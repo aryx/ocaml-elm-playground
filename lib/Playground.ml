@@ -37,6 +37,8 @@ let trusted_node s attrs xs =
 
 let circle =
   trusted_node "circle"
+let ellipse =
+  trusted_node "ellipse"
 
 module Attributes = struct
 let viewBox = V.attr "viewBox"
@@ -45,6 +47,8 @@ let width = V.attr "width"
 let height = V.attr "height"
 
 let r = V.attr "r"
+let rx = V.attr "rx"
+let ry = V.attr "ry"
 let fill = V.attr "fill"
 let transform = V.attr "transform"
 let opacity = V.attr "opacity"
@@ -91,6 +95,8 @@ let render_color color =
   | Rgb (r,g,b) -> spf "rgb(%d,%d,%d)"  r g b
 
 let lightYellow = Hex "#fce94f"
+let white = Hex "#FFFFFF"
+let black = Hex "#000000"
 
 type shape = {
     x: number; 
@@ -103,6 +109,7 @@ type shape = {
 }
 and form = 
   | Circle of color * number (* radius *)
+  | Oval of color * number * number
 
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
@@ -110,6 +117,28 @@ let shape x y angle scale alpha form =
 
 let (circle: color -> number -> shape) = fun color radius ->
   shape 0. 0. 0. 1. 1. (Circle (color, radius))
+
+let (oval: color -> number -> number -> shape) = fun color width height ->
+  shape 0. 0. 0. 1. 1. (Oval (color, width, height))
+
+let (move_left: number -> shape -> shape) = 
+  fun dx {x; y; angle; scale; alpha; form } ->
+    {x = x - dx; y; angle; scale; alpha; form}
+
+let (move_down: number -> shape -> shape) = 
+  fun dy {x; y; angle; scale; alpha; form } ->
+    {x; y = y - dy; angle; scale; alpha; form}
+
+let (move_x: number -> shape -> shape) = 
+  fun dx {x; y; angle; scale; alpha; form } ->
+    {x = x + dx; y; angle; scale; alpha; form}
+
+let (move_y: number -> shape -> shape) = 
+  fun dy {x; y; angle; scale; alpha; form } ->
+    {x; y = dy + y; angle; scale; alpha; form}
+
+let move_right = move_x
+let move_up = move_y
 
 type screen = {
   width: number;
@@ -168,11 +197,21 @@ let render_alpha alpha =
   then []
   else [Svg.Attributes.opacity (string_of_floatint (clamp 0. 1. alpha))]
 
-let render_circle color radius x y angle scale alpha =
+let render_circle color radius x y angle s alpha =
   Svg.circle 
     (Svg.Attributes.r (string_of_floatint radius) ::
      Svg.Attributes.fill (render_color color) ::
-     Svg.Attributes.transform (render_transform x y angle scale)::
+     Svg.Attributes.transform (render_transform x y angle s)::
+     render_alpha alpha
+    )
+    []
+
+let render_oval color width height x y angle s alpha = 
+  Svg.ellipse
+    (Svg.Attributes.rx (string_of_floatint (width / 2.)) ::
+     Svg.Attributes.ry (string_of_floatint (height / 2.)) ::
+     Svg.Attributes.fill (render_color color) ::
+     Svg.Attributes.transform (render_transform x y angle s)::
      render_alpha alpha
     )
     []
@@ -182,6 +221,8 @@ let (render_shape: shape -> 'msg Svg.t) =
   match form with
   | Circle (color, radius) -> 
      render_circle color radius x y angle scale alpha
+  | Oval (color, width, height) ->
+     render_oval color width height x y angle scale alpha
 
 let (render: screen -> shape list -> 'msg V.vdom) = fun screen shapes ->
     let w = screen.width |> string_of_floatint in
