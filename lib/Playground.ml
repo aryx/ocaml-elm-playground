@@ -96,10 +96,10 @@ let (to_screen: number -> number -> screen) = fun width height ->
     
 
 let (render: screen -> shape list -> 'msg V.vdom) = fun screen _shapes ->
-    let w = string_of_float screen.width in
-    let h = string_of_float screen.height in
-    let x = string_of_float screen.left in
-    let y = string_of_float screen.bottom in
+    let w = screen.width |> int_of_float |> string_of_int in
+    let h = screen.height |> int_of_float |> string_of_int  in
+    let x = screen.left |> int_of_float |> string_of_int  in
+    let y = screen.bottom |> int_of_float |> string_of_int in
 
     V.svg_elt "svg"
       ~a:[V.attr "viewBox" (x ^ " " ^ y ^ " " ^ w ^ " " ^ h);
