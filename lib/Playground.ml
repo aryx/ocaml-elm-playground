@@ -1,15 +1,17 @@
 open Common
 module V = Vdom
 
-(* in Core.elm *)
-
+module Core = struct
 type number = float
 let (/) = (/.)
 let (+) = (+.)
 let (-) = (-.)
 let ( * ) = ( *. )
+end
+open Core
 
 module Platform = struct
+(* flags? *)
 type ('flags, 'model, 'msg) program =
   ('model, 'msg) V.app
 end
@@ -19,22 +21,25 @@ type 'msg t = 'msg V.Cmd.t
 let none = V.Cmd.Batch []
 end
 
+module Html = struct
+type 'msg t = 'msg V.vdom
+end
 
 module Browser = struct
 type 'msg document = {
   title: string;
-  body: 'msg V.vdom list;
+  body: 'msg Html.t list;
 }
 
 type ('flags, 'model, 'msg) app = {
-  init: 'flags -> ('model * 'msg V.Cmd.t);
+  init: 'flags -> ('model * 'msg Cmd.t);
   view: 'model -> 'msg document;
-  update: 'msg -> 'model -> ('model * 'msg V.Cmd.t);
+  update: 'msg -> 'model -> ('model * 'msg Cmd.t);
   (* subscriptions: 'model -> 'msg V.Sub?? *)
 }
 
 let (document: ('flags, 'model, 'msg) app -> 
-               ((*'flags,*) 'model, 'msg) V.app) 
+               ('flags, 'model, 'msg) Platform.program) 
  = fun { init; view; update } ->
   V.app 
       ~init:(init ()) 
@@ -138,6 +143,4 @@ let (picture: shape list -> (unit, screen, (int * int)) Platform.program) =
   let _subscriptions _ =
       raise Todo
   in
-
   Browser.document { Browser. init; view; update }
-    
