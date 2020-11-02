@@ -1,7 +1,8 @@
-(executable
-  (name Svg)
+(executables
+  (names Svg Smiley)
   (libraries
     ocaml-vdom
+    elm_playground
   )
   (modes js)
   (link_flags -no-check-prims))
