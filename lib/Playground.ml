@@ -27,13 +27,28 @@ let style = V.style
 end
 
 module Svg = struct
-let svg attr xs = 
-  V.svg_elt "svg" ~a:attr xs
+type 'msg t = 'msg V.vdom
+
+let svg attrs xs = 
+  V.svg_elt "svg" ~a:attrs xs
+
+let trusted_node s attrs xs = 
+  V.svg_elt s ~a:attrs xs
+
+let circle =
+  trusted_node "circle"
 
 module Attributes = struct
 let viewBox = V.attr "viewBox"
+
 let width = V.attr "width"
 let height = V.attr "height"
+
+let r = V.attr "r"
+let fill = V.attr "fill"
+let transform = V.attr "transform"
+let opacity = V.attr "opacity"
+
 end
 end
 
@@ -64,15 +79,18 @@ let (document: ('flags, 'model, 'msg) app ->
      ()
 end
 
-(* in ???.elm *)
-
-type color = string
-
-let hex s = s
-
 (* in Playground.elm *)
 
-let lightYellow = hex "fce94f"
+type color =
+  | Hex of string
+  | Rgb of int * int * int
+
+let render_color color =
+  match color with
+  | Hex str -> str
+  | Rgb (r,g,b) -> spf "rgb(%d,%d,%d)"  r g b
+
+let lightYellow = Hex "#fce94f"
 
 type shape = {
     x: number; 
@@ -84,7 +102,7 @@ type shape = {
     form: form
 }
 and form = 
-  | Circle of color * number
+  | Circle of color * number (* radius *)
 
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
@@ -114,7 +132,58 @@ let (to_screen: number -> number -> screen) = fun width height ->
 let string_of_floatint x = 
   x |> int_of_float |> string_of_int
 
-let (render: screen -> shape list -> 'msg V.vdom) = fun screen _shapes ->
+let render_transform x y a s =
+  if a = 0. then
+    if s = 1.
+    then
+      spf "translate(%s, %s)" 
+        (string_of_floatint x) (string_of_floatint (-. y))
+    else
+      spf "translate(%s, %s) scale(%s)" 
+        (string_of_floatint x) (string_of_floatint (-. y))
+        (string_of_floatint s)
+ else
+  if s = 1.
+  then
+      spf "translate(%s, %s) rotate(%s)" 
+        (string_of_floatint x) (string_of_floatint (-. y))
+        (string_of_floatint (-. a))
+  else
+      spf "translate(%s, %s) rotate(%s) scale(%s) " 
+        (string_of_floatint x) (string_of_floatint (-. y))
+        (string_of_floatint (-. a))
+        (string_of_floatint s)
+
+let clamp low high number =
+  if number < low then
+    low
+  else if number > high then
+    high
+  else
+    number
+
+
+let render_alpha alpha =
+  if alpha = 1.
+  then []
+  else [Svg.Attributes.opacity (string_of_floatint (clamp 0. 1. alpha))]
+
+let render_circle color radius x y angle scale alpha =
+  Svg.circle 
+    (Svg.Attributes.r (string_of_floatint radius) ::
+     Svg.Attributes.fill (render_color color) ::
+     Svg.Attributes.transform (render_transform x y angle scale)::
+     render_alpha alpha
+    )
+    []
+
+let (render_shape: shape -> 'msg Svg.t) = 
+  fun { x; y; angle; scale; alpha; form} ->
+  match form with
+  | Circle (color, radius) -> 
+     render_circle color radius x y angle scale alpha
+
+let (render: screen -> shape list -> 'msg V.vdom) = fun screen shapes ->
     let w = screen.width |> string_of_floatint in
     let h = screen.height |> string_of_floatint  in
     let x = screen.left |> string_of_floatint  in
@@ -128,6 +197,8 @@ let (render: screen -> shape list -> 'msg V.vdom) = fun screen _shapes ->
        Svg.Attributes.width "100%";
        Svg.Attributes.height "100%";
       ]
+      (List.map render_shape shapes)
+(*
       [
       V.svg_elt "circle" []
             ~a:[
@@ -137,7 +208,7 @@ let (render: screen -> shape list -> 'msg V.vdom) = fun screen _shapes ->
               V.attr "fill" ("green");
             ]
     ]
-
+*)
 let (picture: shape list -> (unit, screen, (int * int)) Platform.program) = 
  fun shapes ->
   let init () = 
