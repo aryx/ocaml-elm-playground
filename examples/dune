@@ -1,0 +1,8 @@
+(executable
+  (name Svg)
+  (libraries
+    ocaml-vdom
+  )
+  (modes js)
+  (link_flags -no-check-prims))
+

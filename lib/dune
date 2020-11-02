@@ -1,0 +1,8 @@
+(library
+ (public_name elm_playground)
+ (wrapped false)
+ (libraries
+   commons
+ )
+ (preprocess (pps ppx_profiling))
+)
