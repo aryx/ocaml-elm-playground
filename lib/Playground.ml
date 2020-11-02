@@ -10,6 +10,12 @@ let ( * ) = ( *. )
 end
 open Core
 
+module Time = struct
+type posix = float
+let millis_to_posix n =
+  float_of_int n
+end
+
 module Platform = struct
 (* flags? *)
 type ('flags, 'model, 'msg) program =
@@ -74,6 +80,9 @@ type ('flags, 'model, 'msg) app = {
 let (document: ('flags, 'model, 'msg) app -> 
                ('flags, 'model, 'msg) Platform.program) 
  = fun { init; view; update } ->
+(*
+let document (type flags msg model) {init; view; update} : (flags, model, msg) Platform.program  =
+*)
   V.app 
       ~init:(init ()) 
       ~view:(fun model ->
@@ -83,6 +92,12 @@ let (document: ('flags, 'model, 'msg) app ->
       )
       ~update:(fun model msg -> update msg model) 
      ()
+
+end
+
+module Event = struct
+type visibility = 
+  | Visible
 end
 
 (* in Playground.elm *)
@@ -267,18 +282,12 @@ let (render: screen -> shape list -> 'msg V.vdom) = fun screen shapes ->
        Svg.Attributes.height "100%";
       ]
       (List.map render_shape shapes)
-(*
-      [
-      V.svg_elt "circle" []
-            ~a:[
-              V.int_attr "cx" (10);
-              V.int_attr "cy" (10);
-              V.int_attr "r" (10);
-              V.attr "fill" ("green");
-            ]
-    ]
-*)
-let (picture: shape list -> (unit, screen, (int * int)) Platform.program) = 
+
+type msg1 = 
+  [`Resized of int * int
+  ]
+
+let (picture: shape list -> (unit, screen, msg1) Platform.program) = 
  fun shapes ->
   let init () = 
       to_screen 600. 600., Cmd.none
@@ -289,14 +298,65 @@ let (picture: shape list -> (unit, screen, (int * int)) Platform.program) =
         body = [ render screen shapes ]
       }
   in
-  let update (width, height) _model = 
-     to_screen (float_of_int width) (float_of_int height), Cmd.none
+  let update msg  _model = 
+    match msg with
+    | `Resized (width, height) ->
+       to_screen (float_of_int width) (float_of_int height), Cmd.none
   in
   let _subscriptions _ =
       raise Todo
   in
   Browser.document { Browser. init; view; update }
 
+
+(* TODO: have to use polymorphiv variant, otherwise get 
+ * 'msg gets out of scope error message
+ * TODO and have to comment picture before otherwise get type error. WEIRD.
+ *)
+type msg =
+  Tick of Time.posix
+  | Resized of int * int
+  (* ... *)
+  (* | KeyChanged of bool * string *)
+  
+
+type time = Time of Time.posix
+
+type animation = Animation of Event.visibility * screen * time
+
+let animation_update msg (Animation (v, s, t)) =
+  match msg with
+  | Tick posix -> 
+    Animation (v, s, (Time posix))
+  | Resized (w, h) -> 
+    Animation (v, to_screen (float_of_int w) (float_of_int h), t)
+
+(* TODO: type error if reuse render *)
+let render2 _a _b =
+  raise Todo
+
+let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program) =
+ fun view_frame ->
+   let init () = 
+     Animation (Event.Visible, 
+                to_screen 600. 600., 
+                Time (Time.millis_to_posix 0)),
+     Cmd.none
+   in
+   let view (Animation (_, screen, time)) =
+     { Browser.
+       title = "Playground";
+       body = [render2 screen (view_frame time)];
+     }
+   in
+   let update msg model = 
+     animation_update msg model,
+     Cmd.none
+   in
+  let _subscriptions _ =
+      raise Todo
+  in
+  Browser.document { Browser. init; view; update }
 
 open Js_browser
 let run_app app =
