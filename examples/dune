@@ -1,6 +1,7 @@
 (executables
   (names 
     Smiley Picture 
+    Animation
     Svg)
   (libraries
     ocaml-vdom

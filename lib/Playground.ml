@@ -121,6 +121,7 @@ let lightYellow = Hex "#fce94f"
 let white = Hex "#FFFFFF"
 let black = Hex "#000000"
 let green = Hex "#73d216"
+let red   = Hex "#cc0000"
 let brown = Hex "#c17d11"
 
 type shape = {
