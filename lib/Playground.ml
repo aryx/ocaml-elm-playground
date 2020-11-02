@@ -21,11 +21,14 @@ end
 
 
 module Browser = struct
-type 'msg document = 'msg V.vdom
+type 'msg document = {
+  title: string;
+  body: 'msg V.vdom list;
+}
 
 type ('flags, 'model, 'msg) app = {
   init: 'flags -> ('model * 'msg V.Cmd.t);
-  view: 'model -> 'msg V.vdom;
+  view: 'model -> 'msg document;
   update: 'msg -> 'model -> ('model * 'msg V.Cmd.t);
   (* subscriptions: 'model -> 'msg V.Sub?? *)
 }
@@ -33,7 +36,15 @@ type ('flags, 'model, 'msg) app = {
 let (document: ('flags, 'model, 'msg) app -> 
                ((*'flags,*) 'model, 'msg) V.app) 
  = fun { init; view; update } ->
-  V.app ~init:(init ()) ~view ~update:(fun model msg -> update msg model) ()
+  V.app 
+      ~init:(init ()) 
+      ~view:(fun model ->
+        match view model with
+        (* TODO: do a div? *)
+        | {title=_; body} -> List.hd body
+      )
+      ~update:(fun model msg -> update msg model) 
+     ()
 end
 
 (* in ???.elm *)
@@ -84,13 +95,37 @@ let (to_screen: number -> number -> screen) = fun width height ->
   }
     
 
+let (render: screen -> shape list -> 'msg V.vdom) = fun screen _shapes ->
+    let w = string_of_float screen.width in
+    let h = string_of_float screen.height in
+    let x = string_of_float screen.left in
+    let y = string_of_float screen.bottom in
+
+    V.svg_elt "svg"
+      ~a:[V.attr "viewBox" (x ^ " " ^ y ^ " " ^ w ^ " " ^ h);
+          V.attr "width" "100%";
+          V.attr "height" "100%";
+         ]
+      [
+      V.svg_elt "circle" []
+            ~a:[
+              V.int_attr "cx" (10);
+              V.int_attr "cy" (10);
+              V.int_attr "r" (10);
+              V.attr "fill" ("green");
+            ]
+    ]
+
 let (picture: shape list -> (unit, screen, (int * int)) Platform.program) = 
- fun _shapes ->
+ fun shapes ->
   let init () = 
       to_screen 600. 600., Cmd.none
   in
-  let view _screen = 
-      raise Todo
+  let view screen = 
+      { Browser.
+        title = "Playground";
+        body = [ render screen shapes ]
+      }
   in
   let update (width, height) _model = 
      to_screen (float_of_int width) (float_of_int height), Cmd.none
