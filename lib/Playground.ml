@@ -302,7 +302,7 @@ open Js_browser
 let run_app app =
   let run () = 
     Vdom_blit.run app 
-      |> Vdom_blit.dom 
-      |> Element.append_child (Document.body document) in
+    |> Vdom_blit.dom 
+    |> Element.append_child (Document.body document) in
   let () = Window.set_onload window run in
   ()
