@@ -41,12 +41,20 @@ let svg attrs xs =
 let trusted_node s attrs xs = 
   V.svg_elt s ~a:attrs xs
 
-let circle =
-  trusted_node "circle"
-let ellipse =
-  trusted_node "ellipse"
-let rect =
-  trusted_node "rect"
+(* !subtle! need to eta-expand. You can't factorize with
+ * let circle = trusted_node "circle" otherwise
+ * we don't get the general 'msg vdom type inferred but
+ * the first call to circle in this file will bind forever the type
+ * parameter (e.g., to `Resize of int * int).
+ * You can see the wrongly inferred type by using ocamlc -i on
+ * this file (you may need dune --verbose to get the full list of -I first).
+ *)
+let circle a b  =
+  trusted_node "circle" a b
+let ellipse a b =
+  trusted_node "ellipse" a b
+let rect a b =
+  trusted_node "rect" a b
 
 module Attributes = struct
 let viewBox = V.attr "viewBox"
@@ -80,9 +88,6 @@ type ('flags, 'model, 'msg) app = {
 let (document: ('flags, 'model, 'msg) app -> 
                ('flags, 'model, 'msg) Platform.program) 
  = fun { init; view; update } ->
-(*
-let document (type flags msg model) {init; view; update} : (flags, model, msg) Platform.program  =
-*)
   V.app 
       ~init:(init ()) 
       ~view:(fun model ->
@@ -284,8 +289,7 @@ let (render: screen -> shape list -> 'msg V.vdom) = fun screen shapes ->
       (List.map render_shape shapes)
 
 type msg1 = 
-  [`Resized of int * int
-  ]
+  | Resized of int * int
 
 let (picture: shape list -> (unit, screen, msg1) Platform.program) = 
  fun shapes ->
@@ -300,7 +304,7 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
   in
   let update msg  _model = 
     match msg with
-    | `Resized (width, height) ->
+    | Resized (width, height) ->
        to_screen (float_of_int width) (float_of_int height), Cmd.none
   in
   let _subscriptions _ =
@@ -314,7 +318,7 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
  * TODO and have to comment picture before otherwise get type error. WEIRD.
  *)
 type msg =
-  Tick of Time.posix
+  | Tick of Time.posix
   | Resized of int * int
   (* ... *)
   (* | KeyChanged of bool * string *)
@@ -331,10 +335,6 @@ let animation_update msg (Animation (v, s, t)) =
   | Resized (w, h) -> 
     Animation (v, to_screen (float_of_int w) (float_of_int h), t)
 
-(* TODO: type error if reuse render *)
-let render2 _a _b =
-  raise Todo
-
 let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program) =
  fun view_frame ->
    let init () = 
@@ -346,7 +346,7 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
    let view (Animation (_, screen, time)) =
      { Browser.
        title = "Playground";
-       body = [render2 screen (view_frame time)];
+       body = [render screen (view_frame time)];
      }
    in
    let update msg model = 
@@ -357,6 +357,7 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
       raise Todo
   in
   Browser.document { Browser. init; view; update }
+
 
 open Js_browser
 let run_app app =
