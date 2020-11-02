@@ -94,15 +94,20 @@ let (to_screen: number -> number -> screen) = fun width height ->
     bottom = (-. height) / 2.;
   }
     
+let string_of_floatint x = 
+  x |> int_of_float |> string_of_int
 
 let (render: screen -> shape list -> 'msg V.vdom) = fun screen _shapes ->
-    let w = screen.width |> int_of_float |> string_of_int in
-    let h = screen.height |> int_of_float |> string_of_int  in
-    let x = screen.left |> int_of_float |> string_of_int  in
-    let y = screen.bottom |> int_of_float |> string_of_int in
+    let w = screen.width |> string_of_floatint in
+    let h = screen.height |> string_of_floatint  in
+    let x = screen.left |> string_of_floatint  in
+    let y = screen.bottom |> string_of_floatint in
 
     V.svg_elt "svg"
       ~a:[V.attr "viewBox" (x ^ " " ^ y ^ " " ^ w ^ " " ^ h);
+          V.style "position" "fixed";
+          V.style "top" "0";
+          V.style "left" "0";
           V.attr "width" "100%";
           V.attr "height" "100%";
          ]
