@@ -1,5 +1,7 @@
 (executables
-  (names Svg Smiley)
+  (names 
+    Smiley Picture 
+    Svg)
   (libraries
     ocaml-vdom
     elm_playground

@@ -39,6 +39,8 @@ let circle =
   trusted_node "circle"
 let ellipse =
   trusted_node "ellipse"
+let rect =
+  trusted_node "rect"
 
 module Attributes = struct
 let viewBox = V.attr "viewBox"
@@ -95,8 +97,11 @@ let render_color color =
   | Rgb (r,g,b) -> spf "rgb(%d,%d,%d)"  r g b
 
 let lightYellow = Hex "#fce94f"
+
 let white = Hex "#FFFFFF"
 let black = Hex "#000000"
+let green = Hex "#73d216"
+let brown = Hex "#c17d11"
 
 type shape = {
     x: number; 
@@ -109,7 +114,8 @@ type shape = {
 }
 and form = 
   | Circle of color * number (* radius *)
-  | Oval of color * number * number
+  | Oval      of color * number * number
+  | Rectangle of color * number * number
 
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
@@ -120,6 +126,9 @@ let (circle: color -> number -> shape) = fun color radius ->
 
 let (oval: color -> number -> number -> shape) = fun color width height ->
   shape 0. 0. 0. 1. 1. (Oval (color, width, height))
+
+let (rectangle: color -> number -> number -> shape) = fun color width height ->
+  shape 0. 0. 0. 1. 1. (Rectangle (color, width, height))
 
 let (move_left: number -> shape -> shape) = 
   fun dx {x; y; angle; scale; alpha; form } ->
@@ -183,6 +192,12 @@ let render_transform x y a s =
         (string_of_floatint (-. a))
         (string_of_floatint s)
 
+let render_rect_transform width height x y angle s =
+  render_transform x y angle s ^
+  spf " translate(%s, %s)" 
+     (string_of_floatint (-. width / 2.))
+     (string_of_floatint (-. height / 2.))
+
 let clamp low high number =
   if number < low then
     low
@@ -216,6 +231,16 @@ let render_oval color width height x y angle s alpha =
     )
     []
 
+let render_rectangle color w h x y angle s alpha = 
+  Svg.rect
+    (Svg.Attributes.width (string_of_floatint (w)) ::
+     Svg.Attributes.height (string_of_floatint (h)) ::
+     Svg.Attributes.fill (render_color color) ::
+     Svg.Attributes.transform (render_rect_transform w h x y angle s)::
+     render_alpha alpha
+    )
+    []
+
 let (render_shape: shape -> 'msg Svg.t) = 
   fun { x; y; angle; scale; alpha; form} ->
   match form with
@@ -223,6 +248,9 @@ let (render_shape: shape -> 'msg Svg.t) =
      render_circle color radius x y angle scale alpha
   | Oval (color, width, height) ->
      render_oval color width height x y angle scale alpha
+  | Rectangle (color, width, height) ->
+     render_rectangle color width height x y angle scale alpha
+
 
 let (render: screen -> shape list -> 'msg V.vdom) = fun screen shapes ->
     let w = screen.width |> string_of_floatint in
