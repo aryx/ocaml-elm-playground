@@ -3,6 +3,7 @@
  (wrapped false)
  (libraries
    commons
+   ocaml-vdom
  )
  (preprocess (pps ppx_profiling))
 )
