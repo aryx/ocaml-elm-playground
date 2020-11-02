@@ -23,6 +23,18 @@ end
 
 module Html = struct
 type 'msg t = 'msg V.vdom
+let style = V.style
+end
+
+module Svg = struct
+let svg attr xs = 
+  V.svg_elt "svg" ~a:attr xs
+
+module Attributes = struct
+let viewBox = V.attr "viewBox"
+let width = V.attr "width"
+let height = V.attr "height"
+end
 end
 
 module Browser = struct
@@ -108,14 +120,14 @@ let (render: screen -> shape list -> 'msg V.vdom) = fun screen _shapes ->
     let x = screen.left |> string_of_floatint  in
     let y = screen.bottom |> string_of_floatint in
 
-    V.svg_elt "svg"
-      ~a:[V.attr "viewBox" (x ^ " " ^ y ^ " " ^ w ^ " " ^ h);
-          V.style "position" "fixed";
-          V.style "top" "0";
-          V.style "left" "0";
-          V.attr "width" "100%";
-          V.attr "height" "100%";
-         ]
+    Svg.svg
+      [Svg.Attributes.viewBox (x ^ " " ^ y ^ " " ^ w ^ " " ^ h);
+       Html.style "position" "fixed";
+       Html.style "top" "0";
+       Html.style "left" "0";
+       Svg.Attributes.width "100%";
+       Svg.Attributes.height "100%";
+      ]
       [
       V.svg_elt "circle" []
             ~a:[
