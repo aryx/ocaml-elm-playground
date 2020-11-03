@@ -42,6 +42,7 @@ open Basics
 
 module Set = struct
 type 'a t = 'a list
+let empty = []
 end
 
 module Time = struct
@@ -364,6 +365,12 @@ type keyboard = {
   keys: string Set.t;  
 }
 
+let empty_keyboard = {
+  kup = false; kdown = false; kleft = false; kright = false;
+  kspace = false; kenter = false; kshift = false; kbackspace = false;
+  keys = Set.empty
+}
+
 let to_x keyboard =
   (if keyboard.kright then 1. else 0.) - (if keyboard.kleft then 1. else 0.)
 
@@ -392,6 +399,13 @@ type computer = {
   keyboard: keyboard;
   screen: screen;
   time: time;
+}
+
+let initial_computer = {
+  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false };
+  keyboard = empty_keyboard;
+  screen = to_screen 600. 600.;
+  time = Time (Time.millis_to_posix 1);
 }
 
 (*****************************************************************************)
@@ -541,33 +555,33 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
 (* Playground: animation *)
 (*****************************************************************************)
 
-
-(* TODO: have to use polymorphiv variant, otherwise get 
- * 'msg gets out of scope error message
- * TODO and have to comment picture before otherwise get type error. WEIRD.
- *)
+(* this is also used by the game playground *)
 type msg =
   | Tick of Time.posix
   | Resized of int * int
   (* ... *)
   (* | KeyChanged of bool * string *)
+  | MouseMove of float * float
   
 
 
 type animation = Animation of Event.visibility * screen * time
 
-let animation_update msg (Animation (v, s, t)) =
+let animation_update msg (Animation (v, s, t) as state) =
   match msg with
   | Tick posix -> 
     Animation (v, s, (Time posix))
   | Resized (w, h) -> 
     Animation (v, to_screen (float_of_int w) (float_of_int h), t)
+  | MouseMove _ -> state
 
 let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program) =
  fun view_frame ->
    let init () = 
      Animation (Event.Visible, 
                 to_screen 600. 600., 
+                (* bugfix: use 1, not 0, otherwise get div_by_zero exn in
+                 * to_frac if use spin/wave/... *)
                 Time (Time.millis_to_posix 1)),
      Cmd.none
    in
@@ -591,13 +605,37 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
 (*****************************************************************************)
 type 'memory game = Game of Event.visibility * 'memory * computer
 
+let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
+ 'memory game) =
+ fun _update_memory _msg (Game (vis, memory, computer)) ->
+    (* TODO *)
+    Game (vis, memory, computer)
+
 let (game: 
   (computer -> 'memory -> shape list) ->
   (computer -> 'memory -> 'memory) ->
   'memory ->
   (unit, 'memory game, msg) Platform.program) = 
- fun _view_memory _update_memory _initial_memory ->
-  raise Todo
+ fun view_memory update_memory initial_memory ->
+
+  let init () =
+      Game (Event.Visible, initial_memory, initial_computer),
+      Cmd.none (* TODO: Task.perform GotViewport Dom.getViewport *)
+  in
+  let view (Game (_, memory, computer)) =
+    { Browser.
+      title = "Playground";
+      body = [render computer.screen (view_memory computer memory)];
+    }
+  in
+  let update msg model =
+      game_update update_memory msg model,
+      Cmd.none
+  in
+  let _subscriptions _ =
+      raise Todo
+  in
+  Browser.document { Browser. init; view; update }
 
 (*****************************************************************************)
 (* run_app *)
