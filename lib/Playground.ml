@@ -9,6 +9,7 @@ module V = Vdom
 (* Helpers modules *)
 (*****************************************************************************)
 
+(* can also use Printf.printf I think *)
 let log s = 
   Js_browser.Console.log Js_browser.console (Ojs.string_to_js s)
 
@@ -407,6 +408,13 @@ let to_xy keyboard =
   then (x / square_root_two, y / square_root_two)
   else (x, y)
 
+let string_of_intkey = function
+  | _ -> "TODO"
+
+let update_keyboard _is_down key keyboard =
+  log key;
+  keyboard
+
 (*-------------------------------------------------------------------*)
 (* Memory *)
 (*-------------------------------------------------------------------*)
@@ -655,8 +663,10 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
     | MouseButton is_down ->
         Game (vis, memory, 
              { computer with mouse = mouse_down is_down computer.mouse })
-    | KeyChanged (_is_down, _key) ->
-      raise Todo
+    | KeyChanged (is_down, key) ->
+        Game (vis, memory,
+             { computer with keyboard = update_keyboard is_down key 
+                 computer.keyboard })
         
 
 let (game: 
@@ -687,6 +697,10 @@ let (game:
         V.onmousedown (fun evt -> 
           log (spf "%d" evt.V.buttons);
           MouseButton (evt.V.buttons > 0)
+        );
+        V.onkeydown (fun evt -> 
+          log (spf "key: %d" evt.V.which);
+          KeyChanged (true, string_of_intkey evt.V.which)
         );
       ] [elt] 
     in
