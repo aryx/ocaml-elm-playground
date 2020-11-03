@@ -132,6 +132,10 @@ end
 (*****************************************************************************)
 (* in Playground.elm *)
 
+(* You should not depend on Vdom starting from here, but instead
+ * rely on the helper modules above (which internally use Vdom).
+ *)
+
 (*****************************************************************************)
 (* Number *)
 (*****************************************************************************)
@@ -415,7 +419,7 @@ let (render_shape: shape -> 'msg Svg.t) =
      render_ngon color n radius x y angle scale alpha
 
 
-let (render: screen -> shape list -> 'msg V.vdom) = fun screen shapes ->
+let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
     let w = screen.width |> string_of_floatint in
     let h = screen.height |> string_of_floatint  in
     let x = screen.left |> string_of_floatint  in
