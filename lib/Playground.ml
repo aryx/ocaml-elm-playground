@@ -9,6 +9,9 @@ module V = Vdom
 (* Helpers modules *)
 (*****************************************************************************)
 
+let log s = 
+  Js_browser.Console.log Js_browser.console (Ojs.string_to_js s)
+
 module Basics = struct
 let (/..) = (/)
 let (+..) = (+)
@@ -168,12 +171,12 @@ type time = Time of Time.posix
 let (to_frac: float -> time -> float) = fun period (Time posix) ->
     let ms = Time.posix_to_millis posix in
     let p = period *. 1000. in
-    if p = 0.
-    then failwith "division by zero in to_frag";
+    if p = 0. || ms = 0
+    then failwith "division by zero in to_frac";
     float_of_int ((round p) mod ms) / p
 
-let (spin: number -> time -> number) = fun _period _time -> 0.
-(*    360. * to_frac period time *)
+let (spin: number -> time -> number) = fun period time ->
+    360. * to_frac period time
 
 let (wave: number -> number -> number -> time -> number) = 
  fun lo _hi _period _time -> lo
@@ -560,7 +563,7 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
    let init () = 
      Animation (Event.Visible, 
                 to_screen 600. 600., 
-                Time (Time.millis_to_posix 0)),
+                Time (Time.millis_to_posix 1)),
      Cmd.none
    in
    let view (Animation (_, screen, time)) =
