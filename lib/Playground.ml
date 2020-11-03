@@ -214,6 +214,7 @@ let brown = Hex "#c17d11"
 (*-------------------------------------------------------------------*)
 
 let lightYellow = Hex "#fce94f"
+let lightPurple = Hex "#ad7fa8"
 
 (*-------------------------------------------------------------------*)
 (* Dark colors *)
@@ -304,6 +305,10 @@ let (rotate: number -> shape -> shape) =
   fun da {x; y; angle; scale; alpha; form } ->
     {x; y; angle = angle + da; scale; alpha; form}
 
+let (fade: number -> shape -> shape) = 
+  fun o {x; y; angle; scale; alpha = _; form } ->
+    {x; y; angle; scale; alpha = o; form}
+  
 
 (*****************************************************************************)
 (* Computer *)
@@ -584,7 +589,15 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
 (*****************************************************************************)
 (* Playground: game *)
 (*****************************************************************************)
+type 'memory game = Game of Event.visibility * 'memory * computer
 
+let (game: 
+  (computer -> 'memory -> shape list) ->
+  (computer -> 'memory -> 'memory) ->
+  'memory ->
+  (unit, 'memory game, msg) Platform.program) = 
+ fun _view_memory _update_memory _initial_memory ->
+  raise Todo
 
 (*****************************************************************************)
 (* run_app *)
