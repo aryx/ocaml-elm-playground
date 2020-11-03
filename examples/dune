@@ -3,7 +3,7 @@
     Smiley Picture 
     Animation
     Mouse Keyboard
-    Svg)
+    Svg Test_vdom)
   (libraries
     ocaml-vdom
     elm_playground
