@@ -1,24 +1,23 @@
-(* This file is part of the ocaml-vdom package, released under the terms of an MIT-like license.     *)
-(* See the attached LICENSE file.                                                                    *)
-(* Copyright 2016 by LexiFi.                                                                         *)
-
 open Vdom
 
-type model = float
+type model = string
 
 let update _ = function
-  | `Click -> Js_browser.Date.now ()
+  | `Click -> 
+      "Click:"
+  | `Keydown s -> 
+      "Keydown:" ^ s
 
-let init = 0.
+let init = "EMPTY"
 
-let view n =
-  let t = Js_browser.Date.new_date n in
+let view s =
   div
+    ~a:[
+    onkeydown (fun evt -> `Keydown (Printf.sprintf "%d" evt.which));
+    autofocus;
+  ]
     [
-      div [text (Printf.sprintf "protocol: %S" (Js_browser.Location.protocol (Js_browser.Window.location Js_browser.window)))];
-      div [text (Printf.sprintf "Number of milliseconds: %f" n)];
-      div [text (Printf.sprintf "ToDateString: %s" (Js_browser.Date.to_date_string t))];
-      div [text (Printf.sprintf "ToLocaleString: %s" (Js_browser.Date.to_locale_string t))];
+      div [text (Printf.sprintf "Content: %s" s)];
       div [input [] ~a:[onclick (fun _ -> `Click); type_button; value "Update"]]
     ]
 
@@ -29,4 +28,3 @@ open Js_browser
 
 let run () = Vdom_blit.run app |> Vdom_blit.dom |> Element.append_child (Document.body document)
 let () = Window.set_onload window run
-
