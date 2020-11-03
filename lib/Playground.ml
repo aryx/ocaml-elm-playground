@@ -164,7 +164,7 @@ end
 type number = float
 
 let string_of_floatint x = 
-  x |> int_of_float |> string_of_int
+  spf "%f" x
 
 (*****************************************************************************)
 (* Time (and animations) *)
@@ -573,6 +573,7 @@ type msg =
   (* | KeyChanged of bool * string *)
   | MouseMove of float * float
   | MouseClick
+  | MouseButton of bool (* true = down, false = up *)
   
 
 
@@ -586,6 +587,7 @@ let animation_update msg (Animation (v, s, t) as state) =
     Animation (v, to_screen (float_of_int w) (float_of_int h), t)
   | MouseMove _ 
   | MouseClick 
+  | MouseButton _
     -> state
 
 let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program) =
@@ -633,7 +635,13 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
              { computer with mouse = mouse_move x y computer.mouse })
     | MouseClick ->
         Game (vis, memory, 
-             { computer with mouse = mouse_click true computer.mouse })
+             { computer with mouse = 
+                (* Vdom does not provide OnMouseUp, so we use MouseClick *)
+                 mouse_down false 
+                   (mouse_click true computer.mouse) })
+    | MouseButton is_down ->
+        Game (vis, memory, 
+             { computer with mouse = mouse_down is_down computer.mouse })
         
 
 let (game: 
@@ -652,8 +660,19 @@ let (game:
 
       (* TODO: should use subscription instead *)
     let elt = Html.div [
-        V.onmousemove (fun evt -> MouseMove (evt.V.page_x, evt.V.page_y));
-        V.onclick (fun _evt -> log "click"; MouseClick);
+        V.onmousemove (fun evt -> 
+          MouseMove (evt.V.page_x, evt.V.page_y)
+        );
+        V.onclick (fun _evt -> 
+          log "click"; 
+          MouseClick
+        );
+        (* note that Vdom does not provide onmouseup, so we use onclick 
+         * to set back mouse.mdown to false *)
+        V.onmousedown (fun evt -> 
+          log (spf "%d" evt.V.buttons);
+          MouseButton (evt.V.buttons > 0)
+        );
       ] [elt] 
     in
     { Browser.
