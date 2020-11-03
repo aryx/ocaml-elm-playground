@@ -209,8 +209,11 @@ let render_color color =
 
 let white = Hex "#FFFFFF"
 let black = Hex "#000000"
-let green = Hex "#73d216"
+
 let red   = Hex "#cc0000"
+let green = Hex "#73d216"
+let blue  = Hex "#3465a4"
+
 let brown = Hex "#c17d11"
 
 (*-------------------------------------------------------------------*)
@@ -266,6 +269,9 @@ let (oval: color -> number -> number -> shape) = fun color width height ->
 let (rectangle: color -> number -> number -> shape) = fun color width height ->
   shape 0. 0. 0. 1. 1. (Rectangle (color, width, height))
 
+let (square: color -> number -> shape) = fun color n ->
+  shape 0. 0. 0. 1. 1. (Rectangle (color, n, n))
+
 let (triangle: color -> number -> shape) = fun color radius ->
   shape 0. 0. 0. 1. 1. (Ngon (color, 3, radius))
 
@@ -281,6 +287,10 @@ let (octagon: color -> number -> shape) = fun color radius ->
 (*-------------------------------------------------------------------*)
 (* Move shapes *)
 (*-------------------------------------------------------------------*)
+
+let (move: number -> number -> shape -> shape) = 
+  fun dx dy {x; y; angle; scale; alpha; form } ->
+    {x = x + dx; y = y + dy; angle; scale; alpha; form}
 
 let (move_left: number -> shape -> shape) = 
   fun dx {x; y; angle; scale; alpha; form } ->

@@ -2,7 +2,7 @@
   (names 
     Smiley Picture 
     Animation
-    Mouse
+    Mouse Keyboard
     Svg)
   (libraries
     ocaml-vdom
