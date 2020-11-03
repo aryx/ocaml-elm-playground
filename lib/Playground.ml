@@ -67,6 +67,9 @@ end
 module Html = struct
 type 'msg t = 'msg V.vdom
 let style = V.style
+
+let div a b =
+  V.div ~a b
 end
 
 module Svg = struct
@@ -348,6 +351,9 @@ type mouse = {
   mclick: bool;
 }
 
+let mouse_move mx my mouse = 
+  { mouse with mx; my }
+
 (*-------------------------------------------------------------------*)
 (* Keyboard *)
 (*-------------------------------------------------------------------*)
@@ -607,9 +613,17 @@ type 'memory game = Game of Event.visibility * 'memory * computer
 
 let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
  'memory game) =
- fun _update_memory _msg (Game (vis, memory, computer)) ->
-    (* TODO *)
-    Game (vis, memory, computer)
+ fun _update_memory msg (Game (vis, memory, computer)) ->
+    match msg with
+    | Tick _time ->
+        raise Todo
+    | Resized (_w, _h) ->
+        raise Todo
+    | MouseMove (page_x, page_y) ->
+        let x = computer.screen.left + page_x in
+        let y = computer.screen.top - page_y in
+        Game (vis, memory, 
+             { computer with mouse = mouse_move x y computer.mouse })
 
 let (game: 
   (computer -> 'memory -> shape list) ->
@@ -623,9 +637,16 @@ let (game:
       Cmd.none (* TODO: Task.perform GotViewport Dom.getViewport *)
   in
   let view (Game (_, memory, computer)) =
+      let elt = render computer.screen (view_memory computer memory) in
+      (* TODO: should use subscription instead *)
+      let elt = Html.div [
+        V.onmousemove (fun evt -> 
+              MouseMove (evt.V.page_x, evt.V.page_y)
+          );
+        ] [elt] in
     { Browser.
       title = "Playground";
-      body = [render computer.screen (view_memory computer memory)];
+      body = [elt];
     }
   in
   let update msg model =
