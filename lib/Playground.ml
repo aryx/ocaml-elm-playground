@@ -353,6 +353,10 @@ type mouse = {
 
 let mouse_move mx my mouse = 
   { mouse with mx; my }
+let mouse_click mclick mouse =
+  { mouse with mclick }
+let mouse_down mdown mouse =
+  { mouse with mdown }
 
 (*-------------------------------------------------------------------*)
 (* Keyboard *)
@@ -568,6 +572,7 @@ type msg =
   (* ... *)
   (* | KeyChanged of bool * string *)
   | MouseMove of float * float
+  | MouseClick
   
 
 
@@ -579,7 +584,9 @@ let animation_update msg (Animation (v, s, t) as state) =
     Animation (v, s, (Time posix))
   | Resized (w, h) -> 
     Animation (v, to_screen (float_of_int w) (float_of_int h), t)
-  | MouseMove _ -> state
+  | MouseMove _ 
+  | MouseClick 
+    -> state
 
 let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program) =
  fun view_frame ->
@@ -624,6 +631,10 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
         let y = computer.screen.top - page_y in
         Game (vis, memory, 
              { computer with mouse = mouse_move x y computer.mouse })
+    | MouseClick ->
+        Game (vis, memory, 
+             { computer with mouse = mouse_click true computer.mouse })
+        
 
 let (game: 
   (computer -> 'memory -> shape list) ->
@@ -637,13 +648,14 @@ let (game:
       Cmd.none (* TODO: Task.perform GotViewport Dom.getViewport *)
   in
   let view (Game (_, memory, computer)) =
-      let elt = render computer.screen (view_memory computer memory) in
+    let elt = render computer.screen (view_memory computer memory) in
+
       (* TODO: should use subscription instead *)
-      let elt = Html.div [
-        V.onmousemove (fun evt -> 
-              MouseMove (evt.V.page_x, evt.V.page_y)
-          );
-        ] [elt] in
+    let elt = Html.div [
+        V.onmousemove (fun evt -> MouseMove (evt.V.page_x, evt.V.page_y));
+        V.onclick (fun _evt -> log "click"; MouseClick);
+      ] [elt] 
+    in
     { Browser.
       title = "Playground";
       body = [elt];
