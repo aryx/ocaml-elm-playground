@@ -173,9 +173,7 @@ let (to_frac: float -> time -> float) = fun period (Time posix) ->
     float_of_int ((round p) mod ms) / p
 
 let (spin: number -> time -> number) = fun _period _time -> 0.
-(*
-    360. * to_frac period time
-*)
+(*    360. * to_frac period time *)
 
 let (wave: number -> number -> number -> time -> number) = 
  fun lo _hi _period _time -> lo
