@@ -580,7 +580,9 @@ type msg =
   | Tick of Time.posix
   | Resized of int * int
   (* ... *)
-  (* | KeyChanged of bool * string *)
+
+  | KeyChanged of bool * string
+
   | MouseMove of float * float
   | MouseClick
   | MouseButton of bool (* true = down, false = up *)
@@ -598,6 +600,7 @@ let animation_update msg (Animation (v, s, t) as state) =
   | MouseMove _ 
   | MouseClick 
   | MouseButton _
+  | KeyChanged _
     -> state
 
 let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program) =
@@ -652,6 +655,8 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
     | MouseButton is_down ->
         Game (vis, memory, 
              { computer with mouse = mouse_down is_down computer.mouse })
+    | KeyChanged (_is_down, _key) ->
+      raise Todo
         
 
 let (game: 
