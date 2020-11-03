@@ -10,10 +10,18 @@ module V = Vdom
 (*****************************************************************************)
 
 module Basics = struct
+let (/..) = (/)
+let (+..) = (+)
+let (-..) = (-)
+let ( *.. ) = ( * )
+
 let (/) = (/.)
 let (+) = (+.)
 let (-) = (-.)
 let ( * ) = ( *. )
+
+let (round: float -> int) = fun f ->
+    int_of_float (floor (f +. 0.5))
 
 let (turns: float -> float) = fun angle_in_turns ->
     2. * Float.pi * angle_in_turns
@@ -29,10 +37,16 @@ let (clamp: 'number -> 'number -> 'number -> 'number) = fun low high number ->
 end
 open Basics
 
+module Set = struct
+type 'a t = 'a list
+end
+
 module Time = struct
 type posix = float
 let millis_to_posix n =
   float_of_int n
+let posix_to_millis n =
+  int_of_float n
 end
 
 module Platform = struct
@@ -151,17 +165,29 @@ let string_of_floatint x =
 
 type time = Time of Time.posix
 
-(* TODO *)
-let (spin: number -> time -> number) = fun _period _time ->
-    0.
+let (to_frac: float -> time -> float) = fun period (Time posix) ->
+    let ms = Time.posix_to_millis posix in
+    let p = period *. 1000. in
+    if p = 0.
+    then failwith "division by zero in to_frag";
+    float_of_int ((round p) mod ms) / p
+
+let (spin: number -> time -> number) = fun _period _time -> 0.
+(*
+    360. * to_frac period time
+*)
 
 let (wave: number -> number -> number -> time -> number) = 
- fun lo _hi _period _time ->
-    lo
+ fun lo _hi _period _time -> lo
+(*
+    lo + (hi - lo) * (1. + cos (turns (to_frac period time))) / 2.
+*)
 
 let (zigzag: number -> number -> number -> time -> number) = 
- fun lo _hi _period _time ->
-    lo
+ fun lo _hi _period _time -> lo
+(*
+    lo + (hi - lo) * abs_float (2. * to_frac period time - 1.)
+*)
 
 (*****************************************************************************)
 (* Colors *)
@@ -307,10 +333,46 @@ let (to_screen: number -> number -> screen) = fun width height ->
 (*-------------------------------------------------------------------*)
 (* Mouse *)
 (*-------------------------------------------------------------------*)
+type mouse = {
+  mx: number;
+  my: number;
+
+  mdown: bool;
+  mclick: bool;
+}
 
 (*-------------------------------------------------------------------*)
 (* Keyboard *)
 (*-------------------------------------------------------------------*)
+type keyboard = {
+  kup: bool;
+  kdown: bool;
+  kleft: bool;
+  kright: bool;
+  
+  kspace: bool;
+  kenter: bool;
+  kshift: bool;
+  kbackspace: bool;
+  
+  keys: string Set.t;  
+}
+
+let to_x keyboard =
+  (if keyboard.kright then 1. else 0.) - (if keyboard.kleft then 1. else 0.)
+
+let to_y keyboard =
+  (if keyboard.kup then 1. else 0.) - (if keyboard.kdown then 1. else 0.)
+
+let square_root_two =
+  sqrt 2.
+
+let to_xy keyboard =
+  let x = to_x keyboard in
+  let y = to_y keyboard in
+  if x <> 0. && y <> 0.
+  then (x / square_root_two, y / square_root_two)
+  else (x, y)
 
 (*-------------------------------------------------------------------*)
 (* Memory *)
@@ -319,6 +381,12 @@ let (to_screen: number -> number -> screen) = fun width height ->
 (*-------------------------------------------------------------------*)
 (* Computer *)
 (*-------------------------------------------------------------------*)
+type computer = {
+  mouse: mouse;
+  keyboard: keyboard;
+  screen: screen;
+  time: time;
+}
 
 (*****************************************************************************)
 (* Render *)
