@@ -1,14 +1,17 @@
 open Common
 module V = Vdom
 
-module Core = struct
+module Basics = struct
 type number = float
 let (/) = (/.)
 let (+) = (+.)
 let (-) = (-.)
 let ( * ) = ( *. )
+
+let (turns: float -> float) = fun angle_in_turns ->
+    2. * Float.pi * angle_in_turns
 end
-open Core
+open Basics
 
 module Time = struct
 type posix = float
@@ -55,6 +58,8 @@ let ellipse a b =
   trusted_node "ellipse" a b
 let rect a b =
   trusted_node "rect" a b
+let polygon a b =
+  trusted_node "polygon" a b
 
 module Attributes = struct
 let viewBox = V.attr "viewBox"
@@ -66,6 +71,7 @@ let r = V.attr "r"
 let rx = V.attr "rx"
 let ry = V.attr "ry"
 let fill = V.attr "fill"
+let points = V.attr "points"
 let transform = V.attr "transform"
 let opacity = V.attr "opacity"
 
@@ -124,6 +130,8 @@ let green = Hex "#73d216"
 let red   = Hex "#cc0000"
 let brown = Hex "#c17d11"
 
+let darkGray = Hex "#babdb6"
+
 type shape = {
     x: number; 
     y: number; 
@@ -137,6 +145,7 @@ and form =
   | Circle of color * number (* radius *)
   | Oval      of color * number * number
   | Rectangle of color * number * number
+  | Ngon of color * int * number
 
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
@@ -150,6 +159,19 @@ let (oval: color -> number -> number -> shape) = fun color width height ->
 
 let (rectangle: color -> number -> number -> shape) = fun color width height ->
   shape 0. 0. 0. 1. 1. (Rectangle (color, width, height))
+
+let (triangle: color -> number -> shape) = fun color radius ->
+  shape 0. 0. 0. 1. 1. (Ngon (color, 3, radius))
+
+let (pentagon: color -> number -> shape) = fun color radius ->
+  shape 0. 0. 0. 1. 1. (Ngon (color, 5, radius))
+
+let (hexagon: color -> number -> shape) = fun color radius ->
+  shape 0. 0. 0. 1. 1. (Ngon (color, 6, radius))
+
+let (octagon: color -> number -> shape) = fun color radius ->
+  shape 0. 0. 0. 1. 1. (Ngon (color, 8, radius))
+
 
 let (move_left: number -> shape -> shape) = 
   fun dx {x; y; angle; scale; alpha; form } ->
@@ -169,6 +191,11 @@ let (move_y: number -> shape -> shape) =
 
 let move_right = move_x
 let move_up = move_y
+
+let (rotate: number -> shape -> shape) = 
+  fun da {x; y; angle; scale; alpha; form } ->
+    {x; y; angle = angle + da; scale; alpha; form}
+
 
 type screen = {
   width: number;
@@ -262,6 +289,25 @@ let render_rectangle color w h x y angle s alpha =
     )
     []
 
+let rec to_ngon_points i n radius str =
+  if i == n 
+  then str
+  else
+    let a = turns (float_of_int i / float_of_int n - 0.25) in
+    let x = radius * cos a in
+    let y = radius * sin a in
+    to_ngon_points (Stdlib.(+) i 1) n radius
+      (spf "%s%s,%s " str (string_of_floatint x) (string_of_floatint y))
+
+let render_ngon color n radius x y angle s alpha = 
+  Svg.polygon
+    (Svg.Attributes.points (to_ngon_points 0 n radius "") ::
+     Svg.Attributes.fill (render_color color) ::
+     Svg.Attributes.transform (render_transform x y angle s)::
+     render_alpha alpha
+    )
+    []
+
 let (render_shape: shape -> 'msg Svg.t) = 
   fun { x; y; angle; scale; alpha; form} ->
   match form with
@@ -271,6 +317,8 @@ let (render_shape: shape -> 'msg Svg.t) =
      render_oval color width height x y angle scale alpha
   | Rectangle (color, width, height) ->
      render_rectangle color width height x y angle scale alpha
+  | Ngon (color, n, radius) ->
+     render_ngon color n radius x y angle scale alpha
 
 
 let (render: screen -> shape list -> 'msg V.vdom) = fun screen shapes ->
@@ -326,6 +374,18 @@ type msg =
   
 
 type time = Time of Time.posix
+
+(* TODO *)
+let (spin: number -> time -> number) = fun _period _time ->
+    0.
+
+let (wave: number -> number -> number -> time -> number) = 
+ fun lo _hi _period _time ->
+    lo
+
+let (zigzag: number -> number -> number -> time -> number) = 
+ fun lo _hi _period _time ->
+    lo
 
 type animation = Animation of Event.visibility * screen * time
 
