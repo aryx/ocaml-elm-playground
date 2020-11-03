@@ -1,8 +1,15 @@
 open Common
 module V = Vdom
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Helpers modules *)
+(*****************************************************************************)
+
 module Basics = struct
-type number = float
 let (/) = (/.)
 let (+) = (+.)
 let (-) = (-.)
@@ -10,6 +17,15 @@ let ( * ) = ( *. )
 
 let (turns: float -> float) = fun angle_in_turns ->
     2. * Float.pi * angle_in_turns
+
+let (clamp: 'number -> 'number -> 'number -> 'number) = fun low high number ->
+  if number < low then
+    low
+  else if number > high then
+    high
+  else
+    number
+
 end
 open Basics
 
@@ -111,7 +127,41 @@ type visibility =
   | Visible
 end
 
+(*****************************************************************************)
+(* Real Start of Playground *)
+(*****************************************************************************)
 (* in Playground.elm *)
+
+(*****************************************************************************)
+(* Number *)
+(*****************************************************************************)
+
+type number = float
+
+let string_of_floatint x = 
+  x |> int_of_float |> string_of_int
+
+(*****************************************************************************)
+(* Time (and animations) *)
+(*****************************************************************************)
+
+type time = Time of Time.posix
+
+(* TODO *)
+let (spin: number -> time -> number) = fun _period _time ->
+    0.
+
+let (wave: number -> number -> number -> time -> number) = 
+ fun lo _hi _period _time ->
+    lo
+
+let (zigzag: number -> number -> number -> time -> number) = 
+ fun lo _hi _period _time ->
+    lo
+
+(*****************************************************************************)
+(* Colors *)
+(*****************************************************************************)
 
 type color =
   | Hex of string
@@ -122,15 +172,31 @@ let render_color color =
   | Hex str -> str
   | Rgb (r,g,b) -> spf "rgb(%d,%d,%d)"  r g b
 
-let lightYellow = Hex "#fce94f"
-
 let white = Hex "#FFFFFF"
 let black = Hex "#000000"
 let green = Hex "#73d216"
 let red   = Hex "#cc0000"
 let brown = Hex "#c17d11"
 
+(*-------------------------------------------------------------------*)
+(* Light colors *)
+(*-------------------------------------------------------------------*)
+
+let lightYellow = Hex "#fce94f"
+
+(*-------------------------------------------------------------------*)
+(* Dark colors *)
+(*-------------------------------------------------------------------*)
+
+(*-------------------------------------------------------------------*)
+(* Shades of grey *)
+(*-------------------------------------------------------------------*)
+
 let darkGray = Hex "#babdb6"
+
+(*****************************************************************************)
+(* Shapes *)
+(*****************************************************************************)
 
 type shape = {
     x: number; 
@@ -150,6 +216,10 @@ and form =
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
   { x; y; angle; scale; alpha; form }
+
+(*-------------------------------------------------------------------*)
+(* Shape constructors *)
+(*-------------------------------------------------------------------*)
 
 let (circle: color -> number -> shape) = fun color radius ->
   shape 0. 0. 0. 1. 1. (Circle (color, radius))
@@ -172,6 +242,9 @@ let (hexagon: color -> number -> shape) = fun color radius ->
 let (octagon: color -> number -> shape) = fun color radius ->
   shape 0. 0. 0. 1. 1. (Ngon (color, 8, radius))
 
+(*-------------------------------------------------------------------*)
+(* Move shapes *)
+(*-------------------------------------------------------------------*)
 
 let (move_left: number -> shape -> shape) = 
   fun dx {x; y; angle; scale; alpha; form } ->
@@ -192,10 +265,22 @@ let (move_y: number -> shape -> shape) =
 let move_right = move_x
 let move_up = move_y
 
+(*-------------------------------------------------------------------*)
+(* Customize shapes *)
+(*-------------------------------------------------------------------*)
+
 let (rotate: number -> shape -> shape) = 
   fun da {x; y; angle; scale; alpha; form } ->
     {x; y; angle = angle + da; scale; alpha; form}
 
+
+(*****************************************************************************)
+(* Computer *)
+(*****************************************************************************)
+
+(*-------------------------------------------------------------------*)
+(* Screen *)
+(*-------------------------------------------------------------------*)
 
 type screen = {
   width: number;
@@ -214,10 +299,27 @@ let (to_screen: number -> number -> screen) = fun width height ->
     right = width / 2.;
     bottom = (-. height) / 2.;
   }
-    
-let string_of_floatint x = 
-  x |> int_of_float |> string_of_int
 
+(*-------------------------------------------------------------------*)
+(* Mouse *)
+(*-------------------------------------------------------------------*)
+
+(*-------------------------------------------------------------------*)
+(* Keyboard *)
+(*-------------------------------------------------------------------*)
+
+(*-------------------------------------------------------------------*)
+(* Memory *)
+(*-------------------------------------------------------------------*)
+
+(*-------------------------------------------------------------------*)
+(* Computer *)
+(*-------------------------------------------------------------------*)
+
+(*****************************************************************************)
+(* Render *)
+(*****************************************************************************)
+    
 let render_transform x y a s =
   if a = 0. then
     if s = 1.
@@ -245,14 +347,6 @@ let render_rect_transform width height x y angle s =
   spf " translate(%s, %s)" 
      (string_of_floatint (-. width / 2.))
      (string_of_floatint (-. height / 2.))
-
-let clamp low high number =
-  if number < low then
-    low
-  else if number > high then
-    high
-  else
-    number
 
 
 let render_alpha alpha =
@@ -337,6 +431,10 @@ let (render: screen -> shape list -> 'msg V.vdom) = fun screen shapes ->
       ]
       (List.map render_shape shapes)
 
+(*****************************************************************************)
+(* Playground: picture *)
+(*****************************************************************************)
+
 type msg1 = 
   | Resized of int * int
 
@@ -361,6 +459,10 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
   in
   Browser.document { Browser. init; view; update }
 
+(*****************************************************************************)
+(* Playground: animation *)
+(*****************************************************************************)
+
 
 (* TODO: have to use polymorphiv variant, otherwise get 
  * 'msg gets out of scope error message
@@ -373,19 +475,6 @@ type msg =
   (* | KeyChanged of bool * string *)
   
 
-type time = Time of Time.posix
-
-(* TODO *)
-let (spin: number -> time -> number) = fun _period _time ->
-    0.
-
-let (wave: number -> number -> number -> time -> number) = 
- fun lo _hi _period _time ->
-    lo
-
-let (zigzag: number -> number -> number -> time -> number) = 
- fun lo _hi _period _time ->
-    lo
 
 type animation = Animation of Event.visibility * screen * time
 
@@ -419,6 +508,14 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
   in
   Browser.document { Browser. init; view; update }
 
+(*****************************************************************************)
+(* Playground: game *)
+(*****************************************************************************)
+
+
+(*****************************************************************************)
+(* run_app *)
+(*****************************************************************************)
 
 open Js_browser
 let run_app app =
