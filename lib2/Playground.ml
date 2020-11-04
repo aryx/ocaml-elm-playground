@@ -62,7 +62,13 @@ end
 
 module Html = struct
 type 'msg t = UI of 'msg 
-type 'msg vdom = Vdom of 'msg 
+type 'msg vdom = VNone
+
+let (cr: Cairo.context option ref) = ref None
+let get_cr () = 
+  match !cr with
+  | None -> failwith "no cr"
+  | Some x -> x
 end
 
 module Platform = struct
@@ -496,39 +502,34 @@ let render_ngon color n radius x y angle s alpha =
 
 *)
 
+let render_circle color radius x y angle s alpha =
+  let cr = Html.get_cr () in
+  raise Todo
+
 let (render_shape: shape -> 'msg Html.vdom) = 
   fun { x; y; angle; scale; alpha; form} ->
-    raise Todo
-(*
   match form with
   | Circle (color, radius) -> 
      render_circle color radius x y angle scale alpha
   | Oval (color, width, height) ->
-     render_oval color width height x y angle scale alpha
+     (*render_oval color width height x y angle scale alpha*) raise Todo
   | Rectangle (color, width, height) ->
-     render_rectangle color width height x y angle scale alpha
+     (*render_rectangle color width height x y angle scale alpha*) raise Todo
   | Ngon (color, n, radius) ->
-     render_ngon color n radius x y angle scale alpha
-*)
+     (*render_ngon color n radius x y angle scale alpha*) raise Todo
+
 
 let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
-    let w = screen.width |> string_of_floatint in
-    let h = screen.height |> string_of_floatint  in
-    let x = screen.left |> string_of_floatint  in
-    let y = screen.bottom |> string_of_floatint in
+    let w = screen.width  in
+    let h = screen.height  in
+    let _x = screen.left |> string_of_floatint  in
+    let _y = screen.bottom |> string_of_floatint in
 
-(*
-    Svg.svg
-      [Svg.Attributes.viewBox (x ^ " " ^ y ^ " " ^ w ^ " " ^ h);
-       Html.style "position" "fixed";
-       Html.style "top" "0";
-       Html.style "left" "0";
-       Svg.Attributes.width "100%";
-       Svg.Attributes.height "100%";
-      ]
-      (List.map render_shape shapes)
-*)
-    raise Todo
+    let cr = Html.get_cr () in
+    Cairo.scale cr w h;
+
+    let _vdoms = List.map render_shape shapes in
+    Html.VNone
 
 (*****************************************************************************)
 (* Playground: picture *)
@@ -736,7 +737,7 @@ let draw cr width height x y =
   Cairo.move_to cr (0.05 *. width) (0.95 *. height);
   Cairo.show_text cr (Printf.sprintf "%gx%g -- %.0f fps" width height !fps)
 
-let expose _app =
+let rec expose app model =
   let sx = Graphics.size_x () in
   let sy = Graphics.size_y () in
 
@@ -747,8 +748,10 @@ let expose _app =
      the time bottleneck here. *)
   let cr_img = Cairo.Image.create Cairo.Image.RGB24 sx sy in
   let cr = Cairo.create cr_img in
+  Html.cr := Some cr;
 
-  draw cr (float sx) (float sy) (float mx) (float my);
+(*  draw cr (float sx) (float sy) (float mx) (float my); *)
+  let _vdom = app.Platform.view model in
 
   (* Don't forget to flush the surface before using its content. *)
   Cairo.Surface.flush cr_img;
@@ -762,21 +765,13 @@ let expose _app =
   Graphics.draw_image (Graphics.make_image data_img) 0 0;
   Graphics.synchronize ();
   (* Update our fps counter. *)
-  update_fps ()
+  update_fps ();
+  expose app model
 
 
 let run_app app =
   Graphics.open_graph "";
   Graphics.auto_synchronize false;
-  while true do
-    expose app
-  done
+  let model, _cmds = app.Platform.init in
+  expose app model
 
-(*
-  let run () = 
-    Vdom_blit.run app 
-    |> Vdom_blit.dom 
-    |> Element.append_child (Document.body document) in
-  let () = Window.set_onload window run in
-  ()
-*)
