@@ -504,7 +504,8 @@ let render_ngon color n radius x y angle s alpha =
 
 let render_circle color radius x y angle s alpha =
   let cr = Html.get_cr () in
-  raise Todo
+  Cairo.set_source_rgba cr 1. 0. 0. alpha;
+  Html.VNone
 
 let (render_shape: shape -> 'msg Html.vdom) = 
   fun { x; y; angle; scale; alpha; form} ->
