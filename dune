@@ -1,6 +1,7 @@
 (env
   (dev
-   (flags (:standard)))
+;TODO FIX!
+   (flags (:standard -w -6-33-26-27)))
   (release
    (flags (:standard)))
 )

@@ -1,5 +1,4 @@
 open Common
-module V = Vdom
 
 (*****************************************************************************)
 (* Prelude *)
@@ -9,9 +8,8 @@ module V = Vdom
 (* Helpers modules *)
 (*****************************************************************************)
 
-(* can also use Printf.printf I think *)
-let log s = 
-  Js_browser.Console.log Js_browser.console (Ojs.string_to_js s)
+let log s =
+  Printf.printf "%s" s
 
 module Basics = struct
 let (/..) = (/)
@@ -54,72 +52,44 @@ let posix_to_millis n =
   int_of_float n
 end
 
-module Platform = struct
-(* flags? *)
-type ('flags, 'model, 'msg) program =
-  ('model, 'msg) V.app
-end
+
 
 module Cmd = struct
-type 'msg t = 'msg V.Cmd.t
-let none = V.Cmd.Batch []
+type 'msg t = None | Msg of 'msg
+let none = None
 end
+
 
 module Html = struct
-type 'msg t = 'msg V.vdom
-let style = V.style
-
-let div a b =
-  V.div ~a b
+type 'msg t = UI of 'msg 
+type 'msg vdom = Vdom of 'msg 
 end
 
-module Svg = struct
-type 'msg t = 'msg V.vdom
+module Platform = struct
 
-let svg attrs xs = 
-  V.svg_elt "svg" ~a:attrs xs
+type ('model, 'msg) app =
+  {
+    init: ('model * 'msg Cmd.t);
+    update: ('model -> 'msg -> 'model * 'msg Cmd.t);
+    view: ('model -> 'msg Html.vdom);
+  }
 
-let trusted_node s attrs xs = 
-  V.svg_elt s ~a:attrs xs
+let app ~init ~update ~view () =
+  {init; update; view}
 
-(* !subtle! need to eta-expand. You can't factorize with
- * let circle = trusted_node "circle" otherwise
- * we don't get the general 'msg vdom type inferred but
- * the first call to circle in this file will bind forever the type
- * parameter (e.g., to `Resize of int * int).
- * You can see the wrongly inferred type by using ocamlc -i on
- * this file (you may need dune --verbose to get the full list of -I first).
- *)
-let circle a b  =
-  trusted_node "circle" a b
-let ellipse a b =
-  trusted_node "ellipse" a b
-let rect a b =
-  trusted_node "rect" a b
-let polygon a b =
-  trusted_node "polygon" a b
-
-module Attributes = struct
-let viewBox = V.attr "viewBox"
-
-let width = V.attr "width"
-let height = V.attr "height"
-
-let r = V.attr "r"
-let rx = V.attr "rx"
-let ry = V.attr "ry"
-let fill = V.attr "fill"
-let points = V.attr "points"
-let transform = V.attr "transform"
-let opacity = V.attr "opacity"
+(* flags? *)
+type ('flags, 'model, 'msg) program = 
+    ('model, 'msg) app
 
 end
-end
 
-module Browser = struct
+
+
+
+module Window = struct
 type 'msg document = {
   title: string;
-  body: 'msg Html.t list;
+  body: 'msg Html.vdom list;
 }
 
 type ('flags, 'model, 'msg) app = {
@@ -132,7 +102,7 @@ type ('flags, 'model, 'msg) app = {
 let (document: ('flags, 'model, 'msg) app -> 
                ('flags, 'model, 'msg) Platform.program) 
  = fun { init; view; update } ->
-  V.app 
+  Platform.app 
       ~init:(init ()) 
       ~view:(fun model ->
         match view model with
@@ -440,7 +410,8 @@ let initial_computer = {
 (*****************************************************************************)
 (* Render *)
 (*****************************************************************************)
-    
+
+(*    
 let render_transform x y a s =
   if a = 0. then
     if s = 1.
@@ -523,8 +494,12 @@ let render_ngon color n radius x y angle s alpha =
     )
     []
 
-let (render_shape: shape -> 'msg Svg.t) = 
+*)
+
+let (render_shape: shape -> 'msg Html.vdom) = 
   fun { x; y; angle; scale; alpha; form} ->
+    raise Todo
+(*
   match form with
   | Circle (color, radius) -> 
      render_circle color radius x y angle scale alpha
@@ -534,14 +509,15 @@ let (render_shape: shape -> 'msg Svg.t) =
      render_rectangle color width height x y angle scale alpha
   | Ngon (color, n, radius) ->
      render_ngon color n radius x y angle scale alpha
+*)
 
-
-let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
+let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
     let w = screen.width |> string_of_floatint in
     let h = screen.height |> string_of_floatint  in
     let x = screen.left |> string_of_floatint  in
     let y = screen.bottom |> string_of_floatint in
 
+(*
     Svg.svg
       [Svg.Attributes.viewBox (x ^ " " ^ y ^ " " ^ w ^ " " ^ h);
        Html.style "position" "fixed";
@@ -551,6 +527,8 @@ let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
        Svg.Attributes.height "100%";
       ]
       (List.map render_shape shapes)
+*)
+    raise Todo
 
 (*****************************************************************************)
 (* Playground: picture *)
@@ -565,7 +543,7 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
       to_screen 600. 600., Cmd.none
   in
   let view screen = 
-      { Browser.
+      { Window.
         title = "Playground";
         body = [ render screen shapes ]
       }
@@ -578,7 +556,7 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
   let _subscriptions _ =
       raise Todo
   in
-  Browser.document { Browser. init; view; update }
+  Window.document { Window. init; view; update }
 
 (*****************************************************************************)
 (* Playground: animation *)
@@ -623,7 +601,7 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
      Cmd.none
    in
    let view (Animation (_, screen, time)) =
-     { Browser.
+     { Window.
        title = "Playground";
        body = [render screen (view_frame time)];
      }
@@ -635,7 +613,7 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
   let _subscriptions _ =
       raise Todo
   in
-  Browser.document { Browser. init; view; update }
+  Window.document { Window. init; view; update }
 
 (*****************************************************************************)
 (* Playground: game *)
@@ -684,6 +662,7 @@ let (game:
   let view (Game (_, memory, computer)) =
     let elt = render computer.screen (view_memory computer memory) in
 
+(*
       (* TODO: should use subscription instead *)
     let elt = Html.div [
         V.onmousemove (fun evt -> 
@@ -705,7 +684,9 @@ let (game:
         );
       ] [elt] 
     in
-    { Browser.
+*)
+
+    { Window.
       title = "Playground";
       body = [elt];
     }
@@ -717,17 +698,19 @@ let (game:
   let _subscriptions _ =
       raise Todo
   in
-  Browser.document { Browser. init; view; update }
+  Window.document { Window. init; view; update }
 
 (*****************************************************************************)
 (* run_app *)
 (*****************************************************************************)
 
-open Js_browser
 let run_app app =
+  raise Todo
+(*
   let run () = 
     Vdom_blit.run app 
     |> Vdom_blit.dom 
     |> Element.append_child (Document.body document) in
   let () = Window.set_onload window run in
   ()
+*)

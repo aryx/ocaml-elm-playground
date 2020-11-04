@@ -1,0 +1,10 @@
+(library
+ (public_name elm_playground2)
+ (wrapped false)
+ (libraries
+   commons
+   cairo2
+   graphics
+ )
+ (preprocess (pps ppx_profiling))
+)
