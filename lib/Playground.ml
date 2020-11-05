@@ -203,11 +203,6 @@ type color =
   | Hex of string
   | Rgb of int * int * int
 
-let render_color color =
-  match color with
-  | Hex str -> str
-  | Rgb (r,g,b) -> spf "rgb(%d,%d,%d)"  r g b
-
 let white = Hex "#FFFFFF"
 let black = Hex "#000000"
 
@@ -440,6 +435,11 @@ let initial_computer = {
 (*****************************************************************************)
 (* Render *)
 (*****************************************************************************)
+
+let render_color color =
+  match color with
+  | Hex str -> str
+  | Rgb (r,g,b) -> spf "rgb(%d,%d,%d)"  r g b
     
 let render_transform x y a s =
   if a = 0. then

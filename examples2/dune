@@ -1,6 +1,6 @@
 (executables
   (names 
-    Picture
+    Picture Smiley
     Test_cairo_graphics
   )
   (libraries

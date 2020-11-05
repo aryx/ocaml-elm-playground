@@ -175,11 +175,6 @@ type color =
   | Hex of string
   | Rgb of int * int * int
 
-let render_color color =
-  match color with
-  | Hex str -> str
-  | Rgb (r,g,b) -> spf "rgb(%d,%d,%d)"  r g b
-
 let white = Hex "#FFFFFF"
 let black = Hex "#000000"
 
@@ -428,6 +423,7 @@ let set_color cr color alpha =
     match color with
     | Rgb (r,g,b) -> float_of_int r, float_of_int g, float_of_int b
     | Hex s ->
+        let s = String.lowercase_ascii s in
         if s =~ "^#\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)$"
         then 
           let (a, b, c) = Common.matched3 s in
@@ -437,7 +433,7 @@ let set_color cr color alpha =
           f a, f b, f c
         else failwith (spf "wrong color format: %s" s)
   in
-  Cairo.set_source_rgba cr r g b alpha
+  Cairo.set_source_rgba cr r g b (clamp 0. 1. alpha)
 
 let debug_coordinates cr = 
   let sx = !sx in
@@ -490,36 +486,12 @@ let render_rect_transform width height x y angle s =
      (string_of_floatint (-. height / 2.))
 
 
-let render_alpha alpha =
-  if alpha = 1.
-  then []
-  else [Svg.Attributes.opacity (string_of_floatint (clamp 0. 1. alpha))]
-
-let render_circle color radius x y angle s alpha =
-  Svg.circle 
-    (Svg.Attributes.r (string_of_floatint radius) ::
-     Svg.Attributes.fill (render_color color) ::
-     Svg.Attributes.transform (render_transform x y angle s)::
-     render_alpha alpha
-    )
-    []
-
 let render_oval color width height x y angle s alpha = 
   Svg.ellipse
     (Svg.Attributes.rx (string_of_floatint (width / 2.)) ::
      Svg.Attributes.ry (string_of_floatint (height / 2.)) ::
      Svg.Attributes.fill (render_color color) ::
      Svg.Attributes.transform (render_transform x y angle s)::
-     render_alpha alpha
-    )
-    []
-
-let render_rectangle color w h x y angle s alpha = 
-  Svg.rect
-    (Svg.Attributes.width (string_of_floatint (w)) ::
-     Svg.Attributes.height (string_of_floatint (h)) ::
-     Svg.Attributes.fill (render_color color) ::
-     Svg.Attributes.transform (render_rect_transform w h x y angle s)::
      render_alpha alpha
     )
     []
@@ -544,6 +516,17 @@ let render_ngon color n radius x y angle s alpha =
     []
 *)
 
+let render_rectangle color w h x y angle s alpha = 
+  let cr = Cairo2.get_cr () in
+  Cairo2.set_color cr color alpha;
+  pr2_gen (x,y,w,h);
+  let x0 = x - (w / 2.) in
+  let y0 = y + (h / 2.) in
+  let (x0,y0) = Cairo2.convert (x0,y0) in
+  Cairo.rectangle cr x0 y0 w h;
+  Cairo.fill cr;
+  Html.VNone
+
 
 let render_circle color radius x y angle s alpha =
   let cr = Cairo2.get_cr () in
@@ -562,7 +545,7 @@ let (render_shape: shape -> 'msg Html.vdom) =
   | Oval (color, width, height) ->
      (*render_oval color width height x y angle scale alpha*) raise Todo
   | Rectangle (color, width, height) ->
-     (*render_rectangle color width height x y angle scale alpha*) raise Todo
+     render_rectangle color width height x y angle scale alpha
   | Ngon (color, n, radius) ->
      (*render_ngon color n radius x y angle scale alpha*) raise Todo
 
