@@ -73,6 +73,19 @@ let get_cr () =
   match !cr with
   | None -> failwith "no cr"
   | Some x -> x
+
+let sx = ref 0
+let sy = ref 0
+
+let debug_coordinates cr = 
+  let sx = !sx in
+  let sy = !sy in
+  let (x0,y0) = Cairo.device_to_user cr 0. 0. in
+  let (xmax, ymax) = Cairo.device_to_user cr 
+      (float_of_int sx) (float_of_int sy) in
+  pr2 (spf "device 0,0 => %.1f %.1f, device %d,%d => %.1f %.1f"
+    x0 y0 sx sy xmax ymax)
+
 end
 
 module Platform = struct
@@ -512,6 +525,7 @@ let render_circle color radius x y angle s alpha =
   pr2_gen (x,y, radius);
   Cairo.arc cr 100. 100. 50. 0. pi2;
   Cairo.fill cr;
+  Html.debug_coordinates cr;
   Html.VNone
 
 let (render_shape: shape -> 'msg Html.vdom) = 
@@ -750,6 +764,7 @@ let draw cr width height x y =
   Cairo.show_text cr (Printf.sprintf "%gx%g -- %.0f fps" width height !fps)
 
 
+
 let expose app model =
   let sx = Graphics.size_x () in
   let sy = Graphics.size_y () in
@@ -761,7 +776,12 @@ let expose app model =
      the time bottleneck here. *)
   let cr_img = Cairo.Image.create Cairo.Image.RGB24 sx sy in
   let cr = Cairo.create cr_img in
+
+  Cairo.identity_matrix cr;
   Html.cr := Some cr;
+  Html.sx := sx;
+  Html.sy := sy;
+  Html.debug_coordinates cr;
 
 (*  Cairo.save cr; *)
 (*  draw cr (float sx) (float sy) (float mx) (float my); *)
@@ -787,8 +807,13 @@ let expose app model =
   while true do () done
 
 let run_app app =
-  Graphics.open_graph "";
-  Graphics.resize_window 600 600;
+  Graphics.open_graph ":0 600x600+0+0";
+  (* TODO: WEIRD: resize_window does not seem to work; the command
+   * do not display on the screen after that, hence the manual geometry
+   * before in the call to open_graph.
+   *
+   * Graphics.resize_window 600 600;
+   *)
   Graphics.clear_graph ();
   let sx = Graphics.size_x () in
   let sy = Graphics.size_y () in
