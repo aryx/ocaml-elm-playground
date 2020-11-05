@@ -512,7 +512,7 @@ let render_ngon cr n radius x y angle s =
   ngon_points cr 0 n radius;
   Cairo.fill cr;
   Cairo.restore cr;
-  Html.VNone
+  ()
 
 let render_oval cr w h x y angle s = 
   pr2_gen (x,y,w,h);
@@ -528,9 +528,7 @@ let render_oval cr w h x y angle s =
   Cairo.arc cr 0. 0. 1. 0. pi2;
   Cairo.fill cr;
   Cairo.restore cr;
-
-  Html.VNone
-
+  ()
 
 let render_rectangle cr w h x y angle s = 
   pr2_gen (x,y,w,h);
@@ -539,7 +537,7 @@ let render_rectangle cr w h x y angle s =
   let (x0,y0) = Cairo2.convert (x0,y0) in
   Cairo.rectangle cr x0 y0 w h;
   Cairo.fill cr;
-  Html.VNone
+  ()
 
 
 let render_circle cr radius x y angle s =
@@ -547,12 +545,13 @@ let render_circle cr radius x y angle s =
   let (x,y) = Cairo2.convert (x,y) in
   Cairo.arc cr x y radius 0. pi2;
   Cairo.fill cr;
-  Html.VNone
+  ()
 
 let (render_shape: shape -> 'msg Html.vdom) = 
   fun { x; y; angle; scale; alpha; form} ->
   let cr = Cairo2.get_cr () in
-  match form with
+  Cairo.save cr;
+  (match form with
   | Circle (color, radius) -> 
      Cairo2.set_color cr color alpha;
      render_circle cr radius x y angle scale
@@ -565,6 +564,9 @@ let (render_shape: shape -> 'msg Html.vdom) =
   | Ngon (color, n, radius) ->
      Cairo2.set_color cr color alpha;
      render_ngon cr n radius x y angle scale
+  );
+  Cairo.save cr;
+  Html.VNone
 
 
 let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
