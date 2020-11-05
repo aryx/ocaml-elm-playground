@@ -516,14 +516,24 @@ let render_ngon color n radius x y angle s alpha =
      render_alpha alpha
     )
     []
-
 *)
+
+(* Cairo (0,0) is at the top left of the screen, in which as y goes up,
+ * the coordinates are down on the physical screen. Elm uses a better
+ * default where if your y goes up, then it's upper on the screen.
+ * Here we convert the Elm coordinate system to Cairo. Note that
+ * it's hard to use one of the rotate/translate Cairo function to emulate
+ * that as only y need to change (maybe need to create a special matrix?)
+ *)
+let convert (x, y) =
+  x, -. y
 
 let render_circle color radius x y angle s alpha =
   let cr = Html.get_cr () in
   Cairo.set_source_rgba cr 1. 0. 0. alpha;
   pr2_gen (x,y, radius);
-  Cairo.arc cr x y 50. 0. pi2;
+  let (x,y) = convert (x,y) in
+  Cairo.arc cr x y radius 0. pi2;
   Cairo.fill cr;
   Html.VNone
 
@@ -552,7 +562,6 @@ let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
     Cairo.set_source_rgb cr 1. 1. 1.;
     Cairo.paint cr;
 
-(*    Cairo.scale cr w h; *)
     (* set the origin (0, 0) in the center of the surface *)
     Cairo.identity_matrix cr;
     Cairo.translate cr (w / 2.) (h / 2.);
