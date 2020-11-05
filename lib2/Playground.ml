@@ -25,8 +25,11 @@ let ( * ) = ( *. )
 let (round: float -> int) = fun f ->
     int_of_float (floor (f +. 0.5))
 
+let pi = Float.pi
+let pi2 = 8. *. atan 1.
+
 let (turns: float -> float) = fun angle_in_turns ->
-    2. * Float.pi * angle_in_turns
+    2. * pi * angle_in_turns
 
 let (clamp: 'number -> 'number -> 'number -> 'number) = fun low high number ->
   if number < low then
@@ -35,6 +38,7 @@ let (clamp: 'number -> 'number -> 'number -> 'number) = fun low high number ->
     high
   else
     number
+
 
 end
 open Basics
@@ -505,6 +509,9 @@ let render_ngon color n radius x y angle s alpha =
 let render_circle color radius x y angle s alpha =
   let cr = Html.get_cr () in
   Cairo.set_source_rgba cr 1. 0. 0. alpha;
+  pr2_gen (x,y, radius);
+  Cairo.arc cr 100. 100. 50. 0. pi2;
+  Cairo.fill cr;
   Html.VNone
 
 let (render_shape: shape -> 'msg Html.vdom) = 
@@ -527,7 +534,10 @@ let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
     let _y = screen.bottom |> string_of_floatint in
 
     let cr = Html.get_cr () in
-    Cairo.scale cr w h;
+(*    Cairo.scale cr w h; *)
+(*    Cairo.translate cr (w / 2.) (h / 2.); *)
+    Cairo.set_source_rgb cr 1. 1. 1.;
+    Cairo.paint cr;
 
     let _vdoms = List.map render_shape shapes in
     Html.VNone
@@ -722,6 +732,7 @@ let update_fps () =
   );
   incr frames
 
+
 let draw cr width height x y =
   let x = x -. width *. 0.5 and y = y -. height *. 0.5 in
   let r = 0.5 *. sqrt (x *. x +. y *. y) in
@@ -738,7 +749,8 @@ let draw cr width height x y =
   Cairo.move_to cr (0.05 *. width) (0.95 *. height);
   Cairo.show_text cr (Printf.sprintf "%gx%g -- %.0f fps" width height !fps)
 
-let rec expose app model =
+
+let expose app model =
   let sx = Graphics.size_x () in
   let sy = Graphics.size_y () in
 
@@ -751,8 +763,10 @@ let rec expose app model =
   let cr = Cairo.create cr_img in
   Html.cr := Some cr;
 
+(*  Cairo.save cr; *)
 (*  draw cr (float sx) (float sy) (float mx) (float my); *)
   let _vdom = app.Platform.view model in
+(*  Cairo.restore cr; *)
 
   (* Don't forget to flush the surface before using its content. *)
   Cairo.Surface.flush cr_img;
@@ -767,11 +781,19 @@ let rec expose app model =
   Graphics.synchronize ();
   (* Update our fps counter. *)
   update_fps ();
+(*
   expose app model
-
+*)
+  while true do () done
 
 let run_app app =
   Graphics.open_graph "";
+  Graphics.resize_window 600 600;
+  Graphics.clear_graph ();
+  let sx = Graphics.size_x () in
+  let sy = Graphics.size_y () in
+  pr2_gen (sx, sy);
+
   Graphics.auto_synchronize false;
   let model, _cmds = app.Platform.init in
   expose app model

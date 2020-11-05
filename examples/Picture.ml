@@ -8,7 +8,9 @@ let app =
       |> move_down 80.;
 *)
     circle green 100.
+(*
       |> move_up 100.;
+*)
   ]
 
 let main = Playground.run_app app
