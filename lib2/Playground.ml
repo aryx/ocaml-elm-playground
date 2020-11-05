@@ -613,17 +613,6 @@ let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
     let _x = screen.left |> string_of_floatint  in
     let _y = screen.bottom |> string_of_floatint in
 
-    let cr = Cairo2.get_cr () in
-
-    (* reset the surface content *)
-    Cairo.set_source_rgb cr 1. 1. 1.;
-    Cairo.paint cr;
-
-    (* set the origin (0, 0) in the center of the surface *)
-    Cairo.identity_matrix cr;
-    Cairo.translate cr (w / 2.) (h / 2.);
-    Cairo2.debug_coordinates cr;
-
     let _vdoms = List.map render_shape shapes in
     Html.VNone
 
@@ -858,6 +847,15 @@ let run_app app =
   while true do
     Cairo.save cr;
 (*  draw cr (float sx) (float sy) (float mx) (float my); *)
+
+    (* reset the surface content *)
+    Cairo.set_source_rgb cr 1. 1. 1.;
+    Cairo.paint cr;
+
+    (* set the origin (0, 0) in the center of the surface *)
+    Cairo.identity_matrix cr;
+    Cairo.translate cr (float sx / 2.) (float sy / 2.);
+    Cairo2.debug_coordinates cr;
 
     (* one frame *)
     let time = Unix.gettimeofday() in
