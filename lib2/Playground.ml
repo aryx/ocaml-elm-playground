@@ -523,9 +523,8 @@ let render_circle color radius x y angle s alpha =
   let cr = Html.get_cr () in
   Cairo.set_source_rgba cr 1. 0. 0. alpha;
   pr2_gen (x,y, radius);
-  Cairo.arc cr 100. 100. 50. 0. pi2;
+  Cairo.arc cr x y 50. 0. pi2;
   Cairo.fill cr;
-  Html.debug_coordinates cr;
   Html.VNone
 
 let (render_shape: shape -> 'msg Html.vdom) = 
@@ -548,10 +547,16 @@ let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
     let _y = screen.bottom |> string_of_floatint in
 
     let cr = Html.get_cr () in
-(*    Cairo.scale cr w h; *)
-(*    Cairo.translate cr (w / 2.) (h / 2.); *)
+
+    (* reset the surface content *)
     Cairo.set_source_rgb cr 1. 1. 1.;
     Cairo.paint cr;
+
+(*    Cairo.scale cr w h; *)
+    (* set the origin (0, 0) in the center of the surface *)
+    Cairo.identity_matrix cr;
+    Cairo.translate cr (w / 2.) (h / 2.);
+    Html.debug_coordinates cr;
 
     let _vdoms = List.map render_shape shapes in
     Html.VNone
