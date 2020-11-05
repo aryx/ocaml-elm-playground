@@ -835,11 +835,6 @@ let run_app app =
   pr2_gen (sx, sy);
   Graphics.auto_synchronize false;
 
-
-  (* Create a cairo context from a cairo surface and do our drawings
-     on it. Note: we may cache it between expose events for
-     incremental drawings but its creation and initialization is not
-     the time bottleneck here. *)
   let cr_img = Cairo.Image.create Cairo.Image.RGB24 sx sy in
   let cr = Cairo.create cr_img in
 
@@ -849,32 +844,40 @@ let run_app app =
   Cairo2.sy := sy;
   Cairo2.debug_coordinates cr;
 
-  let initmodel, _cmds = app.Platform.init in
+  let initmodel, _cmdsTODO = app.Platform.init in
   let model = ref initmodel in
-
 
   while true do
     Cairo.save cr;
-(*  draw cr (float sx) (float sy) (float mx) (float my); *)
 
     (* reset the surface content *)
-    (* do not use 1. 1. 1. pure white because Graphics seems to
-     * consider that a transparent and it does not redraw the
-     * screen each time
+    (* do not use 1. 1. 1. (pure white) because Graphics seems to
+     * consider that a transparent color and it does not clear the
+     * screen.
      *)
     Cairo.set_source_rgba cr 0.99 0.99 0.99 1.;
     Cairo.paint cr;
 
-    (* set the origin (0, 0) in the center of the surface *)
+    (* elm-convetion: set the origin (0, 0) in the center of the surface *)
     Cairo.identity_matrix cr;
     Cairo.translate cr (float sx / 2.) (float sy / 2.);
     Cairo2.debug_coordinates cr;
 
+    let old_status = ref (Graphics.wait_next_event [Graphics.Poll]) in
+
     (* one frame *)
     let time = Unix.gettimeofday() in
-    let x, y = Graphics.mouse_pos () in
 
     let msg = app.Platform.subscriptions !model in
+    let _status = 
+      Graphics.wait_next_event [
+        Graphics.Button_down;
+        Graphics.Button_up;
+        Graphics.Key_pressed;
+        Graphics.Mouse_motion;
+        Graphics.Poll
+        ]
+    in
 
     (match msg with
     | Sub.Batch [] -> ()
