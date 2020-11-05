@@ -28,6 +28,10 @@ let (round: float -> int) = fun f ->
 let pi = Float.pi
 let pi2 = 8. *. atan 1.
 
+(* was called just degrees in Basics.elm *)
+let degrees_to_radians deg =
+  (deg * pi) / 180.
+
 let (turns: float -> float) = fun angle_in_turns ->
     2. * pi * angle_in_turns
 
@@ -208,8 +212,10 @@ let darkGray = Hex "#babdb6"
 type shape = {
     x: number; 
     y: number; 
+    (* in degrees *)
     angle: number;
     scale: number;
+    (* [0..1] range *)
     alpha: number;
 
     form: form
@@ -551,6 +557,9 @@ let (render_shape: shape -> 'msg Html.vdom) =
   fun { x; y; angle; scale; alpha; form} ->
   let cr = Cairo2.get_cr () in
   Cairo.save cr;
+  Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
+  pr (spf "rotate: %.1f" angle);
+
   (match form with
   | Circle (color, radius) -> 
      Cairo2.set_color cr color alpha;
