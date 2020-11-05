@@ -70,8 +70,10 @@ end
 
 module Sub = struct
 type 'msg t =  
-| SubTime of (Time.posix -> 'msg)
-| Batch of 'msg t list
+  | SubTick of (Time.posix -> 'msg)
+  | SubMouseMove of (float * float -> 'msg)
+
+  | Batch of 'msg t list
 let none = Batch []
 end
 
@@ -137,7 +139,10 @@ type visibility =
   | Visible
 
 let (on_animation_frame: (Time.posix -> 'msg) -> 'msg Sub.t) = fun f ->
-  Sub.SubTime f
+  Sub.SubTick f
+
+let (on_mouse_move: (float * float -> 'msg) -> 'msg Sub.t) = fun f ->
+  Sub.SubMouseMove f
 end
 
 (*****************************************************************************)
@@ -342,6 +347,7 @@ let (to_screen: number -> number -> screen) = fun width height ->
 (*-------------------------------------------------------------------*)
 (* Mouse *)
 (*-------------------------------------------------------------------*)
+(* in screen-centered coordinate (0, 0) at center of screen *)
 type mouse = {
   mx: number;
   my: number;
@@ -656,7 +662,7 @@ type msg =
 
   | KeyChanged of bool * string
 
-  | MouseMove of float * float
+  | MouseMove of (float * float)
   | MouseClick
   | MouseButton of bool (* true = down, false = up *)
   
@@ -715,9 +721,11 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
         raise Todo
     | Resized (_w, _h) ->
         raise Todo
-    | MouseMove (page_x, page_y) ->
+    | MouseMove (x, y) ->
+(*
         let x = computer.screen.left + page_x in
         let y = computer.screen.top - page_y in
+*)
         Game (vis, memory, 
              { computer with mouse = mouse_move x y computer.mouse })
     | MouseClick ->
@@ -783,7 +791,7 @@ let (game:
       Cmd.none
   in
   let subscriptions _ =
-      Sub.none
+      Event.on_mouse_move (fun x -> MouseMove x)
   in
   Window.document { Window. init; view; update; subscriptions }
 
@@ -844,12 +852,17 @@ let run_app app =
   let initmodel, _cmds = app.Platform.init in
   let model = ref initmodel in
 
+
   while true do
     Cairo.save cr;
 (*  draw cr (float sx) (float sy) (float mx) (float my); *)
 
     (* reset the surface content *)
-    Cairo.set_source_rgb cr 1. 1. 1.;
+    (* do not use 1. 1. 1. pure white because Graphics seems to
+     * consider that a transparent and it does not redraw the
+     * screen each time
+     *)
+    Cairo.set_source_rgba cr 0.99 0.99 0.99 1.;
     Cairo.paint cr;
 
     (* set the origin (0, 0) in the center of the surface *)
@@ -859,14 +872,32 @@ let run_app app =
 
     (* one frame *)
     let time = Unix.gettimeofday() in
+    let x, y = Graphics.mouse_pos () in
+
     let msg = app.Platform.subscriptions !model in
+
     (match msg with
     | Sub.Batch [] -> ()
     | Sub.Batch xs -> 
           (* select on event list *)
           raise Todo
-    | Sub.SubTime f ->
+
+    | Sub.SubTick f ->
       let msg = f time in
+      let newmodel, _cmds = app.Platform.update !model msg in
+      model := newmodel;
+
+    | Sub.SubMouseMove f ->
+
+      let x, y = Graphics.mouse_pos () in
+      let (x, y) = Cairo.device_to_user cr (float x) (float y) in
+      (* note that Graphics origin is at the bottom left, not
+       * top left like in Cairo, which is why we don't need 
+       * to call convert here 
+       * let (x, y) = Cairo2.convert (x, y) in
+       *)
+      pr2_gen (x, y);
+      let msg = f (x, y) in
       let newmodel, _cmds = app.Platform.update !model msg in
       model := newmodel;
     );
