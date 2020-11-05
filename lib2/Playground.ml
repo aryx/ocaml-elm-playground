@@ -486,6 +486,9 @@ let render_rect_transform width height x y angle s =
      (string_of_floatint (-. height / 2.))
 
 
+
+*)
+
 let rec to_ngon_points i n radius str =
   if i == n 
   then str
@@ -497,6 +500,19 @@ let rec to_ngon_points i n radius str =
       (spf "%s%s,%s " str (string_of_floatint x) (string_of_floatint y))
 
 let render_ngon color n radius x y angle s alpha = 
+
+  let cr = Cairo2.get_cr () in
+  Cairo2.set_color cr color alpha;
+  pr2_gen (x,y,n,radius);
+(*
+  let x0 = x - (w / 2.) in
+  let y0 = y + (h / 2.) in
+  let (x0,y0) = Cairo2.convert (x0,y0) in
+  Cairo.rectangle cr x0 y0 w h;
+  Cairo.fill cr;
+*)
+  Html.VNone
+(*
   Svg.polygon
     (Svg.Attributes.points (to_ngon_points 0 n radius "") ::
      Svg.Attributes.fill (render_color color) ::
@@ -557,7 +573,7 @@ let (render_shape: shape -> 'msg Html.vdom) =
   | Rectangle (color, width, height) ->
      render_rectangle color width height x y angle scale alpha
   | Ngon (color, n, radius) ->
-     (*render_ngon color n radius x y angle scale alpha*) raise Todo
+     render_ngon color n radius x y angle scale alpha
 
 
 let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->

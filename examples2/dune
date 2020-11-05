@@ -1,6 +1,7 @@
 (executables
   (names 
     Picture Smiley
+    Animation
     Test_cairo_graphics
   )
   (libraries
