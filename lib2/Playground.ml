@@ -38,8 +38,6 @@ let (clamp: 'number -> 'number -> 'number -> 'number) = fun low high number ->
     high
   else
     number
-
-
 end
 open Basics
 
@@ -67,25 +65,6 @@ end
 module Html = struct
 type 'msg t = UI of 'msg 
 type 'msg vdom = VNone
-
-let (cr: Cairo.context option ref) = ref None
-let get_cr () = 
-  match !cr with
-  | None -> failwith "no cr"
-  | Some x -> x
-
-let sx = ref 0
-let sy = ref 0
-
-let debug_coordinates cr = 
-  let sx = !sx in
-  let sy = !sy in
-  let (x0,y0) = Cairo.device_to_user cr 0. 0. in
-  let (xmax, ymax) = Cairo.device_to_user cr 
-      (float_of_int sx) (float_of_int sy) in
-  pr2 (spf "device 0,0 => %.1f %.1f, device %d,%d => %.1f %.1f"
-    x0 y0 sx sy xmax ymax)
-
 end
 
 module Platform = struct
@@ -434,6 +413,53 @@ let initial_computer = {
 (* Render *)
 (*****************************************************************************)
 
+module Cairo2 = struct
+let (cr: Cairo.context option ref) = ref None
+let get_cr () = 
+  match !cr with
+  | None -> failwith "no cr"
+  | Some x -> x
+
+let sx = ref 0
+let sy = ref 0
+
+let set_color cr color alpha =
+  let (r,g,b) =
+    match color with
+    | Rgb (r,g,b) -> float_of_int r, float_of_int g, float_of_int b
+    | Hex s ->
+        if s =~ "^#\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)$"
+        then 
+          let (a, b, c) = Common.matched3 s in
+          let f x =
+            (("0x" ^ x) |> int_of_string |> float_of_int) / 255.
+          in
+          f a, f b, f c
+        else failwith (spf "wrong color format: %s" s)
+  in
+  Cairo.set_source_rgba cr r g b alpha
+
+let debug_coordinates cr = 
+  let sx = !sx in
+  let sy = !sy in
+  let (x0,y0) = Cairo.device_to_user cr 0. 0. in
+  let (xmax, ymax) = Cairo.device_to_user cr 
+      (float_of_int sx) (float_of_int sy) in
+  pr2 (spf "device 0,0 => %.1f %.1f, device %d,%d => %.1f %.1f"
+    x0 y0 sx sy xmax ymax)
+
+(* Cairo (0,0) is at the top left of the screen, in which as y goes up,
+ * the coordinates are down on the physical screen. Elm uses a better
+ * default where if your y goes up, then it's upper on the screen.
+ * Here we convert the Elm coordinate system to Cairo. Note that
+ * it's hard to use one of the rotate/translate Cairo function to emulate
+ * that as only y need to change (maybe need to create a special matrix?)
+ *)
+let convert (x, y) =
+  x, -. y
+end
+
+
 (*    
 let render_transform x y a s =
   if a = 0. then
@@ -518,21 +544,12 @@ let render_ngon color n radius x y angle s alpha =
     []
 *)
 
-(* Cairo (0,0) is at the top left of the screen, in which as y goes up,
- * the coordinates are down on the physical screen. Elm uses a better
- * default where if your y goes up, then it's upper on the screen.
- * Here we convert the Elm coordinate system to Cairo. Note that
- * it's hard to use one of the rotate/translate Cairo function to emulate
- * that as only y need to change (maybe need to create a special matrix?)
- *)
-let convert (x, y) =
-  x, -. y
 
 let render_circle color radius x y angle s alpha =
-  let cr = Html.get_cr () in
-  Cairo.set_source_rgba cr 1. 0. 0. alpha;
+  let cr = Cairo2.get_cr () in
+  Cairo2.set_color cr color alpha;
   pr2_gen (x,y, radius);
-  let (x,y) = convert (x,y) in
+  let (x,y) = Cairo2.convert (x,y) in
   Cairo.arc cr x y radius 0. pi2;
   Cairo.fill cr;
   Html.VNone
@@ -556,7 +573,7 @@ let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
     let _x = screen.left |> string_of_floatint  in
     let _y = screen.bottom |> string_of_floatint in
 
-    let cr = Html.get_cr () in
+    let cr = Cairo2.get_cr () in
 
     (* reset the surface content *)
     Cairo.set_source_rgb cr 1. 1. 1.;
@@ -565,7 +582,7 @@ let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
     (* set the origin (0, 0) in the center of the surface *)
     Cairo.identity_matrix cr;
     Cairo.translate cr (w / 2.) (h / 2.);
-    Html.debug_coordinates cr;
+    Cairo2.debug_coordinates cr;
 
     let _vdoms = List.map render_shape shapes in
     Html.VNone
@@ -792,10 +809,10 @@ let expose app model =
   let cr = Cairo.create cr_img in
 
   Cairo.identity_matrix cr;
-  Html.cr := Some cr;
-  Html.sx := sx;
-  Html.sy := sy;
-  Html.debug_coordinates cr;
+  Cairo2.cr := Some cr;
+  Cairo2.sx := sx;
+  Cairo2.sy := sy;
+  Cairo2.debug_coordinates cr;
 
 (*  Cairo.save cr; *)
 (*  draw cr (float sx) (float sy) (float mx) (float my); *)
