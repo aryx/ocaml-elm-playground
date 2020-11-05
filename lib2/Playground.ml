@@ -864,7 +864,9 @@ let run_app app =
     let msg = app.Platform.subscriptions !model in
     (match msg with
     | Sub.Batch [] -> ()
-    | Sub.Batch xs -> raise Todo
+    | Sub.Batch xs -> 
+          (* select on event list *)
+          raise Todo
     | Sub.SubTime f ->
       let msg = f time in
       let newmodel, _cmds = app.Platform.update !model msg in
