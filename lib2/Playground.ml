@@ -486,16 +486,6 @@ let render_rect_transform width height x y angle s =
      (string_of_floatint (-. height / 2.))
 
 
-let render_oval color width height x y angle s alpha = 
-  Svg.ellipse
-    (Svg.Attributes.rx (string_of_floatint (width / 2.)) ::
-     Svg.Attributes.ry (string_of_floatint (height / 2.)) ::
-     Svg.Attributes.fill (render_color color) ::
-     Svg.Attributes.transform (render_transform x y angle s)::
-     render_alpha alpha
-    )
-    []
-
 let rec to_ngon_points i n radius str =
   if i == n 
   then str
@@ -515,6 +505,26 @@ let render_ngon color n radius x y angle s alpha =
     )
     []
 *)
+
+let render_oval color w h x y angle s alpha = 
+  let cr = Cairo2.get_cr () in
+  Cairo2.set_color cr color alpha;
+  pr2_gen (x,y,w,h);
+
+  let x = x - (w / 2.) in
+  let y = y + (h / 2.) in
+  let (x,y) = Cairo2.convert (x,y) in
+
+  (* code in cairo.mli to draw ellipsis *)
+  Cairo.save cr;
+  Cairo.translate cr (x +. w /. 2.) (y +. h /. 2.);
+  Cairo.scale cr (w /. 2.) (h /. 2.);
+  Cairo.arc cr 0. 0. 1. 0. pi2;
+  Cairo.fill cr;
+  Cairo.restore cr;
+
+  Html.VNone
+
 
 let render_rectangle color w h x y angle s alpha = 
   let cr = Cairo2.get_cr () in
@@ -543,7 +553,7 @@ let (render_shape: shape -> 'msg Html.vdom) =
   | Circle (color, radius) -> 
      render_circle color radius x y angle scale alpha
   | Oval (color, width, height) ->
-     (*render_oval color width height x y angle scale alpha*) raise Todo
+     render_oval color width height x y angle scale alpha
   | Rectangle (color, width, height) ->
      render_rectangle color width height x y angle scale alpha
   | Ngon (color, n, radius) ->
