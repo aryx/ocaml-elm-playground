@@ -489,42 +489,32 @@ let render_rect_transform width height x y angle s =
 
 *)
 
-let rec to_ngon_points i n radius str =
+let rec ngon_points cr i n radius =
   if i == n 
-  then str
-  else
+  then ()
+  else begin
     let a = turns (float_of_int i / float_of_int n - 0.25) in
     let x = radius * cos a in
     let y = radius * sin a in
-    to_ngon_points (Stdlib.(+) i 1) n radius
-      (spf "%s%s,%s " str (string_of_floatint x) (string_of_floatint y))
+    (if i = 0
+    then Cairo.move_to cr x y
+    else Cairo.line_to cr x y
+    );
+    ngon_points cr (Stdlib.(+) i 1) n radius
+  end
 
-let render_ngon color n radius x y angle s alpha = 
-
-  let cr = Cairo2.get_cr () in
-  Cairo2.set_color cr color alpha;
+let render_ngon cr n radius x y angle s = 
   pr2_gen (x,y,n,radius);
-(*
-  let x0 = x - (w / 2.) in
-  let y0 = y + (h / 2.) in
-  let (x0,y0) = Cairo2.convert (x0,y0) in
-  Cairo.rectangle cr x0 y0 w h;
-  Cairo.fill cr;
-*)
-  Html.VNone
-(*
-  Svg.polygon
-    (Svg.Attributes.points (to_ngon_points 0 n radius "") ::
-     Svg.Attributes.fill (render_color color) ::
-     Svg.Attributes.transform (render_transform x y angle s)::
-     render_alpha alpha
-    )
-    []
-*)
 
-let render_oval color w h x y angle s alpha = 
-  let cr = Cairo2.get_cr () in
-  Cairo2.set_color cr color alpha;
+  Cairo.save cr;
+  let (x, y) = Cairo2.convert (x, y) in
+  Cairo.translate cr x y;
+  ngon_points cr 0 n radius;
+  Cairo.fill cr;
+  Cairo.restore cr;
+  Html.VNone
+
+let render_oval cr w h x y angle s = 
   pr2_gen (x,y,w,h);
 
   let x = x - (w / 2.) in
@@ -542,9 +532,7 @@ let render_oval color w h x y angle s alpha =
   Html.VNone
 
 
-let render_rectangle color w h x y angle s alpha = 
-  let cr = Cairo2.get_cr () in
-  Cairo2.set_color cr color alpha;
+let render_rectangle cr w h x y angle s = 
   pr2_gen (x,y,w,h);
   let x0 = x - (w / 2.) in
   let y0 = y + (h / 2.) in
@@ -554,9 +542,7 @@ let render_rectangle color w h x y angle s alpha =
   Html.VNone
 
 
-let render_circle color radius x y angle s alpha =
-  let cr = Cairo2.get_cr () in
-  Cairo2.set_color cr color alpha;
+let render_circle cr radius x y angle s =
   pr2_gen (x,y, radius);
   let (x,y) = Cairo2.convert (x,y) in
   Cairo.arc cr x y radius 0. pi2;
@@ -565,15 +551,20 @@ let render_circle color radius x y angle s alpha =
 
 let (render_shape: shape -> 'msg Html.vdom) = 
   fun { x; y; angle; scale; alpha; form} ->
+  let cr = Cairo2.get_cr () in
   match form with
   | Circle (color, radius) -> 
-     render_circle color radius x y angle scale alpha
+     Cairo2.set_color cr color alpha;
+     render_circle cr radius x y angle scale
   | Oval (color, width, height) ->
-     render_oval color width height x y angle scale alpha
+     Cairo2.set_color cr color alpha;
+     render_oval cr width height x y angle scale
   | Rectangle (color, width, height) ->
-     render_rectangle color width height x y angle scale alpha
+     Cairo2.set_color cr color alpha;
+     render_rectangle cr width height x y angle scale
   | Ngon (color, n, radius) ->
-     render_ngon color n radius x y angle scale alpha
+     Cairo2.set_color cr color alpha;
+     render_ngon cr n radius x y angle scale
 
 
 let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
