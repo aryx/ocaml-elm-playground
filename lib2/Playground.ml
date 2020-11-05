@@ -25,6 +25,9 @@ let ( * ) = ( *. )
 let (round: float -> int) = fun f ->
     int_of_float (floor (f +. 0.5))
 
+let mod_by a b =
+  b mod a
+
 let pi = Float.pi
 let pi2 = 8. *. atan 1.
 
@@ -55,7 +58,7 @@ type posix = float
 let millis_to_posix n =
   float_of_int n
 let posix_to_millis n =
-  int_of_float n
+  int_of_float ( n * 1000.)
 end
 
 
@@ -63,6 +66,13 @@ end
 module Cmd = struct
 type 'msg t = None | Msg of 'msg
 let none = None
+end
+
+module Sub = struct
+type 'msg t =  
+| SubTime of (Time.posix -> 'msg)
+| Batch of 'msg t list
+let none = Batch []
 end
 
 
@@ -78,10 +88,11 @@ type ('model, 'msg) app =
     init: ('model * 'msg Cmd.t);
     update: ('model -> 'msg -> 'model * 'msg Cmd.t);
     view: ('model -> 'msg Html.vdom);
+    subscriptions: ('model -> 'msg Sub.t);
   }
 
-let app ~init ~update ~view () =
-  {init; update; view}
+let app ~init ~update ~view ~subscriptions () =
+  {init; update; view; subscriptions}
 
 (* flags? *)
 type ('flags, 'model, 'msg) program = 
@@ -102,12 +113,12 @@ type ('flags, 'model, 'msg) app = {
   init: 'flags -> ('model * 'msg Cmd.t);
   view: 'model -> 'msg document;
   update: 'msg -> 'model -> ('model * 'msg Cmd.t);
-  (* subscriptions: 'model -> 'msg V.Sub?? *)
+  subscriptions: 'model -> 'msg Sub.t;
 }
 
 let (document: ('flags, 'model, 'msg) app -> 
                ('flags, 'model, 'msg) Platform.program) 
- = fun { init; view; update } ->
+ = fun { init; view; update; subscriptions } ->
   Platform.app 
       ~init:(init ()) 
       ~view:(fun model ->
@@ -116,6 +127,7 @@ let (document: ('flags, 'model, 'msg) app ->
         | {title=_; body} -> List.hd body
       )
       ~update:(fun model msg -> update msg model) 
+      ~subscriptions:subscriptions
      ()
 
 end
@@ -123,6 +135,9 @@ end
 module Event = struct
 type visibility = 
   | Visible
+
+let (on_animation_frame: (Time.posix -> 'msg) -> 'msg Sub.t) = fun f ->
+  Sub.SubTime f
 end
 
 (*****************************************************************************)
@@ -154,22 +169,21 @@ let (to_frac: float -> time -> float) = fun period (Time posix) ->
     let p = period *. 1000. in
     if p = 0. || ms = 0
     then failwith "division by zero in to_frac";
-    float_of_int ((round p) mod ms) / p
+    pr2_gen (ms, p);
+    float (mod_by (round p) ms) / p
 
+(* period is in seconds *)
 let (spin: number -> time -> number) = fun period time ->
     360. * to_frac period time
+    |> (fun x -> pr2_gen (period, time, x); x)
 
 let (wave: number -> number -> number -> time -> number) = 
- fun lo _hi _period _time -> lo
-(*
+ fun lo hi period time ->
     lo + (hi - lo) * (1. + cos (turns (to_frac period time))) / 2.
-*)
 
 let (zigzag: number -> number -> number -> time -> number) = 
- fun lo _hi _period _time -> lo
-(*
+ fun lo hi period time ->
     lo + (hi - lo) * abs_float (2. * to_frac period time - 1.)
-*)
 
 (*****************************************************************************)
 (* Colors *)
@@ -427,14 +441,14 @@ let sy = ref 0
 let set_color cr color alpha =
   let (r,g,b) =
     match color with
-    | Rgb (r,g,b) -> float_of_int r, float_of_int g, float_of_int b
+    | Rgb (r,g,b) -> float r, float g, float b
     | Hex s ->
         let s = String.lowercase_ascii s in
         if s =~ "^#\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)$"
         then 
           let (a, b, c) = Common.matched3 s in
           let f x =
-            (("0x" ^ x) |> int_of_string |> float_of_int) / 255.
+            (("0x" ^ x) |> int_of_string |> float) / 255.
           in
           f a, f b, f c
         else failwith (spf "wrong color format: %s" s)
@@ -445,8 +459,7 @@ let debug_coordinates cr =
   let sx = !sx in
   let sy = !sy in
   let (x0,y0) = Cairo.device_to_user cr 0. 0. in
-  let (xmax, ymax) = Cairo.device_to_user cr 
-      (float_of_int sx) (float_of_int sy) in
+  let (xmax, ymax) = Cairo.device_to_user cr (float sx) (float sy) in
   pr2 (spf "device 0,0 => %.1f %.1f, device %d,%d => %.1f %.1f"
     x0 y0 sx sy xmax ymax)
 
@@ -499,7 +512,7 @@ let rec ngon_points cr i n radius =
   if i == n 
   then ()
   else begin
-    let a = turns (float_of_int i / float_of_int n - 0.25) in
+    let a = turns (float i / float n - 0.25) in
     let x = radius * cos a in
     let y = radius * sin a in
     (if i = 0
@@ -510,18 +523,23 @@ let rec ngon_points cr i n radius =
   end
 
 let render_ngon cr n radius x y angle s = 
-  pr2_gen (x,y,n,radius);
+  (*pr2_gen (x,y,n,radius);*)
+  let (x, y) = Cairo2.convert (x, y) in
 
   Cairo.save cr;
-  let (x, y) = Cairo2.convert (x, y) in
+
   Cairo.translate cr x y;
+  Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
+  pr (spf "rotate: %.1f" angle);
+
   ngon_points cr 0 n radius;
   Cairo.fill cr;
+
   Cairo.restore cr;
   ()
 
 let render_oval cr w h x y angle s = 
-  pr2_gen (x,y,w,h);
+  (*pr2_gen (x,y,w,h);*)
 
   let x = x - (w / 2.) in
   let y = y + (h / 2.) in
@@ -529,36 +547,48 @@ let render_oval cr w h x y angle s =
 
   (* code in cairo.mli to draw ellipsis *)
   Cairo.save cr;
+
   Cairo.translate cr (x +. w /. 2.) (y +. h /. 2.);
   Cairo.scale cr (w /. 2.) (h /. 2.);
+
   Cairo.arc cr 0. 0. 1. 0. pi2;
   Cairo.fill cr;
+
   Cairo.restore cr;
   ()
 
 let render_rectangle cr w h x y angle s = 
-  pr2_gen (x,y,w,h);
+  (*pr2_gen (x,y,w,h);*)
   let x0 = x - (w / 2.) in
   let y0 = y + (h / 2.) in
   let (x0,y0) = Cairo2.convert (x0,y0) in
+  Cairo.save cr;
+
+  Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
+  pr (spf "rotate: %.1f" angle);
+
   Cairo.rectangle cr x0 y0 w h;
   Cairo.fill cr;
+
+  Cairo.restore cr;
   ()
 
 
 let render_circle cr radius x y angle s =
-  pr2_gen (x,y, radius);
+  (*pr2_gen (x,y, radius);*)
   let (x,y) = Cairo2.convert (x,y) in
+
+  Cairo.save cr;
+
   Cairo.arc cr x y radius 0. pi2;
   Cairo.fill cr;
+
+  Cairo.restore cr;
   ()
 
 let (render_shape: shape -> 'msg Html.vdom) = 
   fun { x; y; angle; scale; alpha; form} ->
   let cr = Cairo2.get_cr () in
-  Cairo.save cr;
-  Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
-  pr (spf "rotate: %.1f" angle);
 
   (match form with
   | Circle (color, radius) -> 
@@ -574,7 +604,6 @@ let (render_shape: shape -> 'msg Html.vdom) =
      Cairo2.set_color cr color alpha;
      render_ngon cr n radius x y angle scale
   );
-  Cairo.save cr;
   Html.VNone
 
 
@@ -619,12 +648,12 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
   let update msg  _model = 
     match msg with
     | Resized (width, height) ->
-       to_screen (float_of_int width) (float_of_int height), Cmd.none
+       to_screen (float width) (float height), Cmd.none
   in
-  let _subscriptions _ =
-      raise Todo
+  let subscriptions _ =
+      Sub.none
   in
-  Window.document { Window. init; view; update }
+  Window.document { Window. init; view; update; subscriptions }
 
 (*****************************************************************************)
 (* Playground: animation *)
@@ -649,9 +678,10 @@ type animation = Animation of Event.visibility * screen * time
 let animation_update msg (Animation (v, s, t) as state) =
   match msg with
   | Tick posix -> 
+    pr2 "HERE"; pr2_gen posix;
     Animation (v, s, (Time posix))
   | Resized (w, h) -> 
-    Animation (v, to_screen (float_of_int w) (float_of_int h), t)
+    Animation (v, to_screen (float w) (float h), t)
   | MouseMove _ 
   | MouseClick 
   | MouseButton _
@@ -678,10 +708,10 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
      animation_update msg model,
      Cmd.none
    in
-  let _subscriptions _ =
-      raise Todo
+  let subscriptions _ =
+      Event.on_animation_frame (fun x -> Tick x)
   in
-  Window.document { Window. init; view; update }
+  Window.document { Window. init; view; update; subscriptions }
 
 (*****************************************************************************)
 (* Playground: game *)
@@ -763,10 +793,10 @@ let (game:
       game_update update_memory msg model,
       Cmd.none
   in
-  let _subscriptions _ =
-      raise Todo
+  let subscriptions _ =
+      Sub.none
   in
-  Window.document { Window. init; view; update }
+  Window.document { Window. init; view; update; subscriptions }
 
 (*****************************************************************************)
 (* run_app *)
@@ -788,65 +818,11 @@ let update_fps () =
   );
   incr frames
 
-
-let draw cr width height x y =
-  let x = x -. width *. 0.5 and y = y -. height *. 0.5 in
-  let r = 0.5 *. sqrt (x *. x +. y *. y) in
-  Cairo.set_source_rgba cr 0. 1. 0. 0.5;
-  Cairo.arc cr (0.5 *. width) (0.35 *. height) r 0. pi2;
-  Cairo.fill cr;
-  Cairo.set_source_rgba cr 1. 0. 0. 0.5;
-  Cairo.arc cr (0.35 *. width) (0.65 *. height) r 0. pi2;
-  Cairo.fill cr;
-  Cairo.set_source_rgba cr 0. 0. 1. 0.5;
-  Cairo.arc cr (0.65 *. width) (0.65 *. height) r 0. pi2;
-  Cairo.fill cr;
-  Cairo.set_source_rgba cr 1. 1. 0. 1.;
+let draw_fps cr width height =
+  Cairo.set_source_rgba cr 0. 0. 0. 1.;
   Cairo.move_to cr (0.05 *. width) (0.95 *. height);
   Cairo.show_text cr (Printf.sprintf "%gx%g -- %.0f fps" width height !fps)
 
-
-
-let expose app model =
-  let sx = Graphics.size_x () in
-  let sy = Graphics.size_y () in
-
-  let mx, my = Graphics.mouse_pos () in
-  (* Create a cairo context from a cairo surface and do our drawings
-     on it. Note: we may cache it between expose events for
-     incremental drawings but its creation and initialization is not
-     the time bottleneck here. *)
-  let cr_img = Cairo.Image.create Cairo.Image.RGB24 sx sy in
-  let cr = Cairo.create cr_img in
-
-  Cairo.identity_matrix cr;
-  Cairo2.cr := Some cr;
-  Cairo2.sx := sx;
-  Cairo2.sy := sy;
-  Cairo2.debug_coordinates cr;
-
-(*  Cairo.save cr; *)
-(*  draw cr (float sx) (float sy) (float mx) (float my); *)
-  let _vdom = app.Platform.view model in
-(*  Cairo.restore cr; *)
-
-  (* Don't forget to flush the surface before using its content. *)
-  Cairo.Surface.flush cr_img;
-  (* Now, access the surface data and convert it to a Graphics.image
-     that can be drawn on the Graphics window. *)
-  let data32 = Cairo.Image.get_data32 cr_img in
-  let data_img =
-    Array.init sy
-      (fun y -> Array.init sx (fun x -> Int32.to_int (data32.{y, x})))
-  in
-  Graphics.draw_image (Graphics.make_image data_img) 0 0;
-  Graphics.synchronize ();
-  (* Update our fps counter. *)
-  update_fps ();
-(*
-  expose app model
-*)
-  while true do () done
 
 let run_app app =
   Graphics.open_graph ":0 600x600+0+0";
@@ -860,8 +836,57 @@ let run_app app =
   let sx = Graphics.size_x () in
   let sy = Graphics.size_y () in
   pr2_gen (sx, sy);
-
   Graphics.auto_synchronize false;
-  let model, _cmds = app.Platform.init in
-  expose app model
 
+
+  (* Create a cairo context from a cairo surface and do our drawings
+     on it. Note: we may cache it between expose events for
+     incremental drawings but its creation and initialization is not
+     the time bottleneck here. *)
+  let cr_img = Cairo.Image.create Cairo.Image.RGB24 sx sy in
+  let cr = Cairo.create cr_img in
+
+  Cairo.identity_matrix cr;
+  Cairo2.cr := Some cr;
+  Cairo2.sx := sx;
+  Cairo2.sy := sy;
+  Cairo2.debug_coordinates cr;
+
+  let initmodel, _cmds = app.Platform.init in
+  let model = ref initmodel in
+
+  while true do
+    Cairo.save cr;
+(*  draw cr (float sx) (float sy) (float mx) (float my); *)
+
+    (* one frame *)
+    let time = Unix.gettimeofday() in
+    let msg = app.Platform.subscriptions !model in
+    (match msg with
+    | Sub.Batch [] -> ()
+    | Sub.Batch xs -> raise Todo
+    | Sub.SubTime f ->
+      let msg = f time in
+      let newmodel, _cmds = app.Platform.update !model msg in
+      model := newmodel;
+    );
+    let _vdom = app.Platform.view !model in
+
+    Cairo.restore cr;
+    draw_fps cr (float sx) (float sy);
+
+  (* Don't forget to flush the surface before using its content. *)
+  Cairo.Surface.flush cr_img;
+  (* Now, access the surface data and convert it to a Graphics.image
+     that can be drawn on the Graphics window. *)
+  let data32 = Cairo.Image.get_data32 cr_img in
+  let data_img =
+    Array.init sy
+      (fun y -> Array.init sx (fun x -> Int32.to_int (data32.{y, x})))
+  in
+  Graphics.draw_image (Graphics.make_image data_img) 0 0;
+  Graphics.synchronize ();
+  (* Update our fps counter. *)
+  update_fps ()
+
+  done
