@@ -841,6 +841,7 @@ let (game:
 (* run_app *)
 (*****************************************************************************)
 
+module Fps = struct
 (* was in cairo/examples/graphics_demo.ml *)
 let lastfps = ref (Unix.gettimeofday ())
 let frames = ref 0
@@ -860,6 +861,7 @@ let draw_fps cr width height =
   Cairo.set_source_rgba cr 0. 0. 0. 1.;
   Cairo.move_to cr (0.05 *. width) (0.95 *. height);
   Cairo.show_text cr (Printf.sprintf "%gx%g -- %.0f fps" width height !fps)
+end
 
 module Graphics_event = struct
 open Graphics
@@ -1020,7 +1022,7 @@ let run_app app =
     let _vdom = app.Platform.view !model in
 
     Cairo.restore cr;
-    draw_fps cr (float sx) (float sy);
+    Fps.draw_fps cr (float sx) (float sy);
 
     (* Don't forget to flush the surface before using its content. *)
     Cairo.Surface.flush cr_img;
@@ -1034,5 +1036,5 @@ let run_app app =
     Graphics.draw_image (Graphics.make_image data_img) 0 0;
     Graphics.synchronize ();
     (* Update our fps counter. *)
-    update_fps ()
+    Fps.update_fps ()
   done
