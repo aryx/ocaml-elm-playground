@@ -3,12 +3,13 @@
     Picture Smiley
     Animation 
     Mouse Keyboard
-    Test_cairo_graphics Test_tsdl
+    Test_cairo_graphics Test_tsdl Test_ocamlsdl2
   )
   (libraries
     cairo2
     graphics
     tsdl
+    sdl2
     elm_playground2
   )
 )
