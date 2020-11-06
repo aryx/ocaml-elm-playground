@@ -947,7 +947,7 @@ let run_app app =
   let sx = 600 in
   let sy = 600 in
 
-  let* () = Sdl.init Sdl.Init.(video + events + timer) in
+  let* () = Sdl.init Sdl.Init.(video + events) in
   let* sdl_window = Sdl.create_window ~w:sx ~h:sy "Playground using SDL+Cairo"
     Sdl.Window.shown in
 (*
