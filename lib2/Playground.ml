@@ -842,13 +842,71 @@ end
 (* Platform specific stuff  *)
 (*****************************************************************************)
 
-module Graphics_event = struct
-open Graphics
+module Platform_event = struct
+(* move in Sub? coupling with Sub.t type anyway *)
 type t = 
   | ETick of float
   | EMouseMove of (int * int)
   | EMouseButton of bool (* is_down = true *)
   | EKeyChanged of (bool (* down = true *) * Key.t)
+
+let rec find_map_opt f = function
+  | [] -> None
+  | x::xs ->
+      (match f x with
+      | None -> find_map_opt f xs
+      | Some x -> Some x
+      )
+
+let event_to_msgopt event subs cr =
+  match event with
+  | ETick time ->
+      subs |> find_map_opt (function 
+       | Sub.SubTick f -> Some (f time) 
+       | _ -> None
+      )
+  | EMouseMove (x, y) ->
+      subs |> find_map_opt (function 
+        | Sub.SubMouseMove f ->
+          let (x, y) = Cairo.device_to_user cr (float x) (float y) in
+          (* note that Graphics origin is at the bottom left, not
+           * top left like in Cairo, which is why we don't need 
+           * to call convert here 
+           * let (x, y) = Cairo2.convert (x, y) in
+           *)
+           pr2_gen (x, y);
+           Some (f (x, y))
+
+         | _ -> None
+      )
+  | EMouseButton (true) ->
+      subs |> find_map_opt (function 
+        | Sub.SubMouseDown f ->
+           Some (f ())
+       | _ -> None
+      )
+  | EMouseButton (false) ->
+      subs |> find_map_opt (function 
+        | Sub.SubMouseUp f ->
+           Some (f ())
+       | _ -> None
+      )
+  | EKeyChanged (true, key) ->
+      subs |> find_map_opt (function 
+        | Sub.SubKeyDown f ->
+           Some (f key)
+       | _ -> None
+      )
+  | EKeyChanged (false, key) ->
+      subs |> find_map_opt (function 
+        | Sub.SubKeyUp f ->
+           Some (f key)
+       | _ -> None
+      )
+end
+
+
+open Graphics
 
 let key_of_char = function
   (* emulate arrows with asdw *)
@@ -858,7 +916,7 @@ let key_of_char = function
   | 's' -> "ArrowDown"
   | c -> spf "%c" c
 
-let (diff_status: float -> status -> status -> t) =
+let (diff_status: float -> status -> status -> Platform_event.t) =
  fun time new_ old_ ->
     match () with
     | _ when new_.mouse_x <> old_.mouse_x || 
@@ -875,15 +933,7 @@ let (diff_status: float -> status -> status -> t) =
 
     (* last case, we generate a Tick *)
     | _ -> ETick time
-end
 
-let rec find_map_opt f = function
-  | [] -> None
-  | x::xs ->
-      (match f x with
-      | None -> find_map_opt f xs
-      | Some x -> Some x
-      )
 
 let run_app app =
   Graphics.open_graph ":0 600x600+0+0";
@@ -942,55 +992,10 @@ let run_app app =
         Graphics.Poll
         ]
     in
-    let event = Graphics_event.diff_status time new_status !status in
+    let event = diff_status time new_status !status in
     status := new_status;
     
-    let msg_opt = 
-      match event with
-      | Graphics_event.ETick time ->
-          subs |> find_map_opt (function 
-           | Sub.SubTick f -> Some (f time) 
-           | _ -> None
-          )
-      | Graphics_event.EMouseMove (x, y) ->
-          subs |> find_map_opt (function 
-            | Sub.SubMouseMove f ->
-              let (x, y) = Cairo.device_to_user cr (float x) (float y) in
-              (* note that Graphics origin is at the bottom left, not
-               * top left like in Cairo, which is why we don't need 
-               * to call convert here 
-               * let (x, y) = Cairo2.convert (x, y) in
-               *)
-               pr2_gen (x, y);
-               Some (f (x, y))
-
-             | _ -> None
-          )
-      | Graphics_event.EMouseButton (true) ->
-          subs |> find_map_opt (function 
-            | Sub.SubMouseDown f ->
-               Some (f ())
-           | _ -> None
-          )
-      | Graphics_event.EMouseButton (false) ->
-          subs |> find_map_opt (function 
-            | Sub.SubMouseUp f ->
-               Some (f ())
-           | _ -> None
-          )
-      | Graphics_event.EKeyChanged (true, key) ->
-          subs |> find_map_opt (function 
-            | Sub.SubKeyDown f ->
-               Some (f key)
-           | _ -> None
-          )
-      | Graphics_event.EKeyChanged (false, key) ->
-          subs |> find_map_opt (function 
-            | Sub.SubKeyUp f ->
-               Some (f key)
-           | _ -> None
-          )
-    in
+    let msg_opt = Platform_event.event_to_msgopt event subs cr in
     (match msg_opt with
     | None -> ()
     | Some msg ->

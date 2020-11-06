@@ -6,8 +6,6 @@
     Test_cairo_graphics
   )
   (libraries
-    cairo2
-    graphics
     elm_playground2
   )
 )
