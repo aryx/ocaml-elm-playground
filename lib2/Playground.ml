@@ -905,7 +905,7 @@ let event_to_msgopt event subs cr =
       )
 end
 
-
+(*
 open Graphics
 
 let key_of_char = function
@@ -934,8 +934,10 @@ let (diff_status: float -> status -> status -> Platform_event.t) =
     (* last case, we generate a Tick *)
     | _ -> ETick time
 
+*)
 
 let run_app app =
+(*
   Graphics.open_graph ":0 600x600+0+0";
   (* TODO: WEIRD: resize_window does not seem to work; the command
    * do not display on the screen after that, hence the manual geometry
@@ -944,10 +946,10 @@ let run_app app =
    * Graphics.resize_window 600 600;
    *)
   Graphics.clear_graph ();
-  let sx = Graphics.size_x () in
-  let sy = Graphics.size_y () in
-  pr2_gen (sx, sy);
   Graphics.auto_synchronize false;
+*)
+  let sx = 600 in
+  let sy = 600 in
 
   let cr_img = Cairo.Image.create Cairo.Image.RGB24 sx sy in
   let cr = Cairo.create cr_img in
@@ -960,8 +962,9 @@ let run_app app =
 
   let initmodel, _cmdsTODO = app.Platform.init in
   let model = ref initmodel in
-
+(*
   let status = ref (Graphics.wait_next_event [Graphics.Poll]) in
+*)
 
   while true do
     Cairo.save cr;
@@ -983,6 +986,7 @@ let run_app app =
     let time = Unix.gettimeofday() in
 
     let subs = app.Platform.subscriptions !model in
+(*
     let new_status = 
       Graphics.wait_next_event [
         Graphics.Button_down;
@@ -994,7 +998,9 @@ let run_app app =
     in
     let event = diff_status time new_status !status in
     status := new_status;
-    
+*)    
+    let event = Platform_event.ETick time in
+
     let msg_opt = Platform_event.event_to_msgopt event subs cr in
     (match msg_opt with
     | None -> ()
@@ -1010,6 +1016,8 @@ let run_app app =
 
     (* Don't forget to flush the surface before using its content. *)
     Cairo.Surface.flush cr_img;
+
+(*
     (* Now, access the surface data and convert it to a Graphics.image
        that can be drawn on the Graphics window. *)
     let data32 = Cairo.Image.get_data32 cr_img in
@@ -1019,6 +1027,7 @@ let run_app app =
     in
     Graphics.draw_image (Graphics.make_image data_img) 0 0;
     Graphics.synchronize ();
+*)
     (* Update our fps counter. *)
     Fps.update_fps ()
   done
