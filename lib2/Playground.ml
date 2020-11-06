@@ -116,7 +116,7 @@ end
 
 
 
-
+(* was called Browser in Elm *)
 module Window = struct
 type 'msg document = {
   title: string;
@@ -185,7 +185,7 @@ end
 
 type number = float
 
-let string_of_floatint x = 
+let string_of_number x = 
   spf "%f" x
 
 (*****************************************************************************)
@@ -463,7 +463,7 @@ let initial_computer = {
 }
 
 (*****************************************************************************)
-(* Render *)
+(* Render (using Cairo) *)
 (*****************************************************************************)
 
 module Cairo2 = struct
@@ -519,28 +519,28 @@ let render_transform x y a s =
     if s = 1.
     then
       spf "translate(%s, %s)" 
-        (string_of_floatint x) (string_of_floatint (-. y))
+        (string_of_number x) (string_of_number (-. y))
     else
       spf "translate(%s, %s) scale(%s)" 
-        (string_of_floatint x) (string_of_floatint (-. y))
-        (string_of_floatint s)
+        (string_of_number x) (string_of_number (-. y))
+        (string_of_number s)
  else
   if s = 1.
   then
       spf "translate(%s, %s) rotate(%s)" 
-        (string_of_floatint x) (string_of_floatint (-. y))
-        (string_of_floatint (-. a))
+        (string_of_number x) (string_of_number (-. y))
+        (string_of_number (-. a))
   else
       spf "translate(%s, %s) rotate(%s) scale(%s) " 
-        (string_of_floatint x) (string_of_floatint (-. y))
-        (string_of_floatint (-. a))
-        (string_of_floatint s)
+        (string_of_number x) (string_of_number (-. y))
+        (string_of_number (-. a))
+        (string_of_number s)
 
 let render_rect_transform width height x y angle s =
   render_transform x y angle s ^
   spf " translate(%s, %s)" 
-     (string_of_floatint (-. width / 2.))
-     (string_of_floatint (-. height / 2.))
+     (string_of_number (-. width / 2.))
+     (string_of_number (-. height / 2.))
 
 
 
@@ -648,8 +648,8 @@ let (render_shape: shape -> 'msg Html.vdom) =
 let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
     let _w = screen.width in
     let _h = screen.height in
-    let _x = screen.left |> string_of_floatint  in
-    let _y = screen.bottom |> string_of_floatint in
+    let _x = screen.left |> string_of_number  in
+    let _y = screen.bottom |> string_of_number in
 
     let _vdoms = List.map render_shape shapes in
     Html.VNone
@@ -791,31 +791,6 @@ let (game:
   in
   let view (Game (_, memory, computer)) =
     let elt = render computer.screen (view_memory computer memory) in
-
-(*
-      (* TODO: should use subscription instead *)
-    let elt = Html.div [
-        V.onmousemove (fun evt -> 
-          MouseMove (evt.V.page_x, evt.V.page_y)
-        );
-        V.onclick (fun _evt -> 
-          log "click"; 
-          MouseClick
-        );
-        (* note that Vdom does not provide onmouseup, so we use onclick 
-         * to set back mouse.mdown to false *)
-        V.onmousedown (fun evt -> 
-          log (spf "%d" evt.V.buttons);
-          MouseButton (evt.V.buttons > 0)
-        );
-        V.onkeydown (fun evt -> 
-          log (spf "key: %d" evt.V.which);
-          KeyChanged (true, string_of_intkey evt.V.which)
-        );
-      ] [elt] 
-    in
-*)
-
     { Window.
       title = "Playground";
       body = [elt];
@@ -838,7 +813,7 @@ let (game:
   Window.document { Window. init; view; update; subscriptions }
 
 (*****************************************************************************)
-(* run_app *)
+(* FPS (using Cairo) *)
 (*****************************************************************************)
 
 module Fps = struct
@@ -862,6 +837,10 @@ let draw_fps cr width height =
   Cairo.move_to cr (0.05 *. width) (0.95 *. height);
   Cairo.show_text cr (Printf.sprintf "%gx%g -- %.0f fps" width height !fps)
 end
+
+(*****************************************************************************)
+(* Platform specific stuff  *)
+(*****************************************************************************)
 
 module Graphics_event = struct
 open Graphics
