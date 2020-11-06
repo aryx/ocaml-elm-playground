@@ -1,3 +1,5 @@
+(* from cairo/examples/graphics_demo.ml *)
+
 (* Demo to show how one could achieve cairo drawing on a Graphics
    window. Note that using XLib or GTK would be *much* faster. *)
 
