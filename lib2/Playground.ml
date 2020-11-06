@@ -17,6 +17,7 @@ let (+..) = (+)
 let (-..) = (-)
 let ( *.. ) = ( * )
 
+(* prefer float operators as default *)
 let (/) = (/.)
 let (+) = (+.)
 let (-) = (-.)
@@ -49,8 +50,10 @@ end
 open Basics
 
 module Set = struct
-type 'a t = 'a list
-let empty = []
+type 'a t = 'a Set_.t
+let empty = Set_.empty
+let insert = Set_.add
+let remove = Set_.remove
 end
 
 module Time = struct
@@ -61,7 +64,10 @@ let posix_to_millis n =
   int_of_float ( n * 1000.)
 end
 
-
+(* not in elm but cleaner *)
+module Key = struct
+type t = string
+end
 
 module Cmd = struct
 type 'msg t = None | Msg of 'msg
@@ -74,6 +80,9 @@ type 'msg onesub =
   | SubMouseMove of (float * float -> 'msg)
   | SubMouseDown of (unit -> 'msg)
   | SubMouseUp of (unit -> 'msg)
+  | SubKeyDown of (Key.t -> 'msg)
+  | SubKeyUp of (Key.t -> 'msg)
+
 
 type 'msg t = 'msg onesub list
 let none = []
@@ -153,6 +162,12 @@ let (on_mouse_down: (unit -> 'msg) -> 'msg Sub.t) = fun f ->
 let (on_mouse_up: (unit -> 'msg) -> 'msg Sub.t) = fun f ->
   [Sub.SubMouseUp f]
 
+let (on_key_down: (Key.t -> 'msg) -> 'msg Sub.t) = fun f ->
+  [Sub.SubKeyDown f]
+
+let (on_key_up: (Key.t -> 'msg) -> 'msg Sub.t) = fun f ->
+  [Sub.SubKeyUp f]
+
 end
 
 (*****************************************************************************)
@@ -184,13 +199,13 @@ let (to_frac: float -> time -> float) = fun period (Time posix) ->
     let p = period *. 1000. in
     if p = 0. || ms = 0
     then failwith "division by zero in to_frac";
-    pr2_gen (ms, p);
+    (*pr2_gen (ms, p);*)
     float (mod_by (round p) ms) / p
 
 (* period is in seconds *)
 let (spin: number -> time -> number) = fun period time ->
     360. * to_frac period time
-    |> (fun x -> pr2_gen (period, time, x); x)
+    (*|> (fun x -> pr2_gen (period, time, x); x)*)
 
 let (wave: number -> number -> number -> time -> number) = 
  fun lo hi period time ->
@@ -412,12 +427,19 @@ let to_xy keyboard =
   then (x / square_root_two, y / square_root_two)
   else (x, y)
 
-let string_of_intkey = function
-  | _ -> "TODO"
+let update_keyboard is_down key keyboard =
+  let keys = 
+    if is_down
+    then Set.insert key keyboard.keys
+    else Set.remove key keyboard.keys
+  in
+  match key with
+  | "ArrowUp"    -> { keyboard with keys; kup = is_down }
+  | "ArrowDown"  -> { keyboard with keys; kdown = is_down }
+  | "ArrowLeft"  -> { keyboard with keys; kleft = is_down }
+  | "ArrowRight" -> { keyboard with keys; kright = is_down }
+  | _ -> { keyboard with keys }
 
-let update_keyboard _is_down key keyboard =
-  log key;
-  keyboard
 
 (*-------------------------------------------------------------------*)
 (* Memory *)
@@ -546,7 +568,7 @@ let render_ngon cr n radius x y angle _s =
 
   Cairo.translate cr x y;
   Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
-  pr (spf "rotate: %.1f" angle);
+  (*pr (spf "rotate: %.1f" angle);*)
 
   ngon_points cr 0 n radius;
   Cairo.fill cr;
@@ -581,7 +603,7 @@ let render_rectangle cr w h x y angle _s =
   Cairo.save cr;
 
   Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
-  pr (spf "rotate: %.1f" angle);
+  (*pr (spf "rotate: %.1f" angle);*)
 
   Cairo.rectangle cr x0 y0 w h;
   Cairo.fill cr;
@@ -656,6 +678,7 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
        to_screen (float width) (float height), Cmd.none
   in
   let subscriptions _ =
+      (* TODO: on_resize *)
       Sub.none
   in
   Window.document { Window. init; view; update; subscriptions }
@@ -683,7 +706,6 @@ type animation = Animation of Event.visibility * screen * time
 let animation_update msg (Animation (v, s, t) as state) =
   match msg with
   | Tick posix -> 
-    pr2 "HERE"; pr2_gen posix;
     Animation (v, s, (Time posix))
   | Resized (w, h) -> 
     Animation (v, to_screen (float w) (float h), t)
@@ -714,6 +736,7 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
      Cmd.none
    in
   let subscriptions _ =
+      (* TODO: on_resize *)
       Event.on_animation_frame (fun x -> Tick x)
   in
   Window.document { Window. init; view; update; subscriptions }
@@ -803,10 +826,13 @@ let (game:
       Cmd.none
   in
   let subscriptions _ = Sub.batch [
+      (* TODO: on_resize *)
       Event.on_animation_frame (fun x -> Tick x);
       Event.on_mouse_move (fun x -> MouseMove x);
       Event.on_mouse_down (fun () -> MouseButton true);
       Event.on_mouse_up   (fun () -> MouseButton false);
+      Event.on_key_down (fun key -> KeyChanged (true, key));
+      Event.on_key_up   (fun key -> KeyChanged (false, key));
   ]
   in
   Window.document { Window. init; view; update; subscriptions }
@@ -815,8 +841,7 @@ let (game:
 (* run_app *)
 (*****************************************************************************)
 
-let pi2 = 8. *. atan 1.
-
+(* was in cairo/examples/graphics_demo.ml *)
 let lastfps = ref (Unix.gettimeofday ())
 let frames = ref 0
 let fps = ref 0.
@@ -841,7 +866,16 @@ open Graphics
 type t = 
   | ETick of float
   | EMouseMove of (int * int)
-  | EMouseButton of bool
+  | EMouseButton of bool (* is_down = true *)
+  | EKeyChanged of (bool (* down = true *) * Key.t)
+
+let key_of_char = function
+  (* emulate arrows with asdw *)
+  | 'a' -> "ArrowLeft"
+  | 'd' -> "ArrowRight"
+  | 'w' -> "ArrowUp"
+  | 's' -> "ArrowDown"
+  | c -> spf "%c" c
 
 let (diff_status: float -> status -> status -> t) =
  fun time new_ old_ ->
@@ -850,8 +884,13 @@ let (diff_status: float -> status -> status -> t) =
              new_.mouse_y <> old_.mouse_y -> 
         EMouseMove (new_.mouse_x, new_.mouse_y)
     | _ when new_.button <> old_.button ->
-        pr2 "HERE1";
         EMouseButton (new_.button)
+    (* argh, can't detect arrows with Graphics, can't detect multiple
+     * keys at the same time *)
+    | _ when new_.keypressed ->
+        pr2 (spf "KEY: %c" new_.key);
+        let key = Graphics.read_key () in
+        EKeyChanged (new_.keypressed, key_of_char key)
 
     (* last case, we generate a Tick *)
     | _ -> ETick time
@@ -907,7 +946,7 @@ let run_app app =
     (* elm-convetion: set the origin (0, 0) in the center of the surface *)
     Cairo.identity_matrix cr;
     Cairo.translate cr (float sx / 2.) (float sy / 2.);
-    Cairo2.debug_coordinates cr;
+    (*Cairo2.debug_coordinates cr;*)
 
     (* one frame *)
     let time = Unix.gettimeofday() in
@@ -956,6 +995,18 @@ let run_app app =
           subs |> find_map_opt (function 
             | Sub.SubMouseUp f ->
                Some (f ())
+           | _ -> None
+          )
+      | Graphics_event.EKeyChanged (true, key) ->
+          subs |> find_map_opt (function 
+            | Sub.SubKeyDown f ->
+               Some (f key)
+           | _ -> None
+          )
+      | Graphics_event.EKeyChanged (false, key) ->
+          subs |> find_map_opt (function 
+            | Sub.SubKeyUp f ->
+               Some (f key)
            | _ -> None
           )
     in
