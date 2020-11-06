@@ -955,7 +955,7 @@ let run_app app =
 *)
 
   let* window_surface = Sdl.get_window_surface sdl_window in
-  let* () = Sdl.lock_surface window_surface in
+(*  let* () = Sdl.lock_surface window_surface in *)
 
   let pixels = Sdl.get_surface_pixels window_surface Bigarray.int32 in
   assert (Bigarray.Array1.dim pixels = sx *.. sy);
@@ -1040,8 +1040,8 @@ let run_app app =
     Fps.draw_fps cr (float sx) (float sy);
 
     (* Don't forget to flush the surface before using its content. *)
-    Cairo.Surface.finish sdl_surface;
-    Sdl.unlock_surface window_surface;
+    Cairo.Surface.flush sdl_surface;
+(*    Sdl.unlock_surface window_surface; *)
     let* () = Sdl.update_window_surface sdl_window in
 (*
     (* Now, access the surface data and convert it to a Graphics.image
@@ -1056,5 +1056,4 @@ let run_app app =
 *)
     (* Update our fps counter. *)
     Fps.update_fps ();
-    while true do () done
   done
