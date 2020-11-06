@@ -69,13 +69,15 @@ let none = None
 end
 
 module Sub = struct
-type 'msg t =  
+type 'msg onesub =  
   | SubTick of (Time.posix -> 'msg)
   | SubMouseMove of (float * float -> 'msg)
+  | SubMouseDown of (unit -> 'msg)
+  | SubMouseUp of (unit -> 'msg)
 
-  | Batch of 'msg t list
-let none = Batch []
-let batch xs = Batch xs
+type 'msg t = 'msg onesub list
+let none = []
+let batch xs = (List.flatten xs)
 end
 
 
@@ -140,10 +142,17 @@ type visibility =
   | Visible
 
 let (on_animation_frame: (Time.posix -> 'msg) -> 'msg Sub.t) = fun f ->
-  Sub.SubTick f
+  [Sub.SubTick f]
 
 let (on_mouse_move: (float * float -> 'msg) -> 'msg Sub.t) = fun f ->
-  Sub.SubMouseMove f
+  [Sub.SubMouseMove f]
+
+let (on_mouse_down: (unit -> 'msg) -> 'msg Sub.t) = fun f ->
+  [Sub.SubMouseDown f]
+
+let (on_mouse_up: (unit -> 'msg) -> 'msg Sub.t) = fun f ->
+  [Sub.SubMouseUp f]
+
 end
 
 (*****************************************************************************)
@@ -716,10 +725,12 @@ type 'memory game = Game of Event.visibility * 'memory * computer
 
 let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
  'memory game) =
- fun _update_memory msg (Game (vis, memory, computer)) ->
+ fun update_memory msg (Game (vis, memory, computer)) ->
     match msg with
-    | Tick _time ->
-        raise Todo
+    | Tick time ->
+        (* todo: remove click in mouse? *)
+        Game (vis, update_memory computer memory,
+          { computer with time = Time time })
     | Resized (_w, _h) ->
         raise Todo
     | MouseMove (x, y) ->
@@ -791,8 +802,12 @@ let (game:
       game_update update_memory msg model,
       Cmd.none
   in
-  let subscriptions _ =
-      Event.on_mouse_move (fun x -> MouseMove x)
+  let subscriptions _ = Sub.batch [
+      Event.on_animation_frame (fun x -> Tick x);
+      Event.on_mouse_move (fun x -> MouseMove x);
+      Event.on_mouse_down (fun x -> MouseButton true);
+      Event.on_mouse_up   (fun x -> MouseButton false);
+  ]
   in
   Window.document { Window. init; view; update; subscriptions }
 
@@ -821,6 +836,34 @@ let draw_fps cr width height =
   Cairo.move_to cr (0.05 *. width) (0.95 *. height);
   Cairo.show_text cr (Printf.sprintf "%gx%g -- %.0f fps" width height !fps)
 
+module Graphics_event = struct
+open Graphics
+type t = 
+  | ETick of float
+  | EMouseMove of (int * int)
+  | EMouseButton of bool
+
+let (diff_status: float -> status -> status -> t) =
+ fun time new_ old_ ->
+    match () with
+    | _ when new_.mouse_x <> old_.mouse_x || 
+             new_.mouse_y <> old_.mouse_y -> 
+        EMouseMove (new_.mouse_x, new_.mouse_y)
+    | _ when new_.button <> old_.button ->
+        pr2 "HERE1";
+        EMouseButton (new_.button)
+
+    (* last case, we generate a Tick *)
+    | _ -> ETick time
+end
+
+let rec find_map_opt f = function
+  | [] -> None
+  | x::xs ->
+      (match f x with
+      | None -> find_map_opt f xs
+      | Some x -> Some x
+      )
 
 let run_app app =
   Graphics.open_graph ":0 600x600+0+0";
@@ -869,7 +912,7 @@ let run_app app =
     (* one frame *)
     let time = Unix.gettimeofday() in
 
-    let sub = app.Platform.subscriptions !model in
+    let subs = app.Platform.subscriptions !model in
     let new_status = 
       Graphics.wait_next_event [
         Graphics.Button_down;
@@ -879,26 +922,42 @@ let run_app app =
         Graphics.Poll
         ]
     in
+    let event = Graphics_event.diff_status time new_status !status in
+    status := new_status;
+    
     let msg_opt = 
-      match sub with
-      | Sub.Batch [] -> None
-      | Sub.Batch xs -> 
-          (* select on event list *)
-          raise Todo
+      match event with
+      | Graphics_event.ETick time ->
+          subs |> find_map_opt (function 
+           | Sub.SubTick f -> Some (f time) 
+           | _ -> None
+          )
+      | Graphics_event.EMouseMove (x, y) ->
+          subs |> find_map_opt (function 
+            | Sub.SubMouseMove f ->
+              let (x, y) = Cairo.device_to_user cr (float x) (float y) in
+              (* note that Graphics origin is at the bottom left, not
+               * top left like in Cairo, which is why we don't need 
+               * to call convert here 
+               * let (x, y) = Cairo2.convert (x, y) in
+               *)
+               pr2_gen (x, y);
+               Some (f (x, y))
 
-      | Sub.SubTick f ->
-         Some (f time)
-
-      | Sub.SubMouseMove f ->
-         let x, y = Graphics.mouse_pos () in
-         let (x, y) = Cairo.device_to_user cr (float x) (float y) in
-        (* note that Graphics origin is at the bottom left, not
-         * top left like in Cairo, which is why we don't need 
-         * to call convert here 
-         * let (x, y) = Cairo2.convert (x, y) in
-         *)
-         pr2_gen (x, y);
-         Some (f (x, y))
+             | _ -> None
+          )
+      | Graphics_event.EMouseButton (true) ->
+          subs |> find_map_opt (function 
+            | Sub.SubMouseDown f ->
+               Some (f ())
+           | _ -> None
+          )
+      | Graphics_event.EMouseButton (false) ->
+          subs |> find_map_opt (function 
+            | Sub.SubMouseUp f ->
+               Some (f ())
+           | _ -> None
+          )
     in
     (match msg_opt with
     | None -> ()
