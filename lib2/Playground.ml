@@ -75,6 +75,7 @@ type 'msg t =
 
   | Batch of 'msg t list
 let none = Batch []
+let batch xs = Batch xs
 end
 
 
@@ -847,6 +848,8 @@ let run_app app =
   let initmodel, _cmdsTODO = app.Platform.init in
   let model = ref initmodel in
 
+  let status = ref (Graphics.wait_next_event [Graphics.Poll]) in
+
   while true do
     Cairo.save cr;
 
@@ -863,13 +866,11 @@ let run_app app =
     Cairo.translate cr (float sx / 2.) (float sy / 2.);
     Cairo2.debug_coordinates cr;
 
-    let old_status = ref (Graphics.wait_next_event [Graphics.Poll]) in
-
     (* one frame *)
     let time = Unix.gettimeofday() in
 
-    let msg = app.Platform.subscriptions !model in
-    let _status = 
+    let sub = app.Platform.subscriptions !model in
+    let new_status = 
       Graphics.wait_next_event [
         Graphics.Button_down;
         Graphics.Button_up;
@@ -878,49 +879,50 @@ let run_app app =
         Graphics.Poll
         ]
     in
-
-    (match msg with
-    | Sub.Batch [] -> ()
-    | Sub.Batch xs -> 
+    let msg_opt = 
+      match sub with
+      | Sub.Batch [] -> None
+      | Sub.Batch xs -> 
           (* select on event list *)
           raise Todo
 
-    | Sub.SubTick f ->
-      let msg = f time in
-      let newmodel, _cmds = app.Platform.update !model msg in
-      model := newmodel;
+      | Sub.SubTick f ->
+         Some (f time)
 
-    | Sub.SubMouseMove f ->
-
-      let x, y = Graphics.mouse_pos () in
-      let (x, y) = Cairo.device_to_user cr (float x) (float y) in
-      (* note that Graphics origin is at the bottom left, not
-       * top left like in Cairo, which is why we don't need 
-       * to call convert here 
-       * let (x, y) = Cairo2.convert (x, y) in
-       *)
-      pr2_gen (x, y);
-      let msg = f (x, y) in
+      | Sub.SubMouseMove f ->
+         let x, y = Graphics.mouse_pos () in
+         let (x, y) = Cairo.device_to_user cr (float x) (float y) in
+        (* note that Graphics origin is at the bottom left, not
+         * top left like in Cairo, which is why we don't need 
+         * to call convert here 
+         * let (x, y) = Cairo2.convert (x, y) in
+         *)
+         pr2_gen (x, y);
+         Some (f (x, y))
+    in
+    (match msg_opt with
+    | None -> ()
+    | Some msg ->
       let newmodel, _cmds = app.Platform.update !model msg in
       model := newmodel;
     );
+
     let _vdom = app.Platform.view !model in
 
     Cairo.restore cr;
     draw_fps cr (float sx) (float sy);
 
-  (* Don't forget to flush the surface before using its content. *)
-  Cairo.Surface.flush cr_img;
-  (* Now, access the surface data and convert it to a Graphics.image
-     that can be drawn on the Graphics window. *)
-  let data32 = Cairo.Image.get_data32 cr_img in
-  let data_img =
-    Array.init sy
-      (fun y -> Array.init sx (fun x -> Int32.to_int (data32.{y, x})))
-  in
-  Graphics.draw_image (Graphics.make_image data_img) 0 0;
-  Graphics.synchronize ();
-  (* Update our fps counter. *)
-  update_fps ()
-
+    (* Don't forget to flush the surface before using its content. *)
+    Cairo.Surface.flush cr_img;
+    (* Now, access the surface data and convert it to a Graphics.image
+       that can be drawn on the Graphics window. *)
+    let data32 = Cairo.Image.get_data32 cr_img in
+    let data_img =
+      Array.init sy
+        (fun y -> Array.init sx (fun x -> Int32.to_int (data32.{y, x})))
+    in
+    Graphics.draw_image (Graphics.make_image data_img) 0 0;
+    Graphics.synchronize ();
+    (* Update our fps counter. *)
+    update_fps ()
   done
