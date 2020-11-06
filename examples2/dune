@@ -2,7 +2,7 @@
   (names 
     Picture Smiley
     Animation 
-    Mouse
+    Mouse Keyboard
     Test_cairo_graphics
   )
   (libraries
