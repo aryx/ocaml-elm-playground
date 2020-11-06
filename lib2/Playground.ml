@@ -538,7 +538,7 @@ let rec ngon_points cr i n radius =
     ngon_points cr (Stdlib.(+) i 1) n radius
   end
 
-let render_ngon cr n radius x y angle s = 
+let render_ngon cr n radius x y angle _s = 
   (*pr2_gen (x,y,n,radius);*)
   let (x, y) = Cairo2.convert (x, y) in
 
@@ -554,7 +554,7 @@ let render_ngon cr n radius x y angle s =
   Cairo.restore cr;
   ()
 
-let render_oval cr w h x y angle s = 
+let render_oval cr w h x y _angle _s = 
   (*pr2_gen (x,y,w,h);*)
 
   let x = x - (w / 2.) in
@@ -573,7 +573,7 @@ let render_oval cr w h x y angle s =
   Cairo.restore cr;
   ()
 
-let render_rectangle cr w h x y angle s = 
+let render_rectangle cr w h x y angle _s = 
   (*pr2_gen (x,y,w,h);*)
   let x0 = x - (w / 2.) in
   let y0 = y + (h / 2.) in
@@ -590,7 +590,7 @@ let render_rectangle cr w h x y angle s =
   ()
 
 
-let render_circle cr radius x y angle s =
+let render_circle cr radius x y _angle _s =
   (*pr2_gen (x,y, radius);*)
   let (x,y) = Cairo2.convert (x,y) in
 
@@ -624,8 +624,8 @@ let (render_shape: shape -> 'msg Html.vdom) =
 
 
 let (render: screen -> shape list -> 'msg Html.vdom) = fun screen shapes ->
-    let w = screen.width  in
-    let h = screen.height  in
+    let _w = screen.width in
+    let _h = screen.height in
     let _x = screen.left |> string_of_floatint  in
     let _y = screen.bottom |> string_of_floatint in
 
@@ -805,8 +805,8 @@ let (game:
   let subscriptions _ = Sub.batch [
       Event.on_animation_frame (fun x -> Tick x);
       Event.on_mouse_move (fun x -> MouseMove x);
-      Event.on_mouse_down (fun x -> MouseButton true);
-      Event.on_mouse_up   (fun x -> MouseButton false);
+      Event.on_mouse_down (fun () -> MouseButton true);
+      Event.on_mouse_up   (fun () -> MouseButton false);
   ]
   in
   Window.document { Window. init; view; update; subscriptions }

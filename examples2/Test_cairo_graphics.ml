@@ -2,7 +2,6 @@
    window. Note that using XLib or GTK would be *much* faster. *)
 
 open Printf
-open Bigarray
 open Cairo
 
 let pi2 = 8. *. atan 1.
