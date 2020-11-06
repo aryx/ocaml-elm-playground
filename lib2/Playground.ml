@@ -909,6 +909,14 @@ let (let*) o f =
       failwith (spf "TSDL error: %s" msg)
   | Ok x -> f x
 
+let scancode_to_keystring = function
+ | "Left" -> "ArrowLeft"
+ | "Right" -> "ArrowRight"
+ | "Up" -> "ArrowUp"
+ | "Down" -> "ArrowDown"
+ | "Q" -> exit 0
+ | s -> s
+
 let run_app app =
   let sx = 600 in
   let sy = 600 in
@@ -981,16 +989,28 @@ let run_app app =
       then
         let event_type = Sdl.Event.get event Sdl.Event.typ in
         (match event_type with
-        | x when x = Sdl.Event.key_down -> exit 0
         | x when x = Sdl.Event.mouse_motion ->
           let mx = Sdl.Event.(get event mouse_motion_x) in
           let my = Sdl.Event.(get event mouse_motion_y) in
           Platform_event.EMouseMove (mx, my)
+
         | x when x = Sdl.Event.mouse_button_down ->
           Platform_event.EMouseButton (true)
+
         | x when x = Sdl.Event.mouse_button_up ->
           Platform_event.EMouseButton (false)
 
+        | x when x = Sdl.Event.key_down -> 
+          let key = Sdl.(get_key_name Event.(get event keyboard_keycode)) in
+          let str = scancode_to_keystring key in
+          Platform_event.EKeyChanged (true, str)
+
+        | x when x = Sdl.Event.key_up -> 
+          let key = Sdl.(get_key_name Event.(get event keyboard_keycode)) in
+          let str = scancode_to_keystring key in
+          Platform_event.EKeyChanged (false, str)
+
+        (* default case *)
         | _ -> Platform_event.ETick time 
         )
       else Platform_event.ETick time 
