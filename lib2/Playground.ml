@@ -905,6 +905,7 @@ let event_to_msgopt event subs cr =
       )
 end
 
+open Tsdl
 (*
 open Graphics
 
@@ -936,23 +937,47 @@ let (diff_status: float -> status -> status -> Platform_event.t) =
 
 *)
 
+let (let*) o f =
+  match o with
+  | Error (`Msg msg) ->
+      failwith (spf "TSDL error: %s" msg)
+  | Ok x -> f x
+
 let run_app app =
-(*
-  Graphics.open_graph ":0 600x600+0+0";
-  (* TODO: WEIRD: resize_window does not seem to work; the command
-   * do not display on the screen after that, hence the manual geometry
-   * before in the call to open_graph.
-   *
-   * Graphics.resize_window 600 600;
-   *)
-  Graphics.clear_graph ();
-  Graphics.auto_synchronize false;
-*)
   let sx = 600 in
   let sy = 600 in
 
-  let cr_img = Cairo.Image.create Cairo.Image.RGB24 sx sy in
-  let cr = Cairo.create cr_img in
+  let* () = Sdl.init Sdl.Init.(video + events + timer) in
+  let* sdl_window = Sdl.create_window ~w:sx ~h:sy "Playground using SDL+Cairo"
+    Sdl.Window.shown in
+(*
+  Graphics.auto_synchronize false;
+*)
+
+  let* window_surface = Sdl.get_window_surface sdl_window in
+  let* () = Sdl.lock_surface window_surface in
+
+  let pixels = Sdl.get_surface_pixels window_surface Bigarray.int32 in
+  assert (Bigarray.Array1.dim pixels = sx *.. sy);
+
+  (* TODO? need that? *)
+  Bigarray.Array1.fill pixels 0xFFFFFFFFl ;
+  let pixels =
+    try
+      let genarray = Bigarray.genarray_of_array1 pixels in
+      Bigarray.reshape_2 genarray sy sx
+      (* screen_xsize screen_ysize *)
+    with _ ->
+      let len = Bigarray.Array1.dim pixels in
+      failwith (spf
+        "Error while reshaping pixel array of length %d to screen size %d x %d"
+        len sx sy)
+  in
+  (* Create a Cairo surface to write on the pixels *)
+  let sdl_surface =
+    Cairo.Image.create_for_data32 ~w:sx ~h:sy pixels
+  in
+  let cr = Cairo.create sdl_surface in
 
   Cairo.identity_matrix cr;
   Cairo2.cr := Some cr;
@@ -1015,8 +1040,9 @@ let run_app app =
     Fps.draw_fps cr (float sx) (float sy);
 
     (* Don't forget to flush the surface before using its content. *)
-    Cairo.Surface.flush cr_img;
-
+    Cairo.Surface.finish sdl_surface;
+    Sdl.unlock_surface window_surface;
+    let* () = Sdl.update_window_surface sdl_window in
 (*
     (* Now, access the surface data and convert it to a Graphics.image
        that can be drawn on the Graphics window. *)
@@ -1029,5 +1055,6 @@ let run_app app =
     Graphics.synchronize ();
 *)
     (* Update our fps counter. *)
-    Fps.update_fps ()
+    Fps.update_fps ();
+    while true do () done
   done

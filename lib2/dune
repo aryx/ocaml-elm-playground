@@ -4,7 +4,7 @@
  (libraries
    commons
    cairo2
-   graphics
+   tsdl
  )
  (preprocess (pps ppx_profiling))
 )
