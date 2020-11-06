@@ -869,13 +869,9 @@ let event_to_msgopt event subs cr =
       subs |> find_map_opt (function 
         | Sub.SubMouseMove f ->
           let (x, y) = Cairo.device_to_user cr (float x) (float y) in
-          (* note that Graphics origin is at the bottom left, not
-           * top left like in Cairo, which is why we don't need 
-           * to call convert here 
-           * let (x, y) = Cairo2.convert (x, y) in
-           *)
-           pr2_gen (x, y);
-           Some (f (x, y))
+          let (x, y) = Cairo2.convert (x, y) in
+          pr2_gen (x, y);
+          Some (f (x, y))
 
          | _ -> None
       )
@@ -906,36 +902,6 @@ let event_to_msgopt event subs cr =
 end
 
 open Tsdl
-(*
-open Graphics
-
-let key_of_char = function
-  (* emulate arrows with asdw *)
-  | 'a' -> "ArrowLeft"
-  | 'd' -> "ArrowRight"
-  | 'w' -> "ArrowUp"
-  | 's' -> "ArrowDown"
-  | c -> spf "%c" c
-
-let (diff_status: float -> status -> status -> Platform_event.t) =
- fun time new_ old_ ->
-    match () with
-    | _ when new_.mouse_x <> old_.mouse_x || 
-             new_.mouse_y <> old_.mouse_y -> 
-        EMouseMove (new_.mouse_x, new_.mouse_y)
-    | _ when new_.button <> old_.button ->
-        EMouseButton (new_.button)
-    (* argh, can't detect arrows with Graphics, can't detect multiple
-     * keys at the same time *)
-    | _ when new_.keypressed ->
-        pr2 (spf "KEY: %c" new_.key);
-        let key = Graphics.read_key () in
-        EKeyChanged (new_.keypressed, key_of_char key)
-
-    (* last case, we generate a Tick *)
-    | _ -> ETick time
-
-*)
 
 let (let*) o f =
   match o with
@@ -950,9 +916,7 @@ let run_app app =
   let* () = Sdl.init Sdl.Init.(video + events) in
   let* sdl_window = Sdl.create_window ~w:sx ~h:sy "Playground using SDL+Cairo"
     Sdl.Window.shown in
-(*
-  Graphics.auto_synchronize false;
-*)
+  let event = Sdl.Event.create () in
 
   let* window_surface = Sdl.get_window_surface sdl_window in
 (*  let* () = Sdl.lock_surface window_surface in *)
@@ -1011,20 +975,26 @@ let run_app app =
     let time = Unix.gettimeofday() in
 
     let subs = app.Platform.subscriptions !model in
-(*
-    let new_status = 
-      Graphics.wait_next_event [
-        Graphics.Button_down;
-        Graphics.Button_up;
-        Graphics.Key_pressed;
-        Graphics.Mouse_motion;
-        Graphics.Poll
-        ]
+
+    let event = 
+      if Sdl.poll_event (Some event)
+      then
+        let event_type = Sdl.Event.get event Sdl.Event.typ in
+        (match event_type with
+        | x when x = Sdl.Event.key_down -> exit 0
+        | x when x = Sdl.Event.mouse_motion ->
+          let mx = Sdl.Event.(get event mouse_motion_x) in
+          let my = Sdl.Event.(get event mouse_motion_y) in
+          Platform_event.EMouseMove (mx, my)
+        | x when x = Sdl.Event.mouse_button_down ->
+          Platform_event.EMouseButton (true)
+        | x when x = Sdl.Event.mouse_button_up ->
+          Platform_event.EMouseButton (false)
+
+        | _ -> Platform_event.ETick time 
+        )
+      else Platform_event.ETick time 
     in
-    let event = diff_status time new_status !status in
-    status := new_status;
-*)    
-    let event = Platform_event.ETick time in
 
     let msg_opt = Platform_event.event_to_msgopt event subs cr in
     (match msg_opt with
@@ -1043,17 +1013,7 @@ let run_app app =
     Cairo.Surface.flush sdl_surface;
 (*    Sdl.unlock_surface window_surface; *)
     let* () = Sdl.update_window_surface sdl_window in
-(*
-    (* Now, access the surface data and convert it to a Graphics.image
-       that can be drawn on the Graphics window. *)
-    let data32 = Cairo.Image.get_data32 cr_img in
-    let data_img =
-      Array.init sy
-        (fun y -> Array.init sx (fun x -> Int32.to_int (data32.{y, x})))
-    in
-    Graphics.draw_image (Graphics.make_image data_img) 0 0;
-    Graphics.synchronize ();
-*)
+
     (* Update our fps counter. *)
     Fps.update_fps ();
   done
