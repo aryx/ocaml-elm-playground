@@ -3,6 +3,7 @@
  (wrapped false)
  (libraries
    commons
+   elm_core
  )
  (preprocess (pps ppx_profiling))
 )

@@ -1,4 +1,5 @@
 open Common
+open Basics
 
 (*****************************************************************************)
 (* Prelude *)
@@ -10,90 +11,6 @@ open Common
 
 let log s =
   Printf.printf "%s" s
-
-module Basics = struct
-let (/..) = (/)
-let (+..) = (+)
-let (-..) = (-)
-let ( *.. ) = ( * )
-
-(* prefer float operators as default *)
-let (/) = (/.)
-let (+) = (+.)
-let (-) = (-.)
-let ( * ) = ( *. )
-
-let (round: float -> int) = fun f ->
-    int_of_float (floor (f +. 0.5))
-
-let mod_by a b =
-  b mod a
-
-let pi = Float.pi
-let pi2 = 8. *. atan 1.
-
-(* was called just degrees in Basics.elm *)
-let degrees_to_radians deg =
-  (deg * pi) / 180.
-
-let (turns: float -> float) = fun angle_in_turns ->
-    2. * pi * angle_in_turns
-
-let (clamp: 'number -> 'number -> 'number -> 'number) = fun low high number ->
-  if number < low then
-    low
-  else if number > high then
-    high
-  else
-    number
-end
-open Basics
-
-module Set = struct
-type 'a t = 'a Set_.t
-let empty = Set_.empty
-let insert = Set_.add
-let remove = Set_.remove
-end
-
-module Time = struct
-type posix = float
-let millis_to_posix n =
-  float_of_int n
-let posix_to_millis n =
-  int_of_float ( n * 1000.)
-end
-
-(* not in elm but cleaner *)
-module Key = struct
-type t = string
-end
-
-module Cmd = struct
-type 'msg t = None | Msg of 'msg
-let none = None
-end
-
-module Sub = struct
-type 'msg onesub =  
-  | SubTick of (Time.posix -> 'msg)
-  | SubMouseMove of (float * float -> 'msg)
-  | SubMouseDown of (unit -> 'msg)
-  | SubMouseUp of (unit -> 'msg)
-  | SubKeyDown of (Key.t -> 'msg)
-  | SubKeyUp of (Key.t -> 'msg)
-
-
-type 'msg t = 'msg onesub list
-let none = []
-let batch xs = (List.flatten xs)
-end
-
-
-module Html = struct
-type 'msg t = UI of 'msg 
-type 'msg vdom = VNone
-end
 
 module Platform = struct
 
@@ -162,10 +79,10 @@ let (on_mouse_down: (unit -> 'msg) -> 'msg Sub.t) = fun f ->
 let (on_mouse_up: (unit -> 'msg) -> 'msg Sub.t) = fun f ->
   [Sub.SubMouseUp f]
 
-let (on_key_down: (Key.t -> 'msg) -> 'msg Sub.t) = fun f ->
+let (on_key_down: (Keyboard.key -> 'msg) -> 'msg Sub.t) = fun f ->
   [Sub.SubKeyDown f]
 
-let (on_key_up: (Key.t -> 'msg) -> 'msg Sub.t) = fun f ->
+let (on_key_up: (Keyboard.key -> 'msg) -> 'msg Sub.t) = fun f ->
   [Sub.SubKeyUp f]
 
 end
@@ -848,7 +765,7 @@ type t =
   | ETick of float
   | EMouseMove of (int * int)
   | EMouseButton of bool (* is_down = true *)
-  | EKeyChanged of (bool (* down = true *) * Key.t)
+  | EKeyChanged of (bool (* down = true *) * Keyboard.key)
 
 let rec find_map_opt f = function
   | [] -> None
