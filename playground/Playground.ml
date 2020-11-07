@@ -388,8 +388,11 @@ let rec ngon_points cr i n radius =
     ngon_points cr (Stdlib.(+) i 1) n radius
   end
 
-let render_ngon cr n radius x y angle _s = 
+let render_ngon color n radius x y angle _s alpha = 
   (*pr2_gen (x,y,n,radius);*)
+  let cr = Cairo2.get_cr () in
+  Cairo2.set_color cr color alpha;
+
   let (x, y) = Cairo2.convert (x, y) in
 
   Cairo.save cr;
@@ -404,8 +407,10 @@ let render_ngon cr n radius x y angle _s =
   Cairo.restore cr;
   ()
 
-let render_oval cr w h x y _angle _s = 
+let render_oval color w h x y _angle _s alpha = 
   (*pr2_gen (x,y,w,h);*)
+  let cr = Cairo2.get_cr () in
+  Cairo2.set_color cr color alpha;
 
   let x = x - (w / 2.) in
   let y = y + (h / 2.) in
@@ -423,8 +428,11 @@ let render_oval cr w h x y _angle _s =
   Cairo.restore cr;
   ()
 
-let render_rectangle cr w h x y angle _s = 
+let render_rectangle color w h x y angle _s alpha = 
   (*pr2_gen (x,y,w,h);*)
+  let cr = Cairo2.get_cr () in
+  Cairo2.set_color cr color alpha;
+
   let x0 = x - (w / 2.) in
   let y0 = y + (h / 2.) in
   let (x0,y0) = Cairo2.convert (x0,y0) in
@@ -440,8 +448,11 @@ let render_rectangle cr w h x y angle _s =
   ()
 
 
-let render_circle cr radius x y _angle _s =
+let render_circle color radius x y _angle _s alpha =
   (*pr2_gen (x,y, radius);*)
+
+  let cr = Cairo2.get_cr () in
+  Cairo2.set_color cr color alpha;
   let (x,y) = Cairo2.convert (x,y) in
 
   Cairo.save cr;
@@ -454,21 +465,15 @@ let render_circle cr radius x y _angle _s =
 
 let (render_shape: shape -> 'msg Html.vdom) = 
   fun { x; y; angle; scale; alpha; form} ->
-  let cr = Cairo2.get_cr () in
-
   (match form with
   | Circle (color, radius) -> 
-     Cairo2.set_color cr color alpha;
-     render_circle cr radius x y angle scale
+     render_circle color radius x y angle scale alpha
   | Oval (color, width, height) ->
-     Cairo2.set_color cr color alpha;
-     render_oval cr width height x y angle scale
+     render_oval color width height x y angle scale alpha
   | Rectangle (color, width, height) ->
-     Cairo2.set_color cr color alpha;
-     render_rectangle cr width height x y angle scale
+     render_rectangle color width height x y angle scale alpha
   | Ngon (color, n, radius) ->
-     Cairo2.set_color cr color alpha;
-     render_ngon cr n radius x y angle scale
+     render_ngon color n radius x y angle scale alpha
   );
   Html.VNone
 
