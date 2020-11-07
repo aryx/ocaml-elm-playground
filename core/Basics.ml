@@ -1,3 +1,6 @@
+let log s =
+  Printf.printf "%s" s
+
 let (/..) = (/)
 let (+..) = (+)
 let (-..) = (-)
