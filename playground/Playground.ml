@@ -12,57 +12,6 @@ open Basics
 let log s =
   Printf.printf "%s" s
 
-module Platform = struct
-
-type ('model, 'msg) app =
-  {
-    init: ('model * 'msg Cmd.t);
-    update: ('model -> 'msg -> 'model * 'msg Cmd.t);
-    view: ('model -> 'msg Html.vdom);
-    subscriptions: ('model -> 'msg Sub.t);
-  }
-
-let app ~init ~update ~view ~subscriptions () =
-  {init; update; view; subscriptions}
-
-(* flags? *)
-type ('flags, 'model, 'msg) program = 
-    ('model, 'msg) app
-
-end
-
-
-
-(* was called Browser in Elm *)
-module Window = struct
-type 'msg document = {
-  title: string;
-  body: 'msg Html.vdom list;
-}
-
-type ('flags, 'model, 'msg) app = {
-  init: 'flags -> ('model * 'msg Cmd.t);
-  view: 'model -> 'msg document;
-  update: 'msg -> 'model -> ('model * 'msg Cmd.t);
-  subscriptions: 'model -> 'msg Sub.t;
-}
-
-let (document: ('flags, 'model, 'msg) app -> 
-               ('flags, 'model, 'msg) Platform.program) 
- = fun { init; view; update; subscriptions } ->
-  Platform.app 
-      ~init:(init ()) 
-      ~view:(fun model ->
-        match view model with
-        (* TODO: do a div? *)
-        | {title=_; body} -> List.hd body
-      )
-      ~update:(fun model msg -> update msg model) 
-      ~subscriptions:subscriptions
-     ()
-
-end
-
 module Event = struct
 type visibility = 
   | Visible
@@ -584,7 +533,7 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
       to_screen 600. 600., Cmd.none
   in
   let view screen = 
-      { Window.
+      { UI.
         title = "Playground";
         body = [ render screen shapes ]
       }
@@ -598,7 +547,7 @@ let (picture: shape list -> (unit, screen, msg1) Platform.program) =
       (* TODO: on_resize *)
       Sub.none
   in
-  Window.document { Window. init; view; update; subscriptions }
+  UI.document { UI. init; view; update; subscriptions }
 
 (*****************************************************************************)
 (* Playground: animation *)
@@ -643,7 +592,7 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
      Cmd.none
    in
    let view (Animation (_, screen, time)) =
-     { Window.
+     { UI.
        title = "Playground";
        body = [render screen (view_frame time)];
      }
@@ -656,7 +605,7 @@ let (animation: (time -> shape list) -> (unit, animation, msg) Platform.program)
       (* TODO: on_resize *)
       Event.on_animation_frame (fun x -> Tick x)
   in
-  Window.document { Window. init; view; update; subscriptions }
+  UI.document { UI. init; view; update; subscriptions }
 
 (*****************************************************************************)
 (* Playground: game *)
@@ -708,7 +657,7 @@ let (game:
   in
   let view (Game (_, memory, computer)) =
     let elt = render computer.screen (view_memory computer memory) in
-    { Window.
+    { UI.
       title = "Playground";
       body = [elt];
     }
@@ -727,7 +676,7 @@ let (game:
       Event.on_key_up   (fun key -> KeyChanged (false, key));
   ]
   in
-  Window.document { Window. init; view; update; subscriptions }
+  UI.document { UI. init; view; update; subscriptions }
 
 (*****************************************************************************)
 (* FPS (using Cairo) *)

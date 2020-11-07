@@ -3,7 +3,8 @@
  (wrapped false)
  (libraries
    commons
-   elm_core elm_ui elm_html
+   elm_core elm_ui elm_html 
+   elm_platform
    cairo2
    tsdl
  )
