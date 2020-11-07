@@ -7,7 +7,7 @@
   )
   (libraries
     ocaml-vdom
-    elm_playground
+    elm_playground_web
   )
   (modes js)
   (link_flags -no-check-prims))

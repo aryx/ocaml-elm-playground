@@ -10,7 +10,7 @@
     graphics
     tsdl
     sdl2
-    elm_playground2
+    elm_playground
   )
 )
 

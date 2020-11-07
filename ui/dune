@@ -1,9 +1,8 @@
 (library
- (public_name elm_playground_web)
+ (public_name elm_ui)
  (wrapped false)
  (libraries
    commons
-   ocaml-vdom
  )
  (preprocess (pps ppx_profiling))
 )
