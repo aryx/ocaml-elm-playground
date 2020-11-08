@@ -13,46 +13,8 @@ module V = Vdom
 let log s = 
   Js_browser.Console.log Js_browser.console (Ojs.string_to_js s)
 
-module Basics = struct
-let (/..) = (/)
-let (+..) = (+)
-let (-..) = (-)
-let ( *.. ) = ( * )
-
-let (/) = (/.)
-let (+) = (+.)
-let (-) = (-.)
-let ( * ) = ( *. )
-
-let (round: float -> int) = fun f ->
-    int_of_float (floor (f +. 0.5))
-
-let (turns: float -> float) = fun angle_in_turns ->
-    2. * Float.pi * angle_in_turns
-
-let (clamp: 'number -> 'number -> 'number -> 'number) = fun low high number ->
-  if number < low then
-    low
-  else if number > high then
-    high
-  else
-    number
-
-end
 open Basics
 
-module Set = struct
-type 'a t = 'a list
-let empty = []
-end
-
-module Time = struct
-type posix = float
-let millis_to_posix n =
-  float_of_int n
-let posix_to_millis n =
-  int_of_float n
-end
 
 module Platform = struct
 (* flags? *)
@@ -157,6 +119,7 @@ end
 (* You should not depend on Vdom starting from here, but instead
  * rely on the helper modules above (which internally use Vdom).
  *)
+open Playground_common
 
 (*****************************************************************************)
 (* Number *)
