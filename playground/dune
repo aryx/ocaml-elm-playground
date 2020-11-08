@@ -4,9 +4,7 @@
  (libraries
    commons
    elm_core elm_html elm_system elm_ui
-   elm_platform
-   cairo2
-   tsdl
+   elm_playground_native
  )
  (preprocess (pps ppx_profiling))
 )
