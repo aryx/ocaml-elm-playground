@@ -336,4 +336,3 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
         Game (vis, memory,
              { computer with keyboard = update_keyboard is_down key 
                  computer.keyboard })
-        
