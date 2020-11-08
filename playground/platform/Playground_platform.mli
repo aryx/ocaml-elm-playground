@@ -14,3 +14,5 @@ val render_ngon:
   Color.t -> int -> float -> float -> float -> float -> float -> float ->
   'msg Html.vdom
  
+val run_app:
+  ('a, 'b) Platform.app -> unit

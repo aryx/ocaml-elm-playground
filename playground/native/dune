@@ -1,7 +1,6 @@
 (library
   (public_name elm_playground_native)
-;  (implements elm_playground_platform)
-  (wrapped false)
+  (implements elm_playground_platform)
   (libraries
     elm_ui
     cairo2 tsdl
