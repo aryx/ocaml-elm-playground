@@ -1,3 +1,4 @@
 dir: _build
-dir: ocaml-vdom
+dir: tests
+
 

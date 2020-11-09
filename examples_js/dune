@@ -1,0 +1,13 @@
+(executables
+  (names 
+    Smiley Picture 
+    Animation
+    Mouse Keyboard
+  )
+  (libraries
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground_platform
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
