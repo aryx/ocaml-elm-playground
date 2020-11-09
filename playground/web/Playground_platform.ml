@@ -15,20 +15,6 @@ module V = Vdom
 let _log s = 
   Js_browser.Console.log Js_browser.console (Ojs.string_to_js s)
 
-
-(*
-module Platform = struct
-(* flags? *)
-type ('flags, 'model, 'msg) program =
-  ('model, 'msg) V.app
-end
-
-module Cmd = struct
-type 'msg t = 'msg V.Cmd.t
-let none = V.Cmd.Batch []
-end
-*)
-
 module Html = struct
 (*type 'msg t = 'msg V.vdom*)
 let style = V.style
@@ -203,15 +189,9 @@ let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
       ]
       (List.map render_shape shapes)
 
- 
-
-
-
-
 (*****************************************************************************)
-(* Playground: game *)
+(* Event to msg *)
 (*****************************************************************************)
-
 (*
     | MouseMove (x, y) ->
         let x = computer.screen.left + page_x in
