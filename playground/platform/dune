@@ -3,6 +3,6 @@
   (virtual_modules Playground_platform)
   (wrapped false)
   (libraries
-     elm_ui
+    elm_playground
   )
 )

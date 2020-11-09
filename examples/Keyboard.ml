@@ -12,4 +12,4 @@ let update computer (x, y) =
 let app = 
   game view update (0., 0.)
 
-let main = Playground.run_app app
+let main = Playground_platform.run_app app

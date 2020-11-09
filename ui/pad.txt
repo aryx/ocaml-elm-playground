@@ -1,4 +1,0 @@
-UI was called Browser/ in elm
-Cmd and Sub were in core/ instead of here.
-There was no Keyboard module.
-

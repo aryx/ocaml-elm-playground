@@ -1,1 +1,0 @@
-type 'msg vdom = VNone

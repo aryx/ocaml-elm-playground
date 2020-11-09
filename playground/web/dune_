@@ -1,9 +1,10 @@
 (library
- (public_name elm_platform_native)
- (wrapped false)
+ (public_name elm_playground_web)
+ (implements elm_playground_platform)
  (libraries
    commons
    elm_playground
+   ocaml-vdom
  )
  (preprocess (pps ppx_profiling))
 )

@@ -10,4 +10,4 @@ let app =
     ;
   ]
 
-let main = Playground.run_app app
+let main = Playground_platform.run_app app

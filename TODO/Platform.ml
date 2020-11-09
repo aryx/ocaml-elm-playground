@@ -1,4 +1,3 @@
-
 type ('model, 'msg) app =
   {
     init: ('model * 'msg Cmd.t);

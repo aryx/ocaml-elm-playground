@@ -18,4 +18,4 @@ let view time =
 let app =
   animation view
 
-let main = Playground.run_app app
+let main = Playground_platform.run_app app

@@ -1,8 +1,0 @@
-(library
- (public_name elm_html)
- (wrapped false)
- (libraries
-   commons
- )
- (preprocess (pps ppx_profiling))
-)

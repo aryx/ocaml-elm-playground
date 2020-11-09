@@ -5,7 +5,7 @@ open Color
 open Tsdl
 
 (*****************************************************************************)
-(* Render *)
+(* Render (independent of Playground) *)
 (*****************************************************************************)
 
 let (g_cr: Cairo.context option ref) = ref None
@@ -117,7 +117,7 @@ let render_ngon color n radius x y angle _s alpha =
   Cairo.fill cr;
 
   Cairo.restore cr;
-  Html.VNone
+  ()
 
 
 let render_oval color w h x y _angle _s alpha = 
@@ -139,7 +139,7 @@ let render_oval color w h x y _angle _s alpha =
   Cairo.fill cr;
 
   Cairo.restore cr;
-  Html.VNone
+  ()
 
 
 let render_rectangle color w h x y angle _s alpha = 
@@ -159,7 +159,7 @@ let render_rectangle color w h x y angle _s alpha =
   Cairo.fill cr;
 
   Cairo.restore cr;
-  Html.VNone
+  ()
 
 
 let render_circle color radius x y _angle _s alpha =
@@ -175,8 +175,34 @@ let render_circle color radius x y _angle _s alpha =
   Cairo.fill cr;
 
   Cairo.restore cr;
-  Html.VNone
+  ()
 
+(*****************************************************************************)
+(* Render playground *)
+(*****************************************************************************)
+open Playground
+
+let (render_shape: shape -> unit) = 
+  fun { x; y; angle; scale; alpha; form} ->
+  match form with
+  | Circle (color, radius) -> 
+     render_circle color radius x y angle scale alpha
+  | Oval (color, width, height) ->
+     render_oval color width height x y angle scale alpha
+  | Rectangle (color, width, height) ->
+     render_rectangle color width height x y angle scale alpha
+  | Ngon (color, n, radius) ->
+     render_ngon color n radius x y angle scale alpha
+  
+let (render: (*screen ->*) shape list -> unit) = fun (*screen*) shapes ->
+(*
+    let _w = screen.width in
+    let _h = screen.height in
+    let _x = screen.left |> string_of_number  in
+    let _y = screen.bottom |> string_of_number in
+*)
+
+    List.iter render_shape shapes
 
 (*****************************************************************************)
 (* Event to msg *)
@@ -313,7 +339,7 @@ let run_app app =
   g_sy := sy;
   debug_coordinates cr;
 
-  let initmodel, _cmdsTODO = app.Platform.init in
+  let initmodel, _cmdsTODO = app.Playground.init () in
   let model = ref initmodel in
 (*
   let status = ref (Graphics.wait_next_event [Graphics.Poll]) in
@@ -338,7 +364,7 @@ let run_app app =
     (* one frame *)
     let time = Unix.gettimeofday() in
 
-    let subs = app.Platform.subscriptions !model in
+    let subs = app.Playground.subscriptions !model in
 
     let event = 
       if Sdl.poll_event (Some event)
@@ -376,11 +402,12 @@ let run_app app =
     (match msg_opt with
     | None -> ()
     | Some msg ->
-      let newmodel, _cmds = app.Platform.update !model msg in
+      let newmodel, _cmds = app.Playground.update msg !model in
       model := newmodel;
     );
 
-    let _vdom = app.Platform.view !model in
+    let shapes = app.Playground.view !model in
+    render shapes;
 
     Cairo.restore cr;
     Fps.draw_fps cr (float sx) (float sy);

@@ -2,7 +2,7 @@
   (public_name elm_playground_native)
   (implements elm_playground_platform)
   (libraries
-    elm_ui
+    elm_playground
     cairo2 tsdl
   )
 )
