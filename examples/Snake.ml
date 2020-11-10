@@ -50,11 +50,13 @@ type model = {
     snake: snake;
     mutable food: position;
     mutable game_over: bool;
+    mutable last_tick: Time.posix;
 }
 let initial_model = {
     snake = initial_snake;
     food = (grid_size.g_width / 2, grid_size.g_height / 2);
     game_over = false;
+    last_tick = 0.;
 }
 
 (*****************************************************************************)
@@ -109,8 +111,57 @@ let view computer model =
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
+let compute_new_head snake =
+  let (x, y) = snake.head in
+  let h = grid_size.g_height in
+  let w = grid_size.g_width in
+  match snake.direction with
+  | Up -> (x, (y + 1 ) mod h)
+  | Down -> (x, (y - 1 + h) mod h)
+  | Right -> ((x + 1) mod w, y)
+  | Left -> ((x - 1 + w) mod w, y)
 
-let update _computer model =
+let update_direction kbd snake =
+  let new_dir =
+    match () with
+    | _ when kbd.kup -> Up
+    | _ when kbd.kdown -> Down
+    | _ when kbd.kleft -> Left
+    | _ when kbd.kright -> Right
+    | _ -> snake.direction
+  in
+  let new_dir = 
+    match new_dir, snake.direction with
+    (* invalid transitions *)
+    | Left, Right | Right, Left 
+    | Up, Down | Down, Up
+      -> snake.direction
+    | x, _ -> x
+  in
+  snake.direction <- new_dir
+
+let update computer model =
+  let (Time now) = computer.time in
+  (* operate by side effect on the model; simpler *)
+  if now -. model.last_tick > 0.5
+  then begin
+      model.last_tick <- now;
+      let snake = model.snake in
+      let new_head = compute_new_head snake in
+      let ate_food = new_head = model.food in
+      let new_body = 
+        if ate_food
+        then snake.body
+        else Common2.list_init snake.body
+      in
+      snake.body <- snake.head::new_body;
+      snake.head <- new_head;
+      if ate_food
+      then model.food <- random_position ();
+      model.game_over <- List.mem new_head new_body;
+  end;
+  update_direction computer.keyboard model.snake;
+
   model
 
 (*****************************************************************************)
