@@ -26,4 +26,6 @@ let lightPurple = Hex "#ad7fa8"
 (* Shades of grey *)
 (*-------------------------------------------------------------------*)
 
+let gray = Hex "#d3d7cf"
+
 let darkGray = Hex "#babdb6"
