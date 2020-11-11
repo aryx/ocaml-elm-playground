@@ -5,6 +5,11 @@ open Playground
 (*****************************************************************************)
 (* Port of the Snake clone from https://github.com/amarantedaniel/snek
  * using OCaml instead of Elm, and using Playground instead of HTML/SVG.
+ *
+ * TODO:
+ *  - accelerate games as times goes
+ *  - display score
+ *  - high score table
  *)
 
 (*****************************************************************************)
@@ -13,10 +18,10 @@ open Playground
 
 (* The origin of the grid (0, 0) is at the bottom left of the screen.
  * This is different from the coordinate system of Playground where the
- * origin is at the center of the screen, but it allows to use mod_by
- * to easily move the snake around the corners.
+ * origin is at the center of the screen, but it allows to use 'mod'
+ * to easily move the snake around the edges.
  *)
-type position = (int * int)
+type position = (int * int) (* x, y *)
 
 type grid_size = {
   g_width: int;
@@ -27,7 +32,8 @@ let grid_size = { g_width = 20; g_height = 20 }
 
 let cell_size screen = 
   int_of_float screen.width / grid_size.g_width
- 
+
+(* TODO: do not return a position already used by the snake *) 
 let random_position () =
   (Random.int (grid_size.g_width - 1), Random.int (grid_size.g_height - 1))
 
