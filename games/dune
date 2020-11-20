@@ -1,8 +1,6 @@
 (executables
   (names 
-    Picture Smiley
-    Animation 
-    Mouse Keyboard
+    Snake
   )
   (libraries
     elm_playground
