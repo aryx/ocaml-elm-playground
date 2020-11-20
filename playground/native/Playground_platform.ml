@@ -285,6 +285,10 @@ end
 (* Run app *)
 (*****************************************************************************)
 
+(* The tsdl library is a heavy user of Result, which is annoying
+ * to check at every calls; fortunately OCaml 4.08 allow to define
+ * monadic operators to remove some boilerplate!
+ *)
 let (let*) o f =
   match o with
   | Error (`Msg msg) ->
@@ -300,6 +304,7 @@ let scancode_to_keystring = function
  | s -> s
 
 let run_app app =
+  (* coupling: must be same than Playground.initial_computer? *)
   let sx = 600 in
   let sy = 600 in
 
