@@ -119,6 +119,7 @@ let render_ngon color n radius x y angle s alpha =
   with_cr (fun cr ->
     set_color cr color alpha;
     render_transform cr x y angle s;
+
     ngon_points cr 0 n radius;
     Cairo.fill cr;
   )
@@ -132,9 +133,9 @@ let render_oval color w h x y _angle _s alpha =
   let (x,y) = convert (x,y) in
 
   with_cr (fun cr -> 
-    (* code in cairo.mli to draw ellipsis *)
     set_color cr color alpha;
 
+    (* code in cairo.mli to draw ellipsis *)
     Cairo.translate cr (x +. w /. 2.) (y +. h /. 2.);
     Cairo.scale cr (w /. 2.) (h /. 2.);
 
@@ -166,9 +167,9 @@ let render_circle color radius x y angle s alpha =
   let (x,y) = convert (x,y) in
 
   with_cr (fun cr ->
-  set_color cr color alpha;
-
+    set_color cr color alpha;
     render_transform cr x y angle s;
+
     Cairo.arc cr 0. 0. radius 0. pi2;
     Cairo.fill cr;
   )
@@ -177,14 +178,13 @@ let render_words color str x y angle s alpha =
   let (x,y) = convert (x,y) in
 
   with_cr (fun cr ->
-
-  let extent = Cairo.text_extents cr str in
-  let tw = extent.Cairo.width in
-  let th = extent.Cairo.height in
-
     set_color cr color alpha;
-
     render_transform cr x y angle s;
+
+    let extent = Cairo.text_extents cr str in
+    let tw = extent.Cairo.width in
+    let th = extent.Cairo.height in
+
     Cairo.move_to cr (-. tw / 2.) (th / 2.);
     Cairo.show_text cr str;
   )
