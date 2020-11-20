@@ -101,17 +101,16 @@ let view_snake_part screen pos =
 let view_snake screen snake =
   List.map (view_snake_part screen) (snake.head::snake.body) |> List.flatten
 
-(* TODO: use words red, bold, fontsize 50 *)
 let view_game_over _screen =
-  [ square blue 40.]
+  [ words red "GAME OVER" |> scale 10. ]
 
 let view computer model = 
   let screen = computer.screen in
-  if model.game_over
-  then view_game_over screen
-  else view_background screen @
-       view_snake screen model.snake @
-       view_food screen model.food
+
+  view_background screen @
+  view_snake screen model.snake @
+  view_food screen model.food @
+  (if model.game_over then view_game_over screen else [])
   
 
 (*****************************************************************************)

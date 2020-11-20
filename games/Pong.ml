@@ -10,6 +10,24 @@ open Basics (* float operators by default *)
  * TODO:
  *  - http://mathieu.agopian.info/blog/making-a-pong-game-in-elm.html (2019)
  *  - https://github.com/einars/skapong ocaml one
+ *  - https://www.awesomeinc.org/tutorials/unity-pong/ unity! with
+ *    physics engine (friction, bounciness)
+ *  - https://en.scratch-wiki.info/wiki/Pong
+ *  - https://www.101computing.net/pong-tutorial-using-pygame-getting-started/
+ *
+ * TODO: extensions listed at the end of the making-pong blog post:
+ *  - dotted line mid field
+ *  - ability to pause the game
+ *  - ability to reset the game (menu somewhere? restart button between
+ *    the score)
+ *  - make ball collisions more complicated:
+ *    * when the ball hits the corner of a paddle, it changes direction
+ *    * if the ball hits a moving paddle, it adds spin to the ball, making it
+ *      rebound in a different direction
+ *  - add a second ball to the game
+ *  - write a simple AI for a paddle (easy but boring = AI that try to
+ *    stay at the same y than the ball; but could design less boring but
+ *    more fun AI too).
  *)
 
 (*****************************************************************************)
