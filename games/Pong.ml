@@ -1,4 +1,5 @@
 open Playground
+open Basics (* float operators by default *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -14,6 +15,9 @@ open Playground
 (*****************************************************************************)
 (* Model *)
 (*****************************************************************************)
+
+(* was time in Pong.elm, but playground defines time as Time of posix *)
+type delta = float 
 
 type obj = { 
     x: number; 
@@ -40,16 +44,19 @@ type game = {
     player2: player;
 }
 
-let game_height = 400.
-let game_width = 600.
+(* coupling: with Playground.initial_computer.screen at 600 x 600 *)
+let (game_width, game_height) = (600., 400.)
+let (half_width, half_height) = (300., 200.)
+
+(* was duplicated many times in the blog post *)
+let default_velocity = 200.
 
 let default_game screen = { 
     state = Pause;
-    ball = { x = 0.; y = 0.; vx = 200.; vy = 200. };
-    player1 = player (screen.left +. 20.);
-    player2 = player (screen.right -. 20.);
+    ball = { x = 0.; y = 0.; vx = default_velocity; vy = default_velocity };
+    player1 = player (screen.left + 20.);
+    player2 = player (screen.right - 20.);
 }
-
 
 (*****************************************************************************)
 (* View *)
@@ -60,7 +67,7 @@ let text_green = Color.Rgb (160, 200, 160)
 let display_obj obj shape = 
   shape |> move (obj.x) (obj.y)
 
-let view _computer game =
+let view _computer (game, _last_tick) =
   (* TODO: score *)
   [ rectangle pong_green game_width game_height;
     display_obj game.ball (oval white 15. 15.);
@@ -71,6 +78,52 @@ let view _computer game =
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
+(* are n and m near each other, specifically are they within c of each other *)
+let near n c m = 
+  m >= n - c && m <= n + c
+
+(* Is the ball within a paddle?
+ * coupling: 8 is (a little more than) half of oval width (15) of the ball 
+ * and 20 is half the height of the player paddle (40)
+ *)
+let (within: ball -> player -> bool) = fun ball player ->
+    near player.obj.x 8. ball.x &&
+    near player.obj.y 20. ball.y
+
+(* change the direction of a velocity (vx, or vy) based on collisions *)
+let (step_v: number -> bool -> bool -> number) = 
+ fun v lower_collision upper_collision ->
+  match () with
+  (* bottom or right collision *)
+  | _ when lower_collision -> abs_float v
+  (* top or left collision *)
+  | _ when upper_collision -> -. (abs_float v)
+  | _ -> v
+
+let (step_obj: delta -> obj -> obj) = fun t ({ x; y; vx; vy} as obj) ->
+  { obj with x = x + vx * t; y = y + vy * t }
+
+(* move a ball forward, detecting collisions with either paddle *)
+let (step_ball: delta -> ball -> player -> player -> ball) =
+ fun t ({x = _; y; vx; vy} as ball) player1 player2 ->
+  if not (near 0. half_width ball.x)
+  then { ball with x = 0.; y = 0. }
+  else
+    step_obj t { ball with
+      vx = step_v vx (within ball player1) (within ball player2);
+      (* coupling: 7. =~ half size of ball *)
+      vy = step_v vy (y < -. half_height + 7.) (y > half_height - 7.);
+    }
+
+(* step a player forward, making sure it does not fly off the screen *)    
+let (step_player: delta -> number -> int -> player -> player) =
+  fun t dir points player ->
+    let obj' = 
+      step_obj t { player.obj with vx = dir * default_velocity} in
+    let y' = Basics.clamp (-. half_height + 22.) (half_height - 22.) obj'.y in
+    let score' = player.score +.. points in
+    { obj = { obj' with y = y'}; score = score' }
+
 type input = {
     space: bool;
 
@@ -78,7 +131,7 @@ type input = {
     paddle1: number;
     paddle2: number;
 
-    delta: time;
+    delta: delta;
 }
 
 let input_of_computer computer =
@@ -86,21 +139,46 @@ let input_of_computer computer =
   { space = kbd.kspace;
     paddle1 = to_y kbd;
     paddle2 = to_y2 kbd;
-    delta = computer.time;
+    delta = 0.;
   }
 
-let update _computer model =
-  model
+let (step_game: input -> game -> game) = fun input game ->
+  let { space; paddle1; paddle2; delta} = input in
+  let {state; ball; player1; player2} = game in
+
+  let score1 = if ball.x > half_width then 1 else 0 in
+  let score2 = if ball.x < -. half_width then 1 else 0 in
+
+  let state' =
+    match () with
+    | _ when space -> Play
+    | _ when score1 <> score2 -> Pause
+    | _ -> state
+  in
+  let ball' =
+    if state = Pause 
+    then ball
+    else step_ball delta ball player1 player2
+  in
+  let player1' = step_player delta paddle1 score1 player1 in
+  let player2' = step_player delta paddle2 score2 player2 in
+  { state = state'; ball = ball'; player1 = player1'; player2 = player2' }
+
+let update computer (game, last_tick) =
+  let input = input_of_computer computer in
+  let (Time now) = computer.time in
+  let delta = now - last_tick in
+  let game' = step_game { input with delta } game in
+  game', now
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
 let app = 
-  game view update (default_game (Playground.initial_computer.screen))
+  game view update 
+    (default_game Playground.initial_computer.screen,
+    Unix.gettimeofday())
 
 let main = 
   Playground_platform.run_app app
-
-
-
