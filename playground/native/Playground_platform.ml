@@ -87,10 +87,14 @@ let render_rect_transform width height x y angle s =
   spf " translate(%s, %s)" 
      (string_of_number (-. width / 2.))
      (string_of_number (-. height / 2.))
-
-
-
 *)
+
+let render_transform cr x y angle s =
+  Cairo.translate cr x y;
+  Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
+  Cairo.scale cr s s;
+  ()
+
 
 let rec ngon_points cr i n radius =
   if i == n 
