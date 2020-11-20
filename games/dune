@@ -1,6 +1,7 @@
 (executables
   (names 
     Snake
+    Pong
   )
   (libraries
     elm_playground
