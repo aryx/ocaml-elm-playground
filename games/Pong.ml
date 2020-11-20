@@ -73,15 +73,24 @@ let default_game = {
 let pong_green = Color.Rgb (60, 100, 60)
 let text_green = Color.Rgb (160, 200, 160)
 
+let msg = "SPACE to start, w/s and up/down to move"
+
 let display_obj obj shape = 
   shape |> move (obj.x) (obj.y)
 
 let view _computer (game, _last_tick) =
-  (* TODO: score *)
   [ rectangle pong_green game_width game_height;
+
     display_obj game.ball (oval white 15. 15.);
+
     display_obj game.player1.obj (rectangle white 10. 40.);
     display_obj game.player2.obj (rectangle white 10. 40.);
+
+    (let s = Printf.sprintf "%d   %d" game.player1.score game.player2.score in
+    words text_green s |> scale 10. |> move 0. (game_height / 2. - 40.));
+    
+    (let s = if game.state = Play then "" else msg in
+    words text_green s |> scale 2. |> move 0. (40. - game_height / 2.));
   ]
 
 (*****************************************************************************)
