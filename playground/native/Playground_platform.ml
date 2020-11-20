@@ -17,7 +17,9 @@ let get_cr () =
 let g_sx = ref 0
 let g_sy = ref 0
 
-let _with_cr cr f = 
+(* less: save_excursion? *)
+let with_cr f = 
+  let cr = get_cr () in
   Cairo.save cr;
   let res = f cr in
   Cairo.restore cr;
@@ -112,99 +114,81 @@ let rec ngon_points cr i n radius =
 
 let render_ngon color n radius x y angle s alpha = 
   (*pr2_gen (x,y,n,radius);*)
-  let cr = get_cr () in
-  set_color cr color alpha;
-
   let (x, y) = convert (x, y) in
 
-  Cairo.save cr;
-
-  render_transform cr x y angle s;
-
-  ngon_points cr 0 n radius;
-  Cairo.fill cr;
-
-  Cairo.restore cr;
-  ()
+  with_cr (fun cr ->
+    set_color cr color alpha;
+    render_transform cr x y angle s;
+    ngon_points cr 0 n radius;
+    Cairo.fill cr;
+  )
 
 
 let render_oval color w h x y _angle _s alpha = 
   (*pr2_gen (x,y,w,h);*)
-  let cr = get_cr () in
-  set_color cr color alpha;
 
   let x = x - (w / 2.) in
   let y = y + (h / 2.) in
   let (x,y) = convert (x,y) in
 
-  (* code in cairo.mli to draw ellipsis *)
-  Cairo.save cr;
+  with_cr (fun cr -> 
+    (* code in cairo.mli to draw ellipsis *)
+    set_color cr color alpha;
 
-  Cairo.translate cr (x +. w /. 2.) (y +. h /. 2.);
-  Cairo.scale cr (w /. 2.) (h /. 2.);
+    Cairo.translate cr (x +. w /. 2.) (y +. h /. 2.);
+    Cairo.scale cr (w /. 2.) (h /. 2.);
 
-  Cairo.arc cr 0. 0. 1. 0. pi2;
-  Cairo.fill cr;
-
-  Cairo.restore cr;
-  ()
+    Cairo.arc cr 0. 0. 1. 0. pi2;
+    Cairo.fill cr;
+  )
 
 
 let render_rectangle color w h x y angle _s alpha = 
   (*pr2_gen (x,y,w,h);*)
-  let cr = get_cr () in
-  set_color cr color alpha;
+
 
   let x0 = x - (w / 2.) in
   let y0 = y + (h / 2.) in
   let (x0,y0) = convert (x0,y0) in
-  Cairo.save cr;
 
-  Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
-  (*pr (spf "rotate: %.1f" angle);*)
+  with_cr (fun cr ->
+    set_color cr color alpha;
 
-  Cairo.rectangle cr x0 y0 w h;
-  Cairo.fill cr;
-
-  Cairo.restore cr;
-  ()
+    Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
+    (*pr (spf "rotate: %.1f" angle);*)
+    Cairo.rectangle cr x0 y0 w h;
+    Cairo.fill cr;
+  )
 
 
 let render_circle color radius x y angle s alpha =
   (*pr2_gen (x,y, radius);*)
-
-  let cr = get_cr () in
-  set_color cr color alpha;
   let (x,y) = convert (x,y) in
 
-  Cairo.save cr;
+  with_cr (fun cr ->
+  set_color cr color alpha;
 
-  render_transform cr x y angle s;
-  Cairo.arc cr 0. 0. radius 0. pi2;
-  Cairo.fill cr;
-
-  Cairo.restore cr;
-  ()
+    render_transform cr x y angle s;
+    Cairo.arc cr 0. 0. radius 0. pi2;
+    Cairo.fill cr;
+  )
 
 let render_words color str x y angle s alpha =
-  let cr = get_cr () in
-  set_color cr color alpha;
-  
+  let (x,y) = convert (x,y) in
+
+  with_cr (fun cr ->
+
   let extent = Cairo.text_extents cr str in
   let tw = extent.Cairo.width in
   let th = extent.Cairo.height in
 
-  let (x,y) = convert (x,y) in
-  
-  Cairo.save cr;
+    set_color cr color alpha;
 
-  render_transform cr x y angle s;
+    render_transform cr x y angle s;
+    Cairo.move_to cr (-. tw / 2.) (th / 2.);
+    Cairo.show_text cr str;
+  )
 
-  Cairo.move_to cr (-. tw / 2.) (th / 2.);
-  Cairo.show_text cr str;
-
-  Cairo.restore cr;
-  ()
 (*****************************************************************************)
 (* Render playground *)
 (*****************************************************************************)
