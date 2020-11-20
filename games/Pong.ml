@@ -33,7 +33,13 @@ type player = {
     score: int;
 }
 let player x = 
-  { obj = { x; y = 0.; vx = 0.; vy = 0. }; score = 0 }
+  { obj = { (* should remain constant *)
+            x; 
+            y = 0.; 
+            (* will remain 0 *)
+            vx = 0.; 
+            vy = 0. }; 
+     score = 0 }
 
 type state = Play | Pause
 
@@ -48,14 +54,17 @@ type game = {
 let (game_width, game_height) = (600., 400.)
 let (half_width, half_height) = (300., 200.)
 
-(* was duplicated many times in the blog post *)
+(* This means that in 1 second, the object will move 200 pixels.
+ * note: was duplicated many times in the blog post, better to factorize.
+ *)
 let default_velocity = 200.
 
-let default_game screen = { 
+let default_game = { 
     state = Pause;
     ball = { x = 0.; y = 0.; vx = default_velocity; vy = default_velocity };
-    player1 = player (screen.left + 20.);
-    player2 = player (screen.right - 20.);
+    (* player1 is on the left, player2 on the right *)
+    player1 = player (-. half_width + 20.);
+    player2 = player (   half_width - 20.);
 }
 
 (*****************************************************************************)
@@ -94,9 +103,9 @@ let (within: ball -> player -> bool) = fun ball player ->
 let (step_v: number -> bool -> bool -> number) = 
  fun v lower_collision upper_collision ->
   match () with
-  (* bottom or right collision *)
+  (* bottom or left collision *)
   | _ when lower_collision -> abs_float v
-  (* top or left collision *)
+  (* top or right collision *)
   | _ when upper_collision -> -. (abs_float v)
   | _ -> v
 
@@ -119,7 +128,8 @@ let (step_ball: delta -> ball -> player -> player -> ball) =
 let (step_player: delta -> number -> int -> player -> player) =
   fun t dir points player ->
     let obj' = 
-      step_obj t { player.obj with vx = dir * default_velocity} in
+      (* bugfix: vy here! not vx *)
+      step_obj t { player.obj with vy = dir * default_velocity } in
     let y' = Basics.clamp (-. half_height + 22.) (half_height - 22.) obj'.y in
     let score' = player.score +.. points in
     { obj = { obj' with y = y'}; score = score' }
@@ -137,8 +147,9 @@ type input = {
 let input_of_computer computer =
   let kbd = computer.keyboard in
   { space = kbd.kspace;
-    paddle1 = to_y kbd;
-    paddle2 = to_y2 kbd;
+    (* bugfix: player2 is on the right, so the arrows or for player2 *)
+    paddle1 = to_y2 kbd;
+    paddle2 = to_y kbd;
     delta = 0.;
   }
 
@@ -146,7 +157,9 @@ let (step_game: input -> game -> game) = fun input game ->
   let { space; paddle1; paddle2; delta} = input in
   let {state; ball; player1; player2} = game in
 
+  (* ball on the right of player2 => score for player 1 *)
   let score1 = if ball.x > half_width then 1 else 0 in
+  (* ball on left of player1 => score for player 2 *)
   let score2 = if ball.x < -. half_width then 1 else 0 in
 
   let state' =
@@ -176,9 +189,7 @@ let update computer (game, last_tick) =
 (*****************************************************************************)
 
 let app = 
-  game view update 
-    (default_game Playground.initial_computer.screen,
-    Unix.gettimeofday())
+  game view update (default_game, Unix.gettimeofday())
 
 let main = 
   Playground_platform.run_app app
