@@ -3,7 +3,7 @@ open Playground
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Port of a Pong clone 
+(* Port of the Pong clone https://elm-lang.org/news/making-pong
  * using OCaml instead of Elm, and using Playground instead of HTML/SVG??
  *
  * inspiration:
@@ -47,8 +47,6 @@ let default_game screen = {
     player2 = player (screen.right -. 20.);
 }
 
-let initial_model = ()
-
 (*****************************************************************************)
 (* View *)
 (*****************************************************************************)
@@ -58,7 +56,18 @@ let view _computer _model = []
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
+type input = {
+    space: bool;
 
+    (* -1, 0, 1 *)
+    paddle1: int;
+    paddle2: int;
+
+    delta: time;
+}
+
+let _input_of_computer _computer =
+  failwith "Todo"
 
 let update _computer model =
   model
@@ -68,7 +77,7 @@ let update _computer model =
 (*****************************************************************************)
 
 let app = 
-  game view update initial_model
+  game view update (default_game (Playground.initial_computer.screen))
 
 let main = 
   Playground_platform.run_app app
