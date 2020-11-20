@@ -17,6 +17,12 @@ let get_cr () =
 let g_sx = ref 0
 let g_sy = ref 0
 
+let _with_cr cr f = 
+  Cairo.save cr;
+  let res = f cr in
+  Cairo.restore cr;
+  res
+
 let set_color cr color alpha =
   let (r,g,b) =
     match color with
@@ -100,7 +106,7 @@ let rec ngon_points cr i n radius =
     ngon_points cr (Stdlib.(+) i 1) n radius
   end
 
-let render_ngon color n radius x y angle _s alpha = 
+let render_ngon color n radius x y angle s alpha = 
   (*pr2_gen (x,y,n,radius);*)
   let cr = get_cr () in
   set_color cr color alpha;
@@ -109,9 +115,7 @@ let render_ngon color n radius x y angle _s alpha =
 
   Cairo.save cr;
 
-  Cairo.translate cr x y;
-  Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
-  (*pr (spf "rotate: %.1f" angle);*)
+  render_transform cr x y angle s;
 
   ngon_points cr 0 n radius;
   Cairo.fill cr;
@@ -162,7 +166,7 @@ let render_rectangle color w h x y angle _s alpha =
   ()
 
 
-let render_circle color radius x y _angle _s alpha =
+let render_circle color radius x y angle s alpha =
   (*pr2_gen (x,y, radius);*)
 
   let cr = get_cr () in
@@ -171,12 +175,32 @@ let render_circle color radius x y _angle _s alpha =
 
   Cairo.save cr;
 
-  Cairo.arc cr x y radius 0. pi2;
+  render_transform cr x y angle s;
+  Cairo.arc cr 0. 0. radius 0. pi2;
   Cairo.fill cr;
 
   Cairo.restore cr;
   ()
 
+let render_words color str x y angle s alpha =
+  let cr = get_cr () in
+  set_color cr color alpha;
+  
+  let extent = Cairo.text_extents cr str in
+  let tw = extent.Cairo.width in
+  let th = extent.Cairo.height in
+
+  let (x,y) = convert (x,y) in
+  
+  Cairo.save cr;
+
+  render_transform cr x y angle s;
+
+  Cairo.move_to cr (-. tw / 2.) (th / 2.);
+  Cairo.show_text cr str;
+
+  Cairo.restore cr;
+  ()
 (*****************************************************************************)
 (* Render playground *)
 (*****************************************************************************)
@@ -193,6 +217,8 @@ let (render_shape: shape -> unit) =
      render_rectangle color width height x y angle scale alpha
   | Ngon (color, n, radius) ->
      render_ngon color n radius x y angle scale alpha
+  | Words (color, str) ->
+     render_words color str x y angle scale alpha
   
 let (render: (*screen ->*) shape list -> unit) = fun (*screen*) shapes ->
 (*
