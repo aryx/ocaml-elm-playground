@@ -1,5 +1,5 @@
 open Common
-open Basics
+open Basics (* elm-core *)
 
 module Event = Event_
 
@@ -11,9 +11,10 @@ module Event = Event_
  * See https://github.com/evancz/elm-playground/blob/master/src/Playground.elm
  * for more information.
  * 
- * I also ported some of the library elm-playground depends on (e.g., elm-core)
- * instead of using directly the equivalent OCaml functions in the hope
- * that if I later need to also port Elm games, I will have less work.
+ * I also partially ported some of the libraries elm-playground depends on
+ * (e.g., elm-core) instead of using directly the equivalent OCaml functions
+ * in the hope that if I later need to also port Elm games, I will have 
+ * less work.
  *
  * I've changed a few things to make the code more portable, so we can
  * use the library in a Native context (with Cairo+SDL), or in 
@@ -21,7 +22,7 @@ module Event = Event_
  *  - I've introduced a new 'app' type instead of using 'Platform.program'
  *  - I avoid to use the 'vdom' type and the views functions returns
  *    instead of a vdom a list of shapes. Anyway, we do not attach
- *    any messages in the returned vdom. We use global system events.
+ *    any messages in the returned vdom; we use global system events.
  *)
 
 (*****************************************************************************)
@@ -390,11 +391,14 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
           { computer with time = Time time })
     | Resized (_w, _h) ->
         raise Todo
+    (* we assume the x, y is in playground coordinate system (0,0) at the
+     * center of the screen.
+     *)
     | MouseMove (x, y) ->
-(*
-        let x = computer.screen.left + page_x in
-        let y = computer.screen.top - page_y in
-*)
+        (* old: in web context:
+         * let x = computer.screen.left + page_x in
+         * let y = computer.screen.top - page_y in
+         *)
         Game (vis, memory, 
              { computer with mouse = mouse_move x y computer.mouse })
     | MouseClick ->
