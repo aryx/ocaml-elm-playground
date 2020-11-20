@@ -15,6 +15,38 @@ open Playground
 (* Model *)
 (*****************************************************************************)
 
+type obj = { 
+    x: number; 
+    y: number; 
+    vx: number;
+    vy: number;
+}
+
+type ball = obj
+
+type player = {
+    obj: obj;
+    score: int;
+}
+let player x = 
+  { obj = { x; y = 0.; vx = 0.; vy = 0. }; score = 0 }
+
+type state = Play | Pause
+
+type game = {
+    state: state;
+    ball: ball;
+    player1: player;
+    player2: player;
+}
+
+let default_game screen = { 
+    state = Pause;
+    ball = { x = 0.; y = 0.; vx = 200.; vy = 200. };
+    player1 = player (screen.left +. 20.);
+    player2 = player (screen.right -. 20.);
+}
+
 let initial_model = ()
 
 (*****************************************************************************)
@@ -26,7 +58,9 @@ let view _computer _model = []
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
-let update _msg model =
+
+
+let update _computer model =
   model
 
 (*****************************************************************************)
