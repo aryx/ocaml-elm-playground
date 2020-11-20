@@ -86,7 +86,10 @@ and form =
   | Oval      of color * number * number
   | Rectangle of color * number * number
   | Ngon of color * int * number
-  (* TODO: Word, Image *)
+  (* TODO: Polygon *)
+  (* TODO: Image *)
+  | Words of color * string
+  (* TODO: Group pf shape list *)
 
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
@@ -119,6 +122,9 @@ let (hexagon: color -> number -> shape) = fun color radius ->
 
 let (octagon: color -> number -> shape) = fun color radius ->
   shape 0. 0. 0. 1. 1. (Ngon (color, 8, radius))
+
+let (words: color -> string -> shape) = fun color str ->
+  shape 0. 0. 0. 1. 1. (Words (color, str))
 
 (*-------------------------------------------------------------------*)
 (* Move shapes *)
@@ -158,7 +164,11 @@ let (rotate: number -> shape -> shape) =
 let (fade: number -> shape -> shape) = 
   fun o {x; y; angle; scale; alpha = _; form } ->
     {x; y; angle; scale; alpha = o; form}
-  
+
+let (scale: number -> shape -> shape) =
+  fun ns {x; y; angle; scale; alpha; form } ->
+    {x; y; angle; scale = scale * ns; alpha; form}
+
 
 (*****************************************************************************)
 (* Computer *)
