@@ -1,6 +1,6 @@
 (executables
   (names 
-    Picture Smiley
+    Picture Smiley Words
     Animation 
     Mouse Keyboard
   )
