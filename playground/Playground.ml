@@ -1,8 +1,6 @@
 open Common
 open Basics (* elm-core *)
 
-module Event = Event_
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -338,14 +336,14 @@ type msg =
   | MouseButton of bool (* true = down, false = up *)
 
 
-type animation = Animation of Event.visibility * screen * time
+type animation = Animation of (*Event.visibility * *) screen * time
 
-let animation_update msg (Animation (v, s, t) as state) =
+let animation_update msg (Animation (s, t) as state) =
   match msg with
   | Tick posix -> 
-    Animation (v, s, (Time posix))
+    Animation (s, (Time posix))
   | Resized (w, h) -> 
-    Animation (v, to_screen (float w) (float h), t)
+    Animation (to_screen (float w) (float h), t)
   | MouseMove _ 
   | MouseClick 
   | MouseButton _
@@ -355,14 +353,14 @@ let animation_update msg (Animation (v, s, t) as state) =
 let (animation: (time -> shape list) -> (animation, msg) app) =
  fun view_frame ->
    let init () = 
-     Animation (Event.Visible, 
+     Animation ((* Event.Visible, *)
                 to_screen 600. 600., 
                 (* bugfix: use 1, not 0, otherwise get div_by_zero exn in
                  * to_frac if use spin/wave/... *)
                 Time (Time.millis_to_posix 1)),
      Cmd.none
    in
-   let view (Animation (_, _screen, time)) =
+   let view (Animation (_screen, time)) =
       view_frame time
    in
    let update msg model = 
@@ -371,7 +369,7 @@ let (animation: (time -> shape list) -> (animation, msg) app) =
    in
   let subscriptions _ =
       (* TODO: on_resize *)
-      Event.on_animation_frame (fun x -> Tick x)
+      Sub.on_animation_frame (fun x -> Tick x)
   in
   { init; view; update; subscriptions }
 
@@ -379,15 +377,15 @@ let (animation: (time -> shape list) -> (animation, msg) app) =
 (* Playground: game *)
 (*****************************************************************************)
 
-type 'memory game = Game of Event.visibility * 'memory * computer
+type 'memory game = Game of (*Event.visibility **) 'memory * computer
 
 let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
  'memory game) =
- fun update_memory msg (Game (vis, memory, computer)) ->
+ fun update_memory msg (Game (memory, computer)) ->
     match msg with
     | Tick time ->
         (* todo: remove click in mouse? *)
-        Game (vis, update_memory computer memory,
+        Game (update_memory computer memory,
           { computer with time = Time time })
     | Resized (_w, _h) ->
         raise Todo
@@ -399,19 +397,19 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
          * let x = computer.screen.left + page_x in
          * let y = computer.screen.top - page_y in
          *)
-        Game (vis, memory, 
+        Game (memory, 
              { computer with mouse = mouse_move x y computer.mouse })
     | MouseClick ->
-        Game (vis, memory, 
+        Game (memory, 
              { computer with mouse = 
                 (* Vdom does not provide OnMouseUp, so we use MouseClick *)
                  mouse_down false 
                    (mouse_click true computer.mouse) })
     | MouseButton is_down ->
-        Game (vis, memory, 
+        Game (memory, 
              { computer with mouse = mouse_down is_down computer.mouse })
     | KeyChanged (is_down, key) ->
-        Game (vis, memory,
+        Game (memory,
              { computer with keyboard = update_keyboard is_down key 
                  computer.keyboard })
 
@@ -423,10 +421,10 @@ let (game:
  fun view_memory update_memory initial_memory ->
 
   let init () =
-      Game (Event.Visible, initial_memory, initial_computer),
+      Game (initial_memory, initial_computer),
       Cmd.none (* TODO: Task.perform GotViewport Dom.getViewport *)
   in
-  let view (Game (_, memory, computer)) =
+  let view (Game (memory, computer)) =
     view_memory computer memory
   in
   let update msg model =
@@ -435,12 +433,12 @@ let (game:
   in
   let subscriptions _ = Sub.batch [
       (* TODO: on_resize *)
-      Event.on_animation_frame (fun x -> Tick x);
-      Event.on_mouse_move (fun x -> MouseMove x);
-      Event.on_mouse_down (fun () -> MouseButton true);
-      Event.on_mouse_up   (fun () -> MouseButton false);
-      Event.on_key_down (fun key -> KeyChanged (true, key));
-      Event.on_key_up   (fun key -> KeyChanged (false, key));
+      Sub.on_animation_frame (fun x -> Tick x);
+      Sub.on_mouse_move (fun x -> MouseMove x);
+      Sub.on_mouse_down (fun () -> MouseButton true);
+      Sub.on_mouse_up   (fun () -> MouseButton false);
+      Sub.on_key_down (fun key -> KeyChanged (true, key));
+      Sub.on_key_up   (fun key -> KeyChanged (false, key));
   ]
   in
   { init; view; update; subscriptions }

@@ -208,7 +208,7 @@ let (render: (*screen ->*) shape list -> unit) = fun (*screen*) shapes ->
 (* Event to msg *)
 (*****************************************************************************)
 
-module E = Platform_event
+module E = Sub
 (* TODO: move cairo stuff out and generalize? *)
 let event_to_msgopt event subs cr =
   match event with
@@ -379,28 +379,28 @@ let run_app app =
         | x when x = Sdl.Event.mouse_motion ->
           let mx = Sdl.Event.(get event mouse_motion_x) in
           let my = Sdl.Event.(get event mouse_motion_y) in
-          Platform_event.EMouseMove (mx, my)
+          E.EMouseMove (mx, my)
 
         | x when x = Sdl.Event.mouse_button_down ->
-          Platform_event.EMouseButton (true)
+          E.EMouseButton (true)
 
         | x when x = Sdl.Event.mouse_button_up ->
-          Platform_event.EMouseButton (false)
+          E.EMouseButton (false)
 
         | x when x = Sdl.Event.key_down -> 
           let key = Sdl.(get_key_name Event.(get event keyboard_keycode)) in
           let str = scancode_to_keystring key in
-          Platform_event.EKeyChanged (true, str)
+          E.EKeyChanged (true, str)
 
         | x when x = Sdl.Event.key_up -> 
           let key = Sdl.(get_key_name Event.(get event keyboard_keycode)) in
           let str = scancode_to_keystring key in
-          Platform_event.EKeyChanged (false, str)
+          E.EKeyChanged (false, str)
 
         (* default case *)
-        | _ -> Platform_event.ETick time 
+        | _ -> E.ETick time 
         )
-      else Platform_event.ETick time 
+      else E.ETick time 
     in
 
     let msg_opt = event_to_msgopt event subs cr in
