@@ -4,12 +4,12 @@ open Basics (* float operators by default *)
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Port of the Pong clone https://elm-lang.org/news/making-pong
- * using OCaml instead of Elm, and using Playground instead of HTML/SVG??
+(* Port of the Pong clone described at https://elm-lang.org/news/making-pong
+ * but using OCaml instead of Elm, and using Playground instead of Collage.
  *
- * inspiration:
- *  - https://elm-lang.org/news/making-pong (2012)
+ * TODO:
  *  - http://mathieu.agopian.info/blog/making-a-pong-game-in-elm.html (2019)
+ *  - https://github.com/einars/skapong ocaml one
  *)
 
 (*****************************************************************************)
@@ -115,6 +115,7 @@ let (step_obj: delta -> obj -> obj) = fun t ({ x; y; vx; vy} as obj) ->
 (* move a ball forward, detecting collisions with either paddle *)
 let (step_ball: delta -> ball -> player -> player -> ball) =
  fun t ({x = _; y; vx; vy} as ball) player1 player2 ->
+  (* put back at the center of the screen when reach player side *)
   if not (near 0. half_width ball.x)
   then { ball with x = 0.; y = 0. }
   else
