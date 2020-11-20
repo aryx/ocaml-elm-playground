@@ -210,10 +210,17 @@ let mouse_down mdown mouse =
 (* Keyboard *)
 (*-------------------------------------------------------------------*)
 type keyboard = {
+  (* player1 usually *)
   kup: bool;
   kdown: bool;
   kleft: bool;
   kright: bool;
+
+  (* player2 (not in original Playground.elm) *)
+  kw: bool;
+  ks: bool;
+  ka: bool;
+  kd: bool;
   
   kspace: bool;
   kenter: bool;
@@ -225,6 +232,7 @@ type keyboard = {
 
 let empty_keyboard = {
   kup = false; kdown = false; kleft = false; kright = false;
+  kw = false; ks = false; ka = false; kd = false;
   kspace = false; kenter = false; kshift = false; kbackspace = false;
   keys = Set.empty
 }
@@ -234,6 +242,12 @@ let to_x keyboard =
 
 let to_y keyboard =
   (if keyboard.kup then 1. else 0.) - (if keyboard.kdown then 1. else 0.)
+
+let to_x2 keyboard =
+  (if keyboard.kd then 1. else 0.) - (if keyboard.ka then 1. else 0.)
+
+let to_y2 keyboard =
+  (if keyboard.kw then 1. else 0.) - (if keyboard.ks then 1. else 0.)
 
 let square_root_two =
   sqrt 2.
@@ -256,6 +270,11 @@ let update_keyboard is_down key keyboard =
   | "ArrowDown"  -> { keyboard with keys; kdown = is_down }
   | "ArrowLeft"  -> { keyboard with keys; kleft = is_down }
   | "ArrowRight" -> { keyboard with keys; kright = is_down }
+  | "w"          -> { keyboard with keys; kw = is_down }
+  | "s"          -> { keyboard with keys; ks = is_down }
+  | "a"          -> { keyboard with keys; ka = is_down }
+  | "d"          -> { keyboard with keys; kd = is_down }
+  | "space"          -> { keyboard with keys; kspace = is_down }
   | _ -> { keyboard with keys }
 
 

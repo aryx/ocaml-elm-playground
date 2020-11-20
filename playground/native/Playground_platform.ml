@@ -20,7 +20,7 @@ let g_sy = ref 0
 let set_color cr color alpha =
   let (r,g,b) =
     match color with
-    | Rgb (r,g,b) -> float r, float g, float b
+    | Rgb (r,g,b) -> float r / 255., float g / 255., float b / 255.
     | Hex s ->
         let s = String.lowercase_ascii s in
         if s =~ "^#\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)$"
@@ -245,6 +245,8 @@ let event_to_msgopt event subs cr =
   | E.EKeyChanged (true, key) ->
       subs |> E.find_map_opt (function 
         | Sub.SubKeyDown f ->
+          pr2_gen key;
+
            Some (f key)
        | _ -> None
       )
@@ -300,8 +302,9 @@ let scancode_to_keystring = function
  | "Right" -> "ArrowRight"
  | "Up" -> "ArrowUp"
  | "Down" -> "ArrowDown"
+
  | "Q" -> exit 0
- | s -> s
+ | s -> String.lowercase_ascii s
 
 let run_app app =
   (* coupling: must be same than Playground.initial_computer? *)
