@@ -61,29 +61,7 @@ let convert (x, y) =
   x, -. y
 
 
-(*    
-let render_transform x y a s =
-  if a = 0. then
-    if s = 1.
-    then
-      spf "translate(%s, %s)" 
-        (string_of_number x) (string_of_number (-. y))
-    else
-      spf "translate(%s, %s) scale(%s)" 
-        (string_of_number x) (string_of_number (-. y))
-        (string_of_number s)
- else
-  if s = 1.
-  then
-      spf "translate(%s, %s) rotate(%s)" 
-        (string_of_number x) (string_of_number (-. y))
-        (string_of_number (-. a))
-  else
-      spf "translate(%s, %s) rotate(%s) scale(%s) " 
-        (string_of_number x) (string_of_number (-. y))
-        (string_of_number (-. a))
-        (string_of_number s)
-
+(* 
 let render_rect_transform width height x y angle s =
   render_transform x y angle s ^
   spf " translate(%s, %s)" 
