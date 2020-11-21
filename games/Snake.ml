@@ -3,8 +3,10 @@ open Playground
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Port of the Snake clone from https://github.com/amarantedaniel/snek
- * using OCaml instead of Elm, and using Playground instead of HTML/SVG.
+(* Port of the Snake clone https://github.com/amarantedaniel/snek,
+ * but using OCaml instead of Elm, and using Playground instead of HTML/SVG.
+ *
+ * See https://en.wikipedia.org/wiki/Snake_(video_game_genre) for more info.
  *
  * TODO:
  *  - accelerate games as times goes

@@ -7,6 +7,8 @@ open Basics (* float operators by default *)
 (* Port of the Pong clone described at https://elm-lang.org/news/making-pong
  * but using OCaml instead of Elm, and using Playground instead of Collage.
  *
+ * See https://en.wikipedia.org/wiki/Pong for more information on Pong.
+ *
  * TODO:
  *  - http://mathieu.agopian.info/blog/making-a-pong-game-in-elm.html (2019)
  *  - https://github.com/einars/skapong ocaml one

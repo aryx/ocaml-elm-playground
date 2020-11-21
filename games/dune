@@ -2,6 +2,7 @@
   (names 
     Snake
     Pong
+    Tetris
   )
   (libraries
     elm_playground

@@ -3,8 +3,14 @@ open Playground
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Port of the Pong clone XXX,
- * but using OCaml instead of Elm, and using Playground instead of YYY.
+(* Port of the Tetris clone https://github.com/w0rm/elm-flatris (itself
+ * a clone of https://github.com/skidding/flatris, itself a clone of the
+ * venerable Tetris), 
+ * but using OCaml instead of Elm, and using Playground instead of SVG.
+ *
+ * See https://en.wikipedia.org/wiki/Tetris for more information on Tetris.
+ *
+ * TODO:
  *)
 
 (*****************************************************************************)
