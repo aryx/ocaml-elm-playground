@@ -3,9 +3,9 @@ open Playground
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Port of the Tetris clone https://github.com/w0rm/elm-flatris (itself
- * a clone of https://github.com/skidding/flatris, itself a clone of the
- * venerable Tetris), 
+(* Port of the Tetris clone https://github.com/w0rm/elm-flatris 
+ * (itself a clone of https://github.com/skidding/flatris, 
+ *  itself a clone of the venerable Tetris), 
  * but using OCaml instead of Elm, and using Playground instead of SVG.
  *
  * See https://en.wikipedia.org/wiki/Tetris for more information on Tetris.
@@ -24,16 +24,20 @@ type color = Color.t
  *)
 type pos = {x: int; y: int }
 
+
 (* orig: was polymorphic, but always use with color, so simpler to hardcode *)
 type cell = {
   color: color;
   pos: pos;
 }
 
-(* an empty cell is represented as a non-existing cell *)
+(* an empty cell is represented as a non-existing cell.
+ * alt: cell option array.
+*)
 type grid = cell list
 
 let empty_grid = []
+
 
 (* pad: I introduced this type *)
 type piece = grid
@@ -42,14 +46,21 @@ let (center_of_mass: piece -> pos) = fun piece ->
     let len = float (List.length piece) in
     let xs = piece |> List.map (fun cell -> cell.pos.x) in
     let ys = piece |> List.map (fun cell -> cell.pos.y) in
-    Basics.round
+    { x = Basics.round (float (Common2.sum xs) /. len);
+      y = Basics.round (float (Common2.sum ys) /. len);
+    }
 
 let (init_position: int -> piece -> pos) = fun wid piece ->
     let {x; _} = center_of_mass piece in
     let y = piece |> List.map (fun cell -> cell.pos.y) |> Common2.maximum in
     { x = wid / 2 - x; y = - y - 1 }
 
-
+let (size: piece -> (int * int)) = fun piece ->
+    let xs = piece |> List.map (fun cell -> cell.pos.x) in
+    let ys = piece |> List.map (fun cell -> cell.pos.y) in
+    let dim zs = 1 + Common2.maximum zs in
+    dim xs, dim ys
+  
 
 
 let (from_list: color -> (int * int) list -> grid) = fun color xs ->
@@ -140,7 +151,6 @@ let initial_model = spawn_tetrimino {
 
     state = Stopped;
   }
-    
 
 (*****************************************************************************)
 (* View *)
