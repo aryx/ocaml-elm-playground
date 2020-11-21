@@ -38,8 +38,11 @@ let empty_grid = []
 (* pad: I introduced this type *)
 type piece = grid
 
-let (center_of_mass: piece -> pos) = fun _piece ->
-    failwith "TODO"
+let (center_of_mass: piece -> pos) = fun piece ->
+    let len = float (List.length piece) in
+    let xs = piece |> List.map (fun cell -> cell.pos.x) in
+    let ys = piece |> List.map (fun cell -> cell.pos.y) in
+    Basics.round
 
 let (init_position: int -> piece -> pos) = fun wid piece ->
     let {x; _} = center_of_mass piece in
