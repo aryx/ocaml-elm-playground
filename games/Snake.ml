@@ -12,6 +12,7 @@ open Playground
  *  - accelerate games as times goes
  *  - display score
  *  - high score table
+ *  - two players (like in original Snake game called Blockade)
  *)
 
 (*****************************************************************************)
