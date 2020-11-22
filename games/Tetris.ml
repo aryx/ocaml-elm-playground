@@ -6,7 +6,7 @@ open Playground
 (* Port of the Tetris clone https://github.com/w0rm/elm-flatris 
  * (itself a clone of https://github.com/skidding/flatris, 
  *  itself a clone of the venerable Tetris), 
- * but using OCaml instead of Elm, and using Playground instead of SVG.
+ * but using OCaml instead of Elm, and using Playground instead of HTML/SVG.
  *
  * See https://en.wikipedia.org/wiki/Tetris for more information on Tetris.
  *
@@ -109,13 +109,14 @@ type state =
   | Playing
   | Paused
 
-(* todo? animationState? size? *)
+(* todo? animationState? *)
 type model = {
+  (* screen size *)
+  size: number * number;
+
+  (* grid dimension *)
   width: int;
   height: int;
-
-  score: int;
-  lines: int;
 
   (* current state of the grid *)
   grid: grid;
@@ -125,6 +126,9 @@ type model = {
   position: (int * float); (* todo: float??*)
   (* next piece *)
   next: piece;
+
+  score: int;
+  lines: int;
 
   state: state;
   (* todo: last_tick? *)
@@ -137,6 +141,10 @@ let spawn_tetrimino model =
   { model with next; active; position = (x, float y) }
 
 let initial_model = spawn_tetrimino {
+
+    (* coupling: Playground.initial_computer.screen *)
+    size = (600., 600.);
+
     width = 10;
     height = 20;
 
@@ -161,6 +169,8 @@ let view _computer _model = []
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
+
+(* todo: Resize/GetViewPort *)
 let update _msg model =
   model
 
