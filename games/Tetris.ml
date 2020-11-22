@@ -19,7 +19,7 @@ open Playground
 type color = Color.t
 
 (* pad: I introduced this type.
- * The origin (0, 0) in the grid is at the top left corner on the screen.
+ * The origin (0, 0) in the grid is at the top left corner of the tetris "well".
  * Pos can also have a negative y, meaning it is not yet visible.
  *)
 type pos = {x: int; y: int }
@@ -111,8 +111,8 @@ type state =
 
 (* todo? animationState? *)
 type model = {
-  (* screen size *)
-  size: number * number;
+  (* screen size (= Playground.initial_computer.screen) *)
+  (* size: number * number; *)
 
   (* grid dimension *)
   width: int;
@@ -143,7 +143,7 @@ let spawn_tetrimino model =
 let initial_model = spawn_tetrimino {
 
     (* coupling: Playground.initial_computer.screen *)
-    size = (600., 600.);
+    (* size = (600., 600.); *)
 
     width = 10;
     height = 20;
@@ -163,8 +163,21 @@ let initial_model = spawn_tetrimino {
 (*****************************************************************************)
 (* View *)
 (*****************************************************************************)
+let f = float
 
-let view _computer _model = []
+(* in pixels, height = 20 * 30 = 600 < 768 height in initial_computer.screen *)
+let cell_size = 30
+
+let render_well { width; height; _ } =
+  [
+    rectangle (Color.Rgb (236, 240, 241)) 
+      (f (width * cell_size))
+      (f (height * cell_size))
+  ]
+
+let view _computer model =
+  render_well model @
+  []
 
 (*****************************************************************************)
 (* Update *)

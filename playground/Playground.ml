@@ -24,6 +24,13 @@ open Basics (* elm-core *)
  *)
 
 (*****************************************************************************)
+(* Config *)
+(*****************************************************************************)
+(* was 600 x 600 *)
+let default_width = 1024.
+let default_height = 768.
+
+(*****************************************************************************)
 (* Number *)
 (*****************************************************************************)
 
@@ -305,7 +312,7 @@ type computer = {
 let initial_computer = {
   mouse = { mx = 0.; my = 0.; mdown = false; mclick = false };
   keyboard = empty_keyboard;
-  screen = to_screen 600. 600.;
+  screen = to_screen default_width default_height;
   time = Time (Time.millis_to_posix 1);
 }
 
@@ -334,7 +341,7 @@ type msg1 =
 let (picture: shape list -> (screen, msg1) app) = 
  fun shapes ->
   let init () = 
-      to_screen 600. 600., Cmd.none
+      to_screen default_width default_height, Cmd.none
   in
   let view _screen = shapes in
   let update msg  _model = 
@@ -383,7 +390,7 @@ let (animation: (time -> shape list) -> (animation, msg) app) =
  fun view_frame ->
    let init () = 
      Animation ((* Event.Visible, *)
-                to_screen 600. 600., 
+                to_screen default_width default_height, 
                 (* bugfix: use 1, not 0, otherwise get div_by_zero exn in
                  * to_frac if use spin/wave/... *)
                 Time (Time.millis_to_posix 1)),

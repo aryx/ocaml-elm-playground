@@ -9,10 +9,10 @@ open Playground
  * See https://en.wikipedia.org/wiki/Snake_(video_game_genre) for more info.
  *
  * TODO:
- *  - accelerate games as times goes
- *  - display score
- *  - high score table
  *  - two players (like in original Snake game called Blockade)
+ *  - display score
+ *  - accelerate games as times goes
+ *  - high score table
  *)
 
 (*****************************************************************************)

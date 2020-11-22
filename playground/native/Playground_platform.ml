@@ -299,9 +299,8 @@ let scancode_to_keystring = function
  | s -> String.lowercase_ascii s
 
 let run_app app =
-  (* coupling: must be same than Playground.initial_computer? *)
-  let sx = 600 in
-  let sy = 600 in
+  let sx = int_of_float Playground.default_width in
+  let sy = int_of_float Playground.default_height in
 
   let* () = Sdl.init Sdl.Init.(video + events) in
   let* sdl_window = Sdl.create_window ~w:sx ~h:sy "Playground using SDL+Cairo"

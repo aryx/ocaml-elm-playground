@@ -76,6 +76,8 @@ let (half_width, half_height) = (300., 200.)
 
 (* This means that in 1 second, the object will move 200 pixels.
  * note: was duplicated many times in the blog post, better to factorize.
+ * note that this is both the velocity of the ball and the paddle, so the
+ * paddle can not move faster than the ball :)
  *)
 let default_velocity = 200.
 
