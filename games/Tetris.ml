@@ -42,7 +42,9 @@ type grid = cell list
 let empty_grid = []
 
 
-(* pad: I introduced this type *)
+(* pad: I introduced this type.
+ * note that x and y are between 0 and 3 for a piece.
+*)
 type piece = grid
 
 let (center_of_mass: piece -> pos) = fun piece ->
@@ -87,6 +89,14 @@ let rec collide ({x; y} as pos) piece (width, height) grid =
     (List.mem { x; y} (grid |> List.map (fun cell -> cell.pos))) ||
     collide pos rest (width, height) grid
 
+(* rotate clockwise *)
+let (rotate: piece -> piece) = fun piece ->
+  let { x; y} = center_of_mass piece in
+  piece |> List.map (fun cell ->
+    let pos = cell.pos in
+    (* ???? *)
+    { cell with pos = { x = 1 + y - pos.y; y = - x + y + pos.x } }
+  )
 
 let (from_list: color -> (int * int) list -> grid) = fun color xs ->
     xs |> List.map (fun (x, y) -> { color; pos = {x ; y} })
@@ -244,8 +254,8 @@ type msg =
 
   | Noop
 
-let msg_of_key _down = function
-  | "ArrowLeft" -> MoveLeft
+let msg_of_key = function
+  | "ArrowLeft"  -> MoveLeft
   | "ArrowRight" -> MoveRight
   | "ArrowDown" -> Accelerate
   | "ArrowUp" -> Rotate
@@ -263,7 +273,7 @@ let update msg model =
 
   | MoveLeft ->
     let (x, y) = model.position in
-    let dx = x - 1 in
+    let dx = - 1 in
     if collide { x = x+dx; y = int_of_float (floor y) } model.active 
                (model.width, model.height) model.grid
     then model
@@ -271,14 +281,15 @@ let update msg model =
 
   | MoveRight ->
     let (x, y) = model.position in
-    let dx = x + 1 in
+    let dx = + 1 in
     if collide { x = x+dx; y = int_of_float (floor y) } model.active 
                (model.width, model.height) model.grid
     then model
     else { model with position = (x+dx, y) }
 
-  | Rotate
-    -> failwith "Todo"
+  | Rotate -> 
+    let rotated = rotate model.active in
+    { model with active = rotated }
 
   | Accelerate -> 
     let (x, y) = model.position in
@@ -299,8 +310,7 @@ let app =
     init = (fun () -> initial_model, Cmd.none);
     subscriptions  = (fun _ -> Sub.batch [
       Sub.on_animation_frame (fun x -> Tick x);
-      Sub.on_key_down (fun key -> msg_of_key true key);
-      Sub.on_key_up   (fun key -> msg_of_key false key);
+      Sub.on_key_down (fun key -> msg_of_key key);
     ]);
   }
 
