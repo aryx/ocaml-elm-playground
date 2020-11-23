@@ -92,7 +92,7 @@ let rec collide ({x; y} as pos) piece (width, height) grid =
 (* rotate clockwise *)
 let (rotate: piece -> piece) = fun piece ->
   let { x; y} = center_of_mass piece in
-  (* todo: do the dx adjustment if collide *)
+
   piece |> List.map (fun cell ->
     let pos = cell.pos in
     (* ???? *)
@@ -262,16 +262,38 @@ let msg_of_key = function
   | "ArrowUp" -> Rotate
   | _ -> Noop
 
+let drop_tetrimino model dy =
+  let (x, y) = model.position in
+  { model with position = (x, y +. dy) }
+
+let rotate_tetrimino model = 
+  let rotated = rotate model.active in
+  let (x, y) = model.position in
+
+  (* make sure the rotated tetrimino stays in the grid *)
+  let rec shift_pos_if_collide deltas = 
+    match deltas with
+    | dx::rest ->
+      if collide { x = x+dx; y = int_of_float (floor y) } rotated
+               (model.width, model.height) model.grid
+      then shift_pos_if_collide rest
+      else { model with active = rotated; position = (x + dx, y) }
+    | [] -> model
+  in
+  (* -2 + 2 range should be enough *)
+  shift_pos_if_collide [0; 1; -1; 2; -2]
+
+  
+
     
 (* less: Resize/GetViewPort *)
 let update msg model =
   (match msg with
   | Tick t -> 
-    let (x, y) = model.position in
     let delta = t -. model.last_tick in
     let model = { model with last_tick = t } in
     let dy = delta in 
-    { model with position = (x, y +. dy) }
+    drop_tetrimino model dy
 
   | MoveLeft ->
     let (x, y) = model.position in
@@ -290,12 +312,11 @@ let update msg model =
     else { model with position = (x+dx, y) }
 
   | Rotate -> 
-    let rotated = rotate model.active in
-    { model with active = rotated }
+    rotate_tetrimino model
 
   | Accelerate -> 
-    let (x, y) = model.position in
-    { model with position = (x, y +. 1.) }
+    let dy = 1. in
+    drop_tetrimino model dy
 
   | Noop -> model
   ),
