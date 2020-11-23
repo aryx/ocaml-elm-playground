@@ -14,6 +14,7 @@ open Playground
  *  - more complex input management where keeping the key pressed has
  *    an effect, rather that forcing the user to keyup
  *    (called confusingly "animation")
+ *  - accelerate Tick as you clear more lines
  *)
 
 (*****************************************************************************)
@@ -98,6 +99,31 @@ let (rotate: piece -> piece) = fun piece ->
     (* ???? *)
     { cell with pos = { x = 1 + y - pos.y; y = - x + y + pos.x } }
   )
+
+let rec full_line_opt width grid =
+  match grid with
+  | [] -> None
+  | cell::_ ->
+    let line_y = cell.pos.y in
+    let same_line, other = 
+      grid |> List.partition (fun { pos; _} -> pos.y = line_y) in
+    if List.length same_line = width
+    then Some line_y
+    else full_line_opt width other
+
+let rec clear_lines width grid =
+  match full_line_opt width grid with
+  | None -> grid, 0
+  | Some line_y ->
+    let cleared_grid = grid |> Common.exclude (fun {pos; _} -> pos.y = line_y)in
+    let (above, below) =
+      cleared_grid |> List.partition (fun {pos; _} -> pos.y < line_y) in
+    let dropped_above = 
+      above |> List.map (fun cell -> 
+        { cell with pos = { x = cell.pos.x; y = cell.pos.y + 1 } }
+      ) in
+    let (new_grid, nb_lines) = clear_lines width (dropped_above @ below) in
+    (new_grid, nb_lines + 1)
 
 let (from_list: color -> (int * int) list -> grid) = fun color xs ->
     xs |> List.map (fun (x, y) -> { color; pos = {x ; y} })
@@ -262,9 +288,38 @@ let msg_of_key = function
   | "ArrowUp" -> Rotate
   | _ -> Noop
 
+let clear_lines_and_add_score model = 
+  let grid, nblines = clear_lines model.width model.grid in
+  let bonus =
+    match nblines with
+    | 0 -> 0
+    | 1 -> 100
+    | 2 -> 300
+    | 3 -> 500
+    | 4 -> 800
+    | _ -> failwith "Impossible"
+  in
+  { model with 
+    grid; 
+    score = model.score + bonus (* todo: level model *);
+    lines = model.lines + nblines;
+  }
+
+(* drop because Tick or Accelerate *)
 let drop_tetrimino model dy =
   let (x, y) = model.position in
-  { model with position = (x, y +. dy) }
+  let new_pos = (x, y +. dy) in 
+  if collide { x; y = int_of_float (floor (y +. dy)) } model.active
+      (model.width, model.height) model.grid
+  then
+    let score = List.length model.active in
+    { model with
+      grid = stamp { x; y = int_of_float (floor y) } model.active model.grid;
+      score = model.score + score;
+    } 
+    |> spawn_tetrimino
+    |> clear_lines_and_add_score
+  else { model with position = new_pos }
 
 let rotate_tetrimino model = 
   let rotated = rotate model.active in
