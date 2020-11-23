@@ -11,6 +11,9 @@ open Playground
  * See https://en.wikipedia.org/wiki/Tetris for more information on Tetris.
  *
  * TODO:
+ *  - more complex input management where keeping the key pressed has
+ *    an effect, rather that forcing the user to keyup
+ *    (called confusingly "animation")
  *)
 
 (*****************************************************************************)
@@ -119,7 +122,7 @@ type state =
   | Playing
   | Paused
 
-(* todo? animationState? *)
+(* less: animationState? input *)
 type model = {
   (* screen size (= Playground.initial_computer.screen) *)
   (* size: number * number; *)
@@ -133,7 +136,8 @@ type model = {
 
   (* current piece *)
   active: piece;
-  position: (int * float); (* todo: float??*)
+  (* using a float for y allows to handle speed of drop *)
+  position: (int * float);
   (* next piece *)
   next: piece;
 
@@ -141,7 +145,7 @@ type model = {
   lines: int;
 
   state: state;
-  
+
   last_tick: float;
 }
 
@@ -216,12 +220,44 @@ let view model =
 (*****************************************************************************)
 type msg = 
   | Tick of float
-  | KeyDown of Keyboard.key
-  | KeyUp of Keyboard.key
+
+  (* bool means down/up (on/off) *)
+  | MoveLeft
+  | MoveRight
+  | Rotate
+  | Accelerate
+
+  | Noop
+
+let msg_of_key _down = function
+  | "ArrowLeft" -> MoveLeft
+  | "ArrowRight" -> MoveRight
+  | "ArrowDown" -> Accelerate
+  | "ArrowUp" -> Rotate
+  | _ -> Noop
 
 (* todo: Resize/GetViewPort *)
-let update _msg model =
-  model,
+let update msg model =
+  (match msg with
+  | Tick t -> 
+    let delta = t -. model.last_tick in
+    let model = { model with last_tick = t } in
+    let (x, y) = model.position in
+    { model with position = (x, y +. delta) }
+
+  | MoveLeft ->
+    let (x, y) = model.position in
+    { model with position = (x - 1, y) }
+  | MoveRight ->
+    let (x, y) = model.position in
+    { model with position = (x + 1, y) }
+  | Rotate
+    -> failwith "Todo"
+  | Accelerate -> 
+    let (x, y) = model.position in
+    { model with position = (x, y +. 1.) }
+  | Noop -> model
+  ),
   Cmd.none
 
 (*****************************************************************************)
@@ -235,8 +271,8 @@ let app =
     init = (fun () -> initial_model, Cmd.none);
     subscriptions  = (fun _ -> Sub.batch [
       Sub.on_animation_frame (fun x -> Tick x);
-      Sub.on_key_down (fun key -> KeyDown (key));
-      Sub.on_key_up   (fun key -> KeyUp (key));
+      Sub.on_key_down (fun key -> msg_of_key true key);
+      Sub.on_key_up   (fun key -> msg_of_key false key);
     ]);
   }
 
