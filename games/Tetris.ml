@@ -92,6 +92,7 @@ let rec collide ({x; y} as pos) piece (width, height) grid =
 (* rotate clockwise *)
 let (rotate: piece -> piece) = fun piece ->
   let { x; y} = center_of_mass piece in
+  (* todo: do the dx adjustment if collide *)
   piece |> List.map (fun cell ->
     let pos = cell.pos in
     (* ???? *)
@@ -266,10 +267,11 @@ let msg_of_key = function
 let update msg model =
   (match msg with
   | Tick t -> 
+    let (x, y) = model.position in
     let delta = t -. model.last_tick in
     let model = { model with last_tick = t } in
-    let (x, y) = model.position in
-    { model with position = (x, y +. delta) }
+    let dy = delta in 
+    { model with position = (x, y +. dy) }
 
   | MoveLeft ->
     let (x, y) = model.position in
