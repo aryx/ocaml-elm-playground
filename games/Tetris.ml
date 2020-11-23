@@ -141,7 +141,8 @@ type model = {
   lines: int;
 
   state: state;
-  (* todo: last_tick? *)
+  
+  last_tick: float;
 }
 
 let spawn_tetrimino model =
@@ -170,6 +171,8 @@ let initial_model = spawn_tetrimino {
     next = random_tetrimino ();
 
     state = Stopped;
+
+    last_tick = Unix.gettimeofday();
   }
 
 (*****************************************************************************)
@@ -204,24 +207,38 @@ let render_well
   (final_grid |> List.map (render_box model)) @
   []
 
-let view _computer model =
+let view model =
   render_well model @
   []
 
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
+type msg = 
+  | Tick of float
+  | KeyDown of Keyboard.key
+  | KeyUp of Keyboard.key
 
 (* todo: Resize/GetViewPort *)
 let update _msg model =
-  model
+  model,
+  Cmd.none
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
 let app = 
-  game view update initial_model
+  { Playground.
+    view;
+    update;
+    init = (fun () -> initial_model, Cmd.none);
+    subscriptions  = (fun _ -> Sub.batch [
+      Sub.on_animation_frame (fun x -> Tick x);
+      Sub.on_key_down (fun key -> KeyDown (key));
+      Sub.on_key_up   (fun key -> KeyUp (key));
+    ]);
+  }
 
 let main = 
   Playground_platform.run_app app
