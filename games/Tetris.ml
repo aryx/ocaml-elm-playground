@@ -53,14 +53,24 @@ let (center_of_mass: piece -> pos) = fun piece ->
 let (init_position: int -> piece -> pos) = fun wid piece ->
     let {x; _} = center_of_mass piece in
     let y = piece |> List.map (fun cell -> cell.pos.y) |> Common2.maximum in
-    { x = wid / 2 - x; y = - y - 1 }
+    (* -y -1 to set as non visible the bottom of the piece *)
+    { x = wid / 2 - x; 
+      y = - y - 1 
+    }
 
 let (size: piece -> (int * int)) = fun piece ->
     let xs = piece |> List.map (fun cell -> cell.pos.x) in
     let ys = piece |> List.map (fun cell -> cell.pos.y) in
     let dim zs = 1 + Common2.maximum zs in
     dim xs, dim ys
-  
+
+let rec (stamp: pos -> piece -> grid -> grid) = fun { x; y} piece grid ->
+  match piece with
+  | [] -> grid
+  | cell::rest ->
+    let newpos = { x = cell.pos.x + x; y = cell.pos.y + y } in
+    (* todo: need exclude from grid cells with pos = newpos? *)
+    stamp { x; y } rest ({ cell with pos = newpos }::grid)
 
 
 let (from_list: color -> (int * int) list -> grid) = fun color xs ->
@@ -140,6 +150,8 @@ let spawn_tetrimino model =
   let {x; y} = init_position model.width active in
   { model with next; active; position = (x, float y) }
 
+let _init = Random.self_init ()
+
 let initial_model = spawn_tetrimino {
 
     (* coupling: Playground.initial_computer.screen *)
@@ -168,12 +180,29 @@ let f = float
 (* in pixels, height = 20 * 30 = 600 < 768 height in initial_computer.screen *)
 let cell_size = 30
 
-let render_well { width; height; _ } =
-  [
-    rectangle (Color.Rgb (236, 240, 241)) 
+let move_box {width; height; _ } { x; y } shape =
+  shape 
+  (* go to (0, 0), top left corner of the well *)
+  |> move_up (float (height * cell_size / 2)) 
+  |> move_left (float (width * cell_size / 2))
+  (* now move the piece to (x, y) *)
+  |> move_right (float (x * cell_size + cell_size / 2))
+  |> move_down  (float (y * cell_size + cell_size / 2))
+
+let render_box model { color; pos } =
+  square color (f cell_size) |> move_box model pos
+
+let render_well 
+ ({ width; height; position = (posx, posy); active; grid; _ } as model) =
+  let final_grid = 
+    stamp { x = posx; y = int_of_float (floor posy) } active grid
+  in
+  [rectangle (Color.Rgb (236, 240, 241)) 
       (f (width * cell_size))
       (f (height * cell_size))
-  ]
+  ] @
+  (final_grid |> List.map (render_box model)) @
+  []
 
 let view _computer model =
   render_well model @
@@ -195,5 +224,4 @@ let app =
   game view update initial_model
 
 let main = 
-  Random.self_init ();
   Playground_platform.run_app app
