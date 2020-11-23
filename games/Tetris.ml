@@ -17,7 +17,7 @@ open Playground
  *)
 
 (*****************************************************************************)
-(* Model *)
+(* Grid and pieces (model part 1) *)
 (*****************************************************************************)
 type color = Color.t
 
@@ -67,6 +67,7 @@ let (size: piece -> (int * int)) = fun piece ->
     let dim zs = 1 + Common2.maximum zs in
     dim xs, dim ys
 
+(* put the piece in the grid *)
 let rec (stamp: pos -> piece -> grid -> grid) = fun { x; y} piece grid ->
   match piece with
   | [] -> grid
@@ -74,6 +75,17 @@ let rec (stamp: pos -> piece -> grid -> grid) = fun { x; y} piece grid ->
     let newpos = { x = cell.pos.x + x; y = cell.pos.y + y } in
     (* todo: need exclude from grid cells with pos = newpos? *)
     stamp { x; y } rest ({ cell with pos = newpos }::grid)
+
+(* check if the piece collide with the grid in the well (width x height) *)
+let rec collide ({x; y} as pos) piece (width, height) grid =
+  match piece with
+  | [] -> false
+  | cell::rest ->
+    let x = cell.pos.x + x in
+    let y = cell.pos.y + y in
+    x >= width || x < 0 || y >= height || 
+    (List.mem { x; y} (grid |> List.map (fun cell -> cell.pos))) ||
+    collide pos rest (width, height) grid
 
 
 let (from_list: color -> (int * int) list -> grid) = fun color xs ->
@@ -114,7 +126,9 @@ let random_tetrimino () =
   let n = Random.int len in
   List.nth tetriminos n
 
-
+(*****************************************************************************)
+(* Model *)
+(*****************************************************************************)
 
 (* todo? need Stopped and Paused? *)
 type state = 
@@ -136,7 +150,8 @@ type model = {
 
   (* current piece *)
   active: piece;
-  (* using a float for y allows to handle speed of drop *)
+  (* leftest highest part of the piece.
+   * using a float for y allows to handle speed of drop *)
   position: (int * float);
   (* next piece *)
   next: piece;
@@ -221,7 +236,7 @@ let view model =
 type msg = 
   | Tick of float
 
-  (* bool means down/up (on/off) *)
+  (* less: add bool to mean down/up (on/off) *)
   | MoveLeft
   | MoveRight
   | Rotate
@@ -236,7 +251,8 @@ let msg_of_key _down = function
   | "ArrowUp" -> Rotate
   | _ -> Noop
 
-(* todo: Resize/GetViewPort *)
+    
+(* less: Resize/GetViewPort *)
 let update msg model =
   (match msg with
   | Tick t -> 
@@ -247,15 +263,27 @@ let update msg model =
 
   | MoveLeft ->
     let (x, y) = model.position in
-    { model with position = (x - 1, y) }
+    let dx = x - 1 in
+    if collide { x = x+dx; y = int_of_float (floor y) } model.active 
+               (model.width, model.height) model.grid
+    then model
+    else { model with position = (x+dx, y) }
+
   | MoveRight ->
     let (x, y) = model.position in
-    { model with position = (x + 1, y) }
+    let dx = x + 1 in
+    if collide { x = x+dx; y = int_of_float (floor y) } model.active 
+               (model.width, model.height) model.grid
+    then model
+    else { model with position = (x+dx, y) }
+
   | Rotate
     -> failwith "Todo"
+
   | Accelerate -> 
     let (x, y) = model.position in
     { model with position = (x, y +. 1.) }
+
   | Noop -> model
   ),
   Cmd.none
