@@ -13,13 +13,16 @@ open Playground
  * extensions I've added:
  *  - space key to drop to the bottom the piece
  *
- * TODO:
+ * TODO finish porting of elm-flatris:
  *  - check end game
+ *  - do not display piece when out of the well
  *  - handle Pause/Resume/Stopped
  *  - more complex input management where keeping the key pressed has
  *    an effect, rather that forcing the user to keyup
  *    (called confusingly "animation")
  *  - accelerate Tick as you clear more lines, manage "level" score
+ * TODO:
+ *  - sound when line cleared!
  *)
 
 (*****************************************************************************)
