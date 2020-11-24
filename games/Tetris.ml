@@ -234,7 +234,7 @@ let initial_model = spawn_tetrimino {
 (*****************************************************************************)
 (* View *)
 (*****************************************************************************)
-let f = float
+let fl = float
 
 (* in pixels, height = 20 * 30 = 600 < 768 height in initial_computer.screen *)
 let cell_size = 30
@@ -242,14 +242,14 @@ let cell_size = 30
 let move_box {width; height; _ } { x; y } shape =
   shape 
   (* go to (0, 0), top left corner of the well *)
-  |> move_up (float (height * cell_size / 2)) 
-  |> move_left (float (width * cell_size / 2))
+  |> move_up (fl (height * cell_size / 2)) 
+  |> move_left (fl (width * cell_size / 2))
   (* now move the piece to (x, y) *)
-  |> move_right (float (x * cell_size + cell_size / 2))
-  |> move_down  (float (y * cell_size + cell_size / 2))
+  |> move_right (fl (x * cell_size + cell_size / 2))
+  |> move_down  (fl (y * cell_size + cell_size / 2))
 
 let render_box model { color; pos } =
-  square color (f cell_size) |> move_box model pos
+  square color (fl cell_size) |> move_box model pos
 
 let render_well 
  ({ width; height; position = (posx, posy); active; grid; _ } as model) =
@@ -257,14 +257,55 @@ let render_well
     stamp { x = posx; y = int_of_float (floor posy) } active grid
   in
   [rectangle (Color.Rgb (236, 240, 241)) 
-      (f (width * cell_size))
-      (f (height * cell_size))
+      (fl (width * cell_size))
+      (fl (height * cell_size))
   ] @
   (final_grid |> List.map (render_box model)) @
   []
 
+let render_panel { width; height; score; lines; next; _ } =
+  let move x = 
+    (* got to top right area *)
+    x |> move_up (fl (height * cell_size / 2 - 2 * cell_size))
+      |> move_right (fl (width * cell_size / 2 + 4 * cell_size))
+  in
+  (* less: bold *)
+  let title = words (Color.Hex "#34495f")  "Flatris" |> move |> scale 5. in
+
+  let move x = x |> move |> move_down (fl (cell_size * 3)) in
+  let score_label = words (Color.Hex "#bdc3c7") "Score" |> move |> scale 2. in
+
+  let move x = x |> move |> move_down (fl (cell_size * 2)) in 
+  let score = 
+    words (Color.Hex "#3993d0") (string_of_int score) |> move |> scale 3. in
+  
+  let move x = x |> move |> move_down (fl (cell_size * 3)) in
+  let lines_label = 
+    words (Color.Hex "#bdc3c7") "Lines Cleared" |> move |> scale 2. in
+
+  let move x = x |> move |> move_down (fl (cell_size * 2)) in 
+  let lines = 
+    words (Color.Hex "#3993d0") (string_of_int lines) |> move |> scale 3. in
+
+  let move x = x |> move |> move_down (fl (cell_size * 3)) in
+  let next_label = 
+    words (Color.Hex "#bdc3c7") "Mext Shape" |> move |> scale 2. in
+
+  let move x = x |> move |> move_down (fl (cell_size * 2)) in
+  let { x; _} = center_of_mass next in
+  let next = 
+    next |> List.map (fun cell ->
+        square cell.color (fl cell_size) |> move
+        |> move_left (fl (x * cell_size))
+        |> move_right (fl (cell.pos.x * cell_size))
+        |> move_down  (fl (cell.pos.y * cell_size))) in
+
+
+  [title; score_label; score; lines_label; lines; next_label] @ next
+
 let view model =
   render_well model @
+  render_panel model @
   []
 
 (*****************************************************************************)
