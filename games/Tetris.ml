@@ -10,11 +10,16 @@ open Playground
  *
  * See https://en.wikipedia.org/wiki/Tetris for more information on Tetris.
  *
+ * extensions I've added:
+ *  - space key to drop to the bottom the piece
+ *
  * TODO:
+ *  - check end game
+ *  - handle Pause/Resume/Stopped
  *  - more complex input management where keeping the key pressed has
  *    an effect, rather that forcing the user to keyup
  *    (called confusingly "animation")
- *  - accelerate Tick as you clear more lines
+ *  - accelerate Tick as you clear more lines, manage "level" score
  *)
 
 (*****************************************************************************)
@@ -319,6 +324,7 @@ type msg =
   | MoveRight
   | Rotate
   | Accelerate
+  | FullDrop
 
   | Noop
 
@@ -327,6 +333,7 @@ let msg_of_key = function
   | "ArrowRight" -> MoveRight
   | "ArrowDown" -> Accelerate
   | "ArrowUp" -> Rotate
+  | "space" -> FullDrop
   | _ -> Noop
 
 let clear_lines_and_add_score model = 
@@ -347,7 +354,7 @@ let clear_lines_and_add_score model =
   }
 
 (* drop because Tick or Accelerate *)
-let drop_tetrimino model dy =
+let (drop_tetrimino: model -> float -> model * bool) = fun model dy ->
   let (x, y) = model.position in
   let new_pos = (x, y +. dy) in 
   if collide { x; y = int_of_float (floor (y +. dy)) } model.active
@@ -360,7 +367,8 @@ let drop_tetrimino model dy =
     } 
     |> spawn_tetrimino
     |> clear_lines_and_add_score
-  else { model with position = new_pos }
+    |> (fun model -> model, true)
+  else { model with position = new_pos }, false
 
 let rotate_tetrimino model = 
   let rotated = rotate model.active in
@@ -389,7 +397,7 @@ let update msg model =
     let delta = t -. model.last_tick in
     let model = { model with last_tick = t } in
     let dy = delta in 
-    drop_tetrimino model dy
+    drop_tetrimino model dy |> fst
 
   | MoveLeft ->
     let (x, y) = model.position in
@@ -412,7 +420,16 @@ let update msg model =
 
   | Accelerate -> 
     let dy = 1. in
-    drop_tetrimino model dy
+    drop_tetrimino model dy |> fst
+
+  | FullDrop ->
+    let rec aux model =
+       let (model, at_bottom) = drop_tetrimino model 1. in
+       if at_bottom
+       then model
+       else aux model
+     in
+     aux model
 
   | Noop -> model
   ),
