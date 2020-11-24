@@ -61,14 +61,6 @@ let convert (x, y) =
   x, -. y
 
 
-(* 
-let render_rect_transform width height x y angle s =
-  render_transform x y angle s ^
-  spf " translate(%s, %s)" 
-     (string_of_number (-. width / 2.))
-     (string_of_number (-. height / 2.))
-*)
-
 let render_transform cr x y angle s =
   Cairo.translate cr x y;
   Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
@@ -122,9 +114,16 @@ let render_oval color w h x y _angle _s alpha =
   )
 
 
+(* TODO
+let render_rect_transform width height x y angle s =
+  render_transform x y angle s ^
+  spf " translate(%s, %s)" 
+     (string_of_number (-. width / 2.))
+     (string_of_number (-. height / 2.))
+*)
+
 let render_rectangle color w h x y angle _s alpha = 
   (*pr2_gen (x,y,w,h);*)
-
 
   let x0 = x - (w / 2.) in
   let y0 = y + (h / 2.) in
@@ -186,14 +185,7 @@ let (render_shape: shape -> unit) =
   | Words (color, str) ->
      render_words color str x y angle scale alpha
   
-let (render: (*screen ->*) shape list -> unit) = fun (*screen*) shapes ->
-(*
-    let _w = screen.width in
-    let _h = screen.height in
-    let _x = screen.left |> string_of_number  in
-    let _y = screen.bottom |> string_of_number in
-*)
-
+let (render: shape list -> unit) = fun shapes ->
     List.iter render_shape shapes
 
 (*****************************************************************************)
@@ -308,18 +300,16 @@ let run_app app =
   let event = Sdl.Event.create () in
 
   let* window_surface = Sdl.get_window_surface sdl_window in
-(*  let* () = Sdl.lock_surface window_surface in *)
 
   let pixels = Sdl.get_surface_pixels window_surface Bigarray.int32 in
   assert (Bigarray.Array1.dim pixels = sx *.. sy);
 
-  (* TODO? need that? *)
+  (* less? need that? *)
   Bigarray.Array1.fill pixels 0xFFFFFFFFl ;
   let pixels =
     try
       let genarray = Bigarray.genarray_of_array1 pixels in
       Bigarray.reshape_2 genarray sy sx
-      (* screen_xsize screen_ysize *)
     with _ ->
       let len = Bigarray.Array1.dim pixels in
       failwith (spf
@@ -340,19 +330,13 @@ let run_app app =
 
   let initmodel, _cmdsTODO = app.Playground.init () in
   let model = ref initmodel in
-(*
-  let status = ref (Graphics.wait_next_event [Graphics.Poll]) in
-*)
 
+  (* typing "Q" will cause an 'exit 0' that will exit the loop *)
   while true do
     Cairo.save cr;
 
     (* reset the surface content *)
-    (* do not use 1. 1. 1. (pure white) because Graphics seems to
-     * consider that a transparent color and it does not clear the
-     * screen.
-     *)
-    Cairo.set_source_rgba cr 0.99 0.99 0.99 1.;
+    Cairo.set_source_rgba cr 1. 1. 1. 1.;
     Cairo.paint cr;
 
     (* elm-convetion: set the origin (0, 0) in the center of the surface *)
@@ -413,7 +397,6 @@ let run_app app =
 
     (* Don't forget to flush the surface before using its content. *)
     Cairo.Surface.flush sdl_surface;
-(*    Sdl.unlock_surface window_surface; *)
     let* () = Sdl.update_window_surface sdl_window in
 
     (* Update our fps counter. *)

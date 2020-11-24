@@ -1,9 +1,7 @@
 (* from https://elm-lang.org/examples/animation *)
 open Playground
 
-let view time = 
-  Common.pr2 (Common.spf "view: time %s" (Common.dump  time));
-  [
+let view time = [
     octagon darkGray 36.
       |> move_left 100.
       |> rotate (spin 3. time);
