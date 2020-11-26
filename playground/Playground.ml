@@ -96,7 +96,7 @@ and form =
   (* TODO: Polygon *)
   (* TODO: Image *)
   | Words of color * string
-  (* TODO: Group pf shape list *)
+  (* TODO: Group of shape list *)
 
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
