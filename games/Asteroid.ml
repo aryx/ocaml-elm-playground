@@ -78,11 +78,10 @@ type 'a obj = {
   xtra: 'a;
 }
 
+(* simpler to make mutable *)
 type ship = {
-
-  (* input *)
-  thrust: number;
-  h_acceleration: number;
+  mutable thrust: number;
+  mutable h_acceleration: number;
 }
 
 type bullet = {
@@ -261,28 +260,20 @@ let update msg model =
     }
 
   | MoveLeft -> 
-     (* less: might be simpler to use mutable *)
-     let ship = { model.ship with xtra = { model.ship.xtra with
-        h_acceleration = 1. *. h_delta; 
-        }} in
-     { model with ship }
+     (* simpler when using mutable *)
+     model.ship.xtra.h_acceleration <- 1. *. h_delta;
+     model
 
   | MoveRight -> 
-     let ship = { model.ship with xtra = { model.ship.xtra with
-      h_acceleration = -1. *. h_delta; 
-      }} in
-     { model with ship }
+     model.ship.xtra.h_acceleration <- -1. *. h_delta;
+     model
 
   | StopMove -> 
-     let ship = { model.ship with xtra = { model.ship.xtra with
-       h_acceleration = 0.; 
-     }} in
-     { model with ship }
+     model.ship.xtra.h_acceleration <- 0.;
+     model
   | Accelerate b ->
-     let ship = { model.ship with xtra = { model.ship.xtra with
-       thrust = if b then a_delta else 0.
-     }} in
-     { model with ship }
+     model.ship.xtra.thrust <- if b then a_delta else 0.;
+     model
   ), Cmd.none
 
 (*****************************************************************************)
