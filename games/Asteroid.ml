@@ -87,8 +87,9 @@ type model = {
   ship: ship;
 }
 
-let space_ship = 
-  rectangle blue 15. 15.
+let space_ship c = 
+  polygon c [(15., 0.); (-15., 10.); (-10., 0.); (-15., -10.); (15., 0.)]
+
 
 (* accelereration delta *)
 let a_delta = 1.
@@ -111,7 +112,7 @@ let initial_model = {
     thrust = 0.;
     h_acceleration = 0.;
 
-    figure = space_ship;
+    figure = space_ship blue;
   }
 }
 
@@ -121,9 +122,9 @@ let initial_model = {
 
 (* todo: resolved_shape_of_obj at some point *)
 let (shape_of_obj: obj -> shape) = 
- fun { figure; pos; orientation=_; _ } ->
+ fun { figure; pos; orientation; _ } ->
    figure 
-(*   |> rotate (Basics.radians_to_degrees orientation) *)
+   |> rotate (Basics.radians_to_degrees orientation)
    |> move (float pos.x) (float pos.y)
 
 (* todo: draw_resolved_shape? *)
@@ -166,7 +167,8 @@ type input = {
 let input_of_computer computer = 
   let kbd = computer.keyboard in
   { up = kbd.kup;
-    h_accelerate = int_of_float (to_x kbd);
+    (* rotate is counter clock-wise => left means adding degrees *)
+    h_accelerate = - (int_of_float (to_x kbd));
   }
 
 let update computer (model, last_tick) =
