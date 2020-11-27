@@ -36,6 +36,9 @@ let (point_rotate: number -> point -> point) = fun w p ->
     }
 *)
 
+let (vector: point -> point -> vector) = fun p1 p2 ->
+    { x = p2.x - p1.x; y = p2.y - p1.y }
+
 let (vector_length: vector -> number) = fun v ->
   sqrt (float v.x ** 2. +. float v.y ** 2.)
 
@@ -50,12 +53,18 @@ let (polar: number -> number -> vector) = fun r phi ->
 (* orig: we can reuse Playground.shape *)
 type figure = Playground.shape
 
-(* Final "resolved" coordinates of a figure after translation/scale/rotate.
- * Use for collision detection.
+(* Final "resolved" coordinates of a figure after translation/rotate.
+ * Used for collision detection.
 *)
 type resolved_shape = 
-  | Poly of point list
+(* TODO  | Poly of point list *)
   | Circle of point * number (* radius *)
+
+let (intersect: resolved_shape -> resolved_shape -> bool) = fun x1 x2 ->
+  match x1, x2 with
+  | Circle (c1, r1), Circle (c2, r2) ->
+     let v = vector c1 c2 in
+     vector_length v <= r1 +. r2
 
 (*****************************************************************************)
 (* Model *)
@@ -155,11 +164,14 @@ let new_asteroid screen =
     xtra = { size = ALarge };
   }
 
+type state = Play | Stop
+
 type model = {
   ship: ship obj;
   bullets: bullet obj list;
   asteroids: asteroid obj list;
  
+  state: state;
   last_tick: float;
 }
 
@@ -185,9 +197,29 @@ let initial_model = {
     new_asteroid initial_computer.screen;
     new_asteroid initial_computer.screen;
   ];
-
+  state = Play;
   last_tick = Unix.gettimeofday();
 }
+
+(*****************************************************************************)
+(* Collision detection *)
+(*****************************************************************************)
+
+let (resolved_shape_of_obj: 'a obj -> resolved_shape) =
+  fun { figure = _; pos; orientation = _; _ } ->
+  (* TODO *)
+  Circle (pos, 10.)
+
+let ship_crashed model =
+  let ship = model.ship in
+  let shp1 = resolved_shape_of_obj ship in
+  let shapes = model.asteroids |> List.map resolved_shape_of_obj in
+  shapes |> List.exists (fun shp2 -> intersect shp1 shp2)
+
+let (check_asteroids: model -> asteroid obj list) = 
+ fun model ->
+  model.asteroids
+   
 
 (*****************************************************************************)
 (* View *)
@@ -200,23 +232,10 @@ let (shape_of_obj: 'a obj -> shape) =
    |> rotate (Basics.radians_to_degrees orientation)
    |> move (float pos.x) (float pos.y)
 
-(* todo: draw_resolved_shape? *)
-let (draw_shape: shape -> shape) = fun shape ->
-  shape
-
-let (draw_ship: ship obj -> shape) = fun ship ->
-  draw_shape (shape_of_obj ship)
-
-let (draw_bullet: bullet obj -> shape) = fun x ->
-  draw_shape (shape_of_obj x)
-
-let (draw_asteroid: asteroid obj -> shape) = fun x ->
-  draw_shape (shape_of_obj x)
-
 let view model =
-  draw_ship model.ship ::
-  (List.map draw_bullet model.bullets) @
-  (List.map draw_asteroid model.asteroids)
+  shape_of_obj model.ship ::
+  (List.map shape_of_obj model.bullets) @
+  (List.map shape_of_obj model.asteroids)
 
 (*****************************************************************************)
 (* Update *)
@@ -292,7 +311,6 @@ let move_bullet screen ({ pos; velocity; xtra = { cnt }; _ } as bullet) =
     pos = add_modulo_window screen pos velocity;
     xtra = { cnt = cnt + 1 };
   }
-
 let move_bullets screen xs =
   xs 
   |> List.map (move_bullet screen)
@@ -300,7 +318,6 @@ let move_bullets screen xs =
 
 let move_asteroid screen ({ pos; velocity; _ } as asteroid) =
   { asteroid with pos = add_modulo_window screen pos velocity; }
- 
 
 let move_asteroids screen xs =
   xs 
@@ -313,13 +330,22 @@ let update msg model =
 
    let delta = now -. model.last_tick in
 
-   if delta < tick
+   if delta < tick || model.state = Stop
    then model
-   else { ship = move_ship initial_computer.screen model.ship;
+   else 
+    let model = { model with
+          ship = move_ship initial_computer.screen model.ship;
           bullets = move_bullets initial_computer.screen model.bullets;
           asteroids = move_asteroids initial_computer.screen model.asteroids;
           last_tick = now;
-        }
+        } in
+     let asteroids = check_asteroids model in
+     let state =
+       if ship_crashed model
+       then Stop
+       else Play
+     in
+     { model with state; asteroids }
 
   | Shoot ->
     let ship = model.ship in 
