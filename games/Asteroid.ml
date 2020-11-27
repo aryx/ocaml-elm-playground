@@ -144,25 +144,24 @@ let view _computer (model, _last_tick) =
 
 (* orig: could use modulo if the origin was not at the center on the screen *)
 let add_modulo_window screen pos velocity =
-  Common.pr2_gen screen;
   let { x; y } = vector_add pos velocity in
   let x = float x in let y = float y in
   (* there is probably something simpler than this code ... *)
   let x = int_of_float (
     match () with
-    | _ when x > screen.top -> 
-        x -. screen.top -. screen.bottom
-    | _ when x < screen.bottom -> 
-        screen.top -. (screen.bottom -. x)
+    | _ when x > screen.right -> 
+        x -. screen.right +. screen.left
+    | _ when x < screen.left -> 
+        screen.right -. (screen.left -. x)
     | _ -> x
    )
   in
   let y = int_of_float (
     match () with
-    | _ when y > screen.right -> 
-        y -. screen.right -. screen.left
-    | _ when y < screen.left -> 
-        screen.right -. (screen.left -. y)
+    | _ when y > screen.top -> 
+        y -. screen.top +. screen.bottom
+    | _ when y < screen.bottom -> 
+        screen.top -. (screen.bottom -. y)
     | _ -> y
    )
   in
