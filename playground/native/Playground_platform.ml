@@ -151,6 +151,28 @@ let render_circle color radius x y angle s alpha =
     Cairo.fill cr;
   )
 
+let render_polygon color points x y angle s alpha =
+  let (x,y) = convert (x,y) in
+
+  with_cr (fun cr ->
+    set_color cr color alpha;
+    render_transform cr x y angle s;
+
+    (match points with
+    | [] -> failwith "not enough points in polygon"
+    | (x, y)::xs ->
+       let (x,y) = convert (x,y) in
+       Cairo.move_to cr x y;
+       xs |> List.iter (fun (x, y) ->
+         let (x,y) = convert (x,y) in
+         Cairo.line_to cr x y
+       );
+       Cairo.line_to cr x y;
+       Cairo.fill cr;
+    )
+  )
+
+
 let render_words color str x y angle s alpha =
   let (x,y) = convert (x,y) in
 
@@ -182,6 +204,8 @@ let (render_shape: shape -> unit) =
      render_rectangle color width height x y angle scale alpha
   | Ngon (color, n, radius) ->
      render_ngon color n radius x y angle scale alpha
+  | Polygon (color, points) -> 
+     render_polygon color points x y angle scale alpha
   | Words (color, str) ->
      render_words color str x y angle scale alpha
   

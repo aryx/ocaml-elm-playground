@@ -163,6 +163,9 @@ let render_ngon color n radius x y angle s alpha =
 let render_words _color _str _x _y _angle _s _alpha =
   raise Todo
 
+let render_polygon _color _points _x _y _angle _s _alpha =
+  raise Todo
+
 let (render_shape: shape -> 'msg Svg.t) = 
   fun { x; y; angle; scale; alpha; form} ->
   match form with
@@ -174,6 +177,8 @@ let (render_shape: shape -> 'msg Svg.t) =
      render_rectangle color width height x y angle scale alpha
   | Ngon (color, n, radius) ->
      render_ngon color n radius x y angle scale alpha
+  | Polygon (color, points) -> 
+     render_polygon color points x y angle scale alpha
   | Words (color, str) ->
      render_words color str x y angle scale alpha
 

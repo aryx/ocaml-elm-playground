@@ -94,7 +94,7 @@ and form =
   | Oval      of color * number * number
   | Rectangle of color * number * number
   | Ngon of color * int * number
-  (* TODO: Polygon *)
+  | Polygon of color * (number * number) list
   (* TODO: Image *)
   | Words of color * string
   (* TODO: Group of shape list *)
@@ -130,6 +130,9 @@ let (hexagon: color -> number -> shape) = fun color radius ->
 
 let (octagon: color -> number -> shape) = fun color radius ->
   shape 0. 0. 0. 1. 1. (Ngon (color, 8, radius))
+
+let (polygon: color -> (number * number) list -> shape) = fun color points ->
+  shape 0. 0. 0. 1. 1. (Polygon (color, points))
 
 let (words: color -> string -> shape) = fun color str ->
   shape 0. 0. 0. 1. 1. (Words (color, str))
