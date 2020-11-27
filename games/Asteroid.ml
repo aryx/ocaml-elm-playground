@@ -78,45 +78,62 @@ type 'a obj = {
   xtra: 'a;
 }
 
+
 (* simpler to make mutable *)
 type ship = {
   mutable thrust: number;
   mutable h_acceleration: number;
 }
-
-type bullet = {
-  cnt: int;
-}
-
-type model = {
-  ship: ship obj;
-  bullets: bullet obj list;
- 
-  last_tick: float;
-}
+(* accelereration delta *)
+let a_delta = 1.
+(* turn delta *)
+let h_delta = 0.3
+(* Max velocity *)
+let v_max = 20.
 
 (* when drawn horizontally at 0 degrees *)
 let space_ship c = 
   polygon c [(15., 0.); (-15., 10.); (-10., 0.); (-15., -10.); (15., 0.)]
 
-let space_bullet =
-  circle red 2.
 
 
-(* 30 ms in original program *)
-let tick = 0.030
-
-(* accelereration delta *)
-let a_delta = 1.
-(* turn delta *)
-let h_delta = 0.3
-
-(* Max velocity *)
-let v_max = 20.
-
+type bullet = {
+  cnt: int;
+}
 let v_bullet = 30.
 (* number of tick to live *)
 let bullet_TTL = 20
+
+let space_bullet =
+  circle red 2.
+
+let new_bullet ship =
+  { pos = ship.pos; velocity = polar v_bullet ship.orientation;
+    orientation = 0.;
+    figure = space_bullet;
+    xtra = { cnt = 0 } 
+  }
+
+type asteroid = {
+  size: asteroid_size;
+}
+  and asteroid_size = ALarge | AMedium | AWee
+
+let new_asteroid _screen =
+  failwith "Todo"
+
+
+
+type model = {
+  ship: ship obj;
+  bullets: bullet obj list;
+  asteroids: asteroid obj list;
+ 
+  last_tick: float;
+}
+
+(* 30 ms in original program *)
+let tick = 0.030
 
 let initial_model = {
   ship = {
@@ -130,6 +147,13 @@ let initial_model = {
     }
   };
   bullets = [];
+  asteroids = [
+    new_asteroid initial_computer.screen;
+    new_asteroid initial_computer.screen;
+    new_asteroid initial_computer.screen;
+    new_asteroid initial_computer.screen;
+    new_asteroid initial_computer.screen;
+  ];
 
   last_tick = Unix.gettimeofday();
 }
@@ -238,7 +262,9 @@ let move_bullets screen xs =
   xs 
   |> List.map (move_bullet screen)
   |> List.filter (fun b -> b.xtra.cnt < bullet_TTL)
-  
+
+let move_asteroids _screen _xs =
+  failwith "TODO"
 
 let update msg model =
  (match msg with
@@ -251,18 +277,13 @@ let update msg model =
    then model
    else { ship = move_ship initial_computer.screen model.ship;
           bullets = move_bullets initial_computer.screen model.bullets;
+          asteroids = move_asteroids initial_computer.screen model.asteroids;
           last_tick = now;
         }
 
   | Shoot ->
     let ship = model.ship in 
-    { model with bullets = 
-      { pos = ship.pos; velocity = polar v_bullet ship.orientation;
-           orientation = 0.;
-           figure = space_bullet;
-           xtra = { cnt = 0 } 
-       }::model.bullets
-    }
+    { model with bullets = new_bullet ship::model.bullets }
 
   | MoveLeft -> 
      (* simpler when using mutable *)
