@@ -18,7 +18,7 @@ open Basics (* elm-core *)
  * use the library in a Native context (with Cairo+SDL), or in 
  * a Web context (with js_of_ocaml+SVG+ocaml-vdom):
  *  - I've introduced a new 'app' type instead of using 'Platform.program'
- *  - I avoid to use the 'vdom' type and the views functions returns
+ *  - I've avoided to use the 'vdom' type and the views functions returns
  *    instead of a vdom a list of shapes. Anyway, we do not attach
  *    any messages in the returned vdom; we use global system events.
  *)
@@ -26,7 +26,7 @@ open Basics (* elm-core *)
 (*****************************************************************************)
 (* Config *)
 (*****************************************************************************)
-(* was 600 x 600 *)
+(* orig: was 600 x 600 *)
 let default_width = 1024.
 let default_height = 768.
 
@@ -50,13 +50,11 @@ let (to_frac: float -> time -> float) = fun period (Time posix) ->
     let p = period *. 1000. in
     if p = 0. || ms = 0
     then failwith "division by zero in to_frac";
-    (*pr2_gen (ms, p);*)
     float (mod_by (round p) ms) / p
 
 (* period is in seconds *)
 let (spin: number -> time -> number) = fun period time ->
     360. * to_frac period time
-    (*|> (fun x -> pr2_gen (period, time, x); x)*)
 
 let (wave: number -> number -> number -> time -> number) = 
  fun lo hi period time ->
@@ -77,10 +75,13 @@ include Color
 (* Shapes *)
 (*****************************************************************************)
 
+(* The coordinate system assumes (0, 0) is at the center of the screen, not
+ * the top left corner as in Cairo, or down left corner as in Graphic.
+ *)
 type shape = {
     x: number; 
     y: number; 
-    (* in degrees *)
+    (* in degrees, counter-clockwise! *)
     angle: number;
     scale: number;
     (* [0..1] range *)
@@ -164,6 +165,7 @@ let move_up = move_y
 (* Customize shapes *)
 (*-------------------------------------------------------------------*)
 
+(* the degrees go counter-clockwise! *)
 let (rotate: number -> shape -> shape) = 
   fun da {x; y; angle; scale; alpha; form } ->
     {x; y; angle = angle + da; scale; alpha; form}
@@ -188,6 +190,8 @@ let (scale: number -> shape -> shape) =
 type screen = {
   width: number;
   height: number;
+
+  (* Derived from width and height. The origin (0, 0) is at center. *)
   top: number;
   left: number;
   right: number;
@@ -233,7 +237,7 @@ type keyboard = {
   kleft: bool;
   kright: bool;
 
-  (* player2 (not in original Playground.elm) *)
+  (* player2 (pad: not in original Playground.elm) *)
   kw: bool;
   ks: bool;
   ka: bool;
@@ -298,6 +302,7 @@ let update_keyboard is_down key keyboard =
 (*-------------------------------------------------------------------*)
 (* Memory *)
 (*-------------------------------------------------------------------*)
+(* the user-defined "model" *)
 
 (*-------------------------------------------------------------------*)
 (* Computer *)

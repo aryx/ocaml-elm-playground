@@ -25,6 +25,9 @@ let pi2 = 8. *. atan 1.
 let degrees_to_radians deg =
   (deg * pi) / 180.
 
+let radians_to_degrees rad =
+  rad * 180. / pi
+
 let (turns: float -> float) = fun angle_in_turns ->
     2. * pi * angle_in_turns
 

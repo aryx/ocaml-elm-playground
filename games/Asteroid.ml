@@ -1,5 +1,4 @@
 open Playground
-open Basics
 
 (*****************************************************************************)
 (* Prelude *)
@@ -22,19 +21,36 @@ open Basics
 (* Geometry *)
 (*****************************************************************************)
 
+(* orig: pad: would be simpler to use float everywhere? *)
 type point = {x: int; y: int }
+
 (* a vector is represented as an arrow from the origin (0, 0) to point *)
 type vector = point
 
-let (vector_length: vector -> number) = fun _v ->
-    failwith "TODO"
+(*
+let (point_rotate: number -> point -> point) = fun w p ->
+    let x' = float p.x in
+    let y' = float p.y in
+    { x = Basics.round (x' *. cos w +. y' *. sin w);
+      (* orig: was - x' ... but the coordinate system of playground is
+       * different than HGL; HGL assumes (0, 0) is the top left corner.
+       *)
+      y = Basics.round (x' *. sin w +. y' *. cos w);
+    }
+*)
 
-let (vector_add: vector -> vector -> vector) = fun _v1 _v2 ->
-    failwith "TODO"
+let (vector_length: vector -> number) = fun v ->
+  sqrt (float v.x ** 2. +. float v.y ** 2.)
 
-let (polar: number -> number -> vector) = fun _len _angle ->
-    failwith "TODO"
+let (vector_add: vector -> vector -> vector) = fun v1 v2 ->
+    {x = v1.x + v2.x; y = v1.y + v2.y }
 
+(* orig: was calling point_rotate but seemed wrong code *)
+let (polar: number -> number -> vector) = fun r phi ->
+    { x = Basics.round (r *. cos phi); y = Basics.round (r *. sin phi) }
+
+
+(* orig: we can reuse Playground.shape *)
 type figure = Playground.shape
 
 (* Final "resolved" coordinates of a figure after translation/scale/rotate.
@@ -74,12 +90,15 @@ type model = {
 let space_ship = 
   rectangle blue 15. 15.
 
+(* accelereration delta *)
 let a_delta = 1.
+(* turn delta *)
 let h_delta = 0.3
 
 (* 30 ms in original program *)
 let tick = 0.030
 
+(* Max velocity *)
 let v_max = 20.
 
 
@@ -87,7 +106,7 @@ let initial_model = {
   ship = {
     pos = { x = 0; y = 0 };
     velocity = { x = 0; y = 0};
-    orientation = pi /. 2.;
+    orientation = Basics.pi /. 2.;
 
     thrust = 0.;
     h_acceleration = 0.;
@@ -102,8 +121,10 @@ let initial_model = {
 
 (* todo: resolved_shape_of_obj at some point *)
 let (shape_of_obj: obj -> shape) = 
- fun { figure=_; pos=_; orientation=_; _ } ->
-   failwith "Todo"
+ fun { figure; pos; orientation=_; _ } ->
+   figure 
+(*   |> rotate (Basics.radians_to_degrees orientation) *)
+   |> move (float pos.x) (float pos.y)
 
 (* todo: draw_resolved_shape? *)
 let (draw_shape: shape -> shape) = fun shape ->
@@ -120,24 +141,21 @@ let view _computer (model, _last_tick) =
 (*****************************************************************************)
 
 let add_modulo_window _screenTODO pos velocity =
+  Common.pr2_gen (pos, velocity);
   vector_add pos velocity
 
 (* orig: this assumed to be called every tick of 30ms *)
-let move_ship screen delta 
+let move_ship screen 
   ({ pos; velocity; h_acceleration; thrust; orientation; _} as ship)  = 
-  if delta < tick
-  then ship
-  else
     let new_velocity = vector_add (polar thrust orientation) velocity in
     let l = vector_length new_velocity in
 
     { ship with
       pos = add_modulo_window screen pos velocity ;
       velocity = if l > v_max then failwith "Todo" else new_velocity;
-      orientation = orientation + h_acceleration;
+      orientation = orientation +. h_acceleration;
     }
   
-
 type input = {
   up: bool;
   (* -1, 0, 1 *)
@@ -154,7 +172,7 @@ let input_of_computer computer =
 let update computer (model, last_tick) =
   let input = input_of_computer computer in
   let (Time now) = computer.time in
-  let delta = now - last_tick in
+  let delta = now -. last_tick in
 
   let ship = model.ship in
   let ship = { ship with 
@@ -162,7 +180,9 @@ let update computer (model, last_tick) =
       thrust = if input.up then a_delta else 0.;
      }
   in
-  { ship = move_ship computer.screen delta ship}, now
+  if delta < tick
+  then { ship }, last_tick
+  else { ship = move_ship computer.screen ship}, now
 
 
 (*****************************************************************************)

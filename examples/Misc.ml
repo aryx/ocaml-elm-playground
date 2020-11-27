@@ -2,7 +2,7 @@ open Playground
 
 let app =
   picture [
-    words green "foobar" |> scale 2. |> rotate 90.;
+    rectangle green 10. 10. |> scale 2. |> move 20. 20. |> rotate 45.;
   ]
 
 let main = Playground_platform.run_app app
