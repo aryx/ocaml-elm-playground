@@ -115,6 +115,8 @@ let h_delta = 0.3
 let v_max = 20.
 
 let v_bullet = 30.
+(* number of tick to live *)
+let bullet_TTL = 20
 
 let initial_model = {
   ship = {
@@ -233,7 +235,9 @@ let move_bullet screen ({ pos; velocity; xtra = { cnt }; _ } as bullet) =
   }
 
 let move_bullets screen xs =
-  xs |> List.map (move_bullet screen)
+  xs 
+  |> List.map (move_bullet screen)
+  |> List.filter (fun b -> b.xtra.cnt < bullet_TTL)
   
 
 let update msg model =
@@ -249,6 +253,7 @@ let update msg model =
           bullets = move_bullets initial_computer.screen model.bullets;
           last_tick = now;
         }
+
   | Shoot ->
     let ship = model.ship in 
     { model with bullets = 
