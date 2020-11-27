@@ -66,6 +66,12 @@ let (intersect: resolved_shape -> resolved_shape -> bool) = fun x1 x2 ->
      let v = vector c1 c2 in
      vector_length v <= r1 +. r2
 
+let (contains: resolved_shape -> point -> bool) = fun x p ->
+  match x with
+  | Circle (c, r) -> 
+     let v = vector c p in
+     vector_length v <= r
+
 (*****************************************************************************)
 (* Model *)
 (*****************************************************************************)
@@ -134,6 +140,11 @@ let random_range (low, high) =
   let diff = high -. low in
   let n = Random.float diff in
   n +. low
+
+let random_range_int (low, high) =
+  let diff = abs (high - low) + 1 in
+  let n = Random.int diff in
+  n + low
 
 let space_asteroid () =
   let corners = random_range (4., 8.) in
@@ -216,9 +227,43 @@ let ship_crashed model =
   let shapes = model.asteroids |> List.map resolved_shape_of_obj in
   shapes |> List.exists (fun shp2 -> intersect shp1 shp2)
 
+let directions v =
+  let n = 1 + Random.int 3 in
+  let rec aux n =
+    if n = 0
+    then []
+    else
+      { x = v.x + random_range_int (- v.x, v.x);
+        y = v.y + random_range_int (- v.y, v.y);
+      }::aux (n - 1)
+  in
+  aux n
+
+let explode a dirs =
+  match a.xtra.size with
+  | ALarge -> 
+    dirs |> List.map (fun velocity -> 
+       { a with figure = a.figure |> scale 0.5; velocity;
+         xtra = { size = AMedium }
+          })
+  | AMedium ->
+    dirs |> List.map (fun velocity -> 
+       { a with figure = a.figure |> scale 0.75; velocity;
+         xtra = { size = AWee }})
+  | AWee -> []
+
+
 let (check_asteroids: model -> asteroid obj list) = 
  fun model ->
-  model.asteroids
+  let bullets = model.bullets |> List.map (fun x -> x.pos) in
+  model.asteroids |> List.map (fun a ->
+     let shp = resolved_shape_of_obj a in
+     if bullets |> List.exists (fun p -> contains shp p)
+     then 
+       let dirs = directions a.velocity in
+       explode a dirs
+     else [a]
+  ) |> List.flatten
    
 
 (*****************************************************************************)
