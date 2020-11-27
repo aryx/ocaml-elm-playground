@@ -114,31 +114,6 @@ let render_oval color w h x y _angle _s alpha =
   )
 
 
-(* TODO
-let render_rect_transform width height x y angle s =
-  render_transform x y angle s ^
-  spf " translate(%s, %s)" 
-     (string_of_number (-. width / 2.))
-     (string_of_number (-. height / 2.))
-*)
-
-let render_rectangle color w h x y angle _s alpha = 
-  (*pr2_gen (x,y,w,h);*)
-
-  let x0 = x - (w / 2.) in
-  let y0 = y + (h / 2.) in
-  let (x0,y0) = convert (x0,y0) in
-
-  with_cr (fun cr ->
-    set_color cr color alpha;
-
-    Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
-    (*pr (spf "rotate: %.1f" angle);*)
-    Cairo.rectangle cr x0 y0 w h;
-    Cairo.fill cr;
-  )
-
-
 let render_circle color radius x y angle s alpha =
   (*pr2_gen (x,y, radius);*)
   let (x,y) = convert (x,y) in
@@ -172,6 +147,14 @@ let render_polygon color points x y angle s alpha =
     )
   )
 
+
+let render_rectangle color w h x y angle s alpha = 
+  render_polygon color 
+    [ (-. w / 2., h /. 2.);
+      (   w / 2., h /. 2.);
+      (   w / 2., -.h /. 2.);
+      (-. w / 2., -.h /. 2.);
+    ] x y angle s alpha
 
 let render_words color str x y angle s alpha =
   let (x,y) = convert (x,y) in
