@@ -32,10 +32,7 @@ let (point_rotate: number -> point -> point) = fun w p ->
     let x' = float p.x in
     let y' = float p.y in
     { x = Basics.round (x' *. cos w +. y' *. sin w);
-      (* orig: was - x' ... but the coordinate system of playground is
-       * different than HGL; HGL assumes (0, 0) is the top left corner.
-       *)
-      y = Basics.round (x' *. sin w +. y' *. cos w);
+      y = Basics.round (-. x' *. sin w +. y' *. cos w);
     }
 *)
 
@@ -45,7 +42,7 @@ let (vector_length: vector -> number) = fun v ->
 let (vector_add: vector -> vector -> vector) = fun v1 v2 ->
     {x = v1.x + v2.x; y = v1.y + v2.y }
 
-(* orig: was calling point_rotate but seemed wrong code *)
+(* orig: was calling point_rotate but simpler to do directly *)
 let (polar: number -> number -> vector) = fun r phi ->
     { x = Basics.round (r *. cos phi); y = Basics.round (r *. sin phi) }
 
@@ -87,17 +84,21 @@ type model = {
   ship: ship;
 }
 
+(* when drawn horizontally at 0 degrees *)
 let space_ship c = 
   polygon c [(15., 0.); (-15., 10.); (-10., 0.); (-15., -10.); (15., 0.)]
 
+
+(* 30 ms in original program *)
+let tick = 0.030
 
 (* accelereration delta *)
 let a_delta = 1.
 (* turn delta *)
 let h_delta = 0.3
 
-(* 30 ms in original program *)
-let tick = 0.030
+let adjust_for_tick delta v =
+  delta *. v /. tick
 
 (* Max velocity *)
 let v_max = 20.
@@ -141,9 +142,31 @@ let view _computer (model, _last_tick) =
 (* Update *)
 (*****************************************************************************)
 
-let add_modulo_window _screenTODO pos velocity =
-  Common.pr2_gen (pos, velocity);
-  vector_add pos velocity
+(* orig: could use modulo if the origin was not at the center on the screen *)
+let add_modulo_window screen pos velocity =
+  Common.pr2_gen screen;
+  let { x; y } = vector_add pos velocity in
+  let x = float x in let y = float y in
+  (* there is probably something simpler than this code ... *)
+  let x = int_of_float (
+    match () with
+    | _ when x > screen.top -> 
+        x -. screen.top -. screen.bottom
+    | _ when x < screen.bottom -> 
+        screen.top -. (screen.bottom -. x)
+    | _ -> x
+   )
+  in
+  let y = int_of_float (
+    match () with
+    | _ when y > screen.right -> 
+        y -. screen.right -. screen.left
+    | _ when y < screen.left -> 
+        screen.right -. (screen.left -. y)
+    | _ -> y
+   )
+  in
+  { x; y }
 
 (* orig: this assumed to be called every tick of 30ms *)
 let move_ship screen 
@@ -178,8 +201,10 @@ let update computer (model, last_tick) =
 
   let ship = model.ship in
   let ship = { ship with 
-      h_acceleration = (float input.h_accelerate) *. h_delta; 
-      thrust = if input.up then a_delta else 0.;
+      h_acceleration = 
+        (float input.h_accelerate) *. adjust_for_tick delta h_delta; 
+      thrust = 
+       if input.up then adjust_for_tick delta a_delta else 0.;
      }
   in
   if delta < tick
