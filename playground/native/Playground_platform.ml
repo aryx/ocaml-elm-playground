@@ -82,11 +82,12 @@ let rec ngon_points cr i n radius =
     ngon_points cr (Stdlib.(+) i 1) n radius
   end
 
-let render_ngon color n radius x y angle s alpha = 
+let render_ngon hook color n radius x y angle s alpha = 
   (*pr2_gen (x,y,n,radius);*)
   let (x, y) = convert (x, y) in
 
   with_cr (fun cr ->
+    hook cr;
     set_color cr color alpha;
     render_transform cr x y angle s;
 
@@ -95,7 +96,7 @@ let render_ngon color n radius x y angle s alpha =
   )
 
 
-let render_oval color w h x y _angle _s alpha = 
+let render_oval hook color w h x y _angle _s alpha = 
   (*pr2_gen (x,y,w,h);*)
 
   let x = x - (w / 2.) in
@@ -103,6 +104,7 @@ let render_oval color w h x y _angle _s alpha =
   let (x,y) = convert (x,y) in
 
   with_cr (fun cr -> 
+    hook cr;
     set_color cr color alpha;
 
     (* code in cairo.mli to draw ellipsis *)
@@ -114,11 +116,12 @@ let render_oval color w h x y _angle _s alpha =
   )
 
 
-let render_circle color radius x y angle s alpha =
+let render_circle hook color radius x y angle s alpha =
   (*pr2_gen (x,y, radius);*)
   let (x,y) = convert (x,y) in
 
   with_cr (fun cr ->
+    hook cr;
     set_color cr color alpha;
     render_transform cr x y angle s;
 
@@ -126,10 +129,11 @@ let render_circle color radius x y angle s alpha =
     Cairo.fill cr;
   )
 
-let render_polygon color points x y angle s alpha =
+let render_polygon hook color points x y angle s alpha =
   let (x,y) = convert (x,y) in
 
   with_cr (fun cr ->
+    hook cr;
     set_color cr color alpha;
     render_transform cr x y angle s;
 
@@ -148,18 +152,19 @@ let render_polygon color points x y angle s alpha =
   )
 
 
-let render_rectangle color w h x y angle s alpha = 
-  render_polygon color 
+let render_rectangle hook color w h x y angle s alpha = 
+  render_polygon hook color 
     [ (-. w / 2., h /. 2.);
       (   w / 2., h /. 2.);
       (   w / 2., -.h /. 2.);
       (-. w / 2., -.h /. 2.);
     ] x y angle s alpha
 
-let render_words color str x y angle s alpha =
+let render_words hook color str x y angle s alpha =
   let (x,y) = convert (x,y) in
 
   with_cr (fun cr ->
+    hook cr;
     set_color cr color alpha;
     render_transform cr x y angle s;
 
@@ -176,24 +181,36 @@ let render_words color str x y angle s alpha =
 (*****************************************************************************)
 open Playground
 
-let (render_shape: shape -> unit) = 
-  fun { x; y; angle; scale; alpha; form} ->
+(* ugly, to handle Group *)
+type hook = Cairo.context -> unit
+let empty_hook = (fun _cr -> ())
+
+let rec (render_shape: hook -> shape -> unit) = 
+  fun hook { x; y; angle; scale; alpha; form} ->
   match form with
   | Circle (color, radius) -> 
-     render_circle color radius x y angle scale alpha
+     render_circle hook color radius x y angle scale alpha
   | Oval (color, width, height) ->
-     render_oval color width height x y angle scale alpha
+     render_oval hook color width height x y angle scale alpha
   | Rectangle (color, width, height) ->
-     render_rectangle color width height x y angle scale alpha
+     render_rectangle hook color width height x y angle scale alpha
   | Ngon (color, n, radius) ->
-     render_ngon color n radius x y angle scale alpha
+     render_ngon hook color n radius x y angle scale alpha
   | Polygon (color, points) -> 
-     render_polygon color points x y angle scale alpha
+     render_polygon hook color points x y angle scale alpha
   | Words (color, str) ->
-     render_words color str x y angle scale alpha
+     render_words hook color str x y angle scale alpha
+  | Group xs ->
+     (* TODO: alpha *)
+     let hook = (fun cr -> 
+              hook cr; 
+              let (x, y) = convert (x, y) in
+              render_transform cr x y angle scale
+     ) in
+     List.iter (render_shape hook) xs
   
 let (render: shape list -> unit) = fun shapes ->
-    List.iter render_shape shapes
+    List.iter (render_shape empty_hook) shapes
 
 (*****************************************************************************)
 (* Event to msg *)

@@ -9,6 +9,8 @@ let red   = Hex "#cc0000"
 let green = Hex "#73d216"
 let blue  = Hex "#3465a4"
 
+let yellow = Hex "#edd400"
+
 let brown = Hex "#c17d11"
 
 (*-------------------------------------------------------------------*)

@@ -97,7 +97,7 @@ and form =
   | Polygon of color * (number * number) list
   (* TODO: Image *)
   | Words of color * string
-  (* TODO: Group of shape list *)
+  | Group of shape list
 
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
@@ -136,6 +136,10 @@ let (polygon: color -> (number * number) list -> shape) = fun color points ->
 
 let (words: color -> string -> shape) = fun color str ->
   shape 0. 0. 0. 1. 1. (Words (color, str))
+
+let (group: shape list -> shape) = fun xs ->
+  shape 0. 0. 0. 1. 1. (Group xs)
+
 
 (*-------------------------------------------------------------------*)
 (* Move shapes *)
