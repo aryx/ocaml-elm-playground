@@ -92,6 +92,8 @@ type bullet = {
 type model = {
   ship: ship obj;
   bullets: bullet obj list;
+ 
+  last_tick: float;
 }
 
 (* when drawn horizontally at 0 degrees *)
@@ -110,9 +112,6 @@ let a_delta = 1.
 (* turn delta *)
 let h_delta = 0.3
 
-let adjust_for_tick delta v =
-  delta *. v /. tick
-
 (* Max velocity *)
 let v_max = 20.
 
@@ -130,6 +129,8 @@ let initial_model = {
     }
   };
   bullets = [];
+
+  last_tick = Unix.gettimeofday();
 }
 
 (*****************************************************************************)
@@ -153,8 +154,7 @@ let (draw_ship: ship obj -> shape) = fun ship ->
 let (draw_bullet: bullet obj -> shape) = fun x ->
   draw_shape (shape_of_obj x)
 
-
-let view _computer (model, _last_tick) =
+let view model =
   draw_ship model.ship ::
   (List.map draw_bullet model.bullets)  
 
@@ -167,17 +167,26 @@ type msg =
 
   | MoveLeft
   | MoveRight
-  | Accelerate
+  | StopMove
+
+  | Accelerate of bool
  
   | Shoot
 
   | Noop
 
-let msg_of_key = function
+let msg_of_key_down = function
   | "ArrowLeft"  -> MoveLeft
   | "ArrowRight" -> MoveRight
-  | "ArrowUp" -> Accelerate
+  | "ArrowUp" -> Accelerate true
   | "space" -> Shoot
+  | _ -> Noop
+
+let msg_of_key_up = function
+  | "ArrowLeft"  -> StopMove
+  | "ArrowRight" -> StopMove
+  | "ArrowUp" -> Accelerate false
+  | "space" -> Noop
   | _ -> Noop
 
 
@@ -227,54 +236,69 @@ let move_bullet screen ({ pos; velocity; xtra = { cnt }; _ } as bullet) =
 let move_bullets screen xs =
   xs |> List.map (move_bullet screen)
   
-type input = {
-  up: bool;
-  (* -1, 0, 1 *)
-  h_accelerate: int;
-  space: bool;
-}
 
-let input_of_computer computer = 
-  let kbd = computer.keyboard in
-  { up = kbd.kup;
-    space = kbd.kspace;
-    (* rotate is counter clock-wise => left means adding degrees *)
-    h_accelerate = - (int_of_float (to_x kbd));
-  }
+let update msg model =
+ (match msg with
+ | Noop -> model
+ | Tick now ->
 
-let update computer (model, last_tick) =
-  let input = input_of_computer computer in
-  let (Time now) = computer.time in
-  let delta = now -. last_tick in
+   let delta = now -. model.last_tick in
 
-  let ship = { model.ship with xtra = {
-      h_acceleration = 
-        (float input.h_accelerate) *. adjust_for_tick delta h_delta; 
-      thrust = 
-       if input.up then adjust_for_tick delta a_delta else 0.;
-     }}
-  in
-  let bullets = 
-    if input.space
-    then { pos = ship.pos; velocity = polar v_bullet ship.orientation;
+   if delta < tick
+   then model
+   else { ship = move_ship initial_computer.screen model.ship;
+          bullets = move_bullets initial_computer.screen model.bullets;
+          last_tick = now;
+        }
+  | Shoot ->
+    let ship = model.ship in 
+    { model with bullets = 
+      { pos = ship.pos; velocity = polar v_bullet ship.orientation;
            orientation = 0.;
            figure = space_bullet;
-           xtra = { cnt = 0 } }::model.bullets
-    else model.bullets
-  in
-  if delta < tick
-  then { ship; bullets }, last_tick
-  else { ship = move_ship computer.screen ship;
-         bullets = move_bullets computer.screen bullets;
-       }, now
+           xtra = { cnt = 0 } 
+       }::model.bullets
+    }
 
+  | MoveLeft -> 
+     (* less: might be simpler to use mutable *)
+     let ship = { model.ship with xtra = { model.ship.xtra with
+        h_acceleration = 1. *. h_delta; 
+        }} in
+     { model with ship }
+
+  | MoveRight -> 
+     let ship = { model.ship with xtra = { model.ship.xtra with
+      h_acceleration = -1. *. h_delta; 
+      }} in
+     { model with ship }
+
+  | StopMove -> 
+     let ship = { model.ship with xtra = { model.ship.xtra with
+       h_acceleration = 0.; 
+     }} in
+     { model with ship }
+  | Accelerate b ->
+     let ship = { model.ship with xtra = { model.ship.xtra with
+       thrust = if b then a_delta else 0.
+     }} in
+     { model with ship }
+  ), Cmd.none
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
-let app =
-  game view update (initial_model, Unix.gettimeofday())
+let app = { Playground.
+  view;
+  update;
+  init = (fun () -> (initial_model), Cmd.none);
+    subscriptions  = (fun _ -> Sub.batch [
+      Sub.on_animation_frame (fun x -> Tick x);
+      Sub.on_key_down (fun key -> msg_of_key_down key);
+      Sub.on_key_up (fun key -> msg_of_key_up key);
+    ]);
+  }
 
 let main = 
   Playground_platform.run_app app
