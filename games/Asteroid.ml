@@ -119,10 +119,41 @@ type asteroid = {
 }
   and asteroid_size = ALarge | AMedium | AWee
 
-let new_asteroid _screen =
-  failwith "Todo"
+let v_asteroid = 5.
 
+let random_range (low, high) =
+  let diff = high -. low in
+  let n = Random.float diff in
+  n +. low
 
+let space_asteroid () =
+  let corners = random_range (4., 8.) in
+  let increment_angle = Basics.pi2 /. corners in
+  let rec aux angle  =
+    if angle >= Basics.pi2
+    then []
+    else polar (random_range (30., 50.)) angle
+         ::aux (angle +. increment_angle)
+  in
+  let pts = aux increment_angle |> List.map (fun pt -> 
+        float pt.x, float pt.y
+  ) in
+  Common.pr2_gen pts;
+  polygon (Color.Rgb (100, 100, 100)) pts
+
+let new_asteroid screen =
+  let pos = {
+      x = int_of_float (random_range (screen.left, screen.right));
+      y = int_of_float (random_range (screen.bottom, screen.top));
+  } in
+  let velocity = {
+      x = int_of_float (random_range (-. v_asteroid, v_asteroid));
+      y = int_of_float (random_range (-. v_asteroid, v_asteroid));
+  } in
+  { pos; velocity; orientation = 0.; 
+    figure = space_asteroid ();
+    xtra = { size = ALarge };
+  }
 
 type model = {
   ship: ship obj;
@@ -179,9 +210,13 @@ let (draw_ship: ship obj -> shape) = fun ship ->
 let (draw_bullet: bullet obj -> shape) = fun x ->
   draw_shape (shape_of_obj x)
 
+let (draw_asteroid: asteroid obj -> shape) = fun x ->
+  draw_shape (shape_of_obj x)
+
 let view model =
   draw_ship model.ship ::
-  (List.map draw_bullet model.bullets)  
+  (List.map draw_bullet model.bullets) @
+  (List.map draw_asteroid model.asteroids)
 
 (*****************************************************************************)
 (* Update *)
@@ -263,8 +298,13 @@ let move_bullets screen xs =
   |> List.map (move_bullet screen)
   |> List.filter (fun b -> b.xtra.cnt < bullet_TTL)
 
-let move_asteroids _screen _xs =
-  failwith "TODO"
+let move_asteroid screen ({ pos; velocity; _ } as asteroid) =
+  { asteroid with pos = add_modulo_window screen pos velocity; }
+ 
+
+let move_asteroids screen xs =
+  xs 
+  |> List.map (move_asteroid screen)
 
 let update msg model =
  (match msg with
