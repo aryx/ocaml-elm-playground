@@ -4,6 +4,7 @@
   (libraries
     elm_playground
     cairo2 tsdl
+    imagelib.unix
   )
 )
 

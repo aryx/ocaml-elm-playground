@@ -5,6 +5,27 @@ open Color
 open Tsdl
 
 (*****************************************************************************)
+(* Image loading (independent of Playground) *)
+(*****************************************************************************)
+let png_file_of_url url =
+  let image = 
+    (* ImageLib_unix.openfile url  *)
+    let fn = url in
+    let ich = ImageUtil_unix.chunk_reader_of_path fn in
+    let extension = ImageUtil_unix.get_extension' fn in
+    pr2 "reading";
+    try ImageLib.openfile ~extension ich 
+    with Image.Not_yet_implemented _ -> failwith (spf "PB with %s" fn)
+  in
+  let tmpfile = 
+    Filename.temp_file "imagelib" ".png" 
+    (* "/tmp/imagelib.png" *)
+  in
+  pr2 "saving";
+  ImageLib_unix.writefile tmpfile image;
+  tmpfile
+
+(*****************************************************************************)
 (* Render (independent of Playground) *)
 (*****************************************************************************)
 
@@ -187,9 +208,10 @@ let render_image hook w h src x y angle s _alpha =
         Hashtbl.find himages src
       with Not_found ->
         pr2_gen src;
-        let x = Cairo.PNG.create src in
-        Hashtbl.add himages src x;
-        x
+        let file = png_file_of_url src in
+        let surface = Cairo.PNG.create file in
+        Hashtbl.add himages src surface;
+        surface
   in
 
   with_cr (fun cr ->
