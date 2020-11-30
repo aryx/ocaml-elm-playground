@@ -76,7 +76,7 @@ include Color
 (*****************************************************************************)
 
 (* The coordinate system assumes (0, 0) is at the center of the screen, not
- * the top left corner as in Cairo, or down left corner as in Graphic.
+ * the top left corner as in Cairo, or bottom left corner as in Graphic.
  *)
 type shape = {
     x: number; 
@@ -94,9 +94,11 @@ and form =
   | Oval      of color * number * number
   | Rectangle of color * number * number
   | Ngon of color * int * number
-  | Polygon of color * (number * number) list
-  | Image of number * number * string (* url *)
+  | Polygon of color * (number (* x *) * number (* y *)) list
+
+  | Image of number (* width *) * number (* height *) * string (* url *)
   | Words of color * string
+
   | Group of shape list
 
 (* less: could use deriving constructor? *)
@@ -378,12 +380,11 @@ let (picture: shape list -> (screen, msg1) app) =
 type msg =
   | Tick of Time.posix
   | Resized of int * int
-  (* ... *)
 
   | KeyChanged of bool * string
 
   | MouseMove of (float * float)
-  | MouseClick
+  | MouseClick (* reset after a Tick *)
   | MouseButton of bool (* true = down, false = up *)
 
 
@@ -395,6 +396,7 @@ let animation_update msg (Animation (s, t) as state) =
     Animation (s, (Time posix))
   | Resized (w, h) -> 
     Animation (to_screen (float w) (float h), t)
+
   | MouseMove _ 
   | MouseClick 
   | MouseButton _
@@ -435,7 +437,9 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
  fun update_memory msg (Game (memory, computer)) ->
     match msg with
     | Tick time ->
-        (* todo: remove click in mouse? *)
+        (* todo: remove click in mouse! after the call to update_memory,
+         * to kinda ack the click
+         *)
         Game (update_memory computer memory,
           { computer with time = Time time })
     | Resized (_w, _h) ->
@@ -453,9 +457,9 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
     | MouseClick ->
         Game (memory, 
              { computer with mouse = 
-                (* Vdom does not provide OnMouseUp, so we use MouseClick *)
-                 mouse_down false 
-                   (mouse_click true computer.mouse) })
+                (* old: Vdom does not provide OnMouseUp, so we use MouseClick
+                 * mouse_down false *)
+                  (mouse_click true computer.mouse) })
     | MouseButton is_down ->
         Game (memory, 
              { computer with mouse = mouse_down is_down computer.mouse })

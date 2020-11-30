@@ -17,6 +17,9 @@ let get_cr () =
 let g_sx = ref 0
 let g_sy = ref 0
 
+(* for external images: url -> surface via Cairo.PNG.create *)
+let himages = Hashtbl.create 101
+
 (* less: save_excursion? *)
 let with_cr f = 
   let cr = get_cr () in
@@ -176,8 +179,6 @@ let render_words hook color str x y angle s alpha =
     Cairo.show_text cr str;
   )
 
-let himages = Hashtbl.create 101
-
 let render_image hook w h src x y angle s _alpha =
   let (x,y) = convert (x,y) in
 
@@ -193,12 +194,10 @@ let render_image hook w h src x y angle s _alpha =
 
   with_cr (fun cr ->
     hook cr;
-
     render_transform cr x y angle s;
+
     Cairo.set_source_surface cr surface ~x:(-. w / 2.) ~y:(-. h / 2.);
     Cairo.paint cr;
-     
-
   )
 
 (*****************************************************************************)
