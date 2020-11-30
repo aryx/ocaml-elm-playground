@@ -15,6 +15,7 @@ let view computer turtle =
     image 96. 96. "/tmp/turtle-0.png"
     |> move turtle.x turtle.y
     |> rotate turtle.angle
+    |> scale 2.
   ]
 
 let update computer turtle =
