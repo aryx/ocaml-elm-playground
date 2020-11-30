@@ -12,7 +12,8 @@ let initial_turtle = { x = 0.; y = 0.; angle = 0. }
 let view computer turtle =
   [ rectangle blue computer.screen.width computer.screen.height;
     rectangle yellow 100. 100.;
-    image 96. 96. "/tmp/turtle-0.png"
+    image 96. 96. "https://elm-lang.org/images/turtle.gif" 
+      (*"/tmp/turtle.gif" *)
     |> move turtle.x turtle.y
     |> rotate turtle.angle
     |> scale 2.

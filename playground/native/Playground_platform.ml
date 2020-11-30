@@ -7,10 +7,36 @@ open Tsdl
 (*****************************************************************************)
 (* Image loading (independent of Playground) *)
 (*****************************************************************************)
+
+(* from ocurl/examples/opar.ml *)
+let writer _fname _conn accum data =
+  (* show_progress fname conn; *)
+  Buffer.add_string accum data;
+  String.length data
+
+let save fname content =
+  let fp = open_out_bin fname in
+    Buffer.output_buffer fp content;
+    close_out fp
+
+let curl_url fname url = 
+  let result = Buffer.create 16384 in
+  let conn = Curl.init () in
+  Curl.set_writefunction conn (writer fname conn result);
+  Curl.set_followlocation conn true;
+  Curl.set_url conn url;
+  Curl.perform conn;
+  Curl.cleanup conn;
+  save fname result
+  
+
 let png_file_of_url url =
   let image = 
-    (* ImageLib_unix.openfile url  *)
-    let fn = url in
+    (* copy of ImageLib_unix.openfile url but not falling back for GIF to
+     * convert, which does not work well on my mac at least  *)
+    let ext = ImageUtil_unix.get_extension' url in
+    let fn = Filename.temp_file "imagelib1" ("." ^ ext) in
+    curl_url fn url;
     let ich = ImageUtil_unix.chunk_reader_of_path fn in
     let extension = ImageUtil_unix.get_extension' fn in
     pr2 "reading";
@@ -18,7 +44,7 @@ let png_file_of_url url =
     with Image.Not_yet_implemented _ -> failwith (spf "PB with %s" fn)
   in
   let tmpfile = 
-    Filename.temp_file "imagelib" ".png" 
+    Filename.temp_file "imagelib2" ".png" 
     (* "/tmp/imagelib.png" *)
   in
   pr2 "saving";
