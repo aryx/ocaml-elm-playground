@@ -193,22 +193,8 @@ let render_image hook w h src x y angle _s _alpha =
 
   with_cr (fun cr ->
     hook cr;
-    (*render_transform cr x y angle s; *)
-(*
-    let pat = Cairo.Pattern.create_for_surface surface in
-    Cairo.set_source cr pat;
-    Cairo.rectangle cr (-. w / 2.) (h / 2.) w h;
-    Cairo.fill cr;
-*)
-
-(*
-    Cairo.translate cr x y;
-    Cairo.translate cr (w / 2.) (h / 2.);
-*)
-(*  Cairo.rotate cr (-. (Basics.degrees_to_radians angle)); *)
 
     Cairo.translate cr x y;
-    Cairo.translate cr (w / 2.) (h / 2.);
     Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
     Cairo.set_source_surface cr surface ~x:(-. w / 2.) ~y:(-. h / 2.);
     Cairo.paint cr;
