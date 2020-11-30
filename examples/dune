@@ -2,7 +2,7 @@
   (names 
     Picture Smiley Words Misc
     Animation 
-    Mouse Keyboard
+    Mouse Keyboard Turtle
   )
   (libraries
     elm_playground
