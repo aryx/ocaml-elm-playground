@@ -95,7 +95,7 @@ and form =
   | Rectangle of color * number * number
   | Ngon of color * int * number
   | Polygon of color * (number * number) list
-  (* TODO: Image *)
+  | Image of number * number * string (* url *)
   | Words of color * string
   | Group of shape list
 
@@ -136,6 +136,9 @@ let (polygon: color -> (number * number) list -> shape) = fun color points ->
 
 let (words: color -> string -> shape) = fun color str ->
   shape 0. 0. 0. 1. 1. (Words (color, str))
+
+let (image: number -> number -> string -> shape) = fun w h src ->
+  shape 0. 0. 0. 1. 1. (Image (w, h, src))
 
 let (group: shape list -> shape) = fun xs ->
   shape 0. 0. 0. 1. 1. (Group xs)

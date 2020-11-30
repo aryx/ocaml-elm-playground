@@ -181,7 +181,10 @@ let (render_shape: shape -> 'msg Svg.t) =
      render_polygon color points x y angle scale alpha
   | Words (color, str) ->
      render_words color str x y angle scale alpha
-  | Group _ -> raise Todo
+  | Image (_w, _h, _src) ->
+      raise Todo
+  | Group _ -> 
+      raise Todo
 
 
 let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->

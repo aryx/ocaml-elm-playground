@@ -11,7 +11,8 @@ let initial_turtle = { x = 0.; y = 0.; angle = 0. }
 
 let view computer turtle =
   [ rectangle blue computer.screen.width computer.screen.height;
-    rectangle black 96. 96.
+    rectangle yellow 100. 100.;
+    image 96. 96. "/tmp/turtle-0.png"
     |> move turtle.x turtle.y
     |> rotate turtle.angle
   ]
