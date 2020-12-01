@@ -2,6 +2,13 @@ type t =
   | Hex of string
   | Rgb of int * int * int
 
+let (color_clamp : int -> int) = fun number ->
+  Basics.clamp 0 255 number
+
+let (rgb : int -> int -> int -> t) = fun r g b ->
+  Rgb (color_clamp r, color_clamp g, color_clamp b)
+
+
 let white = Hex "#FFFFFF"
 let black = Hex "#000000"
 
