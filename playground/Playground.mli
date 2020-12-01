@@ -1,8 +1,19 @@
-(**
-  See {!basics}
+(** {1 Entry points }
+
+The main entry points of this library are:
+- {!val:picture}
+- {!val:animation}
+- {!val:game}
+
+The important types are:
+- {!type:shape}
+- {!type:computer}
+
 *)
 
+(** {1 Basic types} *)
 
+(** {2 Numbers} *)
 
 (* It is more flexible to use float than int for graphical operations.
  * Consider using 'open Basics' to have the +/-/... operators working on 
@@ -10,11 +21,15 @@
  *)
 type number = float
 
+(** {2 Time} *)
+
 type time = Time of number
 
 val spin : number -> time -> number
 val wave : number -> number -> number -> time -> number
 val zigzag : number -> number -> number -> time -> number
+
+(** {2 Colors} *)
 
 type color = Color.t (* Hex of string | Rgb of int * int * int *)
 
@@ -53,7 +68,7 @@ and form =
   | Words of color * string
   | Group of shape list
 
-val shape : number -> number -> number -> number -> number -> form -> shape
+(** {2 Basic Shapes } *)
 
 val circle : color -> number -> shape
 val oval : color -> number -> number -> shape
@@ -68,10 +83,19 @@ val octagon : color -> number -> shape
 
 val polygon : color -> (number * number) list -> shape
 
+(** {2 Images } *)
+
 val image : number -> number -> string -> shape
+
+(** {2 Words } *)
+
 val words : color -> string -> shape
 
+(** {2 Groups } *)
+
 val group : shape list -> shape
+
+(** {2 Move Shapes } *)
 
 val move : number -> number -> shape -> shape
 val move_left : number -> shape -> shape
@@ -81,11 +105,13 @@ val move_down : number -> shape -> shape
 val move_x : number -> shape -> shape
 val move_y : number -> shape -> shape
 
-(** {1:transformations Transformations } *)
+(** {2:transformations Customize Shapes } *)
 
 val scale : number -> shape -> shape
 val rotate : number -> shape -> shape
 val fade : number -> shape -> shape
+
+(** {1 Computer } *)
 
 (* todo: group *)
 
@@ -137,6 +163,7 @@ type computer = {
 val initial_computer : computer
 
 
+(** {1 The Application} *)
 
 type ('model, 'msg) app = {
   init : unit -> 'model * 'msg Cmd.t;
@@ -145,9 +172,15 @@ type ('model, 'msg) app = {
   subscriptions : 'model -> 'msg Sub.t;
 }
 
+(** {1 Playgrounds} *)
+
+(** {2 Pictures} *)
+
 type msg1 = Resized1 of int * int
 
 val picture : shape list -> (screen, msg1) app
+
+(** {2 Animations} *)
 
 type msg =
     Tick of number
@@ -161,12 +194,11 @@ type animation
 
 val animation : (time -> shape list) -> (animation, msg) app
 
+(** {2 Games} *)
+
 type 'memory game
 
 val game :
   (computer -> 'memory -> shape list) ->
   (computer -> 'memory -> 'memory) -> 'memory -> ('memory game, msg) app
-
-(** {1:basics Basics}
-*)
 

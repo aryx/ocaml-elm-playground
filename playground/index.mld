@@ -77,7 +77,7 @@ let main = Playground_platform.run_app app
 ]}
 
 Every game has three important parts:
-+ [memory] - Store information. Our examples stores [(x,y)] coordinates.
++ [memory] - Store information. Our example stores [(x,y)] coordinates.
 + [update] - Update the memory based on mouse movements, key presses, etc. Our example moves the [(x,y)] coordinate around based on the arrow keys.
 + [view] - Turn the memory into a picture. Our example just shows one blue square at the [(x,y)] coordinate we have been tracking in memory.
 
@@ -95,4 +95,5 @@ I hope it will be for you as well!
 
 {!modules:
     Playground
+    Playground_platform
 }
