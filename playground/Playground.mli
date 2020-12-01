@@ -33,6 +33,8 @@ val lightPurple : color
 val gray : color
 val darkGray : color
 
+(** {1:shapes Shapes } *)
+
 type shape = {
   x : number;
   y : number;
@@ -78,6 +80,8 @@ val move_up : number -> shape -> shape
 val move_down : number -> shape -> shape
 val move_x : number -> shape -> shape
 val move_y : number -> shape -> shape
+
+(** {1:transformations Transformations } *)
 
 val scale : number -> shape -> shape
 val rotate : number -> shape -> shape

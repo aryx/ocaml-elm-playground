@@ -6,8 +6,7 @@ let app =
     rectangle brown 40. 200.
       |> move_down 80.;
     circle green 100.
-      |> move_up 100.
-    ;
+      |> move_up 100.;
   ]
 
 let main = Playground_platform.run_app app
