@@ -1,6 +1,7 @@
 open Common
 open Basics
 open Playground
+open Color
 module V = Vdom
 
 (*****************************************************************************)
