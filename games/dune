@@ -7,6 +7,6 @@
   )
   (libraries
     elm_playground
-    elm_playground_native ; implem of virtual elm_playground_platform
+    elm_playground_native ; implem of virtual elm_playground
   )
 )

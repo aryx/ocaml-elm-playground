@@ -1,6 +1,6 @@
 (library
   (public_name elm_playground_native)
-  (implements elm_playground_platform)
+  (implements elm_playground)
   (libraries
     elm_playground
     cairo2 tsdl

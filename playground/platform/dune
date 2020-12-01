@@ -1,8 +1,0 @@
-(library
-  (public_name elm_playground_platform)
-  (virtual_modules Playground_platform)
-  (wrapped false)
-  (libraries
-    elm_playground
-  )
-)

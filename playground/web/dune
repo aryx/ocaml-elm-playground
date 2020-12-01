@@ -1,6 +1,6 @@
 (library
  (public_name elm_playground_web)
- (implements elm_playground_platform)
+ (implements elm_playground)
  (libraries
    commons
    elm_playground

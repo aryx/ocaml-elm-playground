@@ -1,5 +1,6 @@
 (library
  (public_name elm_playground)
+ (virtual_modules Playground_platform)
  (wrapped false)
  (libraries
    commons
