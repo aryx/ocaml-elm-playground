@@ -1,13 +1,13 @@
 (executables
   (names 
-    Test_cairo_graphics 
+;    Test_cairo_graphics 
     Test_tsdl 
-    Test_ocamlsdl2
+;    Test_ocamlsdl2
   )
   (libraries
     cairo2
-    graphics
+;    graphics
     tsdl
-    sdl2
+;    sdl2
   )
 )
