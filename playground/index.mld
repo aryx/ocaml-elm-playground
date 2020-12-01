@@ -1,0 +1,28 @@
+{0:top elm_playground}
+
+{1 OCaml Elm Playground }
+
+Create pictures, animations, and games with OCaml!
+
+This is a port of the excellent {{:https://github.com/evancz/elm-playground} Elm playground package} to OCaml.
+
+This is the package I wanted when I was learning programming. Start by
+putting shapes on screen and work up to making games. I hope this
+package will be fun for a broad range of ages and backgrounds!
+
+{2 Pictures}
+
+A picture is a list of shapes. For example, this picture combines a brown rectangle and a green circle to make a tree
+{[
+]}
+
+{2 Animations}
+
+{2 Games}
+
+
+{2:index Index of modules}
+
+{!modules:
+    Playground
+}

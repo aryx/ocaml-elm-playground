@@ -1,3 +1,8 @@
+(**
+  See {!basics}
+*)
+
+
 
 (* It is more flexible to use float than int for graphical operations.
  * Consider using 'open Basics' to have the +/-/... operators working on 
@@ -157,3 +162,7 @@ type 'memory game
 val game :
   (computer -> 'memory -> shape list) ->
   (computer -> 'memory -> 'memory) -> 'memory -> ('memory game, msg) app
+
+(** {1:basics Basics}
+*)
+

@@ -7,3 +7,7 @@
  )
  (preprocess (pps ppx_profiling))
 )
+
+(documentation
+  (package elm_playground)
+  (mld_files index))
