@@ -16,6 +16,9 @@ module V = Vdom
 let _log s = 
   Js_browser.Console.log Js_browser.console (Ojs.string_to_js s)
 
+let string_of_number x = 
+  spf "%f" x
+
 module Html = struct
 (*type 'msg t = 'msg V.vdom*)
 let style = V.style
