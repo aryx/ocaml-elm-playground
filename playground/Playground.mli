@@ -17,10 +17,10 @@ The important types are:
 
 (** A number like [1] or [3.14] or [-120].
 
-It is more flexible to use [float] than [int] for graphical operations.
+It is more flexible to use [float] rather han [int] for graphical operations.
 Consider using [open Basics] to have the [+], [-], and other
 arithmetic operators working on floats instead of having to use
-the [+.], [-.], etc.
+[+.], [-.], etc.
  *)
 type number = float
 
@@ -294,7 +294,7 @@ val octagon : color -> number -> shape
 
     let main = Playground.run_app app
 ]}
-**Note:** If you {!rotate} a polygon, it will always rotate around
+{b Note:} If you {!rotate} a polygon, it will always rotate around
 [(0,0)]. So it is best to build your shapes around that point, and then use
 {!move} or {!group} so that rotation makes more sense.
 *)
@@ -465,7 +465,7 @@ moves back and forth:
 
     view time =
       [ square purple 20
-          |> moveX (wave 4 -200 200 time)
+          |> move_x (wave 4 -200 200 time)
       ]
 
     let app =
@@ -473,7 +473,7 @@ moves back and forth:
 
     let main = Playground.run_app app
 ]}
-Using [moveX] feels a bit nicer here because the movement may be positive or negative.
+Using [move_x] feels a bit nicer here because the movement may be positive or negative.
 *)
 val move_x : number -> shape -> shape
 
@@ -487,7 +487,7 @@ grass along the bottom of the screen:
 
     let view computer count =
       [ rectangle green computer.screen.width 100
-          |> moveY computer.screen.bottom
+          |> move_y computer.screen.bottom
       ]
 
     let app =
@@ -495,7 +495,7 @@ grass along the bottom of the screen:
 
     let main = Playground.run_app app
 ]}
-Using [moveY] feels a bit nicer when setting things relative to the bottom or
+Using [move_y] feels a bit nicer when setting things relative to the bottom or
 top of the screen, since the values are negative sometimes.
 *)
 val move_y : number -> shape -> shape
@@ -595,8 +595,8 @@ You could draw a circle around the mouse with a program like this:
 
     let view computer memory =
       [ circle yellow 40
-          |> moveX computer.mouse.x
-          |> moveY computer.mouse.y
+          |> move_x computer.mouse.x
+          |> move_y computer.mouse.y
       ]
 
     let update computer memory =
@@ -626,7 +626,7 @@ So if you want to move a character based on arrows, you could write an update
 like this:
 {[
     let update computer y =
-      if computer.keyboard.up then
+      if computer.keyboard.kup then
         y + 1
       else
         y
@@ -670,11 +670,11 @@ So to make a square move left and right based on the arrow keys, we could say:
 
     let view computer x =
       [ square green 40
-          |> moveX x
+          |> move_x x
       ]
 
     let update computer x =
-      x + toX computer.keyboard
+      x + to_x computer.keyboard
 
 
     let app =
@@ -692,7 +692,7 @@ val to_x : keyboard -> number
     to_y { up = True , down = True , ... } == 0
 ]}
 
-This can be used to move characters around in games just like {!toX}:
+This can be used to move characters around in games just like {!to_x}:
 {[
     open Playground
 
@@ -702,8 +702,8 @@ This can be used to move characters around in games just like {!toX}:
       ]
 
     let update computer (x,y) =
-      ( x + toX computer.keyboard
-      , y + toY computer.keyboard
+      ( x + to_x computer.keyboard
+      , y + to_y computer.keyboard
       )
 
     let app =
@@ -741,7 +741,7 @@ Now when you go up/right, you are still going 1 pixel per update.
 
     let update computer (x,y) =
       let
-        (dx,dy) = toXY computer.keyboard
+        (dx,dy) = to_xy computer.keyboard
       in
       (x + dx, y + dy)
 
@@ -761,7 +761,7 @@ about your computer:
   - {!type:screen} - How wide is the screen?
   - {!type:time} - What time is it right now?
 
-So you can use expressions like [computer.mouse.x] and [computer.keyboard.enter]
+So you can use expressions like [computer.mouse.x] and [computer.keyboard.kenter]
 in games where you want some mouse or keyboard interaction.
 *)
 type computer = {
@@ -826,7 +826,7 @@ try out an [animation]. Here is square that zigzags back and forth:
 
     view time =
       [ square blue 40
-          |> moveX (zigzag -100 100 2 time)
+          |> move_x (zigzag -100 100 2 time)
       ]
 
     let app =
@@ -887,8 +887,8 @@ moves based on the arrow keys:
       ]
 
     let update computer (x,y) =
-      ( x + toX computer.keyboard
-      , y + toY computer.keyboard
+      ( x + to_x computer.keyboard
+      , y + to_y computer.keyboard
       )
 
     let app =
