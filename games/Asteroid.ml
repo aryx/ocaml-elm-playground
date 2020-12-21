@@ -21,6 +21,11 @@ open Playground
 (* Geometry *)
 (*****************************************************************************)
 
+(* todo? put that in a separate Geometry.ml library? with better types
+ * less: advanced geometry types:
+ *   https://www.cs.cornell.edu/~asampson/media/papers/gator-oopsla2020-preprint.pdf
+ *)
+
 (* orig: pad: would be simpler to use float everywhere? *)
 type point = {x: int; y: int }
 
