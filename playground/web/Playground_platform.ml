@@ -1,8 +1,8 @@
 open Common
+
 open Basics
 open Playground
 open Color
-module V = Vdom
 
 (*****************************************************************************)
 (* Prelude *)
@@ -19,16 +19,53 @@ let _log s =
 let string_of_number x = 
   spf "%f" x
 
-module Html = struct
-(*type 'msg t = 'msg V.vdom*)
-let style = V.style
-
+(* when using the VDROM, but tedious to use request_animation_frame
+ * and a global keyboard handler => switch to basic Dom.
+ *)
 (*
-let div a b =
-  V.div ~a b
+module V = Vdom
 *)
+
+(* when using directly the DOM *)
+module V = struct
+open Js_browser
+type t = Element.t
+
+type 'a vdom = t
+
+type attr = 
+  | Attr of string * string
+  | Style of string * string
+
+let svg_ns = "http://www.w3.org/2000/svg"
+
+let svg_elt tag ~a children =
+  (* bugfix: for svg elt we need to pass the ns! (namespace_URI), otherwise
+   * it will not render anything.
+   *)
+  let elt = Document.create_element_ns document svg_ns tag in
+  a |> List.iter (function
+     | Attr (k, v) ->
+       Element.set_attribute elt k v
+     | Style (k, v) ->
+          Ojs.set
+            (Ojs.get (Element.t_to_js elt) "style")
+            k
+            (Ojs.string_to_js v)
+  );
+  children |> List.iter (fun child ->
+      Element.append_child elt child
+  );
+  elt
+let style s1 s2  = 
+  Style (s1, s2)
+let attr s v =
+  Attr (s, v)
 end
 
+module Html = struct
+let style = V.style
+end
 
 module Svg = struct
 type 'msg t = 'msg V.vdom
@@ -249,7 +286,9 @@ let string_of_intkey = function
 (*****************************************************************************)
 (* run_app *)
 (*****************************************************************************)
+open Js_browser
 
+(* when using Vdom:
 let (vdom_app_of_app: ('model, 'msg) Playground.app -> ('model, 'msg) V.app) = 
  fun { Playground. init; view; update; subscriptions = _subTODO } ->
   V.app 
@@ -267,8 +306,6 @@ let (vdom_app_of_app: ('model, 'msg) Playground.app -> ('model, 'msg) V.app) =
         model, V.Cmd.Batch []
        )
      ()
-
-open Js_browser
 let run_app app =
   let app = vdom_app_of_app app in
   let run () = 
@@ -277,3 +314,36 @@ let run_app app =
     |> Element.append_child (Document.body document) in
   let () = Window.set_onload window run in
   ()
+*)  
+
+(* when using the simple DOM *)
+let run_app app =
+  Window.set_onload window (fun () ->
+
+    let (model, _cmdsTODO) = app.Playground.init () in
+    let sx = Playground.default_width in
+    let sy = Playground.default_height in
+
+    let model = ref model in
+
+    let shapes = app.Playground.view !model in
+
+    let screen = Playground.to_screen sx sy in
+    let elt = render screen shapes in
+
+    let rec draw _time = 
+      (* probably not needed *)
+      let container = Document.create_element document "div" in
+      Element.append_child container elt;
+
+      (* set the body to the current view *)
+      let body = Document.body document in
+      Element.remove_all_children body;
+      Element.append_child body container;
+
+      (* Window.request_animation_frame window draw; *) 
+      ignore draw;
+    in
+    Window.request_animation_frame window draw;
+    ()
+  )
