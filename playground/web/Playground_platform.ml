@@ -13,7 +13,7 @@ open Color
 (*****************************************************************************)
 
 (* can also use Printf.printf I think *)
-let _log s = 
+let log s = 
   Js_browser.Console.log Js_browser.console (Ojs.string_to_js s)
 
 let string_of_number x = 
@@ -284,6 +284,61 @@ let string_of_intkey = function
 *)
 
 (*****************************************************************************)
+(* Event to msg *)
+(*****************************************************************************)
+
+module E = Sub
+(* TODO: move cairo stuff out and generalize? *)
+let event_to_msgopt event subs =
+  match event with
+  | E.ETick time ->
+      subs |> E.find_map_opt (function 
+       | Sub.SubTick f -> Some (f time) 
+       | _ -> None
+      )
+  | _ -> failwith "TODO"
+(*
+  | E.EMouseMove (x, y) ->
+      subs |> E.find_map_opt (function 
+        | Sub.SubMouseMove f ->
+
+          (* TODO !!!cairo specific stuff!!! *)
+          let (x, y) = Cairo.device_to_user cr (float x) (float y) in
+          let (x, y) = convert (x, y) in
+          pr2_gen (x, y);
+
+          Some (f (x, y))
+
+         | _ -> None
+      )
+  | E.EMouseButton (true) ->
+      subs |> E.find_map_opt (function 
+        | Sub.SubMouseDown f ->
+           Some (f ())
+       | _ -> None
+      )
+  | E.EMouseButton (false) ->
+      subs |> E.find_map_opt (function 
+        | Sub.SubMouseUp f ->
+           Some (f ())
+       | _ -> None
+      )
+  | E.EKeyChanged (true, key) ->
+      subs |> E.find_map_opt (function 
+        | Sub.SubKeyDown f ->
+          pr2_gen key;
+
+           Some (f key)
+       | _ -> None
+      )
+  | E.EKeyChanged (false, key) ->
+      subs |> E.find_map_opt (function 
+        | Sub.SubKeyUp f ->
+           Some (f key)
+       | _ -> None
+      )
+*)
+(*****************************************************************************)
 (* run_app *)
 (*****************************************************************************)
 open Js_browser
@@ -314,36 +369,54 @@ let run_app app =
     |> Element.append_child (Document.body document) in
   let () = Window.set_onload window run in
   ()
-*)  
+*)
 
 (* when using the simple DOM *)
 let run_app app =
   Window.set_onload window (fun () ->
 
-    let (model, _cmdsTODO) = app.Playground.init () in
     let sx = Playground.default_width in
     let sy = Playground.default_height in
 
-    let model = ref model in
+    let (initmodel, _cmdsTODO) = app.Playground.init () in
+    let model = ref initmodel in
 
-    let shapes = app.Playground.view !model in
+    (* TODO: typing Q will cause an 'exit 0' that will exit the loop *)
+    
+    let rec animation_frame time =
+      let time = time /. 1000. in
 
-    let screen = Playground.to_screen sx sy in
-    let elt = render screen shapes in
+      (* one frame *)
+      let subs = app.Playground.subscriptions !model in
 
-    let rec draw _time = 
+      let event = 
+          E.ETick time 
+      in
+      ignore(log);
+      (*log (spf "%f" time);*)
+
+      let msg_opt = event_to_msgopt event subs in
+      (match msg_opt with
+      | None -> ()
+      | Some msg ->
+          let newmodel, _cmds = app.Playground.update msg !model in
+          model := newmodel;
+     );
+      
+      let shapes = app.Playground.view !model in
+      let screen = Playground.to_screen sx sy in
+      let elt = render screen shapes in
+
       (* probably not needed *)
       let container = Document.create_element document "div" in
       Element.append_child container elt;
-
       (* set the body to the current view *)
       let body = Document.body document in
       Element.remove_all_children body;
       Element.append_child body container;
 
-      (* Window.request_animation_frame window draw; *) 
-      ignore draw;
+      Window.request_animation_frame window animation_frame;
     in
-    Window.request_animation_frame window draw;
+    Window.request_animation_frame window animation_frame;
     ()
   )
