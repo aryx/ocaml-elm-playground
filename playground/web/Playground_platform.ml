@@ -8,6 +8,8 @@ open Color
 (* Prelude *)
 (*****************************************************************************)
 
+let debug = ref true
+
 (*****************************************************************************)
 (* Helpers modules *)
 (*****************************************************************************)
@@ -244,51 +246,13 @@ let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
       ]
       (List.map render_shape shapes)
 
-(*****************************************************************************)
-(* Event to msg *)
-(*****************************************************************************)
-(*
-    | MouseMove (x, y) ->
-        let x = computer.screen.left + page_x in
-        let y = computer.screen.top - page_y in
-
-let string_of_intkey = function
-  | _ -> "TODO"
-
-      (* TODO: should use subscription instead *)
-    let elt = Html.div [
-        V.onmousemove (fun evt -> 
-          MouseMove (evt.V.page_x, evt.V.page_y)
-        );
-        V.onclick (fun _evt -> 
-          log "click"; 
-          MouseClick
-        );
-        (* note that Vdom does not provide onmouseup, so we use onclick 
-         * to set back mouse.mdown to false *)
-        V.onmousedown (fun evt -> 
-          log (spf "%d" evt.V.buttons);
-          MouseButton (evt.V.buttons > 0)
-        );
-        V.onkeydown (fun evt -> 
-          log (spf "key: %d" evt.V.which);
-          KeyChanged (true, string_of_intkey evt.V.which)
-        );
-      ] [elt] 
-    in
-    { Browser.
-      title = "Playground";
-      body = [elt];
-    }
-
-*)
 
 (*****************************************************************************)
 (* Event to msg *)
 (*****************************************************************************)
 
 module E = Sub
-(* TODO: move cairo stuff out and generalize? *)
+(* TODO: factorize with native version, remove cairo out *)
 let event_to_msgopt event subs =
   match event with
   | E.ETick time ->
@@ -296,20 +260,14 @@ let event_to_msgopt event subs =
        | Sub.SubTick f -> Some (f time) 
        | _ -> None
       )
-  | _ -> failwith "TODO"
-(*
+
   | E.EMouseMove (x, y) ->
       subs |> E.find_map_opt (function 
         | Sub.SubMouseMove f ->
-
-          (* TODO !!!cairo specific stuff!!! *)
-          let (x, y) = Cairo.device_to_user cr (float x) (float y) in
-          let (x, y) = convert (x, y) in
-          pr2_gen (x, y);
-
+          let x = float_of_int x in
+          let y = float_of_int y in
           Some (f (x, y))
-
-         | _ -> None
+        | _ -> None
       )
   | E.EMouseButton (true) ->
       subs |> E.find_map_opt (function 
@@ -337,7 +295,65 @@ let event_to_msgopt event subs =
            Some (f key)
        | _ -> None
       )
+
+(*
+let string_of_intkey = function
+  | _ -> "TODO"
+
+      (* TODO: should use subscription instead *)
+    let elt = Html.div [
+        V.onmousemove (fun evt -> 
+          MouseMove (evt.V.page_x, evt.V.page_y)
+        );
+        V.onclick (fun _evt -> 
+          log "click"; 
+          MouseClick
+        );
+        (* note that Vdom does not provide onmouseup, so we use onclick 
+         * to set back mouse.mdown to false *)
+        V.onmousedown (fun evt -> 
+          log (spf "%d" evt.V.buttons);
+          MouseButton (evt.V.buttons > 0)
+        );
+        V.onkeydown (fun evt -> 
+          log (spf "key: %d" evt.V.which);
+          KeyChanged (true, string_of_intkey evt.V.which)
+        );
+      ] [elt] 
 *)
+
+open Js_browser
+
+let adjust_x_y x y dim screen =
+  log (spf "%f %f" x y);
+  log (spf "h=%f, w=%f, left=%f, right=%f, top=%f, bottom=%f"
+        (Rect.height dim) (Rect.width dim) (Rect.left dim) (Rect.right dim)
+        (Rect.top dim) (Rect.bottom dim));
+
+  let x = x - Rect.left dim in
+  let x = x * screen.width / Rect.width dim in
+  let x = screen.left + x in
+
+  let y = y - Rect.top dim in
+  let y = y * screen.height / Rect.height dim in
+  let y = screen.top - y in
+
+   x, y
+
+let js_event_to_event evt screen = 
+  let ty = Event.type_ evt in
+  match ty with
+  | "mousemove" ->
+      let (x, y) = Event.page_x evt, Event.page_y evt in
+  
+      let o = Event.target evt in
+      let elt = Element.t_of_js o in
+      let dim = Element.get_bounding_client_rect elt in
+
+      let x, y = adjust_x_y x y dim screen in
+      Some (E.EMouseMove (int_of_float x, int_of_float y))
+  | _ -> None
+
 (*****************************************************************************)
 (* run_app *)
 (*****************************************************************************)
@@ -377,12 +393,14 @@ let run_app app =
 
     let sx = Playground.default_width in
     let sy = Playground.default_height in
+    let screen = Playground.to_screen sx sy in
 
     let (initmodel, _cmdsTODO) = app.Playground.init () in
     let model = ref initmodel in
 
     (* TODO: typing Q will cause an 'exit 0' that will exit the loop *)
-    
+
+   
     let rec animation_frame time =
       let time = time /. 1000. in
 
@@ -404,19 +422,41 @@ let run_app app =
      );
       
       let shapes = app.Playground.view !model in
-      let screen = Playground.to_screen sx sy in
       let elt = render screen shapes in
 
+      let body = Document.body document in
+      Element.remove_all_children body;
+
       (* probably not needed *)
+(*
       let container = Document.create_element document "div" in
       Element.append_child container elt;
       (* set the body to the current view *)
-      let body = Document.body document in
-      Element.remove_all_children body;
       Element.append_child body container;
+*)
+      Element.append_child body elt;
 
-      Window.request_animation_frame window animation_frame;
+      if not !debug 
+      then Window.request_animation_frame window animation_frame;
     in
     Window.request_animation_frame window animation_frame;
+
+    let on_event evt =
+      let evt_opt = js_event_to_event evt screen in
+      (match evt_opt with
+      | None -> ()
+      | Some event ->
+         let subs = app.Playground.subscriptions !model in
+         let msg_opt = event_to_msgopt event subs in
+         (match msg_opt with
+         | None -> ()
+         | Some msg ->
+            let newmodel, _cmds = app.Playground.update msg !model in
+            model := newmodel;
+         );
+       );
+      if !debug then Window.request_animation_frame window animation_frame;
+    in
+    Window.add_event_listener window Event.Mousemove on_event true;
     ()
   )

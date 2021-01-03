@@ -2,6 +2,7 @@
 open Playground
 
 let view computer _memory = [ 
+  rectangle yellow computer.screen.width computer.screen.height;
   circle lightPurple 30.
    |> move_x computer.mouse.mx
    |> move_y computer.mouse.my
