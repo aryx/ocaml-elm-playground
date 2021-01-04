@@ -3,6 +3,7 @@ open Common
 open Basics
 open Playground
 open Color
+module E = Sub
 
 (*****************************************************************************)
 (* Prelude *)
@@ -247,54 +248,11 @@ let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
       (List.map render_shape shapes)
 
 
+
+
 (*****************************************************************************)
-(* Event to msg *)
+(* Event management *)
 (*****************************************************************************)
-
-module E = Sub
-(* TODO: factorize with native version, remove cairo out *)
-let event_to_msgopt event subs =
-  match event with
-  | E.ETick time ->
-      subs |> E.find_map_opt (function 
-       | Sub.SubTick f -> Some (f time) 
-       | _ -> None
-      )
-
-  | E.EMouseMove (x, y) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubMouseMove f ->
-          let x = float_of_int x in
-          let y = float_of_int y in
-          Some (f (x, y))
-        | _ -> None
-      )
-  | E.EMouseButton (true) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubMouseDown f ->
-           Some (f ())
-       | _ -> None
-      )
-  | E.EMouseButton (false) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubMouseUp f ->
-           Some (f ())
-       | _ -> None
-      )
-  | E.EKeyChanged (true, key) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubKeyDown f ->
-          pr2_gen key;
-
-           Some (f key)
-       | _ -> None
-      )
-  | E.EKeyChanged (false, key) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubKeyUp f ->
-           Some (f key)
-       | _ -> None
-      )
 
 (*
 let string_of_intkey = function
@@ -321,6 +279,7 @@ let string_of_intkey = function
         );
       ] [elt] 
 *)
+
 
 open Js_browser
 
@@ -352,6 +311,7 @@ let js_event_to_event evt screen =
 
       let x, y = adjust_x_y x y dim screen in
       Some (E.EMouseMove (int_of_float x, int_of_float y))
+
   | _ -> None
 
 (*****************************************************************************)
@@ -399,7 +359,6 @@ let run_app app =
     let model = ref initmodel in
 
     (* TODO: typing Q will cause an 'exit 0' that will exit the loop *)
-
    
     let rec animation_frame time =
       let time = time /. 1000. in
@@ -413,7 +372,7 @@ let run_app app =
       ignore(log);
       (*log (spf "%f" time);*)
 
-      let msg_opt = event_to_msgopt event subs in
+      let msg_opt = E.event_to_msgopt event subs in
       (match msg_opt with
       | None -> ()
       | Some msg ->
@@ -441,13 +400,13 @@ let run_app app =
     in
     Window.request_animation_frame window animation_frame;
 
-    let on_event evt =
+    let on_js_event evt =
       let evt_opt = js_event_to_event evt screen in
       (match evt_opt with
       | None -> ()
       | Some event ->
          let subs = app.Playground.subscriptions !model in
-         let msg_opt = event_to_msgopt event subs in
+         let msg_opt = E.event_to_msgopt event subs in
          (match msg_opt with
          | None -> ()
          | Some msg ->
@@ -457,6 +416,6 @@ let run_app app =
        );
       if !debug then Window.request_animation_frame window animation_frame;
     in
-    Window.add_event_listener window Event.Mousemove on_event true;
+    Window.add_event_listener window Event.Mousemove on_js_event true;
     ()
   )

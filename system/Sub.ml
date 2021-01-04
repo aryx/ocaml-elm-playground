@@ -46,3 +46,41 @@ let rec find_map_opt f = function
       | None -> find_map_opt f xs
       | Some x -> Some x
       )
+
+let event_to_msgopt event subs =
+  match event with
+  | ETick time ->
+      subs |> find_map_opt (function 
+       | SubTick f -> Some (f time) 
+       | _ -> None
+      )
+  | EMouseMove (x, y) ->
+      subs |> find_map_opt (function 
+        | SubMouseMove f ->
+          Some (f (float_of_int x, float_of_int y))
+         | _ -> None
+      )
+  | EMouseButton (true) ->
+      subs |> find_map_opt (function 
+        | SubMouseDown f ->
+           Some (f ())
+       | _ -> None
+      )
+  | EMouseButton (false) ->
+      subs |> find_map_opt (function 
+        | SubMouseUp f ->
+           Some (f ())
+       | _ -> None
+      )
+  | EKeyChanged (true, key) ->
+      subs |> find_map_opt (function 
+        | SubKeyDown f ->
+           Some (f key)
+       | _ -> None
+      )
+  | EKeyChanged (false, key) ->
+      subs |> find_map_opt (function 
+        | SubKeyUp f ->
+           Some (f key)
+       | _ -> None
+      )

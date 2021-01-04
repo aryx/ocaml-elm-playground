@@ -1,6 +1,7 @@
 open Common
 open Basics
 open Color
+module E = Sub
 
 open Tsdl
 
@@ -286,58 +287,6 @@ let rec (render_shape: hook -> shape -> unit) =
 let (render: shape list -> unit) = fun shapes ->
     List.iter (render_shape empty_hook) shapes
 
-(*****************************************************************************)
-(* Event to msg *)
-(*****************************************************************************)
-
-module E = Sub
-(* TODO: move cairo stuff out and generalize? *)
-let event_to_msgopt event subs cr =
-  match event with
-  | E.ETick time ->
-      subs |> E.find_map_opt (function 
-       | Sub.SubTick f -> Some (f time) 
-       | _ -> None
-      )
-  | E.EMouseMove (x, y) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubMouseMove f ->
-
-          (* TODO !!!cairo specific stuff!!! *)
-          let (x, y) = Cairo.device_to_user cr (float x) (float y) in
-          let (x, y) = convert (x, y) in
-          pr2_gen (x, y);
-
-          Some (f (x, y))
-
-         | _ -> None
-      )
-  | E.EMouseButton (true) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubMouseDown f ->
-           Some (f ())
-       | _ -> None
-      )
-  | E.EMouseButton (false) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubMouseUp f ->
-           Some (f ())
-       | _ -> None
-      )
-  | E.EKeyChanged (true, key) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubKeyDown f ->
-          pr2_gen key;
-
-           Some (f key)
-       | _ -> None
-      )
-  | E.EKeyChanged (false, key) ->
-      subs |> E.find_map_opt (function 
-        | Sub.SubKeyUp f ->
-           Some (f key)
-       | _ -> None
-      )
 
 (*****************************************************************************)
 (* FPS (using Cairo) *)
@@ -453,9 +402,11 @@ let run_app app =
         let event_type = Sdl.Event.get event Sdl.Event.typ in
         (match event_type with
         | x when x = Sdl.Event.mouse_motion ->
-          let mx = Sdl.Event.(get event mouse_motion_x) in
-          let my = Sdl.Event.(get event mouse_motion_y) in
-          E.EMouseMove (mx, my)
+          let x = Sdl.Event.(get event mouse_motion_x) in
+          let y = Sdl.Event.(get event mouse_motion_y) in
+          let (x, y) = Cairo.device_to_user cr (float x) (float y) in
+          let (x, y) = convert (x, y) in
+          E.EMouseMove (int_of_float x, int_of_float y)
 
         | x when x = Sdl.Event.mouse_button_down ->
           E.EMouseButton (true)
@@ -479,7 +430,7 @@ let run_app app =
       else E.ETick time 
     in
 
-    let msg_opt = event_to_msgopt event subs cr in
+    let msg_opt = E.event_to_msgopt event subs in
     (match msg_opt with
     | None -> ()
     | Some msg ->
