@@ -26,9 +26,11 @@ open Basics (* elm-core *)
 (*****************************************************************************)
 (* Config *)
 (*****************************************************************************)
-(* orig: was 600 x 600 *)
-let default_width = 1024.
-let default_height = 768.
+(* orig: was 600 x 600.
+ * todo: note that some games assumes a square grid (e.g., Snake)
+ *)
+let default_width = 1000.
+let default_height = 1000.
 
 (*****************************************************************************)
 (* Number *)

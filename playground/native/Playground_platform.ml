@@ -6,6 +6,17 @@ module E = Sub
 open Tsdl
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Native backend of Playground using Cairo and SDL.
+ *
+ * history:
+ *  - use Graphics, but no keydown/keyup
+ *  - use ocaml-SDL, but initialy lack example to work with Cairo
+ *  - use TSDL+cairo
+ *)
+
+(*****************************************************************************)
 (* Image loading (independent of Playground) *)
 (*****************************************************************************)
 

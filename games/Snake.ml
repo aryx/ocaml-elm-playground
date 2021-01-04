@@ -77,6 +77,7 @@ let smaller size = f size *. 0.90
 
 let movei a b shape = move (f a) (f b) shape
 
+(* this assumes a square screen *)
 let translate (x,y) screen shape =
   let cell_size = cell_size screen in
   shape 

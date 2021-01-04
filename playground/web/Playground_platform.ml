@@ -5,11 +5,23 @@ open Playground
 open Color
 module E = Sub
 
+open Js_browser
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* Web backend of Playground.
+ *
+ * TODO: switch to Canvas, use CanvasToCairo? so closer to native playground?
+ * I originally used SVG because that's what elm-playground is using, but
+ * I have pbs with the mouse coordinate and the bounding box conversion,
+ * so maybe simpler to switch to Canvas.
+ *)
 
-let debug = ref true
+(* When set to true, we generate a new frame only when there is an event.
+ * It makes things easier to observe with Chrome developer tools.
+ *)
+let debug = ref false
 
 (*****************************************************************************)
 (* Helpers modules *)
@@ -31,7 +43,6 @@ module V = Vdom
 
 (* when using directly the DOM *)
 module V = struct
-open Js_browser
 type t = Element.t
 
 type 'a vdom = t
@@ -247,41 +258,9 @@ let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
       ]
       (List.map render_shape shapes)
 
-
-
-
 (*****************************************************************************)
 (* Event management *)
 (*****************************************************************************)
-
-(*
-let string_of_intkey = function
-  | _ -> "TODO"
-
-      (* TODO: should use subscription instead *)
-    let elt = Html.div [
-        V.onmousemove (fun evt -> 
-          MouseMove (evt.V.page_x, evt.V.page_y)
-        );
-        V.onclick (fun _evt -> 
-          log "click"; 
-          MouseClick
-        );
-        (* note that Vdom does not provide onmouseup, so we use onclick 
-         * to set back mouse.mdown to false *)
-        V.onmousedown (fun evt -> 
-          log (spf "%d" evt.V.buttons);
-          MouseButton (evt.V.buttons > 0)
-        );
-        V.onkeydown (fun evt -> 
-          log (spf "key: %d" evt.V.which);
-          KeyChanged (true, string_of_intkey evt.V.which)
-        );
-      ] [elt] 
-*)
-
-
-open Js_browser
 
 let adjust_x_y x y dim screen =
   log (spf "%f %f" x y);
@@ -315,6 +294,9 @@ let js_event_to_event evt screen =
 
       let x, y = adjust_x_y x y dim screen in
       Some (E.EMouseMove (int_of_float x, int_of_float y))
+  | "mousedown" | "mouseup" ->
+      let b = Event.buttons evt > 0 in
+      Some (E.EMouseButton b)
 
   | "keydown" ->
       let key = Event.key evt in
@@ -330,7 +312,6 @@ let js_event_to_event evt screen =
 (*****************************************************************************)
 (* run_app *)
 (*****************************************************************************)
-open Js_browser
 
 (* when using Vdom:
 let (vdom_app_of_app: ('model, 'msg) Playground.app -> ('model, 'msg) V.app) = 
@@ -371,20 +352,8 @@ let run_app app =
     let (initmodel, _cmdsTODO) = app.Playground.init () in
     let model = ref initmodel in
 
-    (* TODO: typing Q will cause an 'exit 0' that will exit the loop *)
-   
-    let rec animation_frame time =
-      let time = time /. 1000. in
-
-      (* one frame *)
+    let process_playground_event event = 
       let subs = app.Playground.subscriptions !model in
-
-      let event = 
-          E.ETick time 
-      in
-      ignore(log);
-      (*log (spf "%f" time);*)
-
       let msg_opt = E.event_to_msgopt event subs in
       (match msg_opt with
       | None -> ()
@@ -392,20 +361,23 @@ let run_app app =
           let newmodel, _cmds = app.Playground.update msg !model in
           model := newmodel;
      );
-      
+    in
+   
+    (* one frame *)
+    let rec animation_frame time =
+      let time = time /. 1000. in
+      log (spf "%f" time);
+      let event = 
+          E.ETick time 
+      in
+      process_playground_event event;
+
       let shapes = app.Playground.view !model in
       let elt = render screen shapes in
 
       let body = Document.body document in
       Element.remove_all_children body;
 
-      (* probably not needed *)
-(*
-      let container = Document.create_element document "div" in
-      Element.append_child container elt;
-      (* set the body to the current view *)
-      Element.append_child body container;
-*)
       Element.append_child body elt;
 
       if not !debug 
@@ -417,20 +389,14 @@ let run_app app =
       let evt_opt = js_event_to_event evt screen in
       (match evt_opt with
       | None -> ()
-      | Some event ->
-         let subs = app.Playground.subscriptions !model in
-         let msg_opt = E.event_to_msgopt event subs in
-         (match msg_opt with
-         | None -> ()
-         | Some msg ->
-            let newmodel, _cmds = app.Playground.update msg !model in
-            model := newmodel;
-         );
-       );
+      | Some event -> process_playground_event event
+      );
       if !debug then Window.request_animation_frame window animation_frame;
     in
     [
       Event.Mousemove;
+      Event.Mousedown;
+      Event.Mouseup;
       Event.Keydown;
       Event.Keyup;
     ] |> List.iter (fun evt_kind ->

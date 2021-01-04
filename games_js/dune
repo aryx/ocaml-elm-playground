@@ -1,0 +1,12 @@
+(executables
+  (names 
+    Snake
+    
+  )
+  (libraries
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
