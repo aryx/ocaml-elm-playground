@@ -215,11 +215,26 @@ let render_ngon color n radius x y angle s alpha =
     )
     []
 
-let render_words _color _str _x _y _angle _s _alpha =
-  raise Todo
+(* TODO *)
+let render_words color _str x y angle s alpha =
+  Svg.circle 
+    (Svg.Attributes.r (string_of_number 10.) ::
+     Svg.Attributes.fill (render_color color) ::
+     Svg.Attributes.transform (render_transform x y angle s)::
+     render_alpha alpha
+    )
+    []
 
-let render_polygon _color _points _x _y _angle _s _alpha =
-  raise Todo
+(* TODO *)
+let render_polygon color _points x y angle s alpha =
+  Svg.circle 
+    (Svg.Attributes.r (string_of_number 10.) ::
+     Svg.Attributes.fill (render_color color) ::
+     Svg.Attributes.transform (render_transform x y angle s)::
+     render_alpha alpha
+    )
+    []
+
 
 let (render_shape: shape -> 'msg Svg.t) = 
   fun { x; y; angle; scale; alpha; form} ->
@@ -279,8 +294,10 @@ let adjust_x_y x y dim screen =
    x, y
 
 let adjust_key key = 
-  log (spf "key = %s" key);
-  key
+  log (spf "key = '%s'" key);
+  match key with
+  | " " -> "space"
+  | _ -> key
 
 let js_event_to_event evt screen = 
   let ty = Event.type_ evt in
@@ -366,7 +383,7 @@ let run_app app =
     (* one frame *)
     let rec animation_frame time =
       let time = time /. 1000. in
-      log (spf "%f" time);
+      (* log (spf "time: %f" time); *)
       let event = 
           E.ETick time 
       in

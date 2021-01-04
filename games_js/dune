@@ -1,7 +1,9 @@
 (executables
   (names 
     Snake
-    
+    Pong
+    Tetris
+    Asteroid    
   )
   (libraries
     elm_playground
