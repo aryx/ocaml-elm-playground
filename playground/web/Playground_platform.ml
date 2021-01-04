@@ -299,6 +299,10 @@ let adjust_x_y x y dim screen =
 
    x, y
 
+let adjust_key key = 
+  log (spf "key = %s" key);
+  key
+
 let js_event_to_event evt screen = 
   let ty = Event.type_ evt in
   match ty with
@@ -311,6 +315,15 @@ let js_event_to_event evt screen =
 
       let x, y = adjust_x_y x y dim screen in
       Some (E.EMouseMove (int_of_float x, int_of_float y))
+
+  | "keydown" ->
+      let key = Event.key evt in
+      let key = adjust_key key in
+      Some (E.EKeyChanged (true, key))
+  | "keyup" ->
+      let key = Event.key evt in
+      let key = adjust_key key in
+      Some (E.EKeyChanged (false, key))
 
   | _ -> None
 
@@ -416,6 +429,11 @@ let run_app app =
        );
       if !debug then Window.request_animation_frame window animation_frame;
     in
-    Window.add_event_listener window Event.Mousemove on_js_event true;
-    ()
+    [
+      Event.Mousemove;
+      Event.Keydown;
+      Event.Keyup;
+    ] |> List.iter (fun evt_kind ->
+       Window.add_event_listener window evt_kind on_js_event true
+    );
   )
