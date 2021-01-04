@@ -1,5 +1,5 @@
 open Playground
-open Basics (* float operators by default *)
+open Basics (* float arithmetic operators by default *)
 
 (*****************************************************************************)
 (* Prelude *)
