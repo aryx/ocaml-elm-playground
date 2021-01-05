@@ -3,6 +3,7 @@
     Smiley Picture Words
     Animation
     Mouse Keyboard
+    Turtle Mario
   )
   (libraries
     elm_playground

@@ -106,6 +106,8 @@ let rect a b =
   trusted_node "rect" a b
 let polygon a b =
   trusted_node "polygon" a b
+let image a b =
+  trusted_node "image" a b
 
 module Attributes = struct
 let viewBox = V.attr "viewBox"
@@ -120,6 +122,8 @@ let fill = V.attr "fill"
 let points = V.attr "points"
 let transform = V.attr "transform"
 let opacity = V.attr "opacity"
+
+let href = V.attr "href"
 
 end
 end
@@ -235,6 +239,17 @@ let render_polygon color _points x y angle s alpha =
     )
     []
 
+let render_image w h src x y angle s alpha =
+  Svg.image
+    (Svg.Attributes.href src:: (* was xlinkHref but require attributeNS *)
+     Svg.Attributes.width (string_of_number w)::
+     Svg.Attributes.width (string_of_number h)::
+     Svg.Attributes.fill (render_color yellow) ::
+     Svg.Attributes.transform (render_rect_transform w h x y angle s)::
+     render_alpha alpha
+    )
+    []
+
 
 let (render_shape: shape -> 'msg Svg.t) = 
   fun { x; y; angle; scale; alpha; form} ->
@@ -251,8 +266,8 @@ let (render_shape: shape -> 'msg Svg.t) =
      render_polygon color points x y angle scale alpha
   | Words (color, str) ->
      render_words color str x y angle scale alpha
-  | Image (_w, _h, _src) ->
-      raise Todo
+  | Image (w, h, src) ->
+     render_image w h src x y angle scale alpha
   | Group _ -> 
       raise Todo
 
