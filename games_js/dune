@@ -6,6 +6,7 @@
     Asteroid    
   )
   (libraries
+    unix
     elm_playground
     elm_playground_web ; implem of virtual elm_playground
   )
