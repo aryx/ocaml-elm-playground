@@ -34,7 +34,9 @@ local job = {
       uses: 'ocaml/setup-ocaml@v3',
       with: {
         'ocaml-compiler': '${{ matrix.ocaml-compiler }}',
-        //'opam-depext': false,
+	// TODO: remove at some point but better to skip
+	// some of the magic opam does for now
+        'opam-depext': false,
       },
     },
     {
