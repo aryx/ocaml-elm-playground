@@ -31,7 +31,7 @@ local job = {
   steps: [
     checkout,
     {
-      uses: 'ocaml/setup-ocaml@v2',
+      uses: 'ocaml/setup-ocaml@v3',
       with: {
         'ocaml-compiler': '${{ matrix.ocaml-compiler }}',
         //'opam-depext': false,
