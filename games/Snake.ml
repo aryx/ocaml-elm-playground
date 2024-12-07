@@ -69,6 +69,15 @@ let initial_model = {
 }
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let rec list_init = function
+  | [] -> raise Not_found
+  | [ _x ] -> []
+  | x :: y :: xs -> x :: list_init (y :: xs)
+
+(*****************************************************************************)
 (* View *)
 (*****************************************************************************)
 let f = float
@@ -161,7 +170,7 @@ let update computer model =
       let new_body = 
         if ate_food
         then snake.body
-        else Common2.list_init snake.body
+        else list_init snake.body
       in
       snake.body <- snake.head::new_body;
       snake.head <- new_head;

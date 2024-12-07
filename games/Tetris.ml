@@ -56,17 +56,37 @@ let empty_grid = []
 *)
 type piece = grid
 
+(*****************************************************************************)
+(* General Helpers *)
+(*****************************************************************************)
+(* those functions were in my common2.ml before, could put in a core/List_.ml *)
+
+let sum xs = List.fold_left ( + ) 0 xs
+
+let foldl1 p xs =
+  match xs with
+  | x :: xs -> List.fold_left p x xs
+  | [] -> failwith "foldl1: empty list"
+
+let maximum l = foldl1 max l
+
+let exclude p xs = List.filter (fun x -> not (p x)) xs
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 let (center_of_mass: piece -> pos) = fun piece ->
     let len = float (List.length piece) in
     let xs = piece |> List.map (fun cell -> cell.pos.x) in
     let ys = piece |> List.map (fun cell -> cell.pos.y) in
-    { x = Basics.round (float (Common2.sum xs) /. len);
-      y = Basics.round (float (Common2.sum ys) /. len);
+    { x = Basics.round (float (sum xs) /. len);
+      y = Basics.round (float (sum ys) /. len);
     }
 
 let (init_position: int -> piece -> pos) = fun wid piece ->
     let {x; _} = center_of_mass piece in
-    let y = piece |> List.map (fun cell -> cell.pos.y) |> Common2.maximum in
+    let y = piece |> List.map (fun cell -> cell.pos.y) |> maximum in
     (* -y -1 to set as non visible the bottom of the piece *)
     { x = wid / 2 - x; 
       y = - y - 1 
@@ -75,7 +95,7 @@ let (init_position: int -> piece -> pos) = fun wid piece ->
 let (size: piece -> (int * int)) = fun piece ->
     let xs = piece |> List.map (fun cell -> cell.pos.x) in
     let ys = piece |> List.map (fun cell -> cell.pos.y) in
-    let dim zs = 1 + Common2.maximum zs in
+    let dim zs = 1 + maximum zs in
     dim xs, dim ys
 
 (* put the piece in the grid *)
@@ -123,7 +143,7 @@ let rec clear_lines width grid =
   match full_line_opt width grid with
   | None -> grid, 0
   | Some line_y ->
-    let cleared_grid = grid |> Common.exclude (fun {pos; _} -> pos.y = line_y)in
+    let cleared_grid = grid |> exclude (fun {pos; _} -> pos.y = line_y)in
     let (above, below) =
       cleared_grid |> List.partition (fun {pos; _} -> pos.y < line_y) in
     let dropped_above = 

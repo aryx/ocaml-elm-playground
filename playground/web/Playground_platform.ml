@@ -1,5 +1,3 @@
-open Common
-
 open Basics
 open Playground
 open Color
@@ -30,6 +28,8 @@ let debug = ref false
 (* can also use Printf.printf I think *)
 let log s = 
   Js_browser.Console.log Js_browser.console (Ojs.string_to_js s)
+
+let spf = Printf.sprintf
 
 let string_of_number x = 
   spf "%f" x
@@ -62,8 +62,8 @@ let svg_elt tag ~a children =
      | Attr (k, v) ->
        Element.set_attribute elt k v
      | Style (k, v) ->
-          Ojs.set
-            (Ojs.get (Element.t_to_js elt) "style")
+          Ojs.set_prop_ascii
+            (Ojs.get_prop_ascii (Element.t_to_js elt) "style")
             k
             (Ojs.string_to_js v)
   );
@@ -135,7 +135,7 @@ end
 let render_color color =
   match color with
   | Hex str -> str
-  | Rgb (r,g,b) -> spf "rgb(%d,%d,%d)"  r g b
+  | Rgb (r,g,b) -> Printf.sprintf "rgb(%d,%d,%d)"  r g b
     
 let render_transform x y a s =
   if a = 0. then
@@ -269,7 +269,7 @@ let (render_shape: shape -> 'msg Svg.t) =
   | Image (w, h, src) ->
      render_image w h src x y angle scale alpha
   | Group _ -> 
-      raise Todo
+      failwith "Todo"
 
 
 let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->

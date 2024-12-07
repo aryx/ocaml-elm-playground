@@ -3,10 +3,10 @@
  (virtual_modules Playground_platform)
  (wrapped false)
  (libraries
-   commons
+   ; commons
    elm_core elm_system
  )
- (preprocess (pps ppx_profiling))
+ ; (preprocess (pps profiling.ppx))
 )
 
 (documentation

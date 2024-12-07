@@ -163,7 +163,7 @@ let space_asteroid () =
   let pts = aux increment_angle |> List.map (fun pt -> 
         float pt.x, float pt.y
   ) in
-  Common.pr2_gen pts;
+  (* Common.pr2_gen pts; *)
   polygon (Color.Rgb (100, 100, 100)) pts
 
 let new_asteroid screen =

@@ -2,9 +2,10 @@
   (public_name elm_playground_native)
   (implements elm_playground)
   (libraries
-    elm_playground
+    str
+    logs
     cairo2 tsdl
     imagelib.unix curl
+    elm_playground
   )
 )
-

@@ -2,8 +2,8 @@
  (public_name elm_system)
  (wrapped false)
  (libraries
-   commons
+   ; commons
    elm_core
  )
- (preprocess (pps ppx_profiling))
+ ; (preprocess (pps profiling.ppx))
 )

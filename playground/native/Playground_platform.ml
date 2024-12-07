@@ -1,8 +1,6 @@
-open Common
 open Basics
 open Color
 module E = Sub
-
 open Tsdl
 
 (*****************************************************************************)
@@ -15,6 +13,20 @@ open Tsdl
  *  - use ocaml-SDL, but initialy lack example to work with Cairo
  *  - use TSDL+cairo
  *)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+(* was in my Commom.ml before, could move in a core/Regexp_.ml *)
+
+let spf = Printf.sprintf
+
+let ( =~ ) s re =
+  Str.string_match (Str.regexp re) s 0
+let matched (i: int) (s: string) : string = Str.matched_group i s
+let _matched1 s = matched 1 s
+let _matched2 s = (matched 1 s, matched 2 s)
+let matched3 s = (matched 1 s, matched 2 s, matched 3 s)
 
 (*****************************************************************************)
 (* Image loading (independent of Playground) *)
@@ -51,15 +63,15 @@ let png_file_of_url url =
     curl_url fn url;
     let ich = ImageUtil_unix.chunk_reader_of_path fn in
     let extension = ImageUtil_unix.get_extension' fn in
-    pr2 "reading";
+    Logs.debug (fun m -> m "reading png_file_of_url");
     try ImageLib.openfile ~extension ich 
-    with Image.Not_yet_implemented _ -> failwith (spf "PB with %s" fn)
+    with Image.Not_yet_implemented _ -> failwith (Printf.sprintf "PB with %s" fn)
   in
   let tmpfile = 
     Filename.temp_file "imagelib2" ".png" 
     (* "/tmp/imagelib.png" *)
   in
-  pr2 "saving";
+  Logs.debug (fun m -> m "saving png_file_of_url");
   ImageLib_unix.writefile tmpfile image;
   tmpfile
 
@@ -95,7 +107,7 @@ let set_color cr color alpha =
         let s = String.lowercase_ascii s in
         if s =~ "^#\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)$"
         then 
-          let (a, b, c) = Common.matched3 s in
+          let (a, b, c) = matched3 s in
           let f x =
             (("0x" ^ x) |> int_of_string |> float) / 255.
           in
@@ -109,7 +121,7 @@ let debug_coordinates cr =
   let sy = !g_sy in
   let (x0,y0) = Cairo.device_to_user cr 0. 0. in
   let (xmax, ymax) = Cairo.device_to_user cr (float sx) (float sy) in
-  pr2 (spf "device 0,0 => %.1f %.1f, device %d,%d => %.1f %.1f"
+  Logs.debug (fun m -> m "device 0,0 => %.1f %.1f, device %d,%d => %.1f %.1f"
     x0 y0 sx sy xmax ymax)
 
 (* Cairo (0,0) is at the top left of the screen, in which as y goes up,
@@ -245,7 +257,7 @@ let render_image hook w h src x y angle s _alpha =
       try 
         Hashtbl.find himages src
       with Not_found ->
-        pr2_gen src;
+        (* pr2_gen src; *)
         let file = png_file_of_url src in
         let surface = Cairo.PNG.create file in
         Hashtbl.add himages src surface;

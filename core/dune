@@ -2,7 +2,7 @@
  (public_name elm_core)
  (wrapped false)
  (libraries
-   commons
+   ; commons; was for Set_.ml but now included here
  )
- (preprocess (pps ppx_profiling))
+ ; (preprocess (pps profiling.ppx))
 )

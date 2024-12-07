@@ -86,9 +86,11 @@ let pp_dollar_gesture_event ppf e =
     Sdl.Event.(get e dollar_gesture_x)
     Sdl.Event.(get e dollar_gesture_y)
 
+(* drop_file_file typing error with recent tsdl
 let pp_drop_event ppf e =
   pp ppf "@[<1>drop_event file:%s@]"
     Sdl.Event.(drop_file_file e)
+*)
 
 let pp_touch_finger_event ppf e =
   pp ppf "@[<1>touch_finger_event %s touch_id:%Ld@ finger_id:%Ld@ (%g,%g)@ \
@@ -252,7 +254,7 @@ let event_pp e =
       Sdl.Event.controller_device_removed, pp_controller_device_event;
       Sdl.Event.dollar_gesture, pp_dollar_gesture_event;
       Sdl.Event.dollar_record, cst "dollar_record";
-      Sdl.Event.drop_file, pp_drop_event;
+      (* Sdl.Event.drop_file, pp_drop_event; *)
       Sdl.Event.finger_down, pp_touch_finger_event;
       Sdl.Event.finger_motion, pp_touch_finger_event;
       Sdl.Event.finger_up, pp_touch_finger_event;

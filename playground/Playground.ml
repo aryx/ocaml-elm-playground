@@ -1,4 +1,3 @@
-open Common
 open Basics (* elm-core *)
 
 (*****************************************************************************)
@@ -442,7 +441,7 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
         Game (update_memory computer memory,
           { computer with time = Time time })
     | Resized (_w, _h) ->
-        raise Todo
+        failwith "Todo"
     (* we assume the x, y is in playground coordinate system (0,0) at the
      * center of the screen.
      *)

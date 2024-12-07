@@ -2,9 +2,9 @@
  (public_name elm_playground_web)
  (implements elm_playground)
  (libraries
-   commons
+   vdom
+   ; commons
    elm_playground
-   ocaml-vdom
  )
- (preprocess (pps ppx_profiling))
+ (preprocess (pps profiling.ppx))
 )
