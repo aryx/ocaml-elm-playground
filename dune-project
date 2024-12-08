@@ -1,6 +1,6 @@
 (lang dune 3.0)
 
-(name elm-playground)
+(name elm_playground)
 
 (generate_opam_files true)
 
