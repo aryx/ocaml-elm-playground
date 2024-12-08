@@ -14,7 +14,7 @@
    "Yoann Padioleau <yoann.padioleau@gmail.com"
 )
 
-(version "0.1.4")
+(version "0.1.5")
 
 (source (github aryx/ocaml-elm-playground))
 (homepage "https://github.com/aryx/ocaml-elm-playground")
@@ -63,9 +63,9 @@ Nope
   (synopsis "Native TDSL-based playground platform")
   (description "")
   (depends
-    ; tsdl fails in 5.2.0 because of some missing unix which are
-    ; not implicit anymore
-    (ocaml (< "5.2.0"))
+    ; tsdl fails in 5.2.0 because of some missing unix
+    ; the lib fails in 4.07 because of some syntax error about an operator
+    (ocaml (and (< "5.2.0") (>= "4.08.0")))
     logs
     (cairo2 (>= "0.6.4"))
     tsdl
@@ -78,6 +78,8 @@ Nope
   (synopsis "Web vdom-based playground platform")
   (description "")
   (depends
+     ; gen_js_api fails to build in 4.10.0
+     (ocaml (>= "4.11.0"))
      vdom
      elm_playground
   )
