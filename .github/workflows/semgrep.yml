@@ -2,7 +2,8 @@ jobs:
   job:
     runs-on: ubuntu-20.04
     container:
-      image: semgrep/semgrep
+      # living on the edge!
+      image: semgrep/semgrep:pro-develop
     #TODO: at some point
     #env:
     #  SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
@@ -10,12 +11,17 @@ jobs:
     # run: semgrep ci
     steps:
       - uses: actions/checkout@v3
+      # TODO: not sure why we need that, the docker contain should do
+      # similar things with ~root/.gitconfig
+      - run: git config --global --add safe.directory /__w/ocaml-elm-playground/ocaml-elm-playground
       # coupling: with Makefile 'make check' target
-      - run: semgrep scan --experimental --config semgrep.jsonnet --strict --error
+      - run: semgrep scan --experimental --config semgrep.jsonnet --strict --error --debug
 
 name: semgrep
 on:
-  pull_request_target: {}
+  # old was pull_request_target but has weird effect like not using
+  # the latest change in this file
+  pull_request: null
   workflow_dispatch: null
   push:
     branches:
