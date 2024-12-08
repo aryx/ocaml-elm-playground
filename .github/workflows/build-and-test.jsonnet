@@ -37,7 +37,7 @@ local job = {
         // TODO: remove at some point but better to skip
         // some of the magic opam does for now.
         // Also it's not available in v3
-        'opam-depext': false,
+        // 'opam-depext': false,
       },
     },
     {
