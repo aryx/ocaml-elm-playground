@@ -6,16 +6,27 @@
 # Main targets
 ###############################################################################
 
-all:
+OPAMS=elm_core.opam elm_system.opam elm_playground.opam
+
+default: all
+
+all: $(OPAMS)
 	dune build
 clean:
 	dune clean
-test:
-	dune runtest -f
 install:
 	dune install
+
+test:
+	dune runtest -f
 doc:
 	dune build @doc
+
+# This will fail if the .opam isn't up-to-date (in git),
+# and dune isn't installed yet. You can always install dune
+# with 'opam install dune' to get started.
+%.opam: dune-project
+	dune build $@
 
 ###############################################################################
 # Developer targets
