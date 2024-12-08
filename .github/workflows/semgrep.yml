@@ -16,7 +16,9 @@ jobs:
 
 name: semgrep
 on:
-  pull_request_target: {}
+  # old was pull_request_target but has weird effect like not using
+  # the latest change in this file
+  pull_request: null
   workflow_dispatch: null
   push:
     branches:
