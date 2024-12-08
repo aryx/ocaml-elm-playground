@@ -34,6 +34,8 @@ Nope
 "
   )
   (depends
+    ; ocaml-ci reports "Unbound module Float" before
+    (ocaml (>= "4.07.0"))
   )
 )
 
