@@ -15,6 +15,7 @@ depends: [
   "tsdl"
   "imagelib"
   "ocurl"
+  "elm_playground"
   "odoc" {with-doc}
 ]
 build: [

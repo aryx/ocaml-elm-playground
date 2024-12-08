@@ -41,6 +41,7 @@ Nope
   (synopsis "Imitate system Elm functions for ease of porting")
   (description "")
   (depends
+    elm_core
   )
 )
 
@@ -52,6 +53,8 @@ Nope
   (elm_playground_native or elm_playground_web)
 ")
   (depends
+    elm_core
+    elm_system
   )
 )
 (package (name elm_playground_native)
@@ -59,6 +62,7 @@ Nope
   (description "")
   (depends
     logs cairo2 tsdl imagelib ocurl
+    elm_playground
   )
 )
 (package (name elm_playground_web)
@@ -66,5 +70,6 @@ Nope
   (description "")
   (depends
      vdom
+     elm_playground
   )
 )

@@ -4,6 +4,7 @@
  (libraries
    vdom
    ; commons
+   
    elm_playground
  )
  ;(preprocess (pps profiling.ppx))

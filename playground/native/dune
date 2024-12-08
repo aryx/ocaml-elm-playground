@@ -6,6 +6,7 @@
     logs
     cairo2 tsdl
     imagelib.unix curl
+    
     elm_playground
   )
 )
