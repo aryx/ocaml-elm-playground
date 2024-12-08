@@ -18,7 +18,7 @@ local job = {
       'os': [
         'ubuntu-latest',
         'macos-latest',
-        //TODO: 'windows-latest'
+        'windows-latest'
       ],
       'ocaml-compiler': [
         '4.14.1',
