@@ -12,7 +12,9 @@ jobs:
         run: |
           opam install --deps-only .
       - name: Build
-        run: make
+        run: |
+          eval $(opam env)
+          make
     strategy:
       matrix:
         ocaml-compiler:

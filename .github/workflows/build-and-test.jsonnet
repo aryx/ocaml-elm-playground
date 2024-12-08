@@ -34,9 +34,9 @@ local job = {
       uses: 'ocaml/setup-ocaml@v2',
       with: {
         'ocaml-compiler': '${{ matrix.ocaml-compiler }}',
-	// TODO: remove at some point but better to skip
-	// some of the magic opam does for now.
-	// Also it's not available in v3
+        // TODO: remove at some point but better to skip
+        // some of the magic opam does for now.
+        // Also it's not available in v3
         'opam-depext': false,
       },
     },
@@ -48,7 +48,10 @@ local job = {
     },
     {
       name: 'Build',
-      run: 'make',
+      run: |||
+        eval $(opam env)
+        make
+      |||,
     },
   ],
 };
