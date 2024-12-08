@@ -18,7 +18,8 @@ local job = {
       'os': [
         'ubuntu-latest',
         'macos-latest',
-        'windows-latest'
+	// does not work because of tsdl compilation error on windows
+        //'windows-latest'
       ],
       'ocaml-compiler': [
         '4.14.1',
