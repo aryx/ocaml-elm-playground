@@ -1,4 +1,4 @@
-// Build and test using setup-ocaml@v2 mostly.
+// Build and test using setup-ocaml@v3 mostly.
 
 // ----------------------------------------------------------------------------
 // Helpers
@@ -14,11 +14,10 @@ local checkout = {
 
 local job = {
   strategy: {
-    //'fail-fast': false,
     matrix: {
-      os: [
+      'os': [
         'ubuntu-latest',
-        //TODO: 'macos-latest'
+        'macos-latest',
         //TODO: 'windows-latest'
       ],
       'ocaml-compiler': [
@@ -26,18 +25,22 @@ local job = {
         '5.2.0',
       ],
     },
+    //'fail-fast': false,
   },
   'runs-on': '${{ matrix.os }}',
   steps: [
     checkout,
     {
-      uses: 'ocaml/setup-ocaml@v2',
+      uses: 'ocaml/setup-ocaml@v3',
       with: {
         'ocaml-compiler': '${{ matrix.ocaml-compiler }}',
-        // TODO: remove at some point but better to skip
-        // some of the magic opam does for now.
-        // Also it's not available in v3
-        // 'opam-depext': false,
+        // I used to have "'opam-depext': false" below, but this flag
+	// is not supported in setup@v3 and anyway we do want
+	// opam-depext otherwise the installation would fail
+	// because some packages like ocurl have external
+	// dependencies (depext) and require some system packages
+	// to be installed. opam-depext does this for us automatically
+	// and in a portable way (for linux/mac/windows)!.
       },
     },
     {
@@ -53,6 +56,14 @@ local job = {
         make
       |||,
     },
+    {
+      name: 'Test',
+      run: |||
+        eval $(opam env)
+        make test
+      |||,
+    },
+    
   ],
 };
 
@@ -72,6 +83,9 @@ local job = {
         'master',
       ],
     },
+    // disabled the cron for now because github complains after
+    // a few months of inactivity when there is no new commit
+    // but the crons ran many times, so simpler to disable for now
     //schedule: [
     //  {
     //    // every day at 12:59

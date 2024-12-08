@@ -32,6 +32,9 @@ doc:
 # Developer targets
 ###############################################################################
 
+check:
+	~/zz/bin/osemgrep --experimental --config semgrep.jsonnet .
+
 pr:
 	git push origin `git rev-parse --abbrev-ref HEAD`
 	hub pull-request -b master
