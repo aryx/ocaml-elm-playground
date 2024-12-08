@@ -11,6 +11,9 @@ jobs:
     # run: semgrep ci
     steps:
       - uses: actions/checkout@v3
+      # TODO: not sure why we need that, the docker contain should do
+      # similar things with ~root/.gitconfig
+      - run: git config --global --add safe.directory /__w/ocaml-elm-playground/ocaml-elm-playground
       # coupling: with Makefile 'make check' target
       - run: semgrep scan --experimental --config semgrep.jsonnet --strict --error --debug
 
