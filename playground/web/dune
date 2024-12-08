@@ -6,5 +6,5 @@
    ; commons
    elm_playground
  )
- (preprocess (pps profiling.ppx))
+ ;(preprocess (pps profiling.ppx))
 )
