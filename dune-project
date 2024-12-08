@@ -1,6 +1,6 @@
 (lang dune 3.0)
 
-(name ocaml_elm)
+(name elm-playground)
 
 (generate_opam_files true)
 
