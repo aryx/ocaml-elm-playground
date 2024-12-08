@@ -1,7 +1,7 @@
 (env
   (dev
-;TODO FIX!
-   (flags (:standard -w -6)))
+;TODO FIX! remove all those -xxx
+   (flags (:standard -w -6-32-37-69)))
   (release
    (flags (:standard)))
 )
