@@ -14,7 +14,7 @@
    "Yoann Padioleau <yoann.padioleau@gmail.com"
 )
 
-(version "0.1.3")
+(version "0.1.4")
 
 (source (github aryx/ocaml-elm-playground))
 (homepage "https://github.com/aryx/ocaml-elm-playground")
@@ -63,7 +63,14 @@ Nope
   (synopsis "Native TDSL-based playground platform")
   (description "")
   (depends
-    logs cairo2 tsdl imagelib ocurl
+    ; tsdl fails in 5.2.0 because of some missing unix which are
+    ; not implicit anymore
+    (ocaml (< "5.2.0"))
+    logs
+    (cairo2 (>= "0.6.4"))
+    tsdl
+    imagelib
+    ocurl
     elm_playground
   )
 )
