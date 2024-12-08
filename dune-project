@@ -14,12 +14,11 @@
 (authors "Yoann Padioleau, Evan Czaplicki")
 
 (package (name elm_core)
-  (synopsis "Stuff")
+  (synopsis "Imitate core Elm functions for ease of porting")
   (description "\
 Nope
 "
   )
-
   (maintainers "Yoann Padioleau <yoann.padioleau@gmail.com>")
   (authors "Yoann Padioleau <yoann.padioleau@gmail.com>")
   (license "MIT")
@@ -35,19 +34,33 @@ Nope
 )
 
 (package (name elm_system)
-  (synopsis "XXX")
-  (description "XXX")
+  (synopsis "Imitate system Elm functions for ease of porting")
+  (description "")
+  (depends
+  )
 )
 
 (package (name elm_playground)
-  (synopsis "XXX")
-  (description "XXX")
+  (synopsis "Interface of the Playground")
+  (description "\
+  This is just the interface of the playground. You'll need an
+  actual platform library to compile your application
+  (elm_playground_native or elm_playground_web)
+")
+  (depends
+  )
 )
 (package (name elm_playground_native)
-  (synopsis "XXX")
-  (description "XXX")
+  (synopsis "Native TDSL-based playground platform")
+  (description "")
+  (depends
+    str logs cairo2 tsdl imagelib curl
+  )
 )
 (package (name elm_playground_web)
-  (synopsis "XXX")
-  (description "XXX")
+  (synopsis "Web vdom-based playground platform")
+  (description "")
+  (depends
+     vdom
+  )
 )
