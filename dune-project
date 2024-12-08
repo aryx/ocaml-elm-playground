@@ -19,7 +19,8 @@
 (source (github aryx/ocaml-elm-playground))
 (homepage "https://github.com/aryx/ocaml-elm-playground")
 (bug_reports "https://github.com/aryx/ocaml-elm-playground/issues")
-(documentation "https://github.com/aryx/ocaml-elm-playground/")
+;TODO: dune-release want a aryx.github.io URL
+;(documentation "https://github.com/aryx/ocaml-elm-playground/")
 
 ;; Opam package declarations for public libraries and public executables
 ;; defined in various dune files.
