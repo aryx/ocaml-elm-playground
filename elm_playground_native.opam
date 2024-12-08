@@ -8,12 +8,11 @@ homepage: "https://github.com/aryx/ocaml-elm-playground"
 bug-reports: "https://github.com/aryx/ocaml-elm-playground/issues"
 depends: [
   "dune" {>= "3.7"}
-  "str"
   "logs"
   "cairo2"
   "tsdl"
   "imagelib"
-  "curl"
+  "ocurl"
   "odoc" {with-doc}
 ]
 build: [

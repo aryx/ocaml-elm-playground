@@ -54,7 +54,7 @@ Nope
   (synopsis "Native TDSL-based playground platform")
   (description "")
   (depends
-    str logs cairo2 tsdl imagelib curl
+    logs cairo2 tsdl imagelib ocurl
   )
 )
 (package (name elm_playground_web)
