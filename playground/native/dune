@@ -2,8 +2,6 @@
   (public_name elm_playground_native)
   (implements elm_playground)
   ; problems with tsdl on windows I think
-  (enabled_if
-  (<> %{os_type} Win32))
   (libraries
     str
     logs
