@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Playground (elm_playground.Playground)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.4"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../index.html">elm_playground</a> &#x00BB; Playground</nav><header class="odoc-preamble"><h1>Module <code><span>Playground</span></code></h1></header><nav class="odoc-toc"><ul><li><a href="#entry-points">Entry points</a></li><li><a href="#basic-types">Basic types</a><ul><li><a href="#numbers">Numbers</a></li><li><a href="#time">Time</a></li><li><a href="#colors">Colors</a></li></ul></li><li><a href="#shapes">Shapes</a><ul><li><a href="#basic-shapes">Basic Shapes</a></li><li><a href="#images">Images</a></li><li><a href="#words">Words</a></li><li><a href="#groups">Groups</a></li><li><a href="#move-shapes">Move Shapes</a></li><li><a href="#transformations">Customize Shapes</a></li></ul></li><li><a href="#computer">Computer</a></li><li><a href="#the-application">The Application</a></li><li><a href="#playgrounds">Playgrounds</a><ul><li><a href="#pictures">Pictures</a></li><li><a href="#animations">Animations</a></li><li><a href="#games">Games</a></li></ul></li></ul></nav><div class="odoc-content"><h2 id="entry-points"><a href="#entry-points" class="anchor"></a>Entry points</h2><p>The main entry points of this library are:</p><ul><li><a href="#val-picture"><code>picture</code></a></li><li><a href="#val-animation"><code>animation</code></a></li><li><a href="#val-game"><code>game</code></a></li></ul><p>The important types are:</p><ul><li><a href="#type-shape"><code>shape</code></a></li><li><a href="#type-computer"><code>computer</code></a></li></ul><h2 id="basic-types"><a href="#basic-types" class="anchor"></a>Basic types</h2><h3 id="numbers"><a href="#numbers" class="anchor"></a>Numbers</h3><div class="odoc-spec"><div class="spec type anchored" id="type-number"><a href="#type-number" class="anchor"></a><code><span><span class="keyword">type</span> number</span><span> = float</span></code></div><div class="spec-doc"><p>A number like <code>1</code> or <code>3.14</code> or <code>-120</code>.</p><p>It is more flexible to use <code>float</code> rather han <code>int</code> for graphical operations. Consider using <code>open Basics</code> to have the <code>+</code>, <code>-</code>, and other arithmetic operators working on floats instead of having to use <code>+.</code>, <code>-.</code>, etc.</p></div></div><h3 id="time"><a href="#time" class="anchor"></a>Time</h3><div class="odoc-spec"><div class="spec type anchored" id="type-time"><a href="#type-time" class="anchor"></a><code><span><span class="keyword">type</span> time</span><span> = </span></code><ol><li id="type-time.Time" class="def variant constructor anchored"><a href="#type-time.Time" class="anchor"></a><code><span>| </span><span><span class="constructor">Time</span> <span class="keyword">of</span> <a href="#type-number">number</a></span></code></li></ol></div><div class="spec-doc"><p>The current time.</p><p>Helpful when making an <a href="#val-animation"><code>animation</code></a> with functions like <a href="#val-spin"><code>spin</code></a>, <a href="#val-wave"><code>wave</code></a>, and <a href="#val-zigzag"><code>zigzag</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-spin"><a href="#val-spin" class="anchor"></a><code><span><span class="keyword">val</span> spin : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-time">time</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-number">number</a></span></code></div><div class="spec-doc"><p>Create an angle that cycles from 0 to 360 degrees over time.</p><p>Here is an <a href="#val-animation"><code>animation</code></a> with a spinning triangle:</p><pre class="language-ocaml"><code>open Playground
+
+let view time =
+  [ triangle orange 50
+      |&gt; rotate (spin 8 time)
+  ]
+
+let app =
+  animation view
+
+let main = Playground.run_app app</code></pre><p>It will do a full rotation once every eight seconds. Try changing the <code>8</code> to a <code>2</code> to make it do a full rotation every two seconds. It moves a lot faster!</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-wave"><a href="#val-wave" class="anchor"></a><code><span><span class="keyword">val</span> wave : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-time">time</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-number">number</a></span></code></div><div class="spec-doc"><p>Smoothly wave between two numbers.</p><p>Here is an <a href="#val-animation"><code>animation</code></a> with a circle that resizes:</p><pre class="language-ocaml"><code>open Playground
+
+view time =
+  [ circle lightBlue (wave 50 90 7 time)
+  ]
+
+let app =
+  animation view
+
+let main = Playground.run_app app</code></pre><p>The radius of the circle will cycles between 50 and 90 every seven seconds. It kind of looks like it is breathing.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-zigzag"><a href="#val-zigzag" class="anchor"></a><code><span><span class="keyword">val</span> zigzag : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-time">time</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-number">number</a></span></code></div><div class="spec-doc"><p>Zig zag between two numbers.</p><p>Here is an <a href="#val-animation"><code>animation</code></a> with a rectangle that tips back and forth:</p><pre class="language-ocaml"><code>open Playground
+
+view time =
+  [ rectangle lightGreen 20 100
+      |&gt; rotate (zigzag -20 20 4 time)
+  ]
+
+let app =
+  animation view
+
+let main = Playground.run_app app</code></pre><p>It gets rotated by an angle. The angle cycles from -20 degrees to 20 degrees every four seconds.</p></div></div><h3 id="colors"><a href="#colors" class="anchor"></a>Colors</h3><div class="odoc-spec"><div class="spec type anchored" id="type-color"><a href="#type-color" class="anchor"></a><code><span><span class="keyword">type</span> color</span><span> = <a href="../../elm_core/Color/index.html#type-t">Color.t</a></span></code></div><div class="spec-doc"><p>Represents a color.</p><p>The colors below, like <code>red</code> and <code>green</code>, come from the <a href="https://en.wikipedia.org/wiki/Tango_Desktop_Project">Tango palette</a>. It provides a bunch of aesthetically reasonable colors. Each color comes with a light and dark version, so you always get a set like <code>lightYellow</code>, <code>yellow</code>, and <code>darkYellow</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-rgb"><a href="#val-rgb" class="anchor"></a><code><span><span class="keyword">val</span> rgb : <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <a href="#type-color">color</a></span></code></div><div class="spec-doc"><p>RGB stands for Red-Green-Blue. With these three parts, you can create any color you want. For example:</p><pre class="language-ocaml"><code>let brightBlue = rgb 18 147 216
+let brightGreen = rgb 119 244 8
+let brightPurple = rgb 94 28 221</code></pre><p>Each number needs to be between 0 and 255.</p><p>It can be hard to figure out what numbers to pick, so try using a color picker like <a href="http://paletton.com/">paletton</a> to find colors that look nice together. Once you find nice colors, click on the color previews to get their RGB values.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-white"><a href="#val-white" class="anchor"></a><code><span><span class="keyword">val</span> white : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-black"><a href="#val-black" class="anchor"></a><code><span><span class="keyword">val</span> black : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-red"><a href="#val-red" class="anchor"></a><code><span><span class="keyword">val</span> red : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-green"><a href="#val-green" class="anchor"></a><code><span><span class="keyword">val</span> green : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-blue"><a href="#val-blue" class="anchor"></a><code><span><span class="keyword">val</span> blue : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-yellow"><a href="#val-yellow" class="anchor"></a><code><span><span class="keyword">val</span> yellow : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-brown"><a href="#val-brown" class="anchor"></a><code><span><span class="keyword">val</span> brown : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-lightYellow"><a href="#val-lightYellow" class="anchor"></a><code><span><span class="keyword">val</span> lightYellow : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-lightPurple"><a href="#val-lightPurple" class="anchor"></a><code><span><span class="keyword">val</span> lightPurple : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-gray"><a href="#val-gray" class="anchor"></a><code><span><span class="keyword">val</span> gray : <a href="#type-color">color</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-darkGray"><a href="#val-darkGray" class="anchor"></a><code><span><span class="keyword">val</span> darkGray : <a href="#type-color">color</a></span></code></div></div><h2 id="shapes"><a href="#shapes" class="anchor"></a>Shapes</h2><div class="odoc-spec"><div class="spec type anchored" id="type-shape"><a href="#type-shape" class="anchor"></a><code><span><span class="keyword">type</span> shape</span><span> = </span><span>{</span></code><ol><li id="type-shape.x" class="def record field anchored"><a href="#type-shape.x" class="anchor"></a><code><span>x : <a href="#type-number">number</a>;</span></code></li><li id="type-shape.y" class="def record field anchored"><a href="#type-shape.y" class="anchor"></a><code><span>y : <a href="#type-number">number</a>;</span></code></li><li id="type-shape.angle" class="def record field anchored"><a href="#type-shape.angle" class="anchor"></a><code><span>angle : <a href="#type-number">number</a>;</span></code></li><li id="type-shape.scale" class="def record field anchored"><a href="#type-shape.scale" class="anchor"></a><code><span>scale : <a href="#type-number">number</a>;</span></code></li><li id="type-shape.alpha" class="def record field anchored"><a href="#type-shape.alpha" class="anchor"></a><code><span>alpha : <a href="#type-number">number</a>;</span></code></li><li id="type-shape.form" class="def record field anchored"><a href="#type-shape.form" class="anchor"></a><code><span>form : <a href="#type-form">form</a>;</span></code></li></ol><code><span>}</span></code></div><div class="spec-doc"><p>Shapes help you make a <code>picture</code>, <code>animation</code>, or <code>game</code>.</p><p>Read on to see examples of <a href="#val-circle"><code>circle</code></a>, <a href="#val-rectangle"><code>rectangle</code></a>, <a href="#val-words"><code>words</code></a>, <a href="#val-image"><code>image</code></a>, and many more!</p></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-form"><a href="#type-form" class="anchor"></a><code><span><span class="keyword">and</span> form</span><span> = </span></code><ol><li id="type-form.Circle" class="def variant constructor anchored"><a href="#type-form.Circle" class="anchor"></a><code><span>| </span><span><span class="constructor">Circle</span> <span class="keyword">of</span> <a href="#type-color">color</a> * <a href="#type-number">number</a></span></code></li><li id="type-form.Oval" class="def variant constructor anchored"><a href="#type-form.Oval" class="anchor"></a><code><span>| </span><span><span class="constructor">Oval</span> <span class="keyword">of</span> <a href="#type-color">color</a> * <a href="#type-number">number</a> * <a href="#type-number">number</a></span></code></li><li id="type-form.Rectangle" class="def variant constructor anchored"><a href="#type-form.Rectangle" class="anchor"></a><code><span>| </span><span><span class="constructor">Rectangle</span> <span class="keyword">of</span> <a href="#type-color">color</a> * <a href="#type-number">number</a> * <a href="#type-number">number</a></span></code></li><li id="type-form.Ngon" class="def variant constructor anchored"><a href="#type-form.Ngon" class="anchor"></a><code><span>| </span><span><span class="constructor">Ngon</span> <span class="keyword">of</span> <a href="#type-color">color</a> * int * <a href="#type-number">number</a></span></code></li><li id="type-form.Polygon" class="def variant constructor anchored"><a href="#type-form.Polygon" class="anchor"></a><code><span>| </span><span><span class="constructor">Polygon</span> <span class="keyword">of</span> <a href="#type-color">color</a> * <span><span>(<a href="#type-number">number</a> * <a href="#type-number">number</a>)</span> list</span></span></code></li><li id="type-form.Image" class="def variant constructor anchored"><a href="#type-form.Image" class="anchor"></a><code><span>| </span><span><span class="constructor">Image</span> <span class="keyword">of</span> <a href="#type-number">number</a> * <a href="#type-number">number</a> * string</span></code></li><li id="type-form.Words" class="def variant constructor anchored"><a href="#type-form.Words" class="anchor"></a><code><span>| </span><span><span class="constructor">Words</span> <span class="keyword">of</span> <a href="#type-color">color</a> * string</span></code></li><li id="type-form.Group" class="def variant constructor anchored"><a href="#type-form.Group" class="anchor"></a><code><span>| </span><span><span class="constructor">Group</span> <span class="keyword">of</span> <span><a href="#type-shape">shape</a> list</span></span></code></li></ol></div></div><h3 id="basic-shapes"><a href="#basic-shapes" class="anchor"></a>Basic Shapes</h3><div class="odoc-spec"><div class="spec value anchored" id="val-circle"><a href="#val-circle" class="anchor"></a><code><span><span class="keyword">val</span> circle : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make circles:</p><pre class="language-ocaml"><code>let dot = circle red 10
+let sun = circle yellow 300</code></pre><p>You give a color and then the radius. So the higher the number, the larger the circle.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-oval"><a href="#val-oval" class="anchor"></a><code><span><span class="keyword">val</span> oval : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make ovals:</p><pre class="language-ocaml"><code>let football = oval brown 200 100</code></pre><p>You give the color, and then the width and height. So our <code>football</code> example is 200 pixels wide and 100 pixels tall.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-rectangle"><a href="#val-rectangle" class="anchor"></a><code><span><span class="keyword">val</span> rectangle : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make rectangles. This example makes a red cross:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ rectangle red 20 60
+    ; rectangle red 60 20
+    ]
+
+let main = Playground.run_app app</code></pre><p>You give the color, width, and then height. So the first shape is vertical part of the cross, the thinner and taller part.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-square"><a href="#val-square" class="anchor"></a><code><span><span class="keyword">val</span> square : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make squares. Here are two squares combined to look like an empty box:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ square purple 80
+    ; square white 60
+    ]
+
+let main = Playground.run_app app</code></pre><p>The number you give is the dimension of each side. So that purple square would be 80 pixels by 80 pixels.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-triangle"><a href="#val-triangle" class="anchor"></a><code><span><span class="keyword">val</span> triangle : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make triangles. So if you wanted to draw the Egyptian pyramids, you could do a simple version like this:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ triangle darkYellow 200
+    ]
+
+let main = Playground.run_app app</code></pre><p>The number is the &quot;radius&quot;, so the distance from the center to each point of the pyramid is <code>200</code>. Pretty big!</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pentagon"><a href="#val-pentagon" class="anchor"></a><code><span><span class="keyword">val</span> pentagon : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make pentagons:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ pentagon darkGrey 100
+    ]
+
+let main = Playground.run_app app</code></pre><p>You give the color and then the radius. So the distance from the center to each of the five points is 100 pixels.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-hexagon"><a href="#val-hexagon" class="anchor"></a><code><span><span class="keyword">val</span> hexagon : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make hexagons:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ hexagon lightYellow 50
+    ]
+
+let main = Playground.run_app app</code></pre><p>The number is the radius, the distance from the center to each point.</p><p>If you made more hexagons, you could <a href="#val-move"><code>move</code></a> them around to make a honeycomb pattern!</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-octagon"><a href="#val-octagon" class="anchor"></a><code><span><span class="keyword">val</span> octagon : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make octogons:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ octagon red 100
+    ]
+
+let main = Playground.run_app app</code></pre><p>You give the color and radius, so each point of this stop sign is 100 pixels from the center.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-polygon"><a href="#val-polygon" class="anchor"></a><code><span><span class="keyword">val</span> polygon : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span><span><span>(<a href="#type-number">number</a> * <a href="#type-number">number</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make any shape you want! Here is a very thin triangle:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ polygon black [ (-10,-20), (0,100), (10,-20) ]
+    ]
+
+let main = Playground.run_app app</code></pre><p><b>Note:</b> If you <a href="#val-rotate"><code>rotate</code></a> a polygon, it will always rotate around <code>(0,0)</code>. So it is best to build your shapes around that point, and then use <a href="#val-move"><code>move</code></a> or <a href="#val-group"><code>group</code></a> so that rotation makes more sense.</p></div></div><h3 id="images"><a href="#images" class="anchor"></a>Images</h3><div class="odoc-spec"><div class="spec value anchored" id="val-image"><a href="#val-image" class="anchor"></a><code><span><span class="keyword">val</span> image : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span>string <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Add some image from the internet:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ image 96 96 &quot;https://elm-lang.org/images/turtle.gif&quot;
+    ]
+
+let main = Playground.run_app app</code></pre><p>You provide the width, height, and then the URL of the image you want to show.</p></div></div><h3 id="words"><a href="#words" class="anchor"></a>Words</h3><div class="odoc-spec"><div class="spec value anchored" id="val-words"><a href="#val-words" class="anchor"></a><code><span><span class="keyword">val</span> words : <span><a href="#type-color">color</a> <span class="arrow">&#45;&gt;</span></span> <span>string <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Show some words!</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ words black &quot;Hello! How are you?&quot;
+    ]
+
+let main = Playground.run_app app</code></pre><p>You can use <a href="#val-scale"><code>scale</code></a> to make the words bigger or smaller.</p></div></div><h3 id="groups"><a href="#groups" class="anchor"></a>Groups</h3><div class="odoc-spec"><div class="spec value anchored" id="val-group"><a href="#val-group" class="anchor"></a><code><span><span class="keyword">val</span> group : <span><span><a href="#type-shape">shape</a> list</span> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Put shapes together so you can <a href="#val-move"><code>move</code></a> and <a href="#val-rotate"><code>rotate</code></a> them as a group. Maybe you want to put a bunch of stars in the sky:</p><pre class="language-ocaml"><code>open Playground
+
+let star =
+  group
+    [ triangle yellow 20
+    ; triangle yellow 20
+        |&gt; rotate 180
+    ]
+
+let app =
+  picture
+    [ star
+        |&gt; move 100 100
+        |&gt; rotate 5
+    ; star
+        |&gt; move -120 40
+        |&gt; rotate 20
+    ; star
+        |&gt; move 80 -150
+        |&gt; rotate 32
+    ; star
+        |&gt; move -90 -30
+        |&gt; rotate -16
+    ]
+let main = Playground.run_app app</code></pre></div></div><h3 id="move-shapes"><a href="#move-shapes" class="anchor"></a>Move Shapes</h3><div class="odoc-spec"><div class="spec value anchored" id="val-move"><a href="#val-move" class="anchor"></a><code><span><span class="keyword">val</span> move : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Move a shape by some number of pixels:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ square red 100
+        |&gt; move -60 60
+    ; square yellow 100
+        |&gt; move 60 60
+    ; square green 100
+        |&gt; move 60 -60
+    ; square blue 100
+        |&gt; move -60 -60
+    ]
+
+let main = Playground.run_app app</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-move_left"><a href="#val-move_left" class="anchor"></a><code><span><span class="keyword">val</span> move_left : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Move shapes to the left.</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ circle yellow 10
+        |&gt; moveLeft 80
+        |&gt; moveUp 30
+    ]
+
+let main = Playground.run_app app</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-move_right"><a href="#val-move_right" class="anchor"></a><code><span><span class="keyword">val</span> move_right : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Move shapes to the right.</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ square purple 20
+        |&gt; moveRight 80
+        |&gt; moveDown 100
+    ]
+
+let main = Playground.run_app app</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-move_up"><a href="#val-move_up" class="anchor"></a><code><span><span class="keyword">val</span> move_up : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Move a shape up by some number of pixels. So if you wanted to make a tree you could move the leaves up above the trunk:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ rectangle brown 40 200
+    , circle green 100
+        |&gt; moveUp 180
+    ]
+
+let main = Playground.run_app app</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-move_down"><a href="#val-move_down" class="anchor"></a><code><span><span class="keyword">val</span> move_down : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Move a shape down by some number of pixels. So if you wanted to put the sky above the ground, you could move the sky up and the ground down:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ rectangle lightBlue 200 100
+        |&gt; moveUp 50
+    ; rectangle lightGreen 200 100
+        |&gt; moveDown 50
+    ]
+
+let main = Playground.run_app app</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-move_x"><a href="#val-move_x" class="anchor"></a><code><span><span class="keyword">val</span> move_x : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Move the <code>x</code> coordinate of a shape by some amount. Here is a square that moves back and forth:</p><pre class="language-ocaml"><code>open Playground
+
+view time =
+  [ square purple 20
+      |&gt; move_x (wave 4 -200 200 time)
+  ]
+
+let app =
+  animation view
+
+let main = Playground.run_app app</code></pre><p>Using <code>move_x</code> feels a bit nicer here because the movement may be positive or negative.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-move_y"><a href="#val-move_y" class="anchor"></a><code><span><span class="keyword">val</span> move_y : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Move the <code>y</code> coordinate of a shape by some amount. Maybe you want to make grass along the bottom of the screen:</p><pre class="language-ocaml"><code>open Playground
+
+let update computer memory =
+  memory
+
+let view computer count =
+  [ rectangle green computer.screen.width 100
+      |&gt; move_y computer.screen.bottom
+  ]
+
+let app =
+  game view update 0
+
+let main = Playground.run_app app</code></pre><p>Using <code>move_y</code> feels a bit nicer when setting things relative to the bottom or top of the screen, since the values are negative sometimes.</p></div></div><h3 id="transformations"><a href="#transformations" class="anchor"></a>Customize Shapes</h3><div class="odoc-spec"><div class="spec value anchored" id="val-scale"><a href="#val-scale" class="anchor"></a><code><span><span class="keyword">val</span> scale : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Make a shape bigger or smaller. So if you wanted some <a href="#val-words"><code>words</code></a> to be larger, you could say:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ words black &quot;Hello, nice to see you!&quot;
+        |&gt; scale 3
+    ]
+
+let main = Playground.run_app app</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-rotate"><a href="#val-rotate" class="anchor"></a><code><span><span class="keyword">val</span> rotate : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Rotate shapes in degrees.</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ words black &quot;These words are tilted!&quot;
+        |&gt; rotate 10
+    ]
+
+let main = Playground.run_app app</code></pre><p>The degrees go <b>counter-clockwise</b> to match the direction of the <a href="https://en.wikipedia.org/wiki/Unit_circle">unit circle</a>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-fade"><a href="#val-fade" class="anchor"></a><code><span><span class="keyword">val</span> fade : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-shape">shape</a></span></code></div><div class="spec-doc"><p>Fade a shape. This lets you make shapes see-through or even completely invisible. Here is a shape that fades in and out:</p><pre class="language-ocaml"><code>open Playground
+
+view time =
+  [ square orange 30
+  ; square blue 200
+      |&gt; fade (zigzag 0 1 3 time)
+  ]
+
+let app =
+  animation view
+
+let main = Playground.run_app app</code></pre><p>The number has to be between <code>0</code> and <code>1</code>, where <code>0</code> is totally transparent and <code>1</code> is completely solid.</p></div></div><h2 id="computer"><a href="#computer" class="anchor"></a>Computer</h2><div class="odoc-spec"><div class="spec value anchored" id="val-default_width"><a href="#val-default_width" class="anchor"></a><code><span><span class="keyword">val</span> default_width : float</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-default_height"><a href="#val-default_height" class="anchor"></a><code><span><span class="keyword">val</span> default_height : float</span></code></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-screen"><a href="#type-screen" class="anchor"></a><code><span><span class="keyword">type</span> screen</span><span> = </span><span>{</span></code><ol><li id="type-screen.width" class="def record field anchored"><a href="#type-screen.width" class="anchor"></a><code><span>width : <a href="#type-number">number</a>;</span></code></li><li id="type-screen.height" class="def record field anchored"><a href="#type-screen.height" class="anchor"></a><code><span>height : <a href="#type-number">number</a>;</span></code></li><li id="type-screen.top" class="def record field anchored"><a href="#type-screen.top" class="anchor"></a><code><span>top : <a href="#type-number">number</a>;</span></code></li><li id="type-screen.left" class="def record field anchored"><a href="#type-screen.left" class="anchor"></a><code><span>left : <a href="#type-number">number</a>;</span></code></li><li id="type-screen.right" class="def record field anchored"><a href="#type-screen.right" class="anchor"></a><code><span>right : <a href="#type-number">number</a>;</span></code></li><li id="type-screen.bottom" class="def record field anchored"><a href="#type-screen.bottom" class="anchor"></a><code><span>bottom : <a href="#type-number">number</a>;</span></code></li></ol><code><span>}</span></code></div><div class="spec-doc"><p>Get the dimensions of the screen. If the screen is 800 by 600, you will see a value like this:</p><pre class="language-ocaml"><code>{ width = 800
+; height = 600
+; top = 300
+; left = -400
+; right = 400
+; bottom = -300
+}</code></pre><p>This can be nice when used with <a href="#val-move_y"><code>move_y</code></a> if you want to put something on the bottom of the screen, no matter the dimensions.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-to_screen"><a href="#val-to_screen" class="anchor"></a><code><span><span class="keyword">val</span> to_screen : <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-number">number</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-screen">screen</a></span></code></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-mouse"><a href="#type-mouse" class="anchor"></a><code><span><span class="keyword">type</span> mouse</span><span> = </span><span>{</span></code><ol><li id="type-mouse.mx" class="def record field anchored"><a href="#type-mouse.mx" class="anchor"></a><code><span>mx : <a href="#type-number">number</a>;</span></code></li><li id="type-mouse.my" class="def record field anchored"><a href="#type-mouse.my" class="anchor"></a><code><span>my : <a href="#type-number">number</a>;</span></code></li><li id="type-mouse.mdown" class="def record field anchored"><a href="#type-mouse.mdown" class="anchor"></a><code><span>mdown : bool;</span></code></li><li id="type-mouse.mclick" class="def record field anchored"><a href="#type-mouse.mclick" class="anchor"></a><code><span>mclick : bool;</span></code></li></ol><code><span>}</span></code></div><div class="spec-doc"><p>Figure out what is going on with the mouse.</p><p>You could draw a circle around the mouse with a program like this:</p><pre class="language-ocaml"><code>open Playground
+
+let view computer memory =
+  [ circle yellow 40
+      |&gt; move_x computer.mouse.x
+      |&gt; move_y computer.mouse.y
+  ]
+
+let update computer memory =
+  memory
+
+let app =
+  game view update 0
+
+let main = Playground.run_app app</code></pre><p>You could also use <code>computer.mouse.down</code> to change the color of the circle while the mouse button is down.</p></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-keyboard"><a href="#type-keyboard" class="anchor"></a><code><span><span class="keyword">type</span> keyboard</span><span> = </span><span>{</span></code><ol><li id="type-keyboard.kup" class="def record field anchored"><a href="#type-keyboard.kup" class="anchor"></a><code><span>kup : bool;</span></code></li><li id="type-keyboard.kdown" class="def record field anchored"><a href="#type-keyboard.kdown" class="anchor"></a><code><span>kdown : bool;</span></code></li><li id="type-keyboard.kleft" class="def record field anchored"><a href="#type-keyboard.kleft" class="anchor"></a><code><span>kleft : bool;</span></code></li><li id="type-keyboard.kright" class="def record field anchored"><a href="#type-keyboard.kright" class="anchor"></a><code><span>kright : bool;</span></code></li><li id="type-keyboard.kw" class="def record field anchored"><a href="#type-keyboard.kw" class="anchor"></a><code><span>kw : bool;</span></code></li><li id="type-keyboard.ks" class="def record field anchored"><a href="#type-keyboard.ks" class="anchor"></a><code><span>ks : bool;</span></code></li><li id="type-keyboard.ka" class="def record field anchored"><a href="#type-keyboard.ka" class="anchor"></a><code><span>ka : bool;</span></code></li><li id="type-keyboard.kd" class="def record field anchored"><a href="#type-keyboard.kd" class="anchor"></a><code><span>kd : bool;</span></code></li><li id="type-keyboard.kspace" class="def record field anchored"><a href="#type-keyboard.kspace" class="anchor"></a><code><span>kspace : bool;</span></code></li><li id="type-keyboard.kenter" class="def record field anchored"><a href="#type-keyboard.kenter" class="anchor"></a><code><span>kenter : bool;</span></code></li><li id="type-keyboard.kshift" class="def record field anchored"><a href="#type-keyboard.kshift" class="anchor"></a><code><span>kshift : bool;</span></code></li><li id="type-keyboard.kbackspace" class="def record field anchored"><a href="#type-keyboard.kbackspace" class="anchor"></a><code><span>kbackspace : bool;</span></code></li><li id="type-keyboard.keys" class="def record field anchored"><a href="#type-keyboard.keys" class="anchor"></a><code><span>keys : <span>string <a href="../../elm_core/Set_/index.html#type-t">Set_.t</a></span>;</span></code></li></ol><code><span>}</span></code></div><div class="spec-doc"><p>Figure out what is going on with the keyboard.</p><p>If someone is pressing the UP and RIGHT arrows, you will see a value like this:</p><pre class="language-ocaml"><code>{ kup = True, kdown = False, kleft = False, kright = True
+, kspace = False, kenter = False, kshift = False, kbackspace = False
+, keys = Set.fromList [&quot;ArrowUp&quot;,&quot;ArrowRight&quot;]
+}</code></pre><p>So if you want to move a character based on arrows, you could write an update like this:</p><pre class="language-ocaml"><code>let update computer y =
+  if computer.keyboard.kup then
+    y + 1
+  else
+    y</code></pre><p>Check out <a href="#val-to_x"><code>to_x</code></a> and <a href="#val-to_y"><code>to_y</code></a> which make this even easier!</p><p><b>Note:</b> The <code>keys</code> set will be filled with the name of all keys which are down right now. So you will see things like <code>&quot;a&quot;</code>, <code>&quot;b&quot;</code>, <code>&quot;c&quot;</code>, <code>&quot;1&quot;</code>, <code>&quot;2&quot;</code>, <code>&quot;Space&quot;</code>, and <code>&quot;Control&quot;</code> in there. Check out <a href="https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values">this list</a> to see the names used for all the different special keys! From there, you can use <code>Set.member</code> to check for whichever key you want. E.g. <code>Set.member &quot;Control&quot; computer.keyboard.keys</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-to_x"><a href="#val-to_x" class="anchor"></a><code><span><span class="keyword">val</span> to_x : <span><a href="#type-keyboard">keyboard</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-number">number</a></span></code></div><div class="spec-doc"><p>Turn the LEFT and RIGHT arrows into a number.</p><pre class="language-ocaml"><code>to_x { left = False, right = False, ... } == 0
+to_x { left = True , right = False, ... } == -1
+to_x { left = False, right = True , ... } == 1
+to_x { left = True , right = True , ... } == 0</code></pre><p>So to make a square move left and right based on the arrow keys, we could say:</p><pre class="language-ocaml"><code>open Playground
+
+let view computer x =
+  [ square green 40
+      |&gt; move_x x
+  ]
+
+let update computer x =
+  x + to_x computer.keyboard
+
+
+let app =
+  game view update 0
+let main = Playground.run_app app</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-to_y"><a href="#val-to_y" class="anchor"></a><code><span><span class="keyword">val</span> to_y : <span><a href="#type-keyboard">keyboard</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-number">number</a></span></code></div><div class="spec-doc"><p>Turn the UP and DOWN arrows into a number.</p><pre class="language-ocaml"><code>to_y { up = False, down = False, ... } == 0
+to_y { up = True , down = False, ... } == 1
+to_y { up = False, down = True , ... } == -1
+to_y { up = True , down = True , ... } == 0</code></pre><p>This can be used to move characters around in games just like <a href="#val-to_x"><code>to_x</code></a>:</p><pre class="language-ocaml"><code>open Playground
+
+let view computer (x,y) =
+  [ square blue 40
+      |&gt; move x y
+  ]
+
+let update computer (x,y) =
+  ( x + to_x computer.keyboard
+  , y + to_y computer.keyboard
+  )
+
+let app =
+  game view update (0,0)
+
+let main = Playground.run_app app</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-to_x2"><a href="#val-to_x2" class="anchor"></a><code><span><span class="keyword">val</span> to_x2 : <span><a href="#type-keyboard">keyboard</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-number">number</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-to_y2"><a href="#val-to_y2" class="anchor"></a><code><span><span class="keyword">val</span> to_y2 : <span><a href="#type-keyboard">keyboard</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-number">number</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-to_xy"><a href="#val-to_xy" class="anchor"></a><code><span><span class="keyword">val</span> to_xy : <span><a href="#type-keyboard">keyboard</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-number">number</a> * <a href="#type-number">number</a></span></code></div><div class="spec-doc"><p>If you just use <code>to_x</code> and <code>to_y</code>, you will move diagonal too fast. You will go right at 1 pixel per update, but you will go up/right at 1.41421 pixels per update.</p><p>So <code>to_xy</code> turns the arrow keys into an <code>(x,y)</code> pair such that the distance is normalized:</p><pre class="language-ocaml"><code>to_xy { up = True , down = False, left = False, right = False, ... } == (1, 0)
+to_xy { up = True , down = False, left = False, right = True , ... } == (0.707, 0.707)
+to_xy { up = False, down = False, left = False, right = True , ... } == (0, 1)</code></pre><p>Now when you go up/right, you are still going 1 pixel per update.</p><pre class="language-ocaml"><code>open Playground
+
+let view computer (x,y) =
+  [ square green 40
+      |&gt; move x y
+  ]
+
+let update computer (x,y) =
+  let
+    (dx,dy) = to_xy computer.keyboard
+  in
+  (x + dx, y + dy)
+
+let app =
+  game view update (0,0)
+
+let main = Playground.run_app app</code></pre></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-computer"><a href="#type-computer" class="anchor"></a><code><span><span class="keyword">type</span> computer</span><span> = </span><span>{</span></code><ol><li id="type-computer.mouse" class="def record field anchored"><a href="#type-computer.mouse" class="anchor"></a><code><span>mouse : <a href="#type-mouse">mouse</a>;</span></code></li><li id="type-computer.keyboard" class="def record field anchored"><a href="#type-computer.keyboard" class="anchor"></a><code><span>keyboard : <a href="#type-keyboard">keyboard</a>;</span></code></li><li id="type-computer.screen" class="def record field anchored"><a href="#type-computer.screen" class="anchor"></a><code><span>screen : <a href="#type-screen">screen</a>;</span></code></li><li id="type-computer.time" class="def record field anchored"><a href="#type-computer.time" class="anchor"></a><code><span>time : <a href="#type-time">time</a>;</span></code></li></ol><code><span>}</span></code></div><div class="spec-doc"><p>When writing a <a href="#val-game"><code>game</code></a>, you can look up all sorts of information about your computer:</p><ul><li><a href="#type-mouse"><code>mouse</code></a> - Where is the mouse right now?</li><li><a href="#type-keyboard"><code>keyboard</code></a> - Are the arrow keys down?</li><li><a href="#type-screen"><code>screen</code></a> - How wide is the screen?</li><li><a href="#type-time"><code>time</code></a> - What time is it right now?</li></ul><p>So you can use expressions like <code>computer.mouse.x</code> and <code>computer.keyboard.kenter</code> in games where you want some mouse or keyboard interaction.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-initial_computer"><a href="#val-initial_computer" class="anchor"></a><code><span><span class="keyword">val</span> initial_computer : <a href="#type-computer">computer</a></span></code></div></div><h2 id="the-application"><a href="#the-application" class="anchor"></a>The Application</h2><div class="odoc-spec"><div class="spec type anchored" id="type-app"><a href="#type-app" class="anchor"></a><code><span><span class="keyword">type</span> <span>('model, 'msg) app</span></span><span> = </span><span>{</span></code><ol><li id="type-app.init" class="def record field anchored"><a href="#type-app.init" class="anchor"></a><code><span>init : <span>unit <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'model</span> * <span><span class="type-var">'msg</span> <a href="../../elm_system/Cmd/index.html#type-t">Cmd.t</a></span>;</span></code></li><li id="type-app.update" class="def record field anchored"><a href="#type-app.update" class="anchor"></a><code><span>update : <span><span class="type-var">'msg</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'model</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'model</span> * <span><span class="type-var">'msg</span> <a href="../../elm_system/Cmd/index.html#type-t">Cmd.t</a></span>;</span></code></li><li id="type-app.view" class="def record field anchored"><a href="#type-app.view" class="anchor"></a><code><span>view : <span><span class="type-var">'model</span> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> list</span>;</span></code></li><li id="type-app.subscriptions" class="def record field anchored"><a href="#type-app.subscriptions" class="anchor"></a><code><span>subscriptions : <span><span class="type-var">'model</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'msg</span> <a href="../../elm_system/Sub/index.html#type-t">Sub.t</a></span>;</span></code></li></ol><code><span>}</span></code></div></div><h2 id="playgrounds"><a href="#playgrounds" class="anchor"></a>Playgrounds</h2><h3 id="pictures"><a href="#pictures" class="anchor"></a>Pictures</h3><div class="odoc-spec"><div class="spec type anchored" id="type-msg1"><a href="#type-msg1" class="anchor"></a><code><span><span class="keyword">type</span> msg1</span><span> = </span></code><ol><li id="type-msg1.Resized1" class="def variant constructor anchored"><a href="#type-msg1.Resized1" class="anchor"></a><code><span>| </span><span><span class="constructor">Resized1</span> <span class="keyword">of</span> int * int</span></code></li></ol></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-picture"><a href="#val-picture" class="anchor"></a><code><span><span class="keyword">val</span> picture : <span><span><a href="#type-shape">shape</a> list</span> <span class="arrow">&#45;&gt;</span></span> <span><span>(<a href="#type-screen">screen</a>, <a href="#type-msg1">msg1</a>)</span> <a href="#type-app">app</a></span></span></code></div><div class="spec-doc"><p>Make a picture! Here is a picture of a triangle with an eyeball:</p><pre class="language-ocaml"><code>open Playground
+
+let app =
+  picture
+    [ triangle green 150
+    ; circle white 40
+    ; circle black 10
+    ]
+
+let main = Playground.run_app app</code></pre></div></div><h3 id="animations"><a href="#animations" class="anchor"></a>Animations</h3><div class="odoc-spec"><div class="spec type anchored" id="type-msg"><a href="#type-msg" class="anchor"></a><code><span><span class="keyword">type</span> msg</span><span> = </span></code><ol><li id="type-msg.Tick" class="def variant constructor anchored"><a href="#type-msg.Tick" class="anchor"></a><code><span>| </span><span><span class="constructor">Tick</span> <span class="keyword">of</span> <a href="#type-number">number</a></span></code></li><li id="type-msg.Resized" class="def variant constructor anchored"><a href="#type-msg.Resized" class="anchor"></a><code><span>| </span><span><span class="constructor">Resized</span> <span class="keyword">of</span> int * int</span></code></li><li id="type-msg.KeyChanged" class="def variant constructor anchored"><a href="#type-msg.KeyChanged" class="anchor"></a><code><span>| </span><span><span class="constructor">KeyChanged</span> <span class="keyword">of</span> bool * string</span></code></li><li id="type-msg.MouseMove" class="def variant constructor anchored"><a href="#type-msg.MouseMove" class="anchor"></a><code><span>| </span><span><span class="constructor">MouseMove</span> <span class="keyword">of</span> <a href="#type-number">number</a> * <a href="#type-number">number</a></span></code></li><li id="type-msg.MouseClick" class="def variant constructor anchored"><a href="#type-msg.MouseClick" class="anchor"></a><code><span>| </span><span><span class="constructor">MouseClick</span></span></code></li><li id="type-msg.MouseButton" class="def variant constructor anchored"><a href="#type-msg.MouseButton" class="anchor"></a><code><span>| </span><span><span class="constructor">MouseButton</span> <span class="keyword">of</span> bool</span></code></li></ol></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-animation"><a href="#type-animation" class="anchor"></a><code><span><span class="keyword">type</span> animation</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-animation"><a href="#val-animation" class="anchor"></a><code><span><span class="keyword">val</span> animation : <span><span>(<span><a href="#type-time">time</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> list</span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span>(<a href="#type-animation">animation</a>, <a href="#type-msg">msg</a>)</span> <a href="#type-app">app</a></span></span></code></div><div class="spec-doc"><p>Create an animation!</p><p>Once you get comfortable using <a href="#val-picture"><code>picture</code></a> to layout shapes, you can try out an <code>animation</code>. Here is square that zigzags back and forth:</p><pre class="language-ocaml"><code>open Playground
+
+view time =
+  [ square blue 40
+      |&gt; move_x (zigzag -100 100 2 time)
+  ]
+
+let app =
+  animation view
+
+let main = Playground.run_app app</code></pre><p>We need to define a <code>view</code> to make our animation work.</p><p>Within <code>view</code> we can use functions like <a href="#val-spin"><code>spin</code></a>, <a href="#val-wave"><code>wave</code></a>, and <a href="#val-zigzag"><code>zigzag</code></a> to move and rotate our shapes.</p></div></div><h3 id="games"><a href="#games" class="anchor"></a>Games</h3><div class="odoc-spec"><div class="spec type anchored" id="type-game"><a href="#type-game" class="anchor"></a><code><span><span class="keyword">type</span> <span>'memory game</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-game"><a href="#val-game" class="anchor"></a><code><span><span class="keyword">val</span> game : 
+  <span><span>(<span><a href="#type-computer">computer</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'memory</span> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-shape">shape</a> list</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><a href="#type-computer">computer</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'memory</span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'memory</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'memory</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><span class="type-var">'memory</span> <a href="#type-game">game</a></span>, <a href="#type-msg">msg</a>)</span> <a href="#type-app">app</a></span></span></code></div><div class="spec-doc"><p>Create a game!</p><p>Once you get comfortable with <a href="#val-animation"><code>animation</code></a>, you can try making a game with the keyboard and mouse. Here is an example of a green square that just moves to the right:</p><pre class="language-ocaml"><code>open Playground
+
+let view computer offset =
+  [ square green 40
+      |&gt; moveRight offset
+  ]
+
+let update computer offset =
+  offset + 0.03
+
+let app =
+  game view update 0
+
+let main = Playground.run_app app</code></pre><p>This shows the three important parts of a game:</p><ol><li><code>memory</code> - makes it possible to store information. So with our green square, we save the <code>offset</code> in memory. It starts out at <code>0</code>.</li><li><code>view</code> - lets us say which shapes to put on screen. So here we move our square right by the <code>offset</code> saved in memory.</li><li><code>update</code> - lets us update the memory. We are incrementing the <code>offset</code> by a tiny amount on each frame.</li></ol><p>The <code>update</code> function is called about 60 times per second, so our little changes to <code>offset</code> start to add up pretty quickly!</p><p>This game is not very fun though! Making a <code>game</code> also gives you access to the <code>Computer</code>, so you can use information about the <a href="#type-mouse"><code>mouse</code></a> and <a href="#type-keyboard"><code>keyboard</code></a> to make it interactive! So here is a red square that moves based on the arrow keys:</p><pre class="language-ocaml"><code>open Playground
+
+let view computer (x,y) =
+  [ square red 40
+      |&gt; move x y
+  ]
+
+let update computer (x,y) =
+  ( x + to_x computer.keyboard
+  , y + to_y computer.keyboard
+  )
+
+let app =
+  game view update (0,0)
+
+let main = Playground.run_app app</code></pre><p>Notice that in the <code>update</code> we use information from the keyboard to update the <code>x</code> and <code>y</code> values. These building blocks let you make pretty fancy games!</p></div></div></div></body></html>

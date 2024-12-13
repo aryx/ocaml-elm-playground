@@ -21,6 +21,8 @@ test:
 	dune runtest -f
 doc:
 	dune build @doc
+	rm -rf docs
+	cp -a _build/default/_doc/_html docs
 
 # This will fail if the .opam isn't up-to-date (in git),
 # and dune isn't installed yet. You can always install dune
@@ -34,6 +36,15 @@ doc:
 
 check:
 	~/zz/bin/osemgrep --experimental --config semgrep.jsonnet .
+
+# To bump-version you need to modify dune-project version then run 'make' then
+# commit and merge then:
+#  git tag -a 0.1.8
+#  git push origin 0.1.8
+#  opam publish
+# and that's it!
+bump:
+	echo TODO, see the comment in this file
 
 pr:
 	git push origin `git rev-parse --abbrev-ref HEAD`
