@@ -39,6 +39,8 @@ doc:
 # so it assumes all the html are under docs/.
 # Note that if you change the settings, you need to commit in
 # the master branch to trigger a redeploy
+# TODO: automatically update games/ and examples/
+# and add entries for those dirs.
 website:
 	rm -rf docs
 	make doc
