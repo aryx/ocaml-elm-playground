@@ -1,0 +1,287 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!-- Created by htmlize-1.57 in css mode. -->
+<html>
+  <head>
+    <title>Snake.ml.txt</title>
+    <style type="text/css">
+    <!--
+      body {
+        color: #f5deb3;
+        background-color: #2f4f4f;
+        font-weight: bold;
+      }
+      .builtin {
+        /* font-lock-builtin-face */
+        color: #ff7f50;
+      }
+      .comment {
+        /* font-lock-comment-face */
+        color: #bebebe;
+      }
+      .comment-delimiter {
+        /* font-lock-comment-delimiter-face */
+        color: #bebebe;
+      }
+      .constant {
+        /* font-lock-constant-face */
+        color: #7fffd4;
+      }
+      .function-name {
+        /* font-lock-function-name-face */
+        color: #b2dfee;
+      }
+      .keyword {
+        /* font-lock-keyword-face */
+        color: #ffa500;
+      }
+      .number {
+        /* font-lock-number-face */
+        color: #cdcd00;
+      }
+      .punctuation {
+        /* font-lock-punctuation-face */
+        color: #00ffff;
+      }
+      .string {
+        /* font-lock-string-face */
+        color: #00cd00;
+      }
+      .tuareg-font-lock-constructor {
+        /* tuareg-font-lock-constructor-face */
+        color: #f5deb3;
+        background-color: #2f4f4f;
+        font-weight: bold;
+      }
+      .tuareg-font-lock-governing {
+        /* tuareg-font-lock-governing-face */
+        color: #f5deb3;
+        font-weight: bold;
+      }
+      .tuareg-font-lock-module {
+        /* tuareg-font-lock-module-face */
+        color: #98fb98;
+      }
+      .tuareg-font-lock-operator {
+        /* tuareg-font-lock-operator-face */
+        color: #f0e68c;
+      }
+      .type {
+        /* font-lock-type-face */
+        color: #98fb98;
+      }
+      .variable-name {
+        /* font-lock-variable-name-face */
+        color: #9ac0cd;
+      }
+
+      a {
+        color: inherit;
+        background-color: inherit;
+        font: inherit;
+        text-decoration: inherit;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    -->
+    </style>
+  </head>
+  <body>
+    <pre>
+<span class="tuareg-font-lock-governing">open </span><span class="tuareg-font-lock-module">Playground</span>
+
+<span class="comment-delimiter">(*****************************************************************************)</span>
+<span class="comment-delimiter">(* </span><span class="comment">Prelude</span><span class="comment-delimiter"> *)</span>
+<span class="comment-delimiter">(*****************************************************************************)</span>
+<span class="comment-delimiter">(* </span><span class="comment">Port of the Snake clone https://github.com/amarantedaniel/snek,
+ * but using OCaml instead of Elm, and using Playground instead of HTML/SVG.
+ *
+ * See https://en.wikipedia.org/wiki/Snake_(video_game_genre) for more info.
+ *
+ * TODO:
+ *  - two players (like in original Snake game called Blockade)
+ *  - display score
+ *  - accelerate games as times goes
+ *  - high score table
+</span><span class="comment-delimiter"> *)</span>
+
+<span class="comment-delimiter">(*****************************************************************************)</span>
+<span class="comment-delimiter">(* </span><span class="comment">Model</span><span class="comment-delimiter"> *)</span>
+<span class="comment-delimiter">(*****************************************************************************)</span>
+
+<span class="comment-delimiter">(* </span><span class="comment">The origin of the grid (0, 0) is at the bottom left of the screen.
+ * This is different from the coordinate system of Playground where the
+ * origin is at the center of the screen, but it allows to use 'mod'
+ * to easily move the snake around the edges.
+</span><span class="comment-delimiter"> *)</span>
+<span class="tuareg-font-lock-governing">type</span> <span class="type">position</span> = <span class="punctuation">(</span>int * int<span class="punctuation">)</span> <span class="comment-delimiter">(* </span><span class="comment">x, y</span><span class="comment-delimiter"> *)</span>
+
+<span class="tuareg-font-lock-governing">type</span> <span class="type">grid_size</span> = <span class="punctuation">{</span>
+  g_width: int<span class="punctuation">;</span>
+  g_height: int<span class="punctuation">;</span>
+<span class="punctuation">}</span>
+<span class="comment-delimiter">(* </span><span class="comment">less: could be changed</span><span class="comment-delimiter"> *)</span>
+<span class="tuareg-font-lock-governing">let</span> <span class="variable-name">grid_size</span> = <span class="punctuation">{</span> g_width = <span class="number">20</span><span class="punctuation">;</span> g_height = <span class="number">20</span> <span class="punctuation">}</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">cell_size</span> <span class="variable-name">screen</span> = 
+  int_of_float screen.width / grid_size.g_width
+
+<span class="comment-delimiter">(* </span><span class="comment">TODO: do not return a position already used by the snake</span><span class="comment-delimiter"> *)</span> 
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">random_position</span> <span class="punctuation">()</span> =
+  <span class="punctuation">(</span><span class="tuareg-font-lock-module">Random.</span>int <span class="punctuation">(</span>grid_size.g_width - <span class="number">1</span><span class="punctuation">)</span>, <span class="tuareg-font-lock-module">Random.</span>int <span class="punctuation">(</span>grid_size.g_height - <span class="number">1</span><span class="punctuation">))</span>
+
+<span class="tuareg-font-lock-governing">type</span> <span class="type">direction</span> = <span class="tuareg-font-lock-constructor">Up</span> | <span class="tuareg-font-lock-constructor">Down</span> | <span class="tuareg-font-lock-constructor">Left</span> | <span class="tuareg-font-lock-constructor">Right</span>
+
+<span class="comment-delimiter">(* </span><span class="comment">using mutable so easier to update subparts of the model</span><span class="comment-delimiter"> *)</span>
+<span class="tuareg-font-lock-governing">type</span> <span class="type">snake</span> = <span class="punctuation">{</span>
+    <span class="keyword">mutable</span> head: position<span class="punctuation">;</span>
+    <span class="keyword">mutable</span> body: position list<span class="punctuation">;</span>
+    <span class="keyword">mutable</span> direction: direction<span class="punctuation">;</span>
+<span class="punctuation">}</span>
+<span class="tuareg-font-lock-governing">let</span> <span class="variable-name">initial_snake</span> = <span class="punctuation">{</span>
+    head = <span class="punctuation">(</span><span class="number">3</span>, <span class="number">0</span><span class="punctuation">);</span>
+    body = <span class="punctuation">[(</span><span class="number">2</span>, <span class="number">0</span><span class="punctuation">);</span> <span class="punctuation">(</span><span class="number">1</span>, <span class="number">0</span><span class="punctuation">);</span> <span class="punctuation">(</span><span class="number">1</span>, <span class="number">0</span><span class="punctuation">)];</span>
+    direction = <span class="tuareg-font-lock-constructor">Right</span><span class="punctuation">;</span>
+<span class="punctuation">}</span>
+
+
+<span class="tuareg-font-lock-governing">type</span> <span class="type">model</span> = <span class="punctuation">{</span>
+    snake: snake<span class="punctuation">;</span>
+    <span class="keyword">mutable</span> food: position<span class="punctuation">;</span>
+    <span class="keyword">mutable</span> game_over: bool<span class="punctuation">;</span>
+    <span class="keyword">mutable</span> last_tick: <span class="tuareg-font-lock-module">Time.</span>posix<span class="punctuation">;</span>
+<span class="punctuation">}</span>
+<span class="tuareg-font-lock-governing">let</span> <span class="variable-name">initial_model</span> = <span class="punctuation">{</span>
+    snake = initial_snake<span class="punctuation">;</span>
+    food = <span class="punctuation">(</span>grid_size.g_width / <span class="number">2</span>, grid_size.g_height / <span class="number">2</span><span class="punctuation">);</span>
+    game_over = <span class="constant">false</span><span class="punctuation">;</span>
+    last_tick = <span class="number">0</span>.<span class="punctuation">;</span>
+<span class="punctuation">}</span>
+
+<span class="comment-delimiter">(*****************************************************************************)</span>
+<span class="comment-delimiter">(* </span><span class="comment">Helpers</span><span class="comment-delimiter"> *)</span>
+<span class="comment-delimiter">(*****************************************************************************)</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="tuareg-font-lock-governing">rec</span> <span class="function-name">list_init</span> = <span class="keyword">function</span>
+  | <span class="tuareg-font-lock-constructor">[]</span> -&gt; <span class="builtin">raise</span> <span class="builtin">Not_found</span>
+  | <span class="punctuation">[</span> _x <span class="punctuation">]</span> -&gt; <span class="tuareg-font-lock-constructor">[]</span>
+  | x <span class="tuareg-font-lock-constructor">::</span> y <span class="tuareg-font-lock-constructor">::</span> xs -&gt; x <span class="tuareg-font-lock-constructor">::</span> list_init <span class="punctuation">(</span>y <span class="tuareg-font-lock-constructor">::</span> xs<span class="punctuation">)</span>
+
+<span class="comment-delimiter">(*****************************************************************************)</span>
+<span class="comment-delimiter">(* </span><span class="comment">View</span><span class="comment-delimiter"> *)</span>
+<span class="comment-delimiter">(*****************************************************************************)</span>
+<span class="tuareg-font-lock-governing">let</span> <span class="variable-name">f</span> = float
+<span class="tuareg-font-lock-governing">let</span> <span class="variable-name">i</span> = int_of_float
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">smaller</span> <span class="variable-name">size</span> = f size *. <span class="number">0</span>.<span class="number">90</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">movei</span> <span class="variable-name">a</span> <span class="variable-name">b</span> <span class="variable-name">shape</span> = move <span class="punctuation">(</span>f a<span class="punctuation">)</span> <span class="punctuation">(</span>f b<span class="punctuation">)</span> shape
+
+<span class="comment-delimiter">(* </span><span class="comment">TODO: this currently assumes a square screen</span><span class="comment-delimiter"> *)</span>
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">translate</span> <span class="punctuation">(</span><span class="variable-name">x</span>,<span class="variable-name">y</span><span class="punctuation">)</span> <span class="variable-name">screen</span> <span class="variable-name">shape</span> =
+  <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">cell_size</span> = cell_size screen <span class="tuareg-font-lock-governing">in</span>
+  shape 
+  <span class="tuareg-font-lock-operator">|&gt;</span> move screen.left screen.bottom
+  <span class="tuareg-font-lock-operator">|&gt;</span> movei <span class="punctuation">(</span>x * cell_size<span class="punctuation">)</span> <span class="punctuation">(</span>y * cell_size<span class="punctuation">)</span>
+  <span class="tuareg-font-lock-operator">|&gt;</span> movei <span class="punctuation">(</span>cell_size / <span class="number">2</span><span class="punctuation">)</span> <span class="punctuation">(</span>cell_size / <span class="number">2</span><span class="punctuation">)</span>
+
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">view_background</span> <span class="variable-name">screen</span> = 
+  <span class="punctuation">[</span>rectangle <span class="punctuation">(</span><span class="tuareg-font-lock-module">Color.</span><span class="tuareg-font-lock-constructor">Hex</span> <span class="string">"#8cbf00"</span><span class="punctuation">)</span> screen.width screen.height<span class="punctuation">]</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">view_food</span> <span class="variable-name">screen</span> <span class="variable-name">pos</span> = 
+  <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">size</span> = cell_size screen <span class="tuareg-font-lock-governing">in</span>
+  <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">radius</span> = size / <span class="number">3</span> <span class="tuareg-font-lock-governing">in</span>
+  <span class="punctuation">[</span>circle gray <span class="punctuation">(</span>f radius<span class="punctuation">)</span> <span class="tuareg-font-lock-operator">|&gt;</span> translate pos screen<span class="punctuation">;</span>
+   circle black <span class="punctuation">(</span>smaller radius<span class="punctuation">)</span> <span class="tuareg-font-lock-operator">|&gt;</span> translate pos screen<span class="punctuation">;</span>
+  <span class="punctuation">]</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">view_snake_part</span> <span class="variable-name">screen</span> <span class="variable-name">pos</span> =
+  <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">size</span> = cell_size screen <span class="tuareg-font-lock-governing">in</span>
+  <span class="punctuation">[</span>square gray <span class="punctuation">(</span>f size<span class="punctuation">)</span> <span class="tuareg-font-lock-operator">|&gt;</span> translate pos screen<span class="punctuation">;</span>
+   square black <span class="punctuation">(</span>smaller size<span class="punctuation">)</span> <span class="tuareg-font-lock-operator">|&gt;</span> translate pos screen<span class="punctuation">;</span>
+  <span class="punctuation">]</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">view_snake</span> <span class="variable-name">screen</span> <span class="variable-name">snake</span> =
+  <span class="tuareg-font-lock-module">List.</span>map <span class="punctuation">(</span>view_snake_part screen<span class="punctuation">)</span> <span class="punctuation">(</span>snake.head<span class="tuareg-font-lock-constructor">::</span>snake.body<span class="punctuation">)</span> <span class="tuareg-font-lock-operator">|&gt;</span> <span class="tuareg-font-lock-module">List.</span>flatten
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">view_game_over</span> <span class="variable-name">_screen</span> =
+  <span class="punctuation">[</span> words red <span class="string">"GAME OVER"</span> <span class="tuareg-font-lock-operator">|&gt;</span> scale <span class="number">10</span>. <span class="punctuation">]</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">view</span> <span class="variable-name">computer</span> <span class="variable-name">model</span> = 
+  <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">screen</span> = computer.screen <span class="tuareg-font-lock-governing">in</span>
+
+  view_background screen <span class="tuareg-font-lock-operator">@</span>
+  view_snake screen model.snake <span class="tuareg-font-lock-operator">@</span>
+  view_food screen model.food <span class="tuareg-font-lock-operator">@</span>
+  <span class="punctuation">(</span><span class="keyword">if</span> model.game_over <span class="keyword">then</span> view_game_over screen <span class="keyword">else</span> <span class="tuareg-font-lock-constructor">[]</span><span class="punctuation">)</span>
+  
+
+<span class="comment-delimiter">(*****************************************************************************)</span>
+<span class="comment-delimiter">(* </span><span class="comment">Update</span><span class="comment-delimiter"> *)</span>
+<span class="comment-delimiter">(*****************************************************************************)</span>
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">compute_new_head</span> <span class="variable-name">snake</span> =
+  <span class="tuareg-font-lock-governing">let</span> <span class="punctuation">(</span><span class="variable-name">x</span>, <span class="variable-name">y</span><span class="punctuation">)</span> = snake.head <span class="tuareg-font-lock-governing">in</span>
+  <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">h</span> = grid_size.g_height <span class="tuareg-font-lock-governing">in</span>
+  <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">w</span> = grid_size.g_width <span class="tuareg-font-lock-governing">in</span>
+  <span class="keyword">match</span> snake.direction <span class="keyword">with</span>
+  | <span class="tuareg-font-lock-constructor">Up</span> -&gt; <span class="punctuation">(</span>x, <span class="punctuation">(</span>y + <span class="number">1</span> <span class="punctuation">)</span> <span class="tuareg-font-lock-operator">mod</span> h<span class="punctuation">)</span>
+  | <span class="tuareg-font-lock-constructor">Down</span> -&gt; <span class="punctuation">(</span>x, <span class="punctuation">(</span>y - <span class="number">1</span> + h<span class="punctuation">)</span> <span class="tuareg-font-lock-operator">mod</span> h<span class="punctuation">)</span>
+  | <span class="tuareg-font-lock-constructor">Right</span> -&gt; <span class="punctuation">((</span>x + <span class="number">1</span><span class="punctuation">)</span> <span class="tuareg-font-lock-operator">mod</span> w, y<span class="punctuation">)</span>
+  | <span class="tuareg-font-lock-constructor">Left</span> -&gt; <span class="punctuation">((</span>x - <span class="number">1</span> + w<span class="punctuation">)</span> <span class="tuareg-font-lock-operator">mod</span> w, y<span class="punctuation">)</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">update_direction</span> <span class="variable-name">kbd</span> <span class="variable-name">snake</span> =
+  <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">new_dir</span> =
+    <span class="keyword">match</span> <span class="punctuation">()</span> <span class="keyword">with</span>
+    | _ <span class="keyword">when</span> kbd.kup -&gt; <span class="tuareg-font-lock-constructor">Up</span>
+    | _ <span class="keyword">when</span> kbd.kdown -&gt; <span class="tuareg-font-lock-constructor">Down</span>
+    | _ <span class="keyword">when</span> kbd.kleft -&gt; <span class="tuareg-font-lock-constructor">Left</span>
+    | _ <span class="keyword">when</span> kbd.kright -&gt; <span class="tuareg-font-lock-constructor">Right</span>
+    | _ -&gt; snake.direction
+  <span class="tuareg-font-lock-governing">in</span>
+  <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">new_dir</span> = 
+    <span class="keyword">match</span> new_dir, snake.direction <span class="keyword">with</span>
+    <span class="comment-delimiter">(* </span><span class="comment">invalid transitions</span><span class="comment-delimiter"> *)</span>
+    | <span class="tuareg-font-lock-constructor">Left</span>, <span class="tuareg-font-lock-constructor">Right</span> | <span class="tuareg-font-lock-constructor">Right</span>, <span class="tuareg-font-lock-constructor">Left</span> 
+    | <span class="tuareg-font-lock-constructor">Up</span>, <span class="tuareg-font-lock-constructor">Down</span> | <span class="tuareg-font-lock-constructor">Down</span>, <span class="tuareg-font-lock-constructor">Up</span>
+      -&gt; snake.direction
+    | x, _ -&gt; x
+  <span class="tuareg-font-lock-governing">in</span>
+  snake.direction &lt;- new_dir
+
+<span class="tuareg-font-lock-governing">let</span> <span class="function-name">update</span> <span class="variable-name">computer</span> <span class="variable-name">model</span> =
+  <span class="tuareg-font-lock-governing">let</span> <span class="punctuation">(</span><span class="tuareg-font-lock-constructor">Time</span> <span class="variable-name">now</span><span class="punctuation">)</span> = computer.time <span class="tuareg-font-lock-governing">in</span>
+  <span class="comment-delimiter">(* </span><span class="comment">operate by side effect on the model; simpler</span><span class="comment-delimiter"> *)</span>
+  <span class="keyword">if</span> now -. model.last_tick &gt; <span class="number">0</span>.<span class="number">5</span>
+  <span class="keyword">then</span> <span class="tuareg-font-lock-governing">begin</span>
+      model.last_tick &lt;- now<span class="punctuation">;</span>
+      <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">snake</span> = model.snake <span class="tuareg-font-lock-governing">in</span>
+      <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">new_head</span> = compute_new_head snake <span class="tuareg-font-lock-governing">in</span>
+      <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">ate_food</span> = new_head = model.food <span class="tuareg-font-lock-governing">in</span>
+      <span class="tuareg-font-lock-governing">let</span> <span class="variable-name">new_body</span> = 
+        <span class="keyword">if</span> ate_food
+        <span class="keyword">then</span> snake.body
+        <span class="keyword">else</span> list_init snake.body
+      <span class="tuareg-font-lock-governing">in</span>
+      snake.body &lt;- snake.head<span class="tuareg-font-lock-constructor">::</span>new_body<span class="punctuation">;</span>
+      snake.head &lt;- new_head<span class="punctuation">;</span>
+      <span class="keyword">if</span> ate_food
+      <span class="keyword">then</span> model.food &lt;- random_position <span class="punctuation">();</span>
+      model.game_over &lt;- <span class="tuareg-font-lock-module">List.</span>mem new_head new_body<span class="punctuation">;</span>
+  <span class="tuareg-font-lock-governing">end</span><span class="punctuation">;</span>
+  update_direction computer.keyboard model.snake<span class="punctuation">;</span>
+
+  model
+
+<span class="comment-delimiter">(*****************************************************************************)</span>
+<span class="comment-delimiter">(* </span><span class="comment">Entry point</span><span class="comment-delimiter"> *)</span>
+<span class="comment-delimiter">(*****************************************************************************)</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="variable-name">app</span> = 
+  game view update initial_model
+
+<span class="tuareg-font-lock-governing">let</span> <span class="variable-name">main</span> = 
+  <span class="tuareg-font-lock-module">Random.</span>self_init <span class="punctuation">();</span>
+  <span class="tuareg-font-lock-module">Playground_platform.</span>run_app app
+</pre>
+  </body>
+</html>

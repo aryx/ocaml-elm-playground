@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!-- Created by htmlize-1.57 in css mode. -->
+<html>
+  <head>
+    <title>Smiley.ml.txt</title>
+    <style type="text/css">
+    <!--
+      body {
+        color: #f5deb3;
+        background-color: #2f4f4f;
+        font-weight: bold;
+      }
+      .comment {
+        /* font-lock-comment-face */
+        color: #bebebe;
+      }
+      .comment-delimiter {
+        /* font-lock-comment-delimiter-face */
+        color: #bebebe;
+      }
+      .number {
+        /* font-lock-number-face */
+        color: #cdcd00;
+      }
+      .punctuation {
+        /* font-lock-punctuation-face */
+        color: #00ffff;
+      }
+      .tuareg-font-lock-governing {
+        /* tuareg-font-lock-governing-face */
+        color: #f5deb3;
+        font-weight: bold;
+      }
+      .tuareg-font-lock-module {
+        /* tuareg-font-lock-module-face */
+        color: #98fb98;
+      }
+      .tuareg-font-lock-operator {
+        /* tuareg-font-lock-operator-face */
+        color: #f0e68c;
+      }
+      .variable-name {
+        /* font-lock-variable-name-face */
+        color: #9ac0cd;
+      }
+
+      a {
+        color: inherit;
+        background-color: inherit;
+        font: inherit;
+        text-decoration: inherit;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    -->
+    </style>
+  </head>
+  <body>
+    <pre>
+<span class="comment-delimiter">(* </span><span class="comment">from elm-playground/examples.smiley.elm</span><span class="comment-delimiter"> *)</span>
+<span class="tuareg-font-lock-governing">open </span><span class="tuareg-font-lock-module">Playground</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="variable-name">app</span> =
+  picture <span class="punctuation">[</span>
+    circle lightYellow <span class="number">200</span>.<span class="punctuation">;</span>
+
+    <span class="comment-delimiter">(* </span><span class="comment">left eye</span><span class="comment-delimiter"> *)</span>
+    circle white <span class="number">50</span>.
+     <span class="tuareg-font-lock-operator">|&gt;</span> move_left <span class="number">70</span>.
+     <span class="tuareg-font-lock-operator">|&gt;</span> move_up <span class="number">50</span>.<span class="punctuation">;</span>
+    circle black <span class="number">10</span>.
+     <span class="tuareg-font-lock-operator">|&gt;</span> move_left <span class="number">75</span>.
+     <span class="tuareg-font-lock-operator">|&gt;</span> move_up <span class="number">40</span>.<span class="punctuation">;</span>
+
+    <span class="comment-delimiter">(* </span><span class="comment">right eye</span><span class="comment-delimiter"> *)</span>
+    circle white <span class="number">50</span>.
+     <span class="tuareg-font-lock-operator">|&gt;</span> move_right <span class="number">70</span>.
+     <span class="tuareg-font-lock-operator">|&gt;</span> move_up <span class="number">50</span>.<span class="punctuation">;</span>
+    circle black <span class="number">10</span>.
+     <span class="tuareg-font-lock-operator">|&gt;</span> move_right <span class="number">65</span>.
+     <span class="tuareg-font-lock-operator">|&gt;</span> move_up <span class="number">40</span>.<span class="punctuation">;</span>
+
+    <span class="comment-delimiter">(* </span><span class="comment">mouth</span><span class="comment-delimiter"> *)</span>
+    oval black <span class="number">180</span>. <span class="number">40</span>.
+     <span class="tuareg-font-lock-operator">|&gt;</span> move_down <span class="number">100</span>.<span class="punctuation">;</span>
+    oval lightYellow <span class="number">180</span>. <span class="number">40</span>.
+    <span class="tuareg-font-lock-operator">|&gt;</span> move_down <span class="number">90</span>.<span class="punctuation">;</span>
+
+  <span class="punctuation">]</span>
+
+<span class="tuareg-font-lock-governing">let</span> <span class="variable-name">main</span> = <span class="tuareg-font-lock-module">Playground_platform.</span>run_app app
+</pre>
+  </body>
+</html>
