@@ -22,9 +22,10 @@ test:
 
 # Note that I've configured Github Pages for this project at
 # https://github.com/aryx/ocaml-elm-playground/settings/pages
-# and select "Deploy from Branch" "master" and "/"
-# (I originally put "/docs" but then I got only the README so "/")
-
+# I've selected "Deploy from Branch" "master" and "/docs"
+# so it assumes all the html are under docs/.
+# Note that if you change the settings, you need to commit in
+# the master branch to trigger a redeploy
 doc:
 	dune build @doc
 	rm -rf docs
