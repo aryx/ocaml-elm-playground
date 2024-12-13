@@ -20,22 +20,38 @@ install:
 test:
 	dune runtest -f
 
+# This will fail if the .opam isn't up-to-date (in git),
+# and dune isn't installed yet. You can always install dune
+# with 'opam install dune' to get started.
+%.opam: dune-project
+	dune build $@
+
+###############################################################################
+# Website building
+###############################################################################
+
+doc:
+	dune build @doc
+
 # Note that I've configured Github Pages for this project at
 # https://github.com/aryx/ocaml-elm-playground/settings/pages
 # I've selected "Deploy from Branch" "master" and "/docs"
 # so it assumes all the html are under docs/.
 # Note that if you change the settings, you need to commit in
 # the master branch to trigger a redeploy
-doc:
-	dune build @doc
+website:
 	rm -rf docs
+	make doc
 	cp -a _build/default/_doc/_html docs
+	make js
 
-# This will fail if the .opam isn't up-to-date (in git),
-# and dune isn't installed yet. You can always install dune
-# with 'opam install dune' to get started.
-%.opam: dune-project
-	dune build $@
+# Preview the site at http://localhost:8000
+serve:
+	python -m http.server --directory docs 8000
+
+js:
+	dune build games_js --profile=release-js
+	dune build examples_js --profile=release-js
 
 ###############################################################################
 # Developer targets
