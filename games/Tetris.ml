@@ -317,7 +317,7 @@ let render_panel { width; height; score; lines; next; _ } =
 
   let move x = x |> move |> move_down (fl (cell_size * 3)) in
   let next_label = 
-    words (Color.Hex "#bdc3c7") "Mext Shape" |> move |> scale 2. in
+    words (Color.Hex "#bdc3c7") "Next Shape" |> move |> scale 2. in
 
   let move x = x |> move |> move_down (fl (cell_size * 2)) in
   let { x; _} = center_of_mass next in
