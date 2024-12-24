@@ -113,8 +113,16 @@ $ dune build --root . --profile=release
 $ cp _build/default/Toy.bc.js static/
 ```
 
-Next step
+Next steps
 ------------
 
 Read the tutorial at:
 https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html
+
+Look at the code under `examples/` and `games/`.
+
+Here is a screenshot of the `games/Tetris.ml` playgound game running:
+<img src="docs/screenshots/game-tetris.png" alt="Toy app screenshot"
+ width="60%">
+
+You can see a few more screenshots [here](docs/screenshots/).
