@@ -124,7 +124,7 @@ https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html
 
 Look at the code under [examples/](examples/) and [games/](games/).
 
-Here is a screenshot of the `games/Tetris.ml` playgound game running:
+Here is a screenshot of the [Tetris](games/Tetris.ml) Playgound game running:
 <img src="docs/screenshots/game-tetris.png" alt="Toy app screenshot"
  width="50%">
 
