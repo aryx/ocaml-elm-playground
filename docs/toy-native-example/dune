@@ -1,0 +1,6 @@
+(executable
+ (name Keyboard)
+ (libraries
+   elm_playground
+   elm_playground_native
+ ))
