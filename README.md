@@ -80,6 +80,7 @@ $ opam install --deps-only --yes .
 $ dune exec --root . ./Toy.exe
 ```
 You should then see in your terminal:
+
 <img src="docs/screenshots/keyboard-game-start-native.png" alt="Toy app screenshot"
  width="60%">
 
