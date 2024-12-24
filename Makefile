@@ -6,7 +6,9 @@
 # Main targets
 ###############################################################################
 
-OPAMS=elm_core.opam elm_system.opam elm_playground.opam
+OPAMS=\
+  elm_core.opam elm_system.opam\
+  elm_playground.opam elm_playground_native.opam elm_playground_web.opam
 
 default: all
 
@@ -25,6 +27,10 @@ test:
 # with 'opam install dune' to get started.
 %.opam: dune-project
 	dune build $@
+
+###############################################################################
+# Release
+###############################################################################
 
 ###############################################################################
 # Website building

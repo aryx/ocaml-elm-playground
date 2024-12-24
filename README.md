@@ -1,4 +1,5 @@
-# OCaml Elm Playground
+OCaml Elm Playground
+=======================
 
 Create pictures, animations, and games with OCaml!
 
@@ -10,5 +11,11 @@ https://github.com/evancz/elm-playground to OCaml.
 > package will be fun for a broad range of ages and backgrounds!"
 > *- Evan Czaplicki*
 
-For more information, see the package documentation at: 
-https://aryx.github.io/ocaml-elm-playground/index.html
+
+[Documentation]
+---------------------------------------------------
+* [Getting started](https://github.com/aryx/ocaml-elm-playground?tab=readme-ov-file#ocaml-elm-playground)
+* [Basic examples](https://aryx.github.io/ocaml-elm-playground/examples/)
+* [Basic games](https://aryx.github.io/ocaml-elm-playground/games/)
+* [API reference](https://aryx.github.io/ocaml-elm-playground/)
+
