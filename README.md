@@ -28,6 +28,9 @@ pictures, animations, and even video games using an API that really
 simplifies how to view the computer and its devices (the screen,
 keyboard, and mouse).
 
+The goal is similar to the old `graphics.mli` (now available in a separate repo at
+https://github.com/ocaml/graphics).
+
 The main API is defined in a single
 [Playground.mli](https://github.com/aryx/ocaml-elm-playground/blob/master/playground/Playground.mli) and is implemented by two backends:
  - a native (SDL-based) backend to run your game in a terminal
