@@ -33,7 +33,8 @@ The main API is defined in a single
  - a native (SDL-based) backend to run your game in a terminal
  - a web (vdom-based) backend to run your game in a browser
 
-Here is for example a simple [Snake game](https://aryx.github.io/ocaml-elm-playground/games/Snake.html) you can run from your browser (use the arrow keys to change the direction of the snake and eat the ball to grow your length).
+Here is for example a simple [Snake game](https://aryx.github.io/ocaml-elm-playground/games/Snake.html) you can run from your browser (use the arrow keys to change the direction of the snake and eat the ball to grow your length). You can run the same game
+in a terminal without changing a line of code.
 
 Install
 --------------
@@ -45,9 +46,14 @@ and/or `opam install elm_playground_web`.
 Simple native application
 --------------------------
 
-Here is a simple `Keyboard.ml` file:
+Here is a a very application using the playground:
 ```ocaml
 open Playground
+
+(* the (x, y) position of the blue square  *)
+type model = (int * int)
+
+let initial_state : model = (0., 0.)
 
 let view _computer (x, y) = [ 
   square blue 40.
@@ -58,11 +64,11 @@ let update computer (x, y) =
   (x +. to_x computer.keyboard, y +. to_y computer.keyboard)
 
 let app = 
-  game view update (0., 0.)
+  game view update initial_state
 
 let main = Playground_platform.run_app app
 ```
-<!-- coupling: examples/Keyboard.ml -->
+<!-- coupling: docs/toy-native-example/toy.ml and examples/Keyboard.ml -->
 
 It is a very simple `game` defining a `view` and `update` function
 to specify how the game behaves.
@@ -71,11 +77,10 @@ To compile this application, simply do:
 ```bash
 $ cd docs/toy-native-example
 $ opam install --deps-only --yes .
-$ dune exec --root . ./Keyboard.exe
+$ dune exec --root . ./Toy.exe
 ```
-
 You should then see in your terminal:
-![Keyboard screenshot]()
+![Keyboard screenshot](docs/screenshots/keyboard-game-native.png)
 
 
 Simple web application
