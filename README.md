@@ -16,10 +16,10 @@ Documentation
 ---------------------------------------------------
 
 * [Getting started](https://github.com/aryx/ocaml-elm-playground?tab=readme-ov-file#ocaml-elm-playground) (this file)
-* [Tutorial](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html)
+* [Tutorial](https://aryx.github.io/ocaml-elm-playground/elm_playground/)
 * [Basic examples](https://aryx.github.io/ocaml-elm-playground/examples/)
 * [Basic games](https://aryx.github.io/ocaml-elm-playground/games/)
-* [API reference](https://aryx.github.io/ocaml-elm-playground/elm_playground/Playground/index.html/)
+* [API reference](https://aryx.github.io/ocaml-elm-playground/elm_playground/Playground/)
 * [Index](https://aryx.github.io/ocaml-elm-playground)
 
 Features
