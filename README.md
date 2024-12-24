@@ -80,8 +80,11 @@ $ opam install --deps-only --yes .
 $ dune exec --root . ./Toy.exe
 ```
 You should then see in your terminal:
-![Keyboard screenshot](docs/screenshots/keyboard-game-native.png)
+<img src="docs/screenshots/keyboard-game-start-native.png" alt="Toy app screenshot"
+ width="60%">
 
+If you type on the arrow keys on your keyboard the blue square should move in the
+corresponding direction. If you type `q` it will exit the game.
 
 Simple web application
 --------------------------
