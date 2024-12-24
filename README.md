@@ -25,19 +25,20 @@ Features
 --------------
 
 The OCaml `elm_playground` package allows you to easily create
-pictures, animations, and even video games using an API that really
-simplifies how to view the computer and its devices (the screen,
+*pictures*, *animations*, and even *video games* in a portable way using an API that
+really simplifies how to view the computer and its devices (the screen,
 keyboard, and mouse).
 
-The goal is similar to the old [`graphics` package](https://github.com/ocaml/graphics).
+The goal is similar to the old [`graphics` package](https://github.com/ocaml/graphics)
+but goes even further in terms of simplification.
 
 The main API is defined in a single
-[Playground.mli](https://github.com/aryx/ocaml-elm-playground/blob/master/playground/Playground.mli) and is implemented by two backends:
- - a native (SDL-based) backend to run your game in a terminal
- - a web (vdom-based) backend to run your game in a browser
+[Playground.mli](https://github.com/aryx/ocaml-elm-playground/blob/master/playground/Playground.mli) module and is implemented by two backends:
+ - a *native* (SDL-based) backend to run your game in a terminal
+ - a *web* (vdom-based) backend to run your game in a browser
 
 Here is for example a simple [Snake game](https://aryx.github.io/ocaml-elm-playground/games/Snake.html) you can run from your browser (use the arrow keys to change the direction of the snake and eat the ball to grow your length). You can run the same game
-in a terminal without changing a line of code.
+in a terminal *without changing a line of code*.
 
 Install
 --------------
@@ -54,7 +55,7 @@ Here is a very simple application using the playground:
 open Playground
 
 (* the (x, y) position of the blue square  *)
-type model = (int * int)
+type model = (float * float)
 
 let initial_state : model = (0., 0.)
 
@@ -92,6 +93,8 @@ You should then see in your terminal:
 If you type on the arrow keys on your keyboard the blue square should move in the
 corresponding direction. If you type `q` it will exit the game.
 
+Note that with the Playground API the center of the screen is at `(0, 0)`.
+
 Simple web application
 --------------------------
 
@@ -119,10 +122,17 @@ Next steps
 Read the tutorial at:
 https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html
 
-Look at the code under `examples/` and `games/`.
+Look at the code under [examples/](examples/) and [games/](games/).
 
 Here is a screenshot of the `games/Tetris.ml` playgound game running:
 <img src="docs/screenshots/game-tetris.png" alt="Toy app screenshot"
- width="60%">
+ width="50%">
 
 You can see a few more screenshots [here](docs/screenshots/).
+
+Limitations
+------------
+
+The web backend is not fully finished yet. Many of the examples and games
+do not work fully yet on the web. You've been warned.
+Contributions are welcome!
