@@ -15,7 +15,9 @@ First release on OPAM (actually 0.1.7 was the version released).
 
 ## Beta (2021-01-05)
 
-Initial native (via TSDL) and web (via vdom) "backends".
+Initial native (via TSDL) and web (via vdom) "backends"
+and a few basic games (Pong, Asteroid, Snake, and even Tetris!)
+working in native and a few working in web.
 
 ## Alpha (2020-11-02)
 
