@@ -19,7 +19,8 @@ Documentation
 * [Tutorial](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html)
 * [Basic examples](https://aryx.github.io/ocaml-elm-playground/examples/)
 * [Basic games](https://aryx.github.io/ocaml-elm-playground/games/)
-* [API reference](https://aryx.github.io/ocaml-elm-playground/)
+* [API reference](https://aryx.github.io/ocaml-elm-playground/elm_playground/Playground/index.html/)
+* [Index](https://aryx.github.io/ocaml-elm-playground)
 
 Features
 --------------
@@ -34,11 +35,11 @@ but goes even further in terms of simplification.
 
 The main API is defined in a single
 [Playground.mli](https://github.com/aryx/ocaml-elm-playground/blob/master/playground/Playground.mli) module and is implemented by two backends:
- - a *native* (SDL-based) backend to run your game in a terminal
+ - a *native* (SDL-based) backend to run your game on your desktop from a terminal
  - a *web* (vdom-based) backend to run your game in a browser
 
 Here is for example a simple [Snake game](https://aryx.github.io/ocaml-elm-playground/games/Snake.html) you can run from your browser (use the arrow keys to change the direction of the snake and eat the ball to grow your length). You can run the same game
-in a terminal *without changing a line of code*.
+on your desktop *without changing a line of code*.
 
 Install
 --------------
@@ -85,7 +86,7 @@ $ cd docs/toy-native-example
 $ opam install --deps-only --yes .
 $ dune exec --root . ./Toy.exe
 ```
-You should then see in your terminal:
+You should then see on your desktop:
 
 <img src="docs/screenshots/keyboard-game-start-native.png" alt="Toy app screenshot"
  width="60%">
@@ -106,7 +107,7 @@ $ opam install --deps-only --yes .
 $ dune build --root .
 $ cp _build/default/Toy.bc.js static/
 ```
-You should be able to then use the app by going to:
+You should then be able to use the web app by going to:
 https://aryx.github.io/ocaml-elm-playground/toy-web-example/static/Toy.html
 
 By default the generated javascript file can be big so to get a smaller one
