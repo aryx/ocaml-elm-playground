@@ -99,6 +99,7 @@ $ dune build --root .
 $ cp _build/default/Toy.bc.js static/
 ```
 You should be able to then use the app by going to:
+https://aryx.github.io/ocaml-elm-playground/toy-web-example/static/Toy.html
 
 By default the generated javascript file can be big so to get a smaller one
 you can do instead:
