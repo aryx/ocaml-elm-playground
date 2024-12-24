@@ -72,8 +72,10 @@ let main = Playground_platform.run_app app
 ```
 <!-- coupling: docs/toy-native-example/toy.ml and examples/Keyboard.ml -->
 
-It is a very simple `game` defining a `view` and `update` function
-to specify how the game behaves.
+It is a very simple `game` defining a `model` type, a `view` function, and an `update` function to specify how the game behaves. It is using the
+"Model-View-Update" architecture to organize the code of a graphical
+interactive application
+(see https://guide.elm-lang.org/architecture/ for more information).
 
 To compile this application, simply do:
 ```bash
