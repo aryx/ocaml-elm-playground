@@ -16,6 +16,7 @@ Documentation
 ---------------------------------------------------
 
 * [Getting started](https://github.com/aryx/ocaml-elm-playground?tab=readme-ov-file#ocaml-elm-playground) (this file)
+* [Tutorial](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html)
 * [Basic examples](https://aryx.github.io/ocaml-elm-playground/examples/)
 * [Basic games](https://aryx.github.io/ocaml-elm-playground/games/)
 * [API reference](https://aryx.github.io/ocaml-elm-playground/)
@@ -48,7 +49,7 @@ and/or `opam install elm_playground_web`.
 Simple native application
 --------------------------
 
-Here is a a very application using the playground:
+Here is a very simple application using the playground:
 ```ocaml
 open Playground
 
@@ -111,3 +112,9 @@ you can do instead:
 $ dune build --root . --profile=release
 $ cp _build/default/Toy.bc.js static/
 ```
+
+Next step
+------------
+
+Read the tutorial at:
+https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html
