@@ -1,0 +1,15 @@
+opam-version: "2.0"
+
+depends: [
+  "ocaml" {>= "4.14.0"}
+  "dune" {>= "2.0.0"}
+  "elm_playground"
+  "elm_playground_web"
+]
+
+synopsis: "One of the OCaml Elm Playground examples"
+homepage: "https://github.com/aryx/ocaml-elm-playground"
+bug-reports: "https://github.com/aryx/ocaml-elm-playground/issues"
+author: "Yoann Padioleau <yoann.padioleau@gmail.com>"
+license: "MIT"
+maintainer: "Yoann Padioleau <yoann.padioleau@gmail.com>"

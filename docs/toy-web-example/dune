@@ -1,0 +1,36 @@
+(executable
+ (name Toy)
+ (libraries
+   elm_playground
+   elm_playground_web
+ )
+ (modes js)
+ (link_flags -no-check-prims)
+)
+
+(env
+  (dev
+      ; (flags (:standard -w -6-32-37-69))
+      ; with dev jsoo Toy.bc.js is =~3MB
+      (js_of_ocaml
+       (flags
+        (
+         :standard ; pretty and sourcemap
+         --no-inline
+         --debug-info
+         --disable staticeval
+         --disable share
+         ; js_of_ocaml has a bug w/ shortvars after 5.5.2 so let's disable it
+         --disable shortvar
+         ; gives us better error messages
+         --enable with-js-error))))
+  (release
+       (flags (:standard)))
+  ; with release-js Toy.bc.js is =~120KB
+  (release-js
+      (js_of_ocaml
+       (flags
+        (
+         --disable shortvar
+         --enable with-js-error))))
+)

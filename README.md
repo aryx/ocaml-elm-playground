@@ -90,3 +90,19 @@ corresponding direction. If you type `q` it will exit the game.
 Simple web application
 --------------------------
 
+To compile this same application for the web, simply do:
+
+```bash
+$ cd docs/toy-web-example
+$ opam install --deps-only --yes .
+$ dune build --root .
+$ cp _build/default/Toy.bc.js static/
+```
+You should be able to then use the app by going to:
+
+By default the generated javascript file can be big so to get a smaller one
+you can do instead:
+```bash
+$ dune build --root . --profile=release
+$ cp _build/default/Toy.bc.js static/
+```
