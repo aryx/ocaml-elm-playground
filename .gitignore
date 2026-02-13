@@ -1,4 +1,5 @@
 _build/
 .merlin
+*.bc.js
 
 todo.txt
