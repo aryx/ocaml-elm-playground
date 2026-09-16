@@ -1,0 +1,133 @@
+#!/bin/sh
+set -eu # to debug this script add '-x'
+
+###############################################################################
+# Prelude
+###############################################################################
+# The goal of this script is to automate the configuration and installation
+# of packages that are needed to then compile the OCaml Elm Playground itself.
+# coupling: adapted from ~/github/syncweb/configure
+
+###############################################################################
+# Helper functions
+###############################################################################
+
+ok()   { echo "  [OK]   $1"; }
+warn() { echo "  [WARN] $1"; }
+err()  { echo "  [ERR]  $1" >&2; }
+
+errors=0
+
+need_command() {
+    if command -v "$1" >/dev/null 2>&1; then
+        ok "$1 ($(command -v "$1"))"
+    else
+        err "$1 not found in PATH"
+        errors=$((errors + 1))
+    fi
+}
+
+check_tar() {
+    # opam fetches package sources as .tar.gz and shells out to 'tar xfz'.
+    # A project-local bootstrap toolchain (e.g. this machine's goken9cc or
+    # xix env.sh, which prepend a bin/ with their own minimal reimplemented
+    # unix tools to $PATH) can shadow GNU/BSD tar with something that
+    # doesn't understand combined flags or gzip, and opam then fails deep
+    # into package fetching with a cryptic "tar: can't open archive z" error
+    # instead of a clear one here.
+    _t=$(mktemp -d)
+    echo hello > "$_t/f"
+    if tar czf "$_t/f.tgz" -C "$_t" f >/dev/null 2>&1 \
+       && tar xzf "$_t/f.tgz" -C "$_t" >/dev/null 2>&1; then
+        ok "tar ($(command -v tar)) supports gzip archives"
+    else
+        err "tar ($(command -v tar)) failed a basic 'tar czf'/'tar xzf' round-trip"
+        err "  opam needs a real tar to fetch package sources. If \$PATH has a"
+        err "  project-local toolchain bin/ ahead of /usr/bin (e.g. from sourcing"
+        err "  goken9cc's or xix's env.sh in this shell), open a fresh shell and retry."
+        errors=$((errors + 1))
+    fi
+    rm -rf "$_t"
+}
+
+check_c_lib() {
+    name="$1"
+    pkg="$2"
+    header="$3"
+
+    if command -v pkg-config >/dev/null 2>&1 \
+       && pkg-config --exists "$pkg" 2>/dev/null; then
+        ok "$name (pkg-config: $pkg)"
+        return 0
+    fi
+
+    search_dirs="/usr/include /usr/local/include"
+    if command -v brew >/dev/null 2>&1; then
+        search_dirs="$search_dirs $(brew --prefix 2>/dev/null)/include"
+    fi
+
+    for dir in $search_dirs; do
+        if [ -f "$dir/$header" ]; then
+            ok "$name (header: $dir/$header)"
+            return 0
+        fi
+    done
+
+    warn "$name not found (pkg-config module '$pkg', header '$header'); the elm_playground_native backend won't build without it"
+}
+
+# On macOS, extend PKG_CONFIG_PATH for Homebrew
+if command -v brew >/dev/null 2>&1; then
+    _brew_prefix="$(brew --prefix 2>/dev/null || true)"
+    if [ -n "$_brew_prefix" ]; then
+        PKG_CONFIG_PATH="${_brew_prefix}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+        export PKG_CONFIG_PATH
+    fi
+fi
+
+###############################################################################
+# Check required tools
+###############################################################################
+
+echo "Checking required tools..."
+
+need_command ocaml
+need_command opam
+need_command make
+need_command tar
+command -v tar >/dev/null 2>&1 && check_tar
+
+if [ "$errors" -ne 0 ]; then
+    echo "$errors error(s) found. Please fix the issues above and re-run ./configure."
+    exit 1
+fi
+
+echo ""
+
+###############################################################################
+# Check C libraries needed by the native (SDL2 + cairo) backend
+###############################################################################
+# coupling: elm_playground_native.opam (tsdl, cairo2, ocurl)
+
+echo "Checking C libraries for elm_playground_native..."
+
+check_c_lib "SDL2"    "sdl2"    "SDL2/SDL.h"
+check_c_lib "cairo"   "cairo"   "cairo.h"
+check_c_lib "libcurl" "libcurl" "curl/curl.h"
+
+echo ""
+
+###############################################################################
+# Install opam dependencies
+###############################################################################
+
+echo "Installing opam dependencies..."
+opam install --confirm-level=unsafe-yes --deps-only -y \
+  ./elm_core.opam ./elm_system.opam ./elm_playground.opam \
+  ./elm_playground_native.opam ./elm_playground_web.opam
+
+echo ""
+echo "Everything looks fine. You can now run:"
+echo ""
+echo "   $ make"
+echo "   $ make test"

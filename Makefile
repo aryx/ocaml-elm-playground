@@ -68,6 +68,11 @@ js:
 check:
 	osemgrep --config semgrep.jsonnet .
 
+build-docker:
+	docker build -t "elm_playground" .
+build-docker-ocaml5:
+	docker build -t "elm_playground" --build-arg OCAML_VERSION=5.1.1 .
+
 # To bump-version you need to modify dune-project version then run 'make' then
 # commit and merge then:
 #  git tag -a 0.1.8
