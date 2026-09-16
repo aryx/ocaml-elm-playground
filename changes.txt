@@ -19,6 +19,22 @@
 - native image loading: replace imagelib (whose GIF decoder has a
   clear-code off-by-one bug, crashing e.g. on the Mario jump sprites) with
   stb_image; move the loading code to its own Image_native.ml{,i}
+- native run_app: cap the render loop to ~60fps (it was free-running at
+  several hundred fps with no vsync, making games like Mario run ~7x too
+  fast since their update functions use a fixed per-tick dt that assumes
+  the web backend's requestAnimationFrame ~60Hz pacing)
+- native run_app: drain the whole SDL event queue each frame and always
+  additionally deliver a Tick, instead of consuming at most one SDL event
+  per loop iteration; a burst of queued input events (e.g. OS key-repeat
+  while holding an arrow key) used to starve Tick delivery, which is the
+  only message game physics reacts to, visibly slowing the game down
+  while a key was held
+- native render_image: scale the decoded surface to fill the requested
+  (w,h) box instead of just positioning its origin there; Cairo's
+  set_source_surface doesn't resize content, so an image whose native
+  decoded size differs from the requested size (e.g. Mario's 35x35 GIF
+  sprites via "image 70. 70. ...") was drawn at native size, off-center
+  (too small, floating above the ground instead of standing on it)
 
 * 0.1.7 (Q4 2024) (first GitHub Pages website, README rewrite, toy examples)
 

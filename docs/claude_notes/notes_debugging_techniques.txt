@@ -1,0 +1,157 @@
+Debugging a native SDL+Cairo Playground app (crashes, and "feels wrong")
+==========================================================================
+
+This file is about the *technique*, not the specific bugs (see git log /
+the "claude:" comments in the source for those: the imagelib GIF decoder
+bug, and the game-loop timing issue). Kept here so the approach can be
+reused next time something in the native (playground/native/) backend
+crashes or just "feels off" in a way that's hard to pin down from reading
+the code alone.
+
+1. Running a GUI app headlessly, without it hanging your shell
+-------------------------------------------------------------------
+Mario.exe (like any Playground `game`) is `while true do ... done` with no
+natural exit. Don't run it bare in a tool call -- wrap it:
+
+  timeout 5 ./_build/default/examples/Mario.exe > /tmp/mario.log 2>&1
+  echo "exit: $?"; cat /tmp/mario.log
+
+`exit: 124` means `timeout` killed it after 5s -- i.e. it ran fine for the
+full duration. Any other exit code (2 here, for an uncaught OCaml
+exception) means it crashed, and the log has the real stack trace. This
+is the difference between "confirmed it didn't crash" and "I assume it's
+fine because nothing printed" -- always check the exit code, not just
+whether output looks alarming.
+
+2. Isolating a suspected third-party-library bug with a standalone repro
+-------------------------------------------------------------------------
+When a crash's stack trace points into an opam-installed library (here:
+`imagelib`'s `imageGIF.ml`, several frames deep inside
+`ImageGIF.ReadGIF.process_image_descriptor_subblock`), don't try to
+debug it by rebuilding the whole dune project on every iteration. Copy
+just the relevant few lines into a throwaway `.ml` in /tmp and compile it
+directly against the installed findlib packages:
+
+  ocamlfind ocamlopt -package curl,imagelib.unix -linkpkg /tmp/test.ml \
+    -o /tmp/test && /tmp/test
+
+This is a fast, dune-independent loop: swap inputs (different URLs,
+different downloaded files), swap library versions (`opam install
+pkg.VERSION`), or swap the implementation being tested (imagelib vs
+stb_image, see below) in seconds, without touching the real project
+until you know exactly what the fix should be. It's also how the actual
+mechanism of the bug was pinned down here: reproducing the exact
+download-then-decode pipeline (`curl_url` + `ImageLib.openfile`) outside
+the app made it possible to bisect "is it the download (curl bindings)
+or the decode (imagelib)" -- confirmed identical bytes via `md5sum` on
+repeated downloads, which ruled out "flaky network content" and pointed
+squarely at the decoder.
+
+Reading the *library's own source* (found via
+`opam show <pkg>` -> `all-installed-versions` gives the exact path under
+`~/.opam/<switch>/lib/<pkg>/`, and the opam cache also keeps the unpacked
+source tree under `~/.opam/<switch>/.opam-switch/sources/<pkg>.<version>/`)
+is what turned "some exception four frames deep" into an actual line-level
+bug: `calc_clear_code lzw_min_size = 1 lsl (lzw_min_size - 1)` in
+imageGIF.ml, which should be `1 lsl lzw_min_size` per the GIF89a spec's
+own definition of the LZW clear code. Don't stop at "the library raised
+an exception, so catch it" -- when it's cheap to read the library's
+source, do, since it turns a defensive workaround into an actual
+diagnosis of *what's wrong and why*, which is what lets you decide
+whether to patch around it (convert fallback), replace the library
+entirely (stb_image), or both in sequence, instead of guessing.
+
+3. Don't assume "latest opam version" means "latest known state"
+-------------------------------------------------------------------
+`opam show <pkg>` lists `all-versions` -- confirms whether a newer
+release exists at all. But an opam release can lag the project's git
+history by years with no new tag cut. Before concluding "this is
+unfixably outdated, need to switch libraries", check upstream git
+directly:
+
+  curl -s https://api.github.com/repos/<owner>/<repo>/commits?path=<file> \
+    | python3 -c "import json,sys; [print(c['sha'][:10], c['commit']['author']['date'], c['commit']['message'].splitlines()[0]) for c in json.load(sys.stdin)]"
+
+  curl -s https://raw.githubusercontent.com/<owner>/<repo>/master/<file> \
+    -o /tmp/master_version_of_file.ml
+
+For `ocaml-imagelib`, this showed the opam release (20221222) *is* the
+latest tag, and separately that the current git `master` -- unreleased,
+years of later commits included -- still has the exact same buggy
+`calc_clear_code`. That's a materially different, stronger claim than
+"no new opam release exists": it means there is no fix to pin to, from
+opam or from git, so switching libraries (rather than waiting/pinning) is
+the only real option. Don't skip this check and assume "no new opam
+version" settles the question.
+
+4. Temporary instrumentation beats guessing about control flow
+-------------------------------------------------------------------
+"Which image URL is being requested when it crashes?" and "why does
+`mario.y` become nonzero on frame 2 with no visible input?" were both
+answered in one shot by adding a throwaway `Printf.eprintf` at the exact
+decision point (inside `render_image`, and inside the SDL key-event
+branch of `run_app`'s loop) instead of reasoning it out from the source:
+
+  Printf.eprintf "DEBUG loading image: %s\n%!" src;
+
+rebuild, rerun, read the log, then **remove it** before committing --
+`git diff` the file afterwards to confirm no debug prints survived. This
+is faster and more reliable than tracing the Elm-style `update`/`view`
+dataflow by eye, especially across an event queue (SDL) where "what fired
+this frame" isn't visible from a static read of the code. It also
+directly disproved a wrong hypothesis here: the "Up" keypress causing
+Mario to jump on frame 2 looked at first like a spurious/synthetic SDL
+event in the sandboxed X server, until the user confirmed in chat they
+were actually pressing keys in the window -- a reminder to state a
+hypothesis as a hypothesis and check it against the human in the loop
+before treating it as confirmed, even when the instrumented evidence by
+itself looks like it points to an environment bug.
+
+5. When something "feels wrong" (not crashing, just off), measure it
+-------------------------------------------------------------------------
+"Mario moves/jumps too fast, and sometimes freezes" is not a stack trace
+-- there's nothing to catch. The fix is the same instinct as above,
+applied to *timing* instead of control flow: don't guess which of several
+plausible causes (frame-rate, physics constants, network stalls, GC
+pauses) it is -- instrument and get numbers.
+
+- Frame rate: the app already had an FPS counter (`Fps.update_fps`,
+  drawn on-screen) but only visible if you're watching the window.
+  Temporarily also `Printf.eprintf` it to stderr to get numbers in a
+  headless run:
+
+    if dt > 0.5 then (
+      fps := float !frames /. dt;
+      Printf.eprintf "DEBUG fps: %.0f\n%!" !fps;
+      ...
+
+  This immediately showed ~400-450fps at idle, against the ~60fps the
+  Elm original gets from the browser's `requestAnimationFrame`
+  throttling -- and the game's `update` uses a *fixed* per-call `dt`
+  (ported as-is from the Elm source, which relies on the browser holding
+  frame rate roughly constant near 60Hz), so an uncapped native loop
+  directly means physics integrates ~7x too fast. One number turned a
+  vague "feels too fast" into a precise, fixable claim: the native
+  `run_app` loop needs frame-rate pacing to match the cadence the shared
+  example code assumes.
+
+- Blocking/stalling: timed a cold (not-yet-cached) image load directly
+  against the same standalone-repro technique from section 2:
+
+    let t0 = Unix.gettimeofday () in
+    let _ = surface_of_url "https://elm-lang.org/images/mario/walk/left.gif" in
+    Printf.printf "cold load took %.3f s\n%!" (Unix.gettimeofday () -. t0)
+
+  -> ~0.7s. Since that download+decode happens synchronously inside the
+  render loop on first use of each sprite variant, this is a precise,
+  reproducible number for the "sometimes lag or blocks" complaint (it
+  happens exactly when the game first needs a not-yet-cached image, e.g.
+  the first jump or the first time moving left), not a vague GC/rendering
+  guess.
+
+General lesson: for "it feels wrong" bug reports with no exception and no
+log, the first move is to find *some* number to print (a rate, a
+duration, a count) at the suspected site, rather than reading the code
+and reasoning about what "should" be slow. A wrong intuition about
+performance is extremely common and cheap to disprove with one timestamp
+pair; don't spend time on it, just measure.

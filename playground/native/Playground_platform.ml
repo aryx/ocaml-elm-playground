@@ -206,11 +206,21 @@ let render_image hook w h src x y angle s _alpha =
   match Image_native.surface_of_url src with
   | None -> ()
   | Some surface ->
+    (* claude: Cairo.set_source_surface only positions a surface's origin,
+     * it never resizes its pixel content to fill (w,h) -- so without this
+     * scale, an image whose native decoded size differs from the
+     * requested (w,h) (e.g. Mario's 35x35 GIF sprites drawn via
+     * "image 70. 70. ...") is drawn at its native size, anchored at the
+     * top-left of the (w,h) box instead of filling/centering it. *)
+    let surface_w = float (Cairo.Image.get_width surface) in
+    let surface_h = float (Cairo.Image.get_height surface) in
     with_cr (fun cr ->
       hook cr;
       render_transform cr x y angle s;
+      Cairo.scale cr (w /. surface_w) (h /. surface_h);
 
-      Cairo.set_source_surface cr surface ~x:(-. w / 2.) ~y:(-. h / 2.);
+      Cairo.set_source_surface cr surface
+        ~x:(-. surface_w /. 2.) ~y:(-. surface_h /. 2.);
       Cairo.paint cr;
     )
 
@@ -309,7 +319,7 @@ let run_app app =
   let* () = Sdl.init Sdl.Init.(video + events) in
   let* sdl_window = Sdl.create_window ~w:sx ~h:sy "Playground using SDL+Cairo"
     Sdl.Window.shown in
-  let event = Sdl.Event.create () in
+  let sdl_event = Sdl.Event.create () in
 
   let* window_surface = Sdl.get_window_surface sdl_window in
 
@@ -343,8 +353,21 @@ let run_app app =
   let initmodel, _cmdsTODO = app.Playground.init () in
   let model = ref initmodel in
 
+  (* claude: the loop below has no vsync (we blit to a plain SDL window
+   * surface, not an accelerated/vsync'd renderer), so without this cap it
+   * free-runs at several hundred fps. Playground.game's update functions
+   * (e.g., examples/Mario.ml) use a fixed per-tick dt inherited from the
+   * original Elm code, which assumes browser's requestAnimationFrame's
+   * ~60Hz pacing (see playground/web/Playground_platform.ml's
+   * animation_frame, which re-schedules itself via
+   * Window.request_animation_frame); an uncapped native loop breaks that
+   * assumption and makes games run several times too fast. *)
+  let target_fps = 60. in
+  let target_frame_time = 1. /. target_fps in
+
   (* typing "Q" will cause an 'exit 0' that will exit the loop *)
   while true do
+    let frame_start = Unix.gettimeofday () in
     Cairo.save cr;
 
     (* reset the surface content *)
@@ -357,51 +380,58 @@ let run_app app =
     (*debug_coordinates cr;*)
 
     (* one frame *)
-    let time = Unix.gettimeofday() in
-
-    let subs = app.Playground.subscriptions !model in
-
-    let event = 
-      if Sdl.poll_event (Some event)
-      then
-        let event_type = Sdl.Event.get event Sdl.Event.typ in
-        (match event_type with
-        | x when x = Sdl.Event.mouse_motion ->
-          let x = Sdl.Event.(get event mouse_motion_x) in
-          let y = Sdl.Event.(get event mouse_motion_y) in
-          let (x, y) = Cairo.device_to_user cr (float x) (float y) in
-          let (x, y) = convert (x, y) in
-          E.EMouseMove (int_of_float x, int_of_float y)
-
-        | x when x = Sdl.Event.mouse_button_down ->
-          E.EMouseButton (true)
-
-        | x when x = Sdl.Event.mouse_button_up ->
-          E.EMouseButton (false)
-
-        | x when x = Sdl.Event.key_down -> 
-          let key = Sdl.(get_key_name Event.(get event keyboard_keycode)) in
-          let str = scancode_to_keystring key in
-          E.EKeyChanged (true, str)
-
-        | x when x = Sdl.Event.key_up -> 
-          let key = Sdl.(get_key_name Event.(get event keyboard_keycode)) in
-          let str = scancode_to_keystring key in
-          E.EKeyChanged (false, str)
-
-        (* default case *)
-        | _ -> E.ETick time 
-        )
-      else E.ETick time 
+    let apply_playground_event pevent =
+      let subs = app.Playground.subscriptions !model in
+      match E.event_to_msgopt pevent subs with
+      | None -> ()
+      | Some msg ->
+        let newmodel, _cmds = app.Playground.update msg !model in
+        model := newmodel
     in
 
-    let msg_opt = E.event_to_msgopt event subs in
-    (match msg_opt with
-    | None -> ()
-    | Some msg ->
-      let newmodel, _cmds = app.Playground.update msg !model in
-      model := newmodel;
-    );
+    (* claude: drain the *whole* pending SDL event queue every frame,
+     * instead of at most one event, and always additionally deliver a
+     * Tick below. Playground.game's update_memory (e.g. Mario's physics)
+     * only runs on Tick, not on KeyChanged (see Playground.game_update);
+     * with only one SDL event consumed per loop iteration, a burst of
+     * queued input events (e.g. OS key-repeat while holding an arrow key)
+     * used to starve Tick delivery for several frames in a row, which
+     * showed up as the game visibly slowing down while a key was held. *)
+    let rec drain_sdl_events () =
+      if Sdl.poll_event (Some sdl_event) then begin
+        let event_type = Sdl.Event.get sdl_event Sdl.Event.typ in
+        (match event_type with
+        | x when x = Sdl.Event.mouse_motion ->
+          let x = Sdl.Event.(get sdl_event mouse_motion_x) in
+          let y = Sdl.Event.(get sdl_event mouse_motion_y) in
+          let (x, y) = Cairo.device_to_user cr (float x) (float y) in
+          let (x, y) = convert (x, y) in
+          apply_playground_event (E.EMouseMove (int_of_float x, int_of_float y))
+
+        | x when x = Sdl.Event.mouse_button_down ->
+          apply_playground_event (E.EMouseButton true)
+
+        | x when x = Sdl.Event.mouse_button_up ->
+          apply_playground_event (E.EMouseButton false)
+
+        | x when x = Sdl.Event.key_down ->
+          let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
+          let str = scancode_to_keystring key in
+          apply_playground_event (E.EKeyChanged (true, str))
+
+        | x when x = Sdl.Event.key_up ->
+          let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
+          let str = scancode_to_keystring key in
+          apply_playground_event (E.EKeyChanged (false, str))
+
+        (* other SDL event types (window resize/expose/...): ignored *)
+        | _ -> ()
+        );
+        drain_sdl_events ()
+      end
+    in
+    drain_sdl_events ();
+    apply_playground_event (E.ETick (Unix.gettimeofday ()));
 
     let shapes = app.Playground.view !model in
     render shapes;
@@ -415,4 +445,8 @@ let run_app app =
 
     (* Update our fps counter. *)
     Fps.update_fps ();
+
+    let elapsed = Unix.gettimeofday () -. frame_start in
+    if elapsed < target_frame_time
+    then Unix.sleepf (target_frame_time -. elapsed);
   done
