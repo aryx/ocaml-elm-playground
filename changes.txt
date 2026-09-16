@@ -62,6 +62,23 @@
   handling it, neither the close button nor e.g. Ctrl-C/`kill` did
   anything, since the event was received but silently ignored
 
+** playground web
+- run_app: deliver Ticks on a fixed 60Hz timestep instead of one per
+  requestAnimationFrame, which fires at the display refresh rate (120Hz
+  on Mac ProMotion screens), making Mario run 2x too fast
+- run_app: patch the <svg> in place via a tiny virtual DOM (V.patch)
+  instead of rebuilding it every frame; freshly created <svg:image>
+  elements decode asynchronously, so the Mario sprite sometimes
+  disappeared (and animated GIFs restarted every frame)
+- preload_image: actually preload (and keep) the images, so switching
+  sprites doesn't flicker
+- render_image: set height (was setting width twice)
+
+** build infra (web)
+- examples_js/ and games_js/: copy the .html files into _build/ next to
+  the .bc.js, so e.g. _build/default/examples_js/ can be opened directly
+  in a browser; make now runs 'dune build @default' to include them
+
 * 0.1.7 (Q4 2024) (first GitHub Pages website, README rewrite, toy examples)
 
 ** releases

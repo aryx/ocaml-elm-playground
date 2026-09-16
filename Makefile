@@ -12,13 +12,21 @@ OPAMS=\
 
 default: all
 
+# claude: @default (recursive) rather than plain 'dune build' so the
+# 'default' alias in examples_js/ and games_js/ is used and their .html
+# files are copied into _build/ next to the generated .bc.js
 all: $(OPAMS)
-	dune build
+	dune build @default
 clean:
 	dune clean
 install:
 	dune install
 
+# to test the native programs, run make and then go to
+# _build/default/examples/ (or games/) and run the .exe there
+# to test the web programs, run also make and then go to
+# _build/default/examples_js/ (or games_js/) under chrome for instance
+# with open -a "Google Chrome" _build/default/examples_js
 test:
 	dune runtest -f
 
@@ -55,7 +63,7 @@ website:
 
 # Preview the site at http://localhost:8000
 serve:
-	python -m http.server --directory docs 8000
+	python3 -m http.server --directory docs 8000
 
 js:
 	dune build games_js --profile=release-js

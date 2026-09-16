@@ -43,38 +43,103 @@ module V = Vdom
 
 (* when using directly the DOM *)
 module V = struct
-type t = Element.t
-
-type 'a vdom = t
 
 type attr = 
   | Attr of string * string
   | Style of string * string
 
+(* claude: a tiny virtual DOM. We used to build real DOM elements directly
+ * here and replace the whole <svg> on every animation frame, but a freshly
+ * created <svg:image> decodes its picture asynchronously (even when the
+ * url is in the browser cache), so some frames were painted without the
+ * sprite (Mario "disappearing"), and animated GIFs restarted every frame.
+ * Now [render] returns this description, and [patch] below updates the
+ * existing DOM in place, touching only the attributes that changed.
+ *)
+type t = {
+  tag: string;
+  attrs: attr list;
+  children: t list;
+}
+
+type 'a vdom = t
+
 let svg_ns = "http://www.w3.org/2000/svg"
 
 let svg_elt tag ~a children =
-  (* bugfix: for svg elt we need to pass the ns! (namespace_URI), otherwise
-   * it will not render anything.
-   *)
-  let elt = Document.create_element_ns document svg_ns tag in
-  a |> List.iter (function
-     | Attr (k, v) ->
-       Element.set_attribute elt k v
-     | Style (k, v) ->
-          Ojs.set_prop_ascii
-            (Ojs.get_prop_ascii (Element.t_to_js elt) "style")
-            k
-            (Ojs.string_to_js v)
-  );
-  children |> List.iter (fun child ->
-      Element.append_child elt child
-  );
-  elt
+  { tag; attrs = a; children }
+
 let style s1 s2  = 
   Style (s1, s2)
 let attr s v =
   Attr (s, v)
+
+let set_attr elt = function
+  | Attr (k, v) ->
+      Element.set_attribute elt k v
+  | Style (k, v) ->
+      Ojs.set_prop_ascii
+        (Ojs.get_prop_ascii (Element.t_to_js elt) "style")
+        k
+        (Ojs.string_to_js v)
+
+let remove_attr elt = function
+  | Attr (k, _) -> Element.remove_attribute elt k
+  | Style (k, _) -> set_attr elt (Style (k, ""))
+
+let same_key a b =
+  match a, b with
+  | Attr (k1, _), Attr (k2, _) | Style (k1, _), Style (k2, _) -> k1 = k2
+  | _ -> false
+
+let rec create (node : t) : Element.t =
+  (* bugfix: for svg elt we need to pass the ns! (namespace_URI), otherwise
+   * it will not render anything.
+   *)
+  let elt = Document.create_element_ns document svg_ns node.tag in
+  node.attrs |> List.iter (set_attr elt);
+  node.children |> List.iter (fun child ->
+      Element.append_child elt (create child)
+  );
+  elt
+
+(* [elt] is the DOM element previously created (or patched) from [old];
+ * returns the DOM element now corresponding to [node]. *)
+let rec patch ~(parent : Element.t) (elt : Element.t) (old : t) (node : t)
+    : Element.t =
+  if old.tag <> node.tag then begin
+    let fresh = create node in
+    Element.replace_child parent fresh elt;
+    fresh
+  end else begin
+    old.attrs |> List.iter (fun a ->
+      if not (List.exists (same_key a) node.attrs)
+      then remove_attr elt a
+    );
+    node.attrs |> List.iter (fun a ->
+      (* only touch changed attributes; re-setting an <image> href
+       * could trigger a reload *)
+      if not (List.mem a old.attrs)
+      then set_attr elt a
+    );
+    patch_children elt (Element.first_child elt) old.children node.children;
+    elt
+  end
+
+and patch_children parent child olds nodes =
+  match olds, nodes with
+  | [], [] -> ()
+  | o :: olds, n :: nodes ->
+      let next = Element.next_sibling child in
+      ignore (patch ~parent child o n);
+      patch_children parent next olds nodes
+  | [], n :: nodes ->
+      Element.append_child parent (create n);
+      patch_children parent child [] nodes
+  | _ :: olds, [] ->
+      let next = Element.next_sibling child in
+      Element.remove_child parent child;
+      patch_children parent next olds []
 end
 
 module Html = struct
@@ -243,7 +308,8 @@ let render_image w h src x y angle s alpha =
   Svg.image
     (Svg.Attributes.href src:: (* was xlinkHref but require attributeNS *)
      Svg.Attributes.width (string_of_number w)::
-     Svg.Attributes.width (string_of_number h)::
+     (* claude: was a second 'width', so 'height' was never set *)
+     Svg.Attributes.height (string_of_number h)::
      Svg.Attributes.fill (render_color yellow) ::
      Svg.Attributes.transform (render_rect_transform w h x y angle s)::
      render_alpha alpha
@@ -373,12 +439,20 @@ let run_app app =
   ()
 *)
 
-(* claude: no-op here -- the browser already loads/caches
- * <img>/<svg:image> asynchronously on its own; this exists so games can
- * call it unconditionally (see examples/Mario.ml's init) without an
- * #ifdef per backend. See playground/native/Playground_platform.ml for
- * the backend that actually needs it. *)
-let preload_image (_url : string) = ()
+(* claude: start downloading (and decoding) the image right away, and
+ * keep a reference to the Image object so the browser keeps it in its
+ * memory cache; this way an <svg:image> switching to this url later
+ * (e.g., Mario going from "walk" to "jump") can paint it without waiting
+ * for the network.
+ *)
+let preloaded : (string, Ojs.t) Hashtbl.t = Hashtbl.create 16
+
+let preload_image (url : string) =
+  if not (Hashtbl.mem preloaded url) then begin
+    let img = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Image") [||] in
+    Ojs.set_prop_ascii img "src" (Ojs.string_to_js url);
+    Hashtbl.replace preloaded url img
+  end
 
 (* when using the simple DOM *)
 let run_app app =
@@ -402,22 +476,66 @@ let run_app app =
      );
     in
    
+    (* claude: requestAnimationFrame fires at the display refresh rate,
+     * which is 120Hz (or more) on many screens (e.g., Mac ProMotion), but
+     * Playground.game's update functions (e.g., examples/Mario.ml) use a
+     * fixed per-tick dt assuming ~60Hz, so delivering one Tick per
+     * animation frame made games run 2x too fast there. We now deliver
+     * Ticks on a fixed 60Hz timestep, independent of the refresh rate
+     * (same fix as the frame cap in playground/native/).
+     *)
+    let tick_period = 1. /. 60. in
+    (* tolerate jitter in rAF timestamps on 60Hz displays, otherwise
+     * we would sometimes skip a Tick and then do 2 in the next frame *)
+    let tick_slack = 0.002 in
+    let last_time = ref None in
+    let pending = ref 0. in
+
+    (* measured rAF rate, logged once, to help diagnose timing issues *)
+    let rate_start = ref None in
+    let rate_frames = ref 0 in
+
+    (* the current <svg> and the vdom it was built from *)
+    let current = ref None in
+
     (* one frame *)
     let rec animation_frame time =
       let time = time /. 1000. in
-      (* log (spf "time: %f" time); *)
-      let event = 
-          E.ETick time 
-      in
-      process_playground_event event;
+
+      (match !rate_start with
+      | None -> rate_start := Some time
+      | Some start ->
+          incr rate_frames;
+          if !rate_frames = 120 then
+            log (spf "requestAnimationFrame rate: %.0f Hz"
+                   (float_of_int !rate_frames /. (time -. start)))
+      );
+
+      (match !last_time with
+      | None -> pending := tick_period
+      | Some last -> pending := !pending +. (time -. last)
+      );
+      last_time := Some time;
+      (* after a long pause (e.g., the tab was hidden) don't try to catch up *)
+      if !pending > 0.25 then pending := tick_period;
+      while !pending >= tick_period -. tick_slack do
+        process_playground_event (E.ETick time);
+        pending := !pending -. tick_period
+      done;
 
       let shapes = app.Playground.view !model in
-      let elt = render screen shapes in
-
+      let node = render screen shapes in
       let body = Document.body document in
-      Element.remove_all_children body;
-
-      Element.append_child body elt;
+      (match !current with
+      | None ->
+          Element.remove_all_children body;
+          let elt = V.create node in
+          Element.append_child body elt;
+          current := Some (node, elt)
+      | Some (old, elt) ->
+          let elt = V.patch ~parent:body elt old node in
+          current := Some (node, elt)
+      );
 
       if not !debug 
       then Window.request_animation_frame window animation_frame;
