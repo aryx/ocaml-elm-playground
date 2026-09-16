@@ -192,11 +192,23 @@ let render_words hook color str x y angle s alpha =
     set_color cr color alpha;
     render_transform cr x y angle s;
 
-    let extent = Cairo.text_extents cr str in
-    let tw = extent.Cairo.width in
-    let th = extent.Cairo.height in
+    (* claude: same font as the web backend (see
+     * Playground.words_font_size), instead of Cairo's default 10 *)
+    Cairo.select_font_face cr Playground.words_font_family;
+    Cairo.set_font_size cr Playground.words_font_size;
 
-    Cairo.move_to cr (-. tw / 2.) (th / 2.);
+    (* claude: center the text on (x, y) the same way the web backend does
+     * with text-anchor="middle" and dominant-baseline="central": use the
+     * advance width (not the width of the inked part), and the font's
+     * ascent/descent (not the inked height of this particular string,
+     * which made e.g. "aaa" and "Ag" sit at different heights). The
+     * baseline goes (ascent - descent) / 2 below the center, which puts
+     * the middle of the font's box on y. *)
+    let (text_ext : Cairo.text_extents) = Cairo.text_extents cr str in
+    let (font_ext : Cairo.font_extents) = Cairo.font_extents cr in
+    Cairo.move_to cr
+      (-. text_ext.x_advance / 2.)
+      ((font_ext.ascent - font_ext.descent) / 2.);
     Cairo.show_text cr str;
   )
 

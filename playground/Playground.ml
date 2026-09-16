@@ -186,6 +186,22 @@ let (polygon: color -> (number * number) list -> shape) = fun color points ->
 let (words: color -> string -> shape) = fun color str ->
   shape 0. 0. 0. 1. 1. (Words (color, str))
 
+(* claude: the font used to render [words], shared by the native and web
+ * backends so that text looks the same in both. It used to be each
+ * backend's default: Cairo's 10 units and sans-serif font natively, the
+ * browser's 16px and serif font (e.g., Times) on the web, so the web text
+ * was 1.6 times bigger and looked different. We use 10, the old native
+ * size, because the [scale] factors in games/ were tuned with it (e.g.,
+ * Pong's score is "words ... |> scale 10."; with 16 it was way too big),
+ * even though elm-playground gets 16 (its renderWords sets no font size,
+ * so the browser default applies). The size is in playground units,
+ * which are pixels for the default 1000x1000 native window; the web
+ * scales it with the window like the other shapes. "sans-serif" is a generic font family name
+ * understood by both Cairo (select_font_face) and browsers (CSS).
+ *)
+let words_font_size = 10.
+let words_font_family = "sans-serif"
+
 let (image: number -> number -> string -> shape) = fun w h src ->
   shape 0. 0. 0. 1. 1. (Image (w, h, src))
 

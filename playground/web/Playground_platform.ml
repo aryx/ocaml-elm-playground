@@ -323,6 +323,8 @@ let href = V.attr "href"
 
 let textAnchor = V.attr "text-anchor"
 let dominantBaseline = V.attr "dominant-baseline"
+let fontSize = V.attr "font-size"
+let fontFamily = V.attr "font-family"
 (* claude: not an attribute in Elm's Svg module (Elm uses a text child
  * node instead), but simpler with our tiny virtual DOM *)
 let textContent = V.prop "textContent"
@@ -428,6 +430,10 @@ let render_words color str x y angle s alpha =
   Svg.text_
     (Svg.Attributes.textAnchor "middle" ::
      Svg.Attributes.dominantBaseline "central" ::
+     (* claude: same font as the native backend, instead of the browser
+      * default (see Playground.words_font_size) *)
+     Svg.Attributes.fontSize (string_of_number words_font_size) ::
+     Svg.Attributes.fontFamily words_font_family ::
      Svg.Attributes.textContent str ::
      Svg.Attributes.fill (render_color color) ::
      Svg.Attributes.transform (render_transform x y angle s)::

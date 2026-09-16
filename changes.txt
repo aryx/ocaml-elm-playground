@@ -96,6 +96,13 @@
   fake DOM (hangs, exceptions, DOM dumps), documented in
   notes_debugging_techniques.txt
 
+** playground (both backends)
+- words: use the same font on native and web (Playground.words_font_size
+  = 10, the old native size the games' scale factors were tuned with,
+  and words_font_family = "sans-serif"); the web used the browser
+  default (16px serif), so text was 1.6x bigger there. Native now also
+  centers text like the web (advance width, font ascent/descent)
+
 ** build infra (web)
 - examples_js/ and games_js/: copy the .html files into _build/ next to
   the .bc.js, so e.g. _build/default/examples_js/ can be opened directly

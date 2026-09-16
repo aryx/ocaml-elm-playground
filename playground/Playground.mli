@@ -334,6 +334,14 @@ You can use {!val:scale} to make the words bigger or smaller.
 *)
 val words : color -> string -> shape
 
+(**/**)
+(* claude: the font size (in playground units) and font family used by the
+ * backends to render {!val:words}; not meant to be used by applications
+ * (use {!val:scale} to change the size of some words) *)
+val words_font_size : number
+val words_font_family : string
+(**/**)
+
 (** {2 Groups } *)
 
 (** Put shapes together so you can {!move} and {!rotate}
