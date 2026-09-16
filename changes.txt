@@ -84,6 +84,17 @@
   circle (fixes the ship and rocks in games_js/Asteroid)
 - render_shape: render Group as an svg <g> instead of failing with "Todo"
 - add Misc (polygon + group) to examples_js/
+- run_app: pass the wall-clock time (Date.now) in Ticks, like the native
+  backend and Elm, instead of the requestAnimationFrame timestamp
+  (time since page load); games computing [now -. last_tick] with
+  last_tick = Unix.gettimeofday() got a delta of about -1.8e9 seconds,
+  making Tetris freeze the tab (space = full drop looped 1.8 billion
+  times) and Asteroid never start
+- Playground.to_frac: use float arithmetic, the wall-clock time in
+  milliseconds does not fit in js_of_ocaml's 32-bit ints
+- add docs/claude_notes/web_headless.js to run a web app in node with a
+  fake DOM (hangs, exceptions, DOM dumps), documented in
+  notes_debugging_techniques.txt
 
 ** build infra (web)
 - examples_js/ and games_js/: copy the .html files into _build/ next to

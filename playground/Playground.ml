@@ -43,12 +43,61 @@ type number = float
 
 type time = Time of Time.posix
 
+(* [to_frac period time] returns where [time] is within the current
+ * [period] (in seconds), as a fraction in [0, 1), e.g., with a period
+ * of 3 seconds: 0.0 at the start of each 3-second cycle, 0.5 after 1.5s,
+ * and close to 1.0 just before the next cycle. spin/wave/zigzag below
+ * turn this fraction into an angle, a position, etc.
+ *
+ * claude: this used to be (same as Elm's toFrac):
+ *
+ *   let (to_frac: float -> time -> float) = fun period (Time posix) ->
+ *       let ms = Time.posix_to_millis posix in
+ *       let p = period *. 1000. in
+ *       if p = 0. || ms = 0
+ *       then failwith "division by zero in to_frac";
+ *       float (mod_by (round p) ms) / p
+ *
+ * The problem: [posix] is the wall-clock time in seconds since 1970 (see
+ * the ETick in each backend's Playground_platform.ml), so
+ * Time.posix_to_millis converts it to an OCaml int around 1.8e12
+ * (e.g., 1789590431780 on 2026-09-16). That's fine natively (63-bit
+ * ints), and in Elm (whose ints are JavaScript doubles), but with
+ * js_of_ocaml, OCaml ints are 32 bits (-2^31 .. 2^31-1 = about +-2.1e9)
+ * and int_of_float silently keeps only the low 32 bits:
+ *
+ *   ms (float)          ms (32-bit int)   old frac (period 3s)  new frac
+ *   1789590431780.  ->  -1410930652       -0.217                 0.927
+ *   1789590431796.  ->  -1410930636       -0.212                 0.932
+ *
+ * so on the web:
+ *  - the int was negative, hence [mod] (which keeps the sign of its
+ *    first argument in OCaml) returned a negative remainder, and the
+ *    "fraction" was in (-1, 0] instead of [0, 1). spin and wave happen
+ *    to still look right with a negative fraction (an angle of -78
+ *    degrees is the same as 282, cos is symmetric), but zigzag does not:
+ *    [abs (2 * frac - 1)] is then between 1 and 3 instead of between 0
+ *    and 1, so e.g. the red rectangle of examples/Animation.ml, which
+ *    should zigzag between -2 and 2 degrees, was tilted between 2 and
+ *    10 degrees (-2 + 4 * 1.434 = 3.7 degrees for frac = -0.217).
+ *  - every 2^32 ms (~49.7 days) the 32-bit value jumps from +2^31-1 to
+ *    -2^31 (next time: 2026-10-28), making every animation jump, e.g.
+ *    from 0.877 to -0.883 for a 3s period, instead of 0.021 -> 0.027.
+ *  - [ms = 0] could happen at each wrap (without any real division by
+ *    zero), raising an exception.
+ *
+ * The new code does the same computation on floats, which hold the
+ * milliseconds exactly (doubles are exact for integers up to 2^53 =~
+ * 9e15), both natively and in JavaScript, and Float.rem of two positive
+ * numbers is always positive. For non-overflowing values (native), the
+ * result is exactly the same as before.
+ *)
 let (to_frac: float -> time -> float) = fun period (Time posix) ->
-    let ms = Time.posix_to_millis posix in
+    let ms = Float.round (posix *. 1000.) in
     let p = period *. 1000. in
-    if p = 0. || ms = 0
+    if p = 0.
     then failwith "division by zero in to_frac";
-    float (mod_by (round p) ms) / p
+    Float.rem ms (Float.round p) / p
 
 (* period is in seconds *)
 let (spin: number -> time -> number) = fun period time ->

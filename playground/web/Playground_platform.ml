@@ -687,8 +687,21 @@ let run_app app =
       last_time := Some time;
       (* after a long pause (e.g., the tab was hidden) don't try to catch up *)
       if !pending > 0.25 then pending := tick_period;
+      (* claude: the Tick carries the wall-clock time (seconds since
+       * 1970), not [time] (seconds since the page was loaded, which is
+       * what requestAnimationFrame gives us). That's what the native
+       * backend passes (Unix.gettimeofday) and what Elm's
+       * onAnimationFrame passes (Time.Posix), and games rely on it:
+       * games/Tetris.ml and games/Asteroid.ml initialize their last_tick
+       * with Unix.gettimeofday() and compute [now -. last_tick] on each
+       * Tick. With [time], that delta was about -1.8 billion seconds:
+       * Tetris' piece started 1.8 billion rows above the well (and a
+       * full drop with space then looped 1.8 billion times, freezing the
+       * tab), and Asteroid ignored all Ticks (delta < tick) so it never
+       * started. *)
+      let wall_clock = Date.now () /. 1000. in
       while !pending >= tick_period -. tick_slack do
-        process_playground_event (E.ETick time);
+        process_playground_event (E.ETick wall_clock);
         pending := !pending -. tick_period
       done;
 
