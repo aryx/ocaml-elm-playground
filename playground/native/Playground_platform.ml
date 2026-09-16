@@ -54,25 +54,44 @@ let curl_url fname url =
   save fname result
   
 
+(* claude: imagelib's GIF LZW decoder (imageGIF.ml) has an off-by-one bug in
+ * how it derives the clear code from the LZW minimum code size, which
+ * desyncs the decoder on some real-world GIFs (e.g., the elm-lang.org mario
+ * jump sprites, https://elm-lang.org/images/mario/jump/{left,right}.gif),
+ * raising Image.Corrupted_image. When that happens, shell out to
+ * ImageMagick's 'convert', which decodes those GIFs correctly. *)
+let convert_with_imagemagick src_file dst_file =
+  let cmd = Printf.sprintf "convert %s %s"
+      (Filename.quote src_file) (Filename.quote dst_file) in
+  Sys.command cmd = 0
+
 let png_file_of_url url =
-  let image = 
-    (* copy of ImageLib_unix.openfile url but not falling back for GIF to
-     * convert, which does not work well on my mac at least  *)
-    let ext = ImageUtil_unix.get_extension' url in
-    let fn = Filename.temp_file "imagelib1" ("." ^ ext) in
-    curl_url fn url;
+  (* copy of ImageLib_unix.openfile url but not always falling back for GIF
+   * to convert, which does not work well on my mac at least  *)
+  let ext = ImageUtil_unix.get_extension' url in
+  let fn = Filename.temp_file "imagelib1" ("." ^ ext) in
+  curl_url fn url;
+  let tmpfile =
+    Filename.temp_file "imagelib2" ".png"
+    (* "/tmp/imagelib.png" *)
+  in
+  (try
     let ich = ImageUtil_unix.chunk_reader_of_path fn in
     let extension = ImageUtil_unix.get_extension' fn in
     Logs.debug (fun m -> m "reading png_file_of_url");
-    try ImageLib.openfile ~extension ich 
-    with Image.Not_yet_implemented _ -> failwith (Printf.sprintf "PB with %s" fn)
-  in
-  let tmpfile = 
-    Filename.temp_file "imagelib2" ".png" 
-    (* "/tmp/imagelib.png" *)
-  in
-  Logs.debug (fun m -> m "saving png_file_of_url");
-  ImageLib_unix.writefile tmpfile image;
+    let image =
+      try ImageLib.openfile ~extension ich
+      with Image.Not_yet_implemented _ -> failwith (Printf.sprintf "PB with %s" fn)
+    in
+    Logs.debug (fun m -> m "saving png_file_of_url");
+    ImageLib_unix.writefile tmpfile image
+  with exn ->
+    Logs.warn (fun m -> m "imagelib failed to decode %s (%s), falling back to convert"
+                  url (Printexc.to_string exn));
+    if not (convert_with_imagemagick fn tmpfile) then
+      failwith (Printf.sprintf
+                  "could not decode image %s (imagelib failed, and 'convert' fallback also failed)"
+                  url));
   tmpfile
 
 (*****************************************************************************)
@@ -253,24 +272,33 @@ let render_words hook color str x y angle s alpha =
 let render_image hook w h src x y angle s _alpha =
   let (x,y) = convert (x,y) in
 
-  let surface = 
-      try 
-        Hashtbl.find himages src
-      with Not_found ->
-        (* pr2_gen src; *)
-        let file = png_file_of_url src in
-        let surface = Cairo.PNG.create file in
-        Hashtbl.add himages src surface;
-        surface
+  (* claude: cache None on decode/download failure (e.g., a GIF that trips
+   * an imagelib decoder bug) so we degrade to "skip this image" instead of
+   * crashing the whole app, and so we don't retry every frame *)
+  let surface_opt =
+    match Hashtbl.find_opt himages src with
+    | Some surface_opt -> surface_opt
+    | None ->
+      let surface_opt =
+        try Some (Cairo.PNG.create (png_file_of_url src))
+        with exn ->
+          Logs.warn (fun m -> m "failed to load image %s: %s"
+                        src (Printexc.to_string exn));
+          None
+      in
+      Hashtbl.add himages src surface_opt;
+      surface_opt
   in
+  match surface_opt with
+  | None -> ()
+  | Some surface ->
+    with_cr (fun cr ->
+      hook cr;
+      render_transform cr x y angle s;
 
-  with_cr (fun cr ->
-    hook cr;
-    render_transform cr x y angle s;
-
-    Cairo.set_source_surface cr surface ~x:(-. w / 2.) ~y:(-. h / 2.);
-    Cairo.paint cr;
-  )
+      Cairo.set_source_surface cr surface ~x:(-. w / 2.) ~y:(-. h / 2.);
+      Cairo.paint cr;
+    )
 
 (*****************************************************************************)
 (* Render playground *)
