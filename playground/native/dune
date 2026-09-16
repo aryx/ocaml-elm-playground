@@ -6,8 +6,8 @@
     str
     logs
     cairo2 tsdl
-    imagelib.unix curl
-    
+    stb_image curl
+
     elm_playground
   )
 )

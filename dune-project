@@ -72,7 +72,7 @@ Nope
     logs
     (cairo2 (>= "0.6.4"))
     tsdl
-    imagelib
+    stb_image
     ocurl
     elm_playground
   )

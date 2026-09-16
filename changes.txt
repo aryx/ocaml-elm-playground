@@ -15,6 +15,11 @@
 - add CLAUDE.md summarizing the build commands and the virtual_modules
   native/web architecture
 
+** playground
+- native image loading: replace imagelib (whose GIF decoder has a
+  clear-code off-by-one bug, crashing e.g. on the Mario jump sprites) with
+  stb_image; move the loading code to its own Image_native.ml{,i}
+
 * 0.1.7 (Q4 2024) (first GitHub Pages website, README rewrite, toy examples)
 
 ** docs
