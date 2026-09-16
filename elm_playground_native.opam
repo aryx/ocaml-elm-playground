@@ -10,7 +10,7 @@ homepage: "https://github.com/aryx/ocaml-elm-playground"
 bug-reports: "https://github.com/aryx/ocaml-elm-playground/issues"
 depends: [
   "dune" {>= "3.0"}
-  "ocaml" {< "5.2.0" & >= "4.08.0"}
+  "ocaml" {>= "4.08.0"}
   "logs"
   "cairo2" {>= "0.6.4"}
   "tsdl"

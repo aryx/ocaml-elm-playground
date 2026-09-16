@@ -1,10 +1,10 @@
 # Build and test the OCaml Elm Playground with OCaml 4.14.4 via OPAM on Ubuntu.
 # See also .github/workflows/docker.yml for its use in Github Actions (GHA).
 #
-# Note: elm_playground_native.opam pins ocaml < 5.2.0 (tsdl fails to build
-# past that), confirmed by trying --build-arg OCAML_VERSION=5.2.1 (opam
-# solver rejects it outright). 5.1.1 is the newest OCaml 5 release that
-# still satisfies that bound - see 'make build-docker-ocaml5'.
+# elm_playground_native.opam used to pin ocaml < 5.2.0 (tsdl failed there
+# with some missing unix error), but that's fixed upstream now (verified
+# 2026-09-16 that OCaml 5.2.0 through 5.5.1 all build and pass the tests) -
+# see 'make build-docker-ocaml5', which tries the latest OCaml 5.
 
 FROM ubuntu:22.04
 

@@ -63,9 +63,12 @@ Nope
   (synopsis "Native TDSL-based playground platform")
   (description "")
   (depends
-    ; tsdl fails in 5.2.0 because of some missing unix
     ; the lib fails in 4.07 because of some syntax error about an operator
-    (ocaml (and (< "5.2.0") (>= "4.08.0")))
+    ; used to also exclude >= 5.2.0 because tsdl failed there with some
+    ; missing unix error, but that got fixed upstream (probably in
+    ; ctypes/ctypes-foreign, not tsdl itself): verified 2026-09-16 that
+    ; OCaml 5.2.0 through 5.5.1 all build and pass the tests fine now.
+    (ocaml (>= "4.08.0"))
     logs
     (cairo2 (>= "0.6.4"))
     tsdl

@@ -17,9 +17,7 @@ jobs:
       matrix:
         ocaml:
           - 4.14.4
-          # elm_playground_native.opam pins ocaml < 5.2.0 (tsdl); 5.1.1 would
-          # be the newest OCaml 5 that satisfies it, add it here once we want
-          # CI to also cover OCaml 5.
+          - 5.5.1
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t "elm_playground" --build-arg OCAML_VERSION=${{matrix.ocaml}} .
