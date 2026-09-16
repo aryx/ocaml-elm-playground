@@ -215,7 +215,9 @@ let render_words hook color str x y angle s alpha =
 let render_image hook w h src x y angle s _alpha =
   let (x,y) = convert (x,y) in
 
-  match Image_native.surface_of_url src with
+  (* claude: surface_of_url_at to animate animated GIFs (e.g., Mario's
+   * walk sprites), like browsers do on the web *)
+  match Image_native.surface_of_url_at ~time:(Unix.gettimeofday ()) src with
   | None -> ()
   | Some surface ->
     (* claude: Cairo.set_source_surface only positions a surface's origin,

@@ -7,6 +7,12 @@
  * ensure the url was already warmed via [preload]. *)
 val surface_of_url : string -> Cairo.Surface.t option
 
+(* claude: same as [surface_of_url], but for an animated GIF (for which
+ * [surface_of_url] returns only the first frame), returns the frame to
+ * display at [time] (in seconds, e.g., Unix.gettimeofday ()); the
+ * animation loops forever, like in browsers. *)
+val surface_of_url_at : time:float -> string -> Cairo.Surface.t option
+
 (* Queue an image url to be loaded ahead of time (so a later
  * [surface_of_url] call for it returns immediately); doesn't touch the
  * network itself, so it's safe to call anytime. [load_queued] actually

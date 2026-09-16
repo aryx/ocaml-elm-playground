@@ -48,6 +48,12 @@
   preloading known-upfront assets is simpler and is what games normally
   do anyway, so dropped the threading in favor of it (Image_native.ml/.mli
   back to a plain synchronous cache)
+- animated GIFs (e.g. Mario's walk sprites, turtle.gif) are now animated
+  like in browsers: stb_image only decodes the first frame, so
+  Image_native now splits a GIF into single-frame GIFs itself, decodes
+  them with stb_image, composes them (frame patches, disposal methods),
+  and render_image picks the frame from the current time
+  (Image_native.surface_of_url_at)
 - run_app/preload_image: parse -v/-verbose/-debug/-quiet (via Arg, one
   shared parse_cli_and_setup_logging for every example/game) and
   install a Logs reporter -- without one, Logs.xxx calls anywhere in
