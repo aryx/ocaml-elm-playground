@@ -1,0 +1,62 @@
+# -*- org -*-
+
+* 0.X (Q3 2026) (Dockerfile, CI hardening, cleanup)
+# started to use Claude code
+
+** build infra
+- add Dockerfile and configure script, plus a docker.yml GHA workflow
+- drop the stale ocaml < 5.2.0 upper bound on elm_playground_native, add
+  OCaml 5.5.1 to CI
+- Makefile: fix make visual, use osemgrep from PATH
+- delete skip_list.txt and the codemap/martin's-lib cruft, rely on
+  .gitignore/.codemapignore instead
+
+** docs
+- add CLAUDE.md summarizing the build commands and the virtual_modules
+  native/web architecture
+
+* 0.1.7 (Q4 2024) (first GitHub Pages website, README rewrite, toy examples)
+
+** docs
+- first website: odoc API docs plus docs/examples/ and docs/games/ pages
+  rendered with M-x htmlize-buffer, then switched to links to the GitHub
+  code viewer
+- full README rewrite with a walkthrough matching new docs/toy-native-example/
+  and docs/toy-web-example/ minimal standalone projects
+- add Turtle example, working both natively and on the web
+
+* 0.1 (Q4 2020 - Q4 2024) (initial prototype, dual native/web architecture, first opam release)
+
+** architecture
+- start from a single lib/ (SVG-based) prototype, then a separate lib2/
+  using Graphics, before settling on the current split: core/ (Basics,
+  Color, Set_, Keyboard, Time) <- system/ (Cmd, Sub) <- playground/, with
+  playground/Playground_platform.mli as a dune virtual_modules interface
+  implemented separately by playground/native/ (tsdl/SDL2 + cairo2) and
+  playground/web/ (js_of_ocaml)
+- switch native rendering from OCaml's Graphics to SDL2 (via tsdl),
+  motivated by Graphics's inability to detect multiple simultaneous keys
+  or keyUp/keyDown events (tried ocamlsdl2 too, see old Test_tsdl.ml /
+  Test_ocamlsdl2.ml)
+- switch the web backend from ocaml-vdom to plain DOM manipulation
+- write Playground.mli as the single public API shared by both backends,
+  ported from the comments of Elm's own Playground.elm
+
+** playground
+- coordinate system centered at (0,0), shapes (circle, rectangle, ngon,
+  polygon, words, image, groups), rotation, computer/mouse/keyboard/screen
+  records, and the picture/animation/game entry points
+- image loading via imagelib, with curl-based fetch for remote URLs
+
+** games and examples
+- examples: Smiley, Picture, Animation, Mouse, Keyboard, Words, Turtle,
+  Mario
+- games: Snake, Pong, Tetris, Asteroid
+
+** build infra
+- resume the project in Dec 2024 after a ~4 year hiatus: compile with
+  recent OCaml/opam packages, drop the old dependency on commons
+- basic GHA CI (Linux/macOS/Windows attempts), add semgrep.jsonnet check
+- generate the *.opam files from dune-project and do the first opam
+  release, iterating 0.1.0 through 0.1.7 to fix opam-repository submission
+  issues (project renaming, missing doc tag, windows .opam.template)
