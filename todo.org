@@ -1,0 +1,18 @@
+# -*- org -*-
+
+* Last
+
+** Last1
+
+*** switch Playground.image's string src to Uri.t?
+right now playground/Playground.mli has
+  val image : number -> number -> string -> shape
+switching the src param to Uri.t would touch both backends (native
+Image_native.ml/curl, web Playground_platform.ml/img src), plus every
+example passing an image url (Mario.ml, Turtle.ml, and their _js copies).
+
+checked the dependency cost: uri pulls in stringext and angstrom
+(which itself pulls bigstringaf), all pure OCaml / light C stubs, no
+new system libraries, so not too heavy on its own. the bigger cost is
+the API-surface churn (public Playground.mli + both backends + every
+example), not the dependency. skipped for now.
