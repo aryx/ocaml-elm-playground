@@ -47,6 +47,10 @@ module V = struct
 type attr = 
   | Attr of string * string
   | Style of string * string
+  (* claude: a JavaScript property of the element object rather than an
+   * attribute in the markup; used for "textContent", the text inside an
+   * element (e.g., the string displayed by <text>) *)
+  | Prop of string * string
 
 (* claude: a tiny "virtual DOM".
  *
@@ -94,6 +98,8 @@ let style s1 s2  =
   Style (s1, s2)
 let attr s v =
   Attr (s, v)
+let prop s v =
+  Prop (s, v)
 
 (* Set one attribute (e.g., <circle r="10">) or one CSS style property
  * (e.g., style="position: fixed") on a real DOM element.
@@ -113,17 +119,24 @@ let set_attr elt = function
         (Ojs.get_prop_ascii (Element.t_to_js elt) "style")
         k
         (Ojs.string_to_js v)
+  | Prop (k, v) ->
+      (* elt[k] = v *)
+      Ojs.set_prop_ascii (Element.t_to_js elt) k (Ojs.string_to_js v)
 
-(* Undo set_attr (setting a style property to "" removes it). *)
+(* Undo set_attr (setting a style property or textContent to "" removes
+ * it). *)
 let remove_attr elt = function
   | Attr (k, _) -> Element.remove_attribute elt k
   | Style (k, _) -> set_attr elt (Style (k, ""))
+  | Prop (k, _) -> set_attr elt (Prop (k, ""))
 
 (* Do the two attributes set the same thing (regardless of the value)?
  * e.g., Attr ("r", "10") and Attr ("r", "20") *)
 let same_key a b =
   match a, b with
-  | Attr (k1, _), Attr (k2, _) | Style (k1, _), Style (k2, _) -> k1 = k2
+  | Attr (k1, _), Attr (k2, _)
+  | Style (k1, _), Style (k2, _)
+  | Prop (k1, _), Prop (k2, _) -> k1 = k2
   | _ -> false
 
 (* Build real DOM elements from a description; used for the first frame
@@ -236,6 +249,8 @@ let polygon a b =
   trusted_node "polygon" a b
 let image a b =
   trusted_node "image" a b
+let text_ a b =
+  trusted_node "text" a b
 
 module Attributes = struct
 let viewBox = V.attr "viewBox"
@@ -252,6 +267,12 @@ let transform = V.attr "transform"
 let opacity = V.attr "opacity"
 
 let href = V.attr "href"
+
+let textAnchor = V.attr "text-anchor"
+let dominantBaseline = V.attr "dominant-baseline"
+(* claude: not an attribute in Elm's Svg module (Elm uses a text child
+ * node instead), but simpler with our tiny virtual DOM *)
+let textContent = V.prop "textContent"
 
 end
 end
@@ -347,10 +368,14 @@ let render_ngon color n radius x y angle s alpha =
     )
     []
 
-(* TODO *)
-let render_words color _str x y angle s alpha =
-  Svg.circle 
-    (Svg.Attributes.r (string_of_number 10.) ::
+(* claude: was a TODO drawing a small circle instead of the text.
+ * Same as renderWords in elm-playground: the text is centered on (x, y)
+ * horizontally (text-anchor) and vertically (dominant-baseline). *)
+let render_words color str x y angle s alpha =
+  Svg.text_
+    (Svg.Attributes.textAnchor "middle" ::
+     Svg.Attributes.dominantBaseline "central" ::
+     Svg.Attributes.textContent str ::
      Svg.Attributes.fill (render_color color) ::
      Svg.Attributes.transform (render_transform x y angle s)::
      render_alpha alpha
