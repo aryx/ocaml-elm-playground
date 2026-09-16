@@ -470,6 +470,15 @@ let run_app app =
           let str = scancode_to_keystring key in
           apply_playground_event (E.EKeyChanged (false, str))
 
+        (* claude: SDL posts this both when the (only, here) window's
+         * close button is clicked, and -- on Unix -- when the process
+         * receives SIGINT/SIGTERM, which SDL's own signal handler
+         * intercepts and turns into this event instead of the default
+         * "terminate the process" behavior. Without handling it, both
+         * the close button and e.g. `kill`/Ctrl-C appeared to do
+         * nothing: the event was received but silently ignored below. *)
+        | x when x = Sdl.Event.quit -> exit 0
+
         (* other SDL event types (window resize/expose/...): ignored *)
         | _ -> ()
         );

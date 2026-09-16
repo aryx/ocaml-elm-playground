@@ -55,6 +55,12 @@
   "loading/loaded image ..." Logs.info calls (the fix for the
   otherwise-silent multi-second stall while Mario preloads its sprites)
   needed -v to actually show up
+- run_app: handle Sdl.Event.quit (exit 0) -- SDL posts this both when
+  the window's close button is clicked and, on Unix, when the process
+  gets SIGINT/SIGTERM (SDL's own signal handler turns those into this
+  event instead of the default terminate-the-process behavior); without
+  handling it, neither the close button nor e.g. Ctrl-C/`kill` did
+  anything, since the event was received but silently ignored
 
 * 0.1.7 (Q4 2024) (first GitHub Pages website, README rewrite, toy examples)
 
