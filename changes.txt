@@ -80,6 +80,10 @@
 - render_words: render an svg <text> (centered, like elm-playground)
   instead of the placeholder circle; add a Prop attribute kind to the
   tiny virtual DOM to set its textContent
+- render_polygon: render an svg <polygon> instead of the placeholder
+  circle (fixes the ship and rocks in games_js/Asteroid)
+- render_shape: render Group as an svg <g> instead of failing with "Todo"
+- add Misc (polygon + group) to examples_js/
 
 ** build infra (web)
 - examples_js/ and games_js/: copy the .html files into _build/ next to

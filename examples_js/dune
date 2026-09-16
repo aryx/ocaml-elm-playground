@@ -1,6 +1,6 @@
 (executables
   (names 
-    Smiley Picture Words
+    Smiley Picture Words Misc
     Animation
     Mouse Keyboard
     Turtle Mario

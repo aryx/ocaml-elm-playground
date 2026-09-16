@@ -251,6 +251,10 @@ let image a b =
   trusted_node "image" a b
 let text_ a b =
   trusted_node "text" a b
+(* <g> (for "group") has no drawing of its own, it applies its attributes
+ * (e.g., transform, opacity) to all its children *)
+let g a b =
+  trusted_node "g" a b
 
 module Attributes = struct
 let viewBox = V.attr "viewBox"
@@ -382,10 +386,19 @@ let render_words color str x y angle s alpha =
     )
     []
 
-(* TODO *)
-let render_polygon color _points x y angle s alpha =
-  Svg.circle 
-    (Svg.Attributes.r (string_of_number 10.) ::
+(* claude: was a TODO drawing a small circle instead of the polygon.
+ * Same as renderPolygon in elm-playground: the points are relative to
+ * (x, y), and their y is negated since the svg y axis goes down (see
+ * render_transform). *)
+let render_polygon color points x y angle s alpha =
+  let points_str =
+    points
+    |> List.map (fun (px, py) ->
+        spf "%s,%s" (string_of_number px) (string_of_number (-. py)))
+    |> String.concat " "
+  in
+  Svg.polygon
+    (Svg.Attributes.points points_str ::
      Svg.Attributes.fill (render_color color) ::
      Svg.Attributes.transform (render_transform x y angle s)::
      render_alpha alpha
@@ -405,7 +418,7 @@ let render_image w h src x y angle s alpha =
     []
 
 
-let (render_shape: shape -> 'msg Svg.t) = 
+let rec (render_shape: shape -> 'msg Svg.t) = 
   fun { x; y; angle; scale; alpha; form} ->
   match form with
   | Circle (color, radius) -> 
@@ -422,8 +435,16 @@ let (render_shape: shape -> 'msg Svg.t) =
      render_words color str x y angle scale alpha
   | Image (w, h, src) ->
      render_image w h src x y angle scale alpha
-  | Group _ -> 
-      failwith "Todo"
+  (* claude: was a failwith "Todo". Same as renderGroup in
+   * elm-playground: an svg <g> whose transform and opacity apply to all
+   * the shapes in the group, which are positioned relative to the group
+   * (x, y). *)
+  | Group shapes ->
+      Svg.g
+        (Svg.Attributes.transform (render_transform x y angle scale) ::
+         render_alpha alpha
+        )
+        (List.map render_shape shapes)
 
 
 let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
