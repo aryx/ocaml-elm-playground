@@ -86,7 +86,7 @@ merge:
 	A=`git rev-parse --abbrev-ref HEAD` && git checkout master && git pull && git branch -D $$A
 
 visual:
-	codemap -screen_size 3 -filter pfff -efuns_client efuns_client -emacs_client /dev/null .
+	codemap -screen_size 3 -filter xix -efuns_client efuns_client -emacs_client /dev/null .
 
 opendoc:
 	dune build @doc
