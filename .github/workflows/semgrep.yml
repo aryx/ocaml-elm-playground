@@ -1,6 +1,6 @@
 jobs:
   job:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container:
       # living on the edge!
       image: semgrep/semgrep:pro-develop
