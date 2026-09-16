@@ -1,0 +1,131 @@
+{0 Making animated sprites}
+
+A sprite is a small picture of a character or object in a game, like
+Mario in {{:https://aryx.github.io/ocaml-elm-playground/examples/Mario.html} the Mario example}.
+This page explains how animated sprites work in playground and how to
+make your own.
+
+{1 What is an animated GIF?}
+
+An animated GIF is like a flip book: one file containing several still
+pictures, called {e frames}, each with a display duration, called its
+{e delay}. The viewer shows frame 1, waits, shows frame 2, and so on,
+and after the last frame starts again from frame 1.
+
+For example, [https://elm-lang.org/images/mario/walk/left.gif] contains 8
+frames (8 poses of Mario walking), each displayed for 0.1 seconds, so one
+walk cycle lasts 8 × 0.1 = 0.8 seconds and then repeats:
+
+{v
+time (s)  0.0  0.1  0.2  0.3  0.4  0.5  0.6  0.7  0.8  0.9 ...
+frame      1    2    3    4    5    6    7    8    1    2  ...
+          |<------------- one cycle = 0.8s ------------>|
+v}
+
+GIF delays are stored in hundredths of a second. The Mario files
+actually say 0, which old GIF tools often wrote. Taken literally, 0
+would mean "switch frames as fast as possible", so browsers treat a delay
+of 0 (or 1) as 10, i.e., 0.1 seconds, and playground does the same on
+both backends.
+
+{1 Animations and the game loop}
+
+A playground game runs its own loop about 60 times per second: it
+updates the memory of the game and redraws the screen. The GIF animation
+has its own, independent clock: at each redraw, playground looks at the
+current time to decide which frame of the GIF should be visible. Since
+0.1 seconds is 6 redraws at 60 redraws per second, each GIF frame stays
+on screen for about 6 redraws:
+
+{v
+redraws (60Hz):  | | | | | | | | | | | | | | | | | | ...
+GIF frame:       1 1 1 1 1 1 2 2 2 2 2 2 3 3 3 3 3 3 ...
+                |<- 0.1s ->|<- 0.1s ->|<- 0.1s ->|
+v}
+
+Your game only chooses {e which} image to display. For example the Mario
+example displays [walk/left.gif] while Mario moves left, [stand/left.gif]
+when he stops, and [jump/left.gif] when he is in the air:
+
+{[
+let to_gif mario =
+  if mario.y > 0. then
+    "https://elm-lang.org/images/mario/jump/" ^ mario.dir ^ ".gif"
+  else if mario.vx <> 0. then
+    "https://elm-lang.org/images/mario/walk/" ^ mario.dir ^ ".gif"
+  else
+    "https://elm-lang.org/images/mario/stand/" ^ mario.dir ^ ".gif"
+]}
+
+and the walk GIF animates by itself.
+
+On the web, the browser animates GIFs. In the native version, playground
+does it itself (see [playground/native/Image_native.ml], which also
+explains how GIF files are structured).
+
+{1 Making your own animated GIF}
+
++ Draw each pose as a separate image, all of the same size (e.g.,
+  35×35 pixels), with a transparent background. Some tools:
+  {ul
+  {- {{:https://www.aseprite.org/} Aseprite}: made for pixel-art
+     animation, with a timeline and GIF export;}
+  {- {{:https://www.gimp.org/} GIMP}: put each frame in its own layer,
+     then use "Export As" with a [.gif] name and tick "As animation";}
+  {- {{:https://www.piskelapp.com/} Piskel}: free, runs in the browser.}}
++ Export as an animated GIF, with:
+  {ul
+  {- a real delay, e.g., 100 ms (not 0), so that all viewers agree on
+     the speed;}
+  {- looping forever;}
+  {- the simple "replace" frame disposal, also called "one frame per
+     layer" or "background": each frame fully replaces the previous one.}}
++ Or, if you already have one PNG file per frame, assemble them with
+  {{:https://imagemagick.org/} ImageMagick}:
+{v
+magick -delay 10 -dispose Background -loop 0 walk1.png walk2.png walk3.png walk.gif
+v}
+  ([-delay] is in hundredths of a second, so [10] means 0.1 seconds per
+  frame.)
+
+Then use it like any other image:
+
+{[
+image 70. 70. "https://example.com/sprites/walk.gif"
+]}
+
+The image is given by a URL. An [http://] or [https://] URL works on
+both backends. On the web, a relative URL like ["walk.gif"] is relative to
+the HTML page; the native version downloads images with curl, so give it
+a full URL (e.g., [file:///path/to/walk.gif] for a local file).
+
+{2 Tips}
+
+{ul
+{- {b Draw small, display big.} Mario is drawn at 35×35 pixels and
+   displayed at 70×70 with [image 70. 70. ...]. Pixel art looks good
+   scaled by a whole number (2×, 3×, ...).}
+{- {b Keep the character at the same place in each frame} (e.g., the
+   feet on the same line), otherwise it wobbles when animated.}
+{- {b Make one GIF per direction} (like [walk/left.gif] and
+   [walk/right.gif]) rather than flipping the image in code.}
+{- {b Only GIFs are animated in the native version.} Animated PNG (APNG)
+   and WebP files are animated by browsers, but the native version
+   displays only their first frame.}}
+
+{1 Alternative: animate from your game code}
+
+Instead of an animated GIF, you can save each pose as a separate still
+image (any format) and choose which one to display from the time. This
+works the same on both backends and gives your game full control over
+the animation (e.g., restart the walk cycle when the character starts
+walking, or animate faster when it runs):
+
+{[
+let view computer memory =
+  (* spin 0.8 goes from 0 to 360 every 0.8 seconds,
+   * so this goes from 0 to 7 every 0.8 seconds *)
+  let frame = int_of_float (spin 0.8 computer.time /. 45.) in
+  [ image 70. 70. (Printf.sprintf "https://example.com/sprites/walk%d.png" frame)
+    |> move memory.x memory.y ]
+]}

@@ -11,4 +11,4 @@
 
 (documentation
   (package elm_playground)
-  (mld_files index))
+  (mld_files index making_sprites))

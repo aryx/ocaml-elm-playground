@@ -263,31 +263,8 @@ let surface_of_url src =
  * walk GIF animates on its own. A faster screen (e.g., 120Hz on the web)
  * just shows each GIF frame during more redraws.
  *
- * Making your own animated sprites
- * --------------------------------
- * Draw each pose as a separate image of the same size (e.g., 35x35) with
- * a transparent background, in a pixel-art or image editor (e.g.,
- * Aseprite, which has a timeline and GIF export; GIMP, one layer per
- * frame, then "Export as GIF" with "As animation"; Piskel, in the
- * browser). When exporting, set a real delay (e.g., 100ms, not 0) so
- * all viewers agree, loop forever, and use the simple "replace" frame
- * disposal (also called "one frame per layer" or "background"). Or
- * assemble PNG frames with ImageMagick:
- *
- *   magick -delay 10 -dispose Background -loop 0 walk1.png walk2.png walk.gif
- *
- * (-delay is in 1/100s). Then use it like any image, e.g.,
- * [image 70. 70. url] (draw small, display big: Mario is drawn at 35x35
- * and displayed at 70x70), and keep the character at the same place in
- * each frame (e.g., the feet), otherwise it wobbles. Only GIFs are
- * animated by this code (animated PNG/WebP work in browsers, but we
- * would display only their first frame natively). An alternative that
- * works with any image format, on both backends, and gives the game full
- * control (e.g., restart the cycle when the character starts walking),
- * is to have one still image per pose and choose it from the time:
- *
- *   let frame = int_of_float (spin 0.8 computer.time /. 45.) in  (* 0..7 *)
- *   image 70. 70. (Printf.sprintf "walk%d.png" frame)
+ * Making your own animated sprites: see playground/making_sprites.mld
+ * (published as docs/elm_playground/making_sprites.html by make website).
  *
  * The GIF format (GIF89a spec, https://www.w3.org/Graphics/GIF/spec-gif89a.txt):
  *

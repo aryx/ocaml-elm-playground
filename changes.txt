@@ -14,6 +14,13 @@
 ** docs
 - add CLAUDE.md summarizing the build commands and the virtual_modules
   native/web architecture
+- add a "Making animated sprites" odoc page (playground/making_sprites.mld,
+  linked from index.mld): animated GIFs, frames/delays vs the 60Hz game
+  loop, how to make your own sprites
+- Makefile: make website no longer does 'rm -rf docs' (which deleted the
+  hand-written index.html, screenshots/, toy-*-example/, claude_notes/);
+  it replaces only the odoc-generated dirs and also publishes the fresh
+  web examples/games (.bc.js + .html) to docs/examples/ and docs/games/
 
 ** playground native
 - image loading: replace imagelib (whose GIF decoder has a clear-code

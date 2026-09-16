@@ -55,11 +55,33 @@ doc:
 # the master branch to trigger a redeploy
 # TODO: automatically update games/ and examples/
 # and add entries for those dirs.
+# claude: website used to 'rm -rf docs' and replace it with the odoc
+# output, which also deleted the hand-written parts of docs/
+# (index.html, screenshots/, toy-*-example/, claude_notes/,
+# examples/ and games/ with their index.html), and 'make js' only builds
+# in _build/, so the published examples/games were not updated either.
+# Now we replace only the odoc-generated directories (not index.html,
+# which is hand-edited, nor the toy-game/toy-web-game docs that odoc also
+# generates from docs/toy-*-example/), and copy each freshly built web
+# example/game (.bc.js + its .html page) to docs/examples/ and docs/games/.
+# 'install -m 644' rather than 'cp' because dune's outputs are read-only.
+ODOC_DIRS=odoc.support \
+  elm_core elm_system elm_playground elm_playground_native elm_playground_web
+
 website:
-	rm -rf docs
 	make doc
-	cp -a _build/default/_doc/_html docs
+	for d in $(ODOC_DIRS); do \
+	  rm -rf docs/$$d; \
+	  cp -R _build/default/_doc/_html/$$d docs/$$d; \
+	  chmod -R u+w docs/$$d; \
+	done
 	make js
+	for d in examples games; do \
+	  for js in _build/default/$${d}_js/*.bc.js; do \
+	    b=`basename $$js .bc.js`; \
+	    install -m 644 $$js $${d}_js/$$b.html docs/$$d/; \
+	  done; \
+	done
 
 # Preview the site at http://localhost:8000
 serve:
