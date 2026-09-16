@@ -22,6 +22,14 @@
 
 * 0.1.7 (Q4 2024) (first GitHub Pages website, README rewrite, toy examples)
 
+** releases
+- 0.1.0 (2024-12-8): first release on OPAM (actually 0.1.7 was the version
+  released)
+- 0.2.0 (2024-12-13): first website at https://aryx.github.io/ocaml-elm-playground/
+- 0.2.1 (2024-12-24): first announce at
+  https://discuss.ocaml.org/t/ann-first-release-of-elm-playground/15838
+  and a better README at https://github.com/aryx/ocaml-elm-playground
+
 ** docs
 - first website: odoc API docs plus docs/examples/ and docs/games/ pages
   rendered with M-x htmlize-buffer, then switched to links to the GitHub
@@ -65,3 +73,13 @@
 - generate the *.opam files from dune-project and do the first opam
   release, iterating 0.1.0 through 0.1.7 to fix opam-repository submission
   issues (project renaming, missing doc tag, windows .opam.template)
+
+* Beta (2021-01-05)
+
+- initial native (via TSDL) and web (via vdom) backends, and a few basic
+  games (Pong, Asteroid, Snake, and even Tetris!) working in native and a
+  few working in web
+
+* Alpha (2020-11-02)
+
+- first commits and first prototype
