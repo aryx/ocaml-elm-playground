@@ -48,13 +48,34 @@ type attr =
   | Attr of string * string
   | Style of string * string
 
-(* claude: a tiny virtual DOM. We used to build real DOM elements directly
- * here and replace the whole <svg> on every animation frame, but a freshly
- * created <svg:image> decodes its picture asynchronously (even when the
- * url is in the browser cache), so some frames were painted without the
- * sprite (Mario "disappearing"), and animated GIFs restarted every frame.
- * Now [render] returns this description, and [patch] below updates the
- * existing DOM in place, touching only the attributes that changed.
+(* claude: a tiny "virtual DOM".
+ *
+ * Background: the DOM (Document Object Model) is the tree of live
+ * elements the browser displays (<body>, <svg>, <circle>, <image>, ...).
+ * The browser redraws the screen from this tree after each
+ * animation frame. A "virtual DOM" is just a plain data structure
+ * *describing* such a tree (like the [t] type below); it costs nothing
+ * to build a new one each frame, and it is not displayed. Libraries like
+ * Elm or ocaml-vdom then compare ("diff") the new description with the
+ * previous one and apply only the differences to the real DOM
+ * ("patching").
+ *
+ * The problem with the old code: this module used to build *real* DOM
+ * elements directly (type t = Element.t), and run_app removed the whole
+ * <svg> and inserted a brand-new one on every frame (60+ times per
+ * second). That looked fine for circles and rectangles, but not for
+ * images: a newly created <image> element loads and decodes its picture
+ * asynchronously, even when the url is already in the browser cache, so
+ * the browser sometimes displayed a frame before the picture was ready
+ * -> the Mario sprite disappeared for a frame now and then. It also
+ * restarted animated GIFs (Mario's "walk" sprite) at their first frame
+ * each time, so they never animated.
+ *
+ * The new code: [render] (and the Svg helpers below) now return a [t]
+ * value, i.e., a description, and [patch] updates the previous frame's
+ * real elements in place. Frame after frame, Mario's <image> is the
+ * *same* DOM element, and its href attribute is only modified when the
+ * sprite really changes (e.g., from "walk" to "jump").
  *)
 type t = {
   tag: string;
@@ -74,6 +95,16 @@ let style s1 s2  =
 let attr s v =
   Attr (s, v)
 
+(* Set one attribute (e.g., <circle r="10">) or one CSS style property
+ * (e.g., style="position: fixed") on a real DOM element.
+ * For styles, js_browser has no binding, so we use Ojs, the low-level
+ * js_of_ocaml/gen_js_api module to manipulate raw JavaScript values:
+ * the code below is the OCaml version of the JavaScript
+ *   elt.style[k] = v
+ * (Element.t_to_js converts the typed OCaml value to a raw JS value,
+ * get_prop_ascii/set_prop_ascii read/write a JS object field, and
+ * string_to_js converts an OCaml string into a JS string).
+ *)
 let set_attr elt = function
   | Attr (k, v) ->
       Element.set_attribute elt k v
@@ -83,15 +114,20 @@ let set_attr elt = function
         k
         (Ojs.string_to_js v)
 
+(* Undo set_attr (setting a style property to "" removes it). *)
 let remove_attr elt = function
   | Attr (k, _) -> Element.remove_attribute elt k
   | Style (k, _) -> set_attr elt (Style (k, ""))
 
+(* Do the two attributes set the same thing (regardless of the value)?
+ * e.g., Attr ("r", "10") and Attr ("r", "20") *)
 let same_key a b =
   match a, b with
   | Attr (k1, _), Attr (k2, _) | Style (k1, _), Style (k2, _) -> k1 = k2
   | _ -> false
 
+(* Build real DOM elements from a description; used for the first frame
+ * and for parts of the tree that did not exist in the previous frame. *)
 let rec create (node : t) : Element.t =
   (* bugfix: for svg elt we need to pass the ns! (namespace_URI), otherwise
    * it will not render anything.
@@ -103,39 +139,66 @@ let rec create (node : t) : Element.t =
   );
   elt
 
-(* [elt] is the DOM element previously created (or patched) from [old];
- * returns the DOM element now corresponding to [node]. *)
+(* Make the real element [elt], which currently displays the description
+ * [old] (the previous frame), display [node] (the new frame) instead,
+ * doing as few DOM modifications as possible. [parent] is [elt]'s
+ * parent in the DOM, needed only if we must replace [elt] entirely.
+ * Returns the real element now displaying [node] ([elt] itself, unless
+ * it was replaced).
+ *
+ * This is a simplified version of what Elm/ocaml-vdom do: children
+ * are matched by position (the 1st child of old with the 1st child of
+ * node, etc.), which is fine for playground since view functions
+ * usually return the same list of shapes in the same order every frame
+ * with just different positions/colors.
+ *)
 let rec patch ~(parent : Element.t) (elt : Element.t) (old : t) (node : t)
     : Element.t =
+  (* different kind of element (e.g., a <circle> became a <rect>):
+   * cannot modify it in place, build a new one *)
   if old.tag <> node.tag then begin
     let fresh = create node in
     Element.replace_child parent fresh elt;
     fresh
   end else begin
+    (* same kind of element: 1) remove attributes no longer present
+     * (e.g., opacity when a shape stops being faded) *)
     old.attrs |> List.iter (fun a ->
       if not (List.exists (same_key a) node.attrs)
       then remove_attr elt a
     );
     node.attrs |> List.iter (fun a ->
-      (* only touch changed attributes; re-setting an <image> href
-       * could trigger a reload *)
+      (* 2) set only new or changed attributes (List.mem compares
+       * both the name and the value); in particular we don't re-set an
+       * unchanged <image> href, which could make the browser reload it *)
       if not (List.mem a old.attrs)
       then set_attr elt a
     );
+    (* 3) same thing recursively for the children *)
     patch_children elt (Element.first_child elt) old.children node.children;
     elt
   end
 
+(* Walk in parallel the old children descriptions [olds], the new ones
+ * [nodes], and the real children of [parent] (starting at [child]; the
+ * real children correspond 1-to-1 to [olds] since we built them).
+ * Element.first_child/next_sibling are the DOM way to iterate over the
+ * children of an element (next_sibling = the next child of the same
+ * parent). *)
 and patch_children parent child olds nodes =
   match olds, nodes with
   | [], [] -> ()
+  (* a child in both frames: patch it *)
   | o :: olds, n :: nodes ->
+      (* get the next sibling before patching, in case child is replaced *)
       let next = Element.next_sibling child in
       ignore (patch ~parent child o n);
       patch_children parent next olds nodes
+  (* more shapes than in the previous frame: add them at the end *)
   | [], n :: nodes ->
       Element.append_child parent (create n);
       patch_children parent child [] nodes
+  (* fewer shapes than in the previous frame: remove the extra ones *)
   | _ :: olds, [] ->
       let next = Element.next_sibling child in
       Element.remove_child parent child;
@@ -358,21 +421,63 @@ let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
 (* Event management *)
 (*****************************************************************************)
 
-let adjust_x_y x y dim screen =
-  log (spf "%f %f" x y);
-  log (spf "h=%f, w=%f, left=%f, right=%f, top=%f, bottom=%f"
-        (Rect.height dim) (Rect.width dim) (Rect.left dim) (Rect.right dim)
-        (Rect.top dim) (Rect.bottom dim));
-
-  let x = x - Rect.left dim in
-  let x = x * screen.width / Rect.width dim in
-  let x = screen.left + x in
-
-  let y = y - Rect.top dim in
-  let y = y * screen.height / Rect.height dim in
-  let y = screen.top - y in
-
-   x, y
+(* claude: convert the mouse position of a JavaScript mouse event into
+ * playground coordinates.
+ *
+ * There are 2 coordinate systems involved:
+ *  - "client" coordinates, which the browser gives us in mouse events
+ *    (Event.client_x/client_y): pixels from the top-left corner of the
+ *    browser window, y going down.
+ *  - the <svg> "user" coordinates, the ones we draw in, set by the
+ *    viewBox attribute in [render]: here x from -500 (left) to 500
+ *    (right), y from -500 (top) to 500 (bottom), since render_transform
+ *    negates y. The <svg> is stretched to fill the whole window
+ *    (width/height 100%), but by default (preserveAspectRatio) the
+ *    browser keeps the drawing square and centered, so if the window is
+ *    wider than tall there are empty bands on the left and right (or at
+ *    the top/bottom otherwise).
+ *
+ * The problem with the old code: it computed the scaling from the
+ * bounding box (position and size on the page) of Event.target, which
+ * is the *element under the mouse pointer*, not necessarily the <svg>.
+ * In examples/Mouse.ml, most of the time the pointer is over the big
+ * yellow rectangle, so the math was roughly right; but as soon as the
+ * purple circle reached the pointer, the target became the circle,
+ * whose bounding box is small and elsewhere, so the computed position
+ * was wrong, the circle moved away, the next event was again over the
+ * rectangle, the circle moved back, etc. -> flickering and wrong
+ * positions. It also ignored the empty bands mentioned above.
+ *
+ * The new code: always use the root <svg> element, and ask the browser
+ * itself for the conversion. svg.getScreenCTM() returns the matrix
+ * converting svg user coordinates to client coordinates (taking into
+ * account the viewBox, the window size, the empty bands, the scrolling,
+ * ...); its inverse converts the other way, which is what we need.
+ * js_browser has no binding for those SVG functions, so we call them
+ * via Ojs (see set_attr above); the code is the OCaml version of
+ * this JavaScript:
+ *
+ *   let pt = svg.createSVGPoint();   // a {x, y} point object
+ *   pt.x = client_x; pt.y = client_y;
+ *   pt = pt.matrixTransform(svg.getScreenCTM().inverse());
+ *   return [pt.x, -pt.y];
+ *
+ * (Ojs.call obj "meth" [|args|] is obj.meth(args), and
+ * Ojs.float_to_js/float_of_js convert between OCaml and JS numbers.)
+ *)
+let adjust_x_y (svg : Element.t) (client_x : float) (client_y : float) =
+  let svg = Element.t_to_js svg in
+  let pt = Ojs.call svg "createSVGPoint" [||] in
+  Ojs.set_prop_ascii pt "x" (Ojs.float_to_js client_x);
+  Ojs.set_prop_ascii pt "y" (Ojs.float_to_js client_y);
+  let ctm = Ojs.call svg "getScreenCTM" [||] in
+  let inv = Ojs.call ctm "inverse" [||] in
+  let pt = Ojs.call pt "matrixTransform" [| inv |] in
+  let x = Ojs.float_of_js (Ojs.get_prop_ascii pt "x") in
+  let y = Ojs.float_of_js (Ojs.get_prop_ascii pt "y") in
+  (* the svg y axis goes down but the playground one goes up
+   * (see render_transform) *)
+  x, -. y
 
 let adjust_key key = 
   log (spf "key = '%s'" key);
@@ -380,27 +485,22 @@ let adjust_key key =
   | " " -> "space"
   | _ -> key
 
-let js_event_to_event evt screen = 
+let js_event_to_event evt (svg_opt : Element.t option) = 
   let ty = Event.type_ evt in
-  match ty with
-  | "mousemove" ->
-      let (x, y) = Event.page_x evt, Event.page_y evt in
-  
-      let o = Event.target evt in
-      let elt = Element.t_of_js o in
-      let dim = Element.get_bounding_client_rect elt in
-
-      let x, y = adjust_x_y x y dim screen in
+  match ty, svg_opt with
+  | "mousemove", None -> None
+  | "mousemove", Some svg ->
+      let x, y = adjust_x_y svg (Event.client_x evt) (Event.client_y evt) in
       Some (E.EMouseMove (int_of_float x, int_of_float y))
-  | "mousedown" | "mouseup" ->
+  | ("mousedown" | "mouseup"), _ ->
       let b = Event.buttons evt > 0 in
       Some (E.EMouseButton b)
 
-  | "keydown" ->
+  | "keydown", _ ->
       let key = Event.key evt in
       let key = adjust_key key in
       Some (E.EKeyChanged (true, key))
-  | "keyup" ->
+  | "keyup", _ ->
       let key = Event.key evt in
       let key = adjust_key key in
       Some (E.EKeyChanged (false, key))
@@ -443,7 +543,16 @@ let run_app app =
  * keep a reference to the Image object so the browser keeps it in its
  * memory cache; this way an <svg:image> switching to this url later
  * (e.g., Mario going from "walk" to "jump") can paint it without waiting
- * for the network.
+ * for the network. The old code did nothing here, so the first jump
+ * could show no sprite until the download was done.
+ *
+ * The Ojs code below is the OCaml version of the JavaScript
+ *   let img = new Image(); img.src = url;
+ * (Ojs.global is the JS global object, where the Image class lives, and
+ * Ojs.new_obj calls a JS constructor.) Setting src is what starts the
+ * download; the image is not inserted in the page. We store img in
+ * [preloaded] so it is not garbage collected (which could evict it
+ * from the browser memory cache).
  *)
 let preloaded : (string, Ojs.t) Hashtbl.t = Hashtbl.create 16
 
@@ -476,13 +585,25 @@ let run_app app =
      );
     in
    
-    (* claude: requestAnimationFrame fires at the display refresh rate,
-     * which is 120Hz (or more) on many screens (e.g., Mac ProMotion), but
-     * Playground.game's update functions (e.g., examples/Mario.ml) use a
-     * fixed per-tick dt assuming ~60Hz, so delivering one Tick per
-     * animation frame made games run 2x too fast there. We now deliver
-     * Ticks on a fixed 60Hz timestep, independent of the refresh rate
-     * (same fix as the frame cap in playground/native/).
+    (* claude: game speed.
+     *
+     * Window.request_animation_frame window f asks the browser to call
+     * f just before it next redraws the screen (f receives the current
+     * time in milliseconds). animation_frame below re-registers itself
+     * each time, so it is called once per screen refresh.
+     *
+     * The problem with the old code: it delivered one Tick per call,
+     * i.e., one per screen refresh. Playground games advance by a fixed
+     * amount per Tick (e.g., examples/Mario.ml's dt), tuned for 60
+     * refreshes per second, but many screens refresh faster (Mac
+     * ProMotion screens: 120 per second), so Mario ran 2x too fast.
+     *
+     * The new code: count how much time passed since the previous call
+     * (in [pending]), and deliver one Tick per full 1/60s elapsed. At 120Hz
+     * that's a Tick every other frame; at 60Hz one per frame; at 30Hz two
+     * per frame. The screen is still redrawn every frame. This is the
+     * classic "fixed timestep" game loop (same idea as the 60fps cap in
+     * playground/native/).
      *)
     let tick_period = 1. /. 60. in
     (* tolerate jitter in rAF timestamps on 60Hz displays, otherwise
@@ -511,6 +632,8 @@ let run_app app =
                    (float_of_int !rate_frames /. (time -. start)))
       );
 
+      (* time elapsed since the previous frame (one Tick on the
+       * very first frame) *)
       (match !last_time with
       | None -> pending := tick_period
       | Some last -> pending := !pending +. (time -. last)
@@ -523,6 +646,9 @@ let run_app app =
         pending := !pending -. tick_period
       done;
 
+      (* redraw: compute the description of the new frame, then either
+       * build the real <svg> (first frame) or update the existing one
+       * (see V.patch) *)
       let shapes = app.Playground.view !model in
       let node = render screen shapes in
       let body = Document.body document in
@@ -543,7 +669,10 @@ let run_app app =
     Window.request_animation_frame window animation_frame;
 
     let on_js_event evt =
-      let evt_opt = js_event_to_event evt screen in
+      (* the root <svg>, needed to convert mouse coordinates (see
+       * adjust_x_y); None if the first frame is not drawn yet *)
+      let svg_opt = Option.map snd !current in
+      let evt_opt = js_event_to_event evt svg_opt in
       (match evt_opt with
       | None -> ()
       | Some event -> process_playground_event event

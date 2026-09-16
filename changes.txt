@@ -73,6 +73,10 @@
 - preload_image: actually preload (and keep) the images, so switching
   sprites doesn't flicker
 - render_image: set height (was setting width twice)
+- mouse coordinates: convert via the root <svg>'s getScreenCTM() instead
+  of the bounding box of the event target, which was the shape under the
+  pointer (e.g. the circle in Mouse.ml), making the circle flicker and
+  jump to wrong places; also handles the svg letterboxing
 
 ** build infra (web)
 - examples_js/ and games_js/: copy the .html files into _build/ next to
