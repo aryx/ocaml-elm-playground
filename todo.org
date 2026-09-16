@@ -16,3 +16,26 @@ checked the dependency cost: uri pulls in stringext and angstrom
 new system libraries, so not too heavy on its own. the bigger cost is
 the API-surface churn (public Playground.mli + both backends + every
 example), not the dependency. skipped for now.
+
+*** rethink Playground.image's loading model (not just its src type)?
+val image : number -> number -> string -> shape is a *pure* function --
+works well on web because the browser gives async fetch/decode/cache
+for free behind <img src>/<svg:image href>. native has nothing like
+that built in, so the native backend keeps having to bolt a loading
+strategy onto that same pure-looking API: synchronous (blocks/crashes
+the frame on a cache miss), background-thread-async (tried it for
+Mario's sprites -- works, but needs a Mutex-protected cache + creating
+Cairo surfaces off the main thread, and the image still visibly pops in
+~1s into gameplay instead of being there from frame 1), or the
+preload_image-based prefetch we landed on for Mario (see
+Playground_platform.preload_image, examples/Mario.ml's init) -- which
+is really just "do what every other game does: load assets in a
+loading phase before the game loop starts", not something [image]
+itself does for you.
+
+preload_image works but only because Mario happens to know all its
+sprite urls upfront; it's not a general solution for an app that
+discovers image urls dynamically. worth someday considering an
+explicit asset-loading step in the Playground API itself (e.g.
+something Cmd/Task-based, matching how Elm's own effect system would
+do it) rather than always pushing this back onto each game/example.

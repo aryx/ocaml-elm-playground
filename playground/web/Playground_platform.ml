@@ -373,6 +373,13 @@ let run_app app =
   ()
 *)
 
+(* claude: no-op here -- the browser already loads/caches
+ * <img>/<svg:image> asynchronously on its own; this exists so games can
+ * call it unconditionally (see examples/Mario.ml's init) without an
+ * #ifdef per backend. See playground/native/Playground_platform.ml for
+ * the backend that actually needs it. *)
+let preload_image (_url : string) = ()
+
 (* when using the simple DOM *)
 let run_app app =
   Window.set_onload window (fun () ->

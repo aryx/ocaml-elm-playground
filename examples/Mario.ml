@@ -26,6 +26,19 @@ let to_gif mario =
   else
     "https://elm-lang.org/images/mario/stand/" ^ mario.dir ^ ".gif"
 
+(* claude: like a real game's loading screen, load every sprite variant
+ * up front instead of lazily on first use -- on native, loading a
+ * not-yet-cached sprite mid-game (e.g. the first jump) blocks the render
+ * loop for a while (network fetch + decode), which is fine to pay once
+ * here but not acceptable frame after frame during gameplay. No-op on
+ * the web backend, which already loads/caches images asynchronously on
+ * its own (see Playground_platform.preload_image in each backend). *)
+let () =
+  ["stand"; "walk"; "jump"] |> List.iter (fun state ->
+    ["left"; "right"] |> List.iter (fun dir ->
+      Playground_platform.preload_image
+        ("https://elm-lang.org/images/mario/" ^ state ^ "/" ^ dir ^ ".gif")))
+
 let view computer mario =
   let w = computer.screen.width in
   let h = computer.screen.height in

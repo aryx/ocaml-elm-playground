@@ -312,6 +312,16 @@ let scancode_to_keystring = function
  | "Q" -> exit 0
  | s -> String.lowercase_ascii s
 
+(* claude: preload_image just queues -- see Image_native.preload -- so it
+ * has no ordering dependency on anything and is safe to call anytime,
+ * including before run_app has even started (examples/Mario.ml calls it
+ * at module init, before run_app). run_app is what actually downloads
+ * the queue (via Image_native.load_queued), once it has parsed argv, set
+ * up logging, and created its window -- so the window is visible and
+ * -v/-debug output makes sense before any blocking network call
+ * happens. *)
+let preload_image = Image_native.preload
+
 let run_app app =
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in
@@ -349,6 +359,16 @@ let run_app app =
   g_sx := sx;
   g_sy := sy;
   debug_coordinates cr;
+
+  (* claude: show a "Loading..." message right away, then run any queued
+   * preload_image downloads -- without this the window doesn't show
+   * anything until preloading finishes, which looks like the app just
+   * hung for a few seconds with no feedback. *)
+  Cairo.set_source_rgba cr 0. 0. 0. 1.;
+  Cairo.move_to cr (float sx /. 2. -. 40.) (float sy /. 2.);
+  Cairo.show_text cr "Loading...";
+  let* () = Sdl.update_window_surface sdl_window in
+  Image_native.load_queued ();
 
   let initmodel, _cmdsTODO = app.Playground.init () in
   let model = ref initmodel in

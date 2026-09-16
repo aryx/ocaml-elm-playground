@@ -2,8 +2,9 @@ jobs:
   job:
     runs-on: ubuntu-latest
     container:
-      # living on the edge!
-      image: semgrep/semgrep:pro-develop
+      #alt: semgrep/semgrep:develop to live on the edge! but pro-develop tag
+      # was removed and no longer pulls, see other sibling projects
+      image: semgrep/semgrep
     #TODO: at some point
     #env:
     #  SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}

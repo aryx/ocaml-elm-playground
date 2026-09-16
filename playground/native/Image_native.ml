@@ -104,10 +104,13 @@ let cairo_surface_of_stb_image (img : Stb_image.int8 Stb_image.t) : Cairo.Surfac
   Cairo.Image.create_for_data32 pixels
 
 let surface_of_url_exn url =
+  Logs.info (fun m -> m "loading image %s" url);
   let fn = Filename.temp_file "playground_img" (Filename.extension url) in
   curl_url fn url;
   match Stb_image.load ~channels:4 fn with
-  | Ok img -> cairo_surface_of_stb_image img
+  | Ok img ->
+    Logs.info (fun m -> m "loaded image %s (%dx%d)" url img.width img.height);
+    cairo_surface_of_stb_image img
   | Error (`Msg msg) ->
     failwith (Printf.sprintf "could not decode image %s: %s" url msg)
 
@@ -115,7 +118,25 @@ let surface_of_url_exn url =
 (* Cairo surface cache *)
 (*****************************************************************************)
 
-(* url -> surface *)
+(* claude: surface_of_url_exn above does a synchronous network fetch
+ * (curl_url) that can easily take several hundred ms, so calling it
+ * lazily from render_image on a cache miss -- i.e., mid-game, the first
+ * time a given sprite variant is actually needed -- freezes the whole
+ * render+input loop for that long. Tried making that background
+ * (Thread.create + a Mutex-protected cache, polled every frame) instead;
+ * it avoided the freeze but the image would then pop in only ~1s later,
+ * in the middle of gameplay, which isn't great either, and it added a
+ * fair amount of complexity (thread lifecycle, cross-thread Cairo
+ * surface creation, a mutex around every cache access) for what turned
+ * out to be the wrong fix.
+ *
+ * What actual games do instead: load all needed assets up front, in a
+ * loading phase, before the game loop starts -- see [preload] below and
+ * Playground_platform.preload_image, called once per sprite in
+ * examples/Mario.ml's init. That makes the cache purely synchronous
+ * again: by the time the game loop runs, every url it'll ask for is
+ * already cached, so the slow path here never runs during actual
+ * gameplay. *)
 let himages : (string, Cairo.Surface.t option) Hashtbl.t = Hashtbl.create 101
 
 (* claude: cache None on decode/download failure so callers can degrade to
@@ -134,3 +155,23 @@ let surface_of_url src =
     in
     Hashtbl.add himages src surface_opt;
     surface_opt
+
+(*****************************************************************************)
+(* Preloading *)
+(*****************************************************************************)
+
+(* claude: preload just enqueues -- it doesn't touch the network itself,
+ * so it has no ordering dependency on anything (CLI/logging setup, the
+ * SDL window existing, ...) and is safe to call anytime, including
+ * before Playground_platform.run_app has even started. run_app calls
+ * [load_queued] once it has parsed argv, set up logging, and created its
+ * window, so preloading only starts once there's a visible window and
+ * -v/-debug would actually show progress. *)
+let queued : string Queue.t = Queue.create ()
+
+let preload src = Queue.push src queued
+
+let load_queued () =
+  Queue.iter (fun src -> ignore (surface_of_url src : Cairo.Surface.t option))
+    queued;
+  Queue.clear queued
