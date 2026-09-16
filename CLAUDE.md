@@ -1,0 +1,65 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+`ocaml-elm-playground` is an OCaml port of Evan Czaplicki's [elm-playground](https://github.com/evancz/elm-playground): a library for making pictures, animations, and simple video games (using the Elm "Model-View-Update" architecture) that run either natively (SDL/Cairo desktop app) or in the browser (js_of_ocaml + vdom), from the *same* application code.
+
+## Build, test, and doc commands
+
+```bash
+make               # = dune build (also regenerates the *.opam files)
+make test           # = dune runtest -f
+make clean          # = dune clean
+dune build @doc     # build odoc API docs (make doc does this too)
+dune build games_js --profile=release-js     # build web games with small .js output
+dune build examples_js --profile=release-js  # same, for examples
+```
+
+Run a single native example/game directly with dune, e.g.:
+```bash
+dune exec examples/Keyboard.exe
+dune exec games/Snake.exe
+```
+
+Web (`*_js`) targets are executables built in `(modes js)`; after building, the resulting `.bc.js` is copied next to the corresponding `.html` file in `examples_js/`/`games_js/` (see the `website`/`js` Makefile targets and the README's "Simple web application" section for the manual `dune build --root . && cp _build/default/Toy.bc.js static/` pattern used by the two toy example projects under `docs/`).
+
+`make check` runs the project's semgrep config (`semgrep.jsonnet`) via a local `osemgrep` binary — not generally runnable outside the author's machine.
+
+## Architecture
+
+### Virtual module split: one API, two backends
+
+The whole library hinges on dune's `virtual_modules` mechanism:
+
+- `playground/Playground.mli` + `playground/Playground.ml` (library `elm_playground`) define the **entire public API**: shapes, colors, `computer`/`mouse`/`keyboard`/`screen` records, animation helpers (`spin`/`wave`/`zigzag`), and the three entry points `picture`, `animation`, `game` which all produce a `('model, 'msg) app` value.
+- `playground/Playground_platform.mli` declares a single virtual function, `run_app : ('a, 'b) Playground.app -> unit`. The `elm_playground` library declares this as a `virtual_modules Playground_platform` in `playground/dune` — it has no implementation.
+- Two separate libraries each provide a concrete `Playground_platform.ml` and `(implements elm_playground)` in their dune file:
+  - `playground/native/Playground_platform.ml` → library `elm_playground_native` (SDL2 via `tsdl`, 2D drawing via `cairo2`, images via `imagelib`, HTTP via `curl`, logging via `logs`).
+  - `playground/web/Playground_platform.ml` → library `elm_playground_web` (DOM/vdom via the `vdom` library, compiled with js_of_ocaml).
+
+Every example/game module (`open Playground; ... let main = Playground_platform.run_app app`) is therefore **backend-agnostic source code**. The `examples/`, `games/` dune files link against `elm_playground_native`; the `examples_js/`, `games_js/` dune files link the *same-named* `.ml` files (they are separate copies, not shared via dune `include`) against `elm_playground_web` with `(modes js)`. When changing example/game behavior, check whether the change needs to be mirrored in both the native and the `_js` copy of the file.
+
+### Supporting libraries
+
+- `core/` → library `elm_core` (unwrapped): `Basics.ml` (float-friendly arithmetic operators, meant to be `open`ed by playground code), `Color.ml`, `Set_.ml`/`Set_.mli` (custom polymorphic set, exposed as `Set.ml`), `Keyboard.ml`, `Time.ml`. Reimplements small pieces of Elm's core/stdlib for ease of porting Elm code.
+- `system/` → library `elm_system` (unwrapped, depends on `elm_core`): `Cmd.ml`, `Sub.ml` — Elm's Cmd/Sub effect-system stand-ins.
+- Dependency order: `elm_core` ← `elm_system` ← `elm_playground` ← {`elm_playground_native` | `elm_playground_web`}.
+
+### The Model-View-Update pattern
+
+`game view update initial_state` (see `playground/Playground.ml` and the README example) builds an `app` from:
+- a `view : computer -> 'model -> shape list` function,
+- an `update : computer -> 'model -> 'model` function,
+- an initial model value.
+
+`picture` and `animation` are simplified special cases of the same `app` type (`picture : shape list -> (screen, msg1) app`, `animation : (time -> shape list) -> (animation, msg) app`). The playground coordinate system is centered at `(0, 0)` (not top-left), which is a deliberate deviation from typical screen coordinates — keep this in mind when writing or debugging view code.
+
+### opam packages are generated, not hand-edited
+
+`dune-project` has `(generate_opam_files true)` and declares five `(package ...)` stanzas (`elm_core`, `elm_system`, `elm_playground`, `elm_playground_native`, `elm_playground_web`) with their dependencies. The `*.opam` files at the repo root are generated from this — edit `dune-project`, then run `make` (or `dune build <name>.opam`) to regenerate them, rather than editing the `.opam` files directly. `elm_playground_native.opam.template` is the one exception (hand-maintained template consumed during opam generation for that package).
+
+### Docs (`docs/`)
+
+`docs/` is the published GitHub Pages site (served from the `master` branch's `/docs` folder per repo settings) — it is *generated* output (`make website`: `dune build @doc` then copy `_build/default/_doc/_html` to `docs/`, plus `make js` to build the release-mode JS bundles for `examples_js`/`games_js`). `docs/toy-native-example/` and `docs/toy-web-example/` are the two minimal standalone example projects referenced in the README's "Simple native/web application" walkthroughs; keep them in sync with the corresponding README code snippet (see the `coupling:` comment in `README.md` referencing `docs/toy-native-example/toy.ml` and `examples/Keyboard.ml`).
