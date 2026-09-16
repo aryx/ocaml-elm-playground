@@ -322,7 +322,33 @@ let scancode_to_keystring = function
  * happens. *)
 let preload_image = Image_native.preload
 
+(* claude: generic -v/-verbose/-debug/-quiet handling for every native
+ * example/game, so individual examples don't each need their own
+ * Arg.parse boilerplate. Without a reporter installed, Logs.xxx calls
+ * anywhere in the program are silently dropped (nothing else in this
+ * codebase installs one), so this is also what makes the Image_native.ml
+ * Logs.info calls (e.g. "loading image ...", visible with -v) actually
+ * show up. *)
+let parse_cli_and_setup_logging () =
+  let level = ref (Some Logs.Warning) in
+  let cli_flags = [
+    "-v", Arg.Unit (fun () -> level := Some Logs.Info),
+    " verbose mode";
+    "-verbose", Arg.Unit (fun () -> level := Some Logs.Info),
+    " verbose mode";
+    "-debug", Arg.Unit (fun () -> level := Some Logs.Debug),
+    " debug mode";
+    "-quiet", Arg.Unit (fun () -> level := None),
+    " quiet mode";
+  ] in
+  Arg.parse cli_flags
+    (fun s -> raise (Arg.Bad (spf "don't know what to do with %s" s)))
+    (spf "usage: %s [-v|-verbose|-debug|-quiet]" Sys.argv.(0));
+  Logs.set_reporter (Logs.format_reporter ());
+  Logs.set_level !level
+
 let run_app app =
+  parse_cli_and_setup_logging ();
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in
 

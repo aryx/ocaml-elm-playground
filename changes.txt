@@ -48,6 +48,13 @@
   preloading known-upfront assets is simpler and is what games normally
   do anyway, so dropped the threading in favor of it (Image_native.ml/.mli
   back to a plain synchronous cache)
+- run_app/preload_image: parse -v/-verbose/-debug/-quiet (via Arg, one
+  shared parse_cli_and_setup_logging for every example/game) and
+  install a Logs reporter -- without one, Logs.xxx calls anywhere in
+  this codebase were silently dropped, which is why e.g. Image_native's
+  "loading/loaded image ..." Logs.info calls (the fix for the
+  otherwise-silent multi-second stall while Mario preloads its sprites)
+  needed -v to actually show up
 
 * 0.1.7 (Q4 2024) (first GitHub Pages website, README rewrite, toy examples)
 

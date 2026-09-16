@@ -39,3 +39,17 @@ discovers image urls dynamically. worth someday considering an
 explicit asset-loading step in the Playground API itself (e.g.
 something Cmd/Task-based, matching how Elm's own effect system would
 do it) rather than always pushing this back onto each game/example.
+
+*** let each game/example see argv (its own CLI flags), not just -v/-debug/-quiet
+right now playground/native/Playground_platform.ml's run_app/preload_image
+parse Sys.argv themselves (-v/-verbose/-debug/-quiet, see
+parse_cli_and_setup_logging) and Arg.Bad on anything else, so a game
+can't add its own flags (e.g. "-level 5", "-speed fast") without editing
+Playground_platform.ml itself.
+
+could pass the remaining/unparsed argv down to the app (e.g. as part of
+computer, or an extra arg to game/picture/animation) so each
+example/game decides what to do with its own flags on top of the
+shared ones. harder on the web backend since there's no real argv in a
+browser -- would need to read "?xxx=yyy" query-string params from the
+page URL instead (Window.location or similar) as the web equivalent.
