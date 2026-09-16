@@ -66,7 +66,7 @@ js:
 ###############################################################################
 
 check:
-	~/zz/bin/osemgrep --experimental --config semgrep.jsonnet .
+	osemgrep --config semgrep.jsonnet .
 
 # To bump-version you need to modify dune-project version then run 'make' then
 # commit and merge then:
