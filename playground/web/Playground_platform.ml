@@ -14,6 +14,55 @@ open Js_browser
  * I originally used SVG because that's what elm-playground is using, but
  * I have pbs with the mouse coordinate and the bounding box conversion,
  * so maybe simpler to switch to Canvas.
+ * claude: the mouse coordinate problem is fixed now (see adjust_x_y),
+ * which removes one reason to switch to Canvas.
+ *
+ * claude: history: ocaml-vdom's Vdom vs our hand-made mini virtual DOM
+ * ---------------------------------------------------------------------
+ * This file uses the "vdom" opam package (LexiFi's ocaml-vdom), but only
+ * its Js_browser module (typed OCaml bindings to the browser API:
+ * Window, Document, Element, Event, Date, ...), not its Vdom module.
+ *
+ * 1) First version (2020): a real Vdom app (see the commented
+ *    vdom_app_of_app/run_app near the end of this file). Vdom works like
+ *    Elm: you give it view/update functions, it owns the main loop, and
+ *    after each update it diffs the new virtual DOM with the previous
+ *    one and patches the real DOM. But two things playground needs were
+ *    missing, which I asked about in the ocaml-vdom GitHub issues:
+ *    - #37: no way to get a Tick message on each animation frame
+ *      (Elm's onAnimationFrame subscription);
+ *    - #36: onkeydown on a <div> only fires when that div (or a child)
+ *      has the keyboard focus, i.e., only after clicking in the page,
+ *      whereas games need to see all key presses (and key releases);
+ *    - (#35: no canvas in Vdom; the answer was to use SVG, which we do.)
+ *    The maintainers' answer for #36/#37 was to use "custom elements":
+ *    Vdom's escape hatch (a Vdom.custom node in the view, plus a
+ *    handler registered with Vdom_blit.register (Vdom_blit.custom ...))
+ *    to include in the view an element managed by your own
+ *    imperative code; that code, run when the element is created, could
+ *    start a requestAnimationFrame loop, or install key listeners on
+ *    window (which receives key presses whatever has the focus), and
+ *    send the results as messages to the Vdom app.
+ *
+ * 2) Current version: instead of plugging our own code into Vdom's
+ *    main loop via custom elements, run_app below *is* the main loop, so
+ *    it does directly what those custom elements would have done:
+ *    - animation_frame re-registers itself with
+ *      Window.request_animation_frame and sends ETick to update (#37);
+ *    - Window.add_event_listener window Keydown/Keyup/Mouse... receives
+ *      all key and mouse events, whatever has the focus (#36).
+ *    What we lost by leaving Vdom is its diffing: the first direct-DOM
+ *    version rebuilt the whole <svg> at each frame, which was simple but
+ *    made <image> sprites disappear now and then (a new <image> element
+ *    decodes its picture asynchronously) and restarted animated GIFs.
+ *    So module V below is now a tiny hand-made virtual DOM (~100 lines)
+ *    with its own diff/patch (V.patch), specialized for our case (flat
+ *    lists of SVG shapes, children matched by position).
+ *
+ * If one day playground needs to be embedded in a bigger Vdom page
+ * (e.g., with buttons or text inputs around the game), going back to
+ * Vdom with custom elements as described in 1) would make sense. For a
+ * standalone full-page playground, the direct approach is simpler.
  *)
 
 (* When set to true, we generate a new frame only when there is an event.
