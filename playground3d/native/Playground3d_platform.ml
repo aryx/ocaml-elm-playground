@@ -769,16 +769,37 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
         | x when x = Sdl.Event.key_down ->
             let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
             let str = scancode_to_keystring key in
-            (* claude: one-shot actions on key-down (not tied to
-             * computer.keyboard's held-key state, which update3d has
-             * no reason to know about) -- debug toggles for comparing
-             * rendering strategies live, see each one's own doc
-             * comment above: "m" shading mode, "b" backface culling,
-             * "f" wireframe/filled, "z" painter's algorithm/z-buffer *)
-            if str = "m" then cycle_shading_mode ();
-            if str = "b" then backface_culling_enabled := not !backface_culling_enabled;
-            if str = "f" then cycle_render_mode ();
-            if str = "z" then cycle_visibility_mode ();
+            (* claude: bugfix -- SDL does NOT send exactly one key_down
+             * per physical press: while a key stays held, the OS/SDL
+             * keeps re-sending key_down for it at the keyboard's repeat
+             * rate (the same mechanism that makes a held letter key
+             * spam "aaaaaa" into a text field), and Sdl.Event.get
+             * ...keyboard_repeat is 0 for the original press but > 0
+             * for each of those repeats. The one-shot toggles below
+             * were reacting to *every* key_down, repeats included --
+             * holding a key even slightly past the repeat delay
+             * (typically ~500ms) fires it 2, 3, or more times in a
+             * row, flipping the toggle back and forth and often
+             * landing right back where it started by the time the key
+             * is released, which looked like "the key does nothing."
+             * Guarding on keyboard_repeat = 0 makes each physical
+             * press count exactly once, matching what these toggles
+             * are meant to be (a single press = a single cycle) rather
+             * than every micro-second of a held key. (Held-key actions
+             * like the arrow keys don't have this problem: they don't
+             * use key_down events at all, only computer.keyboard's
+             * continuously-updated held/not-held state below, which
+             * update3d re-reads every Tick regardless of any of this.) *)
+            if Sdl.Event.(get sdl_event keyboard_repeat) = 0 then begin
+              (* debug toggles for comparing rendering strategies live,
+               * see each one's own doc comment above: "m" shading
+               * mode, "b" backface culling, "f" wireframe/filled, "z"
+               * painter's algorithm/z-buffer *)
+              if str = "m" then cycle_shading_mode ();
+              if str = "b" then backface_culling_enabled := not !backface_culling_enabled;
+              if str = "f" then cycle_render_mode ();
+              if str = "z" then cycle_visibility_mode ()
+            end;
             computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
         | x when x = Sdl.Event.key_up ->
             let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
