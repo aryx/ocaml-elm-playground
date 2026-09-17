@@ -126,15 +126,21 @@ val rgb : int -> int -> int -> color
 val white : color
 val black : color
 val red : color
+val orange : color
+val yellow : color
 val green : color
 val blue : color
-val yellow : color
+val purple : color
 val brown : color
 
 val lightYellow : color
 val lightPurple : color
 val gray : color
 val darkGray : color
+
+(** The colors above, in rainbow order: [[red; orange; yellow; green; blue;
+purple]]. *)
+val rainbow : color list
 
 (** {1:shapes Shapes } *)
 
@@ -239,7 +245,7 @@ val triangle : color -> number -> shape
 
     let app =
       picture
-        [ pentagon darkGrey 100
+        [ pentagon darkGray 100
         ]
 
     let main = Playground.run_app app
