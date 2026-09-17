@@ -23,7 +23,7 @@
  * keep respawning at random positions to keep a target count on
  * screen. There is no on-screen score display yet -- game3d's view has
  * no channel for a 2D HUD overlay on top of the 3D scene (see
- * docs/claude_notes/playground3d_plan.md); the score is tracked
+ * docs/claude_notes/plan_playground3d.md); the score is tracked
  * internally and visible progress comes from watching stars appear and
  * disappear. *)
 open Basics (* elm-core: float +, -, *, /, clamp *)

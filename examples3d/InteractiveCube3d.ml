@@ -18,7 +18,7 @@
  *  - a single-color cube (this library's cube has no per-face colors);
  *  - no on-screen instructions text -- game3d's view has no channel
  *    for a 2D HUD overlay on top of the 3D scene yet (see
- *    docs/claude_notes/playground3d_plan.md);
+ *    docs/claude_notes/plan_playground3d.md);
  *  - the whole scene (not just the cube) gets a mouse-driven turntable
  *    rotation around Y, this library's "up" axis (lucamug's world, and
  *    elm-playground-3d in general, is Z-up).

@@ -18,7 +18,7 @@ open Basics (* elm-core: float +, -, *, /, degrees_to_radians, etc. *)
 (* Prelude *)
 (*****************************************************************************)
 (* First version of a 3D playground on top of elm_playground. See
- * docs/claude_notes/playground3d_plan.md for the overall design
+ * docs/claude_notes/plan_playground3d.md for the overall design
  * rationale. Kept deliberately simple (single flat color per shape, no
  * near-plane clipping, painter's-algorithm depth sort instead of a
  * proper z-buffer at this compile-down-to-2D level -- the native

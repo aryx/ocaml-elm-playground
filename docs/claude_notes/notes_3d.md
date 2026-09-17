@@ -10,7 +10,7 @@ code. If you read this once, the code in `Playground3d.ml` and
 a wall of trigonometry and start looking like a small, recognizable set
 of standard building blocks.
 
-See also [`playground3d_plan.md`](playground3d_plan.md) (the original
+See also [`plan_playground3d.md`](plan_playground3d.md) (the original
 design plan) for *why* this library exists and how it's organized as
 OCaml packages; this note is about the 3D *concepts*, not the OCaml
 architecture.
@@ -49,7 +49,7 @@ are `view_space` and `project_vertex` in
 A 3D point is a triple of numbers, `(x, y, z)`. In this codebase it's
 just an OCaml tuple (see `type vec3 = float * float * float` near the
 top of `Playground3d.ml` and, duplicated, in the native backend -- see
-`playground3d_plan.md`'s notes on why that duplication exists). The
+`plan_playground3d.md`'s notes on why that duplication exists). The
 same triple is used both for *positions* ("this corner of the cube is
 here") and *directions/vectors* ("this face points this way") --
 context tells you which one you mean.
@@ -84,7 +84,7 @@ is just one of these two:
 
 There's no matrix type anywhere in `playground3d/` -- no 4x4 matrices,
 no matrix-vector multiplication. This is a deliberate simplification
-(see `playground3d_plan.md`): everything is done with these two
+(see `plan_playground3d.md`): everything is done with these two
 operations on plain 3-tuples instead. That's *not* how a real game
 engine or GPU pipeline works internally (they represent every
 transform, including projection, as a 4x4 matrix and multiply them
@@ -162,7 +162,7 @@ representations:
   games actually use internally (mouse-look naturally produces
   yaw/pitch deltas), and is the natural next step if/when
   `playground3d/` grows a first-person camera helper for something like
-  a Minecraft-style game (see `playground3d_plan.md`'s Phase 5) --
+  a Minecraft-style game (see `plan_playground3d.md`'s Phase 5) --
   you'd store `(eye, yaw, pitch)` in the game's model and compute a
   `target` from them each frame to build our existing `camera` value.
 - **Full 4x4 view matrix** -- the general, GPU-native representation;
@@ -258,7 +258,7 @@ drawn, but then a face you *were* supposed to see, drawn afterwards in
 list order, happens to cover it up). This works for a fixed demo but
 isn't a general solution -- it's one of the two things
 `Playground3d.render3d_to_2d`'s doc comment calls out as a deliberate
-improvement over the original (see `playground3d_plan.md`).
+improvement over the original (see `plan_playground3d.md`).
 
 ## 6. The hardest problem in classical 3D graphics: hidden surface removal
 
@@ -338,7 +338,7 @@ its two backends land on two different points in the painter's-algorithm
 vs. z-buffer trade-off above, purely because of what each platform
 makes possible (the web backend has no way to touch individual pixels
 at all, so a per-pixel z-buffer isn't an option there; see
-`playground3d_plan.md`).
+`plan_playground3d.md`).
 
 ## 7. Rasterization: turning one triangle into pixels
 
@@ -503,7 +503,7 @@ library's current scope but worth knowing the "proper" fix for:
 
 | | lucamug's elm-playground-3d | `playground3d/` |
 |---|---|---|
-| Shape representation | `Shape3d`/`Form3d`, world-space points, no transform header | Same design, copied deliberately (see `playground3d_plan.md`) |
+| Shape representation | `Shape3d`/`Form3d`, world-space points, no transform header | Same design, copied deliberately (see `plan_playground3d.md`) |
 | Camera | Eye + target ("look-at"), fixed presets (`camera1`..`camera4`) | Same eye/target model, but a real record you construct with your own values, and (unlike lucamug's) usable as a genuinely *moving* value computed fresh each frame from your game's model |
 | Backface culling | None | Yes (§5) |
 | Hidden surface removal | None (relies on manual face ordering + specific camera angles) | Painter's algorithm on web (§6); a real z-buffer on native (§6) |
@@ -514,7 +514,7 @@ library's current scope but worth knowing the "proper" fix for:
 The one approach neither library uses at all, worth knowing about as
 "the other end of the spectrum": **WebGL/OpenGL**, as used by
 `elm-explorations/webgl` and the much more full-featured
-`ianmackenzie/elm-3d-scene` (mentioned in `playground3d_plan.md`).
+`ianmackenzie/elm-3d-scene` (mentioned in `plan_playground3d.md`).
 There, instead of writing your own projection math and rasterizer by
 hand in OCaml/Elm, you upload vertex data to the GPU and write small
 programs ("shaders", in a C-like language called GLSL) that the GPU

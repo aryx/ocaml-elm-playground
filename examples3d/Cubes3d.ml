@@ -13,7 +13,7 @@
  * actually correct (not just "looks like a cube in silhouette", as
  * Cube3d.ml alone can't tell you, since it is a single flat color), and
  * to get a real FPS reading with more than a handful of triangles on
- * screen -- see docs/claude_notes/playground3d_plan.md's Phase 4. *)
+ * screen -- see docs/claude_notes/plan_playground3d.md's Phase 4. *)
 open Playground
 open Playground3d
 

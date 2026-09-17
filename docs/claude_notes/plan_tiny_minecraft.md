@@ -4,7 +4,7 @@
 
 `~/software-src/game/tiny-minecraft/main.py` (the classic
 `fogleman/Minecraft` Pyglet demo, ~750 lines) is the original
-motivating target for `playground3d/` (see `playground3d_plan.md`'s
+motivating target for `playground3d/` (see `plan_playground3d.md`'s
 Phase 5, never detailed there beyond a sketch). This plan replaces that
 sketch with a concrete, phased port to `games3d/`, now that the core
 library, all 5 debug rendering toggles, texture support, and a `box`

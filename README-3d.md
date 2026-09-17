@@ -16,7 +16,7 @@ purpose -- you can read every line involved in turning a 3D shape into
 pixels on screen. See
 [`docs/claude_notes/notes_3d.md`](docs/claude_notes/notes_3d.md) for a
 from-scratch tutorial on the 3D concepts involved, and
-[`docs/claude_notes/playground3d_plan.md`](docs/claude_notes/playground3d_plan.md)
+[`docs/claude_notes/plan_playground3d.md`](docs/claude_notes/plan_playground3d.md)
 for the design rationale.
 
 Credit where due: the core API design (world-space shapes, an
@@ -115,7 +115,7 @@ This is genuinely experimental and quite young:
 - No 2D HUD/overlay channel -- a game can't draw score/instructions
   text on top of the 3D scene yet.
 
-See `docs/claude_notes/playground3d_plan.md` and `notes_3d_opti.md` for
+See `docs/claude_notes/plan_playground3d.md` and `notes_3d_opti.md` for
 more on what's implemented, what's been fixed along the way, and
 what's planned next (a `tiny-minecraft`-style voxel game is the
 original motivating target).
