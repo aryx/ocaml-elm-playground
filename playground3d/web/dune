@@ -1,0 +1,11 @@
+(library
+ (public_name elm_playground_3d_web)
+ (implements elm_playground_3d)
+ (libraries
+   elm_playground
+   elm_playground_3d
+   elm_playground_web ; not just the virtual elm_playground_3d: this
+                       ; backend reuses elm_playground_web's run_app
+                       ; directly instead of implementing its own
+ )
+)
