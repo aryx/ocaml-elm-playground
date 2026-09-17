@@ -21,6 +21,7 @@ Documentation
 * [Basic games](https://aryx.github.io/ocaml-elm-playground/games/)
 * [API reference](https://aryx.github.io/ocaml-elm-playground/elm_playground/Playground/)
 * [Index](https://aryx.github.io/ocaml-elm-playground)
+* [Changelog](changes.txt)
 
 Features
 --------------
@@ -141,8 +142,8 @@ Evan Czaplicki for Elm at https://github.com/evancz/elm-playground
 I (Pad) mostly ported the API and ideas, as well as some of the web backend code,
 to OCaml. I then added also a native backend (using tsdl), which was not
 in the Elm version (Elm is a web language).
-The library is very small, less than 3000 LOC.
+The final library is very small, less than 3000 LOC.
 
 I recently (Sep 2026) used Claude Code to fix many small bugs
-and now about 20% of the code was written by Claude Code
+and now about 20% of the code is written by Claude Code
 (especially the code to handle animaged GIFs).
