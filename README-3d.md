@@ -29,7 +29,10 @@ library [`elm_playground`](README.md) ports to OCaml). The
 `games3d/StarCollector3d.ml` game's mechanics are adapted from Nate
 Abele's [elm-3d-playground](https://github.com/nateabele/elm-3d-playground)
 (a different lineage, wrapping `elm-3d-scene`'s real WebGL rendering in
-an elm-playground-style API).
+an elm-playground-style API). See
+[`docs/claude_notes/notes_playground3d_related_work.md`](docs/claude_notes/notes_playground3d_related_work.md)
+for the fuller related-work survey, including VRML, OpenGL, WebGL,
+Vulkan, and Unity.
 
 Two backends, one API
 ----------------------
