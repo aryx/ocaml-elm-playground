@@ -77,6 +77,97 @@ let rgb_of_color (color : Playground.color) : int * int * int =
       (component 1, component 3, component 5)
 
 (*****************************************************************************)
+(* Shading *)
+(*****************************************************************************)
+(* Pluggable: edit shading_mode's initial value below, or press "m" at
+ * runtime to cycle through modes while a game is running (a debug
+ * toggle in the same spirit as e.g. Quake's r_drawflat console
+ * variable, or a "wireframe view" hotkey -- see the key_down handling
+ * in run_app3d). Only 2 of the 4 modes from
+ * docs/claude_notes/notes_3d_shading.md are
+ * implemented: flat_color (no lighting at all, every face/texel drawn
+ * exactly as given -- what this file always did before) and
+ * flat_shading (one brightness value per FACE, from its already-
+ * computed normal -- see render_shape3d, which already computes a
+ * face's normal for backface culling and just passes it along here
+ * too, at no extra cost). Gouraud and Phong both need a normal *per
+ * vertex* (Gouraud blends per-vertex lighting across a face; Phong
+ * interpolates per-vertex normals and lights every pixel), which our
+ * shapes don't have any use for yet: cube/box/plane are made of flat
+ * faces whose corners aren't shared with neighboring faces, so a
+ * "per-vertex" normal would just equal that face's own flat normal --
+ * Gouraud/Phong would render pixel-for-pixel identical to flat_shading
+ * until a curved primitive (e.g. a future sphere, tessellated from many
+ * small faces with genuinely varying vertex normals) exists to make
+ * per-vertex normal blending visible at all. *)
+
+type shading = Flat_color | Flat_shading
+
+(* claude: a ref, not a plain constant, so it can be changed at
+ * runtime (see cycle_shading_mode and the "m" key below) -- the same
+ * kind of debug toggle many game engines/games expose (e.g. Quake's
+ * r_drawflat console variable, or a "wireframe view" hotkey), handy
+ * for comparing shading modes side by side without restarting. *)
+let shading_mode : shading ref = ref Flat_shading
+
+let cycle_shading_mode () =
+  shading_mode :=
+    (match !shading_mode with
+    | Flat_color -> Flat_shading
+    | Flat_shading -> Flat_color)
+
+(* claude: this is a DIRECTIONAL light -- a "sun" -- not a light at a
+ * position. There are 3 common kinds of light in 3D graphics, in
+ * increasing order of realism/cost:
+ *  - directional (what this is): infinitely far away, so its rays are
+ *    effectively parallel everywhere in the scene -- there is no
+ *    "origin point" to specify, only a *direction* it shines from,
+ *    the same for every face regardless of where that face is. The
+ *    real sun works this way for all practical purposes (it's ~150
+ *    million km away), which is why this is the natural choice for an
+ *    outdoor scene. Cheapest to compute: one constant vector, reused
+ *    for every face, no per-face distance/attenuation math at all.
+ *  - point light: sits at an actual 3D position (e.g. a lightbulb or
+ *    torch); the direction *to* it, and therefore how a face is lit,
+ *    is different for every face depending on where that face is
+ *    relative to the light, and realistically its brightness also
+ *    falls off with distance ("attenuation"). More expensive (a
+ *    per-face, or per-pixel, direction+distance calculation instead of
+ *    one shared constant) and not implemented here.
+ *  - spotlight: a point light further restricted to a cone (a
+ *    direction plus a cutoff angle) -- even more parameters, also not
+ *    implemented here.
+ *
+ * The vector itself is a DIRECTION, not a position: by convention here
+ * it points FROM a lit surface TOWARDS the light (so
+ * [dot normal light_dir] below is large/positive exactly when a face's
+ * normal points roughly *at* the light, i.e. is well-lit -- see
+ * brightness_of_normal). (1., 1.3, 0.6) reads as "the sun sits up and
+ * off to the +X/+Z side" -- an arbitrary but reasonable-looking choice,
+ * not derived from anything; e.g. changing it to (0., 1., 0.) would put
+ * the sun straight overhead instead (top faces bright, sides dimmer,
+ * undersides at the `ambient` floor below). Not exposed to the public
+ * API yet -- a game can't configure this per scene, only by editing
+ * this constant and recompiling. *)
+let light_dir : vec3 = normalize (1., 1.3, 0.6)
+
+(* claude: never fully black (a face directly facing away from the
+ * light stays at least at ambient brightness) -- a real scene has some
+ * ambient/bounced light even on surfaces not directly facing the sun,
+ * and a fully-black face would look like a hole rather than a shaded
+ * surface *)
+let ambient = 0.25
+
+let brightness_of_normal (normal : vec3) : float =
+  match !shading_mode with
+  | Flat_color -> 1.
+  | Flat_shading ->
+      let lit = Stdlib.max 0. (dot normal light_dir) in
+      ambient +. ((1. -. ambient) *. lit)
+
+let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_int c *. brightness)
+
+(*****************************************************************************)
 (* Textures *)
 (*****************************************************************************)
 (* Real per-pixel texture sampling -- this is the one thing the web
@@ -311,6 +402,103 @@ let rasterize_triangle
     done
 
 (*****************************************************************************)
+(* Painter's algorithm (pluggable alternative to the z-buffer above --
+ * "z" to toggle at runtime, see visibility_mode below; notes_3d.md
+ * section 6 has the full history/trade-off) *)
+(*****************************************************************************)
+(* The exact same triangle-fill approach as rasterize_triangle above
+ * (bounding box + edge functions + perspective-correct u/v), but with
+ * NO per-pixel depth test at all: whichever triangle is drawn LAST
+ * simply overwrites whatever was there before, unconditionally. This
+ * only gives correct results if faces were already sorted back-to-front
+ * before calling this (see render_shape3d's depth-sort step below,
+ * only performed in this mode) -- and even then, painter's algorithm
+ * can't handle intersecting or cyclically-overlapping geometry
+ * correctly, since no single global sort order can be right for all of
+ * it at once, which is the historical reason the z-buffer approach won
+ * out. Deliberately its own separate function (rather than one
+ * rasterize_triangle with a runtime branch in the middle) so each
+ * approach can be read start to finish on its own. *)
+let rasterize_triangle_painters
+    (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t) ~(sx : int)
+    ~(sy : int) ~(fill : u:float -> v:float -> int32) (v0 : vertex) (v1 : vertex) (v2 : vertex) : unit =
+  let min_x = max 0 (int_of_float (Float.round (Stdlib.min v0.vx (Stdlib.min v1.vx v2.vx)))) in
+  let max_x = min (sx - 1) (int_of_float (Float.round (Stdlib.max v0.vx (Stdlib.max v1.vx v2.vx)))) in
+  let min_y = max 0 (int_of_float (Float.round (Stdlib.min v0.vy (Stdlib.min v1.vy v2.vy)))) in
+  let max_y = min (sy - 1) (int_of_float (Float.round (Stdlib.max v0.vy (Stdlib.max v1.vy v2.vy)))) in
+  let edge (ax, ay) (bx, by) (px, py) = ((bx -. ax) *. (py -. ay)) -. ((by -. ay) *. (px -. ax)) in
+  let p0 = (v0.vx, v0.vy) and p1 = (v1.vx, v1.vy) and p2 = (v2.vx, v2.vy) in
+  let area = edge p0 p1 p2 in
+  let epsilon = 1e-4 (* same crack fix as rasterize_triangle, see there *) in
+  let inv_area = 1. /. area in
+  if area <> 0. then
+    for py = min_y to max_y do
+      for px = min_x to max_x do
+        let p = (float_of_int px +. 0.5, float_of_int py +. 0.5) in
+        let w0 = edge p1 p2 p in
+        let w1 = edge p2 p0 p in
+        let w2 = edge p0 p1 p in
+        let inside =
+          if area > 0. then w0 >= -.epsilon && w1 >= -.epsilon && w2 >= -.epsilon
+          else w0 <= epsilon && w1 <= epsilon && w2 <= epsilon
+        in
+        if inside then begin
+          let l0 = w0 *. inv_area and l1 = w1 *. inv_area and l2 = w2 *. inv_area in
+          let inv_z = (l0 *. v0.inv_z) +. (l1 *. v1.inv_z) +. (l2 *. v2.inv_z) in
+          let u_over_z = (l0 *. v0.u_over_z) +. (l1 *. v1.u_over_z) +. (l2 *. v2.u_over_z) in
+          let v_over_z = (l0 *. v0.v_over_z) +. (l1 *. v1.v_over_z) +. (l2 *. v2.v_over_z) in
+          let u = u_over_z /. inv_z and v = v_over_z /. inv_z in
+          let idx = (py * sx) + px in
+          Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v)
+        end
+      done
+    done
+
+type visibility = Z_buffer | Painters_algorithm
+
+let visibility_mode : visibility ref = ref Z_buffer
+
+let cycle_visibility_mode () =
+  visibility_mode := (match !visibility_mode with Z_buffer -> Painters_algorithm | Painters_algorithm -> Z_buffer)
+
+(*****************************************************************************)
+(* Wireframe (pluggable: "f" to toggle at runtime, see render_mode below) *)
+(*****************************************************************************)
+(* Draw only a triangle's 3 edges, as plain lines, instead of filling
+ * its interior -- deliberately much simpler code than rasterize_triangle
+ * above (no edge-function/barycentric/z-buffer machinery at all, just
+ * walk each of the 3 edges pixel by pixel). This is a basic DDA
+ * ("digital differential analyzer") line-drawer: step along whichever
+ * axis the line is longer in, one pixel per step, linearly interpolating
+ * the other axis -- simpler (if slightly less precise) to read than the
+ * classic integer-only Bresenham algorithm, and plenty fast enough for
+ * drawing a handful of triangle edges. *)
+let draw_line
+    (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t) ~(sx : int)
+    ~(sy : int) (pixel : int32) ((x0, y0) : float * float) ((x1, y1) : float * float) : unit =
+  let steps = Stdlib.max 1 (int_of_float (Stdlib.max (abs_float (x1 -. x0)) (abs_float (y1 -. y0)))) in
+  for i = 0 to steps do
+    let t = float_of_int i /. float_of_int steps in
+    let px = int_of_float (Float.round (x0 +. (t *. (x1 -. x0)))) in
+    let py = int_of_float (Float.round (y0 +. (t *. (y1 -. y0)))) in
+    if px >= 0 && px < sx && py >= 0 && py < sy then
+      Bigarray.Array1.unsafe_set framebuffer ((py * sx) + px) pixel
+  done
+
+let draw_triangle_wireframe
+    (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t) ~(sx : int)
+    ~(sy : int) (pixel : int32) (v0 : vertex) (v1 : vertex) (v2 : vertex) : unit =
+  let p0 = (v0.vx, v0.vy) and p1 = (v1.vx, v1.vy) and p2 = (v2.vx, v2.vy) in
+  draw_line framebuffer ~sx ~sy pixel p0 p1;
+  draw_line framebuffer ~sx ~sy pixel p1 p2;
+  draw_line framebuffer ~sx ~sy pixel p2 p0
+
+type render_mode = Filled | Wireframe
+
+let render_mode : render_mode ref = ref Filled
+let cycle_render_mode () = render_mode := (match !render_mode with Filled -> Wireframe | Wireframe -> Filled)
+
+(*****************************************************************************)
 (* Optimization: fast RGB -> pixel packing *)
 (*****************************************************************************)
 (* Isolated in its own section, separate from the simple "Render one
@@ -390,42 +578,95 @@ let pixel_of_color (color : Playground.color) : int32 = pixel_of_rgb (rgb_of_col
 
 (* the [fill] closure for a material: computed once per face, not once
  * per pixel, except for the actual texture sampling (genuinely
- * per-pixel, since the color varies across the face) *)
-let fill_of_material (material : material) : u:float -> v:float -> int32 =
+ * per-pixel, since the color varies across the face). [normal] is the
+ * face's normal (already computed by render_shape3d's caller for
+ * backface culling, just passed along) -- brightness_of_normal turns
+ * it into a single per-face brightness scalar (1.0, i.e. a no-op, in
+ * flat_color mode), applied here to whichever color this material
+ * would otherwise have produced. *)
+let fill_of_material (material : material) (normal : vec3) : u:float -> v:float -> int32 =
+  let brightness = brightness_of_normal normal in
+  let shade (r, g, b) : int32 = pixel_of_rgb (scale_channel r brightness, scale_channel g brightness, scale_channel b brightness) in
   match material with
   | Flat color ->
-      let pixel = pixel_of_color color in
+      let pixel = shade (rgb_of_color color) in
       fun ~u:_ ~v:_ -> pixel
   | Textured src -> (
       match Texture_native.load src with
-      | Some img -> fun ~u ~v -> pixel_of_rgb (sample_texture img ~u ~v)
+      | Some img -> fun ~u ~v -> shade (sample_texture img ~u ~v)
       | None ->
-          let pixel = pixel_of_color missing_texture_color in
+          let pixel = shade (rgb_of_color missing_texture_color) in
           fun ~u:_ ~v:_ -> pixel)
+
+(* claude: pluggable, "b" to toggle at runtime (see key_down below) --
+ * off is the simplest possible code (draw every face regardless of
+ * which way it points), on is backface culling as described in
+ * notes_3d.md section 5. Toggling it live shows both the "x-ray"
+ * effect of seeing the inside of solids, and the performance cost of
+ * *not* culling (roughly twice the triangles to rasterize for a closed
+ * solid like a cube). *)
+let backface_culling_enabled = ref true
 
 let render_shape3d
     (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t)
     (zbuffer : float array) ~(sx : int) ~(sy : int) (camera : Playground3d.camera)
     (shape : Playground3d.shape3d) : unit =
-  flatten_faces shape
+  let faces = flatten_faces shape in
+  (* claude: only in Painter's_algorithm mode -- rasterize_triangle_painters
+   * has no per-pixel depth test at all, so *draw order* is the only
+   * thing that determines what ends up on top; sorting faces
+   * farthest-from-the-camera-first here, so nearer faces are drawn
+   * later and end up covering farther ones, is what makes that mode
+   * look right at all (still not correct for intersecting/cyclically-
+   * overlapping geometry -- see that function's doc comment). The
+   * z-buffer mode needs no such sort: its per-pixel depth test makes
+   * the result correct regardless of draw order. *)
+  let faces =
+    match !visibility_mode with
+    | Z_buffer -> faces
+    | Painters_algorithm ->
+        let dist2_to_eye points =
+          let (dx, dy, dz) = sub camera.eye (face_centroid (List.map fst points)) in
+          (dx *. dx) +. (dy *. dy) +. (dz *. dz)
+        in
+        faces |> List.sort (fun (_, pts1) (_, pts2) -> compare (dist2_to_eye pts2) (dist2_to_eye pts1))
+  in
+  faces
   |> List.iter (fun (material, points) ->
          let bare_points = List.map fst points in
          let normal = face_normal bare_points in
          let centroid = face_centroid bare_points in
          (* backface cull: keep only faces whose (outward, CCW-winding)
           * normal points roughly towards the camera *)
-         if dot normal (sub camera.eye centroid) > 0. then begin
-           let fill = fill_of_material material in
-           fan_triangles points
-           |> List.iter (fun (pa, pb, pc) ->
-                  match
-                    (project_vertex camera ~sx ~sy pa, project_vertex camera ~sx ~sy pb, project_vertex camera ~sx ~sy pc)
-                  with
-                  | Some v0, Some v1, Some v2 -> rasterize_triangle framebuffer zbuffer ~sx ~sy ~fill v0 v1 v2
-                  | _ -> (* a vertex is behind the near plane: drop the whole
-                          * triangle rather than clip it -- see the module
-                          * doc comment above *)
-                      ())
+         if (not !backface_culling_enabled) || dot normal (sub camera.eye centroid) > 0. then begin
+           let fill = fill_of_material material normal in
+           let projected =
+             fan_triangles points
+             |> List.map (fun (pa, pb, pc) ->
+                    (project_vertex camera ~sx ~sy pa, project_vertex camera ~sx ~sy pb, project_vertex camera ~sx ~sy pc))
+           in
+           match !render_mode with
+           | Wireframe ->
+               (* one representative color for the whole face (sampled
+                * at the texture's center for a textured one), same
+                * idea as sampling anywhere else -- wireframe mode
+                * doesn't need a different color per pixel *)
+               let pixel = fill ~u:0.5 ~v:0.5 in
+               projected
+               |> List.iter (function
+                    | Some v0, Some v1, Some v2 -> draw_triangle_wireframe framebuffer ~sx ~sy pixel v0 v1 v2
+                    | _ -> ())
+           | Filled ->
+               projected
+               |> List.iter (function
+                    | Some v0, Some v1, Some v2 -> (
+                        match !visibility_mode with
+                        | Z_buffer -> rasterize_triangle framebuffer zbuffer ~sx ~sy ~fill v0 v1 v2
+                        | Painters_algorithm -> rasterize_triangle_painters framebuffer ~sx ~sy ~fill v0 v1 v2)
+                    | _ -> (* a vertex is behind the near plane: drop the whole
+                            * triangle rather than clip it -- see the module
+                            * doc comment above *)
+                        ())
          end)
 
 (*****************************************************************************)
@@ -528,6 +769,16 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
         | x when x = Sdl.Event.key_down ->
             let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
             let str = scancode_to_keystring key in
+            (* claude: one-shot actions on key-down (not tied to
+             * computer.keyboard's held-key state, which update3d has
+             * no reason to know about) -- debug toggles for comparing
+             * rendering strategies live, see each one's own doc
+             * comment above: "m" shading mode, "b" backface culling,
+             * "f" wireframe/filled, "z" painter's algorithm/z-buffer *)
+            if str = "m" then cycle_shading_mode ();
+            if str = "b" then backface_culling_enabled := not !backface_culling_enabled;
+            if str = "f" then cycle_render_mode ();
+            if str = "z" then cycle_visibility_mode ();
             computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
         | x when x = Sdl.Event.key_up ->
             let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
