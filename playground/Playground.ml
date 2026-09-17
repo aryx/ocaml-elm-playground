@@ -20,6 +20,8 @@ open Basics (* elm-core *)
  *  - I've avoided to use the 'vdom' type and the views functions returns
  *    instead of a vdom a list of shapes. Anyway, we do not attach
  *    any messages in the returned vdom; we use global system events.
+ *  - I've introduced Playground_platform.preload_image so better adapt
+ *    to a native context.
  *)
 
 (*****************************************************************************)
