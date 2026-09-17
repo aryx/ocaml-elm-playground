@@ -1,1 +1,4 @@
+# -*- sh -*-
+# gitignore-like file for Codemap (see https://github.com/aryx/codemap)
+
 /docs/odoc.support
