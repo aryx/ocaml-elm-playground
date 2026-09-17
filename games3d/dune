@@ -1,12 +1,9 @@
 (executables
   (names
-    Cube3d
-    Cubes3d
-    TexturedCube3d
-    InteractiveCube3d
+    StarCollector3d
   )
   (libraries
-    elm_core ; Set_.mem, Basics.clamp
+    elm_core ; Basics.clamp
     elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
     elm_playground_3d_native ; implem of virtual elm_playground_3d
