@@ -2,6 +2,7 @@
   (names
     Cube3d
     Cubes3d
+    TexturedCube3d
   )
   (libraries
     elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
