@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.2 (Q3 2026) (Dockerfile, CI hardening, cleanup)
+* 0.2 (Q3 2026) (bugfixes, Dockerfile, CI hardening, cleanup)
 # started to use Claude code
 
 ** build infra
@@ -121,15 +121,17 @@
   the .bc.js, so e.g. _build/default/examples_js/ can be opened directly
   in a browser; make now runs 'dune build @default' to include them
 
-* 0.1.7 (Q4 2024) (first GitHub Pages website, README rewrite, toy examples)
+* 0.1.7 (Q4 2024) (first GitHub Pages website, first opam release, README rewrite)
 
-** releases
-- 0.1.0 (2024-12-8): first release on OPAM (actually 0.1.7 was the version
-  released)
-- 0.2.0 (2024-12-13): first website at https://aryx.github.io/ocaml-elm-playground/
-- 0.2.1 (2024-12-24): first announce at
-  https://discuss.ocaml.org/t/ann-first-release-of-elm-playground/15838
-  and a better README at https://github.com/aryx/ocaml-elm-playground
+** build infra
+- resume the project in Dec 2024 after a ~4 year hiatus: compile with
+  recent OCaml/opam packages, drop the old dependency on commons
+- generate the *.opam files from dune-project and do the first opam
+  release, iterating 0.1.0 through 0.1.7 to fix opam-repository submission
+  issues (project renaming, missing doc tag, windows .opam.template)
+
+** test infra
+- basic GHA CI (Linux/macOS/Windows attempts), add semgrep.jsonnet check
 
 ** docs
 - first website: odoc API docs plus docs/examples/ and docs/games/ pages
@@ -139,15 +141,17 @@
   and docs/toy-web-example/ minimal standalone projects
 - add Turtle example, working both natively and on the web
 
-* 0.1 (Q4 2020 - Q4 2024) (initial prototype, dual native/web architecture, first opam release)
+** first release
+- 0.1.0: first release on OPAM (actually 0.1.7 was the version
+  released)
+- first website at https://aryx.github.io/ocaml-elm-playground/
+- first announce for christmas (24/12/2024) :) at
+  https://discuss.ocaml.org/t/ann-first-release-of-elm-playground/15838
+  and a better README at https://github.com/aryx/ocaml-elm-playground
+
+* 0.1 (Q4 2020) (refined prototype, dual native/web architecture)
 
 ** architecture
-- start from a single lib/ (SVG-based) prototype, then a separate lib2/
-  using Graphics, before settling on the current split: core/ (Basics,
-  Color, Set_, Keyboard, Time) <- system/ (Cmd, Sub) <- playground/, with
-  playground/Playground_platform.mli as a dune virtual_modules interface
-  implemented separately by playground/native/ (tsdl/SDL2 + cairo2) and
-  playground/web/ (js_of_ocaml)
 - switch native rendering from OCaml's Graphics to SDL2 (via tsdl),
   motivated by Graphics's inability to detect multiple simultaneous keys
   or keyUp/keyDown events (tried ocamlsdl2 too, see old Test_tsdl.ml /
@@ -168,19 +172,21 @@
 - games: Snake, Pong, Tetris, Asteroid
 
 ** build infra
-- resume the project in Dec 2024 after a ~4 year hiatus: compile with
-  recent OCaml/opam packages, drop the old dependency on commons
-- basic GHA CI (Linux/macOS/Windows attempts), add semgrep.jsonnet check
-- generate the *.opam files from dune-project and do the first opam
-  release, iterating 0.1.0 through 0.1.7 to fix opam-repository submission
-  issues (project renaming, missing doc tag, windows .opam.template)
+- dune
 
-* Beta (2021-01-05)
+* Beta (2020-11-26) (few basic games)
 
 - initial native (via TSDL) and web (via vdom) backends, and a few basic
   games (Pong, Asteroid, Snake, and even Tetris!) working in native and a
   few working in web
 
-* Alpha (2020-11-02)
+* Alpha (2020-11-02) (first proto)
+
+- start from a single lib/ (SVG-based) prototype, then a separate lib2/
+  using Graphics, before settling on the current split: core/ (Basics,
+  Color, Set_, Keyboard, Time) <- system/ (Cmd, Sub) <- playground/, with
+  playground/Playground_platform.mli as a dune virtual_modules interface
+  implemented separately by playground/native/ (tsdl/SDL2 + cairo2) and
+  playground/web/ (js_of_ocaml)
 
 - first commits and first prototype
