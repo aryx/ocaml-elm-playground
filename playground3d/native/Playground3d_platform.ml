@@ -456,6 +456,14 @@ let rasterize_triangle_painters
 
 type visibility = Z_buffer | Painters_algorithm
 
+(* claude: run examples3d/PaintersAlgorithmFail3d.ml and toggle "z" to
+ * actually see the difference this makes -- Cubes3d.ml's grid of
+ * separate, same-size, non-overlapping cubes doesn't stress this
+ * enough to visibly break under Painters_algorithm (a whole-face
+ * centroid-distance sort happens to get the order right almost
+ * everywhere for that scene), whereas PaintersAlgorithmFail3d.ml's two
+ * genuinely intersecting boxes cannot be correctly ordered by any
+ * single per-face decision, so it reliably shows a visible glitch. *)
 let visibility_mode : visibility ref = ref Z_buffer
 
 let cycle_visibility_mode () =
@@ -601,10 +609,26 @@ let fill_of_material (material : material) (normal : vec3) : u:float -> v:float 
 (* claude: pluggable, "b" to toggle at runtime (see key_down below) --
  * off is the simplest possible code (draw every face regardless of
  * which way it points), on is backface culling as described in
- * notes_3d.md section 5. Toggling it live shows both the "x-ray"
- * effect of seeing the inside of solids, and the performance cost of
- * *not* culling (roughly twice the triangles to rasterize for a closed
- * solid like a cube). *)
+ * notes_3d.md section 5.
+ *
+ * Toggling it live in *filled* mode (render_mode = Filled, the
+ * default) shows NO visual difference at all -- only a performance one
+ * (watch the fps counter: roughly double the triangles to rasterize
+ * for a closed solid like a cube). This isn't a limitation, it's
+ * fundamental to what culling does: in filled mode the z-buffer
+ * independently decides, per pixel, which triangle is nearest, and for
+ * a closed solid that decision always agrees with what culling would
+ * have picked anyway (a back face can never win the z-test against the
+ * front face covering the same pixels) -- so culling only ever saves
+ * work there, it can never change the picture.
+ *
+ * To actually *see* culling do something, switch to wireframe first
+ * ("f"): wireframe has no per-pixel visibility resolution of any kind
+ * (see render_mode/draw_triangle_wireframe below), so with culling off
+ * you'll see extra edges from each shape's hidden/inside faces that
+ * culling normally removes before they're ever drawn -- e.g. on a
+ * single cube, the 3 short edges that meet at its far, otherwise
+ * entirely hidden corner. *)
 let backface_culling_enabled = ref true
 
 let render_shape3d
