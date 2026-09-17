@@ -1,0 +1,20 @@
+; Reuses ../Cubes3d.ml and ../Spheres3d.ml as-is via copy_files (a build-time
+; rule, not a committed duplicate/symlink -- see plan_opengl.md) so the
+; exact same backend-agnostic source runs against elm_playground_3d_opengl
+; here and elm_playground_3d_native in ../dune, with only one real file
+; per example.
+(copy_files ../Cubes3d.ml)
+(copy_files ../Spheres3d.ml)
+
+(executables
+  (names
+    Cubes3d
+    Spheres3d
+  )
+  (libraries
+    elm_core
+    elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)
