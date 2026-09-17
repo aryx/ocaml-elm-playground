@@ -104,6 +104,24 @@ Nope
     (elm_playground (= :version))
   )
 )
+(package (name elm_playground_3d_native_common)
+  (synopsis "SDL event loop/Playground.computer bookkeeping shared by native-ish 3D playground backends")
+  (description "\
+  Not meant to be used directly -- a small library factored out of
+  elm_playground_3d_native so a future GPU-accelerated backend (see
+  docs/claude_notes/plan_opengl.md) can share the same SDL
+  window-event-draining/frame-pacing loop instead of duplicating it.
+  Generic over the model/view types (not a dependency of
+  elm_playground_3d itself) so that depending on it doesn't create a
+  second path to that virtual library alongside a backend's own
+  (implements elm_playground_3d) -- dune forbids that.
+")
+  (depends
+    (ocaml (>= "4.08.0"))
+    tsdl
+    (elm_playground (= :version))
+  )
+)
 (package (name elm_playground_3d_native)
   (synopsis "Native from-scratch software rasterizer for the 3D playground")
   (description "")
@@ -113,6 +131,7 @@ Nope
     (stb_image (>= "0.4")) ; decode textures for textured_quad/textured_cube
     ocurl ; download textures given as an http(s) URL
     (elm_playground_3d (= :version))
+    (elm_playground_3d_native_common (= :version))
   )
 )
 (package (name elm_playground_3d_web)

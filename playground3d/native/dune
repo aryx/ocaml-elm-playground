@@ -8,5 +8,6 @@
    elm_core
    elm_playground
    elm_playground_3d
+   elm_playground_3d_native_common ; SDL event loop/Playground.computer bookkeeping, shared with a future OpenGL backend
  )
 )

@@ -36,7 +36,6 @@ open Tsdl
  * enough for the modest scenes this library targets so far; revisit if
  * needed.
  *)
-open Playground
 open Playground3d
 
 (*****************************************************************************)
@@ -868,45 +867,14 @@ let render_shape3d
          end)
 
 (*****************************************************************************)
-(* Computer bookkeeping (keyboard/mouse), duplicated from Playground.ml
- * since it keeps these helpers private -- small enough not to be worth
- * exposing just for this *)
-(*****************************************************************************)
-
-let mouse_move mx my (mouse : Playground.mouse) : Playground.mouse = { mouse with mx; my }
-let mouse_down mdown (mouse : Playground.mouse) : Playground.mouse = { mouse with mdown }
-
-let update_keyboard (is_down : bool) (key : string) (keyboard : Playground.keyboard) :
-    Playground.keyboard =
-  let keys = if is_down then Set_.add key keyboard.keys else Set_.remove key keyboard.keys in
-  match key with
-  | "ArrowUp" -> { keyboard with keys; kup = is_down }
-  | "ArrowDown" -> { keyboard with keys; kdown = is_down }
-  | "ArrowLeft" -> { keyboard with keys; kleft = is_down }
-  | "ArrowRight" -> { keyboard with keys; kright = is_down }
-  | "w" -> { keyboard with keys; kw = is_down }
-  | "s" -> { keyboard with keys; ks = is_down }
-  | "a" -> { keyboard with keys; ka = is_down }
-  | "d" -> { keyboard with keys; kd = is_down }
-  | "space" -> { keyboard with keys; kspace = is_down }
-  | _ -> { keyboard with keys }
-
-let scancode_to_keystring = function
-  | "Left" -> "ArrowLeft"
-  | "Right" -> "ArrowRight"
-  | "Up" -> "ArrowUp"
-  | "Down" -> "ArrowDown"
-  | "Q" -> exit 0
-  | s -> String.lowercase_ascii s
-
-(*****************************************************************************)
 (* Run app *)
 (*****************************************************************************)
-
-let ( let* ) o f =
-  match o with
-  | Error (`Msg msg) -> failwith (Printf.sprintf "TSDL error: %s" msg)
-  | Ok x -> f x
+(* The SDL event loop/Playground.computer bookkeeping/frame-pacing itself
+ * lives in Native_loop now, shared with a future OpenGL backend (see
+ * docs/claude_notes/plan_opengl.md) -- this module only creates the
+ * window/pixel buffer and supplies the [draw] callback that turns a
+ * (camera, shape3d list) into pixels via the software rasterizer above. *)
+open Native_loop
 
 let preload_texture = Texture_native.preload
 
@@ -918,7 +886,6 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   let* sdl_window =
     Sdl.create_window ~w:sx ~h:sy "Playground3D (software rasterizer)" Sdl.Window.shown
   in
-  let sdl_event = Sdl.Event.create () in
   let* window_surface = Sdl.get_window_surface sdl_window in
 
   let pixels = Sdl.get_surface_pixels window_surface Bigarray.int32 in
@@ -941,90 +908,27 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   let zbuffer = Array.make (sx * sy) infinity in
   let background_pixel = pixel_of_color Playground.white in
 
-  let model = ref (Playground3d.init3d app3d ()) in
-  let computer = ref Playground.initial_computer in
-
-  let target_fps = 60. in
-  let target_frame_time = 1. /. target_fps in
-
-  while true do
-    let frame_start = Unix.gettimeofday () in
-
-    let rec drain_sdl_events () =
-      if Sdl.poll_event (Some sdl_event) then begin
-        let event_type = Sdl.Event.get sdl_event Sdl.Event.typ in
-        (match event_type with
-        | x when x = Sdl.Event.mouse_motion ->
-            let mx = Sdl.Event.(get sdl_event mouse_motion_x) in
-            let my = Sdl.Event.(get sdl_event mouse_motion_y) in
-            let px = float_of_int mx -. (float_of_int sx /. 2.) in
-            let py = (float_of_int sy /. 2.) -. float_of_int my in
-            computer := { !computer with mouse = mouse_move px py (!computer).mouse }
-        | x when x = Sdl.Event.mouse_button_down ->
-            computer := { !computer with mouse = mouse_down true (!computer).mouse }
-        | x when x = Sdl.Event.mouse_button_up ->
-            computer := { !computer with mouse = mouse_down false (!computer).mouse }
-        | x when x = Sdl.Event.key_down ->
-            let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
-            let str = scancode_to_keystring key in
-            (* claude: bugfix -- SDL does NOT send exactly one key_down
-             * per physical press: while a key stays held, the OS/SDL
-             * keeps re-sending key_down for it at the keyboard's repeat
-             * rate (the same mechanism that makes a held letter key
-             * spam "aaaaaa" into a text field), and Sdl.Event.get
-             * ...keyboard_repeat is 0 for the original press but > 0
-             * for each of those repeats. The one-shot toggles below
-             * were reacting to *every* key_down, repeats included --
-             * holding a key even slightly past the repeat delay
-             * (typically ~500ms) fires it 2, 3, or more times in a
-             * row, flipping the toggle back and forth and often
-             * landing right back where it started by the time the key
-             * is released, which looked like "the key does nothing."
-             * Guarding on keyboard_repeat = 0 makes each physical
-             * press count exactly once, matching what these toggles
-             * are meant to be (a single press = a single cycle) rather
-             * than every micro-second of a held key. (Held-key actions
-             * like the arrow keys don't have this problem: they don't
-             * use key_down events at all, only computer.keyboard's
-             * continuously-updated held/not-held state below, which
-             * update3d re-reads every Tick regardless of any of this.) *)
-            if Sdl.Event.(get sdl_event keyboard_repeat) = 0 then begin
-              (* debug toggles for comparing rendering strategies live,
-               * see each one's own doc comment above: "m" shading
-               * mode, "b" backface culling, "f" wireframe/filled, "z"
-               * painter's algorithm/z-buffer, "p" perspective-correct/
-               * linear interpolation *)
-              if str = "m" then cycle_shading_mode ();
-              if str = "b" then backface_culling_enabled := not !backface_culling_enabled;
-              if str = "f" then cycle_render_mode ();
-              if str = "z" then cycle_visibility_mode ();
-              if str = "p" then cycle_interpolation_mode ()
-            end;
-            computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
-        | x when x = Sdl.Event.key_up ->
-            let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
-            let str = scancode_to_keystring key in
-            computer := { !computer with keyboard = update_keyboard false str (!computer).keyboard }
-        | x when x = Sdl.Event.quit -> exit 0
-        | _ -> ());
-        drain_sdl_events ()
-      end
-    in
-    drain_sdl_events ();
-
-    computer := { !computer with time = Playground.Time (Unix.gettimeofday ()) };
-    model := Playground3d.update3d app3d !computer !model;
-
-    let (camera, shapes) = Playground3d.view3d app3d !computer !model in
-
+  (* debug toggles for comparing rendering strategies live, see each
+   * one's own doc comment above: "m" shading mode, "b" backface
+   * culling, "f" wireframe/filled, "z" painter's algorithm/z-buffer,
+   * "p" perspective-correct/linear interpolation *)
+  let on_key_press str =
+    if str = "m" then cycle_shading_mode ();
+    if str = "b" then backface_culling_enabled := not !backface_culling_enabled;
+    if str = "f" then cycle_render_mode ();
+    if str = "z" then cycle_visibility_mode ();
+    if str = "p" then cycle_interpolation_mode ()
+  in
+  let draw (_computer : Playground.computer) ((camera, shapes) : Playground3d.camera * Playground3d.shape3d list)
+      : unit =
     Bigarray.Array1.fill pixels background_pixel;
     Array.fill zbuffer 0 (sx * sy) infinity;
-    render_shape3d pixels zbuffer ~sx ~sy camera (Playground3d.group3d shapes);
-
-    let elapsed = Unix.gettimeofday () -. frame_start in
-    Sdl.set_window_title sdl_window
-      (Printf.sprintf "Playground3D -- %dx%d -- %.0f fps" sx sy (1. /. Stdlib.max 0.001 elapsed));
+    render_shape3d pixels zbuffer ~sx ~sy camera (Playground3d.group3d shapes)
+  in
+  let present () =
     let* () = Sdl.update_window_surface sdl_window in
-
-    if elapsed < target_frame_time then Unix.sleepf (target_frame_time -. elapsed)
-  done
+    ()
+  in
+  Native_loop.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D" ~on_key_press
+    ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d)
+    ~draw ~present

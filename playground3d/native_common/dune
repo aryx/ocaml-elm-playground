@@ -1,0 +1,9 @@
+(library
+ (public_name elm_playground_3d_native_common)
+ (wrapped false)
+ (libraries
+   tsdl
+   elm_core
+   elm_playground
+ )
+)

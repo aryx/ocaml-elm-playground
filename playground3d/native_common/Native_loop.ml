@@ -1,0 +1,118 @@
+(* Claude Code
+ *
+ * Copyright (C) 2026 Yoann Padioleau
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public License
+ * (LGPL) as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ *)
+open Tsdl
+
+let ( let* ) o f =
+  match o with
+  | Error (`Msg msg) -> failwith (Printf.sprintf "TSDL error: %s" msg)
+  | Ok x -> f x
+
+let mouse_move mx my (mouse : Playground.mouse) : Playground.mouse = { mouse with mx; my }
+let mouse_down mdown (mouse : Playground.mouse) : Playground.mouse = { mouse with mdown }
+
+let update_keyboard (is_down : bool) (key : string) (keyboard : Playground.keyboard) :
+    Playground.keyboard =
+  let keys = if is_down then Set_.add key keyboard.keys else Set_.remove key keyboard.keys in
+  match key with
+  | "ArrowUp" -> { keyboard with keys; kup = is_down }
+  | "ArrowDown" -> { keyboard with keys; kdown = is_down }
+  | "ArrowLeft" -> { keyboard with keys; kleft = is_down }
+  | "ArrowRight" -> { keyboard with keys; kright = is_down }
+  | "w" -> { keyboard with keys; kw = is_down }
+  | "s" -> { keyboard with keys; ks = is_down }
+  | "a" -> { keyboard with keys; ka = is_down }
+  | "d" -> { keyboard with keys; kd = is_down }
+  | "space" -> { keyboard with keys; kspace = is_down }
+  | _ -> { keyboard with keys }
+
+let scancode_to_keystring = function
+  | "Left" -> "ArrowLeft"
+  | "Right" -> "ArrowRight"
+  | "Up" -> "ArrowUp"
+  | "Down" -> "ArrowDown"
+  | "Q" -> exit 0
+  | s -> String.lowercase_ascii s
+
+let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : string)
+    ~(on_key_press : string -> unit) ~(init : unit -> 'model)
+    ~(update : Playground.computer -> 'model -> 'model) ~(view : Playground.computer -> 'model -> 'view)
+    ~(draw : Playground.computer -> 'view -> unit) ~(present : unit -> unit) : unit =
+  let sdl_event = Sdl.Event.create () in
+
+  let model = ref (init ()) in
+  let computer = ref Playground.initial_computer in
+
+  let target_fps = 60. in
+  let target_frame_time = 1. /. target_fps in
+
+  while true do
+    let frame_start = Unix.gettimeofday () in
+
+    let rec drain_sdl_events () =
+      if Sdl.poll_event (Some sdl_event) then begin
+        let event_type = Sdl.Event.get sdl_event Sdl.Event.typ in
+        (match event_type with
+        | x when x = Sdl.Event.mouse_motion ->
+            let mx = Sdl.Event.(get sdl_event mouse_motion_x) in
+            let my = Sdl.Event.(get sdl_event mouse_motion_y) in
+            let px = float_of_int mx -. (float_of_int sx /. 2.) in
+            let py = (float_of_int sy /. 2.) -. float_of_int my in
+            computer := { !computer with mouse = mouse_move px py (!computer).mouse }
+        | x when x = Sdl.Event.mouse_button_down ->
+            computer := { !computer with mouse = mouse_down true (!computer).mouse }
+        | x when x = Sdl.Event.mouse_button_up ->
+            computer := { !computer with mouse = mouse_down false (!computer).mouse }
+        | x when x = Sdl.Event.key_down ->
+            let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
+            let str = scancode_to_keystring key in
+            (* claude: bugfix -- SDL does NOT send exactly one key_down
+             * per physical press: while a key stays held, the OS/SDL
+             * keeps re-sending key_down for it at the keyboard's repeat
+             * rate (the same mechanism that makes a held letter key
+             * spam "aaaaaa" into a text field), and Sdl.Event.get
+             * ...keyboard_repeat is 0 for the original press but > 0
+             * for each of those repeats. [on_key_press] is meant for
+             * one-shot toggles (a single press = a single cycle), so
+             * it's only called when keyboard_repeat = 0 -- reacting to
+             * every key_down instead makes holding a key even slightly
+             * past the repeat delay (typically ~500ms) flip a toggle 2,
+             * 3, or more times in a row, which looked like "the key
+             * does nothing" before this guard existed. (Held-key
+             * actions like the arrow keys don't have this problem:
+             * they don't use key_down events at all, only
+             * computer.keyboard's continuously-updated held/not-held
+             * state below, which a game's update3d re-reads every Tick
+             * regardless of any of this.) *)
+            if Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
+            computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
+        | x when x = Sdl.Event.key_up ->
+            let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
+            let str = scancode_to_keystring key in
+            computer := { !computer with keyboard = update_keyboard false str (!computer).keyboard }
+        | x when x = Sdl.Event.quit -> exit 0
+        | _ -> ());
+        drain_sdl_events ()
+      end
+    in
+    drain_sdl_events ();
+
+    computer := { !computer with time = Playground.Time (Unix.gettimeofday ()) };
+    model := update !computer !model;
+
+    let v = view !computer !model in
+    draw !computer v;
+
+    let elapsed = Unix.gettimeofday () -. frame_start in
+    Sdl.set_window_title sdl_window
+      (Printf.sprintf "%s -- %dx%d -- %.0f fps" title_prefix sx sy (1. /. Stdlib.max 0.001 elapsed));
+    present ();
+
+    if elapsed < target_frame_time then Unix.sleepf (target_frame_time -. elapsed)
+  done
