@@ -1,5 +1,6 @@
 _build/
 .merlin
 *.bc.js
+docs/toy-native-example/bin/
 
 todo.txt
