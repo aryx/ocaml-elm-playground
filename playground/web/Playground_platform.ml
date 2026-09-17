@@ -10,31 +10,25 @@ open Js_browser
 (*****************************************************************************)
 (* Web backend of Playground.
  *
- * TODO: switch to Canvas, use CanvasToCairo? so closer to native playground?
- * I originally used SVG because that's what elm-playground is using, but
- * I have pbs with the mouse coordinate and the bounding box conversion,
- * so maybe simpler to switch to Canvas.
- * claude: the mouse coordinate problem is fixed now (see adjust_x_y),
- * which removes one reason to switch to Canvas.
- *
- * claude: history: ocaml-vdom's Vdom vs our hand-made mini virtual DOM
+ * history: ocaml-vdom's Vdom vs our hand-made mini virtual DOM
  * ---------------------------------------------------------------------
  * This file uses the "vdom" opam package (LexiFi's ocaml-vdom), but only
  * its Js_browser module (typed OCaml bindings to the browser API:
  * Window, Document, Element, Event, Date, ...), not its Vdom module.
  *
- * 1) First version (2020): a real Vdom app (see the commented
- *    vdom_app_of_app/run_app near the end of this file). Vdom works like
- *    Elm: you give it view/update functions, it owns the main loop, and
+ * 1) First version (2020): I originally wrote a real Vdom app (see the
+ *    commented vdom_app_of_app/run_app near the end of this file). Vdom works
+ *    like Elm: you give it view/update functions, it owns the main loop, and
  *    after each update it diffs the new virtual DOM with the previous
  *    one and patches the real DOM. But two things playground needs were
- *    missing, which I asked about in the ocaml-vdom GitHub issues:
+ *    missing, which I asked about in the ocaml-vdom GitHub issues
+ *    at https://github.com/LexiFi/ocaml-vdom/issues/ :
+ *    - #35: no canvas in Vdom; the answer was to use SVG, which we do.
  *    - #37: no way to get a Tick message on each animation frame
  *      (Elm's onAnimationFrame subscription);
  *    - #36: onkeydown on a <div> only fires when that div (or a child)
  *      has the keyboard focus, i.e., only after clicking in the page,
  *      whereas games need to see all key presses (and key releases);
- *    - (#35: no canvas in Vdom; the answer was to use SVG, which we do.)
  *    The maintainers' answer for #36/#37 was to use "custom elements":
  *    Vdom's escape hatch (a Vdom.custom node in the view, plus a
  *    handler registered with Vdom_blit.register (Vdom_blit.custom ...))
@@ -43,6 +37,7 @@ open Js_browser
  *    start a requestAnimationFrame loop, or install key listeners on
  *    window (which receives key presses whatever has the focus), and
  *    send the results as messages to the Vdom app.
+ *    But this originally looked complicated to me and I didn't fully understand.
  *
  * 2) Current version: instead of plugging our own code into Vdom's
  *    main loop via custom elements, run_app below *is* the main loop, so
@@ -55,15 +50,28 @@ open Js_browser
  *    version rebuilt the whole <svg> at each frame, which was simple but
  *    made <image> sprites disappear now and then (a new <image> element
  *    decodes its picture asynchronously) and restarted animated GIFs.
- *    So module V below is now a tiny hand-made virtual DOM (~100 lines)
- *    with its own diff/patch (V.patch), specialized for our case (flat
- *    lists of SVG shapes, children matched by position).
+ *    Claude then adjusted the module V below with a tiny hand-made virtual
+ *    DOM (~100 lines) with its own diff/patch (V.patch), specialized for
+ *    our case (flat lists of SVG shapes, children matched by position)
+ *    see https://github.com/aryx/ocaml-elm-playground/commit/e97df45
  *
  * If one day playground needs to be embedded in a bigger Vdom page
  * (e.g., with buttons or text inputs around the game), going back to
  * Vdom with custom elements as described in 1) would make sense. For a
  * standalone full-page playground, the direct approach is simpler.
+ *
+ * TODO:
+ *  - still? switch to Canvas, use CanvasToCairo? so closer to native playground?
+ *    I originally used SVG because that's what elm-playground is using, but
+ *    I had pbs with the mouse coordinate and the bounding box conversion,
+ *    so was maybe simpler to switch to Canvas?
+ *    claude: the mouse coordinate problem is fixed now (see adjust_x_y),
+ *    which removes one reason to switch to Canvas.
  *)
+
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
 
 (* When set to true, we generate a new frame only when there is an event.
  * It makes things easier to observe with Chrome developer tools.
@@ -71,7 +79,7 @@ open Js_browser
 let debug = ref false
 
 (*****************************************************************************)
-(* Helpers modules *)
+(* Helpers *)
 (*****************************************************************************)
 
 (* can also use Printf.printf I think *)
@@ -83,12 +91,15 @@ let spf = Printf.sprintf
 let string_of_number x = 
   spf "%f" x
 
-(* when using the VDROM, but tedious to use request_animation_frame
- * and a global keyboard handler => switch to basic Dom.
+(*****************************************************************************)
+(* (Mini) Virtual DOM *)
+(*****************************************************************************)
+
+(* alt: when using the VDOM, but tedious to use request_animation_frame
+ * and a global keyboard handler => switch to basic Dom (and mini-vdom later)
+ *
+ * module V = Vdom
  *)
-(*
-module V = Vdom
-*)
 
 (* when using directly the DOM *)
 module V = struct
@@ -129,7 +140,10 @@ type attr =
  * real elements in place. Frame after frame, Mario's <image> is the
  * *same* DOM element, and its href attribute is only modified when the
  * sprite really changes (e.g., from "walk" to "jump").
+ *
+ * old: alt: direct DOM with 'type t = Element.t
  *)
+
 type t = {
   tag: string;
   attrs: attr list;
@@ -423,8 +437,7 @@ let render_ngon color n radius x y angle s alpha =
     )
     []
 
-(* claude: was a TODO drawing a small circle instead of the text.
- * Same as renderWords in elm-playground: the text is centered on (x, y)
+(* claude: same as renderWords in elm-playground: the text is centered on (x, y)
  * horizontally (text-anchor) and vertically (dominant-baseline). *)
 let render_words color str x y angle s alpha =
   Svg.text_
@@ -441,8 +454,7 @@ let render_words color str x y angle s alpha =
     )
     []
 
-(* claude: was a TODO drawing a small circle instead of the polygon.
- * Same as renderPolygon in elm-playground: the points are relative to
+(* claude: Same as renderPolygon in elm-playground: the points are relative to
  * (x, y), and their y is negated since the svg y axis goes down (see
  * render_transform). *)
 let render_polygon color points x y angle s alpha =
@@ -464,7 +476,6 @@ let render_image w h src x y angle s alpha =
   Svg.image
     (Svg.Attributes.href src:: (* was xlinkHref but require attributeNS *)
      Svg.Attributes.width (string_of_number w)::
-     (* claude: was a second 'width', so 'height' was never set *)
      Svg.Attributes.height (string_of_number h)::
      Svg.Attributes.fill (render_color yellow) ::
      Svg.Attributes.transform (render_rect_transform w h x y angle s)::
@@ -612,7 +623,7 @@ let js_event_to_event evt (svg_opt : Element.t option) =
 (* run_app *)
 (*****************************************************************************)
 
-(* when using Vdom:
+(* alt: when using Vdom (but Tick and Key issues, see notes about it before):
 let (vdom_app_of_app: ('model, 'msg) Playground.app -> ('model, 'msg) V.app) = 
  fun { Playground. init; view; update; subscriptions = _subTODO } ->
   V.app 
