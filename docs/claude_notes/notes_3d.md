@@ -557,28 +557,60 @@ its own, start to finish.
   tessellated from many small faces with genuinely varying vertex
   normals) exists to make per-vertex normal blending visible at all.
 - **`b` -- backface culling on/off** (§5): off is the simplest possible
-  code (draw every triangle, full stop, an "x-ray"/double-sided view);
-  on is the library's default. Toggling it live shows both that x-ray
-  effect (seeing a solid's interior) and, watching the FPS counter, the
-  real cost of *not* culling -- roughly double the triangles to
-  rasterize for a closed shape like a cube.
+  code (draw every triangle, full stop); on is the library's default.
+  **In *filled* mode this shows no visual difference at all** -- only
+  the FPS counter changes (off draws roughly double the triangles for a
+  closed shape like a cube). That's not a limitation, it's fundamental:
+  the z-buffer already independently decides, per pixel, which triangle
+  is nearest, and for a closed solid that decision always agrees with
+  what culling would have picked anyway (a back face can never win the
+  z-test against the front face covering the same pixels) -- so culling
+  can only ever save work, never change the picture, whenever a z-test
+  is present. To actually *see* it do something, press `f` first
+  (wireframe, which has no per-pixel visibility resolution of any kind)
+  and *then* toggle `b`: with culling off you'll see extra edges from
+  each shape's hidden/inside faces that culling normally removes before
+  they're ever drawn (e.g. on a single cube, the 3 short edges meeting
+  at its otherwise entirely hidden far corner).
 - **`f` -- wireframe vs filled** (§7): wireframe draws only each
   triangle's 3 edges as plain lines, with none of the bounding-box/
   edge-function/z-buffer machinery filled rendering needs -- a good way
   to *see* the actual triangle mesh underneath a shape (e.g. watch a
   cube's 6 quad faces resolve into 12 triangles, each pair split along
-  its diagonal, exactly as described in §3 and §7).
-- **`z` -- painter's algorithm vs z-buffer** (§6): worth trying
-  specifically on `Cubes3d.ml`'s grid of overlapping cubes. Painter's
-  algorithm (sort faces back-to-front, draw with no per-pixel depth
-  test) looks fine there most of the time -- and then, from some
-  viewing angles, visibly breaks (a cube that should be behind another
-  one gets drawn on top of it instead), because sorting *whole faces*
-  by a single distance number can't correctly order faces that are
-  large, overlapping, or nearly equidistant from the camera. Switching
-  back to `z-buffer` fixes it instantly, since a per-pixel test never
-  needed one global ordering to be right about in the first place --
+  its diagonal, exactly as described in §3 and §7 -- wireframe mode
+  currently draws that internal diagonal too, not just each shape's
+  true edges).
+- **`z` -- painter's algorithm vs z-buffer** (§6): **run
+  `examples3d/PaintersAlgorithmFail3d.ml` for this one, not `Cubes3d.ml`.**
+  `Cubes3d.ml`'s grid of separate, same-size, non-overlapping cubes
+  turns out not to stress painter's algorithm enough to visibly break --
+  a whole-face centroid-distance sort happens to get the order right
+  almost everywhere for that scene (confirmed by hand: forcing
+  `Painters_algorithm` as the default there and comparing screenshots
+  showed no real difference). `PaintersAlgorithmFail3d.ml`'s two
+  genuinely intersecting boxes are the real test: where they cross,
+  *part* of one box's face is in front of the other and *part of that
+  same face* is behind it, so no single "draw this whole face before/
+  after that one" decision (all painter's algorithm gets to make, once
+  per face) can be correct for the entire crossing at once. Toggling
+  `z` there reliably shows a visible glitch; the z-buffer (the default)
+  resolves it correctly per pixel, with no such error possible --
   exactly the historical trade-off §6 describes.
+- **`p` -- perspective-correct vs linear interpolation** (§9's UV
+  section, and the "why not linear?" reasoning that turned out to apply
+  to depth too): try this on `TexturedCube3d.ml` specifically, and
+  watch rather than look at a single frame -- the bug is about *motion*.
+  `Linear` interpolates a triangle's depth and texture coordinates the
+  naive way (directly, via screen-space barycentric weights), which is
+  only an approximation, worse the more a triangle's depth varies
+  across itself; since that varies continuously as the cube rotates,
+  checker.png's own crosshair visibly swims/drifts within each face
+  instead of staying put -- confirmed live: forcing `Linear` as the
+  default reproduced exactly the swimming bug the original perspective-
+  correct fix was written to solve. `Perspective_correct` (the default)
+  interpolates `1/z`, `u/z`, `v/z` instead (genuinely linear in screen
+  space, so exact rather than approximate) and holds the texture
+  perfectly still on the rotating cube.
 
 ## Glossary (quick reference)
 
