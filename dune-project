@@ -72,7 +72,10 @@ Nope
     logs
     (cairo2 (>= "0.6.4"))
     tsdl
-    stb_image
+    ; 0.1's `result` type is [ `Ok of 'a | `Error of string ], incompatible
+    ; with the Ok/Error (`Msg _) pattern used since; 0.3 introduced the
+    ; current API.
+    (stb_image (>= "0.3"))
     ocurl
     (elm_playground (= :version))
   )
