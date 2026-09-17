@@ -1,0 +1,9 @@
+(library
+ (public_name elm_playground_3d)
+ (virtual_modules Playground3d_platform)
+ (wrapped false)
+ (libraries
+   ; commons
+   elm_core elm_playground
+ )
+)

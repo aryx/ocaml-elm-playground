@@ -91,3 +91,34 @@ Nope
      (elm_playground (= :version))
   )
 )
+
+(package (name elm_playground_3d)
+  (synopsis "Interface of the 3D Playground")
+  (description "\
+  This is just the interface of the 3D playground. You'll need an
+  actual platform library to compile your application
+  (elm_playground_3d_native or elm_playground_3d_web)
+")
+  (depends
+    (elm_core (= :version))
+    (elm_playground (= :version))
+  )
+)
+(package (name elm_playground_3d_native)
+  (synopsis "Native from-scratch software rasterizer for the 3D playground")
+  (description "")
+  (depends
+    (ocaml (>= "4.08.0"))
+    tsdl
+    (elm_playground_3d (= :version))
+  )
+)
+(package (name elm_playground_3d_web)
+  (synopsis "Web platform for the 3D playground, reusing elm_playground_web")
+  (description "")
+  (depends
+    (ocaml (>= "4.11.0"))
+    (elm_playground_3d (= :version))
+    (elm_playground_web (= :version))
+  )
+)
