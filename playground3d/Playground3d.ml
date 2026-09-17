@@ -93,19 +93,29 @@ let textured_quad src p0 p1 p2 p3 =
 
 (* claude: 6 explicit faces, all with CCW winding as seen from outside
  * (so the outward normal, computed as (p1-p0) x (p2-p0), points away
- * from the cube) -- this is what makes backface culling in
- * render3d_to_2d work. Shared by cube and textured_cube so the two
- * stay in sync. *)
-let cube_faces (size : number) : vec3 list list =
-  let h = size / 2. in
-  let p000 = (-.h, -.h, -.h)
-  and p001 = (-.h, -.h, h)
-  and p010 = (-.h, h, -.h)
-  and p011 = (-.h, h, h)
-  and p100 = (h, -.h, -.h)
-  and p101 = (h, -.h, h)
-  and p110 = (h, h, -.h)
-  and p111 = (h, h, h) in
+ * from the box) -- this is what makes backface culling in
+ * render3d_to_2d work. Shared by box, cube, and textured_cube so they
+ * stay in sync.
+ *
+ * claude: a flat single polygon (e.g. polygon3d) only has a *front*
+ * face -- backface culling makes it vanish once it rotates edge-on or
+ * past that towards the camera, which looks fine for an actual solid's
+ * surface (you were never meant to see its back either) but is a
+ * visible bug for anything meant to look like a thin line/marker from
+ * any angle (e.g. an axis indicator in a scene the user can freely
+ * rotate). A thin box, unlike a flat polygon, always has *some* face
+ * pointing towards the camera from any direction, which is why this is
+ * exposed as a real primitive rather than leaving box_faces private. *)
+let box_faces (width : number) (height : number) (depth : number) : vec3 list list =
+  let hx = width / 2. and hy = height / 2. and hz = depth / 2. in
+  let p000 = (-.hx, -.hy, -.hz)
+  and p001 = (-.hx, -.hy, hz)
+  and p010 = (-.hx, hy, -.hz)
+  and p011 = (-.hx, hy, hz)
+  and p100 = (hx, -.hy, -.hz)
+  and p101 = (hx, -.hy, hz)
+  and p110 = (hx, hy, -.hz)
+  and p111 = (hx, hy, hz) in
   [ [ p100; p110; p111; p101 ] (* +X *)
   ; [ p001; p011; p010; p000 ] (* -X *)
   ; [ p010; p011; p111; p110 ] (* +Y *)
@@ -114,14 +124,15 @@ let cube_faces (size : number) : vec3 list list =
   ; [ p000; p010; p110; p100 ] (* -Z *)
   ]
 
-let cube color size = group3d (cube_faces size |> List.map (polygon3d color))
+let box color width height depth = group3d (box_faces width height depth |> List.map (polygon3d color))
+let cube color size = box color size size size
 
 let textured_cube src size =
   group3d
-    (cube_faces size
+    (box_faces size size size
     |> List.map (function
          | [ p0; p1; p2; p3 ] -> textured_quad src p0 p1 p2 p3
-         | _ -> assert false (* cube_faces always returns 4-point faces *)))
+         | _ -> assert false (* box_faces always returns 4-point faces *)))
 
 let plane color width depth =
   let w = width / 2. and d = depth / 2. in

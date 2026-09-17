@@ -69,6 +69,16 @@ val group3d : shape3d list -> shape3d
     generated with no assets needed: a single flat color, centered on
     the origin so it is easy to {!move3d} into place. *)
 
+(** [box color width height depth] is a rectangular box (a generalized
+    {!cube}), centered on the origin. Prefer this over a single flat
+    {!polygon3d} for anything that needs to look like a thin
+    line/marker visible from any angle (e.g. an axis indicator in a
+    freely-rotatable scene): a flat polygon only has a front face, so
+    backface culling makes it vanish once it rotates edge-on or past
+    that towards the camera, whereas a thin box always has some face
+    pointing towards the camera. *)
+val box : Playground.color -> number -> number -> number -> shape3d
+
 (** [cube color size] is a cube of the given color, [size] units on
     each side, centered on the origin. *)
 val cube : Playground.color -> number -> shape3d
@@ -79,12 +89,17 @@ val plane : Playground.color -> number -> number -> shape3d
 
 (** {2 Textures}
 
-    Like {!Playground.image}: give a local file path (e.g. a .png), no
-    other setup needed. Evan-light on purpose -- there is no atlas/UV
-    mini-language, just "here are 4 corners, here is an image, wrap one
-    onto the other" (an advanced user who wants an atlas sub-region can
-    still reach for the {!TexturedPolygon3d} constructor directly and
-    give explicit UV coordinates per point).
+    Like {!Playground.image}: give a local file path {i or} an http(s)
+    URL (e.g. a .png), no other setup needed. Evan-light on purpose --
+    there is no atlas/UV mini-language, just "here are 4 corners, here
+    is an image, wrap one onto the other" (an advanced user who wants
+    an atlas sub-region can still reach for the {!TexturedPolygon3d}
+    constructor directly and give explicit UV coordinates per point).
+
+    A URL is downloaded (blocking) the first time it's needed; see
+    {!Playground3d_platform.preload_texture} to warm the cache ahead of
+    time instead (e.g. during a game's [init]) so the render loop never
+    has to block on a network fetch mid-game.
 
     {b Current limitation:} only the native backend actually samples the
     image (per pixel, in its rasterizer). The web backend cannot yet
