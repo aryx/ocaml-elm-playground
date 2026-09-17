@@ -250,7 +250,54 @@ let view_space (camera : Playground3d.camera) (point : vec3) : vec3 =
  * change to how interpolation itself works), and only right before
  * using an interpolated value does it divide back out to recover the
  * true z/u/v at that pixel (see "perspective divide" below). *)
-type vertex = { vx : float; vy : float; inv_z : float; u_over_z : float; v_over_z : float }
+(* A vertex ready for the rasterizer, carrying EVERY version of its
+ * depth/texture-coordinate data that either interpolation strategy
+ * below needs, computed once here so rasterize_triangle never has to
+ * recompute anything, just pick which fields to read:
+ *
+ *   - vx, vy: where this vertex lands on screen, in pixels. Always
+ *     interpolated the ordinary (linear) way -- there's nothing to
+ *     debate here, this is just "where is it".
+ *   - z: the vertex's plain view-space depth (how far in front of the
+ *     camera it is). u, v: the vertex's plain texture coordinates.
+ *     These are what you'd naively interpolate across a triangle if
+ *     you'd never heard of the problem explained below -- see "Linear"
+ *     mode.
+ *   - inv_z (= 1/z), u_over_z (= u/z), v_over_z (= v/z): the SAME
+ *     depth/texture information, but pre-divided by z. These are what
+ *     you interpolate instead if you *have* heard of the problem -- see
+ *     "Perspective_correct" mode, and the paragraph below for why.
+ *
+ * The problem, in short: perspective projection computes screen
+ * position by dividing by depth (screen_x is proportional to
+ * view_x / view_z), which makes screen position a NONLINEAR function
+ * of 3D position. z, u, and v, by contrast, are each defined to vary
+ * LINEARLY across the 3D triangle. So interpolating z/u/v linearly
+ * using screen-space barycentric weights (the obvious thing to try) is
+ * only an approximation: exact at the 3 corners, increasingly wrong
+ * towards the interior, and more wrong the more a triangle's depth
+ * varies across itself (i.e. the more obliquely/close-up it's viewed).
+ * This is visible in practice as a texture's own detail appearing to
+ * swim/warp as a shape rotates -- the classic "affine texture mapping"
+ * artifact, notorious from the original PlayStation's 3D rendering
+ * (which used exactly this shortcut for speed).
+ *
+ * The fix (a classic graphics result -- see e.g. Heckbert & Moreton,
+ * 1991, on perspective texture mapping): unlike z/u/v themselves,
+ * 1/z, u/z, and v/z genuinely ARE linear in screen space, so linearly
+ * interpolating THEM is exact, not approximate; dividing back out
+ * afterwards (see "perspective divide" in make_interpolator below)
+ * recovers the true z/u/v at that pixel. *)
+type vertex = {
+  vx : float;
+  vy : float;
+  z : float;
+  u : float;
+  v : float;
+  inv_z : float;
+  u_over_z : float;
+  v_over_z : float;
+}
 
 (* returns None if [point] is at or behind the near plane -- see the
  * module doc comment above about not clipping *)
@@ -268,10 +315,55 @@ let project_vertex (camera : Playground3d.camera) ~(sx : int) ~(sy : int)
     Some
       { vx = (fsx /. 2.) +. (ndc_x *. (fsx /. 2.));
         vy = (fsy /. 2.) -. (ndc_y *. (fsy /. 2.));
+        z = pz;
+        u;
+        v;
         inv_z;
         u_over_z = u *. inv_z;
         v_over_z = v *. inv_z;
       }
+
+(*****************************************************************************)
+(* Perspective-correct vs linear interpolation (pluggable: "p" to
+ * toggle at runtime, see key_down below) *)
+(*****************************************************************************)
+(* "Linear" is the naive, WRONG (but simpler-looking, if you don't know
+ * why it's wrong) interpolation described in vertex's doc comment
+ * above: blend z/u/v directly, the same way vx/vy are blended.
+ * "Perspective_correct" is the fix -- blend inv_z/u_over_z/v_over_z
+ * instead, then divide back out (the "perspective divide"). Both
+ * rasterize_triangle and rasterize_triangle_painters below call
+ * make_interpolator once per triangle (not once per pixel -- same
+ * "decide once, apply per pixel" shape as fill_of_material's [fill]
+ * closure) to get a little function that does whichever of the two is
+ * currently selected; from the pixel loop's point of view it's just
+ * "call interpolate to turn barycentric weights into a (z, u, v)",
+ * with no visible difference between the two modes at that call site. *)
+
+type interpolation = Perspective_correct | Linear
+
+let interpolation_mode : interpolation ref = ref Perspective_correct
+
+let cycle_interpolation_mode () =
+  interpolation_mode := (match !interpolation_mode with Perspective_correct -> Linear | Linear -> Perspective_correct)
+
+let make_interpolator (v0 : vertex) (v1 : vertex) (v2 : vertex) :
+    l0:float -> l1:float -> l2:float -> float * float * float =
+  match !interpolation_mode with
+  | Linear ->
+      fun ~l0 ~l1 ~l2 ->
+        let z = (l0 *. v0.z) +. (l1 *. v1.z) +. (l2 *. v2.z) in
+        let u = (l0 *. v0.u) +. (l1 *. v1.u) +. (l2 *. v2.u) in
+        let v = (l0 *. v0.v) +. (l1 *. v1.v) +. (l2 *. v2.v) in
+        (z, u, v)
+  | Perspective_correct ->
+      fun ~l0 ~l1 ~l2 ->
+        let inv_z = (l0 *. v0.inv_z) +. (l1 *. v1.inv_z) +. (l2 *. v2.inv_z) in
+        let u_over_z = (l0 *. v0.u_over_z) +. (l1 *. v1.u_over_z) +. (l2 *. v2.u_over_z) in
+        let v_over_z = (l0 *. v0.v_over_z) +. (l1 *. v1.v_over_z) +. (l2 *. v2.v_over_z) in
+        (* the "perspective divide": undo the *. inv_z we multiplied by
+         * back in project_vertex, now that interpolation is done *)
+        (1. /. inv_z, u_over_z /. inv_z, v_over_z /. inv_z)
 
 (*****************************************************************************)
 (* Flatten + backface cull *)
@@ -366,6 +458,11 @@ let rasterize_triangle
    * below if this ever gets in the way of reading the simpler
    * per-pixel math. *)
   let inv_area = 1. /. area in
+  (* claude: pluggable, "p" to toggle at runtime -- see
+   * make_interpolator's doc comment above for what Linear vs
+   * Perspective_correct actually means and why it matters. Computed
+   * once per triangle (not once per pixel), like [fill] below. *)
+  let interpolate = make_interpolator v0 v1 v2 in
   if area <> 0. then
     for py = min_y to max_y do
       for px = min_x to max_x do
@@ -379,22 +476,10 @@ let rasterize_triangle
         in
         if inside then begin
           let l0 = w0 *. inv_area and l1 = w1 *. inv_area and l2 = w2 *. inv_area in
-          (* claude: perspective-correct interpolation -- see vertex's
-           * doc comment above for why inv_z/u_over_z/v_over_z (not z/
-           * u/v themselves) are what's safe to interpolate linearly
-           * here. inv_z is genuinely linear in screen space, so this
-           * interpolation is exact, not an approximation; z (below) is
-           * then recovered from it (also exact), same as u and v. *)
-          let inv_z = (l0 *. v0.inv_z) +. (l1 *. v1.inv_z) +. (l2 *. v2.inv_z) in
-          let z = 1. /. inv_z in
+          let (z, u, v) = interpolate ~l0 ~l1 ~l2 in
           let idx = (py * sx) + px in
           if z < Array.unsafe_get zbuffer idx then begin
             Array.unsafe_set zbuffer idx z;
-            let u_over_z = (l0 *. v0.u_over_z) +. (l1 *. v1.u_over_z) +. (l2 *. v2.u_over_z) in
-            let v_over_z = (l0 *. v0.v_over_z) +. (l1 *. v1.v_over_z) +. (l2 *. v2.v_over_z) in
-            (* the "perspective divide": undo the /. inv_z we multiplied
-             * by back in project_vertex, now that interpolation is done *)
-            let u = u_over_z /. inv_z and v = v_over_z /. inv_z in
             Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v)
           end
         end
@@ -431,6 +516,11 @@ let rasterize_triangle_painters
   let area = edge p0 p1 p2 in
   let epsilon = 1e-4 (* same crack fix as rasterize_triangle, see there *) in
   let inv_area = 1. /. area in
+  (* claude: same pluggable interpolation choice as rasterize_triangle
+   * above (see make_interpolator's doc comment) -- this function just
+   * doesn't need the "z" part of what it returns, since it has no
+   * z-buffer to compare against. *)
+  let interpolate = make_interpolator v0 v1 v2 in
   if area <> 0. then
     for py = min_y to max_y do
       for px = min_x to max_x do
@@ -444,10 +534,7 @@ let rasterize_triangle_painters
         in
         if inside then begin
           let l0 = w0 *. inv_area and l1 = w1 *. inv_area and l2 = w2 *. inv_area in
-          let inv_z = (l0 *. v0.inv_z) +. (l1 *. v1.inv_z) +. (l2 *. v2.inv_z) in
-          let u_over_z = (l0 *. v0.u_over_z) +. (l1 *. v1.u_over_z) +. (l2 *. v2.u_over_z) in
-          let v_over_z = (l0 *. v0.v_over_z) +. (l1 *. v1.v_over_z) +. (l2 *. v2.v_over_z) in
-          let u = u_over_z /. inv_z and v = v_over_z /. inv_z in
+          let (_z, u, v) = interpolate ~l0 ~l1 ~l2 in
           let idx = (py * sx) + px in
           Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v)
         end
@@ -818,11 +905,13 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
               (* debug toggles for comparing rendering strategies live,
                * see each one's own doc comment above: "m" shading
                * mode, "b" backface culling, "f" wireframe/filled, "z"
-               * painter's algorithm/z-buffer *)
+               * painter's algorithm/z-buffer, "p" perspective-correct/
+               * linear interpolation *)
               if str = "m" then cycle_shading_mode ();
               if str = "b" then backface_culling_enabled := not !backface_culling_enabled;
               if str = "f" then cycle_render_mode ();
-              if str = "z" then cycle_visibility_mode ()
+              if str = "z" then cycle_visibility_mode ();
+              if str = "p" then cycle_interpolation_mode ()
             end;
             computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
         | x when x = Sdl.Event.key_up ->
