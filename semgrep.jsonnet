@@ -11,9 +11,10 @@ local ocaml_rules =
 
 local semgrep_rules = [
   {
-    // Just an example
+    // Just an example (actually disabled with this never matching _xxx suffix
+    // below because used in Image_native.ml)
     id: 'no-open-in',
-    match: { any: ['open_in_bin ...', 'open_in ...'] },
+    match: { any: ['open_in_bin_xxx ...', 'open_in ...'] },
     // Same but using The old syntax:
     //  "pattern-either": [
     //    { pattern: "open_in_bin ..." },
