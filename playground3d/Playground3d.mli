@@ -49,6 +49,7 @@ type number = Playground.number
 type shape3d = { alpha : number; form : form3d }
 and form3d =
   | Polygon3d of Playground.color * (number * number * number) list
+  | TexturedPolygon3d of string * ((number * number * number) * (number * number)) list
   | Group3d of shape3d list
 
 (** A flat polygon in world space, e.g. one face of a cube. Give its
@@ -75,6 +76,39 @@ val cube : Playground.color -> number -> shape3d
 (** [plane color width depth] is a flat horizontal quad (normal facing
     +Y, i.e. "up") lying on the Y=0 plane, e.g. useful as a ground. *)
 val plane : Playground.color -> number -> number -> shape3d
+
+(** {2 Textures}
+
+    Like {!Playground.image}: give a local file path (e.g. a .png), no
+    other setup needed. Evan-light on purpose -- there is no atlas/UV
+    mini-language, just "here are 4 corners, here is an image, wrap one
+    onto the other" (an advanced user who wants an atlas sub-region can
+    still reach for the {!TexturedPolygon3d} constructor directly and
+    give explicit UV coordinates per point).
+
+    {b Current limitation:} only the native backend actually samples the
+    image (per pixel, in its rasterizer). The web backend cannot yet
+    warp an image onto an arbitrary projected quad -- {!Playground.image}
+    only draws an upright, unrotated rectangle -- so for now it renders
+    textured faces as a flat gray placeholder there instead of dropping
+    them; a real fix would need a new quad-mapped-image primitive in the
+    underlying 2D {!Playground.shape} type, out of scope for this first
+    version. *)
+
+(** [textured_quad src p0 p1 p2 p3] maps the 4 corners of the image at
+    [src] onto [p0]/[p1]/[p2]/[p3] in order: top-left, top-right,
+    bottom-right, bottom-left ([src]'s row 0 is its top). *)
+val textured_quad :
+  string ->
+  number * number * number ->
+  number * number * number ->
+  number * number * number ->
+  number * number * number ->
+  shape3d
+
+(** [textured_cube src size] is like {!cube} but wraps [src] identically
+    on all 6 faces, e.g. a Minecraft-style dirt block. *)
+val textured_cube : string -> number -> shape3d
 
 (** {2 Move shapes} *)
 

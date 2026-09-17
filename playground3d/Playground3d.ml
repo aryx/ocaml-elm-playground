@@ -75,6 +75,7 @@ let normalize (v : vec3) : vec3 =
 type shape3d = { alpha : number; form : form3d }
 and form3d =
   | Polygon3d of Playground.color * vec3 list
+  | TexturedPolygon3d of string * (vec3 * (number * number)) list
   | Group3d of shape3d list
 
 let polygon3d color points =
@@ -83,6 +84,9 @@ let polygon3d color points =
 
 let group3d shapes = { alpha = 1.; form = Group3d shapes }
 
+let textured_quad src p0 p1 p2 p3 =
+  { alpha = 1.; form = TexturedPolygon3d (src, [ (p0, (0., 0.)); (p1, (1., 0.)); (p2, (1., 1.)); (p3, (0., 1.)) ]) }
+
 (*-------------------------------------------------------------------*)
 (* Basic 3D shapes *)
 (*-------------------------------------------------------------------*)
@@ -90,8 +94,9 @@ let group3d shapes = { alpha = 1.; form = Group3d shapes }
 (* claude: 6 explicit faces, all with CCW winding as seen from outside
  * (so the outward normal, computed as (p1-p0) x (p2-p0), points away
  * from the cube) -- this is what makes backface culling in
- * render3d_to_2d work. *)
-let cube color size =
+ * render3d_to_2d work. Shared by cube and textured_cube so the two
+ * stay in sync. *)
+let cube_faces (size : number) : vec3 list list =
   let h = size / 2. in
   let p000 = (-.h, -.h, -.h)
   and p001 = (-.h, -.h, h)
@@ -101,14 +106,22 @@ let cube color size =
   and p101 = (h, -.h, h)
   and p110 = (h, h, -.h)
   and p111 = (h, h, h) in
+  [ [ p100; p110; p111; p101 ] (* +X *)
+  ; [ p001; p011; p010; p000 ] (* -X *)
+  ; [ p010; p011; p111; p110 ] (* +Y *)
+  ; [ p000; p100; p101; p001 ] (* -Y *)
+  ; [ p001; p101; p111; p011 ] (* +Z *)
+  ; [ p000; p010; p110; p100 ] (* -Z *)
+  ]
+
+let cube color size = group3d (cube_faces size |> List.map (polygon3d color))
+
+let textured_cube src size =
   group3d
-    [ polygon3d color [ p100; p110; p111; p101 ] (* +X *)
-    ; polygon3d color [ p001; p011; p010; p000 ] (* -X *)
-    ; polygon3d color [ p010; p011; p111; p110 ] (* +Y *)
-    ; polygon3d color [ p000; p100; p101; p001 ] (* -Y *)
-    ; polygon3d color [ p001; p101; p111; p011 ] (* +Z *)
-    ; polygon3d color [ p000; p010; p110; p100 ] (* -Z *)
-    ]
+    (cube_faces size
+    |> List.map (function
+         | [ p0; p1; p2; p3 ] -> textured_quad src p0 p1 p2 p3
+         | _ -> assert false (* cube_faces always returns 4-point faces *)))
 
 let plane color width depth =
   let w = width / 2. and d = depth / 2. in
@@ -130,6 +143,8 @@ let rec map_points (f : vec3 -> vec3) (shape : shape3d) : shape3d =
   match shape.form with
   | Polygon3d (color, points) ->
       { shape with form = Polygon3d (color, List.map f points) }
+  | TexturedPolygon3d (src, points) ->
+      { shape with form = TexturedPolygon3d (src, List.map (fun (p, uv) -> (f p, uv)) points) }
   | Group3d shapes -> { shape with form = Group3d (List.map (map_points f) shapes) }
 
 let move3d dx dy dz shape = map_points (fun p -> add p (dx, dy, dz)) shape
@@ -158,7 +173,7 @@ let scale3d s shape = map_points (scale_vec3 s) shape
 
 let rec fade3d alpha shape =
   match shape.form with
-  | Polygon3d _ -> { shape with alpha }
+  | Polygon3d _ | TexturedPolygon3d _ -> { shape with alpha }
   | Group3d shapes -> { shape with form = Group3d (List.map (fade3d alpha) shapes) }
 
 (*****************************************************************************)
@@ -207,12 +222,22 @@ let face_normal (points : vec3 list) : vec3 =
   | p0 :: p1 :: p2 :: _ -> normalize (cross (sub p1 p0) (sub p2 p0))
   | _ -> failwith "polygon3d needs at least 3 points"
 
+(* claude: the web backend can't warp an image onto an arbitrary
+ * projected quad (Playground.image only draws an upright rectangle),
+ * so a TexturedPolygon3d renders as this flat placeholder here instead
+ * of the real texture -- see textured_quad's doc comment. The native
+ * backend samples the real texture per pixel instead, so it does not
+ * go through this function at all. *)
+let placeholder_texture_color = Playground.gray
+
 (* flatten a shape3d tree down to its leaf faces, dropping Group3d nodes
  * (their own alpha field is never read -- fade3d already pushed alpha
  * down into every leaf, same as lucamug's shape3dto2d) *)
 let rec flatten_faces (shape : shape3d) : (Playground.color * vec3 list * number) list =
   match shape.form with
   | Polygon3d (color, points) -> [ (color, points, shape.alpha) ]
+  | TexturedPolygon3d (_src, points) ->
+      [ (placeholder_texture_color, List.map fst points, shape.alpha) ]
   | Group3d shapes -> List.concat_map flatten_faces shapes
 
 let render3d_to_2d (camera : camera) (screen : Playground.screen) (shape : shape3d) :

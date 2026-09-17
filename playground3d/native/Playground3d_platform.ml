@@ -77,6 +77,51 @@ let rgb_of_color (color : Playground.color) : int * int * int =
       (component 1, component 3, component 5)
 
 (*****************************************************************************)
+(* Textures *)
+(*****************************************************************************)
+(* Real per-pixel texture sampling -- this is the one thing the web
+ * backend (see Playground3d.placeholder_texture_color) can't do, since
+ * it has no per-pixel access to anything. Local files only (unlike
+ * Playground.image, no http(s) URLs): "Evan-light" texture support
+ * doesn't need a download queue, just Stb_image.load + a cache.
+ *
+ * claude: deliberately NOT forcing ~channels here -- Stb_image.load
+ * ~channels:N with N different from the source's own channel count
+ * corrupts the decoded buffer in this project's pinned stb_image
+ * version (confirmed by hand: forcing a 3-channel PNG to 4 silently
+ * produces a buffer whose *content* is laid out as if 4 channels/pixel
+ * while img.channels/img.stride still report 3, which desyncs every
+ * sample_texture read after the first pixel). Loading at the image's
+ * native channel count (3 for RGB, 4 for RGBA -- both fine, since
+ * sample_texture below reads img.channels dynamically) sidesteps the
+ * bug entirely; only 1- or 2-channel (grayscale[+alpha]) textures are
+ * unsupported as a result, which no real texture image is likely to
+ * be. *)
+let texture_cache : (string, Stb_image.int8 Stb_image.t) Hashtbl.t = Hashtbl.create 16
+
+let load_texture (src : string) : Stb_image.int8 Stb_image.t =
+  match Hashtbl.find_opt texture_cache src with
+  | Some img -> img
+  | None -> (
+      match Stb_image.load src with
+      | Ok img ->
+          Hashtbl.add texture_cache src img;
+          img
+      | Error (`Msg msg) -> failwith (Printf.sprintf "could not load texture %S: %s" src msg))
+
+(* nearest-neighbor sampling (no filtering/mipmaps yet); (u, v) = (0, 0)
+ * is the image's top-left corner, matching textured_quad's convention *)
+let sample_texture (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) : int * int * int =
+  let clamp01 x = if x < 0. then 0. else if x > 1. then 1. else x in
+  let x = min (img.width - 1) (int_of_float (clamp01 u *. float_of_int img.width)) in
+  let y = min (img.height - 1) (int_of_float (clamp01 v *. float_of_int img.height)) in
+  let idx = img.offset + (y * img.stride) + (x * img.channels) in
+  let data = img.data in
+  ( Bigarray.Array1.unsafe_get data idx,
+    Bigarray.Array1.unsafe_get data (idx + 1),
+    Bigarray.Array1.unsafe_get data (idx + 2) )
+
+(*****************************************************************************)
 (* Projection (with depth, for the z-buffer -- see Playground3d.project
  * for the depth-less 2D version used by the web backend) *)
 (*****************************************************************************)
@@ -88,28 +133,43 @@ let view_space (camera : Playground3d.camera) (point : vec3) : vec3 =
   let relative = sub point camera.eye in
   (dot relative right, dot relative up, dot relative forward)
 
-(* returns (pixel_x, pixel_y, view_z), with (pixel_x, pixel_y) in
- * framebuffer coordinates: origin top-left, y going down (unlike
- * Playground's centered/y-up convention) *)
-let project_depth (camera : Playground3d.camera) ~(sx : int) ~(sy : int) (point : vec3) :
-    vec3 option =
-  let (vx, vy, vz) = view_space camera point in
-  if vz <= camera.near || vz >= camera.far then None
+(* a rasterizer-ready vertex: screen-space (sx, sy), view-space depth
+ * (sz, for the z-buffer), and texture coordinates (u, v; unused/(0,0)
+ * for flat-colored faces) -- all four are linearly interpolated across
+ * a triangle by rasterize_triangle below. *)
+type vertex = { vx : float; vy : float; vz : float; vu : float; vv : float }
+
+(* returns None if [point] is at or behind the near plane -- see the
+ * module doc comment above about not clipping *)
+let project_vertex (camera : Playground3d.camera) ~(sx : int) ~(sy : int)
+    ((point, (u, v)) : vec3 * (float * float)) : vertex option =
+  let (px, py, pz) = view_space camera point in
+  if pz <= camera.near || pz >= camera.far then None
   else
     let fsx = float_of_int sx and fsy = float_of_int sy in
     let aspect = fsx /. fsy in
     let f = 1. /. tan (degrees_to_radians camera.fov /. 2.) in
-    let ndc_x = f *. vx /. aspect /. vz in
-    let ndc_y = f *. vy /. vz in
-    Some ((fsx /. 2.) +. (ndc_x *. (fsx /. 2.)), (fsy /. 2.) -. (ndc_y *. (fsy /. 2.)), vz)
+    let ndc_x = f *. px /. aspect /. pz in
+    let ndc_y = f *. py /. pz in
+    Some
+      { vx = (fsx /. 2.) +. (ndc_x *. (fsx /. 2.));
+        vy = (fsy /. 2.) -. (ndc_y *. (fsy /. 2.));
+        vz = pz;
+        vu = u;
+        vv = v;
+      }
 
 (*****************************************************************************)
 (* Flatten + backface cull *)
 (*****************************************************************************)
 
-let rec flatten_faces (shape : Playground3d.shape3d) : (Playground.color * vec3 list) list =
+type material = Flat of Playground.color | Textured of string
+
+let rec flatten_faces (shape : Playground3d.shape3d) :
+    (material * (vec3 * (float * float)) list) list =
   match shape.form with
-  | Polygon3d (color, points) -> [ (color, points) ]
+  | Polygon3d (color, points) -> [ (Flat color, List.map (fun p -> (p, (0., 0.))) points) ]
+  | TexturedPolygon3d (src, points) -> [ (Textured src, points) ]
   | Group3d shapes -> List.concat_map flatten_faces shapes
 
 let face_centroid (points : vec3 list) : vec3 =
@@ -134,34 +194,40 @@ let rec fan_triangles = function
 (* Rasterize a single triangle into the framebuffer + z-buffer *)
 (*****************************************************************************)
 
+(* [fill] resolves a pixel's final color from its interpolated (u, v):
+ * a constant closure for a flat-colored face, a texture sample for a
+ * textured one -- see render_shape3d below. *)
 let rasterize_triangle
     (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t)
-    (zbuffer : float array) ~(sx : int) ~(sy : int) (pixel : int32)
-    ((x0, y0, z0) : vec3) ((x1, y1, z1) : vec3) ((x2, y2, z2) : vec3) : unit =
-  let min_x = max 0 (int_of_float (Float.round (Stdlib.min x0 (Stdlib.min x1 x2)))) in
-  let max_x = min (sx - 1) (int_of_float (Float.round (Stdlib.max x0 (Stdlib.max x1 x2)))) in
-  let min_y = max 0 (int_of_float (Float.round (Stdlib.min y0 (Stdlib.min y1 y2)))) in
-  let max_y = min (sy - 1) (int_of_float (Float.round (Stdlib.max y0 (Stdlib.max y1 y2)))) in
+    (zbuffer : float array) ~(sx : int) ~(sy : int) ~(fill : u:float -> v:float -> int32)
+    (v0 : vertex) (v1 : vertex) (v2 : vertex) : unit =
+  let min_x = max 0 (int_of_float (Float.round (Stdlib.min v0.vx (Stdlib.min v1.vx v2.vx)))) in
+  let max_x = min (sx - 1) (int_of_float (Float.round (Stdlib.max v0.vx (Stdlib.max v1.vx v2.vx)))) in
+  let min_y = max 0 (int_of_float (Float.round (Stdlib.min v0.vy (Stdlib.min v1.vy v2.vy)))) in
+  let max_y = min (sy - 1) (int_of_float (Float.round (Stdlib.max v0.vy (Stdlib.max v1.vy v2.vy)))) in
   let edge (ax, ay) (bx, by) (px, py) = ((bx -. ax) *. (py -. ay)) -. ((by -. ay) *. (px -. ax)) in
-  let area = edge (x0, y0) (x1, y1) (x2, y2) in
+  let p0 = (v0.vx, v0.vy) and p1 = (v1.vx, v1.vy) and p2 = (v2.vx, v2.vy) in
+  let area = edge p0 p1 p2 in
   if area <> 0. then
     for py = min_y to max_y do
       for px = min_x to max_x do
         let p = (float_of_int px +. 0.5, float_of_int py +. 0.5) in
-        let w0 = edge (x1, y1) (x2, y2) p in
-        let w1 = edge (x2, y2) (x0, y0) p in
-        let w2 = edge (x0, y0) (x1, y1) p in
+        let w0 = edge p1 p2 p in
+        let w1 = edge p2 p0 p in
+        let w2 = edge p0 p1 p in
         let inside =
           if area > 0. then w0 >= 0. && w1 >= 0. && w2 >= 0.
           else w0 <= 0. && w1 <= 0. && w2 <= 0.
         in
         if inside then begin
           let l0 = w0 /. area and l1 = w1 /. area and l2 = w2 /. area in
-          let z = (l0 *. z0) +. (l1 *. z1) +. (l2 *. z2) in
+          let z = (l0 *. v0.vz) +. (l1 *. v1.vz) +. (l2 *. v2.vz) in
           let idx = (py * sx) + px in
           if z < Array.unsafe_get zbuffer idx then begin
             Array.unsafe_set zbuffer idx z;
-            Bigarray.Array1.unsafe_set framebuffer idx pixel
+            let u = (l0 *. v0.vu) +. (l1 *. v1.vu) +. (l2 *. v2.vu) in
+            let v = (l0 *. v0.vv) +. (l1 *. v1.vv) +. (l2 *. v2.vv) in
+            Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v)
           end
         end
       done
@@ -178,30 +244,40 @@ let get_pixel_format () =
   | None -> failwith "no pixel format (run_app3d not started yet?)"
   | Some pf -> pf
 
-let pixel_of_color (color : Playground.color) : int32 =
-  let (r, g, b) = rgb_of_color color in
-  Sdl.map_rgb (get_pixel_format ()) r g b
+let pixel_of_rgb (r, g, b) : int32 = Sdl.map_rgb (get_pixel_format ()) r g b
+let pixel_of_color (color : Playground.color) : int32 = pixel_of_rgb (rgb_of_color color)
+
+(* the [fill] closure for a material: computed once per face, not once
+ * per pixel, except for the actual texture sampling (genuinely
+ * per-pixel, since the color varies across the face) *)
+let fill_of_material (material : material) : u:float -> v:float -> int32 =
+  match material with
+  | Flat color ->
+      let pixel = pixel_of_color color in
+      fun ~u:_ ~v:_ -> pixel
+  | Textured src ->
+      let img = load_texture src in
+      fun ~u ~v -> pixel_of_rgb (sample_texture img ~u ~v)
 
 let render_shape3d
     (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t)
     (zbuffer : float array) ~(sx : int) ~(sy : int) (camera : Playground3d.camera)
     (shape : Playground3d.shape3d) : unit =
   flatten_faces shape
-  |> List.iter (fun (color, points) ->
-         let normal = face_normal points in
-         let centroid = face_centroid points in
+  |> List.iter (fun (material, points) ->
+         let bare_points = List.map fst points in
+         let normal = face_normal bare_points in
+         let centroid = face_centroid bare_points in
          (* backface cull: keep only faces whose (outward, CCW-winding)
           * normal points roughly towards the camera *)
          if dot normal (sub camera.eye centroid) > 0. then begin
-           let pixel = pixel_of_color color in
+           let fill = fill_of_material material in
            fan_triangles points
            |> List.iter (fun (pa, pb, pc) ->
                   match
-                    ( project_depth camera ~sx ~sy pa,
-                      project_depth camera ~sx ~sy pb,
-                      project_depth camera ~sx ~sy pc )
+                    (project_vertex camera ~sx ~sy pa, project_vertex camera ~sx ~sy pb, project_vertex camera ~sx ~sy pc)
                   with
-                  | Some v0, Some v1, Some v2 -> rasterize_triangle framebuffer zbuffer ~sx ~sy pixel v0 v1 v2
+                  | Some v0, Some v1, Some v2 -> rasterize_triangle framebuffer zbuffer ~sx ~sy ~fill v0 v1 v2
                   | _ -> (* a vertex is behind the near plane: drop the whole
                           * triangle rather than clip it -- see the module
                           * doc comment above *)

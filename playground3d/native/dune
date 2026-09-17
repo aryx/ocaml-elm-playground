@@ -3,6 +3,7 @@
  (implements elm_playground_3d)
  (libraries
    tsdl
+   stb_image ; decode textures for textured_quad/textured_cube
    elm_core
    elm_playground
    elm_playground_3d

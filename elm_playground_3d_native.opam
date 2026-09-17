@@ -12,6 +12,7 @@ depends: [
   "dune" {>= "3.0"}
   "ocaml" {>= "4.08.0"}
   "tsdl"
+  "stb_image" {>= "0.4"}
   "elm_playground_3d" {= version}
   "odoc" {with-doc}
 ]
