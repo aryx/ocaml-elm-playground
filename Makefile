@@ -13,7 +13,7 @@ OPAMS=\
 default: all
 
 # claude: @default (recursive) rather than plain 'dune build' so the
-# 'default' alias in examples_js/ and games_js/ is used and their .html
+# 'default' alias in examples/js/ and games/js/ is used and their .html
 # files are copied into _build/ next to the generated .bc.js
 all: $(OPAMS)
 	dune build @default
@@ -25,8 +25,8 @@ install:
 # to test the native programs, run make and then go to
 # _build/default/examples/ (or games/) and run the .exe there
 # to test the web programs, run also make and then go to
-# _build/default/examples_js/ (or games_js/) under chrome for instance
-# with open -a "Google Chrome" _build/default/examples_js
+# _build/default/examples/js/ (or games/js/) under chrome for instance
+# with open -a "Google Chrome" _build/default/examples/js
 test:
 	dune runtest -f
 
@@ -77,9 +77,9 @@ website:
 	done
 	make js
 	for d in examples games; do \
-	  for js in _build/default/$${d}_js/*.bc.js; do \
+	  for js in _build/default/$$d/js/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
-	    install -m 644 $$js $${d}_js/$$b.html docs/$$d/; \
+	    install -m 644 $$js $$d/js/$$b.html docs/$$d/; \
 	  done; \
 	done
 
@@ -88,8 +88,8 @@ serve:
 	python3 -m http.server --directory docs 8000
 
 js:
-	dune build games_js --profile=release-js
-	dune build examples_js --profile=release-js
+	dune build games/js --profile=release-js
+	dune build examples/js --profile=release-js
 
 ###############################################################################
 # Developer targets

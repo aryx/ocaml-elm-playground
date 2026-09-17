@@ -1,9 +1,18 @@
+; claude: reuse ../*.ml as-is (a build-time copy, not a committed
+; symlink/duplicate) so the same backend-agnostic source runs against
+; elm_playground_web here and elm_playground_native in ../dune, with
+; only one real file per game.
+(copy_files ../Snake.ml)
+(copy_files ../Pong.ml)
+(copy_files ../Tetris.ml)
+(copy_files ../Asteroid.ml)
+
 (executables
-  (names 
+  (names
     Snake
     Pong
     Tetris
-    Asteroid    
+    Asteroid
   )
   (libraries
     unix

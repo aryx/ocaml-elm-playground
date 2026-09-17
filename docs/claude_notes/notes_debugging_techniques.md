@@ -187,15 +187,15 @@ time too), optionally pressing keys, and prints progress:
 ```bash
 make
 timeout 10 node docs/claude_notes/web_headless.js \
-  _build/default/games_js/Tetris.bc.js 120 "ArrowLeft,ArrowUp, "
+  _build/default/games/js/Tetris.bc.js 120 "ArrowLeft,ArrowUp, "
 echo "exit $?"      # 124 = hang, like in section 1
 
 # DUMP=1 prints the DOM tree (= the rendered shapes) every 30 frames
 DUMP=1 timeout 10 node docs/claude_notes/web_headless.js \
-  _build/default/examples_js/Animation.bc.js 91
+  _build/default/examples/js/Animation.bc.js 91
 
 # smoke test of all the web apps
-for f in examples_js/*.html games_js/*.html; do
+for f in examples/js/*.html games/js/*.html; do
   b=$(basename $f .html); d=$(dirname $f)
   [ -f _build/default/$d/$b.bc.js ] || continue
   timeout 10 node docs/claude_notes/web_headless.js \

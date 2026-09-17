@@ -1,5 +1,19 @@
+; claude: reuse ../*.ml as-is (a build-time copy, not a committed
+; symlink/duplicate) so the same backend-agnostic source runs against
+; elm_playground_web here and elm_playground_native in ../dune, with
+; only one real file per example.
+(copy_files ../Smiley.ml)
+(copy_files ../Picture.ml)
+(copy_files ../Words.ml)
+(copy_files ../Misc.ml)
+(copy_files ../Animation.ml)
+(copy_files ../Mouse.ml)
+(copy_files ../Keyboard.ml)
+(copy_files ../Turtle.ml)
+(copy_files ../Mario.ml)
+
 (executables
-  (names 
+  (names
     Smiley Picture Words Misc
     Animation
     Mouse Keyboard
