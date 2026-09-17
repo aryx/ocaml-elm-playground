@@ -130,11 +130,36 @@ let view_space (camera : Playground3d.camera) (point : vec3) : vec3 =
   let relative = sub point camera.eye in
   (dot relative right, dot relative up, dot relative forward)
 
-(* a rasterizer-ready vertex: screen-space (sx, sy), view-space depth
- * (sz, for the z-buffer), and texture coordinates (u, v; unused/(0,0)
- * for flat-colored faces) -- all four are linearly interpolated across
- * a triangle by rasterize_triangle below. *)
-type vertex = { vx : float; vy : float; vz : float; vu : float; vv : float }
+(* A rasterizer-ready vertex: screen-space (vx, vy), plus inv_z/
+ * u_over_z/v_over_z -- NOT the raw view-space depth and texture
+ * coordinates, on purpose. Perspective projection divides by depth
+ * (screen_x is proportional to view_x / view_z -- see
+ * Playground3d.project's doc comment), which makes it a *nonlinear*
+ * function of 3D position; a vertex attribute like z or a texture's
+ * (u, v), by contrast, is defined to vary *linearly* across the 3D
+ * triangle. Linearly interpolating such an attribute using screen-space
+ * barycentric weights (as rasterize_triangle does, the standard/obvious
+ * thing to do) is therefore only an approximation -- exact at the 3
+ * corners, increasingly wrong towards the interior, and *more* wrong
+ * the more a triangle's depth varies across itself (i.e. the more
+ * obliquely/close-up it's viewed). This is visible in practice: a
+ * texture's own internal detail appears to swim/warp as a shape
+ * rotates and its faces' obliqueness keeps changing -- the classic
+ * "affine texture mapping" artifact, notorious from the original
+ * PlayStation's 3D rendering (which used exactly this shortcut for
+ * speed).
+ *
+ * The standard fix (a classic graphics result -- see e.g. Heckbert &
+ * Moreton 1991 on perspective texture mapping): 1/z and (any
+ * 3D-linear attribute)/z, unlike z and that attribute individually,
+ * genuinely *are* linear in screen space, so linearly interpolating
+ * *them* is exact, not approximate. So a vertex here stores 1/z and
+ * u/z, v/z instead of z, u, v directly; rasterize_triangle
+ * interpolates those (exactly as it would the raw versions -- no
+ * change to how interpolation itself works), and only right before
+ * using an interpolated value does it divide back out to recover the
+ * true z/u/v at that pixel (see "perspective divide" below). *)
+type vertex = { vx : float; vy : float; inv_z : float; u_over_z : float; v_over_z : float }
 
 (* returns None if [point] is at or behind the near plane -- see the
  * module doc comment above about not clipping *)
@@ -148,12 +173,13 @@ let project_vertex (camera : Playground3d.camera) ~(sx : int) ~(sy : int)
     let f = 1. /. tan (degrees_to_radians camera.fov /. 2.) in
     let ndc_x = f *. px /. aspect /. pz in
     let ndc_y = f *. py /. pz in
+    let inv_z = 1. /. pz in
     Some
       { vx = (fsx /. 2.) +. (ndc_x *. (fsx /. 2.));
         vy = (fsy /. 2.) -. (ndc_y *. (fsy /. 2.));
-        vz = pz;
-        vu = u;
-        vv = v;
+        inv_z;
+        u_over_z = u *. inv_z;
+        v_over_z = v *. inv_z;
       }
 
 (*****************************************************************************)
@@ -239,6 +265,16 @@ let rasterize_triangle
    * all -- but that's a fair amount of extra bookkeeping for a problem
    * this epsilon already fixes invisibly at our scale.) *)
   let epsilon = 1e-4 in
+  (* claude: perf -- barycentric coordinates are "w / area" for each of
+   * w0/w1/w2 (3 divisions per pixel); computing 1/area once here and
+   * multiplying by it instead (inv_area, 1 division total + 3 cheaper
+   * multiplications per pixel) is behaviorally identical, just avoids
+   * redoing the same division 3 times per pixel. Just an algebraic
+   * rewrite of "w /. area" as "w *. (1. /. area)", not a change in what
+   * is computed -- feel free to inline it back to "w0 /. area" etc.
+   * below if this ever gets in the way of reading the simpler
+   * per-pixel math. *)
+  let inv_area = 1. /. area in
   if area <> 0. then
     for py = min_y to max_y do
       for px = min_x to max_x do
@@ -251,13 +287,23 @@ let rasterize_triangle
           else w0 <= epsilon && w1 <= epsilon && w2 <= epsilon
         in
         if inside then begin
-          let l0 = w0 /. area and l1 = w1 /. area and l2 = w2 /. area in
-          let z = (l0 *. v0.vz) +. (l1 *. v1.vz) +. (l2 *. v2.vz) in
+          let l0 = w0 *. inv_area and l1 = w1 *. inv_area and l2 = w2 *. inv_area in
+          (* claude: perspective-correct interpolation -- see vertex's
+           * doc comment above for why inv_z/u_over_z/v_over_z (not z/
+           * u/v themselves) are what's safe to interpolate linearly
+           * here. inv_z is genuinely linear in screen space, so this
+           * interpolation is exact, not an approximation; z (below) is
+           * then recovered from it (also exact), same as u and v. *)
+          let inv_z = (l0 *. v0.inv_z) +. (l1 *. v1.inv_z) +. (l2 *. v2.inv_z) in
+          let z = 1. /. inv_z in
           let idx = (py * sx) + px in
           if z < Array.unsafe_get zbuffer idx then begin
             Array.unsafe_set zbuffer idx z;
-            let u = (l0 *. v0.vu) +. (l1 *. v1.vu) +. (l2 *. v2.vu) in
-            let v = (l0 *. v0.vv) +. (l1 *. v1.vv) +. (l2 *. v2.vv) in
+            let u_over_z = (l0 *. v0.u_over_z) +. (l1 *. v1.u_over_z) +. (l2 *. v2.u_over_z) in
+            let v_over_z = (l0 *. v0.v_over_z) +. (l1 *. v1.v_over_z) +. (l2 *. v2.v_over_z) in
+            (* the "perspective divide": undo the /. inv_z we multiplied
+             * by back in project_vertex, now that interpolation is done *)
+            let u = u_over_z /. inv_z and v = v_over_z /. inv_z in
             Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v)
           end
         end
@@ -265,8 +311,13 @@ let rasterize_triangle
     done
 
 (*****************************************************************************)
-(* Render one frame *)
+(* Optimization: fast RGB -> pixel packing *)
 (*****************************************************************************)
+(* Isolated in its own section, separate from the simple "Render one
+ * frame" plumbing below, precisely so that section can stay a plain
+ * read of what a frame does without this optimization's bookkeeping in
+ * the way. pixel_of_color (the only thing the rest of the file calls)
+ * behaves identically whether or not the fast path below applies. *)
 
 let g_pixel_format : Sdl.pixel_format option ref = ref None
 
@@ -275,8 +326,67 @@ let get_pixel_format () =
   | None -> failwith "no pixel format (run_app3d not started yet?)"
   | Some pf -> pf
 
-let pixel_of_rgb (r, g, b) : int32 = Sdl.map_rgb (get_pixel_format ()) r g b
+(* The simple, obviously-correct way to turn an (r, g, b) triple into
+ * this window's native pixel encoding: just ask SDL. This alone is
+ * plenty fast for a *flat*-colored face (pixel_of_color is called once
+ * per face, not per pixel), but a *textured* face has a different
+ * color at every pixel, so this ends up called once per pixel of every
+ * textured triangle -- profiling that (via TexturedCube3d.ml) found it
+ * to be the dominant cost of rendering a textured scene: ~17fps versus
+ * ~87fps for a same-size flat-colored one (Sdl.map_rgb is a call into
+ * the C library, and that per-pixel call overhead adds up fast).
+ *
+ * pixel_of_rgb below tries a direct bit-shift instead (see
+ * g_fast_rgb_shifts), which needs no call into SDL at all -- but it
+ * only works for the very common case of a 32-bit-per-pixel format
+ * with 8 bits for each of red/green/blue, and would compute outright
+ * wrong colors for anything else (e.g. a 16-bit 5-6-5 format, or an
+ * indexed/paletted one). So this exact function is kept as the
+ * fallback pixel_of_rgb reaches for whenever g_fast_rgb_shifts couldn't
+ * confirm the fast path is safe -- i.e. the "slow but always correct"
+ * path is a real, reachable branch of the code, not just a comment. *)
+let pixel_of_rgb_via_sdl (r, g, b) : int32 = Sdl.map_rgb (get_pixel_format ()) r g b
+
+(* the right bit-shift for each 8-bit channel in this window's pixel
+ * format, e.g. { r_shift = 16; g_shift = 8; b_shift = 0 } for the
+ * common 0xAARRGGBB layout -- None if the format isn't the simple
+ * 32-bit/8-bit-per-channel case this optimization handles, in which
+ * case pixel_of_rgb below always falls back to pixel_of_rgb_via_sdl.
+ * Computed once in run_app3d, not touched again afterwards. *)
+let g_fast_rgb_shifts : (int * int * int) option ref = ref None
+
+(* how many bits are set in a mask, e.g. 0x0000FF00 -> 8 *)
+let popcount (mask : int32) : int =
+  let rec go mask acc =
+    if mask = 0l then acc
+    else go (Int32.shift_right_logical mask 1) (acc + Int32.to_int (Int32.logand mask 1l))
+  in
+  go mask 0
+
+(* how many trailing zero bits a mask has, e.g. 0x0000FF00 -> 8 -- the
+ * shift amount needed to move an 8-bit channel value into position *)
+let rec trailing_zeros (mask : int32) : int =
+  if mask = 0l || Int32.logand mask 1l <> 0l then 0 else 1 + trailing_zeros (Int32.shift_right_logical mask 1)
+
+let fast_rgb_shifts_of_masks ((bpp, rmask, gmask, bmask, _amask) : int * int32 * int32 * int32 * int32) :
+    (int * int * int) option =
+  if bpp = 32 && popcount rmask = 8 && popcount gmask = 8 && popcount bmask = 8 then
+    Some (trailing_zeros rmask, trailing_zeros gmask, trailing_zeros bmask)
+  else None
+
+let pixel_of_rgb (r, g, b) : int32 =
+  match !g_fast_rgb_shifts with
+  | None -> pixel_of_rgb_via_sdl (r, g, b)
+  | Some (r_shift, g_shift, b_shift) ->
+      Int32.logor
+        (Int32.logor (Int32.shift_left (Int32.of_int r) r_shift) (Int32.shift_left (Int32.of_int g) g_shift))
+        (Int32.shift_left (Int32.of_int b) b_shift)
+
 let pixel_of_color (color : Playground.color) : int32 = pixel_of_rgb (rgb_of_color color)
+
+(*****************************************************************************)
+(* Render one frame *)
+(*****************************************************************************)
 
 (* the [fill] closure for a material: computed once per face, not once
  * per pixel, except for the actual texture sampling (genuinely
@@ -377,6 +487,8 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
 
   let* pixel_format = Sdl.alloc_format (Sdl.get_surface_format_enum window_surface) in
   g_pixel_format := Some pixel_format;
+  let* masks = Sdl.pixel_format_enum_to_masks (Sdl.get_surface_format_enum window_surface) in
+  g_fast_rgb_shifts := fast_rgb_shifts_of_masks masks;
 
   (* claude: unlike playground/native's run_app, no "Loading..." message
    * first -- this rasterizer has no text-drawing capability at all, so
