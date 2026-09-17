@@ -531,6 +531,55 @@ and `playground3d/native/Playground3d_platform.ml` and see exactly what
 number produced what pixel, the same "no magic" spirit as the original
 2D `elm-playground`.
 
+## 11. Try it yourself: 4 runtime-toggleable rendering modes
+
+`playground3d/native/Playground3d_platform.ml` doesn't just describe
+several of the trade-offs above -- they're wired up as live, in-game
+toggles you can flip with a single key press while any native
+example/game is running, so you can directly compare "simple" vs "more
+correct" side by side instead of just reading about the difference.
+Each one is deliberately its own separate, clearly-sectioned
+function/code path (not one function with a runtime branch buried in
+the middle), so you can read either version of a given trade-off on
+its own, start to finish.
+
+- **`m` -- shading mode** (§8): cycles between `flat_color` (no
+  lighting at all -- every face/texel drawn exactly as given, the
+  library's behavior until this was added) and `flat_shading` (one
+  brightness value per face, from a fixed directional light and the
+  face's own normal -- the same normal already computed for backface
+  culling, reused here at no extra cost). Gouraud and Phong are
+  described in §8 but not implemented: both need a normal *per
+  vertex*, which none of this library's current shapes (`cube`/`box`/
+  `plane`) have any use for, since each face's corners aren't shared
+  with neighboring faces -- they'd render pixel-for-pixel identical to
+  `flat_shading` until a curved primitive (e.g. a future `sphere`,
+  tessellated from many small faces with genuinely varying vertex
+  normals) exists to make per-vertex normal blending visible at all.
+- **`b` -- backface culling on/off** (§5): off is the simplest possible
+  code (draw every triangle, full stop, an "x-ray"/double-sided view);
+  on is the library's default. Toggling it live shows both that x-ray
+  effect (seeing a solid's interior) and, watching the FPS counter, the
+  real cost of *not* culling -- roughly double the triangles to
+  rasterize for a closed shape like a cube.
+- **`f` -- wireframe vs filled** (§7): wireframe draws only each
+  triangle's 3 edges as plain lines, with none of the bounding-box/
+  edge-function/z-buffer machinery filled rendering needs -- a good way
+  to *see* the actual triangle mesh underneath a shape (e.g. watch a
+  cube's 6 quad faces resolve into 12 triangles, each pair split along
+  its diagonal, exactly as described in §3 and §7).
+- **`z` -- painter's algorithm vs z-buffer** (§6): worth trying
+  specifically on `Cubes3d.ml`'s grid of overlapping cubes. Painter's
+  algorithm (sort faces back-to-front, draw with no per-pixel depth
+  test) looks fine there most of the time -- and then, from some
+  viewing angles, visibly breaks (a cube that should be behind another
+  one gets drawn on top of it instead), because sorting *whole faces*
+  by a single distance number can't correctly order faces that are
+  large, overlapping, or nearly equidistant from the camera. Switching
+  back to `z-buffer` fixes it instantly, since a per-pixel test never
+  needed one global ordering to be right about in the first place --
+  exactly the historical trade-off §6 describes.
+
 ## Glossary (quick reference)
 
 - **Vertex**: one corner point of a shape.
