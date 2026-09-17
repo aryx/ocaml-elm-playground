@@ -1,0 +1,13 @@
+(library
+ (public_name elm_playground_3d_opengl)
+ (implements elm_playground_3d)
+ (libraries
+   tsdl
+   tgls.tgl3
+   threads.posix ; tgls/ctypes-foreign needs this to link, even though we don't use threads ourselves
+   elm_core
+   elm_playground
+   elm_playground_3d
+   elm_playground_3d_native_common
+ )
+)

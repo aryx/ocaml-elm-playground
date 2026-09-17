@@ -15,3 +15,17 @@
     elm_playground_3d_native ; implem of virtual elm_playground_3d
   )
 )
+
+; a separate stanza: OpenglTriangleSmoke links elm_playground_3d_opengl
+; instead of elm_playground_3d_native (see docs/claude_notes/plan_opengl.md)
+(executables
+  (names
+    OpenglTriangleSmoke
+  )
+  (libraries
+    elm_core
+    elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

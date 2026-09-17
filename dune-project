@@ -143,3 +143,19 @@ Nope
     (elm_playground_web (= :version))
   )
 )
+(package (name elm_playground_3d_opengl)
+  (synopsis "Real GPU-accelerated (OpenGL 3.3 core) platform for the 3D playground")
+  (description "\
+  See docs/claude_notes/plan_opengl.md -- a third playground3d backend,
+  alongside the native software rasterizer and the web SVG one, that
+  hands the same shape3d/camera scenes to a real GPU via OpenGL
+  instead of hand-rolling the rasterization/depth-test/shading math.
+")
+  (depends
+    (ocaml (>= "4.08.0"))
+    tsdl
+    tgls
+    (elm_playground_3d (= :version))
+    (elm_playground_3d_native_common (= :version))
+  )
+)
