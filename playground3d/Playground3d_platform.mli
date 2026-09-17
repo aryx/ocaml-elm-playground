@@ -21,3 +21,15 @@
  * to ordinary Playground.shape values every frame and delegates to the
  * existing, unmodified elm_playground_web backend. *)
 val run_app3d : ('a, 'b) Playground3d.app3d -> unit
+
+(* Load (and cache) a texture src ahead of time, e.g. for all the
+ * textures a game will need, so that a {!Playground3d.textured_quad}/
+ * {!Playground3d.textured_cube} never has to load one lazily mid-game
+ * -- mirrors {!Playground_platform.preload_image} for the 2D backend.
+ * On the native backend this blocks until the texture is downloaded
+ * (if given as an http(s) URL) and decoded, which is fine to do once
+ * up front but would freeze the render loop if done lazily on first
+ * use. The web backend doesn't actually load textures at all yet (see
+ * {!Playground3d.textured_quad}'s doc comment -- it renders a flat
+ * placeholder color there), so this is a no-op there for now. *)
+val preload_texture : string -> unit

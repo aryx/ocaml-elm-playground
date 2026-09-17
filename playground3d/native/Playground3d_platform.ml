@@ -81,33 +81,30 @@ let rgb_of_color (color : Playground.color) : int * int * int =
 (*****************************************************************************)
 (* Real per-pixel texture sampling -- this is the one thing the web
  * backend (see Playground3d.placeholder_texture_color) can't do, since
- * it has no per-pixel access to anything. Local files only (unlike
- * Playground.image, no http(s) URLs): "Evan-light" texture support
- * doesn't need a download queue, just Stb_image.load + a cache.
+ * it has no per-pixel access to anything. Loading (a local file path or
+ * an http(s) URL, with caching and a preload queue) lives in
+ * Texture_native, the same split as playground/native's
+ * Playground_platform.ml/Image_native.ml.
  *
- * claude: deliberately NOT forcing ~channels here -- Stb_image.load
- * ~channels:N with N different from the source's own channel count
- * corrupts the decoded buffer in this project's pinned stb_image
- * version (confirmed by hand: forcing a 3-channel PNG to 4 silently
- * produces a buffer whose *content* is laid out as if 4 channels/pixel
- * while img.channels/img.stride still report 3, which desyncs every
+ * claude: Texture_native deliberately does NOT force a channel count
+ * when calling Stb_image.load -- Stb_image.load ~channels:N with N
+ * different from the source's own channel count corrupts the decoded
+ * buffer in this project's pinned stb_image version (confirmed by
+ * hand: forcing a 3-channel PNG to 4 silently produces a buffer whose
+ * *content* is laid out as if 4 channels/pixel while
+ * img.channels/img.stride still report 3, which desyncs every
  * sample_texture read after the first pixel). Loading at the image's
  * native channel count (3 for RGB, 4 for RGBA -- both fine, since
  * sample_texture below reads img.channels dynamically) sidesteps the
  * bug entirely; only 1- or 2-channel (grayscale[+alpha]) textures are
  * unsupported as a result, which no real texture image is likely to
  * be. *)
-let texture_cache : (string, Stb_image.int8 Stb_image.t) Hashtbl.t = Hashtbl.create 16
 
-let load_texture (src : string) : Stb_image.int8 Stb_image.t =
-  match Hashtbl.find_opt texture_cache src with
-  | Some img -> img
-  | None -> (
-      match Stb_image.load src with
-      | Ok img ->
-          Hashtbl.add texture_cache src img;
-          img
-      | Error (`Msg msg) -> failwith (Printf.sprintf "could not load texture %S: %s" src msg))
+(* a bright, unmistakable "this texture failed to load" color -- the
+ * same convention (a magenta/checkerboard placeholder) many game
+ * engines use, rather than silently falling back to something that
+ * could be mistaken for an intentional color *)
+let missing_texture_color = Playground.rgb 255 0 255
 
 (* nearest-neighbor sampling (no filtering/mipmaps yet); (u, v) = (0, 0)
  * is the image's top-left corner, matching textured_quad's convention *)
@@ -208,6 +205,40 @@ let rasterize_triangle
   let edge (ax, ay) (bx, by) (px, py) = ((bx -. ax) *. (py -. ay)) -. ((by -. ay) *. (px -. ax)) in
   let p0 = (v0.vx, v0.vy) and p1 = (v1.vx, v1.vy) and p2 = (v2.vx, v2.vy) in
   let area = edge p0 p1 p2 in
+  (* claude: bugfix -- was a strict ">= 0."/"<= 0." test here, which is
+   * exactly correct in real-number math but not in floating point, and
+   * caused a visible bug: a rectangular face (e.g. one face of a
+   * `box`) is always split into 2 triangles sharing a diagonal edge
+   * (see fan_triangles), and for a pixel sitting exactly on that
+   * shared edge, both triangles compute an edge-function value that is
+   * mathematically exactly 0 -- so with a strict ">= 0." test, *both*
+   * triangles would consider that pixel "inside" and draw it (harmless
+   * double-drawing, not a bug). In practice, floating-point rounding
+   * (the two triangles reach that shared edge via different vertex
+   * triples, e.g. edge p1-p2 for one triangle vs. edge p0-p2 for
+   * dealing with the same physical line, so the arithmetic isn't
+   * bit-for-bit identical) can nudge the computed value to something
+   * like -1e-10 instead of exactly 0 for *both* triangles at once, at
+   * that same pixel -- so *neither* draws it, leaving a 1-pixel-wide
+   * gap exactly along the diagonal. This is a well-known rasterizer
+   * artifact usually called a "crack" or "T-junction gap". It's
+   * angle-dependent (only shows up for the specific projected
+   * orientations where rounding happens to tip a shared-edge value
+   * across zero), which is why it only appeared "sometimes, when the
+   * camera moves" instead of being reliably reproducible on both
+   * sides.
+   *
+   * The fix: nudge the boundary very slightly towards "inside" (an
+   * epsilon tolerance) instead of testing against exactly 0, so a
+   * shared edge is now *reliably* inside for both triangles even after
+   * rounding error, trading a theoretical, invisible sub-pixel amount
+   * of double-drawing for the elimination of the gap. (Real GPU
+   * rasterizers instead use a "top-left fill rule" -- a tie-breaking
+   * convention that assigns each shared-edge pixel to exactly one of
+   * the two triangles, so there is neither a gap nor double-drawing at
+   * all -- but that's a fair amount of extra bookkeeping for a problem
+   * this epsilon already fixes invisibly at our scale.) *)
+  let epsilon = 1e-4 in
   if area <> 0. then
     for py = min_y to max_y do
       for px = min_x to max_x do
@@ -216,8 +247,8 @@ let rasterize_triangle
         let w1 = edge p2 p0 p in
         let w2 = edge p0 p1 p in
         let inside =
-          if area > 0. then w0 >= 0. && w1 >= 0. && w2 >= 0.
-          else w0 <= 0. && w1 <= 0. && w2 <= 0.
+          if area > 0. then w0 >= -.epsilon && w1 >= -.epsilon && w2 >= -.epsilon
+          else w0 <= epsilon && w1 <= epsilon && w2 <= epsilon
         in
         if inside then begin
           let l0 = w0 /. area and l1 = w1 /. area and l2 = w2 /. area in
@@ -255,9 +286,12 @@ let fill_of_material (material : material) : u:float -> v:float -> int32 =
   | Flat color ->
       let pixel = pixel_of_color color in
       fun ~u:_ ~v:_ -> pixel
-  | Textured src ->
-      let img = load_texture src in
-      fun ~u ~v -> pixel_of_rgb (sample_texture img ~u ~v)
+  | Textured src -> (
+      match Texture_native.load src with
+      | Some img -> fun ~u ~v -> pixel_of_rgb (sample_texture img ~u ~v)
+      | None ->
+          let pixel = pixel_of_color missing_texture_color in
+          fun ~u:_ ~v:_ -> pixel)
 
 let render_shape3d
     (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t)
@@ -325,6 +359,8 @@ let ( let* ) o f =
   | Error (`Msg msg) -> failwith (Printf.sprintf "TSDL error: %s" msg)
   | Ok x -> f x
 
+let preload_texture = Texture_native.preload
+
 let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in
@@ -341,6 +377,15 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
 
   let* pixel_format = Sdl.alloc_format (Sdl.get_surface_format_enum window_surface) in
   g_pixel_format := Some pixel_format;
+
+  (* claude: unlike playground/native's run_app, no "Loading..." message
+   * first -- this rasterizer has no text-drawing capability at all, so
+   * the window just stays whatever the OS shows it as (typically blank)
+   * until the first frame is ready. Fine for now (a texture-heavy game
+   * should mostly preload_texture everything it needs up front anyway,
+   * making this a short, one-time pause), revisit if it's ever
+   * noticeable. *)
+  Texture_native.load_queued ();
 
   let zbuffer = Array.make (sx * sy) infinity in
   let background_pixel = pixel_of_color Playground.white in

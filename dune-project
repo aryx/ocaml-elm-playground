@@ -111,6 +111,7 @@ Nope
     (ocaml (>= "4.08.0"))
     tsdl
     (stb_image (>= "0.4")) ; decode textures for textured_quad/textured_cube
+    ocurl ; download textures given as an http(s) URL
     (elm_playground_3d (= :version))
   )
 )

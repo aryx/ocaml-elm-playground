@@ -34,3 +34,8 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   let initial = Playground3d.init3d app3d () in
   let app2d = Playground.game view2d update2d initial in
   Playground_platform.run_app app2d
+
+(* claude: no-op -- this backend doesn't load textures at all yet (see
+ * Playground3d.textured_quad's doc comment: it renders a flat
+ * placeholder color instead), so there's nothing to warm up. *)
+let preload_texture (_src : string) : unit = ()

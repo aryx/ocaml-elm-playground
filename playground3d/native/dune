@@ -4,6 +4,7 @@
  (libraries
    tsdl
    stb_image ; decode textures for textured_quad/textured_cube
+   curl ; download textures given as an http(s) URL
    elm_core
    elm_playground
    elm_playground_3d
