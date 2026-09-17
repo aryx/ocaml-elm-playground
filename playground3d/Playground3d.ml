@@ -76,6 +76,7 @@ type shape3d = { alpha : number; form : form3d }
 and form3d =
   | Polygon3d of Playground.color * vec3 list
   | TexturedPolygon3d of string * (vec3 * (number * number)) list
+  | SmoothPolygon3d of Playground.color * (vec3 * vec3) list
   | Group3d of shape3d list
 
 let polygon3d color points =
@@ -139,6 +140,39 @@ let plane color width depth =
   polygon3d color
     [ (-.w, 0., -.d); (-.w, 0., d); (w, 0., d); (w, 0., -.d) ]
 
+(* claude: a UV-sphere, built the same way as e.g. Blender's default
+ * sphere: [lat_segments] horizontal rings between the poles,
+ * [lon_segments] vertical slices around, each cell a
+ * (near-)quadrilateral (except right at the poles, where two of a
+ * cell's 4 corners coincide -- a degenerate, zero-area quad; harmless,
+ * see box_faces-style fan-triangulation downstream, which just skips a
+ * zero-area triangle). Fixed resolution (no parameter), same "no knobs"
+ * style as box/cube.
+ *
+ * Since the sphere is centered on the origin, a point's own outward
+ * normal is simply its own (normalized) position -- no need for the
+ * general "average the normals of every face touching this vertex"
+ * technique real meshes use elsewhere; see SmoothPolygon3d's doc
+ * comment and plan_gouraud_phong.md. *)
+let sphere color radius =
+  let lat_segments = 8 and lon_segments = 12 in
+  let point_at lat lon =
+    let theta = Float.pi * float_of_int lat / float_of_int lat_segments in
+    let phi = 2. * Float.pi * float_of_int lon / float_of_int lon_segments in
+    (sin theta * cos phi, cos theta, sin theta * sin phi)
+  in
+  let faces = ref [] in
+  for lat = 0 to lat_segments -.. 1 do
+    for lon = 0 to lon_segments -.. 1 do
+      let corners =
+        [ point_at lat lon; point_at lat (lon +.. 1); point_at (lat +.. 1) (lon +.. 1); point_at (lat +.. 1) lon ]
+      in
+      let points_and_normals = corners |> List.map (fun p -> (scale_vec3 radius p, p (* already unit length *))) in
+      faces := { alpha = 1.; form = SmoothPolygon3d (color, points_and_normals) } :: !faces
+    done
+  done;
+  group3d !faces
+
 (*-------------------------------------------------------------------*)
 (* Move/rotate/scale/fade shapes *)
 (*-------------------------------------------------------------------*)
@@ -150,13 +184,33 @@ let plane color width depth =
  * every combinator call -- fine at playground scale.
  *)
 
+(* transforms only the points of a shape, leaving any per-point normal
+ * (SmoothPolygon3d) untouched -- correct for move3d/scale3d, since a
+ * normal is a direction, not a position: translating or uniformly
+ * scaling a shape doesn't change which way its surface faces. *)
 let rec map_points (f : vec3 -> vec3) (shape : shape3d) : shape3d =
   match shape.form with
   | Polygon3d (color, points) ->
       { shape with form = Polygon3d (color, List.map f points) }
   | TexturedPolygon3d (src, points) ->
       { shape with form = TexturedPolygon3d (src, List.map (fun (p, uv) -> (f p, uv)) points) }
+  | SmoothPolygon3d (color, points) ->
+      { shape with form = SmoothPolygon3d (color, List.map (fun (p, n) -> (f p, n)) points) }
   | Group3d shapes -> { shape with form = Group3d (List.map (map_points f) shapes) }
+
+(* like map_points, but also applies [f] to each point's normal (for
+ * SmoothPolygon3d) -- correct for rotate3d specifically, since rotating
+ * a shape *does* rotate which way its surface faces. Only safe to reuse
+ * the same [f] for both because [f] here is always a pure rotation (no
+ * translation component -- rotate3d always rotates around the origin),
+ * which is exactly the kind of transform that's equally valid to apply
+ * to a direction as to a position. *)
+let rec map_points_and_normals (f : vec3 -> vec3) (shape : shape3d) : shape3d =
+  match shape.form with
+  | SmoothPolygon3d (color, points) ->
+      { shape with form = SmoothPolygon3d (color, List.map (fun (p, n) -> (f p, f n)) points) }
+  | Group3d shapes -> { shape with form = Group3d (List.map (map_points_and_normals f) shapes) }
+  | Polygon3d _ | TexturedPolygon3d _ -> map_points f shape
 
 let move3d dx dy dz shape = map_points (fun p -> add p (dx, dy, dz)) shape
 let move_x3d dx shape = move3d dx 0. 0. shape
@@ -178,13 +232,16 @@ let rotate3d dx dy dz shape =
     let a = degrees_to_radians a in
     ((x * cos a) - (y * sin a), (x * sin a) + (y * cos a), z)
   in
-  shape |> map_points (rotate_x dx) |> map_points (rotate_y dy) |> map_points (rotate_z dz)
+  shape
+  |> map_points_and_normals (rotate_x dx)
+  |> map_points_and_normals (rotate_y dy)
+  |> map_points_and_normals (rotate_z dz)
 
 let scale3d s shape = map_points (scale_vec3 s) shape
 
 let rec fade3d alpha shape =
   match shape.form with
-  | Polygon3d _ | TexturedPolygon3d _ -> { shape with alpha }
+  | Polygon3d _ | TexturedPolygon3d _ | SmoothPolygon3d _ -> { shape with alpha }
   | Group3d shapes -> { shape with form = Group3d (List.map (fade3d alpha) shapes) }
 
 (*****************************************************************************)
@@ -249,6 +306,13 @@ let rec flatten_faces (shape : shape3d) : (Playground.color * vec3 list * number
   | Polygon3d (color, points) -> [ (color, points, shape.alpha) ]
   | TexturedPolygon3d (_src, points) ->
       [ (placeholder_texture_color, List.map fst points, shape.alpha) ]
+  | SmoothPolygon3d (color, points) ->
+      (* claude: the web backend never does any per-pixel shading (see
+       * Playground3d_platform for native, which does) -- a
+       * SmoothPolygon3d face is just a flat-colored polygon here, same
+       * as Polygon3d, so a sphere still renders (faceted, unlit) on
+       * web, just without the smooth-shading point of having it. *)
+      [ (color, List.map fst points, shape.alpha) ]
   | Group3d shapes -> List.concat_map flatten_faces shapes
 
 let render3d_to_2d (camera : camera) (screen : Playground.screen) (shape : shape3d) :

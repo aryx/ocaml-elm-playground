@@ -2,6 +2,7 @@
   (names
     Cube3d
     Cubes3d
+    Spheres3d
     TexturedCube3d
     InteractiveCube3d
     PaintersAlgorithmFail3d

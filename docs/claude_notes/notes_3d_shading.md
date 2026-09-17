@@ -15,9 +15,9 @@ All of it lives in `playground3d/native/Playground3d_platform.ml`'s
 backend has no per-pixel access at all, so it can't shade anything; see
 `notes_3d.md`'s lucamug comparison table).
 
-- `type shading = Flat_color | Flat_shading` -- the two implemented
-  modes, `Flat_color` being "what this file always did before shading
-  was added" (every face drawn exactly as given, no lighting at all).
+- `type shading = Flat_color | Flat_shading | Gouraud | Phong` -- all 4
+  modes from the roadmap below are now implemented; "m" cycles through
+  them at runtime (`notes_3d.md` section 11).
 - `light_dir : vec3` -- a single, fixed **directional** light (a "sun":
   see the field's own doc comment for why a directional light rather
   than a point light or spotlight was the right minimal choice here).
@@ -27,18 +27,45 @@ backend has no per-pixel access at all, so it can't shade anything; see
 - `brightness_of_normal : vec3 -> float` -- the actual math: `max 0
   (dot normal light_dir)`, rescaled into `[ambient, 1.0]`. This is a
   single `dot` product (§2 of `notes_3d.md`) -- the entire "lighting
-  model" is "how aligned is this face with the light."
-- `fill_of_material` calls `brightness_of_normal` **once per face**
-  (not once per pixel -- see its own doc comment) and scales whichever
-  color that face would have shown (a flat color, or a sampled texel)
-  by that one brightness value via `scale_channel`.
+  model" is "how aligned is this surface with the light." Pure (no
+  branching on the current shading mode); what varies between modes is
+  *which* normal(s) get fed into it and *how often* (once per face,
+  once per vertex, or once per pixel) -- see `make_shader` below.
+- `make_shader v0 v1 v2 : l0:float -> l1:float -> l2:float -> float` --
+  a per-triangle closure, built once and called once per covered pixel
+  (the same "decide once per triangle, apply once per pixel" shape as
+  `make_interpolator` for depth/UV), that is the one place all 4 modes
+  actually differ:
+  - `Flat_color` -- ignores the normal entirely, always `1.`.
+  - `Flat_shading` -- `brightness_of_normal v0.normal` computed once
+    (any of the 3 vertices; a flat face's vertices all share the same
+    winding-based normal), ignoring the barycentric weights.
+  - `Gouraud` -- `brightness_of_normal` computed once per *vertex*
+    (3 dot products per triangle), then the 3 numbers blended per pixel
+    via `l0`/`l1`/`l2`.
+  - `Phong` -- the vertex *normals themselves* blended per pixel via
+    `l0`/`l1`/`l2`, renormalized, then `brightness_of_normal` computed
+    on that (1 dot product per pixel, not per vertex).
+- `fill_of_material` no longer computes brightness at all -- it takes
+  `~brightness` as a 4th per-pixel argument (alongside `~u`/`~v`) and
+  just multiplies it into whichever color it resolves (flat, or a
+  sampled texel), via `scale_channel`. This keeps it fully decoupled
+  from *how* brightness was computed, which is what let Gouraud/Phong
+  slot in without touching it at all.
 
-That's the whole implementation: one dot product per face, applied
-uniformly to every pixel of that face. There is currently no notion of
-light *color* (only intensity/brightness -- a "white" light that just
-dims or brightens whatever color is already there), no more than one
-light, and no shadows (a face's brightness only depends on its own
-orientation, never on whether something else is blocking the light).
+Gouraud and Phong only look any different from `Flat_shading` on a
+shape whose faces share vertices with *varying* normals across them --
+i.e. a curved surface approximated by many small faces, like `sphere`
+(see "3. Gouraud shading" below, now implemented). On `cube`/`box`/
+`plane` (each face's corners are its own independent points, see
+`Playground3d.box_faces`) all 3 lit modes render pixel-for-pixel
+identically; only `Flat_color` looks different there.
+
+There is currently no notion of light *color* (only intensity/
+brightness -- a "white" light that just dims or brightens whatever
+color is already there), no more than one light, and no shadows (a
+surface's brightness only depends on its own orientation, never on
+whether something else is blocking the light).
 
 ## Roadmap, roughly in order of effort
 
@@ -62,42 +89,60 @@ light might scale red/green more than blue) instead of one float, and
 own factor. Cheap to add; mostly a matter of deciding on a light-color
 representation.
 
-### 3. Gouraud shading (needs a new primitive first)
+### 3. Gouraud shading -- DONE
 
-As `notes_3d.md` §8/§11 explains: Gouraud needs a normal *per vertex*,
-computed by averaging the normals of every face that shares that
-vertex, then blended across a triangle the same way `u`/`v` already are
-(barycentric interpolation, §7). The blocker isn't the interpolation
-machinery -- we already have exactly that machinery, built for
-perspective-correct texturing (`notes_3d_opti.md`'s "Fix 2") -- it's
-that **our current shapes have no shared vertices to average in the
-first place**: `cube`/`box`/`plane` each give every face its own 4
-independent corner points (see `Playground3d.box_faces`), specifically
-so hard edges stay sharp. Gouraud only looks *different* from flat
-shading on a surface where neighboring faces have gradually-changing
-normals -- i.e. a curved shape approximated by many small flat faces,
-like a tessellated `sphere`. Concretely, this needs, in order:
-1. A `sphere` (or `cone`/`cylinder`) primitive that tessellates a curved
-   surface into many small triangular/quad faces (mentioned as a
-   possible future primitive in `notes_3d.md`'s design-credit section).
-2. A mesh representation that tracks *shared* vertices across faces
-   (so a vertex's normal can be the average of its neighbors) --
-   `Playground3d.shape3d` doesn't have this today at all.
-3. Extending `vertex` (already carrying `u_over_z`/`v_over_z` for
-   perspective-correct texturing) to also carry a per-vertex normal,
-   interpolated the same way.
+Implemented alongside `Phong` and a new `sphere` primitive (see
+`docs/claude_notes/plan_gouraud_phong.md` for the design writeup). The
+key realization that avoided the originally-assumed prerequisite (a
+general mesh representation tracking shared vertices/adjacency across
+faces, so a vertex's normal could be the *average* of its neighbors):
+`sphere` is centered at the origin, so a point on it has a normal in
+closed form -- its own position, normalized -- no averaging needed at
+all. So instead of generalizing `Playground3d.shape3d`'s mesh
+representation, a new, minimal `form3d` case was added:
 
-### 4. Phong shading (same prerequisite as Gouraud, one step further)
+```ocaml
+| SmoothPolygon3d of Playground.color * ((number*number*number) * (number*number*number)) list
+  (* (point, normal) pairs -- each point carries its OWN normal,
+     instead of sharing one normal computed from the face's winding
+     order like Polygon3d/TexturedPolygon3d do *)
+```
 
-Once per-vertex normals and a curved primitive exist for Gouraud, Phong
-is "only" a matter of interpolating the *normal itself* per pixel
-(again, the exact same barycentric-interpolation trick, applied to a
-third kind of vertex attribute alongside depth and UV) and calling
-`brightness_of_normal` **inside the pixel loop** instead of once per
-face. This does move real cost into the hot path (a dot product per
-pixel instead of per face), which is worth benchmarking
-(`notes_3d_opti.md`-style) once it exists, rather than assuming it's
-free.
+`sphere color radius` tessellates a standard UV-sphere out of
+`SmoothPolygon3d` quads, each corner's normal computed analytically.
+On the native side, `vertex` gained a `normal : vec3` field (filled in
+by `project_vertex`, alongside the existing depth/UV) and
+`flatten_faces` attaches a normal to every point of every face --
+either the single winding-based `face_normal` repeated for every point
+of a `Polygon3d`/`TexturedPolygon3d` face (which is exactly what keeps
+`Flat_shading` uniform across such a face), or the stored per-vertex
+normal for a `SmoothPolygon3d` one. `Gouraud` then blends
+`brightness_of_normal v0.normal`/`v1.normal`/`v2.normal` (3 dot
+products, once per vertex) across each triangle the same way `u`/`v`
+already are (barycentric interpolation, §7) -- see `make_shader` above.
+
+One simplification, stated up front rather than discovered by accident:
+Gouraud/Phong interpolate brightness/normals *linearly*, not
+perspective-correctly like `make_interpolator`'s `u`/`v`/`z` (the `p`
+toggle). Brightness differences are usually too subtle for the
+difference to be visible, and reusing that machinery for a
+differently-shaped attribute (a normal, not a single float) would add
+real complexity for likely-invisible benefit -- worth revisiting only
+if it turns out to actually matter.
+
+### 4. Phong shading -- DONE
+
+Built in the same pass as Gouraud (see above): instead of blending
+*brightness values* per pixel, `Phong` blends the *normal components*
+themselves via `l0`/`l1`/`l2`, renormalizes (an interpolated blend of
+unit vectors isn't unit-length in general), and calls
+`brightness_of_normal` on the result -- one dot product per pixel
+instead of per vertex. `examples3d/Spheres3d.ml` is the demo built to
+actually show all 4 modes differing from each other (press "m"): two
+spheres, since `cube`/`box`/`plane` render identically under all 3 lit
+modes. No FPS regression worth calling out was observed in casual
+testing; a `notes_3d_opti.md`-style benchmark hasn't been done, since
+nothing so far has made this scene's frame rate feel like a bottleneck.
 
 ### 5. Shadows (large, a genuinely different feature)
 

@@ -442,18 +442,18 @@ topic:
   too expensive for real-time use for a long time, standard by the time
   GPUs could run a custom calculation ("shader") per pixel.
 
-**Where `playground3d/` sits on this spectrum today: nowhere on it
-yet** -- there is no light source, no per-face or per-vertex normal
-used for lighting, anywhere in the code (`face_normal` is computed only
-to feed backface culling, §5, never lighting). Every triangle is either
-one flat, unlit `Playground.color`, or an unlit texture sample (§9).
-The natural, well-scoped next step, if/when you want shapes to look
-less flat, is **flat shading with one fixed directional light**: reuse
-the `face_normal` that backface culling already computes, take its dot
-product with a fixed "light direction" constant, and scale the face's
-color by that (clamped to, say, `0.2..1.0` so nothing goes fully
-black) -- a small, self-contained addition that doesn't require solving
-per-vertex normals or interpolation at all.
+**Where `playground3d/` sits on this spectrum today: all four,
+pluggable at runtime** (native backend only -- see §11's `m` toggle and
+`notes_3d_shading.md` for the full writeup). `flat_color`/`flat_shading`
+work exactly as described above, reusing the same `face_normal` that
+backface culling (§5) already computes. Gouraud/Phong needed one more
+piece first: a normal *per vertex*, which `cube`/`box`/`plane` have no
+use for (each face's corners are independent points, not shared with
+neighboring faces, so a per-vertex normal would just equal that one
+face's flat normal) -- so they only look different from `flat_shading`
+on a curved shape approximated by many small faces with genuinely
+varying normals, like the `sphere` primitive added alongside this
+(`examples3d/Spheres3d.ml` is the demo built to show it).
 
 ## 9. Texture mapping: UV coordinates
 
@@ -509,7 +509,7 @@ library's current scope but worth knowing the "proper" fix for:
 | Hidden surface removal | None (relies on manual face ordering + specific camera angles) | Painter's algorithm on web (§6); a real z-buffer on native (§6) |
 | Rendering target | SVG only (via elm-playground's existing renderer) | SVG (via `elm_playground_web`, reusing the same "compile 3D down to 2D shapes" trick) *and* a real hand-written software rasterizer for native |
 | Textures | None | `textured_quad`/`textured_cube`, real per-pixel sampling on native (§9); flat placeholder color on web |
-| Shading | None | None yet (§8) -- flat shading is the natural next step |
+| Shading | None | flat_color/flat_shading/Gouraud/Phong, pluggable at runtime (§8, §11) |
 
 The one approach neither library uses at all, worth knowing about as
 "the other end of the spectrum": **WebGL/OpenGL**, as used by
@@ -529,7 +529,11 @@ deliberately not what this library is going for; the whole point of
 `playground3d/` is that you can read every line of `Playground3d.ml`
 and `playground3d/native/Playground3d_platform.ml` and see exactly what
 number produced what pixel, the same "no magic" spirit as the original
-2D `elm-playground`.
+2D `elm-playground`. See `notes_playground3d_related_work.md` for the
+fuller survey -- the rest of the Elm "3D playground" lineage
+(`erkal`'s and `nateabele`'s projects too), plus VRML, OpenGL, WebGL,
+Vulkan, and Unity, and how `playground3d/`'s teaching-first, no-GPU
+design compares to each.
 
 ## 11. Try it yourself: 4 runtime-toggleable rendering modes
 
@@ -543,19 +547,21 @@ function/code path (not one function with a runtime branch buried in
 the middle), so you can read either version of a given trade-off on
 its own, start to finish.
 
-- **`m` -- shading mode** (§8): cycles between `flat_color` (no
-  lighting at all -- every face/texel drawn exactly as given, the
-  library's behavior until this was added) and `flat_shading` (one
-  brightness value per face, from a fixed directional light and the
-  face's own normal -- the same normal already computed for backface
-  culling, reused here at no extra cost). Gouraud and Phong are
-  described in §8 but not implemented: both need a normal *per
-  vertex*, which none of this library's current shapes (`cube`/`box`/
-  `plane`) have any use for, since each face's corners aren't shared
-  with neighboring faces -- they'd render pixel-for-pixel identical to
-  `flat_shading` until a curved primitive (e.g. a future `sphere`,
-  tessellated from many small faces with genuinely varying vertex
-  normals) exists to make per-vertex normal blending visible at all.
+- **`m` -- shading mode** (§8): cycles through all 4 modes described in
+  §8 -- `flat_color` (no lighting at all -- every face/texel drawn
+  exactly as given, the library's behavior until shading was added),
+  `flat_shading` (one brightness value per face, from a fixed
+  directional light and the face's own normal -- the same normal
+  already computed for backface culling, reused here at no extra
+  cost), `Gouraud` (one brightness value per *vertex*, blended across
+  each triangle), and `Phong` (the vertex *normals* blended per pixel,
+  brightness computed at every pixel). `cube`/`box`/`plane` render
+  pixel-for-pixel identically in the 3 lit modes, since each face's
+  corners are independent points, not shared with neighboring faces --
+  run `examples3d/Spheres3d.exe` and press `m` there instead, where the
+  `sphere` primitive's genuinely varying per-vertex normals make all 4
+  modes look visibly different from each other (`notes_3d_shading.md`
+  has the full implementation writeup).
 - **`b` -- backface culling on/off** (§5): off is the simplest possible
   code (draw every triangle, full stop); on is the library's default.
   **In *filled* mode this shows no visual difference at all** -- only

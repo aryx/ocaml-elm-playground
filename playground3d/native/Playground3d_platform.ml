@@ -83,25 +83,20 @@ let rgb_of_color (color : Playground.color) : int * int * int =
  * runtime to cycle through modes while a game is running (a debug
  * toggle in the same spirit as e.g. Quake's r_drawflat console
  * variable, or a "wireframe view" hotkey -- see the key_down handling
- * in run_app3d). Only 2 of the 4 modes from
- * docs/claude_notes/notes_3d_shading.md are
- * implemented: flat_color (no lighting at all, every face/texel drawn
- * exactly as given -- what this file always did before) and
- * flat_shading (one brightness value per FACE, from its already-
- * computed normal -- see render_shape3d, which already computes a
- * face's normal for backface culling and just passes it along here
- * too, at no extra cost). Gouraud and Phong both need a normal *per
- * vertex* (Gouraud blends per-vertex lighting across a face; Phong
- * interpolates per-vertex normals and lights every pixel), which our
- * shapes don't have any use for yet: cube/box/plane are made of flat
- * faces whose corners aren't shared with neighboring faces, so a
- * "per-vertex" normal would just equal that face's own flat normal --
- * Gouraud/Phong would render pixel-for-pixel identical to flat_shading
- * until a curved primitive (e.g. a future sphere, tessellated from many
- * small faces with genuinely varying vertex normals) exists to make
- * per-vertex normal blending visible at all. *)
+ * in run_app3d). All 4 modes from docs/claude_notes/notes_3d_shading.md
+ * are implemented: flat_color (no lighting at all, every face/texel
+ * drawn exactly as given), flat_shading (one brightness value per FACE,
+ * from its winding-based normal), gouraud (one brightness value per
+ * VERTEX, blended across each triangle), and phong (the vertex NORMALS
+ * themselves blended per pixel, brightness computed at every pixel).
+ * See make_shader below for where the 4 actually differ. Gouraud/Phong
+ * only look any different from flat_shading on a shape built from
+ * SmoothPolygon3d faces with genuinely varying per-vertex normals --
+ * i.e. a curved shape like sphere; on cube/box/plane (independent flat
+ * faces, no shared/varying vertex normals) all 4 modes render
+ * identically except for flat_color. *)
 
-type shading = Flat_color | Flat_shading
+type shading = Flat_color | Flat_shading | Gouraud | Phong
 
 (* claude: a ref, not a plain constant, so it can be changed at
  * runtime (see cycle_shading_mode and the "m" key below) -- the same
@@ -114,7 +109,9 @@ let cycle_shading_mode () =
   shading_mode :=
     (match !shading_mode with
     | Flat_color -> Flat_shading
-    | Flat_shading -> Flat_color)
+    | Flat_shading -> Gouraud
+    | Gouraud -> Phong
+    | Phong -> Flat_color)
 
 (* claude: this is a DIRECTIONAL light -- a "sun" -- not a light at a
  * position. There are 3 common kinds of light in 3D graphics, in
@@ -158,12 +155,18 @@ let light_dir : vec3 = normalize (1., 1.3, 0.6)
  * surface *)
 let ambient = 0.25
 
+(* claude: pure -- "how lit is a surface facing this direction",
+ * independent of shading_mode. It used to also special-case
+ * Flat_color (returning a constant 1. instead of computing this),
+ * which conflated "the lighting physics" with "which shading
+ * strategy/granularity is active" -- that decision now lives in
+ * make_shader below, which is the one place that actually needs to
+ * know the mode (whether to call this once per face, once per vertex,
+ * or once per pixel with an interpolated normal -- or not call it at
+ * all, for Flat_color). *)
 let brightness_of_normal (normal : vec3) : float =
-  match !shading_mode with
-  | Flat_color -> 1.
-  | Flat_shading ->
-      let lit = Stdlib.max 0. (dot normal light_dir) in
-      ambient +. ((1. -. ambient) *. lit)
+  let lit = Stdlib.max 0. (dot normal light_dir) in
+  ambient +. ((1. -. ambient) *. lit)
 
 let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_int c *. brightness)
 
@@ -297,12 +300,21 @@ type vertex = {
   inv_z : float;
   u_over_z : float;
   v_over_z : float;
+  normal : vec3;
+      (** the vertex's own normal, in world space, untouched by
+          projection (a normal is a direction, not a screen position --
+          nothing about "where on screen is this" applies to it). Used
+          by make_shader below for Gouraud (blended per vertex) and
+          Phong (blended per pixel) shading -- see flatten_faces for
+          where this comes from: the same winding-based normal repeated
+          at every point of a flat Polygon3d/TexturedPolygon3d face, or
+          each point's own distinct normal for a SmoothPolygon3d one. *)
 }
 
 (* returns None if [point] is at or behind the near plane -- see the
  * module doc comment above about not clipping *)
 let project_vertex (camera : Playground3d.camera) ~(sx : int) ~(sy : int)
-    ((point, (u, v)) : vec3 * (float * float)) : vertex option =
+    ((point, (u, v), normal) : vec3 * (float * float) * vec3) : vertex option =
   let (px, py, pz) = view_space camera point in
   if pz <= camera.near || pz >= camera.far then None
   else
@@ -321,6 +333,7 @@ let project_vertex (camera : Playground3d.camera) ~(sx : int) ~(sy : int)
         inv_z;
         u_over_z = u *. inv_z;
         v_over_z = v *. inv_z;
+        normal;
       }
 
 (*****************************************************************************)
@@ -366,16 +379,79 @@ let make_interpolator (v0 : vertex) (v1 : vertex) (v2 : vertex) :
         (1. /. inv_z, u_over_z /. inv_z, v_over_z /. inv_z)
 
 (*****************************************************************************)
+(* Gouraud/Phong: how brightness is computed across a triangle
+ * (pluggable via shading_mode above -- "m" to cycle at runtime) *)
+(*****************************************************************************)
+(* A third "decide once per triangle, apply once per pixel" strategy
+ * function, the same shape as fill_of_material (what color) and
+ * make_interpolator (how to interpolate depth/UV) -- this one answers
+ * "how bright is this pixel", from whichever of the 4 shading_mode
+ * strategies is selected:
+ *  - Flat_color: no lighting at all, brightness is always 1 (a
+ *    constant function, ignoring the weights entirely).
+ *  - Flat_shading: one brightness value for the *whole triangle*,
+ *    from v0's normal (all 3 vertices share the same normal on a flat
+ *    face -- see flatten_faces -- so it doesn't matter which one is
+ *    picked).
+ *  - Gouraud: brightness computed once per *vertex* (3 calls to
+ *    brightness_of_normal, one per vertex's own normal), then those 3
+ *    numbers blended per pixel via the same barycentric weights
+ *    everything else uses.
+ *  - Phong: the vertices' *normals themselves* (not a brightness
+ *    number) are blended per pixel first, renormalized (a blend of
+ *    unit vectors generally isn't itself unit length), and only then
+ *    turned into a brightness -- so, unlike Gouraud, a fresh lighting
+ *    calculation happens at every single pixel, not just at the 3
+ *    vertices.
+ * Gouraud and Phong both interpolate *linearly* here (not
+ * perspective-correctly like make_interpolator's u/v/z can) -- see
+ * plan_gouraud_phong.md's "Simplifications" for why that's an
+ * acceptable simplification for now. *)
+let make_shader (v0 : vertex) (v1 : vertex) (v2 : vertex) : l0:float -> l1:float -> l2:float -> float =
+  match !shading_mode with
+  | Flat_color -> fun ~l0:_ ~l1:_ ~l2:_ -> 1.
+  | Flat_shading ->
+      let brightness = brightness_of_normal v0.normal in
+      fun ~l0:_ ~l1:_ ~l2:_ -> brightness
+  | Gouraud ->
+      let b0 = brightness_of_normal v0.normal
+      and b1 = brightness_of_normal v1.normal
+      and b2 = brightness_of_normal v2.normal in
+      fun ~l0 ~l1 ~l2 -> (l0 *. b0) +. (l1 *. b1) +. (l2 *. b2)
+  | Phong ->
+      let (n0x, n0y, n0z) = v0.normal and (n1x, n1y, n1z) = v1.normal and (n2x, n2y, n2z) = v2.normal in
+      fun ~l0 ~l1 ~l2 ->
+        let nx = (l0 *. n0x) +. (l1 *. n1x) +. (l2 *. n2x)
+        and ny = (l0 *. n0y) +. (l1 *. n1y) +. (l2 *. n2y)
+        and nz = (l0 *. n0z) +. (l1 *. n1z) +. (l2 *. n2z) in
+        brightness_of_normal (normalize (nx, ny, nz))
+
+(*****************************************************************************)
 (* Flatten + backface cull *)
 (*****************************************************************************)
 
 type material = Flat of Playground.color | Textured of string
 
+let face_normal (points : vec3 list) : vec3 =
+  match points with
+  | p0 :: p1 :: p2 :: _ -> normalize (cross (sub p1 p0) (sub p2 p0))
+  | _ -> failwith "polygon3d needs at least 3 points"
+
+(* every leaf face's points, tagged with (uv, normal) -- a flat
+ * Polygon3d/TexturedPolygon3d face repeats the SAME winding-based
+ * face_normal at every one of its points (which is exactly what makes
+ * flat_shading uniform across a face: see make_shader), while a
+ * SmoothPolygon3d face already has its own distinct normal per point. *)
 let rec flatten_faces (shape : Playground3d.shape3d) :
-    (material * (vec3 * (float * float)) list) list =
+    (material * (vec3 * (float * float) * vec3) list) list =
   match shape.form with
-  | Polygon3d (color, points) -> [ (Flat color, List.map (fun p -> (p, (0., 0.))) points) ]
-  | TexturedPolygon3d (src, points) -> [ (Textured src, points) ]
+  | Polygon3d (color, points) ->
+      let normal = face_normal points in
+      [ (Flat color, List.map (fun p -> (p, (0., 0.), normal)) points) ]
+  | TexturedPolygon3d (src, points) ->
+      let normal = face_normal (List.map fst points) in
+      [ (Textured src, List.map (fun (p, uv) -> (p, uv, normal)) points) ]
+  | SmoothPolygon3d (color, points) -> [ (Flat color, List.map (fun (p, n) -> (p, (0., 0.), n)) points) ]
   | Group3d shapes -> List.concat_map flatten_faces shapes
 
 let face_centroid (points : vec3 list) : vec3 =
@@ -384,11 +460,6 @@ let face_centroid (points : vec3 list) : vec3 =
   in
   let n = float_of_int (List.length points) in
   (sx /. n, sy /. n, sz /. n)
-
-let face_normal (points : vec3 list) : vec3 =
-  match points with
-  | p0 :: p1 :: p2 :: _ -> normalize (cross (sub p1 p0) (sub p2 p0))
-  | _ -> failwith "polygon3d needs at least 3 points"
 
 (* fan-triangulate a (convex, e.g. a cube face or a plane) polygon:
  * (p0,p1,p2), (p0,p2,p3), (p0,p3,p4), ... *)
@@ -405,8 +476,8 @@ let rec fan_triangles = function
  * textured one -- see render_shape3d below. *)
 let rasterize_triangle
     (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t)
-    (zbuffer : float array) ~(sx : int) ~(sy : int) ~(fill : u:float -> v:float -> int32)
-    (v0 : vertex) (v1 : vertex) (v2 : vertex) : unit =
+    (zbuffer : float array) ~(sx : int) ~(sy : int)
+    ~(fill : u:float -> v:float -> brightness:float -> int32) (v0 : vertex) (v1 : vertex) (v2 : vertex) : unit =
   let min_x = max 0 (int_of_float (Float.round (Stdlib.min v0.vx (Stdlib.min v1.vx v2.vx)))) in
   let max_x = min (sx - 1) (int_of_float (Float.round (Stdlib.max v0.vx (Stdlib.max v1.vx v2.vx)))) in
   let min_y = max 0 (int_of_float (Float.round (Stdlib.min v0.vy (Stdlib.min v1.vy v2.vy)))) in
@@ -463,6 +534,9 @@ let rasterize_triangle
    * Perspective_correct actually means and why it matters. Computed
    * once per triangle (not once per pixel), like [fill] below. *)
   let interpolate = make_interpolator v0 v1 v2 in
+  (* claude: pluggable, "m" to toggle at runtime -- see make_shader's doc
+   * comment above. Computed once per triangle, like [interpolate]/[fill]. *)
+  let shade_pixel = make_shader v0 v1 v2 in
   if area <> 0. then
     for py = min_y to max_y do
       for px = min_x to max_x do
@@ -480,7 +554,8 @@ let rasterize_triangle
           let idx = (py * sx) + px in
           if z < Array.unsafe_get zbuffer idx then begin
             Array.unsafe_set zbuffer idx z;
-            Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v)
+            let brightness = shade_pixel ~l0 ~l1 ~l2 in
+            Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v ~brightness)
           end
         end
       done
@@ -506,7 +581,8 @@ let rasterize_triangle
  * approach can be read start to finish on its own. *)
 let rasterize_triangle_painters
     (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t) ~(sx : int)
-    ~(sy : int) ~(fill : u:float -> v:float -> int32) (v0 : vertex) (v1 : vertex) (v2 : vertex) : unit =
+    ~(sy : int) ~(fill : u:float -> v:float -> brightness:float -> int32) (v0 : vertex) (v1 : vertex)
+    (v2 : vertex) : unit =
   let min_x = max 0 (int_of_float (Float.round (Stdlib.min v0.vx (Stdlib.min v1.vx v2.vx)))) in
   let max_x = min (sx - 1) (int_of_float (Float.round (Stdlib.max v0.vx (Stdlib.max v1.vx v2.vx)))) in
   let min_y = max 0 (int_of_float (Float.round (Stdlib.min v0.vy (Stdlib.min v1.vy v2.vy)))) in
@@ -521,6 +597,7 @@ let rasterize_triangle_painters
    * doesn't need the "z" part of what it returns, since it has no
    * z-buffer to compare against. *)
   let interpolate = make_interpolator v0 v1 v2 in
+  let shade_pixel = make_shader v0 v1 v2 in
   if area <> 0. then
     for py = min_y to max_y do
       for px = min_x to max_x do
@@ -536,7 +613,8 @@ let rasterize_triangle_painters
           let l0 = w0 *. inv_area and l1 = w1 *. inv_area and l2 = w2 *. inv_area in
           let (_z, u, v) = interpolate ~l0 ~l1 ~l2 in
           let idx = (py * sx) + px in
-          Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v)
+          let brightness = shade_pixel ~l0 ~l1 ~l2 in
+          Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v ~brightness)
         end
       done
     done
@@ -673,25 +751,24 @@ let pixel_of_color (color : Playground.color) : int32 = pixel_of_rgb (rgb_of_col
 
 (* the [fill] closure for a material: computed once per face, not once
  * per pixel, except for the actual texture sampling (genuinely
- * per-pixel, since the color varies across the face). [normal] is the
- * face's normal (already computed by render_shape3d's caller for
- * backface culling, just passed along) -- brightness_of_normal turns
- * it into a single per-face brightness scalar (1.0, i.e. a no-op, in
- * flat_color mode), applied here to whichever color this material
- * would otherwise have produced. *)
-let fill_of_material (material : material) (normal : vec3) : u:float -> v:float -> int32 =
-  let brightness = brightness_of_normal normal in
-  let shade (r, g, b) : int32 = pixel_of_rgb (scale_channel r brightness, scale_channel g brightness, scale_channel b brightness) in
+ * per-pixel, since the color varies across the face) and the
+ * [brightness] scaling (genuinely per-pixel too now, for gouraud/phong
+ * -- see make_shader above, which is what actually computes it; this
+ * function no longer knows or cares which shading mode produced it). *)
+let fill_of_material (material : material) : u:float -> v:float -> brightness:float -> int32 =
+  let shade (r, g, b) ~brightness : int32 =
+    pixel_of_rgb (scale_channel r brightness, scale_channel g brightness, scale_channel b brightness)
+  in
   match material with
   | Flat color ->
-      let pixel = shade (rgb_of_color color) in
-      fun ~u:_ ~v:_ -> pixel
+      let (r, g, b) = rgb_of_color color in
+      fun ~u:_ ~v:_ ~brightness -> shade (r, g, b) ~brightness
   | Textured src -> (
       match Texture_native.load src with
-      | Some img -> fun ~u ~v -> shade (sample_texture img ~u ~v)
+      | Some img -> fun ~u ~v ~brightness -> shade (sample_texture img ~u ~v) ~brightness
       | None ->
-          let pixel = shade (rgb_of_color missing_texture_color) in
-          fun ~u:_ ~v:_ -> pixel)
+          let (r, g, b) = rgb_of_color missing_texture_color in
+          fun ~u:_ ~v:_ ~brightness -> shade (r, g, b) ~brightness)
 
 (* claude: pluggable, "b" to toggle at runtime (see key_down below) --
  * off is the simplest possible code (draw every face regardless of
@@ -737,20 +814,29 @@ let render_shape3d
     | Z_buffer -> faces
     | Painters_algorithm ->
         let dist2_to_eye points =
-          let (dx, dy, dz) = sub camera.eye (face_centroid (List.map fst points)) in
+          let (dx, dy, dz) = sub camera.eye (face_centroid (List.map (fun (p, _uv, _n) -> p) points)) in
           (dx *. dx) +. (dy *. dy) +. (dz *. dz)
         in
         faces |> List.sort (fun (_, pts1) (_, pts2) -> compare (dist2_to_eye pts2) (dist2_to_eye pts1))
   in
   faces
   |> List.iter (fun (material, points) ->
-         let bare_points = List.map fst points in
+         let bare_points = List.map (fun (p, _uv, _n) -> p) points in
+         (* claude: this winding-based normal is ONLY for backface
+          * culling (an independent, whole-face notion of "which way
+          * does this face point") -- it is unrelated to the per-point
+          * normals already carried in [points] (used for shading by
+          * make_shader instead, via project_vertex/vertex.normal
+          * below). For a Polygon3d/TexturedPolygon3d face these two
+          * normals happen to have the same value; for a
+          * SmoothPolygon3d (e.g. sphere) they don't, since each of its
+          * points has its own, different normal. *)
          let normal = face_normal bare_points in
          let centroid = face_centroid bare_points in
          (* backface cull: keep only faces whose (outward, CCW-winding)
           * normal points roughly towards the camera *)
          if (not !backface_culling_enabled) || dot normal (sub camera.eye centroid) > 0. then begin
-           let fill = fill_of_material material normal in
+           let fill = fill_of_material material in
            let projected =
              fan_triangles points
              |> List.map (fun (pa, pb, pc) ->
@@ -758,11 +844,12 @@ let render_shape3d
            in
            match !render_mode with
            | Wireframe ->
-               (* one representative color for the whole face (sampled
-                * at the texture's center for a textured one), same
-                * idea as sampling anywhere else -- wireframe mode
-                * doesn't need a different color per pixel *)
-               let pixel = fill ~u:0.5 ~v:0.5 in
+               (* one representative, unlit color for the whole face
+                * (sampled at the texture's center for a textured one)
+                * -- wireframe mode draws bare edges, not shaded pixels,
+                * so brightness is always 1. here regardless of
+                * shading_mode. *)
+               let pixel = fill ~u:0.5 ~v:0.5 ~brightness:1. in
                projected
                |> List.iter (function
                     | Some v0, Some v1, Some v2 -> draw_triangle_wireframe framebuffer ~sx ~sy pixel v0 v1 v2

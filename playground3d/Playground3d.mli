@@ -50,6 +50,15 @@ type shape3d = { alpha : number; form : form3d }
 and form3d =
   | Polygon3d of Playground.color * (number * number * number) list
   | TexturedPolygon3d of string * ((number * number * number) * (number * number)) list
+  | SmoothPolygon3d of Playground.color * ((number * number * number) * (number * number * number)) list
+      (** (point, normal) pairs -- see {!sphere}. Unlike {!Polygon3d},
+          each point carries its own normal instead of sharing one
+          normal computed from the face's winding order, which is what
+          lets a curved shape look smoothly shaded (Gouraud/Phong, see
+          {!Playground3d_platform}'s shading modes) instead of faceted.
+          No texture support on this constructor (kept minimal, like
+          everything else added incrementally here) -- combine with
+          {!TexturedPolygon3d} yourself if you ever need both. *)
   | Group3d of shape3d list
 
 (** A flat polygon in world space, e.g. one face of a cube. Give its
@@ -86,6 +95,17 @@ val cube : Playground.color -> number -> shape3d
 (** [plane color width depth] is a flat horizontal quad (normal facing
     +Y, i.e. "up") lying on the Y=0 plane, e.g. useful as a ground. *)
 val plane : Playground.color -> number -> number -> shape3d
+
+(** [sphere color radius] is a UV-tessellated sphere of the given color,
+    centered on the origin, built from {!SmoothPolygon3d} faces so it
+    renders smoothly shaded (Gouraud/Phong) instead of faceted -- see
+    {!Playground3d_platform}'s shading modes. Coarser than a
+    "real" 3D engine's sphere (a fixed, small latitude/longitude
+    tessellation, no configurable detail level), which is exactly what
+    makes the faceting-vs-smooth-shading tradeoff visible: a flat/
+    flat_shading mode shows the individual quad faces, Gouraud/Phong
+    hide them. *)
+val sphere : Playground.color -> number -> shape3d
 
 (** {2 Textures}
 
