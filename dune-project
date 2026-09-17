@@ -74,8 +74,9 @@ Nope
     tsdl
     ; 0.1's `result` type is [ `Ok of 'a | `Error of string ], incompatible
     ; with the Ok/Error (`Msg _) pattern used since; 0.3 introduced the
-    ; current API.
-    (stb_image (>= "0.3"))
+    ; current API but Stb_image.image (used to compose GIF frames) was only
+    ; added in 0.4.
+    (stb_image (>= "0.4"))
     ocurl
     (elm_playground (= :version))
   )

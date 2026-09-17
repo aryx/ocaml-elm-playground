@@ -14,7 +14,7 @@ depends: [
   "logs"
   "cairo2" {>= "0.6.4"}
   "tsdl"
-  "stb_image" {>= "0.3"}
+  "stb_image" {>= "0.4"}
   "ocurl"
   "elm_playground" {= version}
   "odoc" {with-doc}
