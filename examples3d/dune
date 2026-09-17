@@ -4,6 +4,7 @@
     Cubes3d
     TexturedCube3d
     InteractiveCube3d
+    PaintersAlgorithmFail3d
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp
