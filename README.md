@@ -128,12 +128,20 @@ Look at the code under [examples/](examples/) and [games/](games/).
 Here is a screenshot of the [Tetris](games/Tetris.ml) Playgound game running:
 <img src="docs/screenshots/game-tetris.png" alt="Toy app screenshot"
  width="50%">
+You can even try it online [here](https://aryx.github.io/ocaml-elm-playground/games/Tetris.html)
 
 You can see a few more screenshots [here](docs/screenshots/).
 
-Limitations
+AI disclaimer
 ------------
 
-The web backend is not fully finished yet. Many of the examples and games
-do not work fully yet on the web. You've been warned.
-Contributions are welcome!
+The API and ideas behind the code of this library are the work of
+Evan Czaplicki for Elm at https://github.com/evancz/elm-playground
+I (Pad) mostly ported the API and ideas, as well as some of the web backend code,
+to OCaml. I then added also a native backend (using tsdl), which was not
+in the Elm version (Elm is a web language).
+The library is very small, less than 3000 LOC.
+
+I recently (Sep 2026) used Claude Code to fix many small bugs
+and now about 20% of the code was written by Claude Code
+(especially the code to handle animaged GIFs).
