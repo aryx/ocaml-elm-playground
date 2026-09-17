@@ -16,7 +16,7 @@ depends: [
   "tsdl"
   "stb_image"
   "ocurl"
-  "elm_playground"
+  "elm_playground" {= version}
   "odoc" {with-doc}
 ]
 build: [

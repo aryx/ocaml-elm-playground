@@ -43,7 +43,7 @@ Nope
   (synopsis "Imitate system Elm functions for ease of porting")
   (description "")
   (depends
-    elm_core
+    (elm_core (= :version))
   )
 )
 
@@ -55,8 +55,8 @@ Nope
   (elm_playground_native or elm_playground_web)
 ")
   (depends
-    elm_core
-    elm_system
+    (elm_core (= :version))
+    (elm_system (= :version))
   )
 )
 (package (name elm_playground_native)
@@ -74,7 +74,7 @@ Nope
     tsdl
     stb_image
     ocurl
-    elm_playground
+    (elm_playground (= :version))
   )
 )
 (package (name elm_playground_web)
@@ -84,6 +84,6 @@ Nope
      ; gen_js_api fails to build in 4.10.0
      (ocaml (>= "4.11.0"))
      vdom
-     elm_playground
+     (elm_playground (= :version))
   )
 )

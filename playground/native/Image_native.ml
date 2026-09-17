@@ -469,7 +469,14 @@ let animation_of_url (src : string) : animation option =
       (* make sure the file was downloaded *)
       match surface_of_url src, Hashtbl.find_opt hfiles src with
       | Some _, Some file ->
-          let content = In_channel.with_open_bin file In_channel.input_all in
+          let content =
+            let ic = open_in_bin file in
+            let len = in_channel_length ic in
+            let buf = Bytes.create len in
+            really_input ic buf 0 len;
+            close_in ic;
+            Bytes.unsafe_to_string buf
+          in
           if String.length content >= 3 && String.sub content 0 3 = "GIF" then
             (try
               let anim = animation_of_gif content in
