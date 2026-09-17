@@ -5,6 +5,7 @@
     TexturedCube3d
     InteractiveCube3d
     PaintersAlgorithmFail3d
+    FloatingCity3d
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp
