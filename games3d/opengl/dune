@@ -1,0 +1,22 @@
+; Reuses ../StarCollector3d.ml as-is via copy_files (a build-time rule, not
+; a committed duplicate/symlink -- see docs/claude_notes/done/plan_opengl.md
+; and examples3d/opengl/dune's identical pattern) so the exact same
+; backend-agnostic source runs against elm_playground_3d_opengl here and
+; elm_playground_3d_native in ../dune, with only one real file per game.
+;
+; Note: StarCollector3d.ml's score `hud` won't show up here -- the OpenGL
+; backend doesn't support Hud yet (see plan_opengl.md's Scope), so it's
+; silently dropped; everything else (ground, player, stars) renders.
+(copy_files ../StarCollector3d.ml)
+
+(executables
+  (names
+    StarCollector3d
+  )
+  (libraries
+    elm_core ; Basics.clamp
+    elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

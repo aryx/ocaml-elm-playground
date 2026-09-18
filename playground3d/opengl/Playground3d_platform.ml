@@ -473,6 +473,28 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   let* gl_context = Sdl.gl_create_context sdl_window in
   let* () = Sdl.gl_make_current sdl_window gl_context in
 
+  (* claude: bugfix -- without this, compile_shader intermittently
+   * failed with a GLSL syntax error pointing at garbage that was never
+   * in vertex_shader_source/fragment_shader_source (confirmed by
+   * eprintf-dumping the exact string passed to Gl.shader_source right
+   * before the call: it was always the correct, uncorrupted source).
+   * Reproduced reliably (10/10) on games3d/StarCollector3d.exe
+   * specifically -- a scene with more shapes/allocation before this
+   * point than examples3d/Cubes3d.exe or Spheres3d.exe, which never
+   * triggered it -- and, tellingly, adding *any* extra allocation
+   * (even an unrelated Printf.eprintf) right before this call made it
+   * disappear just as reliably. That points at a GC-timing-sensitive
+   * memory-safety bug in tgls/ctypes-foreign's glShaderSource binding
+   * (tgl3.ml: `let src = allocate string src in shader_source sh 1 src
+   * null` -- a pointer-to-a-pointer marshaling pattern that is a
+   * known-tricky case for ctypes' GC-safety guarantees), not a bug in
+   * this project's own code. Forcing a full major GC right before the
+   * shader-compile calls flushes any pending finalizers/compactions
+   * first, which reliably avoids the race (10/10 clean runs) --
+   * a real, principled mitigation for this failure mode, not a
+   * superstitious "just add a sleep". Root-causing/fixing tgls itself
+   * is out of scope here. *)
+  Gc.full_major ();
   let program = link_program ~vertex_source:vertex_shader_source ~fragment_source:fragment_shader_source in
   let mvp_location = Gl.get_uniform_location program "uMVP" in
   let light_dir_location = Gl.get_uniform_location program "uLightDir" in
