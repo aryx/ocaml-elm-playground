@@ -41,10 +41,11 @@ Like the 2D playground, the same application code runs on two
 backends:
 
 - **software** (`elm_playground_3d_software`): a real, from-scratch
-  software rasterizer -- perspective projection, backface culling, a
-  z-buffer depth test, and (see below) 3 more selectable rendering
-  strategies, all hand-written, using raw SDL only for the window,
-  input, and presenting the final image.
+  software rasterizer -- perspective projection, backface culling,
+  near-plane clipping, a z-buffer depth test, Gouraud/Phong shading,
+  texture mapping, and (see below) switchable alternatives to each, all
+  hand-written (`graphics/3d/`, one module per idea), using raw SDL only
+  for the window, input, and presenting the final image.
 - **web** (`elm_playground_3d_web`): compiles the 3D scene down to
   ordinary 2D `Playground.shape` values every frame (backface-culled
   and depth-sorted) and hands them to the existing, unmodified
@@ -144,20 +145,23 @@ Current limitations
 
 This is genuinely experimental and quite young:
 
-- No lighting beyond a single fixed directional light in `flat_shading`
-  mode -- no Gouraud/Phong shading, no shadows, no multiple lights.
-- No curved primitives yet (no `sphere`/`cylinder`) -- everything is
-  built from flat polygons.
+- One fixed directional light (flat, Gouraud, or Phong shading) -- no
+  shadows, no multiple or colored lights, no specular highlights.
+- One curved primitive, `sphere` (no `cylinder`/`cone` yet) --
+  everything else is built from flat polygons.
 - The web backend can't warp a texture onto an arbitrary projected
   quad, so a textured face renders as a flat gray placeholder there
   (native samples the real texture per pixel).
 - No near-plane clipping on the web backend (a triangle with a vertex
   behind the camera is dropped whole, not clipped into visible
   sub-triangles; the software backend clips, see the `c` key).
-- No 2D HUD/overlay channel -- a game can't draw score/instructions
-  text on top of the 3D scene yet.
+- No transparency on the software backend (`fade3d` is ignored there):
+  blending needs the faces drawn back to front, which the z-buffer
+  doesn't give.
 
-See `docs/claude_notes/plan_playground3d.md` and `notes_3d_opti.md` for
+The rasterizer's code is in `graphics/3d/`, one module per idea, each
+`.mli` explaining its algorithm; `notes_3d.md` section 0 has a reading
+order. See `docs/claude_notes/plan_playground3d.md` and `notes_3d_opti.md` for
 more on what's implemented, what's been fixed along the way, and
 what's planned next (a `tiny-minecraft`-style voxel game is the
 original motivating target).

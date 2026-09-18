@@ -394,10 +394,26 @@ Each a separate function, with its own key, test, and entry in
      epsilon rounding-level changes to 3 goldens (Spheres3d Gouraud by
      1/255, Corridor3d's floor/wall z-ties), approved. Numbers and
      details in `notes_3d_opti.md`.
-7. **Docs**: `notes_3d.md` with pointers into the new modules (and a
+7. **DONE.** **Docs**: `notes_3d.md` with pointers into the new modules (and a
    short "reading order" for students: Camera, Project, Triangle,
    Zbuffer, Interpolate, Shading, Texture, Render), `notes_3d_opti.md`
    with the Opti numbers, `README-3d.md`'s key table.
+   In the end: `notes_3d.md` has a new section 0, the map of the code
+   and a reading order (a table: module, what, section of the note);
+   every pointer to the old single file (`view_space`, `project_vertex`,
+   `rasterize_triangle`, `sample_texture`, ...) now names the module,
+   and the "what we do today" claims were brought up to date (flat
+   color is one choice among four, not "what we do"; texture filtering
+   and perspective-correct interpolation are implemented; Newell's
+   method for normals; matrices only for OpenGL); section 7 gained the
+   fill rule, incremental edge functions and clipping; section 11 all
+   the keys. `notes_3d_shading.md` names the current modules;
+   `notes_3d_opti.md` got optimization 3 (in phase 6) and a note that
+   its "Where" entries name the functions of their time.
+   `README-3d.md`: the keys (with `-debug-keys`), the limitations list
+   (Gouraud/Phong, spheres and the HUD exist; no transparency on the
+   software backend), and a pointer to `graphics/3d/`. The project's
+   `CLAUDE.md`: `graphics/`, the golden frames, `-debug-keys`.
 
 ## Verification
 

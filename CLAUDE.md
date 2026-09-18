@@ -25,6 +25,18 @@ dune exec games/Snake.exe
 
 Web (`js/`) targets are executables built in `(modes js)`; after building, the resulting `.bc.js` is copied next to the corresponding `.html` file in `examples/js/`/`games/js/` (see the `website`/`js` Makefile targets and the README's "Simple web application" section for the manual `dune build --root . && cp _build/default/Toy.bc.js static/` pattern used by the two toy example projects under `docs/`).
 
+`make test` also runs the golden frame tests (`tests/2d/`, `tests/3d/`,
+see `tests/common/Testutil_golden.mli`): every software-rasterizer
+example rendered offscreen (SDL's dummy video driver) and compared pixel
+by pixel with `tests/*/golden/*.png`. After an intended pixel change,
+look at the new frames in `_build/default/tests/*/actual/`, then
+`make approve-golden2d` / `make approve-golden3d`.
+
+The native software backends' debug keys (rendering toggles, "h" for
+help) only work when run with `-debug-keys` (e.g.
+`dune exec examples3d/Cubes3d.exe -- -debug-keys`); other flags:
+`-uncapped`, `-fixed-time t`, `-keys k`, `-dump-frame n file`.
+
 `make check` runs the project's semgrep config (`semgrep.jsonnet`) via a local `osemgrep` binary — not generally runnable outside the author's machine.
 
 ## Architecture
@@ -46,6 +58,7 @@ Every example/game module (`open Playground; ... let main = Playground_platform.
 - `core/` → library `elm_core` (unwrapped): `Basics.ml` (float-friendly arithmetic operators, meant to be `open`ed by playground code), `Color.ml`, `Set_.ml`/`Set_.mli` (custom polymorphic set, exposed as `Set.ml`), `Keyboard.ml`, `Time.ml`. Reimplements small pieces of Elm's core/stdlib for ease of porting Elm code.
 - `system/` → library `elm_system` (unwrapped, depends on `elm_core`): `Cmd.ml`, `Sub.ml` — Elm's Cmd/Sub effect-system stand-ins.
 - Dependency order: `elm_core` ← `elm_system` ← `elm_playground` ← {`elm_playground_native` | `elm_playground_web`}.
+- `graphics/` → private libraries (no `public_name`, each installed as part of a package via its `(package ...)` field), the from-scratch rendering algorithms, independent of the Playground, one idea per module with its `.mli` explaining it: `graphics/core` (`Framebuffer`, `Blit`, `Opti`), `graphics/2d` (the 2D software rasterizer: `Fill`, `Line`, `Circle`, ...), `graphics/3d` (the 3D one: `Triangle`, `Zbuffer`, `Clip`, ..., `Render`), `graphics/3d/geometry` (`Vec3`, `Camera`, `Mat4`, `Lighting`, shared by all 3D backends), `graphics/font` (Hershey), `graphics/images` (decoding). Unit tests in `graphics/tests/`. The `playground/software/` and `playground3d/software/` backends are thin adapters over them.
 
 ### The Model-View-Update pattern
 

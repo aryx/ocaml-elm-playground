@@ -10,12 +10,15 @@ of these -- see below).
 
 ## What exists today
 
-All of it lives in `playground3d/software/Playground3d_platform.ml`'s
-"Shading" section (only the native backend does any of this -- the web
-backend has no per-pixel access at all, so it can't shade anything; see
-`notes_3d.md`'s lucamug comparison table).
+The lighting formula is `graphics/3d/geometry/Lighting.ml` (`light_dir`,
+`ambient`, `brightness_of_normal`, shared by the three 3D backends); the
+4 modes are `graphics/3d/Shading.ml` (`Shading.make`, the native
+software backend only -- the web backend has no per-pixel access at
+all, so it can only light each face with one color, flat; see
+`notes_3d.md`'s lucamug comparison table); the per-face colors are
+`graphics/3d/Render.ml`'s `color_of_paint`.
 
-- `type shading = Flat_color | Flat_shading | Gouraud | Phong` -- all 4
+- `type mode = Flat_color | Flat_shading | Gouraud | Phong` -- all 4
   modes from the roadmap below are now implemented; "m" cycles through
   them at runtime (`notes_3d.md` section 11).
 - `light_dir : vec3` -- a single, fixed **directional** light (a "sun":
@@ -30,11 +33,11 @@ backend has no per-pixel access at all, so it can't shade anything; see
   model" is "how aligned is this surface with the light." Pure (no
   branching on the current shading mode); what varies between modes is
   *which* normal(s) get fed into it and *how often* (once per face,
-  once per vertex, or once per pixel) -- see `make_shader` below.
-- `make_shader v0 v1 v2 : l0:float -> l1:float -> l2:float -> float` --
+  once per vertex, or once per pixel) -- see `Shading.make` below.
+- `Shading.make mode v0 v1 v2 : l0:float -> l1:float -> l2:float -> float` --
   a per-triangle closure, built once and called once per covered pixel
   (the same "decide once per triangle, apply once per pixel" shape as
-  `make_interpolator` for depth/UV), that is the one place all 4 modes
+  `Interpolate.make` for depth/UV), that is the one place all 4 modes
   actually differ:
   - `Flat_color` -- ignores the normal entirely, always `1.`.
   - `Flat_shading` -- `brightness_of_normal v0.normal` computed once
@@ -46,7 +49,7 @@ backend has no per-pixel access at all, so it can't shade anything; see
   - `Phong` -- the vertex *normals themselves* blended per pixel via
     `l0`/`l1`/`l2`, renormalized, then `brightness_of_normal` computed
     on that (1 dot product per pixel, not per vertex).
-- `fill_of_material` no longer computes brightness at all -- it takes
+- `Render.color_of_paint` no longer computes brightness at all -- it takes
   `~brightness` as a 4th per-pixel argument (alongside `~u`/`~v`) and
   just multiplies it into whichever color it resolves (flat, or a
   sampled texel), via `scale_channel`. This keeps it fully decoupled
@@ -85,7 +88,7 @@ brightness number, so a light can only ever dim or brighten a surface's
 own color, never tint it. A colored light would need `brightness_of_
 normal` to return an `(r, g, b)` triple of scale factors (e.g. a warm
 light might scale red/green more than blue) instead of one float, and
-`fill_of_material`'s `shade` function to multiply each channel by its
+`Render.color_of_paint`'s `shade` function to multiply each channel by its
 own factor. Cheap to add; mostly a matter of deciding on a light-color
 representation.
 
@@ -111,19 +114,19 @@ representation, a new, minimal `form3d` case was added:
 `sphere color radius` tessellates a standard UV-sphere out of
 `SmoothPolygon3d` quads, each corner's normal computed analytically.
 On the native side, `vertex` gained a `normal : vec3` field (filled in
-by `project_vertex`, alongside the existing depth/UV) and
-`flatten_faces` attaches a normal to every point of every face --
+by `Project.vertex`, alongside the existing depth/UV) and
+`Shape3d_render_software.faces` attaches a normal to every point of every face --
 either the single winding-based `face_normal` repeated for every point
 of a `Polygon3d`/`TexturedPolygon3d` face (which is exactly what keeps
 `Flat_shading` uniform across such a face), or the stored per-vertex
 normal for a `SmoothPolygon3d` one. `Gouraud` then blends
 `brightness_of_normal v0.normal`/`v1.normal`/`v2.normal` (3 dot
 products, once per vertex) across each triangle the same way `u`/`v`
-already are (barycentric interpolation, §7) -- see `make_shader` above.
+already are (barycentric interpolation, §7) -- see `Shading.make` above.
 
 One simplification, stated up front rather than discovered by accident:
 Gouraud/Phong interpolate brightness/normals *linearly*, not
-perspective-correctly like `make_interpolator`'s `u`/`v`/`z` (the `p`
+perspective-correctly like `Interpolate.make`'s `u`/`v`/`z` (the `p`
 toggle). Brightness differences are usually too subtle for the
 difference to be visible, and reusing that machinery for a
 differently-shaped attribute (a normal, not a single float) would add

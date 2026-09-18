@@ -6,14 +6,43 @@ what "rendering a 3D scene" actually means, the handful of ideas every
 built out of, where those ideas came from historically, and exactly
 which of them `playground3d/` uses -- with pointers into the actual
 code. If you read this once, the code in `Playground3d.ml` and
-`playground3d/software/Playground3d_platform.ml` should stop looking like
-a wall of trigonometry and start looking like a small, recognizable set
-of standard building blocks.
+`graphics/3d/` should stop looking like a wall of trigonometry and start
+looking like a small, recognizable set of standard building blocks.
 
 See also [`plan_playground3d.md`](plan_playground3d.md) (the original
 design plan) for *why* this library exists and how it's organized as
 OCaml packages; this note is about the 3D *concepts*, not the OCaml
 architecture.
+
+## 0. Where the code is, and a reading order
+
+The native software rasterizer is one small module per idea, in
+`graphics/3d/`, independent of the Playground (points, colors as ints,
+cameras as plain records); each `.mli` explains its algorithm with a
+diagram, a worked example checked by `graphics/tests/`, and the paper
+that introduced it. Suggested reading order, which is also the order of
+this note:
+
+| module | what | section |
+|---|---|---|
+| `geometry/Vec3` | points and vectors, dot and cross products, face normals | §2, §3 |
+| `geometry/Camera` | the look-at camera: view coordinates, perspective | §4 |
+| `Project` | a 3D point to a pixel, with what's interpolated | §4 |
+| `Cull` | backface culling | §5 |
+| `Zbuffer`, `Painter` | hidden surface removal, two ways | §6 |
+| `Triangle` | edge functions, the fill rule | §7 |
+| `Clip` | near-plane clipping | §7 |
+| `geometry/Lighting`, `Shading` | Lambert's law; flat, Gouraud, Phong | §8 |
+| `Interpolate`, `Texture` | perspective-correct interpolation, texture sampling | §9 |
+| `Render` | the whole pipeline, one function | all |
+
+Around them: `geometry/Mat4` (the same camera as matrices, for the
+OpenGL backend); `playground3d/software/Shape3d_render_software.ml`,
+which turns the Playground's `shape3d`s and `camera` into `Render`'s
+faces; and `Playground3d_platform.ml`, the window, the debug keys (§11),
+the HUD (§12) and the loop. The web backend (`Playground3d.ml`'s
+`render3d_to_2d`) shares `Camera` and `Lighting`. `tests/3d/` checks
+whole frames of every example against golden images.
 
 ## 1. The big picture: what does "rendering" even mean?
 
@@ -40,16 +69,15 @@ Every 3D engine, from a 1963 wireframe plotter to a 2026 game, does
 some version of these four steps. `playground3d/`'s pipeline is exactly
 this, and you can see all four stages as separate, named functions:
 step 1 is `move3d`/`rotate3d`/`scale3d` (`Playground3d.ml`), steps 2-4
-are `view_space` and `project_vertex` in
-`playground3d/software/Playground3d_platform.ml` (or `project` in
-`Playground3d.ml` for the web backend's simpler 2D-point-only version).
+are `Camera.view`, `Camera.ndc` and `Project.vertex` in `graphics/3d/`
+(or `project` in `Playground3d.ml` for the web backend's simpler
+2D-point-only version, which uses the same `Camera` functions).
 
 ## 2. Points, vectors, and the two operations everything is built from
 
 A 3D point is a triple of numbers, `(x, y, z)`. In this codebase it's
-just an OCaml tuple (see `type vec3 = float * float * float` near the
-top of `Playground3d.ml` and, duplicated, in the native backend -- see
-`plan_playground3d.md`'s notes on why that duplication exists). The
+just an OCaml tuple (`Vec3.t = float * float * float`, in
+`graphics/3d/geometry/Vec3.ml`, shared by all the backends). The
 same triple is used both for *positions* ("this corner of the cube is
 here") and *directions/vectors* ("this face points this way") --
 context tells you which one you mean.
@@ -82,10 +110,12 @@ is just one of these two:
     up_hint` gives you a true "right" direction that *is* perpendicular
     to forward.
 
-There's no matrix type anywhere in `playground3d/` -- no 4x4 matrices,
-no matrix-vector multiplication. This is a deliberate simplification
-(see `plan_playground3d.md`): everything is done with these two
-operations on plain 3-tuples instead. That's *not* how a real game
+The software rasterizer and the web backend use no matrices -- no 4x4
+matrices, no matrix-vector multiplication. This is a deliberate
+simplification (see `plan_playground3d.md`): everything is done with
+these two operations on plain 3-tuples instead. (`geometry/Mat4` builds
+the same camera as 4x4 matrices, only because the OpenGL backend's GPU
+wants them, see §10.) That's *not* how a real game
 engine or GPU pipeline works internally (they represent every
 transform, including projection, as a 4x4 matrix and multiply them
 together) -- but the matrix version is mathematically equivalent to,
@@ -108,10 +138,11 @@ learning-oriented library like this one.
   is how you combine faces (and groups of faces) into a mesh.
 - The **normal** of a face is a vector perpendicular to it, by
   convention pointing "outwards" (away from the solid the face belongs
-  to). `face_normal` computes it from just the first 3 vertices of a
-  face, via a cross product of two of its edges -- this works because
-  a face is planar, so *any* two non-parallel edges give the same
-  normal direction.
+  to). The obvious way is a cross product of two of its edges -- a
+  face is planar, so *any* two non-parallel edges give the same normal
+  direction -- but it fails on a degenerate corner (two equal points,
+  like a sphere's pole); `Vec3.face_normal` uses Newell's method
+  instead, a sum over all the edges, robust to that.
 
 **Why triangles, specifically, are the universal building block of 3D
 graphics:** 3 points are *always* exactly planar/flat (any 3 points in
@@ -123,7 +154,7 @@ surface. This is why real GPUs and rendering engines only ever really
 know how to draw triangles -- a quad you build (like `cube`'s faces
 here) is really "secretly" always meant to be thought of as 2
 triangles glued together along a diagonal. You can see this literally
-in the native backend's `fan_triangles`: it takes a face's point list
+in `Render`'s `fan_triangles`: it takes a face's point list
 (e.g. a cube face's 4 corners) and splits it into a *fan* of triangles
 -- `(p0,p1,p2), (p0,p2,p3), ...` -- before rasterizing each one
 separately. The web backend never does this, because it hands whole
@@ -134,7 +165,7 @@ polygon directly.
 **Winding order.** The *order* you list a face's vertices in matters:
 going around them counter-clockwise (as seen from the side the face
 should be visible from) vs. clockwise flips which way the computed
-normal points. `cube_faces` in `Playground3d.ml` was written (by hand,
+normal points. `box_faces` in `Playground3d.ml` was written (by hand,
 checked with the actual cross-product math) so every face's 4 corners
 are listed in the order that makes its outward normal come out
 correct. If you ever add a new hand-built shape and backface culling
@@ -179,14 +210,14 @@ degrees) controls how wide that pyramid is -- a small FOV is a
 view. `near`/`far` exist mostly for numerical/practical reasons (a
 point exactly *at* the camera can't be projected at all -- dividing by
 a view-space depth of 0 -- and a "far" limit avoids drawing things
-infinitely far away); see §7 for what "clipping" against these planes
-means and why we currently do the simplest possible (non-)version of
-it.
+infinitely far away); see §7 for what "clipping" against the near
+plane means, and `Clip`.
 
 ### 4.2 View space: re-describing the world relative to the camera
 
-`view_space` takes a world-space point and re-expresses it in a
-coordinate system centered on the camera, with 3 axes:
+`Camera.view` takes a world-space point and re-expresses it in a
+coordinate system centered on the camera, with 3 axes (`Camera.basis`,
+also used by `Mat4.look_at`):
 
 - **forward**: the direction the camera is looking (`target - eye`,
   normalized -- "normalize" just means "rescale to length 1", so it's a
@@ -201,7 +232,7 @@ coordinate system centered on the camera, with 3 axes:
 
 Once you have those 3 perpendicular axes, "where is this point relative
 to the camera" is just 3 dot products: how far along "right", how far
-along "up", how far along "forward". That's exactly what `view_space`
+along "up", how far along "forward". That's exactly what `Camera.view`
 computes. The resulting `(vx, vy, vz)` is in **view space**: `vz` is
 literally "distance in front of the camera, measured along where it's
 looking" -- which is exactly the depth value the z-buffer needs (§6).
@@ -213,8 +244,7 @@ away look smaller", the way real cameras and eyes work. Its opposite is
 **orthographic projection** ("parallel" projection, no size falloff
 with distance -- used in some CAD software, isometric-looking games,
 and 2D playground's own coordinate system, which has no notion of depth
-at all). The core formula, seen in `project_vertex`/`Playground3d.project`,
-is: `screen_x` is proportional to `view_x / view_z` (and similarly for
+at all). The core formula, seen in `Camera.ndc`, is: `screen_x` is proportional to `view_x / view_z` (and similarly for
 y) -- literally "divide by depth". This single division is *the*
 mathematical fact that produces the entire visual effect of things
 shrinking with distance: double `view_z` (move a point twice as far
@@ -228,7 +258,7 @@ factor, to "zoom in").
 The result, before converting to actual pixels, is in **normalized
 device coordinates** (NDC): roughly `-1..1` across the visible width
 and height, regardless of the actual window size in pixels. The last
-step (also in `project_vertex`) is just remapping that `-1..1` range
+step (`Project.vertex`) is just remapping that `-1..1` range
 onto actual pixel coordinates -- and, since our framebuffer's pixel
 coordinates have `(0,0)` at the top-left with Y increasing *downward*
 (the universal convention for image/pixel buffers), while
@@ -243,7 +273,7 @@ see the inside surface of the far side of it -- it's always hidden
 behind the near side. **Backface culling** is the optimization of
 detecting and skipping those never-visible faces *before* doing any
 per-pixel work on them, using exactly the dot-product intuition from
-§2: `dot normal (eye - centroid) > 0` asks "does this face's outward
+§2: `dot normal (eye - centroid) > 0` (`Cull.faces_camera`) asks "does this face's outward
 normal point roughly *towards* the camera, or roughly *away* from it?"
 -- a face pointing away is a backface, and gets skipped entirely. On a
 plain cube viewed from outside, this immediately discards 3 of its 6
@@ -278,7 +308,8 @@ other.
   it). Sort whole faces by distance from the camera, farthest first,
   and draw them in that order. This is exactly what
   `Playground3d.render3d_to_2d` does (`List.sort` by `dist_to_eye`,
-  farthest-first) for the *web* backend. It's simple and cheap, but has
+  farthest-first) for the *web* backend, and `Painter.sort_far_to_near`
+  for the native one when you press `z` (§11). It's simple and cheap, but has
   a well-known failure mode: it only works if you can put every face
   into one single consistent front-to-back order, which is impossible
   when faces interpenetrate, or when three faces mutually overlap each
@@ -300,9 +331,9 @@ other.
   and, historically, the per-pixel comparison work -- cheap enough
   today that it's standard in essentially every real-time 3D renderer,
   built directly into GPU hardware. This is exactly what the *native*
-  backend does: `zbuffer` (a plain `float array`, one entry per pixel)
-  and the `if z < Array.unsafe_get zbuffer idx then ...` check inside
-  `rasterize_triangle` are a z-buffer, done by hand.
+  backend does by default: `Zbuffer` (a plain `float array`, one entry
+  per pixel) and its `test_and_set`, called by `Triangle.fill` for
+  every pixel, are a z-buffer, done by hand.
 
 - **BSP trees** (Binary Space Partitioning -- Fuchs, Kedem, and Naylor,
   1980). A different idea: *before* you know where the camera is,
@@ -343,7 +374,7 @@ at all, so a per-pixel z-buffer isn't an option there; see
 ## 7. Rasterization: turning one triangle into pixels
 
 Given a triangle already projected to 2D screen coordinates (§4), how
-do you decide exactly which pixels it covers? `rasterize_triangle`
+do you decide exactly which pixels it covers? `Triangle.fill`
 (native backend only -- the web backend hands whole polygons to
 `Playground.polygon`/SVG and never rasterizes by hand at all) uses the
 **edge function** technique, essentially the same algorithm real GPU
@@ -359,7 +390,7 @@ zero exactly on the line (it's the z-component of a 2D cross product --
 same underlying idea as §2's cross product, just done in 2D).
 Computing all 3 edge functions for a point `p` against all 3 of the
 triangle's edges tells you: if all 3 come out the same sign, `p` is
-inside the triangle; if they don't, it's outside. `rasterize_triangle`
+inside the triangle; if they don't, it's outside. `Triangle.fill`
 does exactly this, for every pixel in the triangle's bounding box (the
 smallest rectangle containing all 3 corners -- there's no point testing
 pixels that can't possibly be inside).
@@ -372,10 +403,10 @@ contributes to this exact pixel (a pixel exactly at `p0` has
 barycentric coordinates `(1, 0, 0)`; a pixel exactly in the middle has
 roughly `(0.33, 0.33, 0.33)`). This turns out to be *the* general tool
 for smoothly interpolating anything that's defined per-vertex across a
-triangle's interior -- `rasterize_triangle` uses it for two different
+triangle's interior -- `Triangle.fill` uses it for two different
 things simultaneously: the interpolated depth `z` (fed to the z-buffer
 test, §6) and the interpolated texture coordinates `u`/`v` (fed to
-`sample_texture`, see §9). Gouraud shading (§8) is the same trick
+`Texture`'s samplers, see §9). Gouraud shading (§8) is the same trick
 applied to per-vertex *colors* instead.
 
 An older, now mostly-historical alternative to edge functions is
@@ -388,7 +419,32 @@ edge-function approach became standard; it's a bit more fiddly to get
 exactly right at triangle edges/shared vertices, and much harder to
 parallelize (each row depends on incremental state from the row
 above), which is part of why edge functions won out once parallel
-hardware (GPUs) became the target.
+hardware (GPUs) became the target. (The 2D rasterizer, `graphics/2d/Fill`,
+is a scanline one: compare.)
+
+Three refinements, each its own debug key (§11):
+
+- **The fill rule** (`t`). A pixel whose center is exactly on an edge
+  shared by two triangles -- a rectangle's diagonal, any mesh's inner
+  edges -- must be drawn by exactly one of them: by both is wasted work
+  (and wrong with transparency), by neither is a hole, a "crack". In
+  floating point, the two triangles compute that edge's value with
+  different roundings, so neither may see it as inside. The default fix
+  is an epsilon (count slightly outside as inside: drawn by both); what
+  GPUs do is the **top-left rule** (the pixel belongs to the triangle
+  for which that edge is a top or left one), made exact by snapping the
+  vertices to 1/256th of a pixel first ("sub-pixel precision"), after
+  which no edge value needs rounding. See `Triangle.mli`, with a
+  picture.
+- **Incremental edge functions** (`o`, an optimization). An edge
+  function is linear in x, so one pixel to the right it changes by a
+  constant: add it instead of recomputing (see `notes_3d_opti.md`).
+- **Near-plane clipping** (`c`). Projection divides by depth, so a
+  vertex behind the camera has no sensible pixel. Dropping every
+  triangle with such a vertex leaves holes near the camera, e.g. the
+  floor under your feet in `examples3d/Corridor3d.ml`; `Clip` cuts the
+  triangle to its part in front of the near plane instead (Sutherland
+  and Hodgman, 1974), which gives 0, 1 or 2 triangles.
 
 ## 8. Shading models: flat, Gouraud, Phong (and where we are)
 
@@ -397,14 +453,12 @@ computed*, typically in response to a light source -- this is a
 separate concern from everything above (which is all purely about
 *geometry*: where things are, which pixels they cover, which one is in
 front). It's worth being precise about the terms here since they're
-easy to conflate, and since `playground3d/` currently skips this whole
-topic:
+easy to conflate:
 
-- **Flat color** (what we actually do): every pixel of a face just gets
-  the same, fixed color, with **no lighting calculation at all** --
-  `pixel_of_color`/the texture sample is used exactly as given, with no
-  darkening on faces that would, in a real scene, be angled away from a
-  light. This is simpler than any of the shading models below, not a
+- **Flat color** (no lighting): every pixel of a face just gets the
+  same, fixed color, with **no lighting calculation at all** -- the
+  color or texture sample is used exactly as given, with no darkening
+  on faces that would, in a real scene, be angled away from a light. This is simpler than any of the shading models below, not a
   variant of one of them.
 - **Flat shading**: one step up from flat color -- compute lighting
   *once per face* (using the face's single normal, e.g. "how aligned is
@@ -444,9 +498,11 @@ topic:
 
 **Where `playground3d/` sits on this spectrum today: all four,
 pluggable at runtime** (native backend only -- see §11's `m` toggle and
-`notes_3d_shading.md` for the full writeup). `flat_color`/`flat_shading`
-work exactly as described above, reusing the same `face_normal` that
-backface culling (§5) already computes. Gouraud/Phong needed one more
+`notes_3d_shading.md` for the full writeup; the code is `Shading`,
+and the lighting formula itself, Lambert's cosine law with an ambient
+floor, is `geometry/Lighting`, shared with the web and OpenGL backends).
+`flat_color`/`flat_shading` work exactly as described above, flat
+shading using the same winding-based normal as backface culling (§5). Gouraud/Phong needed one more
 piece first: a normal *per vertex*, which `cube`/`box`/`plane` have no
 use for (each face's corners are independent points, not shared with
 neighboring faces, so a per-vertex normal would just equal that one
@@ -468,23 +524,24 @@ and color, UV coordinates get linearly interpolated across a triangle
 using barycentric coordinates (§7) -- so a pixel in the *middle* of a
 textured triangle samples from roughly the middle of the corresponding
 part of the image, and so on smoothly across the whole face. This is
-exactly what `rasterize_triangle`'s `fill ~u ~v` callback and
-`sample_texture` do.
+exactly what `Triangle.fill`'s `color ~u ~v` callback and `Texture`'s
+samplers do.
 
-Two real simplifications worth knowing about, both fine for this
-library's current scope but worth knowing the "proper" fix for:
+Two choices, each with a simple and a better version, both
+implemented (and switchable, §11):
 
-- **Nearest-neighbor sampling**: `sample_texture` just rounds `(u, v)`
-  to the nearest source pixel and uses its exact color. The
-  alternative, **bilinear filtering**, blends the 4 nearest source
-  pixels proportionally, giving a smoother result when a texture is
-  magnified (stretched larger than its native resolution) instead of
-  visible blocky pixelation -- a well-known, easy upgrade if the
-  blockiness ever becomes visually undesirable (it's a deliberately
-  authentic look for a Minecraft-style game, incidentally, so may never
-  be worth "fixing" for that use case specifically).
-- **Linear (not perspective-correct) interpolation**: barycentric
-  interpolation, as used here, is linear *in screen space*. Real
+- **Nearest-neighbor or bilinear sampling** (`i`):
+  `Texture.sample_nearest` just takes the source pixel containing
+  `(u, v)` and uses its exact color. The alternative,
+  `Texture.sample_bilinear`, blends the 4 nearest source pixels
+  proportionally, giving a smoother result when a texture is magnified
+  (stretched larger than its native resolution) instead of visible
+  blocky pixelation (a deliberately authentic look for a
+  Minecraft-style game, incidentally, which can ask for it with
+  `rendering`'s `smooth_textures = false`). The same two filters as
+  the 2D rasterizer's images, `graphics/core/Blit`.
+- **Linear or perspective-correct interpolation** (`p`): barycentric
+  interpolation, done naively, is linear *in screen space*. Real
   perspective projection is *not* linear (§4.3's division by depth
   sees to that), so linearly interpolating UV coordinates (or colors,
   or anything else) directly in screen space is a subtly incorrect
@@ -493,11 +550,9 @@ library's current scope but worth knowing the "proper" fix for:
   look of the original PlayStation's 3D rendering, which used exactly
   this shortcut for performance reasons). The correct fix,
   **perspective-correct interpolation**, interpolates `u/z`, `v/z`, and
-  `1/z` instead of `u`, `v` directly, then divides back out at the end;
-  a well-known, self-contained improvement to `rasterize_triangle` if
-  texture warping ever becomes visible on larger/closer geometry (e.g.
-  during the Minecraft-style port, where the camera gets close to large
-  flat faces).
+  `1/z` instead of `u`, `v` directly, then divides back out at the end
+  -- `Interpolate`, the default (and what `Project.vertex` prepares
+  the `1/z`, `u/z`, `v/z` for).
 
 ## 10. lucamug's elm-playground-3d vs. this library, side by side
 
@@ -506,7 +561,7 @@ library's current scope but worth knowing the "proper" fix for:
 | Shape representation | `Shape3d`/`Form3d`, world-space points, no transform header | Same design, copied deliberately (see `plan_playground3d.md`) |
 | Camera | Eye + target ("look-at"), fixed presets (`camera1`..`camera4`) | Same eye/target model, but a real record you construct with your own values, and (unlike lucamug's) usable as a genuinely *moving* value computed fresh each frame from your game's model |
 | Backface culling | None | Yes (§5) |
-| Hidden surface removal | None (relies on manual face ordering + specific camera angles) | Painter's algorithm on web (§6); a real z-buffer on native (§6) |
+| Hidden surface removal | None (relies on manual face ordering + specific camera angles) | Painter's algorithm on web (§6); a real z-buffer on native, or the painter's algorithm with `z` (§6) |
 | Rendering target | SVG only (via elm-playground's existing renderer) | SVG (via `elm_playground_web`, reusing the same "compile 3D down to 2D shapes" trick) *and* a real hand-written software rasterizer for native |
 | Textures | None | `textured_quad`/`textured_cube`, real per-pixel sampling on native (§9); flat placeholder color on web |
 | Shading | None | flat_color/flat_shading/Gouraud/Phong, pluggable at runtime (§8, §11) |
@@ -527,26 +582,28 @@ different, heavier-weight programming model (a shader language, GPU
 buffer management, usually a real matrix/quaternion math library) --
 deliberately not what this library is going for; the whole point of
 `playground3d/` is that you can read every line of `Playground3d.ml`
-and `playground3d/software/Playground3d_platform.ml` and see exactly what
-number produced what pixel, the same "no magic" spirit as the original
-2D `elm-playground`. See `notes_playground3d_related_work.md` for the
+and `graphics/3d/` and see exactly what number produced what pixel, the same "no magic" spirit as the original
+2D `elm-playground`. (This project has an OpenGL backend too,
+`playground3d/opengl/`, to compare: the same scenes, the same
+`Lighting`, drawn by the GPU.) See `notes_playground3d_related_work.md` for the
 fuller survey -- the rest of the Elm "3D playground" lineage
 (`erkal`'s and `nateabele`'s projects too), plus VRML, OpenGL, WebGL,
 Vulkan, and Unity, and how `playground3d/`'s teaching-first, no-GPU
 design compares to each.
 
-## 11. Try it yourself: 4 runtime-toggleable rendering modes
+## 11. Try it yourself: runtime-toggleable rendering modes
 
-`playground3d/software/Playground3d_platform.ml` doesn't just describe
+The native software backend doesn't just describe
 several of the trade-offs above -- they're wired up as live, in-game
 toggles you can flip with a single key press while any native
 example/game is running with the `-debug-keys` flag (off by default,
 so a game can use any key), so you can directly compare "simple" vs "more
 correct" side by side instead of just reading about the difference.
-Each one is deliberately its own separate, clearly-sectioned
-function/code path (not one function with a runtime branch buried in
-the middle), so you can read either version of a given trade-off on
-its own, start to finish.
+Each one is a field of `Render.options`, and each version lives in its
+own module or function of `graphics/3d/` (e.g. `Interpolate.make`'s
+two cases, `Painter` vs `Zbuffer`), so you can read either version of
+a given trade-off on its own. `h` shows them all, with their current
+state, over the frame; the window title too. The main ones:
 
 - **`m` -- shading mode** (§8): cycles through all 4 modes described in
   §8 -- `flat_color` (no lighting at all -- every face/texel drawn
@@ -618,6 +675,14 @@ its own, start to finish.
   interpolates `1/z`, `u/z`, `v/z` instead (genuinely linear in screen
   space, so exact rather than approximate) and holds the texture
   perfectly still on the rotating cube.
+
+And the others, described above: `i` nearest or bilinear texture
+filtering (§9), `c` near-plane clipping and `t` the top-left fill rule
+(§7), `o` the simple versions of the optimizations (a quick way to see
+what they buy, on the fps counter), and `x` a pixel magnifier following
+the mouse (the one from the 2D rasterizer, `graphics/2d/Magnifier`),
+to look at edges and the fill rule up close. `README-3d.md` has the
+table.
 
 ## 12. HUD: a 2D overlay on top of the 3D scene
 
@@ -733,6 +798,10 @@ backend's shape-drawing code can only be called from
 - **Rasterization**: the (opposite-of-ray-tracing) approach of
   projecting geometry onto the screen and figuring out which pixels
   each triangle covers.
+- **Near-plane clipping**: cutting a triangle that goes behind the
+  camera to its part in front of it, instead of dropping it.
+- **Fill rule**: which triangle gets a pixel exactly on an edge shared
+  by two; the **top-left rule** gives it to exactly one.
 - **Edge function**: the per-edge test (from Pineda, 1988) used to
   decide whether a point is inside a triangle, and the basis for...
 - **Barycentric coordinates**: 3 per-vertex weights (summing to 1) for
@@ -750,8 +819,7 @@ backend's shape-drawing code can only be called from
   projection's nonlinearity (§4.3) when interpolating UVs/colors/etc.
   across a triangle, instead of the simpler (and subtly wrong) linear
   screen-space interpolation.
-- **Flat color**: no lighting at all -- what `playground3d/` currently
-  does.
+- **Flat color**: no lighting at all.
 - **Flat shading**: one lighting calculation per face.
 - **Gouraud shading**: one lighting calculation per vertex, colors
   interpolated (via barycentric coordinates) across each triangle.
