@@ -11,6 +11,7 @@
     Platformer
     TinyInvaders
     TinySokoban
+    TinyPacman
   )
   (libraries
     elm_playground

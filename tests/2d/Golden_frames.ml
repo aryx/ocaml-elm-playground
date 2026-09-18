@@ -41,6 +41,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/Platformer", "", 5);
     ("games/software/TinyInvaders", "", 5);
     ("games/software/TinySokoban", "", 5);
+    ("games/software/TinyPacman", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -58,6 +59,9 @@ let scripted : Testutil_golden.scripted list =
       "solve1",
       40,
       "space:1,up:5,left:10,down:15,up:20,right:25,right:30,down:35" );
+    (* after READY!, left, up, right along the top: dots eaten, the
+     * ghosts out of the house, scattering *)
+    ("games/software/TinyPacman", "play", 300, "space:1,left:120-170,up:160-230,right:220-300");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

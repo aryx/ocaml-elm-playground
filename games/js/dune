@@ -9,6 +9,7 @@
 (copy_files ../Platformer.{ml,mli})
 (copy_files ../TinyInvaders.{ml,mli})
 (copy_files ../TinySokoban.{ml,mli})
+(copy_files ../TinyPacman.{ml,mli})
 
 (executables
   (names
@@ -19,6 +20,7 @@
     Platformer
     TinyInvaders
     TinySokoban
+    TinyPacman
   )
   (libraries
     unix

@@ -134,6 +134,16 @@ Known ones, by genre (found, not yet read):
 Genres with nothing found yet in these languages (racing, beat 'em
 ups, fighting) are the ones where our toys would be new.
 
+Not functional, but the closest thing to this project's goal in book
+form: **Code the Classics**, volumes 1 and 2 (Raspberry Pi Press,
+2019 and later; free PDFs): complete remakes of classic games in
+Python with Pygame Zero, each with its full source, explained, and
+the history of the original -- e.g. volume 1's Boing! (Pong), Cavern
+(Bubble Bobble), Infinite Bunner (Frogger), Myriapod (Centipede) and
+Soccer (Sensible Soccer). A model for the toys' headers (the history)
+and for the course (`plan_teaching_other.md`); the games are small
+enough to port. (From memory: the titles and contents to check.)
+
 ## The genres
 
 Ordered roughly by history. For each: the inventors, the toys, the
@@ -209,7 +219,9 @@ Pac-Man (Toru Iwatani, Namco, 1980: the first game character, and
 ghosts with personalities), Bomberman (Hudson, 1983), Boulder Dash
 (First Star, 1984: rocks fall, diamonds roll).
 
-- **Toys**: TinyPacman, TinyBomberman.
+- **Toys**: TinyPacman (DONE: `games/TinyPacman.ml`, our own 19x21
+  maze; its `Grid_move` and `Ghosts` sections are the maze kit, to
+  become `kits/maze/` with a second maze game), TinyBomberman.
 - **Kit**, the maze kit:
   - `Grid_move`: moving along a `Tilemap`'s corridors, with the turn
     you ask for early remembered until possible ("pre-turning", what
