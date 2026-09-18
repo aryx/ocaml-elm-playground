@@ -12,6 +12,7 @@
     TinyInvaders
     TinySokoban
     TinyPacman
+    TinyWorms
   )
   (libraries
     elm_playground
