@@ -131,6 +131,8 @@ website:
 	done
 	mkdir -p docs/examples3d/webgl/examples3d
 	install -m 644 examples3d/checker.png docs/examples3d/webgl/examples3d/
+	mkdir -p docs/games3d/webgl/games3d
+	install -m 644 games3d/texture.png docs/games3d/webgl/games3d/
 
 # Preview the site at http://localhost:8000
 serve:

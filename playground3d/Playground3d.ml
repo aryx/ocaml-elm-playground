@@ -67,6 +67,9 @@ and form3d =
   | SmoothPolygon3d of Playground.color * (vec3 * vec3) list
   | Hud of Playground.shape
   | Group3d of shape3d list
+  | Cached3d of cached
+
+and cached = { id : int; content : shape3d; huds : Playground.shape list }
 
 let polygon3d color points =
   if List.length points < 3 then failwith "polygon3d needs at least 3 points";
@@ -194,6 +197,9 @@ let rec map_points (f : vec3 -> vec3) (shape : shape3d) : shape3d =
    * in Playground3d.mli. *)
   | Hud _ -> shape
   | Group3d shapes -> { shape with form = Group3d (List.map (map_points f) shapes) }
+  (* claude: the transformed points are new geometry, so the result is
+   * a plain, uncached group (see cached3d) *)
+  | Cached3d c -> map_points f c.content
 
 (* like map_points, but also applies [f] to each point's normal (for
  * SmoothPolygon3d) -- correct for rotate3d specifically, since rotating
@@ -208,6 +214,7 @@ let rec map_points_and_normals (f : vec3 -> vec3) (shape : shape3d) : shape3d =
       { shape with form = SmoothPolygon3d (color, List.map (fun (p, n) -> (f p, f n)) points) }
   | Group3d shapes -> { shape with form = Group3d (List.map (map_points_and_normals f) shapes) }
   | Hud _ -> shape (* same no-op as map_points, see there *)
+  | Cached3d c -> map_points_and_normals f c.content (* uncached, like map_points *)
   | Polygon3d _ | TexturedPolygon3d _ -> map_points f shape
 
 let move3d dx dy dz shape = map_points (fun p -> add p (dx, dy, dz)) shape
@@ -241,6 +248,7 @@ let rec fade3d alpha shape =
   match shape.form with
   | Polygon3d _ | TexturedPolygon3d _ | SmoothPolygon3d _ | Hud _ -> { shape with alpha }
   | Group3d shapes -> { shape with form = Group3d (List.map (fade3d alpha) shapes) }
+  | Cached3d c -> fade3d alpha c.content (* uncached, like map_points *)
 
 (* shared by both backends -- see Hud's doc comment in Playground3d.mli
  * and docs/claude_notes/done/plan_hud.md. [Playground.fade shape.alpha s]
@@ -251,7 +259,25 @@ let rec collect_hud_shapes (shape : shape3d) : Playground.shape list =
   match shape.form with
   | Hud s -> [ Playground.fade shape.alpha s ]
   | Group3d shapes -> List.concat_map collect_hud_shapes shapes
+  (* claude: computed once by cached3d, so a big cached subtree isn't
+   * walked every frame just to find (usually no) HUD shapes *)
+  | Cached3d c -> c.huds
   | Polygon3d _ | TexturedPolygon3d _ | SmoothPolygon3d _ -> []
+
+(*-------------------------------------------------------------------*)
+(* Caching *)
+(*-------------------------------------------------------------------*)
+(* claude: see cached3d in Playground3d.mli, and
+ * docs/claude_notes/plan_opengl_perf.md. The id is the node's identity,
+ * like a physical address in Elm's Html.lazy: a fresh one per call, so
+ * a backend knows that a node it has seen before hasn't changed. *)
+
+let next_cached_id = ref 0
+
+let cached3d (shapes : shape3d list) : shape3d =
+  incr next_cached_id;
+  let content = group3d shapes in
+  { alpha = 1.; form = Cached3d { id = !next_cached_id; content; huds = collect_hud_shapes content } }
 
 (*****************************************************************************)
 (* Camera *)
@@ -308,6 +334,7 @@ let rec flatten_faces (shape : shape3d) : (Playground.color * vec3 list * number
       [ (color, List.map fst points, shape.alpha) ]
   | Hud _ -> [] (* collected separately by collect_hud_shapes, contributes no 3D geometry *)
   | Group3d shapes -> List.concat_map flatten_faces shapes
+  | Cached3d c -> flatten_faces c.content (* no cache here: SVG is redrawn from scratch *)
 
 (* claude: rendering hints, see Playground3d.mli *)
 type shading = No_lighting | Flat | Smooth

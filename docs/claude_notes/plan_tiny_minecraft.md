@@ -173,6 +173,13 @@ player's bounding box's corners, not real geometric collision detection
    which backend eventually renders them, and should probably happen
    *before* deciding whether native or OpenGL is the better fit for
    Minecraft3d specifically.
+
+   **DONE since, differently**: not a per-block cache in `shown`, but
+   the world built once as 121 `cached3d` chunks (one per sector) with
+   hidden-face culling, which the GPU backends keep in GPU memory
+   (`Mesh_cache`). OpenGL: ~6.5s per frame -> ~1ms. See
+   `plan_opengl_perf.md`'s Results. Edits (Phase 5 below) will rebuild
+   only the touched chunks.
 3. **First-person camera + WASD + mouse-look**, including resolving the
    relative-mouse-motion gap above.
 4. **Physics**: gravity, jumping, fly-mode toggle, collision.

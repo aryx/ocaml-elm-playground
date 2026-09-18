@@ -10,11 +10,10 @@
 (* Phase 2 of docs/claude_notes/plan_tiny_minecraft.md: static
  * rendering of Minecraft_model.ml's generated world -- a fixed
  * overview camera, no controls yet (first-person movement is Phase
- * 3). The point of this phase is a performance checkpoint before
- * anything else is built on top: does rendering ~50k exposed blocks,
- * rebuilt from scratch every frame (this project's usual game3d
- * style -- see Playground3d.mli's design note), even work at all? See
- * the plan's "rebuild vs. cache" discussion.
+ * 3). Rendering ~50k exposed blocks rebuilt from scratch every frame
+ * (this project's usual game3d style) measured at ~0.2 fps; the world
+ * is now built once, as cached chunks, see [chunks] below and
+ * docs/claude_notes/plan_opengl_perf.md.
  *
  * Atlas UV mapping: ~/software-src/game/tiny-minecraft/main.py's
  * texture.png (copied here) is a 4x4 grid of 64x64 cells, addressed
@@ -83,28 +82,63 @@ let textured_face (cell : int * int) = function
       { alpha = 1.; form = TexturedPolygon3d (atlas_src, [ (p0, (u0, v0)); (p1, (u1, v0)); (p2, (u1, v1)); (p3, (u0, v1)) ]) }
   | _ -> assert false
 
-let block_shape (size : number) (block : Minecraft_model.block) : shape3d =
-  let (top, bottom, side) = atlas_cells_of_block block in
-  match block_faces size with
-  | [ top_face; bottom_face; px; nx; pz; nz ] ->
-      group3d
-        [ textured_face top top_face; textured_face bottom bottom_face; textured_face side px;
-          textured_face side nx; textured_face side pz; textured_face side nz;
-        ]
-  | _ -> assert false
+(* claude: the direction of each of block_faces's faces, in the same
+ * order: the neighbor on that side *)
+let face_directions : Minecraft_model.pos list = [ (0, 1, 0); (0, -1, 0); (1, 0, 0); (-1, 0, 0); (0, 0, 1); (0, 0, -1) ]
 
-let world_to_shapes (m : Minecraft_model.t) : shape3d list =
+(* claude: hidden-face culling -- only the faces with no block in front
+ * of them, i.e. the ones touching air: a face pressed against a
+ * neighbor can never be seen. Most shown blocks have 1 or 2 faces left
+ * (the ground: just its top), so this divides the geometry by several.
+ * The original Python version doesn't do it (the GPU copes), but it
+ * costs nothing (6 lookups per block, once) and every backend gains.
+ * Not the same thing as Minecraft_model.exposed, which decides whether
+ * a block has at least one such face, i.e. whether it's in [shown] at
+ * all. Set to false to see the difference (-debug logs the vertex
+ * counts). The next step, merging neighboring coplanar faces into big
+ * rectangles, is "greedy meshing": M. Lysenko, "Meshing in a Minecraft
+ * Game", 0fps.net, 2012, which also starts from this culling. *)
+let hidden_face_culling = true
+
+let block_shape (m : Minecraft_model.t) ((x, y, z) : Minecraft_model.pos) (block : Minecraft_model.block) : shape3d =
+  let (top, bottom, side) = atlas_cells_of_block block in
+  let cells = [ top; bottom; side; side; side; side ] in
+  let hidden (dx, dy, dz) = hidden_face_culling && Hashtbl.mem m.world (x +.. dx, y +.. dy, z +.. dz) in
+  List.combine (List.combine (block_faces 1.) cells) face_directions
+  |> List.filter_map (fun ((face, cell), dir) -> if hidden dir then None else Some (textured_face cell face))
+  |> group3d
+  |> move3d (float_of_int x) (float_of_int y) (float_of_int z)
+
+(* claude: the world as chunks, one per sector (a 16x16 column, see
+ * Minecraft_model.sectorize), each a Playground3d.cached3d built once,
+ * here: the GPU backends upload each chunk once and on later frames
+ * only draw it again (see docs/claude_notes/plan_opengl_perf.md), so
+ * view's only work is returning this list. Rebuilding every block's
+ * shape in view instead, every frame, took seconds per frame. Chunks
+ * rather than one cached3d for the whole world so that an edit (not
+ * yet possible) only rebuilds the chunks it touches. *)
+let chunks (m : Minecraft_model.t) : shape3d list =
   Hashtbl.fold
-    (fun (x, y, z) block acc ->
-      (block_shape 1. block |> move3d (float_of_int x) (float_of_int y) (float_of_int z)) :: acc)
-    m.shown []
+    (fun _sector positions acc ->
+      let blocks =
+        !positions
+        |> List.filter_map (fun pos ->
+               Hashtbl.find_opt m.shown pos |> Option.map (fun block -> block_shape m pos block))
+      in
+      cached3d blocks :: acc)
+    m.sectors []
 
 let world = Minecraft_model.create_world ()
+let world_chunks = chunks world
 
 let view (_computer : Playground.computer) () : camera * shape3d list =
   let cam = camera ~eye:(0., 40., 60.) ~target:(0., 0., 0.) ~far:400. () in
-  (cam, world_to_shapes world)
+  (cam, world_chunks)
 
 let update _computer () = ()
 let app = game3d view update ()
-let main = Playground3d_platform.run_app3d app
+
+(* claude: sharp texels, like the original's GL_NEAREST: bilinear
+ * filtering blurs the pixel-art blocks, and blends each atlas cell with
+ * its neighbors in the atlas along its borders *)
+let main = Playground3d_platform.run_app3d ~rendering:{ default_rendering with smooth_textures = false } app

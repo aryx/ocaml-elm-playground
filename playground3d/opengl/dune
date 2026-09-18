@@ -11,6 +11,7 @@
    elm_playground_3d
    elm_playground_3d_native_common ; SDL event loop
    graphics_3d_geometry ; Mat4
+   graphics_gpu ; Mesh_cache
    graphics_images ; Texture_decode
  )
 )

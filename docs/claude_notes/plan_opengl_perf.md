@@ -175,9 +175,10 @@ explicit id is simpler and predictable.
  opengl/            webgl/       each: upload (static), draw, free
 ```
 
-- **`Mesh_cache`** (new, `playground3d/Mesh_cache.ml` + `.mli`, in
-  `elm_playground_3d` next to `Gpu_scene`, so both GPU backends and
-  js_of_ocaml can use it): a table `int -> 'mesh` with
+- **`Mesh_cache`** (`graphics/gpu/Mesh_cache.ml` + `.mli`, a new
+  private library `graphics_gpu`, independent of the Playground like
+  the rest of `graphics/`, used by both GPU backends, tested in
+  `graphics/tests/Unit_mesh_cache.ml`): a table `int -> 'mesh` with
   `find_or_build : t -> int -> (unit -> 'mesh) -> 'mesh` (marks the id
   live this frame), `sweep : t -> free:('mesh -> unit) -> unit` (frees
   every mesh not marked since the last sweep, then clears the marks),
@@ -185,11 +186,12 @@ explicit id is simpler and predictable.
   freed this frame). One idea, one module, with the immediate- vs.
   retained-mode explanation in its `.mli`, in the style of
   `graphics/3d/`. Pure OCaml; it knows nothing of GL or shapes.
-- **`Gpu_scene`**: a function that walks the shape list and returns
-  the dynamic (uncached) shapes plus the `Cached3d` nodes found at any
-  depth outside a cached node (a `Cached3d` inside another is simply
-  part of the outer mesh). Both halves are flattened by the existing
-  per-material code.
+- **`Gpu_scene`**: `group_by_material ?on_cached` hands each `Cached3d`
+  node found outside a cached node to `on_cached` instead of flattening
+  it (a `Cached3d` inside another is simply part of the outer mesh);
+  without `on_cached`, a `Cached3d` is flattened like a group. That's
+  the whole change: the existing per-material code flattens both the
+  dynamic part and, once, each cached mesh.
 - **Each GPU backend** supplies its `'mesh` (the per-material buffers
   and vertex counts) and three functions:
   - `opengl/`: `upload` = one VAO + VBO per material, `Gl.static_draw`;
@@ -231,6 +233,16 @@ material (a `Float.Array` doubled when full), no intermediate
 lists or tuples, and the backend converts that once. This also makes
 building a cached mesh cheaper (Minecraft3d's startup).
 
+**Tried, measured, not kept.** A prototype of it on the old,
+uncached Minecraft3d took `draw` from ~3.9s to ~0.8s per frame (and
+stopped the frame-after-frame slowdown, i.e. the GC promotion
+explanation above was right). But with `cached3d` the flattening runs
+once per chunk, at startup (0.4s for the whole world), not per frame,
+so the gain doesn't justify replacing `Gpu_scene`'s simple list code,
+which reads like the software rasterizer's. If a dynamic scene ever
+needs it, add it next to the simple code, switched like the software
+backend's optimizations (`Opti`, "o"), not instead of it.
+
 ### 4. Debug keys and stats: what's left of the "render options" idea
 
 The first version of this plan proposed a formal record of rendering
@@ -240,7 +252,8 @@ backend's full list in `Render.options`, debug keys behind
 `-debug-keys`, `-keys k` to press them from the command line
 (reproducible A/B runs), "h" for help. What this plan adds:
 
-- **A "c" debug key** on both GPU backends: caching on/off (off = treat
+- **A "c" debug key** on the OpenGL backend (the WebGL one has no debug
+  keys yet): caching on/off (off = treat
   every `Cached3d` as a group, today's behavior). It's a debug key, not
   a `rendering` hint: it must never change a pixel, only the speed.
   `-keys c` gives the uncached baseline from the command line.
@@ -282,8 +295,24 @@ fragment-shader lines, on the software side a new one-idea
 
 ## Phasing
 
-0. **Measure.** Give the OpenGL backend a `dump_frame` (`Gl.read_pixels`
-   into a PNG, like the software backend's), so `-dump-frame` works on
+**Results** (OpenGL, this machine's NVIDIA RTX A400, `-debug
+-uncapped -fixed-time 0`; Minecraft3d's default world, 54455 shown
+blocks):
+
+| | per frame | view | draw | vertices uploaded per frame |
+|---|---|---|---|---|
+| before (rebuild every frame) | ~6.5s (0.15 fps), growing | 2.5s | 3.9s | 1959012 |
+| after, first frame (builds the 121 chunk meshes) | 0.41s | 0 | 0.41s | 408372 |
+| after, every other frame | ~1ms (median; ~500-850 fps) | 0 | ~1ms | 0 |
+
+Hidden-face culling alone: 1959012 -> 408372 vertices (4.8x fewer).
+Cached and uncached (`-keys c`) frames are byte-identical
+(`-dump-frame 3`). WebGL draws the same picture (headless Chrome,
+SwiftShader); its fps wasn't measured (headless Chrome renders
+WebGL in software).
+
+0. **DONE (for Minecraft3d).** Measure. Give the OpenGL backend a `dump_frame` (`Gl.read_pixels`
+   into a PPM, like the software backend's), so `-dump-frame` works on
    the GPU too: then `-uncapped -fixed-time 0 -dump-frame n file` both
    times n frames and saves the image to compare against later (same
    machine: GPU pixels aren't portable across drivers). For fps,
@@ -293,22 +322,27 @@ fragment-shader lines, on the software side a new one-idea
    baseline for `games3d/opengl/Minecraft3d.exe` (the target) and a
    big `Cubes3d`-like scene (for general benchmarks, which leave
    Minecraft3d out).
-1. **`cached3d` + `Mesh_cache` + OpenGL.** The new `form3d` case in
+1. **DONE, except the example.** `cached3d` + `Mesh_cache` + OpenGL.
+   The new `form3d` case in
    every match (list above), `Mesh_cache`, the `Gpu_scene` split, the
-   OpenGL upload/draw/free, the "c" key and the stats line. A new
-   `examples3d/` scene (e.g. thousands of cubes in one `cached3d`) to
-   show and measure it; a golden frame of it on the software backend,
-   identical to its uncached twin.
-2. **The cheaper dynamic path** (Design 3), in `Gpu_scene`, used by
-   OpenGL.
-3. **WebGL**: its upload/draw/free for `Mesh_cache` (the WebGL backend
+   OpenGL upload/draw/free, the "c" key and the stats line. Not done:
+   a new `examples3d/` scene (e.g. thousands of cubes in one
+   `cached3d`) to show and measure it outside Minecraft3d, with a
+   golden frame on the software backend, identical to its uncached
+   twin.
+2. **Not done, on purpose**: the cheaper dynamic path (see Design 3).
+3. **DONE.** **WebGL**: its upload/draw/free for `Mesh_cache` (the WebGL backend
    draws real scenes, see `done/plan_webgl.md`; it follows this plan's
    `Gpu_scene` interface).
-4. **Minecraft3d**: per-sector `cached3d`, hidden-face culling,
-   nearest textures. **Target: 60 fps capped on OpenGL**, `view` well
-   under 1ms; then `games3d/webgl/Minecraft3d` (see
-   `plan_webgl_remaining.md`, item 1), with its fps next to OpenGL's
-   and software's.
+4. **DONE.** **Minecraft3d**: per-sector `cached3d`, hidden-face
+   culling (`hidden_face_culling`, a flag to see the difference),
+   nearest textures. Target (60 fps capped on OpenGL, `view` well
+   under 1ms) reached, see Results. `games3d/webgl/Minecraft3d` too.
+   Seen in the WebGL screenshot: faint lines along some block edges,
+   probably texture-atlas bleeding (a sample from the neighboring
+   atlas cell at a cell's border); the classic fix is to shrink each
+   cell's UV rectangle by half a texel. To check on a real browser's
+   GPU first.
 5. **Chunk invalidation on edit**, once `plan_tiny_minecraft.md`'s
    Phase 5 exists to exercise it: no visible hitch per edit, live mesh
    count stable after many edits.

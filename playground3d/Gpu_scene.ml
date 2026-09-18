@@ -85,7 +85,7 @@ let white = Playground.rgb 255 255 255
  * shader's own dot product); a SmoothPolygon3d face already has its
  * own distinct normal per point (see Playground3d.sphere), which is
  * what makes Phong lighting actually look smooth/curved across it. *)
-let rec collect_batches (shape : Playground3d.shape3d) : (material * vertex_data list) list =
+let rec collect_batches ?on_cached (shape : Playground3d.shape3d) : (material * vertex_data list) list =
   match shape.form with
   | Polygon3d (color, points) ->
       let normal = face_normal points in
@@ -112,7 +112,17 @@ let rec collect_batches (shape : Playground3d.shape3d) : (material * vertex_data
       in
       [ (Flat, verts) ]
   | Hud _ -> [] (* collected separately by Playground3d.collect_hud_shapes, contributes no geometry *)
-  | Group3d shapes -> List.concat_map collect_batches shapes
+  | Group3d shapes -> List.concat_map (collect_batches ?on_cached) shapes
+  (* claude: a cached3d is handed to [on_cached], for the backend to draw
+   * the GPU buffers it keeps for it (see Mesh_cache), or, without
+   * [on_cached], flattened like a group (e.g. to build those buffers:
+   * a cached3d inside it is then part of its geometry) *)
+  | Cached3d c -> (
+      match on_cached with
+      | Some f ->
+          f c;
+          []
+      | None -> collect_batches c.content)
 
 (* claude: merges every shape's batches into at most one Flat group
  * (all non-textured geometry, drawn in a single call) plus one group
@@ -120,8 +130,8 @@ let rec collect_batches (shape : Playground3d.shape3d) : (material * vertex_data
  * its draw call). O(batches * distinct materials), fine at this
  * project's scene sizes (a handful to a few dozen faces) -- simplicity
  * over cleverness, per this project's own established preference. *)
-let group_by_material (shapes : Playground3d.shape3d list) : (material * vertex_data list) list =
-  let batches = List.concat_map collect_batches shapes in
+let group_by_material ?on_cached (shapes : Playground3d.shape3d list) : (material * vertex_data list) list =
+  let batches = List.concat_map (collect_batches ?on_cached) shapes in
   let flat = batches |> List.filter_map (function (Flat, vs) -> Some vs | _ -> None) |> List.concat in
   let texture_srcs =
     batches |> List.filter_map (function (Textured src, _) -> Some src | _ -> None) |> List.sort_uniq compare

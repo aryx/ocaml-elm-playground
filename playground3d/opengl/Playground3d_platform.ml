@@ -156,6 +156,12 @@ let shading_code (s : Playground3d.shading) : int = match s with No_lighting -> 
 let backface_culling = ref true
 let smooth_textures = ref true
 
+(* claude: "c": keep the GPU buffers of Playground3d.cached3d shapes
+ * from frame to frame (see Mesh_cache), or rebuild and re-upload them
+ * every frame like groups. Not a rendering hint: it changes the speed,
+ * never the picture. *)
+let use_cache = ref true
+
 (*****************************************************************************)
 (* Textures *)
 (*****************************************************************************)
@@ -344,28 +350,36 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
    * backface_culling, applied every frame in [draw]) *)
   Gl.cull_face Gl.back;
 
-  let vao = int32_bigarray1 1 in
-  Gl.gen_vertex_arrays 1 vao;
-  Gl.bind_vertex_array (Int32.to_int vao.{0});
+  (* claude: a VAO/VBO pair: the VBO holds the vertex data, the VAO
+   * remembers how to read it. One pair for the whole scene, re-uploaded
+   * every frame, plus one per material of each cached3d (see Meshes
+   * below), uploaded once. *)
+  let create_vao_vbo () =
+    let vao = int32_bigarray1 1 in
+    Gl.gen_vertex_arrays 1 vao;
+    Gl.bind_vertex_array (Int32.to_int vao.{0});
 
-  let vbo = int32_bigarray1 1 in
-  Gl.gen_buffers 1 vbo;
-  Gl.bind_buffer Gl.array_buffer (Int32.to_int vbo.{0});
+    let vbo = int32_bigarray1 1 in
+    Gl.gen_buffers 1 vbo;
+    Gl.bind_buffer Gl.array_buffer (Int32.to_int vbo.{0});
 
-  (* claude: the attribute layout (3 floats position, 3 floats normal,
-   * 3 floats color, 2 floats uv, interleaved) is fixed for the
-   * lifetime of this VAO/VBO pair even though the actual vertex DATA
-   * is re-uploaded every frame (see vertex_floats_of_group) -- so
-   * these pointers only need setting up once here, not per frame. *)
-  let stride = Gpu_scene.floats_per_vertex * 4 (* bytes per float *) in
-  Gl.vertex_attrib_pointer 0 3 Gl.float false stride (`Offset 0);
-  Gl.enable_vertex_attrib_array 0;
-  Gl.vertex_attrib_pointer 1 3 Gl.float false stride (`Offset (3 * 4));
-  Gl.enable_vertex_attrib_array 1;
-  Gl.vertex_attrib_pointer 2 3 Gl.float false stride (`Offset (6 * 4));
-  Gl.enable_vertex_attrib_array 2;
-  Gl.vertex_attrib_pointer 3 2 Gl.float false stride (`Offset (9 * 4));
-  Gl.enable_vertex_attrib_array 3;
+    (* claude: the attribute layout (3 floats position, 3 floats normal,
+     * 3 floats color, 2 floats uv, interleaved) is fixed for the
+     * lifetime of this VAO/VBO pair even though the actual vertex DATA
+     * is re-uploaded every frame (see vertex_floats_of_group) -- so
+     * these pointers only need setting up once here, not per frame. *)
+    let stride = Gpu_scene.floats_per_vertex * 4 (* bytes per float *) in
+    Gl.vertex_attrib_pointer 0 3 Gl.float false stride (`Offset 0);
+    Gl.enable_vertex_attrib_array 0;
+    Gl.vertex_attrib_pointer 1 3 Gl.float false stride (`Offset (3 * 4));
+    Gl.enable_vertex_attrib_array 1;
+    Gl.vertex_attrib_pointer 2 3 Gl.float false stride (`Offset (6 * 4));
+    Gl.enable_vertex_attrib_array 2;
+    Gl.vertex_attrib_pointer 3 2 Gl.float false stride (`Offset (9 * 4));
+    Gl.enable_vertex_attrib_array 3;
+    (vao, vbo)
+  in
+  let (vao, vbo) = create_vao_vbo () in
 
   Gl.viewport 0 0 sx sy;
 
@@ -373,26 +387,65 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
     if str = "f" then cycle_render_mode ();
     if str = "m" then cycle_shading ();
     if str = "b" then backface_culling := not !backface_culling;
-    if str = "i" then smooth_textures := not !smooth_textures
+    if str = "i" then smooth_textures := not !smooth_textures;
+    if str = "c" then use_cache := not !use_cache
   in
+  let use_material (material : Gpu_scene.material) : unit =
+    match material with
+    | Flat -> Gl.uniform1i use_texture_location 0
+    | Textured src ->
+        Gl.uniform1i use_texture_location 1;
+        Gl.bind_texture Gl.texture_2d (get_or_create_gl_texture src);
+        (* claude: smooth_textures: the GPU's bilinear filtering, or
+         * nearest texel *)
+        let filter = if !smooth_textures then Gl.linear else Gl.nearest in
+        Gl.tex_parameteri Gl.texture_2d Gl.texture_min_filter filter;
+        Gl.tex_parameteri Gl.texture_2d Gl.texture_mag_filter filter
+  in
+  (* claude: for the -debug stats line, see draw *)
+  let draw_calls = ref 0 and vertices_uploaded = ref 0 in
   let draw_group ((material, vertices) : Gpu_scene.material * Gpu_scene.vertex_data list) : unit =
     let (data, vertex_count) = Gpu_scene.vertex_floats_of_group vertices in
     if vertex_count > 0 then begin
       let vertex_data = Bigarray.Array1.of_array Bigarray.float32 Bigarray.c_layout data in
       Gl.buffer_data Gl.array_buffer (Gl.bigarray_byte_size vertex_data) (Some vertex_data) Gl.dynamic_draw;
-      (match material with
-      | Flat -> Gl.uniform1i use_texture_location 0
-      | Textured src ->
-          Gl.uniform1i use_texture_location 1;
-          Gl.bind_texture Gl.texture_2d (get_or_create_gl_texture src);
-          (* claude: smooth_textures: the GPU's bilinear filtering, or
-           * nearest texel *)
-          let filter = if !smooth_textures then Gl.linear else Gl.nearest in
-          Gl.tex_parameteri Gl.texture_2d Gl.texture_min_filter filter;
-          Gl.tex_parameteri Gl.texture_2d Gl.texture_mag_filter filter);
-      Gl.draw_arrays Gl.triangles 0 vertex_count
+      use_material material;
+      Gl.draw_arrays Gl.triangles 0 vertex_count;
+      incr draw_calls;
+      vertices_uploaded := !vertices_uploaded + vertex_count
     end
   in
+  (* claude: Meshes -- the GPU side of Playground3d.cached3d (see
+   * Mesh_cache): each material group of a cached3d uploaded once, into
+   * its own VAO/VBO pair, with static_draw (a hint to the driver that
+   * the data won't change, so it can keep it in GPU memory); on later
+   * frames, only draw_arrays again. *)
+  let build_mesh (c : Playground3d.cached) () : (Gpu_scene.material * int * int * int) list =
+    Gpu_scene.group_by_material [ c.content ]
+    |> List.filter (fun (_, vertices) -> vertices <> [])
+    |> List.map (fun (material, vertices) ->
+           let (data, vertex_count) = Gpu_scene.vertex_floats_of_group vertices in
+           let (vao, vbo) = create_vao_vbo () in
+           let vertex_data = Bigarray.Array1.of_array Bigarray.float32 Bigarray.c_layout data in
+           Gl.buffer_data Gl.array_buffer (Gl.bigarray_byte_size vertex_data) (Some vertex_data) Gl.static_draw;
+           vertices_uploaded := !vertices_uploaded + vertex_count;
+           (material, Int32.to_int vao.{0}, Int32.to_int vbo.{0}, vertex_count))
+  in
+  let draw_mesh (mesh : (Gpu_scene.material * int * int * int) list) : unit =
+    mesh
+    |> List.iter (fun (material, vao, _vbo, vertex_count) ->
+           Gl.bind_vertex_array vao;
+           use_material material;
+           Gl.draw_arrays Gl.triangles 0 vertex_count;
+           incr draw_calls)
+  in
+  let free_mesh (mesh : (Gpu_scene.material * int * int * int) list) : unit =
+    mesh
+    |> List.iter (fun (_material, vao, vbo, _vertex_count) ->
+           Gl.delete_buffers 1 (Bigarray.Array1.of_array Bigarray.int32 Bigarray.c_layout [| Int32.of_int vbo |]);
+           Gl.delete_vertex_arrays 1 (Bigarray.Array1.of_array Bigarray.int32 Bigarray.c_layout [| Int32.of_int vao |]))
+  in
+  let meshes = Mesh_cache.create () in
   let draw (_computer : Playground.computer) ((camera, shapes) : Playground3d.camera * Playground3d.shape3d list) :
       unit =
     let aspect = float_of_int sx /. float_of_int sy in
@@ -410,9 +463,42 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
     Gl.polygon_mode Gl.front_and_back (match !render_mode with Filled -> Gl.fill | Wireframe -> Gl.line);
     Gl.uniform1i shading_location (shading_code !shading);
     if !backface_culling then Gl.enable Gl.cull_face_enum else Gl.disable Gl.cull_face_enum;
-    Gpu_scene.group_by_material shapes |> List.iter draw_group
+    draw_calls := 0;
+    vertices_uploaded := 0;
+    (* claude: the cached3d shapes are set aside (without the cache, "c",
+     * they're flattened with the rest, like groups), the rest drawn as
+     * before, then the cached ones from their meshes *)
+    let cached = ref [] in
+    let on_cached = if !use_cache then Some (fun c -> cached := c :: !cached) else None in
+    Gpu_scene.group_by_material ?on_cached shapes |> List.iter draw_group;
+    List.rev !cached
+    |> List.iter (fun (c : Playground3d.cached) -> draw_mesh (Mesh_cache.find_or_build meshes c.id (build_mesh c)));
+    Mesh_cache.sweep meshes ~free:free_mesh;
+    let s = Mesh_cache.stats meshes in
+    Logs.debug (fun m ->
+        m "draw: %d draw calls, %d vertices uploaded; cached meshes: %d live, %d built, %d freed%s" !draw_calls
+          !vertices_uploaded s.live s.built s.freed
+          (if !use_cache then "" else " (cache off)"))
   in
   let present () = Sdl.gl_swap_window sdl_window in
+  (* claude: -dump-frame (see Native_loop): the frame as a binary PPM,
+   * like the software backend's, read back from the GPU before
+   * [present]; OpenGL's rows go bottom to top, a PPM's top to bottom.
+   * The pixels depend on the GPU and its driver: only compare frames
+   * from the same machine (e.g. with and without -keys c). *)
+  let dump_frame file =
+    let pixels = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (sx * sy * 3) in
+    Gl.pixel_storei Gl.pack_alignment 1;
+    Gl.read_pixels 0 0 sx sy Gl.rgb Gl.unsigned_byte (`Data pixels);
+    let oc = open_out_bin file in
+    Printf.fprintf oc "P6\n%d %d\n255\n" sx sy;
+    for y = sy - 1 downto 0 do
+      for i = y * sx * 3 to ((y + 1) * sx * 3) - 1 do
+        output_byte oc pixels.{i}
+      done
+    done;
+    close_out oc
+  in
   Native_loop.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D (OpenGL)" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d) ~draw
-    ~present ()
+    ~present ~dump_frame ()

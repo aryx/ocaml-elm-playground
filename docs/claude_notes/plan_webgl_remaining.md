@@ -10,8 +10,12 @@ roughly from most to least worth doing.
 
 ## 1. `Mesh_cache`, then Minecraft3d in the browser
 
-The big one, owned by [`plan_opengl_perf.md`](plan_opengl_perf.md)
-and in progress there: its Phase 3 is WebGL's upload/draw/free for
+**DONE**, except its fps: see [`plan_opengl_perf.md`](plan_opengl_perf.md),
+Phases 3-4 and Results (headless Chrome renders WebGL in software, so
+the fps needs a real browser).
+
+The big one, owned by [`plan_opengl_perf.md`](plan_opengl_perf.md):
+its Phase 3 is WebGL's upload/draw/free for
 `Mesh_cache` (`Gpu_scene.group_by_material`'s `on_cached`, a WebGL
 buffer and vertex count per material of a cached mesh, `deleteBuffer`
 in the sweep; and, WebGL 1 having no VAOs, the attribute pointers set

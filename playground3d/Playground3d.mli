@@ -63,6 +63,11 @@ and form3d =
       (** A 2D overlay shape, drawn in screen space on top of the whole
           3D scene -- see {!hud}. *)
   | Group3d of shape3d list
+  | Cached3d of cached  (** see {!cached3d} *)
+
+(** What {!cached3d} builds: [content] is its shapes as a group, [id] its
+    identity, [huds] the {!hud} shapes inside, found once. *)
+and cached = { id : int; content : shape3d; huds : Playground.shape list }
 
 (** A flat polygon in world space, e.g. one face of a cube. Give its
     vertices in counter-clockwise order as seen from the side the face
@@ -198,6 +203,34 @@ val fade3d : number -> shape3d -> shape3d
     leaf, {!Hud} included, the same way it already reaches every other
     form3d case). *)
 val hud : Playground.shape -> shape3d
+
+(** {2 Big static scenes}
+
+    [view3d] describes the whole scene every frame, and a backend
+    processes that description every frame. Fine for a few hundred
+    faces; not for a world of thousands of blocks, where that work, not
+    the drawing itself, takes all the time (see
+    docs/claude_notes/plan_opengl_perf.md). *)
+
+(** [cached3d shapes] is [group3d shapes], plus a promise: this value
+    won't change. The GPU backends (OpenGL, WebGL) then turn it into GPU
+    buffers the first time they see it, and on later frames just draw
+    those buffers again, skipping all the per-face work. The same idea
+    as Elm's [Html.lazy].
+
+    To benefit, build it {b once} (in the initial model, or in
+    [update3d] when something in it changes), and return that same
+    value from [view3d] on every frame: each call to [cached3d] makes a
+    new, never seen value, so calling it inside [view3d] is correct but
+    as slow as a group. A value no longer returned by [view3d] has its
+    GPU buffers freed at the end of the frame.
+
+    Draws exactly like [group3d shapes] on every backend (the software
+    and web ones don't cache anything). {!move3d}, {!rotate3d},
+    {!scale3d} and {!fade3d} work on it too, but their result is new
+    geometry, so it's an ordinary uncached group: transform first, then
+    cache. *)
+val cached3d : shape3d list -> shape3d
 
 (**/**)
 (* claude: exposed only so Playground3d_platform implementations

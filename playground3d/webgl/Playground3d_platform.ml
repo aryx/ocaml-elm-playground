@@ -15,7 +15,7 @@ open Js_of_ocaml
 (* The fourth backend of the 3D playground: to the web (SVG) backend
  * what the OpenGL one is to the software rasterizer, i.e. the same
  * shape3d/camera scenes handed to a real GPU, here through WebGL 1
- * (js_of_ocaml's WebGL module). See docs/claude_notes/plan_webgl.md.
+ * (js_of_ocaml's WebGL module). See docs/claude_notes/done/plan_webgl.md.
  *
  * No event loop of its own: like the web backend, run_app3d builds an
  * ordinary Playground.game and gives it to elm_playground_web's
@@ -290,11 +290,19 @@ let try_upload (gl : WebGL.renderingContext Js.t) (src : string) (t : texture) :
 (* GL state *)
 (*****************************************************************************)
 
+(* a cached3d's GPU buffers: per material, a buffer and its vertex count
+ * (see Meshes below) *)
+type mesh = (Gpu_scene.material * WebGL.buffer Js.t * int) list
+
 type gl_state = {
   canvas : Dom_html.canvasElement Js.t;
   gl : WebGL.renderingContext Js.t;
   program : WebGL.program Js.t;
   buffer : WebGL.buffer Js.t;
+  (* each vertex attribute's location, size and offset, in floats (see
+   * set_attribute_pointers) *)
+  attributes : (int * int * int) list;
+  meshes : mesh Mesh_cache.t;
   mvp_location : [ `mat4 ] WebGL.uniformLocation Js.t;
   shading_location : int WebGL.uniformLocation Js.t;
   use_texture_location : int WebGL.uniformLocation Js.t;
@@ -316,6 +324,18 @@ let gl_texture (st : gl_state) (src : string) : WebGL.texture Js.t =
 
 let float32_array (data : float array) : Typed_array.float32Array Js.t =
   new%js Typed_array.float32Array_fromArray (Js.array data)
+
+(* The attribute layout of Gpu_scene.vertex_floats_of_group: position
+ * (3 floats), normal (3), color (3), uv (2), interleaved, for the buffer
+ * currently bound to ARRAY_BUFFER. Set again each time another buffer
+ * is drawn (the scene's, or a cached3d's, see Meshes): WebGL 1 has no
+ * VAOs to remember it per buffer, unlike the OpenGL backend. *)
+let set_attribute_pointers (gl : WebGL.renderingContext Js.t) (attributes : (int * int * int) list) : unit =
+  let stride = Gpu_scene.floats_per_vertex * 4 (* bytes per float *) in
+  attributes
+  |> List.iter (fun (loc, size, offset) ->
+         gl##vertexAttribPointer loc size gl##._FLOAT Js._false stride (offset * 4);
+         gl##enableVertexAttribArray loc)
 
 let init_gl () : gl_state =
   let canvas = create_canvas () in
@@ -347,27 +367,21 @@ let init_gl () : gl_state =
   (* which faces to cull, when culling is on (see draw) *)
   gl##cullFace gl##._BACK;
 
-  (* The attribute layout of Gpu_scene.vertex_floats_of_group: position
-   * (3 floats), normal (3), color (3), uv (2), interleaved. One buffer,
-   * so the attribute pointers are set once, here (WebGL 1 has no VAOs
-   * to remember them; it doesn't need to, the state stays as set).
-   * GLSL ES 1.00 has no layout (location = N): the linker tells where
+  (* GLSL ES 1.00 has no layout (location = N): the linker tells where
    * it put each attribute (-1 if the shader doesn't use it). *)
-  let buffer = gl##createBuffer in
-  gl##bindBuffer gl##._ARRAY_BUFFER_ buffer;
-  let stride = Gpu_scene.floats_per_vertex * 4 (* bytes per float *) in
-  [ ("aPos", 3, 0); ("aNormal", 3, 3); ("aColor", 3, 6); ("aUv", 2, 9) ]
-  |> List.iter (fun (name, size, offset) ->
-         let loc = gl##getAttribLocation program (Js.string name) in
-         if loc >= 0 then begin
-           gl##vertexAttribPointer loc size gl##._FLOAT Js._false stride (offset * 4);
-           gl##enableVertexAttribArray loc
-         end);
+  let attributes =
+    [ ("aPos", 3, 0); ("aNormal", 3, 3); ("aColor", 3, 6); ("aUv", 2, 9) ]
+    |> List.filter_map (fun (name, size, offset) ->
+           let loc = gl##getAttribLocation program (Js.string name) in
+           if loc >= 0 then Some (loc, size, offset) else None)
+  in
   {
     canvas;
     gl;
     program;
-    buffer;
+    buffer = gl##createBuffer;
+    attributes;
+    meshes = Mesh_cache.create ();
     mvp_location = uniform "uMVP";
     shading_location = uniform "uShading";
     use_texture_location = uniform "uUseTexture";
@@ -378,24 +392,55 @@ let init_gl () : gl_state =
 (* Drawing *)
 (*****************************************************************************)
 
+let use_material (st : gl_state) (rendering : Playground3d.rendering) (material : Gpu_scene.material) : unit =
+  let gl = st.gl in
+  match material with
+  | Flat -> gl##uniform1i st.use_texture_location 0
+  | Textured src ->
+      gl##uniform1i st.use_texture_location 1;
+      gl##bindTexture gl##._TEXTURE_2D_ (gl_texture st src);
+      (* smooth_textures: the GPU's bilinear filtering, or the
+       * nearest texel *)
+      let filter = if rendering.smooth_textures then gl##._LINEAR else gl##._NEAREST in
+      gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_MIN_FILTER_ filter;
+      gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_MAG_FILTER_ filter
+
 let draw_group (st : gl_state) (rendering : Playground3d.rendering)
     ((material, vertices) : Gpu_scene.material * Gpu_scene.vertex_data list) : unit =
   let gl = st.gl in
   let (data, vertex_count) = Gpu_scene.vertex_floats_of_group vertices in
   if vertex_count > 0 then begin
     gl##bufferData gl##._ARRAY_BUFFER_ (float32_array data) gl##._DYNAMIC_DRAW_;
-    (match material with
-    | Flat -> gl##uniform1i st.use_texture_location 0
-    | Textured src ->
-        gl##uniform1i st.use_texture_location 1;
-        gl##bindTexture gl##._TEXTURE_2D_ (gl_texture st src);
-        (* smooth_textures: the GPU's bilinear filtering, or the
-         * nearest texel *)
-        let filter = if rendering.smooth_textures then gl##._LINEAR else gl##._NEAREST in
-        gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_MIN_FILTER_ filter;
-        gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_MAG_FILTER_ filter);
+    use_material st rendering material;
     gl##drawArrays gl##._TRIANGLES 0 vertex_count
   end
+
+(* Meshes: the GPU side of Playground3d.cached3d (see Mesh_cache): each
+ * material group of a cached3d uploaded once, into its own buffer, with
+ * STATIC_DRAW (a hint that the data won't change, so the browser can
+ * keep it in GPU memory); on later frames, only drawArrays again. *)
+let build_mesh (st : gl_state) (c : Playground3d.cached) () : mesh =
+  let gl = st.gl in
+  Gpu_scene.group_by_material [ c.content ]
+  |> List.filter (fun (_, vertices) -> vertices <> [])
+  |> List.map (fun (material, vertices) ->
+         let (data, vertex_count) = Gpu_scene.vertex_floats_of_group vertices in
+         let buffer = gl##createBuffer in
+         gl##bindBuffer gl##._ARRAY_BUFFER_ buffer;
+         gl##bufferData gl##._ARRAY_BUFFER_ (float32_array data) gl##._STATIC_DRAW_;
+         (material, buffer, vertex_count))
+
+let draw_mesh (st : gl_state) (rendering : Playground3d.rendering) (mesh : mesh) : unit =
+  let gl = st.gl in
+  mesh
+  |> List.iter (fun (material, buffer, vertex_count) ->
+         gl##bindBuffer gl##._ARRAY_BUFFER_ buffer;
+         set_attribute_pointers gl st.attributes;
+         use_material st rendering material;
+         gl##drawArrays gl##._TRIANGLES 0 vertex_count)
+
+let free_mesh (st : gl_state) (mesh : mesh) : unit =
+  mesh |> List.iter (fun (_material, buffer, _vertex_count) -> st.gl##deleteBuffer buffer)
 
 let draw (st : gl_state) (rendering : Playground3d.rendering) (computer : Playground.computer)
     (camera : Playground3d.camera) (shapes : Playground3d.shape3d list) : unit =
@@ -416,7 +461,17 @@ let draw (st : gl_state) (rendering : Playground3d.rendering) (computer : Playgr
   gl##uniformMatrix4fv_typed st.mvp_location Js._false (float32_array mvp);
   gl##uniform1i st.shading_location (shading_code rendering.shading);
   if rendering.backface_culling then gl##enable gl##._CULL_FACE_ else gl##disable gl##._CULL_FACE_;
-  Gpu_scene.group_by_material shapes |> List.iter (draw_group st rendering)
+  (* the cached3d shapes set aside, the rest drawn from the scene's
+   * buffer, then the cached ones from their meshes *)
+  let cached = ref [] in
+  let groups = Gpu_scene.group_by_material ~on_cached:(fun c -> cached := c :: !cached) shapes in
+  gl##bindBuffer gl##._ARRAY_BUFFER_ st.buffer;
+  set_attribute_pointers gl st.attributes;
+  List.iter (draw_group st rendering) groups;
+  List.rev !cached
+  |> List.iter (fun (c : Playground3d.cached) ->
+         draw_mesh st rendering (Mesh_cache.find_or_build st.meshes c.id (build_mesh st c)));
+  Mesh_cache.sweep st.meshes ~free:(free_mesh st)
 
 (*****************************************************************************)
 (* Run app *)

@@ -1,0 +1,8 @@
+; claude: Minecraft3d names its texture by a path relative to the repo
+; root ("games3d/texture.png"), which a web page resolves relative to
+; itself, i.e. to games3d/webgl/games3d/ here; a dune rule can only
+; create files in its own directory, hence this one, with only the
+; copy (like examples3d/webgl/examples3d/dune). See ../dune's default
+; alias, which builds it.
+(rule
+  (copy ../../texture.png texture.png))

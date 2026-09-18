@@ -109,9 +109,9 @@ the diagram is hardware.
 
 | Stage | Software backend (`software/Playground3d_platform.ml`) | OpenGL backend (`opengl/` + `Gpu_scene.ml`) |
 |---|---|---|
-| Scene -> triangles | `flatten_faces`, `fan_triangles`, per frame | `Gpu_scene.collect_batches`/`group_by_material`, per frame (today), then uploaded to a VBO |
-| Camera | `view_space` (right/up/forward dot products per point) | `Gpu_scene.look_at`, one 4x4 matrix per frame |
-| Projection | `project_vertex` (divide by view-space z, scale to pixels) | `Gpu_scene.perspective` matrix + the hardware's divide by `w` |
+| Scene -> triangles | `flatten_faces`, `fan_triangles`, per frame | `Gpu_scene.collect_batches`/`group_by_material`, per frame, then uploaded to a VBO; a `cached3d`'s only once (see section 6) |
+| Camera | `view_space` (right/up/forward dot products per point) | `Mat4.look_at`, one 4x4 matrix per frame |
+| Projection | `project_vertex` (divide by view-space z, scale to pixels) | `Mat4.perspective` matrix + the hardware's divide by `w` |
 | Clipping | none: a vertex behind `near` just drops its triangle | hardware clips triangles against the frustum properly |
 | Backface culling | `backface_culling_enabled` + a dot product per face ("b") | `Gl.enable Gl.cull_face_enum` (winding order in screen space) |
 | Rasterization | `rasterize_triangle`: bounding box, edge functions, barycentric weights | fixed-function hardware, no code |
@@ -151,7 +151,7 @@ instructions: one 4x4 matrix multiply. Two tricks make that possible:
   camera orientation" fold into one matrix.
 - **Deferring the divide.** A matrix can't divide by `z`. So the
   projection matrix instead *copies* view-space `z` into the 4th
-  component `w` (the `0; 0; 1; 0` last row in `Gpu_scene.perspective`),
+  component `w` (the `0; 0; 1; 0` last row in `Mat4.perspective`),
   and the hardware divides `x`, `y`, `z` by `w` after the vertex shader.
   Same math as `project_vertex`, just split in two.
 
@@ -203,9 +203,58 @@ Gl.draw_arrays Gl.triangles 0 vertex_count                              (* act  
 ```
 
 The `Gl.dynamic_draw`/`Gl.static_draw` argument is a *hint* to the
-driver about how often the data will change, i.e. where to put it. We
-re-upload the whole scene every frame (hence `dynamic_draw`); a cached
-chunk mesh uploaded once would use `static_draw`.
+driver about how often the data will change, i.e. where to put it. The
+scene's uncached part is re-uploaded every frame (hence
+`dynamic_draw`); a `cached3d`'s mesh is uploaded once, with
+`static_draw` (see section 6).
+
+### VBO and VAO: the bytes, and how to read them
+
+A VBO is just bytes in GPU memory; nothing in it says what they mean.
+The vertex shader, on the other hand, has named inputs (`aPos`,
+`aNormal`, `aColor`, `aUv`), each at a numbered *location* (the
+`layout (location = N)` in the shader). Something has to connect the
+two: for each input, which buffer it's read from, where it starts in a
+vertex (the offset), how many floats it has (the size), and how far
+apart two consecutive vertices are (the stride). Our layout, written by
+`Gpu_scene.vertex_floats_of_group`, is 11 interleaved floats, 44 bytes,
+per vertex:
+
+```
+ one vertex = 11 floats = 44 bytes (the stride)
+ +----------+----------+----------+--------+----------+----
+ | x  y  z  | nx ny nz | r  g  b  | u  v   | x  y  z  | ...  next vertex
+ +----------+----------+----------+--------+----------+----
+ ^ offset 0 ^ 12       ^ 24       ^ 36     ^ 44
+ aPos (0)   aNormal (1) aColor (2) aUv (3)     <- the shader's inputs (locations)
+```
+
+Each input is described by one call, e.g. for the normals, "location
+1: 3 floats, 44 bytes apart, starting at byte 12":
+
+```ocaml
+Gl.vertex_attrib_pointer 1 3 Gl.float false 44 (`Offset 12);
+Gl.enable_vertex_attrib_array 1
+```
+
+A **VAO** (vertex array object) is the object that *remembers* these
+calls: after the four of them, a single `Gl.bind_vertex_array vao`
+brings the whole description back. An analogy: the VBO is a file of
+numbers, the VAO its format description.
+
+The subtle point: `vertex_attrib_pointer` records the VBO bound *when
+it's called*, so a VAO is tied to its buffer(s), not just to a layout.
+That's why the OpenGL backend creates a VAO/VBO pair per mesh
+(`create_vao_vbo`: one pair for the scene's uncached part, one per
+material of each `cached3d`), and switching from one chunk of the
+Minecraft world to the next is one `bind_vertex_array`, then
+`draw_arrays`.
+
+WebGL 1 has no VAOs (only through the `OES_vertex_array_object`
+extension; WebGL 2 has them built in), so the WebGL backend makes the
+calls again each time it switches buffers
+(`set_attribute_pointers`): the same result, just not remembered.
+Four small calls per buffer, cheap at the 121 chunks of Minecraft3d.
 
 State leaks are the classic bug class: forget to re-bind, and the next
 call silently acts on whatever was bound before. Errors are silent too
@@ -221,20 +270,22 @@ one CPU core, so cost ~ number of triangles + number of pixels filled.
 For a GPU there are several separate budgets, and a frame is as slow as
 the worst one:
 
-| Cost | Scales with | Typical capacity | Our situation |
-|---|---|---|---|
-| **CPU scene building** | whatever your code does per frame | one core; OCaml allocation is cheap when short-lived, much less so when the GC has to promote it | **the bottleneck**: we rebuild everything, every frame |
-| **Upload (bus)** | bytes sent per frame | GB/s, but with driver overhead | ~86MB/frame for Minecraft3d today |
-| **Draw calls** | number of draw calls + state changes | a few thousand per frame in OpenGL | 1-2 per frame today, fine |
-| **Vertex work** | vertices per frame | hundreds of millions to billions/s | ~2M/frame for Minecraft3d, fine |
-| **Fragment work (fill rate)** | pixels shaded (x overdraw) | billions/s | window-sized, fine |
+| Cost | Scales with | Typical capacity | Minecraft3d, rebuilding every frame | Minecraft3d, cached chunks |
+|---|---|---|---|---|
+| **CPU scene building** | whatever your code does per frame | one core; OCaml allocation is cheap when short-lived, much less so when the GC has to promote it | **the bottleneck**: the whole world, every frame, seconds | none (built once, at startup) |
+| **Upload (bus)** | bytes sent per frame | GB/s, but with driver overhead | ~86MB per frame | none (~18MB once) |
+| **Draw calls** | number of draw calls + state changes | a few thousand per frame in OpenGL | 1 | 121, one per chunk, fine |
+| **Vertex work** | vertices per frame | hundreds of millions to billions/s | ~2M, fine | ~400k (hidden faces skipped), fine |
+| **Fragment work (fill rate)** | pixels shaded (x overdraw) | billions/s | window-sized, fine | same |
 
 The Minecraft3d measurement (`plan_tiny_minecraft.md`, Phase 2) is the
-concrete lesson: ~0.2 fps on OpenGL, with the GPU nearly idle, because
-the first two rows cost over a second per frame while the last three
-would take a few milliseconds. **Switching to a GPU speeds up the
-stages the GPU does; it can't speed up CPU work you do before handing
-it the data.**
+concrete lesson: ~0.15 fps on OpenGL, with the GPU nearly idle, because
+the first two rows cost seconds per frame while the last three take a
+few milliseconds. **Switching to a GPU speeds up the stages the GPU
+does; it can't speed up CPU work you do before handing it the data.**
+Removing that CPU work, by building the world once and keeping it in
+GPU memory (the last column, see "Rebuild vs. render" below), took the
+frame from ~6.5s to ~1ms (`plan_opengl_perf.md`, Results).
 
 ### Rebuild vs. render
 
@@ -255,9 +306,10 @@ for what actually changed. A static world should be rebuilt once.
 ### Walkthrough: the player takes one step
 
 Say the player presses "W" and moves forward by 0.1 units, in a world
-whose chunk meshes are already cached in VRAM (the state
-`plan_opengl_perf.md` aims for). Here is everything involved in the
-next frame, and whether it changes:
+whose chunk meshes are already cached in VRAM (Minecraft3d's
+`cached3d` chunks; its camera doesn't move yet, but nothing below
+depends on that). Here is everything involved in the next frame, and
+whether it changes:
 
 | Data | Lives in | Changes when the player moves? | Per-frame cost |
 |---|---|---|---|
@@ -282,10 +334,12 @@ place: the `uMVP` uniform, applied to every vertex by
 kept in VRAM plus one small per-frame matrix, is why a game can move
 the camera through millions of triangles at 60 fps.
 
-The same step in our *current* OpenGL backend, for contrast: the top
-row is rebuilt in OCaml and re-uploaded every frame whether or not
-anything moved (~86MB for Minecraft3d), so moving costs exactly as much
-as standing still, and both are slow. And in the software backend, the
+The same step without the cache, for contrast (a scene of plain
+`group3d`s, or the "c" key of the OpenGL backend with `-debug-keys`):
+the top row is rebuilt in OCaml and re-uploaded every frame whether or
+not anything moved (~86MB for Minecraft3d before hidden-face culling),
+so moving costs exactly as much as standing still, and both are slow.
+And in the software backend, the
 bottom three rows run on one CPU core too (`view_space`,
 `project_vertex`, `rasterize_triangle`, per vertex and per pixel), so
 even with perfect caching of the top rows it can't be as fast: caching
@@ -385,12 +439,12 @@ in core, and what replaces them:
 
 | Legacy (Python original) | Core 3.3 (our backend) |
 |---|---|
-| `glMatrixMode`, `glRotatef`, `glTranslatef`, `gluPerspective` (a built-in matrix stack) | compute matrices yourself (`Gpu_scene.look_at`/`perspective`), upload as a uniform |
+| `glMatrixMode`, `glRotatef`, `glTranslatef`, `gluPerspective` (a built-in matrix stack) | compute matrices yourself (`Mat4.look_at`/`perspective`), upload as a uniform |
 | `GL_QUADS` | gone: triangles only (`fan_triangles` splits each quad into 2) |
 | `glEnable(GL_FOG)`, `glFogf(...)` | gone: a few lines in the fragment shader (mix the color toward the fog color by distance) |
 | built-in lighting (`glLight*`) | gone: write it in the fragment shader (ours) |
 | `glColor3d`, `glBegin`/`glEnd` | vertex attributes in a VBO |
-| pyglet `Batch` (a helper library managing VBOs for you) | our own VBO/VAO code, and `cached3d` (planned) |
+| pyglet `Batch` (a helper library managing VBOs for you) | our own VBO/VAO code, `cached3d` and `Mesh_cache` |
 
 Things that did carry over as-is: `glEnable(GL_CULL_FACE)`,
 `GL_NEAREST` texture filtering (the pixelated Minecraft look; `GL_LINEAR`

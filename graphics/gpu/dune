@@ -1,0 +1,11 @@
+; claude: the GPU backends' own ideas (OpenGL, WebGL), the ones that
+; have no counterpart in the software rasterizer: Mesh_cache, keeping
+; unchanged meshes in GPU memory from frame to frame (retained mode).
+; Depends on nothing, knows nothing of GL or of the Playground. A
+; private library (see graphics/core/dune), installed as part of
+; elm_playground_3d, the package all the 3D backends depend on.
+(library
+ (name graphics_gpu)
+ (package elm_playground_3d)
+ (wrapped false)
+)

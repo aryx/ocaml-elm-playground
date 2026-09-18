@@ -75,6 +75,9 @@ let rec faces (shape : Playground3d.shape3d) : Render.face list =
       [ { paint = Color (rgb_of_color color); points = List.map (fun (p, n) -> (p, (0., 0.), n)) points } ]
   | Hud _ -> [] (* collected separately by Playground3d.collect_hud_shapes, contributes no geometry *)
   | Group3d shapes -> List.concat_map faces shapes
+  (* claude: a group like any other here: the rasterizer draws every face
+   * every frame anyway (see Playground3d.cached3d) *)
+  | Cached3d c -> faces c.content
 
 let render ?options (fb : Framebuffer.t) (zbuffer : Zbuffer.t) (cam : Playground3d.camera)
     (shape : Playground3d.shape3d) : unit =

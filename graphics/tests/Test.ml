@@ -34,4 +34,5 @@ let () =
           Unit_clip.tests;
           Unit_render.tests;
           Unit_rgba.tests;
+          Unit_mesh_cache.tests;
         ])
