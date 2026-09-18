@@ -1,0 +1,16 @@
+; claude: unit tests for the graphics/ libraries, run by 'make test'
+; (dune runtest). Many of them check the worked examples given in the
+; .mli comments, so those examples can't silently become wrong.
+(test
+ (name Test)
+ (package elm_playground_software)
+ (libraries
+   alcotest
+   testo
+   cairo2 ; only to compare our pixels with Cairo's, see Unit_fill.ml
+   graphics_core
+   graphics_2d_geometry
+   graphics_2d
+   graphics_font
+ )
+)

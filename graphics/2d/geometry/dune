@@ -1,0 +1,7 @@
+; claude: 2D geometry: affine transforms (Affine). Depends on nothing.
+; A private library, see graphics/core/dune.
+(library
+ (name graphics_2d_geometry)
+ (package elm_playground_software)
+ (wrapped false)
+)

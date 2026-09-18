@@ -5,8 +5,8 @@ concepts behind text rendering (glyphs, the em, baselines, the three
 families of fonts, hinting, antialiasing, shaping), where they came
 from historically, which libraries do it for real today, and exactly
 what this repository's from-scratch software rasterizer does -- with
-pointers into the code (`playground/raster/Hershey.ml`,
-`playground/raster/Stroke.ml`, `playground/software/Shape_render_software.ml`).
+pointers into the code (`graphics/font/Hershey.ml`,
+`graphics/2d/Stroke.ml`, `playground/software/Shape_render_software.ml`).
 
 Companion to [`plan_software_2d.md`](plan_software_2d.md) (the software
 2D backend's plan, phase 5 being text) and to the future `notes_2d.md`
@@ -132,7 +132,7 @@ wants: thick and thin strokes, serifs, calligraphy.
     |  /    \  |              way; with the nonzero rule, the inside
     | |      | |              of the inner contour has winding number
     | |      | |              1 + (-1) = 0, so it's a hole
-    |  \____/  |              (see raster/Fill.mli)
+    |  \____/  |              (see graphics/2d/Fill.mli)
      \ ______ /
 ```
 
@@ -222,10 +222,10 @@ the GPU.
 
 Every step, in ~200 lines, with a stroke font:
 
-1. **The font**: `playground/raster/fonts/futural.jhf`, Hershey's "Roman
+1. **The font**: `graphics/font/fonts/futural.jhf`, Hershey's "Roman
    simplex", embedded in the library as a string by a dune rule
-   (`playground/raster/dune`). Its free use conditions and the required
-   acknowledgements are in `playground/raster/fonts/README.md`.
+   (`graphics/font/dune`). Its free use conditions and the required
+   acknowledgements are in `graphics/font/fonts/README.md`.
 2. **Decoding** (`Hershey.decode_glyph`): the JHF format stores each
    coordinate as one character, its distance from 'R'; " R" lifts the
    pen. `Hershey.mli` walks through the "A".

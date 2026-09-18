@@ -206,7 +206,7 @@ let missing_texture_color = Playground.rgb 255 0 255
  * comes from run_app3d's ?rendering), "i" to toggle at runtime *)
 let smooth_textures : bool ref = ref true
 
-(* claude: bilinear filtering, like playground/raster/Blit.sample_bilinear
+(* claude: bilinear filtering, like graphics/core/Blit.sample_bilinear
  * for 2D images: mix the 4 texels whose centers surround (u, v), each
  * weighted by how close it is (see Blit.mli for a picture) *)
 let sample_texture_bilinear (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) : int * int * int =
@@ -505,7 +505,7 @@ type material = Flat of Playground.color | Textured of string
  *   ny = sum over the edges (p, q) of (p.z - q.z) * (p.x + q.x)
  *   nz = sum over the edges (p, q) of (p.x - q.x) * (p.y + q.y)
  *
- * Each sum is the shoelace formula (see raster/Stroke.signed_area):
+ * Each sum is the shoelace formula (see graphics/2d/Stroke.signed_area):
  * twice the signed area of the polygon's shadow on one of the three
  * coordinate planes (nz: on the xy plane, looking down z), and those
  * three areas together are the plane's direction, scaled by the

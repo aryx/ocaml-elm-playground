@@ -77,6 +77,17 @@ the optimization buys (numbers in `notes_opti.md`).
 
 ## Layout
 
+**Update (2026-09-18, after phase 7):** the algorithms are no longer in
+`playground/raster/` (package `elm_playground_raster`): since they know
+nothing of the Playground, they moved to a toplevel `graphics/`, as
+private libraries (no `.opam` of their own) installed with
+`elm_playground_software`: `graphics/core/` (`graphics_core`: `Opti`,
+`Framebuffer`, `Blit`), `graphics/2d/geometry/` (`graphics_2d_geometry`:
+`Affine`), `graphics/2d/` (`graphics_2d`: `Fill`, `Line`, `Circle`,
+`Stroke`, `Magnifier`), `graphics/font/` (`graphics_font`: `Hershey` and
+its font file), tests in `graphics/tests/`. Module names didn't change.
+The rest of this plan, written before, keeps the old paths.
+
 The algorithms live in a **plain library** separate from the thin
 `Playground_platform` implementation, for one important reason: a
 library that `(implements elm_playground)` can't be linked together

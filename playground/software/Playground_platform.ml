@@ -12,7 +12,7 @@
 (* Prelude *)
 (*****************************************************************************)
 (* Software-rendering backend of Playground: every pixel is computed by
- * our own code (Shape_render_software, on top of playground/raster/),
+ * our own code (Shape_render_software, on top of graphics/),
  * and SDL is only used to open a window, get input events, and show the
  * pixels. See docs/claude_notes/plan_software_2d.md.
  *

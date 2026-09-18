@@ -1,5 +1,5 @@
 (* A framebuffer: the grid of pixels an image is made of, as one big
- * array of numbers in memory -- the thing every other module in raster/
+ * array of numbers in memory -- the thing every other module in graphics/
  * writes into, and the thing the screen displays.
  *
  * Pixel (x, y) is column x, row y, with (0, 0) the top-left corner and

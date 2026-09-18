@@ -1,5 +1,5 @@
 (* A magnifying glass for looking at individual pixels: the debugging
- * tool for everything else in raster/. At normal size you can't tell
+ * tool for everything else in graphics/. At normal size you can't tell
  * which pixels a shape's edge really covers, or whether two shapes
  * leave a 1-pixel gap between them; magnified 8 times, with a grid
  * between pixels, you can.

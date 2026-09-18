@@ -70,7 +70,7 @@ several coverage samples per pixel, resolved at the end.
 ## The optimizations
 
 Each optimization keeps the original, simple code next to it, runnable:
-`playground/raster/Opti.ml`'s `Opti.enabled` switches between them, the
+`graphics/core/Opti.ml`'s `Opti.enabled` switches between them, the
 "o" key flips it while a game runs. For teaching, the simple version
 explains the idea, the optimized one shows the craft, and "o" shows
 what it buys. A test (`Unit_antialiasing`, "optimized = simple") checks

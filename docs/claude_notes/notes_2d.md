@@ -6,8 +6,10 @@ your screen? This note explains it from the ground up: what a pixel is,
 which pixels a shape covers, how to draw lines, circles, polygons,
 images and text, what transparency and antialiasing really are, and
 where each idea came from -- with pointers into the actual code of this
-repository's from-scratch 2D rasterizer, `playground/raster/` (the
-algorithms, in plain OCaml, depending on nothing) and
+repository's from-scratch 2D rasterizer, `graphics/` (the algorithms,
+in plain OCaml, knowing nothing of the Playground: `graphics/core/`
+the framebuffer and images, `graphics/2d/geometry/` transforms,
+`graphics/2d/` rasterization, `graphics/font/` text) and
 `playground/software/` (the Playground backend using them).
 
 The 2D counterpart of [`notes_3d.md`](notes_3d.md). Companions:
@@ -25,7 +27,7 @@ we do it ourselves, which is the only way to *see* how it works.
 
 A screen, or an image file, is a grid of **pixels** ("picture
 elements"), each one color. In memory that's just a big array of
-numbers: a **framebuffer** (`raster/Framebuffer.ml`), here one 32-bit
+numbers: a **framebuffer** (`graphics/core/Framebuffer.ml`), here one 32-bit
 integer per pixel, `0xAARRGGBB` (8 bits each of alpha, red, green,
 blue). A 1000x1000 window is a million integers; drawing means writing
 some of them.
@@ -56,7 +58,7 @@ first into the second, "rasterization" or "scan conversion":
 `playground/software/Shape_render_software.ml` is exactly this
 pipeline: `shape_transform`, `screen_transform`, then `render_form`,
 which hands the shape, now in pixel coordinates, to one of the
-algorithms of `raster/`.
+algorithms of `graphics/`.
 
 The trick that makes the software backend short: SDL gives us the
 window's pixels as a plain array (`Native_loop_2d.create_window`), and
@@ -95,7 +97,7 @@ looks: with it, two shapes sharing an edge never both cover a pixel on
 that edge, and never both miss one -- no gap, no pixel painted twice.
 Getting it wrong by half a pixel shows up as thin seams between shapes,
 or darker lines where transparent shapes meet (the test
-"shared edge: no gap, no overlap" in `raster/tests/Unit_fill.ml` checks
+"shared edge: no gap, no overlap" in `graphics/tests/Unit_fill.ml` checks
 it).
 
 Reference: Alvy Ray Smith, "A Pixel Is Not A Little Square" (Microsoft
@@ -106,7 +108,7 @@ which is exactly what the center rule does.
 
 Every transformation Playground needs -- move, rotate, scale, and the
 flip from Elm's coordinates to pixels -- is an **affine transform**
-(`raster/Affine.ml`): (x, y) goes to (a*x + c*y + tx, b*x + d*y + ty).
+(`graphics/2d/geometry/Affine.ml`): (x, y) goes to (a*x + c*y + tx, b*x + d*y + ty).
 Written as a 3x3 matrix acting on (x, y, 1), a trick called
 **homogeneous coordinates** (Roberts, 1965), a translation becomes a
 matrix too, so *any* sequence of transforms is one matrix, their
@@ -333,12 +335,12 @@ clock, like browsers.
 
 Text is covered in depth in [`notes_font.md`](notes_font.md). In short:
 the software backend uses a **stroke font**, Hershey's "Roman simplex"
-(1967), where each letter is a few pen strokes (`raster/Hershey.ml`), so
+(1967), where each letter is a few pen strokes (`graphics/font/Hershey.ml`), so
 drawing text only needs drawing lines. Small text is 1-pixel lines
 (Bresenham or Wu). Big text needs **thick lines**, which are *areas*,
 not lines: each segment becomes a rectangle, each point a disk (round
 joins and ends), all filled together with the nonzero rule so their
-union is painted once (`raster/Stroke.ml`, PostScript's "stroking").
+union is painted once (`graphics/2d/Stroke.ml`, PostScript's "stroking").
 
 ## 10. Aliasing and antialiasing
 
@@ -411,7 +413,7 @@ state of each key (`software/Playground_platform.ml`):
 | `o` | optimizations: the original, simple code | watch the fps counter |
 | `z` | the pixel magnifier, following the mouse | everything |
 
-The magnifier (`raster/Magnifier.ml`) shows the 32x32 pixels under the
+The magnifier (`graphics/2d/Magnifier.ml`) shows the 32x32 pixels under the
 mouse enlarged 8 times, with a grid between pixels: the tool to *see*
 the pixel-center rule, gaps between shapes, jaggies, and what
 antialiasing does to an edge. A game can also choose the starting
@@ -421,7 +423,7 @@ values of "n" and "i" (portably, for all backends) with
 Each feature is its own function (e.g. `Line.draw` is `Line.clip` then
 `Line.bresenham`; `render_form` picks `fill_polygon` or
 `outline_polygon`), so the code can be read one feature at a time, in
-the order of this note. And `raster/tests/` checks the worked examples
+the order of this note. And `graphics/tests/` checks the worked examples
 of the `.mli` files, so they can't silently become wrong.
 
 ## 13. Performance
@@ -430,7 +432,7 @@ Measured in [`notes_opti.md`](notes_opti.md): Cairo (tuned C, SIMD) is
 1.5 to 7 times faster than our plain OCaml, and each feature has its
 price (antialiasing 1.1x to 3x). Three optimizations made the software
 backend playable, each keeping its original, simple version runnable
-next to it (`raster/Opti.ml`, the "o" key):
+next to it (`graphics/core/Opti.ml`, the "o" key):
 
 1. antialiasing coverage as sparse "cells" (a few per span) instead of
    updating every pixel of every span;
@@ -448,7 +450,7 @@ writing it by hand, you appreciate what "free" means.
 ## 14. Compared with Cairo, the GPU, and the 3D rasterizer
 
 **Size.** The whole from-scratch renderer: about 775 lines of code
-(`raster/`: 540, `software/`: 235), plus about twice as many lines of
+(`graphics/`: 540, `playground/software/`: 235), plus about twice as many lines of
 comments, and 540 lines of tests. The Cairo backend is 235 lines of
 OCaml too -- but it delegates the actual work to Cairo, pixman,
 FreeType and fontconfig, C libraries of tens of thousands of lines

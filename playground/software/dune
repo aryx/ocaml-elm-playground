@@ -8,7 +8,8 @@
     stb_image ; Image_decode.image's fields
     elm_core ; Color
     elm_playground
-    elm_playground_raster ; the rasterization algorithms
+    ; the from-scratch graphics algorithms, see graphics/
+    graphics_core graphics_2d_geometry graphics_2d graphics_font
     elm_playground_native_common ; Native_loop_2d, Image_decode
   )
 )

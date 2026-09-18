@@ -5,8 +5,13 @@ synopsis:
   "Native playground platform with a from-scratch software rasterizer"
 description: """
 Like elm_playground_native, but every pixel is computed by our own
-  code (elm_playground_raster) instead of Cairo; SDL only opens the
-  window, reads input, and shows the pixels.
+  code instead of Cairo; SDL only opens the window, reads input, and
+  shows the pixels. The algorithms (framebuffer, affine transforms,
+  polygon filling, Bresenham lines, midpoint circles, image warping,
+  compositing, antialiasing, a stroke font), written to be read, with
+  references to the papers that introduced them, are in graphics/,
+  private libraries installed as part of this package for now; see
+  docs/claude_notes/notes_2d.md.
 """
 maintainer: ["Yoann Padioleau <yoann.padioleau@gmail.com"]
 authors: ["Yoann Padioleau <yoann.padioleau@gmail.com"]
@@ -20,8 +25,10 @@ depends: [
   "stb_image" {>= "0.4"}
   "elm_core" {= version}
   "elm_playground" {= version}
-  "elm_playground_raster" {= version}
   "elm_playground_native_common" {= version}
+  "testo" {with-test}
+  "alcotest" {with-test}
+  "cairo2" {with-test}
   "odoc" {with-doc}
 ]
 build: [

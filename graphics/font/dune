@@ -1,0 +1,22 @@
+; claude: fonts: Hershey's stroke font (Hershey), turning a string into
+; pen strokes. Depends on nothing. See docs/claude_notes/notes_font.md.
+; A private library, see graphics/core/dune.
+(library
+ (name graphics_font)
+ (package elm_playground_software)
+ (wrapped false)
+)
+
+; the Hershey font file, embedded as a string (Hershey.ml parses it), so
+; the library needs no file at runtime
+(rule
+ (targets Hershey_futural.ml)
+ (deps fonts/futural.jhf)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from fonts/futural.jhf by graphics/font/dune *)\n")
+    (echo "let jhf = {|")
+    (cat %{deps})
+    (echo "|}\n")))))

@@ -1,0 +1,16 @@
+; claude: the base of the from-scratch graphics libraries of graphics/:
+; the framebuffer (a grid of pixels in memory), drawing images onto it
+; (Blit), and the switch between optimized and simple code (Opti). See
+; docs/claude_notes/notes_2d.md.
+;
+; A private library (no public_name, so no .opam of its own): the
+; (package ...) field installs it as an internal part of the package of
+; its only public user, elm_playground_software. Like the other
+; graphics/ libraries, it depends on nothing of the Playground, only on
+; plain numbers: points, colors, pixels.
+(library
+ (name graphics_core)
+ (package elm_playground_software)
+ (wrapped false)
+ (libraries graphics_2d_geometry) ; Affine, for Blit
+)
