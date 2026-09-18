@@ -180,6 +180,13 @@ above, is the Elm way).
   fuel, landing pads -- Gravitar/Lunar Lander territory.
 - **Mario and Pong, ported**: `fall` and jumping; `keep_in` and
   `bounce` for the ball.
+- **The capstone, TinySoldat** (after Soldat, Michał Marcinkowski,
+  2002; see `plan_games.md` section 17): soldiers with jets (thrust
+  against gravity, fuel), a polygon map to run on and collide with
+  (phases 4-5), fast bullets (tunneling and swept tests), bouncing
+  grenades (restitution), ragdolls on death (Verlet particles and
+  distance constraints, from `Springs.ml`'s rope), then bots and the
+  network -- everything this plan builds, in one game.
 
 ## Target layout
 
@@ -263,6 +270,9 @@ options record, a `ref` like `Opti.enabled`, is the one global.
   *Lectures on Physics*, vol. 1, chapter 9 (planetary motion stepped
   by hand); Hairer, Lubich, Wanner, *Geometric Numerical Integration*
   (why symplectic methods keep orbits closed).
+- **Throughout**: David M. Bourg, *Physics for Game Developers*
+  (O'Reilly, 2002; 2nd ed. with Bryan Bywalec, 2013), the physics for
+  programmers (projectiles with drag and wind, rigid bodies, collisions).
 - **Force**: Newton's *Principia* (1687): F = ma, gravitation;
   Hooke's law (1678); damping. The N-body direct sum (O(n^2)), and a
   pointer to Barnes-Hut (1986) as the next step.
@@ -270,7 +280,8 @@ options record, a `ref` like `Opti.enabled`, is the one global.
 - **Shape**: areas and moments of inertia (disk, box, polygon via
   triangles).
 - **Collide**: Christer Ericson, *Real-Time Collision Detection*
-  (2005), the reference for all of it; point in polygon by crossing
+  (2005), the reference for all of it; Metanet Software's N tutorials
+  (2004-5), SAT and grids for game programmers, the gentlest; point in polygon by crossing
   number (Jordan curve theorem); the separating axis theorem (Gottschalk,
   Lin, Manocha, "OBBTree", SIGGRAPH 1996, for its use in graphics);
   GJK (Gilbert, Johnson, Keerthi, 1988).
@@ -344,6 +355,54 @@ Each small, each showing one idea, each deterministic (golden frames):
 10. *(later)* **3D**: `physics/3d/` (spheres, boxes, gravity) and a
    `Physics3d` API, for StarCollector3d and Minecraft3d (walking on
    blocks).
+
+## Status
+
+- **Phase 0, DONE**: `graphics/2d/geometry/dune`'s package is
+  `elm_playground` (the library itself unchanged, not moved);
+  `physics/2d/` (`physics_2d`) and `physics/tests/` exist. The empty
+  `physics/collision/`, `gravity/`, `mechanics/` placeholders are left
+  as they were.
+- **Phase 1, DONE except the Orbit example**: `Body`, `Integrate` (the
+  four methods, each its own function, and `step` to switch), `Energy`,
+  and, needed by the tests, the start of `Force` (`none`, `uniform`,
+  `gravitation`, `spring`, `drag`, `sum`). Tests (`Unit_integrate`,
+  `Unit_energy`): the projectile table (4.0, 3.5, 3.75, 3.75); the
+  convergence orders measured (error ratios for dt halved: 2.1 and 2.0
+  for the Eulers, 4.0 for Verlet, 15.5 for RK4); the spring's energy
+  (explicit Euler exactly 1.01^100 = 2.70 after 100 steps,
+  semi-implicit within 0.95-1.05 over 1000); the orbit (gm 1,000,000,
+  r 100, dt 1/60: explicit Euler's radius 119.94 after one orbit,
+  190.18 after ten; the other three at 100 within 0.01); drag's
+  terminal speed. `examples/Orbit.ml` is still to do.
+- **Phase 2, started**: `Force.drag` (linear); left: quadratic drag,
+  damping, N-body, `Springs.ml`.
+- **Phase 3, v1 DONE, differing from the sketch above** (by writing a
+  game with it): `playground/Physics.mli`, a layer on top of the
+  playground like `Camera2d` (in the `elm_playground` library, which
+  now depends on `physics_2d`). Changes: the verb is **`step`**, not
+  `move` (which moves shapes: a game opens both `Playground` and
+  `Physics`); `fall`, `push`, `thrust`, `slow` **accumulate** (the
+  record's `ax`, `ay`: the force accumulator of every engine) and
+  `step` uses them up, so their order doesn't matter; the **mass is 1
+  by default** (`heavy` to change it), not from the shape's area:
+  `push` then behaves the same on every body until one is made heavy,
+  F = m a as a lesson to opt into (the area can still give the mass
+  with the collisions, phase 4-5); no `bounciness` field yet
+  (`bounce_in screen bounciness` takes it as an argument). Also
+  `launched`, `pointing`, `turn`, `wrap`, `bounce_in`, `distance`,
+  `speed`, `outside`, `tick`. Tests: `Unit_physics_api` (the thrown
+  ball of `Physics.mli`: x 200, y 300 - 406.67, 6.67 below the exact
+  parabola; the accumulator; the top speed; directions; edges). Not
+  yet: `attracted_by`; Mario and Asteroid not ported.
+- **The artillery game, DONE, before the plan's own games**:
+  `games/TinyWorms.ml` (`plan_games.md`'s artillery toy), two players
+  taking turns, a shell `launched` then `fall |> push wind |> step`, a
+  height-map terrain (Scorched Earth's, no caves) carved by explosions,
+  seeded hills and winds (`seed=n`). Checked with rendered frames
+  (`-script "space:2-3,space:10-11"`: the arc, the crater); golden
+  frames to add once the scripted-input work (another session) lands in
+  `tests/`.
 
 ## Verification
 

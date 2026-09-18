@@ -351,7 +351,10 @@ Artillery (on mainframes and home computers, late 1970s), Gorillas
 (QBasic, 1991), Scorched Earth (1991), Worms (Team17, 1995), Angry
 Birds (Rovio, 2009: the physics plan's Slingshot).
 
-- **Toy**: TinyWorms, with destructible terrain.
+- **Toy**: TinyWorms, with destructible terrain. (DONE:
+  `games/TinyWorms.ml`, on the physics plan's `Physics` layer; its
+  terrain a height map, as in Scorched Earth, so no caves yet: the
+  bitmap kit below would give them.)
 - **Kit**: terrain as a bitmap, explosions carving circles out of it
   (a `graphics/core` `Framebuffer`, collisions by pixel), plus the
   physics plan's projectiles and wind.
@@ -376,6 +379,31 @@ Guitar Hero (2005).
 - **Toy**: TinyDDR: arrows scrolling up, pressed on the beat.
 - **Kit**: in `plan_audio_teaching.md` (timing against the music,
   not the frame).
+
+### 17. Side-view deathmatch: Soldat
+
+Liero (Joosa Riekkinen, 1998: two worms on one keyboard, destructible
+dirt, ninja ropes), then **Soldat** (Michał Marcinkowski, "MM", 2002,
+written in Delphi, freeware, later open source): fast 2D deathmatch
+seen from the side, soldiers with jet boots, dozens of weapons,
+polygon maps, ragdoll deaths, bots, and online play -- the genre's
+peak, and a favorite of this project's author.
+
+- **Toy**: TinySoldat, the capstone of the physics plan: soldiers as
+  bodies running, jumping and flying on jets (`thrust` against `fall`,
+  with fuel), colliding with a polygon map (the physics plan's phases
+  4-5), bullets fast enough to need its anti-tunneling (a swept test,
+  notes_2d_physics.md section 12), grenades bouncing, ragdolls when
+  a soldier dies (Verlet particles and distance constraints, Jakobsen's
+  Hitman technique, the physics plan's Springs example grown up); then
+  bots (`plan_teaching_other.md`'s game AI: pathfinding on the map's
+  waypoints, aiming) and two players over the network
+  (`plan_networking_teaching.md`).
+- **Kit**: the physics plan's polygon collisions and ragdolls, a weapon
+  table, spawn points, the camera following the player
+  (`Camera2d`), a map as polygons (a map editor later).
+
+(Names and dates from memory, to check.)
 
 ### Later, or never
 

@@ -396,12 +396,15 @@ step by step).
 
 ## 13. In the playground
 
-The API (`playground/Physics.mli`, planned, see the plan) hides all of
-the above behind one concept, a **body** -- a shape that moves -- and
-verbs in `update`: `move` (§4), `fall`, `attracted_by`, `thrust`,
-`slow` (§6), `touching` (§8), `bounce` (§10), `step` (all of it, with
-§9). The hitbox and the mass come from the shape. Two games show it
-off: **Asteroid**, ported (inertia, thrust, drag, wrap-around, exact
+The API (`playground/Physics.mli`) hides all of the above behind one
+concept, a **body** -- a shape that moves -- and verbs in `update`:
+`fall`, `push`, `thrust`, `slow` (§6) add up what pushes the body,
+and `step` (§4: one tick of semi-implicit Euler) moves it; planned:
+`attracted_by` (§6), `touching` (§8), `bounce` (§10), and a step for
+many bodies at once (§9). `games/TinyWorms.ml`, an artillery game, is
+its first user: a shell `launched` at an angle and a speed, then
+`fall`, `push` (the wind) and `step` at every tick. Three more games
+will show it off: **Asteroid**, ported (inertia, thrust, drag, wrap-around, exact
 polygon hits), and **Spacewar!**, new (two ships and their torpedoes
 around a star: gravitation, orbits, slingshots -- and, with the
 integrator key, what explicit Euler does to an orbit), and

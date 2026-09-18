@@ -52,6 +52,31 @@ games the playground now wants are the classics:
 
 ## Part 2: the engines
 
+### Before Chipmunk and Box2D
+
+2D physics existed in games long before general engines, each game
+writing its own:
+
+- **The Incredible Machine** (Kevin Ryan, Dynamix/Sierra, 1993): a
+  puzzle game *about* physics -- balls, ropes, conveyor belts, gravity
+  -- with its own simulation; Crayon Physics Deluxe (Petri Purho, 2009)
+  and Phun/Algodoo (Emil Ernerfeldt, 2008) are its descendants.
+- **Metanet Software's N** (Raigan Burns and Mare Sheppard, 2004-2005):
+  a platformer with tight physics, and its famous online tutorials,
+  "Collision Detection and Response" and "Broad-Phase Collision" --
+  the separating axis theorem and grids explained for game programmers,
+  with interactive Flash demos; still one of the best introductions
+  (Collide and Broadphase in the plan).
+- **Flash engines**, the web games' physics before Box2D was ported:
+  **APE** (Alec Cove, ActionScript Physics Engine, 2006: particles and
+  Verlet constraints, after Jakobsen's Hitman article), **Motor2**
+  (Michael Baczynski, 2006: impulses, close to Box2D), **Fisix**
+  (2007); then Box2DFlash made Box2D itself the standard.
+- **3D engines already existed** (ODE, 2001; MathEngine's Karma, around
+  1998; Havok, 2000; Newton Game Dynamics, 2003), used in 2D by
+  ignoring a dimension; Box2D Lite (2006) was a 2D engine written from
+  scratch, and small enough to read, which is what made it the model.
+
 ### Chipmunk (2007) -- 2D, C, simple
 
 Scott Lembcke's Chipmunk (now Chipmunk2D): a 2D rigid-body engine in
@@ -164,6 +189,11 @@ Where the ideas are taught best, and what `physics/` borrows from each:
   (SIGGRAPH course notes, 1997-2001): the same with the full math.
 - **Christer Ericson, *Real-Time Collision Detection* (2005)**: the
   reference for §8-9, every test with its code.
+- **David M. Bourg, *Physics for Game Developers* (O'Reilly, 2002; 2nd
+  edition with Bryan Bywalec, 2013)**: the physics itself -- kinematics,
+  forces, projectiles (with drag and wind: the artillery game), rigid
+  bodies, collisions -- explained for programmers, with code; the book
+  between the physics textbooks and the engine code.
 - **Ian Millington, *Game Physics Engine Development* (2007)**: builds
   a whole engine (Cyclone) chapter by chapter, particles first, then
   springs, then rigid bodies -- the progression `physics/`'s phases
@@ -217,4 +247,5 @@ and after.
 Sources: from memory, to be checked before relying on them for
 teaching -- the books and articles named above, the documentation of
 Chipmunk2D, Box2D, Matter.js, Rapier, elm-physics, and general
-knowledge of the games' history.
+knowledge of the games' and the Flash engines' history (names and dates
+of the pre-Box2D engines especially).
