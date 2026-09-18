@@ -1,0 +1,319 @@
+# Plan: `elm_playground_software`, a from-scratch 2D rasterizer backend
+
+## Context
+
+`playground3d/` ended up with a nice teaching pair:
+
+|         | "do it yourself"                          | "let a library/the hardware do it" |
+|---------|-------------------------------------------|------------------------------------|
+| **3D**  | `playground3d/software/` (software rasterizer: z-buffer, edge functions, ...) | `playground3d/opengl/` (the GPU does it) |
+| **2D**  | **missing**                               | `playground/native/` (Cairo does it) |
+
+The 2D side has no "do it yourself" half. `playground/native/` hands
+every shape to Cairo (`Cairo.arc`, `Cairo.line_to`, `Cairo.fill`,
+`Cairo.show_text`, `Cairo.set_source_surface` + `Cairo.paint`), so the
+actual pixel-level algorithms -- how a polygon becomes pixels, how a
+circle is traced on a grid, how transparency is blended, how an image
+is rotated and scaled, how a letter is drawn -- are all hidden inside
+libcairo/pixman/FreeType.
+
+This plan adds a 2D backend that does all of that itself, on a plain
+`int32` pixel array blitted to an SDL window, with **zero Cairo**. Each
+algorithm gets a comment pointing at the classic paper that introduced
+it (Bresenham 1965, Wylie et al. 1967, Porter & Duff 1984, ...), and a
+new tutorial, `notes_2d.md`, plays the role `notes_3d.md` plays for 3D.
+
+Same API, unmodified: every `examples/` and `games/` file only uses
+`Playground`'s public combinators, so it should link against the new
+backend exactly as it links against `native/` today.
+
+## Naming
+
+Recommendation: **keep `playground/native/` as is, and call the new
+one `playground/software/`, library/package `elm_playground_software`.**
+
+- "Software rendering" / "software rasterizer" is the standard term of
+  art for exactly this (as opposed to hardware-accelerated, or here
+  library-accelerated, rendering) -- a reader who greps the web for it
+  finds the right literature.
+- `elm_playground_native` is **published on opam (0.1.7)**, is what the
+  README's "Simple native application" walkthrough and
+  `docs/toy-native-example/` use, and is what `playground3d/software/`
+  links for its HUD. Renaming it (say to `cairo/`) would break those,
+  and silently re-pointing the name `native` at a different, slower,
+  aliased-by-default renderer would be worse.
+- Rejected: `soft_rendered/` (awkward), `raster/` (Cairo rasterizes
+  too), `pixels/`/`framebuffer/` (describe the output, not the idea),
+  `from_scratch/` (cute, but not a term anyone searches for).
+
+The one wart was that in 3D the software rasterizer used to be called
+`native/`. **DONE** (before phase 0): renamed `playground3d/native/` ->
+`playground3d/software/` (`elm_playground_3d_native` ->
+`elm_playground_3d_software`), cheap because no 3D package was on opam
+yet. Archived plans in `done/` keep the old name, as history. Now both
+halves read the same way:
+
+```
+playground/     native/ (Cairo)     software/   web/ (SVG)
+playground3d/   opengl/ (GPU)       software/   web/ (SVG)
+```
+
+## Layout
+
+Rendering code lives in a **plain library** separate from the thin
+`Playground_platform` implementation, for one important reason: a
+library that `(implements elm_playground)` can't be linked together
+with another implementation (dune rejects two implementations of one
+virtual library). Keeping the rasterizer in a plain library lets a test
+executable link it *next to* `elm_playground_native` and diff our
+pixels against Cairo's (see Verification), and lets
+`playground3d/software/` later drop Cairo for its HUD too.
+
+```
+playground/raster/          library elm_playground_raster (wrapped false, no Cairo, no SDL)
+  Framebuffer.ml            w x h int32 Bigarray (0xAARRGGBB), clear, put, blend
+  Affine.ml                 2x3 affine matrices: translate/rotate/scale/compose/apply/invert
+  Line.ml                   Bresenham (+ Wu antialiased lines, + Cohen-Sutherland clipping)
+  Fill.ml                   scanline polygon fill, active edge table, nonzero winding (+ AA coverage)
+  Circle.ml                 midpoint circle (Bresenham 1977) + ellipse flattening
+  Blit.ml                   image drawing by inverse mapping, nearest (+ bilinear)
+  Hershey.ml + font data    stroked vector font for Words
+  Shape_render_raster.ml    Playground.shape list -> Framebuffer, the analogue of Shape_render_native
+playground/software/        library elm_playground_software (implements elm_playground)
+  Playground_platform.ml    SDL window + event loop + Framebuffer -> window surface
+examples/software/, games/software/   (copy_files ../Foo.ml) + dune, like examples3d/opengl/
+```
+
+`dune-project` gets `elm_playground_raster` and `elm_playground_software`
+package stanzas (regenerate the `.opam` files with `make`); `Makefile`'s
+`OPAMS` list gets them too.
+
+### Two things currently trapped in `elm_playground_native`
+
+`elm_playground_software` can't depend on `elm_playground_native` (two
+implementations again), but it needs two things that live there:
+
+1. **Image decoding** (`Image_native.ml`: URL download via curl, decode
+   via stb_image, animated GIF frames, the cache). Only its last step,
+   `cairo_surface_of_stb_image`, is Cairo-specific.
+2. **The 2D SDL event loop** (`run_app`: event draining, 60 fps cap,
+   `-v`/`-debug` CLI parsing, "Loading..." screen).
+
+Recommended: do what 3D already did with `native_common/` -- extract a
+plain library `playground/native_common/` (`elm_playground_native_common`)
+holding a Cairo-free `Image_decode` (returns RGBA pixel arrays + GIF
+frame timings) and a `Native_loop_2d` parameterized over a
+`draw : Playground.shape list -> unit`-style callback. `Image_native`
+becomes a thin Cairo wrapper over `Image_decode`.
+
+Cost: `elm_playground_native` gains a new dependency that must also be
+published on opam next time. The alternative -- copy ~150 lines of
+event loop and the decode half of `Image_native` into `software/` --
+is simpler to ship but duplicates the GIF/cache logic. **Open question
+for you**; the plan assumes extraction (3D precedent).
+
+## The algorithms, shape by shape
+
+What each `Playground.form` needs, what Cairo did for it, what we do
+instead, and the paper to cite in the code comment.
+
+| Form | Cairo did | We do | Classic reference |
+|---|---|---|---|
+| all | CTM + `save`/`restore` | `Affine.t` passed down the recursion; `Group` = compose parent * child (a scene graph of instances, exactly Sketchpad's idea) | Roberts 1965 (homogeneous coordinates); Sutherland 1963 (Sketchpad instancing) |
+| `Polygon`, `Rectangle`, `Ngon` | `move_to`/`line_to`/`fill` | transform vertices, then **scanline fill** with an edge table / active edge list, **nonzero winding** rule (Cairo's and SVG's default, so self-intersecting polygons match the other backends) | Wylie, Romney, Evans & Erdahl 1967; Heckbert 1990 ("Concave polygon scan conversion", Graphics Gems) |
+| `Circle` | `arc` + fill | under a similarity transform a circle stays a circle: **midpoint circle** algorithm, filling horizontal spans between symmetric octant points | Bresenham 1977 |
+| `Oval` (and circles under non-uniform `Group` scale) | `scale` + `arc` | an ellipse under an arbitrary affine is a rotated ellipse; **flatten** to a polygon (segment count from radius, tolerance-driven) and reuse `Fill` | Pitteway 1967 (midpoint conics, cited as the road not taken) |
+| `Image` | `set_source_surface` + `scale` + `paint` | **inverse mapping**: for each destination pixel in the transformed bounding box, apply the inverse affine to find the source texel; nearest-neighbor first, bilinear as a toggle | Heckbert 1989 (texture mapping / image warping); Catmull 1974 |
+| `Words` | `select_font_face` + `show_text` (FreeType underneath) | **Hershey** simplex Roman vector font: each glyph is a list of strokes, drawn with our own line code, scaled to `words_font_size`, centered like the other backends | Hershey 1967 |
+| `alpha`/`fade` | `set_source_rgba` | per-pixel **"over"** compositing, straight (non-premultiplied) alpha in v1 | Porter & Duff 1984; Smith 1995 ("Alpha and the history of digital compositing") |
+| (debug) outlines | -- | **Bresenham** lines, clipped to the window | Bresenham 1965; Cohen-Sutherland (Newman & Sproull 1973) |
+
+Note what's *not* on the list: nothing in the `Playground` API draws a
+stroked line or outline -- every form is filled. Bresenham still earns
+its place three ways: the wireframe debug toggle below (the analogue of
+3D's "f"), the Hershey font (which is nothing but line segments), and
+the FPS/"Loading..." text.
+
+A nice teaching contrast worth writing up in `notes_2d.md`:
+`playground3d/software/` fills triangles with **edge functions** (Pineda
+1988), a test-every-pixel-in-the-bounding-box approach that suits
+triangles and GPUs; here we fill arbitrary concave polygons with the
+older **scanline/active-edge** approach, which walks only the pixels
+inside. Same problem, two classic answers.
+
+## Debug toggles (same spirit as 3D's "m"/"b"/"f"/"z"/"p")
+
+Handled entirely in `software/Playground_platform.ml`, never part of
+the public API. No example or game currently reacts to a plain letter
+key (grep of `games/`, `examples/`), so plain letters are fine, as in 3D:
+
+- **"a" -- antialiasing on/off.** v1 ships aliased (you *see* the
+  jaggies, which is the point); then add coverage-based AA: for
+  polygons, accumulate exact per-pixel area coverage along each span
+  edge (Duff 1989 "Polygon scan conversion by exact convolution";
+  Carpenter 1984 A-buffer; the approach libart/font-rs/stb_truetype
+  use), for lines Wu 1991. Crow 1977 is the paper that named the
+  problem.
+- **"f" -- wireframe:** draw every flattened polygon's outline with
+  Bresenham instead of filling it -- shows how circles/ovals became
+  polygons.
+- **"i" -- image filtering:** nearest vs bilinear.
+- **"c" -- compare with Cairo:** *not* doable in-process (two
+  implementations), so instead a separate offscreen test, see below.
+
+## Scope for v1 (stated up front)
+
+- No gamma-correct blending (blend in sRGB like most naive renderers;
+  mention in `notes_2d.md` as a known inaccuracy).
+- Hershey text will not look like the web/Cairo sans-serif font.
+  Positioning (centering, size) should match; glyph shapes won't. A
+  real outline-font rasterizer (parse a TrueType file's quadratic
+  Béziers, flatten them via de Casteljau subdivision, fill with our own
+  nonzero-winding + AA filler -- i.e. stb_truetype in OCaml) is a
+  great **stretch phase**, since it reuses `Fill` wholesale, but it's
+  a TTF parser worth of code on top.
+- `Group` alpha: still a TODO, same as in `Shape_render_native`
+  (would need an offscreen layer + composite; Porter-Duff again).
+- Hershey font data: needs a vendored copy of the simplex Roman subset
+  (~95 glyphs, a few KB). The Hershey fonts are freely usable with
+  attribution; check the exact notice of the copy we vendor and keep it
+  in the file header.
+
+## Phasing
+
+0. **Extract `native_common/`** (image decoding without Cairo, 2D SDL
+   loop) out of `playground/native/`; verify every `examples/`/`games/`
+   native demo behaves the same. (Skip if you prefer duplication.)
+1. **Skeleton backend**: `Framebuffer` + SDL blit + event loop;
+   `Shape_render_raster` renders every form as its (transformed)
+   bounding box in its color. Wire `examples/software/` for `Picture`
+   and `Misc`. Proves the pipeline end to end, zero Cairo
+   in `dune` `libraries`.
+2. **`Affine` + `Fill`**: polygons, rectangles, ngons, groups/rotate/
+   scale/move, alpha blending. Most games (`Snake`, `Tetris`, `Pong`,
+   `Asteroid`) should now look right.
+3. **`Circle`**: midpoint circle fast path + ellipse flattening for
+   `Oval` and non-uniformly scaled circles. `Line` (Bresenham +
+   clipping) and the "f" wireframe toggle.
+4. **`Blit`**: images (nearest, then bilinear + "i"), animated GIFs via
+   the shared decoder. `examples/Mario.ml` is the test.
+5. **`Hershey`**: `Words`, FPS counter, "Loading...".
+   `examples/Words.ml` is the test.
+6. **Antialiasing** ("a"): coverage AA for `Fill`, Wu lines.
+7. **`notes_2d.md`** finalized (drafted incrementally from phase 1 --
+   see below), plus a short perf/LOC write-up comparing against Cairo
+   (the 2D twin of the `notes_playground3d_related_work.md`
+   postscript: how many lines to replace Cairo, how many fps we lose).
+8. *(stretch)* TrueType outline rasterizer replacing Hershey.
+9. *(optional)* `playground3d/software/` HUD via `elm_playground_raster`
+   instead of Cairo (making the 3D software renderer Cairo-free too).
+
+## `notes_2d.md`: the companion tutorial
+
+Same tone and structure as `notes_3d.md` ("from the ground up, with
+pointers into the actual code"), written alongside the phases so each
+section is backed by real code. Planned outline:
+
+1. The big picture: a framebuffer is just an array of ints; vector
+   graphics (shapes described by math) vs raster graphics (pixels);
+   "rendering 2D" = turning the former into the latter.
+2. Coordinates: Elm's centered y-up vs the framebuffer's top-left
+   y-down; pixel centers at `+0.5` (Smith 1995, "A pixel is not a
+   little square") and why off-by-half errors cause visible seams.
+3. Affine transforms and homogeneous coordinates; `Group` as a scene
+   graph; composing vs. Cairo's mutable CTM + save/restore.
+4. Lines: DDA vs Bresenham's integer-only error term; why integer
+   arithmetic mattered on 1960s plotters and still makes a tight loop.
+5. Polygon filling: scanline + active edge table; even-odd vs nonzero
+   winding (with an ASCII star showing the difference); the top-left
+   fill convention that stops shared edges from being drawn twice.
+6. Circles and ellipses: 8-way symmetry, the midpoint idea, and why
+   general transformed ellipses are just flattened to polygons in
+   practice (what Cairo, PostScript, and GPUs all do).
+7. Transparency: alpha, Porter-Duff "over", premultiplied vs straight
+   alpha, and the gamma caveat.
+8. Images: forward vs inverse mapping (why forward mapping leaves
+   holes), nearest vs bilinear, aliasing when minifying (mipmaps as a
+   pointer to the 3D notes).
+9. Text: vector (Hershey) vs bitmap vs outline (TrueType/Bézier) fonts;
+   what FreeType/Cairo were doing for us.
+10. Aliasing and antialiasing: Crow 1977, supersampling vs exact
+    coverage, Wu lines.
+11. Clipping: Cohen-Sutherland for lines, Sutherland-Hodgman for
+    polygons, and why a scanline filler mostly gets clipping for free
+    by clamping its y and x ranges.
+12. How this compares to the 3D rasterizer (scanline vs edge functions)
+    and to Cairo/Skia/GPUs; a references section with every paper
+    cited in the code.
+
+## References (to cite in code comments and `notes_2d.md`)
+
+Double-check volume/page numbers against the actual papers when
+writing each comment -- these are from memory.
+
+- Sutherland, I. E. 1963. *Sketchpad: A man-machine graphical
+  communication system.* AFIPS Spring Joint Computer Conference / MIT
+  PhD thesis.
+- Roberts, L. G. 1965. *Homogeneous matrix representation and
+  manipulation of n-dimensional constructs.* MIT Lincoln Lab MS-1405.
+- Bresenham, J. E. 1965. *Algorithm for computer control of a digital
+  plotter.* IBM Systems Journal 4(1):25-30.
+- Wylie, C., Romney, G. W., Evans, D. C., Erdahl, A. 1967. *Half-tone
+  perspective drawings by computer.* AFIPS Fall Joint Computer
+  Conference 31:49-58. (scanline polygon filling)
+- Pitteway, M. L. V. 1967. *Algorithm for drawing ellipses or
+  hyperbolae with a digital plotter.* The Computer Journal
+  10(3):282-289.
+- Hershey, A. V. 1967. *Calligraphy for computers.* NWL Report 2101,
+  U.S. Naval Weapons Laboratory, Dahlgren.
+- Newman, W. M., Sproull, R. F. 1973. *Principles of Interactive
+  Computer Graphics.* McGraw-Hill. (Cohen-Sutherland line clipping)
+- Sutherland, I. E., Hodgman, G. W. 1974. *Reentrant polygon
+  clipping.* CACM 17(1):32-42.
+- Catmull, E. 1974. *A subdivision algorithm for computer display of
+  curved surfaces.* PhD thesis, University of Utah.
+- Bresenham, J. E. 1977. *A linear algorithm for incremental digital
+  display of circular arcs.* CACM 20(2):100-106.
+- Crow, F. C. 1977. *The aliasing problem in computer-generated shaded
+  images.* CACM 20(11):799-805.
+- Porter, T., Duff, T. 1984. *Compositing digital images.* SIGGRAPH '84,
+  Computer Graphics 18(3):253-259.
+- Carpenter, L. 1984. *The A-buffer, an antialiased hidden surface
+  method.* SIGGRAPH '84, Computer Graphics 18(3):103-108.
+- Pineda, J. 1988. *A parallel algorithm for polygon rasterization.*
+  SIGGRAPH '88. (the 3D side's edge functions, for the contrast)
+- Heckbert, P. S. 1989. *Fundamentals of texture mapping and image
+  warping.* Master's thesis, UC Berkeley.
+- Duff, T. 1989. *Polygon scan conversion by exact convolution.* Raster
+  Imaging and Digital Typography, Cambridge University Press.
+- Heckbert, P. S. 1990. *Concave polygon scan conversion.* Graphics
+  Gems, Academic Press.
+- Foley, J. D., van Dam, A., Feiner, S. K., Hughes, J. F. 1990.
+  *Computer Graphics: Principles and Practice*, 2nd ed., ch. 3 (the
+  textbook treatment of almost everything above).
+- Wu, X. 1991. *An efficient antialiasing technique.* SIGGRAPH '91,
+  Computer Graphics 25(4):143-152.
+- Smith, A. R. 1995. *A pixel is not a little square* (Tech Memo 6) and
+  *Alpha and the history of digital compositing* (Tech Memo 7),
+  Microsoft.
+
+## Verification
+
+- `dune build` after each phase; `dune ls`/`grep cairo
+  playground/raster/dune playground/software/dune` stays empty (the
+  "zero Cairo" invariant).
+- **Pixel diff against Cairo**: a Testo test (`tests/`) links
+  `elm_playground_native` (for `Shape_render_native`) *and*
+  `elm_playground_raster`, renders a fixed set of shapes (each form,
+  rotated/scaled/grouped/faded) offscreen with both -- Cairo into a
+  `Cairo.Image` surface, ours into a `Framebuffer` -- and asserts the
+  fraction of differing pixels stays under a threshold (aliased vs
+  antialiased edges will always differ by a 1-pixel fringe; interiors
+  and positions must match). This is the 2D analogue of the 3D
+  "pixel-identical TexturedCube3d screenshot" check, and catches
+  off-by-one/half-pixel and y-flip mistakes early.
+- Side-by-side screenshots of `examples/software/` vs `examples/`
+  (adapt `scripts/screenshot_playground3d.sh`) for `Picture`,
+  `Animation`, `Mario`, `Words`, and each game.
+- FPS at the default 1000x1000 window vs Cairo, per phase, logged the
+  way `notes_3d_opti.md` logs 3D rasterizer optimizations.
