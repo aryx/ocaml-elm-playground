@@ -1,13 +1,3 @@
-(* Claude Code
- *
- * Copyright (C) 2026 Yoann Padioleau
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public License
- * (LGPL) as published by the Free Software Foundation; either version
- * 2 of the License, or (at your option) any later version.
- *)
-
 (* The GPU-API-independent scene preparation shared by the GPU
  * playground3d backends (playground3d/opengl/, and the planned
  * playground3d/webgl/): vertex data as plain OCaml float arrays, which

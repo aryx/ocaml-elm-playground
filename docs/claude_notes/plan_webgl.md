@@ -4,110 +4,92 @@
 
 `playground3d/` has three backends today, and one hole:
 
-|              | CPU                          | GPU                          |
-|--------------|------------------------------|------------------------------|
-| **native**   | `native/` (software rasterizer) | `opengl/` (OpenGL 3.3 via tgls) |
-| **web**      | `web/` (3D -> 2D SVG polygons)  | **missing: `webgl/`**        |
+|              | CPU                               | GPU                          |
+|--------------|-----------------------------------|------------------------------|
+| **native**   | `software/` (from-scratch rasterizer over `graphics/3d/`) | `opengl/` (OpenGL 3.3 via tgls) |
+| **web**      | `web/` (3D -> 2D SVG polygons)    | **missing: `webgl/`**        |
 
 `web/` compiles the scene down to `Playground.shape`s every frame
 (`Playground3d.render3d_to_2d`: backface culling + a painter's sort + a
-plain 2D projection) and hands them to the unmodified 2D SVG backend.
-That was a cheap, clever first web backend, but it has the known
-weaknesses of a painter's algorithm (`PaintersAlgorithmFail3d`), no
-textures (a flat placeholder color), no per-pixel lighting, and it
-creates one SVG `<polygon>` per visible triangle per frame, which is
-hopeless for `Minecraft3d`-sized scenes.
+plain 2D projection, flat shading from `Lighting`) and hands them to
+the unmodified 2D SVG backend. That was a cheap, clever first web
+backend, but it has the known weaknesses of a painter's algorithm
+(`PaintersAlgorithmFail3d`), no textures (a flat placeholder color),
+no smooth shading (`Smooth` is `Flat` there), it drops triangles
+crossing the near plane (`plan_3d_remaining.md`: `Corridor3d` in a
+browser), and it creates one SVG `<polygon>` per visible triangle per
+frame, hopeless for `Minecraft3d`-sized scenes.
 
-`webgl/` would be to `web/` what `opengl/` is to `native/`: same
-`shape3d`/`camera` API, unmodified example/game sources, a real GPU
-doing the z-buffer/culling/rasterization/Phong. It would also make the
-published `docs/examples3d/` pages (and a future `docs/games3d/`,
-e.g. Minecraft3d in the browser) look like the native OpenGL version
-instead of like a flat-shaded SVG approximation.
+`webgl/` would be to `web/` what `opengl/` is to `software/`: same
+`shape3d`/`camera` API and `?rendering` hints, unmodified example/game
+sources, a real GPU doing the z-buffer, culling, near-plane clipping,
+rasterization and per-pixel lighting. It would also make the published
+`docs/examples3d/` pages (and a future `docs/games3d/`) look like the
+OpenGL version instead of a flat-shaded SVG approximation.
 
-## How hard? Short answer: medium-small, about half of `opengl/`
+## How hard? Short answer: medium-small, less than half of `opengl/`
 
-Most of the hard thinking was already done for `opengl/`
-(`done/plan_opengl.md`), and WebGL 1 is essentially OpenGL ES 2.0,
-i.e. the same programmable pipeline the OpenGL backend already uses.
-Of the ~585 lines of `playground3d/opengl/Playground3d_platform.ml`:
+Most of the hard thinking was done for `opengl/` (`done/plan_opengl.md`,
+`notes_opengl.md`), and WebGL 1 is essentially OpenGL ES 2.0, the same
+programmable pipeline. And the backend-independent code is now already
+shared, outside any backend:
 
-- **~200 lines are pure OCaml with no GL call at all** and carry over
-  verbatim: `Mat4` (`look_at`, `perspective`, `mat4_mul`), the
-  `shape3d` -> per-material vertex list flattening (`collect_batches`,
-  `fan_triangles`, `group_by_material`, `vertex_floats_of_group`),
-  `light_dir`, `rgb_of_color`. See Phase 1: share them instead of
-  copying them.
-- **~150 lines are GL calls** that translate nearly 1-for-1 to
-  js_of_ocaml's `WebGL` module (`gl##createShader`, `gl##bufferData`,
-  `gl##drawArrays`, ...), modulo the WebGL 1 gotchas listed below.
-- **The SDL event loop (`Native_loop`) does not carry over**, but the
-  web side already has its own loop in `playground/web/`, and there is
-  a way to reuse it with zero changes (see "Event loop" below).
+- `graphics/3d/geometry/` (library `graphics_3d_geometry`, no
+  dependencies, pure OCaml, so it compiles with js_of_ocaml as is):
+  `Vec3`, `Mat4` (`look_at`, `perspective`, `mul`), `Lighting`
+  (`light_dir`, `ambient`), `Camera`.
+- `playground3d/Gpu_scene.ml` (in `elm_playground_3d` itself): the
+  `shape3d` -> per-material vertex lists flattening
+  (`group_by_material`, `vertex_floats_of_group`, `floats_per_vertex`).
+  It lives in the virtual library because it matches on
+  `Playground3d.shape3d`, and a separate helper library depending on
+  the virtual `elm_playground_3d` would give each backend a second path
+  to it, which dune rejects (see `Native_loop.mli`).
 
-Estimated new code: ~250-350 lines (backend) + dune/html/Makefile
+What's left in `playground3d/opengl/Playground3d_platform.ml` (418
+lines) is only what talks to OpenGL: shaders, texture upload, the
+buffer/attribute setup, the rendering-hint toggles, and the SDL
+window/context via `Native_loop`. The first four translate nearly
+1-for-1 to js_of_ocaml's `WebGL` module (`gl##createShader`,
+`gl##bufferData`, `gl##drawArrays`, ...), modulo the WebGL 1 gotchas
+below; `Native_loop` is replaced by the 2D web backend's own loop (see
+"Event loop").
+
+Estimated new code: ~250-300 lines (backend) + dune/html/Makefile
 wiring. Nothing here looks risky except texture loading (async, CORS)
-and wireframe (no `glPolygonMode` in WebGL), both of which can be
-deferred without blocking anything.
+and wireframe (no `glPolygonMode` in WebGL), both deferrable.
 
 ## Dependency: none new
 
 `js_of_ocaml` 5.8.2 (already installed, already a transitive dep of
 the web backends) ships a `WebGL` module (`js_of_ocaml/webGL.mli`):
 `WebGL.getContext : Dom_html.canvasElement t -> renderingContext t opt`,
-plus `Typed_array.float32Array` for vertex data. It is **WebGL 1
-only** (no `webgl2` context binding), which is fine: everything
-`opengl/` does fits in WebGL 1 (see gotchas). `brr` (Bünzli's newer
-browser bindings, with WebGL2 support) is not installed and not
-needed.
+`getExtension`, plus `Typed_array.float32Array` for vertex data. It is
+**WebGL 1 only** (no `webgl2` context binding). That's enough for
+everything `opengl/` does, with one extension (see the gotchas:
+`OES_standard_derivatives`, for flat shading). `brr` (Bünzli's newer
+browser bindings, with WebGL2) is not installed and not needed.
 
 One interop wrinkle: the existing web code uses vdom's `Js_browser`
 (gen_js_api, `Ojs.t`), while `WebGL` uses js_of_ocaml's `Js.t`
-objects. Both are raw JS values at runtime, so crossing between them
-is a `Js.Unsafe.coerce`/`Obj.magic` at the one or two places it's
-needed -- or, simpler, the new backend uses only `Js_of_ocaml`
-(`Dom_html` for the canvas, `WebGL`, `Typed_array`) and never touches
-`Js_browser` itself.
+objects. Both are raw JS values at runtime; simplest is for the new
+backend to use only `Js_of_ocaml` (`Dom_html` for the canvas, `WebGL`,
+`Typed_array`) and never touch `Js_browser` itself.
 
 ## Naming and layout
 
 - `playground3d/webgl/Playground3d_platform.ml`, library/package
-  `elm_playground_3d_webgl`, `(implements elm_playground_3d)` --
-  mirrors `native/`/`opengl/`/`web/`, named after the technology
-  like `opengl/`.
+  `elm_playground_3d_webgl`, `(implements elm_playground_3d)`, depending
+  on `elm_playground_web` (for its `run_app`, like `web/`),
+  `graphics_3d_geometry` (`Mat4`, `Lighting`) and `js_of_ocaml`. Not on
+  `graphics_images` (stb_image + curl, native only): the browser decodes
+  images itself.
 - `examples3d/webgl/` and `games3d/webgl/` with `(copy_files ../Foo.ml)`
-  + `.html` pages, exactly like `examples3d/js/` (which should probably
-  keep that name: `js/` = the SVG web backend, `webgl/` = this one).
+  + `.html` pages, exactly like `examples3d/js/` (which keeps that name:
+  `js/` = the SVG web backend, `webgl/` = this one).
 - A new `(package (name elm_playground_3d_webgl) ...)` stanza in
-  `dune-project` (regenerates the `.opam` file).
-
-## Phase 1: extract the backend-independent GPU scene prep
-
-Same move as `Native_loop` was for `opengl/`: a second real caller is
-exactly when factoring out becomes worth it.
-
-Move the pure-OCaml half of `opengl/Playground3d_platform.ml` (Mat4,
-`material`, `vertex_data`, `collect_batches`, `group_by_material`,
-`vertex_floats_of_group`, `floats_per_vertex`, `light_dir`,
-`rgb_of_color`) into a new ordinary module, e.g.
-`playground3d/Gpu_scene.ml`/`.mli`, **inside the `elm_playground_3d`
-library itself** (next to `Playground3d.ml`, not in a separate
-library). Rationale: it pattern-matches on `Playground3d.shape3d`, and
-`Native_loop.mli`'s comment explains why a separate helper library
-can't depend on the virtual `elm_playground_3d` (dune rejects a second
-path to it). A virtual library can have normal, non-virtual modules
-that its implementations use, so that's the natural home.
-
-The GLSL sources could also be shared, but GLSL 3.30 core and GLSL ES
-1.00 differ in enough surface syntax (`in`/`out` vs
-`attribute`/`varying`, `FragColor` vs `gl_FragColor`, `texture` vs
-`texture2D`, a mandatory `precision mediump float;`) that two short
-literal strings side by side are clearer than a templating scheme. The
-*lighting formula* (ambient 0.25, same light_dir uniform) stays
-identical, which is what matters for a fair comparison.
-
-Verify: `opengl/` still builds and `Cubes3d`/`TexturedCube3d` on
-OpenGL render the same as before (screenshot diff).
+  `dune-project` (regenerates the `.opam` file), plus the `Makefile`'s
+  `OPAMS`/`ODOC_DIRS` lists.
 
 ## Event loop: piggyback on the 2D web backend (zero changes to it)
 
@@ -115,7 +97,7 @@ OpenGL render the same as before (screenshot diff).
 `Playground.game` and hands it to `Playground_platform.run_app`, which
 provides the `requestAnimationFrame` loop, the fixed-timestep 60Hz
 Ticks, the key/mouse listeners on `window`, and the
-`Playground.computer` bookkeeping (in `Playground.game_update`). The
+`Playground.computer` bookkeeping (`Playground.game_update`). The
 WebGL backend can reuse all of it the same way, with one twist: its
 `view2d` draws the 3D scene into a WebGL `<canvas>` **as a side effect**
 and returns only the HUD shapes:
@@ -136,9 +118,8 @@ so it is transparent except where HUD shapes are drawn.
 Payoffs of this layering, beyond "no new loop to write":
 
 - **HUD for free.** `StarCollector3d`'s score works on day one, via
-  the existing SVG renderer -- something `opengl/` still can't do (it
-  would need the Cairo -> texture -> screen-quad pass sketched in
-  `done/plan_opengl.md`).
+  the existing SVG renderer, something `opengl/` still can't do
+  (`plan_3d_remaining.md`: "The OpenGL backend has no HUD").
 - **Mouse coordinates for free.** The 2D backend's `adjust_x_y` asks
   the root `<svg>` (via `getScreenCTM`) to convert client coordinates
   to playground coordinates. Since the `<svg>` still covers the whole
@@ -150,9 +131,9 @@ Details to get right:
   `Element.remove_all_children body` before inserting the first
   `<svg>`, and the first `view2d` call happens just before that. So
   either (a) create the canvas lazily and re-append it if it has no
-  parent (`canvas##.parentNode` is null) -- a one-line check per
-  frame -- or (b) append it to `document.documentElement` rather than
-  `<body>`. (a) is less surprising.
+  parent (`canvas##.parentNode` is null), a one-line check per frame,
+  or (b) append it to `document.documentElement` rather than `<body>`.
+  (a) is less surprising.
 - **Same framing as the SVG layer.** The `<svg>` uses
   `viewBox` = `Playground.default_width x default_height` stretched to
   100%/100% with the default `preserveAspectRatio="xMidYMid meet"`,
@@ -160,63 +141,91 @@ Details to get right:
   (`width`/`height` = `window.innerWidth/innerHeight * devicePixelRatio`,
   re-checked each frame to follow resizes) with `gl##viewport` set to
   the same centered, aspect-preserving rectangle, so the HUD and the
-  3D scene line up, and the aspect passed to `perspective` is the
+  3D scene line up, and the aspect passed to `Mat4.perspective` is the
   screen's (`computer.screen`), like `opengl/`.
 - **Stacking order:** canvas `z-index: 0`, svg on top; the svg keeps
   receiving mouse events (it's the element under the pointer).
-- **Backend-local keys** ("f" for wireframe, if/when added): the 2D
-  loop doesn't expose raw key events, but the backend can add its own
-  `keydown` listener on `window` (`Dom_html.addEventListener`),
-  independent of the game's.
+- **`?rendering`**: `run_app3d ?rendering` sets the starting shading,
+  culling and texture filtering (see "Rendering hints" below); the 2D
+  `run_app ?rendering` (antialiasing, smooth_images) only affects the
+  HUD layer, so the default is fine there.
 
 Alternative, only if the side-effect-in-view trick turns out to be too
 clever: extract the rAF/Tick/listeners part of
 `playground/web/Playground_platform.ml`'s `run_app` into a `Web_loop`
 module parameterized over a `draw` callback, the web twin of
 `Native_loop`. More code motion in a file shared with every 2D web
-game, so not the first choice.
+game (and actively worked on), so not the first choice.
+
+## Rendering hints (`Playground3d.rendering`)
+
+`opengl/` honors all three hints, and they all map to WebGL 1:
+
+- `shading`: the same `uShading` int uniform (0 no lighting, 1 flat,
+  2 smooth). `Flat` uses `dFdx`/`dFdy` of the position to get the
+  face normal in the fragment shader, which in WebGL 1 needs the
+  `OES_standard_derivatives` extension (`gl##getExtension`, plus
+  `#extension GL_OES_standard_derivatives : enable` at the top of the
+  shader). Supported essentially everywhere; if it's missing, fall
+  back to `Smooth` for `Flat`, which only differs on curved shapes.
+- `backface_culling`: `gl##enable`/`gl##disable CULL_FACE_` each frame,
+  same as `opengl/`.
+- `smooth_textures`: `LINEAR` vs `NEAREST` texture filter, same as
+  `opengl/`; both fine on non-power-of-two textures in WebGL 1 as long
+  as there are no mipmaps and the wrap mode is `CLAMP_TO_EDGE`, which
+  is what `opengl/` does.
+
+**Debug keys** ("m" shading, "b" culling, "i" filtering, "f" wireframe
+on `opengl/`): the native backends only enable them with
+`-debug-keys` (`Native_loop.debug_keys_enabled`). The web has no
+command line; the equivalent is a URL query, `Foo.html?debug-keys`,
+read from `window.location.search`. The keys then come from the
+backend's own `keydown` listener on `window`
+(`Dom_html.addEventListener`), independent of the game's. Optional,
+v2.
 
 ## Rendering: `opengl/` -> WebGL 1 differences (the actual gotchas)
 
 | `opengl/` (GL 3.3 core) | `webgl/` (WebGL 1 = GLES 2.0) |
 |---|---|
-| `uniform_matrix4fv ... true` (GL transposes our row-major Mat4) | **`transpose` must be `false` in WebGL 1** (`INVALID_VALUE` otherwise): transpose on the CPU before upload, or have `Gpu_scene` produce column-major directly |
-| VAO (`gen_vertex_arrays`) | No VAO in core WebGL 1 (only via `OES_vertex_array_object`). Not needed: there is one VBO with a fixed layout, so bind it and set the 4 `vertexAttribPointer`s once (or once per frame, cheap) |
-| GLSL `#version 330 core`, `in`/`out`, `FragColor`, `texture()` | GLSL ES 1.00: `attribute`/`varying`, `gl_FragColor`, `texture2D()`, and `precision mediump float;` required in the fragment shader |
+| `uniform_matrix4fv ... true` (GL transposes our row-major `Mat4.t`) | **`transpose` must be `false` in WebGL 1** (`INVALID_VALUE` otherwise): transpose on the CPU before upload. A `Mat4.transpose` would be the natural home (with a `Unit_` test in `graphics/tests/`) |
+| VAO (`gen_vertex_arrays`) | No VAO in core WebGL 1 (only via `OES_vertex_array_object`). Not needed: one VBO with a fixed layout, bind it and set the 4 `vertexAttribPointer`s once |
+| GLSL `#version 330 core`, `in`/`out`, `FragColor`, `texture()` | GLSL ES 1.00: `attribute`/`varying`, `gl_FragColor`, `texture2D()`, and `precision mediump float;` required in the fragment shader (maybe `highp`, see Verification) |
 | `layout (location = N)` | Not in GLSL ES 1.00: `bindAttribLocation` before linking, or `getAttribLocation` after |
-| `Gl.polygon_mode ... Gl.line` (wireframe, one line) | **No `polygonMode` in WebGL.** Wireframe needs either a second, per-frame-built `gl.LINES` vertex list (3 edges per triangle) or the barycentric-coordinate fragment shader trick. Deferred (see Scope) |
-| `Bigarray.float32` -> `Gl.buffer_data` | Build a `Typed_array.float32Array` (e.g. `new%js Typed_array.float32Array n` + a fill loop, or `Typed_array.float32Array_fromArray`) -> `gl##bufferData` |
-| `Gc.full_major ()` workaround for the tgls `glShaderSource` race | Not applicable (no ctypes); delete |
-| Depth test, backface culling, perspective-correct interpolation | Identical: `gl##enable gl##._DEPTH_TEST_`, `gl##enable gl##._CULL_FACE_`. Ask for a depth buffer explicitly in `getContextWithAttributes` (`depth: true`, which is the default but worth being explicit about) |
-| Uses 32-bit indices? | No: `opengl/` uses `drawArrays`, not indexed draws, so WebGL 1's 16-bit `drawElements` index limit is irrelevant |
+| `dFdx`/`dFdy` (core in GLSL 3.30) for `Flat` | Needs `OES_standard_derivatives`, see above |
+| `uniform bool`, `uniform int`, `?:` in GLSL | Same in GLSL ES 1.00 |
+| `const float ambient = 0.25` in the shader | Same literal; or upload `Lighting.ambient` as a uniform, like `light_dir` already is, so no backend retypes a lighting constant |
+| `Gl.polygon_mode ... Gl.line` (wireframe, one line) | **No `polygonMode` in WebGL.** Wireframe needs a per-frame `gl.LINES` vertex list (3 edges per triangle) or the barycentric fragment shader trick. Deferred |
+| `Bigarray.float32` -> `Gl.buffer_data` | A `Typed_array.float32Array` (`new%js Typed_array.float32Array n` + a fill loop from `Gpu_scene.vertex_floats_of_group`'s array) -> `gl##bufferData` |
+| `Gc.full_major ()` workaround for the tgls `glShaderSource` race | Not applicable (no ctypes); omit |
+| Depth test, culling, perspective-correct interpolation, near-plane clipping | Identical, all in hardware. Ask for a depth buffer explicitly in `getContextWithAttributes` (`depth: true`, the default, but worth being explicit about) |
+| `drawArrays`, no indices | Same, so WebGL 1's 16-bit `drawElements` index limit is irrelevant |
 
-## Textures (Phase 4, the one genuinely different part)
+## Textures (the one genuinely different part)
 
-`opengl/` reuses `Texture_native` (stb_image + curl, synchronous). In
-the browser, image loading is **asynchronous**:
+`opengl/` loads textures with `graphics/images/Texture_decode`
+(stb_image + curl, synchronous). In the browser, image loading is
+**asynchronous**:
 
-- `get_or_create_gl_texture src`: first call creates the GL texture
+- `get_or_create_gl_texture src`: the first call creates the GL texture
   filled with the same 1x1 magenta "missing" pixel, starts
   `let img = new Image(); img.src = src`, and on `img.onload` uploads
   it with `gl##texImage2D_fromImage`, replacing the placeholder. The
   next frame (games redraw at 60Hz anyway) shows the real texture.
-- `preload_texture src` = the same, called earlier -- the web twin of
+- `preload_texture src` = the same, called earlier, the web twin of
   `Playground_platform.preload_image`.
-- Non-power-of-two textures work in WebGL 1 only with
-  `CLAMP_TO_EDGE` and no mipmaps; `opengl/` already uses exactly
-  `NEAREST` + `CLAMP_TO_EDGE`, so no change.
 - Row order: `texImage2D` from an `<img>` puts the image's top row at
   v=0 by default (`UNPACK_FLIP_Y_WEBGL` false), same as `opengl/`'s
-  stb_image upload, so the same "no v-flip" conclusion should hold.
-  Verify with `TexturedCube3d`'s checker, like `opengl/` did.
+  upload, so the same "no v-flip" conclusion should hold. Verify with
+  `TexturedCube3d`'s checker, like `opengl/` did.
 - **Two practical traps:**
   - *CORS / `file://`*: WebGL refuses to upload a cross-origin image
     (tainted), and Chrome treats `file://` pages as cross-origin even
     for sibling files. So textured examples must be served over HTTP
     (`python3 -m http.server` in `_build/default/...`, or GitHub
-    Pages). Untextured examples still work from `file://`. An
-    `http(s)` texture URL from another site needs CORS headers on that
-    site and `img.crossOrigin = "anonymous"`.
+    Pages). Untextured examples still work from `file://`. An `http(s)`
+    texture URL from another site needs CORS headers on that site and
+    `img.crossOrigin = "anonymous"`.
   - *Paths*: examples use repo-root-relative paths
     (`"examples3d/checker.png"`, `"games3d/texture.png"`), which on
     the web resolve relative to the `.html` page. The dune rule that
@@ -224,80 +233,87 @@ the browser, image loading is **asynchronous**:
     `examples3d/webgl/examples3d/checker.png`, and `make website`
     likewise under `docs/`.
 
+## Performance: follows `plan_opengl_perf.md`
+
+`webgl/` rebuilds and re-uploads the whole scene every frame, like
+`opengl/` today. `plan_opengl_perf.md` diagnosed that for Minecraft3d
+the bottleneck is this CPU-side rebuild (`view` + `Gpu_scene`), not
+the GPU, and proposes `cached3d` with a GPU mesh cache in `Gpu_scene`,
+parameterized over the backend's upload/free functions so `webgl/`
+gets it for free. Two consequences here:
+
+- js_of_ocaml-compiled OCaml is several times slower than native at
+  this allocation-heavy list code, so the naive rebuild will hit its
+  limit on smaller scenes than on `opengl/`. Fine for the `examples3d`
+  scenes and StarCollector3d; Minecraft3d on WebGL only makes sense
+  after `plan_opengl_perf.md`'s Phase 1-2.
+- Whichever of the two plans is done second should use the other's
+  `Gpu_scene` interface: keep the WebGL-specific code to "upload a
+  float array, draw it", so a mesh cache slots in without a rewrite.
+
 ## Scope for v1 (simplifications, stated up front)
 
-- One shading mode: per-pixel Phong, same as `opengl/`.
-- Naive per-frame re-flatten + re-upload of the whole scene, same as
-  `opengl/`. **Expect this to be the bottleneck sooner than on native**:
-  `collect_batches`/`vertex_floats_of_group` are allocation-heavy list
-  code, and js_of_ocaml-compiled OCaml is several times slower than
-  native OCaml at that. `opengl/`'s own postscript in
-  `notes_playground3d_related_work.md` already found the OCaml-side
-  rebuild, not the GPU, to be the limit at large triangle counts.
-  Measure (e.g. `Minecraft3d` on WebGL vs OpenGL) before building a
-  per-shape GPU buffer cache.
+- The three `shading` modes, `backface_culling`, `smooth_textures`: yes
+  (the starting values from `?rendering`); the debug keys: v2.
+- Naive per-frame rebuild + upload (see Performance).
 - HUD: yes (free, via the SVG overlay).
-- Textures: Phase 4 (placeholder color before that, like `web/`).
-- Wireframe: out of v1 (no `polygonMode`); maybe later via a LINES pass.
-- No `"b"`/`"z"`/`"p"`/`"m"` debug toggles (same reasons as `opengl/`).
+- Textures: Phase 4 (the magenta placeholder before that).
+- Wireframe: out of v1 (no `polygonMode`).
 - WebGL unavailable (very old browser, some headless setups):
-  `WebGL.getContext` returns null -> log an error in the page (a
-  one-line `<p>` in the body) rather than a blank page. Falling back
-  to the SVG backend automatically would need both backends linked in
-  one executable, which the virtual-module setup doesn't allow; not
-  worth it.
+  `WebGL.getContext` returns null -> show an error in the page (a `<p>`
+  in the body) rather than a blank page. An automatic fallback to the
+  SVG backend would need both backends linked in one executable, which
+  the virtual-module setup doesn't allow; not worth it.
 
 ## Phasing
 
-1. **DONE.** **Extract `Gpu_scene`** out of `opengl/` into
-   `elm_playground_3d` (see above). No behavior change; verify OpenGL
-   screenshots. Done as a verbatim move (checked by diffing the moved
-   lines against the old file: only 3 comments that said "below"/"this
-   backend" changed). `Gpu_scene.mli` exports only what a backend
-   uses (`look_at`, `perspective`, `mat4_mul`, `material`,
-   `vertex_data`, `group_by_material`, `floats_per_vertex`,
-   `vertex_floats_of_group`, `light_dir`); `collect_batches`,
-   `fan_triangles`, the vec3 helpers etc. stay private. OpenGL
-   `TexturedCube3d`, `Spheres3d`, `StarCollector3d` screenshots render
-   as before.
+1. **DONE.** `Gpu_scene` extracted out of `opengl/` into
+   `elm_playground_3d`, and (by the 3D reorg, see
+   `done/plan_code_reorg_teaching_3d.md`) the matrices and lighting
+   into `graphics/3d/geometry/` (`Mat4`, `Lighting`, `Vec3`), so the
+   whole backend-independent part is already shared.
 2. **Skeleton + hello triangle**: `playground3d/webgl/` library, the
    `view2d` side-effect wiring, canvas creation/sizing, context
-   creation, shader compile/link with error log (same `get*Parameter`
-   + `get*InfoLog` checks as `opengl/`, just as important here -- a
-   failed shader is a silent black canvas otherwise), one hardcoded
-   triangle. `examples3d/webgl/dune` + one `.html`. Proves the
-   jsoo/WebGL pipeline end to end.
-3. **Real scenes**: `Gpu_scene` flattening -> `Float32Array` ->
-   `drawArrays`, MVP uniform (transposed on the CPU), depth test +
-   culling, Phong. `Cube3d`, `Cubes3d`, `Spheres3d`,
-   `PaintersAlgorithmFail3d` (should now render *correctly*, which is
-   a nice demo of why a z-buffer matters), `FloatingCity3d`,
-   `InteractiveCube3d` (mouse), and `StarCollector3d` with its HUD.
-4. **Textures**: async `Image` loading, `TexturedCube3d`, then
-   `Minecraft3d` in a new `games3d/webgl/`. FPS number for Minecraft3d
-   on WebGL vs OpenGL vs native, written up next to the existing
-   numbers in `notes_playground3d_related_work.md`'s postscript.
-5. **Publish**: `dune-project` package stanza, Makefile `js`/`website`
-   targets copy `examples3d/webgl/` (and `games3d/webgl/`) under
-   `docs/`, link them from the docs index; README-3d.md mentions the
-   4th backend.
-6. (Optional) wireframe via a LINES pass; per-shape buffer caching if
-   Phase 4's numbers say it's needed.
+   creation, shader compile/link with the error log (same
+   `get*Parameter` + `get*InfoLog` checks as `opengl/`, just as
+   important here: a failed shader is otherwise a silent blank
+   canvas), one hardcoded triangle. `examples3d/webgl/dune` + one
+   `.html`. Proves the jsoo/WebGL pipeline end to end.
+3. **Real scenes**: `Gpu_scene` -> `Float32Array` -> `drawArrays`,
+   the transposed `Mat4` MVP, depth test, the `rendering` hints and
+   `OES_standard_derivatives`. `Cube3d`, `Cubes3d`, `Spheres3d`,
+   `PaintersAlgorithmFail3d` (now drawn *correctly*, a nice demo of
+   why a z-buffer matters), `Corridor3d` (now clipped correctly, unlike
+   `web/`), `FloatingCity3d`, `InteractiveCube3d` (mouse), and
+   `StarCollector3d` with its HUD.
+4. **Textures**: async `Image` loading, `TexturedCube3d`.
+5. **Publish**: `dune-project` package stanza, `Makefile`
+   (`OPAMS`, `ODOC_DIRS`, the `js`/`website` targets copying
+   `examples3d/webgl/` under `docs/`), links from the docs index;
+   README-3d.md mentions the 4th backend.
+6. (Later) debug keys via `?debug-keys`; wireframe via a LINES pass;
+   `games3d/webgl/Minecraft3d` once `plan_opengl_perf.md`'s cache
+   exists, with its fps next to OpenGL's and software's.
 
 ## Verification
 
 - `dune build` (and `dune build examples3d/webgl --profile=release-js`)
-  after each phase.
+  after each phase; `make test` stays green (the golden frames only
+  cover the software backends, so they can't test this one, but they
+  do catch an accidental change to shared code like `Gpu_scene` or
+  `Mat4`).
 - Headless Chrome (`note_headless.md`): `--dump-dom` no longer shows
   the picture (it's pixels in a `<canvas>` now, only the HUD stays in
   the DOM), so use `--screenshot`, with WebGL enabled in headless mode
   (`--use-angle=swiftshader` / `--enable-unsafe-swiftshader`, software
-  GL, so fine for correctness, meaningless for FPS). `web_headless.js`
-  (node + fake DOM) cannot help here: no WebGL in its fake DOM.
-- Side-by-side screenshots against `opengl/` on the same examples:
-  should be nearly pixel-identical (same Mat4, same shader math, same
-  lighting constants); differences would point at a matrix transpose
-  or precision (`mediump`) issue. If `mediump` shows banding, switch
-  the fragment shader to `highp`.
-- A real browser (not just headless) for FPS and for input: keys and
-  mouse in `InteractiveCube3d`/`StarCollector3d`/`Minecraft3d`.
+  GL: fine for correctness, meaningless for fps). `web_headless.js`
+  (node + fake DOM) can't help: no WebGL in its fake DOM.
+- Side-by-side screenshots against `opengl/` on the same examples,
+  e.g. with a fixed time (the native `-fixed-time t` flag; the web page
+  would need the same, e.g. `?fixed-time=t`, for a meaningful
+  comparison): should be nearly pixel-identical (same `Mat4`, same
+  shader math, same `Lighting` constants); differences would point at
+  the matrix transpose or at `mediump` precision. If `mediump` shows
+  banding, switch the fragment shader to `highp`.
+- A real browser (not just headless) for fps and input: keys and
+  mouse in `InteractiveCube3d`/`StarCollector3d`.

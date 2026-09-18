@@ -12,12 +12,10 @@
 (* Prelude *)
 (*****************************************************************************)
 (* The GPU-API-independent half of a GPU playground3d backend: the
- * camera -> 4x4 matrix math and the shape3d -> per-material vertex
- * list flattening, with no OpenGL/WebGL call at all. Extracted verbatim
- * from playground3d/opengl/Playground3d_platform.ml once a second GPU
- * backend (playground3d/webgl/, see docs/claude_notes/plan_webgl.md
- * Phase 1) needed the exact same code -- the same "second real caller"
- * rule that extracted Native_loop.
+ * shape3d -> per-material vertex list flattening, with no OpenGL/WebGL
+ * call at all (the camera matrices are graphics/3d/geometry/Mat4's),
+ * shared by playground3d/opengl/ and the planned playground3d/webgl/
+ * (see docs/claude_notes/plan_webgl.md).
  *
  * It lives in elm_playground_3d itself, as an ordinary (non-virtual)
  * module next to Playground3d, rather than in its own helper library
