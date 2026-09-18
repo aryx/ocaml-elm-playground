@@ -336,10 +336,28 @@ gets it for free. Two consequences here:
    `make serve-build` builds and serves `_build/default/` on
    http://localhost:8001/, for trying the web pages locally (textures
    included).
-5. **Publish**: `dune-project` package stanza, `Makefile`
+5. **DONE.** **Publish**: `dune-project` package stanza, `Makefile`
    (`OPAMS`, `ODOC_DIRS`, the `js`/`website` targets copying
    `examples3d/webgl/` under `docs/`), links from the docs index;
    README-3d.md mentions the 4th backend.
+   `make js` builds `examples3d/webgl` and `games3d/webgl` in
+   release-js (~150KB per page); `make website` copies them to
+   `docs/examples3d/webgl/` and `docs/games3d/webgl/` (a subdirectory:
+   same page names as the SVG backend's), and `checker.png` to
+   `docs/examples3d/webgl/examples3d/`. `docs/examples3d/index.html`
+   has an svg and a webgl link per example (plus the missing
+   `Corridor3d`, and `Triangle3d`); a new `docs/games3d/index.html`
+   (StarCollector3d, webgl), linked from `docs/index.html`.
+   README-3d.md: "Four backends, one API", with a CPU/GPU x
+   native/browser table, how to try the web ones (`make serve-build`),
+   and the limitations updated. Verified by running `make js` and the
+   website's copy commands into a scratch copy of `docs/`, served over
+   HTTP: TexturedCube3d (texture) and StarCollector3d (HUD) render.
+   Not done: `OPAMS` and `ODOC_DIRS` still list none of the 3D
+   packages (none of them is published there yet, the webgl one
+   included); the site itself only changes once `next` is merged into
+   `master` and `make website` is run there (the `.bc.js` are
+   gitignored, so they need a `git add -f`, like `docs/examples/`'s).
 6. (Later) debug keys via `?debug-keys`; wireframe via a LINES pass;
    `games3d/webgl/Minecraft3d` once `plan_opengl_perf.md`'s cache
    exists, with its fps next to OpenGL's and software's.

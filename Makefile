@@ -98,6 +98,11 @@ doc:
 # generates from docs/toy-*-example/), and copy each freshly built web
 # example/game (.bc.js + its .html page) to docs/examples/ and docs/games/.
 # claude: and the 3D examples (examples3d/js/) to docs/examples3d/.
+# claude: and the WebGL 3D examples/games (examples3d/webgl/,
+# games3d/webgl/) to docs/examples3d/webgl/ and docs/games3d/webgl/,
+# a subdirectory since the same names exist for both web backends;
+# plus the textures, at the path the pages look for them (relative to
+# the page, see examples3d/webgl/examples3d/dune).
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
 ODOC_DIRS=odoc.support \
   elm_core elm_system elm_playground elm_playground_native elm_playground_web\
@@ -117,6 +122,15 @@ website:
 	    install -m 644 $$js $$d/js/$$b.html docs/$$d/; \
 	  done; \
 	done
+	for d in examples3d games3d; do \
+	  mkdir -p docs/$$d/webgl; \
+	  for js in _build/default/$$d/webgl/*.bc.js; do \
+	    b=`basename $$js .bc.js`; \
+	    install -m 644 $$js $$d/webgl/$$b.html docs/$$d/webgl/; \
+	  done; \
+	done
+	mkdir -p docs/examples3d/webgl/examples3d
+	install -m 644 examples3d/checker.png docs/examples3d/webgl/examples3d/
 
 # Preview the site at http://localhost:8000
 serve:
@@ -126,6 +140,8 @@ js:
 	dune build games/js --profile=release-js
 	dune build examples/js --profile=release-js
 	dune build examples3d/js --profile=release-js
+	dune build examples3d/webgl --profile=release-js
+	dune build games3d/webgl --profile=release-js
 
 ###############################################################################
 # Developer targets

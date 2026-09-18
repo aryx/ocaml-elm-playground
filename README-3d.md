@@ -9,11 +9,12 @@ same "no assets, no boilerplate, just shapes and combinators" spirit as
 [`ocaml-elm-playground`](README.md) itself.
 
 `playground3d/` is a 3D counterpart to this project's 2D
-`elm_playground`, built on top of it. It's not a wrapper around OpenGL,
-Vulkan, or WebGL: the 3D-to-2D projection, the camera math, and (on
-native) the entire triangle rasterizer are hand-written OCaml, on
+`elm_playground`, built on top of it. Its main backend is not a wrapper
+around OpenGL, Vulkan, or WebGL: the 3D-to-2D projection, the camera
+math, and the entire triangle rasterizer are hand-written OCaml, on
 purpose -- you can read every line involved in turning a 3D shape into
-pixels on screen. See
+pixels on screen. (Two other backends then hand the same scenes to a
+real GPU, with OpenGL and WebGL, for comparison and for speed.) See
 [`docs/claude_notes/notes_3d.md`](docs/claude_notes/notes_3d.md) for a
 from-scratch tutorial on the 3D concepts involved, and
 [`docs/claude_notes/plan_playground3d.md`](docs/claude_notes/plan_playground3d.md)
@@ -34,11 +35,17 @@ an elm-playground-style API). See
 for the fuller related-work survey, including VRML, OpenGL, WebGL,
 Vulkan, and Unity.
 
-Two backends, one API
-----------------------
+Four backends, one API
+-----------------------
 
-Like the 2D playground, the same application code runs on two
-backends:
+Like the 2D playground, the same application code runs on several
+backends, two native and two in the browser, each time one computing
+the pixels itself and one handing the scene to the GPU:
+
+|         | CPU                         | GPU                                  |
+| ------- | --------------------------- | ------------------------------------ |
+| native  | **software** (`examples3d/`) | **opengl** (`examples3d/opengl/`)   |
+| browser | **web**, SVG (`examples3d/js/`) | **webgl** (`examples3d/webgl/`)  |
 
 - **software** (`elm_playground_3d_software`): a real, from-scratch
   software rasterizer -- perspective projection, backface culling,
@@ -52,6 +59,15 @@ backends:
   `elm_playground_web` -- so it gets SVG rendering, the event loop, and
   browser timing for free, at the cost of some fidelity (see
   Limitations below).
+- **opengl** (`elm_playground_3d_opengl`): the same scenes on a real
+  GPU, through OpenGL 3.3 and two small shaders: the z-buffer,
+  culling, clipping, and the rasterization itself are the hardware's
+  (see `docs/claude_notes/notes_opengl.md` and
+  `notes_opengl_shaders.md`).
+- **webgl** (`elm_playground_3d_webgl`): the OpenGL backend's drawing,
+  in the browser, through WebGL 1, reusing `elm_playground_web`'s event
+  loop, and its SVG for the HUD, drawn over the WebGL canvas (see
+  `docs/claude_notes/plan_webgl.md`).
 
 Try it
 ------
@@ -65,6 +81,13 @@ dune exec examples3d/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see 
 dune exec examples3d/Corridor3d.exe      # walk down a corridor (up/down arrows); see the "c" toggle below
 dune exec games3d/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
 ```
+
+The same, on the GPU: `dune exec examples3d/opengl/Cubes3d.exe`. In a
+browser: `make serve-build`, then e.g.
+http://localhost:8001/examples3d/webgl/TexturedCube3d.html (or
+`js/` instead of `webgl/` for the SVG backend). The pages must be
+served over HTTP, not opened as files, for the WebGL ones' textures to
+load (the Makefile's comment above `serve-build` says why).
 
 Run any native example/game with `-debug-keys` (e.g.
 `dune exec examples3d/Cubes3d.exe -- -debug-keys`), and a few keys are
@@ -111,9 +134,11 @@ let main =
   the camera, e.g. for a lone `plane` seen from below;
 - `smooth_textures`: `false` for sharp texels (pixel-art textures).
 
-Each backend does what it can: the software rasterizer and OpenGL
-honor all three; the web backend can only light each face with one
-color (`Smooth` looks like `Flat` there) and has no textures. The 2D
+Each backend does what it can: the software rasterizer, OpenGL and
+WebGL honor all three (WebGL's `Flat` needs a WebGL extension almost
+every browser has; without it, it looks like `Smooth`); the SVG web
+backend can only light each face with one color (`Smooth` looks like
+`Flat` there) and has no textures. The 2D
 playground has the same idea, `Playground.rendering`.
 
 A minimal example
@@ -149,15 +174,18 @@ This is genuinely experimental and quite young:
   shadows, no multiple or colored lights, no specular highlights.
 - One curved primitive, `sphere` (no `cylinder`/`cone` yet) --
   everything else is built from flat polygons.
-- The web backend can't warp a texture onto an arbitrary projected
+- The SVG web backend can't warp a texture onto an arbitrary projected
   quad, so a textured face renders as a flat gray placeholder there
-  (native samples the real texture per pixel).
-- No near-plane clipping on the web backend (a triangle with a vertex
-  behind the camera is dropped whole, not clipped into visible
-  sub-triangles; the software backend clips, see the `c` key).
-- No transparency on the software backend (`fade3d` is ignored there):
-  blending needs the faces drawn back to front, which the z-buffer
-  doesn't give.
+  (the other backends sample the real texture per pixel).
+- No near-plane clipping on the SVG web backend (a triangle with a
+  vertex behind the camera is dropped whole, not clipped into visible
+  sub-triangles; the software backend clips, see the `c` key, and the
+  GPU ones in hardware).
+- No transparency on the software and GPU backends (`fade3d` is
+  ignored there): blending needs the faces drawn back to front, which
+  the z-buffer doesn't give.
+- The WebGL backend has no wireframe (WebGL has no polygon mode) and
+  no debug keys yet, and its textures need the page served over HTTP.
 
 The rasterizer's code is in `graphics/3d/`, one module per idea, each
 `.mli` explaining its algorithm; `notes_3d.md` section 0 has a reading
