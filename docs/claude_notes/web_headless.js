@@ -99,6 +99,9 @@ globalThis.window = globalThis;
 globalThis.requestAnimationFrame = (f) => { rafCallbacks.push(f); return rafCallbacks.length; };
 globalThis.addEventListener = (kind, f) => listeners.push({ kind, f });
 globalThis.Image = class { set src(url) { this._src = url; } };
+// claude: Playground_platform.flags reads the URL's parameters; give
+// some with SEARCH in the environment, e.g. SEARCH='?camera=lock'
+globalThis.location = { search: process.env.SEARCH || "" };
 // window.onload is assigned by run_app; we call it ourselves below
 globalThis.onload = null;
 
