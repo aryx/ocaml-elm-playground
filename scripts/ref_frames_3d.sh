@@ -10,7 +10,7 @@
 #
 # Reference frames for the 3D software rasterizer, to check that a
 # refactoring doesn't change a single pixel (see
-# docs/claude_notes/plan_code_reorg_teaching_3d.md, phase 0): every
+# docs/claude_notes/done/plan_code_reorg_teaching_3d.md, phase 0): every
 # scene is rendered with its clock frozen (-fixed-time), some with debug
 # keys pressed first (-keys), and one frame dumped as a PPM
 # (-dump-frame), then compared byte for byte.

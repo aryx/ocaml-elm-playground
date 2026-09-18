@@ -16,7 +16,7 @@ let ( let* ) o f =
 
 (* claude: deterministic frames, to check that a refactoring of a
  * renderer doesn't change a single pixel (see
- * docs/claude_notes/plan_code_reorg_teaching_3d.md, phase 0): the
+ * docs/claude_notes/done/plan_code_reorg_teaching_3d.md, phase 0): the
  * clock the app sees can be frozen, debug keys pressed before the
  * first frame, and a given frame dumped to a file *)
 let fixed_time : float option ref = ref None

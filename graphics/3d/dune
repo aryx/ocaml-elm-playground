@@ -1,6 +1,6 @@
 ; claude: 3D rendering, from scratch: the algorithms of the 3D software
 ; rasterizer, one classic idea per module (see
-; docs/claude_notes/plan_code_reorg_teaching_3d.md), drawing into
+; docs/claude_notes/done/plan_code_reorg_teaching_3d.md), drawing into
 ; graphics/core's Framebuffer like the 2D ones. Like the rest of
 ; graphics/, independent of the Playground. A private library (see
 ; graphics/core/dune), installed as part of elm_playground_3d_software,

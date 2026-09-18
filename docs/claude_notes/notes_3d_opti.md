@@ -98,7 +98,7 @@ precise numbers.
   that the window's pixels really are 32-bit xRGB (failing with a clear
   message otherwise): colors are plain 0xRRGGBB ints, with no packing
   step at all, neither SDL's nor shifts (see
-  `plan_code_reorg_teaching_3d.md`, phase 3).
+  `done/plan_code_reorg_teaching_3d.md`, phase 3).
 
 ## Fix 2: perspective-correct interpolation (texture "swimming")
 

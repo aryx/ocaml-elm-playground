@@ -175,7 +175,7 @@ Nope
   ; the HUD's 2D shapes and text included, is computed by our own code
   ; (graphics/3d/, graphics/2d/ via Shape_render_software); SDL only
   ; opens the window and shows the pixels. See
-  ; docs/claude_notes/plan_code_reorg_teaching_3d.md, phase 5.
+  ; docs/claude_notes/done/plan_code_reorg_teaching_3d.md, phase 5.
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
