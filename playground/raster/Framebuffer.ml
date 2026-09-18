@@ -77,3 +77,5 @@ let fill_span (fb : t) ~y ~x0 ~x1 ~rgb ~alpha =
         let dst = rgb_of_pixel fb.pixels.{y, x} in
         fb.pixels.{y, x} <- pixel_of_rgb (blend ~src:rgb ~dst ~alpha)
       done
+
+let plot (fb : t) ~x ~y ~rgb ~alpha = fill_span fb ~y ~x0:x ~x1:(x + 1) ~rgb ~alpha

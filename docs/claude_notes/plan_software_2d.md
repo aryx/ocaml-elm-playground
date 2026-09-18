@@ -58,6 +58,17 @@ playground/     native/ (Cairo)     software/   web/ (SVG)
 playground3d/   opengl/ (GPU)       software/   web/ (SVG)
 ```
 
+## Code style: one feature, one function
+
+This code is for teaching, where features get introduced one at a
+time. So each feature is new code in its own function(s), which a
+debug key can turn on and off (`Shape_render_software.options`), and
+the simple path stays short and readable on its own: e.g. `Line.draw`
+is just `Line.clip` then `Line.bresenham`, each understandable alone;
+`render_form` picks `fill_polygon` or `outline_polygon` but neither
+knows about the other. Each algorithm's `.mli` has an ASCII diagram
+and a worked example, and `raster/tests/` checks those examples.
+
 ## Layout
 
 The algorithms live in a **plain library** separate from the thin
@@ -253,9 +264,22 @@ Planned, each with the phase that makes it meaningful:
    Cairo's 1/256-pixel fixed-point coordinates put on the other side
    (checked by hand: we're the exact ones). The test allows exactly
    that (< 0.01 pixel from an edge) and nothing else.
-3. **`Circle`**: midpoint circle fast path + ellipse flattening for
+3. **DONE.** **`Circle`**: midpoint circle fast path + ellipse flattening for
    `Oval` and non-uniformly scaled circles. `Line` (Bresenham +
-   clipping) and the "f" wireframe toggle.
+   clipping) and the "f" wireframe toggle. In the end: `Line.bresenham`
+   and `Line.clip` (Cohen-Sutherland) are separate functions composed
+   by `Line.draw`; `Circle.octant` is the midpoint walk alone, used by
+   `Circle.fill` (one span per row, from the octant's half widths) and
+   `Circle.outline`; a circle uses it when its transform is conformal
+   (`circle_in_pixels`), else, like ovals, becomes a polygon with
+   `segments_for_radius` sides (sagitta <= 1/4 pixel). The renderer is
+   now one small function per way of drawing (`fill_polygon`,
+   `outline_polygon`, `fill_circle`, `outline_circle`), `render_form`
+   only choosing between them. Tests: the `.mli` examples (the
+   (0,0)->(8,3) line with its error table, the r = 5 octant and its
+   fill/outline pictures, segment counts), clipping (incl. the corner
+   case needing two clips), a line from x = -1e9, each circle pixel
+   painted once, and circles within 0.6 pixel of Cairo's.
 4. **`Blit`**: images (nearest, then bilinear + "i"), animated GIFs via
    the shared decoder. `examples/Mario.ml` is the test.
 5. **`Hershey`**: `Words`, FPS counter, "Loading...".

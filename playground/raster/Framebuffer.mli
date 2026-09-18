@@ -44,6 +44,9 @@ val get_rgb : t -> x:int -> y:int -> int
  * is already there (see [blend]). *)
 val fill_span : t -> y:int -> x0:int -> x1:int -> rgb:int -> alpha:float -> unit
 
+(* One pixel: fill_span of length 1; skipped if outside *)
+val plot : t -> x:int -> y:int -> rgb:int -> alpha:float -> unit
+
 (* [blend ~src ~dst ~alpha] is the color you get by painting [src] with
  * opacity [alpha] over an opaque [dst], i.e. Porter & Duff's "src over
  * dst", channel by channel: src * alpha + dst * (1 - alpha). For

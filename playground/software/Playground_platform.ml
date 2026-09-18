@@ -37,6 +37,7 @@ let title = "Playground (software rasterizer)"
  *    examples/Mouse.exe, whose circle fades while the button is down
  *  - "b": bounding boxes instead of the real outlines (the first
  *    version of this backend drew only those)
+ *  - "f": wireframe, outlines only (Bresenham lines, midpoint circles)
  *  - "z": the pixel magnifier (Magnifier), following the mouse
  *)
 
@@ -47,15 +48,17 @@ let on_key_press (key : string) =
   match key with
   | "t" -> options := { !options with alpha_blending = not !options.alpha_blending }
   | "b" -> options := { !options with bounding_boxes = not !options.bounding_boxes }
+  | "f" -> options := { !options with wireframe = not !options.wireframe }
   | "z" -> magnifier := not !magnifier
   | _ -> ()
 
 (* e.g. "Playground (software rasterizer) -- 60 fps -- t:alpha=on
- * b:boxes=off z:zoom=off" *)
+ * b:boxes=off f:wire=off z:zoom=off" *)
 let window_title ~fps =
   let on_off b = if b then "on" else "off" in
-  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s z:zoom=%s" title fps
-    (on_off !options.alpha_blending) (on_off !options.bounding_boxes) (on_off !magnifier)
+  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s z:zoom=%s" title fps
+    (on_off !options.alpha_blending) (on_off !options.bounding_boxes)
+    (on_off !options.wireframe) (on_off !magnifier)
 
 (*****************************************************************************)
 (* Entry points *)

@@ -12,9 +12,12 @@ type options = {
   (* true: draw every shape as the axis-aligned box around it instead
    * of its real outline *)
   bounding_boxes : bool;
+  (* true: draw only the outlines, with Line (Bresenham), instead of
+   * filling; shows the polygons circles and ovals became *)
+  wireframe : bool;
 }
 
-(* blending on, real outlines *)
+(* blending on, real outlines, filled *)
 val default_options : options
 
 val render : ?options:options -> Framebuffer.t -> Playground.shape list -> unit
