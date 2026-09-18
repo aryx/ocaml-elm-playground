@@ -328,10 +328,26 @@ Each a separate function, with its own key, test, and entry in
    `Line.draw` takes the pixel containing them), and no more gaps (the
    DDA took one step too few when a line's length wasn't a whole
    number); approved after comparing them.
-4. **Render and the adapter**: `graphics/3d/Render` (the pipeline and
+4. **DONE.** **Render and the adapter**: `graphics/3d/Render` (the pipeline and
    its options record), `playground3d/software/Shape3d_render_software`,
    `Playground3d_platform` down to the window, keys and loop; the window
    title with every key's state; the magnifier.
+   In the end: `Render.render ?options fb zbuffer camera faces`, its
+   faces Playground-free (`paint`: a 0xRRGGBB color or a
+   `Texture.image`; points with uv and normal), the pipeline diagram
+   and a reading order in `Render.mli`, tested by `Unit_render`. The
+   adapter resolves colors and textures while flattening the shape3d
+   tree. `Playground3d_platform` (241 lines, from 940 before phase 2)
+   has one `options` ref instead of six mode refs, the keys "o" (Opti)
+   and "x" (the magnifier; "z" is taken) besides the six existing
+   ones, and a window title with every key's state, through a new
+   `?title_keys` of `Native_loop.run` (e.g. "Playground3D -- 1000x1000
+   -- 31 fps -- m:phong b:cull=on f:wire=off z:zbuffer p:perspective
+   i:bilinear o:opti=on x:zoom=off"). All golden frames (and
+   Minecraft3d's) identical, a new golden Cubes3d with "o" identical to
+   Cubes3d's on purpose, same speed (Cubes3d 11.78s, Spheres3d Phong
+   4.50s, TexturedCube3d 8.39s); checked on a real window: the keys,
+   the title, and the magnifier.
 5. **Cairo-free HUD**: drawn with `Shape_render_software`; the 3D
    software backend then links the software 2D backend instead of the
    Cairo one (`examples3d/dune`, `games3d/dune`).

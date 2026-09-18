@@ -76,6 +76,8 @@ val scancode_to_keystring : string -> string
  * calls [present] (e.g. Sdl.update_window_surface, or
  * Sdl.gl_swap_window), and paces to 60fps. [sdl_window]'s title is
  * updated every frame to "<title_prefix> -- <sx>x<sy> -- <fps> fps",
+ * followed by " -- " and [title_keys ()] if given (e.g. the debug keys
+ * and their state),
  * and the same fps/frame-time is logged via Logs.debug every frame
  * (see [parse_cli_and_setup_logging] -- run with -debug to see it;
  * useful for e.g. spotting whether [view]/[draw] itself is the slow
@@ -104,5 +106,6 @@ val run :
   draw:(Playground.computer -> 'view -> unit) ->
   present:(unit -> unit) ->
   ?dump_frame:(string -> unit) ->
+  ?title_keys:(unit -> string) ->
   unit ->
   unit

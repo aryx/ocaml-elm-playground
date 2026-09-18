@@ -31,5 +31,6 @@ let () =
           Unit_texture.tests;
           Unit_triangle.tests;
           Unit_painter.tests;
+          Unit_render.tests;
           Unit_rgba.tests;
         ])

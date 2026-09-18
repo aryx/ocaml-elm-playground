@@ -76,7 +76,11 @@ live debug toggles for comparing rendering strategies side by side
 | `z` | Painter's algorithm vs. z-buffer -- try this on `PaintersAlgorithmFail3d.exe`, not `Cubes3d.exe` (that one's grid of cubes turns out not to stress it enough to visibly break) |
 | `p` | Perspective-correct vs. linear interpolation -- try this on `TexturedCube3d.exe`; `Linear` makes the texture visibly swim/drift as the cube rotates |
 | `i` | Texture filtering: bilinear (smooth) vs. nearest (sharp texels) -- `TexturedCube3d.exe` again |
+| `o` | Optimizations on/off: the original simple code instead of the optimized one (see `graphics/core/Opti.mli`); watch the fps |
+| `x` | Pixel magnifier, following the mouse |
 | `Q` | Quit |
+
+The window title shows every toggle's current state.
 
 The OpenGL backend (`examples3d/opengl/`, `games3d/opengl/`) has `m`
 (no lighting, flat, smooth), `b`, `f`, and `i` too.

@@ -82,7 +82,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     ~(on_key_press : string -> unit) ~(init : unit -> 'model)
     ~(update : Playground.computer -> 'model -> 'model) ~(view : Playground.computer -> 'model -> 'view)
     ~(draw : Playground.computer -> 'view -> unit) ~(present : unit -> unit) ?(dump_frame : (string -> unit) option)
-    () : unit =
+    ?(title_keys : (unit -> string) option) () : unit =
   let sdl_event = Sdl.Event.create () in
   (* claude: -keys, as if pressed before the first frame *)
   String.iter (fun c -> on_key_press (String.make 1 c)) !startup_keys;
@@ -181,7 +181,9 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
         m "frame: %.3fs total (view: %.3fs, draw: %.3fs) -- %.0f fps" elapsed (t1 -. t0) (t2 -. t1)
           (1. /. Stdlib.max 0.001 elapsed));
     Sdl.set_window_title sdl_window
-      (Printf.sprintf "%s -- %dx%d -- %.0f fps" title_prefix sx sy (1. /. Stdlib.max 0.001 elapsed));
+      (Printf.sprintf "%s -- %dx%d -- %.0f fps%s" title_prefix sx sy
+         (1. /. Stdlib.max 0.001 elapsed)
+         (match title_keys with Some keys -> " -- " ^ keys () | None -> ""));
     present ();
 
     if (not !uncapped) && elapsed < target_frame_time then Unix.sleepf (target_frame_time -. elapsed)
