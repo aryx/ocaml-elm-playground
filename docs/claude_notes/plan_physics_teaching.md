@@ -155,7 +155,7 @@ above, is the Elm way).
   `turn`, `slow`, `wrap`), exact hits (bullets are points in the
   asteroids' polygons, the ship's polygon against theirs), instead of
   its own vectors and circles. Shorter, and more correct.
-- **Spacewar!, new** (`games/Spacewar.ml`, the second flagship): the
+- **Spacewar!, new** (DONE: `games/TinySpacewar.ml`, the second flagship): the
   1962 PDP-1 game (Steve Russell et al., MIT), the first video game with
   physics, and Asteroids' own ancestor (see `games/Asteroid.ml`'s
   header): two ships, one keyboard (arrows and w/a/s/d), duelling
@@ -374,7 +374,12 @@ Each small, each showing one idea, each deterministic (golden frames):
   semi-implicit within 0.95-1.05 over 1000); the orbit (gm 1,000,000,
   r 100, dt 1/60: explicit Euler's radius 119.94 after one orbit,
   190.18 after ten; the other three at 100 within 0.01); drag's
-  terminal speed. `examples/Orbit.ml` is still to do.
+  terminal speed. `examples/Orbit.ml`: DONE, a planet on an ellipse
+  (G M = 10,000,000, from 250 px at 160 px/s: down to 118 px, 4.95 s
+  per orbit, 2 steps per frame), space switching the integrator and
+  restarting, the energy ratio E/E0 on screen: explicit Euler at 0.544
+  and 501 px away after 8 seconds, semi-implicit Euler at 1.004 on a
+  closed ellipse (golden frames of both).
 - **Phase 2, started**: `Force.drag` (linear); left: quadratic drag,
   damping, N-body, `Springs.ml`.
 - **Phase 3, v1 DONE, differing from the sketch above** (by writing a
@@ -393,16 +398,26 @@ Each small, each showing one idea, each deterministic (golden frames):
   `launched`, `pointing`, `turn`, `wrap`, `bounce_in`, `distance`,
   `speed`, `outside`, `tick`. Tests: `Unit_physics_api` (the thrown
   ball of `Physics.mli`: x 200, y 300 - 406.67, 6.67 below the exact
-  parabola; the accumulator; the top speed; directions; edges). Not
-  yet: `attracted_by`; Mario and Asteroid not ported.
+  parabola; the accumulator; the top speed; directions; edges).
+  Then `attracted_by` (Newton's gravitation towards another body,
+  other.mass / r^2: G = 1 in the playground's units, so a star `heavy
+  1000000.` keeps a body at 100 px on a circle at 100 px/s, tested over
+  one orbit) and `shot_from` (a projectile from a moving shooter's nose,
+  with the shooter's velocity). Mario and Asteroid not ported yet.
+- **Spacewar!, DONE** as `games/TinySpacewar.ml` (the toys' naming):
+  two ships on one keyboard (arrows, w/a/s/d) around a star of mass
+  2,000,000, `turn |> thrust |> attracted_by star |> step |> wrap`,
+  torpedoes `shot_from` the ships and falling around the star too (the
+  original's flew straight), 4 each at most, 3 s each; hits by distance
+  until phase 4; rounds and scores; no randomness. Golden frames of its
+  title and a scripted duel.
 - **The artillery game, DONE, before the plan's own games**:
   `games/TinyWorms.ml` (`plan_games.md`'s artillery toy), two players
   taking turns, a shell `launched` then `fall |> push wind |> step`, a
   height-map terrain (Scorched Earth's, no caves) carved by explosions,
   seeded hills and winds (`seed=n`). Checked with rendered frames
   (`-script "space:2-3,space:10-11"`: the arc, the crater); golden
-  frames to add once the scripted-input work (another session) lands in
-  `tests/`.
+  frames of its title and a scripted shot.
 
 ## Verification
 
