@@ -97,20 +97,24 @@ same event loop twice.
   example/game source file from running -- it's just less to build
   first. Flat/Gouraud can be added later as alternate fragment
   shaders/uniforms if wanted, once v1 works.
-- **No textures initially** -- `TexturedCube3d.exe` simply won't run
-  against this backend yet, the same kind of accepted, documented
-  asymmetry the `web` backend already has (flat placeholder color
-  instead of real sampling). `Texture_native`'s existing
-  download/decode code (stb_image + curl) is still fully reusable when
-  this phase happens; only the "upload to the GPU + sample in the
-  shader" half is new.
-- **No wireframe or painter's-algorithm modes initially.** Wireframe is
-  a one-line addition later (`Gl.polygon_mode Gl.front_and_back Gl.line`);
-  painter's-algorithm doesn't map onto a GPU pipeline in any
-  interesting way (the entire point of a hardware z-buffer is that you
-  no longer need to sort) and may just be permanently out of scope for
-  this backend -- worth deciding explicitly rather than silently
-  dropping it.
+- ~~No textures initially~~ **DONE** (Phase 5): `Texture_native` was
+  moved into `elm_playground_3d_native_common` (it never depended on
+  anything native-rendering-specific, just stb_image/curl) so both
+  backends share the exact same download/decode/cache code; only the
+  "upload to the GPU + sample in the shader" half was new. Faces are
+  grouped by material (`Flat` vs `Textured of string`, one draw call
+  per group, since a single GL draw call can only bind one texture)
+  rather than each picking its own fill closure independently like
+  native does. Verified pixel-identical against native on a
+  controlled, fixed-camera `TexturedCube3d.exe` screenshot (no v-flip
+  needed -- `glTexImage2D`'s row 0 already becomes texture coordinate
+  v=0, the same "v=0 is the top row" convention this project's UV
+  already uses).
+- ~~No wireframe or painter's-algorithm modes initially~~ **Wireframe
+  DONE** (Phase 5, one line: `Gl.polygon_mode Gl.front_and_back
+  Gl.line`, "f" to toggle, same key as native). Painter's-algorithm
+  stays permanently out of scope for this backend, as expected -- a
+  hardware z-buffer makes it moot.
 - **Naive per-frame vertex upload**: flatten `shape3d` into a fresh
   vertex buffer and re-upload it (`glBufferData`) every frame, rather
   than caching a VAO/VBO per shape across frames. Matches this
@@ -144,9 +148,15 @@ same event loop twice.
    `examples3d`/`games3d` dune wiring so at least one existing demo
    (e.g. a `Cubes3d`/`Spheres3d` copy, or a dune `(select ...)`-style
    alternate target) can link this backend instead of `native`.
-5. Stretch/optional: textures, wireframe, a written LOC + FPS
-   comparison against `native` (the actual answer to "how much
-   shorter", not just an expectation).
+5. **DONE.** Textures, wireframe, and a written LOC + FPS comparison
+   against `native` -- see `notes_playground3d_related_work.md`'s
+   "Postscript" section for the actual measured numbers (not just the
+   expectation): ~22% less non-comment code, and anywhere from ~6x to
+   ~33x faster depending on scene size, with the naive per-frame
+   OCaml-side vertex rebuild (not the GPU itself) becoming the
+   bottleneck at larger triangle counts -- exactly the kind of
+   "measure before optimizing" finding worth having before chasing a
+   per-shape GPU buffer cache.
 
 ## Verification
 

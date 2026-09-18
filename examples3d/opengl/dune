@@ -5,11 +5,13 @@
 ; per example.
 (copy_files ../Cubes3d.ml)
 (copy_files ../Spheres3d.ml)
+(copy_files ../TexturedCube3d.ml)
 
 (executables
   (names
     Cubes3d
     Spheres3d
+    TexturedCube3d
   )
   (libraries
     elm_core

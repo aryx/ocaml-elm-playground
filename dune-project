@@ -105,13 +105,14 @@ Nope
   )
 )
 (package (name elm_playground_3d_native_common)
-  (synopsis "SDL event loop/Playground.computer bookkeeping shared by native-ish 3D playground backends")
+  (synopsis "SDL event loop + texture loading shared by native-ish 3D playground backends")
   (description "\
   Not meant to be used directly -- a small library factored out of
-  elm_playground_3d_native so a future GPU-accelerated backend (see
+  elm_playground_3d_native so the OpenGL backend (see
   docs/claude_notes/plan_opengl.md) can share the same SDL
-  window-event-draining/frame-pacing loop instead of duplicating it.
-  Generic over the model/view types (not a dependency of
+  window-event-draining/frame-pacing loop and texture download/decode
+  code instead of duplicating them. The event loop (Native_loop) is
+  generic over the model/view types (not a dependency of
   elm_playground_3d itself) so that depending on it doesn't create a
   second path to that virtual library alongside a backend's own
   (implements elm_playground_3d) -- dune forbids that.
@@ -119,6 +120,8 @@ Nope
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
+    (stb_image (>= "0.4")) ; decode textures for textured_quad/textured_cube
+    ocurl ; download textures given as an http(s) URL
     (elm_playground (= :version))
   )
 )
@@ -128,8 +131,7 @@ Nope
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
-    (stb_image (>= "0.4")) ; decode textures for textured_quad/textured_cube
-    ocurl ; download textures given as an http(s) URL
+    (stb_image (>= "0.4")) ; Stb_image.t, used by the type of sample_texture (Texture_native itself now lives in elm_playground_3d_native_common)
     (elm_playground_3d (= :version))
     (elm_playground_3d_native_common (= :version))
   )
@@ -155,6 +157,7 @@ Nope
     (ocaml (>= "4.08.0"))
     tsdl
     tgls
+    (stb_image (>= "0.4")) ; Stb_image.t, used by the type of get_or_create_gl_texture
     (elm_playground_3d (= :version))
     (elm_playground_3d_native_common (= :version))
   )

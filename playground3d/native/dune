@@ -3,11 +3,10 @@
  (implements elm_playground_3d)
  (libraries
    tsdl
-   stb_image ; decode textures for textured_quad/textured_cube
-   curl ; download textures given as an http(s) URL
+   stb_image ; Stb_image.t, used by the type of sample_texture below (Texture_native.load itself now lives in elm_playground_3d_native_common)
    elm_core
    elm_playground
    elm_playground_3d
-   elm_playground_3d_native_common ; SDL event loop/Playground.computer bookkeeping, shared with a future OpenGL backend
+   elm_playground_3d_native_common ; SDL event loop + Texture_native, shared with the OpenGL backend
  )
 )

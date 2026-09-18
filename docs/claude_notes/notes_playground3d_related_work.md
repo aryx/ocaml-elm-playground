@@ -244,6 +244,74 @@ limited" (lucamug) and "capable but opaque" (elm-3d-scene), and
 further, into a real (if modest) hand-written rasterizer instead of
 lucamug's flatten-to-2D-SVG trick alone.
 
+## Postscript: a real GPU backend now exists -- the actual numbers
+
+Everything above was written when `playground3d/` had exactly the two
+backends this doc contrasts against the industry (native, no GPU at
+all; web, an SVG projection). `docs/claude_notes/plan_opengl.md`
+followed up on this doc's own comparison table by actually building
+the OpenGL end of the spectrum too (`elm_playground_3d_opengl`) --
+closing this doc out with the measured answer, not just the
+expectation, to "how much shorter is the code, and how much faster is
+it" once a real GPU does the work this project otherwise hand-rolls.
+
+**Code size**: `playground3d/native/Playground3d_platform.ml` is 934
+lines (377 non-comment/non-blank) versus `playground3d/opengl/Playground3d_platform.ml`'s
+562 lines (295 non-comment/non-blank) -- roughly 40% shorter by raw
+line count, about 22% shorter by actual code once both files' (this
+project writes a lot of prose explaining *why*) comments are excluded.
+Less dramatic than "the GPU does the rasterizer/z-buffer/culling for
+you" might suggest, for a real reason: a meaningful share of what's
+*left* in the OpenGL file is now bookkeeping the software rasterizer
+never needed at all -- shader compilation/link-error checking, a
+hand-rolled `Mat4`, and (once textures were added) a small
+material-grouping/GPU-texture-cache layer, since a single GPU draw
+call can only bind one texture at a time. The GPU doesn't just delete
+code, it also demands a few new kinds of code the CPU path never had
+to write.
+
+**Frame rate**, measured the same way as `notes_3d_opti.md` (uncapped
+-- `Native_loop`'s 60fps sleep temporarily removed -- with a
+`Printf.eprintf` of the per-frame fps, on this machine's real GPU, an
+NVIDIA RTX A400):
+
+| Scene | native (software rasterizer) | opengl |
+|---|---|---|
+| `Cubes3d.exe` as shipped (25 cubes, 300 triangles) | ~23 fps | ~750-840 fps |
+| Same scene, `grid_size` bumped to 25 (625 cubes, 7500 triangles) | ~6 fps | ~37-40 fps |
+
+Two things worth being honest about rather than just quoting "33x
+faster, then only 6x faster" as if that were the whole story:
+
+1. **The GPU's advantage shrinks sharply as the scene grows** (33x at
+   300 triangles, only ~6x at 7500) precisely because of the "Scope for
+   v1" simplification stated up front in `plan_opengl.md`: the entire
+   scene's vertex data is rebuilt from scratch in OCaml
+   (`group_by_material`/`collect_batches`, list-heavy, one boxed tuple
+   per vertex) and re-uploaded every single frame, with no per-shape
+   GPU-side caching across frames at all. At larger triangle counts,
+   this OCaml-side rebuild -- not the GPU's own rasterization/shading,
+   which really is close to free at this scale -- becomes the
+   bottleneck. This is exactly the kind of thing `notes_3d_opti.md`
+   would say to measure before optimizing, rather than assume: caching
+   per-shape buffers across frames (only re-uploading when a shape
+   actually changes) is the obvious next step if this backend's scenes
+   ever need to grow past a few thousand triangles, but wasn't worth
+   building before this number existed.
+2. **The absolute numbers are specific to this measurement's
+   environment** (a remote, possibly software-composited X11 display)
+   -- native's own ~23fps *at just 300 triangles, uncapped* is
+   suspiciously low for a scene this small, and is at least partly
+   explained by `Sdl.update_window_surface`'s full-frame pixel blit
+   (unrelated to triangle count) rather than the rasterizer's own
+   per-triangle work, whereas the GL path presents via
+   `Sdl.gl_swap_window`, a different code path entirely. Re-running
+   this same comparison on a different machine/display could well give
+   different absolute fps numbers for both backends -- the *relative*
+   story (GPU wins by a lot at small scenes, by much less once the
+   naive per-frame OCaml rebuild dominates) is the more trustworthy
+   takeaway here than either raw number in isolation.
+
 Sources consulted for Part 1/2's factual claims: the READMEs of
 [lucamug/elm-playground-3d](https://github.com/lucamug/elm-playground-3d),
 [erkal/elm-3d-playground-exploration](https://github.com/erkal/elm-3d-playground-exploration),

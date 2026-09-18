@@ -3,6 +3,8 @@
  (wrapped false)
  (libraries
    tsdl
+   stb_image ; decode textures for Texture_native, shared with a future OpenGL backend
+   curl ; download textures given as an http(s) URL
    elm_core
    elm_playground
  )
