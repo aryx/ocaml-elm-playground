@@ -687,15 +687,29 @@ let preload_image (url : string) =
     Hashtbl.replace preloaded url img
   end
 
+(* claude: the page's URL parameters, "?level=5&fast" ->
+ * [("level", "5"); ("fast", "")], the web's command line (see
+ * Playground.flags). The Ojs code is the JavaScript
+ * window.location.search (vdom's Location has no binding for it). No
+ * %-decoding: flags are meant to be short names and values. *)
+let flags () : Playground.flags =
+  let search = Ojs.string_of_js (Ojs.get_prop_ascii (Ojs.get_prop_ascii Ojs.global "location") "search") in
+  let search =
+    if String.length search > 0 && search.[0] = '?'
+    then String.sub search 1 (Stdlib.(-) (String.length search) 1)
+    else search
+  in
+  Playground.flags_of_strings (String.split_on_char '&' search)
+
 (* when using the simple DOM *)
-let run_app ?(rendering = Playground.default_rendering) app =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
   Window.set_onload window (fun () ->
 
     let sx = Playground.default_width in
     let sy = Playground.default_height in
     let screen = Playground.to_screen sx sy in
 
-    let (initmodel, _cmdsTODO) = app.Playground.init () in
+    let (initmodel, _cmdsTODO) = app.Playground.init flags in
     let model = ref initmodel in
 
     let process_playground_event event = 

@@ -26,7 +26,7 @@
 (* claude: [capture_mouse] ignored here: this SVG backend is for small
  * scenes, not first-person games (see the webgl backend for one that
  * captures); mdx/mdy still work, the mouse just isn't captured *)
-let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse:_
+let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse:_ ?flags
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   let view2d (computer : Playground.computer) (model : 'model) : Playground.shape list =
     let (cam, shapes) = Playground3d.view3d app3d computer model in
@@ -37,7 +37,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse:_
   in
   let initial = Playground3d.init3d app3d () in
   let app2d = Playground.game view2d update2d initial in
-  Playground_platform.run_app app2d
+  Playground_platform.run_app ?flags app2d
 
 (* claude: no-op -- this backend doesn't load textures at all yet (see
  * Playground3d.textured_quad's doc comment: it renders a flat

@@ -51,7 +51,9 @@ let draw_fps cr width height fps =
  * happens. *)
 let preload_image = Image_native.preload
 
-let run_app ?(rendering = Playground.default_rendering) app =
+let flags () : Playground.flags = Playground.flags_of_strings (Native_loop_2d.app_args ())
+
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
   Native_loop_2d.parse_cli_and_setup_logging ();
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in
@@ -110,4 +112,4 @@ let run_app ?(rendering = Playground.default_rendering) app =
   let (app : _ Playground.app) = app in
   Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
     ~dump_frame:(Native_loop_2d.dump_ppm pixels)
-    ~init:app.init ~update:app.update ~subscriptions:app.subscriptions ~view:app.view
+    ~init:(fun () -> app.init flags) ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

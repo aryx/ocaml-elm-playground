@@ -3,6 +3,7 @@
     Picture Smiley Words Misc
     Animation 
     Mouse Keyboard Turtle Mario
+    Flags
   )
   (libraries
     elm_playground

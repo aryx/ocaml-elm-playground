@@ -792,6 +792,7 @@ about your computer:
   - {!type:keyboard} - Are the arrow keys down?
   - {!type:screen} - How wide is the screen?
   - {!type:time} - What time is it right now?
+  - {!type:flags} - What parameters was the program started with?
 
 So you can use expressions like [computer.mouse.x] and [computer.keyboard.kenter]
 in games where you want some mouse or keyboard interaction.
@@ -801,15 +802,53 @@ type computer = {
   keyboard : keyboard;
   screen : screen;
   time : time;
+  flags : flags;
 }
 
+(** The parameters a program was started with, as [(name, value)] pairs,
+    e.g. [[("level", "5"); ("fast", "")]] (a parameter given without a
+    value has [""]). They come from outside the program, like Elm's
+    flags: the program's [main] reads them with
+    [Playground_platform.flags ()] and gives them to
+    [Playground_platform.run_app ~flags]; then every [view] and
+    [update] sees them in [computer.flags], unchanged from start to end.
+
+    Natively, they are the command line's arguments without a dash,
+    [name=value] or [name] ([dune exec games/Snake.exe -- level=5 fast]),
+    the dashed ones being the playground's own ([-debug], ...); on the
+    web, the page's URL parameters ([Snake.html?level=5&fast]).
+
+    For example, a game running twice as fast with [speed=fast]:
+{[
+    let update computer memory =
+      let speed =
+        match List.assoc_opt "speed" computer.flags with
+        | Some "fast" -> 2.
+        | _ -> 1.
+      in
+      ...
+
+    let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+]}
+*)
+and flags = (string * string) list
+
 val initial_computer : computer
+
+(**/**)
+(* claude: ["level=5"; "fast"] -> [("level", "5"); ("fast", "")] (split
+ * at the first '=', empty strings skipped): how the backends turn
+ * command-line arguments or URL parameters into flags; not meant to be
+ * used by applications *)
+val flags_of_strings : string list -> flags
+(**/**)
 
 
 (** {1 The Application} *)
 
+(** [init] is given the program's {!flags} (see [Playground_platform.run_app]) *)
 type ('model, 'msg) app = {
-  init : unit -> 'model * 'msg Cmd.t;
+  init : flags -> 'model * 'msg Cmd.t;
   update : 'msg -> 'model -> 'model * 'msg Cmd.t;
   view : 'model -> shape list;
   subscriptions : 'model -> 'msg Sub.t;

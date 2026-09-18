@@ -126,21 +126,9 @@ let shading_code (s : Playground3d.shading) : int = match s with No_lighting -> 
  *    seconds), so a frame is deterministic, e.g. to compare it with the
  *    software rasterizer's golden frame (tests/3d/golden/, made at
  *    1000x1000 with -fixed-time 1000: open the page in a 1000x1000
- *    window). *)
-
-(* "?a&b=1" -> [("a", ""); ("b", "1")] (no %-decoding: our parameters
- * don't need it) *)
-let url_params () : (string * string) list =
-  let search = Js.to_string Dom_html.window##.location##.search in
-  let search =
-    if String.starts_with ~prefix:"?" search then String.sub search 1 (String.length search - 1) else search
-  in
-  String.split_on_char '&' search
-  |> List.filter (fun s -> s <> "")
-  |> List.map (fun s ->
-         match String.index_opt s '=' with
-         | Some i -> (String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1))
-         | None -> (s, ""))
+ *    window).
+ * The URL is read by elm_playground_web's Playground_platform.flags, the
+ * same function that gives the app its flags. *)
 
 (*****************************************************************************)
 (* Debug keys *)
@@ -631,13 +619,16 @@ let capture_mouse_on_click () : unit =
     Js._true
   |> ignore
 
-let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = false)
+let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = false) ?flags
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   if capture_mouse then capture_mouse_on_click ();
   shading := rendering.shading;
   backface_culling := rendering.backface_culling;
   smooth_textures := rendering.smooth_textures;
-  let params = url_params () in
+  (* the URL's parameters, all of them, whatever the app was given as
+   * its flags: the page parameters are the backend's own, like the
+   * native backends' dashed options *)
+  let params = Playground_platform.flags () in
   let keys = Option.value (List.assoc_opt "keys" params) ~default:"" in
   if List.mem_assoc "debug-keys" params || keys <> "" then begin
     listen_to_debug_keys ();
@@ -670,7 +661,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = fa
     Playground3d.update3d app3d (at_fixed_time computer) model
   in
   let initial = Playground3d.init3d app3d () in
-  Playground_platform.run_app (Playground.game view2d update2d initial)
+  Playground_platform.run_app ?flags (Playground.game view2d update2d initial)
 
 (* starts the download (see Textures), so the texture can be there
  * when first drawn; doesn't wait for it (a page can't block) *)

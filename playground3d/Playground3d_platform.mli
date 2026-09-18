@@ -21,9 +21,19 @@
  * to ordinary Playground.shape values every frame and delegates to the
  * existing, unmodified elm_playground_web backend. *)
 val run_app3d :
-  ?rendering:Playground3d.rendering -> ?capture_mouse:bool -> ('a, 'b) Playground3d.app3d -> unit
+  ?rendering:Playground3d.rendering ->
+  ?capture_mouse:bool ->
+  ?flags:Playground.flags ->
+  ('a, 'b) Playground3d.app3d ->
+  unit
 (* claude: [rendering] (default: Playground3d.default_rendering) sets how
  * to draw, see Playground3d.rendering.
+ *
+ * [flags] (default: none): the app's computer.flags, as for 2D's
+ * Playground_platform.run_app, and read the same way, with 2D's
+ * Playground_platform.flags (a 3D program is linked with a 2D backend
+ * too):
+ *   let main = Playground3d_platform.run_app3d ~flags:(Playground_platform.flags ()) app
  *
  * [capture_mouse] (default false), for first-person games: the mouse
  * is captured, i.e. hidden and not stopped by the window's edges, so

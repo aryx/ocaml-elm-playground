@@ -51,10 +51,26 @@ let parse_cli_and_setup_logging () =
       ("-debug-keys", Arg.Set debug_keys, " the backend's debug keys (e.g. h for help), off by default")
     ]
   in
-  Arg.parse cli_flags
-    (fun s -> raise (Arg.Bad (Printf.sprintf "don't know what to do with %s" s)))
-    (Printf.sprintf "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-uncapped] [-debug-keys]"
-       Sys.argv.(0));
+  let usage =
+    Printf.sprintf
+      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-uncapped] [-debug-keys] [name=value|name]..."
+      Sys.argv.(0)
+  in
+  (* claude: the arguments without a dash are the app's flags (see
+   * Playground.flags), read by the program's main through
+   * Playground_platform.flags, i.e. by the 2D backend's own parse of
+   * the same command line (Native_loop_2d, which must therefore know
+   * the same dashed options as here, with the same arities), and given
+   * back to run_app3d ~flags: nothing to do with them here. Parsed with
+   * our own [current] rather than Arg.parse's global one, which that
+   * earlier parse may have left at the end of argv. *)
+  (try Arg.parse_argv ~current:(ref 0) Sys.argv cli_flags (fun _app_flag -> ()) usage with
+  | Arg.Bad msg ->
+      prerr_string msg;
+      exit 2
+  | Arg.Help msg ->
+      print_string msg;
+      exit 0);
   Logs.set_reporter (Logs.format_reporter ());
   Logs.set_level !level
 
@@ -94,7 +110,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     ~(on_key_press : string -> unit) ~(init : unit -> 'model)
     ~(update : Playground.computer -> 'model -> 'model) ~(view : Playground.computer -> 'model -> 'view)
     ~(draw : Playground.computer -> 'view -> unit) ~(present : unit -> unit) ?(dump_frame : (string -> unit) option)
-    ?(title_keys : (unit -> string) option) ?(capture_mouse = false) () : unit =
+    ?(title_keys : (unit -> string) option) ?(capture_mouse = false) ?(flags = []) () : unit =
   let sdl_event = Sdl.Event.create () in
   (* claude: capture_mouse: SDL's relative mouse mode, the cursor hidden
    * and held in the window, only mouse_motion's xrel/yrel (mdx/mdy)
@@ -112,7 +128,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
   let frame_number = ref 0 in
 
   let model = ref (init ()) in
-  let computer = ref Playground.initial_computer in
+  let computer = ref { Playground.initial_computer with flags } in
 
   let target_fps = 60. in
   let target_frame_time = 1. /. target_fps in

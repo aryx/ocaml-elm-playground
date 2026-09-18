@@ -82,8 +82,20 @@ let startup_keys : string ref = ref ""
 let dump_frame_number : int option ref = ref None
 let dump_frame_file : string ref = ref ""
 
-let parse_cli_and_setup_logging () =
+(* claude: parsed once, on first use, by whichever comes first:
+ * [parse_cli_and_setup_logging] (run_app's first step) or [app_args]
+ * (Playground_platform.flags, usually called in a program's main,
+ * i.e. before run_app). The arguments without a dash are the app's
+ * (Playground.flags), kept, in order; only Arg knows which bare
+ * arguments are rather an option's value (-fixed-time 1000), hence
+ * collecting them in its anonymous-argument function rather than
+ * filtering Sys.argv. Arg.parse_argv with its own [current] rather
+ * than Arg.parse: Arg.parse's position in argv is global, so a second
+ * parse in the same program (e.g. playground3d's Native_loop, run
+ * after Playground_platform.flags) would find nothing left to parse. *)
+let parsed_cli : string list Lazy.t = lazy (
   let level = ref (Some Logs.Warning) in
+  let app_args = ref [] in
   let cli_flags = [
     "-v", Arg.Unit (fun () -> level := Some Logs.Info),
     " verbose mode";
@@ -105,12 +117,20 @@ let parse_cli_and_setup_logging () =
     Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
     "<n> <file> write frame n (from 1) to file, then exit";
   ] in
-  Arg.parse cli_flags
-    (fun s -> raise (Arg.Bad (spf "don't know what to do with %s" s)))
-    (spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file]"
-       Sys.argv.(0));
+  let usage =
+    spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [name=value|name]..."
+      Sys.argv.(0)
+  in
+  (* what Arg.parse does on an error or -help *)
+  (try Arg.parse_argv ~current:(ref 0) Sys.argv cli_flags (fun s -> app_args := s :: !app_args) usage with
+  | Arg.Bad msg -> prerr_string msg; exit 2
+  | Arg.Help msg -> print_string msg; exit 0);
   Logs.set_reporter (Logs.format_reporter ());
-  Logs.set_level !level
+  Logs.set_level !level;
+  List.rev !app_args)
+
+let parse_cli_and_setup_logging () = ignore (Lazy.force parsed_cli)
+let app_args () = Lazy.force parsed_cli
 
 (*****************************************************************************)
 (* FPS *)

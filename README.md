@@ -118,6 +118,40 @@ $ dune build --root . --profile=release
 $ cp _build/default/Toy.bc.js static/
 ```
 
+Parameters (flags)
+------------------
+
+A program can be given parameters, the same way natively and on the
+web: `name=value` (or just `name`) arguments on the command line, or
+the URL's `?name=value&name`:
+
+```bash
+$ dune exec examples/Flags.exe -- color=red speed=3
+```
+or `Flags.html?color=red&speed=3` in a browser.
+
+Like Elm's flags, they reach the application purely: `main` reads them
+with `Playground_platform.flags ()` and gives them to `run_app`, and
+every `view` and `update` then finds them in `computer.flags`, as
+`(name, value)` pairs:
+
+```ocaml
+let update computer (x, y) =
+  let speed =
+    match List.assoc_opt "speed" computer.flags with
+    | Some s -> float_of_string s
+    | None -> 1.
+  in
+  (x +. speed *. to_x computer.keyboard, y +. speed *. to_y computer.keyboard)
+
+let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+```
+
+(see [examples/Flags.ml](examples/Flags.ml); a program that doesn't pass
+`~flags` gets none). The arguments starting with a dash (`-debug`,
+`-fixed-time 1000`, ...) are the playground's own. The same works for
+3D programs, with `Playground3d_platform.run_app3d ~flags`.
+
 Next steps
 ------------
 

@@ -1,7 +1,17 @@
 (* claude: [rendering] (default: Playground.default_rendering) sets how
- * to draw, see Playground.rendering *)
+ * to draw, see Playground.rendering; [flags] (default: none) are given
+ * to the app's init, and so end up in computer.flags, see
+ * Playground.flags *)
 val run_app:
-  ?rendering:Playground.rendering -> ('a, 'b) Playground.app -> unit
+  ?rendering:Playground.rendering -> ?flags:Playground.flags -> ('a, 'b) Playground.app -> unit
+
+(* The parameters the program was started with (see Playground.flags):
+ * natively, the command line's arguments without a dash, name=value or
+ * name; on the web, the page's URL parameters, ?name=value&name. The
+ * one impure step of flags, visible in a program's main:
+ *   let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+ *)
+val flags: unit -> Playground.flags
 
 (* Load (and cache) an image url ahead of time, e.g. for all the sprite
  * variants a game will need, so that [Playground.image]/[run_app] never

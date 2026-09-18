@@ -15,8 +15,16 @@ val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
  * [on_key_press], before the first frame) and -dump-frame n file (after
  * drawing frame n, counted from 1, [run] calls its [dump_frame file],
  * then exits; the fps given to [draw] is then 0, and mouse and
- * keyboard are ignored) *)
+ * keyboard are ignored); the arguments without a dash are the app's
+ * (see [app_args]). Parses once: later calls do nothing. *)
 val parse_cli_and_setup_logging : unit -> unit
+
+(* The command line's arguments without a dash (and not an option's
+ * value), in order, e.g. ["level=5"; "fast"]: the app's own, for
+ * Playground_platform.flags. Parses the command line if not done yet
+ * (so it can be called before run_app, which calls
+ * [parse_cli_and_setup_logging]). *)
+val app_args : unit -> string list
 
 (* -debug-keys was given: [run] calls its [on_key_press] for the
  * backend's debug keys. Off by default, so that all keys go to the app

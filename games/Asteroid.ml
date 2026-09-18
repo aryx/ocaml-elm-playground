@@ -425,7 +425,7 @@ let update msg model =
 let app = { Playground.
   view;
   update;
-  init = (fun () -> (initial_model), Cmd.none);
+  init = (fun _flags -> (initial_model), Cmd.none);
     subscriptions  = (fun _ -> Sub.batch [
       Sub.on_animation_frame (fun x -> Tick x);
       Sub.on_key_down (fun key -> msg_of_key_down key);

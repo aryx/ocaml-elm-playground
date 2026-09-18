@@ -405,14 +405,27 @@ type computer = {
   keyboard: keyboard;
   screen: screen;
   time: time;
+  flags: flags;
 }
+(* claude: see Playground.mli *)
+and flags = (string * string) list
 
 let initial_computer = {
   mouse = { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false; mdx = 0.; mdy = 0. };
   keyboard = empty_keyboard;
   screen = to_screen default_width default_height;
   time = Time (Time.millis_to_posix 1);
+  flags = [];
 }
+
+let flags_of_strings (xs : string list) : flags =
+  xs
+  |> List.filter (fun s -> s <> "")
+  |> List.map (fun s ->
+         match String.index_opt s '=' with
+         (* Stdlib's int arithmetic, Basics' is float *)
+         | Some i -> Stdlib.(String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1))
+         | None -> (s, ""))
 
 (*****************************************************************************)
 (* App *)
@@ -426,7 +439,7 @@ let default_rendering = { antialiasing = true; smooth_images = true }
 
 type ('model, 'msg) app =
   {
-    init: (unit -> ('model * 'msg Cmd.t));
+    init: (flags -> ('model * 'msg Cmd.t));
     update: ('msg -> 'model -> ('model * 'msg Cmd.t));
     (* old: removed dependency to vdom, harder to port to native
      * view: ('model -> 'msg Html.vdom);
@@ -443,7 +456,7 @@ type msg1 =
 
 let (picture: shape list -> (screen, msg1) app) = 
  fun shapes ->
-  let init () = 
+  let init _flags =
       to_screen default_width default_height, Cmd.none
   in
   let view _screen = shapes in
@@ -495,7 +508,7 @@ let animation_update msg (Animation (s, t) as state) =
 
 let (animation: (time -> shape list) -> (animation, msg) app) =
  fun view_frame ->
-   let init () = 
+   let init _flags =
      Animation ((* Event.Visible, *)
                 to_screen default_width default_height, 
                 (* bugfix: use 1, not 0, otherwise get div_by_zero exn in
@@ -573,8 +586,8 @@ let (game:
   ('memory game, msg) app) = 
  fun view_memory update_memory initial_memory ->
 
-  let init () =
-      Game (initial_memory, initial_computer),
+  let init flags =
+      Game (initial_memory, { initial_computer with flags }),
       Cmd.none (* TODO: Task.perform GotViewport Dom.getViewport *)
   in
   let view (Game (memory, computer)) =

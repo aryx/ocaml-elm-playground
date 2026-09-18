@@ -119,7 +119,9 @@ let fps_counter (fb : Framebuffer.t) ~fps : Playground.shape =
   Playground.words Playground.black text
   |> Playground.move (-.(0.45 *. w) +. (width *. unit /. 2.)) (-.(0.45 *. h) +. (9. *. unit))
 
-let run_app ?(rendering = Playground.default_rendering) (app : _ Playground.app) =
+let flags () : Playground.flags = Playground.flags_of_strings (Native_loop_2d.app_args ())
+
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) (app : _ Playground.app) =
   (* the app's choices are the starting values; the keys can change them *)
   options :=
     { !options with antialiasing = rendering.antialiasing; bilinear = rendering.smooth_images };
@@ -149,4 +151,4 @@ let run_app ?(rendering = Playground.default_rendering) (app : _ Playground.app)
     Tsdl.Sdl.set_window_title sdl_window (window_title ~fps)
   in
   Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_ppm pixels)
-    ~init:app.init ~update:app.update ~subscriptions:app.subscriptions ~view:app.view
+    ~init:(fun () -> app.init flags) ~update:app.update ~subscriptions:app.subscriptions ~view:app.view
