@@ -112,6 +112,7 @@ Nope
     (ocaml (>= "4.08.0"))
     (testo :with-test)
     (alcotest :with-test)
+    (cairo2 :with-test) ; to compare our pixels with Cairo's
   )
 )
 (package (name elm_playground_software)

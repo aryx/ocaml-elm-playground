@@ -35,6 +35,8 @@ let title = "Playground (software rasterizer)"
  *
  *  - "t": transparency (Porter-Duff alpha blending) on/off; try
  *    examples/Mouse.exe, whose circle fades while the button is down
+ *  - "b": bounding boxes instead of the real outlines (the first
+ *    version of this backend drew only those)
  *  - "z": the pixel magnifier (Magnifier), following the mouse
  *)
 
@@ -43,15 +45,17 @@ let magnifier = ref false
 
 let on_key_press (key : string) =
   match key with
-  | "t" -> options := { alpha_blending = not !options.alpha_blending }
+  | "t" -> options := { !options with alpha_blending = not !options.alpha_blending }
+  | "b" -> options := { !options with bounding_boxes = not !options.bounding_boxes }
   | "z" -> magnifier := not !magnifier
   | _ -> ()
 
-(* e.g. "Playground (software rasterizer) -- 60 fps -- t:alpha=on z:zoom=off" *)
+(* e.g. "Playground (software rasterizer) -- 60 fps -- t:alpha=on
+ * b:boxes=off z:zoom=off" *)
 let window_title ~fps =
   let on_off b = if b then "on" else "off" in
-  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s z:zoom=%s" title fps
-    (on_off !options.alpha_blending) (on_off !magnifier)
+  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s z:zoom=%s" title fps
+    (on_off !options.alpha_blending) (on_off !options.bounding_boxes) (on_off !magnifier)
 
 (*****************************************************************************)
 (* Entry points *)

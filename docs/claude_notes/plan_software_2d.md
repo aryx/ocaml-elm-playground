@@ -240,9 +240,19 @@ Planned, each with the phase that makes it meaningful:
    examples given in the `.mli` comments. Every box matched the
    position/size/rotation of the Cairo shape in side-by-side
    screenshots; 60 fps everywhere.
-2. **`Fill`**: polygons, rectangles, ngons, groups/rotate/
+2. **DONE.** **`Fill`**: polygons, rectangles, ngons, groups/rotate/
    scale/move, alpha blending. Most games (`Snake`, `Tetris`, `Pong`,
-   `Asteroid`) should now look right.
+   `Asteroid`) should now look right. In the end: scanline fill with an
+   edge table + active edge list and incremental x (edge coherence),
+   both Nonzero and Even_odd; the phase-1 boxes became the "b" key and
+   are drawn with `Fill.polygon` too. Tests: worked examples (square,
+   U, pentagram nonzero vs even-odd), "two triangles sharing an edge =
+   the whole quad, pixel for pixel" (no gap, no double-painted pixel),
+   and a comparison with Cairo without antialiasing: identical except
+   one pixel per polygon, each within 0.005 pixel of an edge, which
+   Cairo's 1/256-pixel fixed-point coordinates put on the other side
+   (checked by hand: we're the exact ones). The test allows exactly
+   that (< 0.01 pixel from an edge) and nothing else.
 3. **`Circle`**: midpoint circle fast path + ellipse flattening for
    `Oval` and non-uniformly scaled circles. `Line` (Bresenham +
    clipping) and the "f" wireframe toggle.

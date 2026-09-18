@@ -6,6 +6,7 @@
  (libraries
    alcotest
    testo
+   cairo2 ; only to compare our pixels with Cairo's, see Unit_fill.ml
    elm_playground_raster
  )
 )
