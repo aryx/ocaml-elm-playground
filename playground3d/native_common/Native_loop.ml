@@ -29,6 +29,11 @@ let dump_frame_file : string ref = ref ""
  * -dump-frame n, the time to render n frames of the same scene *)
 let uncapped : bool ref = ref false
 
+(* claude: -debug-keys, like Native_loop_2d's: the backend's debug keys
+ * are off by default, so every key goes to the app only *)
+let debug_keys : bool ref = ref false
+let debug_keys_enabled () = !debug_keys
+
 let parse_cli_and_setup_logging () =
   let level = ref (Some Logs.Warning) in
   let cli_flags =
@@ -42,12 +47,13 @@ let parse_cli_and_setup_logging () =
        "<keys> debug keys to press before the first frame, e.g. \"fz\"");
       ("-dump-frame", Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
        "<n> <file> write frame n (from 1) to file, then exit");
-      ("-uncapped", Arg.Set uncapped, " no 60 fps cap, to measure speed")
+      ("-uncapped", Arg.Set uncapped, " no 60 fps cap, to measure speed");
+      ("-debug-keys", Arg.Set debug_keys, " the backend's debug keys (e.g. h for help), off by default")
     ]
   in
   Arg.parse cli_flags
     (fun s -> raise (Arg.Bad (Printf.sprintf "don't know what to do with %s" s)))
-    (Printf.sprintf "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-uncapped]"
+    (Printf.sprintf "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-uncapped] [-debug-keys]"
        Sys.argv.(0));
   Logs.set_reporter (Logs.format_reporter ());
   Logs.set_level !level
@@ -137,7 +143,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
              * computer.keyboard's continuously-updated held/not-held
              * state below, which a game's update3d re-reads every Tick
              * regardless of any of this.) *)
-            if Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
+            if !debug_keys && Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
             computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
         | x when x = Sdl.Event.key_up ->
             let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in

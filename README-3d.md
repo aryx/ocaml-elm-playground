@@ -65,9 +65,11 @@ dune exec examples3d/Corridor3d.exe      # walk down a corridor (up/down arrows)
 dune exec games3d/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
 ```
 
-While any native example/game is running, a few keys are wired up as
-live debug toggles for comparing rendering strategies side by side
-(see `notes_3d.md` section 11 for what each one demonstrates and why):
+Run any native example/game with `-debug-keys` (e.g.
+`dune exec examples3d/Cubes3d.exe -- -debug-keys`), and a few keys are
+wired up as live debug toggles for comparing rendering strategies side
+by side (see `notes_3d.md` section 11 for what each one demonstrates
+and why). Without the flag they're off, so a game can use any key:
 
 | Key | Toggles |
 | --- | --- |
@@ -87,7 +89,8 @@ live debug toggles for comparing rendering strategies side by side
 The window title shows every toggle's current state.
 
 The OpenGL backend (`examples3d/opengl/`, `games3d/opengl/`) has `m`
-(no lighting, flat, smooth), `b`, `f`, and `i` too.
+(no lighting, flat, smooth), `b`, `f`, and `i` too, with `-debug-keys`
+as well.
 
 Choosing how an app is drawn
 ----------------------------

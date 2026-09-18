@@ -8,7 +8,8 @@
 val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
 
 (* -v/-verbose/-debug/-quiet, and installs a Logs reporter; also
- * -uncapped (no 60 fps pacing) and, for reproducible frames (see
+ * -uncapped (no 60 fps pacing), -debug-keys (see [debug_keys_enabled])
+ * and, for reproducible frames (see
  * tests/2d/Golden_frames.ml), -fixed-time t (the app's clock stays at
  * t), -keys k (the debug keys k pressed, through [run]'s
  * [on_key_press], before the first frame) and -dump-frame n file (after
@@ -16,6 +17,12 @@ val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
  * then exits; the fps given to [draw] is then 0, and mouse and
  * keyboard are ignored) *)
 val parse_cli_and_setup_logging : unit -> unit
+
+(* -debug-keys was given: [run] calls its [on_key_press] for the
+ * backend's debug keys. Off by default, so that all keys go to the app
+ * only (a game may use "f" or "h" itself); -keys still presses its keys
+ * either way. *)
+val debug_keys_enabled : unit -> bool
 
 (* Tsdl's key names to Playground's ("Left" -> "ArrowLeft", ...);
  * "Q" quits immediately. *)

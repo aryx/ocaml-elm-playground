@@ -51,6 +51,12 @@ val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
  * leave it, since it costs nothing when no reporter is installed. *)
 val parse_cli_and_setup_logging : unit -> unit
 
+(* -debug-keys was given: [run] calls its [on_key_press] for the
+ * backend's debug keys. Off by default, so that all keys go to the app
+ * only (a game may use "f" or "h" itself); -keys still presses its keys
+ * either way. *)
+val debug_keys_enabled : unit -> bool
+
 val mouse_move : float -> float -> Playground.mouse -> Playground.mouse
 val mouse_down : bool -> Playground.mouse -> Playground.mouse
 val update_keyboard : bool -> string -> Playground.keyboard -> Playground.keyboard
@@ -93,7 +99,9 @@ val scancode_to_keystring : string -> string
  * k pressed, through [on_key_press], before the first frame) and
  * -dump-frame n file (after drawing frame n, counted from 1, call
  * [dump_frame file], then exit). With -uncapped, frames aren't paced
- * at 60 fps: the three together time the rendering of n frames. *)
+ * at 60 fps: the three together time the rendering of n frames.
+ * [on_key_press] is only called with -debug-keys (see
+ * [debug_keys_enabled]), except for -keys. *)
 val run :
   sdl_window:Tsdl.Sdl.window ->
   sx:int ->

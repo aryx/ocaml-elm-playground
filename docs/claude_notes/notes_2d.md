@@ -401,8 +401,11 @@ doesn't need it, as the list above shows.
 ## 12. Seeing it: the debug keys and the magnifier
 
 Every feature of the software backend can be turned off while any
-example or game runs, to see what it does; the window title shows the
-state of each key (`software/Playground_platform.ml`):
+example or game runs, to see what it does, when it's run with
+`-debug-keys` (e.g. `dune exec examples/software/Picture.exe --
+-debug-keys`; without it, all keys go to the app, so a game can use
+any key); the window title shows the state of each key
+(`software/Playground_platform.ml`):
 
 | key | what it switches | try it on |
 |-----|------------------|-----------|

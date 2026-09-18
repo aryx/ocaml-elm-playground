@@ -71,7 +71,7 @@ press_key() {
 one_run() {
   local LOG PID WID START
   LOG=$(mktemp /tmp/bench_playground.XXXXXX.log)
-  "$EXE" -uncapped -debug > "$LOG" 2>&1 &
+  "$EXE" -uncapped -debug -debug-keys > "$LOG" 2>&1 &
   PID=$!
   WID=$("$DIR/xdrive.py" find "$NAME")
   # let images download (preloaded ones before the first frame, others

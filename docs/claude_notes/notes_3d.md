@@ -540,7 +540,8 @@ design compares to each.
 `playground3d/software/Playground3d_platform.ml` doesn't just describe
 several of the trade-offs above -- they're wired up as live, in-game
 toggles you can flip with a single key press while any native
-example/game is running, so you can directly compare "simple" vs "more
+example/game is running with the `-debug-keys` flag (off by default,
+so a game can use any key), so you can directly compare "simple" vs "more
 correct" side by side instead of just reading about the difference.
 Each one is deliberately its own separate, clearly-sectioned
 function/code path (not one function with a runtime branch buried in

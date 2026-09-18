@@ -59,6 +59,13 @@ let scancode_to_keystring = function
  * draw (see docs/claude_notes/notes_opti.md); games then run too fast *)
 let uncapped = ref false
 
+(* claude: -debug-keys: the backend's debug keys (e.g. the software
+ * rasterizer's "f" for wireframe, "h" for help) are off by default, so
+ * every key goes to the app only and a game can use any key it wants;
+ * this flag turns them on, for demos and debugging *)
+let debug_keys = ref false
+let debug_keys_enabled () = !debug_keys
+
 (* claude: deterministic frames, for the golden frame tests (see
  * tests/2d/Golden_frames.ml): the clock the app sees can be frozen,
  * debug keys pressed before the first frame, and a given frame dumped
@@ -81,6 +88,8 @@ let parse_cli_and_setup_logging () =
     " quiet mode";
     "-uncapped", Arg.Set uncapped,
     " no 60 fps cap (to benchmark)";
+    "-debug-keys", Arg.Set debug_keys,
+    " the backend's debug keys (e.g. h for help), off by default";
     "-fixed-time", Arg.Float (fun t -> fixed_time := Some t),
     "<seconds> the app's clock stays at this time (frozen animations)";
     "-keys", Arg.Set_string startup_keys,
@@ -91,7 +100,7 @@ let parse_cli_and_setup_logging () =
   ] in
   Arg.parse cli_flags
     (fun s -> raise (Arg.Bad (spf "don't know what to do with %s" s)))
-    (spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped] [-fixed-time t] [-keys k] [-dump-frame n file]"
+    (spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file]"
        Sys.argv.(0));
   Logs.set_reporter (Logs.format_reporter ());
   Logs.set_level !level
@@ -257,7 +266,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
            * [on_key_press] is for one-shot toggles, so only the first
            * press counts (see playground3d/native_common/Native_loop.ml
            * for the same filter and the bug it fixed) *)
-          if Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
+          if !debug_keys && Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
           apply_playground_event (E.EKeyChanged (true, str))
 
         | x when x = Sdl.Event.key_up ->

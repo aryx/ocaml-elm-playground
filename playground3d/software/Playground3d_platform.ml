@@ -47,9 +47,10 @@ open Playground3d
  * side by side without restarting -- the same kind of debug toggle many
  * game engines/games expose (e.g. Quake's r_drawflat console variable,
  * or a "wireframe view" hotkey); the 2D software backend has its own
- * (playground/software/Playground_platform.ml). The window title shows
- * their current state. Avoid the keys games use: arrows, w/a/s/d,
- * space.
+ * (playground/software/Playground_platform.ml). Only with the
+ * -debug-keys flag (see Native_loop), so that without it a game can use
+ * any key. The window title shows their current state. Avoid the keys
+ * games use most: arrows, w/a/s/d, space.
  *
  *  - "m": the shading mode, cycling through flat color (no lighting),
  *    flat, Gouraud, Phong (see graphics/3d/Shading.mli); Gouraud and
@@ -272,4 +273,6 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
   in
   Native_loop.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d)
-    ~draw ~present ~dump_frame ~title_keys ()
+    ~draw ~present ~dump_frame
+    ?title_keys:(if Native_loop.debug_keys_enabled () then Some title_keys else None)
+    ()

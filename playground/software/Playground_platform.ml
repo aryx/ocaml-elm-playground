@@ -30,8 +30,10 @@ let title = "Playground (software rasterizer)"
 (*****************************************************************************)
 (* Keys to turn rendering features on and off while any example or game
  * runs, to see what each one does -- like playground3d/software/'s
- * "m"/"b"/"f"/"z"/"p". The window title shows their current state.
- * Avoid the keys games use: arrows, w/a/s/d, space.
+ * "m"/"b"/"f"/"z"/"p". Only with the -debug-keys flag (see
+ * Native_loop_2d), so that without it a game can use any key. The
+ * window title shows their current state. Avoid the keys games use
+ * most: arrows, w/a/s/d, space.
  *
  *  - "t": transparency (Porter-Duff alpha blending) on/off; try
  *    examples/Mouse.exe, whose circle fades while the button is down
@@ -69,11 +71,13 @@ let on_key_press (key : string) =
  * h:help" *)
 let window_title ~fps =
   let on_off b = if b then "on" else "off" in
-  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s z:zoom=%s h:help"
-    title fps (on_off !options.alpha_blending) (on_off !options.bounding_boxes)
-    (on_off !options.wireframe)
-    (if !options.bilinear then "bilinear" else "nearest")
-    (on_off !options.antialiasing) (on_off !Opti.enabled) (on_off !magnifier)
+  if not (Native_loop_2d.debug_keys_enabled ()) then Printf.sprintf "%s -- %.0f fps" title fps
+  else
+    Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s z:zoom=%s h:help"
+      title fps (on_off !options.alpha_blending) (on_off !options.bounding_boxes)
+      (on_off !options.wireframe)
+      (if !options.bilinear then "bilinear" else "nearest")
+      (on_off !options.antialiasing) (on_off !Opti.enabled) (on_off !magnifier)
 
 (* the same, one line per key, for "h" (Help_overlay) *)
 let help_lines () =
