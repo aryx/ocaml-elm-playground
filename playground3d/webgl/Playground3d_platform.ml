@@ -477,7 +477,30 @@ let draw (st : gl_state) (rendering : Playground3d.rendering) (computer : Playgr
 (* Run app *)
 (*****************************************************************************)
 
-let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'msg) Playground3d.app3d) : unit =
+(* capture_mouse, with the browser's Pointer Lock API: a page may only
+ * lock the pointer in answer to a click, so a click while it's not
+ * locked asks for the lock, and is only that: stopped before
+ * elm_playground_web's listeners (registered later, on the same
+ * window, so called after this one) see it as a click for the app.
+ * The browser gives the pointer back on Escape by itself. Once
+ * locked, mousemove events keep coming, with movementX/Y (mdx/mdy)
+ * but a frozen clientX/Y. *)
+let capture_mouse_on_click () : unit =
+  Dom_html.addEventListener Dom_html.window Dom_html.Event.mousedown
+    (Dom_html.handler (fun (evt : Dom_html.mouseEvent Js.t) ->
+         let locked = Js.Opt.test (Js.Unsafe.get Dom_html.document "pointerLockElement") in
+         if locked then Js._true
+         else begin
+           ignore (Js.Unsafe.meth_call Dom_html.document##.body "requestPointerLock" [||]);
+           ignore (Js.Unsafe.meth_call evt "stopImmediatePropagation" [||]);
+           Js._false
+         end))
+    Js._true
+  |> ignore
+
+let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = false)
+    (app3d : ('model, 'msg) Playground3d.app3d) : unit =
+  if capture_mouse then capture_mouse_on_click ();
   (* created on the first frame, i.e. once the page is loaded (run_app
    * waits for the onload event) *)
   let gl_state = lazy (init_gl ()) in

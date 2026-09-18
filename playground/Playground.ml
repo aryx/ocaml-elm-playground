@@ -298,6 +298,12 @@ type mouse = {
   (* pad: not in original Playground.elm: the right button, e.g. to
    * place a block in games3d/Minecraft3d (the left one removes) *)
   mrdown: bool;
+  (* pad: not in original Playground.elm either: how far the mouse
+   * moved since the last frame (y up, like my), even when it can't be
+   * seen or can't move, e.g. captured by a first-person 3D game (see
+   * Playground3d_platform.run_app3d's capture_mouse) *)
+  mdx: number;
+  mdy: number;
 }
 
 let mouse_move mx my mouse =
@@ -308,6 +314,11 @@ let mouse_down mdown mouse =
   { mouse with mdown }
 let mouse_right_down mrdown mouse =
   { mouse with mrdown }
+(* accumulated until the next frame's update, then reset *)
+let mouse_move_by dx dy mouse =
+  { mouse with mdx = mouse.mdx +. dx; mdy = mouse.mdy +. dy }
+let mouse_moves_reset mouse =
+  { mouse with mdx = 0.; mdy = 0. }
 
 (*-------------------------------------------------------------------*)
 (* Keyboard *)
@@ -397,7 +408,7 @@ type computer = {
 }
 
 let initial_computer = {
-  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false };
+  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false; mdx = 0.; mdy = 0. };
   keyboard = empty_keyboard;
   screen = to_screen default_width default_height;
   time = Time (Time.millis_to_posix 1);
@@ -459,6 +470,7 @@ type msg =
   | KeyChanged of bool * string
 
   | MouseMove of (float * float)
+  | MouseMoveBy of (float * float) (* relative: dx, dy, y up *)
   | MouseClick (* reset after a Tick *)
   | MouseButton of bool (* true = down, false = up *)
   | RightMouseButton of bool (* the same, for the right button *)
@@ -474,6 +486,7 @@ let animation_update msg (Animation (s, t) as state) =
     Animation (to_screen (float w) (float h), t)
 
   | MouseMove _
+  | MouseMoveBy _
   | MouseClick
   | MouseButton _
   | RightMouseButton _
@@ -518,7 +531,9 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
          * to kinda ack the click
          *)
         Game (update_memory computer memory,
-          { computer with time = Time time })
+          (* claude: the moves update_memory just saw are consumed *)
+          { computer with time = Time time;
+            mouse = mouse_moves_reset computer.mouse })
     | Resized (_w, _h) ->
         failwith "Todo"
     (* we assume the x, y is in playground coordinate system (0,0) at the
@@ -529,8 +544,11 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
          * let x = computer.screen.left + page_x in
          * let y = computer.screen.top - page_y in
          *)
-        Game (memory, 
+        Game (memory,
              { computer with mouse = mouse_move x y computer.mouse })
+    | MouseMoveBy (dx, dy) ->
+        Game (memory,
+             { computer with mouse = mouse_move_by dx dy computer.mouse })
     | MouseClick ->
         Game (memory, 
              { computer with mouse = 
@@ -570,6 +588,7 @@ let (game:
       (* TODO: on_resize *)
       Sub.on_animation_frame (fun x -> Tick x);
       Sub.on_mouse_move (fun x -> MouseMove x);
+      Sub.on_mouse_move_by (fun d -> MouseMoveBy d);
       Sub.on_mouse_down (fun () -> MouseButton true);
       Sub.on_mouse_up   (fun () -> MouseButton false);
       Sub.on_right_mouse_down (fun () -> RightMouseButton true);

@@ -20,9 +20,19 @@
  * on top of raw SDL; the web implementation compiles the 3D scene down
  * to ordinary Playground.shape values every frame and delegates to the
  * existing, unmodified elm_playground_web backend. *)
-val run_app3d : ?rendering:Playground3d.rendering -> ('a, 'b) Playground3d.app3d -> unit
+val run_app3d :
+  ?rendering:Playground3d.rendering -> ?capture_mouse:bool -> ('a, 'b) Playground3d.app3d -> unit
 (* claude: [rendering] (default: Playground3d.default_rendering) sets how
- * to draw, see Playground3d.rendering *)
+ * to draw, see Playground3d.rendering.
+ *
+ * [capture_mouse] (default false), for first-person games: the mouse
+ * is captured, i.e. hidden and not stopped by the window's edges, so
+ * that the app turns its camera by Playground.mouse's mdx/mdy (how far
+ * the mouse moved), without limit, as in most 3D games. Escape gives
+ * the mouse back; a click in the window captures it again (and is only
+ * that, not a click for the app). On the web (WebGL), the page must be
+ * clicked first (browsers only capture after a click: the Pointer Lock
+ * API); the SVG web backend ignores it. *)
 
 (* Load (and cache) a texture src ahead of time, e.g. for all the
  * textures a game will need, so that a {!Playground3d.textured_quad}/

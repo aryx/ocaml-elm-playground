@@ -115,5 +115,9 @@ val run :
   present:(unit -> unit) ->
   ?dump_frame:(string -> unit) ->
   ?title_keys:(unit -> string) ->
+  ?capture_mouse:bool ->
   unit ->
   unit
+(* claude: [capture_mouse] (default false): see
+ * Playground3d_platform.run_app3d's; Escape gives the mouse back, a
+ * click captures it again *)

@@ -627,8 +627,22 @@ while the mouse button is down.
 [mdown] is the left (main) button; [mrdown], not in the original Elm
 playground, is the right one (e.g. games3d/Minecraft3d: left click
 removes a block, right click places one).
+
+[mdx] and [mdy], not in the original Elm playground either, are how far
+the mouse moved since the last frame (y up, like [my]), for turning a
+first-person camera: unlike [mx]/[my], they keep counting when the
+mouse is captured (hidden, and not stopped by the window's edges; see
+{!Playground3d_platform.run_app3d}'s [capture_mouse]).
 *)
-type mouse = { mx : number; my : number; mdown : bool; mclick : bool; mrdown : bool }
+type mouse = {
+  mx : number;
+  my : number;
+  mdown : bool;
+  mclick : bool;
+  mrdown : bool;
+  mdx : number;
+  mdy : number;
+}
 
 (** Figure out what is going on with the keyboard.
 
@@ -849,6 +863,7 @@ type msg =
   | Resized of int * int
   | KeyChanged of bool * string
   | MouseMove of (number * number)
+  | MouseMoveBy of (number * number)
   | MouseClick
   | MouseButton of bool
   | RightMouseButton of bool

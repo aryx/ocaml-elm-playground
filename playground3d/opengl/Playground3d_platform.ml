@@ -300,8 +300,8 @@ let link_program ~(vertex_source : string) ~(fragment_source : string) : int =
 
 let preload_texture : string -> unit = Texture_decode.preload
 
-let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'msg) Playground3d.app3d) :
-    unit =
+let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse
+    (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   (* claude: -v, -debug, and the -fixed-time/-keys/-dump-frame flags (see
    * Native_loop) *)
   Native_loop.parse_cli_and_setup_logging ();
@@ -611,4 +611,4 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
   in
   Native_loop.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D (OpenGL)" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d) ~draw
-    ~present ~dump_frame ()
+    ~present ~dump_frame ?capture_mouse ()

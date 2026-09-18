@@ -94,8 +94,19 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     ~(on_key_press : string -> unit) ~(init : unit -> 'model)
     ~(update : Playground.computer -> 'model -> 'model) ~(view : Playground.computer -> 'model -> 'view)
     ~(draw : Playground.computer -> 'view -> unit) ~(present : unit -> unit) ?(dump_frame : (string -> unit) option)
-    ?(title_keys : (unit -> string) option) () : unit =
+    ?(title_keys : (unit -> string) option) ?(capture_mouse = false) () : unit =
   let sdl_event = Sdl.Event.create () in
+  (* claude: capture_mouse: SDL's relative mouse mode, the cursor hidden
+   * and held in the window, only mouse_motion's xrel/yrel (mdx/mdy)
+   * changing; the way first-person games turn the camera with no limit.
+   * Not with -dump-frame (no mouse then, see drain_sdl_events). *)
+  let captured = ref false in
+  let set_captured (b : bool) : unit =
+    match Sdl.set_relative_mouse_mode b with
+    | Ok () -> captured := b
+    | Error (`Msg msg) -> Logs.warn (fun m -> m "can't capture the mouse: %s" msg)
+  in
+  if capture_mouse && !dump_frame_number = None then set_captured true;
   (* claude: -keys, as if pressed before the first frame *)
   String.iter (fun c -> on_key_press (String.make 1 c)) !startup_keys;
   let frame_number = ref 0 in
@@ -123,7 +134,17 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
             let my = Sdl.Event.(get sdl_event mouse_motion_y) in
             let px = float_of_int mx -. (float_of_int sx /. 2.) in
             let py = (float_of_int sy /. 2.) -. float_of_int my in
-            computer := { !computer with mouse = mouse_move px py (!computer).mouse }
+            (* claude: and the relative move (mdx/mdy, y up), summed
+             * until the next update: the only one that keeps counting
+             * when the mouse is captured *)
+            let dx = float_of_int Sdl.Event.(get sdl_event mouse_motion_xrel) in
+            let dy = -.float_of_int Sdl.Event.(get sdl_event mouse_motion_yrel) in
+            let m = (!computer).mouse in
+            computer := { !computer with mouse = { (mouse_move px py m) with mdx = m.mdx +. dx; mdy = m.mdy +. dy } }
+        (* claude: capture_mouse, released (Escape): a click captures the
+         * mouse again, and is only that, not a click in the game (like
+         * the original Minecraft's on_mouse_press) *)
+        | x when x = Sdl.Event.mouse_button_down && capture_mouse && not !captured -> set_captured true
         | x when x = Sdl.Event.mouse_button_down ->
             computer := { !computer with mouse = mouse_button sdl_event true (!computer).mouse }
         | x when x = Sdl.Event.mouse_button_up ->
@@ -150,6 +171,8 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
              * state below, which a game's update3d re-reads every Tick
              * regardless of any of this.) *)
             if !debug_keys && Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
+            (* claude: capture_mouse: Escape gives the mouse back *)
+            if capture_mouse && str = "escape" then set_captured false;
             computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
         | x when x = Sdl.Event.key_up ->
             let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
@@ -165,6 +188,8 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
     computer := { !computer with time = Playground.Time now };
     model := update !computer !model;
+    (* claude: the moves [update] just saw are consumed *)
+    computer := { !computer with mouse = { (!computer).mouse with mdx = 0.; mdy = 0. } };
 
     let t0 = Unix.gettimeofday () in
     let v = view !computer !model in

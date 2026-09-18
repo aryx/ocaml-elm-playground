@@ -814,6 +814,14 @@ let run_app ?(rendering = Playground.default_rendering) app =
       | None -> ()
       | Some event -> process_playground_event event
       );
+      (* claude: the relative move too (mdx/mdy), from movementX/Y (not
+       * in vdom's binding, hence Ojs), which keep counting when the
+       * pointer is locked (captured, see playground3d's webgl backend),
+       * whereas clientX/Y then stop; y up, like the playground's *)
+      if Event.type_ evt = "mousemove" then begin
+        let get prop = Ojs.float_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) prop) in
+        process_playground_event (E.EMouseMoveBy (get "movementX", -. (get "movementY")))
+      end;
       if !debug then Window.request_animation_frame window animation_frame;
     in
     [

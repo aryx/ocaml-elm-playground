@@ -257,7 +257,11 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
            * to Elm's (origin at the center, y up) *)
           let x = float x -. (float sx /. 2.) in
           let y = -.(float y -. (float sy /. 2.)) in
-          apply_playground_event (E.EMouseMove (int_of_float x, int_of_float y))
+          apply_playground_event (E.EMouseMove (int_of_float x, int_of_float y));
+          (* claude: the relative move too, y up (mdx/mdy) *)
+          let dx = Sdl.Event.(get sdl_event mouse_motion_xrel) in
+          let dy = Sdl.Event.(get sdl_event mouse_motion_yrel) in
+          apply_playground_event (E.EMouseMoveBy (float dx, -.(float dy)))
 
         | x when x = Sdl.Event.mouse_button_down ->
           apply_playground_event (mouse_button_event sdl_event true)
