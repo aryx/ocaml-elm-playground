@@ -155,18 +155,16 @@ let rebuild_chunks_around ((x, y, z) : Minecraft_model.pos) : unit =
 (*****************************************************************************)
 (* The game *)
 (*****************************************************************************)
-(* Controls (the original's, except the mouse, see [look]):
+(* Controls (the original's):
  *  - W/A/S/D: walk; space: jump; Tab: fly or walk (flying, look up or
  *    down to go up or down);
- *  - the mouse, or the arrow keys: look around;
+ *  - the mouse (captured: Escape to get it back, a click to capture it
+ *    again), or the arrow keys: look around;
  *  - left click: remove the block under the crosshair (not stone);
  *    right click: place one in front of it; 1/2/3: brick, grass, sand. *)
 
 type model = {
   player : Minecraft_player.t;
-  (* the arrow keys' part of where the player looks (see [look]) *)
-  turn_yaw : number;
-  turn_pitch : number;
   (* what a right click places *)
   block : Minecraft_model.block;
   (* the previous frame's time, buttons and Tab key: to know how much
@@ -181,8 +179,6 @@ type model = {
 let initial : model =
   {
     player = Minecraft_player.initial;
-    turn_yaw = 0.;
-    turn_pitch = 0.;
     block = Brick;
     last_time = None;
     was_down = false;
@@ -192,16 +188,21 @@ let initial : model =
 
 let inventory : (string * Minecraft_model.block) list = [ ("1", Brick); ("2", Grass); ("3", Sand) ]
 
-(* claude: where the player looks. The original captures the mouse
- * (an invisible cursor that can move forever, reporting only how much
- * it moved); Playground.mouse is an absolute position in the window,
- * so here the mouse's offset from the window's center adds to the
- * direction, up to 90 degrees left or right at the window's edges (60
- * up or down), and the arrow keys turn further. *)
+let bool_int (b : bool) : int = if b then 1 else 0
+
+(* -1., 0. or 1., from two opposite keys *)
+let axis (plus : bool) (minus : bool) : number = float_of_int (bool_int plus -.. bool_int minus)
+
+(* claude: where the player looks, turned by how far the mouse moved
+ * (mdx/mdy, the mouse being captured, see [main]), 0.15 degree per
+ * pixel, the original's on_mouse_motion; and by the arrow keys, 2
+ * degrees per frame. Not by where the mouse is (mx/my): that stops at
+ * the window's edges, and when the mouse leaves the window. *)
 let look (computer : Playground.computer) (m : model) : number * number =
-  let mouse_yaw = computer.mouse.mx / (computer.screen.width / 2.) * 90. in
-  let mouse_pitch = computer.mouse.my / (computer.screen.height / 2.) * 60. in
-  (m.turn_yaw + mouse_yaw, clamp (-89.) 89. (m.turn_pitch + mouse_pitch))
+  let kb = computer.keyboard in
+  let yaw = m.player.yaw + (0.15 * computer.mouse.mdx) + (2. * axis kb.kright kb.kleft) in
+  let pitch = m.player.pitch + (0.15 * computer.mouse.mdy) + (2. * axis kb.kup kb.kdown) in
+  (yaw, clamp (-89.) 89. pitch)
 
 let key_down (computer : Playground.computer) (key : string) : bool = Set_.mem key computer.keyboard.keys
 
@@ -222,13 +223,6 @@ let edit (computer : Playground.computer) (m : model) : unit =
 
 let update (computer : Playground.computer) (m : model) : model =
   let kb = computer.keyboard in
-  let bool_int b = if b then 1 else 0 in
-  (* -1., 0. or 1., from two opposite keys *)
-  let axis (plus : bool) (minus : bool) : number = float_of_int (bool_int plus -.. bool_int minus) in
-  (* the arrow keys turn (degrees per frame) *)
-  let turn_yaw = m.turn_yaw + (2. * axis kb.kright kb.kleft) in
-  let turn_pitch = clamp (-89.) 89. (m.turn_pitch + (2. * axis kb.kup kb.kdown)) in
-  let m = { m with turn_yaw; turn_pitch } in
   let (yaw, pitch) = look computer m in
   let tab = key_down computer "tab" || key_down computer "Tab" in
   let flying = if tab && not m.was_tab then not m.player.flying else m.player.flying in
@@ -243,6 +237,41 @@ let update (computer : Playground.computer) (m : model) : model =
   let m = { m with player; block } in
   edit computer m;
   { m with last_time = Some now; was_down = computer.mouse.mdown; was_right_down = computer.mouse.mrdown; was_tab = tab }
+
+(* claude: black edges around the block under the crosshair, the
+ * original's draw_focused_block, so you see which block a click will
+ * remove. It draws a cube a bit bigger than the block (0.51 instead of
+ * 0.5 from its center, so the edges aren't hidden inside its faces) in
+ * wireframe mode; the API has no per-shape wireframe (only a
+ * whole-scene debug key), so here the 12 edges are thin boxes (a box,
+ * unlike a flat polygon, is visible from any side, see
+ * Playground3d.box):
+ *
+ *        +-----------+       4 edges along x (top and bottom,
+ *       /|          /|       front and back), 4 along y, 4 along z;
+ *      / |         / |       each [thickness] thick, [length] long,
+ *     +-----------+  |       centered at +-h or -h on the 2 other axes
+ *     |  +--------|--+
+ *     | /         | /
+ *     |/          |/
+ *     +-----------+
+ *
+ * Not cached: it moves with the view. *)
+let outline ((x, y, z) : Minecraft_model.pos) : shape3d =
+  let h = 0.51 and thickness = 0.03 in
+  let length = (2. * h) + thickness in
+  let edge (dx, dy, dz) (ox, oy, oz) = box Playground.black dx dy dz |> move3d ox oy oz in
+  let corners = [ (-.h, -.h); (-.h, h); (h, -.h); (h, h) ] in
+  List.concat_map
+    (fun (a, b) ->
+      [
+        edge (length, thickness, thickness) (0., a, b);
+        edge (thickness, length, thickness) (a, 0., b);
+        edge (thickness, thickness, length) (a, b, 0.);
+      ])
+    corners
+  |> group3d
+  |> move3d (float_of_int x) (float_of_int y) (float_of_int z)
 
 let crosshair : shape3d =
   hud (Playground.group [ Playground.rectangle Playground.black 20. 2.; Playground.rectangle Playground.black 2. 20. ])
@@ -260,11 +289,13 @@ let view (computer : Playground.computer) (m : model) : camera * shape3d list =
   (* the original's field of view, 65 degrees; far enough for the whole
    * world, which it cuts at 60 blocks behind fog instead *)
   let cam = camera ~eye:(x, y, z) ~target:(x + sx, y + sy, z + sz) ~fov:65. ~far:300. () in
-  (cam, Hashtbl.fold (fun _ chunk l -> chunk :: l) chunks [] @ [ crosshair; status computer m ])
+  let targeted = match target m with Some (pos, _) -> [ outline pos ] | None -> [] in
+  (cam, Hashtbl.fold (fun _ chunk l -> chunk :: l) chunks [] @ targeted @ [ crosshair; status computer m ])
 
 let app = game3d view update initial
 
 (* claude: sharp texels, like the original's GL_NEAREST: bilinear
  * filtering blurs the pixel-art blocks, and blends each atlas cell with
  * its neighbors in the atlas along its borders *)
-let main = Playground3d_platform.run_app3d ~rendering:{ default_rendering with smooth_textures = false } app
+let main =
+  Playground3d_platform.run_app3d ~rendering:{ default_rendering with smooth_textures = false } ~capture_mouse:true app

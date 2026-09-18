@@ -11,6 +11,8 @@ original is `~/software-src/game/tiny-minecraft/main.py`.
 
 ## 1. The outline of the targeted block
 
+**DONE**: Minecraft3d.ml's [outline], 12 thin boxes.
+
 The original's `draw_focused_block`: black edges around the block under
 the crosshair, so you see which one a click will remove (a cube a bit
 bigger than the block, 0.51 instead of 0.5, drawn in wireframe mode).
@@ -37,6 +39,12 @@ times a second when walking. Two fixes, either enough:
   text is drawn by the GPU, for free).
 
 ## 3. Mouse look without limits
+
+**DONE**: `Playground.mouse`'s `mdx`/`mdy` (relative motion, every
+backend), and `run_app3d ?capture_mouse` (SDL's relative mouse mode on
+the software and OpenGL backends, Escape to release, a click to capture
+again; the Pointer Lock API on WebGL; ignored by the SVG web backend).
+Minecraft3d turns by 0.15 degree per pixel, the original's.
 
 Looking around with the mouse stops at the window's edges (90 degrees
 left or right, 60 up or down; the arrow keys turn further), because
