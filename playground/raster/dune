@@ -1,0 +1,11 @@
+; claude: the from-scratch 2D rasterization algorithms used by
+; playground/software/ (see docs/claude_notes/plan_software_2d.md).
+; Deliberately depends on nothing: no Cairo, no SDL, and not even
+; elm_playground (a library that playground/software/ depends on can't
+; reach elm_playground again -- dune forbids a second path to the virtual
+; library an implementation implements). So everything here is about
+; plain numbers: points, colors, pixels.
+(library
+ (public_name elm_playground_raster)
+ (wrapped false)
+)

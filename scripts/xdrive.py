@@ -73,16 +73,22 @@ def open_display():
     return d
 
 
-def find(exe):
+def find(exe, timeout=10.):
     # Same trick as scripts/screenshot_playground3d.sh: only the app's
     # inner content window has the executable's basename as WM_CLASS;
     # its title is shared with the window manager's outer frame.
-    tree = subprocess.run(["xwininfo", "-root", "-tree"], capture_output=True,
-                          text=True, check=True).stdout
-    for line in tree.splitlines():
-        if '"%s"' % exe in line:
-            return line.split()[0]
-    sys.exit("xdrive: no window for %s" % exe)
+    # Retries, since right after launching the app the window may not
+    # exist yet (how long that takes varies from run to run).
+    deadline = time.time() + timeout
+    while True:
+        tree = subprocess.run(["xwininfo", "-root", "-tree"], capture_output=True,
+                              text=True, check=True).stdout
+        for line in tree.splitlines():
+            if '"%s"' % exe in line:
+                return line.split()[0]
+        if time.time() > deadline:
+            sys.exit("xdrive: no window for %s" % exe)
+        time.sleep(0.2)
 
 
 def focus(d, wid):

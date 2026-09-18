@@ -1,0 +1,11 @@
+; claude: unit tests for playground/raster/, run by 'make test'
+; (dune runtest). Many of them check the worked examples given in the
+; raster/*.mli comments, so those examples can't silently become wrong.
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   elm_playground_raster
+ )
+)

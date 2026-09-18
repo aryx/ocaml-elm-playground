@@ -1,0 +1,16 @@
+; Same games as ../dune, on the software rasterizer (see
+; examples/software/dune for how copy_files works)
+(copy_files ../*.ml)
+
+(executables
+  (names
+    Snake
+    Pong
+    Tetris
+    Asteroid
+  )
+  (libraries
+    elm_playground
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

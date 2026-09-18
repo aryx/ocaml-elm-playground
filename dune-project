@@ -99,6 +99,37 @@ Nope
     (elm_system (= :version))
   )
 )
+(package (name elm_playground_raster)
+  (synopsis "From-scratch 2D rasterization algorithms, for teaching")
+  (description "\
+  Framebuffer, affine transforms, and the classic 2D rasterization
+  algorithms (polygon filling, Bresenham lines, midpoint circles, image
+  warping, compositing), written to be read, with references to the
+  papers that introduced them. No dependencies. Used by
+  elm_playground_software; see docs/claude_notes/plan_software_2d.md.
+")
+  (depends
+    (ocaml (>= "4.08.0"))
+    (testo :with-test)
+    (alcotest :with-test)
+  )
+)
+(package (name elm_playground_software)
+  (synopsis "Native playground platform with a from-scratch software rasterizer")
+  (description "\
+  Like elm_playground_native, but every pixel is computed by our own
+  code (elm_playground_raster) instead of Cairo; SDL only opens the
+  window, reads input, and shows the pixels.
+")
+  (depends
+    (ocaml (>= "4.08.0"))
+    tsdl
+    (elm_core (= :version))
+    (elm_playground (= :version))
+    (elm_playground_raster (= :version))
+    (elm_playground_native_common (= :version))
+  )
+)
 (package (name elm_playground_web)
   (synopsis "Web vdom-based playground platform")
   (description "")

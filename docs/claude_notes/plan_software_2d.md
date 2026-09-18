@@ -210,12 +210,19 @@ key (grep of `games/`, `examples/`), so plain letters are fine, as in 3D:
 0. **DONE.** **Extract `native_common/`** (image decoding without Cairo, 2D SDL
    loop) out of `playground/native/`; verify every `examples/`/`games/`
    native demo behaves the same.
-1. **Skeleton backend**: `Framebuffer` + SDL blit + event loop;
+1. **DONE.** **Skeleton backend**: `Framebuffer` + SDL blit + event loop;
    `Shape_render_software` renders every form as its (transformed)
    bounding box in its color. Wire `examples/software/` for `Picture`
    and `Misc`. Proves the pipeline end to end, zero Cairo
-   in `dune` `libraries`.
-2. **`Affine` + `Fill`**: polygons, rectangles, ngons, groups/rotate/
+   in `dune` `libraries`. In the end: `Affine` came in this phase
+   already (the boxes need the real transforms, groups included), all
+   examples and games are wired (`examples/software/`,
+   `games/software/`, `copy_files ../*.ml`), and
+   `playground/raster/tests/` has Testo tests checking the worked
+   examples given in the `.mli` comments. Every box matched the
+   position/size/rotation of the Cairo shape in side-by-side
+   screenshots; 60 fps everywhere.
+2. **`Fill`**: polygons, rectangles, ngons, groups/rotate/
    scale/move, alpha blending. Most games (`Snake`, `Tetris`, `Pong`,
    `Asteroid`) should now look right.
 3. **`Circle`**: midpoint circle fast path + ellipse flattening for

@@ -1,0 +1,19 @@
+; Reuses ../Foo.ml as-is via copy_files (a build-time rule, not a
+; committed duplicate/symlink), so the exact same backend-agnostic source
+; runs against elm_playground_software here and elm_playground_native
+; (Cairo) in ../dune -- compare e.g.
+;   dune exec examples/Picture.exe
+;   dune exec examples/software/Picture.exe
+(copy_files ../*.ml)
+
+(executables
+  (names
+    Picture Smiley Words Misc
+    Animation
+    Mouse Keyboard Turtle Mario
+  )
+  (libraries
+    elm_playground
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)
