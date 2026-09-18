@@ -77,6 +77,7 @@ and form3d =
   | Polygon3d of Playground.color * vec3 list
   | TexturedPolygon3d of string * (vec3 * (number * number)) list
   | SmoothPolygon3d of Playground.color * (vec3 * vec3) list
+  | Hud of Playground.shape
   | Group3d of shape3d list
 
 let polygon3d color points =
@@ -84,6 +85,8 @@ let polygon3d color points =
   { alpha = 1.; form = Polygon3d (color, points) }
 
 let group3d shapes = { alpha = 1.; form = Group3d shapes }
+
+let hud (s : Playground.shape) : shape3d = { alpha = 1.; form = Hud s }
 
 let textured_quad src p0 p1 p2 p3 =
   { alpha = 1.; form = TexturedPolygon3d (src, [ (p0, (0., 0.)); (p1, (1., 0.)); (p2, (1., 1.)); (p3, (0., 1.)) ]) }
@@ -196,6 +199,12 @@ let rec map_points (f : vec3 -> vec3) (shape : shape3d) : shape3d =
       { shape with form = TexturedPolygon3d (src, List.map (fun (p, uv) -> (f p, uv)) points) }
   | SmoothPolygon3d (color, points) ->
       { shape with form = SmoothPolygon3d (color, List.map (fun (p, n) -> (f p, n)) points) }
+  (* claude: a Hud shape is screen-space, not scene-space -- move3d/
+   * scale3d (both built on map_points) are deliberately no-ops on it,
+   * even nested inside a moved/scaled Group3d, since the whole point
+   * of a HUD is that it stays fixed on screen. See Hud's doc comment
+   * in Playground3d.mli. *)
+  | Hud _ -> shape
   | Group3d shapes -> { shape with form = Group3d (List.map (map_points f) shapes) }
 
 (* like map_points, but also applies [f] to each point's normal (for
@@ -210,6 +219,7 @@ let rec map_points_and_normals (f : vec3 -> vec3) (shape : shape3d) : shape3d =
   | SmoothPolygon3d (color, points) ->
       { shape with form = SmoothPolygon3d (color, List.map (fun (p, n) -> (f p, f n)) points) }
   | Group3d shapes -> { shape with form = Group3d (List.map (map_points_and_normals f) shapes) }
+  | Hud _ -> shape (* same no-op as map_points, see there *)
   | Polygon3d _ | TexturedPolygon3d _ -> map_points f shape
 
 let move3d dx dy dz shape = map_points (fun p -> add p (dx, dy, dz)) shape
@@ -241,8 +251,19 @@ let scale3d s shape = map_points (scale_vec3 s) shape
 
 let rec fade3d alpha shape =
   match shape.form with
-  | Polygon3d _ | TexturedPolygon3d _ | SmoothPolygon3d _ -> { shape with alpha }
+  | Polygon3d _ | TexturedPolygon3d _ | SmoothPolygon3d _ | Hud _ -> { shape with alpha }
   | Group3d shapes -> { shape with form = Group3d (List.map (fade3d alpha) shapes) }
+
+(* shared by both backends -- see Hud's doc comment in Playground3d.mli
+ * and docs/claude_notes/done/plan_hud.md. [Playground.fade shape.alpha s]
+ * reuses the exact per-leaf alpha fade3d already sets, so a Hud shape
+ * fades the same way every other leaf does, with no special-casing
+ * needed in fade3d itself above. *)
+let rec collect_hud_shapes (shape : shape3d) : Playground.shape list =
+  match shape.form with
+  | Hud s -> [ Playground.fade shape.alpha s ]
+  | Group3d shapes -> List.concat_map collect_hud_shapes shapes
+  | Polygon3d _ | TexturedPolygon3d _ | SmoothPolygon3d _ -> []
 
 (*****************************************************************************)
 (* Camera *)
@@ -313,6 +334,7 @@ let rec flatten_faces (shape : shape3d) : (Playground.color * vec3 list * number
        * as Polygon3d, so a sphere still renders (faceted, unlit) on
        * web, just without the smooth-shading point of having it. *)
       [ (color, List.map fst points, shape.alpha) ]
+  | Hud _ -> [] (* collected separately by collect_hud_shapes, contributes no 3D geometry *)
   | Group3d shapes -> List.concat_map flatten_faces shapes
 
 let render3d_to_2d (camera : camera) (screen : Playground.screen) (shape : shape3d) :
@@ -341,7 +363,14 @@ let render3d_to_2d (camera : camera) (screen : Playground.screen) (shape : shape
            if List.length projected < 3 then None
            else Some (Playground.polygon color projected |> Playground.fade alpha))
   in
-  Playground.group shapes2d
+  (* claude: appended after the depth-sorted 3D-derived shapes so a Hud
+   * shape paints on top of them (later elements in a Playground.group
+   * are drawn on top, same convention relied on elsewhere) -- reaches
+   * elm_playground_web's existing, unmodified SVG renderer exactly the
+   * way any other Playground.shape already does, zero new rendering
+   * code needed on this backend. *)
+  let hud_shapes = collect_hud_shapes shape in
+  Playground.group (shapes2d @ hud_shapes)
 
 (*****************************************************************************)
 (* App *)

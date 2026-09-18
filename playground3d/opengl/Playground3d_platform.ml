@@ -200,6 +200,7 @@ let rec collect_batches (shape : Playground3d.shape3d) : (material * vertex_data
                [ (pa, na, color, (0., 0.)); (pb, nb, color, (0., 0.)); (pc, nc, color, (0., 0.)) ])
       in
       [ (Flat, verts) ]
+  | Hud _ -> [] (* collected separately by Playground3d.collect_hud_shapes, contributes no geometry *)
   | Group3d shapes -> List.concat_map collect_batches shapes
 
 (* claude: merges every shape's batches into at most one Flat group

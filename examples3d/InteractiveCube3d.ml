@@ -16,9 +16,11 @@
  * fresh OCaml implementation of that interactive idea, not a
  * line-by-line translation. Notable adaptations:
  *  - a single-color cube (this library's cube has no per-face colors);
- *  - no on-screen instructions text -- game3d's view has no channel
- *    for a 2D HUD overlay on top of the 3D scene yet (see
- *    docs/claude_notes/plan_playground3d.md);
+ *  - the on-screen instructions text is a `hud` (see
+ *    docs/claude_notes/done/plan_hud.md) -- a good demo of `Hud`'s
+ *    "screen-space, not scene-space" semantics specifically, since it
+ *    has to stay put in the corner while the mouse-driven turntable
+ *    rotation below spins literally everything else in the scene;
  *  - the whole scene (not just the cube) gets a mouse-driven turntable
  *    rotation around Y, this library's "up" axis (lucamug's world, and
  *    elm-playground-3d in general, is Z-up).
@@ -61,7 +63,12 @@ let view (computer : Playground.computer) ((ax, az) : number * number) : camera 
     |> rotate3d 0. (computer.mouse.mx / 3.) 0.
   in
   let cam = camera ~eye:(0., 4., 9.) ~target:(0., 0.5, 0.) () in
-  (cam, [ scene ])
+  let instructions =
+    hud
+      (words black "Arrows: move -- Mouse: look/orbit -- hold d: drop -- hold s: freeze spin"
+      |> move 0. (computer.screen.top -. 30.))
+  in
+  (cam, [ scene; instructions ])
 
 let update (computer : Playground.computer) ((ax, az) : number * number) : number * number =
   let (dx, dz) = to_xy computer.keyboard in

@@ -1,5 +1,4 @@
 open Basics
-open Color
 module E = Sub
 open Tsdl
 
@@ -21,261 +20,26 @@ open Tsdl
 
 let spf = Printf.sprintf
 
-let ( =~ ) s re =
-  Str.string_match (Str.regexp re) s 0
-let matched (i: int) (s: string) : string = Str.matched_group i s
-let _matched1 s = matched 1 s
-let _matched2 s = (matched 1 s, matched 2 s)
-let matched3 s = (matched 1 s, matched 2 s, matched 3 s)
-
 (*****************************************************************************)
 (* Render (independent of Playground) *)
 (*****************************************************************************)
+(* The actual shape-drawing code (render_shape and everything it calls)
+ * now lives in Shape_render_native, a plain sibling module, so it's
+ * usable from a second, independent caller too (playground3d/native/'s
+ * HUD overlay pass -- see docs/claude_notes/plan_hud.md). *)
 
-let (g_cr: Cairo.context option ref) = ref None
-let get_cr () = 
-  match !g_cr with
-  | None -> failwith "no cr"
-  | Some x -> x
+(* Cairo (0,0) is at the top left of the screen, y down; Elm's
+ * convention (y up) is the opposite -- see the identical convert in
+ * Shape_render_native, duplicated here (a one-line helper, not worth
+ * exposing from that module's minimal render-only interface) since
+ * mouse-event coordinates need the same conversion. *)
+let convert (x, y) = (x, -.y)
 
-let g_sx = ref 0
-let g_sy = ref 0
-
-(* less: save_excursion? *)
-let with_cr f = 
-  let cr = get_cr () in
-  Cairo.save cr;
-  let res = f cr in
-  Cairo.restore cr;
-  res
-
-let set_color cr color alpha =
-  let (r,g,b) =
-    match color with
-    | Rgb (r,g,b) -> float r / 255., float g / 255., float b / 255.
-    | Hex s ->
-        let s = String.lowercase_ascii s in
-        if s =~ "^#\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)\\([a-f0-9][a-f0-9]\\)$"
-        then 
-          let (a, b, c) = matched3 s in
-          let f x =
-            (("0x" ^ x) |> int_of_string |> float) / 255.
-          in
-          f a, f b, f c
-        else failwith (spf "wrong color format: %s" s)
-  in
-  Cairo.set_source_rgba cr r g b (clamp 0. 1. alpha)
-
-let debug_coordinates cr = 
-  let sx = !g_sx in
-  let sy = !g_sy in
+let debug_coordinates cr ~sx ~sy =
   let (x0,y0) = Cairo.device_to_user cr 0. 0. in
   let (xmax, ymax) = Cairo.device_to_user cr (float sx) (float sy) in
   Logs.debug (fun m -> m "device 0,0 => %.1f %.1f, device %d,%d => %.1f %.1f"
     x0 y0 sx sy xmax ymax)
-
-(* Cairo (0,0) is at the top left of the screen, in which as y goes up,
- * the coordinates are down on the physical screen. Elm uses a better
- * default where if your y goes up, then it's upper on the screen.
- * Here we convert the Elm coordinate system to Cairo. Note that
- * it's hard to use one of the rotate/translate Cairo function to emulate
- * that as only y need to change (maybe need to create a special matrix?)
- *)
-let convert (x, y) =
-  x, -. y
-
-
-let render_transform cr x y angle s =
-  Cairo.translate cr x y;
-  Cairo.rotate cr (-. (Basics.degrees_to_radians angle));
-  Cairo.scale cr s s;
-  ()
-
-
-let rec ngon_points cr i n radius =
-  if i == n 
-  then ()
-  else begin
-    let a = turns (float i / float n - 0.25) in
-    let x = radius * cos a in
-    let y = radius * sin a in
-    (if i = 0
-    then Cairo.move_to cr x y
-    else Cairo.line_to cr x y
-    );
-    ngon_points cr (Stdlib.(+) i 1) n radius
-  end
-
-let render_ngon hook color n radius x y angle s alpha = 
-  (*pr2_gen (x,y,n,radius);*)
-  let (x, y) = convert (x, y) in
-
-  with_cr (fun cr ->
-    hook cr;
-    set_color cr color alpha;
-    render_transform cr x y angle s;
-
-    ngon_points cr 0 n radius;
-    Cairo.fill cr;
-  )
-
-
-let render_oval hook color w h x y _angle _s alpha = 
-  (*pr2_gen (x,y,w,h);*)
-
-  let x = x - (w / 2.) in
-  let y = y + (h / 2.) in
-  let (x,y) = convert (x,y) in
-
-  with_cr (fun cr -> 
-    hook cr;
-    set_color cr color alpha;
-
-    (* code in cairo.mli to draw ellipsis *)
-    Cairo.translate cr (x +. w /. 2.) (y +. h /. 2.);
-    Cairo.scale cr (w /. 2.) (h /. 2.);
-
-    Cairo.arc cr 0. 0. 1. 0. pi2;
-    Cairo.fill cr;
-  )
-
-
-let render_circle hook color radius x y angle s alpha =
-  (*pr2_gen (x,y, radius);*)
-  let (x,y) = convert (x,y) in
-
-  with_cr (fun cr ->
-    hook cr;
-    set_color cr color alpha;
-    render_transform cr x y angle s;
-
-    Cairo.arc cr 0. 0. radius 0. pi2;
-    Cairo.fill cr;
-  )
-
-let render_polygon hook color points x y angle s alpha =
-  let (x,y) = convert (x,y) in
-
-  with_cr (fun cr ->
-    hook cr;
-    set_color cr color alpha;
-    render_transform cr x y angle s;
-
-    (match points with
-    | [] -> failwith "not enough points in polygon"
-    | (x, y)::xs ->
-       let (x,y) = convert (x,y) in
-       Cairo.move_to cr x y;
-       xs |> List.iter (fun (x, y) ->
-         let (x,y) = convert (x,y) in
-         Cairo.line_to cr x y
-       );
-       Cairo.line_to cr x y;
-       Cairo.fill cr;
-    )
-  )
-
-
-let render_rectangle hook color w h x y angle s alpha = 
-  render_polygon hook color 
-    [ (-. w / 2., h /. 2.);
-      (   w / 2., h /. 2.);
-      (   w / 2., -.h /. 2.);
-      (-. w / 2., -.h /. 2.);
-    ] x y angle s alpha
-
-let render_words hook color str x y angle s alpha =
-  let (x,y) = convert (x,y) in
-
-  with_cr (fun cr ->
-    hook cr;
-    set_color cr color alpha;
-    render_transform cr x y angle s;
-
-    (* claude: same font as the web backend (see
-     * Playground.words_font_size), instead of Cairo's default 10 *)
-    Cairo.select_font_face cr Playground.words_font_family;
-    Cairo.set_font_size cr Playground.words_font_size;
-
-    (* claude: center the text on (x, y) the same way the web backend does
-     * with text-anchor="middle" and dominant-baseline="central": use the
-     * advance width (not the width of the inked part), and the font's
-     * ascent/descent (not the inked height of this particular string,
-     * which made e.g. "aaa" and "Ag" sit at different heights). The
-     * baseline goes (ascent - descent) / 2 below the center, which puts
-     * the middle of the font's box on y. *)
-    let (text_ext : Cairo.text_extents) = Cairo.text_extents cr str in
-    let (font_ext : Cairo.font_extents) = Cairo.font_extents cr in
-    Cairo.move_to cr
-      (-. text_ext.x_advance / 2.)
-      ((font_ext.ascent - font_ext.descent) / 2.);
-    Cairo.show_text cr str;
-  )
-
-let render_image hook w h src x y angle s _alpha =
-  let (x,y) = convert (x,y) in
-
-  (* claude: surface_of_url_at to animate animated GIFs (e.g., Mario's
-   * walk sprites), like browsers do on the web *)
-  match Image_native.surface_of_url_at ~time:(Unix.gettimeofday ()) src with
-  | None -> ()
-  | Some surface ->
-    (* claude: Cairo.set_source_surface only positions a surface's origin,
-     * it never resizes its pixel content to fill (w,h) -- so without this
-     * scale, an image whose native decoded size differs from the
-     * requested (w,h) (e.g. Mario's 35x35 GIF sprites drawn via
-     * "image 70. 70. ...") is drawn at its native size, anchored at the
-     * top-left of the (w,h) box instead of filling/centering it. *)
-    let surface_w = float (Cairo.Image.get_width surface) in
-    let surface_h = float (Cairo.Image.get_height surface) in
-    with_cr (fun cr ->
-      hook cr;
-      render_transform cr x y angle s;
-      Cairo.scale cr (w /. surface_w) (h /. surface_h);
-
-      Cairo.set_source_surface cr surface
-        ~x:(-. surface_w /. 2.) ~y:(-. surface_h /. 2.);
-      Cairo.paint cr;
-    )
-
-(*****************************************************************************)
-(* Render playground *)
-(*****************************************************************************)
-open Playground
-
-(* ugly, to handle Group *)
-type hook = Cairo.context -> unit
-let empty_hook = (fun _cr -> ())
-
-let rec (render_shape: hook -> shape -> unit) = 
-  fun hook { x; y; angle; scale; alpha; form} ->
-  match form with
-  | Circle (color, radius) -> 
-     render_circle hook color radius x y angle scale alpha
-  | Oval (color, width, height) ->
-     render_oval hook color width height x y angle scale alpha
-  | Rectangle (color, width, height) ->
-     render_rectangle hook color width height x y angle scale alpha
-  | Ngon (color, n, radius) ->
-     render_ngon hook color n radius x y angle scale alpha
-  | Polygon (color, points) -> 
-     render_polygon hook color points x y angle scale alpha
-  | Words (color, str) ->
-     render_words hook color str x y angle scale alpha
-  | Image (w, h, src) ->
-     render_image hook w h src x y angle scale alpha
-  | Group xs ->
-     (* TODO: alpha *)
-     let hook = (fun cr -> 
-              hook cr; 
-              let (x, y) = convert (x, y) in
-              render_transform cr x y angle scale
-     ) in
-     List.iter (render_shape hook) xs
-  
-let (render: shape list -> unit) = fun shapes ->
-    List.iter (render_shape empty_hook) shapes
-
 
 (*****************************************************************************)
 (* FPS (using Cairo) *)
@@ -395,10 +159,7 @@ let run_app app =
   let cr = Cairo.create sdl_surface in
 
   Cairo.identity_matrix cr;
-  g_cr := Some cr;
-  g_sx := sx;
-  g_sy := sy;
-  debug_coordinates cr;
+  debug_coordinates cr ~sx ~sy;
 
   (* claude: show a "Loading..." message right away, then run any queued
    * preload_image downloads -- without this the window doesn't show
@@ -437,7 +198,7 @@ let run_app app =
     (* elm-convetion: set the origin (0, 0) in the center of the surface *)
     Cairo.identity_matrix cr;
     Cairo.translate cr (float sx / 2.) (float sy / 2.);
-    (*debug_coordinates cr;*)
+    (*debug_coordinates cr ~sx ~sy;*)
 
     (* one frame *)
     let apply_playground_event pevent =
@@ -503,7 +264,7 @@ let run_app app =
     apply_playground_event (E.ETick (Unix.gettimeofday ()));
 
     let shapes = app.Playground.view !model in
-    render shapes;
+    Shape_render_native.render cr shapes;
 
     Cairo.restore cr;
     Fps.draw_fps cr (float sx) (float sy);

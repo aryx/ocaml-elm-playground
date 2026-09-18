@@ -131,7 +131,9 @@ Nope
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
+    (cairo2 (>= "0.6.4")) ; for the HUD pass (Shape_render_native), see docs/claude_notes/done/plan_hud.md
     (stb_image (>= "0.4")) ; Stb_image.t, used by the type of sample_texture (Texture_native itself now lives in elm_playground_3d_native_common)
+    (elm_playground_native (= :version)) ; Shape_render_native, for the HUD pass
     (elm_playground_3d (= :version))
     (elm_playground_3d_native_common (= :version))
   )

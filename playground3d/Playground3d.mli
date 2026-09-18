@@ -59,6 +59,9 @@ and form3d =
           No texture support on this constructor (kept minimal, like
           everything else added incrementally here) -- combine with
           {!TexturedPolygon3d} yourself if you ever need both. *)
+  | Hud of Playground.shape
+      (** A 2D overlay shape, drawn in screen space on top of the whole
+          3D scene -- see {!hud}. *)
   | Group3d of shape3d list
 
 (** A flat polygon in world space, e.g. one face of a cube. Give its
@@ -167,6 +170,42 @@ val scale3d : number -> shape3d -> shape3d
     with a parent's alpha) -- same simplification lucamug's
     elm-playground-3d makes. *)
 val fade3d : number -> shape3d -> shape3d
+
+(** {2 HUD}
+
+    [game3d]'s [view3d] only ever returns a 3D scene -- there is no
+    separate "2D overlay" return value. Instead, [hud] wraps an
+    ordinary 2D {!Playground.shape} (built with any of the existing 2D
+    combinators -- {!Playground.words}/{!Playground.rectangle}/
+    {!Playground.image}/{!Playground.group}/{!Playground.move}/
+    {!Playground.fade}/...) into a {!shape3d} you drop directly into
+    the list you already return, e.g.:
+    {[
+      (cam, [ ground; player; stars_group;
+              hud (words black (Printf.sprintf "Score: %d" m.score)
+                   |> move (computer.screen.left +. 40.) (computer.screen.top -. 40.)) ])
+    ]}
+    positioned using the exact same coordinate system (origin at
+    screen center, {!Playground.screen}'s bounds, already available in
+    [view3d]'s [computer] argument) as a 2D [picture]/[animation]/
+    [game].
+
+    {b A [Hud] shape is screen-space, not scene-space:} {!move3d},
+    {!rotate3d}, and {!scale3d} are no-ops on it, even nested inside a
+    {!group3d} that itself gets moved/rotated -- the whole point of a
+    HUD is that it stays fixed on screen regardless of what the 3D
+    scene around it is doing. {!fade3d} does apply (it reaches every
+    leaf, {!Hud} included, the same way it already reaches every other
+    form3d case). *)
+val hud : Playground.shape -> shape3d
+
+(**/**)
+(* claude: exposed only so Playground3d_platform implementations
+ * (native, web) can extract the Hud shapes out of a scene to draw
+ * separately from the 3D geometry; not meant to be used directly by
+ * applications. *)
+val collect_hud_shapes : shape3d -> Playground.shape list
+(**/**)
 
 (** {2 Camera}
 

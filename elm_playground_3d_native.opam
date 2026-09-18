@@ -12,7 +12,9 @@ depends: [
   "dune" {>= "3.0"}
   "ocaml" {>= "4.08.0"}
   "tsdl"
+  "cairo2" {>= "0.6.4"}
   "stb_image" {>= "0.4"}
+  "elm_playground_native" {= version}
   "elm_playground_3d" {= version}
   "elm_playground_3d_native_common" {= version}
   "odoc" {with-doc}

@@ -451,6 +451,7 @@ let rec flatten_faces (shape : Playground3d.shape3d) :
       let normal = face_normal (List.map fst points) in
       [ (Textured src, List.map (fun (p, uv) -> (p, uv, normal)) points) ]
   | SmoothPolygon3d (color, points) -> [ (Flat color, List.map (fun (p, n) -> (p, (0., 0.), n)) points) ]
+  | Hud _ -> [] (* collected separately by Playground3d.collect_hud_shapes, contributes no geometry *)
   | Group3d shapes -> List.concat_map flatten_faces shapes
 
 let face_centroid (points : vec3 list) : vec3 =
@@ -890,6 +891,13 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
 
   let pixels = Sdl.get_surface_pixels window_surface Bigarray.int32 in
   assert (Bigarray.Array1.dim pixels = sx * sy);
+  (* claude: a 2D *view* onto the same underlying memory as [pixels]
+   * (Bigarray.reshape shares data, it doesn't copy) -- Cairo.Image.
+   * create_for_data32 wants Array2.t, same shape the 2D backend's own
+   * Playground_platform.ml reshapes into; [pixels] itself stays the
+   * flat Array1.t the rasterizer indexes into directly. Only needed
+   * by the HUD pass below, but cheap to build once here regardless. *)
+  let pixels_2d = Bigarray.reshape_2 (Bigarray.genarray_of_array1 pixels) sy sx in
 
   let* pixel_format = Sdl.alloc_format (Sdl.get_surface_format_enum window_surface) in
   g_pixel_format := Some pixel_format;
@@ -923,7 +931,25 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
       : unit =
     Bigarray.Array1.fill pixels background_pixel;
     Array.fill zbuffer 0 (sx * sy) infinity;
-    render_shape3d pixels zbuffer ~sx ~sy camera (Playground3d.group3d shapes)
+    let group = Playground3d.group3d shapes in
+    render_shape3d pixels zbuffer ~sx ~sy camera group;
+    (* claude: a HUD pass, once the 3D scene above is fully rasterized
+     * into [pixels] for this frame -- reuses the exact same trick the
+     * 2D backend already uses (Cairo.Image.create_for_data32 pointed
+     * directly at an SDL window surface's own pixel Bigarray), just
+     * applied as an extra pass on top instead of the only pass. No
+     * Cairo.paint/clear here (unlike the 2D backend's per-frame reset)
+     * -- this must only add pixels on top, never erase the 3D frame
+     * underneath. See docs/claude_notes/done/plan_hud.md. *)
+    match Playground3d.collect_hud_shapes group with
+    | [] -> ()
+    | hud_shapes ->
+        let surface = Cairo.Image.create_for_data32 ~w:sx ~h:sy pixels_2d in
+        let cr = Cairo.create surface in
+        Cairo.identity_matrix cr;
+        Cairo.translate cr (float_of_int sx /. 2.) (float_of_int sy /. 2.);
+        Shape_render_native.render cr hud_shapes;
+        Cairo.Surface.flush surface
   in
   let present () =
     let* () = Sdl.update_window_surface sdl_window in

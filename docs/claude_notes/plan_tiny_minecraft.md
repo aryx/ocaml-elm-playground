@@ -103,11 +103,11 @@ before this can feel like an actual FPS-style game:
    addition to the native backend (e.g. exposing relative deltas
    somehow) -- worth its own short investigation before Phase 2 below,
    not assumed away.
-2. **No 2D HUD/overlay channel** (already flagged repeatedly in this
-   project): no way to draw a crosshair, selected-block indicator, or
-   position/FPS readout on top of the 3D scene. `game3d`'s `view3d`
-   only ever returns a 3D scene. A first version can simply skip the
-   HUD (crosshair included) rather than block on this.
+2. ~~No 2D HUD/overlay channel~~ **RESOLVED**: `docs/claude_notes/done/plan_hud.md`
+   added `Playground3d.hud`, so a crosshair/selected-block indicator/
+   position readout can be drawn as an ordinary 2D `Playground.shape`
+   dropped into `view3d`'s returned list (see `notes_3d.md` section
+   12). No longer a blocker for Phase 6 below.
 
 ### Physics and collision
 
@@ -138,10 +138,10 @@ player's bounding box's corners, not real geometric collision detection
 4. **Physics**: gravity, jumping, fly-mode toggle, collision.
 5. **Interaction**: `hit_test`-based block add/remove on click, block
    type selection.
-6. **Polish**: HUD (blocked on the 2D-overlay-channel gap -- may need
-   that feature built first, or ship without a HUD initially), matching
-   the original's world-generation "hills" more closely if the flat/
-   simple version from Phase 1 feels too bare.
+6. **Polish**: HUD (crosshair/selected-block indicator, now
+   unblocked -- see above), matching the original's world-generation
+   "hills" more closely if the flat/simple version from Phase 1 feels
+   too bare.
 
 ## Verification
 

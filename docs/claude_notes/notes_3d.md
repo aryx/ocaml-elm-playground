@@ -618,6 +618,79 @@ its own, start to finish.
   space, so exact rather than approximate) and holds the texture
   perfectly still on the rotating cube.
 
+## 12. HUD: a 2D overlay on top of the 3D scene
+
+Every real-time 3D game needs *some* 2D on top of the 3D -- a score, a
+health bar, a crosshair, an "instructions" text. This is universally
+called a **HUD** ("heads-up display", borrowed from the transparent
+displays projected onto a fighter pilot's windshield). The
+implementation idea is almost always the same, regardless of engine:
+render the 3D scene first, then render flat 2D elements *on top of*
+the finished image, in screen space (pixel/screen coordinates, not
+world-space X/Y/Z) -- a HUD element has no position "in" the 3D world
+at all, and in particular no depth to z-test against anything.
+
+`game3d`'s `view3d` still only ever returns one thing, a 3D scene
+(`camera * shape3d list`) -- no second "2D overlay" return value was
+added. Instead, `Playground3d.hud` wraps an ordinary 2D
+`Playground.shape` (built with `words`/`rectangle`/`image`/`group`/
+`move`/`fade`, the exact same combinators §1's `picture`/`animation`/
+`game` already use) into a `shape3d` you drop directly into the list:
+
+```ocaml
+(cam, [ ground; player; stars_group;
+        hud (words black (Printf.sprintf "Score: %d" m.score)
+             |> move (computer.screen.left +. 60.) (computer.screen.top -. 40.)) ])
+```
+
+Nothing new to learn if you already know the 2D playground -- `hud` is
+the *only* new combinator, and a `Hud` shape uses the exact same
+coordinate system (origin at screen center, `computer.screen`'s
+bounds) as any 2D `picture`. The one thing worth internalizing: a
+`Hud` shape is **exempt from `move3d`/`rotate3d`/`scale3d`** -- they're
+no-ops on it, even nested inside a `group3d` that itself gets rotated
+(e.g. `InteractiveCube3d.ml`'s mouse-driven turntable). That's not an
+inconsistency, it's the whole point of "HUD": text that's supposed to
+stay glued to the corner of the screen would look broken if the 3D
+scene's own transforms could drag it around.
+
+**How each backend actually draws it**, since "on top of the finished
+image" means something different depending on how that image gets
+made in the first place:
+
+- **Native** (the software rasterizer) already writes every pixel by
+  hand into a raw SDL window-surface buffer. Once the 3D scene is
+  fully rasterized into that buffer for the frame, the HUD pass wraps
+  the *same* pixel buffer in a fresh `Cairo.context` (the identical
+  `Cairo.Image.create_for_data32` trick the 2D backend already uses to
+  let Cairo draw straight into an SDL surface) and draws the HUD
+  shapes directly on top, via `Shape_render_native.render` -- the
+  exact same Cairo-based 2D shape-drawing code the 2D `elm_playground_native`
+  backend uses for *everything*, reused unchanged here for just the
+  HUD layer. No new rendering code, no alpha-blending step of its own
+  to write: Cairo's own painting already only overwrites the pixels a
+  shape actually covers.
+- **Web**: since this backend already compiles the whole 3D scene down
+  to ordinary `Playground.shape` values every frame (`render3d_to_2d`,
+  §10) and hands them to the existing SVG renderer, a `Hud` shape just
+  needs to ride along in that same list, unprojected -- appended
+  *after* the 3D-derived shapes (SVG draws later elements on top), so
+  it reaches the unmodified web renderer exactly like any other 2D
+  shape would. Genuinely free: zero new rendering code at all.
+- **OpenGL**: not supported yet (see `docs/claude_notes/done/plan_opengl.md`'s
+  Scope) -- that backend owns its own GPU-side framebuffer rather than
+  a plain CPU pixel buffer, so native's "just point Cairo at the same
+  memory" trick doesn't transfer directly; it would need rendering the
+  HUD to an offscreen surface, uploading it as a texture, and drawing
+  a screen-aligned quad with it in a separate pass.
+
+See `docs/claude_notes/done/plan_hud.md` for the full design writeup
+(including the one non-obvious implementation wrinkle: dune seals a
+virtual module's implementation to exactly its virtual `.mli`, so
+`playground/native/Playground_platform.ml`'s shape-drawing code
+couldn't be called from `playground3d/native/` directly until it was
+extracted into a new plain sibling module, `Shape_render_native`).
+
 ## Glossary (quick reference)
 
 - **Vertex**: one corner point of a shape.

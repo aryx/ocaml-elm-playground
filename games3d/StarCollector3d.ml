@@ -14,18 +14,17 @@
  * elm-playground-style `game` API). This is a fresh OCaml
  * implementation of the same idea using this project's own
  * flat-colored, unlit shapes (no real lighting here yet -- see
- * docs/claude_notes/notes_3d.md's section 8) and boxes for the
- * player/stars (this library has no sphere primitive yet, unlike
- * elm-3d-scene's `sphere`).
+ * docs/claude_notes/notes_3d.md's section 8) and a real `sphere` for
+ * the stars (this file originally used boxes -- Playground3d.sphere
+ * didn't exist yet when it was first written -- which is why an
+ * earlier version of this comment had to explain why a "star
+ * collector" game rendered its stars as cubes).
  *
  * Controls: arrow keys move the player box in the X/Z plane; walk into
  * a star to collect it (it vanishes and the score increments); stars
  * keep respawning at random positions to keep a target count on
- * screen. There is no on-screen score display yet -- game3d's view has
- * no channel for a 2D HUD overlay on top of the 3D scene (see
- * docs/claude_notes/plan_playground3d.md); the score is tracked
- * internally and visible progress comes from watching stars appear and
- * disappear. *)
+ * screen. The score is shown on screen via `hud` (see
+ * docs/claude_notes/done/plan_hud.md). *)
 open Basics (* elm-core: float +, -, *, /, clamp *)
 open Playground
 open Playground3d
@@ -66,13 +65,14 @@ let view (computer : Playground.computer) (m : model) : camera * shape3d list =
   let player =
     box blue 0.8 0.8 0.8 |> rotate3d 0. (spin 4. computer.time) 0. |> move3d m.player_x 0.4 m.player_z
   in
-  let stars =
-    m.stars
-    |> List.map (fun (s : star) ->
-           box yellow 0.4 0.4 0.4 |> rotate3d 0. (spin 2. computer.time) 0. |> move3d s.sx 0.3 s.sz)
-  in
+  let stars = m.stars |> List.map (fun (s : star) -> sphere yellow 0.3 |> move3d s.sx 0.3 s.sz) in
   let cam = camera ~eye:(m.player_x, 8., m.player_z + 8.) ~target:(m.player_x, 0., m.player_z) () in
-  (cam, ground :: player :: stars)
+  let score_hud =
+    hud
+      (words black (Printf.sprintf "Score: %d" m.score)
+      |> move (computer.screen.left +. 60.) (computer.screen.top -. 40.))
+  in
+  (cam, (ground :: player :: stars) @ [ score_hud ])
 
 let app = game3d view update init
 let main = Playground3d_platform.run_app3d app
