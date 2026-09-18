@@ -93,9 +93,10 @@ The no-WebGL message was checked with Chrome's `--disable-3d-apis`.
 
 - **No WebGL**: DONE (see 3).
 - **Wireframe**: DONE, as `gl.LINES` (see 3).
-- **A real browser**: keys and mouse (`InteractiveCube3d`,
-  `StarCollector3d`) were only tried in headless Chrome, which can't
-  press keys.
+- **A real browser**: `StarCollector3d` (arrow keys) and
+  `TexturedCube3d` (its texture loaded over HTTP) work, through
+  `make serve-build`. Not tried there yet: the mouse
+  (`InteractiveCube3d`) and `Minecraft3d` (pointer lock, and its fps).
 - **Publishing**: the pages go live only once `next` is merged into
   `master` and `make website` is run there (with a `git add -f` of the
   gitignored `.bc.js`); `OPAMS`/`ODOC_DIRS` in the `Makefile` still
