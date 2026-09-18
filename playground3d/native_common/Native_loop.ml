@@ -14,6 +14,21 @@ let ( let* ) o f =
   | Error (`Msg msg) -> failwith (Printf.sprintf "TSDL error: %s" msg)
   | Ok x -> f x
 
+let parse_cli_and_setup_logging () =
+  let level = ref (Some Logs.Warning) in
+  let cli_flags =
+    [ ("-v", Arg.Unit (fun () -> level := Some Logs.Info), " verbose mode");
+      ("-verbose", Arg.Unit (fun () -> level := Some Logs.Info), " verbose mode");
+      ("-debug", Arg.Unit (fun () -> level := Some Logs.Debug), " debug mode");
+      ("-quiet", Arg.Unit (fun () -> level := None), " quiet mode")
+    ]
+  in
+  Arg.parse cli_flags
+    (fun s -> raise (Arg.Bad (Printf.sprintf "don't know what to do with %s" s)))
+    (Printf.sprintf "usage: %s [-v|-verbose|-debug|-quiet]" Sys.argv.(0));
+  Logs.set_reporter (Logs.format_reporter ());
+  Logs.set_level !level
+
 let mouse_move mx my (mouse : Playground.mouse) : Playground.mouse = { mouse with mx; my }
 let mouse_down mdown (mouse : Playground.mouse) : Playground.mouse = { mouse with mdown }
 
@@ -106,10 +121,22 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     computer := { !computer with time = Playground.Time (Unix.gettimeofday ()) };
     model := update !computer !model;
 
+    let t0 = Unix.gettimeofday () in
     let v = view !computer !model in
+    let t1 = Unix.gettimeofday () in
     draw !computer v;
+    let t2 = Unix.gettimeofday () in
 
     let elapsed = Unix.gettimeofday () -. frame_start in
+    (* claude: -debug shows this every frame, so a scene that suddenly
+     * gets slow (e.g. games3d/Minecraft3d.ml's ~50k-block world, see
+     * plan_tiny_minecraft.md's Phase 2) can be diagnosed without
+     * adding a throwaway Printf.eprintf each time -- is [view] itself
+     * slow (building the shape3d list), or [draw] (turning it into
+     * pixels)? *)
+    Logs.debug (fun m ->
+        m "frame: %.3fs total (view: %.3fs, draw: %.3fs) -- %.0f fps" elapsed (t1 -. t0) (t2 -. t1)
+          (1. /. Stdlib.max 0.001 elapsed));
     Sdl.set_window_title sdl_window
       (Printf.sprintf "%s -- %dx%d -- %.0f fps" title_prefix sx sy (1. /. Stdlib.max 0.001 elapsed));
     present ();

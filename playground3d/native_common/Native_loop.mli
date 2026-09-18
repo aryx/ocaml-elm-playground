@@ -33,6 +33,24 @@
  * backend's own window/context-creation code too, not just here. *)
 val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
 
+(* claude: a straight copy of playground/native/Playground_platform.ml's
+ * own parse_cli_and_setup_logging (2D run_app calls it as its first
+ * action) -- same -v/-verbose/-debug/-quiet convention, so individual
+ * playground3d examples3d/games3d files don't each need their own
+ * Arg.parse boilerplate either. Duplicated rather than shared only
+ * because a virtual module's implementation is sealed to exactly its
+ * own .mli, the same reason Shape_render_native had to be extracted
+ * into its own module instead of reused directly -- see
+ * docs/claude_notes/done/plan_hud.md. Without a reporter installed,
+ * every Logs.xxx call anywhere in a playground3d program is silently
+ * dropped, so this is also what makes [run]'s own per-frame
+ * Logs.debug fps line (see below), or any Logs.debug call you add
+ * temporarily while investigating something, actually show up: prefer
+ * that over a throwaway Printf.eprintf you have to remember to revert
+ * -- run with -debug once and delete it when you're done, or just
+ * leave it, since it costs nothing when no reporter is installed. *)
+val parse_cli_and_setup_logging : unit -> unit
+
 val mouse_move : float -> float -> Playground.mouse -> Playground.mouse
 val mouse_down : bool -> Playground.mouse -> Playground.mouse
 val update_keyboard : bool -> string -> Playground.keyboard -> Playground.keyboard
@@ -57,7 +75,11 @@ val scancode_to_keystring : string -> string
  * resulting "view" value to [draw] to actually put pixels somewhere,
  * calls [present] (e.g. Sdl.update_window_surface, or
  * Sdl.gl_swap_window), and paces to 60fps. [sdl_window]'s title is
- * updated every frame to "<title_prefix> -- <sx>x<sy> -- <fps> fps".
+ * updated every frame to "<title_prefix> -- <sx>x<sy> -- <fps> fps",
+ * and the same fps/frame-time is logged via Logs.debug every frame
+ * (see [parse_cli_and_setup_logging] -- run with -debug to see it;
+ * useful for e.g. spotting whether [view]/[draw] itself is the slow
+ * part without needing to add your own timing).
  *
  * The caller is responsible for Sdl.init and creating [sdl_window]
  * (and any GL context) beforehand -- this function only drives the

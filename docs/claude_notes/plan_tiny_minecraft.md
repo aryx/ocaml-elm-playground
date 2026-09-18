@@ -152,6 +152,27 @@ player's bounding box's corners, not real geometric collision detection
    blocks that actually changed" rework described in that section is
    now a real prerequisite for Phase 3, not a hypothetical -- **not yet
    built**, next up before first-person controls land.
+
+   **"What if we just use the OpenGL backend instead?"** -- tested via
+   `games3d/opengl/Minecraft3d.exe` (same source, `copy_files`, per
+   `plan_opengl.md`'s pattern). Answer: no, it doesn't help, and the
+   *why* matters more than the number -- `view3d` (the pure OCaml
+   `Hashtbl.fold` building 54450 nested `shape3d` records) is
+   **shared, backend-agnostic code**, called identically by both
+   backends' `Native_loop.run`, and it alone was already ~40-50% of
+   native's whole frame time. Measured on OpenGL: `view3d` itself
+   actually got *slower* frame over frame within the same run (1.1s,
+   1.9s, 2.2s, 2.5s, 2.6s -- 5 completed frames in 25s, i.e. ~0.2 fps,
+   worse than native's ~0.4), for code that isn't touching the GPU at
+   all -- almost certainly GC pressure from the sheer allocation
+   volume (54450 short-lived nested records, discarded every frame),
+   not anything OpenGL-specific. The lesson generalizes:
+   **switching rendering backends can't fix a bottleneck that lives
+   above the rendering step** -- the "cache built shape3d values
+   instead of rebuilding them every frame" fix is needed regardless of
+   which backend eventually renders them, and should probably happen
+   *before* deciding whether native or OpenGL is the better fit for
+   Minecraft3d specifically.
 3. **First-person camera + WASD + mouse-look**, including resolving the
    relative-mouse-motion gap above.
 4. **Physics**: gravity, jumping, fly-mode toggle, collision.

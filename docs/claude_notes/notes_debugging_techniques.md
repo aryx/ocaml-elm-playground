@@ -226,3 +226,73 @@ tick). Fix: pass the wall-clock time, like the native backend and Elm do.
 - Chrome's own console is still the quickest check when the tab is
   responsive; the node harness is for hangs, for getting numbers or the
   rendered tree in a loop, and for checking all the apps after a change.
+
+## 7. Screenshotting and smoke-testing playground3d (native/OpenGL) windows
+
+This sandbox has a real X display (`DISPLAY=:1`) but no way to press
+keys or move the mouse, so verifying a `playground3d/` rendering change
+means: run the app in the background, screenshot it, `Read` the PNG.
+Two scripts capture this so it doesn't get reinvented (and gotten
+wrong) every time: `scripts/screenshot_playground3d.sh` and
+`scripts/smoke_test_playground3d.sh`.
+
+```bash
+scripts/screenshot_playground3d.sh _build/default/examples3d/Cubes3d.exe /tmp/cubes.png
+scripts/smoke_test_playground3d.sh          # every examples3d/games3d (+opengl) demo, 3s each
+```
+
+**The gotcha the screenshot script exists to avoid**: `import -window
+<title>` looks like the obvious one-liner, but a window manager creates
+an *outer*, decorated frame window with the exact same title as the
+app's *inner* content window (confirmed via `xwininfo -root -tree`:
+both literally named e.g. `"Playground3D (OpenGL)"`). Matching by
+title can silently grab the *outer* frame instead of the inner
+content, producing a wrong-sized screenshot (e.g. `1056x1132` instead
+of the real `1000x1000`) with no error at all -- easy to not notice
+until the `Read`ed image looks like a screenshot of your own terminal.
+The fix: `xwininfo`'s tree also prints each window's `WM_CLASS`, and
+only the *inner* content window's class is the executable's own
+basename (e.g. `"Mario.exe"`) -- grep for that instead of the title.
+
+**Measuring FPS/frame time** (used for the OpenGL-vs-native LOC/FPS
+comparison in `notes_playground3d_related_work.md` and the
+tiny-minecraft performance checkpoint in `plan_tiny_minecraft.md`):
+same "temporary instrumentation" idea as section 4, applied twice,
+together:
+1. A temporary `Printf.eprintf "DEBUG ...: %.3fs\n%!" (Unix.gettimeofday () -. t0)`
+   around whichever step you suspect is slow (e.g. `view3d`'s shape-list
+   construction) -- run headlessly with `timeout Ns`, `grep -c DEBUG`
+   the log to count completed frames/calls in that window, revert
+   before committing.
+2. `playground3d/native_common/Native_loop.ml`'s `target_fps = 60.`
+   caps every backend (native *and* OpenGL, both go through this same
+   loop) at 60fps by sleeping out the remainder of each frame -- fine
+   for playing a game, useless for measuring how fast a backend
+   *could* go. Temporarily bump it to something absurd (`100000.`) to
+   remove the cap while benchmarking, and revert after.
+
+**A real bug this technique found, not just numbers**: benchmarking
+`games3d/StarCollector3d.exe` on the OpenGL backend surfaced an
+intermittent `Fatal error: OpenGL shader compile error` pointing at
+GLSL syntax errors that were never in the actual shader source string
+(confirmed by dumping the exact string passed to `Gl.shader_source`
+right before the failing call -- always correct). It reproduced
+reliably on that specific executable, never on simpler ones, and --
+the key diagnostic clue -- adding *any* extra unrelated allocation
+(even a debug `Printf.eprintf`) right before the shader-compile calls
+made it disappear just as reliably. That pattern (timing-sensitive,
+"more allocation somehow fixes it") points at a GC-safety bug in a
+third-party FFI binding (here: `tgls`'s `glShaderSource`, a
+pointer-to-a-pointer string-marshaling pattern that's a known-tricky
+case for `ctypes`), not a logic bug in application code. The fix
+wasn't a guess: a deliberate `Gc.full_major ()` right before the
+shader-compile calls (flushing pending finalizers/compactions first)
+reliably avoided the race (10/10 clean runs, versus 100% reproducible
+failure before) -- a real, principled mitigation for the specific
+failure mode observed, not a superstitious "add a sleep and hope".
+**Lesson**: when a crash's exact symptom keeps changing between runs
+(different garbage each time, same call site) despite looking 100%
+reproducible in *whether* it happens, suspect a memory-safety/GC-timing
+bug in an FFI layer before suspecting your own logic -- and use
+"does adding an unrelated allocation change the failure rate" as a
+cheap, decisive test for that hypothesis.

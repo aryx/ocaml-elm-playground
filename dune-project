@@ -120,6 +120,7 @@ Nope
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
+    logs ; parse_cli_and_setup_logging, and run's per-frame Logs.debug fps line
     (stb_image (>= "0.4")) ; decode textures for textured_quad/textured_cube
     ocurl ; download textures given as an http(s) URL
     (elm_playground (= :version))
