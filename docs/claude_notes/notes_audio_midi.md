@@ -1,0 +1,169 @@
+# MIDI: music as messages, a tutorial
+
+A companion to [`notes_audio.md`](notes_audio.md), independent of it:
+that note is about *sound* (samples, oscillators, filters); this one is
+about *music as data* -- not what a note sounds like, but which note,
+when, how hard, on which instrument. That's MIDI, and it's small,
+old, everywhere, and a good lesson in designing a binary protocol and a
+file format. Where it fits in the playground: `audio/`'s `Music`
+sequencer can read MIDI files and play them with its own synthesizer,
+and a real MIDI keyboard can play the `Piano` example (see
+[`plan_audio_teaching.md`](plan_audio_teaching.md)); planned modules:
+`audio/Midi` (messages, files) and `audio/Music` (playing them).
+
+## 1. What MIDI is (1983)
+
+The **Musical Instrument Digital Interface**, proposed by Dave Smith
+(Sequential Circuits) and Ikutaro Kakehashi (Roland), standardized in
+1983 by the synthesizer makers together: a way for one instrument to
+tell another "play this note now", over a 5-pin cable at 31,250 bits
+per second. It carries **no sound at all**: only events, a few bytes
+each. A keyboard sends "note 60 on, velocity 100" when you press middle
+C; whatever receives it -- a synthesizer, a computer -- decides what
+that sounds like. So a whole song is a few kilobytes, the same file
+sounds different on every synthesizer, and a computer can edit the
+music note by note: sequencers, then every music program since.
+
+## 2. Notes as numbers
+
+MIDI numbers the keys: **middle C is 60**, each semitone is one, so the
+88 keys of a piano are 21 (A0, 27.5 Hz) to 108 (C8, 4186 Hz), and
+**A4, 440 Hz, is 69**. The frequency of note n in equal temperament
+(`notes_audio.md` §9):
+
+```
+   f(n) = 440 * 2^((n - 69) / 12)      f(60) = 261.63 Hz, middle C
+```
+
+A note also has a **velocity**, 1 to 127, how hard the key was hit:
+usually loudness, sometimes brightness (a harder piano note has more
+high harmonics).
+
+## 3. Messages
+
+Every message is a **status byte** (high bit 1: what, and on which of
+16 **channels**, one per instrument), then one or two **data bytes**
+(high bit 0: values from 0 to 127):
+
+```
+   9n kk vv     note on, channel n, key kk, velocity vv
+   8n kk vv     note off
+   Bn cc vv     control change: controller cc (7 volume, 64 sustain pedal, ...)
+   Cn pp        program change: choose instrument pp
+   En ll mm     pitch bend: a 14-bit value, 8192 in the middle
+```
+
+Example: `90 3C 64` is "note on, channel 1, key 60 (middle C),
+velocity 100"; `80 3C 40` releases it (a note on with velocity 0 is
+also a note off, which matters for the next trick).
+
+The high bit is the whole framing: a receiver that joins mid-stream,
+or loses a byte, resynchronizes at the next byte with its high bit
+set. **Running status**: when several messages in a row have the same
+status byte, it's sent only once -- `90 3C 64 40 64 43 64` is three
+notes on (C, E, G: a chord) in 7 bytes instead of 9; with "velocity 0
+means off", a whole melody on one channel is one status byte and pairs
+of data bytes. At 31,250 bits per second (about 1000 messages a
+second), a third saved was worth the complication.
+
+## 4. Standard MIDI Files (1988)
+
+A `.mid` file stores messages with their times. It's a sequence of
+**chunks**, each a 4-letter tag and a 32-bit big-endian length: one
+header, `MThd` (the format, the number of tracks, and the **division**:
+ticks per quarter note), then the tracks, `MTrk`, each a list of events
+with the **delta time** since the previous one, in ticks.
+
+Delta times are stored as **variable-length quantities**: 7 bits per
+byte, most significant first, the high bit set on every byte but the
+last. Small numbers, the common case, take one byte:
+
+```
+     0  ->  00          127  ->  7F         128  ->  81 00
+   200  ->  81 48       480  ->  83 60      16383  ->  FF 7F
+   16384 -> 81 80 00
+```
+
+(128 = 1 x 128 + 0: a first byte 0x80 + 1, then 0x00; the same idea as
+UTF-8's continuation bytes, or Protocol Buffers' varints.)
+
+Besides MIDI messages, a track has **meta events** (`FF type length
+data`): the track's name, lyrics, the time signature, the end of the
+track, and the **tempo**, in microseconds per quarter note.
+
+## 5. From ticks to seconds
+
+A delta time is in ticks, abstract; the tempo makes it time. With a
+division of 480 ticks per quarter note and a tempo of 500,000
+microseconds per quarter note (**120 beats per minute**), one tick is
+500,000 / 480 = **1.042 ms**, and 960 ticks (two beats) are one second.
+The tempo can change in the middle of the song (a tempo meta event), so
+converting ticks to seconds means walking the tempo map, adding up each
+stretch at its own tempo: the one subtle computation of a MIDI player.
+
+## 6. General MIDI (1991)
+
+Since MIDI carries no sound, "program 1" meant a different instrument
+on every synthesizer, and a song written for one sounded like nonsense
+on another. **General MIDI** fixed a list: 128 programs (1 is the
+grand piano, 57 the trumpet, 81 a square-wave "lead"), and **channel
+10 is always drums**, each key a drum (36 bass drum, 38 snare, 42
+closed hi-hat). With it, a `.mid` file sounded roughly right anywhere:
+the 1990s web pages' background music, and the soundtracks of PC games
+on their sound cards. `audio/Music` can map the programs to its few
+waveforms (a square for leads, a triangle for bass, noise for drums):
+an NES-like rendering of any MIDI file.
+
+## 7. Playing MIDI with a synthesizer
+
+To play a MIDI file: parse the chunks and events, convert delta times
+to seconds (§5), then for each "note on", start a voice -- an
+oscillator at f(n) with an envelope (`notes_audio.md` §3-4), louder with
+the velocity -- and release it at the matching "note off". A
+**voice** is one playing note; a synthesizer has a limited number
+(**polyphony**) and must steal one when they run out. A **SoundFont**
+(E-mu and Creative, 1990s) replaces the oscillators by recorded
+samples of real instruments, one per range of keys: what FluidSynth
+and TiMidity do.
+
+In the other direction, a MIDI keyboard's messages arrive in real time:
+on native through the OS (ALSA on Linux, CoreMIDI, Windows' MIDI API,
+or PortMidi over all three), in the browser through the **Web MIDI
+API**. The `Piano` example with a real keyboard: each "note on" a
+`note` in the game's model, its `since` the time it arrived.
+
+## 8. A few histories
+
+- **iMUSE** (Michael Land and Peter McConnell, LucasArts, 1991: Monkey
+  Island 2): game music as MIDI, rearranged live as the player walks
+  from place to place -- only possible because the music was notes, not
+  a recording.
+- **Doom** (1993) shipped its music as MIDI (in its own MUS variant),
+  played by whatever sound card the player had: the same song in AdLib
+  FM, Sound Blaster or Roland.
+- **MIDI 2.0** (2020): higher resolution (32-bit velocities and
+  controllers), two-way negotiation between devices, compatible with
+  1.0. The 1983 protocol is still what most instruments speak.
+
+## Glossary
+
+- **MIDI**: a protocol of musical events, not sound.
+- **Note number**: 0-127, 60 = middle C, 69 = A4 (440 Hz).
+- **Velocity**: 1-127, how hard a note is played.
+- **Channel**: 1-16, one per instrument; 10 is drums in General MIDI.
+- **Status byte / data byte**: high bit 1 / 0.
+- **Running status**: a repeated status byte, omitted.
+- **SMF**: Standard MIDI File; **chunk**: `MThd` or `MTrk`.
+- **Tick**, **division**, **tempo**: MIDI's time, per quarter note, and
+  microseconds per quarter note.
+- **Variable-length quantity**: 7 bits per byte, the high bit meaning
+  "more follows".
+- **General MIDI**: the standard list of 128 instruments and the drum
+  map.
+- **Voice**, **polyphony**: a playing note, and how many at once.
+- **SoundFont**: recorded samples of instruments, for playing MIDI.
+
+Sources: from memory, to be checked before relying on them for
+teaching -- the MIDI 1.0 specification and the Standard MIDI File
+specification (MIDI Manufacturers Association), General MIDI's
+instrument list, and general knowledge of the history.

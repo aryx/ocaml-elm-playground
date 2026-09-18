@@ -1,0 +1,284 @@
+# Plan: sound for the playground, from scratch, for teaching (`audio/`)
+
+## Context
+
+`graphics/` teaches how pictures are computed, `physics/` (planned,
+[`plan_physics_teaching.md`](plan_physics_teaching.md)) how motion is;
+this plan does the same for **sound**: a small software synthesizer
+under `audio/` that computes every sample itself, and teaches **digital
+audio and signal processing** -- sampling and the Nyquist limit,
+oscillators, envelopes, mixing, filters, the spectrum -- the audio
+twin of a software rasterizer. And, like `Playground` for pictures, a
+small **Evan-style API** over it, so that a game says what it sounds
+like, not how: a beep when the ball hits the paddle, an explosion when
+an asteroid breaks.
+
+Today the playground is silent: no backend plays sound, and Evan's
+elm-playground has none either. The games are waiting for it: Pong's
+beeps, Asteroid's thrust, shots and explosions (and the arcade game's
+famous two-note heartbeat, speeding up), Spacewar!'s torpedoes,
+Slingshot's impacts, Snake's crunch, Tetris's theme.
+
+Companions: [`notes_audio.md`](notes_audio.md), the tutorial (written
+ahead of the code, as its specification),
+[`notes_audio_midi.md`](notes_audio_midi.md) (music as data: MIDI), and
+[`notes_audio_related_work.md`](notes_audio_related_work.md) (the
+chips, the synthesizers, the languages and libraries, and the teaching
+lineage).
+
+## Principles (the same as `graphics/` and `physics/`)
+
+- **Independent of the Playground.** `audio/` knows samples, signals,
+  frequencies and seconds: no `computer`, no SDL. `playground/Sound.ml`
+  is the adapter.
+- **Generated, not loaded.** Like the playground's shapes (no image
+  needed for a circle), sounds are made from a few parameters -- a
+  frequency, a waveform, an envelope -- not from files: the 8-bit,
+  sfxr-style sound of arcade games, and every sound readable as code.
+  (Loading WAV/OGG files: later, like `image` for pictures.)
+- **One idea per module, the simple and the better version side by
+  side** (e.g. a naive square wave, and a band-limited one that
+  doesn't alias), switchable, so the difference can be *heard* -- and
+  *seen*: an oscilloscope and a spectrum drawn over the frame, the
+  magnifier of sound.
+- **Every `.mli` explains its idea** with a diagram of the waveform, a
+  worked example with numbers, and its reference; `audio/tests/`
+  checks the examples.
+- **Deterministic, so testable.** Synthesis is a pure function of time
+  (noise from a seeded generator, like the NES's), so a sound can have
+  a **golden WAV**, compared sample by sample, like the golden frames;
+  and the spectrum lets tests check what a sound *contains* (a 440 Hz
+  sine has one peak, at 440 Hz).
+- **Comments describe the code as it is**; long explanations in the
+  `.mli`s and the notes.
+
+## The Playground API, Evan-style
+
+Sound doesn't fit the Model-View-Update loop as easily as pictures:
+`view` returns shapes to draw *now*, but a sound lasts, and starts at
+an event (a collision) that happened in `update`. The Elm way, following
+elm-audio's design: **describe what should be playing, as a function of
+the model, like `view` describes what's on screen**; each sound says
+*when it started*; the backend compares with what's already playing,
+starts the new ones, stops the ones that disappeared. No "play" command,
+no handles, no callbacks -- and it replays, pauses and tests like
+pictures do.
+
+Tentative (`playground/Sound.mli`), to be refined by writing the games
+with it:
+
+```ocaml
+type sound                                  (* a value, like a shape *)
+
+(* making sounds *)
+val tone : number -> sound                  (* a sine wave, in Hz *)
+val note : string -> sound                  (* "C4", "A4" (440 Hz), "F#5" *)
+val square : number -> sound                (* the retro ones *)
+val triangle : number -> sound
+val noise : sound                           (* explosions, drums, wind *)
+
+(* shaping them, like move/scale/fade for shapes *)
+val lasting : number -> sound -> sound      (* seconds *)
+val fading : sound -> sound                 (* an envelope: attack, decay *)
+val louder : number -> sound -> sound       (* volume, 0. to 1. *)
+val sliding : number -> sound -> sound      (* pitch sweep: lasers, jumps *)
+val together : sound list -> sound          (* mixing, like group *)
+val after : sound -> sound -> sound         (* one, then the other *)
+
+(* ready-made game sounds, sfxr-style *)
+val blip : sound  val jump : sound  val coin : sound
+val laser : sound  val explosion : sound  val hit : sound
+
+(* when: since a time, like computer.time *)
+val since : time -> sound -> sound
+
+(* the app: a game with sounds, [sounds] beside [view] *)
+val game_with_sounds :
+  (computer -> 'model -> shape list) ->      (* view *)
+  (computer -> 'model -> sound list) ->      (* sounds: what's playing *)
+  (computer -> 'model -> 'model) -> 'model -> ('model, msg) app
+```
+
+Pong then says:
+
+```ocaml
+let sounds computer game =
+  [ blip |> since game.last_bounce;
+    explosion |> since game.last_point ]
+```
+
+and a theremin, in a few lines (`examples/Theremin.ml`):
+
+```ocaml
+let sounds computer () =
+  [ tone (200 + computer.mouse.x) |> louder (0.5 + computer.mouse.y / 1000) ]
+```
+
+Open questions, to settle by writing the games with it: `since` with
+the model storing event times (declarative, elm-audio's way) vs sounds
+returned by `update` as events (simpler for beginners, less Elm-like);
+continuous sounds (the theremin, a ship's thrust) vs one-shots; how a
+sound keeps its identity from frame to frame, so the backend knows it's
+the same one still playing.
+
+## Target layout
+
+```
+audio/                    (audio, private, package elm_playground: pure
+                          OCaml, rendered to samples; both backends use it)
+  Signal                  samples, sample rate, buffers; time <-> samples
+  Oscillator              sine, square, triangle, sawtooth, noise; the
+                          phase accumulator; naive vs band-limited
+                          (PolyBLEP)
+  Noise                   pseudo-random generators: an LFSR like the NES's,
+                          white vs pink noise
+  Envelope                ADSR: attack, decay, sustain, release
+  Mix                     summing, gain, decibels, clipping vs soft clipping
+  Filter                  one-pole low/high-pass, the biquad (resonance)
+  Effect                  pitch slide, vibrato, echo (delay line)
+  Sfx                     the sfxr-style generator: presets and parameters
+  Music                   notes and equal temperament, a small sequencer
+  Midi                    MIDI messages and Standard MIDI Files (see
+                          notes_audio_midi.md)
+  Spectrum                the DFT, then the FFT; for tests and the display
+  Wav                     writing (and later reading) WAV files
+  Resample                changing sample rates (for loaded sounds, later)
+audio/tests/              the worked examples; golden WAVs
+playground/Sound.ml       the Evan-style API above, over audio/
+native: SDL audio         a callback/queue feeding audio/'s samples
+web: two ways             Web Audio's own oscillators and gain nodes (the
+                          "SVG" way: the browser synthesizes), or audio/'s
+                          samples in an AudioBuffer (the "software" way)
+```
+
+## Groundwork decisions
+
+### The audio loop is not the frame loop
+
+Pictures are computed 60 times a second; sound is 44,100 samples a
+second, pulled by the sound card in blocks (e.g. 1024 samples, 23 ms),
+on its own clock, and a late block is an audible click, not a slower
+frame. So synthesis runs apart from `update`/`view`: each frame, the
+game's `sounds` say what should be playing; between frames, the audio
+side renders those sounds, sample by sample, ahead of time into a queue
+(SDL's `SDL_QueueAudio` on native: no callback on another thread to
+synchronize with OCaml). The notes explain latency, buffers and the
+two clocks.
+
+### Where synthesis happens on the web
+
+Two backends in one, like 3D's SVG and WebGL: the browser's Web Audio
+nodes (an `OscillatorNode`, a `GainNode` for the envelope: no samples
+computed by us, low CPU, the "reuse the platform" way) or our
+`audio/` samples copied into an `AudioBuffer` (exactly the native
+sound, every sample ours). The second first: the same sound
+everywhere, and the teaching one; the first as a comparison.
+
+### Debugging sound by looking at it
+
+With `-debug-keys`: an oscilloscope (the waveform of the last frame's
+samples) and a spectrum (its FFT) drawn over the frame, a mute key, and
+keys switching the simple and better versions (naive vs band-limited
+oscillators, hard vs soft clipping). Sound's magnifier.
+
+## The modules, with their references
+
+(To double-check against the sources when writing each `.mli`.)
+
+- **Signal**: sampling; Nyquist (1928) and Shannon (1949): a sample
+  rate of 44,100 Hz can represent frequencies up to 22,050 Hz.
+- **Oscillator**: the phase accumulator; aliasing of the naive square
+  and sawtooth; band-limited synthesis (Stilson and Smith,
+  "Alias-Free Digital Synthesis of Classic Analog Waveforms", ICMC
+  1996; PolyBLEP, Välimäki et al., 2007). Worked example: a 1000 Hz
+  naive square at 44,100 Hz has odd harmonics at 23, 25, 27 kHz, above
+  Nyquist, which fold back to 21.1, 19.1, 17.1 kHz: audible, and not
+  harmonics of 1000 Hz.
+- **Noise**: linear-feedback shift registers (the NES APU's 15-bit
+  LFSR); white vs pink.
+- **Envelope**: ADSR (the Moog and ARP synthesizers, 1960s-70s).
+- **Mix**: decibels (halving the amplitude is -6.02 dB); clipping and
+  soft clipping (tanh).
+- **Filter**: the one-pole low-pass (y += a (x - y)); the biquad
+  (Robert Bristow-Johnson, "Audio EQ Cookbook").
+- **Sfx**: sfxr (Tomas Pettersson, "DrPetter", 2007): a few parameters
+  (waveform, frequency, slide, envelope, noise) cover most game sounds.
+- **Music**: equal temperament (A4 = 440 Hz, a semitone is 2^(1/12));
+  trackers (Ultimate Soundtracker, Amiga, 1987).
+- **Spectrum**: the discrete Fourier transform; the FFT (Cooley and
+  Tukey, 1965).
+- **FM**, maybe (John Chowning, "The Synthesis of Complex Audio
+  Spectra by Means of Frequency Modulation", 1973: the Yamaha DX7's
+  sound in one formula).
+
+## New examples
+
+- `examples/Theremin.ml`: the mouse is the pitch and the volume; the
+  oscilloscope shows the sine (with `-debug-keys`).
+- `examples/Piano.ml`: the keyboard's letters play notes (equal
+  temperament), each with an envelope; switch the waveform.
+- `examples/Sfx.ml`: the sfxr presets on keys, and their parameters on
+  screen: the teaching sfxr.
+- `examples/Aliasing.ml`: a sweep up past Nyquist, naive vs
+  band-limited: aliasing, heard and seen on the spectrum.
+
+## Games with sound
+
+Pong (a blip per bounce, a lower one per point), Asteroid (shots,
+explosions by size, thrust as filtered noise, the heartbeat speeding
+up), Snake, Tetris (Korobeiniki, the folk tune, on the sequencer: the
+music demo), then the physics plan's Spacewar! and Slingshot (impacts
+louder when harder: the collision impulse as the volume -- physics and
+audio meeting).
+
+## Phasing
+
+0. **Groundwork**: `audio/` and `audio/tests/` skeletons; `Wav`
+   (write), so every later phase can produce and compare golden WAVs;
+   SDL audio opened in `Native_loop_2d` (a queue, off by default in
+   the golden-frame dump mode).
+1. **Signals and oscillators**: `Signal`, `Oscillator` (naive), `Noise`;
+   tests: a 440 Hz sine's period (100.23 samples at 44,100 Hz), the
+   LFSR's sequence, golden WAVs.
+2. **Envelopes and mixing**: `Envelope`, `Mix` (clipping vs soft).
+3. **The Playground API, v1 and the native backend**: `Sound` (`tone`,
+   `note`, `square`, `noise`, `lasting`, `fading`, `louder`,
+   `together`, `since`), `game_with_sounds`; the audio queue; Theremin,
+   Piano; Pong's beeps. Settle the open questions by writing them.
+4. **The web backend**: our samples in an `AudioBuffer`, then Web
+   Audio's nodes as a comparison.
+5. **Spectrum and the debug display**: `Spectrum` (DFT, then FFT, the
+   simple one kept), the oscilloscope and spectrum overlay; tests on
+   spectra (a sine's one peak, a square's odd harmonics).
+6. **Band-limited oscillators and filters**: PolyBLEP vs naive (the
+   Aliasing example), `Filter`; tests: aliases gone from the spectrum,
+   a low-pass's attenuation at a known frequency.
+7. **Game sounds**: `Effect`, `Sfx` (presets, sfxr's parameters), the
+   Sfx example; Asteroid's and Snake's sounds.
+8. **Music**: `Music` (notes, a sequencer of patterns); Tetris's
+   theme. Then MIDI (`audio/Midi`, see `notes_audio_midi.md`): reading
+   Standard MIDI Files into the sequencer, played by our synthesizer
+   (General MIDI's programs mapped to our waveforms), and a real MIDI
+   keyboard for the Piano example (ALSA/PortMidi on native, Web MIDI in
+   the browser).
+9. **Docs**: `notes_audio.md` checked against the code, numbers
+   filled in.
+10. *(later)* Loaded sounds (WAV, then OGG via stb_vorbis, the same
+   stb as the images), `Resample`; positional sound for 3D (panning,
+   distance, Doppler: from the physics bodies' positions and
+   velocities).
+
+## Verification
+
+- `make test`: the worked examples, the spectra (frequencies present
+  and absent), and golden WAVs of the examples' sounds, compared
+  sample by sample (and a `make approve-golden-audio`).
+- By ear: each example and game, on native and in the browser.
+- Latency: a key press to a sound, under a frame or two.
+
+## Out of scope
+
+- Sampled instruments, music files (MOD, MIDI), recording from a
+  microphone.
+- Reverb beyond a simple echo, 3D audio beyond panning (phase 10).
+- Real-time safety beyond the queue (no audio thread in OCaml).
