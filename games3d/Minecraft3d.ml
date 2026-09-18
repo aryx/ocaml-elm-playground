@@ -7,12 +7,17 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* Phase 2 of docs/claude_notes/plan_tiny_minecraft.md: static
- * rendering of Minecraft_model.ml's generated world -- a fixed
- * overview camera, no controls yet (first-person movement is Phase
- * 3). Rendering ~50k exposed blocks rebuilt from scratch every frame
- * (this project's usual game3d style) measured at ~0.2 fps; the world
- * is now built once, as cached chunks, see [chunks] below and
+(* A port of Michael Fogleman's Minecraft clone in Python/Pyglet
+ * (~/software-src/game/tiny-minecraft/main.py, see
+ * docs/claude_notes/plan_tiny_minecraft.md): walk, jump, fly, and
+ * remove and place blocks, in a generated world of ~85k blocks. Three
+ * parts, like the original's classes: Minecraft_model, the world;
+ * Minecraft_player, the player's physics; and this file, the rendering
+ * and the controls (see "The game" below).
+ *
+ * Rendering ~50k exposed blocks rebuilt from scratch every frame (this
+ * project's usual game3d style) measured at ~0.2 fps; the world is
+ * built once instead, as cached chunks, see [chunk_shape] below and
  * docs/claude_notes/plan_opengl_perf.md.
  *
  * Atlas UV mapping: ~/software-src/game/tiny-minecraft/main.py's
@@ -115,28 +120,149 @@ let block_shape (m : Minecraft_model.t) ((x, y, z) : Minecraft_model.pos) (block
  * only draw it again (see docs/claude_notes/plan_opengl_perf.md), so
  * view's only work is returning this list. Rebuilding every block's
  * shape in view instead, every frame, took seconds per frame. Chunks
- * rather than one cached3d for the whole world so that an edit (not
- * yet possible) only rebuilds the chunks it touches. *)
-let chunks (m : Minecraft_model.t) : shape3d list =
-  Hashtbl.fold
-    (fun _sector positions acc ->
-      let blocks =
-        !positions
-        |> List.filter_map (fun pos ->
-               Hashtbl.find_opt m.shown pos |> Option.map (fun block -> block_shape m pos block))
-      in
-      cached3d blocks :: acc)
-    m.sectors []
+ * rather than one cached3d for the whole world so that an edit only
+ * rebuilds the chunks it touches (see rebuild_chunks_around). *)
+let chunk_shape (m : Minecraft_model.t) (sector : Minecraft_model.pos) : shape3d =
+  let positions = match Hashtbl.find_opt m.sectors sector with Some ps -> !ps | None -> [] in
+  positions
+  |> List.filter_map (fun pos -> Hashtbl.find_opt m.shown pos |> Option.map (fun block -> block_shape m pos block))
+  |> cached3d
+
+(*****************************************************************************)
+(* The world *)
+(*****************************************************************************)
+(* claude: the world, and its chunks, are the one mutable part of this
+ * game, like the original's Model object: Minecraft_model's hash
+ * tables, changed in place by add_block/remove_block, and [chunks],
+ * sector -> its cached3d. The rest of the state (the player, what's
+ * selected) is an ordinary immutable model, below. *)
 
 let world = Minecraft_model.create_world ()
-let world_chunks = chunks world
+let chunks : (Minecraft_model.pos, shape3d) Hashtbl.t = Hashtbl.create 128
+let () = Hashtbl.iter (fun sector _ -> Hashtbl.replace chunks sector (chunk_shape world sector)) world.sectors
 
-let view (_computer : Playground.computer) () : camera * shape3d list =
-  let cam = camera ~eye:(0., 40., 60.) ~target:(0., 0., 0.) ~far:400. () in
-  (cam, world_chunks)
+(* claude: after an edit at [pos], the chunks that may look different:
+ * [pos]'s own, and those of its 6 neighbors, whose exposed faces
+ * changed (a neighbor can be in the next sector). Each gets a new
+ * cached3d; the GPU backends free the old one's buffers by themselves,
+ * since view stops returning it (Mesh_cache's sweep). *)
+let rebuild_chunks_around ((x, y, z) : Minecraft_model.pos) : unit =
+  (x, y, z) :: List.map (fun (dx, dy, dz) -> (x +.. dx, y +.. dy, z +.. dz)) Minecraft_model.faces
+  |> List.map Minecraft_model.sectorize
+  |> List.sort_uniq compare
+  |> List.iter (fun sector -> Hashtbl.replace chunks sector (chunk_shape world sector))
 
-let update _computer () = ()
-let app = game3d view update ()
+(*****************************************************************************)
+(* The game *)
+(*****************************************************************************)
+(* Controls (the original's, except the mouse, see [look]):
+ *  - W/A/S/D: walk; space: jump; Tab: fly or walk (flying, look up or
+ *    down to go up or down);
+ *  - the mouse, or the arrow keys: look around;
+ *  - left click: remove the block under the crosshair (not stone);
+ *    right click: place one in front of it; 1/2/3: brick, grass, sand. *)
+
+type model = {
+  player : Minecraft_player.t;
+  (* the arrow keys' part of where the player looks (see [look]) *)
+  turn_yaw : number;
+  turn_pitch : number;
+  (* what a right click places *)
+  block : Minecraft_model.block;
+  (* the previous frame's time, buttons and Tab key: to know how much
+   * time passed, and to act once per press rather than on every frame
+   * a button is held *)
+  last_time : number option;
+  was_down : bool;
+  was_right_down : bool;
+  was_tab : bool;
+}
+
+let initial : model =
+  {
+    player = Minecraft_player.initial;
+    turn_yaw = 0.;
+    turn_pitch = 0.;
+    block = Brick;
+    last_time = None;
+    was_down = false;
+    was_right_down = false;
+    was_tab = false;
+  }
+
+let inventory : (string * Minecraft_model.block) list = [ ("1", Brick); ("2", Grass); ("3", Sand) ]
+
+(* claude: where the player looks. The original captures the mouse
+ * (an invisible cursor that can move forever, reporting only how much
+ * it moved); Playground.mouse is an absolute position in the window,
+ * so here the mouse's offset from the window's center adds to the
+ * direction, up to 90 degrees left or right at the window's edges (60
+ * up or down), and the arrow keys turn further. *)
+let look (computer : Playground.computer) (m : model) : number * number =
+  let mouse_yaw = computer.mouse.mx / (computer.screen.width / 2.) * 90. in
+  let mouse_pitch = computer.mouse.my / (computer.screen.height / 2.) * 60. in
+  (m.turn_yaw + mouse_yaw, clamp (-89.) 89. (m.turn_pitch + mouse_pitch))
+
+let key_down (computer : Playground.computer) (key : string) : bool = Set_.mem key computer.keyboard.keys
+
+(* the block under the crosshair, and the empty cell in front of it *)
+let target (m : model) = Minecraft_model.hit_test world ~position:m.player.position ~vector:(Minecraft_player.sight_vector m.player) ()
+
+let edit (computer : Playground.computer) (m : model) : unit =
+  let clicked = computer.mouse.mdown && not m.was_down in
+  let right_clicked = computer.mouse.mrdown && not m.was_right_down in
+  match target m with
+  | Some (block_pos, _) when clicked && Hashtbl.find world.world block_pos <> Minecraft_model.Stone ->
+      Minecraft_model.remove_block world block_pos;
+      rebuild_chunks_around block_pos
+  | Some (_, Some empty_pos) when right_clicked ->
+      Minecraft_model.add_block world empty_pos m.block;
+      rebuild_chunks_around empty_pos
+  | _ -> ()
+
+let update (computer : Playground.computer) (m : model) : model =
+  let kb = computer.keyboard in
+  let bool_int b = if b then 1 else 0 in
+  (* -1., 0. or 1., from two opposite keys *)
+  let axis (plus : bool) (minus : bool) : number = float_of_int (bool_int plus -.. bool_int minus) in
+  (* the arrow keys turn (degrees per frame) *)
+  let turn_yaw = m.turn_yaw + (2. * axis kb.kright kb.kleft) in
+  let turn_pitch = clamp (-89.) 89. (m.turn_pitch + (2. * axis kb.kup kb.kdown)) in
+  let m = { m with turn_yaw; turn_pitch } in
+  let (yaw, pitch) = look computer m in
+  let tab = key_down computer "tab" || key_down computer "Tab" in
+  let flying = if tab && not m.was_tab then not m.player.flying else m.player.flying in
+  let player = { m.player with yaw; pitch; flying } in
+  let block = List.fold_left (fun b (key, block) -> if key_down computer key then block else b) m.block inventory in
+  let (Time now) = computer.time in
+  let dt = match m.last_time with Some last -> now - last | None -> 0. in
+  let input : Minecraft_player.input =
+    { forward = bool_int kb.kw -.. bool_int kb.ks; right = bool_int kb.kd -.. bool_int kb.ka; jump = kb.kspace }
+  in
+  let player = Minecraft_player.step world ~dt input player in
+  let m = { m with player; block } in
+  edit computer m;
+  { m with last_time = Some now; was_down = computer.mouse.mdown; was_right_down = computer.mouse.mrdown; was_tab = tab }
+
+let crosshair : shape3d =
+  hud (Playground.group [ Playground.rectangle Playground.black 20. 2.; Playground.rectangle Playground.black 2. 20. ])
+
+let status (computer : Playground.computer) (m : model) : shape3d =
+  let (x, y, z) = m.player.position in
+  let block = match m.block with Brick -> "brick" | Grass -> "grass" | Sand -> "sand" | Stone -> "stone" in
+  hud
+    (Playground.words Playground.black
+       (Printf.sprintf "%s  (%.0f, %.0f, %.0f)%s" block x y z (if m.player.flying then "  flying" else ""))
+    |> Playground.move (computer.screen.left + 150.) (computer.screen.top - 30.))
+
+let view (computer : Playground.computer) (m : model) : camera * shape3d list =
+  let (x, y, z) = m.player.position and (sx, sy, sz) = Minecraft_player.sight_vector m.player in
+  (* the original's field of view, 65 degrees; far enough for the whole
+   * world, which it cuts at 60 blocks behind fog instead *)
+  let cam = camera ~eye:(x, y, z) ~target:(x + sx, y + sy, z + sz) ~fov:65. ~far:300. () in
+  (cam, Hashtbl.fold (fun _ chunk l -> chunk :: l) chunks [] @ [ crosshair; status computer m ])
+
+let app = game3d view update initial
 
 (* claude: sharp texels, like the original's GL_NEAREST: bilinear
  * filtering blurs the pixel-art blocks, and blends each atlas cell with

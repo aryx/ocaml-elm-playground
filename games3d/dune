@@ -7,7 +7,8 @@
 ; stanza).
 (library
  (name minecraft_model)
- (modules Minecraft_model)
+ (wrapped false) ; Minecraft_model and Minecraft_player, by their own names
+ (modules Minecraft_model Minecraft_player)
 )
 
 ; `dune exec games3d/Test_minecraft_model.exe` -- standalone verification

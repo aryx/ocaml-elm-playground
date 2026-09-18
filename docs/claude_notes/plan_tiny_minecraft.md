@@ -180,11 +180,26 @@ player's bounding box's corners, not real geometric collision detection
    (`Mesh_cache`). OpenGL: ~6.5s per frame -> ~1ms. See
    `plan_opengl_perf.md`'s Results. Edits (Phase 5 below) will rebuild
    only the touched chunks.
-3. **First-person camera + WASD + mouse-look**, including resolving the
-   relative-mouse-motion gap above.
-4. **Physics**: gravity, jumping, fly-mode toggle, collision.
-5. **Interaction**: `hit_test`-based block add/remove on click, block
-   type selection. After an edit at `pos`, rebuild the `cached3d` of
+3. **DONE.** **First-person camera + WASD + mouse-look**. The
+   relative-mouse-motion gap was not closed with an API change: the
+   mouse's offset from the window's center adds up to 90 degrees left
+   or right (60 up or down) to the view direction, and the arrow keys
+   turn further (Minecraft3d.ml's [look]). Works on every backend as
+   is; the price: no unlimited turning with the mouse alone.
+4. **DONE.** **Physics**: gravity, jumping, fly-mode toggle (Tab),
+   collision, in a new module, `Minecraft_player` (a port of the
+   original's `get_sight_vector`/`get_motion_vector`/`_update`/
+   `collide`, same constants, independent of the Playground), checked
+   by `Test_minecraft_model.exe` in a small hand-made world (standing,
+   falling, a 1-block jump, stopping at a wall, flying). Movement uses
+   the real time between frames (`computer.time`), so it's the same
+   speed at any frame rate.
+5. **DONE.** **Interaction**: left click removes the block under the
+   crosshair (not stone), right click places one (a new
+   `Playground.mouse.mrdown`, the right button, added to the API and
+   every backend for this), 1/2/3 choose brick/grass/sand. Checked on
+   OpenGL with `scripts/xdrive.py`: each edit rebuilds 1-2 chunks and
+   frees as many meshes, the live count stays at 121. After an edit at `pos`, rebuild the `cached3d` of
    the chunks of `pos` and of its 6 neighbors (a neighbor can be in
    the adjacent sector, and its exposed faces changed); the GPU
    backends free the old meshes by themselves (`Mesh_cache`'s sweep).
@@ -192,7 +207,11 @@ player's bounding box's corners, not real geometric collision detection
    the live mesh count stays at the number of chunks after many edits
    (see `done/plan_opengl_perf.md`, Phase 5).
 6. **Polish**: HUD (crosshair/selected-block indicator, now
-   unblocked -- see above), matching the original's world-generation
+   unblocked -- see above). **Partly done**: a crosshair and a status
+   line (block, position, flying), shown by the software and WebGL
+   backends; **not on OpenGL**, which has no HUD yet (see
+   `plan_3d_remaining.md`): the missing piece for OpenGL, the backend
+   where the game is actually playable. Also: matching the original's world-generation
    "hills" more closely if the flat/simple version from Phase 1 feels
    too bare.
 
