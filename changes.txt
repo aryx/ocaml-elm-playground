@@ -189,4 +189,7 @@
   implemented separately by playground/native/ (tsdl/SDL2 + cairo2) and
   playground/web/ (js_of_ocaml)
 
-- first commits and first prototype
+- first commits and first prototype, during a "procrastination week" while at R2C
+  (now Semgrep) post-launch when I fell in love with Elm, its creator Evan,
+  and later Evan's gem that is the elm playground (video games making nostalgia!
+  part of the reason I started computer programming).
