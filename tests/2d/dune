@@ -14,5 +14,7 @@
    %{project_root}/examples/software/Keyboard.exe
    %{project_root}/games/software/Pong.exe
    %{project_root}/games/software/Asteroid.exe
+   %{project_root}/games/software/Snake.exe
+   %{project_root}/games/software/Tetris.exe
  )
 )

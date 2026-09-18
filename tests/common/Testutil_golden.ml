@@ -44,7 +44,10 @@ let read_ppm (file : string) : frame =
 
 let render ~dir ~(exe : string) ~(keys : string) ~(frame : int) : frame =
   let ppm = Filename.temp_file "golden3d" ".ppm" in
-  let args = [| exe; "-fixed-time"; "1000"; "-keys"; keys; "-dump-frame"; string_of_int frame; ppm |] in
+  (* claude: seed=1, a flag (see Playground.flags) for the games drawing
+   * random numbers (Snake, Tetris, StarCollector3d): the same numbers
+   * every run; the other programs ignore it *)
+  let args = [| exe; "-fixed-time"; "1000"; "-keys"; keys; "-dump-frame"; string_of_int frame; ppm; "seed=1" |] in
   let env = Array.append [| "SDL_VIDEODRIVER=dummy" |] (Unix.environment ()) in
   (match Unix.fork () with
   | 0 -> (

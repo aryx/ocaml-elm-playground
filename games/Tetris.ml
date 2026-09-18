@@ -235,7 +235,13 @@ let spawn_tetrimino model =
   let {x; y} = init_position model.width active in
   { model with next; active; position = (x, float y) }
 
-let _init = Random.self_init ()
+(* claude: seed=n (see Playground.flags), e.g. for the golden frame
+ * tests: the same pieces every run; before initial_model, which draws
+ * the first ones *)
+let _init =
+  match List.assoc_opt "seed" (Playground_platform.flags ()) with
+  | Some n -> Random.init (int_of_string n)
+  | None -> Random.self_init ()
 
 let initial_model = spawn_tetrimino {
 

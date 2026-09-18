@@ -34,6 +34,10 @@ let scenes : Testutil_golden.scene list =
     ("games/software/Pong", "", 5);
     ("games/software/Asteroid", "", 5);
     ("games/software/Asteroid", "f", 5);
+    (* claude: random, but with the runner's seed=1 flag the same every
+     * run (see Testutil_golden.render) *)
+    ("games/software/Snake", "", 5);
+    ("games/software/Tetris", "", 5);
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" scenes

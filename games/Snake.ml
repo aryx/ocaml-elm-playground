@@ -189,6 +189,10 @@ let update computer model =
 let app = 
   game view update initial_model
 
-let main = 
-  Random.self_init ();
+let main =
+  (* claude: seed=n (see Playground.flags), e.g. for the golden frame
+   * tests: the same food positions every run *)
+  (match List.assoc_opt "seed" (Playground_platform.flags ()) with
+  | Some n -> Random.init (int_of_string n)
+  | None -> Random.self_init ());
   Playground_platform.run_app app

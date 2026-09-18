@@ -44,6 +44,9 @@ let scenes : Testutil_golden.scene list =
     ("examples3d/Corridor3d", "c", 3);
     ("examples3d/Corridor3d", "f", 3);
     ("examples3d/CachedGrid3d", "", 3);
+    (* claude: random stars, but with the runner's seed=1 flag the same
+     * every run (see Testutil_golden.render) *)
+    ("games3d/StarCollector3d", "", 3);
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" scenes

@@ -36,7 +36,13 @@ let collect_distance = 0.8
 type star = { sx : number; sz : number }
 type model = { player_x : number; player_z : number; stars : star list; score : int }
 
-let () = Random.self_init ()
+(* claude: seed=n (see Playground.flags), e.g. for the golden frame
+ * tests: the same stars every run; before init, which draws the first
+ * ones *)
+let () =
+  match List.assoc_opt "seed" (Playground_platform.flags ()) with
+  | Some n -> Random.init (int_of_string n)
+  | None -> Random.self_init ()
 
 let random_coord () = Random.float (2. * play_half_size) - play_half_size
 let make_star () = { sx = random_coord (); sz = random_coord () }
