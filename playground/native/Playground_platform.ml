@@ -99,5 +99,5 @@ let run_app app =
     Cairo.Surface.flush sdl_surface
   in
   let (app : _ Playground.app) = app in
-  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw
+  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
     ~init:app.init ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

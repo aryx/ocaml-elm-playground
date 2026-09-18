@@ -25,6 +25,38 @@
 
 let title = "Playground (software rasterizer)"
 
+(*****************************************************************************)
+(* Debug keys *)
+(*****************************************************************************)
+(* Keys to turn rendering features on and off while any example or game
+ * runs, to see what each one does -- like playground3d/software/'s
+ * "m"/"b"/"f"/"z"/"p". The window title shows their current state.
+ * Avoid the keys games use: arrows, w/a/s/d, space.
+ *
+ *  - "t": transparency (Porter-Duff alpha blending) on/off; try
+ *    examples/Mouse.exe, whose circle fades while the button is down
+ *  - "z": the pixel magnifier (Magnifier), following the mouse
+ *)
+
+let options = ref Shape_render_software.default_options
+let magnifier = ref false
+
+let on_key_press (key : string) =
+  match key with
+  | "t" -> options := { alpha_blending = not !options.alpha_blending }
+  | "z" -> magnifier := not !magnifier
+  | _ -> ()
+
+(* e.g. "Playground (software rasterizer) -- 60 fps -- t:alpha=on z:zoom=off" *)
+let window_title ~fps =
+  let on_off b = if b then "on" else "off" in
+  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s z:zoom=%s" title fps
+    (on_off !options.alpha_blending) (on_off !magnifier)
+
+(*****************************************************************************)
+(* Entry points *)
+(*****************************************************************************)
+
 let preload_image = Image_decode.preload
 
 let run_app (app : _ Playground.app) =
@@ -42,9 +74,14 @@ let run_app (app : _ Playground.app) =
 
   let draw ~fps shapes =
     Framebuffer.clear fb ~rgb:0xFFFFFF;
-    Shape_render_software.render fb shapes;
+    Shape_render_software.render ~options:!options fb shapes;
+    if !magnifier then begin
+      (* SDL keeps track of the mouse position, in window pixels *)
+      let (_buttons, (mx, my)) = Tsdl.Sdl.get_mouse_state () in
+      Magnifier.draw fb ~cx:mx ~cy:my
+    end;
     (* in the window title until we can draw text (phase 5) *)
-    Tsdl.Sdl.set_window_title sdl_window (Printf.sprintf "%s -- %.0f fps" title fps)
+    Tsdl.Sdl.set_window_title sdl_window (window_title ~fps)
   in
-  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw
+  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press
     ~init:app.init ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

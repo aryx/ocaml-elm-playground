@@ -169,21 +169,39 @@ inside. Same problem, two classic answers.
 
 ## Debug toggles (same spirit as 3D's "m"/"b"/"f"/"z"/"p")
 
-Handled entirely in `software/Playground_platform.ml`, never part of
-the public API. No example or game currently reacts to a plain letter
-key (grep of `games/`, `examples/`), so plain letters are fine, as in 3D:
+Handled entirely in `software/Playground_platform.ml` (via
+`Native_loop_2d.run`'s `on_key_press`, one call per physical press),
+never part of the public API; each feature that can be turned off is a
+field of `Shape_render_software.options`. The window title shows every
+key and its state. Plain letters, as in 3D, but **not** the keys games
+use: arrows, space, and w/a/s/d (`Playground.to_x2`/`to_y2`) -- which
+is why antialiasing is "n", not "a".
 
-- **"a" -- antialiasing on/off.** v1 ships aliased (you *see* the
+Done (with phase 1):
+
+- **"t" -- transparency on/off:** without Porter-Duff blending a faded
+  shape is either fully opaque or invisible (`examples/Mouse.exe`
+  fades its circle while the button is down).
+- **"z" -- pixel magnifier** (`raster/Magnifier.ml`): an 8x inset of
+  the 32x32 pixels under the mouse, with a grid between pixels -- to
+  *see* the pixel-center rule, gaps/overlaps between shapes, jaggies,
+  and later what antialiasing does to an edge.
+
+Planned, each with the phase that makes it meaningful:
+
+- **"b" -- bounding boxes** (phase 2): draw every shape as the phase-1
+  box around it, to compare with the real rasterization.
+- **"n" -- antialiasing on/off** (phase 6). v1 ships aliased (you *see* the
   jaggies, which is the point); then add coverage-based AA: for
   polygons, accumulate exact per-pixel area coverage along each span
   edge (Duff 1989 "Polygon scan conversion by exact convolution";
   Carpenter 1984 A-buffer; the approach libart/font-rs/stb_truetype
   use), for lines Wu 1991. Crow 1977 is the paper that named the
   problem.
-- **"f" -- wireframe:** draw every flattened polygon's outline with
+- **"f" -- wireframe** (phase 3): draw every flattened polygon's outline with
   Bresenham instead of filling it -- shows how circles/ovals became
   polygons.
-- **"i" -- image filtering:** nearest vs bilinear.
+- **"i" -- image filtering** (phase 4): nearest vs bilinear.
 - **"c" -- compare with Cairo:** *not* doable in-process (two
   implementations), so instead a separate offscreen test, see below.
 
@@ -232,7 +250,7 @@ key (grep of `games/`, `examples/`), so plain letters are fine, as in 3D:
    the shared decoder. `examples/Mario.ml` is the test.
 5. **`Hershey`**: `Words`, FPS counter, "Loading...".
    `examples/Words.ml` is the test.
-6. **Antialiasing** ("a"): coverage AA for `Fill`, Wu lines.
+6. **Antialiasing** ("n"): coverage AA for `Fill`, Wu lines.
 7. **`notes_2d.md`** finalized (drafted incrementally from phase 1 --
    see below), plus a short perf/LOC write-up comparing against Cairo
    (the 2D twin of the `notes_playground3d_related_work.md`

@@ -140,7 +140,7 @@ let present sdl_window =
 let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(update : 'msg -> 'model -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
-    ~(draw : fps:float -> 'view -> unit) =
+    ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit) =
   let sdl_event = Sdl.Event.create () in
 
   let initmodel, _cmdsTODO = init () in
@@ -202,6 +202,12 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
         | x when x = Sdl.Event.key_down ->
           let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
           let str = scancode_to_keystring key in
+          (* claude: while a key is held, SDL keeps re-sending key_down
+           * at the keyboard's repeat rate, with keyboard_repeat > 0;
+           * [on_key_press] is for one-shot toggles, so only the first
+           * press counts (see playground3d/native_common/Native_loop.ml
+           * for the same filter and the bug it fixed) *)
+          if Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
           apply_playground_event (E.EKeyChanged (true, str))
 
         | x when x = Sdl.Event.key_up ->

@@ -318,6 +318,8 @@ sleep 2                                    # let it create its window
 WID=$(scripts/xdrive.py find Mouse.exe)    # X window id, e.g. 0x3800007
 scripts/xdrive.py move  $WID 700 200       # window pixels, top-left origin
 scripts/xdrive.py click $WID 700 200       # left click there
+scripts/xdrive.py down  $WID               # hold the button (screenshot now)
+scripts/xdrive.py up    $WID               #  ... and release it
 scripts/xdrive.py key   $WID Right 1       # hold the Right arrow for 1s
 scripts/xdrive.py query $WID               # where does X think the pointer is?
 import -window $WID /tmp/after.png         # then Read the PNG, as in section 7

@@ -21,6 +21,8 @@
 #   scripts/xdrive.py find  <exe-basename>        # prints the window id, e.g. Mouse.exe
 #   scripts/xdrive.py move  <wid> <x> <y>
 #   scripts/xdrive.py click <wid> <x> <y> [button]  # button 1 = left (default)
+#   scripts/xdrive.py down  <wid> [button]        # press and hold, e.g. to
+#   scripts/xdrive.py up    <wid> [button]        #  screenshot while held
 #   scripts/xdrive.py key   <wid> <keysym> [hold-seconds]  # e.g. Left, space, a
 #   scripts/xdrive.py query <wid>                 # where is the pointer?
 #
@@ -78,14 +80,21 @@ def find(exe, timeout=10.):
     # inner content window has the executable's basename as WM_CLASS;
     # its title is shared with the window manager's outer frame.
     # Retries, since right after launching the app the window may not
-    # exist yet (how long that takes varies from run to run).
+    # exist yet (how long that takes varies from run to run), and skips
+    # windows that aren't visible: at startup SDL can briefly have a
+    # window with the right WM_CLASS that is destroyed right after
+    # (seen as "BadWindow" errors on the next command).
     deadline = time.time() + timeout
     while True:
         tree = subprocess.run(["xwininfo", "-root", "-tree"], capture_output=True,
                               text=True, check=True).stdout
         for line in tree.splitlines():
             if '"%s"' % exe in line:
-                return line.split()[0]
+                wid = line.split()[0]
+                info = subprocess.run(["xwininfo", "-id", wid], capture_output=True,
+                                      text=True).stdout
+                if "IsViewable" in info:
+                    return wid
         if time.time() > deadline:
             sys.exit("xdrive: no window for %s" % exe)
         time.sleep(0.2)
@@ -124,7 +133,8 @@ def query(d, wid):
 def main(argv):
     if len(argv) < 3:
         sys.exit("usage: xdrive.py find <exe> | move <wid> <x> <y> | "
-                 "click <wid> <x> <y> [button] | key <wid> <keysym> [hold] | "
+                 "click <wid> <x> <y> [button] | down|up <wid> [button] | "
+                 "key <wid> <keysym> [hold] | "
                  "query <wid>")
     cmd = argv[1]
     if cmd == "find":
@@ -141,6 +151,11 @@ def main(argv):
         x11.XSync(d, 0)
         time.sleep(0.1)
         xtst.XTestFakeButtonEvent(d, button, 0, CURRENT_TIME)
+        x11.XSync(d, 0)
+    elif cmd in ("down", "up"):
+        button = int(argv[3]) if len(argv) > 3 else 1
+        focus(d, wid)
+        xtst.XTestFakeButtonEvent(d, button, 1 if cmd == "down" else 0, CURRENT_TIME)
         x11.XSync(d, 0)
     elif cmd == "key":
         hold = float(argv[4]) if len(argv) > 4 else 0.1

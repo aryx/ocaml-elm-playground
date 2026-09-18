@@ -134,16 +134,26 @@ let fill_transformed_box (fb : Framebuffer.t) (m : Affine.t) (xmin, ymin, xmax, 
 (* Shapes *)
 (*****************************************************************************)
 
+type options = { alpha_blending : bool }
+
+let default_options = { alpha_blending = true }
+
+(* The opacity to draw with. Without blending, there's no "partly
+ * there": e.g. [fade 0.2] draws fully opaque, only [fade 0.] hides *)
+let effective_alpha (options : options) (alpha : float) : float =
+  if options.alpha_blending then alpha else if alpha > 0. then 1. else 0.
+
 (* [m] is the transform from the coordinates [shape] lives in (the
  * window's, or its enclosing group's) to pixel coordinates *)
-let rec render_shape (fb : Framebuffer.t) (m : Affine.t) (shape : Playground.shape) : unit =
+let rec render_shape (options : options) (fb : Framebuffer.t) (m : Affine.t) (shape : Playground.shape) : unit =
   let m = Affine.compose m (shape_transform shape) in
+  let alpha = effective_alpha options shape.alpha in
   match shape.form with
   | Group shapes ->
       (* TODO: alpha, like Shape_render_native; doing it right needs an
        * offscreen layer (fading each child separately would let
        * overlapping children show through each other) *)
-      List.iter (render_shape fb m) shapes
+      List.iter (render_shape options fb m) shapes
   | Circle (color, _)
   | Oval (color, _, _)
   | Rectangle (color, _, _)
@@ -151,12 +161,12 @@ let rec render_shape (fb : Framebuffer.t) (m : Affine.t) (shape : Playground.sha
   | Polygon (color, _)
   | Words (color, _) ->
       Option.iter
-        (fun bounds -> fill_transformed_box fb m bounds ~rgb:(rgb_of_color color) ~alpha:shape.alpha)
+        (fun bounds -> fill_transformed_box fb m bounds ~rgb:(rgb_of_color color) ~alpha)
         (local_bounds shape.form)
   | Image _ ->
       Option.iter
-        (fun bounds -> fill_transformed_box fb m bounds ~rgb:image_placeholder_rgb ~alpha:shape.alpha)
+        (fun bounds -> fill_transformed_box fb m bounds ~rgb:image_placeholder_rgb ~alpha)
         (local_bounds shape.form)
 
-let render (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
-  List.iter (render_shape fb (screen_transform fb)) shapes
+let render ?(options = default_options) (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
+  List.iter (render_shape options fb (screen_transform fb)) shapes

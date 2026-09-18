@@ -33,7 +33,10 @@ val present : Tsdl.Sdl.window -> unit
  * a Tick, calls [draw ~fps v] with [v] the app's [view] (the backend
  * must have put the pixels in the window surface when it returns),
  * [present]s, and paces to 60fps. Mouse positions are already in Elm's
- * coordinates (origin at the window's center, y up).
+ * coordinates (origin at the window's center, y up). Each physical key
+ * press (not the repeats while it's held) also calls [on_key_press] with
+ * the key's name, e.g. "t", for backend-specific debug toggles; the app
+ * still gets the key too.
  *
  * The arguments are the fields of a ('model, 'msg) Playground.app
  * ('view = Playground.shape list), passed one by one because this
@@ -50,4 +53,5 @@ val run :
   subscriptions:('model -> 'msg Sub.t) ->
   view:('model -> 'view) ->
   draw:(fps:float -> 'view -> unit) ->
+  on_key_press:(string -> unit) ->
   unit
