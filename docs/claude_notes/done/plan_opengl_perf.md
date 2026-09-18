@@ -252,11 +252,11 @@ backend's full list in `Render.options`, debug keys behind
 `-debug-keys`, `-keys k` to press them from the command line
 (reproducible A/B runs), "h" for help. What this plan adds:
 
-- **A "c" debug key** on the OpenGL backend (the WebGL one has no debug
+- **An "o" debug key** on the OpenGL backend (the WebGL one has no debug
   keys yet): caching on/off (off = treat
   every `Cached3d` as a group, today's behavior). It's a debug key, not
   a `rendering` hint: it must never change a pixel, only the speed.
-  `-keys c` gives the uncached baseline from the command line.
+  `-keys o` gives the uncached baseline from the command line.
 - **A stats line with `-debug`**, next to `Native_loop`'s view/draw
   times: draw calls, vertices uploaded this frame, live/built/freed
   cached meshes (from `Mesh_cache`'s counters). This is what makes the
@@ -299,17 +299,40 @@ fragment-shader lines, on the software side a new one-idea
 -uncapped -fixed-time 0`; Minecraft3d's default world, 54455 shown
 blocks):
 
-| | per frame | view | draw | vertices uploaded per frame |
+| | CPU time per frame | view | draw | vertices uploaded per frame |
 |---|---|---|---|---|
 | before (rebuild every frame) | ~6.5s (0.15 fps), growing | 2.5s | 3.9s | 1959012 |
 | after, first frame (builds the 121 chunk meshes) | 0.41s | 0 | 0.41s | 408372 |
-| after, every other frame | ~1ms (median; ~500-850 fps) | 0 | ~1ms | 0 |
+| after, every other frame | ~1ms | 0 | ~1ms | 0 |
+
+How to read "CPU time": `Native_loop` measures a frame up to the end
+of `draw`, i.e. until the GL commands are *queued*, not executed (the
+GPU works asynchronously, see `notes_opengl.md` section 1), and before
+`Sdl.gl_swap_window`, which waits for the GPU and for the screen's
+vertical sync. So the fps logged with `-debug` (~500-1000 here) is
+what the CPU could sustain; what's shown is 60 fps, the vsync (~57
+frames per second counted over a run). The before/after comparison is
+still the point: from seconds of CPU work per frame to nearly none.
 
 Hidden-face culling alone: 1959012 -> 408372 vertices (4.8x fewer).
-Cached and uncached (`-keys c`) frames are byte-identical
+Cached and uncached (`-keys o`) frames are byte-identical
 (`-dump-frame 3`). WebGL draws the same picture (headless Chrome,
 SwiftShader); its fps wasn't measured (headless Chrome renders
 WebGL in software).
+
+`examples3d/CachedGrid3d` (1600 cubes, 57600 vertices, cached, plus a
+small uncached spinning cube, the camera orbiting), same machine:
+
+| | CPU time per frame | frames shown per second | vertices uploaded per frame |
+|---|---|---|---|
+| cached | < 1ms | ~57 (vsync) | 36 (the spinner) |
+| uncached (`-keys o`) | ~75ms | ~13 | 57636 |
+
+Again byte-identical frames with and without the cache. It also found
+a WebGL bug: on that scene, the simple `Gpu_scene` code overflowed the
+browser's stack (`List.concat` isn't tail-recursive in OCaml 4.14, and
+recursed once per face: 9600 levels); fixed with a tail-recursive
+`concat` in `Gpu_scene`.
 
 0. **DONE (for Minecraft3d).** Measure. Give the OpenGL backend a `dump_frame` (`Gl.read_pixels`
    into a PPM, like the software backend's), so `-dump-frame` works on
@@ -322,14 +345,15 @@ WebGL in software).
    baseline for `games3d/opengl/Minecraft3d.exe` (the target) and a
    big `Cubes3d`-like scene (for general benchmarks, which leave
    Minecraft3d out).
-1. **DONE, except the example.** `cached3d` + `Mesh_cache` + OpenGL.
+1. **DONE.** `cached3d` + `Mesh_cache` + OpenGL.
    The new `form3d` case in
    every match (list above), `Mesh_cache`, the `Gpu_scene` split, the
-   OpenGL upload/draw/free, the "c" key and the stats line. Not done:
-   a new `examples3d/` scene (e.g. thousands of cubes in one
-   `cached3d`) to show and measure it outside Minecraft3d, with a
-   golden frame on the software backend, identical to its uncached
-   twin.
+   OpenGL upload/draw/free, the "o" key and the stats line. The
+   example, `examples3d/CachedGrid3d` (software, OpenGL, WebGL), with
+   a golden frame on the software backend, and `tests/3d/Unit_cached3d`
+   checking that a cached3d gives the software rasterizer the same
+   faces as the group3d of the same shapes (also after move3d/rotate3d),
+   and its HUD shapes.
 2. **Not done, on purpose**: the cheaper dynamic path (see Design 3).
 3. **DONE.** **WebGL**: its upload/draw/free for `Mesh_cache` (the WebGL backend
    draws real scenes, see `done/plan_webgl.md`; it follows this plan's
@@ -343,10 +367,14 @@ WebGL in software).
    atlas cell at a cell's border); the classic fix is to shrink each
    cell's UV rectangle by half a texel. To check on a real browser's
    GPU first.
-5. **Chunk invalidation on edit**, once `plan_tiny_minecraft.md`'s
-   Phase 5 exists to exercise it: no visible hitch per edit, live mesh
-   count stable after many edits.
-6. **Only if numbers say so** (each independent):
+5. **Left to `plan_tiny_minecraft.md`'s Phase 5** (block add/remove,
+   which will exercise it): chunk invalidation on edit, i.e. rebuild
+   the `cached3d` of the touched chunks; no visible hitch per edit,
+   live mesh count stable after many edits (the stats line). Nothing
+   to add to the libraries for it: the sweep already frees the old
+   meshes.
+6. **Moved to `plan_3d_remaining.md`** (only if numbers say so, each
+   independent):
    - fog + draw distance (`rendering` hints, see Design 4);
    - frustum culling of cached nodes, with a bounding box computed at
      `cached3d` construction;
@@ -360,7 +388,7 @@ WebGL in software).
   software backend, a golden frame (`tests/3d/`) of the new example,
   and a unit test that `Shape3d_render_software.faces (cached3d l)` =
   `faces (group3d l)`. On OpenGL, `-dump-frame` with and without
-  `-keys c`, compared on the same machine.
+  `-keys o`, compared on the same machine.
 - **Speed**: each phase's numbers (Phase 0 method, plus the stats
   line) recorded in this file as it completes, like
   `notes_3d_opti.md`.

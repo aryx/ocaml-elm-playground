@@ -8,6 +8,7 @@
     PaintersAlgorithmFail3d
     FloatingCity3d
     Corridor3d
+    CachedGrid3d
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp

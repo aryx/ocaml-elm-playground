@@ -129,10 +129,19 @@ let rec collect_batches ?on_cached (shape : Playground3d.shape3d) : (material * 
  * per distinct texture src (each needs its own texture bound before
  * its draw call). O(batches * distinct materials), fine at this
  * project's scene sizes (a handful to a few dozen faces) -- simplicity
- * over cleverness, per this project's own established preference. *)
+ * over cleverness, per this project's own established preference.
+ *
+ * claude: [concat] is List.concat, but tail-recursive (concat_map is,
+ * concat isn't, in OCaml < 5.1). List.concat recurses once per list,
+ * i.e. once per face here: fine for native code's big stack, but a
+ * 1600-cube scene (examples3d/CachedGrid3d, 9600 faces) overflowed the
+ * browser's much smaller one on the WebGL backend ("Maximum call stack
+ * size exceeded"). *)
+let concat (lists : 'a list list) : 'a list = List.concat_map Fun.id lists
+
 let group_by_material ?on_cached (shapes : Playground3d.shape3d list) : (material * vertex_data list) list =
   let batches = List.concat_map (collect_batches ?on_cached) shapes in
-  let flat = batches |> List.filter_map (function (Flat, vs) -> Some vs | _ -> None) |> List.concat in
+  let flat = batches |> List.filter_map (function (Flat, vs) -> Some vs | _ -> None) |> concat in
   let texture_srcs =
     batches |> List.filter_map (function (Textured src, _) -> Some src | _ -> None) |> List.sort_uniq compare
   in
@@ -142,7 +151,7 @@ let group_by_material ?on_cached (shapes : Playground3d.shape3d list) : (materia
            let vs =
              batches
              |> List.filter_map (function (Textured s, vs) when s = src -> Some vs | _ -> None)
-             |> List.concat
+             |> concat
            in
            (Textured src, vs))
   in

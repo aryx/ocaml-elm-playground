@@ -2,7 +2,16 @@
 ; test' (dune runtest); see Golden_frames.ml
 (test
  (name Test)
- (libraries testo testutil)
+ (libraries
+   alcotest
+   testo
+   testutil
+   ; for Unit_cached3d, which calls the 3D Playground and its software
+   ; backend's shape -> face conversion directly
+   elm_playground_software ; implem of virtual elm_playground
+   elm_playground_3d
+   elm_playground_3d_software ; implem of virtual elm_playground_3d
+ )
  (deps
    (glob_files golden/*.png)
    %{project_root}/examples3d/Cube3d.exe
@@ -13,6 +22,7 @@
    %{project_root}/examples3d/PaintersAlgorithmFail3d.exe
    %{project_root}/examples3d/FloatingCity3d.exe
    %{project_root}/examples3d/Corridor3d.exe
+   %{project_root}/examples3d/CachedGrid3d.exe
    %{project_root}/examples3d/checker.png ; TexturedCube3d's texture
  )
 )

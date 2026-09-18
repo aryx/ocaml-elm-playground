@@ -48,6 +48,28 @@ it (a big low-poly sphere close to the camera?).
 In [`plan_2d_remaining.md`](plan_2d_remaining.md), item 1: once fixed,
 `Texture.sample_bilinear` could share `Blit`'s sampler.
 
+## 5. The GPU backends, for bigger scenes
+
+What [`done/plan_opengl_perf.md`](done/plan_opengl_perf.md) left, only
+if a scene's numbers ask for it (`-debug`'s stats line), each
+independent, for both GPU backends:
+
+- **fog + a draw distance**, the Python Minecraft's two other tricks:
+  `rendering` hints, since fog changes pixels (a few fragment-shader
+  lines on the GPU; a new one-idea `graphics/3d/Fog` for the software
+  rasterizer);
+- **frustum culling** of cached nodes: skip the chunks outside the
+  camera's view, with a bounding box computed once by `cached3d`;
+- **indexed drawing** (`draw_elements`: 4 vertices per quad instead of
+  6, see `notes_opengl.md` section 7);
+- **a per-node model matrix**, so that moving objects can be cached
+  too (today `move3d` on a `cached3d` gives an uncached group);
+- **texture-atlas bleeding**: faint lines along some block edges in
+  Minecraft3d's WebGL screenshot (headless Chrome's SwiftShader; not
+  seen on OpenGL), probably a sample from the neighboring atlas cell at
+  a cell's border. The classic fix: shrink each cell's UV rectangle by
+  half a texel. To check in a real browser first.
+
 ## Smaller things noticed along the way
 
 - **Hershey's colon** at small sizes, e.g. the HUD's "Mouse:": see

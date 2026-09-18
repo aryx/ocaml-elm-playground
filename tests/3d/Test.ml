@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"3d" (fun _env -> Golden_frames.tests)
+let () = Testo.interpret_argv ~project_name:"3d" (fun _env -> Golden_frames.tests @ Unit_cached3d.tests)

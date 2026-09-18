@@ -10,6 +10,7 @@
 (copy_files ../PaintersAlgorithmFail3d.ml)
 (copy_files ../FloatingCity3d.ml)
 (copy_files ../Corridor3d.ml)
+(copy_files ../CachedGrid3d.{ml,mli})
 
 (executables
   (names
@@ -22,6 +23,7 @@
     PaintersAlgorithmFail3d
     FloatingCity3d
     Corridor3d
+    CachedGrid3d
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp

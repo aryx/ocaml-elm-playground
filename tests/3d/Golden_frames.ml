@@ -43,6 +43,7 @@ let scenes : Testutil_golden.scene list =
     ("examples3d/Corridor3d", "", 3);
     ("examples3d/Corridor3d", "c", 3);
     ("examples3d/Corridor3d", "f", 3);
+    ("examples3d/CachedGrid3d", "", 3);
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" scenes

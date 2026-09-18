@@ -114,7 +114,10 @@ The window title shows every toggle's current state.
 
 The OpenGL backend (`examples3d/opengl/`, `games3d/opengl/`) has `m`
 (no lighting, flat, smooth), `b`, `f`, and `i` too, with `-debug-keys`
-as well.
+as well, and `o`: its optimization, keeping the GPU buffers of
+`Playground3d.cached3d` shapes from frame to frame (try
+`games3d/opengl/Minecraft3d.exe` or `examples3d/opengl/CachedGrid3d.exe`
+with `-debug`, which logs the draw calls and vertices uploaded).
 
 Choosing how an app is drawn
 ----------------------------

@@ -18,7 +18,8 @@ See also:
   software-vs-OpenGL fps/LOC numbers.
 - `done/plan_opengl.md`: how the backend was built, and its
   one-for-one comparison table (expanded in section 3 below).
-- `plan_opengl_perf.md`: the plan to make big static scenes fast.
+- `plan_opengl_perf.md`: how big static scenes were made fast
+  (`cached3d`, `Mesh_cache`), with the measurements.
 
 ## 1. What a GPU is, from a programmer's point of view
 
@@ -169,7 +170,7 @@ into world-space points on the CPU (see `Playground3d.ml`'s
 uploaded once, and move the object by changing its (16-float) model
 matrix. That's why moving a character in a game costs nothing, while
 `move3d` on a big shape re-computes every point. See
-`plan_opengl_perf.md`'s "per-node model matrix" future item.
+`plan_3d_remaining.md`'s "per-node model matrix" item.
 
 Depth has one GPU-specific subtlety: the projection maps view `z` in
 `near..far` to NDC `-1..1` *non-linearly* (roughly like `1/z`), so most
@@ -285,7 +286,7 @@ few milliseconds. **Switching to a GPU speeds up the stages the GPU
 does; it can't speed up CPU work you do before handing it the data.**
 Removing that CPU work, by building the world once and keeping it in
 GPU memory (the last column, see "Rebuild vs. render" below), took the
-frame from ~6.5s to ~1ms (`plan_opengl_perf.md`, Results).
+CPU time per frame from ~6.5s to ~1ms (`plan_opengl_perf.md`, Results).
 
 ### Rebuild vs. render
 
@@ -335,7 +336,7 @@ kept in VRAM plus one small per-frame matrix, is why a game can move
 the camera through millions of triangles at 60 fps.
 
 The same step without the cache, for contrast (a scene of plain
-`group3d`s, or the "c" key of the OpenGL backend with `-debug-keys`):
+`group3d`s, or the "o" key of the OpenGL backend with `-debug-keys`):
 the top row is rebuilt in OCaml and re-uploaded every frame whether or
 not anything moved (~86MB for Minecraft3d before hidden-face culling),
 so moving costs exactly as much as standing still, and both are slow.

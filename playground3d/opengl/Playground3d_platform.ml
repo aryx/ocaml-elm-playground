@@ -156,10 +156,12 @@ let shading_code (s : Playground3d.shading) : int = match s with No_lighting -> 
 let backface_culling = ref true
 let smooth_textures = ref true
 
-(* claude: "c": keep the GPU buffers of Playground3d.cached3d shapes
+(* claude: "o": keep the GPU buffers of Playground3d.cached3d shapes
  * from frame to frame (see Mesh_cache), or rebuild and re-upload them
- * every frame like groups. Not a rendering hint: it changes the speed,
- * never the picture. *)
+ * every frame like groups. The same key as the software backend's
+ * optimizations (Opti), for the same idea: the simple code or the
+ * optimized one. Not a rendering hint: it changes the speed, never the
+ * picture. *)
 let use_cache = ref true
 
 (*****************************************************************************)
@@ -388,7 +390,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
     if str = "m" then cycle_shading ();
     if str = "b" then backface_culling := not !backface_culling;
     if str = "i" then smooth_textures := not !smooth_textures;
-    if str = "c" then use_cache := not !use_cache
+    if str = "o" then use_cache := not !use_cache
   in
   let use_material (material : Gpu_scene.material) : unit =
     match material with
@@ -465,7 +467,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
     if !backface_culling then Gl.enable Gl.cull_face_enum else Gl.disable Gl.cull_face_enum;
     draw_calls := 0;
     vertices_uploaded := 0;
-    (* claude: the cached3d shapes are set aside (without the cache, "c",
+    (* claude: the cached3d shapes are set aside (without the cache, "o",
      * they're flattened with the rest, like groups), the rest drawn as
      * before, then the cached ones from their meshes *)
     let cached = ref [] in
@@ -485,7 +487,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
    * like the software backend's, read back from the GPU before
    * [present]; OpenGL's rows go bottom to top, a PPM's top to bottom.
    * The pixels depend on the GPU and its driver: only compare frames
-   * from the same machine (e.g. with and without -keys c). *)
+   * from the same machine (e.g. with and without -keys o). *)
   let dump_frame file =
     let pixels = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (sx * sy * 3) in
     Gl.pixel_storei Gl.pack_alignment 1;

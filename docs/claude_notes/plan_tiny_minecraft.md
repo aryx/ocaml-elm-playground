@@ -184,7 +184,13 @@ player's bounding box's corners, not real geometric collision detection
    relative-mouse-motion gap above.
 4. **Physics**: gravity, jumping, fly-mode toggle, collision.
 5. **Interaction**: `hit_test`-based block add/remove on click, block
-   type selection.
+   type selection. After an edit at `pos`, rebuild the `cached3d` of
+   the chunks of `pos` and of its 6 neighbors (a neighbor can be in
+   the adjacent sector, and its exposed faces changed); the GPU
+   backends free the old meshes by themselves (`Mesh_cache`'s sweep).
+   Check with `-debug`'s stats line: no visible hitch per edit, and
+   the live mesh count stays at the number of chunks after many edits
+   (see `done/plan_opengl_perf.md`, Phase 5).
 6. **Polish**: HUD (crosshair/selected-block indicator, now
    unblocked -- see above), matching the original's world-generation
    "hills" more closely if the flat/simple version from Phase 1 feels
