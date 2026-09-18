@@ -1,6 +1,6 @@
 ; claude: code shared by the SDL-based 2D playground backends --
 ; playground/native/ (Cairo) and the planned playground/software/ (see
-; docs/claude_notes/plan_software_2d.md). A plain library, not an
+; docs/claude_notes/done/plan_software_2d.md). A plain library, not an
 ; (implements elm_playground): two implementations of the same virtual
 ; library can't depend on each other, but they can both depend on this.
 ; Must stay Cairo-free.

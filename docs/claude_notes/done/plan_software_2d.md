@@ -357,9 +357,12 @@ Planned, each with the phase that makes it meaningful:
    `notes_opti.md` (1.5x to 7x slower than Cairo). Also a third
    optimization, images by forward differencing (`Blit.draw_fast`,
    Turtle 51 -> 102 fps).
-8. *(stretch)* TrueType outline rasterizer replacing Hershey.
-9. *(optional)* `playground3d/software/` HUD via `elm_playground_raster`
+8. *(stretch)* TrueType outline rasterizer replacing Hershey. Not done:
+   see `plan_2d_remaining.md`, with the other open items.
+9. **DONE.** *(optional)* `playground3d/software/` HUD via `elm_playground_raster`
    instead of Cairo (making the 3D software renderer Cairo-free too).
+   Done as phase 5 of `plan_code_reorg_teaching_3d.md`, with
+   `elm_playground_software` (the raster backend's final name).
 
 ## `notes_2d.md`: the companion tutorial
 

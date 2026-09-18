@@ -14,7 +14,7 @@
 (* Software-rendering backend of Playground: every pixel is computed by
  * our own code (Shape_render_software, on top of graphics/),
  * and SDL is only used to open a window, get input events, and show the
- * pixels. See docs/claude_notes/plan_software_2d.md.
+ * pixels. See docs/claude_notes/done/plan_software_2d.md.
  *
  * The trick that makes this simple: SDL gives us the window's pixels as
  * a plain array in memory (Native_loop_2d.create_window), and a

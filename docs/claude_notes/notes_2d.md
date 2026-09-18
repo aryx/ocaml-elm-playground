@@ -13,7 +13,7 @@ the framebuffer and images, `graphics/2d/geometry/` transforms,
 `playground/software/` (the Playground backend using them).
 
 The 2D counterpart of [`notes_3d.md`](notes_3d.md). Companions:
-[`plan_software_2d.md`](plan_software_2d.md) (how the backend was built,
+[`done/plan_software_2d.md`](done/plan_software_2d.md) (how the backend was built,
 phase by phase), [`notes_font.md`](notes_font.md) (text, in depth) and
 [`notes_opti.md`](notes_opti.md) (what each feature costs, and the
 optimizations).

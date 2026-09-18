@@ -8,7 +8,7 @@ what this repository's from-scratch software rasterizer does -- with
 pointers into the code (`graphics/font/Hershey.ml`,
 `graphics/2d/Stroke.ml`, `playground/software/Shape_render_software.ml`).
 
-Companion to [`plan_software_2d.md`](plan_software_2d.md) (the software
+Companion to [`done/plan_software_2d.md`](done/plan_software_2d.md) (the software
 2D backend's plan, phase 5 being text) and to the future `notes_2d.md`
 (2D rasterization in general).
 
@@ -158,7 +158,7 @@ from most to least radical:
 - **Antialiasing**: instead of "is this pixel's center inside?" (what
   our `Fill` does), compute *how much* of the pixel is covered, and use
   that as its opacity: edges get intermediate shades, and look smooth.
-  Phase 6 of `plan_software_2d.md` is exactly this.
+  Phase 6 of `done/plan_software_2d.md` is exactly this.
 - **Subpixel rendering** (e.g. Microsoft's ClearType, around 2000): an
   LCD pixel is three thin red, green, blue bars side by side, so
   antialias at 3 times the horizontal resolution, one channel per bar.

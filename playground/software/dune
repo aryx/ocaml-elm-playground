@@ -1,5 +1,5 @@
 ; claude: the software-rendering backend, see Playground_platform.ml and
-; docs/claude_notes/plan_software_2d.md. No Cairo, on purpose.
+; docs/claude_notes/done/plan_software_2d.md. No Cairo, on purpose.
 (library
   (public_name elm_playground_software)
   (implements elm_playground)

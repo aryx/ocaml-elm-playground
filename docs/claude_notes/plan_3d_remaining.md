@@ -43,25 +43,15 @@ key (linear / perspective-correct for everything). Visible only on
 large, oblique, curved triangles: a new example may be needed to show
 it (a big low-poly sphere close to the camera?).
 
-## 4. 2D: `Blit`'s simple and optimized bilinear paths differ by 1
+## 4. 2D: `Blit`'s bilinear rounding
 
-`Blit.sample_bilinear` (the simple path, "o" off) rounds after each of
-its 3 mixes (`Blit.lerp`), `Blit.draw`'s optimized path rounds once, at
-the end: so in 2D the "o" key can change a bilinear image's pixels by 1,
-against the rule that an optimization keeps the pixels. Fix: `lerp` on
-floats, rounding once. Then `graphics/3d/Texture.sample_bilinear`, which
-rounds once too, could share Blit's sampler (the plan's original idea;
-see `Texture.mli`). No 2D golden has an image (Turtle and Mario
-download theirs), so `graphics/tests/Unit_blit.ml` is the check; and a
-local image in an example would let a golden cover it.
+In [`plan_2d_remaining.md`](plan_2d_remaining.md), item 1: once fixed,
+`Texture.sample_bilinear` could share `Blit`'s sampler.
 
 ## Smaller things noticed along the way
 
-- **Hershey's colon** at small sizes (the 3D HUD, ~13 pixels): two tiny
-  stroked diamonds, a smudge close to the previous letter ("Mouse:").
-  The help panel draws its text 1.3 times bigger, where it reads fine.
-  Maybe a minimum dot size, or a bit more spacing, in `graphics/font` or
-  the stroke renderer.
+- **Hershey's colon** at small sizes, e.g. the HUD's "Mouse:": see
+  [`plan_2d_remaining.md`](plan_2d_remaining.md), item 3.
 - **Transparency on the software 3D backend**: `fade3d` is ignored
   (README-3d's limitations). The classic way: draw the opaque faces
   with the z-buffer, then the transparent ones sorted far to near
@@ -75,8 +65,9 @@ local image in an example would let a golden cover it.
   y too, and the barycentric weights (so z, u/z, v/z) instead of
   multiplying per pixel.
 - **The web backend drops triangles crossing the near plane**
-  (`Playground3d.render3d_to_2d`): `Clip` could be used there too, on
-  the projected polygons (e.g. `examples3d/Corridor3d` in a browser).
+  (`Playground3d.render3d_to_2d`): `Clip` could be used there too, in
+  view coordinates, before projecting each polygon (e.g.
+  `examples3d/Corridor3d` in a browser).
 - **The OpenGL backend has no HUD** (`notes_3d.md` section 12), and no
   "h" help.
 - **Golden frames not covered**: Minecraft3d (slow, and a 1.5 MB frame;
