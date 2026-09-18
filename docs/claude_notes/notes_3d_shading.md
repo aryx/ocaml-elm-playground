@@ -10,7 +10,7 @@ of these -- see below).
 
 ## What exists today
 
-All of it lives in `playground3d/native/Playground3d_platform.ml`'s
+All of it lives in `playground3d/software/Playground3d_platform.ml`'s
 "Shading" section (only the native backend does any of this -- the web
 backend has no per-pixel access at all, so it can't shade anything; see
 `notes_3d.md`'s lucamug comparison table).

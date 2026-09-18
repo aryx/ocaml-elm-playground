@@ -1,5 +1,5 @@
 (library
- (public_name elm_playground_3d_native)
+ (public_name elm_playground_3d_software)
  (implements elm_playground_3d)
  (libraries
    tsdl

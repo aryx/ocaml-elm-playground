@@ -2,7 +2,7 @@
 
 Purpose: track each performance optimization and rendering-correctness
 fix applied to the native rasterizer
-(`playground3d/native/Playground3d_platform.ml`), with what it changed,
+(`playground3d/software/Playground3d_platform.ml`), with what it changed,
 why the "simpler" code before it wasn't good enough, and (for the perf
 ones) measured before/after FPS -- so the reasoning stays visible even
 as the code accumulates optimizations. Companion to

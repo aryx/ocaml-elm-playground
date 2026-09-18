@@ -20,7 +20,7 @@
  * 'view = camera * shape3d list aren't named here) rather than
  * depending on Playground3d directly: this library only depends on
  * Playground (elm_playground), not Playground3d (elm_playground_3d).
- * elm_playground_3d_native "(implements elm_playground_3d)" already
+ * elm_playground_3d_software "(implements elm_playground_3d)" already
  * lists elm_playground_3d itself as that implementation's one
  * legitimate edge to it -- dune forbids that same virtual library from
  * also being reachable via a second path (e.g. through this library),

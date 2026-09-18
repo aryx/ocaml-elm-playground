@@ -97,7 +97,7 @@ before this can feel like an actual FPS-style game:
    window-bounded position `Playground.mouse` currently exposes -- and
    ideally a captured/hidden cursor that can move infinitely (SDL's
    relative mouse mode, `Sdl.set_relative_mouse_mode`, not currently
-   used anywhere in `playground3d/native/`). Without it, looking around
+   used anywhere in `playground3d/software/`). Without it, looking around
    is bounded by how far the mouse can physically move inside the
    window before hitting an edge. Likely needs a small, targeted
    addition to the native backend (e.g. exposing relative deltas

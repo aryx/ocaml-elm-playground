@@ -6,7 +6,7 @@ what "rendering a 3D scene" actually means, the handful of ideas every
 built out of, where those ideas came from historically, and exactly
 which of them `playground3d/` uses -- with pointers into the actual
 code. If you read this once, the code in `Playground3d.ml` and
-`playground3d/native/Playground3d_platform.ml` should stop looking like
+`playground3d/software/Playground3d_platform.ml` should stop looking like
 a wall of trigonometry and start looking like a small, recognizable set
 of standard building blocks.
 
@@ -41,7 +41,7 @@ some version of these four steps. `playground3d/`'s pipeline is exactly
 this, and you can see all four stages as separate, named functions:
 step 1 is `move3d`/`rotate3d`/`scale3d` (`Playground3d.ml`), steps 2-4
 are `view_space` and `project_vertex` in
-`playground3d/native/Playground3d_platform.ml` (or `project` in
+`playground3d/software/Playground3d_platform.ml` (or `project` in
 `Playground3d.ml` for the web backend's simpler 2D-point-only version).
 
 ## 2. Points, vectors, and the two operations everything is built from
@@ -527,7 +527,7 @@ different, heavier-weight programming model (a shader language, GPU
 buffer management, usually a real matrix/quaternion math library) --
 deliberately not what this library is going for; the whole point of
 `playground3d/` is that you can read every line of `Playground3d.ml`
-and `playground3d/native/Playground3d_platform.ml` and see exactly what
+and `playground3d/software/Playground3d_platform.ml` and see exactly what
 number produced what pixel, the same "no magic" spirit as the original
 2D `elm-playground`. See `notes_playground3d_related_work.md` for the
 fuller survey -- the rest of the Elm "3D playground" lineage
@@ -537,7 +537,7 @@ design compares to each.
 
 ## 11. Try it yourself: 4 runtime-toggleable rendering modes
 
-`playground3d/native/Playground3d_platform.ml` doesn't just describe
+`playground3d/software/Playground3d_platform.ml` doesn't just describe
 several of the trade-offs above -- they're wired up as live, in-game
 toggles you can flip with a single key press while any native
 example/game is running, so you can directly compare "simple" vs "more
@@ -688,7 +688,7 @@ See `docs/claude_notes/done/plan_hud.md` for the full design writeup
 (including the one non-obvious implementation wrinkle: dune seals a
 virtual module's implementation to exactly its virtual `.mli`, so
 `playground/native/Playground_platform.ml`'s shape-drawing code
-couldn't be called from `playground3d/native/` directly until it was
+couldn't be called from `playground3d/software/` directly until it was
 extracted into a new plain sibling module, `Shape_render_native`).
 
 ## Glossary (quick reference)

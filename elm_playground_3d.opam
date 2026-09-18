@@ -5,7 +5,7 @@ synopsis: "Interface of the 3D Playground"
 description: """
 This is just the interface of the 3D playground. You'll need an
   actual platform library to compile your application
-  (elm_playground_3d_native or elm_playground_3d_web)
+  (elm_playground_3d_software or elm_playground_3d_web)
 """
 maintainer: ["Yoann Padioleau <yoann.padioleau@gmail.com"]
 authors: ["Yoann Padioleau <yoann.padioleau@gmail.com"]

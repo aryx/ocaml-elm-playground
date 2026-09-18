@@ -28,7 +28,7 @@
 
 (*****************************************************************************)
 (* Vec3 (duplicated from Playground3d.ml, which keeps it private -- see
- * the identical comment in playground3d/native/Playground3d_platform.ml) *)
+ * the identical comment in playground3d/software/Playground3d_platform.ml) *)
 (*****************************************************************************)
 
 type vec3 = float * float * float
@@ -119,7 +119,7 @@ let mat4_mul (a : float array) (b : float array) : float array =
 (* Flattening a shape3d tree into per-material vertex lists *)
 (*****************************************************************************)
 (* Deliberately simpler than the native rasterizer's flatten_faces
- * (playground3d/native/Playground3d_platform.ml): a "material" here is
+ * (playground3d/software/Playground3d_platform.ml): a "material" here is
  * only ever Flat or Textured (no separate texture-sampling closure --
  * that's the backend's fragment shader's job now), and it exists at
  * all only because a GPU draw call can bind at most one texture at a
@@ -245,7 +245,7 @@ let vertex_floats_of_group (vertices : vertex_data list) : float array * int =
   (data, vertex_count)
 
 (* claude: byte-for-byte the same light_dir as
- * playground3d/native/Playground3d_platform.ml's -- computed here in
+ * playground3d/software/Playground3d_platform.ml's -- computed here in
  * OCaml (with the exact same normalize function) and uploaded as a
  * uniform, rather than re-typed as a GLSL literal, so there's no risk
  * of a copy-paste/rounding mismatch between the two backends' "same

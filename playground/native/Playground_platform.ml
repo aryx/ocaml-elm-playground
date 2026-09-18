@@ -25,7 +25,7 @@ let spf = Printf.sprintf
 (*****************************************************************************)
 (* The actual shape-drawing code (render_shape and everything it calls)
  * now lives in Shape_render_native, a plain sibling module, so it's
- * usable from a second, independent caller too (playground3d/native/'s
+ * usable from a second, independent caller too (playground3d/software/'s
  * HUD overlay pass -- see docs/claude_notes/plan_hud.md). *)
 
 (* Cairo (0,0) is at the top left of the screen, y down; Elm's

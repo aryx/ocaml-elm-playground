@@ -97,7 +97,7 @@ Nope
   (description "\
   This is just the interface of the 3D playground. You'll need an
   actual platform library to compile your application
-  (elm_playground_3d_native or elm_playground_3d_web)
+  (elm_playground_3d_software or elm_playground_3d_web)
 ")
   (depends
     (elm_core (= :version))
@@ -108,7 +108,7 @@ Nope
   (synopsis "SDL event loop + texture loading shared by native-ish 3D playground backends")
   (description "\
   Not meant to be used directly -- a small library factored out of
-  elm_playground_3d_native so the OpenGL backend (see
+  elm_playground_3d_software so the OpenGL backend (see
   docs/claude_notes/plan_opengl.md) can share the same SDL
   window-event-draining/frame-pacing loop and texture download/decode
   code instead of duplicating them. The event loop (Native_loop) is
@@ -126,7 +126,7 @@ Nope
     (elm_playground (= :version))
   )
 )
-(package (name elm_playground_3d_native)
+(package (name elm_playground_3d_software)
   (synopsis "Native from-scratch software rasterizer for the 3D playground")
   (description "")
   (depends

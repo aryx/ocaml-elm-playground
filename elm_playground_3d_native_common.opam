@@ -5,7 +5,7 @@ synopsis:
   "SDL event loop + texture loading shared by native-ish 3D playground backends"
 description: """
 Not meant to be used directly -- a small library factored out of
-  elm_playground_3d_native so the OpenGL backend (see
+  elm_playground_3d_software so the OpenGL backend (see
   docs/claude_notes/plan_opengl.md) can share the same SDL
   window-event-draining/frame-pacing loop and texture download/decode
   code instead of duplicating them. The event loop (Native_loop) is

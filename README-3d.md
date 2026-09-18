@@ -40,7 +40,7 @@ Two backends, one API
 Like the 2D playground, the same application code runs on two
 backends:
 
-- **native** (`elm_playground_3d_native`): a real, from-scratch
+- **software** (`elm_playground_3d_software`): a real, from-scratch
   software rasterizer -- perspective projection, backface culling, a
   z-buffer depth test, and (see below) 3 more selectable rendering
   strategies, all hand-written, using raw SDL only for the window,

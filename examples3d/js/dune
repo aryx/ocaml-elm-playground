@@ -1,6 +1,6 @@
 ; claude: reuse ../*.ml as-is (a build-time copy, not a committed
 ; symlink/duplicate) so the same backend-agnostic source runs against
-; elm_playground_3d_web here, elm_playground_3d_native in ../dune, and
+; elm_playground_3d_web here, elm_playground_3d_software in ../dune, and
 ; elm_playground_3d_opengl in ../opengl/dune, with only one real file
 ; per example.
 (copy_files ../Cube3d.ml)

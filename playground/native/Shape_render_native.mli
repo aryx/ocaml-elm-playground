@@ -18,7 +18,7 @@
  *
  * Extracted out of Playground_platform.ml (see
  * docs/claude_notes/plan_hud.md) so it's usable from a second,
- * independent caller -- playground3d/native/'s HUD overlay pass --
+ * independent caller -- playground3d/software/'s HUD overlay pass --
  * without needing to call back into elm_playground_native itself,
  * which isn't possible: a virtual module's implementation is sealed
  * to exactly its virtual .mli's signature, so

@@ -29,7 +29,7 @@
     elm_core ; Basics.clamp
     elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
-    elm_playground_3d_native ; implem of virtual elm_playground_3d
+    elm_playground_3d_software ; implem of virtual elm_playground_3d
   )
 )
 
@@ -45,6 +45,6 @@
     elm_core
     elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
-    elm_playground_3d_native ; implem of virtual elm_playground_3d
+    elm_playground_3d_software ; implem of virtual elm_playground_3d
   )
 )

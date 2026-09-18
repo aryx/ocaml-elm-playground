@@ -52,7 +52,7 @@ let ( let* ) o f =
 (*****************************************************************************)
 (* The fragment shader's lighting formula is deliberately byte-for-byte
  * the same as brightness_of_normal in
- * playground3d/native/Playground3d_platform.ml (same directional
+ * playground3d/software/Playground3d_platform.ml (same directional
  * "sun" light, same ambient floor) -- the point of this backend is a
  * fair comparison, not a different look. The one real difference:
  * this runs once per PIXEL, on every one of the GPU's cores in

@@ -2,7 +2,7 @@
 ; a committed duplicate/symlink -- see docs/claude_notes/done/plan_opengl.md
 ; and examples3d/opengl/dune's identical pattern) so the exact same
 ; backend-agnostic source runs against elm_playground_3d_opengl here and
-; elm_playground_3d_native in ../dune, with only one real file per game.
+; elm_playground_3d_software in ../dune, with only one real file per game.
 ;
 ; Note: StarCollector3d.ml's score `hud` won't show up here -- the OpenGL
 ; backend doesn't support Hud yet (see plan_opengl.md's Scope), so it's

@@ -1,7 +1,7 @@
 ; Reuses ../Cubes3d.ml and ../Spheres3d.ml as-is via copy_files (a build-time
 ; rule, not a committed duplicate/symlink -- see plan_opengl.md) so the
 ; exact same backend-agnostic source runs against elm_playground_3d_opengl
-; here and elm_playground_3d_native in ../dune, with only one real file
+; here and elm_playground_3d_software in ../dune, with only one real file
 ; per example.
 (copy_files ../Cubes3d.ml)
 (copy_files ../Spheres3d.ml)
