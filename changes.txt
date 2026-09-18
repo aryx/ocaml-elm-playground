@@ -192,4 +192,5 @@
 - first commits and first prototype, during a "procrastination week" while at R2C
   (now Semgrep) post-launch when I fell in love with Elm, its creator Evan,
   and later Evan's gem that is the elm playground (video games making nostalgia!
-  part of the reason I started computer programming).
+  part of the reason I started computer programming). I even did a weekly-demo
+  about it at R2C :)
