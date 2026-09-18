@@ -1,0 +1,27 @@
+; claude: WebGL-only examples, linked against elm_playground_3d_webgl.
+; Triangle3d.ml lives here (it's the WebGL backend's own first test);
+; the backend-agnostic ../*.ml examples will be reused via copy_files,
+; like ../js/dune does, once the backend draws real scenes
+; (docs/claude_notes/plan_webgl.md, Phase 3).
+
+(executables
+  (names
+    Triangle3d
+  )
+  (libraries
+    elm_core
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_webgl ; implem of virtual elm_playground_3d
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; claude: copy the .html pages into _build/default/examples3d/webgl/
+; next to the generated .bc.js (same trick as ../js/dune)
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))

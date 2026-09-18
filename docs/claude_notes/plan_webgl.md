@@ -272,16 +272,31 @@ gets it for free. Two consequences here:
    `done/plan_code_reorg_teaching_3d.md`) the matrices and lighting
    into `graphics/3d/geometry/` (`Mat4`, `Lighting`, `Vec3`), so the
    whole backend-independent part is already shared.
-2. **Skeleton + hello triangle**: `playground3d/webgl/` library, the
+2. **DONE.** **Skeleton + hello triangle**: `playground3d/webgl/` library, the
    `view2d` side-effect wiring, canvas creation/sizing, context
    creation, shader compile/link with the error log (same
    `get*Parameter` + `get*InfoLog` checks as `opengl/`, just as
    important here: a failed shader is otherwise a silent blank
    canvas), one hardcoded triangle. `examples3d/webgl/dune` + one
    `.html`. Proves the jsoo/WebGL pipeline end to end.
+   Verified with headless Chrome screenshots (`--use-angle=swiftshader
+   --enable-unsafe-swiftshader`) at 800x600 and 600x900: the triangle
+   with its interpolated colors, letterboxed and centered like the
+   `<svg>`, undistorted; `--dump-dom` shows the canvas survives
+   `run_app`'s first-frame `<body>` reset, next to the `<svg>`. The
+   canvas's drawing-buffer size follows its `clientWidth/Height` (its
+   laid-out size) rather than `window.innerWidth/Height`. The
+   `elm_playground_3d_webgl` package stanza was needed now already
+   (dune wants a package for a `public_name`); the `Makefile` lists
+   (`OPAMS`, `ODOC_DIRS`, `js`, `website`) stay for Phase 5. No-WebGL
+   is a `failwith` for now (in the console), not yet a message in the
+   page.
 3. **Real scenes**: `Gpu_scene` -> `Float32Array` -> `drawArrays`,
    the transposed `Mat4` MVP, depth test, the `rendering` hints and
-   `OES_standard_derivatives`. `Cube3d`, `Cubes3d`, `Spheres3d`,
+   `OES_standard_derivatives`. First `examples3d/webgl/Triangle3d`
+   (Phase 2's page, a WebGL-only example: one orange triangle facing
+   the camera, which the Phase 2 backend ignores to draw its hardcoded
+   one), then, via `copy_files`, `Cube3d`, `Cubes3d`, `Spheres3d`,
    `PaintersAlgorithmFail3d` (now drawn *correctly*, a nice demo of
    why a z-buffer matters), `Corridor3d` (now clipped correctly, unlike
    `web/`), `FloatingCity3d`, `InteractiveCube3d` (mouse), and

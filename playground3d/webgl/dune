@@ -1,0 +1,11 @@
+(library
+ (public_name elm_playground_3d_webgl)
+ (implements elm_playground_3d)
+ (libraries
+   js_of_ocaml ; WebGL, Dom_html, Typed_array
+   elm_playground
+   elm_playground_3d
+   elm_playground_web ; its run_app, like elm_playground_3d_web
+ )
+ (preprocess (pps js_of_ocaml-ppx))
+)
