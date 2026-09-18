@@ -29,5 +29,7 @@ let () =
           Unit_interpolate.tests;
           Unit_shading.tests;
           Unit_texture.tests;
+          Unit_triangle.tests;
+          Unit_painter.tests;
           Unit_rgba.tests;
         ])

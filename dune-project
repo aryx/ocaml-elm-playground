@@ -180,6 +180,7 @@ Nope
     (elm_playground_3d (= :version))
     (elm_playground_3d_native_common (= :version))
     (elm_playground_native_common (= :version)) ; graphics/images (Texture_decode)
+    (elm_playground_software (= :version)) ; graphics/core and graphics/2d, used by graphics/3d
   )
 )
 (package (name elm_playground_3d_web)

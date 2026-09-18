@@ -305,8 +305,29 @@ Each a separate function, with its own key, test, and entry in
    TexturedCube3d 9.37s / 9.40s (all within noise; Minecraft3d left
    out, too slow to mean anything). The platform file is at 700
    lines, from 940.
-3. **Triangle and Painter** on a `Framebuffer.t` (the framebuffer
+3. **DONE.** **Triangle and Painter** on a `Framebuffer.t` (the framebuffer
    decision above), wireframe through `graphics/2d/Line`.
+   In the end: `Triangle.fill` (Pineda's edge functions, the crack
+   fix's epsilon, with or without a `Zbuffer`: one loop for both
+   visibility modes) and `Triangle.outline`, `Painter.sort_far_to_near`,
+   each with its worked example (`Unit_triangle`, `Unit_painter`). The
+   backend draws into a `Framebuffer.t` over the window surface, after
+   checking it's 32-bit xRGB; the SDL pixel packing is gone (see
+   `notes_3d_opti.md`). Library moves: `graphics_3d` now uses
+   `graphics_core` and `graphics_2d`, so it became part of
+   `elm_playground_3d_software` (which now depends on
+   `elm_playground_software`), and `Lighting`, which the web and OpenGL
+   backends use too, moved to `graphics/3d/geometry/` (the library
+   shared by all 3D backends). Done in two steps: the Framebuffer
+   switch alone kept all 17 golden frames (and Minecraft3d's) identical,
+   and was faster, not slower (200 frames: Cubes3d 12.63s -> 11.83s,
+   Spheres3d Phong 5.50s -> 4.46s, TexturedCube3d 9.40s -> 8.45s); then
+   wireframe through `Line.draw` (clipping, Bresenham) instead of the
+   3D code's own DDA changed the 2 wireframe goldens on purpose: every
+   line within a pixel of where it was (the DDA rounded the endpoints,
+   `Line.draw` takes the pixel containing them), and no more gaps (the
+   DDA took one step too few when a line's length wasn't a whole
+   number); approved after comparing them.
 4. **Render and the adapter**: `graphics/3d/Render` (the pipeline and
    its options record), `playground3d/software/Shape3d_render_software`,
    `Playground3d_platform` down to the window, keys and loop; the window

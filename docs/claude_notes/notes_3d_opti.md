@@ -90,6 +90,13 @@ precise numbers.
 - **Impact**: `TexturedCube3d.ml` ~17fps -> ~83fps (~5x faster; now
   close to the ~87fps flat-color baseline, confirming this was indeed
   the dominant cost).
+- **Since**: gone, with the need for it. The rasterizer now draws into a
+  `graphics/core/Framebuffer` (0xAARRGGBB, like the 2D software
+  backend), and `Playground3d_platform.run_app3d` checks once at startup
+  that the window's pixels really are 32-bit xRGB (failing with a clear
+  message otherwise): colors are plain 0xRRGGBB ints, with no packing
+  step at all, neither SDL's nor shifts (see
+  `plan_code_reorg_teaching_3d.md`, phase 3).
 
 ## Fix 2: perspective-correct interpolation (texture "swimming")
 

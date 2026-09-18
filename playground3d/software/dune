@@ -11,7 +11,8 @@
    elm_playground_native ; Shape_render_native, for the HUD pass
    elm_playground_3d_native_common ; SDL event loop, shared with the OpenGL backend
    graphics_3d_geometry ; Vec3, Camera
-   graphics_3d ; Lighting
+   graphics_3d ; Project, Cull, Zbuffer, Interpolate, Shading, Texture, Triangle, Painter
+   graphics_core ; Framebuffer
    graphics_images ; Texture_decode
  )
 )

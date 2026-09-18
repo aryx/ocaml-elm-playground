@@ -5,7 +5,6 @@
  (libraries
    ; commons
    elm_core elm_playground
-   graphics_3d_geometry ; Vec3, Mat4, Camera
-   graphics_3d ; Lighting
+   graphics_3d_geometry ; Vec3, Mat4, Camera, Lighting
  )
 )
