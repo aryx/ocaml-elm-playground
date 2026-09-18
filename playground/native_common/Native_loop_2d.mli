@@ -7,7 +7,14 @@
 (* [Ok x -> f x], [Error (`Msg msg) -> failwith msg], for Tsdl calls *)
 val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
 
-(* -v/-verbose/-debug/-quiet, and installs a Logs reporter *)
+(* -v/-verbose/-debug/-quiet, and installs a Logs reporter; also
+ * -uncapped (no 60 fps pacing) and, for reproducible frames (see
+ * tests/2d/Golden_frames.ml), -fixed-time t (the app's clock stays at
+ * t), -keys k (the debug keys k pressed, through [run]'s
+ * [on_key_press], before the first frame) and -dump-frame n file (after
+ * drawing frame n, counted from 1, [run] calls its [dump_frame file],
+ * then exits; the fps given to [draw] is then 0, and mouse and
+ * keyboard are ignored) *)
 val parse_cli_and_setup_logging : unit -> unit
 
 (* Tsdl's key names to Playground's ("Left" -> "ArrowLeft", ...);
@@ -25,6 +32,10 @@ val create_window : title:string -> sx:int -> sy:int -> Tsdl.Sdl.window * pixels
 
 (* Copy the window surface's pixels to the screen. *)
 val present : Tsdl.Sdl.window -> unit
+
+(* [dump_ppm pixels file]: the pixels as a binary PPM image, the usual
+ * [dump_frame] for [run] *)
+val dump_ppm : pixels -> string -> unit
 
 (* [run ~sdl_window ~sx ~sy ~init ~update ~subscriptions ~view ~draw]
  * runs an app forever (like Playground_platform.run_app, it never
@@ -54,4 +65,5 @@ val run :
   view:('model -> 'view) ->
   draw:(fps:float -> 'view -> unit) ->
   on_key_press:(string -> unit) ->
+  dump_frame:(string -> unit) ->
   unit

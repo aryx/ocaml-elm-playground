@@ -59,6 +59,15 @@ let scancode_to_keystring = function
  * draw (see docs/claude_notes/notes_opti.md); games then run too fast *)
 let uncapped = ref false
 
+(* claude: deterministic frames, for the golden frame tests (see
+ * tests/2d/Golden_frames.ml): the clock the app sees can be frozen,
+ * debug keys pressed before the first frame, and a given frame dumped
+ * to a file -- the same flags as playground3d's Native_loop *)
+let fixed_time : float option ref = ref None
+let startup_keys : string ref = ref ""
+let dump_frame_number : int option ref = ref None
+let dump_frame_file : string ref = ref ""
+
 let parse_cli_and_setup_logging () =
   let level = ref (Some Logs.Warning) in
   let cli_flags = [
@@ -72,10 +81,18 @@ let parse_cli_and_setup_logging () =
     " quiet mode";
     "-uncapped", Arg.Set uncapped,
     " no 60 fps cap (to benchmark)";
+    "-fixed-time", Arg.Float (fun t -> fixed_time := Some t),
+    "<seconds> the app's clock stays at this time (frozen animations)";
+    "-keys", Arg.Set_string startup_keys,
+    "<keys> debug keys to press before the first frame, e.g. \"nf\"";
+    "-dump-frame",
+    Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
+    "<n> <file> write frame n (from 1) to file, then exit";
   ] in
   Arg.parse cli_flags
     (fun s -> raise (Arg.Bad (spf "don't know what to do with %s" s)))
-    (spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped]" Sys.argv.(0));
+    (spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped] [-fixed-time t] [-keys k] [-dump-frame n file]"
+       Sys.argv.(0));
   Logs.set_reporter (Logs.format_reporter ());
   Logs.set_level !level
 
@@ -138,6 +155,22 @@ let present sdl_window =
   let* () = Sdl.update_window_surface sdl_window in
   ()
 
+(* claude: -dump-frame: the frame as a binary PPM image, the simplest
+ * image format there is (a header, then r, g, b bytes for each pixel) *)
+let dump_ppm (pixels : pixels) (file : string) : unit =
+  let sy = Bigarray.Array2.dim1 pixels and sx = Bigarray.Array2.dim2 pixels in
+  let oc = open_out_bin file in
+  Printf.fprintf oc "P6\n%d %d\n255\n" sx sy;
+  for y = 0 to sy - 1 do
+    for x = 0 to sx - 1 do
+      let p = Int32.to_int pixels.{y, x} in
+      output_byte oc ((p lsr 16) land 0xFF);
+      output_byte oc ((p lsr 8) land 0xFF);
+      output_byte oc (p land 0xFF)
+    done
+  done;
+  close_out oc
+
 (*****************************************************************************)
 (* Run app *)
 (*****************************************************************************)
@@ -148,8 +181,12 @@ let present sdl_window =
 let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(update : 'msg -> 'model -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
-    ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit) =
+    ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
+    ~(dump_frame : string -> unit) =
   let sdl_event = Sdl.Event.create () in
+  (* claude: -keys, as if pressed before the first frame *)
+  String.iter (fun c -> on_key_press (String.make 1 c)) !startup_keys;
+  let frame_number = ref 0 in
 
   let initmodel, _cmdsTODO = init () in
   let model = ref initmodel in
@@ -192,6 +229,11 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
       if Sdl.poll_event (Some sdl_event) then begin
         let event_type = Sdl.Event.get sdl_event Sdl.Event.typ in
         (match event_type with
+        (* claude: with -dump-frame, no mouse or keyboard at all: wherever
+         * the pointer happens to be when the window opens would otherwise
+         * change the frame (e.g. examples/Mouse.ml); -keys is the way to
+         * give input then *)
+        | x when !dump_frame_number <> None && x <> Sdl.Event.quit -> ()
         | x when x = Sdl.Event.mouse_motion ->
           let x = Sdl.Event.(get sdl_event mouse_motion_x) in
           let y = Sdl.Event.(get sdl_event mouse_motion_y) in
@@ -239,11 +281,24 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
       end
     in
     drain_sdl_events ();
-    apply_playground_event (E.ETick (Unix.gettimeofday ()));
+    let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
+    apply_playground_event (E.ETick now);
 
     let shapes = view !model in
-    draw ~fps:!Fps.fps shapes;
+    (* claude: with -dump-frame, a fixed fps for the counter some
+     * backends draw in the frame, which would otherwise differ from
+     * run to run *)
+    let fps = if !dump_frame_number <> None then 0. else !Fps.fps in
+    draw ~fps shapes;
     present sdl_window;
+
+    (* claude: -dump-frame *)
+    incr frame_number;
+    (match !dump_frame_number with
+    | Some n when n = !frame_number ->
+        dump_frame !dump_frame_file;
+        exit 0
+    | _ -> ());
 
     (* Update our fps counter. *)
     Fps.update_fps ();

@@ -109,4 +109,5 @@ let run_app ?(rendering = Playground.default_rendering) app =
   in
   let (app : _ Playground.app) = app in
   Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
+    ~dump_frame:(Native_loop_2d.dump_ppm pixels)
     ~init:app.init ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

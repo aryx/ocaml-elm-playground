@@ -2,13 +2,7 @@
 ; test' (dune runtest); see Golden_frames.ml
 (test
  (name Test)
- (libraries
-   unix
-   alcotest
-   testo
-   imagelib ; reading and writing the PNGs
-   imagelib.unix
- )
+ (libraries testo testutil)
  (deps
    (glob_files golden/*.png)
    %{project_root}/examples3d/Cube3d.exe

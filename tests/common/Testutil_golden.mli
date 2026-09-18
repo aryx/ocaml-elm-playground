@@ -1,0 +1,27 @@
+(* Golden frame tests: one frame of an example or game, compared pixel
+ * by pixel with a committed PNG, the "golden" frame. Used by
+ * tests/2d/ (the 2D software rasterizer) and tests/3d/ (the 3D one).
+ *
+ * Each scene's executable runs with its clock frozen (-fixed-time), some
+ * debug keys pressed before its first frame (-keys), and frame n dumped
+ * as a PPM (-dump-frame n; see Native_loop_2d and playground3d's
+ * Native_loop), under SDL's "dummy" video driver: the window gets an
+ * in-memory surface, so no display is needed, and the pixels are the
+ * same as on a real window.
+ *
+ * When a frame differs, its test fails saying how many pixels differ
+ * and where, and writes the new frame to <dir>/actual/<scene>.png (in
+ * _build/default/). If the change is intended (look at it!), the
+ * Makefile's approve target makes the new frames the golden ones. *)
+
+(* A scene: an executable, from the project's root and without its .exe
+ * (e.g. "examples3d/Cubes3d"), the debug keys to press ("" for none),
+ * and the frame to compare. Its golden frame is golden/<name>.png, with
+ * <name> the executable's basename, plus "_" and the keys if any (e.g.
+ * golden/Cubes3d_bf.png). *)
+type scene = string * string * int
+
+(* [tests ~dir ~approve scenes]: a test per scene, for a test running in
+ * _build/default/<dir>, with its golden frames in <dir>/golden/ and its
+ * Makefile target [approve] (named in the failure messages) *)
+val tests : dir:string -> approve:string -> scene list -> Testo.t list

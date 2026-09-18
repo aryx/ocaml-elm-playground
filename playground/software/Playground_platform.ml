@@ -122,5 +122,5 @@ let run_app ?(rendering = Playground.default_rendering) (app : _ Playground.app)
     (* the keys and their state *)
     Tsdl.Sdl.set_window_title sdl_window (window_title ~fps)
   in
-  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press
+  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_ppm pixels)
     ~init:app.init ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

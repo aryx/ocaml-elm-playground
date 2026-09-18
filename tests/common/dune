@@ -1,0 +1,12 @@
+; claude: helpers shared by the tests in tests/*/ (Testutil_xxx.ml)
+(library
+ (name testutil)
+ (wrapped false)
+ (libraries
+   unix
+   alcotest
+   testo
+   imagelib ; reading and writing the golden frames' PNGs
+   imagelib.unix
+ )
+)

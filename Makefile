@@ -32,9 +32,12 @@ install:
 test:
 	dune runtest -f
 
-# after 'make test' reported 3D golden frames that differ on purpose
-# (look at them first), make the new frames the golden ones; see
-# tests/3d/Golden_frames.ml
+# after 'make test' reported 2D or 3D golden frames that differ on
+# purpose (look at them first), make the new frames the golden ones;
+# see tests/common/Testutil_golden.mli
+approve-golden2d:
+	cp _build/default/tests/2d/actual/*.png tests/2d/golden/
+	chmod 644 tests/2d/golden/*.png
 approve-golden3d:
 	cp _build/default/tests/3d/actual/*.png tests/3d/golden/
 	chmod 644 tests/3d/golden/*.png
