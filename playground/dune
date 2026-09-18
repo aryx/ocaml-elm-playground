@@ -5,6 +5,10 @@
  (libraries
    ; commons
    elm_core elm_system
+   ; claude: the physics engine under Physics.ml (private libraries, pure
+   ; OCaml, in this same package), see
+   ; docs/claude_notes/plan_physics_teaching.md
+   physics_2d graphics_2d_geometry
  )
  ; (preprocess (pps profiling.ppx))
 )

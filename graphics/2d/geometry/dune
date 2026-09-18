@@ -1,8 +1,10 @@
 ; claude: 2D geometry: vectors (Vec2) and affine transforms (Affine).
 ; Depends on nothing.
-; A private library, see graphics/core/dune.
+; A private library, see graphics/core/dune; installed as part of
+; elm_playground, the package every backend depends on, since physics/
+; uses it too (see docs/claude_notes/plan_physics_teaching.md).
 (library
  (name graphics_2d_geometry)
- (package elm_playground_software)
+ (package elm_playground)
  (wrapped false)
 )

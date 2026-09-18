@@ -1,0 +1,14 @@
+; claude: unit tests for physics/, run by 'make test' (dune runtest):
+; the .mli's worked examples, and the laws physics guarantees (closed
+; forms, conservation, convergence orders)
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   graphics_2d_geometry
+   physics_2d
+   elm_playground ; Physics, the API
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
+)
