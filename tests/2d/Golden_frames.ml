@@ -42,6 +42,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyInvaders", "", 5);
     ("games/software/TinySokoban", "", 5);
     ("games/software/TinyPacman", "", 5);
+    ("games/software/TinyWolf", "", 5);
     (* the physics plan's: explicit Euler's orbit, spiraling out after 8
      * seconds; the artillery and Spacewar! titles *)
     ("examples/software/Orbit", "", 480);
@@ -67,6 +68,9 @@ let scripted : Testutil_golden.scripted list =
     (* after READY!, left, up, right along the top: dots eaten, the
      * ghosts out of the house, scattering *)
     ("games/software/TinyPacman", "play", 300, "space:1,left:120-170,up:160-230,right:220-300");
+    (* turned towards a treasure, walking to it: the billboard in front
+     * of the far wall, a near wall on the right *)
+    ("games/software/TinyWolf", "treasure", 60, "right:1-16,up:20-60");
     (* semi-implicit Euler: the same orbit, closed *)
     ("examples/software/Orbit", "semi", 480, "space:1-2");
     (* a shot, pushed back by the wind, digging its crater *)
