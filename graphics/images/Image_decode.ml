@@ -53,9 +53,10 @@
 (* Decoding *)
 (*****************************************************************************)
 
-(* claude: stb_image decodes to an interleaved, row-major, top-to-bottom
- * RGBA8 buffer (we force ~channels:4 below so this shape is always what we
- * get, even for e.g. an opaque JPEG). *)
+(* claude: an interleaved, row-major, top-to-bottom RGBA8 buffer: stb_image
+ * decodes the file with its own channels, and Rgba.of_stb_image expands
+ * them to 4 (not Stb_image.load ~channels:4, which the pinned binding
+ * gets wrong for e.g. an RGB JPEG, see Rgba.mli) *)
 type image = Stb_image.int8 Stb_image.t
 
 (* claude: url -> local file (downloaded, for a URL), so the "Animated
@@ -67,10 +68,10 @@ let image_of_url_exn url : image =
   Logs.info (fun m -> m "loading image %s" url);
   let fn = Download.local_file ~prefix:"playground_img" url in
   Hashtbl.replace hfiles url fn;
-  match Stb_image.load ~channels:4 fn with
+  match Stb_image.load fn with
   | Ok img ->
     Logs.info (fun m -> m "loaded image %s (%dx%d)" url img.width img.height);
-    img
+    Rgba.of_stb_image img
   | Error (`Msg msg) ->
     failwith (Printf.sprintf "could not decode image %s: %s" url msg)
 
@@ -343,8 +344,8 @@ let decode_string (s : string) : Stb_image.int8 Stb_image.t =
   let buf = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout
       (String.length s) in
   String.iteri (fun i c -> buf.{i} <- Char.code c) s;
-  match Stb_image.decode ~channels:4 buf with
-  | Ok img -> img
+  match Stb_image.decode buf with
+  | Ok img -> Rgba.of_stb_image img
   | Error (`Msg msg) -> failwith msg
 
 (* claude: polymorphic in the frame type so a backend can convert every

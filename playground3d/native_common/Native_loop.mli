@@ -83,7 +83,14 @@ val scancode_to_keystring : string -> string
  *
  * The caller is responsible for Sdl.init and creating [sdl_window]
  * (and any GL context) beforehand -- this function only drives the
- * loop, it never creates or destroys a window. *)
+ * loop, it never creates or destroys a window.
+ *
+ * claude: for reproducible frames (to check a refactoring changes no
+ * pixel), [parse_cli_and_setup_logging] also understands
+ * -fixed-time t (the app's clock stays at t), -keys k (the debug keys
+ * k pressed, through [on_key_press], before the first frame) and
+ * -dump-frame n file (after drawing frame n, counted from 1, call
+ * [dump_frame file], then exit). *)
 val run :
   sdl_window:Tsdl.Sdl.window ->
   sx:int ->
@@ -95,4 +102,6 @@ val run :
   view:(Playground.computer -> 'model -> 'view) ->
   draw:(Playground.computer -> 'view -> unit) ->
   present:(unit -> unit) ->
+  ?dump_frame:(string -> unit) ->
+  unit ->
   unit

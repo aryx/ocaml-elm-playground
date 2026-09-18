@@ -173,19 +173,10 @@ let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_
  * playground/native's Playground_platform.ml and
  * graphics/images/Image_decode.ml.
  *
- * claude: Texture_decode deliberately does NOT force a channel count
- * when calling Stb_image.load -- Stb_image.load ~channels:N with N
- * different from the source's own channel count corrupts the decoded
- * buffer in this project's pinned stb_image version (confirmed by
- * hand: forcing a 3-channel PNG to 4 silently produces a buffer whose
- * *content* is laid out as if 4 channels/pixel while
- * img.channels/img.stride still report 3, which desyncs every
- * sample_texture read after the first pixel). Loading at the image's
- * native channel count (3 for RGB, 4 for RGBA -- both fine, since
- * sample_texture below reads img.channels dynamically) sidesteps the
- * bug entirely; only 1- or 2-channel (grayscale[+alpha]) textures are
- * unsupported as a result, which no real texture image is likely to
- * be. *)
+ * claude: Texture_decode gives RGBA textures, whatever the file's
+ * channels (Rgba.of_stb_image; not Stb_image.load ~channels:4, which
+ * the pinned binding gets wrong, see Rgba.mli), so img.channels is
+ * always 4 here; sample_texture still reads it rather than assume. *)
 
 (* a bright, unmistakable "this texture failed to load" color -- the
  * same convention (a magenta/checkerboard placeholder) many game
@@ -900,6 +891,9 @@ let preload_texture = Texture_decode.preload
 
 let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'msg) Playground3d.app3d) :
     unit =
+  (* claude: -v, -debug, and the -fixed-time/-keys/-dump-frame flags (see
+   * Native_loop) *)
+  Native_loop.parse_cli_and_setup_logging ();
   (* claude: the app's choices are the starting values of the modes
    * below; the debug keys can still change them (e.g. "m" also cycles
    * through Gouraud, which the portable hints don't name) *)
@@ -984,6 +978,20 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
     let* () = Sdl.update_window_surface sdl_window in
     ()
   in
+  (* claude: -dump-frame (see Native_loop): the frame as a binary PPM
+   * image, the simplest image format there is (a header, then r, g, b
+   * bytes for each pixel), whatever the window's pixel format *)
+  let dump_frame file =
+    let oc = open_out_bin file in
+    Printf.fprintf oc "P6\n%d %d\n255\n" sx sy;
+    for i = 0 to (sx * sy) - 1 do
+      let r, g, b = Sdl.get_rgb (get_pixel_format ()) pixels.{i} in
+      output_byte oc r;
+      output_byte oc g;
+      output_byte oc b
+    done;
+    close_out oc
+  in
   Native_loop.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d)
-    ~draw ~present
+    ~draw ~present ~dump_frame ()

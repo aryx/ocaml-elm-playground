@@ -13,13 +13,10 @@
  * LICENSE for more details.
  *)
 
-(* Textures for the 3D backends, like Image_decode for 2D images, and
- * independent of rendering too. Two differences, which is why it's not
- * just Image_decode: no GIF animation, and no forced channel count in
- * Stb_image.load (a texture keeps its own 3 or 4 channels, which the
- * 3D samplers read from img.channels) -- see the note in
- * playground3d/software/Playground3d_platform.ml about the
- * corrupted-buffer bug forcing one causes. *)
+(* Textures for the 3D backends, like Image_decode for 2D images (as
+ * RGBA too, see Rgba), and independent of rendering too; the
+ * difference with Image_decode: no GIF animation, and local file paths
+ * are the common case. *)
 
 (*****************************************************************************)
 (* Load + cache *)
@@ -28,7 +25,7 @@
 let load_exn (src : string) : Stb_image.int8 Stb_image.t =
   let path = Download.local_file ~prefix:"playground3d_texture" src in
   match Stb_image.load path with
-  | Ok img -> img
+  | Ok img -> Rgba.of_stb_image img
   | Error (`Msg msg) -> failwith (Printf.sprintf "could not decode texture %s: %s" src msg)
 
 let cache : (string, Stb_image.int8 Stb_image.t option) Hashtbl.t = Hashtbl.create 16

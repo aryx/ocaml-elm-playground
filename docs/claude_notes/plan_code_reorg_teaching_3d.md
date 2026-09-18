@@ -235,7 +235,25 @@ Each a separate function, with its own key, test, and entry in
 
 ## Phasing
 
-0. **Groundwork**, before moving any code:
+0. **DONE.** **Groundwork**, before moving any code. In the end:
+   `Native_loop`'s `-fixed-time t`, `-keys k`, `-dump-frame n file`
+   (the software backend writes a PPM; with `-dump-frame` the loop
+   ignores mouse and keyboard, which otherwise leaked the pointer's
+   position into InteractiveCube3d's frame), and
+   `scripts/ref_frames_3d.sh capture|check <dir>`: 18 frames (every
+   examples3d scene, Minecraft3d's first frame, and the key variants:
+   shading modes, wireframe, painter's, culling, interpolation,
+   filtering), deterministic run after run. Two findings: neither 3D
+   backend called `Native_loop.parse_cli_and_setup_logging`, so
+   `-v`/`-debug` never worked in 3D (now called); and the stb_image
+   channel bug is worse than the old comment said -- with
+   `~channels:4`, the binding allocates for the file's 3 channels, so
+   an RGB image loaded that way (as `Image_decode` did for every 2D
+   image) was truncated, and read past its end by the Cairo backend.
+   Fixed with `graphics/images/Rgba` (expand to RGBA in OCaml; tested,
+   including a test pinning the binding's behavior); textures are RGBA
+   too now, pixel-identical in all 18 frames.
+   The original plan for this phase:
    - a deterministic frame for checking: a `-fixed-time t` flag in
      `Native_loop` (the clock the app sees stays at t) and a
      `-dump-frame n file` flag (write frame n as a PPM, then exit), so a

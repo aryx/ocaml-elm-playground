@@ -13,5 +13,8 @@
    graphics_2d
    graphics_font
    graphics_3d_geometry
+   graphics_images
+   stb_image ; Unit_rgba loads a real RGB PNG
  )
+ (deps %{project_root}/examples3d/checker.png)
 )

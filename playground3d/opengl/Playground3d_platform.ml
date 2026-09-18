@@ -172,11 +172,8 @@ let smooth_textures = ref true
  * wanted, unlike native's own "well-known easy upgrade" bilinear note
  * in notes_3d.md section 9. *)
 
-(* claude: only 3- or 4-channel images are handled correctly (mirrors
- * native's sample_texture's identical limitation, see its own doc
- * comment) -- a 1- or 2-channel (grayscale[+alpha]) image is uploaded
- * as if it were RGB, which misreads its bytes, but "no real texture
- * image is likely to be" that. *)
+(* claude: Texture_decode's textures are always RGBA (see Rgba), so
+ * this is Gl.rgba in practice *)
 let gl_format_of_channels (channels : int) : Gl.enum = if channels = 4 then Gl.rgba else Gl.rgb
 
 let upload_texture ~(width : int) ~(height : int) ~(format : Gl.enum)
@@ -272,6 +269,9 @@ let preload_texture : string -> unit = Texture_decode.preload
 
 let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'msg) Playground3d.app3d) :
     unit =
+  (* claude: -v, -debug, and the -fixed-time/-keys/-dump-frame flags (see
+   * Native_loop) *)
+  Native_loop.parse_cli_and_setup_logging ();
   shading := rendering.shading;
   backface_culling := rendering.backface_culling;
   smooth_textures := rendering.smooth_textures;
@@ -415,4 +415,4 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
   let present () = Sdl.gl_swap_window sdl_window in
   Native_loop.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D (OpenGL)" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d) ~draw
-    ~present
+    ~present ()

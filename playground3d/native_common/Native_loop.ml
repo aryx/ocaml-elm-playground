@@ -14,18 +14,35 @@ let ( let* ) o f =
   | Error (`Msg msg) -> failwith (Printf.sprintf "TSDL error: %s" msg)
   | Ok x -> f x
 
+(* claude: deterministic frames, to check that a refactoring of a
+ * renderer doesn't change a single pixel (see
+ * docs/claude_notes/plan_code_reorg_teaching_3d.md, phase 0): the
+ * clock the app sees can be frozen, debug keys pressed before the
+ * first frame, and a given frame dumped to a file *)
+let fixed_time : float option ref = ref None
+let startup_keys : string ref = ref ""
+let dump_frame_number : int option ref = ref None
+let dump_frame_file : string ref = ref ""
+
 let parse_cli_and_setup_logging () =
   let level = ref (Some Logs.Warning) in
   let cli_flags =
     [ ("-v", Arg.Unit (fun () -> level := Some Logs.Info), " verbose mode");
       ("-verbose", Arg.Unit (fun () -> level := Some Logs.Info), " verbose mode");
       ("-debug", Arg.Unit (fun () -> level := Some Logs.Debug), " debug mode");
-      ("-quiet", Arg.Unit (fun () -> level := None), " quiet mode")
+      ("-quiet", Arg.Unit (fun () -> level := None), " quiet mode");
+      ("-fixed-time", Arg.Float (fun t -> fixed_time := Some t),
+       "<seconds> the app's clock stays at this time (frozen animations)");
+      ("-keys", Arg.Set_string startup_keys,
+       "<keys> debug keys to press before the first frame, e.g. \"fz\"");
+      ("-dump-frame", Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
+       "<n> <file> write frame n (from 1) to file, then exit")
     ]
   in
   Arg.parse cli_flags
     (fun s -> raise (Arg.Bad (Printf.sprintf "don't know what to do with %s" s)))
-    (Printf.sprintf "usage: %s [-v|-verbose|-debug|-quiet]" Sys.argv.(0));
+    (Printf.sprintf "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file]"
+       Sys.argv.(0));
   Logs.set_reporter (Logs.format_reporter ());
   Logs.set_level !level
 
@@ -58,8 +75,12 @@ let scancode_to_keystring = function
 let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : string)
     ~(on_key_press : string -> unit) ~(init : unit -> 'model)
     ~(update : Playground.computer -> 'model -> 'model) ~(view : Playground.computer -> 'model -> 'view)
-    ~(draw : Playground.computer -> 'view -> unit) ~(present : unit -> unit) : unit =
+    ~(draw : Playground.computer -> 'view -> unit) ~(present : unit -> unit) ?(dump_frame : (string -> unit) option)
+    () : unit =
   let sdl_event = Sdl.Event.create () in
+  (* claude: -keys, as if pressed before the first frame *)
+  String.iter (fun c -> on_key_press (String.make 1 c)) !startup_keys;
+  let frame_number = ref 0 in
 
   let model = ref (init ()) in
   let computer = ref Playground.initial_computer in
@@ -74,6 +95,11 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
       if Sdl.poll_event (Some sdl_event) then begin
         let event_type = Sdl.Event.get sdl_event Sdl.Event.typ in
         (match event_type with
+        (* claude: with -dump-frame, no mouse or keyboard at all: wherever
+         * the pointer happens to be when the window opens would otherwise
+         * change the frame (e.g. InteractiveCube3d's mouse-driven
+         * turntable); -keys is the way to give input then *)
+        | x when !dump_frame_number <> None && x <> Sdl.Event.quit -> ()
         | x when x = Sdl.Event.mouse_motion ->
             let mx = Sdl.Event.(get sdl_event mouse_motion_x) in
             let my = Sdl.Event.(get sdl_event mouse_motion_y) in
@@ -118,7 +144,8 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     in
     drain_sdl_events ();
 
-    computer := { !computer with time = Playground.Time (Unix.gettimeofday ()) };
+    let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
+    computer := { !computer with time = Playground.Time now };
     model := update !computer !model;
 
     let t0 = Unix.gettimeofday () in
@@ -126,6 +153,16 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     let t1 = Unix.gettimeofday () in
     draw !computer v;
     let t2 = Unix.gettimeofday () in
+
+    (* claude: -dump-frame *)
+    incr frame_number;
+    (match !dump_frame_number with
+    | Some n when n = !frame_number ->
+        (match dump_frame with
+        | Some dump -> dump !dump_frame_file
+        | None -> Logs.err (fun m -> m "-dump-frame: this backend can't dump its frames"));
+        exit 0
+    | _ -> ());
 
     let elapsed = Unix.gettimeofday () -. frame_start in
     (* claude: -debug shows this every frame, so a scene that suddenly
