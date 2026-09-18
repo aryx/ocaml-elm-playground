@@ -327,9 +327,10 @@ section 10); the real fix is precomputed smaller versions of the image,
 "mipmaps" (Williams, 1983), which neither this backend nor the 3D
 software rasterizer has yet (GPUs do them in hardware).
 
-Animated GIFs: `Image_decode` (shared with the Cairo backend) decodes
-all the frames once, and each frame picks the one to show from the
-clock, like browsers.
+Loading images: `graphics/images/Image_decode.ml` (shared with the
+Cairo backend) downloads and decodes them, animated GIFs included: it
+decodes all their frames once, and each frame of the game picks the
+one to show from the clock, like browsers.
 
 ## 9. Text, and thick lines
 

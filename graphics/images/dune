@@ -1,0 +1,19 @@
+; claude: image files: downloading (http URLs), decoding (PNG, JPEG, GIF,
+; ... via stb_image), GIF animation, and caching (Image_decode), down to
+; plain RGBA8 pixel buffers; drawing them is up to the user (Cairo
+; surfaces in playground/native/, graphics/core/'s Blit in
+; playground/software/).
+;
+; A private library (see graphics/core/dune), installed as part of
+; elm_playground_native_common, the package both native 2D backends
+; already depend on.
+(library
+ (name graphics_images)
+ (package elm_playground_native_common)
+ (wrapped false)
+ (libraries
+   logs
+   stb_image
+   curl
+ )
+)

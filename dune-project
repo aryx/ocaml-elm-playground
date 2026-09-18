@@ -85,9 +85,11 @@ Nope
   (synopsis "SDL event loop + image loading shared by native 2D playground backends")
   (description "\
   Not meant to be used directly -- the Cairo-free SDL window/event loop
-  and image download/decode/GIF-animation code shared by the native 2D
-  playground backends. A plain library rather than an (implements elm_playground): two
-  implementations of the same virtual library can't depend on each other.
+  (Native_loop_2d) shared by the native 2D playground backends, and,
+  as a private library, the image download/decode/GIF-animation code of
+  graphics/images/ (Image_decode). A plain library rather than an
+  (implements elm_playground): two implementations of the same virtual
+  library can't depend on each other.
 ")
   (depends
     ; see elm_playground_native above for these version constraints

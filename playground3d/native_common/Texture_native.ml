@@ -14,7 +14,7 @@
  *)
 
 (* Pulled out of Playground3d_platform.ml, same reasoning as
- * playground/native_common/Image_decode.ml: independent of rendering. Not
+ * graphics/images/Image_decode.ml: independent of rendering. Not
  * forcing a channel count in Stb_image.load -- see the note in
  * Playground3d_platform.ml about the corrupted-buffer bug that causes. *)
 
