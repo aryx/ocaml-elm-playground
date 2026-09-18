@@ -1,5 +1,89 @@
 # -*- org -*-
 
+* 0.3 (Q4 2026) (3D playground, from-scratch software rasterizers, OpenGL/WebGL)
+# developed on the next branch (Sep 2026)
+# unless mentioned otherwise, everything below was done by Claude Code
+# (with direction from me)
+
+** playground3d (new)
+- new elm_playground_3d library (Playground3d.mli), same Model-View-Update
+  API as the 2D one: shape3d (cube, box, sphere, textured_quad,
+  textured_cube, group3d), camera, lighting, flat/Gouraud/Phong shading,
+  a HUD overlay (Playground3d.hud), portable rendering hints
+  (Playground3d.rendering: shading, culling, textures), and cached3d
+  (like Elm's Html.lazy, lets GPU backends keep a mesh in GPU memory)
+- four backends: software (from-scratch rasterizer on SDL), web (reuses
+  the 2D SVG renderer with a painter's algorithm), OpenGL (tgls) and
+  WebGL, the last two sharing Gpu_scene and graphics/gpu/Mesh_cache;
+  Minecraft3d went from ~6.5s to ~1ms per frame on OpenGL with cached3d
+- textures from local files or http(s) urls, preload_texture, a magenta
+  placeholder when a texture fails to load
+- examples3d/ (Cube3d, Cubes3d, TexturedCube3d, InteractiveCube3d,
+  Spheres3d, FloatingCity3d, PaintersAlgorithmFail3d, Corridor3d,
+  CachedGrid3d) and games3d/ (StarCollector3d, Minecraft3d, a port of
+  tiny-minecraft), each also built for web/opengl/webgl via copy_files
+- fixes: spheres missing their top cap (Newell's method for face
+  normals, the pole made the cross product 0 then NaN), 1-pixel cracks
+  along shared triangle edges, a GC-timing bug in tgls'
+  glShaderSource binding (Gc.full_major before compiling shaders)
+
+** graphics/ (new, from-scratch rendering algorithms for teaching)
+- private libraries independent of the Playground, one idea per module
+  with its .mli explaining it (ASCII diagrams, paper references):
+  core/ (Framebuffer, Blit, Opti), 2d/ (Fill scanline polygons, Line
+  Bresenham, Circle midpoint, Stroke, Magnifier, geometry/Vec2), 3d/
+  (Project, Cull, Clip, Zbuffer, Interpolate, Shading, Texture,
+  Triangle with top-left fill rule and incremental edges, Painter,
+  Render, geometry/ Vec3, Mat4, Camera, Lighting), font/ (Hershey vector
+  fonts), images/ (Image_decode, Texture_decode, Rgba, Download), gpu/
+  (Mesh_cache)
+- unit tests in graphics/tests/ checking the worked examples of the .mli
+
+** playground (2D)
+- new software backend (elm_playground_software): a from-scratch 2D
+  rasterizer on SDL (filled polygons, lines, circles, images by inverse
+  mapping with bilinear/nearest filtering, Hershey text, antialiasing)
+- portable rendering hints Playground.rendering (antialiasing,
+  smooth_images) for run_app, honored by the Cairo, software and web
+  backends; Mario uses it for sharp pixel-art sprites
+- native_common/ (Native_loop_2d) shared by the Cairo and software
+  backends
+- fix: stb_image with ~channels:4 truncated RGB images (read past the
+  end by Cairo); now load with the file's channels and expand to RGBA
+
+** debugging and testing
+- runtime-toggleable debug keys in the software backends (wireframe,
+  bounding boxes, transparency, pixel magnifier, z-buffer vs painter,
+  backface culling, perspective-correct vs linear, antialiasing,
+  filtering, optimizations on/off, mesh cache), "h" for a help panel,
+  only enabled with -debug-keys
+- native flags -uncapped, -fixed-time t, -keys k, -dump-frame n file
+  for deterministic frames; -v/-debug now also work in 3D
+- golden frame tests (tests/2d/, tests/3d/) in make test, every software
+  example rendered offscreen and compared pixel by pixel;
+  make approve-golden2d/3d
+- scripts: xdrive.py (drive a running app's mouse/keys via XTEST),
+  ref_frames_3d.sh, bench_playground.sh, screenshot_playground3d.sh,
+  smoke_test_playground3d.sh
+
+** build infra and packaging
+- examples_js/ and games_js/ symlinks replaced by examples/js/ and
+  games/js/ with dune copy_files (one real source file per example)
+- new opam packages for the new backends (elm_playground_software,
+  elm_playground_native_common, elm_playground_3d{,_web,_software,
+  _opengl,_webgl,_native_common}); elm_core/elm_system become
+  sub-libraries elm_playground.core/.system
+- website: publish the 3D examples (web and WebGL) under docs/, make
+  serve-build
+
+** docs
+- README-3d.md, and many tutorials in docs/claude_notes/: notes_2d.md,
+  notes_3d.md, notes_3d_shading.md, notes_3d_opti.md, notes_opti.md,
+  notes_font.md, notes_opengl.md, notes_opengl_shaders.md,
+  notes_vs_doom_quake.md, related work surveys (2D, 3D, physics, audio)
+- plans for what's next: physics, audio, networking, remaining 2D/3D/
+  WebGL work (plan_*.md, finished ones archived in done/)
+
 * 0.2 (Q3 2026) (bugfixes, Dockerfile, CI hardening, cleanup)
 # started to use Claude code
 
