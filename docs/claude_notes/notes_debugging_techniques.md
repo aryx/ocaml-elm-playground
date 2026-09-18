@@ -408,3 +408,75 @@ not the code change under test.
   the camera moved.
 - Anything else X11 can do -- the same `ctypes` recipe works for any
   C library function you can read the man page of.
+
+## 9. Rendering frames offscreen: `SDL_VIDEODRIVER=dummy`
+
+The golden frame tests, and most checks of a new game, don't look at a
+window at all: they render a given frame of a native software backend
+into memory and write it to a file.
+
+```bash
+cd _build/default     # the examples find their images relative to it
+SDL_VIDEODRIVER=dummy ./games/software/TinyMario.exe \
+  -fixed-time 1000 -dump-frame 150 /tmp/frame.ppm -script "right:1-150,up:30-34"
+python3 -c "from PIL import Image; Image.open('/tmp/frame.ppm').save('/tmp/frame.png')"
+```
+
+then `Read` the PNG. Each piece has a reason:
+
+- **`SDL_VIDEODRIVER=dummy`** makes SDL use its "dummy" video driver:
+  `SDL_CreateWindow` succeeds, but the window is only a surface in
+  memory, never shown. The software backends (2D `playground/software/`,
+  the Cairo one, 3D `playground3d/software/`) write their pixels into
+  the window surface themselves, so they don't notice: the pixels are
+  the same as in a real window, and `-dump-frame` writes them out.
+  Without it, SDL opens a real window on `$DISPLAY`: it pops up on the
+  user's screen (and may steal the keyboard focus while they type),
+  runs are slower, and where there's no display at all (CI, ssh, a
+  sandbox) `SDL_CreateWindow` fails. With it, runs are fast, silent,
+  and can run in parallel (the golden runner starts one per scene).
+  It can't work for the OpenGL backends: the dummy driver has no GL
+  context to give; those are checked with real windows (section 7) or
+  headless Chrome for WebGL (`note_headless.md`).
+- **`-fixed-time t`**: the app's clock frozen, so animations (`spin`,
+  `wave`, `Sprite.frame`, blinking texts) are the same on every run.
+- **`-dump-frame n file`**: after drawing frame n (from 1), write it as
+  a binary PPM and exit. The mouse and keyboard are ignored then: where
+  the pointer happens to be would change the frame.
+- **`-script "key:frames,..."`** (`playground/native_common/
+  Input_script.mli`): game keys held over given frames, since the real
+  keyboard is ignored: what a player would do, replayed exactly. With
+  a deterministic game (no wall clock, `seed=1` for the ones drawing
+  random numbers), the inputs are the whole run.
+- **`-keys k`**: the backend's *debug* keys pressed before the first
+  frame (wireframe, antialiasing off, ...), for their golden frames.
+
+`tests/common/Testutil_golden.ml` runs exactly this for each scene,
+then compares the PPM with `tests/*/golden/*.png` pixel by pixel.
+
+### Simulating a game without drawing it
+
+To check a game's rules over thousands of frames (does the ghost leave
+its house? does the car stay on the road with this steering?), faster
+than rendering, call its `update` directly from a throwaway program
+and print the model:
+
+```bash
+mkdir tmpcheck   # not _tmpcheck: dune ignores directories starting with _
+cat > tmpcheck/dune <<'DUNE'
+(copy_files ../games/TinyPacman.ml)
+(executable (name Sim) (modules TinyPacman Sim) (libraries elm_playground elm_playground_software))
+DUNE
+# tmpcheck/Sim.ml: build a computer (initial_computer with keys held),
+# call TinyPacman.update in a loop, Printf the fields of interest
+sed -i 's|^let main = |let main () = |' games/TinyPacman.ml   # see below
+dune build ./tmpcheck/Sim.exe && ./_build/default/tmpcheck/Sim.exe
+sed -i 's|^let main () = |let main = |' games/TinyPacman.ml; rm -rf tmpcheck
+```
+
+The `sed` is there because a game's `let main = run_app app` runs at
+module initialization: linking the game into another program would
+open its window and never return. Turning it into a function for the
+duration of the check avoids that (and must be undone before
+committing). The game's `.mli` exports nothing, but `copy_files` brings
+the `.ml` alone, so `Sim` sees all of it.

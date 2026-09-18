@@ -50,6 +50,11 @@ let render ~dir ~(exe : string) ~(keys : string) ~(script : string option) ~(fra
    * every run; the other programs ignore it *)
   let args = [| exe; "-fixed-time"; "1000"; "-keys"; keys; "-dump-frame"; string_of_int frame; ppm; "seed=1" |] in
   let args = match script with Some s -> Array.append args [| "-script"; s |] | None -> args in
+  (* claude: SDL's dummy video driver: the window is only a surface in
+   * memory, never shown, which the software backends draw into as into
+   * a real one; no display needed, nothing popping up on the screen,
+   * and scenes can run in parallel (see notes_debugging_techniques.md,
+   * section 9) *)
   let env = Array.append [| "SDL_VIDEODRIVER=dummy" |] (Unix.environment ()) in
   (match Unix.fork () with
   | 0 -> (
