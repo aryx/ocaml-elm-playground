@@ -90,8 +90,13 @@ independent, for both GPU backends:
   (`Playground3d.render3d_to_2d`): `Clip` could be used there too, in
   view coordinates, before projecting each polygon (e.g.
   `examples3d/Corridor3d` in a browser).
-- **The OpenGL backend has no HUD** (`notes_3d.md` section 12), and no
-  "h" help.
+- **The OpenGL backend has no "h" help.** (Its HUD is done: drawn by
+  the 2D software rasterizer, its transparency recovered by
+  `graphics/core/Matting`, blended by the GPU. It costs ~20ms each time
+  the HUD's shapes change, nearly all of it Matting's pass over every
+  pixel of the window: fine for a score, a small hitch for Minecraft3d's
+  position readout, which changes at each block crossed. Next step if
+  it matters: matte only the rows and columns the shapes touch.)
 - **Golden frames not covered**: Minecraft3d (slow, and a 1.5 MB frame;
   `scripts/ref_frames_3d.sh` checks it by hand), and the games using
   `Random.self_init` (StarCollector3d; in 2D, Snake and Tetris): a

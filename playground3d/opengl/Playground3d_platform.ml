@@ -26,15 +26,17 @@ module Gl = Tgl3.Gl
  * PHASES 3-5 of that plan (see git history for Phase 2's
  * proof-of-pipeline version): every shape3d in the scene is flattened
  * into per-material (position, normal, color, uv) vertex buffers once
- * per frame (naive -- no per-shape VAO/VBO caching yet, matching the
- * plan's stated v1 simplification), and a single GLSL fragment shader
+ * per frame, except for Playground3d.cached3d shapes, whose buffers
+ * stay on the GPU from frame to frame (see Mesh_cache and
+ * docs/claude_notes/plan_opengl_perf.md), and a single GLSL fragment shader
  * does real per-pixel Phong lighting using the exact same
  * light_dir/ambient constants as the native rasterizer (both from
  * graphics/3d/Lighting.ml), for a fair side-by-side comparison, plus real
  * texture sampling and a wireframe mode. Still out of scope, per the
  * plan: flat/Gouraud shading modes (Phong is the natural, "free on a
  * GPU" one), a painter's-algorithm mode (a hardware z-buffer makes it
- * moot), and a HUD. *)
+ * moot). The HUD is drawn on the CPU and blended over the scene, see
+ * the HUD section in run_app3d. *)
 
 let ( let* ) o f =
   match o with
@@ -119,6 +121,29 @@ let fragment_shader_source =
   \  float brightness = uShading == 0 ? 1.0 : ambient + (1.0 - ambient) * lit;\n\
   \  vec3 baseColor = uUseTexture ? texture(uTexture, vUv).rgb : vColor;\n\
   \  FragColor = vec4(baseColor * brightness, 1.0);\n\
+   }\n"
+
+(* claude: the HUD's two shaders (see the HUD section in run_app3d): a
+ * rectangle covering the whole window, textured with the HUD's image.
+ * No matrix: the vertices are given directly in normalized device
+ * coordinates, -1..1, the window's left..right and bottom..top. *)
+let hud_vertex_shader_source =
+  "#version 330 core\n\
+   layout (location = 0) in vec2 aPos;\n\
+   layout (location = 1) in vec2 aUv;\n\
+   out vec2 vUv;\n\
+   void main() {\n\
+  \  gl_Position = vec4(aPos, 0.0, 1.0);\n\
+  \  vUv = aUv;\n\
+   }\n"
+
+let hud_fragment_shader_source =
+  "#version 330 core\n\
+   in vec2 vUv;\n\
+   out vec4 FragColor;\n\
+   uniform sampler2D uHud;\n\
+   void main() {\n\
+  \  FragColor = texture(uHud, vUv);\n\
    }\n"
 
 let int32_bigarray1 (n : int) : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t =
@@ -323,6 +348,12 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
    * is out of scope here. *)
   Gc.full_major ();
   let program = link_program ~vertex_source:vertex_shader_source ~fragment_source:fragment_shader_source in
+  (* claude: the same precaution before the HUD's shaders *)
+  Gc.full_major ();
+  let hud_program = link_program ~vertex_source:hud_vertex_shader_source ~fragment_source:hud_fragment_shader_source in
+  Gl.use_program hud_program;
+  (* texture unit 0, like the scene's uTexture *)
+  Gl.uniform1i (Gl.get_uniform_location hud_program "uHud") 0;
   let mvp_location = Gl.get_uniform_location program "uMVP" in
   let light_dir_location = Gl.get_uniform_location program "uLightDir" in
   let use_texture_location = Gl.get_uniform_location program "uUseTexture" in
@@ -382,6 +413,80 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
     (vao, vbo)
   in
   let (vao, vbo) = create_vao_vbo () in
+
+  (* claude: HUD -- the 2D shapes over the 3D scene (Playground3d.hud).
+   * The other backends draw them with their 2D renderer: straight onto
+   * the finished frame (software), or in an <svg> over the canvas
+   * (WebGL). Here the frame is on the GPU, so the HUD is drawn by the
+   * CPU into an image of its own, with transparency, then given to the
+   * GPU as a texture over a rectangle covering the window, blended
+   * over the scene:
+   *
+   *   HUD shapes --Shape_render_software, twice (Matting)--> RGBA image
+   *     --tex_image2d--> texture --hud program, blending--> window
+   *
+   * Only when the shapes change: the image stays in the texture, and on
+   * other frames drawing the HUD is a single draw call. *)
+  let hud_vao = int32_bigarray1 1 in
+  Gl.gen_vertex_arrays 1 hud_vao;
+  Gl.bind_vertex_array (Int32.to_int hud_vao.{0});
+  let hud_vbo = int32_bigarray1 1 in
+  Gl.gen_buffers 1 hud_vbo;
+  Gl.bind_buffer Gl.array_buffer (Int32.to_int hud_vbo.{0});
+  (* two triangles covering the window, each vertex its (x, y), in
+   * normalized device coordinates (-1 left or bottom, 1 right or top),
+   * and (u, v) in the image (v = 0 its top row, at the window's top) *)
+  let quad =
+    [| -1.; 1.; 0.; 0.; -1.; -1.; 0.; 1.; 1.; -1.; 1.; 1.; -1.; 1.; 0.; 0.; 1.; -1.; 1.; 1.; 1.; 1.; 1.; 0. |]
+  in
+  let quad_data = Bigarray.Array1.of_array Bigarray.float32 Bigarray.c_layout quad in
+  Gl.buffer_data Gl.array_buffer (Gl.bigarray_byte_size quad_data) (Some quad_data) Gl.static_draw;
+  Gl.vertex_attrib_pointer 0 2 Gl.float false 16 (`Offset 0);
+  Gl.enable_vertex_attrib_array 0;
+  Gl.vertex_attrib_pointer 1 2 Gl.float false 16 (`Offset 8);
+  Gl.enable_vertex_attrib_array 1;
+  let hud_texture =
+    let id = int32_bigarray1 1 in
+    Gl.gen_textures 1 id;
+    let tex = Int32.to_int id.{0} in
+    Gl.bind_texture Gl.texture_2d tex;
+    (* one image pixel per window pixel: no filtering needed *)
+    Gl.tex_parameteri Gl.texture_2d Gl.texture_min_filter Gl.nearest;
+    Gl.tex_parameteri Gl.texture_2d Gl.texture_mag_filter Gl.nearest;
+    Gl.tex_parameteri Gl.texture_2d Gl.texture_wrap_s Gl.clamp_to_edge;
+    Gl.tex_parameteri Gl.texture_2d Gl.texture_wrap_t Gl.clamp_to_edge;
+    tex
+  in
+  (* the shapes whose image is in hud_texture *)
+  let hud_in_texture : Playground.shape list option ref = ref None in
+  let draw_hud (shapes : Playground.shape list) : unit =
+    Gl.bind_texture Gl.texture_2d hud_texture;
+    if !hud_in_texture <> Some shapes then begin
+      (* claude: ~20ms on a 1000x1000 window, nearly all of it the
+       * matting's pass over every pixel (the 2 renders of a few words:
+       * under 1ms); hence only when the shapes change *)
+      let rgba =
+        Matting.premultiplied_rgba ~width:sx ~height:sy (fun fb -> Shape_render_software.render fb shapes)
+      in
+      Gl.pixel_storei Gl.unpack_alignment 1;
+      Gl.tex_image2d Gl.texture_2d 0 Gl.rgba sx sy 0 Gl.rgba Gl.unsigned_byte (`Data rgba);
+      hud_in_texture := Some shapes
+    end;
+    Gl.use_program hud_program;
+    (* over everything, both sides, filled: none of the scene's
+     * settings apply to a flat overlay *)
+    Gl.disable Gl.depth_test;
+    Gl.disable Gl.cull_face_enum;
+    Gl.polygon_mode Gl.front_and_back Gl.fill;
+    (* "over", for premultiplied colors (see Matting): result = hud +
+     * (1 - hud's alpha) * scene *)
+    Gl.enable Gl.blend;
+    Gl.blend_func Gl.one Gl.one_minus_src_alpha;
+    Gl.bind_vertex_array (Int32.to_int hud_vao.{0});
+    Gl.draw_arrays Gl.triangles 0 6;
+    Gl.disable Gl.blend;
+    Gl.enable Gl.depth_test
+  in
 
   Gl.viewport 0 0 sx sy;
 
@@ -476,6 +581,9 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
     List.rev !cached
     |> List.iter (fun (c : Playground3d.cached) -> draw_mesh (Mesh_cache.find_or_build meshes c.id (build_mesh c)));
     Mesh_cache.sweep meshes ~free:free_mesh;
+    (match Playground3d.collect_hud_shapes (Playground3d.group3d shapes) with
+    | [] -> ()
+    | hud_shapes -> draw_hud hud_shapes);
     let s = Mesh_cache.stats meshes in
     Logs.debug (fun m ->
         m "draw: %d draw calls, %d vertices uploaded; cached meshes: %d live, %d built, %d freed%s" !draw_calls

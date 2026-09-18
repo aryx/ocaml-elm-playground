@@ -189,6 +189,7 @@
     (elm_playground_3d (= :version))
     (elm_playground_3d_native_common (= :version))
     (elm_playground_native_common (= :version)) ; graphics/images (Texture_decode)
+    (elm_playground_software (= :version)) ; the HUD: Shape_render_software, graphics/core (Matting)
   )
 )
 (package (name elm_playground_3d_webgl)

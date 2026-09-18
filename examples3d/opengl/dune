@@ -17,7 +17,7 @@
   )
   (libraries
     elm_core
-    elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d
     elm_playground_3d_opengl ; implem of virtual elm_playground_3d
   )

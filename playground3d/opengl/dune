@@ -12,6 +12,10 @@
    elm_playground_3d_native_common ; SDL event loop
    graphics_3d_geometry ; Mat4
    graphics_gpu ; Mesh_cache
+   ; the HUD: drawn by the 2D software rasterizer (Shape_render_software),
+   ; its transparency recovered by Matting, then blended by the GPU
+   elm_playground_software
+   graphics_core
    graphics_images ; Texture_decode
  )
 )

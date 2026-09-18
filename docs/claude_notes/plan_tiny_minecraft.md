@@ -207,11 +207,9 @@ player's bounding box's corners, not real geometric collision detection
    the live mesh count stays at the number of chunks after many edits
    (see `done/plan_opengl_perf.md`, Phase 5).
 6. **Polish**: HUD (crosshair/selected-block indicator, now
-   unblocked -- see above). **Partly done**: a crosshair and a status
-   line (block, position, flying), shown by the software and WebGL
-   backends; **not on OpenGL**, which has no HUD yet (see
-   `plan_3d_remaining.md`): the missing piece for OpenGL, the backend
-   where the game is actually playable. Also: matching the original's world-generation
+   unblocked -- see above). **DONE**: a crosshair and a status line
+   (block, position, flying), on every backend (OpenGL got a HUD for
+   it, see `plan_3d_remaining.md`). Not done: matching the original's world-generation
    "hills" more closely if the flat/simple version from Phase 1 feels
    too bare.
 
