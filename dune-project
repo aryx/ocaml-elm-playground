@@ -171,16 +171,19 @@ Nope
 (package (name elm_playground_3d_software)
   (synopsis "Native from-scratch software rasterizer for the 3D playground")
   (description "")
+  ; claude: NO cairo2 (nor elm_playground_native) anymore: every pixel,
+  ; the HUD's 2D shapes and text included, is computed by our own code
+  ; (graphics/3d/, graphics/2d/ via Shape_render_software); SDL only
+  ; opens the window and shows the pixels. See
+  ; docs/claude_notes/plan_code_reorg_teaching_3d.md, phase 5.
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
-    (cairo2 (>= "0.6.4")) ; for the HUD pass (Shape_render_native), see docs/claude_notes/done/plan_hud.md
-    (stb_image (>= "0.4")) ; Stb_image.t, used by the type of sample_texture
-    (elm_playground_native (= :version)) ; Shape_render_native, for the HUD pass
+    (stb_image (>= "0.4")) ; Stb_image.t, what Texture_decode gives
     (elm_playground_3d (= :version))
     (elm_playground_3d_native_common (= :version))
     (elm_playground_native_common (= :version)) ; graphics/images (Texture_decode)
-    (elm_playground_software (= :version)) ; graphics/core and graphics/2d, used by graphics/3d
+    (elm_playground_software (= :version)) ; graphics/core and graphics/2d, used by graphics/3d; Shape_render_software, for the HUD pass
   )
 )
 (package (name elm_playground_3d_web)

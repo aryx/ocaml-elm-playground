@@ -166,9 +166,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
   assert (Bigarray.Array1.dim pixels = sx * sy);
   (* claude: a 2D *view* onto the same underlying memory as [pixels]
    * (Bigarray.reshape shares data, it doesn't copy): drawing into [fb]
-   * *is* drawing into the window, like the 2D software backend; and
-   * Cairo.Image.create_for_data32, for the HUD pass below, wants the
-   * same Array2.t *)
+   * *is* drawing into the window, like the 2D software backend *)
   let pixels_2d = Bigarray.reshape_2 (Bigarray.genarray_of_array1 pixels) sy sx in
   let fb = Framebuffer.of_pixels pixels_2d in
   (* claude: a Framebuffer's pixels are 0xAARRGGBB, 8 bits per channel;
@@ -194,22 +192,15 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
     let group = Playground3d.group3d shapes in
     Shape3d_render_software.render ~options:!options fb zbuffer camera group;
     (* claude: a HUD pass, once the 3D scene above is fully rasterized
-     * into [pixels] for this frame -- reuses the exact same trick the
-     * 2D backend already uses (Cairo.Image.create_for_data32 pointed
-     * directly at an SDL window surface's own pixel Bigarray), just
-     * applied as an extra pass on top instead of the only pass. No
-     * Cairo.paint/clear here (unlike the 2D backend's per-frame reset)
-     * -- this must only add pixels on top, never erase the 3D frame
-     * underneath. See docs/claude_notes/done/plan_hud.md. *)
+     * into [fb] for this frame: the 2D shapes drawn on top by the 2D
+     * software rasterizer (playground/software/Shape_render_software,
+     * graphics/2d/), into the same framebuffer. No clear here (unlike
+     * the 2D backend's per-frame one) -- this must only add pixels on
+     * top, never erase the 3D frame underneath. See
+     * docs/claude_notes/done/plan_hud.md. *)
     (match Playground3d.collect_hud_shapes group with
     | [] -> ()
-    | hud_shapes ->
-        let surface = Cairo.Image.create_for_data32 ~w:sx ~h:sy pixels_2d in
-        let cr = Cairo.create surface in
-        Cairo.identity_matrix cr;
-        Cairo.translate cr (float_of_int sx /. 2.) (float_of_int sy /. 2.);
-        Shape_render_native.render cr hud_shapes;
-        Cairo.Surface.flush surface);
+    | hud_shapes -> Shape_render_software.render fb hud_shapes);
     if !magnifier then begin
       (* SDL keeps track of the mouse position, in window pixels *)
       let (_buttons, (mx, my)) = Sdl.get_mouse_state () in

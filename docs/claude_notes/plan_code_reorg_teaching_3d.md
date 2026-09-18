@@ -348,9 +348,22 @@ Each a separate function, with its own key, test, and entry in
    Cubes3d's on purpose, same speed (Cubes3d 11.78s, Spheres3d Phong
    4.50s, TexturedCube3d 8.39s); checked on a real window: the keys,
    the title, and the magnifier.
-5. **Cairo-free HUD**: drawn with `Shape_render_software`; the 3D
+5. **DONE.** **Cairo-free HUD**: drawn with `Shape_render_software`; the 3D
    software backend then links the software 2D backend instead of the
    Cairo one (`examples3d/dune`, `games3d/dune`).
+   In the end: the HUD is drawn by `Shape_render_software.render` into
+   the same `Framebuffer`; `elm_playground_3d_software` no longer
+   depends on `cairo2` nor `elm_playground_native`, and the
+   `examples3d`/`games3d` software executables link
+   `elm_playground_software` as their 2D implementation (the OpenGL
+   ones keep `elm_playground_native`). The one golden frame with a HUD,
+   InteractiveCube3d, changed on purpose: only its instructions line
+   (2333 pixels), now in the 2D software backend's Hershey font instead
+   of Cairo's; approved after comparing (the 3D scene identical).
+   StarCollector3d's "Score" HUD checked by eye. A finding on the way,
+   not new: at the HUD's size (~13 pixels), Hershey's colon, two tiny
+   stroked diamonds, is a smudge close to the previous letter
+   ("Mouse:"); the 2D software backend draws any small `words` so.
 6. **New features**: clipping, top-left rule, incremental edge
    functions, as above.
 7. **Docs**: `notes_3d.md` with pointers into the new modules (and a

@@ -659,17 +659,16 @@ image" means something different depending on how that image gets
 made in the first place:
 
 - **Native** (the software rasterizer) already writes every pixel by
-  hand into a raw SDL window-surface buffer. Once the 3D scene is
-  fully rasterized into that buffer for the frame, the HUD pass wraps
-  the *same* pixel buffer in a fresh `Cairo.context` (the identical
-  `Cairo.Image.create_for_data32` trick the 2D backend already uses to
-  let Cairo draw straight into an SDL surface) and draws the HUD
-  shapes directly on top, via `Shape_render_native.render` -- the
-  exact same Cairo-based 2D shape-drawing code the 2D `elm_playground_native`
-  backend uses for *everything*, reused unchanged here for just the
-  HUD layer. No new rendering code, no alpha-blending step of its own
-  to write: Cairo's own painting already only overwrites the pixels a
-  shape actually covers.
+  hand into a `graphics/core` Framebuffer over the SDL window surface.
+  Once the 3D scene is fully rasterized into it for the frame, the HUD
+  pass draws the HUD shapes directly on top, into the *same*
+  framebuffer, via `Shape_render_software.render` -- the exact same
+  from-scratch 2D shape-drawing code (`graphics/2d/`) the 2D
+  `elm_playground_software` backend uses for *everything*, reused
+  unchanged here for just the HUD layer. No new rendering code, no
+  alpha-blending step of its own to write: drawing a shape already only
+  overwrites the pixels it actually covers. So the whole native 3D
+  backend is from scratch, Cairo-free.
 - **Web**: since this backend already compiles the whole 3D scene down
   to ordinary `Playground.shape` values every frame (`render3d_to_2d`,
   §10) and hands them to the existing SVG renderer, a `Hud` shape just
@@ -679,17 +678,17 @@ made in the first place:
   shape would. Genuinely free: zero new rendering code at all.
 - **OpenGL**: not supported yet (see `docs/claude_notes/done/plan_opengl.md`'s
   Scope) -- that backend owns its own GPU-side framebuffer rather than
-  a plain CPU pixel buffer, so native's "just point Cairo at the same
+  a plain CPU pixel buffer, so native's "just draw into the same
   memory" trick doesn't transfer directly; it would need rendering the
   HUD to an offscreen surface, uploading it as a texture, and drawing
   a screen-aligned quad with it in a separate pass.
 
 See `docs/claude_notes/done/plan_hud.md` for the full design writeup
 (including the one non-obvious implementation wrinkle: dune seals a
-virtual module's implementation to exactly its virtual `.mli`, so
-`playground/native/Playground_platform.ml`'s shape-drawing code
-couldn't be called from `playground3d/software/` directly until it was
-extracted into a new plain sibling module, `Shape_render_native`).
+virtual module's implementation to exactly its virtual `.mli`, so a 2D
+backend's shape-drawing code can only be called from
+`playground3d/software/` from a plain sibling module of its
+`Playground_platform`, like `Shape_render_software`).
 
 ## Glossary (quick reference)
 

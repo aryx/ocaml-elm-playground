@@ -3,12 +3,11 @@
  (implements elm_playground_3d)
  (libraries
    tsdl
-   cairo2 ; for the HUD pass (Shape_render_native), see docs/claude_notes/done/plan_hud.md
    stb_image ; Stb_image.t, what Texture_decode gives
    elm_core
    elm_playground
    elm_playground_3d
-   elm_playground_native ; Shape_render_native, for the HUD pass
+   elm_playground_software ; Shape_render_software, for the HUD pass
    elm_playground_3d_native_common ; SDL event loop, shared with the OpenGL backend
    graphics_3d_geometry ; Vec3, Camera
    graphics_3d ; Render, and the modules of its pipeline
