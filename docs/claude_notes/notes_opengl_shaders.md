@@ -27,7 +27,7 @@ See also:
 - `notes_3d.md` and `notes_3d_shading.md`: the lighting math itself
   (normals, Lambert, flat/Gouraud/Phong), done by hand in the software
   rasterizer; `graphics/3d/geometry/Lighting.mli` for the formula.
-- `plan_webgl.md`: the WebGL backend, and its table of OpenGL -> WebGL
+- `done/plan_webgl.md`: the WebGL backend, and its table of OpenGL -> WebGL
   differences.
 
 ## 1. What a shader is, and why
@@ -97,7 +97,7 @@ It's also why a typo is only found then, and only if you ask
 - **The web (2011, 2017).** WebGL 1 (2011) is OpenGL ES 2.0 for
   JavaScript, hence GLSL ES 1.00 in `webgl/`; WebGL 2 (2017) is ES
   3.0, with GLSL ES 3.00, very close to GLSL 3.30 (js_of_ocaml only
-  binds WebGL 1, see `plan_webgl.md`). Browsers don't necessarily hand
+  binds WebGL 1, see `done/plan_webgl.md`). Browsers don't necessarily hand
   your GLSL to an OpenGL driver: Chrome's and Firefox's ANGLE
   translates it to Direct3D's HLSL on Windows, or to Metal on macOS.
 - **Precompiled (2014-).** Metal (2014) has its own language (MSL);
@@ -360,7 +360,7 @@ There is no `printf` on a GPU, and a broken shader doesn't raise:
   -1..1 mapped to red, green, blue), a classic.
 - **Compare with the software rasterizer**: same camera, same lighting
   constants, so a static scene should match its golden frame
-  (`tests/3d/golden/`); `plan_webgl.md` did that with `Corridor3d`.
+  (`tests/3d/golden/`); `done/plan_webgl.md` did that with `Corridor3d`.
 
 ## 8. The flat-shading trick: `dFdx` and `dFdy`
 

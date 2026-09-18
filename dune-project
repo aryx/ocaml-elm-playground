@@ -216,7 +216,7 @@ Nope
 (package (name elm_playground_3d_webgl)
   (synopsis "GPU-accelerated (WebGL 1) web platform for the 3D playground")
   (description "\
-  See docs/claude_notes/plan_webgl.md -- to elm_playground_3d_web what
+  See docs/claude_notes/done/plan_webgl.md -- to elm_playground_3d_web what
   elm_playground_3d_opengl is to the software rasterizer: the same
   shape3d/camera scenes drawn by the GPU, in the browser, reusing
   elm_playground_web's event loop and its SVG for the HUD.

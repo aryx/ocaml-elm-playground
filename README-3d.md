@@ -67,7 +67,7 @@ the pixels itself and one handing the scene to the GPU:
 - **webgl** (`elm_playground_3d_webgl`): the OpenGL backend's drawing,
   in the browser, through WebGL 1, reusing `elm_playground_web`'s event
   loop, and its SVG for the HUD, drawn over the WebGL canvas (see
-  `docs/claude_notes/plan_webgl.md`).
+  `docs/claude_notes/done/plan_webgl.md`).
 
 Try it
 ------

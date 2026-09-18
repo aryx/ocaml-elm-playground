@@ -21,7 +21,7 @@
  * it actually wants internally, so this code never has to think in
  * column-major.
  * claude: WebGL 1 requires [transpose] = false, so the WebGL backend
- * will have to transpose on the CPU itself (see plan_webgl.md). *)
+ * transposes on the CPU itself, with [transpose] below. *)
 (*****************************************************************************)
 
 type t = float array

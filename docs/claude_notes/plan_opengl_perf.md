@@ -13,8 +13,7 @@ small, measurable path to get `games3d/opengl/Minecraft3d.exe` to
 * shape3d list` API.
 
 Scope: **both GPU backends**, `playground3d/opengl/` and the WebGL one
-in progress (`playground3d/webgl/`, see `plan_webgl.md`, at its "hello
-triangle" phase when this was written). Everything that isn't a GL call
+(`playground3d/webgl/`, see `done/plan_webgl.md`). Everything that isn't a GL call
 goes in shared, GPU-API-independent code, so each backend only
 supplies "upload a float array", "draw it", "free it". The software
 and SVG backends keep the same semantics (same pixels) and get no big
@@ -302,13 +301,14 @@ fragment-shader lines, on the software side a new one-idea
    identical to its uncached twin.
 2. **The cheaper dynamic path** (Design 3), in `Gpu_scene`, used by
    OpenGL.
-3. **WebGL**: its upload/draw/free for `Mesh_cache`, whenever
-   `plan_webgl.md` reaches real scenes (its Phase 3). Whichever plan
-   lands second follows the other's `Gpu_scene` interface.
+3. **WebGL**: its upload/draw/free for `Mesh_cache` (the WebGL backend
+   draws real scenes, see `done/plan_webgl.md`; it follows this plan's
+   `Gpu_scene` interface).
 4. **Minecraft3d**: per-sector `cached3d`, hidden-face culling,
    nearest textures. **Target: 60 fps capped on OpenGL**, `view` well
-   under 1ms; then `games3d/webgl/Minecraft3d` (`plan_webgl.md`'s
-   Phase 6), with its fps next to OpenGL's and software's.
+   under 1ms; then `games3d/webgl/Minecraft3d` (see
+   `plan_webgl_remaining.md`, item 1), with its fps next to OpenGL's
+   and software's.
 5. **Chunk invalidation on edit**, once `plan_tiny_minecraft.md`'s
    Phase 5 exists to exercise it: no visible hitch per edit, live mesh
    count stable after many edits.
