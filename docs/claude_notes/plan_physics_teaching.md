@@ -403,7 +403,30 @@ Each small, each showing one idea, each deterministic (golden frames):
   other.mass / r^2: G = 1 in the playground's units, so a star `heavy
   1000000.` keeps a body at 100 px on a circle at 100 px/s, tested over
   one orbit) and `shot_from` (a projectile from a moving shooter's nose,
-  with the shooter's velocity). Mario and Asteroid not ported yet.
+  with the shooter's velocity).
+- **The ports, DONE, as a choice rather than a rewrite**: each game
+  keeps its own hand-written physics, "the dumb engine", by default, and
+  the flag `physics=engine` (`?physics=engine` on the web) switches to
+  the playground's, so the two can be compared in the same file:
+  - `examples/Mario.ml`: `update_dumb` (Evan's code, velocities per
+    1/100 s) or `update_physics` (a body: 100 px/s, a jump at 500 px/s,
+    `fall 1250.`, the same numbers converted);
+  - `games/TinyMario.ml` (the platformer): only the falling speed
+    (0.8 px/frame^2, or `fall 2880.` and `step`), the moving through the
+    tiles staying `move_by`'s, until collisions; the two engines give
+    byte-identical frames (150 frames with two jumps, compared), since
+    the dumb engine is semi-implicit Euler too;
+  - `games/Asteroid.ml`: one game, two engines on the same objects: the
+    dumb one (every 30 ms of wall-clock time, velocities added, a
+    `failwith "Todo"` past v_max) or `Physics` bodies at every frame,
+    with the numbers converted (bullets 1000 px/s, thrust 1111 px/s^2,
+    turning 573 degrees/s) and two improvements: drag (`slow 1.67`)
+    giving the top speed v_max by itself, and bullets `shot_from` the
+    ship, keeping its velocity. The positions and velocities became
+    floats (the file's own wish), so the dumb engine's golden frames
+    moved by less than a pixel (approved). Rendered with the clock
+    frozen, the dumb engine doesn't move at all (it waits for real
+    time) and the physics engine does: a fixed step's determinism.
 - **Spacewar!, DONE** as `games/TinySpacewar.ml` (the toys' naming):
   two ships on one keyboard (arrows, w/a/s/d) around a star of mass
   2,000,000, `turn |> thrust |> attracted_by star |> step |> wrap`,

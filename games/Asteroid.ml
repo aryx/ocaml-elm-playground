@@ -13,6 +13,24 @@ open Playground
  * Spacewar https://en.wikipedia.org/wiki/Spacewar!
  *
  * 
+ * claude: two physics engines, chosen with the flag physics=engine
+ * (?physics=engine in a browser; see Playground.flags):
+ *
+ *  - the dumb engine, by default, the original code: every 30 ms of
+ *    wall-clock time, each object's velocity (pixels per 30 ms) is added
+ *    to its position, the thrust to the ship's velocity, and a ship
+ *    faster than v_max is a [failwith "Todo"];
+ *  - the physics engine (playground/Physics.mli): the same objects, at
+ *    every frame (1/60 s: a fixed time step), in pixels and seconds, with
+ *    the same numbers converted (see "The physics engine" below), and
+ *    two things the dumb engine didn't have: drag (Physics.slow), which
+ *    gives the ship a top speed by itself, v_max, instead of a crash;
+ *    and bullets that keep the ship's own velocity (Physics.shot_from),
+ *    as they would in space.
+ *
+ * Everything else, the objects, the collisions, the view, the keys, is
+ * the same code for both.
+ *
  * TODO:
  *  - see Elm clones of asteroids:
  *)
@@ -26,8 +44,10 @@ open Playground
  *   https://www.cs.cornell.edu/~asampson/media/papers/gator-oopsla2020-preprint.pdf
  *)
 
-(* orig: pad: would be simpler to use float everywhere? *)
-type point = {x: int; y: int }
+(* orig: pad: would be simpler to use float everywhere?
+ * claude: yes, and needed by the physics engine, whose velocities change
+ * by less than a pixel per step (integers would round them away) *)
+type point = {x: number; y: number }
 
 (* a vector is represented as an arrow from the origin (0, 0) to point *)
 type vector = point
@@ -42,17 +62,17 @@ let (point_rotate: number -> point -> point) = fun w p ->
 *)
 
 let (vector: point -> point -> vector) = fun p1 p2 ->
-    { x = p2.x - p1.x; y = p2.y - p1.y }
+    { x = p2.x -. p1.x; y = p2.y -. p1.y }
 
 let (vector_length: vector -> number) = fun v ->
-  sqrt (float v.x ** 2. +. float v.y ** 2.)
+  sqrt (v.x ** 2. +. v.y ** 2.)
 
 let (vector_add: vector -> vector -> vector) = fun v1 v2 ->
-    {x = v1.x + v2.x; y = v1.y + v2.y }
+    {x = v1.x +. v2.x; y = v1.y +. v2.y }
 
 (* orig: was calling point_rotate but simpler to do directly *)
 let (polar: number -> number -> vector) = fun r phi ->
-    { x = Basics.round (r *. cos phi); y = Basics.round (r *. sin phi) }
+    { x = r *. cos phi; y = r *. sin phi }
 
 
 (* orig: we can reuse Playground.shape *)
@@ -146,11 +166,6 @@ let random_range (low, high) =
   let n = Random.float diff in
   n +. low
 
-let random_range_int (low, high) =
-  let diff = abs (high - low) + 1 in
-  let n = Random.int diff in
-  n + low
-
 let space_asteroid () =
   let corners = random_range (4., 8.) in
   let increment_angle = Basics.pi2 /. corners in
@@ -161,19 +176,19 @@ let space_asteroid () =
          ::aux (angle +. increment_angle)
   in
   let pts = aux increment_angle |> List.map (fun pt -> 
-        float pt.x, float pt.y
+        pt.x, pt.y
   ) in
   (* Common.pr2_gen pts; *)
   polygon (Color.Rgb (100, 100, 100)) pts
 
 let new_asteroid screen =
   let pos = {
-      x = int_of_float (random_range (screen.left, screen.right));
-      y = int_of_float (random_range (screen.bottom, screen.top));
+      x = random_range (screen.left, screen.right);
+      y = random_range (screen.bottom, screen.top);
   } in
   let velocity = {
-      x = int_of_float (random_range (-. v_asteroid, v_asteroid));
-      y = int_of_float (random_range (-. v_asteroid, v_asteroid));
+      x = random_range (-. v_asteroid, v_asteroid);
+      y = random_range (-. v_asteroid, v_asteroid);
   } in
   { pos; velocity; orientation = 0.; 
     figure = space_asteroid ();
@@ -182,7 +197,11 @@ let new_asteroid screen =
 
 type state = Play | Stop
 
+(* the two physics engines, see the prelude *)
+type engine = Dumb | Physics_engine
+
 type model = {
+  engine: engine;
   ship: ship obj;
   bullets: bullet obj list;
   asteroids: asteroid obj list;
@@ -195,9 +214,10 @@ type model = {
 let tick = 0.030
 
 let initial_model = {
+  engine = Dumb;
   ship = {
-    pos = { x = 0; y = 0 };
-    velocity = { x = 0; y = 0};
+    pos = { x = 0.; y = 0. };
+    velocity = { x = 0.; y = 0.};
     figure = space_ship blue;
     orientation = Basics.pi /. 2.;
     xtra = {
@@ -238,8 +258,8 @@ let directions v =
     if n = 0
     then []
     else
-      { x = v.x + random_range_int (- v.x, v.x);
-        y = v.y + random_range_int (- v.y, v.y);
+      { x = v.x +. random_range (-. v.x, v.x);
+        y = v.y +. random_range (-. v.y, v.y);
       }::aux (n - 1)
   in
   aux n
@@ -280,7 +300,7 @@ let (shape_of_obj: 'a obj -> shape) =
  fun { figure; pos; orientation; _ } ->
    figure 
    |> rotate (Basics.radians_to_degrees orientation)
-   |> move (float pos.x) (float pos.y)
+   |> move pos.x pos.y
 
 let view model =
   shape_of_obj model.ship ::
@@ -322,9 +342,8 @@ let msg_of_key_up = function
 (* orig: could use modulo if the origin was not at the center on the screen *)
 let add_modulo_window screen pos velocity =
   let { x; y } = vector_add pos velocity in
-  let x = float x in let y = float y in
   (* there is probably something simpler than this code ... *)
-  let x = int_of_float (
+  let x = (
     match () with
     | _ when x > screen.right -> 
         x -. screen.right +. screen.left
@@ -333,7 +352,7 @@ let add_modulo_window screen pos velocity =
     | _ -> x
    )
   in
-  let y = int_of_float (
+  let y = (
     match () with
     | _ when y > screen.top -> 
         y -. screen.top +. screen.bottom
@@ -373,33 +392,115 @@ let move_asteroids screen xs =
   xs 
   |> List.map (move_asteroid screen)
 
+(*****************************************************************************)
+(* The physics engine *)
+(*****************************************************************************)
+(* claude: the same objects, moved by playground/Physics at every frame
+ * (1/60 s) instead of every 30 ms. The model's velocities stay in
+ * pixels per 30 ms tick, the dumb engine's unit (the explosions reuse
+ * them); Physics wants pixels per second: divide by [tick], and back.
+ * The dumb engine's numbers, converted:
+ *
+ *   bullets     v_bullet = 30 px/tick         1000 px/s
+ *   thrust      a_delta = 1 px/tick per tick  1111 px/s^2
+ *   turning     h_delta = 0.3 rad/tick        573 degrees/s
+ *   top speed   v_max = 20 px/tick            667 px/s, from drag: a
+ *               push against the motion, c times the velocity, balances
+ *               the thrust at thrust / c, so c = 1111 / 667 = 1.67
+ *   bullets     bullet_TTL = 20 ticks         0.6 s, 36 frames *)
+
+let per_second v = v /. tick
+let per_tick v = v *. tick
+let drag = a_delta /. (v_max *. tick)
+let bullet_frames = int_of_float (float bullet_TTL *. tick *. 60.)
+
+let body_of (o : 'a obj) : Physics.body =
+  Physics.body o.figure
+  |> Physics.at o.pos.x o.pos.y
+  |> Physics.moving (per_second o.velocity.x) (per_second o.velocity.y)
+  |> Physics.pointing (Basics.radians_to_degrees o.orientation)
+
+(* [o] where the body is, as fast, turned the same way *)
+let with_body (o : 'a obj) (b : Physics.body) : 'a obj =
+  { o with
+    pos = { x = b.x; y = b.y };
+    velocity = { x = per_tick b.vx; y = per_tick b.vy };
+    orientation = Basics.degrees_to_radians b.angle;
+  }
+
+let physics_ship screen (ship : ship obj) : ship obj =
+  body_of ship
+  |> Physics.turn (Basics.radians_to_degrees (per_second ship.xtra.h_acceleration))
+  |> Physics.thrust (per_second (per_second ship.xtra.thrust))
+  |> Physics.slow drag
+  |> Physics.step
+  |> Physics.wrap screen
+  |> with_body ship
+
+(* bullets and asteroids: no push, they just go on, around the screen *)
+let physics_drift screen (o : 'a obj) : 'a obj =
+  body_of o |> Physics.step |> Physics.wrap screen |> with_body o
+
+let physics_bullets screen (bullets : bullet obj list) : bullet obj list =
+  bullets
+  |> List.map (fun b -> { (physics_drift screen b) with xtra = { cnt = b.xtra.cnt + 1 } })
+  |> List.filter (fun b -> b.xtra.cnt < bullet_frames)
+
+(* from the ship's nose, keeping the ship's own velocity *)
+let physics_bullet (ship : ship obj) : bullet obj =
+  with_body (new_bullet ship)
+    (Physics.body space_bullet |> Physics.shot_from (per_second v_bullet) 0. (body_of ship))
+
+(*****************************************************************************)
+(* The update, with either engine *)
+(*****************************************************************************)
+
+(* the same rules for both engines: bullets break asteroids, an
+ * asteroid touching the ship ends the game *)
+let collide model =
+  let asteroids = check_asteroids model in
+  let state =
+    if ship_crashed model
+    then Stop
+    else Play
+  in
+  { model with state; asteroids }
+
 let update msg model =
  (match msg with
  | Noop -> model
  | Tick now ->
+   (match model.engine with
+   | Dumb ->
+     let delta = now -. model.last_tick in
 
-   let delta = now -. model.last_tick in
-
-   if delta < tick || model.state = Stop
-   then model
-   else 
-    let model = { model with
-          ship = move_ship initial_computer.screen model.ship;
-          bullets = move_bullets initial_computer.screen model.bullets;
-          asteroids = move_asteroids initial_computer.screen model.asteroids;
-          last_tick = now;
-        } in
-     let asteroids = check_asteroids model in
-     let state =
-       if ship_crashed model
-       then Stop
-       else Play
-     in
-     { model with state; asteroids }
+     if delta < tick || model.state = Stop
+     then model
+     else 
+      let model = { model with
+            ship = move_ship initial_computer.screen model.ship;
+            bullets = move_bullets initial_computer.screen model.bullets;
+            asteroids = move_asteroids initial_computer.screen model.asteroids;
+            last_tick = now;
+          } in
+       collide model
+   (* claude: one step per frame, whatever the time: a fixed step *)
+   | Physics_engine ->
+     if model.state = Stop
+     then model
+     else
+      let screen = initial_computer.screen in
+      collide { model with
+        ship = physics_ship screen model.ship;
+        bullets = physics_bullets screen model.bullets;
+        asteroids = List.map (physics_drift screen) model.asteroids;
+        last_tick = now;
+      })
 
   | Shoot ->
     let ship = model.ship in 
-    { model with bullets = new_bullet ship::model.bullets }
+    let bullet = match model.engine with Dumb -> new_bullet ship | Physics_engine -> physics_bullet ship in
+    { model with bullets = bullet::model.bullets }
 
   | MoveLeft -> 
      (* simpler when using mutable *)
@@ -425,7 +526,10 @@ let update msg model =
 let app = { Playground.
   view;
   update;
-  init = (fun _flags -> (initial_model), Cmd.none);
+  (* claude: physics=engine chooses the physics engine, see the prelude *)
+  init = (fun flags ->
+    let engine = match List.assoc_opt "physics" flags with Some "engine" -> Physics_engine | _ -> Dumb in
+    { initial_model with engine }, Cmd.none);
     subscriptions  = (fun _ -> Sub.batch [
       Sub.on_animation_frame (fun x -> Tick x);
       Sub.on_key_down (fun key -> msg_of_key_down key);
@@ -434,4 +538,4 @@ let app = { Playground.
   }
 
 let main = 
-  Playground_platform.run_app app
+  Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

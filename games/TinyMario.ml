@@ -25,7 +25,11 @@
  *   dune exec games/TinyMario.exe -- camera=lock zoom=0.5
  *   http://localhost:8001/games/js/TinyMario.html?camera=lerp
  *
- * camera= is window (the default), lock, or lerp. *)
+ * camera= is window (the default), lock, or lerp.
+ *
+ * A third flag chooses the physics engine: physics=engine for the
+ * playground's (playground/Physics.mli), the dumb one, this file's own
+ * two lines of arithmetic, by default; see [fall] below. *)
 open Playground
 open Basics (* float arithmetics *)
 
@@ -176,12 +180,34 @@ let move_camera (computer : computer) (model : model) : Camera2d.t =
 (* Update *)
 (*****************************************************************************)
 
+(* The vertical speed after a frame of falling, in pixels per frame,
+ * with either physics engine (the physics=engine flag):
+ *
+ *  - the dumb engine: 0.8 pixels per frame less at every frame;
+ *  - the physics engine: the same as a body, in seconds: falling at
+ *    0.8 * 60^2 = 2880 pixels per second, per second (Physics.fall),
+ *    for one tick (Physics.step).
+ *
+ * The same numbers, because the dumb engine is semi-implicit Euler too
+ * (the speed changed first, then the position moved with it, below, by
+ * move_by); the engine only computes the speed here: moving through the
+ * tiles stays move_by's job, until the physics plan's collisions (see
+ * docs/claude_notes/plan_physics_teaching.md). Both then cap the fall
+ * at 15 pixels per frame, a terminal speed (Physics.slow would give one
+ * too, but would also slow the jump on its way up). *)
+let fall (computer : computer) (vy : number) : number =
+  match flag computer "physics" with
+  | Some "engine" ->
+      let body = Physics.body (square white 1.) |> Physics.moving 0. (vy * 60.) |> Physics.fall 2880. |> Physics.step in
+      body.vy / 60.
+  | _ -> vy - 0.8
+
 let update (computer : computer) (model : model) : model =
   let on_ground = blocked model.map model.x (model.y - 1.) in
   let vx = 6. * to_x computer.keyboard in
   let vy =
     if on_ground && computer.keyboard.kup then 19.
-    else max (-15.) (model.vy - 0.8) (* gravity, and a terminal speed *)
+    else max (-15.) (fall computer model.vy) (* gravity, and a terminal speed *)
   in
   let (x, _), _ = move_by model.map (model.x, model.y) (vx, 0.) in
   let (x, y), hit = move_by model.map (x, model.y) (0., vy) in
