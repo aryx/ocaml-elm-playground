@@ -333,10 +333,19 @@ Planned, each with the phase that makes it meaningful:
    `-uncapped` flag + `scripts/bench_playground.sh`; all measured in
    `notes_opti.md`. Tests: the coverage example, pixel-aligned = aliased,
    total coverage = area, the Wu example, optimized = simple.
-7. **`notes_2d.md`** finalized (drafted incrementally from phase 1 --
+7. **DONE.** **`notes_2d.md`** finalized (drafted incrementally from phase 1 --
    see below), plus a short perf/LOC write-up comparing against Cairo
    (the 2D twin of the `notes_playground3d_related_work.md`
    postscript: how many lines to replace Cairo, how many fps we lose).
+   In the end: written in one go at the end (the `.mli` comments,
+   `notes_font.md` and `notes_opti.md` having carried the details
+   along the way), following the outline below plus sections on the
+   debug keys, performance, and exercises; the LOC/fps comparison is
+   its section 14 (about 775 lines of code for the whole renderer, vs
+   235 lines of Cairo backend on top of Cairo's C libraries) and
+   `notes_opti.md` (1.5x to 7x slower than Cairo). Also a third
+   optimization, images by forward differencing (`Blit.draw_fast`,
+   Turtle 51 -> 102 fps).
 8. *(stretch)* TrueType outline rasterizer replacing Hershey.
 9. *(optional)* `playground3d/software/` HUD via `elm_playground_raster`
    instead of Cairo (making the 3D software renderer Cairo-free too).
