@@ -64,6 +64,7 @@ doc:
 # which is hand-edited, nor the toy-game/toy-web-game docs that odoc also
 # generates from docs/toy-*-example/), and copy each freshly built web
 # example/game (.bc.js + its .html page) to docs/examples/ and docs/games/.
+# claude: and the 3D examples (examples3d/js/) to docs/examples3d/.
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
 ODOC_DIRS=odoc.support \
   elm_core elm_system elm_playground elm_playground_native elm_playground_web
@@ -76,7 +77,7 @@ website:
 	  chmod -R u+w docs/$$d; \
 	done
 	make js
-	for d in examples games; do \
+	for d in examples games examples3d; do \
 	  for js in _build/default/$$d/js/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
 	    install -m 644 $$js $$d/js/$$b.html docs/$$d/; \
@@ -90,6 +91,7 @@ serve:
 js:
 	dune build games/js --profile=release-js
 	dune build examples/js --profile=release-js
+	dune build examples3d/js --profile=release-js
 
 ###############################################################################
 # Developer targets
