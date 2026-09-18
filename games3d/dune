@@ -1,9 +1,48 @@
+; Minecraft_model.ml is deliberately independent of playground3d/ (see
+; docs/claude_notes/plan_tiny_minecraft.md Phase 1) -- no elm_playground*
+; dependency here at all. A small private library (not a published
+; package) so both Test_minecraft_model.exe and Minecraft3d.exe below can
+; depend on it without duplicating it between two executables stanzas
+; (dune requires each module in a directory to belong to exactly one
+; stanza).
+(library
+ (name minecraft_model)
+ (modules Minecraft_model)
+)
+
+; `dune exec games3d/Test_minecraft_model.exe` -- standalone verification
+; of Minecraft_model's invariants, per the plan's Phase 1.
+(executables
+  (names
+    Test_minecraft_model
+  )
+  (modules Test_minecraft_model)
+  (libraries minecraft_model)
+)
+
 (executables
   (names
     StarCollector3d
   )
+  (modules StarCollector3d)
   (libraries
     elm_core ; Basics.clamp
+    elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_native ; implem of virtual elm_playground_3d
+  )
+)
+
+; Phase 2 of plan_tiny_minecraft.md: static rendering + performance
+; checkpoint, fixed camera, no controls yet.
+(executables
+  (names
+    Minecraft3d
+  )
+  (modules Minecraft3d)
+  (libraries
+    minecraft_model
+    elm_core
     elm_playground_native ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
     elm_playground_3d_native ; implem of virtual elm_playground_3d

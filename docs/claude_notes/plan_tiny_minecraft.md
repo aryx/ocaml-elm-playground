@@ -120,19 +120,38 @@ player's bounding box's corners, not real geometric collision detection
 
 ## Phasing
 
-1. **World data model only, no rendering.** Port `sectorize`/`exposed`/
-   `hit_test`/`add_block`/`remove_block`/`check_neighbors` and world
-   generation as plain OCaml data-structure code, independent of
-   `playground3d/` entirely. Testable on its own (e.g. via `dune utop`
-   or a throwaway print-based check) before any graphics are involved.
-2. **Static rendering + performance checkpoint.** Render the generated
-   world's exposed blocks (naive: rebuild every frame first, per the
-   "rebuild vs. cache" discussion above) with a fixed camera, no
-   controls yet. Measure FPS the same way `notes_3d_opti.md` did for
-   `Cubes3d.ml`, at a world size comparable to the original's default.
-   **Do not proceed to Phase 3 until this number is known** -- it
-   determines whether the "cache built meshes" rework is needed now or
-   can wait.
+1. **DONE.** World data model only, no rendering: `games3d/Minecraft_model.ml`
+   (`sectorize`/`exposed`/`hit_test`/`add_block`/`remove_block`/
+   `check_neighbors` and world generation, independent of `playground3d/`
+   entirely -- dropped the pyglet-specific incremental show/hide queue,
+   see that file's own header comment for why) plus
+   `games3d/Test_minecraft_model.exe`, a standalone invariant checker
+   (not a Testo suite -- this project has no existing Testo usage, and
+   the plan itself only asked for "a throwaway print-based check").
+   Verified: world/shown consistency, exposure correctness and
+   completeness, a constructed 3x3x3-cube scenario proving
+   `check_neighbors` updates exposure correctly on add/remove, and
+   `hit_test` hitting/missing correctly. Default world (`n=80`, matching
+   the original): 84421 blocks, 54450 shown (exposed).
+2. **DONE -- and the number says "cache built meshes" is needed before
+   Phase 3.** `games3d/Minecraft3d.ml` renders every `shown` block
+   (textured via a local `block_shape`/atlas-UV helper, per this plan's
+   own "no new library primitive" design decision) with a fixed
+   overview camera, no controls -- naive rebuild-every-frame, as
+   planned. Screenshotted correctly (grass/brick/sand/stone atlas
+   mapping right on the first try -- see the atlas UV section above).
+   **Measured** (native software rasterizer, this machine): building
+   the 54450-shape list alone takes ~1-1.3s *every frame*, and a full
+   frame (build + rasterize + present) takes ~2.5s, i.e. **~0.4 fps** --
+   confirmed by running headlessly for 15s and counting how many
+   `view3d` calls completed. This settles the "rebuild vs. cache"
+   question the plan flagged as the single biggest risk: naive
+   rebuild-every-frame does not scale to a world this size, so the
+   "build each shown block's shape3d once, cache it in the `shown`
+   table itself (or alongside it), and only rebuild the small set of
+   blocks that actually changed" rework described in that section is
+   now a real prerequisite for Phase 3, not a hypothetical -- **not yet
+   built**, next up before first-person controls land.
 3. **First-person camera + WASD + mouse-look**, including resolving the
    relative-mouse-motion gap above.
 4. **Physics**: gravity, jumping, fly-mode toggle, collision.
