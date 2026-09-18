@@ -70,3 +70,9 @@ let mul (a : t) (b : t) : t =
         sum := !sum +. (a.((r * 4) + k) *. b.((k * 4) + c))
       done;
       !sum)
+
+(* element (r, c) of the result is element (c, r) of [m] *)
+let transpose (m : t) : t =
+  Array.init 16 (fun idx ->
+      let r = idx / 4 and c = idx mod 4 in
+      m.((c * 4) + r))

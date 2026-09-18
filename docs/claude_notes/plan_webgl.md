@@ -291,7 +291,7 @@ gets it for free. Two consequences here:
    (`OPAMS`, `ODOC_DIRS`, `js`, `website`) stay for Phase 5. No-WebGL
    is a `failwith` for now (in the console), not yet a message in the
    page.
-3. **Real scenes**: `Gpu_scene` -> `Float32Array` -> `drawArrays`,
+3. **DONE.** **Real scenes**: `Gpu_scene` -> `Float32Array` -> `drawArrays`,
    the transposed `Mat4` MVP, depth test, the `rendering` hints and
    `OES_standard_derivatives`. First `examples3d/webgl/Triangle3d`
    (Phase 2's page, a WebGL-only example: one orange triangle facing
@@ -301,6 +301,22 @@ gets it for free. Two consequences here:
    why a z-buffer matters), `Corridor3d` (now clipped correctly, unlike
    `web/`), `FloatingCity3d`, `InteractiveCube3d` (mouse), and
    `StarCollector3d` with its HUD.
+   Done as planned: `Mat4.transpose` (+ a test in `Unit_vec3`), the
+   OpenGL shaders in GLSL ES 1.00 (with `highp` when available,
+   `uAmbient` a uniform set from `Lighting.ambient`, and the `#extension`
+   line and the `dFdx` flat normal only when `getExtension` finds
+   `OES_standard_derivatives`), the attribute pointers set once at
+   init (one buffer, no VAO needed), textured faces drawn with a 1x1
+   magenta placeholder texture, `games3d/webgl/` for StarCollector3d.
+   Verified with headless Chrome screenshots of every page (no console
+   error): `Corridor3d`, the one static scene, matches the software
+   backend's golden frame (framing, wall lighting, stripes), which
+   checks the transpose, the letterboxing and the lighting together;
+   the depth test fixes `PaintersAlgorithmFail3d`; StarCollector3d's
+   score shows top-left. Not checked yet: the `Flat` and
+   `No_lighting` modes and culling off (no way to pick them without
+   the debug keys or a `?rendering` in an example), and keyboard/mouse
+   input in a real browser.
 4. **Textures**: async `Image` loading, `TexturedCube3d`.
 5. **Publish**: `dune-project` package stanza, `Makefile`
    (`OPAMS`, `ODOC_DIRS`, the `js`/`website` targets copying

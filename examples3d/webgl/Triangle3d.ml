@@ -9,12 +9,9 @@
  *)
 (* The "hello triangle" of the WebGL backend: a single triangle, facing
  * the camera, the smallest scene that goes through the whole pipeline
- * (camera matrices, one draw call, lighting).
- *
- * Until docs/claude_notes/plan_webgl.md's Phase 3, the backend ignores
- * the scene and draws its own hardcoded red/green/blue triangle
- * instead: this page is then just a check that the canvas, the WebGL
- * context, the shaders and the vertex buffer work. *)
+ * (camera matrices, one draw call, lighting). Its orange is darker
+ * than orange: facing +z, it gets only part of the "sun" (see
+ * Lighting), 0.25 + 0.75 * 0.34, about half its color. *)
 open Playground
 open Playground3d
 

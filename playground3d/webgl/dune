@@ -6,6 +6,7 @@
    elm_playground
    elm_playground_3d
    elm_playground_web ; its run_app, like elm_playground_3d_web
+   graphics_3d_geometry ; Mat4, Lighting
  )
  (preprocess (pps js_of_ocaml-ppx))
 )

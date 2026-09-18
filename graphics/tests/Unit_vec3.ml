@@ -48,10 +48,20 @@ let test_look_at () =
   let x, y, z = apply (0., 0., 0.) in
   Alcotest.check vec "target -> straight ahead" (0., 0., sqrt 38.) (x, y, z)
 
+(* the translation, in the last column of a row-major matrix, ends up
+ * in the last row, where a column-major GPU expects it *)
+let test_transpose () =
+  let m = Mat4.look_at ~eye:(3., 2., 5.) ~target:(0., 0., 0.) in
+  let tm = Mat4.transpose m in
+  let mat = Alcotest.(array (float 1e-12)) in
+  Alcotest.check mat "last row = last column" [| m.(3); m.(7); m.(11); m.(15) |] (Array.sub tm 12 4);
+  Alcotest.check mat "twice: the same" m (Mat4.transpose tm)
+
 let tests =
   Testo.categorize "Vec3/Mat4"
     [
       t "face_normal of a triangle" test_face_normal_triangle;
       t "face_normal at a sphere's pole" test_face_normal_pole;
       t "look_at" test_look_at;
+      t "transpose" test_transpose;
     ]

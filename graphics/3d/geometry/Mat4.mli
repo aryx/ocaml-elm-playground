@@ -18,3 +18,9 @@ val perspective : fov_degrees:float -> aspect:float -> near:float -> far:float -
 (* [mul a b] applied to a point means "apply b first, then a", so
  * [mul projection view] is "view, then project" *)
 val mul : t -> t -> t
+
+(* Rows become columns: the same matrix in column-major order, the one
+ * a GPU stores. OpenGL can transpose while uploading a matrix
+ * (uniform_matrix4fv's [transpose] argument), but WebGL 1 must be
+ * given column-major already, so its backend calls this first. *)
+val transpose : t -> t

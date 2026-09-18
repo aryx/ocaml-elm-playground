@@ -1,15 +1,30 @@
-; claude: WebGL-only examples, linked against elm_playground_3d_webgl.
-; Triangle3d.ml lives here (it's the WebGL backend's own first test);
-; the backend-agnostic ../*.ml examples will be reused via copy_files,
-; like ../js/dune does, once the backend draws real scenes
-; (docs/claude_notes/plan_webgl.md, Phase 3).
+; claude: examples linked against elm_playground_3d_webgl.
+; Triangle3d.ml lives here (the WebGL backend's own first test); the
+; others are the backend-agnostic ../*.ml as-is, via copy_files (a
+; build-time copy, not a committed duplicate, see ../js/dune).
+(copy_files ../Cube3d.ml)
+(copy_files ../Cubes3d.ml)
+(copy_files ../Spheres3d.ml)
+(copy_files ../TexturedCube3d.ml)
+(copy_files ../InteractiveCube3d.ml)
+(copy_files ../PaintersAlgorithmFail3d.ml)
+(copy_files ../FloatingCity3d.ml)
+(copy_files ../Corridor3d.ml)
 
 (executables
   (names
     Triangle3d
+    Cube3d
+    Cubes3d
+    Spheres3d
+    TexturedCube3d
+    InteractiveCube3d
+    PaintersAlgorithmFail3d
+    FloatingCity3d
+    Corridor3d
   )
   (libraries
-    elm_core
+    elm_core ; Set_.mem, Basics.clamp
     elm_playground
     elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
