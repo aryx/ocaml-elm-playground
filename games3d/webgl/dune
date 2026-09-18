@@ -5,12 +5,14 @@
 ; whose world is drawn from GPU buffers kept from frame to frame (see
 ; Playground3d.cached3d and plan_opengl_perf.md).
 (copy_files ../StarCollector3d.ml)
+(copy_files ../TinyBattlezone.{ml,mli})
 (copy_files ../Minecraft3d.ml)
 
 (executables
   (names
     StarCollector3d
     Minecraft3d
+    TinyBattlezone
   )
   (libraries
     minecraft_model

@@ -116,8 +116,9 @@ Wars (Atari, 1983), and Elite (David Braben and Ian Bell, 1984: a whole
 galaxy of trading and dogfights, generated from a few numbers, on a
 32 KB BBC Micro).
 
-- **Toy**: TinyBattlezone -- tanks and pyramids as wireframes, a
-  radar. The first 3D game to write: no hidden surfaces, no shading,
+- **Toy**: TinyBattlezone (DONE: `games3d/TinyBattlezone.ml`, its
+  segments near-clipped and projected, drawn as HUD lines) -- tanks
+  and pyramids as wireframes, a radar. The first 3D game to write: no hidden surfaces, no shading,
   just `project`; the software backend's wireframe mode ("f") is
   already its look. Later TinyElite (a ship, a space station to dock
   in, spinning).

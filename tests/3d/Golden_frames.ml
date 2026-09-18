@@ -47,9 +47,15 @@ let scenes : Testutil_golden.scene list =
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
+    (* claude: the title's tank, turned by 40 degrees *)
+    ("games3d/TinyBattlezone", "", 40);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
-let scripted : Testutil_golden.scripted list = [ ("games3d/StarCollector3d", "move", 40, "up:1-40,right:10-25") ]
+let scripted : Testutil_golden.scripted list =
+  [ ("games3d/StarCollector3d", "move", 40, "up:1-40,right:10-25");
+    (* turned, driving towards a pyramid (cut by the near plane), a shell
+     * flying at the enemy tank *)
+    ("games3d/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes
