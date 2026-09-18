@@ -55,6 +55,10 @@ let scancode_to_keystring = function
  * codebase installs one), so this is also what makes the Image_decode.ml
  * Logs.info calls (e.g. "loading image ...", visible with -v) actually
  * show up. *)
+(* claude: -uncapped: no 60 fps cap, to measure how fast a backend can
+ * draw (see docs/claude_notes/notes_opti.md); games then run too fast *)
+let uncapped = ref false
+
 let parse_cli_and_setup_logging () =
   let level = ref (Some Logs.Warning) in
   let cli_flags = [
@@ -66,10 +70,12 @@ let parse_cli_and_setup_logging () =
     " debug mode";
     "-quiet", Arg.Unit (fun () -> level := None),
     " quiet mode";
+    "-uncapped", Arg.Set uncapped,
+    " no 60 fps cap (to benchmark)";
   ] in
   Arg.parse cli_flags
     (fun s -> raise (Arg.Bad (spf "don't know what to do with %s" s)))
-    (spf "usage: %s [-v|-verbose|-debug|-quiet]" Sys.argv.(0));
+    (spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped]" Sys.argv.(0));
   Logs.set_reporter (Logs.format_reporter ());
   Logs.set_level !level
 
@@ -91,7 +97,9 @@ let update_fps () =
   if dt > 0.5 then (
     fps := float !frames /. dt;
     frames := 0;
-    lastfps := t
+    lastfps := t;
+    (* claude: with -debug, for scripts measuring any backend's speed *)
+    Logs.debug (fun m -> m "fps %.1f" !fps)
   );
   incr frames
 end
@@ -241,6 +249,6 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     Fps.update_fps ();
 
     let elapsed = Unix.gettimeofday () -. frame_start in
-    if elapsed < target_frame_time
+    if elapsed < target_frame_time && not !uncapped
     then Unix.sleepf (target_frame_time -. elapsed);
   done

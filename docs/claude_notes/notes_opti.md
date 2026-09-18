@@ -1,0 +1,139 @@
+# The software 2D rasterizer: what each feature costs, and the optimizations
+
+Purpose: track how fast `playground/software/` (our from-scratch 2D
+rasterizer, see [`plan_software_2d.md`](plan_software_2d.md)) draws the
+examples and games, what each rendering feature costs, and each
+optimization: what it changed, why the simpler code before it was slow,
+and measured before/after numbers. The 2D counterpart of
+[`notes_3d_opti.md`](notes_3d_opti.md).
+
+The point, besides making the games playable: every feature below is
+something a GPU (or Cairo, with hand-tuned C and SIMD) gives you
+"for free". Measuring what it costs when you do it yourself, in plain
+OCaml on the CPU, is the best way to appreciate hardware rendering.
+
+## How the numbers are measured
+
+- `scripts/bench_playground.sh <exe> [keys]`: runs the app with
+  `-uncapped` (no 60 fps cap, see `Native_loop_2d`) and `-debug` (the
+  loop logs its fps every half second), presses the software backend's
+  debug keys with `scripts/xdrive.py` (checking the window title shows
+  the change), waits for things to settle, and prints the median fps.
+  `REPEAT=3` runs it 3 times: median (min-max).
+- Default window, 1000x1000. Machine: ARM Neoverse-N1, 64 cores (only
+  one used: everything is single-threaded), OCaml 4.14.2 native code.
+- Configurations, all on the same binary thanks to the debug keys:
+  - **optimized**: everything on (the default: antialiasing, bilinear
+    image filtering, blending) with the optimizations (`Opti.enabled`);
+  - **"o"**: the same, with the original, simple code instead of the
+    optimized one (`Opti`, see below);
+  - **"n"**: antialiasing off.
+- Noise: runs vary (other programs, the window manager), so single
+  runs can be off by 2x; trust medians of several runs. Two pitfalls
+  found the hard way: a key press not reaching the app (the script now
+  checks the title and retries), and images loaded from the network
+  failing to download (then they're not drawn, and the scene is
+  artificially fast; the script warns "(image failed)").
+
+## Cairo vs ours
+
+| scene    | Cairo | ours, optimized | ours, no antialiasing |
+|----------|------:|----------------:|----------------------:|
+| Picture  |   465 |             267 |                   380 |
+| Smiley   |   400 |             187 |                   353 |
+| Turtle   |   339 |              51 |                    55 |
+| Mario    |   262 |             128 |                   143 |
+| Pong     |   435 |             166 |                   293 |
+| Snake    |   443 |             164 |                   279 |
+| Tetris   |   423 |              61 |                   184 |
+| Asteroid |   457 |             272 |                   379 |
+
+(Cairo: single runs; ours: medians of 3.) Cairo is antialiased too, and
+still 1.7 to 7 times faster: pixman, the pixel library under it, is
+decades of tuned C with SIMD, compositing whole spans at a time,
+caching glyphs, and so on. Ours computes everything per span or per
+pixel, in plain OCaml, with allocations in the inner loops.
+
+## What each feature costs
+
+**Antialiasing** ("n"): 1.1x to 3x slower. Computing *how much* of each
+edge pixel is covered (4 sub-rows per pixel row, then blending the
+pixel) costs much more than "is its center inside?". Tetris pays the
+most (61 vs 184): many small texts, drawn with Wu's antialiased lines,
+pixel by pixel. On a GPU, antialiasing (MSAA) is a hardware feature:
+several coverage samples per pixel, resolved at the end.
+
+**Images** (Turtle, Mario): even without antialiasing, Turtle's one
+192x192 turtle takes most of its frame time (55 fps): see "Next" below.
+
+## The optimizations
+
+Each optimization keeps the original, simple code next to it, runnable:
+`playground/raster/Opti.ml`'s `Opti.enabled` switches between them, the
+"o" key flips it while a game runs. For teaching, the simple version
+explains the idea, the optimized one shows the craft, and "o" shows
+what it buys. A test (`Unit_antialiasing`, "optimized = simple") checks
+they paint the same pixels.
+
+### 1. Antialiasing: coverage by differences, painted by runs
+
+- **The simple version** (`Fill.polygons_aa_simple`): a coverage array
+  for the current pixel row; each sub-row's span adds its overlap to
+  *every* pixel it touches, one by one; then each covered pixel is
+  plotted with its coverage. A span across Pong's 1000-pixel-wide
+  background: 1000 additions per sub-row, 4 sub-rows, and 1000 single
+  pixel plots per row, a million per frame for the background alone.
+- **First fix** (an intermediate version, never committed, described
+  here only): a *difference array*. A span adds its partial coverage to its two end
+  pixels only, and "+1/4 from here, -1/4 from there" for the fully
+  covered pixels between them; a running sum at the end of the row
+  rebuilds every pixel's coverage. Consecutive pixels of equal coverage
+  are painted as one span. Adding a span costs O(1); but the end of each
+  row still walks every pixel of the row.
+- **Second fix, kept** (`Fill.polygons_aa_sparse`): the same differences,
+  but as a short list of *cells* (pixels where something changes),
+  sorted and walked at the end of the row: between two cells the
+  coverage is constant, one span. A row costs a few cells per span, not
+  one visit per pixel. The idea of the cell lists in libart and
+  Anti-Grain Geometry.
+
+Pong (uncapped fps): simple 18 -> difference array 126 (single run) ->
+cells (+ fix 2 below) 166. Snake: 4.6 -> 76 -> 164. Tetris: 19 -> 52
+-> 61. Before any of this, with the 60 fps cap on, Snake ran at 5 fps:
+unplayable.
+
+### 2. `Framebuffer.plot`: write the pixel directly
+
+- **The simple version** (`Framebuffer.plot_simple`): a pixel is a span
+  of length 1, `fill_span fb ~y ~x0:x ~x1:(x + 1)`. Obviously right,
+  one code path for everything.
+- **The problem**: `fill_span`'s fast path takes two Bigarray *views*
+  of the row (`Array2.slice_left`, then `Array1.sub`), each a small
+  allocation, then fills them. Worth it for a span of 800 pixels; for
+  one pixel, the views cost far more than the write. And images
+  (inverse mapping, one pixel at a time), Wu's lines, and antialiased
+  edge pixels all plot single pixels.
+- **The fix** (`Framebuffer.plot`): bounds check, then write the pixel
+  (blending if needed) directly into the Bigarray.
+
+Turtle: 4.3 -> 51 fps; Mario: 4.3 -> 128: 12x and 30x, for 5 lines of
+code. (The "o" numbers are the simple versions of *both* optimizations;
+Turtle and Mario draw mostly images, which only use `plot`.)
+
+**Lesson**: in a pixel loop, what matters is not the arithmetic but what
+happens per pixel that isn't arithmetic: allocations, bounds checks,
+function calls, boxing of floats. Both optimizations remove per-pixel
+overhead, not math.
+
+## Next
+
+- **Images** (`Blit.draw`): each covered pixel allocates a tuple
+  (`Affine.apply`), 4 `color` records (`sample_bilinear`) and 3 more
+  (`lerp`): about 0.5 microseconds per pixel. The classic fix is
+  *forward differencing*: moving one pixel right on the screen always
+  moves (u, v) in the image by the same amount (the inverse matrix's
+  first column), so add it instead of recomputing the matrix product,
+  and keep the coordinates and colors in plain (unboxed) variables --
+  the same idea as the edge coherence in `Fill`.
+- **Antialiased thin text** (Tetris): Wu's lines plot 2 pixels per
+  column, each with a blend; many small texts add up.

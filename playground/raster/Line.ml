@@ -101,3 +101,39 @@ let draw (fb : Framebuffer.t) p0 p1 ~rgb ~alpha =
   | Some ((x0, y0), (x1, y1)) ->
       let pixel v = int_of_float (Float.floor v) in
       bresenham fb (pixel x0, pixel y0) (pixel x1, pixel y1) ~rgb ~alpha
+
+(*****************************************************************************)
+(* Wu's antialiased lines *)
+(*****************************************************************************)
+
+let wu (fb : Framebuffer.t) (x0, y0) (x1, y1) ~rgb ~alpha =
+  (* plot (a, b), with a along the line's main direction; for a mostly
+   * vertical line, x and y are swapped, so swap them back *)
+  let steep = Float.abs (y1 -. y0) > Float.abs (x1 -. x0) in
+  let plot a b intensity =
+    let x, y = if steep then (b, a) else (a, b) in
+    Framebuffer.plot fb ~x ~y ~rgb ~alpha:(alpha *. intensity)
+  in
+  let (a0, b0), (a1, b1) = if steep then ((y0, x0), (y1, x1)) else ((x0, y0), (x1, y1)) in
+  (* go left to right *)
+  let (a0, b0), (a1, b1) = if a0 <= a1 then ((a0, b0), (a1, b1)) else ((a1, b1), (a0, b0)) in
+  let gradient = if a1 = a0 then 0. else (b1 -. b0) /. (a1 -. a0) in
+  let first = int_of_float (Float.round a0) and last = int_of_float (Float.round a1) in
+  for a = first to last do
+    (* where the exact line is in this column, and the two pixels it
+     * passes between: floor b and floor b + 1 *)
+    let b = b0 +. (gradient *. (float a -. a0)) in
+    let below = Float.floor b in
+    let f = b -. below in
+    plot a (int_of_float below) (1. -. f);
+    plot a (int_of_float below + 1) f
+  done
+
+let draw_aa (fb : Framebuffer.t) p0 p1 ~rgb ~alpha =
+  let width = float fb.width -. 0.001 and height = float fb.height -. 0.001 in
+  match clip ~width ~height p0 p1 with
+  | None -> ()
+  | Some ((x0, y0), (x1, y1)) ->
+      (* pixel coordinates (centers at + 0.5) to wu's (centers at
+       * integers) *)
+      wu fb (x0 -. 0.5, y0 -. 0.5) (x1 -. 0.5, y1 -. 0.5) ~rgb ~alpha

@@ -45,12 +45,13 @@ let signed_area (points : (float * float) list) : float =
 let same_way (points : (float * float) list) : (float * float) list =
   if signed_area points < 0. then List.rev points else points
 
-let polylines (fb : Framebuffer.t) (lines : (float * float) list list) ~width ~rgb ~alpha =
+let contours (lines : (float * float) list list) ~width : (float * float) list list =
   let rec segments = function
     | p :: (q :: _ as rest) -> Option.to_list (segment_rectangle p q ~width) @ segments rest
     | [ _ ] | [] -> []
   in
-  let contours =
-    List.concat (List.map (fun line -> segments line @ List.map (disk ~width) line) lines)
-  in
-  Fill.polygons ~rule:Nonzero fb (List.map same_way contours) ~rgb ~alpha
+  List.concat (List.map (fun line -> segments line @ List.map (disk ~width) line) lines)
+  |> List.map same_way
+
+let polylines (fb : Framebuffer.t) (lines : (float * float) list list) ~width ~rgb ~alpha =
+  Fill.polygons ~rule:Nonzero fb (contours lines ~width) ~rgb ~alpha

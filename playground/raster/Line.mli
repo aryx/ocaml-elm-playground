@@ -90,3 +90,28 @@ val clip :
  * coordinates (x right, y down): [clip] to the framebuffer, then
  * [bresenham] between the pixels containing the two ends *)
 val draw : Framebuffer.t -> float * float -> float * float -> rgb:int -> alpha:float -> unit
+
+(* [wu fb p0 p1 ~rgb ~alpha]: an antialiased line, Xiaolin Wu's way.
+ * Like Bresenham, one column at a time (for a mostly horizontal line),
+ * but instead of choosing *one* pixel per column, light the two pixels
+ * the exact line passes between, sharing the intensity by distance:
+ * the closer pixel gets more. With pixel centers at integer
+ * coordinates here (pixel (x, y)'s center, as for Bresenham), the line
+ * from (0, 1) to (4, 3), whose height goes up by 0.5 per column:
+ *
+ *        x:  0    1    2    3    4
+ *   y = 1   1.0  0.5                   at x = 1 the line is at 1.5,
+ *   y = 2        0.5  1.0  0.5         half way: 0.5 and 0.5; at
+ *   y = 3                  0.5  1.0    x = 2 it's exactly on row 2
+ *
+ * The two intensities always add up to 1, so the line looks equally
+ * bright everywhere, instead of Bresenham's staircase. (Simplified: Wu's
+ * paper also weighs the two end pixels by how much of them the line
+ * covers.)
+ *
+ * Reference: Xiaolin Wu, "An efficient antialiasing technique",
+ * SIGGRAPH '91 (Computer Graphics 25(4):143-152). *)
+val wu : Framebuffer.t -> float * float -> float * float -> rgb:int -> alpha:float -> unit
+
+(* [draw_aa]: [draw] with [wu] instead of [bresenham] *)
+val draw_aa : Framebuffer.t -> float * float -> float * float -> rgb:int -> alpha:float -> unit

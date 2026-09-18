@@ -212,9 +212,11 @@ type options = {
   bounding_boxes : bool;
   wireframe : bool;
   bilinear : bool;
+  antialiasing : bool;
 }
 
-let default_options = { alpha_blending = true; bounding_boxes = false; wireframe = false; bilinear = true }
+let default_options =
+  { alpha_blending = true; bounding_boxes = false; wireframe = false; bilinear = true; antialiasing = true }
 
 (* The opacity to draw with. Without blending, there's no "partly
  * there": e.g. [fade 0.2] draws fully opaque, only [fade 0.] hides *)
@@ -225,19 +227,26 @@ let effective_alpha (options : options) (alpha : float) : float =
 (* Drawing polygons and circles: filled, or wireframe *)
 (*****************************************************************************)
 
-let fill_polygon fb points ~rgb ~alpha = Fill.polygon fb points ~rgb ~alpha
+(* With [~aa] (antialiasing), each function below uses the antialiased
+ * version of its algorithm: Fill.polygons_aa instead of Fill.polygon,
+ * Line.draw_aa (Wu) instead of Line.draw (Bresenham) *)
+
+let fill_polygon ~aa fb points ~rgb ~alpha =
+  if aa then Fill.polygons_aa fb [ points ] ~rgb ~alpha else Fill.polygon fb points ~rgb ~alpha
+
+let line ~aa = if aa then Line.draw_aa else Line.draw
 
 (* wireframe: a line from each corner to the next, and from the last
  * back to the first *)
-let outline_polygon fb points ~rgb ~alpha =
+let outline_polygon ~aa fb points ~rgb ~alpha =
   match points with
   | [] -> ()
   | first :: _ ->
       let rec loop = function
         | p :: (q :: _ as rest) ->
-            Line.draw fb p q ~rgb ~alpha;
+            line ~aa fb p q ~rgb ~alpha;
             loop rest
-        | [ last ] -> Line.draw fb last first ~rgb ~alpha
+        | [ last ] -> line ~aa fb last first ~rgb ~alpha
         | [] -> ()
       in
       loop points
@@ -246,14 +255,23 @@ let outline_polygon fb points ~rgb ~alpha =
  * a pixel (the one containing the real center) and its radius a whole
  * number of pixels, so the circle can be up to half a pixel off --
  * one reason why modern renderers prefer polygons, whose corners can
- * be anywhere between pixels. *)
-let fill_circle fb ((cx, cy), r) ~rgb ~alpha =
-  let pixel v = int_of_float (Float.floor v) in
-  Circle.fill fb ~cx:(pixel cx) ~cy:(pixel cy) ~r:(int_of_float (Float.round r)) ~rgb ~alpha
+ * be anywhere between pixels. It also only decides "in or out" for
+ * each pixel, so antialiased circles are polygons. *)
+let circle_polygon ((cx, cy), r) =
+  Circle.ellipse_points ~rx:r ~ry:r ~segments:(Circle.segments_for_radius r)
+  |> List.map (fun (x, y) -> (cx +. x, cy +. y))
 
-let outline_circle fb ((cx, cy), r) ~rgb ~alpha =
-  let pixel v = int_of_float (Float.floor v) in
-  Circle.outline fb ~cx:(pixel cx) ~cy:(pixel cy) ~r:(int_of_float (Float.round r)) ~rgb ~alpha
+let fill_circle ~aa fb (((cx, cy), r) as circle) ~rgb ~alpha =
+  if aa then Fill.polygons_aa fb [ circle_polygon circle ] ~rgb ~alpha
+  else
+    let pixel v = int_of_float (Float.floor v) in
+    Circle.fill fb ~cx:(pixel cx) ~cy:(pixel cy) ~r:(int_of_float (Float.round r)) ~rgb ~alpha
+
+let outline_circle ~aa fb (((cx, cy), r) as circle) ~rgb ~alpha =
+  if aa then outline_polygon ~aa fb (circle_polygon circle) ~rgb ~alpha
+  else
+    let pixel v = int_of_float (Float.floor v) in
+    Circle.outline fb ~cx:(pixel cx) ~cy:(pixel cy) ~r:(int_of_float (Float.round r)) ~rgb ~alpha
 
 (* The current frame of an animated GIF, e.g. Mario's walk, like
  * browsers do: the animation runs on its own clock *)
@@ -266,10 +284,10 @@ let draw_image options fb m ~w ~h src ~alpha =
       Blit.draw fb image (Affine.compose m (image_to_local ~w ~h image)) ~sample ~alpha
 
 (* A line through points, 1 pixel wide *)
-let thin_polyline fb points ~rgb ~alpha =
+let thin_polyline ~aa fb points ~rgb ~alpha =
   let rec loop = function
     | p :: (q :: _ as rest) ->
-        Line.draw fb p q ~rgb ~alpha;
+        line ~aa fb p q ~rgb ~alpha;
         loop rest
     | [ _ ] | [] -> ()
   in
@@ -282,7 +300,9 @@ let draw_words options fb m str ~rgb ~alpha =
   let m = Affine.compose m (text_to_local ~width) in
   let lines = List.map (List.map (Affine.apply m)) strokes in
   let pen = pen_width *. length_scale m in
-  if options.wireframe || pen < 1.5 then List.iter (fun line -> thin_polyline fb line ~rgb ~alpha) lines
+  let aa = options.antialiasing in
+  if options.wireframe || pen < 1.5 then List.iter (fun l -> thin_polyline ~aa fb l ~rgb ~alpha) lines
+  else if aa then Fill.polygons_aa fb (Stroke.contours lines ~width:pen) ~rgb ~alpha
   else Stroke.polylines fb lines ~width:pen ~rgb ~alpha
 
 (*****************************************************************************)
@@ -303,8 +323,9 @@ let form_rgb (form : Playground.form) : int =
 
 (* A (non-group) form, [m] taking its local coordinates to pixels *)
 let render_form (options : options) (fb : Framebuffer.t) (m : Affine.t) (form : Playground.form) ~rgb ~alpha =
-  let draw_polygon = if options.wireframe then outline_polygon else fill_polygon in
-  let draw_circle = if options.wireframe then outline_circle else fill_circle in
+  let aa = options.antialiasing in
+  let draw_polygon = if options.wireframe then outline_polygon ~aa else fill_polygon ~aa in
+  let draw_circle = if options.wireframe then outline_circle ~aa else fill_circle ~aa in
   let polygon local_corners = draw_polygon fb (List.map (Affine.apply m) local_corners) ~rgb ~alpha in
   let box () = Option.iter (fun b -> draw_polygon fb (box_polygon m b) ~rgb ~alpha) (local_bounds form) in
   if options.bounding_boxes then box ()

@@ -40,6 +40,9 @@ let title = "Playground (software rasterizer)"
  *  - "f": wireframe, outlines only (Bresenham lines, midpoint circles)
  *  - "i": image filtering, bilinear or nearest pixel; try
  *    examples/Turtle.exe with the magnifier on the turtle
+ *  - "n": antialiasing on/off; with the magnifier on any edge
+ *  - "o": optimizations on/off, i.e. the original simple code instead
+ *    of the optimized one (see Opti); watch the fps
  *  - "z": the pixel magnifier (Magnifier), following the mouse
  *)
 
@@ -52,18 +55,20 @@ let on_key_press (key : string) =
   | "b" -> options := { !options with bounding_boxes = not !options.bounding_boxes }
   | "f" -> options := { !options with wireframe = not !options.wireframe }
   | "i" -> options := { !options with bilinear = not !options.bilinear }
+  | "n" -> options := { !options with antialiasing = not !options.antialiasing }
+  | "o" -> Opti.enabled := not !Opti.enabled
   | "z" -> magnifier := not !magnifier
   | _ -> ()
 
 (* e.g. "Playground (software rasterizer) -- 60 fps -- t:alpha=on
- * b:boxes=off f:wire=off i:bilinear z:zoom=off" *)
+ * b:boxes=off f:wire=off i:bilinear n:aa=on o:opti=on z:zoom=off" *)
 let window_title ~fps =
   let on_off b = if b then "on" else "off" in
-  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s z:zoom=%s" title fps
-    (on_off !options.alpha_blending) (on_off !options.bounding_boxes)
+  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s z:zoom=%s"
+    title fps (on_off !options.alpha_blending) (on_off !options.bounding_boxes)
     (on_off !options.wireframe)
     (if !options.bilinear then "bilinear" else "nearest")
-    (on_off !magnifier)
+    (on_off !options.antialiasing) (on_off !Opti.enabled) (on_off !magnifier)
 
 (*****************************************************************************)
 (* Entry points *)

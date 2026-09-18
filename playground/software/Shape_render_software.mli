@@ -18,9 +18,13 @@ type options = {
   (* images: true = bilinear filtering (smooth), false = nearest pixel
    * (blocky), see Blit *)
   bilinear : bool;
+  (* true: smooth edges, pixels partly covered drawn partly transparent
+   * (Fill.polygons_aa, Line.draw_aa); false: all-or-nothing pixels,
+   * "jaggies" *)
+  antialiasing : bool;
 }
 
-(* blending on, real outlines, filled, bilinear *)
+(* blending on, real outlines, filled, bilinear, antialiased *)
 val default_options : options
 
 val render : ?options:options -> Framebuffer.t -> Playground.shape list -> unit

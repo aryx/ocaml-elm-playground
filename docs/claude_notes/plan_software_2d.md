@@ -69,6 +69,12 @@ is just `Line.clip` then `Line.bresenham`, each understandable alone;
 knows about the other. Each algorithm's `.mli` has an ASCII diagram
 and a worked example, and `raster/tests/` checks those examples.
 
+Optimizations follow the same rule: the original, simple code stays,
+runnable, next to the optimized one, and `raster/Opti.ml`'s
+`Opti.enabled` (the "o" key) switches between them -- so the simple
+version still explains the idea, and "o" shows on the fps counter what
+the optimization buys (numbers in `notes_opti.md`).
+
 ## Layout
 
 The algorithms live in a **plain library** separate from the thin
@@ -305,7 +311,18 @@ Planned, each with the phase that makes it meaningful:
    while images download. Tests: the "A" of `Hershey.mli`, layout, the
    union, a thick "V" painting each pixel once. Tutorial:
    `notes_font.md`.
-6. **Antialiasing** ("n"): coverage AA for `Fill`, Wu lines.
+6. **DONE.** **Antialiasing** ("n"): coverage AA for `Fill`, Wu lines. In the
+   end: `Fill.scan` (the scanline walk alone, spans with exact ends)
+   feeding either `Fill.polygons` (pixel centers) or `Fill.polygons_aa`
+   (4 sub-rows per pixel row, exact horizontal overlap; the .mli's
+   0.275/1.0/0.725 example); `Line.wu` + `Line.draw_aa`; antialiased
+   circles are polygons; thick text via `Stroke.contours` +
+   `polygons_aa`. On by default (like Cairo). Too slow at first (Snake
+   5 fps), hence the optimizations, kept switchable with their simple
+   originals (`raster/Opti`, "o" key), and a new
+   `-uncapped` flag + `scripts/bench_playground.sh`; all measured in
+   `notes_opti.md`. Tests: the coverage example, pixel-aligned = aliased,
+   total coverage = area, the Wu example, optimized = simple.
 7. **`notes_2d.md`** finalized (drafted incrementally from phase 1 --
    see below), plus a short perf/LOC write-up comparing against Cairo
    (the 2D twin of the `notes_playground3d_related_work.md`

@@ -78,4 +78,16 @@ let fill_span (fb : t) ~y ~x0 ~x1 ~rgb ~alpha =
         fb.pixels.{y, x} <- pixel_of_rgb (blend ~src:rgb ~dst ~alpha)
       done
 
-let plot (fb : t) ~x ~y ~rgb ~alpha = fill_span fb ~y ~x0:x ~x1:(x + 1) ~rgb ~alpha
+(* The original, simple version: a span of length 1 *)
+let plot_simple (fb : t) ~x ~y ~rgb ~alpha = fill_span fb ~y ~x0:x ~x1:(x + 1) ~rgb ~alpha
+
+(* claude: optimization (Opti.enabled): fill_span's fast path allocates
+ * two Bigarray views (slice_left, sub) per call; for a single pixel
+ * that's most of the cost, and images, Wu lines, and antialiased edges
+ * plot many single pixels. So write the pixel directly. *)
+let plot (fb : t) ~x ~y ~rgb ~alpha =
+  if not !Opti.enabled then plot_simple fb ~x ~y ~rgb ~alpha
+  else if x >= 0 && x < fb.width && y >= 0 && y < fb.height && alpha > 0. then
+    fb.pixels.{y, x} <-
+      (if alpha >= 1. then pixel_of_rgb rgb
+       else pixel_of_rgb (blend ~src:rgb ~dst:(rgb_of_pixel fb.pixels.{y, x}) ~alpha))

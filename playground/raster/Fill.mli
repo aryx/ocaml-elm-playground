@@ -72,3 +72,58 @@ val polygon :
  * draw thick lines. *)
 val polygons :
   ?rule:fill_rule -> Framebuffer.t -> (float * float) list list -> rgb:int -> alpha:float -> unit
+
+(* The scanline algorithm alone: [scan ~height contours ~on_span] calls
+ * [on_span ~y xa xb] for each span of each row y in [0, height), with
+ * its exact ends xa and xb (not rounded to pixels). [polygons] turns
+ * the spans into pixels by their centers; [polygons_aa] by coverage. *)
+val scan :
+  ?rule:fill_rule ->
+  height:int ->
+  (float * float) list list ->
+  on_span:(y:int -> float -> float -> unit) ->
+  unit
+
+(* Like [polygons], with antialiasing: instead of "is the pixel's
+ * center inside?", yes or no, compute *how much* of the pixel is
+ * inside, from 0 to 1, and paint it that opaque. Edges then get
+ * intermediate shades instead of "jaggies", the staircase effect of
+ * all-or-nothing pixels (see the magnifier, "z", with "n" on and off).
+ *
+ * How much of a pixel is covered is estimated by scanning [subrows]
+ * (default 4) rows per pixel row, and adding up, for each pixel, the
+ * exact horizontal overlap of each sub-row's spans, divided by 4. E.g.
+ * for 3 pixels with these spans on their 4 sub-rows:
+ *
+ *      pixel 0   pixel 1   pixel 2
+ *     +--------+---------+---------+
+ *     |    ====|=========|====     |   [0.5, 2.5)
+ *     |     ===|=========|=====    |   [0.6, 2.6)
+ *     |       =|=========|=======  |   [0.8, 2.8)
+ *     |        |=========|=========|   [1.0, 3.0)
+ *     +--------+---------+---------+
+ *       0.275     1.0       0.725      coverage
+ *
+ * pixel 0: (0.5 + 0.4 + 0.2 + 0) / 4 = 0.275; pixel 2:
+ * (0.5 + 0.6 + 0.8 + 1) / 4 = 0.725. Horizontally the coverage is
+ * exact, vertically it's sampled 4 times: a middle ground between
+ * sampling (as many samples as you can afford, e.g. 4x4 per pixel)
+ * and computing exact areas.
+ *
+ * References:
+ * - Franklin C. Crow, "The aliasing problem in computer-generated
+ *   shaded images", Communications of the ACM 20(11):799-805, 1977
+ *   (what jaggies are, and why: sampling a signal with sharper details
+ *   than the sampling rate).
+ * - Loren Carpenter, "The A-buffer, an antialiased hidden surface
+ *   method", SIGGRAPH '84 (per-pixel coverage from subpixel samples).
+ * - Tom Duff, "Polygon scan conversion by exact convolution", Raster
+ *   Imaging and Digital Typography, 1989 (exact area coverage). *)
+val polygons_aa :
+  ?rule:fill_rule ->
+  ?subrows:int ->
+  Framebuffer.t ->
+  (float * float) list list ->
+  rgb:int ->
+  alpha:float ->
+  unit

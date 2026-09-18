@@ -83,33 +83,30 @@ let is_inside (rule : fill_rule) (winding : int) : bool =
    * crossings, since each crossing adds or removes 1 *)
   | Even_odd -> winding land 1 = 1
 
-(* Fill one row, given the edges crossing it sorted by x: walk from left
- * to right keeping the winding number of the current position; each
- * time we go from outside to inside, a span starts, and it ends when we
- * go back outside. For the "U" in Fill.mli with edges going down on the
- * left and up on the right, the winding number goes 0 -> 1 -> 0 -> 1 -> 0
- * at x = 1, 3, 7, 9, giving the spans [1, 3) and [7, 9). A span from
- * xa to xb covers the pixels whose center is in [xa, xb), the same
- * rule as for rows. *)
-let fill_row (fb : Framebuffer.t) ~rule ~y ~rgb ~alpha (crossings : edge list) =
-  ignore
-    (List.fold_left
-      (fun (winding, span_start) (e : edge) ->
+(* The spans of one row, given the edges crossing it sorted by x: walk
+ * from left to right keeping the winding number of the current
+ * position; each time we go from outside to inside, a span starts, and
+ * it ends when we go back outside. For the "U" in Fill.mli with edges
+ * going down on the left and up on the right, the winding number goes
+ * 0 -> 1 -> 0 -> 1 -> 0 at x = 1, 3, 7, 9, giving the spans [1, 3) and
+ * [7, 9). *)
+let spans_of_row ~rule (crossings : edge list) : (float * float) list =
+  let _winding, _span_start, spans =
+    List.fold_left
+      (fun (winding, span_start, spans) (e : edge) ->
         let winding' = winding + e.winding in
         match (is_inside rule winding, is_inside rule winding') with
-        | false, true -> (winding', e.x)
-        | true, false ->
-            Framebuffer.fill_span fb ~y ~x0:(first_pixel span_start)
-              ~x1:(first_pixel e.x) ~rgb ~alpha;
-            (winding', e.x)
-        | _ -> (winding', span_start))
-      (0, 0.) crossings
-      : int * float)
+        | false, true -> (winding', e.x, spans)
+        | true, false -> (winding', e.x, (span_start, e.x) :: spans)
+        | _ -> (winding', span_start, spans))
+      (0, 0., []) crossings
+  in
+  List.rev spans
 
-let polygons ?(rule = Nonzero) (fb : Framebuffer.t) (contours : (float * float) list list) ~rgb ~alpha =
+let scan ?(rule = Nonzero) ~height (contours : (float * float) list list) ~on_span =
   (* the "edge table": all the edges, by the row where they start *)
   let edges =
-    List.concat (List.map (edges_of_polygon ~height:fb.height) contours)
+    List.concat (List.map (edges_of_polygon ~height) contours)
     |> List.sort (fun (e1 : edge) e2 -> compare e1.first_row e2.first_row)
   in
   match edges with
@@ -119,18 +116,160 @@ let polygons ?(rule = Nonzero) (fb : Framebuffer.t) (contours : (float * float) 
       (* going down row by row, [active] is the "active edge list", the
        * edges crossing the current row, and [pending] the edges below
        * it, not reached yet *)
-      let rec scan y active pending =
+      let rec loop y active pending =
         if y < last_row then begin
           let starting, pending = List.partition (fun (e : edge) -> e.first_row = y) pending in
           let active = List.filter (fun (e : edge) -> e.end_row > y) (starting @ active) in
           let crossings = List.sort (fun (e1 : edge) e2 -> compare e1.x e2.x) active in
-          fill_row fb ~rule ~y ~rgb ~alpha crossings;
+          List.iter (fun (xa, xb) -> on_span ~y xa xb) (spans_of_row ~rule crossings);
           (* edge coherence: on the next row, each edge's crossing is
            * [slope] further, no need to intersect lines again *)
           List.iter (fun (e : edge) -> e.x <- e.x +. e.slope) active;
-          scan (y + 1) active pending
+          loop (y + 1) active pending
         end
       in
-      scan first.first_row [] edges
+      loop first.first_row [] edges
+
+(*****************************************************************************)
+(* Filling: pixel centers *)
+(*****************************************************************************)
+
+(* A span from xa to xb covers the pixels whose center is in [xa, xb),
+ * the same rule as for rows *)
+let polygons ?rule (fb : Framebuffer.t) contours ~rgb ~alpha =
+  scan ?rule ~height:fb.height contours ~on_span:(fun ~y xa xb ->
+      Framebuffer.fill_span fb ~y ~x0:(first_pixel xa) ~x1:(first_pixel xb) ~rgb ~alpha)
 
 let polygon ?rule fb points ~rgb ~alpha = polygons ?rule fb [ points ] ~rgb ~alpha
+
+(*****************************************************************************)
+(* Filling with antialiasing: pixel coverage *)
+(*****************************************************************************)
+
+(* How much of pixel x the span [xa, xb) covers horizontally, from 0 to
+ * 1; e.g. [0.5, 2.5) covers half of pixel 0, all of pixel 1, and half
+ * of pixel 2 *)
+let overlap (xa, xb) x = Float.max 0. (Float.min xb (float (x + 1)) -. Float.max xa (float x))
+
+(* The original, simple version: a coverage array for the current pixel
+ * row, where each sub-row's span adds its overlap to every pixel it
+ * touches, one by one; then each pixel is plotted with its coverage.
+ * Easy to follow, but a span across a 1000-pixel-wide window costs
+ * 1000 additions per sub-row, and 1000 plots per row. *)
+let polygons_aa_simple ?rule ?(subrows = 4) (fb : Framebuffer.t) contours ~rgb ~alpha =
+  let n = float subrows in
+  let coverage = Array.make fb.width 0. in
+  let row = ref (-1) in
+  let flush () =
+    if !row >= 0 then
+      for x = 0 to fb.width - 1 do
+        if coverage.(x) > 0. then begin
+          Framebuffer.plot fb ~x ~y:!row ~rgb ~alpha:(alpha *. Float.min 1. coverage.(x));
+          coverage.(x) <- 0.
+        end
+      done
+  in
+  let stretched = List.map (List.map (fun (x, y) -> (x, y *. n))) contours in
+  scan ?rule ~height:(fb.height * subrows) stretched ~on_span:(fun ~y:subrow xa xb ->
+      let y = subrow / subrows in
+      if y <> !row then begin
+        flush ();
+        row := y
+      end;
+      for x = max 0 (int_of_float (Float.floor xa)) to min (fb.width - 1) (int_of_float (Float.ceil xb) - 1) do
+        coverage.(x) <- coverage.(x) +. (overlap (xa, xb) x /. n)
+      done);
+  flush ()
+
+(* claude: optimization (Opti.enabled), what polygons_aa does instead.
+ *
+ * Coverage is accumulated per pixel row, over its sub-rows, as a list
+ * of "cells", so that adding a span costs the same whatever its length.
+ * A cell is a pixel x where something changes:
+ *
+ * - [partial]: coverage of pixel x alone, for the span's two end
+ *   pixels, e.g. [0.5, 2.5) gives 0.5 to pixels 0 and 2 (divided by the
+ *   number of sub-rows);
+ * - [step]: full coverage starting (+1) or stopping (-1) at x, for the
+ *   pixels in between: [0.5, 2.5) gives +1 at x = 1 and -1 at x = 2.
+ *
+ * At the end of the row, walking the cells from left to right with a
+ * running sum of the steps gives every pixel's coverage: [partial] for
+ * the cells' pixels, plus the running sum, which stays the same between
+ * two cells -- so everything between two cells is one span of one
+ * coverage, e.g. the 800 fully covered pixels inside a big rectangle.
+ * A row costs a few cells per span, not one visit per pixel.
+ *
+ * (The "difference array" trick, kept sparse; the same idea as the cell
+ * lists of libart and Anti-Grain Geometry, and font-rs's accumulation
+ * buffer.) *)
+type cell = { x : int; partial : float; step : float }
+
+let add_span (cells : cell list ref) ~weight ~width xa xb =
+  let xa = Float.max 0. xa and xb = Float.min (float width) xb in
+  if xa < xb then begin
+    let add x ~partial ~step = cells := { x; partial; step } :: !cells in
+    let ia = int_of_float (Float.floor xa) and ib = int_of_float (Float.floor xb) in
+    if ia = ib then
+      (* the whole span within one pixel *)
+      add ia ~partial:((xb -. xa) *. weight) ~step:0.
+    else begin
+      (* the left end pixel, from xa to its right side *)
+      add ia ~partial:((float (ia + 1) -. xa) *. weight) ~step:0.;
+      (* the right end pixel, from its left side to xb *)
+      if ib < width then add ib ~partial:((xb -. float ib) *. weight) ~step:0.;
+      (* everything in between, fully *)
+      add (ia + 1) ~partial:0. ~step:weight;
+      add ib ~partial:0. ~step:(-.weight)
+    end
+  end
+
+(* Paint row y from its cells, left to right *)
+let paint_row (fb : Framebuffer.t) (cells : cell list) ~y ~rgb ~alpha =
+  let paint x0 x1 coverage =
+    if x0 < x1 && coverage > 0. then
+      Framebuffer.fill_span fb ~y ~x0 ~x1 ~rgb ~alpha:(alpha *. Float.min 1. coverage)
+  in
+  (* [full]: the running sum of steps; pixels from [next] on haven't been
+   * painted yet *)
+  let rec walk full next = function
+    | [] -> ()
+    | { x; _ } :: _ as cells ->
+        (* all the cells of pixel x together *)
+        let here, rest = List.partition (fun c -> c.x = x) cells in
+        let partial = List.fold_left (fun acc c -> acc +. c.partial) 0. here in
+        let step = List.fold_left (fun acc c -> acc +. c.step) 0. here in
+        (* up to x, nothing changed: one span *)
+        paint next x full;
+        let full = full +. step in
+        if partial <> 0. then begin
+          paint x (x + 1) (partial +. full);
+          walk full (x + 1) rest
+        end
+        else walk full x rest
+  in
+  walk 0. 0 (List.sort (fun c1 c2 -> compare c1.x c2.x) cells)
+
+let polygons_aa_sparse ?rule ?(subrows = 4) (fb : Framebuffer.t) contours ~rgb ~alpha =
+  let cells = ref [] in
+  let weight = 1. /. float subrows in
+  let row = ref (-1) in
+  let flush () =
+    if !row >= 0 then paint_row fb !cells ~y:!row ~rgb ~alpha;
+    cells := []
+  in
+  (* the polygon stretched [subrows] times vertically: its rows are our
+   * sub-rows, sampled at (k + 0.5) / subrows within each pixel row *)
+  let stretched = List.map (List.map (fun (x, y) -> (x, y *. float subrows))) contours in
+  scan ?rule ~height:(fb.height * subrows) stretched ~on_span:(fun ~y:subrow xa xb ->
+      let y = subrow / subrows in
+      if y <> !row then begin
+        flush ();
+        row := y
+      end;
+      add_span cells ~weight ~width:fb.width xa xb);
+  flush ()
+
+let polygons_aa ?rule ?subrows fb contours ~rgb ~alpha =
+  if !Opti.enabled then polygons_aa_sparse ?rule ?subrows fb contours ~rgb ~alpha
+  else polygons_aa_simple ?rule ?subrows fb contours ~rgb ~alpha

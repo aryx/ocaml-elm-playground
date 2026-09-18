@@ -19,7 +19,13 @@
  * Reference: Adobe Systems, "PostScript Language Reference Manual",
  * Addison-Wesley, 1985 (stroke, line width, round joins and caps). *)
 
-(* [polylines fb lines ~width ~rgb ~alpha]: each line is a list of
- * points (in pixel coordinates) joined by segments *)
+(* The rectangles and disks of [lines] (each a list of points, in pixel
+ * coordinates, joined by segments), all turned the same way: to fill
+ * with the Nonzero rule, e.g. with Fill.polygons_aa for antialiased
+ * strokes *)
+val contours : (float * float) list list -> width:float -> (float * float) list list
+
+(* [polylines fb lines ~width ~rgb ~alpha]: fill the [contours] of
+ * [lines] with Fill.polygons *)
 val polylines :
   Framebuffer.t -> (float * float) list list -> width:float -> rgb:int -> alpha:float -> unit
