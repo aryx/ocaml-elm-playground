@@ -249,8 +249,17 @@ the browser, image loading is **asynchronous**:
 
 ## Phasing
 
-1. **Extract `Gpu_scene`** out of `opengl/` into `elm_playground_3d`
-   (see above). No behavior change; verify OpenGL screenshots.
+1. **DONE.** **Extract `Gpu_scene`** out of `opengl/` into
+   `elm_playground_3d` (see above). No behavior change; verify OpenGL
+   screenshots. Done as a verbatim move (checked by diffing the moved
+   lines against the old file: only 3 comments that said "below"/"this
+   backend" changed). `Gpu_scene.mli` exports only what a backend
+   uses (`look_at`, `perspective`, `mat4_mul`, `material`,
+   `vertex_data`, `group_by_material`, `floats_per_vertex`,
+   `vertex_floats_of_group`, `light_dir`); `collect_batches`,
+   `fan_triangles`, the vec3 helpers etc. stay private. OpenGL
+   `TexturedCube3d`, `Spheres3d`, `StarCollector3d` screenshots render
+   as before.
 2. **Skeleton + hello triangle**: `playground3d/webgl/` library, the
    `view2d` side-effect wiring, canvas creation/sizing, context
    creation, shader compile/link with error log (same `get*Parameter`
