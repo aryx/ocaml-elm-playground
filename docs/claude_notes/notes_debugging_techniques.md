@@ -175,6 +175,8 @@ starting". A tab stuck in an infinite loop can't show its console, and
 headless Chrome was useless here (`chrome --headless --dump-dom
 --enable-logging=stderr` on macOS only printed display-driver noise and
 never exited, since the page never stops requesting animation frames).
+(claude: on Linux, with `--virtual-time-budget`, headless Chrome does
+work well for pages that don't hang. See `note_headless.md`.)
 
 What worked: run the compiled `.bc.js` directly in node with a tiny fake
 DOM, `docs/claude_notes/web_headless.js`. It fakes only the DOM calls

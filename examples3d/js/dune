@@ -1,0 +1,41 @@
+; claude: reuse ../*.ml as-is (a build-time copy, not a committed
+; symlink/duplicate) so the same backend-agnostic source runs against
+; elm_playground_3d_web here, elm_playground_3d_native in ../dune, and
+; elm_playground_3d_opengl in ../opengl/dune, with only one real file
+; per example.
+(copy_files ../Cube3d.ml)
+(copy_files ../Cubes3d.ml)
+(copy_files ../Spheres3d.ml)
+(copy_files ../TexturedCube3d.ml)
+(copy_files ../InteractiveCube3d.ml)
+(copy_files ../PaintersAlgorithmFail3d.ml)
+(copy_files ../FloatingCity3d.ml)
+
+(executables
+  (names
+    Cube3d
+    Cubes3d
+    Spheres3d
+    TexturedCube3d
+    InteractiveCube3d
+    PaintersAlgorithmFail3d
+    FloatingCity3d
+  )
+  (libraries
+    elm_core ; Set_.mem, Basics.clamp
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_web ; implem of virtual elm_playground_3d
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; claude: copy the .html pages into _build/default/examples3d/js/ next
+; to the generated .bc.js so the directory can be opened directly in a
+; browser (same trick as examples/js/dune).
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))
