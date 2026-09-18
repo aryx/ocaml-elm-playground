@@ -44,9 +44,18 @@ let test_invert () =
   Alcotest.check point "undoes m" p (Affine.apply (Affine.invert m) (Affine.apply m p));
   Alcotest.check point "= move back, rotate back" (Affine.apply undo p) (Affine.apply (Affine.invert m) p)
 
+(* the examples in Vec2.mli *)
+let test_vec2 () =
+  Alcotest.(check (float 1e-9)) "cross (1, 0) (0, 1)" 1. (Vec2.cross (1., 0.) (0., 1.));
+  Alcotest.(check (float 1e-9)) "cross (0, 1) (1, 0)" (-1.) (Vec2.cross (0., 1.) (1., 0.));
+  Alcotest.check point "perp (1, 0) = a quarter turn" (0., 1.) (Vec2.perp (1., 0.));
+  Alcotest.(check (float 1e-9)) "perpendicular" 0. (Vec2.dot (3., 4.) (Vec2.perp (3., 4.)));
+  Alcotest.(check (float 1e-9)) "length" 5. (Vec2.length (3., 4.))
+
 let tests =
   Testo.categorize "Affine"
     [
+      t "Vec2" test_vec2;
       t "rotate" test_rotate;
       t "compose order" test_compose_order;
       t "Elm coordinates to pixels" test_elm_to_pixels;

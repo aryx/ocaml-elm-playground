@@ -1,4 +1,5 @@
-; claude: 2D geometry: affine transforms (Affine). Depends on nothing.
+; claude: 2D geometry: vectors (Vec2) and affine transforms (Affine).
+; Depends on nothing.
 ; A private library, see graphics/core/dune.
 (library
  (name graphics_2d_geometry)

@@ -7,5 +7,5 @@
  (name graphics_2d)
  (package elm_playground_software)
  (wrapped false)
- (libraries graphics_core)
+ (libraries graphics_core graphics_2d_geometry)
 )
