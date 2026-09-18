@@ -41,7 +41,7 @@
      Itay Keren, "Scroll Back: The Theory and Practice of Cameras in
      Side-Scrollers", GDC 2015 (and its Gamasutra article).
    Each technique is a separate function below, so they can be learned
-   (and compared, see games/Platformer.ml's camera= flag) one by one.
+   (and compared, see games/TinyMario.ml's camera= flag) one by one.
 
    Alternatives: a camera inside Playground (a field of [computer], or
    a [camera] function in Playground.mli applied by the backends, as

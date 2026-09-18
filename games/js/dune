@@ -6,7 +6,7 @@
 (copy_files ../Pong.ml)
 (copy_files ../Tetris.ml)
 (copy_files ../Asteroid.ml)
-(copy_files ../Platformer.{ml,mli})
+(copy_files ../TinyMario.{ml,mli})
 (copy_files ../TinyInvaders.{ml,mli})
 (copy_files ../TinySokoban.{ml,mli})
 (copy_files ../TinyPacman.{ml,mli})
@@ -17,7 +17,7 @@
     Pong
     Tetris
     Asteroid
-    Platformer
+    TinyMario
     TinyInvaders
     TinySokoban
     TinyPacman

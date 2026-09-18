@@ -2,8 +2,8 @@
 
 ## Context
 
-`games/` has five games (Pong, Snake, Tetris, Asteroid,
-Platformer), `games3d/` two (StarCollector3d,
+`games/` started with five games (Pong, Snake, Tetris, Asteroid,
+TinyMario), `games3d/` with two (StarCollector3d,
 Minecraft3d). Each was written from scratch on top of `Playground`
 alone. But games come in **genres**, and the games of a genre share
 most of their machinery: every shoot 'em up has bullets, enemy waves
@@ -18,7 +18,7 @@ such games needs. (`plan_games3d.md`, later, will do the same for 3D:
 first-person shooters, flight simulators, 3D platformers, kart racing.)
 
 The first two layers exist: `playground/Camera2d.mli` and
-`playground/Tilemap.mli`, both used by `games/Platformer.ml`. They
+`playground/Tilemap.mli`, both used by `games/TinyMario.ml`. They
 are the model for the others: not in `Playground.mli` (which stays
 Evan's API), built only from its shapes (so every backend gets them for
 free), with the history of the games that needed them and related work
@@ -34,7 +34,7 @@ in their `.mli`, and unit tests of their worked examples.
 - **A layer when a second game needs it**: the first game of a genre
   keeps its helpers in its own file; they move to a layer when the
   second game wants them (the rule of three, relaxed to two). That's
-  how `Platformer.ml`'s one-pixel-at-a-time `move_by` will become part
+  how `TinyMario.ml`'s one-pixel-at-a-time `move_by` will become part
   of a platformer layer: when TinyDonkeyKong needs it too.
 - **Teaching**: the same rules as `graphics/` and `physics/` -- one idea
   per function, ASCII diagrams, references (papers, talks, and here
@@ -62,7 +62,7 @@ adventures; Doom's engine was licensed for a dozen shooters). "Kit"
 says the smaller, teaching-sized thing better:
 
 ```
-  games       Platformer TinyDK   TinyGradius TinyTouhou  TinyOutRun  TinyPacman
+  games       TinyMario  TinyDK   TinyGradius TinyTouhou  TinyOutRun  TinyPacman
                   |        |           |          |           |           |
   genre kits  platformer kit      shmup kit (Bullets,     racing kit  maze kit
               (Actor)             Waves, Paths)           (Road)      (Grid_move,
@@ -252,10 +252,10 @@ Pitfall! (David Crane, Activision, 1982), Super Mario Bros. (Nintendo,
 1985), Sonic the Hedgehog (Sega, 1991: speed, slopes, loops), Celeste
 (2018: precise controls, and assist mode).
 
-- **Toys**: `games/Platformer.ml` (exists: a TinyMario without
-  enemies), TinyDonkeyKong (one screen, ladders, rolling barrels),
+- **Toys**: `games/TinyMario.ml` (DONE, without enemies yet),
+  TinyDonkeyKong (one screen, ladders, rolling barrels),
   TinyCeleste (a dash, wall jumps).
-- **Kit**, the platformer kit: `Actor` (Platformer's `move_by`, one
+- **Kit**, the platformer kit: `Actor` (TinyMario's `move_by`, one
   pixel at a time), and **game feel**: coyote time (jumping a few
   frames after leaving a ledge), jump buffering (a jump pressed just
   before landing), variable jump height (releasing the button early),
@@ -389,7 +389,7 @@ model to be projects of their own.
 - **Scripted inputs for golden frames**: DONE, `-script
   "right:1-60,up:30"` (`playground/native_common/Input_script.mli`),
   game keys held over given frames, in both native loops; the golden
-  runner's scripted scenes use it (`Platformer_run`,
+  runner's scripted scenes use it (`TinyMario_run`,
   `TinyInvaders_play`, `StarCollector3d_move`).
 - **Sprites** (`plan_playground_other.md` section 4) for the genres
   whose characters animate (beat 'em ups, fighting); shapes are enough

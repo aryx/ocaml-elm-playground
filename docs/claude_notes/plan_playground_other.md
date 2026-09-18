@@ -81,7 +81,7 @@ project, and a nice example game).
 `of_strings`, `get`/`set`/`find` (a map is a value, changed when a coin
 is taken), `center`/`cell`/`tile_at`, `view` and `view_visible` (only
 the cells a `Camera2d.rect` touches), `hits` (box vs. grid). Both used
-by `games/Platformer.ml` (with a golden frame; its `camera=` and
+by `games/TinyMario.ml` (with a golden frame; its `camera=` and
 `zoom=` flags compare the camera techniques).
 
 ## 4. Sprite sheets and animation frames

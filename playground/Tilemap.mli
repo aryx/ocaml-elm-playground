@@ -87,7 +87,7 @@
      - Rodrigo Monteiro, "The guide to implementing 2D platformers"
        (2012): tile-based collisions, from the simplest to Mario's;
      - Maddy Thorson, "Celeste and TowerFall Physics" (2017): moving
-       one pixel at a time against a grid (see games/Platformer.ml).
+       one pixel at a time against a grid (see games/TinyMario.ml).
 *)
 
 open Playground
@@ -173,5 +173,5 @@ val view_visible : Camera2d.rect -> (char -> shape) -> t -> shape
  *
  * What to do when a move hits is the game's business: a common answer,
  * e.g. Celeste's, is to move one pixel at a time, stopping before the
- * first one that hits (see games/Platformer.ml). *)
+ * first one that hits (see games/TinyMario.ml). *)
 val hits : (char -> bool) -> t -> number -> number -> number -> number -> bool

@@ -38,7 +38,7 @@ let scenes : Testutil_golden.scene list =
      * run (see Testutil_golden.render) *)
     ("games/software/Snake", "", 5);
     ("games/software/Tetris", "", 5);
-    ("games/software/Platformer", "", 5);
+    ("games/software/TinyMario", "", 5);
     ("games/software/TinyInvaders", "", 5);
     ("games/software/TinySokoban", "", 5);
     ("games/software/TinyPacman", "", 5);
@@ -49,7 +49,7 @@ let scenes : Testutil_golden.scene list =
  * formation shot at, stepped down, a bunker bitten *)
 let scripted : Testutil_golden.scripted list =
   [
-    ("games/software/Platformer", "run", 150, "right:1-150,up:30-34,up:95-99");
+    ("games/software/TinyMario", "run", 150, "right:1-150,up:30-34,up:95-99");
     ( "games/software/TinyInvaders",
       "play",
       300,

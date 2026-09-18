@@ -24,8 +24,8 @@ type scene = string * string * int
 (* A scene played with game keys: an executable, a label, the frame to
  * compare, and the -script giving the keys held over the frames (see
  * playground/native_common/Input_script.mli), e.g. ("games/software/
- * Platformer", "jump", 60, "right:1-60,up:20-25"). Its golden frame is
- * golden/<basename>_<label>.png (e.g. golden/Platformer_jump.png). *)
+ * TinyMario", "jump", 60, "right:1-60,up:20-25"). Its golden frame is
+ * golden/<basename>_<label>.png (e.g. golden/TinyMario_jump.png). *)
 type scripted = string * string * int * string
 
 (* [tests ~dir ~approve ?scripted scenes]: a test per scene and per

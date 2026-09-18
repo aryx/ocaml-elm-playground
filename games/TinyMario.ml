@@ -7,7 +7,13 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* A little Super Mario Bros.: a level bigger than the screen, typed as
+(* A little Super Mario Bros. (Shigeru Miyamoto, Nintendo, 1985). Not the
+ * first platformer -- Space Panic (Universal, 1980) had ladders, Donkey
+ * Kong (1981) jumping and Mario himself, Jump Bug (1981) scrolling --
+ * but the one that defined the side-scrolling kind for a decade, and
+ * the pieces used here: '?' blocks, coins, pits, the flag at the end.
+ *
+ * A level bigger than the screen, typed as
  * strings (see Tilemap), seen through a camera following the player (see
  * Camera2d), with parallax hills and clouds behind, and a HUD in front.
  * Arrows to run, up to jump; take the coins ('$'), bump the '?' blocks
@@ -16,8 +22,8 @@
  * Two flags (see Playground.flags) to compare the ways a camera can
  * follow the player (see Camera2d.mli), and to see more of the level:
  *
- *   dune exec games/Platformer.exe -- camera=lock zoom=0.5
- *   http://localhost:8001/games/js/Platformer.html?camera=lerp
+ *   dune exec games/TinyMario.exe -- camera=lock zoom=0.5
+ *   http://localhost:8001/games/js/TinyMario.html?camera=lerp
  *
  * camera= is window (the default), lock, or lerp. *)
 open Playground
