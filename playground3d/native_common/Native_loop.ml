@@ -23,6 +23,13 @@ let fixed_time : float option ref = ref None
 let startup_keys : string ref = ref ""
 let dump_frame_number : int option ref = ref None
 let dump_frame_file : string ref = ref ""
+(* claude: -script, game keys held over given frames (see Input_script) *)
+let script : Input_script.t option ref = ref None
+
+let set_script (s : string) : unit =
+  match Input_script.parse s with
+  | Ok sc -> script := Some sc
+  | Error msg -> raise (Arg.Bad msg)
 
 (* claude: -uncapped, no 60 fps cap (no sleep between frames), to
  * measure how fast a renderer really is: with -fixed-time and
@@ -47,13 +54,15 @@ let parse_cli_and_setup_logging () =
        "<keys> debug keys to press before the first frame, e.g. \"fz\"");
       ("-dump-frame", Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
        "<n> <file> write frame n (from 1) to file, then exit");
+      ("-script", Arg.String set_script,
+       "<script> game keys held over frames, e.g. \"up:1-60,space:30\"");
       ("-uncapped", Arg.Set uncapped, " no 60 fps cap, to measure speed");
       ("-debug-keys", Arg.Set debug_keys, " the backend's debug keys (e.g. h for help), off by default")
     ]
   in
   let usage =
     Printf.sprintf
-      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-uncapped] [-debug-keys] [name=value|name]..."
+      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-debug-keys] [name=value|name]..."
       Sys.argv.(0)
   in
   (* claude: the arguments without a dash are the app's flags (see
@@ -200,6 +209,13 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
       end
     in
     drain_sdl_events ();
+    (* claude: -script, the keys going down or up at this frame *)
+    (match !script with
+    | Some sc ->
+        Input_script.changes sc (!frame_number + 1)
+        |> List.iter (fun (key, is_down) ->
+               computer := { !computer with keyboard = update_keyboard is_down key (!computer).keyboard })
+    | None -> ());
 
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
     computer := { !computer with time = Playground.Time now };

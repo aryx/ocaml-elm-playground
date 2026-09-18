@@ -12,10 +12,11 @@ val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
  * and, for reproducible frames (see
  * tests/2d/Golden_frames.ml), -fixed-time t (the app's clock stays at
  * t), -keys k (the debug keys k pressed, through [run]'s
- * [on_key_press], before the first frame) and -dump-frame n file (after
+ * [on_key_press], before the first frame), -dump-frame n file (after
  * drawing frame n, counted from 1, [run] calls its [dump_frame file],
  * then exits; the fps given to [draw] is then 0, and mouse and
- * keyboard are ignored); the arguments without a dash are the app's
+ * keyboard are ignored), and -script s (game keys held over given
+ * frames, see Input_script); the arguments without a dash are the app's
  * (see [app_args]). Parses once: later calls do nothing. *)
 val parse_cli_and_setup_logging : unit -> unit
 

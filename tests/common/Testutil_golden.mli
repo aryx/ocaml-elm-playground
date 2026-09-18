@@ -21,7 +21,15 @@
  * golden/Cubes3d_bf.png). *)
 type scene = string * string * int
 
-(* [tests ~dir ~approve scenes]: a test per scene, for a test running in
- * _build/default/<dir>, with its golden frames in <dir>/golden/ and its
- * Makefile target [approve] (named in the failure messages) *)
-val tests : dir:string -> approve:string -> scene list -> Testo.t list
+(* A scene played with game keys: an executable, a label, the frame to
+ * compare, and the -script giving the keys held over the frames (see
+ * playground/native_common/Input_script.mli), e.g. ("games/software/
+ * Platformer", "jump", 60, "right:1-60,up:20-25"). Its golden frame is
+ * golden/<basename>_<label>.png (e.g. golden/Platformer_jump.png). *)
+type scripted = string * string * int * string
+
+(* [tests ~dir ~approve ?scripted scenes]: a test per scene and per
+ * scripted scene, for a test running in _build/default/<dir>, with its
+ * golden frames in <dir>/golden/ and its Makefile target [approve]
+ * (named in the failure messages) *)
+val tests : dir:string -> approve:string -> ?scripted:scripted list -> scene list -> Testo.t list

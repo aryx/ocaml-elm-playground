@@ -42,4 +42,16 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyInvaders", "", 5);
   ]
 
-let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" scenes
+(* claude: games played with keys (-script, see Input_script): what the
+ * start of a game can't show -- the camera scrolled, a coin taken; the
+ * formation shot at, stepped down, a bunker bitten *)
+let scripted : Testutil_golden.scripted list =
+  [
+    ("games/software/Platformer", "run", 150, "right:1-150,up:30-34,up:95-99");
+    ( "games/software/TinyInvaders",
+      "play",
+      300,
+      "space:1,space:10,space:50,space:90,right:100-116,space:130,space:170,left:180-212,space:220,space:260,space:280" );
+  ]
+
+let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

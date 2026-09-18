@@ -373,12 +373,11 @@ model to be projects of their own.
 
 ## Infrastructure all the games need
 
-- **Scripted inputs for golden frames**: today `-keys` presses debug
-  keys before the first frame; a game's golden frame after 3 seconds
-  of play needs keys held over frames (e.g. `-script
-  "right:0-60,up:30"`), on every backend. (For `Platformer.ml` the
-  physics was checked by hand, with a throwaway simulation calling its
-  `update`.)
+- **Scripted inputs for golden frames**: DONE, `-script
+  "right:1-60,up:30"` (`playground/native_common/Input_script.mli`),
+  game keys held over given frames, in both native loops; the golden
+  runner's scripted scenes use it (`Platformer_run`,
+  `TinyInvaders_play`, `StarCollector3d_move`).
 - **Sprites** (`plan_playground_other.md` section 4) for the genres
   whose characters animate (beat 'em ups, fighting); shapes are enough
   for the others.

@@ -96,9 +96,10 @@ val scancode_to_keystring : string -> string
  * claude: for reproducible frames (to check a refactoring changes no
  * pixel), [parse_cli_and_setup_logging] also understands
  * -fixed-time t (the app's clock stays at t), -keys k (the debug keys
- * k pressed, through [on_key_press], before the first frame) and
+ * k pressed, through [on_key_press], before the first frame),
  * -dump-frame n file (after drawing frame n, counted from 1, call
- * [dump_frame file], then exit). With -uncapped, frames aren't paced
+ * [dump_frame file], then exit), and -script s (game keys held over
+ * given frames, see Input_script). With -uncapped, frames aren't paced
  * at 60 fps: the three together time the rendering of n frames.
  * [on_key_press] is only called with -debug-keys (see
  * [debug_keys_enabled]), except for -keys. *)

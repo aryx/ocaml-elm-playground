@@ -81,6 +81,13 @@ let fixed_time : float option ref = ref None
 let startup_keys : string ref = ref ""
 let dump_frame_number : int option ref = ref None
 let dump_frame_file : string ref = ref ""
+(* claude: -script, game keys held over given frames (see Input_script) *)
+let script : Input_script.t option ref = ref None
+
+let set_script (s : string) : unit =
+  match Input_script.parse s with
+  | Ok sc -> script := Some sc
+  | Error msg -> raise (Arg.Bad msg)
 
 (* claude: parsed once, on first use, by whichever comes first:
  * [parse_cli_and_setup_logging] (run_app's first step) or [app_args]
@@ -116,9 +123,11 @@ let parsed_cli : string list Lazy.t = lazy (
     "-dump-frame",
     Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
     "<n> <file> write frame n (from 1) to file, then exit";
+    "-script", Arg.String set_script,
+    "<script> game keys held over frames, e.g. \"right:1-60,space:30\"";
   ] in
   let usage =
-    spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [name=value|name]..."
+    spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [name=value|name]..."
       Sys.argv.(0)
   in
   (* what Arg.parse does on an error or -help *)
@@ -321,6 +330,12 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
       end
     in
     drain_sdl_events ();
+    (* claude: -script, the keys going down or up at this frame *)
+    (match !script with
+    | Some sc ->
+        Input_script.changes sc (!frame_number + 1)
+        |> List.iter (fun (key, is_down) -> apply_playground_event (E.EKeyChanged (is_down, key)))
+    | None -> ());
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
     apply_playground_event (E.ETick now);
 

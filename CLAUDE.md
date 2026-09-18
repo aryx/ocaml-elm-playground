@@ -35,7 +35,8 @@ look at the new frames in `_build/default/tests/*/actual/`, then
 The native software backends' debug keys (rendering toggles, "h" for
 help) only work when run with `-debug-keys` (e.g.
 `dune exec examples3d/Cubes3d.exe -- -debug-keys`); other flags:
-`-uncapped`, `-fixed-time t`, `-keys k`, `-dump-frame n file`.
+`-uncapped`, `-fixed-time t`, `-keys k`, `-dump-frame n file`,
+`-script "right:1-60,space:30"` (game keys held over frames).
 
 `make check` runs the project's semgrep config (`semgrep.jsonnet`) via a local `osemgrep` binary — not generally runnable outside the author's machine.
 

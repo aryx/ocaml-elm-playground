@@ -49,4 +49,7 @@ let scenes : Testutil_golden.scene list =
     ("games3d/StarCollector3d", "", 3);
   ]
 
-let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" scenes
+(* claude: played with keys (-script, see Input_script) *)
+let scripted : Testutil_golden.scripted list = [ ("games3d/StarCollector3d", "move", 40, "up:1-40,right:10-25") ]
+
+let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

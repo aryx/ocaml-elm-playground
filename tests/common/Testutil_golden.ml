@@ -13,6 +13,7 @@
 let t = Testo.create
 
 type scene = string * string * int
+type scripted = string * string * int * string
 
 (* the tests run in _build/default/<dir>/, e.g. tests/3d/; the
  * examples, from _build/default/, the root their image and texture
@@ -42,12 +43,13 @@ let read_ppm (file : string) : frame =
   close_in ic;
   { width; height; rgb }
 
-let render ~dir ~(exe : string) ~(keys : string) ~(frame : int) : frame =
+let render ~dir ~(exe : string) ~(keys : string) ~(script : string option) ~(frame : int) : frame =
   let ppm = Filename.temp_file "golden3d" ".ppm" in
   (* claude: seed=1, a flag (see Playground.flags) for the games drawing
    * random numbers (Snake, Tetris, StarCollector3d): the same numbers
    * every run; the other programs ignore it *)
   let args = [| exe; "-fixed-time"; "1000"; "-keys"; keys; "-dump-frame"; string_of_int frame; ppm; "seed=1" |] in
+  let args = match script with Some s -> Array.append args [| "-script"; s |] | None -> args in
   let env = Array.append [| "SDL_VIDEODRIVER=dummy" |] (Unix.environment ()) in
   (match Unix.fork () with
   | 0 -> (
@@ -109,11 +111,11 @@ let compare_frames (golden : frame) (actual : frame) : int * (int * int) option 
   done;
   (!count, !first)
 
-let test_scene ~dir ~approve ((exe, keys, frame) : scene) () =
-  let name = Filename.basename exe ^ if keys = "" then "" else "_" ^ keys in
+(* [name]: the golden file's, see Testutil_golden.mli *)
+let test_scene ~dir ~approve ~name ~exe ~keys ~script ~frame () =
   let golden_file = Filename.concat golden_dir (name ^ ".png") in
   let actual_file = Filename.concat actual_dir (name ^ ".png") in
-  let actual = render ~dir ~exe:(exe ^ ".exe") ~keys ~frame in
+  let actual = render ~dir ~exe:(exe ^ ".exe") ~keys ~script ~frame in
   let save_actual () =
     if not (Sys.file_exists actual_dir) then Sys.mkdir actual_dir 0o755;
     write_png actual_file actual
@@ -138,9 +140,19 @@ let test_scene ~dir ~approve ((exe, keys, frame) : scene) () =
       Alcotest.failf "%s: %d pixels differ from the golden frame, the first at (%d, %d); the new frame is %s ('make %s')"
         name n x y (shown ~dir actual_file) approve
 
-let tests ~dir ~approve (scenes : scene list) : Testo.t list =
-  scenes
-  |> List.map (fun ((exe, keys, _) as scene) ->
-         let name = Filename.basename exe ^ if keys = "" then "" else " -keys " ^ keys in
-         t name (test_scene ~dir ~approve scene))
-  |> Testo.categorize "golden frames"
+let tests ~dir ~approve ?(scripted : scripted list = []) (scenes : scene list) : Testo.t list =
+  let plain =
+    scenes
+    |> List.map (fun (exe, keys, frame) ->
+           let name = Filename.basename exe ^ if keys = "" then "" else "_" ^ keys in
+           let title = Filename.basename exe ^ if keys = "" then "" else " -keys " ^ keys in
+           t title (test_scene ~dir ~approve ~name ~exe ~keys ~script:None ~frame))
+  in
+  let with_script =
+    scripted
+    |> List.map (fun (exe, label, frame, script) ->
+           let name = Filename.basename exe ^ "_" ^ label in
+           t (Filename.basename exe ^ " -script " ^ label)
+             (test_scene ~dir ~approve ~name ~exe ~keys:"" ~script:(Some script) ~frame))
+  in
+  Testo.categorize "golden frames" (plain @ with_script)
