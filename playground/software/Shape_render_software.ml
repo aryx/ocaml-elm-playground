@@ -35,9 +35,9 @@
  * through the transform, then Fill.polygon fills them. Circles use the
  * midpoint circle algorithm (Circle), unless the transform stretches
  * them into ellipses, which, like ovals, become polygons with many
- * sides. Words and images are, until their phase of
- * docs/claude_notes/plan_software_2d.md, drawn as the box around them,
- * which is also what the "b" key shows for every form.
+ * sides. Images are drawn pixel by pixel (Blit). Words are, until
+ * their phase of docs/claude_notes/plan_software_2d.md, drawn as the
+ * box around them, which is also what the "b" key shows for every form.
  *)
 
 (*****************************************************************************)
@@ -52,8 +52,8 @@ let rgb_of_color (color : Color.t) : int =
   | Hex s when String.length s = 7 && s.[0] = '#' -> int_of_string ("0x" ^ String.sub s 1 6)
   | Hex s -> failwith (Printf.sprintf "wrong color format: %s" s)
 
-(* Images don't have a color; until phase 4 draws their real pixels,
- * show where they are with a light gray box *)
+(* Images don't have a color; the "b" key shows their box in light
+ * gray *)
 let image_placeholder_rgb = 0xc0c0c0
 
 (*****************************************************************************)
@@ -155,12 +155,46 @@ let box_polygon (m : Affine.t) (xmin, ymin, xmax, ymax) : (float * float) list =
   [ (x0, y0); (x1, y0); (x1, y1); (x0, y1) ]
 
 (*****************************************************************************)
+(* Images *)
+(*****************************************************************************)
+
+(* Image_decode's images (stb_image's buffers) as Blit's: the same
+ * bytes when laid out the same way, which is always the case in
+ * practice (no offset, rows one after the other); else a copy *)
+let blit_image (img : Image_decode.image) : Blit.image =
+  if img.offset = 0 && img.stride = img.width * 4 then
+    { width = img.width; height = img.height; rgba = img.data }
+  else begin
+    let rgba = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (img.width * img.height * 4) in
+    for j = 0 to img.height - 1 do
+      for k = 0 to (img.width * 4) - 1 do
+        rgba.{(j * img.width * 4) + k} <- img.data.{img.offset + (j * img.stride) + k}
+      done
+    done;
+    { width = img.width; height = img.height; rgba }
+  end
+
+(* [image w h src] shows the image as a w x h box centered on (0, 0):
+ * this maps its pixel (u, v) (top-left origin, y down, u from 0 to its
+ * width in pixels) to that box (y up), e.g. for a 35x35 image in a
+ * 70x70 box: pixel (0, 0) -> (-35, 35), pixel (35, 35) -> (35, -35) *)
+let image_to_local ~w ~h (image : Blit.image) : Affine.t =
+  Affine.compose
+    (Affine.translate (-.w /. 2.) (h /. 2.))
+    (Affine.scale (w /. float image.width) (-.h /. float image.height))
+
+(*****************************************************************************)
 (* Options *)
 (*****************************************************************************)
 
-type options = { alpha_blending : bool; bounding_boxes : bool; wireframe : bool }
+type options = {
+  alpha_blending : bool;
+  bounding_boxes : bool;
+  wireframe : bool;
+  bilinear : bool;
+}
 
-let default_options = { alpha_blending = true; bounding_boxes = false; wireframe = false }
+let default_options = { alpha_blending = true; bounding_boxes = false; wireframe = false; bilinear = true }
 
 (* The opacity to draw with. Without blending, there's no "partly
  * there": e.g. [fade 0.2] draws fully opaque, only [fade 0.] hides *)
@@ -201,6 +235,16 @@ let outline_circle fb ((cx, cy), r) ~rgb ~alpha =
   let pixel v = int_of_float (Float.floor v) in
   Circle.outline fb ~cx:(pixel cx) ~cy:(pixel cy) ~r:(int_of_float (Float.round r)) ~rgb ~alpha
 
+(* The current frame of an animated GIF, e.g. Mario's walk, like
+ * browsers do: the animation runs on its own clock *)
+let draw_image options fb m ~w ~h src ~alpha =
+  match Image_decode.image_of_url_at ~time:(Unix.gettimeofday ()) src with
+  | None -> ()
+  | Some img ->
+      let image = blit_image img in
+      let sample = if options.bilinear then Blit.sample_bilinear else Blit.sample_nearest in
+      Blit.draw fb image (Affine.compose m (image_to_local ~w ~h image)) ~sample ~alpha
+
 (*****************************************************************************)
 (* Shapes *)
 (*****************************************************************************)
@@ -234,8 +278,10 @@ let render_form (options : options) (fb : Framebuffer.t) (m : Affine.t) (form : 
         | Some circle -> draw_circle fb circle ~rgb ~alpha
         | None -> draw_polygon fb (ellipse_polygon m ~rx:r ~ry:r) ~rgb ~alpha)
     | Oval (_, w, h) -> draw_polygon fb (ellipse_polygon m ~rx:(w /. 2.) ~ry:(h /. 2.)) ~rgb ~alpha
-    (* until phases 4 (images) and 5 (text) *)
-    | Words _ | Image _ -> box ()
+    | Image (w, h, _) when options.wireframe -> polygon (rectangle_corners w h)
+    | Image (w, h, src) -> draw_image options fb m ~w ~h src ~alpha
+    (* until phase 5 (text) *)
+    | Words _ -> box ()
     | Group _ -> ()
 
 (* [m] is the transform from the coordinates [shape] lives in (the

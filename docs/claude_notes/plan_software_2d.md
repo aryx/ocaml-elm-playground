@@ -280,8 +280,18 @@ Planned, each with the phase that makes it meaningful:
    fill/outline pictures, segment counts), clipping (incl. the corner
    case needing two clips), a line from x = -1e9, each circle pixel
    painted once, and circles within 0.6 pixel of Cairo's.
-4. **`Blit`**: images (nearest, then bilinear + "i"), animated GIFs via
-   the shared decoder. `examples/Mario.ml` is the test.
+4. **DONE.** **`Blit`**: images (nearest, then bilinear + "i"), animated GIFs via
+   the shared decoder. `examples/Mario.ml` is the test. In the end:
+   `Affine.invert`; `Blit.draw` by inverse mapping (the .mli's
+   forward-leaves-holes picture), with the filter passed in
+   (`sample_nearest`, `sample_bilinear`, separate functions);
+   `Blit.image` has stb_image's layout, shared without copy. Bilinear
+   is the default (like Cairo), "i" switches to nearest. Known
+   simplification: bilinear mixes straight (not premultiplied) alpha,
+   so sprite edges can darken slightly. Tests: invert, the 2x
+   enlargement with no holes, a quarter turn, transparent pixels, the
+   bilinear 70/30 example. Turtle and Mario look like Cairo's; the
+   magnifier shows the nearest/bilinear difference; 57-60 fps.
 5. **`Hershey`**: `Words`, FPS counter, "Loading...".
    `examples/Words.ml` is the test.
 6. **Antialiasing** ("n"): coverage AA for `Fill`, Wu lines.

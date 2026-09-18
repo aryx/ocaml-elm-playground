@@ -36,3 +36,13 @@ let compose (m : t) (n : t) : t =
   }
 
 let apply (m : t) (x, y) = ((m.a *. x) +. (m.c *. y) +. m.tx, (m.b *. x) +. (m.d *. y) +. m.ty)
+
+(* The inverse of the 2x2 part [a c; b d] is [d -c; -b a] / determinant
+ * (the determinant a*d - b*c is how much the matrix scales areas; 0
+ * means it squashes the plane flat, and there's no inverse). Then the
+ * translation: m moves by (tx, ty) last, so its inverse must undo that
+ * first, i.e. apply the inverted 2x2 part to (-tx, -ty). *)
+let invert (m : t) : t =
+  let det = (m.a *. m.d) -. (m.b *. m.c) in
+  let a = m.d /. det and b = -.m.b /. det and c = -.m.c /. det and d = m.a /. det in
+  { a; b; c; d; tx = -.((a *. m.tx) +. (c *. m.ty)); ty = -.((b *. m.tx) +. (d *. m.ty)) }

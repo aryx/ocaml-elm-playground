@@ -125,6 +125,7 @@ Nope
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
+    (stb_image (>= "0.4"))
     (elm_core (= :version))
     (elm_playground (= :version))
     (elm_playground_raster (= :version))

@@ -15,9 +15,12 @@ type options = {
   (* true: draw only the outlines, with Line (Bresenham), instead of
    * filling; shows the polygons circles and ovals became *)
   wireframe : bool;
+  (* images: true = bilinear filtering (smooth), false = nearest pixel
+   * (blocky), see Blit *)
+  bilinear : bool;
 }
 
-(* blending on, real outlines, filled *)
+(* blending on, real outlines, filled, bilinear *)
 val default_options : options
 
 val render : ?options:options -> Framebuffer.t -> Playground.shape list -> unit

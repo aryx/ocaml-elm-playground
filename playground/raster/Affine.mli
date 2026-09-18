@@ -58,3 +58,11 @@ val scale : float -> float -> t
 val compose : t -> t -> t
 
 val apply : t -> float * float -> float * float
+
+(* [invert m] undoes [m]: apply (invert m) (apply m p) = p. E.g. the
+ * inverse of "rotate a quarter turn, then move right by 10" is "move
+ * left by 10, then rotate a quarter turn back". Used to go from the
+ * screen back to an image's pixels (see Blit). The matrix must be
+ * invertible: not squashing everything onto a line or a point (a scale
+ * by 0), which Playground never does except with [scale 0.]. *)
+val invert : t -> t

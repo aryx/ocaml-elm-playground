@@ -5,6 +5,7 @@
   (implements elm_playground)
   (libraries
     tsdl
+    stb_image ; Image_decode.image's fields
     elm_core ; Color
     elm_playground
     elm_playground_raster ; the rasterization algorithms
