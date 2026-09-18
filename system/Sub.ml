@@ -3,6 +3,9 @@ type 'msg onesub =
   | SubMouseMove of (float * float -> 'msg)
   | SubMouseDown of (unit -> 'msg)
   | SubMouseUp of (unit -> 'msg)
+  (* pad: not in Elm (its onMouseDown gives the event, with its button) *)
+  | SubRightMouseDown of (unit -> 'msg)
+  | SubRightMouseUp of (unit -> 'msg)
   | SubKeyDown of (Keyboard.key -> 'msg)
   | SubKeyUp of (Keyboard.key -> 'msg)
 
@@ -24,6 +27,13 @@ let (on_mouse_down: (unit -> 'msg) -> 'msg t) = fun f ->
 let (on_mouse_up: (unit -> 'msg) -> 'msg t) = fun f ->
   [SubMouseUp f]
 
+(* claude: on_mouse_down/on_mouse_up are the left (main) button *)
+let (on_right_mouse_down: (unit -> 'msg) -> 'msg t) = fun f ->
+  [SubRightMouseDown f]
+
+let (on_right_mouse_up: (unit -> 'msg) -> 'msg t) = fun f ->
+  [SubRightMouseUp f]
+
 let (on_key_down: (Keyboard.key -> 'msg) -> 'msg t) = fun f ->
   [SubKeyDown f]
 
@@ -37,6 +47,7 @@ type event =
   | ETick of float
   | EMouseMove of (int * int)
   | EMouseButton of bool (* is_down = true *)
+  | ERightMouseButton of bool (* is_down = true *)
   | EKeyChanged of (bool (* down = true *) * Keyboard.key)
 
 let rec find_map_opt f = function
@@ -67,8 +78,20 @@ let event_to_msgopt event subs =
        | _ -> None
       )
   | EMouseButton (false) ->
-      subs |> find_map_opt (function 
+      subs |> find_map_opt (function
         | SubMouseUp f ->
+           Some (f ())
+       | _ -> None
+      )
+  | ERightMouseButton (true) ->
+      subs |> find_map_opt (function
+        | SubRightMouseDown f ->
+           Some (f ())
+       | _ -> None
+      )
+  | ERightMouseButton (false) ->
+      subs |> find_map_opt (function
+        | SubRightMouseUp f ->
            Some (f ())
        | _ -> None
       )

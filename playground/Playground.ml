@@ -295,14 +295,19 @@ type mouse = {
 
   mdown: bool;
   mclick: bool;
+  (* pad: not in original Playground.elm: the right button, e.g. to
+   * place a block in games3d/Minecraft3d (the left one removes) *)
+  mrdown: bool;
 }
 
-let mouse_move mx my mouse = 
+let mouse_move mx my mouse =
   { mouse with mx; my }
 let mouse_click mclick mouse =
   { mouse with mclick }
 let mouse_down mdown mouse =
   { mouse with mdown }
+let mouse_right_down mrdown mouse =
+  { mouse with mrdown }
 
 (*-------------------------------------------------------------------*)
 (* Keyboard *)
@@ -392,7 +397,7 @@ type computer = {
 }
 
 let initial_computer = {
-  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false };
+  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false };
   keyboard = empty_keyboard;
   screen = to_screen default_width default_height;
   time = Time (Time.millis_to_posix 1);
@@ -456,6 +461,7 @@ type msg =
   | MouseMove of (float * float)
   | MouseClick (* reset after a Tick *)
   | MouseButton of bool (* true = down, false = up *)
+  | RightMouseButton of bool (* the same, for the right button *)
 
 
 type animation = Animation of (*Event.visibility * *) screen * time
@@ -467,9 +473,10 @@ let animation_update msg (Animation (s, t) as state) =
   | Resized (w, h) -> 
     Animation (to_screen (float w) (float h), t)
 
-  | MouseMove _ 
-  | MouseClick 
+  | MouseMove _
+  | MouseClick
   | MouseButton _
+  | RightMouseButton _
   | KeyChanged _
     -> state
 
@@ -531,8 +538,11 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
                  * mouse_down false *)
                   (mouse_click true computer.mouse) })
     | MouseButton is_down ->
-        Game (memory, 
+        Game (memory,
              { computer with mouse = mouse_down is_down computer.mouse })
+    | RightMouseButton is_down ->
+        Game (memory,
+             { computer with mouse = mouse_right_down is_down computer.mouse })
     | KeyChanged (is_down, key) ->
         Game (memory,
              { computer with keyboard = update_keyboard is_down key 
@@ -562,6 +572,8 @@ let (game:
       Sub.on_mouse_move (fun x -> MouseMove x);
       Sub.on_mouse_down (fun () -> MouseButton true);
       Sub.on_mouse_up   (fun () -> MouseButton false);
+      Sub.on_right_mouse_down (fun () -> RightMouseButton true);
+      Sub.on_right_mouse_up   (fun () -> RightMouseButton false);
       Sub.on_key_down (fun key -> KeyChanged (true, key));
       Sub.on_key_up   (fun key -> KeyChanged (false, key));
   ]

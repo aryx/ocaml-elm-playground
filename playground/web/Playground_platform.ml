@@ -609,8 +609,15 @@ let js_event_to_event evt (svg_opt : Element.t option) =
   | "mousemove", Some svg ->
       let x, y = adjust_x_y svg (Event.client_x evt) (Event.client_y evt) in
       Some (E.EMouseMove (int_of_float x, int_of_float y))
+  (* claude: [button] (not in vdom's binding, hence Ojs) is the button
+   * that changed: 0 the left (main) one, 2 the right one; [buttons] is
+   * a bitmask of those still held, 1 for the left one *)
+  | "mousedown", _ when Ojs.int_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) "button") = 2 ->
+      Some (E.ERightMouseButton true)
+  | "mouseup", _ when Ojs.int_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) "button") = 2 ->
+      Some (E.ERightMouseButton false)
   | ("mousedown" | "mouseup"), _ ->
-      let b = Event.buttons evt > 0 in
+      let b = Event.buttons evt land 1 <> 0 in
       Some (E.EMouseButton b)
 
   | "keydown", _ ->
@@ -818,4 +825,7 @@ let run_app ?(rendering = Playground.default_rendering) app =
     ] |> List.iter (fun evt_kind ->
        Window.add_event_listener window evt_kind on_js_event true
     );
+    (* claude: a right click is the game's (Playground.mouse.mrdown), not
+     * the browser's context menu *)
+    Window.add_event_listener window Event.Contextmenu Event.prevent_default true;
   )

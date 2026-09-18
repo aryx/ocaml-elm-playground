@@ -61,6 +61,12 @@ let parse_cli_and_setup_logging () =
 let mouse_move mx my (mouse : Playground.mouse) : Playground.mouse = { mouse with mx; my }
 let mouse_down mdown (mouse : Playground.mouse) : Playground.mouse = { mouse with mdown }
 
+(* claude: a press/release of the right button sets mrdown, of any
+ * other mdown (the left, main one) *)
+let mouse_button (sdl_event : Sdl.event) (is_down : bool) (mouse : Playground.mouse) : Playground.mouse =
+  if Sdl.Event.(get sdl_event mouse_button_button) = Sdl.Button.right then { mouse with mrdown = is_down }
+  else mouse_down is_down mouse
+
 let update_keyboard (is_down : bool) (key : string) (keyboard : Playground.keyboard) :
     Playground.keyboard =
   let keys = if is_down then Set_.add key keyboard.keys else Set_.remove key keyboard.keys in
@@ -119,9 +125,9 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
             let py = (float_of_int sy /. 2.) -. float_of_int my in
             computer := { !computer with mouse = mouse_move px py (!computer).mouse }
         | x when x = Sdl.Event.mouse_button_down ->
-            computer := { !computer with mouse = mouse_down true (!computer).mouse }
+            computer := { !computer with mouse = mouse_button sdl_event true (!computer).mouse }
         | x when x = Sdl.Event.mouse_button_up ->
-            computer := { !computer with mouse = mouse_down false (!computer).mouse }
+            computer := { !computer with mouse = mouse_button sdl_event false (!computer).mouse }
         | x when x = Sdl.Event.key_down ->
             let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
             let str = scancode_to_keystring key in

@@ -623,8 +623,12 @@ You could draw a circle around the mouse with a program like this:
 ]}
 You could also use [computer.mouse.down] to change the color of the circle
 while the mouse button is down.
+
+[mdown] is the left (main) button; [mrdown], not in the original Elm
+playground, is the right one (e.g. games3d/Minecraft3d: left click
+removes a block, right click places one).
 *)
-type mouse = { mx : number; my : number; mdown : bool; mclick : bool; }
+type mouse = { mx : number; my : number; mdown : bool; mclick : bool; mrdown : bool }
 
 (** Figure out what is going on with the keyboard.
 
@@ -847,6 +851,7 @@ type msg =
   | MouseMove of (number * number)
   | MouseClick
   | MouseButton of bool
+  | RightMouseButton of bool
 
 type animation
 

@@ -48,6 +48,13 @@ let scancode_to_keystring = function
  | "Q" -> exit 0
  | s -> String.lowercase_ascii s
 
+(* claude: a mouse button press/release as a playground event: the right
+ * button is ERightMouseButton, any other the (left) EMouseButton *)
+let mouse_button_event (sdl_event : Sdl.event) (is_down : bool) : E.event =
+  if Sdl.Event.(get sdl_event mouse_button_button) = Sdl.Button.right
+  then E.ERightMouseButton is_down
+  else E.EMouseButton is_down
+
 (* claude: generic -v/-verbose/-debug/-quiet handling for every native
  * example/game, so individual examples don't each need their own
  * Arg.parse boilerplate. Without a reporter installed, Logs.xxx calls
@@ -253,10 +260,10 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
           apply_playground_event (E.EMouseMove (int_of_float x, int_of_float y))
 
         | x when x = Sdl.Event.mouse_button_down ->
-          apply_playground_event (E.EMouseButton true)
+          apply_playground_event (mouse_button_event sdl_event true)
 
         | x when x = Sdl.Event.mouse_button_up ->
-          apply_playground_event (E.EMouseButton false)
+          apply_playground_event (mouse_button_event sdl_event false)
 
         | x when x = Sdl.Event.key_down ->
           let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
