@@ -35,15 +35,15 @@
  * keep orbits closed, section 5 (and examples/Orbit.ml).
  *
  * The torpedoes feel the star too, unlike the original's, which flew
- * straight: here they curve, and can orbit. The hits are distances
- * between centers for now (the physics plan's collisions will make them
- * exact). No randomness: the background stars come from a formula, so
- * every game is the same (and golden frames are possible).
+ * straight: here they curve, and can orbit. The hits are exact
+ * (Physics.touching): the ships' real outlines, a wedge and a needle,
+ * against the torpedoes, the star, and each other. No randomness: the background stars come from a formula, so
+ * every game is the same (and golden frames are possible). The flag
+ * hitboxes draws what the physics sees over the game (Physics.debug).
  *
  * Left as exercises: hyperspace (the original's panic button: vanish,
  * reappear somewhere at random, maybe exploding), limited fuel and
- * torpedoes per round, the ships' exact shapes as hitboxes (with the
- * physics plan's collisions), the sounds (plan_audio_teaching.md), two
+ * torpedoes per round, the sounds (plan_audio_teaching.md), two
  * players on two computers (plan_networking_teaching.md).
  *)
 open Playground
@@ -128,8 +128,8 @@ let fire (scenes : model) (c : controls) (owner : pilot) (s : ship) (torpedoes :
     [ { t = Physics.body torpedo_shape |> Physics.shot_from 250. 28. s.body; ttl = 180; owner } ]
   else []
 
-let hit_by (things : Physics.body list) (radius : number) (s : ship) : bool =
-  s.exploded = None && List.exists (fun b -> Physics.distance b s.body < radius) things
+let hit_by (things : Physics.body list) (s : ship) : bool =
+  s.exploded = None && List.exists (fun b -> Physics.touching b s.body) things
 
 let update_game (computer : computer) (scenes : model) (g : game) : game =
   let screen = computer.screen and keys = computer.keyboard in
@@ -138,18 +138,18 @@ let update_game (computer : computer) (scenes : model) (g : game) : game =
   let torpedoes =
     g.torpedoes
     |> List.map (fun tp -> { tp with t = tp.t |> Physics.attracted_by star |> Physics.step |> Physics.wrap screen; ttl = tp.ttl -.. 1 })
-    |> List.filter (fun tp -> tp.ttl > 0 && Physics.distance tp.t star > 18.)
+    |> List.filter (fun tp -> tp.ttl > 0 && not (Physics.touching tp.t star))
   in
   let torpedoes = torpedoes @ fire scenes arrows Wedge wedge torpedoes @ fire scenes wasd Needle needle torpedoes in
   let bodies = List.map (fun tp -> tp.t) torpedoes in
   let explode (other : ship) (s : ship) =
-    if hit_by [ star ] 30. s || hit_by bodies 16. s || (other.exploded = None && hit_by [ other.body ] 30. s) then
+    if hit_by [ star ] s || hit_by bodies s || (other.exploded = None && hit_by [ other.body ] s) then
       { s with exploded = Some 0 }
     else s
   in
   let wedge' = explode needle wedge and needle' = explode wedge needle in
   (* the torpedoes that hit something are spent *)
-  let spent tp = List.exists (fun s -> s.exploded = Some 0 && Physics.distance tp.t s.body < 16.) [ wedge'; needle' ] in
+  let spent tp = List.exists (fun s -> s.exploded = Some 0 && Physics.touching tp.t s.body) [ wedge'; needle' ] in
   { wedge = wedge'; needle = needle'; torpedoes = List.filter (fun tp -> not (spent tp)) torpedoes }
 
 (* 1.5 s after a ship blew up, the round ends: the survivor scores *)
@@ -213,8 +213,11 @@ let view (computer : computer) (model : model) : shape list =
       view_ship computer.keyboard arrows g.wedge
       @ view_ship computer.keyboard wasd g.needle
       @ List.map (fun tp -> Physics.draw tp.t) g.torpedoes
+      @ (if List.mem_assoc "hitboxes" computer.flags then
+           List.map Physics.debug (star :: g.wedge.body :: g.needle.body :: List.map (fun tp -> tp.t) g.torpedoes)
+         else [])
       @ [ text red 3. (Printf.sprintf "WEDGE %d" g.wedge.score) |> move (-350.) 460.;
           text (rgb 90 150 255) 3. (Printf.sprintf "NEEDLE %d" g.needle.score) |> move 350. 460. ]
 
 let app = game view update initial_model
-let main = Playground_platform.run_app app
+let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

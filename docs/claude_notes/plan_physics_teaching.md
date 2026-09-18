@@ -441,6 +441,27 @@ Each small, each showing one idea, each deterministic (golden frames):
   seeded hills and winds (`seed=n`). Checked with rendered frames
   (`-script "space:2-3,space:10-11"`: the arc, the crater); golden
   frames of its title and a scripted shot.
+- **Phase 4, collision detection, DONE (the narrow phase)**: in
+  `physics/2d/`, `Shape` (the hitboxes: point, circle, box, polygon,
+  convex or not; `place`, `bounds`, `area` by the shoelace formula,
+  `convex`), `Contact` (normal, depth, point) and `Collide`, one test
+  per function: circles, bounding boxes, point in polygon (crossing
+  number), segments (orientation tests, collinear overlaps), any two
+  polygons (an edge crossing or one inside), SAT for convex ones with
+  the contact, circle against polygon; `touching` (the bounding boxes
+  first) and `contact` (None for concave polygons) for any two. Tests
+  (`Unit_collide`): the `.mli`s' examples, a concave U, and properties
+  on 2000 random convex pairs (SAT agrees with the general test, and
+  so does the circle's contact version). In the API,
+  `Physics.touching`, the hitboxes read from the body's own shape (a
+  circle stays one, rectangles and images are boxes, an oval a
+  16-gon, an ngon its corners, groups recursively, scaled, rotated
+  and moved like the drawing), and `Physics.debug` drawing them
+  translucent, with a velocity arrow. Users: Asteroid's physics engine
+  hits the asteroids' real polygons (the dumb engine keeps its 10 px
+  circles), TinySpacewar's hits and the star; both take a `hitboxes`
+  flag drawing `debug`. The golden frames didn't change. Left: the
+  broad phase (a grid, sort and sweep), for many bodies (phase 5+).
 
 ## Verification
 

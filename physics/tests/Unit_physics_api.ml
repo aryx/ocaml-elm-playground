@@ -67,6 +67,21 @@ let test_shot_from () =
   Alcotest.(check (float 1e-9)) "the ship's vx kept" 10. t.vx;
   Alcotest.(check (float 1e-9)) "300 forward" 300. t.vy
 
+(* touching: the real shapes, turned the way the bodies point *)
+let test_touching () =
+  let point x y = body (circle white 0.5) |> at x y in
+  let stick = body (rectangle red 100. 10.) |> pointing 90. in
+  Alcotest.(check bool) "a stick turned upright: its top" true (touching stick (point 0. 45.));
+  Alcotest.(check bool) "... not its old end" false (touching stick (point 45. 0.));
+  let moon = body (group [ circle red 10. |> move 50. 0. ]) in
+  Alcotest.(check bool) "a group: its moved circle counts" true (touching moon (point 55. 0.));
+  Alcotest.(check bool) "... not the group's center" false (touching moon (point 0. 0.));
+  let ship = body (polygon blue [ (15., 0.); (-15., 10.); (-10., 0.); (-15., -10.) ]) |> at 100. 100. in
+  Alcotest.(check bool) "a concave ship: its nose" true (touching ship (point 112. 100.));
+  Alcotest.(check bool) "... not in its notch" false (touching ship (point 87. 100.));
+  Alcotest.(check bool) "a hexagon" true (touching (body (hexagon red 30.)) (point 0. 28.));
+  Alcotest.(check bool) "... not beside its side" false (touching (body (hexagon red 30.)) (point 28. 0.))
+
 let screen = to_screen 1000. 1000.
 
 let test_edges () =
@@ -87,4 +102,5 @@ let tests =
       t "wrap, bounce_in, outside" test_edges;
       t "attracted_by, the worked example" test_gravitation;
       t "shot_from" test_shot_from;
+      t "touching, with the real shapes" test_touching;
     ]

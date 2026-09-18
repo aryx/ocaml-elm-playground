@@ -85,6 +85,58 @@ let bounce_in (screen : screen) bounciness (b : body) : body =
   let (y, vy) = axis b.vy b.y screen.bottom screen.top in
   { b with x; y; vx; vy }
 
+(* the hitboxes of a shape tree, in the world: [world] turns a point of
+ * the parent's frame into world coordinates, [scale] is the parent's
+ * total scale; a shape is scaled, then rotated, then moved inside its
+ * parent (Playground's order, see the software backend's
+ * shape_transform) *)
+let rec hitboxes_of (world : number * number -> number * number) (scale : number) (s : shape) : Shape.placed list =
+  let a = radians s.angle in
+  let c = cos a and sn = sin a in
+  let to_world (x, y) =
+    let x = x *. s.scale and y = y *. s.scale in
+    world (s.x +. (x *. c) -. (y *. sn), s.y +. (x *. sn) +. (y *. c))
+  in
+  let polygon corners = [ Shape.Polygon_at (List.map to_world corners) ] in
+  match s.form with
+  | Circle (_, r) -> [ Shape.Circle_at (to_world (0., 0.), r *. s.scale *. scale) ]
+  | Rectangle (_, w, h) | Image (w, h, _) -> polygon (Shape.box_corners w h)
+  | Oval (_, w, h) ->
+      polygon (List.init 16 (fun i -> let t = radians (22.5 *. float_of_int i) in (w /. 2. *. cos t, h /. 2. *. sin t)))
+  (* like elm-playground: the first corner at the top, then clockwise *)
+  | Ngon (_, n, r) ->
+      polygon (List.init n (fun i -> let t = radians (90. -. (360. *. float_of_int i /. float_of_int n)) in (r *. cos t, r *. sin t)))
+  | Polygon (_, corners) -> polygon corners
+  (* an estimate: the playground doesn't know the font's widths *)
+  | Words (_, text) ->
+      polygon (Shape.box_corners (0.6 *. words_font_size *. float_of_int (String.length text)) words_font_size)
+  | Group shapes -> List.concat_map (hitboxes_of to_world (scale *. s.scale)) shapes
+
+let hitboxes (b : body) : Shape.placed list =
+  let a = radians b.angle in
+  let c = cos a and s = sin a in
+  hitboxes_of (fun (x, y) -> (b.x +. (x *. c) -. (y *. s), b.y +. (x *. s) +. (y *. c))) 1. b.shape
+
+let touching (a : body) (b : body) : bool =
+  let hb = hitboxes b in
+  List.exists (fun h -> List.exists (Collide.touching h) hb) (hitboxes a)
+
+let debug (b : body) : shape =
+  let green = rgb 0 200 0 in
+  let hitbox = function
+    | Shape.Point_at (x, y) -> circle green 3. |> Playground.move x y
+    | Shape.Circle_at ((x, y), r) -> circle green r |> Playground.move x y
+    | Shape.Polygon_at corners -> polygon green corners
+  in
+  let length = Float.hypot b.vx b.vy /. 4. in
+  let arrow =
+    group [ rectangle green length 2. |> Playground.move_x (length /. 2.) ]
+    |> rotate (Float.atan2 b.vy b.vx *. 180. /. Float.pi)
+    |> Playground.move b.x b.y
+  in
+  (* each piece faded, not the group: not every backend fades groups *)
+  group (List.map (fun s -> s |> fade 0.5) (List.map hitbox (hitboxes b) @ [ arrow ]))
+
 let draw (b : body) : shape = b.shape |> rotate b.angle |> Playground.move b.x b.y
 let distance (a : body) (b : body) : number = Float.hypot (a.x -. b.x) (a.y -. b.y)
 let speed (b : body) : number = Float.hypot b.vx b.vy

@@ -8,4 +8,6 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"physics" (fun _env -> List.concat [ Unit_integrate.tests; Unit_energy.tests; Unit_physics_api.tests; Unit_collide.tests ])
+(* See Contact.mli *)
+
+type t = { normal : Vec2.t; depth : float; point : Vec2.t }

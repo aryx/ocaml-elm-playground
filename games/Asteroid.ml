@@ -23,13 +23,16 @@ open Playground
  *  - the physics engine (playground/Physics.mli): the same objects, at
  *    every frame (1/60 s: a fixed time step), in pixels and seconds, with
  *    the same numbers converted (see "The physics engine" below), and
- *    two things the dumb engine didn't have: drag (Physics.slow), which
- *    gives the ship a top speed by itself, v_max, instead of a crash;
- *    and bullets that keep the ship's own velocity (Physics.shot_from),
- *    as they would in space.
+ *    three things the dumb engine didn't have: drag (Physics.slow),
+ *    which gives the ship a top speed by itself, v_max, instead of a
+ *    crash; bullets that keep the ship's own velocity
+ *    (Physics.shot_from), as they would in space; and exact hits
+ *    (Physics.touching): a bullet anywhere in an asteroid's polygon, the
+ *    ship's polygon against theirs, where the dumb engine only sees
+ *    circles of radius 10 around the centers.
  *
- * Everything else, the objects, the collisions, the view, the keys, is
- * the same code for both.
+ * Everything else, the objects, the rules, the view, the keys, is the
+ * same code for both.
  *
  * TODO:
  *  - see Elm clones of asteroids:
@@ -202,6 +205,8 @@ type engine = Dumb | Physics_engine
 
 type model = {
   engine: engine;
+  (* claude: the flag hitboxes: what the physics engine sees, drawn over *)
+  hitboxes: bool;
   ship: ship obj;
   bullets: bullet obj list;
   asteroids: asteroid obj list;
@@ -215,6 +220,7 @@ let tick = 0.030
 
 let initial_model = {
   engine = Dumb;
+  hitboxes = false;
   ship = {
     pos = { x = 0.; y = 0. };
     velocity = { x = 0.; y = 0.};
@@ -246,11 +252,13 @@ let (resolved_shape_of_obj: 'a obj -> resolved_shape) =
   (* TODO *)
   Circle (pos, 10.)
 
-let ship_crashed model =
-  let ship = model.ship in
-  let shp1 = resolved_shape_of_obj ship in
-  let shapes = model.asteroids |> List.map resolved_shape_of_obj in
-  shapes |> List.exists (fun shp2 -> intersect shp1 shp2)
+(* claude: [crash] and [hit] are the engine's tests (see collide
+ * below); the dumb engine's, circles of radius 10 around the centers: *)
+let dumb_crash ship a = intersect (resolved_shape_of_obj ship) (resolved_shape_of_obj a)
+let dumb_hit a (bullet : bullet obj) = contains (resolved_shape_of_obj a) bullet.pos
+
+let ship_crashed ~crash model =
+  model.asteroids |> List.exists (fun a -> crash model.ship a)
 
 let directions v =
   let n = 1 + Random.int 3 in
@@ -278,12 +286,9 @@ let explode a dirs =
   | AWee -> []
 
 
-let (check_asteroids: model -> asteroid obj list) = 
- fun model ->
-  let bullets = model.bullets |> List.map (fun x -> x.pos) in
+let check_asteroids ~hit model =
   model.asteroids |> List.map (fun a ->
-     let shp = resolved_shape_of_obj a in
-     if bullets |> List.exists (fun p -> contains shp p)
+     if model.bullets |> List.exists (fun b -> hit a b)
      then 
        let dirs = directions a.velocity in
        explode a dirs
@@ -455,12 +460,22 @@ let physics_bullet (ship : ship obj) : bullet obj =
 (* The update, with either engine *)
 (*****************************************************************************)
 
-(* the same rules for both engines: bullets break asteroids, an
- * asteroid touching the ship ends the game *)
+(* the physics engine's tests: the real shapes (Physics.touching), a
+ * bullet anywhere inside an asteroid's polygon, the ship's polygon
+ * against theirs, where the dumb engine sees circles of radius 10 *)
+let physics_crash ship a = Physics.touching (body_of ship) (body_of a)
+let physics_hit a (bullet : bullet obj) = Physics.touching (body_of a) (body_of bullet)
+
+(* the same rules for both engines, with their own tests: bullets break
+ * asteroids, an asteroid touching the ship ends the game *)
 let collide model =
-  let asteroids = check_asteroids model in
+  let crash, hit = match model.engine with
+    | Dumb -> dumb_crash, dumb_hit
+    | Physics_engine -> physics_crash, physics_hit
+  in
+  let asteroids = check_asteroids ~hit model in
   let state =
-    if ship_crashed model
+    if ship_crashed ~crash model
     then Stop
     else Play
   in
@@ -523,13 +538,23 @@ let update msg model =
 (* Entry point *)
 (*****************************************************************************)
 
+(* claude: with the hitboxes flag, each object's hitbox and velocity,
+ * as the physics engine sees them (Physics.debug) *)
+let view_hitboxes model =
+  if not model.hitboxes then []
+  else
+    Physics.debug (body_of model.ship)
+    :: List.map (fun o -> Physics.debug (body_of o)) model.bullets
+    @ List.map (fun o -> Physics.debug (body_of o)) model.asteroids
+
 let app = { Playground.
-  view;
+  view = (fun model -> view model @ view_hitboxes model);
   update;
   (* claude: physics=engine chooses the physics engine, see the prelude *)
   init = (fun flags ->
     let engine = match List.assoc_opt "physics" flags with Some "engine" -> Physics_engine | _ -> Dumb in
-    { initial_model with engine }, Cmd.none);
+    let hitboxes = List.mem_assoc "hitboxes" flags in
+    { initial_model with engine; hitboxes }, Cmd.none);
     subscriptions  = (fun _ -> Sub.batch [
       Sub.on_animation_frame (fun x -> Tick x);
       Sub.on_key_down (fun key -> msg_of_key_down key);

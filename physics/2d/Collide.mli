@@ -1,0 +1,83 @@
+(* Collision detection, the narrow phase: do two placed hitboxes
+ * overlap, and if so, how (see notes_2d_physics.md section 8)? From the
+ * cheapest test to the most general, each its own function, then
+ * [touching] and [contact] choosing the right one for any two hitboxes.
+ *
+ * Circles: overlapping when the distance between their centers is less
+ * than the sum of their radii. Example: centers (0, 0) and (30, 40), 50
+ * apart; radii 20 and 20 (a sum of 40): apart; 30 and 25 (55): an
+ * overlap of 5, the normal (0.6, 0.8).
+ *
+ * Bounding boxes: overlapping when their x ranges overlap *and* their y
+ * ranges do. Too coarse to decide a collision, cheap enough to rule most
+ * of them out first.
+ *
+ * Point in polygon: cast a ray from the point, to the right, and count
+ * the edges it crosses: odd, inside (the Jordan curve theorem; the
+ * even-odd rule of graphics/2d/Fill). Any polygon, convex or not:
+ *
+ *        _____
+ *       /     \___
+ *      /   p ------|------>   one crossing: inside
+ *      \          /
+ *       \________/
+ *
+ * Segments: two segments cross when each one's ends are on opposite
+ * sides of the other's line (the sign of a cross product, the same side
+ * test as a triangle's edge functions in graphics/3d/Triangle). Two
+ * polygons touch when an edge of one crosses an edge of the other, or
+ * one is inside the other (a corner of it in the other).
+ *
+ * The separating axis theorem (SAT), for convex polygons: they don't
+ * overlap exactly when some line separates them, and it's enough to try
+ * the directions perpendicular to their edges. Project both on each
+ * such axis: if their shadows don't overlap on one, they're apart;
+ * otherwise the axis where they overlap the least gives the contact's
+ * normal and depth. Example: the boxes [0, 2] x [0, 2] and [1, 3] x
+ * [3, 4] overlap on the x axis ([0, 2] and [1, 3]) but not on the y
+ * axis ([0, 2] and [3, 4]): apart.
+ *
+ *      +----+                 on the y axis, their shadows
+ *      | A  |   +----+        [0, 2] and [3, 4] don't overlap:
+ *      +----+   | B  |        a separating axis
+ *               +----+
+ *
+ * (GJK -- Gilbert, Johnson, Keerthi, 1988 -- does it for any convex
+ * shapes, curves included; Box2D and Bullet use it. Not here: circles
+ * against polygons have their own test below.)
+ *
+ * References: Christer Ericson, Real-Time Collision Detection, 2005
+ * (all of it); Metanet Software's N tutorials, 2004 (SAT, for game
+ * programmers); Gottschalk, Lin, Manocha, "OBBTree", SIGGRAPH 1996 (the
+ * separating axis theorem in graphics). *)
+
+(* the tests, each on its own *)
+
+val circles : Vec2.t * float -> Vec2.t * float -> Contact.t option
+val bounds_overlap : Vec2.t * Vec2.t -> Vec2.t * Vec2.t -> bool
+val point_in_polygon : Vec2.t -> Vec2.t list -> bool
+val segments_cross : Vec2.t * Vec2.t -> Vec2.t * Vec2.t -> bool
+
+(* any two polygons, convex or not: an edge crossing, or one inside *)
+val polygons_touch : Vec2.t list -> Vec2.t list -> bool
+
+(* two convex polygons: the separating axis theorem, with the contact *)
+val sat : Vec2.t list -> Vec2.t list -> Contact.t option
+
+(* a circle and a polygon (convex or not): the center inside, or an
+ * edge nearer than the radius *)
+val circle_polygon : Vec2.t * float -> Vec2.t list -> bool
+
+(* the same, with the contact, for a convex polygon: the normal from
+ * the circle to the polygon *)
+val circle_convex : Vec2.t * float -> Vec2.t list -> Contact.t option
+
+(* for any two placed hitboxes *)
+
+(* do they overlap? (the bounding boxes first, then the exact test) *)
+val touching : Shape.placed -> Shape.placed -> bool
+
+(* how, the normal from the first to the second: for points, circles and
+ * convex polygons; None when they don't overlap, and for concave
+ * polygons (split them in convex pieces for a contact) *)
+val contact : Shape.placed -> Shape.placed -> Contact.t option

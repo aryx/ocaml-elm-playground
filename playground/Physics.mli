@@ -141,6 +141,23 @@ val wrap : screen -> body -> body
  * ball *)
 val bounce_in : screen -> number -> body -> body
 
+(* {1 Collisions} *)
+
+(* [touching a b]: whether they overlap, exactly: the bodies' real
+ * shapes, turned the way they point -- a bullet (a small circle) inside
+ * an asteroid (a polygon, even a concave one), the corner of a rotated
+ * box. The hitboxes come from the shapes themselves: a [circle] is a
+ * circle, a [rectangle], [square], [image], [triangle], [hexagon] (the
+ * regular polygons) or [polygon] a polygon, an [oval] a 16-sided polygon, [words] their box; a [group]'s
+ * shapes each count, where they were moved. (See physics/2d/Collide.mli
+ * for the tests, from circles to the separating axis theorem.) *)
+val touching : body -> body -> bool
+
+(* [debug b]: [b]'s hitboxes as translucent green shapes, and its
+ * velocity as an arrow (a quarter of a second of motion): draw it over
+ * the game to see what the physics sees *)
+val debug : body -> shape
+
 (* {1 Looking at bodies} *)
 
 (* [draw b]: its shape, where it is, turned the way it points *)
