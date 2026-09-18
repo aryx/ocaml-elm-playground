@@ -12,6 +12,7 @@
 (copy_files ../Turtle.ml)
 (copy_files ../Mario.ml)
 (copy_files ../Flags.{ml,mli})
+(copy_files ../Orbit.{ml,mli})
 
 (executables
   (names
@@ -20,6 +21,7 @@
     Mouse Keyboard
     Turtle Mario
     Flags
+    Orbit
   )
   (libraries
     elm_playground

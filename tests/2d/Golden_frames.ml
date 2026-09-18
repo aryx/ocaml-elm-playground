@@ -42,6 +42,11 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyInvaders", "", 5);
     ("games/software/TinySokoban", "", 5);
     ("games/software/TinyPacman", "", 5);
+    (* the physics plan's: explicit Euler's orbit, spiraling out after 8
+     * seconds; the artillery and Spacewar! titles *)
+    ("examples/software/Orbit", "", 480);
+    ("games/software/TinyWorms", "", 5);
+    ("games/software/TinySpacewar", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -62,6 +67,12 @@ let scripted : Testutil_golden.scripted list =
     (* after READY!, left, up, right along the top: dots eaten, the
      * ghosts out of the house, scattering *)
     ("games/software/TinyPacman", "play", 300, "space:1,left:120-170,up:160-230,right:220-300");
+    (* semi-implicit Euler: the same orbit, closed *)
+    ("examples/software/Orbit", "semi", 480, "space:1-2");
+    (* a shot, pushed back by the wind, digging its crater *)
+    ("games/software/TinyWorms", "shot", 150, "space:2-3,space:10-11");
+    (* both ships thrusting, turning and firing around the star *)
+    ("games/software/TinySpacewar", "duel", 120, "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

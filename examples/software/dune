@@ -12,6 +12,7 @@
     Animation
     Mouse Keyboard Turtle Mario
     Flags
+    Orbit
   )
   (libraries
     elm_playground

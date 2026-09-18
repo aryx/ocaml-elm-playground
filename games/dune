@@ -9,6 +9,7 @@
     TinySokoban
     TinyPacman
     TinyWorms
+    TinySpacewar
   )
   (libraries
     elm_playground
