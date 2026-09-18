@@ -36,6 +36,6 @@ val floats_per_vertex : int
 (* The interleaved float data of a group, and its vertex count. *)
 val vertex_floats_of_group : vertex_data list -> float array * int
 
-(* The directional "sun" light, the same as the native software
- * rasterizer's light_dir, to upload as a shader uniform. *)
+(* The directional "sun" light, Lighting.light_dir, to upload as a
+ * shader uniform. *)
 val light_dir : vec3

@@ -169,10 +169,9 @@ let vertex_floats_of_group (vertices : vertex_data list) : float array * int =
     vertices;
   (data, vertex_count)
 
-(* claude: byte-for-byte the same light_dir as
- * playground3d/software/Playground3d_platform.ml's -- computed here in
- * OCaml (with the exact same normalize function) and uploaded as a
+(* claude: the same light_dir as the software rasterizer's, both from
+ * graphics/3d/Lighting.ml -- computed in OCaml and uploaded as a
  * uniform, rather than re-typed as a GLSL literal, so there's no risk
  * of a copy-paste/rounding mismatch between the two backends' "same
  * light" claim. *)
-let light_dir : vec3 = Vec3.normalize (1., 1.3, 0.6)
+let light_dir : vec3 = Lighting.light_dir

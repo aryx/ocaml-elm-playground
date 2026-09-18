@@ -52,9 +52,6 @@ let dot = Vec3.dot
 let cross = Vec3.cross
 let normalize = Vec3.normalize
 
-let degrees_to_radians d = d *. Float.pi /. 180.
-
-let up_hint : vec3 = (0., 1., 0.)
 
 (*****************************************************************************)
 (* Colors *)
@@ -105,60 +102,11 @@ let cycle_shading_mode () =
     | Gouraud -> Phong
     | Phong -> Flat_color)
 
-(* claude: this is a DIRECTIONAL light -- a "sun" -- not a light at a
- * position. There are 3 common kinds of light in 3D graphics, in
- * increasing order of realism/cost:
- *  - directional (what this is): infinitely far away, so its rays are
- *    effectively parallel everywhere in the scene -- there is no
- *    "origin point" to specify, only a *direction* it shines from,
- *    the same for every face regardless of where that face is. The
- *    real sun works this way for all practical purposes (it's ~150
- *    million km away), which is why this is the natural choice for an
- *    outdoor scene. Cheapest to compute: one constant vector, reused
- *    for every face, no per-face distance/attenuation math at all.
- *  - point light: sits at an actual 3D position (e.g. a lightbulb or
- *    torch); the direction *to* it, and therefore how a face is lit,
- *    is different for every face depending on where that face is
- *    relative to the light, and realistically its brightness also
- *    falls off with distance ("attenuation"). More expensive (a
- *    per-face, or per-pixel, direction+distance calculation instead of
- *    one shared constant) and not implemented here.
- *  - spotlight: a point light further restricted to a cone (a
- *    direction plus a cutoff angle) -- even more parameters, also not
- *    implemented here.
- *
- * The vector itself is a DIRECTION, not a position: by convention here
- * it points FROM a lit surface TOWARDS the light (so
- * [dot normal light_dir] below is large/positive exactly when a face's
- * normal points roughly *at* the light, i.e. is well-lit -- see
- * brightness_of_normal). (1., 1.3, 0.6) reads as "the sun sits up and
- * off to the +X/+Z side" -- an arbitrary but reasonable-looking choice,
- * not derived from anything; e.g. changing it to (0., 1., 0.) would put
- * the sun straight overhead instead (top faces bright, sides dimmer,
- * undersides at the `ambient` floor below). Not exposed to the public
- * API yet -- a game can't configure this per scene, only by editing
- * this constant and recompiling. *)
-let light_dir : vec3 = normalize (1., 1.3, 0.6)
-
-(* claude: never fully black (a face directly facing away from the
- * light stays at least at ambient brightness) -- a real scene has some
- * ambient/bounced light even on surfaces not directly facing the sun,
- * and a fully-black face would look like a hole rather than a shaded
- * surface *)
-let ambient = 0.25
-
-(* claude: pure -- "how lit is a surface facing this direction",
- * independent of shading_mode. It used to also special-case
- * Flat_color (returning a constant 1. instead of computing this),
- * which conflated "the lighting physics" with "which shading
- * strategy/granularity is active" -- that decision now lives in
- * make_shader below, which is the one place that actually needs to
- * know the mode (whether to call this once per face, once per vertex,
- * or once per pixel with an interpolated normal -- or not call it at
- * all, for Flat_color). *)
-let brightness_of_normal (normal : vec3) : float =
-  let lit = Stdlib.max 0. (dot normal light_dir) in
-  ambient +. ((1. -. ambient) *. lit)
+(* claude: the lighting formula (a directional "sun", an ambient floor,
+ * Lambert's cosine law) is in graphics/3d/Lighting.ml, shared with the
+ * web and OpenGL backends; whether to apply it once per face, per
+ * vertex or per pixel is make_shader's decision below. *)
+let brightness_of_normal = Lighting.brightness_of_normal
 
 let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_int c *. brightness)
 
@@ -231,12 +179,9 @@ let sample_texture (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) 
  * for the depth-less 2D version used by the web backend) *)
 (*****************************************************************************)
 
-let view_space (camera : Playground3d.camera) (point : vec3) : vec3 =
-  let forward = normalize (sub camera.target camera.eye) in
-  let right = normalize (cross forward up_hint) in
-  let up = cross right forward in
-  let relative = sub point camera.eye in
-  (dot relative right, dot relative up, dot relative forward)
+(* claude: the view and perspective steps are graphics/3d/geometry/Camera's *)
+let camera_of (camera : Playground3d.camera) : Camera.t =
+  { eye = camera.eye; target = camera.target; fov = camera.fov; near = camera.near; far = camera.far }
 
 (* A rasterizer-ready vertex: screen-space (vx, vy), plus inv_z/
  * u_over_z/v_over_z -- NOT the raw view-space depth and texture
@@ -327,16 +272,13 @@ type vertex = {
 
 (* returns None if [point] is at or behind the near plane -- see the
  * module doc comment above about not clipping *)
-let project_vertex (camera : Playground3d.camera) ~(sx : int) ~(sy : int)
+let project_vertex (camera : Camera.t) ~(sx : int) ~(sy : int)
     ((point, (u, v), normal) : vec3 * (float * float) * vec3) : vertex option =
-  let (px, py, pz) = view_space camera point in
-  if pz <= camera.near || pz >= camera.far then None
-  else
-    let fsx = float_of_int sx and fsy = float_of_int sy in
-    let aspect = fsx /. fsy in
-    let f = 1. /. tan (degrees_to_radians camera.fov /. 2.) in
-    let ndc_x = f *. px /. aspect /. pz in
-    let ndc_y = f *. py /. pz in
+  let ((_px, _py, pz) as view_point) = Camera.view camera point in
+  let fsx = float_of_int sx and fsy = float_of_int sy in
+  match Camera.ndc camera ~aspect:(fsx /. fsy) view_point with
+  | None -> None
+  | Some (ndc_x, ndc_y) ->
     let inv_z = 1. /. pz in
     Some
       { vx = (fsx /. 2.) +. (ndc_x *. (fsx /. 2.));
@@ -809,6 +751,7 @@ let render_shape3d
     (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t)
     (zbuffer : float array) ~(sx : int) ~(sy : int) (camera : Playground3d.camera)
     (shape : Playground3d.shape3d) : unit =
+  let view_camera = camera_of camera in
   let faces = flatten_faces shape in
   (* claude: only in Painter's_algorithm mode -- rasterize_triangle_painters
    * has no per-pixel depth test at all, so *draw order* is the only
@@ -850,7 +793,9 @@ let render_shape3d
            let projected =
              fan_triangles points
              |> List.map (fun (pa, pb, pc) ->
-                    (project_vertex camera ~sx ~sy pa, project_vertex camera ~sx ~sy pb, project_vertex camera ~sx ~sy pc))
+                    ( project_vertex view_camera ~sx ~sy pa,
+                      project_vertex view_camera ~sx ~sy pb,
+                      project_vertex view_camera ~sx ~sy pc ))
            in
            match !render_mode with
            | Wireframe ->

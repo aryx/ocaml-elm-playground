@@ -21,5 +21,7 @@ let () =
           Unit_text.tests;
           Unit_antialiasing.tests;
           Unit_vec3.tests;
+          Unit_camera.tests;
+          Unit_lighting.tests;
           Unit_rgba.tests;
         ])

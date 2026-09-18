@@ -261,9 +261,23 @@ Each a separate function, with its own key, test, and entry in
      of every `examples3d/` scene (and a few with keys pressed:
      wireframe, painter's, flat shading, textures);
    - the texture channel fix (`Texture_decode` expanding to RGBA).
-1. **Camera and Lighting**: `Camera` in `graphics/3d/geometry/`
+1. **DONE.** **Camera and Lighting**: `Camera` in `graphics/3d/geometry/`
    (`Mat4.look_at` using its basis), `graphics/3d/Lighting` replacing
    the 3 copies. Frames identical (web and OpenGL too, by eye).
+   In the end: `Camera` (`basis`, `view`, `focal`, `ndc`, with a
+   worked example: fov 90, 5 up and 10 ahead is ndc y 0.5) is used by
+   the software backend's `project_vertex`, the web's
+   `Playground3d.project`, and `Mat4.look_at`; `Lighting` (the sun, the
+   ambient floor, Lambert's cosine law, with the long comments) by the
+   software backend, the web's flat shading, and `Gpu_scene.light_dir`
+   (the GLSL shader still spells out the formula; its comments point
+   to `Lighting`). New library `graphics_3d` (package
+   elm_playground_3d); tests `Unit_camera` and `Unit_lighting`. The 18
+   software frames are byte-identical. The OpenGL backend has no frame
+   dump, so instead of checking it by eye: its basis and light
+   direction are the exact same float operations as before, as are
+   the web's projection and brightness (`Float.max` became
+   `Stdlib.max`, which differs only on NaN, and normals are never NaN).
 2. **The small modules**: `Project`, `Cull`, `Zbuffer`, `Interpolate`,
    `Shading`, `Texture`, each moved with its comments, tested with its
    worked example.

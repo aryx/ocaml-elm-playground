@@ -262,30 +262,20 @@ type camera = { eye : vec3; target : vec3; fov : number; near : number; far : nu
 let camera ~eye ~target ?(fov = 60.) ?(near = 0.1) ?(far = 1000.) () =
   { eye; target; fov; near; far }
 
-(* world "up"; a camera looking straight up/down would make forward and
- * up_hint parallel, which is out of scope for this first version *)
-let up_hint : vec3 = (0., 1., 0.)
-
 (*****************************************************************************)
 (* Project (3D -> 2D pipeline) *)
 (*****************************************************************************)
+(* claude: the view and perspective steps are graphics/3d/geometry/Camera's
+ * (a camera looking straight up/down has no "right": out of scope) *)
 
 let project (camera : camera) (screen : Playground.screen) (point : vec3) :
     (number * number) option =
-  let forward = normalize (sub camera.target camera.eye) in
-  let right = normalize (cross forward up_hint) in
-  let up = cross right forward in
-  let relative = sub point camera.eye in
-  let view_x = dot relative right in
-  let view_y = dot relative up in
-  let view_z = dot relative forward in
-  if view_z <= camera.near || view_z >= camera.far then None
-  else
-    let aspect = screen.width / screen.height in
-    let f = 1. / tan (degrees_to_radians camera.fov / 2.) in
-    let ndc_x = f * view_x / aspect / view_z in
-    let ndc_y = f * view_y / view_z in
-    Some (ndc_x * (screen.width / 2.), ndc_y * (screen.height / 2.))
+  let camera : Camera.t =
+    { eye = camera.eye; target = camera.target; fov = camera.fov; near = camera.near; far = camera.far }
+  in
+  Camera.view camera point
+  |> Camera.ndc camera ~aspect:(screen.width / screen.height)
+  |> Option.map (fun (ndc_x, ndc_y) -> (ndc_x * (screen.width / 2.), ndc_y * (screen.height / 2.)))
 
 let face_centroid = Vec3.centroid
 
@@ -327,16 +317,9 @@ type rendering = { shading : shading; backface_culling : bool; smooth_textures :
 let default_rendering = { shading = Smooth; backface_culling = true; smooth_textures = true }
 
 (* claude: flat shading for render3d_to_2d (the web backend): the same
- * sun and formula as the software backend's brightness_of_normal and
- * the OpenGL backend's fragment shader (Gpu_scene.light_dir), repeated
- * here because Gpu_scene depends on this module: the brightness is
- * how much the face turns towards the light, never below [ambient] *)
-let light_dir : vec3 = normalize (1., 1.3, 0.6)
-
-let ambient = 0.25
-
-let brightness_of_normal (normal : vec3) : number =
-  ambient + ((1. - ambient) * Float.max 0. (dot normal light_dir))
+ * sun and formula as the software and OpenGL backends, see
+ * graphics/3d/Lighting.ml *)
+let brightness_of_normal = Lighting.brightness_of_normal
 
 (* [color] darkened to [brightness] (0. black, 1. unchanged) *)
 let shade_color (color : Playground.color) (brightness : number) : Playground.color =

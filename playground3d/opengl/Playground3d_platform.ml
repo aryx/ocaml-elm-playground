@@ -29,8 +29,8 @@ module Gl = Tgl3.Gl
  * per frame (naive -- no per-shape VAO/VBO caching yet, matching the
  * plan's stated v1 simplification), and a single GLSL fragment shader
  * does real per-pixel Phong lighting using the exact same
- * light_dir/ambient constants as the native rasterizer's
- * brightness_of_normal, for a fair side-by-side comparison, plus real
+ * light_dir/ambient constants as the native rasterizer (both from
+ * graphics/3d/Lighting.ml), for a fair side-by-side comparison, plus real
  * texture sampling and a wireframe mode. Still out of scope, per the
  * plan: flat/Gouraud shading modes (Phong is the natural, "free on a
  * GPU" one), a painter's-algorithm mode (a hardware z-buffer makes it
@@ -52,8 +52,8 @@ let ( let* ) o f =
 (* Shaders *)
 (*****************************************************************************)
 (* The fragment shader's lighting formula is deliberately byte-for-byte
- * the same as brightness_of_normal in
- * playground3d/software/Playground3d_platform.ml (same directional
+ * the same as Lighting.brightness_of_normal in
+ * graphics/3d/Lighting.ml (same directional
  * "sun" light, same ambient floor) -- the point of this backend is a
  * fair comparison, not a different look. The one real difference:
  * this runs once per PIXEL, on every one of the GPU's cores in

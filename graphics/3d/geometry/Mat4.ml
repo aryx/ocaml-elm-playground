@@ -26,18 +26,13 @@
 
 type t = float array
 
-let up_hint : Vec3.t = (0., 1., 0.)
-
 (* [look_at eye target] builds a view matrix using the exact same
- * right/up/forward basis as the native rasterizer's view_space (same
- * up_hint, same "which way is the camera pointing" derivation) --
+ * right/up/forward basis as Camera.view (Camera.basis) --
  * V * point = (dot (point - eye) right, dot (point - eye) up,
  * dot (point - eye) forward), i.e. the same view-space coordinates
- * view_space computes, just packaged as a matrix a GPU can apply. *)
+ * Camera.view computes, just packaged as a matrix a GPU can apply. *)
 let look_at ~(eye : Vec3.t) ~(target : Vec3.t) : t =
-  let forward = Vec3.normalize (Vec3.sub target eye) in
-  let right = Vec3.normalize (Vec3.cross forward up_hint) in
-  let up = Vec3.cross right forward in
+  let right, up, forward = Camera.basis ~eye ~target in
   let (rx, ry, rz) = right and (ux, uy, uz) = up and (fx, fy, fz) = forward in
   [|
     rx; ry; rz; -.(Vec3.dot right eye);
