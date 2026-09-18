@@ -90,7 +90,8 @@ val scancode_to_keystring : string -> string
  * -fixed-time t (the app's clock stays at t), -keys k (the debug keys
  * k pressed, through [on_key_press], before the first frame) and
  * -dump-frame n file (after drawing frame n, counted from 1, call
- * [dump_frame file], then exit). *)
+ * [dump_frame file], then exit). With -uncapped, frames aren't paced
+ * at 60 fps: the three together time the rendering of n frames. *)
 val run :
   sdl_window:Tsdl.Sdl.window ->
   sx:int ->

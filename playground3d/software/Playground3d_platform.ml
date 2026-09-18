@@ -39,19 +39,12 @@ open Tsdl
 open Playground3d
 
 (*****************************************************************************)
-(* Vec3: graphics/3d/geometry/Vec3, under this file's short names (this
- * backend needs its own view/projection transform that keeps per-vertex
- * depth for the z-buffer, unlike Playground3d.project which only
- * returns a 2D point for the web backend's compile-down-to-2D trick) *)
+(* Vec3: graphics/3d/geometry/Vec3, under this file's short names *)
 (*****************************************************************************)
 
 type vec3 = Vec3.t
 
 let sub = Vec3.sub
-let dot = Vec3.dot
-let cross = Vec3.cross
-let normalize = Vec3.normalize
-
 
 (*****************************************************************************)
 (* Colors *)
@@ -72,41 +65,23 @@ let rgb_of_color (color : Playground.color) : int * int * int =
  * runtime to cycle through modes while a game is running (a debug
  * toggle in the same spirit as e.g. Quake's r_drawflat console
  * variable, or a "wireframe view" hotkey -- see the key_down handling
- * in run_app3d). All 4 modes from docs/claude_notes/notes_3d_shading.md
- * are implemented: flat_color (no lighting at all, every face/texel
- * drawn exactly as given), flat_shading (one brightness value per FACE,
- * from its winding-based normal), gouraud (one brightness value per
- * VERTEX, blended across each triangle), and phong (the vertex NORMALS
- * themselves blended per pixel, brightness computed at every pixel).
- * See make_shader below for where the 4 actually differ. Gouraud/Phong
- * only look any different from flat_shading on a shape built from
- * SmoothPolygon3d faces with genuinely varying per-vertex normals --
- * i.e. a curved shape like sphere; on cube/box/plane (independent flat
- * faces, no shared/varying vertex normals) all 4 modes render
- * identically except for flat_color. *)
-
-type shading = Flat_color | Flat_shading | Gouraud | Phong
+ * in run_app3d). The 4 modes, and where they differ, are in
+ * graphics/3d/Shading.mli. *)
 
 (* claude: a ref, not a plain constant, so it can be changed at
  * runtime (see cycle_shading_mode and the "m" key below) -- the same
  * kind of debug toggle many game engines/games expose (e.g. Quake's
  * r_drawflat console variable, or a "wireframe view" hotkey), handy
  * for comparing shading modes side by side without restarting. *)
-let shading_mode : shading ref = ref Flat_shading
+let shading_mode : Shading.mode ref = ref Shading.Flat_shading
 
 let cycle_shading_mode () =
   shading_mode :=
     (match !shading_mode with
-    | Flat_color -> Flat_shading
+    | Shading.Flat_color -> Shading.Flat_shading
     | Flat_shading -> Gouraud
     | Gouraud -> Phong
     | Phong -> Flat_color)
-
-(* claude: the lighting formula (a directional "sun", an ambient floor,
- * Lambert's cosine law) is in graphics/3d/Lighting.ml, shared with the
- * web and OpenGL backends; whether to apply it once per face, per
- * vertex or per pixel is make_shader's decision below. *)
-let brightness_of_normal = Lighting.brightness_of_normal
 
 let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_int c *. brightness)
 
@@ -121,10 +96,7 @@ let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_
  * playground/native's Playground_platform.ml and
  * graphics/images/Image_decode.ml.
  *
- * claude: Texture_decode gives RGBA textures, whatever the file's
- * channels (Rgba.of_stb_image; not Stb_image.load ~channels:4, which
- * the pinned binding gets wrong, see Rgba.mli), so img.channels is
- * always 4 here; sample_texture still reads it rather than assume. *)
+ * The sampling itself (nearest, bilinear) is graphics/3d/Texture's. *)
 
 (* a bright, unmistakable "this texture failed to load" color -- the
  * same convention (a magenta/checkerboard placeholder) many game
@@ -132,47 +104,20 @@ let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_
  * could be mistaken for an intentional color *)
 let missing_texture_color = Playground.rgb 255 0 255
 
-(* texture sampling: (u, v) = (0, 0) is the image's top-left corner,
- * matching textured_quad's convention; no mipmaps yet *)
-
 (* claude: Playground3d.rendering's smooth_textures (the starting value
  * comes from run_app3d's ?rendering), "i" to toggle at runtime *)
 let smooth_textures : bool ref = ref true
 
-(* claude: bilinear filtering, like graphics/core/Blit.sample_bilinear
- * for 2D images: mix the 4 texels whose centers surround (u, v), each
- * weighted by how close it is (see Blit.mli for a picture) *)
-let sample_texture_bilinear (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) : int * int * int =
-  let clamp lo hi x = if x < lo then lo else if x > hi then hi else x in
-  (* texel i's center is at i + 0.5 *)
-  let x = (u *. float_of_int img.width) -. 0.5 and y = (v *. float_of_int img.height) -. 0.5 in
-  let i = int_of_float (Float.floor x) and j = int_of_float (Float.floor y) in
-  let tx = x -. Float.floor x and ty = y -. Float.floor y in
-  let texel i j =
-    let i = clamp 0 (img.width - 1) i and j = clamp 0 (img.height - 1) j in
-    let idx = img.offset + (j * img.stride) + (i * img.channels) in
-    fun k -> float_of_int (Bigarray.Array1.unsafe_get img.data (idx + k))
-  in
-  let t00 = texel i j and t10 = texel (i + 1) j and t01 = texel i (j + 1) and t11 = texel (i + 1) (j + 1) in
-  let channel k =
-    let top = (t00 k *. (1. -. tx)) +. (t10 k *. tx) and bottom = (t01 k *. (1. -. tx)) +. (t11 k *. tx) in
-    int_of_float ((top *. (1. -. ty)) +. (bottom *. ty) +. 0.5)
-  in
-  (channel 0, channel 1, channel 2)
+(* claude: Texture_decode gives RGBA textures, whatever the file's
+ * channels (Rgba.of_stb_image; not Stb_image.load ~channels:4, which
+ * the pinned binding gets wrong, see Rgba.mli), with no offset and no
+ * padding between rows: exactly Texture.image's layout *)
+let texture_of_stb_image (img : Stb_image.int8 Stb_image.t) : Texture.image =
+  assert (img.channels = 4 && img.offset = 0 && img.stride = img.width * 4);
+  { width = img.width; height = img.height; rgba = img.data }
 
-(* nearest-neighbor sampling: the texel containing (u, v) *)
-let sample_texture_nearest (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) : int * int * int =
-  let clamp01 x = if x < 0. then 0. else if x > 1. then 1. else x in
-  let x = min (img.width - 1) (int_of_float (clamp01 u *. float_of_int img.width)) in
-  let y = min (img.height - 1) (int_of_float (clamp01 v *. float_of_int img.height)) in
-  let idx = img.offset + (y * img.stride) + (x * img.channels) in
-  let data = img.data in
-  ( Bigarray.Array1.unsafe_get data idx,
-    Bigarray.Array1.unsafe_get data (idx + 1),
-    Bigarray.Array1.unsafe_get data (idx + 2) )
-
-let sample_texture (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) : int * int * int =
-  if !smooth_textures then sample_texture_bilinear img ~u ~v else sample_texture_nearest img ~u ~v
+let sample_texture (img : Texture.image) ~(u : float) ~(v : float) : int * int * int =
+  if !smooth_textures then Texture.sample_bilinear img ~u ~v else Texture.sample_nearest img ~u ~v
 
 (*****************************************************************************)
 (* Projection (with depth, for the z-buffer -- see Playground3d.project
@@ -183,156 +128,28 @@ let sample_texture (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) 
 let camera_of (camera : Playground3d.camera) : Camera.t =
   { eye = camera.eye; target = camera.target; fov = camera.fov; near = camera.near; far = camera.far }
 
-(* A rasterizer-ready vertex: screen-space (vx, vy), plus inv_z/
- * u_over_z/v_over_z -- NOT the raw view-space depth and texture
- * coordinates, on purpose. Perspective projection divides by depth
- * (screen_x is proportional to view_x / view_z -- see
- * Playground3d.project's doc comment), which makes it a *nonlinear*
- * function of 3D position; a vertex attribute like z or a texture's
- * (u, v), by contrast, is defined to vary *linearly* across the 3D
- * triangle. Linearly interpolating such an attribute using screen-space
- * barycentric weights (as rasterize_triangle does, the standard/obvious
- * thing to do) is therefore only an approximation -- exact at the 3
- * corners, increasingly wrong towards the interior, and *more* wrong
- * the more a triangle's depth varies across itself (i.e. the more
- * obliquely/close-up it's viewed). This is visible in practice: a
- * texture's own internal detail appears to swim/warp as a shape
- * rotates and its faces' obliqueness keeps changing -- the classic
- * "affine texture mapping" artifact, notorious from the original
- * PlayStation's 3D rendering (which used exactly this shortcut for
- * speed).
- *
- * The standard fix (a classic graphics result -- see e.g. Heckbert &
- * Moreton 1991 on perspective texture mapping): 1/z and (any
- * 3D-linear attribute)/z, unlike z and that attribute individually,
- * genuinely *are* linear in screen space, so linearly interpolating
- * *them* is exact, not approximate. So a vertex here stores 1/z and
- * u/z, v/z instead of z, u, v directly; rasterize_triangle
- * interpolates those (exactly as it would the raw versions -- no
- * change to how interpolation itself works), and only right before
- * using an interpolated value does it divide back out to recover the
- * true z/u/v at that pixel (see "perspective divide" below). *)
-(* A vertex ready for the rasterizer, carrying EVERY version of its
- * depth/texture-coordinate data that either interpolation strategy
- * below needs, computed once here so rasterize_triangle never has to
- * recompute anything, just pick which fields to read:
- *
- *   - vx, vy: where this vertex lands on screen, in pixels. Always
- *     interpolated the ordinary (linear) way -- there's nothing to
- *     debate here, this is just "where is it".
- *   - z: the vertex's plain view-space depth (how far in front of the
- *     camera it is). u, v: the vertex's plain texture coordinates.
- *     These are what you'd naively interpolate across a triangle if
- *     you'd never heard of the problem explained below -- see "Linear"
- *     mode.
- *   - inv_z (= 1/z), u_over_z (= u/z), v_over_z (= v/z): the SAME
- *     depth/texture information, but pre-divided by z. These are what
- *     you interpolate instead if you *have* heard of the problem -- see
- *     "Perspective_correct" mode, and the paragraph below for why.
- *
- * The problem, in short: perspective projection computes screen
- * position by dividing by depth (screen_x is proportional to
- * view_x / view_z), which makes screen position a NONLINEAR function
- * of 3D position. z, u, and v, by contrast, are each defined to vary
- * LINEARLY across the 3D triangle. So interpolating z/u/v linearly
- * using screen-space barycentric weights (the obvious thing to try) is
- * only an approximation: exact at the 3 corners, increasingly wrong
- * towards the interior, and more wrong the more a triangle's depth
- * varies across itself (i.e. the more obliquely/close-up it's viewed).
- * This is visible in practice as a texture's own detail appearing to
- * swim/warp as a shape rotates -- the classic "affine texture mapping"
- * artifact, notorious from the original PlayStation's 3D rendering
- * (which used exactly this shortcut for speed).
- *
- * The fix (a classic graphics result -- see e.g. Heckbert & Moreton,
- * 1991, on perspective texture mapping): unlike z/u/v themselves,
- * 1/z, u/z, and v/z genuinely ARE linear in screen space, so linearly
- * interpolating THEM is exact, not approximate; dividing back out
- * afterwards (see "perspective divide" in make_interpolator below)
- * recovers the true z/u/v at that pixel. *)
-type vertex = {
-  vx : float;
-  vy : float;
-  z : float;
-  u : float;
-  v : float;
-  inv_z : float;
-  u_over_z : float;
-  v_over_z : float;
-  normal : vec3;
-      (** the vertex's own normal, in world space, untouched by
-          projection (a normal is a direction, not a screen position --
-          nothing about "where on screen is this" applies to it). Used
-          by make_shader below for Gouraud (blended per vertex) and
-          Phong (blended per pixel) shading -- see flatten_faces for
-          where this comes from: the same winding-based normal repeated
-          at every point of a flat Polygon3d/TexturedPolygon3d face, or
-          each point's own distinct normal for a SmoothPolygon3d one. *)
-}
-
-(* returns None if [point] is at or behind the near plane -- see the
- * module doc comment above about not clipping *)
-let project_vertex (camera : Camera.t) ~(sx : int) ~(sy : int)
-    ((point, (u, v), normal) : vec3 * (float * float) * vec3) : vertex option =
-  let ((_px, _py, pz) as view_point) = Camera.view camera point in
-  let fsx = float_of_int sx and fsy = float_of_int sy in
-  match Camera.ndc camera ~aspect:(fsx /. fsy) view_point with
-  | None -> None
-  | Some (ndc_x, ndc_y) ->
-    let inv_z = 1. /. pz in
-    Some
-      { vx = (fsx /. 2.) +. (ndc_x *. (fsx /. 2.));
-        vy = (fsy /. 2.) -. (ndc_y *. (fsy /. 2.));
-        z = pz;
-        u;
-        v;
-        inv_z;
-        u_over_z = u *. inv_z;
-        v_over_z = v *. inv_z;
-        normal;
-      }
+(* claude: a 3D point to a rasterizer-ready vertex (its pixel, and its
+ * depth and texture coordinates in both the forms Interpolate needs) is
+ * graphics/3d/Project's *)
+type vertex = Project.vertex
 
 (*****************************************************************************)
 (* Perspective-correct vs linear interpolation (pluggable: "p" to
  * toggle at runtime, see key_down below) *)
 (*****************************************************************************)
-(* "Linear" is the naive, WRONG (but simpler-looking, if you don't know
- * why it's wrong) interpolation described in vertex's doc comment
- * above: blend z/u/v directly, the same way vx/vy are blended.
- * "Perspective_correct" is the fix -- blend inv_z/u_over_z/v_over_z
- * instead, then divide back out (the "perspective divide"). Both
- * rasterize_triangle and rasterize_triangle_painters below call
- * make_interpolator once per triangle (not once per pixel -- same
- * "decide once, apply per pixel" shape as fill_of_material's [fill]
- * closure) to get a little function that does whichever of the two is
- * currently selected; from the pixel loop's point of view it's just
- * "call interpolate to turn barycentric weights into a (z, u, v)",
- * with no visible difference between the two modes at that call site. *)
+(* The two modes, and why the obvious one is wrong, are in
+ * graphics/3d/Interpolate.mli. Both rasterize_triangle and
+ * rasterize_triangle_painters below call make_interpolator once per
+ * triangle (not once per pixel -- same "decide once, apply per pixel"
+ * shape as fill_of_material's [fill] closure). *)
 
-type interpolation = Perspective_correct | Linear
-
-let interpolation_mode : interpolation ref = ref Perspective_correct
+let interpolation_mode : Interpolate.mode ref = ref Interpolate.Perspective_correct
 
 let cycle_interpolation_mode () =
-  interpolation_mode := (match !interpolation_mode with Perspective_correct -> Linear | Linear -> Perspective_correct)
+  interpolation_mode :=
+    (match !interpolation_mode with Interpolate.Perspective_correct -> Interpolate.Linear | Linear -> Perspective_correct)
 
-let make_interpolator (v0 : vertex) (v1 : vertex) (v2 : vertex) :
-    l0:float -> l1:float -> l2:float -> float * float * float =
-  match !interpolation_mode with
-  | Linear ->
-      fun ~l0 ~l1 ~l2 ->
-        let z = (l0 *. v0.z) +. (l1 *. v1.z) +. (l2 *. v2.z) in
-        let u = (l0 *. v0.u) +. (l1 *. v1.u) +. (l2 *. v2.u) in
-        let v = (l0 *. v0.v) +. (l1 *. v1.v) +. (l2 *. v2.v) in
-        (z, u, v)
-  | Perspective_correct ->
-      fun ~l0 ~l1 ~l2 ->
-        let inv_z = (l0 *. v0.inv_z) +. (l1 *. v1.inv_z) +. (l2 *. v2.inv_z) in
-        let u_over_z = (l0 *. v0.u_over_z) +. (l1 *. v1.u_over_z) +. (l2 *. v2.u_over_z) in
-        let v_over_z = (l0 *. v0.v_over_z) +. (l1 *. v1.v_over_z) +. (l2 *. v2.v_over_z) in
-        (* the "perspective divide": undo the *. inv_z we multiplied by
-         * back in project_vertex, now that interpolation is done *)
-        (1. /. inv_z, u_over_z /. inv_z, v_over_z /. inv_z)
+let make_interpolator (v0 : vertex) (v1 : vertex) (v2 : vertex) = Interpolate.make !interpolation_mode v0 v1 v2
 
 (*****************************************************************************)
 (* Gouraud/Phong: how brightness is computed across a triangle
@@ -341,46 +158,8 @@ let make_interpolator (v0 : vertex) (v1 : vertex) (v2 : vertex) :
 (* A third "decide once per triangle, apply once per pixel" strategy
  * function, the same shape as fill_of_material (what color) and
  * make_interpolator (how to interpolate depth/UV) -- this one answers
- * "how bright is this pixel", from whichever of the 4 shading_mode
- * strategies is selected:
- *  - Flat_color: no lighting at all, brightness is always 1 (a
- *    constant function, ignoring the weights entirely).
- *  - Flat_shading: one brightness value for the *whole triangle*,
- *    from v0's normal (all 3 vertices share the same normal on a flat
- *    face -- see flatten_faces -- so it doesn't matter which one is
- *    picked).
- *  - Gouraud: brightness computed once per *vertex* (3 calls to
- *    brightness_of_normal, one per vertex's own normal), then those 3
- *    numbers blended per pixel via the same barycentric weights
- *    everything else uses.
- *  - Phong: the vertices' *normals themselves* (not a brightness
- *    number) are blended per pixel first, renormalized (a blend of
- *    unit vectors generally isn't itself unit length), and only then
- *    turned into a brightness -- so, unlike Gouraud, a fresh lighting
- *    calculation happens at every single pixel, not just at the 3
- *    vertices.
- * Gouraud and Phong both interpolate *linearly* here (not
- * perspective-correctly like make_interpolator's u/v/z can) -- see
- * plan_gouraud_phong.md's "Simplifications" for why that's an
- * acceptable simplification for now. *)
-let make_shader (v0 : vertex) (v1 : vertex) (v2 : vertex) : l0:float -> l1:float -> l2:float -> float =
-  match !shading_mode with
-  | Flat_color -> fun ~l0:_ ~l1:_ ~l2:_ -> 1.
-  | Flat_shading ->
-      let brightness = brightness_of_normal v0.normal in
-      fun ~l0:_ ~l1:_ ~l2:_ -> brightness
-  | Gouraud ->
-      let b0 = brightness_of_normal v0.normal
-      and b1 = brightness_of_normal v1.normal
-      and b2 = brightness_of_normal v2.normal in
-      fun ~l0 ~l1 ~l2 -> (l0 *. b0) +. (l1 *. b1) +. (l2 *. b2)
-  | Phong ->
-      let (n0x, n0y, n0z) = v0.normal and (n1x, n1y, n1z) = v1.normal and (n2x, n2y, n2z) = v2.normal in
-      fun ~l0 ~l1 ~l2 ->
-        let nx = (l0 *. n0x) +. (l1 *. n1x) +. (l2 *. n2x)
-        and ny = (l0 *. n0y) +. (l1 *. n1y) +. (l2 *. n2y)
-        and nz = (l0 *. n0z) +. (l1 *. n1z) +. (l2 *. n2z) in
-        brightness_of_normal (normalize (nx, ny, nz))
+ * "how bright is this pixel", see graphics/3d/Shading.mli *)
+let make_shader (v0 : vertex) (v1 : vertex) (v2 : vertex) = Shading.make !shading_mode v0 v1 v2
 
 (*****************************************************************************)
 (* Flatten + backface cull *)
@@ -428,7 +207,7 @@ let rec fan_triangles = function
  * textured one -- see render_shape3d below. *)
 let rasterize_triangle
     (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t)
-    (zbuffer : float array) ~(sx : int) ~(sy : int)
+    (zbuffer : Zbuffer.t) ~(sx : int) ~(sy : int)
     ~(fill : u:float -> v:float -> brightness:float -> int32) (v0 : vertex) (v1 : vertex) (v2 : vertex) : unit =
   let min_x = max 0 (int_of_float (Float.round (Stdlib.min v0.vx (Stdlib.min v1.vx v2.vx)))) in
   let max_x = min (sx - 1) (int_of_float (Float.round (Stdlib.max v0.vx (Stdlib.max v1.vx v2.vx)))) in
@@ -503,9 +282,8 @@ let rasterize_triangle
         if inside then begin
           let l0 = w0 *. inv_area and l1 = w1 *. inv_area and l2 = w2 *. inv_area in
           let (z, u, v) = interpolate ~l0 ~l1 ~l2 in
-          let idx = (py * sx) + px in
-          if z < Array.unsafe_get zbuffer idx then begin
-            Array.unsafe_set zbuffer idx z;
+          if Zbuffer.test_and_set zbuffer ~x:px ~y:py z then begin
+            let idx = (py * sx) + px in
             let brightness = shade_pixel ~l0 ~l1 ~l2 in
             Bigarray.Array1.unsafe_set framebuffer idx (fill ~u ~v ~brightness)
           end
@@ -717,7 +495,9 @@ let fill_of_material (material : material) : u:float -> v:float -> brightness:fl
       fun ~u:_ ~v:_ ~brightness -> shade (r, g, b) ~brightness
   | Textured src -> (
       match Texture_decode.load src with
-      | Some img -> fun ~u ~v ~brightness -> shade (sample_texture img ~u ~v) ~brightness
+      | Some img ->
+          let img = texture_of_stb_image img in
+          fun ~u ~v ~brightness -> shade (sample_texture img ~u ~v) ~brightness
       | None ->
           let (r, g, b) = rgb_of_color missing_texture_color in
           fun ~u:_ ~v:_ ~brightness -> shade (r, g, b) ~brightness)
@@ -725,31 +505,16 @@ let fill_of_material (material : material) : u:float -> v:float -> brightness:fl
 (* claude: pluggable, "b" to toggle at runtime (see key_down below) --
  * off is the simplest possible code (draw every face regardless of
  * which way it points), on is backface culling as described in
- * notes_3d.md section 5.
- *
- * Toggling it live in *filled* mode (render_mode = Filled, the
- * default) shows NO visual difference at all -- only a performance one
- * (watch the fps counter: roughly double the triangles to rasterize
- * for a closed solid like a cube). This isn't a limitation, it's
- * fundamental to what culling does: in filled mode the z-buffer
- * independently decides, per pixel, which triangle is nearest, and for
- * a closed solid that decision always agrees with what culling would
- * have picked anyway (a back face can never win the z-test against the
- * front face covering the same pixels) -- so culling only ever saves
- * work there, it can never change the picture.
- *
- * To actually *see* culling do something, switch to wireframe first
- * ("f"): wireframe has no per-pixel visibility resolution of any kind
- * (see render_mode/draw_triangle_wireframe below), so with culling off
- * you'll see extra edges from each shape's hidden/inside faces that
- * culling normally removes before they're ever drawn -- e.g. on a
- * single cube, the 3 short edges that meet at its far, otherwise
- * entirely hidden corner. *)
+ * notes_3d.md section 5 and graphics/3d/Cull.mli. Toggling it live in
+ * *filled* mode (render_mode = Filled, the default) shows NO visual
+ * difference at all, only a performance one (watch the fps counter);
+ * switch to wireframe first ("f") to actually *see* culling do
+ * something -- Cull.mli explains why. *)
 let backface_culling_enabled = ref true
 
 let render_shape3d
     (framebuffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t)
-    (zbuffer : float array) ~(sx : int) ~(sy : int) (camera : Playground3d.camera)
+    (zbuffer : Zbuffer.t) ~(sx : int) ~(sy : int) (camera : Playground3d.camera)
     (shape : Playground3d.shape3d) : unit =
   let view_camera = camera_of camera in
   let faces = flatten_faces shape in
@@ -775,27 +540,14 @@ let render_shape3d
   faces
   |> List.iter (fun (material, points) ->
          let bare_points = List.map (fun (p, _uv, _n) -> p) points in
-         (* claude: this winding-based normal is ONLY for backface
-          * culling (an independent, whole-face notion of "which way
-          * does this face point") -- it is unrelated to the per-point
-          * normals already carried in [points] (used for shading by
-          * make_shader instead, via project_vertex/vertex.normal
-          * below). For a Polygon3d/TexturedPolygon3d face these two
-          * normals happen to have the same value; for a
-          * SmoothPolygon3d (e.g. sphere) they don't, since each of its
-          * points has its own, different normal. *)
-         let normal = face_normal bare_points in
-         let centroid = face_centroid bare_points in
-         (* backface cull: keep only faces whose (outward, CCW-winding)
-          * normal points roughly towards the camera *)
-         if (not !backface_culling_enabled) || dot normal (sub camera.eye centroid) > 0. then begin
+         if (not !backface_culling_enabled) || Cull.faces_camera ~eye:camera.eye bare_points then begin
            let fill = fill_of_material material in
            let projected =
              fan_triangles points
              |> List.map (fun (pa, pb, pc) ->
-                    ( project_vertex view_camera ~sx ~sy pa,
-                      project_vertex view_camera ~sx ~sy pb,
-                      project_vertex view_camera ~sx ~sy pc ))
+                    ( Project.vertex view_camera ~width:sx ~height:sy pa,
+                      Project.vertex view_camera ~width:sx ~height:sy pb,
+                      Project.vertex view_camera ~width:sx ~height:sy pc ))
            in
            match !render_mode with
            | Wireframe ->
@@ -843,7 +595,10 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
    * below; the debug keys can still change them (e.g. "m" also cycles
    * through Gouraud, which the portable hints don't name) *)
   shading_mode :=
-    (match rendering.shading with No_lighting -> Flat_color | Flat -> Flat_shading | Smooth -> Phong);
+    (match rendering.shading with
+    | No_lighting -> Shading.Flat_color
+    | Flat -> Shading.Flat_shading
+    | Smooth -> Shading.Phong);
   backface_culling_enabled := rendering.backface_culling;
   smooth_textures := rendering.smooth_textures;
   let sx = int_of_float Playground.default_width in
@@ -879,7 +634,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
    * noticeable. *)
   Texture_decode.load_queued ();
 
-  let zbuffer = Array.make (sx * sy) infinity in
+  let zbuffer = Zbuffer.create ~width:sx ~height:sy in
   let background_pixel = pixel_of_color Playground.white in
 
   (* debug toggles for comparing rendering strategies live, see each
@@ -898,7 +653,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
   let draw (_computer : Playground.computer) ((camera, shapes) : Playground3d.camera * Playground3d.shape3d list)
       : unit =
     Bigarray.Array1.fill pixels background_pixel;
-    Array.fill zbuffer 0 (sx * sy) infinity;
+    Zbuffer.clear zbuffer;
     let group = Playground3d.group3d shapes in
     render_shape3d pixels zbuffer ~sx ~sy camera group;
     (* claude: a HUD pass, once the 3D scene above is fully rasterized

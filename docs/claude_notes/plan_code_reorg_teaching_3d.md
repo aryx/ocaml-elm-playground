@@ -278,9 +278,33 @@ Each a separate function, with its own key, test, and entry in
    direction are the exact same float operations as before, as are
    the web's projection and brightness (`Float.max` became
    `Stdlib.max`, which differs only on NaN, and normals are never NaN).
-2. **The small modules**: `Project`, `Cull`, `Zbuffer`, `Interpolate`,
+2. **DONE.** **The small modules**: `Project`, `Cull`, `Zbuffer`, `Interpolate`,
    `Shading`, `Texture`, each moved with its comments, tested with its
    worked example.
+   In the end: the six modules in `graphics/3d/`, each with its
+   diagram, worked example (checked by `Unit_project`, `Unit_cull`,
+   `Unit_zbuffer`, `Unit_interpolate`, `Unit_shading`,
+   `Unit_texture`) and references. `Interpolate` and `Shading` take
+   their mode as an argument (`make mode v0 v1 v2`); the mode refs and
+   the keys stay in `Playground3d_platform` until phase 4's options
+   record. `Texture.image` has `Blit.image`'s layout (plain RGBA), but
+   is its own type, so that `graphics_3d`, which the web backend links
+   for `Lighting`, doesn't depend on `graphics_core`; the backend turns
+   `Texture_decode`'s images into it (no copy, same bytes).
+   `Texture.sample_bilinear` is still its own, not `Blit`'s: it rounds
+   once, at the end, and `Blit.sample_bilinear` rounds after each of
+   its 3 mixes, so sharing it would change pixels. A finding on the
+   way: `Blit.draw`'s optimized path rounds once too, so in 2D the "o"
+   key can change a bilinear image's pixels by 1 (to fix in 2D, making
+   `Blit.lerp` not round).
+   The 18 frames are byte-identical, and the speed is unchanged:
+   `Native_loop` got `-uncapped` (no 60 fps pacing), so
+   `-fixed-time 1000 -uncapped -dump-frame 200 /dev/null` times 200
+   frames of the same scene, best of 3, dev build: Cubes3d 12.59s
+   before, 12.63s after; Spheres3d (Phong) 5.43s / 5.50s;
+   TexturedCube3d 9.37s / 9.40s (all within noise; Minecraft3d left
+   out, too slow to mean anything). The platform file is at 700
+   lines, from 940.
 3. **Triangle and Painter** on a `Framebuffer.t` (the framebuffer
    decision above), wireframe through `graphics/2d/Line`.
 4. **Render and the adapter**: `graphics/3d/Render` (the pipeline and

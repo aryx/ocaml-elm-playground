@@ -23,5 +23,11 @@ let () =
           Unit_vec3.tests;
           Unit_camera.tests;
           Unit_lighting.tests;
+          Unit_project.tests;
+          Unit_cull.tests;
+          Unit_zbuffer.tests;
+          Unit_interpolate.tests;
+          Unit_shading.tests;
+          Unit_texture.tests;
           Unit_rgba.tests;
         ])

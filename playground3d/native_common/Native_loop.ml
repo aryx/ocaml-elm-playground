@@ -24,6 +24,11 @@ let startup_keys : string ref = ref ""
 let dump_frame_number : int option ref = ref None
 let dump_frame_file : string ref = ref ""
 
+(* claude: -uncapped, no 60 fps cap (no sleep between frames), to
+ * measure how fast a renderer really is: with -fixed-time and
+ * -dump-frame n, the time to render n frames of the same scene *)
+let uncapped : bool ref = ref false
+
 let parse_cli_and_setup_logging () =
   let level = ref (Some Logs.Warning) in
   let cli_flags =
@@ -36,12 +41,13 @@ let parse_cli_and_setup_logging () =
       ("-keys", Arg.Set_string startup_keys,
        "<keys> debug keys to press before the first frame, e.g. \"fz\"");
       ("-dump-frame", Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
-       "<n> <file> write frame n (from 1) to file, then exit")
+       "<n> <file> write frame n (from 1) to file, then exit");
+      ("-uncapped", Arg.Set uncapped, " no 60 fps cap, to measure speed")
     ]
   in
   Arg.parse cli_flags
     (fun s -> raise (Arg.Bad (Printf.sprintf "don't know what to do with %s" s)))
-    (Printf.sprintf "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file]"
+    (Printf.sprintf "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-uncapped]"
        Sys.argv.(0));
   Logs.set_reporter (Logs.format_reporter ());
   Logs.set_level !level
@@ -178,5 +184,5 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
       (Printf.sprintf "%s -- %dx%d -- %.0f fps" title_prefix sx sy (1. /. Stdlib.max 0.001 elapsed));
     present ();
 
-    if elapsed < target_frame_time then Unix.sleepf (target_frame_time -. elapsed)
+    if (not !uncapped) && elapsed < target_frame_time then Unix.sleepf (target_frame_time -. elapsed)
   done
