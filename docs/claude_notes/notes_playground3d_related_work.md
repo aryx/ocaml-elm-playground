@@ -9,7 +9,8 @@ sits relative to all of it. The through-line, worth stating up front:
 capable as possible; `playground3d/` is designed to be as *legible* as
 possible.** Those are different, largely incompatible goals, and almost
 every difference described here follows directly from which one a given
-project picked.
+project picked. (The 2D twin of this note, for `playground/`:
+[`notes_playground_related_work.md`](notes_playground_related_work.md).)
 
 ## The one-line version
 
@@ -129,9 +130,9 @@ different eras worth distinguishing:
   math was all fixed, built-in behavior you invoked rather than wrote.
   The difference: it was still the *GPU's own dedicated hardware*
   doing the rasterization and lighting math per vertex/pixel, entirely
-  opaque, whereas here every one of those steps
-  (`rasterize_triangle`'s edge functions, `brightness_of_normal`'s dot
-  product) is OCaml you're reading right now.
+  opaque, whereas here every one of those steps (`Triangle.fill`'s edge
+  functions, `Lighting.brightness_of_normal`'s dot product) is OCaml
+  you're reading right now.
 - **Programmable/"core" OpenGL** (2.0+, mandatory from 3.2 on): fixed
   functions were removed; instead you upload vertex data into GPU
   buffers (VBOs/VAOs) and write your own small GPU programs
@@ -210,11 +211,11 @@ graphics API at all.
 Put concretely: `playground3d/`'s native backend uses **no GPU API of
 any kind** -- not fixed-function OpenGL, not programmable OpenGL/WebGL,
 not Vulkan. `Playground3d_platform.ml` opens a raw SDL window and pixel
-buffer and does every step by hand in ordinary OCaml: the
-camera/projection math (`project_vertex`), the rasterization
-(`rasterize_triangle`'s edge-function/barycentric test, §7 of
-`notes_3d.md`), the depth test (the z-buffer, §6), and the shading
-(`make_shader`, `notes_3d_shading.md`) -- the exact same category of
+buffer, and `graphics/3d/` does every step by hand in ordinary OCaml,
+one module per step: the camera/projection math (`Camera`, `Project`),
+the rasterization (`Triangle`'s edge-function/barycentric test, §7 of
+`notes_3d.md`), the depth test (`Zbuffer`, §6), clipping (`Clip`), and
+the shading (`Shading`, `notes_3d_shading.md`) -- the exact same category of
 work a GPU's fixed-function hardware or a GLSL shader would otherwise
 do invisibly. The web backend doesn't use WebGL either -- it compiles
 the 3D scene down to plain 2D SVG shapes (`render3d_to_2d`), reusing
@@ -230,7 +231,7 @@ purpose, for the same reason Evan Czaplicki's original 2D
 `elm-playground` doesn't wrap an existing charting/canvas library
 either: **`playground3d/` is a teaching context first.** The entire
 point is that a curious reader can open `Playground3d.ml` and
-`playground3d/software/Playground3d_platform.ml` and trace *every* number
+`graphics/3d/` and trace *every* number
 that ends up as a pixel's color -- no GLSL, no driver, no scene-graph
 file format, no hidden fixed-function hardware -- with an API small
 enough (`box`/`cube`/`plane`/`sphere`, `move3d`/`rotate3d`/`scale3d`,
@@ -255,7 +256,8 @@ closing this doc out with the measured answer, not just the
 expectation, to "how much shorter is the code, and how much faster is
 it" once a real GPU does the work this project otherwise hand-rolls.
 
-**Code size**: `playground3d/software/Playground3d_platform.ml` is 934
+**Code size** (at the time, before the rasterizer moved to
+`graphics/3d/`): `playground3d/software/Playground3d_platform.ml` was 934
 lines (377 non-comment/non-blank) versus `playground3d/opengl/Playground3d_platform.ml`'s
 562 lines (295 non-comment/non-blank) -- roughly 40% shorter by raw
 line count, about 22% shorter by actual code once both files' (this
