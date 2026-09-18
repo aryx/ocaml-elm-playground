@@ -75,6 +75,12 @@ val moving : number -> number -> body -> body
  * [angle] (degrees: 0 right, 90 up), like a cannonball or a bullet *)
 val launched : number -> number -> body -> body
 
+(* [shot_from speed distance shooter b]: [b] fired by [shooter]: placed
+ * [distance] pixels ahead of it, the way it points, and moving at
+ * [speed] that way plus [shooter]'s own velocity -- a bullet leaving a
+ * moving ship keeps the ship's motion (Galileo's ship, again) *)
+val shot_from : number -> number -> body -> body -> body
+
 (* [pointing angle b]: [b] turned to [angle] degrees *)
 val pointing : number -> body -> body
 
@@ -100,6 +106,15 @@ val thrust : number -> body -> body
  * air, water, friction. Under a steady push, a body then stops speeding
  * up (at the push divided by c): a top speed, for free *)
 val slow : number -> body -> body
+
+(* [attracted_by other b]: gravitation, [b] pulled towards [other] --
+ * harder when [other] is heavier and nearer: other.mass / r^2 pixels
+ * per second, per second, r the distance between them (Newton's law of
+ * gravitation, with the constant G = 1 in the playground's units). A
+ * star made [heavy 1000000.] keeps a body 100 pixels away going around
+ * it at 100 pixels per second: on a circle, the speed is
+ * sqrt (mass / r). Spacewar!'s star, a planet's moon. *)
+val attracted_by : body -> body -> body
 
 (* [turn speed b]: [b] turning at [speed] degrees per second (positive
  * counterclockwise, like rotate); 0 to stop *)

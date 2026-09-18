@@ -35,6 +35,17 @@ let radians degrees = degrees *. Float.pi /. 180.
 let launched speed angle (b : body) : body =
   { b with vx = speed *. cos (radians angle); vy = speed *. sin (radians angle) }
 
+let shot_from speed distance (shooter : body) (b : body) : body =
+  let c = cos (radians shooter.angle) and s = sin (radians shooter.angle) in
+  {
+    b with
+    x = shooter.x +. (distance *. c);
+    y = shooter.y +. (distance *. s);
+    vx = shooter.vx +. (speed *. c);
+    vy = shooter.vy +. (speed *. s);
+    angle = shooter.angle;
+  }
+
 let pointing angle (b : body) : body = { b with angle }
 let heavy mass (b : body) : body = { b with mass }
 
@@ -45,6 +56,10 @@ let push fx fy (b : body) : body = accelerate (fx /. b.mass) (fy /. b.mass) b
 let thrust f (b : body) : body = push (f *. cos (radians b.angle)) (f *. sin (radians b.angle)) b
 let slow c (b : body) : body = accelerate (-.c *. b.vx) (-.c *. b.vy) b
 let turn spin (b : body) : body = { b with spin }
+
+let attracted_by (other : body) (b : body) : body =
+  let (ax, ay) = Force.gravitation ~gm:other.mass ~center:(other.x, other.y) (b.x, b.y) (b.vx, b.vy) in
+  accelerate ax ay b
 let tick = 1. /. 60.
 
 let step (b : body) : body =
