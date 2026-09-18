@@ -93,6 +93,9 @@ type model = {
   x : number;
   y : number;
   vy : number;
+  (* for the sprite: running, and which way he faces *)
+  vx : number;
+  facing_left : bool;
   coins : int;
   won : bool;
   cam : Camera2d.t;
@@ -107,7 +110,7 @@ let initial_model =
   let x, y = start in
   let col, row = Tilemap.cell level x y in
   { map = Tilemap.set level col row ' ';
-    x; y; vy = 0.; coins = 0; won = false;
+    x; y; vy = 0.; vx = 0.; facing_left = false; coins = 0; won = false;
     cam = Camera2d.origin |> Camera2d.look_at x y }
 
 (*****************************************************************************)
@@ -182,7 +185,8 @@ let update (computer : computer) (model : model) : model =
   in
   let (x, _), _ = move_by model.map (model.x, model.y) (vx, 0.) in
   let (x, y), hit = move_by model.map (x, model.y) (0., vy) in
-  let model = { model with x; y; vy = (if hit then 0. else vy) } in
+  let facing_left = if vx < 0. then true else if vx > 0. then false else model.facing_left in
+  let model = { model with x; y; vy = (if hit then 0. else vy); vx; facing_left } in
   let model = if hit && vy > 0. then bump model else model in
   let model = touch model in
   (* fallen in a pit: back to the start *)
@@ -197,6 +201,42 @@ let update (computer : computer) (model : model) : model =
 (* View *)
 (*****************************************************************************)
 
+(* false: the player is a red square, the simplest code, and all a game
+ * needs to be played; true: a little plumber in pixel art (see Sprite),
+ * animated *)
+let use_sprites = true
+
+(* Our hero, 10x10 pixels of 4 (the player's 40x40 box), facing right:
+ * 'R' the cap and shirt, 'S' the skin, 'B' the overalls, 'K' the hair
+ * and shoes. The poses differ only in their lower rows. *)
+let head = [ "...RRRR..."; "..RRRRRRR."; "..KKSSKS.."; ".KSKSSSKS."; "..SSSSSS.." ]
+
+let stand = head @ [ "..RRBRR..."; ".RRRBBRRR."; ".SSBBBBSS."; "..BBB.BBB."; ".KKK...KKK" ]
+let walk1 = head @ [ "..RRBRR..."; ".RRRBBRRR."; ".SSBBBBSS."; ".BBB..BBB."; "KKK....KKK" ]
+let walk2 = head @ [ "..RRBRR..."; ".RRRBBRRR."; ".SSBBBBSS."; "...BBBB..."; "...KKKK..." ]
+let jump = head @ [ "S.RRBRRR.S"; "SRRRBBRRRS"; "..BBBBBB.."; ".BBB..BBB."; "KK......KK" ]
+
+let palette = [ ('R', rgb 220 40 30); ('S', rgb 250 190 140); ('B', rgb 40 60 200); ('K', rgb 100 50 20) ]
+
+(* each pose drawn once, facing right, and mirrored (Sprite.flip) *)
+let poses : (string list * (shape * shape)) list =
+  List.map (fun rows -> (rows, (Sprite.pixels 4. palette rows, Sprite.pixels 4. palette (Sprite.flip rows)))) [ stand; walk1; walk2; jump ]
+
+(* In the air: jumping. Running: the walk cycle, one pose every 15
+ * pixels -- driven by the distance run, not by time, so the legs move
+ * as fast as he goes, and stop when he stops. *)
+let hero (model : model) : shape =
+  if not use_sprites then square red player_size
+  else
+    let on_ground = blocked model.map model.x (model.y - 1.) in
+    let rows =
+      if not on_ground then jump
+      else if model.vx <> 0. then Sprite.cycle (int_of_float (Float.abs model.x / 15.)) [ walk1; stand; walk2; stand ]
+      else stand
+    in
+    let right, left = List.assoc rows poses in
+    if model.facing_left then left else right
+
 let hills = List.init 8 (fun i -> oval (rgb 90 170 80) 500. 300. |> move ((float_of_int i * 400.) - 1400.) (-450.))
 let clouds = List.init 8 (fun i -> oval white 160. 60. |> move ((float_of_int i * 350.) - 1300.) (250. + (float_of_int (i mod 3) * 60.)))
 
@@ -205,7 +245,7 @@ let view (computer : computer) (model : model) : shape list =
   let cam = model.cam in
   let world =
     [ Tilemap.view_visible (Camera2d.visible screen cam) tile model.map;
-      square red player_size |> move model.x model.y ]
+      hero model |> move model.x model.y ]
   in
   let hud =
     [ words black (Printf.sprintf "coins: %d" model.coins) |> scale 3. |> move (screen.left + 120.) (screen.top - 40.);
