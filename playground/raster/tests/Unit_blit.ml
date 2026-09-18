@@ -45,7 +45,7 @@ let two_by_one = image [ [ (red, 255); (blue, 255) ] ]
 (* the "x2" picture in Blit.mli: inverse mapping, no holes *)
 let test_enlarge () =
   let fb = Framebuffer.create ~width:6 ~height:3 in
-  Blit.draw fb two_by_one (Affine.scale 2. 2.) ~sample:Blit.sample_nearest ~alpha:1.;
+  Blit.draw fb two_by_one (Affine.scale 2. 2.) ~filter:Blit.Nearest ~alpha:1.;
   Alcotest.(check (list string)) "2x" [ "RRBB.."; "RRBB.."; "......" ] (picture fb)
 
 let test_rotate () =
@@ -53,13 +53,13 @@ let test_rotate () =
   (* a quarter turn (y down: clockwise on screen), moved back into view:
    * the red pixel on top, the blue one below *)
   let m = Affine.compose (Affine.translate 1. 0.) (Affine.rotate (Float.pi /. 2.)) in
-  Blit.draw fb two_by_one m ~sample:Blit.sample_nearest ~alpha:1.;
+  Blit.draw fb two_by_one m ~filter:Blit.Nearest ~alpha:1.;
   Alcotest.(check (list string)) "quarter turn" [ "R.."; "B.."; "..." ] (picture fb)
 
 let test_transparent () =
   let fb = Framebuffer.create ~width:2 ~height:1 in
   Framebuffer.clear fb ~rgb:blue;
-  Blit.draw fb (image [ [ (red, 255); (red, 0) ] ]) Affine.identity ~sample:Blit.sample_nearest ~alpha:1.;
+  Blit.draw fb (image [ [ (red, 255); (red, 0) ] ]) Affine.identity ~filter:Blit.Nearest ~alpha:1.;
   Alcotest.(check (list string)) "alpha 0 shows what's below" [ "RB" ] (picture fb)
 
 (* the example in Blit.mli, on one row: 30% of the way from A's center
@@ -71,9 +71,51 @@ let test_bilinear () =
   Alcotest.(check int) "at A's center: A" 0x000000 (Blit.sample_bilinear img (0.5, 0.5)).rgb;
   Alcotest.(check int) "at B's center: B" 0x0000ff (Blit.sample_bilinear img (1.5, 0.5)).rgb
 
+(* The optimized Blit.draw (forward differencing, samplers inlined)
+ * paints what the simple one does, see Opti *)
+let test_opti_same_pixels () =
+  (* 5x4 pixels of varied colors and opacities *)
+  let img =
+    image
+      (List.init 4 (fun j ->
+           List.init 5 (fun i -> (((i * 50) lsl 16) lor ((j * 60) lsl 8) lor ((i + j) * 20), 255 - (i * 40)))))
+  in
+  let transforms =
+    [
+      ("enlarged", Affine.compose (Affine.translate 3.3 2.7) (Affine.scale 7. 9.));
+      ( "rotated",
+        Affine.compose (Affine.translate 30.2 5.1)
+          (Affine.compose (Affine.rotate 0.7) (Affine.scale 6. 6.)) );
+    ]
+  in
+  let draw ~optimized ~filter m =
+    let fb = Framebuffer.create ~width:50 ~height:50 in
+    Opti.enabled := optimized;
+    Fun.protect ~finally:(fun () -> Opti.enabled := true) (fun () -> Blit.draw fb img m ~filter ~alpha:0.9);
+    fb
+  in
+  transforms
+  |> List.iter (fun (name, m) ->
+         [ ("nearest", Blit.Nearest); ("bilinear", Blit.Bilinear) ]
+         |> List.iter (fun (fname, filter) ->
+                let simple = draw ~optimized:false ~filter m and fast = draw ~optimized:true ~filter m in
+                for y = 0 to 49 do
+                  for x = 0 to 49 do
+                    let s = Framebuffer.get_rgb simple ~x ~y and f = Framebuffer.get_rgb fast ~x ~y in
+                    (* the simple bilinear rounds to integers after each
+                     * of its 3 mixes, the optimized one only at the
+                     * end: allow a difference of 2 per channel *)
+                    let channel k c = (c lsr k) land 0xff in
+                    if List.exists (fun k -> abs (channel k s - channel k f) > 2) [ 0; 8; 16 ] then
+                      Alcotest.failf "%s, %s, pixel (%d, %d): simple 0x%06x, optimized 0x%06x" name fname x y
+                        s f
+                  done
+                done))
+
 let tests =
   Testo.categorize "Blit"
     [
+      t "optimized = simple" test_opti_same_pixels;
       t "enlarge: no holes" test_enlarge;
       t "rotate" test_rotate;
       t "transparent pixels" test_transparent;

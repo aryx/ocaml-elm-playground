@@ -41,15 +41,15 @@ OCaml on the CPU, is the best way to appreciate hardware rendering.
 |----------|------:|----------------:|----------------------:|
 | Picture  |   465 |             267 |                   380 |
 | Smiley   |   400 |             187 |                   353 |
-| Turtle   |   339 |              51 |                    55 |
-| Mario    |   262 |             128 |                   143 |
+| Turtle   |   339 |             102 |                   125 |
+| Mario    |   262 |             176 |                   277 |
 | Pong     |   435 |             166 |                   293 |
 | Snake    |   443 |             164 |                   279 |
 | Tetris   |   423 |              61 |                   184 |
 | Asteroid |   457 |             272 |                   379 |
 
 (Cairo: single runs; ours: medians of 3.) Cairo is antialiased too, and
-still 1.7 to 7 times faster: pixman, the pixel library under it, is
+still 1.5 to 7 times faster: pixman, the pixel library under it, is
 decades of tuned C with SIMD, compositing whole spans at a time,
 caching glyphs, and so on. Ours computes everything per span or per
 pixel, in plain OCaml, with allocations in the inner loops.
@@ -63,8 +63,9 @@ most (61 vs 184): many small texts, drawn with Wu's antialiased lines,
 pixel by pixel. On a GPU, antialiasing (MSAA) is a hardware feature:
 several coverage samples per pixel, resolved at the end.
 
-**Images** (Turtle, Mario): even without antialiasing, Turtle's one
-192x192 turtle takes most of its frame time (55 fps): see "Next" below.
+**Images** (Turtle, Mario): before optimization 3 below, Turtle's one
+192x192 turtle took most of its frame time, even without antialiasing
+(55 fps).
 
 ## The optimizations
 
@@ -125,15 +126,41 @@ happens per pixel that isn't arithmetic: allocations, bounds checks,
 function calls, boxing of floats. Both optimizations remove per-pixel
 overhead, not math.
 
+### 3. Images: forward differencing, samplers inlined
+
+- **The simple version** (`Blit.draw_simple`): for each covered screen
+  pixel, a matrix product (`Affine.apply inverse`) to find where its
+  center comes from in the image, then the filter, a function returning
+  a `color` record (`sample_nearest`, `sample_bilinear`). Clear, one
+  idea per line.
+- **The problem**: per pixel, the (u, v) pair from `Affine.apply`, a
+  `color` record per texel read (4 for bilinear) and one per `lerp` (3
+  more): about 10 small allocations, plus boxed floats, for a few dozen
+  arithmetic operations. About half a microsecond per pixel.
+- **The fix** (`Blit.draw_fast`):
+  - *forward differencing*: one pixel to the right on the screen is
+    always the same step in the image, the inverse matrix's first
+    column `(inverse.a, inverse.b)`, so compute (u, v) once per row and
+    then add the step: two additions instead of a matrix product. The
+    same idea as the edge coherence in `Fill` (and as how scanline
+    texture mappers of the 1990s worked);
+  - the filter inlined, on local numbers (which OCaml keeps unboxed,
+    in registers), producing the final 0xRRGGBB directly: no records.
+  `Blit.draw` takes a `~filter:Nearest|Bilinear` instead of a sampling
+  function for that (the fast path must know which filter to inline).
+
+Turtle: 51 -> 102 fps; Mario: 128 -> 176 (medians of 3). The test
+"optimized = simple" allows 2 per color channel of difference: the
+simple bilinear rounds to integers after each of its 3 mixes, the fast
+one only at the end.
+
 ## Next
 
-- **Images** (`Blit.draw`): each covered pixel allocates a tuple
-  (`Affine.apply`), 4 `color` records (`sample_bilinear`) and 3 more
-  (`lerp`): about 0.5 microseconds per pixel. The classic fix is
-  *forward differencing*: moving one pixel right on the screen always
-  moves (u, v) in the image by the same amount (the inverse matrix's
-  first column), so add it instead of recomputing the matrix product,
-  and keep the coordinates and colors in plain (unboxed) variables --
-  the same idea as the edge coherence in `Fill`.
-- **Antialiased thin text** (Tetris): Wu's lines plot 2 pixels per
-  column, each with a blend; many small texts add up.
+- **Antialiased thin text** (Tetris, 61 fps vs 184 without
+  antialiasing): Wu's lines plot 2 pixels per column, each with a
+  blend; many small texts add up.
+- **The background**: with antialiasing, even a plain full-window
+  rectangle goes through coverage cells for 1000 rows (Turtle: 102 fps
+  with antialiasing, 125 without). A shape whose edges are exactly on
+  pixel boundaries needs no antialiasing at all: a special case worth
+  detecting.

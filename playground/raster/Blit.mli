@@ -75,9 +75,17 @@ val sample_nearest : image -> float * float -> color
  * the nearest border pixels. *)
 val sample_bilinear : image -> float * float -> color
 
-(* [draw fb image m ~sample ~alpha]: draw [image], [m] mapping image
+(* Which of the two samplers above to use *)
+type filter = Nearest | Bilinear
+
+(* [draw fb image m ~filter ~alpha]: draw [image], [m] mapping image
  * pixel coordinates to framebuffer pixel coordinates, taking colors
- * with [sample], and fading the result by [alpha]. A framebuffer pixel
- * is covered if its center comes from inside the image. *)
-val draw :
-  Framebuffer.t -> image -> Affine.t -> sample:(image -> float * float -> color) -> alpha:float -> unit
+ * with [filter], and fading the result by [alpha]. A framebuffer pixel
+ * is covered if its center comes from inside the image.
+ *
+ * Two implementations, switched by Opti.enabled: the simple one (a
+ * matrix product per pixel, then [sample_nearest] or
+ * [sample_bilinear]), and an optimized one computing the same pixels
+ * (forward differencing, samplers inlined; see Blit.ml and
+ * docs/claude_notes/notes_opti.md). *)
+val draw : Framebuffer.t -> image -> Affine.t -> filter:filter -> alpha:float -> unit

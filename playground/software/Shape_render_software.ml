@@ -280,8 +280,8 @@ let draw_image options fb m ~w ~h src ~alpha =
   | None -> ()
   | Some img ->
       let image = blit_image img in
-      let sample = if options.bilinear then Blit.sample_bilinear else Blit.sample_nearest in
-      Blit.draw fb image (Affine.compose m (image_to_local ~w ~h image)) ~sample ~alpha
+      let filter = if options.bilinear then Blit.Bilinear else Blit.Nearest in
+      Blit.draw fb image (Affine.compose m (image_to_local ~w ~h image)) ~filter ~alpha
 
 (* A line through points, 1 pixel wide *)
 let thin_polyline ~aa fb points ~rgb ~alpha =

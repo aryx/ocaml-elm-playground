@@ -51,12 +51,18 @@ toggles_title() {
 # that change nothing in the title (e.g. on the Cairo backend, which
 # has no debug keys) are pressed once.
 press_key() {
-  local WID="$1" KEY="$2" BEFORE i
+  local WID="$1" KEY="$2" BEFORE i j
   BEFORE=$(toggles_title "$WID")
   for i in 1 2 3; do
     "$DIR/xdrive.py" key "$WID" "$KEY" 0.05
-    sleep 0.5
-    if [ "$(toggles_title "$WID")" != "$BEFORE" ]; then return; fi
+    # the title is updated once per frame, and a slow configuration
+    # can take a quarter of a second per frame: wait for up to 3s
+    # before concluding the press was lost (pressing a toggle again
+    # while its first press is still pending would undo it)
+    for j in $(seq 15); do
+      sleep 0.2
+      if [ "$(toggles_title "$WID")" != "$BEFORE" ]; then return; fi
+    done
   done
   echo "(key $KEY: no effect on the window title)" >&2
 }

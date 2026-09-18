@@ -62,26 +62,96 @@ let sample_bilinear (image : image) (u, v) : color =
 (* Inverse mapping *)
 (*****************************************************************************)
 
-let draw (fb : Framebuffer.t) (image : image) (m : Affine.t) ~sample ~alpha =
+type filter = Nearest | Bilinear
+
+(* The framebuffer pixels the image may cover: the box around its
+ * transformed corners, clipped to the framebuffer, as
+ * (x0, x1, y0, y1), x1 and y1 excluded *)
+let covered_box (fb : Framebuffer.t) (image : image) (m : Affine.t) =
   let w = float image.width and h = float image.height in
-  (* 1. the framebuffer pixels the image may cover: the box around its
-   * transformed corners, clipped to the framebuffer *)
   let corners = List.map (Affine.apply m) [ (0., 0.); (w, 0.); (w, h); (0., h) ] in
   let xs = List.map fst corners and ys = List.map snd corners in
   let first_pixel v = int_of_float (Float.ceil (v -. 0.5)) in
-  let x0 = max 0 (first_pixel (List.fold_left min infinity xs)) in
-  let x1 = min fb.width (first_pixel (List.fold_left max neg_infinity xs)) in
-  let y0 = max 0 (first_pixel (List.fold_left min infinity ys)) in
-  let y1 = min fb.height (first_pixel (List.fold_left max neg_infinity ys)) in
-  (* 2. for each, where does its center come from in the image? *)
+  ( max 0 (first_pixel (List.fold_left min infinity xs)),
+    min fb.width (first_pixel (List.fold_left max neg_infinity xs)),
+    max 0 (first_pixel (List.fold_left min infinity ys)),
+    min fb.height (first_pixel (List.fold_left max neg_infinity ys)) )
+
+(* The original, simple version: for each covered pixel, where does its
+ * center come from in the image? (a matrix product), then the color
+ * there (the filter, as a function returning a color) *)
+let draw_simple (fb : Framebuffer.t) (image : image) (m : Affine.t) ~filter ~alpha =
+  let sample = match filter with Nearest -> sample_nearest | Bilinear -> sample_bilinear in
+  let w = float image.width and h = float image.height in
+  let x0, x1, y0, y1 = covered_box fb image m in
   let inverse = Affine.invert m in
   for y = y0 to y1 - 1 do
     for x = x0 to x1 - 1 do
       let ((u, v) as p) = Affine.apply inverse (float x +. 0.5, float y +. 0.5) in
-      (* 3. from inside the image (not just its box): take its color *)
+      (* from inside the image (not just its box): take its color *)
       if u >= 0. && u < w && v >= 0. && v < h then begin
         let c = sample image p in
         Framebuffer.plot fb ~x ~y ~rgb:c.rgb ~alpha:(alpha *. c.a)
       end
     done
   done
+
+(* claude: optimization (Opti.enabled), the same pixels as draw_simple
+ * but without its per-pixel overhead, about 10 small allocations per
+ * pixel (the (u, v) pair from Affine.apply, a [color] record per texel
+ * read and per lerp):
+ *
+ * - forward differencing: one pixel to the right on screen, (x+1, y),
+ *   is always the same step in the image, the inverse matrix's first
+ *   column (inverse.a, inverse.b), so compute (u, v) once per row and
+ *   then just add that step -- the same idea as Fill's edge coherence;
+ * - the filter inlined, on plain local numbers (which OCaml keeps
+ *   unboxed), instead of a function returning records. *)
+let draw_fast (fb : Framebuffer.t) (image : image) (m : Affine.t) ~filter ~alpha =
+  let w = float image.width and h = float image.height in
+  let x0, x1, y0, y1 = covered_box fb image m in
+  let inverse = Affine.invert m in
+  let data = image.rgba and iw = image.width and ih = image.height in
+  let byte i j k = Bigarray.Array1.unsafe_get data ((((j * iw) + i) * 4) + k) in
+  for y = y0 to y1 - 1 do
+    (* (u, v) for the first pixel of the row, then one step per pixel *)
+    let u0, v0 = Affine.apply inverse (float x0 +. 0.5, float y +. 0.5) in
+    let u = ref u0 and v = ref v0 in
+    for x = x0 to x1 - 1 do
+      let u' = !u and v' = !v in
+      if u' >= 0. && u' < w && v' >= 0. && v' < h then begin
+        match filter with
+        | Nearest ->
+            let i = int_of_float u' and j = int_of_float v' in
+            let a = byte i j 3 in
+            if a > 0 then
+              Framebuffer.plot fb ~x ~y
+                ~rgb:((byte i j 0 lsl 16) lor (byte i j 1 lsl 8) lor byte i j 2)
+                ~alpha:(alpha *. float a /. 255.)
+        | Bilinear ->
+            (* as sample_bilinear: the 4 texels around (u, v), weighted *)
+            let fx = u' -. 0.5 and fy = v' -. 0.5 in
+            let i = int_of_float (Float.floor fx) and j = int_of_float (Float.floor fy) in
+            let tx = fx -. float i and ty = fy -. float j in
+            let i0 = max 0 i and i1 = min (iw - 1) (i + 1) in
+            let j0 = max 0 j and j1 = min (ih - 1) (j + 1) in
+            let mix k =
+              let top = (float (byte i0 j0 k) *. (1. -. tx)) +. (float (byte i1 j0 k) *. tx) in
+              let bottom = (float (byte i0 j1 k) *. (1. -. tx)) +. (float (byte i1 j1 k) *. tx) in
+              (top *. (1. -. ty)) +. (bottom *. ty)
+            in
+            let a = mix 3 in
+            if a > 0. then begin
+              let channel k = int_of_float (mix k +. 0.5) in
+              Framebuffer.plot fb ~x ~y
+                ~rgb:((channel 0 lsl 16) lor (channel 1 lsl 8) lor channel 2)
+                ~alpha:(alpha *. a /. 255.)
+            end
+      end;
+      u := u' +. inverse.a;
+      v := v' +. inverse.b
+    done
+  done
+
+let draw fb image m ~filter ~alpha =
+  if !Opti.enabled then draw_fast fb image m ~filter ~alpha else draw_simple fb image m ~filter ~alpha
