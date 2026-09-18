@@ -51,7 +51,7 @@ let draw_fps cr width height fps =
  * happens. *)
 let preload_image = Image_native.preload
 
-let run_app app =
+let run_app ?(rendering = Playground.default_rendering) app =
   Native_loop_2d.parse_cli_and_setup_logging ();
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in
@@ -67,6 +67,15 @@ let run_app app =
 
   Cairo.identity_matrix cr;
   debug_coordinates cr ~sx ~sy;
+
+  (* claude: Playground.rendering's antialiasing, for shapes and text
+   * (set once: save/restore below keep it) *)
+  if not rendering.antialiasing then begin
+    Cairo.set_antialias cr Cairo.ANTIALIAS_NONE;
+    let font_options = Cairo.Font_options.create () in
+    Cairo.Font_options.set_antialias font_options Cairo.ANTIALIAS_NONE;
+    Cairo.Font_options.set cr font_options
+  end;
 
   (* claude: show a "Loading..." message right away, then run any queued
    * preload_image downloads -- without this the window doesn't show
@@ -90,7 +99,7 @@ let run_app app =
     Cairo.translate cr (float sx / 2.) (float sy / 2.);
     (*debug_coordinates cr ~sx ~sy;*)
 
-    Shape_render_native.render cr shapes;
+    Shape_render_native.render ~smooth_images:rendering.smooth_images cr shapes;
 
     Cairo.restore cr;
     draw_fps cr (float sx) (float sy) fps;

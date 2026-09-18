@@ -139,7 +139,7 @@ let render_words cr hook color str x y angle s alpha =
   Cairo.show_text cr str;
   Cairo.restore cr
 
-let render_image cr hook w h src x y angle s _alpha =
+let render_image ~smooth_images cr hook w h src x y angle s _alpha =
   let (x, y) = convert (x, y) in
   (* claude: surface_of_url_at to animate animated GIFs (e.g., Mario's
    * walk sprites), like browsers do on the web *)
@@ -159,6 +159,9 @@ let render_image cr hook w h src x y angle s _alpha =
       render_transform cr x y angle s;
       Cairo.scale cr (w /. surface_w) (h /. surface_h);
       Cairo.set_source_surface cr surface ~x:(-.surface_w /. 2.) ~y:(-.surface_h /. 2.);
+      (* claude: Playground.rendering's smooth_images; NEAREST keeps pixel
+       * art sprites sharp when enlarged *)
+      if not smooth_images then Cairo.Pattern.set_filter (Cairo.get_source cr) Cairo.Pattern.NEAREST;
       Cairo.paint cr;
       Cairo.restore cr
 
@@ -172,8 +175,8 @@ type hook = Cairo.context -> unit
 
 let empty_hook = fun _cr -> ()
 
-let rec (render_shape : Cairo.context -> hook -> shape -> unit) =
- fun cr hook { x; y; angle; scale; alpha; form } ->
+let rec (render_shape : smooth_images:bool -> Cairo.context -> hook -> shape -> unit) =
+ fun ~smooth_images cr hook { x; y; angle; scale; alpha; form } ->
   match form with
   | Circle (color, radius) -> render_circle cr hook color radius x y angle scale alpha
   | Oval (color, width, height) -> render_oval cr hook color width height x y angle scale alpha
@@ -181,7 +184,7 @@ let rec (render_shape : Cairo.context -> hook -> shape -> unit) =
   | Ngon (color, n, radius) -> render_ngon cr hook color n radius x y angle scale alpha
   | Polygon (color, points) -> render_polygon cr hook color points x y angle scale alpha
   | Words (color, str) -> render_words cr hook color str x y angle scale alpha
-  | Image (w, h, src) -> render_image cr hook w h src x y angle scale alpha
+  | Image (w, h, src) -> render_image ~smooth_images cr hook w h src x y angle scale alpha
   | Group xs ->
       (* TODO: alpha *)
       let hook =
@@ -190,6 +193,7 @@ let rec (render_shape : Cairo.context -> hook -> shape -> unit) =
         let (x, y) = convert (x, y) in
         render_transform cr' x y angle scale
       in
-      List.iter (render_shape cr hook) xs
+      List.iter (render_shape ~smooth_images cr hook) xs
 
-let (render : Cairo.context -> shape list -> unit) = fun cr shapes -> List.iter (render_shape cr empty_hook) shapes
+let render ?(smooth_images = true) (cr : Cairo.context) (shapes : shape list) : unit =
+  List.iter (render_shape ~smooth_images cr empty_hook) shapes

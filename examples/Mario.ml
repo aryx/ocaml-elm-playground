@@ -74,5 +74,8 @@ let update computer mario =
 
 let app = game view update initial_model
 
-let main = Playground_platform.run_app app
+(* claude: pixel art: keep the sprites' pixels sharp when enlarged, on
+ * every backend (see Playground.rendering) *)
+let main =
+  Playground_platform.run_app ~rendering:{ default_rendering with smooth_images = false } app
 

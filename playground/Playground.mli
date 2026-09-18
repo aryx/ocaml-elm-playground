@@ -797,6 +797,25 @@ type ('model, 'msg) app = {
   subscriptions : 'model -> 'msg Sub.t;
 }
 
+(** How to draw, for the backends that can honor it, given to
+    [Playground_platform.run_app ~rendering]:
+    - [antialiasing]: smooth edges (true), or all-or-nothing pixels,
+      crisper but jagged (false);
+    - [smooth_images]: enlarged images blend their pixels (true), or
+      show them as sharp squares (false), which is what pixel art
+      sprites, like Mario's, want.
+
+    Each backend maps these to what it has (the software rasterizer
+    to its own algorithms, Cairo to its antialias mode and image
+    filter, the web to SVG's [shape-rendering] and CSS's
+    [image-rendering]), and the software rasterizer's debug keys can
+    still change them while the app runs: these are the starting
+    values. *)
+type rendering = { antialiasing : bool; smooth_images : bool }
+
+(** Both on *)
+val default_rendering : rendering
+
 (** {1 Playgrounds} *)
 
 (** {2 Pictures} *)

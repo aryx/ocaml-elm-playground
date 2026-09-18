@@ -1,5 +1,7 @@
+(* claude: [rendering] (default: Playground.default_rendering) sets how
+ * to draw, see Playground.rendering *)
 val run_app:
-  ('a, 'b) Playground.app -> unit
+  ?rendering:Playground.rendering -> ('a, 'b) Playground.app -> unit
 
 (* Load (and cache) an image url ahead of time, e.g. for all the sprite
  * variants a game will need, so that [Playground.image]/[run_app] never

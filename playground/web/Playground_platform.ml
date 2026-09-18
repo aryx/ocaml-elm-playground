@@ -513,20 +513,25 @@ let rec (render_shape: shape -> 'msg Svg.t) =
         (List.map render_shape shapes)
 
 
-let (render: screen -> shape list -> 'msg Svg.t) = fun screen shapes ->
+let (render: rendering:rendering -> screen -> shape list -> 'msg Svg.t) =
+ fun ~rendering screen shapes ->
     let w = screen.width |> string_of_number in
     let h = screen.height |> string_of_number  in
     let x = screen.left |> string_of_number  in
     let y = screen.bottom |> string_of_number in
 
     Svg.svg
-      [Svg.Attributes.viewBox (x ^ " " ^ y ^ " " ^ w ^ " " ^ h);
+      ([Svg.Attributes.viewBox (x ^ " " ^ y ^ " " ^ w ^ " " ^ h);
        Html.style "position" "fixed";
        Html.style "top" "0";
        Html.style "left" "0";
        Svg.Attributes.width "100%";
        Svg.Attributes.height "100%";
-      ]
+      ] @
+      (* claude: Playground.rendering, the browser's own switches; both
+       * are inherited by all the shapes inside the <svg> *)
+      (if rendering.antialiasing then [] else [V.attr "shape-rendering" "crispEdges"]) @
+      (if rendering.smooth_images then [] else [Html.style "image-rendering" "pixelated"]))
       (List.map render_shape shapes)
 
 (*****************************************************************************)
@@ -676,7 +681,7 @@ let preload_image (url : string) =
   end
 
 (* when using the simple DOM *)
-let run_app app =
+let run_app ?(rendering = Playground.default_rendering) app =
   Window.set_onload window (fun () ->
 
     let sx = Playground.default_width in
@@ -775,7 +780,7 @@ let run_app app =
        * build the real <svg> (first frame) or update the existing one
        * (see V.patch) *)
       let shapes = app.Playground.view !model in
-      let node = render screen shapes in
+      let node = render ~rendering screen shapes in
       let body = Document.body document in
       (match !current with
       | None ->

@@ -94,7 +94,10 @@ let fps_counter (fb : Framebuffer.t) ~fps : Playground.shape =
   Playground.words Playground.black text
   |> Playground.move (-.(0.45 *. w) +. (width *. unit /. 2.)) (-.(0.45 *. h) +. (9. *. unit))
 
-let run_app (app : _ Playground.app) =
+let run_app ?(rendering = Playground.default_rendering) (app : _ Playground.app) =
+  (* the app's choices are the starting values; the keys can change them *)
+  options :=
+    { !options with antialiasing = rendering.antialiasing; bilinear = rendering.smooth_images };
   Native_loop_2d.parse_cli_and_setup_logging ();
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in

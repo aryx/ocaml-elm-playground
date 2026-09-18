@@ -403,7 +403,12 @@ let initial_computer = {
 (*****************************************************************************)
 (* was in Platform.elm but makes its harder to have cross-platform playground*)
 
-type ('model, 'msg) app = 
+(* claude: see Playground.mli *)
+type rendering = { antialiasing : bool; smooth_images : bool }
+
+let default_rendering = { antialiasing = true; smooth_images = true }
+
+type ('model, 'msg) app =
   {
     init: (unit -> ('model * 'msg Cmd.t));
     update: ('msg -> 'model -> ('model * 'msg Cmd.t));

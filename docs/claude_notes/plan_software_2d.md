@@ -204,6 +204,16 @@ Done (with phase 1):
   *see* the pixel-center rule, gaps/overlaps between shapes, jaggies,
   and later what antialiasing does to an edge.
 
+Settable by the app too: `Playground.rendering` (`antialiasing`,
+`smooth_images`), passed as `Playground_platform.run_app ~rendering`,
+is portable -- the software backend uses it as the starting value of
+"n"/"i" (the keys can still flip them), Cairo as its antialias mode and
+image filter, the web as SVG `shape-rendering` and CSS
+`image-rendering`. `examples/Mario.ml` asks for sharp pixel-art
+sprites (`smooth_images = false`). The other keys are debugging
+features of the software rasterizer only, so they stay keys. (The 3D
+backends have no such hints yet: their modes are keys only.)
+
 Planned, each with the phase that makes it meaningful:
 
 - **"b" -- bounding boxes** (phase 2): draw every shape as the phase-1

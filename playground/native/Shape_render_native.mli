@@ -24,4 +24,6 @@
  * to exactly its virtual .mli's signature, so
  * Playground_platform.run_app's implementation can't expose any extra
  * public function beyond run_app, no matter what its own .ml defines. *)
-val render : Cairo.context -> Playground.shape list -> unit
+val render : ?smooth_images:bool -> Cairo.context -> Playground.shape list -> unit
+(* claude: [smooth_images] (default true): Playground.rendering's, see
+ * there *)
