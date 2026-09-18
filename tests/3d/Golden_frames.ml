@@ -13,7 +13,7 @@
 (* the keys: f wireframe, z painter's algorithm, b culling off, m the
  * next shading mode, p linear interpolation, i nearest texture
  * filtering, t the top-left fill rule, c clipping off, o the simple code instead of the
- * optimized one (Opti).
+ * optimized one (Opti), h the help.
  * Not x (the magnifier): it follows the mouse. *)
 let scenes : Testutil_golden.scene list =
   [
@@ -24,6 +24,7 @@ let scenes : Testutil_golden.scene list =
     ("examples3d/Cubes3d", "b", 3);
     ("examples3d/Cubes3d", "bf", 3);
     ("examples3d/Cubes3d", "t", 3);
+    ("examples3d/Cubes3d", "h", 3);
     (* the same golden frame as without "o", on purpose: an optimization
      * must not change a single pixel *)
     ("examples3d/Cubes3d", "o", 3);

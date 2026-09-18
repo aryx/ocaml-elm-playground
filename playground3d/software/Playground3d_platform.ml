@@ -72,10 +72,13 @@ open Playground3d
  *    of the optimized one (see graphics/core/Opti.mli); watch the fps
  *  - "x": the pixel magnifier (graphics/2d/Magnifier), following the
  *    mouse ("z" is taken)
+ *  - "h": this list, with each key's state, over the frame
+ *    (playground/software/Help_overlay)
  *)
 
 let options = ref Render.default_options
 let magnifier = ref false
+let help = ref false
 
 let on_key_press (key : string) =
   let o = !options in
@@ -111,14 +114,15 @@ let on_key_press (key : string) =
       options := { o with fill_rule = (match o.fill_rule with Triangle.Epsilon -> Triangle.Top_left | Top_left -> Epsilon) }
   | "o" -> Opti.enabled := not !Opti.enabled
   | "x" -> magnifier := not !magnifier
+  | "h" -> help := not !help
   | _ -> ()
 
 (* e.g. "m:phong b:cull=on f:wire=off z:zbuffer p:perspective
- * i:bilinear c:clip=on t:epsilon o:opti=on x:zoom=off" *)
+ * i:bilinear c:clip=on t:epsilon o:opti=on x:zoom=off h:help" *)
 let title_keys () =
   let o = !options in
   let on_off b = if b then "on" else "off" in
-  Printf.sprintf "m:%s b:cull=%s f:wire=%s z:%s p:%s i:%s c:clip=%s t:%s o:opti=%s x:zoom=%s"
+  Printf.sprintf "m:%s b:cull=%s f:wire=%s z:%s p:%s i:%s c:clip=%s t:%s o:opti=%s x:zoom=%s h:help"
     (match o.shading with
     | Shading.Flat_color -> "nolight"
     | Flat_shading -> "flat"
@@ -131,6 +135,34 @@ let title_keys () =
     (on_off o.clipping)
     (match o.fill_rule with Triangle.Epsilon -> "epsilon" | Top_left -> "topleft")
     (on_off !Opti.enabled) (on_off !magnifier)
+
+(* the same, one line per key, for "h" (Help_overlay) *)
+let help_lines () =
+  let o = !options in
+  let on_off b = if b then "on" else "off" in
+  [
+    ("h", "this help");
+    ( "m",
+      "shading: "
+      ^
+      match o.shading with
+      | Shading.Flat_color -> "no lighting"
+      | Flat_shading -> "flat"
+      | Gouraud -> "Gouraud"
+      | Phong -> "Phong" );
+    ("b", "backface culling: " ^ on_off o.backface_culling);
+    ("f", "wireframe: " ^ on_off o.wireframe);
+    ("z", "visibility: " ^ match o.visibility with Z_buffer -> "z-buffer" | Painters_algorithm -> "painter's algorithm");
+    ( "p",
+      "interpolation: "
+      ^ match o.interpolation with Interpolate.Perspective_correct -> "perspective-correct" | Linear -> "linear" );
+    ("i", "texture filtering: " ^ if o.bilinear then "bilinear" else "nearest");
+    ("c", "near-plane clipping: " ^ on_off o.clipping);
+    ("t", "fill rule: " ^ match o.fill_rule with Triangle.Epsilon -> "epsilon" | Top_left -> "top-left");
+    ("o", "optimizations: " ^ on_off !Opti.enabled);
+    ("x", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
+    ("Q", "quit");
+  ]
 
 (*****************************************************************************)
 (* Run app *)
@@ -211,6 +243,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
     (match Playground3d.collect_hud_shapes group with
     | [] -> ()
     | hud_shapes -> Shape_render_software.render fb hud_shapes);
+    if !help then Help_overlay.draw fb (help_lines ());
     if !magnifier then begin
       (* SDL keeps track of the mouse position, in window pixels *)
       let (_buttons, (mx, my)) = Sdl.get_mouse_state () in

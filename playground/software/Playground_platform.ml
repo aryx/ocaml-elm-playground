@@ -44,10 +44,13 @@ let title = "Playground (software rasterizer)"
  *  - "o": optimizations on/off, i.e. the original simple code instead
  *    of the optimized one (see Opti); watch the fps
  *  - "z": the pixel magnifier (Magnifier), following the mouse
+ *  - "h": this list, with each key's state, over the frame
+ *    (Help_overlay)
  *)
 
 let options = ref Shape_render_software.default_options
 let magnifier = ref false
+let help = ref false
 
 let on_key_press (key : string) =
   match key with
@@ -58,17 +61,35 @@ let on_key_press (key : string) =
   | "n" -> options := { !options with antialiasing = not !options.antialiasing }
   | "o" -> Opti.enabled := not !Opti.enabled
   | "z" -> magnifier := not !magnifier
+  | "h" -> help := not !help
   | _ -> ()
 
 (* e.g. "Playground (software rasterizer) -- 60 fps -- t:alpha=on
- * b:boxes=off f:wire=off i:bilinear n:aa=on o:opti=on z:zoom=off" *)
+ * b:boxes=off f:wire=off i:bilinear n:aa=on o:opti=on z:zoom=off
+ * h:help" *)
 let window_title ~fps =
   let on_off b = if b then "on" else "off" in
-  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s z:zoom=%s"
+  Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s z:zoom=%s h:help"
     title fps (on_off !options.alpha_blending) (on_off !options.bounding_boxes)
     (on_off !options.wireframe)
     (if !options.bilinear then "bilinear" else "nearest")
     (on_off !options.antialiasing) (on_off !Opti.enabled) (on_off !magnifier)
+
+(* the same, one line per key, for "h" (Help_overlay) *)
+let help_lines () =
+  let on_off b = if b then "on" else "off" in
+  let o = !options in
+  [
+    ("h", "this help");
+    ("t", "transparency (alpha blending): " ^ on_off o.alpha_blending);
+    ("b", "bounding boxes instead of shapes: " ^ on_off o.bounding_boxes);
+    ("f", "wireframe: " ^ on_off o.wireframe);
+    ("i", "image filtering: " ^ if o.bilinear then "bilinear" else "nearest");
+    ("n", "antialiasing: " ^ on_off o.antialiasing);
+    ("o", "optimizations: " ^ on_off !Opti.enabled);
+    ("z", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
+    ("Q", "quit");
+  ]
 
 (*****************************************************************************)
 (* Entry points *)
@@ -114,6 +135,7 @@ let run_app ?(rendering = Playground.default_rendering) (app : _ Playground.app)
     Framebuffer.clear fb ~rgb:0xFFFFFF;
     Shape_render_software.render ~options:!options fb shapes;
     overlay fb [ fps_counter fb ~fps ];
+    if !help then Help_overlay.draw fb (help_lines ());
     if !magnifier then begin
       (* SDL keeps track of the mouse position, in window pixels *)
       let (_buttons, (mx, my)) = Tsdl.Sdl.get_mouse_state () in

@@ -81,6 +81,7 @@ live debug toggles for comparing rendering strategies side by side
 | `c` | Near-plane clipping on/off -- try `Corridor3d.exe`: off, the floor and walls going behind the camera vanish, leaving holes |
 | `o` | Optimizations on/off: the original simple code instead of the optimized one (see `graphics/core/Opti.mli`); watch the fps |
 | `x` | Pixel magnifier, following the mouse |
+| `h` | Help: all these keys and their current state, over the frame |
 | `Q` | Quit |
 
 The window title shows every toggle's current state.

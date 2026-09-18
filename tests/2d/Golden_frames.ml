@@ -12,7 +12,7 @@
 
 (* the keys (see playground/software/Playground_platform.ml): n
  * antialiasing off, f wireframe, b bounding boxes, o the simple code
- * instead of the optimized one (Opti). Not t (alpha blending off): only
+ * instead of the optimized one (Opti), h the help. Not t (alpha blending off): only
  * examples/Mouse fades a shape, while the mouse button is down. *)
 let scenes : Testutil_golden.scene list =
   [
@@ -23,6 +23,7 @@ let scenes : Testutil_golden.scene list =
     (* the same golden frame as without "o", on purpose: an optimization
      * must not change a single pixel *)
     ("examples/software/Picture", "o", 5);
+    ("examples/software/Picture", "h", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);

@@ -413,6 +413,7 @@ state of each key (`software/Playground_platform.ml`):
 | `n` | antialiasing | anything, with `z` on an edge |
 | `o` | optimizations: the original, simple code | watch the fps counter |
 | `z` | the pixel magnifier, following the mouse | everything |
+| `h` | help: all the keys and their state, over the frame | everything |
 
 The magnifier (`graphics/2d/Magnifier.ml`) shows the 32x32 pixels under the
 mouse enlarged 8 times, with a grid between pixels: the tool to *see*
