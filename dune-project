@@ -77,8 +77,26 @@ Nope
     ; current API but Stb_image.image (used to compose GIF frames) was only
     ; added in 0.4.
     (stb_image (>= "0.4"))
-    ocurl
     (elm_playground (= :version))
+    (elm_playground_native_common (= :version))
+  )
+)
+(package (name elm_playground_native_common)
+  (synopsis "SDL event loop + image loading shared by native 2D playground backends")
+  (description "\
+  Not meant to be used directly -- the Cairo-free SDL window/event loop
+  and image download/decode/GIF-animation code shared by the native 2D
+  playground backends. A plain library rather than an (implements elm_playground): two
+  implementations of the same virtual library can't depend on each other.
+")
+  (depends
+    ; see elm_playground_native above for these version constraints
+    (ocaml (>= "4.08.0"))
+    logs
+    tsdl
+    (stb_image (>= "0.4"))
+    ocurl
+    (elm_system (= :version))
   )
 )
 (package (name elm_playground_web)

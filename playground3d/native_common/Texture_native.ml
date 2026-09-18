@@ -14,12 +14,12 @@
  *)
 
 (* Pulled out of Playground3d_platform.ml, same reasoning as
- * playground/native/Image_native.ml: independent of rendering. Not
+ * playground/native_common/Image_decode.ml: independent of rendering. Not
  * forcing a channel count in Stb_image.load -- see the note in
  * Playground3d_platform.ml about the corrupted-buffer bug that causes. *)
 
 (*****************************************************************************)
-(* Download (same approach as Image_native.ml's curl_url) *)
+(* Download (same approach as Image_decode.ml's curl_url) *)
 (*****************************************************************************)
 
 let writer accum data =
@@ -81,7 +81,7 @@ let load (src : string) : Stb_image.int8 Stb_image.t option =
       result
 
 (*****************************************************************************)
-(* Preloading (same rationale as Image_native.ml's preload/load_queued) *)
+(* Preloading (same rationale as Image_decode.ml's preload/load_queued) *)
 (*****************************************************************************)
 
 let queued : string Queue.t = Queue.create ()

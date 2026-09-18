@@ -60,7 +60,7 @@ playground3d/   opengl/ (GPU)       software/   web/ (SVG)
 
 ## Layout
 
-Rendering code lives in a **plain library** separate from the thin
+The algorithms live in a **plain library** separate from the thin
 `Playground_platform` implementation, for one important reason: a
 library that `(implements elm_playground)` can't be linked together
 with another implementation (dune rejects two implementations of one
@@ -69,8 +69,19 @@ executable link it *next to* `elm_playground_native` and diff our
 pixels against Cairo's (see Verification), and lets
 `playground3d/software/` later drop Cairo for its HUD too.
 
+**Constraint found during phase 0**: that plain library must **not
+depend on `elm_playground` either**. Dune also rejects an implementation
+of a virtual library that reaches the same virtual library a second
+time, through one of its dependencies ("Library elm_playground was
+pulled in"). So `raster/` knows nothing about `Playground.shape`: it
+works on points, colors, and pixel buffers only. The code that walks a
+`Playground.shape` tree and calls it, `Shape_render_software`, lives in
+`elm_playground_software` itself, just as `Shape_render_native` lives
+in `elm_playground_native`. That's also the better teaching layout: the
+algorithms stand on their own, with no Elm in sight.
+
 ```
-playground/raster/          library elm_playground_raster (wrapped false, no Cairo, no SDL)
+playground/raster/          library elm_playground_raster (wrapped false; no Cairo, no SDL, no Playground)
   Framebuffer.ml            w x h int32 Bigarray (0xAARRGGBB), clear, put, blend
   Affine.ml                 2x3 affine matrices: translate/rotate/scale/compose/apply/invert
   Line.ml                   Bresenham (+ Wu antialiased lines, + Cohen-Sutherland clipping)
@@ -78,9 +89,9 @@ playground/raster/          library elm_playground_raster (wrapped false, no Cai
   Circle.ml                 midpoint circle (Bresenham 1977) + ellipse flattening
   Blit.ml                   image drawing by inverse mapping, nearest (+ bilinear)
   Hershey.ml + font data    stroked vector font for Words
-  Shape_render_raster.ml    Playground.shape list -> Framebuffer, the analogue of Shape_render_native
 playground/software/        library elm_playground_software (implements elm_playground)
-  Playground_platform.ml    SDL window + event loop + Framebuffer -> window surface
+  Shape_render_software.ml  Playground.shape list -> Framebuffer, the analogue of Shape_render_native
+  Playground_platform.ml    Native_loop_2d + Framebuffer = the window surface's pixels
 examples/software/, games/software/   (copy_files ../Foo.ml) + dune, like examples3d/opengl/
 ```
 
@@ -88,7 +99,7 @@ examples/software/, games/software/   (copy_files ../Foo.ml) + dune, like exampl
 package stanzas (regenerate the `.opam` files with `make`); `Makefile`'s
 `OPAMS` list gets them too.
 
-### Two things currently trapped in `elm_playground_native`
+### Two things that were trapped in `elm_playground_native` (phase 0, DONE)
 
 `elm_playground_software` can't depend on `elm_playground_native` (two
 implementations again), but it needs two things that live there:
@@ -109,8 +120,23 @@ becomes a thin Cairo wrapper over `Image_decode`.
 Cost: `elm_playground_native` gains a new dependency that must also be
 published on opam next time. The alternative -- copy ~150 lines of
 event loop and the decode half of `Image_native` into `software/` --
-is simpler to ship but duplicates the GIF/cache logic. **Open question
-for you**; the plan assumes extraction (3D precedent).
+is simpler to ship but duplicates the GIF/cache logic.
+
+**Done that way.** What actually came out:
+
+- `Image_decode` stops at stb_image's straight-alpha RGBA8 buffers;
+  its `'a animation` is polymorphic in the frame type, so
+  `Image_native` converts every GIF frame to a Cairo surface once
+  (`map_animation`) and still picks frames with the shared `frame_at`.
+- `Native_loop_2d.run` takes the app's `init`/`update`/`subscriptions`/
+  `view` one by one rather than a `Playground.app` record, for the
+  "pulled in" reason above; `view`'s result type is a type variable.
+- The mouse mapping from window pixels to Elm coordinates used to go
+  through `Cairo.device_to_user`; it's now plain arithmetic (verified
+  exact with `scripts/xdrive.py`, see
+  `notes_debugging_techniques.md` section 8).
+- The "Loading..." text and the FPS text stay in each backend, since
+  drawing text is backend-specific (Cairo here, Hershey in `software/`).
 
 ## The algorithms, shape by shape
 
@@ -181,11 +207,11 @@ key (grep of `games/`, `examples/`), so plain letters are fine, as in 3D:
 
 ## Phasing
 
-0. **Extract `native_common/`** (image decoding without Cairo, 2D SDL
+0. **DONE.** **Extract `native_common/`** (image decoding without Cairo, 2D SDL
    loop) out of `playground/native/`; verify every `examples/`/`games/`
-   native demo behaves the same. (Skip if you prefer duplication.)
+   native demo behaves the same.
 1. **Skeleton backend**: `Framebuffer` + SDL blit + event loop;
-   `Shape_render_raster` renders every form as its (transformed)
+   `Shape_render_software` renders every form as its (transformed)
    bounding box in its color. Wire `examples/software/` for `Picture`
    and `Misc`. Proves the pipeline end to end, zero Cairo
    in `dune` `libraries`.
@@ -302,16 +328,20 @@ writing each comment -- these are from memory.
 - `dune build` after each phase; `dune ls`/`grep cairo
   playground/raster/dune playground/software/dune` stays empty (the
   "zero Cairo" invariant).
-- **Pixel diff against Cairo**: a Testo test (`tests/`) links
-  `elm_playground_native` (for `Shape_render_native`) *and*
-  `elm_playground_raster`, renders a fixed set of shapes (each form,
-  rotated/scaled/grouped/faded) offscreen with both -- Cairo into a
-  `Cairo.Image` surface, ours into a `Framebuffer` -- and asserts the
-  fraction of differing pixels stays under a threshold (aliased vs
-  antialiased edges will always differ by a 1-pixel fringe; interiors
-  and positions must match). This is the 2D analogue of the 3D
-  "pixel-identical TexturedCube3d screenshot" check, and catches
-  off-by-one/half-pixel and y-flip mistakes early.
+- **Pixel diff against Cairo**, at the primitive level: a Testo test
+  (`tests/`) links `cairo2` and `elm_playground_raster` (no Playground
+  implementation needed at all), draws the same primitives (polygons
+  convex/concave/self-intersecting, circles, ellipses, rotated images)
+  offscreen with both -- Cairo into a `Cairo.Image` surface, ours into a
+  `Framebuffer` -- and asserts the fraction of differing pixels stays
+  under a threshold (aliased vs antialiased edges will always differ by
+  a 1-pixel fringe; interiors and positions must match). This is the 2D
+  analogue of the 3D "pixel-identical TexturedCube3d screenshot" check,
+  and catches off-by-one/half-pixel mistakes early. Whole-shape-tree
+  differences (y-flip, `Group` transform order) can't be tested in one
+  executable -- `Shape_render_native` and `Shape_render_software` live
+  in two different implementations -- so those are covered by
+  side-by-side screenshots of the same example (below).
 - Side-by-side screenshots of `examples/software/` vs `examples/`
   (adapt `scripts/screenshot_playground3d.sh`) for `Picture`,
   `Animation`, `Mario`, `Words`, and each game.

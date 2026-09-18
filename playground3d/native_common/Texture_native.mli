@@ -2,7 +2,7 @@
  * [textured_cube]) into a decoded pixel buffer, caching the result (or
  * the failure) by src so repeated calls don't re-download/re-decode
  * every frame. Accepts either a local file path or an http(s) URL (the
- * latter downloaded via curl, like Image_native.surface_of_url does for
+ * latter downloaded via curl, like Image_decode.image_of_url does for
  * 2D's [Playground.image]). Returns [None] (after printing a warning)
  * rather than raising, so a broken/unreachable texture doesn't crash
  * the whole app. This blocks on a cache miss -- callers that can't

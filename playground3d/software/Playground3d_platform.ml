@@ -177,7 +177,7 @@ let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_
  * it has no per-pixel access to anything. Loading (a local file path or
  * an http(s) URL, with caching and a preload queue) lives in
  * Texture_native, the same split as playground/native's
- * Playground_platform.ml/Image_native.ml.
+ * Playground_platform.ml/Image_decode.ml.
  *
  * claude: Texture_native deliberately does NOT force a channel count
  * when calling Stb_image.load -- Stb_image.load ~channels:N with N

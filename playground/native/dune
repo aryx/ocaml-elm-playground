@@ -6,8 +6,9 @@
     str
     logs
     cairo2 tsdl
-    stb_image curl
+    stb_image ; Image_decode.image's fields, in Image_native
 
     elm_playground
+    elm_playground_native_common ; Native_loop_2d, Image_decode
   )
 )

@@ -8,7 +8,8 @@
 
 OPAMS=\
   elm_core.opam elm_system.opam\
-  elm_playground.opam elm_playground_native.opam elm_playground_web.opam
+  elm_playground.opam elm_playground_native.opam elm_playground_web.opam\
+  elm_playground_native_common.opam
 
 default: all
 
@@ -67,7 +68,8 @@ doc:
 # claude: and the 3D examples (examples3d/js/) to docs/examples3d/.
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
 ODOC_DIRS=odoc.support \
-  elm_core elm_system elm_playground elm_playground_native elm_playground_web
+  elm_core elm_system elm_playground elm_playground_native elm_playground_web\
+  elm_playground_native_common
 
 website:
 	make doc

@@ -4,7 +4,8 @@
  * logging a warning) rather than raising, so a broken/unreachable image
  * doesn't crash the whole app. This blocks on a cache miss -- callers
  * that can't afford to block (e.g. the render loop, mid-game) should
- * ensure the url was already warmed via [preload]. *)
+ * ensure the url was already warmed via [preload].
+ * claude: a Cairo layer over Image_decode, which does the actual work. *)
 val surface_of_url : string -> Cairo.Surface.t option
 
 (* claude: same as [surface_of_url], but for an animated GIF (for which

@@ -1,0 +1,19 @@
+; claude: code shared by the SDL-based 2D playground backends --
+; playground/native/ (Cairo) and the planned playground/software/ (see
+; docs/claude_notes/plan_software_2d.md). A plain library, not an
+; (implements elm_playground): two implementations of the same virtual
+; library can't depend on each other, but they can both depend on this.
+; Must stay Cairo-free.
+(library
+ (public_name elm_playground_native_common)
+ (wrapped false)
+ (libraries
+   unix
+   logs
+   tsdl
+   stb_image
+   curl
+   elm_system ; Sub/Cmd, to turn SDL events into the app's msgs
+   ; NOT elm_playground: see Native_loop_2d.run's comment in the .mli
+ )
+)
