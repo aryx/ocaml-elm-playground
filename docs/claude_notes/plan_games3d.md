@@ -147,7 +147,9 @@ Hovertank 3D and Catacomb 3-D (id Software, 1991), Wolfenstein 3D (id,
 1992: John Carmack's raycaster, one ray per screen column, walls all
 the same height on a grid).
 
-- **Toys**: TinyWolf in the **2D playground** (one rectangle per
+- **Toys** (DONE: `games/TinyWolf.ml` and `games3d/TinyWolf3d.ml`,
+  the same map, walk and golden frames; the 2D one with billboards
+  hidden per column and a minimap of the rays): TinyWolf in the **2D playground** (one rectangle per
   column, its height 1 / distance: a raycaster needs no 3D at all),
   and TinyWolf3d in `playground3d` (the same map as boxes, the same
   controls), to compare the two -- the lesson of the section.

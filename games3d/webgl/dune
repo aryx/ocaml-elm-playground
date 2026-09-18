@@ -6,6 +6,7 @@
 ; Playground3d.cached3d and plan_opengl_perf.md).
 (copy_files ../StarCollector3d.ml)
 (copy_files ../TinyBattlezone.{ml,mli})
+(copy_files ../TinyWolf3d.{ml,mli})
 (copy_files ../Minecraft3d.ml)
 
 (executables
@@ -13,6 +14,7 @@
     StarCollector3d
     Minecraft3d
     TinyBattlezone
+    TinyWolf3d
   )
   (libraries
     minecraft_model

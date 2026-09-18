@@ -5,14 +5,16 @@
 ; elm_playground_3d_software in ../dune, with only one real file per game.
 (copy_files ../StarCollector3d.ml)
 (copy_files ../TinyBattlezone.{ml,mli})
+(copy_files ../TinyWolf3d.{ml,mli})
 (copy_files ../Minecraft3d.ml)
 
 (executables
   (names
     StarCollector3d
     TinyBattlezone
+    TinyWolf3d
   )
-  (modules StarCollector3d TinyBattlezone)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d)
   (libraries
     elm_core ; Basics.clamp
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)

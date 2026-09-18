@@ -25,8 +25,9 @@
   (names
     StarCollector3d
     TinyBattlezone
+    TinyWolf3d
   )
-  (modules StarCollector3d TinyBattlezone)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d)
   (libraries
     elm_core ; Basics.clamp
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)

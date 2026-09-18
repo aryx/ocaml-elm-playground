@@ -49,6 +49,8 @@ let scenes : Testutil_golden.scene list =
     ("games3d/StarCollector3d", "", 3);
     (* claude: the title's tank, turned by 40 degrees *)
     ("games3d/TinyBattlezone", "", 40);
+    (* claude: the same view as games/TinyWolf's golden frame, in 3D *)
+    ("games3d/TinyWolf3d", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -56,6 +58,8 @@ let scripted : Testutil_golden.scripted list =
   [ ("games3d/StarCollector3d", "move", 40, "up:1-40,right:10-25");
     (* turned, driving towards a pyramid (cut by the near plane), a shell
      * flying at the enemy tank *)
-    ("games3d/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100") ]
+    ("games3d/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100");
+    (* the same walk as games/TinyWolf's *)
+    ("games3d/TinyWolf3d", "treasure", 60, "right:1-16,up:20-60") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes
