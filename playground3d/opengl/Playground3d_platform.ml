@@ -160,10 +160,9 @@ let smooth_textures = ref true
 (* Textures *)
 (*****************************************************************************)
 (* Loading (a local file path or an http(s) URL, with caching and a
- * preload queue) is entirely reused from Texture_native, unchanged --
- * it already lives in elm_playground_3d_native_common precisely so
- * both this backend and the native one can share it (see
- * plan_opengl.md's Scope). The only new piece is uploading the
+ * preload queue) is entirely reused from graphics/images/Texture_decode,
+ * shared with the software rasterizer (see plan_opengl.md's Scope).
+ * The only new piece is uploading the
  * decoded pixel buffer to the GPU (once per distinct src, cached
  * below by this module) and sampling it in the fragment shader
  * instead of sample_texture's hand-written nearest-neighbor lookup --
@@ -211,7 +210,7 @@ let get_or_create_gl_texture (src : string) : int =
   | Some id -> id
   | None ->
       let id =
-        match Texture_native.load src with
+        match Texture_decode.load src with
         | None -> Lazy.force missing_texture_gl_id
         | Some (img : Stb_image.int8 Stb_image.t) ->
             upload_texture ~width:img.width ~height:img.height ~format:(gl_format_of_channels img.channels) img.data
@@ -269,7 +268,7 @@ let link_program ~(vertex_source : string) ~(fragment_source : string) : int =
 (* Run app *)
 (*****************************************************************************)
 
-let preload_texture : string -> unit = Texture_native.preload
+let preload_texture : string -> unit = Texture_decode.preload
 
 let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'msg) Playground3d.app3d) :
     unit =

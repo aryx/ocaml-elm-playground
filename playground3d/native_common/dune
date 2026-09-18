@@ -4,8 +4,6 @@
  (libraries
    tsdl
    logs ; parse_cli_and_setup_logging, and run's per-frame Logs.debug fps line
-   stb_image ; decode textures for Texture_native, shared with a future OpenGL backend
-   curl ; download textures given as an http(s) URL
    elm_core
    elm_playground
  )

@@ -169,10 +169,11 @@ let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_
  * backend (see Playground3d.placeholder_texture_color) can't do, since
  * it has no per-pixel access to anything. Loading (a local file path or
  * an http(s) URL, with caching and a preload queue) lives in
- * Texture_native, the same split as playground/native's
- * Playground_platform.ml and graphics/images/Image_decode.ml.
+ * graphics/images/Texture_decode.ml, the same split as
+ * playground/native's Playground_platform.ml and
+ * graphics/images/Image_decode.ml.
  *
- * claude: Texture_native deliberately does NOT force a channel count
+ * claude: Texture_decode deliberately does NOT force a channel count
  * when calling Stb_image.load -- Stb_image.load ~channels:N with N
  * different from the source's own channel count corrupts the decoded
  * buffer in this project's pinned stb_image version (confirmed by
@@ -782,7 +783,7 @@ let fill_of_material (material : material) : u:float -> v:float -> brightness:fl
       let (r, g, b) = rgb_of_color color in
       fun ~u:_ ~v:_ ~brightness -> shade (r, g, b) ~brightness
   | Textured src -> (
-      match Texture_native.load src with
+      match Texture_decode.load src with
       | Some img -> fun ~u ~v ~brightness -> shade (sample_texture img ~u ~v) ~brightness
       | None ->
           let (r, g, b) = rgb_of_color missing_texture_color in
@@ -895,7 +896,7 @@ let render_shape3d
  * (camera, shape3d list) into pixels via the software rasterizer above. *)
 open Native_loop
 
-let preload_texture = Texture_native.preload
+let preload_texture = Texture_decode.preload
 
 let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'msg) Playground3d.app3d) :
     unit =
@@ -937,7 +938,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
    * should mostly preload_texture everything it needs up front anyway,
    * making this a short, one-time pause), revisit if it's ever
    * noticeable. *)
-  Texture_native.load_queued ();
+  Texture_decode.load_queued ();
 
   let zbuffer = Array.make (sx * sy) infinity in
   let background_pixel = pixel_of_color Playground.white in

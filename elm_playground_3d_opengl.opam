@@ -22,6 +22,7 @@ depends: [
   "stb_image" {>= "0.4"}
   "elm_playground_3d" {= version}
   "elm_playground_3d_native_common" {= version}
+  "elm_playground_native_common" {= version}
   "odoc" {with-doc}
 ]
 build: [

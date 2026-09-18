@@ -13,53 +13,20 @@
  * LICENSE for more details.
  *)
 
-(* Pulled out of Playground3d_platform.ml, same reasoning as
- * graphics/images/Image_decode.ml: independent of rendering. Not
- * forcing a channel count in Stb_image.load -- see the note in
- * Playground3d_platform.ml about the corrupted-buffer bug that causes. *)
-
-(*****************************************************************************)
-(* Download (same approach as Image_decode.ml's curl_url) *)
-(*****************************************************************************)
-
-let writer accum data =
-  Buffer.add_string accum data;
-  String.length data
-
-let save fname content =
-  let fp = open_out_bin fname in
-  Buffer.output_buffer fp content;
-  close_out fp
-
-let curl_url fname url =
-  let result = Buffer.create 16384 in
-  let conn = Curl.init () in
-  Curl.set_writefunction conn (writer result);
-  Curl.set_followlocation conn true;
-  Curl.set_url conn url;
-  Curl.perform conn;
-  Curl.cleanup conn;
-  save fname result
-
-let is_url (src : string) : bool =
-  let has_prefix p =
-    String.length src >= String.length p && String.sub src 0 (String.length p) = p
-  in
-  has_prefix "http://" || has_prefix "https://"
+(* Textures for the 3D backends, like Image_decode for 2D images, and
+ * independent of rendering too. Two differences, which is why it's not
+ * just Image_decode: no GIF animation, and no forced channel count in
+ * Stb_image.load (a texture keeps its own 3 or 4 channels, which the
+ * 3D samplers read from img.channels) -- see the note in
+ * playground3d/software/Playground3d_platform.ml about the
+ * corrupted-buffer bug forcing one causes. *)
 
 (*****************************************************************************)
 (* Load + cache *)
 (*****************************************************************************)
 
 let load_exn (src : string) : Stb_image.int8 Stb_image.t =
-  let path =
-    if is_url src then begin
-      let fn = Filename.temp_file "playground3d_texture" (Filename.extension src) in
-      curl_url fn src;
-      fn
-    end
-    else src
-  in
+  let path = Download.local_file ~prefix:"playground3d_texture" src in
   match Stb_image.load path with
   | Ok img -> img
   | Error (`Msg msg) -> failwith (Printf.sprintf "could not decode texture %s: %s" src msg)

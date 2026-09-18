@@ -5,11 +5,12 @@
    tsdl
    tgls.tgl3
    threads.posix ; tgls/ctypes-foreign needs this to link, even though we don't use threads ourselves
-   stb_image ; Stb_image.t, used by the type of get_or_create_gl_texture (Texture_native itself lives in elm_playground_3d_native_common)
+   stb_image ; Stb_image.t, used by the type of get_or_create_gl_texture
    elm_core
    elm_playground
    elm_playground_3d
-   elm_playground_3d_native_common ; SDL event loop + Texture_native
+   elm_playground_3d_native_common ; SDL event loop
    graphics_3d_geometry ; Mat4
+   graphics_images ; Texture_decode
  )
 )

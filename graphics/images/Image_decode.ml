@@ -50,29 +50,6 @@
  *)
 
 (*****************************************************************************)
-(* Download *)
-(*****************************************************************************)
-(* from ocurl/examples/opar.ml *)
-let writer accum data =
-  Buffer.add_string accum data;
-  String.length data
-
-let save fname content =
-  let fp = open_out_bin fname in
-    Buffer.output_buffer fp content;
-    close_out fp
-
-let curl_url fname url =
-  let result = Buffer.create 16384 in
-  let conn = Curl.init () in
-  Curl.set_writefunction conn (writer result);
-  Curl.set_followlocation conn true;
-  Curl.set_url conn url;
-  Curl.perform conn;
-  Curl.cleanup conn;
-  save fname result
-
-(*****************************************************************************)
 (* Decoding *)
 (*****************************************************************************)
 
@@ -81,14 +58,14 @@ let curl_url fname url =
  * get, even for e.g. an opaque JPEG). *)
 type image = Stb_image.int8 Stb_image.t
 
-(* claude: url -> downloaded file, so the "Animated GIFs" section below
- * can read the file again to extract all the frames *)
+(* claude: url -> local file (downloaded, for a URL), so the "Animated
+ * GIFs" section below can read the file again to extract all the
+ * frames *)
 let hfiles : (string, string) Hashtbl.t = Hashtbl.create 101
 
 let image_of_url_exn url : image =
   Logs.info (fun m -> m "loading image %s" url);
-  let fn = Filename.temp_file "playground_img" (Filename.extension url) in
-  curl_url fn url;
+  let fn = Download.local_file ~prefix:"playground_img" url in
   Hashtbl.replace hfiles url fn;
   match Stb_image.load ~channels:4 fn with
   | Ok img ->
@@ -102,7 +79,7 @@ let image_of_url_exn url : image =
 (*****************************************************************************)
 
 (* claude: image_of_url_exn above does a synchronous network fetch
- * (curl_url) that can easily take several hundred ms, so calling it
+ * (Download.local_file) that can easily take several hundred ms, so calling it
  * lazily from render_image on a cache miss -- i.e., mid-game, the first
  * time a given sprite variant is actually needed -- freezes the whole
  * render+input loop for that long. Tried making that background

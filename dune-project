@@ -149,24 +149,22 @@ Nope
   )
 )
 (package (name elm_playground_3d_native_common)
-  (synopsis "SDL event loop + texture loading shared by native-ish 3D playground backends")
+  (synopsis "SDL event loop shared by native-ish 3D playground backends")
   (description "\
   Not meant to be used directly -- a small library factored out of
   elm_playground_3d_software so the OpenGL backend (see
   docs/claude_notes/plan_opengl.md) can share the same SDL
-  window-event-draining/frame-pacing loop and texture download/decode
-  code instead of duplicating them. The event loop (Native_loop) is
-  generic over the model/view types (not a dependency of
-  elm_playground_3d itself) so that depending on it doesn't create a
-  second path to that virtual library alongside a backend's own
-  (implements elm_playground_3d) -- dune forbids that.
+  window-event-draining/frame-pacing loop instead of duplicating it
+  (textures are loaded by graphics/images/'s Texture_decode). The
+  event loop (Native_loop) is generic over the model/view types (not a
+  dependency of elm_playground_3d itself) so that depending on it
+  doesn't create a second path to that virtual library alongside a
+  backend's own (implements elm_playground_3d) -- dune forbids that.
 ")
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
     logs ; parse_cli_and_setup_logging, and run's per-frame Logs.debug fps line
-    (stb_image (>= "0.4")) ; decode textures for textured_quad/textured_cube
-    ocurl ; download textures given as an http(s) URL
     (elm_playground (= :version))
   )
 )
@@ -177,10 +175,11 @@ Nope
     (ocaml (>= "4.08.0"))
     tsdl
     (cairo2 (>= "0.6.4")) ; for the HUD pass (Shape_render_native), see docs/claude_notes/done/plan_hud.md
-    (stb_image (>= "0.4")) ; Stb_image.t, used by the type of sample_texture (Texture_native itself now lives in elm_playground_3d_native_common)
+    (stb_image (>= "0.4")) ; Stb_image.t, used by the type of sample_texture
     (elm_playground_native (= :version)) ; Shape_render_native, for the HUD pass
     (elm_playground_3d (= :version))
     (elm_playground_3d_native_common (= :version))
+    (elm_playground_native_common (= :version)) ; graphics/images (Texture_decode)
   )
 )
 (package (name elm_playground_3d_web)
@@ -207,5 +206,6 @@ Nope
     (stb_image (>= "0.4")) ; Stb_image.t, used by the type of get_or_create_gl_texture
     (elm_playground_3d (= :version))
     (elm_playground_3d_native_common (= :version))
+    (elm_playground_native_common (= :version)) ; graphics/images (Texture_decode)
   )
 )

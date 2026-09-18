@@ -128,7 +128,7 @@ possible colors per pixel, looked up from a shared palette table) --
 not because it looked better, but because it was 4x less memory
 bandwidth and storage than direct 24-bit RGB, which mattered enormously
 on 1990s hardware. `playground3d/`'s native texture sampling
-(`Texture_native`/`sample_texture`) decodes straight to full RGB(A) via
+(`Texture_decode`/`sample_texture`) decodes straight to full RGB(A) via
 `stb_image` (see `docs/claude_notes/notes_3d_opti.md`'s pixel-packing
 section) with no palette anywhere -- direct color has simply stopped
 being expensive enough to avoid.

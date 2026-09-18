@@ -4,12 +4,13 @@
  (libraries
    tsdl
    cairo2 ; for the HUD pass (Shape_render_native), see docs/claude_notes/done/plan_hud.md
-   stb_image ; Stb_image.t, used by the type of sample_texture below (Texture_native.load itself now lives in elm_playground_3d_native_common)
+   stb_image ; Stb_image.t, used by the type of sample_texture
    elm_core
    elm_playground
    elm_playground_3d
    elm_playground_native ; Shape_render_native, for the HUD pass
-   elm_playground_3d_native_common ; SDL event loop + Texture_native, shared with the OpenGL backend
+   elm_playground_3d_native_common ; SDL event loop, shared with the OpenGL backend
    graphics_3d_geometry ; Vec3
+   graphics_images ; Texture_decode
  )
 )
