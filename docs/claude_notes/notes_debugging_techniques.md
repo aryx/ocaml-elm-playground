@@ -231,8 +231,9 @@ tick). Fix: pass the wall-clock time, like the native backend and Elm do.
 
 ## 7. Screenshotting and smoke-testing playground3d (native/OpenGL) windows
 
-This sandbox has a real X display (`DISPLAY=:1`) but no way to press
-keys or move the mouse, so verifying a `playground3d/` rendering change
+This sandbox has a real X display (`DISPLAY=:1`) but no xdotool to press
+keys or move the mouse (see section 8 for how to do it anyway), so
+verifying a `playground3d/` rendering change
 means: run the app in the background, screenshot it, `Read` the PNG.
 Two scripts capture this so it doesn't get reinvented (and gotten
 wrong) every time: `scripts/screenshot_playground3d.sh` and
@@ -298,3 +299,110 @@ reproducible in *whether* it happens, suspect a memory-safety/GC-timing
 bug in an FFI layer before suspecting your own logic -- and use
 "does adding an unrelated allocation change the failure rate" as a
 cheap, decisive test for that hypothesis.
+
+## 8. Driving a running app: mouse and keyboard from a script (ctypes + XTEST)
+
+Screenshots (section 7) only test what an app draws on its own. Most
+bugs need *input*: does the circle follow the mouse, does holding an
+arrow key move the square at the right speed? The usual tool is
+`xdotool`, which this sandbox doesn't have (nor `python-xlib`), and
+installing packages isn't an option. But the two C libraries xdotool is
+built on *are* installed (they come with any X desktop), and Python's
+standard `ctypes` module can call any C function in any shared library
+directly -- no compiler, no binding package. `scripts/xdrive.py` wraps
+this up:
+
+```bash
+_build/default/examples/Mouse.exe &
+sleep 2                                    # let it create its window
+WID=$(scripts/xdrive.py find Mouse.exe)    # X window id, e.g. 0x3800007
+scripts/xdrive.py move  $WID 700 200       # window pixels, top-left origin
+scripts/xdrive.py click $WID 700 200       # left click there
+scripts/xdrive.py key   $WID Right 1       # hold the Right arrow for 1s
+scripts/xdrive.py query $WID               # where does X think the pointer is?
+import -window $WID /tmp/after.png         # then Read the PNG, as in section 7
+```
+
+### How it works
+
+**ctypes in 30 seconds.** `ctypes.CDLL("libX11.so.6")` loads a shared
+library and gives you every exported C function as a Python attribute:
+`x11.XOpenDisplay(None)` really calls the C `XOpenDisplay(NULL)`. The
+one trap: ctypes doesn't read C headers, so it assumes every function
+takes and returns a C `int`. Anything pointer-sized (a `Display*`, an X
+`Window` id, a `KeySym`) silently gets truncated to 32 bits on a 64-bit
+machine -- a crash, or worse, a call on the wrong window, with no error.
+So declare the real types first, by hand, from the man page:
+
+```python
+x11.XOpenDisplay.restype = ctypes.c_void_p        # returns Display*
+x11.XWarpPointer.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ...]
+```
+
+Output parameters (C's `int *x`) become `ctypes.byref(ctypes.c_int())`,
+read back with `.value` -- see `query` in the script.
+
+**The X11 calls, one per command:**
+
+- *finding the window*: not an X call at all -- `xwininfo -root -tree`,
+  grepping for the executable's name, the same `WM_CLASS` trick as
+  section 7 (the title also matches the window manager's outer frame).
+- *moving*: `XWarpPointer(display, src=None, dest=window, 0,0,0,0, x, y)`
+  moves the real pointer to `(x, y)` relative to `window`, so no need to
+  know where the window is on screen (this sandbox's screen is
+  multi-monitor, the window can be at e.g. `(2060, 654)`).
+- *clicking and keys*: the XTEST extension (`libXtst`), which exists
+  precisely so test tools can inject input events indistinguishable
+  from a real mouse/keyboard: `XTestFakeButtonEvent(display, button,
+  is_press, delay)` and `XTestFakeKeyEvent(display, keycode, is_press,
+  delay)`. A key name like `"Right"` becomes a keysym
+  (`XStringToKeysym`, names from `/usr/include/X11/keysymdef.h` without
+  `XK_`), then the keyboard's keycode for it (`XKeysymToKeycode`).
+  Holding a key = press, `sleep`, release -- the app sees exactly what
+  a human holding the key would, including SDL's key-repeat events.
+- *every call is followed by `XSync`*: Xlib buffers requests; without a
+  sync, the script can exit before anything was sent.
+
+### The flakiness it fixes (and how it was found)
+
+The first version was just one `XWarpPointer` per move, and it was
+*unreliable*: measuring the drawn circle's position after each move
+(ImageMagick: turn the circle's color black, everything else white,
+`-trim`, print the bounding box's center), some moves were simply
+ignored -- the circle stayed where it was -- in both the old and the new
+build of `Mouse.exe`, at random, while `XQueryPointer` said the pointer
+*was* at the right place. So X had moved the pointer, but SDL hadn't
+reported it. Two fixes, both in `move`:
+
+1. **Focus the window first** (`XRaiseWindow` + `XSetInputFocus`). A
+   window that isn't focused doesn't reliably get pointer events in
+   this setup, and key events only ever go to the focused window.
+2. **Warp to `(x+1, y)` first, then to `(x, y)`.** Warping onto the
+   pointer's current position generates no motion event at all, and a
+   first warp into a newly mapped window was sometimes dropped; the
+   extra warp makes sure at least one real motion lands.
+
+After that: 9 out of 9 moves landed exactly (circle center = target
+pixel), on both builds, across repeated runs; holding `Right` for 1s
+in `Keyboard.exe` moved the square 59px (1px per frame at 60fps), as
+expected. **Lesson**: when checking input handling with synthetic
+events, first check the harness on the *unchanged* build -- here, the
+"bug" showed up in both builds, which proved it was the harness and
+not the code change under test.
+
+### What it's good for
+
+- **Verifying a refactoring of the input path**, which is what it was
+  written for: moving the SDL event loop into
+  `playground/native_common/Native_loop_2d.ml` replaced
+  `Cairo.device_to_user` with plain arithmetic to turn window pixels
+  into Elm coordinates; driving `Mouse.exe` to known pixels and finding
+  the circle *exactly* there proves the mapping (including the y-flip
+  and the centered origin) without eyeballing.
+- **Reproducing a game bug** that needs a precise input sequence
+  (`key $WID space 0.05` to jump, then screenshot mid-air).
+- **Smoke tests that exercise input**, not just startup, e.g. extending
+  `scripts/smoke_test_playground3d.sh` to hold an arrow key and check
+  the camera moved.
+- Anything else X11 can do -- the same `ctypes` recipe works for any
+  C library function you can read the man page of.
