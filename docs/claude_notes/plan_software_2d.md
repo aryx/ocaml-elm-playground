@@ -292,8 +292,19 @@ Planned, each with the phase that makes it meaningful:
    enlargement with no holes, a quarter turn, transparent pixels, the
    bilinear 70/30 example. Turtle and Mario look like Cairo's; the
    magnifier shows the nearest/bilinear difference; 57-60 fps.
-5. **`Hershey`**: `Words`, FPS counter, "Loading...".
-   `examples/Words.ml` is the test.
+5. **DONE.** **`Hershey`**: `Words`, FPS counter, "Loading...".
+   `examples/Words.ml` is the test. In the end: `fonts/futural.jhf`
+   (Hershey's Roman simplex, from github.com/kamalmostafa/hershey-fonts,
+   with the required acknowledgements in `fonts/README.md`) embedded by
+   a dune rule; `Hershey.decode_glyph`/`layout` (one glyph per char,
+   em = 30 units); thin text as 1-pixel `Line`s, thick text (pen =
+   1/12 em >= 1.5 pixels, e.g. Pong's score) with the new `Stroke`
+   (rectangles + disks), filled with the new `Fill.polygons` in one
+   go so the nonzero rule makes their union (each pixel painted once).
+   FPS counter bottom-left on the Cairo backend's baseline, "Loading..."
+   while images download. Tests: the "A" of `Hershey.mli`, layout, the
+   union, a thick "V" painting each pixel once. Tutorial:
+   `notes_font.md`.
 6. **Antialiasing** ("n"): coverage AA for `Fill`, Wu lines.
 7. **`notes_2d.md`** finalized (drafted incrementally from phase 1 --
    see below), plus a short perf/LOC write-up comparing against Cairo

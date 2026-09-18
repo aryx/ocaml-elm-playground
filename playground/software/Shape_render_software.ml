@@ -35,9 +35,9 @@
  * through the transform, then Fill.polygon fills them. Circles use the
  * midpoint circle algorithm (Circle), unless the transform stretches
  * them into ellipses, which, like ovals, become polygons with many
- * sides. Images are drawn pixel by pixel (Blit). Words are, until
- * their phase of docs/claude_notes/plan_software_2d.md, drawn as the
- * box around them, which is also what the "b" key shows for every form.
+ * sides. Images are drawn pixel by pixel (Blit), words with the lines
+ * of a vector font (Hershey). The "b" key draws every form as the box
+ * around it instead.
  *)
 
 (*****************************************************************************)
@@ -136,10 +136,9 @@ let local_bounds (form : Playground.form) : (float * float * float * float) opti
       let min_of = List.fold_left min infinity and max_of = List.fold_left max neg_infinity in
       Some (min_of xs, min_of ys, max_of xs, max_of ys)
   | Words (_, str) ->
-      (* rough: in a sans-serif font, a character is about half as wide
-       * as the font is tall; phase 5 draws the real letters *)
       let size = Playground.words_font_size in
-      centered (0.5 *. size *. float (String.length str)) size
+      let _strokes, width = Hershey.layout str in
+      centered (width *. size /. Hershey.units_per_em) size
   | Group _ -> None
 
 (* The axis-aligned box, in pixel coordinates, around the local box
@@ -182,6 +181,27 @@ let image_to_local ~w ~h (image : Blit.image) : Affine.t =
   Affine.compose
     (Affine.translate (-.w /. 2.) (h /. 2.))
     (Affine.scale (w /. float image.width) (-.h /. float image.height))
+
+(*****************************************************************************)
+(* Text *)
+(*****************************************************************************)
+
+(* The pen's width, in font units: 1/12 of the em, a regular weight *)
+let pen_width = Hershey.units_per_em /. 12.
+
+(* Hershey font units to the local coordinates of a [words] shape:
+ * centered on (0, 0) like in the other backends (the web's
+ * text-anchor="middle" and dominant-baseline="central"): move left by
+ * half the text's width (Hershey's y = 0 already is the middle of the
+ * em), flip y (the font's y goes down), and scale the em to the font
+ * size; e.g. at font size 10, "A" is 18 * 10/30 = 6 units wide *)
+let text_to_local ~width : Affine.t =
+  let s = Playground.words_font_size /. Hershey.units_per_em in
+  Affine.compose (Affine.scale s (-.s)) (Affine.translate (-.width /. 2.) 0.)
+
+(* By how much [m] scales lengths (on average, if it stretches more in
+ * one direction): the square root of how much it scales areas *)
+let length_scale (m : Affine.t) : float = sqrt (Float.abs ((m.a *. m.d) -. (m.b *. m.c)))
 
 (*****************************************************************************)
 (* Options *)
@@ -245,6 +265,26 @@ let draw_image options fb m ~w ~h src ~alpha =
       let sample = if options.bilinear then Blit.sample_bilinear else Blit.sample_nearest in
       Blit.draw fb image (Affine.compose m (image_to_local ~w ~h image)) ~sample ~alpha
 
+(* A line through points, 1 pixel wide *)
+let thin_polyline fb points ~rgb ~alpha =
+  let rec loop = function
+    | p :: (q :: _ as rest) ->
+        Line.draw fb p q ~rgb ~alpha;
+        loop rest
+    | [ _ ] | [] -> ()
+  in
+  loop points
+
+(* Text: Hershey's strokes, drawn 1 pixel wide when the pen would be
+ * thinner than that anyway (or in wireframe), else as thick strokes *)
+let draw_words options fb m str ~rgb ~alpha =
+  let strokes, width = Hershey.layout str in
+  let m = Affine.compose m (text_to_local ~width) in
+  let lines = List.map (List.map (Affine.apply m)) strokes in
+  let pen = pen_width *. length_scale m in
+  if options.wireframe || pen < 1.5 then List.iter (fun line -> thin_polyline fb line ~rgb ~alpha) lines
+  else Stroke.polylines fb lines ~width:pen ~rgb ~alpha
+
 (*****************************************************************************)
 (* Shapes *)
 (*****************************************************************************)
@@ -280,8 +320,7 @@ let render_form (options : options) (fb : Framebuffer.t) (m : Affine.t) (form : 
     | Oval (_, w, h) -> draw_polygon fb (ellipse_polygon m ~rx:(w /. 2.) ~ry:(h /. 2.)) ~rgb ~alpha
     | Image (w, h, _) when options.wireframe -> polygon (rectangle_corners w h)
     | Image (w, h, src) -> draw_image options fb m ~w ~h src ~alpha
-    (* until phase 5 (text) *)
-    | Words _ -> box ()
+    | Words (_, str) -> draw_words options fb m str ~rgb ~alpha
     | Group _ -> ()
 
 (* [m] is the transform from the coordinates [shape] lives in (the

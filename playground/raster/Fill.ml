@@ -106,10 +106,10 @@ let fill_row (fb : Framebuffer.t) ~rule ~y ~rgb ~alpha (crossings : edge list) =
       (0, 0.) crossings
       : int * float)
 
-let polygon ?(rule = Nonzero) (fb : Framebuffer.t) (points : (float * float) list) ~rgb ~alpha =
+let polygons ?(rule = Nonzero) (fb : Framebuffer.t) (contours : (float * float) list list) ~rgb ~alpha =
   (* the "edge table": all the edges, by the row where they start *)
   let edges =
-    edges_of_polygon ~height:fb.height points
+    List.concat (List.map (edges_of_polygon ~height:fb.height) contours)
     |> List.sort (fun (e1 : edge) e2 -> compare e1.first_row e2.first_row)
   in
   match edges with
@@ -132,3 +132,5 @@ let polygon ?(rule = Nonzero) (fb : Framebuffer.t) (points : (float * float) lis
         end
       in
       scan first.first_row [] edges
+
+let polygon ?rule fb points ~rgb ~alpha = polygons ?rule fb [ points ] ~rgb ~alpha

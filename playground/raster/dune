@@ -9,3 +9,17 @@
  (public_name elm_playground_raster)
  (wrapped false)
 )
+
+; the Hershey font file, embedded as a string (Hershey.ml parses it), so
+; the library needs no file at runtime
+(rule
+ (targets Hershey_futural.ml)
+ (deps fonts/futural.jhf)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from fonts/futural.jhf by playground/raster/dune *)\n")
+    (echo "let jhf = {|")
+    (cat %{deps})
+    (echo "|}\n")))))

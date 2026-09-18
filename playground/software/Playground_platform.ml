@@ -71,6 +71,24 @@ let window_title ~fps =
 
 let preload_image = Image_decode.preload
 
+(* Text on top of the app's shapes, as ordinary Playground shapes, so
+ * it's drawn like any [words], always with the default options *)
+let overlay fb (shapes : Playground.shape list) =
+  Shape_render_software.render ~options:Shape_render_software.default_options fb shapes
+
+(* e.g. "1000x1000 -- 60 fps", left-aligned at the bottom left, where
+ * the Cairo backend puts it, with its baseline 5% above the bottom:
+ * words are centered on their position, so move right by half their
+ * width, and up by the 9 font units from Hershey's middle (y = 0) to
+ * its baseline (y = 9) *)
+let fps_counter (fb : Framebuffer.t) ~fps : Playground.shape =
+  let w = float fb.width and h = float fb.height in
+  let text = Printf.sprintf "%gx%g -- %.0f fps" w h fps in
+  let _strokes, width = Hershey.layout text in
+  let unit = Playground.words_font_size /. Hershey.units_per_em in
+  Playground.words Playground.black text
+  |> Playground.move (-.(0.45 *. w) +. (width *. unit /. 2.)) (-.(0.45 *. h) +. (9. *. unit))
+
 let run_app (app : _ Playground.app) =
   Native_loop_2d.parse_cli_and_setup_logging ();
   let sx = int_of_float Playground.default_width in
@@ -79,20 +97,21 @@ let run_app (app : _ Playground.app) =
   let (sdl_window, pixels) = Native_loop_2d.create_window ~title ~sx ~sy in
   let fb = Framebuffer.of_pixels pixels in
 
-  (* TODO: a "Loading..." message, once we can draw text (phase 5);
-   * until then the window just stays white while images download *)
+  (* show something right away while images download *)
+  overlay fb [ Playground.words Playground.black "Loading..." ];
   Native_loop_2d.present sdl_window;
   ignore (Image_decode.load_queued () : string list);
 
   let draw ~fps shapes =
     Framebuffer.clear fb ~rgb:0xFFFFFF;
     Shape_render_software.render ~options:!options fb shapes;
+    overlay fb [ fps_counter fb ~fps ];
     if !magnifier then begin
       (* SDL keeps track of the mouse position, in window pixels *)
       let (_buttons, (mx, my)) = Tsdl.Sdl.get_mouse_state () in
       Magnifier.draw fb ~cx:mx ~cy:my
     end;
-    (* in the window title until we can draw text (phase 5) *)
+    (* the keys and their state *)
     Tsdl.Sdl.set_window_title sdl_window (window_title ~fps)
   in
   Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press

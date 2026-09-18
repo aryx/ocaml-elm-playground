@@ -59,3 +59,16 @@ type fill_rule = Nonzero | Even_odd
  * edge never both fill a pixel, nor leave one unfilled between them. *)
 val polygon :
   ?rule:fill_rule -> Framebuffer.t -> (float * float) list -> rgb:int -> alpha:float -> unit
+
+(* Several polygons ("contours") filled as one shape: their edges all go
+ * into the same edge table, so on each row the winding number counts
+ * the crossings of all of them. With Nonzero, overlapping contours
+ * turned the same way (all clockwise, or all counterclockwise) add up,
+ * 1 + 1 = 2, still inside: filling them together paints their *union*,
+ * each pixel once, even where they overlap -- no darker overlaps when
+ * drawn half-transparent, unlike filling them one by one. (Contours
+ * turned opposite ways subtract instead, 1 - 1 = 0: that's how a
+ * letter "O" is an outer contour minus an inner one.) Stroke uses it to
+ * draw thick lines. *)
+val polygons :
+  ?rule:fill_rule -> Framebuffer.t -> (float * float) list list -> rgb:int -> alpha:float -> unit
