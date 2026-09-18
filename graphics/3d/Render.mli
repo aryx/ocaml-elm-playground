@@ -9,9 +9,11 @@
  *     v
  *   front faces
  *     |  fan them into triangles: (p0,p1,p2), (p0,p2,p3), ...
+ *     |  Clip: cut them to their part in front of the camera  (clipping)
  *     |  Project: each vertex to its pixel (Camera: view, then
  *     |    perspective), with its depth and texture coordinates
- *     |    (dropping the triangles with a vertex behind the camera)
+ *     |    (dropping the triangles with a vertex still behind the
+ *     |    camera)
  *     v
  *   triangles on the screen
  *     |  Triangle.fill: the pixels inside (edge functions), each one
@@ -25,7 +27,7 @@
  *
  * Suggested reading order for the modules: Camera, Project, Triangle,
  * Zbuffer, Interpolate, Shading (with Lighting), Texture, Cull, Painter,
- * then this one. *)
+ * Clip, then this one. *)
 
 (* What a face is painted with: a 0xRRGGBB color, or a texture (see
  * Texture), both then darkened by the lighting *)
@@ -54,9 +56,16 @@ type options = {
   backface_culling : bool;
   (* textures: true = bilinear filtering, false = nearest texel *)
   bilinear : bool;
+  (* true: triangles crossing the near plane are cut to their part in
+   * front of the camera (see Clip); false: dropped whole, which leaves
+   * holes near the camera *)
+  clipping : bool;
+  (* which triangle gets the pixels on a shared edge, see Triangle.mli *)
+  fill_rule : Triangle.fill_rule;
 }
 
-(* Phong, perspective-correct, z-buffer, filled, culling, bilinear *)
+(* Phong, perspective-correct, z-buffer, filled, culling, bilinear,
+ * clipping, the epsilon fill rule *)
 val default_options : options
 
 (* [render ?options fb zbuffer camera faces] draws [faces] as seen by

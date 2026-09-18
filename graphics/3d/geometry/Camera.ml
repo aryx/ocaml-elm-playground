@@ -29,7 +29,7 @@ let view (camera : t) (point : Vec3.t) : Vec3.t =
 let focal (camera : t) : float = 1. /. tan (camera.fov *. Float.pi /. 180. /. 2.)
 
 let ndc (camera : t) ~(aspect : float) ((x, y, z) : Vec3.t) : (float * float) option =
-  if z <= camera.near || z >= camera.far then None
+  if z < camera.near || z >= camera.far then None
   else
     let f = focal camera in
     Some (f *. x /. aspect /. z, f *. y /. z)

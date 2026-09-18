@@ -21,6 +21,8 @@ type options = {
   wireframe : bool;
   backface_culling : bool;
   bilinear : bool;
+  clipping : bool;
+  fill_rule : Triangle.fill_rule;
 }
 
 let default_options =
@@ -31,6 +33,8 @@ let default_options =
     wireframe = false;
     backface_culling = true;
     bilinear = true;
+    clipping = true;
+    fill_rule = Triangle.Epsilon;
   }
 
 (*****************************************************************************)
@@ -93,12 +97,19 @@ let render ?(options = default_options) (fb : Framebuffer.t) (zbuffer : Zbuffer.
   |> List.iter (fun (face : face) ->
          if (not options.backface_culling) || Cull.faces_camera ~eye:camera.eye (points_of face) then begin
            let color = color_of_paint options face.paint in
+           let project = Project.vertex camera ~width:fb.width ~height:fb.height in
            let projected =
              fan_triangles face.points
-             |> List.map (fun (pa, pb, pc) ->
-                    ( Project.vertex camera ~width:fb.width ~height:fb.height pa,
-                      Project.vertex camera ~width:fb.width ~height:fb.height pb,
-                      Project.vertex camera ~width:fb.width ~height:fb.height pc ))
+             |> List.concat_map (fun (pa, pb, pc) ->
+                    if not options.clipping then [ (project pa, project pb, project pc) ]
+                    else
+                      (* claude: in view coordinates, where the near plane is
+                       * simply z = near *)
+                      let to_view (p, uv, n) = (Camera.view camera p, uv, n) in
+                      let project = Project.vertex_of_view camera ~width:fb.width ~height:fb.height in
+                      Clip.near_plane ~near:camera.near [ to_view pa; to_view pb; to_view pc ]
+                      |> fan_triangles
+                      |> List.map (fun (a, b, c) -> (project a, project b, project c)))
            in
            if options.wireframe then begin
              (* one representative, unlit color for the whole face
@@ -114,10 +125,11 @@ let render ?(options = default_options) (fb : Framebuffer.t) (zbuffer : Zbuffer.
              projected
              |> List.iter (function
                   | Some v0, Some v1, Some v2 ->
-                      Triangle.fill fb ~zbuffer ~interpolation:options.interpolation ~shading:options.shading ~color v0
-                        v1 v2
+                      Triangle.fill fb ~fill_rule:options.fill_rule ~zbuffer ~interpolation:options.interpolation
+                        ~shading:options.shading ~color v0 v1 v2
                   | _ ->
-                      (* a vertex is behind the camera (or too near): drop
-                       * the whole triangle rather than clip it *)
+                      (* a vertex is behind the camera (or too near; only
+                       * without clipping) or too far: drop the whole
+                       * triangle *)
                       ())
          end)

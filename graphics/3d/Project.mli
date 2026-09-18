@@ -57,7 +57,11 @@ type vertex = {
 }
 
 (* [vertex camera ~width ~height (point, (u, v), normal)]: [point] on a
- * [width] x [height] screen; None when it's not strictly between the
- * camera's near and far planes (the triangles using it are then
- * dropped, not clipped) *)
+ * [width] x [height] screen; None when it's not between the camera's
+ * near and far planes (the triangles using it are then dropped, unless
+ * clipped first, see Clip) *)
 val vertex : Camera.t -> width:int -> height:int -> Vec3.t * (float * float) * Vec3.t -> vertex option
+
+(* The same, for a point already in view coordinates (Camera.view),
+ * e.g. one Clip created *)
+val vertex_of_view : Camera.t -> width:int -> height:int -> Vec3.t * (float * float) * Vec3.t -> vertex option

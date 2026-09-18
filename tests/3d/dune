@@ -12,6 +12,7 @@
    %{project_root}/examples3d/InteractiveCube3d.exe
    %{project_root}/examples3d/PaintersAlgorithmFail3d.exe
    %{project_root}/examples3d/FloatingCity3d.exe
+   %{project_root}/examples3d/Corridor3d.exe
    %{project_root}/examples3d/checker.png ; TexturedCube3d's texture
  )
 )

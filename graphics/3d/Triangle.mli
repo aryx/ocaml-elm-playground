@@ -38,17 +38,59 @@
  *     # # . .
  *     # . . .
  *
- * Reference: Juan Pineda, "A Parallel Algorithm for Polygon
- * Rasterization", SIGGRAPH 1988. *)
+ * Which triangle gets a pixel exactly on an edge shared by two
+ * triangles (w = 0 for both)? A rectangle is drawn as 2 triangles
+ * sharing a diagonal, a mesh as thousands sharing edges: a pixel
+ * drawn by both is drawn twice (wrong with transparency, and wasted
+ * work), a pixel drawn by neither is a hole, a "crack". Two answers:
+ *
+ *  - [Epsilon]: count w >= -epsilon as inside, so an edge pixel is
+ *    drawn by both triangles, even when floating-point rounding makes
+ *    both compute a tiny negative w instead of 0 (the crack). Simple,
+ *    invisible when opaque, but pixels drawn twice.
+ *
+ *  - [Top_left], what GPUs do: an edge pixel belongs to the triangle
+ *    for which that edge is a "top" edge (horizontal, the triangle
+ *    below it) or a "left" edge (the triangle to its right), so to
+ *    exactly one of the two, whose edges are the same line seen from
+ *    opposite sides:
+ *
+ *        +-------+       the shared diagonal is a left edge of A (A is
+ *        |\   A  |       on its right), a right edge of B: its pixels
+ *        |  \    |       are A's; the rectangle's top edge is A's top,
+ *        | B  \  |       its left edge B's left: drawn; its bottom and
+ *        |      \|       right edges aren't (they're the top and left
+ *        +-------+       of the rectangles below and to the right)
+ *
+ *    For the rule to work, w must be *exactly* 0 on a shared edge,
+ *    for both triangles: computed from the same 2 vertices, in the
+ *    opposite order, their values must be exact opposites. Floating
+ *    point doesn't guarantee that (it rounds), unless the numbers are
+ *    simple enough to need no rounding: so the vertices are first
+ *    snapped to a grid of 1/256th of a pixel ("sub-pixel precision",
+ *    fixed-point coordinates in hardware), after which every edge
+ *    function value is an exact multiple of 1/65536, computed without
+ *    any rounding.
+ *
+ * References:
+ * - Juan Pineda, "A Parallel Algorithm for Polygon Rasterization",
+ *   SIGGRAPH 1988.
+ * - Fabian Giesen, "The barycentric conspiracy" and "Optimizing the
+ *   basic rasterizer", blog posts, 2013 (the top-left rule, sub-pixel
+ *   precision, incremental edge functions). *)
 
-(* [fill fb ~zbuffer ~interpolation ~shading ~color v0 v1 v2]: the
- * pixels of the triangle, each colored [color ~u ~v ~brightness] (a
+(* How pixels exactly on an edge are decided, see above *)
+type fill_rule = Epsilon | Top_left
+
+(* [fill fb ~zbuffer ~fill_rule ~interpolation ~shading ~color v0 v1 v2]:
+ * the pixels of the triangle, each colored [color ~u ~v ~brightness] (a
  * 0xRRGGBB color; u, v from [interpolation], brightness from
  * [shading]). With a [zbuffer], a pixel is drawn only if nearer than
  * what's there (see Zbuffer); without, always: the painter's
  * algorithm, see Painter. *)
 val fill :
   Framebuffer.t ->
+  fill_rule:fill_rule ->
   zbuffer:Zbuffer.t option ->
   interpolation:Interpolate.mode ->
   shading:Shading.mode ->

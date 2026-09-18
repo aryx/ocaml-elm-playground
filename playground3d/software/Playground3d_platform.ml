@@ -63,6 +63,11 @@ open Playground3d
  *  - "p": perspective-correct or linear interpolation (see
  *    graphics/3d/Interpolate.mli); try examples3d/TexturedCube3d
  *  - "i": texture filtering, bilinear or nearest texel
+ *  - "t": the top-left fill rule, or the epsilon (see
+ *    graphics/3d/Triangle.mli); with the magnifier on a shared edge
+ *  - "c": near-plane clipping on/off (see graphics/3d/Clip.mli): off,
+ *    the triangles going behind the camera vanish; try
+ *    examples3d/Corridor3d
  *  - "o": optimizations on/off, i.e. the original simple code instead
  *    of the optimized one (see graphics/core/Opti.mli); watch the fps
  *  - "x": the pixel magnifier (graphics/2d/Magnifier), following the
@@ -101,16 +106,19 @@ let on_key_press (key : string) =
             | Linear -> Perspective_correct);
         }
   | "i" -> options := { o with bilinear = not o.bilinear }
+  | "c" -> options := { o with clipping = not o.clipping }
+  | "t" ->
+      options := { o with fill_rule = (match o.fill_rule with Triangle.Epsilon -> Triangle.Top_left | Top_left -> Epsilon) }
   | "o" -> Opti.enabled := not !Opti.enabled
   | "x" -> magnifier := not !magnifier
   | _ -> ()
 
 (* e.g. "m:phong b:cull=on f:wire=off z:zbuffer p:perspective
- * i:bilinear o:opti=on x:zoom=off" *)
+ * i:bilinear c:clip=on t:epsilon o:opti=on x:zoom=off" *)
 let title_keys () =
   let o = !options in
   let on_off b = if b then "on" else "off" in
-  Printf.sprintf "m:%s b:cull=%s f:wire=%s z:%s p:%s i:%s o:opti=%s x:zoom=%s"
+  Printf.sprintf "m:%s b:cull=%s f:wire=%s z:%s p:%s i:%s c:clip=%s t:%s o:opti=%s x:zoom=%s"
     (match o.shading with
     | Shading.Flat_color -> "nolight"
     | Flat_shading -> "flat"
@@ -120,6 +128,8 @@ let title_keys () =
     (match o.visibility with Z_buffer -> "zbuffer" | Painters_algorithm -> "painter")
     (match o.interpolation with Interpolate.Perspective_correct -> "perspective" | Linear -> "linear")
     (if o.bilinear then "bilinear" else "nearest")
+    (on_off o.clipping)
+    (match o.fill_rule with Triangle.Epsilon -> "epsilon" | Top_left -> "topleft")
     (on_off !Opti.enabled) (on_off !magnifier)
 
 (*****************************************************************************)

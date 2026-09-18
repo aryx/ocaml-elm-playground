@@ -364,8 +364,36 @@ Each a separate function, with its own key, test, and entry in
    not new: at the HUD's size (~13 pixels), Hershey's colon, two tiny
    stroked diamonds, is a smudge close to the previous letter
    ("Mouse:"); the 2D software backend draws any small `words` so.
-6. **New features**: clipping, top-left rule, incremental edge
+6. **DONE** (items 1-3; item 4, perspective-correct Gouraud/Phong,
+   not done). **New features**: clipping, top-left rule, incremental edge
    functions, as above.
+   In the end:
+   - Clipping ("c", on by default): Minecraft3d showed no holes (its
+     overview camera, and small blocks), so a new example,
+     `examples3d/Corridor3d.ml` (walking down a corridor, first person),
+     shows them: the floor stripe under the camera vanishes without
+     clipping. `graphics/3d/Clip` (Sutherland-Hodgman on the near plane,
+     in view coordinates, uv and normals interpolated, the new vertices
+     exactly at z = near; a polygon all in front returned as is, so no
+     other frame changed), `Project.vertex_of_view`, and `Camera.ndc`
+     now accepting z = near exactly. Goldens: Corridor3d with and
+     without "c", and in wireframe (the cut edges visible). `Unit_clip`
+     checks the worked example (a quad), a smaller triangle, all in
+     front, all behind.
+   - The top-left rule ("t", off by default: the epsilon stays): with
+     sub-pixel snapping to 1/256th of a pixel, so the edge functions are
+     computed exactly and a shared edge's values are exact opposites.
+     `Unit_triangle` checks a square's diagonal through pixel centers
+     (the epsilon draws its 8 pixels twice, the rule each of the 64
+     pixels once) and a fan of 6 triangles with fractional vertices, both
+     windings (no pixel twice, no hole). Goldens Cubes3d and Spheres3d
+     with "t": 4 and 103 pixels differ from the epsilon's, single pixels
+     along edges between faces.
+   - Incremental edge functions (an `Opti`, "o"): 16-18% faster on
+     Cubes3d and Spheres3d; exact with the top-left rule, and with the
+     epsilon rounding-level changes to 3 goldens (Spheres3d Gouraud by
+     1/255, Corridor3d's floor/wall z-ties), approved. Numbers and
+     details in `notes_3d_opti.md`.
 7. **Docs**: `notes_3d.md` with pointers into the new modules (and a
    short "reading order" for students: Camera, Project, Triangle,
    Zbuffer, Interpolate, Shading, Texture, Render), `notes_3d_opti.md`

@@ -61,6 +61,7 @@ dune exec examples3d/Cubes3d.exe         # a grid of overlapping cubes, orbited 
 dune exec examples3d/TexturedCube3d.exe  # a cube wrapped with a test texture
 dune exec examples3d/InteractiveCube3d.exe  # arrow keys/mouse move a cube around a small scene
 dune exec examples3d/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see the "z" toggle below
+dune exec examples3d/Corridor3d.exe      # walk down a corridor (up/down arrows); see the "c" toggle below
 dune exec games3d/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
 ```
 
@@ -76,6 +77,8 @@ live debug toggles for comparing rendering strategies side by side
 | `z` | Painter's algorithm vs. z-buffer -- try this on `PaintersAlgorithmFail3d.exe`, not `Cubes3d.exe` (that one's grid of cubes turns out not to stress it enough to visibly break) |
 | `p` | Perspective-correct vs. linear interpolation -- try this on `TexturedCube3d.exe`; `Linear` makes the texture visibly swim/drift as the cube rotates |
 | `i` | Texture filtering: bilinear (smooth) vs. nearest (sharp texels) -- `TexturedCube3d.exe` again |
+| `t` | Fill rule: which triangle gets the pixels on an edge shared by two -- both (an epsilon tolerance), or exactly one (the top-left rule, with sub-pixel precision); see it with the magnifier |
+| `c` | Near-plane clipping on/off -- try `Corridor3d.exe`: off, the floor and walls going behind the camera vanish, leaving holes |
 | `o` | Optimizations on/off: the original simple code instead of the optimized one (see `graphics/core/Opti.mli`); watch the fps |
 | `x` | Pixel magnifier, following the mouse |
 | `Q` | Quit |
@@ -144,8 +147,9 @@ This is genuinely experimental and quite young:
 - The web backend can't warp a texture onto an arbitrary projected
   quad, so a textured face renders as a flat gray placeholder there
   (native samples the real texture per pixel).
-- No near-plane clipping (a triangle with a vertex behind the camera is
-  dropped whole, not clipped into visible sub-triangles).
+- No near-plane clipping on the web backend (a triangle with a vertex
+  behind the camera is dropped whole, not clipped into visible
+  sub-triangles; the software backend clips, see the `c` key).
 - No 2D HUD/overlay channel -- a game can't draw score/instructions
   text on top of the 3D scene yet.
 

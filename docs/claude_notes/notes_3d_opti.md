@@ -142,19 +142,48 @@ precise numbers.
 - `Cubes3d.ml`: ~37 fps (was ~28-29 fps)
 - `TexturedCube3d.ml`: ~83 fps (was ~17 fps), and no longer visibly warps
 
+## Optimization 3: incremental edge functions (`Opti`, the "o" key)
+
+- **What**: `graphics/3d/Triangle.fill` computed the 3 edge functions
+  from scratch at every pixel, `(bx - ax) * (py - ay) - (by - ay) *
+  (px - ax)`, plus a `(px, py)` pair allocated per pixel. An edge
+  function is linear in `px`: one pixel to the right it changes by the
+  constant `-(by - ay)`. So the optimized loop computes the 3 values
+  once per row, at its first pixel, then only adds. The simple loop is
+  kept, runnable: "o" switches to it (see `graphics/core/Opti.mli`),
+  like the 2D rasterizer's optimizations.
+- **Same pixels?** With the top-left fill rule ("t"), exactly: the
+  vertices are snapped to 1/256th of a pixel, so the edge values and
+  the steps are exact multiples of 1/65536, added without rounding.
+  With the default epsilon rule, the running sums can differ from the
+  direct formula in their last bits, which changed 3 golden frames when
+  this became the default: `Spheres3d` with Gouraud by 1/255 on 1472
+  pixels (a brightness interpolated between three fully lit vertices
+  is 0.99999.. instead of 1, and `scale_channel` truncates 255 * that
+  down to 254 -- the truncation is the fragile part, not the steps),
+  and `Corridor3d` on 13 pixels exactly where the floor meets the walls
+  (a z-buffer tie between two surfaces at the same depth, decided by
+  the last bits). Approved: both answers are right.
+- **Impact** (`-fixed-time 1000 -uncapped -dump-frame 200`, 200 frames,
+  best of 3, dev build): `Cubes3d` 11.87s -> 10.00s (16% faster),
+  `Spheres3d` with Gouraud 4.54s -> 3.74s (18%), `TexturedCube3d`
+  8.35s -> 8.09s (3%, dominated by texture sampling). With "o", all
+  the simple versions together (this one and `Framebuffer.plot`'s,
+  which allocates two Bigarray views per pixel): 22.54s, 8.84s,
+  11.16s.
+
+## Fix 3: near-plane clipping, and the top-left fill rule
+
+Not optimizations, but the two "not done" items of the first version:
+`graphics/3d/Clip` cuts the triangles crossing the near plane to their
+part in front of the camera ("c", see `examples3d/Corridor3d.ml`), and
+`Triangle.fill` has the top-left fill rule with sub-pixel precision
+("t"), the rigorous version of Fix 1's epsilon (see
+`graphics/3d/Triangle.mli`). The epsilon stays the default.
+
 ## Not done (deliberately, to keep the code simple)
 
-- **Incremental edge-function stepping**: the standard next
-  optimization for this style of rasterizer (compute each pixel's edge
-  values via a running per-pixel/per-row delta instead of recomputing
-  the full edge formula from scratch each time) -- probably worth real
-  FPS on larger/many-triangle scenes, but it turns the "obviously
-  correct, recompute from scratch" loop into a small stateful
-  accumulator, a real complexity cost. Not applied since Optimizations
-  1 and 2 already gave large wins without changing the loop's shape at
-  all; worth revisiting if a future scene (e.g. Cubes3d at a much
-  larger triangle count, or the eventual tiny-minecraft port) still
-  isn't fast enough after these.
-- **Top-left fill rule** (mentioned under Fix 1): the fully rigorous
-  fix for the crack bug; not needed since the epsilon tolerance already
-  fixes it invisibly at this project's scale.
+- **Stepping along y too, and the barycentric weights**: the rows
+  could also start from the previous row's values plus a constant,
+  and l0, l1, l2 (and so z, u/z, v/z) could be stepped the same way
+  instead of multiplied per pixel; smaller wins, more state.

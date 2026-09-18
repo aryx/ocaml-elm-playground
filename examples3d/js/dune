@@ -10,6 +10,7 @@
 (copy_files ../InteractiveCube3d.ml)
 (copy_files ../PaintersAlgorithmFail3d.ml)
 (copy_files ../FloatingCity3d.ml)
+(copy_files ../Corridor3d.ml)
 
 (executables
   (names
@@ -20,6 +21,7 @@
     InteractiveCube3d
     PaintersAlgorithmFail3d
     FloatingCity3d
+    Corridor3d
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp

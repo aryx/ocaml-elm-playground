@@ -55,5 +55,6 @@ val focal : t -> float
  * perspective-divided to normalized device coordinates, x and y in
  * -1..1 for what's in view; [aspect] is the screen's width / height (x
  * is squeezed by it, so a square stays square). None when its depth z
- * is not strictly between [near] and [far]. *)
+ * is not between [near] (included: where Clip puts the points it
+ * creates) and [far] (excluded). *)
 val ndc : t -> aspect:float -> Vec3.t -> (float * float) option

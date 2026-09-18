@@ -22,9 +22,9 @@ type vertex = {
   normal : Vec3.t;
 }
 
-let vertex (camera : Camera.t) ~(width : int) ~(height : int)
-    ((point, (u, v), normal) : Vec3.t * (float * float) * Vec3.t) : vertex option =
-  let ((_px, _py, pz) as view_point) = Camera.view camera point in
+let vertex_of_view (camera : Camera.t) ~(width : int) ~(height : int)
+    ((view_point, (u, v), normal) : Vec3.t * (float * float) * Vec3.t) : vertex option =
+  let (_px, _py, pz) = view_point in
   let fsx = float_of_int width and fsy = float_of_int height in
   match Camera.ndc camera ~aspect:(fsx /. fsy) view_point with
   | None -> None
@@ -41,3 +41,7 @@ let vertex (camera : Camera.t) ~(width : int) ~(height : int)
         v_over_z = v *. inv_z;
         normal;
       }
+
+let vertex (camera : Camera.t) ~(width : int) ~(height : int)
+    ((point, uv, normal) : Vec3.t * (float * float) * Vec3.t) : vertex option =
+  vertex_of_view camera ~width ~height (Camera.view camera point, uv, normal)
