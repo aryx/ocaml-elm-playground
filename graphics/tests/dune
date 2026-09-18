@@ -12,5 +12,6 @@
    graphics_2d_geometry
    graphics_2d
    graphics_font
+   graphics_3d_geometry
  )
 )

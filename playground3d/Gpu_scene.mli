@@ -10,25 +10,12 @@
 
 (* The GPU-API-independent scene preparation shared by the GPU
  * playground3d backends (playground3d/opengl/, and the planned
- * playground3d/webgl/): matrices and vertex data as plain OCaml float
- * arrays, which each backend then uploads with its own GPU API. See
- * Gpu_scene.ml's prelude for why this lives in elm_playground_3d. *)
+ * playground3d/webgl/): vertex data as plain OCaml float arrays, which
+ * each backend then uploads with its own GPU API (the camera matrices
+ * are graphics/3d/geometry/Mat4's). See Gpu_scene.ml's prelude for why
+ * this lives in elm_playground_3d. *)
 
 type vec3 = float * float * float
-
-(* Row-major 4x4 matrices, as a 16-element float array. *)
-
-(* A view matrix, using the exact same right/up/forward camera basis as
- * the native software rasterizer's view_space. *)
-val look_at : eye:vec3 -> target:vec3 -> float array
-
-(* A projection matrix, with the same framing as the native software
- * rasterizer's project_vertex, and a z row mapping [near]..[far] to
- * normalized device coordinates -1..+1. *)
-val perspective : fov_degrees:float -> aspect:float -> near:float -> far:float -> float array
-
-(* [mat4_mul a b] applied to a point means "apply b first, then a". *)
-val mat4_mul : float array -> float array -> float array
 
 (* A GPU draw call binds at most one texture, so faces are grouped by
  * material, one draw call per group. *)

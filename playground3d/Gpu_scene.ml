@@ -27,26 +27,10 @@
  * Native_loop.mli). *)
 
 (*****************************************************************************)
-(* Vec3 (duplicated from Playground3d.ml, which keeps it private -- see
- * the identical comment in playground3d/software/Playground3d_platform.ml) *)
+(* Vec3: graphics/3d/geometry/Vec3 *)
 (*****************************************************************************)
 
-type vec3 = float * float * float
-
-let sub ((ax, ay, az) : vec3) ((bx, by, bz) : vec3) : vec3 = (ax -. bx, ay -. by, az -. bz)
-let dot ((ax, ay, az) : vec3) ((bx, by, bz) : vec3) : float = (ax *. bx) +. (ay *. by) +. (az *. bz)
-
-let cross ((ax, ay, az) : vec3) ((bx, by, bz) : vec3) : vec3 =
-  ((ay *. bz) -. (az *. by), (az *. bx) -. (ax *. bz), (ax *. by) -. (ay *. bx))
-
-let normalize (v : vec3) : vec3 =
-  let n = sqrt (dot v v) in
-  if n = 0. then v
-  else
-    let (x, y, z) = v in
-    (x /. n, y /. n, z /. n)
-
-let up_hint : vec3 = (0., 1., 0.)
+type vec3 = Vec3.t
 
 let rgb_of_color (color : Playground.color) : int * int * int =
   match color with
@@ -55,65 +39,6 @@ let rgb_of_color (color : Playground.color) : int * int * int =
       let s = String.lowercase_ascii s in
       let component i = int_of_string ("0x" ^ String.sub s i 2) in
       (component 1, component 3, component 5)
-
-(*****************************************************************************)
-(* Mat4: the one genuinely new piece of math a GPU backend needs that
- * the software rasterizer doesn't -- see plan_opengl.md's comparison
- * table. The rasterizer projects one point at a time with a few plain
- * scalar formulas (view_space + project_vertex); a GPU vertex shader
- * instead expects a single 4x4 "model-view-projection" matrix per
- * draw call, uploaded once, that it then applies to every vertex
- * itself, in parallel. A row-major float array of 16 elements --
- * uniform_matrix4fv's [transpose] argument (set to true in the OpenGL
- * backend) tells OpenGL to transpose it into the column-major layout
- * it actually wants internally, so this code never has to think in
- * column-major.
- * claude: WebGL 1 requires [transpose] = false, so the WebGL backend
- * will have to transpose on the CPU itself (see plan_webgl.md). *)
-(*****************************************************************************)
-
-(* [look_at eye target] builds a view matrix using the exact same
- * right/up/forward basis as the native rasterizer's view_space (same
- * up_hint, same "which way is the camera pointing" derivation) --
- * V * point = (dot (point - eye) right, dot (point - eye) up,
- * dot (point - eye) forward), i.e. the same view-space coordinates
- * view_space computes, just packaged as a matrix a GPU can apply. *)
-let look_at ~(eye : vec3) ~(target : vec3) : float array =
-  let forward = normalize (sub target eye) in
-  let right = normalize (cross forward up_hint) in
-  let up = cross right forward in
-  let (rx, ry, rz) = right and (ux, uy, uz) = up and (fx, fy, fz) = forward in
-  [| rx; ry; rz; -.(dot right eye); ux; uy; uz; -.(dot up eye); fx; fy; fz; -.(dot forward eye); 0.; 0.; 0.; 1. |]
-
-(* [perspective ~fov_degrees ~aspect ~near ~far]: the exact same
- * f = 1/tan(fov/2), x scaled by f/aspect, y scaled by f formulas as
- * project_vertex's ndc_x/ndc_y (see that function's comment) -- same
- * fov/near/far camera field, same on-screen framing, on both
- * backends. The z row (derived from "NDC z must be -1 at [near] and
- * +1 at [far], for a view-space z that's positive in front of the
- * camera, matching look_at's convention above") is new: the software
- * rasterizer never needs to remap depth into any particular range, it
- * only ever directly compares raw view-space z values against each
- * other in its own hand-rolled zbuffer; a GPU's hardware depth test
- * expects normalized device coordinates instead. *)
-let perspective ~(fov_degrees : float) ~(aspect : float) ~(near : float) ~(far : float) : float array =
-  let fov_rad = fov_degrees *. Float.pi /. 180. in
-  let f = 1. /. tan (fov_rad /. 2.) in
-  let a = (far +. near) /. (far -. near) in
-  let b = -2. *. far *. near /. (far -. near) in
-  [| f /. aspect; 0.; 0.; 0.; 0.; f; 0.; 0.; 0.; 0.; a; b; 0.; 0.; 1.; 0. |]
-
-(* row-major 4x4 * 4x4 -- [mat4_mul a b] then applied to a point means
- * "apply b first, then a" (standard matrix composition), so
- * [mat4_mul projection view] is the usual "view, then project" order. *)
-let mat4_mul (a : float array) (b : float array) : float array =
-  Array.init 16 (fun idx ->
-      let r = idx / 4 and c = idx mod 4 in
-      let sum = ref 0. in
-      for k = 0 to 3 do
-        sum := !sum +. (a.((r * 4) + k) *. b.((k * 4) + c))
-      done;
-      !sum)
 
 (*****************************************************************************)
 (* Flattening a shape3d tree into per-material vertex lists *)
@@ -135,10 +60,10 @@ type material = Flat | Textured of string
  * OpenGL backend's fragment shader's uUseTexture. *)
 type vertex_data = vec3 * vec3 * Playground.color * (float * float)
 
-let face_normal (points : vec3 list) : vec3 =
-  match points with
-  | p0 :: p1 :: p2 :: _ -> normalize (cross (sub p1 p0) (sub p2 p0))
-  | _ -> failwith "polygon3d needs at least 3 points"
+(* claude: Newell's method (Vec3.face_normal) -- this copy still had
+ * the old first-three-points formula, which gives a (0, 0, 0) normal
+ * when two of them coincide (see Vec3.face_normal) *)
+let face_normal = Vec3.face_normal
 
 (* fan-triangulate a (convex, e.g. a cube face or a plane) polygon:
  * (p0,p1,p2), (p0,p2,p3), (p0,p3,p4), ... -- same as native's, and
@@ -250,4 +175,4 @@ let vertex_floats_of_group (vertices : vertex_data list) : float array * int =
  * uniform, rather than re-typed as a GLSL literal, so there's no risk
  * of a copy-paste/rounding mismatch between the two backends' "same
  * light" claim. *)
-let light_dir : vec3 = normalize (1., 1.3, 0.6)
+let light_dir : vec3 = Vec3.normalize (1., 1.3, 0.6)

@@ -41,11 +41,12 @@ let ( let* ) o f =
   | Error (`Msg msg) -> failwith (Printf.sprintf "TSDL error: %s" msg)
   | Ok x -> f x
 
-(* claude: the GL-independent half of this backend (the Mat4 camera
- * math, the shape3d -> per-material vertex list flattening, light_dir)
- * now lives in playground3d/Gpu_scene.ml, shared with the planned WebGL
- * backend (docs/claude_notes/plan_webgl.md, Phase 1). What's left here
- * is only what talks to OpenGL itself. *)
+(* claude: the GL-independent half of this backend (the shape3d ->
+ * per-material vertex list flattening, light_dir) is in
+ * playground3d/Gpu_scene.ml, shared with the planned WebGL backend
+ * (docs/claude_notes/plan_webgl.md, Phase 1), and the camera matrices
+ * in graphics/3d/geometry/Mat4.ml. What's here is only what talks to
+ * OpenGL itself. *)
 
 (*****************************************************************************)
 (* Shaders *)
@@ -396,9 +397,9 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
   let draw (_computer : Playground.computer) ((camera, shapes) : Playground3d.camera * Playground3d.shape3d list) :
       unit =
     let aspect = float_of_int sx /. float_of_int sy in
-    let view = Gpu_scene.look_at ~eye:camera.eye ~target:camera.target in
-    let projection = Gpu_scene.perspective ~fov_degrees:camera.fov ~aspect ~near:camera.near ~far:camera.far in
-    let mvp = Gpu_scene.mat4_mul projection view in
+    let view = Mat4.look_at ~eye:camera.eye ~target:camera.target in
+    let projection = Mat4.perspective ~fov_degrees:camera.fov ~aspect ~near:camera.near ~far:camera.far in
+    let mvp = Mat4.mul projection view in
     let mvp_data = Bigarray.Array1.of_array Bigarray.float32 Bigarray.c_layout mvp in
 
     Gl.clear_color 1.0 1.0 1.0 1.0;

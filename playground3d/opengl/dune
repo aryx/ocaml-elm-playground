@@ -10,5 +10,6 @@
    elm_playground
    elm_playground_3d
    elm_playground_3d_native_common ; SDL event loop + Texture_native
+   graphics_3d_geometry ; Mat4
  )
 )

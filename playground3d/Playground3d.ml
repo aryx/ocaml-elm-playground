@@ -45,28 +45,16 @@ type number = Playground.number
 (*****************************************************************************)
 (* Vec3 (not exposed, just tuples) *)
 (*****************************************************************************)
+(* graphics/3d/geometry/Vec3, under this file's short names *)
 
-type vec3 = number * number * number
+type vec3 = Vec3.t
 
-let sub ((ax, ay, az) : vec3) ((bx, by, bz) : vec3) : vec3 =
-  (ax - bx, ay - by, az - bz)
-
-let add ((ax, ay, az) : vec3) ((bx, by, bz) : vec3) : vec3 =
-  (ax + bx, ay + by, az + bz)
-
-let dot ((ax, ay, az) : vec3) ((bx, by, bz) : vec3) : number =
-  (ax * bx) + (ay * by) + (az * bz)
-
-let cross ((ax, ay, az) : vec3) ((bx, by, bz) : vec3) : vec3 =
-  ((ay * bz) - (az * by), (az * bx) - (ax * bz), (ax * by) - (ay * bx))
-
-let scale_vec3 (s : number) ((x, y, z) : vec3) : vec3 = (s * x, s * y, s * z)
-
-let norm (v : vec3) : number = sqrt (dot v v)
-
-let normalize (v : vec3) : vec3 =
-  let n = norm v in
-  if n = 0. then v else scale_vec3 (1. / n) v
+let sub = Vec3.sub
+let add = Vec3.add
+let dot = Vec3.dot
+let cross = Vec3.cross
+let scale_vec3 = Vec3.scale
+let normalize = Vec3.normalize
 
 (*****************************************************************************)
 (* Shapes *)
@@ -299,28 +287,11 @@ let project (camera : camera) (screen : Playground.screen) (point : vec3) :
     let ndc_y = f * view_y / view_z in
     Some (ndc_x * (screen.width / 2.), ndc_y * (screen.height / 2.))
 
-let face_centroid (points : vec3 list) : vec3 =
-  let (sx, sy, sz) =
-    List.fold_left (fun (ax, ay, az) (x, y, z) -> (ax + x, ay + y, az + z)) (0., 0., 0.) points
-  in
-  let n = float_of_int (List.length points) in
-  (sx / n, sy / n, sz / n)
+let face_centroid = Vec3.centroid
 
-(* claude: bugfix -- Newell's method instead of the cross product of the
- * first two edges, which is NaN once normalized when two of the first
- * three points coincide, e.g. at a sphere's pole: the top cap of every
- * sphere was culled. See the identical face_normal in
- * playground3d/software/Playground3d_platform.ml for the details. *)
-let face_normal (points : vec3 list) : vec3 =
-  match points with
-  | [] | [ _ ] | [ _; _ ] -> failwith "polygon3d needs at least 3 points"
-  | first :: rest ->
-      let edges = List.combine points (rest @ [ first ]) in
-      normalize
-        (List.fold_left
-           (fun (nx, ny, nz) ((x0, y0, z0), (x1, y1, z1)) ->
-             (nx + ((y0 - y1) * (z0 + z1)), ny + ((z0 - z1) * (x0 + x1)), nz + ((x0 - x1) * (y0 + y1))))
-           (0., 0., 0.) edges)
+(* Newell's method, robust to repeated points like a sphere's pole; see
+ * Vec3.face_normal *)
+let face_normal = Vec3.face_normal
 
 (* claude: the web backend can't warp an image onto an arbitrary
  * projected quad (Playground.image only draws an upright rectangle),
