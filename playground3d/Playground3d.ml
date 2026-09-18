@@ -306,10 +306,21 @@ let face_centroid (points : vec3 list) : vec3 =
   let n = float_of_int (List.length points) in
   (sx / n, sy / n, sz / n)
 
+(* claude: bugfix -- Newell's method instead of the cross product of the
+ * first two edges, which is NaN once normalized when two of the first
+ * three points coincide, e.g. at a sphere's pole: the top cap of every
+ * sphere was culled. See the identical face_normal in
+ * playground3d/software/Playground3d_platform.ml for the details. *)
 let face_normal (points : vec3 list) : vec3 =
   match points with
-  | p0 :: p1 :: p2 :: _ -> normalize (cross (sub p1 p0) (sub p2 p0))
-  | _ -> failwith "polygon3d needs at least 3 points"
+  | [] | [ _ ] | [ _; _ ] -> failwith "polygon3d needs at least 3 points"
+  | first :: rest ->
+      let edges = List.combine points (rest @ [ first ]) in
+      normalize
+        (List.fold_left
+           (fun (nx, ny, nz) ((x0, y0, z0), (x1, y1, z1)) ->
+             (nx + ((y0 - y1) * (z0 + z1)), ny + ((z0 - z1) * (x0 + x1)), nz + ((x0 - x1) * (y0 + y1))))
+           (0., 0., 0.) edges)
 
 (* claude: the web backend can't warp an image onto an arbitrary
  * projected quad (Playground.image only draws an upright rectangle),
