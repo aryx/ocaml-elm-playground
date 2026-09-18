@@ -40,6 +40,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/Tetris", "", 5);
     ("games/software/Platformer", "", 5);
     ("games/software/TinyInvaders", "", 5);
+    ("games/software/TinySokoban", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -52,6 +53,11 @@ let scripted : Testutil_golden.scripted list =
       "play",
       300,
       "space:1,space:10,space:50,space:90,right:100-116,space:130,space:170,left:180-212,space:220,space:260,space:280" );
+    (* the first level's shortest solution, uldurrd, a key every 5 frames *)
+    ( "games/software/TinySokoban",
+      "solve1",
+      40,
+      "space:1,up:5,left:10,down:15,up:20,right:25,right:30,down:35" );
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

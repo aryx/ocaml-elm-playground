@@ -6,6 +6,7 @@
     Asteroid
     Platformer
     TinyInvaders
+    TinySokoban
   )
   (libraries
     elm_playground

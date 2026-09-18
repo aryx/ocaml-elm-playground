@@ -225,8 +225,9 @@ Sokoban (Hiroyuki Imabayashi, Thinking Rabbit, 1982), Tetris (Alexey
 Pajitnov, 1984; done: `games/Tetris.ml`), Lemmings (DMA Design,
 1991), Baba Is You (2019: the rules are tiles you push).
 
-- **Toys**: TinySokoban (with undo: in Elm style, the list of past
-  models, one line), TinyBabaIsYou (later: rules as tiles).
+- **Toys**: TinySokoban (DONE: `games/TinySokoban.ml`, three levels of
+  our own checked by a breadth-first solver; undo in Elm style, the
+  list of past boards), TinyBabaIsYou (later: rules as tiles).
 - **Kit**: a `Rules` layer rewriting a `Tilemap` with patterns, as in
   PuzzleScript (Stephen Lavelle, 2013) and TileCode (Thomas Ball,
   Stefania Druga, et al., 2020, see `Tilemap.mli`): a game as a map
