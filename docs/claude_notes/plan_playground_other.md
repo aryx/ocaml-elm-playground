@@ -31,6 +31,13 @@ or given with `-seed n` (a new `Native_loop` flag, like `-fixed-time`;
 the golden tests pass it). The generator itself: `random/` in
 `plan_teaching_other.md` item 4.
 
+**Status**: half DONE. Runs are reproducible: the games drawing random
+numbers take a `seed=n` flag (see `Playground.flags`), which seeds
+OCaml's global `Random`, and the golden tests pass `seed=1` (Snake,
+Tetris, StarCollector3d have golden frames). Left: the pure API above
+(the seed in the model), needed only when replaying from a model
+matters -- the time-travel debugger, rollback networking.
+
 ## 2. A camera for 2D: worlds bigger than the screen
 
 The 2D playground has one screen, centered on (0, 0): a Mario level, a
@@ -47,6 +54,14 @@ screen coordinates, and a way to put HUD shapes on top that don't move
 (3D's `hud`, in 2D). Parallax (layers scrolling at different speeds)
 is `camera` applied per layer.
 
+**Status**: DONE, not in `Playground.mli` but as a layer on top of it,
+`playground/Camera2d.mli`: a camera record in the model, `view` (a
+group scaled and moved), `to_world` for the mouse, `visible` for
+culling, and one function per way of following the player (Keren's
+"Scroll Back" GDC talk: `look_at`, `follow`, `window`, `clamp`), plus
+`parallax`. The HUD is the shapes outside `Camera2d.view`. Unit tests
+of the `.mli`'s worked examples in `playground/tests/`.
+
 ## 3. Tile maps
 
 Most 2D games' worlds are **grids of tiles**: a level as rows of
@@ -61,6 +76,13 @@ val tilemap : number -> (char -> shape) -> string list -> shape
 A level becomes a string literal in the game's code -- readable, easy
 to edit, no level editor needed (a level editor is a nice later
 project, and a nice example game).
+
+**Status**: DONE, `playground/Tilemap.mli`, also a layer on top:
+`of_strings`, `get`/`set`/`find` (a map is a value, changed when a coin
+is taken), `center`/`cell`/`tile_at`, `view` and `view_visible` (only
+the cells a `Camera2d.rect` touches), `hits` (box vs. grid). Both used
+by `games/Platformer.ml` (with a golden frame; its `camera=` and
+`zoom=` flags compare the camera techniques).
 
 ## 4. Sprite sheets and animation frames
 

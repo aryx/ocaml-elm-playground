@@ -16,5 +16,6 @@
    %{project_root}/games/software/Asteroid.exe
    %{project_root}/games/software/Snake.exe
    %{project_root}/games/software/Tetris.exe
+   %{project_root}/games/software/Platformer.exe
  )
 )

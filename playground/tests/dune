@@ -1,0 +1,12 @@
+; claude: unit tests for the layers on top of Playground (Camera2d,
+; Tilemap), run by 'make test' (dune runtest); they check the worked
+; examples given in the .mli comments.
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
+)

@@ -8,6 +8,7 @@
     Pong
     Tetris
     Asteroid
+    Platformer
   )
   (libraries
     elm_playground
