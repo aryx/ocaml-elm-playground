@@ -1,0 +1,317 @@
+# Plan: the classic 3D games, genre by genre, and the kits they need
+
+## Context
+
+The 3D counterpart of [`plan_games.md`](plan_games.md) (read it first:
+the principles, the "kits" and the "layers", the references are the
+same). `games3d/` has two games: StarCollector3d (a third-person toy)
+and Minecraft3d (a voxel sandbox, the port of the Python tiny-minecraft,
+see `done/plan_tiny_minecraft.md`), plus the scenes of `examples3d/`
+(Corridor3d walks down a corridor first-person, CachedGrid3d draws a big
+static world, FloatingCity3d a composition).
+
+3D games came in genres too, each one born from a rendering trick
+before it was a design: Battlezone is what vector hardware could draw,
+Wolfenstein 3D what a raycaster could, Doom what a BSP tree could,
+Super Mario 64 what a GPU and an analog stick could. So this plan is
+also a history of 3D rendering, told through the games -- which fits
+`graphics/3d`'s teaching (`notes_3d.md`) and
+[`notes_vs_doom_quake.md`](notes_vs_doom_quake.md), which it
+references rather than repeats.
+
+What `playground3d` already gives a game (see `Playground3d.mli`):
+shapes (`box`, `sphere`, `polygon3d`, textures), `group3d`/`move3d`/
+`rotate3d`, a `camera` (an eye and a target), `hud` for 2D shapes on
+top, `cached3d` for big static scenes, `project` (a 3D point to the
+screen), flat/smooth shading, and, since Minecraft3d, relative mouse
+motion (`mdx`/`mdy`) and `?capture_mouse`. Four backends: software,
+OpenGL, WebGL, and the web SVG one.
+
+## Principles
+
+The same as `plan_games.md`'s -- toys not clones, a layer when a second
+game needs it, teaching, game culture -- plus two for 3D:
+
+- **Performance decides the toy**: the software rasterizer is the
+  teaching backend, and it's slow (Minecraft3d's frame rate,
+  `plan_minecraft_remaining.md` section 5). A toy's scene should stay
+  small enough to be playable there: flat-shaded low-poly (Virtua
+  Racing's look) rather than Quake's. The GPU backends
+  (`plan_3d_remaining.md` section 5: fog, frustum culling) are for the
+  big scenes.
+- **Pseudo-3D is 2D**: several classics aren't really 3D (a raycaster,
+  Mode 7, voxel terrain, Out Run's road); they fit the 2D playground,
+  or `graphics/core`'s `Framebuffer`, as well as `playground3d`. Each
+  section says which; the pseudo-3D toys are the best lesson on *why*
+  real 3D (a z-buffer, clipping, perspective-correct textures) was
+  needed.
+
+## Kits
+
+```
+  games       TinyBattlezone TinyWolf  TinyDoom  TinyMario64  TinyVirtuaRacing  Minecraft3d
+                    |           |         |           |              |               |
+  3D kits     Vector   Raycaster (2D  Sectors    Camera3d       Track3d        Voxels
+              (lines)  grid, DDA)     (portals)  (chase, orbit)  (+ racing kit)  (Minecraft_model)
+                    |           |         |           |              |               |
+  3D layers   Fps_controller (from Minecraft_player)  Heightmap  Collide3d (box vs. world)
+                    |                                     |
+  base        Playground3d: shapes, camera, hud, cached3d        (+ 2D: Camera2d, Tilemap)
+```
+
+Where: generic 3D layers in `playground3d/` (next to `Gpu_scene`), 3D
+kits in `kits/<genre>/` like the 2D ones. Two layers exist in all but
+name: `games3d/Minecraft_player` (a first-person controller: walking,
+jumping, gravity, looking with yaw/pitch, colliding with blocks) and
+`games3d/Minecraft_model` (a voxel grid, with a ray walk to find the
+targeted block). They become layers when a second game wants them.
+
+## References
+
+The Wikipedia and book references of `plan_games.md`, plus, for 3D:
+
+- Wikipedia, [First-person shooter](https://en.wikipedia.org/wiki/First-person_shooter)
+  (its history section),
+  [Vector monitor](https://en.wikipedia.org/wiki/Vector_monitor),
+  [Mode 7](https://en.wikipedia.org/wiki/Mode_7),
+  [2.5D](https://en.wikipedia.org/wiki/2.5D);
+- Fabien Sanglard, *Game Engine Black Book: Wolfenstein 3D* (2017) and
+  *Game Engine Black Book: Doom* (2018): the engines and their
+  hardware, read line by line;
+- Michael Abrash, *Graphics Programming Black Book* (1997): its last
+  chapters are Quake's renderer, by one of its authors;
+- Lode Vandevenne, [Raycasting](https://lodev.org/cgtutor/raycasting.html)
+  (and its parts II-IV: floors, sprites, doors): the classic tutorial
+  on Wolfenstein's technique, the DDA grid walk;
+- John Amanatides and Andrew Woo, "A Fast Voxel Traversal Algorithm
+  for Ray Tracing" (Eurographics, 1987): the same grid walk, in 3D --
+  a raycaster's and Minecraft's block picking.
+
+## Sources to adapt: 3D games in Elm, Haskell, OCaml
+
+As in `plan_games.md`: look for a functional version first. Fewer
+exist in 3D (found, not yet read):
+
+| Genre | Game | Language | Notes |
+|---|---|---|---|
+| first-person | [first-person-elm](https://github.com/evancz/first-person-elm) | Elm (WebGL) | Evan Czaplicki's first-person walk in a small world, ~300 lines |
+| FPS | [Frag](https://github.com/rainbyte/frag) (also on Hackage) | Haskell (Yampa, OpenGL) | Mun Hon Cheong's 2005 undergraduate thesis, "Functional Programming and 3D Games": an FPS loading Quake III BSP levels |
+| racing / physics | [elm-physics](https://github.com/w0rm/elm-physics)'s RaycastCar example | Elm | a car on raycast wheels, Andrey Kuzmin (w0rm) |
+| various | [elm-3d-scene examples](https://github.com/ianmackenzie/elm-3d-scene/tree/main/examples) | Elm | Ian Mackenzie's engine: lighting, shadows |
+| toys | [lucamug/elm-playground-3d](https://github.com/lucamug/elm-playground-3d), nateabele/elm-3d-playground | Elm | the playground3d lineage (see `notes_playground3d_related_work.md`); StarCollector3d's idea comes from the latter |
+
+No OCaml 3D game was found (searching for OCaml raycasters found
+only C, Go and JavaScript ones): our toys would be the first.
+
+## The genres
+
+In historical order, which here is also the order of rendering
+techniques.
+
+### 1. Vector 3D: wireframes
+
+Battlezone (Ed Rotberg, Atari, 1980: tanks on a vector monitor,
+seen through a periscope), Tempest (Dave Theurer, Atari, 1981), Star
+Wars (Atari, 1983), and Elite (David Braben and Ian Bell, 1984: a whole
+galaxy of trading and dogfights, generated from a few numbers, on a
+32 KB BBC Micro).
+
+- **Toy**: TinyBattlezone -- tanks and pyramids as wireframes, a
+  radar. The first 3D game to write: no hidden surfaces, no shading,
+  just `project`; the software backend's wireframe mode ("f") is
+  already its look. Later TinyElite (a ship, a space station to dock
+  in, spinning).
+- **Kit**: `Vector`: shapes as lists of 3D line segments, drawn with
+  `project` into 2D lines (so it also fits the 2D playground), with
+  near-plane clipping for lines (the 2D version of `graphics/3d`'s
+  `Clip`).
+
+### 2. First-person mazes and dungeon crawlers
+
+Maze War (Steve Colley, Greg Thompson, Howard Palmer, NASA Ames,
+1973-74: the first first-person shooter, soon on the ARPANET), 3D
+Monster Maze (Malcolm Evans, ZX81, 1981), Wizardry (Sir-Tech, 1981:
+step by step, turn by turn), Dungeon Master (FTL, 1987: in real time).
+
+- **Toy**: TinyDungeon -- a `Tilemap` of walls, the player moving one
+  cell and turning 90 degrees at a time, the view drawn as the few
+  wall quads visible from the cell: the step between a 2D map and
+  real 3D, and the easiest first-person game.
+- **Kit**: the grid (`Tilemap` from the 2D playground), turned into
+  `box`es; a grid movement (`Grid_move` of the 2D maze kit).
+
+### 3. Raycasting: Wolfenstein 3D
+
+Hovertank 3D and Catacomb 3-D (id Software, 1991), Wolfenstein 3D (id,
+1992: John Carmack's raycaster, one ray per screen column, walls all
+the same height on a grid).
+
+- **Toys**: TinyWolf in the **2D playground** (one rectangle per
+  column, its height 1 / distance: a raycaster needs no 3D at all),
+  and TinyWolf3d in `playground3d` (the same map as boxes, the same
+  controls), to compare the two -- the lesson of the section.
+- **Kit**: `Raycaster`: the DDA walk through a `Tilemap` grid
+  (Lode's tutorial; Amanatides and Woo), the fisheye correction,
+  wall shading by side, then textures and sprites (Lode's parts II
+  and III). In `graphics/` style, one idea per function.
+
+### 4. Doom: sectors, and 2.5D
+
+Doom (id, 1993), Duke Nukem 3D (1996, Ken Silverman's Build engine:
+sectors joined by portals). Levels are a 2D floor plan of sectors,
+each with a floor and a ceiling height (`notes_vs_doom_quake.md`,
+"Doom: not actually 3D").
+
+- **Toy**: TinyDoom -- a few sectors at different heights, stairs,
+  a window, drawn by `playground3d` (floors and walls as polygons
+  extruded from the 2D plan). No BSP needed with a z-buffer: that's
+  the point to make.
+- **Kit**: `Sectors`: a level as 2D polygons with heights, extruded to
+  `polygon3d`s once (`cached3d`); collisions against the plan in 2D
+  (the player is a circle, walls are segments); later portals for
+  visibility.
+
+### 5. True 3D shooters
+
+Ultima Underworld (Blue Sky, 1992), Quake (id, 1996: real 3D levels,
+lightmaps, and online play), then Half-Life (1998).
+
+- **Toy**: none soon: a Quake level is far beyond the software
+  rasterizer (`notes_vs_doom_quake.md`). Frag (above) shows it done in
+  Haskell with OpenGL.
+- **Kit**: `Fps_controller`, extracted from `Minecraft_player` (move,
+  jump, gravity, mouse look), with collisions against boxes instead of
+  blocks (`Collide3d`); shared with TinyWolf3d and TinyDoom.
+
+### 6. Flight and space
+
+Flight Simulator (Bruce Artwick, subLOGIC, 1979-80; Microsoft's from
+1982), Elite (above), Star Fox (Nintendo and Argonaut, 1993: the Super
+FX chip, polygons on a SNES), Comanche (NovaLogic, 1992: voxel
+terrain).
+
+- **Toys**: TinyStarFox (on rails: the ship flies forward by itself,
+  the player dodges and shoots -- a shmup in 3D, reusing the 2D shmup
+  kit's `Waves` and `Paths` in 3D), TinyComanche (voxel terrain: a
+  height map drawn column by column, again 2D-able; see Sebastian
+  Macke's VoxelSpace explainer on GitHub).
+- **Kit**: `Heightmap`: terrain from a grid of heights (from noise,
+  `plan_teaching_other.md` section 4), as `cached3d` triangles, with
+  height queries for landing; a chase camera (`Camera3d`).
+
+### 7. Voxels and sandboxes
+
+Infiniminer (Zachtronics, 2009), Minecraft (Markus Persson, 2009-).
+Done: `games3d/Minecraft3d.ml` (see `plan_minecraft_remaining.md` for
+what's left).
+
+- **Kit**: `Voxels`, from `Minecraft_model`: the block grid, exposed
+  faces, the ray walk for picking -- when a second voxel toy (a
+  TinyTeardown with destructible blocks?) needs it.
+
+### 8. 3D platformers and the camera problem
+
+Alpha Waves (Christophe de Dinechin, Infogrames, 1990, often called
+the first 3D platformer), Super Mario 64 (Nintendo, 1996: the analog
+stick, and a camera operated by a character, Lakitu, filming Mario),
+Crash Bandicoot (Naughty Dog, 1996: a corridor, the camera behind).
+
+- **Toys**: TinyMario64 (a few platforms, jumping, stars: a
+  StarCollector3d with a real jump), TinyMarble (a ball rolling on a
+  tilting board, after Marble Madness (Mark Cerny, Atari, 1984) and
+  Super Monkey Ball (2001)).
+- **Kit**: `Camera3d`, the 3D `Camera2d`: `look_at` exists (the
+  camera record), plus `chase` (behind the player, at a distance and
+  height, smoothed like `Camera2d.follow`), `orbit` (the player turns
+  the camera around the character, the mouse's `mdx`), and the
+  camera's own collision (not going through walls: the hardest part,
+  and why Super Mario 64 made the camera a character you can blame).
+  Keren's GDC talk has no 3D counterpart this famous; John Nesky's
+  "50 Game Camera Mistakes" (GDC 2014, the camera of Journey) is the
+  closest.
+
+### 9. Racing, from Mode 7 to polygons
+
+F-Zero (Nintendo, 1990) and Super Mario Kart (1992): Mode 7, a SNES
+mode rotating and scaling a flat tile map differently on each scan
+line, which makes a flat plane look like a floor. Then polygons: Hard
+Drivin' (Atari, 1989), Virtua Racing (Yu Suzuki, Sega AM2, 1992: flat-
+shaded, 60 frames per second), Ridge Racer (Namco, 1993: textured).
+
+- **Toys**: TinyKart in Mode 7 (a `Tilemap` track drawn row by row with
+  a per-row scale: 2D-able on the software backend's framebuffer, a
+  sibling of `plan_games.md`'s TinyOutRun), and TinyVirtuaRacing --
+  flat-shaded polygons are exactly `playground3d`'s look, so this may
+  be the most satisfying 3D toy.
+- **Kit**, the racing kit of `plan_games.md` in 3D: `Track3d` (a
+  track as a spline of segments with width, banking and height,
+  turned into a ribbon of quads, `cached3d`), the chase `Camera3d`,
+  a car (elm-physics's RaycastCar for the real thing; the 2D kit's
+  bicycle model is enough for a toy), laps and checkpoints.
+
+### 10. Third-person action and fixed cameras
+
+Alone in the Dark (Frédérick Raynal, Infogrames, 1992: 3D characters
+over pre-drawn backgrounds, fixed camera angles, the start of survival
+horror), Tomb Raider (Core Design, 1996).
+
+- **Toy**: TinyAloneInTheDark -- rooms, each with a fixed camera
+  switching when the player crosses into the next zone: a `Camera3d`
+  choice with no smoothing at all, and a lesson on cinematography.
+
+### 11. 3D fighting
+
+Virtua Fighter (Yu Suzuki, Sega AM2, 1993: the first 3D fighting game,
+flat-shaded, like Virtua Racing), Tekken (Namco, 1994).
+
+- **Toy**: TinyVirtuaFighter, two box-figures (a character as a
+  hierarchy of `box`es: joints, `rotate3d` per limb, the lesson being
+  hierarchical transforms and keyframe animation).
+- **Kit**: the 2D brawler kit's hitboxes and frame data, in 3D; a
+  `Skeleton` (a tree of boxes with angles, keyframes interpolated).
+
+### 12. 3D puzzles
+
+Blockout (1989: Tetris in a 3D pit), Monument Valley (ustwo, 2014:
+impossible architecture, an orthographic camera making far and near
+paths connect).
+
+- **Toys**: TinyBlockout (Tetris with depth: `games/Tetris.ml`'s logic
+  on a 3D grid, the camera looking down the pit), TinyMonumentValley
+  (later: needs an orthographic camera, which `Playground3d.camera`
+  doesn't have -- a `fov` of 0 as the convention?).
+
+### Isometric: 3D worlds drawn in 2D
+
+Zaxxon (Sega, 1982), Q*bert (Gottlieb, 1982), Marble Madness (1984),
+Knight Lore (Ultimate Play the Game, 1984: the "Filmation" engine).
+Not 3D rendering at all: a projection of a 3D grid to 2D with shapes
+sorted back to front, so they belong in the 2D playground, a
+`Tilemap` viewed diagonally (`plan_games.md` can gain an isometric
+kit); listed here because players see them as 3D.
+
+## Infrastructure all the games need
+
+- The 2D plan's list (scripted inputs for golden frames, sprites,
+  scenes, pure randomness) applies here too; `tests/3d/` already has
+  golden frames for the 3D examples and StarCollector3d.
+- **Performance on the software backend**: the toys' budgets, measured
+  with `-debug`'s stats line; fog and frustum culling
+  (`plan_3d_remaining.md` section 5) for the bigger ones.
+- **The web**: WebGL's `Mesh_cache` (`plan_webgl_remaining.md` section
+  1) before any big `cached3d` world runs in the browser.
+- **An orthographic camera** (for isometric-looking 3D and puzzles).
+
+## Ordering
+
+1. TinyBattlezone: the easiest 3D game (wireframes, `project`), and
+   the start of the history.
+2. The raycaster pair, TinyWolf (2D) and TinyWolf3d: the best lesson
+   on what 3D rendering adds, and the `Fps_controller` layer out of
+   `Minecraft_player` with its second user.
+3. `Camera3d` with TinyMario64 and TinyMarble: the camera problem.
+4. The racing kit in 3D with TinyVirtuaRacing (and TinyKart in Mode 7
+   next to `plan_games.md`'s TinyOutRun).
+5. `Heightmap` with TinyComanche/TinyStarFox; `Sectors` with TinyDoom.
+6. The rest as they come: fighting with the 2D brawler kit, puzzles,
+   TinyElite.

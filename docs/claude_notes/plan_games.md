@@ -52,7 +52,11 @@ history has a name: the **construction kits** of the 1980s, each a
 genre's engine plus an editor -- Bill Budge's Pinball Construction Set
 (1983), the Adventure Construction Set (Stuart Smith, 1984), Sensible
 Software's Shoot-'Em-Up Construction Kit (1987), later RPG Maker
-(1992). The industry's own word is **engine** (the SCUMM engine, made
+(1992). Next to them, the game programming languages of the home
+computers: STOS Basic (François Lionet, Constantin Sotiropoulos, 1988)
+on the Atari ST and AMOS (1990) on the Amiga, BASICs with sprite, map
+and music editors, and commands for sprites, collisions, scrolling --
+the closest ancestors of this playground. The industry's own word is **engine** (the SCUMM engine, made
 for Maniac Mansion (1987), ran all of LucasArts' point-and-click
 adventures; Doom's engine was licensed for a dozen shooters). "Kit"
 says the smaller, teaching-sized thing better:
@@ -159,7 +163,8 @@ a coin shortage in Japan, legend says), Galaxian (Namco, 1979:
 colors, diving aliens), Galaga (Namco, 1981), Centipede (Atari, 1981:
 the trackball).
 
-- **Toys**: TinyInvaders (the formation marches, speeds up as it
+- **Toys**: TinyInvaders (DONE: `games/TinyInvaders.ml`, with
+  `Sprite`, `Scene2d`, and bunkers as eroding `Tilemap`s; the formation marches, speeds up as it
   shrinks -- an accident of the hardware, which drew faster with fewer
   aliens, kept as the design), TinyGalaga (dives along curves).
 - **Kit** (the start of the shmup kit): `Shots` (the player's and the
