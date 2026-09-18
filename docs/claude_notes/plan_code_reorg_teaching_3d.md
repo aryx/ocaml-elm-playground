@@ -332,6 +332,14 @@ Each a separate function, with its own key, test, and entry in
 - Phases 1-5 must not change a single pixel: compare each scene's
   dumped frame with its reference (`cmp`); any difference is a bug in
   the move, not a feature.
+  Since phase 2, this is part of `make test`: `tests/3d/` has the 17
+  frames (all but Minecraft3d's) as golden PNGs, the pre-reorganization
+  references (checked pixel for pixel), and a Testo test per scene
+  (`tests/3d/Golden_frames.ml`) renders it offscreen (SDL's "dummy"
+  video driver: no display needed, same pixels) and compares; a
+  difference fails with the number of pixels and the new frame as a
+  PNG, and `make approve-golden3d` accepts intended changes.
+  `scripts/ref_frames_3d.sh` stays for Minecraft3d, by hand.
 - Phase 6 changes pixels on purpose: screenshots before/after (e.g.
   Minecraft3d near the ground for clipping), and the magnifier on a
   shared edge for the fill rule.

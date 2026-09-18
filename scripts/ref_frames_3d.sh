@@ -15,6 +15,10 @@
 # keys pressed first (-keys), and one frame dumped as a PPM
 # (-dump-frame), then compared byte for byte.
 #
+# claude: 'make test' checks the same scenes automatically, against the
+# golden frames in tests/3d/golden/ (see tests/3d/Golden_frames.ml),
+# all but Minecraft3d; this script is for a manual check including it.
+#
 # Usage:
 #   scripts/ref_frames_3d.sh capture <dir>   # before: write the references
 #   scripts/ref_frames_3d.sh check <dir>     # after: compare with them

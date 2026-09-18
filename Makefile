@@ -32,6 +32,13 @@ install:
 test:
 	dune runtest -f
 
+# after 'make test' reported 3D golden frames that differ on purpose
+# (look at them first), make the new frames the golden ones; see
+# tests/3d/Golden_frames.ml
+approve-golden3d:
+	cp _build/default/tests/3d/actual/*.png tests/3d/golden/
+	chmod 644 tests/3d/golden/*.png
+
 # This will fail if the .opam isn't up-to-date (in git),
 # and dune isn't installed yet. You can always install dune
 # with 'opam install dune' to get started.
