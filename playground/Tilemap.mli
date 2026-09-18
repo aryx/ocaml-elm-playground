@@ -58,6 +58,15 @@
    levels are still exchanged in its text format, the one of our
    example: '#' a wall, '@' the player, '$' a box, '.' a goal.
 
+   Alternatives: a grid of numbers (the hardware's way, and Tiled's:
+   more than 256 kinds of tiles, several layers, but unreadable in
+   source code); a list of objects with positions (what a level editor
+   outputs for non-grid worlds: any shape anywhere, but collisions must
+   test them all, see the physics plan's broad phase); a picture whose
+   colors are the tiles (a level drawn in a paint program, one pixel
+   per tile, a common trick of game jams). Strings are the readable
+   ones, for small levels typed by hand.
+
    Related work:
      - Microsoft MakeCode Arcade (2019), a game platform for teaching
        (blocks or TypeScript, on the web and on cheap handhelds), has
@@ -104,6 +113,11 @@ val bounds : t -> Camera2d.rect
  * value, like the rest of a model); outside the map, the same map *)
 val get : t -> int -> int -> char option
 val set : t -> int -> int -> char -> t
+
+(* [to_strings map]: the map's rows, as given to [of_strings] (short rows
+ * completed with ' '): to save a level, print it, or draw it another
+ * way, e.g. with Sprite.pixels (a tile per pixel, merged in runs) *)
+val to_strings : t -> string list
 
 (* [find map c]: the cells holding [c], row after row, e.g. the player's
  * start ('@'), the enemies, the coins to count *)

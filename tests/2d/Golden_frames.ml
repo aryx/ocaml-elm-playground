@@ -39,6 +39,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/Snake", "", 5);
     ("games/software/Tetris", "", 5);
     ("games/software/Platformer", "", 5);
+    ("games/software/TinyInvaders", "", 5);
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" scenes

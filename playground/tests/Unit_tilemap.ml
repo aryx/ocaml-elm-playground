@@ -35,6 +35,7 @@ let test_cells () =
   Alcotest.(check (option char)) "tile_at (100, 0)" None (Tilemap.tile_at map 100. 0.)
 
 let test_find_set () =
+  Alcotest.(check (list string)) "to_strings, padded" [ "##"; "# " ] (Tilemap.to_strings (Tilemap.of_strings 1. [ "##"; "#" ]));
   Alcotest.(check (list cell)) "find '@'" [ (2, 1) ] (Tilemap.find map '@');
   let map' = Tilemap.set map 2 1 '.' in
   Alcotest.(check (list cell)) "set: no more '@'" [] (Tilemap.find map' '@');

@@ -98,6 +98,13 @@ Mario today loads six GIFs from the network (`examples/Mario.ml`); with
 a sheet, one local file (which also lets its golden frames exist: the
 2D goldens exclude it because of the network).
 
+**Status**: half DONE, as a layer on top, `playground/Sprite.mli`:
+pixel art typed as strings (drawn as rectangles, one per run of a
+row's pixels), `flip`, and the animation frames (`cycle` by steps,
+`frame` by time, for shapes or image urls). Left: sprite *sheets*,
+which need `image` to draw part of an image -- a change to
+`Playground.mli` and every backend.
+
 ## 5. Scenes: title, game, game over
 
 Every game has a **title screen**, the game, a **game over**, often
@@ -108,6 +115,14 @@ The Elm way needs no new API: a variant in the model
 (in the course, `plan_teaching_other.md` item 1) and a
 `games/template.ml` showing it, not an API -- unless transitions
 (fades between scenes) are wanted, then a small helper.
+
+**Status**: DONE, `playground/Scene2d.mli`: the variant stays the
+game's, wrapped in a record keeping the time spent in the scene
+(`elapsed`, `frames`, `blink`) and the previous frame's keyboard, for
+keys `pressed` rather than held (without it, a space held on the title
+skips the game over). Used by `games/TinyInvaders.ml`, with `Sprite`
+and `Tilemap` (its eroding bunkers). Transitions wait for a group's
+alpha in the renderers.
 
 ## 6. Input: touch, gamepads, text
 

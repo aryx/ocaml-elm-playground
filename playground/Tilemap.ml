@@ -46,6 +46,8 @@ let set (map : t) (col : int) (row : int) (c : char) : t =
     cells.(row) <- String.mapi (fun i old -> if i = col then c else old) cells.(row);
     { map with cells }
 
+let to_strings (map : t) : string list = Array.to_list map.cells
+
 let find (map : t) (c : char) : (int * int) list =
   map.cells |> Array.to_list
   |> List.mapi (fun row line ->

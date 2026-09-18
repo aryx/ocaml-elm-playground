@@ -9,6 +9,7 @@
     Tetris
     Asteroid
     Platformer
+    TinyInvaders
   )
   (libraries
     elm_playground

@@ -43,6 +43,15 @@
    Each technique is a separate function below, so they can be learned
    (and compared, see games/Platformer.ml's camera= flag) one by one.
 
+   Alternatives: a camera inside Playground (a field of [computer], or
+   a [camera] function in Playground.mli applied by the backends, as
+   playground3d's scenes have one), which would hide it from the game,
+   but grow Evan's API; moving every shape by hand (what games without
+   a camera do, e.g. subtracting the scroll from each x), which a group
+   does once for all; or, in hardware, the scroll registers above. Here
+   the camera is a value of the model, which [update] moves like the
+   player: visible, testable, and replayable.
+
    Related work, the same ideas in other game libraries:
      - PICO-8's camera(x, y): the fantasy console's one-function camera,
        an offset subtracted from every drawing;
