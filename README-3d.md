@@ -119,6 +119,15 @@ as well, and `o`: its optimization, keeping the GPU buffers of
 `games3d/opengl/Minecraft3d.exe` or `examples3d/opengl/CachedGrid3d.exe`
 with `-debug`, which logs the draw calls and vertices uploaded).
 
+The WebGL pages take the same flags as URL parameters, since a page has
+no command line: `?debug-keys` for `m`, `b`, `i`, `f` and `o` (their
+state in the page's title), `?keys=mb` to press some before the first
+frame, and `?fixed-time=1000` to freeze the clock, e.g.
+http://localhost:8001/examples3d/webgl/Spheres3d.html?fixed-time=1000&keys=m
+(with `make serve-build`). In a 1000x1000 window, such a frame can be
+compared with the software rasterizer's golden frame
+(`tests/3d/golden/`), made the same way.
+
 Choosing how an app is drawn
 ----------------------------
 
@@ -187,8 +196,8 @@ This is genuinely experimental and quite young:
 - No transparency on the software and GPU backends (`fade3d` is
   ignored there): blending needs the faces drawn back to front, which
   the z-buffer doesn't give.
-- The WebGL backend has no wireframe (WebGL has no polygon mode) and
-  no debug keys yet, and its textures need the page served over HTTP.
+- The WebGL backend's textures need the page served over HTTP, and its
+  wireframe (lines, WebGL having no polygon mode) is never culled.
 
 The rasterizer's code is in `graphics/3d/`, one module per idea, each
 `.mli` explaining its algorithm; `notes_3d.md` section 0 has a reading

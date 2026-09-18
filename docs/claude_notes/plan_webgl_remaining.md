@@ -35,6 +35,8 @@ Then the WebGL-specific part of Minecraft3d:
 
 ## 2. Debug keys, and with them the untested rendering modes
 
+**DONE**, with 3 and the first two of 4, see the end of 3.
+
 The native backends' `m`/`b`/`i` keys need `-debug-keys`; a page has no
 command line, so: `Foo.html?debug-keys`, read from
 `window.location.search`, and the backend's own `keydown` listener on
@@ -55,15 +57,42 @@ pixel for pixel with its software golden frame; with a
 `run_app3d`'s `update2d`/`view2d`), every example could, in headless
 Chrome.
 
+**Done** (2, 3, and the no-WebGL message and wireframe of 4), in
+`playground3d/webgl/Playground3d_platform.ml`, sections "Page
+parameters" and "Debug keys": `?debug-keys` (`m`, `b`, `i`, `f`, `o`,
+their state in the page's title), `?keys=k` (native's `-keys k`, the
+keys pressed before the first frame, since headless Chrome can't press
+any), `?fixed-time=t`. Wireframe draws each triangle's 3 edges as
+`LINES`, bypassing the mesh cache (its meshes have only triangles);
+lines are never culled, so `b` changes nothing in wireframe. No WebGL:
+a message in the page, kept there by `ensure_in_page`, and one console
+error.
+
+Verified by screenshotting, through `make serve-build`'s kind of
+server, every scene of `tests/3d/Golden_frames.ml` at 1000x1000 with
+`?fixed-time=1000&keys=...`, compared with its software golden frame
+(pixels differing by more than 24 in some channel):
+
+- filled scenes, including `Spheres3d_m` (no lighting), culling off
+  (`Cubes3d_b`) and nearest textures (`TexturedCube3d_i`): 0.08% to
+  0.5%, i.e. edge pixels;
+- `CachedGrid3d`: 5.3%, all at the edges of its 1600 small cubes (the
+  faces' colors match within 1; the GPU's coverage rule fills ~10k more
+  edge pixels); the same frame with the cache off (`keys=o`): identical;
+- `Spheres3d_mm` (`Flat`, the `OES_standard_derivatives` path): 7%
+  from the software golden, but 0.15% from the OpenGL backend's frame
+  (`-fixed-time 1000 -keys mm -dump-frame`): the GPU backends' flat
+  shading (the true face normal, per pixel) differs from the software
+  one, not WebGL from OpenGL;
+- wireframe (`_f`): ~6%, lines lit like the faces (as OpenGL's
+  polygon mode does) and not culled.
+
+The no-WebGL message was checked with Chrome's `--disable-3d-apis`.
+
 ## 4. Smaller
 
-- **No WebGL**: today a `failwith`, i.e. a console error and a blank
-  page; show a message in the page instead. It has to survive
-  `run_app`'s first-frame `<body>` reset, like the canvas does
-  (`ensure_in_page`).
-- **Wireframe**: WebGL has no polygon mode; draw each triangle's 3
-  edges as `gl.LINES` (a second, per-frame vertex list), or the
-  barycentric-coordinates fragment shader trick.
+- **No WebGL**: DONE (see 3).
+- **Wireframe**: DONE, as `gl.LINES` (see 3).
 - **A real browser**: keys and mouse (`InteractiveCube3d`,
   `StarCollector3d`) were only tried in headless Chrome, which can't
   press keys.

@@ -40,9 +40,9 @@ open Js_of_ocaml
  * The drawing itself is the OpenGL backend's, in WebGL 1's dialect:
  * the same Gpu_scene vertex data (one draw call per material), the
  * same Mat4 camera matrices, the same lighting formula in the fragment
- * shader, the same rendering hints. Textures are loaded by the browser
- * (see the Textures section). Not yet: wireframe (WebGL has no polygon
- * mode), and the debug keys. *)
+ * shader, the same rendering hints and debug keys. Textures are loaded
+ * by the browser (see the Textures section). The native backends'
+ * command-line flags are URL parameters here (see Page parameters). *)
 
 (*****************************************************************************)
 (* Shaders *)
@@ -112,6 +112,88 @@ let fragment_shader_source ~(derivatives : bool) : string =
 (* the fragment shader's uShading *)
 let shading_code (s : Playground3d.shading) : int = match s with No_lighting -> 0 | Flat -> 1 | Smooth -> 2
 
+(*****************************************************************************)
+(* Page parameters *)
+(*****************************************************************************)
+(* A page has no command line: the native backends' flags become
+ * parameters of its URL, e.g. Cubes3d.html?debug-keys&fixed-time=1000:
+ *  - debug-keys: like -debug-keys, the keys of the next section;
+ *  - keys=k: like -keys k, the debug keys k pressed before the first
+ *    frame (e.g. keys=mb: shading and culling toggled; implies
+ *    debug-keys), e.g. for a screenshot in headless Chrome, which can't
+ *    press keys;
+ *  - fixed-time=t: like -fixed-time t, every frame at the time t (in
+ *    seconds), so a frame is deterministic, e.g. to compare it with the
+ *    software rasterizer's golden frame (tests/3d/golden/, made at
+ *    1000x1000 with -fixed-time 1000: open the page in a 1000x1000
+ *    window). *)
+
+(* "?a&b=1" -> [("a", ""); ("b", "1")] (no %-decoding: our parameters
+ * don't need it) *)
+let url_params () : (string * string) list =
+  let search = Js.to_string Dom_html.window##.location##.search in
+  let search =
+    if String.starts_with ~prefix:"?" search then String.sub search 1 (String.length search - 1) else search
+  in
+  String.split_on_char '&' search
+  |> List.filter (fun s -> s <> "")
+  |> List.map (fun s ->
+         match String.index_opt s '=' with
+         | Some i -> (String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1))
+         | None -> (s, ""))
+
+(*****************************************************************************)
+(* Debug keys *)
+(*****************************************************************************)
+(* With ?debug-keys, the OpenGL backend's keys: "m" shading, "b"
+ * backface culling, "i" texture filtering, "f" wireframe, "o" the mesh
+ * cache (see Meshes). Off by default, like on native, so a game can use
+ * any key. Their starting values come from run_app3d's ?rendering, and
+ * the page's title shows their current state, as the native window's
+ * title does. *)
+
+let shading : Playground3d.shading ref = ref Playground3d.Smooth
+let backface_culling = ref true
+let smooth_textures = ref true
+let wireframe = ref false
+let use_cache = ref true
+
+let current_rendering () : Playground3d.rendering =
+  { shading = !shading; backface_culling = !backface_culling; smooth_textures = !smooth_textures }
+
+let show_state_in_title () : unit =
+  let on_off b = if b then "on" else "off" in
+  let shading_name = match !shading with No_lighting -> "no lighting" | Flat -> "flat" | Smooth -> "smooth" in
+  Dom_html.document##.title :=
+    Js.string
+      (Printf.sprintf "Playground3D (WebGL) -- m: %s, b: culling %s, i: smooth textures %s, f: wireframe %s, o: cache %s"
+         shading_name (on_off !backface_culling) (on_off !smooth_textures) (on_off !wireframe) (on_off !use_cache))
+
+let on_key_press (key : string) : unit =
+  (match key with
+  | "m" -> shading := (match !shading with No_lighting -> Flat | Flat -> Smooth | Smooth -> No_lighting)
+  | "b" -> backface_culling := not !backface_culling
+  | "i" -> smooth_textures := not !smooth_textures
+  | "f" -> wireframe := not !wireframe
+  | "o" -> use_cache := not !use_cache
+  | _ -> ());
+  show_state_in_title ()
+
+(* our own listener on window, next to elm_playground_web's (which still
+ * gives every key to the app too, as on native) *)
+let listen_to_debug_keys () : unit =
+  Dom_html.addEventListener Dom_html.window Dom_html.Event.keydown
+    (Dom_html.handler (fun (evt : Dom_html.keyboardEvent Js.t) ->
+         (* a key held down repeats its keydown: one toggle per press
+          * (not in js_of_ocaml's keyboardEvent, hence Js.Unsafe) *)
+         let repeat = Js.to_bool (Js.Unsafe.get evt "repeat") in
+         (match Js.Optdef.to_option evt##.key with
+         | Some key when not repeat -> on_key_press (Js.to_string key)
+         | _ -> ());
+         Js._true))
+    Js._false
+  |> ignore
+
 (* Like OpenGL, WebGL reports a shader compile or link error only through
  * a status to check and a log to fetch: without these checks, a GLSL
  * typo is a silently blank canvas. *)
@@ -157,10 +239,29 @@ let create_canvas () : Dom_html.canvasElement Js.t =
   canvas
 
 (* run_app empties <body> before inserting its <svg> on the first
- * frame, i.e. just after our first draw: put the canvas back when it
- * has been removed (a no-op on every other frame) *)
-let ensure_in_page (canvas : Dom_html.canvasElement Js.t) : unit =
-  if not (Js.Opt.test canvas##.parentNode) then Dom.appendChild Dom_html.document##.body canvas
+ * frame, i.e. just after our first draw: put the canvas (or the
+ * no-WebGL message) back when it has been removed (a no-op on every
+ * other frame) *)
+let ensure_in_page (elt : #Dom.node Js.t) : unit =
+  if not (Js.Opt.test elt##.parentNode) then Dom.appendChild Dom_html.document##.body elt
+
+(* instead of a blank page when the browser has no WebGL (too old, or
+ * turned off) *)
+let no_webgl_message : Dom_html.paragraphElement Js.t Lazy.t =
+  lazy
+    (let p = Dom_html.createP Dom_html.document in
+     p##.textContent :=
+       Js.some
+         (Js.string
+            "This page needs WebGL, which this browser doesn't provide (or has turned off). The examples also \
+             have an SVG version, which doesn't need it.");
+     let style = p##.style in
+     style##.position := Js.string "fixed";
+     style##.top := Js.string "40%";
+     style##.width := Js.string "100%";
+     style##.textAlign := Js.string "center";
+     style##.fontFamily := Js.string "sans-serif";
+     p)
 
 (* The canvas has two sizes: its size on the page (clientWidth/Height,
  * 100% of the window, in CSS pixels, see create_canvas) and the size
@@ -337,16 +438,16 @@ let set_attribute_pointers (gl : WebGL.renderingContext Js.t) (attributes : (int
          gl##vertexAttribPointer loc size gl##._FLOAT Js._false stride (offset * 4);
          gl##enableVertexAttribArray loc)
 
-let init_gl () : gl_state =
+(* Error when the browser has no WebGL; a shader that doesn't compile is
+ * our bug, not the browser's, and still a failwith *)
+let init_gl () : (gl_state, string) result =
   let canvas = create_canvas () in
   let attrs = WebGL.defaultContextAttributes in
   (* the default, but the z-buffer is the point of this backend *)
   attrs##.depth := Js._true;
-  let gl =
-    match Js.Opt.to_option (WebGL.getContextWithAttributes canvas attrs) with
-    | Some gl -> gl
-    | None -> failwith "WebGL is not available in this browser"
-  in
+  match Js.Opt.to_option (WebGL.getContextWithAttributes canvas attrs) with
+  | None -> Error "WebGL is not available in this browser"
+  | Some gl ->
   (* getExtension both tells whether the extension is there and turns
    * it on *)
   let derivatives = Js.Opt.test (gl##getExtension (Js.string "OES_standard_derivatives")) in
@@ -375,18 +476,19 @@ let init_gl () : gl_state =
            let loc = gl##getAttribLocation program (Js.string name) in
            if loc >= 0 then Some (loc, size, offset) else None)
   in
-  {
-    canvas;
-    gl;
-    program;
-    buffer = gl##createBuffer;
-    attributes;
-    meshes = Mesh_cache.create ();
-    mvp_location = uniform "uMVP";
-    shading_location = uniform "uShading";
-    use_texture_location = uniform "uUseTexture";
-    textures = Hashtbl.create 8;
-  }
+  Ok
+    {
+      canvas;
+      gl;
+      program;
+      buffer = gl##createBuffer;
+      attributes;
+      meshes = Mesh_cache.create ();
+      mvp_location = uniform "uMVP";
+      shading_location = uniform "uShading";
+      use_texture_location = uniform "uUseTexture";
+      textures = Hashtbl.create 8;
+    }
 
 (*****************************************************************************)
 (* Drawing *)
@@ -405,14 +507,42 @@ let use_material (st : gl_state) (rendering : Playground3d.rendering) (material 
       gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_MIN_FILTER_ filter;
       gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_MAG_FILTER_ filter
 
+(* Wireframe. WebGL has no polygon mode (OpenGL's one-line wireframe,
+ * glPolygonMode(GL_LINE)), so each triangle's 3 edges are drawn as 3
+ * lines instead: its vertices a b c, from Gpu_scene's triangle list,
+ * copied as a b, b c, c a, for drawArrays LINES:
+ *
+ *        c                  triangles:  a b c  d e f  ...
+ *       / \
+ *      /   \                lines:      a b  b c  c a  d e  e f  f d ...
+ *     a-----b
+ *
+ * Unlike the polygon mode, lines are never culled (culling is about
+ * which side of a triangle faces the camera, and a line has no sides),
+ * so "b" makes no difference in wireframe here. *)
+let lines_of_triangles (data : float array) : float array =
+  let n = Gpu_scene.floats_per_vertex in
+  let triangles = Array.length data / (3 * n) in
+  let lines = Array.make (triangles * 6 * n) 0. in
+  for t = 0 to triangles - 1 do
+    [ 0; 1; 1; 2; 2; 0 ] |> List.iteri (fun k v -> Array.blit data (((t * 3) + v) * n) lines (((t * 6) + k) * n) n)
+  done;
+  lines
+
 let draw_group (st : gl_state) (rendering : Playground3d.rendering)
     ((material, vertices) : Gpu_scene.material * Gpu_scene.vertex_data list) : unit =
   let gl = st.gl in
   let (data, vertex_count) = Gpu_scene.vertex_floats_of_group vertices in
   if vertex_count > 0 then begin
-    gl##bufferData gl##._ARRAY_BUFFER_ (float32_array data) gl##._DYNAMIC_DRAW_;
     use_material st rendering material;
-    gl##drawArrays gl##._TRIANGLES 0 vertex_count
+    if !wireframe then begin
+      gl##bufferData gl##._ARRAY_BUFFER_ (float32_array (lines_of_triangles data)) gl##._DYNAMIC_DRAW_;
+      gl##drawArrays gl##._LINES 0 (vertex_count * 2)
+    end
+    else begin
+      gl##bufferData gl##._ARRAY_BUFFER_ (float32_array data) gl##._DYNAMIC_DRAW_;
+      gl##drawArrays gl##._TRIANGLES 0 vertex_count
+    end
   end
 
 (* Meshes: the GPU side of Playground3d.cached3d (see Mesh_cache): each
@@ -462,9 +592,12 @@ let draw (st : gl_state) (rendering : Playground3d.rendering) (computer : Playgr
   gl##uniform1i st.shading_location (shading_code rendering.shading);
   if rendering.backface_culling then gl##enable gl##._CULL_FACE_ else gl##disable gl##._CULL_FACE_;
   (* the cached3d shapes set aside, the rest drawn from the scene's
-   * buffer, then the cached ones from their meshes *)
+   * buffer, then the cached ones from their meshes; unless the cache is
+   * off ("o"), or in wireframe (the meshes only have triangles): then
+   * the cached3d shapes are flattened with the rest, every frame *)
   let cached = ref [] in
-  let groups = Gpu_scene.group_by_material ~on_cached:(fun c -> cached := c :: !cached) shapes in
+  let on_cached = if !use_cache && not !wireframe then Some (fun c -> cached := c :: !cached) else None in
+  let groups = Gpu_scene.group_by_material ?on_cached shapes in
   gl##bindBuffer gl##._ARRAY_BUFFER_ st.buffer;
   set_attribute_pointers gl st.attributes;
   List.iter (draw_group st rendering) groups;
@@ -501,16 +634,40 @@ let capture_mouse_on_click () : unit =
 let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = false)
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   if capture_mouse then capture_mouse_on_click ();
+  shading := rendering.shading;
+  backface_culling := rendering.backface_culling;
+  smooth_textures := rendering.smooth_textures;
+  let params = url_params () in
+  let keys = Option.value (List.assoc_opt "keys" params) ~default:"" in
+  if List.mem_assoc "debug-keys" params || keys <> "" then begin
+    listen_to_debug_keys ();
+    String.iter (fun c -> on_key_press (String.make 1 c)) keys;
+    show_state_in_title ()
+  end;
+  let fixed_time = Option.bind (List.assoc_opt "fixed-time" params) float_of_string_opt in
+  let at_fixed_time (computer : Playground.computer) : Playground.computer =
+    match fixed_time with None -> computer | Some t -> { computer with time = Playground.Time t }
+  in
   (* created on the first frame, i.e. once the page is loaded (run_app
    * waits for the onload event) *)
-  let gl_state = lazy (init_gl ()) in
+  let gl_state =
+    lazy
+      (let r = init_gl () in
+       (match r with
+       | Error msg -> Firebug.console##error (Js.string ("playground3d webgl: " ^ msg))
+       | Ok _ -> ());
+       r)
+  in
   let view2d (computer : Playground.computer) (model : 'model) : Playground.shape list =
+    let computer = at_fixed_time computer in
     let (camera, shapes) = Playground3d.view3d app3d computer model in
-    draw (Lazy.force gl_state) rendering computer camera shapes;
+    (match Lazy.force gl_state with
+    | Ok st -> draw st (current_rendering ()) computer camera shapes
+    | Error _ -> ensure_in_page (Lazy.force no_webgl_message));
     Playground3d.collect_hud_shapes (Playground3d.group3d shapes)
   in
   let update2d (computer : Playground.computer) (model : 'model) : 'model =
-    Playground3d.update3d app3d computer model
+    Playground3d.update3d app3d (at_fixed_time computer) model
   in
   let initial = Playground3d.init3d app3d () in
   Playground_platform.run_app (Playground.game view2d update2d initial)
