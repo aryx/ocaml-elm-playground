@@ -29,6 +29,27 @@ install:
 # to test the web programs, run also make and then go to
 # _build/default/examples/js/ (or games/js/) under chrome for instance
 # with open -a "Google Chrome" _build/default/examples/js
+# claude: or use 'make serve-build' below, required for the WebGL
+# pages with textures.
+
+# claude: build, then serve _build/default/ over HTTP, for the web
+# programs, e.g.
+#   http://localhost:8001/examples3d/webgl/TexturedCube3d.html
+#   http://localhost:8001/examples/js/Mario.html
+# Opening their .html directly (file://) works for most of them, but
+# not for a WebGL page with textures: WebGL refuses to read the pixels
+# of an image it considers from another site (it would let the page
+# spy on images it shouldn't see), and Chrome considers every file://
+# page a site of its own, even for an image in the same directory. The
+# texture then stays magenta, with a SecurityError in the browser's
+# console (see playground3d/webgl/Playground3d_platform.ml, Textures).
+# Served over HTTP, the page and its images are one site.
+# Port 8001, so it can run alongside 'make serve' (docs/, on 8000);
+# 127.0.0.1, so only this machine can connect. Ctrl-C to stop.
+serve-build: all
+	@echo "serving _build/default/ at http://localhost:8001/"
+	python3 -m http.server --directory _build/default --bind 127.0.0.1 8001
+
 test:
 	dune runtest -f
 

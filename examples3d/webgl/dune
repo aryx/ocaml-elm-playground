@@ -35,8 +35,9 @@
 )
 
 ; claude: copy the .html pages into _build/default/examples3d/webgl/
-; next to the generated .bc.js (same trick as ../js/dune)
+; next to the generated .bc.js (same trick as ../js/dune), and the
+; textures where the pages look for them (see examples3d/dune)
 (rule
   (alias default)
-  (deps (glob_files *.html) (alias all))
+  (deps (glob_files *.html) (alias all) examples3d/checker.png)
   (action (progn)))

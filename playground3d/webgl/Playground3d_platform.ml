@@ -40,9 +40,9 @@ open Js_of_ocaml
  * The drawing itself is the OpenGL backend's, in WebGL 1's dialect:
  * the same Gpu_scene vertex data (one draw call per material), the
  * same Mat4 camera matrices, the same lighting formula in the fragment
- * shader, the same rendering hints. Not yet: textures (drawn with a
- * magenta placeholder, see plan_webgl.md's Phase 4), wireframe (WebGL
- * has no polygon mode), and the debug keys. *)
+ * shader, the same rendering hints. Textures are loaded by the browser
+ * (see the Textures section). Not yet: wireframe (WebGL has no polygon
+ * mode), and the debug keys. *)
 
 (*****************************************************************************)
 (* Shaders *)
@@ -199,6 +199,94 @@ let letterbox ~(canvas_w : int) ~(canvas_h : int) (screen : Playground.screen) :
   ((canvas_w - w) / 2, (canvas_h - h) / 2, w, h)
 
 (*****************************************************************************)
+(* Textures *)
+(*****************************************************************************)
+(* The other backends decode their textures themselves
+ * (graphics/images/Texture_decode, stb_image, blocking); here the
+ * browser does it, from an <img>, which also means **asynchronously**:
+ * setting img.src starts the download and returns at once. So a
+ * texture goes through two steps, in two caches:
+ *
+ *  - [images]: src -> its <img>, created on first request (by
+ *    preload_texture, or the first frame that draws the texture),
+ *    before any GL context exists, so a preload can start early;
+ *  - [gl_state.textures]: src -> its GL texture, created on first draw
+ *    with the other backends' 1x1 magenta "missing texture" pixel, and
+ *    replaced by the image, once, on the first frame after the image
+ *    is complete. Until then (or forever, if the image can't be
+ *    loaded) the faces are magenta.
+ *
+ * Checking [complete] every frame, rather than uploading from the
+ * image's onload handler, keeps all GL calls inside [draw]: no GL
+ * context yet when a preload's image arrives is then not a case to
+ * handle. *)
+
+let images : (string, Dom_html.imageElement Js.t) Hashtbl.t = Hashtbl.create 8
+
+let is_http_url (src : string) : bool =
+  String.starts_with ~prefix:"http://" src || String.starts_with ~prefix:"https://" src
+
+(* the <img> of [src], its download started if this is the first request *)
+let image_of (src : string) : Dom_html.imageElement Js.t =
+  match Hashtbl.find_opt images src with
+  | Some img -> img
+  | None ->
+      let img = Dom_html.createImg Dom_html.document in
+      (* WebGL refuses to read the pixels of an image from another site
+       * unless that site allows it (CORS), and the request must ask for
+       * it; not for a relative path, where the attribute would instead
+       * break loading from a file:// page. (Not in js_of_ocaml's
+       * imageElement, hence Js.Unsafe.) *)
+      if is_http_url src then Js.Unsafe.set img "crossOrigin" (Js.string "anonymous");
+      img##.src := Js.string src;
+      Hashtbl.replace images src img;
+      img
+
+type texture = { tex : WebGL.texture Js.t; mutable uploaded : bool }
+
+let magenta_pixel () = new%js Typed_array.uint8Array_fromArray (Js.array [| 255; 0; 255; 255 |])
+
+let create_texture (gl : WebGL.renderingContext Js.t) : WebGL.texture Js.t =
+  let tex = gl##createTexture in
+  gl##bindTexture gl##._TEXTURE_2D_ tex;
+  gl##texImage2D_fromView gl##._TEXTURE_2D_ 0 gl##._RGBA 1 1 0 gl##._RGBA gl##._UNSIGNED_BYTE_ (magenta_pixel ());
+  (* WebGL 1 can only sample a texture whose size isn't a power of 2
+   * (e.g. a 100x60 image) with this wrap mode and no mipmaps (the
+   * filters set in draw_group don't use any) *)
+  gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_WRAP_S_ gl##._CLAMP_TO_EDGE_;
+  gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_WRAP_T_ gl##._CLAMP_TO_EDGE_;
+  tex
+
+(* No v-flip: from an <img>, texImage2D puts the image's top row at
+ * v = 0 (UNPACK_FLIP_Y_WEBGL is false by default), the convention of
+ * the playground's UVs (see Playground3d.textured_quad), like the
+ * OpenGL backend's upload of stb_image's rows.
+ *
+ * A complete image with no width failed to load (e.g. a 404): it stays
+ * magenta. texImage2D itself can fail too, with a SecurityError, on an
+ * image the browser considers from another origin, which includes any
+ * image of a page opened as file:// in Chrome: then too, magenta, and
+ * a message in the console (serve the page over http instead, e.g.
+ * with 'make serve-build'). Either way the texture is marked uploaded, so each
+ * problem is reported once, not every frame. *)
+let try_upload (gl : WebGL.renderingContext Js.t) (src : string) (t : texture) : unit =
+  let img = image_of src in
+  let loaded = Js.Optdef.get img##.naturalWidth (fun () -> 0) > 0 in
+  if Js.to_bool img##.complete then begin
+    t.uploaded <- true;
+    if loaded then begin
+      gl##bindTexture gl##._TEXTURE_2D_ t.tex;
+      try gl##texImage2D_fromImage gl##._TEXTURE_2D_ 0 gl##._RGBA gl##._RGBA gl##._UNSIGNED_BYTE_ img
+      with exn ->
+        (* the browser's console (js_of_ocaml's name for it is historic) *)
+        Firebug.console##warn
+          (Js.string
+             (Printf.sprintf "playground3d webgl: can't use texture %s (%s)" src (Printexc.to_string exn)))
+    end
+    else Firebug.console##warn (Js.string (Printf.sprintf "playground3d webgl: can't load texture %s" src))
+  end
+
+(*****************************************************************************)
 (* GL state *)
 (*****************************************************************************)
 
@@ -210,25 +298,24 @@ type gl_state = {
   mvp_location : [ `mat4 ] WebGL.uniformLocation Js.t;
   shading_location : int WebGL.uniformLocation Js.t;
   use_texture_location : int WebGL.uniformLocation Js.t;
-  (* until textures are loaded (Phase 4), every textured face shows
-   * this, the same magenta as the other backends' missing texture *)
-  placeholder_texture : WebGL.texture Js.t;
+  textures : (string, texture) Hashtbl.t;
 }
+
+(* the GL texture of [src], magenta until its image is there *)
+let gl_texture (st : gl_state) (src : string) : WebGL.texture Js.t =
+  let t =
+    match Hashtbl.find_opt st.textures src with
+    | Some t -> t
+    | None ->
+        let t = { tex = create_texture st.gl; uploaded = false } in
+        Hashtbl.replace st.textures src t;
+        t
+  in
+  if not t.uploaded then try_upload st.gl src t;
+  t.tex
 
 let float32_array (data : float array) : Typed_array.float32Array Js.t =
   new%js Typed_array.float32Array_fromArray (Js.array data)
-
-let create_placeholder_texture (gl : WebGL.renderingContext Js.t) : WebGL.texture Js.t =
-  let tex = gl##createTexture in
-  gl##bindTexture gl##._TEXTURE_2D_ tex;
-  let magenta = new%js Typed_array.uint8Array_fromArray (Js.array [| 255; 0; 255; 255 |]) in
-  gl##texImage2D_fromView gl##._TEXTURE_2D_ 0 gl##._RGBA 1 1 0 gl##._RGBA gl##._UNSIGNED_BYTE_ magenta;
-  (* WebGL 1 can only sample a texture whose size isn't a power of 2
-   * with this wrap mode and no mipmaps; this one is 1x1, but real ones
-   * (Phase 4) will be set up the same way *)
-  gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_WRAP_S_ gl##._CLAMP_TO_EDGE_;
-  gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_WRAP_T_ gl##._CLAMP_TO_EDGE_;
-  tex
 
 let init_gl () : gl_state =
   let canvas = create_canvas () in
@@ -284,7 +371,7 @@ let init_gl () : gl_state =
     mvp_location = uniform "uMVP";
     shading_location = uniform "uShading";
     use_texture_location = uniform "uUseTexture";
-    placeholder_texture = create_placeholder_texture gl;
+    textures = Hashtbl.create 8;
   }
 
 (*****************************************************************************)
@@ -299,9 +386,9 @@ let draw_group (st : gl_state) (rendering : Playground3d.rendering)
     gl##bufferData gl##._ARRAY_BUFFER_ (float32_array data) gl##._DYNAMIC_DRAW_;
     (match material with
     | Flat -> gl##uniform1i st.use_texture_location 0
-    | Textured _src ->
+    | Textured src ->
         gl##uniform1i st.use_texture_location 1;
-        gl##bindTexture gl##._TEXTURE_2D_ st.placeholder_texture;
+        gl##bindTexture gl##._TEXTURE_2D_ (gl_texture st src);
         (* smooth_textures: the GPU's bilinear filtering, or the
          * nearest texel *)
         let filter = if rendering.smooth_textures then gl##._LINEAR else gl##._NEAREST in
@@ -350,5 +437,6 @@ let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'm
   let initial = Playground3d.init3d app3d () in
   Playground_platform.run_app (Playground.game view2d update2d initial)
 
-(* claude: no-op until textures (plan_webgl.md, Phase 4) *)
-let preload_texture (_src : string) : unit = ()
+(* starts the download (see Textures), so the texture can be there
+ * when first drawn; doesn't wait for it (a page can't block) *)
+let preload_texture (src : string) : unit = ignore (image_of src)

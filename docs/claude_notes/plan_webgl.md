@@ -317,7 +317,25 @@ gets it for free. Two consequences here:
    `No_lighting` modes and culling off (no way to pick them without
    the debug keys or a `?rendering` in an example), and keyboard/mouse
    input in a real browser.
-4. **Textures**: async `Image` loading, `TexturedCube3d`.
+4. **DONE.** **Textures**: async `Image` loading, `TexturedCube3d`.
+   Rather than uploading from `img.onload`, two caches: `images` (src
+   -> `<img>`, download started by `preload_texture` or the first
+   draw, usable before the GL context exists) and the GL textures
+   (magenta until the frame after the image is `complete`, then
+   uploaded once). A failed load (404) or a failed upload (the
+   `SecurityError` of a `file://` page, as predicted) keeps the
+   magenta and warns once in the console. `crossOrigin = "anonymous"`
+   only for `http(s)` srcs. The path problem is solved by a
+   one-rule `examples3d/webgl/examples3d/dune` copying `checker.png`
+   where the page looks for it (a dune rule can only write in its own
+   directory), built by the html's default alias. Verified with
+   headless Chrome through `python3 -m http.server`: the checker's
+   quadrants are where the OpenGL backend has them (no v-flip,
+   confirmed); from `file://`, magenta plus the one warning.
+   Phase 5 must copy that `examples3d/checker.png` under `docs/` too.
+   `make serve-build` builds and serves `_build/default/` on
+   http://localhost:8001/, for trying the web pages locally (textures
+   included).
 5. **Publish**: `dune-project` package stanza, `Makefile`
    (`OPAMS`, `ODOC_DIRS`, the `js`/`website` targets copying
    `examples3d/webgl/` under `docs/`), links from the docs index;
