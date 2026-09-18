@@ -199,9 +199,36 @@ let scale_channel (c : int) (brightness : float) : int = int_of_float (float_of_
  * could be mistaken for an intentional color *)
 let missing_texture_color = Playground.rgb 255 0 255
 
-(* nearest-neighbor sampling (no filtering/mipmaps yet); (u, v) = (0, 0)
- * is the image's top-left corner, matching textured_quad's convention *)
-let sample_texture (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) : int * int * int =
+(* texture sampling: (u, v) = (0, 0) is the image's top-left corner,
+ * matching textured_quad's convention; no mipmaps yet *)
+
+(* claude: Playground3d.rendering's smooth_textures (the starting value
+ * comes from run_app3d's ?rendering), "i" to toggle at runtime *)
+let smooth_textures : bool ref = ref true
+
+(* claude: bilinear filtering, like playground/raster/Blit.sample_bilinear
+ * for 2D images: mix the 4 texels whose centers surround (u, v), each
+ * weighted by how close it is (see Blit.mli for a picture) *)
+let sample_texture_bilinear (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) : int * int * int =
+  let clamp lo hi x = if x < lo then lo else if x > hi then hi else x in
+  (* texel i's center is at i + 0.5 *)
+  let x = (u *. float_of_int img.width) -. 0.5 and y = (v *. float_of_int img.height) -. 0.5 in
+  let i = int_of_float (Float.floor x) and j = int_of_float (Float.floor y) in
+  let tx = x -. Float.floor x and ty = y -. Float.floor y in
+  let texel i j =
+    let i = clamp 0 (img.width - 1) i and j = clamp 0 (img.height - 1) j in
+    let idx = img.offset + (j * img.stride) + (i * img.channels) in
+    fun k -> float_of_int (Bigarray.Array1.unsafe_get img.data (idx + k))
+  in
+  let t00 = texel i j and t10 = texel (i + 1) j and t01 = texel i (j + 1) and t11 = texel (i + 1) (j + 1) in
+  let channel k =
+    let top = (t00 k *. (1. -. tx)) +. (t10 k *. tx) and bottom = (t01 k *. (1. -. tx)) +. (t11 k *. tx) in
+    int_of_float ((top *. (1. -. ty)) +. (bottom *. ty) +. 0.5)
+  in
+  (channel 0, channel 1, channel 2)
+
+(* nearest-neighbor sampling: the texel containing (u, v) *)
+let sample_texture_nearest (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) : int * int * int =
   let clamp01 x = if x < 0. then 0. else if x > 1. then 1. else x in
   let x = min (img.width - 1) (int_of_float (clamp01 u *. float_of_int img.width)) in
   let y = min (img.height - 1) (int_of_float (clamp01 v *. float_of_int img.height)) in
@@ -210,6 +237,9 @@ let sample_texture (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) 
   ( Bigarray.Array1.unsafe_get data idx,
     Bigarray.Array1.unsafe_get data (idx + 1),
     Bigarray.Array1.unsafe_get data (idx + 2) )
+
+let sample_texture (img : Stb_image.int8 Stb_image.t) ~(u : float) ~(v : float) : int * int * int =
+  if !smooth_textures then sample_texture_bilinear img ~u ~v else sample_texture_nearest img ~u ~v
 
 (*****************************************************************************)
 (* Projection (with depth, for the z-buffer -- see Playground3d.project
@@ -431,36 +461,6 @@ let make_shader (v0 : vertex) (v1 : vertex) (v2 : vertex) : l0:float -> l1:float
 
 type material = Flat of Playground.color | Textured of string
 
-let face_normal (points : vec3 list) : vec3 =
-  match points with
-  | [] | [ _ ] | [ _; _ ] -> failwith "polygon3d needs at least 3 points"
-  | first :: rest ->
-      (* each point with the next one, the last with the first *)
-      let edges = List.combine points (rest @ [ first ]) in
-      normalize
-        (List.fold_left
-           (fun (nx, ny, nz) ((x0, y0, z0), (x1, y1, z1)) ->
-             ( nx +. ((y0 -. y1) *. (z0 +. z1)),
-               ny +. ((z0 -. z1) *. (x0 +. x1)),
-               nz +. ((x0 -. x1) *. (y0 +. y1)) ))
-           (0., 0., 0.) edges)
-
-(* every leaf face's points, tagged with (uv, normal) -- a flat
- * Polygon3d/TexturedPolygon3d face repeats the SAME winding-based
- * face_normal at every one of its points (which is exactly what makes
- * flat_shading uniform across a face: see make_shader), while a
- * SmoothPolygon3d face already has its own distinct normal per point. *)
-let rec flatten_faces (shape : Playground3d.shape3d) :
-    (material * (vec3 * (float * float) * vec3) list) list =
-  match shape.form with
-  | Polygon3d (color, points) ->
-      let normal = face_normal points in
-      [ (Flat color, List.map (fun p -> (p, (0., 0.), normal)) points) ]
-  | TexturedPolygon3d (src, points) ->
-      let normal = face_normal (List.map fst points) in
-      [ (Textured src, List.map (fun (p, uv) -> (p, uv, normal)) points) ]
-  | SmoothPolygon3d (color, points) -> [ (Flat color, List.map (fun (p, n) -> (p, (0., 0.), n)) points) ]
-  | Hud _ -> [] (* collected separately by Playground3d.collect_hud_shapes, contributes no geometry *)
 (* claude: bugfix: spheres drawn "cut" at the top.
  *
  * The symptom: every sphere was missing its top cap, the ring of faces
@@ -542,6 +542,36 @@ let rec flatten_faces (shape : Playground3d.shape3d) :
  * Reference: Martin Newell's method, as described in Ivan Sutherland,
  * Robert Sproull, Robert Schumacker, "A Characterization of Ten
  * Hidden-Surface Algorithms", ACM Computing Surveys 6(1):1-55, 1974. *)
+let face_normal (points : vec3 list) : vec3 =
+  match points with
+  | [] | [ _ ] | [ _; _ ] -> failwith "polygon3d needs at least 3 points"
+  | first :: rest ->
+      (* each point with the next one, the last with the first *)
+      let edges = List.combine points (rest @ [ first ]) in
+      normalize
+        (List.fold_left
+           (fun (nx, ny, nz) ((x0, y0, z0), (x1, y1, z1)) ->
+             ( nx +. ((y0 -. y1) *. (z0 +. z1)),
+               ny +. ((z0 -. z1) *. (x0 +. x1)),
+               nz +. ((x0 -. x1) *. (y0 +. y1)) ))
+           (0., 0., 0.) edges)
+
+(* every leaf face's points, tagged with (uv, normal) -- a flat
+ * Polygon3d/TexturedPolygon3d face repeats the SAME winding-based
+ * face_normal at every one of its points (which is exactly what makes
+ * flat_shading uniform across a face: see make_shader), while a
+ * SmoothPolygon3d face already has its own distinct normal per point. *)
+let rec flatten_faces (shape : Playground3d.shape3d) :
+    (material * (vec3 * (float * float) * vec3) list) list =
+  match shape.form with
+  | Polygon3d (color, points) ->
+      let normal = face_normal points in
+      [ (Flat color, List.map (fun p -> (p, (0., 0.), normal)) points) ]
+  | TexturedPolygon3d (src, points) ->
+      let normal = face_normal (List.map fst points) in
+      [ (Textured src, List.map (fun (p, uv) -> (p, uv, normal)) points) ]
+  | SmoothPolygon3d (color, points) -> [ (Flat color, List.map (fun (p, n) -> (p, (0., 0.), n)) points) ]
+  | Hud _ -> [] (* collected separately by Playground3d.collect_hud_shapes, contributes no geometry *)
   | Group3d shapes -> List.concat_map flatten_faces shapes
 
 let face_centroid (points : vec3 list) : vec3 =
@@ -969,7 +999,15 @@ open Native_loop
 
 let preload_texture = Texture_native.preload
 
-let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
+let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'msg) Playground3d.app3d) :
+    unit =
+  (* claude: the app's choices are the starting values of the modes
+   * below; the debug keys can still change them (e.g. "m" also cycles
+   * through Gouraud, which the portable hints don't name) *)
+  shading_mode :=
+    (match rendering.shading with No_lighting -> Flat_color | Flat -> Flat_shading | Smooth -> Phong);
+  backface_culling_enabled := rendering.backface_culling;
+  smooth_textures := rendering.smooth_textures;
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in
 
@@ -1009,13 +1047,15 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   (* debug toggles for comparing rendering strategies live, see each
    * one's own doc comment above: "m" shading mode, "b" backface
    * culling, "f" wireframe/filled, "z" painter's algorithm/z-buffer,
-   * "p" perspective-correct/linear interpolation *)
+   * "p" perspective-correct/linear interpolation, "i" bilinear/nearest
+   * texture filtering *)
   let on_key_press str =
     if str = "m" then cycle_shading_mode ();
     if str = "b" then backface_culling_enabled := not !backface_culling_enabled;
     if str = "f" then cycle_render_mode ();
     if str = "z" then cycle_visibility_mode ();
-    if str = "p" then cycle_interpolation_mode ()
+    if str = "p" then cycle_interpolation_mode ();
+    if str = "i" then smooth_textures := not !smooth_textures
   in
   let draw (_computer : Playground.computer) ((camera, shapes) : Playground3d.camera * Playground3d.shape3d list)
       : unit =

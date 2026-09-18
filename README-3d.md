@@ -70,12 +70,39 @@ live debug toggles for comparing rendering strategies side by side
 
 | Key | Toggles |
 | --- | --- |
-| `m` | Shading: flat color (no lighting) vs. flat shading (one light, per-face) |
+| `m` | Shading: cycles flat color (no lighting), flat shading (one brightness per face), Gouraud (per vertex), Phong (per pixel) -- they differ on curved shapes; try `Spheres3d.exe` |
 | `b` | Backface culling on/off -- a solid's far side faces always point away from the camera, so they can never actually be visible; culling skips drawing them at all (a free performance win). No visible difference in filled mode (the z-buffer already hides them anyway); try `f` (wireframe) first to actually see it do something |
 | `f` | Wireframe vs. filled |
 | `z` | Painter's algorithm vs. z-buffer -- try this on `PaintersAlgorithmFail3d.exe`, not `Cubes3d.exe` (that one's grid of cubes turns out not to stress it enough to visibly break) |
 | `p` | Perspective-correct vs. linear interpolation -- try this on `TexturedCube3d.exe`; `Linear` makes the texture visibly swim/drift as the cube rotates |
+| `i` | Texture filtering: bilinear (smooth) vs. nearest (sharp texels) -- `TexturedCube3d.exe` again |
 | `Q` | Quit |
+
+The OpenGL backend (`examples3d/opengl/`, `games3d/opengl/`) has `m`
+(no lighting, flat, smooth), `b`, `f`, and `i` too.
+
+Choosing how an app is drawn
+----------------------------
+
+The keys change things while an app runs; the app itself chooses the
+starting values, portably, with `Playground3d.rendering`:
+
+```ocaml
+let main =
+  Playground3d_platform.run_app3d
+    ~rendering:{ default_rendering with shading = Flat } app
+```
+
+- `shading`: `No_lighting`, `Flat` (crisp facets), or `Smooth` (curved
+  shapes look round; the default);
+- `backface_culling`: `false` to also draw the faces turned away from
+  the camera, e.g. for a lone `plane` seen from below;
+- `smooth_textures`: `false` for sharp texels (pixel-art textures).
+
+Each backend does what it can: the software rasterizer and OpenGL
+honor all three; the web backend can only light each face with one
+color (`Smooth` looks like `Flat` there) and has no textures. The 2D
+playground has the same idea, `Playground.rendering`.
 
 A minimal example
 ------------------

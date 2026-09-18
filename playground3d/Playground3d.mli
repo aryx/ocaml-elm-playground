@@ -259,13 +259,48 @@ val camera :
     geometry. *)
 val project : camera -> Playground.screen -> number * number * number -> (number * number) option
 
+(** {1 Rendering hints} *)
+
+(** How surfaces are lit (by a fixed "sun" up and to the side):
+    - [No_lighting]: every face drawn in its own color, as given;
+    - [Flat]: one brightness per face, from the direction it faces:
+      crisp facets;
+    - [Smooth]: the brightness varies across curved shapes' faces
+      (e.g. {!sphere}'s), so they look round; on flat-faced shapes
+      ({!cube}, {!box}, ...) the same as [Flat]. *)
+type shading = No_lighting | Flat | Smooth
+
+(** How to draw, for the backends that can honor it, given to
+    [Playground3d_platform.run_app3d ~rendering]:
+    - [shading]: see {!shading};
+    - [backface_culling]: skip the faces turned away from the camera
+      (true: the usual, since they're hidden by the front faces of a
+      closed shape anyway), or draw both sides (false: e.g. for a lone
+      {!plane} seen from below);
+    - [smooth_textures]: enlarged textures blend their pixels (true) or
+      show them as sharp squares (false), like
+      {!Playground.rendering}'s [smooth_images].
+
+    Each backend maps these to what it has (the software rasterizer to
+    its own algorithms, OpenGL to shaders and GL settings, the web to
+    what SVG polygons can do: [Smooth] is [Flat] there, and it has no
+    textures), and the backends' debug keys can still change them while
+    the app runs: these are the starting values. *)
+type rendering = { shading : shading; backface_culling : bool; smooth_textures : bool }
+
+(** [Smooth], culling, smooth textures *)
+val default_rendering : rendering
+
 (** [render3d_to_2d camera screen shape] backface-culls [shape]'s faces,
     depth-sorts the remaining ones back-to-front (painter's algorithm --
     lucamug's version skips both of these, which only looks right by
     accident for specific camera angles), then projects each one into an
     ordinary {!Playground.shape} (a {!Playground.group} of
-    {!Playground.polygon}s). *)
-val render3d_to_2d : camera -> Playground.screen -> shape3d -> Playground.shape
+    {!Playground.polygon}s). With [rendering]'s [shading] (except
+    [No_lighting]), each face's color is darkened by how much it faces
+    away from the light (flat shading); [backface_culling] false keeps
+    all the faces. *)
+val render3d_to_2d : ?rendering:rendering -> camera -> Playground.screen -> shape3d -> Playground.shape
 
 (** {1 The 3D Application} *)
 

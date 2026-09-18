@@ -70,9 +70,11 @@ let vertex_shader_source =
    out vec3 vNormal;\n\
    out vec3 vColor;\n\
    out vec2 vUv;\n\
+   out vec3 vPos;\n\
    uniform mat4 uMVP;\n\
    void main() {\n\
   \  gl_Position = uMVP * vec4(aPos, 1.0);\n\
+  \  vPos = aPos;\n\
   \  vNormal = aNormal;\n\
   \  vColor = aColor;\n\
   \  vUv = aUv;\n\
@@ -89,20 +91,31 @@ let vertex_shader_source =
  * upside down" folklore is real for some pipelines, but only when a
  * flip gets introduced elsewhere (e.g. a bottom-up image loader); it
  * doesn't apply here. *)
+(* claude: uShading is Playground3d.rendering's shading (0 = no lighting,
+ * 1 = flat, 2 = smooth, see shading_code), switchable at runtime with
+ * "m". Flat shading needs one normal per *face*, but the vertices only
+ * carry per-vertex normals (a sphere's are smooth); instead of new
+ * vertex data, the classic trick: dFdx/dFdy are how much vPos changes
+ * from this pixel to the next one right/up, i.e. two vectors lying in
+ * the face's plane, so their cross product is the face's normal --
+ * pointing towards the camera, as a visible face's outward normal
+ * does. *)
 let fragment_shader_source =
   "#version 330 core\n\
    in vec3 vNormal;\n\
    in vec3 vColor;\n\
    in vec2 vUv;\n\
+   in vec3 vPos;\n\
    out vec4 FragColor;\n\
    uniform vec3 uLightDir;\n\
    uniform bool uUseTexture;\n\
    uniform sampler2D uTexture;\n\
+   uniform int uShading;\n\
    const float ambient = 0.25;\n\
    void main() {\n\
-  \  vec3 n = normalize(vNormal);\n\
+  \  vec3 n = uShading == 1 ? normalize(cross(dFdx(vPos), dFdy(vPos))) : normalize(vNormal);\n\
   \  float lit = max(dot(n, uLightDir), 0.0);\n\
-  \  float brightness = ambient + (1.0 - ambient) * lit;\n\
+  \  float brightness = uShading == 0 ? 1.0 : ambient + (1.0 - ambient) * lit;\n\
   \  vec3 baseColor = uUseTexture ? texture(uTexture, vUv).rgb : vColor;\n\
   \  FragColor = vec4(baseColor * brightness, 1.0);\n\
    }\n"
@@ -122,6 +135,25 @@ type render_mode = Filled | Wireframe
 
 let render_mode : render_mode ref = ref Filled
 let cycle_render_mode () = render_mode := (match !render_mode with Filled -> Wireframe | Wireframe -> Filled)
+
+(*****************************************************************************)
+(* Rendering hints (Playground3d.rendering), switchable at runtime *)
+(*****************************************************************************)
+(* claude: the starting values come from run_app3d's ?rendering; keys
+ * like the native rasterizer's: "m" shading, "b" backface culling, "i"
+ * texture filtering. Each is a uniform or a GL setting applied every
+ * frame. *)
+
+let shading : Playground3d.shading ref = ref Playground3d.Smooth
+
+let cycle_shading () =
+  shading := (match !shading with No_lighting -> Flat | Flat -> Smooth | Smooth -> No_lighting)
+
+(* the fragment shader's uShading *)
+let shading_code (s : Playground3d.shading) : int = match s with No_lighting -> 0 | Flat -> 1 | Smooth -> 2
+
+let backface_culling = ref true
+let smooth_textures = ref true
 
 (*****************************************************************************)
 (* Textures *)
@@ -238,7 +270,11 @@ let link_program ~(vertex_source : string) ~(fragment_source : string) : int =
 
 let preload_texture : string -> unit = Texture_native.preload
 
-let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
+let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'msg) Playground3d.app3d) :
+    unit =
+  shading := rendering.shading;
+  backface_culling := rendering.backface_culling;
+  smooth_textures := rendering.smooth_textures;
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in
 
@@ -283,6 +319,7 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   let light_dir_location = Gl.get_uniform_location program "uLightDir" in
   let use_texture_location = Gl.get_uniform_location program "uUseTexture" in
   let texture_location = Gl.get_uniform_location program "uTexture" in
+  let shading_location = Gl.get_uniform_location program "uShading" in
   Gl.use_program program;
   let (lx, ly, lz) = Gpu_scene.light_dir in
   Gl.uniform3f light_dir_location lx ly lz;
@@ -303,7 +340,8 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
    * native rasterizer's "b"/"z" runtime toggles -- see the plan's
    * Scope section for why. *)
   Gl.enable Gl.depth_test;
-  Gl.enable Gl.cull_face_enum;
+  (* claude: which faces to cull, when culling is on (see
+   * backface_culling, applied every frame in [draw]) *)
   Gl.cull_face Gl.back;
 
   let vao = int32_bigarray1 1 in
@@ -331,7 +369,12 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
 
   Gl.viewport 0 0 sx sy;
 
-  let on_key_press (str : string) : unit = if str = "f" then cycle_render_mode () in
+  let on_key_press (str : string) : unit =
+    if str = "f" then cycle_render_mode ();
+    if str = "m" then cycle_shading ();
+    if str = "b" then backface_culling := not !backface_culling;
+    if str = "i" then smooth_textures := not !smooth_textures
+  in
   let draw_group ((material, vertices) : Gpu_scene.material * Gpu_scene.vertex_data list) : unit =
     let (data, vertex_count) = Gpu_scene.vertex_floats_of_group vertices in
     if vertex_count > 0 then begin
@@ -341,7 +384,12 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
       | Flat -> Gl.uniform1i use_texture_location 0
       | Textured src ->
           Gl.uniform1i use_texture_location 1;
-          Gl.bind_texture Gl.texture_2d (get_or_create_gl_texture src));
+          Gl.bind_texture Gl.texture_2d (get_or_create_gl_texture src);
+          (* claude: smooth_textures: the GPU's bilinear filtering, or
+           * nearest texel *)
+          let filter = if !smooth_textures then Gl.linear else Gl.nearest in
+          Gl.tex_parameteri Gl.texture_2d Gl.texture_min_filter filter;
+          Gl.tex_parameteri Gl.texture_2d Gl.texture_mag_filter filter);
       Gl.draw_arrays Gl.triangles 0 vertex_count
     end
   in
@@ -360,6 +408,8 @@ let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
     Gl.bind_vertex_array (Int32.to_int vao.{0});
     Gl.bind_buffer Gl.array_buffer (Int32.to_int vbo.{0});
     Gl.polygon_mode Gl.front_and_back (match !render_mode with Filled -> Gl.fill | Wireframe -> Gl.line);
+    Gl.uniform1i shading_location (shading_code !shading);
+    if !backface_culling then Gl.enable Gl.cull_face_enum else Gl.disable Gl.cull_face_enum;
     Gpu_scene.group_by_material shapes |> List.iter draw_group
   in
   let present () = Sdl.gl_swap_window sdl_window in

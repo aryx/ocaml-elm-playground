@@ -20,7 +20,9 @@
  * on top of raw SDL; the web implementation compiles the 3D scene down
  * to ordinary Playground.shape values every frame and delegates to the
  * existing, unmodified elm_playground_web backend. *)
-val run_app3d : ('a, 'b) Playground3d.app3d -> unit
+val run_app3d : ?rendering:Playground3d.rendering -> ('a, 'b) Playground3d.app3d -> unit
+(* claude: [rendering] (default: Playground3d.default_rendering) sets how
+ * to draw, see Playground3d.rendering *)
 
 (* Load (and cache) a texture src ahead of time, e.g. for all the
  * textures a game will need, so that a {!Playground3d.textured_quad}/

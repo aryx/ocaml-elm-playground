@@ -348,15 +348,53 @@ let rec flatten_faces (shape : shape3d) : (Playground.color * vec3 list * number
   | Hud _ -> [] (* collected separately by collect_hud_shapes, contributes no 3D geometry *)
   | Group3d shapes -> List.concat_map flatten_faces shapes
 
-let render3d_to_2d (camera : camera) (screen : Playground.screen) (shape : shape3d) :
-    Playground.shape =
-  let faces = flatten_faces shape in
+(* claude: rendering hints, see Playground3d.mli *)
+type shading = No_lighting | Flat | Smooth
+
+type rendering = { shading : shading; backface_culling : bool; smooth_textures : bool }
+
+let default_rendering = { shading = Smooth; backface_culling = true; smooth_textures = true }
+
+(* claude: flat shading for render3d_to_2d (the web backend): the same
+ * sun and formula as the software backend's brightness_of_normal and
+ * the OpenGL backend's fragment shader (Gpu_scene.light_dir), repeated
+ * here because Gpu_scene depends on this module: the brightness is
+ * how much the face turns towards the light, never below [ambient] *)
+let light_dir : vec3 = normalize (1., 1.3, 0.6)
+
+let ambient = 0.25
+
+let brightness_of_normal (normal : vec3) : number =
+  ambient + ((1. - ambient) * Float.max 0. (dot normal light_dir))
+
+(* [color] darkened to [brightness] (0. black, 1. unchanged) *)
+let shade_color (color : Playground.color) (brightness : number) : Playground.color =
+  let (r, g, b) =
+    match color with
+    | Rgb (r, g, b) -> (r, g, b)
+    | Hex s ->
+        let channel i = int_of_string ("0x" ^ String.sub s (Stdlib.( + ) 1 (Stdlib.( * ) 2 i)) 2) in
+        (channel 0, channel 1, channel 2)
+  in
+  let scale c = int_of_float (float_of_int c * brightness) in
+  Playground.rgb (scale r) (scale g) (scale b)
+
+let render3d_to_2d ?(rendering = default_rendering) (camera : camera) (screen : Playground.screen)
+    (shape : shape3d) : Playground.shape =
+  let faces =
+    flatten_faces shape
+    |> List.map (fun ((color, points, alpha) as face) ->
+           match rendering.shading with
+           | No_lighting -> face
+           (* one color per SVG polygon: Smooth can only be Flat here *)
+           | Flat | Smooth -> (shade_color color (brightness_of_normal (face_normal points)), points, alpha))
+  in
   let visible =
     faces
     |> List.filter (fun (_color, points, _alpha) ->
            let normal = face_normal points in
            let centroid = face_centroid points in
-           dot normal (sub camera.eye centroid) > 0.)
+           (not rendering.backface_culling) || dot normal (sub camera.eye centroid) > 0.)
   in
   let dist_to_eye points =
     let (dx, dy, dz) = sub camera.eye (face_centroid points) in

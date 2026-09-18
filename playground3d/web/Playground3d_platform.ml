@@ -23,10 +23,11 @@
  * gets SVG rendering, the event loop, and the requestAnimationFrame
  * timing for free. Same trick lucamug's elm-playground-3d uses. *)
 
-let run_app3d (app3d : ('model, 'msg) Playground3d.app3d) : unit =
+let run_app3d ?(rendering = Playground3d.default_rendering) (app3d : ('model, 'msg) Playground3d.app3d) :
+    unit =
   let view2d (computer : Playground.computer) (model : 'model) : Playground.shape list =
     let (cam, shapes) = Playground3d.view3d app3d computer model in
-    [ Playground3d.render3d_to_2d cam computer.screen (Playground3d.group3d shapes) ]
+    [ Playground3d.render3d_to_2d ~rendering cam computer.screen (Playground3d.group3d shapes) ]
   in
   let update2d (computer : Playground.computer) (model : 'model) : 'model =
     Playground3d.update3d app3d computer model
