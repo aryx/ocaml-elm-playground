@@ -7,7 +7,6 @@
 ###############################################################################
 
 OPAMS=\
-  elm_core.opam elm_system.opam\
   elm_playground.opam elm_playground_native.opam elm_playground_web.opam\
   elm_playground_native_common.opam\
   elm_playground_software.opam
@@ -105,7 +104,7 @@ doc:
 # the page, see examples3d/webgl/examples3d/dune).
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
 ODOC_DIRS=odoc.support \
-  elm_core elm_system elm_playground elm_playground_native elm_playground_web\
+  elm_playground elm_playground_native elm_playground_web\
   elm_playground_native_common elm_playground_software
 
 website:

@@ -1,5 +1,6 @@
 (library
- (public_name elm_core)
+ (name elm_core)
+ (public_name elm_playground.core)
  (wrapped false)
  (libraries
    ; commons; was for Set_.ml but now included here

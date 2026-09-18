@@ -27,26 +27,6 @@
 ;; See the documentation for declaring opam packages for more info:
 ;; https://dune.readthedocs.io/en/stable/opam.html#opam-generation
 
-(package (name elm_core)
-  (synopsis "Imitate core Elm functions for ease of porting")
-  (description "\
-Nope
-"
-  )
-  (depends
-    ; ocaml-ci reports "Unbound module Float" before
-    (ocaml (>= "4.07.0"))
-  )
-)
-
-(package (name elm_system)
-  (synopsis "Imitate system Elm functions for ease of porting")
-  (description "")
-  (depends
-    (elm_core (= :version))
-  )
-)
-
 (package (name elm_playground)
   (synopsis "Interface of the Playground")
   (description "\
@@ -55,8 +35,8 @@ Nope
   (elm_playground_native or elm_playground_web)
 ")
   (depends
-    (elm_core (= :version))
-    (elm_system (= :version))
+    ; ocaml-ci reports "Unbound module Float" before (in core/)
+    (ocaml (>= "4.07.0"))
   )
 )
 (package (name elm_playground_native)
@@ -98,7 +78,7 @@ Nope
     tsdl
     (stb_image (>= "0.4"))
     ocurl
-    (elm_system (= :version))
+    (elm_playground (= :version)) ; elm_playground.system (Sub/Cmd)
   )
 )
 (package (name elm_playground_software)
@@ -117,7 +97,6 @@ Nope
     (ocaml (>= "4.08.0"))
     tsdl
     (stb_image (>= "0.4"))
-    (elm_core (= :version))
     (elm_playground (= :version))
     (elm_playground_native_common (= :version))
     (testo :with-test)
@@ -144,7 +123,6 @@ Nope
   (elm_playground_3d_software or elm_playground_3d_web)
 ")
   (depends
-    (elm_core (= :version))
     (elm_playground (= :version))
   )
 )

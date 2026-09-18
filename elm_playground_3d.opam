@@ -14,7 +14,6 @@ homepage: "https://github.com/aryx/ocaml-elm-playground"
 bug-reports: "https://github.com/aryx/ocaml-elm-playground/issues"
 depends: [
   "dune" {>= "3.0"}
-  "elm_core" {= version}
   "elm_playground" {= version}
   "odoc" {with-doc}
 ]

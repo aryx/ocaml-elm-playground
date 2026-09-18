@@ -23,7 +23,7 @@ depends: [
   "tsdl"
   "stb_image" {>= "0.4"}
   "ocurl"
-  "elm_system" {= version}
+  "elm_playground" {= version}
   "odoc" {with-doc}
 ]
 build: [
