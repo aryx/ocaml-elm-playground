@@ -1,0 +1,10 @@
+; claude: the light cycles kit: the rules of Tron's light cycles (the
+; arena, the cycles, the crashes, the rounds, the computer player, the
+; scenes), without their picture. games/TinyTron.ml (2D) and
+; games3d/TinyTron3d.ml (3D) are its two views: the same model and
+; update, the Elm architecture's point. A private library.
+(library
+ (name kit_lightcycles)
+ (wrapped false)
+ (libraries elm_playground)
+)

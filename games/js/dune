@@ -43,6 +43,7 @@
     elm_playground
     kit_racing ; TinyOutRun's Road and Car
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
+    kit_lightcycles ; TinyTron's rules
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)
