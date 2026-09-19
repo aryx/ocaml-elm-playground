@@ -6,7 +6,7 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano
-    AiTictactoe
+    AiTictactoe AiPathfinding
     LogoFractals
     BigBangRocket BigBangWorm
   )

@@ -22,6 +22,7 @@
 (copy_files ../AudioTheremin.{ml,mli})
 (copy_files ../AudioPiano.{ml,mli})
 (copy_files ../AiTictactoe.ml)
+(copy_files ../AiPathfinding.ml)
 (copy_files ../LogoFractals.{ml,mli})
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
@@ -35,7 +36,7 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano
-    AiTictactoe
+    AiTictactoe AiPathfinding
     LogoFractals
     BigBangRocket
     BigBangWorm

@@ -162,8 +162,14 @@
 - games/AiOthello: Othello against the computer, thinking 4 moves
   ahead, with its evaluation table of what each square is worth, and
   "v" to see what it thinks of each of your moves
+- ai/Pathfind: breadth-first, Dijkstra and A* as the same search with a
+  different queue, each counting the cells it looks at (an open 13x9
+  grid: 80, 80, 11)
+- examples/AiPathfinding: the frontier drawn as it spreads, walls and
+  mud to paint, the three counts side by side
 - ai/tests/: the .mli's tree, random trees where alpha-beta must agree
-  with minimax, tic-tac-toe
+  with minimax, tic-tac-toe; the pathfinding worked example, A*
+  agreeing with Dijkstra on random grids
 
 ** testing
 - -script: game keys held over frames, for golden frames of gameplay

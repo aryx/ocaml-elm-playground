@@ -74,6 +74,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AudioTheremin", "", 2);
     ("examples/software/AudioPiano", "", 2);
     ("examples/software/AiTictactoe", "", 3);
+    ("examples/software/AiPathfinding", "", 60);
     ("games/software/AiOthello", "", 3);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
@@ -186,6 +187,8 @@ let scripted : Testutil_golden.scripted list =
     (* keys held, lit; the square wave *)
     ("examples/software/AudioPiano", "keys", 30, "space:2,a:10-30,g:10-30,u:10-30");
     ("examples/software/AiTictactoe", "played", 40, "space:2");
+    ("examples/software/AiPathfinding", "breadth_first", 120, "b:2");
+    ("examples/software/AiPathfinding", "dijkstra", 120, "d:2");
     ("games/software/AiOthello", "values", 3, "v:2");
     ("games/software/AiOthello", "reply", 60, "space:2");
     (* flaps timed to thread 5 pipes (the pipes from the LFSR's seed=1);
