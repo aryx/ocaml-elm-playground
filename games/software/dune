@@ -40,6 +40,7 @@
     TinyDoom
     TinyMissileCommand
     TinyLemmings
+    TinyComanche
   )
   (libraries
     elm_playground
@@ -51,6 +52,7 @@
     kit_brawler ; TinyFinalFight's and TinyStreetFighter's Hitbox, Frame_data and Stickman
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo
     kit_sectors ; TinyDoom's level
+    kit_heightmap ; TinyComanche's island
     elm_playground_software ; implem of virtual elm_playground
   )
 )

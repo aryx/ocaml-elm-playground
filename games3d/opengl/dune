@@ -11,6 +11,7 @@
 (copy_files ../TinyMario64.{ml,mli})
 (copy_files ../TinyMarble.{ml,mli})
 (copy_files ../TinyDoom3d.{ml,mli})
+(copy_files ../TinyComanche3d.ml)
 (copy_files ../Minecraft3d.ml)
 
 (executables
@@ -23,12 +24,14 @@
     TinyMario64
     TinyMarble
     TinyDoom3d
+    TinyComanche3d
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_racing ; TinyVirtuaRacing's Road and Car
     kit_sectors ; TinyDoom3d's level
+    kit_heightmap ; TinyComanche3d's island
     elm_core ; Basics.clamp
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d

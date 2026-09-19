@@ -99,13 +99,18 @@
   row), TinyDoom (Doom's renderer: a node builder, the BSP walked
   front to back, per-column clip arrays, no z-buffer),
   TinyMissileCommand (aiming at a point, chain reactions), TinyLemmings
-  (the terrain a bitmap the jobs dig and build); kits/shmup (Shots, Path), kits/platformer (Tile_move,
+  (the terrain a bitmap the jobs dig and build), TinyComanche
+  (Comanche's Voxel Space: a height map drawn column by column, front to
+  back, a y-buffer); kits/shmup (Shots, Path), kits/platformer (Tile_move,
   Ladder), kits/brawler (Hitbox, Frame_data, Stickman), kits/puzzle (Push,
   Undo) and
-  kits/sectors (Sectors: a Doom level as sectors, its lines found)
+  kits/sectors (Sectors: a Doom level as sectors, its lines found),
+  kits/heightmap (Heightmap: an island made up by diamond-square, the
+  ground under a point, a line of sight, colors by height and slope)
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
   TinyTron3d, TinyMario64, TinyMarble (Marble Madness), TinyDoom3d
-  (TinyDoom's level with a z-buffer, no BSP); Minecraft3d is a game (walk, jump, fly,
+  (TinyDoom's level with a z-buffer, no BSP), TinyComanche3d
+  (TinyComanche's island as triangles); Minecraft3d is a game (walk, jump, fly,
   remove and place blocks, the targeted block's outline);
   playground3d's Camera3d (the 3D Camera2d: behind, chase, cockpit,
   orbit, sky); the OpenGL HUD redraws only what changed, box by box

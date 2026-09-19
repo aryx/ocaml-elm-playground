@@ -38,6 +38,7 @@
 (copy_files ../TinyDoom.{ml,mli})
 (copy_files ../TinyMissileCommand.ml)
 (copy_files ../TinyLemmings.ml)
+(copy_files ../TinyComanche.ml)
 
 (executables
   (names
@@ -77,6 +78,7 @@
     TinyDoom
     TinyMissileCommand
     TinyLemmings
+    TinyComanche
   )
   (libraries
     unix
@@ -89,6 +91,7 @@
     kit_brawler ; TinyFinalFight's and TinyStreetFighter's Hitbox, Frame_data and Stickman
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo
     kit_sectors ; TinyDoom's level
+    kit_heightmap ; TinyComanche's island
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)

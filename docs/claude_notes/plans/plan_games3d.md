@@ -210,12 +210,17 @@ terrain).
 
 - **Toys**: TinyStarFox (on rails: the ship flies forward by itself,
   the player dodges and shoots -- a shmup in 3D, reusing the 2D shmup
-  kit's `Waves` and `Paths` in 3D), TinyComanche (voxel terrain: a
-  height map drawn column by column, again 2D-able; see Sebastian
-  Macke's VoxelSpace explainer on GitHub).
-- **Kit**: `Heightmap`: terrain from a grid of heights (from noise,
-  `plan_teaching_other.md` section 4), as `cached3d` triangles, with
-  height queries for landing; a chase camera (`Camera3d`).
+  kit's `Waves` and `Paths` in 3D), TinyComanche (DONE:
+  `games/TinyComanche.ml`, voxel terrain in the *2D* playground: a
+  height map drawn column by column, front to back, a y-buffer; after
+  Sebastian Macke's VoxelSpace explainer on GitHub; and
+  `games3d/TinyComanche3d.ml`, the same island as `cached3d` triangles
+  with a z-buffer, the teaching comparison, like the TinyDoom pair).
+- **Kit**: `Heightmap` (DONE: `kits/heightmap/`, shared by the
+  TinyComanche pair): a grid of heights, an island made up by
+  diamond-square (not noise), the ground under a point, a line of
+  sight, colors by height and slope; the triangles are the game's. Not
+  yet: a chase camera (`Camera3d`) for a helicopter seen from behind.
 
 ### 7. Voxels and sandboxes
 
@@ -344,7 +349,7 @@ kit); listed here because players see them as 3D.
    (both DONE).
 4. The racing kit in 3D with TinyVirtuaRacing (and TinyKart in Mode 7
    next to `plan_games.md`'s TinyOutRun) (both DONE).
-5. `Heightmap` with TinyComanche/TinyStarFox; `Sectors` with TinyDoom
-   and TinyDoom3d (DONE).
+5. `Heightmap` with TinyComanche and TinyComanche3d (DONE), TinyStarFox;
+   `Sectors` with TinyDoom and TinyDoom3d (DONE).
 6. The rest as they come: fighting with the 2D brawler kit, puzzles,
    TinyElite.

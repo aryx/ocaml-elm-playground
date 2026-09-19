@@ -99,6 +99,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyDoom", "", 5);
     (* "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
     ("games/software/TinyDoom", "rr", 5);
+    ("games/software/TinyComanche", "", 5);
     ("games/software/TinyMissileCommand", "", 5);
     ("games/software/TinyLemmings", "", 5);
   ]
@@ -224,6 +225,9 @@ let scripted : Testutil_golden.scripted list =
      * (games3d/TinyDoom3d's golden frames are the same walks) *)
     ("games/software/TinyDoom", "stairs", 80, "left:1-10,up:11-80");
     ("games/software/TinyDoom", "window", 60, "right:1-5,up:6-55");
+    (* over the island, climbing a little (games3d/TinyComanche3d's
+     * golden frame is the same flight) *)
+    ("games/software/TinyComanche", "island", 70, "up:1-70,w:1-20");
     ("games/software/TinyRick", "boulder", 70, "space:1,right:2-160");
     ("games/software/TinyRick", "hole", 160, "space:1,right:2-160");
     (* right to the ladder, up it, a hole dug on the right; the guards

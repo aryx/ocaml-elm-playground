@@ -199,6 +199,37 @@ let doom_exit () =
   Alcotest.(check (float 0.5)) "upstairs on the way" 64. !highest
 
 (*****************************************************************************)
+(* TinyComanche *)
+(*****************************************************************************)
+
+(* A robot pops the balloons, the nearest first: turning towards it,
+ * flying when facing it, climbing or descending to its height; the
+ * ground always under the helicopter (the kit's [height], plus the
+ * clearance) *)
+let comanche_balloons () =
+  let open TinyComanche in
+  let m = ref initial_model and i = ref 0 in
+  while !m.finished = None && !i < 60 * 120 do
+    incr i;
+    let k = initial_computer.keyboard in
+    let nearest = List.sort (fun (x1, y1, _) (x2, y2, _) -> compare (Float.hypot (x1 -. !m.x) (y1 -. !m.y)) (Float.hypot (x2 -. !m.x) (y2 -. !m.y))) !m.left in
+    let keyboard =
+      match nearest with
+      | (x, y, z) :: _ ->
+          let wanted = atan2 (y -. !m.y) (x -. !m.x) *. 180. /. Float.pi in
+          let d = Float.rem (Float.rem (wanted -. !m.angle +. 180.) 360. +. 360.) 360. -. 180. in
+          let k = { k with kw = z > !m.alt +. 1.; ks = z < !m.alt -. 1. } in
+          if d > 5. then { k with kleft = true } else if d < -5. then { k with kright = true }
+          else if Float.hypot (x -. !m.x) (y -. !m.y) < 20. && !m.speed > 0.5 then { k with kdown = true }
+          else { k with kup = true }
+      | [] -> k
+    in
+    m := update (computer ~keyboard !i) !m;
+    Alcotest.(check bool) "above the ground" true (!m.alt >= Heightmap.height map !m.x !m.y +. clearance -. 1e-9)
+  done;
+  Alcotest.(check bool) "all popped" true (!m.finished <> None)
+
+(*****************************************************************************)
 (* TinyMario64 *)
 (*****************************************************************************)
 
@@ -1101,6 +1132,7 @@ let tests =
       t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;
+      t "TinyComanche, a robot pops the balloons" comanche_balloons;
       t "TinyMario64, a jump onto a platform" mario64_jump;
       t "TinyMarble, the ramp's heights" marble_ramp;
       t "TinyMarble, the cliff breaks the marble, the step doesn't" marble_falls;
