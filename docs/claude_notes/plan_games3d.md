@@ -243,7 +243,8 @@ shaded, 60 frames per second), Ridge Racer (Namco, 1993: textured).
 
 - **Toys**: TinyKart in Mode 7 (a `Tilemap` track drawn row by row with
   a per-row scale: 2D-able on the software backend's framebuffer, a
-  sibling of `plan_games.md`'s TinyOutRun), and TinyVirtuaRacing --
+  sibling of `plan_games.md`'s TinyOutRun), and TinyVirtuaRacing (DONE: `games3d/TinyVirtuaRacing.ml`, a stage on
+  TinyOutRun's course, with the racing kit `kits/racing/`) --
   flat-shaded polygons are exactly `playground3d`'s look, so this may
   be the most satisfying 3D toy.
 - **Kit**, the racing kit of `plan_games.md` in 3D: `Track3d` (a

@@ -26,6 +26,7 @@
    %{project_root}/games3d/StarCollector3d.exe
    %{project_root}/games3d/TinyBattlezone.exe
    %{project_root}/games3d/TinyWolf3d.exe
+   %{project_root}/games3d/TinyVirtuaRacing.exe
    %{project_root}/examples3d/checker.png ; TexturedCube3d's texture
  )
 )

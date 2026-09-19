@@ -7,6 +7,7 @@
 (copy_files ../StarCollector3d.ml)
 (copy_files ../TinyBattlezone.{ml,mli})
 (copy_files ../TinyWolf3d.{ml,mli})
+(copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../Minecraft3d.ml)
 
 (executables
@@ -15,9 +16,11 @@
     Minecraft3d
     TinyBattlezone
     TinyWolf3d
+    TinyVirtuaRacing
   )
   (libraries
     minecraft_model
+    kit_racing ; TinyVirtuaRacing's Road and Car
     elm_core ; Basics.clamp
     elm_playground
     elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
