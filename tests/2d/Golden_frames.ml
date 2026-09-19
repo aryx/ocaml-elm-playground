@@ -102,6 +102,7 @@ let scenes : Testutil_golden.scene list =
     ("games2.5d/software/TinyComanche", "", 5);
     ("games/software/TinyMissileCommand", "", 5);
     ("games/software/TinyLemmings", "", 5);
+    ("games/software/TinyPuzzleBobble", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -259,6 +260,7 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyMissileCommand", "explosions", 95, "space:1,up:2-30,a:32,s:33,d:34");
     (* the lemmings out of the hatch, walking, "4" picking the diggers *)
     ("games/software/TinyLemmings", "walking", 500, "space:1,4:10");
+    ("games/software/TinyPuzzleBobble", "pop", 52, "space:1,left:3-12,space:20");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

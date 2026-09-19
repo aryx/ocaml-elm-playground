@@ -34,6 +34,7 @@
 (copy_files ../TinyBabaIsYou.ml)
 (copy_files ../TinyMissileCommand.ml)
 (copy_files ../TinyLemmings.ml)
+(copy_files ../TinyPuzzleBobble.ml)
 
 (executables
   (names
@@ -69,6 +70,7 @@
     TinyBabaIsYou
     TinyMissileCommand
     TinyLemmings
+    TinyPuzzleBobble
   )
   (libraries
     unix

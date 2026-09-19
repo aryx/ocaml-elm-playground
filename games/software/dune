@@ -36,6 +36,7 @@
     TinyBabaIsYou
     TinyMissileCommand
     TinyLemmings
+    TinyPuzzleBobble
   )
   (libraries
     elm_playground

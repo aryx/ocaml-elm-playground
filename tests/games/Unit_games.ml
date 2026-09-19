@@ -1102,6 +1102,65 @@ let lemmings_splat () =
   Alcotest.(check bool) "65 cells" true (fall 65 = Dead)
 
 (*****************************************************************************)
+(* TinyPuzzleBobble *)
+(*****************************************************************************)
+
+(* on the hexagonal grid, a cell's neighbours are all one bubble away:
+ * 64 pixels, a bit more between rows (56 and 32: 64.5) *)
+let bobble_hex () =
+  let open TinyPuzzleBobble in
+  let g = new_round 0 0 1 in
+  List.iter
+    (fun cell ->
+      let x, y = center g cell in
+      Alcotest.(check int) "six" 6 (List.length (neighbours cell));
+      List.iter
+        (fun n ->
+          let x', y' = center g n in
+          Alcotest.(check bool) "one bubble away" true (Float.abs (Float.hypot (x -. x') (y -. y') -. 64.) < 1.))
+        (neighbours cell))
+    [ (2, 3); (3, 3); (4, 1) ]
+
+(* a red shot completes three reds; the blue hanging below them falls,
+ * the green next to the ceiling stays *)
+let bobble_drop () =
+  let open TinyPuzzleBobble in
+  let g = { (new_round 0 0 1) with board = [ ((0, 0), 0); ((0, 1), 0); ((1, 0), 2); ((0, 3), 1) ]; current = 0 } in
+  let x, y = center g (0, 2) in
+  let g = stick g { x; y; vx = 0.; vy = 1.; color = 0 } in
+  Alcotest.(check (list (pair (pair int int) int))) "the green only" [ ((0, 3), 1) ] g.board;
+  Alcotest.(check int) "3 popped, 1 fallen" (30 + 20) g.score
+
+(* a robot tries every angle with the aiming guide's [path] and shoots
+ * where the most bubbles go (pop or fall), or else next to the most of
+ * its color; it clears the three rounds *)
+let bobble_robot () =
+  let open TinyPuzzleBobble in
+  let s = ref initial_model and cleared = ref 0 and i = ref 0 in
+  while !cleared < List.length rounds && !i < 60 * 60 * 5 do
+    incr i;
+    let space = ref (!i mod 2 = 0) in
+    (match !s.scene with
+    | Playing g when g.shot = None && !space ->
+        let value angle =
+          let f = List.nth (path g angle) (List.length (path g angle) - 1) in
+          let cell = snap g f in
+          let after = stick g { f with color = g.current } in
+          let same = List.length (List.filter (fun n -> List.assoc_opt n g.board = Some g.current) (neighbours cell)) in
+          (List.length g.board + 1 - List.length after.board, same)
+        in
+        let angles = List.init 301 (fun k -> 15. +. (0.5 *. float_of_int k)) in
+        let best = List.fold_left (fun a b -> if value b > value a then b else a) 90. angles in
+        s := { !s with scene = Playing { g with angle = best } }
+    | Clear g -> cleared := g.round + 1
+    | Game_over g -> Alcotest.fail (Printf.sprintf "game over, round %d" (g.round + 1))
+    | _ -> ());
+    s := update (computer ~keyboard:{ initial_computer.keyboard with kspace = !space } !i) !s
+  done;
+  Printf.printf "rounds cleared: %d, in %d frames\n" !cleared !i;
+  Alcotest.(check int) "all the rounds" (List.length rounds) !cleared
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -1171,4 +1230,7 @@ let tests =
       t "TinyMissileCommand, a chain reaction" missile_chain;
       t "TinyLemmings, a job per level" lemmings_levels;
       t "TinyLemmings, the fall that splats" lemmings_splat;
+      t "TinyPuzzleBobble, the hexagonal grid" bobble_hex;
+      t "TinyPuzzleBobble, popped and fallen" bobble_drop;
+      t "TinyPuzzleBobble, a robot clears the rounds" bobble_robot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

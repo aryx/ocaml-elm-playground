@@ -270,7 +270,8 @@ ghosts with personalities), Bomberman (Hudson, 1983), Boulder Dash
 
 Sokoban (Hiroyuki Imabayashi, Thinking Rabbit, 1982), Tetris (Alexey
 Pajitnov, 1984; done: `games/Tetris.ml`), Lemmings (DMA Design,
-1991), Baba Is You (2019: the rules are tiles you push).
+1991), Puzzle Bobble (Taito, 1994; its free clone Frozen Bubble,
+2002), Baba Is You (2019: the rules are tiles you push).
 
 - **Toys**: TinySokoban (DONE: `games/TinySokoban.ml`, three levels of
   our own checked by a breadth-first solver; undo in Elm style, the
@@ -285,7 +286,13 @@ Pajitnov, 1984; done: `games/Tetris.ml`), Lemmings (DMA Design,
   cells around them; Blocker, Builder, Basher, Digger; three levels as
   ASCII, each solved by a one-job plan in the tests). Not on the
   puzzle kit: no grid, no pushing; its bitmap is section 14's kit, the
-  day TinyWorms wants caves.
+  day TinyWorms wants caves. TinyPuzzleBobble (DONE:
+  `games/TinyPuzzleBobble.ml`, a hexagonal grid in offset coordinates,
+  the shot snapped to its nearest empty cell, then two flood fills: its
+  color's group pops, what no longer hangs from the ceiling falls; the
+  aiming guide is the shot flown ahead; three rounds, cleared by a
+  robot aiming with that guide in the tests). Not on the puzzle kit
+  either: hexagons, not squares.
 - **Kit**: a `Rules` layer rewriting a `Tilemap` with patterns, as in
   PuzzleScript (Stephen Lavelle, 2013) and TileCode (Thomas Ball,
   Stefania Druga, et al., 2020, see `Tilemap.mli`): a game as a map
