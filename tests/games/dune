@@ -42,6 +42,11 @@
  (deps (:src %{project_root}/games3d/TinyMarble.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
+(rule
+ (target TinyXpilot.ml)
+ (deps (:src %{project_root}/games/TinyXpilot.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
 (test
  (name Test)
  (libraries

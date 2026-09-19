@@ -452,6 +452,22 @@ version of it: the ball a moon, touch every target. LocoRoco (Sony,
   bodies. Exercises: levels, the exit and the timer, bumpers.
 - **Kit**: none; `Physics`.
 
+### 19. Gravity and caves: XPilot
+
+Gravitar (Atari, 1982: a ship, gravity, caves), Thrust (Jeremy Smith,
+1986: a pod hauled on a rod), then XPilot (Bjørn Stabell and Ken Ronny
+Schouten, University of Tromsø, 1991: the same, multiplayer over the
+Internet, on X terminals, with ASCII maps, cannons, fuel, teams and the
+ball game). (Names and dates from memory, to check.)
+
+- **Toy**: TinyXpilot (DONE: `games/TinyXpilot.ml`): the ball game
+  alone against the cannons; the connector a rope that only pulls,
+  the same force on the ship and the ball, opposite (Newton's third
+  law, by hand with `Physics.push`); crashing when a bounce changes
+  the velocity by too much; cannons aiming ahead (the intercept
+  quadratic); a radar. A robot pilot in `tests/games/` wins it.
+- **Kit**: none; `Physics`, `Tilemap`, `Camera2d`.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,

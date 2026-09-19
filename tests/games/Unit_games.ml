@@ -213,6 +213,97 @@ let marble_robot () =
   | _ -> Alcotest.fail (Printf.sprintf "not at the goal: waypoints left %d" (List.length !todo))
 
 (*****************************************************************************)
+(* TinyXpilot *)
+(*****************************************************************************)
+
+(* intercept's worked example: a ship 300 to the right going up at 160,
+ * a shot at 200: they meet after 2.5 s, 500 away (3-4-5) *)
+let xpilot_intercept () =
+  let t = Option.get (TinyXpilot.intercept 300. 0. 0. 160. 200.) in
+  Alcotest.(check (float 1e-9)) "t" 2.5 t;
+  Alcotest.(check (option (float 1e-9))) "outrun" None (TinyXpilot.intercept 300. 0. 250. 0. 200.)
+
+(* rope_pull's worked example: the ball 120 right of the ship, both
+ * still: 600 to the right; slack at 100, nothing *)
+let xpilot_rope () =
+  let open TinyXpilot in
+  let ship = Physics.body ship_shape and ball = new_ball () in
+  let fx, fy = rope_pull ship (ball |> Physics.at 120. 0.) in
+  Alcotest.(check (pair (float 1e-9) (float 1e-9))) "stretched by 10" (600., 0.) (fx, fy);
+  Alcotest.(check (pair (float 1e-9) (float 1e-9))) "slack" (0., 0.) (rope_pull ship (ball |> Physics.at 100. 0.))
+
+(* hit_walls' worked example: landing on the floor at 60 pixels per
+ * second, a jolt of 84; at 250, 350: above crash *)
+let xpilot_crash () =
+  let open TinyXpilot in
+  let x, y = base in
+  (* pointing up, its bottom 2 pixels into the floor *)
+  let ship vy = (new_ship ()).body |> Physics.at x (y -. 10.) |> Physics.moving 0. vy in
+  let _, soft = hit_walls (ship (-60.)) and _, hard = hit_walls (ship (-250.)) in
+  Alcotest.(check (float 1.)) "landing" 84. soft;
+  Alcotest.(check bool) "fine" true (soft < crash);
+  Alcotest.(check (float 1.)) "ramming" 350. hard;
+  Alcotest.(check bool) "crashed" true (hard > crash)
+
+(* A robot pilot, through the keyboard: it wants to go to a tile's
+ * center, at up to 150 pixels per second; the acceleration it needs
+ * (towards the wanted velocity, plus gravity's) says where to point the
+ * ship, and it thrusts when pointing about there; shield up when a
+ * cannon's shot comes near *)
+let xpilot_robot (g : TinyXpilot.game) ((col, row) : int * int) : keyboard =
+  let open TinyXpilot in
+  let s = g.ship.body in
+  let tx, ty = Tilemap.center map col row in
+  let dx = tx -. s.x and dy = ty -. s.y in
+  let d = Float.hypot dx dy in
+  let v = Float.min 150. (1.2 *. d) in
+  let wx = if d > 1. then v *. dx /. d else 0. and wy = if d > 1. then v *. dy /. d else 0. in
+  let ax = 3. *. (wx -. s.vx) and ay = (3. *. (wy -. s.vy)) +. gravity in
+  let want = atan2 ay ax *. 180. /. Float.pi in
+  let err = Float.rem (want -. s.angle +. 540.) 360. -. 180. in
+  let danger = List.exists (fun (b : shot) -> Float.hypot (b.shot.x -. s.x) (b.shot.y -. s.y) < 90.) g.bullets in
+  { initial_computer.keyboard with
+    kleft = err > 4.; kright = err < -4.; kup = Float.abs err < 30. && Float.hypot ax ay > 40.; kdown = danger }
+
+(* the robot flies from the base down to the ball, catches it, and
+ * brings it back up onto the treasure box, in 72 seconds: the ball game
+ * can be won, the rope holds, the cannons can be survived. It taught
+ * the game's numbers: with a thrust of 260 and a tank of 100, hauling
+ * the ball (twice the ship's mass) emptied the tank before the lower
+ * fuel station; and its route: the rope wraps around a pyramid cut
+ * across, and the ball, dragged along the floor, jams on the fuel
+ * station (so it flies high over it) *)
+let xpilot_ball () =
+  let open TinyXpilot in
+  let there = [ (5, 3); (12, 4); (34, 4); (37, 5); (37, 11); (20, 11); (6, 12); (5, 16); (4, 17) ] in
+  let back = [ (5, 15); (6, 11); (20, 11); (32, 11); (33, 16); (34, 17); (37, 11); (37, 5); (34, 3); (12, 4); (9, 1); (2, 3) ] in
+  (* by the lower fuel station, waiting for a full tank *)
+  let refuel = (34, 17) in
+  let s = ref initial_model and todo = ref there and going_back = ref false and i = ref 0 in
+  let deaths = ref 0 and delivered = ref 0 in
+  while !i < 60 * 120 && !delivered = 0 do
+    incr i;
+    let keyboard =
+      match !s.scene with
+      | Playing g -> (
+          if g.deaths > !deaths then (todo := there; going_back := false);
+          deaths := g.deaths;
+          (match !todo with
+          | (c, r) :: rest ->
+              let tx, ty = Tilemap.center map c r in
+              if Float.hypot (tx -. g.ship.body.x) (ty -. g.ship.body.y) < 30. && rest <> [] && ((c, r) <> refuel || g.ship.fuel > 145.) then todo := rest
+          | [] -> ());
+          if g.connected && not !going_back then (going_back := true; todo := back);
+          match !todo with p :: _ -> xpilot_robot g p | [] -> initial_computer.keyboard)
+      | _ -> { initial_computer.keyboard with kspace = !i = 1 }
+    in
+    s := update (computer ~keyboard !i) !s;
+    match !s.scene with Won g | Playing g -> delivered := g.delivered | Title -> ()
+  done;
+  Alcotest.(check int) "delivered" 1 !delivered;
+  Alcotest.(check int) "deaths" 0 !deaths
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -244,4 +335,8 @@ let tests =
       t "TinyMarble, the steelie knocks the marble" marble_steelie;
       t "TinyMarble, rolling down a ramp" marble_rolls_down;
       t "TinyMarble, a robot drives to the goal" marble_robot;
+      t "TinyXpilot, cannons aim ahead" xpilot_intercept;
+      t "TinyXpilot, the rope pulls when stretched" xpilot_rope;
+      t "TinyXpilot, landing vs. crashing" xpilot_crash;
+      t "TinyXpilot, a robot brings a ball home" xpilot_ball;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

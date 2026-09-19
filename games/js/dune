@@ -23,6 +23,7 @@
 (copy_files ../TinySoldat.{ml,mli})
 (copy_files ../TinyFlappyBird.{ml,mli})
 (copy_files ../TinyBreakout.{ml,mli})
+(copy_files ../TinyXpilot.{ml,mli})
 
 (executables
   (names
@@ -47,6 +48,7 @@
     TinySoldat
     TinyFlappyBird
     TinyBreakout
+    TinyXpilot
   )
   (libraries
     unix

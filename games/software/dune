@@ -25,6 +25,7 @@
     TinySoldat
     TinyFlappyBird
     TinyBreakout
+    TinyXpilot
   )
   (libraries
     elm_playground
