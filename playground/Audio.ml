@@ -68,5 +68,27 @@ let keep_playing (name : string) (s : sound) : unit =
 let loop (name : string) (s : sound) : unit =
   if not (List.mem name (Mixer.looping mixer)) then Mixer.loop mixer name (Synth.render s)
 
-let stop (name : string) : unit = Mixer.stop mixer name
+(* the platform's way to get a file's bytes; none until run_app *)
+let fetcher : (string -> (string option -> unit) -> unit) ref = ref (fun _ k -> k None)
+let set_fetcher f = fetcher := f
+
+(* the loops asked for with loop_from, playing or still downloading:
+ * asked once *)
+let requested : (string, unit) Hashtbl.t = Hashtbl.create 2
+
+let loop_from (name : string) (source : string) : unit =
+  if not (Hashtbl.mem requested name) then (
+    Hashtbl.replace requested name ();
+    !fetcher source (function
+      | None ->
+          prerr_endline ("Audio.loop_from: can't get " ^ source);
+          Hashtbl.remove requested name
+      | Some bytes ->
+          let ends_with = Filename.check_suffix (String.lowercase_ascii source) in
+          let read = if ends_with ".mid" || ends_with ".midi" then midi else if ends_with ".abc" then abc else doremi in
+          Mixer.loop mixer name (Synth.render (read bytes))))
+
+let stop (name : string) : unit =
+  Hashtbl.remove requested name;
+  Mixer.stop mixer name
 let pull (n : int) : float array = Mixer.pull mixer n

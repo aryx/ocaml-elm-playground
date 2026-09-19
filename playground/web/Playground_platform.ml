@@ -701,8 +701,82 @@ let flags () : Playground.flags =
   in
   Playground.flags_of_strings (String.split_on_char '&' search)
 
+(*****************************************************************************)
+(* Sound: Web Audio *)
+(*****************************************************************************)
+
+(* claude: the same sound as natively, every sample ours (Audio.pull,
+ * audio/Mixer.mli): each frame, the samples the browser's audio clock
+ * will need next are copied into an AudioBuffer, scheduled right after
+ * the previous one, about 100 ms ahead, so that they play back to back
+ * with no gap (the Web Audio API: an AudioContext, its currentTime, a
+ * buffer source started at a given time; the browser resamples our
+ * 44,100 a second to its own rate). Browsers start an AudioContext
+ * "suspended" until the page gets a click or a key (their autoplay
+ * policy): resumed on the first input event; until then the samples are
+ * pulled and dropped, so that sounds don't pile up.
+ * The other way, the browser's own OscillatorNodes and GainNodes
+ * computing the sound (no samples of ours), is left for comparison
+ * (plan_audio_teaching.md, phase 4).
+ * References: https://www.w3.org/TR/webaudio/ ;
+ * https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API *)
+let audio_context : Ojs.t option Lazy.t =
+  lazy
+    (let ctor = Ojs.get_prop_ascii Ojs.global "AudioContext" in
+     if Ojs.type_of ctor = "undefined" then None else Some (Ojs.new_obj ctor [||]))
+
+let audio_state (ctx : Ojs.t) : string = Ojs.string_of_js (Ojs.get_prop_ascii ctx "state")
+
+let resume_audio () : unit =
+  match Lazy.force audio_context with
+  | Some ctx when audio_state ctx = "suspended" -> ignore (Ojs.call ctx "resume" [||])
+  | _ -> ()
+
+(* when the next buffer starts, on the AudioContext's clock *)
+let next_start = ref 0.
+
+(* after a frame's [ticks] updates *)
+let play_audio (ticks : int) : unit =
+  match Lazy.force audio_context with
+  | Some ctx when audio_state ctx = "running" ->
+      let now = Ojs.float_of_js (Ojs.get_prop_ascii ctx "currentTime") in
+      (* late (the tab was hidden, or the start): start again a bit
+       * ahead *)
+      if !next_start < now then next_start := now +. 0.05;
+      let n = int_of_float ((0.1 -. (!next_start -. now)) *. 44100.) in
+      if n > 0 then (
+        let samples = Audio.pull n in
+        let buffer = Ojs.call ctx "createBuffer" [| Ojs.int_to_js 1; Ojs.int_to_js n; Ojs.int_to_js 44100 |] in
+        let data = Ojs.call buffer "getChannelData" [| Ojs.int_to_js 0 |] in
+        Array.iteri (fun i x -> Ojs.array_set data i (Ojs.float_to_js x)) samples;
+        let source = Ojs.call ctx "createBufferSource" [||] in
+        Ojs.set_prop_ascii source "buffer" buffer;
+        ignore (Ojs.call source "connect" [| Ojs.get_prop_ascii ctx "destination" |]);
+        ignore (Ojs.call source "start" [| Ojs.float_to_js !next_start |]);
+        next_start := !next_start +. (float_of_int n /. 44100.))
+  | _ -> ignore (Audio.pull (ticks *.. (44100 /.. 60)))
+
+(* claude: Audio.loop_from's files, fetched in the background (an
+ * XMLHttpRequest, its response as bytes): a plain name from the page's
+ * own server, a URL elsewhere if that server allows it (CORS) *)
+let fetch_web (source : string) (k : string option -> unit) : unit =
+  let xhr = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "XMLHttpRequest") [||] in
+  ignore (Ojs.call xhr "open" [| Ojs.string_to_js "GET"; Ojs.string_to_js source |]);
+  Ojs.set_prop_ascii xhr "responseType" (Ojs.string_to_js "arraybuffer");
+  Ojs.set_prop_ascii xhr "onload"
+    (Ojs.fun_to_js 1 (fun _ ->
+         let status = Ojs.int_of_js (Ojs.get_prop_ascii xhr "status") in
+         if status >= 200 && status < 300 then (
+           let bytes = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Uint8Array") [| Ojs.get_prop_ascii xhr "response" |] in
+           let n = Ojs.int_of_js (Ojs.get_prop_ascii bytes "length") in
+           k (Some (String.init n (fun i -> Char.chr (Ojs.int_of_js (Ojs.array_get bytes i))))))
+         else k None));
+  Ojs.set_prop_ascii xhr "onerror" (Ojs.fun_to_js 1 (fun _ -> k None));
+  ignore (Ojs.call xhr "send" [||])
+
 (* when using the simple DOM *)
 let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
+  Audio.set_fetcher fetch_web;
   Window.set_onload window (fun () ->
 
     let sx = Playground.default_width in
@@ -792,10 +866,14 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
        * tab), and Asteroid ignored all Ticks (delta < tick) so it never
        * started. *)
       let wall_clock = Date.now () /. 1000. in
+      let ticks = ref 0 in
       while !pending >= tick_period -. tick_slack do
         process_playground_event (E.ETick wall_clock);
-        pending := !pending -. tick_period
+        pending := !pending -. tick_period;
+        incr ticks
       done;
+      (* claude: the sounds those updates played *)
+      play_audio !ticks;
 
       (* redraw: compute the description of the new frame, then either
        * build the real <svg> (first frame) or update the existing one
@@ -820,6 +898,8 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
     Window.request_animation_frame window animation_frame;
 
     let on_js_event evt =
+      (* claude: the browser lets sound start only after an input *)
+      resume_audio ();
       (* the root <svg>, needed to convert mouse coordinates (see
        * adjust_x_y); None if the first frame is not drawn yet *)
       let svg_opt = Option.map snd !current in

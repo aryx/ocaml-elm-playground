@@ -394,6 +394,29 @@ audio meeting).
   Left: a real MIDI keyboard (ALSA/CoreMIDI/PortMidi need bindings;
   Web MIDI in the browser), MIDI's control changes and pitch bend,
   a voice limit.
+- **Phase 4, DONE (our samples; the browser's own nodes left for the
+  comparison)**: `playground/web/Playground_platform.ml` feeds Web
+  Audio: each frame, `Audio.pull`'s samples into an AudioBuffer (mono,
+  44,100, resampled by the browser), a buffer source started right
+  after the previous one, ~100 ms ahead of the AudioContext's clock;
+  resumed on the first input event (the autoplay policy), the samples
+  dropped until then; through Ojs, vdom's JavaScript layer. And files
+  by URL, the user's request: `Audio.loop_from name source` (a file or
+  a URL; .mid, .abc, else solfège), through a fetcher each platform
+  installs (`Audio.set_fetcher`): natively `Download.local_file` (a
+  path read, a URL through curl, blocking once), in a browser an
+  XMLHttpRequest (a plain name from the page's server; elsewhere if
+  CORS allows). TinyMario's music= uses it (a URL works; no famous
+  theme's URL in the repository, the user brings their own). Checked
+  in a headless Chrome (a test page wrapping
+  AudioBufferSourceNode.start, with the autoplay policy lifted):
+  buffers started, no error, the original tune's samples (peak 0.66),
+  and with ?music=test.mid the file fetched and its notes playing
+  (peak 0.156, the computed 0.25 x 100/127 x 0.8); natively the same
+  MIDI through loop_from (C4 then E4, measured). Not checked: hearing
+  it in a real browser (headless Chrome's audio clock barely moves).
+  Left: the Web Audio nodes version (OscillatorNode, GainNode) for
+  comparison; the 3D backends' sound (their loops don't pull yet).
 - **The goal set by the user**: TinyMario with music and sounds when
   moving. So after phases 2 and 3, phase 8's `Music` (notes, the
   sequencer) comes before phases 5-7. The classic Super Mario Bros.

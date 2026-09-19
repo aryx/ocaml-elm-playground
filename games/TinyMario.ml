@@ -39,11 +39,14 @@
  * And music, looping, in ABC notation (audio/Abc.mli): by default an
  * original tune in the NES's style, [original_tune] below (Koji
  * Kondo's famous theme is Nintendo's, not ours to copy); the flag
- * music=file plays your own tune from an ABC file instead (native only:
- * no files in a browser: a MIDI file if it ends in .mid, an ABC file if
- * in .abc, else in solfège, audio/Doremi.mli), music=off none:
+ * music= plays your own tune instead, from a file or a URL (a MIDI file
+ * if it ends in .mid, an ABC one in .abc, else solfège: see
+ * Audio.loop_from; in a browser, a plain name is fetched from the
+ * page's server), music=off none:
  *
- *   dune exec games/TinyMario.exe -- music=mytune.abc *)
+ *   dune exec games/TinyMario.exe -- music=mytune.abc
+ *   dune exec games/TinyMario.exe -- music=https://example.com/song.mid
+ *   http://localhost:8001/games/js/TinyMario.html?music=song.mid *)
 open Playground
 open Basics (* float arithmetics *)
 
@@ -230,22 +233,12 @@ C,2 G,2 E,2 G,2 | F,2 A,2 C2 A,2 | F,2 A,2 D,2 G,2 | C,2 G,2 C,4 |
 D,2 A,2 F,2 A,2 | G,,2 D,2 G,2 D,2 | F,2 G,2 F,2 G,2 | C,2 G,2 C,4 |
 |}
 
-(* the music=file flag's tune, or the original *)
+(* the music= flag's tune (a file or a URL, see Audio.loop_from), or
+ * the original *)
 let start_music (computer : computer) : unit =
   match flag computer "music" with
   | Some "off" -> ()
-  | Some file -> (
-      match In_channel.with_open_bin file In_channel.input_all with
-      | text ->
-          let read =
-            if Filename.check_suffix file ".mid" || Filename.check_suffix file ".midi" then Audio.midi
-            else if Filename.check_suffix file ".abc" then Audio.abc
-            else Audio.doremi
-          in
-          Audio.loop "music" (read text)
-      | exception Sys_error e ->
-          prerr_endline ("music: " ^ e ^ "; the original tune instead");
-          Audio.loop "music" (Audio.abc original_tune))
+  | Some source -> Audio.loop_from "music" source
   | None -> Audio.loop "music" (Audio.abc original_tune)
 
 (* fell in a pit *)

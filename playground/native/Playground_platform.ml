@@ -53,7 +53,17 @@ let preload_image = Image_native.preload
 
 let flags () : Playground.flags = Playground.flags_of_strings (Native_loop_2d.app_args ())
 
+(* claude: Audio.loop_from's files: a local path read, a URL downloaded
+ * (curl, blocking: Download.local_file) *)
+let fetch_file (source : string) (k : string option -> unit) : unit =
+  match In_channel.with_open_bin (Download.local_file ~prefix:"audio" source) In_channel.input_all with
+  | bytes -> k (Some bytes)
+  | exception e ->
+      Logs.warn (fun m -> m "can't get %s: %s" source (Printexc.to_string e));
+      k None
+
 let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
+  Audio.set_fetcher fetch_file;
   Native_loop_2d.parse_cli_and_setup_logging ();
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in

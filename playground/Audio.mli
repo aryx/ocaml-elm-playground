@@ -137,6 +137,15 @@ val keep_playing : string -> sound -> unit
 val loop : string -> sound -> unit
 val stop : string -> unit
 
+(* [loop_from name source]: a tune from a file or a URL, looping once
+   it's there: a MIDI file if [source] ends in .mid, an ABC one in .abc,
+   else solfège; a local path natively, a URL anywhere (natively
+   downloaded, blocking the first time; in a browser fetched in the
+   background, from the page's own server for a plain name). Like
+   [loop], calling it again while it plays (or downloads) does nothing:
+     Audio.loop_from "music" "https://example.com/tune.mid" *)
+val loop_from : string -> string -> unit
+
 (**/**)
 
 (* claude: for the platforms (Playground_platform), not for games: the
@@ -144,3 +153,9 @@ val stop : string -> unit
  * native backend queues for SDL and a golden run writes to a WAV
  * (audio/Mixer.mli) *)
 val pull : int -> float array
+
+(* claude: for the platforms too: how [loop_from] gets a file's bytes,
+ * [fetch source k] calling [k] with them (None if it can't), now or
+ * later; installed by Playground_platform.run_app (natively a file read
+ * or a curl download, in a browser an XMLHttpRequest) *)
+val set_fetcher : (string -> (string option -> unit) -> unit) -> unit
