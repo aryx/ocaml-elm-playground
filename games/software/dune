@@ -33,10 +33,11 @@
     TinyGradius
     TinyZelda
     TinyRogue
+    TinyKart
   )
   (libraries
     elm_playground
-    kit_racing ; TinyOutRun's Road and Car
+    kit_racing ; TinyOutRun's Road and Car, TinyMicroMachines' and TinyKart's Topdown
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
     kit_lightcycles ; TinyTron's rules
     kit_shmup ; TinyInvaders' and TinyGalaga's Shots and Path

@@ -87,6 +87,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyGradius", "", 5);
     ("games/software/TinyZelda", "", 5);
     ("games/software/TinyRogue", "", 5);
+    ("games/software/TinyKart", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -192,6 +193,10 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyRogue", "level", 120, "space:2,right:10,right:14,right:18,right:22,right:26,right:30,up:40,up:44,up:48,left:60,left:64,down:80,down:84,down:88,down:92");
     (* running from the boulder; through the hole, the boulder stopped
      * over it (too big to fall in) *)
+    (* the grid, GO!; the first corner, the karts passed on the way
+     * coming up behind *)
+    ("games/software/TinyKart", "grid", 200, "space:1");
+    ("games/software/TinyKart", "corner", 430, "space:1,up:2-430,right:370-405");
     ("games/software/TinyRick", "boulder", 70, "space:1,right:2-160");
     ("games/software/TinyRick", "hole", 160, "space:1,right:2-160");
     (* right to the ladder, up it, a hole dug on the right; the guards

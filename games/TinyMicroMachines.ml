@@ -20,13 +20,14 @@
  *
  * The cars slide: a car goes where it points only little by little
  * (its velocity turns towards its heading by a fraction each frame, the
- * "grip", [drive]), so fast turns drift, the feel of toy cars on a
- * polished table. Off the track, on the table, they're slower; off the
- * table, they fall, and come back on the track after a moment.
+ * "grip", the racing kit's Topdown.drive), so fast turns drift, the feel
+ * of toy cars on a polished table. Off the track, on the table, they're
+ * slower; off the table, they fall, and come back on the track after a
+ * moment.
  *
  * The track is its waypoints ([waypoints]): the road's cells are drawn
- * between them (a Tilemap), the computer drives from one to the next,
- * and who leads is who's further along them.
+ * between them (a Tilemap), the computer drives from one to the next
+ * (Topdown.computer), and who leads is who's further along them.
  *
  * The camera (Camera2d) follows the leader, looking ahead of it, where
  * it goes: Micro Machines' own trick, since what matters is what's
@@ -69,11 +70,11 @@ let table : Tilemap.t =
 
 let bounds = Tilemap.bounds table
 
-(* a waypoint's world position: the center of its 2x2 cells *)
-let point (i : int) : number * number =
-  let c, r = List.nth waypoints (i mod List.length waypoints) in
-  let x, y = Tilemap.center table c r in
-  (x +. (tile /. 2.), y -. (tile /. 2.))
+(* the waypoints in the world: the centers of their 2x2 cells; passed
+ * within 160, the corner cut from 350 *)
+let track : Topdown.track =
+  let point (c, r) = let x, y = Tilemap.center table c r in (x +. (tile /. 2.), y -. (tile /. 2.)) in
+  { points = Array.of_list (List.map point waypoints); reach = 160.; corner = 350. }
 
 let on_road (x : number) (y : number) : bool = match Tilemap.tile_at table x y with Some ('#' | 'S') -> true | _ -> false
 let on_table (x : number) (y : number) : bool = Tilemap.tile_at table x y <> None
@@ -82,16 +83,7 @@ let on_table (x : number) (y : number) : bool = Tilemap.tile_at table x y <> Non
 (* The model *)
 (*****************************************************************************)
 
-type car = {
-  x : number;
-  y : number;
-  vx : number;
-  vy : number;
-  heading : number; (* degrees, counterclockwise from +x *)
-  speed : number; (* along the heading *)
-  next : int; (* the waypoint it drives to, counted from the start: laps included *)
-  falling : int; (* > 0: fallen off the table, for that long *)
-}
+type car = { body : Topdown.t; falling : int (* > 0: fallen off the table, for that long *) }
 
 type race = {
   red : car;
@@ -109,15 +101,11 @@ type model = { scenes : scene Scene2d.t; turning : bool (* the camera turns with
 let points_to_win = 4
 
 (* a car on waypoint [i], facing the next one, [side] across the road *)
-let car_at (i : int) (side : number) : car =
-  let x1, y1 = point i and x2, y2 = point (i + 1) in
-  let heading = atan2 (y2 -. y1) (x2 -. x1) *. 180. /. Float.pi in
-  let a = (heading +. 90.) *. Float.pi /. 180. in
-  { x = x1 +. (side *. cos a); y = y1 +. (side *. sin a); vx = 0.; vy = 0.; heading; speed = 0.; next = i + 1; falling = 0 }
+let car_at (i : int) (side : number) : car = { body = Topdown.start track i side; falling = 0 }
 
 let restart (r : race) (i : int) : race =
   let red = car_at i 35. and blue = car_at i (-35.) in
-  { r with red; blue; ready = 60; cam = { r.cam with x = red.x; y = red.y } }
+  { r with red; blue; ready = 60; cam = { r.cam with x = red.body.x; y = red.body.y } }
 
 let new_race (computer : bool) : race =
   restart
@@ -130,56 +118,23 @@ let initial_model = { scenes = Scene2d.start Title; turning = false }
 (* Driving *)
 (*****************************************************************************)
 
-let radians d = d *. Float.pi /. 180.
-
-(* how far along the track, for who leads: waypoints passed, and the
- * distance to the next one *)
-let progress (c : car) : number =
-  let x, y = point c.next in
-  (float_of_int c.next *. 10000.) -. Float.hypot (x -. c.x) (y -. c.y)
-
 (* One frame of a car, [gas] from -1 (reverse) to 1, [steer] -1 (right)
- * to 1 (left). The car's speed follows the gas; its velocity turns
- * towards its heading by the grip, 12% a frame: a car turning fast
- * keeps going the old way a moment, it drifts. *)
+ * to 1 (left): Topdown's toy car, 700 fast on the road, 300 on the
+ * table; falling once off it *)
 let drive (gas : number) (steer : number) (c : car) : car =
   if c.falling > 0 then c
   else
-    let dt = 1. /. 60. in
-    let top = if on_road c.x c.y then 700. else 300. in
-    let speed = c.speed +. (gas *. 900. *. dt) in
-    let speed = speed -. (speed *. 1.5 *. dt) (* friction *) in
-    let speed = Float.max (-.top /. 3.) (Float.min top speed) in
-    (* steering needs speed, like a real car's *)
-    let heading = c.heading +. (steer *. 3.5 *. Float.min 1. (Float.abs speed /. 250.)) in
-    let a = radians heading in
-    let grip = 0.12 in
-    let vx = c.vx +. (grip *. ((speed *. cos a) -. c.vx)) and vy = c.vy +. (grip *. ((speed *. sin a) -. c.vy)) in
-    let x = c.x +. (vx *. dt) and y = c.y +. (vy *. dt) in
-    let px, py = point c.next in
-    let next = if Float.hypot (px -. x) (py -. y) < 160. then c.next + 1 else c.next in
-    let c = { c with x; y; vx; vy; heading; speed; next } in
-    if on_table x y then c else { c with falling = 60 }
+    let top = if on_road c.body.x c.body.y then 700. else 300. in
+    let body = Topdown.drive Topdown.toy top gas steer c.body |> Topdown.follow track in
+    if on_table body.x body.y then { c with body } else { body; falling = 60 }
 
 (* back on the track after a fall: at the last waypoint passed *)
 let recover (c : car) : car =
-  if c.falling = 1 then { (car_at (c.next - 1) 0.) with next = c.next }
+  if c.falling = 1 then { body = { (Topdown.start track (c.body.next - 1) 0.) with next = c.body.next }; falling = 0 }
   else if c.falling > 0 then { c with falling = c.falling - 1 }
   else c
 
-(* The computer: steer towards the next waypoint, and, once near it,
- * towards the one after too, to cut the corner (not before: aiming at
- * a mix of the two from the start of a long straight would send it
- * across the table); gas unless the turn ahead is sharp *)
-let computer_drive (c : car) : number * number =
-  let x1, y1 = point c.next and x2, y2 = point (c.next + 1) in
-  let k = 0.5 *. Float.max 0. (1. -. (Float.hypot (x1 -. c.x) (y1 -. c.y) /. 350.)) in
-  let tx = ((1. -. k) *. x1) +. (k *. x2) and ty = ((1. -. k) *. y1) +. (k *. y2) in
-  let wanted = atan2 (ty -. c.y) (tx -. c.x) *. 180. /. Float.pi in
-  let diff = Float.rem (Float.rem (wanted -. c.heading +. 180.) 360. +. 360.) 360. -. 180. in
-  let steer = Float.max (-1.) (Float.min 1. (diff /. 20.)) in
-  let gas = if Float.abs diff > 50. && c.speed > 350. then -0.3 else 0.9 in
-  (gas, steer)
+let progress (c : car) : number = Topdown.progress track c.body
 
 let axis a b = (if a then 1. else 0.) -. if b then 1. else 0.
 
@@ -188,24 +143,25 @@ let update_race (screen : screen) (k : keyboard) (turning : bool) (r : race) : r
   else
     let red = drive (axis k.kup k.kdown) (axis k.kleft k.kright) r.red |> recover in
     let blue =
-      if r.computer then (let gas, steer = computer_drive r.blue in drive gas steer r.blue) |> recover
+      if r.computer then (let gas, steer = Topdown.computer track r.blue.body in drive gas steer r.blue) |> recover
       else drive (axis k.kw k.ks) (axis k.ka k.kd) r.blue |> recover
     in
     let leader = if progress red >= progress blue then red else blue in
+    let l = leader.body in
     (* the camera: on the leader, looking ahead of it (a third of a
      * second of its velocity), smoothed; turned with it if asked *)
-    let cam = Camera2d.follow 0.1 (leader.x +. (0.35 *. leader.vx)) (leader.y +. (0.35 *. leader.vy)) r.cam in
-    let cam = Camera2d.turn_toward 0.08 (if turning then leader.heading -. 90. else 0.) cam in
+    let cam = Camera2d.follow 0.1 (l.x +. (0.35 *. l.vx)) (l.y +. (0.35 *. l.vy)) r.cam in
+    let cam = Camera2d.turn_toward 0.08 (if turning then l.heading -. 90. else 0.) cam in
     let r = { r with red; blue; cam } in
     (* the head-to-head rule: the other car off the screen (or off the
      * table), a point for the leader, and a new start where it is *)
     let trailing = if leader == red then blue else red in
-    let sx, sy = Camera2d.to_screen cam trailing.x trailing.y in
+    let sx, sy = Camera2d.to_screen cam trailing.body.x trailing.body.y in
     let off = Float.abs sx > (screen.width /. 2.) +. 30. || Float.abs sy > (screen.height /. 2.) +. 30. || trailing.falling > 0 in
     if not off then r
     else
       let r = if leader == red then { r with red_points = r.red_points + 1 } else { r with blue_points = r.blue_points + 1 } in
-      restart r (leader.next - 1)
+      restart r (l.next - 1)
 
 let update (computer : computer) (m : model) : model =
   let s = Scene2d.update computer m.scenes in
@@ -240,7 +196,7 @@ let car_shape (color : color) : shape =
       "KBBBBBBK"; "KBBBBBBK"; ".BBBBBB." ]
 
 let view_car (color : color) (c : car) : shape =
-  let shape = car_shape color |> rotate (c.heading -. 90.) |> move c.x c.y in
+  let shape = car_shape color |> rotate (c.body.heading -. 90.) |> move c.body.x c.body.y in
   if c.falling > 0 then shape |> scale (float_of_int c.falling /. 60.) else shape
 
 (* the breakfast table: wood, the cereal bowls, a spoon, a glass *)

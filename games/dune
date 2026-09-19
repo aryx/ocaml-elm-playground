@@ -29,6 +29,7 @@
     TinyGradius
     TinyZelda
     TinyRogue
+    TinyKart
   )
   (libraries
     elm_playground

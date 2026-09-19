@@ -31,6 +31,7 @@
 (copy_files ../TinyGradius.{ml,mli})
 (copy_files ../TinyZelda.{ml,mli})
 (copy_files ../TinyRogue.{ml,mli})
+(copy_files ../TinyKart.{ml,mli})
 
 (executables
   (names
@@ -63,11 +64,12 @@
     TinyGradius
     TinyZelda
     TinyRogue
+    TinyKart
   )
   (libraries
     unix
     elm_playground
-    kit_racing ; TinyOutRun's Road and Car
+    kit_racing ; TinyOutRun's Road and Car, TinyMicroMachines' and TinyKart's Topdown
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
     kit_lightcycles ; TinyTron's rules
     kit_shmup ; TinyInvaders' and TinyGalaga's Shots and Path

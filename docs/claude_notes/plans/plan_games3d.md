@@ -250,9 +250,12 @@ line, which makes a flat plane look like a floor. Then polygons: Hard
 Drivin' (Atari, 1989), Virtua Racing (Yu Suzuki, Sega AM2, 1992: flat-
 shaded, 60 frames per second), Ridge Racer (Namco, 1993: textured).
 
-- **Toys**: TinyKart in Mode 7 (a `Tilemap` track drawn row by row with
-  a per-row scale: 2D-able on the software backend's framebuffer, a
-  sibling of `plan_games.md`'s TinyOutRun), and TinyVirtuaRacing (DONE: `games3d/TinyVirtuaRacing.ml`, a stage on
+- **Toys**: TinyKart in Mode 7 (DONE: `games/TinyKart.ml`, in the 2D
+  playground: a `Tilemap` track sampled row by row with a per-row scale
+  into a 200x130 picture of characters drawn by `Sprite.pixels`, TinyWolf
+  turned sideways; the karts billboards, four drawings by the viewing
+  angle; three laps against three computer karts, on the racing kit's
+  `Topdown`, TinyMicroMachines' model), and TinyVirtuaRacing (DONE: `games3d/TinyVirtuaRacing.ml`, a stage on
   TinyOutRun's course, with the racing kit `kits/racing/`) --
   flat-shaded polygons are exactly `playground3d`'s look, so this may
   be the most satisfying 3D toy.
@@ -325,7 +328,7 @@ kit); listed here because players see them as 3D.
 3. `Camera3d` with TinyMario64 and TinyMarble: the camera problem
    (both DONE).
 4. The racing kit in 3D with TinyVirtuaRacing (and TinyKart in Mode 7
-   next to `plan_games.md`'s TinyOutRun).
+   next to `plan_games.md`'s TinyOutRun) (both DONE).
 5. `Heightmap` with TinyComanche/TinyStarFox; `Sectors` with TinyDoom.
 6. The rest as they come: fighting with the 2D brawler kit, puzzles,
    TinyElite.

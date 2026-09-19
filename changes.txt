@@ -76,7 +76,7 @@
 - relative mouse motion (mdx/mdy), run_app3d ?capture_mouse (FPS look)
 
 ** games (the Tiny* toys) and kits
-- kits/: racing (Road, Car), maze (Grid_move, Chase), lightcycles
+- kits/: racing (Road, Car, Topdown), maze (Grid_move, Chase), lightcycles
   (TinyTron's rules without a view)
 - games/: TinyMario (was Platformer; pixel-art hero, sounds and
   music), TinyInvaders, TinySokoban (undo), TinyPacman, TinyWolf (a
@@ -87,7 +87,8 @@
   TinyDonkeyKong (state machines, slanted girders), TinyLodeRunner
   (digging), TinyRick (traps as tiles, flip-screen rooms), TinyGradius
   (the power-up bar, a timeline of waves), TinyZelda (rooms sliding
-  in, an inventory), TinyRogue (a generated dungeon, turns); kits/shmup (Shots, Path) and kits/platformer (Tile_move,
+  in, an inventory), TinyRogue (a generated dungeon, turns), TinyKart (Mode 7, row by
+  row); kits/shmup (Shots, Path) and kits/platformer (Tile_move,
   Ladder)
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
   TinyTron3d, TinyMario64, TinyMarble (Marble Madness); Minecraft3d is a game (walk, jump, fly,

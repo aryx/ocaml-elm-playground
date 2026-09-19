@@ -349,7 +349,8 @@ Mode 7, see `plan_games3d.md`).
   sprites), TinyMicroMachines (DONE: `games/TinyMicroMachines.ml`, the
   head-to-head mode, drifting cars, the computer on the waypoints; a
   `Camera2d` looking ahead of the leader, or turning with it: the
-  `angle` added to `Camera2d`).
+  `angle` added to `Camera2d`), TinyKart (DONE: `games/TinyKart.ml`,
+  Mode 7, see `plan_games3d.md`, on TinyMicroMachines' model).
 - **Kit**, the racing kit:
   - `Road`: a track as segments (length, curve, hill), projected one
     segment at a time, from far to near; references: Lou Gorenfeld,
@@ -358,7 +359,9 @@ Mode 7, see `plan_games3d.md`).
     Out Run in four parts);
   - `Car`: speed, steering, off-road slowdown, and top-down drifting
     (the bicycle model, with the physics plan);
-  - laps and checkpoints, opponents following a racing line.
+  - laps and checkpoints, opponents following a racing line (DONE:
+    `Topdown`, TinyMicroMachines' drifting car and waypoints, out of it
+    for TinyKart: laps, places, the computer's driving).
 
 ### 12. Action-adventure
 

@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* kits/racing: Road and Car *)
+(* kits/racing: Road, Car and Topdown *)
 
 let t = Testo.create
 
@@ -42,6 +42,23 @@ let test_car () =
   let slowed = drive 120 on_grass in
   Alcotest.(check (float 1.)) "the grass slows it down" (0.4 *. p.max_speed) slowed.speed
 
+let test_topdown () =
+  let p = Topdown.toy in
+  let still = { Topdown.x = 0.; y = 0.; vx = 0.; vy = 0.; heading = 0.; speed = 0.; next = 1 } in
+  let c1 = Topdown.drive p 700. 1. 0. still in
+  let c2 = Topdown.drive p 700. 1. 0. c1 in
+  Alcotest.(check (list (float 0.01))) "full gas from a stop" [ 14.625; 28.88 ] [ c1.speed; c2.speed ];
+  (* the velocity follows the speed only by the grip, 0.12 of the way *)
+  Alcotest.(check (float 1e-9)) "sliding" (0.12 *. 14.625) c1.vx;
+  let track = { Topdown.points = [| (0., 0.); (100., 0.); (100., 100.) |]; reach = 10.; corner = 50. } in
+  let c = Topdown.start track 0 5. in
+  Alcotest.(check (list (float 1e-9))) "facing the next, to its left" [ 0.; 5.; 0. ] [ c.x; c.y; c.heading ];
+  let c = Topdown.follow track { c with x = 95.; y = 0. } in
+  Alcotest.(check int) "passed" 2 c.next;
+  Alcotest.(check int) "first lap" 0 (Topdown.lap track c);
+  Alcotest.(check int) "second lap" 1 (Topdown.lap track { c with next = 4 });
+  Alcotest.(check (float 1e-9)) "progress" (20000. -. Float.hypot 5. 100.) (Topdown.progress track c)
+
 let tests =
   Testo.categorize "kit_racing"
-    [ t "build" test_build; t "the coast" test_coast; t "centerline" test_centerline; t "car" test_car ]
+    [ t "build" test_build; t "the coast" test_coast; t "centerline" test_centerline; t "car" test_car; t "topdown" test_topdown ]

@@ -101,6 +101,44 @@ let micro_machines_computer () =
   Alcotest.(check bool) "hardly off the road" true (!offroad < 60)
 
 (*****************************************************************************)
+(* TinyKart *)
+(*****************************************************************************)
+
+(* Mode 7's two ways, a screen pixel to the ground and back: 90 high,
+ * with a focal of 866 (a 1000-pixel screen, 60 degrees), the row 90
+ * pixels under the horizon sees 866 ahead of the eye (250 behind the
+ * kart), where a pixel is a unit *)
+let kart_mode7 () =
+  let open TinyKart in
+  let e = eye (Playground.to_screen 1000. 1000.) 0. 0. 0. in
+  let x, y = Option.get (to_ground e 0. (horizon -. 90.)) in
+  Alcotest.(check (list (float 0.01))) "866 ahead" [ 866.03 -. 250.; 0. ] [ x; y ];
+  let sx, sy, scale = Option.get (TinyKart.to_screen e x y) in
+  Alcotest.(check (list (float 1e-6))) "and back" [ 0.; horizon -. 90.; 1. ] [ sx; sy; scale ];
+  (* right of the screen is right of the way we look, -y when looking +x *)
+  let x, y = Option.get (to_ground e 100. (horizon -. 45.)) in
+  Alcotest.(check bool) "to the right" true (y < 0.);
+  let sx, sy, _ = Option.get (TinyKart.to_screen e x y) in
+  Alcotest.(check (list (float 1e-6))) "and back" [ 100.; horizon -. 45. ] [ sx; sy ];
+  Alcotest.(check bool) "the sky" true (to_ground e 0. (horizon +. 1.) = None)
+
+(* the computer drives all four karts (the player's too, as after the
+ * finish): the player's kart does its 3 laps in under two minutes,
+ * hardly ever on the grass, and so do the others, slower *)
+let kart_race () =
+  let open TinyKart in
+  let r = ref (new_race ()) and frames = ref 0 and grass = ref 0 in
+  let player () = (List.hd !r.karts).car in
+  while Topdown.lap track (player ()) < laps && !frames < 60 * 120 do
+    incr frames;
+    r := update_race initial_computer.keyboard true !r;
+    if top_speed (player ()).x (player ()).y < 300. then incr grass
+  done;
+  Alcotest.(check int) "3 laps" laps (Topdown.lap track (player ()));
+  Alcotest.(check bool) "hardly on the grass" true (!grass < 60);
+  List.iter (fun k -> Alcotest.(check bool) "the others lapping" true (Topdown.lap track k.car >= 2)) !r.karts
+
+(*****************************************************************************)
 (* TinyMario64 *)
 (*****************************************************************************)
 
@@ -741,6 +779,8 @@ let tests =
       t "TinyPacman, a power pellet" pacman_blue;
       t "TinyBomberman, a chain reaction" bomberman_chain;
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
+      t "TinyKart, Mode 7 there and back" kart_mode7;
+      t "TinyKart, the computer drives the race" kart_race;
       t "TinyMario64, a jump onto a platform" mario64_jump;
       t "TinyMarble, the ramp's heights" marble_ramp;
       t "TinyMarble, the cliff breaks the marble, the step doesn't" marble_falls;
