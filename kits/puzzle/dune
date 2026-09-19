@@ -1,0 +1,9 @@
+; claude: the puzzle kit (see docs/claude_notes/plan_games.md, section 7,
+; and "kits"): what grid puzzles share, on top of the playground --
+; moving and pushing on a grid (Push), and going back (Undo). Used by
+; games/TinySokoban and games/TinyBabaIsYou. A private library, not
+; installed: only the games use it.
+(library
+ (name kit_puzzle)
+ (wrapped false)
+)

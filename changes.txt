@@ -89,10 +89,12 @@
   (the power-up bar, a timeline of waves), TinyZelda (rooms sliding
   in, an inventory), TinyRogue (a generated dungeon, turns),
   TinyStreetFighter (frame data, blocking, the quarter circle),
-  TinyFinalFight (the belt, combos), TinyKart (Mode 7, row by
+  TinyFinalFight (the belt, combos), TinyBabaIsYou (the rules as words
+  on the board), TinyKart (Mode 7, row by
   row), TinyDoom (Doom's renderer: a node builder, the BSP walked
   front to back, per-column clip arrays, no z-buffer); kits/shmup (Shots, Path), kits/platformer (Tile_move,
-  Ladder), kits/brawler (Hitbox, Frame_data, Stickman) and
+  Ladder), kits/brawler (Hitbox, Frame_data, Stickman), kits/puzzle (Push,
+  Undo) and
   kits/sectors (Sectors: a Doom level as sectors, its lines found)
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
   TinyTron3d, TinyMario64, TinyMarble (Marble Madness), TinyDoom3d

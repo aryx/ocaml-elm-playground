@@ -54,6 +54,7 @@
    %{project_root}/games/software/TinyFinalFight.exe
    %{project_root}/examples/software/BigBangRocket.exe
    %{project_root}/examples/software/BigBangWorm.exe
+   %{project_root}/games/software/TinyBabaIsYou.exe
    %{project_root}/games/software/TinyKart.exe
    %{project_root}/games/software/TinyDoom.exe
    %{project_root}/examples/software/LogoFractals.exe

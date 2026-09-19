@@ -93,6 +93,7 @@ let scenes : Testutil_golden.scene list =
      * rocket coming down; the worm dead against the border, its
      * epitaph (last_picture) *)
     ("examples/software/BigBangRocket", "", 60);
+    ("games/software/TinyBabaIsYou", "", 5);
     ("examples/software/BigBangWorm", "", 400);
     ("games/software/TinyKart", "", 5);
     ("games/software/TinyDoom", "", 5);
@@ -206,6 +207,9 @@ let scripted : Testutil_golden.scripted list =
     (* the first wave on the street; the spin *)
     ("games/software/TinyFinalFight", "wave", 160, "space:1,right:3-60,space:100,space:108,space:116,space:124,space:132");
     ("games/software/TinyFinalFight", "spin", 206, "space:1,right:3-60,space:100,space:108,space:116,space:124,space:132,z:200");
+    (* level 1, Baba pushing the rocks; ten moves right: won *)
+    ("games/software/TinyBabaIsYou", "pushing", 30, "space:1,right:5,right:10,right:15,right:20,right:25,right:30,right:35,right:40,right:45,right:50");
+    ("games/software/TinyBabaIsYou", "won", 60, "space:1,right:5,right:10,right:15,right:20,right:25,right:30,right:35,right:40,right:45,right:50");
     (* running from the boulder; through the hole, the boulder stopped
      * over it (too big to fall in) *)
     (* the grid, GO!; the first corner, the karts passed on the way

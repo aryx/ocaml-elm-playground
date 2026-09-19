@@ -269,7 +269,12 @@ Pajitnov, 1984; done: `games/Tetris.ml`), Lemmings (DMA Design,
 
 - **Toys**: TinySokoban (DONE: `games/TinySokoban.ml`, three levels of
   our own checked by a breadth-first solver; undo in Elm style, the
-  list of past boards), TinyBabaIsYou (later: rules as tiles).
+  list of past boards), TinyBabaIsYou (DONE: `games/TinyBabaIsYou.ml`,
+  the rules as words on the board, read as sentences after each move,
+  YOU, WIN, STOP, PUSH, DEFEAT, SINK and NOUN IS NOUN; four levels, each
+  solved by a breadth-first search in the tests). Both on the puzzle
+  kit, `kits/puzzle/`: `Push` (a chain pushed, TinySokoban's limited to
+  one box) and `Undo`.
 - **Kit**: a `Rules` layer rewriting a `Tilemap` with patterns, as in
   PuzzleScript (Stephen Lavelle, 2013) and TileCode (Thomas Ball,
   Stefania Druga, et al., 2020, see `Tilemap.mli`): a game as a map

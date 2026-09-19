@@ -32,7 +32,7 @@ let sokoban_solution () =
   let open TinySokoban in
   let p = load 0 in
   let dirs = [ (0, -1); (-1, 0); (0, 1); (0, -1); (1, 0); (1, 0); (0, 1) ] in
-  let b = List.fold_left (fun b d -> match step b d with Some b -> b | None -> Alcotest.fail "a step blocked") p.board dirs in
+  let b = List.fold_left (fun b d -> match step b d with Some b -> b | None -> Alcotest.fail "a step blocked") p.boards.now dirs in
   Alcotest.(check bool) "solved" true (solved b);
   Alcotest.(check (pair int int)) "moves, pushes" (7, 2) (b.moves, b.pushes)
 
@@ -924,6 +924,48 @@ let ff_robot () =
   Alcotest.(check bool) "street cleared" true !cleared_
 
 (*****************************************************************************)
+(* TinyBabaIsYou *)
+(*****************************************************************************)
+
+(* the shortest solution of a level, by a breadth-first search over the
+ * boards (a board: what's where, the objects' ids aside) *)
+let baba_solve (level : int) : int option =
+  let open TinyBabaIsYou in
+  let key (b : board) = List.sort compare (List.map (fun o -> (o.kind, o.c, o.r)) b.objs) in
+  let seen = Hashtbl.create 10000 and q = Queue.create () in
+  let start = load level in
+  Hashtbl.replace seen (key start) ();
+  Queue.add (start, 0) q;
+  let found = ref None in
+  while !found = None && (not (Queue.is_empty q)) && Hashtbl.length seen < 300_000 do
+    let b, n = Queue.pop q in
+    List.iter
+      (fun d ->
+        let b' = turn b d in
+        if won b' && !found = None then found := Some (n + 1)
+        else if (not (Hashtbl.mem seen (key b'))) && not (no_you b') then begin
+          Hashtbl.replace seen (key b') ();
+          Queue.add (b', n + 1) q
+        end)
+      [ (1, 0); (-1, 0); (0, 1); (0, -1) ]
+  done;
+  !found
+
+(* every level can be won (in 10, 14, 12 and 15 moves); the rules read
+ * off the first one *)
+let baba_levels () =
+  let open TinyBabaIsYou in
+  let rs = rules (load 0) in
+  Alcotest.(check int) "four rules" 4 (List.length rs);
+  Alcotest.(check bool) "BABA IS YOU" true (List.mem (Baba, Prop You) rs);
+  List.iteri
+    (fun i _ ->
+      match baba_solve i with
+      | Some n -> Printf.printf "level %d: %d moves\n" (i + 1) n
+      | None -> Alcotest.fail (Printf.sprintf "level %d unsolvable" (i + 1)))
+    levels
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -987,4 +1029,5 @@ let tests =
       t "TinyStreetFighter, the computer fights" sf_computer;
       t "TinyFinalFight, the combo, on the line" ff_combo;
       t "TinyFinalFight, a robot clears the street" ff_robot;
+      t "TinyBabaIsYou, every level solvable" baba_levels;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

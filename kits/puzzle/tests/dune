@@ -1,0 +1,5 @@
+; claude: the puzzle kit's worked examples (Push.mli, Undo.mli), run by
+; 'make test'
+(test
+ (name Test)
+ (libraries alcotest testo kit_puzzle))

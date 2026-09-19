@@ -29,8 +29,10 @@
  *
  * Undo is where the Elm architecture shines: the model is a value, so
  * the history is just the list of the past boards, and undoing is taking
- * the head of the list. Scene2d gives the title and the "solved"
- * screens, and keys pressed rather than held: one press, one step.
+ * the head of the list (the puzzle kit's Undo, kits/puzzle/, with the
+ * push itself, Push: a chain of one box at most). Scene2d gives the
+ * title and the "solved" screens, and keys pressed rather than held:
+ * one press, one step.
  *
  * Exercises: more levels (the classic free collections, e.g. David W.
  * Skinner's Microban, are in the same format), a solver showing a
@@ -80,8 +82,7 @@ type board = { map : Tilemap.t; col : int; row : int; moves : int; pushes : int 
 
 type play = {
   level : int;
-  board : board;
-  history : board list; (* the boards before, the last one first *)
+  boards : board Undo.t; (* the board now, and the ones before *)
 }
 
 type scene = Title | Playing of play | Solved of play
@@ -93,7 +94,7 @@ let load (level : int) : play =
   let col, row = match Tilemap.find map '@' @ Tilemap.find map '+' with p :: _ -> p | [] -> (0, 0) in
   (* the player is not part of the map: what's under them stays *)
   let under = if Tilemap.get map col row = Some '+' then '.' else ' ' in
-  { level; board = { map = Tilemap.set map col row under; col; row; moves = 0; pushes = 0 }; history = [] }
+  { level; boards = { map = Tilemap.set map col row under; col; row; moves = 0; pushes = 0 } |> Undo.start }
 
 let initial_model : model = Scene2d.start Title
 
@@ -115,15 +116,17 @@ let with_box (c : char option) = if c = Some '.' then '*' else '$'
  *     @$ .   ->    @$.   ->    @*      a push, then another: on the goal
  *)
 let step (b : board) ((dc, dr) : int * int) : board option =
-  let get c r = Tilemap.get b.map c r in
-  let c1 = b.col + dc and r1 = b.row + dr in
-  let c2 = c1 + dc and r2 = r1 + dr in
-  if is_free (get c1 r1) then Some { b with col = c1; row = r1; moves = b.moves + 1 }
-  else if is_box (get c1 r1) && is_free (get c2 r2) then
-    let map = Tilemap.set b.map c1 r1 (without_box (get c1 r1)) in
-    let map = Tilemap.set map c2 r2 (with_box (get c2 r2)) in
-    Some { map; col = c1; row = r1; moves = b.moves + 1; pushes = b.pushes + 1 }
-  else None
+  let get (c, r) = Tilemap.get b.map c r in
+  match Push.chain ~blocked:(fun p -> not (is_free (get p))) ~pushable:(fun p -> is_box (get p)) ~limit:1 (b.col, b.row) (dc, dr) with
+  | None -> None
+  | Some [] -> Some { b with col = b.col + dc; row = b.row + dr; moves = b.moves + 1 }
+  | Some chain ->
+      (* the box from the chain's one cell to the next *)
+      let c1, r1 = List.hd chain in
+      let c2 = c1 + dc and r2 = r1 + dr in
+      let map = Tilemap.set b.map c1 r1 (without_box (get (c1, r1))) in
+      let map = Tilemap.set map c2 r2 (with_box (get (c2, r2))) in
+      Some { map; col = c1; row = r1; moves = b.moves + 1; pushes = b.pushes + 1 }
 
 (* solved: no box left off a goal *)
 let solved (b : board) : bool = Tilemap.find b.map '$' = []
@@ -145,11 +148,11 @@ let update_play (s : model) (p : play) : play =
   in
   match dir with
   | Some d -> (
-      match step p.board d with
-      | Some board -> { p with board; history = p.board :: p.history }
+      match step p.boards.now d with
+      | Some board -> { p with boards = Undo.record board p.boards }
       | None -> p)
   | None when pressed (fun k -> k.kbackspace) s || pressed (letter "u") s -> (
-      match p.history with before :: rest -> { p with board = before; history = rest } | [] -> p)
+      { p with boards = Undo.undo p.boards })
   | None when pressed (letter "r") s -> load p.level
   | None -> p
 
@@ -160,7 +163,7 @@ let update (computer : computer) (s : model) : model =
   | Title -> if space then Scene2d.go (Playing (load 0)) s else s
   | Playing p ->
       let p = update_play s p in
-      if solved p.board then Scene2d.go (Solved p) s else { s with scene = Playing p }
+      if solved p.boards.now then Scene2d.go (Solved p) s else { s with scene = Playing p }
   | Solved p ->
       if not space then s
       else if p.level + 1 < List.length levels then Scene2d.go (Playing (load (p.level + 1))) s
@@ -187,7 +190,7 @@ let tile (c : char) : shape =
 let text (color : color) (size : number) (s : string) : shape = words color s |> scale size
 
 let view_board (p : play) : shape list =
-  let b = p.board in
+  let b = p.boards.now in
   let px, py = Tilemap.center b.map b.col b.row in
   [ Tilemap.view tile b.map; player |> move px py;
     text white 3. (Printf.sprintf "LEVEL %d   MOVES %d   PUSHES %d" (p.level + 1) b.moves b.pushes) |> move_y 420.;
