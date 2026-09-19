@@ -81,6 +81,7 @@ dune exec examples3d/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see 
 dune exec examples3d/Corridor3d.exe      # walk down a corridor (up/down arrows); see the "c" toggle below
 dune exec games3d/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
 dune exec games3d/TinyDescent3d.exe      # fly a ship through a mine, in any direction (arrows, a/d, w/s)
+dune exec games3d/TinyQuake.exe          # a Quake level: qbsp, vis and light at startup, "v" shows what vis saves
 ```
 
 The same, on the GPU: `dune exec examples3d/opengl/Cubes3d.exe`. In a

@@ -13,6 +13,7 @@
 (copy_files ../TinyDoom3d.{ml,mli})
 (copy_files ../TinyComanche3d.ml)
 (copy_files ../TinyDescent3d.ml)
+(copy_files ../TinyQuake.ml)
 (copy_files ../Minecraft3d.ml)
 
 (executables
@@ -27,8 +28,9 @@
     TinyDoom3d
     TinyComanche3d
     TinyDescent3d
+    TinyQuake
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_racing ; TinyVirtuaRacing's Road and Car

@@ -209,12 +209,17 @@ online play), then Half-Life (1998).
     out.
   - It needed `Playground3d.camera` to take an `?up` (a ship that
     rolls), honored by the four 3D backends.
-- **Next**: TinyQuake, Quake's three offline tools in small -- `qbsp`
-  (a BSP tree of the level's brushes), `vis` (the portals between
-  leaves, and from them each leaf's potentially visible set) and
-  `light` (lightmaps baked by casting rays at the lights) -- then, per
-  frame, the eye's leaf's PVS drawn with the z-buffer. The portals are
-  TinyDescent's, computed once instead of walked live.
+- **Toy** (DONE: `games3d/TinyQuake.ml`): Quake's three offline tools
+  in small, all run at startup -- `qbsp` (the map's solid boxes, their
+  hidden faces removed as CSGFaces does, then a BSP tree whose leaves
+  are rock or air), `vis` (each leaf's potentially visible set; ours
+  samples sight lines where Quake clipped through portal chains) and
+  `light` (each face cut into patches, each patch asking every lamp
+  whether it can see it: real shadows, a lightmap of one texel per
+  patch) -- then, per frame, the eye's leaf's set drawn with the
+  z-buffer, and "v" to turn the set off and see the same picture cost
+  6 times more patches. No pair: the lesson is the level pipeline, not
+  the rasterizer.
 - **Kit**: `Fps_controller`, extracted from `Minecraft_player` (move,
   jump, gravity, mouse look), with collisions against boxes instead of
   blocks (`Collide3d`); shared with TinyWolf3d and TinyDoom.

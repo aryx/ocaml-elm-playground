@@ -257,6 +257,48 @@ let descent_mine () =
   Alcotest.(check bool) "escaped" true (match m.over with Some (_, true) -> true | _ -> false)
 
 (*****************************************************************************)
+(* TinyQuake *)
+(*****************************************************************************)
+
+(* The level pipeline: qbsp's tree says what is rock and what is air,
+ * vis's set is smaller than the whole level and works both ways, and
+ * light's patches all landed in an air leaf. *)
+let quake_tools () =
+  let open TinyQuake in
+  List.iter
+    (fun (name, p, solid) -> Alcotest.(check bool) name solid (solid_at p))
+    [ ("inside a wall", (500., 50., 500.), true); ("under the floor", (200., -20., 200.), true);
+      ("the start room", (200., 60., 200.), false); ("where the player starts", add start_at (0., 8., 0.), false) ];
+  let here = leaf_id (add start_at (0., eye_height, 0.)) in
+  Alcotest.(check bool) "the player starts in an air leaf" true (here >= 0);
+  let set = pvs here in
+  let seen = Array.fold_left (fun n v -> if v then n + 1 else n) 0 set in
+  Alcotest.(check bool) "the set is smaller than the level" true (seen > 0 && seen < leaves);
+  Alcotest.(check bool) "seeing works both ways" true (Array.for_all Fun.id (Array.init leaves (fun other -> set.(other) = sees other here)));
+  Alcotest.(check bool) "every lamp is in the air" true (List.for_all (fun (l : lamp) -> not (solid_at l.where)) lamps);
+  Alcotest.(check bool) "the runes and the exit too" true (List.for_all (fun r -> not (solid_at r)) (exit_at :: runes))
+
+(* Walking: gravity puts the player on the floor and the walls stop
+ * him; the three runes then the exit end the game *)
+let quake_walk () =
+  let open TinyQuake in
+  let play keys n m =
+    let s = ref m in
+    for i = 1 to n do
+      s := update (computer ~keyboard:(keys i) i) !s
+    done;
+    !s
+  in
+  let still = { initial_computer.keyboard with kw = false } in
+  let m = play (fun _ -> still) 60 { initial_model with p = add start_at (0., 100., 0.) } in
+  let _, y, _ = m.p in
+  Alcotest.(check (float 1.)) "fallen back to the floor" 0. y;
+  let m = play (fun _ -> { still with kw = true }) 400 initial_model in
+  Alcotest.(check bool) "still in the air, somewhere else" true ((not (solid_at m.p)) && Float.abs (let x, _, _ = m.p in x -. 128.) > 100.);
+  let m = play (fun _ -> still) 2 { initial_model with p = exit_at; runes = [] } in
+  Alcotest.(check bool) "out" true (m.over <> None)
+
+(*****************************************************************************)
 (* TinyMario64 *)
 (*****************************************************************************)
 
@@ -1264,6 +1306,8 @@ let tests =
       t "TinyDoom, a robot finds the exit" doom_exit;
       t "TinyComanche, a robot pops the balloons" comanche_balloons;
       t "TinyDescent, the mine holds the ship, a robot shot, the exit" descent_mine;
+      t "TinyQuake, qbsp, vis and light" quake_tools;
+      t "TinyQuake, walking the level" quake_walk;
       t "TinyMario64, a jump onto a platform" mario64_jump;
       t "TinyMarble, the ramp's heights" marble_ramp;
       t "TinyMarble, the cliff breaks the marble, the step doesn't" marble_falls;

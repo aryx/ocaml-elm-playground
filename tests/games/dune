@@ -38,6 +38,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyQuake.ml)
+ (deps (:src %{project_root}/games3d/TinyQuake.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyDescent.ml)
  (deps (:src %{project_root}/games2.5d/TinyDescent.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

@@ -66,6 +66,8 @@ let scenes : Testutil_golden.scene list =
     ("games3d/TinyComanche3d", "", 5);
     (* claude: the same view as games2.5d/TinyDescent's golden frame *)
     ("games3d/TinyDescent3d", "", 5);
+    (* claude: the start room, its pillar's shadow, the lit doorway *)
+    ("games3d/TinyQuake", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -101,6 +103,10 @@ let scripted : Testutil_golden.scripted list =
     ("games3d/TinyComanche3d", "island", 70, "up:1-70,w:1-20");
     (* the same flight as games2.5d/TinyDescent's *)
     ("games3d/TinyDescent3d", "corridor", 30, "w:1-30");
+    (* through the doorway into the corridor: the visibility set drops
+     * to a few leaves, and "v" (the second one) draws the whole level *)
+    ("games3d/TinyQuake", "doorway", 60, "w:1-60");
+    ("games3d/TinyQuake", "everything", 60, "v:2,w:1-60");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/LogoFractals3d", "tree", 5, "a:2");
