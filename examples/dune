@@ -6,11 +6,13 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano
+    AiTictactoe
     LogoFractals
     BigBangRocket BigBangWorm
   )
   (libraries
     elm_playground
+    ai ; AiTictactoe's Minimax
     elm_playground_native ; implem of virtual elm_playground
   )
 )

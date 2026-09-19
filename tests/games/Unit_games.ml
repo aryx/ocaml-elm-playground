@@ -1161,6 +1161,50 @@ let bobble_robot () =
   Alcotest.(check int) "all the rounds" (List.length rounds) !cleared
 
 (*****************************************************************************)
+(* AiOthello (an example, ai/'s Minimax) *)
+(*****************************************************************************)
+
+(* the start: black's 4 moves, each flipping one disk *)
+let othello_rules () =
+  let open AiOthello in
+  Alcotest.(check (list int)) "4 moves" [ 19; 26; 37; 44 ] (legal start);
+  let p = play start (Put 19) in
+  Alcotest.(check bool) "d4 flipped" true (p.board.(27) = Black);
+  Alcotest.(check (pair int int)) "4 black, 1 white" (4, 1) (count p Black, count p White)
+
+(* the computer against itself, 20 moves: at each, alpha-beta finds
+ * minimax's move and value, looking at fewer positions *)
+let othello_alphabeta () =
+  let open AiOthello in
+  let p = ref start and a_total = ref 0 and m_total = ref 0 in
+  for _ = 1 to 20 do
+    let a = Minimax.alphabeta othello ~depth !p and m = Minimax.minimax othello ~depth !p in
+    Alcotest.(check (float 0.)) "the value" m.value a.value;
+    Alcotest.(check bool) "the move" true (a.best = m.best);
+    a_total := !a_total + a.nodes;
+    m_total := !m_total + m.nodes;
+    match a.best with Some mv -> p := play !p mv | None -> ()
+  done;
+  Printf.printf "alpha-beta: %d positions, minimax: %d\n" !a_total !m_total;
+  Alcotest.(check bool) "fewer positions" true (!a_total < !m_total)
+
+(* the computer (white) beats a greedy player, the one flipping the most
+ * disks each time *)
+let othello_greedy () =
+  let open AiOthello in
+  let greedy p =
+    match moves p with
+    | [ Pass ] -> Pass
+    | ms -> List.fold_left (fun (best, n) m -> match m with Put i when List.length (flips p.board p.turn i) > n -> (m, List.length (flips p.board p.turn i)) | _ -> (best, n)) (List.hd ms, -1) ms |> fst
+  in
+  let p = ref start in
+  while moves !p <> [] do
+    p := play !p (if !p.turn = Black then greedy !p else Option.get (Minimax.alphabeta othello ~depth !p).best)
+  done;
+  Printf.printf "greedy %d, computer %d\n" (count !p Black) (count !p White);
+  Alcotest.(check bool) "the computer wins" true (count !p White > count !p Black)
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -1233,4 +1277,7 @@ let tests =
       t "TinyPuzzleBobble, the hexagonal grid" bobble_hex;
       t "TinyPuzzleBobble, popped and fallen" bobble_drop;
       t "TinyPuzzleBobble, a robot clears the rounds" bobble_robot;
+      t "AiOthello, the rules" othello_rules;
+      t "AiOthello, alpha-beta agrees with minimax" othello_alphabeta;
+      t "AiOthello, the computer beats a greedy player" othello_greedy;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

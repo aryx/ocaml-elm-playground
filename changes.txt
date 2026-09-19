@@ -153,6 +153,18 @@
 - audio/tests/: worked examples and golden WAVs compared sample by
   sample (make approve-golden-audio)
 
+** ai/ (new, game AI for teaching)
+- ai/Minimax: minimax and alpha-beta side by side, each counting the
+  positions it visits, so the cuts can be seen (tic-tac-toe searched to
+  the end: 549,946 positions, 18,297 with alpha-beta)
+- examples/AiTictactoe: searched to the end, so the computer can't
+  lose, and each of your moves says WIN, DRAW or LOSS
+- games/AiOthello: Othello against the computer, thinking 4 moves
+  ahead, with its evaluation table of what each square is worth, and
+  "v" to see what it thinks of each of your moves
+- ai/tests/: the .mli's tree, random trees where alpha-beta must agree
+  with minimax, tic-tac-toe
+
 ** testing
 - -script: game keys held over frames, for golden frames of gameplay
 - tests/games/: scenario tests of the games' rules, played without

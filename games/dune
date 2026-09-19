@@ -33,8 +33,10 @@
     TinyMissileCommand
     TinyLemmings
     TinyPuzzleBobble
+    AiOthello
   )
   (libraries
+    ai ; AiOthello's Minimax (minimax, alpha-beta)
     elm_playground
     kit_racing ; TinyMicroMachines' Topdown
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase

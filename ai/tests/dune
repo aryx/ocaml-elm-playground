@@ -1,0 +1,6 @@
+; claude: unit tests for ai/, run by 'make test' (dune runtest): the
+; .mli's worked examples, and alpha-beta always agreeing with minimax
+(test
+ (name Test)
+ (libraries alcotest testo ai)
+)

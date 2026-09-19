@@ -1,0 +1,10 @@
+; claude: game AI, from scratch, for teaching: one idea per module, each
+; .mli with its diagram, worked example and references, like physics/
+; and audio/. Independent of the Playground. A private library,
+; installed as part of elm_playground: pure OCaml, so every backend, the
+; web one included, can use it.
+(library
+ (name ai)
+ (package elm_playground)
+ (wrapped false)
+)

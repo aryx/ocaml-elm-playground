@@ -21,6 +21,7 @@
 (copy_files ../PhysicsSolarSystem.{ml,mli})
 (copy_files ../AudioTheremin.{ml,mli})
 (copy_files ../AudioPiano.{ml,mli})
+(copy_files ../AiTictactoe.ml)
 (copy_files ../LogoFractals.{ml,mli})
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
@@ -34,12 +35,14 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano
+    AiTictactoe
     LogoFractals
     BigBangRocket
     BigBangWorm
   )
   (libraries
     elm_playground
+    ai ; AiTictactoe's Minimax
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)

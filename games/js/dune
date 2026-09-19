@@ -35,6 +35,7 @@
 (copy_files ../TinyMissileCommand.ml)
 (copy_files ../TinyLemmings.ml)
 (copy_files ../TinyPuzzleBobble.ml)
+(copy_files ../AiOthello.ml)
 
 (executables
   (names
@@ -71,8 +72,10 @@
     TinyMissileCommand
     TinyLemmings
     TinyPuzzleBobble
+    AiOthello
   )
   (libraries
+    ai ; AiOthello's Minimax (minimax, alpha-beta)
     unix
     elm_playground
     kit_racing ; TinyMicroMachines' Topdown

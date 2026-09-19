@@ -73,6 +73,8 @@ let scenes : Testutil_golden.scene list =
     (* the audio plan's first examples (their sounds: -dump-audio) *)
     ("examples/software/AudioTheremin", "", 2);
     ("examples/software/AudioPiano", "", 2);
+    ("examples/software/AiTictactoe", "", 3);
+    ("games/software/AiOthello", "", 3);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -183,6 +185,9 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/PhysicsSolarSystem", "later", 120, "up:2,up:4");
     (* keys held, lit; the square wave *)
     ("examples/software/AudioPiano", "keys", 30, "space:2,a:10-30,g:10-30,u:10-30");
+    ("examples/software/AiTictactoe", "played", 40, "space:2");
+    ("games/software/AiOthello", "values", 3, "v:2");
+    ("games/software/AiOthello", "reply", 60, "space:2");
     (* flaps timed to thread 5 pipes (the pipes from the LFSR's seed=1);
      * and no flap after the first: the bird on the ground, game over *)
     ( "games/software/TinyFlappyBird",

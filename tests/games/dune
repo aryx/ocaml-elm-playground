@@ -127,6 +127,11 @@
  (deps (:src %{project_root}/games/TinyPuzzleBobble.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
+(rule
+ (target AiOthello.ml)
+ (deps (:src %{project_root}/games/AiOthello.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
 (test
  (name Test)
  (libraries
@@ -146,5 +151,6 @@
    kit_platformer
    kit_brawler
    kit_puzzle
+   ai ; AiOthello's Minimax
  )
 )

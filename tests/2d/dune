@@ -40,6 +40,7 @@
    %{project_root}/examples/software/PhysicsSolarSystem.exe
    %{project_root}/examples/software/AudioTheremin.exe
    %{project_root}/examples/software/AudioPiano.exe
+   %{project_root}/examples/software/AiTictactoe.exe
    %{project_root}/games/software/TinyFlappyBird.exe
    %{project_root}/games/software/TinyBreakout.exe
    %{project_root}/games/software/TinyXpilot.exe
@@ -61,6 +62,7 @@
    %{project_root}/games/software/TinyMissileCommand.exe
    %{project_root}/games/software/TinyLemmings.exe
    %{project_root}/games/software/TinyPuzzleBobble.exe
+   %{project_root}/games/software/AiOthello.exe
    %{project_root}/examples/software/LogoFractals.exe
  )
 )
