@@ -32,6 +32,8 @@ let test_ladder () =
   Alcotest.check pt "at the top" (5., 15.) (Ladder.climb solid is_ladder map (6., 10.) (5., -5.) 100.);
   Alcotest.(check bool) "standing on the top" true (Ladder.standing solid is_ladder map (6., 10.) 5. 15.);
   Alcotest.(check bool) "not in the air" false (Ladder.standing solid is_ladder map (6., 10.) (-15.) 15.);
+  Alcotest.(check bool) "on top" true (Ladder.on_top is_ladder map (6., 10.) 5. 15.);
+  Alcotest.(check bool) "on it, not on top" false (Ladder.on_top is_ladder map (6., 10.) 5. 0.);
   Alcotest.check pt "down to the floor" (5., -5.) (Ladder.climb solid is_ladder map (6., 10.) (5., 15.) (-100.));
   Alcotest.check pt "half a tile off, still climbs" (5., 15.) (Ladder.climb solid is_ladder map (6., 10.) (8., -5.) 100.)
 

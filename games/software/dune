@@ -29,6 +29,7 @@
     TinyGalaga
     TinyDonkeyKong
     TinyLodeRunner
+    TinyRick
   )
   (libraries
     elm_playground

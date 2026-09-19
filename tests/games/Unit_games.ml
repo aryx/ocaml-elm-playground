@@ -496,6 +496,70 @@ let lode_escape () =
   Alcotest.(check (option char)) "the escape ladder" (Some 'H') (Tilemap.get g.map 23 0)
 
 (*****************************************************************************)
+(* TinyRick *)
+(*****************************************************************************)
+
+(* A robot plays the two rooms, one step after the other, each a
+ * condition to reach and the keys to hold meanwhile: away from the
+ * boulder, down the hole; the native shot, the spikes jumped, down the
+ * ladder; the next native shot; the wall blown up (and away from the
+ * blast); the last native shot; the dart jumped; the exit. Not once
+ * dead. It found that the spikes killed a jump over them at its start
+ * (the whole tile was deadly, now only its bottom, see on_spikes), and
+ * taught itself one bullet at a time (6 in all) and to shoot the
+ * native that walks back through the blown wall. *)
+let rick_robot () =
+  let open TinyRick in
+  let k = initial_computer.keyboard in
+  (* one bullet at a time: 6 in all *)
+  let fire i (g : game) = { k with kspace = i mod 2 = 0 && g.bullets = [] } in
+  (* the nearest native on Rick's floor, in his room *)
+  let native (g : game) =
+    List.filter (fun n -> Float.abs (n.ny -. g.rick.y) < 30. && room_of n.nx = room_of g.rick.x) g.natives
+    |> List.sort (fun a b -> compare (Float.abs (a.nx -. g.rick.x)) (Float.abs (b.nx -. g.rick.x)))
+    |> function n :: _ -> Some n | [] -> None
+  in
+  (* facing it, shooting *)
+  let shoot i (g : game) =
+    match native g with
+    | Some n when (n.nx -. g.rick.x) *. g.rick.facing < 0. -> if n.nx < g.rick.x then { k with kleft = true } else { k with kright = true }
+    | _ -> fire i g
+  in
+  let clear (g : game) = native g = None in
+  (* (done?, keys) *)
+  let steps : ((game -> bool) * (int -> game -> keyboard)) list =
+    [ ((fun g -> g.rick.y < 0.), fun _ _ -> { k with kright = true });
+      (clear, shoot);
+      ((fun g -> g.rick.x < -470.), fun _ g -> { k with kleft = true; kup = g.rick.x < -325. && g.rick.x > -335. });
+      ((fun g -> Float.abs (g.rick.x +. 775.) < 3.), fun _ g -> if g.rick.x > -775. then { k with kleft = true } else { k with kright = true });
+      ((fun g -> g.rick.y < -270.), fun _ _ -> { k with kdown = true });
+      (clear, shoot);
+      ((fun g -> g.rick.x > 225.), fun _ _ -> { k with kright = true });
+      ((fun g -> g.sticks <> []), fun _ _ -> { k with keys = Set_.singleton "x" });
+      ((fun g -> g.sticks = [] && g.blasts = []), fun _ g -> { k with kleft = g.rick.x > 100. });
+      (clear, shoot);
+      ((fun g -> g.rick.x > 600.), fun _ g -> { k with kright = true; kup = List.exists (fun (d : Shots.t) -> d.x > g.rick.x && d.x -. g.rick.x < 110.) g.darts });
+      ((fun _ -> false), fun _ _ -> { k with kright = true }) ]
+  in
+  let s = ref initial_model and todo = ref steps and i = ref 0 and escaped = ref false and lives = ref 6 in
+  while !i < 60 * 90 && not !escaped do
+    incr i;
+    let keyboard =
+      match !s.scene with
+      | Playing g -> (
+          lives := g.lives;
+          (match !todo with (finished, _) :: rest when finished g -> todo := rest | _ -> ());
+          match !todo with (_, keys) :: _ -> keys !i g | [] -> k)
+      | Escaped _ -> escaped := true; k
+      | _ -> { k with kspace = !i = 1 }
+    in
+    s := update (computer ~keyboard !i) !s
+  done;
+  Alcotest.(check int) "steps left" 1 (List.length !todo);
+  Alcotest.(check bool) "escaped" true !escaped;
+  Alcotest.(check int) "lives" 6 !lives
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -542,4 +606,5 @@ let tests =
       t "TinyLodeRunner, digging" lode_dig;
       t "TinyLodeRunner, a guard trapped, the player crushed" lode_trap;
       t "TinyLodeRunner, the escape ladder" lode_escape;
+      t "TinyRick, a robot escapes the temple" rick_robot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

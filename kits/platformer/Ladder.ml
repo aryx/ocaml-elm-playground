@@ -26,6 +26,9 @@ let reach (is_ladder : char -> bool) (map : Tilemap.t) ((_, h) : number * number
 let standing (solid : char -> bool) (is_ladder : char -> bool) (map : Tilemap.t) (size : number * number) (x : number) (y : number) : bool =
   Tile_move.on_ground solid map size x y || reach is_ladder map size x y <> None
 
+let on_top (is_ladder : char -> bool) (map : Tilemap.t) ((_, h) : number * number) (x : number) (y : number) : bool =
+  ladder_at is_ladder map x y = None && ladder_at is_ladder map x (y - (h / 2.) - 0.5) <> None
+
 let climb (solid : char -> bool) (is_ladder : char -> bool) (map : Tilemap.t) (size : number * number) ((x, y) : number * number) (dy : number) :
     number * number =
   match reach is_ladder map size x y with

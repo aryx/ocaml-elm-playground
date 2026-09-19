@@ -62,6 +62,11 @@
  (deps (:src %{project_root}/games/TinyLodeRunner.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
+(rule
+ (target TinyRick.ml)
+ (deps (:src %{project_root}/games/TinyRick.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
 (test
  (name Test)
  (libraries

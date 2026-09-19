@@ -83,6 +83,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyGalaga", "", 5);
     ("games/software/TinyDonkeyKong", "", 5);
     ("games/software/TinyLodeRunner", "", 5);
+    ("games/software/TinyRick", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -177,6 +178,10 @@ let scripted : Testutil_golden.scripted list =
      * in, a boss diving, the fighter having fired *)
     ("games/software/TinyGalaga", "waves", 200, "space:1");
     ("games/software/TinyGalaga", "formation", 1100, "space:1,space:900,space:930,left:950-980,space:990");
+    (* running from the boulder; through the hole, the boulder stopped
+     * over it (too big to fall in) *)
+    ("games/software/TinyRick", "boulder", 70, "space:1,right:2-160");
+    ("games/software/TinyRick", "hole", 160, "space:1,right:2-160");
     (* right to the ladder, up it, a hole dug on the right; the guards
      * coming *)
     ("games/software/TinyLodeRunner", "dig", 110, "space:1,right:2-41,up:42-81,x:86");

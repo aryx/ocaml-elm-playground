@@ -39,6 +39,13 @@ val reach : (char -> bool) -> Tilemap.t -> number * number -> number -> number -
  * on) *)
 val standing : (char -> bool) -> (char -> bool) -> Tilemap.t -> number * number -> number -> number -> bool
 
+(* [on_top is_ladder map (w, h) x y]: its feet on the top of a ladder
+ * (a ladder just below them, none at its center): for a game where
+ * only the top is a floor, a hero jumping across a ladder not caught
+ * by it (games/TinyRick; in games/TinyLodeRunner, [standing]: a runner
+ * on a ladder doesn't fall) *)
+val on_top : (char -> bool) -> Tilemap.t -> number * number -> number -> number -> bool
+
 (* [climb solid is_ladder map (w, h) (x, y) dy]: on the ladder's column,
  * moved by [dy] one pixel at a time, as long as it still reaches a
  * ladder and doesn't enter a [solid] tile; the body where it stopped,
