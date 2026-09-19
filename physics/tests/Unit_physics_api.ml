@@ -133,6 +133,17 @@ let test_bounce () =
       Alcotest.(check (float 1e-9)) "... the others unchanged" 0. (a.vx +. c.vx)
   | _ -> Alcotest.fail "three bodies in, three out"
 
+(* pulled_to: 4 times the distance, towards the point; a bungee
+ * released from 100 pixels swings back through it *)
+let test_pulled_to () =
+  let b = body (circle red 10.) |> at 100. 0. |> pulled_to 0. 0. 4. in
+  Alcotest.(check (float 1e-9)) "pulled back at 400" (-400.) b.ax;
+  let after = repeat 60 (fun b -> b |> pulled_to 0. 0. 4. |> step) (body (circle red 10.) |> at 100. 0.) in
+  (* k = 4: a period of 2 pi / 2 = 3.14 s; after 1 s, cos 2 = -0.42:
+   * -41.6, and -43.1 here: semi-implicit Euler's positions lag about
+   * half a step (1/120 s, at 182 px/s: 1.5 pixels) *)
+  Alcotest.(check (float 2.)) "a spring's swing, x = 100 cos (2 t)" (100. *. cos 2.) after.x
+
 (* bounce_all with each broad phase: the same bounces *)
 let test_broad_phase () =
   let balls =
@@ -165,4 +176,5 @@ let tests =
       t "touching, with the real shapes" test_touching;
       t "bounce, bounce_off, bounce_all" test_bounce;
       t "bounce_all, the three broad phases" test_broad_phase;
+      t "pulled_to, a spring to a point" test_pulled_to;
     ]

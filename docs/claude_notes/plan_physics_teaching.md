@@ -302,7 +302,7 @@ Each small, each showing one idea, each deterministic (golden frames):
 - `examples/Orbit.ml`: a planet around a star; switch the integrator
   and watch explicit Euler spiral out, Verlet stay on its ellipse --
   computational physics' first lesson, visible.
-- `examples/Springs.ml`: a mass on a spring, a chain, a rope (Verlet
+- `examples/Elastic.ml` (DONE; planned as Springs.ml): a mass on a spring, a chain, a rope (Verlet
   with distance constraints: Jakobsen, "Advanced Character Physics",
   GDC 2001).
 - `examples/Bounce.ml`: balls falling, bouncing on the floor and off
@@ -381,8 +381,25 @@ Each small, each showing one idea, each deterministic (golden frames):
   restarting, the energy ratio E/E0 on screen: explicit Euler at 0.544
   and 501 px away after 8 seconds, semi-implicit Euler at 1.004 on a
   closed ellipse (golden frames of both).
-- **Phase 2, started**: `Force.drag` (linear); left: quadratic drag,
-  damping, N-body, `Springs.ml`.
+- **Phase 2, DONE** (after phase 8, on the way to TinySoldat): `Force.drag`
+  (linear); `physics/2d/Springs` (springs between bodies, Hooke plus
+  damping along the spring, pinned ends as infinite masses; `step`,
+  `chain`) and `physics/2d/Particles` (Jakobsen's Hitman technique:
+  position Verlet, sticks relaxed Gauss-Seidel style, pinned
+  particles; `rope`). Tests (`Unit_springs`): the spring's worked
+  example, momentum kept by internal springs (the N-body test),
+  damping's e^(-c t / 2), the stability limit (k / m = 10,000 bounded,
+  its swings 1.81 times the first as the theory says; 20,000
+  exploding), a rope's pinned end and its stretch (under 5% with 20
+  iterations, less with 100), a pendulum's period 2 pi sqrt (L / g).
+  `Physics.pulled_to x y k` (a spring to a point: bungee, grappling
+  hook). The example is `examples/Elastic.ml`, not `Springs.ml` (an
+  executable named like the engine's module would shadow it): a mass
+  on a spring (d: damping), a chain of springs (x: 10 times stiffer,
+  exploding in 8 steps), a rope of sticks dragged by the mouse; golden
+  frames of it at rest, kicked, and exploding. Left: quadratic drag,
+  N-body gravitation between bodies (Force's is towards a fixed
+  center), cloth.
 - **Phase 3, v1 DONE, differing from the sketch above** (by writing a
   game with it): `playground/Physics.mli`, a layer on top of the
   playground like `Camera2d` (in the `elm_playground` library, which

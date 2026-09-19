@@ -63,6 +63,8 @@ let scenes : Testutil_golden.scene list =
     (* stacking: the pyramid standing still after 5 seconds *)
     ("examples/software/Pyramid", "", 300);
     ("games/software/TinySlingshot", "", 5);
+    (* a mass on a spring, a chain of springs, a rope of sticks *)
+    ("examples/software/Elastic", "", 60);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -126,6 +128,10 @@ let scripted : Testutil_golden.scripted list =
      * solver, the tower slumping by itself, no shot *)
     ("games/software/TinySlingshot", "shot", 130, "space:2,space:60");
     ("games/software/TinySlingshot", "no_solver", 120, "space:2,s:5");
+    (* all three kicked; and the chain too stiff for the time step,
+     * exploding in 8 steps *)
+    ("examples/software/Elastic", "kick", 60, "space:30");
+    ("examples/software/Elastic", "stiff", 8, "x:2");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

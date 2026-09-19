@@ -67,6 +67,7 @@ let turn spin (b : body) : body = { b with spin }
 let attracted_by (other : body) (b : body) : body =
   let (ax, ay) = Force.gravitation ~gm:other.mass ~center:(other.x, other.y) (b.x, b.y) (b.vx, b.vy) in
   accelerate ax ay b
+let pulled_to x y k (b : body) : body = accelerate (k *. (x -. b.x)) (k *. (y -. b.y)) b
 let tick = 1. /. 60.
 
 let step (b : body) : body =

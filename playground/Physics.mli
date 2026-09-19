@@ -154,6 +154,13 @@ val slow : number -> body -> body
  * sqrt (mass / r). Spacewar!'s star, a planet's moon. *)
 val attracted_by : body -> body -> body
 
+(* [pulled_to x y k b]: a spring from [b] to the point (x, y): pulled
+ * towards it k times the distance, per second per second (Hooke's
+ * law): a bungee, a grappling hook (Worms' ninja rope, Soldat's). Add
+ * [slow] to calm it down; too stiff for the time step (k over 14,400),
+ * it explodes (physics/2d/Springs.mli) *)
+val pulled_to : number -> number -> number -> body -> body
+
 (* [turn speed b]: [b] turning at [speed] degrees per second (positive
  * counterclockwise, like rotate); 0 to stop *)
 val turn : number -> body -> body

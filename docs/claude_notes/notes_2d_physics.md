@@ -212,7 +212,12 @@ switch to explicit Euler and watch the planet leave.
   force against the velocity, so it settles instead of bouncing
   forever. Too stiff a spring for the time step and even
   semi-implicit Euler explodes: the step must be small against the
-  spring's period (dt < 2 / sqrt(k / m) for this method).
+  spring's period (dt < 2 / sqrt(k / m) for this method: k / m under
+  14,400 at 60 steps a second). `physics/2d/Springs` (between bodies),
+  and its alternative for stiff things, Jakobsen's particles and
+  sticks (`Particles`, Hitman's ropes and ragdolls): positions set
+  directly, never exploding. Both in `examples/Elastic.ml`; a spring
+  to a point is `Physics.pulled_to`.
 - **Drag** (`slow`): a force against the velocity, linear (-c v, slow
   things in a thick fluid) or quadratic (-c |v| v, air at speed). Gives
   a maximum speed where it balances the thrust: Asteroid's "max
