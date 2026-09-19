@@ -165,14 +165,29 @@ sectors joined by portals). Levels are a 2D floor plan of sectors,
 each with a floor and a ceiling height (`notes_vs_doom_quake.md`,
 "Doom: not actually 3D").
 
-- **Toy**: TinyDoom -- a few sectors at different heights, stairs,
-  a window, drawn by `playground3d` (floors and walls as polygons
-  extruded from the 2D plan). No BSP needed with a z-buffer: that's
-  the point to make.
-- **Kit**: `Sectors`: a level as 2D polygons with heights, extruded to
-  `polygon3d`s once (`cached3d`); collisions against the plan in 2D
-  (the player is a circle, walls are segments); later portals for
-  visibility.
+- **Toys** (DONE: `games/TinyDoom.ml`, `games3d/TinyDoom3d.ml`), a
+  pair, like TinyWolf and TinyWolf3d:
+  - TinyDoom, in the *2D* playground, Doom's own renderer in small:
+    the level's segs split into a BSP tree by a node builder at
+    startup (id's was a separate tool, `idbsp`), walked front to back
+    from the player (`R_RenderBSPNode`), each seg drawn column by
+    column, one-sided walls closing columns, two-sided ones drawing
+    their upper and lower steps and narrowing the per-column clip
+    arrays (`R_StoreWallRange`'s ceilingclip and floorclip), floors
+    and ceilings filled between them, a subtree skipped when its box
+    is behind closed columns (`R_CheckBBox`). No z-buffer, no 3D:
+    the lesson is Doom's. Sector light, darker with the distance, and
+    the "fake contrast"; the sector you're in found by walking the
+    BSP (`R_PointInSubsector`).
+  - TinyDoom3d, the same level in `playground3d`: floors, ceilings and
+    walls extruded as `polygon3d`s once (`cached3d`), a z-buffer, no
+    BSP. The comparison is the point.
+- **Kit**: `Sectors` (`kits/sectors/`, shared by the pair): a level
+  as sectors, polygons with a floor, a ceiling and a light, from which
+  the linedefs are found (the shared edges are two-sided); the sector
+  at a point by its polygons; moving a circle against the lines (steps
+  up to 24 units, 56 of headroom); and the level of both games. The
+  node builder and the renderer stay in TinyDoom.
 
 ### 5. True 3D shooters
 
@@ -329,6 +344,7 @@ kit); listed here because players see them as 3D.
    (both DONE).
 4. The racing kit in 3D with TinyVirtuaRacing (and TinyKart in Mode 7
    next to `plan_games.md`'s TinyOutRun) (both DONE).
-5. `Heightmap` with TinyComanche/TinyStarFox; `Sectors` with TinyDoom.
+5. `Heightmap` with TinyComanche/TinyStarFox; `Sectors` with TinyDoom
+   and TinyDoom3d (DONE).
 6. The rest as they come: fighting with the 2D brawler kit, puzzles,
    TinyElite.

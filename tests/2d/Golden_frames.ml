@@ -95,6 +95,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/BigBangRocket", "", 60);
     ("examples/software/BigBangWorm", "", 400);
     ("games/software/TinyKart", "", 5);
+    ("games/software/TinyDoom", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -211,6 +212,10 @@ let scripted : Testutil_golden.scripted list =
      * coming up behind *)
     ("games/software/TinyKart", "grid", 200, "space:1");
     ("games/software/TinyKart", "corner", 430, "space:1,up:2-430,right:370-405");
+    (* on the stairs, upstairs ahead; at the window onto the dark room
+     * (games3d/TinyDoom3d's golden frames are the same walks) *)
+    ("games/software/TinyDoom", "stairs", 80, "left:1-10,up:11-80");
+    ("games/software/TinyDoom", "window", 60, "right:1-5,up:6-55");
     ("games/software/TinyRick", "boulder", 70, "space:1,right:2-160");
     ("games/software/TinyRick", "hole", 160, "space:1,right:2-160");
     (* right to the ladder, up it, a hole dug on the right; the guards

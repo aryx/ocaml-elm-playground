@@ -139,6 +139,66 @@ let kart_race () =
   List.iter (fun k -> Alcotest.(check bool) "the others lapping" true (Topdown.lap track k.car >= 2)) !r.karts
 
 (*****************************************************************************)
+(* TinyDoom *)
+(*****************************************************************************)
+
+(* The node builder's tree: every subsector (a leaf) convex, its segs
+ * all of one sector; and the sector the tree finds at a point, the one
+ * the level's polygons say, everywhere (every 16 units, except within
+ * 1 of a line, where it's either) *)
+let doom_bsp () =
+  let open TinyDoom in
+  let rec leaves t = match t with Leaf (segs, _) -> [ segs ] | Node (_, f, b, _) -> leaves f @ leaves b in
+  List.iter
+    (fun segs ->
+      Alcotest.(check bool) "convex" true (convex segs);
+      Alcotest.(check int) "one sector" 1 (List.length (List.sort_uniq compare (List.map (fun s -> s.front) segs))))
+    (leaves bsp);
+  let near_line x y = Array.exists (fun (l : Sectors.line) -> Sectors.distance l x y < 1.) level.lines in
+  for i = 0 to 1152 / 16 do
+    for j = 0 to 1024 / 16 do
+      let x = float_of_int (i * 16) +. 0.5 and y = float_of_int (j * 16) +. 0.5 in
+      let s = Sectors.sector_at level x y in
+      if Sectors.inside (sector s) x y && not (near_line x y) then
+        Alcotest.(check int) (Printf.sprintf "the sector at (%g, %g)" x y) s (TinyDoom.sector_at bsp x y)
+    done
+  done
+
+(* a frame at the start: every column drawn to the end (the walls
+ * close them all), without all the segs *)
+let doom_frame () =
+  let open TinyDoom in
+  let v = frame (Playground.to_screen 1000. 1000.) initial_model in
+  Alcotest.(check int) "every column closed" columns v.closed;
+  Alcotest.(check bool) "not every seg" true (List.length v.drawn < snd (count bsp) / 2)
+
+(* A robot walks to the exit, waypoint after waypoint (turning towards
+ * the next, walking when facing it): around the pillar, up the stairs,
+ * along the corridor, down the stairs, into the dark room; climbing the
+ * steps is the kit's (at most 24 at a time), the floor followed *)
+let doom_exit () =
+  let open TinyDoom in
+  let route = [ (300., 400.); (384., 700.); (384., 880.); (700., 896.); (960., 896.); (960., 560.); (960., 400.); (1056., 232.) ] in
+  let m = ref initial_model and todo = ref route and i = ref 0 and highest = ref 0. in
+  while !m.exited = None && !i < 60 * 60 do
+    incr i;
+    (match !todo with (x, y) :: rest when Float.hypot (x -. !m.x) (y -. !m.y) < 20. -> todo := rest | _ -> ());
+    let k = initial_computer.keyboard in
+    let keyboard =
+      match !todo with
+      | (x, y) :: _ ->
+          let wanted = atan2 (y -. !m.y) (x -. !m.x) *. 180. /. Float.pi in
+          let d = Float.rem (Float.rem (wanted -. !m.angle +. 180.) 360. +. 360.) 360. -. 180. in
+          if d > 4. then { k with kleft = true } else if d < -4. then { k with kright = true } else { k with kup = true }
+      | [] -> k
+    in
+    m := update (computer ~keyboard !i) !m;
+    highest := Float.max !highest !m.z
+  done;
+  Alcotest.(check bool) "exited" true (!m.exited <> None);
+  Alcotest.(check (float 0.5)) "upstairs on the way" 64. !highest
+
+(*****************************************************************************)
 (* TinyMario64 *)
 (*****************************************************************************)
 
@@ -891,6 +951,9 @@ let tests =
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
       t "TinyKart, Mode 7 there and back" kart_mode7;
       t "TinyKart, the computer drives the race" kart_race;
+      t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
+      t "TinyDoom, a frame" doom_frame;
+      t "TinyDoom, a robot finds the exit" doom_exit;
       t "TinyMario64, a jump onto a platform" mario64_jump;
       t "TinyMarble, the ramp's heights" marble_ramp;
       t "TinyMarble, the cliff breaks the marble, the step doesn't" marble_falls;

@@ -1,0 +1,10 @@
+; claude: the sectors kit's worked examples (Sectors.mli), run by
+; 'make test'
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   kit_sectors
+ )
+)

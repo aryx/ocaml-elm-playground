@@ -33,6 +33,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyDoom.ml)
+ (deps (:src %{project_root}/games/TinyDoom.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyKart.ml)
  (deps (:src %{project_root}/games/TinyKart.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
@@ -108,6 +113,7 @@
    elm_playground_3d
    elm_playground_3d_software ; an implem of virtual elm_playground_3d
    kit_racing
+   kit_sectors
    kit_maze
    kit_lightcycles
    kit_shmup

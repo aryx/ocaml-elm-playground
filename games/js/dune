@@ -34,6 +34,7 @@
 (copy_files ../TinyStreetFighter.{ml,mli})
 (copy_files ../TinyFinalFight.{ml,mli})
 (copy_files ../TinyKart.{ml,mli})
+(copy_files ../TinyDoom.{ml,mli})
 
 (executables
   (names
@@ -69,6 +70,7 @@
     TinyStreetFighter
     TinyFinalFight
     TinyKart
+    TinyDoom
   )
   (libraries
     unix
@@ -79,6 +81,7 @@
     kit_shmup ; TinyInvaders' and TinyGalaga's Shots and Path
     kit_platformer ; TinyMario's, TinyLodeRunner's and TinyRick's Tile_move and Ladder
     kit_brawler ; TinyFinalFight's and TinyStreetFighter's Hitbox, Frame_data and Stickman
+    kit_sectors ; TinyDoom's level
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)
