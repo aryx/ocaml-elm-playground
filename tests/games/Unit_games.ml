@@ -515,7 +515,7 @@ let rick_robot () =
   let fire i (g : game) = { k with kspace = i mod 2 = 0 && g.bullets = [] } in
   (* the nearest native on Rick's floor, in his room *)
   let native (g : game) =
-    List.filter (fun n -> Float.abs (n.ny -. g.rick.y) < 30. && room_of n.nx = room_of g.rick.x) g.natives
+    List.filter (fun n -> Float.abs (n.ny -. g.rick.y) < 30. && room_of n.nx n.ny = room_of g.rick.x g.rick.y) g.natives
     |> List.sort (fun a b -> compare (Float.abs (a.nx -. g.rick.x)) (Float.abs (b.nx -. g.rick.x)))
     |> function n :: _ -> Some n | [] -> None
   in
@@ -605,6 +605,46 @@ let gradius_robot () =
   Alcotest.(check bool) "at most one ship lost" true (!deaths <= 1)
 
 (*****************************************************************************)
+(* TinyZelda *)
+(*****************************************************************************)
+
+(* a robot's quest, from tile to tile: the sword, the key, down into the
+ * dungeon, through the locked door, to the Triforce; a monster coming
+ * near, it turns to face it and swings *)
+let zelda_robot () =
+  let open TinyZelda in
+  let route = [ (9, 3); (9, 2); (9, 5); (20, 5); (20, 7); (23, 7); (23, 5); (23, 12); (18, 12); (18, 19); (25, 19); (25, 16); (30, 16); (33, 16); (39, 16) ] in
+  let s = ref initial_model and todo = ref route and i = ref 0 and won = ref false and hits = ref 0 in
+  let k = initial_computer.keyboard in
+  let towards dx dy = if Float.abs dx > Float.abs dy then (if dx > 0. then { k with kright = true } else { k with kleft = true }) else if dy > 0. then { k with kup = true } else { k with kdown = true } in
+  while !i < 60 * 120 && not !won do
+    incr i;
+    let keyboard =
+      match !s.scene with
+      | Playing g -> (
+          if g.hurt = 59 then incr hits;
+          let here = room_of g.x g.y in
+          let near = List.find_opt (fun m -> room_of m.mx m.my = here && Float.hypot (m.mx -. g.x) (m.my -. g.y) < 100.) g.monsters in
+          match (near, !todo) with
+          | Some m, _ when g.sword ->
+              let dx = m.mx -. g.x and dy = m.my -. g.y in
+              let want = if Float.abs dx > Float.abs dy then (Float.of_int (compare dx 0.), 0.) else (0., Float.of_int (compare dy 0.)) in
+              if want = g.facing then { k with kspace = !i mod 2 = 0 } else towards dx dy
+          | _, (c, r) :: rest ->
+              let tx, ty = Tilemap.center g.map c r in
+              if Float.abs (tx -. g.x) < 3. && Float.abs (ty -. g.y) < 3. then todo := rest;
+              (* one axis, then the other *)
+              if Float.abs (tx -. g.x) >= 3. then towards (tx -. g.x) 0. else towards 0. (ty -. g.y)
+          | _, [] -> k)
+      | Won _ -> won := true; k
+      | _ -> { k with kspace = !i = 1 }
+    in
+    s := update (computer ~keyboard !i) !s
+  done;
+  Alcotest.(check bool) "the Triforce" true !won;
+  Alcotest.(check bool) "hit at most twice" true (!hits <= 2)
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -654,4 +694,5 @@ let tests =
       t "TinyRick, a robot escapes the temple" rick_robot;
       t "TinyGradius, the power-up bar" gradius_bar;
       t "TinyGradius, a robot clears the stage" gradius_robot;
+      t "TinyZelda, a robot's quest" zelda_robot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

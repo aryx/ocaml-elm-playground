@@ -29,6 +29,7 @@
 (copy_files ../TinyLodeRunner.{ml,mli})
 (copy_files ../TinyRick.{ml,mli})
 (copy_files ../TinyGradius.{ml,mli})
+(copy_files ../TinyZelda.{ml,mli})
 
 (executables
   (names
@@ -59,6 +60,7 @@
     TinyLodeRunner
     TinyRick
     TinyGradius
+    TinyZelda
   )
   (libraries
     unix

@@ -187,6 +187,24 @@ val turn_toward : number -> number -> t -> t
  * The angle is ignored: for cameras that don't turn. *)
 val clamp : screen -> rect -> t -> t
 
+(* {1 Rooms: the flip-screen} *)
+
+(* A world cut in screens, and the camera jumping from one to the next
+ * when the player crosses into it, rather than following: the
+ * "flip-screen" of the 8-bit computers, which could redraw a screen but
+ * not scroll one (games/TinyRick), and The Legend of Zelda's overworld
+ * (games/TinyZelda, which slides from one to the next). *)
+
+(* [room bounds (w, h) x y]: the w x h room (x, y) is in, of the rooms
+ * tiling [bounds] from its top-left corner: (column, row), rows going
+ * down. E.g. bounds from x = -1000 to 1000 and y = -400 to 400, rooms of
+ * 1000 x 800: (-500, 0) is in room (0, 0), (500, 0) in (1, 0). *)
+val room : rect -> number * number -> number -> number -> int * int
+
+(* [flip bounds (w, h) x y cam]: the camera at the center of that room;
+ * with the example above, for (500, 0): at (500, 0) *)
+val flip : rect -> number * number -> number -> number -> t -> t
+
 (* {1 Parallax: depth with layers} *)
 
 (* [parallax factor cam]: a camera for a background layer, which moves

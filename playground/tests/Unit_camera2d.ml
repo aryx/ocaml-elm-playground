@@ -84,6 +84,14 @@ let test_turned () =
   Alcotest.check point "view agrees with to_screen" (10., -20.) (x, y);
   Alcotest.(check (float 1e-9)) "turn_toward, the short way" 360. (Camera2d.turn_toward 0.5 10. { cam with angle = 350. }).angle
 
+(* room's and flip's worked examples *)
+let test_rooms () =
+  let bounds : Camera2d.rect = { left = -1000.; right = 1000.; bottom = -400.; top = 400. } in
+  Alcotest.(check (pair int int)) "left" (0, 0) (Camera2d.room bounds (1000., 800.) (-500.) 0.);
+  Alcotest.(check (pair int int)) "right" (1, 0) (Camera2d.room bounds (1000., 800.) 500. 0.);
+  let c = Camera2d.flip bounds (1000., 800.) 700. (-100.) Camera2d.origin in
+  Alcotest.check point "at the room's center" (500., 0.) (c.x, c.y)
+
 let tests =
   Testo.categorize "Camera2d"
     [ t "turned" test_turned;
@@ -94,4 +102,5 @@ let tests =
       t "window" test_window;
       t "clamp" test_clamp;
       t "parallax" test_parallax;
+      t "rooms" test_rooms;
     ]

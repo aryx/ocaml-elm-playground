@@ -31,7 +31,7 @@
  * ([on_spikes], [spring_traps], [explode]).
  *
  * And the screen is a room: the camera doesn't follow Rick, it jumps
- * from room to room when he crosses a door ([room_of]), the
+ * from room to room when he crosses a door (Camera2d.room and flip), the
  * "flip-screen" of the 8-bit computers (and of Zelda's dungeons, see
  * plan_games.md section 12), which could redraw a screen but not scroll
  * one. Dying sends Rick back to the door he came in by.
@@ -42,7 +42,7 @@
  * jumping across a ladder, Rick isn't caught by it), the shoot 'em up
  * kit's Shots (kits/shmup/: Rick's bullets and the darts), Tilemap (the
  * temple, changed by the treasures taken, the walls blown, the traps
- * sprung), Camera2d (a room at a time), Sprite (Rick and the natives),
+ * sprung), Camera2d (a room at a time: room, flip), Sprite (Rick and the natives),
  * Scene2d. Not Physics: the jump is TinyMario's two lines, and the
  * boulder only rolls.
  *
@@ -97,10 +97,9 @@ let start_map : Tilemap.t =
 (* standing on the floor of the tile at (x, y), a body [h] high *)
 let on_floor (h : number) ((x, y) : number * number) : number * number = (x, y - (tile / 2.) + (h / 2.))
 
-(* the room a point is in: 0 the left one, 1 the right one; and its
- * center, where the camera looks *)
-let room_of (x : number) : int = if x < 0. then 0 else 1
-let room_center (room : int) : number * number = ((float_of_int room * 1000.) - 500., 0.)
+(* the rooms: 20 x 16 tiles, side by side *)
+let room_size = (1000., 800.)
+let room_of (x : number) (y : number) : int * int = Camera2d.room (Tilemap.bounds level) room_size x y
 
 (*****************************************************************************)
 (* The model *)
@@ -133,7 +132,7 @@ type game = {
   score : int;
   lives : int;
   checkpoint : number * number; (* where he comes back: the door of the room *)
-  room : int;
+  room : int * int;
   frames : int;
 }
 
@@ -150,7 +149,7 @@ let new_boulder () : boulder =
 let new_game () : game =
   { map = start_map; rick = new_rick start; natives = List.map (fun p -> let nx, ny = on_floor (snd native_size) p in { nx; ny; dir = -1. }) (places 'N');
     boulder = new_boulder (); bullets = []; darts = []; sticks = []; blasts = []; ammo = 6; dynamite = 6; score = 0; lives = 6;
-    checkpoint = start; room = 0; frames = 0 }
+    checkpoint = start; room = room_of (fst start) (snd start); frames = 0 }
 
 let initial_model : model = Scene2d.start Title
 
@@ -275,7 +274,7 @@ let update_game (computer : computer) (scenes : model) (g : game) : game =
       else { g with rick = new_rick g.checkpoint; lives = g.lives -.. 1; darts = []; bullets = []; boulder = (if g.checkpoint = start then new_boulder () else g.boulder) }
     else
       let rick = step_rick g.map computer.keyboard (pressed (fun k -> k.kup)) g.rick in
-      let room = room_of rick.x in
+      let room = room_of rick.x rick.y in
       let g = { g with rick; room; checkpoint = (if room <> g.room then (rick.x, rick.y) else g.checkpoint) } in
       (* treasures, ammunition *)
       let col, row = Tilemap.cell g.map rick.x rick.y in
@@ -378,8 +377,8 @@ let view_game (g : game) : shape list =
     @ List.map (fun (x, y, n) -> circle (if n mod 6 < 3 then orange else yellow) (20. + (float_of_int n * 3.)) |> fade (1. - (float_of_int n / 30.)) |> move x y) g.blasts
     @ rick
   in
-  let cx, cy = room_center g.room in
-  [ Camera2d.view (Camera2d.origin |> Camera2d.look_at cx cy) world;
+  let cam = Camera2d.flip (Tilemap.bounds level) room_size g.rick.x g.rick.y Camera2d.origin in
+  [ Camera2d.view cam world;
     text white 2.5 (Printf.sprintf "LIVES %d   BULLETS %d   DYNAMITE %d   SCORE %d" g.lives g.ammo g.dynamite g.score) |> move_y 450. ]
 
 let view (computer : computer) (s : model) : shape list =

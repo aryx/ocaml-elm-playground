@@ -83,6 +83,13 @@ let clamp (screen : screen) (bounds : rect) (cam : t) : t =
     x = limit half_w bounds.left bounds.right cam.x;
     y = limit half_h bounds.bottom bounds.top cam.y }
 
+let room (bounds : rect) ((w, h) : number * number) (x : number) (y : number) : int * int =
+  (int_of_float (Float.floor ((x - bounds.left) / w)), int_of_float (Float.floor ((bounds.top - y) / h)))
+
+let flip (bounds : rect) ((w, h) : number * number) (x : number) (y : number) (cam : t) : t =
+  let col, row = room bounds (w, h) x y in
+  { cam with x = bounds.left + ((float_of_int col + 0.5) * w); y = bounds.top - ((float_of_int row + 0.5) * h) }
+
 let turn_toward (fraction : number) (angle : number) (cam : t) : t =
   (* the difference, the short way round: between -180 and 180 *)
   let diff = Float.rem (Float.rem (angle - cam.angle + 180.) 360. + 360.) 360. - 180. in
