@@ -189,7 +189,7 @@ many lines of comments, and 540 lines of tests. The Cairo backend is
 235 lines of OCaml too -- on top of Cairo, pixman, FreeType and
 fontconfig.
 
-**Frame rate** (uncapped, frames per second, `scripts/bench_playground.sh`):
+**Frame rate** (uncapped, frames per second, `scripts/perf/bench_playground.sh`):
 
 | scene    | Cairo | ours, optimized | ours, no antialiasing |
 |----------|------:|----------------:|----------------------:|

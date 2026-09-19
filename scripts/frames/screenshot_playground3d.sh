@@ -22,10 +22,10 @@
 # carries, to reliably find the right window.
 #
 # Usage:
-#   scripts/screenshot_playground3d.sh <path-to-exe> <output.png> [wait-seconds] [run-timeout-seconds]
+#   scripts/frames/screenshot_playground3d.sh <path-to-exe> <output.png> [wait-seconds] [run-timeout-seconds]
 #
 # Example:
-#   scripts/screenshot_playground3d.sh _build/default/examples3d/Cubes3d.exe /tmp/cubes.png
+#   scripts/frames/screenshot_playground3d.sh _build/default/examples3d/Cubes3d.exe /tmp/cubes.png
 
 set -euo pipefail
 

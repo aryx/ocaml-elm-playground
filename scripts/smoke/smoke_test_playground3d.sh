@@ -17,11 +17,11 @@
 # code 124 specifically means success here, not failure.
 #
 # Usage:
-#   scripts/smoke_test_playground3d.sh [seconds-each] [dir ...]
+#   scripts/smoke/smoke_test_playground3d.sh [seconds-each] [dir ...]
 #
 # Example (defaults to the usual example/game dirs under _build):
-#   scripts/smoke_test_playground3d.sh
-#   scripts/smoke_test_playground3d.sh 5 _build/default/examples3d _build/default/games3d
+#   scripts/smoke/smoke_test_playground3d.sh
+#   scripts/smoke/smoke_test_playground3d.sh 5 _build/default/examples3d _build/default/games3d
 
 set -uo pipefail
 

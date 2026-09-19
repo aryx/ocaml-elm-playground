@@ -18,19 +18,19 @@
 #
 # Usage (x, y are window-relative pixels, origin at the top-left, like
 # SDL's -- not Elm's centered coordinates):
-#   scripts/xdrive.py find  <exe-basename>        # prints the window id, e.g. Mouse.exe
-#   scripts/xdrive.py move  <wid> <x> <y>
-#   scripts/xdrive.py click <wid> <x> <y> [button]  # button 1 = left (default)
-#   scripts/xdrive.py down  <wid> [button]        # press and hold, e.g. to
-#   scripts/xdrive.py up    <wid> [button]        #  screenshot while held
-#   scripts/xdrive.py key   <wid> <keysym> [hold-seconds]  # e.g. Left, space, a
-#   scripts/xdrive.py query <wid>                 # where is the pointer?
+#   scripts/input/xdrive.py find  <exe-basename>        # prints the window id, e.g. Mouse.exe
+#   scripts/input/xdrive.py move  <wid> <x> <y>
+#   scripts/input/xdrive.py click <wid> <x> <y> [button]  # button 1 = left (default)
+#   scripts/input/xdrive.py down  <wid> [button]        # press and hold, e.g. to
+#   scripts/input/xdrive.py up    <wid> [button]        #  screenshot while held
+#   scripts/input/xdrive.py key   <wid> <keysym> [hold-seconds]  # e.g. Left, space, a
+#   scripts/input/xdrive.py query <wid>                 # where is the pointer?
 #
-# Example (see also scripts/screenshot_playground3d.sh):
+# Example (see also scripts/frames/screenshot_playground3d.sh):
 #   _build/default/examples/Mouse.exe &
 #   sleep 2
-#   WID=$(scripts/xdrive.py find Mouse.exe)
-#   scripts/xdrive.py move $WID 700 200
+#   WID=$(scripts/input/xdrive.py find Mouse.exe)
+#   scripts/input/xdrive.py move $WID 700 200
 #   import -window $WID /tmp/mouse.png
 
 import ctypes
@@ -76,7 +76,7 @@ def open_display():
 
 
 def find(exe, timeout=10.):
-    # Same trick as scripts/screenshot_playground3d.sh: only the app's
+    # Same trick as scripts/frames/screenshot_playground3d.sh: only the app's
     # inner content window has the executable's basename as WM_CLASS;
     # its title is shared with the window manager's outer frame.
     # Retries, since right after launching the app the window may not

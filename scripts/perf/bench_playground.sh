@@ -11,18 +11,18 @@
 # How fast can a 2D playground backend draw an example or game? Runs it
 # without the 60 fps cap (-uncapped), optionally presses debug keys (e.g.
 # "n" to turn the software rasterizer's antialiasing off, see
-# playground/software/Playground_platform.ml) with scripts/xdrive.py,
+# playground/software/Playground_platform.ml) with scripts/input/xdrive.py,
 # and prints the median of the fps it logs (-debug) once settled. Used
 # for the numbers in docs/claude_notes/notes_opti.md.
 #
 # Usage:
-#   [REPEAT=n] scripts/bench_playground.sh <path-to-exe> [key ...]
+#   [REPEAT=n] scripts/perf/bench_playground.sh <path-to-exe> [key ...]
 #
 # Examples:
-#   scripts/bench_playground.sh _build/default/games/Pong.exe            # Cairo
-#   scripts/bench_playground.sh _build/default/games/software/Pong.exe   # ours
-#   scripts/bench_playground.sh _build/default/games/software/Pong.exe n # ours, no antialiasing
-#   REPEAT=3 scripts/bench_playground.sh ...   # median of 3 runs (min-max)
+#   scripts/perf/bench_playground.sh _build/default/games/Pong.exe            # Cairo
+#   scripts/perf/bench_playground.sh _build/default/games/software/Pong.exe   # ours
+#   scripts/perf/bench_playground.sh _build/default/games/software/Pong.exe n # ours, no antialiasing
+#   REPEAT=3 scripts/perf/bench_playground.sh ...   # median of 3 runs (min-max)
 
 set -euo pipefail
 
@@ -54,7 +54,7 @@ press_key() {
   local WID="$1" KEY="$2" BEFORE i j
   BEFORE=$(toggles_title "$WID")
   for i in 1 2 3; do
-    "$DIR/xdrive.py" key "$WID" "$KEY" 0.05
+    "$DIR/../input/xdrive.py" key "$WID" "$KEY" 0.05
     # the title is updated once per frame, and a slow configuration
     # can take a quarter of a second per frame: wait for up to 3s
     # before concluding the press was lost (pressing a toggle again
@@ -73,7 +73,7 @@ one_run() {
   LOG=$(mktemp /tmp/bench_playground.XXXXXX.log)
   "$EXE" -uncapped -debug -debug-keys > "$LOG" 2>&1 &
   PID=$!
-  WID=$("$DIR/xdrive.py" find "$NAME")
+  WID=$("$DIR/../input/xdrive.py" find "$NAME")
   # let images download (preloaded ones before the first frame, others
   # on first use)
   sleep 2

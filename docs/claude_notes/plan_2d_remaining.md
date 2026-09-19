@@ -33,7 +33,7 @@ From `notes_opti.md`'s "Next" (we're 1.5 to 7 times slower than Cairo):
   antialiasing: a special case worth detecting.
 
 Each as an `Opti`, the simple version kept, measured with
-`scripts/bench_playground.sh` (now with `-debug-keys`).
+`scripts/perf/bench_playground.sh` (now with `-debug-keys`).
 
 ## 3. Text: Hershey at small sizes, and a real outline font
 

@@ -236,12 +236,12 @@ keys or move the mouse (see section 8 for how to do it anyway), so
 verifying a `playground3d/` rendering change
 means: run the app in the background, screenshot it, `Read` the PNG.
 Two scripts capture this so it doesn't get reinvented (and gotten
-wrong) every time: `scripts/screenshot_playground3d.sh` and
-`scripts/smoke_test_playground3d.sh`.
+wrong) every time: `scripts/frames/screenshot_playground3d.sh` and
+`scripts/smoke/smoke_test_playground3d.sh`.
 
 ```bash
-scripts/screenshot_playground3d.sh _build/default/examples3d/Cubes3d.exe /tmp/cubes.png
-scripts/smoke_test_playground3d.sh          # every examples3d/games3d (+opengl) demo, 3s each
+scripts/frames/screenshot_playground3d.sh _build/default/examples3d/Cubes3d.exe /tmp/cubes.png
+scripts/smoke/smoke_test_playground3d.sh          # every examples3d/games3d (+opengl) demo, 3s each
 ```
 
 **The gotcha the screenshot script exists to avoid**: `import -window
@@ -309,19 +309,19 @@ arrow key move the square at the right speed? The usual tool is
 installing packages isn't an option. But the two C libraries xdotool is
 built on *are* installed (they come with any X desktop), and Python's
 standard `ctypes` module can call any C function in any shared library
-directly -- no compiler, no binding package. `scripts/xdrive.py` wraps
+directly -- no compiler, no binding package. `scripts/input/xdrive.py` wraps
 this up:
 
 ```bash
 _build/default/examples/Mouse.exe &
 sleep 2                                    # let it create its window
-WID=$(scripts/xdrive.py find Mouse.exe)    # X window id, e.g. 0x3800007
-scripts/xdrive.py move  $WID 700 200       # window pixels, top-left origin
-scripts/xdrive.py click $WID 700 200       # left click there
-scripts/xdrive.py down  $WID               # hold the button (screenshot now)
-scripts/xdrive.py up    $WID               #  ... and release it
-scripts/xdrive.py key   $WID Right 1       # hold the Right arrow for 1s
-scripts/xdrive.py query $WID               # where does X think the pointer is?
+WID=$(scripts/input/xdrive.py find Mouse.exe)    # X window id, e.g. 0x3800007
+scripts/input/xdrive.py move  $WID 700 200       # window pixels, top-left origin
+scripts/input/xdrive.py click $WID 700 200       # left click there
+scripts/input/xdrive.py down  $WID               # hold the button (screenshot now)
+scripts/input/xdrive.py up    $WID               #  ... and release it
+scripts/input/xdrive.py key   $WID Right 1       # hold the Right arrow for 1s
+scripts/input/xdrive.py query $WID               # where does X think the pointer is?
 import -window $WID /tmp/after.png         # then Read the PNG, as in section 7
 ```
 
@@ -404,7 +404,7 @@ not the code change under test.
 - **Reproducing a game bug** that needs a precise input sequence
   (`key $WID space 0.05` to jump, then screenshot mid-air).
 - **Smoke tests that exercise input**, not just startup, e.g. extending
-  `scripts/smoke_test_playground3d.sh` to hold an arrow key and check
+  `scripts/smoke/smoke_test_playground3d.sh` to hold an arrow key and check
   the camera moved.
 - Anything else X11 can do -- the same `ctypes` recipe works for any
   C library function you can read the man page of.
@@ -486,3 +486,38 @@ open its window and never return. Turning it into a function for the
 duration of the check avoids that (and must be undone before
 committing). The game's `.mli` exports nothing, but `copy_files` brings
 the `.ml` alone, so `Sim` sees all of it.
+
+## 10. Techniques from developing the games
+
+The scripts are in `scripts/` (see its README); what they're for, and a
+few techniques with no script:
+
+- **Look at the difference before approving a golden frame**
+  (`scripts/frames/compare_golden.py`): the golden frame, the new one,
+  and the differing pixels in red, with the box around them. "Only the
+  player's 40x40 box changed" (a sprite replacing a square) or "only a
+  band at the horizon" (a new sky) is an approval; a difference
+  anywhere else is a question.
+- **Check a game's data from its source** (`scripts/games/`): a
+  Sokoban level must be solvable (a breadth-first search over the
+  positions, which also gives its shortest solution), a Pac-Man maze
+  must have all its dots reachable and no dead ends, a race course
+  must not come back near itself. Written before adding the level, not
+  after a player gets stuck.
+- **Find a cost by removing things, one at a time**: to know what makes
+  a frame slow, time the game without its HUD, then without its sky,
+  by editing the source temporarily (a copy of the file saved first,
+  `cp`, restored after, `cp` again -- and checked with `git diff`: a
+  run killed half-way left TinyVirtuaRacing.ml edited once). It found
+  nothing there, but pointed at the HUD for the next bug.
+- **The frame rate on OpenGL is capped by the vsync**, `-uncapped` or
+  not (`scripts/perf/fps.sh`): 300 frames in 5.6 s is 60 fps plus the
+  startup, the best possible, not a slow backend. The per-frame
+  `-debug` log (view and draw times) tells the work apart from the
+  waiting.
+- **A separate build directory when dune's lock is held**: two sessions
+  (or an editor's `dune build --watch`) share `_build/`, and a build
+  waits for the lock, possibly forever if the other one is stuck.
+  `dune build --build-dir _build_other ...` has its own lock, and the
+  dune cache makes its first build quick; the tools take
+  `BUILD_DIR=_build_other`. Remove it after: it's not ignored by git.

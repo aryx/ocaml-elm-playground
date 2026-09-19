@@ -14,10 +14,10 @@ OCaml on the CPU, is the best way to appreciate hardware rendering.
 
 ## How the numbers are measured
 
-- `scripts/bench_playground.sh <exe> [keys]`: runs the app with
+- `scripts/perf/bench_playground.sh <exe> [keys]`: runs the app with
   `-uncapped` (no 60 fps cap, see `Native_loop_2d`) and `-debug` (the
   loop logs its fps every half second), presses the software backend's
-  debug keys with `scripts/xdrive.py` (checking the window title shows
+  debug keys with `scripts/input/xdrive.py` (checking the window title shows
   the change), waits for things to settle, and prints the median fps.
   `REPEAT=3` runs it 3 times: median (min-max).
 - Default window, 1000x1000. Machine: ARM Neoverse-N1, 64 cores (only

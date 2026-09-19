@@ -98,7 +98,7 @@ independent, for both GPU backends:
   position readout, which changes at each block crossed. Next step if
   it matters: matte only the rows and columns the shapes touch.)
 - **Golden frames not covered**: Minecraft3d (slow, and a 1.5 MB frame;
-  `scripts/ref_frames_3d.sh` checks it by hand). The games drawing
+  `scripts/frames/ref_frames_3d.sh` checks it by hand). The games drawing
   random numbers (StarCollector3d; in 2D, Snake and Tetris) are, since
   they take a `seed=n` flag (`Random.init n` instead of
   `Random.self_init`) that the runner passes. The Cairo 2D backend isn't
