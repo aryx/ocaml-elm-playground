@@ -80,6 +80,7 @@ dune exec examples3d/InteractiveCube3d.exe  # arrow keys/mouse move a cube aroun
 dune exec examples3d/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see the "z" toggle below
 dune exec examples3d/Corridor3d.exe      # walk down a corridor (up/down arrows); see the "c" toggle below
 dune exec games3d/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
+dune exec games3d/TinyDescent3d.exe      # fly a ship through a mine, in any direction (arrows, a/d, w/s)
 ```
 
 The same, on the GPU: `dune exec examples3d/opengl/Cubes3d.exe`. In a
@@ -175,6 +176,10 @@ let update _computer () = ()
 let app = game3d view update ()
 let main = Playground3d_platform.run_app3d app
 ```
+
+The camera keeps (0, 1, 0) as up unless told otherwise; a game whose
+ship rolls or looks straight up gives its own (`camera ~eye ~target
+~up ()`, see `games3d/TinyDescent3d.ml`).
 
 `cube`/`box`/`plane` are procedurally generated, single-flat-color
 shapes -- no assets needed, same philosophy as 2D's `circle`/`square`.
