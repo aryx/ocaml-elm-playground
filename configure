@@ -123,8 +123,7 @@ echo ""
 
 echo "Installing opam dependencies..."
 opam install --confirm-level=unsafe-yes --deps-only -y \
-  ./elm_core.opam ./elm_system.opam ./elm_playground.opam \
-  ./elm_playground_native.opam ./elm_playground_web.opam
+  ./elm_playground.opam ./elm_playground_native.opam ./elm_playground_web.opam
 
 echo ""
 echo "Everything looks fine. You can now run:"
