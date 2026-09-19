@@ -86,6 +86,21 @@ val together : sound list -> sound
 (* [after sounds]: one after the other, a tune *)
 val after : sound list -> sound
 
+(* [abc text]: a tune written in ABC notation (audio/Abc.mli: letters
+   for notes, numbers for lengths, a key, voices), played by an 8-bit
+   band (the melody on a square wave, the bass on a triangle, like the
+   NES):
+     let tune = abc "X:1\nL:1/8\nQ:1/4=120\nK:C\nC2 E2 G2 c2 | G8 |"
+   silent if the text isn't a tune (the reason printed on the error
+   output) *)
+val abc : string -> sound
+
+(* [doremi text]: the same in solfège (audio/Doremi.mli): do ré mi fa
+   sol la si, a length in beats after a colon, a rest -:
+     let lune = doremi "do do do re mi:2 re:2 | do mi re re do:4"
+   (Au clair de la lune) *)
+val doremi : string -> sound
+
 (* {1 Ready-made sounds}
 
    In the spirit of sfxr (Tomas Pettersson, 2007), the game jam tool
@@ -109,6 +124,13 @@ val play : sound -> unit
    [name] saying it's the same sound from frame to frame (its length
    and fading ignored: it lasts as long as it's kept) *)
 val keep_playing : string -> sound -> unit
+
+(* [loop name s]: [s] played over and over, background music, until
+   [stop name]; calling it again (at every frame, say) while it plays
+   does nothing, so a game can just say, in update:
+     Audio.loop "music" tune *)
+val loop : string -> sound -> unit
+val stop : string -> unit
 
 (**/**)
 

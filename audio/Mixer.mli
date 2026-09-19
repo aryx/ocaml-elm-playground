@@ -36,6 +36,15 @@ val max_playing : int
 (* [play m s]: [s] from the next sample pulled *)
 val play : t -> Signal.t -> unit
 
+(* [loop m name s]: [s] played over and over, from the next sample,
+ * unless a loop [name] is already playing (so calling it every frame
+ * is harmless): background music *)
+val loop : t -> string -> Signal.t -> unit
+
+(* [stop m name]: the loop [name] stopped (faded out over its next
+ * pull), if playing *)
+val stop : t -> string -> unit
+
 (* [keep m name v]: the continuous voice [name] playing [v] until the
  * next pull at least *)
 val keep : t -> string -> Synth.voice -> unit
@@ -45,3 +54,6 @@ val pull : t -> int -> Signal.t
 
 (* one-shots playing, continuous voices kept (for tests, debug) *)
 val playing : t -> int * int
+
+(* loops playing *)
+val looping : t -> string list

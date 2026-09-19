@@ -17,10 +17,21 @@ type shot = { samples : Signal.t; mutable at : int }
  * was kept since the last pull *)
 type continuous = { mutable voice : Synth.voice; mutable running : Synth.running; mutable kept : bool }
 
-type t = { mutable shots : shot list; continuous : (string, continuous) Hashtbl.t }
+(* a loop: its samples, how far read, and whether it's being stopped *)
+type looped = { sound : Signal.t; mutable pos : int; mutable stopping : bool }
+
+type t = { mutable shots : shot list; continuous : (string, continuous) Hashtbl.t; loops : (string, looped) Hashtbl.t }
 
 let max_playing = 32
-let create () : t = { shots = []; continuous = Hashtbl.create 8 }
+let create () : t = { shots = []; continuous = Hashtbl.create 8; loops = Hashtbl.create 2 }
+
+let loop (m : t) (name : string) (sound : Signal.t) : unit =
+  match Hashtbl.find_opt m.loops name with
+  | Some l when not l.stopping -> ()
+  | _ -> if Array.length sound > 0 then Hashtbl.replace m.loops name { sound; pos = 0; stopping = false }
+
+let stop (m : t) (name : string) : unit = Option.iter (fun l -> l.stopping <- true) (Hashtbl.find_opt m.loops name)
+let looping (m : t) : string list = Hashtbl.fold (fun name _ acc -> name :: acc) m.loops [] |> List.sort compare
 
 let play (m : t) (samples : Signal.t) : unit =
   (* the newest first; past max_playing, the oldest dropped *)
@@ -60,6 +71,19 @@ let pull (m : t) (n : int) : Signal.t =
          Array.iteri (fun i x -> out.(i) <- out.(i) +. x) samples;
          c.kept <- false);
   List.iter (Hashtbl.remove m.continuous) !gone;
+  (* the loops: read around and around; a stopped one fades out over
+   * this pull, then is gone *)
+  let stopped = ref [] in
+  m.loops
+  |> Hashtbl.iter (fun name l ->
+         let len = Array.length l.sound in
+         for i = 0 to n - 1 do
+           let fade = if l.stopping then 1. -. (float_of_int i /. float_of_int n) else 1. in
+           out.(i) <- out.(i) +. (fade *. l.sound.(l.pos));
+           l.pos <- (l.pos + 1) mod len
+         done;
+         if l.stopping then stopped := name :: !stopped);
+  List.iter (Hashtbl.remove m.loops) !stopped;
   Mix.limit ~soft:true out
 
 let playing (m : t) : int * int = (List.length m.shots, Hashtbl.length m.continuous)

@@ -51,5 +51,12 @@ let sounds : (string * (unit -> Signal.t)) list =
       ("beeps_enveloped", fun () -> beeps (Envelope.apply (Envelope.percussive ~attack:0.005 ~decay:0.095) ~held:0.1)) ]
   (* A4 and E5 at full volume, clipped hard, then soft (Mix.mli) *)
   @ [ ("chord_hard", fun () -> Mix.limit (chord ())); ("chord_soft", fun () -> Mix.limit ~soft:true (chord ())) ]
+  (* Frere Jacques as a round, played by the NES-like band
+   * (Music.to_sound): 3 s from 3.5 s, the second voice coming in at 4 s *)
+  @ [ ( "frere_jacques",
+        fun () ->
+          match Abc.parse Unit_abc.frere_jacques with
+          | Ok tune -> Array.sub (Synth.render (Music.to_sound tune)) (Signal.samples 3.5) (Signal.samples 3.)
+          | Error e -> failwith e ) ]
 
 let tests = Testo.categorize "golden WAVs" (List.map (fun (name, f) -> t name (fun () -> check name (f ()) ())) sounds)

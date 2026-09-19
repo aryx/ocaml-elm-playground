@@ -346,6 +346,35 @@ audio meeting).
   The web and 3D backends don't pull yet: silent (phase 4). Left for
   later: golden WAVs of whole game runs (the golden runner would pass
   -dump-audio), a mute key.
+- **Phase 8's music, DONE (moved up)**: tunes in ABC notation (Chris
+  Walshaw, 1991; the 2.1 standard cited), not an invented format: a
+  standard, plain text, and thousands of tunes typed in it.
+  `audio/Abc`, a subset parser (notes and octaves, accidentals lasting
+  to the bar line, lengths, rests, chords, triplets, dotted pairs, the
+  major and minor key signatures, voices, inline fields; skipping
+  comments, chord names, decorations, grace notes, ties, repeats);
+  `Music.to_sound`, a tune on the NES's band (the first voice a square,
+  the last the triangle, notes sounding 90% of their length).
+  `Audio.abc`, `Audio.loop` (a named loop, rendered once, asking again
+  harmless) and `Audio.stop`; `Mixer.loop`, `stop`, `looping`. Tests
+  (`Unit_abc`): each piece of the notation (the `.mli`'s example first
+  had =F for 0.5 s where it's 0.25, fixed to =F2), Frere Jacques as a
+  two-voice round (16 s, the second voice at 4 s); a golden WAV of 3 s
+  of the round, where the voices overlap. TinyMario: an original tune
+  (8 bars, arpeggios over C F Dm G, a triangle bass) looping from the
+  first frame, stopped at the flag; `music=file.abc` for the user's own
+  tune (the decision: the user's choice 3, an original by default and
+  their own file by the flag, the famous theme never in the
+  repository), `music=off`. Checked by dumping a run's sound: the
+  melody's first bar E4 E4 G4 G4 C5 C5 G4 G4. Then, the user's idea,
+  `audio/Doremi`: tunes in solfège (do ré mi fa sol la si, fixed do;
+  # and b; a sticky octave digit; lengths in beats after a colon; -
+  a rest; tempo; voix), parsed into the same Abc.tune; its `.mli`
+  tells Guido d'Arezzo's Ut queant laxis. Tests (`Unit_doremi`): the
+  example, Au clair de la lune (16 beats: 8 s; a first count of 12
+  beats was wrong), two voices, errors. `Audio.doremi`; TinyMario's
+  music= file in solfège unless it ends in .abc; its sounds and music
+  gathered in an Audio section.
 - **The goal set by the user**: TinyMario with music and sounds when
   moving. So after phases 2 and 3, phase 8's `Music` (notes, the
   sequencer) comes before phases 5-7. The classic Super Mario Bros.

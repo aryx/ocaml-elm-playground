@@ -34,7 +34,16 @@
  * Sounds (playground/Audio.mli), played in [update] when things happen:
  * a jump, the steps (a foot lands every 30 pixels of the walk cycle),
  * the coins, a fall into a pit, and an arpeggio at the flag (a plain
- * C major chord, up: not Nintendo's fanfare). *)
+ * C major chord, up: not Nintendo's fanfare).
+ *
+ * And music, looping, in ABC notation (audio/Abc.mli): by default an
+ * original tune in the NES's style, [original_tune] below (Koji
+ * Kondo's famous theme is Nintendo's, not ours to copy); the flag
+ * music=file plays your own tune from an ABC file instead (native only:
+ * no files in a browser: an ABC file if it ends in .abc, else in
+ * solfège, audio/Doremi.mli), music=off none:
+ *
+ *   dune exec games/TinyMario.exe -- music=mytune.abc *)
 open Playground
 open Basics (* float arithmetics *)
 
@@ -108,6 +117,8 @@ type model = {
   coins : int;
   won : bool;
   cam : Camera2d.t;
+  (* the music started (at the first frame, when the flags are known) *)
+  music_on : bool;
 }
 
 let start : number * number =
@@ -119,7 +130,7 @@ let initial_model =
   let x, y = start in
   let col, row = Tilemap.cell level x y in
   { map = Tilemap.set level col row ' ';
-    x; y; vy = 0.; vx = 0.; facing_left = false; coins = 0; won = false;
+    x; y; vy = 0.; vx = 0.; facing_left = false; coins = 0; won = false; music_on = false;
     cam = Camera2d.origin |> Camera2d.look_at x y }
 
 (*****************************************************************************)
@@ -182,6 +193,59 @@ let move_camera (computer : computer) (model : model) : Camera2d.t =
   Camera2d.clamp computer.screen (Tilemap.bounds model.map) cam
 
 (*****************************************************************************)
+(* Audio *)
+(*****************************************************************************)
+
+(* at the flag: C E G up, then the C above, held (a plain C major
+ * arpeggio, not Nintendo's fanfare) *)
+let flag_arpeggio =
+  Audio.after
+    (List.map (fun n -> Audio.square (Music.frequency n) |> Audio.lasting 0.12) [ "C5"; "E5"; "G5" ]
+    @ [ Audio.square (Music.frequency "C6") |> Audio.lasting 0.5 |> Audio.fading ])
+
+(* the sounds of the things that happened between [before] and [after] *)
+let sounds (on_ground : bool) (jumped : bool) (before : model) (after : model) : unit =
+  if jumped then Audio.play Audio.jump;
+  (* a foot lands every 30 pixels: two of the walk cycle's four poses *)
+  if on_ground && (not jumped) && Float.floor (after.x / 30.) <> Float.floor (before.x / 30.) then Audio.play Audio.step;
+  if after.coins > before.coins then Audio.play Audio.coin;
+  if after.won && not before.won then (
+    Audio.stop "music";
+    Audio.play flag_arpeggio)
+
+(* The music: an original tune, 8 bars, the melody on the arpeggios of
+ * its chords (C, F, Dm G, C; Dm, G, F G, C), a triangle bass under it,
+ * like an NES game's (Music.to_sound) *)
+let original_tune =
+  {|X:1
+T:Tiny Plumber (original, for TinyMario)
+L:1/8
+Q:1/4=144
+K:C
+V:1
+E2 G2 c2 G2 | A2 c2 e4 | d2 c2 A2 G2 | E4 z4 |
+F2 A2 d2 A2 | G2 B2 d4 | c2 B2 A2 B2 | c4 z4 |
+V:2
+C,2 G,2 E,2 G,2 | F,2 A,2 C2 A,2 | F,2 A,2 D,2 G,2 | C,2 G,2 C,4 |
+D,2 A,2 F,2 A,2 | G,,2 D,2 G,2 D,2 | F,2 G,2 F,2 G,2 | C,2 G,2 C,4 |
+|}
+
+(* the music=file flag's tune, or the original *)
+let start_music (computer : computer) : unit =
+  match flag computer "music" with
+  | Some "off" -> ()
+  | Some file -> (
+      match In_channel.with_open_text file In_channel.input_all with
+      | text -> Audio.loop "music" ((if Filename.check_suffix file ".abc" then Audio.abc else Audio.doremi) text)
+      | exception Sys_error e ->
+          prerr_endline ("music: " ^ e ^ "; the original tune instead");
+          Audio.loop "music" (Audio.abc original_tune))
+  | None -> Audio.loop "music" (Audio.abc original_tune)
+
+(* fell in a pit *)
+let fall_sound = Audio.square 700. |> Audio.sliding 120. |> Audio.lasting 0.6 |> Audio.fading
+
+(*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
 
@@ -207,19 +271,8 @@ let fall (computer : computer) (vy : number) : number =
       body.vy / 60.
   | _ -> vy - 0.8
 
-(* the sounds of the things that happened between [before] and [after] *)
-let sounds (on_ground : bool) (jumped : bool) (before : model) (after : model) : unit =
-  if jumped then Audio.play Audio.jump;
-  (* a foot lands every 30 pixels: two of the walk cycle's four poses *)
-  if on_ground && (not jumped) && Float.floor (after.x / 30.) <> Float.floor (before.x / 30.) then Audio.play Audio.step;
-  if after.coins > before.coins then Audio.play Audio.coin;
-  if after.won && not before.won then
-    Audio.play (Audio.after (List.map (fun n -> Audio.square (Music.frequency n) |> Audio.lasting 0.12) [ "C5"; "E5"; "G5" ] @ [ Audio.square (Music.frequency "C6") |> Audio.lasting 0.5 |> Audio.fading ]))
-
-(* fell in a pit *)
-let fall_sound = Audio.square 700. |> Audio.sliding 120. |> Audio.lasting 0.6 |> Audio.fading
-
 let update (computer : computer) (model : model) : model =
+  let model = if model.music_on then model else (start_music computer; { model with music_on = true }) in
   let before = model in
   let on_ground = blocked model.map model.x (model.y - 1.) in
   let vx = 6. * to_x computer.keyboard in

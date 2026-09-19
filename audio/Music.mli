@@ -1,5 +1,6 @@
-(* Notes and music (see notes_audio.md section 9); for now, the notes'
- * frequencies. The sequencer and MIDI come later in the plan (phase 8).
+(* Notes and music (see notes_audio.md section 9): the notes'
+ * frequencies, and tunes (Abc.mli) played by a small band of NES-like
+ * instruments. MIDI comes next in the plan (phase 8).
  *
  * Western music's twelve-tone equal temperament: an octave doubles the
  * frequency, and is split into 12 semitones, each multiplying it by the
@@ -30,3 +31,19 @@ val midi_number : string -> int option
 
 (* [frequency name]: "A4" -> 440.; 0. if it isn't a note *)
 val frequency : string -> float
+
+(* {1 Playing tunes}
+ *
+ * A tune's voices played by the NES's band (the 2A03 chip, 1983: two
+ * square channels and a triangle): the first voice on a square (the
+ * melody), the last on the triangle (the bass), those in between on a
+ * softer square. Each note sounds for 90% of its length, then a short
+ * silence, so that two notes in a row are heard as two (a tracker's
+ * "note off"); rests are silences. *)
+
+(* [instrument ~voice ~voices]: the sound of voice number [voice] (from
+ * 0) among [voices]: its waveform and volume *)
+val instrument : voice:int -> voices:int -> Oscillator.waveform * float
+
+(* [to_sound tune]: its voices together, each a sound after another *)
+val to_sound : Abc.tune -> Synth.t

@@ -25,6 +25,16 @@ let sliding = Synth.sliding
 let together sounds = Synth.Together sounds
 let after sounds = Synth.After sounds
 
+let tune (who : string) (parse : string -> (Abc.tune, string) result) (text : string) : sound =
+  match parse text with
+  | Ok tune -> Music.to_sound tune
+  | Error e ->
+      prerr_endline (who ^ ": not a tune: " ^ e);
+      Synth.After []
+
+let abc = tune "Audio.abc" Abc.parse
+let doremi = tune "Audio.doremi" Doremi.parse
+
 (* the ready-made sounds: our own recipes, after sfxr's categories *)
 let blip = square 880. |> lasting 0.06 |> fading
 let coin = after [ square 1047. |> lasting 0.07; square 1568. |> lasting 0.25 |> fading ] |> louder 0.8
@@ -46,4 +56,10 @@ let rec voices (s : sound) : Synth.voice list =
 let keep_playing (name : string) (s : sound) : unit =
   List.iteri (fun i v -> Mixer.keep mixer (Printf.sprintf "%s#%d" name i) v) (voices s)
 
+(* a loop's samples, rendered once (a tune of a minute: 2.6 million
+ * samples, rendered each frame it's asked for would be too slow) *)
+let loop (name : string) (s : sound) : unit =
+  if not (List.mem name (Mixer.looping mixer)) then Mixer.loop mixer name (Synth.render s)
+
+let stop (name : string) : unit = Mixer.stop mixer name
 let pull (n : int) : float array = Mixer.pull mixer n

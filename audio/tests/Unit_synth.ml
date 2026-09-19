@@ -62,6 +62,17 @@ let test_mixer () =
   let last = Mixer.pull m 735 in
   Alcotest.(check (pair int int)) "not kept: gone after that pull" (0, 0) (Mixer.playing m);
   Alcotest.(check bool) "... having faded out" true (Float.abs last.(734) < 0.01);
+  (* a loop: asked again, not restarted; stopped, gone after a pull *)
+  Mixer.loop m "music" (Synth.render beep);
+  ignore (Mixer.pull m 1000);
+  Mixer.loop m "music" (Synth.render beep);
+  Alcotest.(check (list string)) "a loop playing" [ "music" ] (Mixer.looping m);
+  let wrapped = Mixer.pull m 4000 in
+  (* 1000 + 4000 > 4410: it came around, the beep's start again at 3410 *)
+  Alcotest.(check bool) "going around" true (Float.abs wrapped.(3410) < 1e-9 && Float.abs wrapped.(3500) > 0.1);
+  Mixer.stop m "music";
+  ignore (Mixer.pull m 735);
+  Alcotest.(check (list string)) "stopped" [] (Mixer.looping m);
   for _ = 1 to 40 do Mixer.play m (Synth.render beep) done;
   Alcotest.(check int) "at most 32 one-shots" Mixer.max_playing (fst (Mixer.playing m))
 

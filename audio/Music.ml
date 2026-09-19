@@ -28,3 +28,29 @@ let midi_number (name : string) : int option =
         | _ -> None)
 
 let frequency (name : string) : float = match midi_number name with Some n -> midi_frequency n | None -> 0.
+
+let instrument ~(voice : int) ~(voices : int) : Oscillator.waveform * float =
+  if voices > 1 && voice = voices - 1 then (Triangle, 0.5) else if voice = 0 then (Square, 0.3) else (Square, 0.18)
+
+let to_sound (tune : Abc.tune) : Synth.t =
+  let voices = List.length tune.voices in
+  let silence seconds = Synth.voice (Wave Sine) 0. |> Synth.louder 0. |> Synth.lasting seconds in
+  Synth.Together
+    (List.mapi
+       (fun i events ->
+         let (waveform, volume) = instrument ~voice:i ~voices in
+         Synth.After
+           (List.map
+              (fun (e : Abc.event) ->
+                match e.notes with
+                | [] -> silence e.length
+                | notes ->
+                    let sounding = e.length *. 0.9 in
+                    Synth.After
+                      [ Synth.Together
+                          (List.map
+                             (fun n -> Synth.voice (Wave waveform) (midi_frequency n) |> Synth.lasting sounding |> Synth.louder (volume /. 0.5))
+                             notes);
+                        silence (e.length -. sounding) ])
+              events))
+       tune.voices)
