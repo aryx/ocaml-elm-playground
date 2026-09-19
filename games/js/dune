@@ -36,6 +36,8 @@
 (copy_files ../TinyBabaIsYou.ml)
 (copy_files ../TinyKart.{ml,mli})
 (copy_files ../TinyDoom.{ml,mli})
+(copy_files ../TinyMissileCommand.ml)
+(copy_files ../TinyLemmings.ml)
 
 (executables
   (names
@@ -73,6 +75,8 @@
     TinyBabaIsYou
     TinyKart
     TinyDoom
+    TinyMissileCommand
+    TinyLemmings
   )
   (libraries
     unix

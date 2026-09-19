@@ -966,6 +966,111 @@ let baba_levels () =
     levels
 
 (*****************************************************************************)
+(* TinyMissileCommand *)
+(*****************************************************************************)
+
+(* a robot aims every counter-missile where a warhead will be when the
+ * counter-missile gets there, and survives the first two waves (aiming
+ * 40 frames ahead, it lost 5 cities in the first one: most of its
+ * ammo missed) *)
+let missile_robot () =
+  let open TinyMissileCommand in
+  let s = ref (update (computer ~keyboard:{ initial_computer.keyboard with kspace = true } 1) initial_model) in
+  let waves = ref 1 and cities = ref 6 in
+  for i = 2 to 60 * 60 do
+    let mouse, keyboard =
+      match !s.scene with
+      | Playing g when i mod 12 = 0 -> (
+          (* the lowest warhead not already aimed at *)
+          let aimed (m : missile) = List.exists (fun (c : missile) -> Float.hypot (fst c.target -. m.shot.x) (snd c.target -. m.shot.y) < 150.) g.mine in
+          match List.sort (fun (a : missile) b -> compare a.shot.y b.shot.y) (List.filter (fun m -> not (aimed m)) g.theirs) with
+          | m :: _ when m.shot.y > ground +. 120. ->
+              (* where it will be when the counter-missile gets there: the
+               * flight time from the nearest base, refined 3 times *)
+              let ahead t = (m.shot.x +. (t *. m.shot.vx), m.shot.y +. (t *. m.shot.vy)) in
+              let flight (x, y) =
+                let bx = List.fold_left (fun b x' -> if Float.abs (x' -. x) < Float.abs (b -. x) then x' else b) 1e9 base_x in
+                Float.hypot (x -. bx) (y -. base_top) /. 12.
+              in
+              let x, y = ahead (flight (ahead (flight (ahead (flight (ahead 0.)))))) in
+              ({ initial_computer.mouse with mx = x; my = y; mdx = 1.; mclick = true }, initial_computer.keyboard)
+          | _ -> (initial_computer.mouse, initial_computer.keyboard))
+      | _ -> (initial_computer.mouse, initial_computer.keyboard)
+    in
+    s := update { (computer ~keyboard i) with mouse } !s;
+    match !s.scene with
+    | Playing g ->
+        waves := g.wave;
+        cities := List.length (List.filter Fun.id g.cities)
+    | _ -> ()
+  done;
+  Printf.printf "wave %d, %d cities\n" !waves !cities;
+  Alcotest.(check bool) "past wave 2" true (!waves >= 3);
+  Alcotest.(check bool) "cities left" true (!cities >= 3)
+
+(* a warhead in an explosion explodes, and its explosion catches the
+ * next one: the chain reaction *)
+let missile_chain () =
+  let open TinyMissileCommand in
+  let g = { (new_game ()) with pause = 0; to_come = 0 } in
+  let warhead x = { from = (x, 500.); target = (x, ground); shot = Shots.straight x 0. 0. (-0.1) } in
+  let g = { g with theirs = [ warhead 0.; warhead 40.; warhead 80. ]; explosions = [ { ex = 0.; ey = 0.; age = 29 } ] } in
+  let g = ref g in
+  for i = 1 to 60 do g := update_game (computer i) (Scene2d.start Title) !g done;
+  Alcotest.(check int) "all three" 0 (List.length !g.theirs);
+  Alcotest.(check int) "the score" 75 !g.score
+
+(*****************************************************************************)
+(* TinyLemmings *)
+(*****************************************************************************)
+
+(* a level played by a plan: the k-th job given (once) to the first
+ * walker [where] says; the lemmings saved *)
+let lemmings_play (level : int) (plan : (int * (TinyLemmings.lemming -> bool)) list) : int =
+  let open TinyLemmings in
+  let g = ref (new_game level) and i = ref 0 in
+  let todo = ref plan in
+  while not (over !g) do
+    incr i;
+    g := update_game (computer !i) (Scene2d.start Title) !g;
+    match !todo with
+    | (k, where) :: rest -> (
+        match List.find_opt (fun (_, l) -> l.job = Walker && where l) (List.mapi (fun n l -> (n, l)) !g.lemmings) with
+        | Some (n, _) ->
+            g := assign !g n k;
+            todo := rest
+        | None -> ())
+    | [] -> ()
+  done;
+  saved !g
+
+let lemmings_levels () =
+  let open TinyLemmings in
+  (* nothing done: level 1's lemmings walk forever, level 3's fall *)
+  Alcotest.(check int) "level 1, no job" 0 (lemmings_play 0 []);
+  Alcotest.(check int) "level 3, no job" 0 (lemmings_play 2 []);
+  (* a digger through the floor; a basher through the wall; a builder
+   * over the gap *)
+  let saved1 = lemmings_play 0 [ (3, fun l -> l.x > 80) ] in
+  let saved2 = lemmings_play 1 [ (2, fun l -> l.x >= 105) ] in
+  let saved3 = lemmings_play 2 [ (1, fun l -> l.x >= 97) ] in
+  Printf.printf "saved: %d, %d, %d\n" saved1 saved2 saved3;
+  List.iteri (fun i n -> Alcotest.(check bool) (Printf.sprintf "level %d" (i + 1)) true (n >= (List.nth levels i).need)) [ saved1; saved2; saved3 ]
+
+(* a fall of 64 cells is survived, not one of 65 *)
+let lemmings_splat () =
+  let open TinyLemmings in
+  let fall h =
+    let t = Bytes.make (cols * rows) '\000' in
+    for c = 0 to cols - 1 do set t c 140 dirt done;
+    let l = ref { x = 10; y = 139 - h; dir = 1; job = Faller 0 } in
+    for _ = 1 to 100 do l := step t [] 0 !l done;
+    !l.job
+  in
+  Alcotest.(check bool) "64 cells" true (fall 64 = Walker);
+  Alcotest.(check bool) "65 cells" true (fall 65 = Dead)
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -1030,4 +1135,8 @@ let tests =
       t "TinyFinalFight, the combo, on the line" ff_combo;
       t "TinyFinalFight, a robot clears the street" ff_robot;
       t "TinyBabaIsYou, every level solvable" baba_levels;
+      t "TinyMissileCommand, a robot survives two waves" missile_robot;
+      t "TinyMissileCommand, a chain reaction" missile_chain;
+      t "TinyLemmings, a job per level" lemmings_levels;
+      t "TinyLemmings, the fall that splats" lemmings_splat;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

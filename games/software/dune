@@ -38,6 +38,8 @@
     TinyBabaIsYou
     TinyKart
     TinyDoom
+    TinyMissileCommand
+    TinyLemmings
   )
   (libraries
     elm_playground

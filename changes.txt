@@ -97,7 +97,9 @@
   TinyFinalFight (the belt, combos), TinyBabaIsYou (the rules as words
   on the board), TinyKart (Mode 7, row by
   row), TinyDoom (Doom's renderer: a node builder, the BSP walked
-  front to back, per-column clip arrays, no z-buffer); kits/shmup (Shots, Path), kits/platformer (Tile_move,
+  front to back, per-column clip arrays, no z-buffer),
+  TinyMissileCommand (aiming at a point, chain reactions), TinyLemmings
+  (the terrain a bitmap the jobs dig and build); kits/shmup (Shots, Path), kits/platformer (Tile_move,
   Ladder), kits/brawler (Hitbox, Frame_data, Stickman), kits/puzzle (Push,
   Undo) and
   kits/sectors (Sectors: a Doom level as sectors, its lines found)

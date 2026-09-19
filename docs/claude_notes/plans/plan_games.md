@@ -199,7 +199,12 @@ the trackball).
   aliens, kept as the design), TinyGalaga (DONE: `games/TinyGalaga.ml`,
   the waves flying in and the dives along Catmull-Rom splines, moved
   along by arc length; the formation breathing; bosses taking two hits;
-  a robot in `tests/games/` clears stage 1).
+  a robot in `tests/games/` clears stage 1), TinyMissileCommand (DONE:
+  `games/TinyMissileCommand.ml`, Missile Command, Dave Theurer, Atari,
+  1980: aiming at a point, the counter-missile exploding there; the
+  explosions growing and shrinking, the chain reaction; MIRVs; its
+  missiles `Shots`; a robot in the tests aims at the intercept and
+  survives two waves).
 - **Kit** (the start of the shmup kit, DONE: `kits/shmup/`): `Shots`
   (the player's and the enemies' bullets, created, moved, removed when
   off-screen or on a hit), and `Path` (TinyGalaga's Catmull-Rom curves,
@@ -274,7 +279,13 @@ Pajitnov, 1984; done: `games/Tetris.ml`), Lemmings (DMA Design,
   YOU, WIN, STOP, PUSH, DEFEAT, SINK and NOUN IS NOUN; four levels, each
   solved by a breadth-first search in the tests). Both on the puzzle
   kit, `kits/puzzle/`: `Push` (a chain pushed, TinySokoban's limited to
-  one box) and `Undo`.
+  one box) and `Undo`. TinyLemmings (DONE: `games/TinyLemmings.ml`, the
+  terrain a bitmap of 4-pixel cells in the model, copied once per tick
+  and drawn as row runs; walkers as tiny state machines reading the
+  cells around them; Blocker, Builder, Basher, Digger; three levels as
+  ASCII, each solved by a one-job plan in the tests). Not on the
+  puzzle kit: no grid, no pushing; its bitmap is section 14's kit, the
+  day TinyWorms wants caves.
 - **Kit**: a `Rules` layer rewriting a `Tilemap` with patterns, as in
   PuzzleScript (Stephen Lavelle, 2013) and TileCode (Thomas Ball,
   Stefania Druga, et al., 2020, see `Tilemap.mli`): a game as a map

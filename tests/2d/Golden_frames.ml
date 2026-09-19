@@ -99,6 +99,8 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyDoom", "", 5);
     (* "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
     ("games/software/TinyDoom", "rr", 5);
+    ("games/software/TinyMissileCommand", "", 5);
+    ("games/software/TinyLemmings", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -247,6 +249,12 @@ let scripted : Testutil_golden.scripted list =
      * move): Koch's filled snowflake; the dragon, 4096 lines *)
     ("examples/software/LogoFractals", "snowflake", 5, "a:2");
     ("examples/software/LogoFractals", "dragon", 10, "right:2,right:4,right:6,a:8");
+    (* the crosshair raised, a counter-missile from each base: flying,
+     * then exploding there, the three explosions one *)
+    ("games/software/TinyMissileCommand", "fire", 45, "space:1,up:2-30,a:32,s:33,d:34");
+    ("games/software/TinyMissileCommand", "explosions", 95, "space:1,up:2-30,a:32,s:33,d:34");
+    (* the lemmings out of the hatch, walking, "4" picking the diggers *)
+    ("games/software/TinyLemmings", "walking", 500, "space:1,4:10");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes
