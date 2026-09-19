@@ -3,7 +3,7 @@
 Support programs for developing and debugging the playground and its
 games, run from the repository's root. Each one's header says what it
 does, why, and how to use it; the techniques behind them are in
-`docs/claude_notes/notes_debugging_techniques.md`.
+`docs/claude_notes/dev/notes_debugging_techniques.md`.
 
 - `frames/`: getting frames, and looking at them
   - `render_frame.sh`: one frame of a native program, offscreen (SDL's
@@ -23,6 +23,10 @@ does, why, and how to use it; the techniques behind them are in
   - `fps.sh`: frames per second, uncapped (beware OpenGL's vsync)
   - `bench_playground.sh`: the 2D software rasterizer's benchmark,
     with its debug keys (medians of several runs)
+- `web/`: running a web program without a browser
+  - `web_headless.js`: a game's `.bc.js` in node with a fake DOM:
+    hangs, exceptions, the DOM after scripted keys (see
+    `docs/claude_notes/dev/notes_headless.md`)
 - `input/`: driving a real window
   - `xdrive.py`: mouse moves, clicks, keys, through X11's XTEST
 - `games/`: checking the games' data, read from their sources

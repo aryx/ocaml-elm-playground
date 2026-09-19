@@ -10,7 +10,7 @@
 #
 # Smoke-test the web programs, without a browser window:
 #   - each games/js/*.bc.js run in node with a fake DOM
-#     (docs/claude_notes/web_headless.js), 600 frames, pressing space,
+#     (scripts/web/web_headless.js), 600 frames, pressing space,
 #     1, the arrows: any exception or hang is reported;
 #   - each games3d/webgl/*.html screenshotted in headless Chrome (WebGL
 #     through SwiftShader), into $OUT (default /tmp/web_smoke/), to look at
@@ -29,7 +29,7 @@ mkdir -p "$OUT"
 fail=0
 for js in "$B"/games/js/*.bc.js; do
   name=$(basename "$js" .bc.js)
-  res=$(timeout 60 node "$ROOT/docs/claude_notes/web_headless.js" "$js" 600 ' ',1,ArrowUp,ArrowRight,ArrowLeft,' ' 2>&1 | tail -1)
+  res=$(timeout 60 node "$ROOT/scripts/web/web_headless.js" "$js" 600 ' ',1,ArrowUp,ArrowRight,ArrowLeft,' ' 2>&1 | tail -1)
   case "$res" in
     OK*) echo "ok     games/js/$name" ;;
     *) echo "FAILED games/js/$name: $res"; fail=1 ;;
