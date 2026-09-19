@@ -308,7 +308,10 @@ Kung-Fu Master (Irem, 1984), Renegade (Technōs, 1986), Double Dragon
 (Technōs, 1987: two players together), Final Fight (Capcom, 1989),
 Streets of Rage (Sega, 1991).
 
-- **Toy**: TinyFinalFight, one street, three kinds of thugs.
+- **Toy**: TinyFinalFight (DONE: `games/TinyFinalFight.ml`, one street
+  on the belt, drawn back to front; the jab-jab-hook combo chained in
+  the recoveries; waves locking the screen; a barrel's roast chicken;
+  the boss; a robot clears it).
 - **Kit**, the brawler kit (shared with fighting games):
   - the "belt": walking in depth as well as sideways, coordinates
     (x, depth, height), shapes sorted by depth before drawing -- the
@@ -326,7 +329,11 @@ Karate Champ (Technōs, 1984), Street Fighter II (Capcom, 1991: the
 genre as we know it, combos by accident), Mortal Kombat (Midway,
 1992).
 
-- **Toy**: TinyStreetFighter, two players on one keyboard.
+- **Toy**: TinyStreetFighter (DONE: `games/TinyStreetFighter.ml`, vs
+  the computer or two players on one keyboard; frame data, hitboxes,
+  blocking high and low, the fireball's quarter circle read from the
+  input history, hitstop; the brawler kit, `kits/brawler/`: `Hitbox`,
+  `Frame_data`, `Stickman`, shared with TinyFinalFight).
 - **Kit**: the brawler kit plus frame data (each move's startup,
   active and recovery frames: what fighting game players study), an
   input buffer recognizing motions (down, down-forward, forward +

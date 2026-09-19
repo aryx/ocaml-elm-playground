@@ -87,6 +87,16 @@
  (deps (:src %{project_root}/games/TinyRogue.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
+(rule
+ (target TinyStreetFighter.ml)
+ (deps (:src %{project_root}/games/TinyStreetFighter.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyFinalFight.ml)
+ (deps (:src %{project_root}/games/TinyFinalFight.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
 (test
  (name Test)
  (libraries
@@ -102,5 +112,6 @@
    kit_lightcycles
    kit_shmup
    kit_platformer
+   kit_brawler
  )
 )

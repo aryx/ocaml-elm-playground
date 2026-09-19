@@ -33,6 +33,8 @@
     TinyGradius
     TinyZelda
     TinyRogue
+    TinyStreetFighter
+    TinyFinalFight
     TinyKart
   )
   (libraries
@@ -42,6 +44,7 @@
     kit_lightcycles ; TinyTron's rules
     kit_shmup ; TinyInvaders' and TinyGalaga's Shots and Path
     kit_platformer ; TinyMario's, TinyLodeRunner's and TinyRick's Tile_move and Ladder
+    kit_brawler ; TinyFinalFight's and TinyStreetFighter's Hitbox, Frame_data and Stickman
     elm_playground_software ; implem of virtual elm_playground
   )
 )

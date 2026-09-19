@@ -87,6 +87,8 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyGradius", "", 5);
     ("games/software/TinyZelda", "", 5);
     ("games/software/TinyRogue", "", 5);
+    ("games/software/TinyStreetFighter", "", 5);
+    ("games/software/TinyFinalFight", "", 5);
     ("games/software/TinyKart", "", 5);
   ]
 
@@ -191,6 +193,13 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyZelda", "slide", 370, "space:1,right:3-42,up:43-110,down:130-200,right:210-400");
     (* the first room, walked around, a bat fought *)
     ("games/software/TinyRogue", "level", 120, "space:2,right:10,right:14,right:18,right:22,right:26,right:30,up:40,up:44,up:48,left:60,left:64,down:80,down:84,down:88,down:92");
+    (* a fireball thrown (down, down-forward, forward, punch), the
+     * computer jumping it; later, trading blows *)
+    ("games/software/TinyStreetFighter", "fireball", 40, "space:1,s:3-8,d:6-12,f:11");
+    ("games/software/TinyStreetFighter", "fight", 150, "space:1,d:95-120,f:122,g:135");
+    (* the first wave on the street; the spin *)
+    ("games/software/TinyFinalFight", "wave", 160, "space:1,right:3-60,space:100,space:108,space:116,space:124,space:132");
+    ("games/software/TinyFinalFight", "spin", 206, "space:1,right:3-60,space:100,space:108,space:116,space:124,space:132,z:200");
     (* running from the boulder; through the hole, the boulder stopped
      * over it (too big to fall in) *)
     (* the grid, GO!; the first corner, the karts passed on the way

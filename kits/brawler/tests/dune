@@ -1,0 +1,12 @@
+; claude: the brawler kit's worked examples (Hitbox.mli, Frame_data.mli,
+; Stickman.mli), run by 'make test'
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   kit_brawler
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
+)

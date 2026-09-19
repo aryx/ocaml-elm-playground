@@ -754,6 +754,116 @@ let rogue_robot () =
   Alcotest.(check bool) "the Amulet, at least 3 times in 5" true (!won >= 3)
 
 (*****************************************************************************)
+(* TinyStreetFighter *)
+(*****************************************************************************)
+
+(* quarter_circle's worked examples *)
+let sf_quarter_circle () =
+  let open TinyStreetFighter in
+  let none = { back = false; forward = false; up = false; down = false } in
+  let d = { none with down = true } and df = { none with down = true; forward = true } and f = { none with forward = true } in
+  Alcotest.(check bool) "down, down-forward, forward" true (quarter_circle 100 [ (97, f); (93, df); (90, d) ]);
+  Alcotest.(check bool) "forward then down" false (quarter_circle 100 [ (97, d); (93, df); (90, f) ]);
+  Alcotest.(check bool) "too long ago" false (quarter_circle 100 [ (97, f); (93, df); (70, d) ])
+
+(* the motion, frame by frame, down, down-forward, forward, and punch:
+ * a fireball's startup *)
+let sf_fireball () =
+  let open TinyStreetFighter in
+  let none = { back = false; forward = false; up = false; down = false } in
+  let inputs =
+    List.map (fun d -> { dir = d; punch = false; kick = false }) [ { none with down = true }; { none with down = true; forward = true }; { none with forward = true } ]
+    @ [ { dir = { none with forward = true }; punch = true; kick = false } ]
+  in
+  let f, _ = List.fold_left (fun (f, n) i -> (step_fighter n i f, n + 1)) (new_fighter 0. 1. 0, 1) inputs in
+  Alcotest.(check bool) "a fireball" true (match f.state with Attacking (Fireball, _) -> true | _ -> false)
+
+(* the blocks: a kick, blocked holding back; a low kick hits a standing
+ * guard, not a crouching one; a jump kick the other way round *)
+let sf_blocks () =
+  let open TinyStreetFighter in
+  let none = { back = false; forward = false; up = false; down = false } in
+  let back = { dir = { none with back = true }; punch = false; kick = false } and back_down = { dir = { none with back = true; down = true }; punch = false; kick = false } in
+  let attacker a y = { (new_fighter 0. 1. 0) with state = Attacking (a, (move_of a).startup + 1); y } in
+  let defender = new_fighter 120. (-1.) 0 in
+  let result a y i = let _, d, _ = strike (attacker a y) defender i in match d.state with Blocking _ -> `Blocked | Hit _ -> `Hit | _ -> `Missed in
+  Alcotest.(check bool) "kick, standing guard" true (result Kick 0. back = `Blocked);
+  Alcotest.(check bool) "low kick, standing guard" true (result Low_kick 0. back = `Hit);
+  Alcotest.(check bool) "low kick, crouching guard" true (result Low_kick 0. back_down = `Blocked);
+  Alcotest.(check bool) "jump kick, crouching guard" true (result Jump_kick 120. back_down = `Hit);
+  Alcotest.(check bool) "jump kick, standing guard" true (result Jump_kick 120. back = `Blocked)
+
+(* the computer knocks out a player who does nothing *)
+let sf_computer () =
+  let open TinyStreetFighter in
+  let g = ref (new_game false) and i = ref 0 in
+  while !g.over = 0 && !i < 60 * 60 do
+    incr i;
+    g := update_fight (computer !i) (Scene2d.start (Fight !g)) !g
+  done;
+  Alcotest.(check int) "knocked out" 0 !g.p1.hp;
+  Alcotest.(check bool) "the computer standing" true (!g.p2.hp > 0)
+
+(*****************************************************************************)
+(* TinyFinalFight *)
+(*****************************************************************************)
+
+(* the combo: three punches, each in the last one's recovery, on a thug
+ * on the player's line: knocked down; the same thug a little deeper in
+ * the street: missed *)
+let ff_combo () =
+  let open TinyFinalFight in
+  let p = new_player () in
+  let t = { (thug (p.x +. 70.) p.z false red) with wait = 999 } in
+  let run (t : fighter) =
+    let g = ref { (new_game ()) with player = p; thugs = [ t ]; wave = List.length waves; cam = 500. } in
+    for i = 1 to 40 do
+      let keyboard = { initial_computer.keyboard with kspace = List.mem i [ 1; 7; 13 ] } in
+      let s = Scene2d.update (computer ~keyboard i) (Scene2d.start (Street !g)) in
+      g := update_street (computer ~keyboard i) s !g
+    done;
+    List.hd !g.thugs
+  in
+  let t1 = run t in
+  Alcotest.(check bool) "knocked down" true (match t1.state with Knocked _ -> true | _ -> false);
+  Alcotest.(check int) "4 + 5 + 8" (24 - 17) t1.hp;
+  Alcotest.(check int) "off the line: untouched" 24 (run { t with z = t.z +. 30. }).hp
+
+(* a robot clears the street: to the nearest thug's line, at arm's
+ * length, punching every 6 frames (the combo), spinning when two are
+ * near; walking on when the wave is down *)
+let ff_robot () =
+  let open TinyFinalFight in
+  let s = ref initial_model and i = ref 0 and cleared_ = ref false in
+  let k = initial_computer.keyboard in
+  while !i < 60 * 180 && not !cleared_ do
+    incr i;
+    let keyboard =
+      match !s.scene with
+      | Street g -> (
+          let p = g.player in
+          let alive = List.filter (fun t -> t.hp > 0) g.thugs in
+          match List.sort (fun a b -> compare (Float.abs (a.x -. p.x) +. Float.abs (a.z -. p.z)) (Float.abs (b.x -. p.x) +. Float.abs (b.z -. p.z))) alive with
+          | [] -> { k with kright = true }
+          | t :: _ ->
+              let near = List.filter (fun t -> Float.abs (t.x -. p.x) < 110. && Float.abs (t.z -. p.z) < 18.) alive in
+              if List.length near >= 2 && p.hp > 30 then { k with keys = (if !i mod 10 = 0 then Set_.singleton "z" else Set_.empty) }
+              else
+                let side = if t.x > p.x then 1. else -1. in
+                let reach = if t.big then 95. else 65. in
+                let tx = t.x -. (side *. reach) in
+                let dz = t.z -. p.z and dx = tx -. p.x in
+                if Float.abs dz > 4. || Float.abs dx > 6. then { k with kup = dz > 4.; kdown = dz < -4.; kright = dx > 6.; kleft = dx < -6. }
+                else if p.facing <> side then (if side > 0. then { k with kright = true } else { k with kleft = true })
+                else { k with kspace = !i mod 6 = 0 })
+      | Cleared _ -> cleared_ := true; k
+      | _ -> { k with kspace = !i = 1 }
+    in
+    s := update (computer ~keyboard !i) !s
+  done;
+  Alcotest.(check bool) "street cleared" true !cleared_
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -808,4 +918,10 @@ let tests =
       t "TinyZelda, a robot's quest" zelda_robot;
       t "TinyRogue, the dungeons connected" rogue_connected;
       t "TinyRogue, a robot gets the Amulet" rogue_robot;
+      t "TinyStreetFighter, the quarter circle" sf_quarter_circle;
+      t "TinyStreetFighter, blocking high and low" sf_blocks;
+      t "TinyStreetFighter, the fireball's motion" sf_fireball;
+      t "TinyStreetFighter, the computer fights" sf_computer;
+      t "TinyFinalFight, the combo, on the line" ff_combo;
+      t "TinyFinalFight, a robot clears the street" ff_robot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]
