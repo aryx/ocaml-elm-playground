@@ -239,6 +239,14 @@ let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_st
   in
   { bodies = Array.to_list bodies; memory }
 
+let went_through (fast : body) (b : body) : bool =
+  let path = ((fast.x -. (fast.vx *. tick), fast.y -. (fast.vy *. tick)), (fast.x, fast.y)) in
+  hitboxes b
+  |> List.exists (function
+       | Shape.Polygon_at corners -> Collide.segment_polygon path corners <> None
+       | Shape.Circle_at (c, r) -> Collide.segment_circle path (c, r) <> None
+       | Shape.Point_at p -> Collide.segment_circle path (p, 0.) <> None)
+
 let debug (b : body) : shape =
   let green = rgb 0 200 0 in
   let hitbox = function

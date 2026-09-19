@@ -144,6 +144,19 @@ let test_pulled_to () =
    * half a step (1/120 s, at 182 px/s: 1.5 pixels) *)
   Alcotest.(check (float 2.)) "a spring's swing, x = 100 cos (2 t)" (100. *. cos 2.) after.x
 
+(* a bullet at 1500 px/s, 25 px a tick, over a 10-pixel wall:
+ * tunneling, and the swept test catching it *)
+let test_went_through () =
+  let wall = body (rectangle white 10. 100.) and bullet = body (circle white 2.) |> at (-12.) 0. |> moving 1500. 0. in
+  let after = step bullet in
+  Alcotest.(check (float 1e-9)) "25 pixels in a tick" 13. after.x;
+  Alcotest.(check bool) "not touching before" false (touching bullet wall);
+  Alcotest.(check bool) "... nor after" false (touching after wall);
+  Alcotest.(check bool) "but it went through" true (went_through after wall);
+  Alcotest.(check bool) "a tick later, not anymore" false (went_through (step after) wall);
+  let pinned = Particles.keep_out [ [ (0., 0.); (2., 0.); (2., 2.); (0., 2.) ] ] [| Particles.particle (1., 0.2) |] in
+  Alcotest.(check (float 1e-9)) "a particle pushed out of the ground, to its surface" 0. (snd pinned.(0).pos)
+
 (* bounce_all with each broad phase: the same bounces *)
 let test_broad_phase () =
   let balls =
@@ -177,4 +190,5 @@ let tests =
       t "bounce, bounce_off, bounce_all" test_bounce;
       t "bounce_all, the three broad phases" test_broad_phase;
       t "pulled_to, a spring to a point" test_pulled_to;
+      t "went_through: a bullet tunneling through a wall" test_went_through;
     ]

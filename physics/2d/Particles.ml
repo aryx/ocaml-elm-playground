@@ -47,6 +47,16 @@ let relax ~(iterations : int) (sticks : stick list) (particles : particle array)
   done;
   ps
 
+let keep_out ?(friction = 0.3) (polygons : Vec2.t list list) (particles : particle array) : particle array =
+  particles
+  |> Array.map (fun p ->
+         match List.find_opt (Collide.point_in_polygon p.pos) polygons with
+         | Some corners when not p.pinned ->
+             let pos = Collide.nearest_on_outline p.pos corners in
+             (* its velocity, pos - old, scaled by 1 - friction *)
+             { p with pos; old = Vec2.sub pos (Vec2.scale (1. -. friction) (Vec2.sub p.pos p.old)) }
+         | _ -> p)
+
 let rope ~(from : Vec2.t) ~(towards : Vec2.t) (n : int) : particle array * stick list =
   let at i = Vec2.add from (Vec2.scale (float_of_int i /. float_of_int (n - 1)) (Vec2.sub towards from)) in
   let length = Vec2.length (Vec2.sub towards from) /. float_of_int (n - 1) in

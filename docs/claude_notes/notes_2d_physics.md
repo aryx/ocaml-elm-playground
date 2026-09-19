@@ -416,7 +416,9 @@ step by step).
   testing the swept path (the segment from the old position to the
   new) instead of the position -- **continuous collision detection** --
   or making walls thick. Asteroid's bullets against small rocks need
-  the swept test.
+  the swept test. (Done: `Collide.segment_polygon` and
+  `segment_circle`, `Physics.went_through`; `games/TinySoldat.ml`'s
+  bullets, 25 pixels a tick.)
 - **Stiffness.** Very stiff springs, or very heavy things on very light
   ones, need tiny steps or implicit integrators (§5-6).
 

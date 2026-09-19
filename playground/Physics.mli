@@ -226,6 +226,14 @@ val bounce_all : ?broad_phase:Broadphase.method_ -> body list -> body list
  * three methods (examples/Marbles.ml) *)
 val broad_phase : Broadphase.method_ -> body list -> Broadphase.result
 
+(* [went_through fast b]: whether [fast], during its last [step] (from
+ * where it was a tick ago to where it is), went through [b] -- for
+ * things too fast for [touching]: a bullet at 1500 pixels per second
+ * moves 25 pixels a tick, and jumps over a 10-pixel wall without ever
+ * touching it (tunneling). Its path is tested instead of its position
+ * (physics/2d/Collide.mli's swept tests). *)
+val went_through : body -> body -> bool
+
 (* [debug b]: [b]'s hitboxes as translucent green shapes, and its
  * velocity as an arrow (a quarter of a second of motion): draw it over
  * the game to see what the physics sees *)

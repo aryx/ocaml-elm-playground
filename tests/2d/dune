@@ -35,5 +35,6 @@
    %{project_root}/examples/software/Pyramid.exe
    %{project_root}/games/software/TinySlingshot.exe
    %{project_root}/examples/software/Elastic.exe
+   %{project_root}/games/software/TinySoldat.exe
  )
 )

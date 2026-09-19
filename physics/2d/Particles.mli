@@ -64,6 +64,13 @@ val step : ?drag:float -> accel:Vec2.t -> dt:float -> particle array -> particle
  * length, [iterations] times over *)
 val relax : iterations:int -> stick list -> particle array -> particle array
 
+(* [keep_out ?friction polygons particles]: each free particle inside
+ * one of the (convex or not) [polygons] pushed back to its outline's
+ * nearest point: a ragdoll lying on the ground. Friction (0.3 by
+ * default) takes that much of its velocity away, by moving its old
+ * position towards the new one: a body landing slides, then stops. *)
+val keep_out : ?friction:float -> Vec2.t list list -> particle array -> particle array
+
 (* [rope ~from ~towards n]: [n] particles in a line, the first pinned,
  * each stuck to the next *)
 val rope : from:Vec2.t -> towards:Vec2.t -> int -> particle array * stick list

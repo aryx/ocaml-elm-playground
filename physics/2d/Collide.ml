@@ -138,6 +138,24 @@ let circle_convex ((c, r) : Vec2.t * float) (corners : Vec2.t list) : Contact.t 
     Some { normal; depth = r -. d; point = q }
   else None
 
+(* the swept tests, for things too fast to be caught overlapping *)
+
+let segment_polygon ((a, b) : Vec2.t * Vec2.t) (corners : Vec2.t list) : Vec2.t option =
+  if point_in_polygon a corners then Some a
+  else
+    (* where it crosses the outline, the nearest to a *)
+    List.filter_map (crossing (a, b)) (Shape.edges corners)
+    |> List.fold_left
+         (fun best p ->
+           match best with
+           | Some q when Vec2.length (Vec2.sub q a) <= Vec2.length (Vec2.sub p a) -> best
+           | _ -> Some p)
+         None
+
+let segment_circle ((a, b) : Vec2.t * Vec2.t) ((c, r) : Vec2.t * float) : Vec2.t option =
+  let p = nearest_on_segment c (a, b) in
+  if Vec2.length (Vec2.sub p c) <= r then Some p else None
+
 (*****************************************************************************)
 (* Any two hitboxes *)
 (*****************************************************************************)

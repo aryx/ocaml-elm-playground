@@ -398,7 +398,10 @@ seen from the side, soldiers with jet boots, dozens of weapons,
 polygon maps, ragdoll deaths, bots, and online play -- the genre's
 peak, and a favorite of this project's author.
 
-- **Toy**: TinySoldat, the capstone of the physics plan: soldiers as
+- **Toy**: TinySoldat (DONE: `games/TinySoldat.ml`, one screen, you
+  against two bots, first to 5 kills; Opensoldat, the open-sourced
+  Soldat, is MIT: https://github.com/Soldat/soldat), the capstone of
+  the physics plan: soldiers as
   bodies running, jumping and flying on jets (`thrust` against `fall`,
   with fuel), colliding with a polygon map (the physics plan's phases
   4-5), bullets fast enough to need its anti-tunneling (a swept test,

@@ -400,6 +400,27 @@ Each small, each showing one idea, each deterministic (golden frames):
   frames of it at rest, kicked, and exploding. Left: quadratic drag,
   N-body gravitation between bodies (Force's is towards a fixed
   center), cloth.
+- **TinySoldat, DONE** (`games/TinySoldat.ml`, `plan_games.md`
+  section 17), the capstone: a one-screen map of convex polygons
+  (hills, walls, platforms, a bunker) as immovable bodies, with 3
+  soldiers (you and two bots) as `upright` boxes in a `Physics.world`,
+  run by setting their speed and flown on jets (`push` against
+  gravity, fuel refilled on the ground). The engine got the swept
+  tests: `Collide.segment_polygon`, `segment_circle` (and
+  `nearest_on_outline` exposed), `Physics.went_through` (a body's path
+  over its last tick), tested on the tunneling example (a bullet at
+  1500 px/s crossing a 10-pixel wall between two ticks, touching it at
+  neither); `Particles.keep_out` (particles pushed out of polygons,
+  with friction). The bullets fly 25 px a tick, tested by
+  `went_through`; the grenades are bouncy bodies in the world, their
+  blast pushing soldiers and ragdolls; the dead become ragdolls of 9
+  particles and 9 sticks, lying on the map, and respawn after 2 s at
+  the spawn point farthest from the living. The bots: line of sight by
+  the same swept test against the map, an aim wobbling by a sine (no
+  Random), run, strafe, jump, jets, grenades at the hidden. Golden
+  frames: the title, the bots' fight (a ragdoll), the player's jets
+  and a grenade. The kit's parts (camera, weapons table, waypoints,
+  editor, network) left as exercises in its header.
 - **Phase 3, v1 DONE, differing from the sketch above** (by writing a
   game with it): `playground/Physics.mli`, a layer on top of the
   playground like `Camera2d` (in the `elm_playground` library, which

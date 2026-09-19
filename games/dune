@@ -17,6 +17,7 @@
     TinyPong
     TinyCameltry
     TinySlingshot
+    TinySoldat
   )
   (libraries
     elm_playground

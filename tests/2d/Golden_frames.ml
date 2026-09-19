@@ -65,6 +65,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinySlingshot", "", 5);
     (* a mass on a spring, a chain of springs, a rope of sticks *)
     ("examples/software/Elastic", "", 60);
+    ("games/software/TinySoldat", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -132,6 +133,10 @@ let scripted : Testutil_golden.scripted list =
      * exploding in 8 steps *)
     ("examples/software/Elastic", "kick", 60, "space:30");
     ("examples/software/Elastic", "stiff", 8, "x:2");
+    (* the bots' fight, GREEN's ragdoll tumbling; the player running,
+     * jumping, flying on the jets, shooting, a grenade, the blasts *)
+    ("games/software/TinySoldat", "bots", 260, "space:2");
+    ("games/software/TinySoldat", "jets", 130, "space:2,d:10-70,w:30,w:40-90,space:100-160,q:120");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

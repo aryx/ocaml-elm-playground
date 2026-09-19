@@ -109,6 +109,16 @@ let test_circle_convex_vs_general () =
       Alcotest.failf "circle (%g, %g) %g" (fst c) (snd c) r
   done
 
+(* Collide.mli's swept tests *)
+let test_swept () =
+  let sq = square 0. 0. 2. in
+  (match Collide.segment_polygon ((-1., 1.), (3., 1.)) sq with
+  | Some p -> Alcotest.check vec "enters at (0, 1)" (0., 1.) p
+  | None -> Alcotest.fail "crosses the square");
+  Alcotest.(check bool) "above it: misses" true (Collide.segment_polygon ((-1., 5.), (3., 5.)) sq = None);
+  Alcotest.(check bool) "starting inside: its start" true (Collide.segment_polygon ((1., 1.), (5., 5.)) sq = Some (1., 1.));
+  Alcotest.(check bool) "a circle on the way" true (Collide.segment_circle ((-5., 0.), (5., 0.)) ((0., 1.), 1.5) <> None)
+
 let tests =
   Testo.categorize "Collide"
     [
@@ -117,6 +127,7 @@ let tests =
       t "SAT, the worked example" test_sat;
       t "point in a concave polygon" test_point_in_polygon;
       t "segments" test_segments;
+      t "swept: a segment through a polygon, a circle" test_swept;
       t "circle and polygon" test_circle_polygon;
       t "SAT = the general test, 2000 random pairs" test_sat_vs_general;
       t "circle_convex = circle_polygon, 2000 random pairs" test_circle_convex_vs_general;

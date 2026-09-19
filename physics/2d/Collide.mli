@@ -85,6 +85,33 @@ val circle_polygon : Vec2.t * float -> Vec2.t list -> bool
  * the circle to the polygon *)
 val circle_convex : Vec2.t * float -> Vec2.t list -> Contact.t option
 
+(* [nearest_on_outline p corners]: the point of the polygon's outline
+ * nearest to [p]: where to push a point out of it (Particles.keep_out) *)
+val nearest_on_outline : Vec2.t -> Vec2.t list -> Vec2.t
+
+(* The swept tests. A bullet at 1500 pixels per second moves 25 pixels
+ * per step: a wall thinner than that can be jumped over between two
+ * steps, never seen overlapping -- tunneling (notes_2d_physics.md
+ * section 12):
+ *
+ *          step n        step n+1
+ *            o   |wall|    o          touching at neither step,
+ *            *---|----|--->*          but the path crossed the wall
+ *
+ * The fix, continuous collision detection's simplest form: test the
+ * path, the segment from the old position to the new one, not the
+ * position. Example: the square [0, 2] x [0, 2] and the segment from
+ * (-1, 1) to (3, 1): it enters at (0, 1); from (-1, 5) to (3, 5), it
+ * misses. *)
+
+(* [segment_polygon (a, b) corners]: where segment ab first enters the
+ * polygon ([a] if it starts inside), if it does *)
+val segment_polygon : Vec2.t * Vec2.t -> Vec2.t list -> Vec2.t option
+
+(* [segment_circle (a, b) (c, r)]: the segment's point nearest to the
+ * circle's center, if within it *)
+val segment_circle : Vec2.t * Vec2.t -> Vec2.t * float -> Vec2.t option
+
 (* for any two placed hitboxes *)
 
 (* do they overlap? (the bounding boxes first, then the exact test) *)
