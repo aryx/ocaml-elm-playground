@@ -227,7 +227,7 @@ let xpilot_intercept () =
  * still: 600 to the right; slack at 100, nothing *)
 let xpilot_rope () =
   let open TinyXpilot in
-  let ship = Physics.body ship_shape and ball = new_ball () in
+  let ship = Physics.body ship_shape and ball = (new_ball solo Red).ball in
   let fx, fy = rope_pull ship (ball |> Physics.at 120. 0.) in
   Alcotest.(check (pair (float 1e-9) (float 1e-9))) "stretched by 10" (600., 0.) (fx, fy);
   Alcotest.(check (pair (float 1e-9) (float 1e-9))) "slack" (0., 0.) (rope_pull ship (ball |> Physics.at 100. 0.))
@@ -236,14 +236,37 @@ let xpilot_rope () =
  * second, a jolt of 84; at 250, 350: above crash *)
 let xpilot_crash () =
   let open TinyXpilot in
-  let x, y = base in
+  let x, y = List.assoc Blue solo.bases in
   (* pointing up, its bottom 2 pixels into the floor *)
-  let ship vy = (new_ship ()).body |> Physics.at x (y -. 10.) |> Physics.moving 0. vy in
-  let _, soft = hit_walls (ship (-60.)) and _, hard = hit_walls (ship (-250.)) in
+  let ship vy = (new_ship solo Blue).body |> Physics.at x (y -. 10.) |> Physics.moving 0. vy in
+  let _, soft = hit_walls solo (ship (-60.)) and _, hard = hit_walls solo (ship (-250.)) in
   Alcotest.(check (float 1.)) "landing" 84. soft;
   Alcotest.(check bool) "fine" true (soft < crash);
   Alcotest.(check (float 1.)) "ramming" 350. hard;
   Alcotest.(check bool) "crashed" true (hard > crash)
+
+(* two players: the red ball set on the blue treasure box is a point for
+ * blue, and the ball goes back home *)
+let xpilot_duel_score () =
+  let open TinyXpilot in
+  let g = new_game 2 in
+  let x, y = List.assoc Blue g.lv.treasures in
+  let balls = List.map (fun b -> if b.owner = Red then { b with ball = b.ball |> Physics.at x (y +. h +. 10.) } else b) g.balls in
+  let g = update_game (computer 1) (Scene2d.start (Playing g)) { g with balls } in
+  Alcotest.(check (list int)) "scores" [ 1; 0 ] (List.map (fun (p : pilot) -> p.score) g.pilots);
+  let red = List.find (fun b -> b.owner = Red) g.balls in
+  Alcotest.(check (pair (float 1e-9) (float 1e-9))) "home" (List.assoc Red g.lv.homes) (red.ball.x, red.ball.y)
+
+(* red's shot on blue: blue explodes, unless its shield is up (s) *)
+let xpilot_duel_shot () =
+  let open TinyXpilot in
+  let g = new_game 2 in
+  let blue = (List.hd g.pilots).ship.body in
+  let shot = { shot = Physics.body (circle red 3.) |> Physics.at blue.x blue.y; ttl = 90 } in
+  let g = { g with pilots = List.map (fun (p : pilot) -> if p.team = Red then { p with shots = [ shot ] } else p) g.pilots } in
+  let after keyboard = List.hd (update_game (computer ~keyboard 1) (Scene2d.start (Playing g)) g).pilots in
+  Alcotest.(check bool) "exploded" true ((after initial_computer.keyboard).ship.dead <> None);
+  Alcotest.(check bool) "shielded" true ((after { initial_computer.keyboard with ks = true }).ship.dead = None)
 
 (* A robot pilot, through the keyboard: it wants to go to a tile's
  * center, at up to 150 pixels per second; the acceleration it needs
@@ -252,8 +275,9 @@ let xpilot_crash () =
  * cannon's shot comes near *)
 let xpilot_robot (g : TinyXpilot.game) ((col, row) : int * int) : keyboard =
   let open TinyXpilot in
-  let s = g.ship.body in
-  let tx, ty = Tilemap.center map col row in
+  let p = List.hd g.pilots in
+  let s = p.ship.body in
+  let tx, ty = Tilemap.center g.lv.map col row in
   let dx = tx -. s.x and dy = ty -. s.y in
   let d = Float.hypot dx dy in
   let v = Float.min 150. (1.2 *. d) in
@@ -286,19 +310,20 @@ let xpilot_ball () =
     let keyboard =
       match !s.scene with
       | Playing g -> (
-          if g.deaths > !deaths then (todo := there; going_back := false);
-          deaths := g.deaths;
+          let p = List.hd g.pilots in
+          if p.deaths > !deaths then (todo := there; going_back := false);
+          deaths := p.deaths;
           (match !todo with
           | (c, r) :: rest ->
-              let tx, ty = Tilemap.center map c r in
-              if Float.hypot (tx -. g.ship.body.x) (ty -. g.ship.body.y) < 30. && rest <> [] && ((c, r) <> refuel || g.ship.fuel > 145.) then todo := rest
+              let tx, ty = Tilemap.center g.lv.map c r in
+              if Float.hypot (tx -. p.ship.body.x) (ty -. p.ship.body.y) < 30. && rest <> [] && ((c, r) <> refuel || p.ship.fuel > 145.) then todo := rest
           | [] -> ());
-          if g.connected && not !going_back then (going_back := true; todo := back);
+          if List.exists (fun b -> b.holder = Some Blue) g.balls && not !going_back then (going_back := true; todo := back);
           match !todo with p :: _ -> xpilot_robot g p | [] -> initial_computer.keyboard)
       | _ -> { initial_computer.keyboard with kspace = !i = 1 }
     in
     s := update (computer ~keyboard !i) !s;
-    match !s.scene with Won g | Playing g -> delivered := g.delivered | Title -> ()
+    match !s.scene with Won g | Playing g -> delivered := (List.hd g.pilots).score | Title -> ()
   done;
   Alcotest.(check int) "delivered" 1 !delivered;
   Alcotest.(check int) "deaths" 0 !deaths
@@ -339,4 +364,6 @@ let tests =
       t "TinyXpilot, the rope pulls when stretched" xpilot_rope;
       t "TinyXpilot, landing vs. crashing" xpilot_crash;
       t "TinyXpilot, a robot brings a ball home" xpilot_ball;
+      t "TinyXpilot, two players: a ball home" xpilot_duel_score;
+      t "TinyXpilot, two players: a shot, a shield" xpilot_duel_shot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

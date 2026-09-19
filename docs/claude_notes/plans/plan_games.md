@@ -465,7 +465,10 @@ ball game). (Names and dates from memory, to check.)
   the same force on the ship and the ball, opposite (Newton's third
   law, by hand with `Physics.push`); crashing when a bounce changes
   the velocity by too much; cannons aiming ahead (the intercept
-  quadratic); a radar. A robot pilot in `tests/games/` wins it.
+  quadratic); a radar. A robot pilot in `tests/games/` wins it. Two
+  players on one keyboard, on a mirrored map, each stealing the other's
+  ball, one camera framing both ships (a split screen would need
+  clipping, which the playground lacks).
 - **Kit**: none; `Physics`, `Tilemap`, `Camera2d`.
 
 ### Later, or never

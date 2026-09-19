@@ -170,6 +170,9 @@ let scripted : Testutil_golden.scripted list =
     (* a take-off from the base, a turn, two shots; by the fuel station,
      * its beam refueling the ship, the shield up *)
     ("games/software/TinyXpilot", "refuel", 150, "space:1,up:5-40,right:22-28,up:60-80,space:100,space:115,down:140-150");
+    (* two players: both take off, turn, fire; the camera zoomed out to
+     * frame them both, blue's shield up *)
+    ("games/software/TinyXpilot", "duel", 200, "2:1,w:5-60,d:20-26,up:5-60,left:20-26,w:100-110,up:100-110,space:120,space:140,return:130,s:190-200");
     (* a serve, the paddle moved to where the ball comes down each time
      * (aiming off-center, so the ball goes to the side): 15 seconds,
      * 11 points, the ball sped up *)
