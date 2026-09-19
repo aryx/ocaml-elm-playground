@@ -158,7 +158,10 @@ let view (computer : computer) (m : model) : camera * shape3d list =
   let time = float_of_int (Option.value m.exited ~default:m.frames) /. 60. in
   let stat i str = hud (text (rgb 200 30 30) 2.5 str |> move (screen.left +. 210.) (screen.bottom +. 250. -. (float_of_int i *. 45.))) in
   let huds =
-    [ stat 0 (Printf.sprintf "TIME %d:%04.1f" (int_of_float time / 60) (Float.rem time 60.));
+    (* whole seconds, unlike TinyDoom's tenths: on the OpenGL backend,
+     * every change of the HUD's text is rendered on the CPU (see its
+     * draw_hud), a hitch 10 times a second with tenths *)
+    [ stat 0 (Printf.sprintf "TIME %d:%02d" (int_of_float time / 60) (int_of_float time mod 60));
       stat 1 (Printf.sprintf "POLYGONS DRAWN %d / %d" (List.length polygons) (List.length polygons));
       stat 2 (Printf.sprintf "SECTOR %d" (Sectors.sector_at level m.x m.y)) ]
     @ List.map hud (view_minimap screen m)

@@ -117,7 +117,10 @@ The OpenGL backend (`examples3d/opengl/`, `games3d/opengl/`) has `m`
 as well, and `o`: its optimization, keeping the GPU buffers of
 `Playground3d.cached3d` shapes from frame to frame (try
 `games3d/opengl/Minecraft3d.exe` or `examples3d/opengl/CachedGrid3d.exe`
-with `-debug`, which logs the draw calls and vertices uploaded).
+with `-debug`, which logs the draw calls and vertices uploaded), and `u`:
+the HUD off, to tell whether a slow frame is the scene's fault or the
+HUD's, which this backend draws on the CPU (with `-debug`, the log
+also lists the HUD boxes redrawn each frame).
 
 The WebGL pages take the same flags as URL parameters, since a page has
 no command line: `?debug-keys` for `m`, `b`, `i`, `f` and `o` (their

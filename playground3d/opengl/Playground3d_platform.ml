@@ -189,6 +189,11 @@ let smooth_textures = ref true
  * picture. *)
 let use_cache = ref true
 
+(* claude: "u": draw the HUD (Playground3d.hud) or not, to tell at once
+ * whether a slow frame is the scene's fault or the HUD's (drawn on the
+ * CPU, see draw_hud). *)
+let show_hud = ref true
+
 (*****************************************************************************)
 (* Textures *)
 (*****************************************************************************)
@@ -485,9 +490,35 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
        * million. *)
       let old = Option.value !hud_in_texture ~default:[] in
       let changed = List.filter (fun s -> not (List.mem s old)) shapes @ List.filter (fun s -> not (List.mem s shapes)) old in
-      (match Shape_render_software.pixel_bounds ~width:sx ~height:sy changed with
-      | None -> ()
-      | Some (x0, y0, x1, y1) ->
+      (* claude: optimization, the same bugfix again: one box per place
+       * that changed, not one box around them all. A HUD changing in
+       * two far corners every frame (games3d/TinyDoom3d's timer on the
+       * left, its minimap's player on the right) made that box most of
+       * the window's bottom: 40-75ms every few frames, felt as a choppy
+       * walk while the fps in the title stayed high. Each changed
+       * shape's box, merged with the others it overlaps (two boxes
+       * overlapping would redraw their shared pixels twice, and the
+       * shapes in them once per box). The simple version, one box:
+       *
+       *   (match Shape_render_software.pixel_bounds ~width:sx ~height:sy changed with
+       *   | None -> ()
+       *   | Some (x0, y0, x1, y1) -> ... (the same redraw of the box as below))
+       *)
+      let overlap (a0, b0, a1, b1) (c0, d0, c1, d1) = a0 < c1 && c0 < a1 && b0 < d1 && d0 < b1 in
+      let union (a0, b0, a1, b1) (c0, d0, c1, d1) = (min a0 c0, min b0 d0, max a1 c1, max b1 d1) in
+      let rec merge boxes =
+        match boxes with
+        | [] -> []
+        | b :: rest -> (
+            match List.partition (overlap b) rest with
+            | [], _ -> b :: merge rest
+            | hits, others -> merge (List.fold_left union b hits :: others))
+      in
+      let boxes = merge (List.filter_map (fun s -> Shape_render_software.pixel_bounds ~width:sx ~height:sy [ s ]) changed) in
+      Logs.debug (fun m ->
+          m "hud: %s redrawn" (String.concat ", " (List.map (fun (x0, y0, x1, y1) -> Printf.sprintf "%dx%d at (%d, %d)" (x1 - x0) (y1 - y0) x0 y0) boxes)));
+      boxes
+      |> List.iter (fun (x0, y0, x1, y1) ->
           let w = x1 - x0 and h = y1 - y0 in
           let touching (s : Playground.shape) =
             match Shape_render_software.pixel_bounds ~width:sx ~height:sy [ s ] with
@@ -528,7 +559,8 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     if str = "m" then cycle_shading ();
     if str = "b" then backface_culling := not !backface_culling;
     if str = "i" then smooth_textures := not !smooth_textures;
-    if str = "o" then use_cache := not !use_cache
+    if str = "o" then use_cache := not !use_cache;
+    if str = "u" then show_hud := not !show_hud
   in
   let use_material (material : Gpu_scene.material) : unit =
     match material with
@@ -614,7 +646,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     List.rev !cached
     |> List.iter (fun (c : Playground3d.cached) -> draw_mesh (Mesh_cache.find_or_build meshes c.id (build_mesh c)));
     Mesh_cache.sweep meshes ~free:free_mesh;
-    (match Playground3d.collect_hud_shapes (Playground3d.group3d shapes) with
+    (match if !show_hud then Playground3d.collect_hud_shapes (Playground3d.group3d shapes) else [] with
     | [] -> ()
     | hud_shapes -> draw_hud hud_shapes);
     let s = Mesh_cache.stats meshes in
