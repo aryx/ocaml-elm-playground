@@ -40,8 +40,8 @@
  * ball's radius on each side).
  *
  * Left as exercises: a winning score, sounds (plan_audio_teaching.md),
- * a spinning ball (rotation, phase 7 of plan_physics_teaching.md: then
- * the ball's spin would curve its bounces too).
+ * a spinning ball (the ball isn't [upright]: then its spin, drawn,
+ * would change its next bounces too, with rough walls).
  *)
 open Playground
 open Basics (* float arithmetics *)
@@ -59,7 +59,9 @@ let bottom = Physics.body (white_rect 900. 20.) |> Physics.at 0. (-310.) |> Phys
 (* the paddles move by themselves (the players'), not by collisions *)
 let paddle x = Physics.body (white_rect 20. 120.) |> Physics.at x 0. |> Physics.immovable |> Physics.bouncy 1.05 |> Physics.rough 0.5
 
-let ball = Physics.body (circle white 12.) |> Physics.bouncy 1. |> Physics.rough 0.5
+(* upright: a real ball would also start spinning off the moving
+ * paddle, taking two thirds of the drag into its spin (try without) *)
+let ball = Physics.body (circle white 12.) |> Physics.upright |> Physics.bouncy 1. |> Physics.rough 0.5
 
 type game = {
   ball : Physics.body;

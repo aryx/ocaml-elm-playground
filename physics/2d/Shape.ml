@@ -41,6 +41,24 @@ let area (t : t) : float =
   | Box (w, h) -> w *. h
   | Polygon corners -> Float.abs (List.fold_left (fun acc (a, b) -> acc +. Vec2.cross a b) 0. (edges corners)) /. 2.
 
+let moments (p : placed) : float * float =
+  match p with
+  | Point_at _ -> (0., 0.)
+  | Circle_at (c, r) ->
+      let a = Float.pi *. r *. r in
+      (a, (a *. r *. r /. 2.) +. (a *. Vec2.dot c c))
+  | Polygon_at corners ->
+      (* each edge (p, q) and (0, 0) make a triangle, of signed area
+       * (p x q) / 2 and second moment (p x q) (p.p + p.q + q.q) / 12 *)
+      let (a, j) =
+        List.fold_left
+          (fun (a, j) (p, q) ->
+            let c = Vec2.cross p q in
+            (a +. (c /. 2.), j +. (c *. (Vec2.dot p p +. Vec2.dot p q +. Vec2.dot q q) /. 12.)))
+          (0., 0.) (edges corners)
+      in
+      (Float.abs a, Float.abs j)
+
 let bounds (p : placed) : Vec2.t * Vec2.t =
   match p with
   | Point_at v -> (v, v)

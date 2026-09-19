@@ -506,6 +506,38 @@ Each small, each showing one idea, each deterministic (golden frames):
   is the win (10.2 -> 1.6 ms for 300, 107.6 -> 8.7 for 1000). Left:
   the insertion sort of the previous order (sort and sweep's temporal
   coherence), trees.
+- **Phase 7, rotation, DONE**: `Body` got `spin` (radians per second)
+  and `inertia` (infinite by default: the earlier phases' bodies and
+  tests unchanged), `Body.point_velocity`; `Energy.kinetic` counts the
+  spin's energy, `Energy.angular_momentum`; `Shape.moments` (area and
+  polar second moment around the center: polygons by triangles,
+  circles with the parallel axis theorem); `Collide.sat`'s contact
+  point became the middle of the overlap region (its corners: each
+  polygon's corners inside the other, and the edges' crossings), where
+  it was the second polygon's deepest corner -- a floor's far corner
+  for a box on the floor, a 500-pixel lever arm; `Resolve` pushes at
+  the contact point: the relative velocity of the touching points, the
+  (r x n)^2 / I terms, the torques, for friction too. Tests: the
+  `.mli`'s ball into the end of a stick (j = 0.4, the stick at 0.4 and
+  1.2 rad/s, the energy kept), a sliding disk starting to roll at 2/3
+  of its speed, 1000 random collisions with spins and off-center
+  points (momentum and angular momentum conserved, energy never
+  created, kept with e = 1), the moments (disk, box, a moved disk), the
+  overlap's middle. In the API, bodies turn by default, their inertia
+  from their shape's hitboxes and mass (not stored: computed at each
+  bounce), `upright` to never turn (TinyPong's ball keeps its gameplay
+  with it). `examples/Boxes.ml`: boxes landing on corners and tipping
+  over, tumbling down a rough ramp, balls rolling down it; `u` makes
+  everything upright (the boxes balanced on corners, all stuck on the
+  ramp: static friction, tan 25 = 0.47 < 0.69). Golden frames: Boxes,
+  Boxes_upright; Bounce and Marbles moved (the frictionless balls
+  don't spin, but a center-line lever arm is 1e-16, not 0, and a pile
+  amplifies the last bits). Then **TinyCameltry** (`plan_games.md`
+  section 18), the phase's game, the user's pick after Rolling-Moon: a
+  maze turned around a rolling moon. Left: one contact point for a
+  resting edge (two, clipped, with phase 8), the body's center taken
+  as its center of mass (a group off-center turns around the wrong
+  point).
 
 ## Verification
 

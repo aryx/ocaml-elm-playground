@@ -61,7 +61,20 @@ val segments_cross : Vec2.t * Vec2.t -> Vec2.t * Vec2.t -> bool
 (* any two polygons, convex or not: an edge crossing, or one inside *)
 val polygons_touch : Vec2.t list -> Vec2.t list -> bool
 
-(* two convex polygons: the separating axis theorem, with the contact *)
+(* two convex polygons: the separating axis theorem, with the contact.
+ * Its point is the middle of the overlap region (the average of its
+ * corners: the corners of each polygon inside the other, and where
+ * their edges cross), where the rotation's lever arms start (Resolve):
+ * a box landing on a corner is pushed at that corner, and tips; landing
+ * flat, at the middle of its bottom edge, and doesn't.
+ *
+ *      +--------+
+ *      |  box   |
+ *   ===x===*====x=====   floor: the overlap's corners (x) and
+ *      +--------+           their middle (star), the contact point
+ *
+ * (Box2D keeps two points for an edge, clipping one polygon's edge
+ * against the other's: steadier stacks, the plan's phase 8.) *)
 val sat : Vec2.t list -> Vec2.t list -> Contact.t option
 
 (* a circle and a polygon (convex or not): the center inside, or an

@@ -56,6 +56,7 @@ type body = {
   mass : number;          (* how hard it is to push, 1 by default *)
   bounciness : number;    (* how it bounces, 0 (clay) by default *)
   friction : number;      (* how it grips what it slides on, 0 by default *)
+  upright : bool;         (* true: collisions never turn it (false by default) *)
   ax : number;            (* what pushes it until the next [step]: *)
   ay : number;            (*   accelerations, set by fall, push, ... *)
 }
@@ -106,6 +107,15 @@ val rough : number -> body -> body
 (* [immovable b]: nothing it collides with moves it (an infinite mass):
  * walls, the floor, a paddle the game moves itself *)
 val immovable : body -> body
+
+(* [upright b]: collisions never make it turn (an infinite moment of
+ * inertia): a platformer's hero, who shouldn't tip over on a ledge.
+ * Otherwise a body hit off its center spins, like a real one: a box
+ * landing on a corner tips over, a ball sliding on a rough floor
+ * starts rolling. How hard it is to spin (its moment of inertia) comes
+ * from its shape and mass: a ring of mass at the edge spins harder
+ * than the same mass at the center. [turn] still turns it. *)
+val upright : body -> body
 
 (* {1 What pushes it (until the next step)} *)
 
@@ -174,7 +184,8 @@ val touching : body -> body -> bool
 
 (* [bounce a b]: if they touch, [a] and [b] bouncing off each other --
  * their velocities changed at once, like billiard balls, heavier
- * bodies moving less, and pushed apart so they don't overlap anymore;
+ * bodies moving less, and spinning when hit off their center (unless
+ * [upright]), and pushed apart so they don't overlap anymore;
  * otherwise [a] and [b] unchanged. After [step]:
  *   let (ball1, ball2) = bounce (step ball1) (step ball2)
  * The total momentum (mass times velocity) is the same after; the

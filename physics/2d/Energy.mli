@@ -14,11 +14,18 @@
  * Example: a mass of 2 at speed 3 has a kinetic energy of 2 * 3^2 / 2 =
  * 9 and a momentum of 6. *)
 
-(* m |vel|^2 / 2 *)
+(* m |vel|^2 / 2, plus I spin^2 / 2 for a spinning body: a wheel
+ * spinning in place has energy too *)
 val kinetic : Body.t -> float
 
 (* m vel *)
 val momentum : Body.t -> Vec2.t
+
+(* the angular momentum around [around]: m (r x vel), r from [around]
+ * to the body, plus I spin -- conserved by collisions too, the
+ * rotational twin of momentum. Example: a mass of 1 at (0, 2) moving
+ * at (3, 0), around (0, 0): -6 (it goes clockwise around the origin) *)
+val angular_momentum : around:Vec2.t -> Body.t -> float
 
 (* The potential energies of Force's forces, so that kinetic + potential
  * is constant under that force: *)

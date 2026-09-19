@@ -421,7 +421,9 @@ pushes the body, and `step` (§4: one tick of semi-implicit Euler)
 moves it; `touching` (§8) tells whether two bodies overlap, their
 hitboxes read from their shapes (`debug` draws them), and `bounce`
 (§10) makes them bounce off each other (`bouncy`, `rough`,
-`immovable` for walls; `examples/Bounce.ml`, `games/TinyPong.ml`);
+`immovable` for walls; `examples/Bounce.ml`, `games/TinyPong.ml`),
+spinning when hit off center (§11; `upright` to never turn:
+`examples/Boxes.ml`, and the rolling moon of `games/TinyCameltry.ml`);
 planned: a step for many bodies at once (§9). `games/TinyWorms.ml`, an artillery game, was
 its first user (a shell `launched`, then `fall`, `push` for the wind,
 `step`), `games/TinySpacewar.ml` its second (ships and torpedoes

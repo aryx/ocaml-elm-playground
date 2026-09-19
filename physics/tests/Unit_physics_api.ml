@@ -110,13 +110,18 @@ let test_bounce () =
   Alcotest.(check (float 1e-9)) "... pushed back on the floor" 0. clay.y;
   Alcotest.(check (float 1e-9)) "... still sliding (no friction)" 30. clay.vx;
   Alcotest.(check (float 1e-9)) "a superball: back up as fast" 200. (falling |> bouncy 1. |> bounce_off floor).vy;
-  let rubber = falling |> rough 1. |> bounce_off (floor |> rough 1.) in
-  Alcotest.(check (float 1e-9)) "rubber on rubber: the sliding stops" 0. rubber.vx;
+  let rubber = falling |> upright |> rough 1. |> bounce_off (floor |> rough 1.) in
+  Alcotest.(check (float 1e-9)) "rubber on rubber, upright: the sliding stops" 0. rubber.vx;
+  (* free to turn, it rolls instead: slower, spinning clockwise, its
+   * bottom point (8 below its center, 2 in the floor) not sliding *)
+  let rolling = falling |> rough 1. |> bounce_off (floor |> rough 1.) in
+  Alcotest.(check bool) "rubber on rubber: slower" true (rolling.vx > 0. && rolling.vx < 30.);
+  Alcotest.(check (float 1e-9)) "... rolling: its bottom still" 0. (rolling.vx +. (rolling.spin *. Float.pi /. 180. *. 8.));
   (* TinyPong's paddle: moving up at 600, bumper 1.05, rough 0.5; the
    * ball 2 pixels into it at 450: j = 2.05 * 450 = 922.5, and friction
    * gives the ball at most 0.5 j of the paddle's 600 *)
   let paddle = body (rectangle white 20. 120.) |> immovable |> bouncy 1.05 |> rough 0.5 |> moving 0. 600. in
-  let hit = body (circle white 12.) |> bouncy 1. |> rough 0.5 |> at (-20.) 0. |> moving 450. 0. |> bounce_off paddle in
+  let hit = body (circle white 12.) |> upright |> bouncy 1. |> rough 0.5 |> at (-20.) 0. |> moving 450. 0. |> bounce_off paddle in
   Alcotest.(check (float 1e-9)) "back 5% faster" (-472.5) hit.vx;
   Alcotest.(check (float 1e-9)) "dragged up by the paddle" 461.25 hit.vy;
   (* a heavy ball barely slowed by a light one *)

@@ -48,6 +48,18 @@ val edges : Vec2.t list -> (Vec2.t * Vec2.t) list
  * area 8. *)
 val area : t -> float
 
+(* [moments h]: the area of a hitbox and its polar second moment
+ * around (0, 0) (the sum of r^2 over its area, r the distance to
+ * (0, 0)), for placing it around its body's center: the moment of
+ * inertia of a body of mass m made of hitboxes h1, h2, ... is m (J1 +
+ * J2 + ...) / (A1 + A2 + ...), its mass spread evenly. A polygon's, by
+ * the triangles from (0, 0) to each edge (like the shoelace formula);
+ * a circle's, pi r^4 / 2 at its center, plus A d^2 away from it (the
+ * parallel axis theorem, Huygens-Steiner). Examples: a disk of radius
+ * r gives I = m r^2 / 2; a w x h box, m (w^2 + h^2) / 12 (a 4 x 2 box
+ * of mass 3: 5) *)
+val moments : placed -> float * float
+
 (* the axis-aligned bounding box, (min corner, max corner): the cheap
  * test before the exact ones *)
 val bounds : placed -> Vec2.t * Vec2.t

@@ -23,12 +23,13 @@ type body = {
   mass : number;
   bounciness : number;
   friction : number;
+  upright : bool;
   ax : number;
   ay : number;
 }
 
 let body (shape : shape) : body =
-  { shape; x = 0.; y = 0.; vx = 0.; vy = 0.; angle = 0.; spin = 0.; mass = 1.; bounciness = 0.; friction = 0.; ax = 0.; ay = 0. }
+  { shape; x = 0.; y = 0.; vx = 0.; vy = 0.; angle = 0.; spin = 0.; mass = 1.; bounciness = 0.; friction = 0.; upright = false; ax = 0.; ay = 0. }
 
 let at x y (b : body) : body = { b with x; y }
 let moving vx vy (b : body) : body = { b with vx; vy }
@@ -53,13 +54,7 @@ let heavy mass (b : body) : body = { b with mass }
 let bouncy bounciness (b : body) : body = { b with bounciness }
 let rough friction (b : body) : body = { b with friction }
 let immovable (b : body) : body = { b with mass = infinity }
-
-(* to and from the engine's bodies *)
-let state (b : body) : Body.t = Body.make ~vel:(b.vx, b.vy) ~mass:b.mass (b.x, b.y)
-
-let with_state (s : Body.t) (b : body) : body =
-  let (x, y) = s.pos and (vx, vy) = s.vel in
-  { b with x; y; vx; vy }
+let upright (b : body) : body = { b with upright = true }
 
 (* the accumulator: every push adds an acceleration, [step] uses them up *)
 let accelerate ax ay (b : body) : body = { b with ax = b.ax +. ax; ay = b.ay +. ay }
@@ -77,8 +72,9 @@ let tick = 1. /. 60.
 let step (b : body) : body =
   (* one step of the engine's semi-implicit Euler, the pushes as a
    * constant acceleration during the step *)
-  let state' = Integrate.semi_implicit_euler ~force:(Force.uniform (b.ax, b.ay)) ~dt:tick (state b) in
-  { (with_state state' b) with angle = b.angle +. (b.spin *. tick); ax = 0.; ay = 0. }
+  let s = Integrate.semi_implicit_euler ~force:(Force.uniform (b.ax, b.ay)) ~dt:tick (Body.make ~vel:(b.vx, b.vy) (b.x, b.y)) in
+  let (x, y) = s.pos and (vx, vy) = s.vel in
+  { b with x; y; vx; vy; angle = b.angle +. (b.spin *. tick); ax = 0.; ay = 0. }
 
 let wrap (screen : screen) (b : body) : body =
   let around v lo hi = if v < lo then v +. (hi -. lo) else if v > hi then v -. (hi -. lo) else v in
@@ -126,6 +122,26 @@ let hitboxes (b : body) : Shape.placed list =
   let a = radians b.angle in
   let c = cos a and s = sin a in
   hitboxes_of (fun (x, y) -> (b.x +. (x *. c) -. (y *. s), b.y +. (x *. s) +. (y *. c))) 1. b.shape
+
+(* the moment of inertia: the mass spread evenly over the hitboxes,
+ * placed around the body's center, unturned (Shape.moments) *)
+let inertia (b : body) : number =
+  if b.upright || b.mass = infinity then infinity
+  else
+    let (area, j) =
+      List.fold_left
+        (fun (a, j) h -> let (a', j') = Shape.moments h in (a +. a', j +. j'))
+        (0., 0.) (hitboxes_of Fun.id 1. b.shape)
+    in
+    if area = 0. then infinity else b.mass *. j /. area
+
+(* to and from the engine's bodies, whose spins are in radians *)
+let state (b : body) : Body.t =
+  Body.make ~vel:(b.vx, b.vy) ~mass:b.mass ~spin:(radians b.spin) ~inertia:(inertia b) (b.x, b.y)
+
+let with_state (s : Body.t) (b : body) : body =
+  let (x, y) = s.pos and (vx, vy) = s.vel in
+  { b with x; y; vx; vy; spin = s.spin *. 180. /. Float.pi }
 
 let touching (a : body) (b : body) : bool =
   let hb = hitboxes b in

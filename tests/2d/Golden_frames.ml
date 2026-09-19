@@ -55,6 +55,8 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyPong", "", 5);
     (* 300 marbles after 2 seconds, all pairs: 44850 box tests *)
     ("examples/software/Marbles", "", 120);
+    (* rotation: boxes tipping over and tumbling, a ball rolling down *)
+    ("examples/software/Boxes", "", 120);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -91,6 +93,8 @@ let scripted : Testutil_golden.scripted list =
     (* the same marbles, the same frame (the three methods find the same
      * pairs), with the grid and its count *)
     ("examples/software/Marbles", "grid", 120, "space:60-61");
+    (* rotation off: boxes balanced on their corners, stuck on the ramp *)
+    ("examples/software/Boxes", "upright", 300, "u:2-3");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

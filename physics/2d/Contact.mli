@@ -14,5 +14,5 @@
 type t = {
   normal : Vec2.t; (* unit, from the first hitbox to the second *)
   depth : float; (* > 0 *)
-  point : Vec2.t; (* where they touch (roughly, for polygons) *)
+  point : Vec2.t; (* where they touch: for polygons, the middle of their overlap *)
 }

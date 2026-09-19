@@ -32,13 +32,36 @@
  * an infinite mass: 1/m = 0, it gets none of the impulse, and the
  * other body bounces off it with all of it -- no special case needed.
  *
+ * Rotation (section 11): the impulse pushes at the contact point, r
+ * away from each body's center, so it also spins the body, by
+ * (r x j n) / I -- the torque's lever arm: the same push spins a door
+ * more at the handle. The speeds that count are those of the touching
+ * points (Body.point_velocity), and each body resists the impulse by
+ * its mass *and* by its inertia, so the denominator gains the terms
+ * (r x n)^2 / I:
+ *
+ *      j = -(1 + e) (v_rel . n) / (1/m_a + 1/m_b + (r_a x n)^2 / I_a + (r_b x n)^2 / I_b)
+ *
+ * Example: a ball of mass 1 (not turning) moving up at 1 into the end
+ * of a stick at rest, of mass 1, length 2 (I = m L^2 / 12 = 1/3), e = 1:
+ *
+ *                  ^ the stick goes up at 0.4, spinning at 1.2
+ *     ===========*=         (counterclockwise: its right end up)
+ *                ^ ball, 1 -> 0.6
+ *
+ *   r_b = (1, 0), n = (0, 1): r_b x n = 1, j = 2 / (1 + 1 + 3) = 0.4;
+ *   the ball keeps 0.6, the stick moves at 0.4 and spins at 1 * 0.4 *
+ *   3 = 1.2 radians per second. The energy, 0.5 before, is 0.18 + 0.08
+ *   + 0.24 after (the last in the spin): 0.5, kept. Hit at its middle
+ *   (r_b x n = 0), the stick would take all the speed, like a ball.
+ *
  * Two more pieces make it look right:
  *
  * - Friction (Coulomb's law): a second impulse, along the contact's
  *   tangent, against the sliding, but at most mu times the normal
  *   impulse j: a ball hitting a moving paddle is dragged along with it
- *   (Pong's "english"), up to a point. (Without rotation, the ball
- *   doesn't spin: phase 7 of the plan.)
+ *   (Pong's "english"), up to a point; a ball sliding on the floor
+ *   starts rolling (friction at its bottom point spins it).
  *
  * - Positional correction: when a collision is found, the bodies
  *   already overlap (by the contact's depth). The impulse stops them
@@ -59,15 +82,19 @@
 (* 1 / mass: 0 for an immovable body (an infinite mass) *)
 val inverse_mass : Body.t -> float
 
-(* [impulse ~restitution a b normal]: j above, the size of the impulse
- * along [normal] (from a to b); 0 when they're already moving apart
- * (nothing to do: they touched, but are separating), or both are
- * immovable *)
-val impulse : restitution:float -> Body.t -> Body.t -> Vec2.t -> float
+(* 1 / inertia: 0 for a body that never turns *)
+val inverse_inertia : Body.t -> float
 
-(* [apply j dir (a, b)]: the impulse j along [dir] given to b, and -j
- * to a, each divided by its mass *)
-val apply : float -> Vec2.t -> Body.t * Body.t -> Body.t * Body.t
+(* [impulse ~restitution a b contact]: j above, the size of the
+ * impulse along the contact's normal (from a to b), at its point; 0
+ * when they're already moving apart there (nothing to do: they
+ * touched, but are separating), or both are immovable *)
+val impulse : restitution:float -> Body.t -> Body.t -> Contact.t -> float
+
+(* [apply j dir point (a, b)]: the impulse j along [dir], at [point],
+ * given to b, and -j to a: each one's velocity changed by it divided
+ * by its mass, its spin by its torque divided by its inertia *)
+val apply : float -> Vec2.t -> Vec2.t -> Body.t * Body.t -> Body.t * Body.t
 
 (* [bounce ~restitution ~friction (a, b) contact]: the new velocities:
  * the normal impulse, then friction's, at most [friction] times it *)

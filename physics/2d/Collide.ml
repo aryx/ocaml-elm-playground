@@ -63,6 +63,23 @@ let shadow (axis : Vec2.t) (corners : Vec2.t list) : float * float =
 let centroid (corners : Vec2.t list) : Vec2.t =
   Vec2.scale (1. /. float_of_int (List.length corners)) (List.fold_left Vec2.add (0., 0.) corners)
 
+(* where segments ab and cd cross, if they do (not when parallel) *)
+let crossing ((a, b) : Vec2.t * Vec2.t) ((c, d) : Vec2.t * Vec2.t) : Vec2.t option =
+  let ab = Vec2.sub b a and cd = Vec2.sub d c and ac = Vec2.sub c a in
+  let denom = Vec2.cross ab cd in
+  if denom = 0. then None
+  else
+    (* a + t ab = c + u cd *)
+    let t = Vec2.cross ac cd /. denom and u = Vec2.cross ac ab /. denom in
+    if t >= 0. && t <= 1. && u >= 0. && u <= 1. then Some (Vec2.add a (Vec2.scale t ab)) else None
+
+let overlap_middle (p : Vec2.t list) (q : Vec2.t list) : Vec2.t option =
+  (* the corners of the overlap region: the corners of each inside the
+   * other, and where their edges cross *)
+  let inside = List.filter (fun v -> point_in_polygon v q) p @ List.filter (fun v -> point_in_polygon v p) q in
+  let crossings = List.concat_map (fun e -> List.filter_map (crossing e) (Shape.edges q)) (Shape.edges p) in
+  match inside @ crossings with [] -> None | points -> Some (centroid points)
+
 let sat (p : Vec2.t list) (q : Vec2.t list) : Contact.t option =
   (* the axes: perpendicular to every edge of both *)
   let axes = List.map (fun (a, b) -> Vec2.normalize (Vec2.perp (Vec2.sub b a))) (Shape.edges p @ Shape.edges q) in
@@ -83,8 +100,10 @@ let sat (p : Vec2.t list) (q : Vec2.t list) : Contact.t option =
   | Some (axis, depth) ->
       (* the normal from p to q *)
       let normal = if Vec2.dot axis (Vec2.sub (centroid q) (centroid p)) < 0. then Vec2.scale (-1.) axis else axis in
-      (* q's corner deepest in p: the least along the normal *)
-      let point = List.fold_left (fun best v -> if Vec2.dot normal v < Vec2.dot normal best then v else best) (List.hd q) q in
+      (* the middle of the overlap region; failing that (they only
+       * touch along an edge, no area), q's corner deepest in p *)
+      let deepest () = List.fold_left (fun best v -> if Vec2.dot normal v < Vec2.dot normal best then v else best) (List.hd q) q in
+      let point = match overlap_middle p q with Some m -> m | None -> deepest () in
       Some { normal; depth; point }
 
 (* the point of segment ab nearest to p *)

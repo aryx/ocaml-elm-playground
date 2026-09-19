@@ -20,6 +20,14 @@ let test_shape () =
     (Shape.area (Shape.Polygon [ (0., 0.); (4., 0.); (4., 2.); (0., 2.) ]));
   Alcotest.(check bool) "a square is convex" true (Shape.convex (Shape.box_corners 2. 2.));
   Alcotest.(check bool) "an arrowhead isn't" false (Shape.convex [ (0., 0.); (4., 2.); (0., 4.); (1., 2.) ]);
+  (* the moments of inertia per unit of mass, J / A: r^2 / 2 for a
+   * disk, (w^2 + h^2) / 12 for a box, and a circle moved away by 3
+   * gains 3^2 (the parallel axis theorem) *)
+  let per_mass p = let (a, j) = Shape.moments p in j /. a in
+  Alcotest.(check (float 1e-9)) "a disk" 2. (per_mass (Shape.Circle_at ((0., 0.), 2.)));
+  Alcotest.(check (float 1e-9)) "a 4 x 2 box" (5. /. 3.) (per_mass (Shape.place (0., 0.) (Shape.Box (4., 2.))));
+  Alcotest.(check (float 1e-9)) "the same box, clockwise" (5. /. 3.) (per_mass (Shape.Polygon_at (List.rev (Shape.box_corners 4. 2.))));
+  Alcotest.(check (float 1e-9)) "a disk 3 away" 11. (per_mass (Shape.Circle_at ((3., 0.), 2.)));
   (match Shape.place ~angle:(Float.pi /. 2.) (10., 0.) (Shape.Box (4., 2.)) with
   | Shape.Polygon_at (c :: _) -> Alcotest.check vec "a box turned a quarter, moved: its first corner" (11., -2.) c
   | _ -> Alcotest.fail "a box is placed as a polygon")
@@ -42,7 +50,9 @@ let test_sat () =
   | None -> Alcotest.fail "overlapping squares"
   | Some c ->
       Alcotest.(check (float 1e-9)) "depth 0.5, along x" 0.5 c.depth;
-      Alcotest.check vec "normal: from the first to the second" (1., 0.) c.normal
+      Alcotest.check vec "normal: from the first to the second" (1., 0.) c.normal;
+      (* the overlap is [1.5, 2] x [0.5, 2] *)
+      Alcotest.check vec "point: the middle of the overlap" (1.75, 1.25) c.point
 
 (* a U: concave; a point in its notch is outside *)
 let u = [ (0., 0.); (3., 0.); (3., 3.); (2., 3.); (2., 1.); (1., 1.); (1., 3.); (0., 3.) ]
