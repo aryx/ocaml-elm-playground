@@ -27,9 +27,11 @@
     TinyBattlezone
     TinyWolf3d
     TinyVirtuaRacing
+    TinyTron3d
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d)
   (libraries
+    kit_lightcycles ; TinyTron3d's rules
     kit_racing ; TinyVirtuaRacing's Road and Car
     elm_core ; Basics.clamp
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)

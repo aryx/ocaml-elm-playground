@@ -52,6 +52,7 @@ let scenes : Testutil_golden.scene list =
     (* claude: the same view as games/TinyWolf's golden frame, in 3D *)
     ("games3d/TinyWolf3d", "", 5);
     ("games3d/TinyVirtuaRacing", "", 5);
+    ("games3d/TinyTron3d", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -65,6 +66,10 @@ let scripted : Testutil_golden.scripted list =
     (* the same drive as games/TinyOutRun's golden frame, in polygons *)
     ("games3d/TinyVirtuaRacing", "curve", 230, "space:1,up:2-230");
     (* v three times: the view from above *)
-    ("games3d/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200") ]
+    ("games3d/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
+    (* games/TinyTron's "computer" game, seen from behind the blue cycle,
+     * then from above *)
+    ("games3d/TinyTron3d", "behind", 150, "1:1,up:40,right:80,down:120,right:150");
+    ("games3d/TinyTron3d", "above", 150, "1:1,up:40,right:80,down:120,right:150,v:3,v:6") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

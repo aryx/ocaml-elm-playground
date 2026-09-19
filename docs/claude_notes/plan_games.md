@@ -167,7 +167,9 @@ Snake on Nokia phones (1997; done: `games/Snake.ml`).
 
 - **Toy**: TinyTron (DONE: `games/TinyTron.ml`, two players on one
   keyboard, or against the computer choosing the way with the most
-  room, a flood fill).
+  room, a flood fill; and `games3d/TinyTron3d.ml`, the same
+  model in 3D, four views: both on the light cycles kit,
+  `kits/lightcycles/`, only their views differing).
 
 ### 3. Fixed shooters
 
