@@ -165,7 +165,9 @@ Bushnell and Steve Wozniak), Arkanoid (Taito, 1986: power-ups).
 Blockade (Gremlin, 1976), Tron's light cycles (Bally Midway, 1982),
 Snake on Nokia phones (1997; done: `games/Snake.ml`).
 
-- **Toy**: TinyTron, two players on one keyboard, from Snake.
+- **Toy**: TinyTron (DONE: `games/TinyTron.ml`, two players on one
+  keyboard, or against the computer choosing the way with the most
+  room, a flood fill).
 
 ### 3. Fixed shooters
 

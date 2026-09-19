@@ -13,6 +13,7 @@
 (copy_files ../TinyWolf.{ml,mli})
 (copy_files ../TinyOutRun.{ml,mli})
 (copy_files ../TinyBomberman.{ml,mli})
+(copy_files ../TinyTron.{ml,mli})
 (copy_files ../TinyWorms.{ml,mli})
 (copy_files ../TinySpacewar.{ml,mli})
 (copy_files ../TinyPong.{ml,mli})
@@ -31,6 +32,7 @@
     TinyWolf
     TinyOutRun
     TinyBomberman
+    TinyTron
     TinyWorms
     TinySpacewar
     TinyPong
