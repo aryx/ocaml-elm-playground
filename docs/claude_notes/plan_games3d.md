@@ -219,8 +219,10 @@ the first 3D platformer), Super Mario 64 (Nintendo, 1996: the analog
 stick, and a camera operated by a character, Lakitu, filming Mario),
 Crash Bandicoot (Naughty Dog, 1996: a corridor, the camera behind).
 
-- **Toys**: TinyMario64 (a few platforms, jumping, stars: a
-  StarCollector3d with a real jump), TinyMarble (a ball rolling on a
+- **Toys**: TinyMario64 (DONE: `games3d/TinyMario64.ml`, controls
+  relative to the camera, a/d turning it, a drop shadow, coyote time,
+  jump buffering, variable jump height; a few platforms, jumping,
+  stars: a StarCollector3d with a real jump), TinyMarble (a ball rolling on a
   tilting board, after Marble Madness (Mark Cerny, Atari, 1984) and
   Super Monkey Ball (2001)).
 - **Kit**: `Camera3d` (started: `playground3d/Camera3d.mli`, `behind`,

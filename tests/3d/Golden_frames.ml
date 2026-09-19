@@ -53,6 +53,7 @@ let scenes : Testutil_golden.scene list =
     ("games3d/TinyWolf3d", "", 5);
     ("games3d/TinyVirtuaRacing", "", 5);
     ("games3d/TinyTron3d", "", 5);
+    ("games3d/TinyMario64", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -70,6 +71,10 @@ let scripted : Testutil_golden.scripted list =
     (* games/TinyTron's "computer" game, seen from behind the blue cycle,
      * then from above *)
     ("games3d/TinyTron3d", "behind", 150, "1:1,up:40,right:80,down:120,right:150");
-    ("games3d/TinyTron3d", "above", 150, "1:1,up:40,right:80,down:120,right:150,v:3,v:6") ]
+    ("games3d/TinyTron3d", "above", 150, "1:1,up:40,right:80,down:120,right:150,v:3,v:6");
+    (* a jump onto the first platform: Mario in the air, his shadow on
+     * it; then the camera turned with d *)
+    ("games3d/TinyMario64", "jump", 160, "space:1,left:2-63,up:64-175,space:145-165");
+    ("games3d/TinyMario64", "camera", 200, "space:1,left:2-63,up:64-175,space:145-165,d:170-193") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

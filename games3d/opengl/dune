@@ -8,6 +8,7 @@
 (copy_files ../TinyWolf3d.{ml,mli})
 (copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../TinyTron3d.{ml,mli})
+(copy_files ../TinyMario64.{ml,mli})
 (copy_files ../Minecraft3d.ml)
 
 (executables
@@ -17,8 +18,9 @@
     TinyWolf3d
     TinyVirtuaRacing
     TinyTron3d
+    TinyMario64
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_racing ; TinyVirtuaRacing's Road and Car
