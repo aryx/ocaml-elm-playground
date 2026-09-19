@@ -21,8 +21,10 @@
  * space fire, x let go) against red (the arrows, down the shield, enter
  * fire, / let go), on a map the same for both, mirrored. Steal the
  * other's ball, shoot the one who stole yours (the ball drops, and goes
- * home when left alone); three balls wins. The camera frames both ships,
- * zooming out as they part ([frame], as Super Smash Bros. does).
+ * home when left alone); three balls wins. Two ways to see it: one
+ * camera framing both ships, zooming out as they part ([frame], as
+ * Super Smash Bros. does), or the screen split, a camera for each
+ * pilot (2 or 3 on the title).
  *
  * XPilot was one of the first games played over the Internet: a server,
  * and clients on the X terminals of the universities' labs, dozens of
@@ -34,7 +36,7 @@
  * ball game is Thrust's pod, multiplayer. (Names and dates from memory,
  * to check.)
  *
- * Three ideas in it are new to the games of this directory:
+ * Four ideas in it are new to the games of this directory:
  *
  *  - Newton's third law, by hand: the connector is a rope, a spring
  *    that only pulls, and only when stretched ([rope_pull]); the same
@@ -55,6 +57,15 @@
  *    in t. Fly straight at a steady speed, and the cannons hit you; turn
  *    and thrust, and they miss.
  *
+ *  - The split screen, without the playground knowing: the playground
+ *    draws every shape whole, and can't clip a view to its half. So the
+ *    big things, the walls, the ropes and the refueling beams, are cut
+ *    to the part of the world each view shows ([clip]: Ivan Sutherland
+ *    and Gary Hodgman's polygon clipping, 1974), and the small ones are
+ *    shown whole, or not at all, by their center: a strip down the
+ *    middle of the screen, wider than the biggest of them, covers what
+ *    sticks out.
+ *
  * What it uses: Tilemap (the maps), Camera2d (follow, clamp; the radar
  * is the walls again, scaled down), Scene2d (title, play, won), and
  * Physics: the ships ([upright]: a wall never spins them), the balls and
@@ -68,9 +79,7 @@
  *
  * The flag hitboxes draws what the physics sees.
  *
- * Exercises: a split screen, a camera for each player (the playground
- * can't clip a view to its half: each shape would have to be cut, e.g.
- * with Sutherland and Hodgman's polygon clipping, 1974), robots
+ * Exercises: robots
  * (tests/games/Unit_games.ml has one, flying from waypoint to
  * waypoint), real pilots over the network (plan_networking_teaching.md),
  * XPilot's wormholes, its items (afterburners, missiles, cloaking), the
@@ -166,7 +175,7 @@ type cannon = {
 (* a map, and what's found in it *)
 type level = {
   map : Tilemap.t;
-  walls : (Physics.body * number) list; (* with their half width *)
+  walls : (Physics.body * number * (number * number) list) list; (* with their half width, and their corners *)
   bases : (team * (number * number)) list;
   treasures : (team * (number * number)) list; (* each tile of them *)
   homes : (team * (number * number)) list; (* where each team's ball sits *)
@@ -180,7 +189,7 @@ let wall_color = rgb 40 60 190
  * blocks as one rectangle (drawn tile by tile, the tiles' edges would
  * show), each slope a triangle; with their half width, to find the ones
  * near a body *)
-let make_walls (map : Tilemap.t) : (Physics.body * number) list =
+let make_walls (map : Tilemap.t) : (Physics.body * number * (number * number) list) list =
   List.concat
     (List.mapi
        (fun row line ->
@@ -191,11 +200,13 @@ let make_walls (map : Tilemap.t) : (Physics.body * number) list =
              let rec last c = if c +.. 1 < n && is_block line.[c +.. 1] then last (c +.. 1) else c in
              let e = last col in
              let x0, y = Tilemap.center map col row and x1, _ = Tilemap.center map e row in
-             let w = x1 - x0 + tile in
-             go (e +.. 1) ((Physics.body (rectangle wall_color w tile) |> Physics.at ((x0 + x1) / 2.) y |> Physics.immovable, w / 2.) :: acc)
+             let w = x1 - x0 + tile and x = (x0 + x1) / 2. in
+             let corners = [ (x - (w / 2.), y - h); (x + (w / 2.), y - h); (x + (w / 2.), y + h); (x - (w / 2.), y + h) ] in
+             go (e +.. 1) ((Physics.body (rectangle wall_color w tile) |> Physics.at x y |> Physics.immovable, w / 2., corners) :: acc)
            else if is_slope line.[col] then
              let x, y = Tilemap.center map col row in
-             go (col +.. 1) ((Physics.body (polygon wall_color (triangle line.[col])) |> Physics.at x y |> Physics.immovable, h) :: acc)
+             let corners = List.map (fun (px, py) -> (x + px, y + py)) (triangle line.[col]) in
+             go (col +.. 1) ((Physics.body (polygon wall_color (triangle line.[col])) |> Physics.at x y |> Physics.immovable, h, corners) :: acc)
            else go (col +.. 1) acc
          in
          go 0 [])
@@ -236,14 +247,14 @@ let solid (lv : level) (x : number) (y : number) : bool =
       match c with 'q' -> v > u | 's' -> v < u | 'w' -> u + v > 0. | _ -> u + v < 0.)
   | _ -> false
 
-(* the walls in a rectangle *)
-let walls_in (lv : level) (r : Camera2d.rect) : Physics.body list =
+(* the walls in a rectangle, and their corners *)
+let walls_in (lv : level) (r : Camera2d.rect) : (Physics.body * (number * number) list) list =
   List.filter_map
-    (fun ((w : Physics.body), half) -> if w.x + half > r.left && w.x - half < r.right && w.y + h > r.bottom && w.y - h < r.top then Some w else None)
+    (fun ((w : Physics.body), half, corners) -> if w.x + half > r.left && w.x - half < r.right && w.y + h > r.bottom && w.y - h < r.top then Some (w, corners) else None)
     lv.walls
 
 (* the walls near a body: the only ones worth testing *)
-let near (lv : level) (b : Physics.body) : Physics.body list = walls_in lv { left = b.x - 50.; right = b.x + 50.; bottom = b.y - 50.; top = b.y + 50. }
+let near (lv : level) (b : Physics.body) : Physics.body list = List.map fst @@ walls_in lv { left = b.x - 50.; right = b.x + 50.; bottom = b.y - 50.; top = b.y + 50. }
 
 (*****************************************************************************)
 (* The model *)
@@ -293,7 +304,8 @@ type game = {
   bullets : shot list; (* the cannons' *)
   cannons : cannon list;
   frames : int;
-  cam : Camera2d.t;
+  split : bool; (* the screen split, a camera for each pilot *)
+  cams : Camera2d.t list; (* one for all, or one per pilot *)
 }
 
 type scene = Title | Playing of game | Won of game
@@ -313,13 +325,15 @@ let new_ball (lv : level) (owner : team) : ball =
   let x, y = List.assoc owner lv.homes in
   { owner; ball = Physics.body (circle (team_color owner) 10.) |> Physics.at x y |> Physics.heavy 2. |> Physics.bouncy 0.5; holder = None; grab_wait = 0; free = 0 }
 
-let new_game (players : int) : game =
-  let lv = if players = 1 then solo else duel in
+(* [new_game mode]: 1 one player, 2 two sharing the screen, 3 two with
+ * the screen split *)
+let new_game (mode : int) : game =
+  let lv = if mode = 1 then solo else duel in
   let pilot t controls = { team = t; controls; ship = new_ship lv t; shots = []; score = 0; deaths = 0 } in
-  let x, y = List.assoc Blue lv.bases in
-  { lv; pilots = (if players = 1 then [ pilot Blue solo_keys ] else [ pilot Blue left_keys; pilot Red right_keys ]);
+  let cam t = let x, y = List.assoc t lv.bases in { (Camera2d.origin |> Camera2d.look_at x y) with zoom = 1.5 } in
+  { lv; pilots = (if mode = 1 then [ pilot Blue solo_keys ] else [ pilot Blue left_keys; pilot Red right_keys ]);
     balls = List.map (fun (t, _) -> new_ball lv t) lv.homes; bullets = []; cannons = lv.cannons; frames = 0;
-    cam = { (Camera2d.origin |> Camera2d.look_at x y) with zoom = 1.5 } }
+    split = mode = 3; cams = (if mode = 3 then [ cam Blue; cam Red ] else [ cam Blue ]) }
 
 let initial_model : model = Scene2d.start Title
 
@@ -503,6 +517,13 @@ let frame (screen : screen) (lv : level) (ships : Physics.body list) (cam : Came
   { (Camera2d.follow 0.12 ((lo xs + hi xs) / 2.) ((lo ys + hi ys) / 2.) cam) with zoom = cam.zoom + (0.1 * (zoom - cam.zoom)) }
   |> Camera2d.clamp screen (Tilemap.bounds lv.map)
 
+(* the split screen: a view on each side, a strip between them *)
+let strip = 100.
+
+let half (s : screen) : screen =
+  let w = (s.width - strip) / 2. in
+  { s with width = w; left = -.w / 2.; right = w / 2. }
+
 let update_game (computer : computer) (scenes : model) (g : game) : game =
   let keys = computer.keyboard and lv = g.lv in
   (* the ships, pulled by their ropes *)
@@ -567,8 +588,11 @@ let update_game (computer : computer) (scenes : model) (g : game) : game =
         if on_treasure b || free > 600 then new_ball lv b.owner else { b with free })
       balls
   in
-  let cam = frame computer.screen lv (List.map (fun (p : pilot) -> p.ship.body) pilots) g.cam in
-  { g with pilots; balls; bullets; cannons; frames = g.frames +.. 1; cam }
+  let cams =
+    if g.split then List.map2 (fun (p : pilot) cam -> frame (half computer.screen) lv [ p.ship.body ] cam) pilots g.cams
+    else [ frame computer.screen lv (List.map (fun (p : pilot) -> p.ship.body) pilots) (List.hd g.cams) ]
+  in
+  { g with pilots; balls; bullets; cannons; frames = g.frames +.. 1; cams }
 
 let winner (g : game) : pilot option = List.find_opt (fun (p : pilot) -> p.score >= balls_to_win) g.pilots
 
@@ -576,10 +600,10 @@ let update (computer : computer) (model : model) : model =
   let scenes = Scene2d.update computer model in
   let pressed k = Scene2d.pressed k scenes in
   match scenes.scene with
-  | Title ->
-      if pressed (fun k -> k.kspace || key "1" k) then Scene2d.go (Playing (new_game 1)) scenes
-      else if pressed (key "2") then Scene2d.go (Playing (new_game 2)) scenes
-      else scenes
+  | Title -> (
+      match List.find_opt (fun (k, _) -> pressed k) [ ((fun k -> k.kspace || key "1" k), 1); (key "2", 2); (key "3", 3) ] with
+      | Some (_, mode) -> Scene2d.go (Playing (new_game mode)) scenes
+      | None -> scenes)
   | Playing g ->
       let g = update_game computer scenes g in
       if winner g <> None then Scene2d.go (Won g) scenes else { scenes with scene = Playing g }
@@ -591,11 +615,52 @@ let update (computer : computer) (model : model) : model =
 
 let text (color : color) (size : number) (s : string) : shape = words color s |> scale size
 
-(* a line from (x0, y0) to (x1, y1) *)
-let segment (color : color) (width : number) (x0 : number) (y0 : number) (x1 : number) (y1 : number) : shape =
-  rectangle color (Float.hypot (x1 - x0) (y1 - y0)) width
-  |> rotate (atan2 (y1 - y0) (x1 - x0) * 180. / pi)
-  |> move ((x0 + x1) / 2.) ((y0 + y1) / 2.)
+(* [clip r corners]: the part of a convex polygon inside the rectangle
+ * [r], a polygon again (maybe empty): Ivan Sutherland and Gary Hodgman,
+ * "Reentrant Polygon Clipping" (CACM, 1974). The polygon is cut by one
+ * side of the rectangle, then the next: walking around it, each corner
+ * inside is kept, and where an edge crosses the side, the crossing is
+ * added:
+ *
+ *        side x = 0          a (-1, 1) out, b (1, 1) in: the crossing
+ *            |                 (0, 1), then b; b in, c (1, -1) in: c;
+ *      a ----+---- b           c in, d (-1, -1) out: the crossing (0,
+ *      |     |     |           -1); d out, a out: nothing. The square
+ *      d ----+---- c           cut to its right half: (0, 1) (1, 1) (1,
+ *            |                 -1) (0, -1) (the next sides, cutting
+ *                              nothing, start it at another corner). *)
+let clip (r : Camera2d.rect) (corners : (number * number) list) : (number * number) list =
+  let cut inside crossing pts =
+    match pts with
+    | [] -> []
+    | first :: _ ->
+        let keep a b =
+          match (inside a, inside b) with
+          | true, true -> [ b ]
+          | true, false -> [ crossing a b ]
+          | false, true -> [ crossing a b; b ]
+          | false, false -> []
+        in
+        let rec go l = match l with a :: (b :: _ as rest) -> keep a b @ go rest | [ a ] -> keep a first | [] -> [] in
+        go pts
+  in
+  let at_x x (ax, ay) (bx, by) = (x, ay + ((by - ay) * (x - ax) / (bx - ax))) in
+  let at_y y (ax, ay) (bx, by) = (ax + ((bx - ax) * (y - ay) / (by - ay)), y) in
+  corners
+  |> cut (fun (x, _) -> x >= r.left) (at_x r.left)
+  |> cut (fun (x, _) -> x <= r.right) (at_x r.right)
+  |> cut (fun (_, y) -> y >= r.bottom) (at_y r.bottom)
+  |> cut (fun (_, y) -> y <= r.top) (at_y r.top)
+
+(* a polygon, cut to [r] when there is one *)
+let poly (r : Camera2d.rect option) (color : color) (corners : (number * number) list) : shape list =
+  match Option.fold ~none:corners ~some:(fun r -> clip r corners) r with [] | [ _ ] | [ _; _ ] -> [] | pts -> [ polygon color pts ]
+
+(* a line from (x0, y0) to (x1, y1), a thin polygon *)
+let segment (r : Camera2d.rect option) (color : color) (width : number) (x0 : number) (y0 : number) (x1 : number) (y1 : number) : shape list =
+  let d = Float.max 1e-6 (Float.hypot (x1 - x0) (y1 - y0)) in
+  let nx = -.(y1 - y0) / d * width / 2. and ny = (x1 - x0) / d * width / 2. in
+  poly r color [ (x0 + nx, y0 + ny); (x0 - nx, y0 - ny); (x1 - nx, y1 - ny); (x1 + nx, y1 + ny) ]
 
 (* the tiles drawn over the walls *)
 let tile_shape (c : char) : shape =
@@ -619,7 +684,7 @@ let view_ship (keys : keyboard) (p : pilot) : shape list =
   let b = p.ship.body in
   match p.ship.dead with
   | Some n ->
-      let r = 6. + (0.8 * float_of_int n) in
+      let r = 6. + (0.6 * float_of_int n) in
       [ circle orange r |> fade (Float.max 0. (1. - (float_of_int n / 60.))) |> move b.x b.y ]
   | None ->
       let flame = if p.controls.thrust keys && p.ship.fuel > 0. then [ polygon orange [ (-12., 6.); (-26., 0.); (-12., -6.) ] ] else [] in
@@ -627,48 +692,53 @@ let view_ship (keys : keyboard) (p : pilot) : shape list =
       let shield = if shielded keys p then [ circle (rgb 90 180 255) 26. |> fade 0.35 ] else [] in
       [ group (flame @ outline) |> rotate b.angle |> move b.x b.y; group shield |> move b.x b.y ]
 
-let view_world (computer : computer) (g : game) : shape list =
+(* the world, as far as [visible] shows it; [split]: nothing drawn out
+ * of it, cut or left out *)
+let view_world (computer : computer) (g : game) (visible : Camera2d.rect) (split : bool) : shape list =
   let lv = g.lv in
+  let r = if split then Some visible else None in
+  let seen x y = (not split) || (x > visible.left && x < visible.right && y > visible.bottom && y < visible.top) in
+  let small x y shapes = if seen x y then shapes else [] in
   let pilot t = List.find (fun (p : pilot) -> p.team = t) g.pilots in
-  let ropes = List.filter_map (fun b -> Option.map (fun t -> segment (rgb 230 230 120) 2. (pilot t).ship.body.x (pilot t).ship.body.y b.ball.x b.ball.y) b.holder) g.balls in
+  let ropes =
+    List.concat_map (fun b -> match b.holder with Some t -> segment r (rgb 230 230 120) 2. (pilot t).ship.body.x (pilot t).ship.body.y b.ball.x b.ball.y | None -> []) g.balls
+  in
   let beams =
     List.concat_map
       (fun (p : pilot) ->
-        List.filter_map
-          (fun (x, y) -> if refueling lv p.ship && Float.hypot (x - p.ship.body.x) (y - p.ship.body.y) < 110. then Some (segment (rgb 255 170 90) 2. x y p.ship.body.x p.ship.body.y) else None)
+        List.concat_map
+          (fun (x, y) -> if refueling lv p.ship && Float.hypot (x - p.ship.body.x) (y - p.ship.body.y) < 110. then segment r (rgb 255 170 90) 2. x y p.ship.body.x p.ship.body.y else [])
           lv.fuel_stations)
       g.pilots
   in
-  let visible = Camera2d.visible computer.screen g.cam in
-  List.map Physics.draw (walls_in lv visible)
+  List.concat_map (fun (_, corners) -> poly r wall_color corners) (walls_in lv visible)
   @ [ Tilemap.view_visible visible tile_shape lv.map ]
-  @ List.concat_map view_cannon g.cannons
+  @ List.concat_map (fun c -> small c.mx c.my (view_cannon c)) g.cannons
   @ beams @ ropes
-  @ List.map (fun b -> Physics.draw b.ball) g.balls
-  @ List.concat_map (view_ship computer.keyboard) g.pilots
-  @ List.map (fun s -> Physics.draw s.shot) (g.bullets @ List.concat_map (fun (p : pilot) -> p.shots) g.pilots)
+  @ List.concat_map (fun b -> small b.ball.x b.ball.y [ Physics.draw b.ball ]) g.balls
+  @ List.concat_map (fun (p : pilot) -> small p.ship.body.x p.ship.body.y (view_ship computer.keyboard p)) g.pilots
+  @ List.concat_map (fun s -> small s.shot.x s.shot.y [ Physics.draw s.shot ]) (g.bullets @ List.concat_map (fun (p : pilot) -> p.shots) g.pilots)
   @
   if List.mem_assoc "hitboxes" computer.flags then
     List.map Physics.debug (List.concat_map (fun (p : pilot) -> p.ship.body :: near lv p.ship.body) g.pilots @ List.map (fun b -> b.ball) g.balls)
   else []
 
 (* the radar: the walls again, 1/12 of their size, the ships and the
- * balls on it, at the top right *)
+ * balls on it; its center at (x, y) *)
 let radar_scale = 1. / 12.
 
-let radar (screen : screen) (g : game) : shape =
+let radar (g : game) (x : number) (y : number) : shape =
   let r = Tilemap.bounds g.lv.map in
   let dot color (b : Physics.body) = circle color (3. / radar_scale) |> move b.x b.y in
   group
-    ((rectangle black (r.right - r.left) (r.top - r.bottom) :: List.map (fun (w, _) -> Physics.draw w) g.lv.walls)
+    ((rectangle black (r.right - r.left) (r.top - r.bottom) :: List.map (fun (w, _, _) -> Physics.draw w) g.lv.walls)
     @ List.map (fun b -> dot (team_color b.owner) b.ball) g.balls
     @ List.map (fun (p : pilot) -> dot white p.ship.body) g.pilots)
   |> scale radar_scale
-  |> move (screen.right - 20. - (r.right * radar_scale)) (screen.top - 20. - (r.top * radar_scale))
+  |> move x y
 
-(* a pilot's fuel and score: blue at the top left, red below the radar *)
-let view_hud (screen : screen) (g : game) (p : pilot) : shape list =
-  let x = if p.team = Blue then screen.left else screen.right - 280. and y = if p.team = Blue then screen.top else screen.top - 120. in
+(* a pilot's fuel and score, from (x, y) at their top left *)
+let view_hud (g : game) ((x, y) : number * number) (p : pilot) : shape list =
   let fuel = p.ship.fuel / fuel_max in
   [ text white 2. "FUEL" |> move (x + 50.) (y - 30.);
     rectangle (rgb 60 60 60) 150. 14. |> move (x + 165.) (y - 30.);
@@ -676,8 +746,25 @@ let view_hud (screen : screen) (g : game) (p : pilot) : shape list =
     text (team_color p.team) 2.5 (Printf.sprintf "BALLS %d / %d" p.score balls_to_win) |> move (x + 110.) (y - 70.);
     text white 2. (Printf.sprintf "DEATHS %d   %.0f s" p.deaths (float_of_int g.frames / 60.)) |> move (x + 110.) (y - 105.) ]
 
+(* one camera: the HUDs in the top corners (red's below the radar);
+ * split: each view moved to its side, its HUD at its top left, the
+ * radar at the bottom, over the strip *)
 let view_game (computer : computer) (g : game) : shape list =
-  (Camera2d.view g.cam (view_world computer g) :: List.concat_map (view_hud computer.screen g) g.pilots) @ [ radar computer.screen g ]
+  let screen = computer.screen and b = Tilemap.bounds g.lv.map in
+  if g.split then
+    let scr = half screen in
+    List.concat
+      (List.map2
+         (fun (p : pilot) cam ->
+           let dx = if p.team = Blue then -.(scr.width + strip) / 2. else (scr.width + strip) / 2. in
+           (Camera2d.view cam (view_world computer g (Camera2d.visible scr cam) true) :: view_hud g (scr.left, scr.top) p) |> List.map (move_x dx))
+         g.pilots g.cams)
+    @ [ rectangle (rgb 70 70 90) strip screen.height; radar g 0. (screen.bottom + 20. - (b.bottom * radar_scale)) ]
+  else
+    let cam = List.hd g.cams in
+    let rx = screen.right - 20. - (b.right * radar_scale) and ry = screen.top - 20. - (b.top * radar_scale) in
+    (Camera2d.view cam (view_world computer g (Camera2d.visible screen cam) false) :: radar g rx ry
+    :: List.concat_map (fun (p : pilot) -> view_hud g (if p.team = Blue then (screen.left, screen.top) else (screen.right - 280., screen.top - 120.)) p) g.pilots)
 
 let view (computer : computer) (model : model) : shape list =
   let screen = computer.screen in
@@ -685,14 +772,14 @@ let view (computer : computer) (model : model) : shape list =
   ::
   (match model.scene with
   | Title ->
-      let g = new_game 1 in
-      let g = { g with pilots = []; cam = { g.cam with x = 0.; y = 150.; zoom = 0.6 } } in
-      [ Camera2d.view g.cam (view_world computer g) |> fade 0.5;
+      let g = { (new_game 1) with pilots = [] } in
+      let cam = { Camera2d.origin with y = 150.; zoom = 0.6 } in
+      [ Camera2d.view cam (view_world computer g (Camera2d.visible screen cam) false) |> fade 0.5;
         text white 6. "TINY XPILOT" |> move_y 300.;
         text white 2. "left/right turn   up thrust   down shield   space fire   b let go" |> move_y 220.;
         text yellow 2. "catch the red ball down in the cave, set it on your blue box: three to win" |> move_y 185.;
         text white 2. "2 players: blue w a d, s shield, space fire, x let go; red the arrows, enter fire, / let go" |> move_y (-430.) ]
-      @ Scene2d.blink 1. model [ text yellow 3. "SPACE: ONE PLAYER   2: TWO PLAYERS" |> move_y (-380.) ]
+      @ Scene2d.blink 1. model [ text yellow 2.5 "SPACE: ONE PLAYER   2: TWO PLAYERS   3: TWO, SPLIT SCREEN" |> move_y (-380.) ]
   | Playing g -> view_game computer g
   | Won g ->
       let over =
@@ -715,7 +802,7 @@ let help =
          down        shield (uses fuel)
          space       fire (start, restart)
          b           let the ball go
-  2 players (2 on the title):
+  2 players (2 on the title, 3 for a split screen):
          blue: a/d turn, w thrust, s shield, space fire, x let go
          red:  the arrows, down shield, enter fire, / let go
   flags: hitboxes    draw what the physics sees

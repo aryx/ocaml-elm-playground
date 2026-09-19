@@ -475,8 +475,9 @@ ball game). (Names and dates from memory, to check.)
   the velocity by too much; cannons aiming ahead (the intercept
   quadratic); a radar. A robot pilot in `tests/games/` wins it. Two
   players on one keyboard, on a mirrored map, each stealing the other's
-  ball, one camera framing both ships (a split screen would need
-  clipping, which the playground lacks).
+  ball, one camera framing both ships, or the screen split (the walls,
+  ropes and beams clipped to each view, Sutherland-Hodgman; a strip
+  down the middle hiding the small things' overlap).
 - **Kit**: none; `Physics`, `Tilemap`, `Camera2d`.
 
 ### Later, or never

@@ -268,6 +268,18 @@ let xpilot_duel_shot () =
   Alcotest.(check bool) "exploded" true ((after initial_computer.keyboard).ship.dead <> None);
   Alcotest.(check bool) "shielded" true ((after { initial_computer.keyboard with ks = true }).ship.dead = None)
 
+(* clip's worked example: the square (-1, 1) (1, 1) (1, -1) (-1, -1) cut
+ * to x >= 0, its right half; entirely outside, nothing *)
+let xpilot_clip () =
+  let open TinyXpilot in
+  let square = [ (-1., 1.); (1., 1.); (1., -1.); (-1., -1.) ] in
+  let pts = Alcotest.(list (pair (float 1e-9) (float 1e-9))) in
+  (* the same corners in the same order around, from the first expected *)
+  let rec from p l n = match l with q :: rest when q <> p && n > 0 -> from p (rest @ [ q ]) (n - 1) | _ -> l in
+  let right = clip { left = 0.; right = 5.; bottom = -5.; top = 5. } square in
+  Alcotest.check pts "right half" [ (0., 1.); (1., 1.); (1., -1.); (0., -1.) ] (from (0., 1.) right (List.length right));
+  Alcotest.check pts "outside" [] (clip { left = 2.; right = 5.; bottom = -5.; top = 5. } square)
+
 (* A robot pilot, through the keyboard: it wants to go to a tile's
  * center, at up to 150 pixels per second; the acceleration it needs
  * (towards the wanted velocity, plus gravity's) says where to point the
@@ -467,6 +479,7 @@ let tests =
       t "TinyXpilot, a robot brings a ball home" xpilot_ball;
       t "TinyXpilot, two players: a ball home" xpilot_duel_score;
       t "TinyXpilot, two players: a shot, a shield" xpilot_duel_shot;
+      t "TinyXpilot, clipping for the split screen" xpilot_clip;
       t "TinyGalaga, the formation" galaga_formation;
       t "TinyGalaga, a robot clears stage 1" galaga_robot;
       t "TinyDonkeyKong, a girder's height" kong_height;
