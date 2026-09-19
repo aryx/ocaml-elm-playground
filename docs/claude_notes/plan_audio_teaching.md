@@ -268,6 +268,48 @@ audio meeting).
    distance, Doppler: from the physics bodies' positions and
    velocities).
 
+## Status
+
+- **The API decision (2026-09-19), before phase 3**: `playground/Audio.mli`
+  (not `Sound`), Evan-style like `Physics.mli`, but **stateful** for
+  the triggering, as the user suggested: sounds fit the pure
+  Model-View-Update loop badly, and a beginner's "play a blip when the
+  ball bounces" should be one call in `update`. Two kinds: one-shots,
+  `Audio.play sound` (fire and forget, like PICO-8's `sfx(n)`); and
+  continuous sounds, `Audio.keep_playing name sound`, called every frame
+  while it should sound (a theremin, a ship's thrust), stopping the
+  first frame it isn't, its phase kept from frame to frame. The sounds
+  themselves stay values, composed like Paul Hudak's Euterpea (the
+  library of The Haskell School of Music, Hudak and Quick, 2018; after
+  his Haskore): `after` and `together` as its `:+:` and `:=:`, `line`
+  and `chord` for music -- credited where borrowed. Determinism kept:
+  the backend stamps each call with its frame, so a scripted run plays
+  the same samples (golden WAVs of a game). The caveat for the `.mli`:
+  an `update` run twice for a frame (a time-travel debugger) plays its
+  sounds twice, the price elm-audio's declarative design avoids. To
+  revisit (the user: "we can always revisit and find a more Evan-like
+  API later").
+- **Phase 0, DONE except the SDL side**: `audio/` (library `audio`,
+  package elm_playground), `audio/tests/` (`Unit_signal`, and
+  `Golden_wav`: sounds written to `actual/*.wav`, compared sample by
+  sample with `golden/*.wav`, `make approve-golden-audio`, checked by
+  plotting their waveforms when not by ear), `Wav` (the 44-byte header,
+  16-bit mono PCM, writing and reading back). SDL's audio queue comes
+  with phase 3, when there is something to play.
+- **Phase 1, DONE**: `Signal` (the rate, Nyquist, `alias`: 30,000 Hz
+  heard at 14,100), `Oscillator` (the phase accumulator, the four naive
+  waveforms; a 1000 Hz square's 23rd, 25th, 27th harmonics at 21.1,
+  19.1, 17.1 kHz), `Noise` (the NES's 15-bit LFSR: 32,767 steps in its
+  long mode, 93 in its short one, from 1: checked by simulation before
+  writing it). Golden WAVs: the four waveforms at 440 Hz and both
+  noises, a quarter second each.
+- **The goal set by the user**: TinyMario with music and sounds when
+  moving. So after phases 2 and 3, phase 8's `Music` (notes, the
+  sequencer) comes before phases 5-7. The classic Super Mario Bros.
+  theme (Koji Kondo, 1985) is Nintendo's copyrighted melody: not
+  transcribed into the repository; either a tune file the user provides
+  locally (a flag), or an original tune in its style -- the user's call.
+
 ## Verification
 
 - `make test`: the worked examples, the spectra (frequencies present

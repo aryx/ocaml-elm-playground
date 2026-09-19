@@ -1,0 +1,12 @@
+; claude: a software synthesizer, from scratch, for teaching digital
+; audio and signal processing: one idea per module, each .mli with its
+; diagram, worked example and references (see
+; docs/claude_notes/plan_audio_teaching.md and notes_audio.md).
+; Independent of the Playground (playground/Audio.ml is the adapter).
+; A private library, installed as part of elm_playground: pure OCaml,
+; so every backend, the web one included, can use it.
+(library
+ (name audio)
+ (package elm_playground)
+ (wrapped false)
+)

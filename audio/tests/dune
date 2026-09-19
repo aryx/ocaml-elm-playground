@@ -1,0 +1,9 @@
+; claude: unit tests for audio/, run by 'make test' (dune runtest): the
+; .mli's worked examples, and golden WAVs (golden/*.wav) compared
+; sample by sample, like the golden frames ('make approve-golden-audio'
+; after listening to actual/*.wav)
+(test
+ (name Test)
+ (libraries alcotest testo audio)
+ (deps (glob_files golden/*.wav))
+)

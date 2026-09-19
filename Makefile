@@ -61,6 +61,10 @@ approve-golden2d:
 approve-golden3d:
 	cp _build/default/tests/3d/actual/*.png tests/3d/golden/
 	chmod 644 tests/3d/golden/*.png
+# the same for audio/'s golden WAVs (listen to them first)
+approve-golden-audio:
+	cp _build/default/audio/tests/actual/*.wav audio/tests/golden/
+	chmod 644 audio/tests/golden/*.wav
 
 # This will fail if the .opam isn't up-to-date (in git),
 # and dune isn't installed yet. You can always install dune
