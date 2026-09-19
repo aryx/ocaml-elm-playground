@@ -82,7 +82,8 @@
   music), TinyInvaders, TinySokoban (undo), TinyPacman, TinyWolf (a
   raycaster), TinyOutRun (pseudo-3D), TinyWorms, TinySpacewar, TinyPong,
   TinyCameltry, TinySlingshot, TinySoldat, TinyBomberman, TinyTron,
-  TinyMicroMachines, TinyXpilot (the ball game on a rope)
+  TinyMicroMachines, TinyXpilot (the ball game on a rope, 1 or 2
+  players), TinyGalaga (Catmull-Rom paths, by arc length)
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
   TinyTron3d, TinyMario64, TinyMarble (Marble Madness); Minecraft3d is a game (walk, jump, fly,
   remove and place blocks, the targeted block's outline);

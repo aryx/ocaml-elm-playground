@@ -196,7 +196,10 @@ the trackball).
 - **Toys**: TinyInvaders (DONE: `games/TinyInvaders.ml`, with
   `Sprite`, `Scene2d`, and bunkers as eroding `Tilemap`s; the formation marches, speeds up as it
   shrinks -- an accident of the hardware, which drew faster with fewer
-  aliens, kept as the design), TinyGalaga (dives along curves).
+  aliens, kept as the design), TinyGalaga (DONE: `games/TinyGalaga.ml`,
+  the waves flying in and the dives along Catmull-Rom splines, moved
+  along by arc length; the formation breathing; bosses taking two hits;
+  a robot in `tests/games/` clears stage 1).
 - **Kit** (the start of the shmup kit): `Shots` (the player's and the
   enemies' bullets, created, moved, removed when off-screen or on a
   hit), `Formation`.

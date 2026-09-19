@@ -329,6 +329,75 @@ let xpilot_ball () =
   Alcotest.(check int) "deaths" 0 !deaths
 
 (*****************************************************************************)
+(* TinyGalaga *)
+(*****************************************************************************)
+
+(* catmull_rom's worked examples: in a line, the middle; around a
+ * corner, bulging out to (112.5, 50) *)
+let galaga_spline () =
+  let open TinyGalaga in
+  let pt = Alcotest.(pair (float 1e-9) (float 1e-9)) in
+  Alcotest.check pt "line" (150., 0.) (catmull_rom (0., 0.) (100., 0.) (200., 0.) (300., 0.) 0.5);
+  Alcotest.check pt "corner" (112.5, 50.) (catmull_rom (0., 0.) (100., 0.) (100., 100.) (0., 100.) 0.5);
+  Alcotest.check pt "t = 0" (100., 0.) (catmull_rom (0., 0.) (100., 0.) (100., 100.) (0., 100.) 0.)
+
+(* moving by distance along a path: a straight one, 300 long, its middle
+ * at 150; a curved one, the same speed everywhere (a step of 5 pixels
+ * along it moves 5 pixels, give or take the chords' shortcut) *)
+let galaga_path () =
+  let open TinyGalaga in
+  let line = make_path [ (0., 0.); (100., 0.); (200., 0.); (300., 0.) ] in
+  Alcotest.(check (float 1e-6)) "length" 300. (length line);
+  Alcotest.(check (float 1e-6)) "middle" 150. (fst (fst (point_at line 150.)));
+  let p = snd entry_paths.(1) in
+  let steps = List.init (int_of_float (length p /. 5.) - 1) (fun i -> (fst (point_at p (float_of_int i *. 5.)), fst (point_at p (float_of_int (i + 1) *. 5.)))) in
+  List.iter (fun ((x0, y0), (x1, y1)) -> Alcotest.(check (float 0.2)) "a step" 5. (Float.hypot (x1 -. x0) (y1 -. y0))) steps
+
+(* after its five waves, all 40 enemies have flown in and taken their
+ * places (or dive, some of them already) *)
+let galaga_formation () =
+  let open TinyGalaga in
+  let g = ref (new_game ()) in
+  for i = 1 to 1000 do g := update_game (computer i) (Scene2d.start (Playing !g)) !g done;
+  Alcotest.(check int) "all there" 40 (List.length !g.enemies);
+  Alcotest.(check bool) "arrived" true (arrived !g)
+
+(* a robot under the nearest enemy in the formation, firing as fast as
+ * it can, stepping aside from the bullets and the divers, clears the
+ * first stage (in about 40 s, not hit once; chasing the nearest enemy,
+ * diving ones included, it was rammed three times) *)
+let galaga_robot () =
+  let open TinyGalaga in
+  let s = ref initial_model and stage2 = ref false and i = ref 0 in
+  while !i < 60 * 180 && not !stage2 do
+    incr i;
+    let keyboard =
+      match !s.scenes.scene with
+      | Playing g -> (
+          if g.stage = 2 then stage2 := true;
+          (* a bullet or a diver coming down near: out of its way *)
+          let threats =
+            List.map (fun (b : shot) -> (b.sx, b.sy)) g.bullets
+            @ List.filter_map (fun e -> match e.flight with Diving _ -> Some (e.x, e.y) | _ -> None) g.enemies
+          in
+          let close = List.filter (fun (x, y) -> Float.abs (x -. g.fx) < 60. && y < -150.) threats in
+          let fire = !i mod 2 = 0 in
+          match close with
+          | (x, _) :: _ ->
+              let left = x > g.fx || g.fx > 400. in
+              { initial_computer.keyboard with kleft = left; kright = not left; kspace = fire }
+          | [] -> (
+              let targets = List.filter (fun e -> flying e && (match e.flight with Diving _ -> false | _ -> true)) g.enemies in
+              match List.sort (fun a b -> compare (Float.abs (a.x -. g.fx)) (Float.abs (b.x -. g.fx))) targets with
+              | e :: _ -> { initial_computer.keyboard with kleft = e.x < g.fx -. 8.; kright = e.x > g.fx +. 8.; kspace = fire }
+              | [] -> { initial_computer.keyboard with kspace = fire }))
+      | _ -> { initial_computer.keyboard with kspace = !i mod 2 = 0 }
+    in
+    s := update (computer ~keyboard !i) !s
+  done;
+  Alcotest.(check bool) "stage 2" true !stage2
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -366,4 +435,8 @@ let tests =
       t "TinyXpilot, a robot brings a ball home" xpilot_ball;
       t "TinyXpilot, two players: a ball home" xpilot_duel_score;
       t "TinyXpilot, two players: a shot, a shield" xpilot_duel_shot;
+      t "TinyGalaga, Catmull-Rom" galaga_spline;
+      t "TinyGalaga, along a path at constant speed" galaga_path;
+      t "TinyGalaga, the formation" galaga_formation;
+      t "TinyGalaga, a robot clears stage 1" galaga_robot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]
