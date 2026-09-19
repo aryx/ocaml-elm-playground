@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.3 (Q4 2026) (3D playground, from-scratch software rasterizers, OpenGL/WebGL)
+* 0.3 (Q4 2026) (3D playground, from-scratch software rasterizers, OpenGL/WebGL, physics, audio, games)
 # developed on the next branch (Sep 2026)
 # unless mentioned otherwise, everything below was done by Claude Code
 # (with direction from me)
@@ -66,6 +66,73 @@
   ref_frames_3d.sh, bench_playground.sh, screenshot_playground3d.sh,
   smoke_test_playground3d.sh
 
+** playground layers (2D, on top of Playground)
+- Camera2d (window/lock/lerp following, zoom, clamp, an angle and
+  turn_toward), Tilemap (levels typed as strings), Sprite (pixel art
+  from strings, animated), Scene2d (title/playing/over scenes, keys
+  pressed), Physics (see below), Audio (see below)
+- Playground.flags: a program's parameters, name=value natively,
+  ?name=value on the web (Playground_platform.flags); a seed=n flag
+  for the games' randomness
+- relative mouse motion (mdx/mdy), run_app3d ?capture_mouse (FPS look)
+
+** games (the Tiny* toys) and kits
+- kits/: racing (Road, Car), maze (Grid_move, Chase), lightcycles
+  (TinyTron's rules without a view)
+- games/: TinyMario (was Platformer; pixel-art hero, sounds and
+  music), TinyInvaders, TinySokoban (undo), TinyPacman, TinyWolf (a
+  raycaster), TinyOutRun (pseudo-3D), TinyWorms, TinySpacewar, TinyPong,
+  TinyCameltry, TinySlingshot, TinySoldat, TinyBomberman, TinyTron,
+  TinyMicroMachines
+- games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
+  TinyTron3d, TinyMario64; Minecraft3d is a game (walk, jump, fly,
+  remove and place blocks, the targeted block's outline);
+  playground3d's Camera3d (the 3D Camera2d: behind, chase, cockpit,
+  orbit, sky); the OpenGL HUD redraws only what changed
+- Mario, TinyMario, Asteroid: physics=engine, the Physics layer instead
+  of their hand-written "dumb engine"
+- the games' headers say which components they use; keys printed at
+  launch
+
+** physics/ (new, a 2D physics engine for teaching)
+- physics/2d/: Body, Integrate (explicit/semi-implicit Euler, Verlet,
+  RK4), Energy, Force, Shape, Collide (SAT, manifolds, swept tests),
+  Contact, Broadphase (all pairs, grid, sort and sweep), Resolve
+  (impulses, friction, rotation), Solver (sequential impulses, warm
+  starting), Springs, Particles (Jakobsen's ropes and ragdolls),
+  Kepler and Planets (orbits in closed form, JPL's elements)
+- playground/Physics.mli, Evan-style: body, fall, push, thrust,
+  attracted_by, step, touching, bounce, upright, world/simulate,
+  went_through, pulled_to
+- examples/: Orbit, Bounce, Marbles, Boxes, Pyramid, Elastic (each
+  phase switchable off: solver=off, rotation=off), SolarSystem, and
+  examples3d/SolarSystem3d
+- physics/tests/: the .mli's worked examples and the laws
+  (conservation, convergence orders, stability limits)
+
+** audio/ (new, a software synthesizer for teaching)
+- audio/: Signal, Oscillator, Noise (the NES's LFSR), Envelope (ADSR),
+  Mix, Synth (sounds as values, Euterpea's together/after), Mixer,
+  Music, Abc (ABC notation), Doremi (solfège), Midi (Standard MIDI
+  Files, read and written), Spectrum (DFT and FFT), Wav
+- playground/Audio.mli, Evan-style and stateful: tone, square, noise,
+  note; lasting, fading, sliding, together, after; blip, jump, coin...;
+  play, keep_playing, loop, loop_from (a file or a URL: .mid, .abc,
+  solfège); abc, doremi, midi
+- sound natively (SDL's audio queue) and on the web (Web Audio, our own
+  samples); -dump-audio file writes a run's sound as a WAV
+- examples/Theremin, examples/Piano; TinyMario's sounds and an
+  original looping tune (music=file-or-URL for one's own)
+- the "v" debug key: an oscilloscope and a spectrum over the frame
+- audio/tests/: worked examples and golden WAVs compared sample by
+  sample (make approve-golden-audio)
+
+** testing
+- -script: game keys held over frames, for golden frames of gameplay
+- tests/games/: scenario tests of the games' rules, played without
+  drawing
+- scripts/ organized in subfolders, with the tools used for the games
+
 ** build infra and packaging
 - examples_js/ and games_js/ symlinks replaced by examples/js/ and
   games/js/ with dune copy_files (one real source file per example)
@@ -83,6 +150,10 @@
   notes_vs_doom_quake.md, related work surveys (2D, 3D, physics, audio)
 - plans for what's next: physics, audio, networking, remaining 2D/3D/
   WebGL work (plan_*.md, finished ones archived in done/)
+- plan_games.md and plan_games3d.md (the classic games genre by genre,
+  their kits), notes_2d_physics.md, notes_audio.md,
+  notes_audio_midi.md (MIDI, and the trackers' MOD/S3M/XM/IT); the
+  physics plan done (plan_physics_remaining.md)
 
 * 0.2 (Q3 2026) (bugfixes, Dockerfile, CI hardening, cleanup)
 # started to use Claude code
