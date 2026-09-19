@@ -81,6 +81,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyBreakout", "", 5);
     ("games/software/TinyXpilot", "", 5);
     ("games/software/TinyGalaga", "", 5);
+    ("games/software/TinyDonkeyKong", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -175,6 +176,9 @@ let scripted : Testutil_golden.scripted list =
      * in, a boss diving, the fighter having fired *)
     ("games/software/TinyGalaga", "waves", 200, "space:1");
     ("games/software/TinyGalaga", "formation", 1100, "space:1,space:900,space:930,left:950-980,space:990");
+    (* Jumpman walks to the first ladder and climbs it, the barrels
+     * rolling down *)
+    ("games/software/TinyDonkeyKong", "climb", 400, "space:1,right:5-230,up:231-300");
     (* two players: both take off, turn, fire; the camera zoomed out to
      * frame them both, blue's shield up *)
     ("games/software/TinyXpilot", "duel", 200, "2:1,w:5-60,d:20-26,up:5-60,left:20-26,w:100-110,up:100-110,space:120,space:140,return:130,s:190-200");

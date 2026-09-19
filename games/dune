@@ -23,6 +23,7 @@
     TinyBreakout
     TinyXpilot
     TinyGalaga
+    TinyDonkeyKong
   )
   (libraries
     elm_playground

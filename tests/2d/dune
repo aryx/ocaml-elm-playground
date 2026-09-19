@@ -44,6 +44,7 @@
    %{project_root}/games/software/TinyBreakout.exe
    %{project_root}/games/software/TinyXpilot.exe
    %{project_root}/games/software/TinyGalaga.exe
+   %{project_root}/games/software/TinyDonkeyKong.exe
    %{project_root}/examples/software/Fractals.exe
  )
 )

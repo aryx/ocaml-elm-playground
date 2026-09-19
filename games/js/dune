@@ -25,6 +25,7 @@
 (copy_files ../TinyBreakout.{ml,mli})
 (copy_files ../TinyXpilot.{ml,mli})
 (copy_files ../TinyGalaga.{ml,mli})
+(copy_files ../TinyDonkeyKong.{ml,mli})
 
 (executables
   (names
@@ -51,6 +52,7 @@
     TinyBreakout
     TinyXpilot
     TinyGalaga
+    TinyDonkeyKong
   )
   (libraries
     unix

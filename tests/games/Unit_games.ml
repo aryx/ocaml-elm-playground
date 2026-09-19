@@ -398,6 +398,59 @@ let galaga_robot () =
   Alcotest.(check bool) "stage 2" true !stage2
 
 (*****************************************************************************)
+(* TinyDonkeyKong *)
+(*****************************************************************************)
+
+(* height's worked example: the bottom girder, -440 at its left end,
+ * -420 at its right, is at -430 in the middle *)
+let kong_height () = Alcotest.(check (float 1e-9)) "middle" (-430.) (TinyDonkeyKong.height TinyDonkeyKong.girders.(0) 0.)
+
+(* a jump in place: up 57.8 pixels (see jump_speed), and back on the
+ * girder, walking, 35 frames later; walking off the end of the second girder,
+ * a fall of 100 pixels: deadly *)
+let kong_jump () =
+  let open TinyDonkeyKong in
+  let none = initial_computer.keyboard in
+  let rec go h n top = match h.state with Walking _ when n > 0 -> (n, top) | _ when n > 100 -> (n, top) | _ -> go (step_hero none false h) (n + 1) (Float.max top h.y) in
+  let h = step_hero none true start_hero in
+  let frames, top = go h 1 h.y in
+  Alcotest.(check int) "frames in the air" 35 frames;
+  Alcotest.(check (float 1e-6)) "height" 57.8 (top -. start_hero.y);
+  let edge = { start_hero with x = 398.; y = height girders.(1) 398.; state = Walking 1 } in
+  let rec fall h n = match h.state with Dying _ | Walking 0 -> h | _ when n > 200 -> h | _ -> fall (step_hero { none with kright = true } false h) (n + 1) in
+  Alcotest.(check bool) "dead" true (match (fall edge 0).state with Dying _ -> true | _ -> false)
+
+(* a robot climbs to Pauline: to the next unbroken ladder up, up it,
+ * jumping over the barrels rolling at it: the stage can be won, not
+ * hit once *)
+let kong_robot () =
+  let open TinyDonkeyKong in
+  let s = ref initial_model and rescued = ref false and deaths = ref 0 and i = ref 0 in
+  while !i < 60 * 90 && not !rescued do
+    incr i;
+    let keyboard =
+      match !s.scenes.scene with
+      | Playing g -> (
+          let h = g.hero and k = initial_computer.keyboard in
+          match h.state with
+          | Walking n ->
+              let l = List.find (fun l -> l.below = n && not l.broken) ladders in
+              let coming b = (match b.bstate with Rolling m -> m = n | _ -> false) && Float.abs (b.bx -. h.x) < 60. && (b.bx -. h.x) *. downhill girders.(n) < 0. in
+              if List.exists coming g.barrels then { k with kspace = true }
+              else if Float.abs (l.lx -. h.x) < 4. then { k with kup = true }
+              else { k with kleft = l.lx < h.x; kright = l.lx > h.x }
+          | Climbing _ -> { k with kup = true }
+          | _ -> k)
+      | Rescued _ -> rescued := true; initial_computer.keyboard
+      | _ -> { initial_computer.keyboard with kspace = !i = 1 }
+    in
+    s := update (computer ~keyboard !i) !s;
+    match !s.scenes.scene with Playing { hero = { state = Dying 0; _ }; _ } -> incr deaths | _ -> ()
+  done;
+  Alcotest.(check bool) "rescued" true !rescued;
+  Alcotest.(check int) "deaths" 0 !deaths
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -439,4 +492,7 @@ let tests =
       t "TinyGalaga, along a path at constant speed" galaga_path;
       t "TinyGalaga, the formation" galaga_formation;
       t "TinyGalaga, a robot clears stage 1" galaga_robot;
+      t "TinyDonkeyKong, a girder's height" kong_height;
+      t "TinyDonkeyKong, a jump, a fall" kong_jump;
+      t "TinyDonkeyKong, a robot rescues Pauline" kong_robot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

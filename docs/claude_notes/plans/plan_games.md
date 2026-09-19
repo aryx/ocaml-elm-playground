@@ -277,7 +277,9 @@ Pitfall! (David Crane, Activision, 1982), Super Mario Bros. (Nintendo,
 (2018: precise controls, and assist mode).
 
 - **Toys**: `games/TinyMario.ml` (DONE, without enemies yet),
-  TinyDonkeyKong (one screen, ladders, rolling barrels),
+  TinyDonkeyKong (DONE: `games/TinyDonkeyKong.ml`, the first stage:
+  slanted girders as segments, ladders, barrels zigzagging down; the
+  hero and the barrels as state machines; a robot rescues Pauline),
   TinyCeleste (a dash, wall jumps).
 - **Kit**, the platformer kit: `Actor` (TinyMario's `move_by`, one
   pixel at a time), and **game feel**: coyote time (jumping a few
