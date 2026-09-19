@@ -17,7 +17,7 @@
 #
 # claude: 'make test' checks the same scenes automatically, against the
 # golden frames in tests/3d/golden/ (see tests/3d/Golden_frames.ml),
-# all but Minecraft3d; this script is for a manual check including it.
+# all but TinyMinecraft; this script is for a manual check including it.
 #
 # Usage:
 #   scripts/frames/ref_frames_3d.sh capture <dir>   # before: write the references
@@ -56,7 +56,7 @@ examples3d/InteractiveCube3d.exe - 3
 examples3d/PaintersAlgorithmFail3d.exe - 3
 examples3d/PaintersAlgorithmFail3d.exe z 3
 examples3d/FloatingCity3d.exe - 3
-games3d/Minecraft3d.exe - 1
+games3d/TinyMinecraft.exe - 1
 "
 
 FAILED=0

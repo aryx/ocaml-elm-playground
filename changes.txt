@@ -14,12 +14,12 @@
 - four backends: software (from-scratch rasterizer on SDL), web (reuses
   the 2D SVG renderer with a painter's algorithm), OpenGL (tgls) and
   WebGL, the last two sharing Gpu_scene and graphics/gpu/Mesh_cache;
-  Minecraft3d went from ~6.5s to ~1ms per frame on OpenGL with cached3d
+  TinyMinecraft went from ~6.5s to ~1ms per frame on OpenGL with cached3d
 - textures from local files or http(s) urls, preload_texture, a magenta
   placeholder when a texture fails to load
 - examples3d/ (Cube3d, Cubes3d, TexturedCube3d, InteractiveCube3d,
   Spheres3d, FloatingCity3d, PaintersAlgorithmFail3d, Corridor3d,
-  CachedGrid3d) and games3d/ (StarCollector3d, Minecraft3d, a port of
+  CachedGrid3d) and games3d/ (StarCollector3d, TinyMinecraft, a port of
   tiny-minecraft), each also built for web/opengl/webgl via copy_files
 - fixes: spheres missing their top cap (Newell's method for face
   normals, the pole made the cross product 0 then NaN), 1-pixel cracks
@@ -122,8 +122,9 @@
   set per leaf, light's baked lightmaps with shadows; "v" to compare),
   TinyComanche3d
   (TinyComanche's island as triangles), TinyDescent3d (TinyDescent's
-  mine, all of it, with a z-buffer); Minecraft3d is a game (walk, jump, fly,
-  remove and place blocks, the targeted block's outline);
+  mine, all of it, with a z-buffer); TinyMinecraft is a game (walk, jump,
+  fly, remove and place blocks, the targeted block's outline), its world,
+  player, chunks and controls in one file like the other games;
   Playground3d.camera takes an ?up (a ship that rolls: TinyDescent3d),
   honored by the four 3D backends;
   playground3d's Camera3d (the 3D Camera2d: behind, chase, cockpit,

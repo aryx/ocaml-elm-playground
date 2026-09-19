@@ -8,7 +8,7 @@ plus the shared `playground3d/Gpu_scene.ml`): what a GPU actually is,
 how the same pipeline maps onto OpenGL, stage by stage against the
 software version, and, the part that matters most in practice, *where
 the time goes*, since that's where intuition from CPU programming is
-most misleading (see the Minecraft3d story in section 6).
+most misleading (see the TinyMinecraft story in section 6).
 
 See also:
 - `notes_3d.md`: the concepts (camera, projection, culling, z-buffer,
@@ -255,7 +255,7 @@ WebGL 1 has no VAOs (only through the `OES_vertex_array_object`
 extension; WebGL 2 has them built in), so the WebGL backend makes the
 calls again each time it switches buffers
 (`set_attribute_pointers`): the same result, just not remembered.
-Four small calls per buffer, cheap at the 121 chunks of Minecraft3d.
+Four small calls per buffer, cheap at the 121 chunks of TinyMinecraft.
 
 State leaks are the classic bug class: forget to re-bind, and the next
 call silently acts on whatever was bound before. Errors are silent too
@@ -271,7 +271,7 @@ one CPU core, so cost ~ number of triangles + number of pixels filled.
 For a GPU there are several separate budgets, and a frame is as slow as
 the worst one:
 
-| Cost | Scales with | Typical capacity | Minecraft3d, rebuilding every frame | Minecraft3d, cached chunks |
+| Cost | Scales with | Typical capacity | TinyMinecraft, rebuilding every frame | TinyMinecraft, cached chunks |
 |---|---|---|---|---|
 | **CPU scene building** | whatever your code does per frame | one core; OCaml allocation is cheap when short-lived, much less so when the GC has to promote it | **the bottleneck**: the whole world, every frame, seconds | none (built once, at startup) |
 | **Upload (bus)** | bytes sent per frame | GB/s, but with driver overhead | ~86MB per frame | none (~18MB once) |
@@ -279,7 +279,7 @@ the worst one:
 | **Vertex work** | vertices per frame | hundreds of millions to billions/s | ~2M, fine | ~400k (hidden faces skipped), fine |
 | **Fragment work (fill rate)** | pixels shaded (x overdraw) | billions/s | window-sized, fine | same |
 
-The Minecraft3d measurement (`plan_tiny_minecraft.md`, Phase 2) is the
+The TinyMinecraft measurement (`plan_tiny_minecraft.md`, Phase 2) is the
 concrete lesson: ~0.15 fps on OpenGL, with the GPU nearly idle, because
 the first two rows cost seconds per frame while the last three take a
 few milliseconds. **Switching to a GPU speeds up the stages the GPU
@@ -307,7 +307,7 @@ for what actually changed. A static world should be rebuilt once.
 ### Walkthrough: the player takes one step
 
 Say the player presses "W" and moves forward by 0.1 units, in a world
-whose chunk meshes are already cached in VRAM (Minecraft3d's
+whose chunk meshes are already cached in VRAM (TinyMinecraft's
 `cached3d` chunks; its camera doesn't move yet, but nothing below
 depends on that). Here is everything involved in the next frame, and
 whether it changes:
@@ -338,7 +338,7 @@ the camera through millions of triangles at 60 fps.
 The same step without the cache, for contrast (a scene of plain
 `group3d`s, or the "o" key of the OpenGL backend with `-debug-keys`):
 the top row is rebuilt in OCaml and re-uploaded every frame whether or
-not anything moved (~86MB for Minecraft3d before hidden-face culling),
+not anything moved (~86MB for TinyMinecraft before hidden-face culling),
 so moving costs exactly as much as standing still, and both are slow.
 And in the software backend, the
 bottom three rows run on one CPU core too (`view_space`,

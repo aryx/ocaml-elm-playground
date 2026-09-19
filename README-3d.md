@@ -119,7 +119,7 @@ The OpenGL backend (`examples3d/opengl/`, `games3d/opengl/`) has `m`
 (no lighting, flat, smooth), `b`, `f`, and `i` too, with `-debug-keys`
 as well, and `o`: its optimization, keeping the GPU buffers of
 `Playground3d.cached3d` shapes from frame to frame (try
-`games3d/opengl/Minecraft3d.exe` or `examples3d/opengl/CachedGrid3d.exe`
+`games3d/opengl/TinyMinecraft.exe` or `examples3d/opengl/CachedGrid3d.exe`
 with `-debug`, which logs the draw calls and vertices uploaded), and `u`:
 the HUD off, to tell whether a slow frame is the scene's fault or the
 HUD's, which this backend draws on the CPU (with `-debug`, the log

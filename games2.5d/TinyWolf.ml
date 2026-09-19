@@ -34,7 +34,7 @@
  * The walk through the grid is the DDA of Lode Vandevenne's classic
  * tutorial (lodev.org/cgtutor/raycasting.html), the same as John
  * Amanatides and Andrew Woo's "A Fast Voxel Traversal Algorithm for Ray
- * Tracing" (1987), which Minecraft3d's block picking also uses, in 3D.
+ * Tracing" (1987), which TinyMinecraft's block picking also uses, in 3D.
  * Before Wolfenstein, the same idea gave Hovertank 3D and Catacomb 3-D
  * (id, 1991), and, at a whole cell per step, 3D Monster Maze (1981).
  *

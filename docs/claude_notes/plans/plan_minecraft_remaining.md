@@ -1,4 +1,4 @@
-# Plan: what's left for Minecraft3d
+# Plan: what's left for TinyMinecraft
 
 The port itself is done: see
 [`done/plan_tiny_minecraft.md`](done/plan_tiny_minecraft.md) (the world
@@ -11,13 +11,13 @@ original is `~/software-src/game/tiny-minecraft/main.py`.
 
 ## 1. The outline of the targeted block
 
-**DONE**: Minecraft3d.ml's [outline], 12 thin boxes.
+**DONE**: TinyMinecraft.ml's [outline], 12 thin boxes.
 
 The original's `draw_focused_block`: black edges around the block under
 the crosshair, so you see which one a click will remove (a cube a bit
 bigger than the block, 0.51 instead of 0.5, drawn in wireframe mode).
 Without it, aiming at a far or small target is guesswork. Here: in
-`view`, when `target` (`Minecraft_model.hit_test`) finds a block, add
+`view`, when `target` (`TinyMinecraft`'s `hit_test`) finds a block, add
 12 thin boxes along its edges (a `box` has faces from every side, see
 `Playground3d.box`'s doc comment), uncached, since it changes whenever
 the view moves. A per-shape wireframe would be simpler but doesn't
@@ -51,7 +51,7 @@ times a second when walking. Two fixes, either enough:
 backend), and `run_app3d ?capture_mouse` (SDL's relative mouse mode on
 the software and OpenGL backends, Escape to release, a click to capture
 again; the Pointer Lock API on WebGL; ignored by the SVG web backend).
-Minecraft3d turns by 0.15 degree per pixel, the original's.
+TinyMinecraft turns by 0.15 degree per pixel, the original's.
 
 Looking around with the mouse stops at the window's edges (90 degrees
 left or right, 60 up or down; the arrow keys turn further), because
@@ -61,7 +61,7 @@ forever, reporting only how much it moved). The fix is in the
 Playground API, for every backend: relative motion (e.g. `mdx`, `mdy`)
 and a way to capture the cursor (SDL's `Sdl.set_relative_mouse_mode`;
 the browser's Pointer Lock API, `requestPointerLock`, which needs a
-click on the page first). Then Minecraft3d's `look` becomes the
+click on the page first). Then TinyMinecraft's `look` becomes the
 original's `on_mouse_motion`.
 
 ## 4. Clicks shorter than a frame
@@ -91,7 +91,7 @@ worth a measurement first:
 
 ## 6. WebGL, checked in a real browser
 
-`games3d/webgl/Minecraft3d` draws the same picture in headless Chrome,
+`games3d/webgl/TinyMinecraft` draws the same picture in headless Chrome,
 but was never played: the keys and the right click (the web backend's
 `button` = 2, and the context menu it suppresses) are untested there,
 and its fps unmeasured (headless Chrome renders WebGL in software). Also
@@ -108,8 +108,8 @@ section 5).
   per tick), so that walking into new sectors never freezes the game.
   Not needed while the whole world is built at startup (0.4s) and edits
   rebuild 1-2 chunks; needed with a draw distance (section 5).
-- **A golden frame**: Minecraft3d isn't in `tests/3d/` (a 1.5 MB
-  frame, and slow on the software backend); `Test_minecraft_model.exe`
+- **A golden frame**: TinyMinecraft isn't in `tests/3d/` (a 1.5 MB
+  frame, and slow on the software backend); `the TinyMinecraft tests (tests/games)`
   checks the model and the physics instead. The world is deterministic
   (the generator isn't seeded), so a frame could be added.
 - **The hills**: the plan wondered about matching the original's

@@ -95,7 +95,7 @@ tests):
   why the eye is bad at it).
 - **Noise**: value noise, Perlin noise (Ken Perlin, 1985: an Academy
   Award for the film industry), simplex noise (2001); octaves (fractal
-  noise) -- terrain, clouds, textures. Minecraft3d's world, generated
+  noise) -- terrain, clouds, textures. TinyMinecraft's world, generated
   instead of hand-placed.
 - **Generation**: mazes (recursive backtracking, Kruskal's, Prim's --
   and they're minimum spanning trees), cellular automata (Conway's Game

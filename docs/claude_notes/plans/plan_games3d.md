@@ -5,7 +5,7 @@
 The 3D counterpart of [`plan_games.md`](plan_games.md) (read it first:
 the principles, the "kits" and the "layers", the references are the
 same). `games3d/` has two games: StarCollector3d (a third-person toy)
-and Minecraft3d (a voxel sandbox, the port of the Python tiny-minecraft,
+and TinyMinecraft (a voxel sandbox, the port of the Python tiny-minecraft,
 see `done/plan_tiny_minecraft.md`), plus the scenes of `examples3d/`
 (Corridor3d walks down a corridor first-person, CachedGrid3d draws a big
 static world, FloatingCity3d a composition).
@@ -23,7 +23,7 @@ What `playground3d` already gives a game (see `Playground3d.mli`):
 shapes (`box`, `sphere`, `polygon3d`, textures), `group3d`/`move3d`/
 `rotate3d`, a `camera` (an eye and a target), `hud` for 2D shapes on
 top, `cached3d` for big static scenes, `project` (a 3D point to the
-screen), flat/smooth shading, and, since Minecraft3d, relative mouse
+screen), flat/smooth shading, and, since TinyMinecraft, relative mouse
 motion (`mdx`/`mdy`) and `?capture_mouse`. Four backends: software,
 OpenGL, WebGL, and the web SVG one.
 
@@ -33,7 +33,7 @@ The same as `plan_games.md`'s -- toys not clones, a layer when a second
 game needs it, teaching, game culture -- plus two for 3D:
 
 - **Performance decides the toy**: the software rasterizer is the
-  teaching backend, and it's slow (Minecraft3d's frame rate,
+  teaching backend, and it's slow (TinyMinecraft's frame rate,
   `plan_minecraft_remaining.md` section 5). A toy's scene should stay
   small enough to be playable there: flat-shaded low-poly (Virtua
   Racing's look) rather than Quake's. The GPU backends
@@ -49,22 +49,23 @@ game needs it, teaching, game culture -- plus two for 3D:
 ## Kits
 
 ```
-  games       TinyBattlezone TinyWolf  TinyDoom  TinyMario64  TinyVirtuaRacing  Minecraft3d
+  games       TinyBattlezone TinyWolf  TinyDoom  TinyMario64  TinyVirtuaRacing  TinyMinecraft
                     |           |         |           |              |               |
   3D kits     Vector   Raycaster (2D  Sectors    Camera3d       Track3d        Voxels
-              (lines)  grid, DDA)     (portals)  (chase, orbit)  (+ racing kit)  (Minecraft_model)
+              (lines)  grid, DDA)     (portals)  (chase, orbit)  (+ racing kit)  (its block grid)
                     |           |         |           |              |               |
-  3D layers   Fps_controller (from Minecraft_player)  Heightmap  Collide3d (box vs. world)
+  3D layers   Fps_controller (from TinyMinecraft)  Heightmap  Collide3d (box vs. world)
                     |                                     |
   base        Playground3d: shapes, camera, hud, cached3d        (+ 2D: Camera2d, Tilemap)
 ```
 
 Where: generic 3D layers in `playground3d/` (next to `Gpu_scene`), 3D
 kits in `kits/<genre>/` like the 2D ones. Two layers exist in all but
-name: `games3d/Minecraft_player` (a first-person controller: walking,
-jumping, gravity, looking with yaw/pitch, colliding with blocks) and
-`games3d/Minecraft_model` (a voxel grid, with a ray walk to find the
-targeted block). They become layers when a second game wants them.
+name, both inside `games3d/TinyMinecraft.ml`: its player section (a
+first-person controller: walking, jumping, gravity, looking with
+yaw/pitch, colliding with blocks) and its world section (a voxel grid,
+with a ray walk to find the targeted block). They become layers when a
+second game wants them.
 
 ## References
 
@@ -220,7 +221,7 @@ online play), then Half-Life (1998).
   z-buffer, and "v" to turn the set off and see the same picture cost
   6 times more patches. No pair: the lesson is the level pipeline, not
   the rasterizer.
-- **Kit**: `Fps_controller`, extracted from `Minecraft_player` (move,
+- **Kit**: `Fps_controller`, extracted from `TinyMinecraft`'s player (move,
   jump, gravity, mouse look), with collisions against boxes instead of
   blocks (`Collide3d`); shared with TinyWolf3d and TinyDoom.
 
@@ -248,10 +249,10 @@ terrain).
 ### 7. Voxels and sandboxes
 
 Infiniminer (Zachtronics, 2009), Minecraft (Markus Persson, 2009-).
-Done: `games3d/Minecraft3d.ml` (see `plan_minecraft_remaining.md` for
+Done: `games3d/TinyMinecraft.ml` (see `plan_minecraft_remaining.md` for
 what's left).
 
-- **Kit**: `Voxels`, from `Minecraft_model`: the block grid, exposed
+- **Kit**: `Voxels`, from `TinyMinecraft`'s world: the block grid, exposed
   faces, the ray walk for picking -- when a second voxel toy (a
   TinyTeardown with destructible blocks?) needs it.
 
@@ -367,7 +368,7 @@ kit); listed here because players see them as 3D.
    the start of the history.
 2. The raycaster pair, TinyWolf (2D) and TinyWolf3d: the best lesson
    on what 3D rendering adds, and the `Fps_controller` layer out of
-   `Minecraft_player` with its second user.
+   `TinyMinecraft`'s player with its second user.
 3. `Camera3d` with TinyMario64 and TinyMarble: the camera problem
    (both DONE).
 4. The racing kit in 3D with TinyVirtuaRacing (and TinyKart in Mode 7

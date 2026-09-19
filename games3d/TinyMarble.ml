@@ -66,7 +66,7 @@
  * ([from_far]: a far eye and a narrow field of view, nearly isometric;
  * [follow], [orbit] for the title, [floor] for the void), cached3d for
  * the course. Not Physics: it's 2D, and a ball on a height map is ten
- * lines; not Minecraft_player or TinyMario64's box collisions: the
+ * lines; not TinyMinecraft's player or TinyMario64's box collisions: the
  * ground here is a function of (x, z), not boxes. The marble's roll is
  * shown by turning its axes ([roll_axes]: Rodrigues' rotation formula),
  * not by Playground3d.rotate3d's three angles, which can't add up

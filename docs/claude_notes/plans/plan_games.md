@@ -4,7 +4,7 @@
 
 `games/` started with five games (Pong, Snake, Tetris, Asteroid,
 TinyMario), `games3d/` with two (StarCollector3d,
-Minecraft3d). Each was written from scratch on top of `Playground`
+TinyMinecraft). Each was written from scratch on top of `Playground`
 alone. But games come in **genres**, and the games of a genre share
 most of their machinery: every shoot 'em up has bullets, enemy waves
 and paths; every racing game a track, laps and opponents. Writing the

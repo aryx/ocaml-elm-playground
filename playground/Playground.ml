@@ -296,7 +296,7 @@ type mouse = {
   mdown: bool;
   mclick: bool;
   (* pad: not in original Playground.elm: the right button, e.g. to
-   * place a block in games3d/Minecraft3d (the left one removes) *)
+   * place a block in games3d/TinyMinecraft (the left one removes) *)
   mrdown: bool;
   (* pad: not in original Playground.elm either: how far the mouse
    * moved since the last frame (y up, like my), even when it can't be

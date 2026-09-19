@@ -8,7 +8,7 @@ phases 1-5: the shared `Gpu_scene`, the canvas under `run_app`'s
 [`notes_opengl_shaders.md`](notes_opengl_shaders.md). What's left,
 roughly from most to least worth doing.
 
-## 1. `Mesh_cache`, then Minecraft3d in the browser
+## 1. `Mesh_cache`, then TinyMinecraft in the browser
 
 **DONE**, except its fps: see [`plan_opengl_perf.md`](plan_opengl_perf.md),
 Phases 3-4 and Results (headless Chrome renders WebGL in software, so
@@ -21,9 +21,9 @@ buffer and vertex count per material of a cached mesh, `deleteBuffer`
 in the sweep; and, WebGL 1 having no VAOs, the attribute pointers set
 again for each buffer drawn).
 
-Then the WebGL-specific part of Minecraft3d:
+Then the WebGL-specific part of TinyMinecraft:
 
-- `games3d/webgl/dune`: `Minecraft3d` next to `StarCollector3d` (the
+- `games3d/webgl/dune`: `TinyMinecraft` next to `StarCollector3d` (the
   `minecraft_model` library is plain OCaml, it should compile with
   js_of_ocaml as is);
 - its texture atlas, `"games3d/texture.png"`, copied where the page
@@ -96,7 +96,7 @@ The no-WebGL message was checked with Chrome's `--disable-3d-apis`.
 - **A real browser**: `StarCollector3d` (arrow keys) and
   `TexturedCube3d` (its texture loaded over HTTP) work, through
   `make serve-build`. Not tried there yet: the mouse
-  (`InteractiveCube3d`) and `Minecraft3d` (pointer lock, and its fps).
+  (`InteractiveCube3d`) and `TinyMinecraft` (pointer lock, and its fps).
 - **Publishing**: the pages go live only once `next` is merged into
   `master` and `make website` is run there (with a `git add -f` of the
   gitignored `.bc.js`); `OPAMS`/`ODOC_DIRS` in the `Makefile` still

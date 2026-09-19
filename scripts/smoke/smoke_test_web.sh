@@ -15,7 +15,7 @@
 #   - each games3d/webgl/*.html screenshotted in headless Chrome (WebGL
 #     through SwiftShader), into $OUT (default /tmp/web_smoke/), to look at
 #     (the pages are opened as files: a texture loaded over HTTP, like
-#     Minecraft3d's, shows as magenta; make serve-build for the real thing).
+#     TinyMinecraft's, shows as magenta; make serve-build for the real thing).
 # Build first: dune build @games/js/default @games3d/webgl/default
 #
 # Usage: scripts/smoke/smoke_test_web.sh

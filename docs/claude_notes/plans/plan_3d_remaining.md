@@ -65,7 +65,7 @@ independent, for both GPU backends:
 - **a per-node model matrix**, so that moving objects can be cached
   too (today `move3d` on a `cached3d` gives an uncached group);
 - **texture-atlas bleeding**: faint lines along some block edges in
-  Minecraft3d's WebGL screenshot (headless Chrome's SwiftShader; not
+  TinyMinecraft's WebGL screenshot (headless Chrome's SwiftShader; not
   seen on OpenGL), probably a sample from the neighboring atlas cell at
   a cell's border. The classic fix: shrink each cell's UV rectangle by
   half a texel. To check in a real browser first.
@@ -94,10 +94,10 @@ independent, for both GPU backends:
   the 2D software rasterizer, its transparency recovered by
   `graphics/core/Matting`, blended by the GPU. It costs ~20ms each time
   the HUD's shapes change, nearly all of it Matting's pass over every
-  pixel of the window: fine for a score, a small hitch for Minecraft3d's
+  pixel of the window: fine for a score, a small hitch for TinyMinecraft's
   position readout, which changes at each block crossed. Next step if
   it matters: matte only the rows and columns the shapes touch.)
-- **Golden frames not covered**: Minecraft3d (slow, and a 1.5 MB frame;
+- **Golden frames not covered**: TinyMinecraft (slow, and a 1.5 MB frame;
   `scripts/frames/ref_frames_3d.sh` checks it by hand). The games drawing
   random numbers (StarCollector3d; in 2D, Snake and Tetris) are, since
   they take a `seed=n` flag (`Random.init n` instead of

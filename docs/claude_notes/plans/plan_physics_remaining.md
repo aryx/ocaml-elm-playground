@@ -84,6 +84,6 @@ their demos run on the same machine, the same scene sizes.
 ## 5. 3D (the plan's "later")
 
 `physics/3d/`: spheres, boxes, gravity, and a `Physics3d` API, for
-StarCollector3d, Minecraft3d (walking on blocks) and TinyMario64. The
+StarCollector3d, TinyMinecraft (walking on blocks) and TinyMario64. The
 same ideas, a dimension up: `Vec3`, 3x3 inertia tensors, SAT with edge
 cross products.

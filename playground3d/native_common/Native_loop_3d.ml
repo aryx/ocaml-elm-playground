@@ -249,7 +249,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
 
     let elapsed = Unix.gettimeofday () -. frame_start in
     (* claude: -debug shows this every frame, so a scene that suddenly
-     * gets slow (e.g. games3d/Minecraft3d.ml's ~50k-block world, see
+     * gets slow (e.g. games3d/TinyMinecraft.ml's ~50k-block world, see
      * plan_tiny_minecraft.md's Phase 2) can be diagnosed without
      * adding a throwaway Printf.eprintf each time -- is [view] itself
      * slow (building the shape3d list), or [draw] (turning it into

@@ -299,6 +299,94 @@ let quake_walk () =
   Alcotest.(check bool) "out" true (m.over <> None)
 
 (*****************************************************************************)
+(* TinyMinecraft *)
+(*****************************************************************************)
+
+(* The world: [shown] holds exactly the blocks with a side touching
+ * air, and nothing else -- checked on the generated world, then
+ * exactly on a solid 3 x 3 x 3 cube, whose center is buried until a
+ * neighbour is taken away *)
+let minecraft_world () =
+  let open TinyMinecraft in
+  let m = world in
+  Alcotest.(check bool) "the world is not empty" true (Hashtbl.length m.blocks > 0);
+  Alcotest.(check bool) "every shown block exists and is exposed" true
+    (Hashtbl.fold (fun p _ ok -> ok && Hashtbl.mem m.blocks p && exposed m p) m.shown true);
+  Alcotest.(check bool) "and every exposed block is shown" true
+    (Hashtbl.fold (fun p _ ok -> ok && ((not (exposed m p)) || Hashtbl.mem m.shown p)) m.blocks true);
+  let cube = create () in
+  List.iter (fun p -> add_block cube p Stone)
+    (List.concat_map (fun x -> List.concat_map (fun y -> List.map (fun z -> (x, y, z)) [ -1; 0; 1 ]) [ -1; 0; 1 ]) [ -1; 0; 1 ]);
+  Alcotest.(check bool) "the middle of a solid cube is buried" false (exposed cube (0, 0, 0) || Hashtbl.mem cube.shown (0, 0, 0));
+  remove_block cube (1, 0, 0);
+  Alcotest.(check bool) "taking a neighbour away exposes and shows it" true (exposed cube (0, 0, 0) && Hashtbl.mem cube.shown (0, 0, 0));
+  add_block cube (1, 0, 0) Stone;
+  Alcotest.(check bool) "putting it back buries it again" false (exposed cube (0, 0, 0) || Hashtbl.mem cube.shown (0, 0, 0));
+  (* the sight line, along +x from outside the cube: its near face, and
+   * the empty cell in front of it, where a new block would go *)
+  Alcotest.(check (option (pair (triple int int int) (option (triple int int int)))))
+    "what the crosshair is on" (Some ((-1, 0, 0), Some (-2, 0, 0)))
+    (hit_test cube ~position:(-5., 0., 0.) ~vector:(1., 0., 0.) ());
+  Alcotest.(check bool) "nothing, aimed over the cube" true (hit_test cube ~position:(-5., 10., 0.) ~vector:(1., 0., 0.) () = None)
+
+(* The player, in a world worked out by hand: a stone floor at y = -2
+ * for x, z in -5..5, and a wall at z = -3, in front of a player
+ * starting at the origin, looking along -z at it:
+ *
+ *     y
+ *     0  . . . W . . .       W: the wall (z = -3)
+ *    -1  . . . W . . .       P: the player's eyes (0, 0, 0),
+ *    -2  F F F F F F F          body from y 0 down to -1
+ *        -6 -5 -4 -3 -2 -1 0  z  (P at z = 0)
+ *)
+let minecraft_player () =
+  let open TinyMinecraft in
+  let w = create () in
+  for x = -5 to 5 do
+    for z = -5 to 5 do
+      add_block w (x, -2, z) Stone
+    done;
+    add_block w (x, -1, -3) Stone;
+    add_block w (x, 0, -3) Stone
+  done;
+  let none : TinyMinecraft.input = { forward = 0; right = 0; jump = false } in
+  (* [seconds] of frames at 60 fps *)
+  let run ?(input = none) (seconds : float) (p : TinyMinecraft.player) : TinyMinecraft.player =
+    let rec loop n p = if n = 0 then p else loop (n - 1) (step w ~dt:(1. /. 60.) input p) in
+    loop (int_of_float (seconds *. 60.)) p
+  in
+  let y_of (p : TinyMinecraft.player) = let _, y, _ = p.position in y in
+  let z_of (p : TinyMinecraft.player) = let _, _, z = p.position in z in
+  let close a b = Float.abs (a -. b) < 1e-6 in
+  let sx, sy, sz = sight_vector initial_player in
+  Alcotest.(check bool) "yaw 0 looks along -z" true (close sx 0. && close sy 0. && close sz (-1.));
+  let sx, _, sz = sight_vector { initial_player with yaw = 90. } in
+  Alcotest.(check bool) "yaw 90 looks along +x, turning right" true (close sx 1. && close sz 0.);
+  (* standing: gravity pulls, the floor pushes back, and the eyes end
+   * up a quarter block (the collision's [pad]) into the cell above it *)
+  let rest = run 2. initial_player in
+  Alcotest.(check bool) "standing on the floor, not through it" true (y_of rest > -0.5 && y_of rest < 0. && rest.dy = 0.);
+  let fallen = run 3. { initial_player with position = (0., 5., 0.) } in
+  Alcotest.(check bool) "falling from 5 blocks up lands there too" true (close (y_of fallen) (y_of rest) && fallen.dy = 0.);
+  (* a jump: one frame of space, then the highest it gets -- the jump
+   * speed is worked out for exactly one block *)
+  let rec highest n p best =
+    if n = 0 then (best, p)
+    else
+      let p = step w ~dt:(1. /. 60.) none p in
+      highest (n - 1) p (Float.max best (y_of p))
+  in
+  let peak, landed = highest 120 (step w ~dt:(1. /. 60.) { none with jump = true } rest) (y_of rest) in
+  Alcotest.(check bool) "a jump rises about a block, and lands back" true
+    (peak -. y_of rest > 0.9 && peak -. y_of rest < 1.1 && close (y_of landed) (y_of rest));
+  let walked = run ~input:{ none with forward = 1 } 3. rest in
+  Alcotest.(check (float 0.01)) "walking into the wall, stopped a quarter block into it" (-2.25) (z_of walked);
+  let hovering = run 1. { initial_player with position = (0., 3., 0.); flying = true } in
+  Alcotest.(check bool) "flying: no gravity" true (close (y_of hovering) 3.);
+  let climbed = run ~input:{ none with forward = 1 } 0.2 { initial_player with position = (0., 3., 0.); flying = true; pitch = 45. } in
+  Alcotest.(check bool) "flying forward while looking up climbs" true (y_of climbed > 3.5)
+
+(*****************************************************************************)
 (* TinyMario64 *)
 (*****************************************************************************)
 
@@ -1308,6 +1396,8 @@ let tests =
       t "TinyDescent, the mine holds the ship, a robot shot, the exit" descent_mine;
       t "TinyQuake, qbsp, vis and light" quake_tools;
       t "TinyQuake, walking the level" quake_walk;
+      t "TinyMinecraft, the world and what is shown" minecraft_world;
+      t "TinyMinecraft, standing, jumping, walking, flying" minecraft_player;
       t "TinyMario64, a jump onto a platform" mario64_jump;
       t "TinyMarble, the ramp's heights" marble_ramp;
       t "TinyMarble, the cliff breaks the marble, the step doesn't" marble_falls;

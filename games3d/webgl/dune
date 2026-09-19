@@ -1,7 +1,7 @@
 ; claude: ../StarCollector3d.ml as-is, via copy_files (see
 ; ../opengl/dune), linked against elm_playground_3d_webgl. Its score
 ; HUD shows up here (drawn by elm_playground_web's <svg>, over the
-; WebGL canvas), unlike on the OpenGL backend. And ../Minecraft3d.ml,
+; WebGL canvas), unlike on the OpenGL backend. And ../TinyMinecraft.ml,
 ; whose world is drawn from GPU buffers kept from frame to frame (see
 ; Playground3d.cached3d and plan_opengl_perf.md).
 (copy_files ../StarCollector3d.ml)
@@ -15,12 +15,12 @@
 (copy_files ../TinyComanche3d.ml)
 (copy_files ../TinyDescent3d.ml)
 (copy_files ../TinyQuake.ml)
-(copy_files ../Minecraft3d.ml)
+(copy_files ../TinyMinecraft.ml)
 
 (executables
   (names
     StarCollector3d
-    Minecraft3d
+    TinyMinecraft
     TinyBattlezone
     TinyWolf3d
     TinyVirtuaRacing
@@ -33,7 +33,7 @@
     TinyQuake
   )
   (libraries
-    minecraft_model
+
     kit_racing ; TinyVirtuaRacing's Road and Car
     kit_sectors ; TinyDoom3d's level
     kit_heightmap ; TinyComanche3d's island
@@ -51,7 +51,7 @@
 
 ; claude: copy the .html pages into _build/default/games3d/webgl/
 ; next to the generated .bc.js (same trick as examples3d/js/dune), and
-; Minecraft3d's texture where its page looks for it (see
+; TinyMinecraft's texture where its page looks for it (see
 ; games3d/webgl/games3d/dune)
 (rule
   (alias default)
