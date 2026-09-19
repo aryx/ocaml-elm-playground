@@ -19,15 +19,15 @@
  * Jamey Pittman's "The Pac-Man Dossier" (2009), reverse-engineered from
  * the arcade's ROM, which the comments below follow.
  *
- * Two parts are what plan_games.md calls the maze kit, kept here until
- * a second maze game (Bomberman, Boulder Dash) needs them:
+ * Two parts are the maze kit (kits/maze/), shared with
+ * games/TinyBomberman.ml:
  *   - Grid_move: moving along the corridors of a Tilemap, one pixel at a
  *     time, turning only at the center of a tile, and remembering the
  *     turn you asked for until the corridor allows it -- what makes the
  *     controls feel good: you press up *before* the junction;
- *   - Ghosts: at each tile, a ghost takes the way that brings it closest
- *     to its target tile, never turning back; the four targets are the
- *     four personalities.
+ *   - Chase: at each tile, a ghost takes the way that brings it closest
+ *     to its target tile, never turning back; the four targets, here
+ *     (see [target]), are the four personalities.
  *
  * The maze is ours (19x21, the original's is 28x31), as is its drawing
  * (walls as Sprite runs of blue). No randomness: the ghosts' random
@@ -85,65 +85,22 @@ let outside = (9, 7)
 let inside = (9, 9)
 
 (*****************************************************************************)
-(* Grid_move *)
+(* Grid_move, the maze kit's *)
 (*****************************************************************************)
 
-type dir = Up | Down | Left | Right | Stop
+(* moving along the corridors (kits/maze/Grid_move.mli), on this maze's
+ * grid; the types re-exported, to write Up and m.gx here *)
+type dir = Grid_move.dir = Up | Down | Left | Right | Stop
+type mover = Grid_move.mover = { gx : int; gy : int; dir : dir; wanted : dir }
 
-let delta (d : dir) : int * int =
-  match d with Up -> (0, -1) | Down -> (0, 1) | Left -> (-1, 0) | Right -> (1, 0) | Stop -> (0, 0)
-
-let opposite (d : dir) : dir =
-  match d with Up -> Down | Down -> Up | Left -> Right | Right -> Left | Stop -> Stop
-
-(* A position in pixels, from the center of tile (0, 0): tile (col, row)'s
- * center is at (col * t, row * t), rows going down. Integers, so that
- * "at the center of a tile" is exact. [wanted] is the direction asked
- * for, kept until it's possible. *)
-type mover = { gx : int; gy : int; dir : dir; wanted : dir }
-
-let at_center (m : mover) : bool = m.gx mod t = 0 && m.gy mod t = 0
-
-(* the tile the mover is on (the nearest center) *)
-let tile_of (m : mover) : int * int = ((m.gx + (t / 2)) / t mod cols, (m.gy + (t / 2)) / t)
-
-let mover_at ((col, row) : int * int) : mover = { gx = col * t; gy = row * t; dir = Stop; wanted = Stop }
-
-(* one pixel in [m.dir]; the tunnel wraps around *)
-let advance (m : mover) : mover =
-  let dx, dy = delta m.dir in
-  let w = cols * t in
-  { m with gx = (m.gx + dx + w) mod w; gy = m.gy + dy }
-
-(* [slide ~choose speed m]: [speed] pixels, one at a time: at each tile's
- * center, [choose] may change the direction (and stop the mover, with
- * Stop) *)
-let slide ~(choose : mover -> mover) (speed : int) (m : mover) : mover =
-  let rec go n m =
-    if n = 0 then m
-    else
-      let m = if at_center m then choose m else m in
-      if m.dir = Stop then m else go (n - 1) (advance m)
-  in
-  go speed m
-
-(* the tile next to [m]'s, in direction [d] (the tunnel wrapping) *)
-let next_tile (m : mover) (d : dir) : int * int =
-  let col, row = tile_of m in
-  let dc, dr = delta d in
-  ((col + dc + cols) mod cols, row + dr)
-
-(* Pac-Man's choice at a center: the wanted way if it's open, else on,
- * else stop; [open_ (col, row)] says whether a tile can be entered.
- * Between centers, only a U-turn is possible, at once. *)
-let pacman_choose ~(open_ : int * int -> bool) (m : mover) : mover =
-  if m.wanted <> Stop && open_ (next_tile m m.wanted) then { m with dir = m.wanted }
-  else if m.dir <> Stop && open_ (next_tile m m.dir) then m
-  else { m with dir = Stop }
-
-let pacman_move ~open_ (speed : int) (m : mover) : mover =
-  let m = if m.wanted = opposite m.dir && m.dir <> Stop then { m with dir = m.wanted } else m in
-  slide ~choose:(pacman_choose ~open_) speed m
+let grid : Grid_move.grid = { tile = t; cols; rows }
+let delta = Grid_move.delta
+let opposite = Grid_move.opposite
+let at_center = Grid_move.at_center grid
+let tile_of = Grid_move.tile_of grid
+let next_tile = Grid_move.next_tile grid
+let mover_at = Grid_move.mover_at grid
+let slide ~choose = Grid_move.slide grid ~choose
 
 (*****************************************************************************)
 (* Ghosts *)
@@ -213,25 +170,13 @@ let target ~(chase : bool) ~(pac : mover) ~(blinky : mover) (g : ghost) : int * 
           let d2 = ((gc - pc) * (gc - pc)) + ((gr - pr) * (gr - pr)) in
           if d2 > 64 then (pc, pr) else corner g.name)
 
-(* A ghost at a tile's center: never back the way it came; among the
- * other open ways, the one whose next tile is the closest to the target
- * (in a straight line), ties broken in the order up, left, down, right;
- * or, when blue, one at random (from [rng]). A ghost doesn't look
- * further than the next tile: that's why it can be lured the wrong
- * way around a block. *)
+(* A ghost at a tile's center (kits/maze/Chase.mli): never back the way
+ * it came; among the other open ways, the one whose next tile is the
+ * closest to the target, or, when blue, one at random (from [rng]). *)
 let ghost_choose ~(open_ : int * int -> bool) ~(goal : int * int) ~(random : int option) (m : mover) : mover =
-  let ways = List.filter (fun d -> d <> opposite m.dir && open_ (next_tile m d)) [ Up; Left; Down; Right ] in
-  let ways = if ways = [] then [ opposite m.dir ] else ways in
-  let dist d =
-    let c, r = next_tile m d and gc, gr = goal in
-    ((c - gc) * (c - gc)) + ((r - gr) * (r - gr))
-  in
-  let best =
-    match random with
-    | Some n -> List.nth ways (n mod List.length ways)
-    | None -> List.fold_left (fun best d -> if dist d < dist best then d else best) (List.hd ways) ways
-  in
-  { m with dir = best }
+  match random with
+  | Some n -> Chase.at_random grid ~open_ n m
+  | None -> Chase.toward grid ~open_ ~goal m
 
 (* which tiles a ghost can enter: the door only to leave the house, or
  * to go back in as eyes *)
@@ -241,9 +186,7 @@ let ghost_open (g : ghost) ((col, row) : int * int) : bool =
   | Some '-' -> g.state = Leaving || g.state = Eyes
   | Some _ -> true
 
-(* the original's random numbers: r := r * 5 + 1, modulo 8192 (it then
- * read a byte of its ROM at that address) *)
-let next_random (r : int) : int = ((r * 5) + 1) land 8191
+let next_random = Chase.next_random
 
 (*****************************************************************************)
 (* The model *)
@@ -366,7 +309,7 @@ let update_game (computer : computer) (g : game) : game =
   | Some (Ready, _) | None ->
       let g = { g with pause = None } in
       let pac = { g.pac with wanted = wanted_of computer.keyboard g.pac.wanted } in
-      let g = { g with pac = pacman_move ~open_:pac_open 5 pac } |> eat in
+      let g = { g with pac = Grid_move.move_player grid ~open_:pac_open 5 pac } |> eat in
       let g =
         { g with
           blue_frames = max 0 (g.blue_frames - 1);
@@ -406,8 +349,7 @@ let update (computer : computer) (model : model) : model =
 let bounds = Tilemap.bounds maze
 
 (* a mover's position in the world *)
-let world (m : mover) : number * number =
-  (bounds.left +. float_of_int m.gx +. (float_of_int t /. 2.), bounds.top -. float_of_int m.gy -. (float_of_int t /. 2.))
+let world (m : mover) : number * number = Grid_move.to_world grid bounds m
 
 let yellow_pac = rgb 255 230 0
 
