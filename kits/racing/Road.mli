@@ -15,7 +15,7 @@
                                            eases out over a quarter
 
    What a segment's [curve] means is up to the game:
-     - drawn in pseudo-3D (games/TinyOutRun.ml), it's how much the road
+     - drawn in pseudo-3D (games2.5d/TinyOutRun.ml), it's how much the road
        bends *on the screen*: each segment is shifted sideways a bit more
        than the one before; the road never really turns;
      - drawn with polygons (games3d/TinyVirtuaRacing.ml), it's how much
@@ -50,7 +50,7 @@ val curve : int -> number -> section
 val hill : int -> number -> section
 val curve_hill : int -> number -> number -> section
 
-(* the course of games/TinyOutRun and games3d/TinyVirtuaRacing: 1060
+(* the course of games2.5d/TinyOutRun and games3d/TinyVirtuaRacing: 1060
  * segments of curves and hills, ending at the height it started from *)
 val coast : section list
 

@@ -4,7 +4,7 @@
 
    The world is a plane, the car a point on it with a heading, as seen
    from above -- whatever the game then draws: games/TinyMicroMachines
-   draws it from above, games/TinyKart from behind the car, in Mode 7.
+   draws it from above, games2.5d/TinyKart from behind the car, in Mode 7.
    The same model, two pictures (Car.mli's lesson again, where one road
    is raced in pseudo-3D and in polygons).
 

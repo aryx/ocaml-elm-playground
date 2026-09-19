@@ -42,8 +42,8 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyInvaders", "", 5);
     ("games/software/TinySokoban", "", 5);
     ("games/software/TinyPacman", "", 5);
-    ("games/software/TinyWolf", "", 5);
-    ("games/software/TinyOutRun", "", 5);
+    ("games2.5d/software/TinyWolf", "", 5);
+    ("games2.5d/software/TinyOutRun", "", 5);
     ("games/software/TinyBomberman", "", 5);
     ("games/software/TinyTron", "", 5);
     ("games/software/TinyMicroMachines", "", 5);
@@ -95,11 +95,11 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/BigBangRocket", "", 60);
     ("games/software/TinyBabaIsYou", "", 5);
     ("examples/software/BigBangWorm", "", 400);
-    ("games/software/TinyKart", "", 5);
-    ("games/software/TinyDoom", "", 5);
+    ("games2.5d/software/TinyKart", "", 5);
+    ("games2.5d/software/TinyDoom", "", 5);
     (* "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
-    ("games/software/TinyDoom", "rr", 5);
-    ("games/software/TinyComanche", "", 5);
+    ("games2.5d/software/TinyDoom", "rr", 5);
+    ("games2.5d/software/TinyComanche", "", 5);
     ("games/software/TinyMissileCommand", "", 5);
     ("games/software/TinyLemmings", "", 5);
   ]
@@ -124,9 +124,9 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyPacman", "play", 300, "space:1,left:120-170,up:160-230,right:220-300");
     (* turned towards a treasure, walking to it: the billboard in front
      * of the far wall, a near wall on the right *)
-    ("games/software/TinyWolf", "treasure", 60, "right:1-16,up:20-60");
+    ("games2.5d/software/TinyWolf", "treasure", 60, "right:1-16,up:20-60");
     (* flat out into the first curve, which bends right *)
-    ("games/software/TinyOutRun", "curve", 230, "space:1,up:2-230");
+    ("games2.5d/software/TinyOutRun", "curve", 230, "space:1,up:2-230");
     (* a bomb dropped in the corner, the bomber walking away, the fire *)
     ("games/software/TinyBomberman", "bomb", 165, "space:1,space:5,right:8-30,down:31-45");
     (* two bombs, the first one's fire setting off the second: a chain *)
@@ -219,15 +219,15 @@ let scripted : Testutil_golden.scripted list =
      * over it (too big to fall in) *)
     (* the grid, GO!; the first corner, the karts passed on the way
      * coming up behind *)
-    ("games/software/TinyKart", "grid", 200, "space:1");
-    ("games/software/TinyKart", "corner", 430, "space:1,up:2-430,right:370-405");
+    ("games2.5d/software/TinyKart", "grid", 200, "space:1");
+    ("games2.5d/software/TinyKart", "corner", 430, "space:1,up:2-430,right:370-405");
     (* on the stairs, upstairs ahead; at the window onto the dark room
      * (games3d/TinyDoom3d's golden frames are the same walks) *)
-    ("games/software/TinyDoom", "stairs", 80, "left:1-10,up:11-80");
-    ("games/software/TinyDoom", "window", 60, "right:1-5,up:6-55");
+    ("games2.5d/software/TinyDoom", "stairs", 80, "left:1-10,up:11-80");
+    ("games2.5d/software/TinyDoom", "window", 60, "right:1-5,up:6-55");
     (* over the island, climbing a little (games3d/TinyComanche3d's
      * golden frame is the same flight) *)
-    ("games/software/TinyComanche", "island", 70, "up:1-70,w:1-20");
+    ("games2.5d/software/TinyComanche", "island", 70, "up:1-70,w:1-20");
     ("games/software/TinyRick", "boulder", 70, "space:1,right:2-160");
     ("games/software/TinyRick", "hole", 160, "space:1,right:2-160");
     (* right to the ladder, up it, a hole dug on the right; the guards

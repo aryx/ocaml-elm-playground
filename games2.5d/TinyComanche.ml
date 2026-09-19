@@ -34,7 +34,7 @@
  * the column from there down to it. What the column shows is one
  * number, the "y-buffer" ([ybuffer]): the nearest first, a hill hides
  * what's behind it by being drawn first, and the farther cells only
- * add above it. Doom's trick again (games/TinyDoom.ml: the nearest
+ * add above it. Doom's trick again (games2.5d/TinyDoom.ml: the nearest
  * first, the columns' clip arrays), but with no BSP tree: the order is
  * the distance itself, and the clip only has a bottom.
  *
@@ -45,7 +45,7 @@
  * far cells fade to the sky's color, 4 steps of fog, which hid where
  * the map stops.
  *
- * As in games/TinyKart.ml, a "pixel" is 5 x 5 real ones: the view is a
+ * As in games2.5d/TinyKart.ml, a "pixel" is 5 x 5 real ones: the view is a
  * picture of characters (one per color: a kind of ground, its light,
  * its fog), drawn by Sprite.pixels. The balloons are billboards: a
  * circle sized by its distance, drawn over the terrain if nothing is

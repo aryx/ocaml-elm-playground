@@ -20,8 +20,8 @@
    %{project_root}/games/software/TinyInvaders.exe
    %{project_root}/games/software/TinySokoban.exe
    %{project_root}/games/software/TinyPacman.exe
-   %{project_root}/games/software/TinyWolf.exe
-   %{project_root}/games/software/TinyOutRun.exe
+   %{project_root}/games2.5d/software/TinyWolf.exe
+   %{project_root}/games2.5d/software/TinyOutRun.exe
    %{project_root}/games/software/TinyBomberman.exe
    %{project_root}/games/software/TinyTron.exe
    %{project_root}/games/software/TinyMicroMachines.exe
@@ -55,9 +55,9 @@
    %{project_root}/examples/software/BigBangRocket.exe
    %{project_root}/examples/software/BigBangWorm.exe
    %{project_root}/games/software/TinyBabaIsYou.exe
-   %{project_root}/games/software/TinyKart.exe
-   %{project_root}/games/software/TinyDoom.exe
-   %{project_root}/games/software/TinyComanche.exe
+   %{project_root}/games2.5d/software/TinyKart.exe
+   %{project_root}/games2.5d/software/TinyDoom.exe
+   %{project_root}/games2.5d/software/TinyComanche.exe
    %{project_root}/games/software/TinyMissileCommand.exe
    %{project_root}/games/software/TinyLemmings.exe
    %{project_root}/examples/software/LogoFractals.exe

@@ -38,7 +38,7 @@
  * the tiles' patterns: the SNES's floors shimmered there; here the
  * patterns fade to their average color, a mipmap ([ground]).
  *
- * Compare games/TinyWolf.ml, the same idea turned sideways: the
+ * Compare games2.5d/TinyWolf.ml, the same idea turned sideways: the
  * raycaster casts a ray per column into the walls, Mode 7 a line per row
  * across the floor. Each draws what the other can't: Wolfenstein has no
  * floor texture, Mode 7 no walls. The karts are TinyWolf's billboards:

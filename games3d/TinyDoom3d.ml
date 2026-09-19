@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* games/TinyDoom.ml again, in real 3D: the same level (the Sectors kit's),
+(* games2.5d/TinyDoom.ml again, in real 3D: the same level (the Sectors kit's),
  * the same controls, the same exit, but drawn by playground3d like any
  * 3D scene. Left/right to turn, up/down to walk.
  *
@@ -42,7 +42,7 @@ let level = Sectors.outpost
 let sector (i : int) : Sectors.sector = level.sectors.(i)
 
 (*****************************************************************************)
-(* The model, as in games/TinyDoom.ml *)
+(* The model, as in games2.5d/TinyDoom.ml *)
 (*****************************************************************************)
 
 (* coupling: TinyDoom's model and update, with the sector found by the

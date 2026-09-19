@@ -1,0 +1,20 @@
+; Same games as ../dune, on the software rasterizer (see
+; examples/software/dune for how copy_files works)
+(copy_files ../*.ml)
+
+(executables
+  (names
+    TinyWolf
+    TinyOutRun
+    TinyKart
+    TinyDoom
+    TinyComanche
+  )
+  (libraries
+    elm_playground
+    kit_racing ; TinyOutRun's Road and Car, TinyKart's Topdown
+    kit_sectors ; TinyDoom's level
+    kit_heightmap ; TinyComanche's island
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

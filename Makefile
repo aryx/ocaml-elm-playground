@@ -119,7 +119,7 @@ website:
 	  chmod -R u+w docs/$$d; \
 	done
 	make js
-	for d in examples games examples3d; do \
+	for d in examples games games2.5d examples3d; do \
 	  for js in _build/default/$$d/js/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
 	    install -m 644 $$js $$d/js/$$b.html docs/$$d/; \
@@ -143,6 +143,7 @@ serve:
 
 js:
 	dune build games/js --profile=release-js
+	dune build games2.5d/js --profile=release-js
 	dune build examples/js --profile=release-js
 	dune build examples3d/js --profile=release-js
 	dune build examples3d/webgl --profile=release-js

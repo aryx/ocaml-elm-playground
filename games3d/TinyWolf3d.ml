@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* games/TinyWolf.ml again, in real 3D: the same map, the same controls,
+(* games2.5d/TinyWolf.ml again, in real 3D: the same map, the same controls,
  * the same treasure, but each wall cell is a box, drawn by playground3d
  * like any 3D scene. Left/right to turn, up/down to walk.
  *
@@ -29,10 +29,10 @@ open Playground
 open Playground3d
 
 (*****************************************************************************)
-(* The map, and walking: as in games/TinyWolf.ml *)
+(* The map, and walking: as in games2.5d/TinyWolf.ml *)
 (*****************************************************************************)
 
-(* coupling: the same map as games/TinyWolf.ml's *)
+(* coupling: the same map as games2.5d/TinyWolf.ml's *)
 let map =
   Tilemap.of_strings 1.
     [ "################";

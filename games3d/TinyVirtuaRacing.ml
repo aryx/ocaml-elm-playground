@@ -9,7 +9,7 @@
  *)
 (* A toy version of Virtua Racing (Yu Suzuki, Sega AM2, 1992): a stage,
  * from the start line to the GOAL arch, as fast as you can, on the same
- * course as games/TinyOutRun.ml -- but drawn with polygons. Up to
+ * course as games2.5d/TinyOutRun.ml -- but drawn with polygons. Up to
  * accelerate, down to brake, left/right to steer, v to change the view.
  *
  * Virtua Racing was the arcade's first great polygon racer: flat-shaded,

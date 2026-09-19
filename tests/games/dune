@@ -34,17 +34,17 @@
 
 (rule
  (target TinyDoom.ml)
- (deps (:src %{project_root}/games/TinyDoom.ml))
+ (deps (:src %{project_root}/games2.5d/TinyDoom.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
  (target TinyComanche.ml)
- (deps (:src %{project_root}/games/TinyComanche.ml))
+ (deps (:src %{project_root}/games2.5d/TinyComanche.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
  (target TinyKart.ml)
- (deps (:src %{project_root}/games/TinyKart.ml))
+ (deps (:src %{project_root}/games2.5d/TinyKart.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule

@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* games/TinyComanche.ml, the same flight over the same island, but the
+(* games2.5d/TinyComanche.ml, the same flight over the same island, but the
  * terrain as triangles, drawn with a z-buffer by playground3d: the way
  * flight simulators drew their ground (Flight Simulator, Falcon, a few
  * big flat-colored polygons), and every 3D game since, on a GPU. The
@@ -49,7 +49,7 @@ open Playground3d
 (* The island *)
 (*****************************************************************************)
 
-(* coupling: games/TinyComanche.ml's island and balloons, the same *)
+(* coupling: games2.5d/TinyComanche.ml's island and balloons, the same *)
 let map = Heightmap.generate ~seed:7 ~size:256 ~top:80. ~roughness:0.55
 
 let balloons : (number * number * number) list =
@@ -62,7 +62,7 @@ let balloons : (number * number * number) list =
 (* Model *)
 (*****************************************************************************)
 
-(* coupling: games/TinyComanche.ml's model and update, the same *)
+(* coupling: games2.5d/TinyComanche.ml's model and update, the same *)
 type model = {
   x : number;
   y : number;
@@ -173,7 +173,7 @@ let minimap : shape =
 
 let text color size str = words color str |> scale size
 
-(* coupling: games/TinyComanche.ml's panel, the same *)
+(* coupling: games2.5d/TinyComanche.ml's panel, the same *)
 let view_panel (screen : screen) (m : model) : shape list =
   let side = float_of_int (map.size / minimap_cells) *. minimap_pixel in
   let ox = screen.right -. 20. -. (side /. 2.) and oy = screen.bottom +. (panel /. 2.) in

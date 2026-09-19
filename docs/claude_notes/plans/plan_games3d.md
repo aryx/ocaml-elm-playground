@@ -147,7 +147,7 @@ Hovertank 3D and Catacomb 3-D (id Software, 1991), Wolfenstein 3D (id,
 1992: John Carmack's raycaster, one ray per screen column, walls all
 the same height on a grid).
 
-- **Toys** (DONE: `games/TinyWolf.ml` and `games3d/TinyWolf3d.ml`,
+- **Toys** (DONE: `games2.5d/TinyWolf.ml` and `games3d/TinyWolf3d.ml`,
   the same map, walk and golden frames; the 2D one with billboards
   hidden per column and a minimap of the rays): TinyWolf in the **2D playground** (one rectangle per
   column, its height 1 / distance: a raycaster needs no 3D at all),
@@ -165,7 +165,7 @@ sectors joined by portals). Levels are a 2D floor plan of sectors,
 each with a floor and a ceiling height (`notes_vs_doom_quake.md`,
 "Doom: not actually 3D").
 
-- **Toys** (DONE: `games/TinyDoom.ml`, `games3d/TinyDoom3d.ml`), a
+- **Toys** (DONE: `games2.5d/TinyDoom.ml`, `games3d/TinyDoom3d.ml`), a
   pair, like TinyWolf and TinyWolf3d:
   - TinyDoom, in the *2D* playground, Doom's own renderer in small:
     the level's segs split into a BSP tree by a node builder at
@@ -211,7 +211,7 @@ terrain).
 - **Toys**: TinyStarFox (on rails: the ship flies forward by itself,
   the player dodges and shoots -- a shmup in 3D, reusing the 2D shmup
   kit's `Waves` and `Paths` in 3D), TinyComanche (DONE:
-  `games/TinyComanche.ml`, voxel terrain in the *2D* playground: a
+  `games2.5d/TinyComanche.ml`, voxel terrain in the *2D* playground: a
   height map drawn column by column, front to back, a y-buffer; after
   Sebastian Macke's VoxelSpace explainer on GitHub; and
   `games3d/TinyComanche3d.ml`, the same island as `cached3d` triangles
@@ -270,7 +270,7 @@ line, which makes a flat plane look like a floor. Then polygons: Hard
 Drivin' (Atari, 1989), Virtua Racing (Yu Suzuki, Sega AM2, 1992: flat-
 shaded, 60 frames per second), Ridge Racer (Namco, 1993: textured).
 
-- **Toys**: TinyKart in Mode 7 (DONE: `games/TinyKart.ml`, in the 2D
+- **Toys**: TinyKart in Mode 7 (DONE: `games2.5d/TinyKart.ml`, in the 2D
   playground: a `Tilemap` track sampled row by row with a per-row scale
   into a 200x130 picture of characters drawn by `Sprite.pixels`, TinyWolf
   turned sideways; the karts billboards, four drawings by the viewing

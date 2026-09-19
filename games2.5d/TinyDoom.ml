@@ -14,7 +14,7 @@
  *
  * Doom looked 3D, but its renderer had no 3D at all, no z-buffer, no
  * polygons: a level is a floor plan (kits/sectors/Sectors.mli), and it
- * drew it column by column, like Wolfenstein 3D (games/TinyWolf.ml), but
+ * drew it column by column, like Wolfenstein 3D (games2.5d/TinyWolf.ml), but
  * with walls at any angle, floors and ceilings at any height. Its trick
  * is an order: if the walls come nearest first, each screen column only
  * needs to remember how much of it is still to be drawn, and a wall
@@ -64,7 +64,7 @@
  *
  * Doom's floors and ceilings were textured, drawn in rows ("visplanes",
  * r_plane.c: the columns of a flat remembered, then drawn as horizontal
- * spans, sampled like games/TinyKart's Mode 7); here, flat colors, the
+ * spans, sampled like games2.5d/TinyKart's Mode 7); here, flat colors, the
  * columns of a color drawn together too ([paint]). The light is Doom's: the sector's level, darker
  * with the distance, in 32 steps like its COLORMAP, and walls along the
  * x axis darker than along y (its "fake contrast", for corners).

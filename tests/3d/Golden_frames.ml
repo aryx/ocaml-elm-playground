@@ -52,17 +52,17 @@ let scenes : Testutil_golden.scene list =
     ("games3d/StarCollector3d", "", 3);
     (* claude: the title's tank, turned by 40 degrees *)
     ("games3d/TinyBattlezone", "", 40);
-    (* claude: the same view as games/TinyWolf's golden frame, in 3D *)
+    (* claude: the same view as games2.5d/TinyWolf's golden frame, in 3D *)
     ("games3d/TinyWolf3d", "", 5);
     ("games3d/TinyVirtuaRacing", "", 5);
     ("games3d/TinyTron3d", "", 5);
     ("games3d/TinyMario64", "", 5);
     ("games3d/TinyMarble", "", 5);
-    (* claude: the same view as games/TinyDoom's golden frame, in 3D *)
+    (* claude: the same view as games2.5d/TinyDoom's golden frame, in 3D *)
     ("games3d/TinyDoom3d", "", 5);
     (* claude: "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
     ("games3d/TinyDoom3d", "rr", 5);
-    (* claude: the same view as games/TinyComanche's golden frame *)
+    (* claude: the same view as games2.5d/TinyComanche's golden frame *)
     ("games3d/TinyComanche3d", "", 5);
   ]
 
@@ -74,9 +74,9 @@ let scripted : Testutil_golden.scripted list =
     (* turned, driving towards a pyramid (cut by the near plane), a shell
      * flying at the enemy tank *)
     ("games3d/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100");
-    (* the same walk as games/TinyWolf's *)
+    (* the same walk as games2.5d/TinyWolf's *)
     ("games3d/TinyWolf3d", "treasure", 60, "right:1-16,up:20-60");
-    (* the same drive as games/TinyOutRun's golden frame, in polygons *)
+    (* the same drive as games2.5d/TinyOutRun's golden frame, in polygons *)
     ("games3d/TinyVirtuaRacing", "curve", 230, "space:1,up:2-230");
     (* v three times: the view from above *)
     ("games3d/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
@@ -92,10 +92,10 @@ let scripted : Testutil_golden.scripted list =
      * first ramp, its band turned; then on over the cliff, broken *)
     ("games3d/TinyMarble", "ramp", 45, "space:1,down:2-200,left:2-200");
     ("games3d/TinyMarble", "broken", 125, "space:1,down:2-200,left:2-200");
-    (* the same walks as games/TinyDoom's *)
+    (* the same walks as games2.5d/TinyDoom's *)
     ("games3d/TinyDoom3d", "stairs", 80, "left:1-10,up:11-80");
     ("games3d/TinyDoom3d", "window", 60, "right:1-5,up:6-55");
-    (* the same flight as games/TinyComanche's *)
+    (* the same flight as games2.5d/TinyComanche's *)
     ("games3d/TinyComanche3d", "island", 70, "up:1-70,w:1-20");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)

@@ -8,8 +8,6 @@
     TinyInvaders
     TinySokoban
     TinyPacman
-    TinyWolf
-    TinyOutRun
     TinyBomberman
     TinyTron
     TinyMicroMachines
@@ -32,23 +30,18 @@
     TinyStreetFighter
     TinyFinalFight
     TinyBabaIsYou
-    TinyKart
-    TinyDoom
     TinyMissileCommand
     TinyLemmings
-    TinyComanche
   )
   (libraries
     elm_playground
-    kit_racing ; TinyOutRun's Road and Car, TinyMicroMachines' and TinyKart's Topdown
+    kit_racing ; TinyMicroMachines' Topdown
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
     kit_lightcycles ; TinyTron's rules
     kit_shmup ; TinyInvaders' and TinyGalaga's Shots and Path
     kit_platformer ; TinyMario's, TinyLodeRunner's and TinyRick's Tile_move and Ladder
     kit_brawler ; TinyFinalFight's and TinyStreetFighter's Hitbox, Frame_data and Stickman
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo
-    kit_sectors ; TinyDoom's level
-    kit_heightmap ; TinyComanche's island
     elm_playground_native ; implem of virtual elm_playground
   )
 )
