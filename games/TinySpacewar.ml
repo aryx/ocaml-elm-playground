@@ -32,7 +32,7 @@
  * side of the orbit, and diving close to the star slings it faster (the
  * gravity assist of real spacecraft). Newton's gravitation is
  * docs/claude_notes/notes_2d_physics.md section 6; how the time steps
- * keep orbits closed, section 5 (and examples/Orbit.ml).
+ * keep orbits closed, section 5 (and examples/PhysicsOrbit.ml).
  *
  * The torpedoes feel the star too, unlike the original's, which flew
  * straight: here they curve, and can orbit. The hits are exact

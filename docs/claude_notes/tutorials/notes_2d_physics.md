@@ -29,14 +29,14 @@ Two halves, the second built on the first:
 |---|---|---|---|
 | `graphics/2d/geometry/Vec2` | vectors | §2 | |
 | `Body` | a body's state: position, velocity, mass, spin, inertia | §3, §11 | |
-| `Integrate` | one time step: explicit Euler, semi-implicit Euler, Verlet, RK4 | §4, §5 | `examples/Orbit.ml` |
-| `Energy` | kinetic and potential energy, momentum, angular momentum: the checks | §5 | `examples/Orbit.ml` |
+| `Integrate` | one time step: explicit Euler, semi-implicit Euler, Verlet, RK4 | §4, §5 | `examples/PhysicsOrbit.ml` |
+| `Energy` | kinetic and potential energy, momentum, angular momentum: the checks | §5 | `examples/PhysicsOrbit.ml` |
 | `Force` | gravity, gravitation, a spring to a point, drag | §6 | `games/TinySpacewar.ml` |
-| `Springs`, `Particles` | springs between bodies; Jakobsen's particles and sticks | §6, §12 | `examples/Elastic.ml`, `games/TinySoldat.ml` |
+| `Springs`, `Particles` | springs between bodies; Jakobsen's particles and sticks | §6, §12 | `examples/PhysicsElastic.ml`, `games/TinySoldat.ml` |
 | `Shape`, `Collide`, `Contact` | collision detection: hitboxes, the tests, manifolds, swept tests | §8, §12 | `games/Asteroid.ml`, `games/TinySoldat.ml` |
-| `Broadphase` | which pairs to test | §9 | `examples/Marbles.ml` |
-| `Resolve` | collision response: impulses, friction, rotation | §10, §11 | `examples/Bounce.ml`, `examples/Boxes.ml` |
-| `Solver` | stacking: all the contacts together, sequential impulses | §12 | `examples/Pyramid.ml`, `games/TinySlingshot.ml` |
+| `Broadphase` | which pairs to test | §9 | `examples/PhysicsMarbles.ml` |
+| `Resolve` | collision response: impulses, friction, rotation | §10, §11 | `examples/PhysicsBounce.ml`, `examples/PhysicsBoxes.ml` |
+| `Solver` | stacking: all the contacts together, sequential impulses | §12 | `examples/PhysicsPyramid.ml`, `games/TinySlingshot.ml` |
 | `playground/Physics` | the Evan-style API over all of it; `step` and `simulate`, the whole step (§7) | §13 | every game above |
 
 There is no `World` module (the plan had one): the whole step, forces
@@ -188,7 +188,7 @@ Numerical Integration*, 2002). RK4 is far more accurate per step, but
 not symplectic: over a very long run, its tiny energy error does drift.
 
 That's why Box2D and Chipmunk use semi-implicit Euler: as cheap as
-Euler, and stable. And why `examples/Orbit.ml` has an integrator key:
+Euler, and stable. And why `examples/PhysicsOrbit.ml` has an integrator key:
 switch to explicit Euler and watch the planet leave.
 
 ```
@@ -225,7 +225,7 @@ switch to explicit Euler and watch the planet leave.
   14,400 at 60 steps a second). `physics/2d/Springs` (between bodies),
   and its alternative for stiff things, Jakobsen's particles and
   sticks (`Particles`, Hitman's ropes and ragdolls): positions set
-  directly, never exploding. Both in `examples/Elastic.ml`; a spring
+  directly, never exploding. Both in `examples/PhysicsElastic.ml`; a spring
   to a point is `Physics.pulled_to`.
 - **Drag** (`slow`): a force against the velocity, linear (-c v, slow
   things in a thick fluid) or quadratic (-c |v| v, air at speed). Gives
@@ -330,7 +330,7 @@ cheaply, before the exact tests (the **narrow phase**, §8):
   bodies of very different sizes.
 
 A counter of pairs tested, in the debug overlay, makes the difference
-visible (`examples/Marbles.ml`, space switching the method).
+visible (`examples/PhysicsMarbles.ml`, space switching the method).
 
 **Measured** (`Physics.bounce_all` on `Marbles.ml`'s scene, native, ms
 per frame, the walls included: 3.7 ms of the 1000 marbles' frame):
@@ -441,15 +441,15 @@ pushes the body, and `step` (§4: one tick of semi-implicit Euler)
 moves it; `touching` (§8) tells whether two bodies overlap, their
 hitboxes read from their shapes (`debug` draws them), and `bounce`
 (§10) makes them bounce off each other (`bouncy`, `rough`,
-`immovable` for walls; `examples/Bounce.ml`, `games/TinyPong.ml`),
+`immovable` for walls; `examples/PhysicsBounce.ml`, `games/TinyPong.ml`),
 spinning when hit off center (§11; `upright` to never turn:
-`examples/Boxes.ml`, and the rolling moon of `games/TinyCameltry.ml`);
+`examples/PhysicsBoxes.ml`, and the rolling moon of `games/TinyCameltry.ml`);
 and a `world` stepped by `simulate` solves all the contacts of a pile
-together (§12: `examples/Pyramid.ml`, whose `s` key switches back to
+together (§12: `examples/PhysicsPyramid.ml`, whose `s` key switches back to
 `bounce_all` to see the pyramid collapse without it). `games/TinyWorms.ml`, an artillery game, was
 its first user (a shell `launched`, then `fall`, `push` for the wind,
 `step`), `games/TinySpacewar.ml` its second (ships and torpedoes
-`attracted_by` the star); `examples/Orbit.ml` goes under it, to
+`attracted_by` the star); `examples/PhysicsOrbit.ml` goes under it, to
 compare the four integrators. Then, each game adding a chapter:
 `games/Asteroid.ml` ported with a `physics=engine` flag next to its
 hand-written physics (inertia, thrust, drag, wrap-around, exact

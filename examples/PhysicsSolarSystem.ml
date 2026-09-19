@@ -23,7 +23,7 @@
  *   (physics/2d/Kepler.mli: Kepler's equation, solved by Newton's
  *   method), with JPL's orbital elements at J2000 (Planets.mli), not
  *   from integrating the Sun's gravity step by step like
- *   examples/Orbit.ml: at 20 days a second, a 1/60 s frame is a third
+ *   examples/PhysicsOrbit.ml: at 20 days a second, a 1/60 s frame is a third
  *   of a day, and a year per second (up) is 6 days a frame, too coarse
  *   for Mercury's 88-day orbit; the closed form is exact at any date.
  *   Mercury's orbit is visibly off-center (e = 0.21): the Sun is at a
@@ -45,7 +45,7 @@
  *   Earth: its true 0.00257 AU would be inside the Earth's disk).
  *
  * - The planets move in 3D (Mercury's orbit is tilted 7 degrees): seen
- *   from above, the z is dropped; examples3d/SolarSystem3d.ml keeps it.
+ *   from above, the z is dropped; examples3d/PhysicsSolarSystem3d.ml keeps it.
  *
  * - Left out: the Moon's real phase and tilt (it starts at an
  *   arbitrary place), the planets' pulls on each other (the elements'

@@ -7,7 +7,7 @@
 (copy_files ../Spheres3d.ml)
 (copy_files ../TexturedCube3d.ml)
 (copy_files ../CachedGrid3d.{ml,mli})
-(copy_files ../SolarSystem3d.{ml,mli})
+(copy_files ../PhysicsSolarSystem3d.{ml,mli})
 (copy_files ../LogoFractals3d.{ml,mli})
 
 (executables
@@ -16,7 +16,7 @@
     Spheres3d
     TexturedCube3d
     CachedGrid3d
-    SolarSystem3d
+    PhysicsSolarSystem3d
     LogoFractals3d
   )
   (libraries
@@ -24,6 +24,6 @@
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d
     elm_playground_3d_opengl ; implem of virtual elm_playground_3d
-    physics_2d ; SolarSystem3d's Kepler and Planets
+    physics_2d ; PhysicsSolarSystem3d's Kepler and Planets
   )
 )

@@ -18,7 +18,7 @@ difference (`solver=off`, `rotation=off`).
   2007): `Collide.manifold` takes the corners of each polygon inside
   the other, simpler but shakier for deep overlaps; Box2D's clipping
   of the incident edge against the reference face's sides, as a
-  switch, compared on `examples/Pyramid.ml`.
+  switch, compared on `examples/PhysicsPyramid.ml`.
 - **Sleeping**: bodies still for half a second skipped until touched;
   a pyramid then costs nothing at rest. Measured on Pyramid (1.3 ms a
   step for 28 boxes today).

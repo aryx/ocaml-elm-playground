@@ -45,7 +45,7 @@ let scenes : Testutil_golden.scene list =
     ("examples3d/Corridor3d", "f", 3);
     ("examples3d/CachedGrid3d", "", 3);
     (* claude: the planets' night sides turned away from the Sun *)
-    ("examples3d/SolarSystem3d", "", 3);
+    ("examples3d/PhysicsSolarSystem3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
@@ -65,7 +65,7 @@ let scenes : Testutil_golden.scene list =
 let scripted : Testutil_golden.scripted list =
   [ ("games3d/StarCollector3d", "move", 40, "up:1-40,right:10-25");
     (* the camera turned, the time sped up to 80 days a second *)
-    ("examples3d/SolarSystem3d", "turned", 90, "w:2,w:4,left:10-60");
+    ("examples3d/PhysicsSolarSystem3d", "turned", 90, "w:2,w:4,left:10-60");
     (* turned, driving towards a pyramid (cut by the near plane), a shell
      * flying at the enemy tank *)
     ("games3d/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100");

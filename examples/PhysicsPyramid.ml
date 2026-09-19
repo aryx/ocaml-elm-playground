@@ -28,7 +28,7 @@
  *   r      build it again
  *
  * (and the flag solver=off, to start without it:
- *   dune exec examples/Pyramid.exe -- solver=off
+ *   dune exec examples/PhysicsPyramid.exe -- solver=off
  * or ?solver=off on the web; the keys are printed at launch.)
  *
  * Without the solver, the pyramid jitters, sinks and slides apart; with
@@ -140,7 +140,7 @@ let help =
          space  throw a ball
          r      build the pyramid again
   flags: solver=off  without the solver from the start
-  e.g.   dune exec examples/Pyramid.exe -- solver=off
+  e.g.   dune exec examples/PhysicsPyramid.exe -- solver=off
 |}
 
 let app = game view update initial_model

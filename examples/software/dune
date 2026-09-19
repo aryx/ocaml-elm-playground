@@ -12,7 +12,7 @@
     Animation
     Mouse Keyboard Turtle Mario
     Flags
-    Orbit Bounce Marbles Boxes Pyramid Elastic SolarSystem Theremin Piano
+    PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem Theremin Piano
     LogoFractals
     BigBangRocket
     BigBangWorm

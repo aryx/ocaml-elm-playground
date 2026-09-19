@@ -223,7 +223,7 @@ val bounce_all : ?broad_phase:Broadphase.method_ -> body list -> body list
 
 (* [broad_phase m bodies]: the pairs [bounce_all] would test exactly,
  * and how many box tests it took [m] to find them: to compare the
- * three methods (examples/Marbles.ml) *)
+ * three methods (examples/PhysicsMarbles.ml) *)
 val broad_phase : Broadphase.method_ -> body list -> Broadphase.result
 
 (* [went_through fast b]: whether [fast], during its last [step] (from

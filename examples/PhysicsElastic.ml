@@ -25,7 +25,7 @@
  * time, and a stiff one overshoots more and more; the rope's sticks set
  * the positions directly, however stiff (Particles.mli).
  *
- * Like examples/Orbit.ml, this reaches under the Physics layer, into
+ * Like examples/PhysicsOrbit.ml, this reaches under the Physics layer, into
  * the engine (physics/2d/): comparing its pieces is the point. What it
  * uses: Body, Springs (the mass and the chain), Particles (the rope),
  * and Scene2d for the keys.

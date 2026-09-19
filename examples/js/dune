@@ -12,13 +12,13 @@
 (copy_files ../Turtle.ml)
 (copy_files ../Mario.ml)
 (copy_files ../Flags.{ml,mli})
-(copy_files ../Orbit.{ml,mli})
-(copy_files ../Bounce.{ml,mli})
-(copy_files ../Marbles.{ml,mli})
-(copy_files ../Boxes.{ml,mli})
-(copy_files ../Pyramid.{ml,mli})
-(copy_files ../Elastic.{ml,mli})
-(copy_files ../SolarSystem.{ml,mli})
+(copy_files ../PhysicsOrbit.{ml,mli})
+(copy_files ../PhysicsBounce.{ml,mli})
+(copy_files ../PhysicsMarbles.{ml,mli})
+(copy_files ../PhysicsBoxes.{ml,mli})
+(copy_files ../PhysicsPyramid.{ml,mli})
+(copy_files ../PhysicsElastic.{ml,mli})
+(copy_files ../PhysicsSolarSystem.{ml,mli})
 (copy_files ../Theremin.{ml,mli})
 (copy_files ../Piano.{ml,mli})
 (copy_files ../LogoFractals.{ml,mli})
@@ -32,7 +32,7 @@
     Mouse Keyboard
     Turtle Mario
     Flags
-    Orbit Bounce Marbles Boxes Pyramid Elastic SolarSystem Theremin Piano
+    PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem Theremin Piano
     LogoFractals
     BigBangRocket
     BigBangWorm

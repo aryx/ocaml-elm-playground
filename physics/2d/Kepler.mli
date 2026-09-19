@@ -39,7 +39,7 @@
  * the ascending node) put the orbit in the ecliptic, the plane of the
  * Earth's orbit.
  *
- * Why not integrate, like examples/Orbit.ml? At an animation's time
+ * Why not integrate, like examples/PhysicsOrbit.ml? At an animation's time
  * warp (a year a second, a century a minute), a step of 1/60 s is 6
  * days of orbit: Mercury, 88 days around, would need far smaller steps,
  * and every integrator drifts over thousands of orbits. The closed form

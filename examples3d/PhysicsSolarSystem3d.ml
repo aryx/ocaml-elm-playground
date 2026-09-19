@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* The Solar System in 3D, from 2000-01-01 on: examples/SolarSystem.ml
+(* The Solar System in 3D, from 2000-01-01 on: examples/PhysicsSolarSystem.ml
  * seen from the side, the planets on their real, tilted ellipses
  * (Mercury's 7 degrees), their night sides turned away from the Sun,
  * Saturn's rings tilted, the camera turning around it all.

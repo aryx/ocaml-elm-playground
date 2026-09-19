@@ -49,27 +49,27 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyMicroMachines", "", 5);
     (* the physics plan's: explicit Euler's orbit, spiraling out after 8
      * seconds; the artillery and Spacewar! titles *)
-    ("examples/software/Orbit", "", 480);
+    ("examples/software/PhysicsOrbit", "", 480);
     ("games/software/TinyWorms", "", 5);
     ("games/software/TinySpacewar", "", 5);
     (* the bounces after 5 seconds: clay flat, the superball back up;
      * Pong's title *)
-    ("examples/software/Bounce", "", 300);
+    ("examples/software/PhysicsBounce", "", 300);
     ("games/software/TinyPong", "", 5);
     (* 300 marbles after 2 seconds, all pairs: 44850 box tests *)
-    ("examples/software/Marbles", "", 120);
+    ("examples/software/PhysicsMarbles", "", 120);
     (* rotation: boxes tipping over and tumbling, a ball rolling down *)
-    ("examples/software/Boxes", "", 120);
+    ("examples/software/PhysicsBoxes", "", 120);
     ("games/software/TinyCameltry", "", 5);
     (* stacking: the pyramid standing still after 5 seconds *)
-    ("examples/software/Pyramid", "", 300);
+    ("examples/software/PhysicsPyramid", "", 300);
     ("games/software/TinySlingshot", "", 5);
     (* a mass on a spring, a chain of springs, a rope of sticks *)
-    ("examples/software/Elastic", "", 60);
+    ("examples/software/PhysicsElastic", "", 60);
     ("games/software/TinySoldat", "", 5);
     (* the planets on 2000-01-02, Jupiter and Saturn near their May 2000
      * conjunction *)
-    ("examples/software/SolarSystem", "", 2);
+    ("examples/software/PhysicsSolarSystem", "", 2);
     (* the audio plan's first examples (their sounds: -dump-audio) *)
     ("examples/software/Theremin", "", 2);
     ("examples/software/Piano", "", 2);
@@ -136,7 +136,7 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyMicroMachines", "race", 200, "1:1,up:62-200");
     ("games/software/TinyMicroMachines", "turning", 200, "1:1,up:62-200,v:2");
     (* semi-implicit Euler: the same orbit, closed *)
-    ("examples/software/Orbit", "semi", 480, "space:1-2");
+    ("examples/software/PhysicsOrbit", "semi", 480, "space:1-2");
     (* a shot, pushed back by the wind, digging its crater *)
     ("games/software/TinyWorms", "shot", 150, "space:2-3,space:10-11");
     (* both ships thrusting, turning and firing around the star *)
@@ -145,9 +145,9 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyPong", "rally", 150, "space:2-3,w:100-160");
     (* the same marbles, the same frame (the three methods find the same
      * pairs), with the grid and its count *)
-    ("examples/software/Marbles", "grid", 120, "space:60-61");
+    ("examples/software/PhysicsMarbles", "grid", 120, "space:60-61");
     (* rotation off: boxes balanced on their corners, stuck on the ramp *)
-    ("examples/software/Boxes", "upright", 300, "u:2-3");
+    ("examples/software/PhysicsBoxes", "upright", 300, "u:2-3");
     (* the maze turned right then left, the moon rolling, a target taken *)
     ("games/software/TinyCameltry", "turns", 200, "space:2-3,right:30-75,left:150-200");
     (* the maze turned 30 degrees: the moon rolls away; upright, it
@@ -156,24 +156,24 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyCameltry", "tilt_upright", 150, "space:2-3,u:5,right:60-74");
     (* the same pyramid without the solver (phase 7's engine): a heap;
      * and hit by the ball, its top knocked off *)
-    ("examples/software/Pyramid", "no_solver", 300, "s:2");
-    ("examples/software/Pyramid", "ball", 200, "space:120");
+    ("examples/software/PhysicsPyramid", "no_solver", 300, "s:2");
+    ("examples/software/PhysicsPyramid", "ball", 200, "space:120");
     (* a shot along the dotted arc, the tower tumbling; and without the
      * solver, the tower slumping by itself, no shot *)
     ("games/software/TinySlingshot", "shot", 130, "space:2,space:60");
     ("games/software/TinySlingshot", "no_solver", 120, "space:2,s:5");
     (* all three kicked; and the chain too stiff for the time step,
      * exploding in 8 steps *)
-    ("examples/software/Elastic", "kick", 60, "space:30");
-    ("examples/software/Elastic", "stiff", 8, "x:2");
+    ("examples/software/PhysicsElastic", "kick", 60, "space:30");
+    ("examples/software/PhysicsElastic", "stiff", 8, "x:2");
     (* the bots' fight, GREEN's ragdoll tumbling; the player running,
      * jumping, flying on the jets, shooting, a grenade, the blasts *)
     ("games/software/TinySoldat", "bots", 260, "space:2");
     ("games/software/TinySoldat", "jets", 130, "space:2,d:10-70,w:30,w:40-90,space:100-160,q:120");
     (* the true distances, the inner planets crowded; and 80 days a
      * second for 2 seconds: mid-2000 *)
-    ("examples/software/SolarSystem", "true_distances", 3, "d:2");
-    ("examples/software/SolarSystem", "later", 120, "up:2,up:4");
+    ("examples/software/PhysicsSolarSystem", "true_distances", 3, "d:2");
+    ("examples/software/PhysicsSolarSystem", "later", 120, "up:2,up:4");
     (* keys held, lit; the square wave *)
     ("examples/software/Piano", "keys", 30, "space:2,a:10-30,g:10-30,u:10-30");
     (* flaps timed to thread 5 pipes (the pipes from the LFSR's seed=1);

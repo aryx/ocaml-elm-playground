@@ -25,7 +25,7 @@
  * near it, bounded but overshooting: the swings grow to 1 / sqrt (1 -
  * (w dt / 2)^2) of the first one, w = sqrt (k / m); 1.81 at k / m =
  * 10,000). Past it, the energy grows at every step, and the chain
- * flies apart (examples/Elastic.ml, key x). Stiff things need smaller
+ * flies apart (examples/PhysicsElastic.ml, key x). Stiff things need smaller
  * steps, implicit integrators, or constraints instead of springs
  * (Particles.mli).
  *

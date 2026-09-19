@@ -117,7 +117,7 @@
   went_through, pulled_to
 - examples/: Orbit, Bounce, Marbles, Boxes, Pyramid, Elastic (each
   phase switchable off: solver=off, rotation=off), SolarSystem, and
-  examples3d/SolarSystem3d
+  examples3d/PhysicsSolarSystem3d
 - physics/tests/: the .mli's worked examples and the laws
   (conservation, convergence orders, stability limits)
 
