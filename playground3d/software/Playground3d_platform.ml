@@ -48,7 +48,7 @@ open Playground3d
  * game engines/games expose (e.g. Quake's r_drawflat console variable,
  * or a "wireframe view" hotkey); the 2D software backend has its own
  * (playground/software/Playground_platform.ml). Only with the
- * -debug-keys flag (see Native_loop), so that without it a game can use
+ * -debug-keys flag (see Native_loop_3d), so that without it a game can use
  * any key. The window title shows their current state. Avoid the keys
  * games use most: arrows, w/a/s/d, space.
  *
@@ -169,19 +169,19 @@ let help_lines () =
 (* Run app *)
 (*****************************************************************************)
 (* The SDL event loop/Playground.computer bookkeeping/frame-pacing itself
- * lives in Native_loop, shared with the OpenGL backend (see
+ * lives in Native_loop_3d, shared with the OpenGL backend (see
  * docs/claude_notes/plan_opengl.md) -- this module only creates the
  * window/pixel buffer and supplies the [draw] callback that turns a
  * (camera, shape3d list) into pixels via Shape3d_render_software. *)
-open Native_loop
+open Native_loop_3d
 
 let preload_texture = Texture_decode.preload
 
 let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flags
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   (* claude: -v, -debug, and the -fixed-time/-keys/-dump-frame flags (see
-   * Native_loop) *)
-  Native_loop.parse_cli_and_setup_logging ();
+   * Native_loop_3d) *)
+  Native_loop_3d.parse_cli_and_setup_logging ();
   (* claude: the app's choices are the starting values of the options;
    * the debug keys can still change them (e.g. "m" also cycles through
    * Gouraud, which the portable hints don't name) *)
@@ -255,7 +255,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     let* () = Sdl.update_window_surface sdl_window in
     ()
   in
-  (* claude: -dump-frame (see Native_loop): the frame as a binary PPM
+  (* claude: -dump-frame (see Native_loop_3d): the frame as a binary PPM
    * image, the simplest image format there is (a header, then r, g, b
    * bytes for each pixel) *)
   let dump_frame file =
@@ -271,8 +271,8 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     done;
     close_out oc
   in
-  Native_loop.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D" ~on_key_press
+  Native_loop_3d.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d)
     ~draw ~present ~dump_frame
-    ?title_keys:(if Native_loop.debug_keys_enabled () then Some title_keys else None)
+    ?title_keys:(if Native_loop_3d.debug_keys_enabled () then Some title_keys else None)
     ?capture_mouse ?flags ()

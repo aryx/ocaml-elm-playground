@@ -17,7 +17,7 @@ module E = Sub
  * setup, event draining, frame pacing). What each backend supplies is
  * only how a Playground.shape list becomes pixels.
  *
- * Not the same loop as playground3d/native_common/Native_loop.ml: that one
+ * Not the same loop as playground3d/native_common/Native_loop_3d.ml: that one
  * drives Playground3d's computer-based update3d/view3d directly, while this
  * one feeds SDL events through the 2D app's [subscriptions] to get msgs,
  * like the web backend does.
@@ -76,7 +76,7 @@ let debug_keys_enabled () = !debug_keys
 (* claude: deterministic frames, for the golden frame tests (see
  * tests/2d/Golden_frames.ml): the clock the app sees can be frozen,
  * debug keys pressed before the first frame, and a given frame dumped
- * to a file -- the same flags as playground3d's Native_loop *)
+ * to a file -- the same flags as playground3d's Native_loop_3d *)
 let fixed_time : float option ref = ref None
 let startup_keys : string ref = ref ""
 let dump_frame_number : int option ref = ref None
@@ -100,7 +100,7 @@ let set_script (s : string) : unit =
  * collecting them in its anonymous-argument function rather than
  * filtering Sys.argv. Arg.parse_argv with its own [current] rather
  * than Arg.parse: Arg.parse's position in argv is global, so a second
- * parse in the same program (e.g. playground3d's Native_loop, run
+ * parse in the same program (e.g. playground3d's Native_loop_3d, run
  * after Playground_platform.flags) would find nothing left to parse. *)
 let parsed_cli : string list Lazy.t = lazy (
   let level = ref (Some Logs.Warning) in
@@ -344,7 +344,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
           (* claude: while a key is held, SDL keeps re-sending key_down
            * at the keyboard's repeat rate, with keyboard_repeat > 0;
            * [on_key_press] is for one-shot toggles, so only the first
-           * press counts (see playground3d/native_common/Native_loop.ml
+           * press counts (see playground3d/native_common/Native_loop_3d.ml
            * for the same filter and the bug it fixed) *)
           if !debug_keys && Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
           apply_playground_event (E.EKeyChanged (true, str))

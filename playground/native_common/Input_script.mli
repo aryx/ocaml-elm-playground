@@ -1,6 +1,6 @@
 (* Scripted inputs: game keys held down over given frames, for
  * reproducible runs of a game (-script, see Native_loop_2d and
- * playground3d's Native_loop), e.g. the golden frame of a game after 2
+ * playground3d's Native_loop_3d), e.g. the golden frame of a game after 2
  * seconds of play (tests/2d/Golden_frames.ml).
  *
  * A script is a comma-separated list of key:frames, the frames a single

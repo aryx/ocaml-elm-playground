@@ -273,7 +273,7 @@ code, it also demands a few new kinds of code the CPU path never had
 to write.
 
 **Frame rate**, measured the same way as `notes_3d_opti.md` (uncapped
--- `Native_loop`'s 60fps sleep temporarily removed -- with a
+-- `Native_loop_3d`'s 60fps sleep temporarily removed -- with a
 `Printf.eprintf` of the per-frame fps, on this machine's real GPU, an
 NVIDIA RTX A400):
 

@@ -134,7 +134,7 @@
   docs/claude_notes/plan_opengl.md) can share the same SDL
   window-event-draining/frame-pacing loop instead of duplicating it
   (textures are loaded by graphics/images/'s Texture_decode). The
-  event loop (Native_loop) is generic over the model/view types (not a
+  event loop (Native_loop_3d) is generic over the model/view types (not a
   dependency of elm_playground_3d itself) so that depending on it
   doesn't create a second path to that virtual library alongside a
   backend's own (implements elm_playground_3d) -- dune forbids that.

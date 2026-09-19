@@ -27,7 +27,7 @@ val pick : 'a list -> seed -> 'a * seed
 ```
 
 with `computer.seed` changing every tick from a seed chosen at start,
-or given with `-seed n` (a new `Native_loop` flag, like `-fixed-time`;
+or given with `-seed n` (a new `Native_loop_3d` flag, like `-fixed-time`;
 the golden tests pass it). The generator itself: `random/` in
 `plan_teaching_other.md` item 4.
 

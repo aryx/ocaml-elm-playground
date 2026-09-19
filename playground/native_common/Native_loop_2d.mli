@@ -80,7 +80,7 @@ val dump_ppm : pixels -> string -> unit
  * library can't depend on elm_playground: a backend that
  * (implements elm_playground) can't also reach that same virtual
  * library through one of its dependencies -- dune forbids it (same
- * reason playground3d/native_common/Native_loop.mli is generic). *)
+ * reason playground3d/native_common/Native_loop_3d.mli is generic). *)
 val run :
   sdl_window:Tsdl.Sdl.window ->
   sx:int ->

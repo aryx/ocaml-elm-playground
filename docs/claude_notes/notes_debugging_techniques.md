@@ -267,7 +267,7 @@ together:
    construction) -- run headlessly with `timeout Ns`, `grep -c DEBUG`
    the log to count completed frames/calls in that window, revert
    before committing.
-2. `playground3d/native_common/Native_loop.ml`'s `target_fps = 60.`
+2. `playground3d/native_common/Native_loop_3d.ml`'s `target_fps = 60.`
    caps every backend (native *and* OpenGL, both go through this same
    loop) at 60fps by sleeping out the remainder of each frame -- fine
    for playing a game, useless for measuring how fast a backend

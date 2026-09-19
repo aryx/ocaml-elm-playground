@@ -5,7 +5,7 @@
  * Each scene's executable runs with its clock frozen (-fixed-time), some
  * debug keys pressed before its first frame (-keys), and frame n dumped
  * as a PPM (-dump-frame n; see Native_loop_2d and playground3d's
- * Native_loop), under SDL's "dummy" video driver: the window gets an
+ * Native_loop_3d), under SDL's "dummy" video driver: the window gets an
  * in-memory surface, so no display is needed, and the pixels are the
  * same as on a real window.
  *

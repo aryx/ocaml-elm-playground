@@ -19,10 +19,10 @@
  *
  * It lives in elm_playground_3d itself, as an ordinary (non-virtual)
  * module next to Playground3d, rather than in its own helper library
- * like Native_loop: it pattern-matches on Playground3d.shape3d, and
+ * like Native_loop_3d: it pattern-matches on Playground3d.shape3d, and
  * a separate library depending on the virtual elm_playground_3d would
  * give each backend a second path to it, which dune rejects (see
- * Native_loop.mli). *)
+ * Native_loop_3d.mli). *)
 
 (*****************************************************************************)
 (* Vec3: graphics/3d/geometry/Vec3 *)

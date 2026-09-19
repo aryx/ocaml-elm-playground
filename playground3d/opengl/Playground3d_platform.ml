@@ -303,8 +303,8 @@ let preload_texture : string -> unit = Texture_decode.preload
 let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flags
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   (* claude: -v, -debug, and the -fixed-time/-keys/-dump-frame flags (see
-   * Native_loop) *)
-  Native_loop.parse_cli_and_setup_logging ();
+   * Native_loop_3d) *)
+  Native_loop_3d.parse_cli_and_setup_logging ();
   shading := rendering.shading;
   backface_culling := rendering.backface_culling;
   smooth_textures := rendering.smooth_textures;
@@ -624,7 +624,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
           (if !use_cache then "" else " (cache off)"))
   in
   let present () = Sdl.gl_swap_window sdl_window in
-  (* claude: -dump-frame (see Native_loop): the frame as a binary PPM,
+  (* claude: -dump-frame (see Native_loop_3d): the frame as a binary PPM,
    * like the software backend's, read back from the GPU before
    * [present]; OpenGL's rows go bottom to top, a PPM's top to bottom.
    * The pixels depend on the GPU and its driver: only compare frames
@@ -642,6 +642,6 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     done;
     close_out oc
   in
-  Native_loop.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D (OpenGL)" ~on_key_press
+  Native_loop_3d.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D (OpenGL)" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d) ~draw
     ~present ~dump_frame ?capture_mouse ?flags ()
