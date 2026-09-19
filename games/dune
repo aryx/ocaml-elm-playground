@@ -12,6 +12,7 @@
     TinyOutRun
     TinyWorms
     TinySpacewar
+    TinyPong
   )
   (libraries
     elm_playground

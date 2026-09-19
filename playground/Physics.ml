@@ -21,12 +21,14 @@ type body = {
   angle : number;
   spin : number;
   mass : number;
+  bounciness : number;
+  friction : number;
   ax : number;
   ay : number;
 }
 
 let body (shape : shape) : body =
-  { shape; x = 0.; y = 0.; vx = 0.; vy = 0.; angle = 0.; spin = 0.; mass = 1.; ax = 0.; ay = 0. }
+  { shape; x = 0.; y = 0.; vx = 0.; vy = 0.; angle = 0.; spin = 0.; mass = 1.; bounciness = 0.; friction = 0.; ax = 0.; ay = 0. }
 
 let at x y (b : body) : body = { b with x; y }
 let moving vx vy (b : body) : body = { b with vx; vy }
@@ -48,6 +50,16 @@ let shot_from speed distance (shooter : body) (b : body) : body =
 
 let pointing angle (b : body) : body = { b with angle }
 let heavy mass (b : body) : body = { b with mass }
+let bouncy bounciness (b : body) : body = { b with bounciness }
+let rough friction (b : body) : body = { b with friction }
+let immovable (b : body) : body = { b with mass = infinity }
+
+(* to and from the engine's bodies *)
+let state (b : body) : Body.t = Body.make ~vel:(b.vx, b.vy) ~mass:b.mass (b.x, b.y)
+
+let with_state (s : Body.t) (b : body) : body =
+  let (x, y) = s.pos and (vx, vy) = s.vel in
+  { b with x; y; vx; vy }
 
 (* the accumulator: every push adds an acceleration, [step] uses them up *)
 let accelerate ax ay (b : body) : body = { b with ax = b.ax +. ax; ay = b.ay +. ay }
@@ -65,10 +77,8 @@ let tick = 1. /. 60.
 let step (b : body) : body =
   (* one step of the engine's semi-implicit Euler, the pushes as a
    * constant acceleration during the step *)
-  let state = Body.make ~vel:(b.vx, b.vy) ~mass:b.mass (b.x, b.y) in
-  let state' = Integrate.semi_implicit_euler ~force:(Force.uniform (b.ax, b.ay)) ~dt:tick state in
-  let (x, y) = state'.pos and (vx, vy) = state'.vel in
-  { b with x; y; vx; vy; angle = b.angle +. (b.spin *. tick); ax = 0.; ay = 0. }
+  let state' = Integrate.semi_implicit_euler ~force:(Force.uniform (b.ax, b.ay)) ~dt:tick (state b) in
+  { (with_state state' b) with angle = b.angle +. (b.spin *. tick); ax = 0.; ay = 0. }
 
 let wrap (screen : screen) (b : body) : body =
   let around v lo hi = if v < lo then v +. (hi -. lo) else if v > hi then v -. (hi -. lo) else v in
@@ -120,6 +130,44 @@ let hitboxes (b : body) : Shape.placed list =
 let touching (a : body) (b : body) : bool =
   let hb = hitboxes b in
   List.exists (fun h -> List.exists (Collide.touching h) hb) (hitboxes a)
+
+(* the deepest contact between any of their hitboxes *)
+let contact (a : body) (b : body) : Contact.t option =
+  let hb = hitboxes b in
+  List.fold_left
+    (fun best ha ->
+      List.fold_left
+        (fun best hb ->
+          match (Collide.contact ha hb, best) with
+          | Some (c : Contact.t), Some (d : Contact.t) when d.depth >= c.depth -> best
+          | Some c, _ -> Some c
+          | None, _ -> best)
+        best hb)
+    None (hitboxes a)
+
+let bounce (a : body) (b : body) : body * body =
+  match contact a b with
+  | None -> (a, b)
+  | Some c ->
+      (* the pair's: the bouncier one's bounciness, the geometric mean
+       * of the frictions (Box2D's choices) *)
+      let restitution = Float.max a.bounciness b.bounciness and friction = sqrt (a.friction *. b.friction) in
+      let (sa, sb) = Resolve.resolve ~restitution ~friction (state a, state b) c in
+      (with_state sa a, with_state sb b)
+
+let bounce_off (wall : body) (b : body) : body = fst (bounce b (immovable wall))
+
+let bounce_all (bodies : body list) : body list =
+  (* every pair once, i < j, each seeing the others' earlier bounces *)
+  let a = Array.of_list bodies in
+  for i = 0 to Array.length a - 1 do
+    for j = i + 1 to Array.length a - 1 do
+      let (bi, bj) = bounce a.(i) a.(j) in
+      a.(i) <- bi;
+      a.(j) <- bj
+    done
+  done;
+  Array.to_list a
 
 let debug (b : body) : shape =
   let green = rgb 0 200 0 in

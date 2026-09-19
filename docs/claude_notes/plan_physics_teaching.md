@@ -462,6 +462,32 @@ Each small, each showing one idea, each deterministic (golden frames):
   circles), TinySpacewar's hits and the star; both take a `hitboxes`
   flag drawing `debug`. The golden frames didn't change. Left: the
   broad phase (a grid, sort and sweep), for many bodies (phase 5+).
+- **Phase 5, collision response, DONE (without rotation)**:
+  `physics/2d/Resolve`: the impulse along the normal (restitution),
+  Coulomb friction along the tangent (clamped at mu j), positional
+  correction (the depth shared by inverse masses); an immovable body
+  is an infinite mass (1/m = 0, no special case). Tests
+  (`Unit_resolve`): the notes' worked example (e = 1, 0, 0.5: the
+  velocities, momentum 2, energies 2, 1, 1.25), a wall, friction and a
+  moving paddle, and 1000 random collisions (momentum conserved to
+  1e-9, energy never created, kept with e = 1). In the API, the body
+  record got `bounciness` (0 by default, like Box2D; the pair uses the
+  bouncier) and `friction` (0; the pair's is the geometric mean), set
+  by `bouncy`, `rough`, `immovable`; `bounce a b` (the deepest contact
+  among their hitboxes, None for concave polygons: no bounce),
+  `bounce_off wall b` for pipelines, `bounce_all` (all pairs; the
+  broad phase is phase 6). `examples/Bounce.ml`: five balls from clay
+  to superball, and a pile of balls of all sizes (mass = area)
+  bouncing off each other. `games/TinyPong.ml`, new, beside the
+  hand-written `games/Pong.ml` (untouched): paddles as immovable,
+  rough, bouncy 1.05 bodies (bumpers: rallies speed up), so a moving
+  paddle drags the ball (friction) and corners deflect it (the
+  contact normal) -- two of Pong.ml's TODOs, from the physics; a
+  computer opponent (`players=2` for two), the ball's speed capped
+  below tunneling. Golden frames: Bounce, TinyPong, TinyPong_rally.
+  Left: a restitution threshold (resting balls make invisible tiny
+  bounces), friction on rotation (phase 7), iterations for stacks
+  (phase 8).
 
 ## Verification
 

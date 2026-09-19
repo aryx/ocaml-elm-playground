@@ -14,6 +14,7 @@
 (copy_files ../TinyOutRun.{ml,mli})
 (copy_files ../TinyWorms.{ml,mli})
 (copy_files ../TinySpacewar.{ml,mli})
+(copy_files ../TinyPong.{ml,mli})
 
 (executables
   (names
@@ -29,6 +30,7 @@
     TinyOutRun
     TinyWorms
     TinySpacewar
+    TinyPong
   )
   (libraries
     unix

@@ -25,5 +25,7 @@
    %{project_root}/examples/software/Orbit.exe
    %{project_root}/games/software/TinyWorms.exe
    %{project_root}/games/software/TinySpacewar.exe
+   %{project_root}/examples/software/Bounce.exe
+   %{project_root}/games/software/TinyPong.exe
  )
 )

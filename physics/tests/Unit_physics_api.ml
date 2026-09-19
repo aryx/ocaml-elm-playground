@@ -92,6 +92,42 @@ let test_edges () =
   Alcotest.(check (float 1e-9)) "bounce: back, half as fast" (-50.) b.vx;
   Alcotest.(check bool) "outside" true (outside screen (body (circle red 20.) |> at 0. (-600.)))
 
+let test_bounce () =
+  let ball = body (circle red 10.) |> bouncy 1. in
+  (* billiards: two equal balls head-on, 15 apart (overlapping by 5) *)
+  let (a, b) = bounce (ball |> moving 100. 0.) (ball |> at 15. 0.) in
+  Alcotest.(check (float 1e-9)) "the first stops" 0. a.vx;
+  Alcotest.(check (float 1e-9)) "the second goes on at its speed" 100. b.vx;
+  Alcotest.(check (float 1e-9)) "pushed apart: 20 between their centers" 20. (distance a b);
+  let (a', b') = bounce (ball |> at 100. 0.) b in
+  Alcotest.(check bool) "not touching: unchanged" true ((a'.x, a'.vx, b'.x, b'.vx) = (100., 0., b.x, b.vx));
+  (* a clay ball on the floor, then a superball *)
+  let floor = body (rectangle green 400. 20.) |> at 0. (-20.) in
+  (* 2 pixels into the floor, whose top is at -10 *)
+  let falling = body (circle red 10.) |> at 0. (-2.) |> moving 30. (-200.) in
+  let clay = falling |> bounce_off floor in
+  Alcotest.(check (float 1e-9)) "clay: stopped" 0. clay.vy;
+  Alcotest.(check (float 1e-9)) "... pushed back on the floor" 0. clay.y;
+  Alcotest.(check (float 1e-9)) "... still sliding (no friction)" 30. clay.vx;
+  Alcotest.(check (float 1e-9)) "a superball: back up as fast" 200. (falling |> bouncy 1. |> bounce_off floor).vy;
+  let rubber = falling |> rough 1. |> bounce_off (floor |> rough 1.) in
+  Alcotest.(check (float 1e-9)) "rubber on rubber: the sliding stops" 0. rubber.vx;
+  (* TinyPong's paddle: moving up at 600, bumper 1.05, rough 0.5; the
+   * ball 2 pixels into it at 450: j = 2.05 * 450 = 922.5, and friction
+   * gives the ball at most 0.5 j of the paddle's 600 *)
+  let paddle = body (rectangle white 20. 120.) |> immovable |> bouncy 1.05 |> rough 0.5 |> moving 0. 600. in
+  let hit = body (circle white 12.) |> bouncy 1. |> rough 0.5 |> at (-20.) 0. |> moving 450. 0. |> bounce_off paddle in
+  Alcotest.(check (float 1e-9)) "back 5% faster" (-472.5) hit.vx;
+  Alcotest.(check (float 1e-9)) "dragged up by the paddle" 461.25 hit.vy;
+  (* a heavy ball barely slowed by a light one *)
+  let (heavy_ball, _) = bounce (ball |> heavy 99. |> moving 100. 0.) (ball |> at 15. 0.) in
+  Alcotest.(check (float 1e-9)) "99 against 1: 98% of the speed kept" 98. heavy_ball.vx;
+  match bounce_all [ ball |> moving 100. 0.; ball |> at 15. 0.; ball |> at 100. 0. ] with
+  | [ a; b; c ] ->
+      Alcotest.(check (float 1e-9)) "bounce_all: the pair that touches" 100. b.vx;
+      Alcotest.(check (float 1e-9)) "... the others unchanged" 0. (a.vx +. c.vx)
+  | _ -> Alcotest.fail "three bodies in, three out"
+
 let tests =
   Testo.categorize "Physics (the API)"
     [
@@ -103,4 +139,5 @@ let tests =
       t "attracted_by, the worked example" test_gravitation;
       t "shot_from" test_shot_from;
       t "touching, with the real shapes" test_touching;
+      t "bounce, bounce_off, bounce_all" test_bounce;
     ]

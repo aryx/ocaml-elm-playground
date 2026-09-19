@@ -152,7 +152,8 @@ kit, and what it teaches.
 ### 1. Ball and paddle
 
 Tennis for Two (William Higinbotham, 1958, on an oscilloscope), Pong
-(Atari, 1972, done: `games/Pong.ml`), Breakout (Atari, 1976, Nolan
+(Atari, 1972, done: `games/Pong.ml`, and `games/TinyPong.ml` on the
+physics plan's `bounce`), Breakout (Atari, 1976, Nolan
 Bushnell and Steve Wozniak), Arkanoid (Taito, 1986: power-ups).
 
 - **Toy**: TinyBreakout -- the best first game to write after Pong,

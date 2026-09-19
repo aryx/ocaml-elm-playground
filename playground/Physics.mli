@@ -54,6 +54,8 @@ type body = {
   angle : number;         (* which way it points, in degrees, like rotate *)
   spin : number;          (* how its angle changes, degrees per second *)
   mass : number;          (* how hard it is to push, 1 by default *)
+  bounciness : number;    (* how it bounces, 0 (clay) by default *)
+  friction : number;      (* how it grips what it slides on, 0 by default *)
   ax : number;            (* what pushes it until the next [step]: *)
   ay : number;            (*   accelerations, set by fall, push, ... *)
 }
@@ -87,6 +89,23 @@ val pointing : number -> body -> body
 (* [heavy mass b]: [b] with this mass (1 by default); a heavier body
  * moves less when pushed (F = m a), but falls just as fast *)
 val heavy : number -> body -> body
+
+(* [bouncy e b]: how [b] bounces off things (the restitution): 0. not
+ * at all, like clay (the default), 0.5 losing half its speed, 1. a
+ * superball bouncing back as fast, and above 1 a pinball bumper,
+ * *adding* speed. When two bodies collide, the bouncier one decides. *)
+val bouncy : number -> body -> body
+
+(* [rough mu b]: friction, how much [b] grips what it slides against,
+ * from 0. (ice, the default) to 1. (rubber): a ball hitting a rough
+ * moving paddle is dragged along with it. Both bodies must be rough
+ * for friction (their rough-nesses are multiplied, then the square root
+ * taken, like Box2D) *)
+val rough : number -> body -> body
+
+(* [immovable b]: nothing it collides with moves it (an infinite mass):
+ * walls, the floor, a paddle the game moves itself *)
+val immovable : body -> body
 
 (* {1 What pushes it (until the next step)} *)
 
@@ -152,6 +171,27 @@ val bounce_in : screen -> number -> body -> body
  * shapes each count, where they were moved. (See physics/2d/Collide.mli
  * for the tests, from circles to the separating axis theorem.) *)
 val touching : body -> body -> bool
+
+(* [bounce a b]: if they touch, [a] and [b] bouncing off each other --
+ * their velocities changed at once, like billiard balls, heavier
+ * bodies moving less, and pushed apart so they don't overlap anymore;
+ * otherwise [a] and [b] unchanged. After [step]:
+ *   let (ball1, ball2) = bounce (step ball1) (step ball2)
+ * The total momentum (mass times velocity) is the same after; the
+ * speeds too if the bounciness is 1. For circles and convex polygons
+ * (a concave one doesn't bounce: split it in convex pieces, a group).
+ * (See physics/2d/Resolve.mli.) *)
+val bounce : body -> body -> body * body
+
+(* [bounce_off wall b]: [b] bouncing off [wall], which doesn't move
+ * (treated as [immovable]), for pipelines:
+ *   ball |> fall 800. |> step |> bounce_off floor |> bounce_off paddle *)
+val bounce_off : body -> body -> body
+
+(* [bounce_all bodies]: every two of them bouncing off each other, a
+ * box of marbles (every pair tested: fine for tens of bodies, slow for
+ * thousands) *)
+val bounce_all : body list -> body list
 
 (* [debug b]: [b]'s hitboxes as translucent green shapes, and its
  * velocity as an arrow (a quarter of a second of motion): draw it over

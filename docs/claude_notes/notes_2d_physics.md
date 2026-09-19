@@ -401,8 +401,10 @@ concept, a **body** -- a shape that moves -- and verbs in `update`:
 `fall`, `push`, `thrust`, `slow`, `attracted_by` (§6) add up what
 pushes the body, and `step` (§4: one tick of semi-implicit Euler)
 moves it; `touching` (§8) tells whether two bodies overlap, their
-hitboxes read from their shapes (`debug` draws them); planned:
-`bounce` (§10), and a step for many bodies at once (§9). `games/TinyWorms.ml`, an artillery game, was
+hitboxes read from their shapes (`debug` draws them), and `bounce`
+(§10) makes them bounce off each other (`bouncy`, `rough`,
+`immovable` for walls; `examples/Bounce.ml`, `games/TinyPong.ml`);
+planned: a step for many bodies at once (§9). `games/TinyWorms.ml`, an artillery game, was
 its first user (a shell `launched`, then `fall`, `push` for the wind,
 `step`), `games/TinySpacewar.ml` its second (ships and torpedoes
 `attracted_by` the star); `examples/Orbit.ml` goes under it, to

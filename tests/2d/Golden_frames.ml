@@ -49,6 +49,10 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/Orbit", "", 480);
     ("games/software/TinyWorms", "", 5);
     ("games/software/TinySpacewar", "", 5);
+    (* the bounces after 5 seconds: clay flat, the superball back up;
+     * Pong's title *)
+    ("examples/software/Bounce", "", 300);
+    ("games/software/TinyPong", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -80,6 +84,8 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyWorms", "shot", 150, "space:2-3,space:10-11");
     (* both ships thrusting, turning and firing around the star *)
     ("games/software/TinySpacewar", "duel", 120, "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75");
+    (* a serve, returned by the computer, missed by the player *)
+    ("games/software/TinyPong", "rally", 150, "space:2-3,w:100-160");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes
