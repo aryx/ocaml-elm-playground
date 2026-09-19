@@ -67,6 +67,9 @@ let scenes : Testutil_golden.scene list =
     (* a mass on a spring, a chain of springs, a rope of sticks *)
     ("examples/software/Elastic", "", 60);
     ("games/software/TinySoldat", "", 5);
+    (* the planets on 2000-01-02, Jupiter and Saturn near their May 2000
+     * conjunction *)
+    ("examples/software/SolarSystem", "", 2);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -141,6 +144,10 @@ let scripted : Testutil_golden.scripted list =
      * jumping, flying on the jets, shooting, a grenade, the blasts *)
     ("games/software/TinySoldat", "bots", 260, "space:2");
     ("games/software/TinySoldat", "jets", 130, "space:2,d:10-70,w:30,w:40-90,space:100-160,q:120");
+    (* the true distances, the inner planets crowded; and 80 days a
+     * second for 2 seconds: mid-2000 *)
+    ("examples/software/SolarSystem", "true_distances", 3, "d:2");
+    ("examples/software/SolarSystem", "later", 120, "up:2,up:4");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

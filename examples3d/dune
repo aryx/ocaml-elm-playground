@@ -9,12 +9,14 @@
     FloatingCity3d
     Corridor3d
     CachedGrid3d
+    SolarSystem3d
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
     elm_playground_3d_software ; implem of virtual elm_playground_3d
+    physics_2d ; SolarSystem3d's Kepler and Planets
   )
 )
 

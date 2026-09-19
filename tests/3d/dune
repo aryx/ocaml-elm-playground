@@ -17,6 +17,7 @@
    %{project_root}/examples3d/Cube3d.exe
    %{project_root}/examples3d/Cubes3d.exe
    %{project_root}/examples3d/Spheres3d.exe
+   %{project_root}/examples3d/SolarSystem3d.exe
    %{project_root}/examples3d/TexturedCube3d.exe
    %{project_root}/examples3d/InteractiveCube3d.exe
    %{project_root}/examples3d/PaintersAlgorithmFail3d.exe

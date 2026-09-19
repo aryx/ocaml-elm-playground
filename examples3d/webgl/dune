@@ -11,6 +11,7 @@
 (copy_files ../FloatingCity3d.ml)
 (copy_files ../Corridor3d.ml)
 (copy_files ../CachedGrid3d.{ml,mli})
+(copy_files ../SolarSystem3d.{ml,mli})
 
 (executables
   (names
@@ -24,6 +25,7 @@
     FloatingCity3d
     Corridor3d
     CachedGrid3d
+    SolarSystem3d
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp
@@ -31,6 +33,7 @@
     elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
     elm_playground_3d_webgl ; implem of virtual elm_playground_3d
+    physics_2d ; SolarSystem3d's Kepler and Planets
   )
   (modes js)
   (link_flags -no-check-prims)
