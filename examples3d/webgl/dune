@@ -1,7 +1,7 @@
 ; claude: examples linked against elm_playground_3d_webgl.
-; Triangle3d.ml lives here (the WebGL backend's own first test); the
-; others are the backend-agnostic ../*.ml as-is, via copy_files (a
-; build-time copy, not a committed duplicate, see ../js/dune).
+; The backend-agnostic ../*.ml as-is, via copy_files (a build-time
+; copy, not a committed duplicate, see ../js/dune).
+(copy_files ../Triangle3d.ml)
 (copy_files ../Cube3d.ml)
 (copy_files ../Cubes3d.ml)
 (copy_files ../Spheres3d.ml)

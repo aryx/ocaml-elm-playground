@@ -7,9 +7,10 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* The "hello triangle" of the WebGL backend: a single triangle, facing
- * the camera, the smallest scene that goes through the whole pipeline
- * (camera matrices, one draw call, lighting). Its orange is darker
+(* The "hello triangle" of 3D: a single triangle, facing the camera,
+ * the smallest scene that goes through the whole pipeline (camera
+ * matrices, one draw call or one rasterized triangle, lighting); the
+ * first test of each new backend. Its orange is darker
  * than orange: facing +z, it gets only part of the "sun" (see
  * Lighting), 0.25 + 0.75 * 0.34, about half its color. *)
 open Playground

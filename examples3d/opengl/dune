@@ -3,6 +3,7 @@
 ; exact same backend-agnostic source runs against elm_playground_3d_opengl
 ; here and elm_playground_3d_software in ../dune, with only one real file
 ; per example.
+(copy_files ../Triangle3d.ml)
 (copy_files ../Cubes3d.ml)
 (copy_files ../Spheres3d.ml)
 (copy_files ../TexturedCube3d.ml)
@@ -12,6 +13,7 @@
 
 (executables
   (names
+    Triangle3d
     Cubes3d
     Spheres3d
     TexturedCube3d

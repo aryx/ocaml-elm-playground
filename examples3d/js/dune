@@ -3,6 +3,7 @@
 ; elm_playground_3d_web here, elm_playground_3d_software in ../dune, and
 ; elm_playground_3d_opengl in ../opengl/dune, with only one real file
 ; per example.
+(copy_files ../Triangle3d.ml)
 (copy_files ../Cube3d.ml)
 (copy_files ../Cubes3d.ml)
 (copy_files ../Spheres3d.ml)
@@ -16,6 +17,7 @@
 
 (executables
   (names
+    Triangle3d
     Cube3d
     Cubes3d
     Spheres3d

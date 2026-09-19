@@ -318,7 +318,7 @@ void main() {
 
 ### One pixel, by hand
 
-`examples3d/webgl/Triangle3d` draws one `orange` triangle, `Hex
+`examples3d/Triangle3d` draws one `orange` triangle, `Hex
 "#f57900"`, in the `z = 0` plane, facing the camera. Take any pixel
 inside it, with the default `Smooth` shading:
 

@@ -1,5 +1,6 @@
 (executables
   (names
+    Triangle3d
     Cube3d
     Cubes3d
     Spheres3d

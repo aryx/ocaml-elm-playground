@@ -17,6 +17,7 @@
  * Not x (the magnifier): it follows the mouse. *)
 let scenes : Testutil_golden.scene list =
   [
+    ("examples3d/Triangle3d", "", 3);
     ("examples3d/Cube3d", "", 3);
     ("examples3d/Cubes3d", "", 3);
     ("examples3d/Cubes3d", "f", 3);
