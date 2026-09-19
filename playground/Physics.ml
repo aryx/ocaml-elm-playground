@@ -197,6 +197,47 @@ let bounce_all ?(broad_phase = Broadphase.Sort_and_sweep) (bodies : body list) :
          a.(j) <- bj);
   Array.to_list a
 
+type world = { bodies : body list; memory : Solver.memory }
+
+let world (bodies : body list) : world = { bodies; memory = Solver.nothing }
+
+let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_starting = true) (w : world) : world =
+  let moving (b : body) = b.mass <> infinity in
+  (* the pushes change the velocities (semi-implicit Euler: the
+   * velocities first, the positions last, with the new velocities) *)
+  let bodies =
+    Array.of_list w.bodies
+    |> Array.map (fun b ->
+           if not (moving b) then b
+           else let b = fall gravity b in { b with vx = b.vx +. (b.ax *. tick); vy = b.vy +. (b.ay *. tick) })
+  in
+  (* the contacts: the broad phase's pairs, each with its points *)
+  let pairs =
+    (Broadphase.sort_and_sweep (Array.map bounds bodies)).pairs
+    |> List.filter_map (fun (i, j) ->
+           let a = bodies.(i) and b = bodies.(j) in
+           let hb = hitboxes b in
+           match List.concat_map (fun ha -> List.concat_map (Collide.manifold ha) hb) (hitboxes a) with
+           | [] -> None
+           | _ when not (moving a || moving b) -> None
+           | contacts ->
+               Some
+                 { Solver.a = i; b = j; contacts;
+                   restitution = Float.max a.bounciness b.bounciness; friction = sqrt (a.friction *. b.friction) })
+  in
+  let (states, memory) =
+    Solver.solve { Solver.default with iterations; warm_starting } ~dt:tick (Array.map state bodies) pairs w.memory
+  in
+  (* the moves, with the solved velocities *)
+  let bodies =
+    Array.mapi
+      (fun i b ->
+        let b = with_state states.(i) b in
+        { b with x = b.x +. (b.vx *. tick); y = b.y +. (b.vy *. tick); angle = b.angle +. (b.spin *. tick); ax = 0.; ay = 0. })
+      bodies
+  in
+  { bodies = Array.to_list bodies; memory }
+
 let debug (b : body) : shape =
   let green = rgb 0 200 0 in
   let hitbox = function

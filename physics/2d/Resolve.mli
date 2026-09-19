@@ -85,6 +85,15 @@ val inverse_mass : Body.t -> float
 (* 1 / inertia: 0 for a body that never turns *)
 val inverse_inertia : Body.t -> float
 
+(* [relative_velocity a b point]: how fast b's point at [point] moves
+ * away from a's *)
+val relative_velocity : Body.t -> Body.t -> Vec2.t -> Vec2.t
+
+(* [resistance a b point dir]: the denominator above, how a and b
+ * resist an impulse along [dir] at [point] (1/m_a + 1/m_b + the lever
+ * arms' terms); 1 / it is the "effective mass" the impulse sees *)
+val resistance : Body.t -> Body.t -> Vec2.t -> Vec2.t -> float
+
 (* [impulse ~restitution a b contact]: j above, the size of the
  * impulse along the contact's normal (from a to b), at its point; 0
  * when they're already moving apart there (nothing to do: they

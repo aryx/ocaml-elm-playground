@@ -224,6 +224,35 @@ val broad_phase : Broadphase.method_ -> body list -> Broadphase.result
  * the game to see what the physics sees *)
 val debug : body -> shape
 
+(* {1 Piles: many bodies at once} *)
+
+(* [bounce_all] fixes one pair at a time, once: fine for balls in a box,
+ * not for a pile of boxes, which jitters and sinks (each fix undoes a
+ * bit of another). A [world] solves all the contacts together, again
+ * and again, remembering them from one step to the next (see
+ * physics/2d/Solver.mli): a pyramid of boxes stands still. *)
+type world = {
+  bodies : body list;
+  (* the contacts' impulses of the last step, for the next one: the
+   * bodies are known by their place in the list, so add new ones at
+   * the end *)
+  memory : Solver.memory;
+}
+
+(* [world bodies]: the walls and floors among them [immovable] *)
+val world : body list -> world
+
+(* [simulate ~gravity w]: one tick of the whole world: every body
+ * pushed (by gravity, pixels per second per second, 0 by default, and
+ * by what was added to it with fall, push...), then all the contacts
+ * solved together, then every body moved -- [step] and [bounce_all]
+ * in one, for piles:
+ *   let w = w |> simulate ~gravity:800.
+ * [iterations] (10 by default: more is stiffer, slower) and
+ * [warm_starting] (true) are there to see what they do: with 1
+ * iteration, or without warm starting, a pyramid sags and slides. *)
+val simulate : ?gravity:number -> ?iterations:int -> ?warm_starting:bool -> world -> world
+
 (* {1 Looking at bodies} *)
 
 (* [draw b]: its shape, where it is, turned the way it points *)

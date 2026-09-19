@@ -17,6 +17,13 @@
  * flat, and a ball on a rough ramp rolls down instead of sliding: the
  * friction at its bottom point spins it.
  *
+ * Boxes on a rough ramp are the scene of Box2D Lite's "Varying
+ * Friction Coefficients" and Box2D's testbed "Friction" (boxes of
+ * frictions 0.75 to 0 sliding down ramps; here, one friction, and
+ * rotation on or off),
+ *   https://github.com/erincatto/box2d-lite/blob/master/samples/main.cpp
+ *   https://github.com/erincatto/box2d/blob/v2.4.1/testbed/tests/friction.cpp
+ *
  * Space drops them again; u makes every body upright (collisions never
  * turn them), to see the difference: the boxes land on their corners
  * and stay balanced on them, the balls slide down the ramp.

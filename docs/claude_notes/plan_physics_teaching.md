@@ -538,6 +538,37 @@ Each small, each showing one idea, each deterministic (golden frames):
   resting edge (two, clipped, with phase 8), the body's center taken
   as its center of mass (a group off-center turns around the wrong
   point).
+- **Phase 8, stacking, DONE**: `Collide.manifold`, up to two contact
+  points: the corners of each convex polygon inside the other, each
+  with its own depth along the normal, the two farthest apart kept
+  (not Box2D's clipping: the same idea in fewer lines, cited);
+  `physics/2d/Solver`: sequential impulses (the accumulated normal
+  impulse clamped >= 0, friction's within mu of it), warm starting
+  (each point's impulses of the step before, found again within 3
+  pixels: position matching, like Bullet's persistent manifolds, no
+  feature ids), Baumgarte's velocity bias for the overlaps (0.2, slop
+  0.5 px) instead of pushing apart, a bounce threshold (50 px/s: no
+  micro-bounces at rest); `Resolve` exposes `relative_velocity` and
+  `resistance` for it. Tests (`Unit_solver`): the manifold (two points
+  lying flat, one on a corner), the `.mli`'s box on the floor (0.5 at
+  each corner, still, not turning), warm starting (one iteration per
+  step enough warm, not cold), momentum and angular momentum kept. In
+  the API, a `world` (bodies + the solver's memory, the bodies known
+  by their place in the list) and `simulate ?gravity ?iterations
+  ?warm_starting`, the whole step (pushes, broad phase, manifolds,
+  solver, moves). `examples/Pyramid.ml`: 28 boxes standing still; keys
+  `s` (the solver off: phase 7's `step` + `bounce_all`, the pyramid a
+  heap after 5 s), `i` (1, 4, 10, 20 iterations: 1 cold, a heap), `w`
+  (warm starting: 10 cold, standing but sagging, gaps), space (a ball
+  knocking the top off), `r`; flag `solver=off`; keys printed at
+  launch. Golden frames: Pyramid, Pyramid_no_solver, Pyramid_ball. The
+  examples now credit the classic demos they follow, with URLs
+  (checked): Box2D Lite's "Pyramid Stacking" and "Varying Friction
+  Coefficients", Box2D's testbed "Pyramid", "Restitution", "Friction",
+  Chipmunk's "PyramidStack", "Plink". Measured: a 28-box pyramid step
+  is 1.3 ms of physics; the golden runs are slow (30-45 ms a frame)
+  because of the offscreen rendering, for every example. Left:
+  sleeping, joints (springs and ropes: phase 2's Springs), clipping.
 
 ## Verification
 

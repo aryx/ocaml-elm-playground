@@ -19,6 +19,11 @@
  *  - a grid (drawn): only the marbles sharing a cell, a few hundred;
  *  - sort and sweep: only the marbles whose x ranges overlap.
  *
+ * A stress scene like Chipmunk's "Plink" (Scott Lembcke: 300
+ * pentagons falling through a grid of triangles),
+ *   https://github.com/slembcke/Chipmunk2D/blob/master/demo/Plink.c
+ * (the idea, written from scratch here).
+ *
  * The three find the same pairs, so the marbles move exactly the same:
  * only the work differs (and the frame rate, with -uncapped, on the
  * software backend's title bar).

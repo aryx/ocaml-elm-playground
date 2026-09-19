@@ -401,7 +401,10 @@ step by step).
   (Erin Catto, "Iterative Dynamics with Temporal Coherence", GDC 2005 --
   the heart of Box2D, and of Box2D Lite, its 1000-line teaching
   version). What an Angry Birds tower needs to stand still until it's
-  hit: the plan's stacking phase, before the Slingshot game.
+  hit: the plan's stacking phase, before the Slingshot game (done:
+  `physics/2d/Solver`, two contact points per resting edge from
+  `Collide.manifold`, warm starting by matching the points by where
+  they are, Baumgarte's bias for the overlaps).
 - **Tunneling.** A bullet at 600 px/s moves 10 pixels per step: a wall
   thinner than that can be jumped over between two steps, never seen
   overlapping. Fixes: smaller steps for fast things (sub-stepping),
@@ -424,7 +427,9 @@ hitboxes read from their shapes (`debug` draws them), and `bounce`
 `immovable` for walls; `examples/Bounce.ml`, `games/TinyPong.ml`),
 spinning when hit off center (§11; `upright` to never turn:
 `examples/Boxes.ml`, and the rolling moon of `games/TinyCameltry.ml`);
-planned: a step for many bodies at once (§9). `games/TinyWorms.ml`, an artillery game, was
+and a `world` stepped by `simulate` solves all the contacts of a pile
+together (§12: `examples/Pyramid.ml`, whose `s` key switches back to
+`bounce_all` to see the pyramid collapse without it). `games/TinyWorms.ml`, an artillery game, was
 its first user (a shell `launched`, then `fall`, `push` for the wind,
 `step`), `games/TinySpacewar.ml` its second (ships and torpedoes
 `attracted_by` the star); `examples/Orbit.ml` goes under it, to

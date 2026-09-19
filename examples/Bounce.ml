@@ -17,6 +17,11 @@
  * area), and push the small ones around more than they're pushed.
  * Space drops them all again.
  *
+ * The row of balls from clay to superball is the scene of Box2D's
+ * testbed "Restitution" (seven balls, restitution 0 to 1),
+ *   https://github.com/erincatto/box2d/blob/v2.4.1/testbed/tests/restitution.cpp
+ * (the idea, written from scratch here).
+ *
  * Every ball, at every tick:
  *
  *   ball |> fall 800. |> step |> bounce_off floor |> bounce_off wall ...

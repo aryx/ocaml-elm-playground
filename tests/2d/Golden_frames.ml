@@ -60,6 +60,8 @@ let scenes : Testutil_golden.scene list =
     (* rotation: boxes tipping over and tumbling, a ball rolling down *)
     ("examples/software/Boxes", "", 120);
     ("games/software/TinyCameltry", "", 5);
+    (* stacking: the pyramid standing still after 5 seconds *)
+    ("examples/software/Pyramid", "", 300);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -115,6 +117,10 @@ let scripted : Testutil_golden.scripted list =
      * slides, and friction holds it (up to 39 degrees): still there *)
     ("games/software/TinyCameltry", "tilt", 150, "space:2-3,right:60-74");
     ("games/software/TinyCameltry", "tilt_upright", 150, "space:2-3,u:5,right:60-74");
+    (* the same pyramid without the solver (phase 7's engine): a heap;
+     * and hit by the ball, its top knocked off *)
+    ("examples/software/Pyramid", "no_solver", 300, "s:2");
+    ("examples/software/Pyramid", "ball", 200, "space:120");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

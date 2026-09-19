@@ -167,3 +167,35 @@ let contact (a : Shape.placed) (b : Shape.placed) : Contact.t option =
       match circle other with Some c when Shape.convex q -> circle_convex c q | _ -> None)
   | _ -> (
       match (circle a, circle b) with Some c1, Some c2 -> circles c1 c2 | _ -> None)
+
+(* the corners of each polygon inside the other, each with its own
+ * depth along the normal (from p to q), the two farthest apart kept *)
+let polygon_manifold (p : Vec2.t list) (q : Vec2.t list) : Contact.t list =
+  match sat p q with
+  | None -> []
+  | Some c ->
+      let n = c.normal in
+      let along v = Vec2.dot n v in
+      (* how far p reaches towards q, and q back towards p *)
+      let p_front = List.fold_left (fun m v -> Float.max m (along v)) neg_infinity p in
+      let q_front = List.fold_left (fun m v -> Float.min m (along v)) infinity q in
+      let points =
+        List.filter_map (fun v -> if point_in_polygon v p then Some (v, p_front -. along v) else None) q
+        @ List.filter_map (fun v -> if point_in_polygon v q then Some (v, along v -. q_front) else None) p
+        |> List.filter (fun (_, depth) -> depth > 0.)
+      in
+      let contact (point, depth) : Contact.t = { normal = n; depth; point } in
+      (match points with
+      | [] -> [ c ]
+      | [ _ ] | [ _; _ ] -> List.map contact points
+      | first :: _ ->
+          (* the two extremes along the contact's surface: the widest
+           * support *)
+          let t v = Vec2.cross n v in
+          let pick better = List.fold_left (fun m x -> if better (t (fst x)) (t (fst m)) then x else m) first points in
+          [ contact (pick ( < )); contact (pick ( > )) ])
+
+let manifold (a : Shape.placed) (b : Shape.placed) : Contact.t list =
+  match (a, b) with
+  | Polygon_at p, Polygon_at q when Shape.convex p && Shape.convex q -> polygon_manifold p q
+  | _ -> Option.to_list (contact a b)

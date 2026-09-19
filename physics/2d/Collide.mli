@@ -94,3 +94,22 @@ val touching : Shape.placed -> Shape.placed -> bool
  * convex polygons; None when they don't overlap, and for concave
  * polygons (split them in convex pieces for a contact) *)
 val contact : Shape.placed -> Shape.placed -> Contact.t option
+
+(* [manifold a b]: the contact as up to two points, for stacking
+ * (Solver.mli): a box lying on another touches it along an edge, and a
+ * single point in the middle would balance it on a knife's edge. For
+ * two convex polygons, the corners of each inside the other, each with
+ * its own depth along the normal, and when there are more than two
+ * (two boxes of the same width), the two farthest apart:
+ *
+ *        +--------+
+ *        |  box   |
+ *     ===x========x===    the box's two bottom corners, inside the
+ *        +--------+          floor: two points, 2 pixels deep each
+ *
+ * Otherwise (the corners all outside: two thin bars crossed like a +;
+ * or circles) the one point of [contact]. Box2D finds its two points
+ * by clipping one polygon's edge against the other's sides (Catto,
+ * "Contact Manifolds", GDC 2007): sturdier for deep overlaps; the
+ * corners inside are the idea, in fewer lines. *)
+val manifold : Shape.placed -> Shape.placed -> Contact.t list
