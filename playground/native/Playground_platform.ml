@@ -120,6 +120,11 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
     Cairo.Surface.flush sdl_surface
   in
   let (app : _ Playground.app) = app in
+  (* claude: -debug-keys is parsed by the shared loop, but this backend
+   * has no debug keys: say where they are rather than silently ignore *)
+  if Native_loop_2d.debug_keys_enabled () then
+    prerr_endline
+      "-debug-keys: no debug keys in the Cairo backend; they're in the software one, e.g. examples/software/Piano.exe";
   Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
     ~dump_frame:(Native_loop_2d.dump_ppm pixels)
     ~pull_audio:Audio.pull ~dump_audio:Wav.write
