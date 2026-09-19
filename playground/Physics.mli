@@ -114,7 +114,16 @@ val immovable : body -> body
  * landing on a corner tips over, a ball sliding on a rough floor
  * starts rolling. How hard it is to spin (its moment of inertia) comes
  * from its shape and mass: a ring of mass at the edge spins harder
- * than the same mass at the center. [turn] still turns it. *)
+ * than the same mass at the center. [turn] still turns it.
+ *
+ * An upright body is exactly the engine as it was before rotation (the
+ * plan's phase 6), not an approximation: its inertia is infinite, so
+ * every rotation term of the collisions (physics/2d/Resolve.mli) is
+ * multiplied by 1 / inertia = 0 -- the lever arms (r x n)^2 / I, the
+ * torques -- and its spin stays 0, so its touching point moves at its
+ * velocity: what's left are the formulas without rotation, bit for
+ * bit. (The contact point, only used through the lever arms, then
+ * doesn't matter either.) Drawn, its angle never changes. *)
 val upright : body -> body
 
 (* {1 What pushes it (until the next step)} *)

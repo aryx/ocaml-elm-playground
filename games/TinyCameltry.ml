@@ -46,6 +46,19 @@
  * bodies" of notes_2d_physics.md section 9. Not Force.gravitation nor
  * Energy either: gravity is a [push], turned with the maze.
  *
+ * Without rotation (the U key during play, or from the start the flag
+ * rotation=off:
+ *   dune exec games/TinyCameltry.exe -- rotation=off
+ * or ?rotation=off on the web), the moon is upright: exactly the
+ * engine before rotation, phase 6's formulas (see Physics.upright), and
+ * drawn unturned. It can't roll, it slides; and rough walls hold a
+ * sliding thing still up to a slope of atan 0.8 = 39 degrees
+ * (Coulomb's static friction). Turn the maze a little and nothing
+ * moves, then past 39 degrees the moon lets go at once: the game
+ * becomes a different, stickier one. A rolling moon
+ * moves at the slightest tilt -- what makes Cameltry feel like
+ * Cameltry.
+ *
  * Left as exercises: more levels (Rolling-Moon's were drawn in
  * Inkscape), the exit and the timer of Cameltry, bumpers (bounciness
  * above 1) and spikes, the best times kept.
@@ -126,13 +139,16 @@ type play = {
   turned : number;
   targets : (number * number) list;
   frames : int;
+  (* false: the moon upright, sliding instead of rolling (the key u) *)
+  rotation : bool;
 }
 
 type scene = Title | Playing of play | Cleared of int (* frames it took *)
 
 type model = scene Scene2d.t
 
-let start : play = { moon; turned = 0.; targets = tiles '*'; frames = 0 }
+let start (rotation : bool) : play =
+  { moon = (if rotation then moon else moon |> Physics.upright); turned = 0.; targets = tiles '*'; frames = 0; rotation }
 let initial_model : model = Scene2d.start Title
 
 (*****************************************************************************)
@@ -160,15 +176,24 @@ let update_play (keys : keyboard) (jump : bool) (p : play) : play =
   let moon = if jump && on_something p.moon then moon |> Physics.moving (moon.vx - (400. * dx)) (moon.vy - (400. * dy)) else moon in
   let moon = List.fold_left (fun m w -> Physics.bounce_off w m) moon (near moon) in
   let targets = List.filter (fun (x, y) -> not (Physics.touching moon (Physics.body target_shape |> Physics.at x y))) p.targets in
-  { moon; turned; targets; frames = p.frames +.. 1 }
+  { p with moon; turned; targets; frames = p.frames +.. 1 }
 
 let update (computer : computer) (model : model) : model =
   let scenes = Scene2d.update computer model in
   let space = Scene2d.pressed (fun k -> k.kspace) scenes in
+  (* rotation=off: the moon upright from the start *)
+  let rotation = List.assoc_opt "rotation" computer.flags <> Some "off" in
   match scenes.scene with
-  | Title -> if space then Scene2d.go (Playing start) scenes else scenes
-  | Cleared _ -> if space then Scene2d.go (Playing start) scenes else scenes
+  | Title | Cleared _ -> if space then Scene2d.go (Playing (start rotation)) scenes else scenes
   | Playing p ->
+      (* u: rotation on or off, the moon upright or not *)
+      let p =
+        if Scene2d.pressed (fun k -> Set_.mem "u" k.keys) scenes then
+          (* upright, it also stops spinning: nothing would change its spin anymore *)
+          let moon = if p.rotation then p.moon |> Physics.upright |> Physics.turn 0. else { p.moon with upright = false } in
+          { p with rotation = not p.rotation; moon }
+        else p
+      in
       let p = update_play computer.keyboard space p in
       if p.targets = [] then Scene2d.go (Cleared p.frames) scenes else { scenes with scene = Playing p }
 
@@ -189,6 +214,7 @@ let view_play (hitboxes : bool) (p : play) : shape list =
   in
   [ group [ group maze |> move (-.p.moon.x) (-.p.moon.y) ] |> rotate p.turned;
     text 3. (Printf.sprintf "%d left   %s" (List.length p.targets) (seconds p.frames)) |> move_y 450. ]
+  @ if p.rotation then [] else [ text 2. "rotation off: the moon slides (u)" |> move_y 410. ]
 
 let view (computer : computer) (model : model) : shape list =
   let screen = computer.screen in
@@ -198,12 +224,28 @@ let view (computer : computer) (model : model) : shape list =
   | Title ->
       [ text 6. "TINY CAMELTRY" |> move_y 200.;
         text 2. "left/right: turn the maze   space: jump" |> move_y 80.;
-        text 2. "touch every green target, fast" |> move_y 40. ]
+        text 2. "touch every green target, fast" |> move_y 40.;
+        text 2. "(u: rotation off, the moon slides)" |> move_y 0. ]
       @ Scene2d.blink 1. model [ text 3. "PRESS SPACE" |> move_y (-200.) ]
   | Playing p -> view_play (List.mem_assoc "hitboxes" computer.flags) p
   | Cleared frames ->
       [ text 5. "CLEARED!" |> move_y 100.; text 3. (seconds frames) ]
       @ Scene2d.blink 1. model [ text 3. "PRESS SPACE" |> move_y (-200.) ])
 
+(* the keys and flags, printed at launch, to remember them (on the web,
+ * in the browser's console) *)
+let help =
+  {|TinyCameltry
+  keys:  left/right  turn the maze
+         space       jump (start, restart)
+         u           rotation off/on: the moon slides instead of rolling
+  flags: rotation=off  the moon upright from the start
+         hitboxes      draw what the physics sees
+  e.g.   dune exec games/TinyCameltry.exe -- rotation=off hitboxes
+|}
+
 let app = game view update initial_model
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+
+let main =
+  print_string help;
+  Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

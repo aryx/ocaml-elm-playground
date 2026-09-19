@@ -98,6 +98,10 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/Boxes", "upright", 300, "u:2-3");
     (* the maze turned right then left, the moon rolling, a target taken *)
     ("games/software/TinyCameltry", "turns", 200, "space:2-3,right:30-75,left:150-200");
+    (* the maze turned 30 degrees: the moon rolls away; upright, it
+     * slides, and friction holds it (up to 39 degrees): still there *)
+    ("games/software/TinyCameltry", "tilt", 150, "space:2-3,right:60-74");
+    ("games/software/TinyCameltry", "tilt_upright", 150, "space:2-3,u:5,right:60-74");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes
