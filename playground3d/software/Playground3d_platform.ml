@@ -74,6 +74,7 @@ open Playground3d
  *  - "x": the pixel magnifier (graphics/2d/Magnifier), following the
  *    mouse ("z" is taken)
  *  - "h": this list, with each key's state, over the frame
+ *  - Ctrl + any of them: the debug key alone, not given to the game
  *    (playground/software/Help_overlay)
  *)
 
@@ -162,6 +163,7 @@ let help_lines () =
     ("t", "fill rule: " ^ match o.fill_rule with Triangle.Epsilon -> "epsilon" | Top_left -> "top-left");
     ("o", "optimizations: " ^ on_off !Opti.enabled);
     ("x", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
+    ("Ctrl", "+ a key: that key's debug action only, not the game's");
     ("Q", "quit");
   ]
 

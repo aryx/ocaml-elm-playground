@@ -54,7 +54,9 @@ val parse_cli_and_setup_logging : unit -> unit
 (* -debug-keys was given: [run] calls its [on_key_press] for the
  * backend's debug keys. Off by default, so that all keys go to the app
  * only (a game may use "f" or "h" itself); -keys still presses its keys
- * either way. *)
+ * either way. With it, a key is both the app's and the debug key's,
+ * and Ctrl + the key is the debug key alone (Ctrl-h: the help, even in
+ * a game using "h"). *)
 val debug_keys_enabled : unit -> bool
 
 val mouse_move : float -> float -> Playground.mouse -> Playground.mouse

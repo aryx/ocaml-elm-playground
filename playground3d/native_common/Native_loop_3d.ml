@@ -195,10 +195,18 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
              * computer.keyboard's continuously-updated held/not-held
              * state below, which a game's update3d re-reads every Tick
              * regardless of any of this.) *)
-            if !debug_keys && Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
-            (* claude: capture_mouse: Escape gives the mouse back *)
-            if capture_mouse && str = "escape" then set_captured false;
-            computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
+            let first = Sdl.Event.(get sdl_event keyboard_repeat) = 0 in
+            (* claude: Ctrl + a key is the debug key alone, not given to
+             * the app: the way to reach a debug key the game uses
+             * itself *)
+            let ctrl = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.ctrl <> 0 in
+            if !debug_keys && ctrl then (if first then on_key_press str)
+            else begin
+              if !debug_keys && first then on_key_press str;
+              (* claude: capture_mouse: Escape gives the mouse back *)
+              if capture_mouse && str = "escape" then set_captured false;
+              computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
+            end
         | x when x = Sdl.Event.key_up ->
             let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
             let str = scancode_to_keystring key in

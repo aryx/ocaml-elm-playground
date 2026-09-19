@@ -346,8 +346,16 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
            * [on_key_press] is for one-shot toggles, so only the first
            * press counts (see playground3d/native_common/Native_loop_3d.ml
            * for the same filter and the bug it fixed) *)
-          if !debug_keys && Sdl.Event.(get sdl_event keyboard_repeat) = 0 then on_key_press str;
-          apply_playground_event (E.EKeyChanged (true, str))
+          let first = Sdl.Event.(get sdl_event keyboard_repeat) = 0 in
+          (* claude: Ctrl + a key is the debug key alone, not given to
+           * the app: the way to reach a debug key the game uses itself
+           * (Piano's "h") *)
+          let ctrl = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.ctrl <> 0 in
+          if !debug_keys && ctrl then (if first then on_key_press str)
+          else begin
+            if !debug_keys && first then on_key_press str;
+            apply_playground_event (E.EKeyChanged (true, str))
+          end
 
         | x when x = Sdl.Event.key_up ->
           let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in

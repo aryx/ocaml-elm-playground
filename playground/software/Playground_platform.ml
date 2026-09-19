@@ -50,6 +50,8 @@ let title = "Playground (software rasterizer)"
  *    (Audio_debug); try games/TinyMario.exe (its music) or
  *    examples/Piano.exe (space: the waveforms' harmonics)
  *  - "h": this list, with each key's state, over the frame
+ *  - Ctrl + any of them: the debug key alone, not given to the game
+ *    (for a game that uses the key itself: Piano's "h")
  *    (Help_overlay)
  *)
 
@@ -98,6 +100,7 @@ let help_lines () =
     ("o", "optimizations: " ^ on_off !Opti.enabled);
     ("z", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
     ("v", "the sound, seen: " ^ Audio_debug.name !audio_view);
+    ("Ctrl", "+ a key: that key's debug action only, not the game's");
     ("Q", "quit");
   ]
 
