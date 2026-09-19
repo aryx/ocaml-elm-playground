@@ -53,6 +53,8 @@ let scenes : Testutil_golden.scene list =
      * Pong's title *)
     ("examples/software/Bounce", "", 300);
     ("games/software/TinyPong", "", 5);
+    (* 300 marbles after 2 seconds, all pairs: 44850 box tests *)
+    ("examples/software/Marbles", "", 120);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -86,6 +88,9 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinySpacewar", "duel", 120, "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75");
     (* a serve, returned by the computer, missed by the player *)
     ("games/software/TinyPong", "rally", 150, "space:2-3,w:100-160");
+    (* the same marbles, the same frame (the three methods find the same
+     * pairs), with the grid and its count *)
+    ("examples/software/Marbles", "grid", 120, "space:60-61");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

@@ -128,6 +128,25 @@ let test_bounce () =
       Alcotest.(check (float 1e-9)) "... the others unchanged" 0. (a.vx +. c.vx)
   | _ -> Alcotest.fail "three bodies in, three out"
 
+(* bounce_all with each broad phase: the same bounces *)
+let test_broad_phase () =
+  let balls =
+    List.init 40 (fun i ->
+        body (circle red 10.) |> bouncy 0.8
+        |> at (float_of_int (i mod 8) *. 19.) (float_of_int (i / 8) *. 19.)
+        |> moving (float_of_int (i * 37 mod 50)) (float_of_int (i * 11 mod 30)))
+  in
+  let positions bs = List.map (fun b -> (b.x, b.y, b.vx, b.vy)) bs in
+  let run m = positions (repeat 60 (fun bs -> bounce_all ~broad_phase:m (List.map step bs)) balls) in
+  let all = run Broadphase.All_pairs in
+  Alcotest.(check bool) "grid = all pairs, after 60 ticks" true (run Broadphase.Grid = all);
+  Alcotest.(check bool) "sort and sweep = all pairs" true (run Broadphase.Sort_and_sweep = all);
+  let r = broad_phase Broadphase.All_pairs balls in
+  Alcotest.(check int) "all pairs: 40 * 39 / 2 tests" 780 r.tests;
+  (* a grid of 8 x 5 balls 19 apart, radius 10: each touches its 2 to 4
+   * neighbours (not the diagonals, 27 apart; their boxes do overlap) *)
+  Alcotest.(check bool) "neighbours found" true (List.mem (0, 1) r.pairs && List.mem (0, 8) r.pairs)
+
 let tests =
   Testo.categorize "Physics (the API)"
     [
@@ -140,4 +159,5 @@ let tests =
       t "shot_from" test_shot_from;
       t "touching, with the real shapes" test_touching;
       t "bounce, bounce_off, bounce_all" test_bounce;
+      t "bounce_all, the three broad phases" test_broad_phase;
     ]

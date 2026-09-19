@@ -315,7 +315,25 @@ cheaply, before the exact tests (the **narrow phase**, §8):
   bodies of very different sizes.
 
 A counter of pairs tested, in the debug overlay, makes the difference
-visible.
+visible (`examples/Marbles.ml`, space switching the method).
+
+**Measured** (`Physics.bounce_all` on `Marbles.ml`'s scene, native, ms
+per frame, the walls included: 3.7 ms of the 1000 marbles' frame):
+
+```
+                                   300 marbles     1000 marbles
+   the exact test on every pair       10.2            107.6
+   all pairs of bounding boxes         1.8             12.2    (44,850 / 499,500 box tests)
+   grid                                2.1             11.4    (1,202 / 7,698)
+   sort and sweep                      1.6              8.7    (1,614 / 18,108)
+```
+
+The big win is the bounding boxes before the exact test, whichever
+way they're paired: a box test is 4 comparisons, the exact one
+builds the hitboxes and a contact. Among the three, counting tests
+isn't timing them: the grid makes the fewest, but pays for its hash
+table; sort and sweep, a sort and a list, is fastest here (on a pile,
+flat and wide, the x axis is a good one to sweep along).
 
 ## 10. Collision response: impulses
 

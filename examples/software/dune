@@ -12,7 +12,7 @@
     Animation
     Mouse Keyboard Turtle Mario
     Flags
-    Orbit Bounce
+    Orbit Bounce Marbles
   )
   (libraries
     elm_playground

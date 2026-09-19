@@ -157,16 +157,28 @@ let bounce (a : body) (b : body) : body * body =
 
 let bounce_off (wall : body) (b : body) : body = fst (bounce b (immovable wall))
 
-let bounce_all (bodies : body list) : body list =
-  (* every pair once, i < j, each seeing the others' earlier bounces *)
+(* the bounding box of all its hitboxes (its center alone if it has
+ * none: it touches nothing anyway) *)
+let bounds (b : body) : Broadphase.box =
+  let union ((x0, y0), (x1, y1)) ((x0', y0'), (x1', y1')) =
+    ((Float.min x0 x0', Float.min y0 y0'), (Float.max x1 x1', Float.max y1 y1'))
+  in
+  match List.map Shape.bounds (hitboxes b) with
+  | [] -> ((b.x, b.y), (b.x, b.y))
+  | first :: rest -> List.fold_left union first rest
+
+let broad_phase (m : Broadphase.method_) (bodies : body list) : Broadphase.result =
+  Broadphase.pairs m (Array.of_list (List.map bounds bodies))
+
+let bounce_all ?(broad_phase = Broadphase.Sort_and_sweep) (bodies : body list) : body list =
   let a = Array.of_list bodies in
-  for i = 0 to Array.length a - 1 do
-    for j = i + 1 to Array.length a - 1 do
-      let (bi, bj) = bounce a.(i) a.(j) in
-      a.(i) <- bi;
-      a.(j) <- bj
-    done
-  done;
+  (* the candidate pairs, i < j, in order, each seeing the earlier
+   * bounces *)
+  (Broadphase.pairs broad_phase (Array.map bounds a)).pairs
+  |> List.iter (fun (i, j) ->
+         let (bi, bj) = bounce a.(i) a.(j) in
+         a.(i) <- bi;
+         a.(j) <- bj);
   Array.to_list a
 
 let debug (b : body) : shape =

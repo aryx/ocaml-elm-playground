@@ -189,9 +189,15 @@ val bounce : body -> body -> body * body
 val bounce_off : body -> body -> body
 
 (* [bounce_all bodies]: every two of them bouncing off each other, a
- * box of marbles (every pair tested: fine for tens of bodies, slow for
- * thousands) *)
-val bounce_all : body list -> body list
+ * box of marbles. Only the pairs whose bounding boxes overlap are
+ * tested exactly, found by [broad_phase] (sort and sweep by default,
+ * see physics/2d/Broadphase.mli), so hundreds of bodies are fine. *)
+val bounce_all : ?broad_phase:Broadphase.method_ -> body list -> body list
+
+(* [broad_phase m bodies]: the pairs [bounce_all] would test exactly,
+ * and how many box tests it took [m] to find them: to compare the
+ * three methods (examples/Marbles.ml) *)
+val broad_phase : Broadphase.method_ -> body list -> Broadphase.result
 
 (* [debug b]: [b]'s hitboxes as translucent green shapes, and its
  * velocity as an arrow (a quarter of a second of motion): draw it over

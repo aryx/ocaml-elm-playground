@@ -27,5 +27,6 @@
    %{project_root}/games/software/TinySpacewar.exe
    %{project_root}/examples/software/Bounce.exe
    %{project_root}/games/software/TinyPong.exe
+   %{project_root}/examples/software/Marbles.exe
  )
 )

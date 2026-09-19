@@ -14,6 +14,7 @@
 (copy_files ../Flags.{ml,mli})
 (copy_files ../Orbit.{ml,mli})
 (copy_files ../Bounce.{ml,mli})
+(copy_files ../Marbles.{ml,mli})
 
 (executables
   (names
@@ -22,7 +23,7 @@
     Mouse Keyboard
     Turtle Mario
     Flags
-    Orbit Bounce
+    Orbit Bounce Marbles
   )
   (libraries
     elm_playground

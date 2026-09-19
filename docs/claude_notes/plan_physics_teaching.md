@@ -488,6 +488,24 @@ Each small, each showing one idea, each deterministic (golden frames):
   Left: a restitution threshold (resting balls make invisible tiny
   bounces), friction on rotation (phase 7), iterations for stacks
   (phase 8).
+- **Phase 6, the broad phase, DONE**: `physics/2d/Broadphase`, all
+  pairs, a uniform grid (cells as big as the biggest box) and sort and
+  sweep, each returning the same pairs (i < j, sorted) and its count of
+  box tests. Tests (`Unit_broadphase`): the `.mli`'s four boxes (6, 1
+  and 3 tests), the same pairs on 200 random scenes, 300 spread boxes
+  (44,850 tests for all pairs, under 2,000 for the others).
+  `Physics.bounce_all ?broad_phase` (sort and sweep by default) bounces
+  only the candidate pairs, the bounding boxes computed once per
+  pass (so a pair pushed together by an earlier bounce of the same
+  pass waits for the next frame: Bounce's golden frame moved, as
+  plausibly), and `Physics.broad_phase` gives the counts.
+  `examples/Marbles.ml`: 300 marbles, space switching the method, the
+  counts on screen, the grid drawn; golden frames with all pairs and
+  with the grid, identical marbles. The measured times are in
+  `notes_2d_physics.md` section 9: the box test before the exact one
+  is the win (10.2 -> 1.6 ms for 300, 107.6 -> 8.7 for 1000). Left:
+  the insertion sort of the previous order (sort and sweep's temporal
+  coherence), trees.
 
 ## Verification
 
