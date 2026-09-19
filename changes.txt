@@ -85,7 +85,8 @@
   TinyMicroMachines, TinyXpilot (the ball game on a rope, 1 or 2
   players), TinyGalaga (Catmull-Rom paths, by arc length),
   TinyDonkeyKong (state machines, slanted girders), TinyLodeRunner
-  (digging), TinyRick (traps as tiles, flip-screen rooms); kits/shmup (Shots, Path) and kits/platformer (Tile_move,
+  (digging), TinyRick (traps as tiles, flip-screen rooms), TinyGradius
+  (the power-up bar, a timeline of waves); kits/shmup (Shots, Path) and kits/platformer (Tile_move,
   Ladder)
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
   TinyTron3d, TinyMario64, TinyMarble (Marble Madness); Minecraft3d is a game (walk, jump, fly,

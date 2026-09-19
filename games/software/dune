@@ -30,6 +30,7 @@
     TinyDonkeyKong
     TinyLodeRunner
     TinyRick
+    TinyGradius
   )
   (libraries
     elm_playground

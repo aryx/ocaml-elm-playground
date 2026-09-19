@@ -224,7 +224,10 @@ targets), Gradius (Konami, 1985: the power-up bar), R-Type (Irem,
 1987), then "bullet hell" (danmaku): DonPachi (Cave, 1995), Touhou
 Project (ZUN, 1996-).
 
-- **Toys**: TinyGradius (horizontal, power-ups), TinyTouhou (a boss's
+- **Toys**: TinyGradius (DONE: `games/TinyGradius.ml`, the cave as two
+  strings of digits, the waves a timeline of the kit's Paths, the
+  power-up bar, the options on the ship's trail, the Big Core; a robot
+  clears it), TinyTouhou (a boss's
   bullet patterns -- spirals, rings, aimed volleys -- and a tiny
   hitbox).
 - **Kit**, the shmup kit:

@@ -47,6 +47,7 @@
    %{project_root}/games/software/TinyDonkeyKong.exe
    %{project_root}/games/software/TinyLodeRunner.exe
    %{project_root}/games/software/TinyRick.exe
+   %{project_root}/games/software/TinyGradius.exe
    %{project_root}/examples/software/Fractals.exe
  )
 )

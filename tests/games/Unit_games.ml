@@ -86,17 +86,17 @@ let bomberman_chain () =
 
 (* the computer drives two laps in 50 seconds, on the road, never
  * falling off the table (it used to aim across the table on the long
- * straights, see computer_drive) *)
+ * straights, see Topdown.computer) *)
 let micro_machines_computer () =
   let open TinyMicroMachines in
   let c = ref (car_at 0 0.) and falls = ref 0 and offroad = ref 0 in
   for _ = 1 to 3000 do
-    let gas, steer = computer_drive !c in
+    let gas, steer = Topdown.computer track !c.body in
     c := drive gas steer !c |> recover;
     if !c.falling = 60 then incr falls;
-    if not (on_road !c.x !c.y) then incr offroad
+    if not (on_road !c.body.x !c.body.y) then incr offroad
   done;
-  Alcotest.(check bool) "two laps" true (!c.next > 2 * List.length waypoints);
+  Alcotest.(check bool) "two laps" true (!c.body.next > 2 * List.length waypoints);
   Alcotest.(check int) "falls" 0 !falls;
   Alcotest.(check bool) "hardly off the road" true (!offroad < 60)
 
@@ -560,6 +560,51 @@ let rick_robot () =
   Alcotest.(check int) "lives" 6 !lives
 
 (*****************************************************************************)
+(* TinyGradius *)
+(*****************************************************************************)
+
+(* the bar: 5 capsules, the cursor on OPTION; taken, an option, and the
+ * cursor back to nothing; a second SPEED..., up to 4 *)
+let gradius_bar () =
+  let open TinyGradius in
+  let p = take { no_power with cursor = 4 } in
+  Alcotest.(check int) "an option" 1 p.options;
+  Alcotest.(check int) "the cursor reset" (-1) p.cursor;
+  let p = List.fold_left (fun p _ -> take { p with cursor = 0 }) no_power (List.init 6 Fun.id) in
+  Alcotest.(check int) "speed, at most 4" 4 p.speed;
+  Alcotest.(check bool) "laser replaces double" false (take { (take { no_power with cursor = 2 }) with cursor = 3 }).double
+
+(* a robot flies the stage: in the middle of the cave a bit ahead,
+ * away from the bullets coming near, firing, taking SPEED once and the
+ * OPTIONs; at the boss, in line with its core *)
+let gradius_robot () =
+  let open TinyGradius in
+  let s = ref initial_model and i = ref 0 and cleared = ref false and deaths = ref 0 in
+  while !i < 60 * 120 && not !cleared do
+    incr i;
+    let keyboard =
+      match !s.scene with
+      | Playing g ->
+          if g.dead = 1 then incr deaths;
+          let col = int_of_float ((g.sx +. 150. -. bounds.left) /. tile) in
+          let col = max 0 (min (cols - 1) col) in
+          let gap_mid = (ground_top col +. (bounds.top -. (float_of_int (digit ceiling col) *. tile))) /. 2. in
+          let target_y = match g.boss with Boss b -> b.by | _ -> gap_mid in
+          let danger = List.find_opt (fun (b : Shots.t) -> Float.abs (b.x -. g.sx) < 90. && Float.abs (b.y -. g.sy) < 40.) g.bullets in
+          let ty = match danger with Some b -> if b.y > g.sy then g.sy -. 60. else g.sy +. 60. | None -> target_y in
+          let tx = g.cam -. 300. in
+          let want = (g.power.cursor = 0 && g.power.speed = 0) || g.power.cursor = 4 in
+          { initial_computer.keyboard with kup = ty > g.sy +. 4.; kdown = ty < g.sy -. 4.; kright = tx > g.sx +. 4.; kleft = tx < g.sx -. 4.;
+            kspace = !i mod 2 = 0; keys = (if want && !i mod 2 = 1 then Set_.singleton "x" else Set_.empty) }
+      | Clear _ -> cleared := true; initial_computer.keyboard
+      | _ -> { initial_computer.keyboard with kspace = !i mod 2 = 0 }
+    in
+    s := update (computer ~keyboard !i) !s
+  done;
+  Alcotest.(check bool) "stage clear" true !cleared;
+  Alcotest.(check bool) "at most one ship lost" true (!deaths <= 1)
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -607,4 +652,6 @@ let tests =
       t "TinyLodeRunner, a guard trapped, the player crushed" lode_trap;
       t "TinyLodeRunner, the escape ladder" lode_escape;
       t "TinyRick, a robot escapes the temple" rick_robot;
+      t "TinyGradius, the power-up bar" gradius_bar;
+      t "TinyGradius, a robot clears the stage" gradius_robot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]
