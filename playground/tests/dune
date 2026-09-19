@@ -9,5 +9,7 @@
    elm_playground
    elm_playground_software ; an implem of virtual elm_playground, to link
    elm_playground_native_common ; Input_script
+   elm_playground_3d ; Logo3d
+   elm_playground_3d_software ; an implem of virtual elm_playground_3d, to link
  )
 )

@@ -79,6 +79,10 @@ let scripted : Testutil_golden.scripted list =
     (* a jump onto the first platform: Mario in the air, his shadow on
      * it; then the camera turned with d *)
     ("games3d/TinyMario64", "jump", 160, "space:1,left:2-63,up:64-175,space:145-165");
-    ("games3d/TinyMario64", "camera", 200, "space:1,left:2-63,up:64-175,space:145-165,d:170-193") ]
+    ("games3d/TinyMario64", "camera", 200, "space:1,left:2-63,up:64-175,space:145-165,d:170-193");
+    (* the 3D turtle's drawings, all at once (the clock frozen): the
+     * tree, its leaves; Hilbert's curve in 3D, level 2 *)
+    ("examples3d/Fractals3d", "tree", 5, "a:2");
+    ("examples3d/Fractals3d", "hilbert", 8, "right:2,a:4") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

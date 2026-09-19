@@ -12,6 +12,7 @@
 (copy_files ../Corridor3d.ml)
 (copy_files ../CachedGrid3d.{ml,mli})
 (copy_files ../SolarSystem3d.{ml,mli})
+(copy_files ../Fractals3d.{ml,mli})
 
 (executables
   (names
@@ -26,6 +27,7 @@
     Corridor3d
     CachedGrid3d
     SolarSystem3d
+    Fractals3d
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp

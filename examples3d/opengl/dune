@@ -8,6 +8,7 @@
 (copy_files ../TexturedCube3d.ml)
 (copy_files ../CachedGrid3d.{ml,mli})
 (copy_files ../SolarSystem3d.{ml,mli})
+(copy_files ../Fractals3d.{ml,mli})
 
 (executables
   (names
@@ -16,6 +17,7 @@
     TexturedCube3d
     CachedGrid3d
     SolarSystem3d
+    Fractals3d
   )
   (libraries
     elm_core
