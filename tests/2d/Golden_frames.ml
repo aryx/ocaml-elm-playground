@@ -173,6 +173,10 @@ let scripted : Testutil_golden.scripted list =
       "play",
       900,
       "space:1,space:5,right:6-11,right:210-229,left:396-403,right:570-570,right:740-740" );
+    (* the turtle's drawings, all at once (the clock frozen, it wouldn't
+     * move): Koch's filled snowflake; the dragon, 4096 lines *)
+    ("examples/software/Fractals", "snowflake", 5, "a:2");
+    ("examples/software/Fractals", "dragon", 10, "right:2,right:4,right:6,a:8");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes
