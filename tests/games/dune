@@ -70,5 +70,6 @@
    kit_maze
    kit_lightcycles
    kit_shmup
+   kit_platformer
  )
 )

@@ -31,6 +31,7 @@
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
     kit_lightcycles ; TinyTron's rules
     kit_shmup ; TinyInvaders' and TinyGalaga's Shots and Path
+    kit_platformer ; TinyMario's, TinyLodeRunner's and TinyRick's Tile_move and Ladder
     elm_playground_native ; implem of virtual elm_playground
   )
 )

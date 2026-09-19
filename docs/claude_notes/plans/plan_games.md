@@ -284,8 +284,10 @@ Pitfall! (David Crane, Activision, 1982), Super Mario Bros. (Nintendo,
   slanted girders as segments, ladders, barrels zigzagging down; the
   hero and the barrels as state machines; a robot rescues Pauline),
   TinyCeleste (a dash, wall jumps).
-- **Kit**, the platformer kit: `Actor` (TinyMario's `move_by`, one
-  pixel at a time), and **game feel**: coyote time (jumping a few
+- **Kit**, the platformer kit (started: `kits/platformer/`, `Tile_move`,
+  TinyMario's `move_by`, one pixel at a time, and `Ladder`, climbing
+  ladder tiles, for TinyLodeRunner and TinyRick; TinyDonkeyKong's
+  slanted girders are segments, its own), and **game feel**: coyote time (jumping a few
   frames after leaving a ledge), jump buffering (a jump pressed just
   before landing), variable jump height (releasing the button early),
   one-way platforms, slopes; stomping enemies. References: Steve

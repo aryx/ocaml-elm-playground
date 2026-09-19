@@ -17,7 +17,9 @@
  * strings (see Tilemap), seen through a camera following the player (see
  * Camera2d), with parallax hills and clouds behind, and a HUD in front.
  * Arrows to run, up to jump; take the coins ('$'), bump the '?' blocks
- * from below, reach the flag ('F').
+ * from below, reach the flag ('F'). The player moves against the tiles
+ * one pixel at a time, with the platformer kit's Tile_move
+ * (kits/platformer/, with games/TinyLodeRunner and games/TinyRick).
  *
  * Two flags (see Playground.flags) to compare the ways a camera can
  * follow the player (see Camera2d.mli), and to see more of the level:
@@ -140,27 +142,11 @@ let initial_model =
 (* Moving against the tiles *)
 (*****************************************************************************)
 
-let blocked (map : Tilemap.t) (x : number) (y : number) : bool =
-  Tilemap.hits solid map x y player_size player_size
-
-(* Move (x, y) by (dx, dy), at most one pixel at a time, stopping before
- * the first step entering a solid tile; returns where we stopped, and
- * whether we hit something. That's how Celeste and TowerFall move their
- * characters (Maddy Thorson, "Celeste and TowerFall Physics", 2017): slow
- * in theory, but a character moves only a few pixels per frame, and it
- * can't go through a thin wall even when fast (a big step could jump
- * over it: the "tunneling" of physics engines). Called once for x, then
- * once for y, so that running into a wall while falling stops only the
- * running, and the player slides down along the wall. *)
-let move_by (map : Tilemap.t) (x, y) (dx, dy) : (number * number) * bool =
-  let n = int_of_float (ceil (Float.abs dx + Float.abs dy)) in
-  let rec go i (x, y) =
-    if i >= n then ((x, y), false)
-    else
-      let x' = x + (dx / float_of_int n) and y' = y + (dy / float_of_int n) in
-      if blocked map x' y' then ((x, y), true) else go (succ i) (x', y')
-  in
-  go 0 (x, y)
+(* the player's box against the solid tiles, one pixel at a time: see
+ * kits/platformer/Tile_move.mli (move_by once for x, then once for y,
+ * so that running into a wall while falling stops only the running) *)
+let blocked (map : Tilemap.t) (x : number) (y : number) : bool = Tile_move.hits solid map (player_size, player_size) x y
+let move_by (map : Tilemap.t) (x, y) (dx, dy) : (number * number) * bool = Tile_move.move_by solid map (player_size, player_size) (x, y) (dx, dy)
 
 (* the tile over the player's head, bumped from below: a '?' gives a coin *)
 let bump (model : model) : model =

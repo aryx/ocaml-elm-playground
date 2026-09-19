@@ -1,0 +1,12 @@
+; claude: the platformer kit's worked examples (Tile_move.mli,
+; Ladder.mli), run by 'make test'
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   kit_platformer
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
+)
