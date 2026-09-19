@@ -46,6 +46,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyOutRun", "", 5);
     ("games/software/TinyBomberman", "", 5);
     ("games/software/TinyTron", "", 5);
+    ("games/software/TinyMicroMachines", "", 5);
     (* the physics plan's: explicit Euler's orbit, spiraling out after 8
      * seconds; the artillery and Spacewar! titles *)
     ("examples/software/Orbit", "", 480);
@@ -102,6 +103,9 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyTron", "computer", 200, "1:1,up:40,right:80,down:120,right:150");
     (* two players, both turning *)
     ("games/software/TinyTron", "duel", 150, "2:1,up:30,w:40,right:70,s:90,a:120");
+    (* against the computer, north up; then with the camera turning *)
+    ("games/software/TinyMicroMachines", "race", 200, "1:1,up:62-200");
+    ("games/software/TinyMicroMachines", "turning", 200, "1:1,up:62-200,v:2");
     (* semi-implicit Euler: the same orbit, closed *)
     ("examples/software/Orbit", "semi", 480, "space:1-2");
     (* a shot, pushed back by the wind, digging its crater *)

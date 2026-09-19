@@ -314,8 +314,10 @@ Mode 7, see `plan_games3d.md`).
   `games3d/TinyVirtuaRacing.ml`;
   pseudo-3D: all 2D shapes, so a perfect fit
   for the 2D playground -- the road is trapezoids, the scenery scaled
-  sprites), TinyMicroMachines (top-down, a `Camera2d` following the
-  car -- rotating with it would need an `angle` in `Camera2d`).
+  sprites), TinyMicroMachines (DONE: `games/TinyMicroMachines.ml`, the
+  head-to-head mode, drifting cars, the computer on the waypoints; a
+  `Camera2d` looking ahead of the leader, or turning with it: the
+  `angle` added to `Camera2d`).
 - **Kit**, the racing kit:
   - `Road`: a track as segments (length, curve, hill), projected one
     segment at a time, from far to near; references: Lou Gorenfeld,
