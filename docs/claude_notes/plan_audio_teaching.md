@@ -375,6 +375,25 @@ audio meeting).
   beats was wrong), two voices, errors. `Audio.doremi`; TinyMario's
   music= file in solfège unless it ends in .abc; its sounds and music
   gathered in an Audio section.
+- **MIDI, DONE (files; not yet a live keyboard)**: `audio/Midi`,
+  Standard MIDI Files read (formats 0 and 1: chunks, variable-length
+  quantities, running status, note offs as note ons of velocity 0,
+  program changes, meta events, the tempo map walked from ticks to
+  seconds; sysex skipped) and written (`of_tune`: ABC or solfège to
+  MIDI, format 1, a track per voice). A MIDI score's notes overlap
+  freely, so `Music.render_score` renders into one buffer, each note
+  added at its start (`Synth.Samples`, a new leaf: a tree of a song's
+  notes would allocate a song-length array per note), General MIDI's
+  families mapped to our waveforms and channel 10 to noise drums.
+  `Audio.midi`; TinyMario's music= takes a .mid too. Tests
+  (`Unit_midi`): the VLQ table both ways, a chord in 7 bytes with
+  running status, a tempo change mid-song, Frere Jacques from ABC to
+  MIDI and back note for note; a golden WAV of that round played as
+  MIDI. The trackers' formats (MOD, S3M, XM, IT) discussed in
+  `notes_audio_midi.md` section 9 at the user's request, not parsed.
+  Left: a real MIDI keyboard (ALSA/CoreMIDI/PortMidi need bindings;
+  Web MIDI in the browser), MIDI's control changes and pitch bend,
+  a voice limit.
 - **The goal set by the user**: TinyMario with music and sounds when
   moving. So after phases 2 and 3, phase 8's `Music` (notes, the
   sequencer) comes before phases 5-7. The classic Super Mario Bros.

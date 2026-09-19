@@ -145,6 +145,43 @@ API**. The `Piano` example with a real keyboard: each "note on" a
   controllers), two-way negotiation between devices, compatible with
   1.0. The 1983 protocol is still what most instruments speak.
 
+## 9. MIDI's cousins: the trackers' modules (MOD, S3M, XM, IT)
+
+Where a MIDI file says *what* to play and leaves the sound to whatever
+synthesizer reads it, a **module** carries its own instruments: short
+recorded **samples**, inside the file, next to the notes. The same song
+sounds the same everywhere -- on the Amiga, whose Paula chip played
+four sampled channels in hardware, that was the whole point.
+
+- **MOD** (Karsten Obarski's Ultimate Soundtracker, Amiga, 1987; the
+  format everyone used through ProTracker, 1990): 31 instruments of
+  8-bit samples, **patterns** of 64 **rows** by 4 channels (each cell a
+  note, an instrument, and an effect: a slide, a vibrato, a volume
+  change, an arpeggio), and an **order list** saying which pattern
+  plays when. Written by editing the grid, rows scrolling upward in
+  time: the **tracker** interface, still used today (Renoise,
+  OpenMPT, and in hardware, the Polyend Tracker).
+- **S3M** (Scream Tracker 3, Future Crew, PC, 1994): up to 32 channels,
+  and AdLib FM instruments beside the samples.
+- **XM** (FastTracker 2, Triton, PC, 1994): instruments made of several
+  samples across the keyboard, with volume and panning envelopes.
+- **IT** (Impulse Tracker, Jeffrey Lim, PC, 1995): new note actions
+  (a note keeps sounding when the next starts), resonant filters.
+
+They were the music of the **demoscene** (Future Crew's Second
+Reality, 1993) and of many 1990s games -- Epic's Unreal (1998) shipped
+its music as modules (UMX) -- small enough for a floppy, and sounding
+better than the General MIDI of the era's sound cards. Players today: libxmp,
+libopenmpt (OpenMPT's), MikMod.
+
+Their place here: a module is our `audio/` in miniature -- samples,
+a pitch per note (a sample played faster for higher notes: resampling,
+the plan's phase 10), envelopes, effects like `sliding` -- driven by a
+sequencer; a tracker is the music's editor in the same grid spirit as
+`Tilemap` is a level's. Not read by `audio/` (ABC, solfège and MIDI
+cover the notes; a module's samples would need `Resample`): a
+possible exercise, MOD first, the simplest.
+
 ## Glossary
 
 - **MIDI**: a protocol of musical events, not sound.
@@ -162,6 +199,9 @@ API**. The `Piano` example with a real keyboard: each "note on" a
   map.
 - **Voice**, **polyphony**: a playing note, and how many at once.
 - **SoundFont**: recorded samples of instruments, for playing MIDI.
+- **Module**, **tracker**: a song file carrying its own samples (MOD,
+  S3M, XM, IT), and the grid editor that writes it; **pattern**,
+  **row**, **order list**: its structure.
 
 Sources: from memory, to be checked before relying on them for
 teaching -- the MIDI 1.0 specification and the Standard MIDI File

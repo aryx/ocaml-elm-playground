@@ -42,7 +42,13 @@ type voice = {
   fade : bool; (* percussive: dies away over its duration *)
 }
 
-type t = Voice of voice | Together of t list | After of t list
+type t =
+  | Voice of voice
+  | Together of t list
+  | After of t list
+  (* samples already computed: a MIDI file's rendering (Music.render_score),
+   * untouched by the modifiers below *)
+  | Samples of Signal.t
 
 (* [voice source frequency]: 0.3 s at volume 0.5, not sliding nor fading *)
 val voice : source -> float -> t

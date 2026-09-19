@@ -47,3 +47,30 @@ val instrument : voice:int -> voices:int -> Oscillator.waveform * float
 
 (* [to_sound tune]: its voices together, each a sound after another *)
 val to_sound : Abc.tune -> Synth.t
+
+(* {1 Playing MIDI scores}
+ *
+ * A MIDI file's notes overlap freely (a chord, a sustained bass under a
+ * melody), which a tune's one-after-another voices can't hold: a score
+ * is rendered straight into one buffer, each note added at its start.
+ * General MIDI's instrument families (the program / 8, 1991) mapped to
+ * our few waveforms, NES-like:
+ *
+ *   pianos, chromatic percussion (0-15)   square, fading
+ *   organs (16-23)                        square, held
+ *   guitars (24-31)                       sawtooth, fading
+ *   basses (32-39)                        triangle
+ *   strings, ensembles (40-55)            sawtooth, softer
+ *   brass (56-63)                         sawtooth
+ *   reeds, pipes (64-79)                  square
+ *   synth leads (80-87)                   square
+ *   synth pads (88-95)                    triangle
+ *   the rest                              square
+ *
+ * and channel 10 (9 from 0), the drums, by key: 35-36 a bass drum (a
+ * triangle falling from 150 to 50 Hz), 38 and 40 a snare (noise), 42
+ * to 46 hi-hats (short, bright noise), the others a short noise. The
+ * velocity is the volume (127: 0.25, so that chords don't clip). *)
+
+(* [render_score score]: its samples *)
+val render_score : Midi.score -> Signal.t

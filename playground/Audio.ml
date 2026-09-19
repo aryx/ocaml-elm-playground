@@ -35,6 +35,13 @@ let tune (who : string) (parse : string -> (Abc.tune, string) result) (text : st
 let abc = tune "Audio.abc" Abc.parse
 let doremi = tune "Audio.doremi" Doremi.parse
 
+let midi (bytes : string) : sound =
+  match Midi.parse bytes with
+  | Ok score -> Synth.Samples (Music.render_score score)
+  | Error e ->
+      prerr_endline ("Audio.midi: " ^ e);
+      Synth.After []
+
 (* the ready-made sounds: our own recipes, after sfxr's categories *)
 let blip = square 880. |> lasting 0.06 |> fading
 let coin = after [ square 1047. |> lasting 0.07; square 1568. |> lasting 0.25 |> fading ] |> louder 0.8
@@ -51,7 +58,7 @@ let play (s : sound) : unit = Mixer.play mixer (Synth.render s)
 (* a continuous sound's voices, each kept under its own name (after:
    only the first sound goes on) *)
 let rec voices (s : sound) : Synth.voice list =
-  match s with Voice v -> [ v ] | Together l -> List.concat_map voices l | After (s :: _) -> voices s | After [] -> []
+  match s with Voice v -> [ v ] | Together l -> List.concat_map voices l | After (s :: _) -> voices s | After [] | Samples _ -> []
 
 let keep_playing (name : string) (s : sound) : unit =
   List.iteri (fun i v -> Mixer.keep mixer (Printf.sprintf "%s#%d" name i) v) (voices s)

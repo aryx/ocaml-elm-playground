@@ -54,3 +54,35 @@ let to_sound (tune : Abc.tune) : Synth.t =
                         silence (e.length -. sounding) ])
               events))
        tune.voices)
+
+(* a MIDI note's sound: its instrument, from its channel and program *)
+let midi_voice (n : Midi.note) : Synth.t =
+  let volume = 0.25 *. float_of_int n.velocity /. 127. in
+  let v source f = Synth.Voice { source; frequency = f; slide = None; seconds = n.length; volume; fade = false } in
+  let f = midi_frequency n.key in
+  if n.channel = 9 then
+    (* the drums: short, by key, whatever the note's length *)
+    match n.key with
+    | 35 | 36 -> v (Wave Triangle) 150. |> Synth.sliding 50. |> Synth.lasting 0.15 |> Synth.fading |> Synth.louder 2.
+    | 38 | 40 -> v Noise 5000. |> Synth.lasting 0.15 |> Synth.fading
+    | 42 | 44 | 46 -> v Noise 12000. |> Synth.lasting 0.05 |> Synth.fading |> Synth.louder 0.6
+    | _ -> v Noise 3000. |> Synth.lasting 0.1 |> Synth.fading
+  else
+    match n.program / 8 with
+    | 0 | 1 -> v (Wave Square) f |> Synth.fading |> Synth.louder 0.8
+    | 3 -> v (Wave Sawtooth) f |> Synth.fading |> Synth.louder 0.7
+    | 4 -> v (Wave Triangle) f |> Synth.louder 1.5
+    | 5 | 6 -> v (Wave Sawtooth) f |> Synth.louder 0.5
+    | 7 -> v (Wave Sawtooth) f |> Synth.louder 0.7
+    | 11 -> v (Wave Triangle) f
+    | _ -> v (Wave Square) f |> Synth.louder 0.7
+
+let render_score (score : Midi.score) : Signal.t =
+  (* a little after the last note, for the drums' tails *)
+  let out = Array.make (Signal.samples (score.duration +. 0.2)) 0. in
+  List.iter
+    (fun (n : Midi.note) ->
+      let at = Signal.samples n.start and s = Synth.render (midi_voice n) in
+      Array.iteri (fun i x -> if at + i < Array.length out then out.(at + i) <- out.(at + i) +. x) s)
+    score.notes;
+  out

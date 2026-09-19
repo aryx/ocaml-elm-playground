@@ -58,5 +58,15 @@ let sounds : (string * (unit -> Signal.t)) list =
           match Abc.parse Unit_abc.frere_jacques with
           | Ok tune -> Array.sub (Synth.render (Music.to_sound tune)) (Signal.samples 3.5) (Signal.samples 3.)
           | Error e -> failwith e ) ]
+  (* the same round through MIDI (Midi.of_tune, Midi.parse), played as a
+   * MIDI score (Music.render_score: program 80, a square lead) *)
+  @ [ ( "frere_jacques_midi",
+        fun () ->
+          match Abc.parse Unit_abc.frere_jacques with
+          | Ok tune -> (
+              match Midi.parse (Midi.of_tune tune) with
+              | Ok score -> Array.sub (Music.render_score score) (Signal.samples 3.5) (Signal.samples 3.)
+              | Error e -> failwith e)
+          | Error e -> failwith e ) ]
 
 let tests = Testo.categorize "golden WAVs" (List.map (fun (name, f) -> t name (fun () -> check name (f ()) ())) sounds)

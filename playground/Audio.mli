@@ -101,6 +101,11 @@ val abc : string -> sound
    (Au clair de la lune) *)
 val doremi : string -> sound
 
+(* [midi bytes]: a Standard MIDI File's music (its bytes, as read from
+   a .mid file: audio/Midi.mli), General MIDI's instruments played by
+   our 8-bit ones, drums on noise (audio/Music.mli) *)
+val midi : string -> sound
+
 (* {1 Ready-made sounds}
 
    In the spirit of sfxr (Tomas Pettersson, 2007), the game jam tool

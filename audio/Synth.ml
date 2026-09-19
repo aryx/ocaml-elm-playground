@@ -14,7 +14,7 @@ type source = Wave of Oscillator.waveform | Noise
 
 type voice = { source : source; frequency : float; slide : float option; seconds : float; volume : float; fade : bool }
 
-type t = Voice of voice | Together of t list | After of t list
+type t = Voice of voice | Together of t list | After of t list | Samples of Signal.t
 
 let voice (source : source) (frequency : float) : t =
   Voice { source; frequency; slide = None; seconds = 0.3; volume = 0.5; fade = false }
@@ -24,6 +24,7 @@ let rec map_voices (f : voice -> voice) (s : t) : t =
   | Voice v -> Voice (f v)
   | Together l -> Together (List.map (map_voices f) l)
   | After l -> After (List.map (map_voices f) l)
+  | Samples s -> Samples s
 
 let lasting (seconds : float) = map_voices (fun v -> { v with seconds })
 let fading = map_voices (fun v -> { v with fade = true })
@@ -35,6 +36,7 @@ let rec duration (s : t) : float =
   | Voice v -> v.seconds
   | Together l -> List.fold_left (fun m s -> Float.max m (duration s)) 0. l
   | After l -> List.fold_left (fun sum s -> sum +. duration s) 0. l
+  | Samples s -> float_of_int (Array.length s) /. float_of_int Signal.rate
 
 (* the source's state: an oscillator's phase, or noise's register and
  * clock *)
@@ -80,6 +82,7 @@ let rec render (s : t) : Signal.t =
   | Voice v -> render_voice v
   | Together l -> Mix.add (List.map render l)
   | After l -> Array.concat (List.map render l)
+  | Samples s -> s
 
 let continue (r : running) (v : voice) (n : int) : Signal.t * running =
   let r = ref r and from = r.last_volume in

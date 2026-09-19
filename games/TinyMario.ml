@@ -40,8 +40,8 @@
  * original tune in the NES's style, [original_tune] below (Koji
  * Kondo's famous theme is Nintendo's, not ours to copy); the flag
  * music=file plays your own tune from an ABC file instead (native only:
- * no files in a browser: an ABC file if it ends in .abc, else in
- * solfège, audio/Doremi.mli), music=off none:
+ * no files in a browser: a MIDI file if it ends in .mid, an ABC file if
+ * in .abc, else in solfège, audio/Doremi.mli), music=off none:
  *
  *   dune exec games/TinyMario.exe -- music=mytune.abc *)
 open Playground
@@ -235,8 +235,14 @@ let start_music (computer : computer) : unit =
   match flag computer "music" with
   | Some "off" -> ()
   | Some file -> (
-      match In_channel.with_open_text file In_channel.input_all with
-      | text -> Audio.loop "music" ((if Filename.check_suffix file ".abc" then Audio.abc else Audio.doremi) text)
+      match In_channel.with_open_bin file In_channel.input_all with
+      | text ->
+          let read =
+            if Filename.check_suffix file ".mid" || Filename.check_suffix file ".midi" then Audio.midi
+            else if Filename.check_suffix file ".abc" then Audio.abc
+            else Audio.doremi
+          in
+          Audio.loop "music" (read text)
       | exception Sys_error e ->
           prerr_endline ("music: " ^ e ^ "; the original tune instead");
           Audio.loop "music" (Audio.abc original_tune))
