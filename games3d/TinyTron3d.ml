@@ -90,52 +90,41 @@ type view = Chase | Inside | Above | Far
 let view_name = function Chase -> "BEHIND" | Inside -> "INSIDE" | Above -> "ABOVE" | Far -> "FAR"
 let next_view = function Chase -> Inside | Inside -> Above | Above -> Far | Far -> Chase
 
-(* the view is the only state this game adds to the kit's model: kept
- * outside of it, next to it *)
-type model = { game : Lightcycles.model; view : view }
+(* the view, and the camera, smoothed (see [update]), are the only state
+ * this game adds to the kit's model: kept next to it *)
+type model = { game : Lightcycles.model; view : view; cam : camera option }
 
-let forward (d : dir) : number * number = match d with Up -> (0., -1.) | Down -> (0., 1.) | Left -> (-1., 0.) | Right -> (1., 0.)
+(* the blue cycle, as a pose for Camera3d *)
+let pose_of (c : cycle) : Camera3d.pose =
+  let x, z = at_cell c.col c.row in
+  { x; y = 0.; z; heading = heading c.dir }
 
 let camera_for (view : view) (c : cycle) : camera =
-  let x, z = at_cell c.col c.row in
-  let fx, fz = forward c.dir in
   match view with
-  | Chase -> camera ~eye:(x -. (7. *. fx), 3.5, z -. (7. *. fz)) ~target:(x +. (6. *. fx), 0.5, z +. (6. *. fz)) ~far:2000. ()
-  | Inside -> camera ~eye:(x +. (0.3 *. fx), 0.9, z +. (0.3 *. fz)) ~target:(x +. (10. *. fx), 0.7, z +. (10. *. fz)) ~far:2000. ()
-  (* straight down (almost: the camera needs a direction for "up") *)
-  | Above -> camera ~eye:(0., 115., 0.01) ~target:(0., 0., 0.) ~fov:45. ~far:2000. ()
-  (* far and narrow: nearly parallel lines, nearly isometric *)
-  | Far -> camera ~eye:(-300., 300., 300.) ~target:(0., 0., 0.) ~fov:13. ~far:2000. ()
-
-(* The floor, dark, around the camera: big enough to reach the horizon,
- * small enough for its corners to stay nearer than the camera's far
- * plane (a face reaching past it is dropped) *)
-let floor (cam : camera) : shape3d =
-  let ex, _, ez = cam.eye in
-  plane (rgb 8 10 20) 1600. 1600. |> move3d ex (-0.02) ez
-
-(* for the views seeing the horizon: a dark sky (a plane facing up,
- * drawn from below since the back faces are drawn, see [main]), and a
- * backdrop far ahead, between the floor's edge and the sky's *)
-let sky (cam : camera) : shape3d list =
-  let ex, ey, ez = cam.eye and tx, _, tz = cam.target in
-  let dx = tx -. ex and dz = tz -. ez in
-  let d = Float.hypot dx dz in
-  let fx = dx /. d and fz = dz /. d in
-  let rx = -.fz and rz = fx in
-  let cx = ex +. (700. *. fx) and cz = ez +. (700. *. fz) in
-  let corner k y = (cx +. (k *. 1500. *. rx), y, cz +. (k *. 1500. *. rz)) in
-  [ plane (rgb 12 14 30) 1600. 1600. |> move3d ex (ey +. 30.) ez;
-    polygon3d (rgb 12 14 30) [ corner (-1.) (-50.); corner 1. (-50.); corner 1. (ey +. 40.); corner (-1.) (ey +. 40.) ] ]
+  | Chase -> Camera3d.chase (pose_of c)
+  | Inside -> Camera3d.cockpit (pose_of c)
+  | Above -> Camera3d.looking_down ~fov:45. ~height:115. (0., 0., 0.)
+  | Far -> Camera3d.from_far ~fov:13. ~offset:(-300., 300., 300.) (0., 0., 0.)
 
 (*****************************************************************************)
 (* Update and view *)
 (*****************************************************************************)
 
+(* The camera follows, smoothed (Camera3d.follow): when the cycle turns
+ * 90 degrees, the camera swings around it in a few frames instead of
+ * jumping, and changing the view glides from one to the other *)
 let update (computer : computer) (m : model) : model =
   let game = Lightcycles.update computer m.game in
   let v = Scene2d.pressed (fun k -> Set_.mem "v" k.keys) game in
-  { game; view = (if v then next_view m.view else m.view) }
+  let view = if v then next_view m.view else m.view in
+  let cam =
+    match game.scene with
+    | Title -> None
+    | Playing g | Winner g -> (
+        let wanted = camera_for view g.round.p1 in
+        match m.cam with None -> Some wanted | Some cam -> Some (Camera3d.follow 0.2 wanted cam))
+  in
+  { game; view; cam }
 
 let text color size str = words color str |> scale size
 
@@ -145,11 +134,10 @@ let view (computer : computer) (m : model) : camera * shape3d list =
   match s.scene with
   | Title ->
       (* the arena seen turning, from high up *)
-      let a = spin 20. computer.time *. Float.pi /. 180. in
-      let cam = camera ~eye:(90. *. sin a, 60., 90. *. cos a) ~target:(0., 0., 0.) ~far:2000. () in
+      let cam = Camera3d.orbit ~distance:90. ~height:60. ~look:0. (spin 20. computer.time) (0., 0., 0.) in
       ( cam,
-        sky cam
-        @ [ floor cam; arena_shapes;
+        Camera3d.sky cam
+        @ [ Camera3d.floor cam; arena_shapes;
           hud (text blue3 8. "TINY TRON 3D" |> move_y 250.);
           hud (text white 3. "1: against the computer" |> move_y 60.);
           hud (text white 3. "2: two players" |> move_y 0.);
@@ -157,8 +145,8 @@ let view (computer : computer) (m : model) : camera * shape3d list =
         @ List.map hud (Scene2d.blink 1. s [ text orange3 3. "PRESS 1 OR 2" |> move_y (-200.) ]) )
   | Playing g | Winner g ->
       let r = g.round in
-      let cam = camera_for m.view r.p1 in
-      let horizon = match m.view with Chase | Inside -> sky cam | Above | Far -> [] in
+      let cam = match m.cam with Some cam -> cam | None -> camera_for m.view r.p1 in
+      let horizon = match m.view with Chase | Inside -> Camera3d.sky cam | Above | Far -> [] in
       let result =
         match (s.scene, r.over) with
         | Winner _, _ ->
@@ -180,10 +168,10 @@ let view (computer : computer) (m : model) : camera * shape3d list =
       (* inside the blue cycle, it's not seen *)
       let cycles = (if m.view = Inside then [] else [ cycle_shape blue3 r.p1 ]) @ [ cycle_shape orange3 r.p2 ] in
       ( cam,
-        horizon @ [ floor cam; arena_shapes ] @ trail blue3 r.p1 @ trail orange3 r.p2 @ cycles @ List.map hud huds )
+        horizon @ [ Camera3d.floor cam; arena_shapes ] @ trail blue3 r.p1 @ trail orange3 r.p2 @ cycles @ List.map hud huds )
 
-let app = game3d view update { game = Lightcycles.initial_model; view = Chase }
+let app = game3d view update { game = Lightcycles.initial_model; view = Chase; cam = None }
 
-(* flat shading; the back faces drawn too, for the sky (see [sky]) *)
+(* flat shading; the back faces drawn too, for the sky (see Camera3d.sky) *)
 let main =
   Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false } app

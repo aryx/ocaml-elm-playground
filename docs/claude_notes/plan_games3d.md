@@ -223,7 +223,10 @@ Crash Bandicoot (Naughty Dog, 1996: a corridor, the camera behind).
   StarCollector3d with a real jump), TinyMarble (a ball rolling on a
   tilting board, after Marble Madness (Mark Cerny, Atari, 1984) and
   Super Monkey Ball (2001)).
-- **Kit**: `Camera3d`, the 3D `Camera2d`: `look_at` exists (the
+- **Kit**: `Camera3d` (started: `playground3d/Camera3d.mli`, `behind`,
+  `chase`, `cockpit`, `looking_down`, `from_far`, `orbit`, the smoothing
+  `follow`, and `floor`/`sky`; used by TinyVirtuaRacing and TinyTron3d),
+  the 3D `Camera2d`: `look_at` exists (the
   camera record), plus `chase` (behind the player, at a distance and
   height, smoothed like `Camera2d.follow`), `orbit` (the player turns
   the camera around the character, the mouse's `mdx`), and the

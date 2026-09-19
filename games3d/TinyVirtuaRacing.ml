@@ -184,44 +184,21 @@ let car_place (car : Car.t) : (number * number * number) * number =
   let off = car.x *. road_width in
   ((p.x +. ((q.x -. p.x) *. f) +. (off *. rx), p.y +. ((q.y -. p.y) *. f), p.z +. ((q.z -. p.z) *. f) +. (off *. rz)), heading)
 
+(* the four views, all behind the car (Camera3d.behind), from near and
+ * low to high and far; the cockpit's eye in front of the car's center *)
 let camera_for (view : view) ((x, y, z) : number * number * number) (heading : number) : camera =
-  let fx, _, fz = forward heading in
-  let at back up ahead look_up =
-    camera
-      ~eye:(x -. (back *. fx), y +. up, z -. (back *. fz))
-      ~target:(x +. (ahead *. fx), y +. look_up, z +. (ahead *. fz))
-      ~far:2000. ()
-  in
+  let at back height ahead look = Camera3d.behind ~back ~height ~ahead ~look { x; y; z; heading } in
   match view with
   | Chase -> at 9. 3.5 8. 1.
   | Far -> at 20. 8. 10. 1.
   | Cockpit -> at (-0.5) 1.4 20. 1.2
   | Above -> at 12. 30. 12. 0.
 
-(* The sky and the land around, following the camera. Flat shading
- * lights a face by the direction it faces, from the sun, up and to the
- * side: a wall facing away from it gets only the ambient light, a
- * quarter, so a sky drawn as a wall ahead would be dark at some
- * headings. Faces turned up are bright whatever the heading: the sky is
- * a ceiling turned *up* (visible from below only because this game
- * draws the back faces too, see [main]), the land a floor below the
- * road, lowest at height 0. Between their far edges and the horizon, a
- * thin backdrop. *)
+(* the land around, below the road (lowest at height 0), a blue sky, a
+ * hazy horizon (Camera3d.sky: seen from below, see [main]) *)
 let sky_and_land (cam : camera) : shape3d list =
-  let ex, ey, ez = cam.eye and tx, _, tz = cam.target in
-  let dx = tx -. ex and dz = tz -. ez in
-  let d = Float.hypot dx dz in
-  let fx = dx /. d and fz = dz /. d in
-  let rx = -.fz and rz = fx in
-  let cx = ex +. (1250. *. fx) and cz = ez +. (1250. *. fz) in
-  let backdrop =
-    polygon3d (rgb 200 225 245)
-      [ (cx -. (2000. *. rx), ey -. 60., cz -. (2000. *. rz)); (cx +. (2000. *. rx), ey -. 60., cz +. (2000. *. rz));
-        (cx +. (2000. *. rx), ey +. 60., cz +. (2000. *. rz)); (cx -. (2000. *. rx), ey +. 60., cz -. (2000. *. rz)) ]
-  in
-  [ plane (rgb 150 205 250) 2600. 2600. |> move3d ex (ey +. 20.) ez;
-    plane (rgb 70 140 60) 2600. 2600. |> move3d ex (-0.1) ez;
-    backdrop ]
+  Camera3d.floor ~color:(rgb 70 140 60) ~ground:(-0.1) cam
+  :: Camera3d.sky ~sky:(rgb 150 205 250) ~horizon:(rgb 200 225 245) ~ground:(-0.1) cam
 
 let text color size str = words color str |> scale size
 
@@ -234,9 +211,7 @@ let view (computer : computer) (s : model) : camera * shape3d list =
     match s.scene with
     | Title ->
         (* turning around the car on the start line *)
-        let a = spin 12. computer.time in
-        let x, y, z = pos in
-        camera ~eye:(x +. (10. *. sin (radians a)), y +. 4., z +. (10. *. cos (radians a))) ~target:(x, y +. 1., z) ~far:2000. ()
+        Camera3d.orbit ~distance:10. ~height:4. ~look:1. (spin 12. computer.time) pos
     | _ -> camera_for r.view pos heading
   in
   let x, y, z = pos in
