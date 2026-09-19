@@ -11,7 +11,7 @@
 (* graphics/3d/Project *)
 
 let t = Testo.create
-let camera : Camera.t = { eye = (0., 0., 10.); target = (0., 0., 0.); fov = 90.; near = 1.; far = 100. }
+let camera : Camera.t = { eye = (0., 0., 10.); target = (0., 0., 0.); up = (0., 1., 0.); fov = 90.; near = 1.; far = 100. }
 let project p = Project.vertex camera ~width:400 ~height:400 (p, (0.25, 0.5), (0., 0., 1.))
 
 (* Project.mli's example: (0, 5, 0) half way up from the center *)

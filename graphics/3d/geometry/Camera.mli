@@ -32,6 +32,11 @@
 type t = {
   eye : Vec3.t;
   target : Vec3.t;
+  (* claude: which way is up on the screen, a hint: (0, 1, 0), the
+   * world's up, for a camera that doesn't roll; tilted, the picture
+   * turns the other way (a plane banking, Descent's ship). Only its
+   * part across [forward] counts (see [basis]). *)
+  up : Vec3.t;
   (* vertical field of view, in degrees *)
   fov : float;
   (* only what's between these two depths is drawn *)
@@ -40,9 +45,9 @@ type t = {
 }
 
 (* The camera's (right, up, forward) unit vectors, "up" being as close
- * to the world's (0, 1, 0) as possible (a camera looking straight up
- * or down has no right: out of scope) *)
-val basis : eye:Vec3.t -> target:Vec3.t -> Vec3.t * Vec3.t * Vec3.t
+ * to [up] (default the world's (0, 1, 0)) as possible (a camera looking
+ * along [up] has no right: out of scope) *)
+val basis : ?up:Vec3.t -> eye:Vec3.t -> target:Vec3.t -> unit -> Vec3.t * Vec3.t * Vec3.t
 
 (* [view camera point]: [point] in view coordinates, (along right,
  * along up, along forward = depth) *)

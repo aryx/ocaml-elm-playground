@@ -39,7 +39,7 @@ let test_face_normal_pole () =
 (* a view matrix takes the camera's eye to the origin, and the target
  * straight ahead, on +z *)
 let test_look_at () =
-  let m = Mat4.look_at ~eye:(3., 2., 5.) ~target:(0., 0., 0.) in
+  let m = Mat4.look_at ~eye:(3., 2., 5.) ~target:(0., 0., 0.) () in
   let apply (x, y, z) =
     let row i = (m.(i * 4) *. x) +. (m.((i * 4) + 1) *. y) +. (m.((i * 4) + 2) *. z) +. m.((i * 4) + 3) in
     (row 0, row 1, row 2)
@@ -51,7 +51,7 @@ let test_look_at () =
 (* the translation, in the last column of a row-major matrix, ends up
  * in the last row, where a column-major GPU expects it *)
 let test_transpose () =
-  let m = Mat4.look_at ~eye:(3., 2., 5.) ~target:(0., 0., 0.) in
+  let m = Mat4.look_at ~eye:(3., 2., 5.) ~target:(0., 0., 0.) () in
   let tm = Mat4.transpose m in
   let mat = Alcotest.(array (float 1e-12)) in
   Alcotest.check mat "last row = last column" [| m.(3); m.(7); m.(11); m.(15) |] (Array.sub tm 12 4);

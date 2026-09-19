@@ -107,12 +107,22 @@
   Frame_data, Stickman), kits/puzzle (Push, Undo) and
   kits/sectors (Sectors: a Doom level as sectors, its lines found),
   kits/heightmap (Heightmap: an island made up by diamond-square, the
-  ground under a point, a line of sight, colors by height and slope)
+  ground under a point, a line of sight, colors by height and slope),
+  kits/segments (Segments: a Descent mine of boxes and the openings
+  where they touch; Sixdof: a ship that can point anywhere)
+- games2.5d/ (new): the pseudo-3D games moved together, with a README
+  comparing their tricks -- TinyWolf, TinyOutRun, TinyKart, TinyDoom,
+  TinyComanche -- and TinyDescent, which is full 3D on the 2D
+  playground: its own projection and clipping, the mine walked through
+  its portals, cells painted farthest first, no z-buffer
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
   TinyTron3d, TinyMario64, TinyMarble (Marble Madness), TinyDoom3d
   (TinyDoom's level with a z-buffer, no BSP), TinyComanche3d
-  (TinyComanche's island as triangles); Minecraft3d is a game (walk, jump, fly,
+  (TinyComanche's island as triangles), TinyDescent3d (TinyDescent's
+  mine, all of it, with a z-buffer); Minecraft3d is a game (walk, jump, fly,
   remove and place blocks, the targeted block's outline);
+  Playground3d.camera takes an ?up (a ship that rolls: TinyDescent3d),
+  honored by the four 3D backends;
   playground3d's Camera3d (the 3D Camera2d: behind, chase, cockpit,
   orbit, sky); the OpenGL HUD redraws only what changed, box by box
 - Mario, TinyMario, Asteroid: physics=engine, the Physics layer instead

@@ -20,10 +20,10 @@ let vec =
       eq a x && eq b y && eq c z)
 
 (* looking down -z from (0, 0, 10), like an eye in front of the screen *)
-let camera : Camera.t = { eye = (0., 0., 10.); target = (0., 0., 0.); fov = 90.; near = 1.; far = 100. }
+let camera : Camera.t = { eye = (0., 0., 10.); target = (0., 0., 0.); up = (0., 1., 0.); fov = 90.; near = 1.; far = 100. }
 
 let test_basis () =
-  let right, up, forward = Camera.basis ~eye:camera.eye ~target:camera.target in
+  let right, up, forward = Camera.basis ~eye:camera.eye ~target:camera.target () in
   Alcotest.check vec "forward, towards the target" (0., 0., -1.) forward;
   Alcotest.check vec "right" (1., 0., 0.) right;
   Alcotest.check vec "up" (0., 1., 0.) up

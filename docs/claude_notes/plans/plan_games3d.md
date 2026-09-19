@@ -191,12 +191,30 @@ each with a floor and a ceiling height (`notes_vs_doom_quake.md`,
 
 ### 5. True 3D shooters
 
-Ultima Underworld (Blue Sky, 1992), Quake (id, 1996: real 3D levels,
-lightmaps, and online play), then Half-Life (1998).
+Ultima Underworld (Blue Sky, 1992), Descent (Parallax, 1995: the first
+6-degrees-of-freedom shooter, its mine a graph of convex cells drawn
+through portals), Quake (id, 1996: real 3D levels, lightmaps, and
+online play), then Half-Life (1998).
 
-- **Toy**: none soon: a Quake level is far beyond the software
-  rasterizer (`notes_vs_doom_quake.md`). Frag (above) shows it done in
-  Haskell with OpenGL.
+- **Toys** (DONE: `games2.5d/TinyDescent.ml`, `games3d/TinyDescent3d.ml`),
+  a pair again:
+  - TinyDescent, in the *2D* playground, with its own projection,
+    near-plane clipping and Sutherland-Hodgman window clipping: the
+    mine walked through its portals from the cell holding the eye
+    (Descent's `render_mine` and its window rectangles), the cells
+    drawn farthest first, painter's, no z-buffer. The status bar
+    counts the cells drawn (3 of 12 down a corridor).
+  - TinyDescent3d, the same mine as `cached3d` polygons in
+    `playground3d`, all of it every frame, the z-buffer sorting it
+    out.
+  - It needed `Playground3d.camera` to take an `?up` (a ship that
+    rolls), honored by the four 3D backends.
+- **Next**: TinyQuake, Quake's three offline tools in small -- `qbsp`
+  (a BSP tree of the level's brushes), `vis` (the portals between
+  leaves, and from them each leaf's potentially visible set) and
+  `light` (lightmaps baked by casting rays at the lights) -- then, per
+  frame, the eye's leaf's PVS drawn with the z-buffer. The portals are
+  TinyDescent's, computed once instead of walked live.
 - **Kit**: `Fps_controller`, extracted from `Minecraft_player` (move,
   jump, gravity, mouse look), with collisions against boxes instead of
   blocks (`Collide3d`); shared with TinyWolf3d and TinyDoom.
@@ -351,5 +369,7 @@ kit); listed here because players see them as 3D.
    next to `plan_games.md`'s TinyOutRun) (both DONE).
 5. `Heightmap` with TinyComanche and TinyComanche3d (DONE), TinyStarFox;
    `Sectors` with TinyDoom and TinyDoom3d (DONE).
-6. The rest as they come: fighting with the 2D brawler kit, puzzles,
+6. Descent with TinyDescent and TinyDescent3d, on the segments kit
+   (DONE); TinyQuake after it.
+7. The rest as they come: fighting with the 2D brawler kit, puzzles,
    TinyElite.

@@ -8,12 +8,14 @@
     TinyKart
     TinyDoom
     TinyComanche
+    TinyDescent
   )
   (libraries
     elm_playground
     kit_racing ; TinyOutRun's Road and Car, TinyKart's Topdown
     kit_sectors ; TinyDoom's level
     kit_heightmap ; TinyComanche's island
+    kit_segments ; TinyDescent's mine
     elm_playground_native ; implem of virtual elm_playground
   )
 )

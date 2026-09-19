@@ -22,6 +22,17 @@ something else, and that restriction is what makes each trick possible.
 | `TinyKart` | Super Mario Kart (Nintendo, 1992), the SNES's Mode 7 | a flat map, turned, sampled row by row, each row at its distance: height * focal / rows below the horizon | row | walls, hills: only a flat floor |
 | `TinyDoom` | Doom (id, 1993) | a BSP tree of the level's walls, walked nearest first; each column's clip arrays say what's left to draw | column | rooms above rooms, looking up or down, walls that aren't vertical |
 | `TinyComanche` | Comanche (NovaLogic, 1992), "Voxel Space" | a height map, each column a line across the map, near to far; a y-buffer, what's drawn of each column | column | overhangs, caves, a roll |
+| `TinyDescent` | Descent (Parallax, 1995) | the level a graph of convex cells; from the eye's cell, each portal shows the next cell inside its own window on screen; drawn farthest first | cell (polygons) | nothing, really: it is full 3D, and pays for it with a projection per corner |
+
+`TinyDescent` is the odd one out, and on purpose: it is not 2.5D at
+all. Its ship flies in every direction and rolls, its world is a real
+3D graph of cells, and the projection, the near-plane clipping and the
+polygon clipping are all written in the game. What it still doesn't
+have is a depth per pixel: the order the cells come out in does that
+work. It sits here because it is the end of the line this directory
+draws -- how far a game can get on the 2D playground, drawing polygons
+in the right order -- and because it is Doom's "nearest first" idea,
+grown up.
 
 Two families, then:
 
@@ -56,6 +67,7 @@ engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 | `TinyOutRun` | `games3d/TinyVirtuaRacing` | the course and the car (`kits/racing`: `Road`, `Car`) |
 | `TinyDoom` | `games3d/TinyDoom3d` | the level (`kits/sectors`: `Sectors`) |
 | `TinyComanche` | `games3d/TinyComanche3d` | the island (`kits/heightmap`: `Heightmap`) |
+| `TinyDescent` | `games3d/TinyDescent3d` | the mine and the ship (`kits/segments`: `Segments`, `Sixdof`) |
 
 The 3D twin is shorter: the engine does the work, and the camera can do
 anything. The pseudo-3D one shows what the engine does, and why games

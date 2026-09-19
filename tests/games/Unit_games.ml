@@ -230,6 +230,33 @@ let comanche_balloons () =
   Alcotest.(check bool) "all popped" true (!m.finished <> None)
 
 (*****************************************************************************)
+(* TinyDescent *)
+(*****************************************************************************)
+
+(* The mine holds the ship in: flying straight ahead for ten seconds,
+ * it ends up against the rock, still inside, in some cell. Then a shot
+ * down the corridor destroys the robot waiting in the next room -- and
+ * with all of them gone, the exit ends the game. *)
+let descent_mine () =
+  let open TinyDescent in
+  let fly keys n m =
+    let s = ref m in
+    for i = 1 to n do
+      s := update (computer ~keyboard:(keys i) i) !s
+    done;
+    !s
+  in
+  let ahead i = { initial_computer.keyboard with kw = true; kspace = i > 30 } in
+  let m = fly (fun _ -> { initial_computer.keyboard with kw = true }) 600 initial_model in
+  Alcotest.(check bool) "still in the mine" true (Segments.segment_at level m.p <> None);
+  Alcotest.(check bool) "it went somewhere" true (Float.abs (let x, _, _ = m.p in x -. 20.) > 50.);
+  let m = fly ahead 60 initial_model in
+  Alcotest.(check int) "one robot shot down the corridor" 3 (List.length m.robots);
+  (* in the exit, with no robots left: out *)
+  let m = fly (fun _ -> initial_computer.keyboard) 1 { initial_model with p = (150., 72., 110.); robots = [] } in
+  Alcotest.(check bool) "escaped" true (match m.over with Some (_, true) -> true | _ -> false)
+
+(*****************************************************************************)
 (* TinyMario64 *)
 (*****************************************************************************)
 
@@ -1236,6 +1263,7 @@ let tests =
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;
       t "TinyComanche, a robot pops the balloons" comanche_balloons;
+      t "TinyDescent, the mine holds the ship, a robot shot, the exit" descent_mine;
       t "TinyMario64, a jump onto a platform" mario64_jump;
       t "TinyMarble, the ramp's heights" marble_ramp;
       t "TinyMarble, the cliff breaks the marble, the step doesn't" marble_falls;

@@ -31,8 +31,8 @@ type t = float array
  * V * point = (dot (point - eye) right, dot (point - eye) up,
  * dot (point - eye) forward), i.e. the same view-space coordinates
  * Camera.view computes, just packaged as a matrix a GPU can apply. *)
-let look_at ~(eye : Vec3.t) ~(target : Vec3.t) : t =
-  let right, up, forward = Camera.basis ~eye ~target in
+let look_at ?up ~(eye : Vec3.t) ~(target : Vec3.t) () : t =
+  let right, up, forward = Camera.basis ?up ~eye ~target () in
   let (rx, ry, rz) = right and (ux, uy, uz) = up and (fx, fy, fz) = forward in
   [|
     rx; ry; rz; -.(Vec3.dot right eye);

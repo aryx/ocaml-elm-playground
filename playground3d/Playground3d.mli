@@ -253,10 +253,15 @@ val collect_hud_shapes : shape3d -> Playground.shape list
     one by hand: it figures out the up/right/forward basis for you (world
     "up" is always +Y; don't use this for a camera looking straight up or
     down, since then forward and up become parallel and the basis is
-    undefined). *)
+    undefined; a camera that rolls or looks straight up or down gives its
+    own [up], see {!camera}). *)
 type camera = {
   eye : number * number * number;
   target : number * number * number;
+  (* claude: which way is up on the screen: (0, 1, 0) for a camera
+   * that doesn't roll; turned around [target - eye], the picture turns
+   * the other way (a plane banking, games3d/TinyDescent3d's ship) *)
+  up : number * number * number;
   fov : number;
   near : number;
   far : number;
@@ -265,6 +270,7 @@ type camera = {
 val camera :
   eye:number * number * number ->
   target:number * number * number ->
+  ?up:number * number * number (** which way is up on the screen. Default (0, 1, 0). *) ->
   ?fov:number (** vertical field of view, in degrees. Default 60. *) ->
   ?near:number (** default 0.1 *) ->
   ?far:number (** default 1000. *) ->

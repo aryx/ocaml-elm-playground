@@ -35,6 +35,7 @@
    %{project_root}/games3d/TinyMarble.exe
    %{project_root}/games3d/TinyDoom3d.exe
    %{project_root}/games3d/TinyComanche3d.exe
+   %{project_root}/games3d/TinyDescent3d.exe
    %{project_root}/examples3d/checker.png ; TexturedCube3d's texture
  )
 )

@@ -38,6 +38,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyDescent.ml)
+ (deps (:src %{project_root}/games2.5d/TinyDescent.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyComanche.ml)
  (deps (:src %{project_root}/games2.5d/TinyComanche.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
@@ -145,6 +150,7 @@
    kit_racing
    kit_sectors
    kit_heightmap
+   kit_segments
    kit_maze
    kit_lightcycles
    kit_shmup

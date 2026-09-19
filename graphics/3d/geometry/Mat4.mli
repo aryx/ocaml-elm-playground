@@ -6,8 +6,9 @@ type t = float array
 
 (* A view matrix: the scene re-described relative to a camera at [eye]
  * looking at [target] (x to the camera's right, y up, z forward, like
- * the software rasterizer's view_space, with (0, 1, 0) as "up") *)
-val look_at : eye:Vec3.t -> target:Vec3.t -> t
+ * the software rasterizer's view_space, with [up], default (0, 1, 0),
+ * as "up", see Camera.basis) *)
+val look_at : ?up:Vec3.t -> eye:Vec3.t -> target:Vec3.t -> unit -> t
 
 (* A projection matrix: things twice as far drawn half as big, with a
  * vertical field of view of [fov_degrees], the same framing as the
