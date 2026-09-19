@@ -19,8 +19,8 @@
 (copy_files ../PhysicsPyramid.{ml,mli})
 (copy_files ../PhysicsElastic.{ml,mli})
 (copy_files ../PhysicsSolarSystem.{ml,mli})
-(copy_files ../Theremin.{ml,mli})
-(copy_files ../Piano.{ml,mli})
+(copy_files ../AudioTheremin.{ml,mli})
+(copy_files ../AudioPiano.{ml,mli})
 (copy_files ../LogoFractals.{ml,mli})
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
@@ -32,7 +32,8 @@
     Mouse Keyboard
     Turtle Mario
     Flags
-    PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem Theremin Piano
+    PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
+    AudioTheremin AudioPiano
     LogoFractals
     BigBangRocket
     BigBangWorm

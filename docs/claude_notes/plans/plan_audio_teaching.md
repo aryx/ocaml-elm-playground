@@ -107,7 +107,7 @@ let sounds computer game =
     explosion |> since game.last_point ]
 ```
 
-and a theremin, in a few lines (`examples/Theremin.ml`):
+and a theremin, in a few lines (`examples/AudioTheremin.ml`):
 
 ```ocaml
 let sounds computer () =
@@ -213,9 +213,9 @@ oscillators, hard vs soft clipping). Sound's magnifier.
 
 ## New examples
 
-- `examples/Theremin.ml`: the mouse is the pitch and the volume; the
+- `examples/AudioTheremin.ml`: the mouse is the pitch and the volume; the
   oscilloscope shows the sine (with `-debug-keys`).
-- `examples/Piano.ml`: the keyboard's letters play notes (equal
+- `examples/AudioPiano.ml`: the keyboard's letters play notes (equal
   temperament), each with an envelope; switch the waveform.
 - `examples/Sfx.ml`: the sfxr presets on keys, and their parameters on
   screen: the teaching sfxr.
@@ -243,8 +243,8 @@ audio meeting).
 2. **Envelopes and mixing**: `Envelope`, `Mix` (clipping vs soft).
 3. **The Playground API, v1 and the native backend**: `Sound` (`tone`,
    `note`, `square`, `noise`, `lasting`, `fading`, `louder`,
-   `together`, `since`), `game_with_sounds`; the audio queue; Theremin,
-   Piano; Pong's beeps. Settle the open questions by writing them.
+   `together`, `since`), `game_with_sounds`; the audio queue; AudioTheremin,
+   AudioPiano; Pong's beeps. Settle the open questions by writing them.
 4. **The web backend**: our samples in an `AudioBuffer`, then Web
    Audio's nodes as a comparison.
 5. **Spectrum and the debug display**: `Spectrum` (DFT, then FFT, the
@@ -259,7 +259,7 @@ audio meeting).
    theme. Then MIDI (`audio/Midi`, see `notes_audio_midi.md`): reading
    Standard MIDI Files into the sequencer, played by our synthesizer
    (General MIDI's programs mapped to our waveforms), and a real MIDI
-   keyboard for the Piano example (ALSA/PortMidi on native, Web MIDI in
+   keyboard for the AudioPiano example (ALSA/PortMidi on native, Web MIDI in
    the browser).
 9. **Docs**: `notes_audio.md` checked against the code, numbers
    filled in.
@@ -339,8 +339,8 @@ audio meeting).
   TinyMario plays: a jump, steps (a foot every 30 pixels), coins, a
   fall, an arpeggio at the flag, checked by dumping a scripted run's
   sound (steps every 5 frames, the jumps at the script's frames).
-  `examples/Theremin.ml` (keep_playing: the mouse's x the pitch over
-  three octaves, y the volume) and `examples/Piano.ml` (a s d f g h j k
+  `examples/AudioTheremin.ml` (keep_playing: the mouse's x the pitch over
+  three octaves, y the volume) and `examples/AudioPiano.ml` (a s d f g h j k
   and w e t y u, C4 to C5; space the waveform; the notes measured in
   the dumped sound: 260, 330, 390 Hz for C4, E4, G4); golden frames.
   The web and 3D backends don't pull yet: silent (phase 4). Left for

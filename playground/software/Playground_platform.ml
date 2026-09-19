@@ -48,13 +48,13 @@ let title = "Playground (software rasterizer)"
  *  - "z": the pixel magnifier (Magnifier), following the mouse
  *  - "v": the sound, seen: an oscilloscope, then a spectrum, then off
  *    (Audio_debug); try games/TinyMario.exe (its music) or
- *    examples/Piano.exe (space: the waveforms' harmonics)
+ *    examples/AudioPiano.exe (space: the waveforms' harmonics)
  *  - "r": the resolution, full, then a half, a third, a quarter, each
  *    pixel shown as a 2x2, 3x3, 4x4 block (Pixelate): faster (less
  *    per-pixel work), and the look of the old low-resolution games
  *  - "h": this list, with each key's state, over the frame
  *  - Ctrl + any of them: the debug key alone, not given to the game
- *    (for a game that uses the key itself: Piano's "h")
+ *    (for a game that uses the key itself: AudioPiano's "h")
  *    (Help_overlay)
  *)
 

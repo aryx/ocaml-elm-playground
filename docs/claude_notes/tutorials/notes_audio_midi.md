@@ -7,7 +7,7 @@ when, how hard, on which instrument. That's MIDI, and it's small,
 old, everywhere, and a good lesson in designing a binary protocol and a
 file format. Where it fits in the playground: `audio/`'s `Music`
 sequencer can read MIDI files and play them with its own synthesizer,
-and a real MIDI keyboard can play the `Piano` example (see
+and a real MIDI keyboard can play the `AudioPiano` example (see
 [`plan_audio_teaching.md`](plan_audio_teaching.md)); planned modules:
 `audio/Midi` (messages, files) and `audio/Music` (playing them).
 
@@ -129,7 +129,7 @@ and TiMidity do.
 In the other direction, a MIDI keyboard's messages arrive in real time:
 on native through the OS (ALSA on Linux, CoreMIDI, Windows' MIDI API,
 or PortMidi over all three), in the browser through the **Web MIDI
-API**. The `Piano` example with a real keyboard: each "note on" a
+API**. The `AudioPiano` example with a real keyboard: each "note on" a
 `note` in the game's model, its `since` the time it arrived.
 
 ## 8. A few histories

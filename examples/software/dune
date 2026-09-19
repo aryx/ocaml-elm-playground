@@ -12,7 +12,8 @@
     Animation
     Mouse Keyboard Turtle Mario
     Flags
-    PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem Theremin Piano
+    PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
+    AudioTheremin AudioPiano
     LogoFractals
     BigBangRocket
     BigBangWorm

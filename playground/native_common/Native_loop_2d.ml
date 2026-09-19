@@ -349,7 +349,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
           let first = Sdl.Event.(get sdl_event keyboard_repeat) = 0 in
           (* claude: Ctrl + a key is the debug key alone, not given to
            * the app: the way to reach a debug key the game uses itself
-           * (Piano's "h") *)
+           * (AudioPiano's "h") *)
           let ctrl = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.ctrl <> 0 in
           if !debug_keys && ctrl then (if first then on_key_press str)
           else begin
