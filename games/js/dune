@@ -36,6 +36,7 @@
 (copy_files ../TinyLemmings.ml)
 (copy_files ../TinyPuzzleBobble.ml)
 (copy_files ../AiOthello.ml)
+(copy_files ../TinyTowerDefense.ml)
 
 (executables
   (names
@@ -73,6 +74,7 @@
     TinyLemmings
     TinyPuzzleBobble
     AiOthello
+    TinyTowerDefense
   )
   (libraries
     ai ; AiOthello's Minimax (minimax, alpha-beta)

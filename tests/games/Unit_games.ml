@@ -1318,6 +1318,55 @@ let bobble_robot () =
   Alcotest.(check int) "all the rounds" (List.length rounds) !cleared
 
 (*****************************************************************************)
+(* TinyTowerDefense (ai/'s Pathfind) *)
+(*****************************************************************************)
+
+(* every tower makes the way longer, and the one that would close it is
+ * refused: the search as the referee *)
+let tower_maze () =
+  let open TinyTowerDefense in
+  let g = new_game () in
+  let length (g : game) = List.length (way g.field entrance) - 1 in
+  Alcotest.(check int) "straight across" 19 (length g);
+  (* a wall of towers down the middle, all but the last cell *)
+  let g = List.fold_left (fun g y -> build { g with gold = 1000 } (10, y)) g [ 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12 ] in
+  Alcotest.(check int) "around the bottom" 31 (length g);
+  Alcotest.(check bool) "the last cell would close it" false (can_build { g with gold = 1000 } (10, 13));
+  let g' = build { g with gold = 1000 } (10, 13) in
+  Alcotest.(check int) "so nothing was built" 31 (length g');
+  Alcotest.(check int) "and the gold is untouched" 1000 g'.gold
+
+(* a monster walking finds its way again when a tower lands in front of
+ * it, and a tower that would trap it is refused *)
+let tower_repath () =
+  let open TinyTowerDefense in
+  let g = { (new_game ()) with gold = 1000; pause = 0 } in
+  let g = ref g in
+  for i = 1 to 200 do g := update_game (computer i) (Scene2d.start Title) !g done;
+  let m = List.hd !g.monsters in
+  let ahead = (fst (cell_of m) + 2, snd (cell_of m)) in
+  let before = List.length m.path in
+  let g' = build !g ahead in
+  let m' = List.hd g'.monsters in
+  Alcotest.(check bool) "it goes around now" true (List.length m'.path > before);
+  Alcotest.(check bool) "not through the tower" false (List.mem ahead m'.path);
+  (* boxed in on three sides: the fourth tower is refused *)
+  let x, y = cell_of m' in
+  let g'' = List.fold_left (fun g c -> build { g with gold = 1000 } c) g' [ (x, y - 1); (x, y + 1); (x - 1, y) ] in
+  Alcotest.(check bool) "the last way out stays open" false (can_build { g'' with gold = 1000 } (x + 1, y))
+
+(* towers along the way kill the first waves *)
+let tower_waves () =
+  let open TinyTowerDefense in
+  let g = ref { (new_game ()) with gold = 200 } in
+  List.iter (fun c -> g := build !g c) [ (4, 6); (4, 8); (8, 6); (8, 8); (12, 6); (12, 8); (16, 6); (16, 8) ];
+  for i = 1 to 60 * 90 do g := update_game (computer i) (Scene2d.start Title) !g done;
+  Printf.printf "wave %d, %d lives, %d gold, score %d\n" !g.wave !g.lives !g.gold !g.score;
+  Alcotest.(check bool) "past wave 3" true (!g.wave >= 3);
+  Alcotest.(check bool) "still alive" true (!g.lives > 0);
+  Alcotest.(check bool) "monsters killed" true (!g.score > 0)
+
+(*****************************************************************************)
 (* AiOthello (an example, ai/'s Minimax) *)
 (*****************************************************************************)
 
@@ -1439,6 +1488,9 @@ let tests =
       t "TinyPuzzleBobble, the hexagonal grid" bobble_hex;
       t "TinyPuzzleBobble, popped and fallen" bobble_drop;
       t "TinyPuzzleBobble, a robot clears the rounds" bobble_robot;
+      t "TinyTowerDefense, the maze and the referee" tower_maze;
+      t "TinyTowerDefense, a monster finds its way again" tower_repath;
+      t "TinyTowerDefense, towers hold the first waves" tower_waves;
       t "AiOthello, the rules" othello_rules;
       t "AiOthello, alpha-beta agrees with minimax" othello_alphabeta;
       t "AiOthello, the computer beats a greedy player" othello_greedy;

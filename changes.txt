@@ -102,7 +102,10 @@
   (the terrain a bitmap the jobs dig and build), TinyComanche
   (Comanche's Voxel Space: a height map drawn column by column, front to
   back, a y-buffer), TinyPuzzleBobble (a hexagonal grid, flood fills:
-  a color's group pops, what no longer hangs falls); kits/shmup (Shots,
+  a color's group pops, what no longer hangs falls), TinyTowerDefense
+  (the towers are the maze: ai/Pathfind's A* run again at every tower,
+  and used as the referee that refuses one closing the way);
+  kits/shmup (Shots,
   Path), kits/platformer (Tile_move, Ladder), kits/brawler (Hitbox,
   Frame_data, Stickman), kits/puzzle (Push, Undo) and
   kits/sectors (Sectors: a Doom level as sectors, its lines found),
