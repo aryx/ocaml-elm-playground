@@ -92,7 +92,7 @@ let scripted : Testutil_golden.scripted list =
     ("games3d/TinyDoom3d", "window", 60, "right:1-5,up:6-55");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
-    ("examples3d/Fractals3d", "tree", 5, "a:2");
-    ("examples3d/Fractals3d", "hilbert", 8, "right:2,a:4") ]
+    ("examples3d/LogoFractals3d", "tree", 5, "a:2");
+    ("examples3d/LogoFractals3d", "hilbert", 8, "right:2,a:4") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

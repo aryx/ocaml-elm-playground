@@ -10,7 +10,7 @@
     Corridor3d
     CachedGrid3d
     SolarSystem3d
-    Fractals3d
+    LogoFractals3d
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp

@@ -21,7 +21,7 @@
 (copy_files ../SolarSystem.{ml,mli})
 (copy_files ../Theremin.{ml,mli})
 (copy_files ../Piano.{ml,mli})
-(copy_files ../Fractals.{ml,mli})
+(copy_files ../LogoFractals.{ml,mli})
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
 
@@ -33,7 +33,7 @@
     Turtle Mario
     Flags
     Orbit Bounce Marbles Boxes Pyramid Elastic SolarSystem Theremin Piano
-    Fractals
+    LogoFractals
     BigBangRocket
     BigBangWorm
   )

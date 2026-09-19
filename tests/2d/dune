@@ -56,6 +56,6 @@
    %{project_root}/examples/software/BigBangWorm.exe
    %{project_root}/games/software/TinyKart.exe
    %{project_root}/games/software/TinyDoom.exe
-   %{project_root}/examples/software/Fractals.exe
+   %{project_root}/examples/software/LogoFractals.exe
  )
 )

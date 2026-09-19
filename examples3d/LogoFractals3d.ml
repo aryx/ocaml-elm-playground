@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* examples/Fractals.ml, flying: fractals drawn by the 3D turtle
+(* examples/LogoFractals.ml, flying: fractals drawn by the 3D turtle
  * (playground3d/Logo3d.mli), which can also pitch up and down and roll,
  * the camera turning around the drawing:
  *
@@ -30,7 +30,7 @@
  *   http://algorithmicbotany.org/papers/#abop; colored along the way,
  *   red to blue, to follow it.
  *
- * - Koch's snowflake, crumpled: the 2D Koch curve (examples/Fractals.ml)
+ * - Koch's snowflake, crumpled: the 2D Koch curve (examples/LogoFractals.ml)
  *   has its bumps turned left and right; here every other level pitches
  *   them up and down instead, out of the plane. Its ends stay where
  *   the flat one's are (the bump's pitches, up 60, down 120, up 60, add
