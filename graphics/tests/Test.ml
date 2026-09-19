@@ -36,4 +36,5 @@ let () =
           Unit_rgba.tests;
           Unit_mesh_cache.tests;
           Unit_matting.tests;
+          Unit_pixelate.tests;
         ])

@@ -73,6 +73,10 @@ open Playground3d
  *    of the optimized one (see graphics/core/Opti.mli); watch the fps
  *  - "x": the pixel magnifier (graphics/2d/Magnifier), following the
  *    mouse ("z" is taken)
+ *  - "r": the resolution, full, then a half, a third, a quarter, each
+ *    pixel shown as a 2x2, 3x3, 4x4 block (graphics/core/Pixelate):
+ *    faster (a z-buffer test, shading, texturing per pixel: about k^2
+ *    times less of them), and the look of 320x200 games
  *  - "h": this list, with each key's state, over the frame
  *  - Ctrl + any of them: the debug key alone, not given to the game
  *    (playground/software/Help_overlay)
@@ -116,6 +120,7 @@ let on_key_press (key : string) =
       options := { o with fill_rule = (match o.fill_rule with Triangle.Epsilon -> Triangle.Top_left | Top_left -> Epsilon) }
   | "o" -> Opti.enabled := not !Opti.enabled
   | "x" -> magnifier := not !magnifier
+  | "r" -> Pixelate.next ()
   | "h" -> help := not !help
   | _ -> ()
 
@@ -124,7 +129,7 @@ let on_key_press (key : string) =
 let title_keys () =
   let o = !options in
   let on_off b = if b then "on" else "off" in
-  Printf.sprintf "m:%s b:cull=%s f:wire=%s z:%s p:%s i:%s c:clip=%s t:%s o:opti=%s x:zoom=%s h:help"
+  Printf.sprintf "m:%s b:cull=%s f:wire=%s z:%s p:%s i:%s c:clip=%s t:%s o:opti=%s x:zoom=%s r:%s h:help"
     (match o.shading with
     | Shading.Flat_color -> "nolight"
     | Flat_shading -> "flat"
@@ -137,6 +142,7 @@ let title_keys () =
     (on_off o.clipping)
     (match o.fill_rule with Triangle.Epsilon -> "epsilon" | Top_left -> "topleft")
     (on_off !Opti.enabled) (on_off !magnifier)
+    (Pixelate.name ~width:(int_of_float Playground.default_width) ~height:(int_of_float Playground.default_height))
 
 (* the same, one line per key, for "h" (Help_overlay) *)
 let help_lines () =
@@ -162,6 +168,9 @@ let help_lines () =
     ("c", "near-plane clipping: " ^ on_off o.clipping);
     ("t", "fill rule: " ^ match o.fill_rule with Triangle.Epsilon -> "epsilon" | Top_left -> "top-left");
     ("o", "optimizations: " ^ on_off !Opti.enabled);
+    ( "r",
+      "resolution: "
+      ^ Pixelate.name ~width:(int_of_float Playground.default_width) ~height:(int_of_float Playground.default_height) );
     ("x", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
     ("Ctrl", "+ a key: that key's debug action only, not the game's");
     ("Q", "quit");
@@ -229,23 +238,41 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * revisit if it's ever noticeable. *)
   Texture_decode.load_queued ();
 
-  let zbuffer = Zbuffer.create ~width:sx ~height:sy in
+  (* the z-buffer, the size of the framebuffer drawn into (smaller with
+   * "r"), made again when that size changes *)
+  let zbuffer = ref (sx, sy, Zbuffer.create ~width:sx ~height:sy) in
+  let zbuffer_for (fb : Framebuffer.t) : Zbuffer.t =
+    let w, h, zb = !zbuffer in
+    if w = fb.width && h = fb.height then zb
+    else begin
+      let zb = Zbuffer.create ~width:fb.width ~height:fb.height in
+      zbuffer := (fb.width, fb.height, zb);
+      zb
+    end
+  in
 
   let draw (_computer : Playground.computer) ((camera, shapes) : Playground3d.camera * Playground3d.shape3d list)
       : unit =
-    Framebuffer.clear fb ~rgb:0xFFFFFF;
     let group = Playground3d.group3d shapes in
-    Shape3d_render_software.render ~options:!options fb zbuffer camera group;
-    (* claude: a HUD pass, once the 3D scene above is fully rasterized
-     * into [fb] for this frame: the 2D shapes drawn on top by the 2D
-     * software rasterizer (playground/software/Shape_render_software,
-     * graphics/2d/), into the same framebuffer. No clear here (unlike
-     * the 2D backend's per-frame one) -- this must only add pixels on
-     * top, never erase the 3D frame underneath. See
-     * docs/claude_notes/done/plan_hud.md. *)
-    (match Playground3d.collect_hud_shapes group with
-    | [] -> ()
-    | hud_shapes -> Shape_render_software.render fb hud_shapes);
+    (* at the resolution of "r", the scene and its HUD, then blown up
+     * (Pixelate); the HUD without antialiasing then, as in the 2D
+     * backend: big pixels, no seams *)
+    let hud_options =
+      { Shape_render_software.default_options with antialiasing = !Pixelate.factor = 1 }
+    in
+    Pixelate.draw fb (fun fb ~scale ->
+        Framebuffer.clear fb ~rgb:0xFFFFFF;
+        Shape3d_render_software.render ~options:!options fb (zbuffer_for fb) camera group;
+        (* claude: a HUD pass, once the 3D scene above is fully rasterized
+         * into [fb] for this frame: the 2D shapes drawn on top by the 2D
+         * software rasterizer (playground/software/Shape_render_software,
+         * graphics/2d/), into the same framebuffer. No clear here (unlike
+         * the 2D backend's per-frame one) -- this must only add pixels on
+         * top, never erase the 3D frame underneath. See
+         * docs/claude_notes/done/plan_hud.md. *)
+        match Playground3d.collect_hud_shapes group with
+        | [] -> ()
+        | hud_shapes -> Shape_render_software.render ~options:hud_options ~scale fb hud_shapes);
     if !help then Help_overlay.draw fb (help_lines ());
     if !magnifier then begin
       (* SDL keeps track of the mouse position, in window pixels *)

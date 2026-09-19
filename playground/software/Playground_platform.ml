@@ -49,6 +49,9 @@ let title = "Playground (software rasterizer)"
  *  - "v": the sound, seen: an oscilloscope, then a spectrum, then off
  *    (Audio_debug); try games/TinyMario.exe (its music) or
  *    examples/Piano.exe (space: the waveforms' harmonics)
+ *  - "r": the resolution, full, then a half, a third, a quarter, each
+ *    pixel shown as a 2x2, 3x3, 4x4 block (Pixelate): faster (less
+ *    per-pixel work), and the look of the old low-resolution games
  *  - "h": this list, with each key's state, over the frame
  *  - Ctrl + any of them: the debug key alone, not given to the game
  *    (for a game that uses the key itself: Piano's "h")
@@ -70,6 +73,7 @@ let on_key_press (key : string) =
   | "o" -> Opti.enabled := not !Opti.enabled
   | "z" -> magnifier := not !magnifier
   | "v" -> audio_view := Audio_debug.next !audio_view
+  | "r" -> Pixelate.next ()
   | "h" -> help := not !help
   | _ -> ()
 
@@ -80,11 +84,12 @@ let window_title ~fps =
   let on_off b = if b then "on" else "off" in
   if not (Native_loop_2d.debug_keys_enabled ()) then Printf.sprintf "%s -- %.0f fps" title fps
   else
-    Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s z:zoom=%s v:%s h:help"
+    Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s z:zoom=%s v:%s r:%s h:help"
       title fps (on_off !options.alpha_blending) (on_off !options.bounding_boxes)
       (on_off !options.wireframe)
       (if !options.bilinear then "bilinear" else "nearest")
       (on_off !options.antialiasing) (on_off !Opti.enabled) (on_off !magnifier) (Audio_debug.name !audio_view)
+      (Pixelate.name ~width:(int_of_float Playground.default_width) ~height:(int_of_float Playground.default_height))
 
 (* the same, one line per key, for "h" (Help_overlay) *)
 let help_lines () =
@@ -100,6 +105,9 @@ let help_lines () =
     ("o", "optimizations: " ^ on_off !Opti.enabled);
     ("z", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
     ("v", "the sound, seen: " ^ Audio_debug.name !audio_view);
+    ( "r",
+      "resolution: "
+      ^ Pixelate.name ~width:(int_of_float Playground.default_width) ~height:(int_of_float Playground.default_height) );
     ("Ctrl", "+ a key: that key's debug action only, not the game's");
     ("Q", "quit");
   ]
@@ -157,8 +165,15 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) (app : _ P
   ignore (Image_decode.load_queued () : string list);
 
   let draw ~fps shapes =
-    Framebuffer.clear fb ~rgb:0xFFFFFF;
-    Shape_render_software.render ~options:!options fb shapes;
+    (* at the resolution of "r", then blown up (Pixelate); what follows,
+     * the debug views, at the window's. Big pixels without antialiasing:
+     * the retro look, and without the seams where two shapes share an
+     * edge between pixels (each covering it partly), which a 3x3 block
+     * makes plain to see. *)
+    let options = if !Pixelate.factor > 1 then { !options with antialiasing = false } else !options in
+    Pixelate.draw fb (fun fb ~scale ->
+        Framebuffer.clear fb ~rgb:0xFFFFFF;
+        Shape_render_software.render ~options ~scale fb shapes);
     overlay fb [ fps_counter fb ~fps ];
     overlay fb (Audio_debug.shapes !audio_view (Playground.to_screen (float fb.width) (float fb.height)));
     if !help then Help_overlay.draw fb (help_lines ());

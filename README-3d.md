@@ -107,6 +107,7 @@ and why). Without the flag they're off, so a game can use any key:
 | `c` | Near-plane clipping on/off -- try `Corridor3d.exe`: off, the floor and walls going behind the camera vanish, leaving holes |
 | `o` | Optimizations on/off: the original simple code instead of the optimized one (see `graphics/core/Opti.mli`); watch the fps |
 | `x` | Pixel magnifier, following the mouse |
+| `r` | Resolution: full, a half, a third, a quarter, each pixel shown as a 2x2 to 4x4 block (see `graphics/core/Pixelate.mli`): about k^2 times less per-pixel work (z-buffer, shading, texturing), and the look of 320x200 games; try `games3d/TinyDoom3d.exe` |
 | `h` | Help: all these keys and their current state, over the frame |
 | `Q` | Quit |
 

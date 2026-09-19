@@ -59,6 +59,8 @@ let scenes : Testutil_golden.scene list =
     ("games3d/TinyMarble", "", 5);
     (* claude: the same view as games/TinyDoom's golden frame, in 3D *)
     ("games3d/TinyDoom3d", "", 5);
+    (* claude: "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
+    ("games3d/TinyDoom3d", "rr", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)

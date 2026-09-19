@@ -31,6 +31,14 @@
  * Exact for antialiased edges and faded shapes too, as long as the
  * drawing only paints "over" (it does: fill_span, plot, blend).
  *
+ * The name comes from film. A "matte" is the mask that says which part
+ * of a shot to keep and which to replace: painted on glass in front of
+ * the camera for the "matte paintings" of old studio films, or shot
+ * against a blue (later green) screen for the "traveling mattes" of
+ * special effects, where the mask moves with an actor. "Matting" is
+ * computing that mask: pulling a foreground and its transparency out
+ * of its background -- here, each pixel's alpha, from the two renders.
+ *
  * Reference: Alvy Ray Smith, James F. Blinn, "Blue Screen Matting",
  * SIGGRAPH '96, section 5, "triangulation matting": the same object
  * shot against two known backgrounds. For premultiplied alpha: Thomas

@@ -357,8 +357,9 @@ let rec render_shape (options : options) (fb : Framebuffer.t) (m : Affine.t) (sh
   | form ->
       render_form options fb m form ~rgb:(form_rgb form) ~alpha:(effective_alpha options shape.alpha)
 
-let render ?(options = default_options) (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
-  List.iter (render_shape options fb (screen_transform fb)) shapes
+let render ?(options = default_options) ?(scale = 1.) (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
+  let m = if scale = 1. then screen_transform fb else Affine.compose (screen_transform fb) (Affine.scale scale scale) in
+  List.iter (render_shape options fb m) shapes
 
 (* claude: [render]'s screen transform shifted by (x0, y0): the pixel
  * (x0, y0) of the window lands on the framebuffer's (0, 0) *)

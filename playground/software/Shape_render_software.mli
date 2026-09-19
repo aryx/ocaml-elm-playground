@@ -27,7 +27,11 @@ type options = {
 (* blending on, real outlines, filled, bilinear, antialiased *)
 val default_options : options
 
-val render : ?options:options -> Framebuffer.t -> Playground.shape list -> unit
+(* [render ?scale fb shapes]: the shapes drawn into [fb], the playground's
+ * (0, 0) at its center; [scale] (default 1) pixels per playground unit,
+ * e.g. 1/3 to draw a 1000-wide window into a 334-wide framebuffer (see
+ * Pixelate) *)
+val render : ?options:options -> ?scale:float -> Framebuffer.t -> Playground.shape list -> unit
 
 (* [render_region ~window:(width, height) ~origin:(x0, y0) fb shapes]:
  * the part of the [width] x [height] window that [fb] covers, from the

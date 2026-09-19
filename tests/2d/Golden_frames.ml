@@ -97,6 +97,8 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/BigBangWorm", "", 400);
     ("games/software/TinyKart", "", 5);
     ("games/software/TinyDoom", "", 5);
+    (* "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
+    ("games/software/TinyDoom", "rr", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the

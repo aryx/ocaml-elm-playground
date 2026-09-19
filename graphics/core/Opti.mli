@@ -13,7 +13,9 @@
  * - Fill.polygons_aa: sparse coverage cells, not a coverage array
  *   updated pixel by pixel (Fill.polygons_aa_simple);
  * - Blit.draw: forward differencing and inlined samplers, not a matrix
- *   product and a sampling function per pixel (Blit.draw_simple). *)
+ *   product and a sampling function per pixel (Blit.draw_simple);
+ * - Pixelate.nearest: a block's rows after its first copied whole, not
+ *   pixel by pixel (Pixelate.nearest_simple). *)
 
 (* true: use the optimized versions (the default) *)
 val enabled : bool ref
