@@ -10,6 +10,7 @@
 (copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../TinyTron3d.{ml,mli})
 (copy_files ../TinyMario64.{ml,mli})
+(copy_files ../TinyMarble.{ml,mli})
 (copy_files ../Minecraft3d.ml)
 
 (executables
@@ -21,6 +22,7 @@
     TinyVirtuaRacing
     TinyTron3d
     TinyMario64
+    TinyMarble
   )
   (libraries
     minecraft_model

@@ -122,6 +122,97 @@ let mario64_jump () =
   | _ -> Alcotest.fail "not playing"
 
 (*****************************************************************************)
+(* TinyMarble *)
+(*****************************************************************************)
+
+(* the first ramp, "vvvv" twice between the 9s and the 7s: its edges at
+ * 9, 8 and 7; halfway down its first row, 8.5 *)
+let marble_ramp () =
+  let open TinyMarble in
+  let x = 2.5 *. cell in
+  let at r = Option.get (ground x (r *. cell)) in
+  Alcotest.(check (float 1e-9)) "top" 9. (at 4.);
+  Alcotest.(check (float 1e-9)) "middle" 8. (at 5.);
+  Alcotest.(check (float 1e-9)) "bottom" 7. (at 6.);
+  Alcotest.(check (float 1e-9)) "halfway down the first row" 8.5 (at 4.5);
+  let _, sz = slope x (4.5 *. cell) in
+  Alcotest.(check (float 1e-9)) "going down south, 1 per tile of 2" (-0.5) sz
+
+(* rolling south until landing: from how high the ball fell *)
+let marble_fall_from (c, r) : number =
+  let open TinyMarble in
+  let rec go b i =
+    if i > 600 then Alcotest.fail "never landed"
+    else match step (0., 1.) b with _, Some h -> h | b, None -> go b (i + 1)
+  in
+  go (ball_at (c, r)) 0
+
+(* the shortcut down the cliff, from the 7s to the 2s: 5 high, broken;
+ * off the end of the bridge, from the 2s to the 1s: 1 high, fine *)
+let marble_falls () =
+  let open TinyMarble in
+  let cliff = marble_fall_from (2, 7) and step = marble_fall_from (4, 19) in
+  Alcotest.(check (float 0.1)) "the cliff" 5. cliff;
+  Alcotest.(check bool) "breaks" true (cliff > max_fall);
+  Alcotest.(check (float 0.1)) "the step" 1. step;
+  Alcotest.(check bool) "doesn't break" true (step <= max_fall)
+
+(* collide's worked example: the steelie (2) at 0.1 hits the marble (1)
+ * at rest: the marble goes off at 0.133, the steelie on at 0.033 *)
+let marble_steelie () =
+  let open TinyMarble in
+  let me = ball_at (5, 13) in
+  let steelie = { me with x = me.x -. 0.9; vx = 0.1 } in
+  let me, steelie = collide me 1. steelie 2. in
+  Alcotest.(check (float 1e-9)) "the marble" (0.4 /. 3.) me.vx;
+  Alcotest.(check (float 1e-9)) "the steelie" (0.1 /. 3.) steelie.vx
+
+(* left alone at the top of the first ramp, the marble rolls down it by
+ * itself, onto the 7s, faster than a push on the flat would take it in
+ * the same time *)
+let marble_rolls_down () =
+  let open TinyMarble in
+  let b = { (ball_at (2, 3)) with z = 4. *. cell +. 0.01 } in
+  let rec go b i = if i = 0 then b else go (fst (step (0., 0.) b)) (i - 1) in
+  let b = go b 60 in
+  Alcotest.(check (float 1e-9)) "on the 7s" 7. b.y;
+  Alcotest.(check bool) "on the ground" true b.on_ground;
+  Alcotest.(check bool) "rolling on" true (b.vz > 0.1)
+
+(* a robot on the trackball (the mouse) drives from waypoint to waypoint
+ * (tiles, as (column, row)), steering towards the next one and braking
+ * its own speed: it reaches the goal in about 10 seconds, never broken,
+ * never fallen: the course can be won (a weaker braking, 12 times the
+ * speed, overshot the first plateau, and the one after the lane) *)
+let marble_robot () =
+  let open TinyMarble in
+  let waypoints = [ (2.5, 7.); (7., 7.5); (12., 7.5); (12., 13.); (4.5, 13.); (4.5, 19.5); (5., 21.); (8., 22.8) ] in
+  let s = ref initial_model and todo = ref waypoints and broken = ref 0 and fallen = ref 0 and i = ref 0 in
+  while !i < 60 * 45 && (match !s.scene with Finished _ | Time_up _ -> false | _ -> true) do
+    incr i;
+    let mouse =
+      match (!s.scene, !todo) with
+      | Racing r, (c, row) :: rest ->
+          let tx = c *. cell and tz = row *. cell in
+          if Float.hypot (tx -. r.me.x) (tz -. r.me.z) < 0.8 *. cell then todo := (if rest = [] then !todo else rest);
+          let wx = (tx -. r.me.x) -. (25. *. r.me.vx) and wz = (tz -. r.me.z) -. (25. *. r.me.vz) in
+          let n = Float.max 1e-6 (Float.hypot wx wz) in
+          let wx = wx /. n and wz = wz /. n in
+          let right = (wx -. wz) /. sqrt 2. and up = -.(wx +. wz) /. sqrt 2. in
+          { initial_computer.mouse with mdx = 8. *. right; mdy = 8. *. up }
+      | _ -> initial_computer.mouse
+    in
+    let keyboard = { initial_computer.keyboard with kspace = !i = 1 } in
+    s := update { (computer ~keyboard !i) with mouse } !s;
+    match !s.scene with Racing { fate = Broken 0; _ } -> incr broken | Racing r when r.me.y < 0. -> incr fallen | _ -> ()
+  done;
+  Alcotest.(check int) "never broken" 0 !broken;
+  Alcotest.(check int) "never fallen" 0 !fallen;
+  match !s.scene with
+  | Finished r -> Alcotest.(check bool) "with 20 seconds to spare" true (r.time_left > 20 * 60)
+  | _ -> Alcotest.fail (Printf.sprintf "not at the goal: waypoints left %d" (List.length !todo))
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -148,4 +239,9 @@ let tests =
       t "TinyBomberman, a chain reaction" bomberman_chain;
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
       t "TinyMario64, a jump onto a platform" mario64_jump;
+      t "TinyMarble, the ramp's heights" marble_ramp;
+      t "TinyMarble, the cliff breaks the marble, the step doesn't" marble_falls;
+      t "TinyMarble, the steelie knocks the marble" marble_steelie;
+      t "TinyMarble, rolling down a ramp" marble_rolls_down;
+      t "TinyMarble, a robot drives to the goal" marble_robot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

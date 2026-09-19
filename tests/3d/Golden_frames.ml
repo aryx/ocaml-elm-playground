@@ -56,6 +56,7 @@ let scenes : Testutil_golden.scene list =
     ("games3d/TinyVirtuaRacing", "", 5);
     ("games3d/TinyTron3d", "", 5);
     ("games3d/TinyMario64", "", 5);
+    ("games3d/TinyMarble", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -80,6 +81,10 @@ let scripted : Testutil_golden.scripted list =
      * it; then the camera turned with d *)
     ("games3d/TinyMario64", "jump", 160, "space:1,left:2-63,up:64-175,space:145-165");
     ("games3d/TinyMario64", "camera", 200, "space:1,left:2-63,up:64-175,space:145-165,d:170-193");
+    (* rolling south (down and left: the screen's diagonals) down the
+     * first ramp, its band turned; then on over the cliff, broken *)
+    ("games3d/TinyMarble", "ramp", 45, "space:1,down:2-200,left:2-200");
+    ("games3d/TinyMarble", "broken", 125, "space:1,down:2-200,left:2-200");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/Fractals3d", "tree", 5, "a:2");

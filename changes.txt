@@ -85,7 +85,7 @@
   TinyCameltry, TinySlingshot, TinySoldat, TinyBomberman, TinyTron,
   TinyMicroMachines
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
-  TinyTron3d, TinyMario64; Minecraft3d is a game (walk, jump, fly,
+  TinyTron3d, TinyMario64, TinyMarble (Marble Madness); Minecraft3d is a game (walk, jump, fly,
   remove and place blocks, the targeted block's outline);
   playground3d's Camera3d (the 3D Camera2d: behind, chase, cockpit,
   orbit, sky); the OpenGL HUD redraws only what changed

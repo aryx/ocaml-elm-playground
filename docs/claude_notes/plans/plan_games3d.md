@@ -222,9 +222,13 @@ Crash Bandicoot (Naughty Dog, 1996: a corridor, the camera behind).
 - **Toys**: TinyMario64 (DONE: `games3d/TinyMario64.ml`, controls
   relative to the camera, a/d turning it, a drop shadow, coyote time,
   jump buffering, variable jump height; a few platforms, jumping,
-  stars: a StarCollector3d with a real jump), TinyMarble (a ball rolling on a
-  tilting board, after Marble Madness (Mark Cerny, Atari, 1984) and
-  Super Monkey Ball (2001)).
+  stars: a StarCollector3d with a real jump), TinyMarble (DONE:
+  `games3d/TinyMarble.ml`, after Marble Madness (Mark Cerny, Atari,
+  1984): a course of heights in an ASCII map, the nearly isometric
+  `Camera3d.from_far`, the controls on the screen's diagonals (or the
+  mouse as a trackball), a rolling ball's 5/7 g sin(a), marbles
+  breaking when they fall too far, and a steelie pushing; Super Monkey
+  Ball's tilting board left as an exercise).
 - **Kit**: `Camera3d` (started: `playground3d/Camera3d.mli`, `behind`,
   `chase`, `cockpit`, `looking_down`, `from_far`, `orbit`, the smoothing
   `follow`, and `floor`/`sky`; used by TinyVirtuaRacing and TinyTron3d),
@@ -318,7 +322,8 @@ kit); listed here because players see them as 3D.
 2. The raycaster pair, TinyWolf (2D) and TinyWolf3d: the best lesson
    on what 3D rendering adds, and the `Fps_controller` layer out of
    `Minecraft_player` with its second user.
-3. `Camera3d` with TinyMario64 and TinyMarble: the camera problem.
+3. `Camera3d` with TinyMario64 and TinyMarble: the camera problem
+   (both DONE).
 4. The racing kit in 3D with TinyVirtuaRacing (and TinyKart in Mode 7
    next to `plan_games.md`'s TinyOutRun).
 5. `Heightmap` with TinyComanche/TinyStarFox; `Sectors` with TinyDoom.

@@ -29,8 +29,9 @@
     TinyVirtuaRacing
     TinyTron3d
     TinyMario64
+    TinyMarble
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_racing ; TinyVirtuaRacing's Road and Car
