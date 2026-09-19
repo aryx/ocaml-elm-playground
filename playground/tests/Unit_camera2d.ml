@@ -20,7 +20,7 @@ let rect =
       Format.fprintf ppf "{left %g; right %g; bottom %g; top %g}" r.left r.right r.bottom r.top)
     ( = )
 
-let cam : Camera2d.t = { x = 100.; y = 0.; zoom = 2. }
+let cam : Camera2d.t = { x = 100.; y = 0.; zoom = 2.; angle = 0. }
 
 let test_to_screen_world () =
   Alcotest.check point "to_screen (110, 5)" (20., 10.) (Camera2d.to_screen cam 110. 5.);
@@ -70,9 +70,23 @@ let test_parallax () =
   let c = Camera2d.parallax 0.5 { Camera2d.origin with x = 100.; y = 40. } in
   Alcotest.check point "half" (50., 20.) (c.x, c.y)
 
+(* Camera2d.mli's examples with an angle *)
+let test_turned () =
+  let turned = { cam with angle = 90. } in
+  Alcotest.check point "to_screen (110, 5), turned by 90" (10., -20.) (Camera2d.to_screen turned 110. 5.);
+  Alcotest.check point "and back" (110., 5.) (Camera2d.to_world turned 10. (-20.));
+  let shape = Camera2d.view turned [] in
+  Alcotest.(check (float 1e-9)) "the group turned the other way" (-90.) shape.angle;
+  (* the view's group sends the point (110, 5) where to_screen says:
+   * scaled by 2, turned by -90, then moved *)
+  let a = shape.angle *. Float.pi /. 180. in
+  let x, y = (220. *. cos a -. (10. *. sin a) +. shape.x, (220. *. sin a) +. (10. *. cos a) +. shape.y) in
+  Alcotest.check point "view agrees with to_screen" (10., -20.) (x, y);
+  Alcotest.(check (float 1e-9)) "turn_toward, the short way" 360. (Camera2d.turn_toward 0.5 10. { cam with angle = 350. }).angle
+
 let tests =
   Testo.categorize "Camera2d"
-    [
+    [ t "turned" test_turned;
       t "to_screen and to_world" test_to_screen_world;
       t "view" test_view;
       t "visible" test_visible;

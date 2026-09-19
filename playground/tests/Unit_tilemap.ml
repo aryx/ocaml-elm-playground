@@ -59,7 +59,7 @@ let test_view () =
   Alcotest.(check int) "all but the empty ' ' tiles" 18 (count (Tilemap.view tile map));
   let big = Tilemap.of_strings 50. (List.init 20 (fun _ -> String.make 200 '#')) in
   let screen = Playground.to_screen 1000. 1000. in
-  let cam : Camera2d.t = { x = 1234.; y = 0.; zoom = 1. } in
+  let cam : Camera2d.t = { x = 1234.; y = 0.; zoom = 1.; angle = 0. } in
   Alcotest.(check int) "culling: 21x20 of 4000" (21 * 20)
     (count (Tilemap.view_visible (Camera2d.visible screen cam) tile big))
 

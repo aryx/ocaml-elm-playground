@@ -70,11 +70,18 @@ open Playground
 
 (* The camera: [x] and [y] are the world point shown at the screen's
  * center, [zoom] how much bigger than in the world things look (2. twice
- * as big, 0.5 half: we see twice as much of the world). *)
-type t = { x : number; y : number; zoom : number }
+ * as big, 0.5 half: we see twice as much of the world), [angle] how
+ * much the camera is turned, in degrees, counterclockwise: the world
+ * then appears turned the other way. With the angle of a car's heading
+ * (minus 90), the car always points up the screen and the road turns
+ * under it -- the view from its driving seat, flattened; the SNES's
+ * Mode 7 turned whole maps this way (F-Zero, 1990). Most 2D games keep
+ * it at 0: north stays up, which is easier to read (Micro Machines,
+ * 1991, did, see games/TinyMicroMachines.ml, whose v key compares). *)
+type t = { x : number; y : number; zoom : number; angle : number }
 
-(* at (0, 0) with a zoom of 1: the world coordinates are the screen's,
- * as if there were no camera *)
+(* at (0, 0), a zoom of 1, not turned: the world coordinates are the
+ * screen's, as if there were no camera *)
 val origin : t
 
 (* A rectangle in world coordinates, e.g. the part of the world the screen
@@ -93,11 +100,13 @@ type rect = { left : number; right : number; bottom : number; top : number }
  *     [ Camera2d.view model.cam (world model);
  *       words black (score model) |> move 0. (computer.screen.top - 20.) ]
  *
- * A world point p is drawn at zoom * (p - cam) on the screen: e.g. with
- * the camera at (100, 0) and a zoom of 2, the point (110, 5) is at
- * (20, 10), and the camera's own point (100, 0) at the center (0, 0).
- * (It's [group shapes |> scale zoom |> move (-zoom * x) (-zoom * y)]:
- * a group is scaled first, then moved.) *)
+ * A world point p is drawn at zoom * (p - cam) on the screen, turned by
+ * -angle: e.g. with the camera at (100, 0) and a zoom of 2, the point
+ * (110, 5) is at (20, 10), and the camera's own point (100, 0) at the
+ * center (0, 0); with an angle of 90 too, (110, 5) is at (10, -20):
+ * the camera turned left, the world turns right. (It's [group shapes
+ * |> scale zoom |> rotate (-angle) |> move ...]: a group is scaled,
+ * then turned, then moved.) *)
 val view : t -> shape list -> shape
 
 (* [to_screen cam x y]: where the world point (x, y) is on the screen,
@@ -106,7 +115,8 @@ val view : t -> shape list -> shape
  * need, because computer.mouse is on the screen:
  *   let wx, wy = Camera2d.to_world cam computer.mouse.mx computer.mouse.my
  * With the camera at (100, 0) and a zoom of 2: to_screen (110, 5) =
- * (20, 10), to_world (20, 10) = (110, 5). *)
+ * (20, 10), to_world (20, 10) = (110, 5); turned by 90: to_screen
+ * (110, 5) = (10, -20), and back. *)
 val to_screen : t -> number -> number -> number * number
 val to_world : t -> number -> number -> number * number
 
@@ -114,7 +124,9 @@ val to_world : t -> number -> number -> number * number
  * point, plus or minus half the screen divided by the zoom. E.g. a
  * 1000x800 screen, the camera at (100, 0), a zoom of 2: x from -150 to
  * 350, y from -200 to 200. What Tilemap.view_visible draws, the rest
- * being off-screen ("culling"). *)
+ * being off-screen ("culling"). Turned, the screen shows a turned
+ * rectangle of the world: [visible] is the box around it (larger, so
+ * culling still misses nothing). *)
 val visible : screen -> t -> rect
 
 (* {1 Moving the camera: following the player}
@@ -160,12 +172,19 @@ val follow : number -> number -> number -> t -> t
  * (1990) a refined one. *)
 val window : number -> number -> number -> number -> t -> t
 
+(* [turn_toward fraction angle cam]: [cam]'s angle moved [fraction] of
+ * the way to [angle], the short way round (from 170 to -170, through
+ * 180, not through 0): [follow] for the angle, a camera turning after a
+ * car smoothly. E.g. from 350, a fraction of 0.5 towards 10: 0 (360). *)
+val turn_toward : number -> number -> t -> t
+
 (* [clamp screen bounds cam]: the camera moved (the least possible) so
  * that the screen shows nothing outside [bounds], a level's edges: at
  * the start of a level, the player is on the left of the screen, not in
  * its middle with emptiness on the left. E.g. a 1000-wide screen, a zoom
  * of 1, a level from x = 0 to 3000: the camera's x stays between 500 and
- * 2500. A level smaller than the screen (in a direction) is centered. *)
+ * 2500. A level smaller than the screen (in a direction) is centered.
+ * The angle is ignored: for cameras that don't turn. *)
 val clamp : screen -> rect -> t -> t
 
 (* {1 Parallax: depth with layers} *)

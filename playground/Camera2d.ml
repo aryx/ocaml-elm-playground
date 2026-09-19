@@ -12,9 +12,14 @@ open Basics (* float arithmetics *)
 
 (* See Camera2d.mli *)
 
-type t = { x : number; y : number; zoom : number }
+type t = { x : number; y : number; zoom : number; angle : number }
 
-let origin = { x = 0.; y = 0.; zoom = 1. }
+let origin = { x = 0.; y = 0.; zoom = 1.; angle = 0. }
+
+(* (x, y) turned by [degrees], counterclockwise *)
+let rotate_point (degrees : number) ((x, y) : number * number) : number * number =
+  let a = degrees * pi / 180. in
+  ((x * cos a) - (y * sin a), (x * sin a) + (y * cos a))
 
 type rect = { left : number; right : number; bottom : number; top : number }
 
@@ -22,19 +27,28 @@ type rect = { left : number; right : number; bottom : number; top : number }
 (* Looking through the camera *)
 (*****************************************************************************)
 
+(* a group's transform is scale, then rotate, then move: here zoom, then
+ * turn by -angle, then move the camera's point to the center *)
 let view (cam : t) (shapes : shape list) : shape =
-  group shapes |> scale cam.zoom |> move (-.(cam.zoom * cam.x)) (-.(cam.zoom * cam.y))
+  let tx, ty = rotate_point (-.cam.angle) (cam.zoom * cam.x, cam.zoom * cam.y) in
+  group shapes |> scale cam.zoom |> rotate (-.cam.angle) |> move (-.tx) (-.ty)
 
 let to_screen (cam : t) (x : number) (y : number) : number * number =
-  (cam.zoom * (x - cam.x), cam.zoom * (y - cam.y))
+  rotate_point (-.cam.angle) (cam.zoom * (x - cam.x), cam.zoom * (y - cam.y))
 
 let to_world (cam : t) (x : number) (y : number) : number * number =
-  ((x / cam.zoom) + cam.x, (y / cam.zoom) + cam.y)
+  let dx, dy = rotate_point cam.angle (x / cam.zoom, y / cam.zoom) in
+  (dx + cam.x, dy + cam.y)
 
+(* the screen's corners in the world, and the box around them: turned,
+ * the screen shows a turned rectangle of the world, inside this box *)
 let visible (screen : screen) (cam : t) : rect =
   let half_w = screen.width / (2. * cam.zoom) in
   let half_h = screen.height / (2. * cam.zoom) in
-  { left = cam.x - half_w; right = cam.x + half_w; bottom = cam.y - half_h; top = cam.y + half_h }
+  let corners = List.map (rotate_point cam.angle) [ (-.half_w, -.half_h); (half_w, -.half_h); (half_w, half_h); (-.half_w, half_h) ] in
+  let xs = List.map fst corners and ys = List.map snd corners in
+  { left = cam.x + List.fold_left Float.min infinity xs; right = cam.x + List.fold_left Float.max neg_infinity xs;
+    bottom = cam.y + List.fold_left Float.min infinity ys; top = cam.y + List.fold_left Float.max neg_infinity ys }
 
 (*****************************************************************************)
 (* Moving the camera *)
@@ -68,6 +82,11 @@ let clamp (screen : screen) (bounds : rect) (cam : t) : t =
   { cam with
     x = limit half_w bounds.left bounds.right cam.x;
     y = limit half_h bounds.bottom bounds.top cam.y }
+
+let turn_toward (fraction : number) (angle : number) (cam : t) : t =
+  (* the difference, the short way round: between -180 and 180 *)
+  let diff = Float.rem (Float.rem (angle - cam.angle + 180.) 360. + 360.) 360. - 180. in
+  { cam with angle = cam.angle + (fraction * diff) }
 
 (*****************************************************************************)
 (* Parallax *)
