@@ -283,7 +283,10 @@ Pitfall! (David Crane, Activision, 1982), Super Mario Bros. (Nintendo,
   TinyDonkeyKong (DONE: `games/TinyDonkeyKong.ml`, the first stage:
   slanted girders as segments, ladders, barrels zigzagging down; the
   hero and the barrels as state machines; a robot rescues Pauline),
-  TinyCeleste (a dash, wall jumps).
+  TinyCeleste (a dash, wall jumps), TinyLodeRunner (DONE:
+  `games/TinyLodeRunner.ml`, Doug Smith, 1983: digging holes that grow
+  back, guards trapped in them, the escape ladder), TinyRick (Rick
+  Dangerous, Core Design, 1989: traps, a boulder, a pistol, dynamite).
 - **Kit**, the platformer kit (started: `kits/platformer/`, `Tile_move`,
   TinyMario's `move_by`, one pixel at a time, and `Ladder`, climbing
   ladder tiles, for TinyLodeRunner and TinyRick; TinyDonkeyKong's

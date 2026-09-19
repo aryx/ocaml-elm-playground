@@ -26,6 +26,7 @@
 (copy_files ../TinyXpilot.{ml,mli})
 (copy_files ../TinyGalaga.{ml,mli})
 (copy_files ../TinyDonkeyKong.{ml,mli})
+(copy_files ../TinyLodeRunner.{ml,mli})
 
 (executables
   (names
@@ -53,6 +54,7 @@
     TinyXpilot
     TinyGalaga
     TinyDonkeyKong
+    TinyLodeRunner
   )
   (libraries
     unix

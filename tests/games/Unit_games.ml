@@ -442,6 +442,60 @@ let kong_robot () =
   Alcotest.(check int) "deaths" 0 !deaths
 
 (*****************************************************************************)
+(* TinyLodeRunner *)
+(*****************************************************************************)
+
+(* frames of the game, keys held (none after the first frames) *)
+let lode_play (g : TinyLodeRunner.game) (n : int) (keys : int -> keyboard) : TinyLodeRunner.game =
+  let open TinyLodeRunner in
+  let s = ref (Scene2d.start (Playing g)) and g = ref g in
+  for i = 1 to n do
+    let c = computer ~keyboard:(keys i) i in
+    s := Scene2d.update c !s;
+    g := update_game c !s !g
+  done;
+  !g
+
+(* from the start, right to the ladder, up it, and a hole dug on the
+ * right: the brick at (6, 11) gone; 5 s later, back *)
+let lode_dig () =
+  let open TinyLodeRunner in
+  let g = { (new_game 3) with guards = [] } in
+  let keys i = { initial_computer.keyboard with kright = i <= 40; kup = i > 40 && i <= 80; keys = (if i = 85 then Set_.singleton "x" else Set_.empty) } in
+  let g = lode_play g 90 keys in
+  Alcotest.(check (option char)) "dug" (Some ' ') (Tilemap.get g.map 6 11);
+  let g = lode_play g 300 (fun _ -> initial_computer.keyboard) in
+  Alcotest.(check (option char)) "grown back" (Some '#') (Tilemap.get g.map 6 11)
+
+(* a guard over a hole falls in and is stuck (a player would fall
+ * through); the brick growing back over the player is deadly *)
+let lode_trap () =
+  let open TinyLodeRunner in
+  let g = new_game 3 in
+  let at c r = Tilemap.center g.map c r in
+  let guard = runner_at (at 6 10) in
+  let g = { g with guards = [ guard ]; map = Tilemap.set g.map 6 11 ' '; holes = [ (6, 11, 200) ]; player = runner_at (at 2 12) } in
+  let g = lode_play g 30 (fun _ -> initial_computer.keyboard) in
+  let r = List.hd g.guards in
+  Alcotest.(check bool) "trapped" true (r.trapped > 0);
+  Alcotest.(check (pair int int)) "in the hole" (6, 11) (Tilemap.cell g.map r.x r.y);
+  (* a pit: the player falls through holes, so a floor under this one *)
+  let g = { g with guards = []; player = runner_at (at 6 11); map = Tilemap.set g.map 6 12 '@' } in
+  let g = lode_play g 200 (fun _ -> initial_computer.keyboard) in
+  Alcotest.(check bool) "crushed" true (g.dead > 0)
+
+(* the last gold taken: the escape ladder appears *)
+let lode_escape () =
+  let open TinyLodeRunner in
+  let g = new_game 3 in
+  let gold = List.filter (fun (c, r) -> not (c = 15 && r = 12)) (Tilemap.find g.map '$') in
+  let map = List.fold_left (fun m (c, r) -> Tilemap.set m c r ' ') g.map gold in
+  let g = { g with map; guards = []; gold = total_gold - 1; player = runner_at (Tilemap.center map 14 12) } in
+  let g = lode_play g 20 (fun _ -> { initial_computer.keyboard with kright = true }) in
+  Alcotest.(check int) "all the gold" total_gold g.gold;
+  Alcotest.(check (option char)) "the escape ladder" (Some 'H') (Tilemap.get g.map 23 0)
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -485,4 +539,7 @@ let tests =
       t "TinyDonkeyKong, a girder's height" kong_height;
       t "TinyDonkeyKong, a jump, a fall" kong_jump;
       t "TinyDonkeyKong, a robot rescues Pauline" kong_robot;
+      t "TinyLodeRunner, digging" lode_dig;
+      t "TinyLodeRunner, a guard trapped, the player crushed" lode_trap;
+      t "TinyLodeRunner, the escape ladder" lode_escape;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]
