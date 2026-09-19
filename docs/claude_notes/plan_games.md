@@ -221,8 +221,9 @@ ghosts with personalities), Bomberman (Hudson, 1983), Boulder Dash
 (First Star, 1984: rocks fall, diamonds roll).
 
 - **Toys**: TinyPacman (DONE: `games/TinyPacman.ml`, our own 19x21
-  maze; its `Grid_move` and `Ghosts` sections are the maze kit, to
-  become `kits/maze/` with a second maze game), TinyBomberman.
+  maze), TinyBomberman (DONE: `games/TinyBomberman.ml`, bombs, fire in
+  a cross, chain reactions); both on the maze kit, `kits/maze/`
+  (`Grid_move`, `Chase`; the ghosts' personalities stay in TinyPacman).
 - **Kit**, the maze kit:
   - `Grid_move`: moving along a `Tilemap`'s corridors, with the turn
     you ask for early remembered until possible ("pre-turning", what

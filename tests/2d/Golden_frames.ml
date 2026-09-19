@@ -44,6 +44,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyPacman", "", 5);
     ("games/software/TinyWolf", "", 5);
     ("games/software/TinyOutRun", "", 5);
+    ("games/software/TinyBomberman", "", 5);
     (* the physics plan's: explicit Euler's orbit, spiraling out after 8
      * seconds; the artillery and Spacewar! titles *)
     ("examples/software/Orbit", "", 480);
@@ -83,6 +84,13 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyWolf", "treasure", 60, "right:1-16,up:20-60");
     (* flat out into the first curve, which bends right *)
     ("games/software/TinyOutRun", "curve", 230, "space:1,up:2-230");
+    (* a bomb dropped in the corner, the bomber walking away, the fire *)
+    ("games/software/TinyBomberman", "bomb", 165, "space:1,space:5,right:8-30,down:31-45");
+    (* two bombs, the first one's fire setting off the second: a chain *)
+    ( "games/software/TinyBomberman",
+      "chain",
+      178,
+      "space:1,right:3-22,space:25,left:27-46,space:49,down:51-90,right:91-110" );
     (* semi-implicit Euler: the same orbit, closed *)
     ("examples/software/Orbit", "semi", 480, "space:1-2");
     (* a shot, pushed back by the wind, digging its crater *)
