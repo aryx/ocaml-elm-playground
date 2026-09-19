@@ -359,6 +359,10 @@ Each small, each showing one idea, each deterministic (golden frames):
 
 ## Status
 
+**DONE** (2026-09-19): phases 0-8, the docs pass (phase 9, the notes'
+pointers checked against the code), and every game; what's left is in
+[`../plan_physics_remaining.md`](../plan_physics_remaining.md).
+
 - **Phase 0, DONE**: `graphics/2d/geometry/dune`'s package is
   `elm_playground` (the library itself unchanged, not moved);
   `physics/2d/` (`physics_2d`) and `physics/tests/` exist. The empty

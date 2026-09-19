@@ -3,10 +3,11 @@
 How a computer makes things move: the few ideas every physics engine,
 from Spacewar! on a 1962 PDP-1 to Box2D in Angry Birds, is built from,
 where they came from, and what goes wrong when they're done naively.
-It's also the specification of `physics/2d/` (see
-[`plan_physics_teaching.md`](plan_physics_teaching.md)): written before
-the code, its pointers name the planned modules, to be checked against
-the code as it lands. Companions: [`notes_2d.md`](notes_2d.md) and
+It was also the specification of `physics/2d/` (see
+[`done/plan_physics_teaching.md`](done/plan_physics_teaching.md)):
+written before the code, then checked against it once it was all
+there; each section points to the module, the tests and the example
+that make it concrete. Companions: [`notes_2d.md`](notes_2d.md) and
 [`notes_3d.md`](notes_3d.md) (the graphics side), and
 [`notes_physics_related_work.md`](notes_physics_related_work.md)
 (Chipmunk, Box2D and the rest).
@@ -24,18 +25,26 @@ Two halves, the second built on the first:
 
 ## 0. Where the code is, and a reading order
 
-| module (`physics/2d/`, planned) | what | section |
-|---|---|---|
-| `graphics/2d/geometry/Vec2` | vectors | §2 |
-| `Body` | a body's state: position, velocity, mass, angle, spin | §3 |
-| `Integrate` | one time step: explicit Euler, semi-implicit Euler, Verlet, RK4 | §4, §5 |
-| `Energy` | kinetic and potential energy, momentum: the checks | §5 |
-| `Force` | gravity, gravitation, springs, drag | §6 |
-| `World` | the whole step, with a fixed time step | §7 |
-| `Shape`, `Collide`, `Contact` | collision detection | §8 |
-| `Broadphase` | which pairs to test | §9 |
-| `Resolve` | collision response: impulses | §10, §11 |
-| `playground/Physics` | the Evan-style API over all of it | §13 |
+| module (`physics/2d/`) | what | section | see it in |
+|---|---|---|---|
+| `graphics/2d/geometry/Vec2` | vectors | §2 | |
+| `Body` | a body's state: position, velocity, mass, spin, inertia | §3, §11 | |
+| `Integrate` | one time step: explicit Euler, semi-implicit Euler, Verlet, RK4 | §4, §5 | `examples/Orbit.ml` |
+| `Energy` | kinetic and potential energy, momentum, angular momentum: the checks | §5 | `examples/Orbit.ml` |
+| `Force` | gravity, gravitation, a spring to a point, drag | §6 | `games/TinySpacewar.ml` |
+| `Springs`, `Particles` | springs between bodies; Jakobsen's particles and sticks | §6, §12 | `examples/Elastic.ml`, `games/TinySoldat.ml` |
+| `Shape`, `Collide`, `Contact` | collision detection: hitboxes, the tests, manifolds, swept tests | §8, §12 | `games/Asteroid.ml`, `games/TinySoldat.ml` |
+| `Broadphase` | which pairs to test | §9 | `examples/Marbles.ml` |
+| `Resolve` | collision response: impulses, friction, rotation | §10, §11 | `examples/Bounce.ml`, `examples/Boxes.ml` |
+| `Solver` | stacking: all the contacts together, sequential impulses | §12 | `examples/Pyramid.ml`, `games/TinySlingshot.ml` |
+| `playground/Physics` | the Evan-style API over all of it; `step` and `simulate`, the whole step (§7) | §13 | every game above |
+
+There is no `World` module (the plan had one): the whole step, forces
+then contacts then moves, is `Physics.step` for a single body and
+`Physics.simulate` for a `world` of them. The tests are in
+`physics/tests/`, one `Unit_*.ml` per module, checking the worked
+examples of each `.mli` and the laws (conservation, convergence
+orders, stability limits).
 
 ## 1. The big picture: a simulation is a loop
 
@@ -235,7 +244,8 @@ reaches a different height on a slow machine), one slow frame gives one
 huge step that can go unstable (§5) or pass through walls (§12), and
 the same inputs no longer give the same result (no replays, no
 golden-frame tests, no network games in lockstep). So: a **fixed dt**,
-here 1/60 s per tick, like Evan's own games assume.
+here 1/60 s per tick, like Evan's own games assume (`Physics.tick`:
+`step` and `simulate` each advance exactly one tick).
 
 The price is that the game slows down when the frames do. Fiedler's
 fix: an *accumulator* of real time, consumed in fixed steps (maybe 0,
@@ -440,13 +450,16 @@ together (§12: `examples/Pyramid.ml`, whose `s` key switches back to
 its first user (a shell `launched`, then `fall`, `push` for the wind,
 `step`), `games/TinySpacewar.ml` its second (ships and torpedoes
 `attracted_by` the star); `examples/Orbit.ml` goes under it, to
-compare the four integrators. The games still to come: **Asteroid**, ported (inertia, thrust, drag, wrap-around, exact
-polygon hits), and **Spacewar!**, new (two ships and their torpedoes
-around a star: gravitation, orbits, slingshots -- and, with the
-integrator key, what explicit Euler does to an orbit), and
-**Slingshot**, an Angry Birds-like, new (a projectile's parabola into
-towers of boxes that tumble: rotation, friction, and stable stacking,
-§11-12).
+compare the four integrators. Then, each game adding a chapter:
+`games/Asteroid.ml` ported with a `physics=engine` flag next to its
+hand-written physics (inertia, thrust, drag, wrap-around, exact
+polygon hits, §3-8), `games/TinyPong.ml` (bouncing, friction, §10),
+`games/TinyCameltry.ml` (rolling, §11), `games/TinySlingshot.ml` (an
+Angry Birds: the arc, a stacked tower, §4 and §12), and
+`games/TinySoldat.ml`, the capstone (swept bullets, grenades, ragdolls:
+§8, §12, §6). Several of them, and the examples, have a key or a flag
+switching a phase off (`rotation=off`, `solver=off`, `physics=engine`),
+to see what it brings.
 
 ## Glossary
 
