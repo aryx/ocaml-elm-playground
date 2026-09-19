@@ -303,8 +303,9 @@ Run (Yu Suzuki, Sega, 1986: hills, forks, the radio), Micro Machines
 (Codemasters, 1991: top-down again), Super Mario Kart (Nintendo, 1992:
 Mode 7, see `plan_games3d.md`).
 
-- **Toys**: TinyOutRun (DONE: `games/TinyOutRun.ml`, its road kept in
-  the game until TinyKart or TinyVirtuaRacing reuses the track;
+- **Toys**: TinyOutRun (DONE: `games/TinyOutRun.ml`, on the racing
+  kit `kits/racing/` (`Road`, `Car`), shared with
+  `games3d/TinyVirtuaRacing.ml`;
   pseudo-3D: all 2D shapes, so a perfect fit
   for the 2D playground -- the road is trapezoids, the scenery scaled
   sprites), TinyMicroMachines (top-down, a `Camera2d` following the

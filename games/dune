@@ -15,6 +15,7 @@
   )
   (libraries
     elm_playground
+    kit_racing ; TinyOutRun's Road and Car
     elm_playground_native ; implem of virtual elm_playground
   )
 )

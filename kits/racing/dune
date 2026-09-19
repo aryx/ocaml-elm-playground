@@ -1,0 +1,10 @@
+; claude: the racing kit (see docs/claude_notes/plan_games.md, "What to
+; call them: kits"): what racing games share, on top of the playground
+; -- the track as data (Road), and a car driven on it (Car). Used by
+; games/TinyOutRun (pseudo-3D, 2D shapes) and games3d/TinyVirtuaRacing
+; (polygons). A private library, not installed: only the games use it.
+(library
+ (name kit_racing)
+ (wrapped false)
+ (libraries elm_playground)
+)
