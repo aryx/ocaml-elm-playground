@@ -89,6 +89,11 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyRogue", "", 5);
     ("games/software/TinyStreetFighter", "", 5);
     ("games/software/TinyFinalFight", "", 5);
+    (* the world programs of How to Design Programs (Bigbang.mli): the
+     * rocket coming down; the worm dead against the border, its
+     * epitaph (last_picture) *)
+    ("examples/software/BigBangRocket", "", 60);
+    ("examples/software/BigBangWorm", "", 400);
     ("games/software/TinyKart", "", 5);
   ]
 

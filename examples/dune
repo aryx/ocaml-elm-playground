@@ -6,6 +6,7 @@
     Flags
     Orbit Bounce Marbles Boxes Pyramid Elastic SolarSystem Theremin Piano
     Fractals
+    BigBangRocket BigBangWorm
   )
   (libraries
     elm_playground
