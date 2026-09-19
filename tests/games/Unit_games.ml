@@ -645,6 +645,77 @@ let zelda_robot () =
   Alcotest.(check bool) "hit at most twice" true (!hits <= 2)
 
 (*****************************************************************************)
+(* TinyRogue *)
+(*****************************************************************************)
+
+(* the shortest way, by breadth-first search on the squares one can walk
+ * (and the target's), from the player to a target square: its first
+ * step *)
+let rogue_path (g : TinyRogue.game) (target : int * int) : (int * int) option =
+  let open TinyRogue in
+  let seen = Hashtbl.create 100 in
+  let q = Queue.create () in
+  Queue.add ((g.px, g.py), None) q;
+  Hashtbl.replace seen (g.px, g.py) ();
+  let result = ref None in
+  while !result = None && not (Queue.is_empty q) do
+    let (c, r), first = Queue.pop q in
+    if (c, r) = target then result := first
+    else
+      List.iter
+        (fun (dx, dy) ->
+          let n = (c + dx, r + dy) in
+          if (not (Hashtbl.mem seen n)) && (walkable g (fst n) (snd n) || n = target) then begin
+            Hashtbl.replace seen n ();
+            Queue.add (n, (match first with None -> Some (dx, dy) | f -> f)) q
+          end)
+        [ (1, 0); (-1, 0); (0, 1); (0, -1); (1, 1); (-1, 1); (1, -1); (-1, -1) ]
+  done;
+  !result
+
+(* every level of 20 dungeons: the stairs (or the Amulet) reachable from
+ * the start *)
+let rogue_connected () =
+  let open TinyRogue in
+  for seed = 1 to 20 do
+    List.iter
+      (fun depth ->
+        let g = enter depth (new_game seed) in
+        let goal = fst (List.find (fun (_, it) -> it = Stairs || it = Amulet) g.level.items) in
+        Alcotest.(check bool) (Printf.sprintf "seed %d, level %d" seed depth) true (rogue_path { g with level = { g.level with monsters = [] } } goal <> None))
+      [ 1; 2; 3 ]
+  done
+
+(* a robot knowing the map: to the stairs, then down; to the Amulet at
+ * the bottom; fighting what's next to it, drinking a potion when low:
+ * it gets the Amulet *)
+let rogue_robot () =
+  let open TinyRogue in
+  let won = ref 0 in
+  List.iter
+    (fun seed ->
+      let g = ref (look (new_game seed)) and over = ref false and n = ref 0 in
+      while (not !over) && !n < 2000 do
+        incr n;
+        let g0 = !g in
+        let next_to = List.find_opt (fun m -> abs (m.mx - g0.px) <= 1 && abs (m.my - g0.py) <= 1) g0.level.monsters in
+        let goal = fst (List.find (fun (_, it) -> it = Stairs || it = Amulet) g0.level.items) in
+        let action =
+          if g0.hp <= 5 && g0.potions > 0 then Quaff
+          else
+            match next_to with
+            | Some m -> Move (m.mx - g0.px, m.my - g0.py)
+            | None -> if on_stairs g0 then Descend else (match rogue_path g0 goal with Some d -> Move (fst d, snd d) | None -> Rest)
+        in
+        let g1, killer = turn g0 action in
+        g := g1;
+        if killer <> None then over := true;
+        if on_amulet g1 then (incr won; over := true)
+      done)
+    [ 1; 2; 3; 4; 5 ];
+  Alcotest.(check bool) "the Amulet, at least 3 times in 5" true (!won >= 3)
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -695,4 +766,6 @@ let tests =
       t "TinyGradius, the power-up bar" gradius_bar;
       t "TinyGradius, a robot clears the stage" gradius_robot;
       t "TinyZelda, a robot's quest" zelda_robot;
+      t "TinyRogue, the dungeons connected" rogue_connected;
+      t "TinyRogue, a robot gets the Amulet" rogue_robot;
       t "TinyTron, the computer outlasts a straight line" tron_computer ]

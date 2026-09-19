@@ -30,6 +30,7 @@
 (copy_files ../TinyRick.{ml,mli})
 (copy_files ../TinyGradius.{ml,mli})
 (copy_files ../TinyZelda.{ml,mli})
+(copy_files ../TinyRogue.{ml,mli})
 
 (executables
   (names
@@ -61,6 +62,7 @@
     TinyRick
     TinyGradius
     TinyZelda
+    TinyRogue
   )
   (libraries
     unix

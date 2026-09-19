@@ -86,6 +86,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyRick", "", 5);
     ("games/software/TinyGradius", "", 5);
     ("games/software/TinyZelda", "", 5);
+    ("games/software/TinyRogue", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -187,6 +188,8 @@ let scripted : Testutil_golden.scripted list =
      * screen sliding to it *)
     ("games/software/TinyZelda", "sword", 130, "space:1,right:3-42,up:43-110,space:120");
     ("games/software/TinyZelda", "slide", 370, "space:1,right:3-42,up:43-110,down:130-200,right:210-400");
+    (* the first room, walked around, a bat fought *)
+    ("games/software/TinyRogue", "level", 120, "space:2,right:10,right:14,right:18,right:22,right:26,right:30,up:40,up:44,up:48,left:60,left:64,down:80,down:84,down:88,down:92");
     (* running from the boulder; through the hole, the boulder stopped
      * over it (too big to fall in) *)
     ("games/software/TinyRick", "boulder", 70, "space:1,right:2-160");

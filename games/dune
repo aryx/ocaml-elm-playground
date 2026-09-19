@@ -28,6 +28,7 @@
     TinyRick
     TinyGradius
     TinyZelda
+    TinyRogue
   )
   (libraries
     elm_playground

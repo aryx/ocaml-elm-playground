@@ -366,7 +366,10 @@ Adventure (Warren Robinett, Atari 2600, 1980: the first action-
 adventure, and the first Easter egg), The Legend of Zelda (Miyamoto
 and Takashi Tezuka, Nintendo, 1986).
 
-- **Toy**: TinyZelda: a few screens, a sword, a key, a door.
+- **Toy**: TinyZelda (DONE: `games/TinyZelda.ml`, 3 x 2 rooms of 16 x
+  11 tiles sliding in, a sword, a key, a locked door, a dungeon, the
+  Triforce; octoroks and keese; `Camera2d.room` and `flip`, with
+  TinyRick).
 - **Kit**: a `Camera2d` flipping screen by screen (Zelda's rooms)
   rather than scrolling, a `Scene` for the title and game-over screens
   (`plan_playground_other.md` section 5), dialogs (its section 8),
@@ -377,8 +380,10 @@ and Takashi Tezuka, Nintendo, 1986).
 Rogue (Michael Toy, Glenn Wichman, 1980), NetHack (1987), Dragon
 Quest (Enix, 1986), Pokémon (Game Freak, 1996).
 
-- **Toys**: TinyRogue (the whole genre fits in the characters of a
-  `Tilemap`), TinyDragonQuest (walk, then turn-based battles).
+- **Toys**: TinyRogue (DONE: `games/TinyRogue.ml`, Rogue's own
+  generator -- 3 x 3 cells, a room or a crossing in each, corridors --
+  its lit rooms as the field of view, turns, three levels to the
+  Amulet; a robot gets it), TinyDragonQuest (walk, then turn-based battles).
 - **Kit**:
   - a turn-based loop: the world moves only when the player does
     (an `update` doing nothing without a key);
