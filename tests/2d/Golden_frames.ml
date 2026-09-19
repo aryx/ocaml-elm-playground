@@ -77,6 +77,8 @@ let scenes : Testutil_golden.scene list =
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
     ("games/software/TinyMario", "vv", 60);
+    ("games/software/TinyFlappyBird", "", 5);
+    ("games/software/TinyBreakout", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -157,6 +159,20 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/SolarSystem", "later", 120, "up:2,up:4");
     (* keys held, lit; the square wave *)
     ("examples/software/Piano", "keys", 30, "space:2,a:10-30,g:10-30,u:10-30");
+    (* flaps timed to thread 5 pipes (the pipes from the LFSR's seed=1);
+     * and no flap after the first: the bird on the ground, game over *)
+    ( "games/software/TinyFlappyBird",
+      "fly",
+      600,
+      "space:1,space:5,space:51,space:91,space:131,space:172,space:212,space:258,space:299,space:346,space:386,space:426,space:447,space:472,space:512,space:555,space:596" );
+    ("games/software/TinyFlappyBird", "crash", 200, "space:1,space:5");
+    (* a serve, the paddle moved to where the ball comes down each time
+     * (aiming off-center, so the ball goes to the side): 15 seconds,
+     * 11 points, the ball sped up *)
+    ( "games/software/TinyBreakout",
+      "play",
+      900,
+      "space:1,space:5,right:6-11,right:210-229,left:396-403,right:570-570,right:740-740" );
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

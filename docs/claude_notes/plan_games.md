@@ -156,9 +156,24 @@ Tennis for Two (William Higinbotham, 1958, on an oscilloscope), Pong
 physics plan's `bounce`), Breakout (Atari, 1976, Nolan
 Bushnell and Steve Wozniak), Arkanoid (Taito, 1986: power-ups).
 
-- **Toy**: TinyBreakout -- the best first game to write after Pong,
-  ~100 lines. Bricks are a `Tilemap`.
-- **Kit**: none; the physics plan's `bounce`.
+- **Toy**: TinyBreakout (DONE: `games/TinyBreakout.ml`) -- the best
+  first game to write after Pong. Bricks are a `Tilemap` (a brick two
+  tiles, "Rr"), the original's rules: speed-ups, the paddle halved
+  after breaking through, two walls; the paddle's angle a rule, not
+  physics (TinyPong shows the physics way).
+- **Kit**: none.
+
+### 1b. One-button games and endless runners
+
+Helicopter games (SFCave, Helicopter Game, 2000s), Canabalt (Adam
+Saltsman, 2009), Flappy Bird (Dong Nguyen, 2013).
+
+- **Toy**: TinyFlappyBird (DONE: `games/TinyFlappyBird.ml`): a flap
+  *sets* the velocity; an endless world, pipes made at the screen's
+  right edge and dropped at its left; the pipes' heights from an LFSR
+  whose state is in the model (Pitfall!'s and River Raid's trick), so
+  the whole run replays from its seed.
+- **Kit**: none; `Camera2d` (look_at, parallax).
 
 ### 2. Snake and the grid
 

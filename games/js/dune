@@ -21,6 +21,8 @@
 (copy_files ../TinyCameltry.{ml,mli})
 (copy_files ../TinySlingshot.{ml,mli})
 (copy_files ../TinySoldat.{ml,mli})
+(copy_files ../TinyFlappyBird.{ml,mli})
+(copy_files ../TinyBreakout.{ml,mli})
 
 (executables
   (names
@@ -43,6 +45,8 @@
     TinyCameltry
     TinySlingshot
     TinySoldat
+    TinyFlappyBird
+    TinyBreakout
   )
   (libraries
     unix
