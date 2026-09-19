@@ -103,12 +103,14 @@ val follow : number -> camera -> camera -> camera
 val floor : ?color:color -> ?ground:number -> camera -> shape3d
 
 (* [sky ?sky ?horizon ?ground cam]: for the views that see far: a [sky]
- * above the eye, and a [horizon] band far ahead, from below the ground
- * to above the eye, both following the camera.
+ * above the eye, and a [horizon] skirt far ahead, rising from the
+ * [ground] to just above the eye (the land, or sea, going on to the
+ * horizon: give it the floor's color), both following the camera.
  *
  * Flat shading lights a face by the way it faces the sun (up and to the
  * side): a vertical sky ahead would be dark at some headings. The sky is
  * therefore a plane turned *up*, above the eye, seen from below -- which
  * needs the back faces drawn: the game runs with [backface_culling =
- * false] (see Playground3d.rendering). *)
+ * false] (see Playground3d.rendering). For the same reason the horizon
+ * is a slope facing up, not a wall. *)
 val sky : ?sky:color -> ?horizon:color -> ?ground:number -> camera -> shape3d list

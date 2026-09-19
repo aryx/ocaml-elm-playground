@@ -198,7 +198,7 @@ let camera_for (view : view) ((x, y, z) : number * number * number) (heading : n
  * hazy horizon (Camera3d.sky: seen from below, see [main]) *)
 let sky_and_land (cam : camera) : shape3d list =
   Camera3d.floor ~color:(rgb 70 140 60) ~ground:(-0.1) cam
-  :: Camera3d.sky ~sky:(rgb 150 205 250) ~horizon:(rgb 200 225 245) ~ground:(-0.1) cam
+  :: Camera3d.sky ~sky:(rgb 150 205 250) ~horizon:(rgb 90 150 80) ~ground:(-0.1) cam
 
 let text color size str = words color str |> scale size
 

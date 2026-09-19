@@ -71,9 +71,10 @@ let sky ?(sky = rgb 12 14 30) ?(horizon = rgb 12 14 30) ?(ground = -0.02) (cam :
   let d = Float.max 1e-9 (Float.hypot dx dz) in
   let fx = dx /. d and fz = dz /. d in
   let rx = -.fz and rz = fx in
-  (* the horizon band: 700 ahead, 3000 wide, from below the ground to
-   * above the eye *)
-  let cx = ex +. (700. *. fx) and cz = ez +. (700. *. fz) in
-  let corner k y = (cx +. (k *. 1500. *. rx), y, cz +. (k *. 1500. *. rz)) in
-  [ plane sky 1600. 1600. |> move3d ex (ey +. 30.) ez;
-    polygon3d horizon [ corner (-1.) (ground -. 50.); corner 1. (ground -. 50.); corner 1. (ey +. 40.); corner (-1.) (ey +. 40.) ] ]
+  (* the horizon: a skirt ahead, from the ground 700 away up to just
+   * above the eye 1400 away -- nearly flat, facing up, so lit like the
+   * floor, the land (or sea) going on to the horizon; 2400 wide, its
+   * corners within the far plane (2000) *)
+  let at ahead k y = (ex +. (ahead *. fx) +. (k *. 1200. *. rx), y, ez +. (ahead *. fz) +. (k *. 1200. *. rz)) in
+  [ plane sky 2400. 2400. |> move3d ex (ey +. 10.) ez;
+    polygon3d horizon [ at 700. (-1.) ground; at 700. 1. ground; at 1400. 1. (ey +. 12.); at 1400. (-1.) (ey +. 12.) ] ]
