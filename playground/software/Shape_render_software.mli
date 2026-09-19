@@ -28,3 +28,18 @@ type options = {
 val default_options : options
 
 val render : ?options:options -> Framebuffer.t -> Playground.shape list -> unit
+
+(* [render_region ~window:(width, height) ~origin:(x0, y0) fb shapes]:
+ * the part of the [width] x [height] window that [fb] covers, from the
+ * window's pixel (x0, y0): the same pixels as [render] on the whole
+ * window, cropped, for less work when only a part is needed *)
+val render_region :
+  ?options:options -> window:int * int -> origin:int * int -> Framebuffer.t -> Playground.shape list -> unit
+
+(* [pixel_bounds ~width ~height shapes]: the box, (x0, y0, x1, y1) in
+ * pixels of a [width] x [height] window (x1, y1 excluded, clipped to
+ * the window), outside of which [render] paints nothing -- a little
+ * larger than what it paints, for antialiased edges and pens; None if
+ * nothing is drawn. E.g. for the OpenGL backend's HUD, to redraw and
+ * upload only that part of the window when the HUD changes. *)
+val pixel_bounds : width:int -> height:int -> Playground.shape list -> (int * int * int * int) option

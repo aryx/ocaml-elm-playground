@@ -10,4 +10,4 @@
 
 let () =
   Testo.interpret_argv ~project_name:"playground" (fun _env ->
-      List.concat [ Unit_camera2d.tests; Unit_tilemap.tests; Unit_sprite.tests; Unit_scene2d.tests; Unit_input_script.tests ])
+      List.concat [ Unit_camera2d.tests; Unit_tilemap.tests; Unit_sprite.tests; Unit_scene2d.tests; Unit_input_script.tests; Unit_pixel_bounds.tests ])

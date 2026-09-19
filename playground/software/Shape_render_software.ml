@@ -359,3 +359,58 @@ let rec render_shape (options : options) (fb : Framebuffer.t) (m : Affine.t) (sh
 
 let render ?(options = default_options) (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
   List.iter (render_shape options fb (screen_transform fb)) shapes
+
+(* claude: [render]'s screen transform shifted by (x0, y0): the pixel
+ * (x0, y0) of the window lands on the framebuffer's (0, 0) *)
+let render_region ?(options = default_options) ~window:((width, height) : int * int) ~origin:((x0, y0) : int * int)
+    (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
+  let m =
+    Affine.compose
+      (Affine.translate ((float width /. 2.) -. float x0) ((float height /. 2.) -. float y0))
+      (Affine.scale 1. (-1.))
+  in
+  List.iter (render_shape options fb m) shapes
+
+(*****************************************************************************)
+(* Where the pixels go *)
+(*****************************************************************************)
+
+(* claude: the same walk as [render_shape], but collecting the pixel box
+ * of each form instead of drawing it: a form's local box
+ * ([local_bounds]) through its transform, except words, whose box is
+ * their strokes' (as [draw_words] places them) widened by the pen *)
+let pixel_bounds ~(width : int) ~(height : int) (shapes : Playground.shape list) : (int * int * int * int) option =
+  (* [screen_transform]'s, for a window of that size *)
+  let screen = Affine.compose (Affine.translate (float width /. 2.) (float height /. 2.)) (Affine.scale 1. (-1.)) in
+  let boxes = ref [] in
+  let add (points : (float * float) list) (margin : float) =
+    let xs = List.map fst points and ys = List.map snd points in
+    boxes :=
+      ( List.fold_left min infinity xs -. margin, List.fold_left min infinity ys -. margin,
+        List.fold_left max neg_infinity xs +. margin, List.fold_left max neg_infinity ys +. margin )
+      :: !boxes
+  in
+  let rec walk (m : Affine.t) (shape : Playground.shape) =
+    let m = Affine.compose m (shape_transform shape) in
+    match shape.form with
+    | Group shapes -> List.iter (walk m) shapes
+    | Words (_, str) ->
+        let strokes, width = Hershey.layout str in
+        let m = Affine.compose m (text_to_local ~width) in
+        let points = List.concat_map (List.map (Affine.apply m)) strokes in
+        if points <> [] then add points ((pen_width *. length_scale m) +. 2.)
+    | form -> Option.iter (fun b -> add (box_polygon m b) 2.) (local_bounds form)
+  in
+  List.iter (walk screen) shapes;
+  match !boxes with
+  | [] -> None
+  | boxes ->
+      let x0, y0, x1, y1 =
+        List.fold_left
+          (fun (a, b, c, d) (x0, y0, x1, y1) -> (Float.min a x0, Float.min b y0, Float.max c x1, Float.max d y1))
+          (infinity, infinity, neg_infinity, neg_infinity) boxes
+      in
+      let clamp lo hi v = Int.max lo (Int.min hi v) in
+      let x0 = clamp 0 width (int_of_float (floor x0)) and x1 = clamp 0 width (int_of_float (ceil x1)) in
+      let y0 = clamp 0 height (int_of_float (floor y0)) and y1 = clamp 0 height (int_of_float (ceil y1)) in
+      if x1 <= x0 || y1 <= y0 then None else Some (x0, y0, x1, y1)

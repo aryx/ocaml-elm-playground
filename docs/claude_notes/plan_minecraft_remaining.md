@@ -25,6 +25,13 @@ exist in the API (wireframe is a whole-scene debug key).
 
 ## 2. The HUD's hitch on OpenGL
 
+**DONE**, the first fix below, extended: the OpenGL backend redraws,
+mattes and uploads only the box around the HUD shapes that changed
+(`Shape_render_software.pixel_bounds`, `render_region`,
+`tex_sub_image2d`), rendering in it only the shapes touching it. It also
+fixed TinyVirtuaRacing (its always-changing speed: 25 fps, now 60) and
+the blinking "PRESS SPACE" of the titles.
+
 Every change of the HUD costs ~20ms on OpenGL (`graphics/core/Matting`'s
 pass over all 1000x1000 pixels, see its comments), and the status
 line's position changes at each block crossed: a skipped frame, several

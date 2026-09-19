@@ -455,6 +455,12 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     Gl.tex_parameteri Gl.texture_2d Gl.texture_mag_filter Gl.nearest;
     Gl.tex_parameteri Gl.texture_2d Gl.texture_wrap_s Gl.clamp_to_edge;
     Gl.tex_parameteri Gl.texture_2d Gl.texture_wrap_t Gl.clamp_to_edge;
+    (* claude: the whole window, transparent to start with: after that,
+     * only the parts the HUD's shapes cover are redrawn, see draw_hud *)
+    let empty = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (sx * sy * 4) in
+    Bigarray.Array1.fill empty 0;
+    Gl.pixel_storei Gl.unpack_alignment 1;
+    Gl.tex_image2d Gl.texture_2d 0 Gl.rgba sx sy 0 Gl.rgba Gl.unsigned_byte (`Data empty);
     tex
   in
   (* the shapes whose image is in hud_texture *)
@@ -462,14 +468,41 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   let draw_hud (shapes : Playground.shape list) : unit =
     Gl.bind_texture Gl.texture_2d hud_texture;
     if !hud_in_texture <> Some shapes then begin
-      (* claude: ~20ms on a 1000x1000 window, nearly all of it the
+      (* claude: bugfix, a hitch at every change of the HUD: redrawing
+       * it all took ~20ms on a 1000x1000 window, nearly all of it the
        * matting's pass over every pixel (the 2 renders of a few words:
-       * under 1ms); hence only when the shapes change *)
-      let rgba =
-        Matting.premultiplied_rgba ~width:sx ~height:sy (fun fb -> Shape_render_software.render fb shapes)
-      in
-      Gl.pixel_storei Gl.unpack_alignment 1;
-      Gl.tex_image2d Gl.texture_2d 0 Gl.rgba sx sy 0 Gl.rgba Gl.unsigned_byte (`Data rgba);
+       * under 1ms) and the upload of the whole texture -- a skipped
+       * frame each time "PRESS SPACE" blinked on a title, and on nearly
+       * every frame for a HUD always changing (TinyVirtuaRacing's
+       * speed and time: 25 fps instead of 60). Now only what changed
+       * is redrawn: the shapes that appeared or disappeared since the
+       * last time (a blinking "PRESS SPACE", a new speed), the box
+       * around them (the old ones' included, to erase them), and in it
+       * only the shapes touching it -- the big title above isn't
+       * rendered again when the line below blinks, and big antialiased
+       * words are the renderer's costliest shapes. That box is matted
+       * and uploaded (tex_sub_image2d): a few thousand pixels, not a
+       * million. *)
+      let old = Option.value !hud_in_texture ~default:[] in
+      let changed = List.filter (fun s -> not (List.mem s old)) shapes @ List.filter (fun s -> not (List.mem s shapes)) old in
+      (match Shape_render_software.pixel_bounds ~width:sx ~height:sy changed with
+      | None -> ()
+      | Some (x0, y0, x1, y1) ->
+          let w = x1 - x0 and h = y1 - y0 in
+          let touching (s : Playground.shape) =
+            match Shape_render_software.pixel_bounds ~width:sx ~height:sy [ s ] with
+            | Some (a0, b0, a1, b1) -> a0 < x1 && x0 < a1 && b0 < y1 && y0 < b1
+            | None -> false
+          in
+          let visible = List.filter touching shapes in
+          let rgba =
+            Matting.premultiplied_rgba ~width:w ~height:h (fun fb ->
+                Shape_render_software.render_region ~window:(sx, sy) ~origin:(x0, y0) fb visible)
+          in
+          Gl.pixel_storei Gl.unpack_alignment 1;
+          (* the image's rows from the top, as the texture's (see the
+           * quad's texture coordinates) *)
+          Gl.tex_sub_image2d Gl.texture_2d 0 x0 y0 w h Gl.rgba Gl.unsigned_byte (`Data rgba));
       hud_in_texture := Some shapes
     end;
     Gl.use_program hud_program;
