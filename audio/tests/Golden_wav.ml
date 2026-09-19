@@ -14,7 +14,8 @@ let t = Testo.create
 
 let check (name : string) (samples : Signal.t) () =
   let file = name ^ ".wav" in
-  if not (Sys.file_exists "actual") then Sys.mkdir "actual" 0o755;
+  (* the tests run in parallel: another one may have just made it *)
+  (try Sys.mkdir "actual" 0o755 with Sys_error _ -> ());
   Wav.write (Filename.concat "actual" file) samples;
   let hint = Printf.sprintf "the new sound is _build/default/audio/tests/actual/%s ('make approve-golden-audio' after listening)" file in
   match Wav.read (Filename.concat "golden" file) with

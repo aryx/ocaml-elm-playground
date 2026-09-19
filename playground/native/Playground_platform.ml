@@ -112,4 +112,5 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
   let (app : _ Playground.app) = app in
   Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
     ~dump_frame:(Native_loop_2d.dump_ppm pixels)
+    ~pull_audio:Audio.pull ~dump_audio:Wav.write
     ~init:(fun () -> app.init flags) ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

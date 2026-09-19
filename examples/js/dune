@@ -19,6 +19,8 @@
 (copy_files ../Pyramid.{ml,mli})
 (copy_files ../Elastic.{ml,mli})
 (copy_files ../SolarSystem.{ml,mli})
+(copy_files ../Theremin.{ml,mli})
+(copy_files ../Piano.{ml,mli})
 
 (executables
   (names
@@ -27,7 +29,7 @@
     Mouse Keyboard
     Turtle Mario
     Flags
-    Orbit Bounce Marbles Boxes Pyramid Elastic SolarSystem
+    Orbit Bounce Marbles Boxes Pyramid Elastic SolarSystem Theremin Piano
   )
   (libraries
     elm_playground

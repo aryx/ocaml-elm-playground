@@ -29,7 +29,12 @@
  *
  * A third flag chooses the physics engine: physics=engine for the
  * playground's (playground/Physics.mli), the dumb one, this file's own
- * two lines of arithmetic, by default; see [fall] below. *)
+ * two lines of arithmetic, by default; see [fall] below.
+ *
+ * Sounds (playground/Audio.mli), played in [update] when things happen:
+ * a jump, the steps (a foot lands every 30 pixels of the walk cycle),
+ * the coins, a fall into a pit, and an arpeggio at the flag (a plain
+ * C major chord, up: not Nintendo's fanfare). *)
 open Playground
 open Basics (* float arithmetics *)
 
@@ -202,11 +207,25 @@ let fall (computer : computer) (vy : number) : number =
       body.vy / 60.
   | _ -> vy - 0.8
 
+(* the sounds of the things that happened between [before] and [after] *)
+let sounds (on_ground : bool) (jumped : bool) (before : model) (after : model) : unit =
+  if jumped then Audio.play Audio.jump;
+  (* a foot lands every 30 pixels: two of the walk cycle's four poses *)
+  if on_ground && (not jumped) && Float.floor (after.x / 30.) <> Float.floor (before.x / 30.) then Audio.play Audio.step;
+  if after.coins > before.coins then Audio.play Audio.coin;
+  if after.won && not before.won then
+    Audio.play (Audio.after (List.map (fun n -> Audio.square (Music.frequency n) |> Audio.lasting 0.12) [ "C5"; "E5"; "G5" ] @ [ Audio.square (Music.frequency "C6") |> Audio.lasting 0.5 |> Audio.fading ]))
+
+(* fell in a pit *)
+let fall_sound = Audio.square 700. |> Audio.sliding 120. |> Audio.lasting 0.6 |> Audio.fading
+
 let update (computer : computer) (model : model) : model =
+  let before = model in
   let on_ground = blocked model.map model.x (model.y - 1.) in
   let vx = 6. * to_x computer.keyboard in
+  let jumped = on_ground && computer.keyboard.kup in
   let vy =
-    if on_ground && computer.keyboard.kup then 19.
+    if jumped then 19.
     else max (-15.) (fall computer model.vy) (* gravity, and a terminal speed *)
   in
   let (x, _), _ = move_by model.map (model.x, model.y) (vx, 0.) in
@@ -215,10 +234,12 @@ let update (computer : computer) (model : model) : model =
   let model = { model with x; y; vy = (if hit then 0. else vy); vx; facing_left } in
   let model = if hit && vy > 0. then bump model else model in
   let model = touch model in
+  sounds on_ground jumped before model;
   (* fallen in a pit: back to the start *)
   let model =
-    if model.y < (Tilemap.bounds model.map).bottom - 200. then
-      { model with x = fst start; y = snd start; vy = 0. }
+    if model.y < (Tilemap.bounds model.map).bottom - 200. then (
+      Audio.play fall_sound;
+      { model with x = fst start; y = snd start; vy = 0. })
     else model
   in
   { model with cam = move_camera computer model }

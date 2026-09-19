@@ -38,5 +38,7 @@
    %{project_root}/examples/software/Elastic.exe
    %{project_root}/games/software/TinySoldat.exe
    %{project_root}/examples/software/SolarSystem.exe
+   %{project_root}/examples/software/Theremin.exe
+   %{project_root}/examples/software/Piano.exe
  )
 )

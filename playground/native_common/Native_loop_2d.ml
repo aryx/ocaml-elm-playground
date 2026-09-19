@@ -83,6 +83,8 @@ let dump_frame_number : int option ref = ref None
 let dump_frame_file : string ref = ref ""
 (* claude: -script, game keys held over given frames (see Input_script) *)
 let script : Input_script.t option ref = ref None
+(* claude: -dump-audio, with -dump-frame: the sound of those frames *)
+let dump_audio_file : string ref = ref ""
 
 let set_script (s : string) : unit =
   match Input_script.parse s with
@@ -125,9 +127,11 @@ let parsed_cli : string list Lazy.t = lazy (
     "<n> <file> write frame n (from 1) to file, then exit";
     "-script", Arg.String set_script,
     "<script> game keys held over frames, e.g. \"right:1-60,space:30\"";
+    "-dump-audio", Arg.Set_string dump_audio_file,
+    "<file> with -dump-frame, also write the sound of those frames to file (a WAV)";
   ] in
   let usage =
-    spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [name=value|name]..."
+    spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-dump-audio file] [name=value|name]..."
       Sys.argv.(0)
   in
   (* what Arg.parse does on an error or -help *)
@@ -223,12 +227,48 @@ let dump_ppm (pixels : pixels) (file : string) : unit =
 (* claude: takes the fields of a ('model, 'msg) Playground.app one by one
  * rather than the record itself: this library can't depend on
  * elm_playground (see the .mli) *)
+(* claude: the sound: 44,100 samples a second, 735 a frame (1/60 s);
+ * SDL's queue kept about 3 frames (50 ms) ahead of what the card has
+ * played, topped up each frame by what it used: the two clocks, the
+ * game's and the card's, never drift apart (audio/Mixer.mli) *)
+let audio_rate = 44100
+let frame_samples = audio_rate / 60
+let queue_ahead = 3 * frame_samples
+
+let open_audio () : Sdl.audio_device_id option =
+  let warn msg = Logs.warn (fun m -> m "no sound: %s" msg); None in
+  match Sdl.init_sub_system Sdl.Init.audio with
+  | Error (`Msg msg) -> warn msg
+  | Ok () -> (
+      let spec =
+        { Sdl.as_freq = audio_rate; as_format = Sdl.Audio.s16_sys; as_channels = 1; as_silence = 0;
+          as_samples = 1024; as_size = 0l; as_callback = None }
+      in
+      match Sdl.open_audio_device None false spec 0 with
+      | Error (`Msg msg) -> warn msg
+      | Ok (device, _) ->
+          Sdl.pause_audio_device device false;
+          Some device)
+
+let queue_samples (device : Sdl.audio_device_id) (samples : float array) : unit =
+  let n = Array.length samples in
+  let ba = Bigarray.Array1.create Bigarray.int16_signed Bigarray.c_layout n in
+  Array.iteri (fun i x -> ba.{i} <- max (-32768) (min 32767 (int_of_float (Float.round (x *. 32767.))))) samples;
+  match Sdl.queue_audio device ba with
+  | Ok () -> ()
+  | Error (`Msg msg) -> Logs.warn (fun m -> m "queue_audio: %s" msg)
+
 let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(update : 'msg -> 'model -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
     ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
-    ~(dump_frame : string -> unit) =
+    ~(dump_frame : string -> unit)
+    ~(pull_audio : int -> float array) ~(dump_audio : string -> float array -> unit) =
   let sdl_event = Sdl.Event.create () in
+  (* claude: no sound device for -dump-frame: exactly a frame's samples
+   * each frame instead, kept for -dump-audio *)
+  let audio_device = if !dump_frame_number <> None then None else open_audio () in
+  let dumped_audio = ref [] in
   (* claude: -keys, as if pressed before the first frame *)
   String.iter (fun c -> on_key_press (String.make 1 c)) !startup_keys;
   let frame_number = ref 0 in
@@ -338,6 +378,14 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     | None -> ());
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
     apply_playground_event (E.ETick now);
+    (* claude: the sounds this frame's update played, to the card *)
+    (match audio_device with
+    | Some device ->
+        let queued = Sdl.get_queued_audio_size device / 2 in
+        if queued < queue_ahead then queue_samples device (pull_audio (queue_ahead - queued))
+    | None ->
+        let samples = pull_audio frame_samples in
+        if !dump_audio_file <> "" then dumped_audio := samples :: !dumped_audio);
 
     let shapes = view !model in
     (* claude: with -dump-frame, a fixed fps for the counter some
@@ -352,6 +400,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     (match !dump_frame_number with
     | Some n when n = !frame_number ->
         dump_frame !dump_frame_file;
+        if !dump_audio_file <> "" then dump_audio !dump_audio_file (Array.concat (List.rev !dumped_audio));
         exit 0
     | _ -> ());
 

@@ -15,7 +15,8 @@ val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
  * [on_key_press], before the first frame), -dump-frame n file (after
  * drawing frame n, counted from 1, [run] calls its [dump_frame file],
  * then exits; the fps given to [draw] is then 0, and mouse and
- * keyboard are ignored), and -script s (game keys held over given
+ * keyboard are ignored), -dump-audio file (with -dump-frame, the sound
+ * of those frames as a WAV), and -script s (game keys held over given
  * frames, see Input_script); the arguments without a dash are the app's
  * (see [app_args]). Parses once: later calls do nothing. *)
 val parse_cli_and_setup_logging : unit -> unit
@@ -53,7 +54,8 @@ val present : Tsdl.Sdl.window -> unit
  * [dump_frame] for [run] *)
 val dump_ppm : pixels -> string -> unit
 
-(* [run ~sdl_window ~sx ~sy ~init ~update ~subscriptions ~view ~draw]
+(* [run ~sdl_window ~sx ~sy ~init ~update ~subscriptions ~view ~draw
+ * ... ~pull_audio ~dump_audio]
  * runs an app forever (like Playground_platform.run_app, it never
  * returns: "Q" or the window's close button call [exit]): each frame,
  * drains the SDL events into the app's msgs (via [subscriptions]) plus
@@ -64,6 +66,14 @@ val dump_ppm : pixels -> string -> unit
  * press (not the repeats while it's held) also calls [on_key_press] with
  * the key's name, e.g. "t", for backend-specific debug toggles; the app
  * still gets the key too.
+ *
+ * The sound: [pull_audio n] gives the next [n] samples of what's
+ * playing (Audio.pull), at 44,100 a second, which [run] queues for
+ * SDL's audio device, kept about 3 frames (50 ms) ahead; with
+ * -dump-frame, no device, exactly a frame's worth (735) pulled each
+ * frame, and with -dump-audio file, [dump_audio file samples] writes
+ * them all at the end (the platform's Wav.write: this library doesn't
+ * know audio/). No device (SDL can't open one): silence, and a warning.
  *
  * The arguments are the fields of a ('model, 'msg) Playground.app
  * ('view = Playground.shape list), passed one by one because this
@@ -82,4 +92,6 @@ val run :
   draw:(fps:float -> 'view -> unit) ->
   on_key_press:(string -> unit) ->
   dump_frame:(string -> unit) ->
+  pull_audio:(int -> float array) ->
+  dump_audio:(string -> float array -> unit) ->
   unit

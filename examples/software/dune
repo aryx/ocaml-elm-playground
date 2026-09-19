@@ -12,7 +12,7 @@
     Animation
     Mouse Keyboard Turtle Mario
     Flags
-    Orbit Bounce Marbles Boxes Pyramid Elastic SolarSystem
+    Orbit Bounce Marbles Boxes Pyramid Elastic SolarSystem Theremin Piano
   )
   (libraries
     elm_playground

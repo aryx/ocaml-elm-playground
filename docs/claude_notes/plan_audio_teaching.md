@@ -312,6 +312,40 @@ audio meeting).
   dB, two full sines peaking at 2, cut to 1 or bent to tanh 2. Golden
   WAVs: three beeps cut vs enveloped, a chord (A4 and E5) clipped hard
   vs soft (their waveforms plotted before approving).
+- **Phase 3, DONE (native)**: the engine got `Music` (the notes'
+  frequencies, equal temperament: the start of phase 8), `Synth`
+  (sounds as values: voices at the leaves, `Together` and `After`
+  above, Euterpea's (:=:) and (:+:), credited; each voice rendered with
+  5 ms ramps, so nothing clicks; a voice's slide; the continuous
+  voices' `continue` and `release`, their volume ramped over each
+  pull, no zipper noise) and `Mixer` (the stateful part: one-shots read
+  through, continuous voices kept by name, the sum through tanh, at
+  most 32 one-shots so a backend not pulling can't pile them up).
+  `playground/Audio.mli`, Evan-style: `tone`, `square`, `triangle`,
+  `sawtooth`, `noise`, `note`; `lasting`, `fading`, `louder`,
+  `sliding`, `together`, `after`; ready-made sounds after sfxr's
+  categories (our own recipes, credited to sfxr's idea; the coin C6 then
+  G6, not Nintendo's); `play`, `keep_playing`; `pull` for the
+  platforms. Native: `Native_loop_2d.run ~pull_audio ~dump_audio`, an
+  SDL audio device (S16, mono, 44,100), its queue topped up to 3
+  frames (50 ms) ahead each frame, the two clocks never drifting; with
+  -dump-frame, no device, 735 samples a frame, and `-dump-audio file`
+  writing them as a WAV (both native backends). Tests (`Unit_synth`):
+  the notes (A4 69, C4 261.63 Hz), durations, no clicks, a slide's
+  periods (275 then 385 over two half seconds), the mixer's
+  one-shots and continuous voices, the 32 cap. A race fixed on the way:
+  the golden WAV tests run in parallel, and two of them could both
+  create `actual/` (an intermittent failure under `make test`).
+  TinyMario plays: a jump, steps (a foot every 30 pixels), coins, a
+  fall, an arpeggio at the flag, checked by dumping a scripted run's
+  sound (steps every 5 frames, the jumps at the script's frames).
+  `examples/Theremin.ml` (keep_playing: the mouse's x the pitch over
+  three octaves, y the volume) and `examples/Piano.ml` (a s d f g h j k
+  and w e t y u, C4 to C5; space the waveform; the notes measured in
+  the dumped sound: 260, 330, 390 Hz for C4, E4, G4); golden frames.
+  The web and 3D backends don't pull yet: silent (phase 4). Left for
+  later: golden WAVs of whole game runs (the golden runner would pass
+  -dump-audio), a mute key.
 - **The goal set by the user**: TinyMario with music and sounds when
   moving. So after phases 2 and 3, phase 8's `Music` (notes, the
   sequencer) comes before phases 5-7. The classic Super Mario Bros.

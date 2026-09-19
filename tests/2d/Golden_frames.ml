@@ -70,6 +70,9 @@ let scenes : Testutil_golden.scene list =
     (* the planets on 2000-01-02, Jupiter and Saturn near their May 2000
      * conjunction *)
     ("examples/software/SolarSystem", "", 2);
+    (* the audio plan's first examples (their sounds: -dump-audio) *)
+    ("examples/software/Theremin", "", 2);
+    ("examples/software/Piano", "", 2);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -148,6 +151,8 @@ let scripted : Testutil_golden.scripted list =
      * second for 2 seconds: mid-2000 *)
     ("examples/software/SolarSystem", "true_distances", 3, "d:2");
     ("examples/software/SolarSystem", "later", 120, "up:2,up:4");
+    (* keys held, lit; the square wave *)
+    ("examples/software/Piano", "keys", 30, "space:2,a:10-30,g:10-30,u:10-30");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

@@ -9,6 +9,9 @@
    ; OCaml, in this same package), see
    ; docs/claude_notes/plan_physics_teaching.md
    physics_2d graphics_2d_geometry
+   ; claude: the synthesizer under Audio.ml (private, pure OCaml, this
+   ; same package), see docs/claude_notes/plan_audio_teaching.md
+   audio
  )
  ; (preprocess (pps profiling.ppx))
 )
