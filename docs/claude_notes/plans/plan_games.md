@@ -200,9 +200,12 @@ the trackball).
   the waves flying in and the dives along Catmull-Rom splines, moved
   along by arc length; the formation breathing; bosses taking two hits;
   a robot in `tests/games/` clears stage 1).
-- **Kit** (the start of the shmup kit): `Shots` (the player's and the
-  enemies' bullets, created, moved, removed when off-screen or on a
-  hit), `Formation`.
+- **Kit** (the start of the shmup kit, DONE: `kits/shmup/`): `Shots`
+  (the player's and the enemies' bullets, created, moved, removed when
+  off-screen or on a hit), and `Path` (TinyGalaga's Catmull-Rom curves,
+  flown by arc length, for section 5's `Paths` too). Not `Formation`:
+  TinyInvaders' marches one alien per frame, TinyGalaga's breathes,
+  little in common yet.
 
 ### 4. Multi-directional shooters
 

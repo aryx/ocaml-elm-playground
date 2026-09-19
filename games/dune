@@ -30,6 +30,7 @@
     kit_racing ; TinyOutRun's Road and Car
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
     kit_lightcycles ; TinyTron's rules
+    kit_shmup ; TinyInvaders' and TinyGalaga's Shots and Path
     elm_playground_native ; implem of virtual elm_playground
   )
 )

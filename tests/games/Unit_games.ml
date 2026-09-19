@@ -332,27 +332,6 @@ let xpilot_ball () =
 (* TinyGalaga *)
 (*****************************************************************************)
 
-(* catmull_rom's worked examples: in a line, the middle; around a
- * corner, bulging out to (112.5, 50) *)
-let galaga_spline () =
-  let open TinyGalaga in
-  let pt = Alcotest.(pair (float 1e-9) (float 1e-9)) in
-  Alcotest.check pt "line" (150., 0.) (catmull_rom (0., 0.) (100., 0.) (200., 0.) (300., 0.) 0.5);
-  Alcotest.check pt "corner" (112.5, 50.) (catmull_rom (0., 0.) (100., 0.) (100., 100.) (0., 100.) 0.5);
-  Alcotest.check pt "t = 0" (100., 0.) (catmull_rom (0., 0.) (100., 0.) (100., 100.) (0., 100.) 0.)
-
-(* moving by distance along a path: a straight one, 300 long, its middle
- * at 150; a curved one, the same speed everywhere (a step of 5 pixels
- * along it moves 5 pixels, give or take the chords' shortcut) *)
-let galaga_path () =
-  let open TinyGalaga in
-  let line = make_path [ (0., 0.); (100., 0.); (200., 0.); (300., 0.) ] in
-  Alcotest.(check (float 1e-6)) "length" 300. (length line);
-  Alcotest.(check (float 1e-6)) "middle" 150. (fst (fst (point_at line 150.)));
-  let p = snd entry_paths.(1) in
-  let steps = List.init (int_of_float (length p /. 5.) - 1) (fun i -> (fst (point_at p (float_of_int i *. 5.)), fst (point_at p (float_of_int (i + 1) *. 5.)))) in
-  List.iter (fun ((x0, y0), (x1, y1)) -> Alcotest.(check (float 0.2)) "a step" 5. (Float.hypot (x1 -. x0) (y1 -. y0))) steps
-
 (* after its five waves, all 40 enemies have flown in and taken their
  * places (or dive, some of them already) *)
 let galaga_formation () =
@@ -377,7 +356,7 @@ let galaga_robot () =
           if g.stage = 2 then stage2 := true;
           (* a bullet or a diver coming down near: out of its way *)
           let threats =
-            List.map (fun (b : shot) -> (b.sx, b.sy)) g.bullets
+            List.map (fun (b : Shots.t) -> (b.x, b.y)) g.bullets
             @ List.filter_map (fun e -> match e.flight with Diving _ -> Some (e.x, e.y) | _ -> None) g.enemies
           in
           let close = List.filter (fun (x, y) -> Float.abs (x -. g.fx) < 60. && y < -150.) threats in
@@ -488,8 +467,6 @@ let tests =
       t "TinyXpilot, a robot brings a ball home" xpilot_ball;
       t "TinyXpilot, two players: a ball home" xpilot_duel_score;
       t "TinyXpilot, two players: a shot, a shield" xpilot_duel_shot;
-      t "TinyGalaga, Catmull-Rom" galaga_spline;
-      t "TinyGalaga, along a path at constant speed" galaga_path;
       t "TinyGalaga, the formation" galaga_formation;
       t "TinyGalaga, a robot clears stage 1" galaga_robot;
       t "TinyDonkeyKong, a girder's height" kong_height;

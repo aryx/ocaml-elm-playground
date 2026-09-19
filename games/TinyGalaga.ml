@@ -24,34 +24,17 @@
  *
  * The new idea here is the paths. An enemy's flight is a curve through
  * a few points, typed as a list ([entry_paths], [dive_path]), made
- * smooth by a Catmull-Rom spline ([catmull_rom]): the curve passes
- * through every point, and its direction at each point is the direction
- * from the point before to the point after -- no control points to
- * place off the curve, as a Bézier curve would need. Edwin Catmull (of
- * Pixar) and Raphael Rom, "A Class of Local Interpolating Splines"
- * (1974); the splines of animation and camera paths since.
+ * smooth by a Catmull-Rom spline, and flown at a constant speed, by the
+ * distance along it rather than the spline's parameter: see
+ * kits/shmup/Path.mli, the arc-Path.length parametrization in its simplest
+ * form, and the enemies turned to face where they fly.
  *
- * But a spline's parameter isn't a distance: t from 0 to 1 covers a
- * long segment as fast as a short one, and a ship following t would
- * rush and dawdle. So the curve is measured once ([make_path]: 16 points
- * per segment, and the length so far at each), and a ship moves along
- * it by distance, [s] pixels from the start, found in that table
- * ([point_at]): the same speed everywhere, and the direction there to
- * turn the sprite. The arc-length parametrization, in its simplest
- * form.
- *
- *            p1 ------- p2        the segment from p1 to p2 leaves p1
- *           /             \       parallel to p0 -> p2, and arrives at
- *         p0               p3     p2 parallel to p1 -> p3
- *
- * What it uses: Sprite (pixel art, turned to face where they fly),
- * Scene2d (title, play, game over), Audio (the shots, the hits, the
- * explosions). Not Physics: the enemies follow curves, not forces, and
- * the fighter slides left and right. Not a kit yet: the shots and the
- * formation are the second of their kind after games/TinyInvaders.ml,
- * and a shoot 'em up kit (kits/shmup, see plan_games.md section 3) can
- * take them, and these paths, when a third game (TinyGradius) wants
- * them.
+ * What it uses: the shoot 'em up kit (kits/shmup/: Path for the
+ * flights, Shots for the fighter's shots and the divers' aimed
+ * bullets, also games/TinyInvaders'), Sprite (pixel art, turned to face
+ * where they fly), Scene2d (title, play, game over), Audio (the shots,
+ * the hits, the explosions). Not Physics: the enemies follow curves,
+ * not forces, and the fighter slides left and right.
  *
  * Exercises: the boss's tractor beam and the dual fighter, the
  * challenging stages (a wave to shoot that doesn't shoot back), bosses
@@ -67,55 +50,6 @@ open Basics (* float arithmetics *)
 
 type point = number * number
 
-(* [catmull_rom p0 p1 p2 p3 t]: the point at [t] (0 to 1) on the curve
- * from p1 to p2, p0 and p3 their neighbors:
- *   0.5 (2 p1 + (p2 - p0) t + (2 p0 - 5 p1 + 4 p2 - p3) t^2
- *        + (3 p1 - p0 - 3 p2 + p3) t^3)
- * At t = 0, p1; at t = 1, p2. E.g. with points in a line, (0, 0) (100,
- * 0) (200, 0) (300, 0), the middle of the curve from the second to the
- * third is (150, 0); around a corner, (0, 0) (100, 0) (100, 100) (0,
- * 100), the middle from (100, 0) to (100, 100) is (112.5, 50): the
- * curve bulges out, smooth, rather than turning at the corners. *)
-let catmull_rom ((x0, y0) : point) ((x1, y1) : point) ((x2, y2) : point) ((x3, y3) : point) (t : number) : point =
-  let f a b c d = 0.5 * ((2. * b) + ((c - a) * t) + (((2. * a) - (5. * b) + (4. * c) - d) * t * t) + (((3. * b) - a - (3. * c) + d) * t * t * t)) in
-  (f x0 x1 x2 x3, f y0 y1 y2 y3)
-
-(* a curve, measured: its points, 16 per segment, and the length from
- * the start at each *)
-type path = { pts : point array; lengths : number array }
-
-let make_path (points : point list) : path =
-  let a = Array.of_list points in
-  let n = Array.length a in
-  let get i = a.(max 0 (min (n -.. 1) i)) in
-  let pts =
-    Array.of_list
-      (List.concat (List.init (n -.. 1) (fun i -> List.init 16 (fun k -> catmull_rom (get (i -.. 1)) (get i) (get (i +.. 1)) (get (i +.. 2)) (float_of_int k / 16.))))
-      @ [ a.(n -.. 1) ])
-  in
-  let lengths = Array.make (Array.length pts) 0. in
-  for i = 1 to Array.length pts -.. 1 do
-    let (x0, y0), (x1, y1) = (pts.(i -.. 1), pts.(i)) in
-    lengths.(i) <- lengths.(i -.. 1) + Float.hypot (x1 - x0) (y1 - y0)
-  done;
-  { pts; lengths }
-
-let length (p : path) : number = p.lengths.(Array.length p.lengths -.. 1)
-
-(* [point_at p s]: where the path is [s] pixels from its start, and its
- * direction there (degrees): between the two measured points around
- * [s], in proportion *)
-let point_at (p : path) (s : number) : point * number =
-  let n = Array.length p.pts in
-  let rec find i = if i < n -.. 1 && p.lengths.(i) < s then find (i +.. 1) else i in
-  let i = max 1 (find 1) in
-  let (x0, y0), (x1, y1) = (p.pts.(i -.. 1), p.pts.(i)) in
-  let seg = p.lengths.(i) - p.lengths.(i -.. 1) in
-  let f = if seg > 0. then clamp 0. 1. ((s - p.lengths.(i -.. 1)) / seg) else 1. in
-  ((x0 + (f * (x1 - x0)), y0 + (f * (y1 - y0))), atan2 (y1 - y0) (x1 - x0) * 180. / pi)
-
-let mirror (points : point list) : point list = List.map (fun (x, y) -> (-.x, y)) points
-
 (* the waves' ways in: from the top center curling out, from the bottom
  * corners looping, from the top corners sweeping across (the screen is
  * 1000 x 1000, (0, 0) at its center) *)
@@ -125,17 +59,17 @@ let top_left = [ (-560., 380.); (-200., 250.); (0., 50.); (-150., -100.); (-300.
 
 (* each wave's path, for its even and its odd enemies: the first wave
  * comes in two lines, mirrored *)
-let entry_paths : (path * path) array =
-  let both p q = (make_path p, make_path q) in
-  [| both top_center (mirror top_center); both bottom_left bottom_left; both (mirror bottom_left) (mirror bottom_left);
-     both top_left top_left; both (mirror top_left) (mirror top_left) |]
+let entry_paths : (Path.t * Path.t) array =
+  let both p q = (Path.make p, Path.make q) in
+  [| both top_center (Path.mirror top_center); both bottom_left bottom_left; both (Path.mirror bottom_left) (Path.mirror bottom_left);
+     both top_left top_left; both (Path.mirror top_left) (Path.mirror top_left) |]
 
 (* a dive from (x, y), towards the fighter at [fx], on the side of the
  * screen it's on: a loop up and out, down at the fighter, and away off
  * the bottom *)
-let dive_path ((x, y) : point) (fx : number) : path =
+let dive_path ((x, y) : point) (fx : number) : Path.t =
   let side = if x < 0. then -1. else 1. in
-  make_path
+  Path.make
     [ (x, y); (x + (side * 50.), y + 60.); (x + (side * 120.), y); (x + (side * 80.), y - 150.); (fx, -200.); (fx - (side * 120.), -380.);
       (fx - (side * 200.), -580.) ]
 
@@ -167,9 +101,9 @@ let look (k : kind) (hits : int) : shape =
 (*****************************************************************************)
 
 type flight =
-  | Waiting of int * path (* frames before its wave comes, and its way in *)
-  | Entering of path
-  | Diving of path * int (* the shots fired so far *)
+  | Waiting of int * Path.t (* frames before its wave comes, and its way in *)
+  | Entering of Path.t
+  | Diving of Path.t * int (* the shots fired so far *)
   | Returning (* flying to its place *)
   | In_place
 
@@ -185,13 +119,11 @@ type enemy = {
   hits : int;
 }
 
-type shot = { sx : number; sy : number; vx : number; vy : number }
-
 type game = {
   enemies : enemy list;
   fx : number; (* the fighter *)
-  shots : shot list; (* the fighter's, 2 at most *)
-  bullets : shot list; (* the enemies' *)
+  shots : Shots.t list; (* the fighter's, 2 at most *)
+  bullets : Shots.t list; (* the enemies' *)
   explosions : (number * number * int) list; (* where, and frames since *)
   score : int;
   lives : int;
@@ -256,27 +188,25 @@ let speed (g : game) : number = 5. + (0.4 * float_of_int g.stage)
 
 (* one enemy, one frame: along its path, or to its place; a diving one
  * shoots twice at the fighter, at a third and at half of its dive *)
-let fly (g : game) (e : enemy) : enemy * shot list =
-  let along (p : path) (s : number) =
-    let (x, y), angle = point_at p s in
+let fly (g : game) (e : enemy) : enemy * Shots.t list =
+  let along (p : Path.t) (s : number) =
+    let (x, y), angle = Path.at p s in
     { e with x; y; angle; s }
   in
   match e.flight with
   | Waiting (0, p) -> ({ (along p 0.) with flight = Entering p }, [])
   | Waiting (n, p) -> ({ e with flight = Waiting (n -.. 1, p) }, [])
-  | Entering p -> if e.s >= length p then ({ e with flight = Returning }, []) else ({ (along p (e.s + speed g)) with flight = Entering p }, [])
+  | Entering p -> if e.s >= Path.length p then ({ e with flight = Returning }, []) else ({ (along p (e.s + speed g)) with flight = Entering p }, [])
   | Diving (p, fired) ->
-      if e.s >= length p then
+      if e.s >= Path.length p then
         (* off the bottom: back from the top *)
         let px, _ = place g e in
         ({ e with x = px; y = 560.; flight = Returning }, [])
       else
         let e' = along p (e.s + speed g) in
-        let due = float_of_int (fired +.. 1) * length p / 3. in
+        let due = float_of_int (fired +.. 1) * Path.length p / 3. in
         if fired < 2 && e'.s >= due && g.dead = 0 then
-          let dx = g.fx - e'.x and dy = fighter_y - e'.y in
-          let d = Float.hypot dx dy in
-          ({ e' with flight = Diving (p, fired +.. 1) }, [ { sx = e'.x; sy = e'.y; vx = 6. * dx / d; vy = 6. * dy / d } ])
+          ({ e' with flight = Diving (p, fired +.. 1) }, [ Shots.aimed 6. (e'.x, e'.y) (g.fx, fighter_y) ])
         else ({ e' with flight = Diving (p, fired) }, [])
   | Returning ->
       let px, py = place g e in
@@ -311,8 +241,8 @@ let near (x0 : number) (y0 : number) (x1 : number) (y1 : number) (d : number) : 
  * explodes, a boss needs two *)
 let shoot_down (g : game) : game =
   List.fold_left
-    (fun g (s : shot) ->
-      match List.find_opt (fun e -> flying e && near s.sx s.sy e.x e.y 22.) g.enemies with
+    (fun g (s : Shots.t) ->
+      match List.find_opt (fun e -> flying e && Shots.near 22. (e.x, e.y) s) g.enemies with
       | None -> { g with shots = s :: g.shots }
       | Some e when e.kind = Boss && e.hits = 0 ->
           Audio.play Audio.hit;
@@ -324,7 +254,7 @@ let shoot_down (g : game) : game =
 
 (* the fighter hit by a bullet or a diving enemy (which explodes too) *)
 let fighter_hit (g : game) : game =
-  let hit_by_bullet = List.exists (fun (b : shot) -> near b.sx b.sy g.fx fighter_y 16.) g.bullets in
+  let hit_by_bullet = List.exists (Shots.near 16. (g.fx, fighter_y)) g.bullets in
   let rammed = List.find_opt (fun e -> (match e.flight with Diving _ -> true | _ -> false) && near e.x e.y g.fx fighter_y 30.) g.enemies in
   if g.dead > 0 || (not hit_by_bullet && rammed = None) then g
   else begin
@@ -333,8 +263,6 @@ let fighter_hit (g : game) : game =
       enemies = (match rammed with Some e -> List.filter (fun e' -> e' != e) g.enemies | None -> g.enemies) }
   end
 
-let advance (s : shot) : shot = { s with sx = s.sx + s.vx; sy = s.sy + s.vy }
-let on_screen (s : shot) : bool = Float.abs s.sx < 520. && Float.abs s.sy < 520.
 
 let update_game (computer : computer) (scenes : scene Scene2d.t) (g : game) : game =
   let g = { g with frames = g.frames +.. 1 } in
@@ -345,12 +273,12 @@ let update_game (computer : computer) (scenes : scene Scene2d.t) (g : game) : ga
       let fx = clamp (-440.) 440. (g.fx + (7. * to_x computer.keyboard)) in
       let fire = Scene2d.pressed (fun k -> k.kspace) scenes && List.length g.shots < 2 in
       if fire then Audio.play Audio.laser;
-      { g with fx; shots = (if fire then { sx = fx; sy = fighter_y + 30.; vx = 0.; vy = 16. } :: g.shots else g.shots) }
+      { g with fx; shots = (if fire then Shots.straight fx (fighter_y + 30.) 0. 16. :: g.shots else g.shots) }
   in
   let moved, fired = List.split (List.map (fly g) g.enemies) in
   let g =
-    { g with enemies = moved; bullets = List.filter on_screen (List.map advance g.bullets @ List.concat fired);
-      shots = List.filter on_screen (List.map advance g.shots);
+    { g with enemies = moved; bullets = List.filter (Shots.on_screen 20. computer.screen) (List.map Shots.advance g.bullets @ List.concat fired);
+      shots = List.filter (Shots.on_screen 20. computer.screen) (List.map Shots.advance g.shots);
       explosions = List.filter_map (fun (x, y, n) -> if n < 30 then Some (x, y, n +.. 1) else None) g.explosions }
   in
   let g = g |> launch |> shoot_down |> fighter_hit in
@@ -396,8 +324,8 @@ let view_enemy (e : enemy) : shape list =
 
 let view_game (g : game) : shape list =
   List.concat_map view_enemy g.enemies
-  @ List.map (fun (s : shot) -> rectangle white 3. 14. |> move s.sx s.sy) g.shots
-  @ List.map (fun (b : shot) -> rectangle (rgb 255 200 80) 4. 10. |> rotate (atan2 b.vy b.vx * 180. / pi) |> move b.sx b.sy) g.bullets
+  @ List.map (fun (s : Shots.t) -> rectangle white 3. 14. |> move s.x s.y) g.shots
+  @ List.map (fun (b : Shots.t) -> rectangle (rgb 255 200 80) 4. 10. |> rotate (Shots.angle b) |> move b.x b.y) g.bullets
   @ List.map (fun (x, y, n) -> circle (if n mod 6 < 3 then orange else yellow) (8. + (float_of_int n * 1.2)) |> fade (1. - (float_of_int n / 30.)) |> move x y) g.explosions
   @ (if g.dead = 0 then [ fighter |> move g.fx fighter_y ] else [])
   @ List.init (max 0 (g.lives -.. 1)) (fun i -> fighter |> scale 0.6 |> move (-440. + (float_of_int i * 40.)) (-475.))

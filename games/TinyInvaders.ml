@@ -23,7 +23,9 @@
  * It uses three layers on top of the playground: Sprite (the aliens are
  * pixel art typed as strings, two frames each), Scene2d (title, play,
  * game over), and Tilemap (each bunker is a tile map of small tiles,
- * eroded one tile at a time where shots hit it). No randomness: the
+ * eroded one tile at a time where shots hit it); and the shoot 'em up
+ * kit's Shots (kits/shmup/, with games/TinyGalaga) for the cannon's
+ * shot and the aliens' bombs. No randomness: the
  * aliens choose who shoots from a fixed table of columns, or the column
  * above you, as the original did, so every game is the same (and golden
  * frames are possible).
@@ -89,8 +91,8 @@ type game = {
   dir : number; (* 1. marching right, -1. left *)
   reverse : bool; (* one alien reached an edge: down and back at the end of the step *)
   x : number; (* the cannon *)
-  shot : (number * number) option; (* the cannon's one shot *)
-  bombs : (number * number) list; (* the aliens' shots, 3 at most *)
+  shot : Shots.t option; (* the cannon's one shot *)
+  bombs : Shots.t list; (* the aliens' shots, 3 at most *)
   bombs_fired : int;
   bunkers : (number * Tilemap.t) list; (* their x, and their tiles *)
   score : int;
@@ -188,7 +190,7 @@ let drop_bomb (g : game) : game =
   in
   match lowest with
   | a :: _ when List.length g.bombs < 3 ->
-      { g with bombs = (a.ax, a.ay - 20.) :: g.bombs; bombs_fired = g.bombs_fired +.. 1 }
+      { g with bombs = Shots.straight a.ax (a.ay - 20.) 0. (-6.) :: g.bombs; bombs_fired = g.bombs_fired +.. 1 }
   | _ -> { g with bombs_fired = g.bombs_fired +.. 1 }
 
 (* [erode] removes the tiles around the one at (x, y) in a bunker
@@ -222,8 +224,9 @@ let alien_size (a : alien) = (float_of_int (String.length (List.hd (List.hd alie
 let move_shot (g : game) : game =
   match g.shot with
   | None -> g
-  | Some (x, y) -> (
-      let y = y + 15. in
+  | Some s -> (
+      let s = Shots.advance s in
+      let x = s.x and y = s.y in
       let hit_alien =
         List.find_opt
           (fun a ->
@@ -235,18 +238,19 @@ let move_shot (g : game) : game =
       | Some a, _ ->
           { g with shot = None; aliens = List.filter (fun b -> b.id <> a.id) g.aliens; score = g.score +.. points.(a.kind) }
       | None, Some bunkers -> { g with shot = None; bunkers }
-      | None, None -> { g with shot = (if y > 500. then None else Some (x, y)) })
+      | None, None -> { g with shot = (if y > 500. then None else Some s) })
 
 let move_bombs (g : game) : game =
   List.fold_left
-    (fun g (x, y) ->
-      let y = y - 6. in
+    (fun g (b : Shots.t) ->
+      let b = Shots.advance b in
+      let x = b.x and y = b.y in
       match hit_bunker g x y with
       | Some bunkers -> { g with bunkers }
       | None when g.hit_frames = 0 && Float.abs (x - g.x) < 32. && Float.abs (y - cannon_y) < 20. ->
           { g with lives = g.lives -.. 1; hit_frames = 90; bombs = [] }
       | None when y < -450. -> g
-      | None -> { g with bombs = (x, y) :: g.bombs })
+      | None -> { g with bombs = b :: g.bombs })
     { g with bombs = [] } g.bombs
 
 (*****************************************************************************)
@@ -260,7 +264,7 @@ let update_game (computer : computer) (scenes : scene Scene2d.t) (g : game) : ga
   if g.hit_frames > 0 then { g with hit_frames = g.hit_frames -.. 1 }
   else
     let x = clamp (-.edge) edge (g.x + (5. * to_x computer.keyboard)) in
-    let shot = if g.shot = None && fire scenes then Some (x, cannon_y + 20.) else g.shot in
+    let shot = if g.shot = None && fire scenes then Some (Shots.straight x (cannon_y + 20.) 0. 15.) else g.shot in
     let g = march { g with x; shot } in
     let g = if g.frames mod 40 = 0 then drop_bomb g else g in
     g |> move_shot |> move_bombs
@@ -298,8 +302,8 @@ let view_game (g : game) : shape list =
    * rectangle each (see Sprite.runs), a few dozen shapes, not hundreds *)
   @ List.map (fun (bx, map) -> Sprite.pixels 4. [ ('#', green) ] (Tilemap.to_strings map) |> move bx bunker_y) g.bunkers
   @ [ (if g.hit_frames > 0 then cannon_hit else cannon) |> move g.x cannon_y ]
-  @ (match g.shot with Some (x, y) -> [ rectangle white 4. 16. |> move x y ] | None -> [])
-  @ List.map (fun (x, y) -> rectangle white 4. 16. |> move x y) g.bombs
+  @ (match g.shot with Some s -> [ rectangle white 4. 16. |> move s.x s.y ] | None -> [])
+  @ List.map (fun (b : Shots.t) -> rectangle white 4. 16. |> move b.x b.y) g.bombs
   @ [ rectangle green 1000. 3. |> move_y (-440.) ]
   @ List.init (max 0 (g.lives -.. 1)) (fun i -> cannon |> scale 0.6 |> move (-420. + (float_of_int i * 60.)) (-470.))
 

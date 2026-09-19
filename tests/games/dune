@@ -69,5 +69,6 @@
    elm_playground_3d_software ; an implem of virtual elm_playground_3d
    kit_maze
    kit_lightcycles
+   kit_shmup
  )
 )
