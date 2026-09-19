@@ -163,7 +163,8 @@ above, is the Elm way).
   thrust, orbits, slingshots. Everything the engine teaches, in one
   game: gravitation, integration (a bad integrator makes the orbits
   wrong -- try it with the integrator key), collisions.
-- **Slingshot, new** (`games/Slingshot.ml`, the third flagship, an
+- **Slingshot, new** (DONE, as `games/TinySlingshot.ml`, the toys'
+  naming; the third flagship, an
   Angry Birds-like -- the game that made Box2D famous): pull a
   projectile back with the mouse and let go (a spring's force, or
   directly a launch velocity proportional to the pull, with the
@@ -569,6 +570,21 @@ Each small, each showing one idea, each deterministic (golden frames):
   is 1.3 ms of physics; the golden runs are slow (30-45 ms a frame)
   because of the offscreen rendering, for every example. Left:
   sleeping, joints (springs and ropes: phase 2's Springs), clipping.
+- **Slingshot, DONE** as `games/TinySlingshot.ml`: the mouse pulls
+  the ball back from the sling (or keys: the angle, the power, space),
+  the launch speed proportional to the pull; the arc drawn before the
+  shot is the engine's own steps (`fall |> step`, 60 of them), so the
+  ball follows the dots exactly; a two-floor tower of pillars and
+  planks in a `Physics.world`, standing still until hit; 3 green
+  targets that break when their velocity jumps by more than 250 px/s
+  in a step (J = m dv, gravity's own 13 px/s taken out: a hard hit or
+  a hard fall, no new engine API); 3 balls, won or lost. The bodies
+  kept in the order walls, blocks, targets, balls, the balls added at
+  the end (the solver's memory knows bodies by their place). The key
+  `s` / flag `solver=off` plays it with phase 7's `bounce_all`: the
+  tower slumps by itself before any shot. Golden frames: the title, a
+  shot (the tower tumbling), no_solver. Exercises in its header:
+  levels from strings, materials, powers, a camera, stars.
 
 ## Verification
 

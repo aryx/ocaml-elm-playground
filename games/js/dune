@@ -18,6 +18,7 @@
 (copy_files ../TinySpacewar.{ml,mli})
 (copy_files ../TinyPong.{ml,mli})
 (copy_files ../TinyCameltry.{ml,mli})
+(copy_files ../TinySlingshot.{ml,mli})
 
 (executables
   (names
@@ -37,6 +38,7 @@
     TinySpacewar
     TinyPong
     TinyCameltry
+    TinySlingshot
   )
   (libraries
     unix

@@ -33,5 +33,6 @@
    %{project_root}/examples/software/Boxes.exe
    %{project_root}/games/software/TinyCameltry.exe
    %{project_root}/examples/software/Pyramid.exe
+   %{project_root}/games/software/TinySlingshot.exe
  )
 )

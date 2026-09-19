@@ -20,6 +20,7 @@
     TinySpacewar
     TinyPong
     TinyCameltry
+    TinySlingshot
   )
   (libraries
     elm_playground
