@@ -303,6 +303,15 @@ audio meeting).
   long mode, 93 in its short one, from 1: checked by simulation before
   writing it). Golden WAVs: the four waveforms at 440 Hz and both
   noises, a quarter second each.
+- **Phase 2, DONE**: `Envelope` (ADSR, straight lines; `percussive`;
+  the release from wherever the level was when let go) and `Mix`
+  (`add`, `gain`, `delay`, `then_`, decibels, hard vs soft clipping
+  with tanh). Tests (`Unit_envelope`): the `.mli`'s ADSR example
+  (0.5, 0.75, 0.5, 0.25, 0 at 0.005, 0.06, 0.3, 0.6, 0.7 s), the click
+  (a tone cut near a peak ends high, an enveloped one silent), -6.02
+  dB, two full sines peaking at 2, cut to 1 or bent to tanh 2. Golden
+  WAVs: three beeps cut vs enveloped, a chord (A4 and E5) clipped hard
+  vs soft (their waveforms plotted before approving).
 - **The goal set by the user**: TinyMario with music and sounds when
   moving. So after phases 2 and 3, phase 8's `Music` (notes, the
   sequencer) comes before phases 5-7. The classic Super Mario Bros.

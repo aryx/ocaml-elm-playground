@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"audio" (fun _env -> List.concat [ Unit_signal.tests; Golden_wav.tests ])
+let () = Testo.interpret_argv ~project_name:"audio" (fun _env -> List.concat [ Unit_signal.tests; Unit_envelope.tests; Golden_wav.tests ])

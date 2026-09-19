@@ -32,9 +32,23 @@ let check (name : string) (samples : Signal.t) () =
       done;
       if !differ > 0 then Alcotest.failf "%s: %d samples differ, the first at %d; %s" file !differ !first hint
 
+(* three 0.1 s beeps at 880 Hz, each shaped by [f], 0.1 s apart *)
+let beeps (f : Signal.t -> Signal.t) : Signal.t =
+  let beep = f (Oscillator.render Sine ~frequency:880. 0.1) and gap = Array.make (Signal.samples 0.1) 0. in
+  Array.concat [ beep; gap; beep; gap; beep ]
+
+let chord () : Signal.t =
+  Mix.add [ Oscillator.render Sine ~frequency:440. 0.25; Oscillator.render Sine ~frequency:659.26 0.25 ]
+
 (* a quarter second of each, at A4 (440 Hz), and the NES's noises *)
 let sounds : (string * (unit -> Signal.t)) list =
   List.map (fun w -> (Oscillator.name w ^ "_440", fun () -> Oscillator.render w ~frequency:440. 0.25)) Oscillator.waveforms
   @ [ ("noise_long", fun () -> Noise.render ~rate:22050. 0.25); ("noise_short", fun () -> Noise.render ~mode:Short ~rate:22050. 0.25) ]
+  (* the click: three short beeps cut at once, then the same three
+   * enveloped (Envelope.mli) *)
+  @ [ ("beeps_cut", fun () -> beeps (fun s -> s));
+      ("beeps_enveloped", fun () -> beeps (Envelope.apply (Envelope.percussive ~attack:0.005 ~decay:0.095) ~held:0.1)) ]
+  (* A4 and E5 at full volume, clipped hard, then soft (Mix.mli) *)
+  @ [ ("chord_hard", fun () -> Mix.limit (chord ())); ("chord_soft", fun () -> Mix.limit ~soft:true (chord ())) ]
 
 let tests = Testo.categorize "golden WAVs" (List.map (fun (name, f) -> t name (fun () -> check name (f ()) ())) sounds)
