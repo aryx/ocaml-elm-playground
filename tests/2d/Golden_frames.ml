@@ -57,6 +57,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/Marbles", "", 120);
     (* rotation: boxes tipping over and tumbling, a ball rolling down *)
     ("examples/software/Boxes", "", 120);
+    ("games/software/TinyCameltry", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -95,6 +96,8 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/Marbles", "grid", 120, "space:60-61");
     (* rotation off: boxes balanced on their corners, stuck on the ramp *)
     ("examples/software/Boxes", "upright", 300, "u:2-3");
+    (* the maze turned right then left, the moon rolling, a target taken *)
+    ("games/software/TinyCameltry", "turns", 200, "space:2-3,right:30-75,left:150-200");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

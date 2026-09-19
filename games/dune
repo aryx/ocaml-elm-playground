@@ -13,6 +13,7 @@
     TinyWorms
     TinySpacewar
     TinyPong
+    TinyCameltry
   )
   (libraries
     elm_playground

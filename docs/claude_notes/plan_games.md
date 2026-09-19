@@ -409,6 +409,24 @@ peak, and a favorite of this project's author.
 
 (Names and dates from memory, to check.)
 
+### 18. Turn the world: Cameltry
+
+Cameltry (Taito, arcade, 1989; "On the Ball" on the SNES): you don't
+move the ball, you turn the maze, and the ball rolls wherever down now
+is, against the clock. Florent Monnier's Rolling-Moon (2008, OCaml on
+his bindings of the Chipmunk engine, GPL 3; its sources and Inkscape
+levels in `~/software-src/game/OCAML-games/rolling-moon`) is a
+version of it: the ball a moon, touch every target. LocoRoco (Sony,
+2006) tilts its world the same way.
+
+- **Toy**: TinyCameltry (DONE: `games/TinyCameltry.ml`, written from
+  scratch, not from Rolling-Moon's GPL code or levels): turning the
+  maze is turning gravity (`push`), the moon rolls (the physics plan's
+  rotation, phase 7: friction at its bottom point spins it), space
+  jumps, the maze an ASCII map whose rows' runs of walls are immovable
+  bodies. Exercises: levels, the exit and the timer, bumpers.
+- **Kit**: none; `Physics`.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,

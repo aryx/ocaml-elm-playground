@@ -15,6 +15,7 @@
 (copy_files ../TinyWorms.{ml,mli})
 (copy_files ../TinySpacewar.{ml,mli})
 (copy_files ../TinyPong.{ml,mli})
+(copy_files ../TinyCameltry.{ml,mli})
 
 (executables
   (names
@@ -31,6 +32,7 @@
     TinyWorms
     TinySpacewar
     TinyPong
+    TinyCameltry
   )
   (libraries
     unix
