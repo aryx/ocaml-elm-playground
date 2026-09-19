@@ -56,6 +56,11 @@
   backface culling, perspective-correct vs linear, antialiasing,
   filtering, optimizations on/off, mesh cache), "h" for a help panel,
   only enabled with -debug-keys
+- "r" in the software backends: a half, a third or a quarter of the
+  resolution, each pixel a 2x2 to 4x4 block (graphics/core/Pixelate),
+  the look of 320x200 games and about k^2 less per-pixel work
+  (TinyDoom3d 125ms -> 15ms a frame at a third); "u" in the OpenGL one:
+  the HUD off, to tell if it's what's slow
 - native flags -uncapped, -fixed-time t, -keys k, -dump-frame n file
   for deterministic frames; -v/-debug now also work in 3D
 - golden frame tests (tests/2d/, tests/3d/) in make test, every software
@@ -101,7 +106,7 @@
   (TinyDoom's level with a z-buffer, no BSP); Minecraft3d is a game (walk, jump, fly,
   remove and place blocks, the targeted block's outline);
   playground3d's Camera3d (the 3D Camera2d: behind, chase, cockpit,
-  orbit, sky); the OpenGL HUD redraws only what changed
+  orbit, sky); the OpenGL HUD redraws only what changed, box by box
 - Mario, TinyMario, Asteroid: physics=engine, the Physics layer instead
   of their hand-written "dumb engine"
 - the games' headers say which components they use; keys printed at
