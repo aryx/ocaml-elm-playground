@@ -46,6 +46,9 @@ let title = "Playground (software rasterizer)"
  *  - "o": optimizations on/off, i.e. the original simple code instead
  *    of the optimized one (see Opti); watch the fps
  *  - "z": the pixel magnifier (Magnifier), following the mouse
+ *  - "v": the sound, seen: an oscilloscope, then a spectrum, then off
+ *    (Audio_debug); try games/TinyMario.exe (its music) or
+ *    examples/Piano.exe (space: the waveforms' harmonics)
  *  - "h": this list, with each key's state, over the frame
  *    (Help_overlay)
  *)
@@ -53,6 +56,7 @@ let title = "Playground (software rasterizer)"
 let options = ref Shape_render_software.default_options
 let magnifier = ref false
 let help = ref false
+let audio_view = ref Audio_debug.Off
 
 let on_key_press (key : string) =
   match key with
@@ -63,6 +67,7 @@ let on_key_press (key : string) =
   | "n" -> options := { !options with antialiasing = not !options.antialiasing }
   | "o" -> Opti.enabled := not !Opti.enabled
   | "z" -> magnifier := not !magnifier
+  | "v" -> audio_view := Audio_debug.next !audio_view
   | "h" -> help := not !help
   | _ -> ()
 
@@ -73,11 +78,11 @@ let window_title ~fps =
   let on_off b = if b then "on" else "off" in
   if not (Native_loop_2d.debug_keys_enabled ()) then Printf.sprintf "%s -- %.0f fps" title fps
   else
-    Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s z:zoom=%s h:help"
+    Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s z:zoom=%s v:%s h:help"
       title fps (on_off !options.alpha_blending) (on_off !options.bounding_boxes)
       (on_off !options.wireframe)
       (if !options.bilinear then "bilinear" else "nearest")
-      (on_off !options.antialiasing) (on_off !Opti.enabled) (on_off !magnifier)
+      (on_off !options.antialiasing) (on_off !Opti.enabled) (on_off !magnifier) (Audio_debug.name !audio_view)
 
 (* the same, one line per key, for "h" (Help_overlay) *)
 let help_lines () =
@@ -92,6 +97,7 @@ let help_lines () =
     ("n", "antialiasing: " ^ on_off o.antialiasing);
     ("o", "optimizations: " ^ on_off !Opti.enabled);
     ("z", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
+    ("v", "the sound, seen: " ^ Audio_debug.name !audio_view);
     ("Q", "quit");
   ]
 
@@ -151,6 +157,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) (app : _ P
     Framebuffer.clear fb ~rgb:0xFFFFFF;
     Shape_render_software.render ~options:!options fb shapes;
     overlay fb [ fps_counter fb ~fps ];
+    overlay fb (Audio_debug.shapes !audio_view (Playground.to_screen (float fb.width) (float fb.height)));
     if !help then Help_overlay.draw fb (help_lines ());
     if !magnifier then begin
       (* SDL keeps track of the mouse position, in window pixels *)
@@ -161,5 +168,5 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) (app : _ P
     Tsdl.Sdl.set_window_title sdl_window (window_title ~fps)
   in
   Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_ppm pixels)
-    ~pull_audio:Audio.pull ~dump_audio:Wav.write
+    ~pull_audio:(fun n -> let s = Audio.pull n in Audio_debug.record s; s) ~dump_audio:Wav.write
     ~init:(fun () -> app.init flags) ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

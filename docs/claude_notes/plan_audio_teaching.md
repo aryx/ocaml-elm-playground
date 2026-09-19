@@ -417,6 +417,28 @@ audio meeting).
   it in a real browser (headless Chrome's audio clock barely moves).
   Left: the Web Audio nodes version (OscillatorNode, GainNode) for
   comparison; the 3D backends' sound (their loops don't pull yet).
+- **Phase 5, DONE**: `audio/Spectrum`: the DFT by its definition (N^2)
+  and the FFT (Cooley-Tukey, radix 2, recursive: the butterfly), both
+  kept, the first checking the second; magnitudes scaled so a sine of
+  amplitude A reads A; the Hann window; bins to frequencies. Tests
+  (`Unit_spectrum`): the `.mli`'s examples (an impulse's flat
+  spectrum, a cosine's bins 1 and 7 at 4), FFT = DFT on random
+  signals, a sine on a bin's one peak at its amplitude, a square of
+  period 64's odd harmonics within 2% of 4 / (pi k) and its even ones
+  at 0, Parseval. The debug overlay, `playground/Audio_debug`
+  (Playground shapes, so any backend could draw it): the software
+  backend's "v" key (with -debug-keys) cycles an oscilloscope (the
+  last 23 ms, triggered on a rising zero crossing) and a spectrum (an
+  FFT of the last 2048 samples, 90 bars on a log axis from 20 Hz to
+  20 kHz, -80 to 0 dB); the platform records every pulled sample.
+  Golden frames: TinyMario's music as both (and the "h" help's new
+  line). The naive squares' aliasing is already visible on it, spread
+  over the high frequencies: phase 6's subject.
+- **Asked by the user (phase 5)**: subtractive synthesis (a rich wave
+  through a resonant low-pass: phase 6's Filter), FM synthesis
+  (Chowning: to add with phase 6, small, and made for the spectrum),
+  additive (already: together of tones), vibrato and echo (phase 7's
+  Effect).
 - **The goal set by the user**: TinyMario with music and sounds when
   moving. So after phases 2 and 3, phase 8's `Music` (notes, the
   sequencer) comes before phases 5-7. The classic Super Mario Bros.

@@ -73,6 +73,10 @@ let scenes : Testutil_golden.scene list =
     (* the audio plan's first examples (their sounds: -dump-audio) *)
     ("examples/software/Theremin", "", 2);
     ("examples/software/Piano", "", 2);
+    (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
+     * music at 1 s, as an oscilloscope, then a spectrum *)
+    ("games/software/TinyMario", "v", 60);
+    ("games/software/TinyMario", "vv", 60);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
