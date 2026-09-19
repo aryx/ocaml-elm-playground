@@ -474,6 +474,12 @@ dune build ./tmpcheck/Sim.exe && ./_build/default/tmpcheck/Sim.exe
 sed -i 's|^let main () = |let main = |' games/TinyPacman.ml; rm -rf tmpcheck
 ```
 
+Once a check is worth keeping, it goes in `tests/games/` instead
+(`Unit_games.ml`): the same simulation, its printouts turned into
+assertions (the computer drives two laps without falling, Pac-Man's
+ghosts leave their house, a Bomberman chain reaction), run by `make
+test`, with a dune rule doing the `sed` below on a copy of the game.
+
 The `sed` is there because a game's `let main = run_app app` runs at
 module initialization: linking the game into another program would
 open its window and never return. Turning it into a function for the

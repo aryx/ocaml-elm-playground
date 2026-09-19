@@ -1,0 +1,53 @@
+; claude: the games' rules, played without drawing them: each test
+; plays a game headlessly, calling its update frame after frame with
+; keys held, and checks the model (a car's laps, a ghost's state, a
+; bomb's fire) -- scenario tests of the rules, where the golden frames
+; (tests/2d, tests/3d) check the pixels. See Unit_games.ml.
+;
+; A game's source can't be linked as is: its last line,
+;   let main = Playground_platform.run_app app
+; runs the game when the module is initialized. So each game is copied
+; here with that line turned into a function, never called:
+;   let main () = Playground_platform.run_app app
+; (the games themselves unchanged; see notes_debugging_techniques.md
+; section 9 for the same trick done by hand).
+
+(rule
+ (target TinySokoban.ml)
+ (deps (:src %{project_root}/games/TinySokoban.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyPacman.ml)
+ (deps (:src %{project_root}/games/TinyPacman.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyBomberman.ml)
+ (deps (:src %{project_root}/games/TinyBomberman.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMicroMachines.ml)
+ (deps (:src %{project_root}/games/TinyMicroMachines.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMario64.ml)
+ (deps (:src %{project_root}/games3d/TinyMario64.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   elm_core
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground
+   elm_playground_3d
+   elm_playground_3d_software ; an implem of virtual elm_playground_3d
+   kit_maze
+   kit_lightcycles
+ )
+)
