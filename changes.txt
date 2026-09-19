@@ -104,7 +104,10 @@
   back, a y-buffer), TinyPuzzleBobble (a hexagonal grid, flood fills:
   a color's group pops, what no longer hangs falls), TinyTowerDefense
   (the towers are the maze: ai/Pathfind's A* run again at every tower,
-  and used as the referee that refuses one closing the way);
+  and used as the referee that refuses one closing the way), TinyDune2
+  (the first RTS: orders as A* paths, harvesters searching for "the
+  nearest spice" with a predicate as the goal, spice -> credits ->
+  units);
   kits/shmup (Shots,
   Path), kits/platformer (Tile_move, Ladder), kits/brawler (Hitbox,
   Frame_data, Stickman), kits/puzzle (Push, Undo) and

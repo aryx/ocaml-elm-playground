@@ -37,6 +37,7 @@
 (copy_files ../TinyPuzzleBobble.ml)
 (copy_files ../AiOthello.ml)
 (copy_files ../TinyTowerDefense.ml)
+(copy_files ../TinyDune2.ml)
 
 (executables
   (names
@@ -75,6 +76,7 @@
     TinyPuzzleBobble
     AiOthello
     TinyTowerDefense
+    TinyDune2
   )
   (libraries
     ai ; AiOthello's Minimax (minimax, alpha-beta)

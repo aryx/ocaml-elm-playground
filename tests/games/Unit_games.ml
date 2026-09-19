@@ -1367,6 +1367,77 @@ let tower_waves () =
   Alcotest.(check bool) "monsters killed" true (!g.score > 0)
 
 (*****************************************************************************)
+(* TinyDune2 (ai/'s Pathfind) *)
+(*****************************************************************************)
+
+(* an order is a path around the rocks, and the unit walks it to the end *)
+let dune2_order () =
+  let open TinyDune2 in
+  let g = new_game () in
+  let tank = List.nth g.units 1 in
+  let target = (18, 8) in
+  let tank = order g.terrain tank target in
+  Alcotest.(check bool) "there is a way" true (tank.path <> []);
+  Alcotest.(check bool) "it ends at the order" true (List.nth tank.path (List.length tank.path - 1) = target);
+  Alcotest.(check bool) "no rock on it" true (List.for_all (fun c -> passable g.terrain c) tank.path);
+  (* walked to the end *)
+  let u = ref tank in
+  for _ = 1 to 2000 do u := walk !u done;
+  Alcotest.(check bool) "arrived" true (cell_of !u = target)
+
+(* a harvester finds the nearest spice by itself, digs it, brings it
+ * home: the credits go up and the patch goes down *)
+let dune2_harvest () =
+  let open TinyDune2 in
+  let g = ref { (new_game ()) with units = [ List.hd (new_game ()).units ] } in
+  let spice_left (g : game) =
+    List.fold_left (fun n i -> match g.terrain.(i) with Spice k -> n + k | _ -> n) 0 (List.init (cols * rows) Fun.id)
+  in
+  let before = spice_left !g in
+  for i = 1 to 60 * 60 do g := update_game (computer i) (Scene2d.start Title) !g done;
+  Printf.printf "credits %d, spice %d -> %d\n" !g.credits before (spice_left !g);
+  Alcotest.(check bool) "it earned credits" true (!g.credits > 150);
+  Alcotest.(check bool) "it dug the spice" true (spice_left !g < before)
+
+(* left alone, the enemy's tanks come and take our refinery down *)
+let dune2_war () =
+  let open TinyDune2 in
+  let start = new_game () in
+  (* our tank taken away: only harvesters at home *)
+  let g = ref { start with units = List.filter (fun (u : TinyDune2.unit_) -> not (u.side = Us && u.kind = Tank)) start.units } in
+  let over = ref None in
+  let i = ref 0 in
+  while !over = None && !i < 60 * 60 * 6 do
+    incr i;
+    g := update_game (computer !i) (Scene2d.start Title) !g;
+    if not (List.exists (fun (b : building) -> b.bside = Us) !g.buildings) then over := Some Them
+    else if not (List.exists (fun (b : building) -> b.bside = Them) !g.buildings) then over := Some Us
+  done;
+  Printf.printf "over after %d frames: %s\n" !i (match !over with Some Them -> "they won" | Some Us -> "we won" | None -> "nobody");
+  Alcotest.(check bool) "they take our base" true (!over = Some Them)
+
+(* tanks of ours sent at their refinery take it down *)
+let dune2_attack () =
+  let open TinyDune2 in
+  let g = ref { (new_game ()) with credits = 1000 } in
+  (* four tanks bought and ordered across the map *)
+  for i = 1 to 4 do
+    g := update_game (computer ~keyboard:(press "b" initial_computer.keyboard) i) (Scene2d.start Title) !g;
+    g := update_game (computer i) (Scene2d.start Title) !g
+  done;
+  g := { !g with units = List.map (fun (u : unit_) -> if u.side = Us && u.kind = Tank then order !g.terrain u their_base else u) !g.units };
+  let i = ref 0 and won = ref false in
+  while (not !won) && !i < 60 * 60 * 4 do
+    incr i;
+    g := update_game (computer !i) (Scene2d.start Title) !g;
+    (* they keep coming: order ours at their base again when idle *)
+    g := { !g with units = List.map (fun (u : unit_) -> if u.side = Us && u.kind = Tank && u.path = [] && u.cooldown = 0 then order !g.terrain u their_base else u) !g.units };
+    won := not (List.exists (fun (b : building) -> b.bside = Them) !g.buildings)
+  done;
+  Printf.printf "we won after %d frames, %d tanks left\n" !i (List.length (List.filter (fun (u : unit_) -> u.side = Us && u.kind = Tank) !g.units));
+  Alcotest.(check bool) "their refinery is gone" true !won
+
+(*****************************************************************************)
 (* AiOthello (an example, ai/'s Minimax) *)
 (*****************************************************************************)
 
@@ -1491,6 +1562,10 @@ let tests =
       t "TinyTowerDefense, the maze and the referee" tower_maze;
       t "TinyTowerDefense, a monster finds its way again" tower_repath;
       t "TinyTowerDefense, towers hold the first waves" tower_waves;
+      t "TinyDune2, an order is a path" dune2_order;
+      t "TinyDune2, a harvester finds the spice" dune2_harvest;
+      t "TinyDune2, the enemy takes an undefended base" dune2_war;
+      t "TinyDune2, tanks take their refinery" dune2_attack;
       t "AiOthello, the rules" othello_rules;
       t "AiOthello, alpha-beta agrees with minimax" othello_alphabeta;
       t "AiOthello, the computer beats a greedy player" othello_greedy;

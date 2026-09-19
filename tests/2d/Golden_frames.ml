@@ -77,6 +77,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AiPathfinding", "", 60);
     ("games/software/AiOthello", "", 3);
     ("games/software/TinyTowerDefense", "", 5);
+    ("games/software/TinyDune2", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -192,6 +193,7 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/AiPathfinding", "breadth_first", 120, "b:2");
     ("examples/software/AiPathfinding", "dijkstra", 120, "d:2");
     ("games/software/AiOthello", "values", 3, "v:2");
+    ("games/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
     ("games/software/TinyTowerDefense", "maze", 400, "space:1,right:20-40,space:45,up:50-56,space:60,up:64-70,space:74,left:80-84,space:90");
     ("games/software/AiOthello", "reply", 60, "space:2");
     (* flaps timed to thread 5 pipes (the pipes from the LFSR's seed=1);

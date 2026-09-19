@@ -39,6 +39,7 @@
     TinyPuzzleBobble
     AiOthello
     TinyTowerDefense
+    TinyDune2
   )
   (libraries
     ai ; AiOthello's Minimax (minimax, alpha-beta)
