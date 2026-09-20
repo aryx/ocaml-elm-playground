@@ -55,10 +55,15 @@ differently -- which is the same starting point the 2D plan had:
 **The flagship goals, the user's picks, each the excuse for one hard
 part of the engine:**
 
-1. **TinyPinball** -- a small very fast ball, the case that breaks a
+1. **TinyPinball3d** -- a small very fast ball, the case that breaks a
    naive engine: continuous collision detection, kinematic flippers,
    bumpers with restitution, and sleeping when the ball is in the
-   drain.
+   drain. The `3d` suffix because it is a **pair**, like
+   TinyDoom/TinyDoom3d: `games/TinyPinball.ml`, a table seen from
+   above on the *2D* engine, is being written as this plan is
+   (2026-09-20), and the comparison is worth having -- the 2D one
+   caps the ball's speed and thickens its walls, the 3D one has to
+   sweep.
 2. **TinyHalfLife2** -- Havok's greatest hits as a level: the gravity
    gun (a ray pick, a held-point constraint, an impulse launch), a
    seesaw and a ramp (hinge joints), floating barrels (buoyancy),
@@ -200,7 +205,7 @@ the character controller is a `body` verb (`walk`) or its own layer
 
 ## Games
 
-- **TinyPinball, new** (the first flagship; after *3D Pinball: Space
+- **TinyPinball3d, new** (the first flagship; after *3D Pinball: Space
   Cadet*, Cinematronics/Maxis, 1995, and the Pinball Fantasies
   lineage -- names and dates from memory, to check): a table tilted
   6 degrees, a plunger, two flippers, bumpers, drop targets, a drain.
@@ -483,7 +488,7 @@ Each phase builds, tests and ships on its own.
    `TinyMario64.ml` behind `physics=engine`, their game feel untouched.
 10. **Continuous collision**: `Sweep3d` -- swept sphere against planes
     and boxes, speculative contacts, deterministic sub-stepping;
-    `Physics3d.went_through`. Then **TinyPinball**: the tilted table,
+    `Physics3d.went_through`. Then **TinyPinball3d**: the tilted table,
     the plunger, kinematic flippers, bumpers, sleeping in the drain.
     The measured proof: the ball at 10 m/s kept on the table, and the
     same ball lost without the phase (a key to switch it off).

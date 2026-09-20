@@ -40,7 +40,7 @@ three numbers.
 | `Broadphase3d` | which pairs to test | §8 | `PhysicsStack3d.ml` |
 | `Resolve3d` | impulses with the tensor, friction | §9 | `PhysicsBounce3d.ml` |
 | `Solver3d` | manifolds, sequential impulses, warm starting, sleeping | §10 | `PhysicsStack3d.ml` |
-| `Sweep3d` | continuous collision: the fast small ball | §12 | `games3d/TinyPinball.ml` |
+| `Sweep3d` | continuous collision: the fast small ball | §12 | `games3d/TinyPinball3d.ml` |
 | `Joint3d` | distance, hinge, ball-and-socket, motors, limits | §13 | `PhysicsRagdoll3d.ml`, `TinyHalfLife2.ml` |
 | `playground3d/Character3d` | the capsule controller: a player is not a body | §14 | `PhysicsWalk3d.ml`, `TinyMinecraft.ml` |
 | `playground3d/Physics3d` | the Evan-style API over all of it | §16 | every game above |
@@ -460,7 +460,7 @@ Three fixes, in increasing order of honesty and cost:
   body over the step. The 2D engine already has the segment version
   (`Physics.went_through`, `games/TinySoldat.ml`'s bullets).
 
-`TinyPinball` wants the third, and gets a key to switch it off, so
+`TinyPinball3d` wants the third, and gets a key to switch it off, so
 that the ball can be watched falling through the table -- the switch
 is the teaching (principle 3), and the measurement is "kept on the
 table at 10 m/s; lost at 3 m/s without it" (numbers to come).
@@ -597,7 +597,7 @@ The games arrive in the order the engine can support them
 2D plan's pattern: the hand-written physics stays, beside the
 engine's, in the same file), then `TinyMarble.ml`'s rolling against
 §11's, `TinyMinecraft.ml`'s and `TinyMario64.ml`'s players against
-§14's, and then the three the plan is really for -- `TinyPinball`
+§14's, and then the three the plan is really for -- `TinyPinball3d`
 (§12), `TinyHalfLife2` (§13, §6), `TinyPortal` (§15).
 
 ## Glossary
