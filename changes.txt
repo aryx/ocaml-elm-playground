@@ -100,7 +100,7 @@
 - kits/: racing (Road, Car, Topdown), maze (Grid_move, Chase), lightcycles
   (TinyTron's rules without a view)
 - games/: TinyMario (was Platformer; pixel-art hero, sounds and
-  music), TinyInvaders, TinySokoban (undo), TinyPacman, TinyWolfensteinenstein (a
+  music), TinyInvaders, TinySokoban (undo), TinyPacman, TinyWolfenstein (a
   raycaster), TinyOutRun (pseudo-3D), TinyWorms, TinySpacewar, TinyPong,
   TinyCameltry, TinySlingshot, TinySoldat, TinyBomberman, TinyTron,
   TinyMicroMachines, TinyXpilot (the ball game on a rope, 1 or 2
@@ -140,7 +140,7 @@
   kits/segments (Segments: a Descent mine of boxes and the openings
   where they touch; Sixdof: a ship that can point anywhere)
 - games2.5d/ (new): the pseudo-3D games moved together, with a README
-  comparing their tricks and their sizes -- TinyWolfensteinenstein, TinyOutRun,
+  comparing their tricks and their sizes -- TinyWolfenstein, TinyOutRun,
   TinyKart, TinyDoom, TinyComanche -- and TinyDescent, which is full 3D
   on the 2D playground: its own projection and clipping, the mine
   walked through its portals, cells painted farthest first, no z-buffer;
@@ -286,8 +286,8 @@
   pillar shivers in a two-frame loop for a whole round. tests/games
   checks the return leg finds a thrower who kept running, who a flight
   cuts, the slash, and that the computer keeps out of the pits
-- games3d/: TinyBattlezone (vector 3D), TinyWolfensteinenstein3d, TinyVirtuaRacing,
-  TinyTron3d, TinyMario64, TinyMarbleMadnessMadness (Marble Madness), TinyDoom3d
+- games3d/: TinyBattlezone (vector 3D), TinyWolfenstein3d, TinyVirtuaRacing,
+  TinyTron3d, TinyMario64, TinyMarbleMadness (Marble Madness), TinyDoom3d
   (TinyDoom's level with a z-buffer, no BSP), TinyQuake (Quake's three
   tools at startup: qbsp's CSG and BSP of solid boxes, vis's visibility
   set per leaf, light's baked lightmaps with shadows; "v" to compare),

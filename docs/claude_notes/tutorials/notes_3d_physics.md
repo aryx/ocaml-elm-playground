@@ -499,7 +499,7 @@ spin, because `I = 2/5 m r^2`. Galileo timed balls down inclined
 planes (*Two New Sciences*, 1638) precisely to slow falling down
 enough to measure it, and missed the 5/7.
 
-The nice part for us is that `games3d/TinyMarbleMadnessMadness.ml` *already*
+The nice part for us is that `games3d/TinyMarbleMadness.ml` *already*
 computes that number by hand -- its header derives it, because a ball
 on a height map was ten lines and an engine was not needed. So
 `PhysicsRoll3d.ml` is a cross-check in both directions: the engine,
@@ -678,7 +678,7 @@ The games arrive in the order the engine can support them
 ([`plan_physics3d_teaching.md`](../plans/plan_physics3d_teaching.md)):
 `StarCollector3d.ml` ported behind a `physics=engine` flag first (the
 2D plan's pattern: the hand-written physics stays, beside the
-engine's, in the same file), then `TinyMarbleMadnessMadness.ml`'s rolling against
+engine's, in the same file), then `TinyMarbleMadness.ml`'s rolling against
 §11's, `TinyMinecraft.ml`'s and `TinyMario64.ml`'s players against
 §14's, and then the three the plan is really for -- `TinyPinball3d`
 (§12), `TinyHalfLife2` (§13, §6), `TinyPortal` (§15).

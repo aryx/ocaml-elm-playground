@@ -44,7 +44,7 @@ differently -- which is the same starting point the 2D plan had:
 - `games3d/TinyMario64.ml`: box against box, feet, sides and head
   resolved separately, plus coyote time and jump buffering ("no
   physics engine (see plan_physics_teaching.md)", says its header);
-- `games3d/TinyMarbleMadnessMadness.ml`: a ball on a height map, `5/7 g sin(a)`
+- `games3d/TinyMarbleMadness.ml`: a ball on a height map, `5/7 g sin(a)`
   derived by hand, elastic ball-ball collisions, "not Physics: it's
   2D, and a ball on a height map is ten lines";
 - `games3d/TinyQuake.ml`, `TinyTombRaider.ml`, `TinyDescent3d.ml`,
@@ -101,7 +101,7 @@ area needs of its own:
 - **The existing games keep their hand-written physics**, and gain a
   `physics=engine` flag, exactly as `Asteroid.ml`, `Mario.ml` and
   `TinyMario.ml` did in 2D: two engines on the same objects in one
-  file is the best comparison there is, and rewriting TinyMarbleMadnessMadness's
+  file is the best comparison there is, and rewriting TinyMarbleMadness's
   ten lines into an engine call would *lose* the lesson its header
   makes.
 - **Deterministic**: a fixed step, no wall clock, no global `Random`,
@@ -247,7 +247,7 @@ the character controller is a `body` verb (`walk`) or its own layer
   (box collisions against the engine's; its game feel stays
   hand-written, which is the point -- coyote time is not physics),
   `TinyMinecraft.ml` (the player capsule against blocks, phase 9),
-  `TinyMarbleMadnessMadness.ml` (the height-map ball against a real rolling sphere:
+  `TinyMarbleMadness.ml` (the height-map ball against a real rolling sphere:
   its `5/7` is the engine's own test, phase 7).
 - **Later**: a raycast vehicle for `TinyVirtuaRacing.ml`
   (elm-physics's RaycastCar is the model: four springs with rays for
@@ -428,7 +428,7 @@ Each small, each one idea, each deterministic (golden frames in
   a box dropped on a corner (the 2D `PhysicsBounce.ml`'s twin).
 - `PhysicsRoll3d.ml`: a sphere, a cylinder and a box down the same
   ramp. The sphere arrives at `5/7 g sin a`, the box at `g sin a`
-  minus friction, and `games3d/TinyMarbleMadnessMadness.ml` derived that same 5/7 by
+  minus friction, and `games3d/TinyMarbleMadness.ml` derived that same 5/7 by
   hand: the example is the engine's own cross-check against a game
   that predates it.
 - `PhysicsStack3d.ml`: a brick wall, a domino run and a Jenga tower;
@@ -477,7 +477,7 @@ Each phase builds, tests and ships on its own.
    (500 spheres) measured, the numbers into the notes.
 7. **Rotation and rolling**: inertia tensors from every hitbox,
    off-centre impulses, rolling friction; `PhysicsRoll3d.ml`, and
-   `TinyMarbleMadnessMadness.ml`'s `physics=engine`.
+   `TinyMarbleMadness.ml`'s `physics=engine`.
 8. **Stacking**: `Solver3d` -- manifolds by clipping the incident face
    against the reference face (up to 4 points), sequential impulses,
    warm starting by matching points, a bounce threshold, sleeping;

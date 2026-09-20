@@ -408,13 +408,13 @@ let mario64_jump () =
   | _ -> Alcotest.fail "not playing"
 
 (*****************************************************************************)
-(* TinyMarbleMadnessMadness *)
+(* TinyMarbleMadness *)
 (*****************************************************************************)
 
 (* the first ramp, "vvvv" twice between the 9s and the 7s: its edges at
  * 9, 8 and 7; halfway down its first row, 8.5 *)
 let marble_ramp () =
-  let open TinyMarbleMadnessMadness in
+  let open TinyMarbleMadness in
   let x = 2.5 *. cell in
   let at r = Option.get (ground x (r *. cell)) in
   Alcotest.(check (float 1e-9)) "top" 9. (at 4.);
@@ -426,7 +426,7 @@ let marble_ramp () =
 
 (* rolling south until landing: from how high the ball fell *)
 let marble_fall_from (c, r) : number =
-  let open TinyMarbleMadnessMadness in
+  let open TinyMarbleMadness in
   let rec go b i =
     if i > 600 then Alcotest.fail "never landed"
     else match step (0., 1.) b with _, Some h -> h | b, None -> go b (i + 1)
@@ -436,7 +436,7 @@ let marble_fall_from (c, r) : number =
 (* the shortcut down the cliff, from the 7s to the 2s: 5 high, broken;
  * off the end of the bridge, from the 2s to the 1s: 1 high, fine *)
 let marble_falls () =
-  let open TinyMarbleMadnessMadness in
+  let open TinyMarbleMadness in
   let cliff = marble_fall_from (2, 7) and step = marble_fall_from (4, 19) in
   Alcotest.(check (float 0.1)) "the cliff" 5. cliff;
   Alcotest.(check bool) "breaks" true (cliff > max_fall);
@@ -446,7 +446,7 @@ let marble_falls () =
 (* collide's worked example: the steelie (2) at 0.1 hits the marble (1)
  * at rest: the marble goes off at 0.133, the steelie on at 0.033 *)
 let marble_steelie () =
-  let open TinyMarbleMadnessMadness in
+  let open TinyMarbleMadness in
   let me = ball_at (5, 13) in
   let steelie = { me with x = me.x -. 0.9; vx = 0.1 } in
   let me, steelie = collide me 1. steelie 2. in
@@ -457,7 +457,7 @@ let marble_steelie () =
  * itself, onto the 7s, faster than a push on the flat would take it in
  * the same time *)
 let marble_rolls_down () =
-  let open TinyMarbleMadnessMadness in
+  let open TinyMarbleMadness in
   let b = { (ball_at (2, 3)) with z = 4. *. cell +. 0.01 } in
   let rec go b i = if i = 0 then b else go (fst (step (0., 0.) b)) (i - 1) in
   let b = go b 60 in
@@ -471,7 +471,7 @@ let marble_rolls_down () =
  * never fallen: the course can be won (a weaker braking, 12 times the
  * speed, overshot the first plateau, and the one after the lane) *)
 let marble_robot () =
-  let open TinyMarbleMadnessMadness in
+  let open TinyMarbleMadness in
   let waypoints = [ (2.5, 7.); (7., 7.5); (12., 7.5); (12., 13.); (4.5, 13.); (4.5, 19.5); (5., 21.); (8., 22.8) ] in
   let s = ref initial_model and todo = ref waypoints and broken = ref 0 and fallen = ref 0 and i = ref 0 in
   while !i < 60 * 45 && (match !s.scene with Finished _ | Time_up _ -> false | _ -> true) do
@@ -2559,11 +2559,11 @@ let tests =
       t "TinyMinecraft, the world and what is shown" minecraft_world;
       t "TinyMinecraft, standing, jumping, walking, flying" minecraft_player;
       t "TinyMario64, a jump onto a platform" mario64_jump;
-      t "TinyMarbleMadnessMadness, the ramp's heights" marble_ramp;
-      t "TinyMarbleMadnessMadness, the cliff breaks the marble, the step doesn't" marble_falls;
-      t "TinyMarbleMadnessMadness, the steelie knocks the marble" marble_steelie;
-      t "TinyMarbleMadnessMadness, rolling down a ramp" marble_rolls_down;
-      t "TinyMarbleMadnessMadness, a robot drives to the goal" marble_robot;
+      t "TinyMarbleMadness, the ramp's heights" marble_ramp;
+      t "TinyMarbleMadness, the cliff breaks the marble, the step doesn't" marble_falls;
+      t "TinyMarbleMadness, the steelie knocks the marble" marble_steelie;
+      t "TinyMarbleMadness, rolling down a ramp" marble_rolls_down;
+      t "TinyMarbleMadness, a robot drives to the goal" marble_robot;
       t "TinyXpilot, cannons aim ahead" xpilot_intercept;
       t "TinyXpilot, the rope pulls when stretched" xpilot_rope;
       t "TinyXpilot, landing vs. crashing" xpilot_crash;
