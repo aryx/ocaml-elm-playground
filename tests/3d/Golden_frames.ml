@@ -55,6 +55,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: the four hitboxes as the engine sees them -- a sphere's
      * rings, a box's edges, a turned box's, a capsule's *)
     ("examples3d/PhysicsHitbox3d", "", 3);
+    (* claude: the five balls in the air, and the bar each one has to
+     * come back to, drawn from its bounciness alone *)
+    ("examples3d/PhysicsBounce3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
@@ -132,6 +135,10 @@ let scripted : Testutil_golden.scripted list =
     (* pushed into the crate: the contact's point and the way out,
      * drawn as long as the overlap is deep *)
     ("examples3d/PhysicsHitbox3d", "inside", 70, "left:1-25,up:1-120");
+    (* after the first bounce: each ball at the top of its return,
+     * beside the bar at e^2 of its fall, about 2% under it -- the cost
+     * of a discrete step, and on screen rather than hidden *)
+    ("examples3d/PhysicsBounce3d", "returned", 260, "x:1");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/LogoFractals3d", "tree", 5, "a:2");
