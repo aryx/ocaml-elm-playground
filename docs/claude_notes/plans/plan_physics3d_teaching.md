@@ -506,7 +506,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 and 1 done** (2026-09-20); the rest not started. Written as
+**Phases 0 to 3 done** (2026-09-20); the rest not started. Written as
 the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -576,6 +576,59 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     invisible in the golden frames, so the fallback of adding
     `orient3d` to all four backends (Groundwork) stays unneeded. Phase
     3 measures it again on a moving body.
+- **Phase 2, DONE**: `Force3d` (`none`, `uniform`, `gravitation`,
+  `spring`, `drag`, `sum` -- the 2D formulas with a `Vec3`, and the
+  `.mli` says so rather than repeating their explanations -- plus
+  `buoyancy` and the `submerged` fraction it is built on). Six tests:
+  a circular orbit closing on itself, two bodies keeping their
+  momentum while they pull on each other, drag's terminal speed,
+  Hooke's `cos t`, the submerged fraction by hand, and Archimedes'
+  waterline -- a block of relative density 0.6 settles with 0.6000 of
+  itself under water, 0.2 with 0.2000, and 2.7 keeps sinking. Left
+  out, and said so in the `.mli`: the force is applied at the body's
+  centre, so nothing rights itself (a torque at the centre of the
+  submerged part, phase 11), and the submerged fraction comes from a
+  height rather than a shape (`Hitbox3d`, phase 4).
+  `examples3d/PhysicsFloat3d.ml` is phase 2's demo and its own check:
+  five blocks, each with a stripe painted at its density, and nothing
+  lines those stripes up with the water but the simulation.
+- **Phase 3, DONE**: `playground3d/Physics3d`, the Evan-style API, with
+  the verbs the engine can honestly support today (`body`, `at`,
+  `moving`, `pointing`, `turning`, `heavy`, `bouncy`, `rough`,
+  `immovable`, `upright`, `solid_as`, `fall`, `push`, `thrust`,
+  `slow`, `attracted_by`, `pulled_to`, `floating`, `spin_by`, `step`,
+  `draw`, `debug`, `position`, `forward`, `distance`, `speed`,
+  `bounds`); 9 tests in `Unit_physics3d_api`. The open questions,
+  settled by writing it:
+  - **spin is a vector of degrees per second**, not radians and not an
+    axis-plus-angle: the playground is degree-land (`rotate3d`,
+    `Camera3d`'s headings), the conversion happens in `step`, and
+    `turning axis degrees_per_second` is how a game says it. The
+    engine underneath stays in radians.
+  - **`draw` converts the quaternion to Euler angles**, as Groundwork
+    guessed, and `games3d/StarCollector3d.ml` with `physics=engine`
+    is the measurement asked for: a cube tumbling about a tilted axis
+    while it moves, drawn through `rotate3d`, with nothing visible to
+    fix. `orient3d` in four backends stays unneeded.
+  - **every body gets the inertia tensor of its own bounding box**
+    (`Physics3d.bounds`, a fold over the shape's points), so a torque
+    does something without the game having to know what a tensor is,
+    and `upright` is how a game takes it away. The 2D API's default is
+    the same shape-derived one; what is new is that in 3D it makes
+    bodies *wobble*.
+  - `floating` is in the API, because buoyancy with no collisions is
+    already a game-worthy force and `PhysicsFloat3d` is one line of it
+    per block.
+  - `touching`, `bounce`, `ray`, `world`/`simulate` are **not** there
+    yet, and the `.mli` names the gap rather than stubbing it: they
+    arrive with phases 4, 5 and 8.
+  - `games3d/StarCollector3d.ml` ported behind `physics=engine`, as
+    `games/Asteroid.ml` was in 2D: the arrows push a 1 kg body against
+    a drag of 6, which balances at the same 4.8 m/s the hand-written
+    version moved at, and the fence stops it across while it keeps
+    sliding along. The default path is untouched, and its two golden
+    frames are byte-identical, which is what makes the flag a
+    comparison rather than a rewrite.
 
 ## Verification
 

@@ -305,10 +305,18 @@ of its set pieces:
 ```
 
 A barrel of density 0.6 floats with 60% of its height under water, and
-the rest depth is exactly what `PhysicsWater3d`-style tests check
-against the analytic waterline. Torque comes for free: apply the force
-at the *centre of the submerged part*, not the body's centre, and a
-barrel pushed under rights itself.
+the rest depth is exactly what the tests check against the analytic
+waterline (0.6000, 0.2000, 0.9500 in `Unit_force3d`).
+`examples3d/PhysicsFloat3d.ml` makes the same check visible: each
+block wears a stripe painted at its density, nothing lines those
+stripes up with the surface, and the simulation puts them there.
+
+Torque would come for free -- apply the force at the *centre of the
+submerged part* rather than the body's centre and a barrel pushed
+under rights itself -- but that needs a torque channel and a shape to
+find the submerged centre of, so `Force3d.buoyancy` pushes at the
+centre and the example holds its blocks upright instead of pretending
+otherwise. Phase 11 is where it becomes true.
 
 ## 7. Collision detection: more cases, one new idea
 

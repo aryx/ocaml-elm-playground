@@ -13,6 +13,7 @@
 (copy_files ../CachedGrid3d.{ml,mli})
 (copy_files ../PhysicsSolarSystem3d.{ml,mli})
 (copy_files ../PhysicsSpin3d.ml)
+(copy_files ../PhysicsFloat3d.ml)
 (copy_files ../LogoFractals3d.{ml,mli})
 
 (executables
@@ -29,6 +30,7 @@
     CachedGrid3d
     PhysicsSolarSystem3d
     PhysicsSpin3d
+    PhysicsFloat3d
     LogoFractals3d
   )
   (libraries
@@ -38,7 +40,7 @@
     elm_playground_3d
     elm_playground_3d_webgl ; implem of virtual elm_playground_3d
     physics_2d ; PhysicsSolarSystem3d's Kepler and Planets
-    physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d
+    physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d; PhysicsFloat3d's Force3d
   )
   (modes js)
   (link_flags -no-check-prims)

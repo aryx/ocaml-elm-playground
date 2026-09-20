@@ -6,5 +6,6 @@
    ; commons
    elm_core elm_playground
    graphics_3d_geometry ; Vec3, Mat4, Camera, Lighting
+   physics_3d ; Quat, Mat3, Body3d, Integrate3d, Force3d: what Physics3d is an API over
  )
 )

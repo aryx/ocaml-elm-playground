@@ -197,6 +197,30 @@
   against 2e-2 stepping w with the gyroscopic term. All three laws are
   switchable, because the third one (no gyroscopic term) is the trap:
   it never flips and conserves everything to the last bit
+- physics/3d/Force3d: the 2D forces with a Vec3 (uniform, gravitation,
+  spring, drag, sum), and Archimedes, which is new: a body settles with
+  exactly its relative density under the surface (0.6 for wood), the
+  push at its centre for now, so nothing rights itself yet
+- playground3d/Physics3d: the Evan-style API over physics/3d, the same
+  verbs as the 2D playground/Physics (body, at, moving, heavy, fall,
+  push, thrust, slow, attracted_by, step, draw, debug) in metres rather
+  than pixels, plus what 3D adds: pointing/turning an orientation
+  instead of an angle, floating, spin_by, and a tensor taken from every
+  body's own bounding box so that a body wobbles like the solid it
+  looks like (upright takes it away, for a player or a flipper).
+  Collisions are not in it yet, and the .mli names the gap
+- games3d/StarCollector3d: ported behind physics=engine, as Asteroid
+  was in 2D: the arrows push a body against drag, balancing at the same
+  4.8 m/s the hand-written version moved at, the cube tumbling about a
+  tilted axis (a quaternion drawn through rotate3d, which is where that
+  conversion gets measured on something that moves), and "d" for what
+  the engine sees. The default path is unchanged, golden frames
+  byte-identical
+- examples3d/PhysicsFloat3d: five blocks of different densities dropped
+  into water, each settling at its own waterline, each wearing a stripe
+  painted at that density -- nothing lines the stripes up with the
+  surface but Archimedes. The arrows raise and lower the water and
+  everything rises with it
 - examples3d/PhysicsSpin3d: a T-handle thrown spinning, with nothing
   acting on it, that turns itself over and over -- the
   intermediate-axis (tennis racket, Dzhanibekov) theorem, the one piece

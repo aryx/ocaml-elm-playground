@@ -12,5 +12,7 @@
    physics_3d
    elm_playground ; Physics, the API
    elm_playground_software ; an implem of virtual elm_playground, to link
+   elm_playground_3d ; Physics3d, the 3D API
+   elm_playground_3d_software ; an implem of virtual elm_playground_3d, to link
  )
 )
