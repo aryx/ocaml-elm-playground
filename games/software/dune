@@ -40,9 +40,11 @@
     AiOthello
     TinyTowerDefense
     TinyDune2
+    TinyWarcraft2
   )
   (libraries
-    ai ; AiOthello's Minimax (minimax, alpha-beta)
+    ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind
+    kit_rts ; TinyDune2's and TinyWarcraft2's orders and paths (minimax, alpha-beta)
     elm_playground
     kit_racing ; TinyMicroMachines' Topdown
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase

@@ -107,7 +107,9 @@
   and used as the referee that refuses one closing the way), TinyDune2
   (the first RTS: orders as A* paths, harvesters searching for "the
   nearest spice" with a predicate as the goal, spice -> credits ->
-  units);
+  units), TinyWarcraft2 (a crowd sent with one flow field
+  (ai/Pathfind.field) instead of an A* per unit, the fog of war, gold
+  and wood);
   kits/shmup (Shots,
   Path), kits/platformer (Tile_move, Ladder), kits/brawler (Hitbox,
   Frame_data, Stickman), kits/puzzle (Push, Undo) and

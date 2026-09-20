@@ -1367,6 +1367,57 @@ let tower_waves () =
   Alcotest.(check bool) "monsters killed" true (!g.score > 0)
 
 (*****************************************************************************)
+(* TinyWarcraft2 (ai/'s Pathfind: a flow field) *)
+(*****************************************************************************)
+
+(* one Dijkstra from where the crowd is sent, and every unit walks
+ * downhill on it: five of them, from five places, all arrive *)
+let warcraft_crowd () =
+  let open TinyWarcraft2 in
+  let g = new_game () in
+  let target = (8, 8) in
+  let crowd = List.mapi (fun i (c : int * int) -> { (new_unit (100 + i) Footman Us c) with goal = Some target }) [ (2, 2); (4, 13); (6, 6); (2, 11); (5, 5) ] in
+  let g = ref { g with units = crowd; our_field = send g.map target } in
+  for _ = 1 to 1500 do
+    g := { !g with units = List.map (fun u -> follow !g u) !g.units }
+  done;
+  List.iter (fun (u : unit_) -> Alcotest.(check (pair int int)) "arrived" target (cell_of u)) !g.units;
+  (* the field knows the whole map, so it works from anywhere *)
+  Alcotest.(check bool) "one field, the whole map" true (List.length !g.our_field > 300)
+
+(* peasants mine gold and chop wood on their own: the purse fills, the
+ * mine and the forest go down *)
+let warcraft_gather () =
+  let open TinyWarcraft2 in
+  let start = new_game () in
+  let ours = List.filter (fun (u : unit_) -> u.side = Us && u.job = Peasant) start.units in
+  let g = ref { start with units = { (List.hd ours) with carrying = Wood 0 } :: List.tl ours } in
+  let left what = List.fold_left (fun n i -> match (!g.map.(i), what) with (Mine k, `Gold) -> n + k | (Forest k, `Wood) -> n + k | _ -> n) 0 (List.init (cols * rows) Fun.id) in
+  let gold0 = left `Gold and wood0 = left `Wood in
+  for i = 1 to 60 * 90 do g := update_game (computer i) (Scene2d.start Title) !g done;
+  Printf.printf "gold %d, wood %d; mine %d -> %d, forest %d -> %d\n" !g.gold !g.wood gold0 (left `Gold) wood0 (left `Wood);
+  Alcotest.(check bool) "gold mined" true (!g.gold > 120);
+  Alcotest.(check bool) "wood chopped" true (!g.wood > 60);
+  Alcotest.(check bool) "the mine is smaller" true (left `Gold < gold0);
+  Alcotest.(check bool) "the forest is smaller" true (left `Wood < wood0)
+
+(* the fog: what a unit has walked past stays known, the far side never
+ * is *)
+let warcraft_fog () =
+  let open TinyWarcraft2 in
+  let g = ref (new_game ()) in
+  for i = 1 to 120 do g := update_game (computer i) (Scene2d.start Title) !g done;
+  Alcotest.(check bool) "home is seen" true !g.seen.(index our_hall);
+  Alcotest.(check bool) "their hall is not" false !g.seen.(index their_hall);
+  (* a footman sent across the map *)
+  let target = (20, 4) in
+  g := { !g with our_field = send !g.map target;
+         units = List.map (fun (u : unit_) -> if u.job = Footman && u.side = Us then { u with goal = Some target } else u) !g.units };
+  for i = 1 to 60 * 60 do g := update_game (computer i) (Scene2d.start Title) !g done;
+  Alcotest.(check bool) "what it walked past is remembered" true !g.seen.(index (12, 4));
+  Alcotest.(check bool) "home is still known" true !g.seen.(index our_hall)
+
+(*****************************************************************************)
 (* TinyDune2 (ai/'s Pathfind) *)
 (*****************************************************************************)
 
@@ -1562,6 +1613,9 @@ let tests =
       t "TinyTowerDefense, the maze and the referee" tower_maze;
       t "TinyTowerDefense, a monster finds its way again" tower_repath;
       t "TinyTowerDefense, towers hold the first waves" tower_waves;
+      t "TinyWarcraft2, a crowd on one flow field" warcraft_crowd;
+      t "TinyWarcraft2, gold and wood" warcraft_gather;
+      t "TinyWarcraft2, the fog of war" warcraft_fog;
       t "TinyDune2, an order is a path" dune2_order;
       t "TinyDune2, a harvester finds the spice" dune2_harvest;
       t "TinyDune2, the enemy takes an undefended base" dune2_war;

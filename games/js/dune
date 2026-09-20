@@ -38,6 +38,7 @@
 (copy_files ../AiOthello.ml)
 (copy_files ../TinyTowerDefense.ml)
 (copy_files ../TinyDune2.ml)
+(copy_files ../TinyWarcraft2.ml)
 
 (executables
   (names
@@ -77,9 +78,11 @@
     AiOthello
     TinyTowerDefense
     TinyDune2
+    TinyWarcraft2
   )
   (libraries
-    ai ; AiOthello's Minimax (minimax, alpha-beta)
+    ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind
+    kit_rts ; TinyDune2's and TinyWarcraft2's orders and paths (minimax, alpha-beta)
     unix
     elm_playground
     kit_racing ; TinyMicroMachines' Topdown

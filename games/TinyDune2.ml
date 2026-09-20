@@ -137,21 +137,43 @@ type model = scene Scene2d.t
 
 let our_base = (2, 8)
 let their_base = (22, 8)
+let tank_range = 3.2
+
+(* The knobs, gathered so the game can be made easier or harder by
+ * turning one number:
+ *
+ *  - how hard they push: [their_tank_every] (they buy a tank that often,
+ *    if they can pay) and [their_tanks_max]. Left alone, they take an
+ *    undefended refinery in about half a minute.
+ *  - how long anything lasts: [refinery_hp], [tank_hp],
+ *    [harvester_hp], and [shell] every [reload] frames.
+ *  - the economy: [tank_cost], [harvester_cost], [full_load] (how many
+ *    digs fill a harvester), [dig_frames] and [load_worth] (credits a
+ *    full harvester brings).
+ *)
 let tank_cost = 100
 let harvester_cost = 150
-let tank_range = 3.2
 let full_load = 5
+let dig_frames = 40
+let load_worth = 25
+let refinery_hp = 400
+let tank_hp = 60
+let harvester_hp = 80
+let shell = 8
+let reload = 30
+let their_tank_every = 120
+let their_tanks_max = 6
 
-let cell_of (u : unit_) : int * int = (int_of_float (Float.round u.x), int_of_float (Float.round u.y))
+let cell_of (u : unit_) : int * int = Orders.cell_of (u.x, u.y)
 
 let new_unit (id : int) (kind : kind) (side : side) ((x, y) : int * int) : unit_ =
-  { id; kind; side; x = float_of_int x; y = float_of_int y; path = []; hp = (match kind with Tank -> 60 | Harvester -> 80);
+  { id; kind; side; x = float_of_int x; y = float_of_int y; path = []; hp = (match kind with Tank -> tank_hp | Harvester -> harvester_hp);
     cargo = 0; digging = 0; cooldown = 0 }
 
 let new_game () : game =
   { terrain = new_terrain ();
     units = [ new_unit 1 Harvester Us (4, 8); new_unit 2 Tank Us (4, 6); new_unit 3 Harvester Them (20, 8); new_unit 4 Tank Them (20, 10) ];
-    buildings = [ { bside = Us; cell = our_base; bhp = 400 }; { bside = Them; cell = their_base; bhp = 400 } ];
+    buildings = [ { bside = Us; cell = our_base; bhp = refinery_hp }; { bside = Them; cell = their_base; bhp = refinery_hp } ];
     shots = []; selected = None; next_id = 5; cursor = (10, 8); credits = 150; their_credits = 150; frames = 0; show_path = true }
 
 let initial_model : model = Scene2d.start Title
@@ -162,27 +184,16 @@ let initial_model : model = Scene2d.start Title
 
 (* the rocks are what a unit walks around; units don't block each other
  * (the original's did, and they jammed) *)
-let problem (t : terrain) (goal : (int * int) -> bool) (target : int * int) : (int * int) Pathfind.problem =
-  {
-    neighbors =
-      (fun (x, y) ->
-        List.filter_map
-          (fun (dx, dy) -> let c = (x +.. dx, y +.. dy) in if passable t c then Some (c, 1.) else None)
-          [ (1, 0); (-1, 0); (0, 1); (0, -1) ]);
-    goal;
-    estimate = (fun c -> Pathfind.manhattan c target);
-  }
+let walkable (t : terrain) : int * int -> bool = passable t
 
 let order (t : terrain) (u : unit_) (target : int * int) : unit_ =
-  let p = problem t (fun c -> c = target) target in
-  { u with path = (Pathfind.astar p (cell_of u)).path }
+  { u with path = Orders.path ~walkable:(walkable t) ~from:(cell_of u) target }
 
 (* the nearest spice, whichever it is: the goal is a question, so one
  * search finds both the patch and the way to it (no estimate to guide
  * it -- we don't know where we're going) *)
 let spice_run (t : terrain) (u : unit_) : unit_ =
-  let p = { (problem t (fun c -> match at_cell t c with Spice n -> n > 0 | _ -> false) (cell_of u)) with estimate = (fun _ -> 0.) } in
-  { u with path = (Pathfind.astar p (cell_of u)).path }
+  { u with path = Orders.nearest ~walkable:(walkable t) ~from:(cell_of u) (fun c -> match at_cell t c with Spice n -> n > 0 | _ -> false) }
 
 let base_of (side : side) : int * int = match side with Us -> our_base | Them -> their_base
 
@@ -193,14 +204,8 @@ let base_of (side : side) : int * int = match side with Us -> our_base | Them ->
 let speed (u : unit_) : number = match u.kind with Tank -> 0.055 | Harvester -> 0.04
 
 let walk (u : unit_) : unit_ =
-  match u.path with
-  | [] | [ _ ] -> { u with path = [] }
-  | _ :: (next :: _ as rest) ->
-      let tx, ty = (float_of_int (fst next), float_of_int (snd next)) in
-      let dx = tx - u.x and dy = ty - u.y in
-      let d = Float.hypot dx dy in
-      if d <= speed u then { u with x = tx; y = ty; path = rest }
-      else { u with x = u.x + (speed u * dx / d); y = u.y + (speed u * dy / d) }
+  let (x, y), path = Orders.advance ~speed:(speed u) (u.x, u.y) u.path in
+  { u with x; y; path }
 
 (* a harvester: dig where there's spice, carry it home, unload, go
  * again -- the loop the whole game runs on *)
@@ -220,13 +225,13 @@ let harvest (g : game) (u : unit_) : game * unit_ =
     if cell_of u = home then begin
       (* unloaded: 25 credits a load *)
       Audio.play Audio.coin;
-      let g = if u.side = Us then { g with credits = g.credits +.. 25 } else { g with their_credits = g.their_credits +.. 25 } in
+      let g = if u.side = Us then { g with credits = g.credits +.. load_worth } else { g with their_credits = g.their_credits +.. load_worth } in
       (g, spice_run g.terrain { u with cargo = 0 })
     end
     else (g, order g.terrain u home)
   else
     match at_cell g.terrain (cell_of u) with
-    | Spice n when n > 0 -> (g, { u with digging = 40 })
+    | Spice n when n > 0 -> (g, { u with digging = dig_frames })
     | _ ->
         let u' = spice_run g.terrain u in
         (* no spice left anywhere: go home and wait *)
@@ -255,23 +260,23 @@ let fire (g : game) (u : unit_) : game * unit_ =
             (float_of_int (fst b.cell), float_of_int (snd b.cell))
         in
         let units =
-          List.map (fun (v : unit_) -> if hit_unit && (v.x, v.y) = target_pos && v.side <> u.side then { v with hp = v.hp -.. 8 } else v) g.units
+          List.map (fun (v : unit_) -> if hit_unit && (v.x, v.y) = target_pos && v.side <> u.side then { v with hp = v.hp -.. shell } else v) g.units
         in
         let buildings =
           List.map
             (fun (b : building) ->
-              if (not hit_unit) && (float_of_int (fst b.cell), float_of_int (snd b.cell)) = target_pos then { b with bhp = b.bhp -.. 8 } else b)
+              if (not hit_unit) && (float_of_int (fst b.cell), float_of_int (snd b.cell)) = target_pos then { b with bhp = b.bhp -.. shell } else b)
             g.buildings
         in
         Audio.play Audio.laser;
-        ({ g with units; buildings; shots = { from = (u.x, u.y); to_ = target_pos; age = 0 } :: g.shots }, { u with cooldown = 30 })
+        ({ g with units; buildings; shots = { from = (u.x, u.y); to_ = target_pos; age = 0 } :: g.shots }, { u with cooldown = reload })
 
 (* the enemy: a harvester of its own, and a tank sent at our refinery as
  * soon as it can pay for one *)
 let their_turn (g : game) : game =
   let their_tanks = List.filter (fun (u : unit_) -> u.side = Them && u.kind = Tank) g.units in
   let g =
-    if g.their_credits >= tank_cost && List.length their_tanks < 6 && g.frames mod 120 = 0 then
+    if g.their_credits >= tank_cost && List.length their_tanks < their_tanks_max && g.frames mod their_tank_every = 0 then
       { g with their_credits = g.their_credits -.. tank_cost; next_id = g.next_id +.. 1;
         units = g.units @ [ new_unit g.next_id Tank Them their_base ] }
     else g
@@ -376,7 +381,7 @@ let view_unit (selected : bool) (u : unit_) : shape list =
     | Tank -> [ rectangle color 22. 22. |> move x y; rectangle (rgb 40 40 50) 16. 5. |> move x y ]
     | Harvester -> [ rectangle color 26. 18. |> move x y; rectangle (rgb 250 200 90) (5. *. float_of_int u.cargo) 5. |> move x (y + 12.) ])
   @ [ rectangle (rgb 40 40 40) 24. 4. |> move x (y - 16.);
-      rectangle (rgb 90 220 90) (24. * float_of_int u.hp / (match u.kind with Tank -> 60. | Harvester -> 80.)) 4. |> move x (y - 16.) ]
+      rectangle (rgb 90 220 90) (24. * float_of_int u.hp / (match u.kind with Tank -> float_of_int tank_hp | Harvester -> float_of_int harvester_hp)) 4. |> move x (y - 16.) ]
 
 let view_game (g : game) : shape list =
   [ rectangle (rgb 120 95 60) (float_of_int cols * size) (float_of_int rows * size) |> move_y (top - (float_of_int rows * size / 2.)) ]
@@ -390,7 +395,7 @@ let view_game (g : game) : shape list =
       (fun (b : building) ->
         let color = if b.bside = Us then rgb 60 110 200 else rgb 200 70 60 in
         [ at b.cell (rectangle color (size *. 1.8) (size *. 1.8)); at b.cell (rectangle (rgb 30 30 40) 16. 16.);
-          at b.cell (rectangle (rgb 90 220 90) (size *. 1.8 * float_of_int b.bhp / 400.) 5. |> move_y (size *. 1.1)) ])
+          at b.cell (rectangle (rgb 90 220 90) (size *. 1.8 * float_of_int b.bhp / float_of_int refinery_hp) 5. |> move_y (size *. 1.1)) ])
       g.buildings
   @ (match (g.selected, g.show_path) with
     | Some id, true -> (
