@@ -642,6 +642,16 @@ type mouse = {
   mrdown : bool;
   mdx : number;
   mdy : number;
+  (** How far the wheel turned since the last frame, in notches,
+      positive when scrolling up (away from you), [0.] most frames.
+      Not in Evan's playground: a game never scrolls, an application
+      always does. *)
+  mwheel : number;
+  (** Whether this frame carried a double click. Like {!mclick}, but
+      for the second click of a pair; the first one still arrives as an
+      ordinary click, so a program that ignores [mdouble] behaves
+      exactly as before. *)
+  mdouble : bool;
 }
 
 (** Figure out what is going on with the keyboard.
@@ -687,6 +697,23 @@ type keyboard = {
   kshift : bool;
   kbackspace : bool;
   keys : string Set_.t;
+  (** The characters {i typed} this frame, in order -- [""] most
+      frames, ["a"] for one key, and more when a key repeats.
+
+      This is not the same question as {!keys}, and the difference is
+      the reason it exists: [keys] holds key {i names} ("a", "shift",
+      "ArrowLeft"), which is what a game asks ("is left held?"), while
+      a text field needs the {i character} a key press produced --
+      ["A"] rather than ["a"] with shift, ["e"] with an accent from a
+      dead key, whatever a non-US layout puts on that key. Only the
+      platform knows that, so it tells us here.
+
+      A transient, consumed by the update that sees it:
+      {[
+        let update computer model =
+          { model with name = model.name ^ computer.keyboard.typed }
+      ]} *)
+  typed : string;
 }
 
 (** Turn the LEFT and RIGHT arrows into a number.
@@ -906,6 +933,9 @@ type msg =
   | MouseClick
   | MouseButton of bool
   | RightMouseButton of bool
+  | Typed of string
+  | MouseWheel of number
+  | MouseDouble
 
 type animation
 

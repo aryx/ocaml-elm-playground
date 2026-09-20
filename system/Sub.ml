@@ -10,6 +10,14 @@ type 'msg onesub =
   | SubRightMouseUp of (unit -> 'msg)
   | SubKeyDown of (Keyboard.key -> 'msg)
   | SubKeyUp of (Keyboard.key -> 'msg)
+  (* claude: the three an application needs and a game never did (see
+   * docs/claude_notes/plans/plan_gui_teaching.md, phase 0): the
+   * characters a key press produces (a key name is not a character:
+   * shift, dead keys and layouts are the platform's business), the
+   * wheel, and the double click *)
+  | SubTyped of (string -> 'msg)
+  | SubMouseWheel of (float -> 'msg)
+  | SubMouseDouble of (unit -> 'msg)
 
 
 type 'msg t = 'msg onesub list
@@ -45,6 +53,15 @@ let (on_key_down: (Keyboard.key -> 'msg) -> 'msg t) = fun f ->
 let (on_key_up: (Keyboard.key -> 'msg) -> 'msg t) = fun f ->
   [SubKeyUp f]
 
+let (on_typed: (string -> 'msg) -> 'msg t) = fun f ->
+  [SubTyped f]
+
+let (on_mouse_wheel: (float -> 'msg) -> 'msg t) = fun f ->
+  [SubMouseWheel f]
+
+let (on_mouse_double: (unit -> 'msg) -> 'msg t) = fun f ->
+  [SubMouseDouble f]
+
 
 
 
@@ -55,6 +72,11 @@ type event =
   | EMouseButton of bool (* is_down = true *)
   | ERightMouseButton of bool (* is_down = true *)
   | EKeyChanged of (bool (* down = true *) * Keyboard.key)
+  (* claude: the characters typed, not the keys pressed *)
+  | ETyped of string
+  (* claude: notches up (positive) or down since the last frame *)
+  | EMouseWheel of float
+  | EMouseDouble
 
 let rec find_map_opt f = function
   | [] -> None
@@ -117,4 +139,19 @@ let event_to_msgopt event subs =
         | SubKeyUp f ->
            Some (f key)
        | _ -> None
+      )
+  | ETyped str ->
+      subs |> find_map_opt (function
+        | SubTyped f -> Some (f str)
+        | _ -> None
+      )
+  | EMouseWheel notches ->
+      subs |> find_map_opt (function
+        | SubMouseWheel f -> Some (f notches)
+        | _ -> None
+      )
+  | EMouseDouble ->
+      subs |> find_map_opt (function
+        | SubMouseDouble f -> Some (f ())
+        | _ -> None
       )

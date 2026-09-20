@@ -1,11 +1,14 @@
 ; claude: unit tests for the layers on top of Playground (Camera2d,
 ; Tilemap, Sprite, Scene2d, Puzzlescript), and the native backends' Input_script, run by 'make test' (dune runtest); they check the worked
-; examples given in the .mli comments.
+; examples given in the .mli comments. Unit_input checks Playground
+; itself: the transient inputs (typed, wheel, double click), where a
+; backend can break the meaning without any golden frame noticing.
 (test
  (name Test)
  (libraries
    alcotest
    testo
+   elm_core ; Time, for Unit_input's ticks
    elm_playground
    elm_playground_software ; an implem of virtual elm_playground, to link
    elm_playground_native_common ; Input_script

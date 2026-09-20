@@ -304,6 +304,15 @@ type mouse = {
    * Playground3d_platform.run_app3d's capture_mouse) *)
   mdx: number;
   mdy: number;
+  (* claude: not in original Playground.elm either, and the two things
+   * no game here has ever needed but every application does (see
+   * docs/claude_notes/plans/plan_gui_teaching.md, phase 0): the wheel,
+   * in notches since the last frame (positive away from you: scrolling
+   * up), and whether this frame carried a double click. Both are
+   * transients, like mdx and mdy: set by an event, consumed by the
+   * update that sees them, then cleared. *)
+  mwheel: number;
+  mdouble: bool;
 }
 
 let mouse_move mx my mouse =
@@ -317,8 +326,12 @@ let mouse_right_down mrdown mouse =
 (* accumulated until the next frame's update, then reset *)
 let mouse_move_by dx dy mouse =
   { mouse with mdx = mouse.mdx +. dx; mdy = mouse.mdy +. dy }
+let mouse_wheel_by notches mouse =
+  { mouse with mwheel = mouse.mwheel +. notches }
+let mouse_double mouse =
+  { mouse with mdouble = true }
 let mouse_moves_reset mouse =
-  { mouse with mdx = 0.; mdy = 0. }
+  { mouse with mdx = 0.; mdy = 0.; mwheel = 0.; mdouble = false }
 
 (*-------------------------------------------------------------------*)
 (* Keyboard *)
@@ -342,13 +355,23 @@ type keyboard = {
   kbackspace: bool;
   
   keys: string Set.t;  
+
+  (* claude: not in original Playground.elm: the characters typed this
+   * frame, in order ("" most frames, "a" for a key, and more than one
+   * character when a key repeats or a dead key resolves). A key name
+   * is not a character -- shift, layouts and dead keys are the
+   * platform's business, and [keys] cannot tell "a" from "A" -- so a
+   * text field reads this and nothing else. A transient, like the
+   * mouse's mdx: the update that sees it consumes it. *)
+  typed: string;
 }
 
 let empty_keyboard = {
   kup = false; kdown = false; kleft = false; kright = false;
   kw = false; ks = false; ka = false; kd = false;
   kspace = false; kenter = false; kshift = false; kbackspace = false;
-  keys = Set.empty
+  keys = Set.empty;
+  typed = "";
 }
 
 let to_x keyboard =
@@ -372,6 +395,11 @@ let to_xy keyboard =
   if x <> 0. && y <> 0.
   then (x / square_root_two, y / square_root_two)
   else (x, y)
+
+let keyboard_typed str keyboard =
+  { keyboard with typed = keyboard.typed ^ str }
+let keyboard_typed_reset keyboard =
+  { keyboard with typed = "" }
 
 let update_keyboard is_down key keyboard =
   let keys = 
@@ -411,7 +439,8 @@ type computer = {
 and flags = (string * string) list
 
 let initial_computer = {
-  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false; mdx = 0.; mdy = 0. };
+  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false; mdx = 0.; mdy = 0.;
+            mwheel = 0.; mdouble = false };
   keyboard = empty_keyboard;
   screen = to_screen default_width default_height;
   time = Time (Time.millis_to_posix 1);
@@ -487,6 +516,11 @@ type msg =
   | MouseClick (* reset after a Tick *)
   | MouseButton of bool (* true = down, false = up *)
   | RightMouseButton of bool (* the same, for the right button *)
+  (* claude: phase 0 of plan_gui_teaching.md; all three are consumed by
+   * the Tick that follows them *)
+  | Typed of string
+  | MouseWheel of float
+  | MouseDouble
 
 
 type animation = Animation of (*Event.visibility * *) screen * time
@@ -504,6 +538,9 @@ let animation_update msg (Animation (s, t) as state) =
   | MouseButton _
   | RightMouseButton _
   | KeyChanged _
+  | Typed _
+  | MouseWheel _
+  | MouseDouble
     -> state
 
 let (animation: (time -> shape list) -> (animation, msg) app) =
@@ -544,9 +581,11 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
          * to kinda ack the click
          *)
         Game (update_memory computer memory,
-          (* claude: the moves update_memory just saw are consumed *)
+          (* claude: the moves, wheel notches, double click and typed
+           * characters update_memory just saw are consumed *)
           { computer with time = Time time;
-            mouse = mouse_moves_reset computer.mouse })
+            mouse = mouse_moves_reset computer.mouse;
+            keyboard = keyboard_typed_reset computer.keyboard })
     | Resized (_w, _h) ->
         failwith "Todo"
     (* we assume the x, y is in playground coordinate system (0,0) at the
@@ -578,6 +617,15 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
         Game (memory,
              { computer with keyboard = update_keyboard is_down key 
                  computer.keyboard })
+    | Typed str ->
+        Game (memory,
+             { computer with keyboard = keyboard_typed str computer.keyboard })
+    | MouseWheel notches ->
+        Game (memory,
+             { computer with mouse = mouse_wheel_by notches computer.mouse })
+    | MouseDouble ->
+        Game (memory,
+             { computer with mouse = mouse_double computer.mouse })
 
 let (game: 
   (computer -> 'memory -> shape list) ->
@@ -608,6 +656,9 @@ let (game:
       Sub.on_right_mouse_up   (fun () -> RightMouseButton false);
       Sub.on_key_down (fun key -> KeyChanged (true, key));
       Sub.on_key_up   (fun key -> KeyChanged (false, key));
+      Sub.on_typed (fun str -> Typed str);
+      Sub.on_mouse_wheel (fun notches -> MouseWheel notches);
+      Sub.on_mouse_double (fun () -> MouseDouble);
   ]
   in
   { init; view; update; subscriptions }

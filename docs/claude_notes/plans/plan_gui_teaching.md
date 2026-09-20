@@ -378,6 +378,52 @@ with their reasons:
   the GUI lesson itself;
 - **TinyPowerPoint deliberately demoted** (see The apps).
 
+### Phase 0, DONE (2026-09-20), awaiting review
+
+The `computer` gained the three inputs an application needs, as
+additive fields -- nothing renamed, nothing's meaning changed, so
+every existing game behaves exactly as before:
+
+- `keyboard.typed : string`, the characters a key press produced
+  (`""` most frames). The `.mli` says why it is not `keys`: a key name
+  is not a character, and only the platform knows what shift, a dead
+  key or a non-US layout made.
+- `mouse.mwheel : number`, notches since the last frame, positive
+  scrolling up.
+- `mouse.mdouble : bool`, whether this frame carried a double click --
+  the first click of the pair still arrives as an ordinary click, so
+  ignoring it is exactly the old behaviour.
+
+All three are **transients**, like `mdx`/`mdy`: accumulated by events,
+seen by one `update`, cleared by the `Tick` that follows. That is the
+property `playground/tests/Unit_input.ml` (new) checks in four tests,
+because a backend can break it without any golden frame noticing.
+
+Plumbed through `Sub` (`ETyped`, `EMouseWheel`, `EMouseDouble`, with
+their `on_*` subscriptions) and filled by every backend:
+
+- **native 2D and 3D** (`Native_loop_2d.ml`, `Native_loop_3d.ml`):
+  SDL's `text_input` event (which needs `Sdl.start_text_input ()` --
+  off by default, so without it there are no characters at all),
+  `mouse_wheel` (with `mouse_wheel_flipped` undone, so "natural"
+  scrolling does not invert the meaning), and `mouse_button_clicks >= 2`
+  for the double click, which SDL counts for us;
+- **web** (`playground/web/Playground_platform.ml`, which the two 3D
+  web backends delegate to): `wheel` with its `deltaMode` normalised
+  to notches (a notch is about 100 pixels or 3 lines), `dblclick`, and
+  -- for the characters -- `keydown`'s `key` when it is one byte or
+  starts a non-ASCII sequence, since the browser puts the character
+  there and an ASCII word ("Shift", "ArrowUp") otherwise. No IME, as
+  Out of scope says.
+
+`examples/Typing.ml` (new, with a golden frame) shows the three, and
+is the "before" picture for the widgets: it draws its field and its
+boxes by hand, which is precisely what phase 1 removes.
+
+Measured: `dune build` clean everywhere including the js targets; the
+golden suites unchanged (the same eight frames drift here as before,
+the arm64-Linux difference `Testutil_golden.mli` documents).
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

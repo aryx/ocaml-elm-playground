@@ -120,6 +120,11 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     ~(update : Playground.computer -> 'model -> 'model) ~(view : Playground.computer -> 'model -> 'view)
     ~(draw : Playground.computer -> 'view -> unit) ~(present : unit -> unit) ?(dump_frame : (string -> unit) option)
     ?(title_keys : (unit -> string) option) ?(capture_mouse = false) ?(flags = []) () : unit =
+  (* claude: without this, SDL sends no text_input events at all (it is
+   * off until a program says it wants text); with it, every key press
+   * that produces a character also produces one, which is what
+   * computer.keyboard.typed is (see plan_gui_teaching.md, phase 0) *)
+  Sdl.start_text_input ();
   let sdl_event = Sdl.Event.create () in
   (* claude: capture_mouse: SDL's relative mouse mode, the cursor hidden
    * and held in the window, only mouse_motion's xrel/yrel (mdx/mdy)
@@ -171,7 +176,31 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
          * the original Minecraft's on_mouse_press) *)
         | x when x = Sdl.Event.mouse_button_down && capture_mouse && not !captured -> set_captured true
         | x when x = Sdl.Event.mouse_button_down ->
-            computer := { !computer with mouse = mouse_button sdl_event true (!computer).mouse }
+            computer := { !computer with mouse = mouse_button sdl_event true (!computer).mouse };
+            (* claude: SDL counts a burst's clicks for us; the second one
+             * is an ordinary click plus this flag (plan_gui_teaching.md,
+             * phase 0) *)
+            if Sdl.Event.(get sdl_event mouse_button_button) <> Sdl.Button.right
+               && Sdl.Event.(get sdl_event mouse_button_clicks) >= 2
+            then computer := { !computer with mouse = { (!computer).mouse with mdouble = true } }
+
+        | x when x = Sdl.Event.mouse_wheel ->
+            (* claude: notches, positive scrolling up; SDL flips the sign
+             * itself with "natural" scrolling, so undo that *)
+            let y = float_of_int Sdl.Event.(get sdl_event mouse_wheel_y) in
+            let y =
+              if Sdl.Event.(get sdl_event mouse_wheel_direction) = Sdl.Event.mouse_wheel_flipped
+              then -.y else y
+            in
+            let m = (!computer).mouse in
+            computer := { !computer with mouse = { m with mwheel = m.mwheel +. y } }
+
+        (* claude: the characters a key press produced, which key_down
+         * cannot give (shift, dead keys, a non-US layout) *)
+        | x when x = Sdl.Event.text_input ->
+            let str = Sdl.Event.(get sdl_event text_input_text) in
+            let k = (!computer).keyboard in
+            computer := { !computer with keyboard = { k with typed = k.typed ^ str } }
         | x when x = Sdl.Event.mouse_button_up ->
             computer := { !computer with mouse = mouse_button sdl_event false (!computer).mouse }
         | x when x = Sdl.Event.key_down ->
@@ -229,7 +258,10 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     computer := { !computer with time = Playground.Time now };
     model := update !computer !model;
     (* claude: the moves [update] just saw are consumed *)
-    computer := { !computer with mouse = { (!computer).mouse with mdx = 0.; mdy = 0. } };
+    computer :=
+      { !computer with
+        mouse = { (!computer).mouse with mdx = 0.; mdy = 0.; mwheel = 0.; mdouble = false };
+        keyboard = { (!computer).keyboard with typed = "" } };
 
     let t0 = Unix.gettimeofday () in
     let v = view !computer !model in

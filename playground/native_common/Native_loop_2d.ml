@@ -55,6 +55,17 @@ let mouse_button_event (sdl_event : Sdl.event) (is_down : bool) : E.event =
   then E.ERightMouseButton is_down
   else E.EMouseButton is_down
 
+(* claude: SDL counts the clicks of a burst for us (mouse_button_clicks
+ * is 1, then 2 for a second click inside the system's double-click
+ * time and distance), so a double click is the ordinary click of the
+ * pair plus this extra event -- a program that ignores EMouseDouble
+ * still sees two normal clicks, as before *)
+let mouse_double_event (sdl_event : Sdl.event) : E.event option =
+  if Sdl.Event.(get sdl_event mouse_button_button) <> Sdl.Button.right
+     && Sdl.Event.(get sdl_event mouse_button_clicks) >= 2
+  then Some E.EMouseDouble
+  else None
+
 (* claude: generic -v/-verbose/-debug/-quiet handling for every native
  * example/game, so individual examples don't each need their own
  * Arg.parse boilerplate. Without a reporter installed, Logs.xxx calls
@@ -264,6 +275,11 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
     ~(dump_frame : string -> unit)
     ~(pull_audio : int -> float array) ~(dump_audio : string -> float array -> unit) =
+  (* claude: without this, SDL sends no text_input events at all (it is
+   * off until a program says it wants text); with it, every key press
+   * that produces a character also produces one, which is what
+   * computer.keyboard.typed is (see plan_gui_teaching.md, phase 0) *)
+  Sdl.start_text_input ();
   let sdl_event = Sdl.Event.create () in
   (* claude: no sound device for -dump-frame: exactly a frame's samples
    * each frame instead, kept for -dump-audio *)
@@ -333,7 +349,30 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
           apply_playground_event (E.EMouseMoveBy (float dx, -.(float dy)))
 
         | x when x = Sdl.Event.mouse_button_down ->
-          apply_playground_event (mouse_button_event sdl_event true)
+          apply_playground_event (mouse_button_event sdl_event true);
+          (match mouse_double_event sdl_event with
+           | Some e -> apply_playground_event e
+           | None -> ())
+
+        | x when x = Sdl.Event.mouse_wheel ->
+          (* claude: notches, y up; SDL flips the sign itself on
+           * "natural" scrolling (mouse_wheel_flipped), so undo that to
+           * keep one meaning everywhere: positive is scrolling up *)
+          let y = float Sdl.Event.(get sdl_event mouse_wheel_y) in
+          let y =
+            if Sdl.Event.(get sdl_event mouse_wheel_direction)
+               = Sdl.Event.mouse_wheel_flipped
+            then -.y else y
+          in
+          apply_playground_event (E.EMouseWheel y)
+
+        (* claude: the characters a key press produced, which the key
+         * events cannot give (shift, dead keys, a non-US layout): SDL
+         * decides, we pass it on. Enabled by Sdl.start_text_input
+         * below. *)
+        | x when x = Sdl.Event.text_input ->
+          let str = Sdl.Event.(get sdl_event text_input_text) in
+          apply_playground_event (E.ETyped str)
 
         | x when x = Sdl.Event.mouse_button_up ->
           apply_playground_event (mouse_button_event sdl_event false)

@@ -629,7 +629,32 @@ let js_event_to_event evt (svg_opt : Element.t option) =
       let key = adjust_key key in
       Some (E.EKeyChanged (false, key))
 
+  (* claude: the wheel and the double click, for applications rather
+   * than games (plan_gui_teaching.md, phase 0). The browser's deltaY
+   * is in pixels, lines or pages (deltaMode) and grows downwards,
+   * where the playground's mwheel is notches and grows upwards, so
+   * normalize: a notch is about 100 pixels or 3 lines. *)
+  | "wheel", _ ->
+      let get prop = Ojs.float_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) prop) in
+      let delta = get "deltaY" in
+      let mode = int_of_float (get "deltaMode") in
+      let notches = match mode with 0 -> delta /. 100. | 1 -> delta /. 3. | _ -> delta in
+      Some (E.EMouseWheel (-. notches))
+  | "dblclick", _ -> Some E.EMouseDouble
+
   | _ -> None
+
+(* claude: is this keydown's [key] a character the person typed, rather
+ * than a named key? The browser gives the character itself for
+ * character keys ("a", "A" with shift, "e" with an accent from a dead
+ * key, whatever a layout puts there) and an ASCII word otherwise
+ * ("Shift", "ArrowUp", "Backspace", "F1"), so: one byte, or a
+ * non-ASCII first byte (an accented character is several UTF-8 bytes).
+ * No IME support, which is out of this plan's scope and said so. *)
+let typed_of_key (key : string) : string option =
+  if key = "" then None
+  else if String.length key = 1 || Char.code key.[0] >= 0x80 then Some key
+  else None
 
 (*****************************************************************************)
 (* run_app *)
@@ -916,6 +941,13 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
         let get prop = Ojs.float_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) prop) in
         process_playground_event (E.EMouseMoveBy (get "movementX", -. (get "movementY")))
       end;
+      (* claude: a key press that produced a character also feeds
+       * computer.keyboard.typed, beside the key event above *)
+      if Event.type_ evt = "keydown" then begin
+        match typed_of_key (Event.key evt) with
+        | Some str -> process_playground_event (E.ETyped str)
+        | None -> ()
+      end;
       if !debug then Window.request_animation_frame window animation_frame;
     in
     [
@@ -924,6 +956,8 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
       Event.Mouseup;
       Event.Keydown;
       Event.Keyup;
+      Event.Wheel;
+      Event.Dblclick;
     ] |> List.iter (fun evt_kind ->
        Window.add_event_listener window evt_kind on_js_event true
     );
