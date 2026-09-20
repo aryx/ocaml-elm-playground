@@ -21,6 +21,7 @@
    %{project_root}/examples3d/PhysicsSolarSystem3d.exe
    %{project_root}/examples3d/PhysicsSpin3d.exe
    %{project_root}/examples3d/PhysicsFloat3d.exe
+   %{project_root}/examples3d/PhysicsHitbox3d.exe
    %{project_root}/examples3d/LogoFractals3d.exe
    %{project_root}/examples3d/TexturedCube3d.exe
    %{project_root}/examples3d/InteractiveCube3d.exe

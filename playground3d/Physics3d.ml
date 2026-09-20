@@ -26,6 +26,7 @@ type body = {
   mass : number;
   bounciness : number;
   friction : number;
+  hitbox : Hitbox3d.t;
   inertia : Mat3.t;
   ax : number;
   ay : number;
@@ -76,10 +77,33 @@ let sides_of (s : shape3d) : number * number * number =
 (* Making bodies *)
 (*****************************************************************************)
 
+let half_sides (s : shape3d) : Vec3.t =
+  let w, h, d = sides_of s in
+  (w /. 2., h /. 2., d /. 2.)
+
 let body (shape : shape3d) : body =
+  let hitbox = Hitbox3d.Box (half_sides shape) in
   { shape; x = 0.; y = 0.; z = 0.; vx = 0.; vy = 0.; vz = 0.; orientation = Quat.identity; spin = (0., 0., 0.);
-    mass = 1.; bounciness = 0.; friction = 0.; inertia = Body3d.box ~mass:1. (sides_of shape);
+    mass = 1.; bounciness = 0.; friction = 0.; hitbox; inertia = Hitbox3d.inertia ~mass:1. hitbox;
     ax = 0.; ay = 0.; az = 0.; torque = (0., 0., 0.) }
+
+(* claude: a body that was made [upright] stays upright whatever hitbox
+ * it is given afterwards, so that the order of the two does not matter *)
+let hitbox (h : Hitbox3d.t) (b : body) : body =
+  let inertia = if b.inertia = Body3d.never_turns then b.inertia else Hitbox3d.inertia ~mass:b.mass h in
+  { b with hitbox = h; inertia }
+
+let ball (b : body) : body =
+  let hx, hy, hz = half_sides b.shape in
+  hitbox (Hitbox3d.Sphere (Float.min hx (Float.min hy hz))) b
+
+let pill (b : body) : body =
+  let hx, hy, hz = half_sides b.shape in
+  let r = Float.min hx hz in
+  hitbox (Hitbox3d.Capsule (Float.max 0. (hy -. r), r)) b
+
+let hitbox_of (b : body) : Hitbox3d.placed =
+  Hitbox3d.place ~orientation:b.orientation (b.x, b.y, b.z) b.hitbox
 
 let at x y z (b : body) : body = { b with x; y; z }
 let moving vx vy vz (b : body) : body = { b with vx; vy; vz }
@@ -103,6 +127,17 @@ let immovable (b : body) : body = { b with mass = infinity; inertia = Body3d.nev
  * is exactly what a kinematic flipper wants (see Body3d.mli) *)
 let upright (b : body) : body = { b with inertia = Body3d.never_turns }
 let solid_as sides (b : body) : body = { b with inertia = Body3d.box ~mass:b.mass sides }
+
+let touching (a : body) (b : body) : bool = Collide3d.touching (hitbox_of a) (hitbox_of b)
+let contact (a : body) (b : body) : Contact3d.t option = Collide3d.contact (hitbox_of a) (hitbox_of b)
+
+let ray ~from ~direction (bodies : body list) : (body * number) option =
+  List.fold_left
+    (fun best b ->
+      match Collide3d.ray ~from ~direction (hitbox_of b) with
+      | Some t -> ( match best with Some (_, u) when u <= t -> best | _ -> Some (b, t))
+      | None -> best)
+    None bodies
 
 (*****************************************************************************)
 (* What pushes it *)
@@ -164,38 +199,73 @@ let position (b : body) : number * number * number = (b.x, b.y, b.z)
 let distance (a : body) (b : body) : number = Vec3.length (Vec3.sub (position a) (position b))
 let speed (b : body) : number = Vec3.length (b.vx, b.vy, b.vz)
 
-(* claude: the bounding box as its twelve edges (thin boxes, which
- * every backend draws and which stay visible edge-on, unlike a
- * polygon), plus the velocity as a line from the centre. No alpha: the
- * software backend has none, so a translucent hitbox like the 2D
- * debug's is not an option here. *)
+(* claude: a hitbox drawn as its wireframe -- thin boxes between
+ * points, since a flat polygon vanishes edge-on and the software
+ * backend has no alpha for a translucent solid. Everything is built in
+ * world space from the placed hitbox, so a turned box needs no special
+ * case. *)
+let rod (c : color) (a : Vec3.t) (b : Vec3.t) (t : number) : shape3d =
+  let d = Vec3.sub b a in
+  let len = Vec3.length d in
+  if len < 1e-9 then group3d []
+  else
+    let q =
+      let axis = Vec3.cross (0., 1., 0.) d in
+      if Vec3.length axis < 1e-9 then if Vec3.dot (0., 1., 0.) d > 0. then Quat.identity else Quat.of_axis_angle (1., 0., 0.) Float.pi
+      else Quat.of_axis_angle axis (acos (Float.max (-1.) (Float.min 1. (Vec3.dot (Vec3.normalize d) (0., 1., 0.)))))
+    in
+    let dx, dy, dz = Quat.to_euler_xyz q in
+    let mx, my, mz = Vec3.scale 0.5 (Vec3.add a b) in
+    box c t len t |> rotate3d dx dy dz |> move3d mx my mz
+
+(* a circle of [n] rods in the plane of two unit vectors *)
+let ring (c : color) (centre : Vec3.t) (u : Vec3.t) (v : Vec3.t) (r : number) (t : number) : shape3d list =
+  let n = 16 in
+  let at i =
+    let a = 2. *. Float.pi *. float_of_int i /. float_of_int n in
+    Vec3.add centre (Vec3.add (Vec3.scale (r *. cos a) u) (Vec3.scale (r *. sin a) v))
+  in
+  List.init n (fun i -> rod c (at i) (at ((i + 1) mod n)) t)
+
 let debug (b : body) : shape3d =
-  let (ax, ay, az), (bx, by, bz) = bounds b.shape in
-  let t = 0.01 *. Float.max 1. (Vec3.length (bx -. ax, by -. ay, bz -. az)) in
-  (* claude: just outside the shape, or the edges sit exactly on its
-   * faces and are hidden by them *)
-  let ax = ax -. t and ay = ay -. t and az = az -. t in
-  let bx = bx +. t and by = by +. t and bz = bz +. t in
-  let edge (x1, y1, z1) (x2, y2, z2) =
-    box green (Float.abs (x2 -. x1) +. t) (Float.abs (y2 -. y1) +. t) (Float.abs (z2 -. z1) +. t)
-    |> move3d ((x1 +. x2) /. 2.) ((y1 +. y2) /. 2.) ((z1 +. z2) /. 2.)
+  let p = hitbox_of b in
+  let scale_of = Float.max 0.05 (Vec3.length (sides_of b.shape)) in
+  let t = 0.015 *. scale_of in
+  let c = green in
+  let turned v = Quat.rotate b.orientation v in
+  let outline =
+    match b.hitbox with
+    | Hitbox3d.Box _ ->
+        let corners = Hitbox3d.corners p in
+        (* the 8 corners come out in a known order (x slowest, then y,
+         * then z): the 12 edges are the pairs differing in one bit *)
+        let nth i = List.nth corners i in
+        List.filter_map
+          (fun (i, j) ->
+            let bits = i lxor j in
+            if bits = 1 || bits = 2 || bits = 4 then Some (rod c (nth i) (nth j) t) else None)
+          (List.concat_map (fun i -> List.init 8 (fun j -> (i, j))) (List.init 8 (fun i -> i)))
+    | Hitbox3d.Sphere r ->
+        ring c (b.x, b.y, b.z) (turned (1., 0., 0.)) (turned (0., 1., 0.)) r t
+        @ ring c (b.x, b.y, b.z) (turned (0., 1., 0.)) (turned (0., 0., 1.)) r t
+        @ ring c (b.x, b.y, b.z) (turned (0., 0., 1.)) (turned (1., 0., 0.)) r t
+    | Hitbox3d.Capsule (_, r) ->
+        let lo, hi = Hitbox3d.segment p in
+        let u = turned (1., 0., 0.) and w = turned (0., 0., 1.) in
+        ring c lo u w r t @ ring c hi u w r t
+        @ List.map
+            (fun d -> rod c (Vec3.add lo (Vec3.scale r d)) (Vec3.add hi (Vec3.scale r d)) t)
+            [ u; Vec3.scale (-1.) u; w; Vec3.scale (-1.) w ]
+        @ [ rod c lo hi t ]
+    | Hitbox3d.Plane (n, d) ->
+        let n = Vec3.normalize n in
+        let u = Vec3.normalize (if Float.abs (let _, y, _ = n in y) > 0.9 then Vec3.cross n (1., 0., 0.) else Vec3.cross n (0., 1., 0.)) in
+        let v = Vec3.cross n u in
+        let at i j = Vec3.add (Vec3.scale d n) (Vec3.add (Vec3.scale (2. *. i) u) (Vec3.scale (2. *. j) v)) in
+        (* a grid on it, since a plane has no edges of its own *)
+        List.concat_map (fun i -> [ rod c (at i (-2.)) (at i 2.) t; rod c (at (-2.) i) (at 2. i) t ]) [ -2.; -1.; 0.; 1.; 2. ]
   in
-  let corners = [ (ax, ay, az); (bx, ay, az); (bx, ay, bz); (ax, ay, bz) ] in
-  let top (x, _, z) = (x, by, z) in
-  let box_edges =
-    List.concat
-      (List.mapi
-         (fun i c ->
-           let next = List.nth corners ((i + 1) mod 4) in
-           [ edge c next; edge (top c) (top next); edge c (top c) ])
-         corners)
-  in
-  let dx, dy, dz = Quat.to_euler_xyz b.orientation in
   let velocity =
-    if speed b < 1e-6 then []
-    else
-      [ (let vx, vy, vz = (b.vx, b.vy, b.vz) in
-         box red (Float.abs vx +. t) (Float.abs vy +. t) (Float.abs vz +. t)
-         |> move3d (b.x +. (vx /. 2.)) (b.y +. (vy /. 2.)) (b.z +. (vz /. 2.))) ]
+    if speed b < 1e-6 then [] else [ rod red (b.x, b.y, b.z) (b.x +. b.vx, b.y +. b.vy, b.z +. b.vz) t ]
   in
-  group3d ((group3d box_edges |> rotate3d dx dy dz |> move3d b.x b.y b.z) :: velocity)
+  group3d (outline @ velocity)

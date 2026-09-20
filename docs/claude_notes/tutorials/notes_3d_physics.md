@@ -357,6 +357,14 @@ interpenetrate at the corners and look glued. (Gottschalk, Lin,
 Manocha, "OBBTree", SIGGRAPH 1996, is where the 15-axis test is
 usually cited from.)
 
+`Collide3d.boxes` takes `~edge_axes:false` so that the bug can be
+watched instead of imagined, and its test went looking for a pair it
+gets wrong: of 20,000 random pairs of rods, 3 are separated by an
+edge cross and by nothing else, and the first of them is in
+`Unit_collide3d` with a certificate -- the separating axis worked out
+straight from the sixteen corners, checked to be a cross and not a
+face. Six axes call that pair a collision. Fifteen do not.
+
 Beyond boxes, two routes: **SAT on convex hulls** (face normals of
 both plus all edge-pair crosses: correct, and quadratic in the edge
 count) or **GJK** (Gilbert, Johnson, Keerthi, 1988) with **EPA** for
@@ -374,6 +382,20 @@ The honest limit: a *moving* body must be convex. Concave shapes are
 either static triangle meshes (the level) or several convex pieces
 glued together by the game. Real engines do convex decomposition;
 we say so and stop.
+
+Two more limits worth stating where they are easy to find.
+`Collide3d.box_capsule` is the module's one approximation: it goes
+back and forth between the box and the segment until the closest pair
+settles, which is exact when that closest feature is a point and
+reports the middle of the line when a capsule lies flat along a face.
+And every test here answers with *one* contact point, which is what a
+bounce needs; a box resting on a box touches along a whole face, and
+the four points that keeps a stack still are phase 8's job (§10).
+
+`examples3d/PhysicsHitbox3d.ml` is where all of this is visible: four
+shapes wearing their hitboxes as wireframes, one more that you push
+through them, and the contact drawn as an arrow along the way out, as
+long as the overlap is deep.
 
 ## 8. The broad phase: the same three, one dimension up
 

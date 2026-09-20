@@ -124,6 +124,62 @@ let drawing () =
   let (dx, _, _), (ex, _, _) = Physics3d.bounds (debug (b |> moving 1. 0. 0.)) in
   Alcotest.(check bool) "the debug drawing covers the body and its velocity" true (ex -. dx > 2.)
 
+(* what a body *is* to a collision is not what it looks like: a sphere
+ * is a box to the engine until you say [ball], and the two answer
+ * differently in exactly the corner where it matters *)
+let hitboxes () =
+  let cube = body (Playground3d.cube red 1.) in
+  let round_thing = body (sphere blue 0.5) |> at 0.9 0.9 0. in
+  Alcotest.(check bool) "as boxes, their corners overlap" true (touching cube round_thing);
+  Alcotest.(check bool) "as a ball, it misses the cube's corner" false (touching cube (ball round_thing));
+  (* and the tensor follows the hitbox *)
+  let as_ball = ball (body (sphere blue 0.5)) in
+  let i = as_ball.inertia in
+  Alcotest.(check (float 1e-9)) "a ball's tensor, 2/5 m r^2" (0.4 *. 0.25) i.Mat3.m00;
+  Alcotest.(check (float 1e-9)) "the same about every axis" i.Mat3.m00 i.Mat3.m22;
+  (* a pill is a capsule standing up *)
+  (match (pill (body (Playground3d.box gray 0.6 2. 0.6))).hitbox with
+  | Hitbox3d.Capsule (half, r) ->
+      Alcotest.(check (float 1e-9)) "as wide as the narrow sides" 0.3 r;
+      Alcotest.(check (float 1e-9)) "and its segment is what is left" 0.7 half
+  | _ -> Alcotest.fail "pill should give a capsule");
+  (* upright survives being given a hitbox, whichever order *)
+  Alcotest.(check bool) "upright then ball is still upright" true ((body (sphere red 1.) |> upright |> ball).inertia = Body3d.never_turns);
+  (* the hitbox goes where the body goes, and turns with it *)
+  let turned = body (Playground3d.box red 2. 0.5 0.5) |> at 1. 2. 3. |> pointing (0., 1., 0.) 90. in
+  let placed = hitbox_of turned in
+  Alcotest.(check (float 1e-9)) "placed where the body is" 3. (let _, _, z = placed.Hitbox3d.pos in z);
+  let _, _, hz = Vec3.sub (snd (Hitbox3d.bounds placed)) (fst (Hitbox3d.bounds placed)) in
+  Alcotest.(check (float 1e-6)) "turned a quarter, its length is along z" 2. hz
+
+(* a contact says how far in and which way out *)
+let contacts () =
+  let floor = body (Playground3d.box gray 10. 1. 10.) |> at 0. (-0.5) 0. |> immovable in
+  let crate = body (Playground3d.cube brown 1.) |> at 0. 0.4 0. in
+  match contact floor crate with
+  | None -> Alcotest.fail "the crate's bottom is at -0.1, under the floor's top"
+  | Some c ->
+      Alcotest.(check (float 1e-6)) "0.1 through the floor" 0.1 c.Contact3d.depth;
+      let _, ny, _ = c.Contact3d.normal in
+      Alcotest.(check (float 1e-6)) "pushed up, out of the floor" 1. ny
+
+(* what picking, aiming and a ground check are made of *)
+let rays () =
+  let near = body (Playground3d.cube red 1.) |> at 0. 0. (-3.) in
+  let far = body (Playground3d.cube blue 1.) |> at 0. 0. (-8.) in
+  let aside = body (Playground3d.cube green 1.) |> at 5. 0. (-5.) in
+  match ray ~from:(0., 0., 0.) ~direction:(0., 0., -1.) [ far; aside; near ] with
+  | None -> Alcotest.fail "two of them are straight ahead"
+  | Some (hit, distance) ->
+      Alcotest.(check (float 1e-6)) "the nearer one, at its face" 2.5 distance;
+      Alcotest.(check bool) "and it is the near one" true (hit.z = near.z);
+      Alcotest.(check bool) "nothing that way" true (ray ~from:(0., 0., 0.) ~direction:(0., 1., 0.) [ far; aside; near ] = None);
+      (* a ground check: down, from just above the floor *)
+      let floor = body (Playground3d.box gray 10. 1. 10.) |> at 0. (-0.5) 0. in
+      (match ray ~from:(0., 0.6, 0.) ~direction:(0., -1., 0.) [ floor ] with
+      | None -> Alcotest.fail "the floor is right below"
+      | Some (_, d) -> Alcotest.(check (float 1e-6)) "0.6 above the ground" 0.6 d)
+
 let tests =
   [ t "Physics3d, a thrown ball" thrown_ball;
     t "Physics3d, the pushes add up and are used up" accumulator;
@@ -133,4 +189,7 @@ let tests =
     t "Physics3d, gravitation and an orbit" gravitation;
     t "Physics3d, a torque, the tensor of its own box, and upright" spinning;
     t "Physics3d, a barrel floats at its density" floating_body;
-    t "Physics3d, draw and debug" drawing ]
+    t "Physics3d, draw and debug" drawing;
+    t "Physics3d, a hitbox is not a drawing" hitboxes;
+    t "Physics3d, a contact" contacts;
+    t "Physics3d, rays: picking, aiming, a ground check" rays ]

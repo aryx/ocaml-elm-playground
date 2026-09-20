@@ -47,11 +47,13 @@
    Integrate3d.semi_implicit_euler for the position and one
    Integrate3d.spin_step for the orientation.
 
-   Not here yet, and named so that the gap is visible: collisions
-   ([touching], [bounce]), rays, the character controller, joints. They
-   arrive with the phases of
-   docs/claude_notes/plans/plan_physics3d_teaching.md; until then a game
-   does its own contacts, as games3d/TinyMario64.ml does.
+   Collisions are *found* here ([touching], [contact], [ray], and the
+   hitboxes they work on) but not yet *resolved*: [bounce] and a
+   [world] to [simulate] arrive with phases 5 and 8 of
+   docs/claude_notes/plans/plan_physics3d_teaching.md, as do the
+   character controller and joints. Until then a game finds its
+   contacts here and answers them itself, as games3d/TinyMario64.ml
+   does.
 *)
 
 open Playground3d
@@ -72,7 +74,8 @@ type body = {
   mass : number; (* in kg, 1 by default *)
   bounciness : number; (* how it bounces, 0 (clay) by default *)
   friction : number; (* how it grips what it slides on, 0 by default *)
-  inertia : Mat3.t; (* how hard it is to spin: its bounding box's, by default *)
+  hitbox : Hitbox3d.t; (* what it *is* to a collision: its bounding box, by default *)
+  inertia : Mat3.t; (* how hard it is to spin: its hitbox's, by default *)
   ax : number; (* what pushes it until the next [step]: *)
   ay : number; (*   accelerations, set by fall, push, ... *)
   az : number;
@@ -82,12 +85,39 @@ type body = {
 (* {1 Making bodies} *)
 
 (* [body shape]: a body looking like [shape], at the origin, not
- * moving, not turned, of mass 1, and with the inertia tensor of its
- * own bounding box -- so it can be spun, and will wobble like the
- * solid it looks like. [shape] should be centred on the origin (as
- * {!Playground3d.box}, {!Playground3d.sphere} and friends are): [draw]
- * turns it about that point. *)
+ * moving, not turned, of mass 1, whose hitbox is the box of its own
+ * bounding box, and whose inertia tensor is that box's -- so it can be
+ * spun, and will wobble like the solid it looks like. [shape] should
+ * be centred on the origin (as {!Playground3d.box},
+ * {!Playground3d.sphere} and friends are): [draw] turns it about that
+ * point. *)
 val body : shape3d -> body
+
+(* {1 What it is to a collision}
+
+   A body's hitbox is what {!touching}, {!contact} and {!ray} work on,
+   and it is not its drawing: a tree is a cylinder, a character is a
+   capsule, a spaceship is a sphere. The default is the box of the
+   shape's own bounds, which is right often enough to start with. Each
+   of these also gives the body that hitbox's inertia tensor (a ball
+   rolls differently from a crate), unless it is [upright], which stays
+   upright. *)
+
+(* [ball b]: a sphere, as wide as the narrowest side of its bounds --
+ * for anything round *)
+val ball : body -> body
+
+(* [pill b]: a capsule standing up the y axis, as wide as the narrowest
+ * of its two horizontal sides: what a character wants, since it has no
+ * corners to catch on a staircase *)
+val pill : body -> body
+
+(* [hitbox h b]: any hitbox, spelled out (physics/3d/Hitbox3d.mli) *)
+val hitbox : Hitbox3d.t -> body -> body
+
+(* where the hitbox is and how it is turned, right now: what the engine
+ * actually tests, and what [debug] draws *)
+val hitbox_of : body -> Hitbox3d.placed
 
 (* [at x y z b] *)
 val at : number -> number -> number -> body -> body
@@ -179,10 +209,33 @@ val tick : number
 (* [draw b]: its shape, turned the way it points and moved where it is *)
 val draw : body -> shape3d
 
-(* [debug b]: its bounding box as twelve edges, and its velocity as a
- * line from its centre -- ordinary shape3ds, so every backend draws
- * them *)
+(* [debug b]: its *hitbox* -- the box's twelve edges, a ball's or a
+ * pill's outline -- and its velocity as a line from its centre;
+ * ordinary shape3ds, so every backend draws them. Worth looking at the
+ * first time a collision behaves oddly: most of the time the hitbox is
+ * not where the drawing is. *)
 val debug : body -> shape3d
+
+(* {1 Collisions}
+
+   Found, not yet resolved: see the header. *)
+
+(* do their hitboxes overlap, exactly -- the turned box, the sphere,
+ * the capsule, not the bounding boxes *)
+val touching : body -> body -> bool
+
+(* and by how much, and which way to push them apart
+ * (physics/3d/Contact3d.mli); [None] when they miss *)
+val contact : body -> body -> Contact3d.t option
+
+(* [ray ~from ~direction bodies]: the first body the ray meets and how
+ * far away it is, in metres. What picking with the mouse, aiming, a
+ * bullet and a ground check are all made of. *)
+val ray :
+  from:number * number * number ->
+  direction:number * number * number ->
+  body list ->
+  (body * number) option
 
 (* where it is, and which way it faces (its own -z, turned) *)
 val position : body -> number * number * number

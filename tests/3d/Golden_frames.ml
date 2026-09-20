@@ -52,6 +52,9 @@ let scenes : Testutil_golden.scene list =
     ("examples3d/PhysicsSpin3d", "", 3);
     (* claude: the five blocks in the air, a moment before the splash *)
     ("examples3d/PhysicsFloat3d", "", 3);
+    (* claude: the four hitboxes as the engine sees them -- a sphere's
+     * rings, a box's edges, a turned box's, a capsule's *)
+    ("examples3d/PhysicsHitbox3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
@@ -126,6 +129,9 @@ let scripted : Testutil_golden.scripted list =
      * with it, each keeping exactly its own density under the surface,
      * and the stone stays on the bottom *)
     ("examples3d/PhysicsFloat3d", "risen", 600, "up:300-360");
+    (* pushed into the crate: the contact's point and the way out,
+     * drawn as long as the overlap is deep *)
+    ("examples3d/PhysicsHitbox3d", "inside", 70, "left:1-25,up:1-120");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/LogoFractals3d", "tree", 5, "a:2");

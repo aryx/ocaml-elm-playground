@@ -506,7 +506,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 3 done** (2026-09-20); the rest not started. Written as
+**Phases 0 to 4 done** (2026-09-20); the rest not started. Written as
 the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -629,6 +629,44 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     sliding along. The default path is untouched, and its two golden
     frames are byte-identical, which is what makes the flag a
     comparison rather than a rewrite.
+- **Phase 4, DONE**: `Hitbox3d` (sphere, box/OBB, capsule, plane, with
+  their volumes, tensors, bounds, corners, support and extent),
+  `Contact3d`, `Collide3d` (the closest points, every pair, and the
+  rays), `Physics3d`'s `touching`, `contact`, `ray`, `ball`, `pill`,
+  `hitbox`, `hitbox_of` and a `debug` that now draws the *hitbox*;
+  14 tests in `Unit_collide3d` and 3 more in `Unit_physics3d_api`;
+  `examples3d/PhysicsHitbox3d.ml`, and `StarCollector3d`'s pickups
+  exact with `physics=engine`.
+  - **The nine axes, measured rather than described.** `Collide3d.boxes`
+    takes `~edge_axes:false`, and its test hunts for a pair the 6-axis
+    version gets wrong: 20,000 random pairs of rods, 3 found, and the
+    first is now in the test with a *certificate* -- a separating axis
+    computed straight off the 16 corners, which the test checks is an
+    edge cross and not a face. The 15-axis test says apart, the 6-axis
+    one says collision. That is the classic 3D bug, on record.
+  - **A thousand random pairs** against the same certificate, with a
+    point-sampling cross-check when they are called apart: no
+    disagreement.
+  - **"Just touching" counts as apart**, everywhere, and the `.mli`
+    says so: a contact always has depth > 0. Two of the tests were
+    written the other way round first, which is how the inconsistency
+    turned up (the plane test already assumed it).
+  - **What is not there**, in the `.mli` rather than in a stub: GJK and
+    EPA (SAT on boxes plus the primitives is what our games need and
+    can be read in an afternoon); a convex hull, which needs its faces
+    and not just its points; a static triangle mesh, which waits for a
+    level, with `ray_triangle` and `sphere_triangle` already there to
+    build it from; and a manifold, since a box resting on a box needs
+    four points and phase 8 is where faces get clipped.
+  - **One approximation, named**: `box_capsule` walks back and forth
+    between the two shapes four times, which is exact when the closest
+    feature is a point and reports the middle of the line when a
+    capsule lies flat on a face. Good enough for a character against a
+    wall (phase 9), not for stacking.
+  - `Physics3d.debug` draws the hitbox as a wireframe of thin rods (a
+    flat polygon vanishes edge-on, and the software backend has no
+    alpha for a translucent solid): a box's twelve edges, a sphere's
+    three rings, a capsule's outline, a plane's grid.
 
 ## Verification
 

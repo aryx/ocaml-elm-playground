@@ -201,6 +201,25 @@
   spring, drag, sum), and Archimedes, which is new: a body settles with
   exactly its relative density under the surface (0.6 for wood), the
   push at its centre for now, so nothing rights itself yet
+- physics/3d/Hitbox3d, Contact3d, Collide3d: what a body *is* to a
+  collision (sphere, turned box, capsule, plane, with their volumes and
+  inertia tensors) and whether two of them overlap -- the closest
+  points (segment/segment, box, triangle), every pair, and the rays
+  (sphere, box, capsule, Moller-Trumbore for a triangle) that picking,
+  aiming and a ground check are made of. The lesson is the box/box
+  case: two boxes at an angle need their 6 face normals *and* the 9
+  crosses of an edge of each, and Collide3d.boxes takes ~edge_axes:false
+  so the classic bug can be watched. Its test went looking for a pair
+  the 6-axis version gets wrong (20,000 random rods, 3 found) and keeps
+  the first with a certificate computed straight off the corners.
+  Not there, and said in the .mli rather than stubbed: GJK/EPA, convex
+  hulls (which need their faces), triangle meshes, and contact
+  manifolds (phase 8)
+- examples3d/PhysicsHitbox3d: four shapes wearing their hitboxes as
+  green wireframes, one you push through them with the arrows, and the
+  contact drawn as an arrow along the way out, as long as the overlap
+  is deep; 1/2/3 change what the one you push *is* without changing
+  what it looks like, and "r" casts a ray
 - playground3d/Physics3d: the Evan-style API over physics/3d, the same
   verbs as the 2D playground/Physics (body, at, moving, heavy, fall,
   push, thrust, slow, attracted_by, step, draw, debug) in metres rather
@@ -214,8 +233,10 @@
   4.8 m/s the hand-written version moved at, the cube tumbling about a
   tilted axis (a quaternion drawn through rotate3d, which is where that
   conversion gets measured on something that moves), and "d" for what
-  the engine sees. The default path is unchanged, golden frames
-  byte-identical
+  the engine sees, and its pickups are exact (Physics3d.touching, the
+  player's turning box against each star's sphere) where by hand they
+  are a distance between two centres. The default path is unchanged,
+  golden frames byte-identical
 - examples3d/PhysicsFloat3d: five blocks of different densities dropped
   into water, each settling at its own waterline, each wearing a stripe
   painted at that density -- nothing lines the stripes up with the

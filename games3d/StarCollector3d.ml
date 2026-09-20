@@ -45,9 +45,15 @@
  *    takes (Physics3d.draw) -- this game is where that conversion gets
  *    measured on something that moves.
  *
- * Everything else -- the stars, the collecting, the score, the camera
- * -- is the same code for both. "d" draws what the engine sees:
- * the body's bounding box and its velocity (Physics3d.debug).
+ * The collecting differs too, and that is phase 4's part: by hand it
+ * is a distance between two centres, which treats the player as a
+ * point; with the engine it is Physics3d.touching, the player's real
+ * box -- turned, since it tumbles -- against each star's real sphere.
+ * Walk a corner into a star and only one of the two notices.
+ *
+ * Everything else -- the stars, the score, the camera -- is the same
+ * code for both. "d" draws what the engine sees: the hitboxes and the
+ * velocity (Physics3d.debug).
  *)
 open Basics (* elm-core: float +, -, *, /, clamp *)
 open Playground
@@ -112,16 +118,21 @@ let move_by_engine (computer : computer) (p : Physics3d.body) : Physics3d.body =
   let z, vz = wall p.Physics3d.z p.Physics3d.vz in
   { p with Physics3d.x; z; vx; vz; y = 0.4; vy = 0. }
 
+(* a star, as the engine sees it: a real sphere where it is drawn *)
+let star_body (s : star) : Physics3d.body =
+  Physics3d.body (sphere yellow 0.3) |> Physics3d.at s.sx 0.3 s.sz |> Physics3d.ball
+
 let update (computer : Playground.computer) (m : model) : model =
   let player = (match m.engine with By_hand -> move_by_hand | Engine -> move_by_engine) computer m.player in
   let px = player.Physics3d.x and pz = player.Physics3d.z in
-  let collected, remaining =
-    List.partition
-      (fun (s : star) ->
+  let reached (s : star) =
+    match m.engine with
+    | By_hand ->
         let ddx = s.sx - px and ddz = s.sz - pz in
-        sqrt ((ddx * ddx) + (ddz * ddz)) < collect_distance)
-      m.stars
+        sqrt ((ddx * ddx) + (ddz * ddz)) < collect_distance
+    | Engine -> Physics3d.touching player (star_body s)
   in
+  let collected, remaining = List.partition reached m.stars in
   let missing = star_count_target -.. List.length remaining in
   let respawned = List.init missing (fun _ -> make_star ()) in
   { m with player; stars = remaining @ respawned; score = m.score +.. List.length collected }
