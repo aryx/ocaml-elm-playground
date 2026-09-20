@@ -36,6 +36,50 @@ here. And **rollback** netcode (GGPO, the fighting games' standard),
 which needs to save old states and replay inputs, is almost free too:
 old models are immutable values, kept in a list.
 
+## Prior art in the house: tronscroll (the late 1990s)
+
+The author's own first network game, kept at
+`~/Dropbox/role-programmer/project/project-tron/tronscroll-0.1`: *tron
+v0.1*, C and svgalib, GPL, a README that opens "excuse me but i am
+french so i don t speak english very well" and an address at
+ens.insa-rennes.fr. Up to **8 players**, each a pixel drawing a wall
+behind it, on a **1600x1200 virtual map seen through a 320x200
+scrolling window** -- the scroll is the idea the name is about, and it
+is what makes it more than the arcade Tron. Keys on the numeric keypad
+(8/5/4/6, `u` to use an item), and six power-ups: freeze the others,
+speed, teleport, invulnerability, erase all pixels of your colour, and
+"swap to be the tail".
+
+Its netcode is the teaching, and every one of its choices is one this
+plan has an opinion about:
+
+- **TCP** (`SOCK_STREAM`), not UDP -- so a lost packet stalls
+  everything behind it (§1 of the tutorial);
+- **state, not inputs**: the payload is a fixed C struct `t_coord`
+  holding *every* player's `x[]`, `y[]` and `option[]`, plus the
+  current power-up and its position -- the snapshot approach (§6),
+  chosen years before anyone told him there was another one;
+- **the struct is written raw** (`write(sd, &coord, sizeof(t_coord))`):
+  perfect between two identical PCs, broken by any difference of
+  endianness or padding -- which is exactly why `Wire` exists;
+- **ports as matchmaking**: a client tries to connect to 2223, then
+  2224, then 2225... and the first port that accepts *is* your player
+  number (`network.c`, `init_socket_client`). Charming, and impossible
+  today through any NAT (§7);
+- and the one that matters most, in `motor.c` lines 140-141:
+  **`send_coord` then a blocking `recv_coord`, every frame.** A full
+  round trip per frame, synchronously. On the school LAN it was
+  invisible (a round trip under a millisecond); over the Internet it
+  caps the frame rate at 1/RTT -- about **16 frames per second at 60
+  ms**. That single line is the reason input delay (§4) and rollback
+  (§5) were invented, and the reason this plan's `-simulate` mode puts
+  latency on a key: so that the stall can be *seen* rather than
+  explained.
+
+So `games/TinyTronscroll.ml` is this plan's milestone (see "Games"),
+and it keeps the 1997 behaviour as a switch, beside the two modern
+ones.
+
 ## Principles (the same as the other plans)
 
 - **Independent of the Playground.** `network/` knows messages, bytes,
@@ -95,6 +139,43 @@ Open questions: whether `update` gets the `time` (lockstep makes the
 tick number the only time there is); how randomness gets a shared seed
 (the host picks it, it travels in the first message); what a player's
 view shows while the game waits for a late input (lockstep's stall).
+
+### The other API: a universe of worlds (HtDP)
+
+`playground/Bigbang.ml` already brings HtDP's *world programs* to the
+playground (a world, `to_draw`, `on_tick`, `on_key`; see its `.mli`,
+which notes that big-bang is "Elm's architecture before Elm"). HtDP's
+`2htdp/universe` is the other half of that library, and the piece this
+plan should provide: **a world gains a mailbox, and a server called
+the universe passes messages between worlds.**
+
+```ocaml
+(* a world program that can talk: big_bang, plus two handlers *)
+val big_bang : ... -> ?on_receive:('world -> msg -> 'world) ->
+               ?register:string -> ... -> ('world, _) app
+
+(* and the server, which is a program of the same shape: a state, and
+   handlers returning the new state and the letters to send *)
+val universe :
+  'state ->
+  ?on_new:('state -> world_id -> 'state * (world_id * msg) list) ->
+  ?on_msg:('state -> world_id -> msg -> 'state * (world_id * msg) list) ->
+  unit -> unit
+```
+
+Why it earns its place beside `multiplayer`: the two teach different
+things, and HtDP has thirty years of evidence that the second one is
+how beginners get there. `multiplayer` is *one game, many players,
+simulated everywhere* -- lockstep, determinism, rollback, the subject
+of this plan. `universe` is *many little programs sending each other
+messages*, with no determinism requirement at all: a chat, a shared
+whiteboard, a turn-based game, twenty students' rockets in one sky.
+It is the honest introduction, and it is where the plan's "maybe a
+turn-based game" (Games, below) belongs.
+
+It also costs almost nothing here: the universe server *is* the relay
+server this plan already builds for the browser (Target layout), with
+handlers instead of a fixed forwarding rule.
 
 ## The modules, with their references
 
@@ -163,11 +244,25 @@ playground/Multiplayer.ml the Evan-style API above
   with `-local` (one keyboard), `-simulate`, then on two machines; the
   flagship.
 - **Pong**: two players, the simplest possible test of lockstep.
+- **TinyTronscroll, the milestone** (`games/TinyTronscroll.ml`): the
+  author's own first network game, rebuilt Tiny (see "Prior art in the
+  house") -- 8 players on a map much bigger than the screen, a
+  scrolling viewport (`Camera2d`), light trails (`kits/lightcycles`,
+  which `games/TinyTron.ml` already uses) and the six power-ups.
+  What makes it the right milestone rather than one more game: its
+  netcode is a **key**, and the three settings are the plan's three
+  chapters -- `netcode=1997` (send the whole state, then block for
+  the answer, every frame: the original, and unplayable past a LAN),
+  `netcode=lockstep` (inputs, with input delay), `netcode=rollback`
+  (no delay, and a visible snap when a guess was wrong). Same game,
+  same map, three eras, with the latency and loss keys of `-simulate`
+  to push each one until it breaks.
 - **Later, an XPilot-like arena**: more players, walls, gravity, over a
   server (section 5): XPilot's own architecture (1991, a server and X11
   clients).
-- Maybe a turn-based game (e.g. a board game) to show that turns need
-  none of the above: messages, and waiting.
+- A turn-based game (a board game, or HtDP's own shared-world
+  examples) on the **universe** API above, to show that turns need
+  none of the rest: messages, and waiting.
 
 ## Phasing
 
@@ -185,9 +280,16 @@ playground/Multiplayer.ml the Evan-style API above
 3. **Real UDP, native**: `-host`, `-join`; Spacewar! on a LAN.
 4. **Rollback**: `Rollback`, switchable with lockstep (a key), to feel
    the difference with 100 ms of simulated latency. Tests: rollback's
-   final models equal lockstep's.
+   final models equal lockstep's. Then **TinyTronscroll**, the
+   milestone: the scrolling map, the 8 players, the power-ups, and the
+   `netcode=` key with its three eras (1997, lockstep, rollback).
 5. **The web**: the relay server, WebSockets; a browser against a
    native player.
+5b. **The universe** (HtDP): `playground/Universe.ml` over the relay --
+   `on_receive` and `register` for a `Bigbang` world, `on_new` and
+   `on_msg` for the server; a chat, a shared whiteboard and a
+   turn-based game as its examples. Independent of the lockstep
+   phases, and the gentler door into all of this.
 6. *(later)* **Client-server**: `Snapshot`, prediction, reconciliation,
    interpolation; the XPilot-like arena.
 7. **Docs**: `notes_networking.md` checked against the code and its

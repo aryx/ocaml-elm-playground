@@ -20,6 +20,7 @@ works) and
 | Unity Netcode, Photon, Mirror, Nakama, Colyseus | Shipping a product this quarter | Attributes and callbacks over someone else's replication engine |
 | ENet, RakNet, GameNetworkingSockets, netcode.io, QUIC | Reliable-and-unreliable channels over UDP, done properly | A transport API: channels, fragmentation, congestion, encryption |
 | Croquet / TeaTime, distributed simulation (DIS, HLA) | Replicated computation as a platform | A deterministic world and a reflector that orders external events |
+| HtDP's `2htdp/universe` | Teaching beginners that programs can talk | A world with `on-receive`, and a server with `on-new` / `on-msg` -- no determinism asked for |
 | `network/` + `playground/Multiplayer` | Seeing *why* each of those exists, on a game you already have | `multiplayer ~players:2`, and a fake network with latency and loss on a key |
 
 ## Part 1: the games that invented it
@@ -127,6 +128,18 @@ communities had already published.**
   paper: primary sources, all readable in an evening.
 - **Overwatch's "Netcode" GDC talk** (Tim Ford, 2017) for how a modern
   AAA game stacks all of it at once. (To check.)
+- **HtDP's `2htdp/universe`** (Matthias Felleisen, Robert Bruce
+  Findler, Matthew Flatt, Shriram Krishnamurthi, *How to Design
+  Programs*): the only one of these written for *beginners*, and the
+  one with the longest teaching record. Its shape -- a world program
+  with `on-receive`, and a universe server with `on-new` and `on-msg`
+  returning a new state plus the letters to post -- deliberately asks
+  for no determinism, no prediction and no checksums, which is why a
+  fourteen-year-old can write a networked program with it in an
+  afternoon. This repository already has its other half
+  (`playground/Bigbang`), so the universe is a layer rather than a
+  project, and the plan treats it as the gentle door into everything
+  the rest of this note is about.
 
 ## Part 5: in Elm, and in OCaml
 
@@ -151,6 +164,40 @@ communities had already published.**
   [`plan_inspect_teaching.md`](../plans/plan_inspect_teaching.md)'s
   recording -- which is lockstep's input log wearing a different hat.
 
+## Prior art in the house: tronscroll
+
+The author's first network game, kept at
+`~/Dropbox/role-programmer/project/project-tron/tronscroll-0.1` and
+worth reading against every architecture above: *tron v0.1*, C and
+svgalib, up to 8 players, a 1600x1200 map seen through a scrolling
+320x200 window, six power-ups, and a README apologising for its
+English. Written at INSA/ENS Rennes in the late 1990s (the date is the
+author's to confirm; the README asks for "a minimum 486DX2/66").
+
+Read as netcode, it is a complete catalogue of the choices this field
+later gave names to:
+
+| what it did | what it is called | where it hurts |
+|---|---|---|
+| TCP, `SOCK_STREAM` | reliable ordered stream | head-of-line blocking (§1) |
+| sent every player's x, y and option | **snapshots**, not inputs (§6) | grows with players, not with the world |
+| wrote the C struct raw to the socket | no wire format | one endianness, one compiler, one machine type |
+| clients probe ports 2223, 2224, ... until one accepts; the port is your player number | matchmaking | dead on arrival behind a NAT (§7) |
+| `send_coord` then a blocking `recv_coord`, every frame | a synchronous round trip per frame | caps the frame rate at 1/RTT: ~16 fps at 60 ms |
+
+The last row is the interesting one, and it is why it belongs in a
+teaching document rather than in a memoir: on a school LAN, with a
+round trip under a millisecond, that design is *invisible* -- it runs
+at hundreds of frames per second and nothing is wrong. The Internet is
+what turns it into a 16 fps slideshow. Every technique in Part 1
+above, from Doom's input delay to GGPO's rollback, exists to avoid
+that one line, and none of them would have looked necessary from
+inside a computer room in Rennes.
+
+`games/TinyTronscroll.ml` is the plan's milestone for exactly that
+reason: the same game, with the 1997 behaviour kept on a key beside
+lockstep and rollback.
+
 ## Where `network/` and `Multiplayer` actually sit
 
 Two levels, as everywhere here:
@@ -163,7 +210,9 @@ Two levels, as everywhere here:
   can be *felt* rather than described.
 - **`playground/Multiplayer`, the API**, at the simple end: one new
   concept (the `player`), and the same game running local,
-  simulated, hosting or joining without a line changing.
+  simulated, hosting or joining without a line changing -- beside
+  **`playground/Universe`**, HtDP's shape for the other half of the
+  subject: many worlds, one postbox, and nothing to keep in sync.
 
 **The ceiling, stated now**: a handful of players, a LAN or a local
 relay, no matchmaking, no accounts, no encryption or authentication,

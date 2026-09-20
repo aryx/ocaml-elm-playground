@@ -26,11 +26,13 @@ this library's precondition.
 | `Rollback` | predict the others, correct when wrong | §5 |
 | `Snapshot` (later) | a server owns the game; clients predict and interpolate | §6 |
 | `network/relay/` | the little server the browser needs | §7 |
-| `playground/Multiplayer` | the Evan-style API over all of it | §9 |
+| `playground/Universe` | HtDP's other shape: worlds with a mailbox, and a server | §9 |
+| `playground/Multiplayer` | the Evan-style API over all of it | §10 |
 
 Read §1-§2 for what the network is, §3 for the tool that makes the
 rest testable, §4-§6 for the three architectures in increasing order
-of ambition, and §8 for the property all of them stand on.
+of ambition, §8 for the property all of them stand on, and §9 for the
+gentler shape that needs none of it.
 
 ## 1. The network is not a wire
 
@@ -160,6 +162,23 @@ mismatch stops the game with a message. A desync you detect is a bug;
 a desync you do not detect is a ghost story about how "the game went
 weird after ten minutes".
 
+**A worked example, from this project's own history.** The author's
+first network game (*tronscroll*, C and svgalib, late 1990s; see the
+plan's "Prior art in the house") did something simpler than any
+architecture in this note: each frame it sent the whole state and then
+**blocked, waiting for the answer** -- `send_coord` then `recv_coord`,
+over TCP. That is one full round trip per frame, so the frame rate is
+capped at `1 / RTT`:
+
+```
+   school LAN, RTT under 1 ms   ->  hundreds of frames per second: fine
+   Internet,   RTT 60 ms        ->  16 frames per second, and jerky
+```
+
+Everything in §4 and §5 is machinery for not doing that: input delay
+pays 3 frames *once* instead of a round trip *every* frame, and
+rollback pays none at all and apologises afterwards.
+
 ## 5. Rollback: guess, and fix it afterwards
 
 Lockstep's three-frame delay is exactly what a fighting game cannot
@@ -249,7 +268,47 @@ one machine's scale. Lockstep is simply the same property, checked by
 a second computer -- which is also why the networking phases wait for
 `plan_playground_other.md`'s seeded randomness.
 
-## 9. In the playground
+## 9. The other shape: a universe of worlds
+
+Everything above assumes one game simulated in several places, which
+is the hard version. There is a gentler one, and it has been taught to
+beginners for twenty years: **many small programs, each with its own
+world, sending each other messages through a server.**
+
+That is HtDP's `2htdp/universe` (Felleisen, Findler, Flatt and
+Krishnamurthi, *How to Design Programs*), and this playground already
+has its other half: `playground/Bigbang` runs a *world program* -- a
+world, `to_draw`, `on_tick`, `on_key`. The networked version adds two
+things and nothing else:
+
+```
+    world A                  the universe                 world B
+   +---------+   message    +-------------+   message   +---------+
+   | on_tick |------------->|   on_msg    |------------>| on_tick |
+   | on_key  |              |   on_new    |             | on_key  |
+   |on_receive|<-------------|  (a state + |<------------|on_receive|
+   +---------+   message     |   letters)  |   message   +---------+
+                             +-------------+
+```
+
+- a world gains **`on_receive`** (a message arrived; here is the new
+  world) and the ability to **send**;
+- the server is a program of the same shape: a state, **`on_new`**
+  (someone joined) and **`on_msg`**, each returning the new state and
+  the letters to post.
+
+No determinism is required, no checksums, no rollback, nothing from
+§4-§6: messages arrive when they arrive, and each world decides what
+to do about it. That is the right first lesson, and the right shape
+for a chat, a shared whiteboard, a turn-based board game, or twenty
+students' rockets flying in one sky -- and it is the *wrong* shape for
+Spacewar!, which is exactly the comparison worth teaching.
+
+The two APIs therefore both exist here: `Multiplayer` (§4-§6, one
+simulation, everywhere) and `Universe` (this section, many worlds, one
+postbox), with the same transport underneath.
+
+## 10. In the playground
 
 Evan-style, the new concept is the **player** -- everyone's input,
 where `computer` is yours:
@@ -286,4 +345,7 @@ Pong the simplest test.
   compression**: the client-server toolkit (§6).
 - **NAT**, **hole punching**, **relay**, **WebRTC data channel**: how
   two machines reach each other at all.
+- **World program** / **universe** (HtDP): a program with its own
+  world and a mailbox, and the server that carries the mail (§9) --
+  the shape that needs none of the determinism above.
 - **Determinism**: the property everything here stands on (§8).
