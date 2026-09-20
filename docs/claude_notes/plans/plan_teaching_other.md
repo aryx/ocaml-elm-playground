@@ -1,8 +1,9 @@
-# Plan: the other teaching pieces (beyond graphics, physics, audio, network)
+# Plan: the other teaching pieces (beyond graphics, physics, audio, network, AI)
 
-The four teaching areas -- `graphics/` (done), `physics/`, `audio/`,
-`network/` (planned: [`plan_physics_teaching.md`](plan_physics_teaching.md),
+The five teaching areas -- `graphics/` (done), `physics/`, `audio/`,
+`ai/`, `network/` (planned: [`plan_physics_teaching.md`](done/plan_physics_teaching.md),
 [`plan_audio_teaching.md`](plan_audio_teaching.md),
+[`plan_ai_teaching.md`](plan_ai_teaching.md),
 [`plan_networking_teaching.md`](plan_networking_teaching.md)) -- teach
 how a game *runs*, to someone reading the implementation. What's
 missing is on two sides: the **learner's** side (someone learning to
@@ -109,29 +110,22 @@ of Plants* (Prusinkiewicz and Lindenmayer, 1990), Knuth's *TAOCP*
 vol. 2 on random numbers, the *Procedural Content Generation in Games*
 book (Shaker, Togelius, Nelson, 2016).
 
-## 5. Game AI
+## 5. Game AI -- started, and now a plan of its own
 
 `ai/`, the same style: small, classic, very visual algorithms, each
-with its paper, each drawn while it runs (the debug overlay: the
-explored nodes, the path, the steering vectors).
-
-- **Pathfinding**: breadth-first search, Dijkstra (1959), A* (Hart,
-  Nilsson, Raphael, 1968) on a grid -- Pac-Man's ghosts, a strategy
-  game's units; heuristics and why A* is optimal with an admissible one.
-- **Steering and flocking**: Craig Reynolds's boids (1987) and steering
-  behaviors (seek, flee, arrive, wander, 1999) -- on physics bodies, so
-  it composes with `physics/`: Asteroid's enemies, a school of fish.
-- **State machines**: a ghost's chase/scatter/frightened modes (Pac-Man,
-  1980, the classic example), behavior trees (Halo 2, 2004) as their
-  successor.
-- **Game-tree search**: minimax (von Neumann, 1928; Shannon's chess
-  paper, 1950), alpha-beta pruning -- tic-tac-toe, Connect Four, a
-  simple chess; Monte Carlo tree search (2006) as the modern twist.
-
-Examples: a Pac-Man-like, a flock, Connect Four against the computer.
-References: Russell and Norvig, *Artificial Intelligence: A Modern
-Approach*; Reynolds's papers; Amit Patel's "Red Blob Games" pages
-(the best interactive explanations of pathfinding and grids).
+with its paper, each drawn while it runs. The sketch that was here
+(pathfinding, steering and flocking, state machines, game-tree search,
+and Monte Carlo as the modern twist) became
+[`plan_ai_teaching.md`](plan_ai_teaching.md) once the first two
+modules were written -- `ai/Minimax` (with `examples/AiTictactoe.ml`
+and `games/AiOthello.ml`) and `ai/Pathfind` (with
+`examples/AiPathfinding.ml`, and `kits/rts/Orders` over it). That plan
+also adds what the sketch didn't have: **learning** -- a neural
+network from scratch, trained while you watch, and behind a Monte
+Carlo search on a 9x9 Go board. The notes are
+[`notes_ai.md`](../tutorials/notes_ai.md),
+[`notes_ai_learning.md`](../tutorials/notes_ai_learning.md) and
+[`notes_ai_related_work.md`](../related-work/notes_ai_related_work.md).
 
 ## 6. Smaller teaching ideas
 
@@ -152,5 +146,6 @@ Approach*; Reynolds's papers; Amit Patel's "Red Blob Games" pages
 1 and 2 go together (the course lives in the browser editor) and are
 the largest; 3 is the most distinctive, and needs the deterministic
 groundwork of the physics and networking plans (seeded randomness, the
-fixed step); 4 and 5 are independent, can start any time, and each
-gives new games and examples.
+fixed step); 4 is independent and can start any time (and 5, now
+[`plan_ai_teaching.md`](plan_ai_teaching.md), already did -- its
+seeded randomness is the same groundwork 4 would give it).

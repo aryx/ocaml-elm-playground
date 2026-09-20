@@ -1,0 +1,360 @@
+# Learning, from scratch: neural networks in `ai/`
+
+The other half of [`notes_ai.md`](notes_ai.md). There, every rule was
+written by a person: the ghost's target tile, the weight of a corner,
+the three flocking forces. Here nobody writes the rule -- a few
+thousand numbers are nudged until the behaviour comes out. It is the
+same subject seen from the other end, and it is one long application
+of the chain rule.
+
+It is also the specification of the learning modules of `ai/` (see
+[`plan_ai_teaching.md`](../plans/plan_ai_teaching.md)), written before
+them. The constraint that shapes everything below: **pure OCaml, no
+BLAS, no GPU, and it has to run in the browser too**. That rules out
+the modern scale and rules *in* the thing worth teaching -- every
+number in this note is one a laptop computes in seconds, and every
+formula is one a reader can check with a pen.
+
+## 0. Where the code is, and a reading order
+
+| module (`ai/`, planned) | what | section |
+|---|---|---|
+| `Matrix` | dense float matrices, the naive loops | §2 |
+| `Neuron` | the perceptron, its rule, and what it cannot do | §1 |
+| `Net` | layers, activations, the forward pass | §2 |
+| `Backprop` | the loss, gradient descent, the chain rule | §3, §4 |
+| `Grad` | reverse-mode autodiff: the same, written once | §5 |
+| `Train` | batches, learning rate, train/test, the loop | §6 |
+| `Qlearn` | rewards, temporal difference, Q-learning | §8 |
+
+Sections 1 to 7 are supervised learning (here are the answers, find the
+rule); 8 and 9 are learning to *play*, where nobody knows the answers
+and the program has to find out by playing itself.
+
+## 1. One neuron
+
+Take some inputs, weight them, add a bias, and squash:
+
+```
+   x1 --w1--\
+   x2 --w2---> sum ---> f ---> a          a = f(w1 x1 + w2 x2 + b)
+   x3 --w3--/    +b
+```
+
+With a step function for `f`, that is Rosenblatt's **perceptron**
+(1958) -- and it has a learning rule so simple it fits on one line: for
+each example, if the output is wrong, push the weights toward the
+right answer by the input.
+
+```
+   w <- w + rate * (target - output) * x
+```
+
+Show it a few hundred labelled points and the line separating them
+walks into place. `examples/AiPerceptron.ml` is exactly this: click to
+drop red and blue points, watch the line move.
+
+Then show it XOR:
+
+```
+     x2
+      1 |  blue     red              no straight line separates
+        |                            the blues from the reds
+      0 |  red      blue
+        +-------------- x1
+           0        1
+```
+
+and it never settles. A perceptron computes a line (a hyperplane); XOR
+is not a line. Minsky and Papert's *Perceptrons* (1969) made that point
+precisely, and the field's funding went with it for over a decade --
+the first "AI winter". The fix was known in principle (stack the
+neurons) and useless in practice (nobody could train a stack), and that
+is the gap §4 closes.
+
+Keeping this failure in the module is deliberate: it is the shortest
+demonstration that *what a model can represent* and *what it can be
+trained to represent* are two separate questions, and both can kill
+you.
+
+## 2. Layers, and why they're matrices
+
+Stack neurons into layers: every neuron of a layer sees every output of
+the one before. A layer of `m` neurons over `n` inputs is an `m x n`
+matrix of weights, a vector of `m` biases, and an activation:
+
+```
+   a = f(W a' + b)
+
+   inputs      hidden          output
+     o -----> o
+     o -----> o -----> o       2 -> 3 -> 1:  W1 is 3x2, W2 is 1x3
+     o -----> o                10 weights and 4 biases
+```
+
+The whole forward pass of a network is that line, once per layer.
+`Matrix` is three nested loops over a flat float array; that is the
+naive version, and it stays in the module beside a faster one
+(blocking and unrolling, with the measured numbers) exactly as
+`graphics/Opti` keeps the simple rasterizer beside the fast one.
+
+`f` has to be non-linear, or the stack collapses: `W2 (W1 x)` is just
+`(W2 W1) x`, one layer again. Three choices, and the history is in
+them:
+
+```
+   sigmoid   1 / (1 + e^-z)      smooth, 0..1; what 1986 used; saturates
+   tanh      -1..1               the same, centred; TD-Gammon's
+   relu      max(0, z)           a kink; trains far faster in deep nets
+```
+
+## 3. The loss, and walking downhill
+
+Training needs a single number saying how wrong the network is over the
+examples -- the **loss**. For fitting numbers, the mean squared error
+`½(a - y)²`; for choosing among classes, cross-entropy with a softmax.
+
+The loss is a function of the weights. Change one weight a little, the
+loss changes a little: that ratio is `dL/dw`. Compute it for every
+weight and you have the **gradient**, the direction of steepest
+increase; step the other way:
+
+```
+   w <- w - rate * dL/dw
+```
+
+That is all of gradient descent, and the two failure modes are already
+visible in it. Too small a `rate` and nothing moves; too large and the
+step overshoots the valley and the loss explodes to NaN in a dozen
+iterations. Everybody's first network diverges, and knowing that in
+advance saves an evening.
+
+## 4. Backpropagation, with numbers
+
+The gradient could be computed by nudging each weight and re-running
+the network (**finite differences**) -- one forward pass per weight,
+hopeless for 17,000 weights. Backpropagation gets all of them in *one*
+backward pass, by pushing the error back through the same graph the
+forward pass came through, multiplying by local derivatives. It is the
+chain rule, bookkept.
+
+One neuron, one input, done by hand -- this is `Backprop`'s worked
+example, and the `.mli`'s job is to make it checkable:
+
+```
+   x = 1,  w = 0.5,  b = 0,  target y = 1,  sigmoid, rate 1
+
+   forward
+     z = w x + b               = 0.5
+     a = sigma(z)              = 0.62246
+     L = 1/2 (a - y)^2         = 0.07127
+
+   backward
+     dL/da = a - y             = -0.37754
+     da/dz = a (1 - a)         =  0.23500      (the sigmoid's derivative)
+     dL/dz = dL/da * da/dz     = -0.08872
+     dL/dw = dL/dz * x         = -0.08872      (dz/dw is just x)
+     dL/db = dL/dz             = -0.08872
+
+   step
+     w <- 0.5 + 0.08872        =  0.58872
+     a  = sigma(0.58872)       =  0.64307      (closer to 1)
+     L  = 0.06370                              (lower than 0.07127)
+```
+
+Two structural facts are already in those eight lines, and they are the
+whole of the subject. Each step needs only the values from the forward
+pass at that node (`a`, `x`) and the derivative coming back
+(`dL/dz`) -- so a network is trained by walking backwards through it
+once, keeping what the forward pass computed. And `dL/dz` gets
+multiplied by a factor at every layer: with sigmoids those factors are
+at most 0.25, so after six layers the gradient has been multiplied by
+something under 1/4000. That is the **vanishing gradient**, it is why
+deep networks were untrainable for twenty years after 1986, and it is
+why `relu` (whose derivative is 1) changed everything.
+
+`ai/tests/` checks backprop against finite differences on random
+networks: the analytic gradient and `(L(w+e) - L(w-e)) / 2e` must agree
+to six digits. It is the one test that catches every sign error, and no
+network should be trusted without it.
+
+## 5. Autodiff: the same derivatives, written once
+
+`Backprop` writes the backward pass by hand, layer by layer, which is
+the way to *understand* it and a bad way to live: add a layer type and
+you write its derivative, forever.
+
+`Grad` does it once. Every value carries its own little graph -- what
+made it, from what -- and each operation knows only its own local
+derivative. Ask the loss for its gradient, walk the graph backwards
+once, and every weight has its `dL/dw`, whatever the network's shape:
+
+```
+   a = x * w  +  b     becomes a graph:     x   w
+                                             \ /
+                                              *   b
+                                               \ /
+                                                +
+                                                |
+                                                a     ...  L
+```
+
+This is **reverse-mode automatic differentiation** (Linnainmaa, 1970),
+and it is what PyTorch is, underneath the CUDA. Written for scalars, in
+OCaml, it is about eighty lines -- Karpathy's micrograd made that point
+memorably. Keeping both modules is the pattern used everywhere in this
+repository: the version that teaches the mechanism, and the version
+that is actually pleasant, side by side, agreeing to six digits in a
+test.
+
+## 6. Training, in practice
+
+The parts that no formula warns you about:
+
+- **Initialization**: all-zero weights make every neuron in a layer
+  identical forever (they get identical gradients); random small ones,
+  scaled by the layer's size (Xavier/Glorot, 2010; He, 2015), train.
+- **Batches**: average the gradient over 32 examples instead of
+  stepping on each one. Less noise, better use of the matrix
+  multiply -- and the noise of small batches is itself useful, which is
+  why nobody uses the full dataset.
+- **Epochs, and overfitting**: keep some examples out of the training
+  set. The training loss falls forever; the *held-out* loss falls and
+  then rises, and where it turns is where the network stopped learning
+  the rule and started memorising the examples. Drawing both curves is
+  the single most useful picture in machine learning.
+- **The learning rate**, still the one knob that matters most: too
+  small, nothing; too large, NaN; and decaying it over time beats any
+  fixed value.
+
+## 7. Three examples, each watchable
+
+The reason all of this belongs in a *playground*: training is a loop
+with a picture, and 60 frames a second is plenty to watch a network
+learn.
+
+- `AiNeuralNet.ml` -- points in two spirals, a 2-8-8-1 network, the
+  decision boundary recoloured every frame and the loss curve
+  underneath. Turn off a hidden layer and the boundary cannot bend
+  enough; that is model capacity, seen rather than defined. (The
+  ancestor is TensorFlow Playground, playground.tensorflow.org, which
+  this project shares a name with by coincidence.)
+- `AiPerceptron.ml` -- §1: the line, and XOR defeating it.
+- `AiDigits.ml` -- draw a digit with the mouse, get ten output bars. A
+  256-64-10 network is about 17,000 weights, a fraction of a second per
+  epoch here. **And no dataset is downloaded**: the training digits are
+  drawn by our own Hershey font (`graphics/font`) at random sizes,
+  rotations, thicknesses and noise. Self-contained, honest about what
+  it can recognise, and a pleasing loop -- the renderer teaching the
+  network. The instructive failure is built in: it does fine on digits
+  that look like its font and worse on yours, which is what "the
+  training distribution" means, concretely.
+
+## 8. Learning to play
+
+Supervised learning needs the answers. A game has none -- only a result
+at the end, long after the move that caused it. That is the
+**credit assignment** problem, and it has an old and beautiful answer.
+
+**Rewards and values.** Instead of the right move, learn the *value* of
+a position: how well it is likely to end. Then play by looking one move
+ahead and taking the best value.
+
+**Temporal difference** (Sutton, 1988). Don't wait for the end. If the
+position after your move looks better than the one before, that
+difference is itself the signal -- adjust the earlier estimate toward
+the later one:
+
+```
+   V(s) <- V(s) + rate * ( r + gamma * V(s') - V(s) )
+                          \_________________________/
+                           the temporal difference:
+                           what you now think, minus what you thought
+```
+
+`gamma` (the discount) is how much a reward later is worth than one
+now; it is also what keeps the numbers finite in a game with no end.
+
+**Q-learning** (Watkins, 1989) is the same on state-action pairs:
+learn `Q(s, a)`, the value of doing `a` in `s`, and you no longer need
+a model of the world at all -- you never have to know what a move does,
+only what happened after it. On a small grid world that is a table, and
+`examples/AiQlearn.ml` draws it: four numbers per cell, an arrow for
+the best, a cliff to fall off, and the policy appearing over a few
+thousand episodes. The exploration knob (`epsilon`: act randomly this
+often) is right there to turn, and turning it to zero visibly stops
+the learning.
+
+The history is the argument for taking this seriously at small scale.
+Arthur Samuel's checkers player (1959) learned by playing itself on an
+IBM 704 and beat its author -- the first program to learn a game, and
+the source of the phrase "machine learning". Gerald Tesauro's
+**TD-Gammon** (1992) was a network with **80 hidden units**, trained by
+TD on self-play games, and it reached within a hair of the world's best
+backgammon players -- and taught them opening moves the human canon had
+wrong. Eighty hidden units is a network this project can train in
+minutes. The size was never the point; matching the method to the game
+was.
+
+## 9. The two halves joined: a network inside the search
+
+[`notes_ai.md`](notes_ai.md) §10 left Monte Carlo tree search at its
+ceiling: random playouts, a weak amateur on 9x9 Go. Two places in that
+loop are begging for a better guess, and a network fits each:
+
+```
+   select    ... + a prior from the network        which moves are worth trying
+   expand
+   simulate  replace the random playout entirely   how good is this position
+   backup
+```
+
+That is AlphaGo's shape (Silver et al., 2016; AlphaGo Zero, 2017): a
+**policy** head suggesting moves, a **value** head scoring positions,
+MCTS using both, and the network trained on the search's own results --
+the search makes the network better, the network makes the search
+better. Written out, the loop is perhaps two hundred lines, and every
+piece of it is in this directory.
+
+What is *not* here is the compute: AlphaGo Zero was thousands of TPUs
+for days. On a laptop, in OCaml, on 9x9, with a few thousand weights
+and a few thousand self-play games, the realistic outcome is a player
+that beats its own random-playout version and loses to a decent human
+-- and that is the result to report. The thing being taught is that the
+mechanism is small and the scale is not, which is a more useful thing
+to know about modern AI than any benchmark.
+
+## 10. What this deliberately isn't
+
+No GPU, no convolutions at real scale, no transformers, no pretrained
+weights, nothing that needs a download. Those are engineering at a size
+this repository cannot teach honestly, and their absence costs nothing
+here: every idea above -- the neuron, the chain rule, the gradient, the
+value function, the search guided by a guess -- is exactly the same at
+seventeen thousand weights as at seventeen billion. The rest is
+hardware.
+
+## Glossary
+
+- **Perceptron**: one neuron with a step, and a one-line learning rule;
+  **linearly separable**: what it can (and XOR cannot) do.
+- **Activation** (sigmoid, tanh, relu): the non-linearity, without
+  which a stack of layers is one layer.
+- **Loss**: how wrong, as one number; **MSE**, **cross-entropy**.
+- **Gradient**: the derivative of the loss by every weight;
+  **gradient descent**, **learning rate**.
+- **Backpropagation**: all the derivatives in one backward pass;
+  **chain rule**; **finite differences**, its slow check.
+- **Vanishing gradient**: the backward signal multiplied away layer by
+  layer -- why relu replaced sigmoid.
+- **Autodiff** (reverse mode): backpropagation for arbitrary graphs,
+  written once.
+- **Batch**, **epoch**, **overfitting**, **held-out set**.
+- **Initialization**: why not zeros.
+- **Reward**, **value function** V(s), **Q(s, a)**, **discount**
+  (gamma), **policy**.
+- **Credit assignment**: which of the fifty moves lost the game.
+- **Temporal difference**, **Q-learning**, **epsilon-greedy**,
+  **self-play**.
+- **Policy head**, **value head**: a network's two answers inside a
+  search.
