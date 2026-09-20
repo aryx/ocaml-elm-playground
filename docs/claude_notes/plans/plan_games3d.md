@@ -336,12 +336,26 @@ angle, standing in it.
   shells -- which is the question the N64 era actually answered, what
   to model and what to draw. With it the three things the picture
   cannot give: the powerslide and its mini-turbo, items handed out by
-  place, and the rubber band (`plan_ai_teaching.md`'s example).
-- **Kit**, the racing kit of `plan_games.md` in 3D: `Track3d` (a
-  track as a spline of segments with width, banking and height,
-  turned into a ribbon of quads, `cached3d`), the chase `Camera3d`,
-  a car (elm-physics's RaycastCar for the real thing; the 2D kit's
-  bicycle model is enough for a toy), laps and checkpoints.
+  place, and the rubber band (`plan_ai_teaching.md`'s example) -- and,
+  on the ribbon, a circuit that climbs, leans into its one banked
+  corner and throws you off a ramp near the crest, where the shadow
+  staying on the boards is what says how high you are.
+- **Kit**, the racing kit of `plan_games.md` in 3D: `Track3d` (DONE:
+  `kits/racing/3d/Track3d.ml`, its own library beside `kit_racing`
+  because it draws, and the 3D playground is virtual: a 2D game
+  linking the racing kit would otherwise have to link a 3D backend
+  too). A course is a handful of control points with a width, a height
+  and a bank; a Catmull-Rom spline through them, resampled at even
+  distances, gives segments of the same length, so "how far along" is
+  a distance in world units. A game then says everything in (`s`,
+  `offset`): `at`/`across` place a thing on the ribbon, `locate` is the
+  way back from a point in the world, `strip`/`wall` draw it.
+  TinyMarioKart64 drives on it; TinyVirtuaRacing is the obvious second
+  user (its course is a `Road.t` and its ribbon is written out in the
+  game). Still to come when a game needs them: the chase `Camera3d`
+  (exists), a car (elm-physics's RaycastCar for the real thing; the 2D
+  kit's bicycle model is enough for a toy), checkpoints, and a bank
+  that *pulls* the car rather than only tilting the road.
 
 ### 10. Third-person action and fixed cameras
 
@@ -460,11 +474,14 @@ because players see them as 3D.
   the smallest trick there (two lines and a sort, 33 of its 404), and
   the fourth family of `games2.5d/README.md` next to cell by cell, row
   by row and column by column: **object by object**.
-- **What it alone has to deal with**: its world has a real third
-  dimension -- you fly *over* the walls -- and a projection that keeps
-  no depth cannot say how high you are. Hence the shadow: every flying
-  thing drawn twice, and the gap between the two *is* the altitude.
-  Every isometric game since inherits both the problem and the answer.
+- **What it alone has to deal with**: its world keeps the same
+  restriction as the rest of `games2.5d/`, one height per point (a
+  wall is blocks on the floor, and nothing is ever above you), but the
+  *player* has a height where the others fix the eye at one level --
+  and a projection that keeps no depth cannot say what that height is.
+  Hence the shadow: every flying thing drawn twice, and the gap
+  between the two *is* the altitude. Every isometric game since
+  inherits both the problem and the answer.
 - **Kit**: none yet, on purpose. The projection is ten lines in the
   game; a second isometric game (a TinyQbert, a TinyKnightLore) is
   what would move it into one, as the rule of two says.

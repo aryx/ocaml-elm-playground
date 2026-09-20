@@ -283,6 +283,7 @@
    elm_playground_3d
    elm_playground_3d_software ; an implem of virtual elm_playground_3d
    kit_racing
+   kit_racing3d ; TinyMarioKart64's circuit
    kit_sectors
    kit_heightmap
    kit_segments

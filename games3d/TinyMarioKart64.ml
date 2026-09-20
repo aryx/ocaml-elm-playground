@@ -8,16 +8,18 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* A toy version of Mario Kart 64 (Nintendo, 1996): three laps of a
- * circuit against seven computer karts, through traffic, with item
- * boxes to drive into and a powerslide that pays you a boost. Up to
- * accelerate, down to brake, left/right to steer, shift to hop and
- * slide, space to use what you hold.
+ * circuit against seven computer karts, over a hill and through
+ * traffic, with item boxes to drive into, a ramp to fly off and a
+ * powerslide that pays you a boost. Up to accelerate, down to brake,
+ * left/right to steer, shift to hop and slide, space to use what you
+ * hold.
  *
  * The trick of this game is that it draws with two things at once, and
  * which is which is the whole lesson:
  *
  *   - polygons for the world and for what a box can be: the road, the
- *     rails, the item boxes, and the lorries and cars of the traffic;
+ *     rails, the ramp, the item boxes, and the lorries and cars of the
+ *     traffic;
  *   - sprites for the karts, the trees, the bananas and the shells:
  *     flat pictures, turned to face the eye, standing on the ground.
  *
@@ -55,18 +57,27 @@
  *     So the boxes shade their own faces instead ([solid], [shade]),
  *     which is what the N64 did with vertex colours.
  *
- * Underneath the picture there is no new game: the kart is
- * games/TinyMicroMachines' car on a plane (the racing kit's Topdown),
- * the circuit a Tilemap with its waypoints written into it as letters,
- * which give the laps, the places and the computer's driving. That is
- * the same model as games2.5d/TinyKart, drawn a third way:
+ * The circuit is the racing kit's Track3d: a closed spline with a
+ * width, a height and a lean at every point, resampled into segments
+ * and drawn as a ribbon of quads. Everything in the game is then said
+ * in the two numbers that ribbon gives -- how far along the lap [s] is,
+ * and how far across [offset]:
  *
- *     TinyMicroMachines        TinyKart           TinyMarioKart64
- *     from straight above      Mode 7             polygons + sprites
- *            same Topdown.t, same waypoints, three pictures
+ *     the road         |offset| < width           the lap     s / length
+ *     the kerb         |offset| < width + 1.4     the places  compare s
+ *     the grass        beyond that                the rails   at the edge
+ *     the traffic      a lane at a fixed offset   an item box (s, offset)
+ *
+ * which is why there is no map in this file at all, and why the road
+ * can climb and lean: the ribbon carries the height and the bank, and
+ * a kart drawn at its offset stands on the slope ([ground]). The car
+ * underneath is still games/TinyMicroMachines' (the racing kit's
+ * Topdown, driven on the plane, the height only drawn) -- that much is
+ * shared with games2.5d/TinyKart, where the same car is drawn in Mode
+ * 7, which cannot show a hill at all.
  *
  * What the picture cannot give, this game adds, and they are Mario
- * Kart's own three:
+ * Kart's own:
  *
  *   - the powerslide ([step_kart]): hop, slide, charge, let go, boost.
  *     It is why a good player never takes a corner straight -- and it
@@ -80,22 +91,31 @@
  *     same for everyone; the rule inside it is not;
  *   - the rubber band ([rubber]): the computer's karts drive faster
  *     when you are ahead of them and slower when you are behind. Mario
- *     Kart is the famous case, and the reason its races stay close.
+ *     Kart is the famous case, and the reason its races stay close;
+ *   - the hill and the ramp: the slope of the road under a kart is
+ *     taken off its gas ([step_kart] again), so the climb out of the
+ *     start is slow and the drop into the banked right-hander is fast,
+ *     and the ramp on the back straight throws you in the air, where
+ *     nothing steers and the shadow stays on the road below -- which
+ *     is games3d/TinyMario64's lesson, and free here since every kart
+ *     already drags one.
  *
- * Uses: the racing kit's Topdown (with games/TinyMicroMachines and
- * games2.5d/TinyKart), Tilemap, Sprite (its [runs], for the
- * billboards), Scene2d, Camera3d. Not Road and Car (a track is a list
- * of segments there, a map here: see kits/racing/Road.mli), not
- * Physics3d (the arcade's few rules, like Topdown's: no tyre forces),
- * not cached3d for anything that moves (only the circuit is static).
+ * Uses: the racing kit's Track3d (the circuit) and Topdown (the car,
+ * with games/TinyMicroMachines and games2.5d/TinyKart), Sprite (its
+ * [runs], for the billboards), Scene2d, Camera3d. Not Road and Car
+ * (a course is a list of segments there, a ribbon here: see
+ * kits/racing/Road.mli and 3d/Track3d.mli), not Tilemap (the circuit
+ * was a map until the ribbon made the hill possible), not Physics3d
+ * (the arcade's few rules, like Topdown's: no tyre forces, and the
+ * bank does not pull the kart down the camber).
  *
  * Exercises: split screen for two players (four in the original: the
- * camera and the viewport twice, games/TinyXpilot.ml does it in 2D);
- * hills and a jump (a height per waypoint, used only to draw and to
- * place the camera -- the model stays flat on its plane); a shell that
- * bounces off the rails instead of dying on them; a blue shell; the
- * "lakitu" who fishes you out when you fall; fog and a draw distance,
- * the N64's other two tricks (see plan_3d_remaining.md).
+ * camera and the viewport twice, games/TinyXpilot.ml does it in 2D); a
+ * shell that bounces off the rails instead of dying on them; a blue
+ * shell; the "lakitu" who fishes you out when you fall; a bank that
+ * pulls the kart, which would make the banked corner worth driving
+ * high; fog and a draw distance, the N64's other two tricks (see
+ * plan_3d_remaining.md).
  *)
 open Playground
 open Playground3d
@@ -104,62 +124,47 @@ open Playground3d
 (* The circuit *)
 (*****************************************************************************)
 
-let tile = 6.
-
-(* The grass '.', the road '#', the kerb '*', the start line '=', an
- * item box '?', and the waypoints 'a', 'b', ... on the road's middle,
- * in the order they are driven (all of them road to drive on).
+(* The course, as the handful of points the road passes through (see
+ * kits/racing/3d/Track3d.mli): where, how high, how wide, and how much
+ * it leans. Read it as a lap: the start and finish straight, the long
+ * climb, the banked right-hander taken downhill, the dip at the
+ * bottom, a left-hander and the drag back up.
  *
- * Drawn from a closed spline through eleven points, every cell within
- * 1.75 tiles of it road and within 2.35 kerb, which is why the road
- * widens a little where it turns hard. *)
-let map =
-  Tilemap.of_strings tile
-    [ "........................................";
-      "........................................";
-      "........***##=######?##*****............";
-      "......*######=######?########**.........";
-      ".....*####r##=a###b#?#c####d####*.......";
-      "....*########=######?############*......";
-      "...*##q##****.........*****####e###.....";
-      "...*####....................**#####*....";
-      "...####*.......................*####....";
-      "...####.........................#f##....";
-      "..*#p##.........................####*...";
-      "..*###*.........................####....";
-      "..*###*..............****.....*#####....";
-      "..*####............*##?###***####g#*....";
-      "...#o##...........*##j?############.....";
-      "...####*.........#####?##i###h###*......";
-      "...*####*......*######**#######**.......";
-      "....##n##*...*####k#*....*****..........";
-      "....*######**######*....................";
-      ".....*#####?##l###*.....................";
-      "......*###m?####*.......................";
-      "........*##?##**........................";
-      ".........*****..........................";
-      "........................................";
-      "........................................" ]
+ *          start/finish          climb
+ *        +---------------------------+
+ *        |                            \      banked
+ *        |                             |     right
+ *        \                            /
+ *         \          dip            /
+ *          +-----+          +------+
+ *                 \        /
+ *                  +------+   the ramp is on the way back up
+ *)
+let course : Track3d.control list =
+  let control = Track3d.control in
+  (* the first one is in the middle of the start straight, so that the
+   * lap turns over where the chequered line is and the grid lines up
+   * on a straight rather than in the last corner *)
+  [ control ~width:11. (-40.) (-45.);
+    control ~width:11. (-9.) (-48.);
+    control ~y:9. ~width:10. 51. (-42.);
+    control ~y:5.5 ~width:9.5 ~bank:(-15.) 84. (-24.);
+    control ~y:1.5 ~width:9.5 ~bank:(-17.) 84. 6.;
+    control ~y:(-1.) ~width:10. 51. 21.;
+    control ~y:(-3.5) ~width:10.5 15. 15.;
+    control ~y:(-1.) ~width:9.5 ~bank:12. (-15.) 36.;
+    control ~y:3. ~width:10. (-51.) 51.;
+    control ~y:5. ~width:10. (-84.) 24.;
+    control ~y:2. ~width:10.5 (-87.) (-15.);
+    control ~y:0.5 ~width:11. (-69.) (-42.) ]
 
-let cols = Tilemap.cols map
-let rows = Tilemap.rows map
-
-(* the waypoints, 'a' then 'b', ..., until a letter isn't in the map;
- * passed within 13 of their middle (the road is about 20 wide) *)
-let track : Topdown.track =
-  let rec letters (c : char) =
-    match Tilemap.find map c with
-    | [ (col, row) ] -> Tilemap.center map col row :: letters (Char.chr (Char.code c + 1))
-    | _ -> []
-  in
-  { points = Array.of_list (letters 'a'); reach = 13.; corner = 24. }
-
-let waypoints = Array.length track.points
+let track : Track3d.t = Track3d.build ~step:3. course
+let lap_length = Track3d.length track
 let laps = 3
 
 (* TinyMicroMachines' toy car (Topdown.toy) at this game's scale, where
- * a tile is 6 world units instead of 100: a lap is about 460 units,
- * eleven seconds of it *)
+ * the road is 20 wide instead of 300: a lap is about 470 units, some
+ * fifteen seconds of it *)
 let params : Topdown.params = { accel = 54.; friction = 1.5; grip = 0.12; steering = 3.5; steering_speed = 15. }
 
 (* the same, with the grip halved: a sliding kart keeps going the way
@@ -168,83 +173,49 @@ let sliding_params : Topdown.params = { params with grip = 0.05 }
 
 let road_speed = 42.
 
-(* how fast a kart can go where it stands: the grass is a crawl, the
- * kerb costs a little, and off the map is worse than grass *)
-let top_speed_at (x : number) (y : number) : number =
-  match Tilemap.tile_at map x y with None -> 12. | Some '.' -> 17. | Some '*' -> 34. | Some _ -> road_speed
+(* the kerb is the strip just outside the road, and the grass just
+ * outside that; beyond the rails there is nowhere to be *)
+let kerb = 1.4
+let verge = 5.
 
-(* Which grass is outside the circuit and which is the infield: a flood
- * fill of the grass from the map's border. Everything it reaches is
- * outside, and the rails stand where the circuit meets it; what it
- * does not reach is the infield, open and merely slow. So cutting a
- * corner over the grass costs you speed, and running wide costs you
- * the rail.
- *
- *     ===============  rails
- *    | #############  the circuit
- *    | ####       ###
- *    | ###   .     ##   the infield: grass, no rail, drive on it
- *    | ####       ###
- *     ===============
- *   the outside: everything the fill reached from the border *)
-let is_grass (col : int) (row : int) : bool =
-  match Tilemap.get map col row with Some '.' -> true | _ -> false
+(* how fast a kart can go, by how far across the road it is: the grass
+ * is a crawl and the kerb costs a little *)
+let top_speed_at (width : number) (offset : number) : number =
+  let out = Float.abs offset in
+  if out < width then road_speed else if out < width +. kerb then 34. else 17.
 
-let outside : bool array array =
-  let out = Array.make_matrix rows cols false in
-  let todo = Queue.create () in
-  let push (col : int) (row : int) =
-    if col >= 0 && col < cols && row >= 0 && row < rows && is_grass col row && not out.(row).(col) then begin
-      out.(row).(col) <- true;
-      Queue.add (col, row) todo
-    end
-  in
-  for col = 0 to cols - 1 do
-    push col 0;
-    push col (rows - 1)
-  done;
-  for row = 0 to rows - 1 do
-    push 0 row;
-    push (cols - 1) row
-  done;
-  while not (Queue.is_empty todo) do
-    let col, row = Queue.pop todo in
-    push (col - 1) row;
-    push (col + 1) row;
-    push col (row - 1);
-    push col (row + 1)
-  done;
-  out
-
-let is_outside (col : int) (row : int) : bool =
-  col < 0 || col >= cols || row < 0 || row >= rows || outside.(row).(col)
-
-(* a rail is between here and the outside: not a place a kart can be *)
-let walled (x : number) (y : number) : bool =
-  let col, row = Tilemap.cell map x y in
-  is_outside col row
-
-(* [unwall before car]: a kart that has just driven into a rail, put
- * back. One axis at a time, so that a kart meeting the rail at an
- * angle scrapes along it instead of stopping dead -- the oldest
- * collision trick there is, and the reason a wall feels smooth. *)
-let unwall (before : Topdown.t) (car : Topdown.t) : Topdown.t =
-  if not (walled car.x car.y) then car
-  else if not (walled car.x before.y) then { car with y = before.y; vy = 0. }
-  else if not (walled before.x car.y) then { car with x = before.x; vx = 0. }
-  else { car with x = before.x; y = before.y; vx = 0.; vy = 0.; speed = car.speed *. 0.5 }
+(* the rails stand at the edge of the grass, both sides, all the way
+ * round: this circuit is Toad's Turnpike, not a field *)
+let wall_offset (width : number) : number = width +. kerb +. verge
 
 (*****************************************************************************)
-(* The map's plane, in space *)
+(* The ribbon, in space *)
 (*****************************************************************************)
 
-(* The map is drawn on paper, where y goes up the page; the world's z
- * goes into the screen. So z = -y, and a heading of 0 on the map
- * (towards +x) is a heading of 90 in space (Camera3d's headings: 0
- * towards -z, 90 towards +x). Everything below goes through these two
- * lines, and they are the only place the two frames meet. *)
+(* The car is driven on a plane and drawn in space, and these two lines
+ * are the only place the two meet: the plane's y goes up the page, the
+ * world's z into the screen, so z = -y; and a heading of 0 on the
+ * plane (towards +x) is a heading of 90 in space (Camera3d's headings:
+ * 0 towards -z, 90 towards +x). *)
 let world (x : number) (y : number) (h : number) : number * number * number = (x, h, -.y)
 let heading3d (a : number) : number = 90. -. a
+
+(* [locate car]: where a car is on the circuit -- how far along the lap
+ * and how far to the right of the middle. [near] is its own last
+ * answer, since a circuit passes near itself and the nearest bit of
+ * road is not always the one you are on. *)
+let locate ?(near = -1.) (x : number) (y : number) : number * number = Track3d.locate ~near track x (-.y)
+
+(* the road's surface at a place on the ribbon: its height, and the
+ * point of the plane under it *)
+let ground (s : number) (offset : number) : number =
+  let _, y, _ = Track3d.across track s offset in
+  y
+
+(* [plane_at s offset]: the same point, back on the car's plane *)
+let plane_at (s : number) (offset : number) : number * number =
+  let x, _, z = Track3d.across track s offset in
+  (x, -.z)
 
 (* the flat shading this game does by hand, since the backend does none
  * (see the header): a colour at a fraction of its light *)
@@ -272,91 +243,103 @@ let solid ((r, g, b) : int * int * int) (w : number) (h : number) (d : number) :
 (* The circuit, in polygons *)
 (*****************************************************************************)
 
-(* one colour per cell: the grass and the road in squares of two cells
- * (a flat floor of one colour does not seem to move under you), the
- * kerb in red and white stripes, the start line chequered *)
-let tile_color (c : char) (col : int) (row : int) : color =
-  let big = ((col / 2) + (row / 2)) land 1 = 0 in
-  let small = (col + row) land 1 = 0 in
-  match c with
-  | '.' -> if big then rgb 74 152 64 else rgb 82 164 70
-  | '*' -> if small then rgb 220 55 50 else rgb 236 236 236
-  | '=' | 'a' -> if small then rgb 235 235 235 else rgb 45 45 45
-  | _ -> if big then rgb 104 104 112 else rgb 112 112 120
+(* Where the start line is, and where the ramp is: both are stretches
+ * of the lap, said in the one coordinate the ribbon has. *)
+let start_line = 6.
 
-(* the ground: a quad per run of cells of the same colour in a row,
- * which is Sprite.pixels' trick (kept here because it turns 1000 cells
- * into some 400 quads), the quads wound so that their faces point up *)
-let ground_shapes : shape3d list =
-  let color_at (col : int) (row : int) : color =
-    tile_color (match Tilemap.get map col row with Some c -> c | None -> '.') col row
-  in
-  let quad (color : color) (col : int) (len : int) (row : int) : shape3d =
-    let x, y = Tilemap.center map col row in
-    let x1 = x -. (tile /. 2.) and x2 = x +. ((float_of_int len -. 0.5) *. tile) in
-    let z1 = -.(y +. (tile /. 2.)) and z2 = -.(y -. (tile /. 2.)) in
-    polygon3d color [ (x1, 0., z1); (x1, 0., z2); (x2, 0., z2); (x2, 0., z1) ]
-  in
-  let row_shapes (row : int) : shape3d list =
-    let shapes = ref [] and start = ref 0 in
-    for col = 1 to cols do
-      if col = cols || color_at col row <> color_at !start row then begin
-        shapes := quad (color_at !start row) !start (col - !start) row :: !shapes;
-        start := col
-      end
-    done;
-    !shapes
-  in
-  List.concat_map row_shapes (List.init rows Fun.id)
+(* the ramp is near the top of the climb, so that a kart takes off over
+ * the crest and lands on the way down it; it spans the whole road, so
+ * that it is a thing that happens to you rather than a thing to aim
+ * for *)
+let ramp_at = 66.
+let ramp_length = 9.
+let ramp_half = 11.5
 
-(* the rails, one quad along every edge where the circuit meets the
- * outside: red and white, an arcade barrier *)
-let rail_height = 1.7
-
-let rail_shapes : shape3d list =
-  let wall (color : color) ((x1, y1) : number * number) ((x2, y2) : number * number) : shape3d =
-    polygon3d color [ (x1, 0., -.y1); (x2, 0., -.y2); (x2, rail_height, -.y2); (x1, rail_height, -.y1) ]
+(* one segment of circuit: the road, its kerbs (red and white, in
+ * stripes along it), the grass either side, the line down the middle,
+ * and the rails at the edge *)
+let segment_shapes (i : int) : shape3d list =
+  let p = Track3d.at track (float_of_int i *. Track3d.step track) in
+  let w = p.width in
+  let light = i / 2 mod 2 = 0 in
+  let strip = Track3d.strip track in
+  let grass = if light then rgb 74 152 64 else rgb 82 164 70 in
+  let kerb_color = if i mod 2 = 0 then rgb 220 55 50 else rgb 236 236 236 in
+  let road = if light then rgb 104 104 112 else rgb 112 112 120 in
+  let edge = wall_offset w in
+  let on_line = float_of_int i *. Track3d.step track -. start_line in
+  let on_line = on_line >= 0. && on_line < Track3d.step track *. 2. in
+  (* the start line is chequered across the road, and a strip is one
+   * colour, so it takes six of them where the road takes one *)
+  let line_strips =
+    List.init 6 (fun k ->
+        let a = w *. ((float_of_int k /. 3.) -. 1.) and b = w *. ((float_of_int (k + 1) /. 3.) -. 1.) in
+        strip (if (i + k) mod 2 = 0 then white else rgb 45 45 45) i a b)
   in
-  let cell_walls (col : int) (row : int) : shape3d list =
-    if is_grass col row || is_outside col row then []
-    else
-      let x, y = Tilemap.center map col row in
-      let h = tile /. 2. in
-      let color = if (col + row) land 1 = 0 then rgb 215 60 55 else rgb 240 240 240 in
-      List.filter_map Fun.id
-        [ (if is_outside (col - 1) row then Some (wall color (x -. h, y -. h) (x -. h, y +. h)) else None);
-          (if is_outside (col + 1) row then Some (wall color (x +. h, y +. h) (x +. h, y -. h)) else None);
-          (if is_outside col (row - 1) then Some (wall color (x +. h, y +. h) (x -. h, y +. h)) else None);
-          (if is_outside col (row + 1) then Some (wall color (x -. h, y -. h) (x +. h, y -. h)) else None) ]
+  [ strip grass i (-.edge) (-.w -. kerb);
+    strip kerb_color i (-.w -. kerb) (-.w) ]
+  @ (if on_line then line_strips else [ strip road i (-.w) w ])
+  @ [
+    strip kerb_color i w (w +. kerb);
+    strip grass i (w +. kerb) edge;
+    Track3d.wall track (if i mod 2 = 0 then rgb 215 60 55 else rgb 240 240 240) i (-.edge) 1.7;
+    Track3d.wall track (if i mod 2 = 0 then rgb 215 60 55 else rgb 240 240 240) i edge 1.7 ]
+  @ if light && not on_line then [ strip white i (-0.25) 0.25 ] else []
+
+(* The ramp, a wedge of boards across the road: the one place the
+ * circuit leaves the ribbon, since it has to rise above it. Drawn from
+ * the ribbon all the same -- its corners are (s, offset) points like
+ * everything else. *)
+let ramp_height = 1.7
+
+let ramp_shapes : shape3d list =
+  let up (s : number) (o : number) (h : number) : number * number * number =
+    let x, y, z = Track3d.across track s o in
+    (x, y +. h, z)
   in
-  List.concat_map (fun row -> List.concat_map (fun col -> cell_walls col row) (List.init cols Fun.id)) (List.init rows Fun.id)
+  let steps = 6 in
+  let piece (k : int) : shape3d list =
+    let f0 = float_of_int k /. float_of_int steps and f1 = float_of_int (k + 1) /. float_of_int steps in
+    let s0 = ramp_at +. (ramp_length *. f0) and s1 = ramp_at +. (ramp_length *. f1) in
+    let h0 = ramp_height *. f0 *. f0 and h1 = ramp_height *. f1 *. f1 in
+    let color = if k mod 2 = 0 then shade (190, 140, 70) 1. else shade (170, 120, 60) 1. in
+    let w = ramp_half in
+    [ polygon3d color [ up s0 (-.w) h0; up s1 (-.w) h1; up s1 w h1; up s0 w h0 ];
+      (* the sides, so the wedge is a solid thing and not a sheet *)
+      polygon3d (shade (150, 105, 55) 1.) [ up s0 (-.w) 0.; up s0 (-.w) h0; up s1 (-.w) h1; up s1 (-.w) 0. ];
+      polygon3d (shade (150, 105, 55) 1.) [ up s0 w 0.; up s1 w 0.; up s1 w h1; up s0 w h0 ] ]
+  in
+  List.concat (List.init steps piece)
+  @ [ polygon3d (shade (120, 85, 45) 1.)
+        [ up (ramp_at +. ramp_length) (-.ramp_half) 0.; up (ramp_at +. ramp_length) (-.ramp_half) ramp_height;
+          up (ramp_at +. ramp_length) ramp_half ramp_height; up (ramp_at +. ramp_length) ramp_half 0. ] ]
 
-(* the circuit never changes, so its 600-odd quads are turned into
- * faces once and kept (on the GPU backends, into a buffer) *)
-let circuit : shape3d = cached3d (ground_shapes @ rail_shapes)
+(* the circuit never changes, so its quads are turned into faces once
+ * and kept (on the GPU backends, into a buffer) *)
+let circuit : shape3d =
+  cached3d (List.concat (List.init (Track3d.segments track) segment_shapes) @ ramp_shapes)
 
-(* the trees stand on the grass, well away from the road: one grass
- * cell in seventeen, spread by a pattern rather than at random so that
- * the same circuit comes up every run *)
+(* the trees stand on the grass beyond the rails, on both sides, one
+ * every few segments: spread by a pattern rather than at random, so
+ * that the same circuit comes up every run *)
 let tree_places : (number * number) list =
-  List.concat_map
-    (fun row ->
-      List.filter_map
-        (fun col ->
-          let around_is_grass =
-            List.for_all (fun (dc, dr) -> is_grass (col + dc) (row + dr)) [ (-1, 0); (1, 0); (0, -1); (0, 1) ]
-          in
-          if is_grass col row && around_is_grass && ((col * 7) + (row * 11)) mod 17 = 0 then
-            Some (Tilemap.center map col row)
-          else None)
-        (List.init cols Fun.id))
-    (List.init rows Fun.id)
+  List.concat
+    (List.init (Track3d.segments track) (fun i ->
+         if i mod 5 <> 0 then []
+         else
+           let s = float_of_int i *. Track3d.step track in
+           let p = Track3d.at track s in
+           let out = wall_offset p.width +. 4. +. (float_of_int (i * 7 mod 5) *. 2.5) in
+           if i mod 10 = 0 then [ (s, -.out) ] else [ (s, out) ]))
 
-(* where the item boxes are, from the map's '?' *)
+(* the item boxes: three sets of four across the road, spread round the
+ * lap *)
 let item_boxes : (number * number) array =
-  Tilemap.find map '?' |> List.map (fun (col, row) -> Tilemap.center map col row) |> Array.of_list
-
-(*****************************************************************************)
+  [| 0.18; 0.52; 0.81 |]
+  |> Array.map (fun (f : number) -> lap_length *. f)
+  |> Array.to_list
+  |> List.concat_map (fun s -> List.map (fun o -> (s, o)) [ -6.; -2.; 2.; 6. ])
+  |> Array.of_list
 (* Sprites -- the trick of this game (see the header) *)
 (*****************************************************************************)
 
@@ -473,6 +456,11 @@ let mushroom_palette : (char * color) list =
 (* The model *)
 (*****************************************************************************)
 
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
+
 type item = Banana | Green_shell | Red_shell | Mushroom
 
 (* [Sliding (side, charge)]: which way the kart is sliding, and how
@@ -490,13 +478,29 @@ type kart = {
   item : item option;
   roulette : int; (* frames left of the item still spinning *)
   wait : int; (* the computer's wait before it uses what it holds *)
+  (* where it is on the ribbon: how far along the lap, how far to the
+   * right of the middle, and which lap. [s] is also the hint the next
+   * [locate] starts from, which is what keeps a circuit that passes
+   * near itself from teleporting a kart across the infield. *)
+  s : number;
+  offset : number;
+  lap : int;
+  (* in the air, off the ramp: how high above the road, and how fast
+   * that is changing *)
+  air : number;
+  rise : number;
+  (* the offset this one likes to drive: the computer's racing line *)
+  line : number;
 }
 
 type shell = { sx : number; sy : number; shead : number; homing : bool; life : int; owner : int }
-type banana = { bx : number; by : number }
-(* a lorry or a car of the traffic, and the lane it drives:
- * [with_traffic] our way, [oncoming] against us *)
-type vehicle = { vcar : Topdown.t; lorry : bool; lane : Topdown.track }
+type banana = { bx : number; by : number; bh : number }
+
+(* A lorry or a car of the traffic. It does not drive: it is carried
+ * along the ribbon at a fixed offset, which is all a lane is, and
+ * [against] turns it round to come at you. The karts have to avoid it;
+ * it never avoids them. *)
+type vehicle = { vs : number; lane : number; lorry : bool; against : bool }
 
 type race = {
   karts : kart array; (* the player's first *)
@@ -512,80 +516,69 @@ type race = {
 type scene = Title | Racing of race | Finished of race * int (* the player's place *)
 type model = scene Scene2d.t
 
-(* [offset_track side reverse]: the same loop of waypoints, moved
- * [side] to the left of the way it is driven, and driven the other way
- * round if [reverse]. The traffic drives on these: the lorries going
- * our way keep right, the oncoming cars keep right too -- which is
- * their left, and ours to meet. *)
-let offset_track (side : number) (reverse : bool) : Topdown.track =
-  let n = waypoints in
-  let pt (i : int) : number * number = Topdown.point track (if reverse then n - i else i) in
-  let points =
-    Array.init n (fun i ->
-        let x1, y1 = pt i and x2, y2 = pt (i + 1) in
-        let a = atan2 (y2 -. y1) (x2 -. x1) +. (Float.pi /. 2.) in
-        (x1 +. (side *. cos a), y1 +. (side *. sin a)))
-  in
-  { track with points }
-
-(* The two lanes, 7.2 either side of the middle of a road 20 wide.
- * That number is the whole of the traffic as a thing to drive through:
- * a kart is spun by a lorry within 3.6 of it, so passing one on the
- * outside is impossible (7.2 + 3.6 is the grass) and passing it on the
- * inside leaves a corridor 7 wide up the middle of the road. Put the
- * lanes at 5.5 instead and that corridor is 4 wide, which is to say
- * the traffic simply ends the race of whoever meets it. *)
-let with_traffic : Topdown.track = offset_track (-7.2) false
-let oncoming : Topdown.track = offset_track (-7.2) true
-
 let kart_colors =
   [| rgb 220 40 40; rgb 60 170 70; rgb 240 200 40; rgb 60 100 220; rgb 230 120 200; rgb 80 200 210;
      rgb 240 140 40; rgb 150 90 210 |]
 
 let karts_in_race = 8
 
-(* A line of its own for every kart, up to 3.8 either side of the
- * middle of the road -- inside the traffic's lanes. Topdown.computer drives at the waypoints, so without
- * this the seven computers all drive the one racing line: they queue
- * up in single file, bump along it, and reach for the same item box.
- * Only the steering uses these; the laps and the places stay on the
- * track itself. *)
-let lines : Topdown.track array =
-  Array.init karts_in_race (fun i -> offset_track ((float_of_int i -. 3.5) *. 1.1) false)
+(* The two lanes, 7.2 either side of the middle of a road 20 wide. That
+ * number is the whole of the traffic as a thing to drive through: a
+ * kart is spun by a lorry within 3.6 of it, so passing one on the
+ * outside is impossible (7.2 + 3.6 is the kerb) and passing it on the
+ * inside leaves a corridor 7 wide up the middle. Put the lanes at 5.5
+ * instead and that corridor is 4 wide, which is to say the traffic
+ * simply ends the race of whoever meets it. *)
+let lane = 7.2
+let lorry_speed = 15.
+let car_speed = 21.
 
 (* the grid behind the start line, the player last as in every Mario
  * Kart; the computer's karts are a shade slower flat out than the
- * player's, and make it up with the rubber band ([rubber]) *)
+ * player's, and make it up with the rubber band ([rubber]).
+ *
+ * Four across and two rows deep, rather than two and four: a road 20
+ * wide holds them, and the four go through four different item boxes
+ * instead of queueing for the same one. *)
+let grid_sides = [| 8.; 2.7; -2.7; -8. |]
+
 let new_race () : race =
-  (* four across and two rows deep, rather than two and four: a road 20
-   * wide holds them, and the four go through four different item boxes
-   * instead of queueing for the same one *)
-  let grid_sides = [| 8.; 2.7; -2.7; -8. |] in
   let on_grid (slot : int) : kart =
-    let c = Topdown.start track 0 grid_sides.(slot mod 4) in
-    let back = 6. +. (9. *. float_of_int (slot / 4)) in
-    let a = c.heading *. Float.pi /. 180. in
-    { car = { c with x = c.x -. (back *. cos a); y = c.y -. (back *. sin a) };
+    let offset = grid_sides.(slot mod 4) in
+    (* staggered, as a grid is: without the 0.9 the four of a row are
+     * exactly level, and four karts tie for fifth place *)
+    let s = start_line -. 8. -. (9. *. float_of_int (slot / 4)) -. (0.9 *. float_of_int (slot mod 4)) in
+    let s = Float.rem (s +. lap_length) lap_length in
+    let p = Track3d.at track s in
+    let x, y = plane_at s offset in
+    { car = { x; y; vx = 0.; vy = 0.; heading = 90. -. p.heading; speed = 0.; next = 1 };
       color = kart_colors.(if slot = karts_in_race - 1 then 0 else slot + 1);
       base_top = (if slot = karts_in_race - 1 then road_speed else road_speed -. 3. +. (float_of_int slot *. 0.25));
-      boost = 0; spin = 0; hop = 0; drift = Straight; item = None; roulette = 0; wait = 0 }
+      boost = 0; spin = 0; hop = 0; drift = Straight; item = None; roulette = 0; wait = 0;
+      s; offset;
+      (* the grid is behind the start line, so the first crossing is
+       * what makes it lap 0: start the race one lap in hand *)
+      lap = -1;
+      air = 0.; rise = 0.;
+      (* a line of its own for each one, up to 3.8 either side of the
+       * middle: without it the seven computers drive the one racing
+       * line, queue up in single file and reach for the same item box *)
+      line = (float_of_int slot -. 3.5) *. 1.1 }
   in
   let grid = Array.init karts_in_race on_grid in
-  let vehicle (lane : Topdown.track) (lorry : bool) (at_waypoint : int) : vehicle =
-    { vcar = Topdown.start lane at_waypoint 0.; lorry; lane }
+  let vehicle (lorry : bool) (against : bool) (f : number) : vehicle =
+    { vs = lap_length *. f; lane = (if against then lane else -.lane); lorry; against }
   in
   { karts = Array.append [| grid.(karts_in_race - 1) |] (Array.sub grid 0 (karts_in_race - 1));
+    (* spread round the circuit, and none of them near the grid: the
+     * oncoming ones drive *towards* the start line, so one placed just
+     * ahead of it arrives exactly as the lights go out *)
     traffic =
-      Array.of_list
-        (* Spread round the circuit, and none of them near the grid:
-         * the oncoming ones drive *towards* the start line, so one
-         * placed a few waypoints from it arrives exactly as the lights
-         * go out, and the race is over for whoever it meets. *)
-        [ vehicle with_traffic true 3; vehicle with_traffic true 6; vehicle with_traffic false 9;
-          vehicle with_traffic true 12; vehicle oncoming false 4; vehicle oncoming true 8;
-          vehicle oncoming false 12 ];
-    shells = []; bananas = []; boxes = Array.make (Array.length item_boxes) 0; view_angle = 0.; frames = 0;
-    ready = 180 }
+      [| vehicle true false 0.2; vehicle true false 0.42; vehicle false false 0.6; vehicle true false 0.85;
+         vehicle false true 0.3; vehicle true true 0.55; vehicle false true 0.75 |];
+    shells = []; bananas = []; boxes = Array.make (Array.length item_boxes) 0;
+    view_angle = 90. -. (Track3d.at track start_line).heading;
+    frames = 0; ready = 180 }
 
 let initial_model : model = Scene2d.start Title
 
@@ -598,26 +591,26 @@ let axis (a : bool) (b : bool) : number = (if a then 1. else 0.) -. if b then 1.
 (* degrees from [a] to [b], the short way, between -180 and 180 *)
 let angle_diff (a : number) (b : number) : number = Float.rem (Float.rem (b -. a +. 180.) 360. +. 360.) 360. -. 180.
 
-(* How far round the lap, counted in waypoints (2.5: half way from the
- * second to the third), laps included. Topdown.progress orders the
- * field just as well, but this one is a distance as well as an order,
- * which is what the rubber band needs. *)
-let along (c : Topdown.t) : number =
-  let x1, y1 = Topdown.point track (c.next - 1) and x2, y2 = Topdown.point track c.next in
-  let leg = Float.max 1. (Float.hypot (x2 -. x1) (y2 -. y1)) in
-  float_of_int c.next -. (Float.hypot (x2 -. c.x) (y2 -. c.y) /. leg)
+(* the same thing for distances round a lap: from [a] to [b] the short
+ * way, between -length/2 and length/2 *)
+let lap_diff (a : number) (b : number) : number =
+  Float.rem (Float.rem (b -. a +. (lap_length /. 2.)) lap_length +. lap_length) lap_length -. (lap_length /. 2.)
+
+(* how far a kart has driven, laps included: what the places and the
+ * rubber band compare *)
+let along (k : kart) : number = (float_of_int k.lap *. lap_length) +. k.s
 
 (* the place of kart [i], 1 for the first *)
 let place_of (r : race) (i : int) : int =
-  let mine = along r.karts.(i).car in
-  Array.fold_left (fun n (k : kart) -> if along k.car > mine then n + 1 else n) 1 r.karts
+  let mine = along r.karts.(i) in
+  Array.fold_left (fun n (k : kart) -> if along k > mine then n + 1 else n) 1 r.karts
 
 (* Mario Kart's rule, and the reason its races stay close: what an item
  * box holds depends on where you are. The leader gets what only
- * defends -- a banana to drop behind, a green shell that goes straight;
- * the back of the field gets what catches up -- a mushroom, a red
- * shell that finds the kart ahead. The box is the same for everyone;
- * the rule inside it is not. *)
+ * defends -- a banana to drop behind, a green shell that goes
+ * straight; the back of the field gets what catches up -- a mushroom,
+ * a red shell that finds the kart ahead. The box is the same for
+ * everyone; the rule inside it is not. *)
 let roll (place : int) (seed : int) : item =
   if place = 1 then if seed mod 3 = 0 then Green_shell else Banana
   else if place * 2 <= karts_in_race then
@@ -629,6 +622,62 @@ let roll (place : int) (seed : int) : item =
 let spin_out (frames : int) (k : kart) : kart =
   if k.spin > 0 then k
   else { k with spin = frames; drift = Straight; boost = 0; car = { k.car with speed = k.car.speed *. 0.3 } }
+
+(* The ramp's own height, above the road, on the stretch it covers: it
+ * is the one thing in the circuit that leaves the ribbon, and a kart
+ * on it rides up the same curve the boards are drawn on. *)
+let on_ramp (s : number) (offset : number) : number =
+  if Float.abs offset > ramp_half then 0.
+  else
+    let f = lap_diff ramp_at s /. ramp_length in
+    if f < 0. || f > 1. then 0. else ramp_height *. f *. f
+
+(* gravity, for the flight off it: the kart leaves at the boards'
+ * slope, which at the top is twice the height over the length *)
+let gravity = 45.
+let ramp_slope = 2. *. ramp_height /. ramp_length
+
+(* [put_on_track k car]: where the car ended up, said in the ribbon's
+ * two numbers -- and, if that is past the rails, put back on the road.
+ * Only the offset is clamped, so a kart meeting a rail at an angle
+ * scrapes along it and keeps driving, which is the oldest collision
+ * trick there is and what makes a wall feel smooth. *)
+let put_on_track (k : kart) (car : Topdown.t) : kart =
+  let s, offset = locate ~near:k.s car.x car.y in
+  let p = Track3d.at track s in
+  let edge = wall_offset p.width in
+  let car, offset =
+    if Float.abs offset <= edge then (car, offset)
+    else
+      (* Pushed back in *across* the road, and only across it. Rebuild
+       * the whole position from (s, offset) instead -- the obvious
+       * thing -- and a kart scraping a rail never advances at all:
+       * [locate] measures the offset square across the segment while
+       * Track3d.across lays it along the way the ribbon is drawn, and
+       * seventeen out those two differ by about a quarter of a unit,
+       * which is exactly how far a kart travels in a frame. The
+       * rebuild then puts it back where it started, every frame.
+       *
+       * Scraping, not crashing: it keeps most of its speed, and the
+       * rail turns it a little back along the road. Take the speed
+       * away instead and a kart leaning on a wall is pinned there at
+       * walking pace, since it goes on steering into it -- which is
+       * every racing game's oldest complaint. *)
+      let over = Float.abs offset -. edge in
+      let along_track = 90. -. p.heading in
+      let a = along_track *. Float.pi /. 180. in
+      let inward = if offset > 0. then -.over else over in
+      let x = car.x +. (inward *. sin a) and y = car.y -. (inward *. cos a) in
+      let heading = car.heading +. Basics.clamp (-3.) 3. (angle_diff car.heading along_track) in
+      ({ car with x; y; heading; speed = car.speed *. 0.97 }, Float.copy_sign edge offset)
+  in
+  (* the lap turns over when [s] jumps back across the start line *)
+  let lap =
+    if k.s > lap_length *. 0.75 && s < lap_length *. 0.25 then k.lap + 1
+    else if k.s < lap_length *. 0.25 && s > lap_length *. 0.75 then k.lap - 1
+    else k.lap
+  in
+  { k with car; s; offset; lap }
 
 (* One frame of one kart.
  *
@@ -647,13 +696,17 @@ let spin_out (frames : int) (k : kart) : kart =
  * and a charge that wanted longer than that could only ever be earned
  * by driving off the road.
  *
- * which is why a good player never takes a corner straight, and why
- * the sprite of a kart in a corner shows you its side. *)
+ * The hill is the other half of the driving: the slope of the road
+ * under the kart is taken off its gas, so the long climb is slow and
+ * the drop into the banked corner is fast, without anything as
+ * expensive as gravity along a surface. *)
 let step_kart (holding : bool) (gas : number) (steer : number) (road_top : number) (k : kart) : kart =
+  let width = (Track3d.at track k.s).width in
+  let top_here = Float.min road_top (top_speed_at width k.offset) in
   if k.spin > 0 then
-    let car = Topdown.drive params (top_speed_at k.car.x k.car.y) 0. 0. k.car in
+    let car = Topdown.drive params top_here 0. 0. k.car in
     let car = { car with heading = car.heading +. 26. } in
-    { k with car = unwall k.car car |> Topdown.follow track; spin = k.spin - 1; hop = 0 }
+    { (put_on_track k car) with spin = k.spin - 1; hop = 0 }
   else
     let fast = k.car.speed > 18. in
     let drift =
@@ -675,13 +728,25 @@ let step_kart (holding : bool) (gas : number) (steer : number) (road_top : numbe
     let steer = match drift with Sliding (side, _) -> (0.6 *. side) +. (0.4 *. steer) | Straight -> steer in
     let p = match drift with Sliding _ -> sliding_params | Straight -> params in
     let p = if boost > 0 then { p with accel = p.accel *. 3. } else p in
-    let top = Float.min road_top (top_speed_at k.car.x k.car.y) in
     (* a boost is half again as fast wherever it is used -- which is
      * what makes a mushroom over the grass a short cut *)
-    let top = if boost > 0 then top *. 1.5 else top in
+    let top = if boost > 0 then top_here *. 1.5 else top_here in
     let gas = if boost > 0 then 1. else gas in
+    (* the slope the kart is about to drive up, or down *)
+    let ahead = Float.max 0.5 (k.car.speed /. 60.) in
+    let slope = (ground (k.s +. ahead) k.offset -. ground k.s k.offset) /. ahead in
+    let gas = Basics.clamp (-1.) 1. (gas -. (slope *. 1.6)) in
     let car = Topdown.drive p top gas steer k.car in
-    { k with car = unwall k.car car |> Topdown.follow track; drift; hop; boost = max 0 (boost - 1) }
+    let k = { (put_on_track k car) with drift; hop; boost = max 0 (boost - 1) } in
+    (* off the ramp, and back down: nothing steers what is in the air,
+     * but nothing stops it either *)
+    let was_on_ramp = on_ramp k.s k.offset in
+    if k.air > 0. || k.rise > 0. then
+      let air = k.air +. (k.rise /. 60.) and rise = k.rise -. (gravity /. 60.) in
+      if air <= 0. then { k with air = 0.; rise = 0. } else { k with air; rise }
+    else if was_on_ramp > 0. && on_ramp (k.s +. ahead) k.offset = 0. && k.car.speed > 18. then
+      { k with air = was_on_ramp; rise = k.car.speed *. ramp_slope }
+    else { k with air = 0.; rise = 0. }
 
 (* karts closer than 2.6 pushed apart, half the overlap each: bumping,
  * not crashing (games2.5d/TinyKart does the same) *)
@@ -697,11 +762,26 @@ let bump (karts : kart array) : kart array =
   Array.map (fun k -> Array.fold_left push k karts) karts
 
 (* The rubber band: a computer's kart goes up to 14% faster when the
- * player is a waypoint ahead of it, and a little slower when the
- * player is behind. It is Mario Kart's most famous piece of cheating,
- * and the reason the last lap is always worth driving; it is also why
- * a big lead never feels safe, which players hate and keep playing. *)
-let rubber (player : number) (k : kart) : number = 1. +. Basics.clamp (-0.05) 0.14 (0.12 *. (player -. along k.car))
+ * player is a hundred ahead of it, and a little slower when the player
+ * is behind. It is Mario Kart's most famous piece of cheating, and the
+ * reason the last lap is always worth driving; it is also why a big
+ * lead never feels safe, which players hate and keep playing. *)
+let rubber (player : number) (k : kart) : number = 1. +. Basics.clamp (-0.05) 0.14 (0.0014 *. (player -. along k))
+
+(* The computer's driving, now that the road is a ribbon: aim at the
+ * middle of it some way ahead, shifted onto this kart's own line, and
+ * ease off the gas if the road turns hard between here and there.
+ * There are no waypoints left to follow -- [s] is a distance, so
+ * "fourteen further on" is all a corner needs. *)
+let computer_drive (k : kart) : number * number =
+  let target_s = k.s +. 14. +. (k.car.speed *. 0.12) in
+  let tx, ty = plane_at target_s k.line in
+  let wanted = atan2 (ty -. k.car.y) (tx -. k.car.x) *. 180. /. Float.pi in
+  let diff = angle_diff k.car.heading wanted in
+  let steer = Basics.clamp (-1.) 1. (diff /. 20.) in
+  let turn = Float.abs (angle_diff (Track3d.at track k.s).heading (Track3d.at track (k.s +. 26.)).heading) in
+  let gas = if turn > 28. && k.car.speed > 30. then -0.2 else 0.95 in
+  (gas, steer)
 
 (* The computer's karts are the only ones that see the traffic coming:
  * a vehicle in the 20 ahead of one, and it steers away from the side
@@ -712,7 +792,8 @@ let avoid (traffic : vehicle array) (c : Topdown.t) : number =
   let a = c.heading *. Float.pi /. 180. in
   Array.fold_left
     (fun steer (v : vehicle) ->
-      let dx = v.vcar.x -. c.x and dy = v.vcar.y -. c.y in
+      let vx, vy = plane_at v.vs v.lane in
+      let dx = vx -. c.x and dy = vy -. c.y in
       (* how far in front of the kart the vehicle is, and how far to its left *)
       let ahead = (dx *. cos a) +. (dy *. sin a) and side = (dy *. cos a) -. (dx *. sin a) in
       if ahead < 1. || ahead > 20. || Float.abs side > 7. then steer
@@ -720,13 +801,13 @@ let avoid (traffic : vehicle array) (c : Topdown.t) : number =
     0. traffic
 
 let step_karts (keys : keyboard) (holding : bool) (autopilot : bool) (r : race) : race =
-  let leader = along r.karts.(0).car in
+  let leader = along r.karts.(0) in
   let one (i : int) (k : kart) : kart =
     let mine = i = 0 && not autopilot in
     let gas, steer =
       if mine then (axis keys.kup keys.kdown, axis keys.kleft keys.kright)
       else
-        let gas, steer = Topdown.computer lines.(i) k.car in
+        let gas, steer = computer_drive k in
         (gas, Basics.clamp (-1.) 1. (steer +. avoid r.traffic k.car))
     in
     (* the computer's karts powerslide too, through whatever corner
@@ -737,11 +818,14 @@ let step_karts (keys : keyboard) (holding : bool) (autopilot : bool) (r : race) 
   in
   { r with karts = bump (Array.mapi one r.karts) }
 
+(* the traffic is carried along the ribbon rather than driven: a lane
+ * is an offset, and a lorry coming the other way is the same thing
+ * with the sign of its speed turned round *)
 let step_traffic (r : race) : race =
   let one (v : vehicle) : vehicle =
-    let gas, steer = Topdown.computer v.lane v.vcar in
-    let top = if v.lorry then 15. else 21. in
-    { v with vcar = Topdown.drive params top gas steer v.vcar |> Topdown.follow v.lane }
+    let speed = (if v.lorry then lorry_speed else car_speed) /. 60. in
+    let vs = v.vs +. if v.against then -.speed else speed in
+    { v with vs = Float.rem (vs +. lap_length) lap_length }
   in
   { r with traffic = Array.map one r.traffic }
 
@@ -754,11 +838,12 @@ let step_traffic (r : race) : race =
 let step_boxes (r : race) : race =
   let boxes = Array.copy r.boxes and karts = Array.copy r.karts in
   Array.iteri
-    (fun b (bx, by) ->
+    (fun b ((bs, bo) : number * number) ->
       if boxes.(b) = 0 then
         Array.iteri
           (fun i (k : kart) ->
-            if boxes.(b) = 0 && k.item = None && k.roulette = 0 && Float.hypot (k.car.x -. bx) (k.car.y -. by) < 3.6
+            if boxes.(b) = 0 && k.item = None && k.roulette = 0 && k.air = 0.
+               && Float.abs (lap_diff bs k.s) < 2.5 && Float.abs (k.offset -. bo) < 2.5
             then begin
               karts.(i) <- { k with roulette = 42 };
               boxes.(b) <- 15
@@ -783,7 +868,8 @@ let use_item (i : int) (r : race) : race =
       | Mushroom -> set_kart i { k with boost = max k.boost 75 } r
       | Banana ->
           let bx, by = ahead (-3.4) in
-          { r with bananas = { bx; by } :: r.bananas }
+          let bs, bo = locate ~near:k.s bx by in
+          { r with bananas = { bx; by; bh = ground bs bo } :: r.bananas }
       | Green_shell | Red_shell ->
           let sx, sy = ahead 3.4 in
           { r with
@@ -813,15 +899,15 @@ let shell_speed = 62.
 (* The shells fly on their own, and a red one turns towards the kart
  * just ahead of the one who sent it -- by at most 7 degrees a frame,
  * so that it can still miss, and so that it takes the corner wide. A
- * shell dies on a rail; in the original it would bounce (an
+ * shell dies against a rail; in the original it would bounce (an
  * exercise). *)
 let step_shells (r : race) : race =
   let hit = Array.make karts_in_race false in
   let target (owner : int) : (number * number) option =
-    let mine = along r.karts.(owner).car in
+    let mine = along r.karts.(owner) in
     Array.fold_left
       (fun best (k : kart) ->
-        let p = along k.car in
+        let p = along k in
         match best with
         | _ when p <= mine -> best
         | Some (bp, _, _) when bp <= p -> best
@@ -849,7 +935,9 @@ let step_shells (r : race) : race =
           struck := true
         end)
       r.karts;
-    if !struck || s.life <= 1 || walled sx sy then None else Some { s with sx; sy; shead; life = s.life - 1 }
+    let _, offset = locate sx sy in
+    let gone = Float.abs offset > wall_offset 11. in
+    if !struck || s.life <= 1 || gone then None else Some { s with sx; sy; shead; life = s.life - 1 }
   in
   let shells = List.filter_map step_one r.shells in
   { r with shells; karts = Array.mapi (fun i k -> if hit.(i) then spin_out 50 k else k) r.karts }
@@ -861,7 +949,7 @@ let step_bananas (r : race) : race =
     let struck = ref false in
     Array.iteri
       (fun j (k : kart) ->
-        if k.spin = 0 && Float.hypot (k.car.x -. b.bx) (k.car.y -. b.by) < 2.2 then begin
+        if k.spin = 0 && k.air = 0. && Float.hypot (k.car.x -. b.bx) (k.car.y -. b.by) < 2.2 then begin
           hit.(j) <- true;
           struck := true
         end)
@@ -871,15 +959,16 @@ let step_bananas (r : race) : race =
   let bananas = List.filter keep r.bananas in
   { r with bananas; karts = Array.mapi (fun i k -> if hit.(i) then spin_out 45 k else k) r.karts }
 
-(* meeting the traffic, which costs more than a shell does: a lane is
- * 5.5 from the middle of a road 20 wide, so there is always a way
- * past, and taking it is the driving the traffic asks for *)
+(* meeting the traffic, which costs more than a shell does; a kart in
+ * the air goes over it *)
 let step_crashes (r : race) : race =
   let crashed (k : kart) : bool =
-    Array.exists
-      (fun (v : vehicle) ->
-        Float.hypot (k.car.x -. v.vcar.x) (k.car.y -. v.vcar.y) < if v.lorry then 3.6 else 3.)
-      r.traffic
+    k.air < 1.5
+    && Array.exists
+         (fun (v : vehicle) ->
+           let vx, vy = plane_at v.vs v.lane in
+           Float.hypot (k.car.x -. vx) (k.car.y -. vy) < if v.lorry then 3.6 else 3.)
+         r.traffic
   in
   { r with karts = Array.map (fun k -> if crashed k then spin_out 55 k else k) r.karts }
 
@@ -918,8 +1007,7 @@ let update (computer : computer) (m : model) : model =
   | Title -> if space then Scene2d.go (Racing (new_race ())) m else m
   | Racing r ->
       let r = step_race computer.keyboard holding space false r in
-      if Topdown.lap track r.karts.(0).car >= laps then Scene2d.go (Finished (r, place_of r 0)) m
-      else { m with scene = Racing r }
+      if r.karts.(0).lap >= laps then Scene2d.go (Finished (r, place_of r 0)) m else { m with scene = Racing r }
   | Finished (r, n) ->
       if space then Scene2d.go Title m
       else { m with scene = Finished (step_race computer.keyboard false false true r, n) }
@@ -928,7 +1016,7 @@ let update (computer : computer) (m : model) : model =
 (* View *)
 (*****************************************************************************)
 
-(* The camera's right on the ground, and its heading on the map: the
+(* The camera's right on the ground, and its heading on the plane: the
  * sprites need both (which way to lay their plane, and which of the
  * four drawings of a kart to use), and taking them from the camera
  * itself means the title screen, whose camera turns around the grid,
@@ -964,31 +1052,38 @@ let car_model : shape3d =
 let traffic_shapes (r : race) : shape3d list =
   Array.to_list r.traffic
   |> List.map (fun (v : vehicle) ->
-         let x, y, z = world v.vcar.x v.vcar.y 0. in
-         (if v.lorry then lorry_model else car_model) |> rotate3d 0. (-.heading3d v.vcar.heading) 0. |> move3d x y z)
+         let x, y, z = Track3d.across track v.vs v.lane in
+         let p = Track3d.at track v.vs in
+         let heading = if v.against then p.heading +. 180. else p.heading in
+         (if v.lorry then lorry_model else car_model) |> rotate3d 0. (-.heading) 0. |> move3d x y z)
 
 (* an item box: a cube turning over the road, and the road showing
  * through the gap under it *)
 let box_shapes (time : time) (r : race) : shape3d list =
   Array.to_list item_boxes
-  |> List.mapi (fun b (bx, by) ->
+  |> List.mapi (fun b ((bs, bo) : number * number) ->
          if r.boxes.(b) > 0 then []
          else
-           let x, y, z = world bx by 1.8 in
-           [ solid (245, 205, 55) 2.2 2.2 2.2 |> rotate3d 0. (spin 2.5 time) 0. |> move3d x y z ])
+           let x, y, z = Track3d.across track bs bo in
+           [ solid (245, 205, 55) 2.2 2.2 2.2 |> rotate3d 0. (spin 2.5 time) 0. |> move3d x (y +. 1.8) z ])
   |> List.concat
 
 (* a kart: its shadow on the road, the drawing of it, and, while it
- * slides, the sparks under its wheels *)
+ * slides, the sparks under its wheels. In the air the two come apart:
+ * the shadow stays on the road, which is the only thing that says how
+ * high the kart is (games3d/TinyMario64's lesson). *)
 let kart_shapes (right : number * number) (angle : number) (k : kart) : shape3d list =
+  let floor = ground k.s k.offset +. on_ramp k.s k.offset in
   let x, _, z = world k.car.x k.car.y 0. in
   let hop = if k.hop > 0 then 0.9 *. sin (Float.pi *. float_of_int k.hop /. 12.) else 0. in
+  let y = floor +. k.air +. hop in
   (* a dark patch rather than a faded black one: the software
    * rasterizer draws no alpha (see playground3d/software), so a shadow
    * that counted on [fade3d] would be a hole in the road there *)
   let shadow =
     polygon3d (rgb 52 62 52)
-      [ (x -. 1.2, 0.04, z -. 0.85); (x -. 1.2, 0.04, z +. 0.85); (x +. 1.2, 0.04, z +. 0.85); (x +. 1.2, 0.04, z -. 0.85) ]
+      [ (x -. 1.2, floor +. 0.04, z -. 0.85); (x -. 1.2, floor +. 0.04, z +. 0.85);
+        (x +. 1.2, floor +. 0.04, z +. 0.85); (x +. 1.2, floor +. 0.04, z -. 0.85) ]
   in
   let sparks =
     match k.drift with
@@ -998,10 +1093,11 @@ let kart_shapes (right : number * number) (angle : number) (k : kart) : shape3d 
         (* under the outside rear wheel, the one doing the sliding *)
         let back = -1.1 and out = 1.2 *. -.side in
         let sx = k.car.x +. (back *. cos a) -. (out *. sin a) and sy = k.car.y +. (back *. sin a) +. (out *. cos a) in
-        billboard right 0.32 [ ('S', color) ] [ ".S."; "SSS"; ".S." ] (world sx sy 0.1)
+        let px, _, pz = world sx sy 0. in
+        billboard right 0.32 [ ('S', color) ] [ ".S."; "SSS"; ".S." ] (px, floor +. 0.1, pz)
     | _ -> []
   in
-  (shadow :: billboard right (2.6 /. 16.) (kart_palette k.color) (drawing angle k.car.heading) (x, hop, z)) @ sparks
+  (shadow :: billboard right (2.6 /. 16.) (kart_palette k.color) (drawing angle k.car.heading) (x, y, z)) @ sparks
 
 let item_art (i : item) : string list * (char * color) list =
   match i with
@@ -1012,21 +1108,28 @@ let item_art (i : item) : string list * (char * color) list =
 
 let thing_shapes (right : number * number) (r : race) : shape3d list =
   List.concat_map
-    (fun (b : banana) -> billboard right 0.16 banana_palette banana_rows (world b.bx b.by 0.1))
+    (fun (b : banana) ->
+      let x, _, z = world b.bx b.by 0. in
+      billboard right 0.16 banana_palette banana_rows (x, b.bh +. 0.1, z))
     r.bananas
   @ List.concat_map
       (fun (s : shell) ->
         let rows, palette = item_art (if s.homing then Red_shell else Green_shell) in
-        billboard right 0.18 palette rows (world s.sx s.sy 0.1))
+        let ss, so = locate s.sx s.sy in
+        let x, _, z = world s.sx s.sy 0. in
+        billboard right 0.18 palette rows (x, ground ss so +. 0.1, z))
       r.shells
 
-(* the trees, only the ones near enough to be worth drawing: a sprite
- * costs a quad per run of pixels, and the far ones are a few pixels *)
-let tree_shapes (right : number * number) ((px, py) : number * number) : shape3d list =
+(* the trees, only the ones near enough along the lap to be worth
+ * drawing: a sprite costs a quad per run of pixels, and the far ones
+ * are a few pixels *)
+let tree_shapes (right : number * number) (s : number) : shape3d list =
   List.concat_map
-    (fun (x, y) ->
-      if Float.hypot (x -. px) (y -. py) > 95. then []
-      else billboard right 0.55 tree_palette tree_rows (world x y 0.))
+    (fun ((ts, to_) : number * number) ->
+      if Float.abs (lap_diff ts s) > 95. then []
+      else
+        let x, y, z = Track3d.across track ts to_ in
+        billboard right 0.55 tree_palette tree_rows (x, y, z))
     tree_places
 
 (*****************************************************************************)
@@ -1038,20 +1141,29 @@ let text (color : color) (size : number) (str : string) : shape = words color st
 let ordinal (n : int) : string =
   match n with 1 -> "1ST" | 2 -> "2ND" | 3 -> "3RD" | n -> string_of_int n ^ "TH"
 
-(* the whole circuit from above, north up, and a dot per kart: the same
- * race as the screen shows, seen the way games/TinyMicroMachines draws
- * it for real *)
+(* the whole circuit from above, a dot per kart: the same race the
+ * screen shows, seen the way games/TinyMicroMachines draws it for real
+ * -- and, now that the course is a ribbon rather than a map, drawn by
+ * walking the middle of it *)
 let minimap (screen : screen) (r : race) : shape list =
-  let cell = 4. in
-  let ox = screen.right -. 95. and oy = screen.bottom +. 60. in
-  let road_or_line (c : char) : char = match c with '.' -> '.' | '=' | 'a' -> '=' | _ -> '#' in
-  let dot (k : kart) : shape =
-    circle k.color 4. |> move (ox +. (k.car.x /. tile *. cell)) (oy +. (k.car.y /. tile *. cell))
+  let scale = 0.52 in
+  let ox = screen.right -. 95. and oy = screen.bottom +. 70. in
+  let at_screen (x : number) (z : number) : number * number = (ox +. (x *. scale), oy -. (z *. scale)) in
+  let road =
+    List.init (Track3d.segments track / 3) (fun i ->
+        let p = Track3d.at track (float_of_int (i * 3) *. Track3d.step track) in
+        let x, y = at_screen p.px p.pz in
+        circle (rgb 120 120 128) 3.5 |> move x y)
   in
-  [ rectangle (rgb 25 25 30) ((float_of_int cols +. 1.) *. cell) ((float_of_int rows +. 1.) *. cell)
-    |> move ox oy |> fade 0.6;
-    Sprite.pixels cell [ ('#', rgb 120 120 128); ('=', white) ] (List.map (String.map road_or_line) (Tilemap.to_strings map))
-    |> move ox oy ]
+  let dot (k : kart) : shape =
+    let x, _, z = world k.car.x k.car.y 0. in
+    let sx, sy = at_screen x z in
+    circle k.color 4. |> move sx sy
+  in
+  let sx, sy = at_screen (Track3d.at track start_line).px (Track3d.at track start_line).pz in
+  [ rectangle (rgb 25 25 30) 185. 140. |> move ox oy |> fade 0.6 ]
+  @ road
+  @ [ rectangle white 8. 8. |> move sx sy ]
   @ (Array.to_list r.karts |> List.rev |> List.map dot)
 
 (* what you hold, in its box in the corner; while the roulette spins it
@@ -1072,7 +1184,7 @@ let item_slot (screen : screen) (k : kart) : shape list =
 
 let view_hud (screen : screen) (r : race) : shape list =
   let player = r.karts.(0) in
-  let lap = min laps (Topdown.lap track player.car + 1) in
+  let lap = min laps (max 1 (player.lap + 1)) in
   let time = float_of_int r.frames /. 60. in
   [ text white 3. (Printf.sprintf "LAP %d/%d" lap laps) |> move (screen.left +. 110.) (screen.top -. 40.);
     text yellow 5. (ordinal (place_of r 0)) |> move (screen.right -. 90.) (screen.top -. 45.);
@@ -1080,30 +1192,32 @@ let view_hud (screen : screen) (r : race) : shape list =
     |> move (screen.right -. 250.) (screen.top -. 40.) ]
   @ item_slot screen player @ minimap screen r
   @
-  if r.ready > 0 then
-    [ text yellow 9. (string_of_int ((r.ready + 59) / 60)) |> move_y 200. ]
+  if r.ready > 0 then [ text yellow 9. (string_of_int ((r.ready + 59) / 60)) |> move_y 200. ]
   else if r.frames < 40 then [ text yellow 9. "GO!" |> move_y 200. ]
   else []
 
-(* the land beyond the map, a blue sky and a hazy horizon; the sky is
- * seen from below, which is why the game draws back faces too *)
+(* the land beyond the circuit, a blue sky and a hazy horizon; the sky
+ * is seen from below, which is why the game draws back faces too *)
 let sky_and_land (cam : camera) : shape3d list =
-  Camera3d.floor ~color:(rgb 78 158 66) ~ground:(-0.05) cam
-  :: Camera3d.sky ~sky:(rgb 150 200 250) ~horizon:(rgb 96 166 82) ~ground:(-0.05) cam
+  Camera3d.floor ~color:(rgb 78 158 66) ~ground:(-6.) cam
+  :: Camera3d.sky ~sky:(rgb 150 200 250) ~horizon:(rgb 96 166 82) ~ground:(-6.) cam
 
 let view (computer : computer) (m : model) : camera * shape3d list =
   let screen = computer.screen in
   let r = match m.scene with Title -> new_race () | Racing r | Finished (r, _) -> r in
-  let player = r.karts.(0).car in
-  let px, _, pz = world player.x player.y 0. in
+  let player = r.karts.(0) in
+  let px, _, pz = world player.car.x player.car.y 0. in
+  let py = ground player.s player.offset +. on_ramp player.s player.offset +. player.air in
   let cam =
     match m.scene with
-    | Title -> Camera3d.orbit ~distance:22. ~height:8. ~look:1.5 (spin 14. computer.time) (px, 1., pz)
-    | _ -> Camera3d.behind ~back:13. ~height:5.5 ~ahead:9. ~look:2.2 { x = px; y = 0.; z = pz; heading = heading3d r.view_angle }
+    | Title -> Camera3d.orbit ~distance:22. ~height:8. ~look:1.5 (spin 14. computer.time) (px, py +. 1., pz)
+    | _ ->
+        Camera3d.behind ~back:13. ~height:5.5 ~ahead:9. ~look:2.2
+          { x = px; y = py; z = pz; heading = heading3d r.view_angle }
   in
   let right = camera_right cam and angle = camera_angle cam in
   let world_shapes =
-    sky_and_land cam @ [ circuit ] @ tree_shapes right (player.x, player.y) @ traffic_shapes r
+    sky_and_land cam @ [ circuit ] @ tree_shapes right player.s @ traffic_shapes r
     @ box_shapes computer.time r @ thing_shapes right r
     @ List.concat_map (kart_shapes right angle) (Array.to_list r.karts)
   in
@@ -1114,7 +1228,7 @@ let view (computer : computer) (m : model) : camera * shape3d list =
           rectangle black 900. 210. |> move_y (-260.) |> fade 0.55;
           text white 2.5 "up: gas   down: brake   left/right: steer" |> move_y (-210.);
           text white 2.5 "shift: hop and slide (hold it round a bend)   space: use your item" |> move_y (-260.);
-          text white 2.5 "3 laps, 7 karts, and the traffic" |> move_y (-310.) ]
+          text white 2.5 "3 laps, 7 karts, a hill, a ramp and the traffic" |> move_y (-310.) ]
         @ Scene2d.blink 1. m [ text yellow 4. "PRESS SPACE" |> move_y (-390.) ]
     | Racing _ -> view_hud screen r
     | Finished (_, n) ->

@@ -143,30 +143,37 @@ let kart_race () =
 (*****************************************************************************)
 
 (* the computer drives all eight karts (the player's too, as after the
- * finish), through the traffic and whatever items they throw at each
- * other: the player's kart does its 3 laps in under two minutes,
- * hardly ever off the road, and the others are not far behind -- which
- * is what the rubber band is for *)
+ * finish), up the hill, off the ramp, through the traffic and whatever
+ * they throw at each other: the player's kart does its 3 laps in under
+ * two minutes and a half, hardly ever off the road, and the others are
+ * not far behind -- which is what the rubber band is for *)
 let mario_kart_race () =
   let open TinyMarioKart64 in
-  let r = ref (new_race ()) and frames = ref 0 and off_road = ref 0 in
-  let player () = !r.karts.(0).car in
-  while Topdown.lap track (player ()) < laps && !frames < 60 * 120 do
+  let r = ref (new_race ()) and frames = ref 0 and off_road = ref 0 and flew = ref false in
+  let player () = !r.karts.(0) in
+  while (player ()).lap < laps && !frames < 60 * 150 do
     incr frames;
     r := step_race initial_computer.keyboard false false true !r;
-    if top_speed_at (player ()).x (player ()).y < 30. then incr off_road
+    let k = player () in
+    if top_speed_at (Track3d.at track k.s).width k.offset < 30. then incr off_road;
+    if k.air > 1. then flew := true
   done;
-  Alcotest.(check int) "3 laps" laps (Topdown.lap track (player ()));
-  Alcotest.(check bool) "hardly off the road" true (!off_road < 180);
-  Array.iter (fun (k : kart) -> Alcotest.(check bool) "the others lapping" true (Topdown.lap track k.car >= 2)) !r.karts
+  Alcotest.(check int) "3 laps" laps (player ()).lap;
+  Alcotest.(check bool) "hardly off the road" true (!off_road < 240);
+  Alcotest.(check bool) "over the ramp" true !flew;
+  Array.iter (fun (k : kart) -> Alcotest.(check bool) "the others lapping" true (k.lap >= 2)) !r.karts
 
 (* the powerslide: hold it into a corner and the charge builds (2 a
  * frame while the wheel stays in the slide), let go and the charge is
- * a boost, which makes the kart faster than its top speed *)
+ * a boost, which makes the kart faster than its top speed. Driven from
+ * the middle of the start straight, where there is room to slide. *)
 let mario_kart_mini_turbo () =
   let open TinyMarioKart64 in
   let start = (new_race ()).karts.(0) in
-  let k = ref { start with car = { start.car with speed = 40. } } in
+  let s0 = 40. in
+  let x, y = plane_at s0 0. in
+  let heading = 90. -. (Track3d.at track s0).heading in
+  let k = ref { start with car = { start.car with x; y; heading; speed = 40. }; s = s0; offset = 0. } in
   for _ = 1 to 30 do
     k := step_kart true 1. 1. road_speed !k
   done;
@@ -191,8 +198,28 @@ let mario_kart_items () =
     (List.exists (fun s -> roll 8 s = Mushroom) seeds);
   (* and the rubber band: behind the player, faster; ahead of him, slower *)
   let k = (new_race ()).karts.(1) in
-  Alcotest.(check bool) "faster when behind" true (rubber (along k.car +. 2.) k > 1.);
-  Alcotest.(check bool) "slower when ahead" true (rubber (along k.car -. 2.) k < 1.)
+  Alcotest.(check bool) "faster when behind" true (rubber (along k +. 100.) k > 1.);
+  Alcotest.(check bool) "slower when ahead" true (rubber (along k -. 100.) k < 1.)
+
+(* the circuit itself: the ribbon's two ways, a distance along and an
+ * offset across, there and back; and a lap that climbs and comes home
+ * to the height it started from *)
+let mario_kart_ribbon () =
+  let open TinyMarioKart64 in
+  let s = 120. and offset = 4.5 in
+  let x, y, z = Track3d.across track s offset in
+  let back_s, back_offset = Track3d.locate ~near:s track x z in
+  Alcotest.(check (float 0.2)) "the same distance along" s back_s;
+  Alcotest.(check (float 0.2)) "the same offset across" offset back_offset;
+  (* the banked corner really leans: the outside of it is higher than
+   * the inside, by more than the road is thick *)
+  let bank_s = lap_length *. 0.38 in
+  let _, left, _ = Track3d.across track bank_s (-9.) and _, right, _ = Track3d.across track bank_s 9. in
+  Alcotest.(check bool) "the outside of the bank is higher" true (left -. right > 2.);
+  (* and the height at the start is the height after a lap *)
+  let _, y0, _ = Track3d.across track 0. 0. and _, y1, _ = Track3d.across track lap_length 0. in
+  Alcotest.(check (float 0.001)) "the lap closes" y0 y1;
+  ignore y
 
 (*****************************************************************************)
 (* TinyDoom *)
@@ -2971,17 +2998,19 @@ let zaxxon_projection () =
   Alcotest.(check (pair (float 0.01) (float 0.01))) "300 further on, 300 of scroll: the same place"
     (project 0. 40. 20. 900.) (project 300. 40. 20. 1200.)
 
-(* The first wall is wide open at the height you start at, so flying it
- * straight through takes no input at all; climb above the hole and the
- * fortress takes the fighter. *)
-let zaxxon_through_the_hole () =
+(* The fortress asks two questions in turn, and the altimeter answers
+ * both: the first wall is low enough to clear without touching the
+ * stick, the second has to be climbed. *)
+let zaxxon_over_the_wall () =
   let open TinyZaxxon in
   let k = initial_computer.keyboard in
   let straight = zaxxon_play 200 (start ()) in
-  Alcotest.(check int) "through the first wall" 3 straight.lives;
+  Alcotest.(check int) "over the low one, hands off" 3 straight.lives;
   Alcotest.(check bool) "and past it" true (straight.camz +. 260. > 700.);
-  let climbing = zaxxon_play 200 ~keyboard:(fun _ -> { k with kup = true }) (start ()) in
-  Alcotest.(check int) "over the hole is into the wall" 2 climbing.lives
+  let too_low = zaxxon_play 360 (start ()) in
+  Alcotest.(check int) "into the next one, which is higher" 2 too_low.lives;
+  let climbing = zaxxon_play 360 ~keyboard:(fun _ -> { k with kup = true }) (start ()) in
+  Alcotest.(check int) "climbed, and through" 3 climbing.lives
 
 (* A fuel tank is not points, it is the next thirty seconds. *)
 let zaxxon_fuel_tank () =
@@ -3086,6 +3115,21 @@ let zaxxon_end_of_run () =
   Alcotest.(check bool) "faster than the first" true (speed 2 > speed 1);
   Alcotest.(check bool) "back at the start of it" true (after.camz = 0. && List.for_all (fun (t : thing) -> t.alive) after.things)
 
+(* Once you are past a tower it stands between you and the eye, and the
+ * game draws you through it. Whether it does is a walk from the
+ * fighter along the one direction this projection flattens to nothing:
+ * where that walk crosses the wall's plane is where you are hidden, or
+ * not. *)
+let zaxxon_hidden_behind_a_wall () =
+  let open TinyZaxxon in
+  (* the doorway: towers to the ceiling either side of a gap *)
+  let w = List.nth walls 2 in
+  Alcotest.(check bool) "still coming at it: nothing in the way" false (hidden_by (0., 40., w.wz -. 100.) w);
+  Alcotest.(check bool) "in the gap: seen between the towers" false (hidden_by (0., 40., w.wz +. 2.) w);
+  Alcotest.(check bool) "past it: a tower is over you" true (hidden_by (0., 40., w.wz +. 200.) w);
+  (* and far enough past, the line of sight clears the top of it *)
+  Alcotest.(check bool) "well past: out from under it" false (hidden_by (0., 40., w.wz +. 400.) w)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -3098,6 +3142,7 @@ let tests =
       t "TinyMarioKart64, the computer drives the race" mario_kart_race;
       t "TinyMarioKart64, the powerslide and its mini-turbo" mario_kart_mini_turbo;
       t "TinyMarioKart64, the items by place" mario_kart_items;
+      t "TinyMarioKart64, the ribbon there and back" mario_kart_ribbon;
       t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;
@@ -3229,7 +3274,8 @@ let tests =
       t "TinyDefender, the planet goes with the last human" defender_planet_goes;
       t "TinyDefender, the smart bomb is what you can see" defender_smart_bomb;
       t "TinyZaxxon, the projection, and the shadow that reads it" zaxxon_projection;
-      t "TinyZaxxon, through the hole, or into the wall" zaxxon_through_the_hole;
+      t "TinyZaxxon, over the wall, or into it" zaxxon_over_the_wall;
       t "TinyZaxxon, a fuel tank is thirty seconds" zaxxon_fuel_tank;
       t "TinyZaxxon, out of fuel" zaxxon_out_of_fuel;
-      t "TinyZaxxon, the end of the fortress" zaxxon_end_of_run ]
+      t "TinyZaxxon, the end of the fortress" zaxxon_end_of_run;
+      t "TinyZaxxon, hidden behind a wall you have passed" zaxxon_hidden_behind_a_wall ]

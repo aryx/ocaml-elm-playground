@@ -111,12 +111,16 @@ let scripted : Testutil_golden.scripted list =
     (* the same drive as games2.5d/TinyOutRun's golden frame, in polygons *)
     ("games3d/TinyVirtuaRacing", "curve", 230, "space:1,up:2-230");
     (* the grid, on the last second of the countdown: eight karts drawn
-     * four abreast, their shadows under them *)
+     * four abreast, the chequered line under them, and the road
+     * climbing away to the crest *)
     ("games3d/TinyMarioKart64", "grid", 90, "space:1");
-    (* a powerslide into the right-hander at the end of the straight:
-     * the kart shows its side (the drawing is chosen by the angle it is
+    (* the ramp at the top of the climb: the field in the air, each
+     * kart's shadow left on the boards below it *)
+    ("games3d/TinyMarioKart64", "jump", 395, "space:1,up:2-450");
+    (* a powerslide into the banked right-hander, taken downhill: the
+     * kart shows its side (the drawing is chosen by the angle it is
      * seen from), and the sparks say the mini-turbo is charged *)
-    ("games3d/TinyMarioKart64", "slide", 462, "space:1,up:2-520,right:435-458,Shift:435-470");
+    ("games3d/TinyMarioKart64", "slide", 560, "space:1,up:2-620,right:470-545,Shift:470-580");
     (* v three times: the view from above *)
     ("games3d/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
     (* games/TinyTron's "computer" game, seen from behind the blue cycle,

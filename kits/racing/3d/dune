@@ -1,0 +1,15 @@
+; claude: the racing kit's 3D half (see docs/claude_notes/plan_games3d.md,
+; section 9): a circuit as a closed spline with a width, a height and a
+; bank, turned into a ribbon of quads (Track3d). Used by
+; games3d/TinyMarioKart64; games3d/TinyVirtuaRacing is the other one it
+; is shaped for, whose course is a Road.t today.
+;
+; Its own library rather than part of kit_racing next door, because it
+; draws: elm_playground_3d is a virtual library, so a 2D game linking
+; the racing kit (games/TinyMicroMachines, games2.5d/TinyKart) would
+; have to link a 3D backend too. A private library, not installed.
+(library
+ (name kit_racing3d)
+ (wrapped false)
+ (libraries elm_playground elm_playground_3d)
+)
