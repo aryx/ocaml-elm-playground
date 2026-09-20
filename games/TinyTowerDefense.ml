@@ -63,9 +63,27 @@ let left = -.(float_of_int cols * size / 2.)
 let top = 320.
 let entrance = (0, 7)
 let exit_ = (cols -.. 1, 7)
+(* The knobs: the whole difficulty is these numbers, and they're worth
+ * turning one at a time.
+ *
+ *  - the towers: [tower_cost], [tower_range], [tower_delay] (frames
+ *    between two shots) and [tower_damage]. Range matters most, because
+ *    a long reach turns every bend of the maze into more seconds of
+ *    fire.
+ *  - the monsters: [hp_of] (how tough wave n is), [wave_size],
+ *    [spawn_every] and their speed in [update_game]. Making [hp_of]
+ *    grow faster is the usual way a tower defense ends: the maze stops
+ *    being long enough.
+ *  - what you earn: [bounty] a monster and the bonus between waves;
+ *    less gold means fewer towers, which means a shorter maze.
+ *)
 let tower_cost = 20
 let tower_range = 2.6
 let tower_delay = 24 (* frames between two shots *)
+let tower_damage = 6
+let bounty = 2
+let spawn_every = 45
+let wave_size (wave : int) : int = 7 +.. wave
 
 type field = cell array
 
@@ -123,9 +141,10 @@ type model = scene Scene2d.t
 
 let hp_of (wave : int) : int = 18 +.. (12 *.. wave)
 
+
 let new_game () : game =
   { field = Array.make (cols *.. rows) Empty; monsters = []; shots = []; cursor = (10, 7); gold = 80; lives = 10;
-    wave = 1; to_come = 8; frames = 0; pause = 180; show_path = true; score = 0 }
+    wave = 1; to_come = wave_size 1; frames = 0; pause = 180; show_path = true; score = 0 }
 
 let initial_model : model = Scene2d.start Title
 
@@ -192,7 +211,7 @@ let update_game (computer : computer) (scenes : model) (g : game) : game =
   (* the wave: a monster now and then, then a pause before the next *)
   let g = if g.pause > 0 then { g with pause = g.pause -.. 1 } else g in
   let g =
-    if g.pause = 0 && g.to_come > 0 && g.frames mod 45 = 0 then
+    if g.pause = 0 && g.to_come > 0 && g.frames mod spawn_every = 0 then
       let ex, ey = entrance in
       { g with to_come = g.to_come -.. 1;
         monsters = { x = float_of_int ex; y = float_of_int ey; path = way g.field entrance; hp = hp_of g.wave; full = hp_of g.wave;
@@ -220,18 +239,18 @@ let update_game (computer : computer) (scenes : model) (g : game) : game =
               let target = List.fold_left (fun best m -> if m.hp < best.hp then m else best) (List.hd in_range) in_range in
               field.(i) <- Tower g.frames;
               shots := { from = (tx, ty); at = (target.x, target.y); age = 0 } :: !shots;
-              monsters := List.map (fun m -> if m == target then { m with hp = m.hp -.. 6 } else m) !monsters)
+              monsters := List.map (fun m -> if m == target then { m with hp = m.hp -.. tower_damage } else m) !monsters)
       | _ -> ())
     g.field;
   let dead, alive = List.partition (fun m -> m.hp <= 0) !monsters in
   if dead <> [] then Audio.play Audio.coin;
   let g =
-    { g with field; monsters = alive; gold = g.gold +.. (2 *.. List.length dead); score = g.score +.. (10 *.. List.length dead);
+    { g with field; monsters = alive; gold = g.gold +.. (bounty *.. List.length dead); score = g.score +.. (10 *.. List.length dead);
       shots = List.filter (fun s -> s.age < 6) (List.map (fun s -> { s with age = s.age +.. 1 }) g.shots) @ !shots }
   in
   (* the wave cleared: the next one, and a bonus *)
   if g.to_come = 0 && g.monsters = [] && g.pause = 0 then
-    { g with wave = g.wave +.. 1; to_come = 8 +.. g.wave; pause = 240; gold = g.gold +.. (10 +.. (2 *.. g.wave)) }
+    { g with wave = g.wave +.. 1; to_come = wave_size (g.wave +.. 1); pause = 240; gold = g.gold +.. (10 +.. (2 *.. g.wave)) }
   else g
 
 let update (computer : computer) (s : model) : model =

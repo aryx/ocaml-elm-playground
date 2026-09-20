@@ -73,6 +73,46 @@ let search ~(unit_steps : bool) ~(guided : bool) (problem : 'node problem) (star
   in
   loop [ (start, 0.) ] []
 
+(* the same loop again, with no goal to stop at and no path to rebuild:
+ * what it leaves behind is the cost to every node *)
+let field (problem : 'node problem) (start : 'node) : ('node * float) list =
+  let best : ('node, float) Hashtbl.t = Hashtbl.create 97 in
+  let done_with : ('node, unit) Hashtbl.t = Hashtbl.create 97 in
+  Hashtbl.replace best start 0.;
+  let rec loop frontier reached =
+    match frontier with
+    | [] -> List.rev reached
+    | (node, _) :: rest when Hashtbl.mem done_with node -> loop rest reached
+    | (node, g) :: rest ->
+        Hashtbl.replace done_with node ();
+        let frontier =
+          List.fold_left
+            (fun frontier (next, step) ->
+              let g' = g +. step in
+              match Hashtbl.find_opt best next with
+              | Some old when old <= g' -> frontier
+              | _ ->
+                  Hashtbl.replace best next g';
+                  insert next g' frontier)
+            rest (problem.neighbors node)
+        in
+        loop frontier ((node, g) :: reached)
+  in
+  loop [ (start, 0.) ] []
+
+let downhill (problem : 'node problem) (field : ('node * float) list) (node : 'node) : 'node option =
+  match List.assoc_opt node field with
+  | None -> None
+  | Some here ->
+      List.fold_left
+        (fun best (next, _) ->
+          match (List.assoc_opt next field, best) with
+          | Some cost, None when cost < here -> Some (next, cost)
+          | Some cost, Some (_, b) when cost < b -> Some (next, cost)
+          | _ -> best)
+        None (problem.neighbors node)
+      |> Option.map fst
+
 let breadth_first (problem : 'node problem) (start : 'node) : 'node result = search ~unit_steps:true ~guided:false problem start
 let dijkstra (problem : 'node problem) (start : 'node) : 'node result = search ~unit_steps:false ~guided:false problem start
 let astar (problem : 'node problem) (start : 'node) : 'node result = search ~unit_steps:false ~guided:true problem start

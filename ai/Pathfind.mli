@@ -50,6 +50,20 @@
  * 75. The shortest way and the cheapest one are not the same, and the
  * guess helps less when the cheap way isn't the straight one.
  *
+ * One search for a whole crowd: [field] runs Dijkstra from a place
+ * without stopping, so it ends up knowing the cost from there to every
+ * cell. Read backwards, that's a "flow field": each cell points at the
+ * neighbour nearest the place ([downhill]), and any number of units can
+ * follow it at once, each just looking at the cell under its feet. A*
+ * per unit costs a search per unit; a flow field costs one search for
+ * all of them, and it stays right as they move -- how a strategy game
+ * moves fifty units to the same spot.
+ *
+ *     the field, from G           the arrows units follow
+ *     3 2 3 4 5                   > v < < <
+ *     2 1 2 3 4                   > v < < <
+ *     1 G 1 2 3                   > G < < <
+ *
  * The frontier here is a list kept in order; a real implementation uses
  * a priority queue (a binary heap), which matters once the grid is big.
  *
@@ -85,6 +99,18 @@ val dijkstra : 'node problem -> 'node -> 'node result
 
 (* [astar problem start]: the cheapest path, guided by [estimate] *)
 val astar : 'node problem -> 'node -> 'node result
+
+(* [field problem start]: the cost from [start] to every node it can
+   reach, [start] itself included ([goal] and [estimate] are not used:
+   the search runs to the end). On the 13x9 grid above that's all 117
+   cells; with the mud, the cells behind it cost more. *)
+val field : 'node problem -> 'node -> ('node * float) list
+
+(* [downhill problem field node]: the neighbour of [node] the field says
+   is nearest the place it was made from, None at that place (or where
+   the field doesn't reach). A unit follows the field by taking it again
+   and again. *)
+val downhill : 'node problem -> ('node * float) list -> 'node -> 'node option
 
 (* [manhattan (x1, y1) (x2, y2)]: |x1 - x2| + |y1 - y2|, the number of
  * steps on a grid with no diagonals and nothing in the way *)

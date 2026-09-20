@@ -85,6 +85,30 @@ let test_astar_agrees () =
     Alcotest.(check bool) "A* looks at no more cells" true (looked_at a <= looked_at dij)
   done
 
+(* one search for a whole crowd: the field knows the cost from the goal
+ * to everywhere, and following it downhill walks there from anywhere *)
+let test_field () =
+  let goal = (11, 4) in
+  let walls = List.init 9 (fun y -> (5, y)) |> List.filter (fun c -> c <> (5, 8)) in
+  let p = grid ~walls ~w:13 ~h:9 goal in
+  let f = Pathfind.field p goal in
+  Alcotest.(check int) "every cell but the walls" ((13 * 9) - List.length walls) (List.length f);
+  Alcotest.(check (float 0.)) "nothing to do at the goal" 0. (List.assoc goal f);
+  Alcotest.(check (float 0.)) "next door" 1. (List.assoc (10, 4) f);
+  (* on the other side of the wall, around through the gap at (5, 8) *)
+  Alcotest.(check (float 0.)) "around the wall" 15. (List.assoc (4, 4) f);
+  (* three units, each following the field from where it stands *)
+  List.iter
+    (fun start ->
+      let at = ref start and steps = ref 0 in
+      while !at <> goal && !steps < 100 do
+        (match Pathfind.downhill p f !at with Some next -> at := next | None -> Alcotest.fail "the field stops");
+        incr steps
+      done;
+      Alcotest.(check (pair int int)) "it got there" goal !at;
+      Alcotest.(check (float 0.)) "in as many steps as it cost" (List.assoc start f) (float_of_int !steps))
+    [ (0, 0); (4, 4); (12, 8) ]
+
 let tests =
   Testo.categorize "Pathfind"
-    [ t "the worked example, and the mud" test_worked_example; t "a wall with a gap, and without" test_wall; t "A* agrees with Dijkstra" test_astar_agrees ]
+    [ t "the worked example, and the mud" test_worked_example; t "a wall with a gap, and without" test_wall; t "A* agrees with Dijkstra" test_astar_agrees; t "a flow field for a crowd" test_field ]
