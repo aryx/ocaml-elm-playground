@@ -61,6 +61,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: two hundred marbles above the floor of their cage, and
      * the count of bounding boxes the broad phase compared *)
     ("examples3d/PhysicsMarbles3d", "", 3);
+    (* claude: three bodies at the top of the ramp, each labelled with
+     * the acceleration its own tensor predicts *)
+    ("examples3d/PhysicsRoll3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
@@ -148,6 +151,11 @@ let scripted : Testutil_golden.scripted list =
      * all three find the same pairs, which is the point of the
      * counter. *)
     ("examples3d/PhysicsMarbles3d", "grid", 45, "space:1,g:10");
+    (* two seconds down the slope: the ice ball ahead, the sphere next,
+     * the capsule last -- the order the formula gives -- and each
+     * measured acceleration on its prediction, which is the engine
+     * arriving at 5/7 g sin a on its own *)
+    ("examples3d/PhysicsRoll3d", "race", 110, "x:1");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/LogoFractals3d", "tree", 5, "a:2");

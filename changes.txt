@@ -226,6 +226,21 @@
   construction and measured so over a thousand random collisions;
   energy is never created, and never lost with e = 1
 - playground3d/Physics3d: bounce, bounce_off and bounce_all over it
+- physics/3d rolling: the engine arrives at 5/7 g sin a on its own --
+  1.805 m/s^2 measured on a 15 degree slope against the textbook's
+  1.812, 3.488 on 30 degrees against 3.500, with v = w r at the contact
+  to 2% -- having been told only about a tensor, a contact point and a
+  friction impulse. games3d/TinyMarbleMadness derives that same 5/7 by
+  hand in its header, so the two halves of the repository now check
+  each other. With no friction the same sphere slides at exactly
+  g sin a with no spin. Physics3d.spin_slow adds rolling friction,
+  which is the other kind: rough is the grip that makes a ball roll,
+  spin_slow the loss that stops it
+- examples3d/PhysicsRoll3d: a race down a ramp between a frictionless
+  ball (which wins), a solid sphere and a capsule lying across the
+  slope, each labelled with the acceleration its own tensor predicts
+  (a = g sin a / (1 + I/m r^2)) and the one the run measured: 3.03
+  against 3.03, 2.16 against 2.16, 2.06 against 2.05
 - physics/3d/Broadphase3d: which pairs are worth testing exactly -- all
   pairs, a hashed uniform grid, sweep and prune -- and what the third
   dimension changes about them. A dense 3D grid at 100 a side is a

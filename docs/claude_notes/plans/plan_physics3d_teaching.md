@@ -506,8 +506,8 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 6 done** (2026-09-20); the rest not started. Written as
-the specification, with
+**Phases 0 to 7 done** (2026-09-20), bar one port named below; the
+rest not started. Written as the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
 already taken and the reasons, so they are not re-argued later:
@@ -733,6 +733,43 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     3D where in 2D it is a tie), and keeping the sorted order between
     frames, which is what makes sweep and prune a pair *manager*
     rather than a function.
+- **Phase 7, DONE** except the game port: `Physics3d.spin_slow`
+  (rolling friction), 3 tests in `Unit_rolling3d`, and
+  `examples3d/PhysicsRoll3d.ml`. The tensors from every hitbox and the
+  off-centre impulses were already there (phases 4 and 5), so what
+  this phase really was is the *measurement*:
+  - **the engine arrives at 5/7 g sin a by itself.** A sphere let go
+    on a 15 degree slope rolls at 1.805 m/s^2 against the textbook's
+    1.812, and at 30 degrees 3.488 against 3.500 -- within 0.4%,
+    having been told only about a tensor, a contact point and a
+    friction impulse. `games3d/TinyMarbleMadness.ml` derives that same
+    5/7 by hand in its header, from a textbook, so the two halves of
+    the repository now check each other. With `mu = 0` the same sphere
+    slides at exactly `g sin a` with no spin at all, which is the
+    other half of the lesson.
+  - **it is really rolling, not slipping**: the test checks `v = w r`
+    at the contact to 2%, which is the condition that makes 5/7 true
+    in the first place.
+  - **the constant generalises**: `a = g sin a / (1 + k)` with
+    `k = I / m r^2` read straight off the body's own tensor, so
+    `PhysicsRoll3d` is a race between a frictionless ball (k = 0, and
+    it wins), a solid sphere (k = 0.40) and a capsule lying across the
+    slope (k = 0.47), each labelled with what its tensor predicts and
+    what the run measured: 3.03 against 3.03, 2.16 against 2.16, 2.06
+    against 2.05.
+  - **rolling friction is the other one**, and easy to confuse with
+    the first: `rough` is the grip at a contact that makes a ball roll,
+    `spin_slow` is the loss that afterwards stops it (a torque against
+    the angular momentum, so the spin decays at the same rate whatever
+    the shape). On the "r" key in the example.
+  - **What is left**: `TinyMarbleMadness` behind `physics=engine`. Its
+    marble runs on a height map, which is not a hitbox, so the port
+    needs the course's cells turned into box hitboxes -- and then the
+    game's own rules (slopes between cells, marbles that break,
+    the steelie that pushes) all have to meet the engine at once. That
+    is a bigger piece than the rest of phase 7 put together, and it
+    belongs after phase 8's solver, when a body resting on a surface
+    is something the engine can hold still.
 
 ## Verification
 

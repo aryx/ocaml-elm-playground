@@ -192,6 +192,13 @@ val pulled_to : number -> number -> number -> number -> body -> body
  * [fall], not with it. *)
 val floating : ?damping:number -> water:number -> density:number -> body -> body
 
+(* [spin_slow c b]: rolling friction -- a torque against the way it is
+ * turning, c times its angular momentum, so the spin dies away at the
+ * same rate whatever the body's shape. Not the same thing as [rough],
+ * which is the grip *at a contact* that makes a ball roll in the first
+ * place: this is the loss that stops it afterwards. *)
+val spin_slow : number -> body -> body
+
 (* [spin_by tx ty tz b]: a torque about each axis, turned into an
  * angular acceleration by the body's tensor -- so it does nothing to
  * an [upright] body, by design *)

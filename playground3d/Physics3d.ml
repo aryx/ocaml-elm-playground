@@ -205,6 +205,14 @@ let floating ?damping ~water ~density (b : body) : body =
   let _, h, _ = sides_of b.shape in
   apply (Force3d.buoyancy ?damping ~g:9.8 ~water ~half_height:(h /. 2.) ~density ()) b
 
+(* rolling friction, the loss that stops a rolling ball (deformation,
+ * not grip): a torque against the angular momentum, so the spin dies
+ * away at the same rate whatever the tensor *)
+let spin_slow c (b : body) : body =
+  let l = Mat3.mul_vec (Body3d.inertia_world (state b)) (to_radians b.spin) in
+  let tx, ty, tz = Vec3.scale (-.c) l in
+  { b with torque = (let ox, oy, oz = b.torque in (ox +. tx, oy +. ty, oz +. tz)) }
+
 let spin_by tx ty tz (b : body) : body =
   let ox, oy, oz = b.torque in
   { b with torque = (ox +. tx, oy +. ty, oz +. tz) }

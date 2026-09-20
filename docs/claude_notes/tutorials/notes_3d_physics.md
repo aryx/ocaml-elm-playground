@@ -541,6 +541,24 @@ the two, it slips first and starts rolling when the contact point's
 velocity reaches zero (the classic result: a struck billiard ball
 rolls at 5/7 of the speed it was struck with).
 
+Measured, and the agreement is the point: 1.805 m/s^2 on a 15 degree
+slope against the textbook's 1.812, 3.488 on 30 degrees against 3.500,
+with `v = w r` at the contact to within 2% -- the engine having been
+told only about a tensor, a contact point and a friction impulse. With
+`mu = 0`, exactly `g sin a` and no spin.
+
+The formula generalises to any shape as `a = g sin a / (1 + k)` with
+`k = I / m r^2` read off the body's own tensor, which is what
+`examples3d/PhysicsRoll3d.ml` races: a frictionless ball (k = 0, and it
+wins), a solid sphere (k = 0.40) and a capsule lying across the slope
+(k = 0.47), each labelled with its prediction and its measurement.
+
+One more distinction the example puts on a key, because the two are
+easy to confuse: the friction *at the contact* (`rough`) is the grip
+that makes a ball roll at all, and **rolling friction**
+(`Physics3d.spin_slow`, a torque against the angular momentum) is the
+loss that afterwards stops it.
+
 ## 12. The fast small ball: continuous collision
 
 A body moving faster than its own size per step can pass through a
