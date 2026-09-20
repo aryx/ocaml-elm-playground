@@ -37,6 +37,17 @@
  (deps (:src %{project_root}/games2.5d/TinyDoom.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
+; claude: TinyMinecraft's texture, embedded as base64 beside it (the
+; same rule as games3d/dune's: the copied game expects the module here
+; too)
+(rule
+ (targets Texture_atlas.ml)
+ (deps %{project_root}/games3d/texture.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml %{project_root}/games3d/texture.png))))
+
 (rule
  (target TinyMinecraft.ml)
  (deps (:src %{project_root}/games3d/TinyMinecraft.ml))

@@ -245,7 +245,11 @@ let get_or_create_gl_texture (src : string) : int =
   | Some id -> id
   | None ->
       let id =
-        match Texture_decode.load src with
+        match
+          match Playground3d.embedded src with
+          | Some base64 -> Texture_decode.load_base64 ~key:src ~base64
+          | None -> Texture_decode.load src
+        with
         | None -> Lazy.force missing_texture_gl_id
         | Some (img : Stb_image.int8 Stb_image.t) ->
             upload_texture ~width:img.width ~height:img.height ~format:(gl_format_of_channels img.channels) img.data

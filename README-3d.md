@@ -182,6 +182,12 @@ The camera keeps (0, 1, 0) as up unless told otherwise; a game whose
 ship rolls or looks straight up gives its own (`camera ~eye ~target
 ~up ()`, see `games3d/TinyDescent3d.ml`).
 
+A texture can also travel inside the program, with no file to find at
+run time and nothing to copy next to a web page: a dune rule turns the
+image into base64 (`scripts/build/file_to_base64_ml.ml`), and
+`Playground3d.embedded_texture ~name ~base64` gives it a name to use as
+a `src` -- see `games3d/TinyMinecraft.ml` and `games3d/dune`.
+
 `cube`/`box`/`plane` are procedurally generated, single-flat-color
 shapes -- no assets needed, same philosophy as 2D's `circle`/`square`.
 `textured_cube`/`textured_quad` accept a local file path or an http(s)

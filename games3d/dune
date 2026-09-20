@@ -32,7 +32,7 @@
   (names
     TinyMinecraft
   )
-  (modules TinyMinecraft)
+  (modules TinyMinecraft Texture_atlas)
   (libraries
     elm_core
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
@@ -40,3 +40,16 @@
     elm_playground_3d_software ; implem of virtual elm_playground_3d
   )
 )
+
+; claude: texture.png, embedded in the program as base64 (see
+; Playground3d.embedded_texture and graphics/images/Base64.mli), so
+; TinyMinecraft runs from any directory and its texture comes along to
+; the browser -- the same trick graphics/font/dune uses for the Hershey
+; font, through a script since a .png is not text.
+(rule
+ (targets Texture_atlas.ml)
+ (deps texture.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml texture.png))))

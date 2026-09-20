@@ -10,6 +10,12 @@
  * src was already warmed via [preload]. *)
 val load : string -> Stb_image.int8 Stb_image.t option
 
+(* [load_base64 ~key ~base64]: the same, for a texture the program
+ * carries with it (Playground3d.embedded_texture, whose name is the
+ * [key] this caches it under) instead of reading from a file: the
+ * bytes of the image file itself, base64-encoded (see Base64). *)
+val load_base64 : key:string -> base64:string -> Stb_image.int8 Stb_image.t option
+
 (* Queue a texture src to be loaded ahead of time (so a later [load]
  * call for it returns immediately); doesn't touch the network itself,
  * so it's safe to call anytime. [load_queued] actually

@@ -44,16 +44,15 @@
   )
 )
 
-; TinyMinecraft.ml on the GPU -- see docs/claude_notes/plan_tiny_minecraft.md's
-; Phase 2 perf checkpoint: is the naive rebuild-every-frame approach any
-; more viable here than on native? TinyMinecraft.ml reads texture.png via a
-; path relative to the repo root ("games3d/texture.png"), so this must
-; still be run from there regardless of where the .exe itself lives.
+; TinyMinecraft.ml on the GPU, its world kept in GPU buffers from frame
+; to frame (see Playground3d.cached3d and plan_opengl_perf.md). Its
+; texture travels inside the program (the rule at the end of this
+; file), so it runs from any directory.
 (executables
   (names
     TinyMinecraft
   )
-  (modules TinyMinecraft)
+  (modules TinyMinecraft Texture_atlas)
   (libraries
 
     elm_core
@@ -62,3 +61,13 @@
     elm_playground_3d_opengl ; implem of virtual elm_playground_3d
   )
 )
+
+; claude: the same embedding rule as ../dune's: the texture as base64,
+; beside the copied TinyMinecraft.ml
+(rule
+ (targets Texture_atlas.ml)
+ (deps ../texture.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml ../texture.png))))

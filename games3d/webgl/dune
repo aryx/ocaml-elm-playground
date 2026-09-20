@@ -50,10 +50,21 @@
 )
 
 ; claude: copy the .html pages into _build/default/games3d/webgl/
-; next to the generated .bc.js (same trick as examples3d/js/dune), and
-; TinyMinecraft's texture where its page looks for it (see
-; games3d/webgl/games3d/dune)
+; next to the generated .bc.js (same trick as examples3d/js/dune).
+; TinyMinecraft's texture needs no copy here any more: it travels
+; inside the program, and the browser gets it as a "data:" URL (see
+; Playground3d.embedded_texture).
 (rule
   (alias default)
-  (deps (glob_files *.html) (alias all) games3d/texture.png)
+  (deps (glob_files *.html) (alias all))
   (action (progn)))
+
+; claude: the same embedding rule as ../dune's: the texture as base64,
+; beside the copied TinyMinecraft.ml
+(rule
+ (targets Texture_atlas.ml)
+ (deps ../texture.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml ../texture.png))))

@@ -133,6 +133,11 @@
   player, chunks and controls in one file like the other games;
   Playground3d.camera takes an ?up (a ship that rolls: TinyDescent3d),
   honored by the four 3D backends;
+  Playground3d.embedded_texture: a texture carried inside the program
+  (a dune rule turns the .png into base64, as graphics/font/dune does
+  for the Hershey font), so TinyMinecraft runs from any directory and
+  its texture reaches the browser as a data: URL, with no file to copy;
+  graphics/images/Base64;
   playground3d's Camera3d (the 3D Camera2d: behind, chase, cockpit,
   orbit, sky); the OpenGL HUD redraws only what changed, box by box
 - Mario, TinyMario, Asteroid: physics=engine, the Physics layer instead

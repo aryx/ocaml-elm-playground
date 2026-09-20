@@ -28,14 +28,28 @@ let load_exn (src : string) : Stb_image.int8 Stb_image.t =
   | Ok img -> Rgba.of_stb_image img
   | Error (`Msg msg) -> failwith (Printf.sprintf "could not decode texture %s: %s" src msg)
 
+(* claude: a texture carried inside the program rather than read from
+ * a file (see Playground3d.embedded_texture and Base64): the bytes are
+ * decoded straight from memory, no file involved -- which is what lets
+ * a game run from any directory. *)
+let load_base64_exn (base64 : string) : Stb_image.int8 Stb_image.t =
+  let bytes = Base64.decode base64 in
+  let buffer = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (String.length bytes) in
+  String.iteri (fun i c -> Bigarray.Array1.unsafe_set buffer i (Char.code c)) bytes;
+  match Stb_image.decode buffer with
+  | Ok img -> Rgba.of_stb_image img
+  | Error (`Msg msg) -> failwith (Printf.sprintf "could not decode an embedded texture: %s" msg)
+
 let cache : (string, Stb_image.int8 Stb_image.t option) Hashtbl.t = Hashtbl.create 16
 
-let load (src : string) : Stb_image.int8 Stb_image.t option =
+(* [src] is the key of the cache whether it names a file, a URL or
+ * some bytes: [how] says where to get the pixels from *)
+let load_with (src : string) (how : unit -> Stb_image.int8 Stb_image.t) : Stb_image.int8 Stb_image.t option =
   match Hashtbl.find_opt cache src with
   | Some result -> result
   | None ->
       let result =
-        try Some (load_exn src)
+        try Some (how ())
         with exn ->
           Printf.eprintf "playground3d: failed to load texture %s: %s\n%!" src
             (Printexc.to_string exn);
@@ -43,6 +57,11 @@ let load (src : string) : Stb_image.int8 Stb_image.t option =
       in
       Hashtbl.add cache src result;
       result
+
+let load (src : string) : Stb_image.int8 Stb_image.t option = load_with src (fun () -> load_exn src)
+
+let load_base64 ~(key : string) ~(base64 : string) : Stb_image.int8 Stb_image.t option =
+  load_with key (fun () -> load_base64_exn base64)
 
 (*****************************************************************************)
 (* Preloading (same rationale as Image_decode.ml's preload/load_queued) *)

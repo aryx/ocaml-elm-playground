@@ -399,7 +399,11 @@ let step (world : world) ~(dt : float) (input : input) (player : player) : playe
 (*****************************************************************************)
 
 
-let atlas_src = "games3d/texture.png"
+(* the texture atlas, carried inside the program (games3d/dune turns
+ * texture.png into Texture_atlas.base64 at build time): no file to
+ * find at run time, wherever the game is started from, and the browser
+ * gets it as a "data:" URL *)
+let atlas_src = embedded_texture ~name:"minecraft-atlas" ~base64:Texture_atlas.base64
 let atlas_n = 4
 
 (* claude: converts the original's (col, gl_row) cell addressing (see

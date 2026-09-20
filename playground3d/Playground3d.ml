@@ -315,6 +315,18 @@ let face_normal = Vec3.face_normal
  * of the real texture -- see textured_quad's doc comment. The native
  * backend samples the real texture per pixel instead, so it does not
  * go through this function at all. *)
+(* claude: the textures the program carries with it, name -> the image
+ * file's bytes as base64 (see the .mli): filled by the game before its
+ * first frame, read by the backends when they load a texture. A
+ * global, like the caches the backends keep themselves. *)
+let embedded_textures : (string, string) Hashtbl.t = Hashtbl.create 4
+
+let embedded_texture ~(name : string) ~(base64 : string) : string =
+  Hashtbl.replace embedded_textures name base64;
+  name
+
+let embedded (src : string) : string option = Hashtbl.find_opt embedded_textures src
+
 let placeholder_texture_color = Playground.gray
 
 (* flatten a shape3d tree down to its leaf faces, dropping Group3d nodes

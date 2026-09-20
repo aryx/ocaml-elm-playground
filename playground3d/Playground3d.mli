@@ -138,6 +138,25 @@ val sphere : Playground.color -> number -> shape3d
     underlying 2D {!Playground.shape} type, out of scope for this first
     version. *)
 
+(** [embedded_texture ~name ~base64] registers an image the program
+    carries with it -- the bytes of a .png, base64-encoded (see
+    [graphics/images/Base64.mli]), usually generated from the file at
+    build time by a dune rule, the way [graphics/font/dune] embeds the
+    Hershey font and [games3d/dune] this project's one texture -- and
+    returns [name], to be used as the [src] of {!textured_quad} and
+    friends.
+
+    Why: a [src] that is a file path only works from the directory the
+    path is relative to, and not at all in a browser; embedded bytes
+    work from anywhere, and the WebGL backend hands them to the browser
+    as a "data:" URL, which costs it nothing. [name] is any short label,
+    and is what the backends' caches are keyed by. *)
+val embedded_texture : name:string -> base64:string -> string
+
+(** the base64 an {!embedded_texture} was registered with, for the
+    backends: [None] for a [src] that is a path or a URL *)
+val embedded : string -> string option
+
 (** [textured_quad src p0 p1 p2 p3] maps the 4 corners of the image at
     [src] onto [p0]/[p1]/[p2]/[p3] in order: top-left, top-right,
     bottom-right, bottom-left ([src]'s row 0 is its top). *)

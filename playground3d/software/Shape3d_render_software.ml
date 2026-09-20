@@ -45,7 +45,11 @@ let missing_texture_color = 0xFF00FF
  * the pinned binding gets wrong, see Rgba.mli), with no offset and no
  * padding between rows: exactly Texture.image's layout *)
 let paint_of_texture (src : string) : Render.paint =
-  match Texture_decode.load src with
+  match
+    match Playground3d.embedded src with
+    | Some base64 -> Texture_decode.load_base64 ~key:src ~base64
+    | None -> Texture_decode.load src
+  with
   | Some img ->
       assert (img.channels = 4 && img.offset = 0 && img.stride = img.width * 4);
       Texture { width = img.width; height = img.height; rgba = img.data }

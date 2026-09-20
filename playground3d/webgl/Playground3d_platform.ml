@@ -327,7 +327,12 @@ let image_of (src : string) : Dom_html.imageElement Js.t =
        * break loading from a file:// page. (Not in js_of_ocaml's
        * imageElement, hence Js.Unsafe.) *)
       if is_http_url src then Js.Unsafe.set img "crossOrigin" (Js.string "anonymous");
-      img##.src := Js.string src;
+      (* claude: a texture the program carries with it
+       * (Playground3d.embedded_texture) is already base64: a "data:"
+       * URL is exactly that, and the browser decodes it itself, with no
+       * file to find and no request to make *)
+      let url = match Playground3d.embedded src with Some base64 -> "data:image/png;base64," ^ base64 | None -> src in
+      img##.src := Js.string url;
       Hashtbl.replace images src img;
       img
 
