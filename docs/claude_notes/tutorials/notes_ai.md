@@ -25,13 +25,17 @@ because it means a page of code can produce something that looks alive.
 | `Steering` | seek, flee, arrive, wander, pursue, avoid | §4 |
 | `Flock` | separation, alignment, cohesion | §5 |
 | `Fsm`, `Behavior`, `Utility` | choosing what to do | §6 |
+| `Sense`, `Bot` | a mind that plays through the player's own inputs | §6 |
 | `Minimax` (done) | the game tree, and alpha-beta | §7, §8 |
 | `Deepening`, `Zobrist` | making the search go deeper | §9 |
 | `Mcts` | playing without an evaluation function | §10 |
 | `playground/Ai` | the Evan-style API over all of it | §12 |
 
 Read §2 to §5 for the real-time half (a world at 60 fps), §7 to §10
-for the turn-taking half (an opponent). They barely touch.
+for the turn-taking half (an opponent). They barely touch. §6 is where
+both are put to work: how a character decides what to do -- and, at
+its end, what changes when the character is a *bot*, playing the same
+game as you through the same inputs.
 
 ## 1. What a game's AI actually has to answer
 
@@ -248,6 +252,52 @@ conversation to go to the bathroom without anyone writing that
 transition. It scales beautifully and debugs horribly: when something
 silly happens, the answer is always "some curve crossed another curve".
 
+### A bot is the same mind, with its hands tied
+
+All of the above decides by *reaching into the game's state*: a ghost
+reads Pac-Man's tile. That is fine for a ghost, which is a rule wearing
+a sprite. It is not fine for a **bot** -- an opponent that stands where
+a player stands, in a game a human is playing at the same time.
+
+The shape a bot wants is one line of types, and three games in this
+repository found it independently:
+
+```
+   senses  --->   the mind   --->   intent   --->  the game's update
+   what a         steering,         the same
+   player         fsm, aim          record the
+   could know                       keys fill
+```
+
+`games/TinySoldat.ml` has exactly that: a record `intent` (`run`,
+`jump`, `jet`, `shoot`, `grenade`, `aim`), filled either by `human`
+from the keyboard and mouse or by `bot` from the world, and an update
+that cannot tell which. `kits/racing/Topdown.computer` returns
+`(gas, steer)` -- the two numbers the player's keys produce.
+`games/TinyPong.ml`'s paddle follows the ball *at a limited speed*,
+and that limit is the entire difficulty setting.
+
+Why the restriction matters, and why it is the interesting part: a bot
+that knows everything and reacts instantly is trivial to write and
+horrible to play against. The knobs that make one feel like an
+opponent are all *handicaps* -- a reaction delay of some frames
+(a human's is around a quarter of a second), an aim that starts off
+and settles, a limit on how often it changes its mind, and senses that
+stop at a wall (a line-of-sight test, and a memory of where you were
+last seen, which is what makes a bot *search* for you instead of
+tracking you through the floor). The bots people remember -- Quake
+III's, whose Area Awareness System is a small book on its own, and
+Counter-Strike's, whose navigation mesh was learned by watching people
+walk -- are mostly this: careful restriction, not clever search.
+
+It is also the one place in game AI where the type system does the
+teaching. If a bot's mind is `senses -> intent`, then a bot that peeks
+at the whole world *does not compile*, and "no cheating" stops being a
+promise and becomes a signature. `ai/Sense` and `ai/Bot` (planned; see
+the plan's bots section) are that door, and nothing more: the mind
+behind them is the steering, the state machine and the pathfinding of
+the sections above, unchanged.
+
 ## 7. The game tree: minimax
 
 The turn-taking half. A two-player game where both sides see everything
@@ -432,7 +482,10 @@ let update _ fish = fish |> List.map (fun f -> f |> flocking fish |> step)
 Paths come back as a list of tiles (`Ai.way ~walkable from to_`), a
 crowd shares one `Ai.flow`, and an opponent is a value you ask for a
 move (`Ai.thinking_ahead 4 rules |> Ai.best_move`), with
-`Ai.within 0.2` for a time budget instead of a depth. The search, the
+`Ai.within 0.2` for a time budget instead of a depth. A bot is a value
+too -- `Ai.bot mind |> Ai.skill 0.6 |> Ai.thinks senses` -- returning
+the game's own intent record, so the update stays one line for a human
+and a machine alike (§6). The search, the
 table, the frontier and the seeds stay on the other side of the door.
 
 ## Glossary
@@ -452,6 +505,12 @@ table, the frontier and the seeds stay on the other side of the door.
 - **Emergence**: behaviour of the group that is in no member's rule.
 - **State machine**, **behavior tree**, **utility**: three ways to pick
   what to do; **blackboard**: what a behavior tree shares.
+- **Bot**: a mind that plays through the player's own inputs;
+  **intent**: the record those inputs fill, produced by a human or by
+  a bot; **senses**: what a bot is allowed to know, and the reason it
+  can be kept honest by a type.
+- **Handicap knobs**: reaction delay, aim error, input rate -- what
+  difficulty is made of when a bot is not allowed to cheat.
 - **Game tree**, **ply**: one player's move; **MAX**, **MIN**.
 - **Evaluation function**: the guess at a leaf, where a game's
   knowledge lives.

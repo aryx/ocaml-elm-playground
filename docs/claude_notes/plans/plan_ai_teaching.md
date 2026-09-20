@@ -15,7 +15,10 @@ and `games/AiOthello.ml`) and `ai/Pathfind` (with
 `examples/AiPathfinding.ml`, and `kits/rts/Orders` over it, which is
 how TinyDune2's and TinyWarcraft2's units walk). This plan is written
 after those two, to say where the rest goes: the real-time side
-(steering, flocking, state machines), the deeper search (iterative
+(steering, flocking, state machines), **bots** -- an AI that plays a
+game the way a player does, through the same inputs, which is what
+almost every game in this repository actually needs and what three of
+them have already hand-written -- the deeper search (iterative
 deepening, transposition tables, Monte Carlo), and the part nobody
 else in this repository teaches yet -- **learning**: a neural network
 written from scratch, trained while you watch, and finally put behind
@@ -70,29 +73,145 @@ here in `ai/`'s own terms, with the one it added (the last).
 - **Comments describe the code as it is**; the long explanations live
   in the `.mli`s and the notes.
 
-## Two halves, kept apart
+## Three kinds of mind, kept apart
 
-Game AI is two different subjects that share a directory:
+Game AI is three different subjects that share a directory:
 
 ```
-   the opponent                      the agent
-   a turn-taking game                a world running at 60 fps
-   "what move do I play?"            "where do I go, what do I do?"
-   Minimax, Mcts, Deepening          Pathfind, Steering, Flock, Fsm
-   seconds to think, once            a fraction of a frame, every frame
-   AiTictactoe, AiOthello,           TinyPacman's ghosts, TinyDune2's
-   AiConnect4, AiChess, AiGo         units, a flock, TinyZelda's monsters
+   the opponent              the agent                 the bot
+   a turn-taking game        a world at 60 fps         a world at 60 fps
+   "what move do I play?"    "where do I go?"          "what would a
+                                                        player press?"
+   Minimax, Mcts,            Pathfind, Steering,       Bot, Sense, over
+   Deepening                 Flock, Fsm                all of the agent's
+   seconds to think, once    a fraction of a frame     a frame, and a
+                                                        reaction delay
+   AiTictactoe, AiOthello,   TinyPacman's ghosts,      TinySoldat's two
+   AiConnect4, AiChess,      TinyDune2's units, a      soldiers, TinyPong's
+   AiGo                      flock, TinyZelda's        paddle, TinyMicro-
+                             monsters                  Machines' rivals
 ```
 
-They share only two things, and it's worth knowing which: the **debug
-overlay** (both want to draw what the computer is thinking), and
-**learning** (a network can be an opponent's evaluation function or an
-agent's policy). Everything else is separate, and the notes are split
-the same way.
+The difference between the middle and the right column is not the
+algorithms -- a bot *uses* steering, pathfinding and state machines --
+it is **what it is allowed to touch**. A ghost may be a rule over the
+game's state: it is a ghost, it has no hands. A bot stands where a
+player stands, so it should press what a player could press, know what
+a player could know, and take the time a player takes. That
+restriction is the whole subject, and it is what the next section is
+about.
+
+They share three things, and it's worth knowing which: the **debug
+overlay** (all three want to draw what the computer is thinking),
+**learning** (a network can be an opponent's evaluation function, an
+agent's policy or a bot's aim), and the fact that all three must be
+**seeded** rather than globally random. Everything else is separate,
+and the notes are split the same way.
+
+## Bots: playing the game the way a player does
+
+Three games in this repository have already written the same thing by
+hand, independently, which is the usual sign that a layer is missing:
+
+- `games/TinySoldat.ml` has a record `intent` (`run`, `jump`, `jet`,
+  `shoot`, `grenade`, `aim`) and **two functions that fill it**:
+  `human computer scenes p` from the keys and the mouse, and
+  `bot p i` from the world. The update loop does not know which is
+  which. Its bot already does the honest things: line of sight by a
+  swept test against the map (`Physics.went_through`), an aim that
+  wobbles by a sine (no `Random`, so it stays deterministic), keep
+  your distance rules, and grenades at what it cannot see.
+- `kits/racing/Topdown.mli` has `Topdown.computer track car`, which
+  returns **a `(gas, steer)` pair** -- exactly the two numbers the
+  player's keys produce -- by steering at the next waypoint. That is a
+  bot living in a genre kit, and `games/TinyMicroMachines.ml` drives
+  its rivals with it.
+- `games/TinyPong.ml`'s `computer_player` moves the right paddle
+  towards the ball at a limited speed. The limit *is* the difficulty,
+  and it is the smallest possible example of the whole idea.
+
+So the shape is already known, and the plan's job is to name it:
+
+```
+   the world  -->  Sense   -->  the mind    -->  intent     -->  the game's
+   (the model)     what a       steering,        the same         update:
+                   player       fsm,             record the       the same
+                   could know   pathfind, aim    keys fill        for both
+```
+
+**`ai/Bot` is the two middle arrows**: a decision made from senses and
+turned into the game's own input record, with the knobs that make a
+bot *fair* rather than strong (below).
+**`ai/Sense` is the left arrow**: what the bot is allowed to know --
+line of sight, hearing range, and a memory of where the target was
+last seen, which is what makes a bot look like it is searching for you
+rather than tracking you through a wall.
+
+### Difficulty without cheating
+
+The lazy way to make a bot hard is to give it more: more speed, more
+damage, the player's exact position through a wall. It is also the way
+that makes a bot *unfun*, and every one of the references below says
+so. The honest knobs, each a number in `Bot`:
+
+- **reaction delay**: the bot acts on a state a few frames old (a
+  human's is about 250 ms, i.e. 15 frames at 60 fps -- to check);
+- **aim error**: an offset that decays as the target stays visible,
+  so the bot "settles" on you like a hand does;
+- **input rate**: how often it may change its mind, and what it may
+  press at once (a bot that fires on the exact frame a target appears
+  is recognisably a machine);
+- **what it knows**: the `Sense` filter above, which is a *type*, not
+  a promise -- if `bot : senses -> intent`, a bot that peeks at the
+  whole world does not compile.
+
+The last one is the reason to have `Sense` at all, and the only piece
+of this that is really a design decision rather than a routine.
+
+### Where bots live: `ai/`, the genre kits, and the `kits/bots/` question
+
+Whether there should be a `kits/bots/` is worth answering explicitly,
+because the evidence above cuts both ways. The proposal:
+
+- **The mechanism goes in `ai/`** (`Bot`, `Sense`): the intent loop,
+  the delay, the aim error, the memory. It is Playground-independent
+  and genre-independent, it is what all three hand-written bots
+  duplicate, and it belongs beside `Steering` and `Fsm`, which it is
+  built on.
+- **The knowledge stays in the genre kit**, where `Topdown.computer`
+  already is: a racing line and waypoints mean nothing outside
+  `kits/racing/`, a shooter's cover and weapon choice nothing outside
+  a shooter, a fighting game's spacing nothing outside
+  `kits/brawler/`. A kit is organised by genre here, and a bot is
+  mostly genre knowledge.
+- **So: no `kits/bots/` at first.** It would collect things that have
+  nothing in common but the word "bot", and the one thing they *do*
+  have in common is going into `ai/` anyway. The case to revisit it is
+  concrete and worth watching for: **a deathmatch bot wanted by both a
+  2D and a 3D shooter** (`games/TinySoldat.ml` and a 3D one on
+  `playground3d/Character3d`, see
+  [`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)) would
+  share map awareness, waypoints, cover and weapon choice across two
+  genres' kits -- and *that* is the day `kits/bots/` (or a
+  `kits/shooter/`) earns its place, with the shared part moved into it
+  and this paragraph replaced by the reason it happened.
+
+### 2D and 3D from the same layer
+
+A bot's mind is dimension-independent; only the senses and the intent
+change. In 2D the senses are `Physics.went_through` against the map
+and the intent is the game's key record; in 3D the senses are
+`Collide3d`'s rays and the intent drives a `Character3d` capsule
+(tutorial §14 of
+[`notes_3d_physics.md`](../tutorials/notes_3d_physics.md)) -- the same
+`Bot` with a different `sense` function and a different `intent`
+record. Both are one type parameter apart, which is the test of
+whether this layer is the right one: if `Bot` needs to know about
+pixels, or about `y` being up, it is in the wrong directory.
 
 ## The Playground API, Evan-style
 
-`playground/Ai.mli`, three small families, each a one-liner in a game.
+`playground/Ai.mli`, a few small families, each a one-liner in a game.
 Tentative, to be refined by writing the games with it -- the same way
 `Physics.mli` was.
 
@@ -146,6 +265,30 @@ val thoughts : ('state, 'move) opponent -> 'state -> ('move * number) list  (* t
 val mode : ('mode * (computer -> 'model -> bool)) list -> 'mode -> computer -> 'model -> 'mode
 ```
 
+**5. A bot**, which fills the game's own input record instead of the
+player (the section above; `'intent` is the game's type, not ours, and
+`'senses` is what the bot is allowed to know):
+
+```ocaml
+type ('senses, 'intent) bot
+
+val bot : ('senses -> 'intent) -> ('senses, 'intent) bot
+val reacting_in : int -> ('senses, 'intent) bot -> ('senses, 'intent) bot   (* frames *)
+val aim_error : number -> ('senses, 'intent) bot -> ('senses, 'intent) bot
+val skill : number -> ('senses, 'intent) bot -> ('senses, 'intent) bot      (* 0..1, sets both *)
+val thinks : ('senses, 'intent) bot -> 'senses -> 'intent                   (* once a frame *)
+
+(* the senses, over Physics/Collide3d, so a bot knows what a player could *)
+val can_see : body -> body -> body list -> bool
+val last_seen : ...   (* the memory that makes it search rather than track *)
+```
+
+so that a game's update keeps one line for both kinds of player:
+
+```ocaml
+let intent = if s.human then human computer p else Ai.thinks (bot_of i) (senses p i) in
+```
+
 ### The open question: a board game as a way of programming
 
 `AiOthello.ml` (257 lines) and `AiTictactoe.ml` (183) hand-write the
@@ -185,6 +328,10 @@ ai/                    (private, package elm_playground, pure OCaml:
                       path following
   Flock               separation, alignment, cohesion
   Fsm                 states and transitions; Pac-Man's four ghosts
+  Sense               what a bot is allowed to know: line of sight,
+                      hearing, a memory of where the target was
+  Bot                 the player's inputs, filled by a machine: the
+                      intent loop, reaction delay, aim error, skill
   Behavior            behavior trees: sequence, selector, decorator
   Utility             scoring the options instead of branching
   Influence           an influence map: whose ground is this
@@ -311,6 +458,24 @@ from memory until then.)
   the Pac-Man Dossier (Jamey Pittman, 2009).
 - **Behavior**: behavior trees, Halo 2 (Damian Isla, GDC 2005); the
   successor everyone copied, and its costs (the blackboard).
+- **Bot, Sense**: the deathmatch bots, which are where this was worked
+  out -- the Reaper and Eraser bots for Quake and Quake II (1997-98,
+  community-written, when the games shipped without any); **the Quake
+  III Arena bot** (Jan Paul van Waveren, "Mr. Elusive", master's
+  thesis, 1999-2001): its Area Awareness System is the canonical
+  answer to "what does a bot know about the map", and its fuzzy-logic
+  weapon choice and per-bot "characters" to "why does this one feel
+  different"; **the Counter-Strike bot** (Michael Booth, GDC 2004),
+  whose navigation mesh was *learned by watching players walk*, and
+  whose stated goal was bots that are fun rather than strong.
+  Alongside them, the honest-difficulty practice every game has:
+  rubber-banding in racing games (Mario Kart the famous case), and
+  fighting-game opponents that read the player's inputs -- the thing
+  players can feel and resent ("SNK boss syndrome"). The 2010 Google
+  AI Challenge, whose game was Tron, is a nice small corpus of bots
+  that play on exactly the same inputs a player has
+  (`games/TinyTron.ml`'s header already points at it). (Names and
+  dates from memory, to check.)
 - **Utility**: utility AI, The Sims (1997-2000) -- needs scored, the
   highest wins; Dave Mark's "Behavioral Mathematics for Game AI" (2009).
 - **Influence**: influence maps (Andrew Zobrist's Go program, 1969 --
@@ -346,6 +511,13 @@ from memory until then.)
   on one maze, each ghost's target tile drawn as it is computed --
   Blinky at you, Pinky four ahead, Inky's reflected vector, Clyde
   running home when close. (The dossier's actual numbers.)
+- `examples/AiBots.ml`: two bots duelling in a small arena, with what
+  each of them *senses* drawn on the arena (the sight line, the last
+  seen position, the aim error as a cone) and its intent printed as
+  the keys it is "pressing"; keys for the skill knobs, so a bot can be
+  turned from harmless to unfair while you watch, and one key to let
+  it cheat (full knowledge, no delay) to show what that looks like --
+  it stops feeling like an opponent and starts feeling like a bug.
 - `examples/AiPerceptron.ml`: click to drop red and blue points, watch
   the line move, and watch it never settle on XOR.
 - `examples/AiNeuralNet.ml`: the spiral, the hidden layers, the
@@ -384,6 +556,20 @@ from memory until then.)
   material plus piece-square tables, ordering, quiescence, a
   transposition table, and a board that can be set up from a FEN string
   so the classic test positions can be pasted in.
+- **The existing games' bots, rewritten on `ai/Bot`** (each proposed
+  here, decided in the game): `games/TinySoldat.ml`'s two soldiers
+  (its `intent`/`human`/`bot` triple is the model the module is being
+  designed from, so it is the first user and the one that decides the
+  API), `games/TinyPong.ml`'s paddle (the smallest one: skill is a
+  speed limit), `games/TinyMicroMachines.ml`'s rivals through
+  `kits/racing/Topdown.computer` (which stays in the kit, gaining the
+  delay and error knobs), and `games/TinyXpilot.ml`'s "robots", which
+  its header already lists as an exercise.
+- **A 3D bot**, once `playground3d/Character3d` exists
+  ([`plan_physics3d_teaching.md`](plan_physics3d_teaching.md) phase
+  9): the same `Bot` with rays for senses and a capsule to drive --
+  the proof that the layer is dimension-independent, and the case that
+  would justify a shared shooter kit (see the bots section).
 - **The existing games' enemies, rewritten on `ai/`**: TinyPacman's
   ghosts on `Fsm` and the dossier's rules; TinyZelda's and TinyRogue's
   monsters, which currently walk at you and stick to walls, on
@@ -406,26 +592,33 @@ from memory until then.)
    right on the first try.
 4. **Deciding**: `Fsm`, then `Behavior` and `Utility` as the
    comparison; `AiGhosts`; TinyPacman's ghosts on it.
-5. **Deeper search**: `Deepening` (iterative deepening, ordering, a
+5. **Bots**: `Sense` (line of sight over `Physics`, hearing, the
+   memory of a last seen position) and `Bot` (the intent loop, the
+   reaction delay, the aim error, `skill`); `examples/AiBots.ml`.
+   Then the existing hand-written bots on it, `TinySoldat` first,
+   since its `intent`/`human`/`bot` triple is what the module is
+   generalised from -- if the port does not make that file *shorter*,
+   the layer is wrong and this phase failed.
+6. **Deeper search**: `Deepening` (iterative deepening, ordering, a
    budget, resumable), `Zobrist`; `AiConnect4`, whose node counts are
    the test of every one of them.
-6. **Monte Carlo**: `Mcts` (playouts, then UCT); `AiGo` on 9x9.
-7. **The Playground layer**: `playground/Ai.mli` finished (the three
+7. **Monte Carlo**: `Mcts` (playouts, then UCT); `AiGo` on 9x9.
+8. **The Playground layer**: `playground/Ai.mli` finished (the five
    families above), `Ai_debug`, and the board-game question settled by
    rewriting AiConnect4 on it.
-8. **Chess**: `AiChess`, rules first (perft counts as the test: the
+9. **Chess**: `AiChess`, rules first (perft counts as the test: the
    standard node counts per depth from the start position are a
    ruthless check on a move generator), search second.
-9. **Learning**: `Matrix`, `Neuron`, `Net`, `Backprop`, `Grad`,
-   `Train`; `AiPerceptron`, `AiNeuralNet`, `AiDigits`.
-10. **Learning to play**: `Qlearn`; `AiQlearn`; tic-tac-toe learned by
+10. **Learning**: `Matrix`, `Neuron`, `Net`, `Backprop`, `Grad`,
+    `Train`; `AiPerceptron`, `AiNeuralNet`, `AiDigits`.
+11. **Learning to play**: `Qlearn`; `AiQlearn`; tic-tac-toe learned by
     self-play, then measured against the minimax player it cannot beat
     but can learn to draw with; and the network as `AiGo`'s playout
     policy and evaluation -- AlphaGo's shape, at a size that runs here.
-11. **Docs**: `notes_ai.md` and `notes_ai_learning.md` checked against
+12. **Docs**: `notes_ai.md` and `notes_ai_learning.md` checked against
     the code, the numbers filled in;
     `notes_ai_related_work.md`'s postscript.
-12. *(later)* Navigation meshes (funnel/string-pulling) instead of
+13. *(later)* Navigation meshes (funnel/string-pulling) instead of
     grids; crowd avoidance (RVO/ORCA); planning (STRIPS, and GOAP as
     F.E.A.R. used it); genetic algorithms and neuroevolution (NEAT);
     a convolution layer, if the digits want one.
@@ -457,6 +650,25 @@ from memory until then.)
   a `match`, and a library around that can easily be worse than
   nothing); whether the resumable search is worth its complexity
   outside AiChess; and how much of chess to write.
+- **Bots, added 2026-09-20**, at the author's asking ("ultimately
+  `ai/` and the Evan-like `Ai.mli` should also help writing 2d and 3d
+  bots"): the plan had the opponent and the agent and no name for the
+  thing most of this repository's games actually need -- a mind that
+  plays through the player's own inputs. Written up from what three
+  games already do by hand (`TinySoldat`'s `intent`/`human`/`bot`,
+  `kits/racing/Topdown.computer`'s `(gas, steer)`, `TinyPong`'s
+  speed-limited paddle), which is also why `Bot`'s API is being
+  generalised from existing code rather than designed: the test of the
+  port is that TinySoldat gets *shorter*.
+- **`kits/bots/`: not yet, and the condition for changing that**
+  (the author's question, same day). The mechanism (`Bot`, `Sense`) is
+  genre-independent and goes in `ai/`; the knowledge is genre-specific
+  and stays in the genre kit, where `Topdown.computer` already lives.
+  A kit named after a technique rather than a genre would be the first
+  of its kind here. Revisit when a deathmatch bot is wanted by both a
+  2D and a 3D shooter -- that is a real shared body of knowledge (map
+  awareness, cover, weapons), and then it becomes `kits/shooter/` or
+  `kits/bots/`, with the reason recorded here.
 - **The naming**: the AI demo games are `Ai*` (AiOthello, AiTictactoe,
   AiPathfinding), not `Tiny*`, because what they demonstrate is the
   algorithm rather than an arcade original -- kept for AiConnect4,
@@ -477,8 +689,15 @@ from memory until then.)
   playing badly.
 - Golden frames for each example and game, through the scripted keys
   (`-script`), which is exactly why the seeds are explicit.
-- By eye, for the half that has no right answer: does the flock look
-  like a flock, does the ghost look like it is hunting you.
+- **For bots, two checks the other kinds don't need**: that skill is
+  monotone (a bot at skill 1 beats the same bot at skill 0 over N
+  seeded duels -- the same trick as depth 4 against depth 2), and that
+  a bot *cannot* cheat, which is a type rather than a test: if the
+  mind is `senses -> intent`, a bot reaching into the world does not
+  compile, and `Sense` is the only door.
+- By eye, for the third that has no right answer: does the flock look
+  like a flock, does the ghost look like it is hunting you, does the
+  bot look like a player having a bad day rather than a machine.
 
 ## Out of scope
 

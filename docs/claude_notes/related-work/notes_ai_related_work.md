@@ -46,6 +46,19 @@ every moment which one is being discussed.
 - **Half-Life (1998)**: the marines' flanking and the shouted callouts,
   mostly a state machine over navigation nodes, and the game that made
   the public notice enemy AI as a feature.
+- **The deathmatch bots (1997-2004)**: a lineage of its own, because
+  it is the only one where the AI plays *the player's* game. The
+  Reaper and Eraser bots were written by players for Quake and Quake
+  II, which shipped with none; **Quake III Arena** (1999) made them
+  the single-player mode, and Jan Paul van Waveren's thesis on its
+  bot -- the Area Awareness System, fuzzy weapon choice, per-bot
+  "characters" -- is still the reference for what a bot should know
+  about a map. **Counter-Strike's official bot** (Michael Booth, GDC
+  2004) learned its navigation mesh by watching people walk, and was
+  designed to be *fun* rather than strong. The whole lineage is an
+  argument that a good bot is made of restrictions -- reaction delay,
+  aim error, line of sight -- and not of better search. (Names and
+  dates from memory, to check.)
 - **The Sims (2000)**: utility AI, and the inversion that makes it
   work -- the *objects* advertise what they offer ("I reduce hunger by
   40"), so adding a new object adds behaviour without touching any
