@@ -242,10 +242,22 @@ val bounce : body -> body -> body * body
  * however heavy [b] is (a floor, a bat, a pinball flipper) *)
 val bounce_off : body -> body -> body
 
-(* every pair of them, once each. Enough for a handful of bodies
- * knocking about; a pile that has to *stay* still is phase 8, and so
- * is the broad phase that keeps this from being quadratic. *)
-val bounce_all : body list -> body list
+(* [bounce_all ?broad_phase bodies]: every pair whose bounding boxes
+ * overlap, once each. The pairs come from
+ * physics/3d/Broadphase3d.mli -- sweep and prune by default, which on
+ * 500 marbles compares 7,472 boxes where testing every pair compares
+ * 124,750 -- and all three methods find the same pairs, so only the
+ * work differs. A pile that has to *stay* still needs more than one
+ * pass: that is phase 8. *)
+val bounce_all : ?broad_phase:Broadphase3d.method_ -> body list -> body list
+
+(* [broad_phase m bodies]: the pairs [bounce_all] would test, and how
+ * many boxes [m] compared to find them -- for drawing the count on
+ * screen, as examples3d/PhysicsMarbles3d.ml does *)
+val broad_phase : Broadphase3d.method_ -> body list -> Broadphase3d.result
+
+(* the body's hitbox's axis-aligned box in the world *)
+val world_bounds : body -> Broadphase3d.box
 
 (* [ray ~from ~direction bodies]: the first body the ray meets and how
  * far away it is, in metres. What picking with the mouse, aiming, a

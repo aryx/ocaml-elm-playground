@@ -506,7 +506,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 5 done** (2026-09-20); the rest not started. Written as
+**Phases 0 to 6 done** (2026-09-20); the rest not started. Written as
 the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -699,6 +699,40 @@ wrong turns, as `done/plan_physics_teaching.md` does.
   - Still one contact per pair, solved once a frame. `bounce_all` is
     every pair once, quadratic, and says so: the broad phase is phase
     6 and the solver phase 8.
+- **Phase 6, DONE**: `Broadphase3d` (all pairs, a hashed uniform grid,
+  sweep and prune), `Physics3d.bounce_all ?broad_phase`,
+  `Physics3d.broad_phase` and `world_bounds`, 4 tests, and
+  `examples3d/PhysicsMarbles3d.ml` -- 200 marbles in a wireframe cage,
+  space switching the method, the count of compared boxes on screen.
+  Measured on 500 marbles piled in a box:
+
+  ```
+                     box tests        ms      pairs found
+     all pairs         124,750       0.75         174
+     grid                1,340       0.76         174
+     sweep and prune     7,472       0.22         174
+  ```
+
+  the same shape of answer as the 2D engine's: the grid makes far the
+  fewest comparisons and spends the winnings on its hash table, while
+  sweep and prune, a sort and a list, is fastest.
+  - **What the third dimension actually changes** is two things, and
+    both are in the `.mli`. The grid's memory: a dense grid at 100 a
+    side is a million cells, nearly all empty, so ours hashes them and
+    pays only for the ones something is in -- which
+    `PhysicsMarbles3d`'s "g" key draws, since that is a picture worth
+    having. And the sweep's *axis*, which 2D never had to choose: on
+    a pile that is wide in x and z and thin in y, sweeping y costs
+    84,750 box tests against 6,644 for x -- nearly as bad as testing
+    everything. `sweep_and_prune` therefore picks the axis by the
+    variance of the centres, I-COLLIDE's heuristic, and the `.mli`
+    admits it is a heuristic: here it picks z (7,472) where x (6,644)
+    was marginally better.
+  - Not built, and named: the dynamic AABB tree every modern engine
+    defaults to (it also answers ray queries, which is why it wins in
+    3D where in 2D it is a tie), and keeping the sorted order between
+    frames, which is what makes sweep and prune a pair *manager*
+    rather than a function.
 
 ## Verification
 

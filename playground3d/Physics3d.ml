@@ -153,16 +153,22 @@ let bounce (a : body) (b : body) : body * body =
 
 let bounce_off (wall : body) (b : body) : body = fst (bounce b (immovable wall))
 
-let bounce_all (bodies : body list) : body list =
+(* the body's hitbox's box in the world: what a broad phase sorts *)
+let world_bounds (b : body) : Broadphase3d.box = Hitbox3d.bounds (hitbox_of b)
+
+let broad_phase (m : Broadphase3d.method_) (bodies : body list) : Broadphase3d.result =
+  Broadphase3d.pairs m (Array.of_list (List.map world_bounds bodies))
+
+let bounce_all ?(broad_phase = Broadphase3d.Sweep_and_prune) (bodies : body list) : body list =
   let all = Array.of_list bodies in
-  let n = Array.length all in
-  for i = 0 to n - 2 do
-    for j = i + 1 to n - 1 do
+  let boxes = Array.map world_bounds all in
+  let found = Broadphase3d.pairs broad_phase boxes in
+  List.iter
+    (fun (i, j) ->
       let a, b = bounce all.(i) all.(j) in
       all.(i) <- a;
-      all.(j) <- b
-    done
-  done;
+      all.(j) <- b)
+    found.Broadphase3d.pairs;
   Array.to_list all
 
 let ray ~from ~direction (bodies : body list) : (body * number) option =

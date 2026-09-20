@@ -226,6 +226,20 @@
   construction and measured so over a thousand random collisions;
   energy is never created, and never lost with e = 1
 - playground3d/Physics3d: bounce, bounce_off and bounce_all over it
+- physics/3d/Broadphase3d: which pairs are worth testing exactly -- all
+  pairs, a hashed uniform grid, sweep and prune -- and what the third
+  dimension changes about them. A dense 3D grid at 100 a side is a
+  million cells, so the cells are hashed and only the occupied ones
+  exist; and the sweep has to *choose* an axis, where 2D just took x:
+  on a pile wide in x and z and thin in y, sweeping y costs 84,750 box
+  tests against 6,644 for x, so the axis is picked by the variance of
+  the centres. Measured on 500 marbles: 124,750 box tests for all
+  pairs (0.75 ms), 1,340 for the grid (0.76), 7,472 for sweep and
+  prune (0.22), all three finding the same 174 pairs
+- examples3d/PhysicsMarbles3d: 200 marbles in a wireframe cage, space
+  switching the method and the count of compared boxes on screen --
+  nothing else changes, which is the point -- and "g" drawing the
+  cells the grid actually keeps
 - examples3d/PhysicsBounce3d: five balls of different bounciness
   dropped together, each with a bar drawn at e^2 of its fall from its
   bounciness alone -- the simulation comes back and touches it, ~2%

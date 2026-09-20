@@ -58,6 +58,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: the five balls in the air, and the bar each one has to
      * come back to, drawn from its bounciness alone *)
     ("examples3d/PhysicsBounce3d", "", 3);
+    (* claude: two hundred marbles above the floor of their cage, and
+     * the count of bounding boxes the broad phase compared *)
+    ("examples3d/PhysicsMarbles3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
@@ -139,6 +142,12 @@ let scripted : Testutil_golden.scripted list =
      * beside the bar at e^2 of its fall, about 2% under it -- the cost
      * of a discrete step, and on screen rather than hidden *)
     ("examples3d/PhysicsBounce3d", "returned", 260, "x:1");
+    (* the grid's cells, drawn where they exist: a hashed grid holds
+     * only the cells something is in, and in 3D a dense one would be a
+     * million of them. Two spaces would show sweep and prune instead;
+     * all three find the same pairs, which is the point of the
+     * counter. *)
+    ("examples3d/PhysicsMarbles3d", "grid", 45, "space:1,g:10");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/LogoFractals3d", "tree", 5, "a:2");

@@ -409,10 +409,37 @@ hierarchy that is cheap to update as bodies move, and which also
 answers the ray queries of §7 -- which is why it wins in 3D and
 roughly tied in 2D.
 
-Numbers for our scenes (500 spheres, a brick wall, a pinball table) go
-here once measured (to come); the 2D engine's are in
-`notes_2d_physics.md` §9, and the shape of the answer was that the
-cheap AABB test before the exact one is most of the win.
+Measured, 500 marbles piled in a box (`Broadphase3d.mli` has the
+100-marble row too):
+
+```
+                     box tests        ms      pairs found
+   all pairs           124,750       0.75         174
+   grid                  1,340       0.76         174
+   sweep and prune       7,472       0.22         174
+```
+
+the same shape of answer as the 2D engine's (`notes_2d_physics.md`
+§9): the cheap box test before the exact one is most of the win
+whichever way the pairs are found, the grid makes the fewest
+comparisons and spends the winnings on its hash table, and sweep and
+prune -- a sort and a list -- is the fastest of the three.
+
+Two things are genuinely different here. The grid's memory, as above:
+ours hashes its cells, and `examples3d/PhysicsMarbles3d.ml` draws the
+ones that exist. And the sweep's *axis*, which in 2D one never has to
+think about: on that same pile, wide in x and z and thin in y,
+
+```
+   sweeping x        6,644 box tests
+   sweeping y       84,750            (the pile is 0.6 m tall)
+   sweeping z        7,472
+```
+
+so `sweep_and_prune` picks the axis with the most spread of centres,
+which is I-COLLIDE's heuristic and Bullet's -- and is a heuristic: it
+picks z here where x was marginally better, the two being within noise
+of each other.
 
 ## 9. Response: the impulse, with a tensor in it
 
