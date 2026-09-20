@@ -511,7 +511,25 @@ let chunk_shape (m : world) (sector : pos) : shape3d =
 
 let world = create_world ()
 let chunks : (pos, shape3d) Hashtbl.t = Hashtbl.create 128
-let () = Hashtbl.iter (fun sector _ -> Hashtbl.replace chunks sector (chunk_shape world sector)) world.sectors
+
+(* claude: the chunks are not all built at once. Building one means
+ * walking its blocks and making their faces; drawing it the first time
+ * means the backend sending it to the GPU -- about 120 chunks of an
+ * 85000-block world, which on the WebGL backend took tens of seconds
+ * in one go, a frozen page before anything showed. So a few are built
+ * each frame ([build_some], called from [update]) and the world grows
+ * in over a couple of seconds, which is what the original's queue does
+ * too (see the note on [init_shown]: this is the one thing that queue
+ * was for that is worth keeping). *)
+let to_build : pos Queue.t = Queue.create ()
+let () = Hashtbl.iter (fun sector _ -> Queue.push sector to_build) world.sectors
+
+let build_some () : unit =
+  for _ = 1 to 2 do
+    match Queue.take_opt to_build with
+    | Some sector -> Hashtbl.replace chunks sector (chunk_shape world sector)
+    | None -> ()
+  done
 
 (* claude: after an edit at [pos], the chunks that may look different:
  * [pos]'s own, and those of its 6 neighbors, whose exposed faces
@@ -607,6 +625,7 @@ let update (computer : computer) (m : model) : model =
   in
   let player = step world ~dt input player in
   let m = { m with player; block } in
+  build_some ();
   edit computer m;
   { m with last_time = Some now; was_down = computer.mouse.mdown; was_right_down = computer.mouse.mrdown; was_tab = tab }
 
@@ -651,9 +670,12 @@ let crosshair : shape3d =
 let status (computer : computer) (m : model) : shape3d =
   let (x, y, z) = m.player.position in
   let block = match m.block with Brick -> "brick" | Grass -> "grass" | Sand -> "sand" | Stone -> "stone" in
+  let building = Queue.length to_build in
   hud
     (words black
-       (Printf.sprintf "%s  (%.0f, %.0f, %.0f)%s" block x y z (if m.player.flying then "  flying" else ""))
+       (Printf.sprintf "%s  (%.0f, %.0f, %.0f)%s%s" block x y z
+          (if m.player.flying then "  flying" else "")
+          (if building > 0 then Printf.sprintf "  building %d chunks" building else ""))
     |> move (computer.screen.left +. 150.) (computer.screen.top -. 30.))
 
 let view (computer : computer) (m : model) : camera * shape3d list =
