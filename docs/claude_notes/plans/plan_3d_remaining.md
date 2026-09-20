@@ -70,6 +70,15 @@ independent, for both GPU backends:
   a cell's border. The classic fix: shrink each cell's UV rectangle by
   half a texel. To check in a real browser first.
 
+## 6. Ray tracing, the other renderer
+
+Its own plan now:
+[`plan_raytracing_teaching.md`](plan_raytracing_teaching.md) --
+`graphics/3d/Raytrace` over the same `Render.face list` the rasterizer
+takes, for `-dump-frame` stills and a low-resolution preview key, with
+the shadows, mirrors and glass the rasterizer cannot do; the tutorial
+is [`notes_raytracing.md`](../tutorials/notes_raytracing.md).
+
 ## Smaller things noticed along the way
 
 - **Hershey's colon** at small sizes, e.g. the HUD's "Mouse:": see

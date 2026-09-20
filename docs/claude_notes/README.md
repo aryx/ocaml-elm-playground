@@ -69,7 +69,9 @@ A reading order, from the simplest:
 2. `notes_3d.md`: 3D, from a camera to pixels (`graphics/3d/`);
    `notes_3d_shading.md`, light and color; `notes_3d_opti.md`, speed.
 3. `notes_opengl.md` and `notes_opengl_shaders.md`: the same done by a
-   GPU, and what changes.
+   GPU, and what changes; `notes_raytracing.md`, the other renderer --
+   a pixel asking what the eye sees, and the shadows, mirrors and
+   glass that follow (software backend, for stills).
 4. `notes_2d_physics.md`: motion, from Newton's laws to stacks of boxes
    (`physics/2d/`); `notes_3d_physics.md`, the same a dimension up
    (`physics/3d/`): quaternions, inertia tensors, capsules, and why a
@@ -104,7 +106,8 @@ The tools themselves are in `scripts/` (see `scripts/README.md`).
 
 ## plans/: what's next, and what was done
 
-- The open plans: `plan_physics3d_teaching.md`, `plan_ai_teaching.md`,
+- The open plans: `plan_physics3d_teaching.md`,
+  `plan_raytracing_teaching.md`, `plan_ai_teaching.md`,
   `plan_audio_teaching.md`, `plan_games.md`, `plan_games3d.md`,
   `plan_networking_teaching.md`,
   `plan_teaching_languages.md`, `plan_teaching_other.md`,
