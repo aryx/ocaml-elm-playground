@@ -181,6 +181,25 @@
   and the well's ring lit at the level the piece will land on, since a
   view from straight above cannot have a drop shadow (the shadow is
   always exactly behind the thing casting it)
+- games3d/TinyBoomerangFu3d: Boomerang Fu (2020), four foods in one
+  arena, one boomerang each, one hit kills. The whole game follows from
+  the weapon leaving your hand: while it is away you have only the
+  dash, and while you hold it the dash is a slash that kills at arm's
+  length. Three rules do the rest -- the way out cuts everyone, the way
+  back is its owner's catch, and it comes back to where the owner *is*,
+  steering at a moving target every frame -- plus one for the fence: a
+  throw turns on the one who threw it once it has got away and caromed
+  off something. The camera is fixed, high and nearly isometric,
+  because a party game on one screen cannot follow anybody, and
+  everything off the ground drags a shadow, which is the only depth cue
+  that angle allows. The computer's three players use the same intent a
+  human sends (a direction, a throw, a dash) and differ in four
+  numbers; their hesitation before throwing is what makes the game
+  playable at all, and their [clear_way] keeps last frame's direction
+  while it stays clear, without which one wedged between a pit and a
+  pillar shivers in a two-frame loop for a whole round. tests/games
+  checks the return leg finds a thrower who kept running, who a flight
+  cuts, the slash, and that the computer keeps out of the pits
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
   TinyTron3d, TinyMario64, TinyMarble (Marble Madness), TinyDoom3d
   (TinyDoom's level with a z-buffer, no BSP), TinyQuake (Quake's three

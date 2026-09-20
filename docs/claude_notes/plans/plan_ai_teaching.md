@@ -449,13 +449,24 @@ from memory until then.)
   and Fischer, 2002) applied to a tree; Browne et al., "A Survey of
   Monte Carlo Tree Search Methods" (2012).
 - **Steering**: Craig Reynolds, "Steering Behaviors For Autonomous
-  Characters" (GDC 1999).
+  Characters" (GDC 1999). Waiting user:
+  `games3d/TinyBoomerangFu3d.ml`'s `brain` (seek, flee, and an evade
+  that projects the player onto a flying boomerang's line to pick the
+  side to step off it) -- and a warning from it, for the `.mli`: its
+  characters have no velocity (a fixed speed, a committed dash), so a
+  steering API that is only forces on `Physics` bodies would have
+  nothing to offer them. Both forms, then: a force, and a direction.
 - **Flock**: Craig Reynolds, "Flocks, Herds and Schools: A Distributed
   Behavioral Model" (SIGGRAPH 1987) -- three rules, and the birds of
   *Batman Returns*.
 - **Fsm**: Pac-Man (1980) and its four ghosts, whose chase/scatter
   timing and per-ghost target tiles are documented down to the frame in
-  the Pac-Man Dossier (Jamey Pittman, 2009).
+  the Pac-Man Dossier (Jamey Pittman, 2009). Second waiting user:
+  `games3d/TinyBoomerangFu3d.ml`, whose computer is three states in all
+  but name -- dodge what is in the air, hunt while it holds its
+  boomerang, keep away while it does not -- and whose hardest lesson is
+  that the states need *hysteresis*, or the agent flips between two
+  every frame and goes nowhere.
 - **Behavior**: behavior trees, Halo 2 (Damian Isla, GDC 2005); the
   successor everyone copied, and its costs (the blackboard).
 - **Bot, Sense**: the deathmatch bots, which are where this was worked

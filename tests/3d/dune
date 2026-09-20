@@ -39,6 +39,7 @@
    %{project_root}/games3d/TinyQuake.exe
    %{project_root}/games3d/TinyBlockout.exe
    %{project_root}/games3d/TinyTombRaider.exe
+   %{project_root}/games3d/TinyBoomerangFu3d.exe
    %{project_root}/examples3d/checker.png ; TexturedCube3d's texture
  )
 )

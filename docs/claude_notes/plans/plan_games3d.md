@@ -394,6 +394,45 @@ paths connect).
   (later: needs an orthographic camera, which `Playground3d.camera`
   doesn't have -- a `fov` of 0 as the convention?).
 
+### 13. The local arena: one screen, one hit, four players
+
+Bomberman (Hudson Soft, 1983) set the shape and the last decade filled
+it in: Samurai Gunn (Beau Blyth, 2013), TowerFall (Matt Thorson, 2013),
+Duck Game (2014), Boomerang Fu (Cranky Watermelon, 2020). One screen,
+one hit, a round over in twenty seconds, three friends on the sofa.
+They are in *this* plan and not `plan_games.md`'s because the modern
+ones are drawn in 3D -- low-poly, flat-shaded, a fixed high camera --
+while being, underneath, exactly the 2D arena game Bomberman was.
+
+- **Toy**: TinyBoomerangFu3d (DONE: `games3d/TinyBoomerangFu3d.ml`),
+  four foods, a boomerang each. Its lesson is a design one, and it is
+  the cleanest example in `games3d/` of a whole game falling out of a
+  single rule: **your only weapon leaves your hand**. Throw and you are
+  unarmed for the second it takes to come back, with only the dash;
+  hold it and the dash becomes a slash that kills, but at arm's length
+  only. Everything else is a consequence -- the arena is small enough
+  that someone unarmed can always be reached, the return leg steers at
+  a *moving* owner (so you may throw and run), the way out cuts
+  everyone and the way back is the owner's catch, and a throw turns on
+  the one who threw it once it has got away and come off the fence.
+  Two things the 3D costs and pays for: the camera cannot follow
+  anybody (a party game shows one screen to four people, which is *why*
+  these arenas are one screen big), and at that fixed, nearly
+  isometric angle nothing that leaves the ground can be placed, so
+  every flying thing drags a shadow, as TinyMario64's does.
+- **Kit**: none. A second arena party game (a TinyTowerFall with arrows
+  to catch, a TinyDuckGame) would want what `kits/` has not got yet: a
+  round-and-score layer (`Rounds`?), which half of `games/` writes out
+  by hand.
+- **The computer**: written in the game, not from `ai/` -- see
+  [`plan_ai_teaching.md`](plan_ai_teaching.md), where it is now listed
+  as a waiting user of the unwritten `Steering` and `Fsm`. Two numbers
+  there are worth keeping in mind for whoever writes those: computer
+  players that throw the frame they have a line kill a human in a
+  second and a half (so they must hesitate), and a "pick the first
+  clear way" walker wedged between two obstacles oscillates for ever
+  (so it must keep last frame's way while that stays clear).
+
 ### Isometric: 3D worlds drawn in 2D
 
 Zaxxon (Sega, 1982), Q*bert (Gottlieb, 1982), Marble Madness (1984),

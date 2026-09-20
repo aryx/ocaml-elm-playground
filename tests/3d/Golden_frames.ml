@@ -70,6 +70,8 @@ let scenes : Testutil_golden.scene list =
     ("games3d/TinyQuake", "", 5);
     ("games3d/TinyBlockout", "", 5);
     ("games3d/TinyTombRaider", "", 5);
+    (* claude: the title's four foods on their turning arena *)
+    ("games3d/TinyBoomerangFu3d", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -122,6 +124,12 @@ let scripted : Testutil_golden.scripted list =
       "space:1,left:5,left:10,space:15,right:20,right:25,right:30,space:35,up:40,up:45,space:50,down:55,down:60,down:65,space:70,x:75" );
     (* down the entrance corridor: the texture page on the walls, one
      * square of it per square of wall, hieroglyphs along the north side *)
-    ("games3d/TinyTombRaider", "corridor", 90, "space:1,up:10-88") ]
+    ("games3d/TinyTombRaider", "corridor", 90, "space:1,up:10-88");
+    (* a boomerang in the air with its shadow under it (the one depth
+     * cue this fixed, nearly isometric camera gets), all four still
+     * standing; then, further in, the avocado in two halves, its cut
+     * faces pale, and the flight that did it *)
+    ("games3d/TinyBoomerangFu3d", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
+    ("games3d/TinyBoomerangFu3d", "cut", 95, "space:1,up:5-40,right:41-70,space:71,right:75-140") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

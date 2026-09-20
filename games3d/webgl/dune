@@ -18,6 +18,7 @@
 (copy_files ../TinyMinecraft.ml)
 (copy_files ../TinyBlockout.ml)
 (copy_files ../TinyTombRaider.ml)
+(copy_files ../TinyBoomerangFu3d.ml)
 
 (executables
   (names
@@ -35,6 +36,7 @@
     TinyQuake
     TinyBlockout
     TinyTombRaider
+    TinyBoomerangFu3d
   )
   (libraries
 

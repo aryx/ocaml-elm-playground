@@ -13,8 +13,9 @@
     TinyQuake
     TinyBlockout
     TinyTombRaider
+    TinyBoomerangFu3d
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider Tomb_atlas)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d Tomb_atlas)
   (libraries
     kit_puzzle ; TinyTombRaider's Push, the same one TinySokoban uses
     kit_lightcycles ; TinyTron3d's rules
