@@ -82,8 +82,14 @@ val down : mode -> number * number
    The sensor looks both ways, which is what keeps a hero on the ground
    over a bump: forwards for the first solid pixel (it is above the
    ground, walking off a slope), and backwards out of the solid it
-   already stands in (it is inside the ground, walking into one). *)
-val ground : tiles:(int * int -> surface option) -> size:int -> mode -> number * number -> (number * number) option
+   already stands in (it is inside the ground, walking into one).
+
+   [reach] is how far it looks, a tile by default (Sonic's own sensors
+   look 16 pixels). A game whose tiles are coarse, or whose hero can end
+   up deep inside the ground after a fast landing, can ask for more: the
+   search is a pixel walk, so the cost is that many steps. *)
+val ground :
+  tiles:(int * int -> surface option) -> size:int -> ?reach:int -> mode -> number * number -> (number * number) option
 
 (* [block size]: every pixel solid: the inside of the ground, a wall *)
 val block : int -> surface

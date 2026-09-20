@@ -130,8 +130,9 @@
   Path), kits/platformer (Tile_move, Ladder), kits/brawler (Hitbox,
   Frame_data, Stickman), kits/puzzle (Push, Undo) and
   TinySonic (curved ground: tiles with a shape and an angle, sensors
-  instead of a box, the speed along the surface, and a loop that is
-  just tiles); kits/platformer's Slope (the above, beside Tile_move's
+  instead of a box, the speed along the surface, a loop that is just
+  tiles and the path layers that let him out of it; hills, slides and
+  platforms, drawn with grass and checkered earth); kits/platformer's Slope (the above, beside Tile_move's
   blocks),
   kits/sectors (Sectors: a Doom level as sectors, its lines found),
   kits/heightmap (Heightmap: an island made up by diamond-square, the

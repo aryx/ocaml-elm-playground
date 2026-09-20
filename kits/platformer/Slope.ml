@@ -68,8 +68,9 @@ let solid_at ~(tiles : int * int -> surface option) ~(size : int) (px : int) (py
 (* the sensor looks along [down mode]: backwards out of the ground it
  * stands in, or forwards for the ground below it; at most a tile each
  * way, as Sonic's do *)
-let ground ~(tiles : int * int -> surface option) ~(size : int) (mode : mode) ((x, y) : number * number) :
-    (number * number) option =
+let ground ~(tiles : int * int -> surface option) ~(size : int) ?(reach : int option) (mode : mode)
+    ((x, y) : number * number) : (number * number) option =
+  let reach = match reach with Some r -> r | None -> size in
   let dx, dy = down mode in
   let px = int_of_float (Float.round x) and py = int_of_float (Float.round y) in
   let at k =
@@ -80,9 +81,9 @@ let ground ~(tiles : int * int -> surface option) ~(size : int) (mode : mode) ((
   let foot k = if dx <> 0. then x +. (dx *. float_of_int k) else y +. (dy *. float_of_int k) in
   (* above the ground: down to the first solid pixel, the feet on the
    * last empty one *)
-  let rec forward k = if k > size then None else match at k with Some s -> Some (foot (k -.. 1), s.angle) | None -> forward (k +.. 1) in
+  let rec forward k = if k > reach then None else match at k with Some s -> Some (foot (k -.. 1), s.angle) | None -> forward (k +.. 1) in
   (* inside the ground: up to the first empty pixel, the feet on it *)
   let rec backward k angle =
-    if k > size then None else match at (-k) with Some s -> backward (k +.. 1) s.angle | None -> Some (foot (-k), angle)
+    if k > reach then None else match at (-k) with Some s -> backward (k +.. 1) s.angle | None -> Some (foot (-k), angle)
   in
   match at 0 with Some s -> backward 1 s.angle | None -> forward 1
