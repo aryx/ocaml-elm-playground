@@ -331,7 +331,7 @@ let mouse_wheel_by notches mouse =
 let mouse_double mouse =
   { mouse with mdouble = true }
 let mouse_moves_reset mouse =
-  { mouse with mdx = 0.; mdy = 0.; mwheel = 0.; mdouble = false }
+  { mouse with mdx = 0.; mdy = 0.; mwheel = 0.; mdouble = false; mclick = false }
 
 (*-------------------------------------------------------------------*)
 (* Keyboard *)
@@ -609,7 +609,17 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
                   (mouse_click true computer.mouse) })
     | MouseButton is_down ->
         Game (memory,
-             { computer with mouse = mouse_down is_down computer.mouse })
+             { computer with mouse =
+                 (* claude: a click is the release of the button, so the
+                  * button up is both: mdown goes false, mclick is true
+                  * for the one update that follows (the Tick then
+                  * clears it, as it clears mdx and the wheel). Without
+                  * this, nothing ever set mclick: no backend emits the
+                  * MouseClick message above, which the web's vdom used
+                  * to send before the backends were factorized. *)
+                 (if is_down
+                  then mouse_down true computer.mouse
+                  else mouse_click true (mouse_down false computer.mouse)) })
     | RightMouseButton is_down ->
         Game (memory,
              { computer with mouse = mouse_right_down is_down computer.mouse })

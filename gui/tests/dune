@@ -1,0 +1,13 @@
+; claude: unit tests for gui/, run by 'make test' (dune runtest): the
+; .mli's worked examples, and the mouse logic that no golden frame can
+; check, because a click is a sequence of frames and a golden frame is
+; one moment.
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   elm_core ; Color
+   gui
+ )
+)

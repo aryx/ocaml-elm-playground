@@ -99,7 +99,9 @@ and fashion is not an argument:
   toolkits keep them in a side table keyed by an **id**, and
   generating those ids is where the design gets subtle (Dear ImGui
   hashes the label, which is why two buttons called "OK" in one window
-  are a classic bug).
+  are a classic bug). `gui/Immediate` uses the widget's *rectangle*
+  instead: same label twice is fine, same place twice is not, and that
+  one you can see.
 - **Layout is hard when nothing is retained**: you cannot ask a widget
   how big it wants to be before drawing it, because it does not exist
   until you draw it. Toolkits solve this by measuring in a first pass
@@ -210,6 +212,15 @@ until the first resize.
 - **Focus** is which widget gets the keys, plus the tab order and a
   visible ring. Every app's keyboard experience is this and nothing
   else.
+- **A click is the release**, not the press -- which is what lets you
+  press a button, think better of it, and slide away without firing
+  it (the Macintosh, 1984, and everything since). So a widget needs
+  both halves of the gesture and the memory of where the press began,
+  which is the capture above. The playground had a `mouse.mclick`
+  field for this and, it turned out, nothing had set it since the
+  backends were factorized: every game that fires on a click was
+  quietly working through its space-key path only. Writing one button
+  found it, which is the usual way these things surface.
 - **Double-click, the wheel, key repeat, typed characters**: the
   events a game never needs, and an app cannot live without -- which
   is why they are this plan's phase 0.

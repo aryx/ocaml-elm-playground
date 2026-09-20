@@ -25,6 +25,11 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/Picture", "o", 5);
     ("examples/software/Picture", "h", 5);
     ("examples/software/Typing", "", 5);
+    (* the widgets at rest: nothing under the mouse, which waits at
+     * (0, 0) -- pressing one is a sequence of frames, which the golden
+     * frames cannot script (a script holds keys, not the mouse), so
+     * that is gui/tests' business instead *)
+    ("examples/software/GuiWidgets", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);

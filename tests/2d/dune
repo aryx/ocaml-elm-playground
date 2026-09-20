@@ -7,6 +7,7 @@
    (glob_files golden/*.png)
    %{project_root}/examples/software/Picture.exe
    %{project_root}/examples/software/Typing.exe
+   %{project_root}/examples/software/GuiWidgets.exe
    %{project_root}/examples/software/Smiley.exe
    %{project_root}/examples/software/Words.exe
    %{project_root}/examples/software/Misc.exe

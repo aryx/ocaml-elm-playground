@@ -84,10 +84,32 @@ let test_keys_and_typed_are_different_questions () =
   | [ (typed, _, _) ] -> Alcotest.(check string) "the character, not the key" "A" typed
   | l -> Alcotest.failf "expected one frame, got %d" (List.length l)
 
+(* The fourth transient, and the oldest: a click is the *release* of
+ * the button, seen by one update and cleared by the tick after it --
+ * the property every widget rests on (gui/Immediate), and the one a
+ * game asks for when it fires where you clicked. *)
+let test_click_is_the_release () =
+  let seen = ref [] in
+  let update (computer : Playground.computer) () =
+    seen := (computer.mouse.mdown, computer.mouse.mclick) :: !seen
+  in
+  let app = Playground.game (fun _ _ -> []) update () in
+  let model = fst (app.init []) in
+  let model = drive app [ Playground.MouseButton true; tick 16 ] model in
+  let model = drive app [ Playground.MouseButton false; tick 32 ] model in
+  let _ = drive app [ tick 48 ] model in
+  match !seen with
+  | [ (down3, click3); (down2, click2); (down1, click1) ] ->
+      Alcotest.(check (pair bool bool)) "held, not clicked" (true, false) (down1, click1);
+      Alcotest.(check (pair bool bool)) "released: the click" (false, true) (down2, click2);
+      Alcotest.(check (pair bool bool)) "and gone" (false, false) (down3, click3)
+  | l -> Alcotest.failf "expected three frames, got %d" (List.length l)
+
 let tests =
   [
     t "typed accumulates over a frame, then clears" test_typed_accumulates_then_clears;
     t "the wheel's notches add up over a frame, then clear" test_wheel_accumulates_then_clears;
     t "a double click lasts exactly one frame" test_double_click_lasts_one_frame;
     t "a key name is not a character" test_keys_and_typed_are_different_questions;
+    t "a click is the release of the button" test_click_is_the_release;
   ]

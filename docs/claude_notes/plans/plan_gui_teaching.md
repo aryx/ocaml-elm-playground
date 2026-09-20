@@ -424,6 +424,84 @@ Measured: `dune build` clean everywhere including the js targets; the
 golden suites unchanged (the same eight frames drift here as before,
 the arm64-Linux difference `Testutil_golden.mli` documents).
 
+### Phase 1, DONE (2026-09-20), awaiting review
+
+The immediate-mode toolkit, and a fourth input nobody had noticed was
+missing.
+
+**`gui/`** (new private library, package `elm_playground`, pure OCaml,
+no dependency on the playground -- principle 1, so `playground/Gui.ml`
+is the adapter):
+
+- `Widget` (79 + 51 lines): what a widget is -- a `box` (a rectangle
+  placed by its centre, playground coordinates), the hit test
+  (`contains`), and `paint`, what a widget draws: **two constructors
+  only**, `Fill` and `Text`, since an outline is four fills (`frame`)
+  and a tick is one. `text_width` is the 0.6-em approximation the
+  repository already used (`Bigbang`, `Physics.draw`), said in the
+  `.mli` to be an approximation and why an exact one is not available
+  from this side.
+- `Theme` (45 + 44): every colour and size in one record, with the
+  three faces (`face`, `face_hot`, `face_down`) that are the whole of
+  how a button feels alive, and the lineage of the idea (X11
+  resources, CSS, Flutter's ThemeData, "design tokens").
+- `Immediate` (116 + 163): the engine, **as values** -- a widget takes
+  the toolkit's state and gives back a new one plus its answer.
+  Decisions taken here, each with its reason in the `.mli`:
+  - **a widget's id is its rectangle** (`(box.x, box.y)`), not a hash
+    of its label as Dear ImGui does. Two buttons called "OK" are then
+    fine and two buttons in the same place are not -- which is a bug
+    you can see on the screen, the better kind to have;
+  - **the capture is the only thing that survives a frame**: `Free`,
+    `Held of id`, `Elsewhere`. That is what makes a press that ends
+    outside not a click, a press that began outside not a click
+    either, and a slider dragged off itself still yours;
+  - **a click shorter than a frame still counts**: a release with
+    nothing held, which can only be a press and release between two
+    updates (under 1/60 s), fires the widget under the mouse. The
+    `Elsewhere` case is what makes that safe.
+
+**`playground/Gui.ml/.mli`** (77 + 76): the Evan-style API of the
+plan, unchanged from what was written above -- `button`, `checkbox`,
+`slider`, `label` asked for in `update`, `draw ()` in `view`. It holds
+**the one piece of mutable state in these libraries** (Dear ImGui's
+context, one per program), because `update` and `view` are two
+functions and the widgets asked for in one are drawn by the other.
+`draw` ends the frame; the next widget call starts the next one, which
+is the rule that needs no clock -- `-fixed-time` freezes the clock in
+every golden run, so anything keyed on time would have broken exactly
+in the tests.
+
+**The fourth missing input: `mouse.mclick` never happened.** Found
+while writing the button: nothing has emitted the `MouseClick` message
+since the backends were factorized (the web's vdom sent it, before),
+so `computer.mouse.mclick` was *always false* -- games that fire on a
+click (`TinyMissileCommand`, `TinyLemmings`, `TinyPortal2D`,
+`TinyTowerDefense`, ...) only ever worked through their space-key
+path, and `tests/games/` hid it by setting `mclick` by hand in its
+simulated computer. The fix is three lines in `game_update`, no
+backend touched: the button *up* now sets `mdown = false` and
+`mclick = true`, and the `Tick` clears it like the other transients --
+which is also what the author's own TODO there asked for. A fifth test
+in `Unit_input.ml` holds it.
+
+`gui/tests/` (79 + 134, 14 tests): the `.mli`s' worked examples, and
+the mouse logic **no golden frame can check** -- a click is a sequence
+of frames and a golden frame is one moment.
+
+`examples/GuiWidgets.ml` (80 lines, golden frame): a button, two
+sliders and a checkbox tuning a spinning disc, and the "after"
+picture to `Typing.ml`'s "before".
+
+Measured: `dune build` clean everywhere including the js targets;
+`make test` green (the 2D golden suite gains `GuiWidgets`, everything
+else unchanged: no existing frame moved a pixel).
+
+Not done, and deliberately left for the next phase: the game menus
+still place their `words` by hand. Converting one is the honest first
+customer, but it changes what a game looks like, and there is no
+`Inspect` panel yet to be the other one.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

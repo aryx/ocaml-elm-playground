@@ -638,6 +638,11 @@ type mouse = {
   mx : number;
   my : number;
   mdown : bool;
+  (** Whether the button was {i released} this frame: a click is a
+      press and a release, and it is the release that means "do it"
+      (so a press you drag away from and release elsewhere is not a
+      click on anything). A transient, like {!mdx}: the update that
+      follows the release sees it, and the next tick clears it. *)
   mclick : bool;
   mrdown : bool;
   mdx : number;

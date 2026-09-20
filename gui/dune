@@ -1,0 +1,15 @@
+; claude: a GUI toolkit, from scratch, for teaching how a program is
+; built around the person using it: what a widget is (Widget), where
+; its colors and sizes come from (Theme), and the immediate-mode
+; engine the playground's Gui is made of (Immediate). See
+; docs/claude_notes/plans/plan_gui_teaching.md and notes_gui.md.
+; Independent of the Playground (playground/Gui.ml is the adapter): it
+; speaks rectangles and paint, not shapes and computers. A private
+; library, installed as part of elm_playground: pure OCaml, so every
+; backend, the web one included, can use it.
+(library
+ (name gui)
+ (package elm_playground)
+ (wrapped false)
+ (libraries elm_core) ; Color
+)
