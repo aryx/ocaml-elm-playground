@@ -46,6 +46,7 @@
     TinyPinball
     TinyPortal2D
     TinyGauntlet2
+    TinyKickOff2
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

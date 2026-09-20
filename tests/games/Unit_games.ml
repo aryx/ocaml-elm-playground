@@ -2353,6 +2353,104 @@ let gauntlet_robot_escapes () =
   Alcotest.(check bool) "the robot found the way down" true !out;
   Alcotest.(check bool) "having opened the door with the key it picked up" true (!s.keys = 0 && !i > 60)
 
+(*****************************************************************************)
+(* TinyKickOff2 *)
+(*****************************************************************************)
+
+let kickoff_play (frames : int) ?(keyboard = fun (_ : int) -> initial_computer.keyboard) (g : TinyKickOff2.game) : TinyKickOff2.game =
+  let s = ref g in
+  for i = 1 to frames do
+    s := TinyKickOff2.update_game (computer ~keyboard:(keyboard i) i) !s
+  done;
+  !s
+
+(* the game with the whistle already gone and the ball at a player's
+ * feet, ready to dribble *)
+let kickoff_dribbling ?(glued = false) () : TinyKickOff2.game =
+  let open TinyKickOff2 in
+  (* one player and the ball, and nobody to take it off him: what is
+     being measured is the ball, not the other side *)
+  let g = { (new_game glued) with kickoff = 0 } in
+  let me = { (List.nth g.players g.mine) with px = 0.; py = -200.; dir = (0., 1.) } in
+  { g with players = [ me ]; mine = 0; ball = { (new_ball ()) with bx = 0.; by = -200. +. 22. } }
+
+(* The one idea: dribbling up the pitch, a free ball runs ahead of the
+ * player and has to be caught up, where a glued one is his feet. The
+ * numbers are in the game's header. *)
+let kickoff_free_ball () =
+  let open TinyKickOff2 in
+  let up _ = { initial_computer.keyboard with kup = true } in
+  let gap (glued : bool) =
+    let s = ref (kickoff_dribbling ~glued ()) and worst = ref 0. and touches = ref 0 in
+    for i = 1 to 180 do
+      let before = (List.nth !s.players !s.mine).touch in
+      s := update_game (computer ~keyboard:(up i) i) !s;
+      let me = List.nth !s.players !s.mine in
+      if me.touch > before then incr touches;
+      worst := Float.max !worst (Float.hypot (!s.ball.bx -. me.px) (!s.ball.by -. me.py))
+    done;
+    (!worst, !touches)
+  in
+  let free_gap, free_touches = gap false and glued_gap, _ = gap true in
+  Alcotest.(check bool) "glued, the ball is his feet" true (glued_gap < 30.);
+  Alcotest.(check bool) "free, it runs away from him" true (free_gap > 40.);
+  Alcotest.(check bool) "but not so far that he cannot catch it" true (free_gap < 120.);
+  Alcotest.(check bool) "and he has to touch it again and again" true (free_touches >= 3)
+
+(* The aftertouch: the same shot, bent by holding a direction while it
+ * is in the air, finishes somewhere else entirely. *)
+let kickoff_aftertouch () =
+  let open TinyKickOff2 in
+  let shot (bend : bool) =
+    let g = { (kickoff_dribbling ()) with power = 1. } in
+    (* let go of the kick at the first frame, then hold right or nothing *)
+    (* 40 frames, while it is still on the pitch: once it is in the
+       goal the referee puts it on the centre spot and both shots
+       measure the same nothing *)
+    let g = kickoff_play 40 ~keyboard:(fun i -> if i = 1 then initial_computer.keyboard else { initial_computer.keyboard with kright = bend }) g in
+    g.ball.bx
+  in
+  let straight = shot false and bent = shot true in
+  Alcotest.(check bool) "the bent ball ends up well to the side" true (bent -. straight > 80.)
+
+(* Through the posts is a goal, and the game starts again in the middle *)
+let kickoff_goal () =
+  let open TinyKickOff2 in
+  (* an empty net: with a keeper on his line this is a save, which is
+     the keeper's test, not the referee's. One player is kept, far
+     away, because the game always has someone to run *)
+  let g = { (new_game false) with kickoff = 0 } in
+  let g = { g with players = [ { (List.nth g.players 4) with px = 0.; py = -400. } ]; mine = 0 } in
+  let g = { g with ball = { (new_ball ()) with bx = 0.; by = half_h -. 30.; vy = 9.; last = Some South } } in
+  let g = kickoff_play 20 g in
+  Alcotest.(check int) "one nil" 1 g.south;
+  Alcotest.(check bool) "and the ball is back on the centre spot" true (Float.hypot g.ball.bx g.ball.by < 2.)
+
+(* Out at the side is a throw-in, to the other team, and the ball
+ * comes back on the pitch *)
+let kickoff_throw_in () =
+  let open TinyKickOff2 in
+  let g = { (new_game false) with kickoff = 0 } in
+  let g = { g with ball = { (new_ball ()) with bx = half_w -. 10.; by = 0.; vx = 9.; last = Some South } } in
+  let g = kickoff_play 20 g in
+  Alcotest.(check bool) "the ball is on the pitch again" true (Float.abs g.ball.bx < half_w);
+  Alcotest.(check bool) "and it is theirs" true (g.ball.last = Some North)
+
+(* The shape of a team: nobody is told the plan, but when the ball
+ * goes up the pitch the whole side goes with it. *)
+let kickoff_formation_slides () =
+  let open TinyKickOff2 in
+  let outfield (g : game) =
+    let them = List.filter (fun (p : player) -> p.side = South && not (keeper p)) g.players in
+    List.fold_left ( +. ) 0. (List.map (fun (p : player) -> p.py) them) /. float_of_int (List.length them)
+  in
+  let g = { (new_game false) with kickoff = 0 } in
+  let before = outfield g in
+  let g = { g with ball = { (new_ball ()) with bx = 0.; by = half_h -. 120. } } in
+  let g = kickoff_play 120 g in
+  let after = outfield g in
+  Alcotest.(check bool) "the side moved up with the ball" true (after > before +. 80.)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -2460,4 +2558,9 @@ let tests =
       t "TinyGauntlet2, shot the food" gauntlet_shot_the_food;
       t "TinyGauntlet2, the two chases" gauntlet_two_chases;
       t "TinyGauntlet2, the dungeon scrolls" gauntlet_scrolls;
-      t "TinyGauntlet2, a robot walks out of the dungeon" gauntlet_robot_escapes ]
+      t "TinyGauntlet2, a robot walks out of the dungeon" gauntlet_robot_escapes;
+      t "TinyKickOff2, the ball is not glued to your feet" kickoff_free_ball;
+      t "TinyKickOff2, the aftertouch bends it" kickoff_aftertouch;
+      t "TinyKickOff2, a goal, and the centre spot" kickoff_goal;
+      t "TinyKickOff2, out at the side is a throw-in" kickoff_throw_in;
+      t "TinyKickOff2, the formation slides with the ball" kickoff_formation_slides ]

@@ -44,6 +44,7 @@
 (copy_files ../TinyPinball.ml)
 (copy_files ../TinyPortal2D.ml)
 (copy_files ../TinyGauntlet2.ml)
+(copy_files ../TinyKickOff2.ml)
 
 (executables
   (names
@@ -89,6 +90,7 @@
     TinyPinball
     TinyPortal2D
     TinyGauntlet2
+    TinyKickOff2
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

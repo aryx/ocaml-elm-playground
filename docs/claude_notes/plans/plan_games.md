@@ -677,6 +677,41 @@ from memory, to check.)
   shared food that makes friends fight), the thief, "It's a trap!",
   walls that deflect shots.
 
+### 23. Sports: the ball that is not yours
+
+Pong is here already (section 1); this is the other kind, the team
+game seen from above. Kick Off (Dino Dini, Anco, 1989) and Kick Off 2
+(1990), Sensible Soccer (1992), and beside them Speedball 2: Brutal
+Deluxe (The Bitmap Brothers, 1990), which is a sport the way Rollerball
+is. (Names and dates from memory, to check.)
+
+- **Toy**: TinyKickOff2 (DONE: `games/TinyKickOff2.ml`, a pitch taller
+  than the screen, five a side, a two-minute half, throw-ins and
+  goals).
+- **The one idea**: the ball is **not glued to your feet**. Every other
+  football game of the era carried the ball with whoever was nearest;
+  Dini's ball is touched ahead of you as you run into it and rolls on
+  a little faster than you can run. The flag `ball=glued` plays it the
+  other way, and the difference is a measurement: dribbling straight
+  for three seconds, glued keeps the ball 22 pixels away (his feet --
+  the two radii exactly), free lets it get 48 ahead and takes 5
+  touches to keep it. A dribble becomes a chase you are only just
+  winning.
+- **The second**: the **aftertouch** -- while the ball is in the air
+  from your kick, the arrows bend it. The same shot, held right for
+  its 40 frames in the air, lands 141 pixels to the side of the one
+  left alone.
+- **The third**: a team is a **shape**, not ten brains. Each player
+  has his place in a formation, pulled a third of the way towards the
+  ball; only the nearest one chases. Ten lines, and it looks like
+  football -- the same trick as a flock.
+- **Kit**: none yet, deliberately. The second sports game is the one
+  that would justify it, and it is named: **TinySpeedball2**, whose
+  arena is a pinball table with players in it (bounce domes, stars,
+  score multipliers, and the ball never stops). What it would want out
+  of TinyKickOff2 is the pitch, the formation and the free ball; what
+  it adds is the furniture that scores.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,
