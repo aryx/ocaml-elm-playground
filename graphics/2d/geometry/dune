@@ -1,4 +1,5 @@
-; claude: 2D geometry: vectors (Vec2) and affine transforms (Affine).
+; claude: 2D geometry: vectors (Vec2), affine transforms (Affine), and
+; curves (Curve: Bézier and Catmull-Rom, flattened into polylines).
 ; Depends on nothing.
 ; A private library, see graphics/core/dune; installed as part of
 ; elm_playground, the package every backend depends on, since physics/

@@ -7,5 +7,5 @@
 (library
  (name kit_shmup)
  (wrapped false)
- (libraries elm_core elm_playground)
+ (libraries elm_core elm_playground graphics_2d_geometry) ; Curve, for Path
 )

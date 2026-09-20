@@ -13,6 +13,7 @@ let () =
       List.concat
         [
           Unit_affine.tests;
+          Unit_curve.tests;
           Unit_framebuffer.tests;
           Unit_fill.tests;
           Unit_line.tests;
