@@ -44,7 +44,7 @@ differently -- which is the same starting point the 2D plan had:
 - `games3d/TinyMario64.ml`: box against box, feet, sides and head
   resolved separately, plus coyote time and jump buffering ("no
   physics engine (see plan_physics_teaching.md)", says its header);
-- `games3d/TinyMarble.ml`: a ball on a height map, `5/7 g sin(a)`
+- `games3d/TinyMarbleMadness.ml`: a ball on a height map, `5/7 g sin(a)`
   derived by hand, elastic ball-ball collisions, "not Physics: it's
   2D, and a ball on a height map is ten lines";
 - `games3d/TinyQuake.ml`, `TinyTombRaider.ml`, `TinyDescent3d.ml`,
@@ -101,7 +101,7 @@ area needs of its own:
 - **The existing games keep their hand-written physics**, and gain a
   `physics=engine` flag, exactly as `Asteroid.ml`, `Mario.ml` and
   `TinyMario.ml` did in 2D: two engines on the same objects in one
-  file is the best comparison there is, and rewriting TinyMarble's
+  file is the best comparison there is, and rewriting TinyMarbleMadness's
   ten lines into an engine call would *lose* the lesson its header
   makes.
 - **Deterministic**: a fixed step, no wall clock, no global `Random`,
@@ -247,7 +247,7 @@ the character controller is a `body` verb (`walk`) or its own layer
   (box collisions against the engine's; its game feel stays
   hand-written, which is the point -- coyote time is not physics),
   `TinyMinecraft.ml` (the player capsule against blocks, phase 9),
-  `TinyMarble.ml` (the height-map ball against a real rolling sphere:
+  `TinyMarbleMadness.ml` (the height-map ball against a real rolling sphere:
   its `5/7` is the engine's own test, phase 7).
 - **Later**: a raycast vehicle for `TinyVirtuaRacing.ml`
   (elm-physics's RaycastCar is the model: four springs with rays for
@@ -428,7 +428,7 @@ Each small, each one idea, each deterministic (golden frames in
   a box dropped on a corner (the 2D `PhysicsBounce.ml`'s twin).
 - `PhysicsRoll3d.ml`: a sphere, a cylinder and a box down the same
   ramp. The sphere arrives at `5/7 g sin a`, the box at `g sin a`
-  minus friction, and `games3d/TinyMarble.ml` derived that same 5/7 by
+  minus friction, and `games3d/TinyMarbleMadness.ml` derived that same 5/7 by
   hand: the example is the engine's own cross-check against a game
   that predates it.
 - `PhysicsStack3d.ml`: a brick wall, a domino run and a Jenga tower;
@@ -477,7 +477,7 @@ Each phase builds, tests and ships on its own.
    (500 spheres) measured, the numbers into the notes.
 7. **Rotation and rolling**: inertia tensors from every hitbox,
    off-centre impulses, rolling friction; `PhysicsRoll3d.ml`, and
-   `TinyMarble.ml`'s `physics=engine`.
+   `TinyMarbleMadness.ml`'s `physics=engine`.
 8. **Stacking**: `Solver3d` -- manifolds by clipping the incident face
    against the reference face (up to 4 points), sequential impulses,
    warm starting by matching points, a bounce threshold, sleeping;
@@ -506,7 +506,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 4 done** (2026-09-20); the rest not started. Written as
+**Phases 0 to 5 done** (2026-09-20); the rest not started. Written as
 the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -667,6 +667,38 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     flat polygon vanishes edge-on, and the software backend has no
     alpha for a translucent solid): a box's twelve edges, a sphere's
     three rings, a capsule's outline, a plane's grid.
+- **Phase 5, DONE**: `Resolve3d` (the impulse with the tensor in its
+  denominator, friction along two tangents, the positional
+  correction), `Physics3d`'s `bounce`, `bounce_off` and `bounce_all`,
+  6 tests in `Unit_resolve3d` and one more in the API's, and
+  `examples3d/PhysicsBounce3d.ml`.
+  - **The two 2D worked examples had to come out the same**, and they
+    do: two balls head on (0 and 2 at e = 1, 1 and 1 at e = 0, the
+    energy kept only by e = 1), and a ball into the end of a rod (the
+    rod takes 0.4 of the speed and spins at 1.2 rad/s, the ball keeps
+    0.6). That second one is the whole phase in one number: the 2D
+    formula's `(r x n)^2 / I` became `n . ((I^-1 (r x n)) x r)`, and
+    the answer did not move.
+  - **Both conservation laws hold by construction**, and the test says
+    so with numbers: over a thousand random collisions -- random
+    masses, tensors, spins, orientations, restitutions and frictions
+    -- the pair's momentum and its angular momentum about the origin
+    are unchanged to better than 1e-12, energy is never created, and
+    with `e = 1` and no friction it is not lost either.
+  - **Friction is a pyramid, not a cone**, and `Resolve3d.mli` draws
+    the picture: two perpendicular tangents each clamped to `mu j`
+    lets the diagonal reach `mu j sqrt 2`, 41% too much. Everyone
+    ships the pyramid.
+  - `PhysicsBounce3d` checks itself the way `PhysicsFloat3d` does: the
+    bar beside each ball is drawn at `e^2` of its fall, from `e` alone,
+    and the ball comes back and touches it -- about 2% under, which is
+    the discrete step's cost and is printed rather than hidden. The
+    crate dropped on a corner is the part with no 2D version: the
+    impulse lands far from its centre, so most of what it gets is
+    spin.
+  - Still one contact per pair, solved once a frame. `bounce_all` is
+    every pair once, quadratic, and says so: the broad phase is phase
+    6 and the solver phase 8.
 
 ## Verification
 

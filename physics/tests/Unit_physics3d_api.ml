@@ -14,6 +14,9 @@ open Playground
 open Playground3d
 open Physics3d
 
+(* [ball] is a verb here and a good name for a body: keep both *)
+let ball_hitbox = ball
+
 let t = Testo.create
 let close = Alcotest.(check (float 1e-9))
 let rec repeat n f b = if n = 0 then b else repeat (n - 1) f (f b)
@@ -180,6 +183,30 @@ let rays () =
       | None -> Alcotest.fail "the floor is right below"
       | Some (_, d) -> Alcotest.(check (float 1e-6)) "0.6 above the ground" 0.6 d)
 
+(* the API's side of phase 5: one call, and the pair has bounced *)
+let bouncing () =
+  let floor = body (Playground3d.box gray 10. 1. 10.) |> at 0. (-0.5) 0. |> immovable in
+  let ball = body (sphere red 0.5) |> ball_hitbox |> at 0. 0.4 0. |> moving 0. (-3.) 0. |> bouncy 0.8 in
+  let after = bounce_off floor ball in
+  Alcotest.(check (float 1e-6)) "it comes back at 0.8 of the speed" 2.4 after.vy;
+  Alcotest.(check bool) "and is no longer inside the floor" true (after.y >= 0.5 -. 1e-9);
+  let dead = bounce_off floor (ball |> bouncy 0.) in
+  Alcotest.(check (float 1e-9)) "clay does not come back" 0. dead.vy;
+  (* two balls head on, equal and elastic: they swap *)
+  let left = body (sphere red 0.5) |> ball_hitbox |> at (-0.4) 0. 0. |> moving 2. 0. 0. |> bouncy 1. in
+  let right = body (sphere blue 0.5) |> ball_hitbox |> at 0.4 0. 0. |> bouncy 1. in
+  let left, right = bounce left right in
+  Alcotest.(check (float 1e-6)) "the first stops" 0. left.vx;
+  Alcotest.(check (float 1e-6)) "the second leaves at 2" 2. right.vx;
+  (* bodies that miss are handed back untouched *)
+  let far = body (sphere blue 0.5) |> ball_hitbox |> at 9. 0. 0. in
+  let a, b = bounce left far in
+  Alcotest.(check bool) "nothing happens to a pair that misses" true (a.vx = left.vx && b.x = far.x);
+  (* and all of them at once *)
+  match bounce_all [ left; right; far ] with
+  | [ _; _; _ ] -> ()
+  | _ -> Alcotest.fail "bounce_all gives back as many bodies as it took"
+
 let tests =
   [ t "Physics3d, a thrown ball" thrown_ball;
     t "Physics3d, the pushes add up and are used up" accumulator;
@@ -192,4 +219,5 @@ let tests =
     t "Physics3d, draw and debug" drawing;
     t "Physics3d, a hitbox is not a drawing" hitboxes;
     t "Physics3d, a contact" contacts;
-    t "Physics3d, rays: picking, aiming, a ground check" rays ]
+    t "Physics3d, rays: picking, aiming, a ground check" rays;
+    t "Physics3d, bouncing" bouncing ]

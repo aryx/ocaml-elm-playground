@@ -100,7 +100,7 @@
 - kits/: racing (Road, Car, Topdown), maze (Grid_move, Chase), lightcycles
   (TinyTron's rules without a view)
 - games/: TinyMario (was Platformer; pixel-art hero, sounds and
-  music), TinyInvaders, TinySokoban (undo), TinyPacman, TinyWolf (a
+  music), TinyInvaders, TinySokoban (undo), TinyPacman, TinyWolfenstein (a
   raycaster), TinyOutRun (pseudo-3D), TinyWorms, TinySpacewar, TinyPong,
   TinyCameltry, TinySlingshot, TinySoldat, TinyBomberman, TinyTron,
   TinyMicroMachines, TinyXpilot (the ball game on a rope, 1 or 2
@@ -140,7 +140,7 @@
   kits/segments (Segments: a Descent mine of boxes and the openings
   where they touch; Sixdof: a ship that can point anywhere)
 - games2.5d/ (new): the pseudo-3D games moved together, with a README
-  comparing their tricks and their sizes -- TinyWolf, TinyOutRun,
+  comparing their tricks and their sizes -- TinyWolfenstein, TinyOutRun,
   TinyKart, TinyDoom, TinyComanche -- and TinyDescent, which is full 3D
   on the 2D playground: its own projection and clipping, the mine
   walked through its portals, cells painted farthest first, no z-buffer;
@@ -215,6 +215,23 @@
   Not there, and said in the .mli rather than stubbed: GJK/EPA, convex
   hulls (which need their faces), triangle meshes, and contact
   manifolds (phase 8)
+- physics/3d/Resolve3d: what happens after two hitboxes touch -- the
+  impulse, with the inertia tensor inside its denominator
+  (n . ((I^-1 (r x n)) x r) where 2D had (r x n)^2 / I), friction along
+  two tangents (the pyramid every engine ships, 41% too strong on the
+  diagonals, with the picture in the .mli), and the positional
+  correction. The 2D engine's worked examples come out identical, which
+  is the point: a ball into the end of a rod still gives it 0.4 of the
+  speed and 1.2 rad/s. Momentum and angular momentum are conserved by
+  construction and measured so over a thousand random collisions;
+  energy is never created, and never lost with e = 1
+- playground3d/Physics3d: bounce, bounce_off and bounce_all over it
+- examples3d/PhysicsBounce3d: five balls of different bounciness
+  dropped together, each with a bar drawn at e^2 of its fall from its
+  bounciness alone -- the simulation comes back and touches it, ~2%
+  under, which is the discrete step's cost and is on screen. And a
+  crate dropped on its corner, where the impulse lands far from the
+  centre and most of what it gets is spin
 - examples3d/PhysicsHitbox3d: four shapes wearing their hitboxes as
   green wireframes, one you push through them with the arrows, and the
   contact drawn as an arrow along the way out, as long as the overlap
@@ -269,8 +286,8 @@
   pillar shivers in a two-frame loop for a whole round. tests/games
   checks the return leg finds a thrower who kept running, who a flight
   cuts, the slash, and that the computer keeps out of the pits
-- games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
-  TinyTron3d, TinyMario64, TinyMarble (Marble Madness), TinyDoom3d
+- games3d/: TinyBattlezone (vector 3D), TinyWolfenstein3d, TinyVirtuaRacing,
+  TinyTron3d, TinyMario64, TinyMarbleMadness (Marble Madness), TinyDoom3d
   (TinyDoom's level with a z-buffer, no BSP), TinyQuake (Quake's three
   tools at startup: qbsp's CSG and BSP of solid boxes, vis's visibility
   set per leaf, light's baked lightmaps with shadows; "v" to compare),

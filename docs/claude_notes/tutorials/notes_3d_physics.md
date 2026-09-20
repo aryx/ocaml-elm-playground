@@ -431,13 +431,36 @@ tensor version -- Baraff and Witkin's course notes (SIGGRAPH,
 1997-2001) derive it line by line. Apply `j n` to the velocities and
 `r x (j n)` to the spins.
 
+Both conservation laws then hold *by construction* rather than by
+luck: the two bodies get the same impulse with opposite signs at the
+same point in the world, so the linear momentum cancels, and the
+angular momentum does too about any point at all (each body's change
+is `p x J`, with `p` the contact point). Measured over a thousand
+random collisions in `Unit_resolve3d`: both within 1e-12, energy never
+created, and never lost either when `e = 1` and there is no friction.
+
+The check that mattered most while writing it was the 2D engine's own
+worked example, one dimension up: a ball into the *end* of a rod gives
+the rod 0.4 of the speed and 1.2 rad/s of spin, and the ball keeps
+0.6. The tensor version has to produce that same pair of numbers, and
+it does.
+
 **Friction** gains a dimension too, and this is a small, real
 difference: in 2D there is one tangent direction, so friction is one
 impulse clamped to `mu j`. In 3D the tangent plane is two-dimensional.
 Engines pick two perpendicular tangents and clamp each to `mu j`,
 which is a friction *pyramid* -- slightly too strong on the diagonals
 -- instead of the true *cone*. Everyone ships the pyramid; we do too,
-and `Resolve3d.mli` draws the picture of what it gets wrong.
+and `Resolve3d.mli` draws the picture of what it gets wrong (the
+diagonals grip `sqrt 2` times too hard, and which way the diagonals
+lie is an implementation detail of `Resolve3d.tangents`).
+
+`examples3d/PhysicsBounce3d.ml` is the phase's demo and checks itself:
+the bar beside each ball is drawn at `e^2` of its fall from `e` alone,
+and the simulation comes back and touches it, about 2% under -- the
+discrete step's cost, printed rather than hidden. The crate dropped on
+a corner is the part with no 2D version: the impulse lands far from
+its centre, so most of what it gets is spin.
 
 ## 10. Contacts, and stacking
 
@@ -476,7 +499,7 @@ spin, because `I = 2/5 m r^2`. Galileo timed balls down inclined
 planes (*Two New Sciences*, 1638) precisely to slow falling down
 enough to measure it, and missed the 5/7.
 
-The nice part for us is that `games3d/TinyMarble.ml` *already*
+The nice part for us is that `games3d/TinyMarbleMadness.ml` *already*
 computes that number by hand -- its header derives it, because a ball
 on a height map was ten lines and an engine was not needed. So
 `PhysicsRoll3d.ml` is a cross-check in both directions: the engine,
@@ -655,7 +678,7 @@ The games arrive in the order the engine can support them
 ([`plan_physics3d_teaching.md`](../plans/plan_physics3d_teaching.md)):
 `StarCollector3d.ml` ported behind a `physics=engine` flag first (the
 2D plan's pattern: the hand-written physics stays, beside the
-engine's, in the same file), then `TinyMarble.ml`'s rolling against
+engine's, in the same file), then `TinyMarbleMadness.ml`'s rolling against
 §11's, `TinyMinecraft.ml`'s and `TinyMario64.ml`'s players against
 §14's, and then the three the plan is really for -- `TinyPinball3d`
 (§12), `TinyHalfLife2` (§13, §6), `TinyPortal` (§15).

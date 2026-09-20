@@ -105,6 +105,16 @@ let pill (b : body) : body =
 let hitbox_of (b : body) : Hitbox3d.placed =
   Hitbox3d.place ~orientation:b.orientation (b.x, b.y, b.z) b.hitbox
 
+(* the engine's body, and back: the API counts angles in degrees and
+ * physics/3d in radians, and this is the only place that matters *)
+let state (b : body) : Body3d.t =
+  Body3d.make ~vel:(b.vx, b.vy, b.vz) ~orientation:b.orientation ~spin:(to_radians b.spin) ~mass:b.mass
+    ~inertia:b.inertia (b.x, b.y, b.z)
+
+let with_state (s : Body3d.t) (b : body) : body =
+  let x, y, z = s.Body3d.pos and vx, vy, vz = s.Body3d.vel in
+  { b with x; y; z; vx; vy; vz; orientation = s.Body3d.orientation; spin = to_degrees s.Body3d.spin }
+
 let at x y z (b : body) : body = { b with x; y; z }
 let moving vx vy vz (b : body) : body = { b with vx; vy; vz }
 let pointing axis deg (b : body) : body = { b with orientation = Quat.of_axis_angle axis (radians deg) }
@@ -130,6 +140,30 @@ let solid_as sides (b : body) : body = { b with inertia = Body3d.box ~mass:b.mas
 
 let touching (a : body) (b : body) : bool = Collide3d.touching (hitbox_of a) (hitbox_of b)
 let contact (a : body) (b : body) : Contact3d.t option = Collide3d.contact (hitbox_of a) (hitbox_of b)
+
+(* the pair's: the bouncier one's bounciness and the geometric mean of
+ * the frictions, which are Box2D's choices and the 2D API's *)
+let bounce (a : body) (b : body) : body * body =
+  match contact a b with
+  | None -> (a, b)
+  | Some c ->
+      let restitution = Float.max a.bounciness b.bounciness and friction = sqrt (a.friction *. b.friction) in
+      let sa, sb = Resolve3d.resolve ~restitution ~friction (state a, state b) c in
+      (with_state sa a, with_state sb b)
+
+let bounce_off (wall : body) (b : body) : body = fst (bounce b (immovable wall))
+
+let bounce_all (bodies : body list) : body list =
+  let all = Array.of_list bodies in
+  let n = Array.length all in
+  for i = 0 to n - 2 do
+    for j = i + 1 to n - 1 do
+      let a, b = bounce all.(i) all.(j) in
+      all.(i) <- a;
+      all.(j) <- b
+    done
+  done;
+  Array.to_list all
 
 let ray ~from ~direction (bodies : body list) : (body * number) option =
   List.fold_left
@@ -174,18 +208,13 @@ let spin_by tx ty tz (b : body) : body =
 (*****************************************************************************)
 
 let step (b : body) : body =
-  let engine =
-    Body3d.make ~vel:(b.vx, b.vy, b.vz) ~orientation:b.orientation ~spin:(to_radians b.spin) ~mass:b.mass
-      ~inertia:b.inertia (b.x, b.y, b.z)
-  in
+  let engine = state b in
   let engine =
     Integrate3d.step Integrate3d.Semi_implicit_euler ~torque:b.torque
       ~force:(Force3d.uniform (b.ax, b.ay, b.az))
       ~dt:tick engine
   in
-  let x, y, z = engine.Body3d.pos and vx, vy, vz = engine.Body3d.vel in
-  { b with x; y; z; vx; vy; vz; orientation = engine.Body3d.orientation; spin = to_degrees engine.Body3d.spin;
-    ax = 0.; ay = 0.; az = 0.; torque = (0., 0., 0.) }
+  { (with_state engine b) with ax = 0.; ay = 0.; az = 0.; torque = (0., 0., 0.) }
 
 (*****************************************************************************)
 (* Looking at bodies *)

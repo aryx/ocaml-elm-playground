@@ -47,12 +47,15 @@
    Integrate3d.semi_implicit_euler for the position and one
    Integrate3d.spin_step for the orientation.
 
-   Collisions are *found* here ([touching], [contact], [ray], and the
-   hitboxes they work on) but not yet *resolved*: [bounce] and a
-   [world] to [simulate] arrive with phases 5 and 8 of
-   docs/claude_notes/plans/plan_physics3d_teaching.md, as do the
-   character controller and joints. Until then a game finds its
-   contacts here and answers them itself, as games3d/TinyMario64.ml
+   Collisions are found ([touching], [contact], [ray]) and answered
+   ([bounce], [bounce_off], [bounce_all]) -- one pair at a time. A
+   *pile* of bodies that must stay still needs more than that: every
+   contact solved again and again while its neighbours move, and four
+   contact points per pair rather than one. That is a [world] to
+   [simulate], phase 8 of
+   docs/claude_notes/plans/plan_physics3d_teaching.md, and the
+   character controller and the joints come with 9 and 11. A game that
+   needs a stack today does its own contacts, as games3d/TinyMario64.ml
    does.
 *)
 
@@ -227,6 +230,22 @@ val touching : body -> body -> bool
 (* and by how much, and which way to push them apart
  * (physics/3d/Contact3d.mli); [None] when they miss *)
 val contact : body -> body -> Contact3d.t option
+
+(* [bounce a b]: if they touch, the two of them bouncing off each other
+ * -- new velocities and spins from the impulse
+ * (physics/3d/Resolve3d.mli), and pushed apart by the overlap. The
+ * pair's bounciness is the bouncier one's, its friction the geometric
+ * mean of theirs, as in 2D and in Box2D. *)
+val bounce : body -> body -> body * body
+
+(* [bounce_off wall b]: [b] bouncing off [wall], which does not move
+ * however heavy [b] is (a floor, a bat, a pinball flipper) *)
+val bounce_off : body -> body -> body
+
+(* every pair of them, once each. Enough for a handful of bodies
+ * knocking about; a pile that has to *stay* still is phase 8, and so
+ * is the broad phase that keeps this from being quadratic. *)
+val bounce_all : body list -> body list
 
 (* [ray ~from ~direction bodies]: the first body the ray meets and how
  * far away it is, in metres. What picking with the mouse, aiming, a
