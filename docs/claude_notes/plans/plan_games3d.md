@@ -353,8 +353,22 @@ Blockout (1989: Tetris in a 3D pit), Monument Valley (ustwo, 2014:
 impossible architecture, an orthographic camera making far and near
 paths connect).
 
-- **Toys**: TinyBlockout (Tetris with depth: `games/Tetris.ml`'s logic
-  on a 3D grid, the camera looking down the pit), TinyMonumentValley
+- **Toys**: TinyBlockout (DONE: `games3d/TinyBlockout.ml`, Tetris down
+  a well -- the pit an array of cols x levels x rows, a layer full when
+  its cols x rows cells are, and a quarter turn nothing but the piece's
+  bounding box turned: integers, no trigonometry, and four turns about
+  any axis the identity, which `tests/games` checks for every piece.
+  Not `games/Tetris.ml`'s logic in the end: that came from elm-flatris
+  and is written around a 2D grid, so the three rules here were shorter
+  re-derived. The lesson is that the rules are the easy half -- most of
+  the file is *depth cues*, since from up there you cannot tell how
+  deep anything is: the camera just above the mouth so the near walls
+  are wide, cubes drawn darker the deeper they lie, and the ring of the
+  well lit at the level the piece will land on. It has to be the ring,
+  and that is the nice part: a game seen from the side can draw a drop
+  shadow under the falling piece and one seen from straight above
+  cannot, because the shadow is always exactly behind the thing casting
+  it), TinyMonumentValley
   (later: needs an orthographic camera, which `Playground3d.camera`
   doesn't have -- a `fov` of 0 as the convention?).
 

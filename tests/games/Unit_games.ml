@@ -1701,6 +1701,59 @@ let puzzlescript_boulders_run () =
   Alcotest.(check bool) "every diamond taken" true (won g b);
   Alcotest.(check bool) "and the boulder never fell" true (List.mem 'o' (at b 4 2))
 
+(*****************************************************************************)
+(* TinyBlockout *)
+(*****************************************************************************)
+
+(* Turning a solid is turning its bounding box, an integer trick with no
+ * centre and no rounding (see the header of games3d/TinyBlockout.ml).
+ * The proof that it really is a rotation: four quarter turns about any
+ * axis put every cube back where it was, and no cube is ever lost. *)
+let blockout_turns () =
+  let open TinyBlockout in
+  let sorted cs = List.sort compare cs in
+  List.iter
+    (fun (name, turn) ->
+      List.iter
+        (fun (p : piece) ->
+          Alcotest.(check int) (name ^ ", every cube kept") (List.length p.cells) (List.length (turn p.cells));
+          Alcotest.(check bool)
+            (name ^ ", four quarter turns are none")
+            true
+            (sorted (turn (turn (turn (turn p.cells)))) = sorted p.cells))
+        pieces)
+    [ ("about x", turn_x); ("about y", turn_y); ("about z", turn_z) ]
+
+(* A layer is a whole floor of the well, not a line: fill one and it
+ * goes, and what was above it comes down a level. *)
+let blockout_layer () =
+  let open TinyBlockout in
+  let stack = Array.make (cols * levels * rows) None in
+  List.iter (fun (x, z) -> stack.(index x (levels - 1) z) <- Some red) floor_cells;
+  stack.(index 2 (levels - 2) 2) <- Some blue;
+  let s, gone = clear_layers stack in
+  Alcotest.(check int) "one layer went" 1 gone;
+  Alcotest.(check bool) "the cube above came down to the floor" true (s.(index 2 (levels - 1) 2) = Some blue);
+  Alcotest.(check int) "and it is all that is left" 1 (Array.fold_left (fun n c -> if c = None then n else n + 1) 0 s);
+  (* one hole is enough to keep a layer *)
+  let stack = Array.make (cols * levels * rows) None in
+  List.iter (fun (x, z) -> if (x, z) <> (0, 0) then stack.(index x (levels - 1) z) <- Some red) floor_cells;
+  Alcotest.(check int) "a layer with a hole stays" 0 (snd (clear_layers stack))
+
+(* The pit is cols x rows across, so a piece may not be turned or slid
+ * through its wall: BlockOut refuses the move rather than nudging the
+ * piece, and refusing means the game is unchanged. *)
+let blockout_walls () =
+  let open TinyBlockout in
+  let g = start_game () in
+  let long = { cells = [ (0, 0, 0); (1, 0, 0); (2, 0, 0); (3, 0, 0) ]; color = red } in
+  let g = { g with piece = long; at = (0, 0, 0) } in
+  Alcotest.(check bool) "a 4-long bar fits across a 5-wide pit" true (free g (world g));
+  Alcotest.(check bool) "but not one cell further right" true (try_at g (2, 0, 0) long.cells = None);
+  (* turned upright about z it is 4 tall, which the pit has room for *)
+  let upright = turn_z long.cells in
+  Alcotest.(check bool) "and it may stand up" true (try_at g (0, 0, 0) upright <> None)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -1779,4 +1832,7 @@ let tests =
       t "TinyDungeonMaster, the key, the door, the lever, the stairs" dungeon_master_winnable;
       t "TinyDungeonMaster, the dance" dungeon_master_dance;
       t "PuzzleScriptSokoban, every level solvable" puzzlescript_sokoban_levels;
-      t "PuzzleScriptBoulders, a run through the cave" puzzlescript_boulders_run ]
+      t "PuzzleScriptBoulders, a run through the cave" puzzlescript_boulders_run;
+      t "TinyBlockout, four quarter turns are none" blockout_turns;
+      t "TinyBlockout, a layer goes and the rest comes down" blockout_layer;
+      t "TinyBlockout, the pit refuses what does not fit" blockout_walls ]

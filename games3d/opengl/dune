@@ -15,6 +15,7 @@
 (copy_files ../TinyDescent3d.ml)
 (copy_files ../TinyQuake.ml)
 (copy_files ../TinyMinecraft.ml)
+(copy_files ../TinyBlockout.ml)
 
 (executables
   (names
@@ -29,8 +30,9 @@
     TinyComanche3d
     TinyDescent3d
     TinyQuake
+    TinyBlockout
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_racing ; TinyVirtuaRacing's Road and Car

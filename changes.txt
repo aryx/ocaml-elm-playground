@@ -158,6 +158,15 @@
   the "dance"), a torch burning down, a panel telling you about it all.
   ai/Pathfind's A* walks the monsters; tests/games checks the dungeon
   is winnable in that order, and the dance rule
+- games3d/TinyBlockout: BlockOut (1989), Tetris down a well. The rules
+  are Tetris with one more index (a layer is full when its cols x rows
+  cells are), and a quarter turn is the piece's bounding box turned --
+  integers, no trigonometry, four turns the identity. The rest, and
+  most of the file, is depth cues, because from straight above you
+  cannot tell how deep anything is: cubes darker the deeper they lie,
+  and the well's ring lit at the level the piece will land on, since a
+  view from straight above cannot have a drop shadow (the shadow is
+  always exactly behind the thing casting it)
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
   TinyTron3d, TinyMario64, TinyMarble (Marble Madness), TinyDoom3d
   (TinyDoom's level with a z-buffer, no BSP), TinyQuake (Quake's three

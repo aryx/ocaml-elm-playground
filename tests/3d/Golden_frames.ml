@@ -68,6 +68,7 @@ let scenes : Testutil_golden.scene list =
     ("games3d/TinyDescent3d", "", 5);
     (* claude: the start room, its pillar's shadow, the lit doorway *)
     ("games3d/TinyQuake", "", 5);
+    ("games3d/TinyBlockout", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -110,6 +111,13 @@ let scripted : Testutil_golden.scripted list =
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/LogoFractals3d", "tree", 5, "a:2");
-    ("examples3d/LogoFractals3d", "hilbert", 8, "right:2,a:4") ]
+    ("examples3d/LogoFractals3d", "hilbert", 8, "right:2,a:4");
+    (* four pieces dropped around the pit, a fifth on its way down: the
+     * settled cubes darker the deeper they lie, and the lit ring of the
+     * well marking the level this one will land on *)
+    ( "games3d/TinyBlockout",
+      "pit",
+      95,
+      "space:1,left:5,left:10,space:15,right:20,right:25,right:30,space:35,up:40,up:45,space:50,down:55,down:60,down:65,space:70,x:75" ) ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

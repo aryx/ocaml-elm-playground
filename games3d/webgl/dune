@@ -16,6 +16,7 @@
 (copy_files ../TinyDescent3d.ml)
 (copy_files ../TinyQuake.ml)
 (copy_files ../TinyMinecraft.ml)
+(copy_files ../TinyBlockout.ml)
 
 (executables
   (names
@@ -31,6 +32,7 @@
     TinyComanche3d
     TinyDescent3d
     TinyQuake
+    TinyBlockout
   )
   (libraries
 
