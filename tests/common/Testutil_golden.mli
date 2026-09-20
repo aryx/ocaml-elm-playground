@@ -28,6 +28,14 @@ type scene = string * string * int
  * golden/<basename>_<label>.png (e.g. golden/TinyMario_jump.png). *)
 type scripted = string * string * int * string
 
+(* Scenes deep into a game (more than 100 frames) cost seconds of CPU
+   each, and they all run at once: those are skipped unless the
+   environment variable GOLDEN_ALL is set. "make test" then keeps every
+   example's frames and the cheap first frame of each game -- enough to
+   catch a rendering regression -- and "make test-golden-all" runs the
+   gameplay ones too (do that before a release, or after touching a
+   renderer). *)
+
 (* [tests ~dir ~approve ?scripted scenes]: a test per scene and per
  * scripted scene, for a test running in _build/default/<dir>, with its
  * golden frames in <dir>/golden/ and its Makefile target [approve]

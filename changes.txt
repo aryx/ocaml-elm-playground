@@ -200,6 +200,9 @@
 
 ** testing
 - -script: game keys held over frames, for golden frames of gameplay
+- the golden frames deep into a game (more than 100 to render) run only
+  with make test-golden-all: make test keeps the cheap ones (26s instead
+  of 3 minutes)
 - tests/games/: scenario tests of the games' rules, played without
   drawing
 - scripts/ organized in subfolders, with the tools used for the games

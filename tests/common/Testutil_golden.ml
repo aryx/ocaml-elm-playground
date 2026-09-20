@@ -15,6 +15,15 @@ let t = Testo.create
 type scene = string * string * int
 type scripted = string * string * int * string
 
+(* Rendering frame n means playing the game for n frames, so a scene
+ * deep into a game costs real seconds of CPU, and dune runs them all at
+ * once. The heavy ones are skipped unless GOLDEN_ALL is set: 'make
+ * test' keeps the cheap frames (every example, and one of each game),
+ * 'make test-golden-all' runs the lot. *)
+let heavy_frames = 100
+let run_heavy = Sys.getenv_opt "GOLDEN_ALL" <> None
+let skip_heavy = "heavy (deep into a game): make test-golden-all"
+
 (* the tests run in _build/default/<dir>/, e.g. tests/3d/; the
  * examples, from _build/default/, the root their image and texture
  * paths are relative to *)
@@ -146,18 +155,20 @@ let test_scene ~dir ~approve ~name ~exe ~keys ~script ~frame () =
         name n x y (shown ~dir actual_file) approve
 
 let tests ~dir ~approve ?(scripted : scripted list = []) (scenes : scene list) : Testo.t list =
+  let one ~frame title body = if frame > heavy_frames && not run_heavy then t ~skipped:skip_heavy title body else t title body in
   let plain =
     scenes
     |> List.map (fun (exe, keys, frame) ->
            let name = Filename.basename exe ^ if keys = "" then "" else "_" ^ keys in
            let title = Filename.basename exe ^ if keys = "" then "" else " -keys " ^ keys in
-           t title (test_scene ~dir ~approve ~name ~exe ~keys ~script:None ~frame))
+           one ~frame title (test_scene ~dir ~approve ~name ~exe ~keys ~script:None ~frame))
   in
   let with_script =
     scripted
     |> List.map (fun (exe, label, frame, script) ->
            let name = Filename.basename exe ^ "_" ^ label in
-           t (Filename.basename exe ^ " -script " ^ label)
+           one ~frame
+             (Filename.basename exe ^ " -script " ^ label)
              (test_scene ~dir ~approve ~name ~exe ~keys:"" ~script:(Some script) ~frame))
   in
   Testo.categorize "golden frames" (plain @ with_script)

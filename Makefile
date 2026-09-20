@@ -52,6 +52,14 @@ serve-build: all
 test:
 	dune runtest -f
 
+# 'make test' skips the golden frames deep into a game (more than 100
+# frames to render: seconds of CPU each, all at once), keeping every
+# example's and the first frame of each game. This runs those too;
+# worth it before a release, or after touching a renderer. See
+# tests/common/Testutil_golden.mli
+test-golden-all:
+	GOLDEN_ALL=1 dune runtest -f tests/2d tests/3d
+
 # after 'make test' reported 2D or 3D golden frames that differ on
 # purpose (look at them first), make the new frames the golden ones;
 # see tests/common/Testutil_golden.mli

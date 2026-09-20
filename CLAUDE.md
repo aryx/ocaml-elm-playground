@@ -32,6 +32,12 @@ by pixel with `tests/*/golden/*.png`. After an intended pixel change,
 look at the new frames in `_build/default/tests/*/actual/`, then
 `make approve-golden2d` / `make approve-golden3d`.
 
+`make test` skips the scenes deep into a game (more than 100 frames to
+render: each is seconds of CPU, and they run in parallel), keeping every
+example's frames and the first frame of each game. `make
+test-golden-all` runs those too -- before a release, or after touching a
+renderer.
+
 The native software backends' debug keys (rendering toggles, "h" for
 help) only work when run with `-debug-keys` (e.g.
 `dune exec examples3d/Cubes3d.exe -- -debug-keys`); other flags:
