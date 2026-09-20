@@ -4,3 +4,11 @@
 /_build_claude
 /_build
 /docs/odoc.support
+
+# if want to count only the library
+# /games
+# /games3d
+# /games2.5d
+# /examples
+# /examples3d
+# tests/
