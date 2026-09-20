@@ -202,8 +202,12 @@
 ")
   (depends
     (ocaml (>= "4.11.0"))
-    js_of_ocaml
-    js_of_ocaml-ppx
+    ; claude: 6.0 for Js_of_ocaml.Console (Firebug is deprecated since)
+    ; and for the types the backend assumes: a canvas' naturalWidth an
+    ; int rather than an optdef, and Js.number_t/WebGL.clampf an
+    ; abstract Javascript number rather than an OCaml float.
+    (js_of_ocaml (>= "6.0"))
+    (js_of_ocaml-ppx (>= "6.0"))
     (elm_playground_3d (= :version))
     (elm_playground_web (= :version))
   )

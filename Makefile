@@ -6,10 +6,16 @@
 # Main targets
 ###############################################################################
 
+# coupling: one per (package ...) stanza of dune-project, which they
+# are generated from; ./configure installs the dependencies of all of
+# them, so a package missing here would keep a stale .opam around.
 OPAMS=\
   elm_playground.opam elm_playground_native.opam elm_playground_web.opam\
   elm_playground_native_common.opam\
-  elm_playground_software.opam
+  elm_playground_software.opam\
+  elm_playground_3d.opam elm_playground_3d_native_common.opam\
+  elm_playground_3d_software.opam elm_playground_3d_web.opam\
+  elm_playground_3d_opengl.opam elm_playground_3d_webgl.opam
 
 default: all
 

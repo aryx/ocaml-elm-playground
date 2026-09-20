@@ -76,6 +76,24 @@ check_c_lib() {
     warn "$name not found (pkg-config module '$pkg', header '$header'); the elm_playground_native backend won't build without it"
 }
 
+check_opengl() {
+    # tgls (the elm_playground_3d_opengl backend) links against the
+    # system OpenGL: a framework on macOS, a pkg-config'd library
+    # elsewhere.
+    case "$(uname -s)" in
+    Darwin)
+        if [ -d /System/Library/Frameworks/OpenGL.framework ]; then
+            ok "OpenGL (/System/Library/Frameworks/OpenGL.framework)"
+        else
+            warn "OpenGL.framework not found; the elm_playground_3d_opengl backend won't build without it"
+        fi
+        ;;
+    *)
+        check_c_lib "OpenGL" "gl" "GL/gl.h"
+        ;;
+    esac
+}
+
 # On macOS, extend PKG_CONFIG_PATH for Homebrew
 if command -v brew >/dev/null 2>&1; then
     _brew_prefix="$(brew --prefix 2>/dev/null || true)"
@@ -105,15 +123,18 @@ fi
 echo ""
 
 ###############################################################################
-# Check C libraries needed by the native (SDL2 + cairo) backend
+# Check C libraries needed by the native backends
 ###############################################################################
-# coupling: elm_playground_native.opam (tsdl, cairo2, ocurl)
+# coupling: elm_playground_native.opam (tsdl, cairo2),
+# elm_playground_native_common.opam (ocurl),
+# elm_playground_3d_opengl.opam (tgls)
 
-echo "Checking C libraries for elm_playground_native..."
+echo "Checking C libraries for the native backends..."
 
 check_c_lib "SDL2"    "sdl2"    "SDL2/SDL.h"
 check_c_lib "cairo"   "cairo"   "cairo.h"
 check_c_lib "libcurl" "libcurl" "curl/curl.h"
+check_opengl
 
 echo ""
 
@@ -122,8 +143,15 @@ echo ""
 ###############################################################################
 
 echo "Installing opam dependencies..."
-opam install --confirm-level=unsafe-yes --deps-only -y \
-  ./elm_playground.opam ./elm_playground_native.opam ./elm_playground_web.opam
+# Every package, i.e. every .opam file here (generated from the
+# (package ...) stanzas of dune-project, see the Makefile), not just
+# the 2D ones: 'make' builds everything, so a package left out of this
+# list is a library missing at compile time (e.g. tgls, which only
+# elm_playground_3d_opengl depends on) long after configure said all
+# was well.
+# --with-test for what 'make test' needs (testo, alcotest, and cairo2,
+# to compare the software rasterizer's pixels with Cairo's).
+opam install --confirm-level=unsafe-yes --deps-only --with-test -y ./*.opam
 
 echo ""
 echo "Everything looks fine. You can now run:"

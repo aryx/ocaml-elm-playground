@@ -16,8 +16,8 @@ bug-reports: "https://github.com/aryx/ocaml-elm-playground/issues"
 depends: [
   "dune" {>= "3.0"}
   "ocaml" {>= "4.11.0"}
-  "js_of_ocaml"
-  "js_of_ocaml-ppx"
+  "js_of_ocaml" {>= "6.0"}
+  "js_of_ocaml-ppx" {>= "6.0"}
   "elm_playground_3d" {= version}
   "elm_playground_web" {= version}
   "odoc" {with-doc}

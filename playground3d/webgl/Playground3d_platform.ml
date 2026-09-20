@@ -259,7 +259,10 @@ let no_webgl_message : Dom_html.paragraphElement Js.t Lazy.t =
  * stretch the picture to the page size, distorting it. Checked every
  * frame, to follow the window's resizes. *)
 let resize_to_window (canvas : Dom_html.canvasElement Js.t) : int * int =
-  let dpr = Dom_html.window##.devicePixelRatio in
+  (* claude: Js.to_float, not the number as is: js_of_ocaml's
+   * Js.number_t is an abstract Javascript number (js_of_ocaml >= 6),
+   * not an OCaml float. *)
+  let dpr = Js.to_float Dom_html.window##.devicePixelRatio in
   let w = int_of_float (float_of_int canvas##.clientWidth *. dpr) in
   let h = int_of_float (float_of_int canvas##.clientHeight *. dpr) in
   if canvas##.width <> w then canvas##.width := w;
@@ -365,19 +368,19 @@ let create_texture (gl : WebGL.renderingContext Js.t) : WebGL.texture Js.t =
  * problem is reported once, not every frame. *)
 let try_upload (gl : WebGL.renderingContext Js.t) (src : string) (t : texture) : unit =
   let img = image_of src in
-  let loaded = Js.Optdef.get img##.naturalWidth (fun () -> 0) > 0 in
+  (* claude: a plain int, not an optdef, since js_of_ocaml 6 *)
+  let loaded = img##.naturalWidth > 0 in
   if Js.to_bool img##.complete then begin
     t.uploaded <- true;
     if loaded then begin
       gl##bindTexture gl##._TEXTURE_2D_ t.tex;
       try gl##texImage2D_fromImage gl##._TEXTURE_2D_ 0 gl##._RGBA gl##._RGBA gl##._UNSIGNED_BYTE_ img
       with exn ->
-        (* the browser's console (js_of_ocaml's name for it is historic) *)
-        Firebug.console##warn
+        Console.console##warn
           (Js.string
              (Printf.sprintf "playground3d webgl: can't use texture %s (%s)" src (Printexc.to_string exn)))
     end
-    else Firebug.console##warn (Js.string (Printf.sprintf "playground3d webgl: can't load texture %s" src))
+    else Console.console##warn (Js.string (Printf.sprintf "playground3d webgl: can't load texture %s" src))
   end
 
 (*****************************************************************************)
@@ -450,8 +453,10 @@ let init_gl () : (gl_state, string) result =
   gl##useProgram program;
   let uniform name = gl##getUniformLocation program (Js.string name) in
   let (lx, ly, lz) = Gpu_scene.light_dir in
-  gl##uniform3f (uniform "uLightDir") lx ly lz;
-  gl##uniform1f (uniform "uAmbient") Lighting.ambient;
+  (* claude: Js.float, not the OCaml float as is: a WebGL.clampf is an
+   * abstract Javascript number (js_of_ocaml >= 6). *)
+  gl##uniform3f (uniform "uLightDir") (Js.float lx) (Js.float ly) (Js.float lz);
+  gl##uniform1f (uniform "uAmbient") (Js.float Lighting.ambient);
   (* one texture bound at a time (one draw call per material), always
    * on texture unit 0 *)
   gl##uniform1i (uniform "uTexture") 0;
@@ -572,7 +577,7 @@ let draw (st : gl_state) (rendering : Playground3d.rendering) (computer : Playgr
   let (canvas_w, canvas_h) = resize_to_window st.canvas in
   let (x, y, w, h) = letterbox ~canvas_w ~canvas_h computer.screen in
   gl##viewport x y w h;
-  gl##clearColor 1. 1. 1. 1.;
+  gl##clearColor (Js.float 1.) (Js.float 1.) (Js.float 1.) (Js.float 1.);
   gl##clear (gl##._COLOR_BUFFER_BIT_ lor gl##._DEPTH_BUFFER_BIT_);
   gl##useProgram st.program;
   let aspect = computer.screen.width /. computer.screen.height in
@@ -650,7 +655,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = fa
     lazy
       (let r = init_gl () in
        (match r with
-       | Error msg -> Firebug.console##error (Js.string ("playground3d webgl: " ^ msg))
+       | Error msg -> Console.console##error (Js.string ("playground3d webgl: " ^ msg))
        | Ok _ -> ());
        r)
   in
