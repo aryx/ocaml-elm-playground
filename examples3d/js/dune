@@ -13,6 +13,7 @@
 (copy_files ../FloatingCity3d.ml)
 (copy_files ../Corridor3d.ml)
 (copy_files ../PhysicsSolarSystem3d.{ml,mli})
+(copy_files ../PhysicsSpin3d.ml)
 (copy_files ../LogoFractals3d.{ml,mli})
 
 (executables
@@ -27,6 +28,7 @@
     FloatingCity3d
     Corridor3d
     PhysicsSolarSystem3d
+    PhysicsSpin3d
     LogoFractals3d
   )
   (libraries
@@ -36,6 +38,7 @@
     elm_playground_3d
     elm_playground_3d_web ; implem of virtual elm_playground_3d
     physics_2d ; PhysicsSolarSystem3d's Kepler and Planets
+    physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d
   )
   (modes js)
   (link_flags -no-check-prims)

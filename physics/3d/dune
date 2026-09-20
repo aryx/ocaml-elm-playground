@@ -1,0 +1,18 @@
+; claude: a 3D physics engine, from scratch, for teaching, beside
+; physics/2d/ and in the same spirit: one idea per module, each .mli
+; with its diagram, its worked example and its references (see
+; docs/claude_notes/plans/plan_physics3d_teaching.md and
+; notes_3d_physics.md). Independent of the Playground -- it knows
+; vectors, quaternions, bodies and time steps, and nothing of shape3d,
+; camera or computer. A private library (see graphics/core/dune),
+; installed as part of elm_playground_3d, the package every 3D backend
+; already depends on: pure OCaml, so the web backend has it too.
+;
+; Units are metres and seconds (physics/2d works in pixels), so that a
+; 27 mm pinball and a gravity of 9.8 can be written down as themselves.
+(library
+ (name physics_3d)
+ (package elm_playground_3d)
+ (wrapped false)
+ (libraries graphics_3d_geometry) ; Vec3, shared with the renderers
+)

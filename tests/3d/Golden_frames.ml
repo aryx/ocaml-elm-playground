@@ -47,6 +47,9 @@ let scenes : Testutil_golden.scene list =
     ("examples3d/CachedGrid3d", "", 3);
     (* claude: the planets' night sides turned away from the Sun *)
     ("examples3d/PhysicsSolarSystem3d", "", 3);
+    (* claude: the T-handle at rest in its own frame, L and w still
+     * pointing the same way *)
+    ("examples3d/PhysicsSpin3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
@@ -111,6 +114,12 @@ let scripted : Testutil_golden.scripted list =
      * to a few leaves, and "v" (the second one) draws the whole level *)
     ("games3d/TinyQuake", "doorway", 60, "w:1-60");
     ("games3d/TinyQuake", "everything", 60, "v:2,w:1-60");
+    (* four seconds in: thrown about the middle axis the handle has
+     * turned itself over once, with nothing acting on it; thrown about
+     * the largest axis it has not, and will not. The purple arrow (L)
+     * is in the same place in both, which is the point. *)
+    ("examples3d/PhysicsSpin3d", "flip", 240, "2:1");
+    ("examples3d/PhysicsSpin3d", "stable", 240, "3:1");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/LogoFractals3d", "tree", 5, "a:2");

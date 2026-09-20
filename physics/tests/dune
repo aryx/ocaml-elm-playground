@@ -7,7 +7,9 @@
    alcotest
    testo
    graphics_2d_geometry
+   graphics_3d_geometry ; Vec3, for physics/3d
    physics_2d
+   physics_3d
    elm_playground ; Physics, the API
    elm_playground_software ; an implem of virtual elm_playground, to link
  )

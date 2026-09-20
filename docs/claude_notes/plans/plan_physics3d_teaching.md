@@ -506,7 +506,8 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Not started** (2026-09-20). Written as the specification, with
+**Phases 0 and 1 done** (2026-09-20); the rest not started. Written as
+the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
 already taken and the reasons, so they are not re-argued later:
@@ -526,6 +527,55 @@ already taken and the reasons, so they are not re-argued later:
 
 Each phase appends its own DONE entry here, with its numbers and its
 wrong turns, as `done/plan_physics_teaching.md` does.
+
+- **Phase 0, DONE**: `physics/3d/` (library `physics_3d`, package
+  `elm_playground_3d`, `wrapped false`, depending only on
+  `graphics_3d_geometry` for `Vec3`); `physics/tests/` gains it.
+  `Vec3` needed nothing added after all (`neg`, `lerp`, `min`/`max`
+  were listed here speculatively; `sub`, `scale` and `dot` did the
+  work), and there is no `playground3d/Physics3d.mli` stub either: an
+  empty module is not groundwork, and phase 3 will write the real one
+  by porting a game onto it, as the 2D API was.
+- **Phase 1, DONE**: `Quat`, `Mat3`, `Body3d`, `Integrate3d`,
+  `Energy3d`, 19 tests in `physics/tests/` (`Unit_quat3d`,
+  `Unit_body3d`, `Unit_integrate3d`), and
+  `examples3d/PhysicsSpin3d.ml` on all four backends with three golden
+  frames. The numbers, and the one place the sketch above was wrong:
+  - **the step follows L, not w.** The plan and the tutorial both
+    wrote the rotational half as `w += I^-1 (torque - w x (I w)) dt`,
+    the gyroscopic form. Writing the tests showed the simpler one:
+    `dL/dt = torque` has no gyroscopic term at all, and reading `w`
+    back as `I_world^-1 L` produces the same wobble because the tensor
+    has turned. Measured on the T-handle (tensor
+    `diag(0.00149, 0.00233, 0.00370)` kg m^2, 10 rad/s, 30 s,
+    `dt = 1/600`): `|L|` drifts 1e-11 stepping L against 2e-2 stepping
+    w. `Integrate3d.spin_law` keeps all three (`Momentum`, the
+    default; `Spin_gyroscopic`, what Bullet does; `Spin_naive`,
+    without the term) because the comparison is the lesson.
+  - **the energy is not conserved by either**, and saying so is part of
+    the teaching: the orientation step is first order and the
+    middle-axis motion multiplies any error by `e^(4.6 t)`. 57% in 10 s
+    at `dt = 1/60`, 15% at 1/600, 0.9% at 1/6000, with `|L|` at 1e-12
+    throughout. `PhysicsSpin3d` runs ten sub-steps a frame and prints
+    both drifts; a symplectic Lie-group integrator (Moser-Veselov) is
+    named in the `.mli`, not built.
+  - **the trap, on a key**: `Spin_naive` never flips *and* conserves
+    both `|L|` and the energy to 1e-16. The quiet diagnostics are the
+    warning sign, which is the argument for keeping the demo.
+  - the orientation's exact turn (`Quat.turned_by`) is the default
+    rather than the first-order step engines ship: measured lag over
+    one second, 0.0013 degrees at 1 rad/s, 0.17 at 5, 10.4 at 20, 110
+    at 60, for one sin and one cos more.
+  - `Body3d` holds the tensors of a box and a sphere and the 3D
+    parallel-axis theorem (`shifted`) until `Hitbox3d` (phase 4) takes
+    them over; the T-handle's tensor is two boxes shifted to their
+    common centre of mass, which is also what makes its three moments
+    differ.
+  - the quaternion-to-Euler conversion at the drawing edge
+    (`Quat.to_euler_xyz` into `Playground3d.rotate3d`) is exact and
+    invisible in the golden frames, so the fallback of adding
+    `orient3d` to all four backends (Groundwork) stays unneeded. Phase
+    3 measures it again on a moving body.
 
 ## Verification
 

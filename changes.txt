@@ -181,6 +181,30 @@
   and the well's ring lit at the level the piece will land on, since a
   view from straight above cannot have a drop shadow (the shadow is
   always exactly behind the thing casting it)
+- physics/3d/ (new, the 3D physics engine's first phases, beside
+  physics/2d/ and for the same teaching: one idea per module, each .mli
+  with its diagram, worked example and references; see
+  plan_physics3d_teaching.md and notes_3d_physics.md). Metres and
+  seconds, not pixels. Quat (orientation: why not three angles, the
+  half-angle, q' = 1/2 w q), Mat3 (the inertia tensor, and R I R^T),
+  Body3d (position, velocity, orientation, spin, the tensor and its
+  inverse; the tensors of a box and a sphere and the 3D parallel-axis
+  theorem), Integrate3d (the four 2D methods with a z, plus the
+  rotational half) and Energy3d (energy, momentum, angular momentum:
+  the referee). The step follows L, not w: dL/dt = torque has no
+  gyroscopic term, and w read back as I_world^-1 L wobbles anyway
+  because the tensor has turned -- measured, |L| drifts 1e-11 that way
+  against 2e-2 stepping w with the gyroscopic term. All three laws are
+  switchable, because the third one (no gyroscopic term) is the trap:
+  it never flips and conserves everything to the last bit
+- examples3d/PhysicsSpin3d: a T-handle thrown spinning, with nothing
+  acting on it, that turns itself over and over -- the
+  intermediate-axis (tennis racket, Dzhanibekov) theorem, the one piece
+  of rigid-body behaviour with no 2D version. The angular momentum
+  drawn as an arrow that never moves and the angular velocity as one
+  that wanders; keys for the three axes and for how the spin is
+  stepped, and both drifts printed honestly (|L| exact, the energy not:
+  the flip multiplies any error by e^(4.6 t))
 - games3d/TinyBoomerangFu3d: Boomerang Fu (2020), four foods in one
   arena, one boomerang each, one hit kills. The whole game follows from
   the weapon leaving your hand: while it is away you have only the

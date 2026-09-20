@@ -160,9 +160,13 @@ right. Two facts are all a physics engine uses:
 
 That is the whole orientation update: a quaternion multiply, an add,
 and a renormalize. First order and slightly wrong for large spins (the
-normalize hides most of it); exact alternatives exist (turn `|w| dt`
-about `w/|w|` and multiply), and `Integrate3d` will have both, with
-the drift of each measured in its `.mli` (to come).
+normalize hides most of it); the exact alternative is to turn `|w| dt`
+about `w/|w|` and multiply, and `Integrate3d` has both. Measured (a
+sphere spun for one second, how far the first-order step falls behind
+the exact one): 0.0013 degrees at 1 rad/s, 0.17 at 5, 10.4 at 20, 110
+at 60 -- fine at a frame's worth of turn, useless past about 20
+degrees a step, which is why the exact one is the default here and the
+cheap one is what engines ship.
 
 **Drawing it.** `Playground3d.rotate3d` wants XYZ Euler degrees, so
 `Physics3d.draw` converts the quaternion back to three angles. That
@@ -241,11 +245,37 @@ The `w x (I_world w)` term is the **gyroscopic** one -- the part of
 the equation that makes the wing nut flip. It is also stiff: explicit
 stepping of it can gain energy and blow up for fast spins, which is
 why Box2D has no such term at all (it is 2D: there is none) and Bullet
-makes it an opt-in flag. Ours computes it, and offers the switch to
-turn it off, because the difference *is* the lesson: with it, the wing
-nut flips; without it, the wing nut spins forever about the wrong axis
-and the demo silently becomes a lie. The stability limit it imposes
-goes in the `.mli`, measured (to come).
+makes it an opt-in flag.
+
+Writing it (phase 1) turned up a better third line, and `Integrate3d`
+took it as the default. The conserved quantity is not `w` but
+`L = I_world w`, and its own equation has no gyroscopic term in it at
+all:
+
+```
+   L += torque * dt                     with no torque, L does not move
+   q  = turn q by w for dt                             (§3)
+   w  = I_world^-1 * L                  read back, with the *new* q
+```
+
+The wobble and the flip now come out of that last line, because
+`I_world` has turned. Measured over 30 s on the T-handle of
+`PhysicsSpin3d` (tensor `diag(0.00149, 0.00233, 0.00370)`, spun at 10
+rad/s, `dt = 1/600`): `|L|` drifts by 1e-11 stepping `L` against 2e-2
+stepping `w` with the gyroscopic term, and the flips are there either
+way. Energy is the other way round -- neither conserves it, because
+the orientation step is first order and the middle-axis motion
+multiplies any error by `e^(4.6 t)`: 57% in 10 s at `dt = 1/60`, 15% at
+1/600, 0.9% at 1/6000. An integrator that keeps both exists (a
+symplectic Lie-group step, Moser-Veselov; or the closed form in Jacobi
+elliptic functions) and is named, not built.
+
+All three are switchable, because the difference *is* the lesson, and
+the third one is the trap: drop the gyroscopic term and the handle
+spins about a fixed axis for ever while `|L|` and the energy are
+conserved to the last bit. Every diagnostic says the simulation is
+perfect. It is just not this universe -- which is why
+`examples3d/PhysicsSpin3d.ml` puts that switch on a key.
 
 Verlet and RK4 exist here too, for the same comparisons as in 2D, but
 the orientation is where the methods differ most and it is worth
