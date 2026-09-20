@@ -278,8 +278,12 @@ world, sending each other messages through a server.**
 That is HtDP's `2htdp/universe` (Felleisen, Findler, Flatt and
 Krishnamurthi, *How to Design Programs*), and this playground already
 has its other half: `playground/Bigbang` runs a *world program* -- a
-world, `to_draw`, `on_tick`, `on_key`. The networked version adds two
-things and nothing else:
+world, `to_draw`, `on_tick`, `on_key`. Its `.mli` even names the
+missing piece, in its list of what big-bang has and we do not:
+"universe, several world programs and a server exchanging messages:
+the playground has no networking yet [...]; a Universe.ml would come
+with it". This section is that file's specification. The networked
+version adds two things and nothing else:
 
 ```
     world A                  the universe                 world B

@@ -140,38 +140,74 @@ tick number the only time there is); how randomness gets a shared seed
 (the host picks it, it travels in the first message); what a player's
 view shows while the game waits for a late input (lockstep's stall).
 
-### The other API: a universe of worlds (HtDP)
+### The other API: a universe of worlds (HtDP), `playground/Universe.mli`
 
-`playground/Bigbang.ml` already brings HtDP's *world programs* to the
-playground (a world, `to_draw`, `on_tick`, `on_key`; see its `.mli`,
-which notes that big-bang is "Elm's architecture before Elm"). HtDP's
-`2htdp/universe` is the other half of that library, and the piece this
-plan should provide: **a world gains a mailbox, and a server called
-the universe passes messages between worlds.**
+Not a new idea for this repository -- **the gap is already written
+down in the code**. `playground/Bigbang.mli` brings HtDP's *world
+programs* to the playground (a world, `to_draw`, `on_tick`, `on_key`;
+its header calls big-bang "Elm's architecture before Elm"), and its
+list of what big-bang has and the playground does not ends with:
+
+> 4. universe, several world programs and a server exchanging
+>    messages: the playground has no networking yet
+>    (plan_networking_teaching.md; a Universe.ml would come with it).
+
+This is that `Universe.ml`, and **its `.mli` should be written the way
+`Bigbang.mli` is**: the Racket original beside the OCaml, the book
+cited with its edition and its URL, then what the OCaml adds, what it
+deliberately drops, and a straight answer to "is it worth having two
+ways to do this?" -- that file is the model for this one, down to the
+shape of the comment.
+
+A world gains a mailbox; the server is a program of the same shape:
+
+```racket
+; Racket (2htdp/universe)
+(big-bang 0
+  [to-draw render] [on-tick move]
+  [register "localhost"]
+  [on-receive (lambda (w msg) (make-package w msg))])
+
+(universe '()
+  [on-new (lambda (u w)   (make-bundle (cons w u) '() '()))]
+  [on-msg (lambda (u w m) (make-bundle u (list (make-mail w m)) '()))])
+```
 
 ```ocaml
-(* a world program that can talk: big_bang, plus two handlers *)
-val big_bang : ... -> ?on_receive:('world -> msg -> 'world) ->
-               ?register:string -> ... -> ('world, _) app
+(* OCaml: the same, with tuples where Racket has make-package,
+   make-bundle and make-mail -- as Bigbang dropped pinholes and
+   "solid"/"outline" strings *)
+val big_bang :
+  ... ->
+  ?register:string ->                                  (* the universe's host *)
+  ?on_receive:('world -> msg -> 'world * msg list) ->   (* mail in, mail out *)
+  ... -> ('world, _) app
 
-(* and the server, which is a program of the same shape: a state, and
-   handlers returning the new state and the letters to send *)
 val universe :
   'state ->
   ?on_new:('state -> world_id -> 'state * (world_id * msg) list) ->
   ?on_msg:('state -> world_id -> msg -> 'state * (world_id * msg) list) ->
+  ?on_disconnect:('state -> world_id -> 'state * (world_id * msg) list) ->
   unit -> unit
 ```
 
+**The open question to settle by writing an example with it**: what a
+`msg` is. Racket sends S-expressions and checks them at runtime; OCaml
+cannot, so either `msg = string` (simplest, and honest for a chat or
+a board game), or a `'msg` type parameter with `~encode` and `~decode`
+supplied by the program over `Wire` (§2 of the tutorial) -- which is
+more OCaml and one more concept for a beginner. Probably: strings
+first, `'msg` when a game needs it.
+
 Why it earns its place beside `multiplayer`: the two teach different
-things, and HtDP has thirty years of evidence that the second one is
+things, and HtDP has twenty years of evidence that the gentler one is
 how beginners get there. `multiplayer` is *one game, many players,
 simulated everywhere* -- lockstep, determinism, rollback, the subject
 of this plan. `universe` is *many little programs sending each other
 messages*, with no determinism requirement at all: a chat, a shared
 whiteboard, a turn-based game, twenty students' rockets in one sky.
-It is the honest introduction, and it is where the plan's "maybe a
-turn-based game" (Games, below) belongs.
+It is the honest introduction, and it is where the plan's turn-based
+game (Games, below) belongs.
 
 It also costs almost nothing here: the universe server *is* the relay
 server this plan already builds for the browser (Target layout), with
@@ -234,8 +270,14 @@ network/tests/            protocols over Sim_net: every peer ends with the
                           same model, whatever the loss and latency
 native transport          UDP sockets (Unix), in native_common
 web transport             WebSockets to the relay (later: WebRTC)
-network/relay/            a tiny relay server, native OCaml
+network/relay/            a tiny relay server, native OCaml -- the same
+                          program as the universe server, with a fixed
+                          forwarding rule instead of handlers
 playground/Multiplayer.ml the Evan-style API above
+playground/Universe.ml    HtDP's universe: a Bigbang world with a
+  (and Universe.mli)      mailbox, and the server that carries the mail;
+                          its .mli written like Bigbang.mli's, Racket
+                          beside OCaml (see above)
 ```
 
 ## Games
