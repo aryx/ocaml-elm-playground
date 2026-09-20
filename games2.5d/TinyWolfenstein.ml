@@ -28,7 +28,7 @@
  * polygons. Its limits are its rules: no stairs, no slopes, no rooms
  * above rooms, walls only at right angles -- Doom (1993) lifted some,
  * with sectors, and Quake (1996) all of them, with real 3D. Compare with
- * games3d/TinyWolf3d.ml: the same map, as boxes, drawn by the 3D
+ * games3d/TinyWolfenstein3d.ml: the same map, as boxes, drawn by the 3D
  * rasterizer, with a z-buffer.
  *
  * The walk through the grid is the DDA of Lode Vandevenne's classic
@@ -55,7 +55,7 @@ open Playground
 
 (* the walls, by their color ('#', 'R', 'G', 'B'), the floor '.', the
  * treasure '$', and where you start, '@' (coupling: the same map is in
- * games3d/TinyWolf3d.ml) *)
+ * games3d/TinyWolfenstein3d.ml) *)
 let map =
   Tilemap.of_strings 1.
     [ "################";

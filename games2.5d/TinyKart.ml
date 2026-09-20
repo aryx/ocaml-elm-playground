@@ -38,10 +38,10 @@
  * the tiles' patterns: the SNES's floors shimmered there; here the
  * patterns fade to their average color, a mipmap ([ground]).
  *
- * Compare games2.5d/TinyWolf.ml, the same idea turned sideways: the
+ * Compare games2.5d/TinyWolfenstein.ml, the same idea turned sideways: the
  * raycaster casts a ray per column into the walls, Mode 7 a line per row
  * across the floor. Each draws what the other can't: Wolfenstein has no
- * floor texture, Mode 7 no walls. The karts are TinyWolf's billboards:
+ * floor texture, Mode 7 no walls. The karts are TinyWolfenstein's billboards:
  * flat pictures sized by their distance ([to_screen]), the farthest
  * drawn first, and one of four drawings by the angle you see them from
  * (the back, three-quarters, the side, the front), like the SNES's
@@ -58,7 +58,7 @@
  * there, a map here), not Camera2d (a camera turned and zoomed, the whole
  * map the same: Mode 7 without the per-row scale).
  *
- * Exercises: items (bananas, shells: TinyWolf's billboards that move),
+ * Exercises: items (bananas, shells: TinyWolfenstein's billboards that move),
  * coins, jumps (a kart's height, its sprite lifted), a camera looking
  * straight down (Camera2d, turned: Mode 7 with the same scale on every
  * row), two players split screen (games/TinyXpilot.ml), F-Zero's walls.

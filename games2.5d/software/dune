@@ -4,7 +4,7 @@
 
 (executables
   (names
-    TinyWolf
+    TinyWolfenstein
     TinyOutRun
     TinyKart
     TinyDoom

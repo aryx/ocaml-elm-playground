@@ -22,7 +22,7 @@ works) and
 | Rapier 3D, cannon.js, ammo.js, Jolt's JS build | Physics in a browser or in Rust/Wasm | A world stepped per frame, bodies as handles; cannon.js is the readable one, ammo.js is Bullet compiled |
 | elm-physics | Functional 3D physics: bodies and the world as immutable values | `World.simulate (1/60) world` -- the closest thing to this project's design, in Elm |
 | Millington's Cyclone, Bullet's and Jolt's sample code | Teaching how a 3D engine is built | One book, or a large sample browser |
-| each game by hand (`TinyMinecraft`, `TinyMario64`, `TinyMarble` today) | Just enough for one game | A box moved one axis at a time; `5/7 g sin a` derived in a header |
+| each game by hand (`TinyMinecraft`, `TinyMario64`, `TinyMarbleMadness` today) | Just enough for one game | A box moved one axis at a time; `5/7 g sin a` derived in a header |
 | `physics/3d/` + `Physics3d` | Every number that turns a body readable, and the same 3-line API as 2D | `cube white 1. \|> body \|> fall 9.8 \|> step`, over one module per idea |
 
 ## Part 1: the games that made 3D physics a feature
@@ -54,7 +54,7 @@ and the order matters for what is worth teaching.
   "fast small sphere" are nearly different problems.
 - **Marble Madness** (1984) and **Super Monkey Ball** (Amusement
   Vision, 2001): rolling as the whole game -- and mostly done by
-  *cheating* (a ball stuck to a height field), which `TinyMarble.ml`
+  *cheating* (a ball stuck to a height field), which `TinyMarbleMadness.ml`
   does here too, and which §11 of the tutorial cross-checks against a
   real rolling sphere.
 - **Kerbal Space Program** (2011), **BeamNG.drive** (soft-body cars),

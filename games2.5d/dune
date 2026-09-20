@@ -3,7 +3,7 @@
 ; twins with a z-buffer are in games3d/
 (executables
   (names
-    TinyWolf
+    TinyWolfenstein
     TinyOutRun
     TinyKart
     TinyDoom

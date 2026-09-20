@@ -14,7 +14,7 @@
  *
  * Doom looked 3D, but its renderer had no 3D at all, no z-buffer, no
  * polygons: a level is a floor plan (kits/sectors/Sectors.mli), and it
- * drew it column by column, like Wolfenstein 3D (games2.5d/TinyWolf.ml), but
+ * drew it column by column, like Wolfenstein 3D (games2.5d/TinyWolfenstein.ml), but
  * with walls at any angle, floors and ceilings at any height. Its trick
  * is an order: if the walls come nearest first, each screen column only
  * needs to remember how much of it is still to be drawn, and a wall
@@ -59,7 +59,7 @@
  *    two-sided one narrows it, the per-column [top] and [bottom] clip
  *    arrays (Doom's ceilingclip and floorclip), through which the next
  *    sectors show: a window, stairs. Nothing is ever drawn twice
- *    (TinyWolf draws the floor and ceiling first, then the walls over
+ *    (TinyWolfenstein draws the floor and ceiling first, then the walls over
  *    them), and the shapes can be drawn in any order.
  *
  * Doom's floors and ceilings were textured, drawn in rows ("visplanes",
@@ -84,7 +84,7 @@
  * chapters 59-60 on BSP trees.
  *
  * Exercises: textured walls (a seg's column is the distance along it,
- * as TinyWolf's), sprites clipped against the columns (Doom's
+ * as TinyWolfenstein's), sprites clipped against the columns (Doom's
  * "drawsegs"), a door (a sector whose ceiling moves), textured flats in
  * spans.
  *)

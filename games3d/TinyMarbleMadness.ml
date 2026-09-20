@@ -146,7 +146,7 @@ let ramp_edges (get : int -> char) (is_ramp : char -> bool) (i : int) : number *
   | Some ha, Some hb ->
       let edge k = ha +. ((hb -. ha) *. float_of_int k /. float_of_int (b - a - 1)) in
       (edge (i - a - 1), edge (i - a))
-  | _ -> failwith "TinyMarble: a ramp not between two flat tiles"
+  | _ -> failwith "TinyMarbleMadness: a ramp not between two flat tiles"
 
 (* a tile's heights at its four corners *)
 type corners = { nw : number; ne : number; se : number; sw : number }

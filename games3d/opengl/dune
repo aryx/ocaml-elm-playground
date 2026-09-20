@@ -5,11 +5,11 @@
 ; elm_playground_3d_software in ../dune, with only one real file per game.
 (copy_files ../StarCollector3d.ml)
 (copy_files ../TinyBattlezone.{ml,mli})
-(copy_files ../TinyWolf3d.{ml,mli})
+(copy_files ../TinyWolfenstein3d.{ml,mli})
 (copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../TinyTron3d.{ml,mli})
 (copy_files ../TinyMario64.{ml,mli})
-(copy_files ../TinyMarble.{ml,mli})
+(copy_files ../TinyMarbleMadness.{ml,mli})
 (copy_files ../TinyDoom3d.{ml,mli})
 (copy_files ../TinyComanche3d.ml)
 (copy_files ../TinyDescent3d.ml)
@@ -23,11 +23,11 @@
   (names
     StarCollector3d
     TinyBattlezone
-    TinyWolf3d
+    TinyWolfenstein3d
     TinyVirtuaRacing
     TinyTron3d
     TinyMario64
-    TinyMarble
+    TinyMarbleMadness
     TinyDoom3d
     TinyComanche3d
     TinyDescent3d
@@ -36,7 +36,7 @@
     TinyTombRaider
     TinyBoomerangFu3d
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d Tomb_atlas)
+  (modules StarCollector3d TinyBattlezone TinyWolfenstein3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d Tomb_atlas)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_puzzle ; TinyTombRaider's Push

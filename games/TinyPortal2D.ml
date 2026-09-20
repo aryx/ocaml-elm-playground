@@ -253,7 +253,7 @@ let half_along ((hw, hh) : number * number) ((nx, ny) : number * number) : numbe
 
 (* The portal gun: a ray out from the player, walked cell by cell --
  * Amanatides and Woo's grid traversal (1987), the one
- * games2.5d/TinyWolf.ml casts its walls with. Of the two boundaries
+ * games2.5d/TinyWolfenstein.ml casts its walls with. Of the two boundaries
  * ahead, the vertical one and the horizontal one, the ray crosses
  * whichever is nearer; that crossing *is* the face it comes in by, and
  * the face is what a portal needs. (Stepping along the ray a few

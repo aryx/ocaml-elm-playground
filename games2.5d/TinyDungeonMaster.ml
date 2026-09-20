@@ -99,7 +99,7 @@
  * hard part is already done -- [side_face] cuts a receding wall into
  * slices along z to light it, and a slice of a picture would go in
  * exactly the same place. Not a games3d/ twin, though, the way
- * TinyWolf3d is TinyWolf's: the grid view is not a way of drawing that
+ * TinyWolfenstein3d is TinyWolfenstein's: the grid view is not a way of drawing that
  * an engine would do better, it is a rule about where the hero may
  * stand and which way it may look, and everything above is built on it.
  * Give the camera its freedom and the game goes with it.

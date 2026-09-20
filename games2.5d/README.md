@@ -24,7 +24,7 @@ games2.5d/*.ml`) against the whole game.
 | --- | --- | --- | --- | --- | --- |
 | `TinyDungeonMaster` | Dungeon Master (FTL, 1987) | the hero stands in the middle of a cell facing one of four ways, so every cell in view has one fixed place on the screen: nested frames, filled in farthest first | cell (a square and a trapezoid) | 24 / 624 | anything off the grid: a diagonal, a step, standing between two cells, looking up |
 | `TinyOutRun` | Out Run (Sega, 1986) | the road as a list of segments, their edges projected, each slice a trapezoid; a curve, each segment shifted sideways a bit more; a hill hides what's behind (a segment drawn only if it rises above the nearer ones) | slice of road | 23 / 250 | a world beyond the road: a track that crosses itself, a free camera |
-| `TinyWolf` | Wolfenstein 3D (id, 1992) | a ray cast per column through a grid of walls (DDA); the distance gives the wall's height | column | 61 / 306 | walls at an angle, heights, floors |
+| `TinyWolfenstein` | Wolfenstein 3D (id, 1992) | a ray cast per column through a grid of walls (DDA); the distance gives the wall's height | column | 61 / 306 | walls at an angle, heights, floors |
 | `TinyKart` | Super Mario Kart (Nintendo, 1992), the SNES's Mode 7 | a flat map, turned, sampled row by row, each row at its distance: height * focal / rows below the horizon | row | 84 / 441 | walls, hills: only a flat floor |
 | `TinyDoom` | Doom (id, 1993) | a BSP tree of the level's walls, walked nearest first; each column's clip arrays say what's left to draw | column | 300 / 499 | rooms above rooms, looking up or down, walls that aren't vertical |
 | `TinyComanche` | Comanche (NovaLogic, 1992), "Voxel Space" | a height map, each column a line across the map, near to far; a y-buffer, what's drawn of each column | column | 126 / 302 | overhangs, caves, a roll |
@@ -64,11 +64,11 @@ Three families, then:
   screen: one number, the highest row drawn so far.
 
 They read best in order: TinyDungeonMaster, where the view is a fixed
-picture and there is nothing to compute; then TinyWolf, which gives up
+picture and there is nothing to compute; then TinyWolfenstein, which gives up
 the fixed pictures for a ray per column and can then stand anywhere and
-look anywhere; then TinyDoom, which does TinyWolf's columns with walls
-at any angle and heights; TinyKart, TinyWolf turned sideways (a line per
-row across the floor, where TinyWolf has a ray per column); TinyComanche,
+look anywhere; then TinyDoom, which does TinyWolfenstein's columns with walls
+at any angle and heights; TinyKart, TinyWolfenstein turned sideways (a line per
+row across the floor, where TinyWolfenstein has a ray per column); TinyComanche,
 Doom's "nearest first" with the order given by the distance, no tree;
 TinyOutRun, Mode 7 for a road that isn't a map.
 
@@ -91,7 +91,7 @@ engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 
 | Pseudo-3D | Real 3D | Shared |
 | --- | --- | --- |
-| `TinyWolf` | `games3d/TinyWolf3d` | the map (a copy, a `Tilemap`) |
+| `TinyWolfenstein` | `games3d/TinyWolfenstein3d` | the map (a copy, a `Tilemap`) |
 | `TinyOutRun` | `games3d/TinyVirtuaRacing` | the course and the car (`kits/racing`: `Road`, `Car`) |
 | `TinyDoom` | `games3d/TinyDoom3d` | the level (`kits/sectors`: `Sectors`) |
 | `TinyComanche` | `games3d/TinyComanche3d` | the island (`kits/heightmap`: `Heightmap`) |
@@ -112,7 +112,7 @@ where the hero may stand and which way it may look, and the game is
 built on that rule: cell steps, quarter turns, and fights that are
 footwork on a chessboard. Take the rule away and give the camera the
 freedom it wants, and nothing of the game survives; what is left is
-TinyWolf3d with a smaller map.
+TinyWolfenstein3d with a smaller map.
 
 Running them
 ------------

@@ -42,7 +42,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyInvaders", "", 5);
     ("games/software/TinySokoban", "", 5);
     ("games/software/TinyPacman", "", 5);
-    ("games2.5d/software/TinyWolfenstein", "", 5);
+    ("games2.5d/software/TinyWolfensteinenstein", "", 5);
     ("games2.5d/software/TinyOutRun", "", 5);
     ("games/software/TinyBomberman", "", 5);
     ("games/software/TinyTron", "", 5);
@@ -143,7 +143,7 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyPacman", "play", 300, "space:1,left:120-170,up:160-230,right:220-300");
     (* turned towards a treasure, walking to it: the billboard in front
      * of the far wall, a near wall on the right *)
-    ("games2.5d/software/TinyWolfenstein", "treasure", 60, "right:1-16,up:20-60");
+    ("games2.5d/software/TinyWolfensteinenstein", "treasure", 60, "right:1-16,up:20-60");
     (* flat out into the first curve, which bends right *)
     ("games2.5d/software/TinyOutRun", "curve", 230, "space:1,up:2-230");
     (* a bomb dropped in the corner, the bomber walking away, the fire *)

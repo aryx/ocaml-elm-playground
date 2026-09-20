@@ -60,12 +60,12 @@ let scenes : Testutil_golden.scene list =
     ("games3d/StarCollector3d", "", 3);
     (* claude: the title's tank, turned by 40 degrees *)
     ("games3d/TinyBattlezone", "", 40);
-    (* claude: the same view as games2.5d/TinyWolf's golden frame, in 3D *)
-    ("games3d/TinyWolf3d", "", 5);
+    (* claude: the same view as games2.5d/TinyWolfenstein's golden frame, in 3D *)
+    ("games3d/TinyWolfenstein3d", "", 5);
     ("games3d/TinyVirtuaRacing", "", 5);
     ("games3d/TinyTron3d", "", 5);
     ("games3d/TinyMario64", "", 5);
-    ("games3d/TinyMarble", "", 5);
+    ("games3d/TinyMarbleMadness", "", 5);
     (* claude: the same view as games2.5d/TinyDoom's golden frame, in 3D *)
     ("games3d/TinyDoom3d", "", 5);
     (* claude: "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
@@ -90,8 +90,8 @@ let scripted : Testutil_golden.scripted list =
     (* turned, driving towards a pyramid (cut by the near plane), a shell
      * flying at the enemy tank *)
     ("games3d/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100");
-    (* the same walk as games2.5d/TinyWolf's *)
-    ("games3d/TinyWolf3d", "treasure", 60, "right:1-16,up:20-60");
+    (* the same walk as games2.5d/TinyWolfenstein's *)
+    ("games3d/TinyWolfenstein3d", "treasure", 60, "right:1-16,up:20-60");
     (* the same drive as games2.5d/TinyOutRun's golden frame, in polygons *)
     ("games3d/TinyVirtuaRacing", "curve", 230, "space:1,up:2-230");
     (* v three times: the view from above *)
@@ -106,8 +106,8 @@ let scripted : Testutil_golden.scripted list =
     ("games3d/TinyMario64", "camera", 200, "space:1,left:2-63,up:64-175,space:145-165,d:170-193");
     (* rolling south (down and left: the screen's diagonals) down the
      * first ramp, its band turned; then on over the cliff, broken *)
-    ("games3d/TinyMarble", "ramp", 45, "space:1,down:2-200,left:2-200");
-    ("games3d/TinyMarble", "broken", 125, "space:1,down:2-200,left:2-200");
+    ("games3d/TinyMarbleMadness", "ramp", 45, "space:1,down:2-200,left:2-200");
+    ("games3d/TinyMarbleMadness", "broken", 125, "space:1,down:2-200,left:2-200");
     (* the same walks as games2.5d/TinyDoom's *)
     ("games3d/TinyDoom3d", "stairs", 80, "left:1-10,up:11-80");
     ("games3d/TinyDoom3d", "window", 60, "right:1-5,up:6-55");

@@ -49,7 +49,7 @@ game needs it, teaching, game culture -- plus two for 3D:
 ## Kits
 
 ```
-  games       TinyBattlezone TinyWolf  TinyDoom  TinyMario64  TinyVirtuaRacing  TinyMinecraft
+  games       TinyBattlezone TinyWolfenstein  TinyDoom  TinyMario64  TinyVirtuaRacing  TinyMinecraft
                     |           |         |           |              |               |
   3D kits     Vector   Raycaster (2D  Sectors    Camera3d       Track3d        Voxels
               (lines)  grid, DDA)     (portals)  (chase, orbit)  (+ racing kit)  (its block grid)
@@ -151,12 +151,12 @@ step by step, turn by turn), Dungeon Master (FTL, 1987: in real time).
 - **Kit**: none needed in the end -- `Tilemap` and `ai/Pathfind` were
   enough. Not `Grid_move` of the 2D maze kit: that one slides a mover
   between tiles, and here a step is a whole cell, at once.
-- **No 3D twin**, on purpose (unlike TinyWolf, TinyDoom, TinyComanche,
+- **No 3D twin**, on purpose (unlike TinyWolfenstein, TinyDoom, TinyComanche,
   TinyDescent): those pairs share a world and differ only in the
   renderer, but the grid view is not a renderer, it is a rule about
   where the hero may stand and which way it may look, and the whole
   game is built on it -- cell steps, quarter turns, the dance. Give the
-  camera its freedom and nothing of the game is left, only TinyWolf3d
+  camera its freedom and nothing of the game is left, only TinyWolfenstein3d
   with a smaller map. See `games2.5d/README.md`.
 
 ### 3. Raycasting: Wolfenstein 3D
@@ -165,11 +165,11 @@ Hovertank 3D and Catacomb 3-D (id Software, 1991), Wolfenstein 3D (id,
 1992: John Carmack's raycaster, one ray per screen column, walls all
 the same height on a grid).
 
-- **Toys** (DONE: `games2.5d/TinyWolf.ml` and `games3d/TinyWolf3d.ml`,
+- **Toys** (DONE: `games2.5d/TinyWolfenstein.ml` and `games3d/TinyWolfenstein3d.ml`,
   the same map, walk and golden frames; the 2D one with billboards
-  hidden per column and a minimap of the rays): TinyWolf in the **2D playground** (one rectangle per
+  hidden per column and a minimap of the rays): TinyWolfenstein in the **2D playground** (one rectangle per
   column, its height 1 / distance: a raycaster needs no 3D at all),
-  and TinyWolf3d in `playground3d` (the same map as boxes, the same
+  and TinyWolfenstein3d in `playground3d` (the same map as boxes, the same
   controls), to compare the two -- the lesson of the section.
 - **Kit**: `Raycaster`: the DDA walk through a `Tilemap` grid
   (Lode's tutorial; Amanatides and Woo), the fisheye correction,
@@ -184,7 +184,7 @@ each with a floor and a ceiling height (`notes_vs_doom_quake.md`,
 "Doom: not actually 3D").
 
 - **Toys** (DONE: `games2.5d/TinyDoom.ml`, `games3d/TinyDoom3d.ml`), a
-  pair, like TinyWolf and TinyWolf3d:
+  pair, like TinyWolfenstein and TinyWolfenstein3d:
   - TinyDoom, in the *2D* playground, Doom's own renderer in small:
     the level's segs split into a BSP tree by a node builder at
     startup (id's was a separate tool, `idbsp`), walked front to back
@@ -240,7 +240,7 @@ online play), then Half-Life (1998).
   the rasterizer.
 - **Kit**: `Fps_controller`, extracted from `TinyMinecraft`'s player (move,
   jump, gravity, mouse look), with collisions against boxes instead of
-  blocks (`Collide3d`); shared with TinyWolf3d and TinyDoom. Both are
+  blocks (`Collide3d`); shared with TinyWolfenstein3d and TinyDoom. Both are
   phases 4 and 9 of
   [`plan_physics3d_teaching.md`](plan_physics3d_teaching.md), which
   builds `Collide3d` and the capsule controller
@@ -288,8 +288,8 @@ Crash Bandicoot (Naughty Dog, 1996: a corridor, the camera behind).
 - **Toys**: TinyMario64 (DONE: `games3d/TinyMario64.ml`, controls
   relative to the camera, a/d turning it, a drop shadow, coyote time,
   jump buffering, variable jump height; a few platforms, jumping,
-  stars: a StarCollector3d with a real jump), TinyMarble (DONE:
-  `games3d/TinyMarble.ml`, after Marble Madness (Mark Cerny, Atari,
+  stars: a StarCollector3d with a real jump), TinyMarbleMadness (DONE:
+  `games3d/TinyMarbleMadness.ml`, after Marble Madness (Mark Cerny, Atari,
   1984): a course of heights in an ASCII map, the nearly isometric
   `Camera3d.from_far`, the controls on the screen's diagonals (or the
   mouse as a trackball), a rolling ball's 5/7 g sin(a), marbles
@@ -318,7 +318,7 @@ shaded, 60 frames per second), Ridge Racer (Namco, 1993: textured).
 
 - **Toys**: TinyKart in Mode 7 (DONE: `games2.5d/TinyKart.ml`, in the 2D
   playground: a `Tilemap` track sampled row by row with a per-row scale
-  into a 200x130 picture of characters drawn by `Sprite.pixels`, TinyWolf
+  into a 200x130 picture of characters drawn by `Sprite.pixels`, TinyWolfenstein
   turned sideways; the karts billboards, four drawings by the viewing
   angle; three laps against three computer karts, on the racing kit's
   `Topdown`, TinyMicroMachines' model), and TinyVirtuaRacing (DONE: `games3d/TinyVirtuaRacing.ml`, a stage on
@@ -455,7 +455,7 @@ kit); listed here because players see them as 3D.
 - **An orthographic camera** (for isometric-looking 3D and puzzles).
 - **3D physics** ([`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)):
   today each game does its own (a box one axis at a time in
-  TinyMinecraft and TinyMario64, a ball on a height map in TinyMarble),
+  TinyMinecraft and TinyMario64, a ball on a height map in TinyMarbleMadness),
   and keeps it -- the engine arrives beside them behind a
   `physics=engine` flag, as in 2D.
 
@@ -463,10 +463,10 @@ kit); listed here because players see them as 3D.
 
 1. TinyBattlezone: the easiest 3D game (wireframes, `project`), and
    the start of the history.
-2. The raycaster pair, TinyWolf (2D) and TinyWolf3d: the best lesson
+2. The raycaster pair, TinyWolfenstein (2D) and TinyWolfenstein3d: the best lesson
    on what 3D rendering adds, and the `Fps_controller` layer out of
    `TinyMinecraft`'s player with its second user.
-3. `Camera3d` with TinyMario64 and TinyMarble: the camera problem
+3. `Camera3d` with TinyMario64 and TinyMarbleMadness: the camera problem
    (both DONE).
 4. The racing kit in 3D with TinyVirtuaRacing (and TinyKart in Mode 7
    next to `plan_games.md`'s TinyOutRun) (both DONE).

@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* games2.5d/TinyWolf.ml again, in real 3D: the same map, the same controls,
+(* games2.5d/TinyWolfenstein.ml again, in real 3D: the same map, the same controls,
  * the same treasure, but each wall cell is a box, drawn by playground3d
  * like any 3D scene. Left/right to turn, up/down to walk.
  *
@@ -29,10 +29,10 @@ open Playground
 open Playground3d
 
 (*****************************************************************************)
-(* The map, and walking: as in games2.5d/TinyWolf.ml *)
+(* The map, and walking: as in games2.5d/TinyWolfenstein.ml *)
 (*****************************************************************************)
 
-(* coupling: the same map as games2.5d/TinyWolf.ml's *)
+(* coupling: the same map as games2.5d/TinyWolfenstein.ml's *)
 let map =
   Tilemap.of_strings 1.
     [ "################";
@@ -58,7 +58,7 @@ let tile (x : number) (y : number) : char option = Tilemap.get map (int_of_float
 let wall_color (c : char) : color =
   match c with 'R' -> rgb 180 50 40 | 'G' -> rgb 40 150 60 | 'B' -> rgb 40 70 190 | _ -> rgb 130 130 140
 
-(* x and y on the map, as in TinyWolf; in 3D, the map's y is the
+(* x and y on the map, as in TinyWolfenstein; in 3D, the map's y is the
  * world's z, and the world's y is up *)
 type model = { x : number; y : number; angle : number; treasures : (number * number) list; found : int }
 

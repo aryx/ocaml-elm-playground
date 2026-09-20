@@ -31,11 +31,11 @@
    %{project_root}/examples3d/CachedGrid3d.exe
    %{project_root}/games3d/StarCollector3d.exe
    %{project_root}/games3d/TinyBattlezone.exe
-   %{project_root}/games3d/TinyWolf3d.exe
+   %{project_root}/games3d/TinyWolfenstein3d.exe
    %{project_root}/games3d/TinyVirtuaRacing.exe
    %{project_root}/games3d/TinyTron3d.exe
    %{project_root}/games3d/TinyMario64.exe
-   %{project_root}/games3d/TinyMarble.exe
+   %{project_root}/games3d/TinyMarbleMadness.exe
    %{project_root}/games3d/TinyDoom3d.exe
    %{project_root}/games3d/TinyComanche3d.exe
    %{project_root}/games3d/TinyDescent3d.exe

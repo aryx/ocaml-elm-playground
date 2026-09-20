@@ -205,7 +205,7 @@ graphics.
   renderer in Elm itself would be far too slow. elm-3d-scene, which
   `playground3d` follows in spirit, is a rasterizer.
 - **In this repository, three things are already ray-ish**, and the
-  plan connects to all three: `games2.5d/TinyWolf.ml`'s raycaster (the
+  plan connects to all three: `games2.5d/TinyWolfenstein.ml`'s raycaster (the
   2D grid ancestor: one ray per screen column, DDA),
   `games3d/TinyQuake.ml`'s `light` tool (patches asking every lamp
   whether it can see them -- a *baked* ray caster, run once at
