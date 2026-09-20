@@ -776,6 +776,48 @@ is. (Names and dates from memory, to check.)
   the arena together; and a goal mouth with no depth is one the ball
   slides across without going in.
 
+### 24. The flap: Joust
+
+Joust (John Newcomer, Williams Electronics, 1982) is the platform
+game with the ground taken away: you ride a flying ostrich over a pit
+of lava, the knights ride buzzards, and of two riders who meet the
+higher lance wins. The loser leaves an egg, which falls, bounces along
+the ledges and hatches into a faster rider unless it is collected
+first. It was also the first arcade game two people could play at the
+same time on the same screen, and co-operation was optional: flying
+into your friend jousted him just as well.
+
+- **Toy**: TinyJoust (DONE: `games/TinyJoust.ml`, left/right to push,
+  space or up to flap -- once per press, so the key is hammered).
+- **Kit**: none, and that is the point of writing it here. A whole
+  arcade game -- waves, lives, a score, an enemy with a mind of its
+  own, eggs that hatch -- in about 200 lines of code (the size of
+  TinyBreakout, which has none of those), because the physics layer is
+  already most of it:
+
+  | what the game needs | who does it |
+  |---|---|
+  | the flight model | `Physics.fall`, `slow`, `push`, `step` -- five lines |
+  | momentum, top speed, the long turn | nothing: what those four verbs do together |
+  | the ledges, bird against bird, the eggs bouncing | one `Physics.bounce_all` |
+  | the game itself | one rule: of two riders who touch, the higher wins |
+
+  So it is the answer to "what does the `physics/` plan buy a game?",
+  told by a game that would otherwise have had to write all of it.
+- **What it says against its neighbours**: TinyFlappyBird's flap
+  *sets* the rise (every flap identical, learnable by rhythm, and no
+  physics under it at all: two numbers and a line of gravity); Joust's
+  flap *adds* to it, the more physical and much harder choice, and the
+  reason flapping has a rhythm of its own. TinyMario walks a tilemap
+  one pixel at a time (`kits/platformer`'s `Tile_move`); Joust has no
+  tiles and no collision code -- seven ledges are seven immovable
+  bodies.
+- **Left undone** (in the game's header as exercises): the second
+  player on the same keyboard, which is the real Joust and needs only
+  a second flyer with the `Player` role; the pterodactyl; the lava
+  troll's hand; the egg collected in the air, worth more the higher it
+  is taken; the survival and egg waves.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,

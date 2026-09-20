@@ -2674,6 +2674,110 @@ let sensible_goal () =
   Alcotest.(check int) "one nil" 1 after.home;
   Alcotest.(check bool) "and back to the centre spot" true (Float.hypot after.ball.x after.ball.y < 2.)
 
+(*****************************************************************************)
+(* TinyJoust *)
+(*****************************************************************************)
+
+(* the scene wrapper a play needs, for the flap's rising edge *)
+let joust_scenes (p : TinyJoust.play) : TinyJoust.model = Scene2d.start (TinyJoust.Playing p)
+
+(* [n] frames of the play alone, no scene changes, the keyboard of
+ * frame i given by [keyboard] *)
+let joust_play ?(keyboard = fun _ -> initial_computer.keyboard) (n : int) (p : TinyJoust.play) : TinyJoust.play =
+  let p = ref p and m = ref (joust_scenes p) in
+  for i = 1 to n do
+    let c = computer ~keyboard:(keyboard i) i in
+    m := Scene2d.update c !m;
+    p := TinyJoust.update_play c !m !p
+  done;
+  !p
+
+(* The one rule of the game, both ways round: of two riders who touch,
+ * the higher one wins, and the loser leaves an egg. *)
+let joust_higher_wins () =
+  let open TinyJoust in
+  let meeting (dy : number) =
+    let p = { (start ()) with player = { (flyer Player 0 0. dy) with age = 1 }; others = [ flyer Buzzard 0 0. 0. ] } in
+    joust_play 1 p
+  in
+  let won = meeting 20. in
+  Alcotest.(check int) "the higher lance scores" 500 won.score;
+  Alcotest.(check int) "and keeps its lives" 3 won.lives;
+  (match won.others with
+  | [ e ] -> Alcotest.(check bool) "the loser left an egg, a tier up" true (e.role = Egg && e.tier = 1)
+  | l -> Alcotest.fail (Printf.sprintf "expected one egg, got %d" (List.length l)));
+  let lost = meeting (-20.) in
+  Alcotest.(check int) "the lower one pays a life" 2 lost.lives;
+  Alcotest.(check int) "and scores nothing" 0 lost.score;
+  Alcotest.(check bool) "the buzzard flies on" true (List.exists (fun (f : flyer) -> f.role = Buzzard) lost.others);
+  (* level with each other, neither wins: the engine bounces them apart *)
+  let level = meeting 4. in
+  Alcotest.(check int) "level: no score" 0 level.score;
+  Alcotest.(check int) "level: no life lost" 3 level.lives
+
+(* A flap is a key *press*, not a key held: holding the button gives
+ * one flap and then nothing, hammering it climbs. That is the whole
+ * feel of the game, and it comes from Scene2d.pressed. *)
+let joust_flap_is_a_press () =
+  let open TinyJoust in
+  let k = initial_computer.keyboard in
+  let run held =
+    (* a buzzard in the far corner keeps the wave alive without ever
+     * reaching him in 40 frames *)
+    let p = { (start ()) with others = [ flyer Buzzard 0 400. 350. ] } in
+    let after = joust_play 40 ~keyboard:(fun i -> if held i then { k with kspace = true } else k) p in
+    after.player.b.y
+  in
+  let hammered = run (fun i -> i mod 6 = 0) and holding = run (fun _ -> true) and still = run (fun _ -> false) in
+  Printf.eprintf "DBG joust flap: hammered %.0f, holding %.0f, still %.0f\n%!" hammered holding still;
+  Alcotest.(check bool) "hammering climbs" true (hammered > still +. 150.);
+  Alcotest.(check bool) "holding is one flap" true (holding < hammered -. 100.)
+
+(* No collision code in the game at all: one Physics.bounce_all does
+ * every bird against every ledge. A bird dropped over one stays on it. *)
+let joust_ledges_hold () =
+  let open TinyJoust in
+  let p = { (start ()) with player = flyer Player 0 (-300.) 200.; others = [ flyer Buzzard 0 400. 350. ] } in
+  let after = joust_play 120 p in
+  Printf.eprintf "DBG joust ledge: y %.1f\n%!" after.player.b.y;
+  Alcotest.(check int) "no life lost on the way down" 3 after.lives;
+  (* the first ledge under him is the middle-left one, whose top is at
+   * -138: he rests on it half his own height above, and not a pixel
+   * of that is written in the game *)
+  Alcotest.(check bool) "he came to rest on the ledge" true (after.player.b.y > -132. && after.player.b.y < -118.)
+
+(* An egg left alone hatches, and what comes out is a tier faster than
+ * what laid it. *)
+let joust_egg_hatches () =
+  let open TinyJoust in
+  let p = { (start ()) with player = flyer Player 0 (-400.) 300.; others = [ flyer Egg 1 250. (-100.) ] } in
+  let just_before = joust_play (hatch_after - 10) p in
+  (match just_before.others with
+  | [ e ] -> Alcotest.(check bool) "still in the shell" true (e.role = Egg)
+  | _ -> Alcotest.fail "the egg went");
+  let after = joust_play (hatch_after + 4) p in
+  match after.others with
+  | [ f ] -> Alcotest.(check bool) "hatched, a tier up" true (f.role = Buzzard && f.tier = 1)
+  | l -> Alcotest.fail (Printf.sprintf "expected one buzzard, got %d" (List.length l))
+
+(* Collected instead, it pays 250 -- and with the wave cleared, the
+ * next one is laid, one buzzard bigger. *)
+let joust_egg_collected () =
+  let open TinyJoust in
+  let p = { (start ()) with player = flyer Player 0 250. (-100.); others = [ flyer Egg 1 250. (-100.) ] } in
+  let after = joust_play 1 p in
+  Alcotest.(check int) "the egg pays" 250 after.score;
+  Alcotest.(check int) "the wave was cleared" 2 after.wave;
+  Alcotest.(check int) "and the next is laid" 4 (List.length after.others)
+
+(* Under everything is the lava, and it keeps what falls in it. *)
+let joust_lava () =
+  let open TinyJoust in
+  let p = { (start ()) with player = flyer Player 0 0. (-300.); others = [ flyer Buzzard 0 400. 350. ] } in
+  let after = joust_play 60 p in
+  Alcotest.(check int) "over the pit, with nothing under him" 2 after.lives;
+  Alcotest.(check bool) "and back on his own ledge" true (after.dead > 0 && after.player.b.y > lava_top)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -2800,4 +2904,10 @@ let tests =
       t "TinySensibleSoccer, a tap stays on the grass" sensible_tap_stays_down;
       t "TinySensibleSoccer, aftertouch bends a lofted ball" sensible_aftertouch;
       t "TinySensibleSoccer, the charge survives the dribble" sensible_charge_while_dribbling;
-      t "TinySensibleSoccer, a goal" sensible_goal ]
+      t "TinySensibleSoccer, a goal" sensible_goal;
+      t "TinyJoust, the higher lance wins" joust_higher_wins;
+      t "TinyJoust, a flap is a press, not a key held" joust_flap_is_a_press;
+      t "TinyJoust, the ledges hold, with no collision code" joust_ledges_hold;
+      t "TinyJoust, an egg hatches a tier up" joust_egg_hatches;
+      t "TinyJoust, an egg collected, and the next wave" joust_egg_collected;
+      t "TinyJoust, the lava keeps what falls in it" joust_lava ]

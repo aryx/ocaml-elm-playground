@@ -49,6 +49,7 @@
     TinyKickOff2
     TinySpeedball2
     TinySensibleSoccer
+    TinyJoust
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

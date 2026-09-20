@@ -93,6 +93,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyKickOff2", "", 5);
     ("games/software/TinySpeedball2", "", 5);
     ("games/software/TinySensibleSoccer", "", 5);
+    ("games/software/TinyJoust", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -224,6 +225,13 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyKickOff2", "shot", 260, "space:1,up:70-200,space:150-170,right:171-260");
     ("games/software/TinySpeedball2", "match", 700, "space:1,up:60-200,space:120-140,left:210-400,space:260-280");
     ("games/software/TinySensibleSoccer", "loft", 300, "space:1,up:40-150,space:160-200,right:201-300");
+    (* off the bank on six flaps, the buzzards already coming *)
+    ("games/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
+    (* a flap every quarter of a second is a climb: he ends up under
+       the eyries with a buzzard coming up at him, which is the whole
+       game -- be the higher one when you meet *)
+    ("games/software/TinyJoust", "flight", 200,
+     "space:1,space:20,space:35,space:50,space:65,space:80,space:95,space:110,space:125,space:140,space:155,space:170,space:185,right:10-105,left:125-200");
     (* the first chamber: the goo between him and the way out (the
        portals themselves want a mouse, which a script has none of, so
        they are in tests/games/ instead) *)

@@ -47,6 +47,7 @@
 (copy_files ../TinyKickOff2.ml)
 (copy_files ../TinySpeedball2.ml)
 (copy_files ../TinySensibleSoccer.ml)
+(copy_files ../TinyJoust.ml)
 
 (executables
   (names
@@ -95,6 +96,7 @@
     TinyKickOff2
     TinySpeedball2
     TinySensibleSoccer
+    TinyJoust
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind
