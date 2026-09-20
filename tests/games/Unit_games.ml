@@ -2652,6 +2652,19 @@ let sensible_aftertouch () =
   Alcotest.(check bool) "a lofted ball bends a long way" true (air > 100.);
   Alcotest.(check bool) "further than one on the grass" true (air > ground *. 1.3)
 
+(* The way a player actually lofts one: run with the ball, hold the
+ * button while it is running a stride ahead of him, let go. The charge
+ * has to survive the ball being out of reach for a frame here and
+ * there -- it is dribbling, so it always is -- or nothing can ever be
+ * held long enough to leave the grass. *)
+let sensible_charge_while_dribbling () =
+  let open TinySensibleSoccer in
+  let k = initial_computer.keyboard in
+  let held = sensible_play 34 ~keyboard:(fun _ -> { k with kup = true; kspace = true }) (sensible_alone ()) in
+  Alcotest.(check bool) "the charge built while he ran with it" true (held.power > 0.9);
+  let after = sensible_play 14 ~keyboard:(fun _ -> { k with kup = true }) held in
+  Alcotest.(check bool) "and letting go lofted it" true (after.z > 20.)
+
 (* Through the posts is a goal, and the game restarts in the middle *)
 let sensible_goal () =
   let open TinySensibleSoccer in
@@ -2786,4 +2799,5 @@ let tests =
       t "TinySensibleSoccer, the ball has a height" sensible_loft;
       t "TinySensibleSoccer, a tap stays on the grass" sensible_tap_stays_down;
       t "TinySensibleSoccer, aftertouch bends a lofted ball" sensible_aftertouch;
+      t "TinySensibleSoccer, the charge survives the dribble" sensible_charge_while_dribbling;
       t "TinySensibleSoccer, a goal" sensible_goal ]

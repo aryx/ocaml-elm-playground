@@ -171,7 +171,16 @@ let touchable (g : game) : bool = g.z < head_height
 
 let touched (g : game) (p : player) : Free_ball.t option =
   if p.touch > 0 || not (touchable g) then None
-  else Free_ball.touch ~glued:false ~speed:touch_speed ~reach ~hold:(player_r + ball_r) (p.px, p.py) p.dir g.ball
+  else
+    (* Near a touchline, a player reaching the ball turns *inside*:
+     * whatever part of his run points off the pitch is mirrored back
+     * onto it. Without this he keeps poking the ball out -- and since
+     * a throw-in hands it back near the same place, the ball spends
+     * the whole match on one wing, which is exactly what it did. *)
+    let dx, dy = p.dir in
+    let dx = if Float.abs g.ball.x > half_w - 70. && g.ball.x * dx > 0. then 0. - dx else dx in
+    let dir = if dx = 0. && dy = 0. then (0. - (g.ball.x / Float.max 1. (Float.abs g.ball.x)), 0.) else (dx, dy) in
+    Free_ball.touch ~glued:false ~speed:touch_speed ~reach ~hold:(player_r + ball_r) (p.px, p.py) dir g.ball
 
 (*****************************************************************************)
 (* The players *)
@@ -209,8 +218,13 @@ let step_me (computer : computer) (g : game) : game =
  * curl and its taps do not. *)
 let kick (computer : computer) (g : game) : game =
   let me = List.nth g.players g.mine in
-  let has = Free_ball.near (reach + 6.) (me.px, me.py) g.ball && g.z < head_height in
-  if computer.keyboard.kspace && has then { g with power = Float.min 1. (g.power + 0.045) }
+  let has = Free_ball.near (reach + 14.) (me.px, me.py) g.ball && g.z < head_height in
+  (* The charge builds while the button is held, whether or not the
+   * ball is under his foot at that instant -- it is dribbling along a
+   * stride ahead of him, in and out of reach, and a kick that reset
+   * its power every time the ball ran on could never be held long
+   * enough to loft anything. Reach matters when he lets go. *)
+  if computer.keyboard.kspace then { g with power = Float.min 1. (g.power + 0.045) }
   else if g.power = 0. || not has then { g with power = 0. }
   else begin
     Audio.play Audio.laser;
@@ -243,7 +257,12 @@ let referee (g : game) : game =
   else begin
     Audio.play Audio.blip;
     let other = match g.last with Some Home -> Away | _ -> Home in
-    let x = clamp (0. - half_w + 16.) (half_w - 16.) b.x and y = clamp (0. - half_h + 16.) (half_h - 16.) b.y in
+    (* forty pixels *inside* the line, not on it. Put back exactly
+     * where it went out, the ball is knocked straight out again by the
+     * first man to reach it, and spends the match on the touchline --
+     * which is what it did. *)
+    let inside = 40. in
+    let x = clamp (0. - half_w + inside) (half_w - inside) b.x and y = clamp (0. - half_h + inside) (half_h - inside) b.y in
     say { g with ball = Free_ball.still x y; z = 0.; vz = 0.; bent = 0; power = 0.; last = Some other } "THROW IN"
   end
 
@@ -329,8 +348,14 @@ let view_player (g : game) (i : int) (p : player) : shape list =
  * only 3D in the game, and all it needs *)
 let view_ball (g : game) : shape list =
   let b = g.ball in
-  [ oval (rgb 20 50 24) (ball_r * 2.) (ball_r * 1.4) |> fade (0.45 - (Float.min 0.3 (g.z / 300.))) |> move b.x b.y ]
-  @ [ circle white (ball_r + 2. + (g.z / 40.)) |> move b.x (b.y + (g.z * 0.6)) ]
+  (* The shadow sits on the grass at the ball's own place, a little
+   * down and to the right of it, and the ball is drawn lifted by its
+   * height: on the grass the two overlap but the shadow still shows,
+   * and a lofted ball visibly leaves it behind. *)
+  [ oval (rgb 22 58 28) ((ball_r * 2.4) + (g.z / 12.)) ((ball_r * 1.7) + (g.z / 18.))
+    |> fade (0.5 - Float.min 0.28 (g.z / 260.))
+    |> move (b.x + 4.) (b.y - 4.) ]
+  @ [ circle white (ball_r + 2. + (g.z / 40.)) |> move b.x (b.y + (g.z * 0.75)) ]
 
 let view_world (g : game) : shape list = view_pitch @ List.concat (List.mapi (view_player g) g.players) @ view_ball g
 
