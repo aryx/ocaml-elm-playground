@@ -48,6 +48,7 @@
 (copy_files ../TinySpeedball2.ml)
 (copy_files ../TinySensibleSoccer.ml)
 (copy_files ../TinyJoust.ml)
+(copy_files ../TinyDefender.ml)
 
 (executables
   (names
@@ -97,6 +98,7 @@
     TinySpeedball2
     TinySensibleSoccer
     TinyJoust
+    TinyDefender
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

@@ -82,6 +82,7 @@
    %{project_root}/games/software/TinySpeedball2.exe
    %{project_root}/games/software/TinySensibleSoccer.exe
    %{project_root}/games/software/TinyJoust.exe
+   %{project_root}/games/software/TinyDefender.exe
    %{project_root}/examples/software/LogoFractals.exe
  )
 )

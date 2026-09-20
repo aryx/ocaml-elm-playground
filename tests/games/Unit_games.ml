@@ -2778,6 +2778,108 @@ let joust_lava () =
   Alcotest.(check int) "over the pit, with nothing under him" 2 after.lives;
   Alcotest.(check bool) "and back on his own ledge" true (after.dead > 0 && after.player.b.y > lava_top)
 
+(*****************************************************************************)
+(* TinyDefender *)
+(*****************************************************************************)
+
+let defender_play ?(keyboard = fun _ -> initial_computer.keyboard) (n : int) (p : TinyDefender.play) : TinyDefender.play =
+  let p = ref p and m = ref (Scene2d.start (TinyDefender.Playing p)) in
+  for i = 1 to n do
+    let c = computer ~keyboard:(keyboard i) i in
+    m := Scene2d.update c !m;
+    p := TinyDefender.update_play c !m !p
+  done;
+  !p
+
+(* a play with the ship parked at (x, y), and nothing else moving *)
+let defender_at (x : number) (y : number) (p : TinyDefender.play) : TinyDefender.play =
+  { p with ship = { p.ship with b = p.ship.b |> Physics.at x y }; cam = x }
+
+(* The planet is a cylinder, and [near] is the only place that knows:
+ * two things either side of the seam are next to each other. *)
+let defender_cylinder () =
+  let open TinyDefender in
+  Alcotest.(check (float 0.01)) "across the seam, the short way" 20. (apart (10., 0.) (world_w -. 10., 0.));
+  Alcotest.(check (float 0.01)) "and the copy to draw" (world_w +. 100.) (near (world_w -. 100.) 100.);
+  (* flying right off the end comes back at the start, and the camera
+   * goes with it rather than sweeping the whole planet backwards *)
+  let k = initial_computer.keyboard in
+  let p = defender_at (world_w -. 60.) 100. (start ()) in
+  let after = defender_play 60 ~keyboard:(fun _ -> { k with kright = true }) p in
+  Alcotest.(check bool) "the ship came round" true (after.ship.b.x < 400.);
+  Alcotest.(check bool) "the camera came with it" true (apart (after.cam, 0.) (after.ship.b.x, 0.) < 400.)
+
+(* A lander finds the nearest human, carries him to the top, and is a
+ * mutant from then on: the abduction you miss is the enemy you will
+ * have to fight. *)
+let defender_abduction () =
+  let open TinyDefender in
+  let human = List.nth humans_start 0 in
+  let p = { (defender_at 3000. 100. (start ())) with enemies = [ { ex = human.hx; ey = 140.; kind = Lander; holds = None; cool = 100000 } ] } in
+  let grabbing = defender_play 260 p in
+  Alcotest.(check bool) "he has him" true ((List.nth grabbing.humans 0).hstate = Grabbed);
+  Alcotest.(check bool) "and is on his way up" true (List.for_all (fun (e : enemy) -> e.holds = Some 0) grabbing.enemies);
+  let after = defender_play 620 p in
+  Alcotest.(check int) "one human short" 9 (List.length (List.filter alive after.humans));
+  Alcotest.(check bool) "and a mutant instead" true (List.for_all (fun (e : enemy) -> e.kind = Mutant) after.enemies);
+  Alcotest.(check bool) "which now wants the ship" true
+    (apart (after.ship.b.x, after.ship.b.y) ((List.hd after.enemies).ex, (List.hd after.enemies).ey)
+     < apart (after.ship.b.x, after.ship.b.y) (human.hx, 270.))
+
+(* Catching one is the game: fly into him as he falls, take him down,
+ * and the ground gives you 500. *)
+let defender_rescue () =
+  let open TinyDefender in
+  let h = List.nth humans_start 3 in
+  let x = h.hx in
+  let falling = List.mapi (fun i (hu : human) -> if i = 3 then { hu with hy = ground x +. 60.; hstate = Falling } else hu) humans_start in
+  let p = { (defender_at x (ground x +. 60.) (start ())) with humans = falling; enemies = [] } in
+  let caught = defender_play 1 p in
+  Alcotest.(check bool) "caught in the air" true (caught.carried = Some 3 && (List.nth caught.humans 3).hstate = Held);
+  let k = initial_computer.keyboard in
+  let home = defender_play 25 ~keyboard:(fun _ -> { k with kdown = true }) p in
+  Alcotest.(check int) "and flown down to the ground" 500 home.score;
+  Alcotest.(check bool) "standing again" true ((List.nth home.humans 3).hstate = Standing && home.carried = None)
+
+(* Let him fall from high enough and he does not get up; the same fall
+ * from just above the rocks he walks away from. *)
+let defender_drop () =
+  let open TinyDefender in
+  let dropped (height : number) =
+    let h = List.nth humans_start 6 in
+    let humans = List.mapi (fun i (hu : human) -> if i = 6 then { hu with hy = ground h.hx +. height; hstate = Falling } else hu) humans_start in
+    let p = { (defender_at 3000. 200. (start ())) with humans; enemies = [] } in
+    (List.nth (defender_play 120 p).humans 6).hstate
+  in
+  Alcotest.(check bool) "from the sky: dead" true (dropped 500. = Dead);
+  Alcotest.(check bool) "from a stride up: standing" true (dropped 50. = Standing)
+
+(* The planet is the ten of them: lose them all and the ground goes,
+ * and every lander left turns at once. *)
+let defender_planet_goes () =
+  let open TinyDefender in
+  let p =
+    { (defender_at 3000. 200. (start ())) with
+      humans = List.map (fun (h : human) -> { h with hstate = Dead }) humans_start;
+      enemies = [ { ex = 3200.; ey = 150.; kind = Lander; holds = None; cool = 100000 } ] }
+  in
+  let after = defender_play 1 p in
+  Alcotest.(check bool) "no planet left" true (not after.planet);
+  Alcotest.(check bool) "and nothing but mutants" true (List.for_all (fun (e : enemy) -> e.kind = Mutant) after.enemies)
+
+(* The smart bomb is exactly what you can see -- which is why the
+ * scanner, not the screen, is where the game is played. *)
+let defender_smart_bomb () =
+  let open TinyDefender in
+  let lander x = { ex = x; ey = 150.; kind = Lander; holds = None; cool = 100000 } in
+  let p = { (defender_at 3000. 200. (start ())) with enemies = [ lander 3100.; lander 4800. ] } in
+  let k = initial_computer.keyboard in
+  let after = defender_play 1 ~keyboard:(fun _ -> press "b" k) p in
+  Alcotest.(check int) "the one on screen is gone" 1 (List.length after.enemies);
+  Alcotest.(check bool) "the one over the horizon is not" true ((List.hd after.enemies).ex > 4000.);
+  Alcotest.(check int) "it cost a bomb" 2 after.bombs;
+  Alcotest.(check int) "and paid" 150 after.score
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -2910,4 +3012,10 @@ let tests =
       t "TinyJoust, the ledges hold, with no collision code" joust_ledges_hold;
       t "TinyJoust, an egg hatches a tier up" joust_egg_hatches;
       t "TinyJoust, an egg collected, and the next wave" joust_egg_collected;
-      t "TinyJoust, the lava keeps what falls in it" joust_lava ]
+      t "TinyJoust, the lava keeps what falls in it" joust_lava;
+      t "TinyDefender, the planet is a cylinder" defender_cylinder;
+      t "TinyDefender, the abduction, and the mutant it makes" defender_abduction;
+      t "TinyDefender, catching a falling human" defender_rescue;
+      t "TinyDefender, dropped from too high" defender_drop;
+      t "TinyDefender, the planet goes with the last human" defender_planet_goes;
+      t "TinyDefender, the smart bomb is what you can see" defender_smart_bomb ]

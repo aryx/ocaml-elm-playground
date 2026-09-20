@@ -818,6 +818,47 @@ into your friend jousted him just as well.
   troll's hand; the egg collected in the air, worth more the higher it
   is taken; the survival and egg waves.
 
+### 25. The planet, and the scanner: Defender
+
+Defender (Eugene Jarvis and Larry DeMar, Williams Electronics, 1981),
+the hardest game of the arcade and the highest-grossing of its year,
+and those are the same fact. Jarvis went on to Robotron: 2084 (section
+4) and to the flap of Joust's team-mates down the hall (section 24).
+
+- **Toy**: TinyDefender (DONE: `games/TinyDefender.ml`, left/right
+  thrust and flip, up/down, space the laser, b a smart bomb).
+- **Kit**: none. Two layers and one kit do the work: `Camera2d` (the
+  scroll that *leads* the ship, and the scanner), the shmup kit's
+  `Shots` (its fourth game), and `Physics` for the ship alone -- its
+  famous inertia is `push`, `slow`, `step` and nothing else.
+- **What it is here for**, and why it is worth writing after a dozen
+  one-screen games:
+  - **the world does not fit on the screen, and it is a cylinder**.
+    One function, `near`, slides a thing to whichever of its copies is
+    nearest the camera; drawing, aiming and the distance between two
+    things all go through it and the seam never comes up again.
+    Asteroids wraps a world the size of the screen, where it is
+    invisible; here it is six screens and you can chase a lander all
+    the way round to where you started;
+  - **the scanner is a camera, not a picture**: the whole planet
+    squashed into the strip at the top is a second view of the same
+    model at another scale, which is what `Camera2d.mli`'s history
+    section already says Defender invented. Playing is reading it --
+    the screen is where you are only now arriving;
+  - **the mountains are a function**, three sines whose wavelengths
+    divide the world exactly, so the range meets itself at the seam. A
+    height map (TinyWorms) would be 6000 numbers and a join to get
+    right.
+- **And the rule that makes it a game and not a shooting gallery**:
+  the ten humans are the state of the world, not the score. A lander
+  that gets one to the top *becomes* a mutant, so every abduction you
+  miss is an enemy you will have to fight; lose all ten and the planet
+  goes -- no ground, empty space, every lander turning at once, and
+  you keep playing having lost what you were playing for.
+- **Left undone** (exercises in the header): the rest of the zoo
+  (baiters, bombers, pods and swarmers), hyperspace, mountains that
+  kill you, and a second player taking turns.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,

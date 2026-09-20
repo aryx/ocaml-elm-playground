@@ -94,6 +94,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinySpeedball2", "", 5);
     ("games/software/TinySensibleSoccer", "", 5);
     ("games/software/TinyJoust", "", 5);
+    ("games/software/TinyDefender", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -225,8 +226,16 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyKickOff2", "shot", 260, "space:1,up:70-200,space:150-170,right:171-260");
     ("games/software/TinySpeedball2", "match", 700, "space:1,up:60-200,space:120-140,left:210-400,space:260-280");
     ("games/software/TinySensibleSoccer", "loft", 300, "space:1,up:40-150,space:160-200,right:201-300");
+    (* the planet, the scanner reading it, and a lander on its way
+       down to a human *)
+    ("games/software/TinyDefender", "patrol", 95,
+     "space:1,right:5-200,space:60,space:90,space:120,down:130-170,space:150,space:200,right:210-320,space:240,space:280,space:310");
     (* off the bank on six flaps, the buzzards already coming *)
     ("games/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
+    (* the scanner is the game: three abductions are under way in the
+       strip while the screen shows one lander and a laser *)
+    ("games/software/TinyDefender", "hunt", 320,
+     "space:1,right:5-200,space:60,space:90,space:120,down:130-170,space:150,space:200,right:210-320,space:240,space:280,space:310");
     (* a flap every quarter of a second is a climb: he ends up under
        the eyries with a buzzard coming up at him, which is the whole
        game -- be the higher one when you meet *)
