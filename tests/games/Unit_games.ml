@@ -1901,6 +1901,174 @@ let robotron_robot () =
   Alcotest.(check int) "wave 2" 2 !s.wave;
   Alcotest.(check bool) "not once caught" true (!s.lives = 3)
 
+(*****************************************************************************)
+(* TinyPinball *)
+(*****************************************************************************)
+
+(* a game with the ball put somewhere, for a test that wants one *)
+let pinball_at ?(engine = TinyPinball.Ours) ?(substeps = 4) (x : number) (y : number) (vx : number) (vy : number) : TinyPinball.game =
+  let g = TinyPinball.new_game engine substeps in
+  { g with ball = { x; y; vx; vy }; play = TinyPinball.Live }
+
+let pinball_run (frames : int) ?(keyboard = fun (_ : int) -> initial_computer.keyboard) (g : TinyPinball.game) : TinyPinball.game =
+  let s = ref g in
+  for i = 1 to frames do
+    s := TinyPinball.update_game (computer ~keyboard:(keyboard i) i) (Scene2d.start (TinyPinball.Playing !s)) !s
+  done;
+  !s
+
+(* the highest the ball gets while the game runs *)
+let pinball_apex (frames : int) ?(keyboard = fun (_ : int) -> initial_computer.keyboard) (g : TinyPinball.game) : number =
+  let s = ref g and top = ref g.ball.y in
+  for i = 1 to frames do
+    s := TinyPinball.update_game (computer ~keyboard:(keyboard i) i) (Scene2d.start (TinyPinball.Playing !s)) !s;
+    top := Float.max !top !s.ball.y
+  done;
+  !top
+
+(* The flipper does not bat the ball, it carries it: the same ball
+ * falling on the same spot of the left flipper barely comes back up if
+ * the flipper stays down, and is thrown the height of the table if it
+ * is swung. *)
+let pinball_flipper_throws () =
+  let drop () = pinball_at (-60.) (-250.) 0. (-400.) in
+  let resting = pinball_apex 40 (drop ()) in
+  let flipped = pinball_apex 40 ~keyboard:(fun i -> { initial_computer.keyboard with kleft = i > 12 }) (drop ()) in
+  Alcotest.(check bool) "the flipper down, it stays at the bottom" true (resting < -150.);
+  Alcotest.(check bool) "swung, it is thrown up the table" true (flipped > 100.)
+
+(* Both engines play the same table: a ball rolled into the left wall
+ * comes back with the same part of its speed (the restitution is the
+ * table's, not the engine's). They are not the same code -- ours
+ * reflects a velocity about a normal, the engine resolves an impulse
+ * against a box 10 pixels thick -- so they are compared on the physics,
+ * not pixel by pixel. *)
+let pinball_both_engines () =
+  let open TinyPinball in
+  let into_the_wall (engine : engine) = (pinball_run 20 (pinball_at ~engine (-100.) 0. (-800.) 0.)).ball in
+  let ours = into_the_wall Ours and theirs = into_the_wall Engine in
+  Alcotest.(check bool) "ours comes back off the wall" true (ours.vx > 100.);
+  Alcotest.(check bool) "so does the engine's" true (theirs.vx > 100.);
+  Alcotest.(check bool) "at the same speed, give or take" true (Float.abs (ours.vx -. theirs.vx) < 80.);
+  Alcotest.(check bool) "and from the same place, give or take a ball" true (Float.abs (ours.x -. theirs.x) < 30.)
+
+(* The pinball's lesson: at 1/60 s a fast ball jumps clean over a wall
+ * without ever overlapping it. A flipper throws the ball at about 3000
+ * pixels a second, i.e. 50 a frame, four times its radius; dropped at
+ * 4000 on the flipper it goes straight through with substeps=1, and
+ * bounces off it with the four steps of the default. *)
+let pinball_tunnels () =
+  let open TinyPinball in
+  let drop (substeps : int) = (pinball_run 30 (pinball_at ~substeps (-60.) (-100.) 0. (-4000.))).ball.y in
+  Alcotest.(check bool) "substeps=1: gone through the flipper" true (drop 1 < drain_y);
+  Alcotest.(check bool) "substeps=4: still on the table" true (drop 4 > drain_y)
+
+(* A game played by a robot that flips whenever the ball is low: the
+ * ball bounces off the table's things and scores, and -- the thing
+ * worth checking every time the table or the physics changes -- it
+ * never leaves the cabinet. *)
+let pinball_stays_on_the_table () =
+  let open TinyPinball in
+  let g = ref (new_game Ours 4) and escaped = ref None and i = ref 0 in
+  while !i < 1800 do
+    incr i;
+    let b = !g.ball in
+    let keyboard =
+      { initial_computer.keyboard with kspace = !i < 50; kleft = b.y < -250. && b.x < 0.; kright = b.y < -250. && b.x > 0. }
+    in
+    g := update_game (computer ~keyboard !i) (Scene2d.start (Playing !g)) !g;
+    let b = !g.ball in
+    if !escaped = None && (b.x < -260. || b.x > 320. || b.y > 500.) then escaped := Some (b.x, b.y)
+  done;
+  (match !escaped with Some (x, y) -> Alcotest.failf "the ball left the table at (%.0f, %.0f)" x y | None -> ());
+  Alcotest.(check bool) "it hit things on the way" true (!g.score > 0)
+
+(* three balls, and the game is over *)
+let pinball_three_balls () =
+  let open TinyPinball in
+  let drained (g : game) = pinball_run 140 { g with ball = { x = 0.; y = drain_y -. 10.; vx = 0.; vy = -100. }; play = Live } in
+  let g = drained (new_game Ours 4) in
+  Alcotest.(check int) "the second ball" 2 g.balls;
+  let g = drained (drained g) in
+  Alcotest.(check int) "none left" 0 g.balls
+
+(*****************************************************************************)
+(* TinyBoomerangFu3d *)
+(*****************************************************************************)
+
+(* The one rule the whole game hangs on: a thrown boomerang comes back
+ * to where its owner *is*, not to where the throw started. So: throw
+ * north, then walk east the whole time it is away, and it still finds
+ * you. *)
+let boomerang_returns () =
+  let open TinyBoomerangFu3d in
+  let me = List.hd (new_game ()).players in
+  let me, thrown = step_player { go = Some (0., -1.); throw = true; dash_now = false } me in
+  let r = match thrown with Some r -> r | None -> Alcotest.fail "nothing left the hand" in
+  Alcotest.(check bool) "the hand is empty" false me.holds;
+  let from_x = me.px in
+  let rec fly n me rangs =
+    if n = 0 then (me, rangs)
+    else
+      let me, _ = step_player { go = Some (1., 0.); throw = false; dash_now = false } me in
+      let rangs, caught = step_rangs [ me ] rangs in
+      if List.mem me.idx caught then ({ me with holds = true }, rangs) else fly (n - 1) me rangs
+  in
+  let me, rangs = fly 200 me [ r ] in
+  Alcotest.(check bool) "it is caught again" true me.holds;
+  Alcotest.(check int) "and nothing is left in the air" 0 (List.length rangs);
+  Alcotest.(check bool) "having chased a thrower who kept moving" true (me.px -. from_x > 5.)
+
+(* Who a flight cuts, which is three rules in one function ([cuts]):
+ * everyone on the way out, nobody but its owner's enemies on the way
+ * back, and its own thrower only once it has both got away and come off
+ * something. *)
+let boomerang_cuts () =
+  let open TinyBoomerangFu3d in
+  let g = new_game () in
+  let me = List.nth g.players 0 and you = List.nth g.players 1 in
+  let flight = { rx = 0.; rz = 0.; rvx = 0.5; rvz = 0.; owner = me.idx; leg = Out; bounced = false; away = false; age = 10 } in
+  let over (p : player) (r : rang) = { r with rx = p.px; rz = p.pz } in
+  let n rangs players = List.length (cuts players rangs) in
+  Alcotest.(check int) "a throw does not cut the one who threw it" 0 (n [ over me flight ] [ me ]);
+  Alcotest.(check int) "unless it has got away and come off the fence" 1
+    (n [ over me { flight with bounced = true; away = true } ] [ me ]);
+  Alcotest.(check int) "the way back is a catch, never a cut" 0
+    (n [ over me { flight with leg = Back; bounced = true; away = true } ] [ me ]);
+  Alcotest.(check int) "but it cuts anyone else, either way round" 2
+    (n [ over you flight; over you { flight with leg = Back } ] [ me; you ])
+
+(* The other half of the trade: holding the boomerang, the dash is a
+ * slash; without it, the same dash is only a dodge. *)
+let boomerang_slash () =
+  let open TinyBoomerangFu3d in
+  let g = new_game () in
+  let me = { (List.nth g.players 0) with px = 0.; pz = 0.; dash = 5 } in
+  let you = { (List.nth g.players 1) with px = 0.9; pz = 0. } in
+  Alcotest.(check int) "a dash with it in hand cuts" 1 (List.length (cuts [ me; you ] []));
+  Alcotest.(check int) "the same dash, unarmed, does not" 0 (List.length (cuts [ { me with holds = false }; you ] []));
+  Alcotest.(check int) "and it has no reach" 0 (List.length (cuts [ me; { you with px = 3.5 } ] []));
+  Alcotest.(check int) "standing still with it in hand does not either" 0
+    (List.length (cuts [ { me with dash = 0 }; you ] []))
+
+(* The pits swallow whoever walks into one -- and the computer, which
+ * looks where it is going ([way_ok]), must not: a round played out with
+ * nobody at the keyboard is decided by boomerangs, and nobody falls. *)
+let boomerang_pits () =
+  let open TinyBoomerangFu3d in
+  let me = { (List.hd (new_game ()).players) with px = 5.; pz = 0. } in
+  let rec walk n p =
+    if n = 0 || not (alive p) then p else walk (n - 1) (fst (step_player { go = Some (1., 0.); throw = false; dash_now = false } p))
+  in
+  Alcotest.(check bool) "walk into a pit and you fall" true (match (walk 40 me).state with Falling _ -> true | _ -> false);
+  let g = ref (new_game ()) in
+  for _ = 1 to 1800 do
+    g := step_game initial_model initial_computer.keyboard !g
+  done;
+  Alcotest.(check bool) "the round was decided" true (!g.ended <> None);
+  Alcotest.(check int) "and the computer kept out of the pits" 0
+    (List.length (List.filter (fun p -> match p.state with Falling _ -> true | _ -> false) !g.players))
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -1988,4 +2156,13 @@ let tests =
       t "TinyRobotron, the two sticks" robotron_twin_stick;
       t "TinyRobotron, a grunt on an electrode, a hulk on the family" robotron_walks_into_things;
       t "TinyRobotron, the brain rebuilds a human" robotron_brain_rebuilds;
-      t "TinyRobotron, a robot clears the first wave" robotron_robot ]
+      t "TinyRobotron, a robot clears the first wave" robotron_robot;
+      t "TinyPinball, the flipper carries the ball" pinball_flipper_throws;
+      t "TinyPinball, ours and the engine agree" pinball_both_engines;
+      t "TinyPinball, substeps=1 falls through the table" pinball_tunnels;
+      t "TinyPinball, the ball never leaves the table" pinball_stays_on_the_table;
+      t "TinyPinball, three balls and it is over" pinball_three_balls;
+      t "TinyBoomerangFu3d, the boomerang comes back to a moving thrower" boomerang_returns;
+      t "TinyBoomerangFu3d, who a flight cuts" boomerang_cuts;
+      t "TinyBoomerangFu3d, the dash is a slash only with it in hand" boomerang_slash;
+      t "TinyBoomerangFu3d, the pits, and the computer that avoids them" boomerang_pits ]

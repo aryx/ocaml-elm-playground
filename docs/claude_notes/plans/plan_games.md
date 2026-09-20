@@ -551,6 +551,40 @@ ball game). (Names and dates from memory, to check.)
   down the middle hiding the small things' overlap).
 - **Kit**: none; `Physics`, `Tilemap`, `Camera2d`.
 
+### 20. Pinball
+
+Humpty Dumpty (Gottlieb, 1947: the first flippers, six of them, facing
+outwards), Bill Budge's Pinball Construction Set (Apple II, 1983: a
+table you drew, and the first argument that a table is data), Pinball
+Dreams and Pinball Fantasies (Digital Illusions, 1992-93), 3D Pinball:
+Space Cadet (Cinematronics/Maxis, 1995). (Names and dates from memory,
+to check.)
+
+- **Toy**: TinyPinball (DONE: `games/TinyPinball.ml`, one screen, a
+  plunger, two flippers, three pop bumpers, two slingshots, two banks
+  of drop targets, a drain, and the tilt; the table is a list of
+  segments and circles, each with its restitution, its kick and its
+  score, so the table can be changed without touching the physics).
+  Two engines, `physics=engine` as in Asteroid and TinyMario: ours (30
+  lines: the nearest point of a segment, reflect about the normal) and
+  the playground's `Physics` layer (`bounce_off`: Collide and Resolve,
+  with friction and the flipper's surface speed for free). They agree
+  to 9 pixels on a wall bounce, which is the point of having both.
+- **What it taught**, and what `plan_physics_remaining.md` should hear:
+  a pinball is the case that breaks a fixed time step. A flipper
+  throws the ball at ~3000 pixels a second, 50 a frame, four times its
+  radius, so the game integrates in 4 substeps rather than with
+  `Physics.step` (a fixed 1/60 s); `substeps=1` loses the ball through
+  the table within a second, and a test checks exactly that. The
+  subtler half: a *wall* can be the fast one -- a flipper tip travels
+  45 pixels a frame, so the flippers substep too, or they sweep past a
+  ball resting on them and throw nothing.
+- **Kit**: none. There is one pinball, and what it would share with a
+  second one is already in `physics/2d`.
+- **Later**: `games3d/TinyPinball3d.ml`, the same game with 3D
+  graphics and the 3D physics of `plan_physics3d_teaching.md` -- a
+  bigger game, not a port of this one.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,

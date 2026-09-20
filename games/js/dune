@@ -41,6 +41,7 @@
 (copy_files ../TinyWarcraft2.ml)
 (copy_files ../TinySonic.ml)
 (copy_files ../TinyRobotron.ml)
+(copy_files ../TinyPinball.ml)
 
 (executables
   (names
@@ -83,6 +84,7 @@
     TinyWarcraft2
     TinySonic
     TinyRobotron
+    TinyPinball
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

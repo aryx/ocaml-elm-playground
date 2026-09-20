@@ -178,6 +178,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyPinball.ml)
+ (deps (:src %{project_root}/games/TinyPinball.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyWarcraft2.ml)
  (deps (:src %{project_root}/games/TinyWarcraft2.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
@@ -195,6 +200,11 @@
 (rule
  (target AiOthello.ml)
  (deps (:src %{project_root}/games/AiOthello.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyBoomerangFu3d.ml)
+ (deps (:src %{project_root}/games3d/TinyBoomerangFu3d.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
