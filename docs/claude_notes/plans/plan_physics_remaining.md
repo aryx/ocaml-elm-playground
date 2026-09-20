@@ -83,7 +83,13 @@ their demos run on the same machine, the same scene sizes.
 
 ## 5. 3D (the plan's "later")
 
-`physics/3d/`: spheres, boxes, gravity, and a `Physics3d` API, for
-StarCollector3d, TinyMinecraft (walking on blocks) and TinyMario64. The
-same ideas, a dimension up: `Vec3`, 3x3 inertia tensors, SAT with edge
-cross products.
+Started, so it is a plan of its own:
+[`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)
+(`physics/3d/` and a `Physics3d` API; the tutorial
+[`notes_3d_physics.md`](../tutorials/notes_3d_physics.md), the
+related-work note
+[`notes_physics3d_related_work.md`](../related-work/notes_physics3d_related_work.md)).
+The items this section used to list -- spheres, boxes, gravity,
+`Vec3`, 3x3 inertia tensors, SAT with edge cross products, and the
+users StarCollector3d, TinyMinecraft and TinyMario64 -- are its
+phases 0-9.

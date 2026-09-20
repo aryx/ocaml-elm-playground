@@ -240,7 +240,12 @@ online play), then Half-Life (1998).
   the rasterizer.
 - **Kit**: `Fps_controller`, extracted from `TinyMinecraft`'s player (move,
   jump, gravity, mouse look), with collisions against boxes instead of
-  blocks (`Collide3d`); shared with TinyWolf3d and TinyDoom.
+  blocks (`Collide3d`); shared with TinyWolf3d and TinyDoom. Both are
+  phases 4 and 9 of
+  [`plan_physics3d_teaching.md`](plan_physics3d_teaching.md), which
+  builds `Collide3d` and the capsule controller
+  (`playground3d/Character3d`) that this kit wants -- and whose own
+  games are TinyPinball, TinyHalfLife2 and TinyPortal.
 
 ### 6. Flight and space
 
@@ -409,6 +414,11 @@ kit); listed here because players see them as 3D.
 - **The web**: WebGL's `Mesh_cache` (`plan_webgl_remaining.md` section
   1) before any big `cached3d` world runs in the browser.
 - **An orthographic camera** (for isometric-looking 3D and puzzles).
+- **3D physics** ([`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)):
+  today each game does its own (a box one axis at a time in
+  TinyMinecraft and TinyMario64, a ball on a height map in TinyMarble),
+  and keeps it -- the engine arrives beside them behind a
+  `physics=engine` flag, as in 2D.
 
 ## Ordering
 

@@ -71,7 +71,9 @@ A reading order, from the simplest:
 3. `notes_opengl.md` and `notes_opengl_shaders.md`: the same done by a
    GPU, and what changes.
 4. `notes_2d_physics.md`: motion, from Newton's laws to stacks of boxes
-   (`physics/`).
+   (`physics/2d/`); `notes_3d_physics.md`, the same a dimension up
+   (`physics/3d/`): quaternions, inertia tensors, capsules, and why a
+   player is not a rigid body.
 5. `notes_audio.md`: sound, from samples to a synthesizer (`audio/`);
    `notes_audio_midi.md`, music as data: MIDI, and the trackers.
 6. `notes_ai.md`: deciding -- a way through a maze, a flock, a
@@ -86,7 +88,8 @@ A reading order, from the simplest:
 - The lineage of each layer, against its own field:
   `notes_playground_related_work.md` (2D),
   `notes_playground3d_related_work.md` (3D),
-  `notes_physics_related_work.md`, `notes_audio_related_work.md`,
+  `notes_physics_related_work.md` and
+  `notes_physics3d_related_work.md`, `notes_audio_related_work.md`,
   `notes_ai_related_work.md`; and `notes_vs_doom_quake.md`, the
   software renderers of the id Software classics.
 
@@ -101,8 +104,9 @@ The tools themselves are in `scripts/` (see `scripts/README.md`).
 
 ## plans/: what's next, and what was done
 
-- The open plans: `plan_ai_teaching.md`, `plan_audio_teaching.md`,
-  `plan_games.md`, `plan_games3d.md`, `plan_networking_teaching.md`,
+- The open plans: `plan_physics3d_teaching.md`, `plan_ai_teaching.md`,
+  `plan_audio_teaching.md`, `plan_games.md`, `plan_games3d.md`,
+  `plan_networking_teaching.md`,
   `plan_teaching_languages.md`, `plan_teaching_other.md`,
   `plan_playground_other.md`, and what's left of finished ones
   (`plan_*_remaining.md`: 2D, 3D, WebGL, Minecraft, physics).
