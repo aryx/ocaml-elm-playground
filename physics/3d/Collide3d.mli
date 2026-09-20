@@ -157,6 +157,46 @@ val contact : placed -> placed -> Contact3d.t option
 (* [contact] without the numbers *)
 val touching : placed -> placed -> bool
 
+(* {1 Manifolds}
+
+   [contact] answers with one point, which is all a bounce needs. A box
+   resting on a box touches along a whole *face*, and holding a stack
+   still needs every corner of it: push at one point and the box tips
+   about it, again and again, for ever.
+
+   [manifold] is that face. For two boxes it is found by clipping --
+   the reference face is whichever of the two is better aligned with
+   the contact normal, the other box's nearest face is the incident
+   one, and the incident face is cut down by the reference face's four
+   side planes (Sutherland-Hodgman, the same clipping
+   games2.5d/TinyDescent.ml does through its portals):
+
+        reference face (the floor's top)      the incident face, clipped
+        +----------------------+              +--------+
+        |                      |              |  box   |  4 points kept,
+        |     +--------+       |     ->       +--------+  the deepest and
+        |     |  box   |       |                          the three most
+        +-----+--------+-------+                          spread out
+
+   Everything else answers with its single point: a sphere touches a
+   plane at one point and always will, and a capsule lying flat on a
+   face touches along a line that this engine reports the middle of
+   (see [box_capsule]).
+
+   Erin Catto, "Contact Manifolds" (GDC 2007) is the reference. *)
+
+(* up to four contact points for a pair, [] when they miss *)
+val manifold : placed -> placed -> Contact3d.t list
+
+(* the pieces, exposed because they are the interesting half: a box's
+ * six faces (an outward normal and four corners each), one
+ * Sutherland-Hodgman clip against a plane (keeping n . p <= d), and
+ * the choice of which points to keep when clipping leaves more than
+ * four *)
+val box_faces : placed -> (Vec3.t * Vec3.t list) list
+val clip_by_plane : Vec3.t list -> Vec3.t -> float -> Vec3.t list
+val spread_out : int -> Contact3d.t list -> Contact3d.t list
+
 (* do two axis-aligned boxes overlap: the cheap test a broad phase runs
  * before any of the above (Broadphase3d, phase 6) *)
 val bounds_overlap : Vec3.t * Vec3.t -> Vec3.t * Vec3.t -> bool

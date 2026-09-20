@@ -164,8 +164,14 @@ let boxes ?(edge_axes = true) (a : placed) (b : placed) : Contact3d.t option =
     | Some (depth, axis) ->
         (* the normal points from a towards b *)
         let normal = if Vec3.dot (Vec3.sub b.pos a.pos) axis < 0. then Vec3.scale (-1.) axis else axis in
-        let pa = support a normal and pb = support b (Vec3.scale (-1.) normal) in
-        Some (Contact3d.make ~normal ~depth ~point:(Vec3.scale 0.5 (Vec3.add pa pb)))
+        (* the point is b's deepest, pulled back half the overlap --
+         * *not* the midpoint of the two supports, which for a small
+         * box on a huge floor lands at a corner of the floor, metres
+         * from where they touch, and gives the impulse a lever arm so
+         * long that it vanishes. For anything resting, use [manifold]:
+         * one point of a face is never the whole story. *)
+        let deepest = support b (Vec3.scale (-1.) normal) in
+        Some (Contact3d.make ~normal ~depth ~point:(Vec3.add deepest (Vec3.scale (depth /. 2.) normal)))
 
 (* A capsule is a segment with a radius, so the contact is the closest
  * point of that segment to the box -- found by going back and forth
@@ -207,6 +213,129 @@ let contact (a : placed) (b : placed) : Contact3d.t option =
   | _, Plane (n, d) -> flipped (plane_hitbox (n, d) a)
 
 let touching (a : placed) (b : placed) : bool = contact a b <> None
+
+(*****************************************************************************)
+(* Manifolds: a whole face of contact, not one point of it *)
+(*****************************************************************************)
+
+(* a box's six faces, each an outward normal and its four corners in
+ * order around it *)
+let box_faces (p : placed) : (Vec3.t * Vec3.t list) list =
+  match (p.shape, face_axes p) with
+  | Box (hx, hy, hz), [ ax; ay; az ] ->
+      let pairs = [ ((ax, hx), (ay, hy), (az, hz)); ((ay, hy), (az, hz), (ax, hx)); ((az, hz), (ax, hx), (ay, hy)) ] in
+      List.concat_map
+        (fun ((n, h), (u, hu), (v, hv)) ->
+          List.map
+            (fun s ->
+              let normal = Vec3.scale s n in
+              let centre = Vec3.add p.pos (Vec3.scale (s *. h) n) in
+              let corner su sv = Vec3.add centre (Vec3.add (Vec3.scale (su *. hu) u) (Vec3.scale (sv *. hv) v)) in
+              (normal, [ corner 1. 1.; corner 1. (-1.); corner (-1.) (-1.); corner (-1.) 1. ]))
+            [ 1.; -1. ])
+        pairs
+  | _ -> []
+
+(* Sutherland-Hodgman against one plane, keeping the side where
+ * n . p <= d -- the same clipping games2.5d/TinyDescent.ml does
+ * through its portals, here in 3D and against a box's sides *)
+let clip_by_plane (poly : Vec3.t list) (n : Vec3.t) (d : float) : Vec3.t list =
+  let count = List.length poly in
+  if count = 0 then []
+  else
+    List.concat
+      (List.mapi
+         (fun i p ->
+           let q = List.nth poly ((i + 1) mod count) in
+           let dp = Vec3.dot n p -. d and dq = Vec3.dot n q -. d in
+           let kept = if dp <= 0. then [ p ] else [] in
+           let crossing = if dp > 0. = (dq > 0.) then [] else [ Vec3.add p (Vec3.scale (dp /. (dp -. dq)) (Vec3.sub q p)) ] in
+           kept @ crossing)
+         poly)
+
+(* at most [keep] of them: the deepest first, then whichever is
+ * farthest from the ones already taken, so that four points still
+ * span the face rather than huddling in one corner *)
+let spread_out (keep : int) (points : Contact3d.t list) : Contact3d.t list =
+  let rec go taken left =
+    if List.length taken >= keep || left = [] then List.rev taken
+    else
+      let far =
+        List.fold_left
+          (fun best (c : Contact3d.t) ->
+            let d = List.fold_left (fun m (t : Contact3d.t) -> Float.min m (Vec3.length (Vec3.sub c.Contact3d.point t.Contact3d.point))) infinity taken in
+            match best with Some (bd, _) when bd >= d -> best | _ -> Some (d, c))
+          None left
+      in
+      match far with
+      | None -> List.rev taken
+      | Some (_, c) -> go (c :: taken) (List.filter (fun (x : Contact3d.t) -> x != c) left)
+  in
+  match List.sort (fun (x : Contact3d.t) (y : Contact3d.t) -> compare y.Contact3d.depth x.Contact3d.depth) points with
+  | [] -> []
+  | deepest :: rest -> go [ deepest ] rest
+
+(* two boxes: the face of one clipped against the sides of the other's,
+ * which is what turns "they overlap, here" into "they overlap along
+ * this whole face" -- the difference between a box that bounces and a
+ * box that can be stacked on *)
+let box_manifold (a : placed) (b : placed) (c : Contact3d.t) : Contact3d.t list =
+  let n = c.Contact3d.normal in
+  let most_aligned faces dir =
+    List.fold_left
+      (fun best (fn, pts) ->
+        let d = Vec3.dot fn dir in
+        match best with Some (bd, _, _) when bd >= d -> best | _ -> Some (d, fn, pts))
+      None faces
+  in
+  match (most_aligned (box_faces a) n, most_aligned (box_faces b) (Vec3.scale (-1.) n)) with
+  | Some (da, na, pa), Some (db, nb, pb) ->
+      (* The reference face is the better aligned with the contact
+       * normal, and the *tolerance* matters: with two crates squarely
+       * stacked the two faces tie, and floating point breaks the tie
+       * differently from one step to the next -- which hands the
+       * solver a different set of four points each time, and the pile
+       * twitches. Sticking with the first box unless the second is
+       * clearly better keeps the manifold the same manifold (Catto
+       * does the same, for the same reason). *)
+      let flip = db > da +. 0.01 in
+      let rn, ref_pts, inc_pts = if flip then (nb, pb, pa) else (na, pa, pb) in
+      let count = List.length ref_pts in
+      let middle = Vec3.scale (1. /. float_of_int count) (List.fold_left Vec3.add (0., 0., 0.) ref_pts) in
+      let clipped =
+        List.fold_left
+          (fun poly i ->
+            let p = List.nth ref_pts i and q = List.nth ref_pts ((i + 1) mod count) in
+            let side = Vec3.cross (Vec3.sub q p) rn in
+            if Vec3.length side < eps then poly
+            else
+              (* the plane through that edge, its normal pointing *away*
+               * from the face -- taken from the face's middle rather
+               * than from the corners' winding, which a box's six
+               * faces do not all share *)
+              let side = Vec3.normalize side in
+              let d = Vec3.dot side p in
+              let side, d = if Vec3.dot side middle > d then (Vec3.scale (-1.) side, -.d) else (side, d) in
+              clip_by_plane poly side d)
+          inc_pts
+          (List.init count Fun.id)
+      in
+      let plane = Vec3.dot rn (List.hd ref_pts) in
+      let normal = if flip then Vec3.scale (-1.) rn else rn in
+      let points =
+        List.filter_map
+          (fun p ->
+            let depth = plane -. Vec3.dot rn p in
+            if depth >= 0. then Some (Contact3d.make ~normal ~depth ~point:p) else None)
+          clipped
+      in
+      if points = [] then [ c ] else spread_out 4 points
+  | _ -> [ c ]
+
+let manifold (a : placed) (b : placed) : Contact3d.t list =
+  match contact a b with
+  | None -> []
+  | Some c -> ( match (a.shape, b.shape) with Box _, Box _ -> box_manifold a b c | _ -> [ c ])
 
 (*****************************************************************************)
 (* Rays *)

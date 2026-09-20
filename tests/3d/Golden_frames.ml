@@ -64,6 +64,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: three bodies at the top of the ramp, each labelled with
      * the acceleration its own tensor predicts *)
     ("examples3d/PhysicsRoll3d", "", 3);
+    (* claude: the wall and the dominoes as they are built, every body
+     * awake (the yellow markers) *)
+    ("examples3d/PhysicsStack3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
@@ -156,6 +159,11 @@ let scripted : Testutil_golden.scripted list =
      * measured acceleration on its prediction, which is the engine
      * arriving at 5/7 g sin a on its own *)
     ("examples3d/PhysicsRoll3d", "race", 110, "x:1");
+    (* seven seconds later, the same wall: standing, every body asleep,
+     * no contact points solved at all. And the same seven seconds with
+     * the solver turned off at the start ("s"), which is a heap. *)
+    ("examples3d/PhysicsStack3d", "asleep", 400, "x:1");
+    ("examples3d/PhysicsStack3d", "no_solver", 200, "s:2");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/LogoFractals3d", "tree", 5, "a:2");

@@ -141,14 +141,25 @@ let solid_as sides (b : body) : body = { b with inertia = Body3d.box ~mass:b.mas
 let touching (a : body) (b : body) : bool = Collide3d.touching (hitbox_of a) (hitbox_of b)
 let contact (a : body) (b : body) : Contact3d.t option = Collide3d.contact (hitbox_of a) (hitbox_of b)
 
-(* the pair's: the bouncier one's bounciness and the geometric mean of
- * the frictions, which are Box2D's choices and the 2D API's *)
+(* The pair's: the bouncier one's bounciness and the geometric mean of
+ * the frictions, which are Box2D's choices and the 2D API's.
+ *
+ * Every point of the manifold gets its impulse, not just one: a crate
+ * landing flat on the floor touches at four corners, and answering
+ * only one of them tips it. They are pushed apart once, by the deepest
+ * of the points. *)
 let bounce (a : body) (b : body) : body * body =
-  match contact a b with
-  | None -> (a, b)
-  | Some c ->
+  match Collide3d.manifold (hitbox_of a) (hitbox_of b) with
+  | [] -> (a, b)
+  | contacts ->
       let restitution = Float.max a.bounciness b.bounciness and friction = sqrt (a.friction *. b.friction) in
-      let sa, sb = Resolve3d.resolve ~restitution ~friction (state a, state b) c in
+      let pair = List.fold_left (fun pair c -> Resolve3d.bounce ~restitution ~friction pair c) (state a, state b) contacts in
+      let deepest =
+        List.fold_left
+          (fun (best : Contact3d.t) (c : Contact3d.t) -> if c.Contact3d.depth > best.Contact3d.depth then c else best)
+          (List.hd contacts) contacts
+      in
+      let sa, sb = Resolve3d.separate pair deepest in
       (with_state sa a, with_state sb b)
 
 let bounce_off (wall : body) (b : body) : body = fst (bounce b (immovable wall))
@@ -312,3 +323,113 @@ let debug (b : body) : shape3d =
     if speed b < 1e-6 then [] else [ rod red (b.x, b.y, b.z) (b.x +. b.vx, b.y +. b.vy, b.z +. b.vz) t ]
   in
   group3d (outline @ velocity)
+
+(*****************************************************************************)
+(* A world: every contact of a step, solved together *)
+(*****************************************************************************)
+
+type world = {
+  bodies : body list;
+  memory : Solver3d.memory;
+  still : int list;
+  asleep : bool list;
+  solved : int;
+}
+
+let world (bodies : body list) : world =
+  { bodies; memory = Solver3d.nothing; still = List.map (fun _ -> 0) bodies;
+    asleep = List.map (fun _ -> false) bodies; solved = 0 }
+
+(* a body is ready to sleep once it has been slow for this many steps,
+ * and a *group* of them sleeps together -- see below *)
+let sleep_after = 60
+let slow_speed = 0.05
+let slow_spin = 10.
+
+let movable (b : body) : bool = Float.is_finite b.mass
+
+let simulate ?(gravity = 0.) ?(iterations = Solver3d.default.iterations) ?(warm_starting = true) ?(sleeping = true)
+    ?(broad_phase = Broadphase3d.Sweep_and_prune) (w : world) : world =
+  let all = Array.of_list w.bodies in
+  let still = Array.of_list w.still in
+  let asleep = Array.of_list w.asleep in
+  if not sleeping then Array.iteri (fun i _ -> asleep.(i) <- false) asleep;
+  (* the pushes change the velocities (semi-implicit Euler: velocities
+   * first, positions last, with the new ones) *)
+  let awake_and_moving =
+    Array.mapi
+      (fun i b ->
+        if (not (movable b)) || asleep.(i) then b
+        else
+          let b = fall gravity b in
+          { b with vx = b.vx +. (b.ax *. tick); vy = b.vy +. (b.ay *. tick); vz = b.vz +. (b.az *. tick) })
+      all
+  in
+  (* the contacts: the broad phase's pairs, each with the points of its
+   * manifold *)
+  let boxes = Array.map world_bounds awake_and_moving in
+  let found = Broadphase3d.pairs broad_phase boxes in
+  let touching = ref [] in
+  let pairs =
+    List.filter_map
+      (fun (i, j) ->
+        let a = awake_and_moving.(i) and b = awake_and_moving.(j) in
+        let both_still = ((not (movable a)) || asleep.(i)) && ((not (movable b)) || asleep.(j)) in
+        if both_still then None
+        else
+          match Collide3d.manifold (hitbox_of a) (hitbox_of b) with
+          | [] -> None
+          | contacts ->
+              touching := (i, j) :: !touching;
+              (* a sleeper wakes when something *moving* touches it --
+               * not merely when it is touched, or a crate resting on
+               * the one below would keep it awake for ever *)
+              let disturbing k (x : body) = movable x && (not asleep.(k)) && speed x > slow_speed in
+              if asleep.(i) && disturbing j b then asleep.(i) <- false;
+              if asleep.(j) && disturbing i a then asleep.(j) <- false;
+              Some
+                { Solver3d.a = i; b = j; contacts;
+                  restitution = Float.max a.bounciness b.bounciness;
+                  friction = sqrt (a.friction *. b.friction) })
+      found.Broadphase3d.pairs
+  in
+  let states, memory =
+    Solver3d.solve { Solver3d.default with iterations; warm_starting } ~dt:tick
+      (Array.map state awake_and_moving) pairs w.memory
+  in
+  (* the moves, with the solved velocities, and the counters *)
+  let bodies =
+    Array.mapi
+      (fun i b ->
+        if asleep.(i) then { b with ax = 0.; ay = 0.; az = 0.; torque = (0., 0., 0.) }
+        else
+          let b = with_state states.(i) b in
+          let sx, sy, sz = b.spin in
+          let slow = speed b < slow_speed && Float.abs sx +. Float.abs sy +. Float.abs sz < slow_spin in
+          still.(i) <- (if movable b && slow then still.(i) + 1 else 0);
+          { b with
+            x = b.x +. (b.vx *. tick); y = b.y +. (b.vy *. tick); z = b.z +. (b.vz *. tick);
+            ax = 0.; ay = 0.; az = 0.; torque = (0., 0., 0.) })
+      awake_and_moving
+  in
+  (* Sleeping, by *islands*: a crate sent to sleep on its own while the
+   * ones above it are still settling is woken a moment later with a
+   * jolt -- measured, once every sixty-one steps, which is the sleep
+   * threshold plus one. So bodies that touch are put in a group
+   * (union-find over this step's contacts, immovable bodies not
+   * joining any, or the floor would make one island of the world), and
+   * a group sleeps only when every body in it is ready. Box2D does the
+   * same, and for the same reason. *)
+  let parent = Array.init (Array.length bodies) Fun.id in
+  let rec root i = if parent.(i) = i then i else (parent.(i) <- root parent.(i); parent.(i)) in
+  List.iter
+    (fun (i, j) -> if movable bodies.(i) && movable bodies.(j) then parent.(root i) <- root j)
+    !touching;
+  let ready = Array.mapi (fun i b -> (not (movable b)) || still.(i) >= sleep_after) bodies in
+  let island_ready = Array.make (Array.length bodies) true in
+  Array.iteri (fun i _ -> if not ready.(i) then island_ready.(root i) <- false) bodies;
+  Array.iteri
+    (fun i b -> if sleeping && movable b then asleep.(i) <- island_ready.(root i) && still.(i) >= sleep_after)
+    bodies;
+  { bodies = Array.to_list bodies; memory; still = Array.to_list still; asleep = Array.to_list asleep;
+    solved = List.fold_left (fun n (p : Solver3d.pair) -> n + List.length p.Solver3d.contacts) 0 pairs }

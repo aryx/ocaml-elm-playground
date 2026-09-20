@@ -342,6 +342,58 @@ let rays_against_the_analytic_answer () =
           Alcotest.(check (float 1e-6)) "the hit is on the sphere" r (Vec3.length (Vec3.sub p c))
   done
 
+(* One contact point is enough to bounce a box and not nearly enough to
+ * stack one: push at a single corner and it tips about it, again and
+ * again. A manifold is the whole face. *)
+let manifolds () =
+  let floor = place (0., -0.5, 0.) (Box (5., 0.5, 5.)) in
+  let crate = place (0., 0.45, 0.) (Box (0.5, 0.5, 0.5)) in
+  let m = Collide3d.manifold floor crate in
+  Alcotest.(check int) "a crate resting on the floor touches at four corners" 4 (List.length m);
+  List.iter
+    (fun (c : Contact3d.t) ->
+      check_vec ~tol:1e-6 "every one of them pushes straight up" (0., 1., 0.) c.Contact3d.normal;
+      near "every one of them 0.05 deep" 0.05 c.Contact3d.depth;
+      let x, _, z = c.Contact3d.point in
+      near "and sits on a corner of the crate" 0.5 (Float.abs x);
+      near "" 0.5 (Float.abs z))
+    m;
+  let corners = List.map (fun (c : Contact3d.t) -> let x, _, z = c.Contact3d.point in (x, z)) m in
+  Alcotest.(check int) "four *different* corners" 4 (List.length (List.sort_uniq compare corners));
+  (* turned, and stacked: still a face *)
+  let turned = place ~orientation:(Quat.of_axis_angle (0., 1., 0.) 0.6) (0., 0.45, 0.) (Box (0.5, 0.5, 0.5)) in
+  Alcotest.(check int) "a crate turned about y still rests on four" 4 (List.length (Collide3d.manifold floor turned));
+  let upper = place (0.2, 1.35, 0.) (Box (0.5, 0.5, 0.5)) in
+  Alcotest.(check int) "and one crate on another" 4 (List.length (Collide3d.manifold crate upper));
+  (* on a corner, one point is the truth *)
+  let tipped = place ~orientation:(Quat.of_axis_angle (1., 0., 1.) 0.9) (0., 0.6, 0.) (Box (0.5, 0.5, 0.5)) in
+  Alcotest.(check int) "a crate on its corner touches at one" 1 (List.length (Collide3d.manifold floor tipped));
+  (* a sphere always touches at one, whatever it is on *)
+  Alcotest.(check int) "a ball, one" 1 (List.length (Collide3d.manifold floor (place (0., 0.45, 0.) (Sphere 0.5))));
+  Alcotest.(check int) "and bodies that miss, none" 0 (List.length (Collide3d.manifold floor (place (0., 9., 0.) (Sphere 0.5))))
+
+(* the clipping underneath it, on its own *)
+let clipping () =
+  let square = [ (-1., 0., -1.); (1., 0., -1.); (1., 0., 1.); (-1., 0., 1.) ] in
+  let half = Collide3d.clip_by_plane square (1., 0., 0.) 0. in
+  Alcotest.(check int) "a square cut in half is four points again" 4 (List.length half);
+  List.iter (fun (x, _, _) -> Alcotest.(check bool) "all of them on the kept side" true (x <= 1e-9)) half;
+  let gone = Collide3d.clip_by_plane square (1., 0., 0.) (-2.) in
+  Alcotest.(check int) "cut away entirely: nothing left" 0 (List.length gone);
+  let whole = Collide3d.clip_by_plane square (1., 0., 0.) 5. in
+  Alcotest.(check int) "cut nowhere near: untouched" 4 (List.length whole);
+  (* a box has six faces, each with four corners and an outward normal *)
+  let b = place (0., 0., 0.) (Box (1., 2., 3.)) in
+  let faces = Collide3d.box_faces b in
+  Alcotest.(check int) "six faces" 6 (List.length faces);
+  List.iter (fun (n, pts) ->
+      Alcotest.(check int) "four corners each" 4 (List.length pts);
+      near "a unit normal" 1. (Vec3.length n);
+      (* every corner of a face is as far along its normal as the face is *)
+      let d = Vec3.dot n (List.hd pts) in
+      List.iter (fun p -> near "flat" d (Vec3.dot n p)) pts)
+    faces
+
 let tests =
   [ t "Hitbox3d, the volumes and the tensors" shapes_and_their_numbers;
     t "Hitbox3d, placed: bounds, corners, support" placing_and_reading;
@@ -356,4 +408,6 @@ let tests =
     t "Collide3d, against a plane" against_a_plane;
     t "Collide3d, the dispatcher" the_dispatcher;
     t "Collide3d, the rays" rays;
-    t "Collide3d, a hundred rays against the analytic sphere" rays_against_the_analytic_answer ]
+    t "Collide3d, a hundred rays against the analytic sphere" rays_against_the_analytic_answer;
+    t "Collide3d, a whole face of contact, not one point of it" manifolds;
+    t "Collide3d, the clipping underneath it" clipping ]

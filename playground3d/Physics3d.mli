@@ -289,3 +289,61 @@ val speed : body -> number
  * measures a shape with. A shape with no points at all (a lone
  * {!Playground3d.hud}) gives ((0,0,0), (0,0,0)). *)
 val bounds : shape3d -> (number * number * number) * (number * number * number)
+
+(* {1 A pile: every body at once}
+
+   [bounce] answers one pair, once. In a pile each answer undoes a bit
+   of another -- push the top crate up and the one under it goes down,
+   and into the floor -- so a stack solved that way jitters and sinks.
+   A [world] solves all of a step's contacts together, over and over
+   until they agree (physics/3d/Solver3d.mli), which is what lets
+   things be *stacked* rather than merely bounced.
+
+   It is the same loop a game writes by hand, so it reads the same:
+
+   {[
+     let world = Physics3d.world (floor :: crates)
+
+     (* in update *)
+     let world = Physics3d.simulate ~gravity:9.8 world
+
+     (* in view *)
+     List.map Physics3d.draw world.bodies
+   ]} *)
+
+type world = {
+  bodies : body list;
+  (* the previous step's impulses, for warm starting *)
+  memory : Solver3d.memory;
+  (* how many steps each body has been slow *)
+  still : int list;
+  (* which of them are asleep, in order: for drawing them differently,
+   * which is worth doing once to watch a pile settle *)
+  asleep : bool list;
+  (* how many contact points the last step solved, for a HUD *)
+  solved : int;
+}
+
+(* the walls and floors among them [immovable] *)
+val world : body list -> world
+
+(* [simulate ?gravity ?iterations ?warm_starting ?sleeping ?broad_phase
+ * w]: one tick of the whole world -- gravity, then every contact
+ * solved together, then the moves.
+ *
+ * [sleeping] (on by default) stops stepping bodies that have been slow
+ * for a second, until something moving touches them: a finished pile
+ * then costs nothing and, more to the point, stops shivering. They
+ * sleep in *groups* -- everything that touches, together -- because a
+ * crate sent to sleep alone while the ones above it are still settling
+ * gets woken a moment later with a jolt, which is measurable (it
+ * happened every sixty-one steps: the threshold, plus one). *)
+val simulate :
+  ?gravity:number ->
+  ?iterations:int ->
+  ?warm_starting:bool ->
+  ?sleeping:bool ->
+  ?broad_phase:Broadphase3d.method_ ->
+  world ->
+  world
+

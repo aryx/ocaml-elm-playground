@@ -17,6 +17,7 @@
     PhysicsBounce3d
     PhysicsMarbles3d
     PhysicsRoll3d
+    PhysicsStack3d
     LogoFractals3d
   )
   (libraries
@@ -25,7 +26,7 @@
     elm_playground_3d
     elm_playground_3d_software ; implem of virtual elm_playground_3d
     physics_2d ; PhysicsSolarSystem3d's Kepler and Planets
-    physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d; PhysicsFloat3d's Force3d; PhysicsHitbox3d's Hitbox3d; PhysicsBounce3d's Resolve3d; PhysicsMarbles3d's Broadphase3d; PhysicsRoll3d's rolling
+    physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d; PhysicsFloat3d's Force3d; PhysicsHitbox3d's Hitbox3d; PhysicsBounce3d's Resolve3d; PhysicsMarbles3d's Broadphase3d; PhysicsRoll3d's rolling; PhysicsStack3d's Solver3d
   )
 )
 

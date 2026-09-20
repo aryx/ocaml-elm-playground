@@ -506,7 +506,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 7 done** (2026-09-20), bar one port named below; the
+**Phases 0 to 8 done** (2026-09-20), bar one port named below; the
 rest not started. Written as the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -770,6 +770,48 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     is a bigger piece than the rest of phase 7 put together, and it
     belongs after phase 8's solver, when a body resting on a surface
     is something the engine can hold still.
+- **Phase 8, DONE**: `Collide3d.manifold` (face clipping),
+  `Solver3d` (sequential impulses, warm starting, Baumgarte, a bounce
+  threshold), `Physics3d.world` / `simulate` with sleeping, 7 new
+  tests, and `examples3d/PhysicsStack3d.ml`. Measured, a crate dropped
+  on the floor and left for 300 steps:
+
+  ```
+     solved            y = 0.24500 (0.25 less the 5 mm slop), speed 0, asleep
+     one pass per pair y = 0.25120, speed 0.0487 -- shivering, for ever
+  ```
+
+  and a tower of five, after 600 steps: every crate within 2 cm of
+  where it started, sideways creep 3 mm, the whole tower asleep.
+  - **Three bugs, each worth the finding.** The single-point box/box
+    contact put its point at the midpoint of the two support points,
+    which for a small box on a big floor is *a corner of the floor* --
+    metres away, with a lever arm so long the impulse vanished and the
+    crate fell through. It now uses the incident body's deepest point,
+    and `Physics3d.bounce` uses the whole manifold anyway.
+  - The manifold's clipping kept the *outside* of each side plane: the
+    winding of a box's six faces is not all the same way round, so the
+    plane is now oriented from the face's own middle, which cannot be
+    got wrong.
+  - Warm starting remembered friction as *two numbers* in the tangent
+    basis, and `Resolve3d.tangents` jumps by a quarter turn when the
+    normal wobbles across a tie -- replaying last step's friction
+    along this step's axes. It now remembers a *vector*, which has no
+    opinion about the basis.
+  - **Sleeping had to be by islands.** Per-body sleeping put the
+    bottom crate to sleep while the ones above were still settling,
+    and something woke it a moment later with a jolt -- measured, once
+    every 61 steps, which is the threshold plus one. Bodies that touch
+    are now unioned into groups and a group sleeps only when every
+    body in it is ready, which is what Box2D does. The tower's
+    sideways creep fell from 2 cm to 3 mm with it.
+  - `PhysicsStack3d` is the phase's demo and its argument: a brick
+    wall and a row of dominoes, "s" to turn the solver off (the wall
+    comes apart into a heap that never quite stops moving), "i" for
+    the iteration count, "w" for warm starting, space to throw a ball
+    through it, and a marker over every body still awake -- they go
+    out one by one as it settles, and at seven seconds the scene
+    solves *no* contacts at all.
 
 ## Verification
 

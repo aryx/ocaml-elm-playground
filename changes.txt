@@ -226,6 +226,26 @@
   construction and measured so over a thousand random collisions;
   energy is never created, and never lost with e = 1
 - playground3d/Physics3d: bounce, bounce_off and bounce_all over it
+- physics/3d/Solver3d and Collide3d.manifold: stacking. A contact
+  manifold is a whole face, found by clipping the incident face against
+  the reference face's four sides, so a crate resting on a crate
+  touches at four corners and not one; and every contact of a step is
+  then solved together, again and again (sequential impulses, warm
+  starting, Baumgarte, a bounce threshold), which is what lets things
+  be stacked rather than merely bounced. Measured, a crate dropped on
+  the floor: solved, it rests 5 mm in and stops dead and goes to sleep;
+  answered one pair at a time, it shivers at 5 cm/s for ever
+- playground3d/Physics3d.world and simulate, with sleeping by islands:
+  bodies that touch sleep as a group, because a crate sent to sleep
+  alone under a tower that is still settling is woken a moment later
+  with a jolt (measured: every 61 steps, the threshold plus one). A
+  tower of five settles within 2 cm, creeps 3 mm sideways, and then
+  costs nothing
+- examples3d/PhysicsStack3d: a brick wall and a row of dominoes, "s" to
+  turn the solver off and watch the wall come apart, "i" for the
+  iterations, "w" for warm starting, space to throw a ball through it,
+  and a marker over every body still awake -- they go out one by one,
+  and at seven seconds the scene solves no contacts at all
 - physics/3d rolling: the engine arrives at 5/7 g sin a on its own --
   1.805 m/s^2 measured on a 15 degree slope against the textbook's
   1.812, 3.488 on 30 degrees against 3.500, with v = w r at the contact

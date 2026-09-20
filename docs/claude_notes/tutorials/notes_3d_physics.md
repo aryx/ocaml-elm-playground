@@ -514,9 +514,46 @@ Everything after that is the 2D engine's phase 8, unchanged in idea:
 matched by position); a Baumgarte bias for the overlap; a restitution
 threshold so a resting body stops making invisible micro-bounces
 (Erin Catto, GDC 2005 and GDC 2007). And **sleeping**: a body still
-for half a second is skipped until something touches it -- optional in
+for a second is skipped until something touches it -- optional in
 2D, close to mandatory in 3D, where a pinball table full of settled
 targets should cost nothing.
+
+Sleeping has to be by **islands**, and that is worth knowing before
+writing it: bodies that touch sleep as a group. Put a crate to sleep
+on its own while the ones above it are still settling and something
+wakes it a moment later with a jolt -- measured here, once every
+sixty-one steps, which is the sleep threshold plus one. Box2D unions
+touching bodies and sleeps the group; so does `Physics3d.simulate`,
+and the tower's sideways creep fell from 2 cm to 3 mm when it started
+doing so.
+
+Measured, a crate dropped on the floor and left for 300 steps:
+
+```
+   solved together        y = 0.24500 (0.25 less the 5 mm slop),
+                          speed 0, asleep, no contacts solved at all
+   one pair at a time     y = 0.25120, speed 0.0487 -- shivering,
+                          and it will shiver for ever
+```
+
+and a tower of five crates, after 600 steps: each within 2 cm of where
+it started, 3 mm of sideways creep, the whole tower asleep.
+`examples3d/PhysicsStack3d.ml` is the same argument with bricks: "s"
+turns the solver off, and the wall comes apart into a heap.
+
+Three things went wrong while writing it, all of them the kind that
+look like physics bugs and are not. The single-point box/box contact
+put its point at the *midpoint of the two support points*, which for a
+crate on a wide floor is a corner of the floor, metres away, with a
+lever arm so long that the impulse vanished and the crate fell
+through. The face clipping kept the outside of each side plane,
+because a box's six faces do not all wind the same way round (orient
+the plane from the face's own middle and the question does not arise).
+And warm starting remembered friction as two numbers in a tangent
+basis that jumps by a quarter turn when the normal wobbles across a
+tie -- so it replayed last step's friction along this step's axes, and
+kicked the pile. Remember the friction impulse as a *vector* and the
+basis stops mattering.
 
 ## 11. Rolling, and the 5/7 that is already in this repo
 
