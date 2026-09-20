@@ -15,34 +15,54 @@
  * is no out of play, because the arena has walls.
  *
  * It shares its bones with games/TinyKickOff2 -- both are the sports
- * kit (kits/sports/): the ball that is pushed ahead of a player rather
- * than carried by him (Free_ball), and a side that keeps its shape
- * because every player has a place in it (Formation). Writing the
- * second game is what turned those two ideas into a kit; the first
- * game had them inline, as it should have.
+ * kit (kits/sports/): the ball as a thing with a speed and a friction
+ * and walls (Free_ball), and a side that keeps its shape because every
+ * player has a place in it (Formation). Writing the second game is
+ * what turned those into a kit; the first game had them inline, as it
+ * should have.
  *
- * What Speedball adds, and what this file is for:
+ * But the ball is the opposite of Kick Off's, and that is the first
+ * thing to say about this game:
  *
- * 1. THE ARENA SCORES. A goal is 10 points, and so are two hits on a
+ * 1. THE BALL IS CARRIED. This is handball, not football. Run near it
+ *    and you simply *have* it -- there is no catch button, and no
+ *    chasing it either -- and you keep it, running with it, until you
+ *    throw it or somebody knocks it out of you:
+ *
+ *      Kick Off              Speedball
+ *      p   o- - ->           p(o) ----->     you have it; the arena
+ *      the ball runs on      it runs with you, and only what you
+ *      and you chase it      throw is loose again
+ *
+ *    A carried ball does not roll, does not bounce off the walls and
+ *    does not score off the furniture. To use the arena you have to
+ *    let go of it, which is the whole of the game's tension.
+ *
+ * 2. THE ARENA SCORES. A goal is 10 points, and so are two hits on a
  *    bounce dome; the stars are 5 and light the ball up, the two
  *    multiplier plates double everything you score for ten seconds,
  *    and flattening an opponent is 10. So the thing on the screen is
- *    not a pitch with a goal at each end, it is a *table*, and the
- *    ball rattling around the furniture is worth as much as the ball
- *    in the net. It is TinyPinball's table with players on it, and the
- *    score line tells you so: a match here is usually won by the side
- *    that used the arena, not the one that scored more goals.
+ *    not a pitch with a goal at each end, it is a *table*, and a
+ *    thrown ball rattling around the furniture is worth as much as the
+ *    ball in the net. It is TinyPinball's table with players on it.
  *
- * 2. THE BALL NEVER STOPS. No touchlines, no throw-ins, no referee:
- *    the walls give it back, keeping four fifths of its speed
+ * 3. THE LOOSE BALL NEVER STOPS. No touchlines, no throw-ins, no
+ *    referee: the walls give it back, keeping four fifths of its speed
  *    (Free_ball.bounce_in), and a shot that misses comes back at you
- *    off the end wall. The whole game is played inside one closed box,
- *    which is why it never lets up.
+ *    off the end wall. The mouth at each end is a gap in the wall,
+ *    which is what a goal is here.
  *
- * 3. VIOLENCE IS A MOVE, not a foul. Space with no ball is a tackle:
+ * 4. VIOLENCE IS A MOVE, not a foul. Space with no ball is a tackle:
  *    whoever you catch goes down for two seconds, you score for it,
- *    and the ball he was carrying is loose. Speedball's own subtitle
- *    was Brutal Deluxe, and its rule was that there are no rules.
+ *    and if he was carrying the ball it comes out of his hands.
+ *    Speedball's subtitle was Brutal Deluxe, and its rule was that
+ *    there are no rules.
+ *
+ * The view is the other difference: close in (625 pixels of a 760 by
+ * 1320 arena) and nailed to the ball, which is in somebody's hands
+ * most of the time. Kick Off's camera follows the ball up and down a
+ * pitch you can see the width of; this one scrolls in both directions
+ * and shows you a corner of the arena at a time.
  *
  * What it uses: kits/sports (above), Camera2d (the arena is taller
  * than the screen), Scene2d, Audio. Not Physics: a heavy ball on metal
@@ -70,6 +90,11 @@ let goal_half = 90. (* the mouth at each end *)
 let ball_r = 11.
 let player_r = 14.
 let wall_keep = 0.8 (* a heavy ball on metal loses a fifth of its speed *)
+
+(* the view is close in: 625 pixels of a 760 by 1320 arena, so it
+ * scrolls in both directions, and the ball is always in the middle of
+ * it *)
+let zoom = 1.6
 
 type side = Red | Blue
 
@@ -112,6 +137,10 @@ type player = {
 type game = {
   players : player list;
   ball : Free_ball.t;
+  (* who is holding it. This is handball, not football: run near the
+   * ball and you have it, and you keep it until you throw it or
+   * somebody takes it off you. *)
+  carrier : int option;
   last : side option; (* who touched it last: who the arena pays *)
   electric : int; (* frames the ball stays lit, from a star *)
   mine : int;
@@ -147,7 +176,7 @@ let team (s : side) : player list =
     formation
 
 let new_game () : game =
-  { players = team Red @ team Blue; ball = Free_ball.still 0. 0.; last = None; electric = 0; mine = 4; power = 0.; fixtures;
+  { players = team Red @ team Blue; ball = Free_ball.still 0. 0.; carrier = None; last = None; electric = 0; mine = 4; power = 0.; fixtures;
     double = []; red = 0; blue = 0; clock = 60 *.. 90; message = Some ("SPEEDBALL", 90); restarting = 50 }
 
 let initial_model = { scenes = Scene2d.start Title }
@@ -220,7 +249,7 @@ let goals (g : game) : game =
     let scorer = if b.y > 0. then Red else Blue in
     Audio.play Audio.explosion;
     let g = score g scorer 10 in
-    { (say g "GOAL -- TEN POINTS") with ball = Free_ball.still 0. 0.; restarting = 50; players = team Red @ team Blue }
+    { (say g "GOAL -- TEN POINTS") with ball = Free_ball.still 0. 0.; carrier = None; restarting = 50; players = team Red @ team Blue }
 
 (*****************************************************************************)
 (* The players *)
@@ -244,14 +273,18 @@ let belongs (g : game) (p : player) : number * number =
 
 let step_ai (g : game) (i : int) (p : player) : player =
   if p.down > 0 then { p with down = p.down -.. 1 }
+  else if g.carrier = Some i then
+    (* he has the ball in his hands: he runs it at the mouth *)
+    run_to p (0., goal_line p.side) run_speed
   else if keeper p then run_to p (belongs g p) (run_speed * 0.7)
   else if i <> nearest_of g p.side then run_to p (belongs g p) (run_speed * 0.85)
-    (* "he has it" has to be *inside* the reach: at 44 pixels, which is
-     * further than the 37 he can touch it from, he turns for goal
-     * before he can ever touch the ball, walks away from it, and the
-     * ball never moves at all *)
-  else if Free_ball.near (reach * 0.8) (p.px, p.py) g.ball then run_to p (0., goal_line p.side) run_speed
-  else run_to p (g.ball.x, g.ball.y) run_speed
+  else
+    (* after the man with it, or after the loose ball *)
+    match g.carrier with
+    | Some c when (List.nth g.players c).side <> p.side ->
+        let o = List.nth g.players c in
+        run_to p (o.px, o.py) run_speed
+    | _ -> run_to p (g.ball.x, g.ball.y) run_speed
 
 (*****************************************************************************)
 (* Me: throwing, and the tackle *)
@@ -268,23 +301,42 @@ let step_me (computer : computer) (g : game) : game =
  * defence is the second one. *)
 let throw_or_tackle (computer : computer) (g : game) : game =
   let me = List.nth g.players g.mine in
-  let has = Free_ball.near (reach + 4.) (me.px, me.py) g.ball in
+  let has = g.carrier = Some g.mine in
   if computer.keyboard.kspace && has then { g with power = Float.min 1. (g.power + 0.05) }
   else if computer.keyboard.kspace && not has then
-    (* the tackle: whoever is within reach goes down, and it pays *)
+    (* the tackle: whoever is within reach goes down, it pays ten, and
+     * if he was the one carrying the ball it comes out of his hands *)
     match List.find_opt (fun (p : player) -> p.side <> me.side && p.down = 0 && Float.hypot (p.px -. me.px) (p.py -. me.py) < 36.) g.players with
     | None -> g
     | Some victim ->
         Audio.play Audio.hit;
+        let hit = List.mapi (fun i (p : player) -> (i, p)) g.players |> List.find (fun (_, p) -> p == victim) |> fst in
         let g = score g me.side 10 in
-        say { g with players = List.map (fun (p : player) -> if p == victim then { p with down = 120 } else p) g.players } "TACKLED"
+        let g =
+          if g.carrier <> Some hit then g
+          else
+            (* knocked loose, away from the man who hit him *)
+            let dx = victim.px -. me.px and dy = victim.py -. me.py in
+            let d = Float.max 1e-9 (Float.hypot dx dy) in
+            { g with carrier = None; ball = { (Free_ball.still victim.px victim.py) with vx = 6. * dx / d; vy = 6. * dy / d } }
+        in
+        (* the man who hit him cannot simply take it out of the air: he
+         * is held off for a moment, and the ball squirts loose, which
+         * is what a tackle looks like *)
+        say
+          { g with
+            players =
+              List.mapi
+                (fun i (p : player) -> if p == victim then { p with down = 120 } else if i = g.mine then { p with touch = 12 } else p)
+                g.players }
+          "TACKLED"
   else if g.power = 0. || not has then { g with power = 0. }
   else begin
     Audio.play Audio.laser;
     let dx, dy = me.dir in
     let d = Float.max 1e-9 (Float.hypot dx dy) in
     let speed = 8. + (12. * g.power) in
-    { g with power = 0.; last = Some me.side;
+    { g with power = 0.; carrier = None; last = Some me.side;
       players = List.mapi (fun i (p : player) -> if i = g.mine then { p with touch = 14 } else p) g.players;
       ball = { g.ball with vx = speed * dx / d; vy = speed * dy / d } }
   end
@@ -303,31 +355,38 @@ let update_game (computer : computer) (g : game) : game =
     let g = step_me computer g in
     let g = { g with players = List.mapi (fun i p -> if i = g.mine then p else step_ai g i p) g.players } in
     let g = throw_or_tackle computer g in
-    (* the ball: rolling, then the walls, then the furniture, then the
-     * players who reach it *)
-    let g = { g with ball = Free_ball.roll ~friction g.ball } in
-    let g = { g with ball = walls g.ball } in
-    let g = hit_fixtures g in
-    (* One touch a frame, by whoever is nearest. Letting every player
-     * within reach touch it in turn means that in a crowd -- and this
-     * game is a crowd, ten of them round one ball -- each touch undoes
-     * the last, the ball shakes on the spot, and nobody ever scores. *)
+    (* The ball is either in somebody's hands or loose on the metal,
+     * and that is the whole difference with games/TinyKickOff2. There
+     * the ball is never yours: a touch pushes it ahead of you and you
+     * chase it. Here running near it *is* catching it -- no button,
+     * you simply have it -- and you keep it, running with it, until
+     * you throw it or somebody knocks it out of you. A carried ball
+     * does not roll, does not bounce off the walls and does not score
+     * off the furniture: to use the arena you have to let go of it. *)
     let g =
-      let can (p : player) = p.touch = 0 && p.down = 0 in
-      match Formation.nearest (fun (p : player) -> (p.px, p.py)) can (g.ball.x, g.ball.y) g.players with
-      | None -> g
-      | Some i -> (
+      match g.carrier with
+      | Some i when (List.nth g.players i).down = 0 ->
           let p = List.nth g.players i in
-          (* a touch cannot go through a wall: against one, the ball is
-           * sent along it instead, or the chaser simply pins it there
-           * and the two of them travel down the arena together *)
           let dx, dy = p.dir in
-          let dx = if Float.abs g.ball.x > half_w - 40. && g.ball.x * dx > 0. then 0. else dx in
-          let dy = if Float.abs g.ball.y > half_h - 40. && g.ball.y * dy > 0. && Float.abs g.ball.x > goal_half then 0. else dy in
-          let dir = if dx = 0. && dy = 0. then (0. - (g.ball.x / Float.max 1. (Float.abs g.ball.x)), 0.) else (dx, dy) in
-          match Free_ball.touch ~glued:false ~speed:touch_speed ~reach ~hold:(player_r + ball_r) (p.px, p.py) dir g.ball with
+          let d = Float.max 1e-9 (Float.hypot dx dy) in
+          let hold = player_r + ball_r in
+          { g with ball = Free_ball.still (p.px + (dx / d * hold)) (p.py + (dy / d * hold)); last = Some p.side }
+      | _ ->
+          let g = { g with carrier = None } in
+          let g = { g with ball = Free_ball.roll ~friction g.ball } in
+          let g = { g with ball = walls g.ball } in
+          let g = hit_fixtures g in
+          (* and whoever is nearest picks it up, one man a frame *)
+          let can (p : player) = p.touch = 0 && p.down = 0 in
+          (match Formation.nearest (fun (p : player) -> (p.px, p.py)) can (g.ball.x, g.ball.y) g.players with
           | None -> g
-          | Some ball -> { g with ball; last = Some p.side; players = List.mapi (fun j (q : player) -> if j = i then { q with touch = 8 } else q) g.players })
+          | Some i ->
+              let p = List.nth g.players i in
+              if not (Free_ball.near reach (p.px, p.py) g.ball) then g
+              else begin
+                Audio.play Audio.blip;
+                { g with carrier = Some i; last = Some p.side }
+              end)
     in
     goals g
 
@@ -429,7 +488,16 @@ let view (computer : computer) (model : model) : shape list =
   match scenes.scene with
   | Title -> rectangle (rgb 24 26 32) screen.width screen.height :: view_title scenes
   | Playing g ->
-      let cam = Camera2d.origin |> Camera2d.look_at 0. (clamp (0. - half_h + 430.) (half_h - 430.) g.ball.y) in
+      (* Zoomed in, and the ball dead centre at all times -- not the
+       * player, the ball, which in this game is usually in somebody's
+       * hands and so amounts to the same thing until he throws it.
+       * No easing: Speedball's view is nailed to the ball. Camera2d
+       * clamps it to the walls of the arena. *)
+      let cam =
+        { Camera2d.origin with zoom }
+        |> Camera2d.look_at g.ball.x g.ball.y
+        |> Camera2d.clamp screen { Camera2d.left = 0. - half_w; right = half_w; bottom = 0. - half_h; top = half_h }
+      in
       (rectangle (rgb 24 26 32) screen.width screen.height :: Camera2d.view cam (view_world g) :: view_hud g)
   | Full_time (red, blue) ->
       [ rectangle (rgb 24 26 32) screen.width screen.height; text white 5. "FULL TIME" |> move_y 140.;

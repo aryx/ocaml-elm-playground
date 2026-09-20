@@ -2508,27 +2508,51 @@ let speedball_walls () =
   Alcotest.(check bool) "coming back" true (after.ball.vx < 0.);
   Alcotest.(check bool) "a fifth slower" true (Float.abs after.ball.vx < 9. && Float.abs after.ball.vx > 5.)
 
+(* The difference with the football: run near the ball and you have
+ * it, with no button pressed and no chasing it. It then travels with
+ * you rather than rolling away, which is what "carried" means. *)
+let speedball_carries () =
+  let open TinySpeedball2 in
+  let g = speedball_empty () in
+  let me = List.nth g.players 0 in
+  (* the ball a little ahead of him, and he walks north into it *)
+  let g = { g with ball = Free_ball.still me.px (me.py +. 60.) } in
+  let g = speedball_play 40 ~keyboard:(fun _ -> { initial_computer.keyboard with kup = true }) g in
+  Alcotest.(check bool) "he picked it up by running into it" true (g.carrier = Some 0);
+  let me = List.nth g.players 0 in
+  Alcotest.(check bool) "and it is in his hands, not running away" true (Free_ball.near 30. (me.px, me.py) g.ball);
+  (* running on, the ball stays with him *)
+  let far = speedball_play 60 ~keyboard:(fun _ -> { initial_computer.keyboard with kup = true }) g in
+  let me = List.nth far.players 0 in
+  Alcotest.(check bool) "still his, fifty pixels later" true (far.carrier = Some 0 && Free_ball.near 30. (me.px, me.py) far.ball)
+
 (* Violence is a move: space with no ball puts the nearest opponent on
- * the floor, and pays ten for it. *)
+ * the floor, pays ten for it, and takes the ball off him. *)
 let speedball_tackle () =
   let open TinySpeedball2 in
   let g = { (new_game ()) with restarting = 0 } in
   let me = { (List.nth g.players 4) with px = 0.; py = 0. } in
   let victim = { (List.nth g.players 9) with px = 20.; py = 0. } in
   let g = { g with players = [ me; victim ]; mine = 0; ball = Free_ball.still 0. 500. } in
+  (* and he is the one carrying the ball *)
+  let g = { g with carrier = Some 1; ball = Free_ball.still victim.px victim.py } in
   let after = speedball_play 3 ~keyboard:(fun _ -> { initial_computer.keyboard with kspace = true }) g in
   Alcotest.(check bool) "he is on the floor" true ((List.nth after.players 1).down > 0);
-  Alcotest.(check int) "and that is ten points" 10 after.red
+  Alcotest.(check int) "and that is ten points" 10 after.red;
+  Alcotest.(check bool) "the ball came out of his hands" true (after.carrier = None);
+  Alcotest.(check bool) "and is loose, moving" true (Free_ball.speed after.ball > 1.)
 
-(* A match plays itself: with nobody at the controls, the other side
- * and the furniture get on with it. (Also the check that the game is
- * not standing still, which it did until a touch stopped being able to
- * push the ball through a wall.) *)
+(* A match plays itself. The player's man runs north the whole time and
+ * does nothing else -- he has to be moving, because he is usually the
+ * nearest to the ball and so the one holding it, and a man standing
+ * still with the ball in his hands is a game that never restarts. *)
 let speedball_plays_itself () =
   let open TinySpeedball2 in
-  let g = speedball_play 1800 { (new_game ()) with restarting = 0 } in
+  let g = speedball_play 1800 ~keyboard:(fun _ -> { initial_computer.keyboard with kup = true }) { (new_game ()) with restarting = 0 } in
   Alcotest.(check bool) "somebody scored something" true (g.red + g.blue >= 10);
-  Alcotest.(check bool) "and the ball is not sitting on the centre spot" true (Free_ball.speed g.ball > 0.5)
+  (* in play: in somebody's hands, or loose and moving. A carried ball
+     has no speed of its own, which is the point of carrying it *)
+  Alcotest.(check bool) "and the ball is in play" true (g.carrier <> None || Free_ball.speed g.ball > 0.5)
 
 (* Through the mouth is ten, and the ball goes back to the middle --
  * the only thing that stops this game. *)
@@ -2656,6 +2680,7 @@ let tests =
       t "TinySpeedball2, the arena pays" speedball_arena_pays;
       t "TinySpeedball2, the x2 plate doubles it" speedball_multiplier;
       t "TinySpeedball2, the walls give the ball back" speedball_walls;
+      t "TinySpeedball2, the ball is carried, not chased" speedball_carries;
       t "TinySpeedball2, the tackle" speedball_tackle;
       t "TinySpeedball2, a goal is ten" speedball_goal;
       t "TinySpeedball2, a match plays itself" speedball_plays_itself ]

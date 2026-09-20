@@ -12,9 +12,13 @@
                                 whoever else is nearer than he is
 
    Kick Off (Dino Dini, 1989) is the second; every other football game
-   of its day, and Sensible Soccer after it, the first. Speedball's
-   ball is the second and heavier still: it never stops, because the
-   walls send it back.
+   of its day, and Sensible Soccer after it, the first. Speedball 2 is
+   the first taken further still: run near the ball and you simply
+   have it, no button and no chase, and it stays in your hands until
+   you throw it or somebody knocks it out of you -- so in that game
+   this module is what happens to the ball *once it is loose*, which
+   is rolling on metal ([roll]) and coming back off the walls
+   ([bounce_in]).
 
    This is that ball, with nothing else in it: where it is, how fast it
    goes, the grass or the metal slowing it down ([roll]), what a player

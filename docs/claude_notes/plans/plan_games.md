@@ -706,18 +706,28 @@ is. (Names and dates from memory, to check.)
   ball; only the nearest one chases. Ten lines, and it looks like
   football -- the same trick as a flock.
 - **Second toy**: TinySpeedball2 (DONE: `games/TinySpeedball2.ml`,
-  Speedball 2: Brutal Deluxe, The Bitmap Brothers, 1990). What it adds
-  to the football:
+  Speedball 2: Brutal Deluxe, The Bitmap Brothers, 1990). Its ball is
+  the *opposite* of Kick Off's, which is the first thing to say about
+  it: this is handball, so **the ball is carried** -- run near it and
+  you simply have it, with no button and no chase, and you keep it
+  until you throw it or somebody knocks it out of you. A carried ball
+  does not roll, does not bounce off the walls and does not score off
+  the furniture, so using the arena means letting go of it. The two
+  games are the two answers to the same question, which is why they
+  share a kit and not a mechanic. What else it adds:
   - **the arena scores**. A goal is 10 and so are two hits on a bounce
     dome; the stars are 5 and light the ball, the x2 plates double
     everything a side scores for ten seconds, flattening an opponent
     is 10. The thing on the screen is a *table*, not a pitch, and a
     match is usually won by whoever used the furniture -- it is
     `games/TinyPinball.ml`'s table with players on it;
-  - **the ball never stops**: no touchlines, no referee, walls that
-    give it back keeping four fifths of its speed
+  - **the loose ball never stops**: no touchlines, no referee, walls
+    that give it back keeping four fifths of its speed
     (`Free_ball.bounce_in`), and a mouth at each end which is a *gap*
     in the wall;
+  - **the view is nailed to the ball**, and close in: 625 pixels of a
+    760 by 1320 arena, scrolling both ways, where Kick Off shows you
+    the width of the pitch and follows the ball up and down it;
   - **violence is a move**, not a foul: space with no ball is a
     tackle, two seconds on the floor and ten points.
 - **Kit** (DONE, and this is what the second game was for):
