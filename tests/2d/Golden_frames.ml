@@ -24,6 +24,7 @@ let scenes : Testutil_golden.scene list =
      * must not change a single pixel *)
     ("examples/software/Picture", "o", 5);
     ("examples/software/Picture", "h", 5);
+    ("examples/software/Typing", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -86,6 +87,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyGauntlet2", "", 5);
     ("games/software/TinyKickOff2", "", 5);
     ("games/software/TinySpeedball2", "", 5);
+    ("games/software/TinySensibleSoccer", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -216,6 +218,7 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyGauntlet2", "crowd", 400, "space:1,down:30-90,right:100-200,space:220-400");
     ("games/software/TinyKickOff2", "shot", 260, "space:1,up:70-200,space:150-170,right:171-260");
     ("games/software/TinySpeedball2", "match", 700, "space:1,up:60-200,space:120-140,left:210-400,space:260-280");
+    ("games/software/TinySensibleSoccer", "loft", 300, "space:1,up:40-150,space:160-200,right:201-300");
     (* the first chamber: the goo between him and the way out (the
        portals themselves want a mouse, which a script has none of, so
        they are in tests/games/ instead) *)
@@ -230,6 +233,9 @@ let scripted : Testutil_golden.scripted list =
     (* the metal, its furniture, and (heavy) a match well under way:
        the score is mostly what the arena paid *)
     ("games/software/TinySpeedball2", "arena", 95, "space:1,up:20-95");
+    (* the pitch pulled back, and (heavy) a lofted ball bent in the
+       air, which is the game everybody remembers *)
+    ("games/software/TinySensibleSoccer", "pitch", 95, "space:1,up:20-95");
     ("games/software/TinyWarcraft2", "crowd", 300, "space:1,a:10,p:14,right:20-44,space:50");
     ("games/software/TinyTowerDefense", "maze", 400, "space:1,right:20-40,space:45,up:50-56,space:60,up:64-70,space:74,left:80-84,space:90");
     ("games/software/AiOthello", "reply", 60, "space:2");

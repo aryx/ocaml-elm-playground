@@ -6,6 +6,7 @@
  (deps
    (glob_files golden/*.png)
    %{project_root}/examples/software/Picture.exe
+   %{project_root}/examples/software/Typing.exe
    %{project_root}/examples/software/Smiley.exe
    %{project_root}/examples/software/Words.exe
    %{project_root}/examples/software/Misc.exe
@@ -78,6 +79,7 @@
    %{project_root}/games/software/TinyGauntlet2.exe
    %{project_root}/games/software/TinyKickOff2.exe
    %{project_root}/games/software/TinySpeedball2.exe
+   %{project_root}/games/software/TinySensibleSoccer.exe
    %{project_root}/examples/software/LogoFractals.exe
  )
 )

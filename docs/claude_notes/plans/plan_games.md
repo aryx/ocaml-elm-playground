@@ -730,12 +730,40 @@ is. (Names and dates from memory, to check.)
     the width of the pitch and follows the ball up and down it;
   - **violence is a move**, not a foul: space with no ball is a
     tackle, two seconds on the floor and ten points.
+- **Third toy**: TinySensibleSoccer (DONE:
+  `games/TinySensibleSoccer.ml`, Sensible Software -- Jon Hare and
+  Chris Yates -- 1992). It is worth writing after the other two
+  because it is the third answer to their one question, and the three
+  differ by a single number, how fast a touch sends the ball against
+  how fast a man runs:
+
+  | game | touch / run | the ball, dribbling straight |
+  |---|---|---|
+  | `ball=glued` (TinyKickOff2's flag) | -- | 22 px: it is his feet |
+  | TinySensibleSoccer | 4.0 / 3.6 | 28 px: close control |
+  | TinyKickOff2 | 4.8 / 3.4 | 48 px: a chase you are just winning |
+  | TinySpeedball2 | -- | in his hands: he carries it |
+
+  What is its own: **the ball has a height** (a z, a shadow on the
+  grass, a bounce when it lands, and above head height nobody can
+  touch it -- so the lofted through-ball and the header), **the view
+  is pulled back** (nearly the whole pitch, the smallest men of the
+  three, against Speedball's close-in ball-centred view), and
+  **aftertouch is the game**: over the same 45 frames a lofted shot
+  held right ends 321 pixels to the side of the one left alone, a tap
+  along the grass 163.
+- **Where it goes**: `games/`, not `games2.5d/`. That directory is for
+  games that fake a 3D *view* on the 2D playground -- a raycaster,
+  Mode 7, voxels -- and say so ("the trick of this game"). A ball with
+  a height and a shadow is a coordinate, not a trick of rendering.
 - **Kit** (DONE, and this is what the second game was for):
   `kits/sports/` -- `Free_ball` (the ball pushed ahead of a player
   rather than carried, with the glued alternative, the grass or metal
   friction, the aftertouch push and the walls) and `Formation` (a spot
   per player, pulled part of the way towards the ball; the nearest one
-  chases). TinyKickOff2 was rewritten onto it, which is the only way
+  chases), now with three users. The ball's *height* is deliberately
+  not in it: one game has it, and a second one wanting it is what
+  would move it there. TinyKickOff2 was rewritten onto it, which is the only way
   to know a kit is real -- its five
   tests did not change.
 - **What the second game taught**, all of it found by tests rather

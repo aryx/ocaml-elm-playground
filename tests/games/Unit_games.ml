@@ -2585,6 +2585,82 @@ let speedball_goal () =
   Alcotest.(check bool) "ten at least" true (after.red >= 10);
   Alcotest.(check bool) "and back to the middle" true (Float.hypot after.ball.x after.ball.y < 2.)
 
+(*****************************************************************************)
+(* TinySensibleSoccer *)
+(*****************************************************************************)
+
+let sensible_play (frames : int) ?(keyboard = fun (_ : int) -> initial_computer.keyboard) (g : TinySensibleSoccer.game) : TinySensibleSoccer.game =
+  let s = ref g in
+  for i = 1 to frames do
+    s := TinySensibleSoccer.update_game (computer ~keyboard:(keyboard i) i) !s
+  done;
+  !s
+
+(* one player, the ball at his feet, the whistle gone *)
+let sensible_alone () : TinySensibleSoccer.game =
+  let open TinySensibleSoccer in
+  let g = { (new_game ()) with kickoff = 0 } in
+  let me = { (List.nth g.players g.mine) with px = 0.; py = -300.; dir = (0., 1.) } in
+  { g with players = [ me ]; mine = 0; ball = Free_ball.still 0. (-300. +. 20.) }
+
+(* The third answer to the question the other two ask: the ball is not
+ * his, but it never gets far. The number belongs next to
+ * TinyKickOff2's 48 and the glued ball's 22. *)
+let sensible_close_control () =
+  let open TinySensibleSoccer in
+  let s = ref (sensible_alone ()) and worst = ref 0. in
+  for i = 1 to 180 do
+    s := update_game (computer ~keyboard:{ initial_computer.keyboard with kup = true } i) !s;
+    let me = List.nth !s.players 0 in
+    worst := Float.max !worst (Float.hypot (!s.ball.x -. me.px) (!s.ball.y -. me.py))
+  done;
+  Printf.eprintf "DBG sensible: the ball gets %.0f ahead\n%!" !worst;
+  Alcotest.(check bool) "further than his feet" true (!worst > 24.);
+  Alcotest.(check bool) "but nothing like Kick Off's 48" true (!worst < 40.)
+
+(* The ball has a height: hold the kick and it goes up, comes down, and
+ * while it is above head height nobody can touch it. *)
+let sensible_loft () =
+  let open TinySensibleSoccer in
+  let g = { (sensible_alone ()) with power = 1. } in
+  (* let go of the kick at the first frame *)
+  let up = sensible_play 20 g in
+  Alcotest.(check bool) "it went up" true (up.z > 30.);
+  Alcotest.(check bool) "over everybody's head" true (up.z > head_height);
+  let later = sensible_play 120 g in
+  Alcotest.(check bool) "and came back down" true (later.z < 30.)
+
+(* A tap stays on the grass, where a held kick does not: the same
+ * button, two passes. *)
+let sensible_tap_stays_down () =
+  let open TinySensibleSoccer in
+  let tap = sensible_play 20 { (sensible_alone ()) with power = 0.2 } in
+  Alcotest.(check bool) "a tap never leaves the grass" true (tap.z < 1.);
+  Alcotest.(check bool) "but it does move the ball" true (Free_ball.speed tap.ball > 1.)
+
+(* Aftertouch is the game: a lofted ball bends far more than one on the
+ * grass, which is what makes Sensible's shots curl. *)
+let sensible_aftertouch () =
+  let open TinySensibleSoccer in
+  let shot (bend : bool) (power : number) =
+    let g = { (sensible_alone ()) with power } in
+    let g = sensible_play 45 ~keyboard:(fun i -> if i = 1 then initial_computer.keyboard else { initial_computer.keyboard with kright = bend }) g in
+    g.ball.x
+  in
+  let air = shot true 1. -. shot false 1. and ground = shot true 0.2 -. shot false 0.2 in
+  Printf.eprintf "DBG sensible aftertouch: lofted %.0f, along the grass %.0f\n%!" air ground;
+  Alcotest.(check bool) "a lofted ball bends a long way" true (air > 100.);
+  Alcotest.(check bool) "further than one on the grass" true (air > ground *. 1.3)
+
+(* Through the posts is a goal, and the game restarts in the middle *)
+let sensible_goal () =
+  let open TinySensibleSoccer in
+  let g = { (new_game ()) with kickoff = 0; players = [ { (List.nth (new_game ()).players 4) with px = 0.; py = -400. } ]; mine = 0 } in
+  let g = { g with ball = { (Free_ball.still 0. (half_h -. 30.)) with vy = 8. }; last = Some Home } in
+  let after = sensible_play 20 g in
+  Alcotest.(check int) "one nil" 1 after.home;
+  Alcotest.(check bool) "and back to the centre spot" true (Float.hypot after.ball.x after.ball.y < 2.)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -2705,4 +2781,9 @@ let tests =
       t "TinySpeedball2, the tackle" speedball_tackle;
       t "TinySpeedball2, the camera eases after the ball" speedball_camera_is_smooth;
       t "TinySpeedball2, a goal is ten" speedball_goal;
-      t "TinySpeedball2, a match plays itself" speedball_plays_itself ]
+      t "TinySpeedball2, a match plays itself" speedball_plays_itself;
+      t "TinySensibleSoccer, close control: the third answer" sensible_close_control;
+      t "TinySensibleSoccer, the ball has a height" sensible_loft;
+      t "TinySensibleSoccer, a tap stays on the grass" sensible_tap_stays_down;
+      t "TinySensibleSoccer, aftertouch bends a lofted ball" sensible_aftertouch;
+      t "TinySensibleSoccer, a goal" sensible_goal ]
