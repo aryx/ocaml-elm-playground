@@ -44,6 +44,7 @@
     TinySonic
     TinyRobotron
     TinyPinball
+    TinyPortal2D
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

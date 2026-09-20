@@ -585,6 +585,48 @@ to check.)
   graphics and the 3D physics of `plan_physics3d_teaching.md` -- a
   bigger game, not a port of this one.
 
+### 21. Puzzles with a mechanic: Portal
+
+Narbacular Drop (DigiPen, 2005: the student game whose team Valve
+hired), Portal (Valve, 2007), and in two dimensions Portal: The Flash
+Version (We Create Stuff, 2007), which showed the idea survives losing
+a dimension. (Names and dates from memory, to check.)
+
+- **Toy**: TinyPortal2D (DONE: `games/TinyPortal2D.ml`, three test
+  chambers: a goo pit crossed through the side walls, the fling, and a
+  cube on a button behind a wall you can only shoot over. Left click
+  the blue portal, right click the orange, on the white walls only;
+  the physics is the `Physics` layer directly -- tiles as `immovable`
+  bodies, the player an `upright` box, the cube one that tumbles).
+- **The one idea**: a portal is a *transform*. In 2D it is a rotation
+  R -- the one that turns the way you went into A into the way you
+  come out of B -- applied to the position and, unscaled, to the
+  velocity: `p' = B + R (p - A)`, `v' = R v`. Unscaled is why a fall
+  becomes height somewhere else, which is the fling, and is the whole
+  of "speedy thing goes in, speedy thing comes out".
+- **What it taught**, beyond the transform, each found by playing it:
+  - the gun needs a real grid walk (Amanatides and Woo, 1987), not a
+    ray stepped a few pixels at a time: at a corner the stepped ray
+    crosses both boundaries at once and puts the portal on the side of
+    the floor instead of its top;
+  - a teleport must test the body's *leading edge*, not its middle: a
+    player walking over a hole at 260 pixels a second crosses its
+    50-pixel mouth in 11 frames and falls 22 in that time -- exactly
+    the distance from his middle to his feet -- so he skims across it;
+  - a portal leaves its tile with *no* collision at all here, where a
+    real engine carves the hole and keeps the rest solid;
+  - a body must come out with a least speed, or two holes in the floor
+    trap it: it pops out of one with nothing, falls back in, and a
+    half turn mirrors left and right, so walking does not get it out;
+  - and a level whose exit can be reached by a portal is not a puzzle:
+    the floor behind the door had to stop being white.
+- **Kit**: none yet. A second game with portals (a portal in a
+  platformer, light through a portal) would want the transform and the
+  crossing test out of this file.
+- **Later**: the 3D one of `plan_physics3d_teaching.md`, where the
+  transform carries an orientation too, and which is a bigger game
+  than this, not a port of it.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,

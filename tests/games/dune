@@ -183,6 +183,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyPortal2D.ml)
+ (deps (:src %{project_root}/games/TinyPortal2D.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyWarcraft2.ml)
  (deps (:src %{project_root}/games/TinyWarcraft2.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

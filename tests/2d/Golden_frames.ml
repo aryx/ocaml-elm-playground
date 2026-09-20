@@ -82,6 +82,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinySonic", "", 5);
     ("games/software/TinyRobotron", "", 5);
     ("games/software/TinyPinball", "", 5);
+    ("games/software/TinyPortal2D", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -209,6 +210,10 @@ let scripted : Testutil_golden.scripted list =
     (* the plunger pulled and let go: the ball up the lane, under the
        dome and into the table, past the bumpers *)
     ("games/software/TinyPinball", "launch", 90, "space:1-40");
+    (* the first chamber: the goo between him and the way out (the
+       portals themselves want a mouse, which a script has none of, so
+       they are in tests/games/ instead) *)
+    ("games/software/TinyPortal2D", "chamber1", 60, "space:1,right:12-55");
     ("games/software/TinyWarcraft2", "crowd", 300, "space:1,a:10,p:14,right:20-44,space:50");
     ("games/software/TinyTowerDefense", "maze", 400, "space:1,right:20-40,space:45,up:50-56,space:60,up:64-70,space:74,left:80-84,space:90");
     ("games/software/AiOthello", "reply", 60, "space:2");

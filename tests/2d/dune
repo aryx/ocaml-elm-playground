@@ -74,6 +74,7 @@
    %{project_root}/games/software/TinySonic.exe
    %{project_root}/games/software/TinyRobotron.exe
    %{project_root}/games/software/TinyPinball.exe
+   %{project_root}/games/software/TinyPortal2D.exe
    %{project_root}/examples/software/LogoFractals.exe
  )
 )

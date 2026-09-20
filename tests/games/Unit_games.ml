@@ -2069,6 +2069,153 @@ let boomerang_pits () =
   Alcotest.(check int) "and the computer kept out of the pits" 0
     (List.length (List.filter (fun p -> match p.state with Falling _ -> true | _ -> false) !g.players))
 
+(*****************************************************************************)
+(* TinyPortal2D *)
+(*****************************************************************************)
+
+let portal_run (frames : int) ?(keyboard = fun (_ : int) -> initial_computer.keyboard) (g : TinyPortal2D.game) : TinyPortal2D.game =
+  let s = ref g in
+  for i = 1 to frames do
+    s := TinyPortal2D.update_game (computer ~keyboard:(keyboard i) i) (Scene2d.start (TinyPortal2D.In_game !s)) !s
+  done;
+  !s
+
+(* aim the gun from the player at a point, as the mouse does *)
+let portal_shot (g : TinyPortal2D.game) ((x, y) : number * number) : TinyPortal2D.portal =
+  match TinyPortal2D.shoot g.map (g.player.x, g.player.y) (x -. g.player.x, y -. g.player.y) with
+  | Some p -> p
+  | None -> Alcotest.failf "nothing to put a portal on towards (%.0f, %.0f)" x y
+
+(* The transform, on its own: what goes in comes out as fast, turned by
+ * the angle between the two portals. Two floor portals are a half turn
+ * (fall in, come up); a floor and a wall are a quarter (fall in, fly
+ * sideways), which is the fling. *)
+let portal_transform () =
+  let open TinyPortal2D in
+  let floor_a = { px = 0.; py = 0.; nx = 0.; ny = 1.; cell = (0, 0) } in
+  let floor_b = { px = 300.; py = 0.; nx = 0.; ny = 1.; cell = (1, 0) } in
+  let wall_b = { px = 300.; py = 0.; nx = -1.; ny = 0.; cell = (2, 0) } in
+  let falling = Physics.body (circle white 10.) |> Physics.at 0. 10. |> Physics.moving 0. (-900.) in
+  let up = go_through floor_a floor_b falling in
+  Alcotest.(check (float 1e-6)) "it comes out of the floor going up" 900. (Float.round up.vy);
+  Alcotest.(check (float 1e-6)) "and not sideways" 0. (Float.round up.vx);
+  let sideways = go_through floor_a wall_b falling in
+  Alcotest.(check (float 1e-6)) "out of the wall, it flies along it" (-900.) (Float.round sideways.vx);
+  Alcotest.(check (float 1e-6)) "as fast as it fell, no more" 900. (Float.round (Float.hypot sideways.vx sideways.vy))
+
+(* The gun: portals stick to the white walls only, on the face the shot
+ * came in by. *)
+let portal_gun () =
+  let open TinyPortal2D in
+  let g = load 0 in
+  let left = portal_shot g (-500., g.player.y) in
+  Alcotest.(check (float 1e-9)) "the left wall's face points right" 1. left.nx;
+  let right = portal_shot g (500., g.player.y) in
+  Alcotest.(check (float 1e-9)) "the right wall's face points left" (-1.) right.nx;
+  Alcotest.(check bool) "and the dark ceiling takes none" true (shoot g.map (g.player.x, g.player.y) (0., 1.) = None)
+
+(* Chamber 1: a portal on each side wall, walk into one, come out of
+ * the other, and the goo is behind you. *)
+let portal_chamber1 () =
+  let open TinyPortal2D in
+  let g = load 0 in
+  let g = { g with blue = Some (portal_shot g (-500., g.player.y)); orange = Some (portal_shot g (500., g.player.y)) } in
+  let g = portal_run 60 ~keyboard:(fun _ -> { initial_computer.keyboard with kleft = true }) g in
+  Alcotest.(check bool) "through, and on the other side" true (g.player.x > 100.);
+  let g = portal_run 150 ~keyboard:(fun _ -> { initial_computer.keyboard with kleft = true }) g in
+  Alcotest.(check bool) "at the exit" true (match g.play with Won _ -> true | _ -> false)
+
+(* [portal_play until control g]: the game driven a frame at a time by
+ * a player that looks at where it is, up to [until] frames or until it
+ * has nothing left to do *)
+let portal_play (until : int) (control : TinyPortal2D.game -> keyboard option) (g : TinyPortal2D.game) : TinyPortal2D.game =
+  let s = ref g and i = ref 0 and stop = ref false in
+  (* the scenes carried from frame to frame, not made anew each time:
+     the game asks Scene2d whether a key *went* down (picking the cube
+     up), which needs the frame before *)
+  let scenes = ref (Scene2d.start (TinyPortal2D.In_game g)) in
+  while (not !stop) && !i < until do
+    incr i;
+    match control !s with
+    | None -> stop := true
+    | Some keyboard ->
+        let c = computer ~keyboard !i in
+        scenes := Scene2d.update c !scenes;
+        s := TinyPortal2D.update_game c !scenes !s
+  done;
+  !s
+
+let portal_keys ?(left = false) ?(right = false) ?(grab = false) () : keyboard =
+  let k = { initial_computer.keyboard with kleft = left; kright = right } in
+  if grab then { k with keys = Set_.add "e" k.keys } else k
+
+(* Chamber 2, the fling: from the edge of the platform the white floor
+ * below and to the right is in plain view; two holes in it, then step
+ * off, fall the height of the room into one and come out of the other
+ * going up just as fast -- to a ledge no jump reaches. *)
+let portal_fling () =
+  let open TinyPortal2D in
+  let g = load 1 in
+  (* to the right edge of the platform *)
+  let g = portal_play 120 (fun g -> if g.player.x > 40. then None else Some (portal_keys ~right:true ())) g in
+  let g = { g with blue = Some (portal_shot g (225., -240.)); orange = Some (portal_shot g (300., -240.)) } in
+  (match (g.blue, g.orange) with
+  | Some b, Some o ->
+      Alcotest.(check bool) "both holes are in the floor" true (b.ny = 1. && o.ny = 1.);
+      Alcotest.(check bool) "and they are two different tiles" true (b.cell <> o.cell)
+  | _ -> Alcotest.fail "no portals");
+  (* up to about the height he fell from: the platform he left is at 97 *)
+  let fell = portal_play 150 (fun g -> if g.player.y > 60. then None else Some (portal_keys ~right:true ())) g in
+  Alcotest.(check bool) "flung back up to the height he fell from" true (fell.player.y > 60.);
+  (* over the ledge, then along it to the way out *)
+  let exit_x = match Tilemap.find g.map 'E' with (col, row) :: _ -> fst (Tilemap.center g.map col row) | [] -> 0. in
+  let won =
+    portal_play 300
+      (* steering at the top, not on the way up: coming out of the hole
+         he goes straight up, and pressing right too early walks him
+         into the underside of the platform he is aiming for *)
+      (fun g ->
+        match g.play with
+        | Won _ -> None
+        | _ -> Some (portal_keys ~right:(g.player.vy <= 0. && g.player.x < exit_x) ~left:(g.player.vy <= 0. && g.player.x > exit_x +. 10.) ()))
+      fell
+  in
+  Alcotest.(check bool) "and steered onto the ledge with the way out" true (match won.play with Won _ -> true | _ -> false)
+
+(* Chamber 3: the cube fetched through the two white floors, and put on
+ * the button, which opens the door. The player falls in one hole and
+ * comes up out of the other, so walking is what gets him out of it. *)
+let portal_cube () =
+  let open TinyPortal2D in
+  let g = load 2 in
+  let g = { g with blue = Some (portal_shot g (-350., -160.)); orange = Some { px = 225.; py = -100.; nx = 0.; ny = 1.; cell = (14, 6) } } in
+  (* left into the hole, and out in the other room; then away from it,
+     towards the cube *)
+  (* right, into the hole he shot at his feet, and up out of the one in
+     the other room *)
+  (* he lands first, then walks left into the hole at his feet *)
+  let g = portal_play 40 (fun _ -> Some (portal_keys ())) g in
+  let g = portal_play 120 (fun g -> if g.player.x > 150. then None else Some (portal_keys ~left:true ())) g in
+  Alcotest.(check bool) "in the room with the cube" true (g.player.x > 150.);
+  let cube_x (g : game) = match g.cube with Some c -> c.x | None -> 0. in
+  let g = portal_play 150 (fun g -> if g.held then None else Some (portal_keys ~left:(g.player.x > cube_x g +. 20.) ~grab:(Float.abs (g.player.x -. cube_x g) < 50.) ())) g in
+  Alcotest.(check bool) "carrying it" true g.held;
+  (* back east into the hole in this room, up out of the one in the
+     other, and west to the button *)
+  let g = portal_play 200 (fun g -> if g.player.x < 0. then None else Some (portal_keys ~right:true ())) g in
+  Alcotest.(check bool) "back in the first room, with the cube" true (g.player.x < 0. && g.held);
+  let button_x = match Tilemap.find g.map 'B' with (col, row) :: _ -> fst (Tilemap.center g.map col row) | [] -> 0. in
+  (* the cube is carried in front of him, so what has to be over the
+     button is the cube, not the player *)
+  let g =
+    portal_play 250
+      (fun g ->
+        if (not g.held) && g.door_open then None
+        else Some (portal_keys ~left:(cube_x g > button_x +. 10.) ~right:(cube_x g < button_x -. 10.) ~grab:(Float.abs (cube_x g -. button_x) < 12.) ()))
+      g
+  in
+  Alcotest.(check bool) "the cube is on the button, the door is open" true g.door_open
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -2165,4 +2312,9 @@ let tests =
       t "TinyBoomerangFu3d, the boomerang comes back to a moving thrower" boomerang_returns;
       t "TinyBoomerangFu3d, who a flight cuts" boomerang_cuts;
       t "TinyBoomerangFu3d, the dash is a slash only with it in hand" boomerang_slash;
-      t "TinyBoomerangFu3d, the pits, and the computer that avoids them" boomerang_pits ]
+      t "TinyBoomerangFu3d, the pits, and the computer that avoids them" boomerang_pits;
+      t "TinyPortal2D, the transform keeps the speed" portal_transform;
+      t "TinyPortal2D, the gun sticks to white walls only" portal_gun;
+      t "TinyPortal2D, chamber 1: through the side walls" portal_chamber1;
+      t "TinyPortal2D, chamber 2: the fling" portal_fling;
+      t "TinyPortal2D, chamber 3: the cube on the button" portal_cube ]
