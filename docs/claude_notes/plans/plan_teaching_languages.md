@@ -169,6 +169,14 @@ left and not on the right is taken away" is, with a theory behind it.
   one AI can play hundreds of games; interesting next to
   `ai/` more than next to `playground/`.
 
+## Where this meets the GUI plan
+
+[`plan_gui_teaching.md`](plan_gui_teaching.md)'s TinyVisiCalc needs a
+**formula parser and evaluator** (`=B1*2+SUM(A1:A9)`), which is the
+smallest useful language in this repository and a natural first
+customer for anything built here; its TinyHyperCard, if it happens,
+wants a small scripting language of the same kind.
+
 ## Ordering
 
 1. **Turtles** (StarLogo/NetLogo), for the examples above and because

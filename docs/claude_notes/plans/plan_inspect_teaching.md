@@ -281,7 +281,10 @@ first thing a reader will ask is why they are not in the phases. The
 order is by cost:
 
 - **Tweakables** -- a number a game registers (`Inspect.tweak
-  "gravity" 800.`) that the panel can slide while the game runs, so
+  "gravity" 800.`) that the panel can slide while the game runs
+  (the slider itself comes from
+  [`plan_gui_teaching.md`](plan_gui_teaching.md), whose first users
+  are this plan's timeline and panels), so
   the jump arc changes under your hand. This is Victor's actual demo
   and it is *cheap* (a registry, a slider, a lookup), but it adds API
   a game must adopt, and it interacts with replay (a tweak is an

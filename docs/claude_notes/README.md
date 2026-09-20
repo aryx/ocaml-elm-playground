@@ -85,6 +85,9 @@ A reading order, from the simplest:
 7. `notes_inspect.md`: seeing all of the above while it runs -- an
    engine drawing its own thinking, and a run you can rewind
    (`playground/Inspect`).
+8. `notes_gui.md`: interfaces -- widgets, layout, text editing, and
+   the four answers to where an interface's state lives, one of which
+   this playground already is (`gui/`, `appkits/`, `apps/`).
 
 ## related-work/: where this project stands
 
@@ -97,7 +100,9 @@ A reading order, from the simplest:
   `notes_physics_related_work.md` and
   `notes_physics3d_related_work.md`, `notes_audio_related_work.md`,
   `notes_ai_related_work.md`, `notes_inspect_related_work.md` (the
-  debuggers and live environments); and `notes_vs_doom_quake.md`, the
+  debuggers and live environments), `notes_gui_related_work.md` (the
+  toolkits, the architectures, and the compound documents); and
+  `notes_vs_doom_quake.md`, the
   software renderers of the id Software classics.
 
 ## dev/: developing and debugging
@@ -113,7 +118,7 @@ The tools themselves are in `scripts/` (see `scripts/README.md`).
 
 - The open plans: `plan_physics3d_teaching.md`,
   `plan_raytracing_teaching.md`, `plan_inspect_teaching.md`,
-  `plan_ai_teaching.md`,
+  `plan_gui_teaching.md`, `plan_ai_teaching.md`,
   `plan_audio_teaching.md`, `plan_games.md`, `plan_games3d.md`,
   `plan_networking_teaching.md`,
   `plan_teaching_languages.md`, `plan_teaching_other.md`,
