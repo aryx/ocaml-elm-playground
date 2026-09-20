@@ -71,6 +71,7 @@
    %{project_root}/games/software/TinyLemmings.exe
    %{project_root}/games/software/TinyPuzzleBobble.exe
    %{project_root}/games2.5d/software/TinyDungeonMaster.exe
+   %{project_root}/games2.5d/software/TinyZaxxon.exe
    %{project_root}/examples/software/PuzzleScriptSokoban.exe
    %{project_root}/examples/software/PuzzleScriptBoulders.exe
    %{project_root}/games/software/AiOthello.exe

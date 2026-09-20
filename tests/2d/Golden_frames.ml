@@ -137,6 +137,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyLemmings", "", 5);
     ("games/software/TinyPuzzleBobble", "", 5);
     ("games2.5d/software/TinyDungeonMaster", "", 5);
+    ("games2.5d/software/TinyZaxxon", "", 5);
     (* a whole game as a map and one rule (playground/Puzzlescript) *)
     ("examples/software/PuzzleScriptSokoban", "", 5);
     ("examples/software/PuzzleScriptBoulders", "", 5);
@@ -240,6 +241,14 @@ let scripted : Testutil_golden.scripted list =
        down to a human *)
     ("games/software/TinyDefender", "patrol", 95,
      "space:1,right:5-200,space:60,space:90,space:120,down:130-170,space:150,space:200,right:210-320,space:240,space:280,space:310");
+    (* the fortress, a wall flown through and the next one coming, and
+       the fighter over its own shadow: the gap between the two is the
+       altitude, which is the whole game *)
+    ("games2.5d/software/TinyZaxxon", "fortress", 95,
+     "space:1,space:60,right:120-150,up:180-210,space:200,left:260-300,space:300,down:330-360,space:380,right:400-430,up:430-470,space:470");
+    (* deeper in: three walls, a tower, and a shot on its way *)
+    ("games2.5d/software/TinyZaxxon", "deep", 260,
+     "space:1,space:60,right:120-150,up:180-210,space:200,left:260-300,space:300,down:330-360,space:380,right:400-430,up:430-470,space:470");
     (* off the bank on six flaps, the buzzards already coming *)
     ("games/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
     (* the scanner is the game: three abductions are under way in the

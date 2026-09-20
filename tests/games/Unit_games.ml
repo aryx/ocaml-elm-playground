@@ -2880,6 +2880,156 @@ let defender_smart_bomb () =
   Alcotest.(check int) "it cost a bomb" 2 after.bombs;
   Alcotest.(check int) "and paid" 150 after.score
 
+(*****************************************************************************)
+(* TinyZaxxon *)
+(*****************************************************************************)
+
+let zaxxon_play ?(keyboard = fun _ -> initial_computer.keyboard) (n : int) (p : TinyZaxxon.play) : TinyZaxxon.play =
+  let p = ref p and m = ref (Scene2d.start (TinyZaxxon.Playing p)) in
+  for i = 1 to n do
+    let c = computer ~keyboard:(keyboard i) i in
+    m := Scene2d.update c !m;
+    p := TinyZaxxon.update_play c !m !p
+  done;
+  !p
+
+(* The whole renderer is two lines, and the one property the game is
+ * played on is that altitude moves a thing *straight up* the screen
+ * and moves its shadow not at all -- so the gap between the two is the
+ * altitude, in pixels. *)
+let zaxxon_projection () =
+  let open TinyZaxxon in
+  Alcotest.(check (pair (float 0.01) (float 0.01))) "the origin" (-120., -330.) (project 0. 0. 0. 0.);
+  (* across the fortress: right and a little down *)
+  Alcotest.(check (pair (float 0.01) (float 0.01))) "100 across" (-35., -360.) (project 0. 100. 0. 0.);
+  (* along it: up and to the right *)
+  Alcotest.(check (pair (float 0.01) (float 0.01))) "100 along" (-86., -288.) (project 0. 0. 0. 100.);
+  (* and the reading the game is played by *)
+  List.iter
+    (fun (x, y, z) ->
+      let px, py = project 500. x y z and sx, sy = project 500. x 0. z in
+      Alcotest.(check (float 0.01)) "the shadow is directly below" px sx;
+      Alcotest.(check (float 0.01)) "and the gap is the altitude" y (py -. sy))
+    [ (0., 60., 700.); (-180., 0., 120.); (150., 170., 3000.) ];
+  (* the scroll is a subtraction, and nothing else *)
+  Alcotest.(check (pair (float 0.01) (float 0.01))) "300 further on, 300 of scroll: the same place"
+    (project 0. 40. 20. 900.) (project 300. 40. 20. 1200.)
+
+(* The first wall is wide open at the height you start at, so flying it
+ * straight through takes no input at all; climb above the hole and the
+ * fortress takes the fighter. *)
+let zaxxon_through_the_hole () =
+  let open TinyZaxxon in
+  let k = initial_computer.keyboard in
+  let straight = zaxxon_play 200 (start ()) in
+  Alcotest.(check int) "through the first wall" 3 straight.lives;
+  Alcotest.(check bool) "and past it" true (straight.camz +. 260. > 700.);
+  let climbing = zaxxon_play 200 ~keyboard:(fun _ -> { k with kup = true }) (start ()) in
+  Alcotest.(check int) "over the hole is into the wall" 2 climbing.lives
+
+(* A fuel tank is not points, it is the next thirty seconds. *)
+let zaxxon_fuel_tank () =
+  let open TinyZaxxon in
+  let k = initial_computer.keyboard in
+  let tank = List.find (fun (t : thing) -> t.kind = Fuel) things in
+  let p = { (start ()) with px = tank.tx; py = 20.; fuel = 50. } in
+  let after = zaxxon_play 30 ~keyboard:(fun i -> if i = 2 then { k with kspace = true } else k) p in
+  Alcotest.(check int) "the tank is worth 150" 150 after.score;
+  Alcotest.(check bool) "and is 25 of fuel" true (after.fuel > 73.);
+  Alcotest.(check bool) "it is not there any more" true
+    (List.exists (fun (t : thing) -> t.kind = Fuel && not t.alive) after.things)
+
+(* And running out of it is the same as flying into a wall. *)
+let zaxxon_out_of_fuel () =
+  let open TinyZaxxon in
+  let after = zaxxon_play 30 { (start ()) with fuel = 0.5 } in
+  Alcotest.(check int) "down with an empty tank" 2 after.lives
+
+(* The end of the fortress is not the end of the game: round again, and
+ * the fortress comes at you faster. *)
+let zaxxon_end_of_run () =
+  let open TinyZaxxon in
+  let after = zaxxon_play 1 { (start ()) with camz = 3545. } in
+  Alcotest.(check int) "a second run" 2 after.run;
+  Alcotest.(check int) "and a thousand for the first" 1000 after.score;
+  Alcotest.(check bool) "faster than the first" true (speed 2 > speed 1);
+  Alcotest.(check bool) "back at the start of it" true (after.camz = 0. && List.for_all (fun (t : thing) -> t.alive) after.things)
+
+(*****************************************************************************)
+(* TinyZaxxon *)
+(*****************************************************************************)
+
+let zaxxon_play ?(keyboard = fun _ -> initial_computer.keyboard) (n : int) (p : TinyZaxxon.play) : TinyZaxxon.play =
+  let p = ref p and m = ref (Scene2d.start (TinyZaxxon.Playing p)) in
+  for i = 1 to n do
+    let c = computer ~keyboard:(keyboard i) i in
+    m := Scene2d.update c !m;
+    p := TinyZaxxon.update_play c !m !p
+  done;
+  !p
+
+(* The whole renderer is two lines, and the one property the game is
+ * played on is that altitude moves a thing *straight up* the screen
+ * and moves its shadow not at all -- so the gap between the two is the
+ * altitude, in pixels. *)
+let zaxxon_projection () =
+  let open TinyZaxxon in
+  Alcotest.(check (pair (float 0.01) (float 0.01))) "the origin" (-120., -330.) (project 0. 0. 0. 0.);
+  (* across the fortress: right and a little down *)
+  Alcotest.(check (pair (float 0.01) (float 0.01))) "100 across" (-35., -360.) (project 0. 100. 0. 0.);
+  (* along it: up and to the right *)
+  Alcotest.(check (pair (float 0.01) (float 0.01))) "100 along" (-86., -288.) (project 0. 0. 0. 100.);
+  (* and the reading the game is played by *)
+  List.iter
+    (fun (x, y, z) ->
+      let px, py = project 500. x y z and sx, sy = project 500. x 0. z in
+      Alcotest.(check (float 0.01)) "the shadow is directly below" px sx;
+      Alcotest.(check (float 0.01)) "and the gap is the altitude" y (py -. sy))
+    [ (0., 60., 700.); (-180., 0., 120.); (150., 170., 3000.) ];
+  (* the scroll is a subtraction, and nothing else *)
+  Alcotest.(check (pair (float 0.01) (float 0.01))) "300 further on, 300 of scroll: the same place"
+    (project 0. 40. 20. 900.) (project 300. 40. 20. 1200.)
+
+(* The first wall is wide open at the height you start at, so flying it
+ * straight through takes no input at all; climb above the hole and the
+ * fortress takes the fighter. *)
+let zaxxon_through_the_hole () =
+  let open TinyZaxxon in
+  let k = initial_computer.keyboard in
+  let straight = zaxxon_play 200 (start ()) in
+  Alcotest.(check int) "through the first wall" 3 straight.lives;
+  Alcotest.(check bool) "and past it" true (straight.camz +. 260. > 700.);
+  let climbing = zaxxon_play 200 ~keyboard:(fun _ -> { k with kup = true }) (start ()) in
+  Alcotest.(check int) "over the hole is into the wall" 2 climbing.lives
+
+(* A fuel tank is not points, it is the next thirty seconds. *)
+let zaxxon_fuel_tank () =
+  let open TinyZaxxon in
+  let k = initial_computer.keyboard in
+  let tank = List.find (fun (t : thing) -> t.kind = Fuel) things in
+  let p = { (start ()) with px = tank.tx; py = 20.; fuel = 50. } in
+  let after = zaxxon_play 30 ~keyboard:(fun i -> if i = 2 then { k with kspace = true } else k) p in
+  Alcotest.(check int) "the tank is worth 150" 150 after.score;
+  Alcotest.(check bool) "and is 25 of fuel" true (after.fuel > 73.);
+  Alcotest.(check bool) "it is not there any more" true
+    (List.exists (fun (t : thing) -> t.kind = Fuel && not t.alive) after.things)
+
+(* And running out of it is the same as flying into a wall. *)
+let zaxxon_out_of_fuel () =
+  let open TinyZaxxon in
+  let after = zaxxon_play 30 { (start ()) with fuel = 0.5 } in
+  Alcotest.(check int) "down with an empty tank" 2 after.lives
+
+(* The end of the fortress is not the end of the game: round again, and
+ * the fortress comes at you faster. *)
+let zaxxon_end_of_run () =
+  let open TinyZaxxon in
+  let after = zaxxon_play 1 { (start ()) with camz = 3545. } in
+  Alcotest.(check int) "a second run" 2 after.run;
+  Alcotest.(check int) "and a thousand for the first" 1000 after.score;
+  Alcotest.(check bool) "faster than the first" true (speed 2 > speed 1);
+  Alcotest.(check bool) "back at the start of it" true (after.camz = 0. && List.for_all (fun (t : thing) -> t.alive) after.things)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -3018,4 +3168,9 @@ let tests =
       t "TinyDefender, catching a falling human" defender_rescue;
       t "TinyDefender, dropped from too high" defender_drop;
       t "TinyDefender, the planet goes with the last human" defender_planet_goes;
-      t "TinyDefender, the smart bomb is what you can see" defender_smart_bomb ]
+      t "TinyDefender, the smart bomb is what you can see" defender_smart_bomb;
+      t "TinyZaxxon, the projection, and the shadow that reads it" zaxxon_projection;
+      t "TinyZaxxon, through the hole, or into the wall" zaxxon_through_the_hole;
+      t "TinyZaxxon, a fuel tank is thirty seconds" zaxxon_fuel_tank;
+      t "TinyZaxxon, out of fuel" zaxxon_out_of_fuel;
+      t "TinyZaxxon, the end of the fortress" zaxxon_end_of_run ]

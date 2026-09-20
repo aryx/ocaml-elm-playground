@@ -11,6 +11,7 @@
     TinyComanche
     TinyDescent
     TinyDungeonMaster
+    TinyZaxxon
   )
   (libraries
     ai ; TinyDungeonMaster's Pathfind (the monsters' A*)

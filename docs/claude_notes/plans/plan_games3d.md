@@ -438,9 +438,24 @@ while being, underneath, exactly the 2D arena game Bomberman was.
 Zaxxon (Sega, 1982), Q*bert (Gottlieb, 1982), Marble Madness (1984),
 Knight Lore (Ultimate Play the Game, 1984: the "Filmation" engine).
 Not 3D rendering at all: a projection of a 3D grid to 2D with shapes
-sorted back to front, so they belong in the 2D playground, a
-`Tilemap` viewed diagonally (`plan_games.md` can gain an isometric
-kit); listed here because players see them as 3D.
+sorted back to front, so they belong in the 2D playground; listed here
+because players see them as 3D.
+
+- **Toy**: TinyZaxxon (DONE: `games2.5d/TinyZaxxon.ml`), and it went
+  to `games2.5d/` rather than `games/` because that directory's rule
+  is "a 3D look on the 2D playground, with the trick written out in
+  the game" -- which an isometric projection is. It is the oldest and
+  the smallest trick there (two lines and a sort, 33 of its 404), and
+  the fourth family of `games2.5d/README.md` next to cell by cell, row
+  by row and column by column: **object by object**.
+- **What it alone has to deal with**: its world has a real third
+  dimension -- you fly *over* the walls -- and a projection that keeps
+  no depth cannot say how high you are. Hence the shadow: every flying
+  thing drawn twice, and the gap between the two *is* the altitude.
+  Every isometric game since inherits both the problem and the answer.
+- **Kit**: none yet, on purpose. The projection is ten lines in the
+  game; a second isometric game (a TinyQbert, a TinyKnightLore) is
+  what would move it into one, as the rule of two says.
 
 ## Infrastructure all the games need
 
