@@ -12,7 +12,15 @@
  * When a frame differs, its test fails saying how many pixels differ
  * and where, and writes the new frame to <dir>/actual/<scene>.png (in
  * _build/default/). If the change is intended (look at it!), the
- * Makefile's approve target makes the new frames the golden ones. *)
+ * Makefile's approve target makes the new frames the golden ones.
+ *
+ * The committed frames were generated on an arm64 Linux machine: on
+ * another one, expect a few frames to differ slightly without anything
+ * having changed (rounding in the antialiasing, in the shading or in a
+ * z-comparison landing the other way), a handful of pixels off by 1 in
+ * 2D and, where a whole span of a triangle tips over, more in 3D.
+ * That is not a regression to chase; a real one moves pixels you can
+ * see in <dir>/actual/. *)
 
 (* A scene: an executable, from the project's root and without its .exe
  * (e.g. "examples3d/Cubes3d"), the debug keys to press ("" for none),
