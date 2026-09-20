@@ -75,6 +75,10 @@ let scenes : Testutil_golden.scene list =
     (* claude: the same view as games2.5d/TinyWolfenstein's golden frame, in 3D *)
     ("games3d/TinyWolfenstein3d", "", 5);
     ("games3d/TinyVirtuaRacing", "", 5);
+    (* claude: the grid on the start line, from the camera turning
+     * round it: the karts are drawings, the lorries and the item
+     * boxes polygons -- the mix the game is about *)
+    ("games3d/TinyMarioKart64", "", 5);
     ("games3d/TinyTron3d", "", 5);
     ("games3d/TinyMario64", "", 5);
     ("games3d/TinyMarbleMadness", "", 5);
@@ -106,6 +110,13 @@ let scripted : Testutil_golden.scripted list =
     ("games3d/TinyWolfenstein3d", "treasure", 60, "right:1-16,up:20-60");
     (* the same drive as games2.5d/TinyOutRun's golden frame, in polygons *)
     ("games3d/TinyVirtuaRacing", "curve", 230, "space:1,up:2-230");
+    (* the grid, on the last second of the countdown: eight karts drawn
+     * four abreast, their shadows under them *)
+    ("games3d/TinyMarioKart64", "grid", 90, "space:1");
+    (* a powerslide into the right-hander at the end of the straight:
+     * the kart shows its side (the drawing is chosen by the angle it is
+     * seen from), and the sparks say the mini-turbo is charged *)
+    ("games3d/TinyMarioKart64", "slide", 462, "space:1,up:2-520,right:435-458,Shift:435-470");
     (* v three times: the view from above *)
     ("games3d/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
     (* games/TinyTron's "computer" game, seen from behind the blue cycle,

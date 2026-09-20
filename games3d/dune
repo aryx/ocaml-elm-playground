@@ -4,6 +4,7 @@
     TinyBattlezone
     TinyWolfenstein3d
     TinyVirtuaRacing
+    TinyMarioKart64
     TinyTron3d
     TinyMario64
     TinyMarbleMadness
@@ -15,11 +16,11 @@
     TinyTombRaider
     TinyBoomerangFu3d
   )
-  (modules StarCollector3d TinyBattlezone TinyWolfenstein3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d Tomb_atlas)
+  (modules StarCollector3d TinyBattlezone TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d Tomb_atlas)
   (libraries
     kit_puzzle ; TinyTombRaider's Push, the same one TinySokoban uses
     kit_lightcycles ; TinyTron3d's rules
-    kit_racing ; TinyVirtuaRacing's Road and Car
+    kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown
     kit_sectors ; TinyDoom3d's level
     kit_heightmap ; TinyComanche3d's island
     kit_segments ; TinyDescent3d's mine

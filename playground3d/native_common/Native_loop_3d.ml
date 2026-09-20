@@ -92,8 +92,22 @@ let mouse_button (sdl_event : Sdl.event) (is_down : bool) (mouse : Playground.mo
   if Sdl.Event.(get sdl_event mouse_button_button) = Sdl.Button.right then { mouse with mrdown = is_down }
   else mouse_down is_down mouse
 
+(* claude: one name for a key whatever names it, as the 2D loop does
+ * through the playground's own [canonical_key]: SDL says "left shift"
+ * (lowercased by [scancode_to_keystring] below), a browser says
+ * "Shift", and a game should read one of them, not three. *)
+let canonical_key (key : string) : string =
+  match key with
+  | "left shift" | "right shift" -> "Shift"
+  | "left ctrl" | "right ctrl" -> "Control"
+  | "left alt" | "right alt" -> "Alt"
+  | "return" | "Enter" -> "Enter"
+  | "backspace" -> "Backspace"
+  | key -> key
+
 let update_keyboard (is_down : bool) (key : string) (keyboard : Playground.keyboard) :
     Playground.keyboard =
+  let key = canonical_key key in
   let keys = if is_down then Set_.add key keyboard.keys else Set_.remove key keyboard.keys in
   match key with
   | "ArrowUp" -> { keyboard with keys; kup = is_down }
@@ -105,6 +119,14 @@ let update_keyboard (is_down : bool) (key : string) (keyboard : Playground.keybo
   | "a" -> { keyboard with keys; ka = is_down }
   | "d" -> { keyboard with keys; kd = is_down }
   | "space" -> { keyboard with keys; kspace = is_down }
+  (* claude: the same three the 2D loop sets (see the playground's
+   * [update_keyboard]): this loop is a copy that never gained them, so
+   * on this backend a 3D game reading [kshift] -- as
+   * games3d/TinyMarioKart64.ml does, to hop into a slide -- was reading
+   * a field nothing ever set *)
+  | "Backspace" -> { keyboard with keys; kbackspace = is_down }
+  | "Enter" -> { keyboard with keys; kenter = is_down }
+  | "Shift" -> { keyboard with keys; kshift = is_down }
   | _ -> { keyboard with keys }
 
 let scancode_to_keystring = function

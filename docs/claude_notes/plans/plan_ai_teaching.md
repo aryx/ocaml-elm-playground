@@ -484,7 +484,10 @@ from memory until then.)
   whose navigation mesh was *learned by watching players walk*, and
   whose stated goal was bots that are fun rather than strong.
   Alongside them, the honest-difficulty practice every game has:
-  rubber-banding in racing games (Mario Kart the famous case), and
+  rubber-banding in racing games (Mario Kart the famous case, and
+  `games3d/TinyMarioKart64.ml`'s `rubber` and `roll`: the computer's
+  karts drive faster when the player is ahead, and an item box hands
+  out what your place needs), and
   fighting-game opponents that read the player's inputs -- the thing
   players can feel and resent ("SNK boss syndrome"). The 2010 Google
   AI Challenge, whose game was Tron, is a nice small corpus of bots

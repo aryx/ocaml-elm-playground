@@ -315,6 +315,9 @@ mode rotating and scaling a flat tile map differently on each scan
 line, which makes a flat plane look like a floor. Then polygons: Hard
 Drivin' (Atari, 1989), Virtua Racing (Yu Suzuki, Sega AM2, 1992: flat-
 shaded, 60 frames per second), Ridge Racer (Namco, 1993: textured).
+And the console's own answer, Mario Kart 64 (Nintendo, 1996): a
+polygon circuit whose karts are still drawings, one per viewing
+angle, standing in it.
 
 - **Toys**: TinyKart in Mode 7 (DONE: `games2.5d/TinyKart.ml`, in the 2D
   playground: a `Tilemap` track sampled row by row with a per-row scale
@@ -324,7 +327,16 @@ shaded, 60 frames per second), Ridge Racer (Namco, 1993: textured).
   `Topdown`, TinyMicroMachines' model), and TinyVirtuaRacing (DONE: `games3d/TinyVirtuaRacing.ml`, a stage on
   TinyOutRun's course, with the racing kit `kits/racing/`) --
   flat-shaded polygons are exactly `playground3d`'s look, so this may
-  be the most satisfying 3D toy.
+  be the most satisfying 3D toy. Then TinyMarioKart64 (DONE:
+  `games3d/TinyMarioKart64.ml`), the same `Topdown` model as TinyKart
+  and TinyMicroMachines drawn a third way, and the one toy that mixes
+  the two pictures: polygons for the circuit, the rails, the item
+  boxes and the traffic, sprites (`billboard`, pixel art as quads on a
+  plane facing the eye) for the karts, the trees, the bananas and the
+  shells -- which is the question the N64 era actually answered, what
+  to model and what to draw. With it the three things the picture
+  cannot give: the powerslide and its mini-turbo, items handed out by
+  place, and the rubber band (`plan_ai_teaching.md`'s example).
 - **Kit**, the racing kit of `plan_games.md` in 3D: `Track3d` (a
   track as a spline of segments with width, banking and height,
   turned into a ribbon of quads, `cached3d`), the chase `Camera3d`,

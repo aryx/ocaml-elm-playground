@@ -7,6 +7,7 @@
 (copy_files ../TinyBattlezone.{ml,mli})
 (copy_files ../TinyWolfenstein3d.{ml,mli})
 (copy_files ../TinyVirtuaRacing.{ml,mli})
+(copy_files ../TinyMarioKart64.ml)
 (copy_files ../TinyTron3d.{ml,mli})
 (copy_files ../TinyMario64.{ml,mli})
 (copy_files ../TinyMarbleMadness.{ml,mli})
@@ -25,6 +26,7 @@
     TinyBattlezone
     TinyWolfenstein3d
     TinyVirtuaRacing
+    TinyMarioKart64
     TinyTron3d
     TinyMario64
     TinyMarbleMadness
@@ -36,11 +38,11 @@
     TinyTombRaider
     TinyBoomerangFu3d
   )
-  (modules StarCollector3d TinyBattlezone TinyWolfenstein3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d Tomb_atlas)
+  (modules StarCollector3d TinyBattlezone TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d Tomb_atlas)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_puzzle ; TinyTombRaider's Push
-    kit_racing ; TinyVirtuaRacing's Road and Car
+    kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown
     kit_sectors ; TinyDoom3d's level
     kit_heightmap ; TinyComanche3d's island
     kit_segments ; TinyDescent3d's mine

@@ -139,6 +139,62 @@ let kart_race () =
   List.iter (fun k -> Alcotest.(check bool) "the others lapping" true (Topdown.lap track k.car >= 2)) !r.karts
 
 (*****************************************************************************)
+(* TinyMarioKart64 *)
+(*****************************************************************************)
+
+(* the computer drives all eight karts (the player's too, as after the
+ * finish), through the traffic and whatever items they throw at each
+ * other: the player's kart does its 3 laps in under two minutes,
+ * hardly ever off the road, and the others are not far behind -- which
+ * is what the rubber band is for *)
+let mario_kart_race () =
+  let open TinyMarioKart64 in
+  let r = ref (new_race ()) and frames = ref 0 and off_road = ref 0 in
+  let player () = !r.karts.(0).car in
+  while Topdown.lap track (player ()) < laps && !frames < 60 * 120 do
+    incr frames;
+    r := step_race initial_computer.keyboard false false true !r;
+    if top_speed_at (player ()).x (player ()).y < 30. then incr off_road
+  done;
+  Alcotest.(check int) "3 laps" laps (Topdown.lap track (player ()));
+  Alcotest.(check bool) "hardly off the road" true (!off_road < 180);
+  Array.iter (fun (k : kart) -> Alcotest.(check bool) "the others lapping" true (Topdown.lap track k.car >= 2)) !r.karts
+
+(* the powerslide: hold it into a corner and the charge builds (2 a
+ * frame while the wheel stays in the slide), let go and the charge is
+ * a boost, which makes the kart faster than its top speed *)
+let mario_kart_mini_turbo () =
+  let open TinyMarioKart64 in
+  let start = (new_race ()).karts.(0) in
+  let k = ref { start with car = { start.car with speed = 40. } } in
+  for _ = 1 to 30 do
+    k := step_kart true 1. 1. road_speed !k
+  done;
+  Alcotest.(check bool) "charged" true (match !k.drift with Sliding (_, charge) -> charge >= 55 | Straight -> false);
+  k := step_kart false 1. 0. road_speed !k;
+  Alcotest.(check bool) "the mini-turbo" true (!k.boost > 0);
+  let fast = ref 0. in
+  for _ = 1 to 25 do
+    k := step_kart false 1. 0. road_speed !k;
+    fast := Float.max !fast !k.car.speed
+  done;
+  Alcotest.(check bool) "faster than flat out" true (!fast > road_speed)
+
+(* the items go by place: the leader never draws what would take him
+ * further ahead, the back of the field does *)
+let mario_kart_items () =
+  let open TinyMarioKart64 in
+  let seeds = [ 0; 1; 2 ] in
+  Alcotest.(check bool) "nothing to catch up with, in front" true
+    (List.for_all (fun s -> roll 1 s <> Mushroom && roll 1 s <> Red_shell) seeds);
+  Alcotest.(check bool) "something to catch up with, at the back" true
+    (List.exists (fun s -> roll 8 s = Mushroom) seeds);
+  (* and the rubber band: behind the player, faster; ahead of him, slower *)
+  let k = (new_race ()).karts.(1) in
+  Alcotest.(check bool) "faster when behind" true (rubber (along k.car +. 2.) k > 1.);
+  Alcotest.(check bool) "slower when ahead" true (rubber (along k.car -. 2.) k < 1.)
+
+(*****************************************************************************)
 (* TinyDoom *)
 (*****************************************************************************)
 
@@ -3039,6 +3095,9 @@ let tests =
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
       t "TinyKart, Mode 7 there and back" kart_mode7;
       t "TinyKart, the computer drives the race" kart_race;
+      t "TinyMarioKart64, the computer drives the race" mario_kart_race;
+      t "TinyMarioKart64, the powerslide and its mini-turbo" mario_kart_mini_turbo;
+      t "TinyMarioKart64, the items by place" mario_kart_items;
       t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;

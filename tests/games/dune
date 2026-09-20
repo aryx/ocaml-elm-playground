@@ -248,6 +248,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyMarioKart64.ml)
+ (deps (:src %{project_root}/games3d/TinyMarioKart64.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyBlockout.ml)
  (deps (:src %{project_root}/games3d/TinyBlockout.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
