@@ -1823,6 +1823,84 @@ let tomb_raider_jumps () =
       Alcotest.(check (option string)) "into the spikes" (Some "the spikes") g.dead
   | None -> Alcotest.fail "the standing jump was refused"
 
+(*****************************************************************************)
+(* TinyRobotron *)
+(*****************************************************************************)
+
+let robotron_enemy (kind : TinyRobotron.kind) (x : number) (y : number) : TinyRobotron.enemy = { kind; x; y; vx = 0.; vy = 0.; timer = 999 }
+
+(* the two sticks are independent, which is the whole game: the arrows
+ * right and a (shoot left) in the same frame move the man right and
+ * send a shot the other way *)
+let robotron_twin_stick () =
+  let open TinyRobotron in
+  let g = new_game () in
+  let keyboard = { initial_computer.keyboard with kright = true; ka = true } in
+  let g' = update_game (computer ~keyboard 1) g in
+  Alcotest.(check bool) "he runs right" true (g'.mx > g.mx);
+  match g'.shots with
+  | [ s ] ->
+      Alcotest.(check bool) "the shot flies left" true (s.vx < 0.);
+      Alcotest.(check (float 1e-9)) "and straight" 0. s.vy
+  | l -> Alcotest.failf "%d shots, expected 1" (List.length l)
+
+(* A grunt has no idea where it is going: it walks at the man, and an
+ * electrode on the way kills it. The hulk is the other way round --
+ * nothing kills it, and it is the humans who die of it. *)
+let robotron_walks_into_things () =
+  let open TinyRobotron in
+  let steps (n : int) (g : game) : game =
+    let rec go g n = if n = 0 then g else go (walk_into_electrodes (step_enemies g)) (n - 1) in
+    go g n
+  in
+  let g = { (new_game ()) with mx = 0.; my = 0.; enemies = [ robotron_enemy Grunt 300. 0.; robotron_enemy Electrode 200. 0. ]; humans = [] } in
+  let g = steps 120 g in
+  Alcotest.(check int) "the grunt died on the electrode" 1 (List.length g.enemies);
+  Alcotest.(check bool) "which is still standing" true (List.for_all (fun (e : enemy) -> e.kind = Electrode) g.enemies);
+  (* the hulk walks west over the family *)
+  let g = { (new_game ()) with enemies = [ { (robotron_enemy Hulk 200. 0.) with vx = -1.7 } ]; humans = [ { hx = 0.; hy = 0.; hvx = 0.; hvy = 0. } ] } in
+  let g = steps 120 g in
+  Alcotest.(check int) "one of the family is gone" 0 (List.length g.humans);
+  Alcotest.(check int) "and the hulk is still there" 1 (List.length g.enemies)
+
+(* the brain reaches a human and rebuilds it: one human less, one prog
+ * more, and the prog hunts the man faster than a grunt walks *)
+let robotron_brain_rebuilds () =
+  let open TinyRobotron in
+  let g = { (new_game ()) with enemies = [ robotron_enemy Brain 200. 0. ]; humans = [ { hx = 0.; hy = 0.; hvx = 0.; hvy = 0. } ] } in
+  let rec go g n = if n = 0 then g else go (step_enemies g) (n - 1) in
+  let g = go g 200 in
+  Alcotest.(check int) "the human is gone" 0 (List.length g.humans);
+  Alcotest.(check bool) "a prog took its place" true (List.exists (fun (e : enemy) -> e.kind = Prog) g.enemies)
+
+(* a robot player, shooting the nearest robot and backing away from it,
+ * clears the first wave (8 grunts, no electrodes yet) in about 10
+ * seconds; the humans it walks over on the way are worth 1000 and up *)
+let robotron_robot () =
+  let open TinyRobotron in
+  let sign (d : number) : bool * bool = (d > 20., d < -20.) in
+  let s = ref (new_game ()) and i = ref 0 in
+  while !i < 60 * 60 && !s.wave = 1 do
+    incr i;
+    let g = !s in
+    let nearest =
+      List.sort (fun (a : enemy) (b : enemy) -> compare (Float.hypot (a.x -. g.mx) (a.y -. g.my)) (Float.hypot (b.x -. g.mx) (b.y -. g.my))) g.enemies
+    in
+    let keyboard =
+      match nearest with
+      | [] -> initial_computer.keyboard
+      | e :: _ ->
+          (* shoot at it, and run the other way (into the arena) *)
+          let kd, ka = sign (e.x -. g.mx) and kw, ks = sign (e.y -. g.my) in
+          let away (m : number) (o : number) : bool * bool = if Float.abs m > 380. then (m < 0., m > 0.) else (o < m, o > m) in
+          let kright, kleft = away g.mx e.x and kup, kdown = away g.my e.y in
+          { initial_computer.keyboard with kd; ka; kw; ks; kright; kleft; kup; kdown }
+    in
+    s := update_game (computer ~keyboard !i) !s
+  done;
+  Alcotest.(check int) "wave 2" 2 !s.wave;
+  Alcotest.(check bool) "not once caught" true (!s.lives = 3)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -1906,4 +1984,8 @@ let tests =
       t "TinyBlockout, a layer goes and the rest comes down" blockout_layer;
       t "TinyBlockout, the pit refuses what does not fit" blockout_walls;
       t "TinyTombRaider, the tomb can be got out of" tomb_raider_route;
-      t "TinyTombRaider, the two jumps, and the chasm between them" tomb_raider_jumps ]
+      t "TinyTombRaider, the two jumps, and the chasm between them" tomb_raider_jumps;
+      t "TinyRobotron, the two sticks" robotron_twin_stick;
+      t "TinyRobotron, a grunt on an electrode, a hulk on the family" robotron_walks_into_things;
+      t "TinyRobotron, the brain rebuilds a human" robotron_brain_rebuilds;
+      t "TinyRobotron, a robot clears the first wave" robotron_robot ]

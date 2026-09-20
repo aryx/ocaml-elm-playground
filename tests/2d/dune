@@ -72,6 +72,7 @@
    %{project_root}/games/software/TinyDune2.exe
    %{project_root}/games/software/TinyWarcraft2.exe
    %{project_root}/games/software/TinySonic.exe
+   %{project_root}/games/software/TinyRobotron.exe
    %{project_root}/examples/software/LogoFractals.exe
  )
 )

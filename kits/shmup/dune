@@ -1,8 +1,9 @@
 ; claude: the shoot 'em up kit (see docs/claude_notes/plan_games.md,
 ; section 3 and "kits"): what shooters share, on top of the playground
 ; -- shots as values that move (Shots), and the curves enemies fly
-; along (Path). Used by games/TinyInvaders and games/TinyGalaga. A
-; private library, not installed: only the games use it.
+; along (Path). Used by games/TinyInvaders, games/TinyGalaga and
+; games/TinyRobotron. A private library, not installed: only the games
+; use it.
 (library
  (name kit_shmup)
  (wrapped false)

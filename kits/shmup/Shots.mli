@@ -17,8 +17,10 @@
    intercept): an exercise here.
 
    Part of the shoot 'em up kit (kits/shmup/), with Path.mli; used by
-   games/TinyInvaders (the cannon's shot, the aliens' bombs) and
-   games/TinyGalaga (the fighter's shots, the divers' aimed bullets). *)
+   games/TinyInvaders (the cannon's shot, the aliens' bombs),
+   games/TinyGalaga (the fighter's shots, the divers' aimed bullets)
+   and games/TinyRobotron (the man's shots, in any of eight directions,
+   and the enforcers' sparks). *)
 
 open Playground
 

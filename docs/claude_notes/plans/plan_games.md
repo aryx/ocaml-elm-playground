@@ -218,8 +218,18 @@ Asteroids (Atari, 1979; done: `games/Asteroid.ml`), Robotron: 2084
 (Eugene Jarvis, 1982: two joysticks, the twin-stick), Geometry Wars
 (2003).
 
-- **Toy**: TinyRobotron (arrows to move, w/a/s/d to shoot).
-- **Kit**: the shmup kit's `Shots`; the physics plan for the ship.
+- **Toy**: TinyRobotron (DONE: `games/TinyRobotron.ml`, arrows to move,
+  w/a/s/d to shoot -- `to_xy` and `to_x2`/`to_y2`'s first user, and the
+  point of the game: running one way while shooting the other. One
+  screen, seven kinds of robot each with one line of AI (a step towards
+  the man, or towards the nearest human), the family to carry out at
+  1000 a head and up, the grunts speeding up while the wave lasts, and
+  the hulk nothing kills. No pathfinding on purpose: a grunt walks into
+  an electrode and dies there, as in the arcade. A robot in the tests
+  clears the first wave).
+- **Kit**: the shmup kit's `Shots` (its third user: the man's shots and
+  the enforcers' aimed sparks). Not the physics plan: nothing here has
+  inertia, the man stops the frame you let the arrows go.
 
 ### 5. Scrolling shoot 'em ups (shmups)
 
