@@ -49,6 +49,32 @@ val field :
  * caret position *)
 val field_column_at : Theme.t -> Widget.box -> string -> caret:int -> float -> int
 
+(* [text_area theme box lines ~range ~caret ~first]: several lines of
+ * text in a box, from line [first] down, with the selection [range]
+ * (in offsets into the whole text) highlighted and the caret -- as
+ * (line, column), or [None] when the area does not have the keys --
+ * drawn where it belongs.
+ *
+ * Laid out one character to a cell, like the field and for the same
+ * reason (Text.mli): a click lands exactly where it looks. *)
+val text_area :
+  Theme.t ->
+  Widget.box ->
+  (int * string) list ->
+  range:int * int ->
+  caret:(int * int) option ->
+  first:int ->
+  Widget.paint list
+
+(* how many characters across, and how many lines down, fit in a box:
+ * what the caller needs to wrap its text and to scroll *)
+val columns : Theme.t -> Widget.box -> int
+val rows : Theme.t -> Widget.box -> int
+
+(* [text_area_place theme box ~first x y]: the (line, column) a point
+ * falls on -- how a click becomes a caret *)
+val text_area_place : Theme.t -> Widget.box -> first:int -> float -> float -> int * int
+
 (* a dropdown, closed (with its arrow) and open (its items, the one
  * under the mouse lit) *)
 val menu_closed : Theme.t -> Widget.box -> string -> hot:bool -> held:bool -> Widget.paint list

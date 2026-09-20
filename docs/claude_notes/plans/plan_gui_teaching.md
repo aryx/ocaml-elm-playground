@@ -759,6 +759,69 @@ Measured: `dune build` clean everywhere including the js targets;
 `gui/tests` 38 green, `playground/tests` 56, the 2D golden suite 122
 with `GuiFourWays` added and no existing frame moved a pixel.
 
+### Phase 5, DONE (2026-09-21), awaiting review
+
+**`gui/Text_edit`** (133 + 194): the piece table -- the original text,
+never touched, an append buffer, only ever added to, and a list of
+pieces saying what to read from where -- with a caret, a selection,
+undo, redo and greedy word wrap.
+
+Three things worth writing down, all of them found by writing it:
+
+- **the append buffer is mutable and shared by every version**, and
+  that is safe for exactly one reason: it is only ever appended to, so
+  a piece an old version wrote down still says what it said. That
+  one-way rule is what lets everything above it be a value while
+  nothing is ever copied;
+- **merging matters more than it looks**: without it every keystroke
+  is a piece and a typed paragraph is a thousand of them. Extending
+  the last piece when the new text lands exactly where it ends is four
+  lines, and it is the difference between a structure and a linked
+  list of characters (5000 random edits leave a few dozen pieces);
+- **undo needed no code**: it is "put the old list back". No inverse
+  operations, no journal of what was deleted, no copying the
+  document -- which is the property phase 6 (`appkits/document`) is
+  going to be built on, and the one that lets `Inspect` scrub an
+  application as it scrubs a game.
+
+**`gui/tests/Unit_text_edit.ml`** (227 lines, 11 tests): the `.mli`'s
+worked example piece by piece, the wrap (including a word longer than
+the line, and the breaks the text asks for itself), undo and redo at
+their ends -- and the one that matters, **5000 random inserts,
+deletes, selections, undos and redos checked at every step against a
+plain string that copies itself and keeps every version**. A clever
+structure is only worth having if it is indistinguishable from the
+slow one, and "indistinguishable" is a claim about inputs nobody
+thought of. It caught nothing in the table; it caught two wrong
+expectations of mine (the wrap's, and a piece count), which is the
+usual ratio and exactly why the naive implementation is written out.
+
+**`Immediate.text_area`** (+69 lines) and **`Look.text_area`** (+72):
+the widget that holds one. The difference from a `field` is not the
+number of lines, it is where the text lives -- a field's is a string
+in the caller's model with the caret kept by the toolkit, while a text
+area's is a `Text_edit.t` that carries its own caret, selection and
+history. So undo belongs to the text, not to the toolkit. It adds
+lines (Enter), wrap, a selection you can drag or extend with shift,
+up and down between lines, Control-Z and Control-Y.
+
+**`examples/GuiEditor.ml`** (110 lines, golden frame): a text to type
+in, with the structure's numbers on the screen -- pieces, versions
+back, versions forward -- which is a better argument for a piece table
+than a paragraph about one. Its whole model is a `Text_edit.t`.
+
+One trap found while laying it out, now in `Layout.mli`: **a `spacer`
+inside something you are centring makes the whole thing fill the
+screen**, since a spacer takes whatever room it is offered and
+`center` offers all of it. What was wanted there was `space`.
+
+Measured: `gui/tests` 49 green, `playground/tests` 56, the 2D golden
+suite 123 with `GuiEditor` added and no existing frame moved a pixel.
+(`dune build` at the repository root currently stops in
+`games3d/*/TinyMarioKart64.ml`, on an unbound `Track3d` -- the
+author's own work in progress, and nothing this phase touched;
+`dune build gui/ playground/ examples/` is clean.)
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

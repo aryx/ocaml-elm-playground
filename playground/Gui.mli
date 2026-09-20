@@ -78,6 +78,16 @@ val slider :
 val field :
   ?enabled:bool -> Playground.computer -> at:Playground.number * Playground.number -> string -> string
 
+(* [text_area computer ~at edit]: several lines to type into, holding
+   a {!Text_edit.t} -- a piece table, which carries its own caret, its
+   own selection and every version of itself, so that undo (Control-Z)
+   belongs to the text rather than to the toolkit *)
+val text_area :
+  Playground.computer ->
+  at:Playground.number * Playground.number ->
+  Text_edit.t ->
+  Text_edit.t
+
 (* [progress computer ~at fraction]: a bar filled [fraction] of the
    way (0 to 1); it shows and answers nothing *)
 val progress : Playground.computer -> at:Playground.number * Playground.number -> Playground.number -> unit
@@ -131,6 +141,7 @@ val slider_in :
 
 val label_in : Playground.computer -> Widget.box -> string -> unit
 val field_in : ?enabled:bool -> Playground.computer -> Widget.box -> string -> string
+val text_area_in : Playground.computer -> Widget.box -> Text_edit.t -> Text_edit.t
 val progress_in : Playground.computer -> Widget.box -> Playground.number -> unit
 val menu_in : Playground.computer -> Widget.box -> string list -> int -> int
 
@@ -141,6 +152,7 @@ val checkbox_size : string -> Playground.number * Playground.number
 val slider_size : unit -> Playground.number * Playground.number
 val label_size : string -> Playground.number * Playground.number
 val field_size : unit -> Playground.number * Playground.number
+val text_area_size : unit -> Playground.number * Playground.number
 val progress_size : unit -> Playground.number * Playground.number
 val menu_size : string list -> Playground.number * Playground.number
 

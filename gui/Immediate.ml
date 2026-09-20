@@ -231,3 +231,72 @@ let menu_size (th : Theme.t) items =
     List.fold_left (fun acc s -> max acc (Widget.text_width ~size:th.text_size s)) 0. items
   in
   (widest +. (3. *. th.padding), th.row)
+
+let text_area (t : t) (b : Widget.box) (edit : Text_edit.t) =
+  let th = t.theme in
+  let me = id b in
+  let t = { t with focus = Focus.saw me t.focus } in
+  let t, _hot, held, clicked = interact t b in
+  let width = Look.columns th b in
+  (* enough scrolled that the caret's line is in view *)
+  let caret_line, _ = Text_edit.place ~width edit (Text_edit.caret edit) in
+  let first = max 0 (caret_line - Look.rows th b + 1) in
+  let offset_at x y =
+    let line, column = Look.text_area_place th b ~first x y in
+    Text_edit.offset ~width edit ~line ~column
+  in
+  (* a click puts the caret where it landed; dragging from there
+   * carries the other end of a selection with the mouse, which is the
+   * only thing a text area does that a field does not *)
+  let t, edit =
+    if clicked then
+      ({ t with focus = Focus.give me t.focus }, Text_edit.at (offset_at t.input.mx t.input.my) edit)
+    else if held then (t, Text_edit.to_ (offset_at t.input.mx t.input.my) edit)
+    else if t.input.mclick && t.capture = Elsewhere then ({ t with focus = Focus.clear t.focus }, edit)
+    else (t, edit)
+  in
+  let focused = Focus.has me t.focus in
+  let pressed k = List.mem k t.pressed in
+  let shift = List.mem "Shift" t.input.keys in
+  let control = List.mem "Control" t.input.keys in
+  let edit =
+    if not focused then edit
+    else begin
+      (* moving the caret: with shift the anchor stays where it is,
+       * which is all a selection by keyboard is *)
+      let move pos e = if shift then Text_edit.to_ pos e else Text_edit.at pos e in
+      let text = Text_edit.to_string edit in
+      let caret = Text_edit.caret edit in
+      let line, column = Text_edit.place ~width edit caret in
+      let edit =
+        if control && pressed "z" then if shift then Text_edit.redo edit else Text_edit.undo edit
+        else if control && pressed "y" then Text_edit.redo edit
+        else if t.input.typed <> "" then Text_edit.insert t.input.typed edit
+        else if pressed "Enter" then Text_edit.insert "\n" edit
+        else if pressed "Backspace" then Text_edit.delete_backward edit
+        else if pressed "Delete" then Text_edit.delete_forward edit
+        else if pressed "ArrowLeft" then move (Text.prev_char text caret) edit
+        else if pressed "ArrowRight" then move (Text.next_char text caret) edit
+        else if pressed "ArrowUp" then move (Text_edit.offset ~width edit ~line:(line - 1) ~column) edit
+        else if pressed "ArrowDown" then move (Text_edit.offset ~width edit ~line:(line + 1) ~column) edit
+        else if pressed "Home" then move (Text_edit.offset ~width edit ~line ~column:0) edit
+        else if pressed "End" then move (Text_edit.offset ~width edit ~line ~column:width) edit
+        else edit
+      in
+      edit
+    end
+  in
+  (* the lines may have changed under the keystroke, so they are asked
+   * for again: the text is the truth and the lines are a view of it *)
+  let lines = Text_edit.lines ~width edit in
+  let caret_line, caret_column = Text_edit.place ~width edit (Text_edit.caret edit) in
+  let first = max 0 (caret_line - Look.rows th b + 1) in
+  let t =
+    draw t
+      (Look.text_area th b lines ~range:(Text_edit.range edit)
+         ~caret:(if focused then Some (caret_line - first, caret_column) else None)
+         ~first)
+  in
+  (t, edit)
+
+let text_area_size (th : Theme.t) = (th.field_width *. 1.6, th.row *. 5.)

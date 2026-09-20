@@ -126,3 +126,75 @@ let menu_items (th : Theme.t) (b : Widget.box) items ~under =
        items)
   @ Widget.frame th.edge th.border
       { b with y = Widget.bottom b -. (th.row *. float_of_int n /. 2.); h = th.row *. float_of_int n }
+
+(* a line's height: the text, and a little air between lines *)
+let line_height (th : Theme.t) = th.text_size *. 1.5
+let columns (th : Theme.t) (b : Widget.box) =
+  max 1 (int_of_float ((b.w -. (2. *. th.padding)) /. advance th))
+
+let rows (th : Theme.t) (b : Widget.box) =
+  max 1 (int_of_float ((b.h -. th.padding) /. line_height th))
+
+(* where a line sits: the first one just under the top of the box *)
+let line_y (th : Theme.t) (b : Widget.box) i =
+  Widget.top b -. (th.padding /. 2.) -. (line_height th *. (float_of_int i +. 0.5))
+
+let text_area_left (th : Theme.t) (b : Widget.box) = Widget.left b +. th.padding
+
+let text_area_place (th : Theme.t) (b : Widget.box) ~first x y =
+  let line = first + int_of_float ((Widget.top b -. (th.padding /. 2.) -. y) /. line_height th) in
+  let column = int_of_float (Float.round ((x -. text_area_left th b) /. advance th)) in
+  (max 0 line, max 0 column)
+
+let text_area (th : Theme.t) (b : Widget.box) lines ~range ~caret ~first =
+  let left = text_area_left th b in
+  let shown = rows th b in
+  let from, upto = range in
+  let visible =
+    lines |> List.filteri (fun i _ -> i >= first && i < first + shown)
+  in
+  let paint_line i (start, text) =
+    let y = line_y th b i in
+    let cells = Text.chars text in
+    (* the part of this line that is selected, as cells *)
+    let highlight =
+      if upto <= from then []
+      else
+        let a = max 0 (Text.column text (max 0 (from - start))) in
+        let b_ = min (List.length cells) (Text.column text (max 0 (upto - start))) in
+        (* a line entirely inside the selection has its whole width lit *)
+        let a = if from <= start then 0 else a in
+        let b_ = if upto >= start + String.length text then List.length cells else b_ in
+        if b_ <= a then []
+        else
+          [ Widget.Fill
+              ( th.face_hot,
+                { Widget.x = left +. ((float_of_int (a + b_) /. 2.) *. advance th);
+                  y;
+                  w = float_of_int (b_ - a) *. advance th;
+                  h = th.text_size } ) ]
+    in
+    highlight
+    @ List.mapi
+        (fun c s ->
+          Widget.Text
+            ( th.text,
+              { Widget.x = left +. ((float_of_int c +. 0.5) *. advance th); y; w = advance th; h = th.text_size },
+              s ))
+        cells
+  in
+  let caret_paint =
+    match caret with
+    | Some (line, column) when line >= first && line < first + shown ->
+        [ Widget.Fill
+            ( th.text,
+              { Widget.x = left +. (float_of_int column *. advance th);
+                y = line_y th b (line - first);
+                w = th.border;
+                h = th.text_size } ) ]
+    | _ -> []
+  in
+  (Widget.Fill (th.field_face, b)
+  :: Widget.frame (if caret = None then th.edge else th.accent) th.border b)
+  @ List.concat (List.mapi paint_line visible)
+  @ caret_paint

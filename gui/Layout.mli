@@ -114,7 +114,15 @@ val space : float -> 'a t
 
 (* empty space that takes whatever is left: TeX's glue, Flutter's
  * Spacer. Two of them around a thing center it; one before it pushes
- * it to the end. *)
+ * it to the end.
+ *
+ * With one warning, since it catches everybody once: a spacer takes
+ * whatever room it is *offered*, so a row containing one is as wide
+ * as the room, and a [center] offers all of it. Centring a column
+ * that contains a row with a spacer therefore makes the column as
+ * wide as the screen. When what you want is a gap of a known size
+ * inside something that should stay its natural width, that is
+ * [space]. *)
 val spacer : 'a t
 
 (* [expand child]: the child takes the room left over along the axis

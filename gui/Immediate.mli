@@ -133,6 +133,24 @@ val field : ?enabled:bool -> t -> Widget.box -> string -> t * string
  * [to_] at x = 101, relative to its center. *)
 val slider : t -> Widget.box -> from:float -> to_:float -> float -> t * float
 
+(* [text_area t box edit]: several lines to type into, and what they
+ * hold after this frame.
+ *
+ * The difference from [field] is not the number of lines, it is where
+ * the text lives: a field's is a string in the caller's model and the
+ * toolkit keeps only the caret, while a text area's is a
+ * {!Text_edit.t} -- a piece table that carries its own caret, its own
+ * selection and every version of itself. So undo is the text's, not
+ * the toolkit's, and the caller can save, replay or scrub it without
+ * asking anybody.
+ *
+ * What it adds over a field: lines (Enter), word wrap, a selection
+ * you can drag or extend with shift, up and down between lines, and
+ * Control-Z / Control-Y. What it still does not have: a scroll bar
+ * (it scrolls to keep the caret in view, and that is all), cut and
+ * paste, and a font with real widths. *)
+val text_area : t -> Widget.box -> Text_edit.t -> t * Text_edit.t
+
 (* [progress t box fraction]: a bar filled [fraction] of the way (0 to
  * 1), which answers nothing: it is a widget that only shows. *)
 val progress : t -> Widget.box -> float -> t
@@ -175,6 +193,9 @@ val field_size : Theme.t -> float * float
 
 (* a bar as wide as a slider, and shorter *)
 val progress_size : Theme.t -> float * float
+
+(* wide enough to read a line in, and five rows deep *)
+val text_area_size : Theme.t -> float * float
 
 (* [menu_size theme items]: wide enough for the longest item, and the
  * arrow *)

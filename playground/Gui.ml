@@ -61,6 +61,7 @@ let slider_in computer b ~from ~to_ v =
 
 let label_in computer b s = widget computer (fun u -> (Immediate.label u b s, ()))
 let field_in ?enabled computer b text = widget computer (fun u -> Immediate.field ?enabled u b text)
+let text_area_in computer b edit = widget computer (fun u -> Immediate.text_area u b edit)
 let progress_in computer b f = widget computer (fun u -> (Immediate.progress u b f, ()))
 let menu_in computer b items chosen = widget computer (fun u -> Immediate.menu u b items chosen)
 
@@ -69,6 +70,7 @@ let button_size s = Immediate.button_size (theme ()) s
 let checkbox_size s = Immediate.checkbox_size (theme ()) s
 let slider_size () = Immediate.slider_size (theme ())
 let field_size () = Immediate.field_size (theme ())
+let text_area_size () = Immediate.text_area_size (theme ())
 let progress_size () = Immediate.progress_size (theme ())
 let menu_size items = Immediate.menu_size (theme ()) items
 
@@ -88,6 +90,7 @@ let slider computer ~at ~from ~to_ v =
 
 let label computer ~at s = label_in computer (box ~at (label_size s)) s
 let field ?enabled computer ~at text = field_in ?enabled computer (box ~at (field_size ())) text
+let text_area computer ~at edit = text_area_in computer (box ~at (text_area_size ())) edit
 let progress computer ~at f = progress_in computer (box ~at (progress_size ())) f
 let menu computer ~at items chosen = menu_in computer (box ~at (menu_size items)) items chosen
 

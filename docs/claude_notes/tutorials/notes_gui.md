@@ -320,6 +320,32 @@ lists, and a document is naturally a value (§8). A selection is two
 positions; a cursor is a selection of length zero; word wrap is a
 function from pieces to lines.
 
+`gui/Text_edit` is that, in about 190 lines, and three things came out
+of writing it:
+
+- **The append buffer is mutable and shared by every version**, and
+  that is safe for exactly one reason: it is only ever *appended to*,
+  so a piece an old version wrote down still says what it said. That
+  one-way rule is the whole trick — it is what lets everything above
+  it be a value while nothing is ever copied.
+- **Merging matters more than it looks.** Without it, every keystroke
+  is a piece, and a typed paragraph is a thousand of them. Extending
+  the last piece when the new text lands exactly where that piece ends
+  is four lines, and it is the difference between a structure and a
+  linked list of characters: 5000 random edits in the test leave a
+  table of a few dozen pieces.
+- **Undo needed no code at all.** `undo` is "put the old list back",
+  and the test that convinced me the structure was right is not a
+  worked example: five thousand random inserts, deletes, selections,
+  undos and redos, checked at every step against a plain string that
+  copies itself and keeps every version. A clever structure is only
+  worth having if it is indistinguishable from the slow one, and
+  "indistinguishable" is a claim about inputs nobody thought of.
+
+`examples/GuiEditor.ml` puts the numbers on the screen — pieces,
+versions back, versions forward — which is a better argument for the
+structure than any paragraph about it.
+
 Then, for a word processor, the one real algorithm: **Knuth and
 Plass's line breaking** (1981). Greedy breaking -- fill each line until
 the next word does not fit -- is what browsers and most editors do and

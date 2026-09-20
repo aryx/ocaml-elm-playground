@@ -45,6 +45,11 @@ let scenes : Testutil_golden.scene list =
      * gui/tests/Unit_architectures.ml is the proof that they keep
      * doing so as they are clicked *)
     ("examples/software/GuiFourWays", "", 5);
+    (* the piece table, at rest: one piece, no versions behind it.
+     * What typing into it does is gui/tests/Unit_text_edit.ml's
+     * business -- a script holds keys, and a key is not a character
+     * (see examples/Typing.ml) *)
+    ("examples/software/GuiEditor", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
