@@ -1754,6 +1754,75 @@ let blockout_walls () =
   let upright = turn_z long.cells in
   Alcotest.(check bool) "and it may stand up" true (try_at g (0, 0, 0) upright <> None)
 
+(*****************************************************************************)
+(* TinyTombRaider *)
+(*****************************************************************************)
+
+(* The tomb can be got out of, and this is the route: every move the
+ * raider has, in order, from the entrance to the idol and back. It is
+ * worth reading as the level's answer written down -- which is the
+ * point of a game whose moves are fixed lengths (see the header of
+ * games3d/TinyTombRaider.ml). Each move is asked for and must be
+ * granted: a refusal here means the tomb cannot be finished. *)
+let tomb_raider_route () =
+  let open TinyTombRaider in
+  let fwd g = attempt g `Forward and right g = attempt g `Right and left g = attempt g `Left in
+  let hands g = attempt g `Hands and jump2 g = jump g 2 in
+  let times n move = List.init n (fun _ -> move) in
+  let route =
+    List.concat
+      [ times 12 fwd (* east down the entrance corridor *);
+        [ right ] @ times 3 fwd (* south, into the chamber's door *);
+        [ right; fwd ] (* west, up to the ledge *);
+        [ fwd; fwd ] (* her hands catch it, then she pulls up *);
+        [ fwd; fwd ] (* along the ledge, then down off its far end *);
+        [ left; fwd; fwd ] (* south to the row the chasm can be crossed on *);
+        [ right ] @ times 3 fwd (* west to its edge *);
+        [ jump2 ] (* the running jump: two squares, over the chasm *);
+        [ right; hands ] (* face the block and push it beside the plinth *);
+        [ fwd; fwd ] (* grab the block, pull up onto it *);
+        [ left; fwd; fwd ] (* from it, grab the plinth and pull up: the idol *);
+        [ right; right; fwd ] (* about turn, down onto the block *);
+        [ left; fwd ] (* off it, onto the floor *);
+        [ right; jump2 ] (* the chasm again, eastwards *);
+        times 5 fwd (* east across the chamber *);
+        [ right; fwd; fwd ] (* up the ledge again *);
+        [ left; fwd; fwd ] (* down it and out of the chamber *);
+        [ left ] @ times 3 fwd (* north, up the corridor *);
+        [ left ] @ times 12 fwd (* west, the whole way out *) ]
+  in
+  let g =
+    List.fold_left
+      (fun g move ->
+        match move g with
+        | Some d -> finish g d
+        | None -> Alcotest.failf "the tomb refused a move at (%d, %d)" g.at.cx g.at.cz)
+      (new_game ()) route
+  in
+  Alcotest.(check bool) "the idol is off its plinth" false g.idol;
+  Alcotest.(check bool) "and she is out with it" true g.out;
+  Alcotest.(check (option string)) "alive" None g.dead
+
+(* The two jumps are the two lengths there are, and the chasm is exactly
+ * wide enough to tell them apart: that is the whole of the design (see
+ * the header). A standing jump into it lands in the spikes. *)
+let tomb_raider_jumps () =
+  let open TinyTombRaider in
+  (* on the chamber floor, at the chasm's edge, looking across it *)
+  let g = { (new_game ()) with at = { cx = 6; cz = 6; y = 0; facing = West; hanging = false } } in
+  (match jump g 2 with
+  | Some d ->
+      let g = finish g d in
+      Alcotest.(check (pair int int)) "the running jump crosses it" (4, 6) (g.at.cx, g.at.cz);
+      Alcotest.(check (option string)) "and she lives" None g.dead
+  | None -> Alcotest.fail "the running jump was refused");
+  match jump g 1 with
+  | Some d ->
+      let g = finish g d in
+      Alcotest.(check (pair int int)) "the standing jump falls short" (5, 6) (g.at.cx, g.at.cz);
+      Alcotest.(check (option string)) "into the spikes" (Some "the spikes") g.dead
+  | None -> Alcotest.fail "the standing jump was refused"
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -1835,4 +1904,6 @@ let tests =
       t "PuzzleScriptBoulders, a run through the cave" puzzlescript_boulders_run;
       t "TinyBlockout, four quarter turns are none" blockout_turns;
       t "TinyBlockout, a layer goes and the rest comes down" blockout_layer;
-      t "TinyBlockout, the pit refuses what does not fit" blockout_walls ]
+      t "TinyBlockout, the pit refuses what does not fit" blockout_walls;
+      t "TinyTombRaider, the tomb can be got out of" tomb_raider_route;
+      t "TinyTombRaider, the two jumps, and the chasm between them" tomb_raider_jumps ]

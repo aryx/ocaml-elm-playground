@@ -16,6 +16,7 @@
 (copy_files ../TinyQuake.ml)
 (copy_files ../TinyMinecraft.ml)
 (copy_files ../TinyBlockout.ml)
+(copy_files ../TinyTombRaider.ml)
 
 (executables
   (names
@@ -31,10 +32,12 @@
     TinyDescent3d
     TinyQuake
     TinyBlockout
+    TinyTombRaider
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider Tomb_atlas)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
+    kit_puzzle ; TinyTombRaider's Push
     kit_racing ; TinyVirtuaRacing's Road and Car
     kit_sectors ; TinyDoom3d's level
     kit_heightmap ; TinyComanche3d's island
@@ -68,8 +71,17 @@
 ; beside the copied TinyMinecraft.ml
 (rule
  (targets Texture_atlas.ml)
- (deps ../texture.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (deps ../minecraft.png %{project_root}/scripts/build/file_to_base64_ml.ml)
  (action
   (with-stdout-to
    %{targets}
-   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml ../texture.png))))
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml ../minecraft.png))))
+
+; claude: the same embedding rule as ../dune's, for the tomb's atlas
+(rule
+ (targets Tomb_atlas.ml)
+ (deps ../tomb.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml ../tomb.png))))

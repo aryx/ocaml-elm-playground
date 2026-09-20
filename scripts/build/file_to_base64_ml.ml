@@ -13,7 +13,7 @@
  * for a file at run time -- graphics/font/dune does the same for the
  * Hershey font, with `cat`, which only works for text.
  *
- *   ocaml scripts/build/file_to_base64_ml.ml games3d/texture.png > Foo.ml
+ *   ocaml scripts/build/file_to_base64_ml.ml games3d/minecraft.png > Foo.ml
  *
  * Its own base64 encoder, not graphics/images/Base64.ml's: this runs
  * before anything is built. *)

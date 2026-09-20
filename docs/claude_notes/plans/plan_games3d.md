@@ -332,6 +332,23 @@ Alone in the Dark (Frédérick Raynal, Infogrames, 1992: 3D characters
 over pre-drawn backgrounds, fixed camera angles, the start of survival
 horror), Tomb Raider (Core Design, 1996).
 
+- **Toys**: TinyTombRaider (DONE: `games3d/TinyTombRaider.ml`, a tomb,
+  an idol, a chasm, a block to push, and a boulder). Its lesson is not
+  the renderer but the *movement*, and it is the one character in this
+  repository who has no velocity: every other one integrates an
+  acceleration you steer each frame, and she has a vocabulary of moves,
+  each a fixed number of frames over a fixed distance, committed the
+  moment it starts (so its outcome is settled then too, which is why
+  there is no collision detection in the file). That pays for the
+  second half: because a running jump is always two squares, a room is
+  a puzzle with a countable answer, and `tests/games` writes the whole
+  route down, move by move, as the level's answer. The textures are the
+  era's technique as well -- one texture *page* with a sub-rectangle per
+  face, one textured square per square of wall, and the page crushed
+  into a single 16-colour dithered palette, which is where the famous
+  "random stone" speckle came from. Also the first 3D game to use a 2D
+  kit: `kits/puzzle`'s `Push`, the one TinySokoban uses, on the tomb's
+  floor grid.
 - **Toy**: TinyAloneInTheDark -- rooms, each with a fixed camera
   switching when the player crosses into the next zone: a `Camera3d`
   choice with no smoothing at all, and a lesson on cinematography.

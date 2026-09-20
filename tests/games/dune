@@ -42,11 +42,25 @@
 ; too)
 (rule
  (targets Texture_atlas.ml)
- (deps %{project_root}/games3d/texture.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (deps %{project_root}/games3d/minecraft.png %{project_root}/scripts/build/file_to_base64_ml.ml)
  (action
   (with-stdout-to
    %{targets}
-   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml %{project_root}/games3d/texture.png))))
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml %{project_root}/games3d/minecraft.png))))
+
+; claude: and the tomb's, for TinyTombRaider
+(rule
+ (targets Tomb_atlas.ml)
+ (deps %{project_root}/games3d/tomb.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml %{project_root}/games3d/tomb.png))))
+
+(rule
+ (target TinyTombRaider.ml)
+ (deps (:src %{project_root}/games3d/TinyTombRaider.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
  (target TinyMinecraft.ml)

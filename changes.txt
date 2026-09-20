@@ -158,6 +158,20 @@
   the "dance"), a torch burning down, a panel telling you about it all.
   ai/Pathfind's A* walks the monsters; tests/games checks the dungeon
   is winnable in that order, and the dance rule
+- games3d/TinyTombRaider: Tomb Raider (1996), in a tomb. The one
+  character here with no velocity: a vocabulary of moves, each a fixed
+  number of frames over a fixed distance, committed once started, so
+  the outcome is settled at take-off and there is no collision
+  detection in the file at all. That is what makes the level countable
+  -- a running jump is always two squares, so a chasm one square wide
+  is a question with an answer -- and tests/games writes the whole
+  route down as the level's answer. Textures by the era's technique: one
+  texture page (games3d/tomb.png, drawn by
+  scripts/build/make_tomb_atlas.py with fractal noise), a sub-rectangle
+  per face, one textured square per square of wall, and the page
+  crushed into one 16-colour dithered palette. kits/puzzle's Push, from
+  TinySokoban, moves the block: the first 3D game on a 2D kit
+- games3d/texture.png is now games3d/minecraft.png, beside tomb.png
 - games3d/TinyBlockout: BlockOut (1989), Tetris down a well. The rules
   are Tetris with one more index (a layer is full when its cols x rows
   cells are), and a quarter turn is the piece's bounding box turned --

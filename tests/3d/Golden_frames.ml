@@ -69,6 +69,7 @@ let scenes : Testutil_golden.scene list =
     (* claude: the start room, its pillar's shadow, the lit doorway *)
     ("games3d/TinyQuake", "", 5);
     ("games3d/TinyBlockout", "", 5);
+    ("games3d/TinyTombRaider", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -118,6 +119,9 @@ let scripted : Testutil_golden.scripted list =
     ( "games3d/TinyBlockout",
       "pit",
       95,
-      "space:1,left:5,left:10,space:15,right:20,right:25,right:30,space:35,up:40,up:45,space:50,down:55,down:60,down:65,space:70,x:75" ) ]
+      "space:1,left:5,left:10,space:15,right:20,right:25,right:30,space:35,up:40,up:45,space:50,down:55,down:60,down:65,space:70,x:75" );
+    (* down the entrance corridor: the texture page on the walls, one
+     * square of it per square of wall, hieroglyphs along the north side *)
+    ("games3d/TinyTombRaider", "corridor", 90, "space:1,up:10-88") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

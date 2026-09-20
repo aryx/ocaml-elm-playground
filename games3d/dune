@@ -12,9 +12,11 @@
     TinyDescent3d
     TinyQuake
     TinyBlockout
+    TinyTombRaider
   )
-  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout)
+  (modules StarCollector3d TinyBattlezone TinyWolf3d TinyVirtuaRacing TinyTron3d TinyMario64 TinyMarble TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider Tomb_atlas)
   (libraries
+    kit_puzzle ; TinyTombRaider's Push, the same one TinySokoban uses
     kit_lightcycles ; TinyTron3d's rules
     kit_racing ; TinyVirtuaRacing's Road and Car
     kit_sectors ; TinyDoom3d's level
@@ -28,7 +30,7 @@
 )
 
 ; claude: its own stanza: TinyMinecraft uses none of the kits, and
-; reads texture.png beside it.
+; reads minecraft.png beside it.
 (executables
   (names
     TinyMinecraft
@@ -42,15 +44,27 @@
   )
 )
 
-; claude: texture.png, embedded in the program as base64 (see
+; claude: minecraft.png, embedded in the program as base64 (see
 ; Playground3d.embedded_texture and graphics/images/Base64.mli), so
 ; TinyMinecraft runs from any directory and its texture comes along to
 ; the browser -- the same trick graphics/font/dune uses for the Hershey
 ; font, through a script since a .png is not text.
 (rule
  (targets Texture_atlas.ml)
- (deps texture.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (deps minecraft.png %{project_root}/scripts/build/file_to_base64_ml.ml)
  (action
   (with-stdout-to
    %{targets}
-   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml texture.png))))
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml minecraft.png))))
+
+; claude: the tomb's texture atlas, embedded the same way as
+; TinyMinecraft's: tomb.png becomes Tomb_atlas.base64 at build time, so
+; TinyTombRaider carries its walls with it and runs from anywhere (see
+; scripts/build/make_tomb_atlas.py, which drew it).
+(rule
+ (targets Tomb_atlas.ml)
+ (deps tomb.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml tomb.png))))

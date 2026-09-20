@@ -38,7 +38,7 @@
  *    docs/claude_notes/plans/done/plan_opengl_perf.md).
  *
  * The blocks are textured from one image, an "atlas" of 4 x 4 cells
- * (texture.png, the original's), a cell per kind of side: grass on
+ * (minecraft.png, the original's), a cell per kind of side: grass on
  * top, dirt below, grass-over-dirt around ([atlas_cells_of_block]).
  * One image, one texture, however many blocks.
  *
@@ -400,7 +400,7 @@ let step (world : world) ~(dt : float) (input : input) (player : player) : playe
 
 
 (* the texture atlas, carried inside the program (games3d/dune turns
- * texture.png into Texture_atlas.base64 at build time): no file to
+ * minecraft.png into Texture_atlas.base64 at build time): no file to
  * find at run time, wherever the game is started from, and the browser
  * gets it as a "data:" URL *)
 let atlas_src = embedded_texture ~name:"minecraft-atlas" ~base64:Texture_atlas.base64
