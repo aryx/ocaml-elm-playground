@@ -115,22 +115,41 @@ graphics.
 
 - **Whitted's 1980 paper** is eight pages and still the clearest
   statement of the recursive idea.
-- **The 1980s shelf**, which is where most people met this subject
-  before the web: **Andrew Glassner (ed.), *An Introduction to Ray
-  Tracing* (1989)** -- the field's first book on it, Glassner, Haines,
-  Hanrahan, Heckbert, Cook and Whitted writing a chapter each, and
-  still the one to name; **David Rogers, *Procedural Elements for
-  Computer Graphics* (1985)**, the algorithms-with-pseudocode one;
-  **Roy Hall, *Illumination and Color in Computer Generated Imagery*
-  (1989)**; and **Foley and van Dam, *Computer Graphics: Principles
-  and Practice*** (1982; the second edition, 1990, is the one everyone
-  owns). The last has a footnote in this house: the author's ICFP 2000
-  log records finding "cgpp" in a library mid-contest and judging it
-  "not really useful" -- the books explain the model, and what he
-  needed at 17:00 on day two was the sign of a dot product. Which is
-  an argument for the kind of `.mli` this project writes.
-  (Which of these is *the* one the author remembers is still to be
-  settled -- see the plan's Status.)
+- **Andrew Glassner (ed.), *An Introduction to Ray Tracing* (Academic
+  Press, 1989)** -- the book, and the author's own pick when asked
+  which 1980s one to cite (2026-09-20): the field's first, written by
+  seven people who had each just invented a piece of it, and with
+  enough concrete code to build from. Its table of contents is almost
+  this project's module list, which is why it is named in
+  `Raytrace.mli` rather than only here:
+
+  | chapter | | ours |
+  |---|---|---|
+  | 1. An overview of ray tracing | Glassner | `notes_raytracing.md` §1 |
+  | 2. Essential ray tracing algorithms | Eric Haines | §2-§5 |
+  | 3. A survey of ray-surface intersection algorithms | Pat Hanrahan | `Ray` (§3) |
+  | 4. Surface physics for ray tracing | Glassner | `Material` (§7-§8) |
+  | 5. Stochastic sampling and distributed ray tracing | Robert Cook | §9 |
+  | 6. A survey of ray tracing acceleration techniques | Arvo and Kirk | `Bvh` (§6) |
+  | 7. Writing a ray tracer | Paul Heckbert | the whole plan |
+  | 8. A ray tracing bibliography | Heckbert and Haines | these references |
+  | 9. A ray tracing glossary | Glassner | our glossary |
+
+  It is on the Internet Archive, so it can actually be checked rather
+  than remembered.
+- **The rest of that shelf**, for context: **David Rogers,
+  *Procedural Elements for Computer Graphics* (1985)**, the
+  algorithms-with-pseudocode one; **Roy Hall, *Illumination and Color
+  in Computer Generated Imagery* (1989)**; **Watkins, Coy and Finlay,
+  *Photorealism and Ray Tracing in C* (1992)**, a whole renderer's
+  source on a disk; and **Foley and van Dam, *Computer Graphics:
+  Principles and Practice*** (1982; the 1990 second edition is the one
+  everyone owns). The last has a footnote in this house: the author's
+  ICFP 2000 log records finding "cgpp" in a library mid-contest and
+  judging it "not really useful" -- the textbooks explain the model,
+  and what he needed at 17:00 on day two was the sign of a dot
+  product. Which is an argument for the kind of `.mli` this project
+  writes.
 - **Peter Shirley**: *Realistic Ray Tracing* (2000), and then the free
   ***Ray Tracing in One Weekend*** series (2016-, with Trevor Black
   and Steve Hollasch), which is the modern on-ramp -- a working path

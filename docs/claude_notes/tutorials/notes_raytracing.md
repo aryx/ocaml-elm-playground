@@ -81,7 +81,11 @@ subject:
 An old idea, for the record: Arthur Appel shot rays at surfaces to
 find shadows in **1968**; Turner Whitted made the rays recursive --
 reflection and refraction, the chrome and glass spheres everyone's
-first ray tracer still draws -- in **1980**.
+first ray tracer still draws -- in **1980**. The book to have open
+while reading this note is **Glassner (ed.), *An Introduction to Ray
+Tracing* (1989)**, whose nine chapters cover, in order, very nearly
+the sections below; Paul Heckbert's chapter 7, "Writing a ray
+tracer", is where this one's outline comes from.
 
 ## 2. Where the rays come from
 

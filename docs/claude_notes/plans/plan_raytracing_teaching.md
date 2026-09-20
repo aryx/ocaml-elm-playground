@@ -303,7 +303,12 @@ for a reason. (Dates from memory, to check.)
   ray/sphere and ray/AABB (the slab method, Kay and Kajiya 1986) from
   Christer Ericson, *Real-Time Collision Detection* (2005), chapter 5
   -- the same book `physics/3d` leans on.
-- **Raytrace**: Arthur Appel, "Some Techniques for Shading Machine
+- **Raytrace**: **Glassner (ed.), *An Introduction to Ray Tracing*
+  (1989)** -- the book this is written out of: Haines on the essential
+  algorithms (chapter 2), Hanrahan on intersections (3), Glassner on
+  surface physics (4), Cook on stochastic sampling (5), Arvo and Kirk
+  on acceleration (6), and Heckbert's "Writing a ray tracer" (7).
+  Then Arthur Appel, "Some Techniques for Shading Machine
   Renderings of Solids" (1968), ray *casting* -- visibility and hard
   shadows, no recursion; **Turner Whitted, "An Improved Illumination
   Model for Shaded Display" (CACM, 1980)**, the recursive one:
@@ -434,16 +439,14 @@ Decisions taken, with their reasons, so they are not re-argued:
 - the existing `Lighting` sun stays for phases 1-5, so every existing
   scene ray traces unchanged.
 
-**Open, and worth settling before the references are final**: the
-author remembers a 1980s ray tracing book **with concrete code in it**
-and wants it cited. Candidates in
-[`notes_raytracing_related_work.md`](../related-work/notes_raytracing_related_work.md)'s
-"the 1980s shelf"; the ones that actually carried a full listing
-rather than pseudocode are the likeliest (Watkins, Coy and Finlay's
-*Photorealism and Ray Tracing in C*; Lindley's *Practical Ray Tracing
-in C*; Ammeraal's C graphics books; or a French one -- Péroche et
-al.'s *La synthèse d'images*). To be named once the author
-recognises it, and then quoted in `Raytrace.mli` as its reference.
+- **the 1980s book, settled** (the author's pick, 2026-09-20):
+  **Glassner (ed.), *An Introduction to Ray Tracing* (1989)**, whose
+  nine chapters map almost one to one onto this plan's modules (the
+  table is in
+  [`notes_raytracing_related_work.md`](../related-work/notes_raytracing_related_work.md)).
+  It is the reference `Raytrace.mli` opens with; Heckbert's chapter 7,
+  "Writing a ray tracer", is the closest thing to this plan written
+  thirty-seven years earlier.
 
 ## Verification
 
