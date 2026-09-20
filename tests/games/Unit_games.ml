@@ -2302,6 +2302,23 @@ let gauntlet_two_chases () =
   Alcotest.(check bool) "the field brings them out and round" true (smart_there > 0);
   Alcotest.(check bool) "and much closer" true (smart_mean < dumb_mean /. 2.)
 
+(* The dungeon is bigger than the screen, so the view scrolls: walking
+ * east for two seconds takes the camera east too, and it never shows
+ * anything outside the level. (Written after the camera spent a
+ * commit pinned to a corner, because Camera2d.follow takes its
+ * fraction first and it was being handed the hero's x.) *)
+let gauntlet_scrolls () =
+  let open TinyGauntlet2 in
+  let g = { (gauntlet_game ()) with gens = [] } in
+  let start_cam = g.cam.x and start_hero = g.x in
+  let g = gauntlet_play 120 ~keyboard:(fun _ -> { initial_computer.keyboard with kright = true }) g in
+  Alcotest.(check bool) "the hero went east" true (g.x > start_hero +. 200.);
+  Alcotest.(check bool) "and the camera followed him" true (g.cam.x > start_cam +. 60.);
+  Alcotest.(check bool) "without leaving the dungeon" true
+    (let b = Tilemap.bounds g.map in
+     let half = 1000. /. (2. *. zoom) in
+     g.cam.x >= b.left +. half -. 1. && g.cam.x <= b.right -. half +. 1.)
+
 (* A robot with the map walks the dungeon: it takes the key, opens the
  * door and finds the way down. It is the level's own test -- a
  * dungeon whose exit cannot be reached is not a dungeon. *)
@@ -2441,4 +2458,5 @@ let tests =
       t "TinyGauntlet2, health is the clock" gauntlet_health_is_the_clock;
       t "TinyGauntlet2, shot the food" gauntlet_shot_the_food;
       t "TinyGauntlet2, the two chases" gauntlet_two_chases;
+      t "TinyGauntlet2, the dungeon scrolls" gauntlet_scrolls;
       t "TinyGauntlet2, a robot walks out of the dungeon" gauntlet_robot_escapes ]

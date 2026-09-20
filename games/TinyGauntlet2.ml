@@ -501,7 +501,7 @@ let update_game (computer : computer) (scenes : scene Scene2d.t) (g : game) : ga
   let moved, fired = List.split (List.map (step_monster g field) g.monsters) in
   let g = { g with monsters = moved; shots = List.concat fired @ g.shots } in
   let g = g |> step_generators |> step_shots |> shots_hit |> monsters_hit in
-  { g with cam = g.cam |> Camera2d.follow g.x g.y 0.18 |> Camera2d.clamp computer.screen (Tilemap.bounds g.map) }
+  { g with cam = g.cam |> Camera2d.follow 0.18 g.x g.y |> Camera2d.clamp computer.screen (Tilemap.bounds g.map) }
 
 let escaped (g : game) : bool = match Tilemap.tile_at g.map g.x g.y with Some 'X' -> true | _ -> false
 
