@@ -2526,6 +2526,27 @@ let speedball_carries () =
   let me = List.nth far.players 0 in
   Alcotest.(check bool) "still his, fifty pixels later" true (far.carrier = Some 0 && Free_ball.near 30. (me.px, me.py) far.ball)
 
+(* The view eases after the ball instead of being nailed to it. The
+ * ball jumps -- into a carrier's hands, back to the centre spot after
+ * a goal -- and a camera that copies the jump makes the arena lurch,
+ * which is what it did when the camera was computed from the ball in
+ * the view. One frame moves it a tenth of the way; forty get it
+ * there. *)
+let speedball_camera_is_smooth () =
+  let open TinySpeedball2 in
+  let g = speedball_empty () in
+  (* the ball suddenly two hundred pixels away, as a goal or a catch
+     moves it -- and well inside the arena, since near a wall the
+     camera is clamped and *should* stop short of the ball *)
+  let g = { g with ball = Free_ball.still 0. 200. } in
+  let gap (g : game) = Float.abs (g.cam.y -. g.ball.y) in
+  let before = gap g in
+  let one = speedball_play 1 g in
+  Alcotest.(check bool) "one frame does not jump the whole way" true (gap one > before /. 2.);
+  Alcotest.(check bool) "but it does move" true (gap one < before);
+  let later = speedball_play 60 g in
+  Alcotest.(check bool) "and a second later it has caught up" true (gap later < 30.)
+
 (* Violence is a move: space with no ball puts the nearest opponent on
  * the floor, pays ten for it, and takes the ball off him. *)
 let speedball_tackle () =
@@ -2682,5 +2703,6 @@ let tests =
       t "TinySpeedball2, the walls give the ball back" speedball_walls;
       t "TinySpeedball2, the ball is carried, not chased" speedball_carries;
       t "TinySpeedball2, the tackle" speedball_tackle;
+      t "TinySpeedball2, the camera eases after the ball" speedball_camera_is_smooth;
       t "TinySpeedball2, a goal is ten" speedball_goal;
       t "TinySpeedball2, a match plays itself" speedball_plays_itself ]

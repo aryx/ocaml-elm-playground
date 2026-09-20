@@ -96,6 +96,8 @@ let wall_keep = 0.8 (* a heavy ball on metal loses a fifth of its speed *)
  * it *)
 let zoom = 1.6
 
+let arena_bounds : Camera2d.rect = { left = 0. - half_w; right = half_w; bottom = 0. - half_h; top = half_h }
+
 type side = Red | Blue
 
 let goal_line (s : side) : number = match s with Red -> half_h | Blue -> 0. - half_h
@@ -152,6 +154,7 @@ type game = {
   clock : int;
   message : (string * int) option;
   restarting : int;
+  cam : Camera2d.t;
 }
 
 type scene = Title | Playing of game | Full_time of int * int
@@ -177,7 +180,8 @@ let team (s : side) : player list =
 
 let new_game () : game =
   { players = team Red @ team Blue; ball = Free_ball.still 0. 0.; carrier = None; last = None; electric = 0; mine = 4; power = 0.; fixtures;
-    double = []; red = 0; blue = 0; clock = 60 *.. 90; message = Some ("SPEEDBALL", 90); restarting = 50 }
+    double = []; red = 0; blue = 0; clock = 60 *.. 90; message = Some ("SPEEDBALL", 90); restarting = 50;
+    cam = { Camera2d.origin with zoom } }
 
 let initial_model = { scenes = Scene2d.start Title }
 
@@ -388,7 +392,14 @@ let update_game (computer : computer) (g : game) : game =
                 { g with carrier = Some i; last = Some p.side }
               end)
     in
-    goals g
+    let g = goals g in
+    (* The view eases after the ball rather than being nailed to it.
+     * The ball moves in jumps -- into a carrier's hands when he picks
+     * it up, back to the middle after a goal -- and a camera that
+     * copies those jumps makes the whole arena lurch. Following a
+     * tenth of the way each frame turns each of them into a glide.
+     * (Camera2d.follow takes its fraction first.) *)
+    { g with cam = g.cam |> Camera2d.follow 0.1 g.ball.x g.ball.y |> Camera2d.clamp computer.screen arena_bounds }
 
 let update (computer : computer) (model : model) : model =
   let scenes = Scene2d.update computer model.scenes in
@@ -488,16 +499,10 @@ let view (computer : computer) (model : model) : shape list =
   match scenes.scene with
   | Title -> rectangle (rgb 24 26 32) screen.width screen.height :: view_title scenes
   | Playing g ->
-      (* Zoomed in, and the ball dead centre at all times -- not the
-       * player, the ball, which in this game is usually in somebody's
-       * hands and so amounts to the same thing until he throws it.
-       * No easing: Speedball's view is nailed to the ball. Camera2d
-       * clamps it to the walls of the arena. *)
-      let cam =
-        { Camera2d.origin with zoom }
-        |> Camera2d.look_at g.ball.x g.ball.y
-        |> Camera2d.clamp screen { Camera2d.left = 0. - half_w; right = half_w; bottom = 0. - half_h; top = half_h }
-      in
+      (* zoomed in, and the ball in the middle of it: the camera is in
+       * the model, eased towards the ball every frame (see
+       * update_game), because the ball itself jumps *)
+      let cam = g.cam in
       (rectangle (rgb 24 26 32) screen.width screen.height :: Camera2d.view cam (view_world g) :: view_hud g)
   | Full_time (red, blue) ->
       [ rectangle (rgb 24 26 32) screen.width screen.height; text white 5. "FULL TIME" |> move_y 140.;
