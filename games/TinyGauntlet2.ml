@@ -194,6 +194,17 @@ type model = { scenes : scene Scene2d.t; best : int }
 let hero_r = 16.
 let drain_every = 6 (* a point of health, so 10 a second *)
 
+(* The view is zoomed in, which is what makes the dungeon scroll: at 2
+ * the screen shows 500 pixels of it, ten tiles across, out of a level
+ * of twenty-four by eighteen. Gauntlet's own selling point in 1986 was
+ * that scroll -- smooth, and in all eight directions at once, which
+ * arcade hardware of the time did in the display chip and a home
+ * computer could not do at all. Here it is one number, and Camera2d
+ * does the rest: [follow] eases after the hero, [clamp] stops the view
+ * at the walls of the level (and centers a level smaller than the
+ * screen). What you lose is the map, which is why there is a minimap. *)
+let zoom = 2.
+
 (*****************************************************************************)
 (* The dungeon, read *)
 (*****************************************************************************)
@@ -229,7 +240,7 @@ let load (who : hero) (field : bool) (level : int) (carried : int * int * int) :
       [ 'g'; 'h'; 'd'; 'l' ]
   in
   { who; level; map; x; y; facing = (0., -1.); cool = 0; health = 700; keys; potions; score; monsters = []; gens; shots = [];
-    cam = Camera2d.origin |> Camera2d.look_at x y; says = Some (Printf.sprintf "%s ENTERS THE DUNGEON" who.name, 150); seed = 7 +.. level;
+    cam = { Camera2d.origin with zoom } |> Camera2d.look_at x y; says = Some (Printf.sprintf "%s ENTERS THE DUNGEON" who.name, 150); seed = 7 +.. level;
     frames = 0; field }
 
 let initial_model = { scenes = Scene2d.start (Choosing 0); best = 0 }
@@ -490,7 +501,7 @@ let update_game (computer : computer) (scenes : scene Scene2d.t) (g : game) : ga
   let moved, fired = List.split (List.map (step_monster g field) g.monsters) in
   let g = { g with monsters = moved; shots = List.concat fired @ g.shots } in
   let g = g |> step_generators |> step_shots |> shots_hit |> monsters_hit in
-  { g with cam = g.cam |> Camera2d.follow g.x g.y 0.12 |> Camera2d.clamp computer.screen (Tilemap.bounds g.map) }
+  { g with cam = g.cam |> Camera2d.follow g.x g.y 0.18 |> Camera2d.clamp computer.screen (Tilemap.bounds g.map) }
 
 let escaped (g : game) : bool = match Tilemap.tile_at g.map g.x g.y with Some 'X' -> true | _ -> false
 
@@ -562,10 +573,45 @@ let view_world (g : game) : shape list =
   @ List.map (fun (s : shot) -> circle (if s.mine then rgb 250 240 150 else rgb 255 120 60) (if s.mine then 6. else 7.) |> move s.sx s.sy) g.shots
   @ view_hero g
 
+(* The whole dungeon, small, in the corner. The map is already a list
+ * of strings and a sprite is a list of strings, so Sprite.pixels draws
+ * it in one shape, a pixel a tile, with the floor left out of the
+ * palette so it stays transparent (games3d/TinyComanche3d draws its
+ * terrain the same way). On top of it: where the monsters are, where
+ * the hero is, and the part of the level the screen is showing. *)
+let minimap_pixel = 5.
+
+let minimap_palette =
+  [ ('#', rgb 110 106 128); ('b', rgb 140 115 85); ('D', rgb 200 160 70); ('X', rgb 90 220 255); ('K', rgb 240 210 80); ('F', rgb 210 70 70);
+    ('P', rgb 120 240 200); ('T', rgb 200 170 50); ('g', orange); ('h', orange); ('d', orange); ('l', orange) ]
+
+let view_minimap (computer : computer) (g : game) : shape list =
+  let cols = float_of_int (Tilemap.cols g.map) and rows = float_of_int (Tilemap.rows g.map) in
+  let ox = 390. and oy = -400. in
+  let at (col, row) : number * number =
+    (ox + ((float_of_int col - ((cols - 1.) / 2.)) * minimap_pixel), oy + ((((rows - 1.) / 2.) - float_of_int row) * minimap_pixel))
+  in
+  let dot (cell : int * int) (color : color) (size : number) : shape =
+    let x, y = at cell in
+    rectangle color size size |> move x y
+  in
+  let seen = Camera2d.visible computer.screen g.cam in
+  [ rectangle (rgb 10 10 16) ((cols * minimap_pixel) + 12.) ((rows * minimap_pixel) + 12.) |> move ox oy;
+    Sprite.pixels minimap_pixel minimap_palette (Tilemap.to_strings g.map) |> move ox oy;
+    (* what the screen is showing, in the dungeon *)
+    rectangle white ((seen.right - seen.left) / tile * minimap_pixel) ((seen.top - seen.bottom) / tile * minimap_pixel)
+    |> fade 0.14
+    |> move (fst (at (cell_of g.map ((seen.left + seen.right) / 2.) ((seen.bottom + seen.top) / 2.))))
+         (snd (at (cell_of g.map ((seen.left + seen.right) / 2.) ((seen.bottom + seen.top) / 2.)))) ]
+  @ List.map (fun (m : monster) -> dot (cell_of g.map m.mx m.my) (rgb 230 90 80) 3.) g.monsters
+  @ [ dot (cell_of g.map g.x g.y) g.who.color 5. ]
+
 (* the arcade's bar along the top: who you are, how long you have left,
  * and what you are carrying *)
-let view_hud (g : game) : shape list =
-  let bar = 300. * (float_of_int (max 0 g.health) / 700.) in
+let view_hud (computer : computer) (g : game) : shape list =
+  (* food can take him over the 700 he came in with, and the bar stops
+   * at its frame rather than growing out of it *)
+  let bar = Float.min 300. (300. * (float_of_int (max 0 g.health) / 700.)) in
   [ text g.who.color 2.2 g.who.name |> move (-400.) 470.;
     rectangle (rgb 60 60 70) 302. 20. |> move (-150.) 470.;
     rectangle (if g.health < 200 then rgb 230 70 60 else rgb 90 200 110) (Float.max 2. bar) 16. |> move (-300. + (bar / 2.)) 470.;
@@ -575,6 +621,7 @@ let view_hud (g : game) : shape list =
     text white 2. (Printf.sprintf "SCORE %d" g.score) |> move 410. 470.;
     text (rgb 150 150 170) 1.6 (Printf.sprintf "LEVEL %d" (g.level +.. 1)) |> move (-400.) 442. ]
   @ (match g.says with Some (what, _) -> [ text (rgb 250 240 150) 2.6 what |> move_y (-450.) ] | None -> [])
+  @ view_minimap computer g
   @ if g.field then [ text (rgb 150 150 170) 1.6 "chase=field" |> move 410. 442. ] else []
 
 let view_choosing (scenes : scene Scene2d.t) (model : model) (i : int) : shape list =
@@ -600,7 +647,7 @@ let view (computer : computer) (model : model) : shape list =
   ::
   (match scenes.scene with
   | Choosing i -> view_choosing scenes model i
-  | Playing g -> (Camera2d.view g.cam (view_world g) :: view_hud g)
+  | Playing g -> Camera2d.view g.cam (view_world g) :: view_hud computer g
   | Dead score ->
       [ text (rgb 230 70 60) 6. "YOUR HEALTH RAN OUT" |> move_y 60.; text white 3. (Printf.sprintf "SCORE %d" score) |> move_y (-30.) ]
       @ Scene2d.blink 1. scenes [ text (rgb 250 240 150) 3. "PRESS SPACE" |> move_y (-160.) ]

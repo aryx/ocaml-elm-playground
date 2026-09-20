@@ -657,6 +657,16 @@ from memory, to check.)
     exactly where the cheap rule holds up;
   - and the meanest rule in arcade history: **your shot destroys the
     food**, the one thing keeping you alive.
+- **The scroll**: Gauntlet's own selling point in 1986 was smooth
+  scrolling in all eight directions at once, which the arcade hardware
+  did in its display chip and a home computer of the time could not do
+  at all. Here it is `Camera2d` and one number, the camera's zoom of 2:
+  the screen shows ten tiles of a level twenty-four across, `follow`
+  eases after the hero and `clamp` stops at the level's walls. What
+  the zoom costs is the map, so the corner has one --
+  `Sprite.pixels` over `Tilemap.to_strings`, since the dungeon is
+  already a list of strings and so is a sprite (the trick
+  `games3d/TinyComanche3d` draws its terrain with).
 - **Kit**: none of its own. The flow field is `ai/Pathfind` through
   `kits/rts`' `Orders` (its third user, after TinyDune2 and
   TinyWarcraft2: a crowd walking to one place is the same problem
