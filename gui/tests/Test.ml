@@ -10,4 +10,4 @@
 
 let () =
   Testo.interpret_argv ~project_name:"gui" (fun _env ->
-      List.concat [ Unit_widget.tests; Unit_layout.tests; Unit_immediate.tests ])
+      List.concat [ Unit_widget.tests; Unit_layout.tests; Unit_immediate.tests; Unit_focus.tests ])

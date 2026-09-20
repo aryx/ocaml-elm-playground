@@ -24,6 +24,8 @@ type t = {
   padding : float;
   slider_width : float;
   knob : float;
+  field_face : Color.t;
+  field_width : float;
 }
 
 let default =
@@ -41,4 +43,6 @@ let default =
     padding = 12.;
     slider_width = 220.;
     knob = 18.;
+    field_face = Color.white;
+    field_width = 220.;
   }

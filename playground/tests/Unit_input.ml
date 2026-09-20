@@ -105,6 +105,42 @@ let test_click_is_the_release () =
       Alcotest.(check (pair bool bool)) "and gone" (false, false) (down3, click3)
   | l -> Alcotest.failf "expected three frames, got %d" (List.length l)
 
+(* The named keys an application needs -- backspace, enter, shift --
+ * which the two backends spell differently (SDL's names lowercased:
+ * "backspace", "return", "left shift"; a browser's: "Backspace",
+ * "Enter", "Shift"). One name is chosen, the browser's, so that a
+ * program written once reads them on both -- and [kbackspace],
+ * [kenter] and [kshift], which the record has always had, are set at
+ * last. *)
+let test_named_keys_agree_across_backends () =
+  let seen = ref None in
+  let update (computer : Playground.computer) () =
+    let k = computer.keyboard in
+    seen := Some (k.kbackspace, k.kenter, k.kshift, Set_.elements k.keys)
+  in
+  let app = Playground.game (fun _ _ -> []) update () in
+  let pressing key =
+    let model = fst (app.init []) in
+    let _ = drive app [ Playground.KeyChanged (true, key); tick 16 ] model in
+    match !seen with Some x -> x | None -> Alcotest.fail "no frame"
+  in
+  let check what key expected =
+    let backspace, enter, shift, keys = pressing key in
+    Alcotest.(check (list string)) (what ^ ": one name in the set") [ expected ] keys;
+    Alcotest.(check (list bool))
+      (what ^ ": the field it stands for")
+      [ expected = "Backspace"; expected = "Enter"; expected = "Shift" ]
+      [ backspace; enter; shift ]
+  in
+  check "SDL's backspace" "backspace" "Backspace";
+  check "the browser's backspace" "Backspace" "Backspace";
+  check "SDL's return" "return" "Enter";
+  check "the browser's enter" "Enter" "Enter";
+  check "SDL's left shift" "left shift" "Shift";
+  check "the browser's shift" "Shift" "Shift";
+  (* a letter is nobody's special case *)
+  check "a letter" "x" "x"
+
 let tests =
   [
     t "typed accumulates over a frame, then clears" test_typed_accumulates_then_clears;
@@ -112,4 +148,5 @@ let tests =
     t "a double click lasts exactly one frame" test_double_click_lasts_one_frame;
     t "a key name is not a character" test_keys_and_typed_are_different_questions;
     t "a click is the release of the button" test_click_is_the_release;
+    t "the named keys are the same on both backends" test_named_keys_agree_across_backends;
   ]

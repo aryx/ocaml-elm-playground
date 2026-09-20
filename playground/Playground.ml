@@ -401,8 +401,30 @@ let keyboard_typed str keyboard =
 let keyboard_typed_reset keyboard =
   { keyboard with typed = "" }
 
+(* claude: the two backends name the same key differently -- SDL says
+ * "Backspace", "Return", "Left Shift" (lowercased by Native_loop_2d),
+ * a browser says "Backspace", "Enter", "Shift" -- and only the arrows
+ * were ever made to agree. So one name is chosen here, the browser's
+ * (which is what the arrows and Playground.mli's key list already
+ * follow), and both spellings map onto it. Letters keep their own
+ * name, and "space" stays "space": every game reads that one. *)
+let canonical_key key =
+  match key with
+  | "backspace" -> "Backspace"
+  | "return" | "Enter" -> "Enter"
+  | "tab" -> "Tab"
+  | "escape" -> "Escape"
+  | "delete" -> "Delete"
+  | "home" -> "Home"
+  | "end" -> "End"
+  | "left shift" | "right shift" -> "Shift"
+  | "left ctrl" | "right ctrl" -> "Control"
+  | "left alt" | "right alt" -> "Alt"
+  | key -> key
+
 let update_keyboard is_down key keyboard =
-  let keys = 
+  let key = canonical_key key in
+  let keys =
     if is_down
     then Set.insert key keyboard.keys
     else Set.remove key keyboard.keys
@@ -417,6 +439,13 @@ let update_keyboard is_down key keyboard =
   | "a"          -> { keyboard with keys; ka = is_down }
   | "d"          -> { keyboard with keys; kd = is_down }
   | "space"          -> { keyboard with keys; kspace = is_down }
+  (* claude: the three that the record has always had and nothing ever
+   * set: an application needs them (backspace in a field, enter to
+   * accept, shift to extend a selection) and so did the games that
+   * read them (TinySokoban's undo, TinyGauntlet2's potion) *)
+  | "Backspace"  -> { keyboard with keys; kbackspace = is_down }
+  | "Enter"      -> { keyboard with keys; kenter = is_down }
+  | "Shift"      -> { keyboard with keys; kshift = is_down }
   | _ -> { keyboard with keys }
 
 

@@ -234,7 +234,14 @@ window's size arrives.
   first.
 - **Focus** is which widget gets the keys, plus the tab order and a
   visible ring. Every app's keyboard experience is this and nothing
-  else.
+  else. A retained toolkit walks its tree for the tab order, and then
+  needs an escape hatch when the tree's order is not the reading order
+  (the web's `tabindex`, and the accessibility bugs that come of
+  getting it wrong). In immediate mode there is no tree: the widgets
+  are *asked for* in an order, and that order is the tab order, for
+  free and visible in the source. The price is one frame of memory —
+  when Tab arrives, this frame's order does not exist yet, so the walk
+  uses the previous frame's (`gui/Focus`).
 - **A click is the release**, not the press -- which is what lets you
   press a button, think better of it, and slide away without firing
   it (the Macintosh, 1984, and everything since). So a widget needs
@@ -247,6 +254,17 @@ window's size arrives.
 - **Double-click, the wheel, key repeat, typed characters**: the
   events a game never needs, and an app cannot live without -- which
   is why they are this plan's phase 0.
+
+And the keys themselves, which took two goes to get right here. The
+playground's `keyboard` had `kbackspace`, `kenter` and `kshift` from
+the beginning and nothing ever set them; worse, the two backends
+spelled the named keys differently (SDL lowercased: `"backspace"`,
+`"return"`, `"left shift"`; the browser's DOM names: `"Backspace"`,
+`"Enter"`, `"Shift"`), so only the arrows and the space bar agreed.
+A program that reads a key by name could not run on both until one
+spelling was chosen — the browser's, since the arrows already followed
+it. Nothing had noticed because a game asks for arrows and a letter,
+and never for Tab.
 
 ## 7. Editing text
 

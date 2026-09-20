@@ -599,6 +599,96 @@ Measured: `dune build` clean everywhere including the js targets;
 `GuiWidgets` re-approved (it is the only frame that moved, and it is
 this phase's own example).
 
+### Phase 3, DONE (2026-09-20), awaiting review
+
+Focus, a text field, and the first four 7GUIs tasks -- plus a second
+dead corner of the `computer`, found the same way the first one was.
+
+**The keyboard had never worked for named keys.** `kbackspace`,
+`kenter` and `kshift` are in the record from the beginning and
+*nothing ever set them* (`update_keyboard` handled the arrows, wasd
+and space, and no other name); and the two backends spell a named key
+differently -- SDL's, lowercased by `Native_loop_2d`: `"backspace"`,
+`"return"`, `"left shift"`; the browser's DOM names: `"Backspace"`,
+`"Enter"`, `"Shift"` -- so no program could read one by name on both.
+Games that read those fields (`TinySokoban`'s undo on backspace,
+`TinyGauntlet2`'s potion on shift) were quietly dead. Fixed in
+`Playground.ml` alone, `canonical_key` mapping both spellings onto
+one, the browser's (which the arrows already followed); `"space"`
+stays `"space"`, since every game reads that one. A seventh
+`Unit_input` test holds it, checking both spellings of each key.
+
+**`gui/Focus`** (58 + 41): who has the keys, and the tab order. The
+point worth the module: in immediate mode the widgets are *asked for*
+in an order, so that order is the tab order -- for free, and visible
+in the source -- where a retained toolkit walks its tree and then
+needs `tabindex` when the tree is not in reading order. The price is
+one frame of memory: when Tab arrives this frame's order does not
+exist yet, so the walk uses the previous frame's.
+
+**`Immediate.field`**, the widget that needs everything at once: the
+focus, the characters the platform says were typed (phase 0's
+`typed`), the keys that produce no character (backspace, the arrows,
+Home, End), and a caret -- the one piece of state that cannot live in
+the caller's model, so the toolkit keeps it, for the focused field
+alone. Decisions, each in the `.mli`:
+
+- **the text stays in the caller's model**, like a slider's value;
+- **key edges are computed here**, by comparing with the previous
+  frame's held keys, so a key held across frames acts once. No
+  auto-repeat: the playground's keyboard is a *set of keys held*, and
+  a repeat is an event the platform sends that nothing forwards yet;
+- **a character is not a byte**: backspace and the arrows step over a
+  whole UTF-8 sequence, or an accented letter would lose half of
+  itself;
+- **one character to a cell**, like a terminal, rather than at the
+  widths the stroke font really draws. That is what keeps the caret
+  exactly where the person clicked: a real field asks the font where
+  each glyph starts, and we have no font to ask;
+- **a caret that does not blink**, so nothing here depends on the
+  clock and a golden frame is the same picture every run.
+
+Two more widgets the tasks needed: **`progress`** (a bar that answers
+nothing) and **`menu`**, the first *modal* widget -- while its items
+show they take the mouse from every other widget, the "grab" every
+toolkit does with a popup, without which a click meant for an item
+also presses whatever it lands on. Its popup is painted where it is
+asked for, so a menu is asked for last; a real toolkit keeps popups
+in a layer of their own. And `?enabled` on `button` and `field`: a
+greyed button answers false whatever the mouse does, a greyed field
+takes neither the keys nor a place in the tab order.
+
+**The first four 7GUIs tasks** (Eugen Kiss, 2014), in immediate mode,
+each with a golden frame:
+
+- `Gui7Counter` (57 lines), the baseline: four lines of update;
+- `Gui7Temperature` (83): the lesson is that **the model holds the two
+  strings, not two numbers** -- "2." and "-" are things a person types
+  on the way to a number, and a model that cannot represent them must
+  refuse the keystroke or throw it away. Which field was edited is
+  whichever came back changed: one comparison each, no message type;
+- `Gui7Flight` (112): the rules between widgets are four lines of
+  ordinary code, because every widget is asked for every frame and
+  being enabled is an argument. This is the task where callbacks start
+  to hurt, and phase 4 will measure exactly that;
+- `Gui7Timer` (91): the one task this playground answers before it is
+  asked -- update runs 60 times a second whether or not anything
+  happened, so there is no timer to start, no subscription to cancel,
+  no callback firing after its widget is gone. Elapsed time is counted
+  in frames, not from the clock, which keeps it deterministic under
+  `-fixed-time` (its golden frame is at 90 frames: a second and a half
+  into ten, and under the 100 past which `make test` skips a scene).
+
+`gui/tests/Unit_focus.ml` (165 lines, 9 tests): the tab order and its
+wrap-round, a click giving the keys and the backdrop taking them away,
+typing only where the focus is, backspace over a two-byte character, a
+held key acting once, and Tab carrying the typing from one field to
+the next.
+
+Measured: `dune build` clean everywhere including the js targets;
+`gui/tests` 34 green, `playground/tests` 56, the 2D golden suite 119
+with the four new frames and **no existing frame moved a pixel**.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

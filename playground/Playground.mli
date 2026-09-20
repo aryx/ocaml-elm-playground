@@ -701,6 +701,17 @@ type keyboard = {
   kenter : bool;
   kshift : bool;
   kbackspace : bool;
+  (** Every key held right now, by name. The names are the browser's
+      ({{:https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values}this
+      list}): ["a"], ["1"], ["ArrowUp"], ["Backspace"], ["Enter"],
+      ["Tab"], ["Shift"], ["Escape"] -- whatever backend the program
+      runs on, since a native SDL name ("Return", "Left Shift") is
+      translated to it. The one exception is the space bar, which is
+      ["space"] here and not [" "].
+
+      [Set_.mem "x" computer.keyboard.keys] asks whether a key is
+      down; the frame a key {i goes} down (its rising edge) takes
+      remembering the frame before, which {!Scene2d.pressed} does. *)
   keys : string Set_.t;
   (** The characters {i typed} this frame, in order -- [""] most
       frames, ["a"] for one key, and more when a key repeats.

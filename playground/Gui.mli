@@ -25,8 +25,8 @@
 
    Widgets are placed by their center, like every shape in the
    playground, and they size themselves from their label and the
-   theme. (Rows, columns and "as wide as there is room" are layout,
-   which comes later.)
+   theme. Rows, columns and "as wide as there is room" are layout, and
+   live one level down, in [gui/Layout] (see below).
 
    The one piece of mutable state in these libraries lives here, and
    it is worth saying why: [update] and [view] are two functions, so
@@ -35,15 +35,16 @@
    widget call starts the next one. A program that never calls [draw]
    asks questions and shows nothing.
 
-   What it does not do, yet: text fields (typing needs focus), layout,
-   menus, scrolling, and anything retained. Underneath is [gui/]
-   (see docs/claude_notes/tutorials/notes_gui.md), where the same
-   widgets are values rather than a global, and where the three rival
+   What it does not do, yet: selection inside a field, scrolling, and
+   anything retained. Underneath is [gui/] (see
+   docs/claude_notes/tutorials/notes_gui.md), where the same widgets
+   are values rather than a global, and where the three rival
    architectures will sit beside this one. *)
 
 (* [button computer ~at label]: a button centered at [at], true the
    frame it is clicked -- pressed and released inside it *)
-val button : Playground.computer -> at:Playground.number * Playground.number -> string -> bool
+val button :
+  ?enabled:bool -> Playground.computer -> at:Playground.number * Playground.number -> string -> bool
 
 (* [checkbox computer ~at label checked]: a tick box with [label]
    beside it, and the value it has after this frame *)
@@ -63,6 +64,29 @@ val slider :
   to_:Playground.number ->
   Playground.number ->
   Playground.number
+
+(* [field computer ~at text]: a box to type in, and the text it holds
+   after this frame. Click it to give it the keys (or Tab to it), and
+   the characters go there:
+
+   {[
+     let update computer model = { model with name = Gui.field computer ~at:(0., 0.) model.name }
+   ]}
+
+   The text stays in the model, like a slider's value; what the
+   toolkit keeps is only the caret. *)
+val field :
+  ?enabled:bool -> Playground.computer -> at:Playground.number * Playground.number -> string -> string
+
+(* [progress computer ~at fraction]: a bar filled [fraction] of the
+   way (0 to 1); it shows and answers nothing *)
+val progress : Playground.computer -> at:Playground.number * Playground.number -> Playground.number -> unit
+
+(* [menu computer ~at items chosen]: a dropdown, and which item is
+   chosen after this frame. While its items show, they take the mouse
+   from every other widget. *)
+val menu :
+  Playground.computer -> at:Playground.number * Playground.number -> string list -> int -> int
 
 (* [label computer ~at s]: [s], in the theme's color and size *)
 val label : Playground.computer -> at:Playground.number * Playground.number -> string -> unit
@@ -91,7 +115,10 @@ val label : Playground.computer -> at:Playground.number * Playground.number -> s
                   ~from:10. ~to_:150. model.radius }
    ]} *)
 
-val button_in : Playground.computer -> Widget.box -> string -> bool
+(* [~enabled:false] greys a button or a field: the button answers
+   false whatever the mouse does, and the field takes neither the keys
+   nor a place in the tab order *)
+val button_in : ?enabled:bool -> Playground.computer -> Widget.box -> string -> bool
 val checkbox_in : Playground.computer -> Widget.box -> string -> bool -> bool
 
 val slider_in :
@@ -103,6 +130,9 @@ val slider_in :
   Playground.number
 
 val label_in : Playground.computer -> Widget.box -> string -> unit
+val field_in : ?enabled:bool -> Playground.computer -> Widget.box -> string -> string
+val progress_in : Playground.computer -> Widget.box -> Playground.number -> unit
+val menu_in : Playground.computer -> Widget.box -> string list -> int -> int
 
 (* what each widget asks for, in the current theme, to build the
    layout's leaves with *)
@@ -110,6 +140,9 @@ val button_size : string -> Playground.number * Playground.number
 val checkbox_size : string -> Playground.number * Playground.number
 val slider_size : unit -> Playground.number * Playground.number
 val label_size : string -> Playground.number * Playground.number
+val field_size : unit -> Playground.number * Playground.number
+val progress_size : unit -> Playground.number * Playground.number
+val menu_size : string list -> Playground.number * Playground.number
 
 (* the whole screen as a box, the usual thing to lay out inside *)
 val area : Playground.computer -> Widget.box

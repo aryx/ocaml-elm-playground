@@ -30,6 +30,16 @@ let scenes : Testutil_golden.scene list =
      * frames cannot script (a script holds keys, not the mouse), so
      * that is gui/tests' business instead *)
     ("examples/software/GuiWidgets", "", 5);
+    (* the first four 7GUIs tasks (Eugen Kiss, 2014), in immediate
+     * mode: a counter, two fields that convert into each other, a
+     * booking form whose rules turn its widgets off, and a timer --
+     * which at frame 90 is a second and a half into its ten (under
+     * the 100 frames past which 'make test' skips a scene, so that
+     * the everyday run checks it) *)
+    ("examples/software/Gui7Counter", "", 5);
+    ("examples/software/Gui7Temperature", "", 5);
+    ("examples/software/Gui7Flight", "", 5);
+    ("examples/software/Gui7Timer", "", 90);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);

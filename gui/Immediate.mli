@@ -84,12 +84,46 @@ val set_theme : Theme.t -> t -> t
 val label : t -> Widget.box -> string -> t
 
 (* [button t box s]: a button labelled [s], true the frame it is
- * clicked (pressed and released inside, above) *)
-val button : t -> Widget.box -> string -> t * bool
+ * clicked (pressed and released inside, above).
+ *
+ * [~enabled:false] greys it and it answers false whatever the mouse
+ * does -- what a form does with an action that is not available yet
+ * (7GUIs' Flight Booker is the exercise for that). *)
+val button : ?enabled:bool -> t -> Widget.box -> string -> t * bool
 
 (* [checkbox t box s checked]: a box with [s] beside it, and the value
  * it has after this frame -- [not checked] the frame it is clicked *)
 val checkbox : t -> Widget.box -> string -> bool -> t * bool
+
+(* [field t box text]: a box to type in, and the text it holds after
+ * this frame -- [text] unless it has the keys (Focus) and something
+ * was typed into it.
+ *
+ * A field is the widget that needs everything at once: the focus (who
+ * gets the keys), the characters the platform says were typed
+ * (computer.keyboard.typed, which is not the same question as which
+ * keys are down), the keys that produce no character at all
+ * (backspace, the arrows, Home and End), and a caret, whose position
+ * is the one piece of state that cannot live in the caller's model --
+ * so the toolkit keeps it, for the focused field alone, which is the
+ * only one that can have a caret.
+ *
+ *   +--------------------+   clicking puts the caret where you clicked
+ *   | hell|o             |   Tab moves to the next field, caret at its end
+ *   +--------------------+   the text itself stays yours, in the model
+ *
+ * Text is laid out one character to a cell, like a terminal, rather
+ * than at the widths the stroke font really draws: that is what keeps
+ * the caret exactly where the person clicked. A real field asks the
+ * font where each glyph starts; we have no font to ask
+ * (Widget.text_width is an average).
+ *
+ * What it does not do: selection (phase 5's Text_edit, with a piece
+ * table under it), any editing shortcut, and key *repeat* -- holding
+ * backspace deletes one character, because the playground's keyboard
+ * is a set of keys held, and a repeat is an event the platform sends
+ * that nothing forwards yet. *)
+val field : ?enabled:bool -> t -> Widget.box -> string -> t * string
 
 (* [slider t box ~from ~to_ v]: a slider between [from] and [to_],
  * showing [v], and the value it has after this frame: [v] unless the
@@ -98,6 +132,25 @@ val checkbox : t -> Widget.box -> string -> bool -> t * bool
  * 220-wide slider with an 18-wide knob puts [from] at x = -101 and
  * [to_] at x = 101, relative to its center. *)
 val slider : t -> Widget.box -> from:float -> to_:float -> float -> t * float
+
+(* [progress t box fraction]: a bar filled [fraction] of the way (0 to
+ * 1), which answers nothing: it is a widget that only shows. *)
+val progress : t -> Widget.box -> float -> t
+
+(* [menu t box items chosen]: a dropdown showing [items] when it is
+ * open, and which item is chosen after this frame.
+ *
+ * It is the first widget here that is *modal*: while its items are
+ * showing they take the mouse from every other widget, wherever the
+ * mouse goes -- the "grab" that every toolkit does with a popup, and
+ * without which a click meant for an item also presses the button it
+ * happens to land on.
+ *
+ * The popup is painted where the menu is asked for, so a widget asked
+ * for later is painted over it. A real toolkit keeps popups in a
+ * layer of their own; here, ask for the menu last, or leave room
+ * below it. *)
+val menu : t -> Widget.box -> string list -> int -> t * int
 
 (* {1 How big a widget wants to be}
  *
@@ -114,3 +167,15 @@ val checkbox_size : Theme.t -> string -> float * float
 
 (* [slider_size theme]: the theme's, whatever the value *)
 val slider_size : Theme.t -> float * float
+
+(* [field_size theme]: the theme's, whatever the text -- a field is a
+ * window onto its text and scrolls when it is too long, rather than
+ * growing *)
+val field_size : Theme.t -> float * float
+
+(* a bar as wide as a slider, and shorter *)
+val progress_size : Theme.t -> float * float
+
+(* [menu_size theme items]: wide enough for the longest item, and the
+ * arrow *)
+val menu_size : Theme.t -> string list -> float * float

@@ -20,6 +20,10 @@ let top (b : box) = b.y +. (b.h /. 2.)
 let contains (b : box) px py =
   px >= left b && px <= right b && py >= bottom b && py <= top b
 
+type id = float * float
+
+let id (b : box) : id = (b.x, b.y)
+
 let inset d (b : box) =
   { b with w = max 0. (b.w -. (2. *. d)); h = max 0. (b.h -. (2. *. d)) }
 
@@ -30,10 +34,11 @@ type input = {
   mclick : bool;
   typed : string;
   wheel : float;
+  keys : string list;
 }
 
 let no_input =
-  { mx = 0.; my = 0.; mdown = false; mclick = false; typed = ""; wheel = 0. }
+  { mx = 0.; my = 0.; mdown = false; mclick = false; typed = ""; wheel = 0.; keys = [] }
 
 type paint = Fill of Color.t * box | Text of Color.t * box * string
 

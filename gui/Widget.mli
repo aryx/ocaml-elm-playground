@@ -30,6 +30,14 @@ type box = { x : float; y : float; w : float; h : float }
  * at (90, 110) and not at (110, 110). *)
 val contains : box -> float -> float -> bool
 
+(* What tells two widgets apart, so that the pile of state nobody can
+ * hold in the widget itself (who is pressed, who has the keys) can be
+ * keyed by something: where it is. Immediate.mli says why the
+ * rectangle rather than the label, which is what Dear ImGui hashes. *)
+type id = float * float
+
+val id : box -> id
+
 (* [inset d box]: the same box, [d] smaller on every side (a border) *)
 val inset : float -> box -> box
 
@@ -50,6 +58,12 @@ type input = {
   mclick : bool;
   typed : string;
   wheel : float;
+  (* every key held down right now, by name, the playground's spelling
+     ("a", "ArrowLeft", "Backspace", "Shift", "space"). Held, not
+     pressed: the frame a key {i goes} down is the toolkit's business
+     (Immediate compares with the frame before), since a widget wants
+     an edge and a game wants a state. *)
+  keys : string list;
 }
 
 (* nobody touching anything: the mouse at (0, 0), no button, no key *)

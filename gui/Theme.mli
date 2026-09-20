@@ -39,6 +39,11 @@ type t = {
   (* how wide a slider is, and how wide its knob *)
   slider_width : float;
   knob : float;
+  (* a text field: its own face, paler than a button's since it is a
+     hole to type into rather than a thing to press, and how wide it
+     is when nothing says otherwise *)
+  field_face : Color.t;
+  field_width : float;
 }
 
 (* a light grey theme, readable on every backend *)
