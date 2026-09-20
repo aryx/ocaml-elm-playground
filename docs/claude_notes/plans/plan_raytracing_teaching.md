@@ -50,9 +50,12 @@ WebGL backends *cannot* follow it (see Groundwork: the hardware
 exists, the APIs we target do not expose it).
 
 Companions: [`notes_raytracing.md`](../tutorials/notes_raytracing.md),
-the tutorial (written ahead of the code, as its specification), and
-[`notes_3d.md`](../tutorials/notes_3d.md) (the rasterizer this is the
-counterpart of; its section 6 gains a pointer here).
+the tutorial (written ahead of the code, as its specification),
+[`notes_raytracing_related_work.md`](../related-work/notes_raytracing_related_work.md)
+(POV-Ray, PBRT, Cycles, smallpt, the RTX era, the ICFP entries, and
+the ceiling here), and [`notes_3d.md`](../tutorials/notes_3d.md) (the
+rasterizer this is the counterpart of; its section 6 gains a pointer
+here).
 
 ## Prior art in the house: the author's ICFP 2000 entry
 
@@ -430,6 +433,17 @@ Decisions taken, with their reasons, so they are not re-argued:
 - `Ray` goes in `graphics/3d/geometry/`, shared with `physics/3d`;
 - the existing `Lighting` sun stays for phases 1-5, so every existing
   scene ray traces unchanged.
+
+**Open, and worth settling before the references are final**: the
+author remembers a 1980s ray tracing book **with concrete code in it**
+and wants it cited. Candidates in
+[`notes_raytracing_related_work.md`](../related-work/notes_raytracing_related_work.md)'s
+"the 1980s shelf"; the ones that actually carried a full listing
+rather than pseudocode are the likeliest (Watkins, Coy and Finlay's
+*Photorealism and Ray Tracing in C*; Lindley's *Practical Ray Tracing
+in C*; Ammeraal's C graphics books; or a French one -- Péroche et
+al.'s *La synthèse d'images*). To be named once the author
+recognises it, and then quoted in `Raytrace.mli` as its reference.
 
 ## Verification
 

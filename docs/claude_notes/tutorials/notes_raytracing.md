@@ -15,7 +15,9 @@ introduces the two strategies and points here),
 [`notes_3d_shading.md`](notes_3d_shading.md) (the lighting formula
 both renderers share) and
 [`notes_3d_opti.md`](notes_3d_opti.md) (making the rasterizer fast,
-the same kind of story as section 6 below).
+the same kind of story as section 6 below), and
+[`notes_raytracing_related_work.md`](../related-work/notes_raytracing_related_work.md)
+(where this sits among POV-Ray, PBRT, Cycles and the RTX hardware).
 
 One thing to have in mind throughout: **both renderers read the same
 scene**. `Shape3d_render_software.faces` turns a `shape3d` tree into

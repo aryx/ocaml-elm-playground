@@ -90,6 +90,7 @@ A reading order, from the simplest:
 - The lineage of each layer, against its own field:
   `notes_playground_related_work.md` (2D),
   `notes_playground3d_related_work.md` (3D),
+  `notes_raytracing_related_work.md` (the other renderer),
   `notes_physics_related_work.md` and
   `notes_physics3d_related_work.md`, `notes_audio_related_work.md`,
   `notes_ai_related_work.md`; and `notes_vs_doom_quake.md`, the
