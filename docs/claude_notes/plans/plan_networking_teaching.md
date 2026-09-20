@@ -1,11 +1,17 @@
 # Plan: multiplayer for the playground, from scratch, for teaching (`network/`)
 
-One document for networking, unlike graphics, physics and audio (a
-plan, a tutorial and a related-work survey each): the plan first, then
-the ideas it relies on (sections "The ideas"), then where they come
-from ("Related work"). Its prerequisites are the physics engine's
-fixed time step ([`plan_physics_teaching.md`](plan_physics_teaching.md))
-and the games' determinism, so it comes after them.
+Companions, like every other area here (they started inside this
+document and were split out of it on 2026-09-20, which is what its
+phase 7 anticipated): [`notes_networking.md`](../tutorials/notes_networking.md),
+the tutorial -- packets and latency in frames, lockstep, rollback,
+client-server, and the determinism checklist all of them stand on --
+and
+[`notes_networking_related_work.md`](../related-work/notes_networking_related_work.md)
+-- Doom, Quake, Age of Empires, GGPO, and the distributed-systems
+algorithms the games rediscovered. Its prerequisites are the physics
+engine's fixed time step
+([`plan_physics_teaching.md`](done/plan_physics_teaching.md)) and the
+games' determinism, so it comes after them.
 
 ## Context
 
@@ -90,124 +96,44 @@ tick number the only time there is); how randomness gets a shared seed
 (the host picks it, it travels in the first message); what a player's
 view shows while the game waits for a late input (lockstep's stall).
 
-## The ideas
+## The modules, with their references
 
-What the plan builds on, in the order the phases need them (the
-tutorial part; each will be expanded in the modules' `.mli`s).
+The ideas themselves, with their diagrams and their arithmetic, are
+[`notes_networking.md`](../tutorials/notes_networking.md); this is the
+map from module to idea to source. (From memory, to be checked when
+each `.mli` is written.)
 
-### 1. Packets, latency, loss
-
-The Internet moves **packets**, a few hundred bytes each, with no
-promise: one can arrive late, twice, out of order, or never. Two
-protocols on top: **TCP** makes it a reliable, ordered stream
-(resending what's lost) -- but a lost packet then blocks everything
-behind it until it's resent (**head-of-line blocking**), a stall of a
-round trip or more; **UDP** delivers packets as they come, or not at
-all. Games use UDP, and handle loss themselves, because an old input or
-position is worthless once a newer one exists.
-
-**Latency** has a floor, the speed of light in fiber, about 200,000
-km/s: **5 ms per 1000 km**, so Paris to New York (5,840 km) is 29 ms
-one way, 60 ms for a round trip, before any router adds its own. At 60
-frames per second a frame is 16.7 ms: a round trip across the Atlantic
-is **4 frames**. **Jitter** is latency varying from packet to packet.
-Nothing here can make them zero; the techniques below only hide them.
-
-### 2. Encoding messages
-
-A message is bytes. A player's input fits in one: a bit per arrow key
-and button. **Serialization** writes values to bytes and reads them
-back (`Wire`): fixed sizes, a byte order (network order is
-big-endian), and for sizes that vary, **variable-length integers** --
-the same 7-bits-per-byte trick as MIDI's delta times
-([`notes_audio_midi.md`](notes_audio_midi.md) §4). Every message
-starts with its type and the tick it's about; anything that doesn't
-parse is dropped.
-
-Bandwidth: with lockstep, each peer sends 60 inputs a second, 1 byte
-each, but every UDP packet costs 28 bytes of headers (IP and UDP):
-(1 + 28) x 60 = **1,740 bytes per second**, 94% headers. Sending the
-last 3 inputs in each packet at 20 packets per second -- also a cheap
-defense against loss, each input sent three times -- is (3 + 28) x 20
-= **620 bytes per second**: a 1990s modem could do it.
-
-### 3. Lockstep: exchange inputs, simulate everywhere
-
-```
-   tick:    1     2     3     4
-   peer A:  a1    a2    a3    a4  ---.
-                                      >  each peer applies tick n only
-   peer B:  b1    b2    b3    b4  ---'   when it has a_n and b_n: both
-                                          compute update (a_n, b_n)
-```
-
-Every peer runs the whole game; each tick, it sends its input and
-waits for everyone else's for that tick, then steps. Nothing but inputs
-travels, so it scales to any amount of state (Age of Empires' "1500
-archers on a 28.8 modem"). The costs:
-
-- **Input delay**: to not stall every frame, an input is scheduled a
-  few ticks ahead: pressed at tick n, applied at tick n + 3, time for
-  it to arrive (50 ms one way is 3 frames). The game feels 3 frames
-  late, for everyone.
-- **The slowest peer sets the pace**: a late packet stalls everyone.
-- **Determinism, exactly**: the same inputs must give the same model on
-  every machine, bit for bit. Same binary, same OCaml, the same float
-  operations in the same order: fine (the golden tests already rely on
-  it); a different compiler or CPU could differ in the last bit of a
-  float, and the games drift apart forever: a **desync**. So each peer
-  sends a **checksum** of its model every second, and a mismatch stops
-  the game with a message instead of letting it diverge silently.
-
-### 4. Rollback: predict, then correct
-
-Lockstep's input delay is what fighting games can't accept. **Rollback**
-(GGPO, Tony Cannon, 2006) doesn't wait: each peer applies its own input
-at once, and *predicts* the others' (the simplest prediction: the same
-as their last known input -- usually right, keys stay pressed). When
-the real input arrives and differs, it **rolls back**: restores the
-model of that tick, and replays the ticks since with the real inputs.
-
-```
-   tick:        10   11   12   13        B's input for tick 11 arrives
-   A computes:  m10  m11' m12' m13'      at tick 13, and differs from
-                      |                  the guess: go back to m10, redo
-   A redoes:          m11  m12  m13      11, 12, 13 with it, in one frame
-```
-
-The cost is CPU: replaying up to a round trip of ticks in a single
-frame (4 ticks at 60 ms), and saving every tick's state -- which, with
-Elm's immutable models, is keeping the last few models in a list: no
-copying, no "save state" code. The visible cost: a remote ship jumps a
-little when a guess was wrong.
-
-### 5. Client and server: for more players, and for the web
-
-Past two to four players, and on the web, the usual shape is a
-**server** that owns the game: clients send inputs, the server
-simulates and sends back **snapshots** of the state (Quake, 1996).
-Each client then **predicts** its own ship locally, so its controls
-feel instant (QuakeWorld, John Carmack, 1996), corrects when the
-server's snapshot disagrees (**reconciliation**), and shows the other
-players slightly in the past, **interpolated** between two snapshots,
-so they move smoothly despite jitter. The server can also rewind time
-to check what a shooter saw (**lag compensation**). More bandwidth
-(states, not inputs; **delta compression**: only what changed) but no
-desync possible, and the server can refuse impossible moves (cheating:
-lockstep gives every peer the whole state, so a hacked client can see
-everything).
-
-### 6. Connecting: addresses, NAT, the browser
-
-Two computers at home usually can't reach each other directly: their
-routers' **NAT** shares one public address and drops unknown incoming
-packets. Fixes: a LAN (same network), a server both connect to (a
-relay), or **hole punching** (both send first, through a server that
-told them each other's address). In a browser, there are no UDP
-sockets at all: **WebSockets** (TCP, to a server) or **WebRTC data
-channels** (which can be unreliable and unordered, like UDP, and do
-the hole punching). So the web backend needs a small server: a relay,
-native OCaml, part of this plan.
+- **Wire** (§2): fixed sizes, network byte order, variable-length
+  integers -- the same seven-bits-per-byte trick as MIDI's delta times
+  ([`notes_audio_midi.md`](../tutorials/notes_audio_midi.md) §4); a
+  parser that rejects garbage, because it is fed by the Internet. The
+  bandwidth arithmetic that shapes the protocol (1,740 bytes/s naive,
+  620 with three inputs per packet at 20 Hz) is in the tutorial.
+- **Sim_net** (§3): no source to cite, and the most important module
+  here -- a seeded, in-process network with latency, jitter, loss,
+  duplication and reordering. Gabriel Gambetta's "Fast-Paced
+  Multiplayer" demos, with their latency sliders, are the model for
+  what it should feel like.
+- **Lockstep** (§4): Doom (1993) over IPX; Paul Bettner and Mark
+  Terrano, "1500 Archers on a 28.8: Network Programming in Age of
+  Empires and Beyond" (GDC 2001), which is also the best account of
+  why determinism, not bandwidth, is the hard part.
+- **Checksum** (§4): a hash of the serialized model, compared every
+  second -- the difference between a bug and a ghost story.
+- **Rollback** (§5): GGPO (Tony Cannon, 2006; open sourced 2019); and
+  its ancestor, David Jefferson's "Virtual Time" (ACM TOPLAS, 1985),
+  where rolling back a speculative simulation was already called Time
+  Warp.
+- **Snapshot** (§6, later): Quake (1996) and QuakeWorld's client-side
+  prediction (Carmack, 1996); Yahn Bernier, "Latency Compensating
+  Methods in Client/Server In-game Protocol Design and Optimization"
+  (2001) for interpolation, reconciliation and lag compensation; the
+  Tribes model (GDC 2000) for what to send when there is not room for
+  everything.
+- **The transports** (§7): UDP natively; a relay plus WebSockets for
+  the browser, with WebRTC data channels as the later, unreliable
+  option. ENet and Valve's GameNetworkingSockets are what a real
+  project would use instead, and are named in the `.mli` as such.
 
 ## Target layout
 
@@ -264,9 +190,12 @@ playground/Multiplayer.ml the Evan-style API above
    native player.
 6. *(later)* **Client-server**: `Snapshot`, prediction, reconciliation,
    interpolation; the XPilot-like arena.
-7. **Docs**: this plan's "ideas" checked against the code, the numbers
-   measured (bandwidth, delay, rollback's replays per frame); maybe
-   split into a tutorial of its own then.
+7. **Docs**: `notes_networking.md` checked against the code and its
+   numbers measured (bandwidth, delay, rollback's replays per frame),
+   and the related-work note's postscript filled in. (The split into
+   a tutorial and a related-work note this phase anticipated already
+   happened, on 2026-09-20, before the code: the author noticed
+   networking was the one area without them.)
 
 ## Verification
 
@@ -286,46 +215,11 @@ playground/Multiplayer.ml the Evan-style API above
 
 ## Related work
 
-(From memory, to be checked before relying on it for teaching.)
-
-**Games that invented the techniques.** *Doom* (id Software, 1993):
-four players in peer-to-peer lockstep over IPX on a LAN, sending
-inputs; everyone stalls with the slowest. *Quake* (1996): client-server
-over UDP, the server authoritative; then *QuakeWorld* (John Carmack,
-1996) added client-side prediction, for the Internet's latency.
-*Age of Empires* (1997): deterministic lockstep with hundreds of units
-(Paul Bettner and Mark Terrano, "1500 Archers on a 28.8: Network
-Programming in Age of Empires and Beyond", GDC 2001). *Starsiege:
-Tribes* (1998): the "Tribes networking model", prioritizing what each
-client needs (Mark Frohnmayer and Tim Gift, GDC 2000). Valve's Source
-engine: interpolation and lag compensation documented (Yahn Bernier,
-"Latency Compensating Methods in Client/Server In-game Protocol Design
-and Optimization", 2001). *XPilot* (Bjørn Stabell and Ken Ronny
-Schouten, 1991): a multiplayer Spacewar!/Thrust over the Internet, a
-server and X11 clients.
-
-**Rollback.** GGPO (Tony Cannon, 2006; open source since 2019): the
-rollback library that became the fighting games' standard; the idea is
-also Elm-friendly by nature, and was used in emulators' netplay.
-
-**Articles.** Glenn Fiedler's "Networking for Game Programmers" and
-"Networked Physics" series (gafferongames.com), the clearest
-introduction, from UDP to deterministic lockstep and snapshot
-interpolation; Gabriel Gambetta's "Fast-Paced Multiplayer" (client-side
-prediction, reconciliation, interpolation, with live demos).
-
-**Libraries.** ENet (reliable and unreliable channels over UDP), RakNet,
-Valve's GameNetworkingSockets; for the web, WebSockets and WebRTC data
-channels, and servers like Colyseus; in OCaml, Lwt or Eio with sockets,
-and WebSocket libraries.
-
-**Replicated computation.** *Croquet* (David A. Smith, Alan Kay and
-others, 2000s, and the Croquet company today): every participant runs
-the same deterministic computation, only external events are
-replicated through a reflector -- lockstep as a general platform, and
-the closest idea to this plan's "Elm's model is already a pure function
-of the inputs".
-
-**Elm.** Elm has WebSocket support but no multiplayer framework; the
-determinism of its architecture is exactly what lockstep needs, which
-is this plan's bet.
+Split out into
+[`notes_networking_related_work.md`](../related-work/notes_networking_related_work.md)
+(2026-09-20): the games that invented each technique, the transports
+and engines in use today, the distributed-systems ancestors (state
+machine replication, Jefferson's Time Warp, dead reckoning from
+SIMNET and DIS, Croquet's replicated computation), the teaching
+lineage, and what Elm and OCaml each bring -- with this library's
+ceiling stated there rather than here.

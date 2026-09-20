@@ -88,6 +88,9 @@ A reading order, from the simplest:
 8. `notes_gui.md`: interfaces -- widgets, layout, text editing, and
    the four answers to where an interface's state lives, one of which
    this playground already is (`gui/`, `appkits/`, `apps/`).
+9. `notes_networking.md`: other players -- packets and latency in
+   frames, lockstep, rollback, client-server, and the determinism
+   every one of them rests on (`network/`).
 
 ## related-work/: where this project stands
 
@@ -101,9 +104,11 @@ A reading order, from the simplest:
   `notes_physics3d_related_work.md`, `notes_audio_related_work.md`,
   `notes_ai_related_work.md`, `notes_inspect_related_work.md` (the
   debuggers and live environments), `notes_gui_related_work.md` (the
-  toolkits, the architectures, and the compound documents); and
-  `notes_vs_doom_quake.md`, the
-  software renderers of the id Software classics.
+  toolkits, the architectures, and the compound documents),
+  `notes_networking_related_work.md` (the netcodes, and the
+  distributed-systems algorithms the games rediscovered); and
+  `notes_vs_doom_quake.md`, the software renderers of the id Software
+  classics.
 
 ## dev/: developing and debugging
 
