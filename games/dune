@@ -37,6 +37,7 @@
     TinyTowerDefense
     TinyDune2
     TinyWarcraft2
+    TinySonic
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

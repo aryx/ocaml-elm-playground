@@ -515,9 +515,31 @@ few techniques with no script:
   startup, the best possible, not a slow backend. The per-frame
   `-debug` log (view and draw times) tells the work apart from the
   waiting.
+- **A scenario test is the debugger for a game's physics**: when a hero
+  falls through the world, a screenshot says "he is gone" and nothing
+  more. The `tests/games/` test that plays the game headlessly can
+  print a line every 30 frames (`x`, `y`, the speed, the angle, on the
+  ground or in the air), then every frame around the moment it goes
+  wrong, and -- the useful part -- what the helper the game trusts
+  *returns* there: printing `Slope.ground`'s answer showed "none" where
+  there was plainly ground, which turned a vague "Sonic falls" into
+  "the sensors give up when he is buried more than a tile deep", and
+  from there into the real bug (the loop's tiles were solid everywhere
+  outside the circle, so he ran into a buried wall). Print the data the
+  code reads, not only the state it produces.
+- **A scenario test can pass for the wrong reason**: "he went round the
+  loop" was green while the hero was falling through the floor at
+  y = -95866, and "three rounds cleared" was green because the counter
+  counted frames of the `ROUND CLEAR` screen. A test that checks a
+  behavior should also check the world still makes sense around it (`y`
+  within the level, `grounded`, the round number rather than a count of
+  frames). When a new test passes first try, suspect it.
 - **A separate build directory when dune's lock is held**: two sessions
   (or an editor's `dune build --watch`) share `_build/`, and a build
   waits for the lock, possibly forever if the other one is stuck.
   `dune build --build-dir _build_other ...` has its own lock, and the
   dune cache makes its first build quick; the tools take
   `BUILD_DIR=_build_other`. Remove it after: it's not ignored by git.
+  A `dune build` sitting at 0% CPU with no other build running is the
+  same thing with a stale lock: kill it (`ps aux | grep dune`) and run
+  it again, rather than waiting.

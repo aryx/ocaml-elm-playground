@@ -79,6 +79,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyTowerDefense", "", 5);
     ("games/software/TinyDune2", "", 5);
     ("games/software/TinyWarcraft2", "", 5);
+    ("games/software/TinySonic", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -110,6 +111,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyMissileCommand", "", 5);
     ("games/software/TinyLemmings", "", 5);
     ("games/software/TinyPuzzleBobble", "", 5);
+    ("games2.5d/software/TinyDungeonMaster", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -195,6 +197,7 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/AiPathfinding", "dijkstra", 120, "d:2");
     ("games/software/AiOthello", "values", 3, "v:2");
     ("games/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
+    ("games/software/TinySonic", "loop", 330, "space:1,right:5-330");
     ("games/software/TinyWarcraft2", "crowd", 300, "space:1,a:10,p:14,right:20-44,space:50");
     ("games/software/TinyTowerDefense", "maze", 400, "space:1,right:20-40,space:45,up:50-56,space:60,up:64-70,space:74,left:80-84,space:90");
     ("games/software/AiOthello", "reply", 60, "space:2");
@@ -279,6 +282,9 @@ let scripted : Testutil_golden.scripted list =
     (* the lemmings out of the hatch, walking, "4" picking the diggers *)
     ("games/software/TinyLemmings", "walking", 500, "space:1,4:10");
     ("games/software/TinyPuzzleBobble", "pop", 52, "space:1,left:3-12,space:20");
+    (* turned east and walked down the corridor: the torch ahead in
+     * its slot, a wall on the right, the dark past the light's reach *)
+    ("games2.5d/software/TinyDungeonMaster", "corridor", 80, "space:1,right:5-6,up:15-60");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

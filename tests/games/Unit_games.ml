@@ -1367,6 +1367,55 @@ let tower_waves () =
   Alcotest.(check bool) "monsters killed" true (!g.score > 0)
 
 (*****************************************************************************)
+(* TinySonic (kits/platformer's Slope) *)
+(*****************************************************************************)
+
+(* holding right for [frames], reporting where he got to *)
+let sonic_run ?(keys = fun _ -> initial_computer.keyboard) (frames : int) : TinySonic.game =
+  let open TinySonic in
+  let g = ref (new_game ()) in
+  for i = 1 to frames do
+    g := update_game (computer ~keyboard:(keys i) i) (Scene2d.start Title) !g
+  done;
+  !g
+
+let right (_ : int) : keyboard = { initial_computer.keyboard with kright = true }
+
+let sonic_walks () =
+  let open TinySonic in
+  let g = sonic_run ~keys:right 240 in
+  Printf.printf "at %.0f, %.0f: speed %.2f, angle %.0f, grounded %b, rings %d\n" g.sonic.x g.sonic.y g.sonic.gsp g.sonic.angle
+    g.sonic.grounded g.taken;
+  Alcotest.(check bool) "he ran right" true (g.sonic.x > 400.);
+  Alcotest.(check bool) "still in the world" true (g.sonic.y > 0. && g.sonic.y < 200.);
+  Alcotest.(check bool) "fast, on the ground or over a bump" true
+    (Float.abs (if g.sonic.grounded then g.sonic.gsp else g.sonic.vx) > 4.);
+  Alcotest.(check bool) "picking up rings" true (g.taken > 0)
+
+(* the loop: running at it fast enough, he goes round -- the modes
+ * change under him, nothing else *)
+let sonic_loop () =
+  let open TinySonic in
+  let g = ref (new_game ()) and modes = ref [] and highest = ref 0. and i = ref 0 in
+  (* he holds right all the way to the sign post, as a player would *)
+  while !i < 60 * 30 && !g.sonic.x < fst goal_at do
+    incr i;
+    g := update_game (computer ~keyboard:(right !i) !i) (Scene2d.start Title) !g;
+    if not (List.mem !g.sonic.mode !modes) then modes := !g.sonic.mode :: !modes;
+    if !g.sonic.x > 900. && !g.sonic.x < 1200. then highest := Float.max !highest !g.sonic.y
+  done;
+  Printf.printf "modes round the loop: %d; highest in it %.0f; ended at %.0f, %.0f\n" (List.length !modes) !highest !g.sonic.x
+    !g.sonic.y;
+  Alcotest.(check bool) "he went up the loop's wall" true (List.mem Slope.Right_wall !modes || List.mem Slope.Left_wall !modes);
+  Alcotest.(check bool) "and along its ceiling" true (List.mem Slope.Ceiling !modes);
+  Alcotest.(check bool) "over the top of it" true (!highest > 150.);
+  Alcotest.(check bool) "he came out the other side" true (!g.sonic.x > 1200.);
+  Alcotest.(check bool) "still in the world" true (!g.sonic.y > 0. && !g.sonic.y < 400.);
+  Alcotest.(check bool) "and on the ground" true !g.sonic.grounded
+
+let tests_sonic = [ t "TinySonic, he runs right" sonic_walks; t "TinySonic, the loop" sonic_loop ]
+
+(*****************************************************************************)
 (* TinyWarcraft2 (ai/'s Pathfind: a flow field) *)
 (*****************************************************************************)
 
@@ -1551,6 +1600,58 @@ let tron_computer () =
       Alcotest.(check bool) "the computer's points" true (g.score2 >= 1)
   | Title -> Alcotest.fail "still on the title"
 
+(*****************************************************************************)
+(* TinyDungeonMaster *)
+(*****************************************************************************)
+
+(* The dungeon is winnable, and only in this order: the iron key is
+ * within reach at the start but the stairs are not; the key opens the
+ * iron door, which opens the north half -- still not the stairs; the
+ * lever there raises the portcullis, which is the only way in. *)
+let dungeon_master_winnable () =
+  let open TinyDungeonMaster in
+  (* every cell the hero can walk to from where it stands *)
+  let reach (g : game) = List.map fst (Pathfind.field (problem g) (g.x, g.y)) in
+  let one (c : char) (map : Tilemap.t) =
+    match Tilemap.find map c with [ cell ] -> cell | _ -> Alcotest.failf "not one %c in the dungeon" c
+  in
+  let g = new_game () in
+  let key = one 'k' g.map and stairs = one '>' g.map in
+  Alcotest.(check bool) "the key is reachable" true (List.mem key (reach g));
+  Alcotest.(check bool) "the stairs are not" false (List.mem stairs (reach g));
+  (* at the door, with the key *)
+  let g = hand { g with x = 6; y = 9; facing = North; keys = 1 } in
+  Alcotest.(check bool) "the key opened the door" false (wall (Tilemap.get g.map 6 8));
+  Alcotest.(check int) "and was used up" 0 g.keys;
+  Alcotest.(check bool) "the stairs are still shut in" false (List.mem stairs (reach g));
+  (* at the lever, beyond it *)
+  let g = hand { g with x = 12; y = 7; facing = North } in
+  Alcotest.(check (option char)) "the lever stays pulled" (Some 'l') (Tilemap.get g.map 12 6);
+  Alcotest.(check bool) "and the stairs can be reached" true (List.mem stairs (reach g))
+
+(* The rule the fights are built on: a monster that has just struck must
+ * wait [attack_rest] frames and one that has just moved [move_rest], so
+ * a hero who steps out of reach after each blow makes it spend its
+ * clock closing the distance again instead of hitting. That is Dungeon
+ * Master's dance, and it is the whole of it. *)
+let dungeon_master_dance () =
+  let open TinyDungeonMaster in
+  let g = { (new_game ()) with x = 3; y = 14; monsters = [ { mx = 4; my = 14; hp = monster_hp; cool = 0; hurt = 0 } ] } in
+  let g = step_monsters g in
+  Alcotest.(check int) "it strikes" (max_hp - claw) g.hp;
+  Alcotest.(check int) "then it must wait" attack_rest (List.hd g.monsters).cool;
+  (* out of its reach while it waits *)
+  let g = step { g with rest = 0 } West in
+  Alcotest.(check (pair int int)) "a step away" (2, 14) (g.x, g.y);
+  let g = ref g in
+  for _ = 1 to attack_rest + 1 do
+    g := step_monsters !g
+  done;
+  let m = List.hd !g.monsters in
+  Alcotest.(check int) "no second blow" (max_hp - claw) !g.hp;
+  Alcotest.(check (pair int int)) "it closed the distance instead" (3, 14) (m.mx, m.my);
+  Alcotest.(check int) "and must wait again" move_rest m.cool
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -1613,6 +1714,8 @@ let tests =
       t "TinyTowerDefense, the maze and the referee" tower_maze;
       t "TinyTowerDefense, a monster finds its way again" tower_repath;
       t "TinyTowerDefense, towers hold the first waves" tower_waves;
+      t "TinySonic, he runs right" sonic_walks;
+      t "TinySonic, the loop" sonic_loop;
       t "TinyWarcraft2, a crowd on one flow field" warcraft_crowd;
       t "TinyWarcraft2, gold and wood" warcraft_gather;
       t "TinyWarcraft2, the fog of war" warcraft_fog;
@@ -1623,4 +1726,6 @@ let tests =
       t "AiOthello, the rules" othello_rules;
       t "AiOthello, alpha-beta agrees with minimax" othello_alphabeta;
       t "AiOthello, the computer beats a greedy player" othello_greedy;
-      t "TinyTron, the computer outlasts a straight line" tron_computer ]
+      t "TinyTron, the computer outlasts a straight line" tron_computer;
+      t "TinyDungeonMaster, the key, the door, the lever, the stairs" dungeon_master_winnable;
+      t "TinyDungeonMaster, the dance" dungeon_master_dance ]

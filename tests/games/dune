@@ -154,6 +154,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinySonic.ml)
+ (deps (:src %{project_root}/games/TinySonic.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyWarcraft2.ml)
  (deps (:src %{project_root}/games/TinyWarcraft2.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
@@ -171,6 +176,11 @@
 (rule
  (target AiOthello.ml)
  (deps (:src %{project_root}/games/AiOthello.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDungeonMaster.ml)
+ (deps (:src %{project_root}/games2.5d/TinyDungeonMaster.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (test
@@ -193,7 +203,7 @@
    kit_platformer
    kit_brawler
    kit_puzzle
-   ai ; AiOthello's Minimax and Pathfind
+   ai ; AiOthello's Minimax, TinyDungeonMaster's Pathfind
    kit_rts
  )
 )

@@ -64,10 +64,12 @@
    %{project_root}/games/software/TinyMissileCommand.exe
    %{project_root}/games/software/TinyLemmings.exe
    %{project_root}/games/software/TinyPuzzleBobble.exe
+   %{project_root}/games2.5d/software/TinyDungeonMaster.exe
    %{project_root}/games/software/AiOthello.exe
    %{project_root}/games/software/TinyTowerDefense.exe
    %{project_root}/games/software/TinyDune2.exe
    %{project_root}/games/software/TinyWarcraft2.exe
+   %{project_root}/games/software/TinySonic.exe
    %{project_root}/examples/software/LogoFractals.exe
  )
 )

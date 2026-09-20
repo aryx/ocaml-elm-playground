@@ -39,6 +39,7 @@
 (copy_files ../TinyTowerDefense.ml)
 (copy_files ../TinyDune2.ml)
 (copy_files ../TinyWarcraft2.ml)
+(copy_files ../TinySonic.ml)
 
 (executables
   (names
@@ -79,6 +80,7 @@
     TinyTowerDefense
     TinyDune2
     TinyWarcraft2
+    TinySonic
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"kit_platformer" (fun _env -> Unit_platformer.tests)
+let () = Testo.interpret_argv ~project_name:"kit_platformer" (fun _env -> Unit_platformer.tests @ Unit_slope.tests)

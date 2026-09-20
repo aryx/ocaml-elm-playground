@@ -1,5 +1,5 @@
 ; claude: the platformer kit's worked examples (Tile_move.mli,
-; Ladder.mli), run by 'make test'
+; Ladder.mli, Slope.mli), run by 'make test'
 (test
  (name Test)
  (libraries
