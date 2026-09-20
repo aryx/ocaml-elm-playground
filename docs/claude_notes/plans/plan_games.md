@@ -627,6 +627,46 @@ a dimension. (Names and dates from memory, to check.)
   transform carries an orientation too, and which is a bigger game
   than this, not a port of it.
 
+### 22. The arcade dungeon crawl: Gauntlet
+
+Dandy (Atari 800, 1983), Gauntlet (Atari Games, 1985, Ed Logg) and
+Gauntlet II (1986: four of the same hero, the deflecting walls, and
+the voice), then every crawl with a spawner in it. (Names and dates
+from memory, to check.)
+
+- **Toy**: TinyGauntlet2 (DONE: `games/TinyGauntlet2.ml`, two dungeons
+  read as strings, four heroes that differ only by a row of numbers,
+  the generators, keys and doors, food, potions, treasure, and the
+  voice saying what just happened).
+- **The ideas**, in the order they matter:
+  - **the generator**: the monsters are a *flow*, not a set -- a tile
+    that makes another one for ever until it is shot, so killing what
+    comes at you is losing slowly, and the tap matters more than the
+    water. Every crowd game since borrows it;
+  - **health is the clock**: it drains by itself (10 a second here, of
+    700), food is the only way to buy more, and every choice in the
+    game -- fight? go round for the treasure? -- is the same question.
+    In the arcade that clock was also the coin slot;
+  - **stupid monsters on purpose**, with `chase=field` to see the
+    difference. Measured, on a pen whose way out faces away from the
+    hero: the greedy walk leaves 0 of 3 arriving (231 pixels away
+    after 15 seconds), one Dijkstra flow field from the hero brings 3
+    of 3 (1 pixel). On open floor or round a pillar the greedy walk
+    arrives too -- trying the other axis when one is blocked is
+    already a wall-follower -- so a dungeon of rooms and corridors is
+    exactly where the cheap rule holds up;
+  - and the meanest rule in arcade history: **your shot destroys the
+    food**, the one thing keeping you alive.
+- **Kit**: none of its own. The flow field is `ai/Pathfind` through
+  `kits/rts`' `Orders` (its third user, after TinyDune2 and
+  TinyWarcraft2: a crowd walking to one place is the same problem
+  whether it is peasants or grunts). Not `kits/maze`: `Grid_move`
+  locks a mover to the middle of a tile, which is Pac-Man's movement,
+  not Gauntlet's eight directions with sliding.
+- **Exercises**: the second player (the arcade's real subject, and the
+  shared food that makes friends fight), the thief, "It's a trap!",
+  walls that deflect shots.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,

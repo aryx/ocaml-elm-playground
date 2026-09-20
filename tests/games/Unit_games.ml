@@ -2216,6 +2216,125 @@ let portal_cube () =
   in
   Alcotest.(check bool) "the cube is on the button, the door is open" true g.door_open
 
+(*****************************************************************************)
+(* TinyGauntlet2 *)
+(*****************************************************************************)
+
+(* does [s] contain [needle]? (for the voice's lines) *)
+let contains (needle : string) (s : string) : bool =
+  let n = String.length needle and m = String.length s in
+  let rec go i = i + n <= m && (String.sub s i n = needle || go (i + 1)) in
+  go 0
+
+let gauntlet_game ?(field = false) ?(level = 0) () : TinyGauntlet2.game =
+  TinyGauntlet2.load (List.nth TinyGauntlet2.heroes 0) field level (0, 0, 0)
+
+let gauntlet_play (frames : int) ?(keyboard = fun (_ : int) -> initial_computer.keyboard) (g : TinyGauntlet2.game) : TinyGauntlet2.game =
+  let s = ref g and scenes = ref (Scene2d.start (TinyGauntlet2.Playing g)) in
+  for i = 1 to frames do
+    let c = computer ~keyboard:(keyboard i) i in
+    scenes := Scene2d.update c !scenes;
+    s := TinyGauntlet2.update_game c !scenes !s
+  done;
+  !s
+
+(* The generator is the game: left alone for ten seconds the room
+ * fills, and the only thing that stops it is shooting the tile
+ * itself -- killing what has come out changes nothing. *)
+let gauntlet_generators () =
+  let open TinyGauntlet2 in
+  let g = gauntlet_play 600 (gauntlet_game ()) in
+  Alcotest.(check bool) "the room fills by itself" true (List.length g.monsters >= 4);
+  (* the same, with the generators taken out at the start *)
+  let quiet = gauntlet_play 600 { (gauntlet_game ()) with gens = [] } in
+  Alcotest.(check int) "with the taps shut, nothing comes" 0 (List.length quiet.monsters)
+
+(* Health is the clock: it goes down by itself, ten points a second,
+ * whatever the hero does. *)
+let gauntlet_health_is_the_clock () =
+  let open TinyGauntlet2 in
+  let g = { (gauntlet_game ()) with gens = [] } in
+  let after = gauntlet_play 60 g in
+  Alcotest.(check int) "a second costs ten points" 690 after.health;
+  (* and food buys it back *)
+  let fed = gauntlet_play 60 { g with x = fst (center_of g.map (List.hd (Tilemap.find g.map 'F'))); y = snd (center_of g.map (List.hd (Tilemap.find g.map 'F'))) } in
+  Alcotest.(check bool) "food is worth more than the second it takes" true (fed.health > after.health)
+
+(* "Elf shot the food!": the hero's own shot destroys the thing
+ * keeping him alive, and the voice says so. *)
+let gauntlet_shot_the_food () =
+  let open TinyGauntlet2 in
+  let g = { (gauntlet_game ()) with gens = [] } in
+  let fx, fy = center_of g.map (List.hd (Tilemap.find g.map 'F')) in
+  (* stand to the right of the food, facing it, and fire *)
+  let g = { g with x = fx +. 120.; y = fy; facing = (-1., 0.) } in
+  let loaves (g : game) = List.length (Tilemap.find g.map 'F') in
+  let before = loaves g in
+  let g = gauntlet_play 30 ~keyboard:(fun i -> { initial_computer.keyboard with kspace = i = 1 }) g in
+  Alcotest.(check int) "one loaf less" (before - 1) (loaves g);
+  let said = match g.says with Some (what, _) -> what | None -> "" in
+  Alcotest.(check bool) "and the voice says who did it" true (contains "SHOT THE FOOD" said)
+
+(* The two chases, on the layout that tells them apart: a pen whose
+ * only opening faces *away* from the hero. Walking towards him is
+ * walking into its back wall, so the arcade's greedy monsters stay
+ * there for ever, while one Dijkstra from the hero sends them out the
+ * other side and round. This is the exact shape where a flow field
+ * earns its search -- on an open floor, or round a single pillar, the
+ * greedy walk gets there too. The numbers are in the game's header. *)
+let gauntlet_two_chases () =
+  let open TinyGauntlet2 in
+  let pen = [ (7, 14); (7, 15); (7, 16); (8, 14); (8, 16) ] in
+  let stats (field : bool) =
+    let g = { (gauntlet_game ~field ()) with gens = [] } in
+    let map = List.fold_left (fun m (col, row) -> Tilemap.set m col row '#') g.map pen in
+    let hx, hy = center_of map (3, 15) in
+    let mx, my = center_of map (8, 15) in
+    let g =
+      { g with map; x = hx; y = hy; monsters = List.init 3 (fun i -> { kind = Grunt; mx; my = my +. (float_of_int i *. 2.); life = 3; cool = 60 }) }
+    in
+    let g = gauntlet_play 900 g in
+    let ds = List.map (fun (m : monster) -> Float.hypot (m.mx -. g.x) (m.my -. g.y)) g.monsters in
+    (List.length (List.filter (fun d -> d < 80.) ds), List.fold_left ( +. ) 0. ds /. float_of_int (max 1 (List.length ds)))
+  in
+  let dumb_there, dumb_mean = stats false and smart_there, smart_mean = stats true in
+  Alcotest.(check int) "the greedy monsters are still in the pen" 0 dumb_there;
+  Alcotest.(check bool) "the field brings them out and round" true (smart_there > 0);
+  Alcotest.(check bool) "and much closer" true (smart_mean < dumb_mean /. 2.)
+
+(* A robot with the map walks the dungeon: it takes the key, opens the
+ * door and finds the way down. It is the level's own test -- a
+ * dungeon whose exit cannot be reached is not a dungeon. *)
+let gauntlet_robot_escapes () =
+  let open TinyGauntlet2 in
+  let g = { (gauntlet_game ()) with gens = []; health = 9999 } in
+  let walkable (col, row) = match Tilemap.get g.map col row with Some c -> not (c = '#' || c = 'b') | None -> false in
+  let goal (g : game) =
+    match (Tilemap.find g.map 'K', Tilemap.find g.map 'X') with
+    | k :: _, _ when g.keys = 0 -> k
+    | _, x :: _ -> x
+    | _ -> cell_of g.map g.x g.y
+  in
+  let s = ref g and scenes = ref (Scene2d.start (Playing g)) and out = ref false and i = ref 0 in
+  while (not !out) && !i < 3000 do
+    incr i;
+    let g = !s in
+    let here = cell_of g.map g.x g.y in
+    let keyboard =
+      match Orders.path ~walkable ~from:here (goal g) with
+      | _ :: next :: _ ->
+          let tx, ty = center_of g.map next in
+          { initial_computer.keyboard with kright = tx > g.x +. 4.; kleft = tx < g.x -. 4.; kup = ty > g.y +. 4.; kdown = ty < g.y -. 4. }
+      | _ -> initial_computer.keyboard
+    in
+    let c = computer ~keyboard !i in
+    scenes := Scene2d.update c !scenes;
+    s := update_game c !scenes !s;
+    if escaped !s then out := true
+  done;
+  Alcotest.(check bool) "the robot found the way down" true !out;
+  Alcotest.(check bool) "having opened the door with the key it picked up" true (!s.keys = 0 && !i > 60)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -2317,4 +2436,9 @@ let tests =
       t "TinyPortal2D, the gun sticks to white walls only" portal_gun;
       t "TinyPortal2D, chamber 1: through the side walls" portal_chamber1;
       t "TinyPortal2D, chamber 2: the fling" portal_fling;
-      t "TinyPortal2D, chamber 3: the cube on the button" portal_cube ]
+      t "TinyPortal2D, chamber 3: the cube on the button" portal_cube;
+      t "TinyGauntlet2, the generators fill the room" gauntlet_generators;
+      t "TinyGauntlet2, health is the clock" gauntlet_health_is_the_clock;
+      t "TinyGauntlet2, shot the food" gauntlet_shot_the_food;
+      t "TinyGauntlet2, the two chases" gauntlet_two_chases;
+      t "TinyGauntlet2, a robot walks out of the dungeon" gauntlet_robot_escapes ]

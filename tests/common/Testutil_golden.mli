@@ -18,9 +18,12 @@
  * another one, expect a few frames to differ slightly without anything
  * having changed (rounding in the antialiasing, in the shading or in a
  * z-comparison landing the other way), a handful of pixels off by 1 in
- * 2D and, where a whole span of a triangle tips over, more in 3D.
- * That is not a regression to chase; a real one moves pixels you can
- * see in <dir>/actual/. *)
+ * 2D and, where a whole span of a triangle tips over, more in 3D. A
+ * scene deep into a simulation drifts much further than that -- the
+ * 300 marbles of PhysicsMarbles differ in 10000 pixels after two
+ * seconds, because one rounding apart is enough for a pile to settle
+ * differently. That is not a regression to chase; a real one moves
+ * pixels you can see in <dir>/actual/. *)
 
 (* A scene: an executable, from the project's root and without its .exe
  * (e.g. "examples3d/Cubes3d"), the debug keys to press ("" for none),

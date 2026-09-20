@@ -43,6 +43,7 @@
 (copy_files ../TinyRobotron.ml)
 (copy_files ../TinyPinball.ml)
 (copy_files ../TinyPortal2D.ml)
+(copy_files ../TinyGauntlet2.ml)
 
 (executables
   (names
@@ -87,10 +88,11 @@
     TinyRobotron
     TinyPinball
     TinyPortal2D
+    TinyGauntlet2
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind
-    kit_rts ; TinyDune2's and TinyWarcraft2's orders and paths (minimax, alpha-beta)
+    kit_rts ; TinyDune2's, TinyWarcraft2's and TinyGauntlet2's orders and paths
     unix
     elm_playground
     kit_racing ; TinyMicroMachines' Topdown
