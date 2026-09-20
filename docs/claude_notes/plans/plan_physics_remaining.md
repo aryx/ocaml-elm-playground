@@ -45,7 +45,10 @@ difference (`solver=off`, `rotation=off`).
 ## 2. Seeing the physics
 
 - **The debug keys** of the plan's "Debug drawing and keys", never
-  done: with `-debug-keys`, "e" the integrator, "v" velocity and force
+  done -- and now the physics panel of
+  [`plan_inspect_teaching.md`](plan_inspect_teaching.md) (phase 1),
+  which gives them one mechanism, one key and golden frames instead of
+  a per-game flag: with `-debug-keys`, "e" the integrator, "v" velocity and force
   arrows, "c" contact points and normals (the manifold's two points,
   the solver's impulses as their lengths: `Solver.impulses`), "g" the
   broad phase's grid. Today, `Physics.debug` (hitboxes and velocity)

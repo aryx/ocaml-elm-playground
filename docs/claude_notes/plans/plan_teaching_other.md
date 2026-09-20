@@ -61,28 +61,23 @@ Elm, the p5.js editor, or the OCaml playground:
 Size and startup time are the risks (the toplevel is several
 megabytes); to measure first.
 
-## 3. A time-travel debugger
+## 3. A time-travel debugger, and seeing the engines
 
-Elm's architecture makes it almost free, and it's the best teaching
-tool the architecture offers: since the model is a pure function of
-the inputs, the whole run can be recorded and replayed.
+Started, so it is a plan of its own:
+[`plan_inspect_teaching.md`](plan_inspect_teaching.md)
+(`playground/Inspect`: the per-engine panels -- physics contacts, the
+broad phase's grid, A*'s frontier, the audio oscilloscope, overdraw --
+and the recorded run that pauses, steps, rewinds and scrubs, with
+Victor's trail of a sprite's past and future). The tutorial is
+[`notes_inspect.md`](../tutorials/notes_inspect.md), the related-work
+note
+[`notes_inspect_related_work.md`](../related-work/notes_inspect_related_work.md).
 
-- **Pause, step** one frame at a time, **rewind**, with a slider over
-  the frames.
-- **See the model** at any frame (a printer for the model: a generic
-  one, or a `show` function the game provides).
-- **Replay after a change**: edit `update`, and rerun the same
-  recorded inputs -- does the bug still happen?
-- **Export** a run as a test: the recorded inputs, and a golden frame
-  at the end (`tests/2d/`'s machinery, for students' games).
-
-The pieces exist: deterministic games (the fixed step, seeded
-randomness: `plan_playground_other.md` item 1), recorded inputs (`-keys`
-is the start), old models kept as values (the networking plan's
-rollback). Elm shipped exactly this debugger in 0.18 (2016); Bret
-Victor's "Inventing on Principle" (2012) is the manifesto for it.
-Where: the native backends first (a key opens it, `-debug-keys`), the
-web backend and the browser editor after.
+What this section used to list -- pause and step, a slider over the
+frames, seeing the model, replaying after a change, exporting a run as
+a test -- are its phases 3 to 6; live code editing, which needs the
+browser toplevel of section 2 above, stays out of it, and the plan
+says what it would cost.
 
 ## 4. Randomness and procedural generation
 

@@ -82,6 +82,9 @@ A reading order, from the simplest:
    ghost's mind, an opponent's search (`ai/`);
    `notes_ai_learning.md`, the same when nobody writes the rules:
    neural networks, from one neuron to self-play.
+7. `notes_inspect.md`: seeing all of the above while it runs -- an
+   engine drawing its own thinking, and a run you can rewind
+   (`playground/Inspect`).
 
 ## related-work/: where this project stands
 
@@ -93,7 +96,8 @@ A reading order, from the simplest:
   `notes_raytracing_related_work.md` (the other renderer),
   `notes_physics_related_work.md` and
   `notes_physics3d_related_work.md`, `notes_audio_related_work.md`,
-  `notes_ai_related_work.md`; and `notes_vs_doom_quake.md`, the
+  `notes_ai_related_work.md`, `notes_inspect_related_work.md` (the
+  debuggers and live environments); and `notes_vs_doom_quake.md`, the
   software renderers of the id Software classics.
 
 ## dev/: developing and debugging
@@ -108,7 +112,8 @@ The tools themselves are in `scripts/` (see `scripts/README.md`).
 ## plans/: what's next, and what was done
 
 - The open plans: `plan_physics3d_teaching.md`,
-  `plan_raytracing_teaching.md`, `plan_ai_teaching.md`,
+  `plan_raytracing_teaching.md`, `plan_inspect_teaching.md`,
+  `plan_ai_teaching.md`,
   `plan_audio_teaching.md`, `plan_games.md`, `plan_games3d.md`,
   `plan_networking_teaching.md`,
   `plan_teaching_languages.md`, `plan_teaching_other.md`,

@@ -15,7 +15,9 @@ command, which the playground hides); our games use OCaml's
 `Random.self_init` (Snake, Tetris, StarCollector3d, Asteroid's
 directions), which makes every run different: no golden frames for
 them, no deterministic physics, no lockstep networking, no
-time-travel debugger.
+time-travel debugger. It is phase 0 of
+[`plan_inspect_teaching.md`](plan_inspect_teaching.md), which cannot
+replay a run that is not deterministic.
 
 The fix: a **seed** in the `computer` (or the model), and pure
 functions from a seed to a value and the next seed -- Elm's `Random`,

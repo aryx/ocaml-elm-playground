@@ -389,7 +389,11 @@ item 4) exists, then uses that.
 ### Drawing what the computer thinks
 
 The best part of game AI is that all of it is visible, and none of it
-is visible by default. `playground/Ai_debug.ml`, like `Audio_debug`:
+is visible by default. `playground/Ai_debug.ml`, like `Audio_debug`
+(and, once it exists, as one panel of
+[`plan_inspect_teaching.md`](plan_inspect_teaching.md)'s `Inspect`,
+which owns the key, the layout and the cycling so every engine's
+panel behaves the same):
 Playground shapes, so any backend can draw them, on the "v" key with
 `-debug-keys`:
 
