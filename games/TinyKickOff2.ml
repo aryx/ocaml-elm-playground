@@ -94,11 +94,10 @@ type player = {
   touch : int; (* frames before he may touch the ball again *)
 }
 
-type ball = { bx : number; by : number; vx : number; vy : number; last : side option (* who touched it last *) }
-
 type game = {
   players : player list;
-  ball : ball;
+  ball : Free_ball.t;
+  last : side option; (* which side touched it last: the referee's business, not the ball's *)
   mine : int; (* which of my players I am running, an index into [players] *)
   power : number; (* the kick being charged, 0 to 1 *)
   bent : int; (* frames of aftertouch left on my kick *)
@@ -127,8 +126,8 @@ let formation : (number * number) list = [ (0., -0.95); (-0.5, -0.55); (0.5, -0.
 
 let keeper (p : player) : bool = snd p.home < -0.9
 
-let place (side : side) ((fx, fy) : number * number) : number * number =
-  match side with South -> (fx * half_w * 0.8, fy * half_h) | North -> (0. - (fx * half_w * 0.8), 0. - (fy * half_h))
+let place (side : side) (spot : Formation.spot) : number * number =
+  Formation.at ~half_w:(half_w * 0.8) ~half_h ~up:(side = South) spot
 
 let team (side : side) : player list =
   List.map
@@ -137,10 +136,8 @@ let team (side : side) : player list =
       { side; home; px; py; dir = (0., (match side with South -> 1. | North -> -1.)); touch = 0 })
     formation
 
-let new_ball () : ball = { bx = 0.; by = 0.; vx = 0.; vy = 0.; last = None }
-
 let new_game (glued : bool) : game =
-  { players = team South @ team North; ball = new_ball (); mine = 4; power = 0.; bent = 0; south = 0; north = 0; clock = 60 *.. 120;
+  { players = team South @ team North; ball = Free_ball.still 0. 0.; last = None; mine = 4; power = 0.; bent = 0; south = 0; north = 0; clock = 60 *.. 120;
     message = Some ("KICK OFF", 90); glued; kickoff = 60 }
 
 let initial_model = { scenes = Scene2d.start Title }
@@ -153,28 +150,22 @@ let goal_line (side : side) : number = match side with South -> half_h | North -
 
 (* the ball rolls, losing a little speed to the grass; the arrows bend
  * it while the aftertouch lasts *)
-let roll (computer : computer) (g : game) : ball =
-  let b = g.ball in
+let roll (computer : computer) (g : game) : Free_ball.t =
   let ax, ay = if g.bent > 0 then to_xy computer.keyboard else (0., 0.) in
-  let vx = (b.vx + (ax * aftertouch)) * friction and vy = (b.vy + (ay * aftertouch)) * friction in
-  { b with bx = b.bx + vx; by = b.by + vy; vx; vy }
+  Free_ball.roll ~friction ~push:(ax * aftertouch, ay * aftertouch) g.ball
 
 (* A touch: a player who reaches the ball pushes it ahead of him, in
  * the direction he is running. That is all "having the ball" is here;
  * with [glued] the ball is instead kept at his feet, which is the
  * other game. *)
-let touched (g : game) (p : player) : ball option =
-  let b = g.ball in
-  (* the reach: a little more than the two radii, and it has to be more
-   * than a running player covers in a frame -- at 3.4 pixels a frame a
-   * reach of exactly the radii means a glued ball comes off his feet
-   * on the second one *)
-  if p.touch > 0 || Float.hypot (b.bx - p.px) (b.by - p.py) > player_r + ball_r + 12. then None
-  else
-    let dx, dy = p.dir in
-    let d = Float.max 1e-9 (Float.hypot dx dy) in
-    if g.glued then Some { bx = p.px + (dx / d * (player_r + ball_r)); by = p.py + (dy / d * (player_r + ball_r)); vx = 0.; vy = 0.; last = Some p.side }
-    else Some { b with vx = touch_speed * dx / d; vy = touch_speed * dy / d; last = Some p.side }
+(* the reach is a little more than the two radii, and has to be more
+ * than a running player covers in a frame -- at 3.4 pixels a frame a
+ * reach of exactly the radii means a glued ball comes off his feet on
+ * the second one (see Free_ball.mli) *)
+let reach = player_r + ball_r + 12.
+
+let touched (g : game) (p : player) : Free_ball.t option =
+  if p.touch > 0 then None else Free_ball.touch ~glued:g.glued ~speed:touch_speed ~reach ~hold:(player_r + ball_r) (p.px, p.py) p.dir g.ball
 
 (*****************************************************************************)
 (* The team: a place, not a brain *)
@@ -186,25 +177,19 @@ let touched (g : game) (p : player) : ball option =
  * told. The keeper stays on his line and only moves across it. *)
 let belongs (g : game) (p : player) : number * number =
   let hx, hy = place p.side p.home in
-  if keeper p then (clamp (0. - goal_half) goal_half (g.ball.bx / 2.), hy)
-  else (hx + ((g.ball.bx - hx) * 0.33), hy + ((g.ball.by - hy) * 0.33))
+  if keeper p then (clamp (0. - goal_half) goal_half (g.ball.x / 2.), hy)
+  else Formation.belongs ~pull:0.33 ~home:(hx, hy) ~ball:(g.ball.x, g.ball.y)
 
 let nearest_to_ball (g : game) (side : side) : int =
-  let ds =
-    List.mapi (fun i (p : player) -> (i, p, Float.hypot (g.ball.bx -. p.px) (g.ball.by -. p.py))) g.players
-    |> List.filter (fun (_, (p : player), _) -> p.side = side && not (keeper p))
-  in
-  match List.sort (fun (_, _, a) (_, _, b) -> compare a b) ds with (i, _, _) :: _ -> i | [] -> 0
+  match Formation.nearest (fun (p : player) -> (p.px, p.py)) (fun (p : player) -> p.side = side && not (keeper p)) (g.ball.x, g.ball.y) g.players with
+  | Some i -> i
+  | None -> 0
 
 (* one player, one frame, told where to go *)
-let run_to (p : player) ((tx, ty) : number * number) (speed : number) : player =
-  let dx = tx - p.px and dy = ty - p.py in
-  let d = Float.hypot dx dy in
-  if d < 2. then { p with touch = max 0 (p.touch -.. 1) }
-  else
-    let px = p.px + (speed * dx / d) and py = p.py + (speed * dy / d) in
-    { p with px = clamp (0. - half_w - 30.) (half_w + 30.) px; py = clamp (0. - half_h - 30.) (half_h + 30.) py; dir = (dx / d, dy / d);
-      touch = max 0 (p.touch -.. 1) }
+let run_to (p : player) (target : number * number) (speed : number) : player =
+  let (px, py), (dx, dy) = Formation.run_to ~speed ~bounds:(half_w + 30., half_h + 30.) (p.px, p.py) target in
+  let p = { p with px; py; touch = max 0 (p.touch -.. 1) } in
+  if dx = 0. && dy = 0. then p else { p with dir = (dx, dy) }
 
 (* the computer's players: the nearest to the ball goes for it (and,
  * once he has it, towards the goal he is shooting at), everyone else
@@ -214,8 +199,11 @@ let step_ai (g : game) (i : int) (p : player) : player =
   if keeper p then run_to p (belongs g p) keeper_speed
   else if i <> chaser then run_to p (belongs g p) (run_speed * 0.8)
   else
-    let mine = Float.hypot (g.ball.bx -. p.px) (g.ball.by -. p.py) < 40. in
-    if mine then run_to p (0., goal_line p.side) run_speed else run_to p (g.ball.bx, g.ball.by) run_speed
+    (* inside the reach, not outside it: a chaser who turns for goal
+     * before he can touch the ball only walks away from it (see
+     * games/TinySpeedball2.ml, where that bug stopped the game dead) *)
+    let mine = Free_ball.near (reach * 0.8) (p.px, p.py) g.ball in
+    if mine then run_to p (0., goal_line p.side) run_speed else run_to p (g.ball.x, g.ball.y) run_speed
 
 (*****************************************************************************)
 (* Me *)
@@ -236,7 +224,7 @@ let step_me (computer : computer) (g : game) : game =
  * next second the arrows bend it -- the aftertouch *)
 let kick (computer : computer) (g : game) : game =
   let me = List.nth g.players g.mine in
-  let has = Float.hypot (g.ball.bx -. me.px) (g.ball.by -. me.py) < player_r +. ball_r +. 8. in
+  let has = Free_ball.near (player_r + ball_r + 8.) (me.px, me.py) g.ball in
   if computer.keyboard.kspace then { g with power = Float.min 1. (g.power + 0.04) }
   else if g.power = 0. || not has then { g with power = 0. }
   else begin
@@ -246,7 +234,7 @@ let kick (computer : computer) (g : game) : game =
     let speed = 7. + (11. * g.power) in
     { g with power = 0.; bent = 70;
       players = List.mapi (fun i (p : player) -> if i = g.mine then { p with touch = 14 } else p) g.players;
-      ball = { g.ball with vx = speed * dx / d; vy = speed * dy / d; last = Some South } }
+      last = Some South; ball = { g.ball with vx = speed * dx / d; vy = speed * dy / d } }
   end
 
 (*****************************************************************************)
@@ -256,24 +244,24 @@ let kick (computer : computer) (g : game) : game =
 let say (g : game) (what : string) : game = { g with message = Some (what, 110) }
 
 let restart (g : game) (at : number * number) (_ : side) : game =
-  { g with ball = { (new_ball ()) with bx = fst at; by = snd at }; bent = 0; power = 0. }
+  { g with ball = Free_ball.still (fst at) (snd at); bent = 0; power = 0. }
 
 (* a goal, or the ball out of play: the two things that stop a game *)
 let referee (g : game) : game =
   let b = g.ball in
-  if Float.abs b.by >= half_h && Float.abs b.bx < goal_half then
+  if Float.abs b.y >= half_h && Float.abs b.x < goal_half then
     (* through the posts *)
-    let south_scored = b.by >= half_h in
+    let south_scored = b.y >= half_h in
     let g = if south_scored then { g with south = g.south +.. 1 } else { g with north = g.north +.. 1 } in
     Audio.play Audio.explosion;
     let g = say g (if south_scored then "GOAL!" else "GOAL AGAINST") in
     { (restart g (0., 0.) South) with players = team South @ team North; kickoff = 50 }
-  else if in_play b.bx b.by then g
+  else if in_play b.x b.y then g
   else begin
     Audio.play Audio.blip;
-    let other = match b.last with Some South -> North | _ -> South in
-    let x = clamp (0. - half_w + 20.) (half_w - 20.) b.bx and y = clamp (0. - half_h + 20.) (half_h - 20.) b.by in
-    say { (restart g (x, y) other) with ball = { (new_ball ()) with bx = x; by = y; last = Some other } } "THROW IN"
+    let other = match g.last with Some South -> North | _ -> South in
+    let x = clamp (0. - half_w + 20.) (half_w - 20.) b.x and y = clamp (0. - half_h + 20.) (half_h - 20.) b.y in
+    say { (restart g (x, y) other) with last = Some other } "THROW IN"
   end
 
 (*****************************************************************************)
@@ -305,7 +293,8 @@ let update_game (computer : computer) (g : game) : game =
                * put back at his feet every frame, or it would lag a
                * cooldown's worth behind him and come off *)
               let cool = if g.glued then 0 else 8 in
-              { g with ball = b; players = List.mapi (fun j (p : player) -> if j = i then { p with touch = cool } else p) g.players })
+              { g with ball = b; last = Some (List.nth g.players i).side;
+                players = List.mapi (fun j (p : player) -> if j = i then { p with touch = cool } else p) g.players })
         g
         (List.init (List.length g.players) (fun i -> i))
     in
@@ -362,9 +351,9 @@ let view_player (g : game) (i : int) (p : player) : shape list =
     circle (rgb 250 220 180) 6. |> move (p.px + (dx * 3.)) (p.py + (dy * 3.)) ]
   @ if i = g.mine then [ circle white 4. |> move p.px (p.py + 22.); circle (shirt p.side) 2. |> move p.px (p.py + 22.) ] else []
 
-let view_ball (b : ball) : shape list =
-  [ circle (rgb 20 20 24) (ball_r + 2.) |> fade 0.25 |> move (b.bx + 3.) (b.by - 3.); circle white ball_r |> move b.bx b.by;
-    circle (rgb 40 40 50) 3. |> move b.bx b.by ]
+let view_ball (b : Free_ball.t) : shape list =
+  [ circle (rgb 20 20 24) (ball_r + 2.) |> fade 0.25 |> move (b.x + 3.) (b.y - 3.); circle white ball_r |> move b.x b.y;
+    circle (rgb 40 40 50) 3. |> move b.x b.y ]
 
 let view_world (g : game) : shape list = view_pitch @ List.concat (List.mapi (view_player g) g.players) @ view_ball g.ball
 
@@ -400,7 +389,7 @@ let view (computer : computer) (model : model) : shape list =
   match scenes.scene with
   | Title -> rectangle (rgb 20 60 30) screen.width screen.height :: view_title scenes
   | Playing g ->
-      let cam = Camera2d.origin |> Camera2d.look_at 0. (clamp (0. - half_h + 420.) (half_h - 420.) g.ball.by) in
+      let cam = Camera2d.origin |> Camera2d.look_at 0. (clamp (0. - half_h + 420.) (half_h - 420.) g.ball.y) in
       (rectangle (rgb 24 70 36) screen.width screen.height :: Camera2d.view cam (view_world g) :: view_hud g)
   | Full_time (south, north) ->
       [ rectangle (rgb 20 60 30) screen.width screen.height; text white 5. "FULL TIME" |> move_y 120.;

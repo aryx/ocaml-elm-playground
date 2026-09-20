@@ -408,13 +408,13 @@ let mario64_jump () =
   | _ -> Alcotest.fail "not playing"
 
 (*****************************************************************************)
-(* TinyMarble *)
+(* TinyMarbleMadness *)
 (*****************************************************************************)
 
 (* the first ramp, "vvvv" twice between the 9s and the 7s: its edges at
  * 9, 8 and 7; halfway down its first row, 8.5 *)
 let marble_ramp () =
-  let open TinyMarble in
+  let open TinyMarbleMadness in
   let x = 2.5 *. cell in
   let at r = Option.get (ground x (r *. cell)) in
   Alcotest.(check (float 1e-9)) "top" 9. (at 4.);
@@ -426,7 +426,7 @@ let marble_ramp () =
 
 (* rolling south until landing: from how high the ball fell *)
 let marble_fall_from (c, r) : number =
-  let open TinyMarble in
+  let open TinyMarbleMadness in
   let rec go b i =
     if i > 600 then Alcotest.fail "never landed"
     else match step (0., 1.) b with _, Some h -> h | b, None -> go b (i + 1)
@@ -436,7 +436,7 @@ let marble_fall_from (c, r) : number =
 (* the shortcut down the cliff, from the 7s to the 2s: 5 high, broken;
  * off the end of the bridge, from the 2s to the 1s: 1 high, fine *)
 let marble_falls () =
-  let open TinyMarble in
+  let open TinyMarbleMadness in
   let cliff = marble_fall_from (2, 7) and step = marble_fall_from (4, 19) in
   Alcotest.(check (float 0.1)) "the cliff" 5. cliff;
   Alcotest.(check bool) "breaks" true (cliff > max_fall);
@@ -446,7 +446,7 @@ let marble_falls () =
 (* collide's worked example: the steelie (2) at 0.1 hits the marble (1)
  * at rest: the marble goes off at 0.133, the steelie on at 0.033 *)
 let marble_steelie () =
-  let open TinyMarble in
+  let open TinyMarbleMadness in
   let me = ball_at (5, 13) in
   let steelie = { me with x = me.x -. 0.9; vx = 0.1 } in
   let me, steelie = collide me 1. steelie 2. in
@@ -457,7 +457,7 @@ let marble_steelie () =
  * itself, onto the 7s, faster than a push on the flat would take it in
  * the same time *)
 let marble_rolls_down () =
-  let open TinyMarble in
+  let open TinyMarbleMadness in
   let b = { (ball_at (2, 3)) with z = 4. *. cell +. 0.01 } in
   let rec go b i = if i = 0 then b else go (fst (step (0., 0.) b)) (i - 1) in
   let b = go b 60 in
@@ -471,7 +471,7 @@ let marble_rolls_down () =
  * never fallen: the course can be won (a weaker braking, 12 times the
  * speed, overshot the first plateau, and the one after the lane) *)
 let marble_robot () =
-  let open TinyMarble in
+  let open TinyMarbleMadness in
   let waypoints = [ (2.5, 7.); (7., 7.5); (12., 7.5); (12., 13.); (4.5, 13.); (4.5, 19.5); (5., 21.); (8., 22.8) ] in
   let s = ref initial_model and todo = ref waypoints and broken = ref 0 and fallen = ref 0 and i = ref 0 in
   while !i < 60 * 45 && (match !s.scene with Finished _ | Time_up _ -> false | _ -> true) do
@@ -2372,7 +2372,7 @@ let kickoff_dribbling ?(glued = false) () : TinyKickOff2.game =
      being measured is the ball, not the other side *)
   let g = { (new_game glued) with kickoff = 0 } in
   let me = { (List.nth g.players g.mine) with px = 0.; py = -200.; dir = (0., 1.) } in
-  { g with players = [ me ]; mine = 0; ball = { (new_ball ()) with bx = 0.; by = -200. +. 22. } }
+  { g with players = [ me ]; mine = 0; ball = Free_ball.still 0. (-200. +. 22.) }
 
 (* The one idea: dribbling up the pitch, a free ball runs ahead of the
  * player and has to be caught up, where a glued one is his feet. The
@@ -2387,12 +2387,13 @@ let kickoff_free_ball () =
       s := update_game (computer ~keyboard:(up i) i) !s;
       let me = List.nth !s.players !s.mine in
       if me.touch > before then incr touches;
-      worst := Float.max !worst (Float.hypot (!s.ball.bx -. me.px) (!s.ball.by -. me.py))
+      worst := Float.max !worst (Float.hypot (!s.ball.x -. me.px) (!s.ball.y -. me.py))
     done;
     (!worst, !touches)
   in
   let free_gap, free_touches = gap false and glued_gap, _ = gap true in
-  Alcotest.(check bool) "glued, the ball is his feet" true (glued_gap < 30.);
+  (* 22: the two radii, which is what "at his feet" means here *)
+  Alcotest.(check bool) "glued, the ball is his feet" true (glued_gap < 24.);
   Alcotest.(check bool) "free, it runs away from him" true (free_gap > 40.);
   Alcotest.(check bool) "but not so far that he cannot catch it" true (free_gap < 120.);
   Alcotest.(check bool) "and he has to touch it again and again" true (free_touches >= 3)
@@ -2408,7 +2409,7 @@ let kickoff_aftertouch () =
        goal the referee puts it on the centre spot and both shots
        measure the same nothing *)
     let g = kickoff_play 40 ~keyboard:(fun i -> if i = 1 then initial_computer.keyboard else { initial_computer.keyboard with kright = bend }) g in
-    g.ball.bx
+    g.ball.x
   in
   let straight = shot false and bent = shot true in
   Alcotest.(check bool) "the bent ball ends up well to the side" true (bent -. straight > 80.)
@@ -2421,20 +2422,20 @@ let kickoff_goal () =
      away, because the game always has someone to run *)
   let g = { (new_game false) with kickoff = 0 } in
   let g = { g with players = [ { (List.nth g.players 4) with px = 0.; py = -400. } ]; mine = 0 } in
-  let g = { g with ball = { (new_ball ()) with bx = 0.; by = half_h -. 30.; vy = 9.; last = Some South } } in
+  let g = { g with ball = { (Free_ball.still 0. (half_h -. 30.)) with vy = 9. }; last = Some South } in
   let g = kickoff_play 20 g in
   Alcotest.(check int) "one nil" 1 g.south;
-  Alcotest.(check bool) "and the ball is back on the centre spot" true (Float.hypot g.ball.bx g.ball.by < 2.)
+  Alcotest.(check bool) "and the ball is back on the centre spot" true (Float.hypot g.ball.x g.ball.y < 2.)
 
 (* Out at the side is a throw-in, to the other team, and the ball
  * comes back on the pitch *)
 let kickoff_throw_in () =
   let open TinyKickOff2 in
   let g = { (new_game false) with kickoff = 0 } in
-  let g = { g with ball = { (new_ball ()) with bx = half_w -. 10.; by = 0.; vx = 9.; last = Some South } } in
+  let g = { g with ball = { (Free_ball.still (half_w -. 10.) 0.) with vx = 9. }; last = Some South } in
   let g = kickoff_play 20 g in
-  Alcotest.(check bool) "the ball is on the pitch again" true (Float.abs g.ball.bx < half_w);
-  Alcotest.(check bool) "and it is theirs" true (g.ball.last = Some North)
+  Alcotest.(check bool) "the ball is on the pitch again" true (Float.abs g.ball.x < half_w);
+  Alcotest.(check bool) "and it is theirs" true (g.last = Some North)
 
 (* The shape of a team: nobody is told the plan, but when the ball
  * goes up the pitch the whole side goes with it. *)
@@ -2446,10 +2447,98 @@ let kickoff_formation_slides () =
   in
   let g = { (new_game false) with kickoff = 0 } in
   let before = outfield g in
-  let g = { g with ball = { (new_ball ()) with bx = 0.; by = half_h -. 120. } } in
+  let g = { g with ball = Free_ball.still 0. (half_h -. 120.) } in
   let g = kickoff_play 120 g in
   let after = outfield g in
   Alcotest.(check bool) "the side moved up with the ball" true (after > before +. 80.)
+
+(*****************************************************************************)
+(* TinySpeedball2 *)
+(*****************************************************************************)
+
+let speedball_play (frames : int) ?(keyboard = fun (_ : int) -> initial_computer.keyboard) (g : TinySpeedball2.game) : TinySpeedball2.game =
+  let s = ref g in
+  for i = 1 to frames do
+    s := TinySpeedball2.update_game (computer ~keyboard:(keyboard i) i) !s
+  done;
+  !s
+
+(* a game already under way, with nobody on the metal but the ball *)
+let speedball_empty () : TinySpeedball2.game =
+  let open TinySpeedball2 in
+  let g = { (new_game ()) with restarting = 0 } in
+  { g with players = [ { (List.nth g.players 4) with px = 0.; py = -600. } ]; mine = 0 }
+
+(* The arena scores: a ball sent into a dome comes back off it, and the
+ * side that touched it last is paid for the hit. A pinball table's
+ * bumper, in a game about goals. *)
+let speedball_arena_pays () =
+  let open TinySpeedball2 in
+  let dome = List.find (fun (f : fixture) -> f.what = Dome) (speedball_empty ()).fixtures in
+  let g = speedball_empty () in
+  let g = { g with ball = { (Free_ball.still dome.fx (dome.fy -. 120.)) with vy = 7. }; last = Some Red } in
+  let after = speedball_play 30 g in
+  Alcotest.(check bool) "the hit scored" true (after.red > 0);
+  Alcotest.(check bool) "and the ball came back the way it went in" true (after.ball.vy < 0.)
+
+(* The x2 plate doubles what its side scores while it is lit: the same
+ * dome, hit twice, is worth twice as much the second time. *)
+let speedball_multiplier () =
+  let open TinySpeedball2 in
+  let dome = List.find (fun (f : fixture) -> f.what = Dome) (speedball_empty ()).fixtures in
+  let hit (double : bool) =
+    let g = speedball_empty () in
+    let g = if double then { g with double = [ (Red, 600) ] } else g in
+    let g = { g with ball = { (Free_ball.still dome.fx (dome.fy -. 120.)) with vy = 7. }; last = Some Red } in
+    (speedball_play 30 g).red
+  in
+  let plain = hit false and doubled = hit true in
+  Alcotest.(check int) "the plate doubles it" (plain * 2) doubled
+
+(* No out of play: the walls give the ball back, and it keeps four
+ * fifths of its speed. This is why the game never stops. *)
+let speedball_walls () =
+  let open TinySpeedball2 in
+  let g = speedball_empty () in
+  (* at y = 120, a lane with no furniture in it: the plates sit at y = 0
+     and would send the ball back themselves *)
+  let g = { g with ball = { (Free_ball.still (half_w -. 40.) 120.) with vx = 10. } } in
+  let after = speedball_play 20 g in
+  Alcotest.(check bool) "it is still in the arena" true (Float.abs after.ball.x < half_w);
+  Alcotest.(check bool) "coming back" true (after.ball.vx < 0.);
+  Alcotest.(check bool) "a fifth slower" true (Float.abs after.ball.vx < 9. && Float.abs after.ball.vx > 5.)
+
+(* Violence is a move: space with no ball puts the nearest opponent on
+ * the floor, and pays ten for it. *)
+let speedball_tackle () =
+  let open TinySpeedball2 in
+  let g = { (new_game ()) with restarting = 0 } in
+  let me = { (List.nth g.players 4) with px = 0.; py = 0. } in
+  let victim = { (List.nth g.players 9) with px = 20.; py = 0. } in
+  let g = { g with players = [ me; victim ]; mine = 0; ball = Free_ball.still 0. 500. } in
+  let after = speedball_play 3 ~keyboard:(fun _ -> { initial_computer.keyboard with kspace = true }) g in
+  Alcotest.(check bool) "he is on the floor" true ((List.nth after.players 1).down > 0);
+  Alcotest.(check int) "and that is ten points" 10 after.red
+
+(* A match plays itself: with nobody at the controls, the other side
+ * and the furniture get on with it. (Also the check that the game is
+ * not standing still, which it did until a touch stopped being able to
+ * push the ball through a wall.) *)
+let speedball_plays_itself () =
+  let open TinySpeedball2 in
+  let g = speedball_play 1800 { (new_game ()) with restarting = 0 } in
+  Alcotest.(check bool) "somebody scored something" true (g.red + g.blue >= 10);
+  Alcotest.(check bool) "and the ball is not sitting on the centre spot" true (Free_ball.speed g.ball > 0.5)
+
+(* Through the mouth is ten, and the ball goes back to the middle --
+ * the only thing that stops this game. *)
+let speedball_goal () =
+  let open TinySpeedball2 in
+  let g = speedball_empty () in
+  let g = { g with ball = { (Free_ball.still 0. (half_h -. 40.)) with vy = 9. }; last = Some Red } in
+  let after = speedball_play 20 g in
+  Alcotest.(check bool) "ten at least" true (after.red >= 10);
+  Alcotest.(check bool) "and back to the middle" true (Float.hypot after.ball.x after.ball.y < 2.)
 
 let tests =
   Testo.categorize "games"
@@ -2470,11 +2559,11 @@ let tests =
       t "TinyMinecraft, the world and what is shown" minecraft_world;
       t "TinyMinecraft, standing, jumping, walking, flying" minecraft_player;
       t "TinyMario64, a jump onto a platform" mario64_jump;
-      t "TinyMarble, the ramp's heights" marble_ramp;
-      t "TinyMarble, the cliff breaks the marble, the step doesn't" marble_falls;
-      t "TinyMarble, the steelie knocks the marble" marble_steelie;
-      t "TinyMarble, rolling down a ramp" marble_rolls_down;
-      t "TinyMarble, a robot drives to the goal" marble_robot;
+      t "TinyMarbleMadness, the ramp's heights" marble_ramp;
+      t "TinyMarbleMadness, the cliff breaks the marble, the step doesn't" marble_falls;
+      t "TinyMarbleMadness, the steelie knocks the marble" marble_steelie;
+      t "TinyMarbleMadness, rolling down a ramp" marble_rolls_down;
+      t "TinyMarbleMadness, a robot drives to the goal" marble_robot;
       t "TinyXpilot, cannons aim ahead" xpilot_intercept;
       t "TinyXpilot, the rope pulls when stretched" xpilot_rope;
       t "TinyXpilot, landing vs. crashing" xpilot_crash;
@@ -2563,4 +2652,10 @@ let tests =
       t "TinyKickOff2, the aftertouch bends it" kickoff_aftertouch;
       t "TinyKickOff2, a goal, and the centre spot" kickoff_goal;
       t "TinyKickOff2, out at the side is a throw-in" kickoff_throw_in;
-      t "TinyKickOff2, the formation slides with the ball" kickoff_formation_slides ]
+      t "TinyKickOff2, the formation slides with the ball" kickoff_formation_slides;
+      t "TinySpeedball2, the arena pays" speedball_arena_pays;
+      t "TinySpeedball2, the x2 plate doubles it" speedball_multiplier;
+      t "TinySpeedball2, the walls give the ball back" speedball_walls;
+      t "TinySpeedball2, the tackle" speedball_tackle;
+      t "TinySpeedball2, a goal is ten" speedball_goal;
+      t "TinySpeedball2, a match plays itself" speedball_plays_itself ]

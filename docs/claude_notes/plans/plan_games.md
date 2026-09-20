@@ -705,12 +705,38 @@ is. (Names and dates from memory, to check.)
   has his place in a formation, pulled a third of the way towards the
   ball; only the nearest one chases. Ten lines, and it looks like
   football -- the same trick as a flock.
-- **Kit**: none yet, deliberately. The second sports game is the one
-  that would justify it, and it is named: **TinySpeedball2**, whose
-  arena is a pinball table with players in it (bounce domes, stars,
-  score multipliers, and the ball never stops). What it would want out
-  of TinyKickOff2 is the pitch, the formation and the free ball; what
-  it adds is the furniture that scores.
+- **Second toy**: TinySpeedball2 (DONE: `games/TinySpeedball2.ml`,
+  Speedball 2: Brutal Deluxe, The Bitmap Brothers, 1990). What it adds
+  to the football:
+  - **the arena scores**. A goal is 10 and so are two hits on a bounce
+    dome; the stars are 5 and light the ball, the x2 plates double
+    everything a side scores for ten seconds, flattening an opponent
+    is 10. The thing on the screen is a *table*, not a pitch, and a
+    match is usually won by whoever used the furniture -- it is
+    `games/TinyPinball.ml`'s table with players on it;
+  - **the ball never stops**: no touchlines, no referee, walls that
+    give it back keeping four fifths of its speed
+    (`Free_ball.bounce_in`), and a mouth at each end which is a *gap*
+    in the wall;
+  - **violence is a move**, not a foul: space with no ball is a
+    tackle, two seconds on the floor and ten points.
+- **Kit** (DONE, and this is what the second game was for):
+  `kits/sports/` -- `Free_ball` (the ball pushed ahead of a player
+  rather than carried, with the glued alternative, the grass or metal
+  friction, the aftertouch push and the walls) and `Formation` (a spot
+  per player, pulled part of the way towards the ball; the nearest one
+  chases). TinyKickOff2 was rewritten onto it, which is the only way
+  to know a kit is real -- its five
+  tests did not change.
+- **What the second game taught**, all of it found by tests rather
+  than by playing: a chaser must judge "I have the ball" *inside* his
+  touch reach, or he turns for goal before he can ever touch it and
+  walks away from the ball for ever (in Speedball the ball then never
+  moved at all); only one player may touch the ball per frame, or ten
+  of them round it cancel each other out; a touch must not push the
+  ball through a wall, or the chaser pins it and the two travel down
+  the arena together; and a goal mouth with no depth is one the ball
+  slides across without going in.
 
 ### Later, or never
 

@@ -1,0 +1,11 @@
+; claude: the sports kit (see docs/claude_notes/plans/plan_games.md,
+; section 23): what a team game seen from above shares -- the ball that
+; is pushed ahead of a player rather than carried by him (Free_ball),
+; and a side that keeps its shape because every player has a place
+; (Formation). Used by games/TinyKickOff2 and games/TinySpeedball2. A
+; private library, not installed: only the games use it.
+(library
+ (name kit_sports)
+ (wrapped false)
+ (libraries elm_core elm_playground)
+)

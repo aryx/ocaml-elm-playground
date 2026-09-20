@@ -42,7 +42,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyInvaders", "", 5);
     ("games/software/TinySokoban", "", 5);
     ("games/software/TinyPacman", "", 5);
-    ("games2.5d/software/TinyWolf", "", 5);
+    ("games2.5d/software/TinyWolfenstein", "", 5);
     ("games2.5d/software/TinyOutRun", "", 5);
     ("games/software/TinyBomberman", "", 5);
     ("games/software/TinyTron", "", 5);
@@ -85,6 +85,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyPortal2D", "", 5);
     ("games/software/TinyGauntlet2", "", 5);
     ("games/software/TinyKickOff2", "", 5);
+    ("games/software/TinySpeedball2", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -142,7 +143,7 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyPacman", "play", 300, "space:1,left:120-170,up:160-230,right:220-300");
     (* turned towards a treasure, walking to it: the billboard in front
      * of the far wall, a near wall on the right *)
-    ("games2.5d/software/TinyWolf", "treasure", 60, "right:1-16,up:20-60");
+    ("games2.5d/software/TinyWolfenstein", "treasure", 60, "right:1-16,up:20-60");
     (* flat out into the first curve, which bends right *)
     ("games2.5d/software/TinyOutRun", "curve", 230, "space:1,up:2-230");
     (* a bomb dropped in the corner, the bomber walking away, the fire *)
@@ -214,6 +215,7 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyPinball", "launch", 90, "space:1-40");
     ("games/software/TinyGauntlet2", "crowd", 400, "space:1,down:30-90,right:100-200,space:220-400");
     ("games/software/TinyKickOff2", "shot", 260, "space:1,up:70-200,space:150-170,right:171-260");
+    ("games/software/TinySpeedball2", "match", 700, "space:1,up:60-200,space:120-140,left:210-400,space:260-280");
     (* the first chamber: the goo between him and the way out (the
        portals themselves want a mouse, which a script has none of, so
        they are in tests/games/ instead) *)
@@ -225,6 +227,9 @@ let scripted : Testutil_golden.scripted list =
     (* the kick off, and (heavy) a shot bent in the air by the
        aftertouch, which is the game's other idea *)
     ("games/software/TinyKickOff2", "kickoff", 95, "space:1,up:20-95");
+    (* the metal, its furniture, and (heavy) a match well under way:
+       the score is mostly what the arena paid *)
+    ("games/software/TinySpeedball2", "arena", 95, "space:1,up:20-95");
     ("games/software/TinyWarcraft2", "crowd", 300, "space:1,a:10,p:14,right:20-44,space:50");
     ("games/software/TinyTowerDefense", "maze", 400, "space:1,right:20-40,space:45,up:50-56,space:60,up:64-70,space:74,left:80-84,space:90");
     ("games/software/AiOthello", "reply", 60, "space:2");
