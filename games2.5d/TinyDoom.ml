@@ -111,7 +111,8 @@ let segs : seg list =
          | Some b -> [ s; { x1 = l.x2; y1 = l.y2; x2 = l.x1; y2 = l.y1; front = b; back = Some l.front; line = l } ])
 
 (*****************************************************************************)
-(* The node builder *)
+(* The node builder -- the trick of this game, first half, in 100 lines
+ * (the second is [Rendering: the columns] below; see the header) *)
 (*****************************************************************************)
 
 (* a partition: a point and a direction, of length 1: [side] is then the
@@ -244,7 +245,8 @@ let update (computer : computer) (m : model) : model =
       { x; y; z; angle; frames = m.frames + 1; exited = (if here = level.exit then Some m.frames else None) }
 
 (*****************************************************************************)
-(* Rendering: the columns *)
+(* Rendering: the columns -- the trick of this game, second half, in 200
+ * lines (the first is [The node builder] above; see the header) *)
 (*****************************************************************************)
 
 (* the screen's columns, 5 pixels wide on a 1000-pixel screen; the eye

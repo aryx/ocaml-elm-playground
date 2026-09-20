@@ -123,10 +123,24 @@
   kits/segments (Segments: a Descent mine of boxes and the openings
   where they touch; Sixdof: a ship that can point anywhere)
 - games2.5d/ (new): the pseudo-3D games moved together, with a README
-  comparing their tricks -- TinyWolf, TinyOutRun, TinyKart, TinyDoom,
-  TinyComanche -- and TinyDescent, which is full 3D on the 2D
-  playground: its own projection and clipping, the mine walked through
-  its portals, cells painted farthest first, no z-buffer
+  comparing their tricks and their sizes -- TinyWolf, TinyOutRun,
+  TinyKart, TinyDoom, TinyComanche -- and TinyDescent, which is full 3D
+  on the 2D playground: its own projection and clipping, the mine
+  walked through its portals, cells painted farthest first, no z-buffer;
+  each game's trick now marked in its source (grep "the trick of this
+  game" games2.5d/*.ml) with how many lines it takes
+- games2.5d/TinyDungeonMaster: the oldest and simplest of those tricks,
+  and the first one to read -- from a cell's center, looking along an
+  axis, every cell in view has one fixed place on the screen, so the
+  view is nested frames filled in farthest first: 24 lines, and no
+  arithmetic per frame (FTL's artists painted those pictures by hand).
+  Around it is what Dungeon Master (1987) actually invented, which was
+  not the pixels but the game: real time, and a world you act on -- the
+  iron key and its door, the lever and the portcullis, monsters on
+  their own clock (a monster that has just moved cannot strike yet:
+  the "dance"), a torch burning down, a panel telling you about it all.
+  ai/Pathfind's A* walks the monsters; tests/games checks the dungeon
+  is winnable in that order, and the dance rule
 - games3d/: TinyBattlezone (vector 3D), TinyWolf3d, TinyVirtuaRacing,
   TinyTron3d, TinyMario64, TinyMarble (Marble Madness), TinyDoom3d
   (TinyDoom's level with a z-buffer, no BSP), TinyQuake (Quake's three

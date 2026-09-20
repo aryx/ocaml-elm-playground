@@ -128,7 +128,7 @@ let update (computer : computer) (m : model) : model =
   { m with treasures; found = m.found + List.length taken }
 
 (*****************************************************************************)
-(* Raycasting *)
+(* Raycasting -- the trick of this game, in 61 lines (see the header) *)
 (*****************************************************************************)
 
 (* the field of view: the "camera plane", perpendicular to where we

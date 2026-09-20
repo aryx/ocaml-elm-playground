@@ -126,7 +126,7 @@ let update (computer : computer) (m : model) : model =
       { x; y; alt; angle; speed; left; frames = m.frames + 1; finished = (if left = [] then Some m.frames else None) }
 
 (*****************************************************************************)
-(* Voxel Space *)
+(* Voxel Space -- the trick of this game, in 126 lines (see the header) *)
 (*****************************************************************************)
 
 (* the view's "pixels", 5 real ones wide and high; the panel below it *)

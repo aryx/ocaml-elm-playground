@@ -9,8 +9,10 @@
     TinyDoom
     TinyComanche
     TinyDescent
+    TinyDungeonMaster
   )
   (libraries
+    ai ; TinyDungeonMaster's Pathfind (the monsters' A*)
     elm_playground
     kit_racing ; TinyOutRun's Road and Car, TinyKart's Topdown
     kit_sectors ; TinyDoom's level

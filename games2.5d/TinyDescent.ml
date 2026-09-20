@@ -159,7 +159,8 @@ let update (computer : computer) (m : model) : model =
         frames = m.frames + 1; over = (if escaped then Some (m.frames, true) else if shield <= 0 then Some (m.frames, false) else None) }
 
 (*****************************************************************************)
-(* Seeing: from the world to the screen *)
+(* Seeing: from the world to the screen -- the trick of this game, first
+ * half, in 82 lines (the second is [Drawing] below; see the header) *)
 (*****************************************************************************)
 
 (* the status bar below the view *)
@@ -241,7 +242,8 @@ let around (a : window) (b : window) : window =
   { wx0 = Float.min a.wx0 b.wx0; wy0 = Float.min a.wy0 b.wy0; wx1 = Float.max a.wx1 b.wx1; wy1 = Float.max a.wy1 b.wy1 }
 
 (*****************************************************************************)
-(* Drawing *)
+(* Drawing -- the trick of this game, second half, in 134 lines (the
+ * first is [Seeing] above; see the header) *)
 (*****************************************************************************)
 
 type view = {

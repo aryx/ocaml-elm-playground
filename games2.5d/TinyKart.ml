@@ -245,7 +245,7 @@ let update (computer : computer) (m : model) : model =
   | Finished (r, n) -> if space then Scene2d.go Title m else { m with scene = Finished (update_race computer.keyboard true r, n) }
 
 (*****************************************************************************)
-(* Mode 7 *)
+(* Mode 7 -- the trick of this game, in 84 lines (see the header) *)
 (*****************************************************************************)
 
 (* the camera: [height] above the ground, [back] behind the kart, the

@@ -135,12 +135,29 @@ Maze War (Steve Colley, Greg Thompson, Howard Palmer, NASA Ames,
 Monster Maze (Malcolm Evans, ZX81, 1981), Wizardry (Sir-Tech, 1981:
 step by step, turn by turn), Dungeon Master (FTL, 1987: in real time).
 
-- **Toy**: TinyDungeon -- a `Tilemap` of walls, the player moving one
-  cell and turning 90 degrees at a time, the view drawn as the few
-  wall quads visible from the cell: the step between a 2D map and
-  real 3D, and the easiest first-person game.
-- **Kit**: the grid (`Tilemap` from the 2D playground), turned into
-  `box`es; a grid movement (`Grid_move` of the 2D maze kit).
+- **Toy**: TinyDungeonMaster (DONE, and in the *2D* playground:
+  `games2.5d/TinyDungeonMaster.ml`, since the trick needs no 3D at
+  all). A `Tilemap` of walls, the hero moving one cell and turning 90
+  degrees at a time, so each cell in view has one fixed place on the
+  screen: at depth d the 2d + 1 cells across, each a square (the face
+  it shows) and a trapezoid (the face along the corridor), drawn
+  farthest first. The step between a 2D map and real 3D, and the
+  shortest renderer of `games2.5d/` -- 24 lines for the slots. Around
+  it, what actually made Dungeon Master: the iron key and the door,
+  the lever and the portcullis, monsters on their own clock (the
+  "dance": one that has just moved cannot strike yet), the torch
+  burning down, and a panel you act through. The A* of `ai/Pathfind`
+  walks the monsters.
+- **Kit**: none needed in the end -- `Tilemap` and `ai/Pathfind` were
+  enough. Not `Grid_move` of the 2D maze kit: that one slides a mover
+  between tiles, and here a step is a whole cell, at once.
+- **No 3D twin**, on purpose (unlike TinyWolf, TinyDoom, TinyComanche,
+  TinyDescent): those pairs share a world and differ only in the
+  renderer, but the grid view is not a renderer, it is a rule about
+  where the hero may stand and which way it may look, and the whole
+  game is built on it -- cell steps, quarter turns, the dance. Give the
+  camera its freedom and nothing of the game is left, only TinyWolf3d
+  with a smaller map. See `games2.5d/README.md`.
 
 ### 3. Raycasting: Wolfenstein 3D
 

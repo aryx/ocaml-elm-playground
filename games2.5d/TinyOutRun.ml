@@ -103,7 +103,8 @@ let update (computer : computer) (s : model) : model =
   | Racing r -> { s with scene = Racing (update_race computer.keyboard r) }
 
 (*****************************************************************************)
-(* Projection *)
+(* Projection -- the trick of this game, in 23 lines (the slices it
+ * gives are drawn by [view] below; see the header) *)
 (*****************************************************************************)
 
 let camera_height = 1000.
