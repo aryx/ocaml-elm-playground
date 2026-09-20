@@ -14,6 +14,7 @@
   (libraries
     elm_playground
     ai ; AiTictactoe's Minimax
+    gui ; GuiWidgets' Layout
     elm_playground_native ; implem of virtual elm_playground
   )
 )

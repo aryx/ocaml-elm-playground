@@ -128,7 +128,7 @@ unusually well placed to do, since it already *is* one of the four:
 
 | | where the state lives | what you write | who |
 |---|---|---|---|
-| **callbacks** | inside the widgets | build a tree, register functions on it | Tk (Ousterhout, 1988), Motif, Win32's message loop |
+| **callbacks** | inside the widgets | build a tree, register functions on it | Tk (Ousterhout; Tcl 1988, Tk 1991), Motif, Win32's message loop |
 | **MVC** | a model, observed by views | model, view, controller, and the notifications between them | Smalltalk-80 (Trygve Reenskaug, 1979) |
 | **MVU** | one model, rebuilt each message | `update : msg -> model -> model`, `view : model -> ui` | Elm (2012) -- this playground |
 | **immediate mode** | in your own variables; no widget objects at all | `if button "OK" then ...`, every frame | Casey Muratori (2005), Dear ImGui (Omar Cornut, 2014) |
@@ -501,6 +501,103 @@ Not done, and deliberately left for the next phase: the game menus
 still place their `words` by hand. Converting one is the honest first
 customer, but it changes what a game looks like, and there is no
 `Inspect` panel yet to be the other one.
+
+### Phase 2, DONE (2026-09-20), awaiting review
+
+`gui/Layout` (134 + 170 lines): constraints down, sizes up, the parent
+positions -- Flutter's three rules as two functions, `measure` and
+`arrange`, with **a column written as a row turned on its side** (an
+`axis`, and `main`/`cross`/`of_axis` to project onto it), so rows and
+columns are one piece of code rather than two mirror images.
+
+Nine constructors, and the flex rule that makes them work: measure the
+children that know their size, share what is left between the flexible
+ones.
+
+- `leaf key (w, h)` -- the key is whatever you want to find it by
+  afterwards (`arrange` gives back `('a * box) list`), so a program
+  looks the widget up by name and asks for it;
+- `row`/`column ~gap`, `space` (a fixed gap), `spacer` (TeX's glue: it
+  takes what is left, and two of them centre what is between);
+- `expand` (the child takes the leftover *along* the axis, Flutter's
+  Expanded) and `stretch` (it fills the *other* axis, Flutter's
+  CrossAxisAlignment.stretch -- which is how a panel's buttons come
+  out one width);
+- `pad`, `center`.
+
+The rule that keeps the two passes on a page, and the one to remember:
+**a leaf takes exactly the rectangle its parent gives it.** Its
+measured size is what it *asks* for; a row, a column or a `center`
+grants it, while `pad` and `expand` hand over what is left.
+
+Named and compared in the `.mli`, which is the teaching: Tk's geometry
+managers (`pack`/`grid`, Ousterhout; Tcl 1988, Tk 1991, `grid` 1996),
+NeXT/Cocoa's springs and struts (1988), CSS flexbox (2009-2018),
+absolute coordinates -- and the ancestor of all of them, **TeX's boxes
+and glue** (Knuth, 1978).
+
+**Flutter and not Tk, decided with the author** (2026-09-20), Tk being
+both older and more influential, so the question was fair. The answer,
+on the author's three criteria -- simplicity, elegance, and keeping an
+Evan-like API possible later:
+
+- for a *single row or column* the two are the same algorithm under
+  different names (Tk's cavity and parcels are the walk here,
+  `-expand` is `expand`, `-fill` is `stretch`, `-anchor center` is
+  the centering across the axis, `-padx` is `pad`), so this is not a
+  choice between two mechanisms but between two spellings and two
+  orders;
+- the order is the real difference: Tk fixes a widget's requested size
+  *before* knowing the room it gets, so wrapping text there needs
+  `-wraplength` by hand or the `<Configure>` trick, while constraints
+  going down first let a child answer "given 300 wide, I am 80 tall"
+  in the same pass -- the shape of every text layout, and of
+  Knuth-Plass in TinyWord later;
+- simplicity and elegance: two functions and no manager object, and a
+  column written as a row turned on its side rather than twice;
+- flexibility: a new combinator is three lines (`stretch` is three),
+  and an Evan-facing sugar -- `Gui.column computer ~at:(x, y) [ Reset,
+  Gui.button_size "reset"; ... ]`, giving back a box per name with no
+  layout vocabulary at all -- is three more over `arrange` the day
+  something wants it. Writing it before then would be an unused API.
+
+What Tk has that this does not is `grid`: weights, spans and sticky
+edges, aligning columns *across* rows, which rows of rows cannot do.
+That is a real gap rather than a spelling, and it comes back when
+TinyVisiCalc does (phase 7), which is a grid.
+
+Said plainly in the `.mli`, since it would otherwise be overselling:
+the playground's screen is 1000 x 1000 whatever the window and
+`Resized` is still a `failwith "Todo"`, so today a layout *arranges*
+rather than *resizes*. The same three rules are what will make
+resizing work the day the window's size arrives.
+
+`playground/Gui` gained the widgets in a rectangle somebody else
+decided -- `button_in`, `checkbox_in`, `slider_in`, `label_in` -- plus
+the sizes to build the leaves with (`button_size`, `checkbox_size`,
+`slider_size`, `label_size`) and `area computer`, the screen as a box.
+The `~at` forms are now one line each on top of them: placing by hand
+stays the simple way in, and a layout is what a panel uses.
+
+`gui/tests/Unit_layout.ml` (147 lines, 11 tests): every rectangle
+computed by hand, which is the only way to know a layout engine is
+right -- a picture of a panel looks plausible whatever the arithmetic
+did. (One of them caught the author of the test rather than the code:
+the nested row's centre is at -15, not -5.)
+
+`examples/GuiWidgets.ml` is now laid out rather than placed: a column
+of stretched widgets on the left, the disc on the right, a `spacer`
+between them. Its layout is a **value**, and a pure function of the
+room available, so `update` arranges it to ask the widgets and `view`
+arranges it again to draw the disc, with no state in between -- the
+clearest thing to say about layout in this architecture. `examples/`
+links `gui` directly now (as it already links `ai`), since the
+layout's vocabulary is the program's.
+
+Measured: `dune build` clean everywhere including the js targets;
+`gui/tests` 25 tests green; the 2D golden suite green with
+`GuiWidgets` re-approved (it is the only frame that moved, and it is
+this phase's own example).
 
 ## Verification
 

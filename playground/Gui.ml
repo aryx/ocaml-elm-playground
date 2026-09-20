@@ -42,26 +42,44 @@ let widget computer f =
   ui := state;
   answer
 
+let theme () = Immediate.theme !ui
 let box ~at:(x, y) (w, h) : Widget.box = { Widget.x; y; w; h }
 
-let button computer ~at s =
-  widget computer (fun u ->
-      Immediate.button u (box ~at (Immediate.button_size (Immediate.theme u) s)) s)
+let area (computer : computer) : Widget.box =
+  let s = computer.screen in
+  { Widget.x = 0.; y = 0.; w = s.width; h = s.height }
+
+(* the widgets, in a rectangle somebody else decided (a layout) *)
+let button_in computer b s = widget computer (fun u -> Immediate.button u b s)
+
+let checkbox_in computer b s checked =
+  widget computer (fun u -> Immediate.checkbox u b s checked)
+
+let slider_in computer b ~from ~to_ v =
+  widget computer (fun u -> Immediate.slider u b ~from ~to_ v)
+
+let label_in computer b s = widget computer (fun u -> (Immediate.label u b s, ()))
+
+(* how big each one wants to be, for a layout to place *)
+let button_size s = Immediate.button_size (theme ()) s
+let checkbox_size s = Immediate.checkbox_size (theme ()) s
+let slider_size () = Immediate.slider_size (theme ())
+
+let label_size s =
+  let th = theme () in
+  (Widget.text_width ~size:th.text_size s, th.row)
+
+(* and the same, placed by hand at a point: the simple way, which
+ * needs no layout at all *)
+let button computer ~at s = button_in computer (box ~at (button_size s)) s
 
 let checkbox computer ~at s checked =
-  widget computer (fun u ->
-      Immediate.checkbox u
-        (box ~at (Immediate.checkbox_size (Immediate.theme u) s))
-        s checked)
+  checkbox_in computer (box ~at (checkbox_size s)) s checked
 
 let slider computer ~at ~from ~to_ v =
-  widget computer (fun u ->
-      Immediate.slider u (box ~at (Immediate.slider_size (Immediate.theme u))) ~from ~to_ v)
+  slider_in computer (box ~at (slider_size ())) ~from ~to_ v
 
-let label computer ~at s =
-  widget computer (fun u ->
-      let th = Immediate.theme u in
-      (Immediate.label u (box ~at (Widget.text_width ~size:th.text_size s, th.row)) s, ()))
+let label computer ~at s = label_in computer (box ~at (label_size s)) s
 
 let shape_of_paint = function
   | Widget.Fill (color, (b : Widget.box)) -> rectangle color b.w b.h |> move b.x b.y
@@ -72,5 +90,4 @@ let draw () =
   closed := true;
   Immediate.paint !ui |> List.map shape_of_paint
 
-let theme () = Immediate.theme !ui
 let set_theme th = ui := Immediate.set_theme th !ui

@@ -38,11 +38,16 @@ built, in what order).
   the menu bar, and -- the part that matters for this plan -- the
   *Human Interface Guidelines*, the idea that applications should
   agree with each other.
-- **Tk** (John Ousterhout, 1988-90): the high-water mark of "a GUI is
-  a scripting language". Its **geometry managers** (`pack`, `grid`)
-  are still the cleanest separation of layout from widgets anyone has
-  shipped, and its callback style is what most people mean by "GUI
-  programming".
+- **Tk** (John Ousterhout; Tcl 1988, Tk 1991, `grid` in Tk 4.1, 1996):
+  the high-water mark of "a GUI is a scripting language". Its
+  **geometry managers** (`pack`, `grid`) are still the cleanest
+  separation of layout from widgets anyone has shipped, and its
+  callback style is what most people mean by "GUI programming".
+  `pack` is, for a single row or column, the same algorithm as
+  Flutter's constraints (`gui/Layout.mli` puts the two side by side):
+  the difference is that Tk fixes a widget's requested size before
+  knowing the room, which is why wrapping text there needs
+  `-wraplength` or a `<Configure>` binding.
 - **NeXTSTEP and Interface Builder** (1988): the interface as a saved
   object graph rather than code -- the ancestor of every designer tool,
   and of the `.nib`/`.xib` idea that `view : model -> ui` eventually

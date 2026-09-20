@@ -67,6 +67,53 @@ val slider :
 (* [label computer ~at s]: [s], in the theme's color and size *)
 val label : Playground.computer -> at:Playground.number * Playground.number -> string -> unit
 
+(* {1 The same widgets, where a layout put them}
+
+   [~at] places a widget at a point, at the size it asks for, which
+   is all a settings screen needs. A panel wants them arranged
+   instead -- a column, evenly spaced, all of one width -- and that is
+   [gui/Layout] (constraints down, sizes up): it takes the sizes the
+   widgets ask for and gives back a rectangle each.
+
+   {[
+     type panel = Reset | Radius
+
+     let rows =
+       Layout.(center (column ~gap:10.
+          [ leaf Reset (Gui.button_size "reset");
+            stretch (leaf Radius (Gui.slider_size ())) ]))
+
+     let update computer model =
+       let places = Layout.arrange (Gui.area computer) rows in
+       if Gui.button_in computer (List.assoc Reset places) "reset" then initial
+       else { model with radius =
+                Gui.slider_in computer (List.assoc Radius places)
+                  ~from:10. ~to_:150. model.radius }
+   ]} *)
+
+val button_in : Playground.computer -> Widget.box -> string -> bool
+val checkbox_in : Playground.computer -> Widget.box -> string -> bool -> bool
+
+val slider_in :
+  Playground.computer ->
+  Widget.box ->
+  from:Playground.number ->
+  to_:Playground.number ->
+  Playground.number ->
+  Playground.number
+
+val label_in : Playground.computer -> Widget.box -> string -> unit
+
+(* what each widget asks for, in the current theme, to build the
+   layout's leaves with *)
+val button_size : string -> Playground.number * Playground.number
+val checkbox_size : string -> Playground.number * Playground.number
+val slider_size : unit -> Playground.number * Playground.number
+val label_size : string -> Playground.number * Playground.number
+
+(* the whole screen as a box, the usual thing to lay out inside *)
+val area : Playground.computer -> Widget.box
+
 (* the shapes of the widgets this frame asked for, back to front; for
    [view], and it ends the frame *)
 val draw : unit -> Playground.shape list

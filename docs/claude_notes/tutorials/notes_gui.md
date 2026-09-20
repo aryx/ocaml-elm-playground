@@ -191,14 +191,37 @@ Flutter's rule (2017), and the clearest one anybody has written:
 
 Three rules, one pass down and one up, and rows, columns, centring,
 padding and spacers all fall out of them. The alternatives worth
-knowing: Tk's **geometry managers** (`pack` and `grid`, Ousterhout) --
+knowing: Tk's **geometry managers** (`pack` and `grid`, Ousterhout;
+Tcl 1988, Tk 1991, `grid` 1996) --
 a separate object that owns placement, which is why Tk code never
 computes a coordinate -- and CSS **flexbox**, the same constraint idea
 with a much larger vocabulary and a famously subtle sizing algorithm.
 
 Absolute coordinates (what every game in this repository uses, and
 what §3's examples show) are the fourth option, and they are fine
-until the first resize.
+until the first resize. NeXT's and Cocoa's **springs and struts**
+(1988) are the fifth: each widget says which of its edges and sides
+are elastic, which is direct and hopeless once a window gets small.
+
+The family's ancestor is older than any of them: TeX's **boxes and
+glue** (Knuth, 1978). A line of type is boxes with glue between them,
+glue being space that stretches and shrinks by stated amounts; a
+`spacer` is glue with infinite stretch, and a row is an hbox.
+
+In `gui/Layout` the two rules are two functions — `measure`
+(constraints down, sizes up) and `arrange` (the parent positions) —
+and a column is written as a row turned on its side, along an `axis`,
+so there is one of each rather than two. One rule holds it together:
+**a leaf takes exactly the rectangle its parent gives it**. Its
+measured size is what it *asks* for; a row, a column or a `center`
+grants it, while `pad` and `expand` hand over what is left.
+
+Honest about what layout buys here today: the playground's screen is
+1000x1000 whatever the window, and its `Resized` message is a TODO,
+so what a layout gives is arrangement — a column that spaces itself,
+buttons of one width — rather than adapting to a resize. The three
+rules are the same ones that will make resizing work the day the
+window's size arrives.
 
 ## 6. Focus, hit testing, and the events nobody thinks about
 
