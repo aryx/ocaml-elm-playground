@@ -179,6 +179,16 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target PuzzleScriptSokoban.ml)
+ (deps (:src %{project_root}/examples/PuzzleScriptSokoban.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target PuzzleScriptBoulders.ml)
+ (deps (:src %{project_root}/examples/PuzzleScriptBoulders.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyDungeonMaster.ml)
  (deps (:src %{project_root}/games2.5d/TinyDungeonMaster.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

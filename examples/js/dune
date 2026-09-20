@@ -26,6 +26,8 @@
 (copy_files ../LogoFractals.{ml,mli})
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
+(copy_files ../PuzzleScriptSokoban.ml)
+(copy_files ../PuzzleScriptBoulders.ml)
 
 (executables
   (names
@@ -40,6 +42,8 @@
     LogoFractals
     BigBangRocket
     BigBangWorm
+    PuzzleScriptSokoban
+    PuzzleScriptBoulders
   )
   (libraries
     elm_playground

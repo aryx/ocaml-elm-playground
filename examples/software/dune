@@ -18,6 +18,8 @@
     LogoFractals
     BigBangRocket
     BigBangWorm
+    PuzzleScriptSokoban
+    PuzzleScriptBoulders
   )
   (libraries
     elm_playground

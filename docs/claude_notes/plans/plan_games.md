@@ -293,10 +293,24 @@ Pajitnov, 1984; done: `games/Tetris.ml`), Lemmings (DMA Design,
   aiming guide is the shot flown ahead; three rounds, cleared by a
   robot aiming with that guide in the tests). Not on the puzzle kit
   either: hexagons, not squares.
-- **Kit**: a `Rules` layer rewriting a `Tilemap` with patterns, as in
+- **Kit**: DONE, and it turned out not to be a kit at all:
+  `playground/Puzzlescript.mli`, beside `Logo.mli` and `Bigbang.mli`.
+  A `Rules` layer that a game *calls* from its own update would have
+  belonged in `kits/`; this one takes the game over -- you give it
+  things on layers, a map, the rules and what winning means, and there
+  is no update and no view left to write -- and that is what
+  `playground/` is for. A game as a map plus a dozen rules, as in
   PuzzleScript (Stephen Lavelle, 2013) and TileCode (Thomas Ball,
-  Stefania Druga, et al., 2020, see `Tilemap.mli`): a game as a map
-  plus a dozen rules -- maybe the most beginner-friendly kit of all.
+  Stefania Druga, et al., 2020, see `Tilemap.mli`): Sokoban comes out
+  as *one* rule (`examples/PuzzleScriptSokoban.ml`) and a Boulder Dash
+  as four (`examples/PuzzleScriptBoulders.ml`), the same engine twice.
+  Its .mli carries the line this idea comes down: Papert's Logo, then
+  KidSim / Cocoa / Stagecast Creator (Smith, Cypher and Schmucker,
+  1994), Repenning's AgentSheets (1991 on), PuzzleScript, TileCode --
+  people teaching programming by having you draw the board before and
+  after. The engine's worked examples are in
+  `playground/tests/Unit_puzzlescript.ml`; `tests/games` checks a
+  breadth-first search solves all three Sokoban levels.
 
 ### 8. Platformers
 

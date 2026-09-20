@@ -79,6 +79,22 @@
   ?name=value on the web (Playground_platform.flags); a seed=n flag
   for the games' randomness
 - relative mouse motion (mdx/mdy), run_app3d ?capture_mouse (FPS look)
+- Puzzlescript (new): a game as things on layers, a map and a few
+  rewrite rules, after PuzzleScript (Stephen Lavelle, 2013) -- the
+  third way of programming borrowed into playground/, beside Logo's
+  turtle and Bigbang's world programs, and the one that takes the game
+  over: no update function and no view, only data. The whole of
+  Sokoban is
+    rule "> @ | $  ->  > @ | > $"   and   win = all_on '$' '.'
+  Things live on layers, which is what keeps a crate on a target from
+  being a thing of its own and the rules from doubling; a turn is:
+  mark what the player moved, run the rules until the board settles,
+  move what is still marked (it goes if its layer has room there),
+  then the late rules. examples/PuzzleScriptSokoban.ml (one rule) and
+  examples/PuzzleScriptBoulders.ml (four: digging, pushing, gravity,
+  taking a diamond) are two games out of that one engine. Its .mli
+  carries the lineage: Papert's Logo, KidSim/Stagecast Creator,
+  Repenning's AgentSheets, TileCode
 
 ** games (the Tiny* toys) and kits
 - kits/: racing (Road, Car, Topdown), maze (Grid_move, Chase), lightcycles

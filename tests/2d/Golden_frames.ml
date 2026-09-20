@@ -112,6 +112,9 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyLemmings", "", 5);
     ("games/software/TinyPuzzleBobble", "", 5);
     ("games2.5d/software/TinyDungeonMaster", "", 5);
+    (* a whole game as a map and one rule (playground/Puzzlescript) *)
+    ("examples/software/PuzzleScriptSokoban", "", 5);
+    ("examples/software/PuzzleScriptBoulders", "", 5);
   ]
 
 (* claude: games played with keys (-script, see Input_script): what the
@@ -285,6 +288,8 @@ let scripted : Testutil_golden.scripted list =
     (* turned east and walked down the corridor: the torch ahead in
      * its slot, a wall on the right, the dark past the light's reach *)
     ("games2.5d/software/TinyDungeonMaster", "corridor", 80, "space:1,right:5-6,up:15-60");
+    (* the one push that solves the first level, and the banner *)
+    ("examples/software/PuzzleScriptSokoban", "solved", 40, "left:2-3");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

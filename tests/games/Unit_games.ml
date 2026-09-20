@@ -1652,6 +1652,55 @@ let dungeon_master_dance () =
   Alcotest.(check (pair int int)) "it closed the distance instead" (3, 14) (m.mx, m.my);
   Alcotest.(check int) "and must wait again" move_rest m.cool
 
+(*****************************************************************************)
+(* PuzzleScriptSokoban, PuzzleScriptBoulders *)
+(*****************************************************************************)
+
+(* The three levels of examples/PuzzleScriptSokoban.ml are our own, so
+ * something had better check that they can be solved. A board is a
+ * value, so the search is the plain breadth-first one, over the boards
+ * a turn can reach -- which is also the shortest way to see that the
+ * one rule of that file really is the game. *)
+let puzzlescript_sokoban_levels () =
+  let open Puzzlescript in
+  let g = PuzzleScriptSokoban.sokoban in
+  let solve (level : int) : int option =
+    let start = board g level in
+    let seen = Hashtbl.create 1000 and waiting = Queue.create () in
+    Hashtbl.replace seen (to_strings g start) ();
+    Queue.push (start, 0) waiting;
+    let answer = ref None in
+    while !answer = None && not (Queue.is_empty waiting) do
+      let b, moves = Queue.pop waiting in
+      if won g b then answer := Some moves
+      else
+        List.iter
+          (fun d ->
+            let b' = turn g (Some d) b in
+            let key = to_strings g b' in
+            if not (Hashtbl.mem seen key) then begin
+              Hashtbl.replace seen key ();
+              Queue.push (b', moves + 1) waiting
+            end)
+          every
+    done;
+    !answer
+  in
+  Alcotest.(check (list (option int))) "one push, then seven moves, then fifteen" [ Some 1; Some 7; Some 15 ]
+    (List.mapi (fun i _ -> solve i) PuzzleScriptSokoban.levels)
+
+(* The cave of examples/PuzzleScriptBoulders.ml, played: down the left
+ * side for the first diamond, then right along the bottom for the
+ * second. The boulder keeps its dirt under it the whole way, so the run
+ * is the same every time. *)
+let puzzlescript_boulders_run () =
+  let open Puzzlescript in
+  let g = PuzzleScriptBoulders.boulders in
+  let moves = [ Down; Down; Down ] @ List.init 7 (fun _ -> Right) in
+  let b = List.fold_left (fun b d -> turn g (Some d) b) (board g 0) moves in
+  Alcotest.(check bool) "every diamond taken" true (won g b);
+  Alcotest.(check bool) "and the boulder never fell" true (List.mem 'o' (at b 4 2))
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -1728,4 +1777,6 @@ let tests =
       t "AiOthello, the computer beats a greedy player" othello_greedy;
       t "TinyTron, the computer outlasts a straight line" tron_computer;
       t "TinyDungeonMaster, the key, the door, the lever, the stairs" dungeon_master_winnable;
-      t "TinyDungeonMaster, the dance" dungeon_master_dance ]
+      t "TinyDungeonMaster, the dance" dungeon_master_dance;
+      t "PuzzleScriptSokoban, every level solvable" puzzlescript_sokoban_levels;
+      t "PuzzleScriptBoulders, a run through the cave" puzzlescript_boulders_run ]
