@@ -1,0 +1,64 @@
+(* The oldest answer: the widgets are objects that own their state,
+ * and you hang functions on them (notes_gui.md section 4).
+ *
+ *   let count = ref 0 in
+ *   let shown = label box "0" in
+ *   let bump  = button box "count" (fun () ->
+ *                 incr count;
+ *                 set_text shown (string_of_int !count))
+ *
+ * Tk (Ousterhout, Tcl 1988, Tk 1991), Motif, Win32, GTK, Swing, and
+ * every "drag a button onto a form" tool ever shipped. It is the
+ * easiest thing to learn -- a button is a thing, you say what it does
+ * -- and it scales badly for one precise reason:
+ *
+ *   **the truth is scattered.** The count lives in a ref, what the
+ *   person reads lives in a label, and keeping the two equal is your
+ *   job, in every callback that can change either. Forget one and the
+ *   screen says something the program does not believe. Every
+ *   refresh-the-view bug in history lives here.
+ *
+ * "Retained" is the name of the other half of the deal: the widgets
+ * are retained between frames, so they keep their own hot, held,
+ * focused and caret, and the toolkit walks them rather than being
+ * told about them (compare Immediate.mli). That is also why a
+ * retained tree can hit test front to back, and why layout can ask a
+ * widget how big it wants to be before drawing it -- the two things
+ * immediate mode pays for.
+ *
+ * Here it is small on purpose: the same widgets, drawn by the same
+ * Look, so that comparing this with Immediate, Mvc and Mvu compares
+ * wiring and nothing else. What is missing is everything a real
+ * retained toolkit grows next: destroying widgets, reparenting,
+ * relayout on change, and the event *bubbling* that turns a tree of
+ * objects into a tree of handlers. *)
+
+(* a widget: a rectangle, its own state, and what it does *)
+type t
+
+(* the window: the widgets, and the little the toolkit itself
+ * remembers (the previous frame's keys and mouse button) *)
+type ui
+
+val button : Widget.box -> string -> (unit -> unit) -> t
+val label : Widget.box -> string -> t
+
+(* [field box text on_change]: its text is its own, and [on_change] is
+ * told after every keystroke -- which is the moment the count-and-
+ * label problem above starts, because now two places hold the text *)
+val field : Widget.box -> string -> (string -> unit) -> t
+
+val group : t list -> t
+
+(* what a callback reaches back into the widgets with *)
+val text : t -> string
+val set_text : t -> string -> unit
+val set_enabled : t -> bool -> unit
+
+val window : t -> ui
+
+(* one frame: the mouse and keys in, the callbacks fire as it walks
+ * the tree *)
+val handle : Widget.input -> ui -> unit
+
+val paint : Theme.t -> ui -> Widget.paint list

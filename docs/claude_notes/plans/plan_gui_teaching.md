@@ -689,6 +689,76 @@ Measured: `dune build` clean everywhere including the js targets;
 `gui/tests` 34 green, `playground/tests` 56, the 2D golden suite 119
 with the four new frames and **no existing frame moved a pixel**.
 
+### Phase 4, DONE (2026-09-21), awaiting review
+
+The centrepiece: the same program written four ways, running at once,
+and a test that they agree.
+
+First, the thing that had to exist for the comparison to mean
+anything: **`gui/Look`** (56 + 128), how each widget is *drawn*, and
+nothing about who keeps its state. Every function takes what to draw
+plus the state to draw it in (`~hot`, `~held`, `~checked`, `~caret`)
+and answers paint. `Immediate` was rewritten over it and lost a third
+of its body; the other three were written against it from the start.
+Without this, comparing four architectures would have been comparing
+four piles of drawing code. **`gui/Text`** (50 + 65) came out the same
+way: UTF-8 characters, cells, and `edit`, one frame of typing at a
+caret -- because what a field does with Backspace is not an
+architectural question, and all four must do it identically.
+
+The three new wirings, each a module whose `.mli` is its argument:
+
+- **`Retained`** (64 + 117): widgets as objects that own their state,
+  with functions hung on them -- Tk, Motif, Win32, Swing. Its `.mli`
+  says the cost plainly: *the truth is scattered*;
+- **`Mvc`** (61 + 29): Reenskaug's model with observers (Xerox PARC,
+  December 1979). Twenty-nine lines, of which the interesting one is
+  that `change` tells *everybody*, in the order they signed up;
+- **`Mvu`** (73 + 124): the textbook Elm loop, with a message type --
+  which the playground's own `game` does *not* have, and that is the
+  reason `playground/Gui` is immediate mode and this module exists
+  separately.
+
+**`examples/GuiFourWays.ml`** (174 lines): 7GUIs' Counter four times,
+side by side, on one screen, sharing one `Look` and one
+`Widget.input`. Measured in that file, code lines only: **callbacks
+12, MVC 11, MVU 12, immediate 3** -- and the length is explicitly not
+the point, since at this size they are all short. The number that
+matters is *how many places hold the count*: two with callbacks, one
+in the other three.
+
+**`gui/tests/Unit_architectures.ml`** (173 lines, 4 tests) is the
+verification section's demand, met: the same clicks into all four
+produce the same count *and the same paint, frame for frame*. Plus
+the failure mode of callbacks as a test rather than an opinion (bump
+the ref, forget the label, and the screen says 0 while the program
+believes 1), and MVC's cost as a number (one change, every view
+woken).
+
+Four things came out of writing them that reading about them had not
+given, and they are in `notes_gui.md` section 4:
+
+1. the four *can* be made to paint identically, and enforcing it is
+   what stops the comparison from drifting into a comparison of
+   drawing code;
+2. the one place they disagreed was **timing**, and it was not
+   architectural: a retained toolkit paints after its callbacks ran,
+   so a click shows in the same frame, while in immediate mode
+   whether it does is the order you ask the widgets in -- one line,
+   visible, and yours;
+3. **MVU only matches if `step` views the model after folding the
+   messages**, which is what Elm does; discovering that from a failing
+   test is what made `Mvu.step` run the whole loop rather than half
+   of it;
+4. **MVU cannot hold the caret.** The view is rebuilt every frame, so
+   the focus and the caret live underneath it (`Mvu.t`, ten lines).
+   In Elm that underneath is the browser, which is also why a virtual
+   DOM needs keys and React needs refs.
+
+Measured: `dune build` clean everywhere including the js targets;
+`gui/tests` 38 green, `playground/tests` 56, the 2D golden suite 122
+with `GuiFourWays` added and no existing frame moved a pixel.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

@@ -100,4 +100,7 @@ let draw () =
   closed := true;
   Immediate.paint !ui |> List.map shape_of_paint
 
+let shapes paint = List.map shape_of_paint paint
+let input computer = input_of computer
+
 let set_theme th = ui := Immediate.set_theme th !ui

@@ -1,7 +1,8 @@
 ; claude: unit tests for gui/, run by 'make test' (dune runtest): the
-; .mli's worked examples, and the mouse logic that no golden frame can
-; check, because a click is a sequence of frames and a golden frame is
-; one moment.
+; .mli's worked examples, the mouse logic that no golden frame can
+; check (because a click is a sequence of frames and a golden frame is
+; one moment), and the comparison the four architectures are for --
+; that they paint the same picture from the same input.
 (test
  (name Test)
  (libraries

@@ -40,6 +40,11 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/Gui7Temperature", "", 5);
     ("examples/software/Gui7Flight", "", 5);
     ("examples/software/Gui7Timer", "", 90);
+    (* the same counter written four ways, running four times at once:
+     * the frame is the proof that they draw the same thing, and
+     * gui/tests/Unit_architectures.ml is the proof that they keep
+     * doing so as they are clicked *)
+    ("examples/software/GuiFourWays", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);

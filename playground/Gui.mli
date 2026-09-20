@@ -151,6 +151,17 @@ val area : Playground.computer -> Widget.box
    [view], and it ends the frame *)
 val draw : unit -> Playground.shape list
 
+(* {1 For the other three architectures}
+
+   [gui/Retained], [gui/Mvc] and [gui/Mvu] do their own wiring and
+   answer in [Widget.paint] rather than shapes, so a program that
+   compares them (examples/GuiFourWays.ml) needs the two ends of the
+   adapter on their own: what the person is doing, and how to draw the
+   result. Nothing else in the playground needs these. *)
+
+val input : Playground.computer -> Widget.input
+val shapes : Widget.paint list -> Playground.shape list
+
 (* the colors and sizes the widgets use, to read (e.g. [row], to space
    widgets by hand) or to replace *)
 val theme : unit -> Theme.t

@@ -171,13 +171,48 @@ that makes people leave, depending on the day.
 messages, no model of the interface at all -- the program's own
 variables, read and written in place, once a frame.
 
-The honest summary, which the `.mli`s will repeat: **callbacks scatter
-the truth, MVC guards it, MVU rebuilds from it, immediate mode never
+The honest summary, which the `.mli`s repeat: **callbacks scatter the
+truth, MVC guards it, MVU rebuilds from it, immediate mode never
 stores anything but it.** And the harness that makes this more than an
 opinion is **7GUIs** (Eugen Kiss, 2014): seven tasks picked so that
 each architecture's weakness shows up in at least one -- validation in
 Flight Booker, selection in CRUD, undo and dialogs in Circle Drawer,
 and a dependency graph in Cells.
+
+### What writing all four actually showed
+
+They are in `gui/` now (`Immediate`, `Retained`, `Mvc`, `Mvu`), all
+four drawing through one `Look` so that only the wiring differs, and
+running side by side in `examples/GuiFourWays.ml`. Four things came
+out of writing them that reading about them had not given:
+
+- **The length is not the difference.** At the size of a counter all
+  four are a handful of lines, and anyone claiming one is dramatically
+  shorter is choosing the example. What differs is *how many places
+  hold the count*: two with callbacks, one in the other three. That is
+  the whole argument, and `Unit_architectures.ml` has it as a test —
+  bump the ref without telling the label, and the screen says `0`
+  while the program believes `1`.
+- **They can be made to paint identically, and that is worth
+  enforcing.** The same clicks through all four produce the same
+  rectangles, frame for frame; the test that checks it is what stops
+  the comparison from quietly becoming a comparison of drawing code.
+- **The one place they disagreed was timing**, and it was not
+  architectural. A retained toolkit paints *after* its callbacks ran,
+  so a click shows up in the same frame; in immediate mode whether it
+  does is the order you ask the widgets in — button first, or label
+  first — which is one line, visible in the source, and yours. MVU
+  only matches if `step` views the model *after* folding the
+  messages, which is what Elm does and what made the loop in `Mvu.mli`
+  come out honest.
+- **MVU cannot hold the caret.** The view is rebuilt from the model
+  every frame, so the focus and the caret — which are not in the model
+  and should not be — have to live *underneath* it. In Elm that
+  underneath is the browser, which keeps the focus and the selection
+  in the real DOM; it is the same reason a virtual DOM needs keys and
+  React needs refs. Writing `Mvu.t` made that visible in about ten
+  lines: the architecture is honest about where the truth is, and then
+  leans on the platform for the truth it cannot hold.
 
 ## 5. Layout: constraints down, sizes up
 
