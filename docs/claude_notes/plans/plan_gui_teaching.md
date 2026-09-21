@@ -1250,6 +1250,71 @@ mouse, made bold from the icon, then centred.
 
 Measured: the 2D golden suite 150 with the three TinyWord frames.
 
+### Phase 11, DONE (2026-09-21), awaiting review: TinyMacPaint
+
+Done before phase 10, at the author's request, so that the component
+demo has its three kinds of document -- a sheet, a text, a picture --
+when it comes; the author's idea for it: pictures embedded in an
+office document.
+
+**`appkits/paint/`** (`appkit_paint`, pure OCaml, a fifth library in
+`appkits/`), one idea per module:
+
+- **`Bitmap`**: a picture as bits, packed eight to a byte with the
+  leftmost dot highest, as QuickDraw had them (and why: 21,888 bytes
+  for the Mac's screen, where a byte per dot would not have fitted in
+  the machine). Mutable underneath, a value on the outside: `change`
+  copies, then edits -- the rule that lets pictures sit in `Undo`.
+  `rectangles` turns the black dots into rectangles, runs merged with
+  the runs under them, which is how the picture is drawn with no
+  backend change;
+- **`Pattern`**: 8x8 tiles laid from the picture's origin, so that two
+  areas painted apart join without a seam;
+- **`Paint`**: Bresenham's line (1965, integers only), brushes as the
+  dots they cover, rectangles, and ovals whose outline is *defined* as
+  the edge of the filled oval, so frame and fill always meet;
+- **`Seed_fill`**: the bucket, as Smith's scanline fill (1979) -- and
+  in two steps, a mask first and the pattern through it, because
+  painting as you go never finishes when the pattern has white in it;
+- **`Packbits`**: the Mac's run-length compression, tested on Apple's
+  own example from TN1023, byte for byte; `Bitmap.to_string` writes
+  each row with it, as MacPaint's files did.
+
+**`apps/TinyMacPaint.ml`**: ten tools in two columns (select, bucket,
+pencil, brush, eraser, line, rectangle and filled, oval and filled),
+twelve patterns along the bottom, File and Edit menus (Undo/Redo,
+Cut/Copy/Paste/Clear, Select All) and their Control keys, marching
+ants, and a selection lifted, dragged and put down opaque. It opens on
+a house drawn with the same tools, its roof poured by the bucket.
+Every drag is one undo -- recorded on the press, amended each frame --
+and **the history always holds what is on the screen**, the piece
+being dragged included: a floating piece carries the picture it was
+lifted from and is put down again on it at every move, so undo and
+redo never lose it. The pencil draws white when it starts on black,
+as MacPaint's did. The clipboard carries a piece as
+`Bitmap.to_string`, text like everything else on it.
+
+Shaped for `appkits/embed`: a picture can write itself down
+(`to_string`/`of_string`) and draw itself into a rectangle (the app's
+`dots` and `picture_shapes`, which will move into the component).
+
+Measured: a frame of the opening picture is about 3,200 rectangles
+(2,600 of them the picture, the grey sun and the woven tree the
+dearest, since a grey's dots never merge). That is ~20 ms a frame on
+the native backend and ~35 ms on the software one, after two small
+caches: the picture's shapes remembered for the bitmap they were made
+from (compared by `==`, Elm's `lazy`, correct because a picture in the
+history is never changed in place) and the palette drawn once. A
+bitmap shape in the Playground would make it one image, and is the
+obvious next step if pictures get bigger -- a change to every backend,
+so not taken here. Tests: `appkits/tests` 60 (14 new: the packed row,
+PackBits' example and its worst case, Bresenham's worked example, the
+rectangles covering every black dot once, the bucket filling the
+inside, stopping at a diagonal, and finishing when pouring grey), the
+2D golden suite 154 with three frames: the opening; an oval
+rubber-banded in a pattern and grey poured into the window; the sun
+selected and moved.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

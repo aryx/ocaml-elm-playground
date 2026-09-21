@@ -73,6 +73,9 @@ let scenes : Testutil_golden.scene list =
     (* 1985: the same page with a menu bar and a toolbar, its icons drawn
      * by the same pen as the text *)
     ("apps/software/TinyWord", "", 5);
+    (* 1984: a picture as dots, drawn as rectangles -- a run of black
+     * dots merged with the runs under it *)
+    ("apps/software/TinyMacPaint", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -493,6 +496,21 @@ let scripted : Testutil_golden.scripted list =
       "looks",
       24,
       "at(-222;285):1-6,click:5-10,at(-118;285):8-12,at(-300;428):14-16,click:15,at(-82;428):18-20,click:19,at(300;-400):21-24"
+    );
+    (* the filled oval and the diagonal pattern, rubber-banded from one
+     * corner to the other; then the bucket and grey, poured into the
+     * house's window *)
+    ( "apps/software/TinyMacPaint",
+      "shapes",
+      30,
+      "at(-398;202):1-3,click:2,at(88;-160):4-6,click:5,at(-260;350):7-10,click:9-16,at(-200;300):12,at(-120;250):13-17,at(-398;370):18-20,click:19,at(-104;-160):21-23,click:22,at(-4;112):24-27,click:25,at(400;-400):28-30"
+    );
+    (* the sun selected, then dragged left: lifted, white left behind,
+     * put down opaque over the roof, the ants round it *)
+    ( "apps/software/TinyMacPaint",
+      "move",
+      26,
+      "at(-440;370):1-3,click:2,at(190;350):4-7,click:6-12,at(310;230):9-14,at(250;290):15-17,click:17-24,at(100;290):20,at(0;290):21-26"
     );
     ( "apps/software/TinyExcel",
       "edited",

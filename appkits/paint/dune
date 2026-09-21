@@ -1,0 +1,17 @@
+; claude: a paint program's engine, from scratch, for teaching what
+; MacPaint (Bill Atkinson, 1984) actually did (see
+; docs/claude_notes/plans/plan_gui_teaching.md, phase 11): a picture as
+; a grid of bits (Bitmap), the 8x8 patterns it is painted with
+; (Pattern), the lines, brushes and ovals painted into it (Paint), the
+; bucket (Seed_fill), and the way a picture was written to a floppy
+; (Packbits).
+;
+; Independent of everything -- no gui, no playground: a picture is
+; bits. A private library, installed as part of elm_playground: pure
+; OCaml, so every backend can use it (graphics/2d is the software
+; backend's, and cannot be).
+(library
+ (name appkit_paint)
+ (package elm_playground)
+ (wrapped false)
+)

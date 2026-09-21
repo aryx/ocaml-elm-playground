@@ -11,6 +11,7 @@
    appkit_sheet
    appkit_typeset
    appkit_richtext
+   appkit_paint
    gui ; Text_edit, under Rich
  )
 )
