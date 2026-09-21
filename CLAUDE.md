@@ -78,6 +78,10 @@ Every example/game module (`open Playground; ... let main = Playground_platform.
 
 `picture` and `animation` are simplified special cases of the same `app` type (`picture : shape list -> (screen, msg1) app`, `animation : (time -> shape list) -> (animation, msg) app`). The playground coordinate system is centered at `(0, 0)` (not top-left), which is a deliberate deviation from typical screen coordinates — keep this in mind when writing or debugging view code.
 
+### The catalogue
+
+`CATALOG.md` lists every game (`games/`, `games2.5d/`, `games3d/`) and app (`apps/`) by genre, one table row each: name linked to its source, directory, the original it is after, a one-line description (a future tooltip). A new game or app gets its row there; the screenshot and web page are found by convention (see the file's introduction).
+
 ### opam packages are generated, not hand-edited
 
 `dune-project` has `(generate_opam_files true)` and declares five `(package ...)` stanzas (`elm_core`, `elm_system`, `elm_playground`, `elm_playground_native`, `elm_playground_web`) with their dependencies. The `*.opam` files at the repo root are generated from this — edit `dune-project`, then run `make` (or `dune build <name>.opam`) to regenerate them, rather than editing the `.opam` files directly. `elm_playground_native.opam.template` is the one exception (hand-maintained template consumed during opam generation for that package).

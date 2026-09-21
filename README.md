@@ -192,6 +192,9 @@ idea explained in its `.mli` and checked by tests and golden frames:
   TinyOpenDoc (a document made of
   parts), TinyPowerPoint and TinyHyperCard.
 
+Every game and application is listed by genre, with the original it
+is a toy version of, in [CATALOG.md](CATALOG.md).
+
 The plans and tutorial notes for each are in
 [docs/claude_notes/](docs/claude_notes/); for the applications, start
 with [notes_gui.md](docs/claude_notes/tutorials/notes_gui.md).
