@@ -28,7 +28,7 @@ games2.5d/*.ml`) against the whole game.
 | `TinyOutRun` | Out Run (Sega, 1986) | the road as a list of segments, their edges projected, each slice a trapezoid; a curve, each segment shifted sideways a bit more; a hill hides what's behind (a segment drawn only if it rises above the nearer ones) | slice of road | 23 / 250 | a world beyond the road: a track that crosses itself, a free camera |
 | `TinyGuitarHero` | Guitar Hero (Harmonix, 2005) | Out Run's road straightened: one division by the depth for every point of the highway, the gems shrinking and the frets closing in towards the horizon; the lines across it, one a beat, are all that makes it move | point (a lane edge, a gem, a beat line) | 23 / 351 | anything off the highway: it has no world, only a road that the music scrolls |
 | `TinyWolfenstein` | Wolfenstein 3D (id, 1992) | a ray cast per column through a grid of walls (DDA); the distance gives the wall's height | column | 61 / 306 | walls at an angle, heights, floors |
-| `TinyKart` | Super Mario Kart (Nintendo, 1992), the SNES's Mode 7 | a flat map, turned, sampled row by row, each row at its distance: height * focal / rows below the horizon | row | 84 / 441 | walls, hills: only a flat floor |
+| `TinyMarioKart` | Super Mario Kart (Nintendo, 1992), the SNES's Mode 7 | a flat map, turned, sampled row by row, each row at its distance: height * focal / rows below the horizon | row | 99 / 511 | walls, hills: only a flat floor |
 | `TinyDoom` | Doom (id, 1993) | a BSP tree of the level's walls, walked nearest first; each column's clip arrays say what's left to draw | column | 300 / 499 | rooms above rooms, looking up or down, walls that aren't vertical |
 | `TinyComanche` | Comanche (NovaLogic, 1992), "Voxel Space" | a height map, each column a line across the map, near to far; a y-buffer, what's drawn of each column | column | 126 / 302 | overhangs, caves, a roll |
 | `TinyBattlezone` | Battlezone (Ed Rotberg, Atari, 1980) | every object a list of segments; each end taken into the eye's coordinates (three dot products), cut at a plane just ahead of the eye, and divided by its depth | segment | 62 / 420 | hide anything: every edge is drawn, and you see through tanks, pyramids and mountains alike |
@@ -106,7 +106,7 @@ putting things back through them; then TinyDungeonMaster, where the view is a fi
 picture and there is nothing to compute; then TinyWolfenstein, which gives up
 the fixed pictures for a ray per column and can then stand anywhere and
 look anywhere; then TinyDoom, which does TinyWolfenstein's columns with walls
-at any angle and heights; TinyKart, TinyWolfenstein turned sideways (a line per
+at any angle and heights; TinyMarioKart, TinyWolfenstein turned sideways (a line per
 row across the floor, where TinyWolfenstein has a ray per column); TinyComanche,
 Doom's "nearest first" with the order given by the distance, no tree;
 TinyOutRun, Mode 7 for a road that isn't a map; TinyGuitarHero, the
@@ -141,7 +141,7 @@ engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 
 The 3D twin is shorter: the engine does the work, and the camera can do
 anything. The pseudo-3D one shows what the engine does, and why games
-could run in 1992 without one. TinyKart's model is shared the other way,
+could run in 1992 without one. TinyMarioKart's model is shared the other way,
 with the top-down `games/TinyMicroMachines` (`gamekits/racing`: `Topdown`):
 the same race, seen from above. And TinyGuitarHero's highway, drawn by
 hand here, is drawn by a camera in `games3d/TinyRockBand`, four of them

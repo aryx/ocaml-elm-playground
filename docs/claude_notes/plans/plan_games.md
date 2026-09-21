@@ -428,8 +428,13 @@ Mode 7, see `plan_games3d.md`).
   sprites), TinyMicroMachines (DONE: `games/TinyMicroMachines.ml`, the
   head-to-head mode, drifting cars, the computer on the waypoints; a
   `Camera2d` looking ahead of the leader, or turning with it: the
-  `angle` added to `Camera2d`), TinyKart (DONE: `games2.5d/TinyKart.ml`,
-  Mode 7, see `plan_games3d.md`, on TinyMicroMachines' model).
+  `angle` added to `Camera2d`), TinyMarioKart (DONE:
+  `games2.5d/TinyMarioKart.ml`, Mode 7, see `plan_games3d.md`, on
+  TinyMicroMachines' model; two players on one keyboard, the screen
+  split top and bottom as on the SNES -- Mode 7 drawn twice in screens
+  half as tall, the playground unable to clip, so each half is drawn
+  whole, hills cut and near karts left out, the top one last and a
+  strip over the seam).
 - **Kit**, the racing kit:
   - `Road`: a track as segments (length, curve, hill), projected one
     segment at a time, from far to near; references: Lou Gorenfeld,
@@ -440,7 +445,7 @@ Mode 7, see `plan_games3d.md`).
     (the bicycle model, with the physics plan);
   - laps and checkpoints, opponents following a racing line (DONE:
     `Topdown`, TinyMicroMachines' drifting car and waypoints, out of it
-    for TinyKart: laps, places, the computer's driving).
+    for TinyMarioKart: laps, places, the computer's driving).
 
 ### 12. Action-adventure
 

@@ -101,7 +101,7 @@ let micro_machines_computer () =
   Alcotest.(check bool) "hardly off the road" true (!offroad < 60)
 
 (*****************************************************************************)
-(* TinyKart *)
+(* TinyMarioKart *)
 (*****************************************************************************)
 
 (* Mode 7's two ways, a screen pixel to the ground and back: 90 high,
@@ -109,51 +109,76 @@ let micro_machines_computer () =
  * pixels under the horizon sees 866 ahead of the eye (250 behind the
  * kart), where a pixel is a unit *)
 let kart_mode7 () =
-  let open TinyKart in
+  let open TinyMarioKart in
   let e = eye (Playground.to_screen 1000. 1000.) 0. 0. 0. in
-  let x, y = Option.get (to_ground e 0. (horizon -. 90.)) in
+  let x, y = Option.get (to_ground e 0. (e.horizon -. 90.)) in
   Alcotest.(check (list (float 0.01))) "866 ahead" [ 866.03 -. 250.; 0. ] [ x; y ];
-  let sx, sy, scale = Option.get (TinyKart.to_screen e x y) in
-  Alcotest.(check (list (float 1e-6))) "and back" [ 0.; horizon -. 90.; 1. ] [ sx; sy; scale ];
+  let sx, sy, scale = Option.get (TinyMarioKart.to_screen e x y) in
+  Alcotest.(check (list (float 1e-6))) "and back" [ 0.; e.horizon -. 90.; 1. ] [ sx; sy; scale ];
   (* right of the screen is right of the way we look, -y when looking +x *)
-  let x, y = Option.get (to_ground e 100. (horizon -. 45.)) in
+  let x, y = Option.get (to_ground e 100. (e.horizon -. 45.)) in
   Alcotest.(check bool) "to the right" true (y < 0.);
-  let sx, sy, _ = Option.get (TinyKart.to_screen e x y) in
-  Alcotest.(check (list (float 1e-6))) "and back" [ 100.; horizon -. 45. ] [ sx; sy ];
-  Alcotest.(check bool) "the sky" true (to_ground e 0. (horizon +. 1.) = None)
+  let sx, sy, _ = Option.get (TinyMarioKart.to_screen e x y) in
+  Alcotest.(check (list (float 1e-6))) "and back" [ 100.; e.horizon -. 45. ] [ sx; sy ];
+  Alcotest.(check bool) "the sky" true (to_ground e 0. (e.horizon +. 1.) = None)
 
 (* the computer drives all four karts (the player's too, as after the
- * finish): the player's kart does its 3 laps in under two minutes,
- * hardly ever on the grass, and so do the others, slower *)
+ * finish: a place already given): the player's kart does its 3 laps in
+ * under two minutes, hardly ever on the grass, and so do the others,
+ * slower *)
 let kart_race () =
-  let open TinyKart in
-  let r = ref (new_race ()) and frames = ref 0 and grass = ref 0 in
+  let open TinyMarioKart in
+  let r = ref { (new_race 1) with places = [ Some 1 ] } and frames = ref 0 and grass = ref 0 in
   let player () = (List.hd !r.karts).car in
   while Topdown.lap track (player ()) < laps && !frames < 60 * 120 do
     incr frames;
-    r := update_race initial_computer.keyboard true !r;
+    r := update_race initial_computer.keyboard !r;
     if top_speed (player ()).x (player ()).y < 300. then incr grass
   done;
   Alcotest.(check int) "3 laps" laps (Topdown.lap track (player ()));
   Alcotest.(check bool) "hardly on the grass" true (!grass < 60);
   List.iter (fun k -> Alcotest.(check bool) "the others lapping" true (Topdown.lap track k.car >= 2)) !r.karts
 
+(* Two players: the first two karts, each driven by its own keys (the
+ * arrows, w a s d), each finishing on its own; and in a half of the
+ * split screen, a hill taller than the half's sky is cut at its top. *)
+let kart_two_players () =
+  let open TinyMarioKart in
+  let r = { (new_race 2) with ready = 0 } in
+  Alcotest.(check int) "two players" 2 (List.length r.view_angles);
+  let wasd = { initial_computer.keyboard with kw = true } in
+  let r' = ref r in
+  for _ = 1 to 60 do r' := update_race wasd !r' done;
+  let moved i = Float.hypot ((List.nth !r'.karts i).car.x -. (List.nth r.karts i).car.x) ((List.nth !r'.karts i).car.y -. (List.nth r.karts i).car.y) in
+  Alcotest.(check bool) (Printf.sprintf "w drives the second (%.0f)" (moved 1)) true (moved 1 > 100.);
+  Alcotest.(check bool) (Printf.sprintf "not the first (%.0f)" (moved 0)) true (moved 0 < 20.);
+  let one_done = { !r' with places = [ Some 2; None ] } in
+  Alcotest.(check bool) "one finished, the race goes on" true (List.nth (update_race wasd one_done).places 1 = None);
+  let half = Playground.to_screen 1000. 500. in
+  let e = eye half 0. 0. 0. in
+  Alcotest.(check (float 1e-9)) "the half's horizon: 15% of its height" 75. e.horizon;
+  match (hill half Playground.red 220. 0. e.horizon).form with
+  | Playground.Polygon (_, points) ->
+      Alcotest.(check (float 1e-9)) "a tall hill, cut at the half's top" half.top
+        (List.fold_left (fun m (_, y) -> Float.max m y) neg_infinity points)
+  | _ -> Alcotest.fail "a tall hill should be cut" 
+
 (*****************************************************************************)
 (* TinyMarioKart64 *)
 (*****************************************************************************)
 
 (* the computer drives all eight karts (the player's too, as after the
- * finish), up the hill, off the ramp, through the traffic and whatever
+ * finish: a place already given), up the hill, off the ramp, through the traffic and whatever
  * they throw at each other: the player's kart does its 3 laps in under
  * two minutes and a half, hardly ever off the road, and the others are
  * not far behind -- which is what the rubber band is for *)
 let mario_kart_race () =
   let open TinyMarioKart64 in
-  let r = ref (new_race ()) and frames = ref 0 and off_road = ref 0 and flew = ref false in
+  let r = ref { (new_race 1) with places = [| Some 1 |] } and frames = ref 0 and off_road = ref 0 and flew = ref false in
   let player () = !r.karts.(0) in
   while (player ()).lap < laps && !frames < 60 * 150 do
     incr frames;
-    r := step_race initial_computer.keyboard false false true !r;
+    r := step_race [| no_pad |] !r;
     let k = player () in
     if top_speed_at (Track3d.at track k.s).width k.offset < 30. then incr off_road;
     if k.air > 1. then flew := true
@@ -169,7 +194,7 @@ let mario_kart_race () =
  * the middle of the start straight, where there is room to slide. *)
 let mario_kart_mini_turbo () =
   let open TinyMarioKart64 in
-  let start = (new_race ()).karts.(0) in
+  let start = (new_race 1).karts.(0) in
   let s0 = 40. in
   let x, y = plane_at s0 0. in
   let heading = 90. -. (Track3d.at track s0).heading in
@@ -197,9 +222,70 @@ let mario_kart_items () =
   Alcotest.(check bool) "something to catch up with, at the back" true
     (List.exists (fun s -> roll 8 s = Mushroom) seeds);
   (* and the rubber band: behind the player, faster; ahead of him, slower *)
-  let k = (new_race ()).karts.(1) in
+  let k = (new_race 1).karts.(1) in
   Alcotest.(check bool) "faster when behind" true (rubber (along k +. 100.) k > 1.);
   Alcotest.(check bool) "slower when ahead" true (rubber (along k -. 100.) k < 1.)
+
+(* Up to four players: one or two race the seven computers' karts,
+ * three or four race each other alone, as on the N64; each pad drives
+ * its own kart; and the screen is a view per player, in quadrants. *)
+let mario_kart_players () =
+  let open TinyMarioKart64 in
+  Alcotest.(check int) "two players among eight karts" 8 (Array.length (new_race 2).karts);
+  let r = { (new_race 4) with ready = 0 } in
+  Alcotest.(check int) "four players, four karts" 4 (Array.length r.karts);
+  Alcotest.(check int) "four colors" 4 (List.length (List.sort_uniq compare (Array.to_list (Array.map (fun (k : kart) -> k.color) r.karts))));
+  let go = { no_pad with gas = 1. } and stop = { no_pad with gas = -1. } in
+  let r' = ref r in
+  for _ = 1 to 90 do r' := step_race [| go; stop; go; stop |] !r' done;
+  let moved i = along !r'.karts.(i) -. along r.karts.(i) in
+  Alcotest.(check bool) (Printf.sprintf "the gas moves 1 and 3 (%.0f, %.0f)" (moved 0) (moved 2)) true (moved 0 > 20. && moved 2 > 20.);
+  (* the brake held from a standstill backs away, as down does alone *)
+  Alcotest.(check bool) (Printf.sprintf "the brake keeps 2 and 4 back (%.1f, %.1f)" (moved 1) (moved 3)) true (moved 1 < 0. && moved 3 < 0.);
+  let views = TinyMarioKart64.view (Playground.initial_computer) (Scene2d.start (Racing r)) in
+  Alcotest.(check int) "four views" 4 (List.length views);
+  Alcotest.(check bool) "in the four quadrants" true (List.map (fun (v : Playground3d.view) -> v.area) views = Playground3d.split 4)
+
+(* Block Fort: two heights where a bridge crosses the floor, the one a
+ * kart stands on found by its own height; a fort's side stops a kart,
+ * and a ramp takes it to the top. *)
+let mario_kart_block_fort () =
+  let open TinyMarioKart64 in
+  let under_bridge = (0., fort_center) in
+  Alcotest.(check (float 1e-9)) "under the bridge: the floor" 0. (level (fst under_bridge) (snd under_bridge) 0.);
+  Alcotest.(check (float 1e-9)) "on it: the bridge" fort_height (level (fst under_bridge) (snd under_bridge) fort_height);
+  let mid_ramp = fort_center +. fort_half +. (ramp_length_bf /. 2.) in
+  Alcotest.(check (float 1e-6)) "half way up a ramp" (fort_height /. 2.) (level mid_ramp fort_center 2.);
+  Alcotest.(check bool) "a fort's side, from the floor" true (solid_at fort_center fort_center 0.);
+  Alcotest.(check bool) "its top, from above" false (solid_at fort_center fort_center fort_height);
+  let bt = new_battle 2 in
+  let place (f : fighter) x y heading = { f with kart = { f.kart with car = { f.kart.car with x; y; heading; vx = 0.; vy = 0.; speed = 0. } } } in
+  let gas = { no_pad with gas = 1. } in
+  let drive n f = let f = ref f in for _ = 1 to n do f := step_fighter gas !f done; !f in
+  (* at the fort's east side, facing it (west): it bounces, and stays on the floor *)
+  let at_wall = drive 60 (place bt.fighters.(0) (fort_center +. fort_half +. 16.) 0. 180.) in
+  Alcotest.(check bool) (Printf.sprintf "stopped by the fort (x %.1f)" at_wall.kart.car.x) true
+    (at_wall.kart.car.x >= fort_center +. fort_half -. 0.5 && at_wall.h = 0.);
+  (* at the foot of the north-east fort's ramp, facing up it: on top *)
+  let climbed = drive 90 (place bt.fighters.(0) (fort_center +. fort_half +. ramp_length_bf +. 3.) fort_center 180.) in
+  Alcotest.(check (float 1e-6)) (Printf.sprintf "up the ramp, on the fort (x %.1f)" climbed.kart.car.x) fort_height climbed.h
+
+(* A shell comes back off a wall; a hit pops a balloon, with a moment
+ * when nothing else can; the last kart with a balloon wins. *)
+let mario_kart_balloons () =
+  let open TinyMarioKart64 in
+  let bt = new_battle 2 in
+  let shell = { bsx = arena -. 1.; bsy = -40.; bsh = 0.; vx = 62.; vy = 0.; seeking = false; blife = 300; by_ = 0 } in
+  (match step_bshell bt.fighters shell with
+  | Some s, _ -> Alcotest.(check bool) "off the wall, and back" true (s.vx < 0.)
+  | None, _ -> Alcotest.fail "the shell should bounce");
+  let f = bt.fighters.(1) in
+  let hit = pop f in
+  Alcotest.(check int) "a balloon popped" 2 hit.balloons;
+  Alcotest.(check int) "and not twice at once" 2 (pop hit).balloons;
+  Alcotest.(check bool) "two left: no winner yet" true (battle_winner bt = None);
+  let last = { bt with fighters = [| bt.fighters.(0); { f with balloons = 0 } |] } in
+  Alcotest.(check bool) "one left: the winner" true (battle_winner last = Some 0)
 
 (* the circuit itself: the ribbon's two ways, a distance along and an
  * offset across, there and back; and a lap that climbs and comes home
@@ -4756,9 +4842,13 @@ let tests =
       t "TinyPacman, a power pellet" pacman_blue;
       t "TinyBomberman, a chain reaction" bomberman_chain;
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
-      t "TinyKart, Mode 7 there and back" kart_mode7;
-      t "TinyKart, the computer drives the race" kart_race;
+      t "TinyMarioKart, Mode 7 there and back" kart_mode7;
+      t "TinyMarioKart, the computer drives the race" kart_race;
+      t "TinyMarioKart, two players" kart_two_players;
       t "TinyMarioKart64, the computer drives the race" mario_kart_race;
+      t "TinyMarioKart64, Block Fort" mario_kart_block_fort;
+      t "TinyMarioKart64, the balloons" mario_kart_balloons;
+      t "TinyMarioKart64, up to four players" mario_kart_players;
       t "TinyMarioKart64, the powerslide and its mini-turbo" mario_kart_mini_turbo;
       t "TinyMarioKart64, the items by place" mario_kart_items;
       t "TinyMarioKart64, the ribbon there and back" mario_kart_ribbon;

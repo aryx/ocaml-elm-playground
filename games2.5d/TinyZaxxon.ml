@@ -90,7 +90,7 @@
  * cannot do, and why a z-buffer was worth inventing.)
  *
  * The fourth family of this directory, then, next to cell by cell
- * (TinyDungeonMaster), row by row (TinyKart, TinyOutRun) and column by
+ * (TinyDungeonMaster), row by row (TinyMarioKart, TinyOutRun) and column by
  * column (TinyWolfenstein, TinyDoom, TinyComanche): **object by
  * object**. Its world obeys the same restriction as theirs, one height
  * per point; what is new is that the *player* has a height and must

@@ -5,7 +5,7 @@
   (names
     TinyWolfenstein
     TinyOutRun
-    TinyKart
+    TinyMarioKart
     TinyDoom
     TinyComanche
     TinyDescent
@@ -19,7 +19,7 @@
   (libraries
     ai ; TinyDungeonMaster's Pathfind (the monsters' A*)
     elm_playground
-    kit_racing ; TinyOutRun's Road and Car, TinyKart's Topdown
+    kit_racing ; TinyOutRun's Road and Car, TinyMarioKart's Topdown
     kit_sectors ; TinyDoom's level
     kit_heightmap ; TinyComanche's island
     kit_segments ; TinyDescent's mine

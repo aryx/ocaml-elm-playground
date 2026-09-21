@@ -64,7 +64,7 @@
  *
  * Doom's floors and ceilings were textured, drawn in rows ("visplanes",
  * r_plane.c: the columns of a flat remembered, then drawn as horizontal
- * spans, sampled like games2.5d/TinyKart's Mode 7); here, flat colors, the
+ * spans, sampled like games2.5d/TinyMarioKart's Mode 7); here, flat colors, the
  * columns of a color drawn together too ([paint]). The light is Doom's: the sector's level, darker
  * with the distance, in 32 steps like its COLORMAP, and walls along the
  * x axis darker than along y (its "fake contrast", for corners).

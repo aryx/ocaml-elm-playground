@@ -186,6 +186,13 @@ let scripted : Testutil_golden.scripted list =
      * kart shows its side (the drawing is chosen by the angle it is
      * seen from), and the sparks say the mini-turbo is charged *)
     ("games3d/software/TinyMarioKart64", "slide", 560, "space:1,up:2-620,right:470-545,Shift:470-580");
+    (* claude: four players, the screen in quadrants as on the N64: the
+       race without the computer's karts, each view its own camera and
+       HUD *)
+    ("games3d/software/TinyMarioKart64", "four", 300, "4:1,space:3");
+    (* claude: the battle, four players on Block Fort: the forts, the
+       bridges, three balloons each, an item in every hand *)
+    ("games3d/software/TinyMarioKart64", "battle", 230, "4:1,b:3");
     (* v three times: the view from above *)
     ("games3d/software/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
     (* games/TinyTron's "computer" game, seen from behind the blue cycle,

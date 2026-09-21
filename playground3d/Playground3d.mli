@@ -388,11 +388,74 @@ val game3d :
   'model ->
   ('model, Playground.msg) app3d
 
+(** {2 Split screens}
+
+    Several players on one screen, each with a camera of their own, as
+    in Mario Kart 64's four quadrants: a {!view} is a camera, the
+    rectangle of the window it fills (an {!area}), and the shapes it
+    sees. A camera is only a place, a direction and a rectangle of
+    pixels to fill, so a split screen is the same scene drawn once per
+    view:
+
+{v
+      split 2                    split 4
+   +-----------------+       +--------+--------+
+   |   (0, .5, 1, .5) |       | player | player |
+   |    player 1      |       |   1    |   2    |
+   +-----------------+       +--------+--------+
+   |   (0, 0, 1, .5)  |       | player | player |
+   |    player 2      |       |   3    |   4    |
+   +-----------------+       +--------+--------+
+v}
+
+    Each view is drawn with the aspect of its own rectangle, and its
+    {!hud} shapes are in its own coordinates: (0, 0) the middle of the
+    view, the edges those of {!area_screen}. The cost is the view count
+    times the scene: the whole world is drawn again for each player --
+    which is why Mario Kart 64 dropped the computer's karts from its
+    three- and four-player races. *)
+
+(** A rectangle of the window, as fractions of its width and height:
+    [x], [y] its bottom-left corner (0 to 1, from the window's
+    bottom-left), [w] and [h] its size. *)
+type area = { x : number; y : number; w : number; h : number }
+
+type view = { camera : camera; area : area; shapes : shape3d list }
+
+(** The whole window: [{ x = 0.; y = 0.; w = 1.; h = 1. }] *)
+val whole : area
+
+(** [split n]: the usual split screens, player 1 first: 1 the whole
+    window, 2 a top and a bottom half, 3 and 4 the quadrants (the top
+    left, top right, bottom left, bottom right; the fourth left out for
+    three players, as on the N64). *)
+val split : int -> area list
+
+(** [area_screen screen area]: the screen a view sees, as big as its
+    part of the window, centered on (0, 0): what to lay out a view's
+    HUD on, as a whole game's HUD is laid out on [computer.screen]. *)
+val area_screen : Playground.screen -> area -> Playground.screen
+
+(** Like {!game3d}, but [view] gives a list of views, each drawn in its
+    own part of the window -- one, several, and not always the same
+    number (a title screen, then the race split in four). *)
+val split3d :
+  (Playground.computer -> 'model -> view list) ->
+  (Playground.computer -> 'model -> 'model) ->
+  'model ->
+  ('model, Playground.msg) app3d
+
 (**/**)
 (* claude: exposed only so Playground3d_platform implementations (native,
  * web) can pattern-match on an app3d; not meant to be used directly by
  * applications (use game3d). *)
 val init3d : ('model, 'msg) app3d -> unit -> 'model
 val update3d : ('model, 'msg) app3d -> Playground.computer -> 'model -> 'model
-val view3d : ('model, 'msg) app3d -> Playground.computer -> 'model -> camera * shape3d list
+val views3d : ('model, 'msg) app3d -> Playground.computer -> 'model -> view list
+
+(* claude: for the backends: where an area's middle is on the screen
+ * (the offset from the window's middle), and the views' HUD shapes, each
+ * moved there, as one window-wide HUD *)
+val area_offset : Playground.screen -> area -> number * number
+val views_hud : Playground.screen -> view list -> Playground.shape list
 (**/**)

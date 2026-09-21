@@ -477,7 +477,7 @@ let side_face (g : game) (screen : screen) (r : int) (d : int) : shape list =
 
 (* The floor and the ceiling of a depth come out as two bands right
  * across the screen -- everything at one distance is at one height on
- * the screen -- which is Mode 7's whole idea (see TinyKart), arrived at
+ * the screen -- which is Mode 7's whole idea (see TinyMarioKart), arrived at
  * from the other end. *)
 let bands (g : game) (screen : screen) (d : int) : shape list =
   List.concat_map

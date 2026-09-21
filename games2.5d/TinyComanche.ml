@@ -45,7 +45,7 @@
  * far cells fade to the sky's color, 4 steps of fog, which hid where
  * the map stops.
  *
- * As in games2.5d/TinyKart.ml, a "pixel" is 5 x 5 real ones: the view is a
+ * As in games2.5d/TinyMarioKart.ml, a "pixel" is 5 x 5 real ones: the view is a
  * picture of characters (one per color: a kind of ground, its light,
  * its fog), drawn by Sprite.pixels. The balloons are billboards: a
  * circle sized by its distance, drawn over the terrain if nothing is

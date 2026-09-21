@@ -6,7 +6,7 @@
 ;
 ; Its own library rather than part of kit_racing next door, because it
 ; draws: elm_playground_3d is a virtual library, so a 2D game linking
-; the racing kit (games/TinyMicroMachines, games2.5d/TinyKart) would
+; the racing kit (games/TinyMicroMachines, games2.5d/TinyMarioKart) would
 ; have to link a 3D backend too. A private library, not installed.
 (library
  (name kit_racing3d)

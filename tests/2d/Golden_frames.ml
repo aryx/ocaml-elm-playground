@@ -181,7 +181,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/BigBangRocket", "", 60);
     ("games/software/TinyBabaIsYou", "", 5);
     ("examples/software/BigBangWorm", "", 400);
-    ("games2.5d/software/TinyKart", "", 5);
+    ("games2.5d/software/TinyMarioKart", "", 5);
     ("games2.5d/software/TinyDoom", "", 5);
     (* "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
     ("games2.5d/software/TinyDoom", "rr", 5);
@@ -450,8 +450,11 @@ let scripted : Testutil_golden.scripted list =
      * over it (too big to fall in) *)
     (* the grid, GO!; the first corner, the karts passed on the way
      * coming up behind *)
-    ("games2.5d/software/TinyKart", "grid", 200, "space:1");
-    ("games2.5d/software/TinyKart", "corner", 430, "space:1,up:2-430,right:370-405");
+    ("games2.5d/software/TinyMarioKart", "grid", 200, "space:1");
+    ("games2.5d/software/TinyMarioKart", "corner", 430, "space:1,up:2-430,right:370-405");
+    (* two players, the screen split as on the SNES: the first on top
+       (the arrows), the second below (w a s d), both on the gas *)
+    ("games2.5d/software/TinyMarioKart", "split", 260, "2:1,up:2-260,w:2-260,d:200-215");
     (* on the stairs, upstairs ahead; at the window onto the dark room
      * (games3d/TinyDoom3d's golden frames are the same walks) *)
     ("games2.5d/software/TinyDoom", "stairs", 80, "left:1-10,up:11-80");

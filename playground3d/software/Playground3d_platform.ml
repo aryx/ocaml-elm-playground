@@ -251,9 +251,37 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     end
   in
 
-  let draw (_computer : Playground.computer) ((camera, shapes) : Playground3d.camera * Playground3d.shape3d list)
-      : unit =
-    let group = Playground3d.group3d shapes in
+  (* claude: a split screen's views (Playground3d.split3d) are each
+   * drawn in a framebuffer of their own size -- the camera then gets
+   * the aspect of its rectangle for free -- and copied into theirs, a
+   * row at a time; one for each size, made once *)
+  let view_buffers : (int * int, Framebuffer.t * Zbuffer.t) Hashtbl.t = Hashtbl.create 4 in
+  let view_buffer (w : int) (h : int) : Framebuffer.t * Zbuffer.t =
+    match Hashtbl.find_opt view_buffers (w, h) with
+    | Some b -> b
+    | None ->
+        let b = (Framebuffer.create ~width:w ~height:h, Zbuffer.create ~width:w ~height:h) in
+        Hashtbl.replace view_buffers (w, h) b;
+        b
+  in
+  let draw_view (fb : Framebuffer.t) (v : Playground3d.view) : unit =
+    let x0 = int_of_float (Float.round (v.area.x *. float_of_int fb.width)) in
+    let x1 = int_of_float (Float.round ((v.area.x +. v.area.w) *. float_of_int fb.width)) in
+    (* the framebuffer's rows go down, the area's y up *)
+    let y0 = int_of_float (Float.round ((1. -. v.area.y -. v.area.h) *. float_of_int fb.height)) in
+    let y1 = int_of_float (Float.round ((1. -. v.area.y) *. float_of_int fb.height)) in
+    let w = x1 - x0 and h = y1 - y0 in
+    if w > 0 && h > 0 then begin
+      let sub, zb = view_buffer w h in
+      Framebuffer.clear sub ~rgb:0xFFFFFF;
+      Shape3d_render_software.render ~options:!options sub zb v.camera (Playground3d.group3d v.shapes);
+      for r = 0 to h - 1 do
+        Bigarray.Array1.blit (Bigarray.Array2.slice_left sub.pixels r)
+          (Bigarray.Array1.sub (Bigarray.Array2.slice_left fb.pixels (y0 + r)) x0 w)
+      done
+    end
+  in
+  let draw (computer : Playground.computer) (views : Playground3d.view list) : unit =
     (* at the resolution of "r", the scene and its HUD, then blown up
      * (Pixelate); the HUD without antialiasing then, as in the 2D
      * backend: big pixels, no seams *)
@@ -262,7 +290,10 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     in
     Pixelate.draw fb (fun fb ~scale ->
         Framebuffer.clear fb ~rgb:0xFFFFFF;
-        Shape3d_render_software.render ~options:!options fb (zbuffer_for fb) camera group;
+        (match views with
+        | [ v ] when v.area = Playground3d.whole ->
+            Shape3d_render_software.render ~options:!options fb (zbuffer_for fb) v.camera (Playground3d.group3d v.shapes)
+        | views -> List.iter (draw_view fb) views);
         (* claude: a HUD pass, once the 3D scene above is fully rasterized
          * into [fb] for this frame: the 2D shapes drawn on top by the 2D
          * software rasterizer (playground/software/Shape_render_software,
@@ -270,7 +301,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
          * the 2D backend's per-frame one) -- this must only add pixels on
          * top, never erase the 3D frame underneath. See
          * docs/claude_notes/done/plan_hud.md. *)
-        match Playground3d.collect_hud_shapes group with
+        match Playground3d.views_hud computer.screen views with
         | [] -> ()
         | hud_shapes -> Shape_render_software.render ~options:hud_options ~scale fb hud_shapes);
     if !help then Help_overlay.draw fb (help_lines ());
@@ -301,7 +332,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     close_out oc
   in
   Native_loop_3d.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D" ~on_key_press
-    ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d)
+    ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.views3d app3d)
     ~draw ~present ~dump_frame
     ?title_keys:(if Native_loop_3d.debug_keys_enabled () then Some title_keys else None)
     ?capture_mouse ?flags ()

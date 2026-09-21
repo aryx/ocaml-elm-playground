@@ -418,15 +418,50 @@ let render3d_to_2d ?(rendering = default_rendering) (camera : camera) (screen : 
 (* App *)
 (*****************************************************************************)
 
+(* claude: split screens -- see the .mli's "Split screens" *)
+type area = { x : number; y : number; w : number; h : number }
+type view = { camera : camera; area : area; shapes : shape3d list }
+
+let whole = { x = 0.; y = 0.; w = 1.; h = 1. }
+
+let split (n : int) : area list =
+  match n with
+  | 1 -> [ whole ]
+  | 2 -> [ { x = 0.; y = 0.5; w = 1.; h = 0.5 }; { x = 0.; y = 0.; w = 1.; h = 0.5 } ]
+  | _ ->
+      List.filteri
+        (fun i _ -> i < n)
+        [ { x = 0.; y = 0.5; w = 0.5; h = 0.5 }; { x = 0.5; y = 0.5; w = 0.5; h = 0.5 };
+          { x = 0.; y = 0.; w = 0.5; h = 0.5 }; { x = 0.5; y = 0.; w = 0.5; h = 0.5 } ]
+
+let area_screen (screen : Playground.screen) (a : area) : Playground.screen =
+  Playground.to_screen (screen.width *. a.w) (screen.height *. a.h)
+
+let area_offset (screen : Playground.screen) (a : area) : number * number =
+  ((a.x +. (a.w /. 2.) -. 0.5) *. screen.width, (a.y +. (a.h /. 2.) -. 0.5) *. screen.height)
+
+let views_hud (screen : Playground.screen) (views : view list) : Playground.shape list =
+  List.concat_map
+    (fun v ->
+      let dx, dy = area_offset screen v.area in
+      let huds = collect_hud_shapes (group3d v.shapes) in
+      if dx = 0. && dy = 0. then huds else List.map (Playground.move dx dy) huds)
+    views
+
 type ('model, 'msg) app3d = {
   init3d_ : unit -> 'model;
   update3d_ : Playground.computer -> 'model -> 'model;
-  view3d_ : Playground.computer -> 'model -> camera * shape3d list;
+  views3d_ : Playground.computer -> 'model -> view list;
 }
 
 let game3d view_memory update_memory initial_memory =
-  { init3d_ = (fun () -> initial_memory); update3d_ = update_memory; view3d_ = view_memory }
+  { init3d_ = (fun () -> initial_memory);
+    update3d_ = update_memory;
+    views3d_ = (fun computer model -> let camera, shapes = view_memory computer model in [ { camera; area = whole; shapes } ]) }
+
+let split3d views update_memory initial_memory =
+  { init3d_ = (fun () -> initial_memory); update3d_ = update_memory; views3d_ = views }
 
 let init3d app = app.init3d_
 let update3d app = app.update3d_
-let view3d app = app.view3d_
+let views3d app = app.views3d_

@@ -622,17 +622,26 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
            Gl.delete_vertex_arrays 1 (Bigarray.Array1.of_array Bigarray.int32 Bigarray.c_layout [| Int32.of_int vao |]))
   in
   let meshes = Mesh_cache.create () in
-  let draw (_computer : Playground.computer) ((camera, shapes) : Playground3d.camera * Playground3d.shape3d list) :
-      unit =
-    let aspect = float_of_int sx /. float_of_int sy in
+  (* one view, in its rectangle of the window (all of it but in a split
+   * screen, Playground3d.split3d): GL's viewport maps the scene into
+   * it, the scissor keeps the clear of its depth inside it, and the
+   * projection gets its aspect *)
+  let draw_view (v : Playground3d.view) : unit =
+    let camera = v.camera and shapes = v.shapes in
+    let px f n = int_of_float (Float.round (f *. float_of_int n)) in
+    let vx = px v.area.x sx and vy = px v.area.y sy in
+    let vw = px (v.area.x +. v.area.w) sx - vx and vh = px (v.area.y +. v.area.h) sy - vy in
+    Gl.viewport vx vy vw vh;
+    Gl.enable Gl.scissor_test;
+    Gl.scissor vx vy vw vh;
+    Gl.clear Gl.depth_buffer_bit;
+    Gl.disable Gl.scissor_test;
+    let aspect = float_of_int vw /. float_of_int (max 1 vh) in
     let view = Mat4.look_at ~up:camera.up ~eye:camera.eye ~target:camera.target () in
     let projection = (if camera.ortho > 0. then Mat4.orthographic ~height:camera.ortho ~aspect ~near:camera.near ~far:camera.far
        else Mat4.perspective ~fov_degrees:camera.fov ~aspect ~near:camera.near ~far:camera.far) in
     let mvp = Mat4.mul projection view in
     let mvp_data = Bigarray.Array1.of_array Bigarray.float32 Bigarray.c_layout mvp in
-
-    Gl.clear_color 1.0 1.0 1.0 1.0;
-    Gl.clear (Gl.color_buffer_bit lor Gl.depth_buffer_bit);
     Gl.use_program program;
     Gl.uniform_matrix4fv mvp_location 1 true mvp_data;
     Gl.bind_vertex_array (Int32.to_int vao.{0});
@@ -640,8 +649,6 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     Gl.polygon_mode Gl.front_and_back (match !render_mode with Filled -> Gl.fill | Wireframe -> Gl.line);
     Gl.uniform1i shading_location (shading_code !shading);
     if !backface_culling then Gl.enable Gl.cull_face_enum else Gl.disable Gl.cull_face_enum;
-    draw_calls := 0;
-    vertices_uploaded := 0;
     (* claude: the cached3d shapes are set aside (without the cache, "o",
      * they're flattened with the rest, like groups), the rest drawn as
      * before, then the cached ones from their meshes *)
@@ -649,9 +656,20 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     let on_cached = if !use_cache then Some (fun c -> cached := c :: !cached) else None in
     Gpu_scene.group_by_material ?on_cached shapes |> List.iter draw_group;
     List.rev !cached
-    |> List.iter (fun (c : Playground3d.cached) -> draw_mesh (Mesh_cache.find_or_build meshes c.id (build_mesh c)));
+    |> List.iter (fun (c : Playground3d.cached) -> draw_mesh (Mesh_cache.find_or_build meshes c.id (build_mesh c)))
+  in
+  let draw (computer : Playground.computer) (views : Playground3d.view list) : unit =
+    Gl.viewport 0 0 sx sy;
+    Gl.clear_color 1.0 1.0 1.0 1.0;
+    Gl.clear (Gl.color_buffer_bit lor Gl.depth_buffer_bit);
+    draw_calls := 0;
+    vertices_uploaded := 0;
+    List.iter draw_view views;
+    Gl.viewport 0 0 sx sy;
+    (* once all the views are drawn: a mesh one view didn't use may be
+     * another's *)
     Mesh_cache.sweep meshes ~free:free_mesh;
-    (match if !show_hud then Playground3d.collect_hud_shapes (Playground3d.group3d shapes) else [] with
+    (match if !show_hud then Playground3d.views_hud computer.screen views else [] with
     | [] -> ()
     | hud_shapes -> draw_hud hud_shapes);
     let s = Mesh_cache.stats meshes in
@@ -680,5 +698,5 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     close_out oc
   in
   Native_loop_3d.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D (OpenGL)" ~on_key_press
-    ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.view3d app3d) ~draw
+    ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.views3d app3d) ~draw
     ~present ~dump_frame ?capture_mouse ?flags ()

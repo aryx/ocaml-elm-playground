@@ -342,16 +342,17 @@ And the console's own answer, Mario Kart 64 (Nintendo, 1996): a
 polygon circuit whose karts are still drawings, one per viewing
 angle, standing in it.
 
-- **Toys**: TinyKart in Mode 7 (DONE: `games2.5d/TinyKart.ml`, in the 2D
+- **Toys**: TinyMarioKart in Mode 7 (DONE: `games2.5d/TinyMarioKart.ml`, in the 2D
   playground: a `Tilemap` track sampled row by row with a per-row scale
   into a 200x130 picture of characters drawn by `Sprite.pixels`, TinyWolfenstein
   turned sideways; the karts billboards, four drawings by the viewing
   angle; three laps against three computer karts, on the racing kit's
-  `Topdown`, TinyMicroMachines' model), and TinyVirtuaRacing (DONE: `games3d/TinyVirtuaRacing.ml`, a stage on
+  `Topdown`, TinyMicroMachines' model; two players on one keyboard,
+  the screen split top and bottom as on the SNES), and TinyVirtuaRacing (DONE: `games3d/TinyVirtuaRacing.ml`, a stage on
   TinyOutRun's course, with the racing kit `gamekits/racing/`) --
   flat-shaded polygons are exactly `playground3d`'s look, so this may
   be the most satisfying 3D toy. Then TinyMarioKart64 (DONE:
-  `games3d/TinyMarioKart64.ml`), the same `Topdown` model as TinyKart
+  `games3d/TinyMarioKart64.ml`), the same `Topdown` model as TinyMarioKart
   and TinyMicroMachines drawn a third way, and the one toy that mixes
   the two pictures: polygons for the circuit, the rails, the item
   boxes and the traffic, sprites (`billboard`, pixel art as quads on a
@@ -362,7 +363,15 @@ angle, standing in it.
   place, and the rubber band (`plan_ai_teaching.md`'s example) -- and,
   on the ribbon, a circuit that climbs, leans into its one banked
   corner and throws you off a ramp near the crest, where the shadow
-  staying on the boards is what says how high you are.
+  staying on the boards is what says how high you are. And up to four
+  players on one screen, as the N64 was bought for: the viewports are
+  the playground's (`Playground3d.split3d`, a camera and a rectangle of
+  the window per view, in every backend -- the software one drawing
+  each view in a framebuffer of its size, OpenGL and WebGL with a
+  viewport and a scissor, the SVG one clipping each view's polygons);
+  three or four players race without the computer's karts, as in the
+  original; and the battle mode on Block Fort, three balloons each, an
+  arena with two heights where its bridges cross its floor.
 - **Kit**, the racing kit of `plan_games.md` in 3D: `Track3d` (DONE:
   `gamekits/racing/3d/Track3d.ml`, its own library beside `kit_racing`
   because it draws, and the 3D playground is virtual: a 2D game
@@ -631,7 +640,7 @@ one line of the model:
    `TinyMinecraft`'s player with its second user.
 3. `Camera3d` with TinyMario64 and TinyMarbleMadness: the camera problem
    (both DONE).
-4. The racing kit in 3D with TinyVirtuaRacing (and TinyKart in Mode 7
+4. The racing kit in 3D with TinyVirtuaRacing (and TinyMarioKart in Mode 7
    next to `plan_games.md`'s TinyOutRun) (both DONE).
 5. `Heightmap` with TinyComanche and TinyComanche3d (DONE), TinyStarFox;
    `Sectors` with TinyDoom and TinyDoom3d (DONE).

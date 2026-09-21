@@ -14,6 +14,32 @@
  * left/right to steer, shift to hop and slide, space to use what you
  * hold.
  *
+ * And what the N64 was bought for: four friends on one television.
+ * On the title, 1 2 3 4 say how many players, space starts the race,
+ * b the battle. Together the karts accelerate by themselves, and the
+ * keyboard is shared out ([pads]):
+ *
+ *     player 1   arrows: left right, down brakes, up the item; shift hops
+ *     player 2   a d, s brakes, w the item, q hops
+ *     player 3   j l, k brakes, i the item, u hops
+ *     player 4   f h, g brakes, t the item, r hops
+ *
+ * The split screen is the playground's (Playground3d.split3d): a view
+ * per player -- a camera, its quarter or half of the window, and the
+ * world drawn again for it, the sprites turned to face that camera
+ * ([race_world]). The cost is plain: the whole race is drawn once per
+ * player, which is why the original's three- and four-player races
+ * have no computer karts, and neither do these ([new_race]).
+ *
+ * The battle ([step_battle], after Mario Kart 64's Block Fort): four
+ * forts, bridges between their tops, the floor running under the
+ * bridges, three balloons each; a hit pops one, and the last kart with
+ * a balloon wins. Its ground is the one thing new, and the header of
+ * its section draws it: where a bridge crosses the floor there are two
+ * heights, and a kart stands on the one its own height reaches
+ * ([level]); a fort is solid below its top, and shells bounce off it
+ * and off the walls instead of dying on them.
+ *
  * The trick of this game is that it draws with two things at once, and
  * which is which is the whole lesson:
  *
@@ -73,7 +99,7 @@
  * a kart drawn at its offset stands on the slope ([ground]). The car
  * underneath is still games/TinyMicroMachines' (the racing kit's
  * Topdown, driven on the plane, the height only drawn) -- that much is
- * shared with games2.5d/TinyKart, where the same car is drawn in Mode
+ * shared with games2.5d/TinyMarioKart, where the same car is drawn in Mode
  * 7, which cannot show a hill at all.
  *
  * What the picture cannot give, this game adds, and they are Mario
@@ -101,7 +127,7 @@
  *     already drags one.
  *
  * Uses: the racing kit's Track3d (the circuit) and Topdown (the car,
- * with games/TinyMicroMachines and games2.5d/TinyKart), Sprite (its
+ * with games/TinyMicroMachines and games2.5d/TinyMarioKart), Sprite (its
  * [runs], for the billboards), Scene2d, Camera3d. Not Road and Car
  * (a course is a list of segments there, a ribbon here: see
  * gamekits/racing/Road.mli and 3d/Track3d.mli), not Tilemap (the circuit
@@ -109,10 +135,10 @@
  * (the arcade's few rules, like Topdown's: no tyre forces, and the
  * bank does not pull the kart down the camber).
  *
- * Exercises: split screen for two players (four in the original: the
- * camera and the viewport twice, games/TinyXpilot.ml does it in 2D); a
- * shell that bounces off the rails instead of dying on them; a blue
- * shell; the "lakitu" who fishes you out when you fall; a bank that
+ * Exercises: a shell that bounces off the race's rails as the battle's
+ * do off the forts; the other battle arenas (Big Donut, Double Deck,
+ * Skyscraper); gamepads, for four players who aren't sharing one
+ * keyboard; a blue shell; the "lakitu" who fishes you out when you fall; a bank that
  * pulls the kart, which would make the banked corner worth driving
  * high; fog and a draw distance, the N64's other two tricks (see
  * plan_3d_remaining.md).
@@ -503,19 +529,17 @@ type banana = { bx : number; by : number; bh : number }
 type vehicle = { vs : number; lane : number; lorry : bool; against : bool }
 
 type race = {
-  karts : kart array; (* the player's first *)
+  karts : kart array; (* the players' first *)
+  humans : int; (* 1 to 4 players *)
   traffic : vehicle array;
   shells : shell list;
   bananas : banana list;
   boxes : int array; (* per item box: 0 if it is there, else the frames until it is back *)
-  view_angle : number; (* the camera's heading: the kart's, a little late *)
+  view_angles : number array; (* each player's camera heading: the kart's, a little late *)
+  places : int option array; (* each player's place, once finished *)
   frames : int;
   ready : int; (* > 0: the countdown *)
 }
-
-type scene = Title | Racing of race | Finished of race * int (* the player's place *)
-type model = scene Scene2d.t
-
 let kart_colors =
   [| rgb 220 40 40; rgb 60 170 70; rgb 240 200 40; rgb 60 100 220; rgb 230 120 200; rgb 80 200 210;
      rgb 240 140 40; rgb 150 90 210 |]
@@ -533,17 +557,23 @@ let lane = 7.2
 let lorry_speed = 15.
 let car_speed = 21.
 
-(* the grid behind the start line, the player last as in every Mario
+(* the grid behind the start line, the players last as in every Mario
  * Kart; the computer's karts are a shade slower flat out than the
- * player's, and make it up with the rubber band ([rubber]).
+ * players', and make it up with the rubber band ([rubber]). With three
+ * or four players there are no computer karts at all, as on the N64:
+ * every view draws the whole race again, and eight karts four times
+ * over was more than the machine had.
  *
  * Four across and two rows deep, rather than two and four: a road 20
  * wide holds them, and the four go through four different item boxes
  * instead of queueing for the same one. *)
 let grid_sides = [| 8.; 2.7; -2.7; -8. |]
 
-let new_race () : race =
+let new_race (humans : int) : race =
+  let count = if humans <= 2 then karts_in_race else humans in
   let on_grid (slot : int) : kart =
+    (* the players at the back, the first last *)
+    let player = count - 1 - slot in
     let offset = grid_sides.(slot mod 4) in
     (* staggered, as a grid is: without the 0.9 the four of a row are
      * exactly level, and four karts tie for fifth place *)
@@ -552,8 +582,8 @@ let new_race () : race =
     let p = Track3d.at track s in
     let x, y = plane_at s offset in
     { car = { x; y; vx = 0.; vy = 0.; heading = 90. -. p.heading; speed = 0.; next = 1 };
-      color = kart_colors.(if slot = karts_in_race - 1 then 0 else slot + 1);
-      base_top = (if slot = karts_in_race - 1 then road_speed else road_speed -. 3. +. (float_of_int slot *. 0.25));
+      color = kart_colors.(if player < humans then player else (slot + humans) mod karts_in_race);
+      base_top = (if player < humans then road_speed else road_speed -. 3. +. (float_of_int slot *. 0.25));
       boost = 0; spin = 0; hop = 0; drift = Straight; item = None; roulette = 0; wait = 0;
       s; offset;
       (* the grid is behind the start line, so the first crossing is
@@ -565,11 +595,12 @@ let new_race () : race =
        * line, queue up in single file and reach for the same item box *)
       line = (float_of_int slot -. 3.5) *. 1.1 }
   in
-  let grid = Array.init karts_in_race on_grid in
+  let grid = Array.init count on_grid in
   let vehicle (lorry : bool) (against : bool) (f : number) : vehicle =
     { vs = lap_length *. f; lane = (if against then lane else -.lane); lorry; against }
   in
-  { karts = Array.append [| grid.(karts_in_race - 1) |] (Array.sub grid 0 (karts_in_race - 1));
+  { karts = Array.append (Array.init humans (fun j -> grid.(count - 1 - j))) (Array.sub grid 0 (count - humans));
+    humans;
     (* spread round the circuit, and none of them near the grid: the
      * oncoming ones drive *towards* the start line, so one placed just
      * ahead of it arrives exactly as the lights go out *)
@@ -577,10 +608,9 @@ let new_race () : race =
       [| vehicle true false 0.2; vehicle true false 0.42; vehicle false false 0.6; vehicle true false 0.85;
          vehicle false true 0.3; vehicle true true 0.55; vehicle false true 0.75 |];
     shells = []; bananas = []; boxes = Array.make (Array.length item_boxes) 0;
-    view_angle = 90. -. (Track3d.at track start_line).heading;
+    view_angles = Array.make humans (90. -. (Track3d.at track start_line).heading);
+    places = Array.make humans None;
     frames = 0; ready = 180 }
-
-let initial_model : model = Scene2d.start Title
 
 (*****************************************************************************)
 (* Update *)
@@ -749,7 +779,7 @@ let step_kart (holding : bool) (gas : number) (steer : number) (road_top : numbe
     else { k with air = 0.; rise = 0. }
 
 (* karts closer than 2.6 pushed apart, half the overlap each: bumping,
- * not crashing (games2.5d/TinyKart does the same) *)
+ * not crashing (games2.5d/TinyMarioKart does the same) *)
 let bump (karts : kart array) : kart array =
   let push (k : kart) (o : kart) : kart =
     let dx = k.car.x -. o.car.x and dy = k.car.y -. o.car.y in
@@ -800,20 +830,26 @@ let avoid (traffic : vehicle array) (c : Topdown.t) : number =
       else steer -. Float.copy_sign (1. -. (ahead /. 20.)) side)
     0. traffic
 
-let step_karts (keys : keyboard) (holding : bool) (autopilot : bool) (r : race) : race =
-  let leader = along r.karts.(0) in
+(* A player's hands on a frame: one player has the whole keyboard (up
+ * for the gas), more share it and their karts accelerate by
+ * themselves, each with a brake, a hop and an item key of its own. *)
+type pad = { gas : number; steer : number; holding : bool; use : bool }
+
+let step_karts (pads : pad array) (r : race) : race =
+  (* the rubber band pulls towards the leading player *)
+  let leader = Array.fold_left (fun m i -> Float.max m (along r.karts.(i))) neg_infinity (Array.init r.humans Fun.id) in
   let one (i : int) (k : kart) : kart =
-    let mine = i = 0 && not autopilot in
+    let mine = i < r.humans && r.places.(i) = None in
     let gas, steer =
-      if mine then (axis keys.kup keys.kdown, axis keys.kleft keys.kright)
+      if mine then (pads.(i).gas, pads.(i).steer)
       else
         let gas, steer = computer_drive k in
         (gas, Basics.clamp (-1.) 1. (steer +. avoid r.traffic k.car))
     in
     (* the computer's karts powerslide too, through whatever corner
      * needs the wheel all the way over *)
-    let holding = if mine then holding else Float.abs steer > 0.75 && k.car.speed > 25. in
-    let top = if i = 0 then k.base_top else k.base_top *. rubber leader k in
+    let holding = if mine then pads.(i).holding else Float.abs steer > 0.75 && k.car.speed > 25. in
+    let top = if i < r.humans then k.base_top else k.base_top *. rubber leader k in
     step_kart holding gas steer top k
   in
   { r with karts = bump (Array.mapi one r.karts) }
@@ -877,22 +913,23 @@ let use_item (i : int) (r : race) : race =
               { sx; sy; shead = k.car.heading; homing = item = Red_shell; life = 300; owner = i } :: r.shells })
 
 (* the roulette settling on an item, and the karts using what they
- * hold: the player on space, the computers after a wait of their own *)
-let step_items (use : bool) (r : race) : race =
+ * hold: the players on their key, the computers after a wait of their
+ * own *)
+let step_items (pads : pad array) (r : race) : race =
   let settle (i : int) (k : kart) : kart =
     if k.roulette > 1 then { k with roulette = k.roulette - 1 }
     else if k.roulette = 1 then
       { k with roulette = 0; item = Some (roll (place_of r i) ((r.frames / 7) + (i * 5))); wait = 40 + (i * 37 mod 110) }
-    else if k.item <> None && i > 0 then { k with wait = k.wait - 1 }
+    else if k.item <> None && i >= r.humans then { k with wait = k.wait - 1 }
     else k
   in
   let r = { r with karts = Array.mapi settle r.karts } in
-  let r = if use then use_item 0 r else r in
+  let r = Array.fold_left (fun r i -> if pads.(i).use && r.places.(i) = None then use_item i r else r) r (Array.init r.humans Fun.id) in
   let rec computers (i : int) (r : race) : race =
-    if i >= karts_in_race then r
+    if i >= Array.length r.karts then r
     else computers (i + 1) (if r.karts.(i).item <> None && r.karts.(i).wait <= 0 then use_item i r else r)
   in
-  computers 1 r
+  computers r.humans r
 
 let shell_speed = 62.
 
@@ -902,7 +939,7 @@ let shell_speed = 62.
  * shell dies against a rail; in the original it would bounce (an
  * exercise). *)
 let step_shells (r : race) : race =
-  let hit = Array.make karts_in_race false in
+  let hit = Array.make (Array.length r.karts) false in
   let target (owner : int) : (number * number) option =
     let mine = along r.karts.(owner) in
     Array.fold_left
@@ -944,7 +981,7 @@ let step_shells (r : race) : race =
 
 (* a banana lies where it was dropped until someone finds it *)
 let step_bananas (r : race) : race =
-  let hit = Array.make karts_in_race false in
+  let hit = Array.make (Array.length r.karts) false in
   let keep (b : banana) : bool =
     let struck = ref false in
     Array.iteri
@@ -972,15 +1009,15 @@ let step_crashes (r : race) : race =
   in
   { r with karts = Array.map (fun k -> if crashed k then spin_out 55 k else k) r.karts }
 
-(* one frame of the race; [autopilot]: the computer drives the player's
- * kart too, as it does after the finish *)
-let step_race (keys : keyboard) (holding : bool) (use : bool) (autopilot : bool) (r : race) : race =
+(* one frame of the race; a player who has finished is driven by the
+ * computer, as in every Mario Kart *)
+let step_race (pads : pad array) (r : race) : race =
   let r = step_traffic r in
   if r.ready > 0 then { r with ready = r.ready - 1 }
   else
-    let r = step_karts keys holding autopilot r in
+    let r = step_karts pads r in
     let r = step_boxes r in
-    let r = step_items use r in
+    let r = step_items pads r in
     let r = step_shells r in
     let r = step_bananas r in
     let r = step_crashes r in
@@ -992,25 +1029,340 @@ let step_race (keys : keyboard) (holding : bool) (use : bool) (autopilot : bool)
      * heading instead and the camera sits behind the kart's nose the
      * whole way round the corner, which hides the one thing worth
      * seeing -- a kart crossed up, showing you its side. *)
-    let player = r.karts.(0).car in
-    let travel =
-      if Float.hypot player.vx player.vy > 5. then atan2 player.vy player.vx *. 180. /. Float.pi
-      else player.heading
+    let turn (i : int) (angle : number) : number =
+      let player = r.karts.(i).car in
+      let travel =
+        if Float.hypot player.vx player.vy > 5. then atan2 player.vy player.vx *. 180. /. Float.pi
+        else player.heading
+      in
+      angle +. (0.18 *. angle_diff angle travel)
     in
-    { r with view_angle = r.view_angle +. (0.18 *. angle_diff r.view_angle travel); frames = r.frames + 1 }
+    let r = { r with view_angles = Array.mapi turn r.view_angles; frames = r.frames + 1 } in
+    { r with
+      places =
+        Array.mapi (fun i p -> match p with None when r.karts.(i).lap >= laps -> Some (place_of r i) | p -> p) r.places }
+
+(*****************************************************************************)
+(* The battle: Block Fort *)
+(*****************************************************************************)
+
+(* Mario Kart 64's other game, for two to four players: no laps, an
+ * arena, three balloons each, and a hit from a shell or a banana pops
+ * one. The last kart with a balloon wins. Block Fort is the arena
+ * everyone remembers: four square forts, one per colour, each with a
+ * ramp up, their tops joined by bridges -- and the open floor running
+ * under the bridges.
+ *
+ *        seen from above                      from the side
+ *   +---------------------------+
+ *   |  +-----+  bridge  +-----+ |        ramp  fort     bridge    fort
+ *   |=>|  B  |==========|  R  |<=|          ___+----+=============+----+
+ *   |  +-----+          +-----+ |        _/   |    |   floor     |    |
+ *   |     ||    floor     ||    |   ____/     |    |  (under)    |    |
+ *   |  +-----+          +-----+ |
+ *   |=>|  G  |==========|  Y  |<=|   => the ramps, on the outside
+ *   |  +-----+          +-----+ |
+ *   +---------------------------+
+ *
+ * So the ground is not one height per place any more: under a bridge
+ * there are two, the floor and the bridge. A kart finds its level by
+ * its own height ([level]): the highest surface under it that is no
+ * more than a step above it -- on the floor under a bridge, the bridge
+ * is far over its head; on the bridge, the floor is far below. A fort
+ * is solid from the floor to its top ([solid]): a kart meeting its side
+ * bounces off, and so does a shell -- in battle a green shell does not
+ * die against a wall, it comes back. *)
+
+let arena = 60. (* the walls, at +-60 *)
+let fort_height = 5.
+let fort_half = 13. (* each fort a square of 26 *)
+let fort_center = 28.
+
+(* a fort's square: its centre's signs, (+1, +1) the north-east one *)
+let forts = [ (1., 1.); (-1., 1.); (-1., -1.); (1., -1.) ]
+let fort_colors = [| (220, 60, 50); (60, 100, 220); (60, 170, 70); (240, 200, 40) |]
+
+let in_fort (x : number) (y : number) : bool =
+  List.exists
+    (fun (sx, sy) -> Float.abs (x -. (sx *. fort_center)) < fort_half && Float.abs (y -. (sy *. fort_center)) < fort_half)
+    forts
+
+(* the bridges, joining the forts round a ring at their tops: along x
+ * between the north ones and the south ones, along y between the east
+ * ones and the west ones; 7 wide *)
+let bridge_half = 3.5
+
+let on_bridge (x : number) (y : number) : bool =
+  let gap = fort_center -. fort_half in
+  (Float.abs x < gap && Float.abs (Float.abs y -. fort_center) < bridge_half)
+  || (Float.abs y < gap && Float.abs (Float.abs x -. fort_center) < bridge_half)
+
+(* the ramps, one on the outside of each fort, 14 long: the height on
+ * one if (x, y) is on it *)
+let ramp_length_bf = 14.
+let ramp_half_bf = 5.
+
+let ramp_height (x : number) (y : number) : number option =
+  let outer = fort_center +. fort_half in
+  let d = Float.abs x -. outer in
+  if d >= 0. && d < ramp_length_bf && Float.abs (Float.abs y -. fort_center) < ramp_half_bf then
+    Some (fort_height *. (1. -. (d /. ramp_length_bf)))
+  else None
+
+(* where a kart at height [h] stands, at (x, y): the highest surface no
+ * more than a step (1) above it *)
+let level (x : number) (y : number) (h : number) : number =
+  let tops = (if in_fort x y || on_bridge x y then [ fort_height ] else []) @ Option.to_list (ramp_height x y) in
+  List.fold_left (fun best t -> if t <= h +. 1. && t > best then t else best) 0. tops
+
+(* a fort's side, for whatever is lower than its top *)
+let solid_at (x : number) (y : number) (h : number) : bool =
+  in_fort x y && h < fort_height -. 0.5 && ramp_height x y = None
+
+let outside (x : number) (y : number) : bool = Float.abs x > arena || Float.abs y > arena
+
+type fighter = {
+  kart : kart; (* the car, its colour, spin, boost, item and roulette; the rest unused *)
+  h : number; (* its height *)
+  fall : number; (* how fast it is falling *)
+  balloons : int;
+  safe : int; (* frames it can't be hit, after a hit *)
+}
+
+type bshell = { bsx : number; bsy : number; bsh : number; vx : number; vy : number; seeking : bool; blife : int; by_ : int }
+
+type battle = {
+  fighters : fighter array;
+  bshells : bshell list;
+  peels : (number * number * number) list; (* the bananas, (x, y, height) *)
+  crates : int array; (* per item box, as in the race *)
+  angles : number array; (* each player's camera heading *)
+  bframes : int;
+  bready : int;
+}
+
+(* the item boxes: one on each fort, one on the floor between each two
+ * forts, one in the middle *)
+let crate_places : (number * number) list =
+  List.map (fun (sx, sy) -> (sx *. fort_center, sy *. fort_center)) forts
+  @ [ (0., 45.); (0., -45.); (45., 0.); (-45., 0.); (0., 0.) ]
+
+let crate_height (x : number) (y : number) : number = if in_fort x y then fort_height else 0.
+
+let new_battle (humans : int) : battle =
+  let fighter (i : int) : fighter =
+    (* each starts on the floor at an end of the cross the forts leave
+     * open, facing the middle: they meet under the bridges *)
+    let x, y = List.nth [ (0., -48.); (0., 48.); (-48., 0.); (48., 0.) ] i in
+    let heading = atan2 (-.y) (-.x) *. 180. /. Float.pi in
+    let k = (new_race 1).karts.(0) in
+    { kart = { k with car = { k.car with x; y; heading; vx = 0.; vy = 0.; speed = 0. }; color = kart_colors.(i) };
+      h = 0.; fall = 0.; balloons = 3; safe = 0 }
+  in
+  { fighters = Array.init humans fighter; bshells = []; peels = []; crates = Array.make (List.length crate_places) 0;
+    angles = Array.init humans (fun i -> List.nth [ 90.; -90.; 0.; 180. ] i);
+    bframes = 0; bready = 120 }
+
+let alive (f : fighter) : bool = f.balloons > 0
+
+(* one frame of one fighter: driven on the plane as in the race, then
+ * its level found, a fort's side bounced off, the arena's wall too, and
+ * the fall off an edge *)
+let step_fighter (pad : pad) (f : fighter) : fighter =
+  if not (alive f) then f
+  else
+    let k = f.kart in
+    let car =
+      if k.spin > 0 then
+        let car = Topdown.drive params road_speed 0. 0. k.car in
+        { car with heading = car.heading +. 26. }
+      else
+        let boosted = k.boost > 0 in
+        Topdown.drive (if boosted then { params with accel = params.accel *. 3. } else params)
+          (if boosted then road_speed *. 1.5 else road_speed)
+          (if boosted then 1. else pad.gas) pad.steer k.car
+    in
+    let blocked = outside car.x car.y || solid_at car.x car.y f.h in
+    let car = if blocked then { k.car with vx = -0.4 *. k.car.vx; vy = -0.4 *. k.car.vy; speed = -0.4 *. k.car.speed } else car in
+    let under = level car.x car.y f.h in
+    let h, fall =
+      if f.h > under +. 0.01 || f.fall > 0. then
+        let h = f.h -. (f.fall /. 60.) and fall = f.fall +. (gravity /. 60.) in
+        if h <= under then (under, 0.) else (h, fall)
+      else (under, 0.)
+    in
+    { f with
+      kart = { k with car; spin = max 0 (k.spin - 1); boost = max 0 (k.boost - 1) };
+      h; fall; safe = max 0 (f.safe - 1) }
+
+(* a hit: a balloon less, a spin, and a moment when nothing else can hit *)
+let pop (f : fighter) : fighter =
+  if f.safe > 0 || not (alive f) then f
+  else { f with balloons = f.balloons - 1; safe = 90; kart = spin_out 50 f.kart }
+
+let near3 ((x, y, h) : number * number * number) (f : fighter) (r : number) : bool =
+  alive f && Float.hypot (f.kart.car.x -. x) (f.kart.car.y -. y) < r && Float.abs (f.h -. h) < 2.
+
+(* the shells fly at their height and bounce off everything: the
+ * arena's walls and the forts' sides, the velocity's x or y turned
+ * round, whichever took it in; a red one turns towards the nearest
+ * other kart *)
+let step_bshell (fighters : fighter array) (b : bshell) : bshell option * int option =
+  let vx, vy =
+    if not b.seeking then (b.vx, b.vy)
+    else
+      let target =
+        Array.to_list fighters
+        |> List.mapi (fun i f -> (i, f))
+        |> List.filter (fun (i, f) -> i <> b.by_ && alive f)
+        |> List.fold_left
+             (fun best (_, f) ->
+               let d = Float.hypot (f.kart.car.x -. b.bsx) (f.kart.car.y -. b.bsy) in
+               match best with Some (bd, _) when bd <= d -> best | _ -> Some (d, f))
+             None
+      in
+      match target with
+      | None -> (b.vx, b.vy)
+      | Some (_, f) ->
+          let speed = Float.hypot b.vx b.vy in
+          let want = atan2 (f.kart.car.y -. b.bsy) (f.kart.car.x -. b.bsx) and now = atan2 b.vy b.vx in
+          let turn = Basics.clamp (-0.12) 0.12 (angle_diff (now *. 180. /. Float.pi) (want *. 180. /. Float.pi) *. Float.pi /. 180.) in
+          (speed *. cos (now +. turn), speed *. sin (now +. turn))
+  in
+  let x = b.bsx +. (vx /. 60.) and y = b.bsy +. (vy /. 60.) in
+  let wall_x = outside x b.bsy || solid_at x b.bsy b.bsh and wall_y = outside b.bsx y || solid_at b.bsx y b.bsh in
+  let vx = if wall_x then -.vx else vx and vy = if wall_y then -.vy else vy in
+  let x = if wall_x then b.bsx else x and y = if wall_y then b.bsy else y in
+  let h = level x y b.bsh in
+  let struck = ref None in
+  Array.iteri (fun i f -> if !struck = None && (i <> b.by_ || b.blife < 280) && f.safe = 0 && near3 (x, y, h) f 2.4 then struck := Some i) fighters;
+  if !struck <> None || b.blife <= 1 then (None, !struck)
+  else (Some { b with bsx = x; bsy = y; bsh = h; vx; vy; blife = b.blife - 1 }, None)
+
+let use_battle_item (i : int) (bt : battle) : battle =
+  let f = bt.fighters.(i) in
+  match f.kart.item with
+  | None -> bt
+  | Some item ->
+      let f = { f with kart = { f.kart with item = None } } in
+      let a = f.kart.car.heading *. Float.pi /. 180. in
+      let ahead d = (f.kart.car.x +. (d *. cos a), f.kart.car.y +. (d *. sin a)) in
+      let fighters = Array.mapi (fun j g -> if j = i then f else g) bt.fighters in
+      let bt = { bt with fighters } in
+      match item with
+      | Mushroom -> { bt with fighters = Array.mapi (fun j g -> if j = i then { g with kart = { g.kart with boost = 75 } } else g) fighters }
+      | Banana -> let x, y = ahead (-3.4) in { bt with peels = (x, y, f.h) :: bt.peels }
+      | Green_shell | Red_shell ->
+          let x, y = ahead 3.4 in
+          { bt with
+            bshells =
+              { bsx = x; bsy = y; bsh = f.h; vx = shell_speed *. cos a; vy = shell_speed *. sin a; seeking = item = Red_shell;
+                blife = 360; by_ = i }
+              :: bt.bshells }
+
+(* one frame of the battle *)
+let step_battle (pads : pad array) (bt : battle) : battle =
+  if bt.bready > 0 then { bt with bready = bt.bready - 1 }
+  else
+    let fighters = Array.mapi (fun i f -> step_fighter pads.(i) f) bt.fighters in
+    (* the karts bump as in the race *)
+    let bumped = bump (Array.map (fun f -> f.kart) fighters) in
+    let fighters = Array.mapi (fun i f -> { f with kart = bumped.(i) }) fighters in
+    (* the item boxes: the roulette as in the race, an item from all
+     * four whatever the place *)
+    let crates = Array.copy bt.crates in
+    let fighters =
+      Array.mapi
+        (fun i f ->
+          let k = f.kart in
+          let k =
+            if k.roulette > 1 then { k with roulette = k.roulette - 1 }
+            else if k.roulette = 1 then
+              { k with roulette = 0; item = Some (List.nth [ Green_shell; Red_shell; Banana; Mushroom ] ((bt.bframes / 7 + (i * 3)) mod 4)) }
+            else k
+          in
+          let k = ref k in
+          List.iteri
+            (fun c (x, y) ->
+              if crates.(c) = 0 && !k.item = None && !k.roulette = 0 && alive f && near3 (x, y, crate_height x y) f 2.6 then begin
+                k := { !k with roulette = 42 };
+                crates.(c) <- 240
+              end)
+            crate_places;
+          { f with kart = !k })
+        fighters
+    in
+    let bt = { bt with fighters; crates = Array.map (fun n -> max 0 (n - 1)) crates } in
+    let bt = Array.fold_left (fun bt i -> if pads.(i).use && alive bt.fighters.(i) then use_battle_item i bt else bt) bt (Array.init (Array.length bt.fighters) Fun.id) in
+    let moved = List.map (step_bshell bt.fighters) bt.bshells in
+    let hits = List.filter_map snd moved in
+    let peels_hit = List.filter_map (fun (x, y, h) -> let hit = ref None in Array.iteri (fun i f -> if !hit = None && f.safe = 0 && near3 (x, y, h) f 2.2 then hit := Some i) bt.fighters; !hit) bt.peels in
+    let peels = List.filter (fun (x, y, h) -> not (Array.exists (fun f -> f.safe = 0 && near3 (x, y, h) f 2.2) bt.fighters)) bt.peels in
+    let fighters = Array.mapi (fun i f -> if List.mem i hits || List.mem i peels_hit then pop f else f) bt.fighters in
+    let turn i angle =
+      let car = fighters.(i).kart.car in
+      let travel = if Float.hypot car.vx car.vy > 5. then atan2 car.vy car.vx *. 180. /. Float.pi else car.heading in
+      angle +. (0.18 *. angle_diff angle travel)
+    in
+    { bt with fighters; bshells = List.filter_map fst moved; peels; angles = Array.mapi turn bt.angles; bframes = bt.bframes + 1 }
+
+(* the winner, once only one kart has a balloon left *)
+let battle_winner (bt : battle) : int option =
+  match List.filter (fun i -> alive bt.fighters.(i)) (List.init (Array.length bt.fighters) Fun.id) with
+  | [ i ] -> Some i
+  | _ -> None
+
+(* the title remembers how many players *)
+type scene = Title of int | Racing of race | Finished of race | Battling of battle | Battle_over of battle * int
+type model = scene Scene2d.t
+
+let initial_model : model = Scene2d.start (Title 1)
+
+let no_pad = { gas = 0.; steer = 0.; holding = false; use = false }
+
+(* The hands of [humans] players on this frame. Alone, the arrows (up
+ * the gas), shift and space; together, each a left, a right, a brake,
+ * a hop and an item key (the gas is theirs by default):
+ *
+ *     player 1   arrows: left right, down brakes, up the item; shift hops
+ *     player 2   a d, s brakes, w the item, q hops
+ *     player 3   j l, k brakes, i the item, u hops
+ *     player 4   f h, g brakes, t the item, r hops
+ *)
+let pads (computer : computer) (m : model) (humans : int) : pad array =
+  let k = computer.keyboard in
+  let down key = Set_.mem key k.keys and pressed key = Scene2d.pressed (fun k -> Set_.mem key k.keys) m in
+  if humans = 1 then
+    [| { gas = axis k.kup k.kdown; steer = axis k.kleft k.kright; holding = k.kshift; use = Scene2d.pressed (fun k -> k.kspace) m } |]
+  else
+    let first = { gas = (if k.kdown then -1. else 1.); steer = axis k.kleft k.kright; holding = k.kshift; use = Scene2d.pressed (fun k -> k.kup) m } in
+    let other (left, right, brake, hop, item) =
+      { gas = (if down brake then -1. else 1.); steer = axis (down left) (down right); holding = down hop; use = pressed item }
+    in
+    Array.init humans (fun i ->
+        if i = 0 then first else other (List.nth [ ("a", "d", "s", "q", "w"); ("j", "l", "k", "u", "i"); ("f", "h", "g", "r", "t") ] (i - 1)))
 
 let update (computer : computer) (m : model) : model =
   let m = Scene2d.update computer m in
   let space = Scene2d.pressed (fun k -> k.kspace) m in
-  let holding = computer.keyboard.kshift in
+  let digit d = Scene2d.pressed (fun k -> Set_.mem d k.keys) m in
   match m.scene with
-  | Title -> if space then Scene2d.go (Racing (new_race ())) m else m
+  | Title n ->
+      let n = List.fold_left (fun n d -> if digit (string_of_int d) then d else n) n [ 1; 2; 3; 4 ] in
+      if space then Scene2d.go (Racing (new_race n)) m
+      else if Scene2d.pressed (fun k -> Set_.mem "b" k.keys) m then Scene2d.go (Battling (new_battle (max 2 n))) m
+      else { m with scene = Title n }
   | Racing r ->
-      let r = step_race computer.keyboard holding space false r in
-      if r.karts.(0).lap >= laps then Scene2d.go (Finished (r, place_of r 0)) m else { m with scene = Racing r }
-  | Finished (r, n) ->
-      if space then Scene2d.go Title m
-      else { m with scene = Finished (step_race computer.keyboard false false true r, n) }
+      let r = step_race (pads computer m r.humans) r in
+      if Array.for_all Option.is_some r.places then Scene2d.go (Finished r) m else { m with scene = Racing r }
+  | Finished r ->
+      if space then Scene2d.go (Title r.humans) m else { m with scene = Finished (step_race (Array.make r.humans no_pad) r) }
+  | Battling bt -> (
+      let bt = step_battle (pads computer m (Array.length bt.fighters)) bt in
+      match battle_winner bt with Some i -> Scene2d.go (Battle_over (bt, i)) m | None -> { m with scene = Battling bt })
+  | Battle_over (bt, i) ->
+      if space then Scene2d.go (Title (Array.length bt.fighters)) m
+      else { m with scene = Battle_over (step_battle (Array.make (Array.length bt.fighters) no_pad) bt, i) }
 
 (*****************************************************************************)
 (* View *)
@@ -1182,19 +1534,26 @@ let item_slot (screen : screen) (k : kart) : shape list =
       let rows, palette = item_art item in
       [ Sprite.pixels 8. palette rows |> move x y ]
 
-let view_hud (screen : screen) (r : race) : shape list =
-  let player = r.karts.(0) in
+(* player [i]'s HUD, on its view's screen *)
+let view_hud (screen : screen) (r : race) (i : int) : shape list =
+  let player = r.karts.(i) in
   let lap = min laps (max 1 (player.lap + 1)) in
   let time = float_of_int r.frames /. 60. in
+  let place = match r.places.(i) with Some n -> n | None -> place_of r i in
   [ text white 3. (Printf.sprintf "LAP %d/%d" lap laps) |> move (screen.left +. 110.) (screen.top -. 40.);
-    text yellow 5. (ordinal (place_of r 0)) |> move (screen.right -. 90.) (screen.top -. 45.);
+    text yellow 5. (ordinal place) |> move (screen.right -. 90.) (screen.top -. 45.);
     text white 3. (Printf.sprintf "%d:%04.1f" (int_of_float time / 60) (Float.rem time 60.))
     |> move (screen.right -. 250.) (screen.top -. 40.) ]
-  @ item_slot screen player @ minimap screen r
-  @
-  if r.ready > 0 then [ text yellow 9. (string_of_int ((r.ready + 59) / 60)) |> move_y 200. ]
-  else if r.frames < 40 then [ text yellow 9. "GO!" |> move_y 200. ]
-  else []
+  @ item_slot screen player
+  @ (if r.humans <= 2 then minimap screen r else [])
+  @ (match r.places.(i) with
+    | Some n ->
+        [ rectangle black (Float.min 700. screen.width) 160. |> move_y (screen.top *. 0.46) |> fade 0.55;
+          text yellow (if r.humans > 2 then 6. else 9.) (ordinal n ^ " PLACE!") |> move_y (screen.top *. 0.5) ]
+    | None ->
+        if r.ready > 0 then [ text yellow 9. (string_of_int ((r.ready + 59) / 60)) |> move_y (screen.top *. 0.4) ]
+        else if r.frames < 40 then [ text yellow 9. "GO!" |> move_y (screen.top *. 0.4) ]
+        else [])
 
 (* the land beyond the circuit, a blue sky and a hazy horizon; the sky
  * is seen from below, which is why the game draws back faces too *)
@@ -1202,44 +1561,173 @@ let sky_and_land (cam : camera) : shape3d list =
   Camera3d.floor ~color:(rgb 78 158 66) ~ground:(-6.) cam
   :: Camera3d.sky ~sky:(rgb 150 200 250) ~horizon:(rgb 96 166 82) ~ground:(-6.) cam
 
-let view (computer : computer) (m : model) : camera * shape3d list =
-  let screen = computer.screen in
-  let r = match m.scene with Title -> new_race () | Racing r | Finished (r, _) -> r in
-  let player = r.karts.(0) in
+(* the race as player [i] sees it: the camera behind their kart, and
+ * the world drawn for that camera -- the sprites turned towards it,
+ * the trees near that kart *)
+let race_world (time : time) (r : race) (cam : camera) (near : kart) : shape3d list =
+  let right = camera_right cam and angle = camera_angle cam in
+  sky_and_land cam @ [ circuit ] @ tree_shapes right near.s @ traffic_shapes r
+  @ box_shapes time r @ thing_shapes right r
+  @ List.concat_map (kart_shapes right angle) (Array.to_list r.karts)
+
+let behind (r : race) (i : int) : camera =
+  let player = r.karts.(i) in
   let px, _, pz = world player.car.x player.car.y 0. in
   let py = ground player.s player.offset +. on_ramp player.s player.offset +. player.air in
-  let cam =
-    match m.scene with
-    | Title -> Camera3d.orbit ~distance:22. ~height:8. ~look:1.5 (spin 14. computer.time) (px, py +. 1., pz)
-    | _ ->
-        Camera3d.behind ~back:13. ~height:5.5 ~ahead:9. ~look:2.2
-          { x = px; y = py; z = pz; heading = heading3d r.view_angle }
-  in
-  let right = camera_right cam and angle = camera_angle cam in
-  let world_shapes =
-    sky_and_land cam @ [ circuit ] @ tree_shapes right player.s @ traffic_shapes r
-    @ box_shapes computer.time r @ thing_shapes right r
-    @ List.concat_map (kart_shapes right angle) (Array.to_list r.karts)
-  in
-  let hud_shapes =
-    match m.scene with
-    | Title ->
-        [ text (rgb 235 45 40) 7. "TINY MARIO KART 64" |> move_y 320.;
-          rectangle black 900. 210. |> move_y (-260.) |> fade 0.55;
-          text white 2.5 "up: gas   down: brake   left/right: steer" |> move_y (-210.);
-          text white 2.5 "shift: hop and slide (hold it round a bend)   space: use your item" |> move_y (-260.);
-          text white 2.5 "3 laps, 7 karts, a hill, a ramp and the traffic" |> move_y (-310.) ]
-        @ Scene2d.blink 1. m [ text yellow 4. "PRESS SPACE" |> move_y (-390.) ]
-    | Racing _ -> view_hud screen r
-    | Finished (_, n) ->
-        view_hud screen r
-        @ [ rectangle black 700. 160. |> move_y 230. |> fade 0.55;
-            text yellow 9. (ordinal n ^ " PLACE!") |> move_y 250. ]
-        @ Scene2d.blink 1. m [ text white 3. "PRESS SPACE" |> move_y 160. ]
-  in
-  (cam, world_shapes @ List.map hud hud_shapes)
+  Camera3d.behind ~back:13. ~height:5.5 ~ahead:9. ~look:2.2 { x = px; y = py; z = pz; heading = heading3d r.view_angles.(i) }
 
-let app = game3d view update initial_model
+(* Block Fort in polygons: the floor, the walls round it, the four forts
+ * in their colours, the bridges between their tops, the ramps up *)
+let block_fort : shape3d =
+  let floor =
+    polygon3d (rgb 120 120 128)
+      (List.map (fun (x, y) -> world x y 0.) [ (-.arena, -.arena); (arena, -.arena); (arena, arena); (-.arena, arena) ])
+  in
+  let wall (x, y, w, d) =
+    let wx, _, wz = world x y 0. in
+    solid (190, 190, 200) w 2.5 d |> move3d wx 1.25 wz
+  in
+  let fort i (sx, sy) =
+    let wx, _, wz = world (sx *. fort_center) (sy *. fort_center) 0. in
+    solid fort_colors.(i) (2. *. fort_half) fort_height (2. *. fort_half) |> move3d wx (fort_height /. 2.) wz
+  in
+  let gap = fort_center -. fort_half in
+  let bridge (x, y, w, d) =
+    let wx, _, wz = world x y 0. in
+    solid (230, 230, 235) w 0.6 d |> move3d wx (fort_height -. 0.3) wz
+  in
+  let ramp (sx, sy) =
+    let outer = fort_center +. fort_half in
+    let x0 = sx *. outer and x1 = sx *. (outer +. ramp_length_bf) in
+    let y0 = (sy *. fort_center) -. ramp_half_bf and y1 = (sy *. fort_center) +. ramp_half_bf in
+    polygon3d (rgb 170 130 80)
+      [ world x0 y0 fort_height; world x1 y0 0.05; world x1 y1 0.05; world x0 y1 fort_height ]
+  in
+  group3d
+    ([ floor ]
+    @ List.map wall [ (0., arena +. 0.5, 2. *. arena, 1.); (0., -.arena -. 0.5, 2. *. arena, 1.); (arena +. 0.5, 0., 1., 2. *. arena); (-.arena -. 0.5, 0., 1., 2. *. arena) ]
+    @ List.mapi fort forts
+    @ List.map bridge [ (0., fort_center, 2. *. gap, 2. *. bridge_half); (0., -.fort_center, 2. *. gap, 2. *. bridge_half);
+                        (fort_center, 0., 2. *. bridge_half, 2. *. gap); (-.fort_center, 0., 2. *. bridge_half, 2. *. gap) ]
+    @ List.map ramp forts)
+
+(* a fighter: its kart as in the race, its shadow on the level below
+ * it, and its balloons over it, one colour each *)
+let fighter_shapes (right : number * number) (angle : number) (f : fighter) : shape3d list =
+  if not (alive f) then []
+  else
+    let k = f.kart in
+    let x, _, z = world k.car.x k.car.y 0. in
+    let floor = level k.car.x k.car.y f.h in
+    let shadow =
+      polygon3d (rgb 60 60 66)
+        [ (x -. 1.2, floor +. 0.04, z -. 0.85); (x -. 1.2, floor +. 0.04, z +. 0.85);
+          (x +. 1.2, floor +. 0.04, z +. 0.85); (x +. 1.2, floor +. 0.04, z -. 0.85) ]
+    in
+    let flicker = f.safe > 0 && f.safe / 6 mod 2 = 0 in
+    let balloons =
+      List.concat
+        (List.init f.balloons (fun b ->
+             let bx = (float_of_int b -. (float_of_int (f.balloons - 1) /. 2.)) *. 0.8 in
+             billboard right 0.13 [ ('O', k.color); ('s', white) ] [ ".OOO."; "OOOOO"; "OOOOO"; ".OOO."; "..s.."; "..s.." ]
+               (x +. (bx *. fst right), f.h +. 2.6, z +. (bx *. snd right))))
+    in
+    (shadow :: (if flicker then [] else billboard right (2.6 /. 16.) (kart_palette k.color) (drawing angle k.car.heading) (x, f.h, z)))
+    @ balloons
+
+let battle_world (time : time) (bt : battle) (cam : camera) : shape3d list =
+  let right = camera_right cam and angle = camera_angle cam in
+  sky_and_land cam @ [ block_fort ]
+  @ List.concat
+      (List.mapi
+         (fun c (x, y) ->
+           if bt.crates.(c) > 0 then []
+           else
+             let wx, _, wz = world x y 0. in
+             [ solid (245, 205, 55) 2.2 2.2 2.2 |> rotate3d 0. (spin 2.5 time) 0. |> move3d wx (crate_height x y +. 1.8) wz ])
+         crate_places)
+  @ List.concat_map
+      (fun (x, y, h) -> let wx, _, wz = world x y 0. in billboard right 0.16 banana_palette banana_rows (wx, h +. 0.1, wz))
+      bt.peels
+  @ List.concat_map
+      (fun b ->
+        let rows, palette = item_art (if b.seeking then Red_shell else Green_shell) in
+        let wx, _, wz = world b.bsx b.bsy 0. in
+        billboard right 0.18 palette rows (wx, b.bsh +. 0.1, wz))
+      bt.bshells
+  @ List.concat_map (fighter_shapes right angle) (Array.to_list bt.fighters)
+
+let battle_hud (screen : screen) (bt : battle) (i : int) (winner : int option) : shape list =
+  let f = bt.fighters.(i) in
+  [ text white 3. "BALLOONS" |> move (screen.left +. 150.) (screen.top -. 40.) ]
+  @ List.init f.balloons (fun b -> circle f.kart.color 14. |> move (screen.left +. 260. +. (float_of_int b *. 34.)) (screen.top -. 40.))
+  @ item_slot screen f.kart
+  @ (match winner with
+    | Some w when w = i -> [ text yellow 7. "WINNER!" |> move_y (screen.top *. 0.4) ]
+    | _ ->
+        if not (alive f) then [ text (rgb 230 80 80) 7. "OUT" |> move_y (screen.top *. 0.4) ]
+        else if bt.bready > 0 then [ text yellow 9. (string_of_int ((bt.bready + 59) / 60)) |> move_y (screen.top *. 0.4) ]
+        else if bt.bframes < 40 then [ text yellow 9. "GO!" |> move_y (screen.top *. 0.4) ]
+        else [])
+
+(* in a split screen, a black frame round each view, as the N64 drew
+ * them: without it a fort at the edge of one view runs on into the
+ * next *)
+let frame (screen : screen) (n : int) : shape list =
+  if n = 1 then []
+  else
+    [ rectangle black screen.width 4. |> move_y (screen.top -. 2.); rectangle black screen.width 4. |> move_y (screen.bottom +. 2.);
+      rectangle black 4. screen.height |> move_x (screen.left +. 2.); rectangle black 4. screen.height |> move_x (screen.right -. 2.) ]
+
+(* one view per player, split as Playground3d.split lays them out *)
+let view (computer : computer) (m : model) : view list =
+  let screen = computer.screen in
+  match m.scene with
+  | Title n ->
+      let r = new_race 1 in
+      let player = r.karts.(0) in
+      let px, _, pz = world player.car.x player.car.y 0. in
+      let py = ground player.s player.offset in
+      let cam = Camera3d.orbit ~distance:22. ~height:8. ~look:1.5 (spin 14. computer.time) (px, py +. 1., pz) in
+      let hud_shapes =
+        [ text (rgb 235 45 40) 7. "TINY MARIO KART 64" |> move_y 320.;
+          rectangle black 900. 260. |> move_y (-270.) |> fade 0.55;
+          text white 2.5 "up: gas   down: brake   left/right: steer" |> move_y (-190.);
+          text white 2.5 "shift: hop and slide (hold it round a bend)   space: use your item" |> move_y (-240.);
+          text white 2.5 "3 laps, 7 karts, a hill, a ramp and the traffic" |> move_y (-290.);
+          text (rgb 250 220 120) 2.5 (Printf.sprintf "1 2 3 4: players (%d), the screen split   b: battle" n) |> move_y (-340.) ]
+        @ Scene2d.blink 1. m [ text yellow 4. "PRESS SPACE" |> move_y (-410.) ]
+      in
+      [ { camera = cam; area = whole; shapes = race_world computer.time r cam player @ List.map hud hud_shapes } ]
+  | Racing r | Finished r ->
+      List.mapi
+        (fun i area ->
+          let cam = behind r i in
+          let hud_shapes =
+            view_hud (area_screen screen area) r i @ frame (area_screen screen area) r.humans
+            @ (match m.scene with
+              | Finished _ -> Scene2d.blink 1. m [ text white 3. "PRESS SPACE" |> move_y (if r.humans = 1 then 160. else -40.) ]
+              | _ -> [])
+          in
+          { camera = cam; area; shapes = race_world computer.time r cam r.karts.(i) @ List.map hud hud_shapes })
+        (split r.humans)
+  | Battling bt | Battle_over (bt, _) ->
+      let winner = match m.scene with Battle_over (_, w) -> Some w | _ -> None in
+      List.mapi
+        (fun i area ->
+          let f = bt.fighters.(i) in
+          let px, _, pz = world f.kart.car.x f.kart.car.y 0. in
+          let cam =
+            Camera3d.behind ~back:13. ~height:5.5 ~ahead:9. ~look:2.2 { x = px; y = f.h; z = pz; heading = heading3d bt.angles.(i) }
+          in
+          let hud_shapes =
+            battle_hud (area_screen screen area) bt i winner @ frame (area_screen screen area) (Array.length bt.fighters)
+            @ (match winner with Some _ -> Scene2d.blink 1. m [ text white 3. "PRESS SPACE" |> move_y (-40.) ] | None -> [])
+          in
+          { camera = cam; area; shapes = battle_world computer.time bt cam @ List.map hud hud_shapes })
+        (split (Array.length bt.fighters))
+
+let app = split3d view update initial_model
 
 (* No_lighting: the sprites must keep the colours they are drawn with
  * whatever way the camera looks at them, so this game lights its

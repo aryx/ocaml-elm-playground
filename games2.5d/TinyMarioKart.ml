@@ -11,7 +11,9 @@
  * kart race seen from just behind your kart, the track a flat floor
  * stretching to the horizon, turning around you as you steer. Up to
  * accelerate, down to brake, left/right to steer; three laps against
- * three computer karts; the grass slows you down.
+ * three computer karts; the grass slows you down. Press 2 on the title
+ * for two players, the screen split in two as on the SNES: the second
+ * player on w a s d.
  *
  * The SNES had no 3D at all. Its "Mode 7" drew one background, a map of
  * tiles, turned and scaled; the trick (F-Zero, 1990, then Pilotwings and
@@ -58,10 +60,21 @@
  * there, a map here), not Camera2d (a camera turned and zoomed, the whole
  * map the same: Mode 7 without the per-row scale).
  *
+ * The split screen ([view_split]) is the same Mode 7 drawn twice, each
+ * time in a screen half as tall, with its own eye: a camera is only a
+ * place, a heading and a rectangle of pixels to fill. What costs is
+ * that the playground draws every shape whole and can't clip it to its
+ * half (games/TinyXpilot.ml's problem too): the ground and the sky fill
+ * their half exactly, the hills are cut at its top ([hill]), the karts
+ * whose wheels are below its bottom are left out, the top half is drawn
+ * last so that its sky and ground cover what the bottom one spills
+ * upwards, and a strip covers the seam.
+ *
  * Exercises: items (bananas, shells: TinyWolfenstein's billboards that move),
  * coins, jumps (a kart's height, its sprite lifted), a camera looking
  * straight down (Camera2d, turned: Mode 7 with the same scale on every
- * row), two players split screen (games/TinyXpilot.ml), F-Zero's walls.
+ * row), the battle mode (a square arena, three balloons each: the SNES's
+ * other two-player game), F-Zero's walls.
  *)
 open Playground
 
@@ -160,30 +173,36 @@ let palette : (char * color) list =
 type kart = { car : Topdown.t; top : number (* its top speed, whatever the ground *); color : color }
 
 type race = {
-  karts : kart list; (* the player's first *)
-  view_angle : number; (* the camera's heading: the kart's, a little late *)
+  karts : kart list; (* the players' first *)
+  humans : int; (* 1 or 2 players *)
+  view_angles : number list; (* each player's camera heading: the kart's, a little late *)
+  places : int option list; (* each player's place, once finished *)
   frames : int; (* since the start *)
   ready : int; (* > 0: the countdown *)
 }
 
-type scene = Title | Racing of race | Finished of race * int (* the player's place *)
+type scene = Title | Racing of race | Finished of race
 type model = scene Scene2d.t
 
-(* the grid, two by two behind the start line, the player last, as in
+(* the grid, two by two behind the start line, the players last, as in
  * Super Mario Kart's first race; the computer's karts can't go as fast
- * as the player's (full gas, the friction keeps a kart under 585, see
+ * as the players' (full gas, the friction keeps a kart under 585, see
  * Topdown.drive; the computer's 0.9 gas under 526), else no one would
  * pass them *)
-let new_race () : race =
+let new_race (humans : int) : race =
   let place slot (top, color) =
     let c = Topdown.start track 0 (if slot mod 2 = 0 then 60. else -60.) in
     let back = 60. +. (80. *. float_of_int slot) in
     let a = c.heading *. Float.pi /. 180. in
     { car = { c with x = c.x -. (back *. cos a); y = c.y -. (back *. sin a) }; top; color }
   in
-  let grid = [ (480., rgb 40 170 60); (500., rgb 240 200 30); (520., rgb 40 90 220); (700., rgb 220 30 30) ] in
+  let second = if humans = 2 then (700., rgb 40 90 220) else (520., rgb 40 90 220) in
+  let grid = [ (480., rgb 40 170 60); (500., rgb 240 200 30); second; (700., rgb 220 30 30) ] in
   let karts = List.mapi place grid in
-  { karts = List.nth karts 3 :: List.filteri (fun i _ -> i < 3) karts; view_angle = 0.; frames = 0; ready = 180 }
+  (* the players are the last ones on the grid *)
+  let players = List.filteri (fun i _ -> i >= 4 - humans) karts |> List.rev in
+  { karts = players @ List.filteri (fun i _ -> i < 4 - humans) karts; humans;
+    view_angles = List.init humans (fun _ -> 0.); places = List.init humans (fun _ -> None); frames = 0; ready = 180 }
 
 let initial_model : model = Scene2d.start Title
 
@@ -209,60 +228,72 @@ let bump (karts : kart list) : kart list =
   in
   List.map (fun k -> List.fold_left push k karts) karts
 
-(* one frame of the race; [autopilot]: the computer drives the player's
- * kart too (after the finish, as in Super Mario Kart) *)
-let update_race (k : keyboard) (autopilot : bool) (r : race) : race =
+(* a player's place, 1 for the first *)
+let place (r : race) (i : int) : int =
+  let p = Topdown.progress track (List.nth r.karts i).car in
+  1 + List.length (List.filter (fun k -> Topdown.progress track k.car > p) r.karts)
+
+(* the players' hands: the arrows, then w a s d *)
+let hands (k : keyboard) (i : int) : number * number =
+  if i = 0 then (axis k.kup k.kdown, axis k.kleft k.kright) else (axis k.kw k.ks, axis k.ka k.kd)
+
+(* one frame of the race: a player who has finished is driven by the
+ * computer, as in Super Mario Kart *)
+let update_race (k : keyboard) (r : race) : race =
   if r.ready > 0 then { r with ready = r.ready - 1 }
   else
     let drive i (kart : kart) =
       let gas, steer =
-        if i = 0 && not autopilot then (axis k.kup k.kdown, axis k.kleft k.kright) else Topdown.computer track kart.car
+        if i < r.humans && List.nth r.places i = None then hands k i else Topdown.computer track kart.car
       in
       let top = Float.min kart.top (top_speed kart.car.x kart.car.y) in
       { kart with car = Topdown.drive Topdown.toy top gas steer kart.car |> Topdown.follow track }
     in
     let karts = bump (List.mapi drive r.karts) in
-    (* the camera turns after the kart, a fifth of the way a frame: the
+    (* each camera turns after its kart, a fifth of the way a frame: the
      * kart seems to turn in front of you, and a drift shows *)
-    let player = (List.hd karts).car in
-    let view_angle = r.view_angle +. (0.2 *. angle_diff r.view_angle player.heading) in
-    { r with karts; view_angle; frames = r.frames + 1 }
-
-(* the player's place, 1 for the first *)
-let place (r : race) : int =
-  let p = Topdown.progress track (List.hd r.karts).car in
-  1 + List.length (List.filter (fun k -> Topdown.progress track k.car > p) r.karts)
+    let view_angles =
+      List.mapi (fun i a -> a +. (0.2 *. angle_diff a (List.nth karts i).car.heading)) r.view_angles
+    in
+    let r = { r with karts; view_angles; frames = r.frames + 1 } in
+    { r with
+      places =
+        List.mapi
+          (fun i p -> match p with None when Topdown.lap track (List.nth karts i).car >= laps -> Some (place r i) | p -> p)
+          r.places }
 
 let update (computer : computer) (m : model) : model =
   let m = Scene2d.update computer m in
   let space = Scene2d.pressed (fun k -> k.kspace) m in
+  let two = Scene2d.pressed (fun k -> Set_.mem "2" k.keys) m in
   match m.scene with
-  | Title -> if space then Scene2d.go (Racing (new_race ())) m else m
+  | Title -> if space then Scene2d.go (Racing (new_race 1)) m else if two then Scene2d.go (Racing (new_race 2)) m else m
   | Racing r ->
-      let r = update_race computer.keyboard false r in
-      if Topdown.lap track (List.hd r.karts).car >= laps then Scene2d.go (Finished (r, place r)) m
-      else { m with scene = Racing r }
-  | Finished (r, n) -> if space then Scene2d.go Title m else { m with scene = Finished (update_race computer.keyboard true r, n) }
+      let r = update_race computer.keyboard r in
+      if List.for_all Option.is_some r.places then Scene2d.go (Finished r) m else { m with scene = Racing r }
+  | Finished r -> if space then Scene2d.go Title m else { m with scene = Finished (update_race computer.keyboard r) }
 
 (*****************************************************************************)
-(* Mode 7 -- the trick of this game, in 84 lines (see the header) *)
+(* Mode 7 -- the trick of this game, in 99 lines (see the header) *)
 (*****************************************************************************)
 
 (* the camera: [height] above the ground, [back] behind the kart, the
- * horizon [horizon] pixels above the screen's center, and a field of
- * view of 60 degrees *)
+ * horizon 15% of the screen's height above its center (150 pixels on a
+ * screen 1000 high; the split screen's halves have theirs), and a
+ * field of view of 60 degrees *)
 let height = 90.
 let back = 250.
-let horizon = 150.
 
-(* the eye: where it is, the way it looks (a unit vector), and its focal
- * length, in pixels: how many pixels 1 unit at distance 1 takes *)
-type eye = { ex : number; ey : number; dx : number; dy : number; focal : number }
+(* the eye: where it is, the way it looks (a unit vector), its focal
+ * length, in pixels (how many pixels 1 unit at distance 1 takes), and
+ * the height of the horizon on its screen *)
+type eye = { ex : number; ey : number; dx : number; dy : number; focal : number; horizon : number }
 
 let eye (screen : screen) (x : number) (y : number) (angle : number) : eye =
   let a = angle *. Float.pi /. 180. in
   let dx = cos a and dy = sin a in
-  { ex = x -. (back *. dx); ey = y -. (back *. dy); dx; dy; focal = screen.width /. 2. /. tan (Float.pi /. 6.) }
+  { ex = x -. (back *. dx); ey = y -. (back *. dy); dx; dy; focal = screen.width /. 2. /. tan (Float.pi /. 6.);
+    horizon = 0.15 *. screen.height }
 
 (* [to_ground e sx sy]: the point of the ground the screen pixel (sx, sy)
  * shows, if it's below the horizon. The row [below] pixels under the
@@ -272,7 +303,7 @@ let eye (screen : screen) (x : number) (y : number) (angle : number) : eye =
  * focal. E.g. 90 units high with a focal of 866, the row 90 pixels
  * under the horizon sees 866 ahead, where a pixel is 1 unit. *)
 let to_ground (e : eye) (sx : number) (sy : number) : (number * number) option =
-  let below = horizon -. sy in
+  let below = e.horizon -. sy in
   if below <= 0. then None
   else
     let d = height *. e.focal /. below in
@@ -286,7 +317,7 @@ let to_ground (e : eye) (sx : number) (sy : number) : (number * number) option =
 let to_screen (e : eye) (x : number) (y : number) : (number * number * number) option =
   let rx = x -. e.ex and ry = y -. e.ey in
   let depth = (rx *. e.dx) +. (ry *. e.dy) and across = (rx *. e.dy) -. (ry *. e.dx) in
-  if depth < 20. then None else Some (across *. e.focal /. depth, horizon -. (height *. e.focal /. depth), e.focal /. depth)
+  if depth < 20. then None else Some (across *. e.focal /. depth, e.horizon -. (height *. e.focal /. depth), e.focal /. depth)
 
 (* the ground's "pixels", 5 real ones wide and high, and how far we see:
  * further, the rows are left to the horizon's color (a pixel there would
@@ -298,6 +329,7 @@ let far = 4500.
  * one per pixel, the ground's character there ([ground]); all the rows
  * a picture of characters, drawn by Sprite.pixels. *)
 let view_ground (screen : screen) (e : eye) : shape =
+  let horizon = e.horizon in
   let cols = int_of_float (screen.width /. pixel) in
   let rows = int_of_float ((horizon -. screen.bottom) /. pixel) in
   let row i =
@@ -314,13 +346,25 @@ let view_ground (screen : screen) (e : eye) : shape =
   Sprite.pixels pixel palette (List.init rows row)
   |> move ((screen.left +. screen.right) /. 2.) (horizon -. (float_of_int rows *. pixel /. 2.))
 
+(* a hill, a disc on the horizon, cut at the top of the screen when it
+ * goes past it (a half of the split screen): the circle's points above
+ * the top brought down onto it, which for a disc is the disc cut *)
+let hill (screen : screen) (color : color) (r : number) (sx : number) (horizon : number) : shape =
+  if horizon +. r <= screen.top then circle color r |> move sx horizon
+  else
+    polygon color
+      (List.init 48 (fun i ->
+           let a = float_of_int i *. Float.pi /. 24. in
+           (sx +. (r *. cos a), Float.min screen.top (horizon +. (r *. sin a)))))
+
 (* the sky, and hills on the horizon, going by as you turn: at their
  * bearing, as many pixels a degree as the focal length gives *)
-let view_sky (screen : screen) (angle : number) (focal : number) : shape list =
-  let per_degree = focal *. Float.pi /. 180. in
+let view_sky (screen : screen) (angle : number) (e : eye) : shape list =
+  let horizon = e.horizon in
+  let per_degree = e.focal *. Float.pi /. 180. in
   let hill (bearing, r, color) =
     let sx = -.angle_diff angle bearing *. per_degree in
-    if Float.abs sx > (screen.width /. 2.) +. r then [] else [ circle color r |> move sx horizon ]
+    if Float.abs sx > (screen.width /. 2.) +. r then [] else [ hill screen color r sx horizon ]
   in
   [ rectangle (rgb 110 170 240) screen.width (screen.top -. horizon) |> move_y ((screen.top +. horizon) /. 2.) ]
   @ List.concat_map hill
@@ -397,24 +441,52 @@ let text color size str = words color str |> scale size
 
 let ordinal (n : int) : string = match n with 1 -> "1ST" | 2 -> "2ND" | 3 -> "3RD" | n -> string_of_int n ^ "TH"
 
-let view_race (screen : screen) (r : race) : shape list =
-  let player = (List.hd r.karts).car in
-  let e = eye screen player.x player.y r.view_angle in
-  (* the karts, the farthest first (the smallest scale) *)
-  let karts = List.filter_map (view_kart e r.view_angle) r.karts |> List.sort (fun (a, _) (b, _) -> compare a b) |> List.map snd in
+(* the race as player [i] sees it, on [screen] (the whole screen, or a
+ * half of it) *)
+let view_race (screen : screen) (r : race) (i : int) : shape list =
+  let player = (List.nth r.karts i).car and view_angle = List.nth r.view_angles i in
+  let e = eye screen player.x player.y view_angle in
+  (* the karts, the farthest first (the smallest scale); in a half of
+   * the split screen, the ones standing below its bottom left out *)
+  let karts =
+    List.filter_map
+      (fun k ->
+        match to_screen e k.car.x k.car.y with
+        | Some (_, sy, _) when r.humans = 2 && sy < screen.bottom -> None
+        | _ -> view_kart e view_angle k)
+      r.karts
+    |> List.sort (fun (a, _) (b, _) -> compare a b)
+    |> List.map snd
+  in
   let lap = min laps (Topdown.lap track player + 1) in
   let time = float_of_int r.frames /. 60. in
-  view_sky screen r.view_angle e.focal
+  let middle = screen.top /. 2. in
+  view_sky screen view_angle e
   @ [ view_ground screen e ]
   @ karts
-  @ view_minimap screen r
+  @ (if r.humans = 1 then view_minimap screen r else [])
   @ [ text white 3. (Printf.sprintf "LAP %d/%d" lap laps) |> move (screen.left +. 110.) (screen.top -. 40.);
       text white 3. (Printf.sprintf "%d:%04.1f" (int_of_float time / 60) (Float.rem time 60.)) |> move (screen.right -. 120.) (screen.top -. 40.);
-      text yellow 5. (ordinal (place r)) |> move (screen.left +. 80.) (screen.top -. 110.) ]
-  @
-  if r.ready > 0 then [ text yellow 8. (string_of_int ((r.ready + 59) / 60)) |> move_y 250. ]
-  else if r.frames < 40 then [ text yellow 8. "GO!" |> move_y 250. ]
-  else []
+      text yellow 5. (ordinal (match List.nth r.places i with Some n -> n | None -> place r i)) |> move (screen.left +. 80.) (screen.top -. 110.) ]
+  @ (match List.nth r.places i with
+    | Some n -> [ text yellow 6. (ordinal n ^ " PLACE!") |> move_y middle ]
+    | None ->
+        if r.ready > 0 then [ text yellow 8. (string_of_int ((r.ready + 59) / 60)) |> move_y middle ]
+        else if r.frames < 40 then [ text yellow 8. "GO!" |> move_y middle ]
+        else [])
+
+(* Two players: a half each, the first on top, as on the SNES. Each half
+ * is a screen of its own, centered, drawn and moved into place; the
+ * bottom one first, so that the top one's sky and ground cover what it
+ * spills over the middle, then a strip over the seam. *)
+let view_split (screen : screen) (r : race) : shape list =
+  let h = screen.height /. 2. in
+  let half = { screen with height = h; top = h /. 2.; bottom = -.h /. 2. } in
+  let at dy shapes = [ group shapes |> move_y dy ] in
+  at (-.h /. 2.) (view_race half r 1) @ at (h /. 2.) (view_race half r 0) @ [ rectangle black screen.width 6. ]
+
+let view_players (screen : screen) (r : race) : shape list =
+  if r.humans = 2 then view_split screen r else view_race screen r 0
 
 let view (computer : computer) (m : model) : shape list =
   let screen = computer.screen in
@@ -423,18 +495,16 @@ let view (computer : computer) (m : model) : shape list =
       (* the track, turning slowly around the infield's middle *)
       let angle = float_of_int m.frames *. 0.3 in
       let e = eye screen 0. 0. angle in
-      view_sky screen angle e.focal
+      view_sky screen angle e
       @ [ view_ground screen e;
-          text (rgb 220 30 30) 9. "TINY KART" |> move_y 330.;
-          rectangle black 700. 220. |> move_y (-300.) |> fade 0.6;
-          text white 3. "up: gas   down: brake   left/right: steer" |> move_y (-250.);
-          text white 3. "3 laps, against 3 karts" |> move_y (-300.) ]
-      @ Scene2d.blink 1. m [ text yellow 4. "PRESS SPACE" |> move_y (-380.) ]
-  | Racing r -> view_race screen r
-  | Finished (r, n) ->
-      view_race screen r
-      @ [ text yellow 8. (ordinal n ^ " PLACE!") |> move_y 250. ]
-      @ Scene2d.blink 1. m [ text white 3. "PRESS SPACE" |> move_y 150. ]
+          text (rgb 220 30 30) 9. "TINY MARIO KART" |> move_y 330.;
+          rectangle black 760. 260. |> move_y (-300.) |> fade 0.6;
+          text white 3. "up: gas   down: brake   left/right: steer" |> move_y (-230.);
+          text white 3. "3 laps, against the computer's karts" |> move_y (-280.);
+          text white 3. "2: two players, split screen (w a s d)" |> move_y (-330.) ]
+      @ Scene2d.blink 1. m [ text yellow 4. "PRESS SPACE" |> move_y (-400.) ]
+  | Racing r -> view_players screen r
+  | Finished r -> view_players screen r @ Scene2d.blink 1. m [ text white 3. "PRESS SPACE" |> move_y (-40.) ]
 
 let app = game view update initial_model
 

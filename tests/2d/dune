@@ -78,7 +78,7 @@
    %{project_root}/examples/software/BigBangRocket.exe
    %{project_root}/examples/software/BigBangWorm.exe
    %{project_root}/games/software/TinyBabaIsYou.exe
-   %{project_root}/games2.5d/software/TinyKart.exe
+   %{project_root}/games2.5d/software/TinyMarioKart.exe
    %{project_root}/games2.5d/software/TinyDoom.exe
    %{project_root}/games2.5d/software/TinyComanche.exe
    %{project_root}/games2.5d/software/TinyDescent.exe

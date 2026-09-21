@@ -3,7 +3,7 @@
 ; -- the track as data (Road), and a car driven on it (Car). Used by
 ; games2.5d/TinyOutRun (pseudo-3D, 2D shapes) and games3d/TinyVirtuaRacing
 ; (polygons); and a car on a flat world with a track of waypoints
-; (Topdown), used by games/TinyMicroMachines and games2.5d/TinyKart (Mode
+; (Topdown), used by games/TinyMicroMachines and games2.5d/TinyMarioKart (Mode
 ; 7). A private library, not installed: only the games use it.
 (library
  (name kit_racing)

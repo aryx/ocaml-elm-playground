@@ -570,17 +570,24 @@ let draw_mesh (st : gl_state) (rendering : Playground3d.rendering) (mesh : mesh)
 let free_mesh (st : gl_state) (mesh : mesh) : unit =
   mesh |> List.iter (fun (_material, buffer, _vertex_count) -> st.gl##deleteBuffer buffer)
 
-let draw (st : gl_state) (rendering : Playground3d.rendering) (computer : Playground.computer)
-    (camera : Playground3d.camera) (shapes : Playground3d.shape3d list) : unit =
+(* one view, in its rectangle of the letterboxed area [(x, y, w, h)] (all
+ * of it but in a split screen, Playground3d.split3d): the viewport maps
+ * the scene into it, the scissor keeps the clear of its depth inside
+ * it, and the projection gets its aspect *)
+let draw_view (st : gl_state) (rendering : Playground3d.rendering) ((x, y, w, h) : int * int * int * int)
+    (v : Playground3d.view) : unit =
   let gl = st.gl in
-  ensure_in_page st.canvas;
-  let (canvas_w, canvas_h) = resize_to_window st.canvas in
-  let (x, y, w, h) = letterbox ~canvas_w ~canvas_h computer.screen in
-  gl##viewport x y w h;
-  gl##clearColor (Js.float 1.) (Js.float 1.) (Js.float 1.) (Js.float 1.);
-  gl##clear (gl##._COLOR_BUFFER_BIT_ lor gl##._DEPTH_BUFFER_BIT_);
+  let camera = v.camera and shapes = v.shapes in
+  let px f n = int_of_float (Float.round (f *. float_of_int n)) in
+  let vx = x + px v.area.x w and vy = y + px v.area.y h in
+  let vw = x + px (v.area.x +. v.area.w) w - vx and vh = y + px (v.area.y +. v.area.h) h - vy in
+  gl##viewport vx vy vw vh;
+  gl##enable gl##._SCISSOR_TEST_;
+  gl##scissor vx vy vw vh;
+  gl##clear gl##._DEPTH_BUFFER_BIT_;
+  gl##disable gl##._SCISSOR_TEST_;
   gl##useProgram st.program;
-  let aspect = computer.screen.width /. computer.screen.height in
+  let aspect = float_of_int vw /. float_of_int (max 1 vh) in
   let view = Mat4.look_at ~up:camera.up ~eye:camera.eye ~target:camera.target () in
   let projection = (if camera.ortho > 0. then Mat4.orthographic ~height:camera.ortho ~aspect ~near:camera.near ~far:camera.far
        else Mat4.perspective ~fov_degrees:camera.fov ~aspect ~near:camera.near ~far:camera.far) in
@@ -602,7 +609,21 @@ let draw (st : gl_state) (rendering : Playground3d.rendering) (computer : Playgr
   List.iter (draw_group st rendering) groups;
   List.rev !cached
   |> List.iter (fun (c : Playground3d.cached) ->
-         draw_mesh st rendering (Mesh_cache.find_or_build st.meshes c.id (build_mesh st c)));
+         draw_mesh st rendering (Mesh_cache.find_or_build st.meshes c.id (build_mesh st c)))
+
+let draw (st : gl_state) (rendering : Playground3d.rendering) (computer : Playground.computer)
+    (views : Playground3d.view list) : unit =
+  let gl = st.gl in
+  ensure_in_page st.canvas;
+  let (canvas_w, canvas_h) = resize_to_window st.canvas in
+  let (x, y, w, h) = letterbox ~canvas_w ~canvas_h computer.screen in
+  gl##viewport x y w h;
+  gl##clearColor (Js.float 1.) (Js.float 1.) (Js.float 1.) (Js.float 1.);
+  gl##clear (gl##._COLOR_BUFFER_BIT_ lor gl##._DEPTH_BUFFER_BIT_);
+  List.iter (draw_view st rendering (x, y, w, h)) views;
+  gl##viewport x y w h;
+  (* once all the views are drawn: a mesh one view didn't use may be
+   * another's *)
   Mesh_cache.sweep st.meshes ~free:(free_mesh st)
 
 (*****************************************************************************)
@@ -662,11 +683,11 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = fa
   in
   let view2d (computer : Playground.computer) (model : 'model) : Playground.shape list =
     let computer = at_fixed_time computer in
-    let (camera, shapes) = Playground3d.view3d app3d computer model in
+    let views = Playground3d.views3d app3d computer model in
     (match Lazy.force gl_state with
-    | Ok st -> draw st (current_rendering ()) computer camera shapes
+    | Ok st -> draw st (current_rendering ()) computer views
     | Error _ -> ensure_in_page (Lazy.force no_webgl_message));
-    Playground3d.collect_hud_shapes (Playground3d.group3d shapes)
+    Playground3d.views_hud computer.screen views
   in
   let update2d (computer : Playground.computer) (model : 'model) : 'model =
     Playground3d.update3d app3d (at_fixed_time computer) model
