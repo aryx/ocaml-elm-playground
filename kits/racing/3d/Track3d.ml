@@ -19,11 +19,14 @@ let control ?(y = 0.) ?(width = 10.) ?(bank = 0.) (x : number) (z : number) : co
 
 type place = { px : number; py : number; pz : number; heading : number; width : number; bank : number }
 
-(* the samples, one every [step] along the middle, and the loop closes
- * from the last back to the first *)
-type t = { step : number; points : place array }
+(* The samples, one every [step] along the middle. A circuit is
+ * [closed]: the loop runs from the last sample back to the first, and
+ * every distance wraps. A stage is not: it has one segment fewer than
+ * it has samples (the last one leads nowhere), and a distance past its
+ * end stays at its end. *)
+type t = { step : number; points : place array; closed : bool }
 
-let segments (t : t) : int = Array.length t.points
+let segments (t : t) : int = if t.closed then Array.length t.points else Array.length t.points - 1
 let step (t : t) : number = t.step
 let length (t : t) : number = float_of_int (segments t) *. t.step
 
@@ -108,7 +111,33 @@ let build ?(step = 3.) (controls : control list) : t =
         let heading = atan2 (nx -. x) (-.(nz -. z)) *. 180. /. Float.pi in
         { px = x; py = y; pz = z; heading; width; bank })
   in
-  { step; points }
+  { step; points; closed = true }
+
+(* A Road.t is a course written as a table of segments, each with its
+ * curve and its height, which is how the arcade's pseudo-3D racers
+ * described one (see kits/racing/Road.mli). [centerline] already walks
+ * it into points in space; all that is missing to make it a ribbon is
+ * a width and, if the game wants one, a lean.
+ *
+ * The lean comes from the curve itself: a road turning right lifts its
+ * left-hand side, which is a negative bank here, and since Road eases
+ * a curve in and out the lean is eased with it. Real roads are built
+ * this way (superelevation); Virtua Racing's were drawn this way.
+ *
+ * The result is not a circuit: [Road.coast] ends somewhere else than
+ * it started, so this ribbon is a stage, and [at] stops at its end
+ * rather than wrapping round to the start line. *)
+let of_road ?(width = 10.) ?(degrees_per_curve = 0.8) ?(bank_per_curve = 0.) (road : Road.t) : t =
+  let centre = Road.centerline degrees_per_curve road in
+  let last = Array.length road.segments - 1 in
+  let points =
+    Array.mapi
+      (fun i (p : Road.point) ->
+        let curve = road.segments.(min i last).curve in
+        { px = p.x; py = p.y; pz = p.z; heading = p.heading; width; bank = -.curve *. bank_per_curve })
+      centre
+  in
+  { step = road.segment_length; points; closed = false }
 
 (*****************************************************************************)
 (* Places *)
@@ -119,11 +148,15 @@ let build ?(step = 3.) (controls : control list) : t =
 let angle_diff (a : number) (b : number) : number = Float.rem (Float.rem (b -. a +. 180.) 360. +. 360.) 360. -. 180.
 
 let at (t : t) (s : number) : place =
-  let n = segments t in
+  let n = Array.length t.points in
   let total = length t in
-  let s = Float.rem (Float.rem s total +. total) total in
+  (* a circuit wraps round; a stage stops at its end *)
+  let s =
+    if t.closed then Float.rem (Float.rem s total +. total) total
+    else Float.max 0. (Float.min (total -. 0.001) s)
+  in
   let k = int_of_float (s /. t.step) in
-  let k = if k >= n then n - 1 else k in
+  let k = max 0 (min (segments t - 1) k) in
   let f = (s -. (float_of_int k *. t.step)) /. t.step in
   let a = t.points.(k) and b = t.points.((k + 1) mod n) in
   let mix (u : number) (v : number) : number = u +. ((v -. u) *. f) in
@@ -180,9 +213,10 @@ let locate ?(near = -1.) (t : t) (x : number) (z : number) : number * number =
     else
       (* a circuit comes back near itself, so look near where the thing
        * was: twelve segments either way, which at any sane speed is
-       * further than it can have gone *)
+       * further than it can have gone. A stage does not come back, so
+       * its window is clipped to its two ends rather than wrapped. *)
       let k = int_of_float (Float.rem (Float.rem near (length t) +. length t) (length t) /. t.step) in
-      (k - 12, k + 12)
+      if t.closed then (k - 12, k + 12) else (max 0 (k - 12), min (n - 1) (k + 12))
   in
   let best = ref (Float.infinity, 0., 0.) in
   for i = first to last do
@@ -200,14 +234,17 @@ let locate ?(near = -1.) (t : t) (x : number) (z : number) : number * number =
 (*****************************************************************************)
 
 let strip (t : t) (color : color) (i : int) (a : number) (b : number) : shape3d =
-  let n = segments t in
+  let n = Array.length t.points in
   let p = t.points.(((i mod n) + n) mod n) and q = t.points.((((i mod n) + n) mod n + 1) mod n) in
-  (* counterclockwise seen from above (near left, far left, far right,
-   * near right), so that the face points up *)
-  polygon3d color [ across_at p a; across_at q a; across_at q b; across_at p b ]
+  (* Near left, near right, far right, far left: counterclockwise seen
+   * from above, so that the face points *up*. Wind it the other way
+   * round and the road still draws -- a game with no lighting and no
+   * back-face culling cannot tell -- but a flat-shaded one lights it
+   * from underneath and the whole course goes black. *)
+  polygon3d color [ across_at p a; across_at p b; across_at q b; across_at q a ]
 
 let wall (t : t) (color : color) (i : int) (offset : number) (height : number) : shape3d =
-  let n = segments t in
+  let n = Array.length t.points in
   let p = t.points.(((i mod n) + n) mod n) and q = t.points.((((i mod n) + n) mod n + 1) mod n) in
   let x1, y1, z1 = across_at p offset and x2, y2, z2 = across_at q offset in
   polygon3d color [ (x1, y1, z1); (x2, y2, z2); (x2, y2 +. height, z2); (x1, y1 +. height, z1) ]

@@ -84,7 +84,27 @@ type t
  * needed for a spline; fewer raises [Invalid_argument]. *)
 val build : ?step:number -> control list -> t
 
-(* the lap's length, in world units: [segments] times [step] *)
+(* [of_road ~width ~degrees_per_curve ~bank_per_curve road]: the ribbon
+ * a Road.t describes (kits/racing/Road.mli: a course as a table of
+ * segments, the way the arcade's pseudo-3D racers wrote one). Its
+ * centre line is walked into space by [Road.centerline], which is what
+ * [degrees_per_curve] is for; this adds the width and, from each
+ * segment's own curve, the lean:
+ *
+ *     bank = -curve * bank_per_curve
+ *
+ * so a road turning right lifts its left-hand side, eased in and out
+ * with the curve because Road eases the curve. Real roads are built
+ * that way (superelevation).
+ *
+ * The result is a *stage*, not a circuit: [Road.coast] ends somewhere
+ * else than it started, so distances do not wrap and [at] stops at the
+ * end. games3d/TinyVirtuaRacing drives this, on the same Road.t that
+ * games2.5d/TinyOutRun reads segment by segment -- which is the whole
+ * point of having both games. *)
+val of_road : ?width:number -> ?degrees_per_curve:number -> ?bank_per_curve:number -> Road.t -> t
+
+(* the course's length, in world units: [segments] times [step] *)
 val length : t -> number
 
 val segments : t -> int
@@ -104,9 +124,10 @@ type place = {
   bank : number;
 }
 
-(* [at t s]: the place at the distance [s] along the middle, wrapping
- * round the lap (so [at t (length t +. 1.)] is [at t 1.]), the two
- * nearest samples mixed *)
+(* [at t s]: the place at the distance [s] along the middle, the two
+ * nearest samples mixed. On a circuit the distance wraps round the lap
+ * (so [at t (length t +. 1.)] is [at t 1.]); on a stage it stops at
+ * each end. *)
 val at : t -> number -> place
 
 (* [across t s offset]: the point on the road's surface [offset] to the

@@ -19,16 +19,24 @@
  * its famous novelty: the "V.R." buttons (here, the v key).
  *
  * Next to TinyOutRun, the lesson is what polygons changed:
- *   - the road really turns: Road.centerline walks the course, each
- *     segment's curve turning its heading, and each segment of road is a
- *     quad in space between two edges of the center line; in TinyOutRun
- *     a curve is only a sideways shift of the picture;
+ *   - the road really turns: the racing kit's Track3d walks the same
+ *     course into a ribbon in space, each segment's curve turning its
+ *     heading, and each segment of road is a quad between two edges of
+ *     the center line; in TinyOutRun a curve is only a sideways shift
+ *     of the picture;
+ *   - and it leans: a table of segments cannot say which way the road
+ *     is tilted, a shape in space can, so every curve here lifts its
+ *     outside edge (Track3d.of_road's bank, eased in and out with the
+ *     curve, as a real road's camber is);
  *   - so the camera can be anywhere: behind the car, above it, in it --
  *     TinyOutRun's camera can only be where its trick works;
  *   - hills hide what's behind them because of the z-buffer, not because
  *     of a special case (TinyOutRun's [visible]).
  * The course and the car (its speed, steering, the curves' push, the
- * grass) are the racing kit's (kits/racing/), shared by the two games.
+ * grass) are the racing kit's (kits/racing/), shared by the two games;
+ * the ribbon it is drawn as is the kit's 3D half (kits/racing/3d/),
+ * shared with games3d/TinyMarioKart64, whose circuit is written as a
+ * spline instead of read from a Road.t.
  *
  * The road is static: it's cut in chunks of 40 segments, each a cached3d
  * group (kept in GPU buffers on the GPU backends), and only the chunks
@@ -48,26 +56,25 @@ let rumble_length = 3
 let track = Road.build segment_length Road.coast
 let params = Car.params segment_length
 
-(* how many degrees a segment of curve 1 turns: the road winds without
- * coming back near itself *)
-let points = Road.centerline 0.8 track
+(* The course as a shape in space: the racing kit's Track3d walks the
+ * segments into a ribbon of quads (0.8 degrees per unit of curve, so
+ * the road winds without coming back near itself), and everything
+ * below is said in the two numbers a ribbon has -- how far along, and
+ * how far across. The [strip]s, the scenery's places, the start line,
+ * the arch and the car's own position all come from it.
+ *
+ * It is still TinyOutRun's course: the same Road.t, read there as a
+ * table of segments and here as a shape. The one thing the table
+ * cannot say and the shape can is the lean, and it costs a number:
+ * [bank_per_curve] lifts the outside of every curve, eased in and out
+ * with the curve itself, which is how a real road is built and how
+ * Virtua Racing drew its long right-handers. *)
+let ribbon = Track3d.of_road ~width:road_width ~degrees_per_curve:0.8 ~bank_per_curve:2.2 track
 
-let radians d = d *. Float.pi /. 180.
-let forward (h : number) = (sin (radians h), 0., -.cos (radians h))
-let right_of (h : number) = (cos (radians h), 0., sin (radians h))
-
-(* the point at [offset] across the road (in world units, right
- * positive), at the i-th edge of the center line *)
 let across (i : int) (offset : number) : number * number * number =
-  let p = points.(i) in
-  let rx, _, rz = right_of p.heading in
-  (p.x +. (offset *. rx), p.y, p.z +. (offset *. rz))
+  Track3d.across ribbon (float_of_int i *. segment_length) offset
 
-(* a strip of the i-th segment, from [a] to [b] across the road:
- * counterclockwise seen from above (near left, near right, far right,
- * far left), so that its face is up *)
-let strip (color : color) (i : int) (a : number) (b : number) : shape3d =
-  polygon3d color [ across i a; across i b; across (i + 1) b; across (i + 1) a ]
+let strip (color : color) (i : int) (a : number) (b : number) : shape3d = Track3d.strip ribbon color i a b
 
 let segment_shapes (i : int) : shape3d list =
   let light = i / rumble_length mod 2 = 0 in
@@ -92,7 +99,8 @@ let sign : shape3d =
 
 let place (i : int) (offset : number) (shape : shape3d) : shape3d =
   let x, y, z = across i offset in
-  shape |> rotate3d 0. (-.points.(i).heading) 0. |> move3d x y z
+  let p = Track3d.at ribbon (float_of_int i *. segment_length) in
+  shape |> rotate3d 0. (-.p.heading) 0. |> move3d x y z
 
 (* the same places as TinyOutRun's palms, bushes and signs *)
 let scenery (i : int) : shape3d list =
@@ -173,16 +181,12 @@ let car_model : shape3d =
       box red 2.2 0.15 0.6 |> move3d 0. 1.2 1.9; wheel |> move3d (-1.1) 0.35 (-1.3); wheel |> move3d 1.1 0.35 (-1.3);
       wheel |> move3d (-1.1) 0.35 1.3; wheel |> move3d 1.1 0.35 1.3 ]
 
-(* where the car is: on the center line at its position, then across *)
+(* where the car is: how far along the ribbon it has driven, and how
+ * far across ([car.x] is in road widths, the ribbon's offset is in
+ * world units) *)
 let car_place (car : Car.t) : (number * number * number) * number =
   let s = Float.min car.position (Road.length track -. 0.001) in
-  let i = int_of_float (s /. segment_length) in
-  let f = (s -. (float_of_int i *. segment_length)) /. segment_length in
-  let p = points.(i) and q = points.(i + 1) in
-  let heading = q.heading in
-  let rx, _, rz = right_of heading in
-  let off = car.x *. road_width in
-  ((p.x +. ((q.x -. p.x) *. f) +. (off *. rx), p.y +. ((q.y -. p.y) *. f), p.z +. ((q.z -. p.z) *. f) +. (off *. rz)), heading)
+  (Track3d.across ribbon s (car.x *. road_width), (Track3d.at ribbon s).heading)
 
 (* the four views, all behind the car (Camera3d.behind), from near and
  * low to high and far; the cockpit's eye in front of the car's center *)
