@@ -76,6 +76,25 @@ let test_mixer () =
   for _ = 1 to 40 do Mixer.play m (Synth.render beep) done;
   Alcotest.(check int) "at most 32 one-shots" Mixer.max_playing (fst (Mixer.playing m))
 
+(* A loop's clock: the samples of it that have gone out, which keeps
+ * counting when the loop comes round -- its read position goes back to
+ * 0, and a rhythm game timing its steps by that would lose a whole song
+ * every time round. *)
+let test_loop_clock () =
+  let m = Mixer.create () in
+  Alcotest.(check (option int)) "nothing playing, no clock" None (Mixer.played m "song");
+  Mixer.loop m "song" (Synth.render beep);
+  Alcotest.(check (option int)) "started, nothing out yet" (Some 0) (Mixer.played m "song");
+  for _ = 1 to 10 do ignore (Mixer.pull m 735) done;
+  Alcotest.(check (option int)) "ten frames of it" (Some 7350) (Mixer.played m "song");
+  (* the beep is 4410 samples long: 7350 is its second time round, and
+   * the clock did not go back *)
+  Alcotest.(check bool) "past the end, still counting" true (Option.get (Mixer.played m "song") > 4410);
+  Mixer.stop m "song";
+  ignore (Mixer.pull m 735);
+  Alcotest.(check (option int)) "stopped: no clock" None (Mixer.played m "song")
+
 let tests =
   Testo.categorize "Synth and Mixer"
-    [ t "Music: notes and frequencies" test_notes; t "Synth: durations, no clicks, slides" test_synth; t "Mixer: one-shots, continuous voices" test_mixer ]
+    [ t "Music: notes and frequencies" test_notes; t "Synth: durations, no clicks, slides" test_synth; t "Mixer: one-shots, continuous voices" test_mixer;
+      t "Mixer: a loop's own clock" test_loop_clock ]

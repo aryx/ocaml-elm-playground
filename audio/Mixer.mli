@@ -57,3 +57,11 @@ val playing : t -> int * int
 
 (* loops playing *)
 val looping : t -> string list
+
+(* [played m name]: how many samples of the loop [name] have gone out,
+ * counting every time round -- the loop's own clock, which unlike its
+ * read position does not go back to 0 at the end. None if no such loop
+ * is playing. It is what a rhythm game has to time its steps by
+ * (playground/Audio.mli's [position], games/TinyDDR.ml): the frame
+ * clock is the game's, and this one is the music's. *)
+val played : t -> string -> int option

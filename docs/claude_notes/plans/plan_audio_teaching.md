@@ -417,6 +417,21 @@ audio meeting).
   it in a real browser (headless Chrome's audio clock barely moves).
   Left: the Web Audio nodes version (OscillatorNode, GainNode) for
   comparison; the 3D backends' sound (their loops don't pull yet).
+- **The music's clock, DONE (for games/TinyDDR, not in the phases)**:
+  "The audio loop is not the frame loop" above had no way for a game
+  to *read* the audio loop's time, and a rhythm game needs nothing
+  else. `Mixer.played m name` counts the samples of a loop sent to the
+  card, every time round (the read position wraps; this does not), and
+  `Audio.position name` is the same in seconds. `Audio.mli` draws the
+  two clocks side by side and says why a rhythm game must judge by the
+  second one, and why even that is early by the device's latency (~50
+  ms natively, ~100 ms in a browser) -- which a calibration setting
+  subtracts. That is also the first thing in the repository that
+  *measures* the Verification section's "latency: a key press to a
+  sound": TinyDDR's results report a steady player's average error,
+  which is the machine's latency. Tests: the clock keeps counting past
+  the end of the loop and stops with it (`Unit_synth`); two seconds of
+  pulls are two seconds of song (the game's tests).
 - **Phase 5, DONE**: `audio/Spectrum`: the DFT by its definition (N^2)
   and the FFT (Cooley-Tukey, radix 2, recursive: the butterfly), both
   kept, the first checking the second; magnitudes scaled so a sine of

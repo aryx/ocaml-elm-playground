@@ -512,9 +512,28 @@ Tower Defense (2007: tower defense in a browser).
 PaRappa the Rapper (1996), Dance Dance Revolution (Konami, 1998),
 Guitar Hero (2005).
 
-- **Toy**: TinyDDR: arrows scrolling up, pressed on the beat.
-- **Kit**: in `plan_audio_teaching.md` (timing against the music,
-  not the frame).
+- **Toy**: TinyDDR (DONE: `games/TinyDDR.ml`, Konami, 1998): arrows
+  rising in time with an original tune, pressed as each reaches its
+  outline. What the genre is about underneath is *what time it is*:
+  every other game here runs on the frame clock, but the player is
+  listening to the music, which runs on the sound card's clock and
+  never waits for a late frame. So the steps are judged, and the
+  arrows placed, by the music's clock (`Audio.position`, below); the
+  flag clock=frame judges by the frame clock for comparison. And the
+  music's clock is itself early by the machine's latency, which is why
+  there is a calibration (- and =) and why the results report the
+  average error -- a steady player is off by exactly the latency, so
+  the average *is* the calibration to set. The chart is not typed in:
+  a step on each note of the melody at the note's start (from
+  `audio/Abc`), the arrow following the tune's shape (up, down, a leap
+  sideways, a repeat the same arrow).
+- **Kit** (DONE, in `audio/` and the playground rather than a kit, as
+  the plan said): the music's own clock -- `Mixer.played`, the samples
+  of a loop sent to the card counting every time round (its read
+  position wraps, and a game timing steps by that would lose a whole
+  song each pass), and `Audio.position`, the same in seconds. Tested
+  in `audio/tests` and in the game's own tests, where two seconds of
+  pulls are two seconds of song.
 
 ### 17. Side-view deathmatch: Soldat
 

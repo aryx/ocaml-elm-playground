@@ -92,3 +92,6 @@ let stop (name : string) : unit =
   Hashtbl.remove requested name;
   Mixer.stop mixer name
 let pull (n : int) : float array = Mixer.pull mixer n
+
+let position (name : string) : float option =
+  Option.map (fun n -> float_of_int n /. float_of_int Signal.rate) (Mixer.played mixer name)

@@ -3755,6 +3755,80 @@ let celeste_wall_jump () =
   Alcotest.(check bool) "away from the wall" true (off.vx < 0.);
   Alcotest.(check bool) "and up" true (off.vy > 0.)
 
+(*****************************************************************************)
+(* TinyDDR *)
+(*****************************************************************************)
+
+(* The chart is the melody: a step on each note, at the note's start,
+ * the arrow following the tune's shape. *)
+let ddr_chart_is_the_tune () =
+  let open TinyDDR in
+  let beat = 60. /. 128. in
+  (match steps with
+  | a :: b :: c :: d :: _ ->
+      (* two silent bars (8 beats) before the first note *)
+      Alcotest.(check (float 0.001)) "the first step, after the count-in" (8. *. beat) a.at;
+      Alcotest.(check (float 0.001)) "then a note a beat" (9. *. beat) b.at;
+      (* c e g e: a first arrow, up, up, and down *)
+      Alcotest.(check bool) "c e g e is left, up, up, down" true
+        (a.lane = Left && b.lane = Up && c.lane = Up && d.lane = Down)
+  | _ -> Alcotest.fail "a chart of fewer than four steps");
+  (* the melody's eight bars hold 4 + 3 + 4 + 3 + 4 + 3 + 4 + 1 notes *)
+  Alcotest.(check int) "one step per note of the melody" 26 (List.length steps);
+  Alcotest.(check bool) "all within the song" true (List.for_all (fun s -> s.at < song_length) steps)
+
+(* On the beat is PERFECT, a little off still counts, too far off is
+ * not a step at all. *)
+let ddr_judging () =
+  let open TinyDDR in
+  let is j e = Alcotest.(check bool) (Printf.sprintf "%.0f ms" (e *. 1000.)) true (judge e = j) in
+  is (Some Perfect) 0.;
+  is (Some Perfect) (-0.025);
+  is (Some Great) 0.05;
+  is (Some Good) (-0.09);
+  is (Some Almost) 0.13;
+  is None 0.2;
+  (* and a step let go by is a miss, which ends the combo *)
+  let first = List.hd steps in
+  let d = start_dance 0. 0. in
+  let hit = dance_step first.at [ first.lane ] d in
+  Alcotest.(check int) "on the beat: a hundred" 100 hit.score;
+  Alcotest.(check int) "and a combo of one" 1 hit.combo;
+  let after = dance_step (first.at +. 3.) [] hit in
+  Alcotest.(check bool) "the next ones went by: misses" true
+    (List.exists (fun (_, j) -> j = Some Miss) after.judged && after.combo = 0)
+
+(* The game measures its machine through its player: someone who
+ * dances steadily to what they hear is late by the latency, and the
+ * average of their errors is the calibration to set. *)
+let ddr_average_error_is_the_calibration () =
+  let open TinyDDR in
+  let late = 0.040 in
+  let d =
+    List.fold_left (fun d (s : step) -> dance_step (s.at +. late) [ s.lane ] d) (start_dance 0. 0.) steps
+  in
+  (match average_error d with
+  | Some e -> Alcotest.(check (float 0.001)) "forty milliseconds late, on average" late e
+  | None -> Alcotest.fail "no step was hit");
+  Alcotest.(check bool) "and every step was a hit" true (List.for_all (fun (_, j) -> j <> None && j <> Some Miss) d.judged)
+
+(* The clock is the music's: Audio.position is how much of the song the
+ * sound card has been fed, and the dance's time is that less the
+ * calibration. A frame the game spends late does not move it. *)
+let ddr_the_clock_is_the_music () =
+  let open TinyDDR in
+  Audio.stop "song";
+  ignore (Audio.pull 735);
+  Audio.loop "song" song;
+  for _ = 1 to 120 do ignore (Audio.pull 735) done;
+  (match Audio.position "song" with
+  | Some p ->
+      Alcotest.(check (float 1e-6)) "two seconds of song fed to the card" 2. p;
+      Alcotest.(check (float 1e-6)) "heard 50 ms later" 1.95 (song_time ~position:p ~offset:0.05)
+  | None -> Alcotest.fail "the song should be playing");
+  Audio.stop "song";
+  ignore (Audio.pull 735)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -3936,4 +4010,8 @@ let tests =
       t "TinyCeleste, a tap is a hop" celeste_variable_jump;
       t "TinyCeleste, corner correction" celeste_corners;
       t "TinyCeleste, one dash until you land" celeste_one_dash;
-      t "TinyCeleste, the wall jump" celeste_wall_jump ]
+      t "TinyCeleste, the wall jump" celeste_wall_jump;
+      t "TinyDDR, the chart is the tune" ddr_chart_is_the_tune;
+      t "TinyDDR, judging a step" ddr_judging;
+      t "TinyDDR, the average error is the calibration" ddr_average_error_is_the_calibration;
+      t "TinyDDR, the clock is the music's" ddr_the_clock_is_the_music ]

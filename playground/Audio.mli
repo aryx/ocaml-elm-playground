@@ -146,6 +146,39 @@ val stop : string -> unit
      Audio.loop_from "music" "https://example.com/tune.mid" *)
 val loop_from : string -> string -> unit
 
+(* {1 The music's own clock} *)
+
+(* [position name]: how far into the loop [name] the sound card has
+ * been fed, in seconds, counting every time round (so 35.2 for a 16 s
+ * song on its third pass); None if it isn't playing.
+
+   A game has two clocks, and for most games the difference never
+   matters. For a rhythm game it is the whole difficulty:
+
+     the game's clock: computer.time, advanced once a frame
+       |------|------|------|---- - - --|------|------|  60 a second,
+       frame  frame  frame     a frame  frame  frame     unless a frame
+                                late                     is late
+     the music's clock: this, advanced by the samples that went out
+       ||||||||||||||||||||||||||||||||||||||||||||||||  44,100 a
+                                                         second, never
+                                                         late (or it
+                                                         clicks)
+
+   The two drift apart -- a slow frame, a window being dragged, a
+   machine busy elsewhere -- and the music does not wait for the
+   frames. So a step has to be judged against *this* clock, the one
+   the player is dancing to; a game that judges it by computer.time is
+   judging against a clock the player cannot hear.
+
+   And even this is early: it counts what has been *given* to the
+   sound card, which plays it a little later (natively the queue is
+   kept ~50 ms ahead, in a browser ~100 ms, more over Bluetooth). That
+   last gap depends on the machine, not the program, which is why
+   every rhythm game since has a calibration screen: a number the
+   player sets, subtracted from this one. *)
+val position : string -> number option
+
 (**/**)
 
 (* claude: for the platforms (Playground_platform), not for games: the

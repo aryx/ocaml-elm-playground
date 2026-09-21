@@ -50,6 +50,7 @@
 (copy_files ../TinyJoust.ml)
 (copy_files ../TinyDefender.ml)
 (copy_files ../TinyCeleste.ml)
+(copy_files ../TinyDDR.ml)
 
 (executables
   (names
@@ -101,6 +102,7 @@
     TinyJoust
     TinyDefender
     TinyCeleste
+    TinyDDR
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

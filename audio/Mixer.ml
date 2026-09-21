@@ -17,8 +17,10 @@ type shot = { samples : Signal.t; mutable at : int }
  * was kept since the last pull *)
 type continuous = { mutable voice : Synth.voice; mutable running : Synth.running; mutable kept : bool }
 
-(* a loop: its samples, how far read, and whether it's being stopped *)
-type looped = { sound : Signal.t; mutable pos : int; mutable stopping : bool }
+(* a loop: its samples, how far read (wrapping at the end), how many
+ * samples of it have gone out in all (not wrapping: the loop's clock),
+ * and whether it's being stopped *)
+type looped = { sound : Signal.t; mutable pos : int; mutable played : int; mutable stopping : bool }
 
 type t = { mutable shots : shot list; continuous : (string, continuous) Hashtbl.t; loops : (string, looped) Hashtbl.t }
 
@@ -28,7 +30,7 @@ let create () : t = { shots = []; continuous = Hashtbl.create 8; loops = Hashtbl
 let loop (m : t) (name : string) (sound : Signal.t) : unit =
   match Hashtbl.find_opt m.loops name with
   | Some l when not l.stopping -> ()
-  | _ -> if Array.length sound > 0 then Hashtbl.replace m.loops name { sound; pos = 0; stopping = false }
+  | _ -> if Array.length sound > 0 then Hashtbl.replace m.loops name { sound; pos = 0; played = 0; stopping = false }
 
 let stop (m : t) (name : string) : unit = Option.iter (fun l -> l.stopping <- true) (Hashtbl.find_opt m.loops name)
 let looping (m : t) : string list = Hashtbl.fold (fun name _ acc -> name :: acc) m.loops [] |> List.sort compare
@@ -82,8 +84,10 @@ let pull (m : t) (n : int) : Signal.t =
            out.(i) <- out.(i) +. (fade *. l.sound.(l.pos));
            l.pos <- (l.pos + 1) mod len
          done;
+         l.played <- l.played + n;
          if l.stopping then stopped := name :: !stopped);
   List.iter (Hashtbl.remove m.loops) !stopped;
   Mix.limit ~soft:true out
 
 let playing (m : t) : int * int = (List.length m.shots, Hashtbl.length m.continuous)
+let played (m : t) (name : string) : int option = Option.map (fun l -> l.played) (Hashtbl.find_opt m.loops name)

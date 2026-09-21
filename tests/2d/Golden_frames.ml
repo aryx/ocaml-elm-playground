@@ -142,6 +142,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyJoust", "", 5);
     ("games/software/TinyDefender", "", 5);
     ("games/software/TinyCeleste", "", 5);
+    ("games/software/TinyDDR", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -297,6 +298,11 @@ let scripted : Testutil_golden.scripted list =
     (* deeper in: three walls, a tower, and a shot on its way *)
     ("games2.5d/software/TinyZaxxon", "deep", 260,
      "space:1,space:60,right:120-150,up:180-210,space:200,left:260-300,space:300,down:330-360,space:380,right:400-430,up:430-470,space:470");
+    (* the first four steps danced, judged by the music's clock: the
+       card is fed 735 samples a frame here, so the song's time is
+       exact, and a press on a frame lands about 35 ms early by it --
+       GREAT rather than PERFECT, the offset the calibration is for *)
+    ("games/software/TinyDDR", "steps", 318, "space:1,left:228,up:256,up:284,down:312");
     (* the first ledge reached with a held jump, the four lies all on *)
     ("games/software/TinyCeleste", "climb", 60, "space:1,right:10-40,space:22-34");
     (* a jump, then a dash spent straight up: the hair gone blue, which
