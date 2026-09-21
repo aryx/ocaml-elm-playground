@@ -73,6 +73,8 @@ let scenes : Testutil_golden.scene list =
     (* the title's tank, turned by 40 degrees, solid (the same frame as
      * games2.5d/TinyBattlezone's, in lines) *)
     ("games3d/TinyBattlezone3d", "", 40);
+    (* the station turning, solid (games2.5d/TinyElite's title frame) *)
+    ("games3d/TinyElite3d", "", 5);
     (* claude: the same view as games2.5d/TinyWolfenstein's golden frame, in 3D *)
     ("games3d/TinyWolfenstein3d", "", 5);
     ("games3d/TinyVirtuaRacing", "", 5);
@@ -121,6 +123,9 @@ let scripted : Testutil_golden.scripted list =
     (* the same battle as games2.5d/TinyBattlezone's golden frame: the
      * pyramid now hides the enemy tank *)
     ("games3d/TinyBattlezone3d", "play", 150, "space:1,right:5-20,up:30-140,space:100");
+    (* the same launch as games2.5d/TinyElite's: the station ahead, the
+     * slot turning, Lave a sphere behind it *)
+    ("games3d/TinyElite3d", "flight", 200, "space:1");
     (* the same walk as games2.5d/TinyWolfenstein's *)
     ("games3d/TinyWolfenstein3d", "treasure", 60, "right:1-16,up:20-60");
     (* the same drive as games2.5d/TinyOutRun's golden frame, in polygons *)

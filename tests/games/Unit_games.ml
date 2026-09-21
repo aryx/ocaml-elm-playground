@@ -451,6 +451,41 @@ let elite_docking () =
   Alcotest.(check bool) "lined up: docked" true (docking (at_slot facing_you));
   Alcotest.(check bool) "rolled a quarter turn: not" false (docking (at_slot (tidy (roll_by 1.57 facing_you))))
 
+(* Elite's hidden lines are backface culling: the edges TinyElite draws
+ * (LL9, an edge kept when either of its faces is turned towards you)
+ * are the edges of the faces graphics/3d's Cull keeps of TinyElite3d's
+ * wound polygons, the eye at the origin -- for the station seen from
+ * a few places, turned a few ways *)
+let elite3d_culling_is_ll9 () =
+  let round (x, y, z) = (Float.round (x *. 1000.), Float.round (y *. 1000.), Float.round (z *. 1000.)) in
+  let pair a b = let a = round a and b = round b in (min a b, max a b) in
+  List.iter
+    (fun ((x, y, z), pitch, roll) ->
+      let o2 = TinyElite.(tidy (roll_by roll (pitch_by pitch upright))) in
+      let o3 = TinyElite3d.(tidy (roll_by roll (pitch_by pitch upright))) in
+      let ll9 =
+        TinyElite.(visible_edges coriolis (v x y z) o2)
+        |> List.map (fun ((a : TinyElite.vec), (b : TinyElite.vec)) -> pair (a.x, a.y, a.z) (b.x, b.y, b.z))
+        |> List.sort_uniq compare
+      in
+      let pos = TinyElite3d.v x y z in
+      let culled =
+        List.concat_map
+          (fun face ->
+            let pts = List.map (fun i -> TinyElite3d.place pos o3 TinyElite3d.coriolis.corners.(i)) face in
+            let wound = TinyElite3d.wound pos pts in
+            if not (Cull.faces_camera ~eye:(0., 0., 0.) wound) then []
+            else
+              (* back from the engine's frame to Elite's, and round the face *)
+              let back = List.map (fun (x, y, z) -> (x, y, -.z)) wound in
+              List.mapi (fun k a -> pair a (List.nth back ((k + 1) mod List.length back))) back)
+          TinyElite3d.coriolis.faces
+        |> List.sort_uniq compare
+      in
+      Alcotest.(check int) "as many edges" (List.length ll9) (List.length culled);
+      Alcotest.(check bool) "the same edges" true (ll9 = culled))
+    [ ((0., 0., 700.), 0.6, 0.3); ((120., -60., 3400.), 0., 0.3); ((300., 200., 500.), 1.2, -0.7); ((-50., 30., 400.), 2.5, 1.9) ]
+
 (*****************************************************************************)
 (* TinyBattlezone *)
 (*****************************************************************************)
@@ -3747,6 +3782,7 @@ let tests =
       t "TinyElite, docking" elite_docking;
       t "TinyBattlezone, the divide and the near plane" battlezone_projection;
       t "TinyBattlezone, shells at the height of a hull" battlezone_shell_height;
+      t "TinyElite3d, backface culling is Elite's hidden lines" elite3d_culling_is_ll9;
       t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;

@@ -128,11 +128,13 @@ galaxy of trading and dogfights, generated from a few numbers, on a
   ship, a space station to dock in, spinning; its whole engine written
   in the game, on the 2D playground: the universe turning round you,
   the 6502's small-angle turns and TIDY, hidden lines on convex hulls,
-  and the galaxy out of its seed).
-- **Kit**: `Vector`: shapes as lists of 3D line segments, drawn with
-  `project` into 2D lines (so it also fits the 2D playground), with
-  near-plane clipping for lines (the 2D version of `graphics/3d`'s
-  `Clip`).
+  and the galaxy out of its seed; its twin `games3d/TinyElite3d.ml`
+  hands the same hulls to playground3d as faces, whose backface
+  culling is Elite's hidden lines, tested as such).
+- **Kit**: `Vector` (not needed): shapes as lists of 3D line segments,
+  drawn into 2D lines with near-plane clipping. Both vector games
+  write that pipeline themselves, in `games2.5d/`, which is the point
+  of them; a kit would hide it.
 
 ### 2. First-person mazes and dungeon crawlers
 

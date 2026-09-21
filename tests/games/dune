@@ -278,6 +278,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyElite3d.ml)
+ (deps (:src %{project_root}/games3d/TinyElite3d.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyAloneInTheDark.ml)
  (deps (:src %{project_root}/games3d/TinyAloneInTheDark.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
@@ -327,6 +332,7 @@
    elm_playground_software ; an implem of virtual elm_playground
    elm_playground_3d
    elm_playground_3d_software ; an implem of virtual elm_playground_3d
+   graphics_3d ; Cull, against TinyElite's hidden lines
    kit_racing
    kit_racing3d ; TinyMarioKart64's circuit
    kit_brawler3d ; TinyVirtuaFighter's Skeleton

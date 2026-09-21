@@ -122,7 +122,7 @@ is not the same as a game being small.
 Their twins
 -----------
 
-Six of them have a twin in `games3d/`, the same game with a real 3D
+Seven of them have a twin in `games3d/`, the same game with a real 3D
 engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 
 | Pseudo-3D | Real 3D | Shared |
@@ -133,6 +133,7 @@ engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 | `TinyComanche` | `games3d/TinyComanche3d` | the island (`kits/heightmap`: `Heightmap`) |
 | `TinyDescent` | `games3d/TinyDescent3d` | the mine and the ship (`kits/segments`: `Segments`, `Sixdof`) |
 | `TinyBattlezone` | `games3d/TinyBattlezone3d` | the battle: obstacles, enemy, shells (a copy) |
+| `TinyElite` | `games3d/TinyElite3d` | the ships, their small turns and the flight (a copy); the hidden lines become the engine's backface culling |
 
 The 3D twin is shorter: the engine does the work, and the camera can do
 anything. The pseudo-3D one shows what the engine does, and why games
