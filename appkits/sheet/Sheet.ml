@@ -10,6 +10,10 @@
 
 (* See Sheet.mli *)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 module Cells = Map.Make (struct
   type t = Formula.cell
 
@@ -42,6 +46,10 @@ let empty =
     last_recalculated = 0;
   }
 
+(*****************************************************************************)
+(* Reading a sheet *)
+(*****************************************************************************)
+
 let raw t c = match Cells.find_opt c t.raws with Some s -> s | None -> ""
 let value t c = match Cells.find_opt c t.values with Some v -> v | None -> Empty
 let cells t = Cells.bindings t.raws |> List.map fst
@@ -55,7 +63,9 @@ let show = function
       if Float.is_integer f && Float.abs f < 1e15 then Printf.sprintf "%.0f" f
       else Printf.sprintf "%g" f
 
-(* --- computing one cell, given the values of the cells it reads ----- *)
+(*****************************************************************************)
+(* Computing one cell, given the values of the cells it reads *)
+(*****************************************************************************)
 
 (* [Error] here is this module's own (a cell in error), and [Result]'s
  * is the answer of a computation that could not be done -- hence the
@@ -140,7 +150,9 @@ let value_of_content t = function
   | Formula.Invalid why -> Error why
   | Formula.Formula e -> eval t e
 
-(* --- what a change reaches, and in what order ----------------------- *)
+(*****************************************************************************)
+(* What a change reaches, and in what order *)
+(*****************************************************************************)
 
 let readers t c = match Cells.find_opt c t.read_by with Some l -> l | None -> []
 
@@ -197,6 +209,10 @@ let recompute t dirty =
   in
   { t with last_recalculated = !done_ + List.length !pending }
 
+(*****************************************************************************)
+(* Typing into a cell *)
+(*****************************************************************************)
+
 let store c text t =
   let content = Formula.content_of text in
   let old_reads = match Cells.find_opt c t.reads with Some l -> l | None -> [] in
@@ -230,6 +246,10 @@ let set c text t =
   let t = store c text t in
   recompute t (downstream t c)
 
+(*****************************************************************************)
+(* The way it was done in 1979 *)
+(*****************************************************************************)
+
 type order = Rows | Columns
 
 (* One pass, in the order the cells are laid out -- and nothing about
@@ -254,6 +274,10 @@ let recalculate order t =
       t ordered
   in
   { t with last_recalculated = List.length ordered }
+
+(*****************************************************************************)
+(* Saving *)
+(*****************************************************************************)
 
 let to_string t =
   cells t

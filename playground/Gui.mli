@@ -159,6 +159,13 @@ val menu_size : string list -> Playground.number * Playground.number
 (* the whole screen as a box, the usual thing to lay out inside *)
 val area : Playground.computer -> Widget.box
 
+(* Has the toolkit got the mouse -- is a menu's list showing?
+   The widgets know this for themselves; a program that reads
+   [computer.mouse] to work out what its own drawing was clicked on
+   (a spreadsheet's cells, a canvas) has to ask, or it will act on the
+   click that was meant for a menu item. *)
+val modal : unit -> bool
+
 (* the shapes of the widgets this frame asked for, back to front; for
    [view], and it ends the frame *)
 val draw : unit -> Playground.shape list

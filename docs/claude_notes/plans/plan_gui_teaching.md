@@ -999,9 +999,49 @@ B3 with the status line following it in 1979's spelling. (The slash
 commands take *characters*, which a script cannot send: a key is not a
 character, as phase 0 established.)
 
-Still to come in this pair: **TinyExcel** (phase 8), the same engine
-with 1985's answers -- mouse selection, menus, a formula bar -- and
-the comparison written in both headers.
+### Phase 8, DONE (2026-09-21), awaiting review
+
+**`apps/TinyExcel.ml`** (255 lines), and the pair is complete. What is
+*shared* first, because it is the point: `appkits/sheet`, the whole
+engine -- formula language, dependency graph, recalculation. Not one
+line of it differs between 1979 and 1985. The table of what does
+differ is in both headers.
+
+What 1985 bought, all of it visible in one scripted golden frame: a
+**range dragged out with the mouse** (D2 to D5, shaded, its headers
+lit, named `D2:D5` in the bar), a **menu bar** you can read before you
+choose, **Edit > Fill Down**, and a chart.
+
+The one real algorithm is **a formula that moves** (`Formula.shift`,
+new, with `Formula.to_string` to write it back): filling `=B2*C2` down
+gives `=B3*C3`, `=B4*C4`, `=B5*C5`, the totals follow, and the sum at
+the bottom goes to 1236. That is what made spreadsheets useful -- one
+formula written once, for a table of any height -- and it is exactly
+where **$A$1** comes from, which this engine does not have and whose
+absence is stated where it matters (`Formula.mli`).
+
+**`appkits/sheet_view/`** (new library, `gui` + `appkit_sheet`): a
+sheet drawn into a rectangle, with a selection and a way back from a
+click to a cell. It exists because three programs need it -- TinyExcel
+now, `examples/Gui7Cells` (moved onto it in this phase, its golden
+frames gaining lit headers), and `appkits/embed`'s component next --
+and because "draw yourself into this rectangle" is the shape that
+protocol asks for. A **selection is two cells**, an anchor and a
+focus, and one cell is a selection of one: the same shape as a caret
+being a selection of length zero.
+
+And one thing the scripted frame caught that no unit test would have:
+**a menu's grab protects widgets, not drawings.** The first run had a
+click on a menu item fall through and select a cell underneath,
+because the sheet reads `computer.mouse` itself rather than being a
+widget. `Immediate.modal`/`Gui.modal` now answer "has the toolkit got
+the mouse", which is the one line a drawn surface needs to behave
+like a widget -- and the widgets have always known it for themselves.
+
+Measured: `appkits/tests` 24 green (two new: a formula printed back
+out, and a formula that moves), `gui/tests` 54, `playground/tests` 58,
+the 2D golden suite 135 -- `TinyExcel` and `TinyExcel filled` added,
+the two `Gui7Cells` frames re-approved for the lit headers.
 
 ## Verification
 

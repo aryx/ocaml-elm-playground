@@ -5,12 +5,13 @@
 
 (executables
   (names
-    TinyVisiCalc
+    TinyVisiCalc TinyExcel
   )
   (libraries
     elm_playground
     gui
     appkit_sheet
+    appkit_sheet_view
     elm_playground_software ; implem of virtual elm_playground
   )
 )

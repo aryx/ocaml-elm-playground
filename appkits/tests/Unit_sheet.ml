@@ -64,6 +64,28 @@ let test_refs_of_a_range () =
         [ (0, 0); (0, 1); (1, 0); (1, 1); (2, 2) ]
         (Formula.refs e)
 
+(* printing a formula back out, and moving it: the two halves of
+   copying a formula, which is what made spreadsheets useful *)
+let test_printing_a_formula () =
+  let round s = match Formula.parse s with Ok e -> Formula.to_string e | Error m -> Alcotest.fail m in
+  Alcotest.(check string) "what does not need parentheses keeps none" "2+3*4" (round "2+3*4");
+  Alcotest.(check string) "and what needs them gets them" "(2+3)*4" (round "(2+3)*4");
+  Alcotest.(check string) "a range and a call" "SUM(A1:B2)" (round "SUM(A1:B2)");
+  Alcotest.(check string) "a subtraction on the right of one" "1-(2-3)" (round "1-(2-3)")
+
+let test_a_formula_that_moves () =
+  let filled s (dc, dr) =
+    match Formula.parse s with
+    | Ok e -> Formula.to_string (Formula.shift (dc, dr) e)
+    | Error m -> Alcotest.fail m
+  in
+  (* filled down a column: each row gets its own *)
+  Alcotest.(check string) "one row down" "B3*C3" (filled "B2*C2" (0, 1));
+  Alcotest.(check string) "two rows down" "B4*C4" (filled "B2*C2" (0, 2));
+  Alcotest.(check string) "one column right" "C2*D2" (filled "B2*C2" (1, 0));
+  (* a range moves with it *)
+  Alcotest.(check string) "a range too" "SUM(B5:B7)" (filled "SUM(B4:B6)" (0, 1))
+
 (* --- Sheet ------------------------------------------------------------- *)
 
 let sheet cells = List.fold_left (fun s (name, text) ->
@@ -169,6 +191,8 @@ let tests =
     t "parentheses and a leading minus" test_parens_and_unary;
     t "what typing into a cell means" test_what_a_cell_holds;
     t "a range is every cell in it" test_refs_of_a_range;
+    t "a formula printed back out" test_printing_a_formula;
+    t "a formula that moves, which is what filling is" test_a_formula_that_moves;
     t "a sheet computes" test_a_sheet_computes;
     t "only what depends on a change is recalculated" test_only_what_changed_is_recalculated;
     t "what is computed before what" test_order_respects_the_graph;

@@ -45,8 +45,18 @@
  * famous; here the arrows edit the bar's text, and clicking moves),
  * scrolling beyond the cells it shows, selection of a range by
  * dragging, and anything about formatting.
+ *
+ * Exercises: the arrows moving the cursor, which needs a mode (typing
+ * or pointing -- VisiCalc's problem, and apps/TinyVisiCalc's
+ * answer); a range selected by dragging, as apps/TinyExcel does;
+ * showing the formula of the cell you are on rather than its value;
+ * a column wide enough for what is in it.
  *)
 open Playground
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 type model = {
   sheet : Sheet.t;
@@ -71,74 +81,20 @@ let initial =
     typing = "=SUM(D2:D4)";
   }
 
-(* --- the sheet, drawn into a rectangle ----------------------------- *)
-(* shaped the way appkits/embed will ask for it: a size, and a drawing
-   into whatever rectangle it is given *)
+(*****************************************************************************)
+(* The sheet *)
+(*****************************************************************************)
+(* drawn by appkits/sheet_view, which apps/TinyExcel uses too and
+   appkits/embed will wrap: a sheet drawn into a rectangle, with a
+   selection (of one cell here) and a way back from a click to a cell *)
 
-let shown_cols = 5
-let shown_rows = 7
-let cell_w = 104.
-let cell_h = 28.
-let head_w = 40.
-let sheet_size = (head_w +. (float_of_int shown_cols *. cell_w), cell_h *. float_of_int (shown_rows + 1))
+let geometry = Sheet_view.default
+let shown_rows = geometry.Sheet_view.rows
+let sheet_size = Sheet_view.size geometry
 
-(* where a cell sits inside the sheet's rectangle *)
-let cell_box (b : Widget.box) (col, row) : Widget.box =
-  {
-    Widget.x = Widget.left b +. head_w +. (cell_w *. (float_of_int col +. 0.5));
-    y = Widget.top b -. (cell_h *. (float_of_int row +. 1.5));
-    w = cell_w;
-    h = cell_h;
-  }
-
-let cell_at (b : Widget.box) (x, y) : Formula.cell option =
-  let col = int_of_float (Float.floor ((x -. Widget.left b -. head_w) /. cell_w)) in
-  let row = int_of_float (Float.floor ((Widget.top b -. y -. cell_h) /. cell_h)) in
-  if col >= 0 && col < shown_cols && row >= 0 && row < shown_rows then Some (col, row) else None
-
-(* text put where a spreadsheet puts it: numbers against the right
-   edge, everything else against the left -- VisiCalc's rule, and
-   every spreadsheet's since *)
-let text_in (th : Theme.t) (b : Widget.box) ~right s =
-  let w = Widget.text_width ~size:th.text_size s in
-  let x =
-    if right then Widget.right b -. (th.padding /. 2.) -. (w /. 2.)
-    else Widget.left b +. (th.padding /. 2.) +. (w /. 2.)
-  in
-  Widget.Text (th.text, { b with x; w; h = th.text_size }, s)
-
-let draw_sheet (th : Theme.t) (b : Widget.box) sheet cursor =
-  let head_box col : Widget.box = { (cell_box b (col, -1)) with y = Widget.top b -. (cell_h /. 2.) } in
-  let row_head_box row : Widget.box =
-    { (cell_box b (0, row)) with x = Widget.left b +. (head_w /. 2.); w = head_w }
-  in
-  [ Widget.Fill (th.field_face, b) ]
-  (* the headers: A B C ... down the top, 1 2 3 ... down the side *)
-  @ List.concat
-      (List.init shown_cols (fun col ->
-           let box = head_box col in
-           [ Widget.Fill (th.face, box); Look.text_at th box (Formula.name_of_cell (col, 0) |> fun s -> String.sub s 0 (String.length s - 1)) ]))
-  @ List.concat
-      (List.init shown_rows (fun row ->
-           let box = row_head_box row in
-           [ Widget.Fill (th.face, box); Look.text_at th box (string_of_int (row + 1)) ]))
-  (* the cells themselves *)
-  @ List.concat
-      (List.init shown_rows (fun row ->
-           List.concat
-             (List.init shown_cols (fun col ->
-                  let box = cell_box b (col, row) in
-                  let v = Sheet.value sheet (col, row) in
-                  let number = match v with Sheet.Number _ -> true | _ -> false in
-                  let text = Sheet.show v in
-                  (* the lines between the cells, which is what makes
-                     a grid look like one *)
-                  Widget.frame (Color.rgb 225 225 220) 1. box
-                  @ (if text = "" then [] else [ text_in th box ~right:number text ])))))
-  (* and the cell being worked on *)
-  @ Widget.frame th.accent 2. (cell_box b cursor)
-
-(* --- the form around it -------------------------------------------- *)
+(*****************************************************************************)
+(* The form around it *)
+(*****************************************************************************)
 
 type slot = Cell_label | Cell_name | Bar | Recalc_label | Recalc | Sheet_area | Title
 
@@ -163,6 +119,10 @@ let places computer = Grid.arrange (Widget.inset 60. (Gui.area computer)) (form 
 (* Enter, as an edge: the bar has the keys, so the program has to see
    the key going down itself (Scene2d.pressed is the same idea) *)
 let held = ref false
+
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
 
 let update computer model =
   let at = places computer in
@@ -190,19 +150,25 @@ let update computer model =
   (* clicking a cell works on it instead, with what was typed into it *)
   let cursor, typing =
     if m.mclick then
-      match cell_at (box Sheet_area) (m.mx, m.my) with
+      match Sheet_view.cell_at geometry (box Sheet_area) (m.mx, m.my) with
       | Some c -> (c, Sheet.raw sheet c)
       | None -> (cursor, typing)
     else (cursor, typing)
   in
   { sheet; cursor; typing }
 
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
+
 let view computer model =
   let s = computer.screen in
   let th = Gui.theme () in
   let at = places computer in
   (rectangle th.background s.width s.height
-  :: Gui.shapes (draw_sheet th (List.assoc Sheet_area at) model.sheet model.cursor))
+  :: Gui.shapes
+       (Sheet_view.draw geometry th (List.assoc Sheet_area at) model.sheet
+          ~selection:(model.cursor, model.cursor)))
   @ Gui.draw ()
   @ [
       words (rgb 120 120 120) "click a cell, type in the bar, press Enter" |> move_y (-300.);

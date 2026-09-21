@@ -10,6 +10,10 @@
 
 (* See Formula.mli *)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type cell = int * int
 
 type expr =
@@ -21,6 +25,10 @@ type expr =
   | Call of string * expr list
 
 type content = Formula of expr | Invalid of string | Value of float | Text of string | Blank
+
+(*****************************************************************************)
+(* How a cell is named *)
+(*****************************************************************************)
 
 (* A column is base 26 with no zero: A..Z, then AA..AZ, BA.. -- which
  * is why the column after Z is AA and not BA, and why this is a loop
@@ -44,7 +52,9 @@ let cell_of_name (s : string) : cell option =
     | Some row when row >= 1 -> Some (!col - 1, row - 1)
     | _ -> None
 
-(* --- the tokens ---------------------------------------------------- *)
+(*****************************************************************************)
+(* The tokens *)
+(*****************************************************************************)
 
 type token = TNum of float | TName of string | TOp of char | TOpen | TClose | TComma | TColon
 
@@ -86,7 +96,9 @@ let tokens (s : string) : token list =
   in
   go 0 []
 
-(* --- one function per rule of the grammar --------------------------- *)
+(*****************************************************************************)
+(* One function per rule of the grammar *)
+(*****************************************************************************)
 
 let parse (s : string) : (expr, string) result =
   let rest = ref [] in
@@ -178,6 +190,10 @@ let parse (s : string) : (expr, string) result =
       if !rest <> [] then Error "there is something after the end of the formula" else Ok e
   with Bad msg -> Error msg
 
+(*****************************************************************************)
+(* What a cell holds *)
+(*****************************************************************************)
+
 let content_of (s : string) : content =
   let trimmed = String.trim s in
   if trimmed = "" then Blank
@@ -186,6 +202,36 @@ let content_of (s : string) : content =
     | Ok e -> Formula e
     | Error msg -> Invalid msg
   else match float_of_string_opt trimmed with Some f -> Value f | None -> Text trimmed
+
+(* printed back out with the parentheses it needs and no others:
+ * a child binds looser than its parent only if it is a sum inside a
+ * product *)
+let to_string (e : expr) : string =
+  let prec = function Binop (('+' | '-'), _, _) -> 1 | Binop (('*' | '/'), _, _) -> 2 | _ -> 3 in
+  let rec go e =
+    match e with
+    | Number f -> if Float.is_integer f then Printf.sprintf "%.0f" f else Printf.sprintf "%g" f
+    | Ref c -> name_of_cell c
+    | Range (a, b) -> name_of_cell a ^ ":" ^ name_of_cell b
+    | Unary (c, e) -> Printf.sprintf "%c%s" c (wrap e 3)
+    | Binop (c, a, b) ->
+        let p = prec e in
+        Printf.sprintf "%s%c%s" (wrap a p) c (wrap b (p + 1))
+    | Call (name, args) -> Printf.sprintf "%s(%s)" name (String.concat "," (List.map go args))
+  and wrap e p = if prec e < p then "(" ^ go e ^ ")" else go e in
+  go e
+
+let shift ((dc, dr) : int * int) (e : expr) : expr =
+  let move (c, r) = (max 0 (c + dc), max 0 (r + dr)) in
+  let rec go = function
+    | Number f -> Number f
+    | Ref c -> Ref (move c)
+    | Range (a, b) -> Range (move a, move b)
+    | Unary (c, e) -> Unary (c, go e)
+    | Binop (c, a, b) -> Binop (c, go a, go b)
+    | Call (name, args) -> Call (name, List.map go args)
+  in
+  go e
 
 let refs (e : expr) : cell list =
   let out = ref [] in

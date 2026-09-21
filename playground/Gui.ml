@@ -15,6 +15,10 @@ open Playground
 (* The frame being built: the widgets update asks for, until view
  * takes them with [draw]. Dear ImGui calls this the context, and has
  * exactly one too. *)
+(*****************************************************************************)
+(* The frame being built *)
+(*****************************************************************************)
+
 let ui = ref Immediate.empty
 
 (* whether [draw] has taken the last frame, so the next widget starts
@@ -44,6 +48,7 @@ let widget computer f =
   answer
 
 let theme () = Immediate.theme !ui
+let modal () = Immediate.modal !ui
 let box ~at:(x, y) (w, h) : Widget.box = { Widget.x; y; w; h }
 
 let area (computer : computer) : Widget.box =
@@ -51,6 +56,10 @@ let area (computer : computer) : Widget.box =
   { Widget.x = 0.; y = 0.; w = s.width; h = s.height }
 
 (* the widgets, in a rectangle somebody else decided (a layout) *)
+(*****************************************************************************)
+(* The widgets *)
+(*****************************************************************************)
+
 let button_in ?enabled computer b s = widget computer (fun u -> Immediate.button ?enabled u b s)
 
 let checkbox_in computer b s checked =
@@ -93,6 +102,10 @@ let field ?enabled computer ~at text = field_in ?enabled computer (box ~at (fiel
 let text_area computer ~at edit = text_area_in computer (box ~at (text_area_size ())) edit
 let progress computer ~at f = progress_in computer (box ~at (progress_size ())) f
 let menu computer ~at items chosen = menu_in computer (box ~at (menu_size items)) items chosen
+
+(*****************************************************************************)
+(* Paint into shapes *)
+(*****************************************************************************)
 
 let shape_of_paint = function
   | Widget.Fill (color, (b : Widget.box)) -> rectangle color b.w b.h |> move b.x b.y

@@ -77,6 +77,16 @@ val paint : t -> Widget.paint list
 val theme : t -> Theme.t
 val set_theme : Theme.t -> t -> t
 
+(* Is a popup showing -- and so has the toolkit taken the mouse?
+ *
+ * The grab in [menu] protects the *widgets*: they ask [interact],
+ * which knows. A program that reads [computer.mouse] itself -- a
+ * canvas, a spreadsheet's cells, anything drawn rather than asked
+ * for -- is outside that, and would act on a click meant for a menu
+ * item. So it asks this first, which is the one line a drawn surface
+ * needs to behave like a widget. *)
+val modal : t -> bool
+
 (* {1 The widgets} *)
 
 (* [label t box s]: [s], centered in [box]. No state, no answer: it is

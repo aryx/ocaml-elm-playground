@@ -59,6 +59,9 @@ let scenes : Testutil_golden.scene list =
      * lines, the block cursor, and the formulas in VisiCalc's own
      * spelling (+B3*2 rather than =B3*2) *)
     ("apps/software/TinyVisiCalc", "", 5);
+    (* and 1985: the same engine with a menu bar, a formula bar and a
+     * mouse *)
+    ("apps/software/TinyExcel", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -424,6 +427,15 @@ let scripted : Testutil_golden.scripted list =
      * as 1979 spelled it. (The slash commands take characters, which
      * a script cannot send: a key is not a character.) *)
     ("apps/software/TinyVisiCalc", "cursor", 16, "right:3,down:6,down:10");
+    (* what 1985 bought, in one scripted run: a range dragged out with
+     * the mouse (D2 to D5), Edit > Fill Down copying the formula into
+     * it -- =B2*C2 becoming =B3*C3, =B4*C4, =B5*C5, which is what
+     * relative references are for -- the total following, and
+     * Chart > Show drawing the bars *)
+    ( "apps/software/TinyExcel",
+      "filled",
+      40,
+      "at(122;84):1-6,click:5-13,at(122;40):8-10,at(122;0):11-13,at(-45;227):15-18,click:16,at(-45;120):19-24,click:21,at(70;227):26-29,click:27,at(70;156):30-36,click:32,at(122;0):37-40" );
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

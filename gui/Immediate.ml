@@ -12,6 +12,10 @@
 
 (* a widget is its rectangle: where it is tells it from its neighbours
  * (Widget.id) *)
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type id = Widget.id
 
 (* who has the mouse: nobody, this widget (it was pressed inside it),
@@ -42,6 +46,10 @@ type t = {
   (* the frame being built, in reverse order *)
   painted : Widget.paint list;
 }
+
+(*****************************************************************************)
+(* The toolkit's state *)
+(*****************************************************************************)
 
 let empty =
   {
@@ -92,10 +100,15 @@ let frame (input : Widget.input) (t : t) =
   }
 
 let paint (t : t) = List.rev t.painted
+let modal (t : t) = t.open_menu <> None
 let theme (t : t) = t.theme
 let set_theme theme (t : t) = { t with theme }
 let draw (t : t) ps = { t with painted = List.rev_append ps t.painted }
 let id = Widget.id
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 (* The three questions every widget asks about the mouse, and the only
  * place the capture changes: is it over me (hot), is it pressed in me
@@ -123,6 +136,10 @@ let interact (t : t) (b : Widget.box) =
   let clicked = hot && i.mclick && (mine || capture = Free) in
   ({ t with capture }, hot, held, clicked)
 
+(*****************************************************************************)
+(* The widgets *)
+(*****************************************************************************)
+
 let label (t : t) (b : Widget.box) s = draw t (Look.label t.theme b s)
 
 let button ?(enabled = true) (t : t) (b : Widget.box) s =
@@ -148,6 +165,10 @@ let slider (t : t) (b : Widget.box) ~from ~to_ v =
   in
   let fraction = if to_ = from then 0. else max 0. (min 1. ((v -. from) /. (to_ -. from))) in
   (draw t (Look.slider th b ~fraction ~hot ~held), v)
+
+(*****************************************************************************)
+(* How big a widget wants to be *)
+(*****************************************************************************)
 
 let button_size (th : Theme.t) s =
   (Widget.text_width ~size:th.text_size s +. (2. *. th.padding), th.row)

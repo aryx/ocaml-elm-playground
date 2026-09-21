@@ -83,3 +83,26 @@ val refs : expr -> cell list
  * with no zero, which is why the column after Z is AA and not BA. *)
 val name_of_cell : cell -> string
 val cell_of_name : string -> cell option
+
+(* [to_string e]: the formula written back out, with the parentheses
+ * it needs and no others -- so that a cell keeps text a person can
+ * read after the program has changed it *)
+val to_string : expr -> string
+
+(* [shift (dc, dr) e]: every reference moved by that many columns and
+ * rows. This is what copying a formula does, and it is the whole of
+ * why spreadsheets are useful: fill =B2*C2 down a column and each row
+ * gets its own =B3*C3, =B4*C4 -- one formula written once, for a
+ * table of any height.
+ *
+ * VisiCalc had it as /R (replicate, 1979), asking cell by cell
+ * whether each reference should move ("N or R?"); Excel made it Fill
+ * Down and Fill Right, and made moving the default.
+ *
+ * Which is exactly where **$A$1** comes from, and it is not here: a
+ * reference that must *not* move when the formula is copied -- a tax
+ * rate in one corner, read by every row -- needs a way to say so, and
+ * the dollar is it. Without absolute references, filling a formula
+ * that reads a fixed cell gives nonsense, and that is the one thing
+ * to know about this function's limits. *)
+val shift : int * int -> expr -> expr

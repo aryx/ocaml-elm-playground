@@ -28,6 +28,7 @@
     gui ; GuiWidgets' Layout
     appkit_document ; Gui7Circles' Undo
     appkit_sheet ; Gui7Cells' engine
+    appkit_sheet_view ; and how it is drawn
     elm_playground_software ; implem of virtual elm_playground
   )
 )
