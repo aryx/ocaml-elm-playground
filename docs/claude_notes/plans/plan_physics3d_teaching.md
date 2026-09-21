@@ -515,7 +515,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 8 done** (2026-09-20), bar one port named below; the
+**Phases 0 to 8 done** (2026-09-20; phase 7's game port 2026-09-21); the
 rest not started. Written as the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -742,7 +742,7 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     3D where in 2D it is a tie), and keeping the sorted order between
     frames, which is what makes sweep and prune a pair *manager*
     rather than a function.
-- **Phase 7, DONE** except the game port: `Physics3d.spin_slow`
+- **Phase 7, DONE**, the game port included: `Physics3d.spin_slow`
   (rolling friction), 3 tests in `Unit_rolling3d`, and
   `examples3d/PhysicsRoll3d.ml`. The tensors from every hitbox and the
   off-centre impulses were already there (phases 4 and 5), so what
@@ -771,14 +771,35 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     `spin_slow` is the loss that afterwards stops it (a torque against
     the angular momentum, so the spin decays at the same rate whatever
     the shape). On the "r" key in the example.
-  - **What is left**: `TinyMarbleMadness` behind `physics=engine`. Its
-    marble runs on a height map, which is not a hitbox, so the port
-    needs the course's cells turned into box hitboxes -- and then the
-    game's own rules (slopes between cells, marbles that break,
-    the steelie that pushes) all have to meet the engine at once. That
-    is a bigger piece than the rest of phase 7 put together, and it
-    belongs after phase 8's solver, when a body resting on a surface
-    is something the engine can hold still.
+  - **The game port, DONE** (after phase 8): `TinyMarbleMadness` behind
+    `physics=engine`. The course's tiles became box hitboxes -- a box
+    per run of flat tiles, a slab per ramp tilted along its slope --
+    and the marbles rough spheres in a simulated `world`; the rules
+    (checkpoints, breaking, the goal, the steelie's aim) read the
+    engine's marble back as the hand-written one. Tested: rays down
+    onto the boxes meet the height map's height on every tile (the
+    ramps' tilts right on the first try); let go on the first ramp,
+    the marble gains speed at 13.63 against 5/7 g sin a = 13.80,
+    with nothing on the engine's side mentioning 5/7; and the tests'
+    trackball robot wins the race. What it taught:
+    - **the arrows need 7/5.** A push through a rolling ball's centre
+      moves it at 5/7 of what it moves a block, the same 5/7 as
+      gravity's; the hand-written marble applies the push in full, so
+      the engine's gets 7/5 of it for the same feel;
+    - **the engine's marble flies off crests**, which the hand-written
+      one never does (it is glued down by a rule), and lands on the
+      narrow plateau after the long ramp still going: the robot has to
+      brake earlier (40 frames ahead instead of 25);
+    - **on a slope, "on the ground" needs a margin**: a sphere resting
+      on a slope has its centre r / cos a above the ground under it,
+      6 cm more on these ramps, enough to count the whole ramp as a
+      flight and break the marble at its bottom;
+    - **the flag is read from `computer.flags`**, not from the command
+      line at load time: the tests link the game, and Testo's workers
+      have a command line of their own, which the playground's flag
+      parser rejected -- every games test stopped running.
+      `StarCollector3d` still reads it at load time, harmlessly while
+      no test links it.
 - **Phase 8, DONE**: `Collide3d.manifold` (face clipping),
   `Solver3d` (sequential impulses, warm starting, Baumgarte, a bounce
   threshold), `Physics3d.world` / `simulate` with sleeping, 7 new

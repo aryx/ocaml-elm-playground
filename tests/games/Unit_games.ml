@@ -913,11 +913,13 @@ let marble_rolls_down () =
  * (tiles, as (column, row)), steering towards the next one and braking
  * its own speed: it reaches the goal in about 10 seconds, never broken,
  * never fallen: the course can be won (a weaker braking, 12 times the
- * speed, overshot the first plateau, and the one after the lane) *)
-let marble_robot () =
+ * speed, overshot the first plateau, and the one after the lane);
+ * [start] is the model it starts from, [brake] how many frames ahead
+ * it looks *)
+let marble_robot_from ?(brake = 25.) (start : TinyMarbleMadness.model) =
   let open TinyMarbleMadness in
   let waypoints = [ (2.5, 7.); (7., 7.5); (12., 7.5); (12., 13.); (4.5, 13.); (4.5, 19.5); (5., 21.); (8., 22.8) ] in
-  let s = ref initial_model and todo = ref waypoints and broken = ref 0 and fallen = ref 0 and i = ref 0 in
+  let s = ref start and todo = ref waypoints and broken = ref 0 and fallen = ref 0 and i = ref 0 in
   while !i < 60 * 45 && (match !s.scene with Finished _ | Time_up _ -> false | _ -> true) do
     incr i;
     let mouse =
@@ -925,7 +927,7 @@ let marble_robot () =
       | Racing r, (c, row) :: rest ->
           let tx = c *. cell and tz = row *. cell in
           if Float.hypot (tx -. r.me.x) (tz -. r.me.z) < 0.8 *. cell then todo := (if rest = [] then !todo else rest);
-          let wx = (tx -. r.me.x) -. (25. *. r.me.vx) and wz = (tz -. r.me.z) -. (25. *. r.me.vz) in
+          let wx = (tx -. r.me.x) -. (brake *. r.me.vx) and wz = (tz -. r.me.z) -. (brake *. r.me.vz) in
           let n = Float.max 1e-6 (Float.hypot wx wz) in
           let wx = wx /. n and wz = wz /. n in
           let right = (wx -. wz) /. sqrt 2. and up = -.(wx +. wz) /. sqrt 2. in
@@ -941,6 +943,53 @@ let marble_robot () =
   match !s.scene with
   | Finished r -> Alcotest.(check bool) "with 20 seconds to spare" true (r.time_left > 20 * 60)
   | _ -> Alcotest.fail (Printf.sprintf "not at the goal: waypoints left %d" (List.length !todo))
+
+let marble_robot () = marble_robot_from TinyMarbleMadness.initial_model
+
+(* physics=engine: the same robot, the same waypoints, the engine
+ * rolling the marble: the course can be won that way too -- braking
+ * earlier, since the engine's marble leaves the crest of the long ramp
+ * at speed and lands on the narrow plateau after it still going (at 25
+ * frames ahead, it rolled off that plateau's far side) *)
+let marble_engine_robot () =
+  let open TinyMarbleMadness in
+  marble_robot_from ~brake:40. (Scene2d.start (Racing (new_race ~engine:Engine ())))
+
+(* physics=engine: the course as boxes is the course. A ray straight
+ * down onto the engine's boxes meets the height [ground] reads, at a
+ * quarter and three quarters across every tile, ramps and all (a ramp
+ * tilted the wrong way round would be off by its whole drop) *)
+let marble_engine_course () =
+  let open TinyMarbleMadness in
+  for r = 0 to rows - 1 do
+    for c = 0 to cols - 1 do
+      List.iter
+        (fun (fx, fz) ->
+          let x = (float_of_int c +. fx) *. cell and z = (float_of_int r +. fz) *. cell in
+          match (ground x z, Physics3d.ray ~from:(x, 20., z) ~direction:(0., -1., 0.) course_bodies) with
+          | None, None -> ()
+          | Some g, Some (_, d) -> Alcotest.(check (float 1e-6)) (Printf.sprintf "tile (%d, %d)" c r) g (20. -. d)
+          | _ -> Alcotest.fail (Printf.sprintf "tile (%d, %d): a box where there is no tile, or none where there is" c r))
+        [ (0.25, 0.25); (0.75, 0.75); (0.25, 0.75) ]
+    done
+  done
+
+(* physics=engine: the 5/7 comes out by itself. Let go on the first
+ * ramp (a slope of 1 in 2), with no push and no drag, the engine's
+ * marble gains speed down it at 5/7 g sin(a) -- the number [step]
+ * writes down, and which nothing on the engine's side mentions *)
+let marble_engine_five_sevenths () =
+  let open TinyMarbleMadness in
+  let start = { (ball_at (2, 3)) with z = (4. *. cell) +. 0.6 } in
+  let start = { start with y = Option.get (ground start.x start.z) } in
+  let w = ref (Physics3d.world (course_bodies @ [ marble_body 1. start; marble_body 2. (ball_at steelie_home) ])) in
+  let speed () = let b, _ = engine_bodies !w in Physics3d.speed b in
+  for _ = 1 to 5 do w := Physics3d.simulate ~gravity:engine_gravity ~sleeping:false !w done;
+  let v0 = speed () in
+  for _ = 1 to 15 do w := Physics3d.simulate ~gravity:engine_gravity ~sleeping:false !w done;
+  let measured = (speed () -. v0) /. (15. /. 60.) in
+  let expected = 5. /. 7. *. engine_gravity *. (0.5 /. Float.hypot 1. 0.5) in
+  Alcotest.(check bool) "5/7 g sin(a), within 3%" true (Float.abs (measured -. expected) < 0.03 *. expected)
 
 (*****************************************************************************)
 (* TinyXpilot *)
@@ -3943,6 +3992,9 @@ let tests =
       t "TinyMarbleMadness, the steelie knocks the marble" marble_steelie;
       t "TinyMarbleMadness, rolling down a ramp" marble_rolls_down;
       t "TinyMarbleMadness, a robot drives to the goal" marble_robot;
+      t "TinyMarbleMadness, physics=engine: the boxes are the course" marble_engine_course;
+      t "TinyMarbleMadness, physics=engine: 5/7 by itself" marble_engine_five_sevenths;
+      t "TinyMarbleMadness, physics=engine: the robot wins too" marble_engine_robot;
       t "TinyXpilot, cannons aim ahead" xpilot_intercept;
       t "TinyXpilot, the rope pulls when stretched" xpilot_rope;
       t "TinyXpilot, landing vs. crashing" xpilot_crash;

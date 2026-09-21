@@ -65,8 +65,10 @@
  * What it uses: Scene2d (title, race, finish, time's up), Camera3d
  * ([from_far]: a far eye and a narrow field of view, nearly isometric;
  * [follow], [orbit] for the title, [floor] for the void), cached3d for
- * the course. Not Physics: it's 2D, and a ball on a height map is ten
- * lines; not TinyMinecraft's player or TinyMario64's box collisions: the
+ * the course. Not Physics by hand: it's 2D, and a ball on a height map
+ * is ten lines -- but Physics3d with physics=engine, the course turned
+ * into boxes and the marbles into spheres (see [engine]); not
+ * TinyMinecraft's player or TinyMario64's box collisions: the
  * ground here is a function of (x, z), not boxes. The marble's roll is
  * shown by turning its axes ([roll_axes]: Rodrigues' rotation formula),
  * not by Playground3d.rotate3d's three angles, which can't add up
@@ -76,7 +78,8 @@
  * vacuums), a second race with the time carried over, two players side
  * by side (the original had two trackballs), the mouse captured
  * (Playground3d_platform's capture_mouse) for an endless trackball, the
- * marble flying off crests (drop [step_down] and see), a board tilted
+ * marble flying off crests (drop [step_down] and see; physics=engine
+ * does it already), a board tilted
  * rather than a ball pushed (Super Monkey Ball, 2001; see TinyCameltry
  * for the same idea in 2D).
  *)
@@ -337,6 +340,162 @@ let collide (a : ball) (ma : number) (b : ball) (mb : number) : ball * ball =
         { b with vx = b.vx +. ((vb' -. vb) *. nx); vz = b.vz +. ((vb' -. vb) *. nz) } )
 
 (*****************************************************************************)
+(* The engine: the same course and marbles, as bodies *)
+(*****************************************************************************)
+
+(* claude: physics=engine (?physics=engine in a browser; see
+ * Playground.flags), the pattern games3d/StarCollector3d.ml uses. By
+ * hand, the default, the marble is [step] above: a height map read under
+ * it, the 5/7 written down. With the engine, playground3d/Physics3d
+ * rolls it, and nothing above is used but the rules around it (the
+ * checkpoints, breaking, the goal, the steelie's push):
+ *
+ *  - the course is boxes ([course_bodies]): each run of flat tiles of
+ *    one height along a row a box from the void's floor up to its
+ *    height, and each ramp a slab tilted along its slope, its top
+ *    passing through the ramp's two edges. A step up is a box's side,
+ *    so walls need no rule;
+ *  - the marbles are spheres, rough, and the 5/7 is *nowhere*: a
+ *    sphere's tensor and the friction at its contact make it, as the
+ *    engine's own test measures (physics/tests/Unit_rolling3d.ml);
+ *  - and the marble flies off a crest when it goes fast enough, where
+ *    [step] keeps it on the ground ([step_down]) -- the engine knows no
+ *    such rule, which is the header's exercise done for free.
+ *
+ * The numbers are [step]'s, per second instead of per frame: gravity
+ * 0.012 a frame per frame is 43.2 units/s^2 (the course's unit taken as
+ * a metre, that is 4.4 g: Marble Madness was never Earth), the arrows'
+ * push 0.005 is 18 (times 7/5, see [engine_push]), and the drag of
+ * 1.5% a frame is 0.9 per second. *)
+
+type engine = By_hand | Engine
+
+(* read from computer.flags when a race starts, not from the command
+ * line when the module loads: a test linking this game has a command
+ * line of its own *)
+let engine_of (flags : flags) : engine =
+  match List.assoc_opt "physics" flags with Some "engine" -> Engine | _ -> By_hand
+
+let engine_gravity = gravity *. 3600.
+(* 7/5 of [step]'s: a push through a rolling ball's centre moves it at
+ * only 5/7 of what it would move a block, the rest going into the
+ * spin -- the same 5/7 as gravity's, which [step] applies to the slope
+ * but not to the arrows. Without it the engine's marble answers the
+ * trackball at 5/7 strength, and the robot of the tests, braking as
+ * [step] taught it, overshot the plateau after the long ramp *)
+let engine_push = push *. 3600. *. 7. /. 5.
+let engine_drag = (1. -. drag) *. 60.
+
+let slab = 0.5 (* a ramp's thickness *)
+let depth = -4. (* where a flat tile's box ends below: [bottom], the drawn sides' *)
+
+(* a box for the engine, never drawn ([course_shape] draws the course) *)
+let solid (w : number) (h : number) (d : number) : Physics3d.body =
+  Physics3d.body (box white w h d) |> Physics3d.immovable |> Physics3d.rough 0.8
+
+let course_bodies : Physics3d.body list =
+  List.concat
+    (List.init rows (fun r ->
+         let z0 = float_of_int r *. cell in
+         (* the flat runs along the row: one box each *)
+         let rec runs c acc =
+           if c >= cols then List.rev acc
+           else
+             match flat_height (char_at c r) with
+             | None -> runs (c + 1) acc
+             | Some h ->
+                 let rec until c' = if c' < cols && char_at c' r = char_at c r then until (c' + 1) else c' in
+                 let c2 = until c in
+                 let w = float_of_int (c2 - c) *. cell in
+                 let x0 = float_of_int c *. cell in
+                 let b = solid w (h -. depth) cell |> Physics3d.at (x0 +. (w /. 2.)) ((h +. depth) /. 2.) (z0 +. (cell /. 2.)) in
+                 runs c2 (b :: acc)
+         in
+         (* the ramps: a slab each, its top through the tile's two edges *)
+         let ramps =
+           List.filter_map
+             (fun c ->
+               match (char_at c r, tile c r) with
+               | ('v' | '>'), Some k ->
+                   let x0 = float_of_int c *. cell in
+                   let mx = x0 +. (cell /. 2.) and mz = z0 +. (cell /. 2.) and my = (k.nw +. k.se) /. 2. in
+                   if char_at c r = 'v' then
+                     (* turned about x (right-handed): its own +z going
+                      * down by north - south to the south *)
+                     let a = atan2 (k.nw -. k.sw) cell in
+                     let len = Float.hypot cell (k.nw -. k.sw) in
+                     Some
+                       (solid cell slab len
+                       |> Physics3d.pointing (1., 0., 0.) (a *. 180. /. Float.pi)
+                       |> Physics3d.at mx (my -. (slab /. 2. *. cos a)) (mz -. (slab /. 2. *. sin a)))
+                   else
+                     (* turned about z: its own +x rising by east - west
+                      * to the east *)
+                     let a = atan2 (k.ne -. k.nw) cell in
+                     let len = Float.hypot cell (k.ne -. k.nw) in
+                     Some
+                       (solid len slab cell
+                       |> Physics3d.pointing (0., 0., 1.) (a *. 180. /. Float.pi)
+                       |> Physics3d.at (mx +. (slab /. 2. *. sin a)) (my -. (slab /. 2. *. cos a)) mz)
+               | _ -> None)
+             (List.init cols Fun.id)
+         in
+         runs 0 [] @ ramps))
+
+let n_course = List.length course_bodies
+
+(* a marble as a body: a rough sphere. Never drawn as such: [ball_of]
+ * hands its orientation to [marble], which draws both kinds *)
+let marble_body (mass : number) (b : ball) : Physics3d.body =
+  Physics3d.body (sphere white radius)
+  |> Physics3d.ball |> Physics3d.heavy mass |> Physics3d.rough 0.8 |> Physics3d.bouncy bounce
+  |> Physics3d.at b.x (b.y +. radius) b.z
+  |> Physics3d.moving (b.vx *. 60.) (b.vy *. 60.) (b.vz *. 60.)
+
+(* the rules' view of a body: where its bottom is, its speed a frame,
+ * whether it rolls on the course, how high it has been since it left
+ * it, and which way it is turned -- so that [update_race]'s breaking
+ * and checkpoints, and [marble], read the engine's marble as they read
+ * [step]'s *)
+let ball_of (p : Physics3d.body) (before : ball) : ball * number option =
+  let y = p.y -. radius in
+  (* on a slope, a sphere resting on it has its centre r / cos(a) above
+   * the ground under it, not r: 6 cm more on these ramps, enough for a
+   * first version to think the marble flew down every ramp, and broke
+   * it at the bottom of the longest one. And not far *below* it: a
+   * marble falling past a ramp into the void is not on it *)
+  let on_ground = match ground p.x p.z with Some g -> y < g +. 0.15 && y > g -. 0.3 | None -> false in
+  let top = if before.on_ground then y else Float.max before.top y in
+  let turn = Quat.rotate p.orientation in
+  let axes = { ex = turn (1., 0., 0.); ey = turn (0., 1., 0.); ez = turn (0., 0., 1.) } in
+  let b = { x = p.x; y; z = p.z; vx = p.vx /. 60.; vy = p.vy /. 60.; vz = p.vz /. 60.; on_ground; top; axes } in
+  let fall = if on_ground && not before.on_ground then Some (before.top -. y) else None in
+  (b, fall)
+
+(* One frame of both marbles, by the engine: pushed, slowed, and the
+ * world stepped. Sleeping off: only two things move here, and a marble
+ * asleep on a plateau would not wake for the arrows (a push is not a
+ * touch, see Physics3d.simulate). *)
+let engine_step (w : Physics3d.world) ((px, pz) : number * number) ((sx, sz) : number * number) :
+    Physics3d.world =
+  let drive (px, pz) (b : Physics3d.body) =
+    b
+    |> Physics3d.push (engine_push *. b.mass *. px) 0. (engine_push *. b.mass *. pz)
+    |> Physics3d.slow engine_drag |> Physics3d.spin_slow engine_drag
+  in
+  let bodies =
+    List.mapi (fun i b -> if i = n_course then drive (px, pz) b else if i = n_course + 1 then drive (sx, sz) b else b) w.bodies
+  in
+  Physics3d.simulate ~gravity:engine_gravity ~sleeping:false { w with bodies }
+
+let engine_bodies (w : Physics3d.world) : Physics3d.body * Physics3d.body =
+  (List.nth w.bodies n_course, List.nth w.bodies (n_course + 1))
+
+(* a marble put back (a checkpoint, a steelie lost): its body with it *)
+let engine_put (w : Physics3d.world) (i : int) (body : Physics3d.body) : Physics3d.world =
+  Physics3d.world (List.mapi (fun k b -> if k = n_course + i then body else b) w.bodies)
+
+(*****************************************************************************)
 (* The model *)
 (*****************************************************************************)
 
@@ -349,13 +508,20 @@ type race = {
   steelie : ball;
   time_left : int; (* frames *)
   cam : camera option; (* the camera, smoothed *)
+  world : Physics3d.world option; (* with physics=engine: the course and the two marbles *)
 }
 
 type scene = Title | Racing of race | Finished of race | Time_up of race
 type model = scene Scene2d.t
 
-let new_race () =
-  { me = ball_at checkpoints.(0); fate = Rolling; checkpoint = 0; steelie = ball_at steelie_home; time_left = race_time * 60; cam = None }
+let new_race ?(engine = By_hand) () =
+  let me = ball_at checkpoints.(0) and steelie = ball_at steelie_home in
+  let world =
+    match engine with
+    | By_hand -> None
+    | Engine -> Some (Physics3d.world (course_bodies @ [ marble_body 1. me; marble_body 2. steelie ]))
+  in
+  { me; fate = Rolling; checkpoint = 0; steelie; time_left = race_time * 60; cam = None; world }
 
 let initial_model : model = Scene2d.start Title
 
@@ -382,7 +548,9 @@ let steelie_push (r : race) : number * number =
 
 let camera_for (b : ball) : camera = Camera3d.from_far ~fov:30. ~offset:(22., 30., 22.) (b.x, b.y +. radius, b.z)
 
-let respawn (r : race) : race = { r with me = ball_at checkpoints.(r.checkpoint); fate = Rolling }
+let respawn (r : race) : race =
+  let me = ball_at checkpoints.(r.checkpoint) in
+  { r with me; fate = Rolling; world = Option.map (fun w -> engine_put w 0 (marble_body 1. me)) r.world }
 
 (* the last checkpoint passed: the ball rolling on one further on *)
 let passed (r : race) : int =
@@ -393,17 +561,42 @@ let passed (r : race) : int =
   let rec go i best = if i >= Array.length checkpoints then best else go (i + 1) (if near i then i else best) in
   go (r.checkpoint + 1) r.checkpoint
 
+(* both marbles one frame on, by [step] and [collide] or by the engine:
+ * the same balls either way, and how far mine fell if it landed *)
+let move (computer : computer) (r : race) : race * number option =
+  let mine = match r.fate with Rolling -> wanted_push computer | Broken _ -> (0., 0.) in
+  match r.world with
+  | None -> (
+      let steelie, _ = step (steelie_push r) r.steelie in
+      match r.fate with
+      | Broken _ -> ({ r with steelie }, None)
+      | Rolling ->
+          let me, fall = step mine r.me in
+          let me, steelie = collide me 1. steelie 2. in
+          ({ r with me; steelie }, fall))
+  | Some w ->
+      let w = engine_step w mine (steelie_push r) in
+      let me_b, steelie_b = engine_bodies w in
+      let steelie, _ = ball_of steelie_b r.steelie in
+      let me, fall = ball_of me_b r.me in
+      (* a broken marble is gone: the rules' one stays where it broke *)
+      let me, fall = match r.fate with Rolling -> (me, fall) | Broken _ -> (r.me, None) in
+      ({ r with me; steelie; world = Some w }, fall)
+
 let update_race (computer : computer) (r : race) : race =
-  let steelie, _ = step (steelie_push r) r.steelie in
-  let steelie = if steelie.y < lost then ball_at steelie_home else steelie in
-  let r = { r with steelie; time_left = r.time_left - 1 } in
+  let r, fall = move computer r in
+  let r =
+    if r.steelie.y < lost then
+      let steelie = ball_at steelie_home in
+      { r with steelie; world = Option.map (fun w -> engine_put w 1 (marble_body 2. steelie)) r.world }
+    else r
+  in
+  let r = { r with time_left = r.time_left - 1 } in
   let r =
     match r.fate with
     | Broken k -> if k >= 60 then respawn r else { r with fate = Broken (k + 1) }
     | Rolling -> (
-        let me, fall = step (wanted_push computer) r.me in
-        let me, steelie = collide me 1. r.steelie 2. in
-        let r = { r with me; steelie } in
+        let me = r.me in
         match fall with
         | Some h when h > max_fall -> { r with fate = Broken 0 }
         | _ -> if me.y < lost then respawn r else { r with checkpoint = passed r })
@@ -415,7 +608,7 @@ let update (computer : computer) (s : model) : model =
   let s = Scene2d.update computer s in
   let space = Scene2d.pressed (fun k -> k.kspace) s in
   match s.scene with
-  | Title -> if space then Scene2d.go (Racing (new_race ())) s else s
+  | Title -> if space then Scene2d.go (Racing (new_race ~engine:(engine_of computer.flags) ())) s else s
   | Racing r ->
       let r = update_race computer r in
       if r.fate = Rolling && r.me.on_ground && on_goal r.me.x r.me.z then Scene2d.go (Finished r) s
@@ -516,6 +709,14 @@ let steel = rgb 50 50 60
 let void = rgb 15 10 40
 let text color size str = words color str |> scale size
 
+let engine_hud (screen : screen) (r : race) : shape3d list =
+  match r.world with
+  | None -> []
+  | Some _ ->
+      [ hud
+          (text white 2. (Printf.sprintf "physics=engine   %.1f units/s" (Float.hypot r.me.vx r.me.vz *. 60.))
+          |> move_y (screen.bottom +. 30.)) ]
+
 let view_race (screen : screen) (r : race) : camera * shape3d list =
   let cam = match r.cam with Some c -> c | None -> camera_for r.me in
   let me = match r.fate with Rolling -> marble me_blue white r.me :: shadow r.me | Broken k -> pieces r.me k in
@@ -525,7 +726,7 @@ let view_race (screen : screen) (r : race) : camera * shape3d list =
     @ me
     @ (marble steel (rgb 130 130 140) r.steelie :: shadow r.steelie)
     @ [ hud (text (if seconds <= 10 then red else yellow) 4. (Printf.sprintf "TIME %d" seconds) |> move_y (screen.top -. 50.)) ]
-  )
+    @ engine_hud screen r )
 
 let view (computer : computer) (s : model) : camera * shape3d list =
   let screen = computer.screen in
@@ -560,4 +761,6 @@ let view (computer : computer) (s : model) : camera * shape3d list =
 let app = game3d view update initial_model
 
 (* flat shading: each tile and facet of the marbles its own shade *)
-let main = Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat } app
+let main =
+  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat }
+    ~flags:(Playground_platform.flags ()) app
