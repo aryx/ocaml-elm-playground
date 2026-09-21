@@ -416,7 +416,15 @@ audio meeting).
   MIDI through loop_from (C4 then E4, measured). Not checked: hearing
   it in a real browser (headless Chrome's audio clock barely moves).
   Left: the Web Audio nodes version (OscillatorNode, GainNode) for
-  comparison; the 3D backends' sound (their loops don't pull yet).
+  comparison. The 3D backends' sound, DONE later for
+  games3d/TinyRockBand: `Native_loop_3d` now opens the card and tops up
+  its queue each frame as `Native_loop_2d` does (its helpers exposed in
+  `Native_loop_2d.mli`), with `-dump-audio` and, under `-dump-frame`,
+  exactly 735 samples a frame -- so a 3D game's music, and its
+  `Audio.position`, are the same in every golden run. No existing 3D
+  golden frame moved. The WebGL backend needed nothing: it has no loop
+  of its own and hands its frames to the 2D web platform, which already
+  pulls.
 - **The music's clock, DONE (for games/TinyDDR, not in the phases)**:
   "The audio loop is not the frame loop" above had no way for a game
   to *read* the audio loop's time, and a rhythm game needs nothing
@@ -431,7 +439,21 @@ audio meeting).
   sound": TinyDDR's results report a steady player's average error,
   which is the machine's latency. Tests: the clock keeps counting past
   the end of the loop and stops with it (`Unit_synth`); two seconds of
-  pulls are two seconds of song (the game's tests).
+  pulls are two seconds of song (the game's tests). Its second user,
+  games3d/TinyRockBand, is why the 3D loop now pulls too, and why the
+  rhythm machinery became `kits/rhythm`.
+- **Drums, DONE (for the rhythm games, not in the phases)**: an ABC
+  voice marked `clef=perc` (abcm2ps's convention) is percussion: its
+  notes are General MIDI drum keys (C,, the bass drum 36, D,, the
+  snare 38, ^F,, the closed hi-hat 42, ...), `Abc.tune`'s `drums`
+  says which voices are, `Music.drum` gives each key a sound of its
+  own (a falling triangle for the kick, noise for the snare and the
+  cymbals, the hi-hat short and high) -- shared with the MIDI player's
+  channel 10 -- and `Midi.of_tune` puts those voices on that channel.
+  Test (`Unit_abc`): the same note is a pitch in a normal voice and
+  noise in a percussion one (ten times the zero crossings). Used by
+  games2.5d/TinyGuitarHero's backing drummer and by
+  games3d/TinyRockBand's drum part, charted from the keys.
 - **Phase 5, DONE**: `audio/Spectrum`: the DFT by its definition (N^2)
   and the FFT (Cooley-Tukey, radix 2, recursive: the butterfly), both
   kept, the first checking the second; magnitudes scaled so a sine of

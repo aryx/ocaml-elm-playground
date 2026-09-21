@@ -26,6 +26,7 @@ games2.5d/*.ml`) against the whole game.
 | `TinyDiablo` | Diablo (Blizzard North, 1996) | the same two lines as `TinyZaxxon`, from the kit now (`kits/isometric`), on a grid of diamond tiles; and the two lines run *backwards*, which is what turns a mouse click into a place in the dungeon | tile, and one cube per wall | 0 / 567 (the trick is the kit's) | tell you what is under a pixel without the floor being flat; a room above a room; anything the sort cannot order (a long wall against a body inside it) |
 | `TinyDungeonMaster` | Dungeon Master (FTL, 1987) | the hero stands in the middle of a cell facing one of four ways, so every cell in view has one fixed place on the screen: nested frames, filled in farthest first | cell (a square and a trapezoid) | 24 / 624 | anything off the grid: a diagonal, a step, standing between two cells, looking up |
 | `TinyOutRun` | Out Run (Sega, 1986) | the road as a list of segments, their edges projected, each slice a trapezoid; a curve, each segment shifted sideways a bit more; a hill hides what's behind (a segment drawn only if it rises above the nearer ones) | slice of road | 23 / 250 | a world beyond the road: a track that crosses itself, a free camera |
+| `TinyGuitarHero` | Guitar Hero (Harmonix, 2005) | Out Run's road straightened: one division by the depth for every point of the highway, the gems shrinking and the frets closing in towards the horizon; the lines across it, one a beat, are all that makes it move | point (a lane edge, a gem, a beat line) | 23 / 351 | anything off the highway: it has no world, only a road that the music scrolls |
 | `TinyWolfenstein` | Wolfenstein 3D (id, 1992) | a ray cast per column through a grid of walls (DDA); the distance gives the wall's height | column | 61 / 306 | walls at an angle, heights, floors |
 | `TinyKart` | Super Mario Kart (Nintendo, 1992), the SNES's Mode 7 | a flat map, turned, sampled row by row, each row at its distance: height * focal / rows below the horizon | row | 84 / 441 | walls, hills: only a flat floor |
 | `TinyDoom` | Doom (id, 1993) | a BSP tree of the level's walls, walked nearest first; each column's clip arrays say what's left to draw | column | 300 / 499 | rooms above rooms, looking up or down, walls that aren't vertical |
@@ -87,7 +88,9 @@ Four families, then:
   sees the ground at one distance, so everything on that row is scaled
   the same. The SNES did it in hardware, a register changed between two
   rows. Out Run is its cousin, by slices of road instead of rows: a
-  slice is at one distance too, so it's a trapezoid.
+  slice is at one distance too, so it's a trapezoid. And Guitar Hero's
+  highway is Out Run's road with the curves and the hills taken out:
+  straight, it needs no slices at all, only the one division per point.
 - **Column by column**, the walls: Wolfenstein, Doom, Comanche. A
   screen column is one direction from the eye, so drawing the nearest
   thing first and remembering how much of the column is still empty
@@ -106,7 +109,8 @@ look anywhere; then TinyDoom, which does TinyWolfenstein's columns with walls
 at any angle and heights; TinyKart, TinyWolfenstein turned sideways (a line per
 row across the floor, where TinyWolfenstein has a ray per column); TinyComanche,
 Doom's "nearest first" with the order given by the distance, no tree;
-TinyOutRun, Mode 7 for a road that isn't a map.
+TinyOutRun, Mode 7 for a road that isn't a map; TinyGuitarHero, the
+same road straightened, where what moves down it is the music.
 
 The `Lines` column has a lesson of its own, and it is not the one you
 would guess: the simplest trick belongs to the longest game. The other
@@ -139,7 +143,10 @@ The 3D twin is shorter: the engine does the work, and the camera can do
 anything. The pseudo-3D one shows what the engine does, and why games
 could run in 1992 without one. TinyKart's model is shared the other way,
 with the top-down `games/TinyMicroMachines` (`kits/racing`: `Topdown`):
-the same race, seen from above.
+the same race, seen from above. And TinyGuitarHero's highway, drawn by
+hand here, is drawn by a camera in `games3d/TinyRockBand`, four of them
+side by side for a whole band (`kits/rhythm`: the clock, the charts,
+the difficulty): not a twin, the next game.
 
 `TinyDungeonMaster` is the one that gets no twin, and for a reason
 worth knowing: the pairs above share a *world* and differ only in how

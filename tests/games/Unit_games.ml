@@ -3944,6 +3944,170 @@ let ddr_the_clock_is_the_music () =
   Audio.stop "song";
   ignore (Audio.pull 735)
 
+(*****************************************************************************)
+(* TinyRockBand *)
+(*****************************************************************************)
+
+(* The parts are the voices of one tune: the guitar plays the melody,
+ * the bass the bass line, the keys the chords -- several frets at once
+ * -- and the drums the beat, on a pedal and four pads. *)
+let rockband_parts_are_voices () =
+  let open TinyRockBand in
+  let guitar = chart Guitar Expert and bass = chart Bass Expert and keys = chart Keys Expert in
+  let drums = chart Drums Expert in
+  (* the melody's eight bars: 4 + 3 + 4 + 3 + 4 + 3 + 4 + 1 notes; the
+   * bass's: two a bar but the last *)
+  Alcotest.(check int) "the guitar plays the melody" 26 (List.length guitar);
+  Alcotest.(check int) "the bass plays the bass line" 15 (List.length bass);
+  let at_once (l : int Rhythm.note list) =
+    List.exists (fun (n : int Rhythm.note) -> List.length (List.filter (fun (m : int Rhythm.note) -> m.at = n.at) l) >= 2) l
+  in
+  Alcotest.(check bool) "the keys play chords: frets together" true (at_once keys);
+  Alcotest.(check bool) "five frets, no more" true
+    (List.for_all (fun (n : int Rhythm.note) -> n.lane >= 0 && n.lane <= 4) (guitar @ bass @ keys @ drums));
+  let on lane = List.exists (fun (n : int Rhythm.note) -> n.lane = lane) drums in
+  Alcotest.(check bool) "the drums: kick, snare, hi-hat, toms, crash" true (List.for_all on [ 0; 1; 2; 3; 4 ])
+
+(* Every part has its difficulty. The keys' chords were three keys at
+ * once; on Medium they are one, on Easy on three keys only. *)
+let rockband_difficulty () =
+  let open TinyRockBand in
+  let widest l =
+    List.fold_left
+      (fun w (n : int Rhythm.note) -> max w (List.length (List.filter (fun (m : int Rhythm.note) -> m.at = n.at) l)))
+      0 l
+  in
+  Alcotest.(check int) "the keys on Expert: triads" 3 (widest (chart Keys Expert));
+  Alcotest.(check int) "on Medium: one key at a time" 1 (widest (chart Keys Medium));
+  Alcotest.(check bool) "on Easy: three keys" true
+    (List.for_all (fun (n : int Rhythm.note) -> n.lane <= 2) (chart Keys Easy))
+
+(* The drums are reduced their own way: the pedal only from Hard, one
+ * pad at a time below Expert, Easy only on the beats. *)
+let rockband_drums_reduced () =
+  let open TinyRockBand in
+  let kicks l = List.length (List.filter (fun (n : int Rhythm.note) -> n.lane = 0) l) in
+  let count level = List.length (chart Drums level) in
+  Alcotest.(check bool) "Expert has the pedal" true (kicks (chart Drums Expert) > 0);
+  Alcotest.(check int) "Medium: no pedal" 0 (kicks (chart Drums Medium));
+  Alcotest.(check bool) "each level fewer hits" true
+    (count Easy < count Medium && count Medium < count Hard && count Hard < count Expert)
+
+(* A guitar note is two hands: the fret alone plays nothing, the strum
+ * with the fret down plays it. *)
+let rockband_guitar_strums () =
+  let open TinyRockBand in
+  let n = List.hd (chart Guitar Expert) in
+  let p = start Guitar Expert 0. 0. in
+  let fret_only = play_step n.at ~strum:false ~held:[ n.lane ] ~pressed:[ n.lane ] p in
+  Alcotest.(check int) "the fret alone: nothing" 0 fret_only.perf.score;
+  let strummed = play_step n.at ~strum:true ~held:[ n.lane ] ~pressed:[] p in
+  Alcotest.(check int) "fret, then strum, on the beat" 100 strummed.perf.score
+
+(* A keyboard has no strum: the key is the note. *)
+let rockband_keys_no_strum () =
+  let open TinyRockBand in
+  let n = List.hd (chart Keys Expert) in
+  let p = start Keys Expert 0. 0. in
+  let strummed = play_step n.at ~strum:true ~held:[ n.lane ] ~pressed:[] p in
+  Alcotest.(check int) "a strum on a keyboard: nothing" 0 strummed.perf.score;
+  let keyed = play_step n.at ~strum:false ~held:[ n.lane ] ~pressed:[ n.lane ] p in
+  Alcotest.(check int) "the key, on the beat" 100 keyed.perf.score
+
+(* A drum is struck: the pad pressed, or the pedal -- the space bar,
+ * the strum of the others -- on its own. *)
+let rockband_drums_struck () =
+  let open TinyRockBand in
+  let kick = List.find (fun (n : int Rhythm.note) -> n.lane = 0) (chart Drums Expert) in
+  let p = start Drums Expert 0. 0. in
+  let pedal = play_step kick.at ~strum:true ~held:[] ~pressed:[] p in
+  Alcotest.(check bool) "the pedal plays the kick" true (pedal.perf.score >= 100);
+  let snare = List.find (fun (n : int Rhythm.note) -> n.lane = 1) (chart Drums Expert) in
+  let pad = play_step snare.at ~strum:false ~held:[ 1 ] ~pressed:[ 1 ] p in
+  Alcotest.(check int) "a pad, struck on the beat" 100 pad.perf.score
+
+(* A long note held for its length goes on scoring; let go of, it stops. *)
+let rockband_sustain () =
+  let open TinyRockBand in
+  let long = List.find (fun (n : int Rhythm.note) -> n.length >= Rhythm.sustain_min) (chart Guitar Expert) in
+  let hold frames holding =
+    let p = ref (play_step long.at ~strum:true ~held:[ long.lane ] ~pressed:[] (start Guitar Expert 0. 0.)) in
+    for f = 1 to frames do
+      p := play_step (long.at +. (float_of_int f /. 60.)) ~strum:false ~held:(if holding then [ long.lane ] else []) ~pressed:[] !p
+    done;
+    !p.sustain
+  in
+  Alcotest.(check bool) "held: the note keeps scoring" true (hold 40 true > 30);
+  Alcotest.(check int) "let go: it stops" 0 (hold 40 false)
+
+(* The crowd is one meter for the band: a song left unplayed empties it,
+ * and the band is booed off. *)
+let rockband_crowd () =
+  let open TinyRockBand in
+  let p = start Guitar Medium 0. 0. in
+  let ignored = play_step (song_length +. 1.) ~strum:false ~held:[] ~pressed:[] p in
+  Alcotest.(check bool) "every note a miss" true
+    (List.for_all (fun (_, j) -> j = Some Rhythm.Miss) ignored.perf.judged);
+  Alcotest.(check bool) "and the band booed off" true (booed ignored)
+
+(*****************************************************************************)
+(* TinyGuitarHero *)
+(*****************************************************************************)
+
+(* The highway is Out Run's road straightened: one division by the
+ * distance. The line is 630 px under the horizon and 500 wide, and a
+ * thing further up the road is higher, smaller, and nearer the middle. *)
+let gh_the_road () =
+  let open TinyGuitarHero in
+  let x0, y0, s0 = project 2.5 0. in
+  Alcotest.(check (float 1e-6)) "the line: 630 px under the horizon" (horizon -. 630.) y0;
+  Alcotest.(check (float 1e-6)) "and 500 wide" 250. x0;
+  let x1, y1, s1 = project 2.5 10. in
+  Alcotest.(check bool) "further: higher" true (y1 > y0);
+  Alcotest.(check bool) "smaller" true (s1 < s0);
+  Alcotest.(check bool) "and the lanes closer together" true (x1 < x0);
+  let _, y_far, _ = project 0. 1e9 in
+  Alcotest.(check bool) "and at the end of it all, the horizon" true (Float.abs (y_far -. horizon) < 1e-3)
+
+(* The difficulty is the same part, reduced: Expert has the power
+ * chords, Hard their outline, and Easy is single notes on three frets. *)
+let gh_difficulty () =
+  let open TinyGuitarHero in
+  let chords part =
+    List.exists (fun (n : int Rhythm.note) -> List.length (List.filter (fun (m : int Rhythm.note) -> m.at = n.at) part) >= 2) part
+  in
+  Alcotest.(check bool) "expert: power chords" true (chords (part Rhythm.Expert));
+  let easy = part Rhythm.Easy in
+  Alcotest.(check bool) "easy: no chords" false (chords easy);
+  Alcotest.(check bool) "on three frets" true (List.for_all (fun (n : int Rhythm.note) -> n.lane < 3) easy);
+  (* one note per chord on easy and medium: the same number of notes as
+   * the tune has chords and notes *)
+  Alcotest.(check int) "easy and medium, as many notes" (List.length (part Rhythm.Medium)) (List.length easy);
+  Alcotest.(check bool) "fewer than expert" true (List.length easy < List.length (part Rhythm.Expert))
+
+(* A note is two hands: the fret held does nothing until the strum. *)
+let gh_strum () =
+  let open TinyGuitarHero in
+  let n = List.hd (part Rhythm.Expert) in
+  let p = start Rhythm.Expert 0. 0. in
+  Alcotest.(check int) "the fret alone" 0 (play_step n.at ~strum:false ~held:[ n.lane ] p).perf.score;
+  Alcotest.(check int) "fret, then strum, on the beat" 100 (play_step n.at ~strum:true ~held:[ n.lane ] p).perf.score
+
+(* A long note held after the strum goes on scoring. The song's half
+ * notes last 0.91 s at 132 beats a minute, over the kit's 0.75. *)
+let gh_sustain () =
+  let open TinyGuitarHero in
+  let long = List.find (fun (n : int Rhythm.note) -> n.length >= Rhythm.sustain_min) (part Rhythm.Expert) in
+  let run holding =
+    let p = ref (play_step long.at ~strum:true ~held:[ long.lane ] (start Rhythm.Expert 0. 0.)) in
+    for f = 1 to 40 do
+      p := play_step (long.at +. (float_of_int f /. 60.)) ~strum:false ~held:(if holding then [ long.lane ] else []) !p
+    done;
+    !p.sustain
+  in
+  Alcotest.(check bool) "held" true (run true > 30);
+  Alcotest.(check int) "let go" 0 (run false)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -4137,4 +4301,16 @@ let tests =
       t "TinyDDR, the chart is the tune" ddr_chart_is_the_tune;
       t "TinyDDR, judging a step" ddr_judging;
       t "TinyDDR, the average error is the calibration" ddr_average_error_is_the_calibration;
-      t "TinyDDR, the clock is the music's" ddr_the_clock_is_the_music ]
+      t "TinyDDR, the clock is the music's" ddr_the_clock_is_the_music;
+      t "TinyRockBand, the parts are the voices" rockband_parts_are_voices;
+      t "TinyRockBand, a guitar is fret and strum" rockband_guitar_strums;
+      t "TinyRockBand, a keyboard has no strum" rockband_keys_no_strum;
+      t "TinyRockBand, a drum is struck" rockband_drums_struck;
+      t "TinyRockBand, a difficulty per part" rockband_difficulty;
+      t "TinyRockBand, the drums reduced their own way" rockband_drums_reduced;
+      t "TinyRockBand, a long note held goes on scoring" rockband_sustain;
+      t "TinyRockBand, the crowd" rockband_crowd;
+      t "TinyGuitarHero, the road, straightened" gh_the_road;
+      t "TinyGuitarHero, the same part, reduced" gh_difficulty;
+      t "TinyGuitarHero, fret and strum" gh_strum;
+      t "TinyGuitarHero, a long note held" gh_sustain ]

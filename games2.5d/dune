@@ -12,6 +12,7 @@
     TinyDungeonMaster
     TinyZaxxon
     TinyDiablo
+    TinyGuitarHero
     TinyElite
     TinyBattlezone
   )
@@ -22,6 +23,7 @@
     kit_sectors ; TinyDoom's level
     kit_heightmap ; TinyComanche's island
     kit_segments ; TinyDescent's mine
+    kit_rhythm ; TinyGuitarHero's clock, grades, charts and difficulty
     kit_isometric ; TinyZaxxon's and TinyDiablo's projection
     elm_playground_native ; implem of virtual elm_playground
   )

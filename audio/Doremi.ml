@@ -100,4 +100,5 @@ let parse (text : string) : (Abc.tune, string) result =
   | Some e -> Error e
   | None ->
       let voices = List.map (fun v -> List.rev v.events) !voices in
-      if List.for_all (( = ) []) voices then Error "no notes" else Ok { Abc.title = ""; voices }
+      if List.for_all (( = ) []) voices then Error "no notes"
+      else Ok { Abc.title = ""; voices; drums = List.map (fun _ -> false) voices }

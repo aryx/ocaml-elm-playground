@@ -30,6 +30,11 @@
  *   every F an F#, unless marked =F;
  * - voices, V:1, V:2 ... each its own part, played together (a melody
  *   and a bass); fields inline too, [K:D], [L:1/16], [V:2];
+ * - a percussion voice, "V:4 clef=perc" (ABC 2.1's own marking): its
+ *   notes are drums, not pitches -- each note's MIDI number is read as a
+ *   General MIDI drum key, so C,, (36) is the bass drum, D,, (38) the
+ *   snare, ^F,, (42) the closed hi-hat, ^A,, (46) the open one, and
+ *   Music.to_sound plays them with the drum sounds of its MIDI player;
  * - skipped: % comments, "Am" chord names, !trill! and +fermata+
  *   decorations, {grace notes}, the ~ . H ... ornaments, ties (the note
  *   played again), repeats and endings (a tune loops as a whole).
@@ -50,6 +55,8 @@ type tune = {
   title : string;
   (* each voice's events, in time order *)
   voices : event list list;
+  (* for each voice, whether it is percussion (clef=perc) *)
+  drums : bool list;
 }
 
 (* [parse text]: the first tune of [text] (up to the next X:), or why

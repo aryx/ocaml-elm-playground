@@ -105,6 +105,7 @@
    %{project_root}/games/software/TinyDefender.exe
    %{project_root}/games/software/TinyCeleste.exe
    %{project_root}/games/software/TinyDDR.exe
+   %{project_root}/games2.5d/software/TinyGuitarHero.exe
    %{project_root}/examples/software/LogoFractals.exe
  )
 )

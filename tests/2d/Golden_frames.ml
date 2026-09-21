@@ -148,6 +148,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyDefender", "", 5);
     ("games/software/TinyCeleste", "", 5);
     ("games/software/TinyDDR", "", 5);
+    ("games2.5d/software/TinyGuitarHero", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -308,6 +309,10 @@ let scripted : Testutil_golden.scripted list =
        exact, and a press on a frame lands about 35 ms early by it --
        GREAT rather than PERFECT, the offset the calibration is for *)
     ("games/software/TinyDDR", "steps", 318, "space:1,left:228,up:256,up:284,down:312");
+    (* the riff's first four notes on Medium, every fret held and each
+       strummed on its beat (132 a minute, an eighth 0.227 s) *)
+    ("games2.5d/software/TinyGuitarHero", "riff", 305,
+     "space:1,a:200-305,s:200-305,d:200-305,f:200-305,g:200-305,space:217,space:245,space:272,space:299");
     (* the first ledge reached with a held jump, the four lies all on *)
     ("games/software/TinyCeleste", "climb", 60, "space:1,right:10-40,space:22-34");
     (* a jump, then a dash spent straight up: the hair gone blue, which

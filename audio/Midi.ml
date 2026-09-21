@@ -155,5 +155,6 @@ let of_tune ?(program = 80) (tune : Abc.tune) : string =
     chunk "MTrk" (body ^ vlq 0 ^ bytes [ 0xFF; 0x2F; 0 ])
   in
   let tempo = chunk "MTrk" (vlq 0 ^ bytes [ 0xFF; 0x51; 3; 0x07; 0xA1; 0x20 ] ^ vlq 0 ^ bytes [ 0xFF; 0x2F; 0 ]) in
-  let tracks = List.mapi (fun ch events -> track ch events) tune.voices in
+  (* a percussion voice goes to channel 10 (9 from 0), General MIDI's drums *)
+  let tracks = List.mapi (fun i events -> track (if List.nth_opt tune.drums i = Some true then 9 else i) events) tune.voices in
   chunk "MThd" (be16 1 ^ be16 (1 + List.length tracks) ^ be16 division) ^ String.concat "" (tempo :: tracks)

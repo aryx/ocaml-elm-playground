@@ -11,7 +11,7 @@
 (* See Abc.mli *)
 
 type event = { start : float; length : float; notes : int list }
-type tune = { title : string; voices : event list list }
+type tune = { title : string; voices : event list list; drums : bool list }
 
 (*****************************************************************************)
 (* Keys *)
@@ -69,6 +69,8 @@ type state = {
   bar : (char * int, int) Hashtbl.t;
   voices : (string, voice) Hashtbl.t;
   mutable order : string list; (* the voices, in the order they appeared *)
+  (* the voices marked clef=perc: drums, not notes *)
+  mutable drums : string list;
   mutable current : string;
   (* a triplet's notes left, and the factor they're played at *)
   mutable tuplet : int;
@@ -102,7 +104,12 @@ let field (st : state) (name : char) (value : string) : unit =
   | 'L' -> Option.iter (fun l -> st.unit_length <- l) (fraction value)
   | 'Q' -> set_tempo st value
   | 'K' -> st.key <- key_offsets (Option.value (key_count value) ~default:0)
-  | 'V' -> st.current <- (match String.index_opt value ' ' with Some i -> String.sub value 0 i | None -> value)
+  | 'V' ->
+      let id = match String.index_opt value ' ' with Some i -> String.sub value 0 i | None -> value in
+      st.current <- id;
+      (* ABC 2.1's own way of saying a voice is percussion *)
+      let words = String.split_on_char ' ' value in
+      if List.mem "clef=perc" words && not (List.mem id st.drums) then st.drums <- id :: st.drums
   | _ -> ()
 
 (* an event of [units] unit lengths in the current voice *)
@@ -240,7 +247,7 @@ let is_field (line : string) : bool =
 let parse (text : string) : (tune, string) result =
   let st =
     { title = ""; unit_length = 1. /. 8.; whole = 2.; key = []; bar = Hashtbl.create 8; voices = Hashtbl.create 4;
-      order = []; current = "1"; tuplet = 0; next_factor = 1. }
+      order = []; drums = []; current = "1"; tuplet = 0; next_factor = 1. }
   in
   let seen_x = ref false and stop = ref false in
   String.split_on_char '\n' text
@@ -252,7 +259,8 @@ let parse (text : string) : (tune, string) result =
            if not !stop then field st line.[0] (String.sub line 2 (String.length line - 2)))
          else parse_music_line st line);
   let voices = List.map (fun id -> List.rev (Hashtbl.find st.voices id).events) st.order in
-  if List.for_all (( = ) []) voices then Error "no notes" else Ok { title = st.title; voices }
+  let drums = List.map (fun id -> List.mem id st.drums) st.order in
+  if List.for_all (( = ) []) voices then Error "no notes" else Ok { title = st.title; voices; drums }
 
 let duration (t : tune) : float =
   List.fold_left

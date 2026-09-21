@@ -56,6 +56,23 @@ val present : Tsdl.Sdl.window -> unit
  * [dump_frame] for [run] *)
 val dump_ppm : pixels -> string -> unit
 
+(* {1 The sound card}
+
+   44,100 samples a second, 735 a frame; SDL's queue kept about three
+   frames (50 ms) ahead of what the card has played, topped up each
+   frame by what it used, so that the two clocks never drift apart
+   (audio/Mixer.mli). Exposed for playground3d's loop, which plays the
+   same way. *)
+
+val frame_samples : int
+val queue_ahead : int
+
+(* the card, opened and started; None, with a warning, if there is none *)
+val open_audio : unit -> Tsdl.Sdl.audio_device_id option
+
+(* [queue_samples device samples]: queued as 16-bit, clipped *)
+val queue_samples : Tsdl.Sdl.audio_device_id -> float array -> unit
+
 (* [run ~sdl_window ~sx ~sy ~init ~update ~subscriptions ~view ~draw
  * ... ~pull_audio ~dump_audio]
  * runs an app forever (like Playground_platform.run_app, it never

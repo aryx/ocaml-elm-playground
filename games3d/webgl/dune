@@ -27,6 +27,7 @@
 (copy_files ../TinyBoomerangFu3d.ml)
 (copy_files ../TinyHades.ml)
 (copy_files ../TinyMonumentValley.ml)
+(copy_files ../TinyRockBand.ml)
 
 (executables
   (names
@@ -53,9 +54,11 @@
     TinyBoomerangFu3d
     TinyHades
     TinyMonumentValley
+    TinyRockBand
   )
   (libraries
 
+    kit_rhythm ; TinyRockBand's clock, grades and charts, shared with games/TinyDDR
     kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown
     kit_racing3d ; TinyMarioKart64's circuit (Track3d)
     kit_brawler ; TinyVirtuaFighter's Frame_data and Hitbox

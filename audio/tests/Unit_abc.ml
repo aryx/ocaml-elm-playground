@@ -61,4 +61,29 @@ let test_tune () =
       let s = Music.to_sound tune in
       Alcotest.(check (float 1e-9)) "the sound lasts as long" 16. (Synth.duration s)
 
-let tests = Testo.categorize "ABC" [ t "the notation, piece by piece" test_notation; t "Frere Jacques, a round in two voices" test_tune ]
+(* A voice marked clef=perc is drums: its notes are General MIDI drum
+ * keys, not pitches. The same D,, played pitched is a D2, 73 Hz, a
+ * smooth wave crossing zero about fifteen times in a tenth of a second
+ * (14, measured); as a drum it is key 38, the snare, noise, crossing it
+ * more than ten times as often (189, fading as it goes). *)
+let test_drums () =
+  let tune drums = Printf.sprintf "X:1\nL:1/4\nQ:1/4=120\nK:C\nV:1%s\nD,, |" (if drums then " clef=perc" else "") in
+  let crossings text =
+    match Abc.parse text with
+    | Error e -> Alcotest.fail e
+    | Ok t ->
+        let samples = Synth.render (Music.to_sound t) in
+        let n = ref 0 in
+        for i = 1 to 4409 do if (samples.(i - 1) < 0.) <> (samples.(i) < 0.) then incr n done;
+        (t, !n)
+  in
+  let pitched, as_note = crossings (tune false) and drums, as_drum = crossings (tune true) in
+  Alcotest.(check (list bool)) "an ordinary voice" [ false ] pitched.drums;
+  Alcotest.(check (list bool)) "a percussion voice" [ true ] drums.drums;
+  Alcotest.(check bool) (Printf.sprintf "played as a note, a D2: %d crossings" as_note) true (as_note < 30);
+  Alcotest.(check bool) (Printf.sprintf "played as a drum, a snare: %d crossings" as_drum) true (as_drum > 10 * as_note)
+
+let tests =
+  Testo.categorize "ABC"
+    [ t "the notation, piece by piece" test_notation; t "Frere Jacques, a round in two voices" test_tune;
+      t "a clef=perc voice is drums" test_drums ]

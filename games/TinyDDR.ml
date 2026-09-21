@@ -59,10 +59,13 @@
  * people who dance; auto-charting from the notes is what the free
  * clones, StepMania among them, offered for songs nobody had charted.)
  *
- * What it uses: the playground's Audio (the song, played as a loop,
- * and its clock -- Audio.position, added for this game: the mixer
+ * What it uses: kits/rhythm (the grades and their windows, the clock
+ * less the calibration, a chart played through, the notes of a tune's
+ * voice -- written for this game and moved to a kit when
+ * games3d/TinyRockBand wanted the same), the playground's Audio (the
+ * song, played as a loop, and its clock -- Audio.position: the mixer
  * counts, for each loop, the samples it has sent), audio/Abc (the
- * song's notes and their times, for the chart), Scene2d. The tune is
+ * song's notes and their times), Scene2d. The tune is
  * original, in ABC, a few lines at the top of the file.
  *
  * Exercises: freeze arrows (hold the step for the length of the note:
@@ -107,17 +110,19 @@ type lane = Left | Down | Up | Right
 let lanes = [ Left; Down; Up; Right ]
 let lane_index = function Left -> 0 | Down -> 1 | Up -> 2 | Right -> 3
 
-type step = { at : number; (* seconds into the song *) lane : lane }
+(* a step is the rhythm kit's note, in one of the four lanes (the
+ * record re-exported, so that its fields read as this game's own) *)
+type 'lane note = 'lane Rhythm.note = { at : number; lane : 'lane; length : number }
+type step = lane note
 
 (* The chart, from the melody: a step on each note, the arrow following
  * the tune's shape -- up for a step up, down for a step down, a leap
  * (a fifth or more) sideways, a repeated note the same arrow again. *)
 let chart (t : Abc.tune) : step list =
-  let melody = match t.voices with v :: _ -> v | [] -> [] in
-  let notes = List.filter_map (fun (e : Abc.event) -> match e.notes with n :: _ -> Some (e.start, n) | [] -> None) melody in
   let rec go previous lane acc = function
     | [] -> List.rev acc
-    | (at, pitch) :: rest ->
+    | (at, length, pitches) :: rest ->
+        let pitch = match pitches with p :: _ -> p | [] -> 0 in
         let lane =
           match previous with
           | None -> Left
@@ -129,113 +134,58 @@ let chart (t : Abc.tune) : step list =
               else if leap > 0 then Up
               else Down
         in
-        go (Some pitch) lane ({ at; lane } :: acc) rest
+        go (Some pitch) lane ({ at; lane; length } :: acc) rest
   in
-  go None Left [] notes
+  go None Left [] (Rhythm.sounding t 0)
 
 let steps : step list = chart tune
 
 (*****************************************************************************)
-(* Judging *)
+(* Judging, and the dance: the rhythm kit's *)
 (*****************************************************************************)
 
-type judgement = Perfect | Great | Good | Almost | Miss
+(* the grades, the windows and the clock are kits/rhythm's, shared with
+ * games3d/TinyRockBand; see Rhythm.mli for the windows, drawn *)
+type judgement = Rhythm.judgement = Perfect | Great | Good | Almost | Miss
 
-(* how far from the beat a press may be, in seconds, for each grade;
- * our own windows, near DDR's (whose exact ones changed from version
- * to version -- from memory, to check) *)
-let window = function Perfect -> 0.030 | Great -> 0.060 | Good -> 0.100 | Almost -> 0.135 | Miss -> infinity
-
-let judge (error : number) : judgement option =
-  let e = Float.abs error in
-  if e <= window Perfect then Some Perfect
-  else if e <= window Great then Some Great
-  else if e <= window Good then Some Good
-  else if e <= window Almost then Some Almost
-  else None
-
-let points = function Perfect -> 100 | Great -> 70 | Good -> 40 | Almost -> 10 | Miss -> 0
-let name = function Perfect -> "PERFECT" | Great -> "GREAT" | Good -> "GOOD" | Almost -> "ALMOST" | Miss -> "MISS"
-
-(* The music's time, as the player hears it: how far into the song the
- * sound card has been fed, less the machine's latency. *)
-let song_time ~(position : number) ~(offset : number) : number = position - offset
+let judge = Rhythm.judge
+let name = Rhythm.name
+let song_time = Rhythm.song_time
 
 (*****************************************************************************)
 (* The model *)
 (*****************************************************************************)
 
-type dance = {
-  (* each step, and how it went: None until it is judged *)
-  judged : (step * judgement option) list;
-  (* the signed errors of the steps hit, early < 0 < late *)
+(* a dance is a performance of the chart: each step and how it went,
+ * the combo, the score, the calibration *)
+type 'lane performance = 'lane Rhythm.performance = {
+  judged : ('lane note * judgement option) list;
   errors : number list;
   combo : int;
   best_combo : int;
   score : int;
-  (* the last judgement, and when, for the flash in the middle *)
   last : (judgement * number) option;
-  offset : number; (* the calibration, seconds *)
-  (* the song time of the last frame, for the frame-clock comparison *)
+  offset : number;
   now : number;
-  started : number; (* computer.time when the dance began *)
+  started : number;
 }
+
+type dance = lane performance
 
 type scene = Title | Dancing of dance | Results of dance
 type model = scene Scene2d.t
 
-let start_dance (offset : number) (started : number) : dance =
-  { judged = List.map (fun s -> (s, None)) steps; errors = []; combo = 0; best_combo = 0; score = 0; last = None;
-    offset; now = 0.; started }
-
+let start_dance (offset : number) (started : number) : dance = Rhythm.start ~offset ~started steps
 let initial_model : model = Scene2d.start Title
 
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
 
-(* A press in a lane: the nearest step not yet judged in that lane, if
- * it is close enough to be one at all. *)
-let press (now : number) (lane : lane) (d : dance) : dance =
-  let candidates =
-    List.filter_map
-      (fun (s, j) -> if j = None && s.lane = lane then Some (s, now - s.at) else None)
-      d.judged
-  in
-  let nearest =
-    List.fold_left
-      (fun best (s, e) ->
-        match best with Some (_, be) when Float.abs be <= Float.abs e -> best | _ -> Some (s, e))
-      None candidates
-  in
-  match nearest with
-  | Some (s, e) -> (
-      match judge e with
-      | Some j ->
-          let combo = if j = Almost then 0 else d.combo +.. 1 in
-          { d with
-            judged = List.map (fun (s', j') -> if s' == s then (s', Some j) else (s', j')) d.judged;
-            errors = e :: d.errors; combo; best_combo = max d.best_combo combo; score = d.score +.. points j;
-            last = Some (j, now) }
-      | None -> d)
-  | None -> d
-
-(* the steps that went by unpressed are misses *)
-let misses (now : number) (d : dance) : dance =
-  let late (s, j) = j = None && now - s.at > window Almost in
-  if not (List.exists late d.judged) then d
-  else
-    { d with judged = List.map (fun (s, j) -> if late (s, j) then (s, Some Miss) else (s, j)) d.judged; combo = 0;
-             last = Some (Miss, now) }
-
 (* one frame of dancing, given the song's time and the lanes pressed:
  * the pure part, which the tests call directly *)
-let dance_step (now : number) (pressed : lane list) (d : dance) : dance =
-  let d = List.fold_left (fun d lane -> press now lane d) { d with now } pressed in
-  misses now d
-
-let average_error (d : dance) : number option =
-  match d.errors with [] -> None | l -> Some (List.fold_left ( + ) 0. l / float_of_int (List.length l))
+let dance_step : number -> lane list -> dance -> dance = Rhythm.play
+let average_error : dance -> number option = Rhythm.average_error
 
 let finished (d : dance) : bool = d.now > song_length + 0.5
 

@@ -41,6 +41,10 @@ let uncapped : bool ref = ref false
 let debug_keys : bool ref = ref false
 let debug_keys_enabled () = !debug_keys
 
+(* claude: -dump-audio, with -dump-frame: the sound of those frames,
+ * as Native_loop_2d's *)
+let dump_audio_file : string ref = ref ""
+
 let parse_cli_and_setup_logging () =
   let level = ref (Some Logs.Warning) in
   let cli_flags =
@@ -57,12 +61,13 @@ let parse_cli_and_setup_logging () =
       ("-script", Arg.String set_script,
        "<script> game keys held over frames, e.g. \"up:1-60,space:30\"");
       ("-uncapped", Arg.Set uncapped, " no 60 fps cap, to measure speed");
+      ("-dump-audio", Arg.Set_string dump_audio_file, "<file> with -dump-frame, the sound of those frames, as a WAV");
       ("-debug-keys", Arg.Set debug_keys, " the backend's debug keys (e.g. h for help), off by default")
     ]
   in
   let usage =
     Printf.sprintf
-      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-debug-keys] [name=value|name]..."
+      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-dump-audio file] [-debug-keys] [name=value|name]..."
       Sys.argv.(0)
   in
   (* claude: the arguments without a dash are the app's flags (see
@@ -155,6 +160,16 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
    * computer.keyboard.typed is (see plan_gui_teaching.md, phase 0) *)
   Sdl.start_text_input ();
   let sdl_event = Sdl.Event.create () in
+  (* claude: sound, which the 3D loop never had (plan_audio_teaching.md,
+   * phase 4: "the 3D backends' sound, their loops don't pull yet"): the
+   * 2D loop's device and queue, kept ~3 frames ahead; with -dump-frame
+   * no device, exactly a frame's samples each frame instead, so that a
+   * golden run's music -- and Audio.position, its clock -- are the same
+   * every time. A 3D rhythm game (games3d/TinyRockBand) is what needed
+   * it: without a pull, the music never starts and its clock never
+   * moves. *)
+  let audio_device = if !dump_frame_number <> None then None else Native_loop_2d.open_audio () in
+  let dumped_audio = ref [] in
   (* claude: capture_mouse: SDL's relative mouse mode, the cursor hidden
    * and held in the window, only mouse_motion's xrel/yrel (mdx/mdy)
    * changing; the way first-person games turn the camera with no limit.
@@ -300,6 +315,15 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
     computer := { !computer with time = Playground.Time now };
     model := update !computer !model;
+    (* claude: the sounds this frame's update played, to the card *)
+    (match audio_device with
+    | Some device ->
+        let queued = Sdl.get_queued_audio_size device / 2 in
+        if queued < Native_loop_2d.queue_ahead then
+          Native_loop_2d.queue_samples device (Audio.pull (Native_loop_2d.queue_ahead - queued))
+    | None ->
+        let samples = Audio.pull Native_loop_2d.frame_samples in
+        if !dump_audio_file <> "" then dumped_audio := samples :: !dumped_audio);
     (* claude: the moves [update] just saw are consumed *)
     computer :=
       { !computer with
@@ -317,7 +341,9 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     (match !dump_frame_number with
     | Some n when n = !frame_number ->
         (match dump_frame with
-        | Some dump -> dump !dump_frame_file
+        | Some dump ->
+            dump !dump_frame_file;
+            if !dump_audio_file <> "" then Wav.write !dump_audio_file (Array.concat (List.rev !dumped_audio))
         | None -> Logs.err (fun m -> m "-dump-frame: this backend can't dump its frames"));
         exit 0
     | _ -> ());

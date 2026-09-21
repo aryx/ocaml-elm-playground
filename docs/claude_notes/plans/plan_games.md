@@ -527,8 +527,44 @@ Guitar Hero (2005).
   a step on each note of the melody at the note's start (from
   `audio/Abc`), the arrow following the tune's shape (up, down, a leap
   sideways, a repeat the same arrow).
-- **Kit** (DONE, in `audio/` and the playground rather than a kit, as
-  the plan said): the music's own clock -- `Mixer.played`, the samples
+- **Second toy**: TinyGuitarHero (DONE: `games2.5d/TinyGuitarHero.ml`,
+  Harmonix, 2005): **the instrument**. One highway, five frets, and a
+  note is two hands -- the fret held, then the strum (the frets down at
+  the strum are the ones played). Plus the long notes (a sustain held
+  goes on scoring), chords (power chords: two frets at once), and the
+  difficulty as the *same song reduced* rather than another song:
+  Easy three frets and one note a chord, Medium four, Hard five and a
+  chord's outer two, Expert everything (`Rhythm.reduce`, the table in
+  `Rhythm.mli`). The song has a drummer (an ABC `clef=perc` voice,
+  below). In games2.5d because the highway is Out Run's road
+  straightened: one division by the depth per point, the trick of the
+  game, 23 lines.
+- **Third toy**: TinyRockBand (DONE: `games3d/TinyRockBand.ml`,
+  Harmonix, 2007, with Rock Band 3's keyboard): **the band**. Four
+  highways -- guitar, bass, drums, keys -- in real 3D because a
+  highway is a road into the distance and a camera draws four for
+  free. You play one part at your own difficulty and the band plays
+  the others as written; the parts are the four voices of one ABC tune
+  (melody, bass line, chords, a beat), each charted from its own
+  voice. What it adds is that **an instrument is a way of pressing**:
+  fret-then-strum for guitar and bass, the key *is* the note on the
+  keyboard (the same five keys), and hits for the drums (four pads and
+  the kick pedal on space). The drums are charted from their GM drum
+  keys (`pad_of_key`) and reduced their own way -- no pedal below
+  Hard, one pad at a time below Expert, Easy only on the beats -- since
+  folding frets means nothing on a kit. One crowd meter for the band.
+  It needed the native 3D loop to feed the sound card at all (see
+  `plan_audio_teaching.md`, phase 4).
+- **Kit** (DONE): `kits/rhythm/`, TinyDDR's machinery moved out when
+  TinyRockBand wanted it -- the grades and their windows (drawn in
+  `Rhythm.mli`), the clock less the calibration, a chart played
+  through, and `sounding`, the notes of a tune's voice to chart from --
+  then grown by TinyGuitarHero with what an instrument needs:
+  `on_frets` (a voice's pitches on five frets), `reduce` (the
+  difficulty), `strummed`, `sustaining`.
+  TinyDDR was rewritten onto it: its four tests and two golden frames
+  did not move. And under it, in `audio/` and the playground, the
+  music's own clock -- `Mixer.played`, the samples
   of a loop sent to the card counting every time round (its read
   position wraps, and a game timing steps by that would lose a whole
   song each pass), and `Audio.position`, the same in seconds. Tested

@@ -32,6 +32,18 @@ let frequency (name : string) : float = match midi_number name with Some n -> mi
 let instrument ~(voice : int) ~(voices : int) : Oscillator.waveform * float =
   if voices > 1 && voice = voices - 1 then (Triangle, 0.5) else if voice = 0 then (Square, 0.3) else (Square, 0.18)
 
+(* a drum, by its General MIDI key: short, whatever the note's length --
+ * a bass drum a triangle falling from 150 to 50 Hz, a snare noise, a
+ * hi-hat short bright noise. Shared by MIDI's channel 10 and a tune's
+ * percussion voice (Abc.mli's clef=perc). *)
+let drum ~(volume : float) (key : int) : Synth.t =
+  let v source f = Synth.Voice { source; frequency = f; slide = None; seconds = 0.2; volume; fade = false } in
+  match key with
+  | 35 | 36 -> v (Wave Triangle) 150. |> Synth.sliding 50. |> Synth.lasting 0.15 |> Synth.fading |> Synth.louder 2.
+  | 38 | 40 -> v Noise 5000. |> Synth.lasting 0.15 |> Synth.fading
+  | 42 | 44 | 46 -> v Noise 12000. |> Synth.lasting 0.05 |> Synth.fading |> Synth.louder 0.6
+  | _ -> v Noise 3000. |> Synth.lasting 0.1 |> Synth.fading
+
 let to_sound (tune : Abc.tune) : Synth.t =
   let voices = List.length tune.voices in
   let silence seconds = Synth.voice (Wave Sine) 0. |> Synth.louder 0. |> Synth.lasting seconds in
@@ -39,11 +51,16 @@ let to_sound (tune : Abc.tune) : Synth.t =
     (List.mapi
        (fun i events ->
          let (waveform, volume) = instrument ~voice:i ~voices in
+         let is_drums = List.nth_opt tune.drums i = Some true in
          Synth.After
            (List.map
               (fun (e : Abc.event) ->
                 match e.notes with
                 | [] -> silence e.length
+                | notes when is_drums ->
+                    (* the drums of a clef=perc voice: each struck, and
+                     * the rest of the note's time silent *)
+                    Synth.Together (silence e.length :: List.map (drum ~volume:0.25) notes)
                 | notes ->
                     let sounding = e.length *. 0.9 in
                     Synth.After
@@ -60,13 +77,7 @@ let midi_voice (n : Midi.note) : Synth.t =
   let volume = 0.25 *. float_of_int n.velocity /. 127. in
   let v source f = Synth.Voice { source; frequency = f; slide = None; seconds = n.length; volume; fade = false } in
   let f = midi_frequency n.key in
-  if n.channel = 9 then
-    (* the drums: short, by key, whatever the note's length *)
-    match n.key with
-    | 35 | 36 -> v (Wave Triangle) 150. |> Synth.sliding 50. |> Synth.lasting 0.15 |> Synth.fading |> Synth.louder 2.
-    | 38 | 40 -> v Noise 5000. |> Synth.lasting 0.15 |> Synth.fading
-    | 42 | 44 | 46 -> v Noise 12000. |> Synth.lasting 0.05 |> Synth.fading |> Synth.louder 0.6
-    | _ -> v Noise 3000. |> Synth.lasting 0.1 |> Synth.fading
+  if n.channel = 9 then drum ~volume n.key
   else
     match n.program / 8 with
     | 0 | 1 -> v (Wave Square) f |> Synth.fading |> Synth.louder 0.8
