@@ -54,6 +54,13 @@
  * screen is. A real retained toolkit therefore needs relayout, and a
  * way to tell a widget it moved; immediate mode gets that for free,
  * since it is told where to be every frame.
+ *
+ * Exercises: write 7GUIs' Flight Booker four ways in this file and
+ * count the lines again -- it is the task where the four stop being
+ * the same length; add a fifth column for signals (the
+ * observable-per-value idea that SolidJS and Svelte brought back);
+ * break the callbacks column on purpose, by forgetting the
+ * set_text, and watch which columns notice.
  *)
 open Playground
 

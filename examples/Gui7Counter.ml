@@ -26,8 +26,16 @@
  * button. The field is read-only here in the simplest possible way --
  * a label -- since a field you cannot type in is a label with a box
  * around it.
+ *
+ * Exercises: make the count a field you can type into, and decide what
+ * a field holding "12x" should do; two counters sharing one button;
+ * the same task with callbacks (examples/GuiFourWays.ml has it).
  *)
 open Playground
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 (* the whole model: the count. 7GUIs' baseline is a program with one
    number in it *)
@@ -43,10 +51,18 @@ let panel =
 
 let places computer = Layout.arrange (Gui.area computer) panel
 
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
+
 let update computer model =
   let at = places computer in
   Gui.label_in computer (List.assoc Count at) (string_of_int model);
   if Gui.button_in computer (List.assoc Button at) "count" then model + 1 else model
+
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 let view computer _model =
   let s = computer.screen in

@@ -11,9 +11,17 @@
 (* See Undo.mli *)
 
 (* a version, and the name of the edit that made it *)
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type 'a step = { value : 'a; name : string option }
 
 type 'a t = { now : 'a step; past : 'a step list; future : 'a step list; limit : int }
+
+(*****************************************************************************)
+(* Functions *)
+(*****************************************************************************)
 
 let start ?(limit = 100) value = { now = { value; name = None }; past = []; future = []; limit }
 let now t = t.now.value

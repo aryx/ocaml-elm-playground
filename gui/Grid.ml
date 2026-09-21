@@ -10,6 +10,10 @@
 
 (* See Grid.mli *)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type 'a item = {
   what : 'a;
   row : int;
@@ -36,6 +40,10 @@ let item ?(rowspan = 1) ?(colspan = 1) ?(sticky = "") ~row ~col what size =
 let nth l i = match List.nth_opt l i with Some x -> x | None -> 0.
 let sum l = List.fold_left ( +. ) 0. l
 let set_nth l i v = List.mapi (fun j x -> if j = i then v else x) l
+
+(*****************************************************************************)
+(* The columns and rows *)
+(*****************************************************************************)
 
 (* The sizes of one axis: every cell that sits in a single track makes
  * that track at least as big as it is; then a cell that spans several
@@ -94,6 +102,10 @@ let starts gap sizes from =
     List.fold_left (fun (x, acc) s -> (x +. s +. gap, (x, s) :: acc)) (from, []) sizes
   in
   List.rev out
+
+(*****************************************************************************)
+(* Placing *)
+(*****************************************************************************)
 
 let arrange (b : Widget.box) t =
   let widths = grown t.widths t.col_weights (b.w -. fst (measure t)) in

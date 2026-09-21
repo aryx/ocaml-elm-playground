@@ -10,6 +10,10 @@
 
 (* See Layout.mli *)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type constraints = { min_w : float; max_w : float; min_h : float; max_h : float }
 
 let loose w h = { min_w = 0.; max_w = w; min_h = 0.; max_h = h }
@@ -36,6 +40,10 @@ let center t = Center t
 let row ?(gap = 0.) kids = Row (gap, kids)
 let column ?(gap = 0.) kids = Column (gap, kids)
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 (* A column is a row turned on its side, so everything below is
  * written once, along an axis: [main] is the direction it runs in,
  * [cross] the other one. *)
@@ -56,6 +64,10 @@ let along axis share c =
   match axis with
   | Horizontal -> { c with min_w = share; max_w = share; min_h = 0. }
   | Vertical -> { c with min_h = share; max_h = share; min_w = 0. }
+
+(*****************************************************************************)
+(* Pass one: constraints down, sizes up *)
+(*****************************************************************************)
 
 (* Pass one. The flex rule, which is the whole of rows and columns:
  * measure the children that know their size, then share what is left
@@ -124,6 +136,10 @@ and measure c t =
   | Center inner -> measure c inner
   | Row (gap, kids) -> measure_line Horizontal c gap kids
   | Column (gap, kids) -> measure_line Vertical c gap kids
+
+(*****************************************************************************)
+(* Pass two: the parent positions *)
+(*****************************************************************************)
 
 (* Pass two: each parent hands its children the rectangle it decided
  * for them, and only the leaves come back. *)

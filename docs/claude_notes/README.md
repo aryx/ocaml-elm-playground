@@ -57,7 +57,10 @@ note** (`dev/`) says how to run, debug or measure something.
 The long form -- each document's skeleton, what the code owes the
 documents (`.mli`s, game headers, debug keys, small diffs), and the
 prose habits -- is in
-[`guide-principles.md`](guide-principles.md).
+[`guide-principles.md`](guide-principles.md); how a *file* is laid out
+-- the `(****)` banners, the names the sections have, where the long
+comment goes, and the traps met on the way -- is in
+[`guide-code-style.md`](guide-code-style.md).
 
 ## tutorials/: how it works, from scratch
 

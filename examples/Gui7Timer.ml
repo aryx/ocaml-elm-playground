@@ -35,8 +35,17 @@
  * which keeps this deterministic -- the same run gives the same
  * picture, which is what the golden frames need and what -fixed-time
  * would otherwise freeze.
+ *
+ * Exercises: a pause button (and whether pausing is a mode or a
+ * duration of zero); several timers at once; elapsed time taken from
+ * computer.time instead of frames, and what that does to the golden
+ * frame under -fixed-time.
  *)
 open Playground
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 type model = { frames : int; duration : number (* seconds *) }
 
@@ -62,6 +71,10 @@ let panel =
 
 let places computer = Layout.arrange (Gui.area computer) panel
 
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
+
 let update computer model =
   let at = places computer in
   let box slot = List.assoc slot at in
@@ -78,6 +91,10 @@ let update computer model =
   (* time passes whatever the duration says: turning the duration back
      up carries on from where the clock really is *)
   { frames = (if reset then 0 else model.frames + 1); duration }
+
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 let view computer model =
   let s = computer.screen in

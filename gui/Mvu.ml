@@ -10,6 +10,10 @@
 
 (* See Mvu.mli *)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type 'msg element =
   | Button of Widget.box * string * 'msg
   | Label of Widget.box * string
@@ -35,9 +39,17 @@ type t = {
 
 let empty = { focus = None; caret = 0; was_down = false; keys_before = []; held = None }
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 let rec leaves = function Group kids -> List.concat_map leaves kids | e -> [ e ]
 let box_of = function Button (b, _, _) | Label (b, _) | Field (b, _, _) -> b | Group _ -> assert false
 let takes_keys = function Field _ -> true | _ -> false
+
+(*****************************************************************************)
+(* The events of one frame *)
+(*****************************************************************************)
 
 let events (th : Theme.t) (i : Widget.input) (t : t) view =
   let pressed k = List.mem k i.keys && not (List.mem k t.keys_before) in
@@ -114,6 +126,10 @@ let events (th : Theme.t) (i : Widget.input) (t : t) view =
       widgets
   in
   ({ focus; caret; was_down = i.mdown; keys_before = i.keys; held }, msgs, paint)
+
+(*****************************************************************************)
+(* The loop *)
+(*****************************************************************************)
 
 let step (th : Theme.t) (i : Widget.input) (t : t) ~view ~update model =
   (* the loop, in three lines: what the person did to this model, what

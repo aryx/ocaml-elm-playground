@@ -53,6 +53,12 @@
  * the caret in view, and that is all), styles, or optimal line
  * breaking -- the wrap here is greedy, and Knuth-Plass is TinyWord's,
  * in phase 9.
+ *
+ * Exercises: the system clipboard (SDL has one natively, the browser
+ * asks permission); a scroll bar, which needs a scroll position that
+ * is not the caret's; coalescing a run of keystrokes into one undo
+ * step, which every real editor does and this one does not; a piece
+ * *tree* rather than a list, which is what VS Code went to.
  *)
 open Playground
 
@@ -61,6 +67,10 @@ let opening =
    list of pieces saying what to read from where.\n\n\
    Nothing is ever overwritten, so undo is just the older list of \
    pieces -- try it: type here, then press Control-Z.\n"
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 type model = { doc : Text_edit.t Document.t; clip : Clipboard.t }
 
@@ -112,6 +122,10 @@ let pressed (computer : computer) key =
   let now = Set_.elements computer.keyboard.keys in
   List.mem key now && not (List.mem key !held)
 
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
+
 let update computer model =
   let at = places computer in
   let box slot = List.assoc slot at in
@@ -142,6 +156,10 @@ let update computer model =
        (Text_edit.pieces text) (Text_edit.undos text) (Text_edit.redos text) (Text_edit.caret text));
   held := Set_.elements computer.keyboard.keys;
   { doc; clip }
+
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 let view computer model =
   let s = computer.screen in

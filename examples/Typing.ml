@@ -29,12 +29,25 @@
  * What it deliberately does not do: a cursor you can move, a
  * selection, or any widget at all. Those are gui/ (phase 1 onwards);
  * this is only the input.
+ *
+ * Exercises: key repeat (hold backspace and nothing more happens --
+ * the platform sends a repeat this playground does not forward); a
+ * caret you can move with the arrows; a second line, and what it
+ * takes to decide which one a character goes into.
  *)
 open Playground
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 type model = { line : string; scroll : number; doubles : int }
 
 let initial = { line = ""; scroll = 0.; doubles = 0 }
+
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
 
 let update computer model =
   let k = computer.keyboard and m = computer.mouse in
@@ -50,6 +63,10 @@ let update computer model =
     scroll = max 0. (min 20. (model.scroll +. m.mwheel));
     doubles = (if m.mdouble then model.doubles + 1 else model.doubles);
   }
+
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 let view computer model =
   let s = computer.screen in

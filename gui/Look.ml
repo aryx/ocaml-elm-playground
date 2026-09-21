@@ -10,6 +10,10 @@
 
 (* See Look.mli *)
 
+(*****************************************************************************)
+(* The widgets *)
+(*****************************************************************************)
+
 let face (th : Theme.t) ~hot ~held =
   if held then th.face_down else if hot then th.face_hot else th.face
 
@@ -53,6 +57,10 @@ let progress (th : Theme.t) (b : Widget.box) fraction =
   let w = inner.w *. f in
   (Widget.Fill (th.face_down, b) :: Widget.frame th.edge th.border b)
   @ [ Widget.Fill (th.accent, { inner with x = Widget.left inner +. (w /. 2.); w }) ]
+
+(*****************************************************************************)
+(* A field's cells *)
+(*****************************************************************************)
 
 (* A field is laid out one character to a cell, like a terminal: that
  * is what lets a click say exactly where the caret goes, with no font
@@ -103,6 +111,10 @@ let field (th : Theme.t) (b : Widget.box) text ~caret ~enabled =
     (Widget.Fill (th.field_face, b)
     :: Widget.frame (if caret = None then th.edge else th.accent) th.border b)
     @ glyphs @ caret_paint
+
+(*****************************************************************************)
+(* A dropdown *)
+(*****************************************************************************)
 
 let menu_closed (th : Theme.t) (b : Widget.box) label ~hot ~held =
   (Widget.Fill (face th ~hot ~held, b) :: Widget.frame th.edge th.border b)

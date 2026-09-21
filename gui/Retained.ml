@@ -10,6 +10,10 @@
 
 (* See Retained.mli *)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type kind = Button of (unit -> unit) | Label | Field of (string -> unit) | Group of t list
 
 and t = {
@@ -26,6 +30,10 @@ and t = {
 }
 
 type ui = { root : t; mutable was_down : bool; mutable keys_before : string list }
+
+(*****************************************************************************)
+(* Building the tree *)
+(*****************************************************************************)
 
 let make box kind text =
   { box; kind; text; enabled = true; hot = false; held = false; focused = false; caret = 0 }
@@ -46,6 +54,10 @@ let rec leaves t =
   match t.kind with Group kids -> List.concat_map leaves kids | _ -> [ t ]
 
 let takes_keys t = match t.kind with Field _ -> t.enabled | _ -> false
+
+(*****************************************************************************)
+(* One frame: the callbacks fire *)
+(*****************************************************************************)
 
 let handle (i : Widget.input) (ui : ui) =
   let pressed k = List.mem k i.keys && not (List.mem k ui.keys_before) in
@@ -103,6 +115,10 @@ let handle (i : Widget.input) (ui : ui) =
     widgets;
   ui.was_down <- i.mdown;
   ui.keys_before <- i.keys
+
+(*****************************************************************************)
+(* Drawing *)
+(*****************************************************************************)
 
 let paint (th : Theme.t) (ui : ui) =
   leaves ui.root

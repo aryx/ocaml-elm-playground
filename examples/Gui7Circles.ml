@@ -39,8 +39,17 @@
  * dialog. Here the right click opens the dialog. The menu would be a
  * popup at the mouse, which gui/Immediate's dropdown is not -- an
  * exercise, and the reason it is not one line.
+ *
+ * Exercises: the context menu between the right click and the dialog;
+ * dragging a circle, which is a third kind of edit and wants its own
+ * name in the history; a list of the past edits by name, which is
+ * what Undo.undo_name is for; a circle taken away again.
  *)
 open Playground
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 type circle = { cx : number; cy : number; d : number }
 
@@ -82,6 +91,10 @@ let panel =
 
 let places computer = Layout.arrange (Gui.area computer) panel
 
+(*****************************************************************************)
+(* The rules *)
+(*****************************************************************************)
+
 (* the circle the mouse is nearest, among those it is inside *)
 let under (mx, my) circles =
   let inside i c =
@@ -99,6 +112,10 @@ let under (mx, my) circles =
 
 let diameter_of model i =
   match List.nth_opt (shown model) i with Some c -> c.d | None -> 60.
+
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
 
 let update computer model =
   let at = places computer in
@@ -165,6 +182,10 @@ let update computer model =
        (List.length (shown model)) (Undo.undos model.circles) (Undo.redos model.circles)
        (match Undo.undo_name model.circles with Some n -> n | None -> "-"));
   { model with was_rdown = m.mrdown }
+
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 let view computer model =
   let s = computer.screen in

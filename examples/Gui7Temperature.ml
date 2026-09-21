@@ -32,8 +32,18 @@
  * are asked for every frame, so the answer is whichever came back
  * changed (a field returns its text unchanged unless it has the keys
  * and something was typed). One comparison each, and no message type.
+ *
+ * Exercises: add Kelvin, and decide which two fields follow a change
+ * to the third; keep the number typed rather than the number
+ * converted (type 20, see 68, type 68 back: does it say 20?); a
+ * field that refuses letters as they are typed, and whether that is
+ * better or worse than letting them in.
  *)
 open Playground
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 type model = { c : string; f : string }
 
@@ -53,6 +63,10 @@ let panel =
 let places computer = Layout.arrange (Gui.area computer) panel
 let show v = Printf.sprintf "%.1f" v
 
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
+
 let update computer model =
   let at = places computer in
   Gui.label_in computer (List.assoc C_label at) "Celsius";
@@ -70,6 +84,10 @@ let update computer model =
     | Some v -> { f; c = show ((v -. 32.) *. 5. /. 9.) }
     | None -> { model with f }
   else model
+
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 let view computer _model =
   let s = computer.screen in

@@ -34,13 +34,26 @@
  * Note the order the widgets are asked for: the menu is asked for
  * last, because in immediate mode a popup is painted where it is
  * asked for and anything later would paint over it.
+ *
+ * Exercises: the context menu 7GUIs actually asks for; dates that know
+ * about months and leap years (30.2.2014 is accepted here); a
+ * "today" button; and the same task written with callbacks, to feel
+ * where the rules go.
  *)
 open Playground
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 type model = { kind : int (* 0 one-way, 1 return *); out : string; back : string; booked : string option }
 
 let initial = { kind = 0; out = "27.3.2014"; back = "27.3.2014"; booked = None }
 let kinds = [ "one-way flight"; "return flight" ]
+
+(*****************************************************************************)
+(* The rules *)
+(*****************************************************************************)
 
 (* a date as (year, month, day), so that comparing them is comparing
    tuples; None if it is not one *)
@@ -68,6 +81,10 @@ let panel =
          ]))
 
 let places computer = Layout.arrange (Gui.area computer) panel
+
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
 
 let update computer model =
   let at = places computer in
@@ -98,6 +115,10 @@ let update computer model =
               (if return then back else out))
        else model.booked);
   }
+
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 let view computer _model =
   let s = computer.screen in

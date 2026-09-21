@@ -10,6 +10,10 @@
 
 (* See Focus.mli *)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type t = {
   who : Widget.id option;
   (* this frame's widgets, newest first *)
@@ -18,6 +22,10 @@ type t = {
      walks, since this frame's is not built yet when Tab arrives *)
   last : Widget.id list;
 }
+
+(*****************************************************************************)
+(* Functions *)
+(*****************************************************************************)
 
 let none = { who = None; order = []; last = [] }
 let frame t = { t with last = List.rev t.order; order = [] }

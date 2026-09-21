@@ -38,8 +38,18 @@
  *
  * What it deliberately does not do: text fields (typing needs focus,
  * phase 3).
+ *
+ * Exercises: a widget of your own (a group of radio buttons is the
+ * smallest interesting one: only one of them is on); a second theme,
+ * switched with a key, to see what Theme.t is for; a panel that lays
+ * itself out for a window twice the size (which needs
+ * Playground's Resized, still a TODO).
  *)
 open Playground
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 type model = { radius : number; speed : number; spinning : bool; angle : number }
 
@@ -90,6 +100,10 @@ let screen =
 
 let places computer = Layout.arrange (Gui.area computer) screen
 
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
+
 let update computer model =
   let at = places computer in
   let box slot = List.assoc slot at in
@@ -110,6 +124,10 @@ let update computer model =
        * a frame *)
       angle = (if spinning then model.angle +. (6. *. speed) else model.angle);
     }
+
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 let view computer model =
   let s = computer.screen in

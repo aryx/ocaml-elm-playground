@@ -10,6 +10,10 @@
 
 (* See Text_edit.mli *)
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 type source = Original | Added
 type piece = { source : source; start : int; len : int }
 
@@ -26,6 +30,10 @@ type t = {
   past : (piece list * int * int) list;
   future : (piece list * int * int) list;
 }
+
+(*****************************************************************************)
+(* Building one *)
+(*****************************************************************************)
 
 let of_string s =
   {
@@ -47,6 +55,10 @@ let to_string t = String.concat "" (List.map (read t) t.pieces)
 let length t = List.fold_left (fun n p -> n + p.len) 0 t.pieces
 let pieces t = List.length t.pieces
 
+(*****************************************************************************)
+(* The piece table *)
+(*****************************************************************************)
+
 (* everything before [pos], everything after -- splitting the piece
  * that [pos] falls inside, which is the only surgery a piece table
  * ever does *)
@@ -61,6 +73,10 @@ let split pieces pos =
             { p with start = p.start + pos; len = p.len - pos } :: rest )
   in
   go [] pos pieces
+
+(*****************************************************************************)
+(* The caret and the selection *)
+(*****************************************************************************)
 
 let caret t = t.caret
 let anchor t = t.anchor
@@ -104,6 +120,10 @@ let raw_insert ~at s t =
     | _ ->
         { t with pieces = before @ [ { source = Added; start; len = String.length s } ] @ after }
 
+(*****************************************************************************)
+(* Editing *)
+(*****************************************************************************)
+
 let insert s t =
   let a, b = range t in
   let t = remember t in
@@ -133,6 +153,10 @@ let delete_forward t =
     let s = to_string t in
     if a >= String.length s then t else delete ~from:a ~len:(Text.next_char s a - a) t
 
+(*****************************************************************************)
+(* The past *)
+(*****************************************************************************)
+
 let undo t =
   match t.past with
   | [] -> t
@@ -147,6 +171,10 @@ let redo t =
 
 let undos t = List.length t.past
 let redos t = List.length t.future
+
+(*****************************************************************************)
+(* What a view needs *)
+(*****************************************************************************)
 
 (* Greedy word wrap: fill a line until the next character does not
  * fit, then break at the last space -- or inside the word, if the

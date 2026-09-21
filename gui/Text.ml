@@ -10,6 +10,10 @@
 
 (* See Text.mli *)
 
+(*****************************************************************************)
+(* Characters, not bytes *)
+(*****************************************************************************)
+
 (* a byte whose top bits are 10 continues the character before it *)
 let continues s i = Char.code s.[i] land 0xC0 = 0x80
 
@@ -22,6 +26,10 @@ let next_char s i =
   let n = String.length s in
   let rec go i = if i >= n || not (continues s i) then i else go (i + 1) in
   if i >= n then n else go (i + 1)
+
+(*****************************************************************************)
+(* Cells *)
+(*****************************************************************************)
 
 let chars s =
   let rec go i acc =
@@ -37,6 +45,10 @@ let column s i = List.length (chars (String.sub s 0 (min i (String.length s))))
 let byte_of_column s col =
   let rec go i col = if col <= 0 || i >= String.length s then i else go (next_char s i) (col - 1) in
   go 0 col
+
+(*****************************************************************************)
+(* One frame of typing *)
+(*****************************************************************************)
 
 let edit ~typed ~pressed text caret =
   let caret = max 0 (min (String.length text) caret) in

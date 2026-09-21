@@ -56,10 +56,19 @@
  * inserting and deleting rows, /T titles (frozen headings), /W
  * windows (the split screen), /S storage, /P print, and formatting of
  * any kind.
+ *
+ * Exercises: /R replicate, the command this does not have -- and then
+ * $A$1, which replicate is what makes necessary; /T titles (the
+ * headings that stay put while the rest scrolls); a sheet written to
+ * a file and read back (Sheet.to_string is already there); and
+ * column widths, which on a character display means deciding what
+ * nine characters was.
  *)
 open Playground
 
-(* --- the character display ------------------------------------------ *)
+(*****************************************************************************)
+(* The character display *)
+(*****************************************************************************)
 
 let cols = 7 (* columns of the sheet shown *)
 let rows = 14
@@ -83,7 +92,9 @@ let text ?(color = green) col row s =
   words color s |> scale (char_w /. 0.6 /. words_font_size)
   |> move (x +. (Widget.text_width ~size:(char_w /. 0.6) s /. 2.)) y
 
-(* --- 1979's spelling of a formula ------------------------------------ *)
+(*****************************************************************************)
+(* 1979's spelling of a formula *)
+(*****************************************************************************)
 
 (* +B2*C2 and @SUM(B2...B4) into the engine's =B2*C2 and =SUM(B2:B4).
    A formula language is a surface, not a semantics. *)
@@ -119,7 +130,9 @@ let to_1979 (s : string) : string =
     if starts_with_name then "@" ^ body else "+" ^ body
   else s
 
-(* --- the model -------------------------------------------------------- *)
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
 
 type mode =
   | Ready
@@ -158,7 +171,9 @@ let initial =
     was = [];
   }
 
-(* --- what a key does -------------------------------------------------- *)
+(*****************************************************************************)
+(* Update *)
+(*****************************************************************************)
 
 let commit model text =
   let engine_text = of_1979 text in
@@ -229,7 +244,9 @@ let update computer model =
   in
   { model with was = now }
 
-(* --- and what it looks like ------------------------------------------- *)
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 (* nine characters, and the >>>>>>>>> a number too wide showed *)
 let fit s ~right =
