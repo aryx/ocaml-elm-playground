@@ -21,6 +21,7 @@ let rec note s : Component.part =
   {
     kind = "note";
     height = (fun _ -> 20.);
+    natural = None;
     draw = (fun _ ~active:_ -> []);
     input = (fun _ _ -> note s);
     menu = [];
@@ -32,11 +33,28 @@ let rec counter n : Component.part =
   {
     kind = "counter";
     height = (fun w -> w /. 4.);
+    natural = None;
     draw = (fun _ ~active:_ -> []);
     input = (fun _ _ -> counter n);
     menu = [ "Counter"; "Add" ];
     command = (fun c -> if c = "Add" then counter (n + 1) else counter n);
     save = (fun () -> string_of_int n);
+  }
+
+(* a part with a size of its own, 100 by 50, that remembers where it
+   saw the mouse and in what box -- to see what scaling shows it *)
+let rec stamp seen : Component.part =
+  {
+    kind = "stamp";
+    height = (fun _ -> 50.);
+    natural = Some (100., 50.);
+    draw = (fun b ~active:_ -> [ Playground.rectangle Playground.black b.w b.h |> Playground.move b.x b.y ]);
+    input =
+      (fun c (b : Widget.box) ->
+        stamp (Printf.sprintf "%g,%g in %gx%g" c.mouse.mx c.mouse.my b.w b.h));
+    menu = [];
+    command = (fun _ -> stamp seen);
+    save = (fun () -> seen);
   }
 
 let registry : Component.registry = [ ("note", note); ("counter", fun s -> counter (int_of_string s)) ]
@@ -138,8 +156,28 @@ let test_sizes_are_saved () =
   Alcotest.(check string) "read back, the same" text (saved (Compound.load registry text));
   Alcotest.(check bool) "and it says so" true (String.length text > 0 && String.sub text 0 21 = "column 2\nsized 80 1\np")
 
+(* the .mli's example: natural 300 x 144 in a room 150 wide is drawn at
+   half its size; here 100 x 50 in 50 x 25 *)
+let test_scaling () =
+  let p = stamp "" in
+  Alcotest.(check (float 1e-9)) "scaled: its natural height at the width" 25. (Component.fitted_height ~scaled:true p 50.);
+  Alcotest.(check (float 1e-9)) "not: its own" 50. (Component.fitted_height ~scaled:false p 50.);
+  Alcotest.(check (float 1e-9)) "and scaled up, as well as down" 100. (Component.fitted_height ~scaled:true p 200.);
+  let b : Widget.box = { Widget.x = 25.; y = -12.5; w = 50.; h = 25. } in
+  (match Component.draw_in ~scaled:true p b ~active:false with
+  | [ s ] ->
+      Alcotest.(check (float 1e-9)) "drawn at half its size" 0.5 s.scale;
+      Alcotest.(check (pair (float 1e-9) (float 1e-9))) "in the middle of its room" (25., -12.5) (s.x, s.y)
+  | l -> Alcotest.failf "%d shapes, not one group" (List.length l));
+  (* the room's bottom-right corner is the part's own bottom-right
+     corner: the mouse mapped back, and the part never knows *)
+  let c = { Playground.initial_computer with mouse = { Playground.initial_computer.mouse with mx = 50.; my = -25. } } in
+  Alcotest.(check string) "what the part saw" "50,-25 in 100x50" ((Component.input_in ~scaled:true p c b).save ());
+  Alcotest.(check string) "unscaled, the mouse as it is" "50,-25 in 50x25" ((Component.input_in ~scaled:false p c b).save ())
+
 let tests =
   [
+    t "scaling: drawn smaller, the mouse mapped back" test_scaling;
     t "a row shared out by its children's shares" test_a_row_shared_out;
     t "a height given, and frame negotiation" test_a_height_given;
     t "where a row's children meet" test_splitters;

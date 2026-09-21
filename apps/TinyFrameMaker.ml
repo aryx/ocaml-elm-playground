@@ -39,10 +39,10 @@
  *   more restricted -- there is one container, the text, and
  *   everything else hangs from it: no row of two parts side by side,
  *   no part holding a text; a frame is the column's width, and a part
- *   whose content has a fixed size (the sheet, the picture) spills out
- *   of a column too narrow for it -- try two columns -- where a drawing
- *   shrinks to fit (widths are not negotiated, here or in
- *   TinyOpenDoc); and it is
+ *   with a size of its own (the sheet, the picture) is *scaled* to it,
+ *   as FrameMaker scaled an imported graphic -- try two columns, and
+ *   the sheet shrinks into its column, its text with it (TinyOpenDoc
+ *   can scale a part too, or let it insist on its size); and it is
  *   an application with guests (OLE's shape: FrameMaker owns the
  *   document) rather than OpenDoc's document with no owner. Where
  *   TinyOpenDoc is a tree of parts laid out by position, this is a
@@ -122,7 +122,10 @@ let column_w d = match d.master with One_column -> body_w | Two_columns -> (body
 
 (* a frame's room: its part at the column's width, and some air *)
 let frame_air = 12.
-let frame_h d (a : anchored) = a.part.height (column_w d) +. frame_air
+(* a frame is its column's width, and a part with a size of its own is
+   scaled to it, up or down, as FrameMaker scaled an imported graphic
+   to its anchored frame (Component.draw_in) *)
+let frame_h d (a : anchored) = Component.fitted_height ~scaled:true a.part (column_w d) +. frame_air
 
 let layout d =
   let page = Page.layout ~metrics:Stroke_text.metrics ~width:(column_w d) d.text in
@@ -400,7 +403,8 @@ let update computer model =
           match List.find_opt (fun (p : Flow.placed_frame) -> p.frame = i) f.frames with
           | Some p ->
               let b = frame_box d p in
-              { model with editing = Some { d with frames = List.mapi (fun j a -> if j = i then { a with part = a.part.input computer b } else a) d.frames } }
+              let fed a = { a with part = Component.input_in ~scaled:true a.part computer b } in
+              { model with editing = Some { d with frames = List.mapi (fun j a -> if j = i then fed a else a) d.frames } }
           | None -> model)
       | _ -> model
   in
@@ -461,7 +465,7 @@ let view _computer model =
             else if on then Gui.shapes (Widget.frame (rgb 40 90 200) 2. { b with w = b.w +. 6.; h = b.h +. 6. })
             else Gui.shapes (Widget.frame (rgb 210 210 210) 1. { b with w = b.w +. 4.; h = b.h +. 4. })
           in
-          border @ a.part.draw b ~active)
+          border @ Component.draw_in ~scaled:true a.part b ~active)
       f.frames
   in
   (* the anchors, as FrameMaker showed them among the text symbols:

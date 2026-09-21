@@ -104,6 +104,8 @@ let rec part st : Component.part =
   {
     kind;
     height = (fun w -> Page.height (laid_out st.r w) +. (2. *. pad));
+    (* a text reflows to any width: nothing to scale *)
+    natural = None;
     draw = draw st;
     input = (fun computer b -> part (input computer b st));
     menu = [ "Text"; "Bold"; "Italic"; "Underline"; "Bigger"; "Smaller"; "Plain" ];

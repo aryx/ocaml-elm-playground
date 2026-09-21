@@ -8,12 +8,12 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-type sizing = { height : float option; share : float }
+type sizing = { height : float option; share : float; scaled : bool }
 type t = Part of Component.part | Column of t list | Row of t list | Sized of sizing * t
 type path = int list
 
 let gap = 14.
-let unsized = { height = None; share = 1. }
+let unsized = { height = None; share = 1.; scaled = false }
 
 (* a node's sizing, and what it wraps *)
 let rec split = function Sized (s, n) -> (s, snd (split n)) | n -> (unsized, n)
@@ -21,10 +21,15 @@ let share_of n = (fst (split n)).share
 
 (* how tall a node is at [width]; a height a person gave is kept, but
    never less than the node asks for: OpenDoc's frame negotiation, the
-   container proposing and the part insisting on what it needs *)
+   container proposing and the part insisting on what it needs -- unless
+   the part is scaled, and then there is nothing to negotiate: it is as
+   tall as its proportions make it at that width, or as it was given,
+   and drawn to fit *)
 let rec height node width =
   match node with
   | Part p -> p.height width
+  | Sized ({ scaled = true; height = h; _ }, Part p) -> (
+      match h with Some h -> h | None -> Component.fitted_height ~scaled:true p width)
   | Sized (s, n) -> ( match s.height with Some h -> Float.max h (height n width) | None -> height n width)
   | Column kids -> List.fold_left (fun acc k -> acc +. height k width) 0. kids +. (gap *. float_of_int (max 0 (List.length kids - 1)))
   | Row kids -> List.fold_left2 (fun acc k w -> Float.max acc (height k w)) 0. kids (widths width kids)
@@ -104,6 +109,22 @@ let rec set doc path part =
   | (Column kids | Row kids), i :: rest -> rebuild doc (List.mapi (fun j k -> if j = i then set k rest part else k) kids)
   | _ -> doc
 
+(* whether the node at [path] is scaled rather than negotiated with *)
+let scaled doc path =
+  let rec go doc path =
+    match (doc, path) with
+    | Sized (s, n), [] -> s.scaled || go n []
+    | Sized (_, n), _ -> go n path
+    | (Column kids | Row kids), i :: rest -> ( match List.nth_opt kids i with Some k -> go k rest | None -> false)
+    | _ -> false
+  in
+  go doc path
+
+let set_scaled doc path b =
+  update doc path (fun n ->
+      let s, inner = split n in
+      Sized ({ s with scaled = b }, inner))
+
 let set_height doc path h =
   update doc path (fun n ->
       let s, inner = split n in
@@ -170,7 +191,10 @@ let save doc =
         Printf.bprintf out "row %d\n" (List.length kids);
         List.iter go kids
     | Sized (sz, n) ->
-        Printf.bprintf out "sized %s %g\n" (match sz.height with Some h -> Printf.sprintf "%g" h | None -> "-") sz.share;
+        Printf.bprintf out "sized %s %g%s\n"
+          (match sz.height with Some h -> Printf.sprintf "%g" h | None -> "-")
+          sz.share
+          (if sz.scaled then " scaled" else "");
         go n
   in
   go doc;
@@ -192,9 +216,10 @@ let load registry s =
         let rec kids k pos acc = if k = 0 then (List.rev acc, pos) else let kid, pos = node pos in kids (k - 1) pos (kid :: acc) in
         let kids, pos = kids (int_of_string n) pos [] in
         ((if what = "row" then Row kids else Column kids), pos)
-    | [ "sized"; h; share ] ->
+    | "sized" :: h :: share :: rest ->
         let n, pos = node pos in
-        (Sized ({ height = (if h = "-" then None else Some (float_of_string h)); share = float_of_string share }, n), pos)
+        let height = if h = "-" then None else Some (float_of_string h) in
+        (Sized ({ height; share = float_of_string share; scaled = rest = [ "scaled" ] }, n), pos)
     | _ -> failwith ("Compound.load: " ^ l)
   in
   fst (node 0)

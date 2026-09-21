@@ -541,6 +541,25 @@ the same way; and, a drawing being plain data, it saves with Marshal
 behind a checked line (`appkits/document/Saved`, `plan_io.md`) -- the
 first thing in the repository to be saved that way.
 
+And the room a part is given, which a person can now change -- a
+height by a handle, a row's shares by the gap between its parts, the
+whole document reflowing as the mouse moves, since the layout is
+worked out every frame anyway. When the room is not the size a part's
+content has, there are three answers, and the embedding systems each
+picked one:
+
+- **negotiation** (OpenDoc's frames): the host proposes, the part
+  insists on what it needs -- a height given is kept only when it is
+  more (`Compound`'s `Sized`);
+- **scaling** (OLE's embedded objects, FrameMaker's imported
+  graphics): a part with a size of its own (`Component.natural`: the
+  sheet, the picture) is drawn at that size and the drawing scaled to
+  the room, up or down, the mouse mapped back through the same scale,
+  so the part never knows (`Component.draw_in`, `input_in`) --
+  TinyOpenDoc's "Scale to Fit", TinyFrameMaker's frames always;
+- **reflow**: what has no size of its own -- a text, a drawing fitting
+  its page -- simply takes the room and lays itself out in it.
+
 The history is worth a paragraph because it is a genuine road not
 taken: Xerox Star (1981) put text, pictures and tables in one document,
 as a fixed set; the Andrew Toolkit (CMU, around 1988) opened the set

@@ -94,6 +94,8 @@ let rec part st : Component.part =
   {
     kind;
     height = (fun _ -> snd (size st));
+    (* so many dots, two pixels each: a size of its own, to scale *)
+    natural = Some (size st);
     draw = draw st;
     input = (fun computer b -> part (input computer b st));
     menu = [ "Picture"; "Pencil"; "Brush"; "Eraser"; "Fill"; "Black"; "Grey"; "Bricks" ];

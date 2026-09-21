@@ -58,9 +58,13 @@
  * nothing -- immediate mode's gift. A height given is a proposal, as in
  * OpenDoc's frame negotiation: a part gets it if it is more than the
  * part needs, and what it needs otherwise (Compound). Widths are not
- * negotiated: a part whose content has a fixed size (the sheet, the
- * picture) spills over when its share is made too narrow for it, where
- * a text rewraps and a drawing shrinks to fit.
+ * negotiated: a part whose content has a size of its own (the sheet,
+ * the picture) spills over when its share is made too narrow for it --
+ * unless it is made "Scale to Fit" (Edit menu), OLE's way: then it is
+ * drawn scaled to its room, up or down, keeping its proportions, the
+ * mouse mapped back so that the part never knows (Component.draw_in).
+ * So a part given room is negotiated with (OpenDoc), scaled (OLE), or,
+ * for a text, simply rewraps -- three answers to one question.
  *
  * What it deliberately does not do: containers that are parts (here
  * the rows and columns are the document's, see Compound); a part
@@ -260,7 +264,7 @@ let insert name node model =
   { (record ~name d model) with selected = Some at }
 
 let menu_file = [ "File"; "Save"; "Revert"; "New" ]
-let menu_edit = [ "Edit"; "Undo"; "Redo"; "Delete Part" ]
+let menu_edit = [ "Edit"; "Undo"; "Redo"; "Delete Part"; "Scale to Fit"; "Natural Size" ]
 let menu_insert = [ "Insert"; "Text"; "Sheet"; "Picture"; "Drawing" ]
 let menu_box i : Widget.box = { Widget.x = -410. +. (float_of_int i *. 95.); y = 470.; w = 90.; h = 30. }
 
@@ -279,6 +283,12 @@ let command items chosen model =
       { model with history = Undo.redo model.history; selected = None }
   | Some "Delete Part" -> (
       match model.selected with Some p -> { (record ~name:"Delete" (Compound.remove (doc model) p) model) with selected = None } | None -> model)
+  (* the two ways to give a part the room it is given: scale it (OLE),
+     or let it insist on its own size (OpenDoc) *)
+  | Some ("Scale to Fit" | "Natural Size" as c) -> (
+      match model.selected with
+      | Some p -> record ~name:c (Compound.set_scaled (doc model) p (c = "Scale to Fit")) model
+      | None -> model)
   | Some "Text" -> insert "Insert Text" (text "A new text.") model
   | Some "Sheet" -> insert "Insert Sheet" (Part (Part_sheet.make Sheet.empty)) model
   | Some "Picture" -> insert "Insert Picture" (Part (Part_picture.make (Bitmap.create ~width:150 ~height:72))) model
@@ -341,7 +351,9 @@ let update computer model =
       | Some _, _ when model.waking -> model
       | Some d, Some p -> (
           match List.assoc_opt p (laid_out model) with
-          | Some b -> { model with editing = Some (Compound.set d p ((part model p).input computer b)) }
+          | Some b ->
+              let part = Component.input_in ~scaled:(Compound.scaled d p) (part model p) computer b in
+              { model with editing = Some (Compound.set d p part) }
           | None -> model)
       | _ -> model
   in
@@ -393,7 +405,7 @@ let view computer model =
       (fun (p, b) ->
         let on = model.selected = Some p in
         let frame = if on && active model then hatched b else if on then handles b else [] in
-        frame @ (Option.get (Compound.get d p)).draw b ~active:(on && active model))
+        frame @ Component.draw_in ~scaled:(Compound.scaled d p) (Option.get (Compound.get d p)) b ~active:(on && active model))
       boxes
   in
   (* the gap under the mouse, or being dragged, shows it can be *)

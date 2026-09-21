@@ -88,7 +88,11 @@ From TinyOpenDoc's header:
   row out, everything reflowing as the mouse moves (`Compound`'s
   `Sized`, heights negotiated as in OpenDoc: never less than the part
   needs); widths are not negotiated, so a part of fixed size spills
-  out of a share too narrow for it;
+  out of a share too narrow for it -- unless it is **scaled** (done
+  too): `Component.natural`, `draw_in` and `input_in` draw a part with
+  a size of its own scaled to its room and map the mouse back,
+  TinyOpenDoc's "Scale to Fit" per part, TinyFrameMaker's frames
+  always;
 - **linking**, OLE's "L": a part that shows a file kept elsewhere and
   follows it when it changes (after `plan_io.md`);
 - a fourth kind of part added with one registry line and nothing else

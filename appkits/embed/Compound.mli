@@ -45,13 +45,14 @@
  *   part counter 2
  *   42
  *
- * and a Sized node as "sized <height or -> <share>", before what it
- * wraps.
+ * and a Sized node as "sized <height or -> <share>", followed by
+ * "scaled" if it is, before what it wraps.
  *)
 
-(* a height a person gave (None: the part's own), and a share of the
- * row the node is in (1 unless changed) *)
-type sizing = { height : float option; share : float }
+(* a height a person gave (None: the part's own), a share of the row
+ * the node is in (1 unless changed), and whether the part is scaled
+ * to its room (Component.draw_in) rather than negotiated with *)
+type sizing = { height : float option; share : float; scaled : bool }
 
 type t = Part of Component.part | Column of t list | Row of t list | Sized of sizing * t
 type path = int list
@@ -78,6 +79,14 @@ val splitters : t -> left:float -> top:float -> width:float -> splitter list
 (* [set_height doc path h]: the height a person gave the node at
  * [path] (None to give it back its own) *)
 val set_height : t -> path -> float option -> t
+
+(* Whether the part at [path] is scaled to its room, and making it so:
+ * a scaled part is as tall as its proportions make it at its width
+ * (or as it was given), and drawn to fit it -- no negotiation, since
+ * any room fits; a part with no size of its own (Component.natural)
+ * cannot be scaled, and is negotiated with as before *)
+val scaled : t -> path -> bool
+val set_scaled : t -> path -> bool -> t
 
 (* [resize_row doc path i fraction]: the row at [path] with its
  * children [i] and [i+1] sharing their room so that the first has

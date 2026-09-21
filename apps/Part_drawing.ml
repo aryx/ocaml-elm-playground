@@ -122,6 +122,8 @@ let rec part st : Component.part =
     (* the page's shape at the width given, but no taller than a
        third of a screen *)
     height = (fun w -> Float.min 220. (w *. page_h /. page_w));
+    (* it fits its page to whatever room it is given already *)
+    natural = None;
     draw = draw st;
     input = (fun computer b -> part (input computer b st));
     menu = [ "Drawing"; "Rectangle"; "Oval"; "Line"; "Grey"; "White"; "Hollow"; "Bring to Front"; "Send to Back"; "Delete" ];

@@ -661,6 +661,15 @@ let scripted : Testutil_golden.scripted list =
     (* the gap between the sheet and the picture dragged right: the row's
      * width shared out anew, one Resize to undo *)
     ("apps/software/TinyOpenDoc", "split", 14, "at(0;207):1-3,click:2-8,at(20;207):4,at(40;207):5-10,at(600;-600):11-14");
+    (* the picture and the sheet each made "Scale to Fit" from the Edit
+     * menu, then the gap between them dragged left: the picture scaled
+     * up with its share, the sheet down with its -- OLE's way, where the
+     * others negotiate *)
+    ( "apps/software/TinyOpenDoc",
+      "scaled",
+      32,
+      "at(200;200):1-3,click:2,at(-315;470):4-6,click:5,at(-315;293):7-9,click:8,at(-250;230):10-12,click:11,at(-315;470):13-15,click:14,at(-315;293):16-18,click:17,at(0;195):19-21,click:20-26,at(-60;195):23,at(-120;195):24-28,at(600;-600):29-32"
+    );
     (* the master changed to two columns: everything lays itself out
      * again, the drawing shrinking to its column, the sheet spilling
      * out of it -- widths are not negotiated *)

@@ -81,6 +81,8 @@ let rec part st : Component.part =
   {
     kind;
     height = (fun _ -> snd (Sheet_view.size geometry));
+    (* so many cells of a size: a size of its own, to scale *)
+    natural = Some (Sheet_view.size geometry);
     draw = draw st;
     input = (fun computer b -> part (input computer b st));
     menu = [ "Sheet"; "Clear" ];
