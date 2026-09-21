@@ -21,7 +21,7 @@
  *    it's an ordinary shape, rebuilt by view every frame, next to the
  *    cached grid.
  *
- * Run examples3d/opengl/CachedGrid3d.exe with -debug to see the
+ * Run examples3d/CachedGrid3d.exe with -debug to see the
  * "vertices uploaded" per frame, and with -debug-keys press "o" to turn
  * the cache off: the grid is then rebuilt and uploaded every frame
  * too, like a group3d (watch the fps). The software and web (SVG)

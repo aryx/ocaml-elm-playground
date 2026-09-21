@@ -17,58 +17,58 @@
  * Not x (the magnifier): it follows the mouse. *)
 let scenes : Testutil_golden.scene list =
   [
-    ("examples3d/Triangle3d", "", 3);
-    ("examples3d/Cube3d", "", 3);
-    ("examples3d/Cubes3d", "", 3);
-    ("examples3d/Cubes3d", "f", 3);
-    ("examples3d/Cubes3d", "z", 3);
-    ("examples3d/Cubes3d", "b", 3);
-    ("examples3d/Cubes3d", "bf", 3);
-    ("examples3d/Cubes3d", "t", 3);
-    ("examples3d/Cubes3d", "h", 3);
+    ("examples3d/software/Triangle3d", "", 3);
+    ("examples3d/software/Cube3d", "", 3);
+    ("examples3d/software/Cubes3d", "", 3);
+    ("examples3d/software/Cubes3d", "f", 3);
+    ("examples3d/software/Cubes3d", "z", 3);
+    ("examples3d/software/Cubes3d", "b", 3);
+    ("examples3d/software/Cubes3d", "bf", 3);
+    ("examples3d/software/Cubes3d", "t", 3);
+    ("examples3d/software/Cubes3d", "h", 3);
     (* the same golden frame as without "o", on purpose: an optimization
      * must not change a single pixel *)
-    ("examples3d/Cubes3d", "o", 3);
-    ("examples3d/Spheres3d", "", 3);
-    ("examples3d/Spheres3d", "m", 3);
-    ("examples3d/Spheres3d", "mm", 3);
-    ("examples3d/Spheres3d", "mmm", 3);
-    ("examples3d/Spheres3d", "t", 3);
-    ("examples3d/TexturedCube3d", "", 3);
-    ("examples3d/TexturedCube3d", "p", 3);
-    ("examples3d/TexturedCube3d", "i", 3);
-    ("examples3d/InteractiveCube3d", "", 3);
-    ("examples3d/PaintersAlgorithmFail3d", "", 3);
-    ("examples3d/PaintersAlgorithmFail3d", "z", 3);
-    ("examples3d/FloatingCity3d", "", 3);
-    ("examples3d/Corridor3d", "", 3);
-    ("examples3d/Corridor3d", "c", 3);
-    ("examples3d/Corridor3d", "f", 3);
-    ("examples3d/CachedGrid3d", "", 3);
+    ("examples3d/software/Cubes3d", "o", 3);
+    ("examples3d/software/Spheres3d", "", 3);
+    ("examples3d/software/Spheres3d", "m", 3);
+    ("examples3d/software/Spheres3d", "mm", 3);
+    ("examples3d/software/Spheres3d", "mmm", 3);
+    ("examples3d/software/Spheres3d", "t", 3);
+    ("examples3d/software/TexturedCube3d", "", 3);
+    ("examples3d/software/TexturedCube3d", "p", 3);
+    ("examples3d/software/TexturedCube3d", "i", 3);
+    ("examples3d/software/InteractiveCube3d", "", 3);
+    ("examples3d/software/PaintersAlgorithmFail3d", "", 3);
+    ("examples3d/software/PaintersAlgorithmFail3d", "z", 3);
+    ("examples3d/software/FloatingCity3d", "", 3);
+    ("examples3d/software/Corridor3d", "", 3);
+    ("examples3d/software/Corridor3d", "c", 3);
+    ("examples3d/software/Corridor3d", "f", 3);
+    ("examples3d/software/CachedGrid3d", "", 3);
     (* claude: the planets' night sides turned away from the Sun *)
-    ("examples3d/PhysicsSolarSystem3d", "", 3);
+    ("examples3d/software/PhysicsSolarSystem3d", "", 3);
     (* claude: the T-handle at rest in its own frame, L and w still
      * pointing the same way *)
-    ("examples3d/PhysicsSpin3d", "", 3);
+    ("examples3d/software/PhysicsSpin3d", "", 3);
     (* claude: the five blocks in the air, a moment before the splash *)
-    ("examples3d/PhysicsFloat3d", "", 3);
+    ("examples3d/software/PhysicsFloat3d", "", 3);
     (* claude: the four hitboxes as the engine sees them -- a sphere's
      * rings, a box's edges, a turned box's, a capsule's *)
-    ("examples3d/PhysicsHitbox3d", "", 3);
+    ("examples3d/software/PhysicsHitbox3d", "", 3);
     (* claude: the five balls in the air, and the bar each one has to
      * come back to, drawn from its bounciness alone *)
-    ("examples3d/PhysicsBounce3d", "", 3);
+    ("examples3d/software/PhysicsBounce3d", "", 3);
     (* claude: two hundred marbles above the floor of their cage, and
      * the count of bounding boxes the broad phase compared *)
-    ("examples3d/PhysicsMarbles3d", "", 3);
+    ("examples3d/software/PhysicsMarbles3d", "", 3);
     (* claude: three bodies at the top of the ramp, each labelled with
      * the acceleration its own tensor predicts *)
-    ("examples3d/PhysicsRoll3d", "", 3);
+    ("examples3d/software/PhysicsRoll3d", "", 3);
     (* claude: the wall and the dominoes as they are built, every body
      * awake (the yellow markers) *)
-    ("examples3d/PhysicsStack3d", "", 3);
-    ("examples3d/PhysicsWalk3d", "", 5);
-    ("examples3d/PhysicsRagdoll3d", "", 3);
+    ("examples3d/software/PhysicsStack3d", "", 3);
+    ("examples3d/software/PhysicsWalk3d", "", 5);
+    ("examples3d/software/PhysicsRagdoll3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/software/StarCollector3d", "", 3);
@@ -131,7 +131,7 @@ let scenes : Testutil_golden.scene list =
 let scripted : Testutil_golden.scripted list =
   [ ("games3d/software/StarCollector3d", "move", 40, "up:1-40,right:10-25");
     (* the camera turned, the time sped up to 80 days a second *)
-    ("examples3d/PhysicsSolarSystem3d", "turned", 90, "w:2,w:4,left:10-60");
+    ("examples3d/software/PhysicsSolarSystem3d", "turned", 90, "w:2,w:4,left:10-60");
     (* the same battle as games2.5d/TinyBattlezone's golden frame: the
      * pyramid now hides the enemy tank *)
     ("games3d/software/TinyBattlezone3d", "play", 150, "space:1,right:5-20,up:30-140,space:100");
@@ -215,50 +215,50 @@ let scripted : Testutil_golden.scripted list =
      * turned itself over once, with nothing acting on it; thrown about
      * the largest axis it has not, and will not. The purple arrow (L)
      * is in the same place in both, which is the point. *)
-    ("examples3d/PhysicsSpin3d", "flip", 240, "2:1");
-    ("examples3d/PhysicsSpin3d", "stable", 240, "3:1");
+    ("examples3d/software/PhysicsSpin3d", "flip", 240, "2:1");
+    ("examples3d/software/PhysicsSpin3d", "stable", 240, "3:1");
     (* settled, and then the water raised by 60 cm: every block rises
      * with it, each keeping exactly its own density under the surface,
      * and the stone stays on the bottom *)
-    ("examples3d/PhysicsFloat3d", "risen", 600, "up:300-360");
+    ("examples3d/software/PhysicsFloat3d", "risen", 600, "up:300-360");
     (* pushed into the crate: the contact's point and the way out,
      * drawn as long as the overlap is deep *)
-    ("examples3d/PhysicsHitbox3d", "inside", 70, "left:1-25,up:1-120");
+    ("examples3d/software/PhysicsHitbox3d", "inside", 70, "left:1-25,up:1-120");
     (* after the first bounce: each ball at the top of its return,
      * beside the bar at e^2 of its fall, about 2% under it -- the cost
      * of a discrete step, and on screen rather than hidden *)
-    ("examples3d/PhysicsBounce3d", "returned", 260, "x:1");
+    ("examples3d/software/PhysicsBounce3d", "returned", 260, "x:1");
     (* the grid's cells, drawn where they exist: a hashed grid holds
      * only the cells something is in, and in 3D a dense one would be a
      * million of them. Two spaces would show sweep and prune instead;
      * all three find the same pairs, which is the point of the
      * counter. *)
-    ("examples3d/PhysicsMarbles3d", "grid", 45, "space:1,g:10");
+    ("examples3d/software/PhysicsMarbles3d", "grid", 45, "space:1,g:10");
     (* two seconds down the slope: the ice ball ahead, the sphere next,
      * the capsule last -- the order the formula gives -- and each
      * measured acceleration on its prediction, which is the engine
      * arriving at 5/7 g sin a on its own *)
-    ("examples3d/PhysicsRoll3d", "race", 110, "x:1");
+    ("examples3d/software/PhysicsRoll3d", "race", 110, "x:1");
     (* seven seconds later, the same wall: standing, every body asleep,
      * no contact points solved at all. And the same seven seconds with
      * the solver turned off at the start ("s"), which is a heap. *)
-    ("examples3d/PhysicsStack3d", "asleep", 400, "x:1");
-    ("examples3d/PhysicsStack3d", "no_solver", 200, "s:2");
+    ("examples3d/software/PhysicsStack3d", "asleep", 400, "x:1");
+    ("examples3d/software/PhysicsStack3d", "no_solver", 200, "s:2");
     (* the step offset: the 0.5 m step a wall at 0.4, a stair at 0.6
      * ("o" once); the slope limit: the 50 degree ramp a wall at 45, and
      * walked up at 60 ("l" once) *)
     (* the ragdoll at the foot of the stairs; and without the joints'
      * limits, an arm wound over the shoulder on the way down *)
-    ("examples3d/PhysicsRagdoll3d", "fallen", 200, "x:1");
-    ("examples3d/PhysicsRagdoll3d", "no_limits", 60, "l:1");
-    ("examples3d/PhysicsWalk3d", "wall", 200, "up:2-200");
-    ("examples3d/PhysicsWalk3d", "stair", 200, "o:1,up:2-200");
-    ("examples3d/PhysicsWalk3d", "steep", 260, "left:2-161,up:162-260");
-    ("examples3d/PhysicsWalk3d", "steep_60", 260, "l:1,left:2-161,up:162-260");
+    ("examples3d/software/PhysicsRagdoll3d", "fallen", 200, "x:1");
+    ("examples3d/software/PhysicsRagdoll3d", "no_limits", 60, "l:1");
+    ("examples3d/software/PhysicsWalk3d", "wall", 200, "up:2-200");
+    ("examples3d/software/PhysicsWalk3d", "stair", 200, "o:1,up:2-200");
+    ("examples3d/software/PhysicsWalk3d", "steep", 260, "left:2-161,up:162-260");
+    ("examples3d/software/PhysicsWalk3d", "steep_60", 260, "l:1,left:2-161,up:162-260");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
-    ("examples3d/LogoFractals3d", "tree", 5, "a:2");
-    ("examples3d/LogoFractals3d", "hilbert", 8, "right:2,a:4");
+    ("examples3d/software/LogoFractals3d", "tree", 5, "a:2");
+    ("examples3d/software/LogoFractals3d", "hilbert", 8, "right:2,a:4");
     (* four pieces dropped around the pit, a fifth on its way down: the
      * settled cubes darker the deeper they lie, and the lit ring of the
      * well marking the level this one will land on *)

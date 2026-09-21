@@ -86,7 +86,7 @@
 )
 
 ; claude: copy the .html pages into _build/default/games3d/webgl/
-; next to the generated .bc.js (same trick as examples3d/js/dune).
+; next to the generated .bc.js (same trick as examples3d/web/dune).
 ; TinyMinecraft's texture needs no copy here any more: it travels
 ; inside the program, and the browser gets it as a "data:" URL (see
 ; Playground3d.embedded_texture).

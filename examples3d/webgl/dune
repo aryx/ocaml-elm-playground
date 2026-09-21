@@ -1,6 +1,6 @@
 ; claude: examples linked against elm_playground_3d_webgl.
 ; The backend-agnostic ../*.ml as-is, via copy_files (a build-time
-; copy, not a committed duplicate, see ../js/dune).
+; copy, not a committed duplicate, see ../web/dune).
 (copy_files ../Triangle3d.ml)
 (copy_files ../Cube3d.ml)
 (copy_files ../Cubes3d.ml)
@@ -61,7 +61,7 @@
 )
 
 ; claude: copy the .html pages into _build/default/examples3d/webgl/
-; next to the generated .bc.js (same trick as ../js/dune), and the
+; next to the generated .bc.js (same trick as ../web/dune), and the
 ; textures where the pages look for them (see examples3d/dune)
 (rule
   (alias default)

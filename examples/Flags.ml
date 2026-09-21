@@ -12,7 +12,7 @@
  * arrow keys move it:
  *
  *   dune exec examples/Flags.exe -- color=red speed=3 whatever
- *   http://localhost:8001/examples/js/Flags.html?color=red&speed=3&whatever
+ *   http://localhost:8001/examples/web/Flags.html?color=red&speed=3&whatever
  *
  * (the web page with 'make serve-build'). Without flags: a purple
  * square, at speed 1. *)

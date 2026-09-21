@@ -44,8 +44,8 @@ the pixels itself and one handing the scene to the GPU:
 
 |         | CPU                         | GPU                                  |
 | ------- | --------------------------- | ------------------------------------ |
-| native  | **software** (`examples3d/`) | **opengl** (`examples3d/opengl/`)   |
-| browser | **web**, SVG (`examples3d/js/`) | **webgl** (`examples3d/webgl/`)  |
+| native  | **software** (`examples3d/software/`) | **opengl** (`examples3d/`)   |
+| browser | **web**, SVG (`examples3d/web/`) | **webgl** (`examples3d/webgl/`)  |
 
 - **software** (`elm_playground_3d_software`): a real, from-scratch
   software rasterizer -- perspective projection, backface culling,
@@ -73,21 +73,22 @@ Try it
 ------
 
 ```bash
-dune exec examples3d/Cube3d.exe          # a single spinning cube
+dune exec examples3d/software/Cube3d.exe # a single spinning cube
 dune exec examples3d/Cubes3d.exe         # a grid of overlapping cubes, orbited by the camera
 dune exec examples3d/TexturedCube3d.exe  # a cube wrapped with a test texture
-dune exec examples3d/InteractiveCube3d.exe  # arrow keys/mouse move a cube around a small scene
-dune exec examples3d/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see the "z" toggle below
-dune exec examples3d/Corridor3d.exe      # walk down a corridor (up/down arrows); see the "c" toggle below
+dune exec examples3d/software/InteractiveCube3d.exe  # arrow keys/mouse move a cube around a small scene
+dune exec examples3d/software/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see the "z" toggle below
+dune exec examples3d/software/Corridor3d.exe  # walk down a corridor (up/down arrows); see the "c" toggle below
 dune exec games3d/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
 dune exec games3d/TinyDescent3d.exe      # fly a ship through a mine, in any direction (arrows, a/d, w/s)
 dune exec games3d/TinyQuake.exe          # a Quake level: qbsp, vis and light at startup, "v" shows what vis saves
 ```
 
-The same, on the GPU: `dune exec examples3d/opengl/Cubes3d.exe`. In a
+The examples above already run on the GPU by default; the same, on the
+software rasterizer: `dune exec examples3d/software/Cubes3d.exe`. In a
 browser: `make serve-build`, then e.g.
 http://localhost:8001/examples3d/webgl/TexturedCube3d.html (or
-`js/` instead of `webgl/` for the SVG backend). The pages must be
+`web/` instead of `webgl/` for the SVG backend). The pages must be
 served over HTTP, not opened as files, for the WebGL ones' textures to
 load (the Makefile's comment above `serve-build` says why).
 
@@ -115,12 +116,12 @@ and why). Without the flag they're off, so a game can use any key:
 
 The window title shows every toggle's current state.
 
-The OpenGL backend (`examples3d/opengl/`, `games3d/` -- its top-level
-default) has `m`
+The OpenGL backend (`examples3d/` and `games3d/` -- both top-level
+defaults now) has `m`
 (no lighting, flat, smooth), `b`, `f`, and `i` too, with `-debug-keys`
 as well, and `o`: its optimization, keeping the GPU buffers of
 `Playground3d.cached3d` shapes from frame to frame (try
-`games3d/TinyMinecraft.exe` or `examples3d/opengl/CachedGrid3d.exe`
+`games3d/TinyMinecraft.exe` or `examples3d/CachedGrid3d.exe`
 with `-debug`, which logs the draw calls and vertices uploaded), and `u`:
 the HUD off, to tell whether a slow frame is the scene's fault or the
 HUD's, which this backend draws on the CPU (with `-debug`, the log

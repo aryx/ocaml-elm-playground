@@ -6,7 +6,7 @@
 // modify it under the terms of the GNU Lesser General Public License
 // version 2.1 as published by the Free Software Foundation.
 //
-// Run a compiled web Playground app (a .bc.js from examples/js/ or
+// Run a compiled web Playground app (a .bc.js from examples/web/ or
 // games/web/) in node, without a browser, with a tiny fake DOM, to debug
 // hangs and exceptions that are hard to observe in Chrome (a tab stuck in
 // an infinite loop can't even show its console).

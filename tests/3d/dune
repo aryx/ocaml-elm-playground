@@ -14,27 +14,27 @@
  )
  (deps
    (glob_files golden/*.png)
-   %{project_root}/examples3d/Triangle3d.exe
-   %{project_root}/examples3d/Cube3d.exe
-   %{project_root}/examples3d/Cubes3d.exe
-   %{project_root}/examples3d/Spheres3d.exe
-   %{project_root}/examples3d/PhysicsSolarSystem3d.exe
-   %{project_root}/examples3d/PhysicsSpin3d.exe
-   %{project_root}/examples3d/PhysicsFloat3d.exe
-   %{project_root}/examples3d/PhysicsHitbox3d.exe
-   %{project_root}/examples3d/PhysicsBounce3d.exe
-   %{project_root}/examples3d/PhysicsMarbles3d.exe
-   %{project_root}/examples3d/PhysicsRoll3d.exe
-   %{project_root}/examples3d/PhysicsStack3d.exe
-   %{project_root}/examples3d/PhysicsWalk3d.exe
-   %{project_root}/examples3d/PhysicsRagdoll3d.exe
-   %{project_root}/examples3d/LogoFractals3d.exe
-   %{project_root}/examples3d/TexturedCube3d.exe
-   %{project_root}/examples3d/InteractiveCube3d.exe
-   %{project_root}/examples3d/PaintersAlgorithmFail3d.exe
-   %{project_root}/examples3d/FloatingCity3d.exe
-   %{project_root}/examples3d/Corridor3d.exe
-   %{project_root}/examples3d/CachedGrid3d.exe
+   %{project_root}/examples3d/software/Triangle3d.exe
+   %{project_root}/examples3d/software/Cube3d.exe
+   %{project_root}/examples3d/software/Cubes3d.exe
+   %{project_root}/examples3d/software/Spheres3d.exe
+   %{project_root}/examples3d/software/PhysicsSolarSystem3d.exe
+   %{project_root}/examples3d/software/PhysicsSpin3d.exe
+   %{project_root}/examples3d/software/PhysicsFloat3d.exe
+   %{project_root}/examples3d/software/PhysicsHitbox3d.exe
+   %{project_root}/examples3d/software/PhysicsBounce3d.exe
+   %{project_root}/examples3d/software/PhysicsMarbles3d.exe
+   %{project_root}/examples3d/software/PhysicsRoll3d.exe
+   %{project_root}/examples3d/software/PhysicsStack3d.exe
+   %{project_root}/examples3d/software/PhysicsWalk3d.exe
+   %{project_root}/examples3d/software/PhysicsRagdoll3d.exe
+   %{project_root}/examples3d/software/LogoFractals3d.exe
+   %{project_root}/examples3d/software/TexturedCube3d.exe
+   %{project_root}/examples3d/software/InteractiveCube3d.exe
+   %{project_root}/examples3d/software/PaintersAlgorithmFail3d.exe
+   %{project_root}/examples3d/software/FloatingCity3d.exe
+   %{project_root}/examples3d/software/Corridor3d.exe
+   %{project_root}/examples3d/software/CachedGrid3d.exe
    %{project_root}/games3d/software/StarCollector3d.exe
    %{project_root}/games3d/software/TinyBattlezone3d.exe
    %{project_root}/games3d/software/TinyElite3d.exe

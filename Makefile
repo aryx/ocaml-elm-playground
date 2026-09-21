@@ -20,7 +20,7 @@ OPAMS=\
 default: all
 
 # claude: @default (recursive) rather than plain 'dune build' so the
-# 'default' alias in examples/js/ and games/web/ is used and their .html
+# 'default' alias in examples/web/ and games/web/ is used and their .html
 # files are copied into _build/ next to the generated .bc.js
 all: $(OPAMS)
 	dune build @default
@@ -32,15 +32,15 @@ install:
 # to test the native programs, run make and then go to
 # _build/default/examples/ (or games/) and run the .exe there
 # to test the web programs, run also make and then go to
-# _build/default/examples/js/ (or games/web/) under chrome for instance
-# with open -a "Google Chrome" _build/default/examples/js
+# _build/default/examples/web/ (or games/web/) under chrome for instance
+# with open -a "Google Chrome" _build/default/examples/web
 # claude: or use 'make serve-build' below, required for the WebGL
 # pages with textures.
 
 # claude: build, then serve _build/default/ over HTTP, for the web
 # programs, e.g.
 #   http://localhost:8001/examples3d/webgl/TexturedCube3d.html
-#   http://localhost:8001/examples/js/Mario.html
+#   http://localhost:8001/examples/web/Mario.html
 # Opening their .html directly (file://) works for most of them, but
 # not for a WebGL page with textures: WebGL refuses to read the pixels
 # of an image it considers from another site (it would let the page
@@ -114,7 +114,7 @@ doc:
 # which is hand-edited, nor the toy-game/toy-web-game docs that odoc also
 # generates from docs/toy-*-example/), and copy each freshly built web
 # example/game (.bc.js + its .html page) to docs/examples/ and docs/games/.
-# claude: and the 3D examples (examples3d/js/) to docs/examples3d/.
+# claude: and the 3D examples (examples3d/web/) to docs/examples3d/.
 # claude: and the WebGL 3D examples/games (examples3d/webgl/,
 # games3d/webgl/) to docs/examples3d/webgl/ and docs/games3d/webgl/,
 # a subdirectory since the same names exist for both web backends;
@@ -133,13 +133,7 @@ website:
 	  chmod -R u+w docs/$$d; \
 	done
 	make js
-	for d in examples examples3d; do \
-	  for js in _build/default/$$d/js/*.bc.js; do \
-	    b=`basename $$js .bc.js`; \
-	    install -m 644 $$js $$d/js/$$b.html docs/$$d/; \
-	  done; \
-	done
-	for d in games games2.5d; do \
+	for d in examples examples3d games games2.5d; do \
 	  for js in _build/default/$$d/web/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
 	    install -m 644 $$js $$d/web/$$b.html docs/$$d/; \
@@ -164,8 +158,8 @@ serve:
 js:
 	dune build games/web --profile=release-js
 	dune build games2.5d/web --profile=release-js
-	dune build examples/js --profile=release-js
-	dune build examples3d/js --profile=release-js
+	dune build examples/web --profile=release-js
+	dune build examples3d/web --profile=release-js
 	dune build examples3d/webgl --profile=release-js
 	dune build games3d/webgl --profile=release-js
 
