@@ -24,7 +24,7 @@ let square : Render.face =
 let center_pixel ?(options = Render.default_options) ~eye_z () =
   let fb = Framebuffer.create ~width:20 ~height:20 in
   let zbuffer = Zbuffer.create ~width:20 ~height:20 in
-  let camera : Camera.t = { eye = (0., 0., eye_z); target = (0., 0., 0.); up = (0., 1., 0.); fov = 90.; near = 0.1; far = 100. } in
+  let camera : Camera.t = { eye = (0., 0., eye_z); target = (0., 0., 0.); up = (0., 1., 0.); fov = 90.; ortho = 0.; near = 0.1; far = 100. } in
   Render.render ~options:{ options with shading = Shading.Flat_color } fb zbuffer camera [ square ];
   Framebuffer.get_rgb fb ~x:10 ~y:10
 
@@ -38,7 +38,7 @@ let test_behind_camera () =
   Alcotest.(check int) "the camera looking away: nothing" 0xFFFFFF
     (let fb = Framebuffer.create ~width:20 ~height:20 in
      let zbuffer = Zbuffer.create ~width:20 ~height:20 in
-     let camera : Camera.t = { eye = (0., 0., 5.); target = (0., 0., 10.); up = (0., 1., 0.); fov = 90.; near = 0.1; far = 100. } in
+     let camera : Camera.t = { eye = (0., 0., 5.); target = (0., 0., 10.); up = (0., 1., 0.); fov = 90.; ortho = 0.; near = 0.1; far = 100. } in
      Render.render ~options:{ Render.default_options with backface_culling = false } fb zbuffer camera [ square ];
      Framebuffer.get_rgb fb ~x:10 ~y:10)
 

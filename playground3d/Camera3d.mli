@@ -94,6 +94,66 @@ val orbit : ?fov:number -> distance:number -> height:number -> look:number -> nu
  * 0.2, about 90% of the way in 10 frames (1 - 0.8^10 = 0.89). *)
 val follow : number -> camera -> camera -> camera
 
+(* [orthographic ~height cam]: [cam] with its perspective taken away.
+ * [height] of the world fits up the screen -- at every depth, which is
+ * the whole point: two equal things are drawn equal however far apart
+ * they are.
+ *
+ * The words around this are worth untangling once, because games use
+ * them loosely:
+ *
+ *   projection
+ *     |
+ *     +- perspective ....... divide x and y by the depth. Things
+ *     |                      shrink with distance, parallel rails
+ *     |                      meet. Photographs; first-person games.
+ *     |
+ *     +- parallel .......... do not divide. Nothing shrinks, parallel
+ *          |                 stays parallel. Plans and blueprints;
+ *          |                 strategy, puzzle and isometric games.
+ *          |
+ *          +- orthographic .. the rays are square to the picture
+ *               |             (this function)
+ *               |
+ *               +- axonometric .. and the *world* is turned first, so
+ *                    |            that three faces of a cube show at
+ *                    |            once
+ *                    |
+ *                    +- isometric: turned so the three axes are
+ *                    |             equally foreshortened -- the view
+ *                    |             direction (1, 1, 1), the axes 120
+ *                    |             degrees apart on the screen
+ *                    |
+ *                    +- dimetric, trimetric: two of them equal, or
+ *                                  none. Most games called isometric
+ *                                  are really one of these: they pick
+ *                                  a 2:1 diamond because it draws
+ *                                  without seams on a pixel grid.
+ *
+ * So: this function gives you the *parallel* half; pointing the camera
+ * along (1, 1, 1) gives you the isometric part. Together they are what
+ * kits/isometric does by hand on the 2D playground, two lines of
+ * arithmetic and a sort.
+ *
+ * What it costs, and what that buys:
+ *
+ *   the view direction (1, 1, 1) sends these two world points
+ *   to the same pixel, and every pair like them:
+ *
+ *       (0, 0, 0)          .  <- both drawn here
+ *       (3, 3, 3)
+ *
+ *   - an isometric game must therefore draw a *shadow* under anything
+ *     off the ground, or the player cannot tell how high it is
+ *     (games2.5d/TinyZaxxon.ml is built around that shadow);
+ *   - and a game can instead take the ambiguity as its material:
+ *     games3d/TinyMonumentValley.ml joins a near stair to a far one
+ *     because, from here, they touch.
+ *
+ * The depth still decides what is in front of what -- the z-buffer
+ * works exactly as before. Only the divide by it is gone. *)
+val orthographic : height:number -> camera -> camera
+
 (* {1 The world around} *)
 
 (* [floor ?color ?ground cam]: a floor at the height [ground],

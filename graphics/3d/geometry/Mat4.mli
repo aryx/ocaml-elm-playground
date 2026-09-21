@@ -16,6 +16,12 @@ val look_at : ?up:Vec3.t -> eye:Vec3.t -> target:Vec3.t -> unit -> t
  * [near]..[far] to -1..+1 (what a GPU's depth test expects) *)
 val perspective : fov_degrees:float -> aspect:float -> near:float -> far:float -> t
 
+(* [orthographic ~height ~aspect ~near ~far]: the projection with no
+ * perspective in it -- a box, not a pyramid, so nothing shrinks with
+ * distance. [height] is how much of the world fits up the screen, the
+ * same at every depth. *)
+val orthographic : height:float -> aspect:float -> near:float -> far:float -> t
+
 (* [mul a b] applied to a point means "apply b first, then a", so
  * [mul projection view] is "view, then project" *)
 val mul : t -> t -> t

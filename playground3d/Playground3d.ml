@@ -283,10 +283,10 @@ let cached3d (shapes : shape3d list) : shape3d =
 (* Camera *)
 (*****************************************************************************)
 
-type camera = { eye : vec3; target : vec3; up : vec3; fov : number; near : number; far : number }
+type camera = { eye : vec3; target : vec3; up : vec3; fov : number; ortho : number; near : number; far : number }
 
-let camera ~eye ~target ?(up = (0., 1., 0.)) ?(fov = 60.) ?(near = 0.1) ?(far = 1000.) () =
-  { eye; target; up; fov; near; far }
+let camera ~eye ~target ?(up = (0., 1., 0.)) ?(fov = 60.) ?(ortho = 0.) ?(near = 0.1) ?(far = 1000.) () =
+  { eye; target; up; fov; ortho; near; far }
 
 (*****************************************************************************)
 (* Project (3D -> 2D pipeline) *)
@@ -297,7 +297,7 @@ let camera ~eye ~target ?(up = (0., 1., 0.)) ?(fov = 60.) ?(near = 0.1) ?(far = 
 let project (camera : camera) (screen : Playground.screen) (point : vec3) :
     (number * number) option =
   let camera : Camera.t =
-    { eye = camera.eye; target = camera.target; up = camera.up; fov = camera.fov; near = camera.near; far = camera.far }
+    { eye = camera.eye; target = camera.target; up = camera.up; fov = camera.fov; ortho = camera.ortho; near = camera.near; far = camera.far }
   in
   Camera.view camera point
   |> Camera.ndc camera ~aspect:(screen.width / screen.height)

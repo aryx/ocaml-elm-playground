@@ -37,8 +37,49 @@ type t = {
    * turns the other way (a plane banking, Descent's ship). Only its
    * part across [forward] counts (see [basis]). *)
   up : Vec3.t;
-  (* vertical field of view, in degrees *)
+  (* vertical field of view, in degrees; not used when [ortho] is set *)
   fov : float;
+  (* 0 for a perspective camera, which is the usual one; otherwise the
+   * height of the view in world units, and the camera is
+   * *orthographic*: it does not divide by the depth at all.
+   *
+   * The two kinds of camera differ in one thing only, where the rays
+   * that reach the picture come from:
+   *
+   *    perspective: they meet at the eye      orthographic: they are
+   *                                           parallel -- no eye, only
+   *                                           a direction
+   *
+   *      far      near                          far      near
+   *     +----+   +--+                          +----+   +----+
+   *      \    \   |  |                          |    |   |    |
+   *       \    \  |  |                          |    |   |    |
+   *        \    \ |  |                          |    |   |    |
+   *         +----+ +--+---> o  the eye           +----+   +----+
+   *                                                |        |
+   *     the far wall is drawn smaller           both walls are drawn
+   *     (x and y divided by the depth z)        exactly the same size
+   *
+   * So with [ortho = 10.], ten units of world fit up the screen at
+   * *every* depth: a thing 5 up is half way to the top whether it is
+   * 10 away or 90. With [fov = 90.] instead, 5 up is half way at a
+   * depth of 10 and a tenth of the way at 90.
+   *
+   * The depth is still computed and still used -- for the near and far
+   * planes, and for the z-buffer deciding what is in front -- it is
+   * only the *divide* that is gone.
+   *
+   * What it is for: plans and blueprints, strategy and puzzle games,
+   * and above all the isometric view, which is this projection from a
+   * particular direction (see Playground3d's Camera3d.orthographic for
+   * the family, and kits/isometric, which does the same arithmetic by
+   * hand on the 2D playground). It has one famous consequence: with
+   * the view direction (1, 1, 1), the points (0, 0, 0) and (3, 3, 3)
+   * land on the same pixel, and nothing in the picture can tell them
+   * apart. An isometric game therefore draws a shadow to say how high
+   * a thing is -- and games3d/TinyMonumentValley builds its impossible
+   * staircases out of exactly that ambiguity. *)
+  ortho : float;
   (* only what's between these two depths is drawn *)
   near : float;
   far : float;
@@ -53,11 +94,13 @@ val basis : ?up:Vec3.t -> eye:Vec3.t -> target:Vec3.t -> unit -> Vec3.t * Vec3.t
  * along up, along forward = depth) *)
 val view : t -> Vec3.t -> Vec3.t
 
-(* f = 1 / tan(fov / 2), the scale of the perspective *)
+(* f = 1 / tan(fov / 2), the scale of the perspective (of no use to an
+ * orthographic camera, which has none) *)
 val focal : t -> float
 
 (* [ndc camera ~aspect (x, y, z)]: a point already in view coordinates,
- * perspective-divided to normalized device coordinates, x and y in
+ * divided by its depth (or, for an orthographic camera, not divided at
+ * all) to normalized device coordinates, x and y in
  * -1..1 for what's in view; [aspect] is the screen's width / height (x
  * is squeezed by it, so a square stays square). None when its depth z
  * is not between [near] (included: where Clip puts the points it

@@ -59,6 +59,17 @@ let perspective ~(fov_degrees : float) ~(aspect : float) ~(near : float) ~(far :
   let b = -2. *. far *. near /. (far -. near) in
   [| f /. aspect; 0.; 0.; 0.; 0.; f; 0.; 0.; 0.; 0.; a; b; 0.; 0.; 1.; 0. |]
 
+(* the same box without the pyramid: x and y scaled by how much of the
+ * world fits on the screen, z mapped linearly into -1..1, and w left
+ * at 1 -- which is the whole difference, since it is the divide by w
+ * that makes far things small *)
+let orthographic ~(height : float) ~(aspect : float) ~(near : float) ~(far : float) : t =
+  let h = height /. 2. in
+  [| 1. /. (aspect *. h); 0.; 0.; 0.;
+     0.; 1. /. h; 0.; 0.;
+     0.; 0.; 2. /. (far -. near); -.(far +. near) /. (far -. near);
+     0.; 0.; 0.; 1. |]
+
 (* row-major 4x4 * 4x4 -- [mul a b] then applied to a point means
  * "apply b first, then a" (standard matrix composition), so
  * [mul projection view] is the usual "view, then project" order. *)

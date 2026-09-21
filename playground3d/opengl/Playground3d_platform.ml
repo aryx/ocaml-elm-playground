@@ -626,7 +626,8 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
       unit =
     let aspect = float_of_int sx /. float_of_int sy in
     let view = Mat4.look_at ~up:camera.up ~eye:camera.eye ~target:camera.target () in
-    let projection = Mat4.perspective ~fov_degrees:camera.fov ~aspect ~near:camera.near ~far:camera.far in
+    let projection = (if camera.ortho > 0. then Mat4.orthographic ~height:camera.ortho ~aspect ~near:camera.near ~far:camera.far
+       else Mat4.perspective ~fov_degrees:camera.fov ~aspect ~near:camera.near ~far:camera.far) in
     let mvp = Mat4.mul projection view in
     let mvp_data = Bigarray.Array1.of_array Bigarray.float32 Bigarray.c_layout mvp in
 

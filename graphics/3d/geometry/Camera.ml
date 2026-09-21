@@ -10,7 +10,7 @@
 
 (* See Camera.mli *)
 
-type t = { eye : Vec3.t; target : Vec3.t; up : Vec3.t; fov : float; near : float; far : float }
+type t = { eye : Vec3.t; target : Vec3.t; up : Vec3.t; fov : float; ortho : float; near : float; far : float }
 
 (* the world's "up" *)
 let up_hint : Vec3.t = (0., 1., 0.)
@@ -30,6 +30,11 @@ let focal (camera : t) : float = 1. /. tan (camera.fov *. Float.pi /. 180. /. 2.
 
 let ndc (camera : t) ~(aspect : float) ((x, y, z) : Vec3.t) : (float * float) option =
   if z < camera.near || z >= camera.far then None
+  else if camera.ortho > 0. then
+    (* no perspective at all: the depth is used to decide what is drawn
+     * and what is in front, and for nothing else *)
+    let h = camera.ortho /. 2. in
+    Some (x /. aspect /. h, y /. h)
   else
     let f = focal camera in
     Some (f *. x /. aspect /. z, f *. y /. z)

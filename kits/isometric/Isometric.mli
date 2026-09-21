@@ -17,12 +17,39 @@
    Populous (1989), Syndicate (1993) and Diablo (1996) are all this
    projection with different things standing on it.
 
-   ("Isometric" is the word everyone uses. The pedantic one, and Sega's
-   own in 1982, is *axonometric*: isometric is strictly the case where
-   the three axes are equally foreshortened, which a game's view
-   usually is not -- Zaxxon draws x longer than z so its fortress reads
-   as a corridor, and a tile game usually wants the 2:1 diamond that
-   pixels can draw without seams.)
+   What this is, in the words the textbooks use: a *parallel*
+   projection -- no divide by the depth, so nothing shrinks with
+   distance and parallel lines stay parallel -- and in particular an
+   *axonometric* one, meaning the world is turned before being
+   flattened so that three faces of a cube show at once:
+
+     projection
+       |
+       +- perspective ..... divide by the depth; a photograph
+       |
+       +- parallel ........ do not divide; a blueprint
+            |
+            +- orthographic .. rays square to the picture
+                 |
+                 +- axonometric .. the world turned first (this)
+                      |
+                      +- isometric: the three axes equally
+                      |             foreshortened, i.e. the view
+                      |             direction (1, 1, 1)
+                      +- dimetric, trimetric: two equal, or none
+
+   "Isometric" is the word everyone uses for all of it, and the one
+   this file uses too. Strictly it is the last branch, and a game's
+   view usually is not that: Zaxxon draws x longer than z so its
+   fortress reads as a corridor, and a tile game wants the 2:1 diamond
+   that pixels can draw without seams. Sega's own word in 1982 was
+   axonometric.
+
+   The same projection is available from a real 3D camera --
+   [Playground3d]'s [Camera3d.orthographic], which is a camera with the
+   divide taken out -- and games3d/TinyMonumentValley.ml uses it. This
+   kit is the arithmetic done by hand instead, on the 2D playground,
+   with no camera and no z-buffer anywhere.
 
         y
         |                    far          the two screen vectors:

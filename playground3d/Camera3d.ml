@@ -61,6 +61,8 @@ let follow (fraction : number) (wanted : camera) (cam : camera) : camera =
 (* The world around *)
 (*****************************************************************************)
 
+let orthographic ~(height : number) (c : camera) : camera = { c with ortho = height }
+
 let floor ?(color = rgb 8 10 20) ?(ground = -0.02) (cam : camera) : shape3d =
   let ex, _, ez = cam.eye in
   plane color 1600. 1600. |> move3d ex ground ez

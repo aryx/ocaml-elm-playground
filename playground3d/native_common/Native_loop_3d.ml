@@ -84,7 +84,14 @@ let parse_cli_and_setup_logging () =
   Logs.set_level !level
 
 let mouse_move mx my (mouse : Playground.mouse) : Playground.mouse = { mouse with mx; my }
-let mouse_down mdown (mouse : Playground.mouse) : Playground.mouse = { mouse with mdown }
+(* claude: a release is also a *click*: Playground.mli's [mclick], the
+ * transient that means "do it", which exactly one update sees. The 2D
+ * loop gets it out of its event queue; this one keeps the computer
+ * itself, so it has to say so. Without it a 3D game can only be told
+ * that a button is held, and one driven by clicking
+ * (games3d/TinyMonumentValley) cannot be played at all. *)
+let mouse_down mdown (mouse : Playground.mouse) : Playground.mouse =
+  { mouse with mdown; mclick = ((not mdown) || mouse.mclick) }
 
 (* claude: a press/release of the right button sets mrdown, of any
  * other mdown (the left, main one) *)
@@ -271,9 +278,23 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     (* claude: -script, the keys going down or up at this frame *)
     (match !script with
     | Some sc ->
-        Input_script.changes sc (!frame_number + 1)
+        let frame = !frame_number + 1 in
+        Input_script.changes sc frame
         |> List.iter (fun (key, is_down) ->
-               computer := { !computer with keyboard = update_keyboard is_down key (!computer).keyboard })
+               computer := { !computer with keyboard = update_keyboard is_down key (!computer).keyboard });
+        (* claude: and where the pointer is and what its buttons do,
+         * the same as Native_loop_2d does it -- already in playground
+         * coordinates. A 3D game can be played with a mouse, so its
+         * golden frames have to be able to press things too. *)
+        (match Input_script.mouse sc frame with
+        | Some (x, y) -> computer := { !computer with mouse = mouse_move x y (!computer).mouse }
+        | None -> ());
+        Input_script.button_changes sc frame
+        |> List.iter (fun (right, is_down) ->
+               let m = (!computer).mouse in
+               computer :=
+                 { !computer with
+                   mouse = (if right then { m with mrdown = is_down } else mouse_down is_down m) })
     | None -> ());
 
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
@@ -282,7 +303,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     (* claude: the moves [update] just saw are consumed *)
     computer :=
       { !computer with
-        mouse = { (!computer).mouse with mdx = 0.; mdy = 0.; mwheel = 0.; mdouble = false };
+        mouse = { (!computer).mouse with mdx = 0.; mdy = 0.; mwheel = 0.; mdouble = false; mclick = false };
         keyboard = { (!computer).keyboard with typed = "" } };
 
     let t0 = Unix.gettimeofday () in

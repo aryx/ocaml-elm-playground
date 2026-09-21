@@ -11,7 +11,7 @@
 (* See Shape3d_render_software.mli *)
 
 let camera (camera : Playground3d.camera) : Camera.t =
-  { eye = camera.eye; target = camera.target; up = camera.up; fov = camera.fov; near = camera.near; far = camera.far }
+  { eye = camera.eye; target = camera.target; up = camera.up; fov = camera.fov; ortho = camera.ortho; near = camera.near; far = camera.far }
 
 (*****************************************************************************)
 (* Colors and textures *)

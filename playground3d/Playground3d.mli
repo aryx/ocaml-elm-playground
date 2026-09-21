@@ -282,6 +282,14 @@ type camera = {
    * the other way (a plane banking, games3d/TinyDescent3d's ship) *)
   up : number * number * number;
   fov : number;
+  (** 0 for the usual camera, which has perspective. Otherwise the
+      height of the view in world units, the same at every depth: an
+      orthographic camera, which never divides by the depth, so two
+      things of one size are drawn one size however far apart they are.
+      That is what an isometric game is drawn with (see
+      [kits/isometric], which does the same two lines by hand), and
+      what {!Camera3d.orthographic} sets. *)
+  ortho : number;
   near : number;
   far : number;
 }
@@ -291,6 +299,7 @@ val camera :
   target:number * number * number ->
   ?up:number * number * number (** which way is up on the screen. Default (0, 1, 0). *) ->
   ?fov:number (** vertical field of view, in degrees. Default 60. *) ->
+  ?ortho:number (** the view's height in world units, for a camera with no perspective; default 0., which means use [fov]. *) ->
   ?near:number (** default 0.1 *) ->
   ?far:number (** default 1000. *) ->
   unit ->
