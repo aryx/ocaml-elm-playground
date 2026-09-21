@@ -147,8 +147,8 @@ let scripted : Testutil_golden.scripted list =
     (* a portal in the floor, one on the wall over the ledge (seen
      * through: the ceiling, from the floor portal); walked into the
      * floor, flung out of the wall onto the ledge, looking out *)
-    ("games3d/software/TinyPortal", "portals", 62, "space:1,right:2-6,down:7-25,q:27,up:30-58,e:61,down:64-73,w:75-110");
-    ("games3d/software/TinyPortal", "fling", 150, "space:1,right:2-6,down:7-25,q:27,up:30-58,e:61,down:64-73,w:75-110");
+    ("games3d/software/TinyPortal", "portals", 62, "space:1,right:2-6,down:7-25,z:27,up:30-58,x:61,down:64-73,w:75-110");
+    ("games3d/software/TinyPortal", "fling", 150, "space:1,right:2-6,down:7-25,z:27,up:30-58,x:61,down:64-73,w:75-110");
     ("games3d/software/TinyHalfLife2", "grab", 240, "space:1,w:2-166,down:170-185,z:190,up:195-215");
     ("games3d/software/TinyPinball3d", "flippers", 15, "space:1,left:2-15,right:2-15");
     ("games3d/software/TinyPinball3d", "launch", 95, "space:1,space:3-62");

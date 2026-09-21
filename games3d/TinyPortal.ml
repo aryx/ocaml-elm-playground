@@ -11,9 +11,10 @@
  * is the Flash version's. One test chamber: the weighted cube is up on
  * a ledge four metres high, the button that opens the exit is on the
  * floor, and no jump reaches the ledge. W/A/S/D and space to walk and
- * jump, the arrows (or the mouse) to look, q (or a click) for the blue
- * portal, e (or a right click) for the orange one -- on the white
- * panels only -- and f to pick up or drop the cube.
+ * jump, the arrows (or the mouse) to look, z (or a click) for the blue
+ * portal, x (or a right click) for the orange one -- on the white
+ * panels only -- and f to pick up or drop the cube. (Not q: the native
+ * backends quit on it, every game's.)
  *
  * The way up is Portal's first lesson: a portal in the floor, one on
  * the wall above the ledge, and walk into the floor. A portal pair is
@@ -292,10 +293,10 @@ let update_game (computer : computer) (g : game) : game =
   let down key = Set_.mem key computer.keyboard.keys in
   let pressed key = down key && not (List.mem key g.keys_down) in
   let m = computer.mouse in
-  let keys_down = List.filter down [ "q"; "e"; "f" ] @ (if m.mdown then [ "click" ] else []) @ if m.mrdown then [ "rclick" ] else [] in
+  let keys_down = List.filter down [ "z"; "x"; "f" ] @ (if m.mdown then [ "click" ] else []) @ if m.mrdown then [ "rclick" ] else [] in
   let was_open = door_open g in
-  let g = if pressed "q" || (m.mdown && not (List.mem "click" g.keys_down)) then shoot g true else g in
-  let g = if pressed "e" || (m.mrdown && not (List.mem "rclick" g.keys_down)) then shoot g false else g in
+  let g = if pressed "z" || (m.mdown && not (List.mem "click" g.keys_down)) then shoot g true else g in
+  let g = if pressed "x" || (m.mrdown && not (List.mem "rclick" g.keys_down)) then shoot g false else g in
   let before_me = g.me and before_cube = List.hd g.world.bodies in
   let g = walk computer g in
   let g = through_me g before_me in
@@ -405,7 +406,7 @@ let scene_shapes (g : game) : shape3d list =
 let hud_shapes (screen : screen) (g : game) : shape list =
   [ rectangle (if g.blue = None then gray else blue) 12. 3. |> move (-10.) 0.;
     rectangle (if g.orange = None then gray else orange) 12. 3. |> move 10. 0.; rectangle white 2. 2.;
-    text (rgb 60 60 70) 1.8 "q: blue portal   e: orange portal   f: the cube" |> move_y (screen.bottom +. 25.) ]
+    text (rgb 60 60 70) 1.8 "z: blue portal   x: orange portal   f: the cube" |> move_y (screen.bottom +. 25.) ]
 
 let view (computer : computer) (s : model) : camera * shape3d list =
   let screen = computer.screen in
