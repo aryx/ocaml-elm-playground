@@ -1,0 +1,10 @@
+; claude: HyperCard's language (see
+; docs/claude_notes/plans/plan_gui_teaching.md): HyperTalk's words
+; parsed and run against a world given as functions, so that it knows
+; nothing of cards or screens (Hypertalk). Used by apps/TinyHyperCard.
+; A private library, installed as part of elm_playground: pure OCaml.
+(library
+ (name appkit_hypertalk)
+ (package elm_playground)
+ (wrapped false)
+)

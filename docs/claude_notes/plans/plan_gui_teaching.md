@@ -1428,6 +1428,49 @@ every slide; the sorter; a slide typed into the outline and shown
 beside it; the show halfway through a push; the sheet on slide 4
 edited in place, its formula following.
 
+### TinyHyperCard, DONE (2026-09-21), awaiting review
+
+The plan's stretch app (Bill Atkinson, Apple, 1987): programming for
+people who did not think of themselves as programmers.
+
+**`appkits/hypertalk/Hypertalk`** (`appkit_hypertalk`): the language,
+a lexer and a recursive-descent parser a line at a time, run against a
+world given as a record of functions (`get_field`, `set_field`, `go`,
+`answer`, `beep`, ...) threaded through as a value -- so it knows
+nothing of cards, and its tests run scripts against three strings in a
+list. The subset: handlers; put (into, after, before), add, subtract,
+go, answer, beep, if (one line, or a block), repeat n times and with
+i = a to b, pass, and a word on its own line as a message of your own;
+every value a string ("3" + 4 is 7, 7 & "up" is "7up"), an unset word
+standing for itself. And **the message path**: `send` goes along the
+scripts from the target up, to the first handler, and on from there if
+it passes -- button, card, background, stack. Two bugs of mine on the
+way, both the same: past the last token `peek` answered "end of line",
+so skipping blank lines at the end never stopped.
+
+**`apps/TinyHyperCard.ml`**: a stack of cards the Mac's size (512 by
+342, shown 1.6 times), one background with a Title and a Page field
+and Prev/Next buttons -- each card keeping its own text in the
+background's fields, HyperCard's card-as-record idea -- and four cards
+that explain themselves: a button counting its clicks and answering at
+ten, the message path with `pass` shown in a log, and a "your turn"
+card with a picture. The stack's script answers "openCard" for every
+card and numbers the pages. Tools: Browse (every field a live text area
+of the toolkit, asked for every frame -- immediate mode taken at its
+word), Button and Field (select, drag, Objects > Script... to read and
+write the script in an editor that checks it on Close), Pencil (the
+MacPaint engine on the card's picture). Objects > New Button / Field /
+Card, Delete Part; Go menu and arrow keys; `answer` as a dialog with an
+OK button; `beep` as a flash. One bug found by a scene: a press on a
+menu's title is not yet the menu's (it becomes modal on release), so
+the authoring tools now take presses only on the card.
+
+Tests: `appkits/tests` 79 (6 new: the .mli's example, values as
+strings, the control structures, the message path and `pass`, your own
+commands, mistakes and their line numbers), the 2D golden suite 173
+with six frames: the first card, clicks counted, the message path, the
+answer at ten, the script editor, a new button dragged into place.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

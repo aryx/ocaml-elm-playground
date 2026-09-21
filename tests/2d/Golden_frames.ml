@@ -81,6 +81,9 @@ let scenes : Testutil_golden.scene list =
     ("apps/software/TinyOpenDoc", "", 5);
     (* 1987: a slide made from the outline, in the master's look *)
     ("apps/software/TinyPowerPoint", "", 5);
+    (* 1987: a card, its background's fields and buttons, and the page
+     * number the stack's script wrote on it when it opened *)
+    ("apps/software/TinyHyperCard", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -589,6 +592,36 @@ let scripted : Testutil_golden.scripted list =
       "typed",
       16,
       "at(300;66):1-3,click:2,type( Plus):5,return:7,type(Two years after the first Mac):9,tab:11,at(400;-480):12-16"
+    );
+    (* Next, then the button clicked three times: its script counts *)
+    ( "apps/software/TinyHyperCard",
+      "clicks",
+      16,
+      "at(299;-204):1-4,click:2,at(0;79):5-16,click:7,click:10,click:13" );
+    (* the message path: "Pass it on" answers and passes, the card's
+     * script answers next -- twice *)
+    ( "apps/software/TinyHyperCard",
+      "path",
+      16,
+      "at(299;-204):1-7,click:2,click:5,at(-236;150):8-16,click:9,click:12" );
+    (* ten clicks, and the script's "answer" *)
+    ( "apps/software/TinyHyperCard",
+      "answer",
+      30,
+      "at(299;-204):1-4,click:2,at(0;79):5-40,click:6,click:8,click:10,click:12,click:14,click:16,click:18,click:20,click:22,click:24"
+    );
+    (* the button tool, the button selected, Objects > Script...: what it
+     * does, to read and change *)
+    ( "apps/software/TinyHyperCard",
+      "script",
+      20,
+      "at(299;-204):1-4,click:2,at(455;202):5-7,click:6,at(0;79):8-10,click:9,at(-190;470):11-13,click:12,at(-190;401):14-16,click:15,at(600;-600):17-20"
+    );
+    (* Objects > New Button, dragged where it goes *)
+    ( "apps/software/TinyHyperCard",
+      "new",
+      20,
+      "at(-190;470):1-3,click:2,at(-190;257):4-6,click:5,at(0;33):7-9,click:9-14,at(-100;33):11,at(-200;-80):12-16,at(600;-600):17-20"
     );
     ( "apps/software/TinyExcel",
       "edited",
