@@ -432,6 +432,16 @@ let scripted : Testutil_golden.scripted list =
      * it -- =B2*C2 becoming =B3*C3, =B4*C4, =B5*C5, which is what
      * relative references are for -- the total following, and
      * Chart > Show drawing the bars *)
+    (* editing a cell through the bar, which is scriptable because
+     * backspace is a *key* and not a character: C2 selected, the bar
+     * clicked, one backspace turning 120 into 12, Enter -- and D2,
+     * which reads C2, following to 54. It is here because it did not
+     * work: the bar was refreshed from the cell on every frame, so a
+     * keystroke was undone before it could be seen *)
+    ( "apps/software/TinyExcel",
+      "edited",
+      20,
+      "at(19;84):1-5,click:3,at(100;181):6-10,click:8,backspace:11,return:14,at(19;84):16-20" );
     ( "apps/software/TinyExcel",
       "filled",
       40,

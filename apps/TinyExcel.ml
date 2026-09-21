@@ -206,12 +206,12 @@ let update computer model =
   (* the menus. A command menu is a dropdown whose first item is its
      own name: choosing anything else does it, and back it goes *)
   let picked = Gui.menu_in computer (box Menu_edit) edit_menu model.menu_edit in
-  let model =
+  let model, changed =
     match List.nth_opt edit_menu picked with
-    | Some "Clear" -> { model with sheet = clear model }
-    | Some "Fill Down" -> { model with sheet = fill (0, 1) model }
-    | Some "Fill Right" -> { model with sheet = fill (1, 0) model }
-    | _ -> model
+    | Some "Clear" -> ({ model with sheet = clear model }, true)
+    | Some "Fill Down" -> ({ model with sheet = fill (0, 1) model }, true)
+    | Some "Fill Right" -> ({ model with sheet = fill (1, 0) model }, true)
+    | _ -> (model, false)
   in
   let picked = Gui.menu_in computer (box Menu_chart) chart_menu model.menu_chart in
   let model =
@@ -220,8 +220,13 @@ let update computer model =
     | Some "Hide" -> { model with charting = false }
     | _ -> model
   in
-  (* a command may have changed the cell the bar is showing *)
-  let model = { model with typing = Sheet.raw model.sheet model.focus } in
+  (* A command may have changed the cell the bar is showing -- but
+     only then: refreshing the bar on every frame would put the cell's
+     own text back over whatever is being typed into it, which is a
+     field that cannot be edited *)
+  let model =
+    if changed then { model with typing = Sheet.raw model.sheet model.focus } else model
+  in
   let numbers = selected_numbers model in
   Gui.label_in computer (box Status)
     (Printf.sprintf "%d cell%s selected   recalculated %d   %s"

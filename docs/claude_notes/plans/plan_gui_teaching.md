@@ -1043,6 +1043,20 @@ out, and a formula that moves), `gui/tests` 54, `playground/tests` 58,
 the 2D golden suite 135 -- `TinyExcel` and `TinyExcel filled` added,
 the two `Gui7Cells` frames re-approved for the lit headers.
 
+**The bug the author found by using it** (2026-09-21, after the
+commit): a cell could not be edited through the bar. The update ended
+by refreshing the bar from the selected cell -- meant to catch what a
+menu command had changed, and run on *every* frame -- so each
+keystroke was put back by the next frame before it could be seen. The
+fix is to refresh on the events that should (the selection moved, a
+command ran) and never unconditionally; it is the immediate-mode twin
+of the scattered-truth bug `gui/Retained.mli` is about, and it is now
+in `guide-code-style.md`'s traps. None of the scripted goldens had
+typed into the bar, which is why none caught it: `TinyExcel edited`
+does now (C2 selected, the bar clicked, one backspace turning 120
+into 12, Enter, and D2 following to 54) -- scriptable because
+backspace is a key and not a character. The 2D golden suite is 136.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed
