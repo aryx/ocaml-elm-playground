@@ -242,7 +242,14 @@ Project (ZUN, 1996-).
 - **Toys**: TinyGradius (DONE: `games/TinyGradius.ml`, the cave as two
   strings of digits, the waves a timeline of the kit's Paths, the
   power-up bar, the options on the ship's trail, the Big Core; a robot
-  clears it), TinyTouhou (a boss's
+  clears it), TinyRType (DONE: `games/TinyRType.ml`, Irem, 1987: the
+  Force, a pod nothing destroys, docked in front or behind, sent out and
+  called back to dock on the side it comes to -- a state machine, and
+  a part of yourself you place, a shield docked and a grinder loose;
+  the charged beam that pierces, a bet since charging is not shooting;
+  and the stage ending on a battleship longer than the screen, typed as
+  a Tilemap whose turrets are tiles a hit clears: the level as the
+  enemy; a pilot in the tests takes it down), TinyTouhou (a boss's
   bullet patterns -- spirals, rings, aimed volleys -- and a tiny
   hitbox).
 - **Kit**, the shmup kit:

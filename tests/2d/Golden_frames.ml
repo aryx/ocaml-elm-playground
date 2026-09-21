@@ -158,6 +158,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinySimCity", "", 5);
     ("games/software/TinyCivilization", "", 5);
     ("games/software/TinyMarioWorld", "", 5);
+    ("games/software/TinyRType", "", 5);
     ("games2.5d/software/TinyGuitarHero", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
@@ -374,6 +375,11 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyMarioWorld", "flight", 690, mario_world_keyhole);
     (* back on the map: the secret exit found, the Star Road open *)
     ("games/software/TinyMarioWorld", "secret", 800, mario_world_keyhole);
+    (* the Force sent out ahead, hanging there at the ship's height, the
+       first wave coming in *)
+    ("games/software/TinyRType", "force", 150, "space:1,f:60,up:70-85");
+    (* the beam: space held two seconds, let go *)
+    ("games/software/TinyRType", "beam", 176, "space:1,space:100-170");
     (* the riff's first four notes on Medium, every fret held and each
        strummed on its beat (132 a minute, an eighth 0.227 s) *)
     ("games2.5d/software/TinyGuitarHero", "riff", 305,

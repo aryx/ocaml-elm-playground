@@ -54,6 +54,7 @@
 (copy_files ../TinySimCity.ml)
 (copy_files ../TinyCivilization.ml)
 (copy_files ../TinyMarioWorld.ml)
+(copy_files ../TinyRType.ml)
 
 (executables
   (names
@@ -109,6 +110,7 @@
     TinySimCity
     TinyCivilization
     TinyMarioWorld
+    TinyRType
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

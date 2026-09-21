@@ -56,6 +56,7 @@
     TinySimCity
     TinyCivilization
     TinyMarioWorld
+    TinyRType
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

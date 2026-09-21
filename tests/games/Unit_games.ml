@@ -4918,6 +4918,145 @@ let mw_keyhole () =
   Alcotest.(check bool) "not dead" false !p.dead;
   Alcotest.(check bool) "the secret exit" true (!p.ended = Some Secret)
 
+(*****************************************************************************)
+(* TinyRType *)
+(*****************************************************************************)
+
+let rtype_run (h : TinyRType.hands) (n : int) (g : TinyRType.game) : TinyRType.game =
+  let g = ref g in
+  for _ = 1 to n do g := TinyRType.step h !g done;
+  !g
+
+(* the waves not yet come: a game at frame 0 stays quiet for 100 frames *)
+let rtype_quiet () : TinyRType.game = TinyRType.new_game ()
+
+(* The Force: sent, it flies ahead and stays out, following the ship's
+ * height; called back, it docks -- in front if it comes back to the
+ * front of the ship, behind if the ship has gone past it. *)
+let rtype_force () =
+  let open TinyRType in
+  let g = step { no_hands with send = true } (rtype_quiet ()) in
+  Alcotest.(check bool) "sent" true (match g.force with Flying _ -> true | _ -> false);
+  let g = rtype_run no_hands 40 g in
+  Alcotest.(check bool) "out, and staying out" true (g.force = Loose && g.fx -. g.sx > 300.);
+  let g = rtype_run { no_hands with dy = 1. } 20 g in
+  Alcotest.(check bool) (Printf.sprintf "following the ship's height (%.0f towards %.0f)" g.fy g.sy) true (g.sy > 50. && g.fy > 30. && g.fy <= g.sy);
+  let back = rtype_run no_hands 40 (step { no_hands with send = true } g) in
+  Alcotest.(check bool) "called back: docked in front" true (back.force = Front);
+  (* flying into it docks it (touching the Force picks it up); round
+   * it, ahead of it, and a call brings it in behind *)
+  let touched = rtype_run { no_hands with dx = 1. } 90 g in
+  Alcotest.(check bool) "flown into: docked" true (touched.force = Front);
+  let past = { g with sx = g.fx +. 200. } in
+  let behind = rtype_run no_hands 40 (step { no_hands with send = true } past) in
+  Alcotest.(check bool) "called back: docked behind" true (behind.force = Back)
+
+(* Docked in front, the Force takes a bullet coming at the ship *)
+let rtype_shield () =
+  let open TinyRType in
+  let g = rtype_quiet () in
+  let g = { g with bullets = [ Shots.straight (g.sx +. 120.) g.sy (-6.) 0. ] } in
+  let g = rtype_run no_hands 30 g in
+  Alcotest.(check int) "alive" 0 g.dead;
+  Alcotest.(check int) "the bullet gone" 0 (List.length g.bullets)
+
+(* A tap fires a pellet; held a second, the charge fires a beam of level
+ * 2 when let go, which goes through two brutes in a row *)
+let rtype_beam () =
+  let open TinyRType in
+  let g = rtype_quiet () in
+  let tapped = step { no_hands with fire = true; held = true } g in
+  Alcotest.(check bool) "a tap: pellets" true (List.for_all (fun (s : shot) -> s.kind = Pellet) tapped.shots && tapped.shots <> []);
+  let held = rtype_run { no_hands with held = true } 60 { g with shots = [] } in
+  Alcotest.(check int) "a second held: level 2" 2 (beam_level held.charge);
+  let brute x id = { id; path = Path.make [ (0., 0.); (1., 0.) ]; s = 1.; wait = 0; kind = Brute; x; y = held.sy; hp = 12 } in
+  let fired = step { no_hands with released = true } { held with shots = []; enemies = [] } in
+  Alcotest.(check bool) "let go: a beam" true (List.exists (fun (s : shot) -> match s.kind with Beam (2, _) -> true | _ -> false) fired.shots);
+  (* the brutes set in the beam's way, and kept there *)
+  let g = ref { fired with enemies = [ brute (fired.sx +. 150.) 1000; brute (fired.sx +. 260.) 1001 ] } in
+  for _ = 1 to 20 do
+    g := { !g with enemies = List.map (fun (e : enemy) -> { e with x = e.x +. scroll }) !g.enemies };
+    g := shoot { !g with shots = List.map (fun (s : shot) -> { s with shot = Shots.advance s.shot }) !g.shots }
+  done;
+  Alcotest.(check bool) "through both" true (List.for_all (fun (e : enemy) -> e.hp < 12) !g.enemies && List.length !g.enemies = 2)
+
+(* The battleship: a turret shot goes, the hull stops a shot, the core
+ * counts its hits *)
+let rtype_battleship () =
+  let open TinyRType in
+  let g = { (rtype_quiet ()) with cam = last_cam } in
+  let col, row = List.hd (Tilemap.find g.ship 't') in
+  let tx, ty = Tilemap.center g.ship col row in
+  let g1 = shoot { g with shots = [ { shot = Shots.straight tx ty 16. 0.; kind = Pellet } ] } in
+  Alcotest.(check bool) "a turret shot: gone" true (Tilemap.get g1.ship col row = Some ' ');
+  let hcol, hrow = List.hd (Tilemap.find g.ship '#') in
+  let hx, hy = Tilemap.center g.ship hcol hrow in
+  let g2 = shoot { g with shots = [ { shot = Shots.straight hx hy 16. 0.; kind = Pellet } ] } in
+  Alcotest.(check int) "the hull stops a shot" 0 (List.length g2.shots);
+  let ccol, crow = List.hd (Tilemap.find g.ship 'C') in
+  let cx, cy = Tilemap.center g.ship ccol crow in
+  let g3 = shoot { g with shots = [ { shot = Shots.straight cx cy 16. 0.; kind = Beam (3, []) } ] } in
+  Alcotest.(check int) "a level 3 beam on the core" (core_hits - 12) g3.core
+
+(* A pilot flies the stage: on the left of the screen, charging beams
+ * and letting them go; out of the way of bullets and enemies coming
+ * near; along the battleship level with the top of its core, above the
+ * bridge tower, until the core goes. The keys it pressed are printed
+ * as a -script. *)
+let rtype_pilot () =
+  let open TinyRType in
+  let g = ref (new_game ()) and i = ref 0 and deaths = ref 0 and log = ref [] in
+  let core_y = let c, r = List.hd (Tilemap.find stage 'C') in snd (Tilemap.center stage c r) in
+  let ship_left = bounds.left +. (float_of_int empty_cols *. tile) in
+  while !i < 60 * 60 && !g.won = 0 do
+    incr i;
+    let g0 = !g in
+    let over_ship = g0.cam +. 500. > ship_left in
+    let threat =
+      List.find_opt (fun (b : Shots.t) -> Float.abs (b.x -. g0.sx) < 110. && Float.abs (b.y -. g0.sy) < 45.) g0.bullets
+      |> Option.map (fun (b : Shots.t) -> b.y)
+      |> (function
+          | Some y -> Some y
+          | None ->
+              List.find_opt (fun (e : enemy) -> visible e && Float.abs (e.x -. g0.sx) < 130. && Float.abs (e.y -. g0.sy) < 60.) g0.enemies
+              |> Option.map (fun (e : enemy) -> e.y))
+    in
+    let target_y =
+      match threat with
+      | Some y when over_ship -> core_y +. (if y > g0.sy then -. 0. else 60.)
+      | Some y -> if y > g0.sy then g0.sy -. 70. else g0.sy +. 70.
+      | None -> if over_ship then core_y else 0.
+    in
+    let tx = g0.cam -. 320. in
+    let dy = if target_y > g0.sy +. 4. then 1. else if target_y < g0.sy -. 4. then -1. else 0. in
+    let dx = if tx > g0.sx +. 4. then 1. else if tx < g0.sx -. 4. then -1. else 0. in
+    (* the fire button: held 50 frames, let go for 2 *)
+    let phase = !i mod 52 in
+    let held = phase < 50 in
+    let h = { dx; dy; fire = phase = 0; held; released = phase = 50; send = false } in
+    log := h :: !log;
+    g := step h g0;
+    if !g.dead = 1 && g0.dead = 0 then incr deaths
+  done;
+  Printf.eprintf "pilot: frame %d, won %d, deaths %d, core %d, score %d\n" !i !g.won !deaths !g.core !g.score;
+  let hands = Array.of_list (List.rev !log) in
+  let ranges name get =
+    let out = ref [] and start = ref (-1) in
+    Array.iteri
+      (fun i h ->
+        if get h && !start < 0 then start := i
+        else if (not (get h)) && !start >= 0 then (out := Printf.sprintf "%s:%d-%d" name (!start + 2) (i + 1) :: !out; start := -1))
+      hands;
+    if !start >= 0 then out := Printf.sprintf "%s:%d-%d" name (!start + 2) (Array.length hands + 1) :: !out;
+    List.rev !out
+  in
+  Printf.eprintf "SCRIPT %s\n"
+    (String.concat ","
+       (ranges "up" (fun h -> h.dy > 0.) @ ranges "down" (fun h -> h.dy < 0.) @ ranges "right" (fun h -> h.dx > 0.)
+       @ ranges "left" (fun h -> h.dx < 0.) @ ranges "space" (fun h -> h.held)));
+  Alcotest.(check bool) "the core down" true (!g.won > 0);
+  Alcotest.(check bool) "at most one ship lost" true (!deaths <= 1)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -5160,4 +5299,9 @@ let tests =
       t "TinyMarioWorld, the P meter and the takeoff" mw_takeoff;
       t "TinyMarioWorld, flight is a trade" mw_trade;
       t "TinyMarioWorld, the map and its secret" mw_map;
-      t "TinyMarioWorld, the keyhole in the sky" mw_keyhole ]
+      t "TinyMarioWorld, the keyhole in the sky" mw_keyhole;
+      t "TinyRType, the Force sent and called back" rtype_force;
+      t "TinyRType, the Force as a shield" rtype_shield;
+      t "TinyRType, the beam" rtype_beam;
+      t "TinyRType, the battleship" rtype_battleship;
+      t "TinyRType, a pilot takes the battleship down" rtype_pilot ]

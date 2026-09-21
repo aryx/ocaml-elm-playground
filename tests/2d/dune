@@ -112,6 +112,7 @@
    %{project_root}/games/software/TinySimCity.exe
    %{project_root}/games/software/TinyCivilization.exe
    %{project_root}/games/software/TinyMarioWorld.exe
+   %{project_root}/games/software/TinyRType.exe
    %{project_root}/games2.5d/software/TinyGuitarHero.exe
    %{project_root}/examples/software/LogoFractals.exe
  )
