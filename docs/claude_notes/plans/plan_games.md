@@ -1031,6 +1031,41 @@ Walter Bright's Empire and Francis Tresham's board game; the "4X" genre
   buildings, roads and terraforming, boats, taxes, the rival's own fog,
   diplomacy and more rivals.
 
+### 28. The machine you build: The Incredible Machine
+
+The Incredible Machine (Kevin Ryan, Jeff Tunnell, Dynamix / Sierra,
+1993), after Rube Goldberg's cartoons: a machine to finish from a bin
+of parts, that then runs on its own.
+
+- **Toy**: TinyIncredibleMachine (DONE: `games/TinyIncredibleMachine.ml`,
+  click a part in the bin and click where it goes, r tilts a ramp,
+  space runs the machine and stops it, n the next of four puzzles:
+  ramps, a seesaw, a pulley, a switch and a fan).
+- **Kit**: none; `Physics`, and the engine's new joints
+  (`physics/2d/Joint2d`, `plan_physics_remaining.md` section 1), done
+  for it: a seesaw is a plank on a pin, a pulley two ropes over two
+  wheels.
+- **What it is here for**:
+  - **building, then watching**: an edit mode where nothing moves and
+    a run mode where you touch nothing; the game is design, so the
+    physics must be deterministic (a test runs a machine twice);
+  - **joints** in a game: the pin and the pulley, the first 2D users
+    of the engine's joints;
+  - **parts acting on each other beyond touching**: a switch pressed
+    turns a fan on, the fan pushes what is in its wind.
+- **What it taught the engine**: a ball whose drawing was also its
+  hitbox (a basketball's seams as rectangles, a hair out of its
+  circle) was thrown through a wall at 2600 pixels a second, and a
+  shelf's corner left against a wall made a seam that did the same:
+  `Collide.manifold` finds contacts from polygons' corners, and slivers
+  and seams are where that goes wrong -- the case for its clipping
+  (section 1 of `plan_physics_remaining.md`). Each puzzle's solution
+  was found by sweeping a ramp's place and tilt in a test, and is kept
+  and run by the tests.
+- **Left undone** (exercises in the header): the conveyor belt (a pin
+  with a motor a switch turns on), the candle burning a rope, the
+  mouse in its cage, a puzzle editor, saving your machines.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,

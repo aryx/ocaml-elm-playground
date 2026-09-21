@@ -5057,6 +5057,46 @@ let rtype_pilot () =
   Alcotest.(check bool) "the core down" true (!g.won > 0);
   Alcotest.(check bool) "at most one ship lost" true (!deaths <= 1)
 
+(*****************************************************************************)
+(* TinyIncredibleMachine *)
+(*****************************************************************************)
+
+(* a puzzle run with some parts for [frames]: the frame it was solved,
+ * if it was, and where the target ended *)
+let tim_run (p : TinyIncredibleMachine.puzzle) (parts : TinyIncredibleMachine.placed list) (frames : int) =
+  let open TinyIncredibleMachine in
+  let m = ref (build p parts) and at = ref None in
+  for i = 1 to frames do
+    m := step p !m;
+    if !at = None && solved !m then at := Some i
+  done;
+  let target = List.nth !m.world.bodies (List.nth (ball_indices !m) p.target) in
+  (!at, (target.x, target.y), !m)
+
+(* Every puzzle: its solution solves it, in under 15 seconds; without
+ * any part, it isn't solved *)
+let tim_solutions () =
+  let open TinyIncredibleMachine in
+  List.iter
+    (fun (p : puzzle) ->
+      let at, (x, y), _ = tim_run p p.solution 900 in
+      let _, (x0, y0), _ = tim_run p [] 900 in
+      Printf.eprintf "%s: solved at %s, target at (%.0f, %.0f); without parts at (%.0f, %.0f)\n" p.title
+        (match at with Some f -> string_of_int f | None -> "never") x y x0 y0;
+      Alcotest.(check bool) (p.title ^ ": solved") true (at <> None);
+      let at0, _, _ = tim_run p [] 900 in
+      Alcotest.(check bool) (p.title ^ ": not without parts") true (at0 = None))
+    puzzles
+
+(* The same machine, run twice: the same frames, the same world *)
+let tim_deterministic () =
+  let open TinyIncredibleMachine in
+  let p = List.nth puzzles 2 in
+  let _, a, m1 = tim_run p p.solution 400 and _, b, m2 = tim_run p p.solution 400 in
+  Alcotest.(check bool) "the target in the same place" true (a = b);
+  Alcotest.(check bool) "every body too" true
+    (List.for_all2 (fun (x : Physics.body) (y : Physics.body) -> x.x = y.x && x.y = y.y && x.angle = y.angle) m1.world.bodies m2.world.bodies)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -5304,4 +5344,6 @@ let tests =
       t "TinyRType, the Force as a shield" rtype_shield;
       t "TinyRType, the beam" rtype_beam;
       t "TinyRType, the battleship" rtype_battleship;
-      t "TinyRType, a pilot takes the battleship down" rtype_pilot ]
+      t "TinyRType, a pilot takes the battleship down" rtype_pilot;
+      t "TinyIncredibleMachine, every puzzle solved by its solution" tim_solutions;
+      t "TinyIncredibleMachine, the same machine runs the same" tim_deterministic ]

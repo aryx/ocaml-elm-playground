@@ -53,8 +53,15 @@ type point = {
   mutable pt : float;
 }
 
-let solve (o : options) ~(dt : float) (bodies : Body.t array) (pairs : pair list) (memory : memory) : Body.t array * memory =
+let solve (o : options) ~(dt : float) ?joints (bodies : Body.t array) (pairs : pair list) (memory : memory) :
+    Body.t array * memory =
   let bodies = Array.copy bodies in
+  (* the joints' rows, made once for the step (see Joint2d) *)
+  let rows =
+    match joints with
+    | None -> []
+    | Some (angles, joints) -> List.concat_map (Joint2d.rows ~beta:o.baumgarte ~dt bodies angles) joints
+  in
   let apply (pt : point) (impulse : Vec2.t) =
     let (a, b) = Resolve.apply 1. impulse pt.p (bodies.(pt.a), bodies.(pt.b)) in
     bodies.(pt.a) <- a;
@@ -84,6 +91,7 @@ let solve (o : options) ~(dt : float) (bodies : Body.t array) (pairs : pair list
   let points = List.concat_map (fun pr -> List.filter_map (prepare pr) pr.contacts) pairs in
   List.iter (fun pt -> apply pt (Vec2.add (Vec2.scale pt.pn pt.n) (Vec2.scale pt.pt pt.t))) points;
   for _ = 1 to o.iterations do
+    List.iter (Joint2d.solve_row bodies) rows;
     points
     |> List.iter (fun pt ->
            let rel () = Resolve.relative_velocity bodies.(pt.a) bodies.(pt.b) pt.p in

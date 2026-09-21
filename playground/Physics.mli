@@ -252,6 +252,9 @@ type world = {
    * bodies are known by their place in the list, so add new ones at
    * the end *)
   memory : Solver.memory;
+  (* what holds its bodies together (see Joints below), naming them by
+   * their place in [bodies] *)
+  joints : Joint2d.t list;
 }
 
 (* [world bodies]: the walls and floors among them [immovable] *)
@@ -267,6 +270,51 @@ val world : body list -> world
  * [warm_starting] (true) are there to see what they do: with 1
  * iteration, or without warm starting, a pyramid sags and slides. *)
 val simulate : ?gravity:number -> ?iterations:int -> ?warm_starting:bool -> world -> world
+
+(* {1 Joints}
+
+   A joint takes away some of the ways two bodies of a world can move
+   against each other (physics/2d/Joint2d.mli), solved in [simulate]'s
+   loop with the contacts; two bodies joined don't collide. The bodies
+   are named by their place in the world's [bodies], and the joint is
+   made from where they are now; a joint to the world is one to an
+   [immovable] body:
+
+     let w = world [ pivot; plank ] |> pin 0 1 ~at:(0., 0.)
+*)
+
+(* [pin ?motor a b ~at w]: [a] and [b] held together at the point [at],
+   free to turn about it (a seesaw, a wheel); [motor]: the spin of b
+   against a asked (degrees a second, counterclockwise) and the most
+   torque (a conveyor's roller) *)
+val pin : ?motor:number * number -> int -> int -> at:number * number -> world -> world
+
+(* [rod a b ~at_a ~at_b w]: those two points kept as far apart as they
+   are now *)
+val rod : int -> int -> at_a:number * number -> at_b:number * number -> world -> world
+
+(* [rope ?length a b ~at_a ~at_b w]: a rope between the two points,
+   [length] long (as long as they are apart by default): it pulls when
+   taut, and is slack when shorter *)
+val rope : ?length:number -> int -> int -> at_a:number * number -> at_b:number * number -> world -> world
+
+(* [pulley a b ~at_a ~at_b ~ground_a ~ground_b w]: a rope from [at_a] up
+   over the fixed point [ground_a], across to [ground_b], down to
+   [at_b]: what one side gains, the other gives up *)
+val pulley :
+  int -> int -> at_a:number * number -> at_b:number * number -> ground_a:number * number -> ground_b:number * number -> world -> world
+
+(* [set_motor i (speed, torque) w]: the [i]-th joint's motor, if it is a
+   pin (a switch turning a machine on) *)
+val set_motor : int -> number * number -> world -> world
+
+(* the [i]-th joint's length now (a rope's, a rod's, a pulley's two
+   sides together) *)
+val joint_length : int -> world -> number
+
+(* the joints, drawn: a dot for a pin, a line for a rod or a rope, the
+   three lines of a pulley *)
+val debug_joints : world -> shape list
 
 (* {1 Looking at bodies} *)
 

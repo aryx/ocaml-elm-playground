@@ -22,10 +22,18 @@ difference (`solver=off`, `rotation=off`).
 - **Sleeping**: bodies still for half a second skipped until touched;
   a pyramid then costs nothing at rest. Measured on Pyramid (1.3 ms a
   step for 28 boxes today).
-- **Joints between bodies**: a revolute joint (a pin: a seesaw, a
-  wheel, Box2D Lite's "A Teeter" and "Suspension Bridge") and a
-  distance joint, solved in `Solver`'s loop like the contacts.
-  `Particles`' sticks are the same idea for particles only.
+- **Joints between bodies** (DONE: `physics/2d/Joint2d`, for
+  games/TinyIncredibleMachine): a pin (a seesaw, a wheel), with a motor
+  (a conveyor's roller); a rod; a rope, a distance that only pulls; a
+  pulley, two ropes over two fixed points. Rows solved by sequential
+  impulses in `Solver`'s loop before the contacts (`Solver.solve
+  ?joints`, with the bodies' angles, which `Body.t` has none of); in
+  the API, `Physics.pin`, `rod`, `rope`, `pulley`, `set_motor`, and
+  two joined bodies don't collide. Tests (`Unit_joint2d`): a
+  pendulum's period (2.217 s for the textbook's 2.221), a seesaw, a
+  rope slack then taut, Atwood's machine (g / 3, within 3%), a motor.
+  Left: warm starting for the joints, a pin's angle limits, Box2D
+  Lite's suspension bridge as an example.
 - **The center of mass**: a body is taken to turn around its (x, y);
   a group whose shapes are off center turns around the wrong point.
   Compute it from `Shape.moments`' areas, and turn around it.

@@ -164,6 +164,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyCivilization", "", 5);
     ("games/software/TinyMarioWorld", "", 5);
     ("games/software/TinyRType", "", 5);
+    ("games/software/TinyIncredibleMachine", "", 5);
     ("games2.5d/software/TinyGuitarHero", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
@@ -385,6 +386,14 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyRType", "force", 150, "space:1,f:60,up:70-85");
     (* the beam: space held two seconds, let go *)
     ("games/software/TinyRType", "beam", 176, "space:1,space:100-170");
+    (* the pulley puzzle, built with the mouse: the ramp picked from the
+       bin, tilted, put under the bowling ball -- then run, the bowling
+       ball in the bucket and the tray on its way up *)
+    ("games/software/TinyIncredibleMachine", "built", 14, "space:1,n:3,n:5,at(-330;-410):7-9,click:8,r:10,at(-380;240):11-14,click:13");
+    ("games/software/TinyIncredibleMachine", "pulley", 200, "space:1,n:3,n:5,at(-330;-410):7-9,click:8,r:10,at(-380;240):11-14,click:13,space:16");
+    (* the fan puzzle: the ball on the switch, the fan on, the balloon
+       blown out from under the ledge *)
+    ("games/software/TinyIncredibleMachine", "fan", 260, "space:1,n:3,n:5,n:7,at(-330;-410):9-11,click:10,r:12,r:14,r:16,r:18,at(400;50):20-23,click:22,space:25");
     (* the riff's first four notes on Medium, every fret held and each
        strummed on its beat (132 a minute, an eighth 0.227 s) *)
     ("games2.5d/software/TinyGuitarHero", "riff", 305,

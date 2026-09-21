@@ -198,9 +198,9 @@ let bounce_all ?(broad_phase = Broadphase.Sort_and_sweep) (bodies : body list) :
          a.(j) <- bj);
   Array.to_list a
 
-type world = { bodies : body list; memory : Solver.memory }
+type world = { bodies : body list; memory : Solver.memory; joints : Joint2d.t list }
 
-let world (bodies : body list) : world = { bodies; memory = Solver.nothing }
+let world (bodies : body list) : world = { bodies; memory = Solver.nothing; joints = [] }
 
 let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_starting = true) (w : world) : world =
   let moving (b : body) = b.mass <> infinity in
@@ -212,9 +212,12 @@ let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_st
            if not (moving b) then b
            else let b = fall gravity b in { b with vx = b.vx +. (b.ax *. tick); vy = b.vy +. (b.ay *. tick) })
   in
-  (* the contacts: the broad phase's pairs, each with its points *)
+  (* the contacts: the broad phase's pairs, each with its points; two
+   * bodies joined by a joint don't collide (a seesaw sits on its pivot) *)
+  let joined i j = List.exists (fun (jt : Joint2d.t) -> (jt.a = i && jt.b = j) || (jt.a = j && jt.b = i)) w.joints in
   let pairs =
     (Broadphase.sort_and_sweep (Array.map bounds bodies)).pairs
+    |> List.filter (fun (i, j) -> not (joined i j))
     |> List.filter_map (fun (i, j) ->
            let a = bodies.(i) and b = bodies.(j) in
            let hb = hitboxes b in
@@ -226,8 +229,10 @@ let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_st
                  { Solver.a = i; b = j; contacts;
                    restitution = Float.max a.bounciness b.bounciness; friction = sqrt (a.friction *. b.friction) })
   in
+  let angles = Array.map (fun b -> radians b.angle) bodies in
   let (states, memory) =
-    Solver.solve { Solver.default with iterations; warm_starting } ~dt:tick (Array.map state bodies) pairs w.memory
+    Solver.solve { Solver.default with iterations; warm_starting } ~dt:tick ~joints:(angles, w.joints) (Array.map state bodies)
+      pairs w.memory
   in
   (* the moves, with the solved velocities *)
   let bodies =
@@ -237,7 +242,58 @@ let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_st
         { b with x = b.x +. (b.vx *. tick); y = b.y +. (b.vy *. tick); angle = b.angle +. (b.spin *. tick); ax = 0.; ay = 0. })
       bodies
   in
-  { bodies = Array.to_list bodies; memory }
+  { w with bodies = Array.to_list bodies; memory }
+
+(* the joints, made from where the bodies are now (see Physics.mli) *)
+let states (w : world) : Body.t array * float array =
+  let bodies = Array.of_list w.bodies in
+  (Array.map state bodies, Array.map (fun b -> radians b.angle) bodies)
+
+let add (j : Body.t array -> float array -> Joint2d.t) (w : world) : world =
+  let s, angles = states w in
+  { w with joints = w.joints @ [ j s angles ] }
+
+let pin ?motor (a : int) (b : int) ~(at : number * number) (w : world) : world =
+  let motor = Option.map (fun (speed, torque) -> (radians speed, torque)) motor in
+  add (fun s angles -> Joint2d.pin s angles a b ~at ?motor ()) w
+
+let rod (a : int) (b : int) ~at_a ~at_b (w : world) : world = add (fun s angles -> Joint2d.rod s angles a b ~at_a ~at_b ()) w
+
+let rope ?length (a : int) (b : int) ~at_a ~at_b (w : world) : world =
+  add (fun s angles -> Joint2d.rope s angles a b ~at_a ~at_b ?length ()) w
+
+let pulley (a : int) (b : int) ~at_a ~at_b ~ground_a ~ground_b (w : world) : world =
+  add (fun s angles -> Joint2d.pulley s angles a b ~at_a ~at_b ~ground_a ~ground_b ()) w
+
+let set_motor (i : int) ((speed, torque) : number * number) (w : world) : world =
+  { w with
+    joints =
+      List.mapi
+        (fun k (j : Joint2d.t) ->
+          match j.kind with
+          | Pin _ when k = i -> { j with kind = Pin { motor = Some (radians speed, torque) } }
+          | _ -> j)
+        w.joints }
+
+let joint_length (i : int) (w : world) : number =
+  let s, angles = states w in
+  Joint2d.length_now s angles (List.nth w.joints i)
+
+let debug_joints (w : world) : shape list =
+  let s, angles = states w in
+  List.concat_map
+    (fun (j : Joint2d.t) ->
+      let (ax, ay), (bx, by) = Joint2d.anchors s angles j in
+      let line (x1, y1) (x2, y2) =
+        let dx = x2 -. x1 and dy = y2 -. y1 in
+        rectangle (rgb 240 200 60) (Float.hypot dx dy) 2. |> rotate (atan2 dy dx *. 180. /. Float.pi)
+        |> Playground.move ((x1 +. x2) /. 2.) ((y1 +. y2) /. 2.)
+      in
+      match j.kind with
+      | Pin _ -> [ circle (rgb 240 200 60) 4. |> Playground.move ax ay ]
+      | Rod _ | Rope _ -> [ line (ax, ay) (bx, by) ]
+      | Pulley { ground_a; ground_b; _ } -> [ line (ax, ay) ground_a; line ground_a ground_b; line ground_b (bx, by) ])
+    w.joints
 
 let went_through (fast : body) (b : body) : bool =
   let path = ((fast.x -. (fast.vx *. tick), fast.y -. (fast.vy *. tick)), (fast.x, fast.y)) in

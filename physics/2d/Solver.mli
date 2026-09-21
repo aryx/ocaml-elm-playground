@@ -38,8 +38,10 @@
  * each, step after step. Warm started, the first iteration of a step
  * already has it.
  *
- * Left out, compared to Box2D: sleeping (bodies still for a while
- * skipped until something touches them), and joints.
+ * Joints (Joint2d) are solved in the same loop, their rows before the
+ * contacts' at each iteration: a pin, a rod, a rope, a pulley. Left
+ * out, compared to Box2D: sleeping (bodies still for a while skipped
+ * until something touches them), and warm starting for the joints.
  *
  * References: Erin Catto, "Iterative Dynamics with Temporal
  * Coherence", GDC 2005, and Box2D Lite (2006, 1000 lines); J.
@@ -74,11 +76,14 @@ type memory
 
 val nothing : memory
 
-(* [solve options ~dt bodies pairs memory]: the bodies with their
- * velocities changed by the contacts (not their positions: the caller
- * moves them after, with the new velocities), and the memory for the
- * next step *)
-val solve : options -> dt:float -> Body.t array -> pair list -> memory -> Body.t array * memory
+(* [solve options ~dt ?joints bodies pairs memory]: the bodies with
+ * their velocities changed by the contacts and the joints (not their
+ * positions: the caller moves them after, with the new velocities),
+ * and the memory for the next step. [joints]: the bodies' angles
+ * (radians, which Body.t doesn't have and the joints' anchors need),
+ * and the joints. *)
+val solve :
+  options -> dt:float -> ?joints:float array * Joint2d.t list -> Body.t array -> pair list -> memory -> Body.t array * memory
 
 (* [impulses memory (a, b)]: the normal impulses of a pair's contact
  * points at the last step (for tests and debug drawing) *)
