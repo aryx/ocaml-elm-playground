@@ -38,7 +38,7 @@
  * second renderer, no cached bitmaps.
  *
  * What it uses: appkits/slides (Outline), appkits/embed (Component)
- * and the parts of apps/ (Part_sheet, Part_picture), appkits/richtext
+ * and the parts of apps/ (Part_sheet, Part_picture, Part_drawing), appkits/richtext
  * (Rich, Page) with apps/Stroke_text for the text, appkits/document's
  * Undo, and the playground's text area and menus.
  *
@@ -344,7 +344,7 @@ let menus =
     [ "File"; "New" ];
     [ "Edit"; "Undo"; "Redo"; "Delete Part" ];
     [ "View"; "Slide"; "Outline"; "Sorter"; "Show" ];
-    [ "Insert"; "New Slide"; "Sheet"; "Picture" ];
+    [ "Insert"; "New Slide"; "Sheet"; "Picture"; "Drawing" ];
     [ "Master"; "Plain"; "Rules"; "Frame"; "Band"; "Centered Titles"; "Left Titles"; "Numbers" ];
   ]
 
@@ -365,6 +365,10 @@ let command c model =
   | "Picture" ->
       record ~name:"Insert Picture"
         (fun d -> { d with parts = (model.current, Part_picture.make (Bitmap.create ~width:140 ~height:110)) :: List.remove_assoc model.current d.parts })
+        model
+  | "Drawing" ->
+      record ~name:"Insert Drawing"
+        (fun d -> { d with parts = (model.current, Part_drawing.make Drawing.empty) :: List.remove_assoc model.current d.parts })
         model
   | "Plain" -> master_edit c (fun m -> { m with background = Plain }) model
   | "Rules" -> master_edit c (fun m -> { m with background = Rules }) model

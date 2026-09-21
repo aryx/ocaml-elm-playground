@@ -97,7 +97,10 @@ browser, for that site, and survives a reload.
 
 ## Phases
 
-1. `appkits/document/Saved` and its tests.
+1. `appkits/document/Saved` and its tests -- **done** (2026-09-21),
+   with a check that all of Marshal's data is there as well as the
+   line; its first user is TinyOpenDoc's drawing part
+   (`apps/Part_drawing`), whose part text is a drawing so saved.
 2. `store` / `fetch` / `export` in the native and software backends
    (with `caps`, `plan_caps.md` phase 1); File > Save / Open / Export in
    TinyExcel first, then TinyWord, TinyMacPaint, TinyPowerPoint,

@@ -627,6 +627,15 @@ let scripted : Testutil_golden.scripted list =
       16,
       "at(-410;470):1-3,click:2,at(-410;401):4-6,click:5,at(-410;470):7-9,click:8,at(-410;365):10-12,click:11,at(400;-400):13-16"
     );
+    (* a fourth kind of part, TinyMacDraw's: inserted, activated, an
+     * oval added from its menu, dragged and made grey; then Save and
+     * Revert -- the drawing written by Marshal and read back through
+     * the registry *)
+    ( "apps/software/TinyOpenDoc",
+      "drawing",
+      53,
+      "at(0;17):1-3,click:2,at(-220;470):4-6,click:5,at(-220;293):7-9,click:8,at(-200;-60):10-13,click:11,at(-125;470):14-16,click:15,at(-125;365):17-19,click:18,at(-195;-122):20-22,click:21-27,at(-150;-130):24,at(-95;-150):25-28,at(-125;470):29-31,click:30,at(-125;293):32-34,click:33,escape:36,at(-410;470):38-40,click:39,at(-410;401):41-43,click:42,at(-410;470):44-46,click:45,at(-410;365):47-49,click:48,at(600;-600):50-53"
+    );
     (* the master changed twice -- a black band, titles centred -- and
      * every slide changes with it *)
     ( "apps/software/TinyPowerPoint",

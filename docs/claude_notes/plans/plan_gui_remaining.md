@@ -82,8 +82,11 @@ From TinyOpenDoc's header:
   is a box);
 - **linking**, OLE's "L": a part that shows a file kept elsewhere and
   follows it when it changes (after `plan_io.md`);
-- a fourth kind of part (a chart of a sheet's column) added with one
-  registry line and nothing else changed -- the whole point, shown.
+- a fourth kind of part added with one registry line and nothing else
+  changed -- **done** (2026-09-21): `apps/Part_drawing`, TinyMacDraw's
+  engine as a part, in TinyOpenDoc's registry and Insert menu and in
+  TinyPowerPoint's; it saves with Marshal (`appkits/document/Saved`).
+  A fifth (a chart of a sheet's column) would be the same.
 
 ## 6. TinyHarvardGraphics, before TinyPowerPoint
 

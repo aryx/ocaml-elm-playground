@@ -115,6 +115,25 @@ let test_clipboard () =
   let c = Clipboard.put "world" (Clipboard.put "hello" c) in
   Alcotest.(check (option string)) "the last thing copied" (Some "world") (Clipboard.get c)
 
+(* --- Saved ------------------------------------------------------------ *)
+
+type point = { x : float; y : float; label : string }
+
+let test_saved_round_trip () =
+  let v = [ { x = 1.; y = 2.; label = "a" }; { x = -3.5; y = 0.; label = "b\nc" } ] in
+  let s = Saved.to_string ~magic:"points 1" v in
+  Alcotest.(check bool) "it says what it is" true (String.sub s 0 9 = "points 1\n");
+  Alcotest.(check bool) "and reads back the same" true (Saved.of_string ~magic:"points 1" s = Some v)
+
+(* the three ways a file is not what the program expects *)
+let test_saved_refuses () =
+  let s = Saved.to_string ~magic:"points 1" [ { x = 1.; y = 2.; label = "a" } ] in
+  Alcotest.(check bool) "another kind" true ((Saved.of_string ~magic:"sheet 1" s : point list option) = None);
+  Alcotest.(check bool) "another version" true ((Saved.of_string ~magic:"points 2" s : point list option) = None);
+  Alcotest.(check bool) "cut short" true
+    ((Saved.of_string ~magic:"points 1" (String.sub s 0 (String.length s - 3)) : point list option) = None);
+  Alcotest.(check bool) "nothing at all" true ((Saved.of_string ~magic:"points 1" "" : point list option) = None)
+
 let tests =
   [
     t "dirty is a comparison, not a flag" test_dirty_is_a_pointer_comparison;
@@ -127,4 +146,6 @@ let tests =
     t "the oldest versions are forgotten" test_the_oldest_versions_are_forgotten;
     t "undo and redo at the ends do nothing" test_undo_at_the_ends_does_nothing;
     t "the clipboard holds the last thing copied" test_clipboard;
+    t "a value saved and read back" test_saved_round_trip;
+    t "a file that is not the right one is refused" test_saved_refuses;
   ]

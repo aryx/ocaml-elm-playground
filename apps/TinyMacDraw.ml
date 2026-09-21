@@ -33,7 +33,8 @@
  *   to make that impossible, as there were in TinyOpenDoc's parts.
  *
  * What it uses: appkits/draw (Figure, Drawing), appkits/document
- * (Undo), apps/Stroke_text for the text, and the playground's menus.
+ * (Undo), apps/Figure_shapes to draw the figures (and Stroke_text for
+ * their text), and the playground's menus.
  *
  * The tools: the arrow (click to select, Shift-click to add, drag on
  * nothing for a marquee, drag a selection to move it, a handle to
@@ -429,50 +430,6 @@ let update computer model =
 (* View *)
 (*****************************************************************************)
 
-let grey_color g =
-  let v = int_of_float (Float.round (g *. 255.)) in
-  rgb v v v
-
-(* a stroke from a to b, [w] wide: a thin rectangle, turned *)
-let segment color w (ax, ay) (bx, by) =
-  let dx = bx -. ax and dy = by -. ay in
-  let len = Float.sqrt ((dx *. dx) +. (dy *. dy)) in
-  rectangle color (len +. w) w |> rotate (Float.atan2 dy dx *. 180. /. Float.pi) |> move ((ax +. bx) /. 2.) ((ay +. by) /. 2.)
-
-let rec figure_shapes (f : Figure.t) =
-  match f with
-  | Line (a, b, s) -> [ segment black s.pen a b ]
-  | Rect (b, s) ->
-      let w = b.x1 -. b.x0 and h = b.y1 -. b.y0 in
-      let cx = (b.x0 +. b.x1) /. 2. and cy = (b.y0 +. b.y1) /. 2. in
-      (match s.fill with Some g -> [ rectangle (grey_color g) w h |> move cx cy ] | None -> [])
-      @ [
-          rectangle black (w +. s.pen) s.pen |> move cx b.y1;
-          rectangle black (w +. s.pen) s.pen |> move cx b.y0;
-          rectangle black s.pen (h +. s.pen) |> move b.x0 cy;
-          rectangle black s.pen (h +. s.pen) |> move b.x1 cy;
-        ]
-  | Oval (b, s) ->
-      let a = (b.x1 -. b.x0) /. 2. and r = (b.y1 -. b.y0) /. 2. in
-      let cx = b.x0 +. a and cy = b.y0 +. r in
-      (* the outline as short strokes round the ellipse *)
-      let n = 64 in
-      let pt k =
-        let t = 2. *. Float.pi *. float_of_int k /. float_of_int n in
-        (cx +. (a *. Float.cos t), cy +. (r *. Float.sin t))
-      in
-      (match s.fill with Some g -> [ oval (grey_color g) (2. *. a) (2. *. r) |> move cx cy ] | None -> [])
-      @ List.init n (fun k -> segment black s.pen (pt k) (pt (k + 1)))
-  | Text (b, s, size) ->
-      let style = { Style.plain with size } in
-      snd
-        (String.fold_left
-           (fun (x, acc) c ->
-             let ch = String.make 1 c in
-             (x +. Stroke_text.metrics style ch, acc @ Stroke_text.glyph black style ch ~x ~baseline:(b.y1 -. size)))
-           (b.x0, []) s)
-  | Group fs -> List.concat_map figure_shapes fs
-
 (* an icon, in ink on paper: inverted when the tool is in use *)
 let icon (b : Widget.box) tool ~ink ~paper =
   let at dx dy s = s |> move (b.x +. dx) (b.y +. dy) in
@@ -512,10 +469,10 @@ let view _computer model =
         let (b : Figure.box) = Figure.box a z in
         let c = rgb 90 90 90 in
         [
-          segment c 1. (b.x0, b.y0) (b.x1, b.y0);
-          segment c 1. (b.x1, b.y0) (b.x1, b.y1);
-          segment c 1. (b.x1, b.y1) (b.x0, b.y1);
-          segment c 1. (b.x0, b.y1) (b.x0, b.y0);
+          Figure_shapes.segment c 1. (b.x0, b.y0) (b.x1, b.y0);
+          Figure_shapes.segment c 1. (b.x1, b.y0) (b.x1, b.y1);
+          Figure_shapes.segment c 1. (b.x1, b.y1) (b.x0, b.y1);
+          Figure_shapes.segment c 1. (b.x0, b.y1) (b.x0, b.y0);
         ]
     | _ -> []
   in
@@ -546,7 +503,7 @@ let view _computer model =
     rectangle white page_w page_h |> move page_cx page_cy;
   ]
   @ grid
-  @ List.concat_map (fun (_, f) -> figure_shapes f) (Drawing.figures d)
+  @ List.concat_map (fun (_, f) -> Figure_shapes.figure f) (Drawing.figures d)
   @ handles @ marquee @ caret @ palette
   @ [ words (rgb 30 30 30) status |> move 0. (-450.) ]
   @ Gui.draw ()

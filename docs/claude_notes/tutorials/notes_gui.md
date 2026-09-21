@@ -532,6 +532,15 @@ the host's bar. Two things came out of writing it:
 TinyPowerPoint (§14) is the second host: a slide can carry a sheet or
 a picture, the same parts.
 
+And a fourth kind came later, TinyMacDraw's drawing (`Part_drawing`),
+which is the protocol's claim tested: the hosts learned of it through
+one line in TinyOpenDoc's registry and an item in each Insert menu, and
+nothing else in them changed. Its page is fitted to the part's
+rectangle by grouping and scaling its shapes, the mouse mapped back
+the same way; and, a drawing being plain data, it saves with Marshal
+behind a checked line (`appkits/document/Saved`, `plan_io.md`) -- the
+first thing in the repository to be saved that way.
+
 The history is worth a paragraph because it is a genuine road not
 taken: Xerox Star (1981) put text, pictures and tables in one document,
 as a fixed set; the Andrew Toolkit (CMU, around 1988) opened the set

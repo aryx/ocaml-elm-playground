@@ -31,13 +31,15 @@
  * author wrote, and a notebook is cells of different kinds.
  *
  * What it uses: appkits/embed (Component, what a part is; Compound, a
- * document of parts), and three kinds of part, each a small editor
+ * document of parts), and four kinds of part, each a small editor
  * over the engine of the application it is taken from -- Part_text
  * (TinyWord's), Part_sheet (TinyExcel's), Part_picture
- * (TinyMacPaint's) -- plus appkits/document's Undo, and the
- * playground's menus. This file knows none of the three: it reaches
- * them through the protocol, and through the registry when a
- * document is read back.
+ * (TinyMacPaint's), Part_drawing (TinyMacDraw's) -- plus
+ * appkits/document's Undo, and the playground's menus. This file knows
+ * none of them: it reaches them through the protocol, and through the
+ * registry when a document is read back. The fourth came after the
+ * others, and adding it here took a line in the registry and one in
+ * the Insert menu, nothing else -- which is the whole point.
  *
  * What it demonstrates, besides: a part of a kind nobody here has
  * code for (the "equation" at the bottom) is shown as a placeholder
@@ -61,9 +63,8 @@
  * Exercises: a container part -- a Column as a Component.part holding
  * parts, so that a text can hold a sheet that holds a picture, as
  * OpenDoc's could; drag a part to move it, which is Compound.remove
- * then insert_after; a fourth kind (a chart of a sheet's column, which
- * TinyExcel draws already) added with one line in the registry and
- * nothing else changed -- the whole point; the placeholder showing a
+ * then insert_after; a fifth kind (a chart of a sheet's column, which
+ * TinyExcel draws already), added as the drawing was; the placeholder showing a
  * picture of the part saved with it, as OLE's cached metafile did.
  *)
 open Playground
@@ -93,7 +94,12 @@ type model = {
 (* how each kind of part is read back: the only place the three are
    named *)
 let registry : Component.registry =
-  [ (Part_text.kind, Part_text.load); (Part_sheet.kind, Part_sheet.load); (Part_picture.kind, Part_picture.load) ]
+  [
+    (Part_text.kind, Part_text.load);
+    (Part_sheet.kind, Part_sheet.load);
+    (Part_picture.kind, Part_picture.load);
+    (Part_drawing.kind, Part_drawing.load);
+  ]
 
 let doc model = match model.editing with Some d -> d | None -> Undo.now model.history
 let active model = model.editing <> None
@@ -188,7 +194,7 @@ let insert name node model =
 
 let menu_file = [ "File"; "Save"; "Revert"; "New" ]
 let menu_edit = [ "Edit"; "Undo"; "Redo"; "Delete Part" ]
-let menu_insert = [ "Insert"; "Text"; "Sheet"; "Picture" ]
+let menu_insert = [ "Insert"; "Text"; "Sheet"; "Picture"; "Drawing" ]
 let menu_box i : Widget.box = { Widget.x = -410. +. (float_of_int i *. 95.); y = 470.; w = 90.; h = 30. }
 
 let command items chosen model =
@@ -209,6 +215,7 @@ let command items chosen model =
   | Some "Text" -> insert "Insert Text" (text "A new text.") model
   | Some "Sheet" -> insert "Insert Sheet" (Part (Part_sheet.make Sheet.empty)) model
   | Some "Picture" -> insert "Insert Picture" (Part (Part_picture.make (Bitmap.create ~width:150 ~height:72))) model
+  | Some "Drawing" -> insert "Insert Drawing" (Part (Part_drawing.make Drawing.empty)) model
   | _ -> model
 
 let update computer model =
