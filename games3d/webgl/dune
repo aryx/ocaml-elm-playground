@@ -20,6 +20,7 @@
 (copy_files ../TinyBlockout.ml)
 (copy_files ../TinyTombRaider.ml)
 (copy_files ../TinyBoomerangFu3d.ml)
+(copy_files ../TinyHades.ml)
 
 (executables
   (names
@@ -39,6 +40,7 @@
     TinyBlockout
     TinyTombRaider
     TinyBoomerangFu3d
+    TinyHades
   )
   (libraries
 

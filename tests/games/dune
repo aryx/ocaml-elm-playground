@@ -208,6 +208,16 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyHades.ml)
+ (deps (:src %{project_root}/games3d/TinyHades.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDiablo.ml)
+ (deps (:src %{project_root}/games2.5d/TinyDiablo.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyZaxxon.ml)
  (deps (:src %{project_root}/games2.5d/TinyZaxxon.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
@@ -287,6 +297,7 @@
    kit_sectors
    kit_heightmap
    kit_segments
+   kit_isometric
    kit_maze
    kit_lightcycles
    kit_shmup

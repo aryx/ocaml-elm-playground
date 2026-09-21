@@ -52,8 +52,8 @@
  * high you are. Two pictures a hundred pixels apart on the screen may
  * be a plane at altitude 100 and a plane on the ground, or two planes
  * at the same height a hundred units apart along the fortress -- the
- * projection has thrown away exactly the number you need to fly
- * through a hole. Sega's answer, and every isometric game's since, is
+ * projection has thrown away exactly the number you need to clear a
+ * wall. Sega's answer, and every isometric game's since, is
  * the **shadow**: every flying thing is drawn twice, once where it is
  * and once at y = 0 directly below ([at] and [shadow_at]), and the
  * vertical gap between the two *is* the altitude, in pixels, to be
@@ -61,22 +61,29 @@
  * plane. The altimeter up the left side ([altimeter]) is the arcade's
  * second answer, for when the ground below you is too busy to read.
  *
+ * The projection, the shadow, the sort and the line of sight are
+ * kits/isometric's, shared with games2.5d/TinyDiablo: the same three
+ * axes and the same two lines, with a dungeon standing on them instead
+ * of a fortress.
+ *
  * Nothing in the fortress is ever above the fighter: a wall is blocks
  * standing on the floor, and you clear them or you go between them.
  * That is not a simplification, it is the shape of the thing -- the
  * arcade had no windows to fly into either -- and it is what keeps
  * this world inside the rule the rest of games2.5d/ lives by, one
  * height per point of the map. What it does not spare you is the
- * tower you have *flown past*, which stands between you and the eye
- * until its picture slides off you; the fighter is then drawn again
- * over it, faintly ([hidden_by], which asks whether a block is in the
- * way -- a question this projection answers with one direction and a
- * multiplication, there being no perspective in it). Knight Lore did
- * that, and so does every game since that lets you walk behind a
- * wall.
+ * tower you fly *past*, which stands between you and the eye until
+ * its picture has slid off you, and hides you while it does -- as it
+ * should. Which of the two is in front is not left to the sort, whose
+ * one key per object cannot be right along a whole face: [hidden_by]
+ * asks it exactly, walking the line of sight from the fighter to the
+ * wall's plane and seeing whether it comes out inside a block. That
+ * walk is one direction and a multiplication, there being no
+ * perspective to divide by, and it is the kit's ([Isometric.sight]).
  *
  * Depth is settled the way every game here settles it, by the order of
- * the drawing: the shapes are sorted by their z, far ones first
+ * the drawing: the shapes are sorted by their distance from the eye,
+ * far ones first
  * ([painted]). With no overlapping allowed to be ambiguous -- one
  * thing per place on the fortress -- the painter's algorithm is exact,
  * and costs a sort. (examples3d/PaintersAlgorithmFail3d.ml is what it
@@ -98,10 +105,12 @@
  * shadow problem, and most of them solve it the same way. (Names and
  * dates from memory, to check.)
  *
- * What it uses: no kit and no layer but Scene2d. Not Camera2d: the
- * scroll is a subtraction inside [project], and a camera that moved
- * the finished shapes would move the shadows with them, which is the
- * one thing that must not happen. Not the shmup kit's Shots either,
+ * What it uses: kits/isometric (the projection, the shadow, the sort
+ * and the line of sight, shared with games2.5d/TinyDiablo) and
+ * Scene2d. Not Camera2d: the scroll is a subtraction inside the
+ * projection ([Isometric.follow]), and a camera that moved the
+ * finished shapes would move the shadows with them, which is the one
+ * thing that must not happen. Not the shmup kit's Shots either,
  * and for a reason worth saying: a Shots.t is two numbers and two
  * speeds on the *screen*, and these shots fly along the world's third
  * axis, which the screen does not have -- a kit is for the games whose
@@ -111,8 +120,8 @@
  * floor at all -- which is the same game with the ground taken away,
  * and much harder to judge), the enemy fighters that fly at you, the
  * homing missiles, the Zaxxon robot at the end with its lock to shoot
- * out; and the projection turned into a layer once a second game (a
- * TinyQbert, a TinyKnightLore) wants it.
+ * out; and a TinyQbert or a TinyKnightLore, which would be the kit's
+ * third game and the first to put the player on the ground.
  *)
 open Playground
 open Basics (* float arithmetics *)
@@ -177,29 +186,38 @@ let things : thing list =
 (* The projection -- the trick of this game, in 54 lines (see the header) *)
 (*****************************************************************************)
 
-(* the screen point of a world point, the camera's z taken off first:
- * no perspective, no camera, no depth -- the whole of it is these two
- * lines *)
+(* The view, and the whole of the projection: x goes across the
+ * fortress, z along it (up and to the right), height straight up. The
+ * arithmetic is kits/isometric's, shared with games2.5d/TinyDiablo;
+ * the numbers are this game's, and x is drawn longer than z on purpose
+ * so that the fortress reads as a corridor. *)
+let iso : Isometric.t =
+  Isometric.make ~across:(0.85, -0.30) ~along:(0.34, 0.42) ~up:1. |> Isometric.origin (-120.) (-330.)
+
+(* scrolling is a subtraction before those two lines, and nothing else *)
+let view (camz : number) : Isometric.t = Isometric.follow 0. camz iso
+
 let project (camz : number) (x : number) (y : number) (z : number) : number * number =
-  let z = z - camz in
-  ((0.85 * x) + (0.34 * z) - 120., (-0.30 * x) + (0.42 * z) + y - 330.)
+  Isometric.project (view camz) (x, y, z)
 
 (* a shape put where a world point is *)
-let at (camz : number) ((x, y, z) : number * number * number) (s : shape) : shape =
-  let sx, sy = project camz x y z in
-  s |> move sx sy
+let at (camz : number) (p : number * number * number) (s : shape) : shape = Isometric.at (view camz) p s
 
 (* and its shadow, the same shape flattened on the ground directly
  * below it: the gap between the two on the screen is the altitude, and
  * is the only thing that tells you what it is *)
-let shadow_at (camz : number) ((x, _y, z) : number * number * number) (s : shape) : shape =
-  at camz (x, 0., z) (s |> fade 0.55)
+let shadow_at (camz : number) (p : number * number * number) (s : shape) : shape =
+  Isometric.shadow (view camz) p (s |> fade 0.55)
+
+(* how far a thing is from the eye, which is what the drawing is sorted
+ * on: not its z alone, since going across the fortress brings you
+ * towards the eye too *)
+let far (camz : number) (p : number * number * number) : number = Isometric.depth (view camz) p
 
 (* Everything is drawn back to front, and that is the whole of the
  * depth test: with one thing per place on the fortress, nothing can
  * cut through anything else, so the order *is* the answer. *)
-let painted (l : (number * shape) list) : shape list =
-  List.map snd (List.sort (fun (a, _) (b, _) -> compare b a) l)
+let painted (l : (number * shape) list) : shape list = Isometric.sorted l
 
 (* One thing is outside that order, and only one: the floor, which
  * everything stands on and nothing is ever under, is painted first.
@@ -221,12 +239,10 @@ let painted (l : (number * shape) list) : shape list =
  * So: walk from the fighter towards the eye until z reaches a wall's,
  * see where on the wall you come out, and if that point is on the wall
  * and not in its hole, the wall is between you and the eye. *)
-let hidden_by ((x, y, z) : number * number * number) (w : wall) : bool =
-  let t = z - w.wz in
-  t > 0.
-  &&
-  let hx = x + (0.4 * t) and hy = y + (0.54 * t) in
-  List.exists (fun b -> hx > b.bx0 && hx < b.bx1 && hy >= 0. && hy < b.bh) w.blocks
+let hidden_by (p : number * number * number) (w : wall) : bool =
+  match Isometric.sight iso p w.wz with
+  | None -> false
+  | Some (hx, hy) -> List.exists (fun b -> hx > b.bx0 && hx < b.bx1 && hy >= 0. && hy < b.bh) w.blocks
 
 (*****************************************************************************)
 (* The model *)
@@ -354,7 +370,7 @@ let floor_slices (camz : number) : (number * shape) list =
       let quad = polygon (if Float.rem (z / 100.) 2. = 0. then floor_a else floor_b)
           [ corner (-.half_w) z; corner half_w z; corner half_w (z + 100.); corner (-.half_w) (z + 100.) ]
       in
-      (z, quad))
+      (far camz (0., 0., z + 50.), quad))
 
 (* a wall is one quad per block, each standing on the floor *)
 let wall_shapes (camz : number) (w : wall) : (number * shape) list =
@@ -364,7 +380,7 @@ let wall_shapes (camz : number) (w : wall) : (number * shape) list =
       and p1 = project camz b.bx1 0. w.wz
       and p2 = project camz b.bx1 b.bh w.wz
       and p3 = project camz b.bx0 b.bh w.wz in
-      (w.wz, polygon wall_color [ p0; p1; p2; p3 ]))
+      (far camz (0.5 * (b.bx0 + b.bx1), 0.5 * b.bh, w.wz), polygon wall_color [ p0; p1; p2; p3 ]))
     w.blocks
 
 let thing_shape (t : thing) : shape =
@@ -407,37 +423,39 @@ let view_play (computer : computer) (p : play) : shape list =
   let pz = camz + plane_z in
   let visible (z : number) = z > camz - 200. && z < camz + 1300. in
   let world =
-    List.concat_map (fun (w : wall) -> if visible w.wz then wall_shapes camz w else []) walls
-    @ List.concat_map
+    List.concat_map
         (fun (t : thing) ->
           if (not t.alive) || not (visible t.tz) then []
-          else [ (t.tz, at camz (t.tx, 0., t.tz) (thing_shape t)) ])
+          else [ (far camz (t.tx, 0., t.tz), at camz (t.tx, 0., t.tz) (thing_shape t)) ])
         p.things
     @ List.concat_map
         (fun (s : shot) ->
           if not (visible s.sz) then []
           else
-            [ (s.sz, at camz (s.sx, s.sy, s.sz) (circle (if s.mine then rgb 250 240 120 else rgb 250 110 90) 5.));
-              (s.sz, shadow_at camz (s.sx, s.sy, s.sz) (circle shadow_color 4.)) ])
+            [ (far camz (s.sx, s.sy, s.sz), at camz (s.sx, s.sy, s.sz) (circle (if s.mine then rgb 250 240 120 else rgb 250 110 90) 5.));
+              (far camz (s.sx, 0., s.sz), shadow_at camz (s.sx, s.sy, s.sz) (circle shadow_color 4.)) ])
         p.shots
   in
   (* the fighter and its shadow take their places in the sort, the
    * fighter a hair nearer than the shadow it casts *)
   let fighter =
-    if p.dead > 0 then [ (pz, at camz (p.px, p.py, pz) (circle (rgb 250 180 60) (float_of_int (60 -.. p.dead) + 6.) |> fade 0.8)) ]
-    else [ (pz, shadow_at camz (p.px, p.py, pz) plane_shadow); (pz -. 0.5, at camz (p.px, p.py, pz) plane_shape) ]
+    if p.dead > 0 then [ (far camz (p.px, p.py, pz), at camz (p.px, p.py, pz) (circle (rgb 250 180 60) (float_of_int (60 -.. p.dead) + 6.) |> fade 0.8)) ]
+    else
+      [ (far camz (p.px, 0., pz), shadow_at camz (p.px, p.py, pz) plane_shadow);
+        (far camz (p.px, p.py, pz) -. 0.5, at camz (p.px, p.py, pz) plane_shape) ]
   in
-  (* and when a wall you have flown past is over you, the fighter is
-   * drawn again, faintly, on top of it: correct is not the same as
-   * playable, and every isometric game from Knight Lore to Diablo
-   * shows you the thing the wall is hiding *)
-  let ghost =
-    if p.dead > 0 || not (List.exists (hidden_by (p.px, p.py, pz)) walls) then []
-    else [ at camz (p.px, p.py, pz) (plane_shape |> fade 0.3) ]
-  in
+  (* The sort gives every two shapes an order, but one key per object
+   * is only an approximation of it: a wall is a whole face, and the
+   * fighter can be in front of one end of it and behind the other.
+   * For the one pair that has to be right -- the fighter against the
+   * walls -- the line of sight answers exactly, so the walls that hide
+   * it are drawn after it and all the rest before. *)
+  let here = List.filter (fun (w : wall) -> visible w.wz) walls in
+  let hiding, clear = List.partition (hidden_by (p.px, p.py, pz)) here in
+  let faces ws = List.concat_map (wall_shapes camz) ws in
   (rectangle sky screen.width screen.height :: painted (floor_slices camz))
-  @ painted (world @ fighter)
-  @ ghost
+  @ painted (faces clear @ world @ fighter)
+  @ painted (faces hiding)
   @ altimeter p
   @ [ text white 2.2 (Printf.sprintf "score %d    run %d" p.score p.run) |> move_y (screen.top - 40.);
       text (if p.fuel < 25. then rgb 250 110 90 else rgb 120 220 140) 2.2

@@ -3130,6 +3130,155 @@ let zaxxon_hidden_behind_a_wall () =
   (* and far enough past, the line of sight clears the top of it *)
   Alcotest.(check bool) "well past: out from under it" false (hidden_by (0., 40., w.wz +. 400.) w)
 
+(*****************************************************************************)
+(* TinyDiablo *)
+(*****************************************************************************)
+
+let diablo_play ?(mouse = fun _ -> initial_computer.mouse) ?(keyboard = fun _ -> initial_computer.keyboard) (n : int)
+    (p : TinyDiablo.play) : TinyDiablo.play =
+  let p = ref p and m = ref (Scene2d.start (TinyDiablo.Playing p)) in
+  for i = 1 to n do
+    let c = { (computer ~keyboard:(keyboard i) i) with mouse = mouse i } in
+    m := Scene2d.update c !m;
+    p := TinyDiablo.update_play c !m !p
+  done;
+  !p
+
+(* A dungeon is a pure function of its seed -- the same one is the same
+ * dungeon for ever -- and whatever it rolls, the stairs can be walked
+ * to from where you come in. A generator that can lock the stairs
+ * behind a wall is not a generator, it is a coin toss. *)
+let diablo_dungeon_holds_together () =
+  let open TinyDiablo in
+  let floors cells =
+    let n = ref 0 in
+    Array.iter (Array.iter (fun c -> if c <> Rock then incr n)) cells;
+    !n
+  in
+  let a, _, _ = dig 24601 7 and b, _, _ = dig 24601 7 and c, _, _ = dig 1234 7 in
+  Alcotest.(check int) "the same seed, the same dungeon" (floors a) (floors b);
+  Alcotest.(check bool) "another seed, another dungeon" true (floors a <> floors c);
+  (* twenty of them, each walked from the first room to the stairs *)
+  for k = 1 to 20 do
+    let cells, rooms, _ = dig (1000 + (k * 7919)) 7 in
+    let start = match rooms with r :: _ -> centre r | [] -> (2, 2) in
+    let stairs = ref None in
+    Array.iteri (fun i col -> Array.iteri (fun j c -> if c = Stairs then stairs := Some (i, j)) col) cells;
+    match !stairs with
+    | None -> Alcotest.fail "a dungeon with no way down"
+    | Some goal ->
+        Alcotest.(check bool) (Printf.sprintf "dungeon %d: the stairs can be reached" k) true
+          (goal = start || path_to cells start goal <> [])
+  done
+
+(* Clicking is not a direction, it is a place: the pixel becomes a cell
+ * (the projection backwards), the cell becomes a path found by A
+ * star, and the
+ * path is walked. *)
+let diablo_click_walks_there () =
+  let open TinyDiablo in
+  let p = start () in
+  (* a cell a few steps away in the first room *)
+  let here = cell_of p.px p.pz in
+  let there = (fst here + 2, snd here + 1) in
+  let path = path_to p.cells here there in
+  Alcotest.(check bool) "there is a way" true (path <> []);
+  let after = diablo_play 120 { p with path } in
+  Alcotest.(check bool) "and he walked it" true (apart after.px after.pz (float_of_int (fst there)) (float_of_int (snd there)) < 0.2);
+  Alcotest.(check bool) "with nothing left to walk" true (after.path = [])
+
+(* A monster killed drops what it carries, and what is on the floor is
+ * picked up by walking over it. *)
+let diablo_kills_and_loots () =
+  let open TinyDiablo in
+  let p = start () in
+  let m = { mx = p.px +. 0.6; mz = p.pz; hp = 4.; kind = Imp; cool = 100; hurt = 0 } in
+  let after = diablo_play 40 { p with monsters = [ m ]; target = Some 0 } in
+  Alcotest.(check int) "the imp is dead" 0 (List.length after.monsters);
+  Alcotest.(check bool) "and paid for itself" true (after.gold > p.gold || after.items <> [] || after.potions > p.potions)
+
+(* The stairs only go down, and what you carry goes with you. *)
+let diablo_stairs_go_down () =
+  let open TinyDiablo in
+  let p = start () in
+  let stairs = ref (0, 0) in
+  Array.iteri (fun i col -> Array.iteri (fun j c -> if c = Stairs then stairs := (i, j)) col) p.cells;
+  let i, j = !stairs in
+  let on_them = { p with px = float_of_int i; pz = float_of_int j; gold = 130; potions = 2; monsters = [] } in
+  let after = diablo_play 1 on_them in
+  Alcotest.(check int) "a level deeper" 2 after.depth;
+  Alcotest.(check int) "the gold came too" 130 after.gold;
+  Alcotest.(check int) "and the potions" 2 after.potions;
+  Alcotest.(check bool) "a new dungeon, with monsters in it" true (after.monsters <> [])
+
+(*****************************************************************************)
+(* TinyHades *)
+(*****************************************************************************)
+
+let hades_play ?(keyboard = fun _ -> initial_computer.keyboard) (n : int) (p : TinyHades.play) : TinyHades.play =
+  let p = ref p and m = ref (Scene2d.start (TinyHades.Playing p)) in
+  for i = 1 to n do
+    let c = computer ~keyboard:(keyboard i) i in
+    m := Scene2d.update c !m;
+    p := TinyHades.update_play c !m !p
+  done;
+  !p
+
+(* A boon is not a weapon, it is a number in the model changed for the
+ * rest of the run. *)
+let hades_a_boon_is_a_number () =
+  let open TinyHades in
+  let p = start () in
+  Alcotest.(check bool) "fury hits harder" true ((take_boon Fury p).damage > p.damage);
+  Alcotest.(check bool) "reach reaches further" true ((take_boon Reach p).reach > p.reach);
+  Alcotest.(check bool) "swift dashes sooner" true ((take_boon Swift p).dash_wait < p.dash_wait);
+  let v = take_boon Vitality p in
+  Alcotest.(check bool) "vitality is more life, and some of it now" true (v.max_hp > p.max_hp && v.hp > p.hp)
+
+(* The dash is the defence: for its first frames nothing lands. That
+ * one rule is what separates an action game of the 2010s from one of
+ * the 1990s. *)
+let hades_the_dash_is_the_defence () =
+  let open TinyHades in
+  let p = start () in
+  let beside = { fx = p.px +. 1.2; fz = p.pz; hp = 30.; kind = Shade; cool = 0; hurt = 0 } in
+  let hit = hades_play 1 { p with foes = [ beside ]; shots = [] } in
+  Alcotest.(check bool) "standing there, it lands" true (hit.hp < p.hp);
+  let dashing = hades_play 1 { p with foes = [ beside ]; shots = []; dash = 14 } in
+  Alcotest.(check bool) "dashing through it, nothing lands" true (dashing.hp = p.hp)
+
+(* A chamber cleared offers three, and taking one opens the door. *)
+let hades_between_chambers () =
+  let open TinyHades in
+  let k = initial_computer.keyboard in
+  let cleared = hades_play 1 { (start ()) with foes = [] } in
+  Alcotest.(check int) "three on offer" 3 (List.length cleared.offer);
+  Alcotest.(check bool) "and nothing else moves until one is taken" true (cleared.chamber = 1);
+  let taken = hades_play 3 ~keyboard:(fun i -> if i = 2 then press "1" k else k) cleared in
+  Alcotest.(check int) "the next chamber" 2 taken.chamber;
+  Alcotest.(check bool) "with something in it" true (taken.foes <> []);
+  Alcotest.(check bool) "and the boon kept" true (taken.offer = [])
+
+(* Dying is not a reset: it pays for the next run, which is the whole
+ * of the roguelite and the reason this game is not TinyRogue. *)
+let hades_death_pays_for_the_next_run () =
+  let open TinyHades in
+  let k = initial_computer.keyboard in
+  let p = start () in
+  let doomed = { p with hp = 1.; foes = [ { fx = p.px; fz = p.pz +. 1.; hp = 30.; kind = Brute; cool = 0; hurt = 0 } ] } in
+  let m = ref (Scene2d.go (Playing doomed) (Scene2d.start Title)) in
+  for i = 1 to 3 do m := TinyHades.update (computer i) !m done;
+  (match !m.scene with
+  | Dead _ -> ()
+  | _ -> Alcotest.fail "the brute should have finished him");
+  for i = 4 to 6 do m := TinyHades.update (computer ~keyboard:(if i = 5 then { k with kspace = true } else k) i) !m done;
+  match !m.scene with
+  | Playing next ->
+      Alcotest.(check int) "a second run" 2 next.run;
+      Alcotest.(check bool) "kept something from the first" true (next.kept > 0.);
+      Alcotest.(check bool) "and starts with more life than the first did" true (next.max_hp > p.max_hp)
+  | _ -> Alcotest.fail "space should have started the next run"
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -3278,4 +3427,12 @@ let tests =
       t "TinyZaxxon, a fuel tank is thirty seconds" zaxxon_fuel_tank;
       t "TinyZaxxon, out of fuel" zaxxon_out_of_fuel;
       t "TinyZaxxon, the end of the fortress" zaxxon_end_of_run;
-      t "TinyZaxxon, hidden behind a wall you have passed" zaxxon_hidden_behind_a_wall ]
+      t "TinyZaxxon, hidden behind a wall you have passed" zaxxon_hidden_behind_a_wall;
+      t "TinyDiablo, the dungeon holds together" diablo_dungeon_holds_together;
+      t "TinyDiablo, a click is a place, and a path to it" diablo_click_walks_there;
+      t "TinyDiablo, what it dropped" diablo_kills_and_loots;
+      t "TinyDiablo, the stairs only go down" diablo_stairs_go_down;
+      t "TinyHades, a boon is a number" hades_a_boon_is_a_number;
+      t "TinyHades, the dash is the defence" hades_the_dash_is_the_defence;
+      t "TinyHades, three boons between chambers" hades_between_chambers;
+      t "TinyHades, dying pays for the next run" hades_death_pays_for_the_next_run ]

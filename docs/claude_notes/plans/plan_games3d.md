@@ -482,9 +482,63 @@ because players see them as 3D.
   Hence the shadow: every flying thing drawn twice, and the gap
   between the two *is* the altitude. Every isometric game since
   inherits both the problem and the answer.
-- **Kit**: none yet, on purpose. The projection is ten lines in the
-  game; a second isometric game (a TinyQbert, a TinyKnightLore) is
-  what would move it into one, as the rule of two says.
+- **Second toy**: TinyDiablo (DONE: `games2.5d/TinyDiablo.ml`,
+  Blizzard North, 1996), which is what paid for the kit. Its own
+  subject is not the view but what the view makes possible: **the
+  mouse**. A click is not a direction but a place, and turning the
+  pixel into a place is the projection run backwards
+  (`Isometric.ground`, a 2x2 determinant that exists only because
+  there is no perspective); then A* from `ai/Pathfind` walks there.
+  Next to `games/TinyRogue.ml` it is the same dungeon with the turns
+  taken out -- monsters on their own clock, a health orb rather than a
+  number, loot on the floor -- which is the whole difference between
+  the roguelike and the action RPG.
+- **Kit** (DONE): `kits/isometric/` -- the two lines of the
+  projection, the shadow that gives back the height they throw away,
+  the back-to-front sort, the line of sight (what stands between a
+  thing and the eye) and the inverse under the mouse. TinyZaxxon was
+  rewritten onto it, which is the only way to know a kit is real: its
+  six tests and its three golden frames did not move.
+
+### 14. The roguelite run: Hades
+
+Rogue (1980) made the dungeon, Diablo (1996) took the turns out of it,
+and Hades (Supergiant, 2020) changed what death is worth. The three
+are in this repository as one line, and the difference between them is
+one line of the model:
+
+| game | a death is |
+|---|---|
+| `games/TinyRogue` | final; the dungeon is forgotten |
+| `games2.5d/TinyDiablo` | the end of a life; the character keeps what it carried |
+| `games3d/TinyHades` | the end of a *run*, and it pays for the next one |
+
+- **Toy**: TinyHades (DONE: `games3d/TinyHades.ml`, arrows to move,
+  space to strike, x to dash, 1/2/3 for the boon between chambers).
+- **Why `games3d/` and not `games2.5d/`**: Hades is drawn in 2D from a
+  fixed angle, like Diablo, so the *honest* twin of TinyDiablo would
+  be that same dungeon with a camera over it. This is not that -- it
+  shares no world with it -- and it sits here to be the same genre
+  with the engine doing the drawing: a camera, triangles and a
+  z-buffer, where TinyDiablo has two lines of arithmetic and a sort.
+  Read side by side, `chamber_camera` is exactly what
+  `kits/isometric`'s two lines do by hand.
+- **What it teaches**, and neither of the other two does:
+  - **the run loop**: the chamber is the unit, the boon is the choice
+    between chambers, and `kept` is what a death is worth -- the only
+    game here where losing is progress;
+  - **a boon is a number**: `take_boon` changes `damage`, `reach`,
+    `dash_wait` or `max_hp` for the rest of the run, so a run is a
+    little machine built out of whatever the gods offered. Boons that
+    *combine* (fire that spreads, dashes that strike) are the
+    exercise, and `strike` is where they would go;
+  - **the dash with invulnerability**: eight frames in which nothing
+    lands, which turns every fight from a question of position into a
+    question of timing. That is Dark Souls' roll (2011) and everything
+    after it; compare `games3d/TinyBoomerangFu3d.ml`, whose dash is
+    only speed.
+- **Kit**: none. An arena is a floor and four walls, and there is no
+  second game to share one with yet.
 
 ## Infrastructure all the games need
 

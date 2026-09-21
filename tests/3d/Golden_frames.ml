@@ -96,6 +96,9 @@ let scenes : Testutil_golden.scene list =
     ("games3d/TinyTombRaider", "", 5);
     (* claude: the title's four foods on their turning arena *)
     ("games3d/TinyBoomerangFu3d", "", 5);
+    (* claude: the first chamber, its three shades, and the hero the
+     * arcade angle looks down on *)
+    ("games3d/TinyHades", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -198,6 +201,10 @@ let scripted : Testutil_golden.scripted list =
      * standing; then, further in, the avocado in two halves, its cut
      * faces pale, and the flight that did it *)
     ("games3d/TinyBoomerangFu3d", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
+    (* claude: a run in progress: one death already paid for, so the
+       gauge says run 2 and the life kept from the first *)
+    ("games3d/TinyHades", "run", 300,
+     "space:1,down:10-80,right:10-80,space:90,space:110,up:120-200,left:150-200,space:210,x:220,space:240,space:270,space:290");
     ("games3d/TinyBoomerangFu3d", "cut", 95, "space:1,up:5-40,right:41-70,space:71,right:75-140") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

@@ -11,6 +11,7 @@
     TinyDescent
     TinyDungeonMaster
     TinyZaxxon
+    TinyDiablo
   )
   (libraries
     ai ; TinyDungeonMaster's Pathfind (the monsters' A*)
@@ -19,6 +20,7 @@
     kit_sectors ; TinyDoom's level
     kit_heightmap ; TinyComanche's island
     kit_segments ; TinyDescent's mine
+    kit_isometric ; TinyZaxxon's and TinyDiablo's projection
     elm_playground_native ; implem of virtual elm_playground
   )
 )

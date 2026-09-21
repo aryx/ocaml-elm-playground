@@ -153,6 +153,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyPuzzleBobble", "", 5);
     ("games2.5d/software/TinyDungeonMaster", "", 5);
     ("games2.5d/software/TinyZaxxon", "", 5);
+    ("games2.5d/software/TinyDiablo", "", 5);
     (* a whole game as a map and one rule (playground/Puzzlescript) *)
     ("examples/software/PuzzleScriptSokoban", "", 5);
     ("examples/software/PuzzleScriptBoulders", "", 5);
@@ -256,6 +257,13 @@ let scripted : Testutil_golden.scripted list =
        down to a human *)
     ("games/software/TinyDefender", "patrol", 95,
      "space:1,right:5-200,space:60,space:90,space:120,down:130-170,space:150,space:200,right:210-320,space:240,space:280,space:310");
+    (* the dungeon, the dark around it, and a click being walked to:
+       the first golden frames here that are played with a mouse *)
+    ("games2.5d/software/TinyDiablo", "dungeon", 95,
+     "click:2,at(150;20):6-60,click:8,at(-120;-40):70-140,click:72,at(60;120):150-260,click:152,rclick:200,click:230");
+    (* a bolt cast (the mana orb half down), an imp at arm's length *)
+    ("games2.5d/software/TinyDiablo", "fight", 260,
+     "click:2,at(150;20):6-60,click:8,at(-120;-40):70-140,click:72,at(60;120):150-260,click:152,rclick:200,click:230");
     (* the fortress, a wall flown through and the next one coming, and
        the fighter over its own shadow: the gap between the two is the
        altitude, which is the whole game *)
