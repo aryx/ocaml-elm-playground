@@ -249,6 +249,15 @@ the character controller is a `body` verb (`walk`) or its own layer
   `TinyMinecraft.ml` (the player capsule against blocks, phase 9),
   `TinyMarbleMadness.ml` (the height-map ball against a real rolling sphere:
   its `5/7` is the engine's own test, phase 7).
+- **A game written on it from the start**: `games3d/TinyTeardown.ml`
+  (DONE), where every piece of a building knocked loose is a body of a
+  simulated `world` -- tumbling (the quaternion and the tensor),
+  landing at any angle (box/box separating axes), piling up and going
+  to sleep (phase 8's solver). The standing level is immovable boxes,
+  rebuilt after each blow. Found on the way: a body starting *inside*
+  another's box is thrown out of it hard enough to tunnel through a
+  thin floor (a crate inside a tank's bounding box went through a 1 m
+  ground; the ground is now 10 m thick and the tank flat).
 - **Later**: a raycast vehicle for `TinyVirtuaRacing.ml`
   (elm-physics's RaycastCar is the model: four springs with rays for
   wheels, no wheel bodies), a Jenga/domino toy, a Monkey Ball tilt

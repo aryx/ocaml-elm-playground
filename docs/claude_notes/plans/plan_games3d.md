@@ -289,9 +289,17 @@ Infiniminer (Zachtronics, 2009), Minecraft (Markus Persson, 2009-).
 Done: `games3d/TinyMinecraft.ml` (see `plan_minecraft_remaining.md` for
 what's left).
 
+- **Second toy**: TinyTeardown (DONE: `games3d/TinyTeardown.ml`, after
+  Teardown, Tuxedo Labs 2020-22): a heist in a level of quarter-metre
+  voxels, drawn by greedy meshing; a hammer (Amanatides-Woo's ray
+  through the grid), a flood fill from the ground for what no longer
+  stands, and every loose group a Physics3d body in a simulated world
+  -- the physics engine's first real game.
 - **Kit**: `Voxels`, from `TinyMinecraft`'s world: the block grid, exposed
-  faces, the ray walk for picking -- when a second voxel toy (a
-  TinyTeardown with destructible blocks?) needs it.
+  faces, the ray walk for picking. Not yet: TinyTeardown's grid is a
+  flat array of materials (its flood fill and meshing want one), where
+  TinyMinecraft's is a hash table of textured blocks; a third voxel
+  game would say which of the two a kit should be.
 
 ### 8. 3D platformers and the camera problem
 

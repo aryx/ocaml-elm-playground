@@ -7,6 +7,7 @@
 (copy_files ../StarCollector3d.ml)
 (copy_files ../TinyBattlezone3d.{ml,mli})
 (copy_files ../TinyElite3d.ml)
+(copy_files ../TinyTeardown.ml)
 (copy_files ../TinyWolfenstein3d.{ml,mli})
 (copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../TinyMarioKart64.ml)
@@ -33,6 +34,7 @@
     TinyMinecraft
     TinyBattlezone3d
     TinyElite3d
+    TinyTeardown
     TinyWolfenstein3d
     TinyVirtuaRacing
     TinyMarioKart64

@@ -75,6 +75,9 @@ let scenes : Testutil_golden.scene list =
     ("games3d/TinyBattlezone3d", "", 40);
     (* the station turning, solid (games2.5d/TinyElite's title frame) *)
     ("games3d/TinyElite3d", "", 5);
+    (* the heist from above: the house, the vault, the water tower and
+     * its crate *)
+    ("games3d/TinyTeardown", "", 5);
     (* claude: the same view as games2.5d/TinyWolfenstein's golden frame, in 3D *)
     ("games3d/TinyWolfenstein3d", "", 5);
     ("games3d/TinyVirtuaRacing", "", 5);
@@ -126,6 +129,16 @@ let scripted : Testutil_golden.scripted list =
     (* the same launch as games2.5d/TinyElite's: the station ahead, the
      * slot turning, Lave a sphere behind it *)
     ("games3d/TinyElite3d", "flight", 200, "space:1");
+    (* three blows at the house's south wall: the hole, and the greedy
+     * mesh cut round it *)
+    ("games3d/TinyTeardown", "hole", 130, "space:1,w:2-99,x:101,down:102-109,x:121,left:122-124,x:141");
+    (* under the water tower, its four legs knocked out one by one, then
+     * back out to look: the tank came down onto the stumps *)
+    ( "games3d/TinyTeardown",
+      "tower",
+      600,
+      "space:1,right:2-37,w:38-105,left:106-141,w:142-224,down:225-235,left:236-253,x:255,left:256-291,x:293,left:294-329,x:331,left:332-367,x:369,right:370-423,w:424-513,right:514-585,up:586-593"
+    );
     (* the same walk as games2.5d/TinyWolfenstein's *)
     ("games3d/TinyWolfenstein3d", "treasure", 60, "right:1-16,up:20-60");
     (* the same drive as games2.5d/TinyOutRun's golden frame, in polygons *)

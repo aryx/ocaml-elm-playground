@@ -6,6 +6,7 @@
 (copy_files ../StarCollector3d.ml)
 (copy_files ../TinyBattlezone3d.{ml,mli})
 (copy_files ../TinyElite3d.ml)
+(copy_files ../TinyTeardown.ml)
 (copy_files ../TinyWolfenstein3d.{ml,mli})
 (copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../TinyMarioKart64.ml)
@@ -31,6 +32,7 @@
     StarCollector3d
     TinyBattlezone3d
     TinyElite3d
+    TinyTeardown
     TinyWolfenstein3d
     TinyVirtuaRacing
     TinyMarioKart64
@@ -50,7 +52,7 @@
     TinyHades
     TinyMonumentValley
   )
-  (modules StarCollector3d TinyBattlezone3d TinyElite3d TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyVirtuaFighter TinyStarFox TinyAloneInTheDark TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d TinyHades TinyMonumentValley Tomb_atlas)
+  (modules StarCollector3d TinyBattlezone3d TinyElite3d TinyTeardown TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyVirtuaFighter TinyStarFox TinyAloneInTheDark TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d TinyHades TinyMonumentValley Tomb_atlas)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_puzzle ; TinyTombRaider's Push

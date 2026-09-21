@@ -288,6 +288,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyTeardown.ml)
+ (deps (:src %{project_root}/games3d/TinyTeardown.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyAloneInTheDark.ml)
  (deps (:src %{project_root}/games3d/TinyAloneInTheDark.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

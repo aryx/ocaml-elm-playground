@@ -487,6 +487,72 @@ let elite3d_culling_is_ll9 () =
     [ ((0., 0., 700.), 0.6, 0.3); ((120., -60., 3400.), 0., 0.3); ((300., 200., 500.), 1.2, -0.7); ((-50., 30., 400.), 2.5, 1.9) ]
 
 (*****************************************************************************)
+(* TinyTeardown *)
+(*****************************************************************************)
+
+(* Greedy meshing: a voxel is its six faces, and so is a bar of four in
+ * one material; two materials side by side are not merged *)
+let teardown_mesh () =
+  let open TinyTeardown in
+  let quads mat dims = List.length (mesh mat dims corner) in
+  Alcotest.(check int) "one voxel" 6 (quads (fun _ _ _ -> Brick) (1, 1, 1));
+  Alcotest.(check int) "a bar of four" 6 (quads (fun _ _ _ -> Brick) (4, 1, 1));
+  Alcotest.(check int) "half brick, half wood" 10 (quads (fun i _ _ -> if i < 2 then Brick else Wood) (4, 1, 1))
+
+(* The standing level as boxes: every solid cell in exactly one *)
+let teardown_boxes () =
+  let open TinyTeardown in
+  let g = level () in
+  let solid = Array.fold_left (fun n m -> if m <> Air then n + 1 else n) 0 g in
+  let covered = List.fold_left (fun n ((i, j, k), (i2, j2, k2)) -> n + ((i2 - i) * (j2 - j) * (k2 - k))) 0 (boxes g) in
+  Alcotest.(check int) "the boxes hold every solid cell once" solid covered;
+  Alcotest.(check bool) "and far fewer boxes than cells" true (List.length (boxes g) * 20 < solid)
+
+(* The hammer's ray: from the yard, straight at the house's south wall,
+ * whose face is at z = -2 *)
+let teardown_cast () =
+  let open TinyTeardown in
+  match cast (level ()) (0., 1., 5.) (0., 0., -1.) 20. with
+  | Some ((_, j, k), t) ->
+      Alcotest.(check bool) "7 metres" true (Float.abs (t -. 7.) < 1e-6);
+      Alcotest.(check (pair int int)) "the wall's cell" (4, 31) (j, k)
+  | None -> Alcotest.fail "the wall is there"
+
+(* The water tower: its four legs knocked out, the tank is one loose
+ * piece, and three seconds later it is down -- on the stumps of its
+ * legs, what is left of them above the blows hanging under it -- and
+ * the crate that was on it with it *)
+let teardown_tower () =
+  let open TinyTeardown in
+  let legs = [ (3., 0.); (5.5, 0.); (3., 2.5); (5.5, 2.5) ] in
+  let g = List.fold_left (fun g (x, z) -> blow g (x +. 0.25, 1., z +. 0.25)) (new_game ()) legs in
+  Alcotest.(check int) "one piece came down" 1 g.broken;
+  let g = ref g in
+  for _ = 1 to 180 do g := { !g with world = Physics3d.simulate ~gravity:9.8 !g.world } done;
+  let g = !g in
+  let (tank : Physics3d.body) = List.hd (pieces g) and (crate : Physics3d.body) = List.nth (crates g) 2 in
+  Alcotest.(check bool) "the tank down" true (tank.y < 2.2);
+  Alcotest.(check bool) "the crate on it, not through it" true (crate.y > tank.y && crate.y < 2.8)
+
+(* The heist, walls down beforehand: the tower's legs knocked out, then
+ * the player at each crate in turn. The first one taken sets off the
+ * alarm; with the three taken, the car is the way out. *)
+let teardown_heist () =
+  let open TinyTeardown in
+  let legs = [ (3., 0.); (5.5, 0.); (3., 2.5); (5.5, 2.5) ] in
+  let g = ref (List.fold_left (fun g (x, z) -> blow g (x +. 0.25, 1., z +. 0.25)) (new_game ()) legs) in
+  for _ = 1 to 180 do g := { !g with world = Physics3d.simulate ~gravity:9.8 !g.world } done;
+  Alcotest.(check bool) "no alarm yet" true (!g.alarm = None);
+  List.iteri
+    (fun n (x, _, z) ->
+      g := take_loot { !g with player = { !g.player with x; z } };
+      Alcotest.(check int) "one more crate taken" (2 - n) !g.n_crates;
+      Alcotest.(check bool) "the alarm is on" true (!g.alarm <> None))
+    loot_at;
+  Alcotest.(check bool) "not away yet" false (at_car !g);
+  Alcotest.(check bool) "at the car" true (at_car { !g with player = { !g.player with x = 7.; z = 7. } })
+
+(*****************************************************************************)
 (* TinyBattlezone *)
 (*****************************************************************************)
 
@@ -3857,6 +3923,11 @@ let tests =
       t "TinyBattlezone, the divide and the near plane" battlezone_projection;
       t "TinyBattlezone, shells at the height of a hull" battlezone_shell_height;
       t "TinyElite3d, backface culling is Elite's hidden lines" elite3d_culling_is_ll9;
+      t "TinyTeardown, greedy meshing" teardown_mesh;
+      t "TinyTeardown, the level as boxes" teardown_boxes;
+      t "TinyTeardown, the hammer's ray" teardown_cast;
+      t "TinyTeardown, the water tower comes down" teardown_tower;
+      t "TinyTeardown, the heist" teardown_heist;
       t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;

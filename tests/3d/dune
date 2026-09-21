@@ -36,6 +36,7 @@
    %{project_root}/games3d/StarCollector3d.exe
    %{project_root}/games3d/TinyBattlezone3d.exe
    %{project_root}/games3d/TinyElite3d.exe
+   %{project_root}/games3d/TinyTeardown.exe
    %{project_root}/games3d/TinyWolfenstein3d.exe
    %{project_root}/games3d/TinyVirtuaRacing.exe
    %{project_root}/games3d/TinyMarioKart64.exe
