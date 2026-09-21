@@ -577,6 +577,14 @@ let scripted : Testutil_golden.scripted list =
       "part",
       24,
       "right:2,right:4,right:6,at(175;122):8-24,click:9,click:12,type(3):15,return:17" );
+    (* typing on the slide itself: a point clicked at its end, a word
+     * added, Enter for a new point, Tab to push it a level down -- all
+     * of it edits of the outline's lines *)
+    ( "apps/software/TinyPowerPoint",
+      "typed",
+      16,
+      "at(300;66):1-3,click:2,type( Plus):5,return:7,type(Two years after the first Mac):9,tab:11,at(400;-480):12-16"
+    );
     ( "apps/software/TinyExcel",
       "edited",
       20,

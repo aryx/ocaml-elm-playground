@@ -50,6 +50,20 @@ let test_start_of () =
   Alcotest.(check int) "the second" (index_of example "The bucket") (Outline.start_of example 1);
   Alcotest.(check int) "past the last: the end" (String.length example) (Outline.start_of example 2)
 
+let test_lines_of () =
+  Alcotest.(check (pair (option int) (list int))) "the first slide's lines" (Some 0, [ 1; 2 ]) (Outline.lines_of example 0);
+  Alcotest.(check (pair (option int) (list int))) "the second's" (Some 3, [ 4 ]) (Outline.lines_of example 1);
+  Alcotest.(check (pair (option int) (list int))) "blank lines skipped, an untitled first slide" (None, [ 0; 2 ])
+    (Outline.lines_of "  a\n\n  b\nC" 0);
+  Alcotest.(check (pair (option int) (list int))) "no such slide" (None, []) (Outline.lines_of example 5)
+
+let test_line_span () =
+  let a, c, e = Outline.line_span example 2 in
+  Alcotest.(check string) "the whole line" "    and dots are bits" (String.sub example a (e - a));
+  Alcotest.(check string) "its text, after the indentation" "and dots are bits" (String.sub example c (e - c));
+  Alcotest.(check (list int)) "the last line, no newline after it" [ String.length example ]
+    (let _, _, e = Outline.line_span example 4 in [ e ])
+
 let test_round_trip () =
   let slides = Outline.parse example in
   Alcotest.(check string) "written back as it was" example (Outline.to_text slides);
@@ -61,5 +75,7 @@ let tests =
     t "tabs, blanks, and a point with no title" test_corners;
     t "which slide the caret is on" test_slide_at;
     t "where a slide starts" test_start_of;
+    t "the lines of a slide" test_lines_of;
+    t "where a line and its text are" test_line_span;
     t "written back, read again" test_round_trip;
   ]

@@ -1409,6 +1409,16 @@ piece table) and the deck's (master and parts), so that undoing a look
 never undoes typing. A part stays with its slide's *number*, not the
 slide (said in the header, with the fix as an exercise).
 
+Then, at the author's request ("I want to click on some text and edit
+it"), **typing on the slide itself**: the slide's text is laid out as
+blocks, each knowing the outline line it came from
+(`Outline.lines_of`, `line_span`), so a click puts a caret in a title
+or a point and each key edits that line of the outline -- the text has
+no other home, so the other views follow at once and the outline's
+undo takes it back. Enter starts a new point, Tab and Shift-Tab move a
+line down or up a level. A seventh golden frame, "typed"; `appkits`
+tests 73.
+
 Tests: `appkits/tests` 71 (5 new: the outline's worked example, tabs
 and blank lines and a point before any title, the slide a caret is on,
 where a slide starts, the round trip), the 2D golden suite 164 with

@@ -61,6 +61,26 @@ let start_of text n =
   in
   match List.nth_opt (titles 0 []) n with Some pos -> pos | None -> String.length text
 
+let lines_of text n =
+  (* the numbered lines that are not blank, and each slide's lines: a
+     title opens one, a point joins the last (or an untitled first) *)
+  let numbered = List.filter (fun (_, l) -> String.trim l <> "") (List.mapi (fun i l -> (i, l)) (String.split_on_char '\n' text)) in
+  let slides =
+    List.fold_left
+      (fun acc (i, l) ->
+        if fst (indent l) = 0 then (Some i, []) :: acc
+        else match acc with (t, ps) :: rest -> (t, i :: ps) :: rest | [] -> [ (None, [ i ]) ])
+      [] numbered
+  in
+  match List.nth_opt (List.rev slides) n with Some (t, ps) -> (t, List.rev ps) | None -> (None, [])
+
+let line_span text k =
+  let rec start pos k = if k = 0 then pos else match String.index_from_opt text pos '\n' with Some e -> start (e + 1) (k - 1) | None -> String.length text in
+  let a = start 0 k in
+  let e = match String.index_from_opt text a '\n' with Some e -> e | None -> String.length text in
+  let rec content i = if i < e && (text.[i] = ' ' || text.[i] = '\t') then content (i + 1) else i in
+  (a, content a, e)
+
 let to_text slides =
   String.concat "\n"
     (List.concat_map

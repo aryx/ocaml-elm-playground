@@ -36,6 +36,18 @@ val slide_at : string -> int -> int
  * slide [n - 1] goes *)
 val start_of : string -> int -> int
 
+(* Editing a slide where it is shown means editing the outline, which
+ * is the model: a click on a slide's title or point has to find the
+ * line of the outline it came from. *)
+
+(* [lines_of text n]: the line numbers (from 0) of slide [n]'s title --
+ * None for an untitled first slide -- and of its points, in order *)
+val lines_of : string -> int -> int option * int list
+
+(* [line_span text k]: where line [k] starts, where its text starts
+ * (after the indentation), and where it ends (before its newline) *)
+val line_span : string -> int -> int * int * int
+
 (* the outline of some slides: two spaces per level, so that [parse]
  * gives them back *)
 val to_text : slide list -> string
