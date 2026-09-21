@@ -26,7 +26,7 @@
  *    world is already in the eye's coordinates ([turn_world]).
  *
  *  - A ship's orientation is three vectors, nose, roof and side, which
- *    is a rotation matrix written a row at a time (kits/segments/
+ *    is a rotation matrix written a row at a time (gamekits/segments/
  *    Sixdof.mli says the same, for games2.5d/TinyDescent). Sixdof turns
  *    them with the real cosine and sine and straightens them after
  *    every turn. The 6502 had neither, so Elite turned them by
@@ -81,7 +81,7 @@
  * anything, and draws only lines.
  *
  * Uses: the 2D playground and Scene2d, and nothing else -- the engine is
- * the game. Not kits/segments/Sixdof (its turns are exact; these are
+ * the game. Not gamekits/segments/Sixdof (its turns are exact; these are
  * the 6502's), not Playground3d (it would do the projection and the
  * hidden surfaces, which are the lesson).
  *

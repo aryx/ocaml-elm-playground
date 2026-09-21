@@ -30,7 +30,7 @@
  *     height
  *
  * and those are exactly the coordinates the racing kit's Track3d hands
- * out (kits/racing/3d/Track3d.mli: a course as a closed spline with a
+ * out (gamekits/racing/3d/Track3d.mli: a course as a closed spline with a
  * width, a height and a bank, resampled into segments of equal
  * length). It was written for games3d/TinyMarioKart64's circuit; a
  * canyon is the same ribbon with walls instead of kerbs, flown over
@@ -40,13 +40,13 @@
  * rolls the whole canyon, which is the Star Fox shot.
  *
  * The enemies come out of the 2D shoot 'em up kit unaltered, which is
- * the other half of the lesson. kits/shmup/Path is Galaga's flight
+ * the other half of the lesson. gamekits/shmup/Path is Galaga's flight
  * curves: a few points, a Catmull-Rom spline through them, measured so
  * that a ship moves along it by *distance* rather than by parameter.
  * In 2D that curve is where an enemy flies on the screen. Here it is
  * where an enemy flies across the canyon's cross-section, while the
  * stage carries it towards you: a 2D pattern in a 3D tube, and the
- * same file for both. kits/shmup/Shots carries the bolts the same way,
+ * same file for both. gamekits/shmup/Shots carries the bolts the same way,
  * its x and y being across and up.
  *
  *        the canyon, from the front        a path across it

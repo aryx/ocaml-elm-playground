@@ -28,7 +28,7 @@
  * the one before: games/TinyDDR.ml is the music's clock,
  * games2.5d/TinyGuitarHero.ml the instrument (fret and strum, long
  * notes, a difficulty as the same song reduced), and this one the band.
- * All of the first two is in kits/rhythm, shared. What is new here is
+ * All of the first two is in gamekits/rhythm, shared. What is new here is
  * what makes it a *band*:
  *
  *  - The parts are the voices of one tune. The song is written once, in
@@ -74,7 +74,7 @@
  * hand, Out Run's road straightened; a camera is what makes four
  * cheap.
  *
- * What it uses: kits/rhythm (the clock, the grades, the performance,
+ * What it uses: gamekits/rhythm (the clock, the grades, the performance,
  * the charts on frets, the difficulty, the strum, the sustains),
  * playground3d (the highways, a perspective camera), Audio (the band,
  * a note per hit, Audio.position -- which in 3D needed the 3D loop to feed the

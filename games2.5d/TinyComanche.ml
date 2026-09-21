@@ -15,7 +15,7 @@
  * Flight simulators drew their hills with a few big polygons, flat
  * colors; Comanche showed real hills, with every slope and valley, on a
  * 386. Its "Voxel Space" (Kyle Freeman) had no polygons: the terrain is
- * a height map and a color map (kits/heightmap/Heightmap.mli), and the
+ * a height map and a color map (gamekits/heightmap/Heightmap.mli), and the
  * screen is drawn column by column, each a line across the map, from
  * the nearest to the farthest ([view_terrain]):
  *

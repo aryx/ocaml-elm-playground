@@ -74,7 +74,7 @@ says the smaller, teaching-sized thing better:
 ```
 
 Where: generic layers in `playground/` (in the `elm_playground`
-library, like `Camera2d`); each kit in `kits/<genre>/`, its own
+library, like `Camera2d`); each kit in `gamekits/<genre>/`, its own
 library (`elm_kit_shmup`, ...), depending on `elm_playground` only, so
 a kit is visibly optional -- and the playground's own `.mli` never
 grows. (The physics plan's `physics/` is a layer of the same kind, and
@@ -184,7 +184,7 @@ Snake on Nokia phones (1997; done: `games/Snake.ml`).
   keyboard, or against the computer choosing the way with the most
   room, a flood fill; and `games3d/TinyTron3d.ml`, the same
   model in 3D, four views: both on the light cycles kit,
-  `kits/lightcycles/`, only their views differing).
+  `gamekits/lightcycles/`, only their views differing).
 
 ### 3. Fixed shooters
 
@@ -205,7 +205,7 @@ the trackball).
   explosions growing and shrinking, the chain reaction; MIRVs; its
   missiles `Shots`; a robot in the tests aims at the intercept and
   survives two waves).
-- **Kit** (the start of the shmup kit, DONE: `kits/shmup/`): `Shots`
+- **Kit** (the start of the shmup kit, DONE: `gamekits/shmup/`): `Shots`
   (the player's and the enemies' bullets, created, moved, removed when
   off-screen or on a hit), and `Path` (TinyGalaga's Catmull-Rom curves,
   flown by arc length, for section 5's `Paths` too). Not `Formation`:
@@ -265,7 +265,7 @@ ghosts with personalities), Bomberman (Hudson, 1983), Boulder Dash
 
 - **Toys**: TinyPacman (DONE: `games/TinyPacman.ml`, our own 19x21
   maze), TinyBomberman (DONE: `games/TinyBomberman.ml`, bombs, fire in
-  a cross, chain reactions); both on the maze kit, `kits/maze/`
+  a cross, chain reactions); both on the maze kit, `gamekits/maze/`
   (`Grid_move`, `Chase`; the ghosts' personalities stay in TinyPacman).
 - **Kit**, the maze kit:
   - `Grid_move`: moving along a `Tilemap`'s corridors, with the turn
@@ -289,7 +289,7 @@ Pajitnov, 1984; done: `games/Tetris.ml`), Lemmings (DMA Design,
   the rules as words on the board, read as sentences after each move,
   YOU, WIN, STOP, PUSH, DEFEAT, SINK and NOUN IS NOUN; four levels, each
   solved by a breadth-first search in the tests). Both on the puzzle
-  kit, `kits/puzzle/`: `Push` (a chain pushed, TinySokoban's limited to
+  kit, `gamekits/puzzle/`: `Push` (a chain pushed, TinySokoban's limited to
   one box) and `Undo`. TinyLemmings (DONE: `games/TinyLemmings.ml`, the
   terrain a bitmap of 4-pixel cells in the model, copied once per tick
   and drawn as row runs; walkers as tiny state machines reading the
@@ -306,7 +306,7 @@ Pajitnov, 1984; done: `games/Tetris.ml`), Lemmings (DMA Design,
 - **Kit**: DONE, and it turned out not to be a kit at all:
   `playground/Puzzlescript.mli`, beside `Logo.mli` and `Bigbang.mli`.
   A `Rules` layer that a game *calls* from its own update would have
-  belonged in `kits/`; this one takes the game over -- you give it
+  belonged in `gamekits/`; this one takes the game over -- you give it
   things on layers, a map, the rules and what winning means, and there
   is no update and no view left to write -- and that is what
   `playground/` is for. A game as a map plus a dozen rules, as in
@@ -351,7 +351,7 @@ Pitfall! (David Crane, Activision, 1982), Super Mario Bros. (Nintendo,
   rather than jumping exactly -- the ground felt as a *surface* with an
   angle rather than as solid tiles, so the hero runs up the hill and
   round the loop; the spindash; rings as life).
-- **Kit**, the platformer kit (`kits/platformer/`): `Tile_move`,
+- **Kit**, the platformer kit (`gamekits/platformer/`): `Tile_move`,
   TinyMario's `move_by`, one pixel at a time; `Ladder`, climbing
   ladder tiles, for TinyLodeRunner and TinyRick; and `Slope`, the
   ground as tiles with a shape and an angle, found by sensors under
@@ -396,7 +396,7 @@ genre as we know it, combos by accident), Mortal Kombat (Midway,
 - **Toy**: TinyStreetFighter (DONE: `games/TinyStreetFighter.ml`, vs
   the computer or two players on one keyboard; frame data, hitboxes,
   blocking high and low, the fireball's quarter circle read from the
-  input history, hitstop; the brawler kit, `kits/brawler/`: `Hitbox`,
+  input history, hitstop; the brawler kit, `gamekits/brawler/`: `Hitbox`,
   `Frame_data`, `Stickman`, shared with TinyFinalFight).
 - **Kit**: the brawler kit plus frame data (each move's startup,
   active and recovery frames: what fighting game players study), an
@@ -413,7 +413,7 @@ Run (Yu Suzuki, Sega, 1986: hills, forks, the radio), Micro Machines
 Mode 7, see `plan_games3d.md`).
 
 - **Toys**: TinyOutRun (DONE: `games2.5d/TinyOutRun.ml`, on the racing
-  kit `kits/racing/` (`Road`, `Car`), shared with
+  kit `gamekits/racing/` (`Road`, `Car`), shared with
   `games3d/TinyVirtuaRacing.ml`;
   pseudo-3D: all 2D shapes, so a perfect fit
   for the 2D playground -- the road is trapezoids, the scenery scaled
@@ -500,7 +500,7 @@ Tower Defense (2007: tower defense in a browser).
   whole crowd as a flow field that each unit walks downhill
   (`Pathfind.field` and `downhill`), and the fog of war as two bitmaps,
   what has been seen and what is seen now).
-- **Kit** (DONE): `kits/rts/`'s `Orders`, the layer between
+- **Kit** (DONE): `gamekits/rts/`'s `Orders`, the layer between
   `ai/Pathfind`'s searches and a game -- the grid as a search problem,
   and the walking -- used by TinyDune2, TinyWarcraft2 and later
   TinyGauntlet2. Not done: a minimap (a second, zoomed-out camera,
@@ -560,7 +560,7 @@ Guitar Hero (2005).
   only when hit, as in TinyGuitarHero.
   It needed the native 3D loop to feed the sound card at all (see
   `plan_audio_teaching.md`, phase 4).
-- **Kit** (DONE): `kits/rhythm/`, TinyDDR's machinery moved out when
+- **Kit** (DONE): `gamekits/rhythm/`, TinyDDR's machinery moved out when
   TinyRockBand wanted it -- the grades and their windows (drawn in
   `Rhythm.mli`), the clock less the calibration, a chart played
   through, and `sounding`, the notes of a tune's voice to chart from --
@@ -759,9 +759,9 @@ from memory, to check.)
   already a list of strings and so is a sprite (the trick
   `games3d/TinyComanche3d` draws its terrain with).
 - **Kit**: none of its own. The flow field is `ai/Pathfind` through
-  `kits/rts`' `Orders` (its third user, after TinyDune2 and
+  `gamekits/rts`' `Orders` (its third user, after TinyDune2 and
   TinyWarcraft2: a crowd walking to one place is the same problem
-  whether it is peasants or grunts). Not `kits/maze`: `Grid_move`
+  whether it is peasants or grunts). Not `gamekits/maze`: `Grid_move`
   locks a mover to the middle of a tile, which is Pac-Man's movement,
   not Gauntlet's eight directions with sliding.
 - **Exercises**: the second player (the arcade's real subject, and the
@@ -848,7 +848,7 @@ is. (Names and dates from memory, to check.)
   Mode 7, voxels -- and say so ("the trick of this game"). A ball with
   a height and a shadow is a coordinate, not a trick of rendering.
 - **Kit** (DONE, and this is what the second game was for):
-  `kits/sports/` -- `Free_ball` (the ball pushed ahead of a player
+  `gamekits/sports/` -- `Free_ball` (the ball pushed ahead of a player
   rather than carried, with the glued alternative, the grass or metal
   friction, the aftertouch push and the walls) and `Formation` (a spot
   per player, pulled part of the way towards the ball; the nearest one
@@ -900,7 +900,7 @@ into your friend jousted him just as well.
   physics under it at all: two numbers and a line of gravity); Joust's
   flap *adds* to it, the more physical and much harder choice, and the
   reason flapping has a rhythm of its own. TinyMario walks a tilemap
-  one pixel at a time (`kits/platformer`'s `Tile_move`); Joust has no
+  one pixel at a time (`gamekits/platformer`'s `Tile_move`); Joust has no
   tiles and no collision code -- seven ledges are seven immovable
   bodies.
 - **Left undone** (in the game's header as exercises): the second

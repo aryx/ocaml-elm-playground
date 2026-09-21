@@ -56,7 +56,7 @@
  *    which is most of what Diablo's dungeon feels like, and is one
  *    [fade] on each tile.
  *
- * What it uses: kits/isometric (the projection, the back-to-front
+ * What it uses: gamekits/isometric (the projection, the back-to-front
  * sort, the shadow under the bolt, and the inverse under the mouse --
  * its second game, after games2.5d/TinyZaxxon.ml, and what paid for
  * it), ai/Pathfind (A* for the clicks), and Scene2d. Not Tilemap:
@@ -140,7 +140,7 @@ let at (cells : cell array array) (i : int) (j : int) : cell =
 let walkable (cells : cell array array) ((i, j) : int * int) : bool = at cells i j <> Rock
 
 (*****************************************************************************)
-(* The view: one fixed angle (kits/isometric) *)
+(* The view: one fixed angle (gamekits/isometric) *)
 (*****************************************************************************)
 
 (* a tile is a diamond 56 by 28, the grid every isometric game draws

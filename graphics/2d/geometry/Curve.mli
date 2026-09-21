@@ -77,7 +77,7 @@
  * - Adobe Systems, "PostScript Language Reference Manual",
  *   Addison-Wesley, 1985 (curveto, and flattening with a tolerance).
  *
- * Users: kits/shmup/Path.ml (the curves shmup enemies fly along).
+ * Users: gamekits/shmup/Path.ml (the curves shmup enemies fly along).
  * Depends on nothing, like its neighbors Vec2 and Affine.
  *)
 

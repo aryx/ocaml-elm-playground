@@ -42,7 +42,7 @@ the code, and the shape of the Groundwork section below):
   sentence;
 - text is drawn with **Hershey's vector font** (`graphics/font`,
   Roman simplex, 1967), so every glyph is strokes we draw ourselves;
-- `kits/puzzle/Undo` exists, for games going back one move on a grid;
+- `gamekits/puzzle/Undo` exists, for games going back one move on a grid;
 - `Scene2d` switches whole screens, which is as close to a window
   manager as the repo gets.
 
@@ -185,19 +185,19 @@ gui/tests/                hit tests, layout by hand, the piece table
 playground/Gui.ml         the Evan-style API above, over Immediate
 appkits/document/         (appkit_document) what every app shares:
   Document                a document as a value: content, dirty, path
-  Undo                    the command pattern over values (kits/puzzle
+  Undo                    the command pattern over values (gamekits/puzzle
                           /Undo is its game-shaped cousin)
   Clipboard               cut, copy, paste, in-process
 appkits/embed/            (appkit_embed) compound documents, below
   Component               render into a rectangle, take events when
                           activated, report a natural size, serialize
 apps/                     TinyVisiCalc, TinyExcel, TinyWord, ...
-apps/js/                  the same, for the web, as games/js does
+apps/js/                  the same, for the web, as games/web does
 examples/Gui7*.ml         the 7GUIs tasks, four ways
 ```
 
-`appkits/` sits beside `kits/` deliberately, and the name says the
-relation: `kits/` is what games of a genre share, `appkits/` is what
+`appkits/` sits beside `gamekits/` deliberately, and the name says the
+relation: `gamekits/` is what games of a genre share, `appkits/` is what
 *apps* share. If `apps/` grows past a handful, a catalog plan splits
 off the way [`plan_games.md`](plan_games.md) did for games.
 
@@ -825,8 +825,9 @@ author's own work in progress, and nothing this phase touched;
 ### Phase 6, DONE (2026-09-21), awaiting review
 
 **`appkits/`** exists (the author's call, 2026-09-21: the plan's own
-layout, a directory beside `kits/`, since `kits/` is what games of a
-genre share and `appkits/` is what applications share).
+layout, a directory beside `gamekits/` -- renamed from `kits/` the same
+day, once `appkits/` made the old name ambiguous -- since `gamekits/` is
+what games of a genre share and `appkits/` is what applications share).
 `appkits/document/` is a private library `appkit_document` in package
 `elm_playground`, depending on nothing at all -- a document is a
 value, and these are the rules about values:
@@ -843,7 +844,7 @@ value, and these are the rules about values:
 - **`Undo`** (68 + 46): any value, both ways, with a name per edit
   (a menu says "Undo Add Circle") and a limit, since an editor's
   memory has to stop somewhere. Its `.mli` compares the three undos
-  this repository now has -- `kits/puzzle/Undo` (a game's: one way, no
+  this repository now has -- `gamekits/puzzle/Undo` (a game's: one way, no
   names), `gui/Text_edit`'s (a text's own, over its pieces), and this
   one -- and says plainly what the command pattern is for and where
   its bugs live (in the inverse of an edit, which here does not exist);

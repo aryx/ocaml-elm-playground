@@ -26,7 +26,7 @@
  * In this repository there are three of these, and the differences
  * are the interesting part:
  *
- *   kits/puzzle/Undo     a game's: one way, no redo, no names. A
+ *   gamekits/puzzle/Undo     a game's: one way, no redo, no names. A
  *                        Sokoban player wants the move before, and
  *                        never a menu
  *   gui/Text_edit        a text's own, over its pieces: the same idea

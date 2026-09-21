@@ -13,7 +13,7 @@
  * walk; the steps climb themselves.
  *
  * Doom looked 3D, but its renderer had no 3D at all, no z-buffer, no
- * polygons: a level is a floor plan (kits/sectors/Sectors.mli), and it
+ * polygons: a level is a floor plan (gamekits/sectors/Sectors.mli), and it
  * drew it column by column, like Wolfenstein 3D (games2.5d/TinyWolfenstein.ml), but
  * with walls at any angle, floors and ceilings at any height. Its trick
  * is an order: if the walls come nearest first, each screen column only

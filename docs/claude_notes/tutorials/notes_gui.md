@@ -393,7 +393,7 @@ An edit returns a new document. Then:
 
 - **undo** is a list of past contents, **redo** the list you popped
   off (or the command pattern, which is the same thing with sharing --
-  `kits/puzzle/Undo` is this idea for a grid game, already here);
+  `gamekits/puzzle/Undo` is this idea for a grid game, already here);
 - **dirty** is `content != saved`, a pointer comparison;
 - and, the reason it is worth insisting on, **`Inspect` can scrub an
   app**: a word processor whose whole history replays is the

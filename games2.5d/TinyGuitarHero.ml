@@ -63,7 +63,7 @@
  * from the horizon at the song's own tempo ([beat_lines]), so the
  * highway visibly carries the music towards you.
  *
- * What it uses: kits/rhythm (the music's clock and calibration, the
+ * What it uses: gamekits/rhythm (the music's clock and calibration, the
  * grades, the performance, the chart from a voice on frets, the
  * difficulty reduction, the strum, the sustains -- all of them shared
  * with TinyRockBand), Audio (the band, a note per hit, Audio.position,

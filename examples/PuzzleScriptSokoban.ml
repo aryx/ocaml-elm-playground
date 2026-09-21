@@ -23,7 +23,7 @@
  * and simply goes, if it can.
  *
  * Compare with games/TinySokoban.ml, which is the same game written out
- * by hand, with kits/puzzle's Push and Undo: three hundred lines against
+ * by hand, with gamekits/puzzle's Push and Undo: three hundred lines against
  * these thirty. What the hand-written one has that this has not is a
  * solver in its tests, a move and push counter, and levels that look
  * like something; what this has is that you can change the game by

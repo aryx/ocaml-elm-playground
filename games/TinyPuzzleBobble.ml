@@ -45,7 +45,7 @@
  *    to choose where to aim.
  *
  * What it uses: Scene2d, Audio. No kit: the grid is too different from
- * the square ones of kits/maze/ and kits/puzzle/. Not Physics: a bounce
+ * the square ones of gamekits/maze/ and gamekits/puzzle/. Not Physics: a bounce
  * off a wall is a sign flipped, and the falling bubbles' gravity is one
  * line.
  *

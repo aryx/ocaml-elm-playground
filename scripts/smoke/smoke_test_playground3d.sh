@@ -35,7 +35,7 @@ if [ ${#DIRS[@]} -eq 0 ]; then
     _build/default/examples3d
     _build/default/examples3d/opengl
     _build/default/games3d
-    _build/default/games3d/opengl
+    _build/default/games3d/software
   )
 fi
 

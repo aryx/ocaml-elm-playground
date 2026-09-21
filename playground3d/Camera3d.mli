@@ -132,7 +132,7 @@ val follow : number -> camera -> camera -> camera
  *
  * So: this function gives you the *parallel* half; pointing the camera
  * along (1, 1, 1) gives you the isometric part. Together they are what
- * kits/isometric does by hand on the 2D playground, two lines of
+ * gamekits/isometric does by hand on the 2D playground, two lines of
  * arithmetic and a sort.
  *
  * What it costs, and what that buys:

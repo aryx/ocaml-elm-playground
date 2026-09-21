@@ -24,7 +24,7 @@
  * designers wrote down how, which almost no one does: Maddy Thorson's
  * notes on how Celeste and TowerFall move things ("Celeste and
  * TowerFall Physics", 2017 -- the pixel-at-a-time movement
- * kits/platformer/Tile_move.mli already cites), and the game's own
+ * gamekits/platformer/Tile_move.mli already cites), and the game's own
  * Player code, published for anyone to learn from. It is also
  * remembered for its Assist Mode (slow the game down, a dash that never
  * runs out: a hard game that lets you choose how hard), and for a story
@@ -75,14 +75,14 @@
  * Celeste's own line is that the count is not a score, it is how much
  * you practised.
  *
- * What it uses: kits/platformer's Tile_move (the movement: one pixel at
+ * What it uses: gamekits/platformer's Tile_move (the movement: one pixel at
  * a time, x and then y, which is Celeste's own way of moving -- the
  * kit's header cites it, and this is the first game here written after
  * it), Tilemap (the three rooms, as strings), Scene2d. Not Physics:
  * nothing here is physical, every number is a feel, tuned. Not
  * Camera2d: a room is exactly one screen, as the original's are.
  *
- * The feel lives in this file, and kits/platformer is where it would
+ * The feel lives in this file, and gamekits/platformer is where it would
  * move when a second game wants it: games/TinyMario.ml is the obvious
  * one, and would be a better game for coyote time and a buffer.
  *
@@ -285,7 +285,7 @@ let step (i : input) (p : play) : play =
     in
     let p = cut i.jump_held p in
     (* moving, one pixel at a time: x first, then y, so that a wall
-     * stops only the running (kits/platformer's Tile_move) *)
+     * stops only the running (gamekits/platformer's Tile_move) *)
     let (x, y), hit_x = Tile_move.move_by solid p.map size (p.x, p.y) (p.vx, 0.) in
     let p = { p with x; y; vx = (if hit_x then 0. else p.vx) } in
     let p =

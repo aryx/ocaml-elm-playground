@@ -216,7 +216,7 @@ let exit_at : vec = (144., 0., 400.)
  * air is on the other side. Where another box is against it, it is a
  * surface inside the rock, which nothing can see: qbsp's CSGFaces
  * throws those away, and so does this. The other boxes' edges cut the
- * side into a grid (as in kits/segments/Segments.ml's [rock]), and a
+ * side into a grid (as in gamekits/segments/Segments.ml's [rock]), and a
  * piece is kept if the air just outside it is really air:
  *
  *      +-----+-----+          the side of a box, against another box

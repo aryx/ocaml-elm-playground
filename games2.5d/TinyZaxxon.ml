@@ -62,7 +62,7 @@
  * second answer, for when the ground below you is too busy to read.
  *
  * The projection, the shadow, the sort and the line of sight are
- * kits/isometric's, shared with games2.5d/TinyDiablo: the same three
+ * gamekits/isometric's, shared with games2.5d/TinyDiablo: the same three
  * axes and the same two lines, with a dungeon standing on them instead
  * of a fortress.
  *
@@ -105,7 +105,7 @@
  * shadow problem, and most of them solve it the same way. (Names and
  * dates from memory, to check.)
  *
- * What it uses: kits/isometric (the projection, the shadow, the sort
+ * What it uses: gamekits/isometric (the projection, the shadow, the sort
  * and the line of sight, shared with games2.5d/TinyDiablo) and
  * Scene2d. Not Camera2d: the scroll is a subtraction inside the
  * projection ([Isometric.follow]), and a camera that moved the
@@ -188,7 +188,7 @@ let things : thing list =
 
 (* The view, and the whole of the projection: x goes across the
  * fortress, z along it (up and to the right), height straight up. The
- * arithmetic is kits/isometric's, shared with games2.5d/TinyDiablo;
+ * arithmetic is gamekits/isometric's, shared with games2.5d/TinyDiablo;
  * the numbers are this game's, and x is drawn longer than z on purpose
  * so that the fortress reads as a corridor. *)
 let iso : Isometric.t =

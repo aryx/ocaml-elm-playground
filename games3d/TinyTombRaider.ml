@@ -83,7 +83,7 @@
  * What it uses: playground3d (box, sphere, camera, hud, and
  * TexturedPolygon3d with the texture carried inside the program, as
  * games3d/TinyMinecraft.ml carries its own), Camera3d (behind: the
- * chase camera), and kits/puzzle's Push -- the
+ * chase camera), and gamekits/puzzle's Push -- the
  * same Push that games/TinySokoban.ml uses, on the tomb's floor grid,
  * because a pushable block in a tomb is a Sokoban crate that happens
  * to be drawn in three dimensions. That is the nicest thing this game
@@ -476,7 +476,7 @@ let top_face (cell : int * int) (cx : int) (cz : int) (h : number) : shape3d =
 (* The upright face where two squares meet: on the side of (cx, cz)
  * facing (dx, dz), from [y0] up to [y1]. Every wall in this tomb is one
  * of these, drawn once, by the square that can see it -- the same "one
- * face per shared edge" bookkeeping as a Doom linedef (kits/sectors),
+ * face per shared edge" bookkeeping as a Doom linedef (gamekits/sectors),
  * and the reason the tomb is a few hundred quadrilaterals and not a few
  * thousand. *)
 let side_face (cell : int * int) (cx : int) (cz : int) ((dx, dz) : int * int) (y0 : number) (y1 : number) : shape3d =

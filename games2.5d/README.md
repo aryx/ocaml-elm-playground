@@ -23,7 +23,7 @@ games2.5d/*.ml`) against the whole game.
 | Game | After | Trick | Drawn by | Lines | What the trick can't do |
 | --- | --- | --- | --- | --- | --- |
 | `TinyZaxxon` | Zaxxon (Sega, 1982) | two lines of projection (`x` across the fortress, `z` along it, `y` up), then everything sorted back to front; the altitude of a thing is the gap on screen between it and its shadow | object (a shape, and its shadow at y = 0) | 54 / 478 | tell you how high anything is without drawing it twice; turn, tilt or look from anywhere else (one fixed angle, for ever); two things whose order the sort cannot settle |
-| `TinyDiablo` | Diablo (Blizzard North, 1996) | the same two lines as `TinyZaxxon`, from the kit now (`kits/isometric`), on a grid of diamond tiles; and the two lines run *backwards*, which is what turns a mouse click into a place in the dungeon | tile, and one cube per wall | 0 / 567 (the trick is the kit's) | tell you what is under a pixel without the floor being flat; a room above a room; anything the sort cannot order (a long wall against a body inside it) |
+| `TinyDiablo` | Diablo (Blizzard North, 1996) | the same two lines as `TinyZaxxon`, from the kit now (`gamekits/isometric`), on a grid of diamond tiles; and the two lines run *backwards*, which is what turns a mouse click into a place in the dungeon | tile, and one cube per wall | 0 / 567 (the trick is the kit's) | tell you what is under a pixel without the floor being flat; a room above a room; anything the sort cannot order (a long wall against a body inside it) |
 | `TinyDungeonMaster` | Dungeon Master (FTL, 1987) | the hero stands in the middle of a cell facing one of four ways, so every cell in view has one fixed place on the screen: nested frames, filled in farthest first | cell (a square and a trapezoid) | 24 / 624 | anything off the grid: a diagonal, a step, standing between two cells, looking up |
 | `TinyOutRun` | Out Run (Sega, 1986) | the road as a list of segments, their edges projected, each slice a trapezoid; a curve, each segment shifted sideways a bit more; a hill hides what's behind (a segment drawn only if it rises above the nearer ones) | slice of road | 23 / 250 | a world beyond the road: a track that crosses itself, a free camera |
 | `TinyGuitarHero` | Guitar Hero (Harmonix, 2005) | Out Run's road straightened: one division by the depth for every point of the highway, the gems shrinking and the frets closing in towards the horizon; the lines across it, one a beat, are all that makes it move | point (a lane edge, a gem, a beat line) | 23 / 351 | anything off the highway: it has no world, only a road that the music scrolls |
@@ -132,20 +132,20 @@ engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 | Pseudo-3D | Real 3D | Shared |
 | --- | --- | --- |
 | `TinyWolfenstein` | `games3d/TinyWolfenstein3d` | the map (a copy, a `Tilemap`) |
-| `TinyOutRun` | `games3d/TinyVirtuaRacing` | the course and the car (`kits/racing`: `Road`, `Car`) |
-| `TinyDoom` | `games3d/TinyDoom3d` | the level (`kits/sectors`: `Sectors`) |
-| `TinyComanche` | `games3d/TinyComanche3d` | the island (`kits/heightmap`: `Heightmap`) |
-| `TinyDescent` | `games3d/TinyDescent3d` | the mine and the ship (`kits/segments`: `Segments`, `Sixdof`) |
+| `TinyOutRun` | `games3d/TinyVirtuaRacing` | the course and the car (`gamekits/racing`: `Road`, `Car`) |
+| `TinyDoom` | `games3d/TinyDoom3d` | the level (`gamekits/sectors`: `Sectors`) |
+| `TinyComanche` | `games3d/TinyComanche3d` | the island (`gamekits/heightmap`: `Heightmap`) |
+| `TinyDescent` | `games3d/TinyDescent3d` | the mine and the ship (`gamekits/segments`: `Segments`, `Sixdof`) |
 | `TinyBattlezone` | `games3d/TinyBattlezone3d` | the battle: obstacles, enemy, shells (a copy) |
 | `TinyElite` | `games3d/TinyElite3d` | the ships, their small turns and the flight (a copy); the hidden lines become the engine's backface culling |
 
 The 3D twin is shorter: the engine does the work, and the camera can do
 anything. The pseudo-3D one shows what the engine does, and why games
 could run in 1992 without one. TinyKart's model is shared the other way,
-with the top-down `games/TinyMicroMachines` (`kits/racing`: `Topdown`):
+with the top-down `games/TinyMicroMachines` (`gamekits/racing`: `Topdown`):
 the same race, seen from above. And TinyGuitarHero's highway, drawn by
 hand here, is drawn by a camera in `games3d/TinyRockBand`, four of them
-side by side for a whole band (`kits/rhythm`: the clock, the charts,
+side by side for a whole band (`gamekits/rhythm`: the clock, the charts,
 the difficulty): not a twin, the next game.
 
 `TinyDungeonMaster` is the one that gets no twin, and for a reason
@@ -167,7 +167,7 @@ dune exec games2.5d/TinyDoom.exe            # native, Cairo
 dune exec games2.5d/software/TinyDoom.exe   # the from-scratch 2D rasterizer
 ```
 
-and in a browser, `games2.5d/js/` (see the main README). On the software
+and in a browser, `games2.5d/web/` (see the main README). On the software
 backend, run with `-debug-keys` and press `r` to draw at a half, a third
 or a quarter of the resolution (`graphics/core/Pixelate.mli`): the look
 of 320 x 200 screens, and a lot faster.

@@ -41,7 +41,7 @@
  *    towards the hero along whichever axis it is furthest from, and
  *    tries the other one when that is a wall. With chase=field the
  *    game builds one Dijkstra flow field from the hero every frame
- *    (ai/Pathfind, through kits/rts' Orders -- the same "one search
+ *    (ai/Pathfind, through gamekits/rts' Orders -- the same "one search
  *    for a whole crowd" that moves TinyWarcraft2's peasants) and every
  *    monster walks down it; it costs one search a frame however many
  *    monsters there are.
@@ -65,7 +65,7 @@
  *
  * What it uses: Tilemap (the dungeons, as strings), Camera2d (the
  * dungeon is bigger than the screen), Scene2d, Audio, ai/Pathfind
- * through kits/rts' Orders for the flow field. Not kits/maze: its
+ * through gamekits/rts' Orders for the flow field. Not gamekits/maze: its
  * Grid_move locks a mover to the middle of a tile, which is what
  * Pac-Man wants and Gauntlet does not -- here everything walks in
  * eight directions and slides along the walls. Not Physics: nothing
@@ -279,7 +279,7 @@ let greedy_step (g : game) (m : monster) (speed : number) : number * number =
   else (sx, 0.)
 
 (* The other way: one Dijkstra from the hero for the whole crowd
- * (Orders.field, kits/rts), and each monster walks to the next tile
+ * (Orders.field, gamekits/rts), and each monster walks to the next tile
  * down it. It costs one search a frame however many monsters there
  * are, which is the point of a field. *)
 let field_step (g : game) (field : ((int * int) * number) list) (m : monster) (speed : number) : number * number =

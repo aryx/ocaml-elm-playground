@@ -38,14 +38,16 @@
     kit_heightmap ; TinyComanche3d's island
     kit_segments ; TinyDescent3d's mine
     elm_core ; Basics.clamp
-    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d
-    elm_playground_3d_software ; implem of virtual elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
   )
 )
 
 ; claude: its own stanza: TinyMinecraft uses none of the kits, and
-; reads minecraft.png beside it.
+; reads minecraft.png beside it. TinyMinecraft.ml on the GPU, its world
+; kept in GPU buffers from frame to frame (see Playground3d.cached3d
+; and plan_opengl_perf.md).
 (executables
   (names
     TinyMinecraft
@@ -53,9 +55,9 @@
   (modules TinyMinecraft Texture_atlas)
   (libraries
     elm_core
-    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d
-    elm_playground_3d_software ; implem of virtual elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
   )
 )
 

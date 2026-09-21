@@ -52,7 +52,7 @@
  * Kick Off scrolls up and down it), Scene2d, Audio. Not Physics: a
  * ball on grass is a velocity and a friction, and the whole of the
  * game's physics is the touch that pushes it ahead of you. Not
- * kits/*: this is the first sports game here; if a second one comes
+ * gamekits/*: this is the first sports game here; if a second one comes
  * (TinySpeedball2 is the obvious one, and Speedball's arena is a
  * pinball table with players in it), the pitch, the formation and the
  * free ball are what it would want out of this file.

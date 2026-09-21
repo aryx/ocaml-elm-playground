@@ -16,9 +16,9 @@
  *
  * Where games/TinyMario is about jumping exactly, this is about not
  * losing speed, and the difference is in how the ground is felt.
- * TinyMario walks a box against solid tiles (kits/platformer's
+ * TinyMario walks a box against solid tiles (gamekits/platformer's
  * Tile_move): the ground is flat, a tile is in or out. Sonic runs on a
- * *surface* (kits/platformer's Slope):
+ * *surface* (gamekits/platformer's Slope):
  *
  *  - The ground is tiles with a shape and an angle, and a few sensors
  *    find the surface under the feet rather than a box being pushed out
@@ -40,7 +40,7 @@
  *    ([charge]) is speed bought while standing still, the 1992 sequel's
  *    answer to a hill you can't climb.
  *
- * What it uses: kits/platformer's Slope (the new one) and Camera2d (a
+ * What it uses: gamekits/platformer's Slope (the new one) and Camera2d (a
  * window that looks ahead when Sonic is fast), Scene2d, Audio. Not
  * Tile_move, whose blocks are what Slope replaces here; not Physics:
  * the ground speed is no rigid body, and gravity in the air is two

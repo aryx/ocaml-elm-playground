@@ -15,7 +15,7 @@
  * is no out of play, because the arena has walls.
  *
  * It shares its bones with games/TinyKickOff2 -- both are the sports
- * kit (kits/sports/): the ball as a thing with a speed and a friction
+ * kit (gamekits/sports/): the ball as a thing with a speed and a friction
  * and walls (Free_ball), and a side that keeps its shape because every
  * player has a place in it (Formation). Writing the second game is
  * what turned those into a kit; the first game had them inline, as it
@@ -64,7 +64,7 @@
  * pitch you can see the width of; this one scrolls in both directions
  * and shows you a corner of the arena at a time.
  *
- * What it uses: kits/sports (above), Camera2d (the arena is taller
+ * What it uses: gamekits/sports (above), Camera2d (the arena is taller
  * than the screen), Scene2d, Audio. Not Physics: a heavy ball on metal
  * is a velocity, a friction and a wall, and the domes are two lines of
  * reflection -- see games/TinyPinball.ml, which does the same thing

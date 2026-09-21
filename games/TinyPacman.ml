@@ -19,7 +19,7 @@
  * Jamey Pittman's "The Pac-Man Dossier" (2009), reverse-engineered from
  * the arcade's ROM, which the comments below follow.
  *
- * Two parts are the maze kit (kits/maze/), shared with
+ * Two parts are the maze kit (gamekits/maze/), shared with
  * games/TinyBomberman.ml:
  *   - Grid_move: moving along the corridors of a Tilemap, one pixel at a
  *     time, turning only at the center of a tile, and remembering the
@@ -88,7 +88,7 @@ let inside = (9, 9)
 (* Grid_move, the maze kit's *)
 (*****************************************************************************)
 
-(* moving along the corridors (kits/maze/Grid_move.mli), on this maze's
+(* moving along the corridors (gamekits/maze/Grid_move.mli), on this maze's
  * grid; the types re-exported, to write Up and m.gx here *)
 type dir = Grid_move.dir = Up | Down | Left | Right | Stop
 type mover = Grid_move.mover = { gx : int; gy : int; dir : dir; wanted : dir }
@@ -170,7 +170,7 @@ let target ~(chase : bool) ~(pac : mover) ~(blinky : mover) (g : ghost) : int * 
           let d2 = ((gc - pc) * (gc - pc)) + ((gr - pr) * (gr - pr)) in
           if d2 > 64 then (pc, pr) else corner g.name)
 
-(* A ghost at a tile's center (kits/maze/Chase.mli): never back the way
+(* A ghost at a tile's center (gamekits/maze/Chase.mli): never back the way
  * it came; among the other open ways, the one whose next tile is the
  * closest to the target, or, when blue, one at random (from [rng]). *)
 let ghost_choose ~(open_ : int * int -> bool) ~(goal : int * int) ~(random : int option) (m : mover) : mover =

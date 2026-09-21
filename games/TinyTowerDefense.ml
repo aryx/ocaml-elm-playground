@@ -37,7 +37,7 @@
  *    couldn't touch the creeps either.
  *
  * What it uses: ai/'s Pathfind, its A* search, Scene2d, Audio. Not the maze kit
- * (kits/maze/'s Grid_move is for a character in a fixed maze; here the
+ * (gamekits/maze/'s Grid_move is for a character in a fixed maze; here the
  * maze changes every time you build), not Physics: a shot hits at once,
  * drawn as a line for a few frames.
  *

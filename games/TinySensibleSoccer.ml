@@ -15,7 +15,7 @@
  *
  * THE THREE ANSWERS, which is why this game is worth writing after the
  * other two rather than instead of either. All three use the same
- * kits/sports Free_ball, and what separates them is one number -- how
+ * gamekits/sports Free_ball, and what separates them is one number -- how
  * fast a touch sends the ball, against how fast a man runs:
  *
  *   game            touch   run    the ball, dribbling straight
@@ -61,7 +61,7 @@
  *    the same 45 frames: a lofted shot held right ends up 321 pixels
  *    to the side of the one left alone, a tap along the grass 163.
  *
- * What it uses: kits/sports (Free_ball for the ball on the grass and
+ * What it uses: gamekits/sports (Free_ball for the ball on the grass and
  * the touch, Formation for the shape of a side -- its third user,
  * after TinyKickOff2 and TinySpeedball2), Camera2d, Scene2d, Audio.
  * The height is the game's own: the kit's ball is flat, and a second

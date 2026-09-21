@@ -27,7 +27,7 @@
  * lean toward the goal.
  *
  * What it uses: ai/'s Pathfind, Scene2d. The games do this by hand for
- * now (kits/maze's Chase follows Pac-Man's rules, TinyZelda's and
+ * now (gamekits/maze's Chase follows Pac-Man's rules, TinyZelda's and
  * TinyRogue's monsters walk toward the player and get stuck on walls).
  *
  * Exercises: diagonal steps (and the right heuristic for them: the

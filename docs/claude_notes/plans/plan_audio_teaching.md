@@ -441,7 +441,7 @@ audio meeting).
   the end of the loop and stops with it (`Unit_synth`); two seconds of
   pulls are two seconds of song (the game's tests). Its second user,
   games3d/TinyRockBand, is why the 3D loop now pulls too, and why the
-  rhythm machinery became `kits/rhythm`.
+  rhythm machinery became `gamekits/rhythm`.
 - **Drums, DONE (for the rhythm games, not in the phases)**: an ABC
   voice marked `clef=perc` (abcm2ps's convention) is percussion: its
   notes are General MIDI drum keys (C,, the bass drum 36, D,, the

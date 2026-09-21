@@ -46,7 +46,7 @@
  * a drag, and when it has slowed enough it homes. It is the arc that
  * has to read as a boomerang, not the aerodynamics -- the same choice
  * as everywhere else in this repository (games/TinySlingshot.ml's
- * parabola, kits/racing's bicycle car).
+ * parabola, gamekits/racing's bicycle car).
  *
  * The camera is the other thing the genre decides for you. A party game
  * on one screen cannot follow anybody, so the camera here is fixed,
@@ -77,7 +77,7 @@
  * steering is forces on Physics bodies, which these characters do not
  * have: they move at a fixed speed and their dash is committed, on
  * purpose. So: written out here, the way games/TinyPacman.ml's ghosts
- * and kits/lightcycles' computer are, and noted in that plan as a
+ * and gamekits/lightcycles' computer are, and noted in that plan as a
  * waiting user of both modules.
  *
  * Exercises: the original's power-ups (fire, ice, and above all the

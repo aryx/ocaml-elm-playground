@@ -355,8 +355,8 @@ let won (g : t) (b : board) : bool =
 
 (* the level being played, the boards before this one (for undo), and
  * whether it is over. The history is the same one-line trick as
- * kits/puzzle/Undo.mli, written out here so that playground/ needs
- * nothing from kits/. *)
+ * gamekits/puzzle/Undo.mli, written out here so that playground/ needs
+ * nothing from gamekits/. *)
 type level = { n : int; now : board; past : board list; over : bool }
 type state = level Scene2d.t
 

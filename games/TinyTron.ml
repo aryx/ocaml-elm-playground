@@ -20,7 +20,7 @@
  * descendant (see games/Snake.ml). And it's a classic first clone: the
  * whole game is a grid, two positions, two directions, and one rule.
  *
- * The rules are the light cycles kit's (kits/lightcycles/, the model
+ * The rules are the light cycles kit's (gamekits/lightcycles/, the model
  * and the update); this file is only the 2D view, and
  * games3d/TinyTron3d.ml the 3D one. The arena is a Tilemap of
  * characters (' ' free, '#' the walls, '1' and '2' the trails); the

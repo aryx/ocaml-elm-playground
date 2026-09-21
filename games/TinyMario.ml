@@ -19,13 +19,13 @@
  * Arrows to run, up to jump; take the coins ('$'), bump the '?' blocks
  * from below, reach the flag ('F'). The player moves against the tiles
  * one pixel at a time, with the platformer kit's Tile_move
- * (kits/platformer/, with games/TinyLodeRunner and games/TinyRick).
+ * (gamekits/platformer/, with games/TinyLodeRunner and games/TinyRick).
  *
  * Two flags (see Playground.flags) to compare the ways a camera can
  * follow the player (see Camera2d.mli), and to see more of the level:
  *
  *   dune exec games/TinyMario.exe -- camera=lock zoom=0.5
- *   http://localhost:8001/games/js/TinyMario.html?camera=lerp
+ *   http://localhost:8001/games/web/TinyMario.html?camera=lerp
  *
  * camera= is window (the default), lock, or lerp.
  *
@@ -48,7 +48,7 @@
  *
  *   dune exec games/TinyMario.exe -- music=mytune.abc
  *   dune exec games/TinyMario.exe -- music=https://example.com/song.mid
- *   http://localhost:8001/games/js/TinyMario.html?music=song.mid *)
+ *   http://localhost:8001/games/web/TinyMario.html?music=song.mid *)
 open Playground
 open Basics (* float arithmetics *)
 
@@ -143,7 +143,7 @@ let initial_model =
 (*****************************************************************************)
 
 (* the player's box against the solid tiles, one pixel at a time: see
- * kits/platformer/Tile_move.mli (move_by once for x, then once for y,
+ * gamekits/platformer/Tile_move.mli (move_by once for x, then once for y,
  * so that running into a wall while falling stops only the running) *)
 let blocked (map : Tilemap.t) (x : number) (y : number) : bool = Tile_move.hits solid map (player_size, player_size) x y
 let move_by (map : Tilemap.t) (x, y) (dx, dy) : (number * number) * bool = Tile_move.move_by solid map (player_size, player_size) (x, y) (dx, dy)

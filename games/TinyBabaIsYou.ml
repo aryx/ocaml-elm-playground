@@ -29,7 +29,7 @@
  * PUSH, WALL IS STOP; see games/TinySokoban). (Names and dates from
  * memory, to check.)
  *
- * What it uses: the puzzle kit (kits/puzzle/: Push, rows of things
+ * What it uses: the puzzle kit (gamekits/puzzle/: Push, rows of things
  * pushed, no limit; Undo, the boards before), Scene2d. Not Tilemap: a
  * cell can hold several things (Baba on the flag, a rock on the water),
  * so the board is a list of objects with their cells.

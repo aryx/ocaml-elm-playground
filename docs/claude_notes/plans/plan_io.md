@@ -103,7 +103,7 @@ browser, for that site, and survives a reload.
    TinyExcel first, then TinyWord, TinyMacPaint, TinyPowerPoint,
    TinyOpenDoc.
 3. Import by drop: `computer.dropped`, from SDL's drop event.
-4. `apps/web/`: the apps built for the browser (like `games/js/`:
+4. `apps/web/`: the apps built for the browser (like `games/web/`:
    `copy_files` of `../Foo.ml`, `(modes js)`, an `.html` each) -- to
    check on the way that `Stroke_text`'s Hershey data (`graphics_font`)
    compiles to JavaScript and that the text area and menus behave with

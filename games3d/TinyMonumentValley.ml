@@ -63,7 +63,7 @@
  * graphics/3d/geometry/Camera.mli's [ortho]); [Playground3d.project],
  * which the game calls itself, once per block per frame, because the
  * screen is where the rules live; and Scene2d. No kit: the isometric
- * kit (kits/isometric) is the same projection done by hand on the 2D
+ * kit (gamekits/isometric) is the same projection done by hand on the 2D
  * playground, and this game deliberately has the engine do it instead,
  * so that the z-buffer sorts the blocks and the game can think about
  * nothing but the graph.

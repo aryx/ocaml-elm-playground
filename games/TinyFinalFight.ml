@@ -21,7 +21,7 @@
  * food in the barrels. Streets of Rage (Sega, 1991) answered. (Names and
  * dates from memory, to check.)
  *
- * What's new here, with the brawler kit (kits/brawler/), shared with
+ * What's new here, with the brawler kit (gamekits/brawler/), shared with
  * games/TinyStreetFighter:
  *
  *  - The belt: characters walk left and right, and in depth, up and down

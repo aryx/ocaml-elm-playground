@@ -20,7 +20,7 @@ OPAMS=\
 default: all
 
 # claude: @default (recursive) rather than plain 'dune build' so the
-# 'default' alias in examples/js/ and games/js/ is used and their .html
+# 'default' alias in examples/js/ and games/web/ is used and their .html
 # files are copied into _build/ next to the generated .bc.js
 all: $(OPAMS)
 	dune build @default
@@ -32,7 +32,7 @@ install:
 # to test the native programs, run make and then go to
 # _build/default/examples/ (or games/) and run the .exe there
 # to test the web programs, run also make and then go to
-# _build/default/examples/js/ (or games/js/) under chrome for instance
+# _build/default/examples/js/ (or games/web/) under chrome for instance
 # with open -a "Google Chrome" _build/default/examples/js
 # claude: or use 'make serve-build' below, required for the WebGL
 # pages with textures.
@@ -133,10 +133,16 @@ website:
 	  chmod -R u+w docs/$$d; \
 	done
 	make js
-	for d in examples games games2.5d examples3d; do \
+	for d in examples examples3d; do \
 	  for js in _build/default/$$d/js/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
 	    install -m 644 $$js $$d/js/$$b.html docs/$$d/; \
+	  done; \
+	done
+	for d in games games2.5d; do \
+	  for js in _build/default/$$d/web/*.bc.js; do \
+	    b=`basename $$js .bc.js`; \
+	    install -m 644 $$js $$d/web/$$b.html docs/$$d/; \
 	  done; \
 	done
 	for d in examples3d games3d; do \
@@ -156,8 +162,8 @@ serve:
 	python3 -m http.server --directory docs 8000
 
 js:
-	dune build games/js --profile=release-js
-	dune build games2.5d/js --profile=release-js
+	dune build games/web --profile=release-js
+	dune build games2.5d/web --profile=release-js
 	dune build examples/js --profile=release-js
 	dune build examples3d/js --profile=release-js
 	dune build examples3d/webgl --profile=release-js

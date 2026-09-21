@@ -35,7 +35,7 @@
  *  - Missiles that split (MIRVs, [split]): a warhead becoming three, at
  *    a height drawn from the seed in the model.
  *
- * What it uses: the shoot 'em up kit's Shots (kits/shmup/: every
+ * What it uses: the shoot 'em up kit's Shots (gamekits/shmup/: every
  * missile a shot, aimed at its target), Scene2d, Audio. Not Physics: the
  * missiles fly straight, at a constant speed.
  *

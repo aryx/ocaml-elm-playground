@@ -61,7 +61,7 @@
  *
  * What it uses: the Physics layer (above), Tilemap (the levels, as
  * strings), Scene2d (title, play, done), Audio, and the mouse's two
- * buttons. Not kits/platformer: its Tile_move walks a character
+ * buttons. Not gamekits/platformer: its Tile_move walks a character
  * against a grid a pixel at a time, which is the *other* way to write
  * a platformer -- and the engine is what a portal needs, since what
  * goes through it is a velocity.

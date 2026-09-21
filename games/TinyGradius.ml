@@ -41,7 +41,7 @@
  *    are where the ship was 16 and 32 moves ago ([trail]), which is why
  *    they snake behind it.
  *
- * What it uses: the shoot 'em up kit (kits/shmup/: Path for the waves'
+ * What it uses: the shoot 'em up kit (gamekits/shmup/: Path for the waves'
  * flights, Shots for every shot, bullet and laser -- its third game,
  * after games/TinyInvaders and games/TinyGalaga), Tilemap (the cave, for
  * the collisions), Camera2d (the scrolling), Sprite (the ship), Scene2d,

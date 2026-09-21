@@ -30,7 +30,7 @@
  * them anyway, dropping off edges -- no pathfinding, as dumb as the
  * original's (and still dangerous, since there are several).
  *
- * What it uses: the platformer kit (kits/platformer/: Tile_move, the
+ * What it uses: the platformer kit (gamekits/platformer/: Tile_move, the
  * bodies against the bricks, one pixel at a time; Ladder, climbing, and
  * the ladders' tops as floors), Tilemap (the level, and its holes),
  * Sprite (the runner and the guards), Scene2d (title, play, cleared,

@@ -1,7 +1,7 @@
 # Testing the web backends with headless Chrome
 
 A short tutorial on checking that a web Playground app (a `.bc.js` built
-from `examples/js/`, `games/js/`, `examples3d/js/`, ...) actually
+from `examples/js/`, `games/web/`, `examples3d/js/`, ...) actually
 *renders* something, from a shell, without opening a browser window.
 First used to smoke-test the new `examples3d/js/` (the
 `elm_playground_3d_web` backend) in one command.

@@ -21,7 +21,7 @@
  *     (Zaxxon, Marble Madness), perspective barely showing.
  *
  * The model and the update are the light cycles kit's
- * (kits/lightcycles/), shared with TinyTron: this file is only another
+ * (gamekits/lightcycles/), shared with TinyTron: this file is only another
  * view of the same model -- the Elm architecture's promise, kept. Each
  * trail is drawn from its corners (where the cycle turned): one box per
  * straight part, a few dozen walls in all, instead of one box per cell.

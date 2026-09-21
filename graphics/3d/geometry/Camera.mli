@@ -72,7 +72,7 @@ type t = {
    * What it is for: plans and blueprints, strategy and puzzle games,
    * and above all the isometric view, which is this projection from a
    * particular direction (see Playground3d's Camera3d.orthographic for
-   * the family, and kits/isometric, which does the same arithmetic by
+   * the family, and gamekits/isometric, which does the same arithmetic by
    * hand on the 2D playground). It has one famous consequence: with
    * the view direction (1, 1, 1), the points (0, 0, 0) and (3, 3, 3)
    * land on the same pixel, and nothing in the picture can tell them

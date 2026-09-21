@@ -59,7 +59,7 @@
  * people who dance; auto-charting from the notes is what the free
  * clones, StepMania among them, offered for songs nobody had charted.)
  *
- * What it uses: kits/rhythm (the grades and their windows, the clock
+ * What it uses: gamekits/rhythm (the grades and their windows, the clock
  * less the calibration, a chart played through, the notes of a tune's
  * voice -- written for this game and moved to a kit when
  * games3d/TinyRockBand wanted the same), the playground's Audio (the
@@ -144,7 +144,7 @@ let steps : step list = chart tune
 (* Judging, and the dance: the rhythm kit's *)
 (*****************************************************************************)
 
-(* the grades, the windows and the clock are kits/rhythm's, shared with
+(* the grades, the windows and the clock are gamekits/rhythm's, shared with
  * games3d/TinyRockBand; see Rhythm.mli for the windows, drawn *)
 type judgement = Rhythm.judgement = Perfect | Great | Good | Almost | Miss
 

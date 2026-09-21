@@ -24,7 +24,7 @@
  * pixel art typed as strings, two frames each), Scene2d (title, play,
  * game over), and Tilemap (each bunker is a tile map of small tiles,
  * eroded one tile at a time where shots hit it); and the shoot 'em up
- * kit's Shots (kits/shmup/, with games/TinyGalaga) for the cannon's
+ * kit's Shots (gamekits/shmup/, with games/TinyGalaga) for the cannon's
  * shot and the aliens' bombs. No randomness: the
  * aliens choose who shoots from a fixed table of columns, or the column
  * above you, as the original did, so every game is the same (and golden

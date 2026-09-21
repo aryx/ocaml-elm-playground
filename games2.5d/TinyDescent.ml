@@ -15,11 +15,11 @@
  *
  * Descent was the first game where you could fly in every direction
  * and look anywhere, two years after Doom, whose player could not even
- * look up. The ship's directions are its own (kits/segments/Sixdof.mli),
+ * look up. The ship's directions are its own (gamekits/segments/Sixdof.mli),
  * and there is no floor.
  *
  * Yet its renderer has no z-buffer either. The mine is a set of closed
- * boxes ("segments", kits/segments/Segments.mli) that touch on
+ * boxes ("segments", gamekits/segments/Segments.mli) that touch on
  * rectangles, and everything not in the box you are in is seen through
  * one of those rectangles, a "portal":
  *

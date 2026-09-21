@@ -1910,7 +1910,7 @@ let tower_waves () =
   Alcotest.(check bool) "monsters killed" true (!g.score > 0)
 
 (*****************************************************************************)
-(* TinySonic (kits/platformer's Slope) *)
+(* TinySonic (gamekits/platformer's Slope) *)
 (*****************************************************************************)
 
 (* holding right for [frames], reporting where he got to *)

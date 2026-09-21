@@ -14,7 +14,7 @@
  * another block hides a power-up, a longer fire. Don't stand in the
  * fire, and don't touch the balloons.
  *
- * The second maze game, and the maze kit's second user (kits/maze/):
+ * The second maze game, and the maze kit's second user (gamekits/maze/):
  * the bomber moves like Pac-Man (Grid_move: along the corridors, the
  * turn asked for early remembered), the balloons wander like Pac-Man's
  * blue ghosts (Chase.at_random: at each tile, a random way, but never

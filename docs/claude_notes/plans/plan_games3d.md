@@ -60,7 +60,7 @@ game needs it, teaching, game culture -- plus two for 3D:
 ```
 
 Where: generic 3D layers in `playground3d/` (next to `Gpu_scene`), 3D
-kits in `kits/<genre>/` like the 2D ones. Two layers exist in all but
+kits in `gamekits/<genre>/` like the 2D ones. Two layers exist in all but
 name, both inside `games3d/TinyMinecraft.ml`: its player section (a
 first-person controller: walking, jumping, gravity, looking with
 yaw/pitch, colliding with blocks) and its world section (a voxel grid,
@@ -208,7 +208,7 @@ each with a floor and a ceiling height (`notes_vs_doom_quake.md`,
   - TinyDoom3d, the same level in `playground3d`: floors, ceilings and
     walls extruded as `polygon3d`s once (`cached3d`), a z-buffer, no
     BSP. The comparison is the point.
-- **Kit**: `Sectors` (`kits/sectors/`, shared by the pair): a level
+- **Kit**: `Sectors` (`gamekits/sectors/`, shared by the pair): a level
   as sectors, polygons with a floor, a ceiling and a light, from which
   the linedefs are found (the shared edges are two-sided); the sector
   at a point by its polygons; moving a circle against the lines (steps
@@ -277,7 +277,7 @@ terrain).
   Sebastian Macke's VoxelSpace explainer on GitHub; and
   `games3d/TinyComanche3d.ml`, the same island as `cached3d` triangles
   with a z-buffer, the teaching comparison, like the TinyDoom pair).
-- **Kit**: `Heightmap` (DONE: `kits/heightmap/`, shared by the
+- **Kit**: `Heightmap` (DONE: `gamekits/heightmap/`, shared by the
   TinyComanche pair): a grid of heights, an island made up by
   diamond-square (not noise), the ground under a point, a line of
   sight, colors by height and slope; the triangles are the game's. Not
@@ -348,7 +348,7 @@ angle, standing in it.
   turned sideways; the karts billboards, four drawings by the viewing
   angle; three laps against three computer karts, on the racing kit's
   `Topdown`, TinyMicroMachines' model), and TinyVirtuaRacing (DONE: `games3d/TinyVirtuaRacing.ml`, a stage on
-  TinyOutRun's course, with the racing kit `kits/racing/`) --
+  TinyOutRun's course, with the racing kit `gamekits/racing/`) --
   flat-shaded polygons are exactly `playground3d`'s look, so this may
   be the most satisfying 3D toy. Then TinyMarioKart64 (DONE:
   `games3d/TinyMarioKart64.ml`), the same `Topdown` model as TinyKart
@@ -364,7 +364,7 @@ angle, standing in it.
   corner and throws you off a ramp near the crest, where the shadow
   staying on the boards is what says how high you are.
 - **Kit**, the racing kit of `plan_games.md` in 3D: `Track3d` (DONE:
-  `kits/racing/3d/Track3d.ml`, its own library beside `kit_racing`
+  `gamekits/racing/3d/Track3d.ml`, its own library beside `kit_racing`
   because it draws, and the 3D playground is virtual: a 2D game
   linking the racing kit would otherwise have to link a 3D backend
   too). A course is a handful of control points with a width, a height
@@ -401,7 +401,7 @@ horror), Tomb Raider (Core Design, 1996).
   face, one textured square per square of wall, and the page crushed
   into a single 16-colour dithered palette, which is where the famous
   "random stone" speckle came from. Also the first 3D game to use a 2D
-  kit: `kits/puzzle`'s `Push`, the one TinySokoban uses, on the tomb's
+  kit: `gamekits/puzzle`'s `Push`, the one TinySokoban uses, on the tomb's
   floor grid.
 - **Toy**: TinyAloneInTheDark (DONE: `games3d/TinyAloneInTheDark.ml`), a
   house of four rooms on a `Tilemap`, each with its camera bolted in a
@@ -430,7 +430,7 @@ flat-shaded, like Virtua Racing), Tekken (Namco, 1994).
   the one thing a wall-bounded 2D fighter cannot have. The rules are
   games/TinyStreetFighter's, unaltered and out of the same kit
   (`Frame_data`, `Hitbox`): what changed is what a character *is*.
-- **Kit**: `Skeleton` (DONE: `kits/brawler/3d/Skeleton.ml`, its own
+- **Kit**: `Skeleton` (DONE: `gamekits/brawler/3d/Skeleton.ml`, its own
   library beside `kit_brawler` because it draws): a figure as a tree of
   boxes with joint angles, poses interpolated between keyframes, and
   the hierarchical transforms three dimensions need -- a forearm is
@@ -512,7 +512,7 @@ while being, underneath, exactly the 2D arena game Bomberman was.
   isometric angle nothing that leaves the ground can be placed, so
   every flying thing drags a shadow, as TinyMario64's does.
 - **Kit**: none. A second arena party game (a TinyTowerFall with arrows
-  to catch, a TinyDuckGame) would want what `kits/` has not got yet: a
+  to catch, a TinyDuckGame) would want what `gamekits/` has not got yet: a
   round-and-score layer (`Rounds`?), which half of `games/` writes out
   by hand.
 - **The computer**: written in the game, not from `ai/` -- see
@@ -558,7 +558,7 @@ because players see them as 3D.
   taken out -- monsters on their own clock, a health orb rather than a
   number, loot on the floor -- which is the whole difference between
   the roguelike and the action RPG.
-- **Kit** (DONE): `kits/isometric/` -- the two lines of the
+- **Kit** (DONE): `gamekits/isometric/` -- the two lines of the
   projection, the shadow that gives back the height they throw away,
   the back-to-front sort, the line of sight (what stands between a
   thing and the eye) and the inverse under the mouse. TinyZaxxon was
@@ -587,7 +587,7 @@ one line of the model:
   with the engine doing the drawing: a camera, triangles and a
   z-buffer, where TinyDiablo has two lines of arithmetic and a sort.
   Read side by side, `chamber_camera` is exactly what
-  `kits/isometric`'s two lines do by hand.
+  `gamekits/isometric`'s two lines do by hand.
 - **What it teaches**, and neither of the other two does:
   - **the run loop**: the chamber is the unit, the boon is the choice
     between chambers, and `kept` is what a death is worth -- the only

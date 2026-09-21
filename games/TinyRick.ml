@@ -36,11 +36,11 @@
  * plan_games.md section 12), which could redraw a screen but not scroll
  * one. Dying sends Rick back to the door he came in by.
  *
- * What it uses: the platformer kit (kits/platformer/: Tile_move, for
+ * What it uses: the platformer kit (gamekits/platformer/: Tile_move, for
  * Rick, the natives and the boulder against the rock, one pixel at a
  * time; Ladder, climbing, and ladders' tops as floors, [on_top] only:
  * jumping across a ladder, Rick isn't caught by it), the shoot 'em up
- * kit's Shots (kits/shmup/: Rick's bullets and the darts), Tilemap (the
+ * kit's Shots (gamekits/shmup/: Rick's bullets and the darts), Tilemap (the
  * temple, changed by the treasures taken, the walls blown, the traps
  * sprung), Camera2d (a room at a time: room, flip), Sprite (Rick and the natives),
  * Scene2d. Not Physics: the jump is TinyMario's two lines, and the

@@ -104,7 +104,7 @@
  * with games/TinyMicroMachines and games2.5d/TinyKart), Sprite (its
  * [runs], for the billboards), Scene2d, Camera3d. Not Road and Car
  * (a course is a list of segments there, a ribbon here: see
- * kits/racing/Road.mli and 3d/Track3d.mli), not Tilemap (the circuit
+ * gamekits/racing/Road.mli and 3d/Track3d.mli), not Tilemap (the circuit
  * was a map until the ribbon made the hill possible), not Physics3d
  * (the arcade's few rules, like Topdown's: no tyre forces, and the
  * bank does not pull the kart down the camber).
@@ -125,7 +125,7 @@ open Playground3d
 (*****************************************************************************)
 
 (* The course, as the handful of points the road passes through (see
- * kits/racing/3d/Track3d.mli): where, how high, how wide, and how much
+ * gamekits/racing/3d/Track3d.mli): where, how high, how wide, and how much
  * it leans. Read it as a lap: the start and finish straight, the long
  * climb, the banked right-hander taken downhill, the dip at the
  * bottom, a left-hander and the drag back up.

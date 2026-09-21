@@ -12,7 +12,7 @@ how the search works.
 
 It has already started: `ai/Minimax` (with `examples/AiTictactoe.ml`
 and `games/AiOthello.ml`) and `ai/Pathfind` (with
-`examples/AiPathfinding.ml`, and `kits/rts/Orders` over it, which is
+`examples/AiPathfinding.ml`, and `gamekits/rts/Orders` over it, which is
 how TinyDune2's and TinyWarcraft2's units walk). This plan is written
 after those two, to say where the rest goes: the real-time side
 (steering, flocking, state machines), **bots** -- an AI that plays a
@@ -121,7 +121,7 @@ hand, independently, which is the usual sign that a layer is missing:
   swept test against the map (`Physics.went_through`), an aim that
   wobbles by a sine (no `Random`, so it stays deterministic), keep
   your distance rules, and grenades at what it cannot see.
-- `kits/racing/Topdown.mli` has `Topdown.computer track car`, which
+- `gamekits/racing/Topdown.mli` has `Topdown.computer track car`, which
   returns **a `(gas, steer)` pair** -- exactly the two numbers the
   player's keys produce -- by steering at the next waypoint. That is a
   bot living in a genre kit, and `games/TinyMicroMachines.ml` drives
@@ -168,9 +168,9 @@ so. The honest knobs, each a number in `Bot`:
 The last one is the reason to have `Sense` at all, and the only piece
 of this that is really a design decision rather than a routine.
 
-### Where bots live: `ai/`, the genre kits, and the `kits/bots/` question
+### Where bots live: `ai/`, the genre kits, and the `gamekits/bots/` question
 
-Whether there should be a `kits/bots/` is worth answering explicitly,
+Whether there should be a `gamekits/bots/` is worth answering explicitly,
 because the evidence above cuts both ways. The proposal:
 
 - **The mechanism goes in `ai/`** (`Bot`, `Sense`): the intent loop,
@@ -180,11 +180,11 @@ because the evidence above cuts both ways. The proposal:
   built on.
 - **The knowledge stays in the genre kit**, where `Topdown.computer`
   already is: a racing line and waypoints mean nothing outside
-  `kits/racing/`, a shooter's cover and weapon choice nothing outside
+  `gamekits/racing/`, a shooter's cover and weapon choice nothing outside
   a shooter, a fighting game's spacing nothing outside
-  `kits/brawler/`. A kit is organised by genre here, and a bot is
+  `gamekits/brawler/`. A kit is organised by genre here, and a bot is
   mostly genre knowledge.
-- **So: no `kits/bots/` at first.** It would collect things that have
+- **So: no `gamekits/bots/` at first.** It would collect things that have
   nothing in common but the word "bot", and the one thing they *do*
   have in common is going into `ai/` anyway. The case to revisit it is
   concrete and worth watching for: **a deathmatch bot wanted by both a
@@ -192,8 +192,8 @@ because the evidence above cuts both ways. The proposal:
   `playground3d/Character3d`, see
   [`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)) would
   share map awareness, waypoints, cover and weapon choice across two
-  genres' kits -- and *that* is the day `kits/bots/` (or a
-  `kits/shooter/`) earns its place, with the shared part moved into it
+  genres' kits -- and *that* is the day `gamekits/bots/` (or a
+  `gamekits/shooter/`) earns its place, with the shared part moved into it
   and this paragraph replaced by the reason it happened.
 
 ### 2D and 3D from the same layer
@@ -580,7 +580,7 @@ from memory until then.)
   designed from, so it is the first user and the one that decides the
   API), `games/TinyPong.ml`'s paddle (the smallest one: skill is a
   speed limit), `games/TinyMicroMachines.ml`'s rivals through
-  `kits/racing/Topdown.computer` (which stays in the kit, gaining the
+  `gamekits/racing/Topdown.computer` (which stays in the kit, gaining the
   delay and error knobs), and `games/TinyXpilot.ml`'s "robots", which
   its header already lists as an exercise.
 - **A 3D bot**, once `playground3d/Character3d` exists
@@ -592,7 +592,7 @@ from memory until then.)
   ghosts on `Fsm` and the dossier's rules; TinyZelda's and TinyRogue's
   monsters, which currently walk at you and stick to walls, on
   `Pathfind`; TinyDune2 and TinyWarcraft2 already on it through
-  `kits/rts/Orders`. Each of those touches a game's existing code, so
+  `gamekits/rts/Orders`. Each of those touches a game's existing code, so
   each is proposed here and decided there.
 
 ## Phasing
@@ -602,7 +602,7 @@ from memory until then.)
 1. **Game-tree search, DONE**: `Minimax` (minimax, alpha-beta, the node
    counts), `examples/AiTictactoe.ml`, `games/AiOthello.ml`.
 2. **Pathfinding, DONE**: `Pathfind` (breadth-first, Dijkstra, A*,
-   flow fields), `examples/AiPathfinding.ml`, and `kits/rts/Orders`
+   flow fields), `examples/AiPathfinding.ml`, and `gamekits/rts/Orders`
    over it for TinyDune2 and TinyWarcraft2.
 3. **Steering and flocking**: `Steering`, `Flock`, on `Physics.body`;
    `AiSteering`, `AiFlock`; the `Ai.mli` forces above, which is the
@@ -659,7 +659,7 @@ from memory until then.)
   with a mud patch costing 5, breadth-first wades through for a cost of
   18 while Dijkstra and A* go around for 16, looking at 115 and 75
   cells. `examples/AiPathfinding.ml` watches all three;
-  `kits/rts/Orders` turns them into a strategy game's three kinds of
+  `gamekits/rts/Orders` turns them into a strategy game's three kinds of
   order (one unit to a place, one unit to whatever is nearest, a crowd
   to a place through one flow field).
 - **Open decisions**, to settle while writing, not now: the board-game
@@ -674,19 +674,19 @@ from memory until then.)
   thing most of this repository's games actually need -- a mind that
   plays through the player's own inputs. Written up from what three
   games already do by hand (`TinySoldat`'s `intent`/`human`/`bot`,
-  `kits/racing/Topdown.computer`'s `(gas, steer)`, `TinyPong`'s
+  `gamekits/racing/Topdown.computer`'s `(gas, steer)`, `TinyPong`'s
   speed-limited paddle), which is also why `Bot`'s API is being
   generalised from existing code rather than designed: the test of the
   port is that TinySoldat gets *shorter*.
-- **`kits/bots/`: not yet, and the condition for changing that**
+- **`gamekits/bots/`: not yet, and the condition for changing that**
   (the author's question, same day). The mechanism (`Bot`, `Sense`) is
   genre-independent and goes in `ai/`; the knowledge is genre-specific
   and stays in the genre kit, where `Topdown.computer` already lives.
   A kit named after a technique rather than a genre would be the first
   of its kind here. Revisit when a deathmatch bot is wanted by both a
   2D and a 3D shooter -- that is a real shared body of knowledge (map
-  awareness, cover, weapons), and then it becomes `kits/shooter/` or
-  `kits/bots/`, with the reason recorded here.
+  awareness, cover, weapons), and then it becomes `gamekits/shooter/` or
+  `gamekits/bots/`, with the reason recorded here.
 - **The naming**: the AI demo games are `Ai*` (AiOthello, AiTictactoe,
   AiPathfinding), not `Tiny*`, because what they demonstrate is the
   algorithm rather than an arcade original -- kept for AiConnect4,

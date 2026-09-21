@@ -289,7 +289,7 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
 - **TinyTronscroll, the milestone** (`games/TinyTronscroll.ml`): the
   author's own first network game, rebuilt Tiny (see "Prior art in the
   house") -- 8 players on a map much bigger than the screen, a
-  scrolling viewport (`Camera2d`), light trails (`kits/lightcycles`,
+  scrolling viewport (`Camera2d`), light trails (`gamekits/lightcycles`,
   which `games/TinyTron.ml` already uses) and the six power-ups.
   What makes it the right milestone rather than one more game: its
   netcode is a **key**, and the three settings are the plan's three

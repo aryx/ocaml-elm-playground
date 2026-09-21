@@ -43,7 +43,7 @@
  * purpose: grunts walk into electrodes and die there, as they do in
  * the arcade, and that is the design rather than a bug.
  *
- * What it uses: the shoot 'em up kit (kits/shmup/Shots, its third user
+ * What it uses: the shoot 'em up kit (gamekits/shmup/Shots, its third user
  * after TinyInvaders and TinyGalaga: the man's shots, and the
  * enforcers' aimed sparks), Sprite (the pixel art), Scene2d (title,
  * play, game over), Audio. Not Physics: nothing here has inertia, the

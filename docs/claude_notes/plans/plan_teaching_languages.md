@@ -14,7 +14,7 @@ that were built to teach programming:
 
 Each of them builds a `Playground.app` for you, so a program written on
 one has no `update` and no `view` of its own. That is the line between
-`playground/` and `kits/`, and it is worth keeping sharp:
+`playground/` and `gamekits/`, and it is worth keeping sharp:
 
 - a **kit** module is something a game *calls* from its own update or
   view (`Push`, `Undo`, `Shots`, `Road`); the game keeps the

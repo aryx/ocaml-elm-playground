@@ -33,8 +33,8 @@
  *   - hills hide what's behind them because of the z-buffer, not because
  *     of a special case (TinyOutRun's [visible]).
  * The course and the car (its speed, steering, the curves' push, the
- * grass) are the racing kit's (kits/racing/), shared by the two games;
- * the ribbon it is drawn as is the kit's 3D half (kits/racing/3d/),
+ * grass) are the racing kit's (gamekits/racing/), shared by the two games;
+ * the ribbon it is drawn as is the kit's 3D half (gamekits/racing/3d/),
  * shared with games3d/TinyMarioKart64, whose circuit is written as a
  * spline instead of read from a Road.t.
  *

@@ -131,7 +131,7 @@ Read backwards, each tile points at the neighbour nearest the goal.
 One search for any number of units; each one only ever looks at the
 tile under its feet, so being pushed off course costs nothing. This is
 how a strategy game moves a crowd, and it is `Pathfind.field` and
-`downhill`, with `kits/rts/Orders` turning it into TinyDune2's and
+`downhill`, with `gamekits/rts/Orders` turning it into TinyDune2's and
 TinyWarcraft2's orders.
 
 The same field, read differently, is an **influence map**: run it from
@@ -272,7 +272,7 @@ repository found it independently:
 `games/TinySoldat.ml` has exactly that: a record `intent` (`run`,
 `jump`, `jet`, `shoot`, `grenade`, `aim`), filled either by `human`
 from the keyboard and mouse or by `bot` from the world, and an update
-that cannot tell which. `kits/racing/Topdown.computer` returns
+that cannot tell which. `gamekits/racing/Topdown.computer` returns
 `(gas, steer)` -- the two numbers the player's keys produce.
 `games/TinyPong.ml`'s paddle follows the ball *at a limited speed*,
 and that limit is the entire difficulty setting.

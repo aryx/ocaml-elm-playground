@@ -43,7 +43,7 @@
  *    isn't swinging the sword, is stopped -- one dot product: the rock's
  *    direction against the one he faces.
  *
- * What it uses: the platformer kit's Tile_move (kits/platformer/: seen
+ * What it uses: the platformer kit's Tile_move (gamekits/platformer/: seen
  * from above, Link and the octoroks are boxes against the trees and
  * rocks, one pixel at a time, with no gravity), the shoot 'em up kit's
  * Shots (the rocks), Tilemap (the world, changed by the items taken and

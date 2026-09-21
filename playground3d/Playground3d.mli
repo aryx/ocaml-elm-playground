@@ -287,7 +287,7 @@ type camera = {
       orthographic camera, which never divides by the depth, so two
       things of one size are drawn one size however far apart they are.
       That is what an isometric game is drawn with (see
-      [kits/isometric], which does the same two lines by hand), and
+      [gamekits/isometric], which does the same two lines by hand), and
       what {!Camera3d.orthographic} sets. *)
   ortho : number;
   near : number;

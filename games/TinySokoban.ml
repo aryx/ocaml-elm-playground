@@ -29,7 +29,7 @@
  *
  * Undo is where the Elm architecture shines: the model is a value, so
  * the history is just the list of the past boards, and undoing is taking
- * the head of the list (the puzzle kit's Undo, kits/puzzle/, with the
+ * the head of the list (the puzzle kit's Undo, gamekits/puzzle/, with the
  * push itself, Push: a chain of one box at most). Scene2d gives the
  * title and the "solved" screens, and keys pressed rather than held:
  * one press, one step.

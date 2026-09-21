@@ -32,7 +32,7 @@
  * Both ways need the same two things to fly in every direction: a
  * camera with a roll (playground3d's camera takes an [up], here the
  * ship's own, where the other games leave it (0, 1, 0)) and no floor
- * to stand on (kits/segments/Sixdof.mli).
+ * to stand on (gamekits/segments/Sixdof.mli).
  *
  * The mine is built once into a [cached3d] shape, so the GPU backends
  * keep it in their buffers; only the ship, the robots and the shots

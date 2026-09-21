@@ -9,14 +9,14 @@
 # 2 of the License, or (at your option) any later version.
 #
 # Smoke-test the web programs, without a browser window:
-#   - each games/js/*.bc.js run in node with a fake DOM
+#   - each games/web/*.bc.js run in node with a fake DOM
 #     (scripts/web/web_headless.js), 600 frames, pressing space,
 #     1, the arrows: any exception or hang is reported;
 #   - each games3d/webgl/*.html screenshotted in headless Chrome (WebGL
 #     through SwiftShader), into $OUT (default /tmp/web_smoke/), to look at
 #     (the pages are opened as files: a texture loaded over HTTP, like
 #     TinyMinecraft's, shows as magenta; make serve-build for the real thing).
-# Build first: dune build @games/js/default @games3d/webgl/default
+# Build first: dune build @games/web/default @games3d/webgl/default
 #
 # Usage: scripts/smoke/smoke_test_web.sh
 # Env: BUILD_DIR (default _build), OUT (default /tmp/web_smoke).
@@ -27,12 +27,12 @@ B="$ROOT/${BUILD_DIR:-_build}/default"
 OUT=${OUT:-/tmp/web_smoke}
 mkdir -p "$OUT"
 fail=0
-for js in "$B"/games/js/*.bc.js; do
+for js in "$B"/games/web/*.bc.js; do
   name=$(basename "$js" .bc.js)
   res=$(timeout 60 node "$ROOT/scripts/web/web_headless.js" "$js" 600 ' ',1,ArrowUp,ArrowRight,ArrowLeft,' ' 2>&1 | tail -1)
   case "$res" in
-    OK*) echo "ok     games/js/$name" ;;
-    *) echo "FAILED games/js/$name: $res"; fail=1 ;;
+    OK*) echo "ok     games/web/$name" ;;
+    *) echo "FAILED games/web/$name: $res"; fail=1 ;;
   esac
 done
 CHROME=$(command -v google-chrome || command -v chromium || true)

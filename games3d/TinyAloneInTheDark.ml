@@ -51,7 +51,7 @@
  * which is also what a thermostat does, and for the same reason.
  *
  * Carnby and the thing in the corridor are the brawler kit's Skeleton
- * (kits/brawler/3d/Skeleton.mli), the one games3d/TinyVirtuaFighter
+ * (gamekits/brawler/3d/Skeleton.mli), the one games3d/TinyVirtuaFighter
  * fights with: a walk is two key poses swapped, and the creature is a
  * pose with its arms held out, which is all a 1992 zombie ever was.
  *

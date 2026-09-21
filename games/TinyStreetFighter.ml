@@ -23,7 +23,7 @@
  * (1987) came before; Mortal Kombat (Midway, 1992) answered. (Names and
  * dates from memory, to check.)
  *
- * What's new here, with the brawler kit (kits/brawler/):
+ * What's new here, with the brawler kit (gamekits/brawler/):
  *
  *  - Moves in frames ([moves], Frame_data): a jab is 3 frames of
  *    startup, 2 active, 6 of recovery; hit, the other is stunned 12:

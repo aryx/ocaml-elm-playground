@@ -50,7 +50,7 @@ open Playground
 (* The track, and the car: the racing kit *)
 (*****************************************************************************)
 
-(* the course and the car's rules are the racing kit's (kits/racing/,
+(* the course and the car's rules are the racing kit's (gamekits/racing/,
  * Road and Car), shared with games3d/TinyVirtuaRacing.ml *)
 let segment_length = 200. (* world units along the road *)
 let road_width = 2000. (* half the road's width, in world units *)

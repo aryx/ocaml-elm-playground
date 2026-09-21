@@ -31,7 +31,7 @@
  *
  * What the third dimension brings, and what this file is about:
  *
- *  - Hierarchical transforms (kits/brawler/3d/Skeleton.mli): a forearm
+ *  - Hierarchical transforms (gamekits/brawler/3d/Skeleton.mli): a forearm
  *    is drawn in its upper arm's frame, so a shoulder's angle moves the
  *    hand without the hand knowing. In 2D each line could be drawn
  *    where it lay; here a limb must be built, bent, and only then

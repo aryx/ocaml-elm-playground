@@ -26,10 +26,10 @@
  * a few points, typed as a list ([entry_paths], [dive_path]), made
  * smooth by a Catmull-Rom spline, and flown at a constant speed, by the
  * distance along it rather than the spline's parameter: see
- * kits/shmup/Path.mli, the arc-Path.length parametrization in its simplest
+ * gamekits/shmup/Path.mli, the arc-Path.length parametrization in its simplest
  * form, and the enemies turned to face where they fly.
  *
- * What it uses: the shoot 'em up kit (kits/shmup/: Path for the
+ * What it uses: the shoot 'em up kit (gamekits/shmup/: Path for the
  * flights, Shots for the fighter's shots and the divers' aimed
  * bullets, also games/TinyInvaders'), Sprite (pixel art, turned to face
  * where they fly), Scene2d (title, play, game over), Audio (the shots,

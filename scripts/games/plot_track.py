@@ -8,7 +8,7 @@
 # (LGPL) as published by the Free Software Foundation; either version
 # 2 of the License, or (at your option) any later version.
 #
-# The racing kit's course (kits/racing/Road.ml's [coast], read from its
+# The racing kit's course (gamekits/racing/Road.ml's [coast], read from its
 # source) in space, as TinyVirtuaRacing builds it (Road.centerline):
 # the closest the road comes back near itself (two points at least 40
 # segments apart), which must stay above the road's width, and a top
@@ -26,7 +26,7 @@ L = float(sys.argv[2]) if len(sys.argv) > 2 else 2.0
 out = sys.argv[3] if len(sys.argv) > 3 else "/tmp/track.png"
 
 num = r'\(?-?[0-9.]+\)?'
-text = block("kits/racing/Road.ml", "coast")
+text = block("gamekits/racing/Road.ml", "coast")
 sections = []
 for kind, args in re.findall(r'\b(straight|curve_hill|curve|hill) ((?:' + num + r' ?)+)', text):
     vals = [float(v) for v in re.findall(r'-?[0-9.]+', args)]
