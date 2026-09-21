@@ -8,12 +8,13 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* A toy version of Zaxxon (Sega, 1982), the first game to be seen from
- * an angle: you fly a fighter along an isometric fortress, through the
- * openings in its walls, shooting what stands on it before the fuel
- * runs out.
+ * an angle: you fly a fighter along an isometric fortress, over its
+ * walls and between its towers, shooting what stands on it before the
+ * fuel runs out.
  *
  *   left/right  across the fortress
  *   up/down     higher and lower (and the shadow says how high)
+ *               -- the gauge's red mark is the wall ahead of you
  *   space       fire
  *
  * The trick of this game is the oldest in this directory, and the
@@ -60,6 +61,20 @@
  * plane. The altimeter up the left side ([altimeter]) is the arcade's
  * second answer, for when the ground below you is too busy to read.
  *
+ * Nothing in the fortress is ever above the fighter: a wall is blocks
+ * standing on the floor, and you clear them or you go between them.
+ * That is not a simplification, it is the shape of the thing -- the
+ * arcade had no windows to fly into either -- and it is what keeps
+ * this world inside the rule the rest of games2.5d/ lives by, one
+ * height per point of the map. What it does not spare you is the
+ * tower you have *flown past*, which stands between you and the eye
+ * until its picture slides off you; the fighter is then drawn again
+ * over it, faintly ([hidden_by], which asks whether a block is in the
+ * way -- a question this projection answers with one direction and a
+ * multiplication, there being no perspective in it). Knight Lore did
+ * that, and so does every game since that lets you walk behind a
+ * wall.
+ *
  * Depth is settled the way every game here settles it, by the order of
  * the drawing: the shapes are sorted by their z, far ones first
  * ([painted]). With no overlapping allowed to be ambiguous -- one
@@ -70,9 +85,11 @@
  * The fourth family of this directory, then, next to cell by cell
  * (TinyDungeonMaster), row by row (TinyKart, TinyOutRun) and column by
  * column (TinyWolfenstein, TinyDoom, TinyComanche): **object by
- * object**. It is also the only one whose world has a real third
- * dimension -- you fly *over* the walls -- and it pays for it with the
- * one thing the others never need, a shadow to tell you where you are.
+ * object**. Its world obeys the same restriction as theirs, one height
+ * per point; what is new is that the *player* has a height and must
+ * judge it, where the others put the eye at a fixed level and let the
+ * world have all the geometry. That one extra number is what the
+ * projection throws away, and the shadow is what gives it back.
  *
  * Zaxxon was a landmark in 1982 for its look alone, and the view
  * became a genre of its own: Q*bert (1982), Marble Madness (1984),
@@ -115,18 +132,34 @@ let wall_color = rgb 150 120 90
 let plane_color = rgb 230 230 240
 let shadow_color = rgb 20 22 40
 
-(* A wall across the fortress with one opening in it: fly through the
- * hole, or lose the fighter. *)
-type wall = { wz : number; hx0 : number; hx1 : number; hy0 : number; hy1 : number }
+(* A wall is blocks standing on the floor: fly over the low ones, and
+ * between the tall ones. There are no windows in the fortress and
+ * nothing to fly *under* -- the arcade had none either -- which is
+ * also what keeps this world inside the rule the rest of games2.5d/
+ * lives by: one height per point of the map, and the drawing order
+ * settles everything. *)
+type block = { bx0 : number; bx1 : number; bh : number }
+type wall = { wz : number; blocks : block list }
+
+let wall (wz : number) (blocks : (number * number * number) list) : wall =
+  { wz; blocks = List.map (fun (bx0, bx1, bh) -> { bx0; bx1; bh }) blocks }
 
 let walls : wall list =
-  [ (* the first one is wide open at the height you start at: the
-     * fortress teaches you to read the shadow before it asks you to *)
-    { wz = 700.; hx0 = -90.; hx1 = 90.; hy0 = 0.; hy1 = 85. };
-    { wz = 1300.; hx0 = 40.; hx1 = 160.; hy0 = 60.; hy1 = 130. };
-    { wz = 1900.; hx0 = -170.; hx1 = -70.; hy0 = 0.; hy1 = 70. };
-    { wz = 2500.; hx0 = -50.; hx1 = 50.; hy0 = 90.; hy1 = 160. };
-    { wz = 3100.; hx0 = 60.; hx1 = 180.; hy0 = 0.; hy1 = 50. } ]
+  [ (* low enough to clear without touching the stick: the fortress
+       lets you read your shadow once before it asks you to use it *)
+    wall 700. [ (-.half_w, half_w, 30.) ];
+    (* the first climb *)
+    wall 1300. [ (-.half_w, half_w, 100.) ];
+    (* a doorway: two towers to the ceiling, and the way is between
+       them -- here it is your x that matters and your height not at all *)
+    wall 1900. [ (-.half_w, -40., ceiling); (60., half_w, ceiling) ];
+    wall 2500. [ (-.half_w, half_w, 140.) ];
+    (* a doorway on the right, with a low step to clear beside it *)
+    wall 3100. [ (-.half_w, 40., ceiling); (120., half_w, 60.) ] ]
+
+(* what the wall does to a fighter that reaches it at (x, y) *)
+let blocked (x : number) (y : number) (w : wall) : bool =
+  List.exists (fun b -> x > b.bx0 && x < b.bx1 && y < b.bh) w.blocks
 
 type kind = Fuel | Turret | Tower
 
@@ -141,7 +174,7 @@ let things : thing list =
   @ List.map (at Tower) [ (-180., 800.); (180., 1450.); (-60., 2050.); (60., 2650.); (-180., 3250.) ]
 
 (*****************************************************************************)
-(* The projection -- the trick of this game, in 33 lines (see the header) *)
+(* The projection -- the trick of this game, in 54 lines (see the header) *)
 (*****************************************************************************)
 
 (* the screen point of a world point, the camera's z taken off first:
@@ -168,12 +201,32 @@ let shadow_at (camz : number) ((x, _y, z) : number * number * number) (s : shape
 let painted (l : (number * shape) list) : shape list =
   List.map snd (List.sort (fun (a, _) (b, _) -> compare b a) l)
 
-(* Two things are outside that order on purpose, as they were in the
- * arcade: the floor, which everything stands on and nothing is ever
- * under, goes first; and the fighter, which is a *sprite* and had
- * priority over the background hardware, goes last -- so the wall you
- * have just flown through passes behind you rather than swallowing
- * you for six frames. *)
+(* One thing is outside that order, and only one: the floor, which
+ * everything stands on and nothing is ever under, is painted first.
+ * The fighter is *in* the sort like everything else, and has to be --
+ * it is the whole point of the view. A wall is drawn over you once you
+ * have passed it (it is then between you and the eye) and under you
+ * while you are still coming at it, and the frame of a hole you are
+ * entering cuts across your nose. Taking the fighter out of the sort
+ * and always drawing it last, as sprite hardware would, is a lie the
+ * player can see: you slide over the frame instead of into it. *)
+
+(* Which way the eye is, in world coordinates: the direction the
+ * projection sends to (0, 0), since walking along it keeps you on the
+ * same pixel. Solving the two lines of [project] for it gives
+ * (0.4, 0.54, -1) per unit of z towards the eye -- and it is a
+ * direction, the same everywhere, because there is no perspective:
+ * that is the one convenience the trick buys back.
+ *
+ * So: walk from the fighter towards the eye until z reaches a wall's,
+ * see where on the wall you come out, and if that point is on the wall
+ * and not in its hole, the wall is between you and the eye. *)
+let hidden_by ((x, y, z) : number * number * number) (w : wall) : bool =
+  let t = z - w.wz in
+  t > 0.
+  &&
+  let hx = x + (0.4 * t) and hy = y + (0.54 * t) in
+  List.exists (fun b -> hx > b.bx0 && hx < b.bx1 && hy >= 0. && hy < b.bh) w.blocks
 
 (*****************************************************************************)
 (* The model *)
@@ -255,9 +308,8 @@ let update_play (computer : computer) (scenes : model) (p : play) : play =
   in
   (* what can end the flight: a wall you are not in the hole of, a
    * tower you fly into, a shot, or the fuel *)
-  let through (w : wall) : bool = px > w.hx0 && px < w.hx1 && py > w.hy0 && py < w.hy1 in
   let crossed (w : wall) : bool = p.camz + plane_z < w.wz && pz >= w.wz in
-  let into_wall = List.exists (fun w -> crossed w && not (through w)) walls in
+  let into_wall = List.exists (fun w -> crossed w && blocked px py w) walls in
   let into_tower =
     List.exists (fun (t : thing) -> t.alive && t.kind = Tower && Float.abs (px - t.tx) < 26. && Float.abs (pz - t.tz) < 26. && py < tall t.kind) things
   in
@@ -304,15 +356,16 @@ let floor_slices (camz : number) : (number * shape) list =
       in
       (z, quad))
 
-(* a wall is its two sides and its lintel: the hole is not cut out of
- * anything, it is what is left between three rectangles *)
+(* a wall is one quad per block, each standing on the floor *)
 let wall_shapes (camz : number) (w : wall) : (number * shape) list =
-  let piece x0 x1 y0 y1 =
-    let a = project camz x0 y0 w.wz and b = project camz x1 y0 w.wz and c = project camz x1 y1 w.wz and d = project camz x0 y1 w.wz in
-    polygon wall_color [ a; b; c; d ]
-  in
-  [ (w.wz, piece (-.half_w) w.hx0 0. ceiling); (w.wz, piece w.hx1 half_w 0. ceiling);
-    (w.wz, piece w.hx0 w.hx1 w.hy1 ceiling); (w.wz, piece w.hx0 w.hx1 0. w.hy0) ]
+  List.map
+    (fun b ->
+      let p0 = project camz b.bx0 0. w.wz
+      and p1 = project camz b.bx1 0. w.wz
+      and p2 = project camz b.bx1 b.bh w.wz
+      and p3 = project camz b.bx0 b.bh w.wz in
+      (w.wz, polygon wall_color [ p0; p1; p2; p3 ]))
+    w.blocks
 
 let thing_shape (t : thing) : shape =
   match t.kind with
@@ -334,9 +387,19 @@ let plane_shadow : shape = plane_body shadow_color |> fade 0.7
 let altimeter (p : play) : shape list =
   let x = -430. and h = 300. in
   let mark (y : number) = (y / ceiling * h) - (h / 2.) in
+  (* how high the next wall is *where you are*: the block your x runs
+   * into, or nothing at all if you are lined up with a gap. The gauge
+   * therefore answers both questions the fortress asks, "climb" and
+   * "move across", with one line *)
+  let need =
+    match List.find_opt (fun (w : wall) -> w.wz > p.camz + plane_z) walls with
+    | Some w -> List.fold_left (fun m b -> if p.px > b.bx0 && p.px < b.bx1 then Float.max m b.bh else m) 0. w.blocks
+    | None -> 0.
+  in
   [ rectangle (rgb 40 45 70) 26. h |> move x 0.;
-    rectangle (rgb 90 200 120) 26. 4. |> move x (mark 0.);
-    triangle (rgb 240 240 250) 10. |> rotate (-90.) |> move (x + 22.) (mark p.py) ]
+    rectangle (rgb 90 200 120) 26. 4. |> move x (mark 0.) ]
+  @ (if need > 0. then [ rectangle (rgb 230 90 80) 26. 4. |> move x (mark need) ] else [])
+  @ [ triangle (rgb 240 240 250) 10. |> rotate (-90.) |> move (x + 22.) (mark p.py) ]
 
 let view_play (computer : computer) (p : play) : shape list =
   let screen = computer.screen in
@@ -358,12 +421,23 @@ let view_play (computer : computer) (p : play) : shape list =
               (s.sz, shadow_at camz (s.sx, s.sy, s.sz) (circle shadow_color 4.)) ])
         p.shots
   in
+  (* the fighter and its shadow take their places in the sort, the
+   * fighter a hair nearer than the shadow it casts *)
   let fighter =
-    if p.dead > 0 then [ at camz (p.px, p.py, pz) (circle (rgb 250 180 60) (float_of_int (60 -.. p.dead) + 6.) |> fade 0.8) ]
-    else [ shadow_at camz (p.px, p.py, pz) plane_shadow; at camz (p.px, p.py, pz) plane_shape ]
+    if p.dead > 0 then [ (pz, at camz (p.px, p.py, pz) (circle (rgb 250 180 60) (float_of_int (60 -.. p.dead) + 6.) |> fade 0.8)) ]
+    else [ (pz, shadow_at camz (p.px, p.py, pz) plane_shadow); (pz -. 0.5, at camz (p.px, p.py, pz) plane_shape) ]
+  in
+  (* and when a wall you have flown past is over you, the fighter is
+   * drawn again, faintly, on top of it: correct is not the same as
+   * playable, and every isometric game from Knight Lore to Diablo
+   * shows you the thing the wall is hiding *)
+  let ghost =
+    if p.dead > 0 || not (List.exists (hidden_by (p.px, p.py, pz)) walls) then []
+    else [ at camz (p.px, p.py, pz) (plane_shape |> fade 0.3) ]
   in
   (rectangle sky screen.width screen.height :: painted (floor_slices camz))
-  @ painted world @ fighter
+  @ painted (world @ fighter)
+  @ ghost
   @ altimeter p
   @ [ text white 2.2 (Printf.sprintf "score %d    run %d" p.score p.run) |> move_y (screen.top - 40.);
       text (if p.fuel < 25. then rgb 250 110 90 else rgb 120 220 140) 2.2

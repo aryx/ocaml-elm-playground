@@ -22,7 +22,7 @@ games2.5d/*.ml`) against the whole game.
 
 | Game | After | Trick | Drawn by | Lines | What the trick can't do |
 | --- | --- | --- | --- | --- | --- |
-| `TinyZaxxon` | Zaxxon (Sega, 1982) | two lines of projection (`x` across the fortress, `z` along it, `y` up), then everything sorted back to front; the altitude of a thing is the gap on screen between it and its shadow | object (a shape, and its shadow at y = 0) | 33 / 404 | tell you how high anything is without drawing it twice; turn, tilt or look from anywhere else (one fixed angle, for ever); two things whose order the sort cannot settle |
+| `TinyZaxxon` | Zaxxon (Sega, 1982) | two lines of projection (`x` across the fortress, `z` along it, `y` up), then everything sorted back to front; the altitude of a thing is the gap on screen between it and its shadow | object (a shape, and its shadow at y = 0) | 54 / 478 | tell you how high anything is without drawing it twice; turn, tilt or look from anywhere else (one fixed angle, for ever); two things whose order the sort cannot settle |
 | `TinyDungeonMaster` | Dungeon Master (FTL, 1987) | the hero stands in the middle of a cell facing one of four ways, so every cell in view has one fixed place on the screen: nested frames, filled in farthest first | cell (a square and a trapezoid) | 24 / 624 | anything off the grid: a diagonal, a step, standing between two cells, looking up |
 | `TinyOutRun` | Out Run (Sega, 1986) | the road as a list of segments, their edges projected, each slice a trapezoid; a curve, each segment shifted sideways a bit more; a hill hides what's behind (a segment drawn only if it rises above the nearer ones) | slice of road | 23 / 250 | a world beyond the road: a track that crosses itself, a free camera |
 | `TinyWolfenstein` | Wolfenstein 3D (id, 1992) | a ray cast per column through a grid of walls (DDA); the distance gives the wall's height | column | 61 / 306 | walls at an angle, heights, floors |
@@ -45,14 +45,16 @@ Four families, then:
 
 - **Object by object**, the projection: Zaxxon, and every isometric
   game after it. The oldest trick here and the smallest -- two lines
-  that turn three world axes into two screen ones, and a sort -- and
-  the only one whose world really has a third dimension, since you fly
-  *over* the walls rather than through a floor plan. It pays for that
-  with the one problem none of the others have: a projection that
-  keeps no depth cannot say how high you are, so every flying thing is
-  drawn twice, once where it is and once as a shadow on the ground,
-  and the gap between them is the altitude. Q*bert, Knight Lore,
-  Populous and Diablo are all this trick.
+  that turn three world axes into two screen ones, and a sort. Its
+  world keeps the same restriction as the others, one height per point
+  (a wall is blocks on the floor; there is nothing to fly under), but
+  it is the one where the *player* has a height and must judge it,
+  where the rest put the eye at a fixed level and give the world all
+  the geometry. That one number is exactly what the projection throws
+  away -- so every flying thing is drawn twice, once where it is and
+  once as a shadow on the ground, and the gap between them is the
+  altitude. Q*bert, Knight Lore, Populous and Diablo are all this
+  trick.
 - **Cell by cell**, the grid: Dungeon Master. If the eye is always at a
   cell's center and looks along an axis, there is a small, fixed set of
   cells it can see, and each one has one place on the screen -- so the
