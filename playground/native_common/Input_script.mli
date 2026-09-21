@@ -26,6 +26,14 @@
  * during n and up at n+1, which is what makes it a click
  * (Playground.mli's [mclick]).
  *
+ * And characters, which are not keys (Playground.mli's [typed]):
+ *
+ *   "type(edit):30"
+ *
+ * types "edit" at frame 30, all four in that one frame's [typed], as a
+ * fast typist's keystrokes arrive between two frames. No comma inside
+ * the parentheses, since commas separate the entries.
+ *
  * The same idea as the "input movies" of emulators (the TAS, tool-
  * assisted speedrun, communities' frame-by-frame recordings, e.g.
  * FCEUX's .fm2 files) and as the demos of Doom and Quake (.lmp and .dem
@@ -52,6 +60,10 @@ val changes : t -> int -> (string * bool) list
  * script says. The last [at] covering the frame wins, so a later
  * entry can move the pointer over a stretch an earlier one covers. *)
 val mouse : t -> int -> (float * float) option
+
+(* [typed script frame]: the characters the script types at [frame],
+ * "" at most frames *)
+val typed : t -> int -> string
 
 (* [button_changes script frame]: the mouse buttons going down (true)
  * or up (false) at the start of [frame], each paired with whether it

@@ -83,6 +83,14 @@ let test_names_are_for_the_menu () =
   Alcotest.(check (option string)) "and now the one before" (Some "Add Circle") (Undo.undo_name h);
   Alcotest.(check (option string)) "with the other to put back" (Some "Adjust Diameter") (Undo.redo_name h)
 
+(* what changes the state but is not an edit: no new version *)
+let test_amend () =
+  let h = Undo.record "ab" (Undo.start "a") in
+  let h = Undo.amend "abc" h in
+  Alcotest.(check string) "the state now" "abc" (Undo.now h);
+  Alcotest.(check int) "and still one version behind" 1 (Undo.undos h);
+  Alcotest.(check string) "which is where undo goes, past the amendment" "a" (Undo.now (Undo.undo h))
+
 let test_the_oldest_versions_are_forgotten () =
   let h = ref (Undo.start ~limit:3 0) in
   for i = 1 to 10 do
@@ -115,6 +123,7 @@ let tests =
     t "the title is the file's name" test_title_is_the_file_name;
     t "the worked example of a history" test_the_worked_example;
     t "an edit's name is for the menu" test_names_are_for_the_menu;
+    t "amending is not a new version" test_amend;
     t "the oldest versions are forgotten" test_the_oldest_versions_are_forgotten;
     t "undo and redo at the ends do nothing" test_undo_at_the_ends_does_nothing;
     t "the clipboard holds the last thing copied" test_clipboard;

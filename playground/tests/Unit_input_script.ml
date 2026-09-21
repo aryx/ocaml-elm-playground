@@ -61,6 +61,17 @@ let test_buttons () =
   Alcotest.check changes "frame 12: the right one" [ (true, true) ] (Input_script.button_changes s 12);
   Alcotest.check changes "frame 30: nothing" [] (Input_script.button_changes s 30)
 
+(* characters, which are not keys: all of them in the frame they are
+ * typed at, and nothing at the others *)
+let test_typing () =
+  match Input_script.parse "type(edit):30,type(!):31,right:31" with
+  | Error msg -> Alcotest.fail msg
+  | Ok s ->
+      Alcotest.(check string) "frame 30" "edit" (Input_script.typed s 30);
+      Alcotest.(check string) "frame 31" "!" (Input_script.typed s 31);
+      Alcotest.(check string) "frame 32" "" (Input_script.typed s 32);
+      Alcotest.(check (list string)) "and the keys beside them" [ "ArrowRight" ] (Input_script.down s 31)
+
 let tests =
   Testo.categorize "Input_script"
     [
@@ -69,4 +80,5 @@ let tests =
       t "errors" test_errors;
       t "where the pointer is" test_mouse;
       t "the buttons going down and up" test_buttons;
+      t "typing characters" test_typing;
     ]

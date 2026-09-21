@@ -433,7 +433,10 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
         Input_script.button_changes sc frame
         |> List.iter (fun (right, is_down) ->
                apply_playground_event
-                 (if right then E.ERightMouseButton is_down else E.EMouseButton is_down))
+                 (if right then E.ERightMouseButton is_down else E.EMouseButton is_down));
+        (match Input_script.typed sc frame with
+        | "" -> ()
+        | s -> apply_playground_event (E.ETyped s))
     | None -> ());
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
     apply_playground_event (E.ETick now);

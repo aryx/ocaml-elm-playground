@@ -5,13 +5,16 @@
 ; software/ for the golden frames.
 (executables
   (names
-    TinyVisiCalc TinyExcel
+    TinyVisiCalc TinyExcel TinyBravo
   )
   (libraries
     elm_playground
     gui ; Widget, for text_width
     appkit_sheet ; Formula and Sheet, the engine
     appkit_sheet_view ; a sheet drawn into a rectangle (TinyExcel)
+    appkit_document ; Undo (TinyBravo, TinyWord)
+    appkit_richtext ; text with looks, and its page (TinyBravo, TinyWord)
+    graphics_font ; Hershey's strokes, for Stroke_text
     elm_playground_native ; implem of virtual elm_playground
   )
 )

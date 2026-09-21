@@ -66,6 +66,10 @@ let scenes : Testutil_golden.scene list =
      * ratio in the margin, and the one loose line it could not avoid
      * without hyphenation marked *)
     ("examples/software/TypesetParagraph", "", 5);
+    (* 1974: the page as it would print, its looks drawn by the pen from
+     * Hershey's own strokes -- a bold title at 26, a bold word, an
+     * italic one *)
+    ("apps/software/TinyBravo", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -465,6 +469,18 @@ let scripted : Testutil_golden.scripted list =
       "greedy",
       20,
       "at(-146;455):1-5,click:3,at(-146;419):6-12,click:8,at(300;-300):13-20" );
+    (* Bravo's modes, which a script can now reach because it can type:
+     * "edit" typed in command mode -- e selects everything, d deletes
+     * it, i starts inserting, and a t is all that is left -- then
+     * Escape and two undos, one per command, bringing it all back *)
+    ("apps/software/TinyBravo", "edit", 12, "type(edit):10");
+    ("apps/software/TinyBravo", "undone", 22, "type(edit):10,escape:14,type(uu):18");
+    (* a selection dragged with the mouse, then l u and l s from the
+     * keyboard: underlined and struck, the pen's two rules *)
+    ( "apps/software/TinyBravo",
+      "looks",
+      20,
+      "at(-222;285):1-6,click:5-10,at(-118;285):8-10,type(lu):14,type(ls):16,at(300;-400):17-20" );
     ( "apps/software/TinyExcel",
       "edited",
       20,

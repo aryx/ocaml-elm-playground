@@ -33,6 +33,8 @@ let rec keep n = function [] -> [] | x :: rest -> if n <= 0 then [] else x :: ke
 let record ?name value t =
   { t with now = { value; name }; past = keep t.limit (t.now :: t.past); future = [] }
 
+let amend value t = { t with now = { t.now with value } }
+
 let undo t =
   match t.past with
   | [] -> t

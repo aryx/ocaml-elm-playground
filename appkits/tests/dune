@@ -10,5 +10,7 @@
    appkit_document
    appkit_sheet
    appkit_typeset
+   appkit_richtext
+   gui ; Text_edit, under Rich
  )
 )

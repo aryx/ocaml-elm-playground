@@ -1116,29 +1116,109 @@ Measured: `appkits/tests` 29 green (5 new), `gui/tests` 55 (1 new),
 dropdown by a scripted click and showing three rivers where
 Knuth-Plass had one.
 
-### Phase 9b, planned: the real TinyWord
+### Phases 9b-9d, planned: TinyBravo, then TinyWord
 
-What makes Word *Word* is what the example skipped, and it is the
-document host phase 10 needs anyway ("a TinyExcel sheet inside a
-TinyWord document"):
+The author's idea (2026-09-21): **a TinyBravo before TinyWord, as
+TinyVisiCalc came before TinyExcel** -- and it is the actual lineage,
+not only a parallel. Bravo (Butler Lampson and Charles Simonyi, Xerox
+PARC, 1974), on the Alto, was the first WYSIWYG editor, and it is where
+the **piece table** came from: `gui/Text_edit` already is Bravo's
+structure. Simonyi then went to Microsoft and wrote Word with it. So
+one engine, two interfaces a decade apart, and this time the lesson
+is **modes**: Bravo was modal (letters were commands until you entered
+insert mode -- type "edit" in command mode, and **e** selects
+everything, **d** deletes it, **i** starts inserting, and a **t** is
+all that is left), Tesler and Mott's Gypsy (1975) made it modeless,
+and Word inherited that.
 
-- **WYSIWYG**: the caret *in* the laid-out page, hit-testing glyphs
-  across wrapped lines -- the hard part, and why Bravo (Xerox PARC,
-  1974) is a landmark;
-- **character formatting as runs over the piece table** -- Word's own
-  structure, whose pieces carried formatting: a second data-structure
-  lesson, in how an insert splits a bold run and how a selection
-  across three runs is made italic;
-- **paragraph formatting**: left, centre, right, justified -- justified
-  reusing `appkits/typeset`, *greedy* by default because that is what
-  Word does, with Knuth-Plass as the switch;
-- **bold, italic, strike, underline, sizes** -- the one blocker is that
-  the playground's `words` carries only a colour and a string, and
-  `graphics/font` has one Hershey face. The route that touches no
-  backend: draw text from Hershey's own strokes as thin rectangles --
-  bold a thicker pen (Hershey's duplex and triplex faces are literally
-  that), italic a shear of the stroke coordinates, strike and
-  underline a rule. Its cost is shapes per frame, to be measured.
+- **9b, the shared engine, `appkits/richtext`**: a text plus *style
+  runs* over it (Bravo's "looks") -- how an insert extends a run or
+  splits one, how a selection across three runs is restyled, the
+  "typing style" a bold with nothing selected leaves on the caret --
+  and a WYSIWYG layout: glyphs positioned, the caret to a point and a
+  click back to an offset. Undo over the whole styled text is
+  `appkits/document/Undo`, since it is a value. **The glyph widths are
+  a parameter** (as `Linebreak`'s word widths are): `graphics/font` is
+  a private library of the software package and cannot be a
+  dependency here -- which is the right push anyway: the apps supply
+  Hershey's real metrics, the tests simple ones checkable by hand.
+- **9c, TinyBravo (1974)**: modal commands, the mouse to select, looks
+  by keyboard, and the "edit" trap reproducible.
+- **9d, TinyWord (1985)**: modeless, a toolbar or menu for bold,
+  italic, underline, strike, sizes, and alignment -- justified
+  reusing `appkits/typeset`, greedy by default since that is what Word
+  does.
+
+Both draw their text from Hershey's own strokes as thin rectangles,
+so no backend changes: bold a thicker pen (Hershey's duplex and
+triplex faces are literally that), italic a shear of the stroke
+coordinates, strike and underline a rule. The cost in shapes per
+frame is to be measured.
+
+### Phase 9b, DONE (2026-09-21), awaiting review: the engine
+
+**`appkits/richtext/`** (a fourth library in `appkits/`, depending on
+`gui` for the piece table):
+
+- **`Style`**: a look -- bold, italic, underline, strike, size -- as a
+  value with no identity, so that two characters are in the same style
+  exactly when their looks are equal;
+- **`Rich`** (the text and its looks): the piece table's characters
+  beside a second table of **runs**, and every edit the same surgery
+  on both -- split at a position, keep what is either side, merge
+  neighbours that have come to look alike. Its two rules are the ones
+  every word processor has and gets wrong somewhere: what you type
+  looks like what is before it (over a selection, like its first
+  character), and a look set with nothing selected is the *typing
+  style*, pending on the caret and forgotten when it moves. Tested
+  against 3000 random edits compared with a naive model storing one
+  look per character, first time;
+- **`Page`** (the WYSIWYG layout): greedy word by word, as Bravo and
+  Word did, lines as tall as their tallest look -- and both ways
+  between the text and the page, `caret_at` and `offset_at`, with a
+  test that they agree at *every* place in a text. **The glyph widths
+  are the caller's**, which is what keeps it a library every backend
+  can use. It also carries the alignment TinyWord needs (left, centre,
+  right, justified -- greedy lines stretched, the last line of a
+  paragraph left alone), committed with the engine; TinyBravo sets
+  everything left, as Bravo did.
+
+`Undo` gained `amend`: what changes the state without being an edit
+-- the selection moving, the second letter of a word being typed --
+which is how an insertion becomes one undoable edit however long it
+is. And `-script` gained **`type(text):n`**, characters rather than
+keys, which is what finally makes modal commands and typing testable
+in a golden frame.
+
+### Phase 9c, DONE (2026-09-21), awaiting review: TinyBravo
+
+**`apps/TinyBravo.ml`**: 1974, on a sheet of paper standing up (the
+Alto's portrait screen), the text in its looks where it would print.
+**Modal**, as Bravo was: `i` insert, `a` append, `d` delete, `e`
+everything, `l` then a letter for looks, `u` undo -- and the mouse to
+select. What it uses is the engine above and **`apps/Stroke_text`**,
+which draws a look *with the pen* from Hershey's own strokes (bold a
+thicker pen, italic the points sheared, underline and strike two
+rules) -- no backend touched, and what is laid out is exactly what is
+drawn, since the same glyph data gives the widths and the strokes.
+Fast enough: five frames and start-up in 0.3 s.
+
+The golden frames are the program's story: the page as it would print;
+**the "edit" trap**, typed in command mode -- e selects everything, d
+deletes it, i starts inserting, and a t is all that is left; the same
+**undone** by `uu`, one undo per command; and a selection dragged with
+the mouse, underlined and struck from the keyboard.
+
+One mistake of mine worth keeping: the opening's looks were first put
+on offsets counted by hand, and landed on "uld p" and "lic". They are
+found in the string now, and the comment says why.
+
+Measured: `appkits/tests` 44 green (15 new: the runs, the typing
+rules, the page both ways, `amend`), `playground/tests` 59 (typing in
+a script), the 2D golden suite 143 with the four TinyBravo frames.
+
+Still to come: **9d, TinyWord** -- the same engine, modeless, as
+Tesler's Gypsy made it and Word inherited.
 
 ## Verification
 

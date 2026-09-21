@@ -53,6 +53,12 @@ val now : 'a t -> 'a
  * as in every editor that is not a version control system. *)
 val record : ?name:string -> 'a -> 'a t -> 'a t
 
+(* [amend v t]: [v] is the state now, *without* a new version -- for
+ * what changes the state but is not an edit: the selection moving,
+ * or the second keystroke of a word being typed, which should be
+ * undone together with the first. *)
+val amend : 'a -> 'a t -> 'a t
+
 val undo : 'a t -> 'a t
 val redo : 'a t -> 'a t
 val can_undo : 'a t -> bool
