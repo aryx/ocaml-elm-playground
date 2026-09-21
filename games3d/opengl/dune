@@ -8,6 +8,7 @@
 (copy_files ../TinyWolfenstein3d.{ml,mli})
 (copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../TinyMarioKart64.ml)
+(copy_files ../TinyVirtuaFighter.ml)
 (copy_files ../TinyTron3d.{ml,mli})
 (copy_files ../TinyMario64.{ml,mli})
 (copy_files ../TinyMarbleMadness.{ml,mli})
@@ -20,6 +21,7 @@
 (copy_files ../TinyTombRaider.ml)
 (copy_files ../TinyBoomerangFu3d.ml)
 (copy_files ../TinyHades.ml)
+(copy_files ../TinyMonumentValley.ml)
 
 (executables
   (names
@@ -28,6 +30,7 @@
     TinyWolfenstein3d
     TinyVirtuaRacing
     TinyMarioKart64
+    TinyVirtuaFighter
     TinyTron3d
     TinyMario64
     TinyMarbleMadness
@@ -39,13 +42,16 @@
     TinyTombRaider
     TinyBoomerangFu3d
     TinyHades
+    TinyMonumentValley
   )
-  (modules StarCollector3d TinyBattlezone TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d TinyHades Tomb_atlas)
+  (modules StarCollector3d TinyBattlezone TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyVirtuaFighter TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d TinyHades TinyMonumentValley Tomb_atlas)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_puzzle ; TinyTombRaider's Push
     kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown
     kit_racing3d ; TinyMarioKart64's circuit (Track3d)
+    kit_brawler ; TinyVirtuaFighter's Frame_data and Hitbox
+    kit_brawler3d ; TinyVirtuaFighter's Skeleton
     kit_sectors ; TinyDoom3d's level
     kit_heightmap ; TinyComanche3d's island
     kit_segments ; TinyDescent3d's mine

@@ -222,6 +222,67 @@ let mario_kart_ribbon () =
   ignore y
 
 (*****************************************************************************)
+(* TinyVirtuaFighter *)
+(*****************************************************************************)
+
+(* the keyframes are the frame data: the fist is where the hitbox is,
+ * exactly while the move can hit. Written by eye instead, an animation
+ * drifts from the rules and a fighter seems to hit before it does. *)
+let virtua_fighter_keyframes () =
+  let open TinyVirtuaFighter in
+  let m = move_of Punch in
+  let reach (frame : int) : number =
+    let _, _, z = Skeleton.hand fighter_height 0. (poses_of Punch frame) in
+    (* built facing -z, so the fist reaches out as this grows *)
+    -.z
+  in
+  (* frame 0 is the guard; by frame 1 the arm is already a quarter of
+   * the way out, which is the interpolation doing its job *)
+  let guard_reach = reach 0 and active_reach = reach (m.startup + 1) and back = reach (Frame_data.length m) in
+  Alcotest.(check bool) "the fist is out while the move is active" true (active_reach > guard_reach +. 0.3);
+  Alcotest.(check bool) "and back afterwards" true (back < active_reach -. 0.3);
+  (* the hitbox and the fist agree about where a punch lands *)
+  Alcotest.(check bool) "the hitbox is where the fist is" true (Float.abs (m.hitbox.x -. active_reach) < 0.35)
+
+(* a punch that lands takes health, the same punch blocked takes far
+ * less and pushes less: holding back is the whole defence *)
+let virtua_fighter_blocking () =
+  let open TinyVirtuaFighter in
+  let attacker = { (new_fighter (-0.5) 1.) with state = Attacking (Punch, (move_of Punch).startup + 1) } in
+  let open_up = new_fighter 0.5 (-1.) in
+  let back = { no_input with dir = { back = true; forward = false; down = false } } in
+  let _, hit, landed = strike attacker open_up no_input in
+  let _, guarded, landed_guard = strike attacker open_up back in
+  Alcotest.(check bool) "it lands" true landed;
+  Alcotest.(check bool) "it lands on the guard too" true landed_guard;
+  Alcotest.(check bool) "blocking costs less health" true (guarded.health > hit.health);
+  Alcotest.(check bool) "and gives less ground" true (guarded.x < hit.x);
+  (* a low kick goes under a standing guard *)
+  let sweeper = { (new_fighter (-0.5) 1.) with state = Attacking (Low_kick, (move_of Low_kick).startup + 1) } in
+  let _, swept, _ = strike sweeper open_up back in
+  Alcotest.(check bool) "a low kick is not blocked standing" true (swept.health < guarded.health)
+
+(* the ring is the second way to lose: pushed past its edge, a fighter
+ * goes down and the round is over whatever its health says *)
+let virtua_fighter_ring_out () =
+  let open TinyVirtuaFighter in
+  (* a kick landing on someone already at the edge pushes them off it,
+   * with their health barely touched: the ring is a second way to lose *)
+  let attacker = { (new_fighter (ring_half -. 0.8) 1.) with state = Attacking (Kick, (move_of Kick).startup + 1) } in
+  let victim = new_fighter (ring_half -. 0.05) (-1.) in
+  let _, pushed, landed = strike attacker victim no_input in
+  Alcotest.(check bool) "the kick lands" true landed;
+  Alcotest.(check bool) "and pushes them off the ring" true (off_ring pushed);
+  Alcotest.(check bool) "with most of their health" true (pushed.health > 80);
+  (* and a round in that state is over, won by the one still on it *)
+  let r = new_round 0 0 in
+  let r = { r with b = { r.b with x = ring_half +. 0.1 } } in
+  let r = step_round initial_computer.keyboard r in
+  Alcotest.(check bool) "the round is decided" true (r.over > 0);
+  Alcotest.(check bool) "on the ring, not on damage" true (r.ring_out && r.b.health > 80);
+  Alcotest.(check int) "the one still standing on it wins it" 1 r.won_a
+
+(*****************************************************************************)
 (* TinyDoom *)
 (*****************************************************************************)
 
@@ -3279,6 +3340,80 @@ let hades_death_pays_for_the_next_run () =
       Alcotest.(check bool) "and starts with more life than the first did" true (next.max_hp > p.max_hp)
   | _ -> Alcotest.fail "space should have started the next run"
 
+(*****************************************************************************)
+(* TinyMonumentValley *)
+(*****************************************************************************)
+
+let mv_screen = to_screen 1000. 1000.
+
+(* The claim the whole game rests on: with no perspective and the view
+ * direction (1, 1, 1), a block and another three along, three up and
+ * three away are drawn on the same pixel. Nothing in the picture can
+ * tell them apart -- so the game lets the figure step between them. *)
+let mv_three_apart_is_one_pixel () =
+  let open TinyMonumentValley in
+  let l = levels.(0) in
+  let cam = monument_camera l 0 in
+  let blocks = Array.of_list (placed l 0) in
+  let a = blocks.(4) and b = blocks.(5) in
+  Alcotest.(check (float 0.001)) "three along" 3. (b.bx -. a.bx);
+  Alcotest.(check (float 0.001)) "three up" 3. (b.by -. a.by);
+  Alcotest.(check (float 0.001)) "three away" 3. (b.bz -. a.bz);
+  (match (on_screen cam mv_screen a, on_screen cam mv_screen b) with
+  | Some (ax, ay), Some (bx, by) ->
+      Alcotest.(check bool) "and yet one pixel" true (Float.hypot (ax -. bx) (ay -. by) < 1.)
+  | _ -> Alcotest.fail "both should be on screen");
+  Alcotest.(check bool) "so the figure may step across" true (connected cam mv_screen a b);
+  (* and two blocks that are neither neighbours nor lined up are not *)
+  Alcotest.(check bool) "unlike two unrelated stones" false (connected cam mv_screen blocks.(0) blocks.(6))
+
+(* The first monument is walkable end to end only through that step. *)
+let mv_the_first_monument_is_walked () =
+  let open TinyMonumentValley in
+  let l = levels.(0) in
+  let cam = monument_camera l 0 in
+  let blocks = placed l 0 in
+  let path = route cam mv_screen blocks l.start l.goal in
+  Alcotest.(check bool) "there is a way" true (path <> []);
+  Alcotest.(check bool) "and it goes through the impossible step" true (List.mem 5 path)
+
+(* Turning the piece does not build anything: it changes which of the
+ * impossible connections the camera happens to be making. At rest the
+ * bridge lines up with the east terrace, a quarter turn later with the
+ * north one -- and the goal is north. *)
+let mv_turning_changes_what_connects () =
+  let open TinyMonumentValley in
+  let l = levels.(1) in
+  let way (turns : int) =
+    let cam = monument_camera l turns in
+    route cam mv_screen (placed l turns) l.start l.goal
+  in
+  Alcotest.(check bool) "pointing east, no way to the goal" true (way 0 = []);
+  Alcotest.(check bool) "turned a quarter, there is one" true (way 1 <> []);
+  (* the bridge really did move: it is the world that turned, not the rule *)
+  let before = Array.of_list (placed l 0) and after = Array.of_list (placed l 1) in
+  Alcotest.(check bool) "the bridge swung" true (before.(6).bx <> after.(6).bx || before.(6).bz <> after.(6).bz);
+  Alcotest.(check bool) "the masonry did not" true (before.(0).bx = after.(0).bx && before.(0).bz = after.(0).bz)
+
+(* Walking is the same number of frames a step whether the step is real
+ * or not, which is what sells it. *)
+let mv_a_step_is_a_step () =
+  let open TinyMonumentValley in
+  let p = ref (start ()) in
+  let l = levels.(0) in
+  let cam = monument_camera l 0 in
+  let path = route cam mv_screen (placed l 0) l.start l.goal in
+  p := { !p with path };
+  let m = ref (Scene2d.start (TinyMonumentValley.Playing !p)) in
+  let steps = List.length path in
+  for i = 1 to (steps * 17) + 5 do
+    let c = computer i in
+    m := Scene2d.update c !m;
+    p := TinyMonumentValley.update_play c !m !p
+  done;
+  Alcotest.(check int) "she arrived" l.goal !p.here;
+  Alcotest.(check bool) "with nothing left to walk" true (!p.path = [])
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -3292,6 +3427,9 @@ let tests =
       t "TinyMarioKart64, the powerslide and its mini-turbo" mario_kart_mini_turbo;
       t "TinyMarioKart64, the items by place" mario_kart_items;
       t "TinyMarioKart64, the ribbon there and back" mario_kart_ribbon;
+      t "TinyVirtuaFighter, the keyframes are the frame data" virtua_fighter_keyframes;
+      t "TinyVirtuaFighter, blocking, and what goes under it" virtua_fighter_blocking;
+      t "TinyVirtuaFighter, the ring is the other way to lose" virtua_fighter_ring_out;
       t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;
@@ -3435,4 +3573,8 @@ let tests =
       t "TinyHades, a boon is a number" hades_a_boon_is_a_number;
       t "TinyHades, the dash is the defence" hades_the_dash_is_the_defence;
       t "TinyHades, three boons between chambers" hades_between_chambers;
-      t "TinyHades, dying pays for the next run" hades_death_pays_for_the_next_run ]
+      t "TinyHades, dying pays for the next run" hades_death_pays_for_the_next_run;
+      t "TinyMonumentValley, three apart is one pixel" mv_three_apart_is_one_pixel;
+      t "TinyMonumentValley, the first monument is walked" mv_the_first_monument_is_walked;
+      t "TinyMonumentValley, turning changes what connects" mv_turning_changes_what_connects;
+      t "TinyMonumentValley, a step is a step" mv_a_step_is_a_step ]

@@ -389,11 +389,22 @@ horror), Tomb Raider (Core Design, 1996).
 Virtua Fighter (Yu Suzuki, Sega AM2, 1993: the first 3D fighting game,
 flat-shaded, like Virtua Racing), Tekken (Namco, 1994).
 
-- **Toy**: TinyVirtuaFighter, two box-figures (a character as a
-  hierarchy of `box`es: joints, `rotate3d` per limb, the lesson being
-  hierarchical transforms and keyframe animation).
-- **Kit**: the 2D brawler kit's hitboxes and frame data, in 3D; a
-  `Skeleton` (a tree of boxes with angles, keyframes interpolated).
+- **Toy**: TinyVirtuaFighter (DONE: `games3d/TinyVirtuaFighter.ml`),
+  two box-figures on a raised ring, best of three rounds, and a round
+  won by knocking the other *off* it -- Virtua Fighter's own rule, and
+  the one thing a wall-bounded 2D fighter cannot have. The rules are
+  games/TinyStreetFighter's, unaltered and out of the same kit
+  (`Frame_data`, `Hitbox`): what changed is what a character *is*.
+- **Kit**: `Skeleton` (DONE: `kits/brawler/3d/Skeleton.ml`, its own
+  library beside `kit_brawler` because it draws): a figure as a tree of
+  boxes with joint angles, poses interpolated between keyframes, and
+  the hierarchical transforms three dimensions need -- a forearm is
+  built, bent, and only then turned by its upper arm, so a shoulder
+  moves the hand without the hand knowing. Its proportions are
+  Stickman's, so the two are the same fighter drawn twice. A move's
+  keyframes are its own frame data, which is what keeps the fist out
+  exactly while the move can hit. Not yet: a sidestep (VF2's, which
+  needs hitboxes with a width), throws, a replay camera.
 
 ### 12. 3D puzzles
 
@@ -416,9 +427,28 @@ paths connect).
   and that is the nice part: a game seen from the side can draw a drop
   shadow under the falling piece and one seen from straight above
   cannot, because the shadow is always exactly behind the thing casting
-  it), TinyMonumentValley
-  (later: needs an orthographic camera, which `Playground3d.camera`
-  doesn't have -- a `fov` of 0 as the convention?).
+  it), TinyMonumentValley (DONE:
+  `games3d/TinyMonumentValley.ml`, and it brought the orthographic
+  camera with it: `Playground3d.camera` gained an `ortho` field --
+  the height of the view in world units instead of a `fov`, and no
+  divide by the depth at all -- with `Camera3d.orthographic` to set
+  it, `Mat4.orthographic` for the GPU backends, and a diagram of the
+  two kinds of camera in `graphics/3d/geometry/Camera.mli`.
+
+  The game is one rule and it is the camera's: with the view direction
+  (1, 1, 1) and no perspective, the points (0, 0, 0) and (3, 3, 3) are
+  drawn on the same pixel, so two blocks that far apart *look*
+  adjacent -- and `connected` lets the figure step between any two
+  blocks that look adjacent, which is Escher's staircase. A piece that
+  turns decides which of those lies is currently being told. It is the
+  opposite lesson to `games2.5d/TinyZaxxon.ml`, which has the same
+  ambiguity and spends a shadow on removing it; here it is the
+  material. Four tests, two golden frames.
+
+  It also cost the 3D native loop a gap it had had all along: it never
+  produced `mclick` (only `mdown`), so no 3D game could be played by
+  clicking, and `-script`'s `at(x;y)`/`click` reached the 2D loop only.
+  Both are fixed in `Native_loop_3d`.
 
 ### 13. The local arena: one screen, one hit, four players
 

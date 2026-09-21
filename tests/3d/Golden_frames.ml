@@ -79,6 +79,9 @@ let scenes : Testutil_golden.scene list =
      * round it: the karts are drawings, the lorries and the item
      * boxes polygons -- the mix the game is about *)
     ("games3d/TinyMarioKart64", "", 5);
+    (* claude: two skeletons of boxes on the ring, in their guard: the
+     * pose is the angles of their joints, and nothing else *)
+    ("games3d/TinyVirtuaFighter", "", 5);
     ("games3d/TinyTron3d", "", 5);
     ("games3d/TinyMario64", "", 5);
     ("games3d/TinyMarbleMadness", "", 5);
@@ -99,6 +102,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: the first chamber, its three shades, and the hero the
      * arcade angle looks down on *)
     ("games3d/TinyHades", "", 5);
+    (* claude: the first monument, which is two structures three
+     * blocks apart drawn as one beam: the whole game in one frame *)
+    ("games3d/TinyMonumentValley", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -117,6 +123,10 @@ let scripted : Testutil_golden.scripted list =
      * four abreast, the chequered line under them, and the road
      * climbing away to the crest *)
     ("games3d/TinyMarioKart64", "grid", 90, "space:1");
+    (* a kick landing, held still by the hitstop the hit itself caused:
+     * the leg is out exactly while the move is active, because the
+     * keyframes and the frame data are the same numbers *)
+    ("games3d/TinyVirtuaFighter", "kick", 150, "space:1,right:20-80,g:110-200");
     (* the ramp at the top of the climb: the field in the air, each
      * kart's shadow left on the boards below it *)
     ("games3d/TinyMarioKart64", "jump", 395, "space:1,up:2-450");
@@ -201,6 +211,10 @@ let scripted : Testutil_golden.scripted list =
      * standing; then, further in, the avocado in two halves, its cut
      * faces pale, and the flight that did it *)
     ("games3d/TinyBoomerangFu3d", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
+    (* claude: the figure part way along the impossible beam, having
+       stepped from the ground path onto a terrace three blocks up and
+       three away without anything in between *)
+    ("games3d/TinyMonumentValley", "walked", 120, "space:2,at(120;-40):20-40,click:30");
     (* claude: a run in progress: one death already paid for, so the
        gauge says run 2 and the life kept from the first *)
     ("games3d/TinyHades", "run", 300,

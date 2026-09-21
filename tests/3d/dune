@@ -38,6 +38,7 @@
    %{project_root}/games3d/TinyWolfenstein3d.exe
    %{project_root}/games3d/TinyVirtuaRacing.exe
    %{project_root}/games3d/TinyMarioKart64.exe
+   %{project_root}/games3d/TinyVirtuaFighter.exe
    %{project_root}/games3d/TinyTron3d.exe
    %{project_root}/games3d/TinyMario64.exe
    %{project_root}/games3d/TinyMarbleMadness.exe
@@ -49,6 +50,7 @@
    %{project_root}/games3d/TinyTombRaider.exe
    %{project_root}/games3d/TinyBoomerangFu3d.exe
    %{project_root}/games3d/TinyHades.exe
+   %{project_root}/games3d/TinyMonumentValley.exe
    %{project_root}/examples3d/checker.png ; TexturedCube3d's texture
  )
 )
