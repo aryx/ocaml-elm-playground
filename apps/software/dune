@@ -5,7 +5,7 @@
 
 (executables
   (names
-    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint
+    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint TinyOpenDoc
   )
   (libraries
     elm_playground
@@ -15,6 +15,7 @@
     appkit_document
     appkit_richtext
     appkit_paint
+    appkit_embed
     graphics_font
     elm_playground_software ; implem of virtual elm_playground
   )

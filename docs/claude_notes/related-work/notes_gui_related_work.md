@@ -75,6 +75,11 @@ built, in what order).
 The subject `appkits/embed` revives, and a genuinely interesting
 failure:
 
+- **Xerox Star** (1981): text, pictures, tables and equations in one
+  document, each edited where it sat, with the same few universal
+  commands (Move, Copy, Delete, Properties) on all of them -- but a
+  fixed set of kinds, built into one editor: integration rather than
+  components.
 - **The Andrew Toolkit / Andrew User Interface System** (CMU, 1988):
   the first widely used compound documents -- text with embedded
   drawings, spreadsheets and animations, each handled by its own

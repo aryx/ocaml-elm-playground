@@ -1315,6 +1315,68 @@ inside, stopping at a diagonal, and finishing when pouring grey), the
 rubber-banded in a pattern and grey poured into the window; the sun
 selected and moved.
 
+### Phase 10, DONE (2026-09-21), awaiting review: appkits/embed and TinyOpenDoc
+
+The author's framing: towards a "TinyOffice", one document mixing
+OLE-like things -- and which program was seminal. Of Xerox Star
+(1981, a fixed set of kinds in one editor), the Andrew Toolkit (1988,
+open insets, nested), OLE 2 (1993, in-place activation, applications
+kept) and OpenDoc (1994-97, no applications, only parts), the author
+chose **TinyOpenDoc**: the purest statement of the idea, and the three
+engines built so far are exactly the parts it needs.
+
+**`appkits/embed/`** (`appkit_embed`), two modules:
+
+- **`Component`**: a part is a record of functions closing over its
+  own state -- `height` at a width, `draw` into a rectangle (`~active`
+  for the caret and selection), `input` when active, a `menu` and its
+  `command`, `save`. `input` and `command` return a new part, so parts
+  are values and a document of them gets undo for nothing. The
+  `registry` (kind name -> loader) is OLE's registry as an association
+  list, and a kind with no loader becomes a `placeholder` that saves
+  back exactly the text it was loaded from. The plan's sketch had
+  `size : unit -> w * h`; `height : width -> float` replaced it, which
+  is `Layout`'s constraints-down/sizes-up and what a text needs to
+  wrap;
+- **`Compound`**: the document as `Part | Column | Row`, laid out as
+  Flutter would (rows share their width, as tall as their tallest
+  part); parts found by **path**; insert, remove (a row left with one
+  child is that child), and a save format where each part's text is
+  counted, so the reader never has to understand a part to skip it.
+
+**Three kinds of part**, in `apps/` beside `Stroke_text`, each a small
+in-place editor over its application's engine: `Part_text` (Rich,
+Page; its looks saved as run lines before the characters),
+`Part_sheet` (Sheet, Sheet_view; typing goes straight into the cell,
+since a part has no formula bar), `Part_picture` (Bitmap, Paint,
+Seed_fill; its menu picks tool and pattern). `Sheet_view.draw`'s
+`~selection` became optional -- a sheet sitting in a document shows
+none -- with its callers unchanged and their frames identical.
+
+**`apps/TinyOpenDoc.ml`**: a page of parts -- a text, a row holding
+the sheet and the picture, a text, and an "equation" part nobody here
+has code for, shown as a placeholder and saved back byte for byte.
+Click once to select (OLE's eight handles), again to activate (OLE's
+hatched border, and the part's menu added to the document's bar);
+Escape or a click outside puts it down. Insert Text/Sheet/Picture,
+Delete Part, Undo/Redo, File > Save and Revert (through the saved text
+and the registry). Two decisions worth their comments: **an editing
+session is one edit**, kept outside the history while it lasts and
+recorded when it ends, only if it changed something -- decided by
+comparing what the parts save, since parts, being functions, cannot be
+compared; and **the click that activates a part is the document's**,
+held back from the part until released -- found when the activating
+click on the picture painted a dot, and a later pour filled that dot
+instead of the sky.
+
+Tests: `appkits/tests` 66 (6 new, with two kinds of part made up for
+them: the saved example byte for byte, a round trip, an unknown kind
+kept whole, a layout by hand, paths, undo of a command), the 2D golden
+suite 158 with four frames: the opening; the sheet activated and a
+formula typed into it, the total following; the picture activated,
+grey poured into the sky from its own menu, joining the sun's grey
+without a seam; and Save then Revert.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

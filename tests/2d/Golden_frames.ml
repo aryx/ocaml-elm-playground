@@ -76,6 +76,9 @@ let scenes : Testutil_golden.scene list =
     (* 1984: a picture as dots, drawn as rectangles -- a run of black
      * dots merged with the runs under it *)
     ("apps/software/TinyMacPaint", "", 5);
+    (* 1994: a document of parts -- a text, a sheet and a picture side
+     * by side, and a part of a kind nobody here can read, kept *)
+    ("apps/software/TinyOpenDoc", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -517,6 +520,29 @@ let scripted : Testutil_golden.scripted list =
       "move",
       26,
       "at(-440;370):1-3,click:2,at(190;350):4-7,click:6-12,at(310;230):9-14,at(250;290):15-17,click:17-24,at(100;290):20,at(0;290):21-26"
+    );
+    (* the sheet clicked once (selected), twice (active: the hatched
+     * border, and its menu in the document's bar), then B1 clicked and
+     * =B2*2 typed into it -- the total follows *)
+    ( "apps/software/TinyOpenDoc",
+      "sheet",
+      18,
+      "at(-195;245):1-18,click:2,click:5,click:8,type(=B2*2):10,return:13" );
+    (* the picture activated, the fill tool and grey chosen from its own
+     * menu, poured into the sky -- the sun's grey joins it seamlessly,
+     * the pattern being laid from the picture's corner -- and put down
+     * with Escape *)
+    ( "apps/software/TinyOpenDoc",
+      "picture",
+      26,
+      "at(200;250):1-6,click:2,click:5,at(-125;470):7-9,click:8,at(-125;293):10-12,click:11,at(-125;470):13-15,click:14,at(-125;221):16-18,click:17,at(200;255):19-21,click:20,escape:23,at(400;-400):22-26"
+    );
+    (* File > Save, then File > Revert: the document read back through
+     * the registry, the unknown part included, the same *)
+    ( "apps/software/TinyOpenDoc",
+      "reverted",
+      16,
+      "at(-410;470):1-3,click:2,at(-410;401):4-6,click:5,at(-410;470):7-9,click:8,at(-410;365):10-12,click:11,at(400;-400):13-16"
     );
     ( "apps/software/TinyExcel",
       "edited",

@@ -12,6 +12,8 @@
    appkit_typeset
    appkit_richtext
    appkit_paint
+   appkit_embed
+   elm_playground_software ; an implem of virtual elm_playground, to link
    gui ; Text_edit, under Rich
  )
 )

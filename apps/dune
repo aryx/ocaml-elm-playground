@@ -5,7 +5,7 @@
 ; software/ for the golden frames.
 (executables
   (names
-    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint
+    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint TinyOpenDoc
   )
   (libraries
     elm_playground
@@ -15,6 +15,7 @@
     appkit_document ; Undo (TinyBravo, TinyWord)
     appkit_richtext ; text with looks, and its page (TinyBravo, TinyWord)
     appkit_paint ; a picture as bits, and what paints it (TinyMacPaint)
+    appkit_embed ; a document of parts (TinyOpenDoc)
     graphics_font ; Hershey's strokes, for Stroke_text
     elm_playground_native ; implem of virtual elm_playground
   )

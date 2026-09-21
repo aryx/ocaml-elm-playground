@@ -21,6 +21,7 @@
    %{project_root}/apps/software/TinyBravo.exe
    %{project_root}/apps/software/TinyWord.exe
    %{project_root}/apps/software/TinyMacPaint.exe
+   %{project_root}/apps/software/TinyOpenDoc.exe
    %{project_root}/examples/software/TypesetParagraph.exe
    %{project_root}/examples/software/Smiley.exe
    %{project_root}/examples/software/Words.exe

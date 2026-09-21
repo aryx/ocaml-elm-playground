@@ -80,7 +80,10 @@ let column_letters col =
   let name = Formula.name_of_cell (col, 0) in
   String.sub name 0 (String.length name - 1)
 
-let draw g (th : Theme.t) (b : Widget.box) sheet ~selection =
+let draw ?selection g (th : Theme.t) (b : Widget.box) sheet =
+  (* claude: no selection is one outside the sheet, never lit, and no ring *)
+  let shown = selection <> None in
+  let selection = Option.value selection ~default:((-1, -1), (-1, -1)) in
   let (left_col, top_row), (right_col, bottom_row) = corners selection in
   let in_selection (c, r) = c >= left_col && c <= right_col && r >= top_row && r <= bottom_row in
   let head_box col : Widget.box =
@@ -122,6 +125,8 @@ let draw g (th : Theme.t) (b : Widget.box) sheet ~selection =
   (* the ring around the whole selection: one rectangle, however many
      cells it covers *)
   @
+  if not shown then []
+  else
   let a = cell_box g b (left_col, top_row) and z = cell_box g b (right_col, bottom_row) in
   Widget.frame th.accent 2.
     {

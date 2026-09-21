@@ -1,0 +1,18 @@
+; claude: compound documents (see
+; docs/claude_notes/plans/plan_gui_teaching.md, phase 10): what a part
+; of a document has to be able to do (Component), and a document made
+; of parts, nested (Compound) -- Andrew's insets, OLE's objects,
+; OpenDoc's parts, in two small modules.
+;
+; It knows no kind of part: a sheet, a text, a picture are the
+; applications', and it reaches them only through the protocol. A
+; private library, installed as part of elm_playground.
+(library
+ (name appkit_embed)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   elm_playground ; a part draws Playground shapes, and reads the computer
+   gui ; Widget.box, the rectangle a part is given
+ )
+)
