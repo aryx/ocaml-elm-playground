@@ -11,7 +11,17 @@
  *
  * Laid out as Flutter would (gui/Layout): the width goes down, each
  * part says how tall it is at that width, the heights come back up. A
- * row shares its width equally and is as tall as its tallest part.
+ * row shares its width out by its children's shares (equal, unless a
+ * person dragged the gap between two of them) and is as tall as its
+ * tallest part.
+ *
+ * What a person chose about a node's size is a [Sized] wrapper round
+ * it: a height, and a share of its row's width. The height is a
+ * proposal, OpenDoc's **frame negotiation**: the document gives a part
+ * the height it was given, but never less than the part asks for at
+ * that width -- a person can give a part more room, not less than it
+ * needs (nothing here can clip what a part draws). The wrappers are
+ * not in the paths: a path goes through one to what it wraps.
  *
  * A part is found by its **path**, the child numbers from the root:
  * above, the picture is [1; 1]. A path is what the document keeps to
@@ -34,9 +44,16 @@
  *   row 1
  *   part counter 2
  *   42
+ *
+ * and a Sized node as "sized <height or -> <share>", before what it
+ * wraps.
  *)
 
-type t = Part of Component.part | Column of t list | Row of t list
+(* a height a person gave (None: the part's own), and a share of the
+ * row the node is in (1 unless changed) *)
+type sizing = { height : float option; share : float }
+
+type t = Part of Component.part | Column of t list | Row of t list | Sized of sizing * t
 type path = int list
 
 (* the room between parts *)
@@ -50,6 +67,22 @@ val layout : t -> left:float -> top:float -> width:float -> (path * Widget.box) 
 
 (* the part a point is on, in a layout *)
 val at_point : (path * Widget.box) list -> float * float -> path option
+
+(* Where two children of a row meet, for a person to drag: the row's
+ * path, the child before the gap, the gap itself, and the left and
+ * right edges of the two children together *)
+type splitter = { row : path; index : int; grip : Widget.box; span : float * float }
+
+val splitters : t -> left:float -> top:float -> width:float -> splitter list
+
+(* [set_height doc path h]: the height a person gave the node at
+ * [path] (None to give it back its own) *)
+val set_height : t -> path -> float option -> t
+
+(* [resize_row doc path i fraction]: the row at [path] with its
+ * children [i] and [i+1] sharing their room so that the first has
+ * [fraction] of it (kept between a tenth and nine tenths) *)
+val resize_row : t -> path -> int -> float -> t
 
 val get : t -> path -> Component.part option
 

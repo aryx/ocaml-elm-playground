@@ -8,51 +8,79 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-type t = Part of Component.part | Column of t list | Row of t list
+type sizing = { height : float option; share : float }
+type t = Part of Component.part | Column of t list | Row of t list | Sized of sizing * t
 type path = int list
 
 let gap = 14.
+let unsized = { height = None; share = 1. }
 
-(* the room each child of a node takes along its axis, and how tall
-   the node is -- both at [width] *)
+(* a node's sizing, and what it wraps *)
+let rec split = function Sized (s, n) -> (s, snd (split n)) | n -> (unsized, n)
+let share_of n = (fst (split n)).share
+
+(* how tall a node is at [width]; a height a person gave is kept, but
+   never less than the node asks for: OpenDoc's frame negotiation, the
+   container proposing and the part insisting on what it needs *)
 let rec height node width =
   match node with
   | Part p -> p.height width
+  | Sized (s, n) -> ( match s.height with Some h -> Float.max h (height n width) | None -> height n width)
   | Column kids -> List.fold_left (fun acc k -> acc +. height k width) 0. kids +. (gap *. float_of_int (max 0 (List.length kids - 1)))
-  | Row kids ->
-      let w = share width kids in
-      List.fold_left (fun acc k -> Float.max acc (height k w)) 0. kids
+  | Row kids -> List.fold_left2 (fun acc k w -> Float.max acc (height k w)) 0. kids (widths width kids)
 
-and share width kids =
+(* a row's width, shared out by its children's shares *)
+and widths width kids =
   let n = float_of_int (max 1 (List.length kids)) in
-  (width -. (gap *. (n -. 1.))) /. n
+  let room = width -. (gap *. (n -. 1.)) in
+  let total = List.fold_left (fun acc k -> acc +. share_of k) 0. kids in
+  List.map (fun k -> room *. share_of k /. total) kids
 
-let layout doc ~left ~top ~width =
-  let rec go path node left top width acc =
+type splitter = { row : path; index : int; grip : Widget.box; span : float * float }
+
+(* one walk for both: where the parts go, and where a row's children
+   meet -- the gaps a person can drag *)
+let walk doc ~left ~top ~width =
+  let parts = ref [] and splitters = ref [] in
+  let rec go ?forced path node left top width =
     match node with
     | Part p ->
-        let h = p.height width in
-        (List.rev path, { Widget.x = left +. (width /. 2.); y = top -. (h /. 2.); w = width; h }) :: acc
+        let h = match forced with Some h -> h | None -> p.height width in
+        parts := (List.rev path, { Widget.x = left +. (width /. 2.); y = top -. (h /. 2.); w = width; h }) :: !parts
+    | Sized (_, n) -> go ~forced:(height node width) path n left top width
     | Column kids ->
-        let _, _, acc =
-          List.fold_left
-            (fun (i, top, acc) k -> (i + 1, top -. height k width -. gap, go (i :: path) k left top width acc))
-            (0, top, acc) kids
-        in
-        acc
-    | Row kids ->
-        let w = share width kids in
-        snd
+        ignore
           (List.fold_left
-             (fun (i, acc) k -> (i + 1, go (i :: path) k (left +. (float_of_int i *. (w +. gap))) top w acc))
-             (0, acc) kids)
+             (fun (i, top) k ->
+               go (i :: path) k left top width;
+               (i + 1, top -. height k width -. gap))
+             (0, top) kids)
+    | Row kids ->
+        let ws = widths width kids in
+        let h = height node width in
+        let lefts = List.rev (snd (List.fold_left (fun (x, acc) w -> (x +. w +. gap, x :: acc)) (left, []) ws)) in
+        List.iteri
+          (fun i (k, (l, w)) ->
+            go (i :: path) k l top w;
+            if i + 1 < List.length kids then
+              let r = List.nth lefts (i + 1) +. List.nth ws (i + 1) in
+              splitters :=
+                { row = List.rev path; index = i; grip = { Widget.x = l +. w +. (gap /. 2.); y = top -. (h /. 2.); w = gap; h }; span = (l, r) }
+                :: !splitters)
+          (List.combine kids (List.combine lefts ws))
   in
-  (List.rev (go [] doc left top width []), height doc width)
+  go [] doc left top width;
+  (List.rev !parts, List.rev !splitters)
 
+let layout doc ~left ~top ~width = (fst (walk doc ~left ~top ~width), height doc width)
+let splitters doc ~left ~top ~width = snd (walk doc ~left ~top ~width)
 let at_point boxes (x, y) = Option.map fst (List.find_opt (fun (_, b) -> Widget.contains b x y) boxes)
 
+(* the wrappers are not in the paths: a path goes through a Sized to
+   what it wraps, and the Sized goes where its node goes *)
 let rec get doc path =
   match (doc, path) with
+  | Sized (_, n), _ -> get n path
   | Part p, [] -> Some p
   | (Column kids | Row kids), i :: rest -> Option.bind (List.nth_opt kids i) (fun k -> get k rest)
   | _ -> None
@@ -60,14 +88,48 @@ let rec get doc path =
 (* the same kind of node, with other children *)
 let rebuild node kids = match node with Row _ -> Row kids | _ -> Column kids
 
+(* [update doc path f]: the node at path -- its wrapper included --
+   given to f *)
+let rec update doc path f =
+  match (doc, path) with
+  | _, [] -> f doc
+  | Sized (s, n), _ -> Sized (s, update n path f)
+  | (Column kids | Row kids), i :: rest -> rebuild doc (List.mapi (fun j k -> if j = i then update k rest f else k) kids)
+  | _ -> doc
+
 let rec set doc path part =
   match (doc, path) with
+  | Sized (s, n), _ -> Sized (s, set n path part)
   | Part _, [] -> Part part
   | (Column kids | Row kids), i :: rest -> rebuild doc (List.mapi (fun j k -> if j = i then set k rest part else k) kids)
   | _ -> doc
 
+let set_height doc path h =
+  update doc path (fun n ->
+      let s, inner = split n in
+      Sized ({ s with height = h }, inner))
+
+let resize_row doc path i fraction =
+  update doc path (fun n ->
+      let s, row = split n in
+      let row =
+        match row with
+        | Row kids when i + 1 < List.length kids ->
+            let a = List.nth kids i and b = List.nth kids (i + 1) in
+            let total = share_of a +. share_of b in
+            let f = Float.max 0.1 (Float.min 0.9 fraction) in
+            let resize k share =
+              let ks, inner = split k in
+              Sized ({ ks with share }, inner)
+            in
+            Row (List.mapi (fun j k -> if j = i then resize a (f *. total) else if j = i + 1 then resize b ((1. -. f) *. total) else k) kids)
+        | row -> row
+      in
+      if s = unsized then row else Sized (s, row))
+
 let rec insert_after doc path node =
   match (doc, path) with
+  | Sized (s, n), _ -> Sized (s, insert_after n path node)
   | (Column kids | Row kids), [] -> rebuild doc (kids @ [ node ])
   | (Column kids | Row kids), [ i ] -> rebuild doc (List.concat (List.mapi (fun j k -> if j = i then [ k; node ] else [ k ]) kids))
   | (Column kids | Row kids), i :: rest -> rebuild doc (List.mapi (fun j k -> if j = i then insert_after k rest node else k) kids)
@@ -78,6 +140,7 @@ let rec insert_after doc path node =
    and a node left with one child is that child *)
 let rec remove_in node path =
   match (node, path) with
+  | Sized (s, n), _ -> Option.map (fun n -> Sized (s, n)) (remove_in n path)
   | Part _, [] -> None
   | (Column kids | Row kids), i :: rest -> (
       match without kids i rest with [] -> None | [ only ] -> Some only | kids -> Some (rebuild node kids))
@@ -86,8 +149,11 @@ let rec remove_in node path =
 and without kids i rest = List.concat (List.mapi (fun j k -> if j <> i then [ k ] else Option.to_list (remove_in k rest)) kids)
 
 (* the root stays what it is, even with one child or none *)
-let remove doc path =
-  match (doc, path) with (Column kids | Row kids), i :: rest -> rebuild doc (without kids i rest) | _ -> doc
+let rec remove doc path =
+  match (doc, path) with
+  | Sized (s, n), _ -> Sized (s, remove n path)
+  | (Column kids | Row kids), i :: rest -> rebuild doc (without kids i rest)
+  | _ -> doc
 
 (* ---- saving: one line per node, each part's text counted ---- *)
 
@@ -103,6 +169,9 @@ let save doc =
     | Row kids ->
         Printf.bprintf out "row %d\n" (List.length kids);
         List.iter go kids
+    | Sized (sz, n) ->
+        Printf.bprintf out "sized %s %g\n" (match sz.height with Some h -> Printf.sprintf "%g" h | None -> "-") sz.share;
+        go n
   in
   go doc;
   Buffer.contents out
@@ -123,6 +192,9 @@ let load registry s =
         let rec kids k pos acc = if k = 0 then (List.rev acc, pos) else let kid, pos = node pos in kids (k - 1) pos (kid :: acc) in
         let kids, pos = kids (int_of_string n) pos [] in
         ((if what = "row" then Row kids else Column kids), pos)
+    | [ "sized"; h; share ] ->
+        let n, pos = node pos in
+        (Sized ({ height = (if h = "-" then None else Some (float_of_string h)); share = float_of_string share }, n), pos)
     | _ -> failwith ("Compound.load: " ^ l)
   in
   fst (node 0)

@@ -69,6 +69,11 @@ type glyph = {
   advance : float; (* how far the next one starts *)
 }
 
+(* a line: where it is (from the top of the page), how tall, its
+ * baseline, its glyphs, and the offsets it covers, [first, stop) --
+ * what Flow cuts a text into columns by *)
+type line = { top : float; height : float; baseline : float; cells : glyph list; first : int; stop : int }
+
 type t
 
 (* [layout ?align ~metrics ~width text]: [text] set in lines of at
@@ -81,6 +86,9 @@ val layout : ?align:align -> metrics:metrics -> width:float -> Rich.t -> t
 
 (* every glyph, in order *)
 val glyphs : t -> glyph list
+
+(* the lines, top to bottom *)
+val lines : t -> line list
 
 (* how tall the whole page is *)
 val height : t -> float

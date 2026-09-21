@@ -101,8 +101,49 @@ let test_parts_are_values () =
   Alcotest.(check string) "after" "column 1\npart counter 1\n2\n" (saved (Undo.now h));
   Alcotest.(check string) "and undone" "column 1\npart counter 1\n1\n" (saved (Undo.now (Undo.undo h)))
 
+(* a row's width shared 3 to 1, by dragging the gap between its
+   children: each counter as tall as a quarter of its width *)
+let test_a_row_shared_out () =
+  let doc = Compound.Column [ Row [ Part (counter 1); Part (counter 2) ] ] in
+  let doc = Compound.resize_row doc [ 0 ] 0 0.75 in
+  let boxes, height = Compound.layout doc ~left:0. ~top:0. ~width:200. in
+  Alcotest.(check (list (float 1e-9))) "the room, 186, three to one" [ 139.5; 46.5 ] (List.map (fun (_, (b : Widget.box)) -> b.w) boxes);
+  Alcotest.(check (float 1e-9)) "as tall as its tallest" 34.875 height;
+  Alcotest.(check (list int)) "the paths go through the wrappers" [ 1; 2 ]
+    (List.map (fun p -> int_of_string ((Option.get (Compound.get doc p)).save ())) [ [ 0; 0 ]; [ 0; 1 ] ])
+
+(* frame negotiation: a height given is kept when it is more than the
+   part asks for, and the part's own when it is less *)
+let test_a_height_given () =
+  let doc = Compound.Column [ Part (counter 1) ] in
+  let h doc = (snd (List.hd (fst (Compound.layout doc ~left:0. ~top:0. ~width:200.)))).Widget.h in
+  Alcotest.(check (float 1e-9)) "its own: a quarter of 200" 50. (h doc);
+  Alcotest.(check (float 1e-9)) "given more" 120. (h (Compound.set_height doc [ 0 ] (Some 120.)));
+  Alcotest.(check (float 1e-9)) "given less: it keeps what it needs" 50. (h (Compound.set_height doc [ 0 ] (Some 10.)));
+  Alcotest.(check (float 1e-9)) "given back its own" 50. (h (Compound.set_height (Compound.set_height doc [ 0 ] (Some 120.)) [ 0 ] None))
+
+let test_splitters () =
+  let doc = Compound.Column [ Part (counter 0); Row [ Part (counter 1); Part (counter 2) ] ] in
+  match Compound.splitters doc ~left:0. ~top:0. ~width:200. with
+  | [ s ] ->
+      Alcotest.(check (list int)) "in the row" [ 1 ] s.row;
+      Alcotest.(check (float 1e-9)) "in the gap between the two" 100. s.grip.x;
+      Alcotest.(check (pair (float 1e-9) (float 1e-9))) "the two together" (0., 200.) s.span
+  | l -> Alcotest.failf "%d splitters, not one" (List.length l)
+
+let test_sizes_are_saved () =
+  let doc = Compound.Column [ Part (counter 0); Row [ Part (counter 1); Part (counter 2) ] ] in
+  let doc = Compound.set_height (Compound.resize_row doc [ 1 ] 0 0.25) [ 0 ] (Some 80.) in
+  let text = saved doc in
+  Alcotest.(check string) "read back, the same" text (saved (Compound.load registry text));
+  Alcotest.(check bool) "and it says so" true (String.length text > 0 && String.sub text 0 21 = "column 2\nsized 80 1\np")
+
 let tests =
   [
+    t "a row shared out by its children's shares" test_a_row_shared_out;
+    t "a height given, and frame negotiation" test_a_height_given;
+    t "where a row's children meet" test_splitters;
+    t "the sizes are saved with the document" test_sizes_are_saved;
     t "the saved example" test_the_saved_example;
     t "a document saved and read back" test_saved_and_read_back;
     t "a kind nobody knows is kept whole" test_an_unknown_kind_is_kept;

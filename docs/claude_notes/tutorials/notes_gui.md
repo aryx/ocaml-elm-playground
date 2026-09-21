@@ -31,12 +31,12 @@ this toolkit's first customer.
 | `appkits/embed` | a document made of parts | §9 |
 | `playground/Gui` | the Evan-style API over all of it | §10 |
 | `appkits/sheet`, `appkits/sheet_view` | a spreadsheet's engine, and its drawing | §11 |
-| `appkits/richtext` | text with looks, and its page | §12 |
+| `appkits/richtext` | text with looks, its page, and its flow through columns | §12, §13b |
 | `appkits/paint` | a picture as bits, and what paints it | §13 |
 | `appkits/draw` | a picture as objects | §13 |
 | `appkits/slides` | a talk as an outline | §14 |
 | `appkits/hypertalk` | HyperCard's language, and its message path | §15 |
-| `apps/` | TinyVisiCalc, TinyExcel, TinyBravo, TinyWord, TinyMacPaint, TinyMacDraw, TinyOpenDoc, TinyPowerPoint, TinyHyperCard | §10-15 |
+| `apps/` | TinyVisiCalc, TinyExcel, TinyBravo, TinyWord, TinyFrameMaker, TinyMacPaint, TinyMacDraw, TinyOpenDoc, TinyPowerPoint, TinyHyperCard | §10-15 |
 
 ## 1. A GUI is a loop you already have
 
@@ -697,6 +697,28 @@ through to what is behind it; and resizing is a map of the points
 from the old bounds to the new, so a group, resized, scales everything
 it holds. Being plain data, a drawing is compared with `=`, which is
 how a drag that changed nothing is kept out of the undo history.
+
+## 13b. A document that lays itself out: FrameMaker
+
+**TinyFrameMaker** (FrameMaker, around 1986) is §12's text engine made
+to fill pages: one text poured through the columns of every page, the
+pages made from a master (one column or two, a header, "page n of N"),
+and parts -- a sheet, a picture, a drawing, TinyOpenDoc's own --
+**anchored** in the text, each set just below its line and moving with
+it. The algorithm is `appkits/richtext/Flow`, and it is small: lay the
+text out once at the columns' width, then deal its lines into columns
+of a given height, a line going where the last thing ended unless it
+does not fit there, and an anchored frame after the line it is tied
+to, the same way. Typing above a frame is then enough to move it to the
+next page.
+
+It is the other answer to TinyOpenDoc's question, and the comparison is
+the lesson: TinyOpenDoc lays its parts out *by position* -- a tree of
+rows and columns, a part wherever the tree puts it -- and TinyFrameMaker
+*by order*, every part hanging from a place in one stream of text. The
+first can put two parts side by side and cannot carry a part along a
+text; the second cannot do the first and does the second for nothing.
+They are the web's two layouts again, a grid of boxes and a flow.
 
 ## 14. A talk is an outline: PowerPoint
 

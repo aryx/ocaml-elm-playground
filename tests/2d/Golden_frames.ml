@@ -88,6 +88,9 @@ let scenes : Testutil_golden.scene list =
     ("apps/software/TinyHyperCard", "", 5);
     (* 1984: a picture made of objects, not of dots *)
     ("apps/software/TinyMacDraw", "", 5);
+    (* 1986: one text flowing over pages from a master page, a sheet
+     * anchored in it *)
+    ("apps/software/TinyFrameMaker", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -647,6 +650,27 @@ let scripted : Testutil_golden.scripted list =
       "drawing",
       53,
       "at(0;17):1-3,click:2,at(-220;470):4-6,click:5,at(-220;293):7-9,click:8,at(-200;-60):10-13,click:11,at(-125;470):14-16,click:15,at(-125;365):17-19,click:18,at(-195;-122):20-22,click:21-27,at(-150;-130):24,at(-95;-150):25-28,at(-125;470):29-31,click:30,at(-125;293):32-34,click:33,escape:36,at(-410;470):38-40,click:39,at(-410;401):41-43,click:42,at(-410;470):44-46,click:45,at(-410;365):47-49,click:48,at(600;-600):50-53"
+    );
+    (* the first text selected, its bottom handle dragged down: it is
+     * given more room, and the row, the text and the placeholder below
+     * it reflow as the mouse moves *)
+    ( "apps/software/TinyOpenDoc",
+      "height",
+      18,
+      "at(0;350):1-3,click:2,at(0;293):4-7,click:5-12,at(0;250):8,at(0;213):9-14,at(600;-600):15-18" );
+    (* the gap between the sheet and the picture dragged right: the row's
+     * width shared out anew, one Resize to undo *)
+    ("apps/software/TinyOpenDoc", "split", 14, "at(0;207):1-3,click:2-8,at(20;207):4,at(40;207):5-10,at(600;-600):11-14");
+    (* the master changed to two columns: everything lays itself out
+     * again, the drawing shrinking to its column, the sheet spilling
+     * out of it -- widths are not negotiated *)
+    ("apps/software/TinyFrameMaker", "columns", 10, "at(-210;470):1-3,click:2,at(-210;365):4-6,click:5,at(600;-600):7-10");
+    (* eight new lines typed above the sheet: it moves down with the
+     * text, onto the next page, and the document grows a page *)
+    ( "apps/software/TinyFrameMaker",
+      "push",
+      24,
+      "at(-406;42):1-3,click:2,return:5,return:7,return:9,return:11,return:13,return:15,return:17,return:19,at(600;-600):20-24"
     );
     (* the master changed twice -- a black band, titles centred -- and
      * every slide changes with it *)

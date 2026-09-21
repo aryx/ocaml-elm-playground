@@ -77,9 +77,18 @@ From TinyOpenDoc's header:
   holding parts, so that a text can hold a sheet that holds a picture,
   as OpenDoc's could -- the idea's real generality, and today the
   rows and columns are the document's own;
-- **a part flowing in a text** like a very large character, which is
-  what Word does with an embedded sheet (`Page` would need a glyph that
-  is a box);
+- **a part flowing in a text** -- done the FrameMaker way (2026-09-21):
+  `apps/TinyFrameMaker.ml` anchors the same parts in a text that flows
+  over pages (`appkits/richtext/Flow`), each set below its line and
+  moving with it. The Word way, a part inline as a very large
+  character inside a line, is still open (`Page` would need a glyph
+  that is a box);
+- **resizing -- done** (2026-09-21): a selected part's bottom handle
+  gives it a height, the gap between two parts of a row shares the
+  row out, everything reflowing as the mouse moves (`Compound`'s
+  `Sized`, heights negotiated as in OpenDoc: never less than the part
+  needs); widths are not negotiated, so a part of fixed size spills
+  out of a share too narrow for it;
 - **linking**, OLE's "L": a part that shows a file kept elsewhere and
   follows it when it changes (after `plan_io.md`);
 - a fourth kind of part added with one registry line and nothing else
@@ -127,9 +136,15 @@ and missed six kinds of program; by what each would teach:
   out as nested boxes by TeX's rules (Knuth, 1978), next to
   `appkits/typeset` -- and a real part for TinyOpenDoc, whose
   "equation" part is today a placeholder.
-- **Desktop publishing** (Publisher): TinyPageMaker (Aldus, 1985),
-  text flowing through linked frames across columns and pages, over
-  `appkits/richtext`'s `Page`.
+- **Desktop publishing -- the long-document half done**:
+  `apps/TinyFrameMaker.ml` (FrameMaker, around 1986): one text flowing
+  through the columns of pages made from a master page, and parts
+  anchored in it, over `appkits/richtext/Flow`; its header compares it
+  with TinyOpenDoc (more powerful: parts in the text's flow, many
+  pages, one master; more restricted: one container, the text). The
+  free-form half, TinyPageMaker (Aldus, 1985: frames placed by hand on
+  each page, the text threaded through them), and FrameMaker's
+  paragraph catalog, are still open.
 - **Project planning** (Project): TinyMacProject (1984), tasks and
   dependencies, a Gantt chart, the critical path as the longest path
   through a graph -- the spreadsheet's topological order again.

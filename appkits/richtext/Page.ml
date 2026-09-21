@@ -194,6 +194,7 @@ let layout ?(align = Left) ~metrics ~width r =
   { lines = List.rev lines; length }
 
 let glyphs t = List.concat_map (fun l -> l.cells) t.lines
+let lines t = t.lines
 
 let height t = List.fold_left (fun _ l -> l.top +. l.height) 0. t.lines
 

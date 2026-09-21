@@ -187,7 +187,8 @@ idea explained in its `.mli` and checked by tests and golden frames:
   wired four ways (callbacks, MVC, MVU, immediate mode), the engines of
   `appkits/`, and the Tiny applications of `apps/` -- TinyVisiCalc and
   TinyExcel over one spreadsheet engine, TinyBravo and TinyWord over
-  one text engine, TinyMacPaint and TinyMacDraw (dots, and objects),
+  one text engine, TinyFrameMaker (the text poured over pages),
+  TinyMacPaint and TinyMacDraw (dots, and objects),
   TinyOpenDoc (a document made of
   parts), TinyPowerPoint and TinyHyperCard.
 
