@@ -1217,8 +1217,38 @@ Measured: `appkits/tests` 44 green (15 new: the runs, the typing
 rules, the page both ways, `amend`), `playground/tests` 59 (typing in
 a script), the 2D golden suite 143 with the four TinyBravo frames.
 
-Still to come: **9d, TinyWord** -- the same engine, modeless, as
-Tesler's Gypsy made it and Word inherited.
+### Phase 9d, DONE (2026-09-21), awaiting review: TinyWord
+
+**`apps/TinyWord.ml`**: 1985, the same page and the same engine as
+TinyBravo, made **modeless** -- Tesler's answer (Gypsy, 1975) to the
+"edit" trap, which Word inherited: a caret you type at wherever it is,
+and cut, copy and paste. Every look has **three ways** to it, none of
+which needs remembering: a **toolbar** (B, I, U, S and four
+alignments, their icons drawn by the same pen as the text, pressed in
+when on), a **menu bar** (File, Edit with Undo/Redo named, Format),
+and Control-B/I/U, Z/Y, C/X/V, A. A size dropdown (12 to 32), arrows
+including up and down through `Page.caret_at`/`offset_at`.
+
+The toolbar is drawn by the program rather than made of widgets,
+because a widget's label cannot be a pen-drawn italic I -- so it asks
+`Gui.modal ()` before taking a click, the rule TinyExcel's menu bug
+taught. Typing is one "Undo Typing" per run of keystrokes, through
+`Undo.amend`.
+
+Deviations from the plan: justified is `Page`'s greedy lines
+stretched, not `appkits/typeset`'s Knuth-Plass -- which is what Word
+did, and keeps the two apps on one layout; Knuth-Plass stays in
+`examples/TypesetParagraph`. And **alignment is the document's**, kept
+beside the text rather than in it, so undo does not take a centring
+back; per-paragraph alignment (a second run table over paragraphs,
+which would put it in the history for free) is the header's first
+exercise.
+
+The golden frames: the first screen; **"edit" typed anywhere**, which
+is just the word edit, one undo; and a selection dragged with the
+mouse, made bold from the icon, then centred.
+
+Measured: the 2D golden suite 150 with the three TinyWord frames.
 
 ## Verification
 

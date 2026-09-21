@@ -5,7 +5,7 @@
 ; software/ for the golden frames.
 (executables
   (names
-    TinyVisiCalc TinyExcel TinyBravo
+    TinyVisiCalc TinyExcel TinyBravo TinyWord
   )
   (libraries
     elm_playground

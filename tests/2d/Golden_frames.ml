@@ -70,6 +70,9 @@ let scenes : Testutil_golden.scene list =
      * Hershey's own strokes -- a bold title at 26, a bold word, an
      * italic one *)
     ("apps/software/TinyBravo", "", 5);
+    (* 1985: the same page with a menu bar and a toolbar, its icons drawn
+     * by the same pen as the text *)
+    ("apps/software/TinyWord", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -481,6 +484,16 @@ let scripted : Testutil_golden.scripted list =
       "looks",
       20,
       "at(-222;285):1-6,click:5-10,at(-118;285):8-10,type(lu):14,type(ls):16,at(300;-400):17-20" );
+    (* Tesler's answer: no modes, so "edit" typed anywhere is the word
+     * edit, and the four letters are one "Undo Typing" *)
+    ("apps/software/TinyWord", "typed", 12, "type( edit):10");
+    (* a selection dragged with the mouse, the B icon, then the centring
+     * one: the looks are the selection's, the alignment the page's *)
+    ( "apps/software/TinyWord",
+      "looks",
+      24,
+      "at(-222;285):1-6,click:5-10,at(-118;285):8-12,at(-300;428):14-16,click:15,at(-82;428):18-20,click:19,at(300;-400):21-24"
+    );
     ( "apps/software/TinyExcel",
       "edited",
       20,
