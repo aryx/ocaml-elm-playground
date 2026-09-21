@@ -4210,6 +4210,98 @@ let gh_sustain () =
   Alcotest.(check bool) "held" true (run true > 30);
   Alcotest.(check int) "let go" 0 (run false)
 
+(*****************************************************************************)
+(* TinySimCity *)
+(*****************************************************************************)
+
+(* a city with [tool] used on each of [cells], the months left alone *)
+let simcity_with (city : TinySimCity.city) (tool : TinySimCity.tool) (cells : (int * int) list) =
+  List.fold_left (fun city c -> TinySimCity.build { city with tool } c) city cells
+
+let simcity_months (n : int) (city : TinySimCity.city) =
+  let c = ref city in
+  for _ = 1 to n do c := TinySimCity.month !c done;
+  !c
+
+let row y x0 x1 = List.init (x1 - x0 + 1) (fun k -> (x0 + k, y))
+
+(* A plant powers what touches it, and power runs on through the zones
+ * and the lines; a road between two zones stops it. *)
+let simcity_power () =
+  let open TinySimCity in
+  let city = simcity_with (new_city ()) Plant_tool [ (2, 2) ] in
+  let city = simcity_with city (Zone_tool Residential) [ (3, 2); (4, 2); (6, 2) ] in
+  let city = simcity_with city Road_tool [ (5, 2) ] in
+  let powered c = city.powered.(index c) in
+  Alcotest.(check bool) "the zone beside the plant" true (powered (3, 2));
+  Alcotest.(check bool) "the next one, through the first" true (powered (4, 2));
+  Alcotest.(check bool) "not across a road" false (powered (6, 2));
+  let city = simcity_with city Wire_tool [ (5, 3); (6, 3) ] in
+  let city = simcity_with city (Zone_tool Residential) [ (4, 3) ] in
+  Alcotest.(check bool) "a line around the road" true city.powered.(index (6, 2))
+
+(* the smallest town that grows: a plant, a road, homes along it *)
+let simcity_town ?(road = true) () =
+  let open TinySimCity in
+  let city = simcity_with (new_city ()) Plant_tool [ (2, 5) ] in
+  let city = simcity_with city (Zone_tool Residential) (row 5 3 8) in
+  if road then simcity_with city Road_tool (row 6 2 9) else city
+
+(* A zone with power and a road grows, month after month, while the city
+ * wants homes; without a road it never does. *)
+let simcity_growth () =
+  let open TinySimCity in
+  let level (city : city) c = match city.tiles.(index c) with Zone (_, l) -> l | _ -> -1 in
+  let grown = simcity_months 24 (simcity_town ()) in
+  Alcotest.(check bool) "homes built" true (List.exists (fun c -> level grown c > 0) (row 5 3 8));
+  Alcotest.(check bool) "people living in them" true ((census grown.tiles).residents > 0);
+  let stranded = simcity_months 24 (simcity_town ~road:false ()) in
+  Alcotest.(check int) "no road, no one" 0 (census stranded.tiles).residents
+
+(* The valves, SimCity's R C I bars: an empty town wants homes; homes
+ * without jobs want factories and shops, not more homes. *)
+let simcity_valves () =
+  let open TinySimCity in
+  let empty = valves { residents = 0; shops = 0; factories = 0 } 7 in
+  Alcotest.(check bool) "an empty town wants homes" true (empty.r > 0);
+  let dormitory = valves { residents = 200; shops = 0; factories = 0 } 7 in
+  Alcotest.(check bool) "homes and no jobs: no more homes" true (dormitory.r < 0);
+  Alcotest.(check bool) "but factories" true (dormitory.i > 0);
+  Alcotest.(check bool) "and shops" true (dormitory.c > 0)
+
+(* Industry fouls the air around it, and the air spreads, a blur: bad
+ * next door, gone two tiles away. Homes beside a coal plant will not
+ * grow there. *)
+let simcity_smog () =
+  let open TinySimCity in
+  let tiles = Array.copy (new_city ()).tiles in
+  tiles.(index (10, 10)) <- Zone (Industrial, 3);
+  let air = ref (Array.make (Array.length tiles) 0.) in
+  for _ = 1 to 60 do air := spread tiles !air done;
+  let at c = !air.(index c) in
+  Alcotest.(check bool) "the factory's own air" true (at (10, 10) > 0.5);
+  Alcotest.(check bool) "next door: smog" true (at (11, 10) > smog);
+  Alcotest.(check bool) "two tiles away: clean" true (at (12, 10) < smog);
+  let city = simcity_with (new_city ()) Plant_tool [ (4, 5) ] in
+  let city = simcity_with city (Zone_tool Residential) [ (5, 5) ] in
+  let city = simcity_with city Road_tool (row 6 2 9) in
+  let city = simcity_months 24 city in
+  Alcotest.(check bool) "no home beside the plant" true (city.tiles.(index (5, 5)) = Zone (Residential, 0))
+
+(* Every point of tax pushes every bar down: at 20%, nothing grows. *)
+let simcity_tax () =
+  let open TinySimCity in
+  let taxed = simcity_months 24 { (simcity_town ()) with tax = 20 } in
+  Alcotest.(check int) "nobody comes" 0 (census taxed.tiles).residents;
+  let fair = simcity_months 24 (simcity_town ()) in
+  Alcotest.(check bool) "at 7%, they do, and pay" true ((census fair.tiles).residents > 0 && taxes (census fair.tiles) 7 > 0)
+
+(* The dice are a hash of the place and the month: the same city, the
+ * same months, the same town. *)
+let simcity_replays () =
+  let a = simcity_months 36 (simcity_town ()) and b = simcity_months 36 (simcity_town ()) in
+  Alcotest.(check bool) "the same tiles" true (a.tiles = b.tiles)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -4419,4 +4511,10 @@ let tests =
       t "TinyGuitarHero, the road, straightened" gh_the_road;
       t "TinyGuitarHero, the same part, reduced" gh_difficulty;
       t "TinyGuitarHero, fret and strum" gh_strum;
-      t "TinyGuitarHero, a long note held" gh_sustain ]
+      t "TinyGuitarHero, a long note held" gh_sustain;
+      t "TinySimCity, power: zones pass it on, roads don't" simcity_power;
+      t "TinySimCity, a zone grows with power and a road" simcity_growth;
+      t "TinySimCity, the valves" simcity_valves;
+      t "TinySimCity, the smog" simcity_smog;
+      t "TinySimCity, the tax rate" simcity_tax;
+      t "TinySimCity, the same city replays the same" simcity_replays ]

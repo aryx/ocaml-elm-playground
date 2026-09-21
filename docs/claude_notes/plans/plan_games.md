@@ -950,12 +950,42 @@ and those are the same fact. Jarvis went on to Robotron: 2084 (section
   (baiters, bombers, pods and swarmers), hyperspace, mountains that
   kill you, and a second player taking turns.
 
+### 26. The city that builds itself: SimCity
+
+SimCity (Will Wright, Maxis, 1989), out of the level editor of his
+Raid on Bungeling Bay; its source GPL'd in 2008 as Micropolis.
+
+- **Toy**: TinySimCity (DONE: `games/TinySimCity.ml`, tools 1 to 7 or
+  the toolbar, the mouse or the arrows and space, v the view, - = the
+  tax, f fast).
+- **Kit**: none; `Scene2d`, and a `tile array` as TinyTowerDefense has.
+- **What it is here for**: the one game of the list where the player is
+  not the subject. No enemy, no goal -- a "software toy" -- and the
+  code worth reading is the month (`month`), which the player never
+  calls:
+  - **the valves**: the R C I bars, what the city lacks of each zone,
+    from a census (homes follow the jobs, shops and factories follow
+    the workers, the tax pushes on all three). It feeds on itself,
+    which is why a town grows at all;
+  - **the maps behind the tiles**: power as a flood fill from the plants
+    through what conducts (lines and zones, *not* roads), pollution as
+    a diffusion -- the image blur, a tenth lost a month -- that
+    empties the homes beside the factories. "v" shows both: the
+    simulation's real state is maps, the tiles are only one of them;
+  - **the dice as a hash** of place and month, so a neighbourhood grows
+    in patches and the same city replays the same (tests, golden
+    frames).
+- **Left undone** (exercises in the header): traffic (the cars' random
+  walk, and what it crowds and fouls), crime and police as another
+  spread map, land value, a plant's capacity, bridges, 3x3 zones,
+  disasters.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,
-walkboxes), city builders (SimCity, 1989), text adventures (Colossal
-Cave Adventure, 1976; Zork) -- different enough from the playground's
-model to be projects of their own.
+walkboxes), text adventures (Colossal Cave Adventure, 1976; Zork) --
+different enough from the playground's model to be projects of their
+own.
 
 ## Infrastructure all the games need
 

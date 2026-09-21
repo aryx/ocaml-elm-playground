@@ -151,6 +151,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyDefender", "", 5);
     ("games/software/TinyCeleste", "", 5);
     ("games/software/TinyDDR", "", 5);
+    ("games/software/TinySimCity", "", 5);
     ("games2.5d/software/TinyGuitarHero", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
@@ -193,6 +194,20 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/PuzzleScriptSokoban", "", 5);
     ("examples/software/PuzzleScriptBoulders", "", 5);
   ]
+
+(* claude: TinySimCity's starter town, built with the keys: a road, a
+ * row of homes above it, factories and shops below, a plant at the end
+ * and a power line around the road to the homes; then fast. *)
+let simcity_town =
+  "space:1,right:5,right:7,right:9,right:11,right:13,right:15,right:17,"
+  ^ "right:19,right:21,right:23,right:25,space:3-27,3:29,up:31,left:35,"
+  ^ "left:37,left:39,left:41,left:43,left:45,left:47,left:49,left:51,"
+  ^ "left:53,left:55,space:33-57,down:59,down:61,5:63,right:67,right:69,"
+  ^ "right:71,right:73,space:65-75,4:77,right:79,right:83,right:85,"
+  ^ "right:87,right:89,right:91,right:93,space:81-95,6:97,down:99,"
+  ^ "space:101,2:103,up:105,left:107,left:109,left:111,left:113,left:115,"
+  ^ "left:117,left:119,left:121,left:123,left:125,left:127,left:129,up:133,"
+  ^ "up:135,space:131-137,f:139"
 
 (* claude: games played with keys (-script, see Input_script): what the
  * start of a game can't show -- the camera scrolled, a coin taken; the
@@ -312,6 +327,12 @@ let scripted : Testutil_golden.scripted list =
        exact, and a press on a frame lands about 35 ms early by it --
        GREAT rather than PERFECT, the offset the calibration is for *)
     ("games/software/TinyDDR", "steps", 318, "space:1,left:228,up:256,up:284,down:312");
+    (* the town five years on: grown, and the homes across the road
+       from the factories empty again -- the smog *)
+    ("games/software/TinySimCity", "town", 600, simcity_town);
+    (* and why, in the pollution view: the air around the factories and
+       the plant *)
+    ("games/software/TinySimCity", "smog", 610, simcity_town ^ ",v:600,v:602");
     (* the riff's first four notes on Medium, every fret held and each
        strummed on its beat (132 a minute, an eighth 0.227 s) *)
     ("games2.5d/software/TinyGuitarHero", "riff", 305,
