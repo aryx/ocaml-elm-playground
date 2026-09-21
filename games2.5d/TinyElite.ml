@@ -42,7 +42,7 @@
  *    normal against the line of sight, one dot product); an edge is
  *    drawn when *either* of its two faces is ([visible_edges]). That is
  *    hidden-line removal, and it is why Elite's wireframes read as
- *    solid ships where games3d/TinyBattlezone's, which draw every edge,
+ *    solid ships where games2.5d/TinyBattlezone's, which draw every edge,
  *    are see-through:
  *
  *            _______            _______

@@ -70,8 +70,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
-    (* claude: the title's tank, turned by 40 degrees *)
-    ("games3d/TinyBattlezone", "", 40);
+    (* the title's tank, turned by 40 degrees, solid (the same frame as
+     * games2.5d/TinyBattlezone's, in lines) *)
+    ("games3d/TinyBattlezone3d", "", 40);
     (* claude: the same view as games2.5d/TinyWolfenstein's golden frame, in 3D *)
     ("games3d/TinyWolfenstein3d", "", 5);
     ("games3d/TinyVirtuaRacing", "", 5);
@@ -117,9 +118,9 @@ let scripted : Testutil_golden.scripted list =
   [ ("games3d/StarCollector3d", "move", 40, "up:1-40,right:10-25");
     (* the camera turned, the time sped up to 80 days a second *)
     ("examples3d/PhysicsSolarSystem3d", "turned", 90, "w:2,w:4,left:10-60");
-    (* turned, driving towards a pyramid (cut by the near plane), a shell
-     * flying at the enemy tank *)
-    ("games3d/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100");
+    (* the same battle as games2.5d/TinyBattlezone's golden frame: the
+     * pyramid now hides the enemy tank *)
+    ("games3d/TinyBattlezone3d", "play", 150, "space:1,right:5-20,up:30-140,space:100");
     (* the same walk as games2.5d/TinyWolfenstein's *)
     ("games3d/TinyWolfenstein3d", "treasure", 60, "right:1-16,up:20-60");
     (* the same drive as games2.5d/TinyOutRun's golden frame, in polygons *)

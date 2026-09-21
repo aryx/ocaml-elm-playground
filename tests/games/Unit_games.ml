@@ -452,6 +452,36 @@ let elite_docking () =
   Alcotest.(check bool) "rolled a quarter turn: not" false (docking (at_slot (tidy (roll_by 1.57 facing_you))))
 
 (*****************************************************************************)
+(* TinyBattlezone *)
+(*****************************************************************************)
+
+(* The divide: straight ahead is the middle of the screen, and a point
+ * twice as far is drawn twice as close to it; the near plane cuts a
+ * segment going behind the eye where it crosses it *)
+let battlezone_projection () =
+  let open TinyBattlezone in
+  let screen = Playground.to_screen 1000. 1000. in
+  let eye = look (0., 1., 0.) (0., 1., -1.) in
+  let at p = project screen (to_eye eye p) in
+  let near_ x y = Float.abs (x -. y) < 1e-6 in
+  let x, y = at (0., 1., -10.) in
+  Alcotest.(check bool) "ahead: the middle" true (near_ x 0. && near_ y 0.);
+  let x10, y10 = at (1., 0., -10.) and x20, y20 = at (1., 0., -20.) in
+  Alcotest.(check bool) "twice as far, half as far out" true (near_ x10 (2. *. x20) && near_ y10 (2. *. y20));
+  Alcotest.(check bool) "right is right, below is below" true (x10 > 0. && y10 < 0.);
+  match clip (to_eye eye (0., 1., -5.), to_eye eye (0., 1., 5.)) with
+  | Some ((_, _, z1), (_, _, z2)) -> Alcotest.(check bool) "cut at the near plane" true (z1 = 5. && near_ z2 near)
+  | None -> Alcotest.fail "the part ahead is kept"
+
+(* Shells fly at the height of a tank's hull, below the eye: at the eye's
+ * height a shell is drawn on the horizon whatever its distance, above
+ * the hull it goes through *)
+let battlezone_shell_height () =
+  let open TinyBattlezone in
+  let ys = List.concat_map (fun ((_, y1, _), (_, y2, _)) -> [ y1; y2 ]) shell_edges in
+  Alcotest.(check bool) "within the hull (0 to 0.6)" true (List.for_all (fun y -> y >= 0. && y <= 0.6) ys)
+
+(*****************************************************************************)
 (* TinyDoom *)
 (*****************************************************************************)
 
@@ -3608,6 +3638,8 @@ let tests =
       t "TinyElite, small turns and TIDY" elite_tidy;
       t "TinyElite, the hidden lines" elite_hidden_lines;
       t "TinyElite, docking" elite_docking;
+      t "TinyBattlezone, the divide and the near plane" battlezone_projection;
+      t "TinyBattlezone, shells at the height of a hull" battlezone_shell_height;
       t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;

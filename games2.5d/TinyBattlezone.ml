@@ -16,27 +16,47 @@
  *
  * Battlezone's screen was a vector monitor: no pixels, an electron beam
  * drawing lines from point to point (the monitor of Asteroids, with a
- * "math box" to compute the 3D). So its 3D is the simplest there is:
- * every object is a list of line segments (see [box_edges]), each end
- * projected onto the screen (Playground3d.project) and the two joined by
- * a line. No faces, so no hidden surfaces to remove: you see through
- * everything, and that's the look. The one thing to get right is a
- * segment going behind you: projecting its far end would draw garbage,
- * so it's cut where it crosses a plane just in front of the eye first
- * ([clip], near-plane clipping, the 3D pipeline's first step; see
- * graphics/3d's Clip for triangles). Everything drawn is then 2D lines,
- * given to playground3d as a HUD, so it looks the same on every backend.
+ * "math box" to compute the 3D). So its 3D is the simplest there is,
+ * and it is the trick of this game, written out here on the *2D*
+ * playground:
+ *
+ *  - every object is a list of line segments (see [box_edges]);
+ *
+ *  - each end is taken into the eye's coordinates: how far to the
+ *    right of the eye, how far up, how far ahead ([to_eye], three dot
+ *    products with the eye's right, up and forward);
+ *
+ *  - a segment going behind you is cut where it crosses a plane just
+ *    in front of the eye ([clip], near-plane clipping, the 3D
+ *    pipeline's first step; see graphics/3d's Clip for triangles):
+ *    projecting its far end would draw garbage;
+ *
+ *  - and both ends are divided by how far ahead they are ([project]):
+ *    perspective, the one line of it.
+ *
+ *        eye            (x, y, z)            a point twice as far
+ *         >- - - - - - - - -*                  is drawn twice as close
+ *          \     screen                        to the middle:
+ *           \      |                            x' = focal * x / z
+ *            \- - - * (x', y')                  y' = focal * y / z
+ *
+ * No faces, so no hidden surfaces to remove: you see through
+ * everything, and that's the look (games2.5d/TinyElite, four years
+ * later, hides each ship's back edges; games3d/TinyBattlezone3d is the
+ * same battle drawn with solid faces and a z-buffer, by playground3d).
  *
  * The US Army asked Atari for a version to train gunners, the "Bradley
  * Trainer" (1981): one of the first military uses of a video game.
  * Rotberg himself didn't like working on it.
+ *
+ * Uses: the 2D playground and Scene2d, and nothing else -- not
+ * Playground3d, whose camera would do [to_eye] and [project] for us.
  *
  * Exercises: the flying saucer, the fast "super tanks" and the guided
  * missiles of the original, the volcano erupting on the horizon, a
  * second player over the network (plan_networking_teaching.md).
  *)
 open Playground
-open Playground3d
 
 (*****************************************************************************)
 (* Vectors, and the models: lists of segments *)
@@ -85,6 +105,12 @@ let place (heading : number) ((tx, tz) : number * number) (segs : segment list) 
   let a = radians heading in
   let tr (x, y, z) = (tx +. (x *. cos a) -. (z *. sin a), y, tz +. (x *. sin a) +. (z *. cos a)) in
   List.map (fun (p, q) -> (tr p, tr q)) segs
+
+(* a shell, a small cube, flying at the height of a tank's hull. The eye
+ * is at y = 1 (the periscope); a shell at that height is drawn on the
+ * horizon at every distance, so it looks to sail over the tank it goes
+ * through (a first version did exactly that) *)
+let shell_edges : segment list = box_edges ~y0:0.3 0.3 0.3 0.3
 
 (* the obstacles, where they stand: pyramids and blocks, as in the
  * original, which shells don't go through *)
@@ -229,7 +255,7 @@ let update (computer : computer) (s : model) : model =
   | Game_over _ -> if space || s.elapsed > 10. then Scene2d.go Title s else s
 
 (*****************************************************************************)
-(* Drawing lines *)
+(* Seeing: from the world to the screen -- the trick of this game *)
 (*****************************************************************************)
 
 let vector_green = rgb 60 255 60
@@ -242,10 +268,29 @@ let line (color : color) ((x1, y1) : number * number) ((x2, y2) : number * numbe
   |> rotate (atan2 dy dx *. 180. /. Float.pi)
   |> move ((x1 +. x2) /. 2.) ((y1 +. y2) /. 2.)
 
-(* Near-plane clipping: the part of a segment in front of the plane at
- * distance [near] ahead of the eye. With d(p) the distance of p in front
- * of the plane, a segment from p (in front) to q (behind) is cut at
- * p + (q - p) * d(p) / (d(p) - d(q)), where d is 0.
+let cross (x1, y1, z1) (x2, y2, z2) = ((y1 *. z2) -. (z1 *. y2), (z1 *. x2) -. (x1 *. z2), (x1 *. y2) -. (y1 *. x2))
+let unit (v : v3) : v3 = (1. /. Float.sqrt (dot v v)) *| v
+
+(* the eye: where it is, and its three directions. Right is forward
+ * crossed with the world's up, and the eye's up is right crossed with
+ * forward, so that the three are square to each other even when the eye
+ * looks down (the title's tank is seen from a little above) *)
+type eye = { pos : v3; right : v3; up : v3; ahead : v3 }
+
+let look (pos : v3) (target : v3) : eye =
+  let ahead = unit (target -| pos) in
+  let right = unit (cross ahead (0., 1., 0.)) in
+  { pos; right; up = cross right ahead; ahead }
+
+(* a point in the eye's coordinates: x to the right, y up, z ahead *)
+let to_eye (e : eye) (p : v3) : v3 =
+  let r = p -| e.pos in
+  (dot r e.right, dot r e.up, dot r e.ahead)
+
+(* Near-plane clipping, in the eye's coordinates, where the plane is
+ * z = near: a segment from p (in front) to q (behind) is cut at
+ * p + (q - p) * t, with t = (p.z - near) / (p.z - q.z), where the
+ * height above the plane is 0.
  *
  *        eye   near plane
  *         >      |    p
@@ -257,24 +302,25 @@ let line (color : color) ((x1, y1) : number * number) ((x2, y2) : number * numbe
  *)
 let near = 0.5
 
-let clip (eye : v3) (fwd : v3) ((p, q) : segment) : segment option =
-  let d v = dot (v -| eye) fwd -. near in
-  let dp = d p and dq = d q in
-  let cut a b da db = a +| ((da /. (da -. db)) *| (b -| a)) in
-  if dp < 0. && dq < 0. then None
-  else if dp < 0. then Some (cut q p dq dp, q)
-  else if dq < 0. then Some (p, cut p q dp dq)
+let clip (((_, _, pz) as p), ((_, _, qz) as q) : segment) : segment option =
+  let cut a b az bz = a +| (((az -. near) /. (az -. bz)) *| (b -| a)) in
+  if pz < near && qz < near then None
+  else if pz < near then Some (cut q p qz pz, q)
+  else if qz < near then Some (p, cut p q pz qz)
   else Some (p, q)
 
-let draw (color : color) (cam : camera) (screen : screen) (fwd : v3) (segs : segment list) : shape list =
+(* The divide. The focal length is how far the screen is from the eye,
+ * in pixels: a 60 degree view from top to bottom, so half the screen's
+ * height is tan 30 * focal *)
+let project (screen : screen) ((x, y, z) : v3) : number * number =
+  let focal = screen.height /. 2. /. Float.tan (radians 30.) in
+  (focal *. x /. z, focal *. y /. z)
+
+let draw (color : color) (e : eye) (screen : screen) (segs : segment list) : shape list =
   List.filter_map
-    (fun seg ->
-      match clip cam.eye fwd seg with
-      | None -> None
-      | Some (p, q) -> (
-          match (project cam screen p, project cam screen q) with
-          | Some a, Some b -> Some (line color a b)
-          | _ -> None))
+    (fun (p, q) ->
+      clip (to_eye e p, to_eye e q)
+      |> Option.map (fun (p, q) -> line color (project screen p) (project screen q)))
     segs
 
 (*****************************************************************************)
@@ -322,19 +368,17 @@ let explosion_edges ((x, z, age) : number * number * int) : segment list =
       (p +| off, q +| off))
     (place 0. (x, z) tank_edges)
 
-let view_game (computer : computer) (g : game) : camera * shape3d list =
+let view_game (computer : computer) (g : game) : shape list =
   let screen = computer.screen in
-  let fwd = forward g.heading in
-  let eye = (g.x, 1., g.z) in
-  let cam = camera ~eye ~target:(eye +| fwd) () in
-  let draw = draw vector_green cam screen fwd in
+  let pos = (g.x, 1., g.z) in
+  let draw = draw vector_green (look pos (pos +| forward g.heading)) screen in
   let e = g.enemy in
   let shells = List.filter_map Fun.id [ g.shot; g.enemy_shot ] in
   let world =
     draw mountains
     @ List.concat_map (fun o -> draw (obstacle_edges o)) obstacles
     @ draw (place e.eh (e.ex, e.ez) tank_edges)
-    @ List.concat_map (fun (sh : shell) -> draw (place sh.sh (sh.sx, sh.sz) (box_edges ~y0:0.8 0.3 0.3 0.3))) shells
+    @ List.concat_map (fun (sh : shell) -> draw (place sh.sh (sh.sx, sh.sz) shell_edges)) shells
     @ (match g.explosion with Some ((_, _, age) as ex) when age < 90 -> draw (explosion_edges ex) | _ -> [])
   in
   let rel = normalize (bearing g.x g.z e.ex e.ez -. g.heading) in
@@ -344,42 +388,33 @@ let view_game (computer : computer) (g : game) : camera * shape3d list =
     else if rel < 0. then [ "ENEMY TO LEFT" ]
     else [ "ENEMY TO RIGHT" ]
   in
-  let huds =
-    world @ sight @ radar screen g
-    @ List.map (fun w -> text vector_red 3. w |> move_y (screen.top -. 190.)) warning
-    @ [ text vector_red 3. (Printf.sprintf "SCORE %d" g.score) |> move (screen.left +. 160.) (screen.top -. 40.);
-        text vector_red 3. (Printf.sprintf "LIVES %d" g.lives) |> move (screen.right -. 140.) (screen.top -. 40.) ]
-    @ if g.hit > 0 then cracks else []
-  in
-  (cam, [ hud (rectangle black screen.width screen.height); hud (group huds) ])
+  (rectangle black screen.width screen.height :: world)
+  @ sight @ radar screen g
+  @ List.map (fun w -> text vector_red 3. w |> move_y (screen.top -. 190.)) warning
+  @ [ text vector_red 3. (Printf.sprintf "SCORE %d" g.score) |> move (screen.left +. 160.) (screen.top -. 40.);
+      text vector_red 3. (Printf.sprintf "LIVES %d" g.lives) |> move (screen.right -. 140.) (screen.top -. 40.) ]
+  @ if g.hit > 0 then cracks else []
 
 (* the title: a tank turning slowly, seen from the front *)
-let view_title (computer : computer) (s : model) : camera * shape3d list =
+let view_title (computer : computer) (s : model) : shape list =
   let screen = computer.screen in
-  let eye = (0., 2.5, 7.) in
-  let cam = camera ~eye ~target:(0., 0.5, 0.) () in
-  let fwd = (0., 0., -1.) in
-  let tank = draw vector_green cam screen fwd (place (float_of_int (s.frames mod 360)) (0., 0.) tank_edges) in
-  let shapes =
-    [ text vector_green 6. "TINY BATTLEZONE" |> move_y 300.;
+  let eye = look (0., 2.5, 7.) (0., 0.5, 0.) in
+  let tank = draw vector_green eye screen (place (float_of_int (s.frames mod 360)) (0., 0.) tank_edges) in
+  (rectangle black screen.width screen.height :: tank)
+  @ [ text vector_green 6. "TINY BATTLEZONE" |> move_y 300.;
       text vector_red 2.5 "left/right: turn   up/down: move   space: fire" |> move_y (-250.) ]
-    @ Scene2d.blink 1. s [ text vector_green 3. "PRESS SPACE" |> move_y (-330.) ]
-  in
-  (cam, [ hud (rectangle black screen.width screen.height); hud (group (tank @ shapes)) ])
+  @ Scene2d.blink 1. s [ text vector_green 3. "PRESS SPACE" |> move_y (-330.) ]
 
-let view (computer : computer) (s : model) : camera * shape3d list =
+let view (computer : computer) (s : model) : shape list =
   match s.scene with
   | Title -> view_title computer s
   | Playing g -> view_game computer g
   | Game_over score ->
       let screen = computer.screen in
-      ( camera ~eye:(0., 1., 0.) ~target:(0., 1., -1.) (),
-        [ hud (rectangle black screen.width screen.height);
-          hud
-            (group
-               ([ text vector_red 6. "GAME OVER"; text vector_green 3. (Printf.sprintf "SCORE %d" score) |> move_y (-80.) ]
-               @ Scene2d.blink 1. s [ text vector_green 3. "PRESS SPACE" |> move_y (-200.) ])) ] )
+      [ rectangle black screen.width screen.height; text vector_red 6. "GAME OVER";
+        text vector_green 3. (Printf.sprintf "SCORE %d" score) |> move_y (-80.) ]
+      @ Scene2d.blink 1. s [ text vector_green 3. "PRESS SPACE" |> move_y (-200.) ]
 
-let app = game3d view update initial_model
+let app = game view update initial_model
 
-let main = Playground3d_platform.run_app3d app
+let main = Playground_platform.run_app app

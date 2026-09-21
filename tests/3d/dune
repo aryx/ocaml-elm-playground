@@ -34,7 +34,7 @@
    %{project_root}/examples3d/Corridor3d.exe
    %{project_root}/examples3d/CachedGrid3d.exe
    %{project_root}/games3d/StarCollector3d.exe
-   %{project_root}/games3d/TinyBattlezone.exe
+   %{project_root}/games3d/TinyBattlezone3d.exe
    %{project_root}/games3d/TinyWolfenstein3d.exe
    %{project_root}/games3d/TinyVirtuaRacing.exe
    %{project_root}/games3d/TinyMarioKart64.exe

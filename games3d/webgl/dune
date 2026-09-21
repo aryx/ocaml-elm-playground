@@ -5,7 +5,7 @@
 ; whose world is drawn from GPU buffers kept from frame to frame (see
 ; Playground3d.cached3d and plan_opengl_perf.md).
 (copy_files ../StarCollector3d.ml)
-(copy_files ../TinyBattlezone.{ml,mli})
+(copy_files ../TinyBattlezone3d.{ml,mli})
 (copy_files ../TinyWolfenstein3d.{ml,mli})
 (copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../TinyMarioKart64.ml)
@@ -30,7 +30,7 @@
   (names
     StarCollector3d
     TinyMinecraft
-    TinyBattlezone
+    TinyBattlezone3d
     TinyWolfenstein3d
     TinyVirtuaRacing
     TinyMarioKart64

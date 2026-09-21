@@ -30,6 +30,7 @@ games2.5d/*.ml`) against the whole game.
 | `TinyKart` | Super Mario Kart (Nintendo, 1992), the SNES's Mode 7 | a flat map, turned, sampled row by row, each row at its distance: height * focal / rows below the horizon | row | 84 / 441 | walls, hills: only a flat floor |
 | `TinyDoom` | Doom (id, 1993) | a BSP tree of the level's walls, walked nearest first; each column's clip arrays say what's left to draw | column | 300 / 499 | rooms above rooms, looking up or down, walls that aren't vertical |
 | `TinyComanche` | Comanche (NovaLogic, 1992), "Voxel Space" | a height map, each column a line across the map, near to far; a y-buffer, what's drawn of each column | column | 126 / 302 | overhangs, caves, a roll |
+| `TinyBattlezone` | Battlezone (Ed Rotberg, Atari, 1980) | every object a list of segments; each end taken into the eye's coordinates (three dot products), cut at a plane just ahead of the eye, and divided by its depth | segment | 62 / 420 | hide anything: every edge is drawn, and you see through tanks, pyramids and mountains alike |
 | `TinyElite` | Elite (Braben and Bell, 1984) | you never move: the universe turns round you, each ship's orientation three vectors turned by `sin a ~ a`, `cos a ~ 1 - a^2/2` and straightened every 16 frames; a convex hull, an edge drawn when either of its faces is turned towards you | edge | 144 / 606 | hide one ship behind another (they show through each other); a ship that isn't convex; anything filled |
 | `TinyDescent` | Descent (Parallax, 1995) | the level a graph of convex cells; from the eye's cell, each portal shows the next cell inside its own window on screen; drawn farthest first | cell (polygons) | 216 / 440 | nothing, really: it is full 3D, and pays for it with a projection per corner |
 
@@ -43,12 +44,16 @@ draws -- how far a game can get on the 2D playground, drawing polygons
 in the right order -- and because it is Doom's "nearest first" idea,
 grown up.
 
-`TinyElite` is the other one, eleven years older and with no order at
-all. Its engine is as full 3D as Descent's -- six degrees of freedom,
-a divide by the depth, a near plane -- but it draws only lines, and
-each ship hides its own back edges by itself: a face turned away is
-one dot product, and a convex hull cannot hide anything else from
-itself. Between two ships nothing is hidden, and on a vector look
+`TinyBattlezone` and `TinyElite` are the other two, older and with no
+order at all. Battlezone is where 3D games start: the whole pipeline
+in its smallest form -- into the eye's coordinates, clip, divide --
+and no hiding of any kind, which a vector monitor, drawing lines and
+no surfaces, never needed. Elite, four years later, is the same
+pipeline and one step more. Its engine is as full 3D as Descent's --
+six degrees of freedom, a divide by the depth, a near plane -- but it
+draws only lines, and each ship hides its own back edges by itself: a
+face turned away is one dot product, and a convex hull cannot hide
+anything else from itself. Between two ships nothing is hidden, and on a vector look
 nobody minds.
 
 Four families, then:
@@ -117,7 +122,7 @@ is not the same as a game being small.
 Their twins
 -----------
 
-Five of them have a twin in `games3d/`, the same game with a real 3D
+Six of them have a twin in `games3d/`, the same game with a real 3D
 engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 
 | Pseudo-3D | Real 3D | Shared |
@@ -127,6 +132,7 @@ engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 | `TinyDoom` | `games3d/TinyDoom3d` | the level (`kits/sectors`: `Sectors`) |
 | `TinyComanche` | `games3d/TinyComanche3d` | the island (`kits/heightmap`: `Heightmap`) |
 | `TinyDescent` | `games3d/TinyDescent3d` | the mine and the ship (`kits/segments`: `Segments`, `Sixdof`) |
+| `TinyBattlezone` | `games3d/TinyBattlezone3d` | the battle: obstacles, enemy, shells (a copy) |
 
 The 3D twin is shorter: the engine does the work, and the camera can do
 anything. The pseudo-3D one shows what the engine does, and why games
