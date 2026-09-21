@@ -50,6 +50,7 @@
     TinyCeleste
     TinyDDR
     TinySimCity
+    TinyCivilization
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

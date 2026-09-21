@@ -152,6 +152,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyCeleste", "", 5);
     ("games/software/TinyDDR", "", 5);
     ("games/software/TinySimCity", "", 5);
+    ("games/software/TinyCivilization", "", 5);
     ("games2.5d/software/TinyGuitarHero", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
@@ -208,6 +209,17 @@ let simcity_town =
   ^ "space:101,2:103,up:105,left:107,left:109,left:111,left:113,left:115,"
   ^ "left:117,left:119,left:121,left:123,left:125,left:127,left:129,up:133,"
   ^ "up:135,space:131-137,f:139"
+
+(* claude: TinyCivilization's first thirty turns: Rome founded where the
+ * settlers start, its warriors walking east into the fog one tile a
+ * turn, then Enter, turn after turn *)
+let civ_thirty_turns =
+  "space:1,b:4,right:6,return:8,right:10,return:12,right:14,return:16,"
+  ^ "right:18,return:20,right:22,return:24,right:26,return:28,right:30,"
+  ^ "return:32,right:34,return:36,return:38,return:40,return:42,return:44,"
+  ^ "return:46,return:48,return:50,return:52,return:54,return:56,return:58,"
+  ^ "return:60,return:62,return:64,return:66,return:68,return:70,return:72,"
+  ^ "return:74,return:76,return:78,return:80"
 
 (* claude: games played with keys (-script, see Input_script): what the
  * start of a game can't show -- the camera scrolled, a coin taken; the
@@ -333,6 +345,12 @@ let scripted : Testutil_golden.scripted list =
     (* and why, in the pollution view: the air around the factories and
        the plant *)
     ("games/software/TinySimCity", "smog", 610, simcity_town ^ ",v:600,v:602");
+    (* 3400 BC: Rome, the strip its warriors uncovered, the rival's
+       first advance in the news *)
+    ("games/software/TinyCivilization", "rome", 90, civ_thirty_turns);
+    (* and the tree of advances at that point: Alphabet known, Bronze
+       Working under way, what is open and what is not *)
+    ("games/software/TinyCivilization", "tree", 96, civ_thirty_turns ^ ",t:94");
     (* the riff's first four notes on Medium, every fret held and each
        strummed on its beat (132 a minute, an eighth 0.227 s) *)
     ("games2.5d/software/TinyGuitarHero", "riff", 305,

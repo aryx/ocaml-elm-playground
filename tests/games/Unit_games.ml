@@ -4302,6 +4302,125 @@ let simcity_replays () =
   let a = simcity_months 36 (simcity_town ()) and b = simcity_months 36 (simcity_town ()) in
   Alcotest.(check bool) "the same tiles" true (a.tiles = b.tiles)
 
+(*****************************************************************************)
+(* TinyCivilization *)
+(*****************************************************************************)
+
+(* The made world: about half land, and the two starts far apart on
+ * the same continent, so that the rival can walk to you. The map is
+ * printed in the log. *)
+let civ_world () =
+  let open TinyCivilization in
+  let char_of = function Ocean -> '~' | Grass -> '"' | Plains -> '.' | Forest -> 'f' | Hills -> 'h' in
+  let us, them = starts in
+  for y = 0 to rows - 1 do
+    prerr_endline
+      (String.init cols (fun x -> if (x, y) = us then 'R' else if (x, y) = them then 'B' else char_of world.(index (x, y))))
+  done;
+  let land_tiles = Array.fold_left (fun n t -> if t <> Ocean then n + 1 else n) 0 world in
+  let fraction = float_of_int land_tiles /. float_of_int (cols * rows) in
+  Alcotest.(check bool) (Printf.sprintf "about half land (%.2f)" fraction) true (fraction > 0.35 && fraction < 0.6);
+  Alcotest.(check bool) "both starts on land" true (on_land us && on_land them);
+  Alcotest.(check bool) (Printf.sprintf "far apart (%d)" (distance us them)) true (distance us them >= 15);
+  let reached = Array.make (cols * rows) false in
+  let rec walk = function
+    | [] -> ()
+    | c :: rest ->
+        if on_land c && not reached.(index c) then begin
+          reached.(index c) <- true;
+          walk (List.tl (around 1 c) @ rest)
+        end
+        else walk rest
+  in
+  walk [ us ];
+  Alcotest.(check bool) "one can walk to the other" true reached.(index them)
+
+(* The tree: six advances to start with; each learnt opens its
+ * children; Philosophy waits for all three of its parents. *)
+let civ_tree () =
+  let open TinyCivilization in
+  Alcotest.(check int) "six roots" 6 (List.length (available []));
+  Alcotest.(check bool) "Alphabet opens Writing and Code of Laws" true
+    (List.mem Writing (available [ Alphabet ]) && List.mem Code_of_laws (available [ Alphabet ]));
+  Alcotest.(check int) "Philosophy: three advances deep" 3 (depth Philosophy);
+  let all_but_currency = List.filter (fun t -> t <> Currency && t <> Philosophy) techs in
+  Alcotest.(check bool) "not without Currency" false (List.mem Philosophy (available all_but_currency));
+  Alcotest.(check bool) "with it, yes" true (List.mem Philosophy (available (Currency :: all_but_currency)))
+
+(* A city on the Roman start: its own tile and one around it, food
+ * filling the box to a second citizen, shields making warriors. *)
+let civ_city () =
+  let open TinyCivilization in
+  let us, _ = starts in
+  let c = { name = "Rome"; owner = Us; at = us; size = 1; food = 0; shields = 0; making = Warriors } in
+  Alcotest.(check int) "size 1 works two tiles" 2 (List.length (worked c));
+  let f, s, _ = output c in
+  Alcotest.(check bool) (Printf.sprintf "food to spare (%d), shields (%d)" f s) true (f > 2 && s > 0);
+  let c = ref c and made = ref [] in
+  for _ = 1 to 30 do
+    let c', unit = city_turn !c in
+    c := c';
+    Option.iter (fun k -> made := k :: !made) unit
+  done;
+  Alcotest.(check bool) "grown" true (!c.size >= 2);
+  Alcotest.(check bool) "warriors made" true (List.mem Warriors !made)
+
+(* A weighted coin: a catapult against warriors wins six times in seven;
+ * warriors against a phalanx fortified on hills in a city, rarely. And
+ * the defender lost, the whole stack dies. *)
+let civ_combat () =
+  let open TinyCivilization in
+  let g = new_game () in
+  let at = (20, 12) and next = (21, 12) in
+  let u id side kind at : unit_ = { id; side; kind; at; moves = 1 } in
+  let g = { g with units = [ u 10 Us Catapult at; u 11 Them Warriors next; u 12 Them Settlers next ] } in
+  let odds_c = odds g (List.hd g.units) next in
+  Alcotest.(check (float 1e-9)) "catapult against warriors" (6. /. 7.) odds_c;
+  (* the first roll of the dice that the catapult wins *)
+  let rec first_win g = let r, g' = roll g in if r < odds_c then g else first_win g' in
+  let g = first_win g in
+  let after = advance g (List.hd g.units) next in
+  Alcotest.(check int) "both of theirs gone" 0 (List.length (List.filter (fun (u : unit_) -> u.side = Them) after.units));
+  let g2 = { g with units = [ u 20 Us Warriors at ]; cities = [ { name = "Ur"; owner = Them; at = next; size = 3; food = 0; shields = 0; making = Warriors } ] } in
+  let g2 = { g2 with units = g2.units @ [ u 21 Them Phalanx next ] } in
+  let hills = world.(index next) = Hills in
+  Alcotest.(check (float 1e-9)) "warriors against a phalanx in a city" (1. /. (1. +. (2. *. 1.5 *. if hills then 1.5 else 1.)))
+    (odds g2 (List.hd g2.units) next)
+
+(* Settlers found a city where they stand -- but not two tiles from
+ * another. *)
+let civ_found () =
+  let open TinyCivilization in
+  let g = new_game () in
+  let settlers = List.hd g.units in
+  let g = found g settlers in
+  Alcotest.(check int) "a city" 1 (List.length g.cities);
+  Alcotest.(check bool) "the settlers settled" false (List.exists (fun (u : unit_) -> u.kind = Settlers && u.side = Us) g.units);
+  let x, y = settlers.at in
+  Alcotest.(check bool) "not two tiles away" false (can_found g (x + 2, y));
+  Alcotest.(check bool) "three is fine, on land" true ((not (on_land (x + 3, y))) || can_found g (x + 3, y))
+
+(* The rival plays on its own: left alone for eighty turns it has more
+ * cities, advances, and an army -- the same ones every time. *)
+let civ_rival () =
+  let open TinyCivilization in
+  let play () =
+    let g = new_game () in
+    let g = ref (found g (List.hd g.units)) in
+    for _ = 1 to 80 do g := end_turn !g done;
+    !g
+  in
+  let g = play () in
+  let theirs = List.filter (fun (c : city) -> c.owner = Them) g.cities in
+  prerr_endline
+    (Printf.sprintf "after 80 turns: %d Babylonian cities, %d advances, %d units; winner %s" (List.length theirs)
+       (List.length g.them.known) (List.length (List.filter (fun (u : unit_) -> u.side = Them) g.units))
+       (match g.winner with Some Us -> "Us" | Some Them -> "Them" | None -> "none"));
+  Alcotest.(check bool) "more than one city" true (List.length theirs >= 2);
+  Alcotest.(check bool) "advances learnt" true (List.length g.them.known >= 2);
+  let g' = play () in
+  Alcotest.(check bool) "the same game again" true (g.units = g'.units && g.cities = g'.cities)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -4517,4 +4636,10 @@ let tests =
       t "TinySimCity, the valves" simcity_valves;
       t "TinySimCity, the smog" simcity_smog;
       t "TinySimCity, the tax rate" simcity_tax;
-      t "TinySimCity, the same city replays the same" simcity_replays ]
+      t "TinySimCity, the same city replays the same" simcity_replays;
+      t "TinyCivilization, the world" civ_world;
+      t "TinyCivilization, the tree of advances" civ_tree;
+      t "TinyCivilization, a city grows and builds" civ_city;
+      t "TinyCivilization, combat, and the stack that dies" civ_combat;
+      t "TinyCivilization, cities keep their distance" civ_found;
+      t "TinyCivilization, the rival" civ_rival ]

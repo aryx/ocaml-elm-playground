@@ -980,6 +980,37 @@ Raid on Bungeling Bay; its source GPL'd in 2008 as Micropolis.
   spread map, land value, a plant's capacity, bridges, 3x3 zones,
   disasters.
 
+### 27. One more turn: Civilization
+
+Civilization (Sid Meier and Bruce Shelley, MicroProse, 1991), after
+Walter Bright's Empire and Francis Tresham's board game; the "4X" genre
+(explore, expand, exploit, exterminate) was named after it.
+
+- **Toy**: TinyCivilization (DONE: `games/TinyCivilization.ml`, arrows
+  move the blinking unit, b builds a city, p production, r research,
+  t the tree, Enter ends the turn).
+- **Kit**: none; `Scene2d`. Turns are TinyRogue's and the black map
+  TinyWarcraft2's fog ("ever seen"), both borrowed rather than new.
+- **What it is here for**:
+  - **the tree of advances**, a directed acyclic graph: an advance is
+    open once all its parents are known, and "t" draws it in columns
+    by depth (one more than the deepest parent). Research is choosing
+    a path, and the military branches lead nowhere near Philosophy
+    (the science victory standing in for the spaceship);
+  - **a city as a small economy**: its tile and one more per citizen,
+    the best first, each giving food, shields and trade -- food grows
+    the city, shields build units (settlers take a citizen), trade is
+    research;
+  - **a made world**: a random number per tile, blurred three times,
+    cut at a sea level and at levels for the kinds of land; the same
+    seed, the same world;
+  - **a rival on the same rules** (expanding, researching, garrisoning,
+    then marching once it has an army), and combat as a weighted coin
+    in which the losing defender's whole stack dies (Civilization I).
+- **Left undone** (exercises in the header): the 21-tile fat cross,
+  buildings, roads and terraforming, boats, taxes, the rival's own fog,
+  diplomacy and more rivals.
+
 ### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,
