@@ -535,8 +535,11 @@ Guitar Hero (2005).
   difficulty as the *same song reduced* rather than another song:
   Easy three frets and one note a chord, Medium four, Hard five and a
   chord's outer two, Expert everything (`Rhythm.reduce`, the table in
-  `Rhythm.mli`). The song has a drummer (an ABC `clef=perc` voice,
-  below). In games2.5d because the highway is Out Run's road
+  `Rhythm.mli`). And you hear what you play: the song loops with the
+  guitar muted (`Rhythm.muted`), a note hit sounds when strummed
+  (`Rhythm.struck`, `Audio.of_tune`), a note missed is silence. The
+  song has a drummer (an ABC `clef=perc` voice, below). In games2.5d
+  because the highway is Out Run's road
   straightened: one division by the depth per point, the trick of the
   game, 23 lines.
 - **Third toy**: TinyRockBand (DONE: `games3d/TinyRockBand.ml`,
@@ -552,7 +555,9 @@ Guitar Hero (2005).
   the kick pedal on space). The drums are charted from their GM drum
   keys (`pad_of_key`) and reduced their own way -- no pedal below
   Hard, one pad at a time below Expert, Easy only on the beats -- since
-  folding frets means nothing on a kit. One crowd meter for the band.
+  folding frets means nothing on a kit. One crowd meter for the band,
+  and the band heard without you: your part muted, your notes sounding
+  only when hit, as in TinyGuitarHero.
   It needed the native 3D loop to feed the sound card at all (see
   `plan_audio_teaching.md`, phase 4).
 - **Kit** (DONE): `kits/rhythm/`, TinyDDR's machinery moved out when

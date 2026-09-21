@@ -171,3 +171,24 @@ val sustain_min : float
  * time [now] -- hit, long enough, not over yet, and their lane still
  * held. A game scores them for every frame they last. *)
 val sustaining : float -> 'lane list -> 'lane performance -> int
+
+(* {2 Hearing what is played}
+
+   In the games the player's part is not in the song: a note sounds
+   when it is hit, and a note missed is silence -- the most direct
+   judgement there is. So the song plays with the part muted, and each
+   hit plays that note alone, in the part's own sound:
+
+     the song      [muted v tune]: voice [v] all rests, the other voices
+                   (and their sounds, which depend on how many voices
+                   there are) untouched
+     a hit         [newly_hit before after]: the notes hit between two
+                   moments, by their start in the song
+     its sound     [struck tune v at]: voice [v]'s note (or chord)
+                   starting at [at], as a tune of its own
+
+   The whole written chord sounds even on an easy chart: the part is
+   reduced, never the music. *)
+val muted : int -> Abc.tune -> Abc.tune
+val newly_hit : 'lane performance -> 'lane performance -> float list
+val struck : Abc.tune -> int -> float -> Abc.tune

@@ -101,6 +101,10 @@ val abc : string -> sound
    (Au clair de la lune) *)
 val doremi : string -> sound
 
+(* [of_tune tune]: a tune already parsed (Abc.parse), or changed after
+   parsing -- a voice muted, a single note kept -- played the same way *)
+val of_tune : Abc.tune -> sound
+
 (* [midi bytes]: a Standard MIDI File's music (its bytes, as read from
    a .mid file: audio/Midi.mli), General MIDI's instruments played by
    our 8-bit ones, drums on noise (audio/Music.mli) *)

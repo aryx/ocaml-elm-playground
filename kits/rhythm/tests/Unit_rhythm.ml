@@ -87,7 +87,29 @@ let strum_and_sustain () =
   Alcotest.(check int) "let go" 0 (Rhythm.sustaining 2. [] p);
   Alcotest.(check int) "over" 0 (Rhythm.sustaining 3.5 [ 2 ] p)
 
+(* You hear what you play: the song with the part muted keeps its other
+ * voice as it was; a note hit is heard alone, the whole chord; a note
+ * missed is not heard at all. *)
+let hearing () =
+  match Abc.parse "X:1\nL:1/4\nQ:1/4=60\nK:C\nV:1\nC [EG] c2 |\nV:2\nC,4 |" with
+  | Error e -> Alcotest.fail e
+  | Ok tune ->
+      let band = Rhythm.muted 0 tune in
+      Alcotest.(check int) "the part muted: no note left" 0 (List.length (Rhythm.sounding band 0));
+      Alcotest.(check int) "the band untouched" 1 (List.length (Rhythm.sounding band 1));
+      Alcotest.(check (float 1e-9)) "and the song as long" (Abc.duration tune) (Abc.duration band);
+      let chord = Rhythm.struck tune 0 1. in
+      Alcotest.(check (list (list int))) "a hit on the second beat: the chord, alone" [ [ 64; 67 ] ]
+        (List.map (fun (_, _, ps) -> List.sort compare ps) (Rhythm.sounding chord 0));
+      Alcotest.(check int) "nothing of the other voice" 0 (List.length (Rhythm.sounding chord 1));
+      let p = Rhythm.start ~offset:0. ~started:0. (Rhythm.on_frets tune 0) in
+      let hit = Rhythm.play 1.01 [ 2; 3; 4 ] p in
+      Alcotest.(check (list (float 1e-9))) "hit: heard once, at its time" [ 1. ] (Rhythm.newly_hit p hit);
+      let missed = Rhythm.play 3. [] hit in
+      Alcotest.(check (list (float 1e-9))) "missed: never heard" [] (Rhythm.newly_hit hit missed)
+
 let tests =
   Testo.categorize "rhythm"
     [ t "the windows" windows; t "a chart played through" performance; t "a chart from a tune" from_a_tune;
-      t "a part on frets" on_frets; t "the same chart, reduced" difficulty; t "strum and sustain" strum_and_sustain ]
+      t "a part on frets" on_frets; t "the same chart, reduced" difficulty; t "strum and sustain" strum_and_sustain;
+      t "you hear what you play" hearing ]

@@ -34,6 +34,7 @@ let tune (who : string) (parse : string -> (Abc.tune, string) result) (text : st
 
 let abc = tune "Audio.abc" Abc.parse
 let doremi = tune "Audio.doremi" Doremi.parse
+let of_tune = Music.to_sound
 
 let midi (bytes : string) : sound =
   match Midi.parse bytes with

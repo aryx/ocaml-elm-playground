@@ -34,6 +34,11 @@
  *    the part as the tune has it; Hard keeps each chord's outline;
  *    Medium and Easy one note of it, on four frets and then three.
  *    Never a different song: an easy part is still the same part.
+ *  - You hear what you play. The song runs with the guitar muted
+ *    (Rhythm.muted); a note hit sounds when it is strummed, in the
+ *    guitar's own sound (Rhythm.struck), and a note missed is silence.
+ *    Guitar Hero mutes its guitar track on a miss for the same reason:
+ *    the ear judges before the score does.
  *
  * The highway -- the trick of this game -- is games2.5d/TinyOutRun.ml's
  * road, straightened. A flat strip seen from above and behind: a point
@@ -61,7 +66,8 @@
  * What it uses: kits/rhythm (the music's clock and calibration, the
  * grades, the performance, the chart from a voice on frets, the
  * difficulty reduction, the strum, the sustains -- all of them shared
- * with TinyRockBand), Audio (the song, and Audio.position), audio's ABC
+ * with TinyRockBand), Audio (the band, a note per hit, Audio.position,
+ * Audio.of_tune), audio's ABC
  * percussion (the backing band's drummer: a clef=perc voice, played
  * with real drum sounds), Scene2d. No Camera2d: the road is drawn by
  * [project] alone.
@@ -72,7 +78,8 @@
  * chord), hammer-ons and pull-offs (a note right after another on a
  * higher or lower fret, played by the fret alone, no strum), and the
  * highway bending like Out Run's road -- which would take nothing but
- * TinyOutRun's curve.
+ * TinyOutRun's curve, and a sustain let go of cut short (here a hit
+ * note always sounds its full length).
  *)
 open Playground
 open Basics (* float arithmetics *)
@@ -105,7 +112,9 @@ C,,2 ^F,,2 D,,2 ^F,,2 | C,,2 ^F,,2 D,,2 ^F,,2 | C,,2 ^F,,2 D,,2 ^F,,2 | C,,2 D,,
 |}
 
 let tune : Abc.tune = match Abc.parse tune_text with Ok t -> t | Error e -> failwith ("TinyGuitarHero's tune: " ^ e)
-let song : Audio.sound = Audio.abc tune_text
+(* the backing band: the song with the guitar, the part you play,
+ * muted *)
+let band : Audio.sound = Audio.of_tune (Rhythm.muted 0 tune)
 let song_length : number = Abc.duration tune
 let beat : number = 60. / 132.
 
@@ -178,10 +187,13 @@ let update (computer : computer) (model : model) : model =
       end
       else scenes
   | Playing p ->
-      Audio.loop "guitar" song;
+      Audio.loop "guitar" band;
       let offset = p.perf.offset + (if down "=" then 0.01 else 0.) - if down "-" then 0.01 else 0. in
       let now = Rhythm.song_time ~position:(Option.value ~default:0. (Audio.position "guitar")) ~offset in
+      let before = p in
       let p = play_step now ~strum:(key (fun k -> k.kspace)) ~held:(held computer.keyboard) { p with perf = { p.perf with offset } } in
+      (* the notes just hit, heard; the ones missed never are *)
+      List.iter (fun at -> Audio.play (Audio.of_tune (Rhythm.struck tune 0 at))) (Rhythm.newly_hit before.perf p.perf);
       if p.rock <= 0. then begin
         Audio.stop "guitar";
         Scene2d.go (Over (p, false)) scenes

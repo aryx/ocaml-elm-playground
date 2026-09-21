@@ -130,6 +130,29 @@ let strummed ~(strum : bool) ~(held : 'lane list) : 'lane list = if strum then h
 
 let sustain_min = 0.75
 
+let muted (v : int) (t : Abc.tune) : Abc.tune =
+  { t with
+    voices =
+      List.mapi (fun i events -> if i = v then List.map (fun (e : Abc.event) -> { e with notes = [] }) events else events) t.voices }
+
+(* the performances' notes are in the same order, their judgements
+ * changed only from None *)
+let newly_hit (before : 'lane performance) (after : 'lane performance) : float list =
+  List.combine before.judged after.judged
+  |> List.filter_map (fun ((_, j0), (n, j1)) ->
+         match (j0, j1) with None, Some j when j <> Miss -> Some n.at | _ -> None)
+  |> List.sort_uniq compare
+
+(* the other voices kept, empty, so that the voice sounds as it does in
+ * the song (Music.instrument depends on the number of voices) *)
+let struck (t : Abc.tune) (v : int) (at : float) : Abc.tune =
+  { t with
+    voices =
+      List.mapi
+        (fun i (events : Abc.event list) ->
+          if i = v then List.filter (fun (e : Abc.event) -> e.notes <> [] && Float.abs (e.start -. at) < 0.001) events else [])
+        t.voices }
+
 let sustaining (now : float) (held : 'lane list) (p : 'lane performance) : int =
   List.length
     (List.filter

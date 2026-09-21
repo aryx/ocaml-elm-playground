@@ -61,7 +61,10 @@
  *  - The band: the parts you are not playing play themselves, their
  *    highways beside yours, so the four are always seen together; and
  *    the crowd is one meter for all of it ([crowd]): hits fill it,
- *    misses drain it, and empty, the band is booed off.
+ *    misses drain it, and empty, the band is booed off. And the band is
+ *    heard without you ([bands]: your part muted); your notes sound
+ *    only when you hit them (TinyGuitarHero's rule, Rhythm.struck), so
+ *    a miss is a hole in the song -- a missing chord, a missing snare.
  *
  * And it is in games3d/ because the highway is a road into the
  * distance, which a camera draws for free: four of them in real 3D,
@@ -73,8 +76,8 @@
  *
  * What it uses: kits/rhythm (the clock, the grades, the performance,
  * the charts on frets, the difficulty, the strum, the sustains),
- * playground3d (the highways, a perspective camera), Audio (the song
- * and Audio.position -- which in 3D needed the 3D loop to feed the
+ * playground3d (the highways, a perspective camera), Audio (the band,
+ * a note per hit, Audio.position -- which in 3D needed the 3D loop to feed the
  * sound card at all, plan_audio_teaching.md's phase 4 item, done for
  * this game), audio's ABC percussion (the drums), Scene2d.
  *
@@ -131,7 +134,6 @@ z8 | ^F,,2 ^F,,2 ^F,,2 ^F,,2 |
 |}
 
 let tune : Abc.tune = match Abc.parse tune_text with Ok t -> t | Error e -> failwith ("TinyRockBand's tune: " ^ e)
-let song : Audio.sound = Audio.abc tune_text
 let song_length : number = Abc.duration tune
 
 type instrument = Guitar | Bass | Drums | Keys
@@ -192,6 +194,11 @@ let chart (i : instrument) (level : Rhythm.difficulty) : int Rhythm.note list =
   match i with
   | Drums -> drum_part level (drum_chart tune)
   | Guitar | Bass | Keys -> Rhythm.reduce level (Rhythm.on_frets tune (voice_of i))
+
+(* the band as each player hears it: the song with that player's part
+ * muted, made once *)
+let bands : (instrument * Audio.sound) list =
+  List.map (fun i -> (i, Audio.of_tune (Rhythm.muted (voice_of i) tune))) instruments
 
 (*****************************************************************************)
 (* The model *)
@@ -285,17 +292,22 @@ let update (computer : computer) (model : model) : model =
       end
       else scenes
   | Playing p ->
-      Audio.loop "rockband" song;
+      Audio.loop "rockband" (List.assoc p.mine bands);
       let offset =
         p.perf.offset + (if digit "=" then 0.01 else 0.) - if digit "-" then 0.01 else 0.
       in
       let now = Rhythm.song_time ~position:(Option.value ~default:0. (Audio.position "rockband")) ~offset in
+      let before = p in
       let p =
         play_step now ~strum:(key (fun k -> k.kspace))
           ~held:(lanes p.mine (fun k -> Set_.mem k computer.keyboard.keys))
           ~pressed:(lanes p.mine digit)
           { p with perf = { p.perf with offset } }
       in
+      (* your notes just hit, heard; the ones missed never are *)
+      List.iter
+        (fun at -> Audio.play (Audio.of_tune (Rhythm.struck tune (voice_of p.mine) at)))
+        (Rhythm.newly_hit before.perf p.perf);
       if booed p then begin
         Audio.stop "rockband";
         Scene2d.go (Over (p, false)) scenes
