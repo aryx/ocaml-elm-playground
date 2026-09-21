@@ -33,9 +33,10 @@ this toolkit's first customer.
 | `appkits/sheet`, `appkits/sheet_view` | a spreadsheet's engine, and its drawing | §11 |
 | `appkits/richtext` | text with looks, and its page | §12 |
 | `appkits/paint` | a picture as bits, and what paints it | §13 |
+| `appkits/draw` | a picture as objects | §13 |
 | `appkits/slides` | a talk as an outline | §14 |
 | `appkits/hypertalk` | HyperCard's language, and its message path | §15 |
-| `apps/` | TinyVisiCalc, TinyExcel, TinyBravo, TinyWord, TinyMacPaint, TinyOpenDoc, TinyPowerPoint, TinyHyperCard | §10-15 |
+| `apps/` | TinyVisiCalc, TinyExcel, TinyBravo, TinyWord, TinyMacPaint, TinyMacDraw, TinyOpenDoc, TinyPowerPoint, TinyHyperCard | §10-15 |
 
 ## 1. A GUI is a loop you already have
 
@@ -677,6 +678,16 @@ rectangles for the bitmap they came from (compared with `==`, correct
 precisely because a picture in the history is never changed in place)
 is Elm's `lazy`, and the obvious next step, a bitmap shape in the
 Playground, is a change to every backend.
+
+And its opposite, the same year: **TinyMacDraw** (MacDraw, 1984),
+where the rectangle stays a rectangle (`appkits/draw`). A drawing is a
+list of objects back to front -- drawn from its start, hit-tested from
+its end -- and two things come with objects that dots never had. A
+*hollow* shape is only its outline, so a click in its middle goes
+through to what is behind it; and resizing is a map of the points
+from the old bounds to the new, so a group, resized, scales everything
+it holds. Being plain data, a drawing is compared with `=`, which is
+how a drag that changed nothing is kept out of the undo history.
 
 ## 14. A talk is an outline: PowerPoint
 

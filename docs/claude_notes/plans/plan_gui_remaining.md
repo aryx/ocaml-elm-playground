@@ -103,7 +103,43 @@ drawn) makes it one draw call -- a change to every backend and to the
 public API, so a decision for the author, and the natural time for it
 is when pictures get bigger (MacPaint's full page, FatBits).
 
-## 8. Small things found on the way
+## 8. The office programs not yet there
+
+Compared with Microsoft Office and LibreOffice (2026-09-21), the suite
+had Word, Excel, PowerPoint, a paint program and compound documents,
+and missed six kinds of program; by what each would teach:
+
+- **Vector drawing -- done**: `apps/TinyMacDraw.ml` (MacDraw, 1984)
+  over `appkits/draw` (`Figure`, `Drawing`): objects rather than dots,
+  a hollow shape hit only on its outline, the order as the depth,
+  groups, resizing as an affine map passed down a group. TinyMacPaint's
+  pair.
+- **The database**, the biggest gap (Access, Base): TinydBASE (dBASE
+  II, 1980: a dot prompt, `USE`, `LIST FOR`, `INDEX ON`) and then
+  TinyFileMaker or TinyAccess (forms over the same engine, 1985/1992)
+  -- the VisiCalc/Excel pair again. An engine with real algorithms:
+  records, a small query language (select, project, join), an index as
+  a B-tree, reports. HyperCard's card-as-record is its hint.
+- **Equations** (LibreOffice Math): a formula language parsed and laid
+  out as nested boxes by TeX's rules (Knuth, 1978), next to
+  `appkits/typeset` -- and a real part for TinyOpenDoc, whose
+  "equation" part is today a placeholder.
+- **Desktop publishing** (Publisher): TinyPageMaker (Aldus, 1985),
+  text flowing through linked frames across columns and pages, over
+  `appkits/richtext`'s `Page`.
+- **Project planning** (Project): TinyMacProject (1984), tasks and
+  dependencies, a Gantt chart, the critical path as the longest path
+  through a graph -- the spreadsheet's topological order again.
+- **Mail and calendar** (Outlook): TinyEudora (1988), a mailbox,
+  threads by their References (Jamie Zawinski's algorithm), and
+  calendar recurrence; with
+  [`plan_networking_teaching.md`](plan_networking_teaching.md), since
+  mail wants a network.
+
+History to be checked before building on any of these, as for the
+others.
+
+## 9. Small things found on the way
 
 - **Two `Undo` modules**: `gamekits/puzzle/Undo` and
   `appkits/document/Undo`, both in unwrapped libraries, so nothing can

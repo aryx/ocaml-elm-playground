@@ -86,6 +86,8 @@ let scenes : Testutil_golden.scene list =
     (* 1987: a card, its background's fields and buttons, and the page
      * number the stack's script wrote on it when it opened *)
     ("apps/software/TinyHyperCard", "", 5);
+    (* 1984: a picture made of objects, not of dots *)
+    ("apps/software/TinyMacDraw", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -693,6 +695,23 @@ let scripted : Testutil_golden.scripted list =
       "new",
       20,
       "at(-190;470):1-3,click:2,at(-190;257):4-6,click:5,at(0;33):7-9,click:9-14,at(-100;33):11,at(-200;-80):12-16,at(600;-600):17-20"
+    );
+    (* a click in the middle of the hollow rectangle goes through it,
+     * and selects the grey oval behind *)
+    ("apps/software/TinyMacDraw", "through", 8, "at(-140;135):1-4,click:2,at(600;-600):5-8");
+    (* the "Objects" group dragged down, then its corner handle: the box
+     * scales, its label goes with it -- the resize a map of the points *)
+    ( "apps/software/TinyMacDraw",
+      "group",
+      24,
+      "at(100;280):1-3,click:2-8,at(100;200):5,at(100;60):6-10,at(210;10):12-14,click:13-19,at(260;-30):16,at(320;-60):17-20,at(600;-600):21-24"
+    );
+    (* a rectangle drawn across the thick line, filled dark grey from the
+     * Fill menu, and sent to the back: the line is in front of it *)
+    ( "apps/software/TinyMacDraw",
+      "draw",
+      28,
+      "at(-440;262):1-3,click:2,at(0;-150):4-6,click:5-11,at(120;-200):8,at(250;-280):9-12,at(-95;472):13-15,click:14,at(-95;259):16-18,click:17,at(-200;472):19-21,click:20,at(-200;367):22-24,click:23,at(600;-600):25-28"
     );
     ( "apps/software/TinyExcel",
       "edited",

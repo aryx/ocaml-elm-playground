@@ -5,7 +5,7 @@
 ; software/ for the golden frames.
 (executables
   (names
-    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint TinyOpenDoc TinyPowerPoint TinyHyperCard
+    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint TinyOpenDoc TinyPowerPoint TinyHyperCard TinyMacDraw
   )
   (libraries
     elm_playground
@@ -18,6 +18,7 @@
     appkit_embed ; a document of parts (TinyOpenDoc, TinyPowerPoint)
     appkit_slides ; a talk as an outline (TinyPowerPoint)
     appkit_hypertalk ; HyperCard's language (TinyHyperCard)
+    appkit_draw ; a picture as objects (TinyMacDraw)
     graphics_font ; Hershey's strokes, for Stroke_text
     elm_playground_native ; implem of virtual elm_playground
   )

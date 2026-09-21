@@ -1,0 +1,10 @@
+; claude: a drawing program's engine (MacDraw, Apple, 1984; see
+; docs/claude_notes/plans/plan_gui_remaining.md): a picture as a list
+; of objects rather than of dots -- one object (Figure), and the
+; document of them, back to front (Drawing). Used by apps/TinyMacDraw.
+; A private library, installed as part of elm_playground: pure OCaml.
+(library
+ (name appkit_draw)
+ (package elm_playground)
+ (wrapped false)
+)
