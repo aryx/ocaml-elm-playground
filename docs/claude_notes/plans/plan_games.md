@@ -350,12 +350,20 @@ Pitfall! (David Crane, Activision, 1982), Super Mario Bros. (Nintendo,
   TinySonic (DONE: `games/TinySonic.ml`, Sega, 1991: not losing speed
   rather than jumping exactly -- the ground felt as a *surface* with an
   angle rather than as solid tiles, so the hero runs up the hill and
-  round the loop; the spindash; rings as life).
+  round the loop; the spindash; rings as life), TinyMarioWorld (DONE:
+  `games/TinyMarioWorld.ml`, Nintendo, 1990: `Slope`'s second user, on
+  floors only -- a slope capping the speed uphill, and the slide
+  crouched down it knocking enemies out; the cape, flight as a trade
+  of speed for height and back, which the numbers keep lossy so every
+  flight lands; and the world map as a graph whose paths the exits
+  open, a keyhole in the sky opening the Star Road past a course. A
+  closed-loop pilot in the tests plays Donut Hills to its secret exit,
+  and its keys are the golden frames' script).
 - **Kit**, the platformer kit (`gamekits/platformer/`): `Tile_move`,
   TinyMario's `move_by`, one pixel at a time; `Ladder`, climbing
   ladder tiles, for TinyLodeRunner and TinyRick; and `Slope`, the
   ground as tiles with a shape and an angle, found by sensors under
-  the feet, for TinySonic. TinyDonkeyKong's slanted girders are
+  the feet, for TinySonic and TinyMarioWorld. TinyDonkeyKong's slanted girders are
   segments, its own. And **game feel**, which is in TinyCeleste and
   not yet in the kit -- it moves there when a second game wants it,
   TinyMario the obvious one: coyote time (jumping a few

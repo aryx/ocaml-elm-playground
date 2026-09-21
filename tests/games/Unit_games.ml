@@ -4421,6 +4421,204 @@ let civ_rival () =
   let g' = play () in
   Alcotest.(check bool) "the same game again" true (g.units = g'.units && g.cities = g'.cities)
 
+(*****************************************************************************)
+(* TinyMarioWorld *)
+(*****************************************************************************)
+
+let mw_run (c : TinyMarioWorld.course) (h : TinyMarioWorld.hands) (n : int) (m : TinyMarioWorld.mario) =
+  let m = ref m in
+  for _ = 1 to n do m := TinyMarioWorld.step_mario c h !m done;
+  !m
+
+(* Mario dropped at column [tx] of a course, [dy] pixels over its tile
+ * row [ty], and let fall to the ground *)
+let mw_at (c : TinyMarioWorld.course) (tx : int) (ty : int) : TinyMarioWorld.mario =
+  let open TinyMarioWorld in
+  let m =
+    { x = (float_of_int tx +. 0.5) *. 16.; y = (float_of_int ty *. 16.) +. 40.; vx = 0.; vy = 0.; grounded = false; angle = 0.;
+      facing = 1.; sliding = false; p = 0.; flight = Walking }
+  in
+  mw_run c no_hands 60 m
+
+(* the first column of [ch] in the course's bottom rows *)
+let mw_find (c : TinyMarioWorld.course) (ch : char) : int * int =
+  let found = ref None in
+  for ty = c.rows - 1 downto 0 do
+    for tx = c.cols - 1 downto 0 do
+      if TinyMarioWorld.char_at c (tx, ty) = ch then found := Some (tx, ty)
+    done
+  done;
+  Option.get !found
+
+(* The sensors find the slope under the feet: walking up a 45 degree
+ * hill he rises as much as he goes along, and stands at its angle. *)
+let mw_slope () =
+  let open TinyMarioWorld in
+  let c = course Donut in
+  let tx, ty = mw_find c '/' in
+  let m = mw_at c tx (ty + 1) in
+  Alcotest.(check bool) "on the ground" true m.grounded;
+  Alcotest.(check (float 0.5)) "at the hill's angle" 45. m.angle;
+  let m' = mw_run c { no_hands with right = true } 10 m in
+  Alcotest.(check (float 1.)) "as high again as along" (m'.x -. m.x) (m'.y -. m.y)
+
+(* Up a hill the top speed shrinks; down it, it doesn't *)
+let mw_uphill () =
+  let open TinyMarioWorld in
+  let m = { (mw_at (course Donut) 3 3) with angle = 45.; vx = 1. } in
+  Alcotest.(check bool) "uphill: less" true (uphill m run_max < run_max);
+  Alcotest.(check (float 1e-9)) "downhill: the same" run_max (uphill { m with vx = -1. } run_max)
+
+(* Crouch at the top of the long slope: he slides down it, faster and
+ * faster, and the three galoombas at its foot go down with him. *)
+let mw_slide () =
+  let open TinyMarioWorld in
+  let c = course Donut in
+  let screen = { Playground.initial_computer.screen with width = 1000.; height = 1000. } in
+  (* the long slope: the last '\' of the course's lowest rows *)
+  let tx = ref 0 in
+  for x = 0 to c.cols - 1 do if char_at c (x, 1) = '\\' then tx := x done;
+  let top = !tx - 4 in
+  let p = start_play Donut in
+  let p = { p with mario = mw_at c top 6 } in
+  Alcotest.(check bool) "standing on the slope" true (p.mario.grounded && p.mario.angle < -40.);
+  let p = ref p and fastest = ref 0. in
+  for _ = 1 to 150 do
+    p := play_step screen { no_hands with down = true } !p;
+    fastest := Float.max !fastest !p.mario.vx
+  done;
+  Alcotest.(check bool) (Printf.sprintf "faster than running (%.2f)" !fastest) true (!fastest > run_max);
+  Alcotest.(check bool) "alive" false !p.dead;
+  Alcotest.(check int) "the three galoombas knocked out" 0
+    (List.length (List.filter (fun g -> g.gx > float_of_int (top * 16) && g.gx < float_of_int ((top + 20) * 16)) !p.galoombas))
+
+(* A second at full run fills the P meter; then a jump is a takeoff,
+ * and he rises as long as jump is held. *)
+let mw_takeoff () =
+  let open TinyMarioWorld in
+  let c = course Cloud in
+  let run = { no_hands with right = true; run = true } in
+  let m = mw_run c run 100 (mw_at c 3 3) in
+  Alcotest.(check (float 1e-9)) "the P meter full" 1. m.p;
+  let m = step_mario c { run with jump = true; holding = true } m in
+  Alcotest.(check bool) "taking off" true (match m.flight with Rising _ -> true | _ -> false);
+  let high = mw_run c { run with holding = true } 40 m in
+  Alcotest.(check bool) (Printf.sprintf "risen (%.0f px)" (high.y -. m.y)) true (high.y -. m.y > 100.);
+  let walked = step_mario c { run with jump = true; holding = true } { m with flight = Walking; grounded = true; p = 0.5; vy = 0. } in
+  Alcotest.(check bool) "without it, only a jump" true (walked.flight = Walking)
+
+(* In the air the cape trades: a dive makes speed of height, a climb
+ * height of speed; and a dive and a climb end lower than they began. *)
+let mw_trade () =
+  let open TinyMarioWorld in
+  let c = course Cloud in
+  let m = { (mw_at c 3 3) with y = 280.; grounded = false; flight = Soaring; vx = 3.; vy = 0.; facing = 1. } in
+  let dived = mw_run c { no_hands with right = true } 20 m in
+  Alcotest.(check bool) "a dive: faster" true (dived.vx > m.vx);
+  Alcotest.(check bool) "and lower" true (dived.y < m.y);
+  let climbed = mw_run c { no_hands with left = true } 20 dived in
+  Alcotest.(check bool) "a climb: slower" true (climbed.vx < dived.vx);
+  Alcotest.(check bool) "and higher" true (climbed.y > dived.y);
+  let rec pump m k = if k = 0 then m else pump (mw_run c { no_hands with left = true } 30 (mw_run c { no_hands with right = true } 20 m)) (k - 1) in
+  let pumped = pump m 3 in
+  Alcotest.(check bool) (Printf.sprintf "no free height (%.0f -> %.0f)" m.y pumped.y) true (pumped.y < m.y)
+
+(* The map is a graph: at first one path, from home to Donut Hills; the
+ * goal opens Cloud Gap, the keyhole the Star Road, and that road
+ * reaches the castle without Cloud Gap. *)
+let mw_map () =
+  let open TinyMarioWorld in
+  let fresh = new_progress in
+  Alcotest.(check int) "one path to begin with" 1 (List.length (opened fresh));
+  let at_donut = walk_map fresh (1., 0.) in
+  Alcotest.(check bool) "right: to Donut Hills" true (at_donut.at = Course Donut);
+  Alcotest.(check bool) "up: nothing yet" true ((walk_map at_donut (0., 1.)).at = Course Donut);
+  let secret = finish at_donut Donut Secret in
+  let on_star = walk_map secret (0., 1.) in
+  Alcotest.(check bool) "the keyhole: up to the Star Road" true (on_star.at = Course Star);
+  let on_star = finish on_star Star Normal in
+  Alcotest.(check bool) "and on to the castle, Cloud Gap never played" true
+    ((walk_map on_star (1., 0.)).at = Course Castle && not (List.mem (Cloud, Normal) on_star.found))
+
+(* Donut Hills played to its secret exit, by a little pilot that looks at
+ * Mario each frame: walk, hop the galoomba on the hill, slide down the
+ * long slope through the three at its foot, run the runway until the P
+ * meter is full, take off, glide onto the island in the sky, and walk
+ * to the keyhole. The keys it pressed are printed as a -script for the
+ * golden frames. *)
+let mw_pilot (p : TinyMarioWorld.play) (frame : int) (phase : int ref) (hold : int ref) : TinyMarioWorld.hands =
+  let open TinyMarioWorld in
+  let c = course Donut in
+  let m = p.mario in
+  let tx = int_of_float (m.x /. 16.) in
+  let slope_top = let t = ref 0 in for x = 0 to c.cols - 1 do if char_at c (x, 1) = '\\' then t := x done; !t - 4 in
+  let key_x = fst (mw_find c 'K') in
+  ignore frame;
+  (match !phase with
+   | 0 when tx >= slope_top -> phase := 1
+   | 1 when (not m.sliding) && m.grounded && Float.abs m.vx < 0.05 && tx > slope_top + 4 -> phase := 2
+   | 2 when m.flight <> Walking -> phase := 3
+   | 3 when m.grounded && m.y > 150. -> phase := 4
+   | _ -> ());
+  let galoomba_ahead = List.exists (fun g -> g.gx > m.x && g.gx -. m.x < 40. && Float.abs (g.gy -. m.y) < 40.) p.galoombas in
+  match !phase with
+  | 0 ->
+      let jump = m.grounded && galoomba_ahead && !hold = 0 in
+      if jump then hold := 14 else hold := max 0 (!hold - 1);
+      { no_hands with right = true; jump; holding = !hold > 0 }
+  | 1 -> { no_hands with down = true }
+  | 2 ->
+      (* the pit before the runway: hop it running, then run on *)
+      let pit_ahead = m.grounded && feet c { m with x = m.x +. 24. } = None in
+      let past_pit = tx > slope_top + 20 in
+      let go = m.grounded && m.p >= 1. && tx >= key_x - 14 in
+      if pit_ahead && not past_pit && !hold = 0 then (hold := 14; { no_hands with right = true; run = true; jump = true; holding = true })
+      else begin
+        hold := max 0 (!hold - 1);
+        { no_hands with right = true; run = true; jump = go; holding = go || !hold > 0 }
+      end
+  | 3 -> (
+      match m.flight with
+      | Rising _ -> { no_hands with right = true; run = true; holding = true }
+      (* over the island: pull back, climb, stall, and drop onto it *)
+      | _ -> if tx >= key_x - 3 then { no_hands with left = true } else no_hands)
+  | _ -> { no_hands with right = tx < key_x; left = tx > key_x }
+
+let mw_keyhole () =
+  let open TinyMarioWorld in
+  let screen = { Playground.initial_computer.screen with width = 1000.; height = 1000. } in
+  let p = ref (start_play Donut) and phase = ref 0 and hold = ref 0 and frame = ref 0 and log = ref [] in
+  while !p.ended = None && (not !p.dead) && !frame < 3000 do
+    incr frame;
+    let before = !phase in
+    let h = mw_pilot !p !frame phase hold in
+    log := h :: !log;
+    p := play_step screen h !p;
+    if !phase <> before then
+      Printf.eprintf "frame %d: phase %d at (%.0f, %.0f) p=%.2f\n" !frame !phase !p.mario.x !p.mario.y !p.mario.p
+  done;
+  Printf.eprintf "end at frame %d: (%.0f, %.0f) dead=%b\n" !frame !p.mario.x !p.mario.y !p.dead;
+  (* the keys, as a -script from the frame the course starts (6) *)
+  let hands = Array.of_list (List.rev !log) in
+  let ranges name get =
+    let out = ref [] and start = ref (-1) in
+    Array.iteri
+      (fun i h ->
+        if get h && !start < 0 then start := i
+        else if (not (get h)) && !start >= 0 then (out := Printf.sprintf "%s:%d-%d" name (!start + 6) (i + 5) :: !out; start := -1))
+      hands;
+    if !start >= 0 then out := Printf.sprintf "%s:%d-%d" name (!start + 6) (Array.length hands + 5) :: !out;
+    List.rev !out
+  in
+  let jumps = List.concat (List.mapi (fun i (h : hands) -> if h.jump then [ i ] else []) (Array.to_list hands)) in
+  Printf.eprintf "SCRIPT %s\n"
+    (String.concat ","
+       (ranges "right" (fun h -> h.right) @ ranges "left" (fun h -> h.left) @ ranges "down" (fun h -> h.down)
+       @ ranges "x" (fun h -> h.run) @ ranges "space" (fun h -> h.holding || h.jump)));
+  ignore jumps;
+  Alcotest.(check bool) "not dead" false !p.dead;
+  Alcotest.(check bool) "the secret exit" true (!p.ended = Some Secret)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -4642,4 +4840,11 @@ let tests =
       t "TinyCivilization, a city grows and builds" civ_city;
       t "TinyCivilization, combat, and the stack that dies" civ_combat;
       t "TinyCivilization, cities keep their distance" civ_found;
-      t "TinyCivilization, the rival" civ_rival ]
+      t "TinyCivilization, the rival" civ_rival;
+      t "TinyMarioWorld, the feet on a slope" mw_slope;
+      t "TinyMarioWorld, slower uphill" mw_uphill;
+      t "TinyMarioWorld, the slide" mw_slide;
+      t "TinyMarioWorld, the P meter and the takeoff" mw_takeoff;
+      t "TinyMarioWorld, flight is a trade" mw_trade;
+      t "TinyMarioWorld, the map and its secret" mw_map;
+      t "TinyMarioWorld, the keyhole in the sky" mw_keyhole ]

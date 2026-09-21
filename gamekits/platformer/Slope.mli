@@ -52,7 +52,8 @@
    Ohshima, Sega, 1991.
 
    Part of the platformer kit (gamekits/platformer/), with Tile_move.mli
-   (blocks) and Ladder.mli; used by games/TinySonic. *)
+   (blocks) and Ladder.mli; used by games/TinySonic, and on floors only by
+   games/TinyMarioWorld. *)
 
 open Playground
 

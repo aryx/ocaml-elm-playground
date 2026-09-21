@@ -153,6 +153,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyDDR", "", 5);
     ("games/software/TinySimCity", "", 5);
     ("games/software/TinyCivilization", "", 5);
+    ("games/software/TinyMarioWorld", "", 5);
     ("games2.5d/software/TinyGuitarHero", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
@@ -220,6 +221,14 @@ let civ_thirty_turns =
   ^ "return:46,return:48,return:50,return:52,return:54,return:56,return:58,"
   ^ "return:60,return:62,return:64,return:66,return:68,return:70,return:72,"
   ^ "return:74,return:76,return:78,return:80"
+
+(* claude: TinyMarioWorld's Donut Hills played to its secret exit: the
+ * keys tests/games' pilot pressed (mw_keyhole prints them), from the
+ * map's first course, entered at frame 5 *)
+let mario_world_keyhole =
+  "space:1,right:3,space:5,right:6-393,right:484-696,left:697-789,"
+  ^ "down:394-483,x:484-696,space:90-103,space:328-341,space:531-544,"
+  ^ "space:635-696"
 
 (* claude: games played with keys (-script, see Input_script): what the
  * start of a game can't show -- the camera scrolled, a coin taken; the
@@ -351,6 +360,15 @@ let scripted : Testutil_golden.scripted list =
     (* and the tree of advances at that point: Alphabet known, Bronze
        Working under way, what is open and what is not *)
     ("games/software/TinyCivilization", "tree", 96, civ_thirty_turns ^ ",t:94");
+    (* the world map, one path open, Mario at home *)
+    ("games/software/TinyMarioWorld", "map", 10, "space:1");
+    (* crouched on the long slope of Donut Hills: the slide *)
+    ("games/software/TinyMarioWorld", "slide", 435, mario_world_keyhole);
+    (* the cape: taken off at the end of the runway, rising to the
+       island in the sky and its keyhole *)
+    ("games/software/TinyMarioWorld", "flight", 690, mario_world_keyhole);
+    (* back on the map: the secret exit found, the Star Road open *)
+    ("games/software/TinyMarioWorld", "secret", 800, mario_world_keyhole);
     (* the riff's first four notes on Medium, every fret held and each
        strummed on its beat (132 a minute, an eighth 0.227 s) *)
     ("games2.5d/software/TinyGuitarHero", "riff", 305,
