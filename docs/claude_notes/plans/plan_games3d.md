@@ -121,8 +121,11 @@ galaxy of trading and dogfights, generated from a few numbers, on a
   segments near-clipped and projected, drawn as HUD lines) -- tanks
   and pyramids as wireframes, a radar. The first 3D game to write: no hidden surfaces, no shading,
   just `project`; the software backend's wireframe mode ("f") is
-  already its look. Later TinyElite (a ship, a space station to dock
-  in, spinning).
+  already its look. TinyElite (DONE: `games2.5d/TinyElite.ml`, a
+  ship, a space station to dock in, spinning; its whole engine written
+  in the game, on the 2D playground: the universe turning round you,
+  the 6502's small-angle turns and TIDY, hidden lines on convex hulls,
+  and the galaxy out of its seed).
 - **Kit**: `Vector`: shapes as lists of 3D line segments, drawn with
   `project` into 2D lines (so it also fits the 2D playground), with
   near-plane clipping for lines (the 2D version of `graphics/3d`'s
@@ -622,4 +625,4 @@ one line of the model:
 6. Descent with TinyDescent and TinyDescent3d, on the segments kit
    (DONE); TinyQuake after it.
 7. The rest as they come: fighting with the 2D brawler kit, puzzles,
-   TinyElite.
+   TinyElite (DONE, in `games2.5d/`).

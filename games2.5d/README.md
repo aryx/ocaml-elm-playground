@@ -30,6 +30,7 @@ games2.5d/*.ml`) against the whole game.
 | `TinyKart` | Super Mario Kart (Nintendo, 1992), the SNES's Mode 7 | a flat map, turned, sampled row by row, each row at its distance: height * focal / rows below the horizon | row | 84 / 441 | walls, hills: only a flat floor |
 | `TinyDoom` | Doom (id, 1993) | a BSP tree of the level's walls, walked nearest first; each column's clip arrays say what's left to draw | column | 300 / 499 | rooms above rooms, looking up or down, walls that aren't vertical |
 | `TinyComanche` | Comanche (NovaLogic, 1992), "Voxel Space" | a height map, each column a line across the map, near to far; a y-buffer, what's drawn of each column | column | 126 / 302 | overhangs, caves, a roll |
+| `TinyElite` | Elite (Braben and Bell, 1984) | you never move: the universe turns round you, each ship's orientation three vectors turned by `sin a ~ a`, `cos a ~ 1 - a^2/2` and straightened every 16 frames; a convex hull, an edge drawn when either of its faces is turned towards you | edge | 144 / 606 | hide one ship behind another (they show through each other); a ship that isn't convex; anything filled |
 | `TinyDescent` | Descent (Parallax, 1995) | the level a graph of convex cells; from the eye's cell, each portal shows the next cell inside its own window on screen; drawn farthest first | cell (polygons) | 216 / 440 | nothing, really: it is full 3D, and pays for it with a projection per corner |
 
 `TinyDescent` is the odd one out, and on purpose: it is not 2.5D at
@@ -41,6 +42,14 @@ work. It sits here because it is the end of the line this directory
 draws -- how far a game can get on the 2D playground, drawing polygons
 in the right order -- and because it is Doom's "nearest first" idea,
 grown up.
+
+`TinyElite` is the other one, eleven years older and with no order at
+all. Its engine is as full 3D as Descent's -- six degrees of freedom,
+a divide by the depth, a near plane -- but it draws only lines, and
+each ship hides its own back edges by itself: a face turned away is
+one dot product, and a convex hull cannot hide anything else from
+itself. Between two ships nothing is hidden, and on a vector look
+nobody minds.
 
 Four families, then:
 

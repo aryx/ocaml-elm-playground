@@ -12,6 +12,7 @@
     TinyDungeonMaster
     TinyZaxxon
     TinyDiablo
+    TinyElite
   )
   (libraries
     ai ; TinyDungeonMaster's Pathfind (the monsters' A*)

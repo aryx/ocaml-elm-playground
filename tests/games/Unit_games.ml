@@ -392,6 +392,66 @@ let alone_door_locked () =
   Alcotest.(check bool) "and he walks through" true (opened.carnby.y < ly)
 
 (*****************************************************************************)
+(* TinyElite *)
+(*****************************************************************************)
+
+(* the galaxy is the original's: the seed twisted system by system gives
+ * Tibedied first, and Lave -- where every game began -- eighth, with
+ * the government, economy and tech level the manual gave it *)
+let elite_galaxy () =
+  let open TinyElite in
+  let first = systems 10 in
+  Alcotest.(check string) "system 0" "Tibedied" (List.nth first 0).name;
+  Alcotest.(check (list string)) "the next ones" [ "Qube"; "Leleer"; "Biarge"; "Xequerin" ]
+    (List.map (fun (s : system) -> s.name) (List.filteri (fun i _ -> i >= 1 && i <= 4) first));
+  Alcotest.(check string) "Lave" "Lave" lave.name;
+  Alcotest.(check string) "a dictatorship" "Dictatorship" lave.government;
+  Alcotest.(check string) "rich agricultural" "Rich Agricultural" lave.economy;
+  Alcotest.(check int) "tech level 5" 5 lave.tech
+
+(* The 6502's rotation is not quite a rotation: each small turn
+ * stretches the two vectors it mixes by 1 + t^4/4, so a thousand turns
+ * without straightening leave them measurably out of square -- about
+ * 4e-4 in floating point, far more in Elite's 8-bit fixed point, which
+ * is why it tidied every few frames. One TIDY and they are square
+ * again, to the last digit. *)
+let elite_tidy () =
+  let open TinyElite in
+  let o = ref upright in
+  for _ = 1 to 1000 do
+    o := roll_by 0.035 (pitch_by 0.022 !o)
+  done;
+  let drift = Float.abs (length !o.nose -. 1.) +. Float.abs (dot !o.nose !o.roof) in
+  Alcotest.(check bool) "drifted" true (drift > 1e-5);
+  let t = tidy !o in
+  Alcotest.(check (float 1e-9)) "unit nose" 1. (length t.nose);
+  Alcotest.(check (float 1e-9)) "unit roof" 1. (length t.roof);
+  Alcotest.(check (float 1e-9)) "square" 0. (dot t.nose t.roof);
+  Alcotest.(check (float 1e-9)) "side square too" 0. (dot t.side t.nose)
+
+(* Hidden lines: the station seen straight on to one of its squares,
+ * from far off, shows that square and the four triangles round it --
+ * five faces, twelve of its twenty-four edges -- and nothing of the
+ * far side. Battlezone would draw all twenty-four. *)
+let elite_hidden_lines () =
+  let open TinyElite in
+  Alcotest.(check int) "twenty-four edges" 24 (List.length coriolis.edges);
+  let shown = visible_edges coriolis (v 0. 0. 100000.) upright in
+  Alcotest.(check int) "twelve of them facing you" 12 (List.length shown)
+
+(* docking: at the slot, slow, pointing in, and rolled to match it; the
+ * same approach rolled a quarter turn is a crash, because the slot is a
+ * letterbox and it turns *)
+let elite_docking () =
+  let open TinyElite in
+  let facing_you = { nose = v 0. 0. (-1.); roof = v 0. 1. 0.; side = v (-1.) 0. 0. } in
+  let at_slot (o : orientation) =
+    { (new_flight ()) with station = { pos = v 0. 0. (coriolis_size +. 40.); o; speed = 0. }; speed = 3. }
+  in
+  Alcotest.(check bool) "lined up: docked" true (docking (at_slot facing_you));
+  Alcotest.(check bool) "rolled a quarter turn: not" false (docking (at_slot (tidy (roll_by 1.57 facing_you))))
+
+(*****************************************************************************)
 (* TinyDoom *)
 (*****************************************************************************)
 
@@ -3544,6 +3604,10 @@ let tests =
       t "TinyAloneInTheDark, the cut is past the doorway" alone_cut;
       t "TinyAloneInTheDark, tank controls ignore the camera" alone_tank;
       t "TinyAloneInTheDark, the study door and its key" alone_door_locked;
+      t "TinyElite, the galaxy from its seed" elite_galaxy;
+      t "TinyElite, small turns and TIDY" elite_tidy;
+      t "TinyElite, the hidden lines" elite_hidden_lines;
+      t "TinyElite, docking" elite_docking;
       t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;

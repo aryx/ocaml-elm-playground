@@ -159,6 +159,7 @@ let scenes : Testutil_golden.scene list =
     ("games2.5d/software/TinyDoom", "rr", 5);
     ("games2.5d/software/TinyComanche", "", 5);
     ("games2.5d/software/TinyDescent", "", 5);
+    ("games2.5d/software/TinyElite", "", 5);
     ("games/software/TinyMissileCommand", "", 5);
     ("games/software/TinyLemmings", "", 5);
     ("games/software/TinyPuzzleBobble", "", 5);
@@ -363,6 +364,9 @@ let scripted : Testutil_golden.scripted list =
     (* down the corridor, the robot of the next cell ahead
      * (games3d/TinyDescent3d's golden frames are the same flight) *)
     ("games2.5d/software/TinyDescent", "corridor", 30, "w:1-30");
+    (* launched from the station: Coriolis ahead, its slot turning, in
+     * front of Lave; the three Sidewinders coming *)
+    ("games2.5d/software/TinyElite", "flight", 200, "space:1");
     ("games/software/TinyRick", "boulder", 70, "space:1,right:2-160");
     ("games/software/TinyRick", "hole", 160, "space:1,right:2-160");
     (* right to the ladder, up it, a hole dug on the right; the guards
