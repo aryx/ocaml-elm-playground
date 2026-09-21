@@ -51,7 +51,7 @@
  *
  * What it deliberately does not do: a scroll bar (it scrolls to keep
  * the caret in view, and that is all), styles, or optimal line
- * breaking -- the wrap here is greedy, and Knuth-Plass is TinyWord's,
+ * breaking -- the wrap here is greedy, and Knuth-Plass is appkits/typeset's,
  * in phase 9.
  *
  * Exercises: the system clipboard (SDL has one natively, the browser

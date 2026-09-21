@@ -122,7 +122,8 @@ val redos : t -> int
  *
  * Greedy is what browsers and most editors do, and it is what leaves
  * the rivers and the lonely short lines that Knuth and Plass's
- * algorithm exists to fix (TinyWord, phase 9). *)
+ * algorithm exists to fix (appkits/typeset, and
+ * examples/TypesetParagraph to see the difference). *)
 val lines : width:int -> t -> (int * string) list
 
 (* [place ~width t pos]: which line [pos] is on, and how far along it,

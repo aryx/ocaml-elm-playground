@@ -9,5 +9,6 @@
    testo
    appkit_document
    appkit_sheet
+   appkit_typeset
  )
 )

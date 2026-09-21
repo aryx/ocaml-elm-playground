@@ -56,8 +56,12 @@ let of_axis axis ~main ~cross =
   match axis with Horizontal -> (main, cross) | Vertical -> (cross, main)
 
 let clamp c (w, h) = (max c.min_w (min c.max_w w), max c.min_h (min c.max_h h))
-let is_flexible = function Spacer | Expand _ -> true | _ -> false
-let is_stretch = function Stretch _ -> true | _ -> false
+(* the two flags look through each other: [expand (stretch x)] and
+ * [stretch (expand x)] are both a child that fills the room along the
+ * axis *and* across it -- a pane in a window, which is the commonest
+ * thing a layout holds *)
+let rec is_flexible = function Spacer | Expand _ -> true | Stretch t -> is_flexible t | _ -> false
+let rec is_stretch = function Stretch _ -> true | Expand t -> is_stretch t | _ -> false
 
 (* [share] along the axis, whatever it is given across it *)
 let along axis share c =
@@ -79,10 +83,10 @@ let rec child_sizes axis c gap kids =
   let known =
     kids
     |> List.map (fun k ->
-           match k with
-           | Spacer | Expand _ -> None
-           | Space n -> Some (of_axis axis ~main:n ~cross:0.)
-           | k -> Some (measure loose_c k))
+           if is_flexible k then None
+           else match k with
+             | Space n -> Some (of_axis axis ~main:n ~cross:0.)
+             | k -> Some (measure loose_c k))
   in
   let used =
     List.fold_left
@@ -101,8 +105,7 @@ let rec child_sizes axis c gap kids =
       | None, Spacer -> of_axis axis ~main:share ~cross:0.
       (* an expanded child is measured again, now that it knows how
        * much it got: constraints down, once more *)
-      | None, Expand inner -> measure (along axis share c) inner
-      | None, _ -> (0., 0.))
+      | None, k -> measure (along axis share c) k)
     kids known
 
 and measure_line axis c gap kids =

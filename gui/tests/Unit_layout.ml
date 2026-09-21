@@ -93,6 +93,21 @@ let test_narrow_child_is_centered () =
   in
   check_box "centered, at its own width" (0., -20., 50., 40.) (place `Narrow places)
 
+(* a pane in a window: the room left over along the row, *and* all of
+   its height -- expand and stretch together, in either order. (Found
+   by examples/TypesetParagraph, whose page pane floated at its natural height
+   because stretch inside expand was ignored.) *)
+let test_expand_and_stretch_together () =
+  let pane k = Layout.(row ~gap:0. [ leaf `Fixed (100., 40.); k (leaf `Pane (50., 40.)) ]) in
+  List.iter
+    (fun (name, wrap) ->
+      let places = Layout.arrange area (pane wrap) in
+      check_box name (50., 0., 300., 400.) (place `Pane places))
+    [
+      ("expand (stretch x)", fun x -> Layout.expand (Layout.stretch x));
+      ("stretch (expand x)", fun x -> Layout.stretch (Layout.expand x));
+    ]
+
 (* padding is room taken off all four sides, and what is inside fills
  * what is left (the .mli's rule: a leaf takes the box it is given) *)
 let test_pad () =
@@ -141,6 +156,7 @@ let tests =
     t "two expanded children share it" test_two_expands_share;
     t "a stretched child fills the cross axis" test_stretch_fills_the_cross_axis;
     t "a narrow child is centered across the axis" test_narrow_child_is_centered;
+    t "expand and stretch together fill a pane" test_expand_and_stretch_together;
     t "padding takes room off all four sides" test_pad;
     t "constraints clamp what a child asks for" test_constraints_clamp;
     t "a row inside a column" test_nested;

@@ -62,6 +62,10 @@ let scenes : Testutil_golden.scene list =
     (* and 1985: the same engine with a menu bar, a formula bar and a
      * mouse *)
     ("apps/software/TinyExcel", "", 5);
+    (* a page set by Knuth and Plass's breaker: justified, each line's
+     * ratio in the margin, and the one loose line it could not avoid
+     * without hyphenation marked *)
+    ("examples/software/TypesetParagraph", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -438,6 +442,14 @@ let scripted : Testutil_golden.scripted list =
      * which reads C2, following to 54. It is here because it did not
      * work: the bar was refreshed from the cell on every frame, so a
      * keystroke was undone before it could be seen *)
+    (* the same page, switched to greedy through the dropdown: three
+     * rivers marked where Knuth-Plass had one, "shrunk until the line
+     * fills the" stretched to 2.80 -- the lesson of the program, in
+     * one frame *)
+    ( "examples/software/TypesetParagraph",
+      "greedy",
+      20,
+      "at(-146;455):1-5,click:3,at(-146;419):6-12,click:8,at(300;-300):13-20" );
     ( "apps/software/TinyExcel",
       "edited",
       20,

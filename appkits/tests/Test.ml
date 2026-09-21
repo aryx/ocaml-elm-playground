@@ -9,4 +9,4 @@
  *)
 
 let () =
-  Testo.interpret_argv ~project_name:"appkits" (fun _env -> List.concat [ Unit_document.tests; Unit_sheet.tests ])
+  Testo.interpret_argv ~project_name:"appkits" (fun _env -> List.concat [ Unit_document.tests; Unit_sheet.tests; Unit_typeset.tests ])

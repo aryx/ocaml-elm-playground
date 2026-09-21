@@ -1057,6 +1057,89 @@ does now (C2 selected, the bar clicked, one backspace turning 120
 into 12, Enter, and D2 following to 54) -- scriptable because
 backspace is a key and not a character. The 2D golden suite is 136.
 
+### Phase 9a, DONE (2026-09-21), awaiting review: the typesetting example
+
+(First written as `apps/TinyWord`, and moved to
+`examples/TypesetParagraph` the same day, the author's call: *"for me
+Word is a text editor with multiple fonts, bold, strike, layout"*. And
+there is a factual reason on top of that one: **Word has never used
+Knuth-Plass** -- it breaks its lines greedily, as browsers do; the
+optimal breaker is TeX's, and Adobe InDesign's "paragraph composer".
+What was built is a small TeX, not a small Word, and naming it TinyWord
+taught something false about Word. The real TinyWord is phase 9b,
+below.)
+
+**`appkits/typeset/Linebreak`** (a third library beside `document` and
+`sheet`, depending on nothing): where to break a paragraph into lines,
+the greedy way and Knuth and Plass's (1981), side by side. Their model
+simplified -- boxes and glue, a line's ratio, badness 100|r|^3,
+demerits (10 + badness)^2, the last line free -- and the optimal one
+as the dynamic programme `best(j) = min over i of best(i) + demerits(i
+.. j-1)`, O(n^2) as written, with TeX's active nodes named as what
+makes it close to linear.
+
+Its worked example is checked by hand in the `.mli`: "aaa bb cc ddddd
+ee ff gggg" at a measure of 10, where greedy leaves one space
+stretched to double (656,706 over the paragraph) and the optimal
+breaker takes a word up a line and shrinks two spaces instead
+(12,706) -- fifty times better. And the law, on 300 paragraphs nobody
+wrote: the optimal breaker is never worse than greedy, since greedy's
+breaks are among its choices, and it sets every word once, in order.
+
+**`examples/TypesetParagraph.ml`**, shaped the way TeX is: the text as typed on the
+left (the text area, over phase 5's piece table), the page set on the
+right -- justified, with each line's ratio in the margin and the lines
+stretched past comfort marked. A dropdown switches the breaker, a
+slider moves the measure, and the bottom line gives both scores for
+the page (8 times better on the opening one). TeX's paragraphs (a
+blank line ends one), one style (a `# ` heading), and a monospaced
+face on purpose -- every width exact, so the right edge is straight
+and the only thing that differs between the two breakers is the
+breaking.
+
+**A real bug in `Layout`, found by this example**: `stretch` inside
+`expand` was ignored, because the two flags each looked only at the
+outermost constructor -- so the page pane, which wants the leftover
+width *and* the full height, floated at its natural height. They look
+through each other now, with a test for both orders; no existing
+golden frame moved.
+
+What it deliberately does not do, in its header: editing *in* the
+typeset page (a caret inside justified text is the hard part of
+WYSIWYG, and why Bravo, 1974, is a landmark), hyphenation (Liang's
+patterns, which give the breaker more places to break), pages, and any
+style but the heading.
+
+Measured: `appkits/tests` 29 green (5 new), `gui/tests` 55 (1 new),
+`playground/tests` 58, the 2D golden suite 138 -- `TinyWord` and
+`TypesetParagraph greedy` added, the second switched through the
+dropdown by a scripted click and showing three rivers where
+Knuth-Plass had one.
+
+### Phase 9b, planned: the real TinyWord
+
+What makes Word *Word* is what the example skipped, and it is the
+document host phase 10 needs anyway ("a TinyExcel sheet inside a
+TinyWord document"):
+
+- **WYSIWYG**: the caret *in* the laid-out page, hit-testing glyphs
+  across wrapped lines -- the hard part, and why Bravo (Xerox PARC,
+  1974) is a landmark;
+- **character formatting as runs over the piece table** -- Word's own
+  structure, whose pieces carried formatting: a second data-structure
+  lesson, in how an insert splits a bold run and how a selection
+  across three runs is made italic;
+- **paragraph formatting**: left, centre, right, justified -- justified
+  reusing `appkits/typeset`, *greedy* by default because that is what
+  Word does, with Knuth-Plass as the switch;
+- **bold, italic, strike, underline, sizes** -- the one blocker is that
+  the playground's `words` carries only a colour and a string, and
+  `graphics/font` has one Hershey face. The route that touches no
+  backend: draw text from Hershey's own strokes as thin rectangles --
+  bold a thicker pen (Hershey's duplex and triplex faces are literally
+  that), italic a shear of the stroke coordinates, strike and
+  underline a rule. Its cost is shapes per frame, to be measured.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

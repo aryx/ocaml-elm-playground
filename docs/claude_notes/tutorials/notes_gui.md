@@ -346,6 +346,34 @@ of writing it:
 versions back, versions forward — which is a better argument for the
 structure than any paragraph about it.
 
+And the line breaking, which is `appkits/typeset/Linebreak` and
+`examples/TypesetParagraph`. The worked example in its `.mli` is the whole idea
+at a size that checks by hand — "aaa bb cc ddddd ee ff gggg" at a
+measure of 10:
+
+```
+   greedy                ratio   demerits      optimal               ratio   demerits
+     aaa bb cc            0.5       506          aaa bb cc            0.5       506
+     ddddd ee             2.0    656100          ddddd ee ff         -1.0     12100
+     ff gggg              0.0       100          gggg                 0.0       100
+```
+
+Greedy put `ff` on the last line because it fit there, and left
+`ddddd ee` with two units to fill and one space to fill them with. The
+optimal breaker took `ff` up a line and shrank two spaces a little,
+and the paragraph comes out fifty times better. Two things from
+writing it:
+
+- **the test that matters is a law, not an example**: over three
+  hundred random paragraphs, the optimal breaker is never worse than
+  greedy — it cannot be, since greedy's breaks are one of the choices
+  it had — and every word is set exactly once, in order;
+- **a monospaced page is the honest way to show it**: with every width
+  exact, the right edge is straight to the pixel and the only thing
+  that differs between the two breakers is the breaking. Switched to
+  greedy, the example's own opening page grows three rivers where
+  Knuth-Plass had one, and the margin says by how much.
+
 Then, for a word processor, the one real algorithm: **Knuth and
 Plass's line breaking** (1981). Greedy breaking -- fill each line until
 the next word does not fit -- is what browsers and most editors do and

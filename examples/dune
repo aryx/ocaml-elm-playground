@@ -4,6 +4,7 @@
     Animation 
     Mouse Keyboard Turtle Mario Typing GuiWidgets
     Gui7Counter Gui7Temperature Gui7Flight Gui7Timer GuiFourWays GuiEditor Gui7Circles Gui7Cells
+    TypesetParagraph
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano
@@ -19,6 +20,7 @@
     appkit_document ; Gui7Circles' Undo
     appkit_sheet ; Gui7Cells' engine
     appkit_sheet_view ; and how it is drawn
+    appkit_typeset ; TypesetParagraph's two line breakers
     elm_playground_native ; implem of virtual elm_playground
   )
 )
