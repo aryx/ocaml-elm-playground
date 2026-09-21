@@ -145,6 +145,9 @@ val text_area_in : Playground.computer -> Widget.box -> Text_edit.t -> Text_edit
 val progress_in : Playground.computer -> Widget.box -> Playground.number -> unit
 val menu_in : Playground.computer -> Widget.box -> string list -> int -> int
 
+(* a list box: which row is selected, if any; a click selects another *)
+val list_in : Playground.computer -> Widget.box -> string list -> int option -> int option
+
 (* what each widget asks for, in the current theme, to build the
    layout's leaves with *)
 val button_size : string -> Playground.number * Playground.number
@@ -155,6 +158,7 @@ val field_size : unit -> Playground.number * Playground.number
 val text_area_size : unit -> Playground.number * Playground.number
 val progress_size : unit -> Playground.number * Playground.number
 val menu_size : string list -> Playground.number * Playground.number
+val list_size : unit -> Playground.number * Playground.number
 
 (* the whole screen as a box, the usual thing to lay out inside *)
 val area : Playground.computer -> Widget.box

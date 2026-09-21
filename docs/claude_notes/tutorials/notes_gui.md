@@ -22,6 +22,7 @@ this toolkit's first customer.
 | `gui/Widget`, `gui/Theme`, `gui/Look` | what a widget is: a rectangle, a drawing, a hit test, some state; the colours; the drawing all four architectures share | §2 |
 | `gui/Immediate` | the toolkit `playground/Gui` is built on | §3 |
 | `gui/Retained`, `gui/Mvc`, `gui/Mvu` | the same widgets, wired the other three ways | §4 |
+| `examples/gui4` | four 7GUIs tasks, each written the four ways | §4 |
 | `gui/Layout`, `gui/Grid` | constraints down, sizes up; Tk's grid | §5 |
 | `gui/Focus` | who gets the keys | §6 |
 | `gui/Text`, `gui/Text_edit` | UTF-8; a piece table, a cursor, a selection, undo | §7 |
@@ -196,12 +197,27 @@ out of writing them that reading about them had not given:
 
 - **The length is not the difference.** At the size of a counter all
   four are a handful of lines, and anyone claiming one is dramatically
-  shorter is choosing the example. Measured in `GuiFourWays.ml`, code
-  lines each, the wiring into the loop included: callbacks 12, MVC 12,
-  MVU 16, immediate 3 -- and the 3 is the example choosing itself,
-  since the immediate version keeps its count in the playground's own
-  model and runs in the playground's own loop, which the other three
-  had to bring. What differs is *how many places
+  shorter is choosing the example. Four 7GUIs tasks are now written
+  four ways each (`examples/gui4/`, one file per task, the four one
+  under the other), and each version's own code lines, the rules and
+  the layout they share counted apart:
+
+  ```
+                   immediate  callbacks  MVC  MVU   shared
+     Counter            8         6       7    11      6
+     Temperature       12        17      13    19     20
+     Flight Booker     13        15      17    22     30
+     Timer             13        17      16    22     24
+  ```
+
+  MVU is the longest every time, and five of its lines are the loop
+  itself -- stepping, and keeping the model and the platform's state in
+  refs -- which a real MVU framework (the playground's own `game`)
+  provides; the rest is its message type and its view. Callbacks grow
+  with the rules: they pass immediate mode exactly in the two tasks
+  where fields depend on each other (Temperature, Flight Booker), and
+  what the table cannot show is that Flight Booker's callbacks are
+  correct only because every handler remembers to call one `check`. What differs is *how many places
   hold the count*: two with callbacks, one in the other three. That is
   the whole argument, and `Unit_architectures.ml` has it as a test —
   bump the ref without telling the label, and the screen says `0`
@@ -226,6 +242,21 @@ out of writing them that reading about them had not given:
   React needs refs. Writing `Mvu.t` made that visible in about ten
   lines: the architecture is honest about where the truth is, and then
   leans on the platform for the truth it cannot hold.
+- **The test that makes them paint alike found five things**, once it
+  ran on tasks bigger than a counter (`examples/gui4/tests/Unit_gui4`): in
+  immediate mode a widget is drawn when it is asked for, so a menu
+  asked for last turned the return date on a frame late, and a field
+  asked for first showed the focus leaving it a frame late -- fixed by
+  asking the menu first (its items on an **overlay** drawn last, Dear
+  ImGui's popup layer) and by moving the focus at the start of the
+  frame whose release ends in a field; two immediate fields shared one
+  caret, which an unfocused field with a shorter text could move (a
+  real bug, now a test); the retained toolkit gave a clicked field the
+  keys but no caret where the click landed; and the four disagreed
+  about whether clicking a button takes the keys away from a field --
+  they now agree it does not, the Mac's rule. None of the five is an
+  architecture's virtue; each was a place where "the same program"
+  was quietly not the same.
 
 ## 5. Layout: constraints down, sizes up
 
@@ -522,9 +553,11 @@ let update computer model =
 
 no new concepts, no message type, and `view` draws what `update`
 declared. The other three architectures live in `gui/` as runnable
-comparisons, and the counter is written all four ways in
-`examples/GuiFourWays.ml` (§4); the 7GUIs tasks are in
-`examples/Gui7*.ml`, once each, in immediate mode. The apps are what
+comparisons: Counter, Temperature, Flight Booker and Timer are written
+all four ways in `examples/gui4/` and run side by side in
+`examples/GuiFourWays.ml` (§4); the 7GUIs tasks are also in
+`examples/Gui7*.ml`, once each, in immediate mode -- CRUD included,
+with the list box it needed. The apps are what
 the toolkit is *for* ([`plan_gui_teaching.md`](../plans/plan_gui_teaching.md)),
 mostly in pairs of the same engine under two interfaces a few years
 apart: TinyVisiCalc and TinyExcel (§11), TinyBravo and TinyWord (§12);
@@ -704,7 +737,7 @@ teaches with:
 | of which `Immediate`, the one the playground uses | 221 (326) |
 | `Retained` 84, `Mvc` 13, `Mvu` 94 -- the other three, over the same `Look` | |
 | `playground/Gui`, the API | 67 (122) |
-| the counter four ways (`GuiFourWays`): callbacks, MVC, MVU, immediate | 12, 12, 16, 3 |
+| 7GUIs four ways (`examples/gui4/`), per task and architecture | see §4 |
 | `appkits/`, the engines (19 modules) | 1,708 (2,404) |
 | `apps/`, the eight applications and their parts | 2,421 (3,649) |
 
@@ -729,7 +762,10 @@ assembly -- on top of QuickDraw. TinyMacPaint with its engine is some
 and the page is the lesson.
 
 The golden frames at the time of writing: 173 in the 2D suite, of which
-48 are the GUI examples and apps; unit tests: 55 in `gui/tests`, 79 in
+48 are the GUI examples and apps (and 5 more since: CRUD's three,
+GuiFourWays' Flight Booker and Timer); unit tests: 55 in `gui/tests`
+(57 since, with the list box and the shared caret), 4 in
+`examples/gui4/tests` (the four ways, frame by frame), 79 in
 `appkits/tests`.
 
 ## Glossary

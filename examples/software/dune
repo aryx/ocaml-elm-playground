@@ -11,7 +11,7 @@
     Picture Smiley Words Misc
     Animation
     Mouse Keyboard Turtle Mario Typing GuiWidgets
-    Gui7Counter Gui7Temperature Gui7Flight Gui7Timer GuiFourWays GuiEditor Gui7Circles Gui7Cells
+    Gui7Counter Gui7Temperature Gui7Flight Gui7Timer GuiFourWays GuiEditor Gui7Circles Gui7Cells Gui7Crud
     TypesetParagraph
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
@@ -27,6 +27,7 @@
     elm_playground
     ai ; AiTictactoe's Minimax
     gui ; GuiWidgets' Layout
+    gui4 ; GuiFourWays' tasks, examples/gui4
     appkit_document ; Gui7Circles' Undo
     appkit_sheet ; Gui7Cells' engine
     appkit_sheet_view ; and how it is drawn

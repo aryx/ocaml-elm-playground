@@ -42,9 +42,21 @@
  * sends *)
 type 'msg element
 
-val button : Widget.box -> string -> 'msg -> 'msg element
+val button : ?enabled:bool -> Widget.box -> string -> 'msg -> 'msg element
 val label : Widget.box -> string -> 'msg element
-val field : Widget.box -> string -> (string -> 'msg) -> 'msg element
+val field : ?enabled:bool -> Widget.box -> string -> (string -> 'msg) -> 'msg element
+
+(* [slider box ~from ~to_ value to_msg]: the value comes from the
+ * model, and dragging sends the new one *)
+val slider : Widget.box -> from:float -> to_:float -> float -> (float -> 'msg) -> 'msg element
+
+val progress : Widget.box -> float -> 'msg element
+
+(* [menu box items chosen to_msg]: which item is chosen is the model's;
+ * whether the items are showing is not, and lives underneath with the
+ * focus *)
+val menu : Widget.box -> string list -> int -> (int -> 'msg) -> 'msg element
+
 val group : 'msg element list -> 'msg element
 
 (* what the platform keeps between frames, because the model cannot:

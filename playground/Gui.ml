@@ -73,6 +73,7 @@ let field_in ?enabled computer b text = widget computer (fun u -> Immediate.fiel
 let text_area_in computer b edit = widget computer (fun u -> Immediate.text_area u b edit)
 let progress_in computer b f = widget computer (fun u -> (Immediate.progress u b f, ()))
 let menu_in computer b items chosen = widget computer (fun u -> Immediate.menu u b items chosen)
+let list_in computer b items selected = widget computer (fun u -> Immediate.list u b items selected)
 
 (* how big each one wants to be, for a layout to place *)
 let button_size s = Immediate.button_size (theme ()) s
@@ -82,6 +83,7 @@ let field_size () = Immediate.field_size (theme ())
 let text_area_size () = Immediate.text_area_size (theme ())
 let progress_size () = Immediate.progress_size (theme ())
 let menu_size items = Immediate.menu_size (theme ()) items
+let list_size () = Immediate.list_size (theme ())
 
 let label_size s =
   let th = theme () in

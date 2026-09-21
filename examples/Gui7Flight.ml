@@ -25,20 +25,21 @@
  * widget is asked for every frame and its enabled-ness is just an
  * argument. With callbacks, each rule must be re-checked in each
  * handler that can break it, and remembering all of them is the whole
- * difficulty of the task -- which is why 7GUIs includes it, and what
- * phase 4 will measure by writing this same program three more ways.
+ * difficulty of the task -- which is why 7GUIs includes it; the same
+ * program written the three other ways is examples/gui4/Gui4Flight.ml.
  *
  * Dates are 7GUIs' own format, D.M.Y (27.3.2014), parsed by hand:
  * that is the task's, not the toolkit's.
  *
- * Note the order the widgets are asked for: the menu is asked for
- * last, because in immediate mode a popup is painted where it is
- * asked for and anything later would paint over it.
+ * The menu is asked for last here, though it need not be: an open
+ * menu's items go on the toolkit's overlay, drawn over everything
+ * whenever they were asked for (Dear ImGui's popup layer). Asking for
+ * it first is what examples/gui4/Gui4Flight.ml does, so that the return
+ * date turns on in the frame the menu says "return".
  *
  * Exercises: the context menu 7GUIs actually asks for; dates that know
  * about months and leap years (30.2.2014 is accepted here); a
- * "today" button; and the same task written with callbacks, to feel
- * where the rules go.
+ * "today" button.
  *)
 open Playground
 

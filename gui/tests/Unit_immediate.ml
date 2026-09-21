@@ -120,6 +120,44 @@ let test_paint_is_one_frame () =
   let ui = Immediate.frame (hover 0. 0.) ui in
   Alcotest.(check int) "a new frame starts empty" 0 (List.length (Immediate.paint ui))
 
+(* a list box: a click on a row selects that row, a click below the
+   last item keeps the selection, and the selection is the caller's *)
+let test_list_selects_a_row () =
+  let list : Widget.box = { Widget.x = 0.; y = 0.; w = 200.; h = 180. } in
+  let items = [ "Emil, Hans"; "Mustermann, Max"; "Tisch, Roman" ] in
+  let row i = (Look.list_row Theme.default list i).y in
+  let run frames selected =
+    List.fold_left
+      (fun (ui, sel) i ->
+        let ui = Immediate.frame i ui in
+        let ui, sel = Immediate.list ui list items sel in
+        (ui, sel))
+      (Immediate.empty, selected) frames
+    |> snd
+  in
+  let click y = [ press 0. y; release 0. y; hover 0. y ] in
+  Alcotest.(check (option int)) "the second row" (Some 1) (run (click (row 1)) None);
+  Alcotest.(check (option int)) "below the last item: unchanged" (Some 1) (run (click (row 4)) (Some 1));
+  Alcotest.(check (option int)) "no click, no change" None (run [ hover 0. (row 0) ] None)
+
+(* two fields share one caret, and only the focused one moves it: the
+   bug examples/gui4/tests/Unit_gui4 found, where a field without the keys
+   and a shorter text pulled the caret of the one being typed in *)
+let test_an_unfocused_field_leaves_the_caret () =
+  let short : Widget.box = { Widget.x = 0.; y = 100.; w = 200.; h = 36. } in
+  let long : Widget.box = { Widget.x = 0.; y = 0.; w = 200.; h = 36. } in
+  let frame i (ui, a, b) =
+    let ui = Immediate.frame i ui in
+    let ui, a = Immediate.field ui short a in
+    let ui, b = Immediate.field ui long b in
+    (ui, a, b)
+  in
+  let frames =
+    [ press 0. 0.; release 0. 0.; hover 0. 0.; { (hover 0. 0.) with keys = [ "End" ] }; hover 0. 0.; { (hover 0. 0.) with typed = "!" }; hover 0. 0. ]
+  in
+  let _, _, b = List.fold_left (fun st i -> frame i st) (Immediate.empty, "ab", "abcdef") frames in
+  Alcotest.(check string) "typed at the end of the long one" "abcdef!" b
+
 let tests =
   [
     t "a click is a press and a release, both inside" test_press_and_release_inside;
@@ -131,4 +169,6 @@ let tests =
     t "a slider maps the mouse onto its range" test_slider_maps_the_mouse;
     t "a slider keeps the mouse while dragged off it" test_slider_keeps_the_mouse;
     t "the paint lasts one frame" test_paint_is_one_frame;
+    t "a list selects the row clicked" test_list_selects_a_row;
+    t "an unfocused field leaves the caret alone" test_an_unfocused_field_leaves_the_caret;
   ]

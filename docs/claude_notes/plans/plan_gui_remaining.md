@@ -13,22 +13,26 @@ web, have their own plans: [`plan_io.md`](plan_io.md) and
 
 ## 1. 7GUIs: the rest of the comparison
 
-The plan's harness is only half used. The counter is written four ways
-(`examples/GuiFourWays.ml`, with `gui/tests/Unit_architectures.ml`
-checking the four paint the same), but the other tasks are written
-once each, in immediate mode, and **CRUD** (a list, a filter, a
-selection) is not written at all. The plan's own bounded exercise:
+Done (2026-09-21): **CRUD** in immediate mode (`examples/Gui7Crud.ml`,
+with the list box it needed: `Look.list`, `Immediate.list`,
+`Gui.list_in`), and **Temperature, Flight Booker and Timer four ways**
+beside the counter (`examples/gui4/`, a module per task), run side by
+side in `examples/GuiFourWays.ml` and checked frame by frame by
+`examples/gui4/tests/Unit_gui4.ml`. Retained and MVU gained a slider, a
+progress bar and a menu (MVU also disabled buttons and fields) to do
+it; the test found and fixed five disagreements (`notes_gui.md` §4),
+and §4 now has the table of lines per architecture per task.
 
-- CRUD, once, in immediate mode -- the task about lists and selection,
-  the one widget `gui/` does not have yet (a list box);
-- Temperature, Flight Booker and Timer four ways, each checked by the
-  same "the four paint alike" test as the counter;
-- Circle Drawer four ways if the first three go well: it is where
-  callbacks start to hurt (the dialog's live value, and one undo for
-  a whole drag), which is the comparison's best argument.
+What is left of it:
 
-Then `notes_gui.md` §16 gets a real table of lines per architecture
-per task, instead of one counter.
+- **Circle Drawer four ways**: where callbacks start to hurt (the
+  dialog's live value, and one undo for a whole drag) -- the
+  comparison's best argument, and the biggest of the four-way tasks.
+- **CRUD four ways**: the retained list holds a *row*, and the program
+  has to translate it back to a person after every filter -- which
+  needs a list widget in `Retained` and `Mvu`.
+- **Cells four ways** is probably not worth it: its interest is the
+  engine (`appkits/sheet`), which is the same in all four.
 
 ## 2. The first customers outside `apps/`
 

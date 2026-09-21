@@ -139,6 +139,26 @@ let menu_items (th : Theme.t) (b : Widget.box) items ~under =
   @ Widget.frame th.edge th.border
       { b with y = Widget.bottom b -. (th.row *. float_of_int n /. 2.); h = th.row *. float_of_int n }
 
+(* a list box: rows from the top, the selected one lit, the text
+   against the left; rows past the bottom are not shown *)
+let list_row (th : Theme.t) (b : Widget.box) i =
+  { b with y = Widget.top b -. (th.row *. (float_of_int i +. 0.5)); h = th.row }
+
+let list (th : Theme.t) (b : Widget.box) items ~selected =
+  let fits = int_of_float (b.h /. th.row) in
+  (Widget.Fill (th.field_face, b)
+  :: List.concat
+       (List.mapi
+          (fun i s ->
+            if i >= fits then []
+            else
+              let row = list_row th b i in
+              let w = Widget.text_width ~size:th.text_size s in
+              (if selected = Some i then [ Widget.Fill (th.face_hot, row) ] else [])
+              @ [ text_at th { row with x = Widget.left row +. th.padding +. (w /. 2.); w } s ])
+          items))
+  @ Widget.frame th.edge th.border b
+
 (* a line's height: the text, and a little air between lines *)
 let line_height (th : Theme.t) = th.text_size *. 1.5
 let columns (th : Theme.t) (b : Widget.box) =

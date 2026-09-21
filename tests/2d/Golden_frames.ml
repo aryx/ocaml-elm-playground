@@ -55,6 +55,8 @@ let scenes : Testutil_golden.scene list =
      * right edge as VisiCalc put them, and the cursor on the cell the
      * bar is showing *)
     ("examples/software/Gui7Cells", "", 5);
+    (* 7GUIs 5: a list, a filter, and a selection kept as a person *)
+    ("examples/software/Gui7Crud", "", 5);
     (* 1979, on a character display: green on black, the three status
      * lines, the block cursor, and the formulas in VisiCalc's own
      * spelling (+B3*2 rather than =B3*2) *)
@@ -527,6 +529,18 @@ let scripted : Testutil_golden.scripted list =
      * the bar shows what was typed into it (the typing itself a
      * script cannot do -- a key is not a character, examples/Typing) *)
     ("examples/software/Gui7Cells", "picked", 20, "at(-180;100):1-20,click:8");
+    (* Mustermann selected, his name changed, Update *)
+    ( "examples/software/Gui7Crud",
+      "update",
+      24,
+      "at(-163;36):1-4,click:2,at(163;23):5-8,click:6,end:9,backspace:11,backspace:13,backspace:15,type(Erika):17,at(0;-121):19-24,click:20"
+    );
+    (* Emil selected, then filtered out by "T": Update and Delete off *)
+    ("examples/software/Gui7Crud", "filter", 14, "at(-163;72):1-4,click:2,at(71;122):5-8,click:6,type(T):9,at(300;-300):11-14");
+    (* the four ways side by side, Flight Booker chosen from the menu *)
+    ("examples/software/GuiFourWays", "flight", 10, "at(0;300):1-3,click:2,at(0;210):4-6,click:5,at(0;600):7-10");
+    (* and the Timer, a second and a half in: four clocks, one reading *)
+    ("examples/software/GuiFourWays", "timer", 96, "at(0;300):1-3,click:2,at(0;158):4-6,click:5,at(0;600):7-96");
     (* the arrows are the whole interface: the cursor walked to B3,
      * and the line at the top showing what is in it -- @SUM(B4...B6),
      * as 1979 spelled it. (The slash commands take characters, which

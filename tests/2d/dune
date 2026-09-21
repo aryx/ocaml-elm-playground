@@ -16,6 +16,7 @@
    %{project_root}/examples/software/GuiEditor.exe
    %{project_root}/examples/software/Gui7Circles.exe
    %{project_root}/examples/software/Gui7Cells.exe
+   %{project_root}/examples/software/Gui7Crud.exe
    %{project_root}/apps/software/TinyVisiCalc.exe
    %{project_root}/apps/software/TinyExcel.exe
    %{project_root}/apps/software/TinyBravo.exe

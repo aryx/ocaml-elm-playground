@@ -48,12 +48,28 @@ val label : Widget.box -> string -> t
  * label problem above starts, because now two places hold the text *)
 val field : Widget.box -> string -> (string -> unit) -> t
 
+(* [slider box ~from ~to_ value on_change]: the value is the slider's
+ * own, [on_change] told while it is dragged *)
+val slider : Widget.box -> from:float -> to_:float -> float -> (float -> unit) -> t
+
+(* a bar filled to a fraction, 0 to 1 *)
+val progress : Widget.box -> float -> t
+
+(* [menu box items chosen on_choose]: a dropdown showing its chosen
+ * item; while its items show, it has the mouse *)
+val menu : Widget.box -> string list -> int -> (int -> unit) -> t
+
 val group : t list -> t
 
 (* what a callback reaches back into the widgets with *)
 val text : t -> string
 val set_text : t -> string -> unit
 val set_enabled : t -> bool -> unit
+
+(* a slider's value or a progress bar's fraction, and a menu's choice *)
+val value : t -> float
+val set_value : t -> float -> unit
+val chosen : t -> int
 
 val window : t -> ui
 

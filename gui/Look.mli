@@ -77,6 +77,10 @@ val text_area_place : Theme.t -> Widget.box -> first:int -> float -> float -> in
 
 (* a dropdown, closed (with its arrow) and open (its items, the one
  * under the mouse lit) *)
+(* a list box, and where its row [i] is *)
+val list : Theme.t -> Widget.box -> string list -> selected:int option -> Widget.paint list
+val list_row : Theme.t -> Widget.box -> int -> Widget.box
+
 val menu_closed : Theme.t -> Widget.box -> string -> hot:bool -> held:bool -> Widget.paint list
 val menu_item : Theme.t -> Widget.box -> int -> Widget.box
 val menu_items : Theme.t -> Widget.box -> string list -> under:int option -> Widget.paint list

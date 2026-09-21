@@ -180,6 +180,12 @@ val progress : t -> Widget.box -> float -> t
  * below it. *)
 val menu : t -> Widget.box -> string list -> int -> t * int
 
+(* [list t box items selected]: a list box, a row per item from the
+ * top; a click on a row selects it (and the selection is yours to
+ * keep, like a field's text). Rows past the bottom are not shown:
+ * scrolling it with the wheel is left as an exercise *)
+val list : t -> Widget.box -> string list -> int option -> t * int option
+
 (* {1 How big a widget wants to be}
  *
  * The answer immediate mode can give without layout: from the theme
@@ -210,3 +216,4 @@ val text_area_size : Theme.t -> float * float
 (* [menu_size theme items]: wide enough for the longest item, and the
  * arrow *)
 val menu_size : Theme.t -> string list -> float * float
+val list_size : Theme.t -> float * float

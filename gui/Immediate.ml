@@ -45,6 +45,16 @@ type t = {
   cursor : int;
   (* the frame being built, in reverse order *)
   painted : Widget.paint list;
+  (* claude: and what goes over all of it, whenever it was asked for:
+   * an open menu's items -- Dear ImGui's popup layer, so that a menu
+   * can be asked for first, where its choice is needed, and still be
+   * drawn on top *)
+  overlay : Widget.paint list;
+  (* claude: the fields asked for in the frame, kept into the next --
+   * so that a click ending in a field moves the focus at the start of
+   * that frame, before the fields asked earlier have drawn themselves
+   * as still having it *)
+  fields : Widget.box list;
 }
 
 (*****************************************************************************)
@@ -64,6 +74,8 @@ let empty =
     pressed = [];
     cursor = 0;
     painted = [];
+    overlay = [];
+    fields = [];
   }
 
 (* the caret lands at the end of a field it has just been given *)
@@ -86,6 +98,16 @@ let frame (input : Widget.input) (t : t) =
   let focus =
     if tab then if shift then Focus.previous focus else Focus.next focus else focus
   in
+  (* claude: the release of a press that a field has held since it went
+   * down gives that field the keys -- known now, at the start of the
+   * frame, so that every field is drawn as it will be after it *)
+  let focus =
+    match capture with
+    | Held who when input.mclick ->
+        if List.exists (fun b -> Widget.id b = who && Widget.contains b input.mx input.my) t.fields then Focus.give who focus
+        else focus
+    | _ -> focus
+  in
   {
     t with
     input;
@@ -97,9 +119,11 @@ let frame (input : Widget.input) (t : t) =
     pressed;
     cursor = (if tab then at_the_end else t.cursor);
     painted = [];
+    overlay = [];
+    fields = [];
   }
 
-let paint (t : t) = List.rev t.painted
+let paint (t : t) = List.rev t.painted @ List.rev t.overlay
 let modal (t : t) = t.open_menu <> None
 let theme (t : t) = t.theme
 let set_theme theme (t : t) = { t with theme }
@@ -188,7 +212,7 @@ let field ?(enabled = true) (t : t) (b : Widget.box) (text : string) =
   if not enabled then (draw t (Look.field th b text ~caret:None ~enabled:false), text)
   else
     (* a field can take the keys, so it is in the tab order *)
-    let t = { t with focus = Focus.saw me t.focus } in
+    let t = { t with focus = Focus.saw me t.focus; fields = b :: t.fields } in
     let t, _hot, _held, clicked = interact t b in
     let cursor = max 0 (min (String.length text) t.cursor) in
     (* a click takes the keys, and puts the caret where it landed; a
@@ -210,7 +234,10 @@ let field ?(enabled = true) (t : t) (b : Widget.box) (text : string) =
       else Text.edit ~typed:t.input.typed ~pressed text cursor
     in
     let t = draw t (Look.field th b text ~caret:(if focused then Some cursor else None) ~enabled:true) in
-    ({ t with cursor }, text)
+    (* claude: the caret is the focused field's alone: a field without
+     * the keys clamping it to its own, shorter, text moved the caret of
+     * the one being typed in (found by examples/gui4/tests/Unit_gui4) *)
+    ((if focused then { t with cursor } else t), text)
 
 let field_size (th : Theme.t) = (th.field_width, th.row)
 
@@ -241,11 +268,29 @@ let menu (t : t) (b : Widget.box) (items : string list) (chosen : int) =
   in
   let t = { t with open_menu } in
   let label = match List.nth_opt items chosen with Some s -> s | None -> "" in
-  let paint =
-    Look.menu_closed th b label ~hot ~held
-    @ if was_open then Look.menu_items th b items ~under:under_mouse else []
+  (* claude: drawn as it is after this frame's click, not before: open
+   * on the frame of the click that opens it, as a retained toolkit
+   * (which paints after its callbacks) and MVU (which draws the view
+   * of the new model) show it -- rather than a frame late *)
+  let t = draw t (Look.menu_closed th b label ~hot ~held) in
+  let t =
+    if open_menu = Some me then { t with overlay = List.rev_append (Look.menu_items th b items ~under:under_mouse) t.overlay } else t
   in
-  (draw t paint, chosen)
+  (t, chosen)
+
+(* a list box: a click on a row selects it *)
+let list (t : t) (b : Widget.box) items selected =
+  let th = t.theme in
+  let t, _hot, _held, clicked = interact t b in
+  let selected =
+    if clicked then
+      let i = int_of_float ((Widget.top b -. t.input.my) /. th.row) in
+      if i >= 0 && i < List.length items then Some i else selected
+    else selected
+  in
+  (draw t (Look.list th b items ~selected), selected)
+
+let list_size (th : Theme.t) = (th.field_width, th.row *. 5.)
 
 let menu_size (th : Theme.t) items =
   let widest =
