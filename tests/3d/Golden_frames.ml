@@ -79,6 +79,7 @@ let scenes : Testutil_golden.scene list =
     (* the heist from above: the house, the vault, the water tower and
      * its crate *)
     ("games3d/software/TinyTeardown", "", 5);
+    ("games3d/software/TinyPinball3d", "", 5);
     (* claude: the same view as games2.5d/TinyWolfenstein's golden frame, in 3D *)
     ("games3d/software/TinyWolfenstein3d", "", 5);
     ("games3d/software/TinyVirtuaRacing", "", 5);
@@ -136,6 +137,10 @@ let scripted : Testutil_golden.scripted list =
     ("games3d/software/TinyElite3d", "flight", 200, "space:1");
     (* three blows at the house's south wall: the hole, and the greedy
      * mesh cut round it *)
+    (* the flippers raised, turned by the game (kinematic bodies); the
+     * ball, launched, round the dome, the sweep catching its touches *)
+    ("games3d/software/TinyPinball3d", "flippers", 15, "space:1,left:2-15,right:2-15");
+    ("games3d/software/TinyPinball3d", "launch", 95, "space:1,space:3-62");
     ("games3d/software/TinyTeardown", "hole", 130, "space:1,w:2-99,x:101,down:102-109,x:121,left:122-124,x:141");
     (* under the water tower, its four legs knocked out one by one, then
      * back out to look: the tank came down onto the stumps *)

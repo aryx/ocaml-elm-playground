@@ -902,6 +902,58 @@ let mario64_engine () =
   | _ -> Alcotest.fail "not playing"
 
 (*****************************************************************************)
+(* TinyPinball3d *)
+(*****************************************************************************)
+
+(* a game in play, the ball at (x, z) mm on the table moving (vx, vz)
+ * m/s, the sweep on or off *)
+let pinball3d_with ~continuous ((x, y) : number * number) ((vx, vz) : number * number) : TinyPinball3d.game =
+  let open TinyPinball3d in
+  let g = new_game () in
+  with_ball { g with play = Live; continuous } (ball_body (to3 (x, y)) |> Physics3d.moving vx 0. vz)
+
+let pinball3d_run (keyboard : keyboard) (frames : int) (g : TinyPinball3d.game) : TinyPinball3d.game =
+  let open TinyPinball3d in
+  let g = ref g in
+  for i = 1 to frames do
+    g := update_game (computer ~keyboard i) (Scene2d.start (Playing !g)) !g
+  done;
+  !g
+
+(* A ball near the tip of the left flipper, a centimetre above its
+ * face, and the flipper raised: the sweep catches the flipper *turning*
+ * into the ball, and it is thrown up the table. Without the sweep, the
+ * flipper's face goes past the ball between two steps -- out there it
+ * moves 4.5 cm a frame, more than the ball's width and its own
+ * together -- and throws nothing. (A ball *resting* on the flipper is
+ * thrown either way: it is touching at the start of the step, and that
+ * contact is the solver's; a first version of this test put it there
+ * and measured the same throw twice.) *)
+let pinball3d_flipper () =
+  let open TinyPinball3d in
+  (* 100 mm out from the pivot, and 8 + 13 + 10 mm above the face *)
+  let near_tip = (-32. +. (0.47 *. 31.), -377. +. (0.88 *. 31.)) in
+  let flip continuous =
+    let g = pinball3d_with ~continuous near_tip (0., 0.) in
+    let g = pinball3d_run { initial_computer.keyboard with kleft = true } 8 g in
+    (ball g).vz
+  in
+  let swept = flip true and not_swept = flip false in
+  Alcotest.(check bool) (Printf.sprintf "swept: thrown up the table (%.2f m/s)" swept) true (swept < -1.);
+  Alcotest.(check bool) (Printf.sprintf "not swept: the flipper goes through it (%.2f m/s)" not_swept) true (not_swept > -0.5)
+
+(* The ball shot at 3 m/s straight at the left wall (1 cm thick): kept
+ * on the table with the sweep, and through the wall without, the
+ * game's counter counting it *)
+let pinball3d_wall () =
+  let open TinyPinball3d in
+  let shoot continuous = pinball3d_run initial_computer.keyboard 20 (pinball3d_with ~continuous (-200., 0.) (-3., 0.)) in
+  let kept = shoot true and lost = shoot false in
+  Alcotest.(check bool) "swept: still on the table" true ((ball kept).x > m left_x);
+  Alcotest.(check bool) "not swept: through the wall" true ((ball lost).x < m left_x);
+  Alcotest.(check bool) (Printf.sprintf "and counted (%d)" lost.through) true (lost.through > 0)
+
+(*****************************************************************************)
 (* TinyMarbleMadness *)
 (*****************************************************************************)
 
@@ -4203,6 +4255,8 @@ let tests =
       t "TinyMinecraft, physics=engine: the capsule on the blocks" minecraft_engine;
       t "TinyMario64, a jump onto a platform" mario64_jump;
       t "TinyMario64, physics=engine: the same jump" mario64_engine;
+      t "TinyPinball3d, the sweep and the flipper" pinball3d_flipper;
+      t "TinyPinball3d, the sweep and a wall" pinball3d_wall;
       t "TinyMarbleMadness, the ramp's heights" marble_ramp;
       t "TinyMarbleMadness, the cliff breaks the marble, the step doesn't" marble_falls;
       t "TinyMarbleMadness, the steelie knocks the marble" marble_steelie;

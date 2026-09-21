@@ -93,6 +93,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyPinball3d.ml)
+ (deps (:src %{project_root}/games3d/TinyPinball3d.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyMarbleMadness.ml)
  (deps (:src %{project_root}/games3d/TinyMarbleMadness.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

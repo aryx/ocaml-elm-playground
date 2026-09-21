@@ -72,10 +72,12 @@ let a_tower_stands () =
     (fun i (b : Physics3d.body) ->
       if i > 0 then begin
         let wanted = 0.25 +. (float_of_int (i - 1) *. 0.5) in
+        (* each contact below it may keep the solver's slop, 5 mm, of
+         * overlap: crate 5 rests up to 2.5 cm low, and does (2.1) *)
         Alcotest.(check bool)
-          (Printf.sprintf "crate %d is within 2 cm of where it started (%.3f)" i b.Physics3d.y)
+          (Printf.sprintf "crate %d is within the slop of the contacts under it (%.3f)" i b.Physics3d.y)
           true
-          (Float.abs (b.Physics3d.y -. wanted) < 0.02);
+          (Float.abs (b.Physics3d.y -. wanted) < (float_of_int i *. 0.005) +. 0.001);
         Alcotest.(check bool)
           (Printf.sprintf "crate %d has hardly crept sideways (%.4f)" i b.Physics3d.x)
           true
@@ -124,13 +126,43 @@ let warm_starting_settles_faster () =
   let warm = sunk (run ~steps:120 ~sleeping:false (tower ())) in
   let cold = sunk (run ~steps:120 ~sleeping:false ~warm_starting:false (tower ())) in
   Alcotest.(check bool) (Printf.sprintf "cold sinks further (%.4f against %.4f)" cold warm) true (cold > warm);
-  (* and one iteration is not enough for a tower, where ten are *)
-  let lazy_ = sunk (run ~steps:120 ~sleeping:false ~iterations:1 (tower ())) in
-  Alcotest.(check bool) (Printf.sprintf "one iteration sinks further still (%.4f)" lazy_) true (lazy_ > warm)
+  (* and one iteration is not enough for a tower, where ten are: after
+   * two seconds it is still bouncing, its crates at up to 0.6 m/s where
+   * the ten-iteration tower's are still. Not measured by how far it
+   * sank: a bouncing crate is sometimes *above* where it started (a
+   * first version of this test measured the sinking, and passed only
+   * while nothing in a world could turn) *)
+  let fastest (w : Physics3d.world) = List.fold_left (fun m b -> Float.max m (Physics3d.speed b)) 0. w.Physics3d.bodies in
+  let still_ = fastest (run ~steps:120 ~sleeping:false (tower ())) in
+  let lazy_ = fastest (run ~steps:120 ~sleeping:false ~iterations:1 (tower ())) in
+  Alcotest.(check bool) (Printf.sprintf "one iteration: still moving (%.3f m/s against %.4f)" lazy_ still_) true
+    (lazy_ > 100. *. still_)
+
+(* A world turns its bodies, as [Physics3d.step] does: a free box given
+ * a quarter turn a second is a quarter turned after a second; and a
+ * domino tipped past its edge falls over rather than standing there
+ * tipped (a first version of [simulate] never turned anything) *)
+let a_world_turns_its_bodies () =
+  let spun = Physics3d.body (cube Playground.brown 0.5) |> Physics3d.turning (0., 1., 0.) 90. in
+  let w = ref (Physics3d.world [ spun ]) in
+  for _ = 1 to 60 do w := Physics3d.simulate !w done;
+  let fx, _, fz = Physics3d.forward (List.hd !w.Physics3d.bodies) in
+  Alcotest.(check (float 1e-3)) "a quarter turn: -z is now -x" (-1.) fx;
+  Alcotest.(check (float 1e-3)) "and no longer -z" 0. fz;
+  (* 0.06 wide and 0.3 tall, it tips past its edge at 11 degrees: 20 *)
+  let domino =
+    Physics3d.body (box Playground.white 0.06 0.3 0.15) |> Physics3d.pointing (0., 0., 1.) (-20.)
+    |> Physics3d.at 0. 0.155 0. |> Physics3d.rough 0.6
+  in
+  let w = run ~steps:120 (Physics3d.world [ floor (); domino ]) in
+  let d = List.nth w.Physics3d.bodies 1 in
+  let _, uy, _ = Quat.rotate d.Physics3d.orientation (0., 1., 0.) in
+  Alcotest.(check bool) (Printf.sprintf "the domino lies down (its up is now %.2f up)" uy) true (uy < 0.5)
 
 let tests =
   [ t "Solver3d, a crate comes to rest and stays there" a_crate_comes_to_rest;
     t "Solver3d, and one answered pair at a time shivers" one_pass_shivers;
     t "Solver3d, a tower of five stands" a_tower_stands;
     t "Solver3d, they sleep in islands, not one by one" they_sleep_together;
-    t "Solver3d, warm starting, and how many iterations" warm_starting_settles_faster ]
+    t "Solver3d, warm starting, and how many iterations" warm_starting_settles_faster;
+    t "Solver3d, a world turns its bodies: a domino topples" a_world_turns_its_bodies ]

@@ -515,7 +515,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 9 done** (2026-09-20; phase 7's game port and phase 9 2026-09-21); the
+**Phases 0 to 10 done** (2026-09-20; phase 7's game port, phases 9 and 10 2026-09-21); the
 rest not started. Written as the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -883,6 +883,48 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     first reset the speed to zero, so a character let go on a 50
     degree ramp slid down it at one tick's gravity for ever; only a
     walkable landing (or a ceiling) stops the speed now.
+- **Phase 10, DONE** (2026-09-21): `physics/3d/Sweep3d` (conservative
+  advancement, Mirtich: a sphere against any hitbox, the hitbox moving
+  and turning if it does), `Physics3d.simulate ~continuous ~substeps`,
+  `went_through`, kinematic bodies documented (an immovable body with a
+  velocity or a spin), and `games3d/TinyPinball3d.ml`, the 2D table's
+  twin in metres. The measured switch, a pinball head on at a 1 cm
+  wall: lost from 1.5 m/s in plain steps, from 6 m/s in four substeps,
+  never with the sweep (to 10 m/s); a flipper throws a ball a
+  centimetre above its tip at 2.98 m/s with it and at 0.12 without it.
+  5 tests in `Unit_sweep3d`, 2 in the games' tests, 3 golden frames.
+  - **Found first: a world never turned its bodies.** `simulate` moved
+    each body by its velocity and never turned it by its spin -- only
+    `step` did. So in every world since phase 8 the solver's spins went
+    nowhere: a domino could slide and not topple, TinyTeardown's pieces
+    fell without tumbling, and a kinematic flipper, which is nothing but
+    a spin, would not have moved. One line; a new test (a quarter turn,
+    and a domino lying down); PhysicsStack3d's and TinyTeardown's
+    golden frames changed by a few hundred pixels. Two solver tests had
+    thresholds measured on the unturning world: the tower of five now
+    rests within the slop of the contacts under each crate (2.1 cm at
+    the top, 2.5 allowed), and "one iteration is not enough" is now
+    measured by what it is -- a tower still bouncing at 0.6 m/s where
+    ten iterations' is still -- rather than by how far it sank, which a
+    bouncing crate can make look good.
+  - **Stopping at the touch is not enough.** The first sweep stopped the
+    ball where it touched and let the next step's contact bounce it.
+    That loses the rest of the step, and worse, only the ball is held
+    back: a flipper swinging into a ball at rest went through it
+    anyway. So the touch is answered at its time of impact, against
+    anything immovable -- the ball's speed relative to the surface's own
+    speed there turned round, and the rest of the step spent going the
+    new way. Against another moving body it still stops, and the solver
+    takes over.
+  - **`went_through` is a bullet's question.** It works out where the
+    body was from where it is going now, so after a bounce the path it
+    tests runs through the very wall bounced off: TinyPinball3d's
+    counter counted every bounce as a tunnel until it compared the
+    ball's two positions instead. The `.mli` says so.
+  - **The launch does not tunnel**, even without the sweep: the ball
+    rides round the dome *along* its walls, a little into each segment
+    per step. What tunnels on the table is head-on -- a flipper's
+    throw, a kick -- which is what the tests measure.
 
 ## Verification
 

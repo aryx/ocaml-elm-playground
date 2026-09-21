@@ -625,10 +625,36 @@ Three fixes, in increasing order of honesty and cost:
   body over the step. The 2D engine already has the segment version
   (`Physics.went_through`, `games/TinySoldat.ml`'s bullets).
 
-`TinyPinball3d` wants the third, and gets a key to switch it off, so
-that the ball can be watched falling through the table -- the switch
-is the teaching (principle 3), and the measurement is "kept on the
-table at 10 m/s; lost at 3 m/s without it" (numbers to come).
+`TinyPinball3d` takes the third, and gets a key to switch it off, so
+that the ball can be watched going through the table -- the switch is
+the teaching (principle 3). Measured on the pinball against a 1 cm
+wall, head on (`physics/tests/Unit_sweep3d.ml`):
+
+```
+   plain steps          lost from 1.5 m/s
+   4 substeps           lost from 6 m/s
+   the sweep            never (tried up to 10 m/s)
+```
+
+`Sweep3d` is Mirtich's *conservative advancement*: advance the sphere
+by the gap divided by the fastest the gap can close, again and again,
+never past anything; it needs nothing of the obstacle but a distance,
+and the obstacle may move and turn during the step (the closing speed
+is then bounded by its turning speed times its reach). At the first
+touch the ball is bounced off there and then, relative to the
+surface's own speed at the point, and goes on for the rest of the step
+-- not handed to the solver as a speculative contact, which would stop
+it gently at the wall and lose the bounce's energy, which a pinball
+cannot afford.
+
+And the obstacle can be the fast one: a flipper turning at 1400
+degrees a second moves its tip 4.5 cm a frame, more than the ball's
+width and its own together, so a ball a centimetre above it is behind
+it at the next frame without ever having overlapped it. The sweep is
+the ball's, but it measures the gap against the flipper *turning*:
+with it the flipper throws the ball at 2.98 m/s, without it at 0.12 --
+it went through. A ball resting *on* the flipper is thrown either way,
+being in contact at the start of the step: the solver's business.
 
 ## 13. Joints: the gravity gun is three calls
 

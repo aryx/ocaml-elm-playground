@@ -334,11 +334,12 @@ type world = {
   still : int list;
   asleep : bool list;
   solved : int;
+  swept : int;
 }
 
 let world (bodies : body list) : world =
   { bodies; memory = Solver3d.nothing; still = List.map (fun _ -> 0) bodies;
-    asleep = List.map (fun _ -> false) bodies; solved = 0 }
+    asleep = List.map (fun _ -> false) bodies; solved = 0; swept = 0 }
 
 (* a body is ready to sleep once it has been slow for this many steps,
  * and a *group* of them sleeps together -- see below *)
@@ -348,8 +349,20 @@ let slow_spin = 10.
 
 let movable (b : body) : bool = Float.is_finite b.mass
 
-let simulate ?(gravity = 0.) ?(iterations = Solver3d.default.iterations) ?(warm_starting = true) ?(sleeping = true)
-    ?(broad_phase = Broadphase3d.Sweep_and_prune) (w : world) : world =
+(* the radius a body is swept with: its own for a sphere or a capsule,
+ * its narrowest half for a box (see [went_through]) *)
+let sweep_radius (b : body) : number =
+  match b.hitbox with
+  | Hitbox3d.Sphere r | Hitbox3d.Capsule (_, r) -> r
+  | Hitbox3d.Box (hx, hy, hz) -> Float.min hx (Float.min hy hz)
+  | Hitbox3d.Plane _ -> 0.
+
+(* One step of [dt] (a tick, or a piece of one): the pushes, the
+ * contacts solved, the sweep, the moves. [last]: the pushes are used up
+ * (the game's pushes last the whole tick, however many pieces it is
+ * cut into). *)
+let advance ~gravity ~iterations ~warm_starting ~sleeping ~broad_phase ~continuous ~(dt : number) ~(last : bool)
+    (w : world) : world =
   let all = Array.of_list w.bodies in
   let still = Array.of_list w.still in
   let asleep = Array.of_list w.asleep in
@@ -362,7 +375,7 @@ let simulate ?(gravity = 0.) ?(iterations = Solver3d.default.iterations) ?(warm_
         if (not (movable b)) || asleep.(i) then b
         else
           let b = fall gravity b in
-          { b with vx = b.vx +. (b.ax *. tick); vy = b.vy +. (b.ay *. tick); vz = b.vz +. (b.az *. tick) })
+          { b with vx = b.vx +. (b.ax *. dt); vy = b.vy +. (b.ay *. dt); vz = b.vz +. (b.az *. dt) })
       all
   in
   (* the contacts: the broad phase's pairs, each with the points of its
@@ -394,22 +407,112 @@ let simulate ?(gravity = 0.) ?(iterations = Solver3d.default.iterations) ?(warm_
       found.Broadphase3d.pairs
   in
   let states, memory =
-    Solver3d.solve { Solver3d.default with iterations; warm_starting } ~dt:tick
+    Solver3d.solve { Solver3d.default with iterations; warm_starting } ~dt
       (Array.map state awake_and_moving) pairs w.memory
   in
+  let solved_bodies = Array.mapi (fun i b -> if asleep.(i) then b else with_state states.(i) b) awake_and_moving in
+  (* The sweep (continuous collision, Sweep3d). A sphere that is fast
+   * this step (farther than a quarter of its radius), or near something
+   * that moves, is swept along its path against everything else --
+   * where it is at the start of the step, moving and turning as it will
+   * -- and at the first touch:
+   *
+   *  - against something that nothing can push (a wall, a flipper), the
+   *    touch is answered there and then: the ball's speed along the
+   *    normal, relative to that surface's own speed at the point, is
+   *    turned round (keeping the pair's bounciness), and the ball spends
+   *    the rest of the step going the new way. Nothing is lost, and a
+   *    flipper swinging into a ball at rest throws it -- where stopping
+   *    the ball at the touch would have let the flipper sweep through
+   *    it, since only the ball is held back;
+   *  - against another moving body, it stops there, and the next step's
+   *    contact is the solver's.
+   *
+   * The ball is treated as a point there (its spin is not touched): a
+   * pinball's spin barely matters to where it goes, and the solver
+   * takes over at the next step. Every pair, every step, for those
+   * spheres only: fine for a table, not for a thousand marbles. *)
+  let n = Array.length solved_bodies in
+  let final = Array.copy solved_bodies and swept = ref 0 in
+  let moves (o : body) = o.vx <> 0. || o.vy <> 0. || o.vz <> 0. || o.spin <> (0., 0., 0.) in
+  if continuous then
+    Array.iteri
+      (fun i (b : body) ->
+        match b.hitbox with
+        | Hitbox3d.Sphere radius when movable b && not asleep.(i) ->
+            let motion = (b.vx *. dt, b.vy *. dt, b.vz *. dt) in
+            let fast = Vec3.length motion > radius /. 4. in
+            let first = ref None in
+            for j = 0 to n - 1 do
+              let o = solved_bodies.(j) in
+              if j <> i && (fast || (moves o && not asleep.(j))) then
+                let shift = (o.vx *. dt, o.vy *. dt, o.vz *. dt) and turn = Vec3.scale dt (to_radians o.spin) in
+                let moving = if asleep.(j) then None else Some (shift, turn) in
+                match Sweep3d.sphere ~radius ~from:(b.x, b.y, b.z) ~motion ?moving (hitbox_of o) with
+                | Some t when (match !first with None -> true | Some (t', _) -> t < t') -> first := Some (t, j)
+                | _ -> ()
+            done;
+            (match !first with
+            | None -> ()
+            | Some (t, j) ->
+                incr swept;
+                let o = solved_bodies.(j) in
+                let at = Vec3.add (b.x, b.y, b.z) (Vec3.scale t motion) in
+                if movable o then
+                  let x, y, z = at in
+                  final.(i) <- { b with x; y; z }
+                else begin
+                  (* the obstacle where it is at the touch *)
+                  let shift = (o.vx *. dt *. t, o.vy *. dt *. t, o.vz *. dt *. t) in
+                  let placed = hitbox_of o in
+                  let placed =
+                    { placed with pos = Vec3.add placed.pos shift;
+                      orientation = Quat.turned_by ~spin:(to_radians o.spin) ~dt:(dt *. t) placed.orientation }
+                  in
+                  let v = (b.vx, b.vy, b.vz) in
+                  let v =
+                    match Collide3d.contact placed (Hitbox3d.place at (Hitbox3d.Sphere radius)) with
+                    | None -> v
+                    | Some k ->
+                        (* the surface's own speed there: its velocity,
+                         * and its spin about its middle *)
+                        let r = Vec3.sub k.Contact3d.point placed.pos in
+                        let surface = Vec3.add (o.vx, o.vy, o.vz) (Vec3.cross (to_radians o.spin) r) in
+                        let closing = Vec3.dot (Vec3.sub v surface) k.Contact3d.normal in
+                        if closing >= 0. then v
+                        else
+                          let e = if -.closing < Solver3d.default.bounce_threshold then 0. else Float.max b.bounciness o.bounciness in
+                          Vec3.sub v (Vec3.scale ((1. +. e) *. closing) k.Contact3d.normal)
+                  in
+                  let x, y, z = Vec3.add at (Vec3.scale ((1. -. t) *. dt) v) and vx, vy, vz = v in
+                  final.(i) <- { b with x; y; z; vx; vy; vz }
+                end)
+        | _ -> ())
+      solved_bodies;
+  let swept_now = Array.init n (fun i -> final.(i) != solved_bodies.(i)) in
+  let used (b : body) = if last then { b with ax = 0.; ay = 0.; az = 0.; torque = (0., 0., 0.) } else b in
   (* the moves, with the solved velocities, and the counters *)
   let bodies =
     Array.mapi
       (fun i b ->
-        if asleep.(i) then { b with ax = 0.; ay = 0.; az = 0.; torque = (0., 0., 0.) }
+        if asleep.(i) then used b
         else
-          let b = with_state states.(i) b in
+          let b = solved_bodies.(i) in
           let sx, sy, sz = b.spin in
           let slow = speed b < slow_speed && Float.abs sx +. Float.abs sy +. Float.abs sz < slow_spin in
           still.(i) <- (if movable b && slow then still.(i) + 1 else 0);
-          { b with
-            x = b.x +. (b.vx *. tick); y = b.y +. (b.vy *. tick); z = b.z +. (b.vz *. tick);
-            ax = 0.; ay = 0.; az = 0.; torque = (0., 0., 0.) })
+          (* claude: and turned by its spin, as [step] turns it (a
+           * first version of the world only moved bodies: the solver
+           * changed their spins, and nothing ever turned by them -- a
+           * domino could slide but not topple, a falling piece of
+           * TinyTeardown never tumbled; found when phase 10's flippers,
+           * which are nothing but a spin, would not move) *)
+          let turned = Quat.turned_by ~spin:(to_radians b.spin) ~dt b.orientation in
+          if swept_now.(i) then used { (final.(i)) with orientation = turned }
+          else
+            used
+              { b with
+                x = b.x +. (b.vx *. dt); y = b.y +. (b.vy *. dt); z = b.z +. (b.vz *. dt); orientation = turned })
       awake_and_moving
   in
   (* Sleeping, by *islands*: a crate sent to sleep on its own while the
@@ -432,4 +535,21 @@ let simulate ?(gravity = 0.) ?(iterations = Solver3d.default.iterations) ?(warm_
     (fun i b -> if sleeping && movable b then asleep.(i) <- island_ready.(root i) && still.(i) >= sleep_after)
     bodies;
   { bodies = Array.to_list bodies; memory; still = Array.to_list still; asleep = Array.to_list asleep;
-    solved = List.fold_left (fun n (p : Solver3d.pair) -> n + List.length p.Solver3d.contacts) 0 pairs }
+    solved = List.fold_left (fun n (p : Solver3d.pair) -> n + List.length p.Solver3d.contacts) 0 pairs;
+    swept = w.swept + !swept }
+
+let simulate ?(gravity = 0.) ?(iterations = Solver3d.default.iterations) ?(warm_starting = true) ?(sleeping = true)
+    ?(broad_phase = Broadphase3d.Sweep_and_prune) ?(continuous = false) ?(substeps = 1) (w : world) : world =
+  let dt = tick /. float_of_int (max 1 substeps) in
+  let rec go w n =
+    let w = advance ~gravity ~iterations ~warm_starting ~sleeping ~broad_phase ~continuous ~dt ~last:(n = 1) w in
+    if n <= 1 then w else go w (n - 1)
+  in
+  go { w with swept = 0 } (max 1 substeps)
+
+(* the fast body's path during its last step, from where it was a tick
+ * ago, swept as a sphere of its narrowest size *)
+let went_through (fast : body) (b : body) : bool =
+  let motion = (fast.vx *. tick, fast.vy *. tick, fast.vz *. tick) in
+  let from = Vec3.sub (fast.x, fast.y, fast.z) motion in
+  Sweep3d.sphere ~radius:(sweep_radius fast) ~from ~motion (hitbox_of b) <> None

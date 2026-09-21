@@ -33,8 +33,8 @@
      it walks, keeps it on the ground down stairs and slopes instead of
      leaving it to fall a step at a time.
 
-   The trace is the one piece this module has to invent, because the
-   engine cannot sweep yet (that is Sweep3d, phase 10). It steps along
+   The trace is the one piece this module has to invent: the engine's
+   sweep (Sweep3d, phase 10) sweeps a sphere, not a capsule. It steps along
    the move in pieces shorter than half the capsule's radius, and when
    a piece ends overlapping a solid, bisects that piece down to where
    the overlap starts; the plane is the contact's normal there

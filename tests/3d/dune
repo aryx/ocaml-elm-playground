@@ -38,6 +38,7 @@
    %{project_root}/games3d/software/TinyBattlezone3d.exe
    %{project_root}/games3d/software/TinyElite3d.exe
    %{project_root}/games3d/software/TinyTeardown.exe
+   %{project_root}/games3d/software/TinyPinball3d.exe
    %{project_root}/games3d/software/TinyWolfenstein3d.exe
    %{project_root}/games3d/software/TinyVirtuaRacing.exe
    %{project_root}/games3d/software/TinyMarioKart64.exe

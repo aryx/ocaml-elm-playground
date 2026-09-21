@@ -144,7 +144,12 @@ val bouncy : number -> body -> body
 (* [rough mu b]: friction, same. *)
 val rough : number -> body -> body
 
-(* [immovable b]: an infinite mass, so nothing can push it (a floor) *)
+(* [immovable b]: an infinite mass, so nothing can push it (a floor).
+ * Given a velocity ([moving]) or a spin ([turning]), it is *kinematic*:
+ * [simulate] moves and turns it by them, nothing can change them, and a
+ * body it meets is hit by its surface's speed at the contact -- a
+ * pinball flipper is exactly that, driven by the game from one tick to
+ * the next rather than by forces (games3d/TinyPinball3d.ml). *)
 val immovable : body -> body
 
 (* [upright b]: nothing can turn it. A player, a pinball flipper: a
@@ -322,6 +327,9 @@ type world = {
   asleep : bool list;
   (* how many contact points the last step solved, for a HUD *)
   solved : int;
+  (* how many bodies the last tick's sweep stopped short (see [simulate]
+   * ~continuous): each one would have been through something *)
+  swept : int;
 }
 
 (* the walls and floors among them [immovable] *)
@@ -338,12 +346,36 @@ val world : body list -> world
  * crate sent to sleep alone while the ones above it are still settling
  * gets woken a moment later with a jolt, which is measurable (it
  * happened every sixty-one steps: the threshold, plus one). *)
+(* [continuous] (off by default): continuous collision, for small fast
+ * spheres (physics/3d/Sweep3d.mli). A sphere going farther in a step
+ * than a quarter of its radius is swept along its path, and stopped
+ * where it first touches something -- its velocity kept, so that the
+ * next step's contact bounces it. Without it, a 27 mm pinball at 3 m/s
+ * goes 5 cm a step and passes through a 1 cm wall having overlapped it
+ * on no step at all.
+ *
+ * [substeps] (1): the tick cut into that many steps, the other answer
+ * to the same problem -- simpler, as costly as the count, and only as
+ * good as a step is small. The game's pushes last the whole tick. *)
 val simulate :
   ?gravity:number ->
   ?iterations:int ->
   ?warm_starting:bool ->
   ?sleeping:bool ->
   ?broad_phase:Broadphase3d.method_ ->
+  ?continuous:bool ->
+  ?substeps:int ->
   world ->
   world
+
+(* [went_through fast b]: whether [fast], during its last tick (from
+ * where it was a tick ago to where it is), passed through [b] -- swept
+ * as a sphere of its narrowest size. The question, where [simulate]
+ * ~continuous is the answer: for counting what tunnelled, or for a
+ * bullet that only needs to know what it hit. Where it was is worked
+ * out from where it is going now, so the answer is for a body that did
+ * not bounce during the tick: one that did has its velocity turned
+ * round, and its path is drawn through the very wall it bounced off
+ * (games3d/TinyPinball3d.ml compares its two positions instead). *)
+val went_through : body -> body -> bool
 
