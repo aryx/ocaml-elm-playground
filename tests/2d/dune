@@ -27,6 +27,7 @@
    %{project_root}/apps/software/TinyHyperCard.exe
    %{project_root}/apps/software/TinyMacDraw.exe
    %{project_root}/apps/software/TinyFrameMaker.exe
+   %{project_root}/apps/software/TinyOffice.exe
    %{project_root}/examples/software/TypesetParagraph.exe
    %{project_root}/examples/software/Smiley.exe
    %{project_root}/examples/software/Words.exe

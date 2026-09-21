@@ -161,6 +161,27 @@ and missed six kinds of program; by what each would teach:
 History to be checked before building on any of these, as for the
 others.
 
+## 8b. TinyOffice, the suite as it is today -- done, and what's next
+
+`apps/TinyOffice.ml` (2026-09-21), separate from TinyOpenDoc and
+TinyFrameMaker so that they keep their history (its header says what
+each of them cannot do): a start screen of five kinds, every kind a
+host of the others, objects floating anywhere (dragged, resized,
+scaled, front and back), text running round them (`Page.layout
+~around`, tested), in-place editing with OLE 2's menu merging. Next,
+by what each would give:
+
+- **saving**, every kind with its objects, through `Saved`
+  (`plan_io.md`);
+- **move with text**: an object tied to a paragraph, as
+  TinyFrameMaker's anchors are, but still free to be dragged;
+- **wrap on both sides** of an object, a line's two stretches filled
+  in turn;
+- **several pages** for a document, the text flowing on
+  (`appkits/richtext/Flow`), and the presentation's show;
+- **a chart object** drawn from a sheet object's cells, refreshed when
+  they change -- linking beside embedding.
+
 ## 9. Small things found on the way
 
 - **Two `Undo` modules**: `gamekits/puzzle/Undo` and

@@ -24,6 +24,9 @@ type state = {
      a figure by a handle *)
   moving : Figure.point option;
   resizing : (Drawing.id * int) option;
+  (* how tall it may grow: a third of a screen in a document, a page
+     when it is the document *)
+  max_h : float;
   was_down : bool;
   was : string list;
 }
@@ -121,7 +124,7 @@ let rec part st : Component.part =
     kind;
     (* the page's shape at the width given, but no taller than a
        third of a screen *)
-    height = (fun w -> Float.min 220. (w *. page_h /. page_w));
+    height = (fun w -> Float.min st.max_h (w *. page_h /. page_w));
     (* it fits its page to whatever room it is given already *)
     natural = None;
     draw = draw st;
@@ -132,6 +135,7 @@ let rec part st : Component.part =
     save = (fun () -> Saved.to_string ~magic st.d);
   }
 
-let make d = part { d; selection = []; moving = None; resizing = None; was_down = false; was = [] }
+let make ?(max_height = 220.) d =
+  part { d; selection = []; moving = None; resizing = None; max_h = max_height; was_down = false; was = [] }
 
 let load s = match Saved.of_string ~magic s with Some d -> make d | None -> Component.placeholder ~kind s

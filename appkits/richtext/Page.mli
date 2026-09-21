@@ -81,8 +81,23 @@ type t
  * "ab cd" in a line 60 wide (every character 10) has 10 of slack:
  * Center starts it at x = 5, Right at 10, and Justify widens its one
  * space from 10 to 20 -- except that a one-line paragraph is its own
- * last line, and so stays Left. *)
-val layout : ?align:align -> metrics:metrics -> width:float -> Rich.t -> t
+ * last line, and so stays Left.
+ *
+ * [?around]: boxes the text must go round -- pictures, sheets floating
+ * on a page, as in Publisher and Pages -- each (x0, y0, x1, y1) in the
+ * page's coordinates, y down. The lines are then laid one at a time:
+ * at each line's height, the width is cut by the boxes that reach it,
+ * and the line takes the widest free stretch left; where none is wide
+ * enough to hold text, the line goes on below the box in the way.
+ *
+ *     +-----------+  a line beside the box starts after it
+ *     |  box      |  ......................
+ *     +-----------+  ......................
+ *     .....................................  and below it, the whole
+ *
+ * A word too long for its stretch is set whole and runs over it. With
+ * no boxes (or [~around:[]]) the text is laid out exactly as before. *)
+val layout : ?align:align -> ?around:(float * float * float * float) list -> metrics:metrics -> width:float -> Rich.t -> t
 
 (* every glyph, in order *)
 val glyphs : t -> glyph list

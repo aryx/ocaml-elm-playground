@@ -5,5 +5,7 @@
  * to leave it -- since a part has no formula bar of its own. *)
 
 val kind : string
-val make : Sheet.t -> Component.part
+(* [make ?cols ?rows sheet]: 3 columns and 5 rows unless said, a table
+ * in a document; a sheet that is the document asks for more *)
+val make : ?cols:int -> ?rows:int -> Sheet.t -> Component.part
 val load : string -> Component.part

@@ -15,5 +15,8 @@
  * drawing it can read comes back as a placeholder, kept whole. *)
 
 val kind : string
-val make : Drawing.t -> Component.part
+(* [make ?max_height drawing]: no taller than a third of a screen
+ * unless said -- a drawing in a document; one that is the document
+ * asks for more *)
+val make : ?max_height:float -> Drawing.t -> Component.part
 val load : string -> Component.part

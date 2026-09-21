@@ -124,6 +124,42 @@ let test_the_two_ways_agree_when_aligned () =
       done)
     [ Page.Center; Page.Right; Page.Justify ]
 
+(* --- text round boxes -------------------------------------------------- *)
+
+let text = Rich.of_string "aaaa bbbb cccc dddd"
+
+(* each line as (its first letter, where it starts, its top) *)
+let lines_of page =
+  List.map (fun (l : Page.line) -> ((List.hd l.cells).text, (List.hd l.cells).x, l.top)) (Page.lines page)
+
+let placed = Alcotest.(list (triple string (float 1e-9) (float 1e-9)))
+
+let test_no_boxes_is_as_before () =
+  Alcotest.check placed "the same lines" (lines_of (Page.layout ~metrics ~width:100. text))
+    (lines_of (Page.layout ~around:[] ~metrics ~width:100. text))
+
+(* a box on the right, 30 high: the two lines it reaches are cut to its
+   left edge, 50, and hold one word each; the third, below it, two *)
+let test_a_box_on_the_right () =
+  Alcotest.check placed "shortened beside it, whole below"
+    [ ("a", 0., 0.); ("b", 0., 22.4); ("c", 0., 44.8) ]
+    (lines_of (Page.layout ~around:[ (50., 0., 100., 30.) ] ~metrics ~width:100. text))
+
+let test_a_box_on_the_left () =
+  match lines_of (Page.layout ~around:[ (0., 0., 30., 25.) ] ~metrics ~width:100. text) with
+  | ("a", x, _) :: ("b", x', _) :: ("c", x'', _) :: _ ->
+      Alcotest.(check (float 1e-9)) "the first line starts after it" 30. x;
+      Alcotest.(check (float 1e-9)) "and the second, which it still reaches" 30. x';
+      Alcotest.(check (float 1e-9)) "the third, below it, at the edge" 0. x''
+  | l -> Alcotest.failf "%d lines" (List.length l)
+
+(* a box across the whole width: nothing fits beside it, and the text
+   starts below it *)
+let test_a_box_across () =
+  match lines_of (Page.layout ~around:[ (0., 0., 100., 50.) ] ~metrics ~width:100. text) with
+  | (_, _, top) :: _ -> Alcotest.(check (float 1e-9)) "below the box" 50. top
+  | [] -> Alcotest.fail "no lines"
+
 let tests =
   [
     t "the worked example" test_the_worked_example;
@@ -135,4 +171,8 @@ let tests =
     t "newlines end lines" test_newlines_end_lines;
     t "a bigger look makes a taller line" test_a_bigger_look_makes_a_taller_line;
     t "a word too long for a line" test_a_word_too_long_for_a_line;
+    t "round boxes: none, and it is as before" test_no_boxes_is_as_before;
+    t "round boxes: one on the right" test_a_box_on_the_right;
+    t "round boxes: one on the left" test_a_box_on_the_left;
+    t "round boxes: one across the page" test_a_box_across;
   ]

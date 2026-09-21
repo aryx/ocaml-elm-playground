@@ -190,7 +190,8 @@ idea explained in its `.mli` and checked by tests and golden frames:
   one text engine, TinyFrameMaker (the text poured over pages),
   TinyMacPaint and TinyMacDraw (dots, and objects),
   TinyOpenDoc (a document made of
-  parts), TinyPowerPoint and TinyHyperCard.
+  parts), TinyPowerPoint and TinyHyperCard -- and TinyOffice, the suite
+  as it is today, where every kind of document holds the others.
 
 Every game and application is listed by genre, with the original it
 is a toy version of, in [CATALOG.md](CATALOG.md).

@@ -91,6 +91,8 @@ let scenes : Testutil_golden.scene list =
     (* 1986: one text flowing over pages from a master page, a sheet
      * anchored in it *)
     ("apps/software/TinyFrameMaker", "", 5);
+    (* the office suite today: first the kind of document *)
+    ("apps/software/TinyOffice", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -670,6 +672,23 @@ let scripted : Testutil_golden.scripted list =
       32,
       "at(200;200):1-3,click:2,at(-315;470):4-6,click:5,at(-315;293):7-9,click:8,at(-250;230):10-12,click:11,at(-315;470):13-15,click:14,at(-315;293):16-18,click:17,at(0;195):19-21,click:20-26,at(-60;195):23,at(-120;195):24-28,at(600;-600):29-32"
     );
+    (* a document, its text running round the sheet floating on it *)
+    ("apps/software/TinyOffice", "document", 8, "at(-360;30):1-2,click:1,at(600;-600):4-8");
+    (* the sheet dragged left and its corner dragged out: scaled up, and
+     * the text reflowing round it as it moves *)
+    ( "apps/software/TinyOffice",
+      "drag",
+      26,
+      "at(-360;30):1-2,click:1,at(160;227):3-5,click:4-11,at(60;190):7,at(-60;150):8-12,at(50;97):13-15,click:14-20,at(90;70):17,at(130;40):18-22,at(600;-600):23-26"
+    );
+    (* the sheet clicked twice: edited in place, the menu bar File and
+     * the sheet's own -- OLE 2's menu merging *)
+    ("apps/software/TinyOffice", "active", 12, "at(-360;30):1-2,click:1,at(160;227):3-9,click:4,click:7,at(600;-600):10-12");
+    (* the four other kinds, each holding another *)
+    ("apps/software/TinyOffice", "spreadsheet", 6, "at(-180;30):1-2,click:1,at(600;-600):3-6");
+    ("apps/software/TinyOffice", "presentation", 6, "at(0;30):1-2,click:1,at(600;-600):3-6");
+    ("apps/software/TinyOffice", "picture", 6, "at(180;30):1-2,click:1,at(600;-600):3-6");
+    ("apps/software/TinyOffice", "drawing", 6, "at(360;30):1-2,click:1,at(600;-600):3-6");
     (* the master changed to two columns: everything lays itself out
      * again, the drawing shrinking to its column, the sheet spilling
      * out of it -- widths are not negotiated *)

@@ -232,6 +232,7 @@ own trick and once by playground3d (see `games2.5d/README.md`).
 |---|---|---|---|---|
 | [TinyHyperCard](apps/TinyHyperCard.ml) | app | HyperCard (Bill Atkinson, Apple, 1987) | Cards, buttons and scripts: programming for non-programmers. | Using and building as one: backgrounds as a database's columns, the message path, HyperTalk. |
 | [TinyOpenDoc](apps/TinyOpenDoc.ml) | app | OpenDoc (Apple, IBM and CI Labs, 1994-97) | A document with no application: text, sheet, picture and drawing parts. | Parts edited in place, the menu bar becoming theirs; unknown parts kept byte for byte; sizes negotiated or scaled. |
+| [TinyOffice](apps/TinyOffice.ml) | app | today's office suites (Microsoft 365, iWork, LibreOffice) | Choose a document, sheet, presentation, picture or drawing; each holds the others. | A start screen; every kind a host; objects floating anywhere, dragged and resized; text running round them; OLE's menu merging. |
 
 ## PIM
 

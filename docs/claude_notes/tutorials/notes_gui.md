@@ -786,6 +786,40 @@ is immediate mode taken at its word, and the reason a field could not
 be opened by the click that finds it (a text area takes the focus only
 from a click it saw both halves of).
 
+## 15b. The office suite today: TinyOffice
+
+The programs above are each a period piece, true to the program they
+are named after -- and so each has its original's limits: five
+editors that cannot hold each other; TinyOpenDoc's parts laid out by
+position, in a tree of rows and columns, never floating, never with a
+text running round them; TinyFrameMaker's frames laid out by order,
+anchored below a line, as wide as their column. **TinyOffice** is the
+suite people know now, as a separate program so that the others keep
+their history:
+
+- a **start screen**, the kind of document first -- document,
+  spreadsheet, presentation, picture, drawing;
+- **every kind a host**: the sheet, picture and drawing documents are
+  a part of their own kind as their content, the document and the
+  presentation a text, and any of them holds objects of the others --
+  OLE's shape (applications embedding each other) rather than
+  OpenDoc's (parts without applications);
+- **free-floating objects**, anywhere on the page, dragged, resized by
+  their corners (scaled if they have a size of their own, §9),
+  brought forward or sent back;
+- **text running round them**, as Publisher and Pages do: `Page.layout
+  ~around` cuts each line to the widest stretch the objects beside it
+  leave, and goes on below one that leaves no room -- so dragging an
+  object reflows the text live, the layout being worked out every
+  frame;
+- **in-place editing with OLE 2's menu merging**: click an object
+  again, and the bar keeps the host's File and takes the object's
+  menus for the rest, until Escape.
+
+Two small changes let the parts be a document's whole content: a sheet
+part of any number of cells (`Part_sheet.make ?cols ?rows`), a
+drawing part as tall as a page (`Part_drawing.make ?max_height`).
+
 ## 16. The numbers
 
 Measured 2026-09-21, lines of code (not blank, not comments) and, in
