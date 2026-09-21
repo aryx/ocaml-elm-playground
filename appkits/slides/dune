@@ -1,0 +1,10 @@
+; claude: a presentation's engine (see
+; docs/claude_notes/plans/plan_gui_teaching.md): the outline a deck is
+; written as, and the slides it becomes (Outline). Used by
+; apps/TinyPowerPoint. A private library, installed as part of
+; elm_playground: pure OCaml, so every backend can use it.
+(library
+ (name appkit_slides)
+ (package elm_playground)
+ (wrapped false)
+)

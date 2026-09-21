@@ -79,6 +79,8 @@ let scenes : Testutil_golden.scene list =
     (* 1994: a document of parts -- a text, a sheet and a picture side
      * by side, and a part of a kind nobody here can read, kept *)
     ("apps/software/TinyOpenDoc", "", 5);
+    (* 1987: a slide made from the outline, in the master's look *)
+    ("apps/software/TinyPowerPoint", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -544,6 +546,37 @@ let scripted : Testutil_golden.scripted list =
       16,
       "at(-410;470):1-3,click:2,at(-410;401):4-6,click:5,at(-410;470):7-9,click:8,at(-410;365):10-12,click:11,at(400;-400):13-16"
     );
+    (* the master changed twice -- a black band, titles centred -- and
+     * every slide changes with it *)
+    ( "apps/software/TinyPowerPoint",
+      "master",
+      16,
+      "at(-30;470):1-3,click:2,at(-30;293):4-6,click:5,at(-30;470):7-9,click:8,at(-30;257):10-12,click:11,at(400;-480):13-16"
+    );
+    (* the sorter: every slide, the same drawing scaled *)
+    ( "apps/software/TinyPowerPoint",
+      "sorter",
+      10,
+      "at(-220;470):1-3,click:2,at(-220;329):4-6,click:5,at(400;-480):7-10" );
+    (* the outline, and a line typed against its edge: a sixth slide,
+     * shown beside it as it is typed *)
+    ( "apps/software/TinyPowerPoint",
+      "outline",
+      18,
+      "at(-220;470):1-3,click:2,at(-220;365):4-6,click:5,at(80;-66):7-9,click:8,return:10,type(Questions?):12,at(400;-480):13-18"
+    );
+    (* the show, caught halfway through pushing slide 1 away for slide
+     * 2: the two drawings, moved *)
+    ( "apps/software/TinyPowerPoint",
+      "show",
+      14,
+      "at(-220;470):1-3,click:2,at(-220;293):4-6,click:5,right:9,at(0;0):12-14" );
+    (* slide 4's sheet clicked (activated: its menu in the bar), B1
+     * clicked and 3 typed into it -- B3, =B2/B1, follows *)
+    ( "apps/software/TinyPowerPoint",
+      "part",
+      24,
+      "right:2,right:4,right:6,at(175;122):8-24,click:9,click:12,type(3):15,return:17" );
     ( "apps/software/TinyExcel",
       "edited",
       20,

@@ -1377,6 +1377,46 @@ formula typed into it, the total following; the picture activated,
 grey poured into the sky from its own menu, joining the sun's grey
 without a seam; and Save then Revert.
 
+### TinyPowerPoint, DONE (2026-09-21), awaiting review
+
+At the author's request ("TinyPowerpoint, or whatever seminal app
+introduced this kind of applications"): PowerPoint itself is the
+seminal one -- Robert Gaskins and Dennis Austin at Forethought, first
+called Presenter, shipped for the Mac in 1987 in black and white for
+overhead transparencies, bought by Microsoft the same year. The plan
+above had turned it down unless it came "as a component host", and
+`appkits/embed` now exists, so it does: a slide can carry a sheet or a
+picture, the same parts as TinyOpenDoc's, edited in place.
+
+**`appkits/slides/Outline`** (`appkit_slides`): a talk as indented
+text -- a line against the edge is a slide's title, two spaces per
+level of point -- parsed into slides every time it changes, so the
+outline is the model and the slides a view of it; `slide_at` (the
+slide a caret is on), `start_of` (where a new slide goes), `to_text`.
+
+**`apps/TinyPowerPoint.ml`**: four views of one deck -- **Slide**,
+**Outline** (the text area, with the slide the caret is on drawn
+beside it as it is typed), **Sorter** (thumbnails), **Show** (full
+screen, with a push from slide to slide) -- and a **master** (the
+background -- plain, rules, frame, black band -- titles centred or
+not, numbers, footer) said once for every slide, PowerPoint's style
+sheet for pages. The lesson of the four views: a slide is drawn once,
+at one size, as a list of shapes, and the editor, the thumbnails and
+the show are that list scaled -- no second renderer. The show's
+transition is two drawings moved, since group transparency is not in
+the software backend. Two undos on purpose: the outline's own (its
+piece table) and the deck's (master and parts), so that undoing a look
+never undoes typing. A part stays with its slide's *number*, not the
+slide (said in the header, with the fix as an exercise).
+
+Tests: `appkits/tests` 71 (5 new: the outline's worked example, tabs
+and blank lines and a point before any title, the slide a caret is on,
+where a slide starts, the round trip), the 2D golden suite 164 with
+six frames: a slide; the master changed (band, centred titles) on
+every slide; the sorter; a slide typed into the outline and shown
+beside it; the show halfway through a push; the sheet on slide 4
+edited in place, its formula following.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

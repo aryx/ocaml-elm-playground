@@ -13,6 +13,7 @@
    appkit_richtext
    appkit_paint
    appkit_embed
+   appkit_slides
    elm_playground_software ; an implem of virtual elm_playground, to link
    gui ; Text_edit, under Rich
  )
