@@ -67,6 +67,7 @@ let scenes : Testutil_golden.scene list =
     (* claude: the wall and the dominoes as they are built, every body
      * awake (the yellow markers) *)
     ("examples3d/PhysicsStack3d", "", 3);
+    ("examples3d/PhysicsWalk3d", "", 5);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/StarCollector3d", "", 3);
@@ -227,6 +228,13 @@ let scripted : Testutil_golden.scripted list =
      * the solver turned off at the start ("s"), which is a heap. *)
     ("examples3d/PhysicsStack3d", "asleep", 400, "x:1");
     ("examples3d/PhysicsStack3d", "no_solver", 200, "s:2");
+    (* the step offset: the 0.5 m step a wall at 0.4, a stair at 0.6
+     * ("o" once); the slope limit: the 50 degree ramp a wall at 45, and
+     * walked up at 60 ("l" once) *)
+    ("examples3d/PhysicsWalk3d", "wall", 200, "up:2-200");
+    ("examples3d/PhysicsWalk3d", "stair", 200, "o:1,up:2-200");
+    ("examples3d/PhysicsWalk3d", "steep", 260, "left:2-161,up:162-260");
+    ("examples3d/PhysicsWalk3d", "steep_60", 260, "l:1,left:2-161,up:162-260");
     (* the 3D turtle's drawings, all at once (the clock frozen): the
      * tree, its leaves; Hilbert's curve in 3D, level 2 *)
     ("examples3d/LogoFractals3d", "tree", 5, "a:2");

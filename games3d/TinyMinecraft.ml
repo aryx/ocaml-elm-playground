@@ -395,6 +395,69 @@ let step (world : world) ~(dt : float) (input : input) (player : player) : playe
   loop substeps player
 
 (*****************************************************************************)
+(* The player, with the engine *)
+(*****************************************************************************)
+
+(* claude: physics=engine (?physics=engine in a browser; see
+ * Playground.flags), the pattern of games3d/StarCollector3d.ml and
+ * TinyMarbleMadness.ml. By hand, the default, the player is the
+ * original's: [collide] pushes the body out of the blocks next to it,
+ * one axis at a time. With the engine it is playground3d/Character3d,
+ * the capsule controller (plan_physics3d_teaching.md phase 9): Quake's
+ * loop of trace and slide against the blocks around it, turned into
+ * boxes each frame ([solids_near]), a step offset, and a ground check.
+ *
+ * The sizes are Minecraft's own rather than the Python original's
+ * (whose body is the two cells under the eyes, a quarter of a block
+ * from the walls): 1.8 blocks tall, 0.6 wide, the eyes at 1.6, and a
+ * step of 0.6 -- so a slab would be walked up and a block still has to
+ * be jumped, as in the real game. Flying (Tab) stays the original's:
+ * it is a way of moving through the world, not physics. *)
+
+type engine = By_hand | Engine
+
+(* from computer.flags, not the command line at load time: a test linking
+ * this game has a command line of its own *)
+let engine_of (flags : flags) : engine =
+  match List.assoc_opt "physics" flags with Some "engine" -> Engine | _ -> By_hand
+
+let eye = 1.6
+
+(* the blocks around the character, as boxes: a block at (i, j, k) is
+ * the unit cube centred there *)
+let solids_near (w : world) (c : Character3d.t) : Physics3d.body list =
+  let ci = int_of_float (Float.round c.x) and cj = int_of_float (Float.round c.y) and ck = int_of_float (Float.round c.z) in
+  let found = ref [] in
+  for i = ci - 2 to ci + 2 do
+    for j = cj - 2 to cj + 3 do
+      for k = ck - 2 to ck + 2 do
+        if Hashtbl.mem w.blocks (i, j, k) then
+          found :=
+            (Physics3d.body (box white 1. 1. 1.)
+            |> Physics3d.at (float_of_int i) (float_of_int j) (float_of_int k)
+            |> Physics3d.immovable)
+            :: !found
+      done
+    done
+  done;
+  !found
+
+let walker_of (p : player) : Character3d.t =
+  let x, y, z = p.position in
+  { (Character3d.make ~radius:0.3 ~height:1.8 ~step:0.6 x (y -. eye) z) with vy = p.dy }
+
+(* one tick of walking, by the engine: the same keys and speeds as
+ * [step], the same jump, reaching one block *)
+let step_engine (w : world) (input : input) (c : Character3d.t) (p : player) : Character3d.t * player =
+  let mx, _, mz = motion_vector p input in
+  let c =
+    Character3d.walk ~gravity ~jump:(if input.jump then jump_speed else 0.) (solids_near w c)
+      (mx *. walking_speed, mz *. walking_speed)
+      c
+  in
+  (c, { p with position = (c.x, c.y +. eye, c.z); dy = c.vy })
+
+(*****************************************************************************)
 (* The blocks, drawn: the texture atlas and the chunks *)
 (*****************************************************************************)
 
@@ -555,6 +618,8 @@ let rebuild_chunks_around ((x, y, z) : pos) : unit =
 
 type model = {
   player : player;
+  (* with physics=engine, walking: the capsule the engine moves *)
+  walker : Character3d.t option;
   (* what a right click places *)
   block : block;
   (* the previous frame's time, buttons and Tab key: to know how much
@@ -569,6 +634,7 @@ type model = {
 let initial_model : model =
   {
     player = initial_player;
+    walker = None;
     block = Brick;
     last_time = None;
     was_down = false;
@@ -623,8 +689,15 @@ let update (computer : computer) (m : model) : model =
   let input : input =
     { forward = bool_int kb.kw - bool_int kb.ks; right = bool_int kb.kd - bool_int kb.ka; jump = kb.kspace }
   in
-  let player = step world ~dt input player in
-  let m = { m with player; block } in
+  let walker, player =
+    match (engine_of computer.flags, player.flying) with
+    | Engine, false ->
+        let c = match m.walker with Some c -> c | None -> walker_of player in
+        let c, player = step_engine world input c player in
+        (Some c, player)
+    | _ -> (None, step world ~dt input player)
+  in
+  let m = { m with player; walker; block } in
   build_some ();
   edit computer m;
   { m with last_time = Some now; was_down = computer.mouse.mdown; was_right_down = computer.mouse.mrdown; was_tab = tab }
@@ -692,4 +765,5 @@ let app = game3d view update initial_model
  * filtering blurs the pixel-art blocks, and blends each atlas cell with
  * its neighbors in the atlas along its borders *)
 let main =
-  Playground3d_platform.run_app3d ~rendering:{ default_rendering with smooth_textures = false } ~capture_mouse:true app
+  Playground3d_platform.run_app3d ~rendering:{ default_rendering with smooth_textures = false } ~capture_mouse:true
+    ~flags:(Playground_platform.flags ()) app

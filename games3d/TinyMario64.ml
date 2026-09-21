@@ -31,9 +31,11 @@
  * releasing the button early cuts the jump short (variable height).
  * Each is a few lines; without them the controls feel unfair.
  *
- * No physics engine (see plan_physics_teaching.md): Mario's feet land on
- * the platforms' tops, his sides are stopped by their sides, his head by
- * their undersides, box against box, one axis at a time.
+ * No physics engine by default (see plan_physics_teaching.md): Mario's
+ * feet land on the platforms' tops, his sides are stopped by their
+ * sides, his head by their undersides, box against box, one axis at a
+ * time. With physics=engine, playground3d/Character3d moves him instead
+ * ([step_mario_engine]), and the game feel stays here, untouched.
  *
  * Exercises: moving platforms, a camera avoiding walls (Camera3d.mli),
  * the triple jump, wall jumps, enemies to stomp.
@@ -82,7 +84,15 @@ type mario = {
   buffer : int; (* frames since space was pressed, while in the air *)
 }
 
+type engine = By_hand | Engine
+
+(* from computer.flags, not the command line at load time: a test linking
+ * this game has a command line of its own *)
+let engine_of (flags : flags) : engine =
+  match List.assoc_opt "physics" flags with Some "engine" -> Engine | _ -> By_hand
+
 type level = {
+  engine : engine;
   mario : mario;
   stars : (number * number * number) list; (* the ones left *)
   cam_yaw : number; (* where the camera looks from, turned with a/d *)
@@ -94,7 +104,7 @@ type scene = Title | Playing of level | Won of level
 type model = scene Scene2d.t
 
 let start = { x = 0.; y = 0.; z = 6.; vy = 0.; heading = 0.; on_ground = true; coyote = 0; buffer = 99 }
-let new_level () = { mario = start; stars = star_places; cam_yaw = 0.; cam = None; frames = 0 }
+let new_level ?(engine = By_hand) () = { engine; mario = start; stars = star_places; cam_yaw = 0.; cam = None; frames = 0 }
 let initial_model : model = Scene2d.start Title
 
 (*****************************************************************************)
@@ -162,12 +172,49 @@ let step_mario (s : model) (k : keyboard) (cam_yaw : number) (m : mario) : mario
   | None, Some p -> { m with y = p.top -. p.thick -. height; vy = 0.; on_ground = false; coyote = m.coyote + 1; buffer }
   | None, None -> { m with y; vy; on_ground = false; coyote = (if m.on_ground then 0 else m.coyote + 1); buffer }
 
+(* claude: physics=engine (?physics=engine in a browser; see
+ * Playground.flags), the pattern of games3d/StarCollector3d.ml. The
+ * same Mario and the same keys, but his body moved by
+ * playground3d/Character3d (plan_physics3d_teaching.md phase 9): the
+ * platforms are boxes, and Quake's loop of trace and slide against them
+ * replaces [blocked], [landing] and [bumping]. What does not move to
+ * the engine is the game feel -- coyote time, the jump buffer, the jump
+ * cut short -- which is decided here first, exactly as [step_mario]
+ * decides it, and handed to the controller as a speed up. It is not
+ * physics (notes_3d_physics.md section 14), and an engine that imposed
+ * it would be wrong. The numbers are [step_mario]'s per second: 0.13 a
+ * frame is 7.8 m/s, the gravity of 0.03 a frame per frame is 108 m/s^2
+ * (a cartoon's), the jump 27 m/s. *)
+let solids : Physics3d.body list =
+  List.map
+    (fun p ->
+      Physics3d.body (box p.color p.w p.thick p.d)
+      |> Physics3d.at p.px (p.top -. (p.thick /. 2.)) p.pz
+      |> Physics3d.immovable)
+    platforms
+
+let step_mario_engine (s : model) (k : keyboard) (cam_yaw : number) (m : mario) : mario =
+  let space_pressed = Scene2d.pressed (fun k -> k.kspace) s in
+  let dx, dz, heading = match wanted_move k cam_yaw with None -> (0., 0., m.heading) | Some (dx, dz) -> (dx, dz, atan2 dx (-.dz) *. 180. /. Float.pi) in
+  (* the game feel, as in [step_mario] *)
+  let buffer = if space_pressed then 0 else m.buffer + 1 in
+  let can_jump = m.on_ground || m.coyote < 6 in
+  let jumps = can_jump && buffer < 6 in
+  let vy, buffer, coyote = if jumps then (jump_speed, 99, 99) else (m.vy, buffer, m.coyote) in
+  let vy = if vy > 0.15 && not k.kspace then 0.15 else vy in
+  (* the body, by the engine *)
+  let c = Character3d.make ~radius ~height ~step:0.3 m.x m.y m.z in
+  let c = { c with vy = vy *. 60.; grounded = m.on_ground && not jumps } in
+  let c = Character3d.walk ~gravity:(gravity *. 3600.) solids (dx *. run_speed *. 60., dz *. run_speed *. 60.) c in
+  { x = c.x; y = c.y; z = c.z; vy = c.vy /. 60.; heading; on_ground = c.grounded;
+    coyote = (if c.grounded then 0 else if m.on_ground then 0 else coyote + 1); buffer }
+
 let camera_for (l : level) : camera =
   Camera3d.behind ~back:9. ~height:5. ~ahead:0. ~look:1. { x = l.mario.x; y = l.mario.y; z = l.mario.z; heading = l.cam_yaw }
 
 let update_level (s : model) (k : keyboard) (l : level) : level =
   let cam_yaw = l.cam_yaw +. (if Set_.mem "a" k.keys then -2.5 else 0.) +. if Set_.mem "d" k.keys then 2.5 else 0. in
-  let mario = step_mario s k cam_yaw l.mario in
+  let mario = (match l.engine with By_hand -> step_mario | Engine -> step_mario_engine) s k cam_yaw l.mario in
   (* fallen off the course: back to the start *)
   let mario = if mario.y < -30. then start else mario in
   let near (x, y, z) = Float.hypot (Float.hypot (x -. mario.x) (z -. mario.z)) (y -. (mario.y +. 0.6)) < 1.2 in
@@ -178,7 +225,9 @@ let update_level (s : model) (k : keyboard) (l : level) : level =
 let update (computer : computer) (s : model) : model =
   let s = Scene2d.update computer s in
   match s.scene with
-  | Title -> if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Playing (new_level ())) s else s
+  | Title ->
+      if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Playing (new_level ~engine:(engine_of computer.flags) ())) s
+      else s
   | Playing l ->
       let l = update_level s computer.keyboard l in
       if l.stars = [] then Scene2d.go (Won l) s else { s with scene = Playing l }
@@ -260,4 +309,5 @@ let app = game3d view update initial_model
 
 (* flat shading; the back faces drawn too, for the sky (Camera3d.sky) *)
 let main =
-  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false } app
+  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false }
+    ~flags:(Playground_platform.flags ()) app

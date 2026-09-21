@@ -26,6 +26,7 @@
    %{project_root}/examples3d/PhysicsMarbles3d.exe
    %{project_root}/examples3d/PhysicsRoll3d.exe
    %{project_root}/examples3d/PhysicsStack3d.exe
+   %{project_root}/examples3d/PhysicsWalk3d.exe
    %{project_root}/examples3d/LogoFractals3d.exe
    %{project_root}/examples3d/TexturedCube3d.exe
    %{project_root}/examples3d/InteractiveCube3d.exe

@@ -515,7 +515,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 8 done** (2026-09-20; phase 7's game port 2026-09-21); the
+**Phases 0 to 9 done** (2026-09-20; phase 7's game port and phase 9 2026-09-21); the
 rest not started. Written as the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -842,6 +842,47 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     through it, and a marker over every body still awake -- they go
     out one by one as it settles, and at seven seconds the scene
     solves *no* contacts at all.
+- **Phase 9, DONE** (2026-09-21): `playground3d/Character3d`, the
+  capsule controller -- a record the game owns and one verb, `walk`,
+  which settles the plan's open question: its own layer, not a
+  `body` verb, since a character has none of a body's state but its
+  place. Quake's loop (trace, move to the hit, slide along the plane,
+  four times), Quake's `SV_WalkMove` step (the move tried lifted by
+  the offset and set down, the farther one kept), a slope limit, and
+  a ground check that keeps the character on stairs going down. 6
+  tests in `Unit_character3d`, `examples3d/PhysicsWalk3d.ml` with the
+  offset and the limit on keys, and both ports behind
+  `physics=engine`: `TinyMinecraft` (Minecraft's own sizes: 1.8 m,
+  0.6 wide, a 0.6 step, so a block still has to be jumped) and
+  `TinyMario64` (its coyote time, jump buffer and cut-short jump kept
+  in the game and handed to the controller as a speed up). The
+  measured switch: a 0.5 m step is a wall at an offset of 0.4 and a
+  stair at 0.6; a 50 degree ramp is a wall at a 45 degree limit and
+  walked up at 60. Without the flag, the ports' golden frames are
+  byte-identical.
+  - **The trace is a stand-in.** The engine cannot sweep until phase
+    10, so the trace steps along the move in pieces shorter than half
+    the radius and bisects the piece where an overlap starts; the
+    contact's normal is the plane. A walking character moves a few
+    centimetres a frame, so it is enough; `Sweep3d` replaces it.
+  - **A round foot is not Quake's box, three ways.** Coming down on a
+    step's edge, the capsule touches the corner, whose normal points
+    from the corner to the sphere's middle -- 60 degrees from level
+    on a perfectly walkable step: the slope limit refused it, and a
+    0.3 m step stopped the character for ever. So only a *face*'s
+    slope counts (the normal one of a box's axes); an edge is not a
+    slope. Then the opposite: sliding along an edge's slanted normal,
+    the round foot rolled up over any edge lower than its radius, on
+    top of the offset, and climbed a 0.5 m step at 0.4 -- so walking,
+    an edge is a wall, and climbing is the step's job alone, as in
+    PhysX's controller. And last, the set-down could leave the foot
+    perched on a corner higher than the offset, the feet still below
+    it: a step is accepted by the height of the *contact*, not of the
+    feet, which is what PhysX checks.
+  - **A steep slope keeps the fall.** Hitting a steep face going down
+    first reset the speed to zero, so a character let go on a 50
+    degree ramp slid down it at one tick's gravity for ever; only a
+    walkable landing (or a ceiling) stops the speed now.
 
 ## Verification
 

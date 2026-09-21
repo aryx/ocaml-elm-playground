@@ -830,6 +830,38 @@ let minecraft_player () =
   let climbed = run ~input:{ none with forward = 1 } 0.2 { initial_player with position = (0., 3., 0.); flying = true; pitch = 45. } in
   Alcotest.(check bool) "flying forward while looking up climbs" true (y_of climbed > 3.5)
 
+(* physics=engine: the same world, walked by the engine's capsule
+ * (Character3d): it stands on the floor (its top at y = -1.5), walks
+ * into the wall and stops a radius short of it (the wall's face at
+ * z = -2.5), and a single block is a wall without a jump and a stair
+ * with one, the step offset (0.6) being less than a block, as in
+ * Minecraft *)
+let minecraft_engine () =
+  let open TinyMinecraft in
+  let floor_and extra =
+    let w = create () in
+    for x = -5 to 5 do
+      for z = -5 to 5 do
+        add_block w (x, -2, z) Stone
+      done;
+      List.iter (fun (y, z) -> add_block w (x, y, z) Stone) extra
+    done;
+    w
+  in
+  let run w ?(jump = false) (seconds : float) =
+    let input : TinyMinecraft.input = { forward = 1; right = 0; jump } in
+    let p = { initial_player with position = (0., -1.5 +. eye, 0.) } in
+    let rec loop n (c, p) = if n = 0 then (c, p) else loop (n - 1) (step_engine w input c p) in
+    loop (int_of_float (seconds *. 60.)) (walker_of p, p)
+  in
+  let c, _ = run (floor_and [ (-1, -3); (0, -3) ]) 2. in
+  Alcotest.(check (float 1e-3)) "standing on the floor" (-1.5) c.y;
+  Alcotest.(check (float 1e-3)) "stopped by the wall, a radius short" (-2.2) c.z;
+  let c, _ = run (floor_and [ (-1, -3) ]) 2. in
+  Alcotest.(check (float 1e-3)) "a block, no jump: a wall" (-1.5) c.y;
+  let c, _ = run (floor_and [ (-1, -3) ]) ~jump:true 2. in
+  Alcotest.(check bool) "a block, jumping: on it, or beyond it" true (c.z < -3.)
+
 (*****************************************************************************)
 (* TinyMario64 *)
 (*****************************************************************************)
@@ -848,6 +880,24 @@ let mario64_jump () =
   match !s.scene with
   | Playing l ->
       Alcotest.(check (float 1e-9)) "on the platform's top" 2. l.mario.y;
+      Alcotest.(check bool) "on the ground" true l.mario.on_ground
+  | _ -> Alcotest.fail "not playing"
+
+(* physics=engine: the same keys, the same jump onto the same platform
+ * (its top 2 m up), Mario's body moved by the engine's capsule
+ * (Character3d) and the game feel still the game's *)
+let mario64_engine () =
+  let open TinyMario64 in
+  let s = ref (Scene2d.start (Playing (new_level ~engine:Engine ()))) in
+  for i = 2 to 180 do
+    let keyboard =
+      { initial_computer.keyboard with kspace = i >= 145 && i <= 165; kleft = i >= 2 && i <= 63; kup = i >= 64 && i <= 180 }
+    in
+    s := update (computer ~keyboard i) !s
+  done;
+  match !s.scene with
+  | Playing l ->
+      Alcotest.(check (float 1e-3)) "on the platform's top" 2. l.mario.y;
       Alcotest.(check bool) "on the ground" true l.mario.on_ground
   | _ -> Alcotest.fail "not playing"
 
@@ -4150,7 +4200,9 @@ let tests =
       t "TinyQuake, walking the level" quake_walk;
       t "TinyMinecraft, the world and what is shown" minecraft_world;
       t "TinyMinecraft, standing, jumping, walking, flying" minecraft_player;
+      t "TinyMinecraft, physics=engine: the capsule on the blocks" minecraft_engine;
       t "TinyMario64, a jump onto a platform" mario64_jump;
+      t "TinyMario64, physics=engine: the same jump" mario64_engine;
       t "TinyMarbleMadness, the ramp's heights" marble_ramp;
       t "TinyMarbleMadness, the cliff breaks the marble, the step doesn't" marble_falls;
       t "TinyMarbleMadness, the steelie knocks the marble" marble_steelie;

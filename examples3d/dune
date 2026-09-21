@@ -18,6 +18,7 @@
     PhysicsMarbles3d
     PhysicsRoll3d
     PhysicsStack3d
+    PhysicsWalk3d
     LogoFractals3d
   )
   (libraries

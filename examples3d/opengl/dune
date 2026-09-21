@@ -16,6 +16,7 @@
 (copy_files ../PhysicsMarbles3d.ml)
 (copy_files ../PhysicsRoll3d.ml)
 (copy_files ../PhysicsStack3d.ml)
+(copy_files ../PhysicsWalk3d.ml)
 (copy_files ../LogoFractals3d.{ml,mli})
 
 (executables
@@ -33,6 +34,7 @@
     PhysicsMarbles3d
     PhysicsRoll3d
     PhysicsStack3d
+    PhysicsWalk3d
     LogoFractals3d
   )
   (libraries
