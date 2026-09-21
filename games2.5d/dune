@@ -15,6 +15,7 @@
     TinyGuitarHero
     TinyElite
     TinyBattlezone
+    TinyShufflePuck
   )
   (libraries
     ai ; TinyDungeonMaster's Pathfind (the monsters' A*)

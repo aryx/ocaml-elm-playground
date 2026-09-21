@@ -1170,6 +1170,89 @@ let portal3d_door () =
   Alcotest.(check bool) "out through it: the chamber complete" true (match !s.scene with Complete _ -> true | _ -> false)
 
 (*****************************************************************************)
+(* TinyShufflePuck *)
+(*****************************************************************************)
+
+(* The projection's worked example: your end of the table fills the
+ * bottom of the screen, 900 pixels wide; the centre line at -60; the
+ * far end at 135, 450 pixels wide; and the mouse's inverse gives the
+ * same point of the table back *)
+let shufflepuck_view () =
+  let open TinyShufflePuck in
+  let near = Alcotest.(check (float 1e-6)) in
+  let x, y, _ = project (0.5, 0., 0.) in
+  near "your end, its right corner, across" 450. x;
+  near "your end, along the bottom" (-450.) y;
+  let _, y, _ = project (0., 1., 0.) in
+  near "the centre line" (-60.) y;
+  let x, y, _ = project (0.5, 2., 0.) in
+  near "the far end" 135. y;
+  near "half as wide" 225. x;
+  let sx, sy, _ = project (0.3, 1.4, 0.) in
+  let x, y = unproject (sx, sy) in
+  near "back across" 0.3 x;
+  near "back along" 1.4 y
+
+let shufflepuck_rally ?(who = 1) (puck : TinyShufflePuck.puck) : TinyShufflePuck.rally =
+  let open TinyShufflePuck in
+  (* you out of the way, in a corner of your end *)
+  { (new_rally who) with puck; you = { px = -0.4; py = 0.1; pvx = 0.; pvy = 0. } }
+
+let shufflepuck_run (frames : int) (f : TinyShufflePuck.rally -> unit) (r : TinyShufflePuck.rally) : TinyShufflePuck.rally =
+  let r = ref r in
+  for i = 1 to frames do
+    r := TinyShufflePuck.step_rally (computer i) !r;
+    f !r
+  done;
+  !r
+
+(* The rails hold a puck at 4 m/s, 7 cm a frame: it is moved in eight
+ * steps a frame and bounced by the engine at each *)
+let shufflepuck_rails () =
+  let open TinyShufflePuck in
+  let worst = ref 0. in
+  ignore
+    (shufflepuck_run 120
+       (fun r -> worst := Float.max !worst (Float.abs r.puck.x))
+       (shufflepuck_rally { x = 0.; y = 1.; vx = 4.; vy = 0.2 }));
+  Alcotest.(check bool) (Printf.sprintf "never past a rail (%.3f m out at most)" !worst) true (!worst <= half_width)
+
+(* A bank shot at the goal, off the right rail: Robo-9, who sees where
+ * it will cross his line, is there; Nervous Ned, who follows where the
+ * puck is, and late, is on the wrong side when it comes off the rail *)
+let shufflepuck_block () =
+  (* from (0.3, 0.6), at the goal's mirror image across the right rail *)
+  let dx = (2. *. (TinyShufflePuck.half_width -. TinyShufflePuck.puck_r)) -. 0.3 and dy = 2. -. 0.6 in
+  let d = Float.hypot dx dy in
+  let shot = { TinyShufflePuck.x = 0.3; y = 0.6; vx = 3. *. dx /. d; vy = 3. *. dy /. d } in
+  let robo = shufflepuck_run 150 ignore (shufflepuck_rally ~who:1 shot) in
+  let ned = shufflepuck_run 150 ignore (shufflepuck_rally ~who:0 shot) in
+  Alcotest.(check int) "Robo-9 stops it" 0 robo.mine;
+  Alcotest.(check int) "Ned lets it in" 1 ned.mine
+
+(* How they shoot: the puck left still on her side, Bank Betty sends it
+ * at your goal off a rail; Robo-9 straight at it, touching none *)
+let shufflepuck_aim () =
+  let banks who =
+    let still = { TinyShufflePuck.x = 0.1; y = 1.5; vx = 0.; vy = 0. } in
+    let hit = ref false and railed = ref false in
+    ignore
+      (shufflepuck_run 180
+         (fun r ->
+           if r.puck.vy < -0.5 then hit := true;
+           if !hit && r.puck.y > 0.5 && Float.abs r.puck.x > TinyShufflePuck.half_width -. TinyShufflePuck.puck_r -. 0.01 then
+             railed := true)
+         (shufflepuck_rally ~who still));
+    (!hit, !railed)
+  in
+  let hit, railed = banks 2 in
+  Alcotest.(check bool) "Betty hits it" true hit;
+  Alcotest.(check bool) "off a rail" true railed;
+  let hit, railed = banks 1 in
+  Alcotest.(check bool) "Robo-9 hits it" true hit;
+  Alcotest.(check bool) "straight, off no rail" false railed
+
+(*****************************************************************************)
 (* TinyMarbleMadness *)
 (*****************************************************************************)
 
@@ -4892,6 +4975,10 @@ let tests =
       t "TinyHalfLife2, the seesaw" hl2_seesaw;
       t "TinyPortal, speedy thing goes in" portal3d_fling;
       t "TinyPortal, the button and the door" portal3d_door;
+      t "TinyShufflePuck, the view" shufflepuck_view;
+      t "TinyShufflePuck, the rails hold" shufflepuck_rails;
+      t "TinyShufflePuck, a bank shot: Robo-9 blocks it, Ned does not" shufflepuck_block;
+      t "TinyShufflePuck, a bank and a straight shot" shufflepuck_aim;
       t "TinyMarbleMadness, the ramp's heights" marble_ramp;
       t "TinyMarbleMadness, the cliff breaks the marble, the step doesn't" marble_falls;
       t "TinyMarbleMadness, the steelie knocks the marble" marble_steelie;

@@ -190,6 +190,7 @@ let scenes : Testutil_golden.scene list =
     ("games2.5d/software/TinyElite", "", 5);
     (* the title's tank, turned by 40 degrees *)
     ("games2.5d/software/TinyBattlezone", "", 40);
+    ("games2.5d/software/TinyShufflePuck", "", 5);
     ("games/software/TinyMissileCommand", "", 5);
     ("games/software/TinyLemmings", "", 5);
     ("games/software/TinyPuzzleBobble", "", 5);
@@ -471,6 +472,8 @@ let scripted : Testutil_golden.scripted list =
     (* turned, driving towards a pyramid (cut by the near plane), a shell
      * flying at the enemy tank, at the height of its hull *)
     ("games2.5d/software/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100");
+    (* the served puck struck up the table, Ned's paddle coming to meet it *)
+    ("games2.5d/software/TinyShufflePuck", "rally", 45, "space:1,up:3-14");
     ("games/software/TinyRick", "boulder", 70, "space:1,right:2-160");
     ("games/software/TinyRick", "hole", 160, "space:1,right:2-160");
     (* right to the ladder, up it, a hole dug on the right; the guards
