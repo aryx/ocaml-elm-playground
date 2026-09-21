@@ -49,6 +49,7 @@
 (copy_files ../TinySensibleSoccer.ml)
 (copy_files ../TinyJoust.ml)
 (copy_files ../TinyDefender.ml)
+(copy_files ../TinyCeleste.ml)
 
 (executables
   (names
@@ -99,6 +100,7 @@
     TinySensibleSoccer
     TinyJoust
     TinyDefender
+    TinyCeleste
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

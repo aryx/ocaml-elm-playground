@@ -3613,6 +3613,113 @@ let mv_a_step_is_a_step () =
   Alcotest.(check int) "she arrived" l.goal !p.here;
   Alcotest.(check bool) "with nothing left to walk" true (!p.path = [])
 
+(*****************************************************************************)
+(* TinyCeleste *)
+(*****************************************************************************)
+
+(* A little room to try each rule in: a floor, a wall on each side, and
+ * a block of ceiling in the middle for the corner correction. *)
+let celeste_room =
+  Tilemap.of_strings 40.
+    [ "##########";
+      "#........#";
+      "#...##...#";
+      "#........#";
+      "#........#";
+      "#........#";
+      "##########" ]
+
+let celeste_at (x : float) (y : float) (feel : TinyCeleste.feel) : TinyCeleste.play =
+  { (TinyCeleste.enter 0 0 feel) with map = celeste_room; x; y; vx = 0.; vy = 0.; airborne = 0 }
+
+let celeste_run (inputs : TinyCeleste.input list) (p : TinyCeleste.play) : TinyCeleste.play =
+  List.fold_left (fun p i -> TinyCeleste.step i p) p inputs
+
+(* the floor's top, and where a climber standing on it is *)
+let celeste_floor = -100.
+let celeste_standing = celeste_floor +. 17.
+
+(* Coyote time: a jump a few frames after leaving the ground still
+ * counts. Off, the same press does nothing. *)
+let celeste_coyote () =
+  let open TinyCeleste in
+  (* away from the ceiling block, which is only for the corner test *)
+  let falling feel = { (celeste_at (-120.) 0. feel) with airborne = 3; vy = -2.7 } in
+  let jump = { nothing with jump = true; jump_held = true } in
+  Alcotest.(check bool) "on: still a jump, three frames late" true ((step jump (falling all_on)).vy > 10.);
+  Alcotest.(check bool) "off: just a fall" true ((step jump (falling { all_on with coyote = false })).vy < 0.)
+
+(* The buffer: a jump pressed just before landing is done on landing.
+ * Off, it was too early and is lost. *)
+let celeste_buffer () =
+  let open TinyCeleste in
+  let landing feel = { (celeste_at (-120.) (celeste_standing +. 12.) feel) with airborne = 20; vy = -6. } in
+  let press = { nothing with jump = true; jump_held = true } in
+  let highest feel =
+    let p = ref (landing feel) and top = ref neg_infinity in
+    List.iter (fun i -> p := step i !p; top := Float.max !top !p.y) (press :: List.init 20 (fun _ -> nothing));
+    !top
+  in
+  Alcotest.(check bool) "on: the early press became a jump" true (highest all_on > celeste_standing +. 40.);
+  Alcotest.(check bool) "off: it was lost" true (highest { all_on with buffer = false } < celeste_standing +. 20.)
+
+(* Variable height: the same jump, let go of early, is lower. Off, the
+ * button's length says nothing. *)
+let celeste_variable_jump () =
+  let open TinyCeleste in
+  let apex feel hold =
+    let p = ref (celeste_at (-120.) celeste_standing feel) and top = ref neg_infinity in
+    for f = 0 to 40 do
+      p := step { nothing with jump = f = 0; jump_held = f < hold } !p;
+      top := Float.max !top !p.y
+    done;
+    !top -. celeste_standing
+  in
+  Printf.eprintf "DBG celeste apex: held %.0f, tapped %.0f\n%!" (apex all_on 40) (apex all_on 3);
+  Alcotest.(check bool) "on: a tap is a hop" true (apex all_on 3 < apex all_on 40 *. 0.6);
+  Alcotest.(check bool) "off: a tap is a leap" true
+    (Float.abs (apex { all_on with variable = false } 3 -. apex { all_on with variable = false } 40) < 1.)
+
+(* Corner correction: a jump that clips a ceiling's corner by a few
+ * pixels is slid round it. Off, it stops dead. *)
+let celeste_corners () =
+  let open TinyCeleste in
+  (* the ceiling block spans x -40..40; a climber 24 wide centred at 50
+   * overlaps it by 2 pixels on his left *)
+  let rise feel =
+    let p = ref (celeste_at 50. celeste_standing feel) and top = ref neg_infinity in
+    for f = 0 to 25 do
+      p := step { nothing with jump = f = 0; jump_held = true } !p;
+      top := Float.max !top !p.y
+    done;
+    !top
+  in
+  Printf.eprintf "DBG celeste corner: on %.0f, off %.0f\n%!" (rise all_on) (rise { all_on with corners = false });
+  (* the block's underside is at y = 20: a head above it got past *)
+  Alcotest.(check bool) "on: past the ceiling" true (rise all_on > 40.);
+  Alcotest.(check bool) "off: stopped under it" true (rise { all_on with corners = false } < 20.)
+
+(* One dash, spent in the air, and not another until the feet touch. *)
+let celeste_one_dash () =
+  let open TinyCeleste in
+  let p = { (celeste_at 0. 0. all_on) with airborne = 10 } in
+  let dashed = step { nothing with dash = true; dx = 1. } p in
+  Alcotest.(check bool) "the dash is spent" true ((not dashed.dash_ready) && dashed.dashing > 0);
+  let after = celeste_run (List.init 12 (fun _ -> nothing)) dashed in
+  let again = step { nothing with dash = true; dx = -1. } after in
+  Alcotest.(check int) "and there is no second one" 0 again.dashing;
+  let landed = celeste_run (List.init 60 (fun _ -> nothing)) again in
+  Alcotest.(check bool) "until the ground gives it back" true landed.dash_ready
+
+(* A wall jump throws you away from the wall, and up. *)
+let celeste_wall_jump () =
+  let open TinyCeleste in
+  (* against the right wall, whose inside is at x = 160 *)
+  let p = { (celeste_at 148. 20. all_on) with airborne = 15; vy = -3. } in
+  let off = step { nothing with jump = true; jump_held = true; dx = 1. } p in
+  Alcotest.(check bool) "away from the wall" true (off.vx < 0.);
+  Alcotest.(check bool) "and up" true (off.vy > 0.)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -3787,4 +3894,10 @@ let tests =
       t "TinyMonumentValley, three apart is one pixel" mv_three_apart_is_one_pixel;
       t "TinyMonumentValley, the first monument is walked" mv_the_first_monument_is_walked;
       t "TinyMonumentValley, turning changes what connects" mv_turning_changes_what_connects;
-      t "TinyMonumentValley, a step is a step" mv_a_step_is_a_step ]
+      t "TinyMonumentValley, a step is a step" mv_a_step_is_a_step;
+      t "TinyCeleste, coyote time" celeste_coyote;
+      t "TinyCeleste, the jump buffer" celeste_buffer;
+      t "TinyCeleste, a tap is a hop" celeste_variable_jump;
+      t "TinyCeleste, corner correction" celeste_corners;
+      t "TinyCeleste, one dash until you land" celeste_one_dash;
+      t "TinyCeleste, the wall jump" celeste_wall_jump ]

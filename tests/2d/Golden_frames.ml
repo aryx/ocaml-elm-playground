@@ -131,6 +131,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinySensibleSoccer", "", 5);
     ("games/software/TinyJoust", "", 5);
     ("games/software/TinyDefender", "", 5);
+    ("games/software/TinyCeleste", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/software/TinyMario", "v", 60);
@@ -286,6 +287,11 @@ let scripted : Testutil_golden.scripted list =
     (* deeper in: three walls, a tower, and a shot on its way *)
     ("games2.5d/software/TinyZaxxon", "deep", 260,
      "space:1,space:60,right:120-150,up:180-210,space:200,left:260-300,space:300,down:330-360,space:380,right:400-430,up:430-470,space:470");
+    (* the first ledge reached with a held jump, the four lies all on *)
+    ("games/software/TinyCeleste", "climb", 60, "space:1,right:10-40,space:22-34");
+    (* a jump, then a dash spent straight up: the hair gone blue, which
+       is the only interface Celeste needs *)
+    ("games/software/TinyCeleste", "dash", 48, "space:1,right:10-60,space:22-40,up:36-50,x:38");
     (* off the bank on six flaps, the buzzards already coming *)
     ("games/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
     (* the scanner is the game: three abductions are under way in the

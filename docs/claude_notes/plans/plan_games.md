@@ -333,15 +333,32 @@ Pitfall! (David Crane, Activision, 1982), Super Mario Bros. (Nintendo,
   TinyDonkeyKong (DONE: `games/TinyDonkeyKong.ml`, the first stage:
   slanted girders as segments, ladders, barrels zigzagging down; the
   hero and the barrels as state machines; a robot rescues Pauline),
-  TinyCeleste (a dash, wall jumps), TinyLodeRunner (DONE:
+  TinyCeleste (DONE: `games/TinyCeleste.ml`, Maddy Thorson and Noel
+  Berry, 2018: three rooms -- the climb, the gap, the shaft -- for the
+  jump, the dash and the wall jump; and **game feel** as four small,
+  named lies told in the player's favour, each a function and each
+  switched off in the game with 1-4: coyote time, the jump buffer,
+  variable jump height, corner correction. Measured in the tests: a
+  held jump rises 141 px and a tap 65; with corner correction a head
+  clipping a ceiling by 2 px gets to 58, above it, and without, stops
+  at 3. The first game written on `Tile_move` after it, whose header
+  already cited Celeste's way of moving), TinyLodeRunner (DONE:
   `games/TinyLodeRunner.ml`, Doug Smith, 1983: digging holes that grow
   back, guards trapped in them, the escape ladder), TinyRick (DONE:
   `games/TinyRick.ml`, Rick Dangerous, Core Design, 1989: traps as
-  tiles, the boulder, a pistol, dynamite, flip-screen rooms).
-- **Kit**, the platformer kit (started: `kits/platformer/`, `Tile_move`,
-  TinyMario's `move_by`, one pixel at a time, and `Ladder`, climbing
-  ladder tiles, for TinyLodeRunner and TinyRick; TinyDonkeyKong's
-  slanted girders are segments, its own), and **game feel**: coyote time (jumping a few
+  tiles, the boulder, a pistol, dynamite, flip-screen rooms),
+  TinySonic (DONE: `games/TinySonic.ml`, Sega, 1991: not losing speed
+  rather than jumping exactly -- the ground felt as a *surface* with an
+  angle rather than as solid tiles, so the hero runs up the hill and
+  round the loop; the spindash; rings as life).
+- **Kit**, the platformer kit (`kits/platformer/`): `Tile_move`,
+  TinyMario's `move_by`, one pixel at a time; `Ladder`, climbing
+  ladder tiles, for TinyLodeRunner and TinyRick; and `Slope`, the
+  ground as tiles with a shape and an angle, found by sensors under
+  the feet, for TinySonic. TinyDonkeyKong's slanted girders are
+  segments, its own. And **game feel**, which is in TinyCeleste and
+  not yet in the kit -- it moves there when a second game wants it,
+  TinyMario the obvious one: coyote time (jumping a few
   frames after leaving a ledge), jump buffering (a jump pressed just
   before landing), variable jump height (releasing the button early),
   one-way platforms, slopes; stomping enemies. References: Steve
@@ -470,11 +487,25 @@ Dune II (Westwood, 1992: the RTS), Warcraft (Blizzard, 1994),
 Command & Conquer (Westwood, 1995); Rampart (Atari, 1990), Desktop
 Tower Defense (2007: tower defense in a browser).
 
-- **Toys**: TinyTowerDefense (enemies along a `Paths` path in
-  `Waves`: the shmup kit reused!), TinyRTS (a few units).
-- **Kit**: selection with a mouse rectangle (`Camera2d.to_world`),
-  orders, A* on a `Tilemap` (`plan_teaching_other.md`'s game AI),
-  fog of war (roguelike FOV), a minimap (a second, zoomed-out camera).
+- **Toys**: TinyTowerDefense (DONE: `games/TinyTowerDefense.ml`, the
+  *maze* tower defense of Desktop Tower Defense rather than a fixed
+  road: there is no road, the towers are the road, and every tower
+  placed makes the monsters' way longer -- so the game is the
+  pathfinding, `ai/Pathfind`, recomputed as you build, and you may
+  never close the way completely), TinyDune2 (DONE:
+  `games/TinyDune2.ml`, Westwood, 1992: harvest, build, and orders as
+  paths -- a click on the ground is an A* for the selected unit), and
+  TinyWarcraft2 (DONE: `games/TinyWarcraft2.ml`, Blizzard, 1995: what
+  Dune II lacks -- a box dragged round several units, one search for a
+  whole crowd as a flow field that each unit walks downhill
+  (`Pathfind.field` and `downhill`), and the fog of war as two bitmaps,
+  what has been seen and what is seen now).
+- **Kit** (DONE): `kits/rts/`'s `Orders`, the layer between
+  `ai/Pathfind`'s searches and a game -- the grid as a search problem,
+  and the walking -- used by TinyDune2, TinyWarcraft2 and later
+  TinyGauntlet2. Not done: a minimap (a second, zoomed-out camera,
+  which is `games/TinyDefender.ml`'s scanner), and fog as roguelike
+  field of view rather than a radius.
 
 ### 16. Rhythm games
 
