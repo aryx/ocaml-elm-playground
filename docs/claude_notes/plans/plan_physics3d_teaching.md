@@ -515,7 +515,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 12 done** (2026-09-20; phase 7's game port, phases 9 to 12 2026-09-21); the
+**Phases 0 to 13 done**, the plan finished (2026-09-20; phase 7's game port, phases 9 to 13 2026-09-21); the
 rest not started. Written as the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -989,6 +989,20 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     thing there, and the z-buffer needs no help. A portal on an inner
     wall would show the real room behind that wall through the hole as
     well, and need the cut to hide it.
+- **Phase 13, DONE** (2026-09-21): `notes_3d_physics.md` checked
+  against the code, section by section, and corrected where it had
+  specified something that was not built or was built otherwise: the
+  hitboxes are sphere, box, capsule and plane (no hull, no mesh); the
+  manifold keeps the deepest point and then the farthest ones; the
+  tower rests within the slop; §10 tells of the world that never
+  turned, and what a pile costs; §12 why the sweep answers the touch
+  rather than handing it to the solver; the ragdoll is ten bodies and
+  nine joints, the gravity gun's hold a direct carry; §14 the stand-in
+  trace and the round foot; §15 how "half through" is done; §16 the
+  API as it is. And `notes_physics3d_related_work.md`'s postscript
+  measured: the sizes (1,078 lines of engine code), bodies at 60 Hz (a
+  hundred awake, hundreds asleep; the broad phase makes no difference
+  at this size), the pinball kept and lost, the ported games.
 
 ## Verification
 

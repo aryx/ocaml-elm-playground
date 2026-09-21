@@ -2,10 +2,11 @@
 
 What actually changes when a physics engine gains a third dimension --
 which is much more than an added `z`, and much less than a rewrite. It
-is the specification of `physics/3d/` (see
-[`plan_physics3d_teaching.md`](../plans/plan_physics3d_teaching.md)):
-written before the code, to be checked against it and to have its
-numbers filled in once it is there. Companions:
+was the specification of `physics/3d/` (see
+[`plan_physics3d_teaching.md`](../plans/plan_physics3d_teaching.md)),
+written before the code; it has since been checked against the code
+(the plan's phase 13), and where the two disagreed it now says what
+was built, and its numbers are measured ones. Companions:
 [`notes_2d_physics.md`](notes_2d_physics.md), which this one assumes
 (Newton's laws, integrators, impulses, the broad phase, stacking -- all
 of that carries over unchanged and is not repeated here),
@@ -35,7 +36,7 @@ three numbers.
 | `Integrate3d` | one time step, and the orientation's own update | §5 | `PhysicsSpin3d.ml` |
 | `Force3d` | gravity, gravitation, springs, drag, buoyancy | §6 | `games3d/TinyHalfLife2.ml` |
 | `Energy3d` | energy, momentum, angular momentum: the referee | §4, §5 | `PhysicsSpin3d.ml` |
-| `Hitbox3d` | sphere, AABB, box, capsule, hull, plane, triangle mesh | §7 | |
+| `Hitbox3d` | sphere, box (an OBB), capsule, plane | §7 | `PhysicsHitbox3d.ml` |
 | `Collide3d`, `Contact3d` | the narrow phase, and rays | §7 | `games3d/StarCollector3d.ml` |
 | `Broadphase3d` | which pairs to test | §8 | `PhysicsStack3d.ml` |
 | `Resolve3d` | impulses with the tensor, friction | §9 | `PhysicsBounce3d.ml` |
@@ -43,6 +44,8 @@ three numbers.
 | `Sweep3d` | continuous collision: the fast small ball | §12 | `games3d/TinyPinball3d.ml` |
 | `Joint3d` | distance, hinge, ball-and-socket, motors, limits | §13 | `PhysicsRagdoll3d.ml`, `TinyHalfLife2.ml` |
 | `playground3d/Character3d` | the capsule controller: a player is not a body | §14 | `PhysicsWalk3d.ml`, `TinyMinecraft.ml` |
+| `playground3d/Ragdoll3d` | ten boxes and nine joints | §13 | `PhysicsRagdoll3d.ml`, `TinyHalfLife2.ml` |
+| `playground3d/Portal3d` | a portal pair's motion, crossing, seeing through | §15 | `games3d/TinyPortal.ml` |
 | `playground3d/Physics3d` | the Evan-style API over all of it | §16 | every game above |
 
 Read §1-§6 for the mechanics (the part a simulation of the solar
@@ -316,14 +319,20 @@ submerged part* rather than the body's centre and a barrel pushed
 under rights itself -- but that needs a torque channel and a shape to
 find the submerged centre of, so `Force3d.buoyancy` pushes at the
 centre and the example holds its blocks upright instead of pretending
-otherwise. Phase 11 is where it becomes true.
+otherwise. It is still so: phase 11 brought joints, not that torque,
+and `TinyHalfLife2`'s barrels float upright only because nothing tips
+them. The submerged centre remains the exercise.
 
 ## 7. Collision detection: more cases, one new idea
 
-The primitives (`Hitbox3d`): **sphere**, **AABB**, **box (OBB)**,
-**capsule**, **convex hull**, **plane**, and, for the level, a static
-**triangle mesh**. Ericson's *Real-Time Collision Detection* (2005) is
-the reference for every test below; chapter 5 is the one to have open.
+The primitives (`Hitbox3d`): **sphere**, **box** (an OBB: an AABB is
+only ever a bounding box here, for the broad phase), **capsule** and
+**plane**. The specification also had a convex hull and a static
+triangle mesh for levels; neither was built, and no game needed them
+-- every level in the games is boxes. What exists of the mesh is its
+pieces, `Collide3d.sphere_triangle` and `ray_triangle`. Ericson's
+*Real-Time Collision Detection* (2005) is the reference for every test
+below; chapter 5 is the one to have open.
 
 The easy ones carry over from 2D unchanged in spirit:
 
@@ -496,7 +505,9 @@ touches over a whole face, and one point cannot hold it up -- it would
 pivot. The manifold is built by **clipping the incident face against
 the reference face's side planes** (Sutherland-Hodgman, 1974, the same
 clipping `games2.5d/TinyDescent.ml` already does for its portals),
-then keeping the deepest 4 of the resulting points:
+then keeping 4 of the resulting points -- the deepest, and then each
+time the one farthest from those already kept, so that the four span
+the face rather than huddle in a corner (`Collide3d.spread_out`):
 
 ```
    reference face (the floor)        clip the box's bottom face
@@ -536,8 +547,9 @@ Measured, a crate dropped on the floor and left for 300 steps:
                           and it will shiver for ever
 ```
 
-and a tower of five crates, after 600 steps: each within 2 cm of where
-it started, 3 mm of sideways creep, the whole tower asleep.
+and a tower of five crates, after 600 steps: each resting within the
+slop of the contacts under it (5 mm each, so the top crate 2.1 cm low
+of 2.5 allowed), 3 mm of sideways creep, the whole tower asleep.
 `examples3d/PhysicsStack3d.ml` is the same argument with bricks: "s"
 turns the solver off, and the wall comes apart into a heap.
 
@@ -554,6 +566,26 @@ basis that jumps by a quarter turn when the normal wobbles across a
 tie -- so it replayed last step's friction along this step's axes, and
 kicked the pile. Remember the friction impulse as a *vector* and the
 basis stops mattering.
+
+And one was found only at phase 10, the worst of them: `simulate`
+moved each body by its velocity and never *turned* it by its spin --
+only the single-body `step` did. The solver computed spins that went
+nowhere, so in every world a domino could slide but not topple, and
+nothing tumbled. Every test of the stacking passed, because a pile
+that cannot turn stands very well. Two of those tests had thresholds
+measured on the world that could not turn, and one of them measured
+the wrong thing: "one iteration is not enough" was checked by how far
+the tower sank, and a tower still bouncing at 0.6 m/s sinks less than
+a settled one. It is checked now by what it is, the tower still
+moving (0.63 m/s against 0.0001 at ten iterations).
+
+What it costs, measured on one core with crates in towers of four:
+about 0.17 ms per awake crate per step, so a hundred awake crates fill
+a 60 Hz frame; asleep, the same pile is twenty times cheaper (400
+crates: 72 ms a step while falling, 3.3 ms once asleep). The broad
+phase makes no difference here -- all pairs or sweep and prune, the
+same times: what costs is the contact points and the solver's ten
+iterations over them, not finding the pairs.
 
 ## 11. Rolling, and the 5/7 that is already in this repo
 
@@ -620,10 +652,13 @@ Three fixes, in increasing order of honesty and cost:
   (deterministic if the count is fixed). Simple, and 8x the cost;
 - **swept tests / speculative contacts**: test the *path*, the segment
   or the swept sphere from the old position to the new
-  (`Sweep3d`), and stop the body at the first hit -- or, better, let
-  the solver see the contact *before* it happens and let it brake the
+  (`Sweep3d`), and answer the first hit -- or let the solver see the
+  contact *before* it happens (a speculative contact) and brake the
   body over the step. The 2D engine already has the segment version
-  (`Physics.went_through`, `games/TinySoldat.ml`'s bullets).
+  (`Physics.went_through`, `games/TinySoldat.ml`'s bullets), and so
+  does this one; both are a bullet's question, worked out from where
+  the body is going now, and wrong for a body that has just bounced
+  (§16).
 
 `TinyPinball3d` takes the third, and gets a key to switch it off, so
 that the ball can be watched going through the table -- the switch is
@@ -672,20 +707,32 @@ just an inequality constraint, which is why they cost the same code:
                                                  not bend backwards
 ```
 
-A **ragdoll** is then 9 bodies and 8 ball-and-socket joints with cone
-limits -- and the moment it exists, a corpse falls down a staircase
-convincingly for free, which is the observation that made Half-Life 2
-(Valve, 2004, on Havok) feel different from everything before it.
+A **ragdoll** is then ten bodies and nine joints (`playground3d/
+Ragdoll3d`): ball-and-sockets with cones at the neck, the shoulders and
+the hips, hinges with limits at the elbows and the knees -- and the
+moment it exists, a corpse falls down a staircase convincingly for
+free, which is the observation that made Half-Life 2 (Valve, 2004, on
+Havok) feel different from everything before it.
+
+Each joint is a few *rows* for the solver, as a contact point is: a
+direction, a speed to reach along it, a clamp on the running impulse
+(three rows for a ball-and-socket, five for a hinge, one for a rod, one
+more for a limit that is past or a motor). Unlike the contacts they
+are not warm started: it was tried, on the three rows along the
+world's axes, and bought nothing measurable; on a hinge's two rows
+across its axis it was worse than useless, for the reason friction's
+warm start was in §10 -- their directions jump when the axis wobbles.
 
 The **gravity gun**, HL2's toy and the best advertisement a physics
 engine ever had, is smaller than it looks:
 
 ```
    fire    ->  ray (§7) from the eye: the first body hit
-   hold    ->  each step, a stiff constraint pulling that body to a
-               point ~1.5 m in front of the eye (position and
-               velocity: a spring with damping, or a direct
-               "kinematic" carry)
+   hold    ->  each step, the body pulled to a point in front of the
+               eye: a direct "kinematic" carry, Physics3d.held_by --
+               the velocity that gets there in a tenth of a second,
+               15 m/s at most, and its spin mostly taken away (a
+               spring would overshoot)
    launch  ->  release, then one impulse along the look direction
 ```
 
@@ -737,12 +784,29 @@ first (`SV_FlyMove`, id Software, 1996; source released 1999):
                                                             the plane
 ```
 
+`Character3d`'s "sweep" is a trace instead, since `Sweep3d` sweeps a
+sphere and not a capsule: it steps along the move in pieces shorter
+than half the radius, and bisects the piece where an overlap starts.
+A walking character moves a few centimetres a step, so nothing is
+stepped over.
+
 Plus three parameters every engine has: a **step offset** (walk up
 anything below ~0.4 m without jumping), a **slope limit** (walk up to
 ~45 degrees, slide above it), and a **ground check** (a short ray or
 sweep down: are we standing, and on what). `Character3d` is that, and
 `PhysicsWalk3d.ml` puts the parameters on keys so that a 0.5 m step
 can be watched turning into a wall when the offset drops to 0.4.
+
+A round foot is not Quake's box, and that cost three bugs, each now a
+test in `Unit_character3d`. Coming down on the edge of a step, the
+capsule touches its corner, whose normal is 60 degrees from level on a
+perfectly walkable step -- so only a *face*'s slope is a slope, an edge
+is not. Sliding along an edge's slanted normal, the round foot rolled
+up over any edge lower than its radius, on top of the offset -- so,
+walking, an edge is a wall, and climbing is the step's job alone (as in
+PhysX's controller). And a step set down could leave the foot perched
+on a corner higher than the offset -- so a step is judged by the
+height of the *contact*, not the feet's.
 
 The game feel on top -- coyote time, jump buffering, variable jump
 height (`TinyMario64.ml`'s header) -- stays in the game. It is not
@@ -766,9 +830,10 @@ transform `T` from one mouth to the other. When a body crosses:
 ```
 
 The subtleties are in the crossing, not the transform: a body must be
-allowed to be *half through* (its hitbox tested against both rooms at
-once, the portal's own wall not blocking it), and the teleport must
-happen when its centre crosses the plane, not when it touches.
+allowed to be *half through* -- the portal's own wall not blocking it,
+which `TinyPortal` does by taking the portal's panel out of the solids
+while the pair is open -- and the teleport must happen when its centre
+crosses the plane, not when it touches (`Portal3d.crossed`).
 
 The *rendering* is the expensive half, and this note says so up front
 rather than discovering it in phase 12: with no stencil buffer and no
@@ -799,20 +864,29 @@ moves -- and the same verbs, so that someone who wrote
 (§7, §9), and a `world` stepped by `simulate` solves a pile together
 (§10). `heavy`, `bouncy`, `rough`, `immovable` and `upright` set what
 a body is; `draw` gives the shape back where the body is, turned (§3);
-`debug` draws its hitbox, its velocity and its contacts.
+`debug` draws its hitbox and its velocity.
 
 What 3D adds to that vocabulary is small and specific: `ray` (§7:
-picking, aiming, ground checks), `walk` / `Character3d` (§14),
-`held_by` (§13: the gravity gun), and `through` (§15: a portal).
+picking, aiming, ground checks), `simulate ~continuous` and
+`went_through` (§12), the joints -- `ball_joint`, `hinge`, `rod`,
+`set_motor` -- and `held_by` (§13: the gravity gun); and three layers
+beside the API rather than verbs in it, since none of them is a body:
+`Character3d.walk` (§14), `Ragdoll3d` (§13) and `Portal3d.carry` (§15).
+One question the API answers wrongly on purpose: `went_through` works
+out where a body was from where it is going now, which is right for a
+bullet and wrong for anything that has just bounced -- `TinyPinball3d`
+counts its tunnellings from the ball's two positions instead.
 
-The games arrive in the order the engine can support them
+The games arrived in the order the engine could support them
 ([`plan_physics3d_teaching.md`](../plans/plan_physics3d_teaching.md)):
 `StarCollector3d.ml` ported behind a `physics=engine` flag first (the
 2D plan's pattern: the hand-written physics stays, beside the
 engine's, in the same file), then `TinyMarbleMadness.ml`'s rolling against
 §11's, `TinyMinecraft.ml`'s and `TinyMario64.ml`'s players against
-§14's, and then the three the plan is really for -- `TinyPinball3d`
-(§12), `TinyHalfLife2` (§13, §6), `TinyPortal` (§15).
+§14's, and then the three the plan was really for -- `TinyPinball3d`
+(§12), `TinyHalfLife2` (§13, §6), `TinyPortal` (§15). Without the
+flag, the ported games draw their golden frames byte for byte as
+before.
 
 ## Glossary
 
@@ -845,7 +919,15 @@ What this note added:
 - **Friction pyramid / cone**: two clamped tangent impulses / the
   correct circular limit they approximate.
 - **Speculative contact**: a contact reported before the bodies touch,
-  so the solver can brake them within the step; a cheap CCD.
+  so the solver can brake them within the step; a cheap CCD, and not
+  the one used here, since it loses a bounce's energy (§12).
+- **Conservative advancement**: a swept test that advances a body by
+  the gap divided by the fastest the gap can close, again and again,
+  never past anything (§12, `Sweep3d`).
+- **Kinematic body**: one that nothing can push, moved by the game
+  through a velocity or a spin the engine carries out (a flipper).
+- **Row**: one direction of a constraint for the solver -- a contact's
+  normal, a joint's axis -- with a speed to reach and a clamp (§13).
 - **Character controller**: a capsule moved by sweeping and sliding
   along planes, with a step offset and a slope limit -- not a rigid
   body (§14).

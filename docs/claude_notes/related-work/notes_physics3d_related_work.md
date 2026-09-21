@@ -179,19 +179,56 @@ moving bodies only (concave means a static mesh or several pieces),
 SAT and primitives rather than GJK/EPA, no articulated solver, no
 vehicles beyond a raycast car, no soft bodies, cloth, fluids or
 destruction, no threading or SIMD, and a budget of a few hundred
-bodies at 60 Hz on the software backend rather than thousands. A
+bodies at 60 Hz on the software backend rather than thousands (as
+measured: a hundred awake, several hundred asleep -- see below). A
 pinball table, a room of crates and barrels, a ragdoll and a portal --
 which is exactly the set of games the plan commits to, and nothing
 larger.
 
-## Postscript: the numbers (to come)
+## Postscript: the numbers
 
-Once built, and in the same spirit as the graphics notes' comparisons:
-lines of code of `physics/3d/` against cannon.js and Jolt; bodies at
-60 frames per second in `PhysicsStack3d.ml`, with and without the
-broad phase, the solver and sleeping; the pinball kept on the table at
-10 m/s with `Sweep3d` and lost without it; and the ported games'
-`physics=engine` frames against their hand-written ones.
+Measured once it was built (2026-09-21), in the same spirit as the
+graphics notes' comparisons.
+
+**Size.** `physics/3d/` is 1,078 lines of code in its `.ml` files
+(1,573 with their comments), and 1,504 lines of `.mli`, most of them
+the explanations; the playground's layers over it (`Physics3d`,
+`Character3d`, `Ragdoll3d`, `Portal3d`) are 670 more. cannon.js is of
+the order of ten thousand lines and Jolt of a hundred thousand and
+more -- from memory, to be checked like the rest of this note's
+sources -- which is the size of what the ceiling above leaves out.
+
+**Bodies at 60 frames a second**, crates in towers of four, physics
+only, one core:
+
+```
+   crates   falling (ms a step)   settled and asleep   without sleeping
+      50          8.4                   0.32                 8.6
+     100         16.8                   0.70                17.4
+     200         36.2                   1.4                 37.9
+     400         72.0                   3.3                 74.8
+```
+
+so a hundred awake bodies fill a frame, and sleeping is what lets a
+settled room of several hundred cost nothing. The broad phase changes
+none of these (all pairs and sweep and prune within 2% of each other):
+at this size the contact points and the solver's iterations are the
+cost, not finding the pairs.
+
+**The pinball**, a 27 mm ball head on at a 1 cm wall: lost from
+1.5 m/s in plain steps, from 6 m/s in four substeps, and never with
+`Sweep3d`, tried to 10 m/s; a flipper turning at 1400 degrees a second
+throws a ball a centimetre above its tip at 2.98 m/s with the sweep,
+and goes through it without (0.12 m/s).
+
+**The ported games**, behind `physics=engine`: without the flag, their
+golden frames are the same as before, byte for byte. With it, they play
+the same games: `TinyMarbleMadness`'s marble gains speed at 13.63 m/s^2
+down a ramp where the hand-written code writes 5/7 g sin a = 13.80,
+and the tests' robot still wins the race (braking earlier, since the
+engine's marble flies off crests); `TinyMario64`'s scripted jump lands
+on the same platform; `TinyMinecraft`'s player stands, is stopped by a
+wall a radius short of it, and needs a jump for a block.
 
 Sources: from memory, to be checked before relying on them for
 teaching -- the books and talks named above, the documentation of
