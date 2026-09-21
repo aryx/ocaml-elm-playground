@@ -1,0 +1,15 @@
+; claude: a spreadsheet's engine, from scratch, for teaching what a
+; spreadsheet actually is (see docs/claude_notes/plans/plan_gui_teaching.md,
+; phase 7): a formula language (Formula) and a grid of cells that
+; recalculates only what changed (Sheet). Shared by the pair of apps
+; that put two interfaces on it, TinyVisiCalc's of 1979 and
+; TinyExcel's of 1985.
+;
+; Independent of everything -- no gui, no playground: a spreadsheet is
+; a graph of values. A private library, installed as part of
+; elm_playground: pure OCaml, so every backend can use it.
+(library
+ (name appkit_sheet)
+ (package elm_playground)
+ (wrapped false)
+)

@@ -446,6 +446,56 @@ times over, and the apps -- TinyVisiCalc and TinyExcel over one
 engine, TinyWord, TinyMacPaint -- are what the toolkit is *for*
 ([`plan_gui_teaching.md`](../plans/plan_gui_teaching.md)).
 
+## 11. A spreadsheet is a graph
+
+The first of the applications, and the one whose lesson is not about
+interfaces at all. `appkits/sheet` is the engine both planned
+front ends share — TinyVisiCalc's keyboard one of 1979 and TinyExcel's
+mouse one of 1985 — and it is two ideas:
+
+**A formula is a tree, and the parser is the grammar.** Four rules,
+one function each, calling the one below:
+
+```
+   expr   ::= term (('+'|'-') term)*      -- a sum is made of products
+   term   ::= factor (('*'|'/') factor)*  -- so a product binds tighter
+   factor ::= '-'? atom
+   atom   ::= number | ref (':' ref)? | name '(' args ')' | '(' expr ')'
+```
+
+That is **recursive descent**, and precedence is not a table in it:
+multiplication binds tighter because `term` sits *below* `expr` and is
+asked for first. It is the parser worth knowing before any other,
+because the grammar and the code are the same shape — and it is where
+`plan_teaching_languages.md` meets this one.
+
+**A cell is a node, and changing it walks forwards.** A formula names
+other cells, so the sheet is a graph, and what a change costs is the
+size of what depends on it:
+
+```
+   A1 ------> B1 = A1*2 ------> C1 = B1+A2
+                            ^
+   A2 ----------------------+
+
+   change A1  ->  recompute B1, then C1   (2 cells, not the sheet)
+```
+
+The order is a **topological order** of that part of the graph —
+Kahn's algorithm (1962): take a cell waiting for nothing, compute it,
+cross it off the lists of those waiting for it. What is left when
+nothing can be taken is exactly a **cycle**, which is how a
+spreadsheet finds `A1 = B1+1, B1 = A1+1` and says so rather than
+looping. `Sheet.recalculated` puts the number on the screen, because
+it is the difference between a spreadsheet and a demonstration.
+
+Worth knowing what VisiCalc itself did (Bricklin and Frankston, 1979),
+since it explains a generation of habits: it recalculated in row order
+or column order, your choice, so a formula reading a cell *below* it
+got the previous value and users were told to press the recalculate
+key twice. Lotus 1-2-3 (1983) brought the natural-order recalculation
+this engine does.
+
 ## Glossary
 
 - **Widget**: a rectangle with a drawing, a hit test and some state.
@@ -464,3 +514,9 @@ engine, TinyWord, TinyMacPaint -- are what the toolkit is *for*
   a list and replay is free.
 - **Component**, **in-place activation**, **compound document**: one
   document embedded in another, and editing it where it sits.
+- **Recursive descent**: one function per rule of a grammar;
+  **topological order**: computing nothing before what it reads;
+  **Kahn's algorithm**: the way to find one, and to find a cycle.
+- **Geometry manager**: Tk's separate placement object; **grid** is
+  the one that makes columns line up across rows, which a column of
+  rows cannot do.

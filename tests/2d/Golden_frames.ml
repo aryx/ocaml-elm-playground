@@ -51,6 +51,10 @@ let scenes : Testutil_golden.scene list =
      * (see examples/Typing.ml) *)
     ("examples/software/GuiEditor", "", 5);
     ("examples/software/Gui7Circles", "", 5);
+    (* a spreadsheet: the formulas computed, the numbers against the
+     * right edge as VisiCalc put them, and the cursor on the cell the
+     * bar is showing *)
+    ("examples/software/Gui7Cells", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -399,6 +403,10 @@ let scripted : Testutil_golden.scripted list =
      * disc as big as the drag has made it. No golden frame could show
      * that before the script could hold a button down *)
     ("examples/software/GuiWidgets", "dragging", 20, "at(-330;10):1-20,click:5-20,at(-280;10):8-20");
+    (* clicking a cell of the spreadsheet: the cursor moves there and
+     * the bar shows what was typed into it (the typing itself a
+     * script cannot do -- a key is not a character, examples/Typing) *)
+    ("examples/software/Gui7Cells", "picked", 20, "at(-180;100):1-20,click:8");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

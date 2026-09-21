@@ -894,6 +894,66 @@ of this package (`kit_puzzle` and `appkit_document`). Nothing links
 both, so it builds; an application that used a puzzle kit would
 collide, and renaming one is a `git mv` away.
 
+### Phase 7a, DONE (2026-09-21), awaiting review
+
+The spreadsheet's engine, Tk's grid, and 7GUIs' last task. Phase 7 was
+split: the engine is where the teaching is, and TinyVisiCalc's 1979
+interface (7b) and TinyExcel's 1985 one (phase 8) are two front ends
+over exactly this.
+
+**`appkits/sheet/`** (a second library beside `appkits/document/`,
+depending on nothing):
+
+- **`Formula`** (75 + 205): what you can type into a cell, and a
+  recursive-descent parser -- four grammar rules, one function each,
+  with precedence coming from the *shape* of the grammar rather than
+  a table (a sum is made of products, so `term` sits below `expr`).
+  Cell names are base 26 with no zero, which is why the column after
+  Z is AA;
+- **`Sheet`** (85 + 256): the idea a spreadsheet actually is. A cell's
+  formula names other cells, so the sheet is a **graph**; a change
+  walks *forwards* through it and recomputes what depends on it in a
+  **topological order** (Kahn, 1962), and what is left when nothing
+  can be taken is exactly a **cycle**, which is how `A1 = B1+1, B1 =
+  A1+1` is caught and said rather than looped on. `recalculated`
+  puts the number on the screen, because "changing one cell of a
+  thousand recomputed 3" is the difference between a spreadsheet and
+  a demonstration. The `.mli` says what VisiCalc itself did (row or
+  column order, your choice, hence pressing recalculate twice) and
+  that Lotus 1-2-3 brought natural order in 1983.
+
+Shaped for **`appkits/embed/`** at the author's request, before it
+exists: `Sheet.to_string`/`of_string` (a component must be able to
+write itself down), and the sheet's *drawing* is one function taking a
+rectangle -- which is the component protocol's other half, a thing
+that draws into whatever rectangle it is given.
+
+**`gui/Grid`** (79 + 136): Tk's geometry manager, over the same box
+math as `Layout`. Rows and columns that line up across rows, which a
+column of rows cannot do -- and that is the whole reason it exists,
+so its `.mli` is the two-row form whose labels are of different widths
+and whose fields still start in the same place. Tk's vocabulary kept
+(`-row`, `-column`, `-rowspan`, `-columnspan`, `-sticky "nsew"`,
+`-weight`), with a spanning cell growing the *last* column of its
+span as Tk does, and two deviations stated: a grid with no weights
+sits in the middle of its room rather than the top-left, and there is
+no `-padx`/`-uniform`/`-minsize`.
+
+**`examples/Gui7Cells.ml`** (213 lines), 7GUIs task 7 and the hardest
+of the seven: a working spreadsheet -- click a cell, type in the bar,
+press Enter, and everything downstream follows. Numbers against the
+right edge and text against the left, VisiCalc's rule. The form around
+the sheet is a `Grid`, for the reason grids exist.
+
+Tests: `appkits/tests` 21 (12 new: the parser's precedence, ranges,
+the graph, what a change reaches, cycles and recovering from them,
+errors spreading, saving and loading), `gui/tests` 54 (5 new, every
+grid rectangle computed by hand). Two golden frames, one of them
+scripted (a click moving the cursor and the bar following it).
+
+Still phase 7b: TinyVisiCalc's own interface -- the 1979 keyboard one,
+which is a different program over this same engine.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

@@ -8,5 +8,6 @@
    alcotest
    testo
    appkit_document
+   appkit_sheet
  )
 )
