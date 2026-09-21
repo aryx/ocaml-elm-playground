@@ -1,0 +1,12 @@
+; claude: unit tests for appkits/, run by 'make test' (dune runtest):
+; the .mli's worked examples, and the two properties a document rests
+; on -- that dirty is a comparison rather than a flag, and that going
+; back to the version you saved leaves nothing to save.
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   appkit_document
+ )
+)

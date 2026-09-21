@@ -371,6 +371,29 @@ An edit returns a new document. Then:
   app**: a word processor whose whole history replays is the
   architecture arguing for itself.
 
+`appkits/document` is those three in about eighty lines, and writing
+them turned up two things worth keeping:
+
+- **the pointer comparison has a catch.** It is exact and free when
+  going back to a version means *the old value itself*, which is what
+  a list of past documents gives you — undo back to what you saved,
+  and the star in the title goes out by itself, which most editors get
+  wrong. But a structure that *rebuilds* a version rather than keeping
+  it — `Text_edit.undo` rebuilds its record — hands back something
+  equal and not identical, and then the star stays lit. Hence
+  `Document.create ?equal`, and the honest statement that the cost of
+  getting it right there is whatever comparing two documents costs.
+- **the interesting question about undo is what counts as one edit.**
+  7GUIs' Circle Drawer is built to ask it: dragging a slider in a
+  dialog must be *one* undoable edit and not the fifty values it
+  passed through. The answer is to keep the live value aside while the
+  dialog is open and record once when it closes — three lines, and the
+  bug they prevent is the most common undo bug there is.
+
+Saving is deliberately not in there: writing bytes is a backend's
+business, and a browser has no files at all. What a document knows is
+whether it *needs* saving, and what to call itself.
+
 ## 9. One document inside another
 
 The idea worth reviving, and the author's own ask. A **component** is

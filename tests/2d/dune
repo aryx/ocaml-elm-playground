@@ -14,6 +14,7 @@
    %{project_root}/examples/software/Gui7Timer.exe
    %{project_root}/examples/software/GuiFourWays.exe
    %{project_root}/examples/software/GuiEditor.exe
+   %{project_root}/examples/software/Gui7Circles.exe
    %{project_root}/examples/software/Smiley.exe
    %{project_root}/examples/software/Words.exe
    %{project_root}/examples/software/Misc.exe

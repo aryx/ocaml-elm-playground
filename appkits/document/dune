@@ -1,0 +1,16 @@
+; claude: what every application shares, whatever it is a document of
+; (see docs/claude_notes/plans/plan_gui_teaching.md, phase 6): a
+; document as a value (Document), the versions of it you can go back
+; to (Undo), and what was cut or copied (Clipboard). appkits/ sits
+; beside kits/ and the name says the relation: kits/ is what games of
+; a genre share, appkits/ is what applications share.
+;
+; Independent of everything -- no gui, no playground, no shapes: a
+; document is a value, and these are the rules about values. A private
+; library, installed as part of elm_playground: pure OCaml, so every
+; backend, the web one included, can use it.
+(library
+ (name appkit_document)
+ (package elm_playground)
+ (wrapped false)
+)

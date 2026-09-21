@@ -271,7 +271,10 @@ let text_area (t : t) (b : Widget.box) (edit : Text_edit.t) =
       let edit =
         if control && pressed "z" then if shift then Text_edit.redo edit else Text_edit.undo edit
         else if control && pressed "y" then Text_edit.redo edit
-        else if t.input.typed <> "" then Text_edit.insert t.input.typed edit
+          (* claude: a shortcut is not typing. Natively Control-C
+           * produces no character at all, but a browser's keydown
+           * still carries one, so the guard has to be here *)
+        else if t.input.typed <> "" && not control then Text_edit.insert t.input.typed edit
         else if pressed "Enter" then Text_edit.insert "\n" edit
         else if pressed "Backspace" then Text_edit.delete_backward edit
         else if pressed "Delete" then Text_edit.delete_forward edit

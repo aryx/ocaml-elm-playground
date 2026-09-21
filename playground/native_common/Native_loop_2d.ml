@@ -137,7 +137,7 @@ let parsed_cli : string list Lazy.t = lazy (
     Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
     "<n> <file> write frame n (from 1) to file, then exit";
     "-script", Arg.String set_script,
-    "<script> game keys held over frames, e.g. \"right:1-60,space:30\"";
+    "<script> what the person does over frames, e.g. \"right:1-60,space:30,at(0;80):1-60,click:30\"";
     "-dump-audio", Arg.Set_string dump_audio_file,
     "<file> with -dump-frame, also write the sound of those frames to file (a WAV)";
   ] in
@@ -417,11 +417,23 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
       end
     in
     drain_sdl_events ();
-    (* claude: -script, the keys going down or up at this frame *)
+    (* claude: -script, what the person does at this frame: the keys
+     * going down or up, where the pointer is, and its buttons *)
     (match !script with
     | Some sc ->
-        Input_script.changes sc (!frame_number + 1)
-        |> List.iter (fun (key, is_down) -> apply_playground_event (E.EKeyChanged (is_down, key)))
+        let frame = !frame_number + 1 in
+        Input_script.changes sc frame
+        |> List.iter (fun (key, is_down) -> apply_playground_event (E.EKeyChanged (is_down, key)));
+        (match Input_script.mouse sc frame with
+        | Some (x, y) ->
+            (* already playground coordinates, as the SDL branch above
+             * converts them to *)
+            apply_playground_event (E.EMouseMove (int_of_float x, int_of_float y))
+        | None -> ());
+        Input_script.button_changes sc frame
+        |> List.iter (fun (right, is_down) ->
+               apply_playground_event
+                 (if right then E.ERightMouseButton is_down else E.EMouseButton is_down))
     | None -> ());
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
     apply_playground_event (E.ETick now);

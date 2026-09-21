@@ -822,6 +822,78 @@ suite 123 with `GuiEditor` added and no existing frame moved a pixel.
 author's own work in progress, and nothing this phase touched;
 `dune build gui/ playground/ examples/` is clean.)
 
+### Phase 6, DONE (2026-09-21), awaiting review
+
+**`appkits/`** exists (the author's call, 2026-09-21: the plan's own
+layout, a directory beside `kits/`, since `kits/` is what games of a
+genre share and `appkits/` is what applications share).
+`appkits/document/` is a private library `appkit_document` in package
+`elm_playground`, depending on nothing at all -- a document is a
+value, and these are the rules about values:
+
+- **`Document`** (59 + 39): content, path, and the version last saved
+  kept beside the current one, so "is there anything to save" is a
+  comparison rather than a flag somebody has to remember to set. The
+  catch, found by using it: the pointer comparison is exact and free
+  when going back means *the old value itself*, but a structure that
+  rebuilds a version rather than keeping it (`Text_edit.undo` rebuilds
+  its record) hands back something equal and not identical -- hence
+  `?equal`, and the star in the title goes out when you undo back to
+  what you saved, which most editors get wrong;
+- **`Undo`** (68 + 46): any value, both ways, with a name per edit
+  (a menu says "Undo Add Circle") and a limit, since an editor's
+  memory has to stop somewhere. Its `.mli` compares the three undos
+  this repository now has -- `kits/puzzle/Undo` (a game's: one way, no
+  names), `gui/Text_edit`'s (a text's own, over its pieces), and this
+  one -- and says plainly what the command pattern is for and where
+  its bugs live (in the inverse of an edit, which here does not exist);
+- **`Clipboard`** (33 + 18): cut, copy and paste in this program,
+  with the history (Tesler and Mott's Gypsy, 1974-75) and the honest
+  line about the system clipboard being a backend's business.
+
+**`examples/Gui7Circles.ml`** (195 lines), 7GUIs task 6: the task
+exists to ask *what is one edit*, and the answer -- keep the dialog's
+live value aside and record once when it closes -- is three lines.
+Scripted, the golden frame proves it: a slider dragged over ten frames
+and the history says **back 3** (two circles and one adjustment), not
+thirty.
+
+**`examples/GuiEditor.ml`** gained the other two: `Document` (the
+title says `notes.txt *`, Save is greyed when there is nothing to
+save) and `Clipboard` (Control-C, X, V). `Immediate.text_area` learned
+to ignore `typed` while Control is held -- natively Control-C produces
+no character, but a browser's keydown still carries one, so the guard
+belongs in the toolkit.
+
+**The golden frames can press things now.** `-script` grew the mouse
+(`Input_script`: `at(x;y):frames`, `click`, `rclick`; playground
+coordinates, and a semicolon inside the parentheses because commas
+separate entries), fed to `Native_loop_2d` beside the keys. Three new
+scenes use it, and they are the first frames in this repository that
+show a widget being *used* rather than sitting there:
+
+- `GuiWidgets dragging`: the slider grabbed and dragged, the knob
+  held, the disc the size the drag made it (radius 115, from 80);
+- `Gui7Circles drawn`: three circles put down by clicking, the one
+  under the pointer lit;
+- `Gui7Circles adjusted`: the right click, the dialog, the drag, and
+  "back 3".
+
+Two of those scripts aimed at the wrong pixels first (the slider had
+moved when phase 2 laid the panel out, and a click fell in the margin
+that keeps a circle whole) -- which is worth knowing about scripted
+goldens: they are exact, and they will need re-aiming whenever a
+layout changes.
+
+Measured: `appkits/tests` 9 green, `gui/tests` 49, `playground/tests`
+58 (two new for the script's mouse), the 2D golden suite 127 with five
+frames added or re-approved and no other frame moved a pixel.
+
+Noted, not fixed: `Undo` now exists in two `wrapped false` libraries
+of this package (`kit_puzzle` and `appkit_document`). Nothing links
+both, so it builds; an application that used a puzzle kit would
+collide, and renaming one is a `git mv` away.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

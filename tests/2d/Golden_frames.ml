@@ -50,6 +50,7 @@ let scenes : Testutil_golden.scene list =
      * business -- a script holds keys, and a key is not a character
      * (see examples/Typing.ml) *)
     ("examples/software/GuiEditor", "", 5);
+    ("examples/software/Gui7Circles", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -376,6 +377,28 @@ let scripted : Testutil_golden.scripted list =
     ("games2.5d/software/TinyDungeonMaster", "corridor", 80, "space:1,right:5-6,up:15-60");
     (* the one push that solves the first level, and the banner *)
     ("examples/software/PuzzleScriptSokoban", "solved", 40, "left:2-3");
+    (* claude: the first scenes here that use the mouse (-script's
+     * at(x;y), click and rclick, see Input_script.mli), which is what
+     * an application is made of and what no game golden needed.
+     *
+     * Three circles put down by clicking, the last one under the
+     * pointer and so drawn lit; then the 7GUIs task's real question:
+     * a right click opens the dialog, the slider is dragged over ten
+     * frames, and "done" records it -- as ONE edit ("back 3": two
+     * circles and one adjustment), which is the bug the task exists
+     * to catch *)
+    ( "examples/software/Gui7Circles",
+      "drawn",
+      40,
+      "at(-150;100):1-8,click:5,at(60;40):9-16,click:12,at(-20;20):17-24,click:20,at(60;40):25-40" );
+    ( "examples/software/Gui7Circles",
+      "adjusted",
+      42,
+      "at(-150;100):1-8,click:5,at(60;40):9-24,click:12,rclick:20,at(-60;-258):25-27,click:26-34,at(-30;-258):28-34,at(0;-307):36-42,click:38" );
+    (* a slider being dragged: the knob under the mouse and held, the
+     * disc as big as the drag has made it. No golden frame could show
+     * that before the script could hold a button down *)
+    ("examples/software/GuiWidgets", "dragging", 20, "at(-330;10):1-20,click:5-20,at(-280;10):8-20");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

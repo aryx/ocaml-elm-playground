@@ -3,7 +3,7 @@
     Picture Smiley Words Misc
     Animation 
     Mouse Keyboard Turtle Mario Typing GuiWidgets
-    Gui7Counter Gui7Temperature Gui7Flight Gui7Timer GuiFourWays GuiEditor
+    Gui7Counter Gui7Temperature Gui7Flight Gui7Timer GuiFourWays GuiEditor Gui7Circles
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano
@@ -16,6 +16,7 @@
     elm_playground
     ai ; AiTictactoe's Minimax
     gui ; GuiWidgets' Layout
+    appkit_document ; Gui7Circles' Undo
     elm_playground_native ; implem of virtual elm_playground
   )
 )
