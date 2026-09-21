@@ -96,11 +96,12 @@ type memory
 
 val nothing : memory
 
-(* [solve options ~dt bodies pairs memory]: the bodies with their
- * velocities and spins changed by the contacts -- not their positions,
+(* [solve options ~dt ?joints bodies pairs memory]: the bodies with
+ * their velocities and spins changed by the contacts and the joints
+ * (Joint3d, whose rows are solved in the same iterations) -- not their positions,
  * which the caller integrates afterwards with the new velocities --
  * and the memory for the next step's warm start *)
-val solve : options -> dt:float -> Body3d.t array -> pair list -> memory -> Body3d.t array * memory
+val solve : options -> dt:float -> ?joints:Joint3d.t list -> Body3d.t array -> pair list -> memory -> Body3d.t array * memory
 
 (* [impulses memory (a, b)]: the normal impulses of that pair's contact
  * points at the last step, for tests and for drawing *)

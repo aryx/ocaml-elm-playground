@@ -335,11 +335,12 @@ type world = {
   asleep : bool list;
   solved : int;
   swept : int;
+  joints : Joint3d.t list;
 }
 
 let world (bodies : body list) : world =
   { bodies; memory = Solver3d.nothing; still = List.map (fun _ -> 0) bodies;
-    asleep = List.map (fun _ -> false) bodies; solved = 0; swept = 0 }
+    asleep = List.map (fun _ -> false) bodies; solved = 0; swept = 0; joints = [] }
 
 (* a body is ready to sleep once it has been slow for this many steps,
  * and a *group* of them sleeps together -- see below *)
@@ -388,7 +389,10 @@ let advance ~gravity ~iterations ~warm_starting ~sleeping ~broad_phase ~continuo
       (fun (i, j) ->
         let a = awake_and_moving.(i) and b = awake_and_moving.(j) in
         let both_still = ((not (movable a)) || asleep.(i)) && ((not (movable b)) || asleep.(j)) in
-        if both_still then None
+        (* two bodies joined do not collide: a forearm overlaps its
+         * upper arm at the elbow, and a door its frame at the hinge *)
+        let joined = List.exists (fun (jt : Joint3d.t) -> (jt.a = i && jt.b = j) || (jt.a = j && jt.b = i)) w.joints in
+        if both_still || joined then None
         else
           match Collide3d.manifold (hitbox_of a) (hitbox_of b) with
           | [] -> None
@@ -407,7 +411,7 @@ let advance ~gravity ~iterations ~warm_starting ~sleeping ~broad_phase ~continuo
       found.Broadphase3d.pairs
   in
   let states, memory =
-    Solver3d.solve { Solver3d.default with iterations; warm_starting } ~dt
+    Solver3d.solve { Solver3d.default with iterations; warm_starting } ~dt ~joints:w.joints
       (Array.map state awake_and_moving) pairs w.memory
   in
   let solved_bodies = Array.mapi (fun i b -> if asleep.(i) then b else with_state states.(i) b) awake_and_moving in
@@ -527,7 +531,7 @@ let advance ~gravity ~iterations ~warm_starting ~sleeping ~broad_phase ~continuo
   let rec root i = if parent.(i) = i then i else (parent.(i) <- root parent.(i); parent.(i)) in
   List.iter
     (fun (i, j) -> if movable bodies.(i) && movable bodies.(j) then parent.(root i) <- root j)
-    !touching;
+    (!touching @ List.map (fun (jt : Joint3d.t) -> (jt.a, jt.b)) w.joints);
   let ready = Array.mapi (fun i b -> (not (movable b)) || still.(i) >= sleep_after) bodies in
   let island_ready = Array.make (Array.length bodies) true in
   Array.iteri (fun i _ -> if not ready.(i) then island_ready.(root i) <- false) bodies;
@@ -536,7 +540,7 @@ let advance ~gravity ~iterations ~warm_starting ~sleeping ~broad_phase ~continuo
     bodies;
   { bodies = Array.to_list bodies; memory; still = Array.to_list still; asleep = Array.to_list asleep;
     solved = List.fold_left (fun n (p : Solver3d.pair) -> n + List.length p.Solver3d.contacts) 0 pairs;
-    swept = w.swept + !swept }
+    swept = w.swept + !swept; joints = w.joints }
 
 let simulate ?(gravity = 0.) ?(iterations = Solver3d.default.iterations) ?(warm_starting = true) ?(sleeping = true)
     ?(broad_phase = Broadphase3d.Sweep_and_prune) ?(continuous = false) ?(substeps = 1) (w : world) : world =
@@ -553,3 +557,53 @@ let went_through (fast : body) (b : body) : bool =
   let motion = (fast.vx *. tick, fast.vy *. tick, fast.vz *. tick) in
   let from = Vec3.sub (fast.x, fast.y, fast.z) motion in
   Sweep3d.sphere ~radius:(sweep_radius fast) ~from ~motion (hitbox_of b) <> None
+
+(*****************************************************************************)
+(* Joints *)
+(*****************************************************************************)
+
+let states (w : world) : Body3d.t array = Array.of_list (List.map state w.bodies)
+
+let ball_joint ?cone (a : int) (b : int) ~(at : number * number * number) (w : world) : world =
+  let cone = Option.map (fun (axis, deg) -> (axis, radians deg)) cone in
+  { w with joints = w.joints @ [ Joint3d.ball (states w) a b ~at ?cone () ] }
+
+let hinge ?limits ?motor (a : int) (b : int) ~(at : number * number * number) ~(axis : number * number * number)
+    (w : world) : world =
+  let limits = Option.map (fun (lo, hi) -> (radians lo, radians hi)) limits in
+  let motor = Option.map (fun (speed, torque) -> (radians speed, torque)) motor in
+  { w with joints = w.joints @ [ Joint3d.hinge (states w) a b ~at ~axis ?limits ?motor () ] }
+
+let rod (a : int) (b : int) ~(at_a : number * number * number) ~(at_b : number * number * number) (w : world) : world =
+  { w with joints = w.joints @ [ Joint3d.distance (states w) a b ~at_a ~at_b () ] }
+
+let set_motor (i : int) ((speed, torque) : number * number) (w : world) : world =
+  { w with
+    joints =
+      List.mapi
+        (fun k (jt : Joint3d.t) ->
+          match jt.kind with
+          | Joint3d.Hinge h when k = i -> { jt with kind = Joint3d.Hinge { h with motor = Some (radians speed, torque) } }
+          | _ -> jt)
+        w.joints }
+
+let joint_angle (i : int) (w : world) : number = Joint3d.angle (states w) (List.nth w.joints i) *. 180. /. Float.pi
+
+let held_by ((tx, ty, tz) : number * number * number) (b : body) : body =
+  (* at the point in a tenth of a second, at most 15 m/s, and its spin
+   * mostly taken away: a hold, not a spring that overshoots *)
+  let dx = tx -. b.x and dy = ty -. b.y and dz = tz -. b.z in
+  let k = 10. in
+  let vx, vy, vz = (k *. dx, k *. dy, k *. dz) in
+  let s = Float.sqrt ((vx *. vx) +. (vy *. vy) +. (vz *. vz)) in
+  let f = if s > 15. then 15. /. s else 1. in
+  let sx, sy, sz = b.spin in
+  { b with vx = vx *. f; vy = vy *. f; vz = vz *. f; spin = (sx *. 0.5, sy *. 0.5, sz *. 0.5) }
+
+let debug_joints (w : world) : shape3d list =
+  let s = states w in
+  List.concat_map
+    (fun (jt : Joint3d.t) ->
+      let (ax, ay, az), (bx, by, bz) = Joint3d.anchors s jt in
+      [ cube Playground.yellow 0.03 |> move3d ax ay az; cube Playground.red 0.02 |> move3d bx by bz ])
+    w.joints

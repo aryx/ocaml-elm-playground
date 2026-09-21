@@ -691,7 +691,22 @@ engine ever had, is smaller than it looks:
 
 Three engine calls, and the whole game's vocabulary changes. The
 seesaw beside it is one hinge; the barrels are §6's buoyancy; the
-crate stack is §10.
+crate stack is §10. All four are `games3d/TinyHalfLife2.ml`, and its
+zombies are the ragdoll's best argument: each walks as one upright
+body, and the moment something knocks it faster than it walks it is
+swapped for a ragdoll going on at that speed -- no animation of a fall
+anywhere in the file.
+
+Measured (`physics/tests/Unit_joint3d.ml`): a 1 m pendulum on a rod
+swings with a period of 2.000 s (the textbook's 2 pi sqrt(L/g) is
+2.007), the rod 0.2 mm off its length at most. A door set turning
+about its middle turns about its hinge at a quarter of the speed,
+because the hinge keeps its angular momentum *about the hinge* and a
+door is four times harder to turn about its edge. And a ragdoll's
+joints are not rigid: at a hard landing an elbow opens by about 4 cm
+for a few frames, which more iterations do not cure -- the contact and
+the joint are fighting, each at Baumgarte's slow speed, and the cure
+is to correct positions directly (Catto's non-linear Gauss-Seidel).
 
 ## 14. A player is not a rigid body
 

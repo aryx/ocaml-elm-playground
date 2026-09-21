@@ -954,6 +954,80 @@ let pinball3d_wall () =
   Alcotest.(check bool) (Printf.sprintf "and counted (%d)" lost.through) true (lost.through > 0)
 
 (*****************************************************************************)
+(* TinyHalfLife2 *)
+(*****************************************************************************)
+
+let hl2_run ?(keys = []) (frames : int) (g : TinyHalfLife2.game) : TinyHalfLife2.game =
+  let keyboard = { initial_computer.keyboard with keys = List.fold_left (fun s k -> Set_.add k s) Set_.empty keys } in
+  let g = ref g in
+  for i = 1 to frames do g := TinyHalfLife2.update_game (computer ~keyboard i) !g done;
+  !g
+
+(* The gravity gun: aimed at the bottom crate of the pile, z grabs it,
+ * and it is soon held 1.8 m in front of the eye; x launches it at
+ * 12 m/s *)
+let hl2_gun () =
+  let open TinyHalfLife2 in
+  (* standing 3 m from the pile, looking down at its middle crate *)
+  let g = { (new_game ()) with me = Character3d.make (-0.6) 0. (-5.); pitch = -.(atan2 1.3 3. *. 180. /. Float.pi) } in
+  let g = hl2_run 1 g in
+  let g = hl2_run ~keys:[ "z" ] 1 g in
+  let held = match g.held with Some i -> i | None -> Alcotest.fail "the crate is grabbed" in
+  let g = hl2_run 40 g in
+  let ex, ey, ez = eye g and lx, ly, lz = look g in
+  let b = nth g held in
+  let off = Float.hypot (Float.hypot (b.x -. (ex +. (1.8 *. lx))) (b.y -. (ey +. (1.8 *. ly)))) (b.z -. (ez +. (1.8 *. lz))) in
+  Alcotest.(check bool) (Printf.sprintf "held in front of the eye (%.2f m off)" off) true (off < 0.25);
+  (* aimed up and away first: launched down at the pile it came from, a
+   * first version of this test hit the other crates in the same step *)
+  let g = hl2_run 20 { g with pitch = 20. } in
+  let g = hl2_run ~keys:[ "x" ] 1 g in
+  Alcotest.(check bool) "let go" true (g.held = None);
+  let speed = Physics3d.speed (nth g held) in
+  Alcotest.(check bool) (Printf.sprintf "launched (%.1f m/s)" speed) true (speed > 10. && speed < 13.)
+
+(* A crate at 12 m/s into a zombie: it goes faster than it walks, and is
+ * a ragdoll from then on, knocked out into the yard and lying there *)
+let hl2_zombie () =
+  let open TinyHalfLife2 in
+  let g = new_game () in
+  let z = nth g first_zombie in
+  let thrown = List.length statics in
+  let g = { g with world = set thrown (fun b -> b |> Physics3d.at (z.x -. 1.) 1. z.z |> Physics3d.moving 12. 0. 0.) g.world } in
+  let g = hl2_run 120 g in
+  Alcotest.(check bool) "the zombie is down" true (List.hd g.zombies = Fallen);
+  (* the ragdoll's ten bodies are the last ones, its torso first *)
+  let torso = List.nth g.world.bodies (List.length g.world.bodies - Ragdoll3d.count) in
+  Alcotest.(check bool) (Printf.sprintf "a ragdoll, lying (its torso %.2f m up)" torso.y) true (torso.y < 0.4)
+
+(* The barrels, half as dense as water, float half out of it: their
+ * middles at the water's level, 0.7 m *)
+let hl2_barrels () =
+  let open TinyHalfLife2 in
+  let g = hl2_run 240 (new_game ()) in
+  let first_barrel = plank_index + 2 in
+  List.iter
+    (fun i ->
+      let b = nth g i in
+      Alcotest.(check bool) (Printf.sprintf "barrel %d afloat (%.2f m)" i b.y) true (Float.abs (b.y -. water) < 0.08))
+    [ first_barrel; first_barrel + 1; first_barrel + 2 ]
+
+(* The seesaw: a crate dropped on its high end sends the crate on its
+ * low end up *)
+let hl2_seesaw () =
+  let open TinyHalfLife2 in
+  let g = new_game () in
+  let g = hl2_run 30 g in
+  let dropped = List.length statics in
+  let g = { g with world = set dropped (fun b -> b |> Physics3d.at (-2.8) 3. 3. |> Physics3d.moving 0. (-4.) 0.) g.world } in
+  let fastest = ref 0. and g = ref g in
+  for _ = 1 to 60 do
+    g := hl2_run 1 !g;
+    fastest := Float.max !fastest (nth !g (plank_index + 1)).vy
+  done;
+  Alcotest.(check bool) (Printf.sprintf "thrown up (%.1f m/s)" !fastest) true (!fastest > 1.)
+
+(*****************************************************************************)
 (* TinyMarbleMadness *)
 (*****************************************************************************)
 
@@ -4666,6 +4740,10 @@ let tests =
       t "TinyMario64, physics=engine: the same jump" mario64_engine;
       t "TinyPinball3d, the sweep and the flipper" pinball3d_flipper;
       t "TinyPinball3d, the sweep and a wall" pinball3d_wall;
+      t "TinyHalfLife2, the gravity gun" hl2_gun;
+      t "TinyHalfLife2, a zombie hit goes limp" hl2_zombie;
+      t "TinyHalfLife2, the barrels float" hl2_barrels;
+      t "TinyHalfLife2, the seesaw" hl2_seesaw;
       t "TinyMarbleMadness, the ramp's heights" marble_ramp;
       t "TinyMarbleMadness, the cliff breaks the marble, the step doesn't" marble_falls;
       t "TinyMarbleMadness, the steelie knocks the marble" marble_steelie;

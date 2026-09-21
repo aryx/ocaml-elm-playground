@@ -515,7 +515,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 10 done** (2026-09-20; phase 7's game port, phases 9 and 10 2026-09-21); the
+**Phases 0 to 11 done** (2026-09-20; phase 7's game port, phases 9 to 11 2026-09-21); the
 rest not started. Written as the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -925,6 +925,38 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     rides round the dome *along* its walls, a little into each segment
     per step. What tunnels on the table is head-on -- a flipper's
     throw, a kick -- which is what the tests measure.
+- **Phase 11, DONE** (2026-09-21): `physics/3d/Joint3d` (ball-and-socket
+  with a cone, hinge with limits and a motor, distance), each joint a
+  few *rows* solved in `Solver3d`'s iterations with the contacts;
+  `Physics3d`'s world holds its joints (`ball_joint`, `hinge`, `rod`,
+  `set_motor`, `joint_angle`), two joined bodies never collide and sleep
+  together; `held_by`, the gravity gun's hold; `playground3d/Ragdoll3d`
+  (ten boxes, nine joints, shared by the example and the game);
+  `examples3d/PhysicsRagdoll3d.ml` down a staircase, "l" for the limits;
+  and `games3d/TinyHalfLife2.ml`: the gravity gun (ray, `held_by`, a
+  launch), a seesaw on a hinge, a pile, floating barrels, and zombies
+  that walk as one upright body and become ragdolls when knocked faster
+  than they walk. Measured: a 1 m pendulum's period 2.000 s against
+  the textbook's 2.007, its rod 0.2 mm off at most; a hinge's limit
+  held at 90.1 degrees; a motor at 360.0 degrees a second; a cone at
+  30.2 for 30; a door set turning about its middle turns about its
+  hinge at a quarter of the speed, as angular momentum about the hinge
+  says. 7 tests in `Unit_joint3d`, 4 in the games' tests, 5 golden
+  frames.
+  - **A ragdoll's joints stretch at a hard landing**: an elbow opens by
+    about 4 cm for a few frames, the arm caught between a step and the
+    body falling on it, contact and joint each correcting by
+    Baumgarte's slow speed. Not the solver's patience -- 4.5 cm at 10
+    iterations, 5.4 at 20, 3.4 at 40 -- nor a cold start: warm starting
+    the joints' anchor rows was tried and bought nothing (4.5 against
+    4.6), so it was taken out again. What would help is correcting the
+    positions themselves (Catto's non-linear Gauss-Seidel, Box2D's),
+    left as the exercise. Warm starting a hinge's two rows across its
+    axis was worse than useless: they are `Resolve3d.tangents`, which
+    jump a quarter turn when the axis wobbles, the trap friction's
+    warm start fell into in phase 8, and replaying last step's
+    impulses along this step's directions threw a ragdoll apart
+    (0.67 m).
 
 ## Verification
 

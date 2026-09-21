@@ -330,6 +330,9 @@ type world = {
   (* how many bodies the last tick's sweep stopped short (see [simulate]
    * ~continuous): each one would have been through something *)
   swept : int;
+  (* what holds its bodies together (see Joints below), naming them by
+   * their place in [bodies] *)
+  joints : Joint3d.t list;
 }
 
 (* the walls and floors among them [immovable] *)
@@ -379,3 +382,58 @@ val simulate :
  * (games3d/TinyPinball3d.ml compares its two positions instead). *)
 val went_through : body -> body -> bool
 
+
+(* {1 Joints}
+
+   A joint takes away some of the ways two bodies of a world can move
+   against each other (physics/3d/Joint3d.mli), solved in [simulate]'s
+   loop with the contacts. The bodies are named by their place in the
+   world's [bodies], and the joint is made from where they are now:
+
+   {[
+     let world =
+       Physics3d.world [ frame; door ]
+       |> Physics3d.hinge 0 1 ~at:(0.5, 1., 0.) ~axis:(0., 1., 0.) ~limits:(0., 110.)
+   ]}
+
+   Two bodies joined never collide with each other, and sleep together.
+   Angles are in degrees, as everywhere in this module. *)
+
+(* [ball_joint ?cone a b ~at w]: a ball-and-socket at [at] (a
+ * shoulder); [cone] (an axis, degrees): the most the two bodies may
+ * turn that axis apart *)
+val ball_joint : ?cone:(number * number * number) * number -> int -> int -> at:number * number * number -> world -> world
+
+(* [hinge ?limits ?motor a b ~at ~axis w]: a hinge through [at] about
+ * [axis] (a door); [limits] (least, most) in degrees from where it is
+ * now; [motor] (degrees a second, the most torque in N m) *)
+val hinge :
+  ?limits:number * number ->
+  ?motor:number * number ->
+  int ->
+  int ->
+  at:number * number * number ->
+  axis:number * number * number ->
+  world ->
+  world
+
+(* [rod a b ~at_a ~at_b w]: those two points kept as far apart as they
+ * are now (a rope that never slackens, a chain's link) *)
+val rod : int -> int -> at_a:number * number * number -> at_b:number * number * number -> world -> world
+
+(* [set_motor i (speed, torque) w]: the [i]-th joint's motor, if it is a
+ * hinge (a pinball flipper's kick, a car's wheel) *)
+val set_motor : int -> number * number -> world -> world
+
+(* the [i]-th joint's angle, degrees, if it is a hinge *)
+val joint_angle : int -> world -> number
+
+(* [held_by point b]: [b] pulled to [point] -- to reach it in a tenth of
+ * a second, no faster than 15 m/s -- and its spin mostly taken away:
+ * the gravity gun's hold, to set on the held body before each
+ * [simulate] *)
+val held_by : number * number * number -> body -> body
+
+(* the joints' anchors, one small cube for each body's: when a joint
+ * holds, the two are in the same place *)
+val debug_joints : world -> shape3d list

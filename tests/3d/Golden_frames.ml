@@ -68,6 +68,7 @@ let scenes : Testutil_golden.scene list =
      * awake (the yellow markers) *)
     ("examples3d/PhysicsStack3d", "", 3);
     ("examples3d/PhysicsWalk3d", "", 5);
+    ("examples3d/PhysicsRagdoll3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
     ("games3d/software/StarCollector3d", "", 3);
@@ -80,6 +81,7 @@ let scenes : Testutil_golden.scene list =
      * its crate *)
     ("games3d/software/TinyTeardown", "", 5);
     ("games3d/software/TinyPinball3d", "", 5);
+    ("games3d/software/TinyHalfLife2", "", 5);
     (* claude: the same view as games2.5d/TinyWolfenstein's golden frame, in 3D *)
     ("games3d/software/TinyWolfenstein3d", "", 5);
     ("games3d/software/TinyVirtuaRacing", "", 5);
@@ -139,6 +141,9 @@ let scripted : Testutil_golden.scripted list =
      * mesh cut round it *)
     (* the flippers raised, turned by the game (kinematic bodies); the
      * ball, launched, round the dome, the sweep catching its touches *)
+    (* the gravity gun: up to the pile, a crate grabbed out of it and
+     * held up, the others tumbling down *)
+    ("games3d/software/TinyHalfLife2", "grab", 240, "space:1,w:2-166,down:170-185,z:190,up:195-215");
     ("games3d/software/TinyPinball3d", "flippers", 15, "space:1,left:2-15,right:2-15");
     ("games3d/software/TinyPinball3d", "launch", 95, "space:1,space:3-62");
     ("games3d/software/TinyTeardown", "hole", 130, "space:1,w:2-99,x:101,down:102-109,x:121,left:122-124,x:141");
@@ -236,6 +241,10 @@ let scripted : Testutil_golden.scripted list =
     (* the step offset: the 0.5 m step a wall at 0.4, a stair at 0.6
      * ("o" once); the slope limit: the 50 degree ramp a wall at 45, and
      * walked up at 60 ("l" once) *)
+    (* the ragdoll at the foot of the stairs; and without the joints'
+     * limits, an arm wound over the shoulder on the way down *)
+    ("examples3d/PhysicsRagdoll3d", "fallen", 200, "x:1");
+    ("examples3d/PhysicsRagdoll3d", "no_limits", 60, "l:1");
     ("examples3d/PhysicsWalk3d", "wall", 200, "up:2-200");
     ("examples3d/PhysicsWalk3d", "stair", 200, "o:1,up:2-200");
     ("examples3d/PhysicsWalk3d", "steep", 260, "left:2-161,up:162-260");

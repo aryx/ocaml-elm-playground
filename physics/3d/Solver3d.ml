@@ -42,6 +42,7 @@ end)
  * opinion, and is taken apart again in whatever basis the new step
  * picked. *)
 type remembered = { at : Vec3.t; normal_impulse : float; friction_impulse : Vec3.t }
+
 type memory = remembered list Pairs.t
 
 let nothing = Pairs.empty
@@ -67,7 +68,7 @@ type point = {
   mutable p2 : float;
 }
 
-let solve (o : options) ~(dt : float) (bodies : Body3d.t array) (pairs : pair list) (memory : memory) :
+let solve (o : options) ~(dt : float) ?(joints = []) (bodies : Body3d.t array) (pairs : pair list) (memory : memory) :
     Body3d.t array * memory =
   let bodies = Array.copy bodies in
   let apply (pt : point) (impulse : Vec3.t) =
@@ -111,7 +112,12 @@ let solve (o : options) ~(dt : float) (bodies : Body3d.t array) (pairs : pair li
   List.iter
     (fun pt -> apply pt (Vec3.add (Vec3.scale pt.pn pt.n) (Vec3.add (Vec3.scale pt.p1 pt.t1) (Vec3.scale pt.p2 pt.t2))))
     points;
+  (* the joints' rows (Joint3d), solved in the same iterations, before
+   * the contacts, and no differently: a row is a direction and a speed
+   * to reach along it, as a contact point's normal is *)
+  let rows = List.concat_map (Joint3d.rows ~beta:o.baumgarte ~dt bodies) joints in
   for _ = 1 to o.iterations do
+    List.iter (Joint3d.solve_row bodies) rows;
     points
     |> List.iter (fun pt ->
            let rel () = Resolve3d.relative_velocity bodies.(pt.a) bodies.(pt.b) pt.p in

@@ -9,6 +9,7 @@
 (copy_files ../TinyElite3d.ml)
 (copy_files ../TinyTeardown.ml)
 (copy_files ../TinyPinball3d.ml)
+(copy_files ../TinyHalfLife2.ml)
 (copy_files ../TinyWolfenstein3d.{ml,mli})
 (copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../TinyMarioKart64.ml)
@@ -38,6 +39,7 @@
     TinyElite3d
     TinyTeardown
     TinyPinball3d
+    TinyHalfLife2
     TinyWolfenstein3d
     TinyVirtuaRacing
     TinyMarioKart64

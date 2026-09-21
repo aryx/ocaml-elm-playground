@@ -19,6 +19,7 @@
     PhysicsRoll3d
     PhysicsStack3d
     PhysicsWalk3d
+    PhysicsRagdoll3d
     LogoFractals3d
   )
   (libraries
