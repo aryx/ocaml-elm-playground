@@ -10,6 +10,8 @@
 (copy_files ../TinyVirtuaRacing.{ml,mli})
 (copy_files ../TinyMarioKart64.ml)
 (copy_files ../TinyVirtuaFighter.ml)
+(copy_files ../TinyStarFox.ml)
+(copy_files ../TinyAloneInTheDark.ml)
 (copy_files ../TinyTron3d.{ml,mli})
 (copy_files ../TinyMario64.{ml,mli})
 (copy_files ../TinyMarbleMadness.{ml,mli})
@@ -33,6 +35,8 @@
     TinyVirtuaRacing
     TinyMarioKart64
     TinyVirtuaFighter
+    TinyStarFox
+    TinyAloneInTheDark
     TinyTron3d
     TinyMario64
     TinyMarbleMadness
@@ -51,7 +55,8 @@
     kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown
     kit_racing3d ; TinyMarioKart64's circuit (Track3d)
     kit_brawler ; TinyVirtuaFighter's Frame_data and Hitbox
-    kit_brawler3d ; TinyVirtuaFighter's Skeleton
+    kit_brawler3d ; TinyVirtuaFighter's and TinyAloneInTheDark's Skeleton
+    kit_shmup ; TinyStarFox's Path and Shots
     kit_sectors ; TinyDoom3d's level
     kit_heightmap ; TinyComanche3d's island
     kit_segments ; TinyDescent3d's mine

@@ -82,6 +82,11 @@ let scenes : Testutil_golden.scene list =
     (* claude: two skeletons of boxes on the ring, in their guard: the
      * pose is the angles of their joints, and nothing else *)
     ("games3d/TinyVirtuaFighter", "", 5);
+    (* claude: the canyon from the title's camera, turning round the
+     * start: the ribbon of the racing kit, flown over *)
+    ("games3d/TinyStarFox", "", 5);
+    (* claude: the hall, from its corner, behind the title *)
+    ("games3d/TinyAloneInTheDark", "", 5);
     ("games3d/TinyTron3d", "", 5);
     ("games3d/TinyMario64", "", 5);
     ("games3d/TinyMarbleMadness", "", 5);
@@ -127,6 +132,13 @@ let scripted : Testutil_golden.scripted list =
      * the leg is out exactly while the move is active, because the
      * keyframes and the frame data are the same numbers *)
     ("games3d/TinyVirtuaFighter", "kick", 150, "space:1,right:20-80,g:110-200");
+    (* down the canyon on rails, the arwing slid to the left, its bolts
+     * streaming ahead and a wave crossing below *)
+    ("games3d/TinyStarFox", "canyon", 200, "space:1,space:150-200,left:120-150");
+    (* through the hall's south door: the cut to the corridor, Carnby
+     * small at the far end and the thing in the foreground walking at
+     * him *)
+    ("games3d/TinyAloneInTheDark", "corridor", 240, "space:1,right:20-47,up:48-128,right:129-156,up:157-240");
     (* the ramp at the top of the climb: the field in the air, each
      * kart's shadow left on the boards below it *)
     ("games3d/TinyMarioKart64", "jump", 395, "space:1,up:2-450");

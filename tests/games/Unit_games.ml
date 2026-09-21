@@ -283,6 +283,115 @@ let virtua_fighter_ring_out () =
   Alcotest.(check int) "the one still standing on it wins it" 1 r.won_a
 
 (*****************************************************************************)
+(* TinyStarFox *)
+(*****************************************************************************)
+
+(* on rails: the stage carries the ship down the canyon whatever the
+ * player does, and the player can only move it across -- inside the
+ * canyon, whatever the player does *)
+let star_fox_rails () =
+  let open TinyStarFox in
+  let r = ref (new_run ()) in
+  let keys = { initial_computer.keyboard with kleft = true; kup = true } in
+  for _ = 1 to 300 do
+    r := step_run keys !r
+  done;
+  Alcotest.(check (float 0.01)) "carried at the stage's speed" (start_s +. (300. *. ship_speed /. 60.)) !r.s;
+  let width = (Track3d.at track !r.s).width in
+  Alcotest.(check bool) "not through the wall" true (Float.abs !r.ship.offset <= width -. 2. +. 0.001);
+  Alcotest.(check bool) "not above the canyon" true (!r.ship.height <= ceiling +. 0.001)
+
+(* a bolt fired down the canyon meets the enemy in front of it: the
+ * enemy is flying the shmup kit's 2D path across the cross-section, so
+ * the ship is put where that path puts the enemy *)
+let star_fox_bolt () =
+  let open TinyStarFox in
+  let r = new_run () in
+  let target = List.hd waves in
+  let x, y = enemy_across target in
+  let r =
+    { r with
+      s = target.es -. 40.;
+      ship = { r.ship with offset = x; height = y };
+      enemies = [ { target with speed = 0. } ] }
+  in
+  let r = ref (fire r) in
+  for _ = 1 to 60 do
+    r := step_bolts !r
+  done;
+  Alcotest.(check int) "one enemy down" 100 !r.score;
+  Alcotest.(check bool) "and it stays down" true (List.for_all (fun (e : enemy) -> not e.alive) !r.enemies)
+
+(*****************************************************************************)
+(* TinyAloneInTheDark *)
+(*****************************************************************************)
+
+(* the tile under a point, and the doorway between the hall and the
+ * corridor *)
+let alone_door () : number * number =
+  let open TinyAloneInTheDark in
+  match Tilemap.find map '.' with
+  | cells -> (
+      (* the one below the hall: the lowest of them *)
+      let col, row = List.fold_left (fun (c, r) (c2, r2) -> if r2 > r then (c2, r2) else (c, r)) (List.hd cells) cells in
+      match Tilemap.center map col row with x, y -> (x, y))
+
+(* The cut, and where it happens: standing in the doorway, the camera is
+ * still the hall's (a doorway belongs to no room, so the room you came
+ * from is kept); one step past it, it is the corridor's -- instantly,
+ * with nothing in between. Change it *in* the doorway instead, and a
+ * player standing on the threshold flickers between the two shots. *)
+let alone_cut () =
+  let open TinyAloneInTheDark in
+  let dx, dy = alone_door () in
+  let h = new_house () in
+  (* in the doorway, facing south, coming from the hall *)
+  let h = { h with carnby = { h.carnby with x = dx; y = dy; heading = -90. }; room = 'a' } in
+  let still = step_house initial_computer.keyboard h in
+  Alcotest.(check char) "in the doorway: the hall's camera still" 'a' still.room;
+  let h = ref still in
+  for _ = 1 to 40 do
+    h := step_house { initial_computer.keyboard with kup = true } !h
+  done;
+  Alcotest.(check char) "past it: the corridor's" 'c' !h.room
+
+(* Tank controls: up walks the way Carnby faces, whatever the camera is
+ * doing -- the same key moves him east facing east and west facing
+ * west, in the same room, under the same shot *)
+let alone_tank () =
+  let open TinyAloneInTheDark in
+  let h = new_house () in
+  let walk heading =
+    let h = { h with carnby = { h.carnby with heading } } in
+    let after = step_house { initial_computer.keyboard with kup = true } h in
+    after.carnby.x -. h.carnby.x
+  in
+  Alcotest.(check bool) "facing east, up goes east" true (walk 0. > 0.);
+  Alcotest.(check bool) "facing west, up goes west" true (walk 180. < 0.)
+
+(* the study's door holds without the key, and opens for it *)
+let alone_door_locked () =
+  let open TinyAloneInTheDark in
+  let lx, ly =
+    match Tilemap.find map 'L' with [ (col, row) ] -> Tilemap.center map col row | _ -> Alcotest.fail "no door"
+  in
+  (* just north of the door, facing south into it *)
+  let before = { (new_house ()) with room = 'c' } in
+  let before = { before with carnby = { before.carnby with x = lx; y = ly +. 2.; heading = -90. } } in
+  let walk (h : house) =
+    let h = ref h in
+    for _ = 1 to 90 do
+      h := step_house { initial_computer.keyboard with kup = true } !h
+    done;
+    !h
+  in
+  let locked = walk before in
+  Alcotest.(check bool) "without the key: still outside" true (locked.carnby.y > ly);
+  let opened = walk { before with has_key = true } in
+  Alcotest.(check bool) "with it: the door opens" true opened.unlocked;
+  Alcotest.(check bool) "and he walks through" true (opened.carnby.y < ly)
+
+(*****************************************************************************)
 (* TinyDoom *)
 (*****************************************************************************)
 
@@ -3430,6 +3539,11 @@ let tests =
       t "TinyVirtuaFighter, the keyframes are the frame data" virtua_fighter_keyframes;
       t "TinyVirtuaFighter, blocking, and what goes under it" virtua_fighter_blocking;
       t "TinyVirtuaFighter, the ring is the other way to lose" virtua_fighter_ring_out;
+      t "TinyStarFox, on rails and inside the canyon" star_fox_rails;
+      t "TinyStarFox, a bolt down the canyon" star_fox_bolt;
+      t "TinyAloneInTheDark, the cut is past the doorway" alone_cut;
+      t "TinyAloneInTheDark, tank controls ignore the camera" alone_tank;
+      t "TinyAloneInTheDark, the study door and its key" alone_door_locked;
       t "TinyDoom, the BSP: convex subsectors, the right sectors" doom_bsp;
       t "TinyDoom, a frame" doom_frame;
       t "TinyDoom, a robot finds the exit" doom_exit;

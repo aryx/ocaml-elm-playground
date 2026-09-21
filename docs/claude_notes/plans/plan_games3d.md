@@ -254,9 +254,16 @@ Flight Simulator (Bruce Artwick, subLOGIC, 1979-80; Microsoft's from
 FX chip, polygons on a SNES), Comanche (NovaLogic, 1992: voxel
 terrain).
 
-- **Toys**: TinyStarFox (on rails: the ship flies forward by itself,
-  the player dodges and shoots -- a shmup in 3D, reusing the 2D shmup
-  kit's `Waves` and `Paths` in 3D), TinyComanche (DONE:
+- **Toys**: TinyStarFox (DONE: `games3d/TinyStarFox.ml`), on rails: the
+  ship flies forward by itself and the player dodges and shoots. On
+  rails is two numbers instead of six -- how far down the canyon, and
+  where across it -- which are exactly what `Track3d` hands out, so the
+  canyon is the racing kit's ribbon with walls, flown over: the kit's
+  third user, in a genre it was not designed for, and its bank rolls
+  the whole canyon through a turn. The enemies are the 2D shmup kit's
+  unaltered: `Path` (Galaga's curves) is where an enemy flies across the
+  canyon's cross-section, `Shots` carries the bolts across it, so a 2D
+  pattern becomes a 3D flight. TinyComanche (DONE:
   `games2.5d/TinyComanche.ml`, voxel terrain in the *2D* playground: a
   height map drawn column by column, front to back, a y-buffer; after
   Sebastian Macke's VoxelSpace explainer on GitHub; and
@@ -380,9 +387,21 @@ horror), Tomb Raider (Core Design, 1996).
   "random stone" speckle came from. Also the first 3D game to use a 2D
   kit: `kits/puzzle`'s `Push`, the one TinySokoban uses, on the tomb's
   floor grid.
-- **Toy**: TinyAloneInTheDark -- rooms, each with a fixed camera
-  switching when the player crosses into the next zone: a `Camera3d`
-  choice with no smoothing at all, and a lesson on cinematography.
+- **Toy**: TinyAloneInTheDark (DONE: `games3d/TinyAloneInTheDark.ml`), a
+  house of four rooms on a `Tilemap`, each with its camera bolted in a
+  corner: when you cross a doorway the shot *cuts*, with no smoothing at
+  all. The first camera here that follows nobody. The cut is placed past
+  the doorway, never in it -- a doorway belongs to no room, so standing
+  on the threshold keeps the shot you came in with (a hysteresis, or it
+  flickers). And the cuts are why the game has *tank controls*: up
+  walks the way Carnby faces, not up the screen, because a control tied
+  to the screen reverses at every cut. Carnby and the creature are the
+  brawler kit's `Skeleton` (TinyVirtuaFighter's): a walk is two key
+  poses, a zombie a pose with its arms out. Two things the first
+  version got wrong and the frames showed: a camera above the walls of
+  a roofless house sees every room at once, and a corner camera needs a
+  wide lens to see its own room -- 60 degrees leaves a third of it
+  out.
 
 ### 11. 3D fighting
 

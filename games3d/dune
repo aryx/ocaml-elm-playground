@@ -6,6 +6,8 @@
     TinyVirtuaRacing
     TinyMarioKart64
     TinyVirtuaFighter
+    TinyStarFox
+    TinyAloneInTheDark
     TinyTron3d
     TinyMario64
     TinyMarbleMadness
@@ -19,14 +21,15 @@
     TinyHades
     TinyMonumentValley
   )
-  (modules StarCollector3d TinyBattlezone TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyVirtuaFighter TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d TinyHades TinyMonumentValley Tomb_atlas)
+  (modules StarCollector3d TinyBattlezone TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyVirtuaFighter TinyStarFox TinyAloneInTheDark TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d TinyHades TinyMonumentValley Tomb_atlas)
   (libraries
     kit_puzzle ; TinyTombRaider's Push, the same one TinySokoban uses
     kit_lightcycles ; TinyTron3d's rules
     kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown
     kit_racing3d ; TinyMarioKart64's circuit (Track3d)
     kit_brawler ; TinyVirtuaFighter's Frame_data and Hitbox, shared with the 2D fighters
-    kit_brawler3d ; TinyVirtuaFighter's Skeleton
+    kit_brawler3d ; TinyVirtuaFighter's and TinyAloneInTheDark's Skeleton
+    kit_shmup ; TinyStarFox's Path and Shots, the 2D shoot 'em up kit's
     kit_sectors ; TinyDoom3d's level
     kit_heightmap ; TinyComanche3d's island
     kit_segments ; TinyDescent3d's mine
