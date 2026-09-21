@@ -1,0 +1,23 @@
+; claude: CATALOG.md kept complete: every program of games/, games2.5d/,
+; games3d/ and apps/ (the (names ...) of their dune files) has its row,
+; its golden frame and its web page. See Unit_catalog.ml.
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+ )
+ (deps
+   %{project_root}/CATALOG.md
+   %{project_root}/games/dune
+   %{project_root}/games2.5d/dune
+   %{project_root}/games3d/dune
+   %{project_root}/apps/dune
+   (glob_files %{project_root}/tests/2d/golden/*.png)
+   (glob_files %{project_root}/tests/3d/golden/*.png)
+   (glob_files %{project_root}/games/web/*.html)
+   (glob_files %{project_root}/games2.5d/web/*.html)
+   (glob_files %{project_root}/games3d/webgl/*.html)
+   (glob_files %{project_root}/apps/web/*.html)
+ )
+)

@@ -80,7 +80,7 @@ Every example/game module (`open Playground; ... let main = Playground_platform.
 
 ### The catalogue
 
-`CATALOG.md` lists every game (`games/`, `games2.5d/`, `games3d/`) and app (`apps/`) by genre, one table row each: name linked to its source, directory, the original it is after, a one-line description (a future tooltip). A new game or app gets its row there; the screenshot and web page are found by convention (see the file's introduction).
+`CATALOG.md` lists every game (`games/`, `games2.5d/`, `games3d/`) and app (`apps/`) by genre, one table row each: name linked to its source, directory, the original it is after, a one-line description (a future tooltip). A new game or app gets its row there; the screenshot and web page are found by convention (see the file's introduction). `tests/catalog/` checks it in `make test`: every executable named in those four directories' dune files needs its row, its golden frame (`tests/2d/golden/<Name>.png`, `tests/3d/` for games3d) and its web page (`web/` or `games3d/webgl/<Name>.html`), and every row must name an existing program.
 
 ### opam packages are generated, not hand-edited
 

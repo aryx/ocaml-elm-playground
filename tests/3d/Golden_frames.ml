@@ -113,6 +113,9 @@ let scenes : Testutil_golden.scene list =
     ("games3d/software/TinyQuake", "", 5);
     ("games3d/software/TinyBlockout", "", 5);
     ("games3d/software/TinyTombRaider", "", 5);
+    (* claude: frame 60, not 5: the world's chunks are built a few per
+     * frame, and at 5 most of it is not there yet *)
+    ("games3d/software/TinyMinecraft", "", 60);
     (* claude: the title's four foods on their turning arena *)
     ("games3d/software/TinyBoomerangFu3d", "", 5);
     (* claude: the first chamber, its three shades, and the hero the

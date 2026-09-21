@@ -162,6 +162,7 @@ js:
 	dune build examples3d/web --profile=release-js
 	dune build examples3d/webgl --profile=release-js
 	dune build games3d/webgl --profile=release-js
+	dune build apps/web --profile=release-js
 
 ###############################################################################
 # Developer targets

@@ -1,0 +1,34 @@
+; claude: the applications in a browser: ../*.ml reused as-is by a
+; build-time copy, not a committed duplicate (see games/web/dune), and
+; linked against elm_playground_web.
+(copy_files ../*.{ml,mli})
+
+(executables
+  (names
+    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint TinyOpenDoc TinyPowerPoint TinyHyperCard TinyMacDraw TinyFrameMaker TinyOffice
+  )
+  (libraries
+    elm_playground
+    gui
+    appkit_sheet
+    appkit_sheet_view
+    appkit_document
+    appkit_richtext
+    appkit_paint
+    appkit_embed
+    appkit_slides
+    appkit_hypertalk
+    appkit_draw
+    graphics_font
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; claude: the .html pages next to the generated .bc.js, as in
+; games/web/dune
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))

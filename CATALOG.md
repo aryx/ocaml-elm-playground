@@ -24,13 +24,9 @@ this list without more information:
   `games3d/`); other frames of the same program are next to it, as
   `<Name>_<scene>.png`.
 - **Run online**: `games/web/<Name>.html`, `games2.5d/web/<Name>.html`,
-  `games3d/webgl/<Name>.html`, once built with `make js`.
+  `games3d/webgl/<Name>.html`, `apps/web/<Name>.html`, once built with
+  `make js`.
 - **Run natively**: `dune exec <dir>/<Name>.exe`.
-
-The exceptions: TinyMinecraft has no golden frame (its texture atlas);
-TinyAloneInTheDark, TinyMarioKart64, TinyStarFox, TinyTombRaider and
-TinyVirtuaFighter build for WebGL but have no `.html` page yet; and the
-apps run natively only (they have no web build).
 
 A **2.5D** or **3D** game with a twin in another directory says so:
 TinyDoom and TinyDoom3d are the same level, drawn once by the game's
