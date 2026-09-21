@@ -780,6 +780,14 @@ plane -- Sutherland-Hodgman again, and exactly the technique
 One level of recursion (a portal seen through a portal), and no more:
 the cost is a second copy of the room's geometry per level.
 
+`games3d/TinyPortal.ml` does exactly this, one level deep (a portal
+seen through a portal shows its colour, not a view), with
+`playground3d/Portal3d.mli`'s motion, crossing and cut. The one
+surprise was the eye rather than the body: walking forward into a
+floor portal, looking ahead, is looking along that portal's up, which
+comes out of a wall portal as straight up -- the view has to be turned
+back upright, which Portal does over a moment and this game at once.
+
 ## 16. In the playground
 
 The API (`playground3d/Physics3d.mli`) hides all of the above behind

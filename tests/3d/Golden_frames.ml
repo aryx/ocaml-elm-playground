@@ -82,6 +82,7 @@ let scenes : Testutil_golden.scene list =
     ("games3d/software/TinyTeardown", "", 5);
     ("games3d/software/TinyPinball3d", "", 5);
     ("games3d/software/TinyHalfLife2", "", 5);
+    ("games3d/software/TinyPortal", "", 5);
     (* claude: the same view as games2.5d/TinyWolfenstein's golden frame, in 3D *)
     ("games3d/software/TinyWolfenstein3d", "", 5);
     ("games3d/software/TinyVirtuaRacing", "", 5);
@@ -143,6 +144,11 @@ let scripted : Testutil_golden.scripted list =
      * ball, launched, round the dome, the sweep catching its touches *)
     (* the gravity gun: up to the pile, a crate grabbed out of it and
      * held up, the others tumbling down *)
+    (* a portal in the floor, one on the wall over the ledge (seen
+     * through: the ceiling, from the floor portal); walked into the
+     * floor, flung out of the wall onto the ledge, looking out *)
+    ("games3d/software/TinyPortal", "portals", 62, "space:1,right:2-6,down:7-25,q:27,up:30-58,e:61,down:64-73,w:75-110");
+    ("games3d/software/TinyPortal", "fling", 150, "space:1,right:2-6,down:7-25,q:27,up:30-58,e:61,down:64-73,w:75-110");
     ("games3d/software/TinyHalfLife2", "grab", 240, "space:1,w:2-166,down:170-185,z:190,up:195-215");
     ("games3d/software/TinyPinball3d", "flippers", 15, "space:1,left:2-15,right:2-15");
     ("games3d/software/TinyPinball3d", "launch", 95, "space:1,space:3-62");

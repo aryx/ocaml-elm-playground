@@ -1028,6 +1028,62 @@ let hl2_seesaw () =
   Alcotest.(check bool) (Printf.sprintf "thrown up (%.1f m/s)" !fastest) true (!fastest > 1.)
 
 (*****************************************************************************)
+(* TinyPortal *)
+(*****************************************************************************)
+
+let portal3d_panel (c : number * number * number) : TinyPortal.panel =
+  List.find (fun (p : TinyPortal.panel) -> Vec3.length (Vec3.sub p.centre c) < 1e-6) TinyPortal.panels
+
+let portal3d_run ?(keys = []) (frames : int) (g : TinyPortal.game) : TinyPortal.game =
+  let keyboard = { initial_computer.keyboard with kw = List.mem "w" keys } in
+  let g = ref g in
+  for i = 1 to frames do g := TinyPortal.update_game (computer ~keyboard i) !g done;
+  !g
+
+(* Speedy thing goes in: a portal in the floor 3 m ahead, one on the
+ * wall above the ledge; walk into the floor, fall through it, come out
+ * of the wall flung into the room, and land on the ledge 4 m up, which
+ * no jump reaches *)
+let portal3d_fling () =
+  let open TinyPortal in
+  let g = new_game () in
+  let g =
+    rebuild
+      { g with blue = Some (portal_on g (portal3d_panel (1., 0., 3.))); orange = Some (portal_on g (portal3d_panel (1., 5., -8.)));
+        me = Character3d.make 1. 0. 6. }
+  in
+  (* walking at it until through (up the wall), then letting go *)
+  let g = ref g and n = ref 0 in
+  while !g.me.y < 3. && !n < 180 do
+    g := portal3d_run ~keys:[ "w" ] 1 !g;
+    incr n
+  done;
+  Alcotest.(check bool) "through, and out of the wall" true (!g.me.y > 3.);
+  Alcotest.(check bool) "flung out into the room" true (snd !g.fling > 1.);
+  let g = portal3d_run 120 !g in
+  Alcotest.(check bool) (Printf.sprintf "on the ledge (%.2f m up, z %.2f)" g.me.y g.me.z) true
+    (Float.abs (g.me.y -. 4.) < 0.05 && g.me.z < -4. && g.me.grounded)
+
+(* The cube on the button opens the door, and through the door is the
+ * end of the chamber *)
+let portal3d_door () =
+  let open TinyPortal in
+  let g = new_game () in
+  let bx, bz = button_at in
+  let cube = List.hd g.world.bodies |> Physics3d.at bx 0.3 bz in
+  (* put there from outside the game, so the solids are worked out again
+   * here: in play the cube lands on the button during an update, which
+   * notices the door change and does it *)
+  let g = portal3d_run 2 (rebuild { g with world = { g.world with bodies = cube :: List.tl g.world.bodies } }) in
+  Alcotest.(check bool) "the door is open" true (door_open g);
+  let g = { g with yaw = 180.; me = Character3d.make 0. 0. 6. } in
+  let s = ref (Scene2d.start (Playing g)) in
+  for i = 1 to 90 do
+    s := update (computer ~keyboard:{ initial_computer.keyboard with kw = true } i) !s
+  done;
+  Alcotest.(check bool) "out through it: the chamber complete" true (match !s.scene with Complete _ -> true | _ -> false)
+
+(*****************************************************************************)
 (* TinyMarbleMadness *)
 (*****************************************************************************)
 
@@ -4744,6 +4800,8 @@ let tests =
       t "TinyHalfLife2, a zombie hit goes limp" hl2_zombie;
       t "TinyHalfLife2, the barrels float" hl2_barrels;
       t "TinyHalfLife2, the seesaw" hl2_seesaw;
+      t "TinyPortal, speedy thing goes in" portal3d_fling;
+      t "TinyPortal, the button and the door" portal3d_door;
       t "TinyMarbleMadness, the ramp's heights" marble_ramp;
       t "TinyMarbleMadness, the cliff breaks the marble, the step doesn't" marble_falls;
       t "TinyMarbleMadness, the steelie knocks the marble" marble_steelie;

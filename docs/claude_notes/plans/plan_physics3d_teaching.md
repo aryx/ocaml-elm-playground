@@ -515,7 +515,7 @@ Each phase builds, tests and ships on its own.
 
 ## Status
 
-**Phases 0 to 11 done** (2026-09-20; phase 7's game port, phases 9 to 11 2026-09-21); the
+**Phases 0 to 12 done** (2026-09-20; phase 7's game port, phases 9 to 12 2026-09-21); the
 rest not started. Written as the specification, with
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
@@ -957,6 +957,38 @@ wrong turns, as `done/plan_physics_teaching.md` does.
     warm start fell into in phase 8, and replaying last step's
     impulses along this step's directions threw a ragdoll apart
     (0.67 m).
+- **Phase 12, DONE** (2026-09-21): `playground3d/Portal3d` -- a portal
+  a rectangle on a surface, a pair one rigid motion (half a turn about
+  the portal's up, from one frame to the other), applied to a point, a
+  direction, an orientation (Shepperd's quaternion from the frame) and
+  so to a whole body (`carry`); `crossed`, a middle going through the
+  rectangle from the front; and `clip`, a polygon cut to what the eye
+  sees through a portal (the four planes through the eye and its edges,
+  and its own plane: Sutherland-Hodgman). 5 tests in `Unit_portal3d`
+  (falling at 9 m/s into the floor, out of the wall at 9 m/s straight
+  out; there and back is nowhere; an orientation goes through as a
+  direction does; crossing only through the rectangle, from the front;
+  seeing through keeps only the window). And `games3d/TinyPortal.ml`,
+  the 3D original's first lesson as a chamber: the cube up on a ledge
+  no jump reaches, a floor portal and a wall portal, the fall into the
+  one a fling out of the other; seeing through each open portal is the
+  whole chamber taken through the pair's motion and cut to the hole,
+  one level deep -- you can see yourself. 2 tests in the games' tests
+  (flung onto the ledge, 4.00 m up; the cube on the button and out
+  through the door), 3 golden frames.
+  - **Coming out upright.** The look is taken through with the rest,
+    but walking forward into a floor portal, looking ahead, is looking
+    along the floor portal's up -- which comes out of a wall portal as
+    straight up. A first version kept that as a heading and landed the
+    player on the ledge staring at it sideways; Portal turns the view
+    back upright over a moment, and this snaps it: a look that comes
+    out nearly vertical is set level, facing out of the portal.
+  - **What the simplifications buy.** A portal is a whole 2 m panel, and
+    only on the chamber's outer walls and floor, so nothing real is
+    ever behind a hole: the copy of the chamber behind it is the only
+    thing there, and the z-buffer needs no help. A portal on an inner
+    wall would show the real room behind that wall through the hole as
+    well, and need the cut to hide it.
 
 ## Verification
 

@@ -41,6 +41,7 @@
    %{project_root}/games3d/software/TinyTeardown.exe
    %{project_root}/games3d/software/TinyPinball3d.exe
    %{project_root}/games3d/software/TinyHalfLife2.exe
+   %{project_root}/games3d/software/TinyPortal.exe
    %{project_root}/games3d/software/TinyWolfenstein3d.exe
    %{project_root}/games3d/software/TinyVirtuaRacing.exe
    %{project_root}/games3d/software/TinyMarioKart64.exe
