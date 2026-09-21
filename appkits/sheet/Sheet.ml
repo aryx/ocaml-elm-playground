@@ -137,6 +137,7 @@ let value_of_content t = function
   | Formula.Blank -> Empty
   | Formula.Value f -> Number f
   | Formula.Text s -> Text s
+  | Formula.Invalid why -> Error why
   | Formula.Formula e -> eval t e
 
 (* --- what a change reaches, and in what order ----------------------- *)
@@ -196,12 +197,8 @@ let recompute t dirty =
   in
   { t with last_recalculated = !done_ + List.length !pending }
 
-let set c text t =
-  let content, parse_error =
-    match Formula.content_of text with
-    | Ok content -> (content, None)
-    | Error why -> (Formula.Blank, Some why)
-  in
+let store c text t =
+  let content = Formula.content_of text in
   let old_reads = match Cells.find_opt c t.reads with Some l -> l | None -> [] in
   let new_reads = match content with Formula.Formula e -> Formula.refs e | _ -> [] in
   (* the reverse edges, taken out where they were and put in where
@@ -220,21 +217,43 @@ let set c text t =
         Cells.add d (c :: others) m)
       read_by new_reads
   in
-  let t =
-    {
-      t with
-      raws = (if String.trim text = "" then Cells.remove c t.raws else Cells.add c text t.raws);
-      contents = Cells.add c content t.contents;
-      reads = Cells.add c new_reads t.reads;
-      read_by;
-    }
+  {
+    t with
+    raws = (if String.trim text = "" then Cells.remove c t.raws else Cells.add c text t.raws);
+    contents = Cells.add c content t.contents;
+    reads = Cells.add c new_reads t.reads;
+    read_by;
+  }
+
+(* typing into a cell, and then everything that depends on it *)
+let set c text t =
+  let t = store c text t in
+  recompute t (downstream t c)
+
+type order = Rows | Columns
+
+(* One pass, in the order the cells are laid out -- and nothing about
+ * what reads what. Compare with [recompute] above, which is the same
+ * loop with the graph in it. *)
+let recalculate order t =
+  let cs = cells t in
+  let ordered =
+    List.sort
+      (fun (c1, r1) (c2, r2) ->
+        match order with
+        | Rows -> compare (r1, c1) (r2, c2)
+        | Columns -> compare (c1, r1) (c2, r2))
+      cs
   in
-  let t = recompute t (downstream t c) in
-  match parse_error with
-  | None -> t
-  | Some why ->
-      (* the text stays on the screen, with what is wrong with it *)
-      { t with raws = Cells.add c text t.raws; values = Cells.add c (Error why) t.values }
+  let t =
+    List.fold_left
+      (fun t c ->
+        match Cells.find_opt c t.contents with
+        | Some content -> { t with values = Cells.add c (value_of_content t content) t.values }
+        | None -> t)
+      t ordered
+  in
+  { t with last_recalculated = List.length ordered }
 
 let to_string t =
   cells t

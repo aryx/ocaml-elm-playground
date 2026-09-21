@@ -55,6 +55,10 @@ let scenes : Testutil_golden.scene list =
      * right edge as VisiCalc put them, and the cursor on the cell the
      * bar is showing *)
     ("examples/software/Gui7Cells", "", 5);
+    (* 1979, on a character display: green on black, the three status
+     * lines, the block cursor, and the formulas in VisiCalc's own
+     * spelling (+B3*2 rather than =B3*2) *)
+    ("apps/software/TinyVisiCalc", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -415,6 +419,11 @@ let scripted : Testutil_golden.scripted list =
      * the bar shows what was typed into it (the typing itself a
      * script cannot do -- a key is not a character, examples/Typing) *)
     ("examples/software/Gui7Cells", "picked", 20, "at(-180;100):1-20,click:8");
+    (* the arrows are the whole interface: the cursor walked to B3,
+     * and the line at the top showing what is in it -- @SUM(B4...B6),
+     * as 1979 spelled it. (The slash commands take characters, which
+     * a script cannot send: a key is not a character.) *)
+    ("apps/software/TinyVisiCalc", "cursor", 16, "right:3,down:6,down:10");
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes

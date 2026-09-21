@@ -54,6 +54,12 @@ val empty : t
  * recalculated, in an order that respects what reads what. *)
 val set : Formula.cell -> string -> t -> t
 
+(* [store cell text t]: the same, without recalculating anything --
+ * which is what typing into a cell did in 1979, the sheet being
+ * recalculated afterwards, in order (see below). Modern spreadsheets
+ * do both at once, and [set] is that. *)
+val store : Formula.cell -> string -> t -> t
+
 (* what was typed in, and what it came to *)
 val raw : t -> Formula.cell -> string
 val value : t -> Formula.cell -> value
@@ -68,6 +74,37 @@ val cells : t -> Formula.cell list
 (* how many cells the last [set] recomputed -- the number that says
  * whether this is a spreadsheet or a demonstration *)
 val recalculated : t -> int
+
+(* {1 The way it was done in 1979}
+ *
+ * VisiCalc did not have the graph. It recalculated the sheet in *row
+ * order*, or in *column order* -- your choice, with /G O R and
+ * /G O C -- one pass, cell after cell, and whatever a formula read
+ * was whatever that cell happened to hold at the time.
+ *
+ * Which works, as long as every formula reads cells *above and to the
+ * left* of it. Put a formula that reads a cell below it, and one pass
+ * gives the value from before the change:
+ *
+ *   A1 = B1 + 1       row order: A1 first, reading the OLD B1
+ *   B1 = 2                       then B1 = 2
+ *                                so A1 is one pass behind
+ *
+ * which is why a generation of people pressed the recalculate key
+ * twice, and why "lay your sheet out so it flows down and right" was
+ * advice rather than taste. Lotus 1-2-3 brought natural order in 1983.
+ *
+ * It is here, beside the real one, because the difference is the
+ * lesson: run both on the same sheet and the graph stops being an
+ * implementation detail. [apps/TinyVisiCalc] switches between them
+ * with a key. *)
+type order = Rows | Columns
+
+(* [recalculate order t]: one pass over the cells in that order, each
+ * read taking whatever the cell holds at that moment -- 1979's
+ * answer. Running it twice gets the sheet above right, which is the
+ * habit it taught. *)
+val recalculate : order -> t -> t
 
 (* {1 Saving}
  *

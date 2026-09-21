@@ -45,15 +45,15 @@ let test_parens_and_unary () =
     (ok "-A1" = Formula.Unary ('-', Formula.Ref (0, 0)))
 
 let test_what_a_cell_holds () =
-  let content s = match Formula.content_of s with Ok c -> c | Error msg -> Alcotest.fail msg in
+  let content = Formula.content_of in
   Alcotest.(check bool) "a number" true (content "12" = Formula.Value 12.);
   Alcotest.(check bool) "some text" true (content "hello" = Formula.Text "hello");
   Alcotest.(check bool) "nothing" true (content "   " = Formula.Blank);
   Alcotest.(check bool) "a formula" true (content "=A1" = Formula.Formula (Formula.Ref (0, 0)));
-  (* a formula that does not parse says why, and the text is kept by
-     the sheet so it can be corrected *)
+  (* a formula that does not parse is something a cell can hold: the
+     text stays, to be corrected *)
   Alcotest.(check bool) "a broken formula" true
-    (match Formula.content_of "=A1+" with Error _ -> true | Ok _ -> false)
+    (match content "=A1+" with Formula.Invalid _ -> true | _ -> false)
 
 let test_refs_of_a_range () =
   match Formula.parse "SUM(A1:B2)+C3" with
@@ -134,6 +134,26 @@ let test_errors_are_values_and_spread () =
   Alcotest.(check bool) "a broken formula is an error, and its text is kept" true
     (String.length (shown s "E1") > 0 && Sheet.raw s (4, 0) = "=A1+")
 
+(* 1979's answer, kept beside the real one. Typing into a cell stored
+   it ([store]); the sheet was recalculated afterwards in one pass,
+   row by row -- so a formula reading a cell *below or to the right*
+   of it was a pass behind, and people pressed the key twice. *)
+let test_the_way_it_was_done_in_1979 () =
+  let s = sheet [ ("A1", "=B1+1"); ("B1", "1") ] in
+  Alcotest.(check string) "A1, to start with" "2" (shown s "A1");
+  (* B1 typed, and nothing recalculated yet *)
+  let typed = Sheet.store (1, 0) "10" s in
+  let once = Sheet.recalculate Sheet.Rows typed in
+  Alcotest.(check string)
+    "one pass in row order: A1 was computed before B1, so it is behind" "2" (shown once "A1");
+  Alcotest.(check string) "B1 itself is right" "10" (shown once "B1");
+  let twice = Sheet.recalculate Sheet.Rows once in
+  Alcotest.(check string) "the second pass catches up -- the habit of 1979" "11" (shown twice "A1");
+  (* and what the graph does with the same change *)
+  let modern = Sheet.set (1, 0) "10" s in
+  Alcotest.(check string) "the graph needs one" "11" (shown modern "A1");
+  Alcotest.(check int) "and touched two cells, not the sheet" 2 (Sheet.recalculated modern)
+
 let test_saving_and_loading () =
   let s = sheet [ ("A1", "12"); ("B1", "=A1*2"); ("C1", "hello") ] in
   let text = Sheet.to_string s in
@@ -155,5 +175,6 @@ let tests =
     t "a cycle is found, said, and recovered from" test_a_cycle_is_found_and_said;
     t "functions over a range" test_functions_over_a_range;
     t "errors are values, and they spread" test_errors_are_values_and_spread;
+    t "the way it was done in 1979, and why twice" test_the_way_it_was_done_in_1979;
     t "saving and loading" test_saving_and_loading;
   ]

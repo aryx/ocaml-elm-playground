@@ -20,7 +20,7 @@ type expr =
   | Binop of char * expr * expr
   | Call of string * expr list
 
-type content = Formula of expr | Value of float | Text of string | Blank
+type content = Formula of expr | Invalid of string | Value of float | Text of string | Blank
 
 (* A column is base 26 with no zero: A..Z, then AA..AZ, BA.. -- which
  * is why the column after Z is AA and not BA, and why this is a loop
@@ -178,14 +178,14 @@ let parse (s : string) : (expr, string) result =
       if !rest <> [] then Error "there is something after the end of the formula" else Ok e
   with Bad msg -> Error msg
 
-let content_of (s : string) : (content, string) result =
+let content_of (s : string) : content =
   let trimmed = String.trim s in
-  if trimmed = "" then Ok Blank
+  if trimmed = "" then Blank
   else if trimmed.[0] = '=' then
     match parse (String.sub trimmed 1 (String.length trimmed - 1)) with
-    | Ok e -> Ok (Formula e)
-    | Error msg -> Error msg
-  else match float_of_string_opt trimmed with Some f -> Ok (Value f) | None -> Ok (Text trimmed)
+    | Ok e -> Formula e
+    | Error msg -> Invalid msg
+  else match float_of_string_opt trimmed with Some f -> Value f | None -> Text trimmed
 
 let refs (e : expr) : cell list =
   let out = ref [] in

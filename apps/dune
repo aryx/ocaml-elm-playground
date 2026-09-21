@@ -1,0 +1,16 @@
+; claude: the applications (see docs/claude_notes/plans/plan_gui_teaching.md):
+; whole programs rather than demonstrations of one idea, each Tiny and
+; each saying in its header what it deliberately does not do. They sit
+; beside games/ and examples/ and are laid out the same way, with
+; software/ for the golden frames.
+(executables
+  (names
+    TinyVisiCalc
+  )
+  (libraries
+    elm_playground
+    gui ; Widget, for text_width
+    appkit_sheet ; Formula and Sheet, the engine
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)

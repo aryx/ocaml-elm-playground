@@ -951,8 +951,57 @@ errors spreading, saving and loading), `gui/tests` 54 (5 new, every
 grid rectangle computed by hand). Two golden frames, one of them
 scripted (a click moving the cursor and the bar following it).
 
-Still phase 7b: TinyVisiCalc's own interface -- the 1979 keyboard one,
-which is a different program over this same engine.
+### Phase 7b, DONE (2026-09-21), awaiting review
+
+**`apps/`** exists (the author's call, 2026-09-21: the plan's layout,
+a directory beside `games/` and `examples/`, laid out the same way
+with `software/` for the golden frames).
+
+**`apps/TinyVisiCalc.ml`** (292 lines): 1979, on a character display.
+What it uses is `appkits/sheet` and the playground's shapes; what it
+uses **nothing** of is `gui/` -- no widget, no layout, no focus, no
+mouse -- and that is the subject rather than minimalism. VisiCalc ran
+on a 40-column display with nothing to point with, and every decision
+in it follows: the cursor is the interface, the three lines at the top
+are what a character display has room for, and everything a modern
+spreadsheet puts in a toolbar was a letter after a slash.
+
+Three faithful details worth the lines:
+
+- **the formulas are spelled 1979's way**, `+B3*2` and
+  `@SUM(B4...B6)`, translated to the engine's `=` and `:` in six
+  lines each way -- a good reminder that a formula language is a
+  surface, not a semantics;
+- **the slash commands**: `/B` blanks, `/C` clears, `/G` is global --
+  and `/G` is what the program is for;
+- **`>>>>>>>>>`** when a number does not fit its nine characters.
+
+And the thing worth running it for, which needed one addition to the
+engine (`store`, typing into a cell *without* recalculating, and
+`recalculate Rows|Columns`, one pass in order): **`/G` then R, C or N
+switches between VisiCalc's recalculation order and the natural one**
+Lotus 1-2-3 brought in 1983. The opening sheet has a forward
+reference on purpose -- A1 reads B3, below it -- so in row order it is
+a pass behind until you press `!`, which is the habit of 1979 made
+visible. That is the repository's third principle (the simple version
+stays beside the better one, switchable) applied to an *idea* rather
+than an algorithm, and `Unit_sheet` has it as a test.
+
+One design consequence, found by the test that broke: a formula that
+does not parse is now `Formula.Invalid`, a thing a cell *holds*,
+rather than a failure of `content_of`. A spreadsheet must keep what
+was typed so it can be corrected, so "it does not parse" is a kind of
+content and not a reason to refuse it.
+
+Measured: `appkits/tests` 22 green, the 2D golden suite 133 with two
+frames added -- one of them scripted, the arrows walking the cursor to
+B3 with the status line following it in 1979's spelling. (The slash
+commands take *characters*, which a script cannot send: a key is not a
+character, as phase 0 established.)
+
+Still to come in this pair: **TinyExcel** (phase 8), the same engine
+with 1985's answers -- mouse selection, menus, a formula bar -- and
+the comparison written in both headers.
 
 ## Verification
 

@@ -51,15 +51,25 @@ type expr =
   | Binop of char * expr * expr
   | Call of string * expr list
 
-(* what a cell holds, before anything is computed: [Formula] when it
+(* What a cell holds, before anything is computed: [Formula] when it
  * starts with '=', [Value] for a number, [Text] for anything else --
- * which is how a spreadsheet tells "3" from "three" without asking *)
-type content = Formula of expr | Value of float | Text of string | Blank
+ * which is how a spreadsheet tells "3" from "three" without asking.
+ *
+ * [Invalid] is the fifth, and it is there rather than as a failure
+ * because of what a spreadsheet has to do with a formula that does
+ * not parse: keep it. The text stays in the cell, to be corrected,
+ * and the cell shows an error -- so "it does not parse" is a thing a
+ * cell can hold, and not a reason to refuse what was typed. *)
+type content =
+  | Formula of expr
+  | Invalid of string
+  | Value of float
+  | Text of string
+  | Blank
 
-(* [content_of s]: what typing [s] into a cell means. A formula that
- * does not parse is [Formula] of nothing -- an error, reported as
- * such by Sheet -- so that the text stays and can be corrected. *)
-val content_of : string -> (content, string) result
+(* [content_of s]: what typing [s] into a cell means. Anything can be
+ * typed into a cell, so this cannot fail. *)
+val content_of : string -> content
 
 (* [parse s]: the formula in [s] (without its leading '='), for the
  * tests and for anybody wanting the tree *)
