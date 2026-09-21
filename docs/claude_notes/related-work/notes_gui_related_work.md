@@ -68,7 +68,9 @@ built, in what order).
   Omar Cornut, 2014): the counter-argument, from games -- if you are
   redrawing sixty times a second anyway, widget objects are a cost
   with no benefit. Now the default for every game engine's tools.
-  (Dates from memory, to check.)
+  (Checked 2026-09-21: Muratori coined "IMGUI" in a 2005 video, after
+  describing the idea on a mailing list in 2002; Dear ImGui 1.00 was
+  published on 11 August 2014.)
 
 ## Part 2: compound documents, the road not taken
 
@@ -84,7 +86,7 @@ failure:
   the first widely used compound documents -- text with embedded
   drawings, spreadsheets and animations, each handled by its own
   "inset". It worked, and it is largely forgotten.
-- **OLE 1** (Microsoft, 1991) and **OLE 2** (1993), whose *in-place
+- **OLE 1** (Microsoft, 1990) and **OLE 2** (1993), whose *in-place
   activation* -- clicking the embedded spreadsheet changes the host's
   menus, and you edit it where it sits -- is the feature everyone
   remembers and the one this plan reproduces in a `bool`. Underneath
@@ -102,8 +104,10 @@ failure:
   note, because the lesson is not "OLE was bad" but "the unit of
   composition moved".
 
-(Names and dates above from memory, to check -- especially OpenDoc's
-cancellation and the Andrew dates.)
+(Checked 2026-09-21: OLE 1.0 is from 1990, and in-place activation
+came with OLE 2; OpenDoc was cancelled in March 1997, soon after Jobs's
+return; the Andrew Toolkit's insets date from the late 1980s, its
+papers around 1988 -- "around 1988" is as exact as the sources are.)
 
 ## Part 3: the teaching lineage
 
@@ -187,8 +191,8 @@ Two levels, as everywhere here:
 - **`gui/`, the toolkit**, at the legible end: one module per idea
   (`Widget`, `Layout`, `Focus`, `Text_edit`), and -- the part no other
   toolkit can offer -- **the same widgets wired four ways**
-  (`Immediate`, `Retained`, `Mvc`, and MVU which is the playground
-  itself), with 7GUIs as the shared harness, so the architectures can
+  (`Immediate`, `Retained`, `Mvc`, `Mvu`, all drawing through one
+  `Look`), with 7GUIs as the shared harness, so the architectures can
   be compared by reading and by running rather than by argument.
 - **`playground/Gui`, the API**, at the simple end: immediate mode,
   because `game`'s update has no message type, so a button is a
@@ -197,21 +201,67 @@ Two levels, as everywhere here:
 **The ceiling, stated now**: no native widgets, no accessibility, no
 IME, no right-to-left or complex text shaping, Hershey strokes for
 type, no real file formats, no printing, no window manager, and apps
-that are a page each rather than a product. TinyExcel will recalculate
-a dependency graph and will not open a `.xlsx`; TinyWord will break
-paragraphs the way TeX does and will not hyphenate Hungarian.
+that are a page each rather than a product. TinyExcel recalculates
+a dependency graph and will not open a `.xlsx`; the typesetting
+example breaks paragraphs the way TeX does and will not hyphenate
+Hungarian -- and TinyWord breaks them greedily, as Word did.
 
-## Postscript: the numbers (to come)
+## Postscript: the numbers, and what building it showed
 
-Once built: lines per architecture for the same 7GUIs task (the
-number the whole comparison exists for); `gui/`'s total against Tk's
-and Dear ImGui's; TinyVisiCalc's engine against its 1979 original's
-reported size; a paragraph broken greedily against Knuth-Plass, with
-the badness scores; and how much of each app is the toolkit's rather
-than its own.
+Built and measured 2026-09-21 (the full tables are in
+[`notes_gui.md`](../tutorials/notes_gui.md) §16):
 
-Sources: from memory unless linked, and to be checked before relying
-on them for teaching -- particularly the OpenDoc and Andrew dates, the
-Dear ImGui and 7GUIs attributions, and OCaml's GUI library history,
-where the surviving projects should be checked rather than
-remembered.
+- **Lines per architecture for the same 7GUIs task**, the number the
+  comparison existed for: the counter is 12 lines of code with
+  callbacks, 12 with MVC, 16 with MVU, 3 in immediate mode -- and the 3
+  borrows the playground's own model and loop, so the honest reading
+  is the one the plan guessed: at this size the length is not the
+  difference; *where the count lives* is (two places with callbacks,
+  one in the others).
+- **`gui/`'s size**: 1,073 lines of code for all four architectures,
+  layout, grid, focus, text and the piece table; 221 of them are the
+  immediate-mode toolkit the playground uses. Against Tk's or Dear
+  ImGui's size the comparison would be unfair both ways -- they are
+  products with thirty and ten years of edge cases -- so it is not
+  made here; the point is that the ideas fit in an afternoon's reading.
+- **A paragraph, greedy against Knuth-Plass**: the worked example in
+  `appkits/typeset/Linebreak.mli` -- demerits 656,706.25 for greedy,
+  12,706.25 for the optimum, the difference being one word moved up a
+  line.
+- **An original's size**: MacPaint's released source (Computer History
+  Museum, 2010) is about 5,800 lines of Pascal and 2,700 to 3,600 of
+  assembly depending on the version counted, on top of QuickDraw;
+  TinyMacPaint with its engine is some 600 lines of code on top of the
+  playground. VisiCalc's source is not public, so its size is not
+  given here.
+- **How much of each app is the toolkit's**: roughly half, and
+  growing with each app -- TinyExcel is 159 lines over a 500-line
+  engine; the later apps reuse the earlier ones' engines (TinyOpenDoc's
+  parts are TinyWord's, TinyExcel's and TinyMacPaint's; TinyHyperCard
+  paints with TinyMacPaint's).
+
+What writing it showed that reading had not, in one line each (the
+details are in `notes_gui.md`):
+
+- MVU cannot hold the caret: the focus and the selection have to live
+  under the model, which in Elm is the browser's DOM.
+- A click is the release, and the playground's `mclick` had not been
+  set by any backend since they were factorized -- the first button
+  found it.
+- A press on a menu's title is not yet the menu's (it becomes modal on
+  release), and more than one drawn surface acted on it.
+- In a compound document, the click that activates a part is the
+  host's, not the part's.
+- An editing session in place is one undo, and two parts, being
+  functions, can only be compared by what they save.
+- The apps came out in pairs over one engine -- VisiCalc and Excel,
+  Bravo and Word -- which is the clearest statement of what a GUI adds
+  to a program: the same engine, and a different person using it.
+
+Sources: checked on 2026-09-21 where said above (OpenDoc, OLE, the
+Andrew Toolkit, Dear ImGui and Muratori, 7GUIs -- a 2014 master's thesis
+by Eugen Kiss at Leibniz University Hannover --, PowerPoint 1.0 on 20
+April 1987, MacPaint's released source); the rest from memory, and to
+be checked before relying on it for teaching, particularly OCaml's GUI
+library history, where the surviving projects should be checked rather
+than remembered.

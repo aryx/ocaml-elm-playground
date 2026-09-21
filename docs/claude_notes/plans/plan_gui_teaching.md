@@ -1471,6 +1471,31 @@ commands, mistakes and their line numbers), the 2D golden suite 173
 with six frames: the first card, clicks counted, the message path, the
 answer at ten, the script editor, a new button dragged into place.
 
+### Phase 12, DONE (2026-09-21), awaiting review: the docs
+
+- **`tutorials/notes_gui.md`**, the specification written before the
+  code, checked against it: the reading-order table now covers every
+  module of `gui/`, `appkits/` and `apps/`; §9 rewritten for the
+  protocol that was built (`height` at a width rather than a `size`,
+  `input`/`command` returning a new part, the registry and the
+  placeholder, TinyOpenDoc as the host, the two lessons of writing
+  it); §10 corrected (the 7GUIs tasks are there once each, in immediate
+  mode -- only the counter is written four ways, in `GuiFourWays`); the
+  sizes it guessed replaced by measured ones; new §12-15 for rich text,
+  paint, slides and HyperCard, and **§16, the numbers**: code lines per
+  directory and per app next to its engine, the counter four ways
+  (callbacks 12, MVC 12, MVU 16, immediate 3 -- the 3 borrowing the
+  playground's model and loop), MacPaint's released source for scale.
+- **`related-work/notes_gui_related_work.md`**: its "to check" dates
+  checked (OLE 1 was 1990, not 1991; OpenDoc cancelled March 1997; Dear
+  ImGui 1.00 on 11 August 2014; Muratori's video 2005; 7GUIs a 2014
+  thesis; PowerPoint 1.0 on 20 April 1987; MacPaint's source as
+  released in 2010), a claim corrected (TinyWord breaks greedily; the
+  Knuth-Plass one is the typesetting example), and the postscript
+  written: the numbers, and what building it showed.
+- **`README.md`**: a section, "What the project has become", before the
+  AI disclaimer, which is the author's own and was left as it was.
+
 ## Verification
 
 - `make test`: `gui/tests/` (hit testing, layout by hand-computed

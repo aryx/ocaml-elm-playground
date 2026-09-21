@@ -168,6 +168,32 @@ You can even try it online [here](https://aryx.github.io/ocaml-elm-playground/ga
 
 You can see a few more screenshots [here](docs/screenshots/).
 
+What the project has become
+---------------------------
+
+The playground is still the small library above, but around it this
+repository has grown into a place to learn how the things it draws are
+made, each subject written from scratch, one idea per module, with the
+idea explained in its `.mli` and checked by tests and golden frames:
+
+- **pictures**: `graphics/`, the 2D and 3D software rasterizers behind
+  the `software` backends, and `playground3d/` for 3D programs (see
+  [README-3d.md](README-3d.md));
+- **games**: `games/`, `games2.5d/` (each pseudo-3D trick written out
+  in its game) and `games3d/`, over the genre kits of `gamekits/`;
+- **motion, sound, decisions, networks**: `physics/`, `audio/`, `ai/`,
+  `networking/`;
+- **applications**: `gui/`, a small toolkit with the same widgets
+  wired four ways (callbacks, MVC, MVU, immediate mode), the engines of
+  `appkits/`, and the Tiny applications of `apps/` -- TinyVisiCalc and
+  TinyExcel over one spreadsheet engine, TinyBravo and TinyWord over
+  one text engine, TinyMacPaint, TinyOpenDoc (a document made of
+  parts), TinyPowerPoint and TinyHyperCard.
+
+The plans and tutorial notes for each are in
+[docs/claude_notes/](docs/claude_notes/); for the applications, start
+with [notes_gui.md](docs/claude_notes/tutorials/notes_gui.md).
+
 AI disclaimer
 ------------
 

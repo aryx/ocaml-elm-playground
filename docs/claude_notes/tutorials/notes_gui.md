@@ -5,10 +5,11 @@ actually is, where the state lives (four rival answers, one of which
 this playground already is), how things are laid out, how text is
 edited, and how one document ends up inside another.
 
-It is the specification of the toolkit planned in
-[`plan_gui_teaching.md`](../plans/plan_gui_teaching.md): written
-before the code, to be checked against it and have its numbers filled
-in. Companions:
+It began as the specification of the toolkit planned in
+[`plan_gui_teaching.md`](../plans/plan_gui_teaching.md), written
+before the code; it has since been checked against the code
+(2026-09-21), its numbers filled in (§16), and what writing each part
+showed added where it belongs. Companions:
 [`notes_gui_related_work.md`](../related-work/notes_gui_related_work.md)
 (Smalltalk, Tk, Qt, Flutter, React, Dear ImGui, acme, OLE) and
 [`notes_inspect.md`](notes_inspect.md), whose panels and timeline are
@@ -16,17 +17,24 @@ this toolkit's first customer.
 
 ## 0. Where the code is, and a reading order
 
-| module (`gui/`) | what | section |
+| module | what | section |
 |---|---|---|
-| `Widget` | what a widget is: a rectangle, a drawing, a hit test, some state | §2 |
-| `Immediate` | the toolkit `playground/Gui` is built on | §3 |
-| `Retained`, `Mvc` | the same widgets, wired the other two ways | §4 |
-| `Layout` | constraints down, sizes up | §5 |
-| `Focus` | who gets the keys | §6 |
-| `Text_edit` | a piece table, a cursor, a selection, undo | §7 |
+| `gui/Widget`, `gui/Theme`, `gui/Look` | what a widget is: a rectangle, a drawing, a hit test, some state; the colours; the drawing all four architectures share | §2 |
+| `gui/Immediate` | the toolkit `playground/Gui` is built on | §3 |
+| `gui/Retained`, `gui/Mvc`, `gui/Mvu` | the same widgets, wired the other three ways | §4 |
+| `gui/Layout`, `gui/Grid` | constraints down, sizes up; Tk's grid | §5 |
+| `gui/Focus` | who gets the keys | §6 |
+| `gui/Text`, `gui/Text_edit` | UTF-8; a piece table, a cursor, a selection, undo | §7 |
+| `appkits/typeset` | where to break a paragraph, greedily and Knuth-Plass | §7 |
 | `appkits/document` | a document as a value; undo; the clipboard | §8 |
-| `appkits/embed` | one document inside another | §9 |
+| `appkits/embed` | a document made of parts | §9 |
 | `playground/Gui` | the Evan-style API over all of it | §10 |
+| `appkits/sheet`, `appkits/sheet_view` | a spreadsheet's engine, and its drawing | §11 |
+| `appkits/richtext` | text with looks, and its page | §12 |
+| `appkits/paint` | a picture as bits, and what paints it | §13 |
+| `appkits/slides` | a talk as an outline | §14 |
+| `appkits/hypertalk` | HyperCard's language, and its message path | §15 |
+| `apps/` | TinyVisiCalc, TinyExcel, TinyBravo, TinyWord, TinyMacPaint, TinyOpenDoc, TinyPowerPoint, TinyHyperCard | §10-15 |
 
 ## 1. A GUI is a loop you already have
 
@@ -188,7 +196,12 @@ out of writing them that reading about them had not given:
 
 - **The length is not the difference.** At the size of a counter all
   four are a handful of lines, and anyone claiming one is dramatically
-  shorter is choosing the example. What differs is *how many places
+  shorter is choosing the example. Measured in `GuiFourWays.ml`, code
+  lines each, the wiring into the loop included: callbacks 12, MVC 12,
+  MVU 16, immediate 3 -- and the 3 is the example choosing itself,
+  since the immediate version keeps its count in the playground's own
+  model and runs in the playground's own loop, which the other three
+  had to bring. What differs is *how many places
   hold the count*: two with callbacks, one in the other three. That is
   the whole argument, and `Unit_architectures.ml` has it as a test —
   bump the ref without telling the label, and the screen says `0`
@@ -320,8 +333,8 @@ lists, and a document is naturally a value (§8). A selection is two
 positions; a cursor is a selection of length zero; word wrap is a
 function from pieces to lines.
 
-`gui/Text_edit` is that, in about 190 lines, and three things came out
-of writing it:
+`gui/Text_edit` is that, in 222 lines (145 of them code), and three
+things came out of writing it:
 
 - **The append buffer is mutable and shared by every version**, and
   that is safe for exactly one reason: it is only ever *appended to*,
@@ -353,7 +366,7 @@ measure of 10:
 
 ```
    greedy                ratio   demerits      optimal               ratio   demerits
-     aaa bb cc            0.5       506          aaa bb cc            0.5       506
+     aaa bb cc            0.5    506.25          aaa bb cc            0.5    506.25
      ddddd ee             2.0    656100          ddddd ee ff         -1.0     12100
      ff gggg              0.0       100          gggg                 0.0       100
 ```
@@ -381,7 +394,9 @@ leaves rivers and lonely short lines. Knuth-Plass instead scores a
 whole paragraph (each line's "badness", plus penalties for
 hyphenation and for consecutive breaks) and picks the *globally* best
 set of breaks by dynamic programming. It is the reason a TeX paragraph
-looks the way it does, and it is perhaps two hundred lines.
+looks the way it does, and here it is 136 lines, greedy included (77
+of code) -- without hyphenation or stretchability per space, which is
+where TeX's own gets long.
 
 ## 8. A document is a value
 
@@ -399,8 +414,8 @@ An edit returns a new document. Then:
   app**: a word processor whose whole history replays is the
   architecture arguing for itself.
 
-`appkits/document` is those three in about eighty lines, and writing
-them turned up two things worth keeping:
+`appkits/document` is those three in 121 lines (50 of code), and
+writing them turned up two things worth keeping:
 
 - **the pointer comparison has a catch.** It is exact and free when
   going back to a version means *the old value itself*, which is what
@@ -420,40 +435,78 @@ them turned up two things worth keeping:
 
 Saving is deliberately not in there: writing bytes is a backend's
 business, and a browser has no files at all. What a document knows is
-whether it *needs* saving, and what to call itself.
+whether it *needs* saving, and what to call itself. (How the apps will
+save -- Marshal behind a checked header, files natively and
+`localStorage` on the web, with capabilities -- is
+[`plan_io.md`](../plans/plan_io.md) and
+[`plan_caps.md`](../plans/plan_caps.md).)
 
-## 9. One document inside another
+## 9. A document made of parts
 
-The idea worth reviving, and the author's own ask. A **component** is
-something that can draw itself into a rectangle, take events while it
-is active, say how big it would like to be, and serialize itself:
+The idea worth reviving, and the author's own ask. A **part** is
+something that can say how tall it is at a width, draw itself into a
+rectangle, take the mouse and keys while it is **active**, offer a
+menu, and write itself down -- `appkits/embed/Component`:
 
 ```ocaml
-type component = {
-  size  : unit -> number * number;
-  draw  : number * number -> shape list;
-  event : computer -> component;
-  save  : unit -> string;
+type part = {
+  kind : string;                                  (* what reads it back *)
+  height : float -> float;                        (* at this width *)
+  draw : Widget.box -> active:bool -> shape list;
+  input : computer -> Widget.box -> part;         (* a new part *)
+  menu : string list;
+  command : string -> part;
+  save : unit -> string;
 }
 ```
 
 That is the whole protocol, and everything the 1990s built around it
--- OLE's interfaces and registries, OpenDoc's parts, Bonobo's CORBA --
-is plumbing for doing it *across processes and languages*, which we do
-not need: in one OCaml program a component is a record of closures.
+-- OLE's interfaces and registry, OpenDoc's parts, Bonobo's CORBA -- is
+plumbing for doing it *across processes and languages*, which one
+OCaml program does not need: a part is a record of closures over its
+own state, `input` and `command` return a new record, and so a part is
+a value and a document of them has undo for nothing. The registry is
+an association list from a kind's name to its loader; and a kind
+nobody here knows becomes a **placeholder** that shows what it is and
+saves back exactly the text it came from -- the rule that a document
+must survive a program that cannot read all of it.
 
-The host (TinyWord) lays a component out like a very large character,
-and hands over the keys when it is **activated** -- OLE 2's "in-place
-activation" (1993), the feature that made a spreadsheet inside a
-document feel like one program instead of two. In our model that is a
-`bool` in the host's state.
+The planned sketch had `size : unit -> w * h`; writing it made it
+`height : width -> float`, which is §5's constraints down, sizes up,
+and what a text needs in order to wrap.
+
+`appkits/embed/Compound` is the document: a tree of parts in rows and
+columns, laid out by width, a part found by its **path** (its child
+numbers from the root -- a value where a toolkit would keep a
+pointer), and saved with each part's text counted, so that a reader
+can skip a part without understanding it.
+
+The host is **TinyOpenDoc**, chosen over a TinyOffice because it is
+the purest form of the idea: OpenDoc (Apple and IBM, 1994-97, cancelled
+in March 1997) had no applications at all, only documents of parts.
+Click a part once to select it, again to **activate** it -- OLE 2's
+in-place activation (1993): a hatched border, and the part's menu in
+the host's bar. Two things came out of writing it:
+
+- **An editing session is one edit**, kept outside the history while
+  it lasts and recorded when the part is put down -- and only if it
+  changed something, which is decided by comparing what the parts
+  *save*, since two parts, being functions, cannot be compared.
+- **The click that activates a part is the host's, not the part's.**
+  Found by a golden scene: the activating click on a picture painted a
+  dot, and the pour that followed filled the dot instead of the sky.
+  The part now sees the mouse only once that press is released.
+
+TinyPowerPoint (§14) is the second host: a slide can carry a sheet or
+a picture, the same parts.
 
 The history is worth a paragraph because it is a genuine road not
-taken: Andrew (CMU, 1988) did it first, OLE made it a product,
-OpenDoc (Apple and IBM, 1992-97) bet a company on it and was cancelled,
-and the whole idea faded from applications -- and then came back
+taken: Xerox Star (1981) put text, pictures and tables in one document,
+as a fixed set; the Andrew Toolkit (CMU, around 1988) opened the set
+with its "insets"; OLE made it a product; OpenDoc bet on it and was
+cancelled; and the idea faded from applications -- and then came back
 everywhere else. A Jupyter notebook cell, a Notion block, an embedded
-tweet: compound documents won the web and lost the desktop.
+video: compound documents won the web and lost the desktop.
 
 ## 10. In the playground
 
@@ -469,10 +522,14 @@ let update computer model =
 
 no new concepts, no message type, and `view` draws what `update`
 declared. The other three architectures live in `gui/` as runnable
-comparisons (§4), the 7GUIs tasks are in `examples/Gui7*.ml` four
-times over, and the apps -- TinyVisiCalc and TinyExcel over one
-engine, TinyWord, TinyMacPaint -- are what the toolkit is *for*
-([`plan_gui_teaching.md`](../plans/plan_gui_teaching.md)).
+comparisons, and the counter is written all four ways in
+`examples/GuiFourWays.ml` (§4); the 7GUIs tasks are in
+`examples/Gui7*.ml`, once each, in immediate mode. The apps are what
+the toolkit is *for* ([`plan_gui_teaching.md`](../plans/plan_gui_teaching.md)),
+mostly in pairs of the same engine under two interfaces a few years
+apart: TinyVisiCalc and TinyExcel (§11), TinyBravo and TinyWord (§12);
+then TinyMacPaint (§13), TinyOpenDoc (§9), TinyPowerPoint (§14) and
+TinyHyperCard (§15).
 
 ## 11. A spreadsheet is a graph
 
@@ -524,6 +581,157 @@ got the previous value and users were told to press the recalculate
 key twice. Lotus 1-2-3 (1983) brought the natural-order recalculation
 this engine does.
 
+## 12. Text with looks: Bravo, then Word
+
+`appkits/richtext` is the engine both word processors share, and the
+pair is the same argument as §11's: **one engine, two interfaces**.
+
+- **`Rich`** keeps §7's piece table for the characters and, beside
+  it, a second table of **runs** -- (length, look) -- and every edit is
+  the same surgery on both: split at a position, keep what is either
+  side, merge neighbours that have come to look alike. Its two rules
+  are the ones every word processor has and gets wrong somewhere: what
+  you type looks like what is before it, and a look chosen with
+  nothing selected is the **typing style**, pending on the caret and
+  forgotten when it moves. Tested against three thousand random edits
+  compared with the naive way, one look stored per character.
+- **`Page`** is WYSIWYG, and the half of it that is harder than it
+  looks is the way *back*: `caret_at` puts the caret on the page for
+  an offset in the text, `offset_at` takes a click on the page back to
+  an offset, and a test checks they agree at every place in a text.
+  Glyph widths are the caller's, so the engine never sees a font.
+
+**TinyBravo** (Lampson and Simonyi, Xerox PARC, 1974) is the first
+editor where the screen looked like the page -- and it was **modal**:
+the keyboard gives commands until one of them says that what follows
+is text. Type "edit" in command mode and `e` selects everything, `d`
+deletes it, `i` starts inserting, and a `t` is all that is left: the
+story Larry Tesler told for the rest of his life. **TinyWord** (1985)
+is his answer (Gypsy, with Tim Mott, 1975): no modes, a caret you type
+at wherever it is, cut, copy and paste -- and every look reachable
+three ways, a toolbar, a menu and a key, none of which needs
+remembering. Both draw their looks with the pen from Hershey's strokes
+(`apps/Stroke_text`): bold a thicker pen, italic the points sheared.
+
+## 13. A picture is bits: MacPaint
+
+`appkits/paint`, for **TinyMacPaint** (Bill Atkinson, 1984), is a
+paint program's lessons, one per module:
+
+- **`Bitmap`**: a picture as bits, eight to a byte as QuickDraw had
+  them -- which is why the Mac's screen fitted in its 128 KB at all
+  (21,888 bytes, where a byte per dot would have been 175,104).
+  Mutable underneath, a value outside: `change` copies, then edits.
+- **`Pattern`**: 8 by 8 tiles laid from the *picture's* corner, not
+  from where the painting starts, so that two areas painted apart in
+  the same pattern join without a seam.
+- **`Paint`**: Bresenham's line (1965, integers only), and ovals whose
+  outline is *defined* as the edge of the filled oval, so a frame and a
+  fill always meet.
+- **`Seed_fill`**: the bucket, a row at a time (Smith, 1979), in two
+  steps -- find the area as a mask, then paint the pattern through it
+  -- because painting as you go never finishes when the pattern has
+  white in it.
+- **`Packbits`**: the Mac's run-length compression, matching Apple's
+  own worked example byte for byte.
+
+And the drawing, which is a lesson about this playground: it has
+rectangles and no bitmaps, so a picture is drawn as its runs of black
+dots, each merged with the run under it (`Bitmap.rectangles`). Grey is
+the worst case -- its dots never line up -- and a frame of the opening
+picture is about 3,200 rectangles, 20 ms natively. Remembering the
+rectangles for the bitmap they came from (compared with `==`, correct
+precisely because a picture in the history is never changed in place)
+is Elm's `lazy`, and the obvious next step, a bitmap shape in the
+Playground, is a change to every backend.
+
+## 14. A talk is an outline: PowerPoint
+
+**TinyPowerPoint** (Robert Gaskins and Dennis Austin, Forethought,
+1987 -- first called Presenter; black and white, for overhead
+transparencies; Microsoft bought the company three months later). Its
+lessons:
+
+- **The outline is the model** (`appkits/slides/Outline`): a line
+  against the edge is a slide's title, an indented line a point on it,
+  and the slides are made from that text whenever it changes. Typing
+  on a slide edits the outline line it came from (`lines_of`,
+  `line_span`), so every view follows at once.
+- **The master** is the look of every slide said once: a style sheet
+  for pages.
+- **A drawing is a value, so it scales**: the slide is drawn once, as a
+  list of shapes, and the editor, the sorter's thumbnails and the
+  full-screen show are that list grouped and scaled -- no second
+  renderer.
+- **Two undos, on purpose**: the outline's own (its piece table) and
+  the deck's (the master and the parts), so that undoing a look never
+  undoes typing.
+
+## 15. A program you can open: HyperCard
+
+**TinyHyperCard** (Bill Atkinson, 1987; HyperTalk with Dan Winkler) is
+the "no line between using and building" corner of the related-work
+table, and two ideas:
+
+- **Backgrounds**: the buttons and fields every card shares live on
+  the background, once, but each card keeps its own text in the
+  background's fields -- a card is a record, a background field a
+  column.
+- **The message path** (`appkits/hypertalk`): a click sends "mouseUp"
+  to the button; what it does not answer, or answers and **passes**,
+  goes to the card, then the background, then the stack. So the stack's
+  script can number every card on "openCard", and a word on a line of
+  its own is a message of your own, sent up the same path --
+  inheritance by position, with no classes.
+
+The language knows nothing of cards: the stack is given to it as a
+record of functions, threaded through as a value, so its tests run
+scripts against three strings in a list. And the fields, when
+browsing, are the toolkit's text areas asked for every frame -- which
+is immediate mode taken at its word, and the reason a field could not
+be opened by the click that finds it (a text area takes the focus only
+from a click it saw both halves of).
+
+## 16. The numbers
+
+Measured 2026-09-21, lines of code (not blank, not comments) and, in
+brackets, all lines -- the rest being the comments this repository
+teaches with:
+
+| | code (all) |
+|---|---|
+| `gui/`, the four architectures and everything under them (12 modules) | 1,073 (1,645) |
+| of which `Immediate`, the one the playground uses | 221 (326) |
+| `Retained` 84, `Mvc` 13, `Mvu` 94 -- the other three, over the same `Look` | |
+| `playground/Gui`, the API | 67 (122) |
+| the counter four ways (`GuiFourWays`): callbacks, MVC, MVU, immediate | 12, 12, 16, 3 |
+| `appkits/`, the engines (19 modules) | 1,708 (2,404) |
+| `apps/`, the eight applications and their parts | 2,421 (3,649) |
+
+Each app's own code, next to what it rests on:
+
+| app | code (all) | its engine in `appkits/` |
+|---|---|---|
+| TinyVisiCalc | 190 (309) | sheet: 413 (551) |
+| TinyExcel | 159 (279) | the same, and sheet_view: 90 (137) |
+| TinyBravo | 137 (252) | richtext: 266 (409) |
+| TinyWord | 285 (431) | the same |
+| TinyMacPaint | 334 (518) | paint: 259 (361) |
+| TinyOpenDoc (+ its three parts) | 200 + 253 (325 + 328) | embed: 123 (171) |
+| TinyPowerPoint | 395 (550) | slides: 63 (88) |
+| TinyHyperCard | 439 (606) | hypertalk: 367 (430) |
+
+For scale, one original whose source is public: MacPaint 1.x, released
+by the Computer History Museum in 2010, is about 5,800 lines of Pascal
+and, depending on the version counted, 2,700 to 3,600 of 68000
+assembly -- on top of QuickDraw. TinyMacPaint with its engine is some
+600 lines of code, on top of the playground: a page, as the plan said,
+and the page is the lesson.
+
+The golden frames at the time of writing: 173 in the 2D suite, of which
+48 are the GUI examples and apps; unit tests: 55 in `gui/tests`, 79 in
+`appkits/tests`.
+
 ## Glossary
 
 - **Widget**: a rectangle with a drawing, a hit test and some state.
@@ -548,3 +756,13 @@ this engine does.
 - **Geometry manager**: Tk's separate placement object; **grid** is
   the one that makes columns line up across rows, which a column of
   rows cannot do.
+- **Run**: a stretch of text in one look; **typing style**: the look
+  waiting on the caret for what is typed next; **modal**: a keyboard
+  whose keys mean different things depending on a mode (Bravo, vi).
+- **Pattern**: an 8 by 8 tile laid from the picture's origin; **seed
+  fill**: the bucket, finding an area a row at a time; **PackBits**:
+  the Mac's run-length compression.
+- **Master**: the look of every slide, said once.
+- **Message path**: button, card, background, stack -- where a
+  HyperTalk message goes until something answers it; **pass**: answer
+  it and send it on anyway.
