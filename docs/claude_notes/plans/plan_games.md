@@ -73,6 +73,12 @@ says the smaller, teaching-sized thing better:
   base        Playground: shapes, computer, game
 ```
 
+The construction kits' other half, the editor, is here too: a genre's
+level editor is a program of the genre, beside its game, sharing the
+kit with it (`TinySokobanEd`, over the puzzle kit's `Sokoban`); a tool
+for any game goes in `apps/gamedev/`. `games/README-tools.md` has the
+rules, and how a game gets what a tool made.
+
 Where: generic layers in `playground/` (in the `elm_playground`
 library, like `Camera2d`); each kit in `gamekits/<genre>/`, its own
 library (`elm_kit_shmup`, ...), depending on `elm_playground` only, so

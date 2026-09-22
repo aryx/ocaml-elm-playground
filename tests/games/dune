@@ -17,6 +17,18 @@
  (deps (:src %{project_root}/games/puzzle/TinySokoban.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
+; claude: and its levels, embedded as games/puzzle/dune does
+(rule
+ (targets Sokoban_levels.ml)
+ (deps %{project_root}/games/puzzle/TinySokoban.xsb)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let xsb = {|")
+    (cat %{deps})
+    (echo "|}\n")))))
+
 (rule
  (target TinyPacman.ml)
  (deps (:src %{project_root}/games/arcade/TinyPacman.ml))

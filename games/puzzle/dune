@@ -3,17 +3,37 @@
 ; browser in web/.
 (executables
   (names AiChess AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
-    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban)
+    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
+    TinySokobanEd)
   (modules AiChess AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
-    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban)
+    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
+    TinySokobanEd Sokoban_levels)
   (libraries
     unix ; Tetris's clock
+    caps ; TinySokobanEd's authority to export its file
     elm_playground
     ai ; AiChess's and AiOthello's Minimax
-    kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo
+    kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo, Sokoban's rules
     elm_playground_native ; implem of virtual elm_playground
   )
 )
+
+; claude: TinySokoban's levels, in Sokoban's own text format, embedded
+; as a string: TinySokoban.xsb becomes Sokoban_levels.xsb (a value) at
+; build time, so the game and its editor carry the levels with them. The
+; file is what TinySokobanEd exports, byte for byte (see
+; games/README-tools.md)
+(rule
+ (targets Sokoban_levels.ml)
+ (deps TinySokoban.xsb)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from TinySokoban.xsb by games/puzzle/dune *)\n")
+    (echo "let xsb = {|")
+    (cat %{deps})
+    (echo "|}\n")))))
 
 (executables
   (names TinyBlockout TinyMonumentValley TinyPortal)

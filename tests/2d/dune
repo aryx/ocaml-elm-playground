@@ -42,6 +42,7 @@
    %{project_root}/games/platform/software/TinyMario.exe
    %{project_root}/games/shmup/software/TinyInvaders.exe
    %{project_root}/games/puzzle/software/TinySokoban.exe
+   %{project_root}/games/puzzle/software/TinySokobanEd.exe
    %{project_root}/games/arcade/software/TinyPacman.exe
    %{project_root}/games/fps/software/TinyWolfenstein.exe
    %{project_root}/games/racing/software/TinyOutRun.exe

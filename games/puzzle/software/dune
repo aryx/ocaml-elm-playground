@@ -4,11 +4,14 @@
 
 (executables
   (names AiChess AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
-    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban)
+    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
+    TinySokobanEd)
   (modules AiChess AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
-    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban)
+    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
+    TinySokobanEd Sokoban_levels)
   (libraries
     unix
+    caps
     elm_playground
     ai
     kit_puzzle

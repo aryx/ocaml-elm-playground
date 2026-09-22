@@ -32,9 +32,21 @@ let sokoban_solution () =
   let open TinySokoban in
   let p = load 0 in
   let dirs = [ (0, -1); (-1, 0); (0, 1); (0, -1); (1, 0); (1, 0); (0, 1) ] in
-  let b = List.fold_left (fun b d -> match step b d with Some b -> b | None -> Alcotest.fail "a step blocked") p.boards.now dirs in
-  Alcotest.(check bool) "solved" true (solved b);
+  let b = List.fold_left (fun b d -> match Sokoban.step b d with Some b -> b | None -> Alcotest.fail "a step blocked") p.boards.now dirs in
+  Alcotest.(check bool) "solved" true (Sokoban.solved b);
   Alcotest.(check (pair int int)) "moves, pushes" (7, 2) (b.moves, b.pushes)
+
+(* the levels of TinySokoban.xsb, as the header says: their shortest
+ * solutions are 7, 37 and 23 moves (the kit's solver, which is what
+ * TinySokobanEd's s asks) *)
+let sokoban_levels_solvable () =
+  let moves rows = match Sokoban.solve rows with Sokoban.Moves m -> String.length m | _ -> -1 in
+  Alcotest.(check (list int)) "shortest solutions" [ 7; 37; 23 ] (List.map moves TinySokoban.levels)
+
+(* the editor's round trip: the file it exports is the one the game was
+ * built with, byte for byte, when nothing was changed *)
+let sokoban_editor_round_trip () =
+  Alcotest.(check string) "TinySokoban.xsb" Sokoban_levels.xsb (Sokoban.to_xsb TinySokoban.levels)
 
 (*****************************************************************************)
 (* TinyPacman *)
@@ -5846,6 +5858,8 @@ let frogger_bays () =
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
+      t "TinySokoban, every level solvable" sokoban_levels_solvable;
+      t "TinySokoban.xsb, as the editor writes it" sokoban_editor_round_trip;
       t "TinyPacman, the ghosts leave the house" pacman_ghosts_leave;
       t "TinyPacman, a power pellet" pacman_blue;
       t "TinyPacman, a ghost eaten" pacman_eaten;

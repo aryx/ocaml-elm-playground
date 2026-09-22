@@ -130,6 +130,7 @@ level to solve or a board to win; time pressure, when there is some
 | [AiChess](games/puzzle/AiChess.ml) | 2D | Chess, as Claude Shannon's "Programming a Computer for Playing Chess" (1950) set it for computers | Chess against a computer thinking 3 moves ahead with alpha-beta. | Rules checked by perft; move ordering (most valuable victim first); quiescence, the captures played out at the leaves against the horizon effect. |
 | [AiOthello](games/puzzle/AiOthello.ml) | 2D | Othello (Goro Hasegawa, 1971) | Othello against a computer thinking 4 moves ahead with alpha-beta. | Game-tree search: alpha-beta, an evaluation table, and its cuts counted against plain minimax. |
 | [TinySokoban](games/puzzle/TinySokoban.ml) | 2D | Sokoban (Hiroyuki Imabayashi, Thinking Rabbit, 1982) | Push every box onto a goal, one at a time, never pulling. | Deep puzzles from a few rules (PSPACE-complete); undo for free, since the model is a value; levels checked by breadth-first search. |
+| [TinySokobanEd](games/puzzle/TinySokobanEd.ml) | 2D | the level editors games shipped with (Lode Runner's, Doug Smith, Broderbund, 1983) | TinySokoban's levels: type them, check them, play them, export the file the game is built with. | A game's tool: the rules, format and solver in the kit, the level a text file embedded at build time; a text editor on a grid, with the checks a text editor cannot do. |
 | [Tetris](games/puzzle/Tetris.ml) | 2D | Tetris (Alexey Pajitnov, 1984), via elm-flatris | Falling pieces, full lines cleared. | Falling pieces and cleared lines on a grid; a port from Elm. |
 | [TinyBlockout](games/puzzle/TinyBlockout.ml) | 3D | BlockOut (P.Z.Karen Co., California Dreams, 1989) | Tetris down a well, seen from above, with pieces turning in 3D. | Tetris with one more index; depth cues (shading, the landing ring); quarter turns of polycubes in integers. |
 | [TinyLemmings](games/puzzle/TinyLemmings.ml) | 2D | Lemmings (DMA Design, Psygnosis, 1991) | Creatures walk mindlessly; give them jobs to save them. | Indirect control; the terrain as a bitmap in the model, dug and built; creatures as tiny state machines reading the pixels. |
@@ -292,7 +293,10 @@ match is programs run against the machine or against each other.
 All in `apps/office/` so far, the sections below being its kinds of
 program. The other categories are waiting for their first app, each
 with a dune file saying what it might hold: `apps/music/`,
-`apps/internet/`, `apps/devtools/`, `apps/graphics/`, `apps/system/`.
+`apps/internet/`, `apps/devtools/`, `apps/graphics/`, `apps/system/`,
+and `apps/gamedev/`, the tools making what any game can use (a
+genre's level editor is with its games instead, as TinySokobanEd is:
+see `games/README-tools.md`).
 
 ## Word processing and publishing
 

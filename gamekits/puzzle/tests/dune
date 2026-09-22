@@ -1,5 +1,12 @@
-; claude: the puzzle kit's worked examples (Push.mli, Undo.mli), run by
-; 'make test'
+; claude: the puzzle kit's worked examples (Push.mli, Undo.mli,
+; Sokoban.mli), run by 'make test'
 (test
  (name Test)
- (libraries alcotest testo kit_puzzle))
+ (libraries
+   alcotest
+   testo
+   kit_puzzle
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
+)

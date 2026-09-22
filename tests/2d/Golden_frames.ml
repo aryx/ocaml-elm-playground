@@ -110,6 +110,7 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyMario", "", 5);
     ("games/shmup/software/TinyInvaders", "", 5);
     ("games/puzzle/software/TinySokoban", "", 5);
+    ("games/puzzle/software/TinySokobanEd", "", 5);
     ("games/arcade/software/TinyPacman", "", 5);
     ("games/fps/software/TinyWolfenstein", "", 5);
     ("games/racing/software/TinyOutRun", "", 5);
@@ -293,6 +294,16 @@ let scripted : Testutil_golden.scripted list =
       "solve1",
       40,
       "space:1,up:5,left:10,down:15,up:20,right:25,right:30,down:35" );
+    (* its editor: a wall and a box typed at the cursor (3 boxes for 2
+     * goals, which the status line says); the second level solved by
+     * the kit's solver, 37 moves; and the first one tested, one box
+     * pushed onto its goal *)
+    ( "games/puzzle/software/TinySokobanEd",
+      "typed",
+      25,
+      "right:3,right:6,type($):9,down:15,type(#):18" );
+    ("games/puzzle/software/TinySokobanEd", "solve2", 10, "Tab:3,s:6");
+    ("games/puzzle/software/TinySokobanEd", "test", 15, "Enter:3,up:6,left:9,down:12");
     (* after READY!, left, up, right along the top: dots eaten, the
      * ghosts out of the house, scattering *)
     ("games/arcade/software/TinyPacman", "play", 300, "space:1,left:120-170,up:160-230,right:220-300");

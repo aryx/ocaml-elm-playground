@@ -1,0 +1,25 @@
+; claude: the game-making tools -- none yet, a placeholder for the
+; category (CATALOG.md gets its section with the first one). Laid out
+; like office/: the programs here, software/ for the golden frames,
+; web/ for the browser.
+;
+; The tools making what any game can use: not one genre's levels,
+; whose editor goes with the genre (TinySokobanEd, in games/puzzle/),
+; nor what any program can use, a picture or a tune, whose tool goes in
+; its medium's category (graphics/, music/). See games/README-tools.md
+; for which goes where, and for how a game gets what a tool made: in
+; the format of the playground layer that reads it, in a file the game
+; embeds at build time.
+;
+; What it might contain, each Tiny and after a famous original:
+;  - a sprite editor (STOS's 1988 and AMOS's 1990, Aseprite 2001):
+;    pixel art in a palette, animation frames, written as the strings
+;    Sprite.pixels draws;
+;  - a tile-map editor (Tiled, Thorbjorn Lindeijer, 2008): a level
+;    painted with a tile set, written as Tilemap's strings;
+;  - a sound-effect maker (sfxr, Tomas Pettersson, 2007, for the Ludum
+;    Dare game jams): sliders over audio/'s sfxr parameters, and a
+;    button per kind of sound (a pickup, a laser, an explosion);
+;  - a fantasy console's editors in one program (PICO-8, Joseph White,
+;    2015): the sprites, map, sounds and music of one game.
+; Built on gui/, the paint appkit and audio/.

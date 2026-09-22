@@ -8,8 +8,9 @@
 ; What it might contain, each Tiny and after a famous original:
 ;  - a photo editor (Photoshop, 1990): layers, selections, filters as
 ;    convolutions over the paint appkit's bits;
-;  - a pixel-art and sprite editor (Deluxe Paint, 1985): palettes,
-;    brushes, animation frames -- the sprites the games draw;
+;  - a pixel-art editor (Deluxe Paint, 1985): palettes, brushes,
+;    animation frames, colour cycling (the sprite editor, writing what
+;    the games' Sprite draws, is gamedev/'s);
 ;  - a 3D modeller (3D Studio 1990, Blender): meshes built and turned,
 ;    drawn by playground3d;
 ;  - a font editor (Fontographer, 1986): Bezier outlines, graphics_font's
