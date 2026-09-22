@@ -157,56 +157,76 @@ let aligned align ~width ~last (glyphs : glyph list) =
         List.rev out
 
 (* The lines laid round boxes, one at a time (see the .mli): each as
- * (cells, where its stretch starts, how wide it is, its top). A line's
- * height is guessed from its first letter's look before it is filled,
- * which is the look that decides it in all but mixed lines. *)
-let lines_around ~width ~around ~size_of words =
+ * its segments -- (cells, where the stretch starts, how wide it is) --
+ * and its top. A line fills the widest stretch the boxes leave it, or,
+ * [both], every stretch wide enough, left to right: a text on both
+ * sides of a box. A line's height is guessed from its first letter's
+ * look before it is filled, which is the look that decides it in all
+ * but mixed lines. *)
+let lines_around ~both ~width ~around ~size_of words =
   let min_w = 40. in
-  (* the widest stretch of [0, width] the boxes reaching [y, y+h)
-     leave, and those boxes *)
+  (* the stretches of [0, width] the boxes reaching [y, y+h) leave, left
+     to right, and those boxes *)
   let free y h =
     let blocking = List.filter (fun (_, y0, _, y1) -> y0 < y +. h && y1 > y) around in
     let cuts = List.sort compare (List.map (fun (x0, _, x1, _) -> (Float.max 0. x0, Float.min width x1)) blocking) in
     let stretches, last =
       List.fold_left (fun (acc, x) (a, b) -> ((if a > x then (x, a) :: acc else acc), Float.max x b)) ([], 0.) cuts
     in
-    let stretches = if width > last then (last, width) :: stretches else stretches in
-    let widest =
-      List.fold_left
-        (fun best (a, b) -> match best with Some (a', b') when b' -. a' >= b -. a -> best | _ -> Some (a, b))
-        None (List.rev stretches)
+    let stretches = List.rev (if width > last then (last, width) :: stretches else stretches) in
+    let wide = List.filter (fun (a, b) -> b -. a >= min_w) stretches in
+    let chosen =
+      if both then wide
+      else
+        match
+          List.fold_left (fun best (a, b) -> match best with Some (a', b') when b' -. a' >= b -. a -> best | _ -> Some (a, b)) None wide
+        with
+        | Some s -> [ s ]
+        | None -> []
     in
-    (widest, blocking)
+    (chosen, blocking)
+  in
+  (* words into a stretch w wide, as many as fit -- and whether a
+     newline ended the line *)
+  let fill w words =
+    let rec go x cur = function
+      | wd :: rest when cur = [] || x +. wd.ink <= w ->
+          let cur = List.rev_append wd.parts cur in
+          if wd.hard then (List.rev cur, rest, true) else go (x +. wd.total) cur rest
+      | rest -> (List.rev cur, rest, false)
+    in
+    go 0. [] words
   in
   let rec go y words acc last_hard =
     match words with
     | [] ->
         (* the caret's last line, after a final newline or in an empty
            text *)
-        List.rev (if acc = [] || last_hard then ([], 0., width, y) :: acc else acc)
+        List.rev (if acc = [] || last_hard then ([ ([], 0., width) ], y) :: acc else acc)
     | first :: _ -> (
         let h = line_height (size_of (match first.parts with c :: _ -> [ c ] | [] -> [])) in
         match free y h with
-        | Some (a, b), _ when b -. a >= min_w ->
-            let w = b -. a in
-            let rec fill x cur hard = function
-              | wd :: rest when cur = [] || x +. wd.ink <= w ->
-                  let cur = List.rev_append wd.parts cur in
-                  if wd.hard then (cur, rest, true) else fill (x +. wd.total) cur false rest
-              | rest -> (cur, rest, hard)
-            in
-            let cur, rest, hard = fill 0. [] false words in
-            let cells = List.rev cur in
-            go (y +. line_height (size_of cells)) rest ((cells, a, w, y) :: acc) hard
-        | _, blocking ->
+        | [], blocking ->
             (* no room at this height: on below the nearest bottom of the
                boxes in the way *)
             let next = List.fold_left (fun m (_, _, _, y1) -> Float.min m y1) infinity blocking in
-            go (if next = infinity || next <= y then y +. 1. else next) words acc last_hard)
+            go (if next = infinity || next <= y then y +. 1. else next) words acc last_hard
+        | stretches, _ ->
+            (* each stretch in turn, until the words or the line end *)
+            let rec segments words hard acc = function
+              | [] -> (List.rev acc, words, hard)
+              | _ when words = [] || hard -> (List.rev acc, words, hard)
+              | (a, b) :: more ->
+                  let cells, rest, hard = fill (b -. a) words in
+                  segments rest hard ((cells, a, b -. a) :: acc) more
+            in
+            let segs, rest, hard = segments words false [] stretches in
+            let cells = List.concat_map (fun (c, _, _) -> c) segs in
+            go (y +. line_height (size_of cells)) rest ((segs, y) :: acc) hard)
   in
   go 0. words [] false
 
-let layout ?(align = Left) ?(around = []) ~metrics ~width r =
+let layout ?(align = Left) ?(around = []) ?(both = false) ~metrics ~width r =
   let s = Rich.to_string r in
   let rec cells_from i acc =
     if i >= String.length s then List.rev acc
@@ -223,34 +243,43 @@ let layout ?(align = Left) ?(around = []) ~metrics ~width r =
     let size = List.fold_left (fun m c -> max m c.look.Style.size) 0. cells in
     if size = 0. then base.Style.size else size
   in
-  (* each line: its cells, where its stretch starts, its width, its top *)
+  (* each line: its segments -- cells, where the stretch starts, its
+     width -- and its top *)
   let placed =
     if around = [] then
       List.rev
         (snd
            (List.fold_left
-              (fun (top, acc) cells -> (top +. line_height (size_of cells), (cells, 0., width, top) :: acc))
+              (fun (top, acc) cells -> (top +. line_height (size_of cells), ([ (cells, 0., width) ], top) :: acc))
               (0., []) (lines_of ~width words)))
-    else lines_around ~width ~around ~size_of words
+    else lines_around ~both ~width ~around ~size_of words
   in
   let lines =
     List.map
-      (fun (cells, x0, w, top) ->
+      (fun (segs, top) ->
+        let cells = List.concat_map (fun (c, _, _) -> c) segs in
         let size = size_of cells in
         let baseline = top +. size in
-        let _, glyphs =
-          List.fold_left
-            (fun (x, gs) c ->
-              (x +. c.w, { offset = c.at; text = c.ch; style = c.look; x; baseline; advance = c.w } :: gs))
-            (0., []) cells
-        in
         let first = match cells with c :: _ -> c.at | [] -> length in
         let stop = List.fold_left (fun _ c -> c.at + String.length c.ch) first cells in
         (* the last line of a paragraph: it ends with a newline, or the
            text ends with it *)
         let last = stop >= length || (match List.rev cells with c :: _ -> c.ch = "\n" | [] -> true) in
-        let glyphs = aligned align ~width:w ~last (List.rev glyphs) in
-        let glyphs = if x0 = 0. then glyphs else List.map (fun g -> { g with x = g.x +. x0 }) glyphs in
+        let n = List.length segs in
+        let glyphs =
+          List.concat
+            (List.mapi
+               (fun i (cells, x0, w) ->
+                 let _, glyphs =
+                   List.fold_left
+                     (fun (x, gs) c -> (x +. c.w, { offset = c.at; text = c.ch; style = c.look; x; baseline; advance = c.w } :: gs))
+                     (0., []) cells
+                 in
+                 (* only the line's last segment can be a paragraph's last *)
+                 let glyphs = aligned align ~width:w ~last:(last && i = n - 1) (List.rev glyphs) in
+                 if x0 = 0. then glyphs else List.map (fun g -> { g with x = g.x +. x0 }) glyphs)
+               segs)
+        in
         { top; height = line_height size; baseline; cells = glyphs; first; stop })
       placed
   in

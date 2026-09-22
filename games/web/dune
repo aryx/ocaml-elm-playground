@@ -36,7 +36,6 @@
 (copy_files ../TinyLemmings.ml)
 (copy_files ../TinyPuzzleBobble.ml)
 (copy_files ../AiOthello.ml)
-(copy_files ../AiChess.ml)
 (copy_files ../TinyTowerDefense.ml)
 (copy_files ../TinyDune2.ml)
 (copy_files ../TinyWarcraft2.ml)
@@ -94,7 +93,6 @@
     TinyLemmings
     TinyPuzzleBobble
     AiOthello
-    AiChess
     TinyTowerDefense
     TinyDune2
     TinyWarcraft2

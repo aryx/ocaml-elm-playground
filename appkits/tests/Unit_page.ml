@@ -160,6 +160,35 @@ let test_a_box_across () =
   | (_, _, top) :: _ -> Alcotest.(check (float 1e-9)) "below the box" 50. top
   | [] -> Alcotest.fail "no lines"
 
+(* a box in the middle, a stretch of 45 on each side: with [both] a
+   line holds a word on each side, the right one starting after the box;
+   without, only the left stretch is used *)
+let middle = [ (45., 0., 55., 30.) ]
+
+let test_both_sides () =
+  let p = Page.layout ~around:middle ~both:true ~metrics ~width:100. text in
+  (match Page.lines p with
+  | l :: _ ->
+      Alcotest.(check (list (pair string (float 1e-9))))
+        "a word on each side" [ ("a", 0.); ("b", 55.) ]
+        (List.filter_map
+           (fun (g : Page.glyph) -> if g.x = 0. || g.x = 55. then Some (g.text, g.x) else None)
+           l.cells)
+  | [] -> Alcotest.fail "no lines");
+  Alcotest.check placed "two lines beside it" [ ("a", 0., 0.); ("c", 0., 22.4) ] (lines_of p);
+  Alcotest.check placed "one side only, without"
+    [ ("a", 0., 0.); ("b", 0., 22.4); ("c", 0., 44.8) ]
+    (lines_of (Page.layout ~around:middle ~metrics ~width:100. text))
+
+(* the caret along a line goes from the left stretch to the right one,
+   and a click on the right stretch finds its letters *)
+let test_both_sides_caret () =
+  let p = Page.layout ~around:middle ~both:true ~metrics ~width:100. text in
+  let x, _, _ = Page.caret_at p 5 in
+  Alcotest.(check (float 1e-9)) "b is after the box" 55. x;
+  let x, baseline, height = Page.caret_at p 7 in
+  Alcotest.(check int) "a click on it" 7 (Page.offset_at p (x +. 1., baseline -. (height /. 3.)))
+
 let tests =
   [
     t "the worked example" test_the_worked_example;
@@ -175,4 +204,6 @@ let tests =
     t "round boxes: one on the right" test_a_box_on_the_right;
     t "round boxes: one on the left" test_a_box_on_the_left;
     t "round boxes: one across the page" test_a_box_across;
+    t "round boxes: text on both sides" test_both_sides;
+    t "round boxes: the caret on both sides" test_both_sides_caret;
   ]

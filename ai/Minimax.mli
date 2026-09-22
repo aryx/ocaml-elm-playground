@@ -52,9 +52,7 @@ type ('state, 'move) game = {
   (* the legal moves; none: the game is over *)
   moves : 'state -> 'move list;
   play : 'state -> 'move -> 'state;
-  (* the evaluation function: the higher, the better for MAX; of an
-   * ended game too, which alpha-beta scores without asking [moves] when
-   * it is a leaf *)
+  (* the evaluation function: the higher, the better for MAX *)
   score : 'state -> float;
   max_to_play : 'state -> bool;
 }
@@ -74,15 +72,5 @@ val minimax : ('state, 'move) game -> depth:int -> 'state -> 'move result
 
 (* [alphabeta game ~depth state]: the same value and best move as
  * [minimax], without the branches that can't change them. E.g. the
- * tree above: 11 nodes.
- *
- * [leaf], if given, scores the positions [depth] moves ahead instead
- * of [score], told the window there: whatever it answers below [alpha]
- * or above [beta] only needs to stay below or above it. A game that
- * searches on at its leaves -- chess's quiescence, the captures played
- * out until the board is quiet (games/AiChess.ml) -- can then cut
- * that search too, where [score] would have to search with no window
- * at all. *)
-val alphabeta :
-  ?leaf:('state -> alpha:float -> beta:float -> float) ->
-  ('state, 'move) game -> depth:int -> 'state -> 'move result
+ * tree above: 11 nodes. *)
+val alphabeta : ('state, 'move) game -> depth:int -> 'state -> 'move result

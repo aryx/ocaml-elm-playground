@@ -95,9 +95,21 @@ type t
  *     +-----------+  ......................
  *     .....................................  and below it, the whole
  *
+ * [?both] (default false): a line fills every stretch wide enough,
+ * left to right, rather than only the widest -- the text on both sides
+ * of a box standing in the middle of a column, as Word's "Square" and
+ * Pages' "Around" do. Each stretch is aligned on its own; a line is
+ * still one [line], its glyphs in x order, so the caret goes from the
+ * left stretch to the right one as it goes along a line.
+ *
+ *     ..........  +-------+  ..........
+ *     ..........  |  box  |  ..........
+ *     ..........  +-------+  ..........
+ *
  * A word too long for its stretch is set whole and runs over it. With
  * no boxes (or [~around:[]]) the text is laid out exactly as before. *)
-val layout : ?align:align -> ?around:(float * float * float * float) list -> metrics:metrics -> width:float -> Rich.t -> t
+val layout :
+  ?align:align -> ?around:(float * float * float * float) list -> ?both:bool -> metrics:metrics -> width:float -> Rich.t -> t
 
 (* every glyph, in order *)
 val glyphs : t -> glyph list

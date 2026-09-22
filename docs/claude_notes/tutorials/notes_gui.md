@@ -820,6 +820,40 @@ Two small changes let the parts be a document's whole content: a sheet
 part of any number of cells (`Part_sheet.make ?cols ?rows`), a
 drawing part as tall as a page (`Part_drawing.make ?max_height`).
 
+Four more things a modern suite does, each small once the text runs
+round boxes:
+
+- **text on both sides** of an object (Arrange > Wrap Both Sides,
+  Word's "Square"): `Page.layout ~both` fills every stretch wide
+  enough, left to right, instead of the widest. A line is still one
+  `line`, its glyphs in x order, so the caret and the clicks work
+  unchanged -- the caret simply jumps the object as it goes along;
+- **pages**: the document's text is *one* tall layout over all its
+  pages, with a box across the page's width over each bottom margin,
+  gap and next top margin. A line that would reach one goes on below
+  it, on the next page: pagination as text round boxes nobody drew.
+  (TinyFrameMaker pours the text through one column after another
+  instead, `Flow`, which it needs for its columns and master pages.)
+  The pages are scrolled, and follow the caret as it is typed;
+- **objects that move with the text** (Arrange > Move with Text): an
+  object tied to the start of a paragraph, its y kept from that
+  paragraph's line. Where is the line? Wherever the layout puts it --
+  and the layout depends on where the objects are. The circle is
+  broken with two layouts: the first without the tied objects, to find
+  their paragraphs, the second with everything, the one shown. The
+  anchors are offsets in the text, so every edit shifts the ones after
+  the caret by what it typed or deleted, as a mark in Emacs moves;
+- **a chart linked to a sheet** (Insert > Chart): the one object that
+  holds not its content but *where its content is* -- the sheet that
+  is the document, or a sheet object by an id that stays the same as
+  objects come and go. It is made again from the sheet's cells every
+  time it is drawn (`Part_chart.of_sheet`), so its bars move as a
+  number is typed, even while the sheet is being edited in place.
+  That is OLE's *linking* beside its embedding: an embedded object is a
+  copy, a linked one a reference -- and, like a reference, it can
+  dangle, so a chart whose sheet is deleted keeps the last numbers it
+  had.
+
 ## 16. The numbers
 
 Measured 2026-09-21, lines of code (not blank, not comments) and, in

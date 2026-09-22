@@ -168,19 +168,21 @@ TinyFrameMaker so that they keep their history (its header says what
 each of them cannot do): a start screen of five kinds, every kind a
 host of the others, objects floating anywhere (dragged, resized,
 scaled, front and back), text running round them (`Page.layout
-~around`, tested), in-place editing with OLE 2's menu merging. Next,
-by what each would give:
+~around`, tested), in-place editing with OLE 2's menu merging. Then (2026-09-21,
+`notes_gui.md` §15b): **wrap on both sides** (`Page.layout ~both`,
+tested); **several pages**, the text laid out once over them all with
+the margins between pages as boxes it goes round, scrolled; **move
+with text**, an object tied to a paragraph and placed in two layouts;
+and **a chart linked to a sheet** (`apps/Part_chart`), made again from
+the sheet's cells whenever it is drawn. Next, by what each would give:
 
-- **saving**, every kind with its objects, through `Saved`
-  (`plan_io.md`);
-- **move with text**: an object tied to a paragraph, as
-  TinyFrameMaker's anchors are, but still free to be dragged;
-- **wrap on both sides** of an object, a line's two stretches filled
-  in turn;
-- **several pages** for a document, the text flowing on
-  (`appkits/richtext/Flow`), and the presentation's show;
-- **a chart object** drawn from a sheet object's cells, refreshed when
-  they change -- linking beside embedding.
+- **saving**, every kind with its objects, their anchors and links,
+  through `Saved` (`plan_io.md`);
+- the presentation's **show**, and headers, footers and page numbers
+  for the document's pages;
+- wrapping chosen **per object** rather than for the whole document;
+- a chart of a **range dragged over**, rather than of columns A and B,
+  and a link to a sheet in another file (after `plan_io.md`).
 
 ## 9. Small things found on the way
 
