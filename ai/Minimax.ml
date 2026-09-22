@@ -56,13 +56,17 @@ let minimax (game : ('state, 'move) game) ~(depth : int) (state : 'state) : 'mov
 (* [alpha]: what MAX is sure to get elsewhere, [beta]: what MIN is; a
  * position worth more than beta to MAX (or less than alpha to MIN)
  * won't be allowed by the other: its remaining moves are cut *)
-let alphabeta (game : ('state, 'move) game) ~(depth : int) (state : 'state) : 'move result =
+let alphabeta ?leaf (game : ('state, 'move) game) ~(depth : int) (state : 'state) : 'move result =
+  let leaf = match leaf with Some f -> f | None -> fun s ~alpha:_ ~beta:_ -> game.score s in
   let nodes = ref 0 in
   let rec value depth s alpha beta =
     incr nodes;
+    (* claude: the depth first: a leaf's moves are never looked at, and
+     * [score] (or [leaf]) says what an ended game is worth anyway *)
+    if depth = 0 then leaf s ~alpha ~beta
+    else
     match game.moves s with
     | [] -> game.score s
-    | _ when depth = 0 -> game.score s
     | moves ->
         if game.max_to_play s then
           let rec loop v alpha = function

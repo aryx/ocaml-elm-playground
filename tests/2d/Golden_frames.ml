@@ -145,6 +145,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AiTictactoe", "", 3);
     ("examples/software/AiPathfinding", "", 60);
     ("games/software/AiOthello", "", 3);
+    ("games/software/AiChess", "", 3);
     ("games/software/TinyTowerDefense", "", 5);
     ("games/software/TinyDune2", "", 5);
     ("games/software/TinyWarcraft2", "", 5);
@@ -441,6 +442,10 @@ let scripted : Testutil_golden.scripted list =
     ("games/software/TinyWarcraft2", "crowd", 300, "space:1,a:10,p:14,right:20-44,space:50");
     ("games/software/TinyTowerDefense", "maze", 400, "space:1,right:20-40,space:45,up:50-56,space:60,up:64-70,space:74,left:80-84,space:90");
     ("games/software/AiOthello", "reply", 60, "space:2");
+    (* claude: the knight on g1 clicked, its two squares shown *)
+    ("games/software/AiChess", "selected", 10, "at(250;-350):1-10,click:3");
+    (* claude: e2-e4 in two clicks, and the computer's answer *)
+    ("games/software/AiChess", "reply", 60, "at(50;-250):1-6,click:3,at(50;-50):7-60,click:9");
     (* flaps timed to thread 5 pipes (the pipes from the LFSR's seed=1);
      * and no flap after the first: the bird on the ground, game over *)
     ( "games/software/TinyFlappyBird",
