@@ -359,6 +359,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyTonyHawk.ml)
+ (deps (:src %{project_root}/games/sports/TinyTonyHawk.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyHamurabi.ml)
  (deps (:src %{project_root}/games/strategy/TinyHamurabi.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

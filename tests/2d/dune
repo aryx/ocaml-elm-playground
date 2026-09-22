@@ -143,6 +143,7 @@
    %{project_root}/games/adventure/software/TinyManiacMansion.exe
    %{project_root}/games/strategy/software/TinyHamurabi.exe
    %{project_root}/games/sports/software/TinyTennisForTwo.exe
+   %{project_root}/games/sports/software/TinyTonyHawk.exe
    %{project_root}/games/fps/software/TinyMazeWar.exe
    %{project_root}/games/puzzle/software/TinyCrush.exe
    %{project_root}/games/puzzle/software/TinyFez.exe

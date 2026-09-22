@@ -4,9 +4,9 @@
 
 (executables
   (names TinyKickOff2 TinyPinball TinySensibleSoccer TinyShufflePuck
-    TinySpeedball2 TinyTennisForTwo)
+    TinySpeedball2 TinyTennisForTwo TinyTonyHawk)
   (modules TinyKickOff2 TinyPinball TinySensibleSoccer TinyShufflePuck
-    TinySpeedball2 TinyTennisForTwo)
+    TinySpeedball2 TinyTennisForTwo TinyTonyHawk)
   (libraries
     elm_playground
     kit_sports

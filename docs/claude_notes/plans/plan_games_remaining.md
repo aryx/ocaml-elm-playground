@@ -403,6 +403,9 @@ longer true. See Adventure below.
   score is the length of the chain times its variety, the landing
   judged by the board's angle. Tiny as one half-pipe seen from the
   side.
+  (DONE: `TinyTonyHawk.ml`. The spins in the screen's plane, the
+  side view hiding THPS's; the grind a stall on the coping, a lip
+  trick; the revert (THPS3) and the manual (THPS2) as the links.)
 - Seen but not planned: Rocket League (Psyonix, 2015), a modern
   classic but a 3D car-physics sport, not a toy; Wii Sports (Nintendo,
   2006), the motion controller.

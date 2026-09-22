@@ -197,6 +197,7 @@ let scenes : Testutil_golden.scene list =
     ("games/adventure/software/TinyManiacMansion", "", 5);
     ("games/strategy/software/TinyHamurabi", "", 5);
     ("games/sports/software/TinyTennisForTwo", "", 5);
+    ("games/sports/software/TinyTonyHawk", "", 5);
     ("games/fps/software/TinyMazeWar", "", 5);
     ("games/puzzle/software/TinyCrush", "", 5);
     ("games/puzzle/software/TinyFez", "", 5);
@@ -591,6 +592,9 @@ let scripted : Testutil_golden.scripted list =
      "type(0):5,Enter:10,type(2000):15,Enter:25,type(1000):30,Enter:40,type(5):50");
     (* the serve, over the net, its trail on the phosphor *)
     ("games/sports/software/TinyTennisForTwo", "rally", 70, "d:3");
+    (* pumped five times across, the fifth air: a kickflip, in the
+       chain, and an indy grab held *)
+    ("games/sports/software/TinyTonyHawk", "air", 615, "down:1-571,x:575,z:596-640");
     (* five steps down the first corridor, to its side opening, and a
        quarter turn into it: the frames of a new corridor *)
     ("games/fps/software/TinyMazeWar", "walk", 50, "up:3,up:10,up:17,up:24,up:31,right:38");

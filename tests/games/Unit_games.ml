@@ -5315,6 +5315,101 @@ let tennis_computer_returns () =
   Alcotest.(check bool) "hit back over the net" true (back.ball.hitter = Right && back.ball.crossed && back.ball.x < 0.)
 
 (*****************************************************************************)
+(* TinyTonyHawk *)
+(*****************************************************************************)
+
+(* frames of [step], the input chosen by [play] each frame, until
+ * [stop] or [n] frames *)
+let hawk_until (n : int) (stop : TinyTonyHawk.run -> bool) (play : TinyTonyHawk.run -> TinyTonyHawk.input) (g : TinyTonyHawk.run) :
+    TinyTonyHawk.run * int =
+  let rec go k g = if k = n || stop g then (g, k) else go (k + 1) (TinyTonyHawk.step (play g) g) in
+  go 0 g
+
+let hawk_in_air (g : TinyTonyHawk.run) : bool = match g.skater with Air _ -> true | _ -> false
+let hawk_pumping (_ : TinyTonyHawk.run) : TinyTonyHawk.input = { TinyTonyHawk.nothing with down = true }
+
+(* pumped up to an air of at least [vy] off the lip *)
+let hawk_high_air (vy : float) : TinyTonyHawk.run =
+  fst (hawk_until 3000 (fun g -> match g.skater with Air a -> a.vy >= vy | _ -> false) hawk_pumping TinyTonyHawk.start)
+
+(* The ramp is one curve: its pieces meet; dropped in from a lip with
+ * no input, the skater rolls to the other side and back, almost up
+ * to the lips (the friction's loss) but never over them. *)
+let hawk_ramp () =
+  let open TinyTonyHawk in
+  let near (x1, y1) (x2, y2) = Float.abs (x1 -. x2) < 0.01 && Float.abs (y1 -. y2) < 0.01 in
+  Alcotest.(check bool) "flat to curve" true (near (pos flat) (pos (flat +. 0.0001)));
+  Alcotest.(check bool) "curve to vert" true (near (pos s_curve) (pos (s_curve +. 0.0001)));
+  Alcotest.(check bool) "the lip" true (near (pos (-.s_lip)) (-.(flat +. r), lip_height));
+  let top = ref (-1000.) in
+  let g, _ =
+    hawk_until 400 hawk_in_air (fun g -> if g.s > 0. then top := Float.max !top (snd (pos g.s)); nothing) start
+  in
+  Printf.eprintf "DBG hawk: highest on the right %.1f (lip %.0f)\n%!" !top lip_height;
+  Alcotest.(check bool) "never in the air" false (hawk_in_air g);
+  Alcotest.(check bool) "almost up to the lip" true (!top > lip_height -. 40. && !top < lip_height)
+
+(* Pumping (down held) takes the skater over a lip, and back down on
+ * it: a landing without a trick, nothing to bank; and pumping on, the
+ * airs get higher. *)
+let hawk_pump_to_air () =
+  let open TinyTonyHawk in
+  let g, k = hawk_until 1500 hawk_in_air hawk_pumping start in
+  Printf.eprintf "DBG hawk: in the air after %d frames\n%!" k;
+  let top = ref 0. in
+  let _ = hawk_until 1500 (fun _ -> false) (fun g -> (match g.skater with Air a ->  top := Float.max !top a.height | _ -> ()); hawk_pumping g) start in
+  Printf.eprintf "DBG hawk: the highest air %.0f\n%!" !top;
+  Alcotest.(check bool) "higher and higher" true (!top > 150.);
+  Alcotest.(check bool) "in the air" true (hawk_in_air g);
+  let g, _ = hawk_until 200 (fun g -> not (hawk_in_air g)) (fun _ -> nothing) g in
+  Alcotest.(check bool) "landed" true (g.skater = Rolling && g.combo = [])
+
+(* the chain's arithmetic: a kickflip, an indy, and a kickflip again,
+ * worth half *)
+let hawk_combo_score () =
+  let open TinyTonyHawk in
+  let kf = { name = "kickflip"; points = 100 } and indy = { name = "indy"; points = 130 } in
+  Alcotest.(check int) "the second kickflip" 50 (trick_value [ indy; kf ] kf);
+  Alcotest.(check int) "(100 + 130 + 50) x 3" 840 (combo_score [ kf; indy; kf ])
+
+(* In the air: a kickflip and a half turn land, the chain banked (the
+ * revert's window let go by); a quarter turn does not. *)
+let hawk_landing () =
+  let open TinyTonyHawk in
+  let air = hawk_high_air 9. in
+  let spin deg (g : run) =
+    match g.skater with Air a when Float.abs a.spun < deg -> { nothing with dir = 1.; flip = a.height > 20. && a.vy > 0. && a.flip = None && g.combo = [] } | _ -> nothing
+  in
+  let landed, _ = hawk_until 300 (fun g -> not (hawk_in_air g)) (spin 180.) air in
+  Printf.eprintf "DBG hawk: landed, %s\n%!" (String.concat " + " (List.map (fun (t : trick) -> t.name) landed.combo));
+  Alcotest.(check (list string)) "a kickflip and a 180" [ "180"; "kickflip" ] (List.map (fun (t : trick) -> t.name) landed.combo);
+  let banked, _ = hawk_until 20 (fun g -> g.combo = []) (fun _ -> nothing) landed in
+  Alcotest.(check int) "banked: (100 + 100) x 2" 400 banked.score;
+  let fell, _ = hawk_until 300 (fun g -> not (hawk_in_air g)) (spin 90.) air in
+  Alcotest.(check bool) "a quarter turn: a bail" true (match fell.skater with Bailed _ -> true | _ -> false)
+
+(* The chain across the half-pipe: a kickflip, a revert on landing, a
+ * manual on the flat, balanced, then up the other side and a grab:
+ * five tricks, one chain. *)
+let hawk_revert_manual () =
+  let open TinyTonyHawk in
+  let air = hawk_high_air 8. in
+  let robot (g : run) : input =
+    let a = Float.abs g.s in
+    match g.skater with
+    | Air x when g.combo = [] || List.length g.combo = 3 ->
+        if x.vy > 0. && x.height > 40. && x.flip = None then { nothing with flip = List.length g.combo = 0; grab = List.length g.combo = 3 } else nothing
+    | Air x -> { nothing with grab = x.grab <> None && x.grab <> Some ("indy", 20) && x.vy > -.5. }
+    | Manual b -> { nothing with dir = -.(sign (b.needle +. (b.speed *. 10.))) }
+    | Rolling when g.landed > 0 -> { nothing with revert = true }
+    | Rolling when a <= flat -> { nothing with up = true; up_held = true }
+    | _ -> { nothing with down = true }
+  in
+  let g, k = hawk_until 1000 (fun g -> List.length g.combo = 4 && not (hawk_in_air g) || g.score > 0 || match g.skater with Bailed _ -> true | _ -> false) robot air in
+  Printf.eprintf "DBG hawk chain after %d frames: %s, score %d\n%!" k (String.concat " + " (List.rev_map (fun (t : trick) -> t.name) g.combo)) g.score;
+  Alcotest.(check (list string)) "one chain" [ "indy"; "manual"; "revert"; "kickflip" ] (List.map (fun (t : trick) -> t.name) g.combo)
+
+(*****************************************************************************)
 (* TinyMazeWar *)
 (*****************************************************************************)
 
@@ -7207,6 +7302,11 @@ let tests =
       t "TinyTennisForTwo, the serve, and the net" tennis_serve_and_net;
       t "TinyTennisForTwo, two bounces" tennis_two_bounces;
       t "TinyTennisForTwo, the computer returns" tennis_computer_returns;
+      t "TinyTonyHawk, the ramp" hawk_ramp;
+      t "TinyTonyHawk, pumping to the air" hawk_pump_to_air;
+      t "TinyTonyHawk, the chain's score" hawk_combo_score;
+      t "TinyTonyHawk, the landing" hawk_landing;
+      t "TinyTonyHawk, revert and manual" hawk_revert_manual;
       t "TinyMazeWar, the frames" mazewar_frames;
       t "TinyMazeWar, a step, and a shot" mazewar_move_and_shoot;
       t "TinyMazeWar, back from the dead" mazewar_respawn;
