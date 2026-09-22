@@ -71,7 +71,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/PhysicsRagdoll3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
-    ("games/arcade/software/StarCollector3d", "", 3);
+    ("examples/software/StarCollector3d", "", 3);
     (* the title's tank, turned by 40 degrees, solid (the same frame as
      * TinyBattlezone's, in lines) *)
     ("games/fps/software/TinyBattlezone3d", "", 40);
@@ -132,7 +132,7 @@ let scenes : Testutil_golden.scene list =
 
 (* claude: played with keys (-script, see Input_script) *)
 let scripted : Testutil_golden.scripted list =
-  [ ("games/arcade/software/StarCollector3d", "move", 40, "up:1-40,right:10-25");
+  [ ("examples/software/StarCollector3d", "move", 40, "up:1-40,right:10-25");
     (* the camera turned, the time sped up to 80 days a second *)
     ("examples/software/PhysicsSolarSystem3d", "turned", 90, "w:2,w:4,left:10-60");
     (* the same battle as TinyBattlezone's golden frame: the

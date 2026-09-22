@@ -23,7 +23,7 @@
 #   scripts/frames/ref_frames_3d.sh capture <dir>   # before: write the references
 #   scripts/frames/ref_frames_3d.sh check <dir>     # after: compare with them
 #
-# Not included: games/arcade/StarCollector3d.exe (Random.self_init: its
+# Not included: StarCollector3d.exe (Random.self_init: its
 # stars are somewhere else on every run).
 
 set -uo pipefail

@@ -18,8 +18,8 @@
 )
 
 (executables
-  (names StarCollector3d TinyMarbleMadness TinyTron3d)
-  (modules StarCollector3d TinyMarbleMadness TinyTron3d)
+  (names TinyMarbleMadness TinyTron3d)
+  (modules TinyMarbleMadness TinyTron3d)
   (libraries
     elm_core
     kit_lightcycles

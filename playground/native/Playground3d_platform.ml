@@ -339,7 +339,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * in vertex_shader_source/fragment_shader_source (confirmed by
    * eprintf-dumping the exact string passed to Gl.shader_source right
    * before the call: it was always the correct, uncorrupted source).
-   * Reproduced reliably (10/10) on games/arcade/StarCollector3d.exe
+   * Reproduced reliably (10/10) on StarCollector3d.exe
    * specifically -- a scene with more shapes/allocation before this
    * point than Cubes3d.exe or Spheres3d.exe, which never
    * triggered it -- and, tellingly, adding *any* extra allocation

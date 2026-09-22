@@ -89,7 +89,6 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyMarbleMadness](games/arcade/TinyMarbleMadness.ml) | 3D | Marble Madness (Mark Cerny, Atari Games, 1984) | Roll a marble down a course floating in space, against the clock. | A ball rolling on a height map (5/7 of g sin a), falls that break it, collisions between balls; a far, nearly isometric camera. |
 | [TinyCameltry](games/arcade/TinyCameltry.ml) | 2D | Cameltry (Taito, 1989) | You don't move the ball, you turn the maze. | Turning the maze is turning gravity; rotation, so the ball rolls instead of sliding (`rotation=off` to compare). |
 | [TinyFlappyBird](games/arcade/TinyFlappyBird.ml) | 2D | Flappy Bird (Dong Nguyen, .GEARS, 2013) | One button: flap through the gaps between pipes. | A flap that sets the velocity; an endless world made and dropped as you fly; randomness from an LFSR kept in the model. |
-| [StarCollector3d](games/arcade/StarCollector3d.ml) | 3D | nateabele's elm-3d-playground example | Walk a 3D field collecting stars: the smallest 3D game here. | The first 3D game; moving by hand or pushed by forces (`physics=engine`), and a tumbling body's quaternion drawn. |
 
 ## Puzzle and board games
 

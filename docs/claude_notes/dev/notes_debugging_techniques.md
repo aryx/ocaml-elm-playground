@@ -275,7 +275,7 @@ together:
    remove the cap while benchmarking, and revert after.
 
 **A real bug this technique found, not just numbers**: benchmarking
-`games/arcade/StarCollector3d.exe` on the OpenGL backend surfaced an
+`StarCollector3d.exe` on the OpenGL backend surfaced an
 intermittent `Fatal error: OpenGL shader compile error` pointing at
 GLSL syntax errors that were never in the actual shader source string
 (confirmed by dumping the exact string passed to `Gl.shader_source`

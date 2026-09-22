@@ -79,9 +79,9 @@ dune exec examples/TexturedCube3d.exe  # a cube wrapped with a test texture
 dune exec examples/software/InteractiveCube3d.exe  # arrow keys/mouse move a cube around a small scene
 dune exec examples/software/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see the "z" toggle below
 dune exec examples/software/Corridor3d.exe  # walk down a corridor (up/down arrows); see the "c" toggle below
-dune exec games/arcade/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
-dune exec games/flight/TinyDescent3d.exe      # fly a ship through a mine, in any direction (arrows, a/d, w/s)
-dune exec games/fps/TinyQuake.exe          # a Quake level: qbsp, vis and light at startup, "v" shows what vis saves
+dune exec examples/StarCollector3d.exe  # move a box, collect randomly-spawning stars for points
+dune exec games/flight/TinyDescent3d.exe  # fly a ship through a mine, in any direction (arrows, a/d, w/s)
+dune exec games/fps/TinyQuake.exe      # a Quake level: qbsp, vis and light at startup, "v" shows what vis saves
 ```
 
 The examples above already run on the GPU by default; the same, on the
