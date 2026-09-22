@@ -4,7 +4,8 @@
 ; TinyOutRun (pseudo-3D, 2D shapes) and TinyVirtuaRacing
 ; (polygons); and a car on a flat world with a track of waypoints
 ; (Topdown), used by TinyMicroMachines and TinyMarioKart (Mode
-; 7). A private library, not installed: only the games use it.
+; 7), and by the ones from above -- TinyGranTrak10, TinySuperSprint,
+; TinySupercars and TinySuperOffRoad (its walls, bounces and bumps). A private library, not installed: only the games use it.
 (library
  (name kit_racing)
  (wrapped false)

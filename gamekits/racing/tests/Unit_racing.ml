@@ -57,8 +57,23 @@ let test_topdown () =
   Alcotest.(check int) "passed" 2 c.next;
   Alcotest.(check int) "first lap" 0 (Topdown.lap track c);
   Alcotest.(check int) "second lap" 1 (Topdown.lap track { c with next = 4 });
-  Alcotest.(check (float 1e-9)) "progress" (20000. -. Float.hypot 5. 100.) (Topdown.progress track c)
+  Alcotest.(check (float 1e-9)) "progress" (20000. -. Float.hypot 5. 100.) (Topdown.progress track c);
+  Alcotest.(check (list (float 1e-9)))
+    "distance to the center line" [ 10.; Float.hypot 10. 10. ]
+    [ Topdown.distance track 50. 10.; Topdown.distance track 110. (-10.) ];
+  Alcotest.(check (float 1e-9)) "to the second segment only" 50. (Topdown.distance_from track 1 1 50. 10.)
+
+let test_hitting () =
+  let still = { Topdown.x = 0.; y = 0.; vx = 0.; vy = 0.; heading = 0.; speed = 0.; next = 1 } in
+  let wall x _y = x > 100. in
+  let c = Topdown.bounce wall { still with x = 95. } { still with x = 105.; vx = 300.; speed = 300. } in
+  Alcotest.(check (list (float 1e-9))) "turned back by the wall" [ 95.; 0.; -150.; 150. ] [ c.x; c.y; c.vx; c.speed ];
+  let c = Topdown.bounce wall { still with x = 95. } { still with x = 105.; y = 5.; vx = 300.; vy = 300. } in
+  Alcotest.(check (list (float 1e-9))) "sliding along it" [ 95.; 5.; -150.; 300. ] [ c.x; c.y; c.vx; c.vy ];
+  let a, b = Topdown.push 10. { still with vx = 100. } { still with x = 10. } in
+  Alcotest.(check (list (float 1e-9))) "the one hitting stops, the one hit goes" [ -5.; 0.; 15.; 100. ] [ a.x; a.vx; b.x; b.vx ]
 
 let tests =
   Testo.categorize "kit_racing"
-    [ t "build" test_build; t "the coast" test_coast; t "centerline" test_centerline; t "car" test_car; t "topdown" test_topdown ]
+    [ t "build" test_build; t "the coast" test_coast; t "centerline" test_centerline; t "car" test_car; t "topdown" test_topdown;
+      t "hitting" test_hitting ]

@@ -116,6 +116,10 @@ let scenes : Testutil_golden.scene list =
     ("games/arcade/software/TinyBomberman", "", 5);
     ("games/arcade/software/TinyTron", "", 5);
     ("games/racing/software/TinyMicroMachines", "", 5);
+    ("games/racing/software/TinyGranTrak10", "", 5);
+    ("games/racing/software/TinySuperSprint", "", 5);
+    ("games/racing/software/TinySupercars", "", 5);
+    ("games/racing/software/TinySuperOffRoad", "", 5);
     (* the physics plan's: explicit Euler's orbit, spiraling out after 8
      * seconds; the artillery and Spacewar! titles *)
     ("examples/software/PhysicsOrbit", "", 480);
@@ -311,6 +315,14 @@ let scripted : Testutil_golden.scripted list =
     (* against the computer, north up; then with the camera turning *)
     ("games/racing/software/TinyMicroMachines", "race", 200, "1:1,up:62-200");
     ("games/racing/software/TinyMicroMachines", "turning", 200, "1:1,up:62-200,v:2");
+    (* shifted up to third, the engine's pitch dropping at each shift *)
+    ("games/racing/software/TinyGranTrak10", "gears", 260, "space:1,up:3-260,2:70,3:130,right:200-230");
+    (* the drones round the figure eight, over and under the bridge *)
+    ("games/racing/software/TinySuperSprint", "bridge", 330, "1:1,up:95-330");
+    (* two missiles fired, the camera ahead of the car, the minimap *)
+    ("games/racing/software/TinySupercars", "race", 300, "space:1,up:95-300,space:200,space:230");
+    (* the computer's trucks through the mud hole, their shadows *)
+    ("games/racing/software/TinySuperOffRoad", "race", 700, "1:1,up:95-700");
     (* semi-implicit Euler: the same orbit, closed *)
     ("examples/software/PhysicsOrbit", "semi", 480, "space:1-2");
     (* a shot, pushed back by the wind, digging its crater *)

@@ -48,6 +48,10 @@
    %{project_root}/games/arcade/software/TinyBomberman.exe
    %{project_root}/games/arcade/software/TinyTron.exe
    %{project_root}/games/racing/software/TinyMicroMachines.exe
+   %{project_root}/games/racing/software/TinyGranTrak10.exe
+   %{project_root}/games/racing/software/TinySuperSprint.exe
+   %{project_root}/games/racing/software/TinySupercars.exe
+   %{project_root}/games/racing/software/TinySuperOffRoad.exe
    %{project_root}/examples/software/PhysicsOrbit.exe
    %{project_root}/games/strategy/software/TinyWorms.exe
    %{project_root}/games/arcade/software/TinySpacewar.exe

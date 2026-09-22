@@ -24,6 +24,7 @@ games/*/*.ml`) against the whole game.
 | --- | --- | --- | --- | --- | --- |
 | `TinyZaxxon` | Zaxxon (Sega, 1982) | two lines of projection (`x` across the fortress, `z` along it, `y` up), then everything sorted back to front; the altitude of a thing is the gap on screen between it and its shadow | object (a shape, and its shadow at y = 0) | 54 / 478 | tell you how high anything is without drawing it twice; turn, tilt or look from anywhere else (one fixed angle, for ever); two things whose order the sort cannot settle |
 | `TinyDiablo` | Diablo (Blizzard North, 1996) | the same two lines as `TinyZaxxon`, from the kit now (`gamekits/isometric`), on a grid of diamond tiles; and the two lines run *backwards*, which is what turns a mouse click into a place in the dungeon | tile, and one cube per wall | 0 / 567 (the trick is the kit's) | tell you what is under a pixel without the floor being flat; a room above a room; anything the sort cannot order (a long wall against a body inside it) |
+| `TinySuperOffRoad` | Ironman Ivan Stewart's Super Off Road (Leland, 1989) | the isometric kit's two lines again, seen from the stands (x across, the depth squeezed to 0.6, the height up): every ground cell a quad lifted by its corners' heights and lit by its slope, flat runs merged, sorted far to near with the trucks' boxes; the truck's height a second number beside the ground's, flying when the ground falls away faster than gravity | cell (a run of cells), and a box's face | 110 / 473 | an overhang or a tunnel; the stadium seen from anywhere else; a truck sorted wrong against a steep hill just in front of it (one key per truck) |
 | `TinyDungeonMaster` | Dungeon Master (FTL, 1987) | the hero stands in the middle of a cell facing one of four ways, so every cell in view has one fixed place on the screen: nested frames, filled in farthest first | cell (a square and a trapezoid) | 24 / 624 | anything off the grid: a diagonal, a step, standing between two cells, looking up |
 | `TinyOutRun` | Out Run (Sega, 1986) | the road as a list of segments, their edges projected, each slice a trapezoid; a curve, each segment shifted sideways a bit more; a hill hides what's behind (a segment drawn only if it rises above the nearer ones) | slice of road | 23 / 250 | a world beyond the road: a track that crosses itself, a free camera |
 | `TinyGuitarHero` | Guitar Hero (Harmonix, 2005) | Out Run's road straightened: one division by the depth for every point of the highway, the gems shrinking and the frets closing in towards the horizon; the lines across it, one a beat, are all that makes it move | point (a lane edge, a gem, a beat line) | 23 / 351 | anything off the highway: it has no world, only a road that the music scrolls |
@@ -76,7 +77,11 @@ Four families, then:
   with it, Diablo also runs it backwards, because a click is a pixel
   and the game needs a place. That inverse exists only because there
   is no perspective to divide by, and it is why every game that looks
-  like this is played with a mouse.
+  like this is played with a mouse. `TinySuperOffRoad` is the third:
+  the same two lines turned to face the stands, and its ground not
+  blocks but a surface -- every cell's corners lifted by their heights,
+  the one game here whose driving, not only its picture, depends on the
+  height (slower up, faster down, and off a crest into the air).
 - **Cell by cell**, the grid: Dungeon Master. If the eye is always at a
   cell's center and looks along an axis, there is a small, fixed set of
   cells it can see, and each one has one place on the screen -- so the

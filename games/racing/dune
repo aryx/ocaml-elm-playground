@@ -1,13 +1,16 @@
 ; claude: the racing games (CATALOG.md's section): 2D, the 2.5D ones
-; (TinyOutRun's road and TinyMarioKart's Mode 7, drawn by the games
-; themselves) and 3D side by side; on the software rasterizers in
+; (TinyOutRun's road, TinyMarioKart's Mode 7 and TinySuperOffRoad's
+; stadium, drawn by the games themselves) and 3D side by side; on the software rasterizers in
 ; software/, in the browser in web/.
 (executables
-  (names TinyMarioKart TinyMicroMachines TinyOutRun)
-  (modules TinyMarioKart TinyMicroMachines TinyOutRun)
+  (names TinyGranTrak10 TinyMarioKart TinyMicroMachines TinyOutRun
+    TinySupercars TinySuperOffRoad TinySuperSprint)
+  (modules TinyGranTrak10 TinyMarioKart TinyMicroMachines TinyOutRun
+    TinySupercars TinySuperOffRoad TinySuperSprint)
   (libraries
     elm_playground
     kit_racing ; TinyOutRun's Road and Car, the others' Topdown
+    kit_isometric ; TinySuperOffRoad's view
     elm_playground_native ; implem of virtual elm_playground
   )
 )

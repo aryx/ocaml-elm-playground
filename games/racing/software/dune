@@ -3,11 +3,14 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyMarioKart TinyMicroMachines TinyOutRun)
-  (modules TinyMarioKart TinyMicroMachines TinyOutRun)
+  (names TinyGranTrak10 TinyMarioKart TinyMicroMachines TinyOutRun
+    TinySupercars TinySuperOffRoad TinySuperSprint)
+  (modules TinyGranTrak10 TinyMarioKart TinyMicroMachines TinyOutRun
+    TinySupercars TinySuperOffRoad TinySuperSprint)
   (libraries
     elm_playground
     kit_racing
+    kit_isometric
     elm_playground_software ; implem of virtual elm_playground
   )
 )

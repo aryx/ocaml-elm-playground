@@ -441,7 +441,17 @@ Mode 7, see `plan_games3d.md`).
   split top and bottom as on the SNES -- Mode 7 drawn twice in screens
   half as tall, the playground unable to clip, so each half is drawn
   whole, hills cut and near karts left out, the top one last and a
-  strip over the seam).
+  strip over the seam). The top-down line, from above on one screen
+  (DONE, 2026-09-22, asked for by the author, Super Off Road a
+  childhood favorite): TinyGranTrak10 (Atari, 1974: the gearbox, oil,
+  crashes), TinySuperSprint (Atari Games, 1986: four cars bumping, a
+  figure eight under a bridge, wrenches for upgrades), TinySupercars
+  (Magnetic Fields, 1990: scrolling, a minimap, missiles, prize money
+  and a shop), TinySuperOffRoad (Leland, 1989: 2.5D, the stadium's
+  ground with a height, drawn with the isometric kit, trucks that slow
+  uphill and fly off crests); Topdown gained [bounce], [push],
+  [distance], [distance_from] (a track crossing itself) and [ribbon]
+  for them.
 - **Kit**, the racing kit:
   - `Road`: a track as segments (length, curve, hill), projected one
     segment at a time, from far to near; references: Lou Gorenfeld,
