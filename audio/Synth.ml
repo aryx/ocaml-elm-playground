@@ -10,7 +10,7 @@
 
 (* See Synth.mli *)
 
-type source = Wave of Oscillator.waveform | Naive of Oscillator.waveform | Fm of { ratio : float; index : float } | Noise
+type source = Wave of Oscillator.waveform | Naive of Oscillator.waveform | Fm of { ratio : float; index : float } | Noise | Pluck
 
 type voice = {
   source : source;
@@ -44,6 +44,22 @@ let fading = map_voices (fun v -> { v with fade = true })
 let louder (k : float) = map_voices (fun v -> { v with volume = v.volume *. k })
 let sliding (target : float) = map_voices (fun v -> { v with slide = Some target })
 let with_effect (e : Effect.pitch) = map_voices (fun v -> { v with effects = v.effects @ [ e ] })
+
+let rec faster (k : float) (s : t) : t =
+  let effect (e : Effect.pitch) : Effect.pitch =
+    match e with
+    | Vibrato { rate; depth } -> Vibrato { rate = rate *. k; depth }
+    | Jump { semitones; at } -> Jump { semitones; at = at /. k }
+    | Arpeggio { semitones; step } -> Arpeggio { semitones; step = step /. k }
+  in
+  match s with
+  | Voice v -> Voice { v with seconds = v.seconds /. k; effects = List.map effect v.effects }
+  | Together l -> Together (List.map (faster k) l)
+  | After l -> After (List.map (faster k) l)
+  | Samples s -> Samples s
+  | Filtered (f, s) -> Filtered (f, faster k s)
+  | Echo (e, s) -> Echo ({ e with delay = e.delay /. k }, faster k s)
+
 let naive = map_voices (fun v -> match v.source with Wave w -> { v with source = Naive w } | _ -> v)
 
 let rec duration (s : t) : float =
@@ -66,8 +82,9 @@ let wrap (phase : float) : float = phase -. Float.floor phase
 
 (* one sample of [source] at [frequency], and the state after;
  * [brightness] scales FM's index *)
-let sample ?(brightness = 1.) (source : source) (frequency : float) (r : running) : float * running =
+let rec sample ?(brightness = 1.) (source : source) (frequency : float) (r : running) : float * running =
   match source with
+  | Pluck -> sample (Wave Triangle) frequency r
   | Wave w | Naive w ->
       let dt = frequency /. rate in
       let x =
@@ -104,12 +121,19 @@ let render_voice (v : voice) : Signal.t =
   (* FM's brightness following the level when the voice dies away *)
   let dies = v.fade || Option.is_some v.envelope in
   let r = ref (start ()) in
+  let string = match v.source with Pluck -> Pluck.render ~frequency:v.frequency v.seconds | _ -> [||] in
   Array.init n (fun i ->
       let t = float_of_int i /. rate in
       let f = match v.slide with None -> v.frequency | Some target -> v.frequency +. ((target -. v.frequency) *. t /. v.seconds) in
       let level = Envelope.level envelope ~held t in
-      let (x, r') = sample ~brightness:(if dies then level else 1.) v.source (f *. effects_factor v t) !r in
-      r := r';
+      let x =
+        match v.source with
+        | Pluck -> string.(i)
+        | _ ->
+            let (x, r') = sample ~brightness:(if dies then level else 1.) v.source (f *. effects_factor v t) !r in
+            r := r';
+            x
+      in
       x *. v.volume *. level)
 
 let rec render (s : t) : Signal.t =

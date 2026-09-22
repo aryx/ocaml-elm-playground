@@ -30,6 +30,7 @@ same mistake, with the same cure.
 | `Fm` | FM synthesis: sidebands from two sines | §7 |
 | `Synth` | a sound as a tree of voices, rendered; slides | §8 |
 | `Effect`, `Sfx` | vibrato, jump, arpeggio, echo; sfxr's parameters | §8 |
+| `Pluck` | a plucked string: Karplus-Strong | §8 |
 | `Music`, `Abc`, `Doremi`, `Midi` | notes, equal temperament, tunes as text, MIDI files | §9 |
 | `Mixer` | the sounds playing, pulled by the sound card | §10 |
 | `Wav` | writing samples to a file | §2 |
@@ -252,6 +253,22 @@ reverberation. Its echoes die away geometrically, the sound lasting
 until they fall below -60 dB: 2.5 s for a delay of 0.25 s and a
 feedback of 0.5 (`Effect.echo`, `Effect.tail`).
 
+A delay line makes an instrument too. **Karplus-Strong** (Kevin Karplus
+and Alex Strong, Stanford, 1983): fill a delay line one period long
+with noise, read it around and around, and write each sample back as
+the average of it and its neighbour. Going round, the line repeats, so
+the noise becomes a periodic wave with every harmonic, like a string
+just plucked; the average, a gentle low-pass once a period, kills the
+high harmonics first and the low ones last, which is what a real
+string does -- the twang turning into a hum. Nothing in it models a
+string, and it sounds like one (`Pluck`, `Audio.pluck`: an A3's
+brightness falls from 4312 Hz at the pluck to 644 Hz 1.5 s later). Two
+details make it right: the average is half a sample late, so the
+period is the line's length plus a half; and the noise must add up to
+0, or the averaging, which lets 0 Hz through, keeps its offset forever
+-- a first version, filled from the NES's shift register started at 1,
+was three quarters -1s.
+
 ### The ready-made sounds, three generations
 
 `playground/Audio`'s `blip`, `coin`, `laser`, `explosion`... were
@@ -333,9 +350,18 @@ Hz, A5 is 880 Hz, and C4 (middle C, nine semitones below A4) is 440 x
 A **sequencer** plays notes at times: a pattern of steps, like the
 **trackers** of the Amiga (1987) and the NES's music drivers -- rows
 of notes, one per channel, played at a tempo. Tetris's theme (the
-Russian folk song Korobeiniki) is a few such rows. The standard way
-to store and send notes, MIDI, has its own note:
-[`notes_audio_midi.md`](notes_audio_midi.md).
+Russian folk song Korobeiniki) is a few such rows: `Tetris.ml` has it
+in ABC, two voices, 8 bars, 12.8 s. The standard way to store and send
+notes, MIDI, has its own note: [`notes_audio_midi.md`](notes_audio_midi.md).
+
+The **tempo** is how many notes a second, and changing it is dividing
+every duration by the same number, the pitches kept (`Synth.faster`).
+Games learned to play with it: Space Invaders' four-note march speeds
+up as the invaders get fewer (1978), Tetris's theme as the level rises.
+The music has to *go on* faster, not start again from its first note,
+so a playing loop is swapped for the faster one at the same point of
+the tune, the same fraction of the way through (`Mixer.change`,
+`Audio.change_loop`).
 
 ## 10. The audio loop: latency and the two clocks
 
@@ -396,8 +422,10 @@ In rough order of difficulty:
 - **a wah on a continuous sound**: `keep_playing` filters with the
   cutoff of the frame (the biquad's memory carried from pull to pull),
   but ignores a `wah`'s sweep, which is over a sound's length;
-- **a plucked string**, Karplus-Strong: a delay line of noise, averaged
-  as it goes round -- a new `Synth.source`, a guitar in a few lines;
+- **a plucked string in tune**: `Pluck`'s delay line is a whole number
+  of samples, so its pitch can be off by half a sample (35 cents at
+  2 kHz); an all-pass filter in the loop, a fractional delay (Jaffe
+  and Smith, 1983), tunes it exactly;
 - **stereo and panning**: `Signal.t` and `Wav` are mono; then
   distance and Doppler from a physics body's position and velocity
   (the plan's phase 10);
@@ -415,9 +443,9 @@ In rough order of difficulty:
 The API is `playground/Audio.mli`, in the `elm_playground` library, so
 every backend has it. A **sound** is a value, like a shape: made from a
 few numbers (`tone`, `square`, `triangle`, `sawtooth`, `noise`, §3;
-`fm`, §7; `note "C4"`, §9), shaped by verbs like `move` and `scale`
+`fm`, §7; `pluck`, §8; `note "C4"`, §9), shaped by verbs like `move` and `scale`
 (`lasting`, `fading`, §4; `louder`, §5; `sliding`, `vibrato`,
-`arpeggio`, `echo`, §8; `low_pass`, `high_pass`, `wah`, §7; `naive`,
+`arpeggio`, `echo`, §8; `faster`, §9; `low_pass`, `high_pass`, `wah`, §7; `naive`,
 §6), and combined with `after` and `together`, Euterpea's two
 operators; `blip`, `coin`, `jump`, `laser`, `hit`, `explosion`, `step`
 and `powerup` are ready-made, `audio/Sfx`'s presets (§8), `varied`
@@ -430,7 +458,8 @@ the ball bounces, fire and forget -- the one impure call of the
 playground (the `.mli` says why, and what elm-audio does instead).
 `keep_playing name s`, called every frame, is a continuous sound whose
 pitch and volume change smoothly (§10's two clocks: the phase goes on
-between pulls); `loop` and `stop` are the music, `loop_from` a tune
+between pulls); `loop` and `stop` are the music, `change_loop` the
+same music changed (faster) from the same note, `loop_from` a tune
 from a file or a URL, and `position` the music's own clock, what a
 rhythm game judges a step by (§10). Underneath, `Mixer` sums them
 through tanh (§5), and the platform pulls its samples: the SDL queue
@@ -438,7 +467,8 @@ natively, an `AudioBuffer` in the browser (§10).
 
 The examples, one idea each: `examples/AudioTheremin.ml`, the whole
 instrument one `keep_playing` line; `examples/AudioPiano.ml`, the
-keyboard as a piano, space switching the waveform (§3's timbre, §9's
+keyboard as a piano, space switching the waveform (and a fifth
+timbre, the plucked string) (§3's timbre, §9's
 notes); `examples/AudioAliasing.ml`, a square's spectrum, its aliases
 in red, space switching naive and band-limited (§2, §6);
 `examples/AudioSfx.ml`, the ready-made sounds on keys 1 to 8, their
@@ -451,7 +481,8 @@ music, an ABC tune or `music=` a `.mid` file), and the rhythm games,
 noise through a low-pass brightening with speed, kept playing, the
 heartbeat speeding up as the asteroids get fewer), `Pong.ml` and
 `TinyPong.ml` (Pong's three blips, TinyPong's rising with the rally's
-speed), `Snake.ml` (a crunch, a fall); about thirty more play the
+speed), `Snake.ml` (a crunch, a fall), `Tetris.ml` (Korobeiniki, faster at each
+level, `change_loop`; a thud, a chime, a "Tetris"); about thirty more play the
 ready-made sounds. No game uses `fm` or `wah` yet: only the golden WAVs
 do.
 

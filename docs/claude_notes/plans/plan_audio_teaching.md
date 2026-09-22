@@ -536,6 +536,25 @@ audio meeting).
   falling tone when it bites itself), each checked on a scripted run's
   dumped sound. Left: sfxr's per-category random, a reverb, Tetris's
   theme (phase 8).
+- **Phase 8's music, continued: Tetris's theme and tempo; a plucked
+  string, DONE**: `Synth.faster` (every duration divided, the pitches
+  kept), `Mixer.change` (a playing loop swapped, going on from the same
+  fraction of the tune, its clock too), `Audio.faster`,
+  `Audio.change_loop`. Tetris: Korobeiniki (the folk melody; an octave
+  bass of our own, not the Game Boy's), in ABC, 8 bars, 12.8 s (the
+  loop checked sample-exact at 564,443 samples: 37 lost to the notes'
+  rounding); levels, one every 10 lines, the fall 30% faster each, the
+  theme 10% faster (`change_loop` at a new level); a thud when a piece
+  lands, a chime for lines, an arpeggiated chord for four; `music=off`.
+  `audio/Pluck`: Karplus-Strong, the delay line from the NES's LFSR
+  (warmed up 5000 steps: from 1 its first 200 bits average -0.49, a
+  first version rang around an offset) less its mean; tests
+  (`Unit_pluck`): A3's line 200 samples, its pitch, its ring dying
+  (0.49, 0.09 at 1 s), its brightness 4312 Hz then 644 at 1.5 s; golden
+  WAVs of A3 and a strummed G chord. `Audio.pluck`; AudioPiano's fifth
+  timbre (C4 and G4 measured at 263 and 395.5 Hz, within the DFT's
+  resolution). Left: the live MIDI keyboard, MIDI's pitch bend and
+  control changes, a fractional delay to tune the string exactly.
 - **Asked by the user (phase 5)**: subtractive synthesis (a rich wave
   through a resonant low-pass: phase 6's Filter), FM synthesis
   (Chowning: to add with phase 6, small, and made for the spectrum),

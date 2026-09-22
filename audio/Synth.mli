@@ -40,6 +40,9 @@ type source =
   | Naive of Oscillator.waveform (* the formula of the phase, aliasing *)
   | Fm of { ratio : float; index : float } (* the modulator's ratio *)
   | Noise
+  (* a plucked string (Pluck.mli): its slide and effects ignored; kept
+   * playing, a triangle (a string can't be held) *)
+  | Pluck
 
 type voice = {
   source : source;
@@ -87,6 +90,11 @@ val louder : float -> t -> t (* the volume multiplied *)
 val sliding : float -> t -> t (* to that frequency *)
 val naive : t -> t (* Wave to Naive *)
 val with_effect : Effect.pitch -> t -> t (* one more *)
+
+(* [faster k s]: [s] played [k] times as fast, every duration divided by
+ * [k] (the voices', their effects' times, an echo's delay), the pitches
+ * kept: a tune's tempo (Samples, already computed, untouched) *)
+val faster : float -> t -> t
 
 (* [duration s]: in seconds (see above) *)
 val duration : t -> float

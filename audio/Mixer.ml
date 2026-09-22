@@ -38,6 +38,13 @@ let loop (m : t) (name : string) (sound : Signal.t) : unit =
   | Some l when not l.stopping -> ()
   | _ -> if Array.length sound > 0 then Hashtbl.replace m.loops name { sound; pos = 0; played = 0; stopping = false }
 
+let change (m : t) (name : string) (sound : Signal.t) : unit =
+  match Hashtbl.find_opt m.loops name with
+  | Some l when (not l.stopping) && Array.length sound > 0 ->
+      let pos = l.pos * Array.length sound / Array.length l.sound in
+      Hashtbl.replace m.loops name { l with sound; pos = min pos (Array.length sound - 1) }
+  | _ -> loop m name sound
+
 let stop (m : t) (name : string) : unit = Option.iter (fun l -> l.stopping <- true) (Hashtbl.find_opt m.loops name)
 let looping (m : t) : string list = Hashtbl.fold (fun name _ acc -> name :: acc) m.loops [] |> List.sort compare
 

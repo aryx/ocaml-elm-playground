@@ -41,6 +41,12 @@ val play : t -> Signal.t -> unit
  * is harmless): background music *)
 val loop : t -> string -> Signal.t -> unit
 
+(* [change m name s]: the loop [name] now [s], from the same point of
+ * it (the same fraction of the way through: a tune made faster goes
+ * on from the same note), its clock ([played]) going on; a new loop if
+ * none is playing *)
+val change : t -> string -> Signal.t -> unit
+
 (* [stop m name]: the loop [name] stopped (faded out over its next
  * pull), if playing *)
 val stop : t -> string -> unit

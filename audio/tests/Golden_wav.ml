@@ -66,6 +66,18 @@ let sounds : (string * (unit -> Signal.t)) list =
           Synth.render
             (Synth.voice (Wave Square) 261.63 |> Synth.with_effect (Arpeggio { semitones = [ 0.; 4.; 7. ]; step = 1. /. 60. }) |> Synth.lasting 0.5) );
       ("sfx_blip_echo", fun () -> Synth.render (Sfx.to_sound { Sfx.blip with echo = 0.15 })) ]
+  (* a plucked string, A3 for 1.5 s (Pluck.mli: Karplus-Strong), and a G
+   * major chord strummed, three strings 30 ms apart, turned down not to
+   * clip *)
+  @ [ ("pluck_a3", fun () -> Pluck.render ~frequency:220. 1.5);
+      ( "pluck_strum",
+        fun () ->
+          Synth.render
+            (Synth.Together
+               (List.mapi
+                  (fun i f -> Synth.After [ Synth.voice (Wave Sine) 0. |> Synth.louder 0. |> Synth.lasting (0.03 *. float_of_int i); Synth.voice Pluck f |> Synth.lasting 1.5 ])
+                  [ 196.; 246.94; 293.66 ])
+            |> Synth.louder 0.6) ) ]
   (* the click: three short beeps cut at once, then the same three
    * enveloped (Envelope.mli) *)
   @ [ ("beeps_cut", fun () -> beeps (fun s -> s));

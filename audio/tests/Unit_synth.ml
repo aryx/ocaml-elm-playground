@@ -131,7 +131,34 @@ let test_sources () =
   let expected = Filter.run (Filter.biquad Low_pass ~cutoff:300. ~q:0.707) plain in
   Array.iteri (fun i x -> Alcotest.(check (float 1e-9)) (Printf.sprintf "a filtered continuous voice, sample %d" i) expected.(i) x) filtered
 
+(* a tune twice as fast: half as long, the same notes; changed while
+ * looping, it goes on from the same point of the tune, its clock too *)
+let test_tempo () =
+  let tune = Synth.After [ beep; Synth.voice (Wave Sine) 880. |> Synth.lasting 0.3 ] in
+  Alcotest.(check (float 1e-9)) "twice as fast: half as long" 0.2 (Synth.duration (Synth.faster 2. tune));
+  let fast = Synth.render (Synth.faster 2. tune) in
+  let downs lo hi =
+    let c = ref 0 in
+    for i = Signal.samples lo + 1 to Signal.samples hi - 1 do
+      if fast.(i - 1) >= 0. && fast.(i) < 0. then incr c
+    done;
+    !c
+  in
+  Alcotest.(check int) "the same first note: 440 Hz, 22 periods in its 0.05 s" 22 (downs 0. 0.05);
+  Alcotest.(check int) "the same second: 880 Hz, 132 in its 0.15 s" 132 (downs 0.05 0.2);
+  let m = Mixer.create () in
+  let slow = Synth.render tune in
+  Mixer.loop m "music" slow;
+  ignore (Mixer.pull m (Array.length slow / 4));
+  Mixer.change m "music" fast;
+  Alcotest.(check (option int)) "the clock goes on" (Some (Array.length slow / 4)) (Mixer.played m "music");
+  (* a quarter through the slow tune, a quarter through the fast one:
+   * the next sample the fast tune's at its quarter *)
+  let next = Mixer.pull m 1 in
+  Alcotest.(check (float 1e-6)) "from the same point" (Float.tanh fast.(Array.length fast / 4)) next.(0)
+
 let tests =
   Testo.categorize "Synth and Mixer"
     [ t "Music: notes and frequencies" test_notes; t "Synth: durations, no clicks, slides" test_synth; t "Mixer: one-shots, continuous voices" test_mixer;
-      t "Mixer: a loop's own clock" test_loop_clock; t "Synth: naive, FM darkening, filters" test_sources ]
+      t "Mixer: a loop's own clock" test_loop_clock; t "Synth: naive, FM darkening, filters" test_sources;
+      t "tempo: faster, and a loop changed while playing" test_tempo ]

@@ -21,8 +21,16 @@ open Playground
  *    an effect, rather that forcing the user to keyup
  *    (called confusingly "animation")
  *  - accelerate Tick as you clear more lines, manage "level" score
- * TODO:
- *  - sound when line cleared!
+ *
+ * claude: done since: levels (one every 10 lines, the pieces falling
+ * faster), and sound (see "Sound" below): the theme, Korobeiniki, the
+ * Russian folk song Tetris made famous (its melody: public domain, the
+ * bass line our own, not the Game Boy's), its tempo rising with the
+ * level (Audio.faster, Audio.change_loop: the music goes on from the same
+ * note, faster); a thud when a piece lands, a chime when lines are
+ * cleared, a bigger one for four at once (a "Tetris"), a flourish at a
+ * new level. The flag music=off (?music=off in a browser) turns the
+ * theme off.
  *)
 
 (*****************************************************************************)
@@ -223,6 +231,10 @@ type model = {
 
   score: int;
   lines: int;
+  (* claude: lines / 10: the fall's speed and the music's tempo *)
+  level: int;
+  (* claude: the flag music=off *)
+  music: bool;
 
   state: state;
 
@@ -253,6 +265,8 @@ let initial_model = spawn_tetrimino {
 
     score = 0;
     lines = 0;
+    level = 0;
+    music = true;
 
     grid = empty_grid;
 
@@ -365,6 +379,40 @@ let msg_of_key = function
   | "space" -> FullDrop
   | _ -> Noop
 
+(*****************************************************************************)
+(* Sound *)
+(*****************************************************************************)
+(* claude: Korobeiniki ("The Peddlers", a poem by Nikolay Nekrasov,
+ * 1861, sung to a folk tune), the music of Tetris since its Soviet
+ * version was ported to the West (Spectrum HoloByte, 1988; then the Game
+ * Boy's, 1989). In ABC notation (audio/Abc.mli), two voices: the
+ * melody, played on a square, and an octave bass on a triangle (the
+ * NES's band: Music.to_sound), eight bars of eighths at 150 quarters a
+ * minute, 12.8 s, looping. *)
+let korobeiniki = {|X:1
+T:Korobeiniki
+L:1/8
+Q:1/4=150
+K:Am
+V:1
+e2 Bc d2 cB | A2 Ac e2 dc | B3 c d2 e2 | c2 A2 A4 |
+z d2 f a2 gf | e3 c e2 dc | B2 Bc d2 e2 | c2 A2 A4 |
+V:2
+E,,E, E,,E, E,,E, E,,E, | A,,A, A,,A, A,,A, A,,A, | E,,E, E,,E, E,,E, E,,E, | A,,A, A,,A, A,,A, A,,A, |
+D,,D, D,,D, D,,D, D,,D, | C,,C, C,,C, C,,C, C,,C, | E,,E, E,,E, E,,E, E,,E, | A,,A, A,,A, A,,A, A,,A, |
+|}
+
+let theme = Audio.abc korobeiniki |> Audio.louder 0.6
+
+(* a tenth faster each level: 1.5 times as fast at level 5 *)
+let music_at level = theme |> Audio.faster (1. +. (0.1 *. float level))
+
+let landed = Audio.sfx { Sfx.step with frequency = 120.; slide = 60.; decay = 0.08; volume = 0.4 }
+let cleared = Audio.sfx { Sfx.coin with frequency = 784.; slide = 784.; jump = 5.; jump_at = 0.06 }
+(* four lines, a "Tetris": a major chord, arpeggiated (Effect.mli) *)
+let tetris = Audio.sfx { Sfx.powerup with frequency = 523.; slide = 523.; sustain = 0.4 } |> Audio.arpeggio [ 0.; 4.; 7.; 12. ] 0.05
+let level_up = Audio.powerup
+
 let clear_lines_and_add_score model = 
   let grid, nblines = clear_lines model.width model.grid in
   let bonus =
@@ -376,10 +424,21 @@ let clear_lines_and_add_score model =
     | 4 -> 800
     | _ -> failwith "Impossible"
   in
+  let lines = model.lines + nblines in
+  let level = lines / 10 in
+  (* claude: the sounds of a piece landing, of lines going *)
+  if nblines = 4 then Audio.play tetris
+  else if nblines > 0 then Audio.play cleared
+  else Audio.play landed;
+  if level > model.level then begin
+    Audio.play level_up;
+    if model.music then Audio.change_loop "music" (music_at level)
+  end;
   { model with 
     grid; 
     score = model.score + bonus (* todo: level model *);
-    lines = model.lines + nblines;
+    lines;
+    level;
   }
 
 (* drop because Tick or Accelerate *)
@@ -425,7 +484,10 @@ let update msg model =
   | Tick t -> 
     let delta = t -. model.last_tick in
     let model = { model with last_tick = t } in
-    let dy = delta in 
+    (* claude: a row a second at level 0, 30% faster each level *)
+    let dy = delta *. (1. +. (0.3 *. float model.level)) in
+    (* claude: harmless when already playing (Audio.loop) *)
+    if model.music then Audio.loop "music" (music_at model.level);
     drop_tetrimino model dy |> fst
 
   | MoveLeft ->
@@ -472,7 +534,7 @@ let app =
   { Playground.
     view;
     update;
-    init = (fun _flags -> initial_model, Cmd.none);
+    init = (fun flags -> { initial_model with music = List.assoc_opt "music" flags <> Some "off" }, Cmd.none);
     subscriptions  = (fun _ -> Sub.batch [
       Sub.on_animation_frame (fun x -> Tick x);
       Sub.on_key_down (fun key -> msg_of_key key);
@@ -480,4 +542,4 @@ let app =
   }
 
 let main = 
-  Playground_platform.run_app app
+  Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

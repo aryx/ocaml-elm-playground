@@ -55,6 +55,12 @@ val square : number -> sound
 val triangle : number -> sound
 val sawtooth : number -> sound
 
+(* [pluck frequency]: a plucked string, a guitar's or a harp's, bright
+   then mellow as it rings (audio/Pluck.mli: noise in a delay line,
+   averaged as it goes round, Karplus and Strong's discovery):
+     let strum = together [ pluck 196; pluck 247; pluck 294 ] |> lasting 2 *)
+val pluck : number -> sound
+
 (* [noise roughness]: random, for explosions, hits, wind, drums;
    [roughness] from 500 (a rumble) to 10,000 (a hiss) *)
 val noise : number -> sound
@@ -203,6 +209,17 @@ val keep_playing : string -> sound -> unit
      Audio.loop "music" tune *)
 val loop : string -> sound -> unit
 val stop : string -> unit
+
+(* [faster k s]: [s] [k] times as fast, the same notes (1.5: half as
+   fast again): a tune's tempo *)
+val faster : number -> sound -> sound
+
+(* [change_loop name s]: the loop [name] now plays [s], going on from
+   the same point of the tune (the same fraction of the way through),
+   not from its start: the music speeding up with the danger, as in
+   Space Invaders and Tetris,
+     Audio.change_loop "music" (tune |> Audio.faster (1 + 0.1 * level)) *)
+val change_loop : string -> sound -> unit
 
 (* [loop_from name source]: a tune from a file or a URL, looping once
    it's there: a MIDI file if [source] ends in .mid, an ABC one in .abc,

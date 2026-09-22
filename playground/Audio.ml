@@ -17,6 +17,7 @@ let square f = Synth.voice (Wave Square) f
 let triangle f = Synth.voice (Wave Triangle) f
 let sawtooth f = Synth.voice (Wave Sawtooth) f
 let noise roughness = Synth.voice Noise roughness
+let pluck f = Synth.voice Pluck f
 let fm f ratio index = Synth.voice (Fm { ratio; index }) f
 let note name = tone (Music.frequency name)
 let lasting = Synth.lasting
@@ -117,6 +118,9 @@ let loop_from (name : string) (source : string) : unit =
           let ends_with = Filename.check_suffix (String.lowercase_ascii source) in
           let read = if ends_with ".mid" || ends_with ".midi" then midi else if ends_with ".abc" then abc else doremi in
           Mixer.loop mixer name (Synth.render (read bytes))))
+
+let faster = Synth.faster
+let change_loop (name : string) (s : sound) : unit = Mixer.change mixer name (Synth.render s)
 
 let stop (name : string) : unit =
   Hashtbl.remove requested name;
