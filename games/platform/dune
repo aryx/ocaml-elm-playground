@@ -17,13 +17,14 @@
   )
 )
 
-; claude: TinyMario's hero, four poses drawn as XPM files (see
-; Sprite.of_xpm), embedded as strings: mario_stand.xpm becomes
+; claude: TinyMario's hero, its four poses, and its level, drawn as XPM
+; files (see Sprite.of_xpm and Tilemap.of_xpm), embedded as strings:
+; mario_stand.xpm becomes
 ; Mario_xpm.stand at build time, and so on, so the game still needs no
 ; file at run time (see games/README-tools.md)
 (rule
  (targets Mario_xpm.ml)
- (deps mario_stand.xpm mario_walk1.xpm mario_walk2.xpm mario_jump.xpm)
+ (deps mario_stand.xpm mario_walk1.xpm mario_walk2.xpm mario_jump.xpm mario_level.xpm)
  (action
   (with-stdout-to
    %{targets}
@@ -37,6 +38,8 @@
     (cat mario_walk2.xpm)
     (echo "|}\nlet jump = {|")
     (cat mario_jump.xpm)
+    (echo "|}\nlet level = {|")
+    (cat mario_level.xpm)
     (echo "|}\n")))))
 
 (executables

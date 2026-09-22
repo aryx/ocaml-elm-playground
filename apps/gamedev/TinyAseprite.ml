@@ -21,7 +21,9 @@
  * or the one clicked in the palette), the right button erases. Tab goes
  * to the next frame (with shift, the one before), n adds a copy of the
  * frame after it, f flips it left-right (Sprite.flip), o shows or hides
- * the onion skin, and e exports every frame as its XPM file: natively
+ * the onion skin, '+' and '-' grow and shrink the canvas (every frame:
+ * a sprite's frames are one size), and e exports every frame as its
+ * XPM file: natively
  * in the current directory, in the browser as downloads. Copied over
  * the game's files, they are its sprites at the next build.
  *
@@ -45,9 +47,13 @@
  * (Cap.open_out). Not: the paint appkit (a sprite is a few hundred
  * pixels, as characters, not a bitmap), gui/.
  *
- * Exercises: a color picker, to change the palette (the characters stay,
- * their colors change: a palette swap, the NES's way of making Luigi out
- * of Mario); a bigger or smaller canvas; the fill bucket (TinyMacPaint's
+ * The colors come from a fixed palette of sixteen, PICO-8's: clicking
+ * one gives it to the brush's character (the others keep theirs: a
+ * palette swap, the NES's way of making Luigi out of Mario), or, with
+ * the transparent brush, adds a character for it.
+ *
+ * Exercises: a color of your own (three sliders, or a hexadecimal
+ * typed); a character taken out of the palette again; the fill bucket (TinyMacPaint's
  * seed fill, over characters); undo (the puzzle kit's Undo, over the
  * frames); frames of different speeds, as Aseprite's timeline has.
  *)
@@ -111,6 +117,41 @@ let export (caps : < Cap.open_out >) (e : editor) : editor =
   e.frames |> List.iter (fun f -> Playground_platform.export caps (f.name ^ ".xpm") (Sprite.to_xpm f.name e.palette f.rows));
   { e with said = Printf.sprintf "exported %s: copy them over the game's" (String.concat ", " (List.map (fun f -> f.name ^ ".xpm") e.frames)) }
 
+(* The colors to choose from: PICO-8's sixteen (Joseph White,
+ * Lexaloffle, 2015), the fixed palette of a fantasy console, as the
+ * home computers had theirs (the Commodore 64's sixteen, 1982). A
+ * palette that small is a style: the colors go together whatever you
+ * pick, which is why pixel artists still draw in it. *)
+let colors : color list =
+  [ rgb 0 0 0; rgb 29 43 83; rgb 126 37 83; rgb 0 135 81; rgb 171 82 54; rgb 95 87 79; rgb 194 195 199; rgb 255 241 232;
+    rgb 255 0 77; rgb 255 163 0; rgb 255 236 39; rgb 0 228 54; rgb 41 173 255; rgb 131 118 156; rgb 255 119 168; rgb 255 204 170 ]
+
+(* the characters a palette can use, the sprite's own first *)
+let free_char (e : editor) : char option =
+  "RSBKGYWPOCMabcdefghijklmnopqrstuvwxyz0123456789"
+  |> String.to_seq |> List.of_seq
+  |> List.find_opt (fun c -> not (List.mem_assoc c e.palette))
+
+(* [pick e color]: the color chosen in the strip. The brush's character
+ * takes it -- a palette swap, how the NES made Luigi out of Mario --
+ * or, with the transparent brush, a new character takes it. *)
+let pick (e : editor) (color : color) : editor =
+  if e.brush <> transparent then
+    { e with palette = List.map (fun (c, col) -> if c = e.brush then (c, color) else (c, col)) e.palette; said = Printf.sprintf "%C recolored" e.brush }
+  else
+    match free_char e with
+    | None -> { e with said = "no character left for another color" }
+    | Some c -> { e with palette = e.palette @ [ (c, color) ]; brush = c; said = Printf.sprintf "%C added to the palette" c }
+
+(* [resize e d]: [d] columns and rows more (or fewer), on the right and
+ * at the bottom, in every frame: a sprite's frames are one size *)
+let resize (e : editor) (d : int) : editor =
+  let w = max 1 (cols e + d) and h = max 1 (nrows e + d) in
+  let row (r : string) = if String.length r >= w then String.sub r 0 w else r ^ String.make (w - String.length r) transparent in
+  let rows (rs : string list) = List.init h (fun i -> match List.nth_opt rs i with Some r -> row r | None -> String.make w transparent) in
+  let e = { e with frames = List.map (fun f -> { f with rows = rows f.rows }) e.frames; said = Printf.sprintf "%d x %d" w h } in
+  move_cursor e (0, 0)
+
 (* a copy of this frame, after it *)
 let add_frame (e : editor) : editor =
   let f = frame e in
@@ -145,14 +186,21 @@ let palette_y = -240.
 let brushes (e : editor) : char list = transparent :: List.map fst e.palette
 let palette_x (i : int) : number = canvas_x -. 160. +. (float_of_int i *. 70.)
 
+(* the colors to choose from, two rows of eight on the right *)
+let pick_center (i : int) : number * number = (290. +. ((float_of_int (i mod 8) -. 3.5) *. 46.), if i < 8 then -120. else -172.)
+
 let update_mouse (m : mouse) (e : editor) : editor =
   match pixel_at e m.mx m.my with
   | Some p when m.mdown -> paint { e with cursor = p } e.brush
   | Some p when m.mrdown -> { (paint { e with cursor = p } transparent) with brush = e.brush }
   | _ when m.mclick -> (
-      match List.find_opt (fun (i, _) -> abs_float (m.mx -. palette_x i) < 30. && abs_float (m.my -. palette_y) < 30.) (List.mapi (fun i b -> (i, b)) (brushes e)) with
-      | Some (_, b) -> { e with brush = b }
-      | None -> e)
+      let near (x, y) = abs_float (m.mx -. x) < 23. && abs_float (m.my -. y) < 23. in
+      match List.find_opt (fun (i, _) -> near (palette_x i, palette_y)) (List.mapi (fun i b -> (i, b)) (brushes e)) with
+      | Some (_, b) -> { e with brush = b; said = "" }
+      | None -> (
+          match List.find_opt (fun (i, _) -> near (pick_center i)) (List.mapi (fun i c -> (i, c)) colors) with
+          | Some (_, color) -> pick e color
+          | None -> e))
   | _ -> e
 
 (*****************************************************************************)
@@ -180,6 +228,8 @@ let update (caps : < Cap.open_out >) (computer : computer) (s : model) : model =
     else if pressed (fun k -> k.kright) then move_cursor e (1, 0)
     else if pressed (fun k -> Set_.mem "Tab" k.keys) then
       move_cursor { e with current = (if computer.keyboard.kshift then e.current + n - 1 else e.current + 1) mod n; said = "" } (0, 0)
+    else if command '+' || command '=' then resize e 1
+    else if command '-' then resize e (-1)
     else if command 'n' then add_frame e
     else if command 'f' then set_frame { e with said = "" } { (frame e) with rows = Sprite.flip (frame e).rows }
     else if command 'o' then { e with onion = not e.onion }
@@ -226,7 +276,13 @@ let view_frames (computer : computer) (e : editor) : shape list =
   @ [ text gray 1.6 "played, 4 frames a second" |> move 300. 250.;
       Sprite.pixels 12. e.palette (Sprite.frame 4. computer.time (List.map (fun f -> f.rows) e.frames)) |> move 300. 150.;
       text gray 1.6 "the game's size" |> move 300. 40.;
-      Sprite.pixels 4. e.palette (frame e).rows |> move 300. (-10.) ]
+      Sprite.pixels 4. e.palette (frame e).rows |> move 300. (-10.);
+      text gray 1.6 "click a color: the brush's, or a new one" |> move 300. (-70.) ]
+  @ List.mapi
+      (fun i color ->
+        let x, y = pick_center i in
+        square color 40. |> move x y)
+      colors
 
 let view_palette (e : editor) : shape list =
   List.mapi
@@ -243,7 +299,7 @@ let view (computer : computer) (s : model) : shape list =
     text yellow 1.6 e.said |> move_y 395. ]
   @ view_canvas e @ view_palette e @ view_frames computer e
   @ [ text gray 1.6 "type a palette character, or paint with the mouse (right: erase)   arrows: cursor" |> move_y (-420.);
-      text gray 1.6 "tab: next frame   n: new frame   f: flip   o: onion skin   e: export" |> move_y (-450.) ]
+      text gray 1.6 "tab: next frame   n: new frame   f: flip   o: onion skin   + -: canvas   e: export" |> move_y (-450.) ]
 
 let app (caps : < Cap.open_out >) = game view (update caps) initial_model
 

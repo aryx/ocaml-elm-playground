@@ -19,6 +19,7 @@ let of_strings (size : number) (rows : string list) : t =
   let pad row = row ^ String.make (cols - String.length row) ' ' in
   { size; cols; cells = Array.of_list (List.map pad rows) }
 
+let of_xpm (size : number) (text : string) : t = of_strings size (snd (Sprite.of_xpm text))
 let size (map : t) : number = map.size
 let cols (map : t) : int = map.cols
 let rows (map : t) : int = Array.length map.cells

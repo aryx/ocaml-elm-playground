@@ -20,7 +20,7 @@ The question is who reads what the tool makes.
 | Who reads it | Where the tool goes | Examples |
 | --- | --- | --- |
 | one genre's games only (a Sokoban level, a Doom map, a race track) | `games/<genre>/`, beside its game, as `Tiny<Game>Ed`; what the editor and the game share (rules, look, format) in the genre's kit, `gamekits/<genre>/` | `TinySokobanEd` (and the kit's `Sokoban`); a `TinyDoomEd` over `Sectors`, a track editor over `Track3d` |
-| any game, through a playground layer (`Sprite`, `Tilemap`, `audio/`'s sound effects) | `apps/gamedev/`, as `Tiny<Original>` | `TinyAseprite`, the sprite editor; a tile-map editor (Tiled), a sound-effect maker (sfxr), PICO-8's editors |
+| any game, through a playground layer (`Sprite`, `Tilemap`, `audio/`'s sound effects) | `apps/gamedev/`, as `Tiny<Original>` | `TinyAseprite`, the sprite editor, and `TinyTiled`, the map editor; a sound-effect maker (sfxr), PICO-8's editors |
 | any program at all (a picture, a tune) | the medium's category, `apps/graphics/` or `apps/music/` | a paint program (Deluxe Paint), a tracker (ProTracker) |
 
 A level editor goes with its genre and not in `apps/`, for three
@@ -38,12 +38,14 @@ How a game gets what a tool made
 
 1. **The format belongs to whoever reads it**: the kit for a genre's
    levels (`Sokoban.of_xsb`), the playground layer for the rest
-   (`Sprite.of_xpm`). The tool writes that format and nothing of its
-   own, so that its work can also be written by hand, and read in a
-   diff. Where the world already has a text format, use it (Sokoban's
-   `.xsb`; XPM for sprites, which GIMP and ImageMagick open too, read
-   and written by our own code, `graphics/images/xpm/`); otherwise
-   strings, one character per pixel or cell, as `Tilemap` takes.
+   (`Sprite.of_xpm`, `Tilemap.of_xpm`). The tool writes that format and
+   nothing of its own, so that its work can also be written by hand,
+   and read in a diff. Where the world already has a text format, use
+   it: Sokoban's `.xsb`, and XPM for sprites *and* maps, which GIMP and
+   ImageMagick open too, read and written by our own code
+   (`graphics/images/xpm/`). One character per pixel is also one
+   character per cell, so a sprite and a level are the same file, and
+   the editors are siblings.
 2. **The work is a file in the game's directory**, next to the game
    (`games/puzzle/TinySokoban.xsb`, `games/platform/mario_walk1.xpm`),
    committed with it.

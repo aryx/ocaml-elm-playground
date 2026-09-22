@@ -79,6 +79,7 @@ let scenes : Testutil_golden.scene list =
      * dots merged with the runs under it *)
     ("apps/office/software/TinyMacPaint", "", 5);
     ("apps/gamedev/software/TinyAseprite", "", 5);
+    ("apps/gamedev/software/TinyTiled", "", 5);
     (* 1994: a document of parts -- a text, a sheet and a picture side
      * by side, and a part of a kind nobody here can read, kept *)
     ("apps/office/software/TinyOpenDoc", "", 5);
@@ -807,6 +808,20 @@ let scripted : Testutil_golden.scripted list =
       "edited",
       22,
       "Tab:3,right:5,down:7,type(RRR):9,type(n):12,type(f):15,at(-310;240):17-20,click:18-19" );
+    (* a color clicked with the transparent brush, which adds a
+     * character for it ('G'), a second one, which recolors it, and the
+     * canvas grown by a column and a row *)
+    ( "apps/gamedev/software/TinyAseprite",
+      "palette",
+      16,
+      "at(359;-120):3-5,click:4,at(129;-172):8-10,click:9,type(+):13" );
+    (* the map editor: the cursor run to the right, the camera following
+     * it along the level (the minimap's window moves with it), three
+     * bricks typed and a column added *)
+    ( "apps/gamedev/software/TinyTiled",
+      "edited",
+      55,
+      "right:3-40,up:6,type(BBB):45,type(+):50" );
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

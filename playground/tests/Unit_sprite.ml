@@ -64,11 +64,11 @@ let test_xpm () =
   let palette', _ = Sprite.of_xpm (Sprite.to_xpm "crab" [ ('#', Playground.green) ] crab) in
   Alcotest.(check bool) "green, #73d216" true (palette' = [ ('#', Playground.rgb 0x73 0xd2 0x16) ])
 
-(* TinyMario's hero, as TinyAseprite writes it: its files read and
- * written back, byte for byte, so that exporting an unchanged sprite
- * changes nothing *)
+(* TinyMario's hero, as TinyAseprite writes it, and its level, as
+ * TinyTiled writes it: the files read and written back, byte for byte,
+ * so that exporting an unchanged sprite or level changes nothing *)
 let test_mario_files () =
-  [ "stand"; "walk1"; "walk2"; "jump" ]
+  [ "stand"; "walk1"; "walk2"; "jump"; "level" ]
   |> List.iter (fun pose ->
          let name = "mario_" ^ pose in
          let ic = open_in_bin ("../../games/platform/" ^ name ^ ".xpm") in

@@ -4,8 +4,8 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyAseprite)
-  (modules TinyAseprite Mario_xpm)
+  (names TinyAseprite TinyTiled)
+  (modules TinyAseprite TinyTiled Mario_xpm)
   (libraries
     caps
     elm_playground

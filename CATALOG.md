@@ -350,3 +350,4 @@ reads them, in files the games embed at build time.
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyAseprite](apps/gamedev/TinyAseprite.ml) | app | Aseprite (David Capello, 2001) | TinyMario's hero, four frames of pixel art: paint them, play them, export them. | The sprite as text: XPM files (a palette and rows of characters) that GIMP opens and a game embeds; the onion skin; the keys as the file's own characters. |
+| [TinyTiled](apps/gamedev/TinyTiled.ml) | app | Tiled (Thorbjorn Lindeijer, 2008) | TinyMario's level, a cell at a time, the camera following the cursor along it. | The same file as a sprite, a character per cell (Tilemap.of_xpm); an editor that knows the level and not the game, so a cell is its palette color and its character; a minimap, and a keyboard's repeat written out. |

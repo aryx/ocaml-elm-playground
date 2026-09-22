@@ -56,37 +56,17 @@ open Basics (* float arithmetics *)
 (* The level *)
 (*****************************************************************************)
 
-(* '#' ground, 'B' a brick, '?' a block with a coin inside ('X' once
- * bumped), '$' a coin, 'F' the flag, '@' where the player starts *)
-let level =
-  Tilemap.of_strings 50.
-    [
-      "                                                            ";
-      "                                                            ";
-      "                                                 $$$        ";
-      "                                                #####       ";
-      "                                                            ";
-      "                                                            ";
-      "                                                     ###    ";
-      "                                                            ";
-      "                                                            ";
-      "                                             $ $            ";
-      "                                            #######         ";
-      "                                                            ";
-      "                                     $                      ";
-      "                                   #####                    ";
-      "                                                            ";
-      "                              $ $                           ";
-      "                             #####                          ";
-      "                                                            ";
-      "               ?B?B?                    $$$                 ";
-      "                                       #####                ";
-      "                                                            ";
-      "      $  $                   #                    #         ";
-      "  @         #       $$     # #       $            #      F  ";
-      "####################  ###########   ######   ###############";
-      "####################  ###########   ######   ###############";
-    ]
+(* mario_level.xpm, beside this file: 60 cells by 25, one character
+ * each, drawn in the map editor (apps/gamedev/TinyTiled) or in any
+ * text editor, and embedded by dune (Mario_xpm, see the dune file).
+ * '#' ground, 'B' a brick, '?' a block with a coin inside ('X' once
+ * bumped), '$' a coin, 'F' the flag, '@' where the player starts:
+ *
+ *      $  $                   #                    #
+ *  @         #       $$     # #       $            #      F
+ *  ####################  ###########   ######   ###############
+ *)
+let level = Tilemap.of_xpm 50. Mario_xpm.level
 
 let solid (c : char) : bool = c = '#' || c = 'B' || c = '?' || c = 'X'
 

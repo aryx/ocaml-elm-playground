@@ -98,6 +98,15 @@ type t
  * string, from the top; short rows are completed with ' ' *)
 val of_strings : number -> string list -> t
 
+(* [of_xpm size text]: the map in an XPM file (Sprite.of_xpm, and
+ * graphics/images/xpm/Xpm.mli), one character per cell as one character
+ * per pixel: a level drawn in a map editor (TinyAseprite's sibling,
+ * apps/gamedev/TinyTiled), or in GIMP, and embedded in the game at
+ * build time (games/README-tools.md). The file's palette, which says
+ * what color each character is drawn in while it is edited, is not
+ * this module's business: the game draws its own tiles ([view]). *)
+val of_xpm : number -> string -> t
+
 (* the size of a tile, and of the map: its number of columns (the
  * longest row) and rows, and its world coordinates (e.g. for the example
  * map above: left -30, right 30, bottom -15, top 15) *)
