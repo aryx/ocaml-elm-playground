@@ -7,7 +7,7 @@
     str
     logs
     cairo2 tsdl
-    stb_image ; Image_decode.image's fields, in Image_native
+    graphics_rgba ; Image_decode.image's fields, in Image_native
 
     elm_playground
     elm_playground_native_common ; Native_loop_2d
@@ -26,7 +26,7 @@
    tsdl
    tgls.tgl3
    threads.posix ; tgls/ctypes-foreign needs this to link, even though we don't use threads ourselves
-   stb_image ; Stb_image.t, used by the type of get_or_create_gl_texture
+   graphics_rgba ; Rgba_image.t, used by the type of get_or_create_gl_texture
    elm_core
    elm_playground
    elm_playground_3d

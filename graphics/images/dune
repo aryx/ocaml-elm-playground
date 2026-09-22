@@ -15,6 +15,7 @@
  (wrapped false)
  (libraries
    logs
+   graphics_rgba ; Rgba_image, the decoded pictures
    stb_image
    curl
  )

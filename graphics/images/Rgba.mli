@@ -16,7 +16,7 @@
  * Reading it as RGBA then reads past its end. So: load with the file's
  * own channels, and expand here, in OCaml. *)
 
-(* [of_stb_image img]: [img] as RGBA (4 channels, stride = width * 4,
- * offset 0), a copy unless it's already so; gray becomes r = g = b, a
+(* [of_stb_image img]: [img] as an Rgba_image.t (4 channels, no offset,
+ * no padding), a copy unless it's already so; gray becomes r = g = b, a
  * missing alpha becomes 255 (opaque) *)
-val of_stb_image : Stb_image.int8 Stb_image.t -> Stb_image.int8 Stb_image.t
+val of_stb_image : Stb_image.int8 Stb_image.t -> Rgba_image.t

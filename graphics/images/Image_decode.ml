@@ -57,7 +57,7 @@
  * decodes the file with its own channels, and Rgba.of_stb_image expands
  * them to 4 (not Stb_image.load ~channels:4, which the pinned binding
  * gets wrong for e.g. an RGB JPEG, see Rgba.mli) *)
-type image = Stb_image.int8 Stb_image.t
+type image = Rgba_image.t
 
 (* claude: url -> local file (downloaded, for a URL), so the "Animated
  * GIFs" section below can read the file again to extract all the
@@ -340,7 +340,7 @@ let gif_frames (s : string) : (int * int) * gif_frame list =
   in
   (width, height), loop global_end None []
 
-let decode_string (s : string) : Stb_image.int8 Stb_image.t =
+let decode_string (s : string) : image =
   let buf = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout
       (String.length s) in
   String.iteri (fun i c -> buf.{i} <- Char.code c) s;
@@ -359,8 +359,8 @@ type 'a animation = {
 }
 
 (* Compose the frames into full images; the "canvas" is an RGBA8 buffer
- * of the full image size, in the same layout as what stb_image returns,
- * so a snapshot of it is just another [image].
+ * of the full image size, in the layout of Rgba_image.t, so a snapshot
+ * of it is just another [image].
  *)
 let animation_of_gif (s : string) : image animation =
   let (w, h), frames = gif_frames s in
@@ -392,18 +392,13 @@ let animation_of_gif (s : string) : image animation =
       let before = if fr.disposal = 3 then Some (copy_canvas canvas) else None in
       (* draw the patch; its transparent pixels (alpha 0) let the
        * previous image show through *)
-      let (patch : Stb_image.int8 Stb_image.t) = decode_string fr.gif in
-      let data = patch.data in
+      let patch = decode_string fr.gif in
+      let data = patch.rgba in
       iter_patch fr (fun co po ->
         if data.{po + 3} <> 0 then
           for k = 0 to 3 do canvas.{co + k} <- data.{po + k} done
       );
-      let snapshot =
-        match Stb_image.image ~width:w ~height:h ~channels:4
-                (copy_canvas canvas) with
-        | Ok img -> img
-        | Error (`Msg msg) -> failwith msg
-      in
+      let snapshot : image = { width = w; height = h; rgba = copy_canvas canvas } in
       (* dispose of the patch before the next frame *)
       (match fr.disposal, before with
       | 2, _ -> iter_patch fr (fun co _ -> for k = 0 to 3 do canvas.{co + k} <- 0 done)

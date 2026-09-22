@@ -40,10 +40,8 @@ let missing_texture_color = 0xFF00FF
  * playground/native's Playground_platform.ml and
  * graphics/images/Image_decode.ml.
  *
- * claude: Texture_decode gives RGBA textures, whatever the file's
- * channels (Rgba.of_stb_image; not Stb_image.load ~channels:4, which
- * the pinned binding gets wrong, see Rgba.mli), with no offset and no
- * padding between rows: exactly Texture.image's layout *)
+ * claude: Texture_decode gives Rgba_image.t textures, whatever the
+ * file's channels: exactly Texture.image's layout *)
 let paint_of_texture (src : string) : Render.paint =
   match
     match Playground3d.embedded src with
@@ -51,8 +49,7 @@ let paint_of_texture (src : string) : Render.paint =
     | None -> Texture_decode.load src
   with
   | Some img ->
-      assert (img.channels = 4 && img.offset = 0 && img.stride = img.width * 4);
-      Texture { width = img.width; height = img.height; rgba = img.data }
+      Texture { width = img.width; height = img.height; rgba = img.rgba }
   | None -> Color missing_texture_color
 
 (*****************************************************************************)

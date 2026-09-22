@@ -17,14 +17,14 @@
 (* Conversion *)
 (*****************************************************************************)
 
-(* claude: stb_image decodes to an interleaved, row-major, top-to-bottom
- * RGBA8 buffer (see Image_decode.image). Cairo.Image.create_for_data32
+(* claude: Image_decode decodes to an interleaved, row-major, top-to-bottom
+ * RGBA8 buffer (see Rgba_image.mli). Cairo.Image.create_for_data32
  * wants a (height, width) Bigarray.Array2.t of int32, each int32 being a
  * premultiplied-alpha ARGB32 pixel (alpha in the top byte); this is the
  * same layout/orientation, so we just need to repack/premultiply. *)
 let cairo_surface_of_image (img : Image_decode.image) : Cairo.Surface.t =
   let w = img.width and h = img.height in
-  let data = img.data in
+  let data = img.rgba in
   let pixels =
     Bigarray.Array2.create Bigarray.int32 Bigarray.c_layout h w in
   for y = 0 to h - 1 do

@@ -157,21 +157,9 @@ let box_polygon (m : Affine.t) (xmin, ymin, xmax, ymax) : (float * float) list =
 (* Images *)
 (*****************************************************************************)
 
-(* Image_decode's images (stb_image's buffers) as Blit's: the same
- * bytes when laid out the same way, which is always the case in
- * practice (no offset, rows one after the other); else a copy *)
+(* Image_decode's images as Blit's: the same bytes, the same layout *)
 let blit_image (img : Image_decode.image) : Blit.image =
-  if img.offset = 0 && img.stride = img.width * 4 then
-    { width = img.width; height = img.height; rgba = img.data }
-  else begin
-    let rgba = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (img.width * img.height * 4) in
-    for j = 0 to img.height - 1 do
-      for k = 0 to (img.width * 4) - 1 do
-        rgba.{(j * img.width * 4) + k} <- img.data.{img.offset + (j * img.stride) + k}
-      done
-    done;
-    { width = img.width; height = img.height; rgba }
-  end
+  { width = img.width; height = img.height; rgba = img.rgba }
 
 (* [image w h src] shows the image as a w x h box centered on (0, 0):
  * this maps its pixel (u, v) (top-left origin, y down, u from 0 to its

@@ -40,8 +40,8 @@
 
 (* An image: width x height pixels, row by row from the top, 4 bytes per
  * pixel, red, green, blue, alpha (0 = transparent, 255 = opaque, not
- * premultiplied). The layout stb_image decodes to, so images loaded by
- * graphics/images/Image_decode.ml can be used as they are. *)
+ * premultiplied). The layout of Rgba_image.t, so images loaded by
+ * Image_decode can be used as they are. *)
 type image = {
   width : int;
   height : int;

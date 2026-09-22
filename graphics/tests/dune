@@ -15,6 +15,7 @@
    graphics_3d_geometry
    graphics_3d
    graphics_images
+   graphics_rgba
    graphics_xpm
    graphics_gpu
    stb_image ; Unit_rgba loads a real RGB PNG

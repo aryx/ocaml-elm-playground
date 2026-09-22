@@ -28,7 +28,7 @@
 
 (* An image, the same layout as Blit.image: width x height pixels, row
  * by row from the top, 4 bytes per pixel, red, green, blue, alpha (the
- * layout graphics/images/Rgba.ml gives) *)
+ * layout of Rgba_image.t, what Texture_decode gives) *)
 type image = {
   width : int;
   height : int;

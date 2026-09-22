@@ -1,9 +1,9 @@
 (* claude: Cairo-free image loading shared by the SDL-based 2D backends.
  *
- * An image is stb_image's decoded buffer: width x height pixels,
- * row-major, top-to-bottom, 4 bytes per pixel in R, G, B, A order,
- * straight (non-premultiplied) alpha. *)
-type image = Stb_image.int8 Stb_image.t
+ * An image is a decoded buffer: width x height pixels, row-major,
+ * top-to-bottom, 4 bytes per pixel in R, G, B, A order, straight
+ * (non-premultiplied) alpha; see Rgba_image.mli. *)
+type image = Rgba_image.t
 
 (* Load an external image (e.g., a URL passed to [Playground.image]),
  * caching the result (or the failure) by url so repeated calls don't

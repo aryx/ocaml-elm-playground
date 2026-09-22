@@ -6,7 +6,7 @@
   (modules Playground_platform Help_overlay Shape_render_software)
   (libraries
     tsdl
-    stb_image ; Image_decode.image's fields
+    graphics_rgba ; Image_decode.image's fields
     elm_core ; Color
     elm_playground
     ; the from-scratch graphics algorithms, see graphics/
@@ -23,7 +23,7 @@
  (modules Playground3d_platform Shape3d_render_software)
  (libraries
    tsdl
-   stb_image ; Stb_image.t, what Texture_decode gives
+   graphics_rgba ; Rgba_image.t, what Texture_decode gives
    elm_core
    elm_playground
    elm_playground_3d

@@ -106,7 +106,7 @@ type t = {
   height : int;
   (* row-major, top-to-bottom, 4 bytes per pixel, R G B A,
    * straight (not premultiplied) alpha; no offset, no stride *)
-  data : (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t;
+  rgba : (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t;
 }
 ```
 
@@ -114,7 +114,9 @@ A `Bigarray` rather than `Bytes`, to keep what the consumers do today
 unchanged: the OpenGL backend uploads it as is, the software backends
 already use such a buffer (their stride-copy disappears, since there
 is no stride any more). Always 4 channels: the decoders expand gray,
-palette and RGB themselves, which is what `Rgba` does today.
+palette and RGB themselves, which is what `Rgba` does today. The field
+is `rgba`, as in `Blit.image` and `Texture.image`, the same layout: the
+software backends go from one to the other by renaming the record.
 
 ## Target layout
 
@@ -287,6 +289,19 @@ medium, `Inflate` being the only tricky part and `puff.c` a precise
 guide; JPEG is the biggest (Huffman bit reading, subsampling layouts,
 restart intervals), but baseline-only keeps it bounded. The migration
 itself is small: the consumers already take a Bigarray of RGBA bytes.
+
+## Status
+
+- **Phase 1: done.** `graphics/images/rgba/` (library `graphics_rgba`,
+  in `elm_playground`); `Rgba.of_stb_image` now gives an
+  `Rgba_image.t`, and is the only code that sees stb_image's type
+  (with `Unit_rgba`, which checks the binding's bug); the software
+  backends' stride copy, the software 3D backend's layout assert and
+  the OpenGL backend's `gl_format_of_channels` are gone (always RGBA);
+  the two 3D packages no longer list stb_image. Golden frames
+  unchanged (TexturedCube3d, TinyMinecraft, TinyTombRaider); Mario's
+  animated GIFs and the turtle checked by hand (they need the network,
+  so have no golden frame).
 
 ## Demos: seeing the compression
 

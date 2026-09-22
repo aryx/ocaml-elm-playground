@@ -163,7 +163,6 @@
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
-    (stb_image (>= "0.4")) ; Stb_image.t, what Texture_decode gives
     (elm_playground_3d (= :version))
     (elm_playground_software (= :version)) ; graphics/core and graphics/2d, used by graphics/3d; Shape_render_software, for the HUD pass; the SDL loop; graphics/images (Texture_decode)
   )
@@ -194,7 +193,6 @@
     (ocaml (>= "4.08.0"))
     tsdl
     tgls
-    (stb_image (>= "0.4")) ; Stb_image.t, used by the type of get_or_create_gl_texture
     (elm_playground_3d (= :version))
     (elm_playground_software (= :version)) ; the HUD: Shape_render_software, graphics/core (Matting); the SDL loop; graphics/images (Texture_decode)
   )

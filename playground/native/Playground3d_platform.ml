@@ -210,10 +210,6 @@ let show_hud = ref true
  * wanted, unlike native's own "well-known easy upgrade" bilinear note
  * in notes_3d.md section 9. *)
 
-(* claude: Texture_decode's textures are always RGBA (see Rgba), so
- * this is Gl.rgba in practice *)
-let gl_format_of_channels (channels : int) : Gl.enum = if channels = 4 then Gl.rgba else Gl.rgb
-
 let upload_texture ~(width : int) ~(height : int) ~(format : Gl.enum)
     (data : (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t) : int =
   let id = int32_bigarray1 1 in
@@ -251,8 +247,9 @@ let get_or_create_gl_texture (src : string) : int =
           | None -> Texture_decode.load src
         with
         | None -> Lazy.force missing_texture_gl_id
-        | Some (img : Stb_image.int8 Stb_image.t) ->
-            upload_texture ~width:img.width ~height:img.height ~format:(gl_format_of_channels img.channels) img.data
+        | Some (img : Rgba_image.t) ->
+            (* claude: Texture_decode's textures are always RGBA *)
+            upload_texture ~width:img.width ~height:img.height ~format:Gl.rgba img.rgba
       in
       Hashtbl.add gl_texture_cache src id;
       id

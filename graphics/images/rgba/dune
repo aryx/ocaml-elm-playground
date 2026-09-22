@@ -1,0 +1,9 @@
+; claude: a decoded picture, what every image reader of graphics/images/
+; gives (Rgba_image.mli) and every backend draws from. Pure OCaml, like
+; xpm/, so the web backend could use it too. A private library (see
+; graphics/core/dune), installed as part of elm_playground.
+(library
+ (name graphics_rgba)
+ (package elm_playground)
+ (wrapped false)
+)

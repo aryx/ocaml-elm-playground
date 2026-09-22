@@ -10,9 +10,9 @@
 
 (* See Rgba.mli *)
 
-let of_stb_image (img : Stb_image.int8 Stb_image.t) : Stb_image.int8 Stb_image.t =
+let of_stb_image (img : Stb_image.int8 Stb_image.t) : Rgba_image.t =
   let w = img.width and h = img.height and n = img.channels in
-  if n = 4 && img.offset = 0 && img.stride = w * 4 then img
+  if n = 4 && img.offset = 0 && img.stride = w * 4 then { width = w; height = h; rgba = img.data }
   else begin
     let data = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (w * h * 4) in
     for y = 0 to h - 1 do
@@ -33,7 +33,5 @@ let of_stb_image (img : Stb_image.int8 Stb_image.t) : Stb_image.int8 Stb_image.t
         data.{dst + 3} <- a
       done
     done;
-    match Stb_image.image ~width:w ~height:h ~channels:4 data with
-    | Ok img -> img
-    | Error (`Msg msg) -> failwith msg
+    { width = w; height = h; rgba = data }
   end
