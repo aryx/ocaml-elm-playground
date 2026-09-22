@@ -70,10 +70,12 @@ let step (f : biquad) (m : memory) (x : float) : float =
   m.y1 <- y;
   y
 
+let silence () : memory = { x1 = 0.; x2 = 0.; y1 = 0.; y2 = 0. }
+
 let run (f : biquad) (s : Signal.t) : Signal.t =
-  let m = { x1 = 0.; x2 = 0.; y1 = 0.; y2 = 0. } in
+  let m = silence () in
   Array.map (step f m) s
 
 let sweep (kind : kind) ~(q : float) ~(from : float) ~(to_ : float) (s : Signal.t) : Signal.t =
-  let m = { x1 = 0.; x2 = 0.; y1 = 0.; y2 = 0. } and n = float_of_int (max 1 (Array.length s)) in
+  let m = silence () and n = float_of_int (max 1 (Array.length s)) in
   Array.mapi (fun i x -> step (biquad kind ~cutoff:(from *. ((to_ /. from) ** (float_of_int i /. n))) ~q) m x) s

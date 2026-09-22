@@ -29,7 +29,7 @@ same mistake, with the same cure.
 | `Filter` | low-pass, high-pass, resonance | §7 |
 | `Fm` | FM synthesis: sidebands from two sines | §7 |
 | `Synth` | a sound as a tree of voices, rendered; slides | §8 |
-| `Effect`, `Sfx` | vibrato, echo; sfxr's parameters (not written: §12) | §8 |
+| `Effect`, `Sfx` | vibrato, jump, arpeggio, echo; sfxr's parameters | §8 |
 | `Music`, `Abc`, `Doremi`, `Midi` | notes, equal temperament, tunes as text, MIDI files | §9 |
 | `Mixer` | the sounds playing, pulled by the sound card | §10 |
 | `Wav` | writing samples to a file | §2 |
@@ -230,14 +230,27 @@ modulations: a **pitch slide** (a jump goes up, a laser goes down, a
 coin jumps up by a step), a **vibrato** (the pitch wobbling), an
 **arpeggio**, filtered noise for impacts. **sfxr** (Tomas Pettersson,
 2007, written for game jams) turned that into a generator: a dozen
-parameters, a "random laser" button. `playground/Audio`'s ready-made
-sounds are the same, readable: `jump` is `square 300 |> sliding 650 |>
-lasting 0.18 |> fading` -- a square wave, a slide up, a length, a
-decay to 0.
+parameters, a "random laser" button. `audio/Sfx` is the same, readable:
+a record of sfxr's sliders -- `jump` is a square from 300 Hz sliding to
+650, held 0.04 s, decaying over 0.14 s; the explosion noise sliding
+from 1500 steps a second to 150 under a low-pass falling from 4000 Hz
+to 150 -- and `Sfx.vary`, sfxr's "mutate", nudges every number for a
+family of sounds from one. `playground/Audio`'s ready-made sounds are
+its presets.
 
-An **echo** is the sound plus itself delayed and quieter, from a
-**delay line** (a circular buffer of the last samples): the simplest
-effect with memory, and the start of reverberation.
+The **arpeggio** is worth a second look: the notes of a chord one after
+the other, every 1/60 s, around and around -- the chiptune trick of the
+NES and the C64, whose two or three voices were too few to play chords:
+fast enough, the notes blur into one warbling chord (`Effect.Arpeggio`,
+and a tracker's `0xy` effect).
+
+An **echo** is the sound plus itself delayed and quieter, fed back so
+that the echo echoes too, `y[n] = x[n] + g y[n - D]`, from a **delay
+line** (a circular buffer of the last D samples): a feedback comb
+filter, the simplest effect with memory, and the start of
+reverberation. Its echoes die away geometrically, the sound lasting
+until they fall below -60 dB: 2.5 s for a delay of 0.25 s and a
+feedback of 0.5 (`Effect.echo`, `Effect.tail`).
 
 ## 9. Notes and music
 
@@ -304,21 +317,15 @@ In rough order of difficulty:
 
 - **pink noise** (§3): white noise through a few one-pole low-passes
   summed, or Voss's algorithm; in `Noise`, next to the LFSR;
-- **PolyBLAMP** for the triangle's corners (§6), the band-limited
-  ramp, in `Oscillator.wave_band_limited`, which leaves the triangle
-  naive; measure its aliases the way `Unit_oscillator` does the
-  square's;
-- **vibrato and arpeggio** (§8): a `Synth.voice` only `slide`s; a
-  frequency modulated by a slow sine, or stepping through a chord, is
-  the `Effect` of §0;
-- **sfxr's generator** (§8): the `Sfx` of §0, its dozen parameters and
-  random buttons, over `Synth`;
-- **an echo** (§8): a delay line, a circular buffer fed back quieter
-  (`Mix.delay` only shifts a sound); then a reverb, Schroeder's comb
-  and all-pass filters;
-- **filters on continuous sounds**: `keep_playing` ignores `low_pass`
-  and `wah`; `Synth.continue` would have to carry the biquad's two
-  samples of memory in its `running` state, like the phase;
+- **sfxr's random buttons** (§8): `Sfx.vary` nudges a preset; sfxr
+  also picks a new sound at random within a category's ranges ("random
+  laser"), each category its own ranges;
+- **a reverb** (§8): `Effect.echo` is one feedback comb; Schroeder's
+  reverb (1962) is four of them in parallel, their delays mutually
+  prime, then two all-pass filters in series;
+- **a wah on a continuous sound**: `keep_playing` filters with the
+  cutoff of the frame (the biquad's memory carried from pull to pull),
+  but ignores a `wah`'s sweep, which is over a sound's length;
 - **a plucked string**, Karplus-Strong: a delay line of noise, averaged
   as it goes round -- a new `Synth.source`, a guitar in a few lines;
 - **stereo and panning**: `Signal.t` and `Wav` are mono; then
@@ -339,11 +346,13 @@ The API is `playground/Audio.mli`, in the `elm_playground` library, so
 every backend has it. A **sound** is a value, like a shape: made from a
 few numbers (`tone`, `square`, `triangle`, `sawtooth`, `noise`, §3;
 `fm`, §7; `note "C4"`, §9), shaped by verbs like `move` and `scale`
-(`lasting`, `fading`, §4; `louder`, §5; `sliding`, §8; `low_pass`,
-`high_pass`, `wah`, §7; `naive`, §6), and combined with `after` and
-`together`, Euterpea's two operators; `blip`, `coin`, `jump`, `laser`,
-`hit`, `explosion` and `step` are ready-made, after sfxr's categories
-(§8). Tunes are text, `abc` and `doremi`, or a MIDI file, `midi` (§9,
+(`lasting`, `fading`, §4; `louder`, §5; `sliding`, `vibrato`,
+`arpeggio`, `echo`, §8; `low_pass`, `high_pass`, `wah`, §7; `naive`,
+§6), and combined with `after` and `together`, Euterpea's two
+operators; `blip`, `coin`, `jump`, `laser`, `hit`, `explosion`, `step`
+and `powerup` are ready-made, `audio/Sfx`'s presets (§8), `varied`
+nudges one (a new seed, a new shot), and `sfx` makes one's own from
+sfxr's numbers. Tunes are text, `abc` and `doremi`, or a MIDI file, `midi` (§9,
 `notes_audio_midi.md`).
 
 Unlike pictures, sounds are *commands*: `Audio.play` in `update`, when
@@ -361,16 +370,24 @@ The examples, one idea each: `examples/AudioTheremin.ml`, the whole
 instrument one `keep_playing` line; `examples/AudioPiano.ml`, the
 keyboard as a piano, space switching the waveform (§3's timbre, §9's
 notes); `examples/AudioAliasing.ml`, a square's spectrum, its aliases
-in red, space switching naive and band-limited (§2, §6). The games:
+in red, space switching naive and band-limited (§2, §6);
+`examples/AudioSfx.ml`, the ready-made sounds on keys 1 to 8, their
+numbers and their shape on screen, `r` a variation (§8). The games:
 `TinyBreakout.ml` (a brick's pitch from its row), `TinyMario.ml` (a
 jump, footsteps, coins, a flag's arpeggio made with `after`, and its
 music, an ABC tune or `music=` a `.mid` file), and the rhythm games,
 `TinyDDR.ml`, `TinyGuitarHero.ml`, `TinyRockBand.ml`, judged by
-`Audio.position`; about thirty more play the ready-made sounds. No
-game uses `fm`, the filters or `wah` yet: only the golden WAVs do.
+`Audio.position`; `Asteroid.ml` (a bang by size, the thrust as
+noise through a low-pass brightening with speed, kept playing, the
+heartbeat speeding up as the asteroids get fewer), `Pong.ml` and
+`TinyPong.ml` (Pong's three blips, TinyPong's rising with the rally's
+speed), `Snake.ml` (a crunch, a fall); about thirty more play the
+ready-made sounds. No game uses `fm` or `wah` yet: only the golden WAVs
+do.
 
 To see the sound: the software backend's `v` key (with `-debug-keys`)
-draws `Audio_debug`'s oscilloscope, then spectrum (§6), over the frame.
+draws `Audio_debug`'s oscilloscope, then spectrum (§6), over the frame;
+its `l` key turns the band-limited oscillators off, the aliases back.
 To test it: the golden WAVs of `audio/tests/`, compared sample by
 sample, and `-dump-audio file` with `-dump-frame` writing a game's
 sound to a WAV.

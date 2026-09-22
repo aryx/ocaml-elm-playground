@@ -54,7 +54,7 @@ let test_mixer () =
   ignore (Mixer.pull m 4000);
   ignore (Mixer.pull m 1000);
   Alcotest.(check (pair int int)) "played out after 4410 samples" (0, 0) (Mixer.playing m);
-  let v = { Synth.source = Wave Sine; frequency = 220.; slide = None; seconds = 0.; volume = 0.5; fade = false } in
+  let v = { Synth.source = Wave Sine; frequency = 220.; slide = None; seconds = 0.; volume = 0.5; fade = false; effects = []; envelope = None } in
   Mixer.keep m "hum" v;
   let first = Mixer.pull m 735 in
   Alcotest.(check (pair int int)) "a continuous voice" (0, 1) (Mixer.playing m);
@@ -117,7 +117,19 @@ let test_sources () =
   Alcotest.(check (float 1.)) "at 1.5 s, darker (Hz)" 687. late;
   let filtered = Synth.Filtered ({ kind = Low_pass; cutoff = 300.; cutoff_to = 300.; q = 0.707 }, Synth.voice Noise 3000.) in
   Alcotest.(check (float 1e-9)) "a filter keeps the length" 0.3 (Synth.duration filtered);
-  Alcotest.(check int) "its samples too" (Signal.samples 0.3) (Array.length (Synth.render filtered))
+  Alcotest.(check int) "its samples too" (Signal.samples 0.3) (Array.length (Synth.render filtered));
+  (* a continuous voice filtered as the mixer pulls it, three frames of
+   * 735 samples, is the same voice filtered in one go: the filter's
+   * memory carried from pull to pull, no seam (atanh undoes the
+   * mixer's tanh) *)
+  let v = { Synth.source = Noise; frequency = 3000.; slide = None; seconds = 0.; volume = 0.5; fade = false; effects = []; envelope = None } in
+  let f = { Synth.kind = Low_pass; cutoff = 300.; cutoff_to = 300.; q = 0.707 } in
+  let frames (m : Mixer.t) ?filter () =
+    Array.concat (List.init 3 (fun _ -> Mixer.keep ?filter m "engine" v; Array.map Float.atanh (Mixer.pull m 735)))
+  in
+  let filtered = frames (Mixer.create ()) ~filter:f () and plain = frames (Mixer.create ()) () in
+  let expected = Filter.run (Filter.biquad Low_pass ~cutoff:300. ~q:0.707) plain in
+  Array.iteri (fun i x -> Alcotest.(check (float 1e-9)) (Printf.sprintf "a filtered continuous voice, sample %d" i) expected.(i) x) filtered
 
 let tests =
   Testo.categorize "Synth and Mixer"

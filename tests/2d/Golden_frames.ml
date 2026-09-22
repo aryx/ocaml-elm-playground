@@ -144,6 +144,8 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AudioPiano", "", 2);
     (* a naive 1250 Hz square: its aliases in red, all over the spectrum *)
     ("examples/software/AudioAliasing", "", 2);
+    (* the explosion's numbers, and its shape: a burst, then a rumble *)
+    ("examples/software/AudioSfx", "", 2);
     ("examples/software/AiTictactoe", "", 3);
     ("examples/software/AiPathfinding", "", 60);
     (* claude: seek, the mouse at the centre: a curve into it *)
@@ -360,6 +362,8 @@ let scripted : Testutil_golden.scripted list =
     (* band-limited, then an octave up (12 semitones): 2500 Hz, the low
      * aliases gone, those near Nyquist left *)
     ("examples/software/AudioAliasing", "band_limited", 20, "space:2,right:5-16");
+    (* the laser, echoed: its copies, each 0.4 of the last *)
+    ("examples/software/AudioSfx", "laser_echo", 10, "4:2,e:5");
     ("examples/software/AiTictactoe", "played", 40, "space:2");
     ("examples/software/AiPathfinding", "breadth_first", 120, "b:2");
     ("examples/software/AiPathfinding", "dijkstra", 120, "d:2");

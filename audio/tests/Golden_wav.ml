@@ -57,6 +57,15 @@ let sounds : (string * (unit -> Signal.t)) list =
   @ [ ("fm_bell", fun () -> Synth.render (Synth.voice (Fm { ratio = 1.4; index = 5. }) 440. |> Synth.lasting 1. |> Synth.fading));
       ("noise_low_pass", fun () -> Filter.low_pass ~cutoff:300. (Noise.render ~rate:22050. 0.25));
       ("sawtooth_wah", fun () -> Filter.sweep Low_pass ~q:5. ~from:200. ~to_:4000. (Mix.gain 0.25 (Oscillator.render ~band_limited:true Sawtooth ~frequency:110. 1.))) ]
+  (* phase 7: sfxr's categories (Sfx.mli), each preset; a C major chord
+   * as an arpeggio (Effect.mli: one voice, 0 4 7 semitones every 1/60
+   * s); a blip echoed (0.15 s, each echo 0.4 of the last) *)
+  @ List.map (fun (name, s) -> ("sfx_" ^ name, fun () -> Synth.render (Sfx.to_sound s))) Sfx.presets
+  @ [ ( "arpeggio_c_major",
+        fun () ->
+          Synth.render
+            (Synth.voice (Wave Square) 261.63 |> Synth.with_effect (Arpeggio { semitones = [ 0.; 4.; 7. ]; step = 1. /. 60. }) |> Synth.lasting 0.5) );
+      ("sfx_blip_echo", fun () -> Synth.render (Sfx.to_sound { Sfx.blip with echo = 0.15 })) ]
   (* the click: three short beeps cut at once, then the same three
    * enveloped (Envelope.mli) *)
   @ [ ("beeps_cut", fun () -> beeps (fun s -> s));

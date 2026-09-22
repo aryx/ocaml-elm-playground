@@ -15,7 +15,13 @@ type shot = { samples : Signal.t; mutable at : int }
 
 (* a continuous voice: what it should play, its state, and whether it
  * was kept since the last pull *)
-type continuous = { mutable voice : Synth.voice; mutable running : Synth.running; mutable kept : bool }
+type continuous = {
+  mutable voice : Synth.voice;
+  mutable running : Synth.running;
+  mutable kept : bool;
+  mutable filter : Synth.filter option;
+  memory : Filter.memory;
+}
 
 (* a loop: its samples, how far read (wrapping at the end), how many
  * samples of it have gone out in all (not wrapping: the loop's clock),
@@ -39,12 +45,13 @@ let play (m : t) (samples : Signal.t) : unit =
   (* the newest first; past max_playing, the oldest dropped *)
   m.shots <- List.filteri (fun i _ -> i < max_playing) ({ samples; at = 0 } :: m.shots)
 
-let keep (m : t) (name : string) (voice : Synth.voice) : unit =
+let keep ?filter (m : t) (name : string) (voice : Synth.voice) : unit =
   match Hashtbl.find_opt m.continuous name with
   | Some c ->
       c.voice <- voice;
+      c.filter <- filter;
       c.kept <- true
-  | None -> Hashtbl.replace m.continuous name { voice; running = Synth.start (); kept = true }
+  | None -> Hashtbl.replace m.continuous name { voice; running = Synth.start (); kept = true; filter; memory = Filter.silence () }
 
 let pull (m : t) (n : int) : Signal.t =
   let out = Array.make n 0. in
@@ -69,6 +76,13 @@ let pull (m : t) (n : int) : Signal.t =
            else (
              gone := name :: !gone;
              Synth.release c.running c.voice n)
+         in
+         let samples =
+           match c.filter with
+           | None -> samples
+           | Some f ->
+               let q = Filter.biquad f.kind ~cutoff:f.cutoff ~q:f.q in
+               Array.map (Filter.step q c.memory) samples
          in
          Array.iteri (fun i x -> out.(i) <- out.(i) +. x) samples;
          c.kept <- false);

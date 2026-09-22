@@ -34,6 +34,13 @@ open Playground
  * Everything else, the objects, the rules, the view, the keys, is the
  * same code for both.
  *
+ * claude: and the arcade game's sounds (see "Sound" below): shots,
+ * asteroids breaking with a bang by size, the ship's thrust, the ship
+ * crashing, and the heartbeat speeding up as the asteroids get fewer;
+ * from playground/Audio (its ready-made laser and explosion, varied or
+ * with their numbers changed: audio/Sfx.mli; keep_playing and low_pass
+ * for the thrust).
+ *
  * TODO:
  *  - see Elm clones of asteroids:
  *)
@@ -213,6 +220,10 @@ type model = {
  
   state: state;
   last_tick: float;
+  (* claude: the heartbeat's next beat (a time, like last_tick), and
+   * which of its two notes *)
+  beat_at: float;
+  beat_low: bool;
 }
 
 (* 30 ms in original program *)
@@ -241,6 +252,8 @@ let initial_model = {
   ];
   state = Play;
   last_tick = Unix.gettimeofday();
+  beat_at = 0.;
+  beat_low = true;
 }
 
 (*****************************************************************************)
@@ -457,6 +470,61 @@ let physics_bullet (ship : ship obj) : bullet obj =
     (Physics.body space_bullet |> Physics.shot_from (per_second v_bullet) 0. (body_of ship))
 
 (*****************************************************************************)
+(* Sound *)
+(*****************************************************************************)
+(* claude: the arcade game's (Atari, 1979) were made by circuits on its
+ * board, one per sound, not by a sound chip; here each is a few numbers
+ * (audio/Sfx.mli):
+ *  - a shot: the ready-made laser, nudged at each shot (Audio.varied),
+ *    so a burst of them doesn't sound like one sample repeated;
+ *  - an asteroid breaking: a bang by its size, as the arcade had three,
+ *    the large one deepest and longest (the noise slower, the low-pass
+ *    lower);
+ *  - the ship crashing: the longest, falling to a rumble;
+ *  - the thrust: noise through a low-pass, playing while the thrust is
+ *    on (Audio.keep_playing, called at every frame), brighter the faster
+ *    the ship goes;
+ *  - the heartbeat: two low notes in turn, faster as the asteroids get
+ *    fewer, the arcade's famous beat (after Space Invaders' four-note
+ *    march, 1978: music whose tempo is the danger).
+ *)
+
+let bang (size : asteroid_size) : Audio.sound =
+  match size with
+  | ALarge -> Audio.explosion
+  | AMedium ->
+      Audio.sfx { Sfx.explosion with frequency = 2500.; slide = 400.; decay = 0.35; low_pass = 6000.; low_pass_to = 400.; volume = 0.6 }
+  | AWee ->
+      Audio.sfx
+        { Sfx.explosion with frequency = 4000.; slide = 1000.; sustain = 0.05; decay = 0.2; low_pass = 8000.; low_pass_to = 1500.; volume = 0.5 }
+
+let crash_sound = Audio.sfx { Sfx.explosion with decay = 1.5; low_pass_to = 80.; volume = 0.6 }
+
+(* the two notes, a triangle falling a little, like a drum *)
+let thump low =
+  Audio.sfx
+    { Sfx.step with frequency = (if low then 55. else 62.); slide = (if low then 40. else 45.); decay = 0.12; volume = 0.5 }
+
+(* 0.31 s between beats with one asteroid left, 0.55 s with five, at
+ * most 0.97 s *)
+let beat_interval model = 0.25 +. (0.06 *. float (min 12 (List.length model.asteroids)))
+
+(* the ship's speed, 0 to 1 (its top speed), in either engine's units *)
+let speed model =
+  let top = match model.engine with Dumb -> v_max | Physics_engine -> per_second v_max in
+  Float.min 1. (vector_length model.ship.velocity /. top)
+
+(* at every frame: the thrust while it's on, and the heartbeat when due *)
+let sounds now model =
+  if model.state = Play && model.ship.xtra.thrust > 0. then
+    Audio.keep_playing "thrust" (Audio.noise 3000. |> Audio.low_pass (300. +. (1700. *. speed model)) |> Audio.louder 0.8);
+  if model.state = Play && now >= model.beat_at then begin
+    Audio.play (thump model.beat_low);
+    { model with beat_at = now +. beat_interval model; beat_low = not model.beat_low }
+  end
+  else model
+
+(*****************************************************************************)
 (* The update, with either engine *)
 (*****************************************************************************)
 
@@ -474,17 +542,23 @@ let collide model =
     | Physics_engine -> physics_crash, physics_hit
   in
   let asteroids = check_asteroids ~hit model in
+  (* claude: a bang for each asteroid broken, a crash for the ship *)
+  model.asteroids |> List.iter (fun a ->
+    if List.exists (hit a) model.bullets then Audio.play (bang a.xtra.size));
   let state =
     if ship_crashed ~crash model
     then Stop
     else Play
   in
+  if state = Stop then Audio.play crash_sound;
   { model with state; asteroids }
 
 let update msg model =
  (match msg with
  | Noop -> model
  | Tick now ->
+   (* claude: the sounds at every frame, even those the dumb engine skips *)
+   let model = sounds now model in
    (match model.engine with
    | Dumb ->
      let delta = now -. model.last_tick in
@@ -514,6 +588,8 @@ let update msg model =
 
   | Shoot ->
     let ship = model.ship in 
+    (* claude: a new seed for each shot *)
+    if model.state = Play then Audio.play (Audio.varied "laser" (List.length model.bullets + 1));
     let bullet = match model.engine with Dumb -> new_bullet ship | Physics_engine -> physics_bullet ship in
     { model with bullets = bullet::model.bullets }
 

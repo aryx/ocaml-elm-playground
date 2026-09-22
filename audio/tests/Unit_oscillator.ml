@@ -47,8 +47,8 @@ let loudest_alias ?(below = Signal.nyquist) (m : float array) : float =
 (* the loudest alias, naive then band-limited, in dB, over the whole
  * band and below 5 kHz: PolyBLEP is weakest just under Nyquist (the
  * aliases folded from just above it), strongest far below it, where the
- * aliases would be out of tune among the low harmonics; the triangle's
- * aliases are left alone (Oscillator.mli), and already quieter *)
+ * aliases would be out of tune among the low harmonics; the triangle's,
+ * already quieter, by PolyBLAMP (its corners, not jumps) *)
 let test_aliases () =
   List.iter
     (fun (w, below, naive_db, limited_db) ->
@@ -60,7 +60,8 @@ let test_aliases () =
       (Square, 5000., -30.2, -71.9);
       (Sawtooth, Signal.nyquist, -31.2, -39.8);
       (Sawtooth, 5000., -36.0, -76.0);
-      (Triangle, Signal.nyquist, -56.3, -56.3);
+      (Triangle, Signal.nyquist, -56.3, -64.9);
+      (Triangle, 5000., -66.3, -109.6);
     ]
 
 (* the price: the harmonics near the top a little quieter (the

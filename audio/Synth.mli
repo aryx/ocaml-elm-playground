@@ -48,6 +48,10 @@ type voice = {
   seconds : float;
   volume : float; (* 0 to 1 *)
   fade : bool; (* percussive: dies away over its duration *)
+  effects : Effect.pitch list; (* vibrato, jumps, arpeggios, multiplied *)
+  (* an ADSR instead of the 5 ms ramps (or [fade]), released at
+   * [seconds] less its release: sfxr's attack, sustain, decay *)
+  envelope : Envelope.t option;
 }
 
 type t =
@@ -60,8 +64,18 @@ type t =
   (* the sound through a biquad (Filter.mli), its cutoff moving from
    * [cutoff] to [cutoff_to] over it (the same: fixed) *)
   | Filtered of filter * t
+  (* the sound echoed (Effect.echo), [Effect.tail] longer *)
+  | Echo of echo * t
+
+and echo = { delay : float; feedback : float }
 
 and filter = { kind : Filter.kind; cutoff : float; cutoff_to : float; q : float }
+
+(* false: every Wave played as Naive, the band-limited oscillators off,
+ * for the backends' debug key (the software backend's "l"): the sounds
+ * rendered from then on (a loop already rendered keeps its own) and the
+ * continuous voices at once; true by default *)
+val band_limited : bool ref
 
 (* [voice source frequency]: 0.3 s at volume 0.5, not sliding nor fading *)
 val voice : source -> float -> t
@@ -72,6 +86,7 @@ val fading : t -> t
 val louder : float -> t -> t (* the volume multiplied *)
 val sliding : float -> t -> t (* to that frequency *)
 val naive : t -> t (* Wave to Naive *)
+val with_effect : Effect.pitch -> t -> t (* one more *)
 
 (* [duration s]: in seconds (see above) *)
 val duration : t -> float
@@ -80,13 +95,14 @@ val duration : t -> float
 val render : t -> Signal.t
 
 (* a continuous voice's state, frame after frame: its oscillator's
- * phase (or its noise's register and clock), its last volume *)
+ * phase (or its noise's register and clock), its last volume, its
+ * time (for its pitch effects: a vibrato goes on from frame to frame) *)
 type running
 
 val start : unit -> running
 
 (* [continue running v n]: the next [n] samples of [v] as a steady
- * sound (its duration, slide and fade ignored), its phase going on
+ * sound (its duration, slide, fade and envelope ignored), its phase going on
  * from the last call, its volume moving smoothly from the last call's
  * to [v]'s (no zipper noise when a theremin's volume changes), and the
  * state for the next call *)

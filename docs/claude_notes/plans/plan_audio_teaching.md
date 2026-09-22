@@ -499,10 +499,43 @@ audio meeting).
   (a first version, windowed, painted the leak red: misleading).
   Golden WAVs: the band-limited square and sawtooth, an FM bell, noise
   low-passed, a sawtooth's wah (plotted before approving; the wah first
-  clipped, the sawtooth turned down). Left: a debug key switching every
-  oscillator naive (only per sound now), PolyBLAMP for the triangle,
-  filters on continuous sounds, the ready-made sounds remade with the
-  filters (phase 7's `Sfx`).
+  clipped, the sawtooth turned down). Its leftovers, done with phase 7:
+  PolyBLAMP for the triangle (the integral of PolyBLEP's residual,
+  (u+1)^3/6 and (1-u)^3/6 times the slope's change, 8 dt: its loudest
+  alias below 5 kHz from -66 to -110 dB; Frere Jacques's golden WAV
+  moved by at most 163 of 32767, its triangle bass's corners); filters
+  on continuous sounds (`Filter.step` and its memory, kept by the
+  `Mixer` per voice: three pulls filtered = one block filtered, to
+  1e-9); the software backend's "l" key, `Synth.band_limited`, every
+  oscillator naive (the help's golden frame redone).
+- **Phase 7, DONE**: `audio/Effect`: pitch effects, a voice's
+  frequency times their factors (`Vibrato`, `Jump`, sfxr's "change",
+  `Arpeggio`, the chiptune chord, cycling), and the echo, a feedback comb
+  on a delay line, lengthened by its tail (-60 dB: 2.5 s for 0.25 s and
+  0.5). `Synth`'s voices got `effects` and an optional `envelope` (an
+  ADSR instead of the 5 ms ramps), its tree an `Echo` node, its
+  continuous voices a clock (a vibrato goes on from frame to frame).
+  `audio/Sfx`: sfxr's sliders as a record (wave, frequency and slide,
+  attack/sustain/decay, vibrato, jump, low-pass and its sweep and
+  resonance, high-pass, echo, volume), `to_sound`, eight presets (blip,
+  coin, jump, laser, hit, explosion, step, powerup), `vary` (sfxr's
+  mutate, seeded). `Audio`'s ready-made sounds are now its presets
+  (every game's sounds changed a little: the laser darker as it falls,
+  the explosion a burst then a rumble), plus `powerup`, `varied`, `sfx`,
+  `vibrato`, `arpeggio`, `echo`. Tests (`Unit_effect`): the factors,
+  an impulse's echoes (1, 0.5, 0.25, 0.125), the coin's two notes
+  measured (1047 then 1568 Hz), vary's determinism, the explosion's
+  centroid 1126 Hz then 175. Golden WAVs: the eight presets, a C major
+  arpeggio, a blip echoed (plotted before approving). The example
+  `AudioSfx` (1-8 the presets, their numbers, their shape; r a
+  variation, e an echo). The games: Asteroid (a varied laser per shot,
+  a bang by asteroid size, the crash, the thrust as `keep_playing` noise
+  through a low-pass brightening with speed, the heartbeat faster as
+  the asteroids get fewer), Pong and TinyPong (paddle, wall, point;
+  TinyPong's paddle pitch rising with the rally), Snake (a crunch, a
+  falling tone when it bites itself), each checked on a scripted run's
+  dumped sound. Left: sfxr's per-category random, a reverb, Tetris's
+  theme (phase 8).
 - **Asked by the user (phase 5)**: subtractive synthesis (a rich wave
   through a resonant low-pass: phase 6's Filter), FM synthesis
   (Chowning: to add with phase 6, small, and made for the spectrum),

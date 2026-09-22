@@ -46,8 +46,9 @@ val loop : t -> string -> Signal.t -> unit
 val stop : t -> string -> unit
 
 (* [keep m name v]: the continuous voice [name] playing [v] until the
- * next pull at least *)
-val keep : t -> string -> Synth.voice -> unit
+ * next pull at least, through [filter] if given (its cutoff fixed at
+ * [cutoff]; changed from frame to frame, the filter's memory kept) *)
+val keep : ?filter:Synth.filter -> t -> string -> Synth.voice -> unit
 
 (* [pull m n]: the next [n] samples *)
 val pull : t -> int -> Signal.t

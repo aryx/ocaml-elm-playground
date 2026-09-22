@@ -209,11 +209,24 @@ let (step_game: input -> game -> game) = fun input game ->
   let player2' = step_player delta paddle2 score2 player2 in
   { state = state'; ball = ball'; player1 = player1'; player2 = player2' }
 
+(* claude: Pong's three sounds (Allan Alcorn made them from tones already
+ * on the board): a blip off a paddle, a lower one off a wall, a long
+ * low one for a point; a bounce is the ball's velocity turned around *)
+let paddle_blip = Audio.blip
+let wall_blip = Audio.sfx { Sfx.blip with frequency = 440.; slide = 440. }
+let point_sound = Audio.sfx { Sfx.blip with frequency = 220.; slide = 220.; sustain = 0.3; decay = 0.2 }
+
+let sounds game game' =
+  if game.ball.vx * game'.ball.vx < 0. then Audio.play paddle_blip;
+  if game.ball.vy * game'.ball.vy < 0. then Audio.play wall_blip;
+  if game'.player1.score > game.player1.score || game'.player2.score > game.player2.score then Audio.play point_sound
+
 let update computer (game, last_tick) =
   let input = input_of_computer computer in
   let (Time now) = computer.time in
   let delta = now - last_tick in
   let game' = step_game { input with delta } game in
+  sounds game game';
   game', now
 
 (*****************************************************************************)

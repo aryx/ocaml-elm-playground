@@ -53,30 +53,45 @@ let midi (bytes : string) : sound =
       prerr_endline ("Audio.midi: " ^ e);
       Synth.After []
 
-(* the ready-made sounds: our own recipes, after sfxr's categories *)
-let blip = square 880. |> lasting 0.06 |> fading
-let coin = after [ square 1047. |> lasting 0.07; square 1568. |> lasting 0.25 |> fading ] |> louder 0.8
-let jump = square 300. |> sliding 650. |> lasting 0.18 |> fading |> louder 0.8
-let laser = sawtooth 1200. |> sliding 200. |> lasting 0.2 |> fading
-let hit = noise 3000. |> lasting 0.1 |> fading
-let explosion = noise 1500. |> sliding 150. |> lasting 0.7 |> fading |> louder 1.5
-let step = triangle 150. |> sliding 90. |> lasting 0.05 |> fading |> louder 0.6
+let vibrato rate depth = Synth.with_effect (Vibrato { rate; depth })
+let arpeggio semitones step = Synth.with_effect (Arpeggio { semitones; step })
+let echo delay feedback s = Synth.Echo ({ delay; feedback = Float.min 0.95 (Float.max 0. feedback) }, s)
+
+(* the ready-made sounds: audio/Sfx's presets, after sfxr's categories *)
+let sfx = Sfx.to_sound
+let blip = sfx Sfx.blip
+let coin = sfx Sfx.coin
+let jump = sfx Sfx.jump
+let laser = sfx Sfx.laser
+let hit = sfx Sfx.hit
+let explosion = sfx Sfx.explosion
+let step = sfx Sfx.step
+let powerup = sfx Sfx.powerup
+
+let varied (name : string) (seed : int) : sound =
+  match List.assoc_opt name Sfx.presets with
+  | Some s -> sfx (Sfx.vary ~seed s)
+  | None ->
+      prerr_endline ("Audio.varied: no such sound " ^ name);
+      Synth.After []
 
 (* the mixer every sound goes to; the platform pulls its samples *)
 let mixer = Mixer.create ()
 let play (s : sound) : unit = Mixer.play mixer (Synth.render s)
 
-(* a continuous sound's voices, each kept under its own name (after:
-   only the first sound goes on) *)
-let rec voices (s : sound) : Synth.voice list =
+(* a continuous sound's voices, each kept under its own name, with the
+   filter it's under (after: only the first sound goes on; filters
+   nested: the outermost) *)
+let rec voices ?filter (s : sound) : (Synth.voice * Synth.filter option) list =
   match s with
-  | Voice v -> [ v ]
-  | Together l -> List.concat_map voices l
-  | After (s :: _) | Filtered (_, s) -> voices s
+  | Voice v -> [ (v, filter) ]
+  | Together l -> List.concat_map (voices ?filter) l
+  | After (s :: _) | Echo (_, s) -> voices ?filter s
+  | Filtered (f, s) -> voices ~filter:(Option.value filter ~default:f) s
   | After [] | Samples _ -> []
 
 let keep_playing (name : string) (s : sound) : unit =
-  List.iteri (fun i v -> Mixer.keep mixer (Printf.sprintf "%s#%d" name i) v) (voices s)
+  List.iteri (fun i (v, filter) -> Mixer.keep ?filter mixer (Printf.sprintf "%s#%d" name i) v) (voices s)
 
 (* a loop's samples, rendered once (a tune of a minute: 2.6 million
  * samples, rendered each frame it's asked for would be too slow) *)

@@ -37,7 +37,7 @@ let instrument ~(voice : int) ~(voices : int) : Oscillator.waveform * float =
  * hi-hat short bright noise. Shared by MIDI's channel 10 and a tune's
  * percussion voice (Abc.mli's clef=perc). *)
 let drum ~(volume : float) (key : int) : Synth.t =
-  let v source f = Synth.Voice { source; frequency = f; slide = None; seconds = 0.2; volume; fade = false } in
+  let v source f = Synth.Voice { source; frequency = f; slide = None; seconds = 0.2; volume; fade = false; effects = []; envelope = None } in
   match key with
   | 35 | 36 -> v (Wave Triangle) 150. |> Synth.sliding 50. |> Synth.lasting 0.15 |> Synth.fading |> Synth.louder 2.
   | 38 | 40 -> v Noise 5000. |> Synth.lasting 0.15 |> Synth.fading
@@ -75,7 +75,7 @@ let to_sound (tune : Abc.tune) : Synth.t =
 (* a MIDI note's sound: its instrument, from its channel and program *)
 let midi_voice (n : Midi.note) : Synth.t =
   let volume = 0.25 *. float_of_int n.velocity /. 127. in
-  let v source f = Synth.Voice { source; frequency = f; slide = None; seconds = n.length; volume; fade = false } in
+  let v source f = Synth.Voice { source; frequency = f; slide = None; seconds = n.length; volume; fade = false; effects = []; envelope = None } in
   let f = midi_frequency n.key in
   if n.channel = 9 then drum ~volume n.key
   else

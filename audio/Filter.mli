@@ -83,6 +83,16 @@ val response : biquad -> float -> float
 (* [run f s]: [s] through [f], from silence *)
 val run : biquad -> Signal.t -> Signal.t
 
+(* a biquad's memory, the last two inputs and outputs: what lets a
+ * continuous sound go through a filter a block at a time, as the mixer
+ * pulls it, without a click where the blocks meet *)
+type memory
+
+val silence : unit -> memory
+
+(* [step f m x]: one sample through [f], [m] updated *)
+val step : biquad -> memory -> float -> float
+
 (* [sweep kind ~q ~from ~to_ s]: through a biquad whose cutoff moves
  * from [from] to [to_] over [s], evenly in octaves (as the ear hears
  * it), its coefficients recomputed at each sample *)

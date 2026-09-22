@@ -62,10 +62,13 @@
  * (graphics/2d's coverage): the pixels on the edge get in-between
  * values, the samples on the jump too. The square has two jumps (up at
  * 0, down at 0.5), the sawtooth one (down by 2 at 0, so the correction
- * is subtracted). The sine has no jump, and the triangle only corners,
- * whose harmonics fall as 1/n^2 instead of 1/n: its aliases are about
- * 30 dB quieter than the square's, left as they are (the corners' own
- * fix, PolyBLAMP, a band-limited ramp, is the next step: an exercise).
+ * is subtracted). The sine has no jump. The triangle has no jump
+ * either, only corners, where its slope turns (+4 to -4 a period, at
+ * 0.25): its harmonics fall as 1/n^2 instead of 1/n, its aliases about
+ * 30 dB quieter than the square's to begin with. A corner is a jump of
+ * the slope, so its correction is the jump's integrated, PolyBLAMP (a
+ * band-limited ramp): (u+1)^3 / 6 just before, (1-u)^3 / 6 just after,
+ * times the slope's change in a sample (8 dt).
  *
  * Example, a 1001 Hz square (Unit_oscillator): its loudest alias below
  * 5 kHz, where one would be out of tune among the harmonics, drops from
@@ -73,7 +76,8 @@
  * just under Nyquist, folded from just above it, where a two-sample
  * correction can't tell them apart from the harmonics it must keep.
  * The price: the top harmonics dulled a little, the 5th (5 kHz) by 0.4
- * dB, the 9th by 1.2 dB.
+ * dB, the 9th by 1.2 dB. The triangle's loudest alias below 5 kHz: from
+ * -66 dB to -110 dB.
  *
  * References: Joseph Fourier, Théorie analytique de la chaleur, 1822;
  * Curtis Roads, The Computer Music Tutorial, 1996, chapter 4; Tim
@@ -81,7 +85,8 @@
  * Analog Waveforms", ICMC 1996 (the band-limited step, BLEP); Vesa
  * Välimäki, Antti Huovilainen, "Antialiasing Oscillators in
  * Subtractive Synthesis", IEEE Signal Processing Magazine, 2007
- * (PolyBLEP, the polynomial one). *)
+ * (PolyBLEP, the polynomial one); Fabián Esqueda, Vesa Välimäki,
+ * Stefan Bilbao, "Rounding Corners with BLAMP", DAFx 2016 (PolyBLAMP). *)
 
 type waveform = Sine | Square | Triangle | Sawtooth
 
@@ -94,6 +99,10 @@ val wave : waveform -> float -> float
 (* [polyblep ~dt t]: the correction above, for a jump up by 2 at phase
  * 0 *)
 val polyblep : dt:float -> float -> float
+
+(* [polyblamp ~dt t]: the triangle's, for a corner at phase 0 whose
+ * slope goes up by one a sample *)
+val polyblamp : dt:float -> float -> float
 
 (* [wave_band_limited w ~dt phase]: [wave w phase] with its jumps
  * smoothed, [dt] the phase step, frequency / rate *)

@@ -8,6 +8,10 @@ open Playground
  *
  * See https://en.wikipedia.org/wiki/Snake_(video_game_genre) for more info.
  *
+ * claude: two sounds (playground/Audio): a crunch when the snake eats,
+ * a short burst of noise and a rising blip at once; and a falling
+ * tone, the end, when it bites itself.
+ *
  * TODO:
  *  - two players (like in original Snake game called Blockade)
  *  - display score
@@ -158,6 +162,13 @@ let update_direction kbd snake =
   in
   snake.direction <- new_dir
 
+(* claude: the sounds *)
+let crunch =
+  Audio.together
+    [ Audio.sfx { Sfx.hit with decay = 0.05; volume = 0.35 }; Audio.sfx { Sfx.blip with frequency = 660.; slide = 990.; volume = 0.35 } ]
+
+let game_over_sound = Audio.sfx { Sfx.default with wave = Triangle; frequency = 440.; slide = 110.; sustain = 0.2; decay = 0.4 }
+
 let update computer model =
   let (Time now) = computer.time in
   (* operate by side effect on the model; simpler *)
@@ -175,8 +186,13 @@ let update computer model =
       snake.body <- snake.head::new_body;
       snake.head <- new_head;
       if ate_food
-      then model.food <- random_position ();
-      model.game_over <- List.mem new_head new_body;
+      then begin
+        model.food <- random_position ();
+        Audio.play crunch
+      end;
+      let bitten = List.mem new_head new_body in
+      if bitten && not model.game_over then Audio.play game_over_sound;
+      model.game_over <- bitten;
   end;
   update_direction computer.keyboard model.snake;
 

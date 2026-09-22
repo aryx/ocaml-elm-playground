@@ -33,13 +33,31 @@ let polyblep ~(dt : float) (t : float) : float =
     (u *. u) +. (2. *. u) +. 1.
   else 0.
 
+(* the integral of polyblep's residual for a unit step, (u+1)^3 / 6
+ * before, (1-u)^3 / 6 after: 1/6 at the corner *)
+let polyblamp ~(dt : float) (t : float) : float =
+  if t < dt then
+    let u = 1. -. (t /. dt) in
+    u *. u *. u /. 6.
+  else if t > 1. -. dt then
+    let u = ((t -. 1.) /. dt) +. 1. in
+    u *. u *. u /. 6.
+  else 0.
+
+let wrap (phase : float) : float = phase -. Float.floor phase
+
 let wave_band_limited (w : waveform) ~(dt : float) (phase : float) : float =
   match w with
-  | Sine | Triangle -> wave w phase
+  | Sine -> wave w phase
+  (* corners at 0.25 (the slope from +4 to -4 a period: -8 dt a sample)
+   * and 0.75 (back up, +8 dt) *)
+  | Triangle ->
+      wave w phase
+      -. (8. *. dt *. polyblamp ~dt (wrap (phase -. 0.25)))
+      +. (8. *. dt *. polyblamp ~dt (wrap (phase -. 0.75)))
   (* up at 0, down at 0.5 *)
   | Square ->
-      let down = phase +. 0.5 in
-      wave w phase +. polyblep ~dt phase -. polyblep ~dt (down -. Float.floor down)
+      wave w phase +. polyblep ~dt phase -. polyblep ~dt (wrap (phase +. 0.5))
   (* down at 0 *)
   | Sawtooth -> wave w phase -. polyblep ~dt phase
 

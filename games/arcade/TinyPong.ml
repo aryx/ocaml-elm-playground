@@ -39,8 +39,13 @@
  * tick, below the 44 of the paddle's zone (its 20 of width plus the
  * ball's radius on each side).
  *
- * Left as exercises: a winning score, sounds (plan_audio_teaching.md),
- * a spinning ball (the ball isn't [upright]: then its spin, drawn,
+ * Its sounds are Pong's three: a blip off a paddle, a lower one off a
+ * wall, a long low one for a point (Allan Alcorn made them from tones
+ * already on the board). Here the paddle's blip rises with the ball's
+ * speed, so a rally that speeds up is heard speeding up (Audio.mli; a
+ * bounce is a velocity turned around: [bounced]).
+ *
+ * Left as exercises: a winning score, a spinning ball (the ball isn't [upright]: then its spin, drawn,
  * would change its next bounces too, with rough walls).
  *)
 open Playground
@@ -113,6 +118,17 @@ let capped (b : Physics.body) : Physics.body =
   let s = Physics.speed b in
   if s > max_speed then b |> Physics.moving (b.vx * max_speed / s) (b.vy * max_speed / s) else b
 
+(* the sounds: a paddle's blip from 440 Hz up an octave as the ball
+ * gets to its top speed, a wall's an octave below, a point's long *)
+let paddle_blip (speed : number) : Audio.sound =
+  Audio.sfx { Sfx.blip with frequency = 440. * (2. ** min 1. (speed / 1100.)); slide = 440. * (2. ** min 1. (speed / 1100.)) }
+
+let wall_blip = Audio.sfx { Sfx.blip with frequency = 220.; slide = 220. }
+let point_sound = Audio.sfx { Sfx.blip with frequency = 110.; slide = 110.; sustain = 0.3; decay = 0.2 }
+
+(* a bounce: the velocity along that axis turned around *)
+let bounced (before : number) (after : number) : bool = before * after < 0.
+
 let update_game (computer : computer) (g : game) : game =
   let k = computer.keyboard in
   let two_players = List.assoc_opt "players" computer.flags = Some "2" in
@@ -126,10 +142,12 @@ let update_game (computer : computer) (g : game) : game =
       |> Physics.bounce_off left |> Physics.bounce_off right
       |> capped
     in
+    if bounced g.ball.vx ball.vx then Audio.play (paddle_blip (Float.hypot ball.vx ball.vy));
+    if bounced g.ball.vy ball.vy then Audio.play wall_blip;
     let g = { g with ball; left; right } in
     (* a point, and the next serve towards the one who lost it *)
-    if ball.x < -470. then serve (-1.) g.serves { g with right_score = g.right_score +.. 1 }
-    else if ball.x > 470. then serve 1. g.serves { g with left_score = g.left_score +.. 1 }
+    if ball.x < -470. then (Audio.play point_sound; serve (-1.) g.serves { g with right_score = g.right_score +.. 1 })
+    else if ball.x > 470. then (Audio.play point_sound; serve 1. g.serves { g with left_score = g.left_score +.. 1 })
     else g
 
 let update (computer : computer) (model : model) : model =

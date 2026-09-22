@@ -104,6 +104,23 @@ val high_pass : number -> sound -> sound
      let wow = sawtooth 110 |> lasting 1 |> wah 200 4000 *)
 val wah : number -> number -> sound -> sound
 
+(* [vibrato rate depth s]: the pitch wobbling [depth] semitones up and
+   down, [rate] times a second: 6 and 0.3 a singer, 8 and 2 a siren
+   (audio/Effect.mli) *)
+val vibrato : number -> number -> sound -> sound
+
+(* [arpeggio semitones step s]: the pitch stepping through [semitones]
+   above the note, [step] seconds each, around and around: [0; 4; 7] is
+   a major chord played by a single voice, the chiptune trick of the
+   NES and the C64, which had too few voices for real chords:
+     let chord = square 262 |> arpeggio [ 0; 4; 7 ] 0.03 |> lasting 1 *)
+val arpeggio : number list -> number -> sound -> sound
+
+(* [echo delay feedback s]: [s] again [delay] seconds later, [feedback]
+   as loud (0 to 0.95), and again, and again, dying away: a cave, a
+   canyon (the sound lasts longer: until the echoes are silent) *)
+val echo : number -> number -> sound -> sound
+
 (* [naive s]: the square, triangle and sawtooth waves of [s] computed
    the simple way, a formula, with their aliases: high notes whistle
    out of tune (the default removes most of them: audio/Oscillator.mli;
@@ -144,8 +161,9 @@ val midi : string -> sound
 (* {1 Ready-made sounds}
 
    In the spirit of sfxr (Tomas Pettersson, 2007), the game jam tool
-   whose few parameters make most 8-bit game sounds: each here is a few
-   of the verbs above (see Audio.ml). *)
+   whose few parameters make most 8-bit game sounds: each here is a
+   handful of numbers (audio/Sfx.mli; examples/AudioSfx.ml plays them
+   and shows the numbers). *)
 
 val blip : sound (* a short beep: a menu, a ball on a paddle *)
 val coin : sound (* two quick rising notes: a pickup *)
@@ -154,6 +172,17 @@ val laser : sound (* a falling sawtooth *)
 val hit : sound (* a short noise burst *)
 val explosion : sound (* a long, falling noise *)
 val step : sound (* a soft, low tick: footsteps *)
+val powerup : sound (* a rising, warbling square *)
+
+(* [varied name seed]: the ready-made sound [name] ("blip", "coin", ...)
+   with its numbers nudged at random (sfxr's "mutate"), the same for the
+   same [seed]: ten shots in a row that don't all sound alike,
+     Audio.play (Audio.varied "laser" shots_fired) *)
+val varied : string -> int -> sound
+
+(* [sfx numbers]: your own, from sfxr's numbers (audio/Sfx.mli):
+     let zap = sfx { Sfx.laser with frequency = 2000.; echo = 0.1 } *)
+val sfx : Sfx.t -> sound
 
 (* {1 Playing them} *)
 
@@ -161,8 +190,11 @@ val step : sound (* a soft, low tick: footsteps *)
 val play : sound -> unit
 
 (* [keep_playing name s]: [s] playing while this is called every frame,
-   [name] saying it's the same sound from frame to frame (its length,
-   fading and filters ignored: it lasts as long as it's kept) *)
+   [name] saying it's the same sound from frame to frame (its length
+   and fading ignored: it lasts as long as it's kept); a filter's cutoff
+   may change from frame to frame, a ship's engine brighter as it
+   speeds up (a wah's sweep ignored: the cutoff is the frame's):
+     Audio.keep_playing "thrust" (Audio.noise 2000 |> Audio.low_pass (200 + speed)) *)
 val keep_playing : string -> sound -> unit
 
 (* [loop name s]: [s] played over and over, background music, until
