@@ -27,6 +27,16 @@ this list without more information:
   once built with `make js`.
 - **Run natively**: `dune exec <dir>/<Name>.exe`.
 
+A game that has two looks draws, by default, in the medium its
+original really used: Pac-Man's ghosts and Mario were sprites, while
+Asteroids and Battlezone were vector displays and Pong was
+rectangles. The flag `artwork` changes it -- `artwork=shapes` for the
+playground's plain shapes, where the whole game is in the code and
+nothing hides behind a picture, `artwork=sprites` for the pixel art
+(see `Sprite.mli`):
+
+    dune exec games/platform/TinyCeleste.exe -- artwork=shapes
+
 A **2.5D** or **3D** game with a twin says so: TinyDoom and TinyDoom3d
 are the same level, drawn once by the game's own trick and once by
 playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
@@ -129,6 +139,7 @@ level to solve or a board to win; time pressure, when there is some
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [AiChess](games/puzzle/AiChess.ml) | 2D | Chess, as Claude Shannon's "Programming a Computer for Playing Chess" (1950) set it for computers | Chess against a computer thinking 3 moves ahead with alpha-beta. | Rules checked by perft; move ordering (most valuable victim first); quiescence, the captures played out at the leaves against the horizon effect. |
+| [AiConnect4](games/puzzle/AiConnect4.ml) | 2D | Connect Four (Milton Bradley, 1974; solved by Allen and by Allis, 1988) | Connect 4 against a computer that searches deeper by iterative deepening, move ordering and a transposition table, and says what each saved. | Iterative deepening, ordering (the middle columns first) and Zobrist keys, with the node counts they save. |
 | [AiOthello](games/puzzle/AiOthello.ml) | 2D | Othello (Goro Hasegawa, 1971) | Othello against a computer thinking 4 moves ahead with alpha-beta. | Game-tree search: alpha-beta, an evaluation table, and its cuts counted against plain minimax. |
 | [TinySokoban](games/puzzle/TinySokoban.ml) | 2D | Sokoban (Hiroyuki Imabayashi, Thinking Rabbit, 1982) | Push every box onto a goal, one at a time, never pulling. | Deep puzzles from a few rules (PSPACE-complete); undo for free, since the model is a value; levels checked by breadth-first search. |
 | [TinySokobanEd](games/puzzle/TinySokobanEd.ml) | 2D | the level editors games shipped with (Lode Runner's, Doug Smith, Broderbund, 1983) | TinySokoban's levels: type them, check them, play them, export the file the game is built with. | A game's tool: the rules, format and solver in the kit, the level a text file embedded at build time; a text editor on a grid, with the checks a text editor cannot do. |

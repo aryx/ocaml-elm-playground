@@ -113,6 +113,7 @@
    %{project_root}/games/rpg/software/TinyDiablo.exe
    %{project_root}/examples/software/PuzzleScriptSokoban.exe
    %{project_root}/examples/software/PuzzleScriptBoulders.exe
+   %{project_root}/games/puzzle/software/AiConnect4.exe
    %{project_root}/games/puzzle/software/AiOthello.exe
    %{project_root}/games/puzzle/software/AiChess.exe
    %{project_root}/games/strategy/software/TinyTowerDefense.exe

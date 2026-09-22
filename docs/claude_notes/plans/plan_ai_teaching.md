@@ -621,9 +621,11 @@ from memory until then.)
    and on the criterion below, see the status entry: the file grew, and
    the reason is worth more than the rule was. `examples/AiBots.ml`:
    the four handicaps on four keys, and what the bot knows drawn.
-6. **Deeper search**: `Deepening` (iterative deepening, ordering, a
-   budget, resumable), `Zobrist`; `AiConnect4`, whose node counts are
-   the test of every one of them.
+6. **Deeper search, DONE**: `Deepening` (iterative deepening,
+   ordering, a node budget, thinking a frame at a time), `Zobrist` (the
+   keys and the transposition table); `AiConnect4`, whose node counts
+   are the test of every one of them -- and which showed that iterative
+   deepening can cost rather than save (see the status entry).
 7. **Monte Carlo**: `Mcts` (playouts, then UCT); `AiGo` on 9x9.
 8. **The Playground layer**: `playground/Ai.mli` finished (the five
    families above), `Ai_debug`, and the board-game question settled by
@@ -771,6 +773,30 @@ from memory until then.)
   right where it stood, and the bot never found anyone), and anything
   that walks into a wall must slide along it (its first version stopped
   dead, and the bot stuck in a corner for good).
+- **Phase 6, DONE** (`ai/Zobrist`, `ai/Deepening`, `AiConnect4`):
+  `Zobrist` draws one 64-bit number per (piece, square) plus one for
+  the side to move, so a position's key is their xor and a move two
+  more; and holds the transposition table (value, depth, exact or a
+  bound, and the best move found, a deeper search replacing a
+  shallower). `Deepening.search` is alpha-beta with the previous
+  depth's best move first, the game's own ordering hint, the table, and
+  a node budget that abandons the depth in progress; `start`/`think`/
+  `plan` let a game search a frame's worth at a time, the allowance
+  doubling when a depth does not fit (or a deep search would never
+  finish in a frame). Checked (`Unit_deepening`, on Nim): every
+  combination gives alpha-beta's value and finishes the depth asked
+  for; the budget keeps the last finished depth; thinking in pieces
+  ends where thinking at once does.
+- **What AiConnect4 measured, and the surprise**: the opening searched
+  7 moves ahead -- alpha-beta with the columns left to right, 65,724
+  nodes; the middle columns first, 9,449; *plus* iterative deepening,
+  12,818; plus the table, 7,742. Iterative deepening cost a third more
+  rather than saving: the game's own hint already orders the moves
+  well, so the shallower passes bought little ordering and were paid
+  for in full. What it buys here is the time control (stop whenever,
+  with a complete answer), and the table pays its repeats back. The
+  plan had assumed the four lines would fall monotonically; they do not,
+  and `Deepening.mli` and notes_ai.md section 9 now say why.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

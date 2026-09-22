@@ -150,6 +150,39 @@ let soldat_senses () =
   Alcotest.(check bool) "GREEN neither" false (knows 2)
 
 (*****************************************************************************)
+(* AiConnect4 *)
+(*****************************************************************************)
+
+(* claude: what each trick of ai/Deepening saves, on the opening
+   position searched 7 moves ahead -- the numbers Deepening.mli quotes.
+   Each line adds one thing to the line above *)
+let connect4_nodes () =
+  let open AiConnect4 in
+  let table = Zobrist.table () in
+  let plain = (Minimax.alphabeta connect4 ~depth start).nodes in
+  let ordered = (Minimax.alphabeta ordered_rules ~depth start).nodes in
+  let deepened = (Deepening.search ~order:middle_first connect4 ~depth start).nodes in
+  let tabled = (Deepening.search ~order:middle_first ~key ~table connect4 ~depth start).nodes in
+  Alcotest.(check int) "alpha-beta, the columns left to right" 65724 plain;
+  Alcotest.(check int) "the middle columns first" 9449 ordered;
+  (* iterative deepening costs a third more here: the game's own hint
+     already orders the moves well, so the shallower passes buy little
+     and are paid for in full (Deepening.mli says so) *)
+  Alcotest.(check int) "+ iterative deepening, 1 to 7" 12818 deepened;
+  Alcotest.(check int) "+ the transposition table" 7742 tabled
+
+(* claude: the tricks must not change the answer: every way of
+   searching plays the same opening move (the middle column, which is
+   what everybody knows about Connect 4) *)
+let connect4_same_move () =
+  let open AiConnect4 in
+  let table = Zobrist.table () in
+  let plain = (Minimax.alphabeta connect4 ~depth start).best in
+  let tabled = (Deepening.search ~order:middle_first ~key ~table connect4 ~depth start).best in
+  Alcotest.(check (option int)) "alpha-beta and the tricks agree" plain tabled;
+  Alcotest.(check (option int)) "and it is the middle column" (Some 3) tabled
+
+(*****************************************************************************)
 (* TinyBomberman *)
 (*****************************************************************************)
 
@@ -6342,6 +6375,8 @@ let tests =
       t "TinySoldat, the bots fight" soldat_fight;
       t "TinySoldat ai=engine, the bots fight" (soldat_fight ~ai_engine:true);
       t "TinySoldat ai=engine, a bot knows only what it has seen" soldat_senses;
+      t "AiConnect4, what each trick saves" connect4_nodes;
+      t "AiConnect4, the tricks do not change the move" connect4_same_move;
       t "TinyBomberman, a chain reaction" bomberman_chain;
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
       t "TinyMarioKart, Mode 7 there and back" kart_mode7;

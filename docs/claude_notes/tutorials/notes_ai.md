@@ -27,7 +27,7 @@ because it means a page of code can produce something that looks alive.
 | `Fsm`, `Behavior`, `Utility` (done) | choosing what to do | §6 |
 | `Sense`, `Bot` (done) | a mind that plays through the player's own inputs | §6 |
 | `Minimax` (done) | the game tree, and alpha-beta | §7, §8 |
-| `Deepening`, `Zobrist` | making the search go deeper | §9 |
+| `Deepening`, `Zobrist` (done) | making the search go deeper | §9 |
 | `Mcts` | playing without an evaluation function | §10 |
 | `playground/Ai` (steering done) | the Evan-style API over all of it | §14 |
 
@@ -414,6 +414,27 @@ Every one of these is in the engines, and every one is small:
   elsewhere (killer moves). Cheap, and worth more than a whole extra
   ply of search.
 
+Three of the four are `ai/Deepening` and `ai/Zobrist`, and Connect 4's
+opening searched 7 moves ahead says what each is worth
+(`AiConnect4.ml`, the numbers checked in `tests/games`):
+
+```
+   alpha-beta, the columns left to right    65,724 nodes
+   the middle columns first                  9,449
+   + iterative deepening, 1 to 7            12,818
+   + the transposition table                 7,742
+```
+
+The third line is the interesting one: iterative deepening *cost* a
+third more here. It is not free -- the shallower searches are real work
+-- and it repays that only through the ordering it hands the deeper
+ones. Connect 4 already has a good hint (the middle columns are in more
+fours: 13 against 3 at the edge), so there was little ordering left to
+buy. What iterative deepening always buys, hint or not, is the right to
+stop whenever asked and still have a complete answer, which is what a
+game at 60 frames a second needs; and the table makes its repeats
+cheap, which is why those two lines belong together.
+
 ## 10. When you have no evaluation function: Monte Carlo
 
 Go broke everything above. The board has ~250 moves per position
@@ -583,7 +604,8 @@ off -- the last of them its senses, after which it sees you through the
 walls, and the demonstration is how quickly that stops being a game
 (§6);
 `Minimax` by `examples/AiTictactoe.ml` (§7, §8), `AiOthello.ml` and
-`AiChess.ml` (with its quiescence, §9). `Behavior` and `Utility` have
+`AiChess.ml` (with its quiescence, §9); `Deepening` and `Zobrist` by
+`AiConnect4.ml`, which prints what they save after every move (§9). `Behavior` and `Utility` have
 only their tests so far.
 
 ## Glossary

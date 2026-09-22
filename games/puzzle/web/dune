@@ -3,10 +3,10 @@
 (copy_files ../*.ml)
 
 (executables
-  (names AiChess AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+  (names AiChess AiConnect4 AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd)
-  (modules AiChess AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+  (modules AiChess AiConnect4 AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd Sokoban_levels)
   (libraries

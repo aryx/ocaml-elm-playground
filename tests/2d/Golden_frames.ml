@@ -167,6 +167,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AiGhosts", "", 60);
     (* the bot on its rounds, having seen nobody yet *)
     ("examples/software/AiBots", "", 2);
+    ("games/puzzle/software/AiConnect4", "", 3);
     ("games/puzzle/software/AiOthello", "", 3);
     ("games/puzzle/software/AiChess", "", 3);
     ("games/strategy/software/TinyTowerDefense", "", 5);
@@ -582,6 +583,9 @@ let scripted : Testutil_golden.scripted list =
     ("games/strategy/software/TinyWarcraft2", "crowd", 300, "space:1,a:10,p:14,right:20-44,space:50");
     ("games/strategy/software/TinyTowerDefense", "maze", 400, "space:1,right:20-40,space:45,up:50-56,space:60,up:64-70,space:74,left:80-84,space:90");
     ("games/puzzle/software/AiOthello", "reply", 60, "space:2");
+    (* claude: you drop in the middle, it answers in the middle too, and
+     * says what the tricks saved it *)
+    ("games/puzzle/software/AiConnect4", "reply", 90, "space:2");
     (* claude: the knight on g1 clicked, its two squares shown *)
     ("games/puzzle/software/AiChess", "selected", 10, "at(250;-350):1-10,click:3");
     (* claude: e2-e4 in two clicks, and the computer's answer *)
