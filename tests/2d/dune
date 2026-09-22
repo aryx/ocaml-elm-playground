@@ -65,6 +65,8 @@
    %{project_root}/examples/software/AudioPiano.exe
    %{project_root}/examples/software/AiTictactoe.exe
    %{project_root}/examples/software/AiPathfinding.exe
+   %{project_root}/examples/software/AiSteering.exe
+   %{project_root}/examples/software/AiFlock.exe
    %{project_root}/games/software/TinyFlappyBird.exe
    %{project_root}/games/software/TinyBreakout.exe
    %{project_root}/games/software/TinyXpilot.exe

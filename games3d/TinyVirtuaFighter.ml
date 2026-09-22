@@ -314,7 +314,7 @@ let off_ring (f : fighter) : bool = Float.abs f.x > ring_half
 
 (* The computer: walk into range, then punch, kick or sweep; hold back
  * while the other is swinging, which is what makes it look as though
- * it is reading the fight. Three rules, like games3d/TinyBoomerangFu3d's. *)
+ * it is reading the fight. Three rules, like games3d/TinyBoomerangFu's. *)
 let computer (self : fighter) (other : fighter) (frames : int) : input =
   let gap = Float.abs (other.x -. self.x) in
   let seed = (frames / 17) + int_of_float (Float.abs self.x *. 3.) in

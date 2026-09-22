@@ -49,7 +49,7 @@
  * on you. Once a game gives you that, every fight becomes a question
  * of timing rather than of positioning, which is Dark Souls' roll
  * (2011) and everything after it, Hades included. Compare
- * games3d/TinyBoomerangFu3d.ml, whose dash is only speed: there, being
+ * games3d/TinyBoomerangFu.ml, whose dash is only speed: there, being
  * somewhere else is the whole of the defence.
  *
  * Why it is here and not in games2.5d/: Hades is drawn in 2D from a

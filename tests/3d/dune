@@ -57,7 +57,7 @@
    %{project_root}/games3d/software/TinyQuake.exe
    %{project_root}/games3d/software/TinyBlockout.exe
    %{project_root}/games3d/software/TinyTombRaider.exe
-   %{project_root}/games3d/software/TinyBoomerangFu3d.exe
+   %{project_root}/games3d/software/TinyBoomerangFu.exe
    %{project_root}/games3d/software/TinyHades.exe
    %{project_root}/games3d/software/TinyMonumentValley.exe
    %{project_root}/games3d/software/TinyRockBand.exe

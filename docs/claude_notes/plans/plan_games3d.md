@@ -504,7 +504,7 @@ They are in *this* plan and not `plan_games.md`'s because the modern
 ones are drawn in 3D -- low-poly, flat-shaded, a fixed high camera --
 while being, underneath, exactly the 2D arena game Bomberman was.
 
-- **Toy**: TinyBoomerangFu3d (DONE: `games3d/TinyBoomerangFu3d.ml`),
+- **Toy**: TinyBoomerangFu (DONE: `games3d/TinyBoomerangFu.ml`),
   four foods, a boomerang each. Its lesson is a design one, and it is
   the cleanest example in `games3d/` of a whole game falling out of a
   single rule: **your only weapon leaves your hand**. Throw and you are
@@ -609,7 +609,7 @@ one line of the model:
   - **the dash with invulnerability**: eight frames in which nothing
     lands, which turns every fight from a question of position into a
     question of timing. That is Dark Souls' roll (2011) and everything
-    after it; compare `games3d/TinyBoomerangFu3d.ml`, whose dash is
+    after it; compare `games3d/TinyBoomerangFu.ml`, whose dash is
     only speed.
 - **Kit**: none. An arena is a floor and four walls, and there is no
   second game to share one with yet.

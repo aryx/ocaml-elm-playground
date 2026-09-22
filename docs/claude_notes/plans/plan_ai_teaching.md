@@ -324,9 +324,9 @@ ai/                    (private, package elm_playground, pure OCaml:
   Zobrist             hashing a position; the transposition table
   Mcts                random playouts, then UCT: search without an
                       evaluation function
-  Steering            seek, flee, arrive, pursue, evade, wander, avoid,
+  Steering      DONE  seek, flee, arrive, pursue, evade, wander, avoid,
                       path following
-  Flock               separation, alignment, cohesion
+  Flock         DONE  separation, alignment, cohesion
   Fsm                 states and transitions; Pac-Man's four ghosts
   Sense               what a bot is allowed to know: line of sight,
                       hearing, a memory of where the target was
@@ -454,7 +454,7 @@ from memory until then.)
   Monte Carlo Tree Search Methods" (2012).
 - **Steering**: Craig Reynolds, "Steering Behaviors For Autonomous
   Characters" (GDC 1999). Waiting user:
-  `games3d/TinyBoomerangFu3d.ml`'s `brain` (seek, flee, and an evade
+  `games3d/TinyBoomerangFu.ml`'s `brain` (seek, flee, and an evade
   that projects the player onto a flying boomerang's line to pick the
   side to step off it) -- and a warning from it, for the `.mli`: its
   characters have no velocity (a fixed speed, a committed dash), so a
@@ -466,7 +466,7 @@ from memory until then.)
 - **Fsm**: Pac-Man (1980) and its four ghosts, whose chase/scatter
   timing and per-ghost target tiles are documented down to the frame in
   the Pac-Man Dossier (Jamey Pittman, 2009). Second waiting user:
-  `games3d/TinyBoomerangFu3d.ml`, whose computer is three states in all
+  `games3d/TinyBoomerangFu.ml`, whose computer is three states in all
   but name -- dodge what is in the air, hunt while it holds its
   boomerang, keep away while it does not -- and whose hardest lesson is
   that the states need *hysteresis*, or the agent flips between two
@@ -604,7 +604,7 @@ from memory until then.)
 2. **Pathfinding, DONE**: `Pathfind` (breadth-first, Dijkstra, A*,
    flow fields), `examples/AiPathfinding.ml`, and `gamekits/rts/Orders`
    over it for TinyDune2 and TinyWarcraft2.
-3. **Steering and flocking**: `Steering`, `Flock`, on `Physics.body`;
+3. **Steering and flocking, DONE**: `Steering`, `Flock`, on `Physics.body`;
    `AiSteering`, `AiFlock`; the `Ai.mli` forces above, which is the
    first piece of the Evan-style layer and the one most likely to be
    right on the first try.
@@ -624,7 +624,7 @@ from memory until then.)
 8. **The Playground layer**: `playground/Ai.mli` finished (the five
    families above), `Ai_debug`, and the board-game question settled by
    rewriting AiConnect4 on it.
-9. **Chess**: `AiChess`, rules first (perft counts as the test: the
+9. **Chess, mostly DONE (ahead of its turn)**: `AiChess`, rules first (perft counts as the test: the
    standard node counts per depth from the start position are a
    ruthless check on a move generator), search second.
 10. **Learning**: `Matrix`, `Neuron`, `Net`, `Backprop`, `Grad`,
@@ -662,6 +662,42 @@ from memory until then.)
   `gamekits/rts/Orders` turns them into a strategy game's three kinds of
   order (one unit to a place, one unit to whatever is nearest, a crowd
   to a place through one flow field).
+- **Phase 3, DONE** (`ai/Steering`, `ai/Flock`, `playground/Ai`): a
+  behaviour is a *desired velocity*, and `steer` turns it into the
+  force (desired minus velocity, clamped), so behaviours add with
+  `blend`; `direction` is the second form, for characters with a fixed
+  speed and no velocity (TinyBoomerangFu's). Worked examples: seek from
+  (0, 0) going up at 100 towards (300, 400), desired (120, 160), steer
+  (44.7, 22.4) at a force of 50; pursue's guess, 2 seconds ahead of a
+  target 400 away; two boids 10 apart, separation and cohesion pulling
+  equally against each other (hence separation's half radius); and
+  emergence measured -- 30 boids headed the golden angle apart go from
+  an order of 0.04 (the length of their mean heading) to 1.00 in 20
+  seconds. `playground/Ai.mli`'s first family, verbs on
+  `Physics.body` next to `fall` and `push` (seek, flee, arrive, chase,
+  escaping, wandering, avoiding, flocking, following, facing). Two
+  changes from the sketch above, forced by what a body is: it has no
+  field for a top speed or a turning force, so `steer_speed` became
+  `?speed` and `?force` on every verb (200 and 400 by default); and
+  `wandering` takes a time, the angle on its circle being smooth noise
+  of it, since a body has nowhere to keep that angle either.
+  `examples/AiSteering.ml` (seven keys, the force as a red arrow, each
+  behaviour's thinking drawn: the slowing circle, the predicted point,
+  the corridor, the road) and `examples/AiFlock.ml` (60 fish, a slider
+  per weight and for the radius, s/a/c to switch a rule off, one fish's
+  neighbourhood drawn). TinyBoomerangFu's `brain` on `Steering` stays a
+  proposal, to decide in the game.
+- **Phase 9, mostly DONE, ahead of phases 4-8** (`games/AiChess.ml`):
+  the rules checked by perft (20/400/8902 from the start; Kiwipete,
+  positions 3 and 4), material and Michniewski's piece-square tables,
+  MVV-LVA ordering (2,305 positions instead of 25,206 on Kiwipete,
+  3 ahead), quiescence against the horizon effect, FEN. For the
+  quiescence, `Minimax.alphabeta` gained `?leaf`, the positions at the
+  depth scored knowing the window there: without it, Kiwipete took 1.9
+  s natively and 5 in JavaScript, with it 0.16 and 1.5. Left: the
+  transposition table and iterative deepening (phase 6's `Zobrist` and
+  `Deepening`, which AiChess should then use), and the draws by
+  repetition and the 50-move rule.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

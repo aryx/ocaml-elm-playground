@@ -26,7 +26,7 @@
 (copy_files ../TinyMinecraft.ml)
 (copy_files ../TinyBlockout.ml)
 (copy_files ../TinyTombRaider.ml)
-(copy_files ../TinyBoomerangFu3d.ml)
+(copy_files ../TinyBoomerangFu.ml)
 (copy_files ../TinyHades.ml)
 (copy_files ../TinyMonumentValley.ml)
 (copy_files ../TinyRockBand.ml)
@@ -55,12 +55,12 @@
     TinyQuake
     TinyBlockout
     TinyTombRaider
-    TinyBoomerangFu3d
+    TinyBoomerangFu
     TinyHades
     TinyMonumentValley
     TinyRockBand
   )
-  (modules StarCollector3d TinyBattlezone3d TinyElite3d TinyTeardown TinyPinball3d TinyHalfLife2 TinyPortal TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyVirtuaFighter TinyStarFox TinyAloneInTheDark TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu3d TinyHades TinyMonumentValley TinyRockBand Tomb_atlas)
+  (modules StarCollector3d TinyBattlezone3d TinyElite3d TinyTeardown TinyPinball3d TinyHalfLife2 TinyPortal TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyVirtuaFighter TinyStarFox TinyAloneInTheDark TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu TinyHades TinyMonumentValley TinyRockBand Tomb_atlas)
   (libraries
     kit_lightcycles ; TinyTron3d's rules
     kit_puzzle ; TinyTombRaider's Push

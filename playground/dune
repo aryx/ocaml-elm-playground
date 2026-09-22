@@ -15,6 +15,9 @@
    ; claude: the widgets under Gui.ml (private, pure OCaml, this same
    ; package), see docs/claude_notes/plans/plan_gui_teaching.md
    gui
+   ; claude: the game AI under Ai.ml (private, pure OCaml, this same
+   ; package), see docs/claude_notes/plans/plan_ai_teaching.md
+   ai
  )
  ; (preprocess (pps profiling.ppx))
 )

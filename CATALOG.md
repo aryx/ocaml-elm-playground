@@ -57,7 +57,7 @@ own trick and once by playground3d (see `games2.5d/README.md`).
 | [TinyFinalFight](games/TinyFinalFight.ml) | 2D | Final Fight (Capcom, 1989) | Walk down a street beating up wave after wave of thugs, then their boss. | The belt: depth along a street, and fighters drawn sorted by it; combos by chaining; the screen that locks until the wave is down. |
 | [TinyStreetFighter](games/TinyStreetFighter.ml) | 2D | Street Fighter II (Capcom, 1991) | Two fighters, one screen, best of three rounds, and a fireball. | Moves measured in frames (startup, active, recovery); hitboxes against hurtboxes; high and low blocks; special moves read from the input history; hitstop. |
 | [TinyVirtuaFighter](games3d/TinyVirtuaFighter.ml) | 3D | Virtua Fighter (Yu Suzuki, Sega AM2, 1993) | Two fighters of flat-shaded boxes on a ring you can be knocked out of. | The fighter as a skeleton: hierarchical transforms and keyframed poses; the ring-out; a camera framing two subjects. |
-| [TinyBoomerangFu3d](games3d/TinyBoomerangFu3d.ml) | 3D | Boomerang Fu (Cranky Watermelon, 2020) | Four foods in an arena, one boomerang each, one hit kills. | Your only weapon leaves your hand: a return arc homing on its owner; a fixed party-game camera, and shadows to read height. |
+| [TinyBoomerangFu](games3d/TinyBoomerangFu.ml) | 3D | Boomerang Fu (Cranky Watermelon, 2020) | Four foods in an arena, one boomerang each, one hit kills. | Your only weapon leaves your hand: a return arc homing on its owner; a fixed party-game camera, and shadows to read height. |
 
 ## Platform
 

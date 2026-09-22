@@ -2957,7 +2957,7 @@ let pinball_three_balls () =
   Alcotest.(check int) "none left" 0 g.balls
 
 (*****************************************************************************)
-(* TinyBoomerangFu3d *)
+(* TinyBoomerangFu *)
 (*****************************************************************************)
 
 (* The one rule the whole game hangs on: a thrown boomerang comes back
@@ -2965,7 +2965,7 @@ let pinball_three_balls () =
  * north, then walk east the whole time it is away, and it still finds
  * you. *)
 let boomerang_returns () =
-  let open TinyBoomerangFu3d in
+  let open TinyBoomerangFu in
   let me = List.hd (new_game ()).players in
   let me, thrown = step_player { go = Some (0., -1.); throw = true; dash_now = false } me in
   let r = match thrown with Some r -> r | None -> Alcotest.fail "nothing left the hand" in
@@ -2988,7 +2988,7 @@ let boomerang_returns () =
  * back, and its own thrower only once it has both got away and come off
  * something. *)
 let boomerang_cuts () =
-  let open TinyBoomerangFu3d in
+  let open TinyBoomerangFu in
   let g = new_game () in
   let me = List.nth g.players 0 and you = List.nth g.players 1 in
   let flight = { rx = 0.; rz = 0.; rvx = 0.5; rvz = 0.; owner = me.idx; leg = Out; bounced = false; away = false; age = 10 } in
@@ -3005,7 +3005,7 @@ let boomerang_cuts () =
 (* The other half of the trade: holding the boomerang, the dash is a
  * slash; without it, the same dash is only a dodge. *)
 let boomerang_slash () =
-  let open TinyBoomerangFu3d in
+  let open TinyBoomerangFu in
   let g = new_game () in
   let me = { (List.nth g.players 0) with px = 0.; pz = 0.; dash = 5 } in
   let you = { (List.nth g.players 1) with px = 0.9; pz = 0. } in
@@ -3019,7 +3019,7 @@ let boomerang_slash () =
  * looks where it is going ([way_ok]), must not: a round played out with
  * nobody at the keyboard is decided by boomerangs, and nobody falls. *)
 let boomerang_pits () =
-  let open TinyBoomerangFu3d in
+  let open TinyBoomerangFu in
   let me = { (List.hd (new_game ()).players) with px = 5.; pz = 0. } in
   let rec walk n p =
     if n = 0 || not (alive p) then p else walk (n - 1) (fst (step_player { go = Some (1., 0.); throw = false; dash_now = false } p))
@@ -5407,10 +5407,10 @@ let tests =
       t "TinyPinball, substeps=1 falls through the table" pinball_tunnels;
       t "TinyPinball, the ball never leaves the table" pinball_stays_on_the_table;
       t "TinyPinball, three balls and it is over" pinball_three_balls;
-      t "TinyBoomerangFu3d, the boomerang comes back to a moving thrower" boomerang_returns;
-      t "TinyBoomerangFu3d, who a flight cuts" boomerang_cuts;
-      t "TinyBoomerangFu3d, the dash is a slash only with it in hand" boomerang_slash;
-      t "TinyBoomerangFu3d, the pits, and the computer that avoids them" boomerang_pits;
+      t "TinyBoomerangFu, the boomerang comes back to a moving thrower" boomerang_returns;
+      t "TinyBoomerangFu, who a flight cuts" boomerang_cuts;
+      t "TinyBoomerangFu, the dash is a slash only with it in hand" boomerang_slash;
+      t "TinyBoomerangFu, the pits, and the computer that avoids them" boomerang_pits;
       t "TinyPortal2D, the transform keeps the speed" portal_transform;
       t "TinyPortal2D, the gun sticks to white walls only" portal_gun;
       t "TinyPortal2D, chamber 1: through the side walls" portal_chamber1;

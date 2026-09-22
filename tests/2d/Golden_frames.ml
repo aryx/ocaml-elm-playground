@@ -144,6 +144,10 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AudioPiano", "", 2);
     ("examples/software/AiTictactoe", "", 3);
     ("examples/software/AiPathfinding", "", 60);
+    (* claude: seek, the mouse at the centre: a curve into it *)
+    ("examples/software/AiSteering", "", 90);
+    (* claude: the school forming, one fish's neighbours drawn *)
+    ("examples/software/AiFlock", "", 90);
     ("games/software/AiOthello", "", 3);
     ("games/software/AiChess", "", 3);
     ("games/software/TinyTowerDefense", "", 5);
@@ -331,6 +335,16 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/AiTictactoe", "played", 40, "space:2");
     ("examples/software/AiPathfinding", "breadth_first", 120, "b:2");
     ("examples/software/AiPathfinding", "dijkstra", 120, "d:2");
+    (* claude: arrive: slowed within its circle round the mouse *)
+    ("examples/software/AiSteering", "arrive", 90, "3:2,at(-80;-120):1-90");
+    (* claude: pursue: the prey, and where it will be *)
+    ("examples/software/AiSteering", "pursue", 90, "4:2");
+    (* claude: avoid: round the rock in its corridor *)
+    ("examples/software/AiSteering", "avoid", 90, "6:2");
+    (* claude: follow: along the road *)
+    ("examples/software/AiSteering", "follow", 90, "7:2");
+    (* claude: cohesion off: the school spreading out *)
+    ("examples/software/AiFlock", "no_cohesion", 90, "c:2");
     ("games/software/AiOthello", "values", 3, "v:2");
     ("games/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
     ("games/software/TinySonic", "loop", 330, "space:1,right:5-330");
