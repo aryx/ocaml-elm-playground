@@ -85,7 +85,7 @@ Every example/game module (`open Playground; ... let main = Playground_platform.
 
 ### opam packages are generated, not hand-edited
 
-`dune-project` has `(generate_opam_files true)` and declares eleven `(package ...)` stanzas, one per public library (`elm_playground`, which also installs `elm_core` as `elm_playground.core`, `elm_playground_native`, `elm_playground_software`, `elm_playground_web`, `elm_playground_3d`, `elm_playground_3d_opengl`, ...) with their dependencies. The `*.opam` files at the repo root are generated from this — edit `dune-project`, then run `make` (or `dune build <name>.opam`) to regenerate them, rather than editing the `.opam` files directly. `elm_playground_native.opam.template` is the one exception (hand-maintained template consumed during opam generation for that package).
+`dune-project` has `(generate_opam_files true)` and declares nine `(package ...)` stanzas, one per public library (`elm_playground`, which also installs `elm_core` as `elm_playground.core`, `elm_playground_native`, `elm_playground_software`, `elm_playground_web`, `elm_playground_3d`, `elm_playground_3d_opengl`, ...) with their dependencies. The libraries shared by the native backends (`playground/native_common/`, `graphics/images/`) are private, installed as part of `elm_playground_software` (see `playground/native_common/dune` for why, and the caveat). The `*.opam` files at the repo root are generated from this — edit `dune-project`, then run `make` (or `dune build <name>.opam`) to regenerate them, rather than editing the `.opam` files directly. `elm_playground_native.opam.template` is the one exception (hand-maintained template consumed during opam generation for that package).
 
 ### Docs (`docs/`)
 

@@ -7,11 +7,11 @@
 ; samplers and GL textures).
 ;
 ; A private library (see graphics/core/dune), installed as part of
-; elm_playground_native_common, the package the native 2D backends
-; already depend on (and the 3D ones now too).
+; elm_playground_software, the package all the native backends depend
+; on (see playground/native_common/dune for why).
 (library
  (name graphics_images)
- (package elm_playground_native_common)
+ (package elm_playground_software)
  (wrapped false)
  (libraries
    logs

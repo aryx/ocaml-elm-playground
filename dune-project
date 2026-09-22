@@ -61,27 +61,9 @@
     ; added in 0.4.
     (stb_image (>= "0.4"))
     (elm_playground (= :version))
-    (elm_playground_native_common (= :version))
-  )
-)
-(package (name elm_playground_native_common)
-  (synopsis "SDL event loop + image loading shared by native 2D playground backends")
-  (description "\
-  Not meant to be used directly -- the Cairo-free SDL window/event loop
-  (Native_loop_2d) shared by the native 2D playground backends, and,
-  as a private library, the image download/decode/GIF-animation code of
-  graphics/images/ (Image_decode). A plain library rather than an
-  (implements elm_playground): two implementations of the same virtual
-  library can't depend on each other.
-")
-  (depends
-    ; see elm_playground_native above for these version constraints
-    (ocaml (>= "4.08.0"))
-    logs
-    tsdl
-    (stb_image (>= "0.4"))
-    ocurl
-    (elm_playground (= :version)) ; elm_playground.core (Sub/Cmd)
+    ; claude: for playground/native_common/ and graphics/images/, private
+    ; libraries installed as part of it (see native_common/dune for why)
+    (elm_playground_software (= :version))
   )
 )
 (package (name elm_playground_software)
@@ -94,14 +76,16 @@
   compositing, antialiasing, a stroke font), written to be read, with
   references to the papers that introduced them, are in graphics/,
   private libraries installed as part of this package for now; see
-  docs/claude_notes/notes_2d.md.
+  docs/claude_notes/notes_2d.md. Also installs the SDL event loops and
+  the image loading shared by all the native backends (Cairo, OpenGL).
 ")
   (depends
     (ocaml (>= "4.08.0"))
+    logs
     tsdl
     (stb_image (>= "0.4"))
+    ocurl
     (elm_playground (= :version))
-    (elm_playground_native_common (= :version))
     (testo :with-test)
     (alcotest :with-test)
     (cairo2 :with-test) ; to compare our pixels with Cairo's
@@ -129,26 +113,6 @@
     (elm_playground (= :version))
   )
 )
-(package (name elm_playground_3d_native_common)
-  (synopsis "SDL event loop shared by native-ish 3D playground backends")
-  (description "\
-  Not meant to be used directly -- a small library factored out of
-  elm_playground_3d_software so the OpenGL backend (see
-  docs/claude_notes/plan_opengl.md) can share the same SDL
-  window-event-draining/frame-pacing loop instead of duplicating it
-  (textures are loaded by graphics/images/'s Texture_decode). The
-  event loop (Native_loop_3d) is generic over the model/view types (not a
-  dependency of elm_playground_3d itself) so that depending on it
-  doesn't create a second path to that virtual library alongside a
-  backend's own (implements elm_playground_3d) -- dune forbids that.
-")
-  (depends
-    (ocaml (>= "4.08.0"))
-    tsdl
-    logs ; parse_cli_and_setup_logging, and run's per-frame Logs.debug fps line
-    (elm_playground (= :version))
-  )
-)
 (package (name elm_playground_3d_software)
   (synopsis "Native from-scratch software rasterizer for the 3D playground")
   (description "")
@@ -162,9 +126,7 @@
     tsdl
     (stb_image (>= "0.4")) ; Stb_image.t, what Texture_decode gives
     (elm_playground_3d (= :version))
-    (elm_playground_3d_native_common (= :version))
-    (elm_playground_native_common (= :version)) ; graphics/images (Texture_decode)
-    (elm_playground_software (= :version)) ; graphics/core and graphics/2d, used by graphics/3d; Shape_render_software, for the HUD pass
+    (elm_playground_software (= :version)) ; graphics/core and graphics/2d, used by graphics/3d; Shape_render_software, for the HUD pass; the SDL loop; graphics/images (Texture_decode)
   )
 )
 (package (name elm_playground_3d_web)
@@ -190,9 +152,7 @@
     tgls
     (stb_image (>= "0.4")) ; Stb_image.t, used by the type of get_or_create_gl_texture
     (elm_playground_3d (= :version))
-    (elm_playground_3d_native_common (= :version))
-    (elm_playground_native_common (= :version)) ; graphics/images (Texture_decode)
-    (elm_playground_software (= :version)) ; the HUD: Shape_render_software, graphics/core (Matting)
+    (elm_playground_software (= :version)) ; the HUD: Shape_render_software, graphics/core (Matting); the SDL loop; graphics/images (Texture_decode)
   )
 )
 (package (name elm_playground_3d_webgl)

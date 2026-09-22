@@ -11,9 +11,8 @@
 # them, so a package missing here would keep a stale .opam around.
 OPAMS=\
   elm_playground.opam elm_playground_native.opam elm_playground_web.opam\
-  elm_playground_native_common.opam\
   elm_playground_software.opam\
-  elm_playground_3d.opam elm_playground_3d_native_common.opam\
+  elm_playground_3d.opam\
   elm_playground_3d_software.opam elm_playground_3d_web.opam\
   elm_playground_3d_opengl.opam elm_playground_3d_webgl.opam
 
@@ -134,7 +133,7 @@ doc:
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
 ODOC_DIRS=odoc.support \
   elm_playground elm_playground_native elm_playground_web\
-  elm_playground_native_common elm_playground_software
+  elm_playground_software
 
 website:
 	make doc

@@ -4,8 +4,25 @@
 ; (implements elm_playground): two implementations of the same virtual
 ; library can't depend on each other, but they can both depend on this.
 ; Must stay Cairo-free.
+;
+; Both libraries of this file are private (no public_name, so no .opam
+; of their own): nobody but the backends is meant to use them. The
+; (package ...) field installs each as an internal part of
+; elm_playground_software, the only package all its users can share:
+; - not elm_playground (or elm_playground_3d): the web backends depend
+;   on it, and their users would have to install tsdl and ocurl;
+; - not elm_playground_native: elm_playground_software would then
+;   depend on it, hence on cairo2, when it must be Cairo-free.
+; The caveat: elm_playground_native (Cairo) now depends on
+; elm_playground_software, so installing the Cairo backend also builds
+; the software rasterizer (graphics/), which it doesn't use. It costs
+; no extra external dependency, only build time. The other loss: code
+; outside this repository can't use Native_loop_2d/Native_loop_3d (to
+; write its own SDL backend); a public_name and a package of their own
+; would allow it, at the cost of two more .opam files.
 (library
- (public_name elm_playground_native_common)
+ (name elm_playground_native_common)
+ (package elm_playground_software)
  (wrapped false)
  (modules Input_script Native_loop_2d Store)
  (libraries
@@ -18,9 +35,12 @@
 )
 
 ; claude: and the 3D ones' (the OpenGL backend in native/, the software
-; one in software/): the SDL event loop they share
+; one in software/): the SDL event loop they share. Private too, in the
+; same package, for the same reasons (elm_playground_3d instead of
+; elm_playground).
 (library
- (public_name elm_playground_3d_native_common)
+ (name elm_playground_3d_native_common)
+ (package elm_playground_software)
  (wrapped false)
  (modules Native_loop_3d)
  (libraries
