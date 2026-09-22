@@ -68,12 +68,22 @@
  *   object with text", where TinyFrameMaker's anchors cannot be moved
  *   at all. Its place is found in two layouts, the first without the
  *   tied objects to find their paragraphs' lines;
- * - **text on both sides** of an object (Arrange > Wrap Both Sides),
- *   Word's "Square": a line fills every stretch the objects leave it;
+ * - **each object its own wrapping**, Word's choices (Arrange): the
+ *   text on its wider side, on both sides ("Square"), above and below
+ *   it only, or not at all, the object in front of the text. Page has
+ *   one rule, a line filling every stretch it is left; the rest is the
+ *   box each object gives it -- reaching the edge on the side the text
+ *   must not go;
  * - **pages**: a document's text runs on from page to page, the pages
  *   one under the other, scrolled with the wheel and the page keys and
  *   following the caret -- one tall layout, the margins between pages
  *   boxes the text goes round like any other;
+ * - **headers and footers**, the same on every page, edited in place
+ *   by a click in the margin (the body dimmed meanwhile), with *fields*
+ *   each page fills in: "page {page} of {pages}" -- Word's fields, their
+ *   code shown while being edited and their result otherwise;
+ * - **the show** (Slide > Show): the slides one at a time, the whole
+ *   screen, drawn by the same code as the page being edited, scaled;
  * - **a chart linked to a sheet** (Insert > Chart, the sheet object
  *   selected, or in a spreadsheet): the chart holds no sheet, only which
  *   sheet it shows, and is made again from that sheet's cells every
@@ -91,15 +101,18 @@
  *
  * What it deliberately does not do: saving (plan_io.md, whose Saved
  * module the parts' saves are ready for); rotation; the presentation's
- * show and its master (TinyPowerPoint has them); headers, footers and
- * page numbers; a link to a sheet in another file (its link is to an
- * object of the same document); collaboration, and the cloud.
+ * master, its transitions and its builds (TinyPowerPoint has them); a
+ * first page without its header, or odd and even pages; a link to a
+ * sheet in another file (its link is to an object of the same
+ * document); collaboration, and the cloud.
  *
  * Exercises: saving every kind through Saved, the objects with their
- * boxes, anchors and links; wrapping chosen per object rather than for
- * the whole document; snapping an object to the others' edges while it
- * is dragged; a chart of a range chosen by dragging over the cells,
- * rather than of columns A and B; a pie chart.
+ * boxes, anchors, wraps and links; a {date} field; a header left out of
+ * the first page; text wrapped to an object's outline rather than its
+ * box ("Tight", a drawing's figures giving the stretches); snapping an
+ * object to the others' edges while it is dragged; a chart of a range
+ * chosen by dragging over the cells, rather than of columns A and B; a
+ * pie chart.
  *)
 open Playground
 
@@ -115,6 +128,10 @@ let name = function Document -> "Document" | Spreadsheet -> "Spreadsheet" | Pres
 (* where a chart takes its numbers from: the sheet that is the
    document, or a sheet object, by its id *)
 type link = Main_sheet | Sheet_object of int
+
+(* how the text goes round an object, Word's choices: on its wider side
+   only, on both, above and below it only, or not at all *)
+type wrap = Wider_side | Both_sides | Top_and_bottom | In_front
 
 (* an object floating on the page: its part, the slide it is on, its
    top-left corner and size (the page's coordinates, y down), and
@@ -134,15 +151,21 @@ type obj = {
   scaled : bool;
   anchor : int option;
   link : link option;
+  wrap : wrap;
 }
 
 (* what the document is before anything floats on it: a text per slide
    (a document is one slide), or a part of its own kind *)
 type body = Texts of Rich.t list | Main of Component.part
 
-(* [both]: the text runs on both sides of an object, not only the wider;
-   [scroll]: how far down the document's pages are scrolled *)
-type doc = { kind : kind; body : body; objects : obj list; slide : int; both : bool; scroll : float }
+(* which text the keys go to: the body, or the header or footer of a
+   document -- on the page it was clicked on, for its caret *)
+type area = Body | Header of int | Footer of int
+
+(* a document's header and footer, the same on every page, with fields
+   in them -- {page} and {pages} -- that each page fills in; [scroll]:
+   how far down the document's pages are scrolled *)
+type doc = { kind : kind; body : body; objects : obj list; slide : int; header : Rich.t; footer : Rich.t; area : area; scroll : float }
 
 type drag =
   | Moving of float * float (* where on the object the mouse holds it *)
@@ -167,6 +190,9 @@ type model = {
   run : bool;
   was : string list;
   was_down : bool;
+  (* the presentation's show: the slides one at a time, the whole
+     screen *)
+  show : bool;
 }
 
 let doc m = match (m.editing, m.live) with Some d, _ | None, Some d -> d | None, None -> Undo.now m.history
@@ -230,16 +256,23 @@ let text_around d objs =
   match d.body with
   | Texts ts ->
       let r = List.nth ts d.slide in
-      let around =
-        List.filter_map
-          (fun o ->
-            if on_slide d o then
-              Some (o.x -. margin -. wrap_room, o.y -. margin -. wrap_room, o.x +. o.w -. margin +. wrap_room, o.y +. o.h -. margin +. wrap_room)
-            else None)
-          objs
-        @ between_pages d
+      let width = text_width d.kind in
+      (* Page fills every stretch a line is left (~both); an object that
+         keeps the text to one side, or above and below it, is a box
+         that reaches the edge of the text on the side the text must
+         not go -- each object its own way of wrapping, with one rule in
+         Page *)
+      let box o =
+        let x0 = o.x -. margin -. wrap_room and x1 = o.x +. o.w -. margin +. wrap_room in
+        let y0 = o.y -. margin -. wrap_room and y1 = o.y +. o.h -. margin +. wrap_room in
+        match o.wrap with
+        | In_front -> None
+        | Both_sides -> Some (x0, y0, x1, y1)
+        | Top_and_bottom -> Some (-1., y0, width +. 1., y1)
+        | Wider_side -> if x0 < width -. x1 then Some (-1., y0, x1, y1) else Some (x0, y0, width +. 1., y1)
       in
-      Some (r, Page.layout ~around ~both:d.both ~metrics:Stroke_text.metrics ~width:(text_width d.kind) r)
+      let around = List.filter_map (fun o -> if on_slide d o then box o else None) objs @ between_pages d in
+      Some (r, Page.layout ~around ~both:true ~metrics:Stroke_text.metrics ~width r)
   | Main _ -> None
 
 (* the top of the line the text's [offset] is on, in the page's
@@ -278,6 +311,30 @@ let placed d =
     | None -> objects
 
 let layout d = text_around d (placed d)
+
+(* The header and the footer, in the top and bottom margins of every
+   page: laid out as texts of their own, each page filling in its
+   fields -- where Word keeps a field's code and shows its result. The
+   one being edited is shown as it is typed, codes and all. *)
+let band_top d = function `Header -> 12. | `Footer -> snd (page_size d.kind) -. margin +. 10.
+
+let band_layout d which r =
+  Page.layout ~align:(if which = `Header then Page.Left else Page.Center) ~metrics:Stroke_text.metrics ~width:(text_width d.kind) r
+
+let with_fields ~page ~pages r =
+  let find sub s =
+    let n = String.length sub in
+    let rec go i = if i + n > String.length s then None else if String.sub s i n = sub then Some i else go (i + 1) in
+    go 0
+  in
+  let rec fill r =
+    let s = Rich.to_string r in
+    (* over the field's code, its value -- taking the code's look *)
+    match List.find_map (fun (code, v) -> Option.map (fun i -> (i, code, v)) (find code s)) [ ("{pages}", pages); ("{page}", page) ] with
+    | Some (i, code, v) -> fill (Rich.insert (string_of_int v) (Rich.select ~anchor:i ~caret:(i + String.length code) r))
+    | None -> r
+  in
+  fill r
 
 (* how many pages the document has: enough for its text and its objects *)
 let pages d =
@@ -328,11 +385,21 @@ let shapes =
   |> add (Figure.Line ((130., 140.), (170., 140.), { st with fill = None }))
   |> add (Figure.Oval (Figure.box (100., 20.) (200., 80.), { Figure.fill = Some 0.7; pen = 2. }))
 
-let obj ?(slide = 0) ?link part x y w h = { id = 0; part; slide; x; y; w; h; scaled = part.Component.natural <> None; anchor = None; link }
+let obj ?(slide = 0) ?link part x y w h = { id = 0; part; slide; x; y; w; h; scaled = part.Component.natural <> None; anchor = None; link; wrap = Wider_side }
 
 (* a new document: its objects numbered *)
 let new_doc kind body objects =
-  refresh { kind; body; slide = 0; both = false; scroll = 0.; objects = List.mapi (fun i o -> { o with id = i + 1 }) objects }
+  refresh
+    {
+      kind;
+      body;
+      slide = 0;
+      header = styled 12. "TinyOffice, a document";
+      footer = styled 12. "page {page} of {pages}";
+      area = Body;
+      scroll = 0.;
+      objects = List.mapi (fun i o -> { o with id = i + 1 }) objects;
+    }
 
 let fresh kind =
   match kind with
@@ -348,7 +415,8 @@ let fresh kind =
                  Insert puts a text box, a sheet, a picture or a drawing on the page, and every kind of document \
                  can hold every other: a drawing over a spreadsheet, a picture on a slide. Arrange brings an \
                  object to the front or sends it back, scales it or gives it its natural size, ties it to \
-                 its paragraph so that it moves with the text, and lets the text run on both of its sides. \
+                 its paragraph so that it moves with the text, and chooses how the text goes round it. Click \
+                 the top or the bottom margin to edit the header or the footer. \
                  With the sheet selected, Insert > Chart makes a chart of it -- linked, not copied: change \
                  a number in the sheet, and its bar follows.\n\n\
                  File > New goes back to the choice of the five kinds.";
@@ -388,7 +456,20 @@ let fresh kind =
 let opening = fresh Document
 
 let initial =
-  { start = true; history = Undo.start opening; live = None; editing = None; selected = None; drag = None; pressed_at = (0., 0.); again = false; run = false; was = []; was_down = false }
+  {
+    start = true;
+    history = Undo.start opening;
+    live = None;
+    editing = None;
+    selected = None;
+    drag = None;
+    pressed_at = (0., 0.);
+    again = false;
+    run = false;
+    was = [];
+    was_down = false;
+    show = false;
+  }
 
 (*****************************************************************************)
 (* Editing *)
@@ -438,10 +519,20 @@ let untie d i =
   let p = List.nth (placed d) i in
   set_obj i (fun o -> { o with anchor = None; y = p.y }) d
 
+(* the text the keys go to *)
+let current_text d =
+  match (d.area, d.body) with
+  | Header _, _ -> Some d.header
+  | Footer _, _ -> Some d.footer
+  | Body, Texts ts -> Some (List.nth ts d.slide)
+  | Body, Main _ -> None
+
 let edit_text f m =
   let d = doc m in
-  match d.body with
-  | Texts ts ->
+  match (d.area, d.body) with
+  | Header _, _ -> { d with header = f d.header }
+  | Footer _, _ -> { d with footer = f d.footer }
+  | Body, Texts ts ->
       let r = List.nth ts d.slide in
       let r' = f r in
       (* the paragraphs after the caret move along with what was typed
@@ -450,18 +541,18 @@ let edit_text f m =
       let shift a = if a >= c then a + delta else if a > c + delta then c + delta else a in
       let objects = List.map (fun o -> if on_slide d o then { o with anchor = Option.map shift o.anchor } else o) d.objects in
       { d with body = Texts (List.mapi (fun i r -> if i = d.slide then r' else r) ts); objects }
-  | Main _ -> d
+  | Body, Main _ -> d
 
 let a_run ?(name = "Typing") d m = if m.run then { m with history = Undo.amend d m.history } else { (record ~name d m) with run = true }
 
 let host_menus d =
   [ [ "File"; "New" ]; [ "Edit"; "Undo"; "Redo"; "Delete" ]; [ "Insert"; "Text Box"; "Sheet"; "Picture"; "Drawing"; "Chart" ];
-    [ "Arrange"; "Scale to Fit"; "Natural Size"; "Bring to Front"; "Send to Back"; "Move with Text"; "Fix on Page"; "Wrap Both Sides"; "Wrap One Side" ];
+    [ "Arrange"; "Scale to Fit"; "Natural Size"; "Bring to Front"; "Send to Back"; "Move with Text"; "Fix on Page"; "Wrap Wider Side"; "Wrap Both Sides"; "Top and Bottom"; "In Front of Text" ];
   ]
   @
   match (d.kind, d.body) with
   | Document, _ -> [ [ "Format"; "Bold"; "Italic"; "Bigger"; "Smaller" ] ]
-  | Presentation, _ -> [ [ "Format"; "Bold"; "Italic"; "Bigger"; "Smaller" ]; [ "Slide"; "New Slide"; "Next"; "Previous" ] ]
+  | Presentation, _ -> [ [ "Format"; "Bold"; "Italic"; "Bigger"; "Smaller" ]; [ "Slide"; "New Slide"; "Next"; "Previous"; "Show" ] ]
   | _, Main p -> [ p.menu ]
   | _, Texts _ -> []
 
@@ -508,7 +599,10 @@ let command ~menu c m =
       match d.body with
       | Texts _ -> on_selected (fun i -> record ~name:c ((if c = "Move with Text" then tie else untie) d i) m)
       | Main _ -> m)
-  | _, ("Wrap Both Sides" | "Wrap One Side") -> record ~name:c { d with both = c = "Wrap Both Sides" } m
+  | _, ("Wrap Wider Side" | "Wrap Both Sides" | "Top and Bottom" | "In Front of Text") ->
+      let wrap = match c with "Wrap Wider Side" -> Wider_side | "Wrap Both Sides" -> Both_sides | "Top and Bottom" -> Top_and_bottom | _ -> In_front in
+      on_selected (fun i -> record ~name:c (set_obj i (fun o -> { o with wrap }) d) m)
+  | "Slide", "Show" -> { (put_down m) with show = true; selected = None }
   | _, ("Scale to Fit" | "Natural Size") ->
       on_selected (fun i ->
           let scaled = c = "Scale to Fit" in
@@ -571,10 +665,9 @@ let text_keys computer m =
   let now = Set_.elements k.keys in
   let pressed key = List.mem key now && not (List.mem key m.was) in
   let d = doc m in
-  match d.body with
-  | Main _ -> m
-  | Texts ts ->
-      let r = List.nth ts d.slide in
+  match current_text d with
+  | None -> m
+  | Some r ->
       let text = Rich.to_string r and c = Rich.caret r in
       let move to_ = { m with history = Undo.amend (edit_text (Rich.at to_) m) m.history; run = false } in
       if k.typed <> "" then a_run (edit_text (Rich.insert k.typed) m) m
@@ -611,7 +704,24 @@ let press m (mx, my) =
           match layout d with
           | Some (_, page) ->
               let px, py = to_page d (mx, my) in
-              let o = Page.offset_at page (px -. margin, py -. margin) in
+              (* in a document's top or bottom margin: its header or its
+                 footer, on the page clicked *)
+              let k = int_of_float (Float.max 0. (py /. pitch d.kind)) in
+              let y = py -. (float_of_int k *. pitch d.kind) in
+              let area =
+                if d.kind <> Document then Body
+                else if y < margin then Header k
+                else if y > snd (page_size d.kind) -. margin then Footer k
+                else Body
+              in
+              let d = { d with area } in
+              let o =
+                match area with
+                | Body -> Page.offset_at page (px -. margin, py -. margin)
+                | Header _ -> Page.offset_at (band_layout d `Header d.header) (px -. margin, y -. band_top d `Header)
+                | Footer _ -> Page.offset_at (band_layout d `Footer d.footer) (px -. margin, y -. band_top d `Footer)
+              in
+              let m = { m with history = Undo.amend d m.history } in
               { m with history = Undo.amend (edit_text (Rich.at o) m) m.history }
           | None -> m))
 
@@ -661,7 +771,7 @@ let scrolled dy m =
 let follow m =
   let d = doc m in
   match (d.kind, layout d) with
-  | Document, Some (r, page) ->
+  | Document, Some (r, page) when d.area = Body ->
       let _, baseline, h = Page.caret_at page (Rich.caret r) in
       let y = snd (origin d) -. margin -. baseline in
       if y < -420. then scrolled (-420. -. y) m else if y +. h > 440. then scrolled (440. -. y -. h) m else m
@@ -678,6 +788,21 @@ let update computer model =
       match List.find_opt (fun (i, _) -> press_edge && Widget.contains (tile i) mouse.mx mouse.my) (List.mapi (fun i k -> (i, k)) kinds) with
       | Some (_, k) -> { initial with start = false; history = Undo.start (fresh k) }
       | None -> model
+    else if model.show then
+      (* the show: a click or the keys on to the next slide, past the
+         last back to editing *)
+      let d = doc model in
+      let go dir =
+        let slide = d.slide + dir in
+        match d.body with
+        | Texts ts when slide >= 0 && slide < List.length ts -> { model with history = Undo.amend { d with slide } model.history }
+        | _ when dir > 0 -> { model with show = false }
+        | _ -> model
+      in
+      if pressed "Escape" then { model with show = false }
+      else if mouse.mclick || pressed "ArrowRight" || pressed " " || pressed "PageDown" then go 1
+      else if pressed "ArrowLeft" || pressed "PageUp" then go (-1)
+      else model
     else
       let model =
         List.fold_left
@@ -767,51 +892,94 @@ let start_view () =
          kinds)
   @ [ words (rgb 120 120 130) "each kind can hold the others: a sheet in a document, a drawing on a sheet, a picture on a slide" |> move 0. (-150.) ]
 
+let glyphs_at ink page ~x ~y =
+  List.concat_map
+    (fun (g : Page.glyph) ->
+      if g.text = "\n" || g.text = " " then [] else Stroke_text.glyph ink g.style g.text ~x:(x +. g.x) ~baseline:(y -. g.baseline))
+    (Page.glyphs page)
+
+let caret_at ink page offset ~x ~y =
+  let cx, baseline, h = Page.caret_at page offset in
+  [ rectangle ink 2. (h *. 0.8) |> move (x +. cx) (y -. baseline +. (h *. 0.25)) ]
+
+(* what is on the pages: the main part, the text, the header and
+   footer of every page, and the objects -- with [~chrome] the caret and
+   the selection too, without them for the show *)
+let page_shapes ~chrome d model =
+  let pw, _ = page_size d.kind in
+  let l, t = origin d in
+  let ink = rgb 20 20 20 and dim = rgb 150 150 150 in
+  let text =
+    match layout d with
+    | Some (r, page) ->
+        (* the body dimmed while the header or footer is edited, as
+           Word does *)
+        glyphs_at (if d.area = Body then ink else dim) page ~x:(l +. margin) ~y:(t -. margin)
+        @ if chrome && model.selected = None && d.area = Body then caret_at ink page (Rich.caret r) ~x:(l +. margin) ~y:(t -. margin) else []
+    | None -> []
+  in
+  let n = pages d in
+  let bands =
+    if d.kind <> Document then []
+    else
+      List.concat
+        (List.init n (fun k ->
+             let top = t -. (float_of_int k *. pitch d.kind) in
+             List.concat_map
+               (fun (which, r, here) ->
+                 let shown = if here then r else with_fields ~page:(k + 1) ~pages:n r in
+                 let page = band_layout d which shown in
+                 let y = top -. band_top d which in
+                 let edge = if which = `Header then top -. margin +. 4. else top -. snd (page_size d.kind) +. margin -. 4. in
+                 glyphs_at (if here then ink else rgb 110 110 110) page ~x:(l +. margin) ~y
+                 @
+                 if here && chrome then
+                   (* where the header ends, or the footer starts *)
+                   [ rectangle (rgb 40 90 200) (pw -. (2. *. margin)) 1. |> move (l +. (pw /. 2.)) edge ]
+                   @ caret_at ink page (Rich.caret r) ~x:(l +. margin) ~y
+                 else [])
+               [ (`Header, d.header, d.area = Header k); (`Footer, d.footer, d.area = Footer k) ]))
+  in
+  let main = match d.body with Main p -> Component.draw_in ~scaled:false p (main_box d p) ~active:(chrome && model.selected = None) | Texts _ -> [] in
+  let objects =
+    List.concat
+      (List.mapi
+         (fun i o ->
+           if not (on_slide d o) then []
+           else
+             let b = obj_box d o in
+             let selected = chrome && model.selected = Some i in
+             let active = selected && model.editing <> None in
+             let frame =
+               if active then Gui.shapes (Widget.frame (rgb 90 90 90) 4. { b with w = b.w +. 10.; h = b.h +. 10. })
+               else if selected then
+                 Gui.shapes (Widget.frame (rgb 40 90 200) 1. b) @ List.map (fun (x, y) -> rectangle (rgb 40 90 200) 9. 9. |> move x y) (corners b)
+               else []
+             in
+             (* an object in front of the text keeps its page's white
+                from hiding the lines under it *)
+             (if o.wrap = In_front then [] else [ rectangle white b.w b.h |> move b.x b.y ])
+             @ Component.draw_in ~scaled:o.scaled o.part b ~active @ frame)
+         (placed d))
+  in
+  main @ text @ bands @ objects
+
+(* the show: the slide scaled to fill the screen's width, on black *)
+let show_view d model =
+  let pw, ph = page_size d.kind in
+  let l, t = origin d in
+  let k = 1000. /. pw in
+  let slide = (rectangle white pw ph |> move (l +. (pw /. 2.)) (t -. (ph /. 2.))) :: page_shapes ~chrome:false d model in
+  [ rectangle black 1000. 1000.; group [ group slide |> move (-.(l +. (pw /. 2.))) (-.(t -. (ph /. 2.))) ] |> scale k ]
+
 let view _computer model =
   if model.start then start_view ()
   else
     let d = doc model in
+    if model.show then show_view d model
+    else
     let pw, ph = page_size d.kind in
     let l, t = origin d in
-    let ink = rgb 20 20 20 in
-    let text =
-      match layout d with
-      | Some (r, page) ->
-          let glyphs =
-            List.concat_map
-              (fun (g : Page.glyph) ->
-                if g.text = "\n" || g.text = " " then []
-                else Stroke_text.glyph ink g.style g.text ~x:(l +. margin +. g.x) ~baseline:(t -. margin -. g.baseline))
-              (Page.glyphs page)
-          in
-          let caret =
-            if model.selected <> None then []
-            else
-              let x, baseline, h = Page.caret_at page (Rich.caret r) in
-              [ rectangle ink 2. (h *. 0.8) |> move (l +. margin +. x) (t -. margin -. baseline +. (h *. 0.25)) ]
-          in
-          glyphs @ caret
-      | None -> []
-    in
-    let main = match d.body with Main p -> Component.draw_in ~scaled:false p (main_box d p) ~active:(model.selected = None) | Texts _ -> [] in
-    let objects =
-      List.concat
-        (List.mapi
-           (fun i o ->
-             if not (on_slide d o) then []
-             else
-               let b = obj_box d o in
-               let selected = model.selected = Some i in
-               let active = selected && model.editing <> None in
-               let frame =
-                 if active then Gui.shapes (Widget.frame (rgb 90 90 90) 4. { b with w = b.w +. 10.; h = b.h +. 10. })
-                 else if selected then
-                   Gui.shapes (Widget.frame (rgb 40 90 200) 1. b) @ List.map (fun (x, y) -> rectangle (rgb 40 90 200) 9. 9. |> move x y) (corners b)
-                 else []
-               in
-               (rectangle white b.w b.h |> move b.x b.y) :: (Component.draw_in ~scaled:o.scaled o.part b ~active @ frame))
-           (placed d))
-    in
     let n = pages d in
     let slides =
       match d.body with
@@ -821,18 +989,20 @@ let view _computer model =
     in
     let status =
       Printf.sprintf "%s%s     %s" (name d.kind) slides
-        (match (model.editing, model.selected, Undo.undo_name model.history) with
-        | Some _, _, _ -> "editing the object in place -- Escape to go back to the " ^ String.lowercase_ascii (name d.kind)
-        | None, Some _, _ -> "selected: drag it, drag a corner, or click it again to edit it"
-        | None, None, Some u -> "Undo " ^ u
-        | None, None, None -> "")
+        (match (model.editing, model.selected, d.area, Undo.undo_name model.history) with
+        | Some _, _, _, _ -> "editing the object in place -- Escape to go back to the " ^ String.lowercase_ascii (name d.kind)
+        | None, Some _, _, _ -> "selected: drag it, drag a corner, or click it again to edit it"
+        | None, None, Header _, _ -> "editing the header, the same on every page -- click the page to go back"
+        | None, None, Footer _, _ -> "editing the footer: {page} and {pages} are filled in by each page"
+        | None, None, Body, Some u -> "Undo " ^ u
+        | None, None, Body, None -> "")
     in
     let sheet k =
       let t = t -. (float_of_int k *. pitch d.kind) in
       [ rectangle (rgb 120 120 128) pw ph |> move (l +. (pw /. 2.) +. 5.) (t -. (ph /. 2.) -. 5.); rectangle white pw ph |> move (l +. (pw /. 2.)) (t -. (ph /. 2.)) ]
     in
     (rectangle (rgb 165 168 175) 1000. 1000. :: List.concat (List.init n sheet))
-    @ main @ text @ objects
+    @ page_shapes ~chrome:true d model
     (* the menu bar and the status line over the pages scrolled under them *)
     @ [
         rectangle (Gui.theme ()).face 1000. 48. |> move 0. 476.;

@@ -178,9 +178,11 @@ the sheet's cells whenever it is drawn. Next, by what each would give:
 
 - **saving**, every kind with its objects, their anchors and links,
   through `Saved` (`plan_io.md`);
-- the presentation's **show**, and headers, footers and page numbers
-  for the document's pages;
-- wrapping chosen **per object** rather than for the whole document;
+- done too (2026-09-22): the presentation's **show**, **headers and
+  footers** with {page} and {pages} fields, and wrapping chosen **per
+  object** (wider side, both, top and bottom, in front);
+- text wrapped to a drawing's **outline** ("Tight") rather than its
+  box, and a first page without its header;
 - a chart of a **range dragged over**, rather than of columns A and B,
   and a link to a sheet in another file (after `plan_io.md`).
 

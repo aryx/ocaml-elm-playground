@@ -715,7 +715,7 @@ let scripted : Testutil_golden.scripted list =
     ( "apps/software/TinyOffice",
       "both",
       24,
-      "at(-360;30):1-2,click:1,at(160;227):3-5,click:4-11,at(60;227):7,at(-40;227):8-12,at(-104;470):13-15,click:14,at(-104;185):16-18,click:17,at(600;-600):19-24"
+      "at(-360;30):1-2,click:1,at(160;227):3-5,click:4-11,at(60;227):7,at(-40;227):8-12,at(-104;470):13-15,click:14,at(-104;149):16-18,click:17,at(600;-600):19-24"
     );
     (* the sheet tied to its paragraph (Arrange > Move with Text), then
      * twelve new lines typed above that paragraph: the sheet moves down
@@ -730,6 +730,26 @@ let scripted : Testutil_golden.scripted list =
       "scroll",
       52,
       "at(-360;30):1-2,click:1,at(160;227):3-5,click:4,at(-104;470):6-8,click:7,at(-104;257):9-11,click:10,at(-272;345):12-14,click:13,return:20,return:22,return:24,return:26,return:28,return:30,return:32,return:34,return:36,return:38,return:40,return:42,at(600;-600):45-52,PageDown:47"
+    );
+    (* the sheet made "Top and Bottom": no text beside it, only above
+     * and below -- each object its own way of wrapping *)
+    ( "apps/software/TinyOffice",
+      "wrap",
+      14,
+      "at(-360;30):1-2,click:1,at(160;227):3-5,click:4,at(-104;470):6-8,click:7,at(-104;113):9-11,click:10,at(600;-600):12-14"
+    );
+    (* a click in the top margin, and the header edited: the body
+     * dimmed, the fields shown as codes in the footer's place *)
+    ( "apps/software/TinyOffice",
+      "header",
+      14,
+      "at(-360;30):1-2,click:1,at(-100;415):3-5,click:4,type( -- draft):7,at(600;-600):9-14"
+    );
+    (* the presentation's show, a click on to its second slide *)
+    ( "apps/software/TinyOffice",
+      "show",
+      16,
+      "at(0;30):1-2,click:1,at(100;470):3-5,click:4,at(100;293):6-8,click:7,at(0;0):9-16,click:12"
     );
     (* the sheet selected, Insert > Chart, then the sheet edited in
      * place, Ink made 90: the chart, linked to it, follows *)

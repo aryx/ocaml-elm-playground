@@ -854,6 +854,31 @@ round boxes:
   dangle, so a chart whose sheet is deleted keeps the last numbers it
   had.
 
+Then three follow-ups:
+
+- **each object its own wrapping** (wider side, both sides, top and
+  bottom, in front of the text). `Page` did not change: its one rule is
+  still "fill every stretch a line is left" (`~both`), and the four
+  ways are four boxes an object gives it. "Top and bottom" is a box as
+  wide as the text; "wider side" is the object's box stretched to the
+  edge on its narrower side, so that the only stretch left is the wider
+  one; "in front" is no box at all. The frames of every other kind came
+  out pixel for pixel as before, which is the test that the old rule --
+  take the widest stretch -- was one of the four;
+- **headers and footers with fields**: two more texts, laid out on
+  their own in each page's top and bottom margin. The keys go to one of
+  three texts now (`area`: the body, or a header or footer *on a
+  page*, for its caret), and a click in a margin chooses. "page {page}
+  of {pages}" is filled in per page by selecting each code and typing
+  its value over it (`Rich.insert` over a selection keeps its look) --
+  but not in the one being edited, which shows its codes: a field's
+  offsets have to stay those of the text the caret is in, the reason
+  Word toggles between codes and results;
+- **the show**: the view split into the pages' content, drawn with or
+  without its chrome (caret, selections), and the frame round it --
+  so the show is the same content, without chrome, grouped and scaled
+  to the screen, as TinyPowerPoint's thumbnails are.
+
 ## 16. The numbers
 
 Measured 2026-09-21, lines of code (not blank, not comments) and, in
