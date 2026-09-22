@@ -177,7 +177,7 @@ made, each subject written from scratch, one idea per module, with the
 idea explained in its `.mli` and checked by tests and golden frames:
 
 - **pictures**: `graphics/`, the 2D and 3D software rasterizers behind
-  the `software` backends, and `playground3d/` for 3D programs (see
+  the `software` backends, and `Playground3d` for 3D programs (see
   [README-3d.md](README-3d.md));
 - **games**: `games/`, `games2.5d/` (each pseudo-3D trick written out
   in its game) and `games3d/`, over the genre kits of `gamekits/`;

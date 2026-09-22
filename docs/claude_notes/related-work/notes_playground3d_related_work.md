@@ -1,12 +1,12 @@
-# playground3d/ vs. the rest of the 3D graphics world
+# Playground3d vs. the rest of the 3D graphics world
 
 You asked for a survey of related work: the small cluster of Elm "3D
 playground" experiments this project's design was mined from (already
 summarized in `notes_3d.md` §10 and `plan_playground3d.md`), plus the
-bigger picture -- VRML, OpenGL, WebGL, Vulkan -- and where `playground3d/`
+bigger picture -- VRML, OpenGL, WebGL, Vulkan -- and where `Playground3d`
 sits relative to all of it. The through-line, worth stating up front:
 **every one of the industry APIs below is designed to be as fast and as
-capable as possible; `playground3d/` is designed to be as *legible* as
+capable as possible; `Playground3d` is designed to be as *legible* as
 possible.** Those are different, largely incompatible goals, and almost
 every difference described here follows directly from which one a given
 project picked. (The 2D twin of this note, for `playground/`:
@@ -22,7 +22,7 @@ project picked. (The 2D twin of this note, for `playground/`:
 | Unity | Shipping a full game via an editor + engine, not writing a renderer | Least of all -- your C# script talks to an object model, which talks to a render pipeline, which talks to a shader, which talks to whichever of Direct3D/Metal/Vulkan/OpenGL the platform picked |
 | elm-3d-scene / nateabele's elm-3d-playground | A good WebGL-backed *result* with a friendly API on top | Same as WebGL underneath -- the friendliness is a wrapper, not a change in what's hidden |
 | lucamug's elm-playground-3d | Extending elm-playground's *existing* 2D renderer with zero new rendering code | Everything -- it's plain SVG shapes, the same as any 2D elm-playground picture |
-| `playground3d/` | Every number that produces a pixel being readable in one file | Everything -- see below |
+| `Playground3d` | Every number that produces a pixel being readable in one file | Everything -- see below |
 
 ## Part 1: the Elm "3D playground" lineage
 
@@ -52,7 +52,7 @@ directly for creative-coding/visualization work. Less
 formalized/documented than the other three projects here (no
 stable public API contract the way lucamug's or nateabele's have), so
 it's mentioned here mainly to be complete about what was surveyed,
-rather than as a design influence on any specific `playground3d/`
+rather than as a design influence on any specific `Playground3d`
 decision.
 
 ### ianmackenzie/elm-3d-scene -- the "real engine" end of the Elm spectrum
@@ -77,7 +77,7 @@ and step through.
 Wraps elm-3d-scene in an API that deliberately mirrors elm-playground's
 shape (`sphere`/`box`/`group`, `move`/`rotate`, a `Computer` parameter
 for keyboard/mouse, explicitly aimed at making 3D approachable for
-students). This is the closest thing to `playground3d/`'s own ambition
+students). This is the closest thing to `Playground3d`'s own ambition
 that already existed -- "Evan-light API, but for 3D" -- and it's the
 project `games3d/StarCollector3d.ml`'s mechanics (not code) were
 adapted from (see that file's header comment). The difference is
@@ -85,17 +85,17 @@ exactly the one-line summary at the top of this doc: nateabele's
 project gets the *API ergonomics* of elm-playground while keeping
 elm-3d-scene's real WebGL rendering underneath (so it's fast and
 capable, but a student still can't read "how did this triangle become
-these pixels" without learning WebGL/GLSL); `playground3d/` instead
+these pixels" without learning WebGL/GLSL); `Playground3d` instead
 keeps the *rendering* fully readable, at the cost of leaving all of
 elm-3d-scene's realism on the table.
 
 ## Part 2: the industry APIs -- VRML, OpenGL, WebGL, Vulkan
 
-None of these were mined for `playground3d/`'s design the way the Elm
+None of these were mined for `Playground3d`'s design the way the Elm
 projects above were -- they're included because understanding roughly
 what they are, and roughly how much machinery sits between "your code"
 and "a pixel" in each one, is what makes it possible to see just how
-unusual `playground3d/`'s choice (no machinery at all) really is.
+unusual `Playground3d`'s choice (no machinery at all) really is.
 
 ### VRML/X3D (1994, standardized 1997) -- a file format, not an API
 
@@ -110,9 +110,9 @@ every other entry in this table is -- there's no per-pixel loop to
 reason about at all, because you never write one; you describe a scene
 declaratively and the viewer's own (typically OpenGL-based, entirely
 hidden) renderer does 100% of the work of turning it into pixels. In
-that sense it's the opposite extreme from `playground3d/`: maximal
+that sense it's the opposite extreme from `Playground3d`: maximal
 declarativeness, zero visibility into the rendering, whereas
-`playground3d/` is maximal visibility with a comparably tiny
+`Playground3d` is maximal visibility with a comparably tiny
 declarative surface (`shape3d`/`form3d`, `Group3d` for a scene graph --
 this project's one real structural echo of VRML's scene-graph idea).
 
@@ -125,7 +125,7 @@ different eras worth distinguishing:
   book" era): you called functions like `glBegin(GL_TRIANGLES)`,
   `glVertex3f`, `glColor3f`, `glEnd`, and pushed/popped matrices onto a
   built-in matrix stack (`glTranslatef`, `glRotatef`) -- genuinely not
-  that far in spirit from `playground3d/`'s own `move3d`/`rotate3d`
+  that far in spirit from `Playground3d`'s own `move3d`/`rotate3d`
   combinators, actually, since the lighting/transform/rasterization
   math was all fixed, built-in behavior you invoked rather than wrote.
   The difference: it was still the *GPU's own dedicated hardware*
@@ -202,13 +202,13 @@ shader (often visually authored via Unity's node-based Shader Graph,
 itself compiling down to HLSL), and finally whichever of Direct3D/
 Metal/Vulkan/OpenGL that shader targets on a given machine -- several
 more opaque layers than even elm-3d-scene's single WebGL layer.
-`playground3d/`'s entire native rendering path, by contrast, is
+`Playground3d`'s entire native rendering path, by contrast, is
 shorter than the list of layers Unity has *before* it reaches a
 graphics API at all.
 
-## Where `playground3d/` actually sits
+## Where `Playground3d` actually sits
 
-Put concretely: `playground3d/`'s native backend uses **no GPU API of
+Put concretely: `Playground3d`'s native backend uses **no GPU API of
 any kind** -- not fixed-function OpenGL, not programmable OpenGL/WebGL,
 not Vulkan. `Playground3d_platform.ml` opens a raw SDL window and pixel
 buffer, and `graphics/3d/` does every step by hand in ordinary OCaml,
@@ -229,7 +229,7 @@ qualitatively different undertaking here, likely requiring exactly the
 kind of GPU API this section describes. That trade was made on
 purpose, for the same reason Evan Czaplicki's original 2D
 `elm-playground` doesn't wrap an existing charting/canvas library
-either: **`playground3d/` is a teaching context first.** The entire
+either: **`Playground3d` is a teaching context first.** The entire
 point is that a curious reader can open `Playground3d.ml` and
 `graphics/3d/` and trace *every* number
 that ends up as a pixel's color -- no GLSL, no driver, no scene-graph
@@ -241,13 +241,13 @@ real, harder problem (production-quality real-time graphics at scale)
 that this project isn't trying to solve; every one of the Elm projects
 in Part 1 sits somewhere on the spectrum between "readable but
 limited" (lucamug) and "capable but opaque" (elm-3d-scene), and
-`playground3d/` deliberately picked the readable end and pushed it
+`Playground3d` deliberately picked the readable end and pushed it
 further, into a real (if modest) hand-written rasterizer instead of
 lucamug's flatten-to-2D-SVG trick alone.
 
 ## Postscript: a real GPU backend now exists -- the actual numbers
 
-Everything above was written when `playground3d/` had exactly the two
+Everything above was written when `Playground3d` had exactly the two
 backends this doc contrasts against the industry (native, no GPU at
 all; web, an SVG projection). `docs/claude_notes/plan_opengl.md`
 followed up on this doc's own comparison table by actually building
@@ -257,8 +257,8 @@ expectation, to "how much shorter is the code, and how much faster is
 it" once a real GPU does the work this project otherwise hand-rolls.
 
 **Code size** (at the time, before the rasterizer moved to
-`graphics/3d/`): `playground3d/software/Playground3d_platform.ml` was 934
-lines (377 non-comment/non-blank) versus `playground3d/opengl/Playground3d_platform.ml`'s
+`graphics/3d/`): the software backend's `Playground3d_platform.ml` was
+934 lines (377 non-comment/non-blank) versus the OpenGL backend's
 562 lines (295 non-comment/non-blank) -- roughly 40% shorter by raw
 line count, about 22% shorter by actual code once both files' (this
 project writes a lot of prose explaining *why*) comments are excluded.

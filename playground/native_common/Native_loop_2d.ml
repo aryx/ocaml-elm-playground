@@ -17,7 +17,7 @@ module E = Sub
  * setup, event draining, frame pacing). What each backend supplies is
  * only how a Playground.shape list becomes pixels.
  *
- * Not the same loop as playground3d/native_common/Native_loop_3d.ml: that one
+ * Not the same loop as Native_loop_3d.ml: that one
  * drives Playground3d's computer-based update3d/view3d directly, while this
  * one feeds SDL events through the 2D app's [subscriptions] to get msgs,
  * like the web backend does.
@@ -383,7 +383,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
           (* claude: while a key is held, SDL keeps re-sending key_down
            * at the keyboard's repeat rate, with keyboard_repeat > 0;
            * [on_key_press] is for one-shot toggles, so only the first
-           * press counts (see playground3d/native_common/Native_loop_3d.ml
+           * press counts (see Native_loop_3d.ml
            * for the same filter and the bug it fixed) *)
           let first = Sdl.Event.(get sdl_event keyboard_repeat) = 0 in
           (* claude: Ctrl + a key is the debug key alone, not given to

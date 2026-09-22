@@ -45,8 +45,8 @@ let ( let* ) o f =
 
 (* claude: the GL-independent half of this backend (the shape3d ->
  * per-material vertex list flattening, light_dir) is in
- * playground3d/Gpu_scene.ml, shared with the planned WebGL backend
- * (docs/claude_notes/plan_webgl.md, Phase 1), and the camera matrices
+ * Gpu_scene.ml, shared with the WebGL backend
+ * (plan_webgl.md, Phase 1), and the camera matrices
  * in graphics/3d/geometry/Mat4.ml. What's here is only what talks to
  * OpenGL itself. *)
 

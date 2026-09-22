@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground3d/Logo3d: the turtle's frame, turned, pitched, rolled *)
+(* Logo3d: the turtle's frame, turned, pitched, rolled *)
 
 open Logo3d
 

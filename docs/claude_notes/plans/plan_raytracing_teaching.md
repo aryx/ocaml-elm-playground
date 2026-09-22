@@ -8,11 +8,11 @@ fill their pixels, keep the nearest (`notes_3d.md`,
 already explains, in prose, the *other* way of making a picture --
 **ray tracing**: instead of asking "which pixels does this triangle
 cover?", ask, for each pixel, "what does the eye see through it?" --
-and ends with "`playground3d/` is a rasterizer, not a ray tracer, on
+and ends with "`Playground3d` is a rasterizer, not a ray tracer, on
 both backends". This plan makes that paragraph executable.
 
 The hook is already in place, which is most of why this is worth
-doing now. `playground3d/software/Shape3d_render_software.mli`
+doing now. `Shape3d_render_software.mli`
 exposes
 
 ```ocaml
@@ -29,7 +29,7 @@ consumer of the existing scene, not a refactor of anything:
 Raytrace.render ?options fb (camera cam) (faces shape)
 ```
 
-And `-dump-frame n file` (`playground3d/native_common/Native_loop_3d.ml`)
+And `-dump-frame n file` (`Native_loop_3d.ml`)
 is already a separate code path from the 60 fps loop, so a renderer
 that takes ten seconds a frame can live in this project without
 slowing any game down by a microsecond.
@@ -187,7 +187,7 @@ graphics/3d/
                         supersampling; same signature shape as Render
   Render                (exists) the rasterizer; its `face` gains a
                         `material` field, defaulting to matte
-playground3d/software/
+playground/software/
   Shape3d_render_software  (exists) `faces` fills the new field;
                         a `raytrace` entry point beside `render`
   Playground3d_platform (exists) the -raytrace flag, the preview key,
@@ -268,7 +268,7 @@ as an addition rather than a replacement.
   (recursion depth, 3 by default -- the ICFP scenes' own value),
   `-rt-brute` (no BVH: the slow, readable path, for the comparison).
 - A debug key, **"y"** (free in
-  `playground3d/software/Playground3d_platform.ml`, where b, f, z, p,
+  the software backend's `Playground3d_platform.ml`, where b, f, z, p,
   i, c, o, x, r, m, t, h are taken), ray traces the live frame at the
   current `Pixelate` resolution -- at "r"'s quarter resolution that is
   a preview in a fraction of a second, and it is what makes the

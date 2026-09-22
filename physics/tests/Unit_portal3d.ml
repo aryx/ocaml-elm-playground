@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground3d/Portal3d: the pair's motion, crossing, and seeing
+(* Portal3d: the pair's motion, crossing, and seeing
  * through *)
 
 let t = Testo.create

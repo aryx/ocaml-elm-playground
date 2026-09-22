@@ -6,7 +6,7 @@ The engine and its games are done: see
 forces and buoyancy, collisions with the 15 axes, the broad phase,
 impulses, stacking with sleeping by islands, rolling, the character
 controller, continuous collision, joints, portals; the
-`playground3d/Physics3d` API and its layers `Character3d`,
+`Physics3d` API and its layers `Character3d`,
 `Ragdoll3d`, `Portal3d`; PhysicsSpin3d, Float3d, Hitbox3d, Bounce3d,
 Marbles3d, Roll3d, Stack3d, Walk3d, Ragdoll3d; TinyPinball3d,
 TinyHalfLife2, TinyPortal, TinyTeardown, and the `physics=engine`

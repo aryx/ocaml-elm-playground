@@ -1430,7 +1430,7 @@ let kart_shapes (right : number * number) (angle : number) (k : kart) : shape3d 
   let hop = if k.hop > 0 then 0.9 *. sin (Float.pi *. float_of_int k.hop /. 12.) else 0. in
   let y = floor +. k.air +. hop in
   (* a dark patch rather than a faded black one: the software
-   * rasterizer draws no alpha (see playground3d/software), so a shadow
+   * rasterizer draws no alpha (see the 3D software backend), so a shadow
    * that counted on [fade3d] would be a hole in the road there *)
   let shadow =
     polygon3d (rgb 52 62 52)

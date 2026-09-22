@@ -1,4 +1,4 @@
-# Shading in playground3d/: current state and how to extend it
+# Shading in Playground3d: current state and how to extend it
 
 `notes_3d.md` section 8 explains the *concepts* (flat color vs. flat/
 Gouraud/Phong shading) from first principles, and section 11 covers the

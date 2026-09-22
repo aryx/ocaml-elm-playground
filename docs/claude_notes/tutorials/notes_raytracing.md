@@ -37,7 +37,7 @@ rasterized twin one key away.
 | `graphics/3d/Bvh` | not testing every triangle | §6 |
 | `graphics/3d/Material` | matte, mirror, glass | §7, §8 |
 | `graphics/3d/Render` (exists) | the rasterizer, for comparison | `notes_3d.md` |
-| `playground3d/software/Playground3d_platform` | the `-raytrace` flag, the "y" key, the dump | §11 |
+| the software backend's `Playground3d_platform` | the `-raytrace` flag, the "y" key, the dump | §11 |
 
 Read §1-§5 for a working ray tracer (visibility, light, shadows),
 §6 for the part that makes it usable, §7-§9 for what it can do that

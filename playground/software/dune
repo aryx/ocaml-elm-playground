@@ -3,6 +3,7 @@
 (library
   (public_name elm_playground_software)
   (implements elm_playground)
+  (modules Playground_platform Help_overlay Shape_render_software)
   (libraries
     tsdl
     stb_image ; Image_decode.image's fields
@@ -13,4 +14,25 @@
     elm_playground_native_common ; Native_loop_2d
     graphics_images ; Image_decode
   )
+)
+
+; claude: and the 3D one, the from-scratch rasterizer of graphics/3d/
+(library
+ (public_name elm_playground_3d_software)
+ (implements elm_playground_3d)
+ (modules Playground3d_platform Shape3d_render_software)
+ (libraries
+   tsdl
+   stb_image ; Stb_image.t, what Texture_decode gives
+   elm_core
+   elm_playground
+   elm_playground_3d
+   elm_playground_software ; Shape_render_software, for the HUD pass
+   elm_playground_3d_native_common ; SDL event loop, shared with the OpenGL backend
+   graphics_3d_geometry ; Vec3, Camera
+   graphics_3d ; Render, and the modules of its pipeline
+   graphics_core ; Framebuffer, Opti
+   graphics_2d ; Magnifier
+   graphics_images ; Texture_decode
+ )
 )

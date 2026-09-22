@@ -18,8 +18,8 @@ open Basics
 (*****************************************************************************)
 (* The actual shape-drawing code (render_shape and everything it calls)
  * now lives in Shape_render_native, a plain sibling module, so it's
- * usable from a second, independent caller too (playground3d/software/'s
- * HUD overlay pass -- see docs/claude_notes/plan_hud.md). *)
+ * usable from a second, independent caller too (the 3D software
+ * backend's HUD overlay pass -- see docs/claude_notes/plan_hud.md). *)
 
 let debug_coordinates cr ~sx ~sy =
   let (x0,y0) = Cairo.device_to_user cr 0. 0. in

@@ -14,8 +14,7 @@
 (* The GPU-API-independent half of a GPU playground3d backend: the
  * shape3d -> per-material vertex list flattening, with no OpenGL/WebGL
  * call at all (the camera matrices are graphics/3d/geometry/Mat4's),
- * shared by playground3d/opengl/ and the planned playground3d/webgl/
- * (see docs/claude_notes/plan_webgl.md).
+ * shared by the OpenGL and WebGL backends (see plan_webgl.md).
  *
  * It lives in elm_playground_3d itself, as an ordinary (non-virtual)
  * module next to Playground3d, rather than in its own helper library
@@ -42,7 +41,7 @@ let rgb_of_color (color : Playground.color) : int * int * int =
 (* Flattening a shape3d tree into per-material vertex lists *)
 (*****************************************************************************)
 (* Deliberately simpler than the native rasterizer's flatten_faces
- * (playground3d/software/Playground3d_platform.ml): a "material" here is
+ * (the software backend's Playground3d_platform.ml): a "material" here is
  * only ever Flat or Textured (no separate texture-sampling closure --
  * that's the backend's fragment shader's job now), and it exists at
  * all only because a GPU draw call can bind at most one texture at a

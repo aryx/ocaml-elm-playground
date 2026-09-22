@@ -1,10 +1,10 @@
-# 3D rendering, from scratch: a tutorial for `playground3d/`
+# 3D rendering, from scratch: a tutorial for `Playground3d`
 
 You said you're new to 3D, so this is a from-the-ground-up explanation:
 what "rendering a 3D scene" actually means, the handful of ideas every
 3D engine (from a 1970s wireframe plotter to a modern game on a GPU) is
 built out of, where those ideas came from historically, and exactly
-which of them `playground3d/` uses -- with pointers into the actual
+which of them `Playground3d` uses -- with pointers into the actual
 code. If you read this once, the code in `Playground3d.ml` and
 `graphics/3d/` should stop looking like a wall of trigonometry and start
 looking like a small, recognizable set of standard building blocks.
@@ -37,9 +37,9 @@ this note:
 | `Render` | the whole pipeline, one function | all |
 
 Around them: `geometry/Mat4` (the same camera as matrices, for the
-OpenGL backend); `playground3d/software/Shape3d_render_software.ml`,
+OpenGL backend); `Shape3d_render_software.ml`,
 which turns the Playground's `shape3d`s and `camera` into `Render`'s
-faces; and `Playground3d_platform.ml`, the window, the debug keys (§11),
+faces; and its `Playground3d_platform.ml`, the window, the debug keys (§11),
 the HUD (§12) and the loop. The web backend (`Playground3d.ml`'s
 `render3d_to_2d`) shares `Camera` and `Lighting`. `tests/3d/` checks
 whole frames of every example against golden images.
@@ -66,7 +66,7 @@ photograph.
    pixel coordinates you can draw).
 
 Every 3D engine, from a 1963 wireframe plotter to a 2026 game, does
-some version of these four steps. `playground3d/`'s pipeline is exactly
+some version of these four steps. `Playground3d`'s pipeline is exactly
 this, and you can see all four stages as separate, named functions:
 step 1 is `move3d`/`rotate3d`/`scale3d` (`Playground3d.ml`), steps 2-4
 are `Camera.view`, `Camera.ndc` and `Project.vertex` in `graphics/3d/`
@@ -192,7 +192,7 @@ representations:
   of north, tilted 10 degrees down"). This is what most first-person
   games actually use internally (mouse-look naturally produces
   yaw/pitch deltas), and is the natural next step if/when
-  `playground3d/` grows a first-person camera helper for something like
+  `Playground3d` grows a first-person camera helper for something like
   a Minecraft-style game (see `plan_playground3d.md`'s Phase 5) --
   you'd store `(eye, yaw, pitch)` in the game's model and compute a
   `target` from them each frame to build our existing `camera` value.
@@ -370,7 +370,7 @@ of this note -- shadows, mirrors and glass on the same scenes, for
 [`notes_raytracing.md`](notes_raytracing.md) and
 [`plan_raytracing_teaching.md`](../plans/plan_raytracing_teaching.md).
 
-`playground3d/` is a rasterizer, not a ray tracer, on both backends;
+`Playground3d` is a rasterizer, not a ray tracer, on both backends;
 its two backends land on two different points in the painter's-algorithm
 vs. z-buffer trade-off above, purely because of what each platform
 makes possible (the web backend has no way to touch individual pixels
@@ -502,7 +502,7 @@ easy to conflate:
   too expensive for real-time use for a long time, standard by the time
   GPUs could run a custom calculation ("shader") per pixel.
 
-**Where `playground3d/` sits on this spectrum today: all four,
+**Where `Playground3d` sits on this spectrum today: all four,
 pluggable at runtime** (native backend only -- see §11's `m` toggle and
 `notes_3d_shading.md` for the full writeup; the code is `Shading`,
 and the lighting formula itself, Lambert's cosine law with an ambient
@@ -562,7 +562,7 @@ implemented (and switchable, §11):
 
 ## 10. lucamug's elm-playground-3d vs. this library, side by side
 
-| | lucamug's elm-playground-3d | `playground3d/` |
+| | lucamug's elm-playground-3d | `Playground3d` |
 |---|---|---|
 | Shape representation | `Shape3d`/`Form3d`, world-space points, no transform header | Same design, copied deliberately (see `plan_playground3d.md`) |
 | Camera | Eye + target ("look-at"), fixed presets (`camera1`..`camera4`) | Same eye/target model, but a real record you construct with your own values, and (unlike lucamug's) usable as a genuinely *moving* value computed fresh each frame from your game's model |
@@ -587,14 +587,14 @@ shadows, reflections, and more all become practical), but a genuinely
 different, heavier-weight programming model (a shader language, GPU
 buffer management, usually a real matrix/quaternion math library) --
 deliberately not what this library is going for; the whole point of
-`playground3d/` is that you can read every line of `Playground3d.ml`
+`Playground3d` is that you can read every line of `Playground3d.ml`
 and `graphics/3d/` and see exactly what number produced what pixel, the same "no magic" spirit as the original
-2D `elm-playground`. (This project has an OpenGL backend too,
-`playground3d/opengl/`, to compare: the same scenes, the same
+2D `elm-playground`. (This project has an OpenGL backend too, to
+compare: the same scenes, the same
 `Lighting`, drawn by the GPU.) See `notes_playground3d_related_work.md` for the
 fuller survey -- the rest of the Elm "3D playground" lineage
 (`erkal`'s and `nateabele`'s projects too), plus VRML, OpenGL, WebGL,
-Vulkan, and Unity, and how `playground3d/`'s teaching-first, no-GPU
+Vulkan, and Unity, and how `Playground3d`'s teaching-first, no-GPU
 design compares to each.
 
 ## 11. Try it yourself: runtime-toggleable rendering modes
@@ -757,9 +757,9 @@ made in the first place:
 
 See `docs/claude_notes/done/plan_hud.md` for the full design writeup
 (including the one non-obvious implementation wrinkle: dune seals a
-virtual module's implementation to exactly its virtual `.mli`, so a 2D
-backend's shape-drawing code can only be called from
-`playground3d/software/` from a plain sibling module of its
+virtual module's implementation to exactly its virtual `.mli`, so the
+3D software backend's `Playground3d_platform.ml` can only call a 2D
+backend's shape-drawing code through a plain sibling module of its
 `Playground_platform`, like `Shape_render_software`).
 
 ## Glossary (quick reference)

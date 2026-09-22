@@ -29,7 +29,7 @@ let title = "Playground (software rasterizer)"
 (* Debug keys *)
 (*****************************************************************************)
 (* Keys to turn rendering features on and off while any example or game
- * runs, to see what each one does -- like playground3d/software/'s
+ * runs, to see what each one does -- like the 3D software backend's
  * "m"/"b"/"f"/"z"/"p". Only with the -debug-keys flag (see
  * Native_loop_2d), so that without it a game can use any key. The
  * window title shows their current state. Avoid the keys games use

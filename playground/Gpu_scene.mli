@@ -1,7 +1,6 @@
 (* The GPU-API-independent scene preparation shared by the GPU
- * playground3d backends (playground3d/opengl/, and the planned
- * playground3d/webgl/): vertex data as plain OCaml float arrays, which
- * each backend then uploads with its own GPU API (the camera matrices
+ * playground3d backends (OpenGL and WebGL): vertex data as plain
+ * OCaml float arrays, which each backend then uploads with its own GPU API (the camera matrices
  * are graphics/3d/geometry/Mat4's). See Gpu_scene.ml's prelude for why
  * this lives in elm_playground_3d. *)
 

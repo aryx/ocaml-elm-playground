@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* A ragdoll down a staircase: playground3d/Ragdoll3d, ten boxes and
+(* A ragdoll down a staircase: Ragdoll3d, ten boxes and
  * nine joints (physics/3d/Joint3d.mli), shoved off the top landing.
  *
  *   space   again

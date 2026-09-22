@@ -1,7 +1,7 @@
 # Plan: what's left for the WebGL backend
 
 The backend itself is done: see
-[`done/plan_webgl.md`](done/plan_webgl.md) (`playground3d/webgl/`,
+[`done/plan_webgl.md`](done/plan_webgl.md) (the WebGL backend's `Playground3d_platform.ml`,
 phases 1-5: the shared `Gpu_scene`, the canvas under `run_app`'s
 `<svg>`, real scenes with the rendering hints, textures from `<img>`,
 `make serve-build`, publishing) and the shader tutorial,
@@ -58,7 +58,7 @@ pixel for pixel with its software golden frame; with a
 Chrome.
 
 **Done** (2, 3, and the no-WebGL message and wireframe of 4), in
-`playground3d/webgl/Playground3d_platform.ml`, sections "Page
+the WebGL backend's `Playground3d_platform.ml`, sections "Page
 parameters" and "Debug keys": `?debug-keys` (`m`, `b`, `i`, `f`, `o`,
 their state in the page's title), `?keys=k` (native's `-keys k`, the
 keys pressed before the first frame, since headless Chrome can't press

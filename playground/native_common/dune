@@ -7,11 +7,27 @@
 (library
  (public_name elm_playground_native_common)
  (wrapped false)
+ (modules Input_script Native_loop_2d Store)
  (libraries
    unix
    logs
    tsdl
    elm_core ; Sub/Cmd, to turn SDL events into the app's msgs
    ; NOT elm_playground: see Native_loop_2d.run's comment in the .mli
+ )
+)
+
+; claude: and the 3D ones' (the OpenGL backend in native/, the software
+; one in software/): the SDL event loop they share
+(library
+ (public_name elm_playground_3d_native_common)
+ (wrapped false)
+ (modules Native_loop_3d)
+ (libraries
+   tsdl
+   logs ; parse_cli_and_setup_logging, and run's per-frame Logs.debug fps line
+   elm_core
+   elm_playground
+   elm_playground_native_common ; Input_script
  )
 )

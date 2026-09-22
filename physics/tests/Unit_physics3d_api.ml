@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground3d/Physics3d, the Evan-style API over physics/3d *)
+(* Physics3d, the Evan-style API over physics/3d *)
 
 open Playground
 open Playground3d

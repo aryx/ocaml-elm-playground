@@ -3,7 +3,7 @@
  * docs/claude_notes/notes_3d.md, section 2, for what dot and cross
  * products are for.
  *
- * Used by the 3D Playground (playground3d/Playground3d.ml), its
+ * Used by the 3D Playground (Playground3d.ml), its
  * software rasterizer and its OpenGL backend (Gpu_scene). *)
 
 type t = float * float * float

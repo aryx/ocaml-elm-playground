@@ -141,9 +141,8 @@ playground/
                          each stage took; 2D and 3D
 playground/native_common/
   Native_loop_2d.ml      (exists) -inspect, and the wrap
-playground3d/native_common/
   Native_loop_3d.ml      (exists) the same, panels drawn through hud
-playground/web/, playground3d/web/, opengl/, webgl/
+playground/native/, software/, web/, svg/
                          the same flag, the same shapes
 ```
 

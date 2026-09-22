@@ -43,7 +43,7 @@
  *                                           starts here
  *
  *  - A loose group leaves the grid and becomes a rigid body of
- *    playground3d/Physics3d, the first game to put the engine's whole
+ *    Physics3d, the first game to put the engine's whole
  *    second half to work: the group tumbles as it falls (its
  *    orientation a quaternion, its resistance to turning its bounding
  *    box's), hits the ground and the other pieces at any angle (boxes

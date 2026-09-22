@@ -82,7 +82,7 @@ Architecture and HTML (around Elm 0.17, 2016), and came back in 2019 as
 `animation`, `game`, a `computer` record for time, mouse, keyboard and
 screen, shapes drawn with SVG. This project is its OCaml port, and
 Luca Mugnaini's elm-playground-3d, its 3D extension, is the ancestor of
-`playground3d/` (see the 3D note).
+`Playground3d` (see the 3D note).
 
 ### OCaml's `Graphics` module
 

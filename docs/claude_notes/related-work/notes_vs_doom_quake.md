@@ -1,4 +1,4 @@
-# playground3d/ vs. Doom and Quake
+# Playground3d vs. Doom and Quake
 
 You asked for a comparison between this project's rendering strategy
 and id Software's *Doom* (1993) and *Quake* (1996) -- two of the most
@@ -11,7 +11,7 @@ perspective-correct) is unfamiliar.
 
 ## The one-line version
 
-Doom, Quake, and `playground3d/`'s native backend are all
+Doom, Quake, and `Playground3d`'s native backend are all
 **rasterizers**, not ray tracers (§6 of `notes_3d.md`) -- none of them
 shoot rays into the scene; all three project geometry onto the screen
 and figure out which pixels it covers. Where they differ enormously is
@@ -19,7 +19,7 @@ and figure out which pixels it covers. Where they differ enormously is
 because of the hardware they were built for. Doom and Quake were
 engineering feats of working around 1990s CPUs having no meaningful
 floating-point throughput, no hardware z-buffer, and no GPU at all;
-`playground3d/` was written 30 years later with none of those
+`Playground3d` was written 30 years later with none of those
 constraints, so it gets to make much simpler (if slower, relative to
 what's now possible) choices throughout.
 
@@ -68,7 +68,7 @@ of the map, a **potentially visible set (PVS)** -- which *other*
 regions could possibly be seen from here -- so at runtime it can throw
 out huge chunks of the map without even attempting to project them.
 This is a form of large-scale visibility culling that has no equivalent
-in `playground3d/` at all: our backface culling (§5) only ever discards
+in `Playground3d` at all: our backface culling (§5) only ever discards
 individual *faces* of a *single already-selected* shape, one at a time
 -- nothing in this codebase decides "don't even consider that whole
 distant part of the scene," the way Quake's PVS does. That kind of
@@ -127,7 +127,7 @@ Both Doom and Quake used an 8-bit **indexed color palette** (256
 possible colors per pixel, looked up from a shared palette table) --
 not because it looked better, but because it was 4x less memory
 bandwidth and storage than direct 24-bit RGB, which mattered enormously
-on 1990s hardware. `playground3d/`'s native texture sampling
+on 1990s hardware. `Playground3d`'s native texture sampling
 (`Texture_decode`/`sample_texture`) decodes straight to full RGB(A) via
 `stb_image` (see `docs/claude_notes/notes_3d_opti.md`'s pixel-packing
 section) with no palette anywhere -- direct color has simply stopped
@@ -148,7 +148,7 @@ blood from in the early-to-mid 1990s.
 
 ## Summary table
 
-| | Doom (1993) | Quake (1996) | `playground3d/` native |
+| | Doom (1993) | Quake (1996) | `Playground3d` native |
 | --- | --- | --- | --- |
 | Truly 3D? | No (2.5D, 2D map + heights) | Yes | Yes |
 | Visibility structure | BSP tree, per-column | BSP tree + PVS | None (per-shape backface culling only) |

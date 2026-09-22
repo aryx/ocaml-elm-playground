@@ -43,10 +43,10 @@ three numbers.
 | `Solver3d` | manifolds, sequential impulses, warm starting, sleeping | §10 | `PhysicsStack3d.ml` |
 | `Sweep3d` | continuous collision: the fast small ball | §12 | `games3d/TinyPinball3d.ml` |
 | `Joint3d` | distance, hinge, ball-and-socket, motors, limits | §13 | `PhysicsRagdoll3d.ml`, `TinyHalfLife2.ml` |
-| `playground3d/Character3d` | the capsule controller: a player is not a body | §14 | `PhysicsWalk3d.ml`, `TinyMinecraft.ml` |
-| `playground3d/Ragdoll3d` | ten boxes and nine joints | §13 | `PhysicsRagdoll3d.ml`, `TinyHalfLife2.ml` |
-| `playground3d/Portal3d` | a portal pair's motion, crossing, seeing through | §15 | `games3d/TinyPortal.ml` |
-| `playground3d/Physics3d` | the Evan-style API over all of it | §16 | every game above |
+| `Character3d` | the capsule controller: a player is not a body | §14 | `PhysicsWalk3d.ml`, `TinyMinecraft.ml` |
+| `Ragdoll3d` | ten boxes and nine joints | §13 | `PhysicsRagdoll3d.ml`, `TinyHalfLife2.ml` |
+| `Portal3d` | a portal pair's motion, crossing, seeing through | §15 | `games3d/TinyPortal.ml` |
+| `Physics3d` | the Evan-style API over all of it | §16 | every game above |
 
 Read §1-§6 for the mechanics (the part a simulation of the solar
 system shares with a video game), §7-§12 for the collisions (the part
@@ -707,10 +707,10 @@ just an inequality constraint, which is why they cost the same code:
                                                  not bend backwards
 ```
 
-A **ragdoll** is then ten bodies and nine joints (`playground3d/
-Ragdoll3d`): ball-and-sockets with cones at the neck, the shoulders and
-the hips, hinges with limits at the elbows and the knees -- and the
-moment it exists, a corpse falls down a staircase convincingly for
+A **ragdoll** is then ten bodies and nine joints (`Ragdoll3d`):
+ball-and-sockets with cones at the neck, the shoulders and the hips,
+hinges with limits at the elbows and the knees -- and the moment it
+exists, a corpse falls down a staircase convincingly for
 free, which is the observation that made Half-Life 2 (Valve, 2004, on
 Havok) feel different from everything before it.
 
@@ -847,7 +847,7 @@ the cost is a second copy of the room's geometry per level.
 
 `games3d/TinyPortal.ml` does exactly this, one level deep (a portal
 seen through a portal shows its colour, not a view), with
-`playground3d/Portal3d.mli`'s motion, crossing and cut. The one
+`Portal3d.mli`'s motion, crossing and cut. The one
 surprise was the eye rather than the body: walking forward into a
 floor portal, looking ahead, is looking along that portal's up, which
 comes out of a wall portal as straight up -- the view has to be turned
@@ -855,7 +855,7 @@ back upright, which Portal does over a moment and this game at once.
 
 ## 16. In the playground
 
-The API (`playground3d/Physics3d.mli`) hides all of the above behind
+The API (`Physics3d.mli`) hides all of the above behind
 the same one concept the 2D API has -- a **body**, a `shape3d` that
 moves -- and the same verbs, so that someone who wrote
 `games/TinySlingshot.ml` recognizes every one: `fall`, `push`,

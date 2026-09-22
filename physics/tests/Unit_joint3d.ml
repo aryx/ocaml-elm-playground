@@ -115,7 +115,7 @@ let cone () =
        w);
   Alcotest.(check bool) (Printf.sprintf "within the cone (%.1f degrees at most)" !most) true (!most < 33. && !most > 25.)
 
-(* A ragdoll (playground3d/Ragdoll3d, ten bodies, nine joints) shoved
+(* A ragdoll (Ragdoll3d, ten bodies, nine joints) shoved
  * down a flight of stairs: every joint holds all the way down, and at
  * the bottom it comes to rest, its joints together again. Not rigidly:
  * at the hardest landing an elbow opens by about 5 cm for a few frames,

@@ -35,7 +35,7 @@ Non-test code only; the tests and `scripts/` are programs of their own
 and can take `Cap.main` in their mains later.
 
 - **The native loops** (`playground/native_common/Native_loop_2d.ml`,
-  `playground3d/native_common/Native_loop_3d.ml`): `Sys.argv` (the
+  `Native_loop_3d.ml`): `Sys.argv` (the
   `-script`, `-dump-frame`, ... flags), `exit` (on Q, on the window's
   close, after `-dump-frame`), `open_out_bin` (writing the dumped
   frame), `Unix.gettimeofday` and `Unix.sleepf` (the frame clock).

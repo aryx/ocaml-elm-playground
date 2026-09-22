@@ -346,7 +346,7 @@ let collide (a : ball) (ma : number) (b : ball) (mb : number) : ball * ball =
 (* claude: physics=engine (?physics=engine in a browser; see
  * Playground.flags), the pattern games3d/StarCollector3d.ml uses. By
  * hand, the default, the marble is [step] above: a height map read under
- * it, the 5/7 written down. With the engine, playground3d/Physics3d
+ * it, the 5/7 written down. With the engine, Physics3d
  * rolls it, and nothing above is used but the rules around it (the
  * checkpoints, breaking, the goal, the steelie's push):
  *

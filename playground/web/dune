@@ -1,11 +1,30 @@
 (library
  (public_name elm_playground_web)
  (implements elm_playground)
+ (modules Playground_platform Web_store)
  (libraries
    vdom
    ; commons
-   
+
    elm_playground
  )
  ;(preprocess (pps profiling.ppx))
+)
+
+; claude: and the 3D one, WebGL (the other 3D web backend, drawing
+; through SVG, is in ../svg/: both implement Playground3d_platform, so
+; they can't share a directory)
+(library
+ (public_name elm_playground_3d_webgl)
+ (implements elm_playground_3d)
+ (modules Playground3d_platform)
+ (libraries
+   js_of_ocaml ; WebGL, Dom_html, Typed_array
+   elm_playground
+   elm_playground_3d
+   elm_playground_web ; its run_app, like elm_playground_3d_web
+   graphics_3d_geometry ; Mat4, Lighting
+   graphics_gpu ; Mesh_cache
+ )
+ (preprocess (pps js_of_ocaml-ppx))
 )

@@ -34,7 +34,7 @@
  * No physics engine by default (see plan_physics_teaching.md): Mario's
  * feet land on the platforms' tops, his sides are stopped by their
  * sides, his head by their undersides, box against box, one axis at a
- * time. With physics=engine, playground3d/Character3d moves him instead
+ * time. With physics=engine, Character3d moves him instead
  * ([step_mario_engine]), and the game feel stays here, untouched.
  *
  * Exercises: moving platforms, a camera avoiding walls (Camera3d.mli),
@@ -175,7 +175,7 @@ let step_mario (s : model) (k : keyboard) (cam_yaw : number) (m : mario) : mario
 (* claude: physics=engine (?physics=engine in a browser; see
  * Playground.flags), the pattern of games3d/StarCollector3d.ml. The
  * same Mario and the same keys, but his body moved by
- * playground3d/Character3d (plan_physics3d_teaching.md phase 9): the
+ * Character3d (plan_physics3d_teaching.md phase 9): the
  * platforms are boxes, and Quake's loop of trace and slide against them
  * replaces [blocked], [landing] and [bumping]. What does not move to
  * the engine is the game feel -- coyote time, the jump buffer, the jump

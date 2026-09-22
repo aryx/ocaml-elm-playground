@@ -43,7 +43,7 @@ type face = { paint : paint; points : (Vec3.t * (float * float) * Vec3.t) list }
 type visibility = Z_buffer | Painters_algorithm
 
 (* Rendering choices that can be changed, to see what each one does
- * (see the keys in playground3d/software/Playground3d_platform.ml) *)
+ * (see the keys in the software backend's Playground3d_platform.ml) *)
 type options = {
   shading : Shading.mode;
   interpolation : Interpolate.mode;

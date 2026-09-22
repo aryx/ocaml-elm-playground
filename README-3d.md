@@ -8,7 +8,7 @@ Create simple 3D pictures, animations, and games with OCaml, in the
 same "no assets, no boilerplate, just shapes and combinators" spirit as
 [`ocaml-elm-playground`](README.md) itself.
 
-`playground3d/` is a 3D counterpart to this project's 2D
+`Playground3d` is a 3D counterpart to this project's 2D
 `elm_playground`, built on top of it. Its main backend is not a wrapper
 around OpenGL, Vulkan, or WebGL: the 3D-to-2D projection, the camera
 math, and the entire triangle rasterizer are hand-written OCaml, on

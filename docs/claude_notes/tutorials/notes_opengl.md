@@ -1,10 +1,10 @@
-# OpenGL for `playground3d/`: a tutorial, compared with the software rasterizer
+# OpenGL for `Playground3d`: a tutorial, compared with the software rasterizer
 
 `notes_3d.md` explains 3D rendering from scratch, using the software
-rasterizer (`playground3d/software/Playground3d_platform.ml`) as the
+rasterizer (the software backend's `Playground3d_platform.ml`) as the
 running example: every step is OCaml you can read. This note is the
-companion for the GPU backend (`playground3d/opengl/Playground3d_platform.ml`
-plus the shared `playground3d/Gpu_scene.ml`): what a GPU actually is,
+companion for the GPU backend (the OpenGL backend's `Playground3d_platform.ml`
+plus the shared `Gpu_scene.ml`): what a GPU actually is,
 how the same pipeline maps onto OpenGL, stage by stage against the
 software version, and, the part that matters most in practice, *where
 the time goes*, since that's where intuition from CPU programming is

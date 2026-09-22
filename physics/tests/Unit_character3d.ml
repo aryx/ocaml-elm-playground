@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground3d/Character3d, the character controller: one course piece
+(* Character3d, the character controller: one course piece
  * per test, and the character walked over it for a second or two *)
 
 open Playground

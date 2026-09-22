@@ -189,7 +189,7 @@ because the evidence above cuts both ways. The proposal:
   have in common is going into `ai/` anyway. The case to revisit it is
   concrete and worth watching for: **a deathmatch bot wanted by both a
   2D and a 3D shooter** (`games/TinySoldat.ml` and a 3D one on
-  `playground3d/Character3d`, see
+  `Character3d`, see
   [`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)) would
   share map awareness, waypoints, cover and weapon choice across two
   genres' kits -- and *that* is the day `gamekits/bots/` (or a
@@ -583,7 +583,7 @@ from memory until then.)
   `gamekits/racing/Topdown.computer` (which stays in the kit, gaining the
   delay and error knobs), and `games/TinyXpilot.ml`'s "robots", which
   its header already lists as an exercise.
-- **A 3D bot**, once `playground3d/Character3d` exists
+- **A 3D bot**, once `Character3d` exists
   ([`plan_physics3d_teaching.md`](plan_physics3d_teaching.md) phase
   9): the same `Bot` with rays for senses and a capsule to drive --
   the proof that the layer is dimension-independent, and the case that

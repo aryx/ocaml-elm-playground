@@ -1,3 +1,6 @@
+; claude: the 3D web backend that draws through the 2D one: the scene
+; compiled down to plain Playground shapes, which elm_playground_web
+; renders as SVG (see Playground3d_platform.ml).
 (library
  (public_name elm_playground_3d_web)
  (implements elm_playground_3d)

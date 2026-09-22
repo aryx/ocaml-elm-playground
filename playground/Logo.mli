@@ -53,7 +53,7 @@
    Powerful Ideas", 1980; Harold Abelson and Andrea diSessa, "Turtle
    Geometry: The Computer as a Medium for Exploring Mathematics", MIT
    Press, 1981 (the fractals of examples/LogoFractals.ml, and the 3D turtle
-   of playground3d/Logo3d.mli); Brian Harvey, "Computer Science Logo
+   of Logo3d.mli); Brian Harvey, "Computer Science Logo
    Style", MIT Press, 1997, and his Berkeley Logo (UCBLogo), whose names
    are used here (setxy, setheading, filled, label),
    https://people.eecs.berkeley.edu/~bh/logo.html; Python's turtle

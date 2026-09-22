@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* physics/3d/Solver3d, through playground3d/Physics3d's world: the
+(* physics/3d/Solver3d, through Physics3d's world: the
  * difference between bouncing things off each other and stacking them.
  * One pass per pair leaves a crate shivering on the floor for ever;
  * the solver puts it down and, a second later, stops simulating it at

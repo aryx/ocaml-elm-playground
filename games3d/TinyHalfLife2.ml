@@ -17,7 +17,7 @@
  * Half-Life 2 was built on Havok, and its lesson was that physics is a
  * thing to *use*: every prop is a weapon, a lid a shield, a seesaw a
  * catapult. Each of its party tricks is here, and each is one thing
- * the engine (playground3d/Physics3d, plan_physics3d_teaching.md) does:
+ * the engine (Physics3d, plan_physics3d_teaching.md) does:
  *
  *   - the gravity gun is three calls (notes_3d_physics.md section 13):
  *     Physics3d.ray from the eye picks a body; Physics3d.held_by pulls
@@ -31,13 +31,13 @@
  *   - the barrels float in the tank, Archimedes (Physics3d.floating,
  *     phase 2): a barrel is half as dense as water, and rides half out;
  *   - and a zombie walks as one upright body -- until something hits it
- *     harder than it walks. Then it is a ragdoll (playground3d/
- *     Ragdoll3d: ten boxes, nine joints), going on at the speed it was
- *     knocked, and it falls like a body because it is built like one.
+ *     harder than it walks. Then it is a ragdoll (Ragdoll3d: ten boxes,
+ *     nine joints), going on at the speed it was knocked, and it falls
+ *     like a body because it is built like one.
  *     That moment, a character going limp, is what made Half-Life 2
  *     feel like nothing before it.
  *
- * You are playground3d/Character3d, the capsule controller (phase 9):
+ * You are Character3d, the capsule controller (phase 9):
  * the props are solids to you, and you cannot push them with your body
  * -- that is what the gun is for.
  *

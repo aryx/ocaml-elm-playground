@@ -8,7 +8,7 @@
 # (LGPL) as published by the Free Software Foundation; either version
 # 2 of the License, or (at your option) any later version.
 #
-# Run every playground3d/2D-playground native executable under a given
+# Run every 3D/2D-playground native executable under a given
 # directory for a few seconds each and report which ones crashed (exit
 # code other than 124, the `timeout` code for "still running when the
 # deadline hit", i.e. no exception was raised) -- see

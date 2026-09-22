@@ -1,7 +1,14 @@
+; claude: two libraries in this directory, the 2D playground and the 3D
+; one (each with its own backends, in native/, software/, web/, svg/):
+; each says which modules it owns. A 3D module missing from the list
+; below lands in the 2D library, whose build then fails (it needs
+; Playground3d), so the two lists can't drift apart silently.
 (library
  (public_name elm_playground)
  (virtual_modules Playground_platform)
  (wrapped false)
+ (modules :standard \ Playground3d Playground3d_platform Camera3d
+   Character3d Gpu_scene Logo3d Physics3d Portal3d Ragdoll3d)
  (libraries
    ; commons
    elm_core
@@ -23,6 +30,20 @@
    ai
  )
  ; (preprocess (pps profiling.ppx))
+)
+
+(library
+ (public_name elm_playground_3d)
+ (virtual_modules Playground3d_platform)
+ (wrapped false)
+ (modules Playground3d Playground3d_platform Camera3d
+   Character3d Gpu_scene Logo3d Physics3d Portal3d Ragdoll3d)
+ (libraries
+   ; commons
+   elm_core elm_playground
+   graphics_3d_geometry ; Vec3, Mat4, Camera, Lighting
+   physics_3d ; Quat, Mat3, Body3d, Integrate3d, Force3d: what Physics3d is an API over
+ )
 )
 
 (documentation

@@ -1,8 +1,8 @@
-# playground3d/ native rasterizer: optimizations and fixes log
+# Playground3d native rasterizer: optimizations and fixes log
 
 Purpose: track each performance optimization and rendering-correctness
 fix applied to the native rasterizer (today `graphics/3d/`, then all of
-it in `playground3d/software/Playground3d_platform.ml`: the "Where"
+it in the software backend's `Playground3d_platform.ml`: the "Where"
 entries below name the functions of their time, e.g.
 `rasterize_triangle`, now `Triangle.fill`), with what it changed,
 why the "simpler" code before it wasn't good enough, and (for the perf

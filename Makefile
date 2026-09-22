@@ -47,7 +47,7 @@ install:
 # spy on images it shouldn't see), and Chrome considers every file://
 # page a site of its own, even for an image in the same directory. The
 # texture then stays magenta, with a SecurityError in the browser's
-# console (see playground3d/webgl/Playground3d_platform.ml, Textures).
+# console (see the WebGL backend's Playground3d_platform.ml, Textures).
 # Served over HTTP, the page and its images are one site.
 # Port 8001, so it can run alongside 'make serve' (docs/, on 8000);
 # 127.0.0.1, so only this machine can connect. Ctrl-C to stop.

@@ -7,9 +7,9 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* A player walking, which is to say not a rigid body: playground3d/
- * Character3d, the capsule controller, on a course with one lane per
- * thing a controller has to get right.
+(* A player walking, which is to say not a rigid body: Character3d,
+ * the capsule controller, on a course with one lane per thing a
+ * controller has to get right.
  *
  *   arrows   walk (up is along the course, left towards the ramps)
  *   space    jump

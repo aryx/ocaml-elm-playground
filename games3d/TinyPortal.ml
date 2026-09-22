@@ -18,7 +18,7 @@
  *
  * The way up is Portal's first lesson: a portal in the floor, one on
  * the wall above the ledge, and walk into the floor. A portal pair is
- * one rigid motion (playground3d/Portal3d.mli): what goes in one comes
+ * one rigid motion (Portal3d.mli): what goes in one comes
  * out of the other turned, its speed turned with it and not scaled --
  * the fall into the floor becomes a fling out of the wall, "speedy
  * thing goes in, speedy thing comes out". The fling is kept until you

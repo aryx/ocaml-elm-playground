@@ -1,6 +1,6 @@
-# Shaders in `playground3d/`: what they are, where they come from, and how ours work
+# Shaders in `Playground3d`: what they are, where they come from, and how ours work
 
-Both GPU backends, `playground3d/opengl/` and `playground3d/webgl/`,
+Both GPU backends, the OpenGL one and the WebGL one,
 contain two small programs written in another language, stored in
 OCaml strings:
 

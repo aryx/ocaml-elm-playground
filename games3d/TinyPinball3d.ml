@@ -23,7 +23,7 @@
  * game cuts each frame into four substeps; four substeps hold a 3D
  * ball up to 6 m/s.
  *
- * This one sweeps instead: playground3d/Physics3d.simulate ~continuous
+ * This one sweeps instead: Physics3d.simulate ~continuous
  * (physics/3d/Sweep3d.mli, plan_physics3d_teaching.md phase 10). The
  * ball's path through the step is tested, not its position, by
  * conservative advancement -- advance by the gap divided by the

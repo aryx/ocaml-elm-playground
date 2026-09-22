@@ -1,6 +1,7 @@
 (library
   (public_name elm_playground_native)
   (implements elm_playground)
+  (modules Playground_platform Image_native Shape_render_native)
   ; problems with tsdl on windows I think
   (libraries
     str
@@ -12,4 +13,30 @@
     elm_playground_native_common ; Native_loop_2d
     graphics_images ; Image_decode
   )
+)
+
+; claude: the 3D native backend, on the GPU. Its own library, so that a
+; 2D program doesn't need OpenGL, and a 3D one can pick its 2D backend:
+; the software one, which draws its HUD.
+(library
+ (public_name elm_playground_3d_opengl)
+ (implements elm_playground_3d)
+ (modules Playground3d_platform)
+ (libraries
+   tsdl
+   tgls.tgl3
+   threads.posix ; tgls/ctypes-foreign needs this to link, even though we don't use threads ourselves
+   stb_image ; Stb_image.t, used by the type of get_or_create_gl_texture
+   elm_core
+   elm_playground
+   elm_playground_3d
+   elm_playground_3d_native_common ; SDL event loop
+   graphics_3d_geometry ; Mat4
+   graphics_gpu ; Mesh_cache
+   ; the HUD: drawn by the 2D software rasterizer (Shape_render_software),
+   ; its transparency recovered by Matting, then blended by the GPU
+   elm_playground_software
+   graphics_core
+   graphics_images ; Texture_decode
+ )
 )

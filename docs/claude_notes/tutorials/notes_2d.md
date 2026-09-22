@@ -472,7 +472,7 @@ are positive. That tests pixels the triangle doesn't cover, which a
 scanline filler never does, but every pixel is independent: perfect for
 thousands of parallel units. 2D on a GPU then means triangulating every
 shape first (or tricks like stencil-then-cover). Our 3D software
-rasterizer (`playground3d/software/`, see `notes_3d.md`) uses edge
+rasterizer (see `notes_3d.md`) uses edge
 functions like a GPU; this 2D one uses scanlines, like the classic 2D
 libraries: same problem, two classic answers.
 

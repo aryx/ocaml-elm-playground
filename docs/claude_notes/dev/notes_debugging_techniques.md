@@ -233,7 +233,7 @@ tick). Fix: pass the wall-clock time, like the native backend and Elm do.
 
 This sandbox has a real X display (`DISPLAY=:1`) but no xdotool to press
 keys or move the mouse (see section 8 for how to do it anyway), so
-verifying a `playground3d/` rendering change
+verifying a `Playground3d` rendering change
 means: run the app in the background, screenshot it, `Read` the PNG.
 Two scripts capture this so it doesn't get reinvented (and gotten
 wrong) every time: `scripts/frames/screenshot_playground3d.sh` and
@@ -267,7 +267,7 @@ together:
    construction) -- run headlessly with `timeout Ns`, `grep -c DEBUG`
    the log to count completed frames/calls in that window, revert
    before committing.
-2. `playground3d/native_common/Native_loop_3d.ml`'s `target_fps = 60.`
+2. `Native_loop_3d.ml`'s `target_fps = 60.`
    caps every backend (native *and* OpenGL, both go through this same
    loop) at 60fps by sleeping out the remainder of each frame -- fine
    for playing a game, useless for measuring how fast a backend
@@ -426,8 +426,8 @@ then `Read` the PNG. Each piece has a reason:
 
 - **`SDL_VIDEODRIVER=dummy`** makes SDL use its "dummy" video driver:
   `SDL_CreateWindow` succeeds, but the window is only a surface in
-  memory, never shown. The software backends (2D `playground/software/`,
-  the Cairo one, 3D `playground3d/software/`) write their pixels into
+  memory, never shown. The software backends (the 2D software one,
+  the Cairo one, the 3D software one) write their pixels into
   the window surface themselves, so they don't notice: the pixels are
   the same as in a real window, and `-dump-frame` writes them out.
   Without it, SDL opens a real window on `$DISPLAY`: it pops up on the

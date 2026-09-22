@@ -67,7 +67,7 @@ one gets its own `svg/`.
 The same holds for the programs: every 3D example and game already
 ends in `3d` or has a name no 2D program has (checked below, step 3).
 
-## Step 1: `playground3d/` into `playground/`
+## Step 1: `playground3d/` into `playground/` (done, 2026-09-22)
 
 ```
 playground/               elm_playground + elm_playground_3d
@@ -91,9 +91,9 @@ playground/tests/         unchanged (already tests both)
 - The library `elm_playground_3d_web` keeps its name, although it now
   lives in `svg/`. Renaming it `elm_playground_3d_svg` changes an
   opam package: later, separately, if at all.
-- Update: every dune file that says "see playground3d/...", the
-  `playground3d/` paths in the `.ml`/`.mli` comments, `CLAUDE.md`,
-  `README-3d.md`, the Makefile's comments.
+- Update (see "Path references" below): the `playground3d/` paths in
+  the `.ml`/`.mli` comments, the notes and open plans, `CLAUDE.md`,
+  `README*.md`, the Makefile's comments.
 
 ## Step 2: `examples3d/` into `examples/`
 
@@ -248,9 +248,16 @@ and the open notes (`notes_3d.md`, `notes_playground3d_related_work.md`,
 
 About 115 `.ml`/`.mli` files and 30 notes name `playground3d/`,
 `examples3d/`, `games3d/` or `games2.5d/`, mostly in comments.
-Updated with the step that moves the file they name: the dune files,
-source comments, `CLAUDE.md`, `README*.md`, `CATALOG.md`,
-`docs/claude_notes/tutorials/` and the plans that are still open.
+Updated with the step that moves the file they name, by turning the
+path into a **basename** (`playground3d/Physics3d` becomes
+`Physics3d`), not into the new path: things may move again, and the
+name says where a file is anyway. A basename several files share
+(`Playground3d_platform.ml`, one per backend) is qualified in words:
+"the OpenGL backend's `Playground3d_platform.ml`". A bare
+`playground3d/` naming the whole 3D playground becomes `Playground3d`.
+Paths stay only where the layout *is* the subject: the dune files,
+`CLAUDE.md`'s architecture section, the executables' paths (`dune exec
+examples/...`, the tests' deps), `CATALOG.md`'s links.
 Not updated: `docs/claude_notes/plans/done/` (history) and `docs/`'s
 generated site.
 

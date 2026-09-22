@@ -402,7 +402,7 @@ let step (world : world) ~(dt : float) (input : input) (player : player) : playe
  * Playground.flags), the pattern of games3d/StarCollector3d.ml and
  * TinyMarbleMadness.ml. By hand, the default, the player is the
  * original's: [collide] pushes the body out of the blocks next to it,
- * one axis at a time. With the engine it is playground3d/Character3d,
+ * one axis at a time. With the engine it is Character3d,
  * the capsule controller (plan_physics3d_teaching.md phase 9): Quake's
  * loop of trace and slide against the blocks around it, turned into
  * boxes each frame ([solids_near]), a step offset, and a ground check.

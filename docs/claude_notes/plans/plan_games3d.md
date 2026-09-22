@@ -59,7 +59,7 @@ game needs it, teaching, game culture -- plus two for 3D:
   base        Playground3d: shapes, camera, hud, cached3d        (+ 2D: Camera2d, Tilemap)
 ```
 
-Where: generic 3D layers in `playground3d/` (next to `Gpu_scene`), 3D
+Where: generic 3D layers in `playground/` (next to `Gpu_scene`), 3D
 kits in `gamekits/<genre>/` like the 2D ones. Two layers exist in all but
 name, both inside `games3d/TinyMinecraft.ml`: its player section (a
 first-person controller: walking, jumping, gravity, looking with
@@ -252,7 +252,7 @@ online play), then Half-Life (1998).
   phases 4 and 9 of
   [`plan_physics3d_teaching.md`](plan_physics3d_teaching.md), which
   builds `Collide3d` and the capsule controller
-  (`playground3d/Character3d`) that this kit wants -- and whose own
+  (`Character3d`) that this kit wants -- and whose own
   games are TinyPinball, TinyHalfLife2 and TinyPortal.
 
 ### 6. Flight and space
@@ -318,7 +318,7 @@ Crash Bandicoot (Naughty Dog, 1996: a corridor, the camera behind).
   mouse as a trackball), a rolling ball's 5/7 g sin(a), marbles
   breaking when they fall too far, and a steelie pushing; Super Monkey
   Ball's tilting board left as an exercise).
-- **Kit**: `Camera3d` (started: `playground3d/Camera3d.mli`, `behind`,
+- **Kit**: `Camera3d` (started: `Camera3d.mli`, `behind`,
   `chase`, `cockpit`, `looking_down`, `from_far`, `orbit`, the smoothing
   `follow`, and `floor`/`sky`; used by TinyVirtuaRacing and TinyTron3d),
   the 3D `Camera2d`: `look_at` exists (the

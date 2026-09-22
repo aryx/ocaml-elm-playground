@@ -33,7 +33,7 @@
  *  - by hand, the default and the original code: the arrows set the
  *    position directly, 0.08 units a frame, and the cube is drawn
  *    spinning by the clock. Let go and it stops dead;
- *  - playground3d/Physics3d (the plan's phase 3, its first user): the
+ *  - Physics3d (the plan's phase 3, its first user): the
  *    arrows *push* a body of 1 kg, drag gives it a top speed instead
  *    of the position doing it, and the same top speed as before comes
  *    out of the balance -- a push of 28.8 N against a drag of 6 per
