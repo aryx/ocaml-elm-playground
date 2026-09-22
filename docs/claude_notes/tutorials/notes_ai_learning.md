@@ -21,8 +21,8 @@ formula is one a reader can check with a pen.
 |---|---|---|
 | `Matrix` (done) | dense float matrices, the naive loops | §2 |
 | `Neuron` (done) | the perceptron, its rule, and what it cannot do | §1 |
-| `Net` | layers, activations, the forward pass | §2 |
-| `Backprop` | the loss, gradient descent, the chain rule | §3, §4 |
+| `Net` (done) | layers, activations, the forward pass | §2 |
+| `Backprop` (done) | the loss, gradient descent, the chain rule | §3, §4 |
 | `Grad` | reverse-mode autodiff: the same, written once | §5 |
 | `Train` | batches, learning rate, train/test, the loop | §6 |
 | `Qlearn` | rewards, temporal difference, Q-learning | §8 |
@@ -179,22 +179,43 @@ example, and the `.mli`'s job is to make it checkable:
      dL/dw = dL/dz * x         = -0.08872      (dz/dw is just x)
      dL/db = dL/dz             = -0.08872
 
-   step
+   step (rate 1; the bias moves too -- it has a gradient of its own,
+         and leaving it out would be a different algorithm)
      w <- 0.5 + 0.08872        =  0.58872
-     a  = sigma(0.58872)       =  0.64307      (closer to 1)
-     L  = 0.06370                              (lower than 0.07127)
+     b <- 0.0 + 0.08872        =  0.08872
+     z  = 0.58872 + 0.08872    =  0.67745
+     a  = sigma(z)             =  0.66317      (closer to 1)
+     L  = 0.05673                              (lower than 0.07127)
 ```
+
+(Step the weight alone, as this arithmetic is often written out, and
+a = 0.64307 with L = 0.06370: the same story, one nudge smaller.
+`Unit_backprop` checks both numbers, which is how the discrepancy
+turned up.)
 
 Two structural facts are already in those eight lines, and they are the
 whole of the subject. Each step needs only the values from the forward
 pass at that node (`a`, `x`) and the derivative coming back
 (`dL/dz`) -- so a network is trained by walking backwards through it
 once, keeping what the forward pass computed. And `dL/dz` gets
-multiplied by a factor at every layer: with sigmoids those factors are
-at most 0.25, so after six layers the gradient has been multiplied by
-something under 1/4000. That is the **vanishing gradient**, it is why
-deep networks were untrainable for twenty years after 1986, and it is
-why `relu` (whose derivative is 1) changed everything.
+multiplied by a factor at every layer, the activation's slope, which
+for a sigmoid never exceeds 0.25. That is the **vanishing gradient**,
+and it is why deep networks were untrainable for twenty years after
+1986.
+
+Measured, on a 4-8-8-8-8-8-1 network with the same starting weights
+(`Unit_backprop`), the last layer's gradient against the first's:
+sigmoid **2159 : 1**, tanh **0.7 : 1**, relu **1.4 : 1**. The first
+number is the famous one; the second is the one worth keeping. A tanh
+is a sigmoid stretched to -1..1, with a slope of 1 at the origin, and
+Glorot initialisation is built to keep the signal steady through such
+a layer -- so at this depth nothing vanishes at all, and the first
+layer's gradient is if anything the larger. The sigmoid loses twice
+over: its slope is at most 1/4, and its outputs sit around 0.5 rather
+than 0, so each layer adds an offset the next must undo. Depth alone
+does not kill a gradient; depth with the wrong squash and the wrong
+starting weights does -- which is why `relu` and the initialisations
+that go with it changed what was trainable.
 
 `ai/tests/` checks backprop against finite differences on random
 networks: the analytic gradient and `(L(w+e) - L(w-e)) / 2e` must agree
@@ -256,12 +277,16 @@ The reason all of this belongs in a *playground*: training is a loop
 with a picture, and 60 frames a second is plenty to watch a network
 learn.
 
-- `AiNeuralNet.ml` -- points in two spirals, a 2-8-8-1 network, the
-  decision boundary recoloured every frame and the loss curve
-  underneath. Turn off a hidden layer and the boundary cannot bend
-  enough; that is model capacity, seen rather than defined. (The
-  ancestor is TensorFlow Playground, playground.tensorflow.org, which
-  this project shares a name with by coincidence.)
+- `AiNeuralNet.ml` (**written**) -- points in two spirals, a 2-8-8-1
+  network (105 weights), the decision boundary recoloured every few
+  frames and the loss curve underneath. The keys are the lesson: "0"
+  takes the hidden layers away and the boundary is a straight line
+  that stays one -- 3 weights, the loss stuck at 0.075 against the
+  full network's 0.023 -- which is model capacity, seen rather than
+  defined; "s"/"t"/"e" swap the squash; "-" and "+" the learning rate;
+  "h" holds out a quarter of the points and draws the second curve.
+  (The ancestor is TensorFlow Playground, playground.tensorflow.org,
+  which this project shares a name with by coincidence.)
 - `AiPerceptron.ml` -- §1: the line, and XOR defeating it.
 - `AiDigits.ml` -- draw a digit with the mouse, get ten output bars. A
   256-64-10 network is about 17,000 weights, a fraction of a second per

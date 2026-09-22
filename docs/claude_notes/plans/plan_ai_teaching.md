@@ -670,9 +670,9 @@ from memory until then.)
 9. **Chess, mostly DONE (ahead of its turn)**: `AiChess`, rules first (perft counts as the test: the
    standard node counts per depth from the start position are a
    ruthless check on a move generator), search second.
-10. **Learning, started**: `Matrix` and `Neuron` written, with
-    `AiPerceptron`; `Net`, `Backprop`, `Grad`, `Train` and the other
-    two examples (`AiNeuralNet`, `AiDigits`) still to come.
+10. **Learning, in progress**: `Matrix`, `Neuron`, `Net` and
+    `Backprop` written, with `AiPerceptron` and `AiNeuralNet`; `Grad`,
+    `Train` and `AiDigits` still to come.
 11. **Learning to play**: `Qlearn`; `AiQlearn`; tic-tac-toe learned by
     self-play, then measured against the minimax player it cannot beat
     but can learn to draw with; and the network as `AiGo`'s playout
@@ -913,6 +913,25 @@ from memory until then.)
   bot that has only just started is worth knowing, and the test says
   it: it acts on the oldest senses it has, so the delay is a memory,
   not a blindfold.
+- **Backprop, 2026-09-22**: the backward pass by hand, checked
+  against finite differences on every activation to six digits -- the
+  test that catches sign errors, and the reason to trust anything
+  built on it. Two numbers the writing corrected. The worked example
+  in the notes stepped the weight and quietly left the bias alone
+  (a = 0.64307); training steps both, which gives 0.66317, and both
+  numbers are now in the test so neither can drift. And the vanishing
+  gradient, measured on a 4-8-8-8-8-8-1 net as the last layer's
+  gradient over the first's: sigmoid 2159, tanh 0.7, relu 1.4 -- so
+  with Glorot weights a tanh stack does not vanish at this depth at
+  all, and the plan's "sigmoids multiply by under 1/4000" was true of
+  the slopes and false of the network. Depth alone does not kill a
+  gradient; depth with the wrong squash and the wrong starting weights
+  does. `examples/AiNeuralNet.ml` is the two spirals, with the hidden
+  layers on a key: 105 weights reach a loss of 0.023, and the same run
+  with no hidden layer (3 weights, a straight boundary) sticks at
+  0.075. Its cost is the drawing, not the arithmetic -- a frame is 9 ms
+  of network and 40 of rasterizer -- so the decision field is quantised
+  into bands and equal runs are drawn as one rectangle.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

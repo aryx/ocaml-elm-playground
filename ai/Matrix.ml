@@ -79,7 +79,10 @@ let mul_simple (a : t) (b : t) : t =
 let mul_fast (a : t) (b : t) : t =
   if a.cols <> b.rows then invalid_arg "Matrix.mul: inner dimensions differ";
   let n = a.cols in
-  let bt = transpose b in
+  (* a matrix times a *vector* is the common case (a network's forward
+   * pass is nothing else), and a column vector is already contiguous:
+   * nothing to transpose *)
+  let bt = if b.cols = 1 then b else transpose b in
   let c = create a.rows b.cols in
   for i = 0 to a.rows - 1 do
     let arow = i * n in
