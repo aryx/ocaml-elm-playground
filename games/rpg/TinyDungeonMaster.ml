@@ -84,7 +84,7 @@
  * to check.)
  *
  * What it uses: Tilemap (the dungeon, changed as doors open, levers are
- * pulled and things are picked up), ai/Pathfind (the monsters walk the
+ * pulled and things are picked up), Ai.way (the monsters walk the
  * shortest way to you: the same A* as TinyTowerDefense's), Scene2d (the
  * title and the endings). Not Camera2d: there is no camera, the view is
  * the slots. Not the maze kit's Grid_move either: that one slides a
@@ -278,16 +278,7 @@ let hand (g : game) : game =
 
 (* where a monster may walk: the open cells of the map (the door stops
  * it too, while it is shut) *)
-let problem (g : game) : (int * int) Pathfind.problem =
-  { neighbors =
-      (fun (c, r) ->
-        List.filter_map
-          (fun (dc, dr) ->
-            let n = (c +.. dc, r +.. dr) in
-            if wall (Tilemap.get g.map (fst n) (snd n)) then None else Some (n, 1.))
-          [ (1, 0); (-1, 0); (0, 1); (0, -1) ]);
-    goal = (fun c -> c = (g.x, g.y));
-    estimate = (fun c -> Pathfind.manhattan c (g.x, g.y)) }
+let open_cell (g : game) ((c, r) : int * int) : bool = not (wall (Tilemap.get g.map c r))
 
 let next_to (m : monster) (g : game) : bool = abs (m.mx -.. g.x) +.. abs (m.my -.. g.y) = 1
 
@@ -305,8 +296,8 @@ let step_monsters (g : game) : game =
           (say "it strikes you!" { g with hp = g.hp -.. claw }, { m with cool = attack_rest } :: acc)
         else
           let taken (x, y) = List.exists (fun (o : monster) -> (o.mx, o.my) = (x, y)) (acc @ g.monsters) in
-          match (Pathfind.astar (problem g) (m.mx, m.my)).path with
-          | _ :: next :: _ when not (taken next) ->
+          match Ai.way ~walkable:(open_cell g) (m.mx, m.my) (g.x, g.y) with
+          | next :: _ when not (taken next) ->
               (g, { m with mx = fst next; my = snd next; cool = move_rest } :: acc)
           | _ -> (g, { m with cool = move_rest } :: acc))
       (g, []) g.monsters

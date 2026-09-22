@@ -31,6 +31,7 @@
 (copy_files ../AiFlock.ml)
 (copy_files ../AiGhosts.ml)
 (copy_files ../AiBots.ml)
+(copy_files ../AiDebug.ml)
 (copy_files ../LogoFractals.{ml,mli})
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
@@ -69,7 +70,7 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
-    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots
+    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug
     LogoFractals
     BigBangRocket
     BigBangWorm

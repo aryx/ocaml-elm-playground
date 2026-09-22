@@ -312,6 +312,32 @@ else -- which is the only way a chess game stays readable. **To
 decide** by writing AiConnect4 with it first (a third game is the
 earliest point at which the shape is really known, not guessed).
 
+**Decided, 2026-09-22: no.** Written and measured, as a kit
+(`gamekits/board/`, beside `Cards` -- it is one genre's machinery, not
+a borrowed way of programming, so it did not belong in `playground/`),
+and AiConnect4 was ported onto it and played correctly. The numbers:
+305 lines to 292. Thirteen lines, for a kit of 156 plus 87 of
+interface, because the loop is not where these games spend their
+lines -- the rules, the evaluation and the teaching overlays are --
+and because a game that hands its model over has to hand back what it
+took away: a second `rules` record (its `Minimax.game` is over
+positions, the kit's `Ai.rules` over the whole game record), a `place`
+helper duplicating the kit's own geometry, and its own cursor drawing,
+since no two of these games draw a cursor the same way (Connect 4
+holds the piece above the column, Go puts a ghost stone on the point).
+And the two biggest games do not fit at all: AiChess's move is two
+clicks, a piece and then its square, which is a second cursor the kit
+has no word for; AiGo's opponent is MCTS with its *own* playout (the
+eye rule, without which the playouts mean nothing), which
+`Ai.playing_out` cannot take, so it would have wanted a third
+`machine` variant -- and the kit was already growing one variant per
+game. The sentence above ("their rules and their squares, and nothing
+else") is the thing the experiment disproved. What the loop really is:
+thirty lines a game, readable, and the part of it each game does
+differently is the part that gives it its character. The layer's four
+families (§ The Playground API) remain, and are what the games
+actually wanted from this.
+
 ## Target layout
 
 ```
@@ -629,9 +655,11 @@ from memory until then.)
 7. **Monte Carlo, DONE**: `Mcts` (playouts, then UCT, and a tree
    grown a frame at a time); `AiGo` on 9x9, rules and all, with the
    one rule its playouts need (see the status entry).
-8. **The Playground layer**: `playground/Ai.mli` finished (the five
-   families above), `Ai_debug`, and the board-game question settled by
-   rewriting AiConnect4 on it.
+8. **The Playground layer, DONE**: `playground/Ai.mli` finished (the
+   five families above) and `Ai_debug` written, with
+   `examples/AiDebug.ml` drawing all four of its pictures; the
+   board-game builder written, measured on AiConnect4 and dropped (see
+   § The open question, and the status entry).
 9. **Chess, mostly DONE (ahead of its turn)**: `AiChess`, rules first (perft counts as the test: the
    standard node counts per depth from the start position are a
    ruthless check on a move generator), search second.
@@ -818,6 +846,36 @@ from memory until then.)
   and dull one -- both sides passed and komi decided it -- which is why
   the board has a keyboard cursor: a scripted game needs to be able to
   put a stone down.
+- **The layer, 2026-09-22**: the four remaining families of
+  `playground/Ai.mli` (ways, an opponent, a mode, a bot) and
+  `Ai_debug`'s four pictures, checked in `playground/tests/Unit_ai.ml`
+  (Nim for the opponent: from five sticks it leaves four). Three
+  things the writing decided, against the plan as written above.
+  `Ai.within 0.2` (a budget in seconds) is gone: an `update` has no
+  clock and a second cannot be replayed, so thinking across frames is
+  a budget of work -- `pondering`/`ponder`/`settled`/`answer`, with
+  `a_frame_of n`, since only a game knows what its own moves cost (12
+  playouts is a frame of 9x9 Go and fifty frames of tic-tac-toe).
+  `Ai.thoughts` runs a search per move, because alpha-beta's cut
+  siblings report the bound that cut them and not their value -- the
+  first version drew three equal bars where one move won and two lost.
+  And the layer deliberately stops short of `TinyXCOM`'s pathfinding
+  (corner-cutting, a friend in the way, steps of 4 and 6 time units):
+  a `way` that took all of that would be `Pathfind` with new names.
+  The proof that it is the right shape: `TinyDiablo` and
+  `TinyDungeonMaster` each lost a hand-written `Pathfind.problem` for
+  one line of `Ai.way`, with every golden frame and scenario test
+  unchanged, pixel for pixel.
+- **The board-game builder: written, measured, dropped** (same day,
+  at the author's asking that it be a kit rather than a playground
+  layer -- right, and that is where it was written). AiConnect4 on it
+  went from 305 lines to 292, against a kit of 156 plus 87 of
+  interface, and AiChess (two clicks a move) and AiGo (its own MCTS
+  playout) could not use it at all. Deleted, with the reasoning kept
+  in § The open question so that nobody spends the afternoon again.
+  The negative result is worth as much as the layer is: the loop is
+  thirty readable lines a game, and the part each game does
+  differently is the part that gives it its character.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

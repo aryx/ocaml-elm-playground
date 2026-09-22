@@ -39,8 +39,8 @@
  *    Populous, Syndicate, Age of Empires, Diablo -- is played with one.
  *
  *  - **Click to walk is a path, not a step**: A* from the cell you are
- *    in to the cell you clicked (ai/Pathfind, the same search
- *    TinyTowerDefense uses for its creeps), then walked one cell at a
+ *    in to the cell you clicked (one line of Ai.way, over ai/Pathfind:
+ *    the same search TinyTowerDefense uses for its creeps), then walked one cell at a
  *    time. The pathfinding is the *player's*, which is unusual: in
  *    most games it belongs to the enemies. Here the monsters are the
  *    stupid ones -- they take the greedy step towards you and get
@@ -59,7 +59,7 @@
  * What it uses: gamekits/isometric (the projection, the back-to-front
  * sort, the shadow under the bolt, and the inverse under the mouse --
  * its second game, after TinyZaxxon.ml, and what paid for
- * it), ai/Pathfind (A* for the clicks), and Scene2d. Not Tilemap:
+ * it), Ai.way (A* for the clicks), and Scene2d. Not Tilemap:
  * that layer draws a grid of squares on the screen's own axes, and
  * this grid is diamonds on the world's. Not Camera2d: the camera is
  * [Isometric.follow], a subtraction inside the projection. Not
@@ -261,20 +261,7 @@ let apart (ax : number) (az : number) (bx : number) (bz : number) : number = Flo
 (* A* from where you stand to where you clicked: the player's own
  * pathfinding, which is the click-to-walk of every game of this shape *)
 let path_to (cells : cell array array) (from : int * int) (goal : int * int) : (int * int) list =
-  if not (walkable cells goal) then []
-  else
-    let problem =
-      {
-        Pathfind.neighbors =
-          (fun (i, j) ->
-            List.filter_map
-              (fun c -> if walkable cells c then Some (c, 1.) else None)
-              [ (i +.. 1, j); (i -.. 1, j); (i, j +.. 1); (i, j -.. 1) ]);
-        goal = (fun c -> c = goal);
-        estimate = (fun c -> Pathfind.manhattan c goal);
-      }
-    in
-    match (Pathfind.astar problem from).path with _ :: rest -> rest | [] -> []
+  Ai.way ~walkable:(walkable cells) from goal
 
 (* one step along the path, and the path shortened when a cell is
  * reached *)

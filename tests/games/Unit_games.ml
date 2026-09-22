@@ -2767,24 +2767,25 @@ let tron_computer () =
  * lever there raises the portcullis, which is the only way in. *)
 let dungeon_master_winnable () =
   let open TinyDungeonMaster in
-  (* every cell the hero can walk to from where it stands *)
-  let reach (g : game) = List.map fst (Pathfind.field (problem g) (g.x, g.y)) in
+  (* every cell the hero can walk to from where it stands: one flow
+     field from where it stands, and a cell is on it or it is not *)
+  let reaches (g : game) (cell : int * int) = Ai.steps_to_go (Ai.flow ~walkable:(open_cell g) (g.x, g.y)) cell <> None in
   let one (c : char) (map : Tilemap.t) =
     match Tilemap.find map c with [ cell ] -> cell | _ -> Alcotest.failf "not one %c in the dungeon" c
   in
   let g = new_game () in
   let key = one 'k' g.map and stairs = one '>' g.map in
-  Alcotest.(check bool) "the key is reachable" true (List.mem key (reach g));
-  Alcotest.(check bool) "the stairs are not" false (List.mem stairs (reach g));
+  Alcotest.(check bool) "the key is reachable" true (reaches g key);
+  Alcotest.(check bool) "the stairs are not" false (reaches g stairs);
   (* at the door, with the key *)
   let g = hand { g with x = 6; y = 9; facing = North; keys = 1 } in
   Alcotest.(check bool) "the key opened the door" false (wall (Tilemap.get g.map 6 8));
   Alcotest.(check int) "and was used up" 0 g.keys;
-  Alcotest.(check bool) "the stairs are still shut in" false (List.mem stairs (reach g));
+  Alcotest.(check bool) "the stairs are still shut in" false (reaches g stairs);
   (* at the lever, beyond it *)
   let g = hand { g with x = 12; y = 7; facing = North } in
   Alcotest.(check (option char)) "the lever stays pulled" (Some 'l') (Tilemap.get g.map 12 6);
-  Alcotest.(check bool) "and the stairs can be reached" true (List.mem stairs (reach g))
+  Alcotest.(check bool) "and the stairs can be reached" true (reaches g stairs)
 
 (* The rule the fights are built on: a monster that has just struck must
  * wait [attack_rest] frames and one that has just moved [move_rest], so

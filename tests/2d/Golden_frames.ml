@@ -167,6 +167,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AiGhosts", "", 60);
     (* the bot on its rounds, having seen nobody yet *)
     ("examples/software/AiBots", "", 2);
+    ("examples/software/AiDebug", "", 3);
     ("games/puzzle/software/AiConnect4", "", 3);
     ("games/puzzle/software/AiGo", "", 3);
     ("games/puzzle/software/AiOthello", "", 3);
@@ -425,6 +426,10 @@ let scripted : Testutil_golden.scripted list =
     (* its rounds bring it round the corner: it sees you, aims (a little
      * off: the error has not settled yet) and fires *)
     ("examples/software/AiBots", "seen", 330, "right:5-60");
+    (* claude: the four pictures at once -- the walker half way to the
+     * flag with its way and the field drawn, its mind resting, and the
+     * opponent's opinion of a Nim position it has already won *)
+    ("examples/software/AiDebug", "thinking", 95, "2:5");
     ("games/puzzle/software/AiOthello", "values", 3, "v:2");
     ("games/strategy/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
     ("games/platform/software/TinySonic", "loop", 330, "space:1,right:5-330");

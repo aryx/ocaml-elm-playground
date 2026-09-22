@@ -29,7 +29,8 @@ because it means a page of code can produce something that looks alive.
 | `Minimax` (done) | the game tree, and alpha-beta | §7, §8 |
 | `Deepening`, `Zobrist` (done) | making the search go deeper | §9 |
 | `Mcts` (done) | playing without an evaluation function | §10 |
-| `playground/Ai` (steering done) | the Evan-style API over all of it | §14 |
+| `playground/Ai` (done) | the Evan-style API over all of it | §14 |
+| `playground/Ai_debug` (done) | drawing what it thinks | §11 |
 
 Read §2 to §5 for the real-time half (a world at 60 fps), §7 to §10
 for the turn-taking half (an opponent). They barely touch. §6 is where
@@ -512,17 +513,34 @@ win counts with a neural network, which is
 ## 11. Seeing what it thinks
 
 Every algorithm here is invisible by default and obvious once drawn,
-which is why `playground/Ai_debug` (the "v" key, with `-debug-keys`)
-is in the plan as a first-class piece rather than a convenience:
+which is why `playground/Ai_debug` is a first-class piece rather than
+a convenience. Four drawings, one per thing an AI does, each a single
+call and each returning plain shapes:
 
-- the frontier in the order it was taken, and the path (which is the
-  entire content of `AiPathfinding`);
-- the flow field as arrows on the tiles;
-- each steering force as a vector out of its body, and the wander
-  circle in front of it;
-- each enemy's current state, written above it -- the fastest way to
-  find out that everyone is stuck in *flee*;
-- the search's moves and their values, and how many nodes it took.
+- `way`, the tiles it means to walk, joined, with a ring on the last;
+- `field`, an arrow per tile fading with the distance still to go --
+  the plan of a hundred monsters in one picture;
+- `thoughts`, a bar per move against a zero line, longest first, the
+  chosen one bright: `Ai.thoughts` or `Ai.so_far` made readable;
+- `machine`, the modes in a ring with the current one lit and counting
+  its frames, an arrow per change of mind carrying the few words that
+  trigger it. A state machine is a drawing that was written down as a
+  list, and this puts it back.
+
+`examples/AiDebug.ml` is all four at once: a walker taking a way
+across a map over the field everyone would follow, its mind beside it,
+and a game of Nim whose opponent says what it makes of each move.
+
+Unlike `Audio_debug`, this is not the backend's to draw and has no
+debug key of its own: the platform knows the samples it plays, but
+only a game knows what its enemies are thinking, so a game draws these
+where and when it likes (TinyTowerDefense's "p" is the pattern).
+
+Still missing, and worth doing: the frontier in the order it was taken
+(the entire content of `AiPathfinding`, which draws its own), each
+steering force as a vector out of its body with the wander circle in
+front of it, and a bot's senses -- what it has seen and how stale it
+is, the only honest way to check that it is not cheating.
 
 Debugging an AI by reading its code is nearly hopeless; debugging it by
 watching the arrows takes seconds.
@@ -607,21 +625,64 @@ other:
 let update _ fish = fish |> List.map (fun f -> f |> flocking fish |> step)
 ```
 
-Planned for the rest: paths come back as a list of tiles (`Ai.way ~walkable from to_`), a
-crowd shares one `Ai.flow`, and an opponent is a value you ask for a
-move (`Ai.thinking_ahead 4 rules |> Ai.best_move`), with
-`Ai.within 0.2` for a time budget instead of a depth. A bot is a value
-too -- `Ai.bot mind |> Ai.skill 0.6 |> Ai.thinks senses` -- returning
-the game's own intent record, so the update stays one line for a human
-and a machine alike (§6). The search, the
-table, the frontier and the seeds stay on the other side of the door.
+The other four families are built now, each a few verbs over a module
+of `ai/`:
 
-Of that door, the steering part is built: `Ai.seek`, `flee`, `arrive`,
-`chase`, `escaping`, `wandering`, `avoiding`, `following` (§4),
-`flocking` (§5) and `facing`, each a verb on a `Physics.body`, used by
-`examples/AiSteering.ml` and `examples/AiFlock.ml`. The rest is used
-straight from `ai/` for now: `Pathfind.astar` by `TinyDiablo.ml`,
-`TinyDungeonMaster.ml`, `TinyTowerDefense.ml` and `TinyXCOM.ml`, the
+```ocaml
+let step = Ai.way ~walkable:(free level) monster.cell door      (* §2 *)
+let field = Ai.flow ~walkable:(free level) door                 (* §3, one search, a crowd *)
+let reply = Ai.best_move (Ai.thinking_ahead 4 othello) board    (* §7-§9 *)
+let ghost = { g with mind = Ai.deciding changes g g.mind }      (* §6 *)
+let intent = if p.human then keys computer else Ai.thinks brain world p.playing  (* §6 *)
+```
+
+and the search, the table, the frontier and the seeds stay on the
+other side of the door. Two decisions the writing settled. There is no
+`Ai.within 0.2` (a budget in seconds): the playground has no clock in
+an `update`, and a budget in seconds cannot be replayed frame by frame
+either, so thinking across frames is a budget of *work* a frame --
+`Ai.pondering`, `ponder`, `settled`, `answer`, with `a_frame_of n` to
+say how much a frame is worth, since only the game knows what its own
+moves cost. And `Ai.thoughts` costs a search per move rather than one
+search: a branch alpha-beta cuts never learns its own value, only that
+it was not worth the trouble, so a search that says what it thinks of
+everything is a slower search (`Minimax.mli` warns of exactly this,
+and the first version of `Ai.thoughts` drew the bounds as if they were
+values -- three equal bars where one move won and two lost).
+
+Who uses what: `Ai.seek`, `flee`, `arrive`, `chase`, `escaping`,
+`wandering`, `avoiding`, `following` (§4), `flocking` (§5) and
+`facing`, each a verb on a `Physics.body`, by `examples/AiSteering.ml`
+and `examples/AiFlock.ml`; `Ai.way` by `TinyDiablo.ml` (a click is a
+path) and `TinyDungeonMaster.ml` (the monsters walk to you), where it
+replaced a hand-written `Pathfind.problem` each, with the golden
+frames coming out pixel for pixel the same; `Ai.way`, `Ai.flow`,
+`Ai.deciding` and `Ai.thinking_ahead` together by
+`examples/AiDebug.ml`, which draws all four (§11).
+
+One thing that was tried and is not here: a board-game *builder*, in
+the shape of `Logo`, `Bigbang` and `Puzzlescript` -- rules and squares
+in, a whole `app` out -- since AiTictactoe, AiOthello, AiConnect4 and
+AiGo each write the same cursor, click, reply and restart. It was
+written as a kit and AiConnect4 was ported onto it: 305 lines became
+292. The loop is not where these games spend their lines, a game that
+hands over its model has to hand back a second rules record and its
+own cursor drawing, and the two biggest games could not use it at all
+(chess's move is two clicks; Go's opponent needs its own playout). It
+was deleted; the plan keeps the numbers. Thirty readable lines a game,
+and the part each does differently is the part that gives it its
+character.
+
+The rest is still used straight from `ai/`, and on purpose. The demo
+games (`AiTictactoe`, `AiOthello`, `AiChess`, `AiConnect4`, `AiGo`,
+`AiPathfinding`) are *about* the algorithm -- they count nodes and
+compare searches, which is precisely what the layer hides -- and
+`TinyXCOM.ml` keeps its own `Pathfind.problem` because its moves have
+rules the layer has no word for (no cutting a wall's corner
+diagonally, a friend blocking the tile, a step costing 4 or 6 time
+units). A layer that swallowed those would be the whole of `Pathfind`
+with different names. So: `Pathfind.astar` by `TinyTowerDefense.ml`
+and `TinyXCOM.ml`, the
 flow field (§3) by `gamekits/rts/Orders`, for `TinyDune2.ml` and
 `TinyWarcraft2.ml`, the
 three searches side by side in `examples/AiPathfinding.ml` (§2);
