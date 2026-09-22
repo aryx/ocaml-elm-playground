@@ -252,6 +252,76 @@ reverberation. Its echoes die away geometrically, the sound lasting
 until they fall below -60 dB: 2.5 s for a delay of 0.25 s and a
 feedback of 0.5 (`Effect.echo`, `Effect.tail`).
 
+### The ready-made sounds, three generations
+
+`playground/Audio`'s `blip`, `coin`, `laser`, `explosion`... were
+written three times, each generation keeping the sounds' idea and
+changing only how they were made, so the difference each technique
+makes can be measured on the same sounds (`Unit_effect`'s "three
+generations" test keeps the first generation's recipes as the record,
+and checks every number below):
+
+1. **Recipes on naive oscillators** (phase 3): each sound a few verbs,
+   `square 880 |> lasting 0.06 |> fading`, the coin two voices `after`
+   each other, the explosion noise sliding from 1500 steps a second to
+   150. The oscillators the formulas of §3.
+2. **The same recipes, band-limited** (phase 6): not a character
+   changed in them; the oscillators underneath smooth their jumps
+   (PolyBLEP) and the triangle its corners (PolyBLAMP, §6).
+3. **sfxr's numbers** (phase 7): `audio/Sfx`'s presets, the same
+   sounds re-made with what the recipes couldn't say -- an envelope
+   with a held part, a jump inside one voice, filters.
+
+What each step bought (brightness is the spectrum's centroid, its
+centre of mass, over 2048 samples at the start and near the end):
+
+| sound | generation 1 | 2: band-limited | 3: sfxr's numbers |
+|---|---|---|---|
+| blip | brightness 7623 Hz | 4476 Hz: 1.6% of its energy taken out (-18 dB) | the same, a held part |
+| coin | 7869 Hz; its level falls to 0.045 where its notes meet (0.391 held) | 4656 Hz (-16 dB taken out) | one voice, a jump: 0.389 where the notes meet |
+| laser | 7839 Hz | 6568 Hz, 4150 at 0.15 s (-16 dB taken out) | 3803 Hz, 1066 at 0.15 s: the low-pass following it down |
+| hit | 4725 Hz | the same (noise: no jumps to smooth) | 1755 Hz |
+| explosion | 4027 Hz, 3078 near the end | the same | 1196 Hz, 109 near the end: a burst, then a rumble |
+| step | 422 Hz | -69 dB taken out: inaudible | the same |
+
+The lessons, one per row:
+
+- **Aliases are a small part of the energy and a large part of the
+  sound.** Band-limiting took only 1.6% of the naive blip's energy out
+  (-18 dB), yet its brightness fell from 7623 Hz to 4476: most of what
+  was *high* in it were aliases, harmonics above 22,050 Hz folded back
+  (§2), out of tune with the note, heard as a thin whistle over it. The
+  higher the note, the worse: the coin's 1568 Hz loses as much. The
+  triangle's corners (the step's) were never much of a problem: PolyBLAMP
+  takes out -69 dB, a correct fix nobody can hear -- the triangle's
+  harmonics already fall as 1/n^2 (§3).
+- **Two notes in one voice, not two voices.** The first coin was two
+  sounds one `after` the other, each fading in and out over 5 ms so
+  as not to click (§4): where they met, the level dropped to a ninth,
+  an audible hiccup between the notes. sfxr's "change" -- a jump in
+  pitch inside a single voice, `Effect.Jump` -- keeps the phase and the
+  envelope going: 0.389 where it was 0.045.
+- **Slowing noise doesn't darken it; a filter does.** The first
+  explosion slid its noise from 1500 steps a second to 150, meaning a
+  rumble, and hardly got darker (4027 Hz to 3078): each step of the
+  shift register is a jump from -1 to 1 or back, a square edge, and its
+  harmonics are there however slow the steps. Only a low-pass falling
+  with it (4000 Hz to 150) takes them away: 1196 Hz, then 109. That's
+  subtractive synthesis (§7), and why sfxr has a low-pass slider: the
+  same filter makes the laser go darker as it falls (1066 Hz at 0.15 s,
+  where the band-limited recipe was still at 4150) and the hit a thud
+  rather than a hiss.
+- **A held part.** A linear fade from the start (the recipes'
+  `fading`) makes every sound a pluck; sfxr's attack, sustain, decay
+  lets a blip or a coin *hold* its note before dying, which is what
+  makes it read as a note rather than a click.
+
+The first two steps are general (every sound played gets them); the
+third is the sound designer's, a dozen numbers per sound -- which is
+why sfxr, for all its sliders, sounds like sfxr. Hear the difference
+with the software backend's `l` key (generation 2 back to 1, on any
+game), and `examples/AudioSfx.ml` for the third's numbers.
+
 ## 9. Notes and music
 
 Western music divides each octave (a doubling of the frequency) into

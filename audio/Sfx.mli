@@ -35,6 +35,10 @@
  * falling from 4000 Hz to 150 Hz: the burst, then the rumble; its eight
  * numbers are all of it.
  *
+ * What these numbers buy over plain recipes (the ready-made sounds'
+ * first generation), measured sound by sound: notes_audio.md section 8,
+ * "The ready-made sounds, three generations".
+ *
  * [vary] is sfxr's "mutate" button: every number nudged at random (a
  * seed, so the same seed gives the same sound): a family of lasers from
  * one, so that ten shots in a row don't sound like a machine.

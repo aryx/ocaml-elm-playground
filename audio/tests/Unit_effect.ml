@@ -68,10 +68,96 @@ let test_sfx () =
   Alcotest.(check (float 1.)) "the explosion's burst, its brightness (Hz)" 1126. early;
   Alcotest.(check (float 1.)) "its rumble at 0.5 s (Hz)" 175. late
 
+(* The ready-made sounds, three generations (notes_audio.md section 8):
+ * 1. phase 3's recipes (playground/Audio.ml until phase 7, kept here as
+ *    the record), on the naive oscillators;
+ * 2. the same recipes, band-limited (phase 6: PolyBLEP, PolyBLAMP);
+ * 3. sfxr's numbers (phase 7, Sfx's presets): envelopes, a jump,
+ *    filters.
+ * What each step changed, measured: the energy PolyBLEP took out (the
+ * naive sound less the band-limited one), the brightness (the
+ * spectrum's centroid) near the start and the end, the coin's level
+ * where its two notes meet. *)
+let first_generation : (string * Synth.t) list =
+  let sq = Synth.voice (Wave Square) and saw = Synth.voice (Wave Sawtooth) and tri = Synth.voice (Wave Triangle) in
+  let noise = Synth.voice Noise in
+  Synth.
+    [
+      ("blip", sq 880. |> lasting 0.06 |> fading);
+      ("coin", After [ sq 1047. |> lasting 0.07; sq 1568. |> lasting 0.25 |> fading ] |> louder 0.8);
+      ("jump", sq 300. |> sliding 650. |> lasting 0.18 |> fading |> louder 0.8);
+      ("laser", saw 1200. |> sliding 200. |> lasting 0.2 |> fading);
+      ("hit", noise 3000. |> lasting 0.1 |> fading);
+      ("explosion", noise 1500. |> sliding 150. |> lasting 0.7 |> fading |> louder 1.5);
+      ("step", tri 150. |> sliding 90. |> lasting 0.05 |> fading |> louder 0.6);
+    ]
+
+let naive (s : Synth.t) : Signal.t =
+  Synth.band_limited := false;
+  let x = Synth.render s in
+  Synth.band_limited := true;
+  x
+
+let energy (x : Signal.t) : float = Array.fold_left (fun e v -> e +. (v *. v)) 0. x
+
+(* the centroid of the 2048 samples from [seconds] (or the last 2048) *)
+let brightness (x : Signal.t) (seconds : float) : float =
+  let n = Array.length x in
+  let i = min (Signal.samples seconds) (max 0 (n - 2048)) in
+  Unit_synth.centroid (Array.sub x i (min 2048 (n - i)))
+
+let rms (x : Signal.t) (from : float) (until : float) : float =
+  let i = Signal.samples from and j = Signal.samples until in
+  sqrt (energy (Array.sub x i (j - i)) /. float_of_int (j - i))
+
+let test_generations () =
+  let sound name = List.assoc name first_generation in
+  let third name = Synth.render (Sfx.to_sound (List.assoc name Sfx.presets)) in
+  let hz what expected actual = Alcotest.(check (float 1.)) (what ^ " (Hz)") expected actual in
+  (* 1 -> 2: what PolyBLEP took out, in dB below the sound: little
+   * energy, but the blip's and the coin's brightness nearly halved --
+   * most of what was high in them were aliases; the triangle's corners
+   * (PolyBLAMP, the step) -69 dB, inaudible; the noises untouched *)
+  List.iter
+    (fun (name, expected) ->
+      let n1 = naive (sound name) and b1 = Synth.render (sound name) in
+      Alcotest.(check (float 0.1)) (name ^ ": the energy band-limiting took out (dB)") expected
+        (10. *. log10 (energy (Array.map2 ( -. ) n1 b1) /. energy n1)))
+    [ ("blip", -18.2); ("coin", -16.1); ("jump", -21.4); ("laser", -15.8); ("step", -69.3) ];
+  hz "the blip's brightness, naive" 7623. (brightness (naive (sound "blip")) 0.);
+  hz "band-limited" 4476. (brightness (Synth.render (sound "blip")) 0.);
+  hz "the coin's, naive" 7869. (brightness (naive (sound "coin")) 0.);
+  hz "band-limited" 4656. (brightness (Synth.render (sound "coin")) 0.);
+  (* 2 -> 3: the filters. The laser darker as it falls (its low-pass
+   * following it down), the explosion from a burst to a rumble: its noise
+   * slowed tenfold hardly dulled it (the LFSR's steps are square: their
+   * harmonics stay), the low-pass does it *)
+  let laser2 = Synth.render (sound "laser") and laser3 = third "laser" in
+  hz "the laser's brightness at the start, recipe" 6568. (brightness laser2 0.);
+  hz "at the end" 4150. (brightness laser2 0.15);
+  hz "sfxr's, at the start" 3803. (brightness laser3 0.);
+  hz "at the end" 1066. (brightness laser3 0.15);
+  let explosion2 = Synth.render (sound "explosion") and explosion3 = third "explosion" in
+  hz "the explosion's brightness at the start, recipe" 4027. (brightness explosion2 0.);
+  hz "at the end" 3078. (brightness explosion2 0.65);
+  hz "sfxr's, at the start" 1196. (brightness explosion3 0.);
+  hz "at the end" 109. (brightness explosion3 0.65);
+  hz "the hit's, recipe" 4725. (brightness (Synth.render (sound "hit")) 0.);
+  hz "sfxr's" 1755. (brightness (third "hit") 0.);
+  (* the coin's two notes: two voices one after the other, each with its
+   * 5 ms ramps, dipped to a ninth of the level where they meet; one
+   * voice with a jump doesn't *)
+  let coin1 = Synth.render (sound "coin") and coin3 = third "coin" in
+  Alcotest.(check (float 0.001)) "the recipe's coin, held" 0.391 (rms coin1 0.05 0.06);
+  Alcotest.(check (float 0.001)) "where its notes meet" 0.045 (rms coin1 0.069 0.071);
+  Alcotest.(check (float 0.001)) "sfxr's, held" 0.391 (rms coin3 0.05 0.06);
+  Alcotest.(check (float 0.001)) "where its notes meet" 0.389 (rms coin3 0.069 0.071)
+
 let tests =
   Testo.categorize "Effect and Sfx"
     [
       t "the pitch effects: vibrato, jump, arpeggio" test_pitch;
       t "the echo: an impulse's echoes, the tail" test_echo;
       t "the presets measured, vary" test_sfx;
+      t "the ready-made sounds, three generations" test_generations;
     ]
