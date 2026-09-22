@@ -700,6 +700,16 @@ from memory until then.)
 
 ## Status
 
+**DONE** (2026-09-23): phases 1-12 -- the searches, the agents, the
+bots, the learning half, the Evan-style layer and its drawings, and
+the docs pass that checked both tutorials claim by claim against the
+code. Two things the plan decided *against* doing are recorded below
+with their measurements (a board-game app builder; `Ai.within`, a
+budget in seconds), and two it decided to leave for a machine rather
+than for code (`AiGo` with a network, and `Influence`, which no phase
+ever claimed). What is left is in
+[`../plan_ai_remaining.md`](../plan_ai_remaining.md).
+
 - **Phase 0-1, DONE** (`ai/Minimax`): the `game` record (moves, play,
   score, max_to_play -- players needn't alternate, so passing works,
   which Othello needs), `minimax` and `alphabeta` returning the same
