@@ -175,6 +175,11 @@ let scenes : Testutil_golden.scene list =
     ("games/strategy/software/TinyXCOM", "", 5);
     ("games/platform/software/TinyMetroid", "", 5);
     ("games/rhythm/software/TinyGuitarHero", "", 5);
+    (* claude: Microsoft's deal 1, FreeCell's and Klondike's ways *)
+    ("games/cards/software/TinyFreeCell", "", 3);
+    ("games/cards/software/TinySolitaire", "", 3);
+    (* claude: the Dwarf and the Imp loaded, the core empty between *)
+    ("games/programming/software/TinyCoreWar", "", 3);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
     ("games/platform/software/TinyMario", "v", 60);
@@ -433,6 +438,18 @@ let scripted : Testutil_golden.scripted list =
     ("games/platform/software/TinyMetroid", "morph", 85, "space:1,left:5-80");
     ("games/platform/software/TinyMetroid", "ball", 230, "space:1,left:5-80,right:90-235,down:200");
     ("games/platform/software/TinyMetroid", "map", 330, "space:1,left:5-80,right:90-235,down:200,right:237-300,up:302,return:320");
+    (* claude: the 6S parked in a free cell, and the 9C picked up *)
+    ("games/cards/software/TinyFreeCell", "cell", 28,
+     "at(-420;0):1-10,click:3,at(-420;380):11-20,click:13,at(-300;0):21-30,click:23");
+    (* claude: the ace of hearts home, the card under it turned over, and
+     * two cards turned from the stock onto the waste *)
+    ("games/cards/software/TinySolitaire", "home", 33,
+     "at(120;150):1-10,click:3,at(240;380):11-20,click:13,at(-360;380):21-33,click:23,click:28");
+    (* claude: cycle 360: the Imp has walked through the Dwarf and made it
+     * an Imp, two walking the core, which neither can kill *)
+    ("games/programming/software/TinyCoreWar", "imp", 90, "");
+    (* claude: fight 2: the Mice have multiplied, and the Dwarf is dead *)
+    ("games/programming/software/TinyCoreWar", "mice", 60, "2:2");
     (* the riff's first four notes on Medium, every fret held and each
        strummed on its beat (132 a minute, an eighth 0.227 s) *)
     ("games/rhythm/software/TinyGuitarHero", "riff", 305,

@@ -165,8 +165,8 @@ serve:
 
 # claude: the games' genres' directories (games/<genre>/, each with its
 # own web/), in CATALOG.md's order
-GENRES=$(addprefix games/,shmup fighting platform arcade puzzle adventure \
-  rpg fps flight racing sports strategy rhythm)
+GENRES=$(addprefix games/,shmup fighting platform arcade puzzle cards \
+  adventure rpg fps flight racing sports strategy rhythm programming)
 
 js:
 	dune build $(GENRES:%=%/web) --profile=release-js

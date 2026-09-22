@@ -138,6 +138,18 @@ level to solve or a board to win; time pressure, when there is some
 | [TinyMonumentValley](games/puzzle/TinyMonumentValley.ml) | 3D | Monument Valley (ustwo, 2014) | Walk over architecture that cannot exist, trusting the picture. | An orthographic camera's ambiguity as the rule: blocks that look adjacent are walkable; a search over the picture's graph. |
 | [TinyBabaIsYou](games/puzzle/TinyBabaIsYou.ml) | 2D | Baba Is You (Arvi Teikari, 2019) | The rules are words on the board, and you can push them. | The rules as data in the world they rule, rewritten by the player: a game that is its own level editor. |
 
+## Card games
+
+`games/cards/`: a deck of cards and the rules of a game played with
+it -- patience alone, or a table of players; what shows and what is
+hidden, and the luck of the deal, are the game. Every deal has a
+number (Microsoft's, the cards kit's), so a game can be played again.
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinySolitaire](games/cards/TinySolitaire.ml) | 2D | Solitaire, Klondike (Wes Cherry, Microsoft, 1990) | Seven columns, the stock, and four foundations to build, ace to king. | The patience that taught a generation the mouse; face-down cards turned over as they are uncovered, and the luck of what is hidden. |
+| [TinyFreeCell](games/cards/TinyFreeCell.ml) | 2D | FreeCell (Paul Alfille, 1978; Windows, 1995) | All 52 cards face up on eight columns, and four free cells to park them. | Numbered deals, the same on every computer (Microsoft's random generator, written out); the supermove, a run moved at once as the single moves it stands for. |
+
 ## Action-adventure and horror
 
 `games/adventure/`: a world explored in real time, whose rooms, items
@@ -257,6 +269,16 @@ clock rather than the screen's.
 | [TinyDDR](games/rhythm/TinyDDR.ml) | 2D | Dance Dance Revolution (Konami, 1998) | Press each arrow as it reaches the top, in time with the music. | What time is it? Steps judged by the music's clock, the calibration measured from the player; charts computed from the melody. |
 | [TinyGuitarHero](games/rhythm/TinyGuitarHero.ml) | 2.5D | Guitar Hero (Harmonix, 2005) | Hold the fret and strum as each note reaches the line. | The instrument: fret and strum, long notes, a difficulty as the same song reduced; the highway as Out Run's road straightened. |
 | [TinyRockBand](games/rhythm/TinyRockBand.ml) | 3D | Rock Band (Harmonix, 2007) | A band on four highways: play guitar, bass, drums or keys. | The band: four parts from a tune's four voices, four ways of pressing, drums from a percussion voice, one crowd meter. |
+
+## Programming games
+
+`games/programming/`: you win by writing the program that plays --
+the player is a programmer, the game a machine and its rules, and a
+match is programs run against the machine or against each other.
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinyCoreWar](games/programming/TinyCoreWar.ml) | 2D | Core War (A. K. Dewdney and D. G. Jones, 1984) | Two programs in one circular memory, each trying to make the other execute a DAT. | A virtual machine and its assembler, a page each (Redcode, MARS); the classic warriors -- the Imp, the Dwarf, the Mice -- and why each beats the next. |
 
 # Apps
 

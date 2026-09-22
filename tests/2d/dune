@@ -123,6 +123,9 @@
    %{project_root}/games/strategy/software/TinyXCOM.exe
    %{project_root}/games/platform/software/TinyMetroid.exe
    %{project_root}/games/rhythm/software/TinyGuitarHero.exe
+   %{project_root}/games/cards/software/TinyFreeCell.exe
+   %{project_root}/games/cards/software/TinySolitaire.exe
+   %{project_root}/games/programming/software/TinyCoreWar.exe
    %{project_root}/examples/software/LogoFractals.exe
  )
 )

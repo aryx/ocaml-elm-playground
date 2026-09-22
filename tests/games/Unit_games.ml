@@ -5535,6 +5535,114 @@ let metroid_climbs () =
       ("and again", [ High_jump ], (25, 16), 10, 1., 15, (27, 12));
       ("out, into the corridor", [ High_jump ], (27, 12), 10, 1., 10, (28, 11)) ]
 
+(*****************************************************************************)
+(* TinyFreeCell (the cards kit) *)
+(*****************************************************************************)
+
+let names cards = List.map Cards.name cards
+
+(* deal 1, as players know it: its first column, from the last card up,
+ * and the 7 and 6 cards of the columns *)
+let freecell_deal () =
+  let open TinyFreeCell in
+  let g = new_game 1 in
+  Alcotest.(check (list string)) "column 1" [ "6S"; "6D"; "3S"; "4C"; "2S"; "KD"; "JD" ] (names g.columns.(0));
+  Alcotest.(check (list int)) "the columns" [ 7; 7; 7; 7; 6; 6; 6; 6 ] (Array.to_list (Array.map List.length g.columns))
+
+(* a card into a free cell, a card onto one of the other color one
+ * higher, and what the rules refuse *)
+let freecell_moves () =
+  let open TinyFreeCell in
+  let g = new_game 1 in
+  Alcotest.(check bool) "the 9C onto nothing" true (move_cards g (Column 1) 1 (Foundation 0) = None);
+  Alcotest.(check bool) "two cards that are no run" true (move_cards g (Column 0) 2 (Cell 0) = None);
+  let g = Option.get (move_cards g (Column 0) 1 (Cell 0)) in
+  Alcotest.(check (option string)) "the 6S parked" (Some "6S") (Option.map Cards.name g.cells.(0));
+  Alcotest.(check bool) "not into a full cell" true (move_cards g (Column 1) 1 (Cell 0) = None);
+  (* the 6D, uncovered, onto the 8C: not one lower *)
+  Alcotest.(check bool) "the 6D onto the 8C" true (move_cards g (Column 0) 1 (Column 6) = None);
+  Alcotest.(check int) "a move counted" 1 g.moves
+
+(* the header's supermove: 2 free cells and 1 empty column move 6 cards
+ * onto a column, 3 onto the empty one *)
+let freecell_supermove () =
+  let open TinyFreeCell in
+  let g = new_game 1 in
+  let g = { g with cells = [| Some (Cards.of_index 0); Some (Cards.of_index 1); None; None |] } in
+  let columns = Array.copy g.columns in
+  columns.(7) <- [];
+  let g = { g with columns } in
+  Alcotest.(check int) "onto a column" 6 (capacity g (Column 0));
+  Alcotest.(check int) "onto the empty one" 3 (capacity g (Column 7))
+
+(*****************************************************************************)
+(* TinySolitaire (the cards kit) *)
+(*****************************************************************************)
+
+(* deal 1 the Klondike way: 1 to 7 cards, the last face up, 24 in the
+ * stock *)
+let solitaire_deal () =
+  let open TinySolitaire in
+  let g = new_game 1 in
+  Alcotest.(check (list int)) "the columns" [ 1; 2; 3; 4; 5; 6; 7 ] (Array.to_list (Array.map List.length g.columns));
+  Alcotest.(check (list string)) "their last cards" [ "JD"; "5H"; "QC"; "9D"; "AH"; "5C"; "QH" ]
+    (Array.to_list (Array.map (fun col -> Cards.name (fst (List.hd col))) g.columns));
+  Alcotest.(check int) "face up" 7 (Array.fold_left (fun n col -> n + List.length (List.filter snd col)) 0 g.columns);
+  Alcotest.(check int) "the stock" 24 (List.length g.stock)
+
+(* the ace home, and the card under it turned over; the stock through
+ * the waste and back *)
+let solitaire_moves () =
+  let open TinySolitaire in
+  let g = new_game 1 in
+  Alcotest.(check bool) "the ace not onto clubs" true (move_cards g (Column 4) 1 (Foundation 0) = None);
+  let g = Option.get (move_cards g (Column 4) 1 (Foundation 2)) in
+  Alcotest.(check int) "hearts: the ace" 1 g.foundations.(2);
+  Alcotest.(check bool) "the card under it face up" true (snd (List.hd g.columns.(4)));
+  Alcotest.(check bool) "only a king into an empty column" true
+    (let columns = Array.copy g.columns in
+     columns.(0) <- [];
+     move_cards { g with columns } (Column 1) 1 (Column 0) = None);
+  let g = List.fold_left (fun g _ -> turn g) g (List.init 24 Fun.id) in
+  Alcotest.(check (pair int int)) "all turned over" (0, 24) (List.length g.stock, List.length g.waste);
+  let g = turn g in
+  Alcotest.(check (pair int int)) "and back" (24, 0) (List.length g.stock, List.length g.waste)
+
+(*****************************************************************************)
+(* TinyCoreWar *)
+(*****************************************************************************)
+
+(* the labels: the Dwarf as Dewdney printed it, with numbers *)
+let corewar_assemble () =
+  let open TinyCoreWar in
+  let d = dwarf in
+  Alcotest.(check bool) "ADD #4, 3" true (List.nth d.code 0 = { op = ADD; amode = Immediate; a = 4; bmode = Direct; b = 3 });
+  Alcotest.(check bool) "MOV 2, @2" true (List.nth d.code 1 = { op = MOV; amode = Direct; a = 2; bmode = Indirect; b = 2 });
+  Alcotest.(check bool) "JMP -2" true ((List.nth d.code 2).a = -2);
+  Alcotest.(check bool) "SPL @3, 0" true (List.nth mice.code 4 = { op = SPL; amode = Indirect; a = 3; bmode = Direct; b = 0 })
+
+(* the Imp walks a cell a cycle; the Dwarf's first bomb lands 7 cells
+ * from its start, the next 4 further *)
+let corewar_imp_and_dwarf () =
+  let open TinyCoreWar in
+  let m = run (load (imp, dwarf)) 10 in
+  Alcotest.(check (list int)) "the Imp" [ 10 ] m.warriors.(0).queue;
+  Alcotest.(check bool) "a bomb at 407" true (m.core.(407).op = DAT && m.owner.(407) = 2);
+  Alcotest.(check bool) "and at 411" true (m.core.(411).op = DAT && m.owner.(411) = 2)
+
+(* a program running into a DAT dies; the Imp turns the Dwarf into an
+ * Imp, a draw; the Mice multiply and kill the Dwarf *)
+let corewar_fights () =
+  let open TinyCoreWar in
+  let dead = { name = "DAT"; code = [ dat0 ]; entry = 0 } in
+  Alcotest.(check bool) "DAT kills" true (result (run (load (dead, imp)) 5) = Wins 1);
+  Alcotest.(check bool) "Dwarf and Imp: a draw" true (result (run (load (dwarf, imp)) max_cycles) = Draw);
+  let m = run (load (mice, dwarf)) max_cycles in
+  Printf.printf "Mice against Dwarf: %s, cycle %d, %d mice\n"
+    (match result m with Wins 0 -> "Mice" | Wins _ -> "Dwarf" | _ -> "a draw")
+    m.cycles (List.length m.warriors.(0).queue);
+  Alcotest.(check bool) "the Mice win" true (result m = Wins 0)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -5814,4 +5922,12 @@ let tests =
       t "TinyMetroid, a red door" metroid_door;
       t "TinyMetroid, a bomb" metroid_bomb;
       t "TinyMetroid, Kraid feels only missiles" metroid_kraid;
-      t "TinyMetroid, the climbs, with the game's jump" metroid_climbs ]
+      t "TinyMetroid, the climbs, with the game's jump" metroid_climbs;
+      t "TinyFreeCell, deal 1" freecell_deal;
+      t "TinyFreeCell, the moves" freecell_moves;
+      t "TinyFreeCell, the supermove" freecell_supermove;
+      t "TinySolitaire, deal 1 the Klondike way" solitaire_deal;
+      t "TinySolitaire, a card home, the stock round" solitaire_moves;
+      t "TinyCoreWar, the assembler" corewar_assemble;
+      t "TinyCoreWar, the Imp walks, the Dwarf bombs" corewar_imp_and_dwarf;
+      t "TinyCoreWar, three fights" corewar_fights ]

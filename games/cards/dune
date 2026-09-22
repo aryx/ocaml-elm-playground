@@ -1,0 +1,11 @@
+; claude: the card games (CATALOG.md's section), all on the cards kit;
+; on the software rasterizer in software/, in the browser in web/.
+(executables
+  (names TinyFreeCell TinySolitaire)
+  (modules TinyFreeCell TinySolitaire)
+  (libraries
+    elm_playground
+    kit_cards ; the cards, Microsoft's deals, a card drawn
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)

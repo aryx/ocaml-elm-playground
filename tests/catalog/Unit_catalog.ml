@@ -20,8 +20,8 @@ let read file = In_channel.with_open_bin (path file) In_channel.input_all
  * side, so its golden frames are where the catalogue's Dir column says
  * (None): tests/3d for a 3D game, tests/2d for the others *)
 let genres =
-  [ "shmup"; "fighting"; "platform"; "arcade"; "puzzle"; "adventure"; "rpg";
-    "fps"; "flight"; "racing"; "sports"; "strategy"; "rhythm" ]
+  [ "shmup"; "fighting"; "platform"; "arcade"; "puzzle"; "cards"; "adventure"; "rpg";
+    "fps"; "flight"; "racing"; "sports"; "strategy"; "rhythm"; "programming" ]
 
 (* claude: and the apps' categories, most still empty *)
 let categories = [ "office"; "music"; "internet"; "devtools"; "graphics"; "system" ]

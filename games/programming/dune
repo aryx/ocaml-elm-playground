@@ -1,0 +1,11 @@
+; claude: the programming games (CATALOG.md's section): you win by
+; writing the program that plays. On the software rasterizer in
+; software/, in the browser in web/.
+(executables
+  (names TinyCoreWar)
+  (modules TinyCoreWar)
+  (libraries
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
