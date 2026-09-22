@@ -2,10 +2,10 @@
 ; side by side; on the software rasterizers in software/, in the
 ; browser in web/.
 (executables
-  (names AiChess AiConnect4 AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+  (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd)
-  (modules AiChess AiConnect4 AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+  (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd Sokoban_levels)
   (libraries

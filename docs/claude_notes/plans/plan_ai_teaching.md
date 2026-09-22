@@ -626,7 +626,9 @@ from memory until then.)
    keys and the transposition table); `AiConnect4`, whose node counts
    are the test of every one of them -- and which showed that iterative
    deepening can cost rather than save (see the status entry).
-7. **Monte Carlo**: `Mcts` (playouts, then UCT); `AiGo` on 9x9.
+7. **Monte Carlo, DONE**: `Mcts` (playouts, then UCT, and a tree
+   grown a frame at a time); `AiGo` on 9x9, rules and all, with the
+   one rule its playouts need (see the status entry).
 8. **The Playground layer**: `playground/Ai.mli` finished (the five
    families above), `Ai_debug`, and the board-game question settled by
    rewriting AiConnect4 on it.
@@ -797,6 +799,25 @@ from memory until then.)
   with a complete answer), and the table pays its repeats back. The
   plan had assumed the four lines would fall monotonically; they do not,
   and `Deepening.mli` and notes_ai.md section 9 now say why.
+- **Monte Carlo, 2026-09-22**: `Mcts` is the four steps and UCB1
+  (`sqrt 2` by default), with the tree grown in place so a game can
+  keep it in its model -- `search` for all of it at once,
+  `start`/`think`/`plan` for a frame's worth at a time, and the answer
+  is the most visited child rather than the best scoring one. Checked
+  on tic-tac-toe (`Unit_mcts`), where nothing in the code knows what a
+  line of three is worth: 2000 playouts open in the centre, block, and
+  take a win; blocking is 20/20 over 20 seeds against 5/20 at ten
+  playouts; thinking in pieces ends where thinking at once does.
+  `AiGo` is 9x9 Go -- groups and liberties, capture, suicide, simple
+  ko, Chinese scoring with 6.5 komi -- and the two things it taught:
+  the playouts need the eye rule or they say nothing, and a playout's
+  cost is the whole game (15 s a move at first; candidates tried in a
+  random order, a precomputed neighbour table and a stamped scratch
+  array for the flood fill brought 1200 playouts to 1.5 s, and the
+  game now thinks 12 a frame). Its first golden frame was a correct
+  and dull one -- both sides passed and komi decided it -- which is why
+  the board has a keyboard cursor: a scripted game needs to be able to
+  put a stone down.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

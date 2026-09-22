@@ -183,6 +183,81 @@ let connect4_same_move () =
   Alcotest.(check (option int)) "and it is the middle column" (Some 3) tabled
 
 (*****************************************************************************)
+(* AiGo *)
+(*****************************************************************************)
+
+(* claude: Go's rules are the subtle part of that game, and the search
+   knows none of them -- so they are what there is to check. A board
+   written out as nine rows, "." empty, "b" black, "w" white *)
+let go_board (rows : string list) (turn : AiGo.stone) : AiGo.position =
+  let open AiGo in
+  let board = Array.make points Empty in
+  List.iteri
+    (fun r row ->
+      String.iteri
+        (fun c ch ->
+          board.(((size - 1 - r) * size) + c) <- (match ch with 'b' -> Black | 'w' -> White | _ -> Empty))
+        row)
+    rows;
+  { board; turn; ko = None; passes = 0 }
+
+let go_rows (p : AiGo.position) : string list =
+  let open AiGo in
+  List.init size (fun r ->
+      String.init size (fun c ->
+          match p.board.(((size - 1 - r) * size) + c) with Empty -> '.' | Black -> 'b' | White -> 'w'))
+
+let go_captures () =
+  let open AiGo in
+  (* a white stone with one liberty left, on the edge; black takes it *)
+  let p = go_board [ ".........";  ".........";  ".........";  ".........";  ".........";  ".........";  ".b.......";  "bw.......";  ".b......." ] Black in
+  let after = Option.get (put p ((1 * size) + 2)) in
+  Alcotest.(check (list string)) "the white stone is taken off"
+    [ ".........";  ".........";  ".........";  ".........";  ".........";  ".........";  ".b.......";  "b.b......";  ".b......." ]
+    (go_rows after);
+  (* the same point for white would be suicide: no liberty, nothing taken *)
+  let suicide = go_board [ ".........";  ".........";  ".........";  ".........";  ".........";  ".........";  ".b.......";  "b.b......";  ".b......." ] White in
+  Alcotest.(check bool) "white cannot fill it: suicide" true (put suicide ((1 * size) + 1) = None);
+  (* but black may: it is its own eye, and legal *)
+  Alcotest.(check bool) "black may" true (put { suicide with turn = Black } ((1 * size) + 1) <> None)
+
+let go_ko () =
+  let open AiGo in
+  (* the ko shape: black takes one white stone, white may not take it
+     straight back *)
+  (* black plays the empty point, taking the white stone beside it; the
+     three stones around black's are white, so black's is alone with
+     that one liberty -- the shape where taking back would repeat for
+     ever *)
+  let p = go_board [ ".........";  ".........";  ".........";  ".........";  ".........";  ".........";  ".wb......";  "w.wb.....";  ".wb......" ] Black in
+  let taken = Option.get (put p ((1 * size) + 1)) in
+  Alcotest.(check bool) "black took the white stone" true (taken.board.((1 * size) + 2) = Empty);
+  Alcotest.(check (option int)) "and the point it took from is forbidden" (Some ((1 * size) + 2)) taken.ko;
+  Alcotest.(check bool) "white cannot take back at once" true (put taken ((1 * size) + 2) = None)
+
+let go_scoring () =
+  let open AiGo in
+  (* black owns the bottom left corner: four stones around three empty
+     points; white has a stone of its own *)
+  (* five black stones walling off the four points of the corner *)
+  let p = go_board [ ".........";  ".........";  ".........";  ".........";  ".........";  ".......w.";  "bbb......";  "..b......";  "..b......" ] Black in
+  Alcotest.(check (float 0.)) "black: five stones and four points" 9. (area p Black);
+  Alcotest.(check (float 0.)) "white: one stone, no territory" 1. (area p White);
+  Alcotest.(check (float 0.)) "black leads, less komi" (9. -. 1. -. 6.5) (final_score p)
+
+(* claude: and the search plays a legal move, in the time a turn has *)
+let go_plays () =
+  let open AiGo in
+  let t0 = Unix.gettimeofday () in
+  let r = Mcts.search ~seed:1 ~playout go ~playouts:1200 start in
+  let seconds = Unix.gettimeofday () -. t0 in
+  Printf.eprintf "go: 1200 playouts in %.2f s\n" seconds;
+  match r.best with
+  | Some (Put i) -> Alcotest.(check bool) "a legal point" true (put start i <> None)
+  | Some Pass -> Alcotest.fail "it passed on an empty board"
+  | None -> Alcotest.fail "no move at all"
+
+(*****************************************************************************)
 (* TinyBomberman *)
 (*****************************************************************************)
 
@@ -6377,6 +6452,10 @@ let tests =
       t "TinySoldat ai=engine, a bot knows only what it has seen" soldat_senses;
       t "AiConnect4, what each trick saves" connect4_nodes;
       t "AiConnect4, the tricks do not change the move" connect4_same_move;
+      t "AiGo, a capture and a suicide" go_captures;
+      t "AiGo, the ko rule" go_ko;
+      t "AiGo, area scoring" go_scoring;
+      t "AiGo, MCTS plays a legal move" go_plays;
       t "TinyBomberman, a chain reaction" bomberman_chain;
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
       t "TinyMarioKart, Mode 7 there and back" kart_mode7;

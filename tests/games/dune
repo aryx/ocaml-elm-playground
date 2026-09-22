@@ -45,6 +45,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target AiGo.ml)
+ (deps (:src %{project_root}/games/puzzle/AiGo.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyBomberman.ml)
  (deps (:src %{project_root}/games/arcade/TinyBomberman.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

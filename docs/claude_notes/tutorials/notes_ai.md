@@ -28,7 +28,7 @@ because it means a page of code can produce something that looks alive.
 | `Sense`, `Bot` (done) | a mind that plays through the player's own inputs | §6 |
 | `Minimax` (done) | the game tree, and alpha-beta | §7, §8 |
 | `Deepening`, `Zobrist` (done) | making the search go deeper | §9 |
-| `Mcts` | playing without an evaluation function | §10 |
+| `Mcts` (done) | playing without an evaluation function | §10 |
 | `playground/Ai` (steering done) | the Evan-style API over all of it | §14 |
 
 Read §2 to §5 for the real-time half (a world at 60 fps), §7 to §10
@@ -482,12 +482,32 @@ knowledge of the game beyond its rules, it is **anytime** (interrupt it
 at any moment and it has an answer, which is perfect for a frame
 budget), and it does not care how large the branching factor is.
 
-That is the ceiling for a pure MCTS player -- a weak amateur on 9x9 --
-and it is exactly what `games/AiGo.ml` is for, because it is a
-historically real result: in 2006 this beat thirty years of
-handcrafted Go programs. What lifted it to superhuman ten years later
-was replacing the random playouts and the win counts with a neural
-network, which is [`notes_ai_learning.md`](notes_ai_learning.md) §9.
+The first of those is nearly true rather than exactly true, and the
+exception is worth knowing. Uniformly random playouts work on
+tic-tac-toe (`Unit_mcts`: with 2000 playouts a move it opens in the
+centre, blocks a threat and takes a win, blocking 20 times out of 20
+over 20 seeds -- against 5 out of 20 with ten playouts, which is what
+a coin looks like), but in Go they need exactly one rule: **do not
+fill your own eyes**. A random player that fills its own eyes kills
+its own groups, and then the playouts say nothing about the position.
+That one rule -- a point surrounded by your own stones is not played
+-- is the smallest thing that makes random Go mean something, and it
+is where every Monte Carlo Go program starts.
+
+`games/puzzle/AiGo.ml` is that program, on 9x9. It has no evaluation
+function anywhere in it -- grep for one -- and it plays like a weak
+amateur, which is the honest result: pure MCTS on 9x9 in 2006 was
+about that, and it beat thirty years of handcrafted Go programs. The
+numbers on screen are the whole method: a thousand random games, the
+tree of a thousand positions they grew, and the share of them the move
+it chose won. A playout costs about 1.2 ms there, so it thinks a dozen
+a frame for a second and a half a move, never stopping the game --
+which is the anytime property made visible, and is exactly what a
+chess engine cannot do (interrupt alpha-beta and you have nothing; §9
+buys that back with iterative deepening). What lifted this to
+superhuman ten years later was replacing the random playouts and the
+win counts with a neural network, which is
+[`notes_ai_learning.md`](notes_ai_learning.md) §9.
 
 ## 11. Seeing what it thinks
 
@@ -559,7 +579,15 @@ In rough order of difficulty:
   A* searching over *world states*, an action's preconditions and
   effects as the edges, which `Pathfind.problem`'s polymorphic `'node`
   already allows;
-- `Mcts` (§10) and the 9x9 Go it is meant for;
+- playouts in `AiGo` that answer a capture or an atari instead of
+  playing anywhere (the next thing every Monte Carlo Go program did
+  after the eye rule), and RAVE / all-moves-as-first (Gelly and Silver,
+  2007), which lets a move's results elsewhere in a playout count
+  towards it here -- both worth far more per playout than more
+  playouts are;
+- the full ko rule (`AiGo` has the simple one: a move may not take back
+  the single stone that just took), which means keeping the positions
+  already seen;
 - a bot for a *second* genre on `Sense` and `Bot` (§6):
   `gamekits/racing/Topdown.computer` (a racing line) and
   `TinyPong.ml`'s paddle are the two nearest, and a second user is the
@@ -605,8 +633,10 @@ walls, and the demonstration is how quickly that stops being a game
 (§6);
 `Minimax` by `examples/AiTictactoe.ml` (§7, §8), `AiOthello.ml` and
 `AiChess.ml` (with its quiescence, §9); `Deepening` and `Zobrist` by
-`AiConnect4.ml`, which prints what they save after every move (§9). `Behavior` and `Utility` have
-only their tests so far.
+`AiConnect4.ml`, which prints what they save after every move (§9);
+`Mcts` by `AiGo.ml`, the one game here whose opponent has nothing to
+say about a position except how often random play wins it (§10).
+`Behavior` and `Utility` have only their tests so far.
 
 ## Glossary
 
