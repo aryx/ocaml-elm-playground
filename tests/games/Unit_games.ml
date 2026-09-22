@@ -4877,6 +4877,84 @@ let braid_decision () =
   Alcotest.(check bool) "with the shadow on the plate, out" true (reached_exit helped)
 
 (*****************************************************************************)
+(* TinyVVVVVV *)
+(*****************************************************************************)
+
+let vv_frames (n : int) (i : TinyVVVVVV.input) (p : TinyVVVVVV.play) : TinyVVVVVV.play =
+  List.fold_left (fun p i -> TinyVVVVVV.step i p) p (List.init n (fun _ -> i))
+
+let vv_until (i : TinyVVVVVV.input) (stop : TinyVVVVVV.play -> bool) (p : TinyVVVVVV.play) : TinyVVVVVV.play =
+  let rec go n p = if n = 0 || stop p then p else go (n - 1) (TinyVVVVVV.step i p) in
+  go 600 p
+
+(* Viridian standing on the tile (col, row) of room [r] *)
+let vv_on (r : int) (col : int) (row : int) : TinyVVVVVV.play =
+  let open TinyVVVVVV in
+  let x, y = Tilemap.center rooms.(r).map col row in
+  vv_frames 3 nothing { start with room = r; x; y }
+
+(* The flip: from the floor to the ceiling, all the way; and not again
+ * until he stands on something. *)
+let vvvvvv_flip () =
+  let open TinyVVVVVV in
+  let p = vv_frames 5 nothing start in
+  Alcotest.(check bool) "on the floor" true (standing p);
+  let up = step { nothing with flip = true } p in
+  Alcotest.(check bool) "flipped" true up.flipped;
+  let again = step { nothing with flip = true } up in
+  Alcotest.(check bool) "no flip back in the air" true again.flipped;
+  let ceiling = vv_frames 60 nothing again in
+  Alcotest.(check bool) "on the ceiling" true (standing ceiling && ceiling.y > 150.)
+
+(* The first room: up, over the wall on the ceiling, down between the
+ * spikes, and out on the right. *)
+let vvvvvv_first_room () =
+  let open TinyVVVVVV in
+  let right = { dx = 1.; flip = false } in
+  let p = step { nothing with flip = true } (vv_frames 5 nothing start) in
+  let p = vv_until nothing standing (vv_frames 1 nothing p) in
+  let p = vv_frames 10 nothing (vv_until right (fun p -> p.x > 190.) p) in
+  let p = vv_until nothing standing (vv_frames 1 nothing (step { nothing with flip = true } p)) in
+  Alcotest.(check bool) "down past the spikes" true ((not p.flipped) && p.y < 0.);
+  let p = vv_until right (fun p -> p.room = 1 || p.dead > 0) p in
+  Alcotest.(check int) "into the next room" 1 p.room;
+  Alcotest.(check int) "without dying" 0 p.deaths
+
+(* A spike takes him back to the checkpoint touched last. *)
+let vvvvvv_checkpoint () =
+  let open TinyVVVVVV in
+  let p = vv_on 1 2 13 in
+  Alcotest.(check int) "the checkpoint is his" 1 p.save.s_room;
+  let dead = vv_until { dx = 1.; flip = false } (fun p -> p.dead > 0) p in
+  Alcotest.(check int) "the spikes" 1 dead.deaths;
+  let back = vv_frames dying_frames nothing dead in
+  let cx, _ = Tilemap.center rooms.(1).map 2 13 in
+  Alcotest.(check bool) "back at the checkpoint" true (back.dead = 0 && back.room = 1 && back.x = cx)
+
+(* The gravity line: walk off into the pit, and it throws you up to the
+ * ceiling, clear over the pit. *)
+let vvvvvv_gravity_line () =
+  let open TinyVVVVVV in
+  let right = { dx = 1.; flip = false } in
+  let p = vv_until right (fun p -> p.flipped || p.dead > 0) (vv_on 2 2 13) in
+  Alcotest.(check bool) "flipped by the line" true p.flipped;
+  let p = vv_until right standing p in
+  Printf.eprintf "DBG vvvvvv line: on the ceiling at x %.0f\n%!" p.x;
+  Alcotest.(check bool) "on the ceiling, past the pit" true (p.y > 150. && p.x > 160.);
+  let p = vv_until nothing standing (vv_frames 1 nothing (step { nothing with flip = true } p)) in
+  let p = vv_until right (fun p -> p.room = 3 || p.dead > 0) p in
+  Alcotest.(check int) "and out" 3 p.room;
+  Alcotest.(check int) "without dying" 0 p.deaths
+
+(* A room that wraps: fall off the bottom, in at the top, onto the
+ * ledge with the teleporter. *)
+let vvvvvv_wrap () =
+  let open TinyVVVVVV in
+  let x, _ = Tilemap.center rooms.(3).map 12 8 in
+  let p = vv_until nothing arrived { start with room = 3; x; y = -300. } in
+  Alcotest.(check bool) "home" true (arrived p)
+
+(*****************************************************************************)
 (* TinyMetalGearSolid *)
 (*****************************************************************************)
 
@@ -7346,6 +7424,11 @@ let tests =
       t "TinyBraid, mystery: the green key stays in hand" braid_mystery;
       t "TinyBraid, place: time is where you stand" braid_place;
       t "TinyBraid, decision: the shadow holds the plate" braid_decision;
+      t "TinyVVVVVV, the flip goes all the way" vvvvvv_flip;
+      t "TinyVVVVVV, the first room played through" vvvvvv_first_room;
+      t "TinyVVVVVV, back at the checkpoint" vvvvvv_checkpoint;
+      t "TinyVVVVVV, the gravity line" vvvvvv_gravity_line;
+      t "TinyVVVVVV, off the bottom, in at the top" vvvvvv_wrap;
       t "TinyMetalGearSolid, seen in the cone, not behind walls" mgs_seeing;
       t "TinyMetalGearSolid, the box" mgs_box;
       t "TinyMetalGearSolid, the knock" mgs_knock;

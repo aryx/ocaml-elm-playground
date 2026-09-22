@@ -191,6 +191,7 @@ let scenes : Testutil_golden.scene list =
     ("games/shmup/software/TinyDefender", "", 5);
     ("games/platform/software/TinyCeleste", "", 5);
     ("games/platform/software/TinyBraid", "", 5);
+    ("games/platform/software/TinyVVVVVV", "", 5);
     ("games/adventure/software/TinyMetalGearSolid", "", 5);
     ("games/adventure/software/TinyGTA", "", 5);
     ("games/adventure/software/TinyZork", "", 5);
@@ -569,6 +570,9 @@ let scripted : Testutil_golden.scripted list =
     (* run into the first pit, die on its spikes, and hold shift: the
        picture gone sepia, Tim going back up out of the pit *)
     ("games/platform/software/TinyBraid", "rewind", 90, "space:1,right:5-70,Shift:75-90");
+    (* flipped up to the ceiling, walking along it over the wall, the
+       spikes below: upside down, and still smiling *)
+    ("games/platform/software/TinyVVVVVV", "ceiling", 90, "space:1,space:12,right:30-100");
     (* a knock on his room's wall: the guard next door has heard it
        ('?'), and comes round through the door by A*; the radar in the
        corner is the only place the cones are drawn *)
@@ -1160,6 +1164,7 @@ let flagged : Testutil_golden.flagged list =
   [
     ("games/platform/software/TinyMario", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyCeleste", "shapes", 5, [ "artwork=shapes" ]);
+    ("games/platform/software/TinyVVVVVV", "shapes", 5, [ "artwork=shapes" ]);
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged scenes
