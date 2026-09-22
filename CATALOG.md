@@ -91,10 +91,11 @@ own trick and once by playground3d (see `games2.5d/README.md`).
 | [TinyFlappyBird](games/TinyFlappyBird.ml) | 2D | Flappy Bird (Dong Nguyen, .GEARS, 2013) | One button: flap through the gaps between pipes. | A flap that sets the velocity; an endless world made and dropped as you fly; randomness from an LFSR kept in the model. |
 | [StarCollector3d](games3d/StarCollector3d.ml) | 3D | nateabele's elm-3d-playground example | Walk a 3D field collecting stars: the smallest 3D game here. | The first 3D game; moving by hand or pushed by forces (`physics=engine`), and a tumbling body's quaternion drawn. |
 
-## Puzzle
+## Puzzle and board games
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
+| [AiChess](games/AiChess.ml) | 2D | Chess, as Claude Shannon's "Programming a Computer for Playing Chess" (1950) set it for computers | Chess against a computer thinking 3 moves ahead with alpha-beta. | Rules checked by perft; move ordering (most valuable victim first); quiescence, the captures played out at the leaves against the horizon effect. |
 | [AiOthello](games/AiOthello.ml) | 2D | Othello (Goro Hasegawa, 1971) | Othello against a computer thinking 4 moves ahead with alpha-beta. | Game-tree search: alpha-beta, an evaluation table, and its cuts counted against plain minimax. |
 | [TinySokoban](games/TinySokoban.ml) | 2D | Sokoban (Hiroyuki Imabayashi, Thinking Rabbit, 1982) | Push every box onto a goal, one at a time, never pulling. | Deep puzzles from a few rules (PSPACE-complete); undo for free, since the model is a value; levels checked by breadth-first search. |
 | [Tetris](games/Tetris.ml) | 2D | Tetris (Alexey Pajitnov, 1984), via elm-flatris | Falling pieces, full lines cleared. | Falling pieces and cleared lines on a grid; a port from Elm. |

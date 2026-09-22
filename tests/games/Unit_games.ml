@@ -2476,6 +2476,76 @@ let othello_greedy () =
   Alcotest.(check bool) "the computer wins" true (count !p White > count !p Black)
 
 (*****************************************************************************)
+(* AiChess (an example, ai/'s Minimax) *)
+(*****************************************************************************)
+
+(* perft: every position 1, 2, 3 moves ahead, counted, against the
+ * numbers every chess programmer checks theirs with (the Chess
+ * Programming Wiki's "Perft Results") *)
+let chess_perft () =
+  let open AiChess in
+  let check name fen counts =
+    let p = of_fen fen in
+    List.iteri (fun i n -> Alcotest.(check int) (Printf.sprintf "%s, %d moves ahead" name (i + 1)) n (perft p (i + 1))) counts
+  in
+  check "the start" "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" [ 20; 400; 8902 ];
+  (* castling both ways for both, pins, en passant, promotions *)
+  check "Kiwipete" "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1" [ 48; 2039 ];
+  (* an endgame where en passant can uncover a check on its own king *)
+  check "position 3" "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1" [ 14; 191; 2812 ];
+  (* promotions that capture, white in check *)
+  check "position 4" "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1" [ 6; 264; 9467 ]
+
+(* the three moves that do more than move a piece *)
+let chess_special_moves () =
+  let open AiChess in
+  let mv from dest = { from; dest; promotion = None } in
+  (* e5xd6 en passant: the pawn taken is on d5 *)
+  let p = of_fen "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1" in
+  Alcotest.(check bool) "e5xd6 is legal" true (List.mem (mv 28 19) (legal p));
+  let q = play p (mv 28 19) in
+  Alcotest.(check bool) "d5 is empty" true (q.board.(27) = None);
+  (* e1-g1: the rook jumps to f1, and neither may castle again *)
+  let p = of_fen "4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1" in
+  let q = play p (mv 60 62) in
+  Alcotest.(check bool) "the rook on f1" true (q.board.(61) = Some { color = White; kind = Rook } && q.board.(63) = None);
+  Alcotest.(check bool) "no more castling" false (q.white_short || q.white_long);
+  (* a7-a8: four moves, one per piece *)
+  let p = of_fen "4k3/P7/8/8/8/8/8/4K3 w - - 0 1" in
+  Alcotest.(check int) "four promotions" 4 (List.length (List.filter (fun m -> m.from = 8) (legal p)));
+  Alcotest.(check bool) "a queen" true ((play p { from = 8; dest = 0; promotion = Some Queen }).board.(0) = Some { color = White; kind = Queen })
+
+(* the search: mate in one for either side, and a queen left hanging *)
+let chess_search () =
+  let open AiChess in
+  let best fen = Option.get (search ~ordered:true ~quiescence:true ~depth (of_fen fen)).best in
+  let m = best "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1" in
+  Alcotest.(check (pair int int)) "white: Ra8 mate" (56, 0) (m.from, m.dest);
+  let m = best "r5k1/5ppp/8/8/8/8/5PPP/6K1 b - - 0 1" in
+  Alcotest.(check (pair int int)) "black: Ra1 mate" (0, 56) (m.from, m.dest);
+  let m = best "4k3/8/2n5/8/1Q6/8/8/4K3 b - - 0 1" in
+  Alcotest.(check (pair int int)) "the knight takes the queen" (18, 33) (m.from, m.dest)
+
+(* the horizon effect: one move ahead, Qxe5 wins a pawn -- unless the
+ * search goes on to see d6xe5 *)
+let chess_quiescence () =
+  let open AiChess in
+  let p = of_fen "4k3/8/3p4/4p3/8/8/8/4QK2 w - - 0 1" in
+  let best quiescence = Option.get (search ~ordered:true ~quiescence ~depth:1 p).best in
+  let takes m = m.from = 60 && m.dest = 28 in
+  Alcotest.(check bool) "without quiescence, Qxe5" true (takes (best false));
+  Alcotest.(check bool) "with it, not" false (takes (best true))
+
+(* move ordering: the same value, fewer positions *)
+let chess_ordering () =
+  let open AiChess in
+  let p = of_fen "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1" in
+  let o = search ~ordered:true ~quiescence:false ~depth p and u = search ~ordered:false ~quiescence:false ~depth p in
+  Printf.printf "ordered: %d positions, unordered: %d\n" o.nodes u.nodes;
+  Alcotest.(check (float 0.)) "the same value" u.value o.value;
+  Alcotest.(check bool) "fewer positions" true (o.nodes < u.nodes)
+
+(*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
 
@@ -5216,6 +5286,11 @@ let tests =
       t "AiOthello, the rules" othello_rules;
       t "AiOthello, alpha-beta agrees with minimax" othello_alphabeta;
       t "AiOthello, the computer beats a greedy player" othello_greedy;
+      t "AiChess, perft" chess_perft;
+      t "AiChess, en passant, castling, promotion" chess_special_moves;
+      t "AiChess, mates in one and a hanging queen" chess_search;
+      t "AiChess, quiescence against the horizon effect" chess_quiescence;
+      t "AiChess, move ordering" chess_ordering;
       t "TinyTron, the computer outlasts a straight line" tron_computer;
       t "TinyDungeonMaster, the key, the door, the lever, the stairs" dungeon_master_winnable;
       t "TinyDungeonMaster, the dance" dungeon_master_dance;
