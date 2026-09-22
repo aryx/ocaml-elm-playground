@@ -84,6 +84,7 @@
    %{project_root}/examples/software/AiPerceptron.exe
    %{project_root}/examples/software/AiNeuralNet.exe
    %{project_root}/examples/software/AiDigits.exe
+   %{project_root}/examples/software/AiQlearn.exe
    %{project_root}/games/arcade/software/TinyFlappyBird.exe
    %{project_root}/games/arcade/software/TinyFrogger.exe
    %{project_root}/games/arcade/software/TinyLunarLander.exe

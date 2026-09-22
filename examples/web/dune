@@ -35,6 +35,7 @@
 (copy_files ../AiPerceptron.ml)
 (copy_files ../AiNeuralNet.ml)
 (copy_files ../AiDigits.ml)
+(copy_files ../AiQlearn.ml)
 (copy_files ../LogoFractals.{ml,mli})
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
@@ -73,7 +74,7 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
-    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits
+    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
     LogoFractals
     BigBangRocket
     BigBangWorm

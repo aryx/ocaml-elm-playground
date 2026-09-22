@@ -672,10 +672,11 @@ from memory until then.)
    ruthless check on a move generator), search second.
 10. **Learning, DONE**: `Matrix`, `Neuron`, `Net`, `Backprop`, `Grad`
     and `Train`, with `AiPerceptron`, `AiNeuralNet` and `AiDigits`.
-11. **Learning to play**: `Qlearn`; `AiQlearn`; tic-tac-toe learned by
-    self-play, then measured against the minimax player it cannot beat
-    but can learn to draw with; and the network as `AiGo`'s playout
-    policy and evaluation -- AlphaGo's shape, at a size that runs here.
+11. **Learning to play, mostly DONE**: `Qlearn` and `AiQlearn` written,
+    and tic-tac-toe learned by playing the minimax player it cannot
+    beat -- after four thousand games it draws every time. What is
+    left is the last piece: the network as `AiGo`'s playout policy and
+    evaluation, AlphaGo's shape at a size that runs here.
 12. **Docs**: `notes_ai.md` and `notes_ai_learning.md` checked against
     the code, the numbers filled in;
     `notes_ai_related_work.md`'s postscript.
@@ -947,6 +948,19 @@ from memory until then.)
   own Hershey font draws, shaken and inked by distance to the strokes;
   about 80% on held-out digits after six thousand examples, and worse
   on a mouse-drawn one, which is the point.
+- **Qlearn, 2026-09-22**: the rule, the cliff world, and the thing
+  the writing turned up. The plan (and the tutorial) said "turning
+  exploration to zero visibly stops the learning". On the cliff it
+  does not: every step costs 1, an untried action is worth 0, so
+  greedy behaviour is exploratory all by itself and a learner with
+  exploration off still finds the 13-step optimum. Optimism in the
+  initial values, switched on by the sign of the rewards. The test now
+  shows both halves -- pay only at the goal and the same learner ends
+  with four state-action pairs after five hundred episodes and never
+  reaches it -- which is a better lesson than the one that was
+  planned. And the old result, working: as X against a perfect player
+  it loses at first and draws after four thousand games (400 positions
+  learned), which is Samuel 1959 in twenty lines.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

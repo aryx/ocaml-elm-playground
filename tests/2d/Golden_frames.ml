@@ -171,6 +171,7 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AiPerceptron", "", 3);
     ("examples/software/AiNeuralNet", "", 3);
     ("examples/software/AiDigits", "", 3);
+    ("examples/software/AiQlearn", "", 3);
     ("games/puzzle/software/AiConnect4", "", 3);
     ("games/puzzle/software/AiGo", "", 3);
     ("games/puzzle/software/AiOthello", "", 3);
@@ -451,6 +452,10 @@ let scripted : Testutil_golden.scripted list =
      * network that has seen six thousand of them: the bars say what
      * it was torn between *)
     ("examples/software/AiDigits", "digit", 95, "n:3");
+    (* claude: two hundred episodes of falling off the cliff, the
+     * values seeped back across the grid, and the greedy way it has
+     * learned drawn over them: thirteen steps along the edge *)
+    ("examples/software/AiQlearn", "learned", 95, "f:2,g:90");
     ("games/puzzle/software/AiOthello", "values", 3, "v:2");
     ("games/strategy/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
     ("games/platform/software/TinySonic", "loop", 330, "space:1,right:5-330");

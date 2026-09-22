@@ -25,7 +25,7 @@ formula is one a reader can check with a pen.
 | `Backprop` (done) | the loss, gradient descent, the chain rule | §3, §4 |
 | `Grad` (done) | reverse-mode autodiff: the same, written once | §5 |
 | `Train` (done) | batches, learning rate, train/test, the loop | §6 |
-| `Qlearn` | rewards, temporal difference, Q-learning | §8 |
+| `Qlearn` (done) | rewards, temporal difference, Q-learning | §8 |
 
 Sections 1 to 7 are supervised learning (here are the answers, find the
 rule); 8 and 9 are learning to *play*, where nobody knows the answers
@@ -341,9 +341,28 @@ a model of the world at all -- you never have to know what a move does,
 only what happened after it. On a small grid world that is a table, and
 `examples/AiQlearn.ml` draws it: four numbers per cell, an arrow for
 the best, a cliff to fall off, and the policy appearing over a few
-thousand episodes. The exploration knob (`epsilon`: act randomly this
-often) is right there to turn, and turning it to zero visibly stops
-the learning.
+hundred episodes -- watch the values seep backwards from the goal at
+about one cell per episode, which is exactly how far one use of the
+rule can carry them.
+
+The exploration knob has a trapdoor in it, and the example ("e") and
+the tests both open it. An action never tried is worth 0. Where every
+step *costs* something -- this cliff, one point a step -- nought is
+better than anything already tried, so a purely greedy learner tries
+everything once anyway and still finds the shortest way with
+exploration switched off. That is optimism in the initial values
+(Sutton and Barto 2.6), turned on by accident by the *sign* of the
+rewards. Pay only at the goal instead ("p") and the optimism goes: the
+same learner does the same thing five hundred episodes running, ends
+with **four** state-action pairs in its whole table, and never reaches
+the goal at all.
+
+Off-policy is the other thing to watch. The rule uses the best it
+*could* do next, not what it will actually do, so it learns the
+cliff-edge path -- the shortest one -- while behaving carelessly
+enough to fall in eighty times ("g" walks what it has learned,
+without dice). Learning about the policy actually followed is SARSA,
+one symbol's difference, and it keeps a safer distance.
 
 The history is the argument for taking this seriously at small scale.
 Arthur Samuel's checkers player (1959) learned by playing itself on an
