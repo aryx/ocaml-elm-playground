@@ -27,6 +27,7 @@ same mistake, with the same cure.
 | `Mix` | adding sounds, volume, decibels, clipping | §5 |
 | `Spectrum` | the Fourier transform: which frequencies a sound has | §6 |
 | `Filter` | low-pass, high-pass, resonance | §7 |
+| `Fm` | FM synthesis: sidebands from two sines | §7 |
 | `Effect`, `Sfx` | slides, vibrato, echo; game sounds from parameters | §8 |
 | `Music` | notes, equal temperament, a sequencer | §9 |
 | `Wav` | writing samples to a file | §2 |
@@ -208,6 +209,17 @@ Bristow-Johnson's cookbook gives them for every classic filter) adds
 whose cutoff moves. Filtered noise is most of the sound effects there
 are: a low-passed noise is a rumble, an explosion, a ship's engine; a
 high-passed one a hiss, a cymbal.
+
+The other way to a rich spectrum is to make one rather than carve one:
+**FM synthesis** (John Chowning, Stanford, 1973), one sine wobbling
+the phase of another at an audio rate, `sin(2 pi fc t + I sin(2 pi fm
+t))`. The spectrum gets sidebands at fc +- k fm, of amplitude the
+Bessel function J_k(I): the ratio fm / fc says where they fall (a whole
+number on the harmonics, an instrument; otherwise between them, a bell),
+the index I how many are loud (the brightness), and making the index
+follow the envelope gives a note bright when struck and darker as it
+dies. Two sines and three numbers: the Yamaha DX7's sound, and the Sega
+Genesis's and the Sound Blaster's (`audio/Fm`).
 
 ## 8. Game sounds from a few parameters
 

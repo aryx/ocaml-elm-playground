@@ -471,6 +471,38 @@ audio meeting).
   Golden frames: TinyMario's music as both (and the "h" help's new
   line). The naive squares' aliasing is already visible on it, spread
   over the high frequencies: phase 6's subject.
+- **Phase 6, DONE, with FM**: `Oscillator.wave_band_limited`, PolyBLEP
+  (Välimäki and Huovilainen, 2007) next to the naive waveforms, the
+  square's two jumps and the sawtooth's one corrected over two samples;
+  the triangle left naive (its aliases already ~31 dB quieter; PolyBLAMP
+  an exercise). Measured (`Unit_oscillator`, a 1001 Hz square with its
+  harmonics on FFT bins): the loudest alias below 5 kHz from -30 to
+  -72 dB, anywhere only from -25 to -34 (those just under Nyquist), the
+  price the 9th harmonic 1.2 dB quieter. `Synth`'s `Wave` is now the
+  band-limited one, `Naive` the old one (`Audio.naive`): the Frere
+  Jacques golden WAVs changed only on the jumps (3667 of 3669 samples),
+  TinyMario's spectrum frame barely (its notes are low). `audio/Filter`:
+  the one-pole (a = 0.133 at 1 kHz: -3.00 dB at the cutoff) and the
+  biquad (Bristow-Johnson's cookbook: low, high, band-pass; -3.01 dB at
+  the cutoff, Q = 10's +20 dB), `response` from the transfer function
+  equal to the gain measured on filtered sines, and `sweep` (the wah:
+  +14 dB as the cutoff passes a 1 kHz sine, Q = 5). `audio/Fm`
+  (Chowning): the sidebands' amplitudes checked against the Bessel
+  functions to 0.001; a fading FM voice's index follows its envelope (a
+  bell's spectral centroid 1948 Hz at 0.1 s, 687 at 1.5 s). `Synth`'s
+  `Filtered` node; `Audio.fm`, `low_pass`, `high_pass`, `wah` (its
+  sound turned down first, the resonance ringing 5 times as loud;
+  filters ignored by `keep_playing`). `examples/AudioAliasing.ml`: a
+  square's spectrum from 0 to Nyquist, harmonics yellow, aliases red,
+  space naive / band-limited; its pitch kept on a multiple of the FFT's
+  10.77 Hz so each bar is a harmonic or an alias, not a window's leak
+  (a first version, windowed, painted the leak red: misleading).
+  Golden WAVs: the band-limited square and sawtooth, an FM bell, noise
+  low-passed, a sawtooth's wah (plotted before approving; the wah first
+  clipped, the sawtooth turned down). Left: a debug key switching every
+  oscillator naive (only per sound now), PolyBLAMP for the triangle,
+  filters on continuous sounds, the ready-made sounds remade with the
+  filters (phase 7's `Sfx`).
 - **Asked by the user (phase 5)**: subtractive synthesis (a rich wave
   through a resonant low-pass: phase 6's Filter), FM synthesis
   (Chowning: to add with phase 6, small, and made for the spectrum),

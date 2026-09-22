@@ -21,6 +21,7 @@
 (copy_files ../PhysicsSolarSystem.{ml,mli})
 (copy_files ../AudioTheremin.{ml,mli})
 (copy_files ../AudioPiano.{ml,mli})
+(copy_files ../AudioAliasing.{ml,mli})
 (copy_files ../AiTictactoe.ml)
 (copy_files ../AiPathfinding.ml)
 (copy_files ../AiSteering.ml)
@@ -63,7 +64,7 @@
     Turtle Mario
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
-    AudioTheremin AudioPiano
+    AudioTheremin AudioPiano AudioAliasing
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts
     LogoFractals
     BigBangRocket

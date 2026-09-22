@@ -45,6 +45,18 @@ let chord () : Signal.t =
 let sounds : (string * (unit -> Signal.t)) list =
   List.map (fun w -> (Oscillator.name w ^ "_440", fun () -> Oscillator.render w ~frequency:440. 0.25)) Oscillator.waveforms
   @ [ ("noise_long", fun () -> Noise.render ~rate:22050. 0.25); ("noise_short", fun () -> Noise.render ~mode:Short ~rate:22050. 0.25) ]
+  (* the same, band-limited (PolyBLEP: Oscillator.mli): the samples on
+   * each jump pulled towards the middle *)
+  @ List.map
+      (fun w -> (Oscillator.name w ^ "_440_band_limited", fun () -> Oscillator.render ~band_limited:true w ~frequency:440. 0.25))
+      [ Oscillator.Square; Sawtooth ]
+  (* phase 6's other sounds: an FM bell (Fm.mli), noise low-passed (a
+   * rumble) and a sawtooth through a sweeping resonant low-pass (the
+   * wah: Filter.mli; the sawtooth at a quarter, the resonance ringing
+   * up to 5 times as loud) *)
+  @ [ ("fm_bell", fun () -> Synth.render (Synth.voice (Fm { ratio = 1.4; index = 5. }) 440. |> Synth.lasting 1. |> Synth.fading));
+      ("noise_low_pass", fun () -> Filter.low_pass ~cutoff:300. (Noise.render ~rate:22050. 0.25));
+      ("sawtooth_wah", fun () -> Filter.sweep Low_pass ~q:5. ~from:200. ~to_:4000. (Mix.gain 0.25 (Oscillator.render ~band_limited:true Sawtooth ~frequency:110. 1.))) ]
   (* the click: three short beeps cut at once, then the same three
    * enveloped (Envelope.mli) *)
   @ [ ("beeps_cut", fun () -> beeps (fun s -> s));

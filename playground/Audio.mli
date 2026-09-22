@@ -32,7 +32,8 @@
    Underneath is a small synthesizer written to be read, audio/ (see
    docs/claude_notes/notes_audio.md): oscillators (Oscillator.mli),
    noise from the NES's shift register (Noise.mli), envelopes so nothing
-   clicks (Envelope.mli), and a mixer adding it all up (Mixer.mli).
+   clicks (Envelope.mli), FM (Fm.mli), filters (Filter.mli), and a mixer
+   adding it all up (Mixer.mli).
 *)
 
 open Playground
@@ -58,6 +59,15 @@ val sawtooth : number -> sound
    [roughness] from 500 (a rumble) to 10,000 (a hiss) *)
 val noise : number -> sound
 
+(* [fm frequency ratio depth]: two sines, one wobbling the other (John
+   Chowning's FM, the Yamaha DX7's and the Sega Genesis's sound:
+   audio/Fm.mli): [ratio] a whole number for an instrument (1 brass, 2
+   a clarinet), in between for a bell or a gong (1.4); [depth] from 0 (a
+   plain tone) to 10 (very bright). Fading, it gets darker as it dies
+   away, like a struck bell:
+     let bell = fm 440 1.4 5 |> lasting 2 |> fading *)
+val fm : number -> number -> number -> sound
+
 (* [note name]: the tone of a note, "A4" (440 Hz), "C4" (middle C),
    "F#5", "Bb3" (audio/Music.mli: equal temperament); silent if it isn't
    a note *)
@@ -78,6 +88,27 @@ val louder : number -> sound -> sound
 (* [sliding frequency s]: its pitch moving to [frequency] over its
    length: up for a jump, down for a laser or a falling bomb *)
 val sliding : number -> sound -> sound
+
+(* [low_pass cutoff s], [high_pass cutoff s]: [s] with its frequencies
+   above [cutoff] (in hertz) taken away, or those below: muffled, or
+   thin. Noise low-passed is a rumble, an engine, an explosion; high-
+   passed, a hiss, a cymbal (audio/Filter.mli):
+     let engine = noise 3000 |> low_pass 300 *)
+val low_pass : number -> sound -> sound
+val high_pass : number -> sound -> sound
+
+(* [wah from to_ s]: [s] through a low-pass that rings at its cutoff,
+   the cutoff moving from [from] to [to_] over the sound: the "wah" of
+   the analog synthesizers, sweeping through the harmonics of a rich
+   sound (a sawtooth, a square):
+     let wow = sawtooth 110 |> lasting 1 |> wah 200 4000 *)
+val wah : number -> number -> sound -> sound
+
+(* [naive s]: the square, triangle and sawtooth waves of [s] computed
+   the simple way, a formula, with their aliases: high notes whistle
+   out of tune (the default removes most of them: audio/Oscillator.mli;
+   examples/AudioAliasing.ml lets you hear both) *)
+val naive : sound -> sound
 
 (* [together sounds]: at the same time, a chord; lasting as long as the
    longest *)
@@ -130,8 +161,8 @@ val step : sound (* a soft, low tick: footsteps *)
 val play : sound -> unit
 
 (* [keep_playing name s]: [s] playing while this is called every frame,
-   [name] saying it's the same sound from frame to frame (its length
-   and fading ignored: it lasts as long as it's kept) *)
+   [name] saying it's the same sound from frame to frame (its length,
+   fading and filters ignored: it lasts as long as it's kept) *)
 val keep_playing : string -> sound -> unit
 
 (* [loop name s]: [s] played over and over, background music, until

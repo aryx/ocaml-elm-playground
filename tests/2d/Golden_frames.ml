@@ -142,6 +142,8 @@ let scenes : Testutil_golden.scene list =
     (* the audio plan's first examples (their sounds: -dump-audio) *)
     ("examples/software/AudioTheremin", "", 2);
     ("examples/software/AudioPiano", "", 2);
+    (* a naive 1250 Hz square: its aliases in red, all over the spectrum *)
+    ("examples/software/AudioAliasing", "", 2);
     ("examples/software/AiTictactoe", "", 3);
     ("examples/software/AiPathfinding", "", 60);
     (* claude: seek, the mouse at the centre: a curve into it *)
@@ -341,6 +343,9 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/PhysicsSolarSystem", "later", 120, "up:2,up:4");
     (* keys held, lit; the square wave *)
     ("examples/software/AudioPiano", "keys", 30, "space:2,a:10-30,g:10-30,u:10-30");
+    (* band-limited, then an octave up (12 semitones): 2500 Hz, the low
+     * aliases gone, those near Nyquist left *)
+    ("examples/software/AudioAliasing", "band_limited", 20, "space:2,right:5-16");
     ("examples/software/AiTictactoe", "played", 40, "space:2");
     ("examples/software/AiPathfinding", "breadth_first", 120, "b:2");
     ("examples/software/AiPathfinding", "dijkstra", 120, "d:2");

@@ -31,11 +31,57 @@
  * past the Nyquist frequency, where they fold back as aliases
  * (Signal.alias): a 1000 Hz square's 23rd, 25th, 27th harmonics (23,
  * 25, 27 kHz) are heard at 21.1, 19.1, 17.1 kHz, not harmonics of 1000
- * Hz: a harsh whistle over high notes. The band-limited versions come
- * later in the plan (PolyBLEP, phase 6), next to these, switchable.
+ * Hz: a harsh whistle over high notes.
+ *
+ * The band-limited versions, [wave_band_limited], next to these: the
+ * same formula, with each jump smoothed over the samples around it by
+ * a small polynomial, PolyBLEP (a "band-limited step"). An ideal jump
+ * sampled has harmonics forever; a jump band-limited to Nyquist is a
+ * smeared one, rising over a sample or two with a small overshoot; the
+ * polynomial is a cheap stand-in for the difference between the two,
+ * added where the jump is:
+ *
+ *     naive square               band-limited (PolyBLEP)
+ *       1 . . .                   1 . . .
+ *                |                        '
+ *                |                         .       the sample just
+ *      -1        . . . .         -1          . . .  before and just
+ *              ^ jump                               after the jump pulled
+ *                                                   towards the middle
+ *
+ * The correction for a jump up by 2 at phase 0, t the phase and dt =
+ * frequency / rate the phase step (a sample's worth of phase):
+ *
+ *     t < dt      (just after):  u = t / dt,        2u - u^2 - 1
+ *     t > 1 - dt  (just before): u = (t - 1) / dt,  u^2 + 2u + 1
+ *     otherwise 0
+ *
+ * -1 right at the jump (the naive 1 becomes 0, the middle), back to 0
+ * one sample away: only two samples per jump change, so it costs
+ * almost nothing. It's the audio twin of antialiasing a polygon's edge
+ * (graphics/2d's coverage): the pixels on the edge get in-between
+ * values, the samples on the jump too. The square has two jumps (up at
+ * 0, down at 0.5), the sawtooth one (down by 2 at 0, so the correction
+ * is subtracted). The sine has no jump, and the triangle only corners,
+ * whose harmonics fall as 1/n^2 instead of 1/n: its aliases are about
+ * 30 dB quieter than the square's, left as they are (the corners' own
+ * fix, PolyBLAMP, a band-limited ramp, is the next step: an exercise).
+ *
+ * Example, a 1001 Hz square (Unit_oscillator): its loudest alias below
+ * 5 kHz, where one would be out of tune among the harmonics, drops from
+ * -30 dB to -72 dB; the loudest anywhere only from -25 to -34 dB: those
+ * just under Nyquist, folded from just above it, where a two-sample
+ * correction can't tell them apart from the harmonics it must keep.
+ * The price: the top harmonics dulled a little, the 5th (5 kHz) by 0.4
+ * dB, the 9th by 1.2 dB.
  *
  * References: Joseph Fourier, Théorie analytique de la chaleur, 1822;
- * Curtis Roads, The Computer Music Tutorial, 1996, chapter 4. *)
+ * Curtis Roads, The Computer Music Tutorial, 1996, chapter 4; Tim
+ * Stilson, Julius Smith, "Alias-Free Digital Synthesis of Classic
+ * Analog Waveforms", ICMC 1996 (the band-limited step, BLEP); Vesa
+ * Välimäki, Antti Huovilainen, "Antialiasing Oscillators in
+ * Subtractive Synthesis", IEEE Signal Processing Magazine, 2007
+ * (PolyBLEP, the polynomial one). *)
 
 type waveform = Sine | Square | Triangle | Sawtooth
 
@@ -45,6 +91,14 @@ val name : waveform -> string
 (* [wave w phase]: the waveform at [phase], in [0, 1) *)
 val wave : waveform -> float -> float
 
+(* [polyblep ~dt t]: the correction above, for a jump up by 2 at phase
+ * 0 *)
+val polyblep : dt:float -> float -> float
+
+(* [wave_band_limited w ~dt phase]: [wave w phase] with its jumps
+ * smoothed, [dt] the phase step, frequency / rate *)
+val wave_band_limited : waveform -> dt:float -> float -> float
+
 (* an oscillator: its waveform, its frequency (Hz), where it is in its
  * period *)
 type t = { waveform : waveform; frequency : float; phase : float }
@@ -52,9 +106,11 @@ type t = { waveform : waveform; frequency : float; phase : float }
 (* [make w frequency]: at phase 0 *)
 val make : waveform -> float -> t
 
-(* [next o]: its current sample, and the oscillator one sample later
- * (the phase advanced by frequency / rate, wrapped) *)
-val next : t -> float * t
+(* [next o]: its current sample (the naive one unless [band_limited]),
+ * and the oscillator one sample later (the phase advanced by
+ * frequency / rate, wrapped) *)
+val next : ?band_limited:bool -> t -> float * t
 
-(* [render w ~frequency seconds]: [seconds] of it, from phase 0 *)
-val render : waveform -> frequency:float -> float -> Signal.t
+(* [render w ~frequency seconds]: [seconds] of it, from phase 0, the
+ * naive one unless [band_limited] *)
+val render : ?band_limited:bool -> waveform -> frequency:float -> float -> Signal.t

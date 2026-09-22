@@ -19,19 +19,27 @@
  *
  * Rendering: each voice its oscillator (Oscillator's phase accumulator,
  * the frequency moving from [frequency] to [slide] over the voice, for
- * a laser's or a jump's sweep) or its noise (Noise's LFSR, stepped
- * [frequency] times a second: its "pitch"), times its volume, times its
+ * a laser's or a jump's sweep; band-limited, unless [Naive]), its FM
+ * pair (Fm.mli: a fading voice's index following its envelope, bright
+ * when struck, darker as it dies, Chowning's way) or its noise (Noise's
+ * LFSR, stepped [frequency] times a second: its "pitch"), times its
+ * volume, times its
  * envelope: [fade], a percussive one, attack 5 ms then down to 0 over
  * the rest; otherwise 5 ms ramps in and out, so that even a plain voice
  * never clicks (Envelope.mli). Then Mix.add for together, Mix.then_ for
- * after.
+ * after, and a filter (Filter.mli) over a sound's samples for
+ * [Filtered]: subtractive synthesis, a rich sound with some taken away.
  *
  * References: Paul Hudak, Donovan Quick, The Haskell School of Music:
  * From Signals to Symphonies, Cambridge University Press, 2018,
  * chapter 1 (Music values, (:+:) and (:=:)); Euterpea,
  * https://www.euterpea.com *)
 
-type source = Wave of Oscillator.waveform | Noise
+type source =
+  | Wave of Oscillator.waveform (* band-limited (Oscillator.mli) *)
+  | Naive of Oscillator.waveform (* the formula of the phase, aliasing *)
+  | Fm of { ratio : float; index : float } (* the modulator's ratio *)
+  | Noise
 
 type voice = {
   source : source;
@@ -49,6 +57,11 @@ type t =
   (* samples already computed: a MIDI file's rendering (Music.render_score),
    * untouched by the modifiers below *)
   | Samples of Signal.t
+  (* the sound through a biquad (Filter.mli), its cutoff moving from
+   * [cutoff] to [cutoff_to] over it (the same: fixed) *)
+  | Filtered of filter * t
+
+and filter = { kind : Filter.kind; cutoff : float; cutoff_to : float; q : float }
 
 (* [voice source frequency]: 0.3 s at volume 0.5, not sliding nor fading *)
 val voice : source -> float -> t
@@ -58,6 +71,7 @@ val lasting : float -> t -> t
 val fading : t -> t
 val louder : float -> t -> t (* the volume multiplied *)
 val sliding : float -> t -> t (* to that frequency *)
+val naive : t -> t (* Wave to Naive *)
 
 (* [duration s]: in seconds (see above) *)
 val duration : t -> float

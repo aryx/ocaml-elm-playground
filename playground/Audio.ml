@@ -17,6 +17,7 @@ let square f = Synth.voice (Wave Square) f
 let triangle f = Synth.voice (Wave Triangle) f
 let sawtooth f = Synth.voice (Wave Sawtooth) f
 let noise roughness = Synth.voice Noise roughness
+let fm f ratio index = Synth.voice (Fm { ratio; index }) f
 let note name = tone (Music.frequency name)
 let lasting = Synth.lasting
 let fading = Synth.fading
@@ -24,6 +25,15 @@ let louder = Synth.louder
 let sliding = Synth.sliding
 let together sounds = Synth.Together sounds
 let after sounds = Synth.After sounds
+let filtered kind ~q cutoff cutoff_to s = Synth.Filtered ({ kind; cutoff; cutoff_to; q }, s)
+
+(* Butterworth's Q, the flattest; the wah's 5, a +14 dB ring *)
+let low_pass cutoff = filtered Low_pass ~q:0.707 cutoff cutoff
+let high_pass cutoff = filtered High_pass ~q:0.707 cutoff cutoff
+(* the resonance rings up to 5 times as loud: the sound turned down
+ * first, not to be cut by the mixer *)
+let wah from to_ s = filtered Low_pass ~q:5. from to_ (Synth.louder 0.4 s)
+let naive = Synth.naive
 
 let tune (who : string) (parse : string -> (Abc.tune, string) result) (text : string) : sound =
   match parse text with
@@ -59,7 +69,11 @@ let play (s : sound) : unit = Mixer.play mixer (Synth.render s)
 (* a continuous sound's voices, each kept under its own name (after:
    only the first sound goes on) *)
 let rec voices (s : sound) : Synth.voice list =
-  match s with Voice v -> [ v ] | Together l -> List.concat_map voices l | After (s :: _) -> voices s | After [] | Samples _ -> []
+  match s with
+  | Voice v -> [ v ]
+  | Together l -> List.concat_map voices l
+  | After (s :: _) | Filtered (_, s) -> voices s
+  | After [] | Samples _ -> []
 
 let keep_playing (name : string) (s : sound) : unit =
   List.iteri (fun i v -> Mixer.keep mixer (Printf.sprintf "%s#%d" name i) v) (voices s)

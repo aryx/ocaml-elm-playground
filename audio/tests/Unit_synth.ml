@@ -94,7 +94,32 @@ let test_loop_clock () =
   ignore (Mixer.pull m 735);
   Alcotest.(check (option int)) "stopped: no clock" None (Mixer.played m "song")
 
+(* phase 6's sources and filters in the tree: [naive] turns only the
+ * waveforms naive; a fading FM voice darker as it dies (its index
+ * following the envelope: the spectrum's centroid falls); a filter
+ * keeps the sound's length *)
+let centroid (x : Signal.t) : float =
+  let m = Spectrum.of_signal x in
+  let n = 2 * (Array.length m - 1) in
+  let sum = ref 0. and weighted = ref 0. in
+  Array.iteri (fun k v -> sum := !sum +. v; weighted := !weighted +. (v *. Spectrum.bin_frequency ~n k)) m;
+  !weighted /. !sum
+
+let test_sources () =
+  let s = Synth.Together [ Synth.voice (Wave Square) 440.; Synth.voice Noise 1000. ] |> Synth.naive in
+  (match s with
+  | Together [ Voice { source = Naive Square; _ }; Voice { source = Noise; _ } ] -> ()
+  | _ -> Alcotest.fail "naive: the square naive, the noise unchanged");
+  let bell = Synth.render (Synth.voice (Fm { ratio = 1.4; index = 5. }) 440. |> Synth.lasting 2. |> Synth.fading) in
+  let early = centroid (Array.sub bell (Signal.samples 0.1) 4096) and late = centroid (Array.sub bell (Signal.samples 1.5) 4096) in
+  (* the spectrum's centre of mass: 1948 Hz at 0.1 s, 687 at 1.5 s *)
+  Alcotest.(check (float 1.)) "the bell's brightness at 0.1 s (Hz)" 1948. early;
+  Alcotest.(check (float 1.)) "at 1.5 s, darker (Hz)" 687. late;
+  let filtered = Synth.Filtered ({ kind = Low_pass; cutoff = 300.; cutoff_to = 300.; q = 0.707 }, Synth.voice Noise 3000.) in
+  Alcotest.(check (float 1e-9)) "a filter keeps the length" 0.3 (Synth.duration filtered);
+  Alcotest.(check int) "its samples too" (Signal.samples 0.3) (Array.length (Synth.render filtered))
+
 let tests =
   Testo.categorize "Synth and Mixer"
     [ t "Music: notes and frequencies" test_notes; t "Synth: durations, no clicks, slides" test_synth; t "Mixer: one-shots, continuous voices" test_mixer;
-      t "Mixer: a loop's own clock" test_loop_clock ]
+      t "Mixer: a loop's own clock" test_loop_clock; t "Synth: naive, FM darkening, filters" test_sources ]
