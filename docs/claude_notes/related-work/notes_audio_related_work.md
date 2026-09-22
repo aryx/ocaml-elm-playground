@@ -131,6 +131,44 @@ synthesizes every sample itself.
 - **Sonic Pi's tutorials** and **Euterpea**: teaching with sound, for
   beginners and for functional programmers.
 
+## Part 7: synthesizers, their virtual versions, and effects
+
+The lineage of [`plan_synth_teaching.md`](../plans/plan_synth_teaching.md)
+and [`notes_synth.md`](../tutorials/notes_synth.md), TinyMinimoog first:
+
+- **The analog synthesizers**: Robert Moog's modular systems (1964,
+  the ladder filter patented 1969) and Don Buchla's (1963, the "West
+  Coast" school: complex oscillators and waveshaping rather than
+  filtering); the **Minimoog Model D** (1970), the modular's signal
+  path fixed and portable, and the instrument of progressive rock and
+  funk; ARP's 2600 (1971) and Odyssey (1972); the **Prophet-5**
+  (Sequential Circuits, 1978), polyphonic and with patch memory, the
+  first synthesizer driven by a microprocessor; the **TB-303** (Roland,
+  1981) and the **Juno-106** (Roland, 1984). Then digital: the
+  **DX7** (Yamaha, 1983), FM, and the end of analog's first era.
+- **Virtual analog**: the Clavia Nord Lead (1995), analog modeled by
+  DSP in hardware; then in software, Native Instruments' Pro-52 (a
+  Prophet-5, 1999) and Reaktor, **Arturia's V Collection** (the
+  Minimoog V, 2004, modeled with Robert Moog's collaboration; the Jup-8
+  V, the Prophet V, the DX7 V...), u-he's Diva (2011, circuit-level
+  filters), and open source: VCV Rack (2017, a Eurorack modular in
+  software) and Surge (2004, open-sourced 2018). They optimize for
+  sounding like the hardware, at any CPU cost; TinyMinimoog, like the
+  rest of `audio/`, for being read -- each block a module and the
+  "better" version beside the simple one.
+- **Effects, the hardware first**: the tape echo (the Echoplex, 1961;
+  the Roland Space Echo, 1974), the plate reverb (EMT 140, 1957), the
+  compressor (Teletronix LA-2A, 1960s; Urei 1176, 1967), the phaser
+  (MXR Phase 90, 1974), the chorus (Roland's, in the Jazz Chorus amp,
+  1975, and the Juno-60, 1982); digital: Lexicon's reverbs (from 1978),
+  and Schroeder, Moorer and Dattorro's papers behind them.
+- **The books**: Hal Chamberlin's *Musical Applications of
+  Microprocessors* (1980), the first on digital synthesis for
+  programmers; Zölzer's *DAFX* (2002, 2011), the effects; Zavalishin's
+  *The Art of VA Filter Design* (2012), the modern filter; Will
+  Pirkle's two plug-in books (2014, 2019), the closest to this plan's
+  shape, in C++; *Analog Days* (Pinch and Trocco, 2002), the history.
+
 ## Where `audio/` and `Sound` actually sit
 
 Two levels, like graphics and physics:

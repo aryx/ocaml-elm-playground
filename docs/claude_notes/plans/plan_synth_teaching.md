@@ -31,9 +31,9 @@ lesson. Its successors come in the same order the history went (see
 "The collection" below): the TB-303, the DX7, the Juno.
 
 Companion, written ahead of the code as its specification, like
-`notes_audio.md`: `docs/claude_notes/tutorials/notes_synth.md` (to
-write, phase 0), and a section added to `notes_audio_related_work.md`
-(the synthesizers, their virtual versions, the books).
+`notes_audio.md`: `docs/claude_notes/tutorials/notes_synth.md`, and
+Part 7 of `notes_audio_related_work.md` (the synthesizers, their
+virtual versions, the books).
 
 ## Principles (the same as `audio/`)
 
@@ -121,11 +121,11 @@ doesn't click ("zipper noise"). Modulation that must be faster than a
 block (an envelope on the cutoff, an LFO at audio rate) is a signal
 too: a block of values beside the audio block (`~cutoff:Signal.t`).
 
-To decide when writing phase 1: records of mutable fields (the
-simple, C-like way, closest to the DSP books) vs immutable states
-returned (the Elm way, a copy per block). The mutable one, contained
-behind each `.mli`'s `t`, is the likely answer: the `Mixer` is already
-the stateful part of `audio/`.
+Decided in phase 0: records of mutable fields, behind each `.mli`'s
+`t` (the simple, C-like way, closest to the DSP books), not immutable
+states returned per block (the Elm way: a copy of every delay line 60
+times a second). The `Mixer` was already the stateful part of `audio/`;
+`Instrument.mli` writes the pattern down on its `sine`.
 
 ### How the Playground hears an instrument
 
@@ -153,9 +153,14 @@ keyboard (a real MIDI keyboard's jitter is of that order), not for a
 sequencer, so the TB-303's sequencer will run in the audio clock (the
 music's clock of `Audio.position`), not in `update`.
 
-To settle by writing TinyMinimoog: whether the instrument is a
-`Minimoog.t` known to the mixer through a closure (above), or a
-generic `Patch` description `audio/` interprets.
+Built in phase 0 a little differently from the sketch above: the
+mixer holds an `Instrument.t`, a record of four functions (`note_on`
+with a MIDI key and a velocity, `note_off`, `set`, `fill` a stereo
+block in place), not an `int -> Signal.stereo`; and
+`Audio.instrument name make` takes the maker, run the first time the
+name is asked for (`Audio.instrument "keys" Instrument.sine`). A
+`Minimoog_voice` will be one more maker; a generic `Patch` that
+`audio/` interprets is left to the modular exercise.
 
 ### Knobs
 
@@ -415,6 +420,26 @@ microphone, which is out of scope) likewise later.
    phase list here when started; a live MIDI keyboard (the audio
    plan's leftover: an instrument is where it matters) with MIDI's
    control changes mapped to the knobs.
+
+## Status
+
+- **Phase 0, DONE (2026-09-23)**: `notes_synth.md` written ahead (the
+  Minimoog's path, the blocks, the effects, their worked examples: the
+  ladder's k = 4 and 1 / (1 + k), the drive's 9th harmonic folded to
+  0.9 kHz, the chorus's +- 16 cents, the compressor's -17 dB), and
+  Part 7 of `notes_audio_related_work.md`. `audio/Instrument` (the
+  interface, and `sine`, the pattern's model: mutable state, events
+  between blocks, the knob ramped over a block, the gate over 5 ms);
+  `Mixer.instrument`, `instruments`, `stop` for instruments too (faded
+  over a pull); `Audio.instrument`, `note_on`, `note_off`, `set`. Tests
+  (`Unit_instrument`): A4 pressed at frame 10 of a golden run's pulls
+  silent until sample 7350 and sounding in that frame's block, under
+  the gate's ramp for 221 samples, at tanh 0.5 and 440 Hz, silent 221
+  samples after frame 40's release; the volume from 0.2 to 0.8 with no
+  step above C1's slope plus 0.00082; legato; asked again, stopped.
+  `playground/tests/Unit_audio`: made once by name, made afresh after
+  `stop`. Also done before it: `File_menu` an appkit
+  (`appkits/file_menu`).
 
 ## Verification
 

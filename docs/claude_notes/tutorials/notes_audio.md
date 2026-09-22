@@ -35,6 +35,7 @@ same mistake, with the same cure.
 | `Music`, `Abc`, `Doremi`, `Midi` | notes, equal temperament, tunes as text, MIDI files | §9 |
 | `Resample` | recordings at other pitches and rates: nearest, linear, cubic | §9 |
 | `Mixer` | the sounds playing, pulled by the sound card | §10 |
+| `Instrument` | a sound played live, a block at a time: see [`notes_synth.md`](notes_synth.md) | §10 |
 | `Wav` | samples in a file, written and read | §2, §9 |
 | `playground/Audio`, `Audio3d`, `Audio_debug` | the Evan-style API over all of it; heard from a 3D camera; the sound seen | §13 |
 

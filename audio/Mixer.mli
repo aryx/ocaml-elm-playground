@@ -2,11 +2,13 @@
  * takes (see notes_audio.md sections 5 and 10). The stateful part of
  * audio/: the sounds come and go as the game plays them.
  *
- *    play blip ---.                        the one-shots: rendered once,
- *    play jump ---+--> [ + ] --> tanh -->  read through as the samples
- *    keep "thrust" --'   ^       samples   go out; the continuous ones:
- *                        |                 advanced frame by frame
- *               pull n: the next n
+ *    play blip ---------.                        the one-shots: rendered
+ *    play jump ---------+--> [ + ] --> tanh -->  once, read through as the
+ *    keep "thrust" -----+      ^       samples   samples go out; the
+ *    instrument "moog" -'      |                 continuous ones: advanced
+ *                              |                 frame by frame; the
+ *                     pull n: the next n         instruments: asked for
+ *                                                the next block
  *
  * Two clocks: the game's, 60 frames a second, and the sound card's,
  * 44,100 samples a second, pulling on its own (notes_audio.md section
@@ -52,8 +54,8 @@ val loop : t -> string -> Signal.stereo -> unit
  * none is playing *)
 val change : t -> string -> Signal.stereo -> unit
 
-(* [stop m name]: the loop [name] stopped (faded out over its next
- * pull), if playing *)
+(* [stop m name]: the loop or the instrument [name] stopped (faded out
+ * over its next pull), if playing *)
 val stop : t -> string -> unit
 
 (* [keep m name v]: the continuous voice [name] playing [v] until the
@@ -63,6 +65,13 @@ val stop : t -> string -> unit
  * frame, it glides over the pull) *)
 val keep : ?filter:Synth.filter -> ?pan:float -> t -> string -> Synth.voice -> unit
 
+(* [instrument m name i]: the instrument [i] (Instrument.mli) playing
+ * from the next pull, a block of it each pull, until [stop m name];
+ * nothing if an instrument [name] is already playing (so asking for it
+ * every frame is harmless, as for [loop]). Its notes and knobs are the
+ * caller's, through [i]'s functions: the mixer only pulls. *)
+val instrument : t -> string -> Instrument.t -> unit
+
 (* [pull m n]: the next [n] samples, in both channels *)
 val pull : t -> int -> Signal.stereo
 
@@ -71,6 +80,9 @@ val playing : t -> int * int
 
 (* loops playing *)
 val looping : t -> string list
+
+(* instruments playing (not those being stopped) *)
+val instruments : t -> string list
 
 (* [played m name]: how many samples of the loop [name] have gone out,
  * counting every time round -- the loop's own clock, which unlike its

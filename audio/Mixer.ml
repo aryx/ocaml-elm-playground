@@ -31,12 +31,20 @@ type continuous = {
  * and whether it's being stopped *)
 type looped = { sound : Signal.stereo; mutable pos : int; mutable played : int; mutable stopping : bool }
 
-type t = { mutable shots : shot list; continuous : (string, continuous) Hashtbl.t; loops : (string, looped) Hashtbl.t }
+(* an instrument: what it is, and whether it's being stopped *)
+type played_live = { live : Instrument.t; mutable ending : bool }
+
+type t = {
+  mutable shots : shot list;
+  continuous : (string, continuous) Hashtbl.t;
+  loops : (string, looped) Hashtbl.t;
+  instruments : (string, played_live) Hashtbl.t;
+}
 
 let max_playing = 32
 let stereo = ref true
 let length (s : Signal.stereo) : int = Array.length s.left
-let create () : t = { shots = []; continuous = Hashtbl.create 8; loops = Hashtbl.create 2 }
+let create () : t = { shots = []; continuous = Hashtbl.create 8; loops = Hashtbl.create 2; instruments = Hashtbl.create 2 }
 
 let loop (m : t) (name : string) (sound : Signal.stereo) : unit =
   match Hashtbl.find_opt m.loops name with
@@ -50,8 +58,19 @@ let change (m : t) (name : string) (sound : Signal.stereo) : unit =
       Hashtbl.replace m.loops name { l with sound; pos = min pos (length sound - 1) }
   | _ -> loop m name sound
 
-let stop (m : t) (name : string) : unit = Option.iter (fun l -> l.stopping <- true) (Hashtbl.find_opt m.loops name)
+let stop (m : t) (name : string) : unit =
+  Option.iter (fun l -> l.stopping <- true) (Hashtbl.find_opt m.loops name);
+  Option.iter (fun i -> i.ending <- true) (Hashtbl.find_opt m.instruments name)
+
 let looping (m : t) : string list = Hashtbl.fold (fun name _ acc -> name :: acc) m.loops [] |> List.sort compare
+
+let instrument (m : t) (name : string) (live : Instrument.t) : unit =
+  match Hashtbl.find_opt m.instruments name with
+  | Some i when not i.ending -> ()
+  | _ -> Hashtbl.replace m.instruments name { live; ending = false }
+
+let instruments (m : t) : string list =
+  Hashtbl.fold (fun name i acc -> if i.ending then acc else name :: acc) m.instruments [] |> List.sort compare
 
 let play (m : t) (samples : Signal.stereo) : unit =
   (* the newest first; past max_playing, the oldest dropped *)
@@ -127,6 +146,20 @@ let pull (m : t) (n : int) : Signal.stereo =
          l.played <- l.played + n;
          if l.stopping then stopped := name :: !stopped);
   List.iter (Hashtbl.remove m.loops) !stopped;
+  (* the instruments: a block each; a stopped one fades out over this
+   * pull, like a loop, then is gone *)
+  let ended = ref [] in
+  m.instruments
+  |> Hashtbl.iter (fun name i ->
+         let block : Signal.stereo = { left = Array.make n 0.; right = Array.make n 0. } in
+         i.live.fill block;
+         for k = 0 to n - 1 do
+           let fade = if i.ending then 1. -. (float_of_int k /. float_of_int n) else 1. in
+           left.(k) <- left.(k) +. (fade *. block.left.(k));
+           right.(k) <- right.(k) +. (fade *. block.right.(k))
+         done;
+         if i.ending then ended := name :: !ended);
+  List.iter (Hashtbl.remove m.instruments) !ended;
   let out : Signal.stereo = { left = Mix.limit ~soft:true left; right = Mix.limit ~soft:true right } in
   if !stereo then out else Signal.both (Signal.mono out)
 

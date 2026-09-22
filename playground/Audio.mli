@@ -273,6 +273,40 @@ val change_loop : string -> sound -> unit
      Audio.loop_from "music" "https://example.com/tune.mid" *)
 val loop_from : string -> string -> unit
 
+(* {1 Instruments: played live}
+
+   A sound above is made whole, then played. An instrument is played
+   the way a piano is: a key goes down, and the note sounds until the key
+   comes up, however long that is; and its knobs can be turned while it
+   plays. In update:
+
+     let keys = Audio.instrument "keys" Instrument.sine in
+     if pressed "a" then Audio.note_on keys "C4";
+     if released "a" then Audio.note_off keys "C4"
+
+   An instrument is made the first time it's asked for, and kept by
+   name: asking again (at every frame) gives the same one, until [stop
+   name]. What instruments there are is audio/'s business
+   (Instrument.mli: [sine], the smallest one; a synthesizer is a bigger
+   one, apps/music/TinyMinimoog.ml's). *)
+
+type instrument
+
+(* [instrument name make]: the instrument [name], made by [make ()] if
+   it isn't playing yet *)
+val instrument : string -> (unit -> Instrument.t) -> instrument
+
+(* [note_on i name]: the key of the note [name] ("C4", "F#5": see
+   [note]) pressed, at full velocity; [note_off i name] let go.
+   Nothing if [name] isn't a note. *)
+val note_on : instrument -> string -> unit
+val note_off : instrument -> string -> unit
+
+(* [set i knob value]: a knob turned ("volume", 0 to 1, for
+   Instrument.sine), smoothly: over the next few milliseconds, not at
+   once, so nothing clicks *)
+val set : instrument -> string -> number -> unit
+
 (* {1 The music's own clock} *)
 
 (* [position name]: how far into the loop [name] the sound card has

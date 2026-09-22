@@ -147,6 +147,25 @@ let from (x : float) (y : float) (s : sound) : sound =
   let d = Float.hypot x y in
   Synth.Panned (x /. 500., s) |> Synth.louder (Space.attenuation ~reference:700. d)
 
+type instrument = Instrument.t
+
+(* the instruments asked for, by name; the mixer's list says which still
+ * play (a stopped one is made afresh when asked for again) *)
+let instruments : (string, Instrument.t) Hashtbl.t = Hashtbl.create 2
+
+let instrument (name : string) (make : unit -> Instrument.t) : instrument =
+  match Hashtbl.find_opt instruments name with
+  | Some i when List.mem name (Mixer.instruments mixer) -> i
+  | _ ->
+      let i = make () in
+      Hashtbl.replace instruments name i;
+      Mixer.instrument mixer name i;
+      i
+
+let note_on (i : instrument) (name : string) : unit = Option.iter (fun key -> i.note_on key 1.) (Music.midi_number name)
+let note_off (i : instrument) (name : string) : unit = Option.iter i.note_off (Music.midi_number name)
+let set (i : instrument) (knob : string) (value : float) : unit = i.set knob value
+
 let stop (name : string) : unit =
   Hashtbl.remove requested name;
   Mixer.stop mixer name
