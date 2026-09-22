@@ -3,10 +3,10 @@
 (copy_files ../*.ml)
 
 (executables
-  (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+  (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd)
-  (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+  (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd Sokoban_levels)
   (libraries
@@ -15,6 +15,7 @@
     elm_playground
     ai
     kit_puzzle
+    kit_crush
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)
@@ -22,11 +23,12 @@
 )
 
 (executables
-  (names TinyBlockout TinyMonumentValley TinyPortal)
-  (modules TinyBlockout TinyMonumentValley TinyPortal)
+  (names TinyBlockout TinyCrush3d TinyMonumentValley TinyPortal)
+  (modules TinyBlockout TinyCrush3d TinyMonumentValley TinyPortal)
   (libraries
     elm_core
     physics_3d graphics_3d_geometry
+    kit_crush
     elm_playground
     elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d

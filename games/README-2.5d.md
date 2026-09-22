@@ -34,6 +34,7 @@ games/*/*.ml`) against the whole game.
 | `TinyDoom` | Doom (id, 1993) | a BSP tree of the level's walls, walked nearest first; each column's clip arrays say what's left to draw | column | 300 / 499 | rooms above rooms, looking up or down, walls that aren't vertical |
 | `TinyComanche` | Comanche (NovaLogic, 1992), "Voxel Space" | a height map, each column a line across the map, near to far; a y-buffer, what's drawn of each column | column | 126 / 302 | overhangs, caves, a roll |
 | `TinyGTA` | Grand Theft Auto (DMA Design, 1997) | a city seen from straight above, each building's roof pushed away from the camera's point by its height, `p + (p - cam) * h`, the four walls the quads between the ground and the roof, drawn first so the roof hides the two turned away | building (four quads and a roof) | 17 / 524 | a building that isn't a box; something on a roof, or under a bridge; a camera that isn't straight above |
+| `TinyCrush` | Crush (Zoë Mode, Sega, 2007) | a cabinet projection: depth d drawn `d * 0.45` of a tile up and right, far first, each block its front, top and side; crushing is that offset animated to 0, the picture of the rule | block (a square and two parallelograms) | 21 / 177 | anything but boxes on a grid; a view from any other angle than straight on (the side view is the level turned a quarter, not a camera) |
 | `TinyShufflePuck` | Shufflepuck Café (Christopher Gross, Brøderbund, 1988) | one plane, one eye that never moves: a point of the table drawn at `f x / depth` across and `horizon - f h / depth` up, its size `f / depth`; and the same division backwards for the mouse | object (a disc on the table, or a person behind it) | 22 / 445 | anything not on the table's plane; the eye moving -- then it is Mode 7 |
 | `TinyBattlezone` | Battlezone (Ed Rotberg, Atari, 1980) | every object a list of segments; each end taken into the eye's coordinates (three dot products), cut at a plane just ahead of the eye, and divided by its depth | segment | 62 / 420 | hide anything: every edge is drawn, and you see through tanks, pyramids and mountains alike |
 | `TinyElite` | Elite (Braben and Bell, 1984) | you never move: the universe turns round you, each ship's orientation three vectors turned by `sin a ~ a`, `cos a ~ 1 - a^2/2` and straightened every 16 frames; a convex hull, an edge drawn when either of its faces is turned towards you | edge | 144 / 606 | hide one ship behind another (they show through each other); a ship that isn't convex; anything filled |
@@ -134,7 +135,7 @@ is not the same as a game being small.
 Their twins
 -----------
 
-Seven of them have a 3D twin, the same game with a real 3D
+Eight of them have a 3D twin, the same game with a real 3D
 engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 
 | Pseudo-3D | Real 3D | Shared |
@@ -145,6 +146,7 @@ engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 | `TinyComanche` | `TinyComanche3d` | the island (`gamekits/heightmap`: `Heightmap`) |
 | `TinyDescent` | `TinyDescent3d` | the mine and the ship (`gamekits/segments`: `Segments`, `Sixdof`) |
 | `TinyBattlezone` | `TinyBattlezone3d` | the battle: obstacles, enemy, shells (a copy) |
+| `TinyCrush` | `TinyCrush3d` | the levels and the rules (`gamekits/crush`: `Crush`); the crush drawn once as the cabinet projection's lean shrinking to nothing, once as the slices sliding in depth while the camera turns straight on |
 | `TinyElite` | `TinyElite3d` | the ships, their small turns and the flight (a copy); the hidden lines become the engine's backface culling |
 
 The 3D twin is shorter: the engine does the work, and the camera can do

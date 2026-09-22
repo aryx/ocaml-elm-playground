@@ -2,10 +2,10 @@
 ; side by side; on the software rasterizers in software/, in the
 ; browser in web/.
 (executables
-  (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+  (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd)
-  (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+  (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd Sokoban_levels)
   (libraries
@@ -14,6 +14,7 @@
     elm_playground
     ai ; AiChess's and AiOthello's Minimax
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo, Sokoban's rules
+    kit_crush ; TinyCrush's levels and rules, Crush
     elm_playground_native ; implem of virtual elm_playground
   )
 )
@@ -36,11 +37,12 @@
     (echo "|}\n")))))
 
 (executables
-  (names TinyBlockout TinyMonumentValley TinyPortal)
-  (modules TinyBlockout TinyMonumentValley TinyPortal)
+  (names TinyBlockout TinyCrush3d TinyMonumentValley TinyPortal)
+  (modules TinyBlockout TinyCrush3d TinyMonumentValley TinyPortal)
   (libraries
     elm_core
     physics_3d graphics_3d_geometry ; TinyPortal's bodies
+    kit_crush ; TinyCrush3d's levels and rules, the same as TinyCrush's
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d
     elm_playground_3d_opengl ; implem of virtual elm_playground_3d

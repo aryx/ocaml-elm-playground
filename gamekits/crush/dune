@@ -1,0 +1,10 @@
+; claude: the crush kit: the rules of Crush (Crush) -- a level of 2D
+; slices, played on the slice you stand in or crushed into their union
+; -- whatever draws them. Used by TinyCrush (a cabinet projection, on
+; the 2D playground) and TinyCrush3d. A private library, not installed:
+; only the games use it.
+(library
+ (name kit_crush)
+ (wrapped false)
+ (libraries elm_core elm_playground kit_platformer)
+)

@@ -67,6 +67,9 @@ Switching between 3D and 2D:
 - **Crush** (Zoë Mode / Sega, PSP, 2007; *Crush3D* on 3DS, 2012): a 3D
   level "crushed" flat along the camera's axis; platforms far apart in
   depth become one 2D platform. The most literal 3D-to-2D puzzle game.
+  (Now in the catalogue: `TinyCrush.ml`, a stack of 2D slices and their
+  union, the same platformer on either; the first of this family here,
+  and a first step towards Idea 1's projections.)
 - **Fez** (Phil Fish / Polytron, 2012): a 3D world played in a 2D
   projection, turned a quarter at a time; depth is ignored, so what
   lines up in the projection is connected.

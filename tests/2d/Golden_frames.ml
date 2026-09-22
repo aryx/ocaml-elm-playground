@@ -196,6 +196,7 @@ let scenes : Testutil_golden.scene list =
     ("games/strategy/software/TinyHamurabi", "", 5);
     ("games/sports/software/TinyTennisForTwo", "", 5);
     ("games/fps/software/TinyMazeWar", "", 5);
+    ("games/puzzle/software/TinyCrush", "", 5);
     ("games/rhythm/software/TinyDDR", "", 5);
     ("games/strategy/software/TinySimCity", "", 5);
     ("games/strategy/software/TinyCivilization", "", 5);
@@ -582,6 +583,12 @@ let scripted : Testutil_golden.scripted list =
     (* five steps down the first corridor, to its side opening, and a
        quarter turn into it: the frames of a new corridor *)
     ("games/fps/software/TinyMazeWar", "walk", 50, "up:3,up:10,up:17,up:24,up:31,right:38");
+    (* the first level, uncrushed: Danny's slice in colour, the bridge
+       and the wall behind in grey, each depth leaning up and right *)
+    ("games/puzzle/software/TinyCrush", "uncrushed", 20, "space:1");
+    (* crushed, and a few steps: the bridge fills the gap, the wall
+       from the back slice stands in the way *)
+    ("games/puzzle/software/TinyCrush", "crushed", 60, "space:1,c:22,right:45-60");
     (* off the bank on six flaps, the buzzards already coming *)
     ("games/platform/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
     (* the scanner is the game: three abductions are under way in the
