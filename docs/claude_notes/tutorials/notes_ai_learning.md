@@ -23,8 +23,8 @@ formula is one a reader can check with a pen.
 | `Neuron` (done) | the perceptron, its rule, and what it cannot do | §1 |
 | `Net` (done) | layers, activations, the forward pass | §2 |
 | `Backprop` (done) | the loss, gradient descent, the chain rule | §3, §4 |
-| `Grad` | reverse-mode autodiff: the same, written once | §5 |
-| `Train` | batches, learning rate, train/test, the loop | §6 |
+| `Grad` (done) | reverse-mode autodiff: the same, written once | §5 |
+| `Train` (done) | batches, learning rate, train/test, the loop | §6 |
 | `Qlearn` | rewards, temporal difference, Q-learning | §8 |
 
 Sections 1 to 7 are supervised learning (here are the answers, find the
@@ -248,8 +248,18 @@ and it is what PyTorch is, underneath the CUDA. Written for scalars, in
 OCaml, it is about eighty lines -- Karpathy's micrograd made that point
 memorably. Keeping both modules is the pattern used everywhere in this
 repository: the version that teaches the mechanism, and the version
-that is actually pleasant, side by side, agreeing to six digits in a
-test.
+that is actually pleasant, side by side -- and here they agree not to
+six digits but to the *last* digit, over all 105 weights of a 2-8-8-1
+network, because they are the same arithmetic in a different order
+(`Unit_grad`).
+
+What the convenience costs, measured on that gradient: 9.6 us by hand,
+197 us through the graph, about 20x. That is why a real library runs
+reverse mode over whole *arrays* -- one node per matrix multiply
+instead of one per multiplication -- while the idea stays exactly this
+one. And the reason to have it at all, in one line from the test: the
+derivative of (x^2 + 3x)/(x - 1) at x = 2 is -3, I wrote -4 in the
+test, and the graph was right.
 
 ## 6. Training, in practice
 
@@ -288,14 +298,16 @@ learn.
   (The ancestor is TensorFlow Playground, playground.tensorflow.org,
   which this project shares a name with by coincidence.)
 - `AiPerceptron.ml` -- §1: the line, and XOR defeating it.
-- `AiDigits.ml` -- draw a digit with the mouse, get ten output bars. A
-  256-64-10 network is about 17,000 weights, a fraction of a second per
-  epoch here. **And no dataset is downloaded**: the training digits are
-  drawn by our own Hershey font (`graphics/font`) at random sizes,
-  rotations, thicknesses and noise. Self-contained, honest about what
-  it can recognise, and a pleasing loop -- the renderer teaching the
-  network. The instructive failure is built in: it does fine on digits
-  that look like its font and worse on yours, which is what "the
+- `AiDigits.ml` (**written**) -- draw a digit with the mouse, get ten
+  output bars. A 256-64-10 network, 17,098 weights, trained a few dozen
+  examples a frame while you watch: about 80% on held-out digits after
+  six thousand of them. **And no dataset is downloaded**: the training
+  digits are drawn by our own Hershey font (`graphics/font`), each one
+  shaken -- scaled, slanted, shifted, thickened, speckled -- and inked
+  by distance to the pen strokes, so the edges are soft rather than
+  jagged. Self-contained, and a pleasing loop: the renderer teaching
+  the network. The instructive failure is built in: it does fine on
+  digits that look like its font and worse on yours, which is what "the
   training distribution" means, concretely.
 
 ## 8. Learning to play

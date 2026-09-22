@@ -8,7 +8,7 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
-    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet
+    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits
     LogoFractals
     BigBangRocket BigBangWorm
     PuzzleScriptSokoban PuzzleScriptBoulders
@@ -21,6 +21,7 @@
     PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
     PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d)
   (libraries
+    graphics_font ; AiDigits trains on digits this font draws
     elm_playground
     ai ; AiTictactoe's Minimax
     kit_maze ; AiGhosts' Grid_move and Chase, TinyPacman's

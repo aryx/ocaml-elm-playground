@@ -670,9 +670,8 @@ from memory until then.)
 9. **Chess, mostly DONE (ahead of its turn)**: `AiChess`, rules first (perft counts as the test: the
    standard node counts per depth from the start position are a
    ruthless check on a move generator), search second.
-10. **Learning, in progress**: `Matrix`, `Neuron`, `Net` and
-    `Backprop` written, with `AiPerceptron` and `AiNeuralNet`; `Grad`,
-    `Train` and `AiDigits` still to come.
+10. **Learning, DONE**: `Matrix`, `Neuron`, `Net`, `Backprop`, `Grad`
+    and `Train`, with `AiPerceptron`, `AiNeuralNet` and `AiDigits`.
 11. **Learning to play**: `Qlearn`; `AiQlearn`; tic-tac-toe learned by
     self-play, then measured against the minimax player it cannot beat
     but can learn to draw with; and the network as `AiGo`'s playout
@@ -932,6 +931,22 @@ from memory until then.)
   0.075. Its cost is the drawing, not the arithmetic -- a frame is 9 ms
   of network and 40 of rasterizer -- so the decision field is quantised
   into bands and equal runs are drawn as one rectangle.
+- **Grad, Train and AiDigits, 2026-09-22**, finishing the supervised
+  half. `Grad` is reverse mode on scalars (micrograd's shape), and it
+  agrees with the hand-written pass to the *last* digit over all 105
+  weights of a 2-8-8-1 network -- the same arithmetic in a different
+  order. Measured, it costs about 20x (9.6 us by hand, 197 through the
+  graph), which is the honest reason the examples still use
+  `Backprop`, and the reason real libraries do reverse mode over
+  arrays rather than scalars. `Train` is the loop: a deterministic
+  shuffle, batches, a decaying rate, and a held-out split -- with
+  overfitting made to happen in a test (a 24-24 network on twenty
+  examples: the training loss goes under 0.01 while the held-out one
+  turns round and climbs), because the two curves crossing is the
+  picture the subject is really about. `AiDigits` trains on digits our
+  own Hershey font draws, shaken and inked by distance to the strokes;
+  about 80% on held-out digits after six thousand examples, and worse
+  on a mouse-drawn one, which is the point.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

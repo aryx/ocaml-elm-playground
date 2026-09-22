@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"ai" (fun _env -> Unit_matrix.tests @ Unit_neuron.tests @ Unit_backprop.tests @ Unit_minimax.tests @ Unit_pathfind.tests @ Unit_steering.tests @ Unit_bot.tests @ Unit_deepening.tests @ Unit_mcts.tests @ Unit_fsm.tests @ Unit_decide.tests)
+let () = Testo.interpret_argv ~project_name:"ai" (fun _env -> Unit_matrix.tests @ Unit_neuron.tests @ Unit_backprop.tests @ Unit_grad.tests @ Unit_train.tests @ Unit_minimax.tests @ Unit_pathfind.tests @ Unit_steering.tests @ Unit_bot.tests @ Unit_deepening.tests @ Unit_mcts.tests @ Unit_fsm.tests @ Unit_decide.tests)
