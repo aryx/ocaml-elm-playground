@@ -81,6 +81,19 @@ is [`notes_raytracing.md`](../tutorials/notes_raytracing.md).
 
 ## Smaller things noticed along the way
 
+- **The SVG backend's package name**: `elm_playground_3d_web` draws
+  through SVG and lives in `playground/svg/`, next to the WebGL one in
+  `playground/web/` (`done/plan_merge_2d_3d.md`). Renaming it
+  `elm_playground_3d_svg` would say what it is, at the cost of
+  renaming an opam package.
+- **Five 3D examples build only on the software rasterizer and the web
+  backends**, not on OpenGL: `Cube3d`, `InteractiveCube3d`,
+  `PaintersAlgorithmFail3d`, `FloatingCity3d`, `Corridor3d`. Two of
+  them are deliberate (the "z" and "c" toggles are the software
+  rasterizer's, and `InteractiveCube3d` wants a HUD), but `Cube3d` and
+  `FloatingCity3d` render fine everywhere else -- see `examples/dune`'s
+  trailing comment.
+
 - **Hershey's colon** at small sizes, e.g. the HUD's "Mouse:": see
   [`plan_2d_remaining.md`](plan_2d_remaining.md), item 3.
 - **Transparency on the software 3D backend**: `fade3d` is ignored
