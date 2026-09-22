@@ -130,7 +130,8 @@ The tools themselves are in `scripts/` (see `scripts/README.md`).
   `plan_audio_teaching.md`, `plan_games.md`, `plan_games3d.md`,
   `plan_networking_teaching.md`,
   `plan_teaching_languages.md`, `plan_teaching_other.md`,
-  `plan_playground_other.md`, and what's left of finished ones
+  `plan_playground_other.md`, `plan_factorize_v1.md` (shrinking the
+  games and apps through better shared helpers), and what's left of finished ones
   (`plan_*_remaining.md`: 2D, 3D, WebGL, Minecraft, physics).
 - `plans/done/`: the finished plans, kept for their history and
   numbers (the 2D and 3D software rasterizers, OpenGL, WebGL, the
