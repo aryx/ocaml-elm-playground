@@ -128,6 +128,7 @@ let scenes : Testutil_golden.scene list =
      * blocks apart drawn as one beam: the whole game in one frame *)
     ("games/puzzle/software/TinyMonumentValley", "", 5);
     ("games/puzzle/software/TinyCrush3d", "", 5);
+    ("games/puzzle/software/TinyPerspective", "", 5);
     (* claude: the band on its stage: the four highways, the fret pads
      * of the guitar and the bass, the drum pads and the pedal, the
      * keyboard of the keys, and the difficulty to pick *)
@@ -315,6 +316,12 @@ let scripted : Testutil_golden.scripted list =
     ("games/puzzle/software/TinyCrush3d", "crushing", 30, "space:1,c:22");
     (* crushed, and a few steps: the crushed plane, the gap filled *)
     ("games/puzzle/software/TinyCrush3d", "crushed", 60, "space:1,c:22,right:45-60");
+    (* the first picture: the runner on his ledge, the other out of
+       reach, the far bridge high above them *)
+    ("games/puzzle/software/TinyPerspective", "first", 10, "space:1");
+    (* the camera lowered to the ledges' height: every top on the
+       horizon, the far bridge between the ledges, the runner across *)
+    ("games/puzzle/software/TinyPerspective", "horizon", 40, "space:1,Tab:5,down:6-17,Tab:25,right:28-40");
     (* claude: a run in progress: one death already paid for, so the
        gauge says run 2 and the life kept from the first *)
     ("games/rpg/software/TinyHades", "run", 300,

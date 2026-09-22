@@ -78,7 +78,10 @@ Switching between 3D and 2D:
 - **Super Paper Mario** (Intelligent Systems, Wii, 2007): a 2D
   side-scroller flipped into 3D to walk around obstacles, then back.
 - **Perspective** (DigiPen student game, 2012): move a 3D camera, then
-  drop into a 2D platformer played on what the camera shows.
+  drop into a 2D platformer played on what the camera shows. (Now in
+  the catalogue: `TinyPerspective.ml`, the one of this family with a
+  perspective projection, where Crush and Fez are orthographic -- the
+  runner's world the boxes' silhouettes on the screen.)
 
 The picture is the truth:
 

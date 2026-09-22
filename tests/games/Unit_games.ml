@@ -5559,6 +5559,74 @@ let fez_the_cube () =
   Alcotest.(check int) "the cube is whole" 0 (List.length p.bits)
 
 (*****************************************************************************)
+(* TinyPerspective *)
+(*****************************************************************************)
+
+let perspective_screen = Playground.to_screen 1000. 1000.
+
+let perspective_frames (n : int) (i : TinyPerspective.input) (p : TinyPerspective.play) : TinyPerspective.play =
+  List.fold_left (fun p i -> TinyPerspective.step perspective_screen i p) p (List.init n (fun _ -> i))
+
+(* The runner starts on the start ledge's picture, standing; from the
+ * first camera, the gap is a fall. *)
+let perspective_start () =
+  let open TinyPerspective in
+  let p = perspective_frames 30 nothing (enter perspective_screen 0) in
+  Printf.eprintf "DBG perspective start: x %.0f y %.0f ground %b\n%!" p.x p.y p.ground;
+  Alcotest.(check bool) "standing" true p.ground;
+  let ran = perspective_frames 300 { nothing with dx = 1. } p in
+  Printf.eprintf "DBG perspective ran from the start: x %.0f y %.0f\n%!" ran.x ran.y;
+  Alcotest.(check bool) "the gap, a fall" true (fell perspective_screen ran)
+
+(* The far bridge: the camera lowered to the ledges' height, every top
+ * at that height is on the horizon, and the far bridge fills the gap:
+ * the runner runs across to the goal. *)
+let perspective_bridge () =
+  let open TinyPerspective in
+  let p = perspective_frames 30 nothing (enter perspective_screen 0) in
+  let p = step perspective_screen { nothing with switch = true } p in
+  let rec lower n p = if n = 0 || p.pitch <= 0. then p else lower (n - 1) (step perspective_screen { nothing with dy = -1. } p) in
+  let p = lower 100 p in
+  let p = step perspective_screen { nothing with switch = true } p in
+  Printf.eprintf "DBG perspective bridge: pitch %.0f, %s, x %.0f y %.0f\n%!" p.pitch p.message p.x p.y;
+  let rec run n p = if n = 0 || at_goal p || fell perspective_screen p then p else run (n - 1) (step perspective_screen { nothing with dx = 1. } p) in
+  let p = run 400 p in
+  Printf.eprintf "DBG perspective ran: x %.0f y %.0f\n%!" p.x p.y;
+  Alcotest.(check bool) "at the goal" true (at_goal p)
+
+(* a robot runner: right, jumping at walls and at edges *)
+let perspective_robot (n : int) (p : TinyPerspective.play) : TinyPerspective.play =
+  let open TinyPerspective in
+  let rec go n p =
+    if n = 0 || at_goal p || fell perspective_screen p then p
+    else
+      let jump =
+        match p.mode with
+        | Runner map ->
+            let feet = p.y -. (snd size /. 2.) in
+            p.ground
+            && (Tile_move.hits solid map size (p.x +. 6.) p.y
+               || not (Tile_move.hits solid map (4., 4.) (p.x +. 16.) (feet -. 4.)))
+        | Camera -> false
+      in
+      go (n - 1) (step perspective_screen { nothing with dx = 1.; jump } p)
+  in
+  go n p
+
+(* The stairs: from the first camera, the robot does not get up them;
+ * turned a little and lowered below the pillars' tops, their pictures
+ * are steps a jump high -- one of the cameras a search over yaw, pitch
+ * and distance found, about one in nine. *)
+let perspective_stairs () =
+  let open TinyPerspective in
+  let first = perspective_robot 500 (perspective_frames 5 nothing (enter perspective_screen 1)) in
+  Alcotest.(check bool) "not from the first camera" false (at_goal first);
+  let p = enter perspective_screen 1 in
+  let p = to_runner perspective_screen (stand perspective_screen { p with mode = Camera; yaw = -20.; pitch = -6.; dist = 24. }) in
+  Alcotest.(check bool) "the picture taken" true (match p.mode with Runner _ -> true | Camera -> false);
+  Alcotest.(check bool) "up the stairs" true (at_goal (perspective_robot 500 (perspective_frames 5 nothing p)))
+
+(*****************************************************************************)
 (* TinyPrinceOfPersia *)
 (*****************************************************************************)
 
@@ -7314,6 +7382,9 @@ let tests =
       t "TinyFez, the four views" fez_views;
       t "TinyFez, background and walls" fez_background_and_walls;
       t "TinyFez, the cube" fez_the_cube;
+      t "TinyPerspective, the start" perspective_start;
+      t "TinyPerspective, the far bridge" perspective_bridge;
+      t "TinyPerspective, the stairs" perspective_stairs;
       t "TinyPrinceOfPersia, the distances are the tables' sums" pop_tables;
       t "TinyPrinceOfPersia, a robot escapes the dungeon" pop_robot;
       t "TinyPrinceOfPersia, the gate closes, the shaft hurts" pop_gate_and_fall;

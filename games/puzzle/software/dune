@@ -22,12 +22,13 @@
 )
 
 (executables
-  (names TinyBlockout TinyCrush3d TinyMonumentValley TinyPortal)
-  (modules TinyBlockout TinyCrush3d TinyMonumentValley TinyPortal)
+  (names TinyBlockout TinyCrush3d TinyMonumentValley TinyPerspective TinyPortal)
+  (modules TinyBlockout TinyCrush3d TinyMonumentValley TinyPerspective TinyPortal)
   (libraries
     elm_core
     physics_3d graphics_3d_geometry
     kit_crush
+    kit_platformer
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
     elm_playground_3d_software ; implem of virtual elm_playground_3d
