@@ -3,7 +3,7 @@
 Every program in this repository that you can play or use, sorted by
 genre: the video games of `games/`, one directory per section below
 (`games/shmup/`, ..., `games/rhythm/`), and the applications of
-`apps/`. The **Dir** column says how a game is drawn: 2D, 2.5D (a 3D
+`apps/`, one directory per category (`apps/office/` so far). The **Dir** column says how a game is drawn: 2D, 2.5D (a 3D
 look drawn by the game itself on the 2D playground) or 3D (drawn by
 playground3d). The demos of one feature (`examples/`) and the unit
 programs are not listed here.
@@ -197,41 +197,46 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 
 # Apps
 
+All in `apps/office/` so far, the sections below being its kinds of
+program. The other categories are waiting for their first app, each
+with a dune file saying what it might hold: `apps/music/`,
+`apps/internet/`, `apps/devtools/`, `apps/graphics/`, `apps/system/`.
+
 ## Word processing and publishing
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
-| [TinyBravo](apps/TinyBravo.ml) | app | Bravo (Butler Lampson and Charles Simonyi, Xerox PARC, 1974) | The first editor where the screen looked like the page. | WYSIWYG, and the piece table; modal commands, with their famous "edit" trap. |
-| [TinyWord](apps/TinyWord.ml) | app | Microsoft Word (1983 on DOS, 1985 on the Macintosh) | The same text as TinyBravo, with no modes. | No modes: a caret wherever you click, cut, copy and paste, menus you can read, undo by name. |
-| [TinyFrameMaker](apps/TinyFrameMaker.ml) | app | FrameMaker (Charles Corfield, Frame Technology, 1986) | A long document that lays itself out in columns and pages. | Text flowing through a chain of frames over pages; master pages; anchored frames carrying parts along with the text. |
+| [TinyBravo](apps/office/TinyBravo.ml) | app | Bravo (Butler Lampson and Charles Simonyi, Xerox PARC, 1974) | The first editor where the screen looked like the page. | WYSIWYG, and the piece table; modal commands, with their famous "edit" trap. |
+| [TinyWord](apps/office/TinyWord.ml) | app | Microsoft Word (1983 on DOS, 1985 on the Macintosh) | The same text as TinyBravo, with no modes. | No modes: a caret wherever you click, cut, copy and paste, menus you can read, undo by name. |
+| [TinyFrameMaker](apps/office/TinyFrameMaker.ml) | app | FrameMaker (Charles Corfield, Frame Technology, 1986) | A long document that lays itself out in columns and pages. | Text flowing through a chain of frames over pages; master pages; anchored frames carrying parts along with the text. |
 
 ## Spreadsheets
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
-| [TinyVisiCalc](apps/TinyVisiCalc.ml) | app | VisiCalc (Dan Bricklin and Bob Frankston, 1979) | The program that sold the Apple II: cells and formulas. | The spreadsheet on a 40-column screen with no mouse: the cursor as the interface, slash commands, recalculation in row or column order. |
-| [TinyExcel](apps/TinyExcel.ml) | app | Excel (Microsoft, 1985, on the Macintosh) | The same spreadsheet six years later, with the mouse. | The same engine with 1985's answers: ranges, menus, a formula bar, Fill Down's relative references, a dependency graph. |
+| [TinyVisiCalc](apps/office/TinyVisiCalc.ml) | app | VisiCalc (Dan Bricklin and Bob Frankston, 1979) | The program that sold the Apple II: cells and formulas. | The spreadsheet on a 40-column screen with no mouse: the cursor as the interface, slash commands, recalculation in row or column order. |
+| [TinyExcel](apps/office/TinyExcel.ml) | app | Excel (Microsoft, 1985, on the Macintosh) | The same spreadsheet six years later, with the mouse. | The same engine with 1985's answers: ranges, menus, a formula bar, Fill Down's relative references, a dependency graph. |
 
 ## Presentations
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
-| [TinyPowerPoint](apps/TinyPowerPoint.ml) | app | PowerPoint (Robert Gaskins and Dennis Austin, Forethought, 1987) | Slides, an outline, a master, a sorter, and the show. | A talk written before it is drawn: four views of one outline, and a master slide, a style sheet for pages. |
+| [TinyPowerPoint](apps/office/TinyPowerPoint.ml) | app | PowerPoint (Robert Gaskins and Dennis Austin, Forethought, 1987) | Slides, an outline, a master, a sorter, and the show. | A talk written before it is drawn: four views of one outline, and a master slide, a style sheet for pages. |
 
 ## Graphics
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
-| [TinyMacPaint](apps/TinyMacPaint.ml) | app | MacPaint (Bill Atkinson, Apple, 1984) | Paint with dots: pencil, brush, shapes, bucket, and a selection to move. | The picture as bits: palettes of tools and patterns, the seed fill, marching ants, one undo per stroke. |
-| [TinyMacDraw](apps/TinyMacDraw.ml) | app | MacDraw (Apple, 1984) | A picture made of objects you can select, move and group. | The picture as a list of objects: the order is the depth, handles, grouping, hollow shapes clicked through. |
+| [TinyMacPaint](apps/office/TinyMacPaint.ml) | app | MacPaint (Bill Atkinson, Apple, 1984) | Paint with dots: pencil, brush, shapes, bucket, and a selection to move. | The picture as bits: palettes of tools and patterns, the seed fill, marching ants, one undo per stroke. |
+| [TinyMacDraw](apps/office/TinyMacDraw.ml) | app | MacDraw (Apple, 1984) | A picture made of objects you can select, move and group. | The picture as a list of objects: the order is the depth, handles, grouping, hollow shapes clicked through. |
 
 ## Authoring and compound documents
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
-| [TinyHyperCard](apps/TinyHyperCard.ml) | app | HyperCard (Bill Atkinson, Apple, 1987) | Cards, buttons and scripts: programming for non-programmers. | Using and building as one: backgrounds as a database's columns, the message path, HyperTalk. |
-| [TinyOpenDoc](apps/TinyOpenDoc.ml) | app | OpenDoc (Apple, IBM and CI Labs, 1994-97) | A document with no application: text, sheet, picture and drawing parts. | Parts edited in place, the menu bar becoming theirs; unknown parts kept byte for byte; sizes negotiated or scaled. |
-| [TinyOffice](apps/TinyOffice.ml) | app | today's office suites (Microsoft 365, iWork, LibreOffice) | Choose a document, sheet, presentation, picture or drawing; each holds the others. | A start screen; every kind a host; objects floating anywhere, dragged and resized; text running round them, each object its own way; pages with headers, footers and page numbers; objects that move with the text; a chart linked to a sheet; a slide show; OLE's menu merging. |
+| [TinyHyperCard](apps/office/TinyHyperCard.ml) | app | HyperCard (Bill Atkinson, Apple, 1987) | Cards, buttons and scripts: programming for non-programmers. | Using and building as one: backgrounds as a database's columns, the message path, HyperTalk. |
+| [TinyOpenDoc](apps/office/TinyOpenDoc.ml) | app | OpenDoc (Apple, IBM and CI Labs, 1994-97) | A document with no application: text, sheet, picture and drawing parts. | Parts edited in place, the menu bar becoming theirs; unknown parts kept byte for byte; sizes negotiated or scaled. |
+| [TinyOffice](apps/office/TinyOffice.ml) | app | today's office suites (Microsoft 365, iWork, LibreOffice) | Choose a document, sheet, presentation, picture or drawing; each holds the others. | A start screen; every kind a host; objects floating anywhere, dragged and resized; text running round them, each object its own way; pages with headers, footers and page numbers; objects that move with the text; a chart linked to a sheet; a slide show; OLE's menu merging. |
 
 ## PIM
 

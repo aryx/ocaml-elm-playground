@@ -39,7 +39,7 @@
  *
  * What it uses: appkits/slides (Outline), appkits/embed (Component)
  * and the parts of apps/ (Part_sheet, Part_picture, Part_drawing), appkits/richtext
- * (Rich, Page) with apps/Stroke_text for the text, appkits/document's
+ * (Rich, Page) with Stroke_text for the text, appkits/document's
  * Undo, and the playground's text area and menus.
  *
  * Two undos, deliberately: the outline's own (Control-Z in it, the
@@ -57,7 +57,7 @@
  * with its slide when slides are inserted before it in the outline (it
  * stays with the slide's number); notes pages; printing; colour,
  * which came with PowerPoint 2.0 (1988). It saves (File,
- * apps/File_menu): the outline's text, the master, and each part as
+ * File_menu): the outline's text, the master, and each part as
  * its slide, its kind and its saved text.
  *
  * Exercises: drag a thumbnail in the sorter to move a slide, which is

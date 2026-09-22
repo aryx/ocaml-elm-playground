@@ -60,10 +60,10 @@ let scenes : Testutil_golden.scene list =
     (* 1979, on a character display: green on black, the three status
      * lines, the block cursor, and the formulas in VisiCalc's own
      * spelling (+B3*2 rather than =B3*2) *)
-    ("apps/software/TinyVisiCalc", "", 5);
+    ("apps/office/software/TinyVisiCalc", "", 5);
     (* and 1985: the same engine with a menu bar, a formula bar and a
      * mouse *)
-    ("apps/software/TinyExcel", "", 5);
+    ("apps/office/software/TinyExcel", "", 5);
     (* a page set by Knuth and Plass's breaker: justified, each line's
      * ratio in the margin, and the one loose line it could not avoid
      * without hyphenation marked *)
@@ -71,28 +71,28 @@ let scenes : Testutil_golden.scene list =
     (* 1974: the page as it would print, its looks drawn by the pen from
      * Hershey's own strokes -- a bold title at 26, a bold word, an
      * italic one *)
-    ("apps/software/TinyBravo", "", 5);
+    ("apps/office/software/TinyBravo", "", 5);
     (* 1985: the same page with a menu bar and a toolbar, its icons drawn
      * by the same pen as the text *)
-    ("apps/software/TinyWord", "", 5);
+    ("apps/office/software/TinyWord", "", 5);
     (* 1984: a picture as dots, drawn as rectangles -- a run of black
      * dots merged with the runs under it *)
-    ("apps/software/TinyMacPaint", "", 5);
+    ("apps/office/software/TinyMacPaint", "", 5);
     (* 1994: a document of parts -- a text, a sheet and a picture side
      * by side, and a part of a kind nobody here can read, kept *)
-    ("apps/software/TinyOpenDoc", "", 5);
+    ("apps/office/software/TinyOpenDoc", "", 5);
     (* 1987: a slide made from the outline, in the master's look *)
-    ("apps/software/TinyPowerPoint", "", 5);
+    ("apps/office/software/TinyPowerPoint", "", 5);
     (* 1987: a card, its background's fields and buttons, and the page
      * number the stack's script wrote on it when it opened *)
-    ("apps/software/TinyHyperCard", "", 5);
+    ("apps/office/software/TinyHyperCard", "", 5);
     (* 1984: a picture made of objects, not of dots *)
-    ("apps/software/TinyMacDraw", "", 5);
+    ("apps/office/software/TinyMacDraw", "", 5);
     (* 1986: one text flowing over pages from a master page, a sheet
      * anchored in it *)
-    ("apps/software/TinyFrameMaker", "", 5);
+    ("apps/office/software/TinyFrameMaker", "", 5);
     (* the office suite today: first the kind of document *)
-    ("apps/software/TinyOffice", "", 5);
+    ("apps/office/software/TinyOffice", "", 5);
     ("examples/software/Smiley", "", 5);
     ("examples/software/Words", "", 5);
     ("examples/software/Words", "n", 5);
@@ -624,7 +624,7 @@ let scripted : Testutil_golden.scripted list =
      * and the line at the top showing what is in it -- @SUM(B4...B6),
      * as 1979 spelled it. (The slash commands take characters, which
      * a script cannot send: a key is not a character.) *)
-    ("apps/software/TinyVisiCalc", "cursor", 16, "right:3,down:6,down:10");
+    ("apps/office/software/TinyVisiCalc", "cursor", 16, "right:3,down:6,down:10");
     (* what 1985 bought, in one scripted run: a range dragged out with
      * the mouse (D2 to D5), Edit > Fill Down copying the formula into
      * it -- =B2*C2 becoming =B3*C3, =B4*C4, =B5*C5, which is what
@@ -648,20 +648,20 @@ let scripted : Testutil_golden.scripted list =
      * "edit" typed in command mode -- e selects everything, d deletes
      * it, i starts inserting, and a t is all that is left -- then
      * Escape and two undos, one per command, bringing it all back *)
-    ("apps/software/TinyBravo", "edit", 12, "type(edit):10");
-    ("apps/software/TinyBravo", "undone", 22, "type(edit):10,escape:14,type(uu):18");
+    ("apps/office/software/TinyBravo", "edit", 12, "type(edit):10");
+    ("apps/office/software/TinyBravo", "undone", 22, "type(edit):10,escape:14,type(uu):18");
     (* a selection dragged with the mouse, then l u and l s from the
      * keyboard: underlined and struck, the pen's two rules *)
-    ( "apps/software/TinyBravo",
+    ( "apps/office/software/TinyBravo",
       "looks",
       20,
       "at(-222;285):1-6,click:5-10,at(-118;285):8-10,type(lu):14,type(ls):16,at(300;-400):17-20" );
     (* Tesler's answer: no modes, so "edit" typed anywhere is the word
      * edit, and the four letters are one "Undo Typing" *)
-    ("apps/software/TinyWord", "typed", 12, "type( edit):10");
+    ("apps/office/software/TinyWord", "typed", 12, "type( edit):10");
     (* a selection dragged with the mouse, the B icon, then the centring
      * one: the looks are the selection's, the alignment the page's *)
-    ( "apps/software/TinyWord",
+    ( "apps/office/software/TinyWord",
       "looks",
       24,
       "at(-222;285):1-6,click:5-10,at(-118;285):8-12,at(-300;428):14-16,click:15,at(-82;428):18-20,click:19,at(300;-400):21-24"
@@ -669,14 +669,14 @@ let scripted : Testutil_golden.scripted list =
     (* the filled oval and the diagonal pattern, rubber-banded from one
      * corner to the other; then the bucket and grey, poured into the
      * house's window *)
-    ( "apps/software/TinyMacPaint",
+    ( "apps/office/software/TinyMacPaint",
       "shapes",
       30,
       "at(-398;202):1-3,click:2,at(88;-160):4-6,click:5,at(-260;350):7-10,click:9-16,at(-200;300):12,at(-120;250):13-17,at(-398;370):18-20,click:19,at(-104;-160):21-23,click:22,at(-4;112):24-27,click:25,at(400;-400):28-30"
     );
     (* the sun selected, then dragged left: lifted, white left behind,
      * put down opaque over the roof, the ants round it *)
-    ( "apps/software/TinyMacPaint",
+    ( "apps/office/software/TinyMacPaint",
       "move",
       26,
       "at(-440;370):1-3,click:2,at(190;350):4-7,click:6-12,at(310;230):9-14,at(250;290):15-17,click:17-24,at(100;290):20,at(0;290):21-26"
@@ -684,7 +684,7 @@ let scripted : Testutil_golden.scripted list =
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)
-    ( "apps/software/TinyOpenDoc",
+    ( "apps/office/software/TinyOpenDoc",
       "sheet",
       18,
       "at(-195;245):1-18,click:2,click:5,click:8,type(=B2*2):10,return:13" );
@@ -692,7 +692,7 @@ let scripted : Testutil_golden.scripted list =
      * menu, poured into the sky -- the sun's grey joins it seamlessly,
      * the pattern being laid from the picture's corner -- and put down
      * with Escape *)
-    ( "apps/software/TinyOpenDoc",
+    ( "apps/office/software/TinyOpenDoc",
       "picture",
       26,
       "at(200;250):1-6,click:2,click:5,at(-125;470):7-9,click:8,at(-125;293):10-12,click:11,at(-125;470):13-15,click:14,at(-125;221):16-18,click:17,at(200;255):19-21,click:20,escape:23,at(400;-400):22-26"
@@ -700,7 +700,7 @@ let scripted : Testutil_golden.scripted list =
     (* File > Save As..., then File > Open...: the document written to
      * the store and read back through the registry, the unknown part
      * included, the same *)
-    ( "apps/software/TinyOpenDoc",
+    ( "apps/office/software/TinyOpenDoc",
       "reopened",
       26,
       "at(-410;470):1-3,click:2,at(-410;291):4-6,click:5,type(parts):8,return:10,at(-410;470):11-13,click:12,at(-410;363):14-16,click:15,at(0;160):17-19,click:18,at(90;-75):20-22,click:21,at(400;-400):23-26"
@@ -709,7 +709,7 @@ let scripted : Testutil_golden.scripted list =
      * oval added from its menu, dragged and made grey; then saved and
      * opened again -- the drawing written by Marshal and read back
      * through the registry *)
-    ( "apps/software/TinyOpenDoc",
+    ( "apps/office/software/TinyOpenDoc",
       "drawing",
       62,
       "at(0;17):1-3,click:2,at(-220;470):4-6,click:5,at(-220;293):7-9,click:8,at(-200;-60):10-13,click:11,at(-125;470):14-16,click:15,at(-125;365):17-19,click:18,at(-195;-122):20-22,click:21-27,at(-150;-130):24,at(-95;-150):25-28,at(-125;470):29-31,click:30,at(-125;293):32-34,click:33,escape:36,at(-410;470):38-40,click:39,at(-410;291):41-43,click:42,type(drawing):44,return:46,at(-410;470):47-49,click:48,at(-410;363):50-52,click:51,at(0;160):53-55,click:54,at(90;-75):56-58,click:57,at(600;-600):59-62"
@@ -717,42 +717,42 @@ let scripted : Testutil_golden.scripted list =
     (* the first text selected, its bottom handle dragged down: it is
      * given more room, and the row, the text and the placeholder below
      * it reflow as the mouse moves *)
-    ( "apps/software/TinyOpenDoc",
+    ( "apps/office/software/TinyOpenDoc",
       "height",
       18,
       "at(0;350):1-3,click:2,at(0;293):4-7,click:5-12,at(0;250):8,at(0;213):9-14,at(600;-600):15-18" );
     (* the gap between the sheet and the picture dragged right: the row's
      * width shared out anew, one Resize to undo *)
-    ("apps/software/TinyOpenDoc", "split", 14, "at(0;207):1-3,click:2-8,at(20;207):4,at(40;207):5-10,at(600;-600):11-14");
+    ("apps/office/software/TinyOpenDoc", "split", 14, "at(0;207):1-3,click:2-8,at(20;207):4,at(40;207):5-10,at(600;-600):11-14");
     (* the picture and the sheet each made "Scale to Fit" from the Edit
      * menu, then the gap between them dragged left: the picture scaled
      * up with its share, the sheet down with its -- OLE's way, where the
      * others negotiate *)
-    ( "apps/software/TinyOpenDoc",
+    ( "apps/office/software/TinyOpenDoc",
       "scaled",
       32,
       "at(200;200):1-3,click:2,at(-315;470):4-6,click:5,at(-315;293):7-9,click:8,at(-250;230):10-12,click:11,at(-315;470):13-15,click:14,at(-315;293):16-18,click:17,at(0;195):19-21,click:20-26,at(-60;195):23,at(-120;195):24-28,at(600;-600):29-32"
     );
     (* a document, its text running round the sheet floating on it *)
-    ("apps/software/TinyOffice", "document", 8, "at(-360;30):1-2,click:1,at(600;-600):4-8");
+    ("apps/office/software/TinyOffice", "document", 8, "at(-360;30):1-2,click:1,at(600;-600):4-8");
     (* the sheet dragged left and its corner dragged out: scaled up, and
      * the text reflowing round it as it moves *)
-    ( "apps/software/TinyOffice",
+    ( "apps/office/software/TinyOffice",
       "drag",
       26,
       "at(-360;30):1-2,click:1,at(160;227):3-5,click:4-11,at(60;190):7,at(-60;150):8-12,at(50;97):13-15,click:14-20,at(90;70):17,at(130;40):18-22,at(600;-600):23-26"
     );
     (* the sheet clicked twice: edited in place, the menu bar File and
      * the sheet's own -- OLE 2's menu merging *)
-    ("apps/software/TinyOffice", "active", 12, "at(-360;30):1-2,click:1,at(160;227):3-9,click:4,click:7,at(600;-600):10-12");
+    ("apps/office/software/TinyOffice", "active", 12, "at(-360;30):1-2,click:1,at(160;227):3-9,click:4,click:7,at(600;-600):10-12");
     (* the four other kinds, each holding another *)
-    ("apps/software/TinyOffice", "spreadsheet", 6, "at(-180;30):1-2,click:1,at(600;-600):3-6");
-    ("apps/software/TinyOffice", "presentation", 6, "at(0;30):1-2,click:1,at(600;-600):3-6");
-    ("apps/software/TinyOffice", "picture", 6, "at(180;30):1-2,click:1,at(600;-600):3-6");
-    ("apps/software/TinyOffice", "drawing", 6, "at(360;30):1-2,click:1,at(600;-600):3-6");
+    ("apps/office/software/TinyOffice", "spreadsheet", 6, "at(-180;30):1-2,click:1,at(600;-600):3-6");
+    ("apps/office/software/TinyOffice", "presentation", 6, "at(0;30):1-2,click:1,at(600;-600):3-6");
+    ("apps/office/software/TinyOffice", "picture", 6, "at(180;30):1-2,click:1,at(600;-600):3-6");
+    ("apps/office/software/TinyOffice", "drawing", 6, "at(360;30):1-2,click:1,at(600;-600):3-6");
     (* the sheet dragged to the middle of the text, then Arrange > Wrap
      * Both Sides: a line filling the stretches on both of its sides *)
-    ( "apps/software/TinyOffice",
+    ( "apps/office/software/TinyOffice",
       "both",
       24,
       "at(-360;30):1-2,click:1,at(160;227):3-5,click:4-11,at(60;227):7,at(-40;227):8-12,at(-104;470):13-15,click:14,at(-104;149):16-18,click:17,at(600;-600):19-24"
@@ -760,27 +760,27 @@ let scripted : Testutil_golden.scripted list =
     (* the sheet tied to its paragraph (Arrange > Move with Text), then
      * twelve new lines typed above that paragraph: the sheet moves down
      * with it, and the last paragraph onto a second page *)
-    ( "apps/software/TinyOffice",
+    ( "apps/office/software/TinyOffice",
       "push",
       50,
       "at(-360;30):1-2,click:1,at(160;227):3-5,click:4,at(-104;470):6-8,click:7,at(-104;257):9-11,click:10,at(-272;345):12-14,click:13,return:20,return:22,return:24,return:26,return:28,return:30,return:32,return:34,return:36,return:38,return:40,return:42,at(600;-600):45-50"
     );
     (* and PageDown: the second page *)
-    ( "apps/software/TinyOffice",
+    ( "apps/office/software/TinyOffice",
       "scroll",
       52,
       "at(-360;30):1-2,click:1,at(160;227):3-5,click:4,at(-104;470):6-8,click:7,at(-104;257):9-11,click:10,at(-272;345):12-14,click:13,return:20,return:22,return:24,return:26,return:28,return:30,return:32,return:34,return:36,return:38,return:40,return:42,at(600;-600):45-52,PageDown:47"
     );
     (* the sheet made "Top and Bottom": no text beside it, only above
      * and below -- each object its own way of wrapping *)
-    ( "apps/software/TinyOffice",
+    ( "apps/office/software/TinyOffice",
       "wrap",
       14,
       "at(-360;30):1-2,click:1,at(160;227):3-5,click:4,at(-104;470):6-8,click:7,at(-104;113):9-11,click:10,at(600;-600):12-14"
     );
     (* a click in the top margin, and the header edited: the body
      * dimmed, the fields shown as codes in the footer's place *)
-    ( "apps/software/TinyOffice",
+    ( "apps/office/software/TinyOffice",
       "header",
       14,
       "at(-360;30):1-2,click:1,at(-100;415):3-5,click:4,type( -- draft):7,at(600;-600):9-14"
@@ -789,33 +789,33 @@ let scripted : Testutil_golden.scripted list =
      * of its own, empty): the sheet made "Top and Bottom", saved as
      * "letter", File > New back to the start screen, and its Open...
      * -- the document as it was, its wrap included *)
-    ( "apps/software/TinyOffice",
+    ( "apps/office/software/TinyOffice",
       "reopened",
       40,
       "at(-360;30):1-2,click:1,at(160;227):3-5,click:4,at(-104;470):6-8,click:7,at(-104;113):9-11,click:10,at(-410;472):12-14,click:13,at(-410;293):15-17,click:16,type(letter):18,return:20,at(-410;472):21-23,click:22,at(-410;401):24-26,click:25,at(0;-220):27-29,click:28,at(0;160):30-32,click:31,at(90;-75):33-35,click:34,at(600;-600):36-40"
     );
     (* B2 cleared, saved as "budget", File > New, File > Open... *)
-    ( "apps/software/TinyExcel",
+    ( "apps/office/software/TinyExcel",
       "saved",
       40,
       "at(-85;85):1-3,click:2,at(24;229):4-6,click:5,at(24;158):7-9,click:8,at(-116;229):10-12,click:11,at(-116;50):13-15,click:14,type(budget):16,return:18,at(-116;229):19-21,click:20,at(-116;158):22-24,click:23,at(-116;229):25-27,click:26,at(-116;122):28-30,click:29,at(0;160):31-33,click:32,at(90;-75):34-36,click:35,at(600;-600):37-40"
     );
     (* 42 in A1, /S S demo, /C, /S L demo: VisiCalc's storage command,
      * the same file TinyExcel opens *)
-    ( "apps/software/TinyVisiCalc",
+    ( "apps/office/software/TinyVisiCalc",
       "storage",
       32,
       "type(42):2,return:4,type(/):6,type(s):8,type(s):10,type(demo):12,return:14,type(/):16,type(c):18,type(/):20,type(s):22,type(l):24,type(demo):26,return:28"
     );
     (* the presentation's show, a click on to its second slide *)
-    ( "apps/software/TinyOffice",
+    ( "apps/office/software/TinyOffice",
       "show",
       16,
       "at(0;30):1-2,click:1,at(100;470):3-5,click:4,at(100;293):6-8,click:7,at(0;0):9-16,click:12"
     );
     (* the sheet selected, Insert > Chart, then the sheet edited in
      * place, Ink made 90: the chart, linked to it, follows *)
-    ( "apps/software/TinyOffice",
+    ( "apps/office/software/TinyOffice",
       "chart",
       30,
       "at(-360;30):1-2,click:1,at(160;227):3-5,click:4,at(-206;470):6-8,click:7,at(-206;257):9-11,click:10,at(170;237):12-21,click:13,click:16,click:19,type(90):22,return:24,at(600;-600):26-30"
@@ -823,105 +823,105 @@ let scripted : Testutil_golden.scripted list =
     (* the master changed to two columns: everything lays itself out
      * again, the drawing shrinking to its column, the sheet spilling
      * out of it -- widths are not negotiated *)
-    ("apps/software/TinyFrameMaker", "columns", 10, "at(-110;470):1-3,click:2,at(-110;365):4-6,click:5,at(600;-600):7-10");
+    ("apps/office/software/TinyFrameMaker", "columns", 10, "at(-110;470):1-3,click:2,at(-110;365):4-6,click:5,at(600;-600):7-10");
     (* eight new lines typed above the sheet: it moves down with the
      * text, onto the next page, and the document grows a page *)
-    ( "apps/software/TinyFrameMaker",
+    ( "apps/office/software/TinyFrameMaker",
       "push",
       24,
       "at(-406;42):1-3,click:2,return:5,return:7,return:9,return:11,return:13,return:15,return:17,return:19,at(600;-600):20-24"
     );
     (* the master changed twice -- a black band, titles centred -- and
      * every slide changes with it *)
-    ( "apps/software/TinyPowerPoint",
+    ( "apps/office/software/TinyPowerPoint",
       "master",
       16,
       "at(-30;470):1-3,click:2,at(-30;293):4-6,click:5,at(-30;470):7-9,click:8,at(-30;257):10-12,click:11,at(400;-480):13-16"
     );
     (* the sorter: every slide, the same drawing scaled *)
-    ( "apps/software/TinyPowerPoint",
+    ( "apps/office/software/TinyPowerPoint",
       "sorter",
       10,
       "at(-220;470):1-3,click:2,at(-220;329):4-6,click:5,at(400;-480):7-10" );
     (* the outline, and a line typed against its edge: a sixth slide,
      * shown beside it as it is typed *)
-    ( "apps/software/TinyPowerPoint",
+    ( "apps/office/software/TinyPowerPoint",
       "outline",
       18,
       "at(-220;470):1-3,click:2,at(-220;365):4-6,click:5,at(80;-66):7-9,click:8,return:10,type(Questions?):12,at(400;-480):13-18"
     );
     (* the show, caught halfway through pushing slide 1 away for slide
      * 2: the two drawings, moved *)
-    ( "apps/software/TinyPowerPoint",
+    ( "apps/office/software/TinyPowerPoint",
       "show",
       14,
       "at(-220;470):1-3,click:2,at(-220;293):4-6,click:5,right:9,at(0;0):12-14" );
     (* slide 4's sheet clicked (activated: its menu in the bar), B1
      * clicked and 3 typed into it -- B3, =B2/B1, follows *)
-    ( "apps/software/TinyPowerPoint",
+    ( "apps/office/software/TinyPowerPoint",
       "part",
       24,
       "right:2,right:4,right:6,at(175;122):8-24,click:9,click:12,type(3):15,return:17" );
     (* typing on the slide itself: a point clicked at its end, a word
      * added, Enter for a new point, Tab to push it a level down -- all
      * of it edits of the outline's lines *)
-    ( "apps/software/TinyPowerPoint",
+    ( "apps/office/software/TinyPowerPoint",
       "typed",
       16,
       "at(300;66):1-3,click:2,type( Plus):5,return:7,type(Two years after the first Mac):9,tab:11,at(400;-480):12-16"
     );
     (* Next, then the button clicked three times: its script counts *)
-    ( "apps/software/TinyHyperCard",
+    ( "apps/office/software/TinyHyperCard",
       "clicks",
       16,
       "at(299;-204):1-4,click:2,at(0;79):5-16,click:7,click:10,click:13" );
     (* the message path: "Pass it on" answers and passes, the card's
      * script answers next -- twice *)
-    ( "apps/software/TinyHyperCard",
+    ( "apps/office/software/TinyHyperCard",
       "path",
       16,
       "at(299;-204):1-7,click:2,click:5,at(-236;150):8-16,click:9,click:12" );
     (* ten clicks, and the script's "answer" *)
-    ( "apps/software/TinyHyperCard",
+    ( "apps/office/software/TinyHyperCard",
       "answer",
       30,
       "at(299;-204):1-4,click:2,at(0;79):5-40,click:6,click:8,click:10,click:12,click:14,click:16,click:18,click:20,click:22,click:24"
     );
     (* the button tool, the button selected, Objects > Script...: what it
      * does, to read and change *)
-    ( "apps/software/TinyHyperCard",
+    ( "apps/office/software/TinyHyperCard",
       "script",
       20,
       "at(299;-204):1-4,click:2,at(455;202):5-7,click:6,at(0;79):8-10,click:9,at(-80;470):11-13,click:12,at(-80;401):14-16,click:15,at(600;-600):17-20"
     );
     (* Objects > New Button, dragged where it goes *)
-    ( "apps/software/TinyHyperCard",
+    ( "apps/office/software/TinyHyperCard",
       "new",
       20,
       "at(-80;470):1-3,click:2,at(-80;257):4-6,click:5,at(0;33):7-9,click:9-14,at(-100;33):11,at(-200;-80):12-16,at(600;-600):17-20"
     );
     (* a click in the middle of the hollow rectangle goes through it,
      * and selects the grey oval behind *)
-    ("apps/software/TinyMacDraw", "through", 8, "at(-140;135):1-4,click:2,at(600;-600):5-8");
+    ("apps/office/software/TinyMacDraw", "through", 8, "at(-140;135):1-4,click:2,at(600;-600):5-8");
     (* the "Objects" group dragged down, then its corner handle: the box
      * scales, its label goes with it -- the resize a map of the points *)
-    ( "apps/software/TinyMacDraw",
+    ( "apps/office/software/TinyMacDraw",
       "group",
       24,
       "at(100;280):1-3,click:2-8,at(100;200):5,at(100;60):6-10,at(210;10):12-14,click:13-19,at(260;-30):16,at(320;-60):17-20,at(600;-600):21-24"
     );
     (* a rectangle drawn across the thick line, filled dark grey from the
      * Fill menu, and sent to the back: the line is in front of it *)
-    ( "apps/software/TinyMacDraw",
+    ( "apps/office/software/TinyMacDraw",
       "draw",
       28,
       "at(-440;262):1-3,click:2,at(0;-150):4-6,click:5-11,at(120;-200):8,at(250;-280):9-12,at(-95;472):13-15,click:14,at(-95;259):16-18,click:17,at(-200;472):19-21,click:20,at(-200;367):22-24,click:23,at(600;-600):25-28"
     );
-    ( "apps/software/TinyExcel",
+    ( "apps/office/software/TinyExcel",
       "edited",
       20,
       "at(19;84):1-5,click:3,at(100;181):6-10,click:8,backspace:11,return:14,at(19;84):16-20" );
-    ( "apps/software/TinyExcel",
+    ( "apps/office/software/TinyExcel",
       "filled",
       40,
       "at(122;84):1-6,click:5-13,at(122;40):8-10,at(122;0):11-13,at(-45;227):15-18,click:16,at(-45;120):19-24,click:21,at(70;227):26-29,click:27,at(70;156):30-36,click:32,at(122;0):37-40" );

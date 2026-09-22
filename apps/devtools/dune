@@ -1,0 +1,16 @@
+; claude: the programming tools -- none yet, a placeholder for the
+; category (CATALOG.md gets its section with the first one). Laid out
+; like office/: the programs here, software/ for the golden frames,
+; web/ for the browser.
+;
+; What it might contain, each Tiny and after a famous original:
+;  - a text editor (vi 1976, Emacs): a buffer, modes, the undo of
+;    appkit_document;
+;  - an integrated environment (Turbo Pascal, 1983): edit, compile, run,
+;    and the error on its line -- over one of the small languages of
+;    plan_teaching_languages.md;
+;  - a debugger (the Smalltalk-80 one): a running program's stack and
+;    state, the inspector of plan_inspect_teaching.md;
+;  - a notebook or REPL (Mathematica 1988, Jupyter): cells of code and
+;    what they print, pictures included.
+; Built on gui/ and the appkits (richtext, document).

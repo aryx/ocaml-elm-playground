@@ -54,7 +54,7 @@ val cell_at : geometry -> Widget.box -> float * float -> Formula.cell option
 (* [draw geometry theme box sheet ~selection]: the whole thing. The
  * selection is (anchor, focus), in either order; without one, nothing
  * is shown selected -- a sheet sitting in a document, not being
- * edited (apps/Part_sheet). *)
+ * edited (Part_sheet). *)
 val draw :
   ?selection:Formula.cell * Formula.cell ->
   geometry ->

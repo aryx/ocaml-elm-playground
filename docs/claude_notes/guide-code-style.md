@@ -109,7 +109,7 @@ Small traps, written down because each cost a build:
   pixel coordinate, so any layout change re-aims every script that
   pointed into the changed panel.
 - **A field's text belongs to the caller, so anything that rewrites it
-  every frame makes it uneditable.** `apps/TinyExcel` refreshed its
+  every frame makes it uneditable.** `TinyExcel` refreshed its
   formula bar from the selected cell at the end of each update, to
   catch what a menu command had changed — and so put the cell's own
   text back over every keystroke. The rule: refresh it *on the events

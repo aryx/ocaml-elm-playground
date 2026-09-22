@@ -45,7 +45,7 @@
  * lasso, the hand, text, the spray can, polygons, rounded rectangles;
  * FatBits, the magnified view for editing dot by dot; the line widths;
  * brush shapes; patterns you edit; the page of 576 by 720 dots and
- * printing it. It saves (File, apps/File_menu): the Bitmap.t, its bits
+ * printing it. It saves (File, File_menu): the Bitmap.t, its bits
  * as they are.
  *
  * Exercises: the spray can (dots of the pattern at random in a disc,

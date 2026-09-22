@@ -100,7 +100,7 @@ document named this"), whatever the storage behind them is.
    and the ten saving apps call `Cap.main` in their main, narrowing to
    `File_menu.caps`; the platforms only ask for the capability, never
    hold one.
-2. The web: check `caps` links under js_of_ocaml (an `apps/web/` app
+2. The web: check `caps` links under js_of_ocaml (an `apps/office/web/` app
    with `Cap.main` in it). **Done**: it links and runs, with no
    missing-primitive warning.
 3. `Cap.random` for Tetris and Snake.

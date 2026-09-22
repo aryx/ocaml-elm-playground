@@ -40,7 +40,7 @@
  * What it uses: appkits/hypertalk (the language, run against this
  * stack through a record of functions), appkits/paint (the card's
  * picture and the pencil: Atkinson wrote MacPaint first, and
- * HyperCard's paint tools are MacPaint's), apps/Stroke_text for the
+ * HyperCard's paint tools are MacPaint's), Stroke_text for the
  * fields' text, and the playground's menus, fields and text areas --
  * the fields, when browsing, are text areas of the toolkit, asked for
  * every frame, which is immediate mode taken at its word.

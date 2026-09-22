@@ -57,7 +57,7 @@
  *
  * What it uses: appkits/richtext (Rich, Page, Flow), appkits/embed
  * (Component) and the parts of apps/ (Part_sheet, Part_picture,
- * Part_drawing), apps/Stroke_text, appkits/document's Undo, and the
+ * Part_drawing), Stroke_text, appkits/document's Undo, and the
  * playground's menus.
  *
  * What it deliberately does not do: FrameMaker's named paragraph
@@ -66,7 +66,7 @@
  * widths, placed anywhere, or with the text running round them;
  * selections in the text, and looks (TinyWord has them); several
  * master pages; tables; books of many files. It saves (File,
- * apps/File_menu): the text with its looks, the master, and each
+ * File_menu): the text with its looks, the master, and each
  * frame as its place, its kind and its saved text.
  *
  * Exercises: the paragraph catalog -- a style per paragraph, by name,

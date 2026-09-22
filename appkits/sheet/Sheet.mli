@@ -96,7 +96,7 @@ val recalculated : t -> int
  *
  * It is here, beside the real one, because the difference is the
  * lesson: run both on the same sheet and the graph stops being an
- * implementation detail. [apps/TinyVisiCalc] switches between them
+ * implementation detail. [TinyVisiCalc] switches between them
  * with a key. *)
 type order = Rows | Columns
 

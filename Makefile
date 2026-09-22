@@ -172,7 +172,7 @@ js:
 	dune build $(GENRES:%=%/web) --profile=release-js
 	dune build examples/web --profile=release-js
 	dune build examples/svg --profile=release-js
-	dune build apps/web --profile=release-js
+	dune build apps/office/web --profile=release-js
 
 ###############################################################################
 # Developer targets

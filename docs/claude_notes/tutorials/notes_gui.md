@@ -702,7 +702,7 @@ is his answer (Gypsy, with Tim Mott, 1975): no modes, a caret you type
 at wherever it is, cut, copy and paste -- and every look reachable
 three ways, a toolbar, a menu and a key, none of which needs
 remembering. Both draw their looks with the pen from Hershey's strokes
-(`apps/Stroke_text`): bold a thicker pen, italic the points sheared.
+(`Stroke_text`): bold a thicker pen, italic the points sheared.
 
 ## 13. A picture is bits: MacPaint
 
@@ -933,7 +933,7 @@ each take one, which only `Cap.main` hands out, once, in the program's
 main. A game whose main does not call it cannot touch a file, and its
 type says so.
 
-The menu is shared (`apps/File_menu`), immediate mode like the rest:
+The menu is shared (`File_menu`), immediate mode like the rest:
 the app asks for it in its update and, while a dialog is up, gives it
 the frame instead of its own input. Two apps keep their period's way:
 TinyVisiCalc's `/S S` and `/S L` (the same `.sheet` file TinyExcel

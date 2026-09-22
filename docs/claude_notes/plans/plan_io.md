@@ -14,7 +14,7 @@ decisions (2026-09-21):
 - **Both kinds of saving**: a store of named documents (Save / Open),
   and real files in and out (Export / Import).
 - **On the web too**, with a web build of the apps to try it:
-  `apps/web/` (not `apps/js/`; the other `js/` directories are to be
+  `apps/office/web/` (not `apps/js/`; the other `js/` directories are to be
   renamed later by the author, for consistency).
 - **With capabilities** -- the authority side is
   [`plan_caps.md`](plan_caps.md); this plan only says which capability
@@ -100,14 +100,14 @@ browser, for that site, and survives a reload.
 1. `appkits/document/Saved` and its tests -- **done** (2026-09-21),
    with a check that all of Marshal's data is there as well as the
    line; its first user is TinyOpenDoc's drawing part
-   (`apps/Part_drawing`), whose part text is a drawing so saved.
+   (`Part_drawing`), whose part text is a drawing so saved.
 2. `store` / `fetch` / `export` in the native and software backends
    (with `caps`, `plan_caps.md` phase 1); File > Save / Open / Export in
    TinyExcel first, then TinyWord, TinyMacPaint, TinyPowerPoint,
    TinyOpenDoc. **Done** (2026-09-22): `Playground_platform.store`,
    `fetch`, `stored`, `export`, each taking its capability
    (`native_common/Store`: $ELM_PLAYGROUND_STORE, else
-   ~/.elm-playground/documents); `apps/File_menu`, the menu and its two
+   ~/.elm-playground/documents); `File_menu`, the menu and its two
    dialogs (Save As's name field takes the keys at once, Open lists the
    documents of the app's extension), in all the menu-driven apps --
    TinyExcel (.sheet), TinyWord (.doc), TinyMacPaint (.paint),
@@ -121,7 +121,7 @@ browser, for that site, and survives a reload.
    (kind, saved text) -- TinyOffice by making its records polymorphic
    in the part, so the saved form is the same records.
 3. Import by drop: `computer.dropped`, from SDL's drop event.
-4. `apps/web/`: the apps built for the browser (like `games/<genre>/web/`:
+4. `apps/office/web/`: the apps built for the browser (like `games/<genre>/web/`:
    `copy_files` of `../Foo.ml`, `(modes js)`, an `.html` each) -- to
    check on the way that `Stroke_text`'s Hershey data (`graphics_font`)
    compiles to JavaScript and that the text area and menus behave with

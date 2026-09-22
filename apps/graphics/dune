@@ -1,0 +1,17 @@
+; claude: the graphics applications beyond the office's -- none yet, a
+; placeholder for the category (CATALOG.md gets its section with the
+; first one). TinyMacPaint and TinyMacDraw stay in office/ (they were
+; the Mac's first office bundle, and share its File menu and text).
+; Laid out like office/: the programs here, software/ for the golden
+; frames, web/ for the browser.
+;
+; What it might contain, each Tiny and after a famous original:
+;  - a photo editor (Photoshop, 1990): layers, selections, filters as
+;    convolutions over the paint appkit's bits;
+;  - a pixel-art and sprite editor (Deluxe Paint, 1985): palettes,
+;    brushes, animation frames -- the sprites the games draw;
+;  - a 3D modeller (3D Studio 1990, Blender): meshes built and turned,
+;    drawn by playground3d;
+;  - a font editor (Fontographer, 1986): Bezier outlines, graphics_font's
+;    strokes seen the other way round.
+; Built on graphics/, the appkits (paint, draw) and playground3d.

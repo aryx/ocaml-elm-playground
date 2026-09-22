@@ -1,5 +1,5 @@
 ; claude: CATALOG.md kept complete: every program of games/<genre>/ and
-; apps/ (the (names ...) of their dune files) has its row, its golden
+; apps/<category>/ (the (names ...) of their dune files) has its row, its golden
 ; frame and its web page. See Unit_catalog.ml.
 (test
  (name Test)
@@ -10,10 +10,10 @@
  (deps
    %{project_root}/CATALOG.md
    (glob_files_rec %{project_root}/games/dune)
-   %{project_root}/apps/dune
+   (glob_files_rec %{project_root}/apps/dune)
    (glob_files %{project_root}/tests/2d/golden/*.png)
    (glob_files %{project_root}/tests/3d/golden/*.png)
    (glob_files_rec %{project_root}/games/*.html)
-   (glob_files %{project_root}/apps/web/*.html)
+   (glob_files_rec %{project_root}/apps/*.html)
  )
 )

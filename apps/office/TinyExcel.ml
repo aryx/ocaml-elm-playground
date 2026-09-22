@@ -10,7 +10,7 @@
 (* TinyExcel: the same spreadsheet, six years later
  * (Microsoft, 1985, on the Macintosh; plan_gui_teaching.md, phase 8).
  *
- * The pair with apps/TinyVisiCalc.ml is the point, and it is worth
+ * The pair with TinyVisiCalc.ml is the point, and it is worth
  * saying what is *shared* first: appkits/sheet, the whole engine --
  * the formula language, the dependency graph, the recalculation. Not
  * one line of it differs between 1979 and 1985. What differs is

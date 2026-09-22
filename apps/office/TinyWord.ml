@@ -11,10 +11,10 @@
  * modes (Microsoft Word, 1983 on DOS and 1985 on the Macintosh;
  * plan_gui_teaching.md, phase 9d).
  *
- * The pair with apps/TinyBravo.ml is the point, as TinyVisiCalc and
+ * The pair with TinyBravo.ml is the point, as TinyVisiCalc and
  * TinyExcel are, and what is shared comes first: appkits/richtext --
  * the piece table, the runs of looks over it, the page they are laid
- * out on and the way back from a click -- and apps/Stroke_text, the
+ * out on and the way back from a click -- and Stroke_text, the
  * looks drawn with Hershey's pen. Not a line of it differs. Charles
  * Simonyi wrote both programs' ancestors: Bravo at Xerox, then Word at
  * Microsoft, with the same piece table.
@@ -41,7 +41,7 @@
  * inherited all of it, and so did everything since.
  *
  * What it uses: appkits/richtext (Rich, Page and its alignment),
- * appkits/document (Undo, Clipboard), apps/Stroke_text, and the
+ * appkits/document (Undo, Clipboard), Stroke_text, and the
  * playground's menus. The toolbar is drawn by the program rather than
  * made of widgets, because its icons are drawn with the pen -- a bold
  * B, an italic I -- which a widget's label cannot be; so it asks

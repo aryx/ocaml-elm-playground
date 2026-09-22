@@ -47,8 +47,8 @@
  * dragging, and anything about formatting.
  *
  * Exercises: the arrows moving the cursor, which needs a mode (typing
- * or pointing -- VisiCalc's problem, and apps/TinyVisiCalc's
- * answer); a range selected by dragging, as apps/TinyExcel does;
+ * or pointing -- VisiCalc's problem, and TinyVisiCalc's
+ * answer); a range selected by dragging, as TinyExcel does;
  * showing the formula of the cell you are on rather than its value;
  * a column wide enough for what is in it.
  *)
@@ -84,7 +84,7 @@ let initial =
 (*****************************************************************************)
 (* The sheet *)
 (*****************************************************************************)
-(* drawn by appkits/sheet_view, which apps/TinyExcel uses too and
+(* drawn by appkits/sheet_view, which TinyExcel uses too and
    appkits/embed will wrap: a sheet drawn into a rectangle, with a
    selection (of one cell here) and a way back from a click to a cell *)
 

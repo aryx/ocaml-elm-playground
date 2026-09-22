@@ -96,10 +96,10 @@
  * the main content of the sheet, picture and drawing documents and the
  * objects floating on any of them, appkits/richtext (Rich, Page and its
  * text round boxes, on one side or both) for the document and the
- * slides, apps/Stroke_text, appkits/document's Undo, and the
+ * slides, Stroke_text, appkits/document's Undo, and the
  * playground's menus.
  *
- * It saves (File, apps/File_menu, and Open... on the start screen):
+ * It saves (File, File_menu, and Open... on the start screen):
  * every kind in one file type, the document's own records with each
  * part replaced by its kind and saved text.
  *

@@ -33,7 +33,7 @@
  *   to make that impossible, as there were in TinyOpenDoc's parts.
  *
  * What it uses: appkits/draw (Figure, Drawing), appkits/document
- * (Undo), apps/Figure_shapes to draw the figures (and Stroke_text for
+ * (Undo), Figure_shapes to draw the figures (and Stroke_text for
  * their text), and the playground's menus.
  *
  * The tools: the arrow (click to select, Shift-click to add, drag on
@@ -49,7 +49,7 @@
  * rectangles, arcs, polygons, freehand); patterns (the objects are
  * filled with greys, since they are drawn as shapes and not as dots);
  * text of several lines, and text styles; rotation; rulers; pages and
- * printing. It saves (File, apps/File_menu): the Drawing.t, as it is.
+ * printing. It saves (File, File_menu): the Drawing.t, as it is.
  *
  * Exercises: rounded rectangles (the corner radius a fifth handle);
  * polygons, clicked point by point, and their hit test (a point in a

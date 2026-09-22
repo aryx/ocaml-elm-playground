@@ -23,9 +23,12 @@ let genres =
   [ "shmup"; "fighting"; "platform"; "arcade"; "puzzle"; "adventure"; "rpg";
     "fps"; "flight"; "racing"; "sports"; "strategy"; "rhythm" ]
 
+(* claude: and the apps' categories, most still empty *)
+let categories = [ "office"; "music"; "internet"; "devtools"; "graphics"; "system" ]
+
 let dirs =
   List.map (fun g -> ("games/" ^ g, None, "games/" ^ g ^ "/web")) genres
-  @ [ ("apps", Some "tests/2d", "apps/web") ]
+  @ List.map (fun c -> ("apps/" ^ c, Some "tests/2d", "apps/" ^ c ^ "/web")) categories
 
 (* the position of [sub] in [s] from [from], if any *)
 let rec find (s : string) (sub : string) (from : int) : int option =

@@ -10,7 +10,7 @@ changes pixels ends with new golden frames, approved after looking at
 them (`make approve-golden2d`). Saving documents, and the apps on the
 web, have their own plans: [`plan_io.md`](plan_io.md) and
 [`plan_caps.md`](plan_caps.md) -- saving is done (2026-09-22: every
-app but TinyBravo, a File menu shared in `apps/File_menu`, the store
+app but TinyBravo, a File menu shared in `File_menu`, the store
 native and web); import by dropping a file is what is left of it.
 
 ## 1. 7GUIs: the rest of the comparison
@@ -84,7 +84,7 @@ From TinyOpenDoc's header:
   as OpenDoc's could -- the idea's real generality, and today the
   rows and columns are the document's own;
 - **a part flowing in a text** -- done the FrameMaker way (2026-09-21):
-  `apps/TinyFrameMaker.ml` anchors the same parts in a text that flows
+  `TinyFrameMaker.ml` anchors the same parts in a text that flows
   over pages (`appkits/richtext/Flow`), each set below its line and
   moving with it. The Word way, a part inline as a very large
   character inside a line, is still open (`Page` would need a glyph
@@ -102,7 +102,7 @@ From TinyOpenDoc's header:
 - **linking**, OLE's "L": a part that shows a file kept elsewhere and
   follows it when it changes (after `plan_io.md`);
 - a fourth kind of part added with one registry line and nothing else
-  changed -- **done** (2026-09-21): `apps/Part_drawing`, TinyMacDraw's
+  changed -- **done** (2026-09-21): `Part_drawing`, TinyMacDraw's
   engine as a part, in TinyOpenDoc's registry and Insert menu and in
   TinyPowerPoint's; it saves with Marshal (`appkits/document/Saved`).
   A fifth (a chart of a sheet's column) would be the same.
@@ -131,7 +131,7 @@ Compared with Microsoft Office and LibreOffice (2026-09-21), the suite
 had Word, Excel, PowerPoint, a paint program and compound documents,
 and missed six kinds of program; by what each would teach:
 
-- **Vector drawing -- done**: `apps/TinyMacDraw.ml` (MacDraw, 1984)
+- **Vector drawing -- done**: `TinyMacDraw.ml` (MacDraw, 1984)
   over `appkits/draw` (`Figure`, `Drawing`): objects rather than dots,
   a hollow shape hit only on its outline, the order as the depth,
   groups, resizing as an affine map passed down a group. TinyMacPaint's
@@ -147,7 +147,7 @@ and missed six kinds of program; by what each would teach:
   `appkits/typeset` -- and a real part for TinyOpenDoc, whose
   "equation" part is today a placeholder.
 - **Desktop publishing -- the long-document half done**:
-  `apps/TinyFrameMaker.ml` (FrameMaker, around 1986): one text flowing
+  `TinyFrameMaker.ml` (FrameMaker, around 1986): one text flowing
   through the columns of pages made from a master page, and parts
   anchored in it, over `appkits/richtext/Flow`; its header compares it
   with TinyOpenDoc (more powerful: parts in the text's flow, many
@@ -169,7 +169,7 @@ others.
 
 ## 8b. TinyOffice, the suite as it is today -- done, and what's next
 
-`apps/TinyOffice.ml` (2026-09-21), separate from TinyOpenDoc and
+`TinyOffice.ml` (2026-09-21), separate from TinyOpenDoc and
 TinyFrameMaker so that they keep their history (its header says what
 each of them cannot do): a start screen of five kinds, every kind a
 host of the others, objects floating anywhere (dragged, resized,
@@ -179,7 +179,7 @@ scaled, front and back), text running round them (`Page.layout
 tested); **several pages**, the text laid out once over them all with
 the margins between pages as boxes it goes round, scrolled; **move
 with text**, an object tied to a paragraph and placed in two layouts;
-and **a chart linked to a sheet** (`apps/Part_chart`), made again from
+and **a chart linked to a sheet** (`Part_chart`), made again from
 the sheet's cells whenever it is drawn. Next, by what each would give:
 
 - **saving**, every kind with its objects, their anchors and links,

@@ -1,7 +1,7 @@
 ; claude: setting a paragraph into lines (see plan_gui_teaching.md,
 ; phase 9): the greedy way every editor does it, and Knuth and Plass's
 ; optimal one, side by side. Used by examples/TypesetParagraph (and,
-; planned, apps/TinyWord's justified paragraphs, greedy by default
+; planned, TinyWord's justified paragraphs, greedy by default
 ; since that is what Word does). Independent of
 ; everything: a paragraph is words with widths, and the widths are the
 ; caller's.

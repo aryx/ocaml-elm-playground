@@ -17,12 +17,12 @@
  * italic, where the lines really broke. That is WYSIWYG, and it was
  * new. It is also where the **piece table** comes from, the structure
  * gui/Text_edit is; Simonyi took it to Microsoft and wrote Word with
- * it, which is why this program comes before apps/TinyWord, as
+ * it, which is why this program comes before TinyWord, as
  * TinyVisiCalc comes before TinyExcel.
  *
  * What it uses: appkits/richtext (Rich, the text and its looks; Page,
  * the layout and the way back from a click), appkits/document/Undo,
- * and apps/Stroke_text to draw the looks from Hershey's strokes. No
+ * and Stroke_text to draw the looks from Hershey's strokes. No
  * widget at all: Bravo had none.
  *
  * And the thing it is remembered for besides WYSIWYG: it was

@@ -1,0 +1,17 @@
+; claude: the music applications -- none yet, a placeholder for the
+; category (CATALOG.md gets its section with the first one). Laid out
+; like office/: the programs here, software/ for the golden frames,
+; web/ for the browser.
+;
+; What it might contain, each Tiny and after a famous original:
+;  - a tracker (Ultimate Soundtracker 1987, ProTracker, FastTracker):
+;    patterns of notes in columns, played by the audio library's mixer;
+;  - a sequencer (Cubase, 1989): tracks of MIDI notes on a timeline, a
+;    piano roll, audio/'s MIDI player;
+;  - a sound editor (SoundEdit, Audacity): a waveform to cut, fade and
+;    filter, audio/'s samples and Spectrum;
+;  - a synthesizer (a Minimoog on screen): knobs over audio/'s voices,
+;    played from the keyboard;
+;  - a score editor (Finale, MuseScore): ABC in, staff notation out.
+; Built on audio/ (synth, mixer, ABC, MIDI) and gui/; the office apps'
+; File_menu would become an appkit for them.

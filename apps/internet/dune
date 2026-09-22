@@ -1,0 +1,15 @@
+; claude: the internet applications -- none yet, a placeholder for the
+; category (CATALOG.md gets its section with the first one). Laid out
+; like office/: the programs here, software/ for the golden frames,
+; web/ for the browser.
+;
+; What it might contain, each Tiny and after a famous original:
+;  - a web browser (WorldWideWeb 1990, Mosaic 1993): a subset of HTML
+;    laid out with the typesetting appkit, links followed;
+;  - a mail client (Eudora, 1988): a mailbox, a message, a reply (or in
+;    office/, beside the calendar, as Outlook has it -- see
+;    plan_gui_remaining.md);
+;  - a chat (IRC, 1988): channels and nicknames over a connection;
+;  - a news reader (Usenet's rn/trn): threads of articles.
+; Built on networking/ and gui/, the servers they talk to small enough
+; to run beside them.

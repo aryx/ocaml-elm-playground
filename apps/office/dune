@@ -1,8 +1,16 @@
-; claude: the applications (see docs/claude_notes/plans/plan_gui_teaching.md):
-; whole programs rather than demonstrations of one idea, each Tiny and
-; each saying in its header what it deliberately does not do. They sit
-; beside games/ and examples/ and are laid out the same way, with
-; software/ for the golden frames.
+; claude: the office applications (see
+; docs/claude_notes/plans/plan_gui_teaching.md): whole programs rather
+; than demonstrations of one idea, each Tiny and each saying in its
+; header what it deliberately does not do -- word processing and
+; publishing, spreadsheets, presentations, paint and draw, authoring and
+; compound documents (CATALOG.md's sections). Laid out like a genre of
+; games/, with software/ for the golden frames and web/ for the browser.
+;
+; The modules here that are not programs are shared by them: File_menu
+; (nearly every app's File menu), Stroke_text (Hershey text), the parts
+; of a compound document (Part_text, Part_sheet, Part_picture,
+; Part_drawing, Part_chart) and Figure_shapes. When an app of another
+; category needs one (a music app's File menu), it becomes an appkit.
 (executables
   (names
     TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint TinyOpenDoc TinyPowerPoint TinyHyperCard TinyMacDraw TinyFrameMaker TinyOffice

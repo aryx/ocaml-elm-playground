@@ -18,7 +18,7 @@
  *
  * -- which is Knuth's, and which Word never used: Word breaks its lines
  * greedily, as browsers do. The optimal breaker is TeX's (and Adobe
- * InDesign's "paragraph composer"). apps/TinyWord, when it exists, is
+ * InDesign's "paragraph composer"). TinyWord, when it exists, is
  * the other thing: a page you edit in place, with formatting.
  *
  * The left pane is the text, as typed. The right one is the page:
