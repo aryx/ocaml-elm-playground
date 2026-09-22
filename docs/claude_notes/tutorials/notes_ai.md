@@ -25,7 +25,7 @@ because it means a page of code can produce something that looks alive.
 | `Steering` (done) | seek, flee, arrive, wander, pursue, avoid | §4 |
 | `Flock` (done) | separation, alignment, cohesion | §5 |
 | `Fsm`, `Behavior`, `Utility` (done) | choosing what to do | §6 |
-| `Sense`, `Bot` | a mind that plays through the player's own inputs | §6 |
+| `Sense`, `Bot` (done) | a mind that plays through the player's own inputs | §6 |
 | `Minimax` (done) | the game tree, and alpha-beta | §7, §8 |
 | `Deepening`, `Zobrist` | making the search go deeper | §9 |
 | `Mcts` | playing without an evaluation function | §10 |
@@ -293,10 +293,28 @@ walk -- are mostly this: careful restriction, not clever search.
 It is also the one place in game AI where the type system does the
 teaching. If a bot's mind is `senses -> intent`, then a bot that peeks
 at the whole world *does not compile*, and "no cheating" stops being a
-promise and becomes a signature. `ai/Sense` and `ai/Bot` (planned; see
-the plan's bots section) are that door, and nothing more: the mind
-behind them is the steering, the state machine and the pathfinding of
-the sections above, unchanged.
+promise and becomes a signature. `ai/Sense` and `ai/Bot` are that
+door, and nothing more: the mind behind them is the steering, the
+state machine and the pathfinding of the sections above, unchanged.
+`Sense` keeps, per target, whether it is visible (the game says
+whether the line is clear: only it knows its walls), whether it is
+audible, where it was last seen and how many frames ago, and how long
+it has been in sight; `Bot` holds the loop and the handicaps -- the
+reaction delay (it decides on senses `delay` frames old), the input
+rate (it may change its mind every `rate` frames, and repeats itself
+in between), and an aim error that halves the longer a target stays
+visible. With a delay of 15 frames and a rate of 6, a target appearing
+at frame 100 is shot at frame 120; with both off, at frame 100, which
+is the machine you can feel.
+
+`TinySoldat.ml` has both bots now, chosen by the flag `ai=engine`, as
+its physics and TinyPacman's ghosts offer both ways of being written.
+Reading them side by side shows what the door costs: the hand-written
+bot takes the nearest enemy *through the walls*, so it never has to
+look for anyone; take that away and it needs a behaviour it never had,
+patrolling when it knows nothing, and hunting the place where it last
+saw you. Honest senses are not a smaller program -- that game grew by
+a quarter -- they are a different one.
 
 ## 7. The game tree: minimax
 
@@ -521,7 +539,13 @@ In rough order of difficulty:
   effects as the edges, which `Pathfind.problem`'s polymorphic `'node`
   already allows;
 - `Mcts` (§10) and the 9x9 Go it is meant for;
-- `Sense` and `Bot` (§6), with the handicap knobs as parameters.
+- a bot for a *second* genre on `Sense` and `Bot` (§6):
+  `gamekits/racing/Topdown.computer` (a racing line) and
+  `TinyPong.ml`'s paddle are the two nearest, and a second user is the
+  real test of that layer -- TinySoldat alone only showed what honest
+  senses cost;
+- hearing used for something (`Sense`'s `audible` is kept and no game
+  reads it yet): a bot that turns towards a shot it could not see.
 
 ## 14. In the playground
 
@@ -553,6 +577,7 @@ flow field (§3) by `gamekits/rts/Orders`, for `TinyDune2.ml` and
 `TinyWarcraft2.ml`, the
 three searches side by side in `examples/AiPathfinding.ml` (§2);
 `Fsm` by the ghosts of `TinyPacman.ml` and `examples/AiGhosts.ml` (§6);
+`Sense` and `Bot` by `TinySoldat.ml`'s soldiers with `ai=engine` (§6);
 `Minimax` by `examples/AiTictactoe.ml` (§7, §8), `AiOthello.ml` and
 `AiChess.ml` (with its quiescence, §9). `Behavior` and `Utility` have
 only their tests so far.

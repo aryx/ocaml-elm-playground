@@ -614,13 +614,13 @@ from memory until then.)
    `physics=engine`): the original hand-written ghosts stay the
    default and the code beside it, the ones on `ai/` are the flag, so
    the two can be read and played side by side.
-5. **Bots**: `Sense` (line of sight over `Physics`, hearing, the
-   memory of a last seen position) and `Bot` (the intent loop, the
-   reaction delay, the aim error, `skill`); `examples/AiBots.ml`.
-   Then the existing hand-written bots on it, `TinySoldat` first,
-   since its `intent`/`human`/`bot` triple is what the module is
-   generalised from -- if the port does not make that file *shorter*,
-   the layer is wrong and this phase failed.
+5. **Bots, DONE**: `Sense` (what may be known: visible, audible, the
+   last seen position and its age) and `Bot` (the intent loop, the
+   reaction delay, the input rate, the aim error). TinySoldat's bots on
+   it behind `ai=engine`, its hand-written ones still the default --
+   and on the criterion below, see the status entry: the file grew, and
+   the reason is worth more than the rule was. `examples/AiBots.ml`:
+   not written yet.
 6. **Deeper search**: `Deepening` (iterative deepening, ordering, a
    budget, resumable), `Zobrist`; `AiConnect4`, whose node counts are
    the test of every one of them.
@@ -727,6 +727,39 @@ from memory until then.)
   transposition table and iterative deepening (phase 6's `Zobrist` and
   `Deepening`, which AiChess should then use), and the draws by
   repetition and the 50-move rule.
+- **Phase 5, DONE** (`ai/Sense`, `ai/Bot`): `Sense.target` per thing a
+  bot might care about (visible, audible, the position it is at or was
+  last seen at, its age, how long it has been in sight), the game
+  passing the distance and whether the line is clear, since only it
+  knows its walls -- so the module is dimension-free, and a 3D bot
+  would differ by its `'v`. `Bot.t` is `sense` then `decide` with the
+  handicaps: the delay (it decides on senses that many frames old), the
+  rate (it may change its mind every so many frames, repeating itself
+  in between), and `aim_error`, an offset halving every `settle` frames
+  a target stays visible, deterministic (a wobble of the time and the
+  bot's number, no Random). Worked example, checked: delay 15 and rate
+  6, a target out at frame 100 is shot at 120; delay 15 rate 1, at 115;
+  neither, at 100. `sense` is given what it sensed last frame -- a
+  bot's memory is part of its senses -- so a game keeps no memory of
+  its own; `last_senses` reads the newest for a game's tests.
+- **The phase's criterion, not met, and what it showed instead**: the
+  plan said the port must make `TinySoldat.ml` *shorter* or the layer
+  is wrong. It made it longer (465 to 588 lines, with both bots in it),
+  and the reason is the interesting part: the hand-written bot took the
+  nearest enemy *through the walls* and asked what it could see only to
+  decide whether to shoot, so it never had to look for anyone. Honest
+  senses take that away, and the bot then needs a behaviour it never
+  had -- patrolling when it knows nothing, hunting where it last saw
+  you. The mechanism that moved out (delay, rate, memory, the settling
+  aim) was small because the old bot had none of it. So the criterion
+  measured the wrong thing for a game that was cheating rather than
+  duplicating; the real test is a *second* user (Topdown's racing line,
+  TinyPong's paddle), which is now an exercise in notes_ai.md section
+  13. Two things the port did prove: the layer needs nothing of the
+  Playground (the game passes distances and a boolean), and the flag
+  pattern fits it -- `ai=engine`, the author's rule from phase 4, the
+  two bots side by side in one file, the default unchanged (its golden
+  frames did not move).
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

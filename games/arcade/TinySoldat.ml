@@ -35,12 +35,31 @@
  *   (Particles, the Hitman technique): 9 particles, a stick figure,
  *   falling, tumbling and lying on the map (Particles.keep_out).
  *
- * The bots see the target when nothing of the map is on the segment
- * between them (the same swept test), aim with a wobble (no Random: a
- * sine of the time, so every game is the same), run towards or away,
- * jump or fly when it's above them, and throw a grenade when it hides.
+ * Two ways of writing the bots, chosen with the flag ai=engine
+ * (?ai=engine on the web), as TinyPacman chooses its ghosts':
  *
- * What it uses: no kit; the Playground, Scene2d (the keys pressed), and
+ *  - by hand, the default: the bot takes the nearest living enemy
+ *    wherever it is, through the walls, and asks what it can see only
+ *    to decide whether to shoot; it aims with a wobble (a sine of the
+ *    time, so every game replays the same), runs towards or away, jumps
+ *    or flies when the enemy is above, and throws a grenade at what it
+ *    cannot see;
+ *  - with ai=engine, on ai/Sense and ai/Bot: what a bot may know is a
+ *    value rather than the world -- an enemy seen when nothing of the
+ *    map is on the segment between them, remembered for 90 frames where
+ *    it was last seen, nothing at all before that -- and it acts on
+ *    senses 12 frames old, changes its mind every 4 (a hand's quarter
+ *    second, not a machine's instant), and aims with an error that
+ *    settles the longer it can see you.
+ *
+ * The second is the interesting one to read next to the first: taking
+ * away the knowledge costs a behaviour the hand-written bot never
+ * needed. Never having to look for anyone, it had nothing to do when it
+ * saw nobody; the ai/ one patrols, turning every two seconds and hopping
+ * when it gets stuck, and hunts what it remembers, lobbing a grenade at
+ * where you went.
+ *
+ * What it uses: no kit; ai/ (Sense, Bot: the flag); the Playground, Scene2d (the keys pressed), and
  * the Physics layer: a world ([world], [simulate]), [upright],
  * [immovable], [bouncy], [shot_from], [step], [went_through],
  * [touching]; underneath, physics/2d/'s Body, Integrate, Shape, Collide
@@ -116,6 +135,19 @@ type soldier = {
  * mind *)
 type intent = { run : number; (* -1, 0, 1 *) jump : bool; jet : bool; shoot : bool; grenade : bool; aim : number }
 
+(* what a bot may know (ai/Sense.mli): where it is and how it is, and
+ * its nearest enemy -- seen now, or remembered where it was last seen,
+ * or not known at all. Not the world: a bot cannot read through a wall
+ * what it hasn't got *)
+type senses = {
+  me : number * number;
+  my_vx : number;
+  my_fuel : number;
+  seed : int; (* which bot: its aim wobbles its own way *)
+  frame : int; (* to patrol by, when it has nobody to chase *)
+  enemy : (number * number) Sense.target;
+}
+
 type bullet = { b : Physics.body; owner : int; ttl : int }
 type grenade = { fuse : int; thrower : int }
 type blast = { x : number; y : number; age : int }
@@ -125,6 +157,11 @@ type blast = { x : number; y : number; age : int }
 type play = {
   world : Physics.world;
   soldiers : soldier array;
+  (* claude: with ai=engine, one per soldier: the senses it has seen
+   * but not yet acted on, its memory of its enemy among them
+   * (ai/Bot.mli) *)
+  minds : (senses, intent) Bot.running array;
+  ai_engine : bool;
   bullets : bullet list;
   grenades : grenade list;
   blasts : blast list;
@@ -141,11 +178,16 @@ let body_of (p : play) (i : int) : Physics.body = List.nth p.world.bodies (n_map
 (* a dead soldier's body waits far away, out of everyone's way *)
 let parked (color : color) : Physics.body = soldier_body color (0., 5000.) |> Physics.immovable
 
-let start : play =
+let start ?(ai_engine = false) () : play =
   let soldier name color human = { name; color; human; health = 100.; fuel = 100.; reload = 0; grenade_reload = 0; aim = 0.; dead = None; kills = 0 } in
   let soldiers = [| soldier "YOU" (rgb 220 60 50) true; soldier "BLUE" (rgb 60 110 220) false; soldier "GREEN" (rgb 60 170 80) false |] in
   let bodies = Array.to_list (Array.mapi (fun i s -> soldier_body s.color (List.nth spawns i)) soldiers) in
-  { world = Physics.world (map_bodies @ bodies); soldiers; bullets = []; grenades = []; blasts = []; frame = 0 }
+  let still = { run = 0.; jump = false; jet = false; shoot = false; grenade = false; aim = 0. } in
+  { world = Physics.world (map_bodies @ bodies);
+    soldiers;
+    minds = Array.map (fun _ -> Bot.start still) soldiers;
+    ai_engine;
+    bullets = []; grenades = []; blasts = []; frame = 0 }
 
 let initial_model : model = Scene2d.start Title
 
@@ -184,6 +226,9 @@ let move_ragdoll (ps : Particles.particle array) : Particles.particle array =
 
 let degrees (dx : number) (dy : number) : number = Float.atan2 dy dx * 180. / Float.pi
 
+(* the hand-written bot, the default: it takes the nearest living enemy
+ * wherever it is -- through the walls -- and only asks what it can see
+ * when it decides whether to shoot *)
 let bot (p : play) (i : int) : intent =
   let me = body_of p i in
   let others = List.filter (fun j -> j <> i && p.soldiers.(j).dead = None) [ 0; 1; 2 ] in
@@ -208,6 +253,71 @@ let bot (p : play) (i : int) : intent =
         grenade = (not seen) && Float.abs dx < 450.;
         aim = (if seen then degrees dx dy + wobble else degrees dx (dy + 200.));
       }
+
+(*****************************************************************************)
+(* The bots on ai/ (ai=engine) *)
+(*****************************************************************************)
+(* claude: with the flag ai=engine (?ai=engine on the web), the same
+ * three soldiers on the ai/ layer, as TinyPacman's ghosts choose
+ * between hand-written lives and ai/Fsm machines. The difference is
+ * not the tactics -- those are the same numbers below -- but what a
+ * bot is allowed to know and how fast it may act on it. *)
+
+(* what soldier [i] may know: its nearest living enemy, seen if nothing
+ * of the map is between them, remembered for 90 frames after that *)
+let look (p : play) (i : int) (was : (number * number) Sense.target) : (number * number) Sense.target =
+  let me = body_of p i in
+  let others = List.filter (fun j -> j <> i && p.soldiers.(j).dead = None) [ 0; 1; 2 ] in
+  let distance j = let b = body_of p j in Float.hypot (b.x - me.x) (b.y - me.y) in
+  match List.sort (fun a b -> compare (distance a) (distance b)) others with
+  | [] -> Sense.forget ~after:90 (Sense.update ~distance:Float.infinity ~clear:false ~position:(me.x, me.y) was)
+  | j :: _ ->
+      let t = body_of p j in
+      Sense.update ~distance:(distance j) ~clear:(clear (me.x, me.y + 10.) (t.x, t.y)) ~position:(t.x, t.y) was
+      |> Sense.forget ~after:90
+
+let senses_of (was : senses option) ((p, i) : play * int) : senses =
+  let me = body_of p i in
+  let enemy = look p i (match was with Some s -> s.enemy | None -> Sense.unknown) in
+  { me = (me.x, me.y); my_vx = me.vx; my_fuel = p.soldiers.(i).fuel; seed = i; frame = p.frame; enemy }
+
+(* the mind: nearer than 120, back off; farther than 260, go; in
+ * between, strafe. Shoot what it sees, lob a grenade at what it
+ * remembers, and aim with an error that settles the longer the enemy
+ * stays in sight (ai/Bot.mli).
+ *
+ * claude: a bot that knows only what it can see (ai/Sense.mli) needs
+ * one thing the old one didn't: somewhere to go when it sees nobody.
+ * The old bot took the nearest enemy through the walls and never had
+ * to look for anyone -- which is exactly the cheat this layer is here
+ * to take away. So: patrol, turning every two seconds and hopping when
+ * it gets stuck against something *)
+let decide (s : senses) : intent =
+  let still = { run = 0.; jump = false; jet = false; shoot = false; grenade = false; aim = 0. } in
+  match s.enemy.position with
+  | None ->
+      let way = if ((s.frame /.. 120) +.. s.seed) mod 2 = 0 then 1. else -1. in
+      { still with run = way; jump = Float.abs s.my_vx < 20.; aim = if way > 0. then 0. else 180. }
+  | Some (tx, ty) ->
+      let (mx, my) = s.me in
+      let dx = tx - mx and dy = ty - my in
+      let seen = s.enemy.visible in
+      let strafe = if (s.enemy.seen_for /.. 90) mod 2 = 0 then 1. else -1. in
+      let run = if Float.abs dx > 260. then Float.copy_sign 1. dx else if Float.abs dx < 120. then Float.copy_sign 1. (-.dx) else strafe in
+      let error = Bot.aim_error ~spread:12. ~settle:25. ~seen_for:s.enemy.seen_for ~seed:s.seed () in
+      {
+        run;
+        jump = dy > 60. || (Float.abs s.my_vx < 20. && run <> 0.);
+        jet = dy > 100. && s.my_fuel > 20.;
+        shoot = seen;
+        grenade = (not seen) && Float.abs dx < 450.;
+        aim = (if seen then degrees dx dy + error else degrees dx (dy + 200.));
+      }
+
+(* a human's reaction is about a quarter of a second, and no hand
+ * changes its mind sixty times a second (ai/Bot.mli) *)
+let mind : (play * int, senses, intent) Bot.t =
+  Bot.make ~delay:12 ~rate:4 ~sense:senses_of ~decide ()
 
 let human (computer : computer) (scenes : model) (p : play) : intent =
   let k = computer.keyboard and m = computer.mouse in
@@ -257,12 +367,21 @@ let update_play (computer : computer) (scenes : model) (p : play) : play =
   let p = { p with frame = p.frame +.. 1 } in
   let bodies = Array.of_list p.world.bodies in
   let soldiers = Array.copy p.soldiers in
+  let minds = Array.copy p.minds in
   let new_bullets = ref [] and new_grenades = ref [] in
   (* 1. the living soldiers act *)
   soldiers
   |> Array.iteri (fun i s ->
          if s.dead = None then (
-           let it = if s.human then human computer scenes p else bot p i in
+           let it =
+             if s.human then human computer scenes p
+             else if not p.ai_engine then bot p i
+             else begin
+               let (it, mind') = Bot.step mind (p, i) minds.(i) in
+               minds.(i) <- mind';
+               it
+             end
+           in
            let (s, b) = drive p s it bodies.(n_map +.. i) in
            bodies.(n_map +.. i) <- b;
            let s = if s.reload > 0 then { s with reload = s.reload -.. 1 } else s in
@@ -374,7 +493,7 @@ let update_play (computer : computer) (scenes : model) (p : play) : play =
                bodies.(n_map +.. i) <- soldier_body s.color spot;
                soldiers.(i) <- { s with dead = None; health = 100.; fuel = 100. })
              else soldiers.(i) <- { s with dead = Some (n +.. 1, move_ragdoll ps) });
-  { p with world = { world with bodies = Array.to_list bodies }; soldiers; bullets; grenades; blasts = !blasts }
+  { p with world = { world with bodies = Array.to_list bodies }; soldiers; minds; bullets; grenades; blasts = !blasts }
 
 let winner (p : play) : soldier option = Array.to_list p.soldiers |> List.find_opt (fun s -> s.kills >= 5)
 
@@ -382,7 +501,10 @@ let update (computer : computer) (model : model) : model =
   let scenes = Scene2d.update computer model in
   let space = Scene2d.pressed (fun k -> k.kspace) scenes in
   match scenes.scene with
-  | Title | Over _ -> if space then Scene2d.go (Playing start) scenes else scenes
+  | Title | Over _ ->
+      (* claude: ai=engine chooses the bots, at the start of a round *)
+      let ai_engine = List.assoc_opt "ai" computer.flags = Some "engine" in
+      if space then Scene2d.go (Playing (start ~ai_engine ())) scenes else scenes
   | Playing p -> (
       let p = update_play computer scenes p in
       match winner p with Some s -> Scene2d.go (Over s.name) scenes | None -> { scenes with scene = Playing p })
@@ -455,6 +577,7 @@ let help =
          space  shoot            q      a grenade
   mouse: aim; click to shoot
   flags: hitboxes  draw what the physics sees
+         ai=engine the bots on ai/Sense and ai/Bot instead of by hand
   e.g.   dune exec games/arcade/TinySoldat.exe -- hitboxes
 |}
 
