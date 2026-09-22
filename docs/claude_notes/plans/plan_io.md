@@ -104,17 +104,42 @@ browser, for that site, and survives a reload.
 2. `store` / `fetch` / `export` in the native and software backends
    (with `caps`, `plan_caps.md` phase 1); File > Save / Open / Export in
    TinyExcel first, then TinyWord, TinyMacPaint, TinyPowerPoint,
-   TinyOpenDoc.
+   TinyOpenDoc. **Done** (2026-09-22): `Playground_platform.store`,
+   `fetch`, `stored`, `export`, each taking its capability
+   (`native_common/Store`: $ELM_PLAYGROUND_STORE, else
+   ~/.elm-playground/documents); `apps/File_menu`, the menu and its two
+   dialogs (Save As's name field takes the keys at once, Open lists the
+   documents of the app's extension), in all the menu-driven apps --
+   TinyExcel (.sheet), TinyWord (.doc), TinyMacPaint (.paint),
+   TinyMacDraw (.draw), TinyPowerPoint (.slides), TinyOpenDoc
+   (.opendoc), TinyFrameMaker (.frame), TinyOffice (.office, one type
+   for its five kinds, and Open... on its start screen) -- and in their
+   period's own way in TinyHyperCard (no Save: once named, every change
+   is written) and TinyVisiCalc (/S S and /S L, the same .sheet file as
+   TinyExcel). TinyBravo is left without, its own command letters for
+   files not being checked. The documents with parts save each part as
+   (kind, saved text) -- TinyOffice by making its records polymorphic
+   in the part, so the saved form is the same records.
 3. Import by drop: `computer.dropped`, from SDL's drop event.
 4. `apps/web/`: the apps built for the browser (like `games/web/`:
    `copy_files` of `../Foo.ml`, `(modes js)`, an `.html` each) -- to
    check on the way that `Stroke_text`'s Hershey data (`graphics_font`)
    compiles to JavaScript and that the text area and menus behave with
    DOM key names; then the web `store`/`fetch` (localStorage, base64),
-   `export` (download) and the `drop` event.
+   `export` (download) and the `drop` event. **The store and export
+   done** (2026-09-22; built, not yet tried in a browser):
+   `playground/web/Web_store`, localStorage under "elm-playground:" and
+   the name, the bytes base64-encoded in OCaml (Marshal's bytes are not
+   UTF-8, so the browser's btoa cannot take them), `export` an `<a
+   download>` clicked; `caps` links under js_of_ocaml with no warning.
+   The `drop` event goes with phase 3.
 5. A golden scene saving and opening again in one run (the software
    backend's store in a temporary directory); the apps' headers lose
-   their "does not do: saving" lines; the status here.
+   their "does not do: saving" lines; the status here. **Done**
+   (2026-09-22): tests/common/Testutil_golden gives every rendering an
+   empty store of its own; scenes TinyExcel_saved,
+   TinyVisiCalc_storage, TinyOffice_reopened, and TinyOpenDoc_reopened
+   and _drawing (its old Save/Revert in memory replaced by the store).
 
 ## Verification
 

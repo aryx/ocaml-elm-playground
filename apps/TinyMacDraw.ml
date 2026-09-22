@@ -49,7 +49,7 @@
  * rectangles, arcs, polygons, freehand); patterns (the objects are
  * filled with greys, since they are drawn as shapes and not as dots);
  * text of several lines, and text styles; rotation; rulers; pages and
- * printing; saving (plan_io.md).
+ * printing. It saves (File, apps/File_menu): the Drawing.t, as it is.
  *
  * Exercises: rounded rectangles (the corner radius a fifth handle);
  * polygons, clicked point by point, and their hit test (a point in a
@@ -77,6 +77,8 @@ type drag =
 type model = {
   (* the drawing, and every version of it *)
   history : Drawing.t Undo.t;
+  (* the document's name, and the File menu's dialog *)
+  file : File_menu.t;
   (* the drawing while a drag changes it, made one edit on release *)
   live : Drawing.t option;
   selection : Drawing.id list;
@@ -131,6 +133,7 @@ let opening =
 let initial =
   {
     history = Undo.start opening;
+    file = File_menu.start;
     live = None;
     selection = [];
     tool = Arrow;
@@ -240,7 +243,7 @@ let redo m = { m with history = Undo.redo m.history; selection = []; typing = No
 
 let menus =
   [
-    [ "File"; "New" ];
+    File_menu.items;
     [ "Edit"; "Undo"; "Redo"; "Cut"; "Copy"; "Paste"; "Duplicate"; "Delete"; "Select All" ];
     [ "Arrange"; "Bring to Front"; "Send to Back"; "Group"; "Ungroup"; "Align Lefts"; "Align Centers"; "Align Tops" ];
     [ "Fill"; "None"; "White"; "Light Grey"; "Grey"; "Dark Grey"; "Black" ];
@@ -252,7 +255,6 @@ let menu_box i : Widget.box = { Widget.x = -410. +. (float_of_int i *. 105.); y 
 
 let command c m =
   match c with
-  | "New" -> { initial with history = Undo.start Drawing.empty }
   | "Undo" -> undo m
   | "Redo" -> redo m
   | "Cut" -> cut m
@@ -397,14 +399,32 @@ let keyboard computer m =
   else if pressed "Backspace" || pressed "Delete" then delete m
   else m
 
-let update computer model =
+(* a drawing, saved as the Drawing.t it is: its figures, by id and in
+   depth order *)
+let kind = { File_menu.magic = "TinyMacDraw 1"; extension = ".draw" }
+
+let reopened (r : Drawing.t File_menu.result) model =
+  match r with
+  | File_menu.Nothing -> model
+  | File_menu.New -> { initial with history = Undo.start Drawing.empty; file = model.file }
+  | File_menu.Opened d -> { initial with history = Undo.start d; file = model.file }
+
+let update caps computer model =
   let mouse = computer.mouse in
   let now = Set_.elements computer.keyboard.keys in
+  if File_menu.busy model.file then
+    let file, r = File_menu.dialog caps kind computer ~current:(fun () -> Undo.now model.history) model.file in
+    reopened r { model with file; was_down = mouse.mdown; was = now }
+  else
   let shift = computer.keyboard.kshift in
   let press_edge = mouse.mdown && not model.was_down in
   let model =
     List.fold_left
       (fun m (i, items) ->
+        if i = 0 then
+          let file, r = File_menu.menu_in caps kind computer (menu_box i) ~current:(fun () -> Undo.now m.history) m.file in
+          reopened r { m with file }
+        else
         match List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) with
         | Some c when c <> List.hd items -> command c { m with typing = None }
         | _ -> m)
@@ -493,7 +513,9 @@ let view _computer model =
     | None -> []
   in
   let status =
-    Printf.sprintf "%s     %d selected%s%s" (tool_name model.tool) (List.length model.selection)
+    Printf.sprintf "%s     %s     %d selected%s%s"
+      (if File_menu.said model.file <> "" then File_menu.said model.file else File_menu.title model.file)
+      (tool_name model.tool) (List.length model.selection)
       (match Undo.undo_name model.history with Some n -> "     Undo " ^ n | None -> "")
       (if model.grid then "     grid" else "")
   in
@@ -506,7 +528,8 @@ let view _computer model =
   @ List.concat_map (fun (_, f) -> Figure_shapes.figure f) (Drawing.figures d)
   @ handles @ marquee @ caret @ palette
   @ [ words (rgb 30 30 30) status |> move 0. (-450.) ]
+  @ File_menu.view model.file
   @ Gui.draw ()
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))

@@ -5,6 +5,9 @@
  (libraries
    ; commons
    elm_core elm_system
+   ; claude: the capabilities Playground_platform's store/fetch/export
+   ; take (plan_caps.md)
+   caps
    ; claude: the physics engine under Physics.ml (private libraries, pure
    ; OCaml, in this same package), see
    ; docs/claude_notes/plan_physics_teaching.md

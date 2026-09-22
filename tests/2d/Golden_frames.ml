@@ -607,6 +607,14 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/GuiFourWays", "flight", 10, "at(0;300):1-3,click:2,at(0;210):4-6,click:5,at(0;600):7-10");
     (* and the Timer, a second and a half in: four clocks, one reading *)
     ("examples/software/GuiFourWays", "timer", 96, "at(0;300):1-3,click:2,at(0;158):4-6,click:5,at(0;600):7-96");
+    (* Circle Drawer, in the immediate column: two circles, the first
+     * right-clicked, "Adjust diameter...", the slider dragged and the
+     * dialog closed -- Undo on, for the whole drag as one step *)
+    ( "examples/software/GuiFourWays",
+      "circles",
+      38,
+      "at(0;300):1-3,click:2,at(0;122):4-6,click:5,at(-420;50):7-9,click:8,at(-330;-20):10-12,click:11,at(-420;50):13-16,rclick:14,at(-320;30):17-20,click:19,at(-432;-142):21-23,click:22-30,at(-400;-142):24,at(-360;-142):25,at(-330;-142):26-31,at(-375;-188):32-34,click:33,at(-375;-300):35-38"
+    );
     (* the arrows are the whole interface: the cursor walked to B3,
      * and the line at the top showing what is in it -- @SUM(B4...B6),
      * as 1979 spelled it. (The slash commands take characters, which
@@ -684,21 +692,22 @@ let scripted : Testutil_golden.scripted list =
       26,
       "at(200;250):1-6,click:2,click:5,at(-125;470):7-9,click:8,at(-125;293):10-12,click:11,at(-125;470):13-15,click:14,at(-125;221):16-18,click:17,at(200;255):19-21,click:20,escape:23,at(400;-400):22-26"
     );
-    (* File > Save, then File > Revert: the document read back through
-     * the registry, the unknown part included, the same *)
+    (* File > Save As..., then File > Open...: the document written to
+     * the store and read back through the registry, the unknown part
+     * included, the same *)
     ( "apps/software/TinyOpenDoc",
-      "reverted",
-      16,
-      "at(-410;470):1-3,click:2,at(-410;401):4-6,click:5,at(-410;470):7-9,click:8,at(-410;365):10-12,click:11,at(400;-400):13-16"
+      "reopened",
+      26,
+      "at(-410;470):1-3,click:2,at(-410;291):4-6,click:5,type(parts):8,return:10,at(-410;470):11-13,click:12,at(-410;363):14-16,click:15,at(0;160):17-19,click:18,at(90;-75):20-22,click:21,at(400;-400):23-26"
     );
     (* a fourth kind of part, TinyMacDraw's: inserted, activated, an
-     * oval added from its menu, dragged and made grey; then Save and
-     * Revert -- the drawing written by Marshal and read back through
-     * the registry *)
+     * oval added from its menu, dragged and made grey; then saved and
+     * opened again -- the drawing written by Marshal and read back
+     * through the registry *)
     ( "apps/software/TinyOpenDoc",
       "drawing",
-      53,
-      "at(0;17):1-3,click:2,at(-220;470):4-6,click:5,at(-220;293):7-9,click:8,at(-200;-60):10-13,click:11,at(-125;470):14-16,click:15,at(-125;365):17-19,click:18,at(-195;-122):20-22,click:21-27,at(-150;-130):24,at(-95;-150):25-28,at(-125;470):29-31,click:30,at(-125;293):32-34,click:33,escape:36,at(-410;470):38-40,click:39,at(-410;401):41-43,click:42,at(-410;470):44-46,click:45,at(-410;365):47-49,click:48,at(600;-600):50-53"
+      62,
+      "at(0;17):1-3,click:2,at(-220;470):4-6,click:5,at(-220;293):7-9,click:8,at(-200;-60):10-13,click:11,at(-125;470):14-16,click:15,at(-125;365):17-19,click:18,at(-195;-122):20-22,click:21-27,at(-150;-130):24,at(-95;-150):25-28,at(-125;470):29-31,click:30,at(-125;293):32-34,click:33,escape:36,at(-410;470):38-40,click:39,at(-410;291):41-43,click:42,type(drawing):44,return:46,at(-410;470):47-49,click:48,at(-410;363):50-52,click:51,at(0;160):53-55,click:54,at(90;-75):56-58,click:57,at(600;-600):59-62"
     );
     (* the first text selected, its bottom handle dragged down: it is
      * given more room, and the row, the text and the placeholder below
@@ -771,6 +780,28 @@ let scripted : Testutil_golden.scripted list =
       14,
       "at(-360;30):1-2,click:1,at(-100;415):3-5,click:4,type( -- draft):7,at(600;-600):9-14"
     );
+    (* saving, and opening again, in one run (each scene has a store
+     * of its own, empty): the sheet made "Top and Bottom", saved as
+     * "letter", File > New back to the start screen, and its Open...
+     * -- the document as it was, its wrap included *)
+    ( "apps/software/TinyOffice",
+      "reopened",
+      40,
+      "at(-360;30):1-2,click:1,at(160;227):3-5,click:4,at(-104;470):6-8,click:7,at(-104;113):9-11,click:10,at(-410;472):12-14,click:13,at(-410;293):15-17,click:16,type(letter):18,return:20,at(-410;472):21-23,click:22,at(-410;401):24-26,click:25,at(0;-220):27-29,click:28,at(0;160):30-32,click:31,at(90;-75):33-35,click:34,at(600;-600):36-40"
+    );
+    (* B2 cleared, saved as "budget", File > New, File > Open... *)
+    ( "apps/software/TinyExcel",
+      "saved",
+      40,
+      "at(-85;85):1-3,click:2,at(24;229):4-6,click:5,at(24;158):7-9,click:8,at(-116;229):10-12,click:11,at(-116;50):13-15,click:14,type(budget):16,return:18,at(-116;229):19-21,click:20,at(-116;158):22-24,click:23,at(-116;229):25-27,click:26,at(-116;122):28-30,click:29,at(0;160):31-33,click:32,at(90;-75):34-36,click:35,at(600;-600):37-40"
+    );
+    (* 42 in A1, /S S demo, /C, /S L demo: VisiCalc's storage command,
+     * the same file TinyExcel opens *)
+    ( "apps/software/TinyVisiCalc",
+      "storage",
+      32,
+      "type(42):2,return:4,type(/):6,type(s):8,type(s):10,type(demo):12,return:14,type(/):16,type(c):18,type(/):20,type(s):22,type(l):24,type(demo):26,return:28"
+    );
     (* the presentation's show, a click on to its second slide *)
     ( "apps/software/TinyOffice",
       "show",
@@ -787,7 +818,7 @@ let scripted : Testutil_golden.scripted list =
     (* the master changed to two columns: everything lays itself out
      * again, the drawing shrinking to its column, the sheet spilling
      * out of it -- widths are not negotiated *)
-    ("apps/software/TinyFrameMaker", "columns", 10, "at(-210;470):1-3,click:2,at(-210;365):4-6,click:5,at(600;-600):7-10");
+    ("apps/software/TinyFrameMaker", "columns", 10, "at(-110;470):1-3,click:2,at(-110;365):4-6,click:5,at(600;-600):7-10");
     (* eight new lines typed above the sheet: it moves down with the
      * text, onto the next page, and the document grows a page *)
     ( "apps/software/TinyFrameMaker",
@@ -856,13 +887,13 @@ let scripted : Testutil_golden.scripted list =
     ( "apps/software/TinyHyperCard",
       "script",
       20,
-      "at(299;-204):1-4,click:2,at(455;202):5-7,click:6,at(0;79):8-10,click:9,at(-190;470):11-13,click:12,at(-190;401):14-16,click:15,at(600;-600):17-20"
+      "at(299;-204):1-4,click:2,at(455;202):5-7,click:6,at(0;79):8-10,click:9,at(-80;470):11-13,click:12,at(-80;401):14-16,click:15,at(600;-600):17-20"
     );
     (* Objects > New Button, dragged where it goes *)
     ( "apps/software/TinyHyperCard",
       "new",
       20,
-      "at(-190;470):1-3,click:2,at(-190;257):4-6,click:5,at(0;33):7-9,click:9-14,at(-100;33):11,at(-200;-80):12-16,at(600;-600):17-20"
+      "at(-80;470):1-3,click:2,at(-80;257):4-6,click:5,at(0;33):7-9,click:9-14,at(-100;33):11,at(-200;-80):12-16,at(600;-600):17-20"
     );
     (* a click in the middle of the hollow rectangle goes through it,
      * and selects the grey oval behind *)

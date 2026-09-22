@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* The same programs, four ways: 7GUIs' Counter, Temperature
- * Converter, Flight Booker and Timer, each with callbacks, with MVC,
+ * Converter, Flight Booker, Timer and Circle Drawer, each with callbacks, with MVC,
  * with MVU, and in immediate mode -- all four running at once, side by
  * side, on one screen; the menu at the top picks the task
  * (docs/claude_notes/tutorials/notes_gui.md section 4).
@@ -18,7 +18,7 @@
  * same Widget.input: everything that differs between them is
  * *wiring*, and it is in examples/gui4/, one file per task with its
  * four versions one under the other (Gui4Counter.ml,
- * Gui4Temperature.ml, Gui4Flight.ml, Gui4Timer.ml). examples/gui4/tests/Unit_gui4 checks that, fed
+ * Gui4Temperature.ml, Gui4Flight.ml, Gui4Timer.ml, Gui4Circles.ml). examples/gui4/tests/Unit_gui4 checks that, fed
  * the same session, the four paint the same picture frame after frame.
  *
  *   callbacks   the state is in the widgets and in refs, and every
@@ -40,7 +40,11 @@
  * that stops being a matter of taste is Flight Booker: with callbacks,
  * every handler must call the one check that turns Book on and off,
  * and forgetting it in one is a bug nobody sees until that handler
- * runs.
+ * runs. Circle Drawer is the same lesson at full size: a canvas whose
+ * picture every callback must repaint, a popup, a dialog, and an undo
+ * whose steps are not the program's events (a whole drag of the
+ * slider is one) -- where MVU's view, a function of the model, has
+ * nothing to keep in line at all.
  *
  * What writing the four ways of each task found, since the test
  * insisted they paint alike: in immediate mode a widget is drawn when
@@ -50,7 +54,14 @@
  * unfocused one could move; the retained toolkit put no caret where a
  * click landed; and the four disagreed about whether clicking a button
  * takes the keys from a field (they now agree it does not, the Mac's
- * rule).
+ * rule). Circle Drawer found that the same slider arithmetic, written
+ * once in each toolkit, rounded differently on arm64 (a multiply and
+ * an add fused into one instruction in one copy only): the toolkits
+ * now share Look.slider_value.
+ *
+ * Right-click a circle for its menu: the playground's right button,
+ * which the widgets now see (Widget.input's mrdown), as they do the
+ * canvas and the context menu every toolkit grew for this task.
  *
  * Exercises: CRUD four ways -- the one where the retained list holds a
  * row and the program must translate it back to a person after every
@@ -67,7 +78,13 @@ let theme = Gui.theme ()
    decides its rectangles before anything knows how big the screen is,
    and the screen is 1000 x 1000 here (Playground.to_screen) *)
 let tasks =
-  [ ("Counter", Gui4Counter.make); ("Temperature", Gui4Temperature.make); ("Flight Booker", Gui4Flight.make); ("Timer", Gui4Timer.make) ]
+  [
+    ("Counter", Gui4Counter.make);
+    ("Temperature", Gui4Temperature.make);
+    ("Flight Booker", Gui4Flight.make);
+    ("Timer", Gui4Timer.make);
+    ("Circle Drawer", Gui4Circles.make);
+  ]
 
 let panel n : Widget.box = { Widget.x = -375. +. (float_of_int n *. 250.); y = -30.; w = 240.; h = 440. }
 
@@ -87,7 +104,7 @@ let update computer task =
      would land on what is under it too *)
   let input = Gui.input computer in
   let input =
-    if was_modal || Gui.modal () then { input with mx = 1e6; my = 1e6; mdown = false; mclick = false } else input
+    if was_modal || Gui.modal () then { input with mx = 1e6; my = 1e6; mdown = false; mclick = false; mrdown = false } else input
   in
   painted := List.map (fun (r : Gui4.runner) -> r.step input) (List.nth runners task);
   task

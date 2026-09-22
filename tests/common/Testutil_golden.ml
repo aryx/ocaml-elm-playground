@@ -64,7 +64,14 @@ let render ~dir ~(exe : string) ~(keys : string) ~(script : string option) ~(fra
    * a real one; no display needed, nothing popping up on the screen,
    * and scenes can run in parallel (see notes_debugging_techniques.md,
    * section 9) *)
-  let env = Array.append [| "SDL_VIDEODRIVER=dummy" |] (Unix.environment ()) in
+  (* claude: and a store of documents of its own, empty (see
+   * Playground_platform.store): an app's scene that saves and opens
+   * again finds only what it saved, never another scene's -- they run
+   * in parallel -- nor the user's own documents *)
+  let store = Filename.temp_file "golden_store" "" in
+  Sys.remove store;
+  Sys.mkdir store 0o755;
+  let env = Array.append [| "SDL_VIDEODRIVER=dummy"; "ELM_PLAYGROUND_STORE=" ^ store |] (Unix.environment ()) in
   (match Unix.fork () with
   | 0 -> (
       try
@@ -77,6 +84,8 @@ let render ~dir ~(exe : string) ~(keys : string) ~(script : string option) ~(fra
       | _ -> Alcotest.failf "%s -keys %S failed" exe keys));
   let result = read_ppm ppm in
   Sys.remove ppm;
+  Array.iter (fun f -> Sys.remove (Filename.concat store f)) (Sys.readdir store);
+  Sys.rmdir store;
   result
 
 (*****************************************************************************)

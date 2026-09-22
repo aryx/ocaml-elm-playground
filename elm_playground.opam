@@ -15,6 +15,7 @@ bug-reports: "https://github.com/aryx/ocaml-elm-playground/issues"
 depends: [
   "dune" {>= "3.0"}
   "ocaml" {>= "4.07.0"}
+  "caps" {>= "0.1.0"}
   "odoc" {with-doc}
 ]
 build: [

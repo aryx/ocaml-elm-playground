@@ -61,10 +61,30 @@ val menu : Widget.box -> string list -> int -> (int -> unit) -> t
 
 val group : t list -> t
 
+(* [canvas box on_event]: the program's own drawing, which it keeps
+ * there with [set_drawing] -- the canvas holds a picture, like a label
+ * holds its text, and the program has to put a new one in after every
+ * change, in every callback that makes one (the problem above, again,
+ * and here the most expensive form of it) *)
+val canvas : Widget.box -> (Widget.canvas_event -> unit) -> t
+val set_drawing : t -> Widget.paint list -> unit
+
+(* [context_menu items on_close]: a menu that shows only when [popup]
+ * opens it at a point, has the mouse while it shows, and closes at the
+ * next click -- [on_close (Some i)] on an item, [on_close None]
+ * anywhere else. Put it last in the tree, where it is drawn on top. *)
+val context_menu : string list -> (int option -> unit) -> t
+val popup : t -> float * float -> unit
+
 (* what a callback reaches back into the widgets with *)
 val text : t -> string
 val set_text : t -> string -> unit
 val set_enabled : t -> bool -> unit
+
+(* a hidden widget -- a group, and all it holds -- is neither drawn nor
+ * handled, as if it were not in the tree: how a dialog comes and goes
+ * in a toolkit that cannot add and remove widgets *)
+val set_shown : t -> bool -> unit
 
 (* a slider's value or a progress bar's fraction, and a menu's choice *)
 val value : t -> float

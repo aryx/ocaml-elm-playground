@@ -726,6 +726,13 @@ let flags () : Playground.flags =
   in
   Playground.flags_of_strings (String.split_on_char '&' search)
 
+(* claude: documents, in localStorage (Web_store); the capability is
+ * the caller's proof it may, see the .mli *)
+let store (_ : < Cap.open_out; .. >) name bytes = Web_store.store name bytes
+let fetch (_ : < Cap.open_in; .. >) name = Web_store.fetch name
+let stored (_ : < Cap.readdir; .. >) = Web_store.stored ()
+let export (_ : < Cap.open_out; .. >) name bytes = Web_store.export name bytes
+
 (*****************************************************************************)
 (* Sound: Web Audio *)
 (*****************************************************************************)

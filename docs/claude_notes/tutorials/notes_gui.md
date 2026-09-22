@@ -198,7 +198,7 @@ out of writing them that reading about them had not given:
 
 - **The length is not the difference.** At the size of a counter all
   four are a handful of lines, and anyone claiming one is dramatically
-  shorter is choosing the example. Four 7GUIs tasks are now written
+  shorter is choosing the example. Five 7GUIs tasks are now written
   four ways each (`examples/gui4/`, one file per task, the four one
   under the other), and each version's own code lines, the rules and
   the layout they share counted apart:
@@ -209,6 +209,7 @@ out of writing them that reading about them had not given:
      Temperature       12        17      13    19     20
      Flight Booker     13        15      17    22     30
      Timer             13        17      16    22     24
+     Circle Drawer     39        31      26    35     89
   ```
 
   MVU is the longest every time, and five of its lines are the loop
@@ -218,7 +219,17 @@ out of writing them that reading about them had not given:
   with the rules: they pass immediate mode exactly in the two tasks
   where fields depend on each other (Temperature, Flight Booker), and
   what the table cannot show is that Flight Booker's callbacks are
-  correct only because every handler remembers to call one `check`. What differs is *how many places
+  correct only because every handler remembers to call one `check`.
+  Circle Drawer turns the table over: immediate mode is the longest,
+  because a click that takes a widget away (Close closing the dialog)
+  leaves it drawn for that frame -- immediate mode's frame of lag --
+  and its runner draws the frame again when the model changed, as
+  MVU's `step` does; and callbacks come out short only because the
+  rules they call are shared and pure (the undo of a whole drag is
+  `close`, eight lines counted once). What they cannot share is the
+  knot: every callback ends in `redraw ()`, the widgets and their
+  callbacks need each other (a forward reference), and the dialog's
+  slider has to be told its starting value by hand. What differs is *how many places
   hold the count*: two with callbacks, one in the other three. That is
   the whole argument, and `Unit_architectures.ml` has it as a test —
   bump the ref without telling the label, and the screen says `0`
@@ -258,6 +269,24 @@ out of writing them that reading about them had not given:
   they now agree it does not, the Mac's rule. None of the five is an
   architecture's virtue; each was a place where "the same program"
   was quietly not the same.
+- **Circle Drawer needed three things no toolkit had, and found a
+  sixth disagreement.** A *canvas* (the program's drawing, and what the
+  mouse did there: `Widget.canvas_event`), a *context menu* (a popup
+  at a point that has the mouse while it shows), and, for the retained
+  toolkit, *hiding* a widget (`Retained.set_shown`: a dialog that
+  comes and goes in a toolkit that cannot add and remove widgets) --
+  and the widgets now see the right button (`Widget.input.mrdown`).
+  Each architecture takes the canvas its own way: immediate mode asks
+  what the mouse did and *then* draws what it now knows (Dear ImGui's
+  InvisibleButton and draw list), callbacks and MVC hand a retained
+  canvas a new picture after every change, MVU draws it in the view
+  like everything else. The disagreement was below the pixels: the
+  slider arithmetic, written once in each toolkit, came out a last
+  bit apart -- on arm64, OCaml fuses a multiply and an add into one
+  `fmadd` where the code's shape allows it, and one copy was fused and
+  another not -- so a circle drawn from each version's diameter was
+  not the same picture. The toolkits now share `Look.slider_value`: the
+  same formula must be the same code, not the same text.
 
 ## 5. Layout: constraints down, sizes up
 
@@ -879,6 +908,39 @@ Then three follow-ups:
   so the show is the same content, without chrome, grouped and scaled
   to the screen, as TinyPowerPoint's thumbnails are.
 
+## 15c. Saving: a value, written down
+
+Every app but TinyBravo now saves (`plan_io.md`), and how shows what
+the earlier sections built. A document is a value, so saving it is
+Marshal (`appkits/document/Saved`: the value behind a line naming the
+app and a version, which is the only check Marshal's reading gets).
+What a document is *made* of decides what is written:
+
+- the sheet, the text, the bitmap, the drawing, the stack are data,
+  and are written as they are;
+- a document holding parts is not: a part is a record of functions
+  (§9), which only the very same program could read back, and
+  js_of_ocaml not at all. So each part is written as its kind and what
+  it saves, and read back through the registry. TinyOffice does it
+  without a second set of types: its object and document records take
+  the part as a parameter, and the saved form is the same records with
+  `(kind, text)` where each part was.
+
+Where it goes is the platform's (`Playground_platform.store`: a
+directory natively, localStorage on the web), and the right to go
+there is a *capability* (`caps`, `plan_caps.md`): the four functions
+each take one, which only `Cap.main` hands out, once, in the program's
+main. A game whose main does not call it cannot touch a file, and its
+type says so.
+
+The menu is shared (`apps/File_menu`), immediate mode like the rest:
+the app asks for it in its update and, while a dialog is up, gives it
+the frame instead of its own input. Two apps keep their period's way:
+TinyVisiCalc's `/S S` and `/S L` (the same `.sheet` file TinyExcel
+opens -- one engine, one file), and TinyHyperCard, which like
+HyperCard has no Save at all: once a stack has a name, every change is
+written as it is made.
+
 ## 16. The numbers
 
 Measured 2026-09-21, lines of code (not blank, not comments) and, in
@@ -919,7 +981,8 @@ The golden frames at the time of writing: 173 in the 2D suite, of which
 48 are the GUI examples and apps (and 5 more since: CRUD's three,
 GuiFourWays' Flight Booker and Timer); unit tests: 55 in `gui/tests`
 (57 since, with the list box and the shared caret), 4 in
-`examples/gui4/tests` (the four ways, frame by frame), 79 in
+`examples/gui4/tests` (the four ways, frame by frame; 5 since, with
+Circle Drawer), 79 in
 `appkits/tests`.
 
 ## Glossary

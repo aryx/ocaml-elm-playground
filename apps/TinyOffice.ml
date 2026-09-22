@@ -99,15 +99,17 @@
  * slides, apps/Stroke_text, appkits/document's Undo, and the
  * playground's menus.
  *
- * What it deliberately does not do: saving (plan_io.md, whose Saved
- * module the parts' saves are ready for); rotation; the presentation's
+ * It saves (File, apps/File_menu, and Open... on the start screen):
+ * every kind in one file type, the document's own records with each
+ * part replaced by its kind and saved text.
+ *
+ * What it deliberately does not do: rotation; the presentation's
  * master, its transitions and its builds (TinyPowerPoint has them); a
  * first page without its header, or odd and even pages; a link to a
  * sheet in another file (its link is to an object of the same
  * document); collaboration, and the cloud.
  *
- * Exercises: saving every kind through Saved, the objects with their
- * boxes, anchors, wraps and links; a {date} field; a header left out of
+ * Exercises: a {date} field; a header left out of
  * the first page; text wrapped to an object's outline rather than its
  * box ("Tight", a drawing's figures giving the stretches); snapping an
  * object to the others' edges while it is dragged; a chart of a range
@@ -139,10 +141,12 @@ type wrap = Wider_side | Both_sides | Top_and_bottom | In_front
    the same as objects come and go, for a chart to find its sheet by.
    Tied to a paragraph ([anchor], the offset where the paragraph
    starts), its y is from the top of that paragraph's line, so that it
-   moves with the text. *)
-type obj = {
+   moves with the text. The part is a parameter only for saving: a
+   document saved is the same records with (kind, saved text) where
+   each part was -- a part being functions (see [saved] below). *)
+type 'p placed = {
   id : int;
-  part : Component.part;
+  part : 'p;
   slide : int;
   x : float;
   y : float;
@@ -154,9 +158,11 @@ type obj = {
   wrap : wrap;
 }
 
+type obj = Component.part placed
+
 (* what the document is before anything floats on it: a text per slide
    (a document is one slide), or a part of its own kind *)
-type body = Texts of Rich.t list | Main of Component.part
+type 'p body_ = Texts of Rich.t list | Main of 'p
 
 (* which text the keys go to: the body, or the header or footer of a
    document -- on the page it was clicked on, for its caret *)
@@ -165,7 +171,9 @@ type area = Body | Header of int | Footer of int
 (* a document's header and footer, the same on every page, with fields
    in them -- {page} and {pages} -- that each page fills in; [scroll]:
    how far down the document's pages are scrolled *)
-type doc = { kind : kind; body : body; objects : obj list; slide : int; header : Rich.t; footer : Rich.t; area : area; scroll : float }
+type 'p doc_ = { kind : kind; body : 'p body_; objects : 'p placed list; slide : int; header : Rich.t; footer : Rich.t; area : area; scroll : float }
+
+type doc = Component.part doc_
 
 type drag =
   | Moving of float * float (* where on the object the mouse holds it *)
@@ -193,6 +201,8 @@ type model = {
   (* the presentation's show: the slides one at a time, the whole
      screen *)
   show : bool;
+  (* the document's name, and the File menu's dialog *)
+  file : File_menu.t;
 }
 
 let doc m = match (m.editing, m.live) with Some d, _ | None, Some d -> d | None, None -> Undo.now m.history
@@ -215,21 +225,21 @@ let origin (d : doc) =
   let w, h = page_size d.kind in
   (-.w /. 2., (if h > 700. then 430. else 400.) +. d.scroll)
 
-let to_page d (sx, sy) =
+let to_page (d : doc) (sx, sy) =
   let l, t = origin d in
   (sx -. l, t -. sy)
 
-let box_on_screen d x y w h : Widget.box =
+let box_on_screen (d : doc) x y w h : Widget.box =
   let l, t = origin d in
   { Widget.x = l +. x +. (w /. 2.); y = t -. y -. (h /. 2.); w; h }
 
-let obj_box d (o : obj) = box_on_screen d o.x o.y o.w o.h
+let obj_box (d : doc) (o : obj) = box_on_screen d o.x o.y o.w o.h
 let on_slide (d : doc) (o : obj) = o.slide = d.slide
 let text_width k = fst (page_size k) -. (2. *. margin)
 
 (* the main part of a sheet, picture or drawing: the page's width less
    a margin, as tall as it is at that width *)
-let main_box d (p : Component.part) =
+let main_box (d : doc) (p : Component.part) =
   let w = fst (page_size d.kind) -. 40. in
   box_on_screen d 20. 20. w (p.height w)
 
@@ -241,7 +251,7 @@ let main_box d (p : Component.part) =
    through one column after another instead, appkits/richtext/Flow.) *)
 let max_pages = 30
 
-let between_pages d =
+let between_pages (d : doc) =
   if d.kind <> Document then []
   else
     let p = pitch d.kind and text_h = snd (page_size d.kind) -. (2. *. margin) in
@@ -252,7 +262,7 @@ let between_pages d =
 (* the text of the slide shown, laid out round [objs] (those on it) *)
 let wrap_room = 12.
 
-let text_around d objs =
+let text_around (d : doc) objs =
   match d.body with
   | Texts ts ->
       let r = List.nth ts d.slide in
@@ -284,7 +294,7 @@ let line_top page offset =
   | None, [] -> margin
 
 (* a chart made again from its sheet, if its sheet is still there *)
-let refreshed d o =
+let refreshed (d : doc) (o : obj) =
   let source =
     match o.link with
     | Some Main_sheet -> ( match d.body with Main p when p.kind = Part_sheet.kind -> Some p | _ -> None)
@@ -293,7 +303,7 @@ let refreshed d o =
   in
   match source with Some p -> { o with part = Part_chart.make (Part_chart.of_sheet (Sheet.of_string (p.save ()))) } | None -> o
 
-let refresh d = { d with objects = List.map (refreshed d) d.objects }
+let refresh (d : doc) = { d with objects = List.map (refreshed d) d.objects }
 
 (* The objects where they are on the page: the charts made again from
    their sheets, and those tied to a paragraph placed from its line. That
@@ -302,7 +312,7 @@ let refresh d = { d with objects = List.map (refreshed d) d.objects }
    layout, with them, is the one shown. (Word goes round until nothing
    moves; two passes are right unless tied objects push each other's
    paragraphs.) *)
-let placed d =
+let placed (d : doc) =
   let objects = List.map (refreshed d) d.objects in
   if not (List.exists (fun o -> o.anchor <> None && on_slide d o) objects) then objects
   else
@@ -310,15 +320,15 @@ let placed d =
     | Some (_, page) -> List.map (fun o -> match o.anchor with Some a when on_slide d o -> { o with y = line_top page a +. o.y } | _ -> o) objects
     | None -> objects
 
-let layout d = text_around d (placed d)
+let layout (d : doc) = text_around d (placed d)
 
 (* The header and the footer, in the top and bottom margins of every
    page: laid out as texts of their own, each page filling in its
    fields -- where Word keeps a field's code and shows its result. The
    one being edited is shown as it is typed, codes and all. *)
-let band_top d = function `Header -> 12. | `Footer -> snd (page_size d.kind) -. margin +. 10.
+let band_top (d : doc) = function `Header -> 12. | `Footer -> snd (page_size d.kind) -. margin +. 10.
 
-let band_layout d which r =
+let band_layout (d : doc) which r =
   Page.layout ~align:(if which = `Header then Page.Left else Page.Center) ~metrics:Stroke_text.metrics ~width:(text_width d.kind) r
 
 let with_fields ~page ~pages r =
@@ -337,7 +347,7 @@ let with_fields ~page ~pages r =
   fill r
 
 (* how many pages the document has: enough for its text and its objects *)
-let pages d =
+let pages (d : doc) =
   match (d.kind, layout d) with
   | Document, Some (_, page) ->
       let bottom = List.fold_left (fun b o -> Float.max b (o.y +. o.h)) (Page.height page +. margin) (placed d) in
@@ -345,7 +355,7 @@ let pages d =
   | _ -> 1
 
 (* the index of the object on top at a point of the screen *)
-let object_at d (mx, my) =
+let object_at (d : doc) (mx, my) =
   let hits = List.filter (fun (_, o) -> on_slide d o && Widget.contains (obj_box d o) mx my) (List.mapi (fun i o -> (i, o)) (placed d)) in
   match List.rev hits with (i, _) :: _ -> Some i | [] -> None
 
@@ -353,7 +363,7 @@ let object_at d (mx, my) =
    bottom-right, bottom-left *)
 let corners (b : Widget.box) = [ (Widget.left b, Widget.top b); (Widget.right b, Widget.top b); (Widget.right b, Widget.bottom b); (Widget.left b, Widget.bottom b) ]
 
-let corner_at d i (mx, my) =
+let corner_at (d : doc) i (mx, my) =
   match List.nth_opt (placed d) i with
   | Some o ->
       let cs = List.mapi (fun c p -> (c, p)) (corners (obj_box d o)) in
@@ -469,6 +479,7 @@ let initial =
     was = [];
     was_down = false;
     show = false;
+    file = File_menu.start;
   }
 
 (*****************************************************************************)
@@ -476,7 +487,7 @@ let initial =
 (*****************************************************************************)
 
 let record ~name d m = { m with history = Undo.record ~name d m.history; run = false }
-let set_obj i f d = { d with objects = List.mapi (fun j o -> if j = i then f o else o) d.objects }
+let set_obj i (f : obj -> obj) (d : doc) = { d with objects = List.mapi (fun j o -> if j = i then f o else o) d.objects }
 
 (* the end of an editing session in place: one edit, if it made one *)
 let put_down m =
@@ -484,7 +495,7 @@ let put_down m =
   | None -> m
   | Some d ->
       let before = Undo.now m.history in
-      let saved (d : doc) = List.map (fun o -> o.part.save ()) d.objects in
+      let saved (d : doc) = List.map (fun (o : obj) -> o.part.save ()) d.objects in
       let m = { m with editing = None } in
       if saved d = saved before then m else record ~name:"Edit Object" d m
 
@@ -500,13 +511,13 @@ let insert ?link name part m =
 
 (* an object put at a place on the page, and given a size: tied to a
    paragraph, it keeps its distance from the paragraph's line *)
-let place d i ~x ~y ~w ~h =
+let place (d : doc) i ~x ~y ~w ~h =
   let p = List.nth (placed d) i in
   set_obj i (fun o -> { o with x; y = o.y +. (y -. p.y); w; h }) d
 
 (* an object tied to the paragraph beside its top, or untied: either
    way it stays where it is *)
-let tie d i =
+let tie (d : doc) i =
   let p = List.nth (placed d) i in
   match text_around d (List.filteri (fun j o -> j <> i && o.anchor = None) (placed d)) with
   | Some (r, page) ->
@@ -515,12 +526,12 @@ let tie d i =
       set_obj i (fun o -> { o with anchor = Some a; y = p.y -. line_top page a }) d
   | None -> d
 
-let untie d i =
+let untie (d : doc) i =
   let p = List.nth (placed d) i in
   set_obj i (fun o -> { o with anchor = None; y = p.y }) d
 
 (* the text the keys go to *)
-let current_text d =
+let current_text (d : doc) =
   match (d.area, d.body) with
   | Header _, _ -> Some d.header
   | Footer _, _ -> Some d.footer
@@ -545,8 +556,8 @@ let edit_text f m =
 
 let a_run ?(name = "Typing") d m = if m.run then { m with history = Undo.amend d m.history } else { (record ~name d m) with run = true }
 
-let host_menus d =
-  [ [ "File"; "New" ]; [ "Edit"; "Undo"; "Redo"; "Delete" ]; [ "Insert"; "Text Box"; "Sheet"; "Picture"; "Drawing"; "Chart" ];
+let host_menus (d : doc) =
+  [ File_menu.items; [ "Edit"; "Undo"; "Redo"; "Delete" ]; [ "Insert"; "Text Box"; "Sheet"; "Picture"; "Drawing"; "Chart" ];
     [ "Arrange"; "Scale to Fit"; "Natural Size"; "Bring to Front"; "Send to Back"; "Move with Text"; "Fix on Page"; "Wrap Wider Side"; "Wrap Both Sides"; "Top and Bottom"; "In Front of Text" ];
   ]
   @
@@ -561,7 +572,7 @@ let host_menus d =
 let menus m =
   let d = doc m in
   match (m.editing, m.selected) with
-  | Some _, Some i -> ( match List.nth_opt d.objects i with Some o when o.part.menu <> [] -> [ [ "File"; "New" ]; o.part.menu ] | _ -> [ [ "File"; "New" ] ])
+  | Some _, Some i -> ( match List.nth_opt d.objects i with Some o when o.part.menu <> [] -> [ File_menu.items; o.part.menu ] | _ -> [ File_menu.items ])
   | _ -> host_menus d
 
 let menu_box i : Widget.box = { Widget.x = -410. +. (float_of_int i *. 102.); y = 472.; w = 98.; h = 30. }
@@ -570,7 +581,6 @@ let command ~menu c m =
   let d = doc m in
   let on_selected f = match m.selected with Some i -> f i | None -> m in
   match (menu, c, m.editing, m.selected) with
-  | "File", "New", _, _ -> { initial with start = true }
   (* the object's own menu, while it is edited in place *)
   | _, c, Some e, Some i -> { m with editing = Some (set_obj i (fun o -> { o with part = o.part.command c }) e) }
   | _ -> (
@@ -777,16 +787,64 @@ let follow m =
       if y < -420. then scrolled (-420. -. y) m else if y +. h > 440. then scrolled (440. -. y -. h) m else m
   | _ -> m
 
-let update computer model =
+(* A document is saved as the same records with each part replaced by
+   its kind and what it saves -- whatever kind the document is, one
+   file type, as the suite's own formats hold any kind of object. Open
+   reads the parts back through the registry. *)
+type saved = (string * string) doc_
+
+let kind = { File_menu.magic = "TinyOffice 1"; extension = ".office" }
+
+let registry : Component.registry =
+  [
+    (Part_text.kind, Part_text.load);
+    (Part_sheet.kind, Part_sheet.load);
+    (Part_picture.kind, Part_picture.load);
+    (Part_drawing.kind, Part_drawing.load);
+    (Part_chart.kind, Part_chart.load);
+  ]
+
+let to_saved (d : doc) : saved =
+  let data (p : Component.part) = (p.kind, p.save ()) in
+  {
+    d with
+    body = (match d.body with Texts ts -> Texts ts | Main p -> Main (data p));
+    objects = List.map (fun (o : obj) -> { o with part = data o.part }) (refresh d).objects;
+  }
+
+let of_saved (d : saved) : doc =
+  let part (kind, text) = Component.load registry ~kind text in
+  { d with body = (match d.body with Texts ts -> Texts ts | Main p -> Main (part p)); objects = List.map (fun o -> { o with part = part o.part }) d.objects }
+
+let reopened (r : saved File_menu.result) model =
+  match r with
+  | File_menu.Nothing -> model
+  | File_menu.New -> { initial with start = true; file = model.file }
+  | File_menu.Opened d -> { initial with start = false; history = Undo.start (of_saved d); file = model.file }
+
+(* where the start screen's Open... is *)
+let open_button : Widget.box = { Widget.x = 0.; y = -220.; w = 140.; h = 36. }
+
+let update caps computer model =
   let mouse = computer.mouse in
   let now = Set_.elements computer.keyboard.keys in
+  let current () = to_saved (doc (put_down model)) in
+  if File_menu.busy model.file then
+    let file, r = File_menu.dialog caps kind computer ~current model.file in
+    reopened r { model with file; was = now; was_down = mouse.mdown }
+  else
   let pressed key = List.mem key now && not (List.mem key model.was) in
   let press_edge = mouse.mdown && not model.was_down in
   let model =
     if model.start then
-      (* the start screen: the kinds, as tiles *)
+      (* the start screen: the kinds, as tiles -- or a document saved
+         before *)
+      if Gui.button_in computer open_button "Open..." then
+        let file, r = File_menu.command caps kind ~current "Open..." model.file in
+        reopened r { model with file }
+      else
       match List.find_opt (fun (i, _) -> press_edge && Widget.contains (tile i) mouse.mx mouse.my) (List.mapi (fun i k -> (i, k)) kinds) with
-      | Some (_, k) -> { initial with start = false; history = Undo.start (fresh k) }
+      | Some (_, k) -> { initial with start = false; history = Undo.start (fresh k); file = File_menu.start }
       | None -> model
     else if model.show then
       (* the show: a click or the keys on to the next slide, past the
@@ -807,6 +865,10 @@ let update computer model =
       let model =
         List.fold_left
           (fun model (i, items) ->
+            if i = 0 then
+              let file, r = File_menu.menu_in caps kind computer (menu_box i) ~current model.file in
+              reopened r { model with file }
+            else
             match List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) with
             | Some c when c <> List.hd items -> command ~menu:(List.hd items) c model
             | _ -> model)
@@ -880,7 +942,7 @@ let kind_icon k (b : Widget.box) =
   | Picture -> [ at 0. 10. (rectangle ink 90. 70.); at 0. 10. (rectangle white 84. 64.); at 20. 25. (circle (rgb 120 120 120) 10.); at 0. (-12.) (rectangle ink 84. 3.) ]
   | Drawing_doc -> [ at (-20.) 20. (rectangle ink 40. 30.); at 25. 0. (oval (rgb 150 150 150) 40. 30.); at 0. 10. (rectangle ink 30. 2. |> rotate 30.) ]
 
-let start_view () =
+let start_view model =
   [ rectangle (rgb 235 236 240) 1000. 1000.; words (rgb 30 30 40) "TinyOffice" |> scale 2.5 |> move 0. 260.; words (rgb 100 100 110) "What would you like to make?" |> move 0. 190. ]
   @ List.concat
       (List.mapi
@@ -891,6 +953,9 @@ let start_view () =
            @ [ words (rgb 40 40 50) (name k) |> move b.x (b.y -. 70.) ])
          kinds)
   @ [ words (rgb 120 120 130) "each kind can hold the others: a sheet in a document, a drawing on a sheet, a picture on a slide" |> move 0. (-150.) ]
+  @ [ words (rgb 60 60 70) (File_menu.said model.file) |> move 0. (-280.) ]
+  @ File_menu.view model.file
+  @ Gui.draw ()
 
 let glyphs_at ink page ~x ~y =
   List.concat_map
@@ -905,7 +970,7 @@ let caret_at ink page offset ~x ~y =
 (* what is on the pages: the main part, the text, the header and
    footer of every page, and the objects -- with [~chrome] the caret and
    the selection too, without them for the show *)
-let page_shapes ~chrome d model =
+let page_shapes ~chrome (d : doc) model =
   let pw, _ = page_size d.kind in
   let l, t = origin d in
   let ink = rgb 20 20 20 and dim = rgb 150 150 150 in
@@ -965,7 +1030,7 @@ let page_shapes ~chrome d model =
   main @ text @ bands @ objects
 
 (* the show: the slide scaled to fill the screen's width, on black *)
-let show_view d model =
+let show_view (d : doc) model =
   let pw, ph = page_size d.kind in
   let l, t = origin d in
   let k = 1000. /. pw in
@@ -973,7 +1038,7 @@ let show_view d model =
   [ rectangle black 1000. 1000.; group [ group slide |> move (-.(l +. (pw /. 2.))) (-.(t -. (ph /. 2.))) ] |> scale k ]
 
 let view _computer model =
-  if model.start then start_view ()
+  if model.start then start_view model
   else
     let d = doc model in
     if model.show then show_view d model
@@ -988,7 +1053,9 @@ let view _computer model =
       | _ -> ""
     in
     let status =
-      Printf.sprintf "%s%s     %s" (name d.kind) slides
+      Printf.sprintf "%s     %s%s     %s"
+        (if File_menu.said model.file <> "" then File_menu.said model.file else File_menu.title model.file)
+        (name d.kind) slides
         (match (model.editing, model.selected, d.area, Undo.undo_name model.history) with
         | Some _, _, _, _ -> "editing the object in place -- Escape to go back to the " ^ String.lowercase_ascii (name d.kind)
         | None, Some _, _, _ -> "selected: drag it, drag a corner, or click it again to edit it"
@@ -1009,7 +1076,8 @@ let view _computer model =
         rectangle (rgb 165 168 175) 1000. 60. |> move 0. (-470.);
         words (rgb 40 40 40) status |> move 0. (-455.);
       ]
+    @ File_menu.view model.file
     @ Gui.draw ()
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))

@@ -55,7 +55,9 @@
  * are all there at once); more than one background; resizing parts;
  * button styles and icons; the message box, where a line of HyperTalk
  * could be typed and run at once; visual effects between cards; "find";
- * saving the stack (plan_io.md); and most of HyperTalk (see its .mli).
+ * and most of HyperTalk (see its .mli). It saves as HyperCard did,
+ * with no Save command: once the stack has a name (File > Save As...),
+ * every change is written to it as it is made.
  *
  * Exercises: the message box -- a field at the bottom whose Enter
  * sends its line as a one-handler script, the quickest way to learn
@@ -109,6 +111,8 @@ type model = {
   flash : int;
   next_id : int;
   said : string;
+  (* the stack's name, and the File menu's dialog *)
+  file : File_menu.t;
   was : string list;
   was_down : bool;
 }
@@ -294,6 +298,7 @@ let initial =
       flash = 0;
       next_id = 100;
       said = "";
+      file = File_menu.start;
       was = [];
       was_down = false;
     }
@@ -326,8 +331,13 @@ let tool_box i : Widget.box = { Widget.x = 455.; y = 250. -. (float_of_int i *. 
 (* Update *)
 (*****************************************************************************)
 
+(* HyperCard's File menu had no Save: a stack was saved as it changed
+   (see [autosave] in update) *)
+let file_items = [ "File"; "New"; "Open..."; "Save As..."; "Export" ]
+
 let menus =
   [
+    file_items;
     [ "Go"; "First"; "Prev"; "Next"; "Last" ];
     [ "Tools"; "Browse"; "Button"; "Field"; "Pencil" ];
     [ "Objects"; "Script..."; "Card Script..."; "Background Script..."; "Stack Script..."; "New Button"; "New Field"; "New Card"; "Delete Part" ];
@@ -407,9 +417,24 @@ let edit_script computer m (e : editor) =
     { m with editor = None; said = (if problem = "" then "script kept" else "script kept, but " ^ problem) }
   else { m with editor = Some e }
 
-let update computer model =
+(* a stack is saved as the stack it is: backgrounds, cards, their
+   fields' texts, pictures and scripts -- all data *)
+let kind = { File_menu.magic = "TinyHyperCard 1"; extension = ".stack" }
+
+let reopened (r : stack File_menu.result) model =
+  match r with
+  | File_menu.Nothing -> model
+  | File_menu.New -> { initial with stack = { opening with cards = [ { (List.hd opening.cards) with cparts = []; texts = []; cscript = "" } ] }; file = model.file }
+  | File_menu.Opened stack -> send { initial with stack; current = 0; file = model.file } "openStack"
+
+let update caps computer model =
   let m = computer.mouse in
   let now = Set_.elements computer.keyboard.keys in
+  if File_menu.busy model.file then
+    let file, r = File_menu.dialog caps kind computer ~current:(fun () -> model.stack) model.file in
+    reopened r { model with file; was_down = m.mdown; was = now }
+  else
+  let before = model.stack in
   let pressed key = List.mem key now && not (List.mem key model.was) in
   let press = m.mdown && not model.was_down in
   let model =
@@ -422,6 +447,10 @@ let update computer model =
         let model =
           List.fold_left
             (fun model (i, items) ->
+              if i = 0 then
+                let file, r = File_menu.menu_in ~items:file_items caps kind computer (menu_box i) ~current:(fun () -> model.stack) model.file in
+                reopened r { model with file }
+              else
               match List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) with Some c when c <> List.hd items -> command c model | _ -> model)
             model
             (List.mapi (fun i items -> (i, items)) menus)
@@ -478,6 +507,13 @@ let update computer model =
                   let model = with_card model (fun c -> { c with picture = Bitmap.change c.picture (fun b -> Paint.stroke b ~brush:Paint.pencil Pattern.solid from at) }) in
                   { model with pen = Some at }
               | _ -> { model with pen = None })
+  in
+  (* HyperCard's saving: whenever the stack has changed, to its name --
+     cheap to find out, a physical comparison first *)
+  let model =
+    if model.stack != before && model.stack <> before then
+      { model with file = File_menu.autosave caps kind ~current:(fun () -> model.stack) model.file }
+    else model
   in
   { model with flash = max 0 (model.flash - 1); was = now; was_down = m.mdown }
 
@@ -596,11 +632,13 @@ let view _computer model =
   @ palette
   @ [
       words (rgb 30 30 30)
-        (Printf.sprintf "card %d of %d, %S -- %s%s" (model.current + 1) (List.length model.stack.cards) c.cname tool_name
+        (Printf.sprintf "%s     card %d of %d, %S -- %s%s"
+           (if File_menu.said model.file <> "" then File_menu.said model.file else File_menu.title model.file)
+           (model.current + 1) (List.length model.stack.cards) c.cname tool_name
            (if model.said = "" then "" else "     " ^ model.said))
       |> move 0. (-300.);
     ]
-  @ overlay @ Gui.draw ()
+  @ overlay @ File_menu.view model.file @ Gui.draw ()
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))

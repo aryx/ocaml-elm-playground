@@ -78,6 +78,8 @@ type model = {
   focus : Formula.cell;
   typing : string;
   charting : bool;
+  (* the document's name, and the File menu's dialog *)
+  file : File_menu.t;
   menu_edit : int;
   menu_chart : int;
   was_down : bool;
@@ -100,6 +102,7 @@ let initial =
     focus = (3, 1);
     typing = "=B2*C2";
     charting = false;
+    file = File_menu.start;
     menu_edit = 0;
     menu_chart = 0;
     was_down = false;
@@ -113,7 +116,7 @@ let chart_menu = [ "Chart"; "Show"; "Hide" ]
 
 let geometry = { Sheet_view.default with cols = 5; rows = 7 }
 
-type slot = Menu_edit | Menu_chart | Name | Bar | Sheet_area | Status | Chart_area
+type slot = Menu_file | Menu_edit | Menu_chart | Name | Bar | Sheet_area | Status | Chart_area
 
 let panel =
   Layout.(
@@ -122,6 +125,7 @@ let panel =
          [
            row ~gap:8.
              [
+               leaf Menu_file (Gui.menu_size File_menu.items);
                leaf Menu_edit (Gui.menu_size edit_menu);
                leaf Menu_chart (Gui.menu_size chart_menu);
              ];
@@ -176,7 +180,21 @@ let selected_numbers model =
 
 let enter_held = ref false
 
-let update computer model =
+(* a sheet, saved as the Sheet.t it is *)
+let kind = { File_menu.magic = "TinyExcel 1"; extension = ".sheet" }
+
+(* what File > New or Open... asks for *)
+let reopened (r : Sheet.t File_menu.result) model =
+  match r with
+  | File_menu.Nothing -> model
+  | File_menu.New -> { initial with file = model.file }
+  | File_menu.Opened sheet -> { initial with sheet; anchor = (0, 0); focus = (0, 0); typing = Sheet.raw sheet (0, 0); file = model.file }
+
+let update caps computer model =
+  if File_menu.busy model.file then
+    let file, r = File_menu.dialog caps kind computer ~current:(fun () -> model.sheet) model.file in
+    reopened r { model with file; was_down = computer.mouse.mdown }
+  else
   let at = places computer in
   let box slot : Widget.box = List.assoc slot at in
   let m = computer.mouse in
@@ -205,6 +223,10 @@ let update computer model =
   let model = { model with sheet; typing } in
   (* the menus. A command menu is a dropdown whose first item is its
      own name: choosing anything else does it, and back it goes *)
+  let model =
+    let file, r = File_menu.menu_in caps kind computer (box Menu_file) ~current:(fun () -> model.sheet) model.file in
+    reopened r { model with file }
+  in
   let picked = Gui.menu_in computer (box Menu_edit) edit_menu model.menu_edit in
   let model, changed =
     match List.nth_opt edit_menu picked with
@@ -229,7 +251,8 @@ let update computer model =
   in
   let numbers = selected_numbers model in
   Gui.label_in computer (box Status)
-    (Printf.sprintf "%d cell%s selected   recalculated %d   %s"
+    (Printf.sprintf "%s   %d cell%s selected   recalculated %d   %s"
+       (if File_menu.said model.file <> "" then File_menu.said model.file else File_menu.title model.file)
        (List.length (Sheet_view.cells_of (model.anchor, model.focus)))
        (if List.length (Sheet_view.cells_of (model.anchor, model.focus)) = 1 then "" else "s")
        (Sheet.recalculated model.sheet)
@@ -267,6 +290,7 @@ let view computer model =
        (Sheet_view.draw geometry th (List.assoc Sheet_area at) model.sheet
           ~selection:(model.anchor, model.focus)))
   @ (if model.charting then chart th (List.assoc Chart_area at) (selected_numbers model) else [])
+  @ File_menu.view model.file
   @ Gui.draw ()
   @ [
       words (rgb 120 120 120) "click a cell, drag to select a range, type in the bar, press Enter"
@@ -275,5 +299,5 @@ let view computer model =
       |> move_y (-360.);
     ]
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))

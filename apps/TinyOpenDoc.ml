@@ -48,7 +48,7 @@
  * one edit of the document, "Undo Edit sheet", recorded when it ends
  * and only if it changed something -- which is decided by comparing
  * what the part saves, since two parts, being functions, cannot be
- * compared; and File > Save then Revert goes through the saved text
+ * compared; and File > Save then Open goes through the saved text
  * and the registry, so what comes back is what was written.
  *
  * And resizing, with everything reflowing as the mouse moves: a
@@ -99,8 +99,8 @@ type model = {
      document's, not the part's, and the part sees the mouse only once
      it is let go -- or the click that wakes a picture would paint *)
   waking : bool;
-  (* what File > Save wrote, for File > Revert to read *)
-  saved : string;
+  (* the document's name, and the File menu's dialog *)
+  file : File_menu.t;
   said : string;
   (* a size being dragged -- a part's height by its bottom handle, or
      the gap between two parts of a row -- and the document as it
@@ -178,7 +178,7 @@ let initial =
     editing = None;
     selected = None;
     waking = false;
-    saved = "";
+    file = File_menu.start;
     said = "";
     resizing = None;
     live = None;
@@ -263,18 +263,12 @@ let insert name node model =
   let d = Compound.insert_after (doc model) (Option.value model.selected ~default:[]) node in
   { (record ~name d model) with selected = Some at }
 
-let menu_file = [ "File"; "Save"; "Revert"; "New" ]
 let menu_edit = [ "Edit"; "Undo"; "Redo"; "Delete Part"; "Scale to Fit"; "Natural Size" ]
 let menu_insert = [ "Insert"; "Text"; "Sheet"; "Picture"; "Drawing" ]
 let menu_box i : Widget.box = { Widget.x = -410. +. (float_of_int i *. 95.); y = 470.; w = 90.; h = 30. }
 
 let command items chosen model =
   match List.nth_opt items chosen with
-  | Some "Save" ->
-      let saved = Compound.save (doc model) in
-      { (put_down model) with saved; said = Printf.sprintf "saved, %d bytes" (String.length saved) }
-  | Some "Revert" when model.saved <> "" -> { (record ~name:"Revert" (Compound.load registry model.saved) model) with selected = None; said = "read back from what was saved" }
-  | Some "New" -> { (record ~name:"New" (Compound.Column [ text "" ]) model) with selected = Some [ 0 ] }
   | Some "Undo" ->
       let model = put_down model in
       { model with history = Undo.undo model.history; selected = None }
@@ -295,11 +289,33 @@ let command items chosen model =
   | Some "Drawing" -> insert "Insert Drawing" (Part (Part_drawing.make Drawing.empty)) model
   | _ -> model
 
-let update computer model =
+(* A document of parts is saved as its text (Compound.save): each part
+   as its kind and what it saves, never as the part -- a record of
+   functions, which Marshal could not write for another program, nor
+   js_of_ocaml at all. Open reads it back through the registry. *)
+let kind = { File_menu.magic = "TinyOpenDoc 1"; extension = ".opendoc" }
+
+let reopened (r : string File_menu.result) model =
+  match r with
+  | File_menu.Nothing -> model
+  | File_menu.New -> { (record ~name:"New" (Compound.Column [ text "" ]) model) with selected = Some [ 0 ] }
+  | File_menu.Opened saved -> { initial with history = Undo.start (Compound.load registry saved); file = model.file }
+
+let update caps computer model =
   let m = computer.mouse in
   let now = Set_.elements computer.keyboard.keys in
+  (* what is saved: the document as it is, an editing session in place
+     put down first *)
+  let current () = Compound.save (doc (put_down model)) in
+  if File_menu.busy model.file then
+    let file, r = File_menu.dialog caps kind computer ~current model.file in
+    reopened r { model with file; was_down = m.mdown; was = now }
+  else
   let pressed key = List.mem key now && not (List.mem key model.was) in
-  let model = command menu_file (Gui.menu_in computer (menu_box 0) menu_file 0) model in
+  let model =
+    let file, r = File_menu.menu_in caps kind computer (menu_box 0) ~current model.file in
+    reopened r { model with file }
+  in
   let model = command menu_edit (Gui.menu_in computer (menu_box 1) menu_edit 0) model in
   let model = command menu_insert (Gui.menu_in computer (menu_box 2) menu_insert 0) model in
   (* in-place activation: the active part's menu, in the host's bar *)
@@ -428,8 +444,14 @@ let view computer model =
     rectangle white page_w page_h |> move 0. (page_top -. (page_h /. 2.));
   ]
   @ parts @ grip
-  @ [ words (rgb 50 50 50) (status ^ if model.said = "" then "" else "     " ^ model.said) |> move 0. (-470.) ]
+  @ [
+      words (rgb 50 50 50)
+        (String.concat "     "
+           (List.filter (( <> ) "") [ (if File_menu.said model.file <> "" then File_menu.said model.file else File_menu.title model.file); status; model.said ]))
+      |> move 0. (-470.);
+    ]
+  @ File_menu.view model.file
   @ Gui.draw ()
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))

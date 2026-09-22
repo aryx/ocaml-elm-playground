@@ -59,6 +59,18 @@ val menu : Widget.box -> string list -> int -> (int -> 'msg) -> 'msg element
 
 val group : 'msg element list -> 'msg element
 
+(* [canvas box drawing to_msg]: the model's picture, drawn by the view
+ * like everything else -- so nothing has to be told to redraw it -- and
+ * what the mouse does there as messages, [None] for what the program
+ * ignores *)
+val canvas : Widget.box -> Widget.paint list -> (Widget.canvas_event -> 'msg option) -> 'msg element
+
+(* [context_menu at items to_msg]: a menu at a point, in the view while
+ * the model says it is open. It has the mouse, and the next click
+ * sends [to_msg (Some i)] on an item or [to_msg None] elsewhere; the
+ * model closes it by leaving it out of the next view. *)
+val context_menu : float * float -> string list -> (int option -> 'msg) -> 'msg element
+
 (* what the platform keeps between frames, because the model cannot:
  * who has the keys, and where the caret is *)
 type t

@@ -186,6 +186,27 @@ val menu : t -> Widget.box -> string list -> int -> t * int
  * scrolling it with the wheel is left as an exercise *)
 val list : t -> Widget.box -> string list -> int option -> t * int option
 
+(* [canvas t box]: what the mouse did in [box] this frame
+ * (Widget.canvas_event) -- a press only if no widget asked before it
+ * claimed it, so a popup asked first keeps its click. It draws
+ * nothing: the program, having handled the events, draws what it now
+ * knows with [draw] -- Dear ImGui's InvisibleButton and draw list, and
+ * the reason a drawing is not a frame behind the click that changed
+ * it. *)
+val canvas : t -> Widget.box -> t * Widget.canvas_event list
+
+(* [draw t paint]: the program's own paint, over what was drawn so far *)
+val draw : t -> Widget.paint list -> t
+
+(* [context_menu t at items]: a menu of [items] opened at the point
+ * [at] (a right click's) -- the program keeps whether it is open, and
+ * asks for it every frame it is. Asked for, it takes the mouse from
+ * every widget asked after it, this frame (so ask for it first), and
+ * is drawn over everything. [`Chosen i] the frame an item is clicked,
+ * [`Dismissed] the frame a click lands anywhere else -- both mean the
+ * program closes it -- and [`Open] otherwise. *)
+val context_menu : t -> float * float -> string list -> t * [ `Open | `Chosen of int | `Dismissed ]
+
 (* {1 How big a widget wants to be}
  *
  * The answer immediate mode can give without layout: from the theme

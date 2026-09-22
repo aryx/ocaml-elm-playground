@@ -55,8 +55,10 @@
  * What it deliberately does not do: text boxes, lines and shapes placed
  * freely on a slide; more than one part per slide, and a part kept
  * with its slide when slides are inserted before it in the outline (it
- * stays with the slide's number); notes pages; printing; saving;
- * colour, which came with PowerPoint 2.0 (1988).
+ * stays with the slide's number); notes pages; printing; colour,
+ * which came with PowerPoint 2.0 (1988). It saves (File,
+ * apps/File_menu): the outline's text, the master, and each part as
+ * its slide, its kind and its saved text.
  *
  * Exercises: drag a thumbnail in the sorter to move a slide, which is
  * moving its lines in the outline; notes pages -- a slide's notes as
@@ -98,6 +100,8 @@ type model = {
   (* a transition of the show: frames still to go, and from which
      slide, pushed which way *)
   push : int * int * int;
+  (* the document's name, and the File menu's dialog *)
+  file : File_menu.t;
   was : string list;
   was_down : bool;
 }
@@ -149,6 +153,7 @@ let initial =
     waking = false;
     typing = None;
     push = (0, 0, 0);
+    file = File_menu.start;
     was = [];
     was_down = false;
   }
@@ -341,7 +346,7 @@ let new_slide model =
 
 let menus =
   [
-    [ "File"; "New" ];
+    File_menu.items;
     [ "Edit"; "Undo"; "Redo"; "Delete Part" ];
     [ "View"; "Slide"; "Outline"; "Sorter"; "Show" ];
     [ "Insert"; "New Slide"; "Sheet"; "Picture"; "Drawing" ];
@@ -352,7 +357,6 @@ let menu_box i : Widget.box = { Widget.x = -410. +. (float_of_int i *. 95.); y =
 
 let command c model =
   match c with
-  | "New" -> { initial with outline = Text_edit.of_string "Untitled\n  A point"; history = Undo.start { (Undo.now initial.history) with parts = [] } }
   | "Undo" -> let model = put_down model in { model with history = Undo.undo model.history }
   | "Redo" -> let model = put_down model in { model with history = Undo.redo model.history }
   | "Delete Part" -> record ~name:"Delete Part" (fun d -> { d with parts = List.remove_assoc model.current d.parts }) model
@@ -417,9 +421,39 @@ let thumb i = (-300. +. (float_of_int (i mod 3) *. 300.), 330. -. (float_of_int 
 
 let push_frames = 14
 
-let update computer model =
+(* A talk is saved as data: the outline's text, the master, and each
+   part as its slide, its kind and what it saves -- a part being
+   functions, only its data can be written (Saved.mli) *)
+type saved = { talk : string; look : master; saved_parts : (int * string * string) list }
+
+let kind = { File_menu.magic = "TinyPowerPoint 1"; extension = ".slides" }
+
+let registry : Component.registry =
+  [ (Part_sheet.kind, Part_sheet.load); (Part_picture.kind, Part_picture.load); (Part_drawing.kind, Part_drawing.load); (Part_text.kind, Part_text.load) ]
+
+let reopened (r : saved File_menu.result) model =
+  match r with
+  | File_menu.Nothing -> model
+  | File_menu.New -> { initial with outline = Text_edit.of_string "Untitled\n  A point"; history = Undo.start { (Undo.now initial.history) with parts = [] }; file = model.file }
+  | File_menu.Opened sv ->
+      let parts = List.map (fun (n, kind, text) -> (n, Component.load registry ~kind text)) sv.saved_parts in
+      { initial with outline = Text_edit.of_string sv.talk; history = Undo.start { master = sv.look; parts }; file = model.file }
+
+let update caps computer model =
   let m = computer.mouse in
   let now = Set_.elements computer.keyboard.keys in
+  let current () =
+    let d = deck (put_down model) in
+    {
+      talk = Text_edit.to_string model.outline;
+      look = d.master;
+      saved_parts = List.map (fun (n, (p : Component.part)) -> (n, p.kind, p.save ())) d.parts;
+    }
+  in
+  if File_menu.busy model.file then
+    let file, r = File_menu.dialog caps kind computer ~current model.file in
+    reopened r { model with file; was_down = m.mdown; was = now }
+  else
   let pressed key = List.mem key now && not (List.mem key model.was) in
   let click = m.mdown && not model.was_down in
   (* the menus: not in the show, which is the whole screen *)
@@ -427,7 +461,12 @@ let update computer model =
     if model.view = Show then model
     else
       List.fold_left
-        (fun model (i, items) -> match List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) with Some c when c <> List.hd items -> command c model | _ -> model)
+        (fun model (i, items) ->
+          if i = 0 then
+            let file, r = File_menu.menu_in caps kind computer (menu_box i) ~current model.file in
+            reopened r { model with file }
+          else
+          match List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) with Some c when c <> List.hd items -> command c model | _ -> model)
         model
         (List.mapi (fun i items -> (i, items)) menus)
   in
@@ -512,7 +551,10 @@ let view _computer model =
   let drawn ?active ?caret n = slide_shapes ?active ?caret d (nth_slide model n) ~lines:(lines model n) ~number:n ~total in
   let bar = [ rectangle (Gui.theme ()).face 1000. 40. |> move 0. 470. ] in
   let desk = rectangle (rgb 160 160 165) 1000. 1000. in
-  let status s = [ words (rgb 40 40 40) s |> move 0. (-470.) ] in
+  let status s =
+    let file = if File_menu.said model.file <> "" then File_menu.said model.file else File_menu.title model.file in
+    [ words (rgb 40 40 40) (file ^ "     " ^ s) |> move 0. (-470.) ] @ File_menu.view model.file
+  in
   let undo = match Undo.undo_name model.history with Some n -> "     Undo " ^ n | None -> "" in
   match model.view with
   | Show ->
@@ -550,5 +592,5 @@ let view _computer model =
       @ status ("click a slide to open it" ^ undo)
       @ Gui.draw ()
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))

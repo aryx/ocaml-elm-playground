@@ -35,6 +35,19 @@ val checkbox :
 (* [fraction] is where the knob sits, 0 at the left end, 1 at the right *)
 val slider : Theme.t -> Widget.box -> fraction:float -> hot:bool -> held:bool -> Widget.paint list
 
+(* [slider_value theme box ~from ~to_ mx]: the value of a slider whose
+ * knob is dragged to [mx] -- its center under the mouse, kept in the
+ * track; None when the box is too narrow to have a track.
+ *
+ * Here once, for the three toolkits, rather than written in each: the
+ * same formula written twice can come out a last bit apart. On arm64,
+ * OCaml's native code fuses a multiplication and an addition into one
+ * instruction (fmadd, one rounding instead of two) where the pattern
+ * of the code allows it, and one toolkit's copy was fused and another's
+ * not -- found by examples/gui4/tests/Unit_gui4, when a circle drawn
+ * from each version's value was not the same picture. *)
+val slider_value : Theme.t -> Widget.box -> from:float -> to_:float -> float -> float option
+
 val progress : Theme.t -> Widget.box -> float -> Widget.paint list
 
 (* [caret] is the byte index the caret sits at, or [None] when the
@@ -84,3 +97,8 @@ val list_row : Theme.t -> Widget.box -> int -> Widget.box
 val menu_closed : Theme.t -> Widget.box -> string -> hot:bool -> held:bool -> Widget.paint list
 val menu_item : Theme.t -> Widget.box -> int -> Widget.box
 val menu_items : Theme.t -> Widget.box -> string list -> under:int option -> Widget.paint list
+
+(* a context menu opened at a point: the box its items hang from (with
+ * [menu_item] and [menu_items]), the first item's top-left corner just
+ * off the point, as wide as its widest item *)
+val context_box : Theme.t -> float * float -> string list -> Widget.box

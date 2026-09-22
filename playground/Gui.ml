@@ -32,6 +32,7 @@ let input_of (computer : computer) : Widget.input =
     my = m.my;
     mdown = m.mdown;
     mclick = m.mclick;
+    mrdown = m.mrdown;
     typed = k.typed;
     wheel = m.mwheel;
     keys = Set_.elements k.keys;

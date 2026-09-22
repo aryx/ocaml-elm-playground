@@ -25,9 +25,15 @@ type capture = Free | Held of id | Elsewhere
 type t = {
   input : Widget.input;
   theme : Theme.t;
-  (* the mouse button at the previous frame, to see a press begin *)
+  (* the mouse button at the previous frame, to see a press begin; and
+     the right one's, for a right press *)
   was_down : bool;
   press : bool;
+  was_rdown : bool;
+  rpress : bool;
+  (* a context menu asked for this frame, which has the mouse for the
+     rest of it *)
+  grab : id option;
   capture : capture;
   (* who has the keys, and in what order Tab walks *)
   focus : Focus.t;
@@ -67,6 +73,9 @@ let empty =
     theme = Theme.default;
     was_down = false;
     press = false;
+    was_rdown = false;
+    rpress = false;
+    grab = None;
     capture = Free;
     focus = Focus.none;
     open_menu = None;
@@ -113,6 +122,9 @@ let frame (input : Widget.input) (t : t) =
     input;
     press;
     was_down = input.mdown;
+    rpress = input.mrdown && not t.was_rdown;
+    was_rdown = input.mrdown;
+    grab = None;
     capture;
     focus;
     keys_before = input.keys;
@@ -144,6 +156,7 @@ let interact (t : t) (b : Widget.box) =
     (* claude: ... unless another widget's popup is showing, and then
      * the mouse is its, wherever it goes *)
     && (match t.open_menu with Some m -> m = Widget.id b | None -> true)
+    && (match t.grab with Some m -> m = Widget.id b | None -> true)
   in
   (* claude: the first hot widget of the frame claims the press. In
    * immediate mode the widgets are asked in drawing order, so with
@@ -178,13 +191,8 @@ let checkbox (t : t) (b : Widget.box) s checked =
 let slider (t : t) (b : Widget.box) ~from ~to_ v =
   let t, hot, held, _clicked = interact t b in
   let th = t.theme in
-  (* the knob's center travels over this much, its sides staying in *)
-  let travel = max 0. (b.w -. th.knob) in
-  let x0 = Widget.left b +. (th.knob /. 2.) in
   let v =
-    if held && travel > 0. then
-      let f = max 0. (min 1. ((t.input.mx -. x0) /. travel)) in
-      from +. (f *. (to_ -. from))
+    if held then Option.value (Look.slider_value th b ~from ~to_ t.input.mx) ~default:v
     else v
   in
   let fraction = if to_ = from then 0. else max 0. (min 1. ((v -. from) /. (to_ -. from))) in
@@ -277,6 +285,31 @@ let menu (t : t) (b : Widget.box) (items : string list) (chosen : int) =
     if open_menu = Some me then { t with overlay = List.rev_append (Look.menu_items th b items ~under:under_mouse) t.overlay } else t
   in
   (t, chosen)
+
+let canvas (t : t) (b : Widget.box) =
+  let t, hot, _held, _clicked = interact t b in
+  let i = t.input in
+  let at = (i.mx, i.my) in
+  (* the press is the canvas's only if it claimed it: a widget asked
+     before it, over it, took it first *)
+  let events =
+    (if hot then [ Widget.Hover at ] else [])
+    @ (if hot && t.press && t.capture = Held (id b) then [ Widget.Press at ] else [])
+    @ if hot && t.rpress then [ Widget.Right_press at ] else []
+  in
+  (t, events)
+
+let context_menu (t : t) at items =
+  let th = t.theme in
+  let b = Look.context_box th at items in
+  let under =
+    List.find_opt (fun k -> Widget.contains (Look.menu_item th b k) t.input.mx t.input.my) (List.init (List.length items) Fun.id)
+  in
+  let answer = if t.input.mclick then match under with Some k -> `Chosen k | None -> `Dismissed else `Open in
+  (* the mouse is the menu's for the rest of the frame: whatever is
+     under it does not see the press *)
+  let t = { t with grab = Some (id b); capture = (if t.press then Held (id b) else t.capture) } in
+  ({ t with overlay = List.rev_append (Look.menu_items th b items ~under) t.overlay }, answer)
 
 (* a list box: a click on a row selects it *)
 let list (t : t) (b : Widget.box) items selected =

@@ -37,6 +37,9 @@
   (depends
     ; ocaml-ci reports "Unbound module Float" before (in core/)
     (ocaml (>= "4.07.0"))
+    ; claude: capabilities, for Playground_platform's store/fetch/export
+    ; (docs/claude_notes/plans/plan_caps.md); links under js_of_ocaml too
+    (caps (>= "0.1.0"))
   )
 )
 (package (name elm_playground_native)

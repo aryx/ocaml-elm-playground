@@ -36,13 +36,16 @@ type input = {
   my : float;
   mdown : bool;
   mclick : bool;
+  mrdown : bool;
   typed : string;
   wheel : float;
   keys : string list;
 }
 
 let no_input =
-  { mx = 0.; my = 0.; mdown = false; mclick = false; typed = ""; wheel = 0.; keys = [] }
+  { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false; typed = ""; wheel = 0.; keys = [] }
+
+type canvas_event = Hover of (float * float) | Press of (float * float) | Right_press of (float * float)
 
 (*****************************************************************************)
 (* What a widget draws *)

@@ -53,6 +53,13 @@ let preload_image = Image_native.preload
 
 let flags () : Playground.flags = Playground.flags_of_strings (Native_loop_2d.app_args ())
 
+(* claude: documents, in a directory (native_common/Store); the
+ * capability is the caller's proof it may, see the .mli *)
+let store (_ : < Cap.open_out; .. >) name bytes = Store.store name bytes
+let fetch (_ : < Cap.open_in; .. >) name = Store.fetch name
+let stored (_ : < Cap.readdir; .. >) = Store.stored ()
+let export (_ : < Cap.open_out; .. >) name bytes = Store.export name bytes
+
 (* claude: Audio.loop_from's files: a local path read, a URL downloaded
  * (curl, blocking: Download.local_file) *)
 let fetch_file (source : string) (k : string option -> unit) : unit =

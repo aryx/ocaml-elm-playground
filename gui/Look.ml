@@ -128,6 +128,22 @@ let menu_closed (th : Theme.t) (b : Widget.box) label ~hot ~held =
 let menu_item (th : Theme.t) (b : Widget.box) i =
   { b with y = Widget.bottom b -. (th.row *. (float_of_int i +. 0.5)); h = th.row }
 
+let slider_value (th : Theme.t) (b : Widget.box) ~from ~to_ mx =
+  (* the knob's center travels over this much, its sides staying in *)
+  let travel = max 0. (b.w -. th.knob) in
+  if travel <= 0. then None
+  else
+    let x0 = Widget.left b +. (th.knob /. 2.) in
+    let f = max 0. (min 1. ((mx -. x0) /. travel)) in
+    Some (from +. (f *. (to_ -. from)))
+
+let context_box (th : Theme.t) (x, y) items =
+  let w = List.fold_left (fun w s -> max w (Widget.text_width ~size:th.text_size s +. (2. *. th.padding))) 0. items in
+  (* just off the pointer, as menus open: nothing is under the mouse
+     until it moves *)
+  let x = x +. 2. and y = y -. 2. in
+  { Widget.x = x +. (w /. 2.); y = y +. (th.row /. 2.); w; h = th.row }
+
 let menu_items (th : Theme.t) (b : Widget.box) items ~under =
   let n = List.length items in
   List.concat

@@ -82,6 +82,8 @@ type model = {
   (* whether the last thing done was typing, so that the next letter
      joins the same edit *)
   typing : bool;
+  (* the document's name, and the File menu's dialog *)
+  file : File_menu.t;
   (* the keys and the mouse button at the previous frame, for edges *)
   was : string list;
   was_down : bool;
@@ -115,6 +117,7 @@ let initial =
     clip = Clipboard.empty;
     align = Page.Left;
     typing = false;
+    file = File_menu.start;
     was = [];
     was_down = false;
   }
@@ -250,16 +253,15 @@ let icon (b : Widget.box) tool =
 
 type slot = File | Edit_ | Format | Size
 
-let menu_file = [ "File"; "New" ]
 let menu_edit = [ "Edit"; "Undo"; "Redo"; "Cut"; "Copy"; "Paste"; "Select All" ]
 let menu_format = [ "Format"; "Bold"; "Italic"; "Underline"; "Strike"; "Plain" ]
 let size_names = List.map (fun s -> Printf.sprintf "%.0f" s) sizes
 
 let menu_box slot : Widget.box =
   match slot with
-  | File -> { Widget.x = -410.; y = 470.; w = 80.; h = 30. }
-  | Edit_ -> { Widget.x = -325.; y = 470.; w = 80.; h = 30. }
-  | Format -> { Widget.x = -230.; y = 470.; w = 100.; h = 30. }
+  | File -> { Widget.x = -400.; y = 470.; w = 100.; h = 30. }
+  | Edit_ -> { Widget.x = -295.; y = 470.; w = 80.; h = 30. }
+  | Format -> { Widget.x = -200.; y = 470.; w = 100.; h = 30. }
   | Size -> { Widget.x = 120.; y = toolbar_y; w = 80.; h = tool_h }
 
 (* the keyboard, with no modes: a letter is a letter unless Control is
@@ -303,14 +305,28 @@ let keyboard computer model =
   in
   { model with was = now }
 
-let update computer model =
+(* a text, saved as its Rich.t -- the looks with it -- and its
+   alignment *)
+let kind = { File_menu.magic = "TinyWord 1"; extension = ".doc" }
+
+let reopened (r : (Rich.t * Page.align) File_menu.result) model =
+  match r with
+  | File_menu.Nothing -> model
+  | File_menu.New -> { initial with history = Undo.start (Rich.of_string ""); file = model.file }
+  | File_menu.Opened (text, align) -> { initial with history = Undo.start (Rich.at 0 text); align; file = model.file }
+
+let update caps computer model =
+  let current () = (doc model, model.align) in
+  if File_menu.busy model.file then
+    let file, r = File_menu.dialog caps kind computer ~current model.file in
+    reopened r { model with file; was_down = computer.mouse.mdown; was = Set_.elements computer.keyboard.keys }
+  else
   let m = computer.mouse in
   let page = laid_out model in
   (* the menus: real widgets, asked for first, so that their items are
      what a click lands on while one is open *)
   let command items chosen model =
     match List.nth_opt items chosen with
-    | Some "New" -> { initial with history = Undo.start (Rich.of_string "") }
     | Some "Undo" -> undo model
     | Some "Redo" -> redo model
     | Some "Cut" -> cut model
@@ -336,7 +352,10 @@ let update computer model =
       edit ~name:"Size" (Rich.restyle (fun s -> { s with size })) model
     else model
   in
-  let model = command menu_file (Gui.menu_in computer (menu_box File) menu_file 0) model in
+  let model =
+    let file, r = File_menu.menu_in caps kind computer (menu_box File) ~current model.file in
+    reopened r { model with file }
+  in
   let model = command menu_edit (Gui.menu_in computer (menu_box Edit_) menu_edit 0) model in
   let model = command menu_format (Gui.menu_in computer (menu_box Format) menu_format 0) model in
   (* the toolbar, and the page: drawn, so they ask first whether a menu
@@ -411,7 +430,8 @@ let view _computer model =
          tools)
   in
   let status =
-    Printf.sprintf "%d words   %s   %s"
+    Printf.sprintf "%s   %d words   %s   %s"
+      (if File_menu.said model.file <> "" then File_menu.said model.file else File_menu.title model.file)
       (List.length (List.filter (fun w -> w <> "") (String.split_on_char ' ' (String.map (fun c -> if c = '\n' then ' ' else c) (Rich.to_string r)))))
       (match Undo.undo_name model.history with Some n -> "Undo " ^ n | None -> "")
       (match Clipboard.get model.clip with Some s -> Printf.sprintf "clipboard: %d" (String.length s) | None -> "")
@@ -424,8 +444,9 @@ let view _computer model =
   ]
   @ selected @ glyphs @ caret @ toolbar
   @ [ words (rgb 90 90 90) status |> move 0. (-440.) ]
+  @ File_menu.view model.file
   (* last, so that an open menu's items are over everything *)
   @ Gui.draw ()
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))

@@ -9,6 +9,7 @@
   )
   (libraries
     elm_playground
+    caps ; the File menu's authority to save (File_menu, plan_caps.md)
     gui ; Widget, for text_width
     appkit_sheet ; Formula and Sheet, the engine
     appkit_sheet_view ; a sheet drawn into a rectangle (TinyExcel)

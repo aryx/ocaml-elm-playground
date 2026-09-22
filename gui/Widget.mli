@@ -56,6 +56,8 @@ type input = {
   my : float;
   mdown : bool;
   mclick : bool;
+  (* the right button held: a context menu opens on its press *)
+  mrdown : bool;
   typed : string;
   wheel : float;
   (* every key held down right now, by name, the playground's spelling
@@ -68,6 +70,13 @@ type input = {
 
 (* nobody touching anything: the mouse at (0, 0), no button, no key *)
 val no_input : input
+
+(* What a canvas tells its program -- a canvas being the one widget
+ * whose drawing is the program's: the circles of 7GUIs' Circle Drawer,
+ * a chart, a map. [Hover] every frame the mouse is over it (and
+ * nothing has grabbed the mouse), then [Press] or [Right_press] the
+ * frame a button goes down there; each at the mouse's point. *)
+type canvas_event = Hover of (float * float) | Press of (float * float) | Right_press of (float * float)
 
 (* What a widget draws: rectangles of colour, and text. Two
  * constructors, because that is all a toolkit needs -- a box with an

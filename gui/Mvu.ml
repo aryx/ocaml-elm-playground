@@ -21,6 +21,8 @@ type 'msg element =
   | Slider of Widget.box * float * float * float * (float -> 'msg) (* from, to, value *)
   | Progress of Widget.box * float
   | Menu of Widget.box * string list * int * (int -> 'msg)
+  | Canvas of Widget.box * Widget.paint list * (Widget.canvas_event -> 'msg option)
+  | Context_menu of (float * float) * string list * (int option -> 'msg)
   | Group of 'msg element list
 
 let button ?(enabled = true) box s msg = Button (box, s, msg, enabled)
@@ -30,6 +32,8 @@ let slider box ~from ~to_ v f = Slider (box, from, to_, v, f)
 let progress box fraction = Progress (box, fraction)
 let menu box items chosen f = Menu (box, items, chosen, f)
 let group kids = Group kids
+let canvas box drawing f = Canvas (box, drawing, f)
+let context_menu at items f = Context_menu (at, items, f)
 
 (* The view is rebuilt every frame, so nothing about *how* it is being
  * used can live in it: this is what is underneath -- in Elm, the
@@ -38,6 +42,7 @@ type t = {
   focus : Widget.id option;
   caret : int;
   was_down : bool;
+  was_rdown : bool;
   keys_before : string list;
   (* the press that is going on began in this widget *)
   held : Widget.id option;
@@ -45,7 +50,7 @@ type t = {
   open_menu : Widget.id option;
 }
 
-let empty = { focus = None; caret = 0; was_down = false; keys_before = []; held = None; open_menu = None }
+let empty = { focus = None; caret = 0; was_down = false; was_rdown = false; keys_before = []; held = None; open_menu = None }
 
 (*****************************************************************************)
 (* Helpers *)
@@ -53,11 +58,12 @@ let empty = { focus = None; caret = 0; was_down = false; keys_before = []; held 
 
 let rec leaves = function Group kids -> List.concat_map leaves kids | e -> [ e ]
 let box_of = function
-  | Button (b, _, _, _) | Label (b, _) | Field (b, _, _, _) | Slider (b, _, _, _, _) | Progress (b, _) | Menu (b, _, _, _) -> b
+  | Button (b, _, _, _) | Label (b, _) | Field (b, _, _, _) | Slider (b, _, _, _, _) | Progress (b, _) | Menu (b, _, _, _) | Canvas (b, _, _) -> b
+  | Context_menu (at, items, _) -> Look.context_box Theme.default at items
   | Group _ -> assert false
 
 let takes_keys = function Field (_, _, _, enabled) -> enabled | _ -> false
-let enabled = function Button (_, _, _, e) | Field (_, _, _, e) -> e | Label _ | Progress _ -> false | _ -> true
+let enabled = function Button (_, _, _, e) | Field (_, _, _, e) -> e | Label _ | Progress _ | Context_menu _ -> false | _ -> true
 
 (*****************************************************************************)
 (* The events of one frame *)
@@ -66,11 +72,15 @@ let enabled = function Button (_, _, _, e) | Field (_, _, _, e) -> e | Label _ |
 let events (th : Theme.t) (i : Widget.input) (t : t) view =
   let pressed k = List.mem k i.keys && not (List.mem k t.keys_before) in
   let press = i.mdown && not t.was_down in
+  let rpress = i.mrdown && not t.was_rdown in
   let widgets = leaves view in
   let id e = Widget.id (box_of e) in
+  (* a context menu in the view has the mouse: nothing else is hot *)
+  let grabbed = List.exists (function Context_menu _ -> true | _ -> false) widgets in
   let hot e =
     enabled e && Widget.contains (box_of e) i.mx i.my
     && (match t.open_menu with Some m -> m = id e | None -> true)
+    && not grabbed
   in
   (* Tab walks the view's own order, which is the order the view
      function wrote the widgets in *)
@@ -135,13 +145,18 @@ let events (th : Theme.t) (i : Widget.input) (t : t) view =
         | Field (_, text, to_msg, _) when Some (id e) = focus ->
             let after, _ = Text.edit ~typed:i.typed ~pressed text caret in
             if after <> text then [ to_msg after ] else []
-        | Slider (b, from, to_, _, to_msg) when held = Some (id e) && i.mdown ->
-            let travel = max 0. (b.w -. th.knob) in
-            if travel <= 0. then []
-            else
-              let x0 = Widget.left b +. (th.knob /. 2.) in
-              [ to_msg (from +. (max 0. (min 1. ((i.mx -. x0) /. travel)) *. (to_ -. from))) ]
+        | Slider (b, from, to_, _, to_msg) when held = Some (id e) && i.mdown -> (
+            match Look.slider_value th b ~from ~to_ i.mx with Some v -> [ to_msg v ] | None -> [])
         | Menu (_, _, _, to_msg) when i.mclick -> ( match menu_under e with Some k -> [ to_msg k ] | None -> [])
+        | Canvas (_, _, to_msg) ->
+            let at = (i.mx, i.my) in
+            List.filter_map to_msg
+              ((if hot e then [ Widget.Hover at ] else [])
+              @ (if press && held = Some (id e) then [ Widget.Press at ] else [])
+              @ if rpress && hot e then [ Widget.Right_press at ] else [])
+        | Context_menu (at, items, to_msg) when i.mclick ->
+            let b = Look.context_box th at items in
+            [ to_msg (List.find_opt (fun k -> Widget.contains (Look.menu_item th b k) i.mx i.my) (List.init (List.length items) Fun.id)) ]
         | _ -> [])
       widgets
   in
@@ -150,7 +165,9 @@ let events (th : Theme.t) (i : Widget.input) (t : t) view =
     | Some (Field (_, text, _, _)) -> snd (Text.edit ~typed:i.typed ~pressed text caret)
     | _ -> caret
   in
-  let t' = { focus; caret; was_down = i.mdown; keys_before = i.keys; held = (if i.mdown then held else None); open_menu } in
+  let t' = { focus; caret; was_down = i.mdown; was_rdown = i.mrdown; keys_before = i.keys; held = (if i.mdown then held else None); open_menu } in
+  (* a context menu over everything, wherever the view put it *)
+  let menus, others = List.partition (function Context_menu _ -> true | _ -> false) widgets in
   let paint =
     List.concat_map
       (fun e ->
@@ -167,8 +184,13 @@ let events (th : Theme.t) (i : Widget.input) (t : t) view =
             let label = match List.nth_opt items chosen with Some s -> s | None -> "" in
             Look.menu_closed th b label ~hot:(hot e) ~held:(Some (id e) = held && i.mdown)
             @ if open_menu = Some (id e) then Look.menu_items th b items ~under:(menu_under e) else []
+        | Canvas (_, drawing, _) -> drawing
+        | Context_menu (at, items, _) ->
+            let b = Look.context_box th at items in
+            Look.menu_items th b items
+              ~under:(List.find_opt (fun k -> Widget.contains (Look.menu_item th b k) i.mx i.my) (List.init (List.length items) Fun.id))
         | Group _ -> [])
-      widgets
+      (others @ menus)
   in
   (t', msgs, paint)
 

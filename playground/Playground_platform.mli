@@ -22,3 +22,35 @@ val flags: unit -> Playground.flags
  * downloaded and decoded, which is fine to do once up front but would
  * freeze the render loop if done lazily on first use. *)
 val preload_image: string -> unit
+
+(* Documents, saved and opened again (docs/claude_notes/plans/plan_io.md).
+ *
+ * A *store* of named documents, each a string of bytes (what
+ * appkits/document/Saved writes): natively, the files of one directory
+ * -- $ELM_PLAYGROUND_STORE if set, else ~/.elm-playground/documents --
+ * and on the web the browser's localStorage, which lives in that
+ * browser, for that site, and survives a reload. A name is the
+ * document's own ("budget.sheet"); a '/' in it is not a directory.
+ *
+ * Each takes the capability it uses, which only [Cap.main] hands out,
+ * once, in the program's main: a program whose main does not call it
+ * cannot touch a document, and one that does says so in its types --
+ *
+ *   let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))
+ *
+ * The platform itself is the trusted computing base: it holds no
+ * capability, only asks for one. All four are synchronous, so an
+ * [update] can call them as it goes. *)
+
+(* [store caps name bytes]: kept under [name], over what was there *)
+val store : < Cap.open_out; .. > -> string -> string -> unit
+
+(* [fetch caps name]: what was stored under [name], if anything *)
+val fetch : < Cap.open_in; .. > -> string -> string option
+
+(* the names stored, in order *)
+val stored : < Cap.readdir; .. > -> string list
+
+(* [export caps name bytes]: a real file, out of the store --
+ * natively written in the current directory, on the web downloaded *)
+val export : < Cap.open_out; .. > -> string -> string -> unit

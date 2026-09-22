@@ -45,8 +45,8 @@
  * lasso, the hand, text, the spray can, polygons, rounded rectangles;
  * FatBits, the magnified view for editing dot by dot; the line widths;
  * brush shapes; patterns you edit; the page of 576 by 720 dots and
- * printing it; and saving to a file, which is Bitmap.to_string one
- * step away.
+ * printing it. It saves (File, apps/File_menu): the Bitmap.t, its bits
+ * as they are.
  *
  * Exercises: the spray can (dots of the pattern at random in a disc,
  * a few per frame); FatBits, each dot drawn eight times bigger, with
@@ -78,6 +78,8 @@ type drag =
 type model = {
   (* the picture, and every version of it *)
   history : Bitmap.t Undo.t;
+  (* the document's name, and the File menu's dialog *)
+  file : File_menu.t;
   tool : tool;
   pattern : Pattern.t;
   clip : Clipboard.t;
@@ -128,6 +130,7 @@ let house =
 let initial =
   {
     history = Undo.start house;
+    file = File_menu.start;
     tool = Brush;
     pattern = Pattern.solid;
     clip = Clipboard.empty;
@@ -375,18 +378,16 @@ let icon (b : Widget.box) tool ~ink ~paper =
 
 type slot = File | Edit_
 
-let menu_file = [ "File"; "New" ]
 let menu_edit = [ "Edit"; "Undo"; "Redo"; "Cut"; "Copy"; "Paste"; "Clear"; "Select All" ]
 
 let menu_box = function
-  | File -> ({ Widget.x = -410.; y = 470.; w = 80.; h = 30. } : Widget.box)
-  | Edit_ -> { Widget.x = -325.; y = 470.; w = 80.; h = 30. }
+  | File -> ({ Widget.x = -400.; y = 470.; w = 100.; h = 30. } : Widget.box)
+  | Edit_ -> { Widget.x = -295.; y = 470.; w = 80.; h = 30. }
 
 let select_all model = { (deselect model) with tool = Select; selection = Some (0, 0, pic_w - 1, pic_h - 1) }
 
 let command items chosen model =
   match List.nth_opt items chosen with
-  | Some "New" -> { initial with history = Undo.start (Bitmap.create ~width:pic_w ~height:pic_h) }
   | Some "Undo" -> undo model
   | Some "Redo" -> redo model
   | Some "Cut" -> cut model
@@ -413,10 +414,27 @@ let keyboard computer model =
   in
   { model with was = now }
 
-let update computer model =
+(* a picture, saved as the Bitmap.t it is: its bits *)
+let kind = { File_menu.magic = "TinyMacPaint 1"; extension = ".paint" }
+
+let reopened (r : Bitmap.t File_menu.result) model =
+  match r with
+  | File_menu.Nothing -> model
+  | File_menu.New -> { initial with history = Undo.start (Bitmap.create ~width:pic_w ~height:pic_h); file = model.file }
+  | File_menu.Opened bits -> { initial with history = Undo.start bits; before = bits; file = model.file }
+
+let update caps computer model =
+  let current () = Undo.now model.history in
+  if File_menu.busy model.file then
+    let file, r = File_menu.dialog caps kind computer ~current model.file in
+    reopened r { model with file; was_down = computer.mouse.mdown; was = Set_.elements computer.keyboard.keys }
+  else
   let m = computer.mouse in
   (* the menus first, so that an open one gets the click *)
-  let model = command menu_file (Gui.menu_in computer (menu_box File) menu_file 0) model in
+  let model =
+    let file, r = File_menu.menu_in caps kind computer (menu_box File) ~current model.file in
+    reopened r { model with file }
+  in
   let model = command menu_edit (Gui.menu_in computer (menu_box Edit_) menu_edit 0) model in
   let model =
     if Gui.modal () then model
@@ -501,7 +519,9 @@ let view computer model =
   in
   let patterns = swatch current_box model.pattern @ Lazy.force swatches in
   let status =
-    Printf.sprintf "%s     %s     %s" (name model.tool)
+    Printf.sprintf "%s     %s     %s     %s"
+      (if File_menu.said model.file <> "" then File_menu.said model.file else File_menu.title model.file)
+      (name model.tool)
       (match Undo.undo_name model.history with Some n -> "Undo " ^ n | None -> "")
       (if Clipboard.has model.clip then "a piece on the clipboard" else "")
   in
@@ -512,7 +532,8 @@ let view computer model =
   ]
   @ window @ picture @ marquee @ palette @ patterns
   @ [ words (rgb 40 40 40) status |> move 0. (-440.) ]
+  @ File_menu.view model.file
   @ Gui.draw ()
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))

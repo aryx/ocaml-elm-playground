@@ -21,10 +21,13 @@ type kind =
   | Slider of float * float * (float -> unit) (* from, to, on change *)
   | Progress
   | Menu of string list * (int -> unit)
+  | Canvas of (Widget.canvas_event -> unit)
+  | Context_menu of string list * (int option -> unit)
   | Group of t list
 
 and t = {
-  box : Widget.box;
+  (* mutable for a context menu, which opens where it is told *)
+  mutable box : Widget.box;
   kind : kind;
   (* everything below is the widget's own, which is what "retained"
      means: the toolkit does not recompute it, it keeps it *)
@@ -40,16 +43,34 @@ and t = {
   mutable chosen : int;
   mutable opened : bool;
   mutable under : int option;
+  mutable shown : bool;
+  (* a canvas's picture, the program's *)
+  mutable drawing : Widget.paint list;
 }
 
-type ui = { root : t; mutable was_down : bool; mutable keys_before : string list }
+type ui = { root : t; mutable was_down : bool; mutable was_rdown : bool; mutable keys_before : string list }
 
 (*****************************************************************************)
 (* Building the tree *)
 (*****************************************************************************)
 
 let make box kind text =
-  { box; kind; text; enabled = true; hot = false; held = false; focused = false; caret = 0; value = 0.; chosen = 0; opened = false; under = None }
+  {
+    box;
+    kind;
+    text;
+    enabled = true;
+    hot = false;
+    held = false;
+    focused = false;
+    caret = 0;
+    value = 0.;
+    chosen = 0;
+    opened = false;
+    under = None;
+    shown = true;
+    drawing = [];
+  }
 
 let button box s f = make box (Button f) s
 let label box s = make box Label s
@@ -61,16 +82,34 @@ let menu box items chosen f = { (make box (Menu (items, f)) "") with chosen }
 (* a group has no rectangle of its own: it is its children *)
 let group kids = make { Widget.x = 0.; y = 0.; w = 0.; h = 0. } (Group kids) ""
 
+let canvas box f = make box (Canvas f) ""
+let set_drawing t d = t.drawing <- d
+
+(* hidden, and nowhere, until it pops up *)
+let context_menu items f = { (make { Widget.x = 0.; y = 0.; w = 0.; h = 0. } (Context_menu (items, f)) "") with shown = false }
+
+let popup t at =
+  match t.kind with
+  | Context_menu (items, _) ->
+      t.box <- Look.context_box Theme.default at items;
+      t.shown <- true;
+      t.opened <- true;
+      t.under <- None
+  | _ -> ()
+
+let set_shown t b = t.shown <- b
 let text t = t.text
 let set_text t s = t.text <- s
 let set_enabled t b = t.enabled <- b
 let value t = t.value
 let set_value t v = t.value <- v
 let chosen t = t.chosen
-let window root = { root; was_down = false; keys_before = [] }
+let window root = { root; was_down = false; was_rdown = false; keys_before = [] }
 
+(* the widgets there are: a hidden one, or one in a hidden group, is
+   not *)
 let rec leaves t =
-  match t.kind with Group kids -> List.concat_map leaves kids | _ -> [ t ]
+  if not t.shown then [] else match t.kind with Group kids -> List.concat_map leaves kids | _ -> [ t ]
 
 let takes_keys t = match t.kind with Field _ -> t.enabled | _ -> false
 
@@ -81,6 +120,7 @@ let takes_keys t = match t.kind with Field _ -> t.enabled | _ -> false
 let handle (i : Widget.input) (ui : ui) =
   let pressed k = List.mem k i.keys && not (List.mem k ui.keys_before) in
   let press = i.mdown && not ui.was_down in
+  let rpress = i.mrdown && not ui.was_rdown in
   let widgets = leaves ui.root in
   (* Tab walks the tree, which here *is* the tab order: the widgets
      are objects in an order, and the order they were built in is the
@@ -108,7 +148,8 @@ let handle (i : Widget.input) (ui : ui) =
   List.iter
     (fun w ->
       w.hot <-
-        w.enabled && Widget.contains w.box i.mx i.my
+        w.enabled
+        && (Widget.contains w.box i.mx i.my || match w.kind with Context_menu _ -> w.opened | _ -> false)
         && (match open_menu with Some m -> m == w | None -> true);
       if press && w.hot && not !claimed then (
         claimed := true;
@@ -144,13 +185,12 @@ let handle (i : Widget.input) (ui : ui) =
       (match w.kind with
       (* a slider follows the mouse while the press that began on it
          lasts *)
-      | Slider (from, to_, f) when w.held && i.mdown ->
-          let travel = max 0. (w.box.w -. th.knob) in
-          if travel > 0. then (
-            let x0 = Widget.left w.box +. (th.knob /. 2.) in
-            let v = from +. (max 0. (min 1. ((i.mx -. x0) /. travel)) *. (to_ -. from)) in
-            w.value <- v;
-            f v)
+      | Slider (from, to_, f) when w.held && i.mdown -> (
+          match Look.slider_value th w.box ~from ~to_ i.mx with
+          | Some v ->
+              w.value <- v;
+              f v
+          | None -> ())
       (* a menu: a click on it opens or closes it; while it is open, a
          click on an item chooses it, and a click anywhere closes it *)
       | Menu (items, f) ->
@@ -167,6 +207,19 @@ let handle (i : Widget.input) (ui : ui) =
           | _ -> ());
           if i.mclick && w.hot && w.held then w.opened <- not was_open
           else if was_open && i.mclick then w.opened <- false
+      (* a context menu: the next click closes it, on an item or not *)
+      | Context_menu (items, f) when w.opened ->
+          let under = List.find_opt (fun k -> Widget.contains (Look.menu_item th w.box k) i.mx i.my) (List.init (List.length items) Fun.id) in
+          w.under <- under;
+          if i.mclick then (
+            w.opened <- false;
+            w.shown <- false;
+            f under)
+      | Canvas f ->
+          let at = (i.mx, i.my) in
+          if w.hot then f (Widget.Hover at);
+          if press && w.held then f (Widget.Press at);
+          if rpress && w.hot then f (Widget.Right_press at)
       | _ -> ());
       if i.mclick && w.hot && w.held then (
         w.held <- false;
@@ -184,6 +237,7 @@ let handle (i : Widget.input) (ui : ui) =
   (* a press that is over is over, wherever the mouse was let go *)
   if not i.mdown then List.iter (fun w -> w.held <- false) widgets;
   ui.was_down <- i.mdown;
+  ui.was_rdown <- i.mrdown;
   ui.keys_before <- i.keys
 
 (*****************************************************************************)
@@ -191,7 +245,10 @@ let handle (i : Widget.input) (ui : ui) =
 (*****************************************************************************)
 
 let paint (th : Theme.t) (ui : ui) =
-  leaves ui.root
+  (* a context menu over everything, wherever it is in the tree *)
+  let widgets = leaves ui.root in
+  let menus, others = List.partition (fun w -> match w.kind with Context_menu _ -> true | _ -> false) widgets in
+  others @ menus
   |> List.concat_map (fun w ->
          match w.kind with
          | Button _ -> Look.button th w.box w.text ~hot:w.hot ~held:w.held ~enabled:w.enabled
@@ -208,4 +265,6 @@ let paint (th : Theme.t) (ui : ui) =
              let label = match List.nth_opt items w.chosen with Some s -> s | None -> "" in
              Look.menu_closed th w.box label ~hot:w.hot ~held:w.held
              @ if w.opened then Look.menu_items th w.box items ~under:w.under else []
+         | Canvas _ -> w.drawing
+         | Context_menu (items, _) -> Look.menu_items th w.box items ~under:w.under
          | Group _ -> [])

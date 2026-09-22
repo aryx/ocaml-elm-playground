@@ -9,7 +9,9 @@ What's left, roughly from most to least worth doing. Anything that
 changes pixels ends with new golden frames, approved after looking at
 them (`make approve-golden2d`). Saving documents, and the apps on the
 web, have their own plans: [`plan_io.md`](plan_io.md) and
-[`plan_caps.md`](plan_caps.md).
+[`plan_caps.md`](plan_caps.md) -- saving is done (2026-09-22: every
+app but TinyBravo, a File menu shared in `apps/File_menu`, the store
+native and web); import by dropping a file is what is left of it.
 
 ## 1. 7GUIs: the rest of the comparison
 
@@ -23,11 +25,15 @@ progress bar and a menu (MVU also disabled buttons and fields) to do
 it; the test found and fixed five disagreements (`notes_gui.md` §4),
 and §4 now has the table of lines per architecture per task.
 
+**Circle Drawer four ways** too (2026-09-22): `examples/gui4/Gui4Circles`,
+in `GuiFourWays` and in `Unit_gui4` (the whole drag of the dialog's
+slider undone as one step), with what it needed in every toolkit --
+a canvas, a context menu, the right button, `Retained.set_shown` --
+and the sixth disagreement it found, the slider's value a last bit
+apart on arm64 (`notes_gui.md` §4).
+
 What is left of it:
 
-- **Circle Drawer four ways**: where callbacks start to hurt (the
-  dialog's live value, and one undo for a whole drag) -- the
-  comparison's best argument, and the biggest of the four-way tasks.
 - **CRUD four ways**: the retained list holds a *row*, and the program
   has to translate it back to a person after every filter -- which
   needs a list widget in `Retained` and `Mvu`.

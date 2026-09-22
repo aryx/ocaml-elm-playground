@@ -65,7 +65,9 @@
  * changes); cross-references and automatic numbering; frames of other
  * widths, placed anywhere, or with the text running round them;
  * selections in the text, and looks (TinyWord has them); several
- * master pages; tables; books of many files; saving (plan_io.md).
+ * master pages; tables; books of many files. It saves (File,
+ * apps/File_menu): the text with its looks, the master, and each
+ * frame as its place, its kind and its saved text.
  *
  * Exercises: the paragraph catalog -- a style per paragraph, by name,
  * as TinyPowerPoint's master is a style per slide; a frame anchored
@@ -99,6 +101,8 @@ type model = {
      joins the same edit *)
   typing : bool;
   said : string;
+  (* the document's name, and the File menu's dialog *)
+  file : File_menu.t;
   was : string list;
   was_down : bool;
 }
@@ -233,6 +237,7 @@ let initial =
     waking = false;
     typing = false;
     said = "";
+    file = File_menu.start;
     was = [];
     was_down = false;
   }
@@ -281,6 +286,7 @@ let insert_frame name part m =
 
 let menus =
   [
+    File_menu.items;
     [ "Edit"; "Undo"; "Redo"; "Delete Frame" ];
     [ "Insert"; "Sheet"; "Picture"; "Drawing" ];
     [ "Master"; "One Column"; "Two Columns" ];
@@ -345,13 +351,43 @@ let keyboard computer m =
         else if pressed "ArrowRight" then move (Text.next_char text c)
         else m
 
-let update computer model =
+(* A document is saved as data: its text with its looks, the master,
+   and each frame as its place in the text, its kind and what it saves
+   -- never the part itself, which is functions (Saved.mli) *)
+type saved = { saved_text : Rich.t; saved_frames : (int * string * string) list; saved_master : master }
+
+let kind = { File_menu.magic = "TinyFrameMaker 1"; extension = ".frame" }
+
+let registry : Component.registry =
+  [ (Part_sheet.kind, Part_sheet.load); (Part_picture.kind, Part_picture.load); (Part_drawing.kind, Part_drawing.load); (Part_text.kind, Part_text.load) ]
+
+let reopened (r : saved File_menu.result) model =
+  match r with
+  | File_menu.Nothing -> model
+  | File_menu.New -> { initial with history = Undo.start { text = Rich.of_string ""; frames = []; master = One_column }; file = model.file }
+  | File_menu.Opened sv ->
+      let frames = List.map (fun (at, kind, text) -> { at; part = Component.load registry ~kind text }) sv.saved_frames in
+      { initial with history = Undo.start { text = Rich.at 0 sv.saved_text; frames; master = sv.saved_master }; file = model.file }
+
+let update caps computer model =
   let m = computer.mouse in
   let now = Set_.elements computer.keyboard.keys in
+  let current () =
+    let d = doc (put_down model) in
+    { saved_text = d.text; saved_frames = List.map (fun a -> (a.at, a.part.Component.kind, a.part.save ())) d.frames; saved_master = d.master }
+  in
+  if File_menu.busy model.file then
+    let file, r = File_menu.dialog caps kind computer ~current model.file in
+    reopened r { model with file; was_down = m.mdown; was = now }
+  else
   let pressed key = List.mem key now && not (List.mem key model.was) in
   let model =
     List.fold_left
       (fun model (i, items) ->
+        if i = 0 then
+          let file, r = File_menu.menu_in caps kind computer (menu_box i) ~current model.file in
+          reopened r { model with file }
+        else
         match List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) with
         | Some c when c <> List.hd items -> command c model
         | _ -> model)
@@ -364,7 +400,7 @@ let update computer model =
     | Some d, Some i -> (
         match List.nth_opt d.frames i with
         | Some a when a.part.menu <> [] ->
-            let chosen = Gui.menu_in computer (menu_box 3) a.part.menu 0 in
+            let chosen = Gui.menu_in computer (menu_box 4) a.part.menu 0 in
             if chosen > 0 then
               let part = a.part.command (List.nth a.part.menu chosen) in
               { model with editing = Some { d with frames = List.mapi (fun j a -> if j = i then { a with part } else a) d.frames } }
@@ -487,7 +523,9 @@ let view _computer model =
     | _ -> []
   in
   let status =
-    Printf.sprintf "%d pages, %s%s" n
+    Printf.sprintf "%s     %d pages, %s%s"
+      (if File_menu.said model.file <> "" then File_menu.said model.file else File_menu.title model.file)
+      n
       (match d.master with One_column -> "one column" | Two_columns -> "two columns")
       (match (model.editing, Undo.undo_name model.history) with
       | Some _, _ -> "     editing the frame in place -- Escape to put it down"
@@ -497,7 +535,8 @@ let view _computer model =
   [ rectangle (rgb 160 160 165) 1000. 1000.; rectangle (Gui.theme ()).face 1000. 40. |> move 0. 470. ]
   @ pages_shown @ text @ frames @ anchors @ caret
   @ [ words (rgb 40 40 40) status |> move 0. (-455.) ]
+  @ File_menu.view model.file
   @ Gui.draw ()
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> File_menu.caps)))

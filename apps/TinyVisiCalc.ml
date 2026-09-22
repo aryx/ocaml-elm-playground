@@ -29,8 +29,10 @@
  *     has no room for anything else, and everything a modern
  *     spreadsheet puts in toolbars was a letter after a slash;
  *   - **the slash commands**: / then a letter. B blanks the cell, C
- *     clears the sheet, G is "global" -- and it is G that this
- *     program is really about;
+ *     clears the sheet, S is "storage" (S S and a name saves the
+ *     sheet, S L loads one -- the same file TinyExcel opens, one
+ *     engine), G is "global" -- and it is G that this program is
+ *     really about;
  *   - **the formulas are spelled differently**: +B2*C2 rather than
  *     =B2*C2, and @SUM(B2...B4) rather than =SUM(B2:B4). The '='
  *     spelling and the ':' range came later; this program translates
@@ -54,7 +56,7 @@
  * What it deliberately does not do: /R replicate (the command that
  * made spreadsheets useful, and the reason $A$1 exists), /I and /D
  * inserting and deleting rows, /T titles (frozen headings), /W
- * windows (the split screen), /S storage, /P print, and formatting of
+ * windows (the split screen), /P print, and formatting of
  * any kind.
  *
  * Exercises: /R replicate, the command this does not have -- and then
@@ -139,6 +141,12 @@ type mode =
   | Entering of string
   | Command (* the slash prompt *)
   | Global (* after /G: waiting for R, C or N *)
+  | Storage (* after /S: waiting for S or L *)
+  | File_name of storage * string (* the name being typed *)
+
+(* /S S saves the sheet to a file, /S L loads one: VisiCalc's floppy
+   disk, here Playground_platform's store *)
+and storage = Save_to | Load_from
 
 type model = {
   sheet : Sheet.t;
@@ -190,7 +198,22 @@ let move_cursor (dc, dr) model =
   let c, r = model.cursor in
   { model with cursor = (max 0 (min (cols - 1) (c + dc)), max 0 (min (rows - 1) (r + dr))) }
 
-let update computer model =
+(* the same file as TinyExcel's: one engine, one Sheet.t -- a sheet
+   saved here opens there, and back *)
+let magic = "TinyExcel 1"
+
+let storage (caps : < Cap.open_in ; Cap.open_out ; .. >) op name model =
+  let file = name ^ ".sheet" in
+  match op with
+  | Save_to ->
+      Playground_platform.store caps file (Saved.to_string ~magic model.sheet);
+      { model with mode = Ready; message = "saved " ^ file }
+  | Load_from -> (
+      match Option.bind (Playground_platform.fetch caps file) (Saved.of_string ~magic) with
+      | Some sheet -> { model with sheet; cursor = (0, 0); mode = Ready; message = "loaded " ^ file }
+      | None -> { model with mode = Ready; message = "no sheet called " ^ file })
+
+let update caps computer model =
   let k = computer.keyboard in
   let now = Set_.elements k.keys in
   let pressed key = List.mem key now && not (List.mem key model.was) in
@@ -229,7 +252,20 @@ let update computer model =
           { (commit { model with mode = Ready } "") with message = "blanked" }
         else if letter = "C" then { initial with order = model.order; message = "cleared" }
         else if letter = "G" then { model with mode = Global }
+        else if letter = "S" then { model with mode = Storage }
         else if typed <> "" || List.mem "Escape" now then { model with mode = Ready }
+        else model
+    | Storage ->
+        let letter = String.uppercase_ascii typed in
+        if letter = "S" then { model with mode = File_name (Save_to, "") }
+        else if letter = "L" then { model with mode = File_name (Load_from, "") }
+        else if typed <> "" || List.mem "Escape" now then { model with mode = Ready }
+        else model
+    | File_name (op, name) ->
+        if k.kenter && name <> "" then storage caps op name model
+        else if List.mem "Escape" now then { model with mode = Ready }
+        else if pressed "Backspace" && String.length name > 0 then { model with mode = File_name (op, String.sub name 0 (String.length name - 1)) }
+        else if typed <> "" then { model with mode = File_name (op, name ^ typed) }
         else model
     | Global ->
         let letter = String.uppercase_ascii typed in
@@ -276,15 +312,18 @@ let view _computer model =
     text 0 0 (Printf.sprintf "%s %s %s" (Formula.name_of_cell model.cursor) kind (to_1979 raw));
     text ~color:dim 0 1
       (match model.mode with
-      | Command -> "COMMAND: B(lank) C(lear) G(lobal)"
+      | Command -> "COMMAND: B(lank) C(lear) G(lobal) S(torage)"
       | Global -> "GLOBAL ORDER: R(ows) C(olumns) N(atural)"
+      | Storage -> "STORAGE: S(ave) L(oad)"
+      | File_name (Save_to, _) -> "FILE FOR SAVING, THEN RETURN"
+      | File_name (Load_from, _) -> "FILE TO LOAD, THEN RETURN"
       | _ ->
           Printf.sprintf "%s   ! recalculates   / commands"
             (match model.order with
             | None -> "order: natural (1983)"
             | Some Sheet.Rows -> "order: by rows (1979)"
             | Some Sheet.Columns -> "order: by columns (1979)"));
-    text 0 2 (match model.mode with Entering s -> "> " ^ s ^ "_" | _ -> model.message);
+    text 0 2 (match model.mode with Entering s | File_name (_, s) -> "> " ^ s ^ "_" | _ -> model.message);
     (* the column letters, and the row numbers down the side *)
     text ~color:dim 0 4
       ("   "
@@ -305,5 +344,5 @@ let view _computer model =
       |> move (cursor_x +. (char_w *. float_of_int cell_chars /. 2.) -. (char_w /. 2.)) cursor_y;
     ]
 
-let app = game view update initial
-let main = Playground_platform.run_app app
+let app caps = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> < Cap.open_in ; Cap.open_out >)))
