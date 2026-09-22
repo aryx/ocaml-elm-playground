@@ -1,7 +1,6 @@
 # -*- sh -*-
 # gitignore-like file for Codemap (see https://github.com/aryx/codemap)
 
-/_build_claude
 /_build
 /docs/odoc.support
 
