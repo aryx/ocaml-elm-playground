@@ -51,7 +51,11 @@ let test_worked_example () =
   Alcotest.(check (float 0.)) "but a cost of 16" 16. dij.cost;
   Alcotest.(check (list (pair int int))) "A*: the same way" dij.path a.path;
   Alcotest.(check int) "Dijkstra looks at 115 cells" 115 (looked_at dij);
-  Alcotest.(check int) "A* at 75" 75 (looked_at a)
+  Alcotest.(check int) "A* at 75" 75 (looked_at a);
+  (* and breadth-first looks at exactly what it looked at before: it
+     ignores cost, so putting mud on the grid does not change its
+     search by one cell *)
+  Alcotest.(check int) "breadth-first, the same 80 as without mud" 80 (looked_at bfs)
 
 (* a wall with one gap: the way through it, or none at all when it's
  * closed *)

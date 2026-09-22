@@ -501,7 +501,7 @@ from memory until then.)
   boomerang, keep away while it does not -- and whose hardest lesson is
   that the states need *hysteresis*, or the agent flips between two
   every frame and goes nowhere. On `Fsm` that lesson is a guard
-  (`Fsm.after 8` before leaving Dodge) instead of a condition buried in
+  (`since >= 8` before leaving Dodge) instead of a condition buried in
   an if, which is the clearest case in this repository for the module
   existing at all.
 - **Behavior**: behavior trees, Halo 2 (Damian Isla, GDC 2005); the
@@ -685,8 +685,9 @@ from memory until then.)
     -- measured on tic-tac-toe with a perfect value function standing
     in for a trained one. Wiring an actual network into `AiGo` is left
     undone on purpose: see the status entry.
-12. **Docs, in progress**: `notes_ai.md` and `notes_ai_learning.md`
-    checked against the code, the numbers filled in;
+12. **Docs, DONE**: `notes_ai.md` and `notes_ai_learning.md` checked
+    against the code claim by claim (see the status entry for what the
+    check found);
     `notes_ai_related_work.md`'s postscript **written**, from
     measurements (how much code, 115k nodes a second for alpha-beta,
     depth 4 inside a 16 ms frame, 180k playouts a second at
@@ -916,7 +917,7 @@ from memory until then.)
   three cooks: sight through a pillar (`Sense`, with the enemy
   remembered for 90 frames after it goes behind one), an answer on the
   same frame (`Bot`, delay 6 and rate 3), and hysteresis hidden inside
-  an if (`Fsm`, `after 8` before leaving Dodge). What it does not use
+  an if (`Fsm`, `since >= 8` before leaving Dodge). What it does not use
   is `Steering` -- see the module's entry. Three tests in
   `tests/games`: a pillar blocks sight and a pit does not, the three
   modes and the eight frames of hysteresis, and the delay seen for what
@@ -1001,6 +1002,21 @@ from memory until then.)
   run that plays self-play games offline and writes a small weights
   file, with `AiGo` loading it behind a flag. Recorded here so the
   gap is a decision rather than an oversight.
+- **The documents checked against the code, 2026-09-22**, which is
+  the last phase and found seven things. Two were wrong: the layers
+  picture said "10 weights and 4 biases" for a 2-3-1 network (it is 9),
+  and drew three input nodes for two inputs; and `Train` was credited
+  with a `step` that lives in `Backprop`. Two named things that are
+  not used where the prose said: `TinyBoomerangFu` writes its
+  hysteresis guard inline rather than calling `Fsm.after` (its own
+  header said otherwise, and now does not), and no example uses
+  `Ai.escaping`. One snippet did not typecheck (`Ai.thinks` returns a
+  pair). And several numbers were real but unpinned -- breadth-first's
+  80 cells on the mud grid, "10 of 12" and "11 wins" in the MCTS
+  match -- which are now assertions rather than printfs, the way
+  everything else here is. The vaguest claim, "TinySoldat grew by a
+  quarter", turned out to be exactly right and is now the two numbers:
+  465 lines to 588.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

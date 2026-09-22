@@ -28,7 +28,9 @@
  * arithmetic: walking down a column of [b] jumps [b.cols] floats at
  * every step, so almost every read is a cache miss. [mul_fast] copies
  * [b] transposed first, so both walks are along rows, and then adds
- * four products at a time to give the processor independent work:
+ * four products at a time to give the processor independent work
+ * (except where [b] is a column vector -- a network's forward pass and
+ * nothing else -- which is contiguous already and is used as it is):
  *
  *     b, by column              b transposed, by row
  *     ┌ . x . . ┐   each read   ┌ . . . . ┐   each read is the next
@@ -40,7 +42,7 @@
  * machine's), on square matrices, the time for one product:
  *
  *        n      simple      fast
- *       64      0.9 ms     0.6 ms      1.6x
+ *       64      0.9 ms     0.6 ms      1.5x
  *      128      7.5 ms     4.0 ms      1.9x
  *      256     65.2 ms    29.9 ms      2.2x
  *

@@ -154,7 +154,7 @@ let test_value_head () =
   Printf.eprintf "value head: at 12 playouts, %d of %d won positions found with an opinion, %d with random games\n"
     by_value n by_playouts;
   Alcotest.(check int) "with an opinion, every one of them" n by_value;
-  Alcotest.(check bool) "with random games at the same budget, fewer" true (by_playouts < by_value);
+  Alcotest.(check int) "with random games at the same budget, ten" 10 by_playouts;
   (* And a surprise worth keeping. From an empty board the random
      playouts pick the centre, which everyone knows is right. The
      *perfect* evaluation does not: with best play every opening move
@@ -236,7 +236,8 @@ let test_alphago_shape () =
     zero_wins random_wins;
   (* tic-tac-toe is a draw between good players, so the result to want
      is not wins but never losing *)
-  Alcotest.(check int) "the searcher with an opinion never loses" 0 random_wins
+  Alcotest.(check int) "the searcher with an opinion never loses" 0 random_wins;
+  Alcotest.(check int) "and wins eleven of the twenty" 11 zero_wins
 
 let tests =
   Testo.categorize "Mcts"

@@ -603,8 +603,8 @@ let brain (g : game) (p : player) : intent =
  *   ai/Bot      it acts on what it saw 6 frames ago and changes its
  *               mind 20 times a second, not 60
  *   ai/Fsm      dodge / hunt / keep away as three states and the rules
- *               between them, with the hysteresis written into a guard
- *               ([Fsm.after]) instead of into an if
+ *               between them, with the hysteresis written into a
+ *               transition's guard instead of into an if
  *
  * The delay is what you feel: the hand-written one steps out of a
  * boomerang's line the frame it becomes dangerous, and this one steps
@@ -647,8 +647,10 @@ let threat_to (g : game) (p : player) (w : wits) : (number * number * number * n
 (* three states, and the rules between them. The one that matters is
  * the third: a bot that leaves Dodge the instant the line is clear
  * steps back into it, which is the flip-flop [clear_way]'s comment
- * describes; [Fsm.after] keeps it stepping aside for another eight
- * frames, and the state machine says so where an if would hide it *)
+ * describes. Its guard keeps it stepping aside for another eight
+ * frames ([Fsm.after] is that test on its own; here it is part of a
+ * larger one, since where it goes next depends on whether it is
+ * armed), and the machine says so where an if would hide it *)
 let modes : (mode, senses) Fsm.machine =
   [
     { from = Hunt; label = "a boomerang"; guard = (fun s _ -> s.incoming <> None); target = Dodge };

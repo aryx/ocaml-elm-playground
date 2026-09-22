@@ -100,8 +100,8 @@ matrix of weights, a vector of `m` biases, and an activation:
 
    inputs      hidden          output
      o -----> o
-     o -----> o -----> o       2 -> 3 -> 1:  W1 is 3x2, W2 is 1x3
-     o -----> o                10 weights and 4 biases
+       \   /  o -----> o       2 -> 3 -> 1:  W1 is 3x2, W2 is 1x3
+     o -----> o                9 weights and 4 biases
 ```
 
 The whole forward pass of a network is that line, once per layer.
@@ -115,7 +115,7 @@ walking down a column of the right-hand matrix jumps a whole row at
 every step, so it copies that matrix transposed first and then walks
 both along rows, four products at a time. Measured on this machine,
 for one square product: 0.9 ms against 0.6 at n = 64, 7.5 against 4.0
-at 128, 65 against 30 at 256 -- between 1.6x and 2.2x, growing with n
+at 128, 65 against 30 at 256 -- between 1.5x and 2.2x, growing with n
 as a column stops fitting in cache. Twice, not ten times, and that is
 the honest shape of the thing: the next factor of five is blocking the
 work so that a *piece* of each matrix stays in cache across many
@@ -291,17 +291,23 @@ learn.
   network (105 weights), the decision boundary recoloured every few
   frames and the loss curve underneath. The keys are the lesson: "0"
   takes the hidden layers away and the boundary is a straight line
-  that stays one -- 3 weights, the loss stuck at 0.075 against the
-  full network's 0.023 -- which is model capacity, seen rather than
+  that stays one -- 3 weights, and the two golden frames of the same
+  run record what it costs: a loss of 0.0754 against the full
+  network's 0.0230 -- which is model capacity, seen rather than
   defined; "s"/"t"/"e" swap the squash; "-" and "+" the learning rate;
   "h" holds out a quarter of the points and draws the second curve.
   (The ancestor is TensorFlow Playground, playground.tensorflow.org,
   which this project shares a name with by coincidence.)
-- `AiPerceptron.ml` -- §1: the line, and XOR defeating it.
+- `AiPerceptron.ml` (**written**) -- §1: the line walking into place
+  and stopping dead on AND, the weights drawn as its normal, the
+  example being shown ringed so that it can be seen sitting still
+  whenever it is right; and XOR, where it never stops.
 - `AiDigits.ml` (**written**) -- draw a digit with the mouse, get ten
-  output bars. A 256-64-10 network, 17,098 weights, trained a few dozen
-  examples a frame while you watch: about 80% on held-out digits after
-  six thousand of them. **And no dataset is downloaded**: the training
+  output bars. A 256-64-10 network: 16,384 + 640 weights and 74
+  biases, 17,098 numbers, trained a few dozen examples a frame while
+  you watch. Its golden frame records 80% on held-out digits after six
+  thousand of them; trained properly offline (thirty epochs, under
+  five seconds) it reaches 89%. **And no dataset is downloaded**: the training
   digits are drawn by our own Hershey font (`graphics/font`), each one
   shaken -- scaled, slanted, shifted, thickened, speckled -- and inked
   by distance to the pen strokes, so the edges are soft rather than
@@ -360,8 +366,8 @@ the goal at all.
 Off-policy is the other thing to watch. The rule uses the best it
 *could* do next, not what it will actually do, so it learns the
 cliff-edge path -- the shortest one -- while behaving carelessly
-enough to fall in eighty times ("g" walks what it has learned,
-without dice). Learning about the policy actually followed is SARSA,
+enough to fall in eighty-four times by episode 213 ("g" walks what it
+has learned, without dice; the golden frame keeps that count). Learning about the policy actually followed is SARSA,
 one symbol's difference, and it keeps a safer distance.
 
 The history is the argument for taking this seriously at small scale.
@@ -461,9 +467,9 @@ and the teaching lineage are in
 What real systems have that this design leaves out, each a good
 exercise once its module exists, in rough order of difficulty:
 
-- momentum, then Adam (Kingma and Ba, 2015), in `Train`'s step instead
-  of §3's plain `w <- w - rate * dL/dw`, and the spiral's loss curve
-  with each;
+- momentum, then Adam (Kingma and Ba, 2015), in `Backprop.step`
+  instead of §3's plain `w <- w - rate * dL/dw`, and the spiral's loss
+  curve with each;
 - early stopping, `Train` watching §6's held-out curve and keeping the
   weights from where it turned;
 - weight decay and dropout (Srivastava et al., 2014), and the gap

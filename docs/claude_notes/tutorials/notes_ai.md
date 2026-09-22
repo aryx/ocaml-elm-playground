@@ -314,8 +314,8 @@ Reading them side by side shows what the door costs: the hand-written
 bot takes the nearest enemy *through the walls*, so it never has to
 look for anyone; take that away and it needs a behaviour it never had,
 patrolling when it knows nothing, and hunting the place where it last
-saw you. Honest senses are not a smaller program -- that game grew by
-a quarter -- they are a different one.
+saw you. Honest senses are not a smaller program -- that
+game went from 465 lines to 588 -- they are a different one.
 
 `TinyBoomerangFu.ml` is the second one with the flag, and it shows a
 different face of the same layer: its three cooks keep their tactics
@@ -327,7 +327,8 @@ sixty. Its `dodge / hunt / keep away` becomes an `Fsm`, which is worth
 it for one reason: the hysteresis that game learned the hard way -- an
 agent that leaves *dodge* the instant a boomerang's line is clear
 steps straight back into it -- is a guard on a transition
-(`Fsm.after 8`) instead of a condition buried in an if. What it does
+(`since >= 8`, beside the test for what it should go back to) instead
+of a condition buried in an if. What it does
 *not* take is steering: its characters have a fixed speed and a
 committed dash, so there is no velocity to steer, and `Ai.seek` and
 its family have nothing to offer them (§14).
@@ -515,8 +516,8 @@ function anywhere in it -- grep for one -- and it plays like a weak
 amateur, which is the honest result: pure MCTS on 9x9 in 2006 was
 about that, and it beat thirty years of handcrafted Go programs. The
 numbers on screen are the whole method: a thousand random games, the
-tree of a thousand positions they grew, and the share of them the move
-it chose won. A playout costs about 1.2 ms there, so it thinks a dozen
+tree they grew (1,201 positions in the frame `tests/2d/golden/` keeps
+of it), and the share of those games the move it chose won. A playout costs about 1.2 ms there, so it thinks a dozen
 a frame for a second and a half a move, never stopping the game --
 which is the anytime property made visible, and is exactly what a
 chess engine cannot do (interrupt alpha-beta and you have nothing; §9
@@ -656,7 +657,7 @@ let step = Ai.way ~walkable:(free level) monster.cell door      (* §2 *)
 let field = Ai.flow ~walkable:(free level) door                 (* §3, one search, a crowd *)
 let reply = Ai.best_move (Ai.thinking_ahead 4 othello) board    (* §7-§9 *)
 let ghost = { g with mind = Ai.deciding changes g g.mind }      (* §6 *)
-let intent = if p.human then keys computer else Ai.thinks brain world p.playing  (* §6 *)
+let (intent, playing) = Ai.thinks brain world p.playing          (* §6 *)
 ```
 
 and the search, the table, the frontier and the seeds stay on the
@@ -676,7 +677,8 @@ values -- three equal bars where one move won and two lost).
 Who uses what: `Ai.seek`, `flee`, `arrive`, `chase`, `escaping`,
 `wandering`, `avoiding`, `following` (§4), `flocking` (§5) and
 `facing`, each a verb on a `Physics.body`, by `examples/AiSteering.ml`
-and `examples/AiFlock.ml`; `Ai.way` by `TinyDiablo.ml` (a click is a
+and `examples/AiFlock.ml` -- all but `escaping`, which the layer has
+and no example draws yet; `Ai.way` by `TinyDiablo.ml` (a click is a
 path) and `TinyDungeonMaster.ml` (the monsters walk to you), where it
 replaced a hand-written `Pathfind.problem` each, with the golden
 frames coming out pixel for pixel the same; `Ai.way`, `Ai.flow`,
