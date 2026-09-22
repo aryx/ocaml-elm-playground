@@ -27,12 +27,31 @@
 ;; See the documentation for declaring opam packages for more info:
 ;; https://dune.readthedocs.io/en/stable/opam.html#opam-generation
 
+;; claude: two interfaces, and the platforms implementing them. A program
+;; links one interface's platform; a 3D program links a 2D platform too
+;; (Playground3d is built on Playground, and draws its HUD with it):
+;;
+;;                 2D (elm_playground)        3D (elm_playground_3d)
+;;   native        elm_playground_native      elm_playground_3d_opengl
+;;                 (Cairo)                    + elm_playground_software
+;;   web           elm_playground_web         elm_playground_3d_webgl
+;;                 (SVG)                      + elm_playground_web
+;;   teaching      elm_playground_software    elm_playground_3d_software
+;;   (from scratch)                           + elm_playground_software
+;;   fallback                                 elm_playground_3d_web (SVG)
+;;                                            + elm_playground_web
+;;
+;; The libraries the platforms share but nobody else should use are
+;; private (no .opam of their own), see playground/native_common/dune.
+
 (package (name elm_playground)
-  (synopsis "Interface of the Playground")
+  (synopsis "Interface of the Playground: pictures, animations and games")
   (description "\
-  This is just the interface of the playground. You'll need an
-  actual platform library to compile your application
-  (elm_playground_native or elm_playground_web)
+  This is just the interface of the 2D playground, and the libraries
+  built on it (physics, audio, widgets, ...). You'll need an actual
+  platform library to compile your application: elm_playground_native
+  for the desktop, or elm_playground_web for the browser. For 3D, see
+  elm_playground_3d.
 ")
   (depends
     ; ocaml-ci reports "Unbound module Float" before (in core/)
@@ -43,8 +62,13 @@
   )
 )
 (package (name elm_playground_native)
-  (synopsis "Native TDSL-based playground platform")
-  (description "")
+  (synopsis "Native playground platform: SDL window, Cairo drawing")
+  (description "\
+  The desktop platform for a 2D program: SDL opens the window and reads
+  the input, Cairo draws the shapes. (A 3D program uses
+  elm_playground_software as its 2D platform instead, see
+  elm_playground_3d.)
+")
   (depends
     ; the lib fails in 4.07 because of some syntax error about an operator
     ; used to also exclude >= 5.2.0 because tsdl failed there with some
@@ -71,14 +95,16 @@
   (description "\
   Like elm_playground_native, but every pixel is computed by our own
   code instead of Cairo; SDL only opens the window, reads input, and
-  shows the pixels. The algorithms (framebuffer, affine transforms,
-  polygon filling, Bresenham lines, midpoint circles, image warping,
-  compositing, antialiasing, a stroke font), written to be read, with
-  references to the papers that introduced them, are in graphics/,
-  private libraries installed as part of this package for now; see
-  docs/claude_notes/notes_2d.md. Also installs the SDL event loops and
-  the image loading shared by all the native backends (Cairo, OpenGL).
+  shows the pixels. Meant for teaching: the algorithms (framebuffer,
+  affine transforms, polygon filling, Bresenham lines, midpoint
+  circles, image warping, compositing, antialiasing, a stroke font) are
+  written to be read, with references to the papers that introduced
+  them. It is also the 2D platform of the native 3D programs, whose HUD
+  it draws, and installs the SDL event loops and the image loading
+  shared by all the native platforms.
 ")
+  ; claude: the algorithms are graphics/'s private libraries, installed
+  ; as part of this package; see notes_2d.md
   (depends
     (ocaml (>= "4.08.0"))
     logs
@@ -92,8 +118,12 @@
   )
 )
 (package (name elm_playground_web)
-  (synopsis "Web vdom-based playground platform")
-  (description "")
+  (synopsis "Web playground platform: js_of_ocaml, vdom and SVG")
+  (description "\
+  The browser platform, for a 2D program and a 3D one alike: the same
+  application code as on the desktop, compiled by js_of_ocaml, its
+  shapes drawn as SVG through vdom.
+")
   (depends
      ; gen_js_api fails to build in 4.10.0
      (ocaml (>= "4.11.0"))
@@ -106,21 +136,30 @@
   (synopsis "Interface of the 3D Playground")
   (description "\
   This is just the interface of the 3D playground. You'll need an
-  actual platform library to compile your application
-  (elm_playground_3d_software or elm_playground_3d_web)
+  actual platform library to compile your application, and a 2D one
+  with it (the 3D playground is built on the 2D one, which draws its
+  HUD): elm_playground_3d_opengl with elm_playground_software for the
+  desktop, elm_playground_3d_webgl with elm_playground_web for the
+  browser. elm_playground_3d_software draws every pixel with our own
+  code, for teaching; elm_playground_3d_web draws small scenes as SVG,
+  without a GPU.
 ")
   (depends
     (elm_playground (= :version))
   )
 )
 (package (name elm_playground_3d_software)
-  (synopsis "Native from-scratch software rasterizer for the 3D playground")
-  (description "")
-  ; claude: NO cairo2 (nor elm_playground_native) anymore: every pixel,
-  ; the HUD's 2D shapes and text included, is computed by our own code
+  (synopsis "Native 3D playground platform with a from-scratch software rasterizer")
+  (description "\
+  Like elm_playground_3d_opengl, but every pixel is computed by our own
+  code instead of the GPU's: transforms, clipping, triangle filling,
+  the z-buffer, shading and texturing, written to be read. Meant for
+  teaching; slower than the GPU.
+")
+  ; claude: NO cairo2 (nor elm_playground_native): every pixel, the
+  ; HUD's 2D shapes and text included, is computed by our own code
   ; (graphics/3d/, graphics/2d/ via Shape_render_software); SDL only
-  ; opens the window and shows the pixels. See
-  ; docs/claude_notes/done/plan_code_reorg_teaching_3d.md, phase 5.
+  ; opens the window and shows the pixels. See notes_3d.md.
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
@@ -130,8 +169,13 @@
   )
 )
 (package (name elm_playground_3d_web)
-  (synopsis "Web platform for the 3D playground, reusing elm_playground_web")
-  (description "")
+  (synopsis "Web 3D playground platform drawing through SVG")
+  (description "\
+  The scene compiled every frame down to plain 2D shapes (backface
+  culling, the painter's algorithm), drawn by elm_playground_web: no
+  GPU needed, but for small scenes. elm_playground_3d_webgl is the web
+  platform to pick otherwise.
+")
   (depends
     (ocaml (>= "4.11.0"))
     (elm_playground_3d (= :version))
@@ -139,13 +183,13 @@
   )
 )
 (package (name elm_playground_3d_opengl)
-  (synopsis "Real GPU-accelerated (OpenGL 3.3 core) platform for the 3D playground")
+  (synopsis "Native 3D playground platform on the GPU (OpenGL 3.3 core)")
   (description "\
-  See docs/claude_notes/plan_opengl.md -- a third playground3d backend,
-  alongside the native software rasterizer and the web SVG one, that
-  hands the same shape3d/camera scenes to a real GPU via OpenGL
-  instead of hand-rolling the rasterization/depth-test/shading math.
+  The desktop platform for a 3D program: the scenes handed to the GPU
+  through OpenGL, the HUD drawn by elm_playground_software, its 2D
+  platform.
 ")
+  ; claude: see plan_opengl.md and notes_opengl.md
   (depends
     (ocaml (>= "4.08.0"))
     tsdl
@@ -156,13 +200,13 @@
   )
 )
 (package (name elm_playground_3d_webgl)
-  (synopsis "GPU-accelerated (WebGL 1) web platform for the 3D playground")
+  (synopsis "Web 3D playground platform on the GPU (WebGL 1)")
   (description "\
-  See docs/claude_notes/done/plan_webgl.md -- to elm_playground_3d_web what
-  elm_playground_3d_opengl is to the software rasterizer: the same
-  shape3d/camera scenes drawn by the GPU, in the browser, reusing
-  elm_playground_web's event loop and its SVG for the HUD.
+  The browser platform for a 3D program: the scenes drawn by the GPU,
+  reusing elm_playground_web (its 2D platform) for the event loop and,
+  as SVG, the HUD.
 ")
+  ; claude: see plan_webgl.md
   (depends
     (ocaml (>= "4.11.0"))
     ; claude: 6.0 for Js_of_ocaml.Console (Firebug is deprecated since)
