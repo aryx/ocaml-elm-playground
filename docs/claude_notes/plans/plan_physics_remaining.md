@@ -23,7 +23,7 @@ difference (`solver=off`, `rotation=off`).
   a pyramid then costs nothing at rest. Measured on Pyramid (1.3 ms a
   step for 28 boxes today).
 - **Joints between bodies** (DONE: `physics/2d/Joint2d`, for
-  games/TinyIncredibleMachine): a pin (a seesaw, a wheel), with a motor
+  games/TinyIncredibleMachine, then games/TinyWorms' ninja rope): a pin (a seesaw, a wheel), with a motor
   (a conveyor's roller); a rod; a rope, a distance that only pulls; a
   pulley, two ropes over two fixed points. Rows solved by sequential
   impulses in `Solver`'s loop before the contacts (`Solver.solve

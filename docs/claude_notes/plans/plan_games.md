@@ -494,12 +494,22 @@ Artillery (on mainframes and home computers, late 1970s), Gorillas
 Birds (Rovio, 2009: the physics plan's Slingshot).
 
 - **Toy**: TinyWorms, with destructible terrain. (DONE:
-  `games/TinyWorms.ml`, on the physics plan's `Physics` layer; its
-  terrain a height map, as in Scorched Earth, so no caves yet: the
-  bitmap kit below would give them.)
+  `games/TinyWorms.ml`, on the physics plan's `Physics` layer. First a
+  Scorched Earth -- two cannons on a height map -- then Worms: the
+  terrain a bitmap, TinyLemmings' way (a byte per 4x4 cell: earth,
+  girder, air), with caves, girders in the sky and water below, an
+  explosion carving a circle out of it anywhere; worms that walk (up a
+  slope, not a wall), jump, are blown away and drown; the bazooka
+  (pushed by the wind, exploding on impact) and the grenade (bouncing
+  off the ground's slope, read from the bitmap, until its fuse); and
+  the ninja rope, the engine's `Joint2d` rope: fired along the aim, it
+  hooks the first earth or girder, you swing, climb and let go with
+  your speed. Its terrain collision in the rope's world refuses only a
+  step that goes *deeper* into the ground, so a worm roped from where
+  it stands can be lifted off it.)
 - **Kit**: terrain as a bitmap, explosions carving circles out of it
-  (a `graphics/core` `Framebuffer`, collisions by pixel), plus the
-  physics plan's projectiles and wind.
+  -- now written twice, in games/TinyLemmings and games/TinyWorms: a
+  destructible-terrain kit would have them as its two users.
 
 ### 15. Strategy and tower defense
 

@@ -282,7 +282,14 @@ let scripted : Testutil_golden.scripted list =
     (* semi-implicit Euler: the same orbit, closed *)
     ("examples/software/PhysicsOrbit", "semi", 480, "space:1-2");
     (* a shot, pushed back by the wind, digging its crater *)
-    ("games/software/TinyWorms", "shot", 150, "space:2-3,space:10-11");
+    (* the bazooka: aimed up, charged, fired -- through a girder, the
+       terrain's steel as destructible as its earth -- and the turn
+       passed, with a new wind *)
+    ("games/software/TinyWorms", "shot", 190, "space:1,up:6-25,space:30-75");
+    (* the ninja rope hooked on a girder, the worm swinging from it *)
+    ("games/software/TinyWorms", "rope", 150, "space:1,3:4,up:6-35,space:40,up:45-80,right:85-105,left:110-130,right:135-150");
+    (* a grenade in flight, its fuse counting *)
+    ("games/software/TinyWorms", "grenade", 140, "space:1,2:4,up:6-20,space:30-60");
     (* both ships thrusting, turning and firing around the star *)
     ("games/software/TinySpacewar", "duel", 120, "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75");
     (* a serve, returned by the computer, missed by the player *)

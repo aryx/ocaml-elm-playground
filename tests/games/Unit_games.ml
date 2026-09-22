@@ -5097,6 +5097,103 @@ let tim_deterministic () =
   Alcotest.(check bool) "every body too" true
     (List.for_all2 (fun (x : Physics.body) (y : Physics.body) -> x.x = y.x && x.y = y.y && x.angle = y.angle) m1.world.bodies m2.world.bodies)
 
+(*****************************************************************************)
+(* TinyWorms *)
+(*****************************************************************************)
+
+(* a flat terrain, earth under y = 0, and whatever else [f] adds *)
+let worms_flat ?(f = fun (_ : TinyWorms.terrain) -> ()) () : TinyWorms.terrain =
+  let open TinyWorms in
+  let t = Bytes.make (cols * rows) (Char.chr air) in
+  for r = row_of 0. to rows - 1 do
+    for c = 0 to cols - 1 do Bytes.set_uint8 t ((r * cols) + c) earth done
+  done;
+  f t;
+  t
+
+let worms_game (t : TinyWorms.terrain) (x : float) : TinyWorms.game =
+  let open TinyWorms in
+  let g = new_game () in
+  (* the ground found from under the test girders (at 200) *)
+  let w = { g.worms.(0) with x; y = ground_below t x 100. +. radius; vx = 0.; vy = 0.; airborne = false } in
+  { g with terrain = t; worms = [| w; { g.worms.(1) with x = 400.; y = ground_below t 400. 100. +. radius } |]; turn = 0; phase = Moving None; wind = 0. }
+
+let worms_hands = { TinyWorms.dir = 0.; aim_by = 0.; jump = false; pick = None; held = false; pressed = false; released = false }
+
+let worms_run (h : TinyWorms.hands) (n : int) (g : TinyWorms.game) : TinyWorms.game =
+  let g = ref g in
+  for _ = 1 to n do g := TinyWorms.step h !g done;
+  !g
+
+(* A crater: a circle of air, nothing outside it touched *)
+let worms_crater () =
+  let open TinyWorms in
+  let t = carve (worms_flat ()) 0. 0. 40. in
+  Alcotest.(check bool) "the middle, air" false (solid_at t 0. (-20.));
+  Alcotest.(check bool) "the edge, air" false (solid_at t 36. (-4.));
+  Alcotest.(check bool) "just beyond, earth" true (solid_at t 46. (-4.));
+  Alcotest.(check bool) "below it, earth" true (solid_at t 0. (-46.))
+
+(* A worm walks on the flat, is stopped by a wall, falls off an edge *)
+let worms_walk () =
+  let open TinyWorms in
+  let wall t = for r = row_of 60. to row_of 0. do Bytes.set_uint8 t ((r * cols) + col_of 50.) earth done in
+  let g = worms_game (worms_flat ~f:wall ()) 0. in
+  let g = worms_run { worms_hands with dir = 1. } 60 g in
+  let w = g.worms.(0) in
+  Alcotest.(check bool) (Printf.sprintf "walked, up to the wall (x %.0f)" w.x) true (w.x > 30. && w.x < 50.);
+  Alcotest.(check bool) "still on the ground" false w.airborne;
+  let edge t = for r = row_of 0. to rows - 1 do for c = col_of 100. to cols - 1 do Bytes.set_uint8 t ((r * cols) + c) air done done in
+  let g = worms_run { worms_hands with dir = 1. } 90 (worms_game (worms_flat ~f:edge ()) 60.) in
+  Alcotest.(check bool) (Printf.sprintf "off the edge, falling (y %.0f)" g.worms.(0).y) true (g.worms.(0).y < -20.)
+
+(* The rope: fired straight up at a girder, it hooks it; climbing lifts
+ * the worm, a push swings it, and let go, it flies on *)
+let worms_rope () =
+  let open TinyWorms in
+  let girder_ t = for c = col_of (-100.) to col_of 100. do Bytes.set_uint8 t ((row_of 200. * cols) + c) girder done in
+  let g = worms_game (worms_flat ~f:girder_ ()) 0. in
+  let g = { g with weapon = Rope; worms = [| { g.worms.(0) with aim = 80. }; g.worms.(1) |] } in
+  let g = step { worms_hands with pressed = true } g in
+  (match g.phase with Roping (_, (_, hy)) -> Alcotest.(check (float 5.)) "hooked on the girder" 200. hy | _ -> Alcotest.fail "the rope should hook");
+  let g = worms_run { worms_hands with aim_by = 1. } 30 g in
+  Alcotest.(check bool) (Printf.sprintf "climbed off the ground (y %.0f)" g.worms.(0).y) true (g.worms.(0).y > 30.);
+  let g = worms_run { worms_hands with dir = 1. } 30 g in
+  let x = g.worms.(0).x in
+  Alcotest.(check bool) (Printf.sprintf "swung (x %.0f)" x) true (Float.abs x > 5.);
+  let g = step { worms_hands with pressed = true } g in
+  Alcotest.(check bool) "let go: flying, with the swing's speed" true (g.worms.(0).airborne && Float.abs g.worms.(0).vx > 10.)
+
+(* A grenade dropped on the flat bounces up, slower; its fuse blows *)
+let worms_grenade () =
+  let open TinyWorms in
+  let t = worms_flat () in
+  let b = ref (Physics.body (Playground.circle Playground.black 5.) |> Physics.at 0. 60. |> Physics.moving 0. (-200.)) in
+  let bounced = ref None in
+  for _ = 1 to 40 do
+    let b' = bounce t !b in
+    if !bounced = None && !b.vy < 0. && b'.vy > 0. then bounced := Some (!b.vy, b'.vy);
+    b := b'
+  done;
+  (match !bounced with
+  | Some (down, up) -> Alcotest.(check bool) (Printf.sprintf "back up, slower (%.0f then %.0f)" down up) true (up > 0. && up < -.down)
+  | None -> Alcotest.fail "it should bounce");
+  let g = worms_game t 0. in
+  let g = { g with phase = Thrown (Physics.body (Playground.circle Playground.black 5.) |> Physics.at (-200.) 10., 1) } in
+  let g = worms_run worms_hands 2 g in
+  Alcotest.(check bool) "the fuse: a blast" true (match g.phase with Blast _ -> true | _ -> false)
+
+(* A blast near a worm hurts it and throws it away; the water drowns *)
+let worms_blast () =
+  let open TinyWorms in
+  let g = worms_game (worms_flat ()) 0. in
+  let g = explode g (-30.) 5. in
+  let w = g.worms.(0) in
+  Alcotest.(check bool) "hurt" true (w.health < 100.);
+  Alcotest.(check bool) "thrown away, up and to the right" true (w.airborne && w.vx > 0. && w.vy > 0.);
+  Alcotest.(check bool) "the far worm untouched" true (g.worms.(1).health = 100.);
+  Alcotest.(check bool) "in the water: drowned" true (drowned { w with y = water -. 10. })
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -5346,4 +5443,9 @@ let tests =
       t "TinyRType, the battleship" rtype_battleship;
       t "TinyRType, a pilot takes the battleship down" rtype_pilot;
       t "TinyIncredibleMachine, every puzzle solved by its solution" tim_solutions;
-      t "TinyIncredibleMachine, the same machine runs the same" tim_deterministic ]
+      t "TinyIncredibleMachine, the same machine runs the same" tim_deterministic;
+      t "TinyWorms, the craters" worms_crater;
+      t "TinyWorms, walking" worms_walk;
+      t "TinyWorms, the ninja rope" worms_rope;
+      t "TinyWorms, the grenade bounces" worms_grenade;
+      t "TinyWorms, the blast and the water" worms_blast ]
