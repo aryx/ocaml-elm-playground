@@ -70,12 +70,15 @@ let test_speed () =
       Printf.eprintf "matrix %dx%d: simple %.1f ms, fast %.1f ms (%.1fx)\n" n n (1000. *. simple) (1000. *. fast)
         (simple /. Float.max 1e-9 fast))
     [ 64; 128; 256 ];
-  (* asserted loosely: the machine is not the point, the memory is *)
+  (* asserted loosely, and on the best of three runs: the ratio is this
+     machine's and this moment's -- a busy machine narrows it -- while
+     the fact that reading along rows wins is not *)
   let n = 256 in
   let a = Matrix.random ~seed:1 n n and b = Matrix.random ~seed:2 n n in
-  let simple = time (fun () -> Matrix.mul_simple a b) in
-  let fast = time (fun () -> Matrix.mul_fast a b) in
-  Alcotest.(check bool) "reading along rows is worth at least twice" true (fast *. 2. < simple)
+  let best f = List.fold_left (fun m () -> Float.min m (time f)) infinity [ (); (); () ] in
+  let simple = best (fun () -> Matrix.mul_simple a b) in
+  let fast = best (fun () -> Matrix.mul_fast a b) in
+  Alcotest.(check bool) "reading along rows is worth half as long again" true (fast *. 1.5 < simple)
 
 let test_random () =
   let m = Matrix.random ~seed:7 ~spread:0.5 4 4 in

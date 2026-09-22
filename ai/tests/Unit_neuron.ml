@@ -53,7 +53,19 @@ let test_convergence () =
         let y = if y > 0. then y +. 0.2 else y -. 0.2 in
         ([| x; y |], if y > x then 1. else 0.))
   in
-  Alcotest.(check (float 1e-9)) "a hundred points, all of them" 1. (Neuron.learns ~epochs:200 points)
+  Alcotest.(check (float 1e-9)) "a hundred points, all of them" 1. (Neuron.learns ~epochs:200 points);
+  (* and how long it takes, which Rosenblatt's theorem bounds but does
+     not predict: count the epochs until an epoch makes no mistake *)
+  let epochs_until_settled (examples : Neuron.example list) (seed : int) : int =
+    let rec go n net =
+      if Neuron.mistakes net examples = 0 || n > 500 then n else go (n + 1) (Neuron.epoch net examples)
+    in
+    go 0 (Neuron.make ~inputs:2 ~seed)
+  in
+  Printf.eprintf "perceptron: AND settles in %d epochs, a hundred separable points in %d\n"
+    (epochs_until_settled Neuron.and_ 3) (epochs_until_settled points 5);
+  Alcotest.(check int) "AND, in five epochs" 5 (epochs_until_settled Neuron.and_ 3);
+  Alcotest.(check bool) "a hundred points, in under twenty" true (epochs_until_settled points 5 < 20)
 
 (* and the one it cannot: half of it stays wrong, which is worse than
    the best line available -- a rule that cannot converge wanders *)
