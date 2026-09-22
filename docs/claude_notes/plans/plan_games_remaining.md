@@ -280,7 +280,10 @@ longer true. See Adventure below.
   around the enemy held, which every 3D action game since uses. One
   room of TinyZelda's dungeon in 3D, and one enemy that blocks.
   (DONE: `TinyZeldaOcarina.ml`, a Stalfos got round by circling it
-  locked on; the swords and the shield held in Skeleton's new hands.)
+  locked on; the swords and the shield held in Skeleton's new hands.
+  And Hyrule Field, which the plan left out: the heightmap kit's
+  terrain as a hub, a loading zone to the room, day and night, the
+  Stalchildren.)
 - **TinyGTA** (P3, ~500; Grand Theft Auto, DMA Design, 1997): the open
   world seen from above, as the first one was -- any car yours,
   traffic and pedestrians walking a road graph, the police's wanted

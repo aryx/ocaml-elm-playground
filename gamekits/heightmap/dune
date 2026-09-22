@@ -2,7 +2,9 @@
 ; section 6): a terrain as a grid of heights, an island made up by
 ; diamond-square; the ground under a point, a line of sight, the colors.
 ; Used by TinyComanche (drawn in "Voxel Space", column by column)
-; and TinyComanche3d (as triangles, with a z-buffer). A private
+; and TinyComanche3d (as triangles, with a z-buffer), and by
+; TinyZeldaOcarina for Hyrule Field (its own heights, a valley in
+; hills, the generator giving only the bumps). A private
 ; library, not installed: only the games use it.
 (library
  (name kit_heightmap)

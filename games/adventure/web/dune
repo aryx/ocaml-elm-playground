@@ -26,6 +26,7 @@
     elm_core
     kit_brawler3d
     kit_brawler
+    kit_heightmap
     kit_puzzle
     elm_playground
     elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)

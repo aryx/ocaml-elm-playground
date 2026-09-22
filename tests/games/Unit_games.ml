@@ -3065,12 +3065,20 @@ let tomb_raider_jumps () =
 (* TinyZeldaOcarina *)
 (*****************************************************************************)
 
-(* Link at [d] in front of the Stalfos (which stands at the origin,
- * facing +z, towards him), facing it *)
-let ocarina_facing (d : number) : TinyZeldaOcarina.play =
+(* in the temple's room, just come in by its south door *)
+let ocarina_room () : TinyZeldaOcarina.play =
   let open TinyZeldaOcarina in
   let p = new_play () in
-  { p with link = { p.link with x = 0.; z = d; heading = 0. }; foe = { p.foe with x = 0.; z = 0.; heading = 180. } }
+  { p with area = Dungeon; link = { p.link with x = 0.; z = half -. 0.8; heading = 0. } }
+
+(* Link at [d] in front of the Stalfos (which stands at the room's
+ * middle, facing +z, towards him), facing it *)
+let ocarina_facing (d : number) : TinyZeldaOcarina.play =
+  let open TinyZeldaOcarina in
+  let p = ocarina_room () in
+  { p with
+    link = { p.link with x = 0.; z = d; heading = 0. };
+    stalfos = { p.stalfos with body = { p.stalfos.body with x = 0.; z = 0.; heading = 180. } } }
 
 (* Locked on, a key held sideways is an orbit: the distance stays what
  * it was, and Link faces the Stalfos all the way round. Unlocked, the
@@ -3079,36 +3087,38 @@ let ocarina_facing (d : number) : TinyZeldaOcarina.play =
 let ocarina_orbit () =
   let open TinyZeldaOcarina in
   let p = ocarina_facing 2.5 in
+  let foe = p.stalfos.body in
   let right = { fwd = 0.; side = 1. } in
   let locked = ref p in
   for _ = 1 to 60 do
-    locked := { !locked with link = move_link true true right !locked }
+    locked := { !locked with link = move_link true (Some foe) right !locked }
   done;
   let l = !locked in
-  Alcotest.(check bool) "locked: still at arm's length" true (Float.abs (dist l.link l.foe -. 2.5) < 1e-6);
-  Alcotest.(check bool) "and facing it" true (off_facing l.link l.foe < 1e-6);
+  Alcotest.(check bool) "locked: still at arm's length" true (Float.abs (dist l.link foe -. 2.5) < 1e-6);
+  Alcotest.(check bool) "and facing it" true (off_facing l.link foe < 1e-6);
   (* 60 steps of 0.11 at 2.5: 2.64 radians, 151 degrees round *)
   Alcotest.(check bool) "having gone most of the way to its back" true (Float.abs (diff l.link.heading 0.) > 140.);
   let free = ref p in
   for _ = 1 to 60 do
-    free := { !free with link = move_link false false right !free }
+    free := { !free with link = move_link false None right !free }
   done;
   let f = !free in
-  Alcotest.(check bool) "free: further off" true (dist f.link f.foe > 5.);
-  Alcotest.(check bool) "and facing away from it" true (off_facing f.link f.foe > 60.)
+  Alcotest.(check bool) "free: further off" true (dist f.link foe > 5.);
+  Alcotest.(check bool) "and facing away from it" true (off_facing f.link foe > 60.)
 
 (* the shield: a slash from the front clangs off it; from behind, or
  * while the Stalfos is bent over after its chop, it lands *)
 let ocarina_shield () =
   let open TinyZeldaOcarina in
   let p = ocarina_facing 2. in
-  Alcotest.(check bool) "from the front: blocked" true (strike p = Blocked);
-  let behind = { p with foe = { p.foe with heading = 0. } } in
-  Alcotest.(check bool) "from behind: a hit" true (strike behind = Hit);
-  let after_chop = { p with foe_state = Chop (chop.startup + chop.active + 5) } in
-  Alcotest.(check bool) "after its chop: a hit" true (strike after_chop = Hit);
+  let s = p.stalfos in
+  Alcotest.(check bool) "from the front: blocked" true (strike p s = Blocked);
+  let behind = { s with body = { s.body with heading = 0. } } in
+  Alcotest.(check bool) "from behind: a hit" true (strike p behind = Hit);
+  let after_chop = { s with state = Chop (chop.startup + chop.active + 5) } in
+  Alcotest.(check bool) "after its chop: a hit" true (strike p after_chop = Hit);
   let far = ocarina_facing 4. in
-  Alcotest.(check bool) "out of reach: nothing" true (strike { far with foe = behind.foe } = Miss)
+  Alcotest.(check bool) "out of reach: nothing" true (strike far behind = Miss)
 
 (* The fight is two numbers: circling at arm's length, locked on, Link
  * goes round faster than the Stalfos turns, so its back comes round.
@@ -3120,24 +3130,24 @@ let ocarina_circle_to_its_back () =
   let reached = ref false in
   for _ = 1 to 150 do
     p := step_play keys false !p;
-    if !p.locked && off_facing !p.foe !p.link > 90. then reached := true
+    if !p.target <> None && off_facing !p.stalfos.body !p.link > 90. then reached := true
   done;
   Alcotest.(check bool) "behind it, still locked on" true !reached
 
 (* The room can be won with the lock-on alone: hold z, circle, and
  * slash when the Stalfos' back is towards you. Played through the
- * whole update from the start, until the bars are up. *)
+ * whole update from the south door, until the bars are up. *)
 let ocarina_won_by_circling () =
   let open TinyZeldaOcarina in
-  let p = ref (new_play ()) in
+  let p = ref (ocarina_room ()) in
   let frames = ref 0 in
   while !frames < 3000 && not (door_open !p) do
     let q = !p in
-    let close = dist q.link q.foe < reach in
+    let close = dist q.link q.stalfos.body < reach in
     let keys =
       { initial_computer.keyboard with kup = not close; kright = close; keys = Set_.of_list [ "z" ] }
     in
-    let swing = close && q.swing = 0 && off_facing q.foe q.link > 90. in
+    let swing = close && q.swing = 0 && off_facing q.stalfos.body q.link > 90. in
     p := step_play keys swing q;
     incr frames
   done;
@@ -3148,9 +3158,60 @@ let ocarina_won_by_circling () =
 let ocarina_lock_ranges () =
   let open TinyZeldaOcarina in
   let p = ocarina_facing 12. in
-  Alcotest.(check bool) "at 12, it does not lock" false (lock_on true p);
-  Alcotest.(check bool) "but a lock held from nearer holds" true (lock_on true { p with locked = true });
-  Alcotest.(check bool) "and z let go lets go" false (lock_on false { p with locked = true })
+  Alcotest.(check bool) "at 12, it does not lock" true (lock_on true p = None);
+  Alcotest.(check bool) "but a lock held from nearer holds" true (lock_on true { p with target = Some 0 } = Some 0);
+  Alcotest.(check bool) "and z let go lets go" true (lock_on false { p with target = Some 0 } = None)
+
+(* The temple's door is a loading zone: walking into it on the field
+ * puts Link at the room's south door, behind a moment of black during
+ * which nothing moves; walking back out of that door puts him on the
+ * field again, before the temple. Two places, two coordinates, and a
+ * pair of positions for a door. *)
+let ocarina_loading_zone () =
+  let open TinyZeldaOcarina in
+  let walk (keys : keyboard) (p : play) (until : play -> bool) : play =
+    let p = ref p and n = ref 0 in
+    while !n < 200 && not (until !p) do
+      p := step_play keys false !p;
+      incr n
+    done;
+    !p
+  in
+  let up = { initial_computer.keyboard with kup = true } in
+  let p = new_play () in
+  let p = { p with link = { p.link with x = 0.; z = temple_z +. 3.; heading = 0. } } in
+  let inside = walk up p (fun p -> p.area = Dungeon) in
+  Alcotest.(check bool) "in the room" true (inside.area = Dungeon);
+  Alcotest.(check bool) "at its south door" true (Float.abs (inside.link.z -. (half -. 0.8)) < 1e-6);
+  let loaded = step_play up false inside in
+  Alcotest.(check bool) "while it loads, Link does not move" true (loaded.link = inside.link);
+  let down = { initial_computer.keyboard with kdown = true } in
+  let out = walk down inside (fun p -> p.area = Field) in
+  Alcotest.(check bool) "back on the field" true (out.area = Field);
+  Alcotest.(check bool) "before the temple" true (Float.abs (out.link.z -. (temple_z +. 2.5)) < 1e-6)
+
+(* The clock runs on the field only; at night Stalchildren climb out
+ * of the ground, and at dawn they sink back and are gone. *)
+let ocarina_night () =
+  let open TinyZeldaOcarina in
+  let still = initial_computer.keyboard in
+  let run (n : int) (p : play) : play =
+    let p = ref p in
+    for _ = 1 to n do
+      p := step_play still false !p
+    done;
+    !p
+  in
+  let room = run 100 (ocarina_room ()) in
+  Alcotest.(check bool) "in the room, time stands still" true (room.clock = (new_play ()).clock);
+  let dusk = { (new_play ()) with clock = 0.5 } in
+  let night = run 240 dusk in
+  Alcotest.(check bool) "at night, they come" true (night.stalchildren <> []);
+  (* a frame before dawn (a frame is 1/3600 of the day) *)
+  let dawn = run 2 { night with clock = 0.9499 } in
+  Alcotest.(check bool) "at dawn, they sink" true
+    (List.for_all (fun (f : foe) -> match f.state with Dying _ -> true | _ -> false) dawn.stalchildren);
+  Alcotest.(check bool) "and are gone" true ((run 70 dawn).stalchildren = [])
 
 (*****************************************************************************)
 (* TinyRobotron *)
@@ -7036,6 +7097,8 @@ let tests =
       t "TinyZeldaOcarina, circling reaches its back" ocarina_circle_to_its_back;
       t "TinyZeldaOcarina, the lock's two ranges" ocarina_lock_ranges;
       t "TinyZeldaOcarina, won by circling" ocarina_won_by_circling;
+      t "TinyZeldaOcarina, the temple's door is a loading zone" ocarina_loading_zone;
+      t "TinyZeldaOcarina, the night and its Stalchildren" ocarina_night;
       t "TinyRobotron, the two sticks" robotron_twin_stick;
       t "TinyRobotron, a grunt on an electrode, a hulk on the family" robotron_walks_into_things;
       t "TinyRobotron, the brain rebuilds a human" robotron_brain_rebuilds;
