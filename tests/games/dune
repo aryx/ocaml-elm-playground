@@ -290,6 +290,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyBraid.ml)
+ (deps (:src %{project_root}/games/platform/TinyBraid.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyCeleste.ml)
  (deps (:src %{project_root}/games/platform/TinyCeleste.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

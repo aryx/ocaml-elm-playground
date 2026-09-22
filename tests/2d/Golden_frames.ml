@@ -180,6 +180,7 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyJoust", "", 5);
     ("games/shmup/software/TinyDefender", "", 5);
     ("games/platform/software/TinyCeleste", "", 5);
+    ("games/platform/software/TinyBraid", "", 5);
     ("games/rhythm/software/TinyDDR", "", 5);
     ("games/strategy/software/TinySimCity", "", 5);
     ("games/strategy/software/TinyCivilization", "", 5);
@@ -520,6 +521,9 @@ let scripted : Testutil_golden.scripted list =
     (* a jump, then a dash spent straight up: the hair gone blue, which
        is the only interface Celeste needs *)
     ("games/platform/software/TinyCeleste", "dash", 48, "space:1,right:10-60,space:22-40,up:36-50,x:38");
+    (* run into the first pit, die on its spikes, and hold shift: the
+       picture gone sepia, Tim going back up out of the pit *)
+    ("games/platform/software/TinyBraid", "rewind", 90, "space:1,right:5-70,Shift:75-90");
     (* off the bank on six flaps, the buzzards already coming *)
     ("games/platform/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
     (* the scanner is the game: three abductions are under way in the

@@ -171,6 +171,8 @@ longer true. See Adventure below.
   debugger was the same idea. Braid's worlds are variations on it --
   objects that ignore the rewind (green), a ring slowing time around
   it, time moving only when you move -- each a rule over that list.
+  (DONE: `TinyBraid.ml`, four rooms, Forgiveness, Mystery, Place and
+  Decision, each a flag of the room; the ring left as an exercise.)
 - **The camera's own collision** in TinyMario64 (a camera not going
   through walls, the hardest part, and why Mario 64 made the camera a
   character, Lakitu); `Camera3d` would get it. John Nesky, "50 Game

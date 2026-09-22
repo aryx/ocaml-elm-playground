@@ -4380,6 +4380,115 @@ let celeste_wall_jump () =
   Alcotest.(check bool) "and up" true (off.vy > 0.)
 
 (*****************************************************************************)
+(* TinyBraid *)
+(*****************************************************************************)
+
+(* [until i stop p]: the same input, frame after frame, until [stop] (at
+ * most 600 frames) *)
+let braid_until (i : TinyBraid.input) (stop : TinyBraid.play -> bool) (p : TinyBraid.play) : TinyBraid.play =
+  let rec go n p = if n = 0 || stop p then p else go (n - 1) (TinyBraid.step i p) in
+  go 600 p
+
+let braid_frames (n : int) (i : TinyBraid.input) (p : TinyBraid.play) : TinyBraid.play =
+  List.fold_left (fun p i -> TinyBraid.step i p) p (List.init n (fun _ -> i))
+
+(* shift held until the start: [TinyBraid.rewind] with the room's rules
+ * given, to try them changed *)
+let rec braid_rewind_all (r : TinyBraid.room) (p : TinyBraid.play) : TinyBraid.play =
+  match p.history.past with [] -> p | _ -> braid_rewind_all r (TinyBraid.rewind r p)
+
+let braid_tim (p : TinyBraid.play) : TinyBraid.tim = p.history.now.tim
+
+(* Forgiveness: running into the pit kills; rewinding undoes it, frame
+ * for frame, and a monster stomped walks again. *)
+let braid_forgiveness () =
+  let open TinyBraid in
+  let right = { nothing with dx = 1. } in
+  let p = enter 0 in
+  let early = braid_frames 20 right p in
+  let dead = braid_until right (fun p -> (braid_tim p).dead) early in
+  Alcotest.(check bool) "the spikes kill" true (braid_tim dead).dead;
+  let frozen = braid_frames 30 right dead in
+  Alcotest.(check bool) "and dead, time stops" true (braid_tim frozen = braid_tim dead);
+  let back = braid_until { nothing with rewind = true } (fun p -> p.history.now.clock = early.history.now.clock) frozen in
+  Alcotest.(check bool) "rewound, it is the frame it was" true (back.history.now = early.history.now);
+  (* a monster stomped, one frame, rewound one frame *)
+  let w = p.history.now in
+  let m = List.hd w.monsters in
+  let above = { p with history = Undo.start { w with tim = { w.tim with x = m.mx; y = m.my +. 25.; vy = -3. } } } in
+  let stomped = step nothing above in
+  Alcotest.(check bool) "stomped" false (List.hd stomped.history.now.monsters).alive;
+  Alcotest.(check bool) "and it walks again" true (List.hd (step { nothing with rewind = true } stomped).history.now.monsters).alive
+
+(* And the room can be got through by a robot that runs and jumps at
+ * the pits (stomping the first monster on the way down), and that,
+ * should a monster get it, would rewind a second and wait a third of
+ * one: no lives, no restart, just the list. *)
+let braid_robot () =
+  let open TinyBraid in
+  let rec go n deaths p =
+    let t = braid_tim p in
+    if n = 0 || reached_exit p then (p, deaths)
+    else if t.dead then go (n - 1) (deaths + 1) (braid_frames 20 nothing (braid_frames 60 { nothing with rewind = true } p))
+    else
+      let pit = Tilemap.tile_at forgiveness.map (t.x +. 30.) (t.y -. 30.) = Some '^' in
+      go (n - 1) deaths (step { nothing with dx = 1.; jump = t.ground && pit } p)
+  in
+  let p, deaths = go 3000 0 (enter 0) in
+  Printf.eprintf "DBG braid robot: %d deaths, %d frames kept\n%!" deaths (List.length p.history.past);
+  Alcotest.(check bool) "out" true (reached_exit p)
+
+(* Mystery: the key at the bottom of the drop, taken, and brought up by
+ * rewinding, because it is green; not green, it goes back down. *)
+let braid_mystery () =
+  let open TinyBraid in
+  let right = { nothing with dx = 1. } in
+  let p = enter 1 in
+  let down = braid_until right (fun p -> p.history.now.key = Held) p in
+  Alcotest.(check bool) "the key, taken at the bottom" true ((braid_tim down).y < 0.);
+  let back = braid_rewind_all mystery down in
+  Alcotest.(check bool) "rewound to the start" true ((braid_tim back).y > 0.);
+  Alcotest.(check bool) "and the key still in hand" true (back.history.now.key = Held);
+  let not_green = braid_rewind_all { mystery with green = false } down in
+  Alcotest.(check bool) "not green, it would be back down there" true (not_green.history.now.key = Lying);
+  (* up there, round the hole: a jump over it, then the door *)
+  let at_hole = braid_until right (fun p -> (braid_tim p).x > -190.) back in
+  let over = braid_frames 1 { right with jump = true } at_hole in
+  let out = braid_until right reached_exit over in
+  Alcotest.(check bool) "the door opened for the key" true (out.history.now.key = Used);
+  Alcotest.(check bool) "and the exit is behind it" true (reached_exit out)
+
+(* Place: standing still, time stands still; walking across the lift
+ * raises it, and from its top the ledge is a jump away. *)
+let braid_place () =
+  let open TinyBraid in
+  let right = { nothing with dx = 1. } in
+  let p = enter 2 in
+  let still = braid_frames 60 nothing (braid_frames 5 nothing p) in
+  Alcotest.(check bool) "standing, the clock stops" true (still.history.now.clock = (braid_frames 5 nothing p).history.now.clock);
+  let top = braid_until right (fun p -> (braid_tim p).x > 150.) p in
+  Printf.eprintf "DBG braid lift: x %.0f y %.0f\n%!" (braid_tim top).x (braid_tim top).y;
+  Alcotest.(check bool) "carried up by walking" true ((braid_tim top).y > 120.);
+  let out = braid_until right reached_exit (braid_frames 1 { right with jump = true } top) in
+  Alcotest.(check bool) "and out" true (reached_exit out)
+
+(* Decision: the door stays open only while the plate is pressed. Run
+ * for it, and it closes before you get there; stand on the plate,
+ * rewind, and the shadow stands there while you run. *)
+let braid_decision () =
+  let open TinyBraid in
+  let right = { nothing with dx = 1. } in
+  let on_plate = braid_frames 20 nothing (braid_until right (fun p -> (braid_tim p).x > -300.) (enter 3)) in
+  let run p = braid_until right reached_exit p in
+  let alone = run on_plate in
+  Printf.eprintf "DBG braid alone: x %.0f\n%!" (braid_tim alone).x;
+  Alcotest.(check bool) "alone, the door is shut in front of you" false (reached_exit alone);
+  let waited = braid_frames 150 nothing on_plate in
+  let rewound = braid_frames 150 { nothing with rewind = true } waited in
+  let helped = run rewound in
+  Alcotest.(check bool) "with the shadow on the plate, out" true (reached_exit helped)
+
+(*****************************************************************************)
 (* TinyPrinceOfPersia *)
 (*****************************************************************************)
 
@@ -6075,6 +6184,11 @@ let tests =
       t "TinyCeleste, corner correction" celeste_corners;
       t "TinyCeleste, one dash until you land" celeste_one_dash;
       t "TinyCeleste, the wall jump" celeste_wall_jump;
+      t "TinyBraid, forgiveness: death undone" braid_forgiveness;
+      t "TinyBraid, forgiveness: a robot that rewinds gets out" braid_robot;
+      t "TinyBraid, mystery: the green key stays in hand" braid_mystery;
+      t "TinyBraid, place: time is where you stand" braid_place;
+      t "TinyBraid, decision: the shadow holds the plate" braid_decision;
       t "TinyPrinceOfPersia, the distances are the tables' sums" pop_tables;
       t "TinyPrinceOfPersia, a robot escapes the dungeon" pop_robot;
       t "TinyPrinceOfPersia, the gate closes, the shaft hurts" pop_gate_and_fall;
