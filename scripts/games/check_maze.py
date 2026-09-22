@@ -8,18 +8,18 @@
 # (LGPL) as published by the Free Software Foundation; either version
 # 2 of the License, or (at your option) any later version.
 #
-# Check games/TinyPacman.ml's maze (read from its source): the rows the
+# Check TinyPacman.ml's maze (read from its source): the rows the
 # same width, every dot and pellet reachable from Pac-Man's start (the
 # tunnel wrapping around), no dead ends in the corridors (ghosts never
 # turn back: a dead end would trap them), and the ghost house.
 #
-# Usage: scripts/games/check_maze.py [games/TinyPacman.ml]
+# Usage: scripts/games/check_maze.py [TinyPacman.ml]
 
 import sys
 from collections import deque
 from ocaml_strings import block, strings
 
-path = sys.argv[1] if len(sys.argv) > 1 else "games/TinyPacman.ml"
+path = sys.argv[1] if len(sys.argv) > 1 else "TinyPacman.ml"
 maze = strings(block(path, "maze_rows"))
 problems = []
 widths = set(len(r) for r in maze)

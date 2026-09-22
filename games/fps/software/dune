@@ -1,0 +1,28 @@
+; claude: the same games as ../dune, on the software rasterizers (see
+; examples/software/dune for how copy_files works), and ../dune's
+; Texture_atlas.ml with them
+(copy_files ../*.ml)
+
+(executables
+  (names TinyBattlezone TinyDoom TinyWolfenstein)
+  (modules TinyBattlezone TinyDoom TinyWolfenstein)
+  (libraries
+    elm_playground
+    kit_sectors
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyBattlezone3d TinyDoom3d TinyHalfLife2 TinyMinecraft TinyQuake
+    TinyTeardown TinyWolfenstein3d)
+  (modules TinyBattlezone3d TinyDoom3d TinyHalfLife2 TinyMinecraft TinyQuake
+    TinyTeardown TinyWolfenstein3d Texture_atlas)
+  (libraries
+    elm_core
+    kit_sectors
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_software ; implem of virtual elm_playground_3d
+  )
+)

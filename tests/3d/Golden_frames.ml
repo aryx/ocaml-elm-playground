@@ -71,59 +71,59 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/PhysicsRagdoll3d", "", 3);
     (* claude: random stars, but with the runner's seed=1 flag the same
      * every run (see Testutil_golden.render) *)
-    ("games3d/software/StarCollector3d", "", 3);
+    ("games/arcade/software/StarCollector3d", "", 3);
     (* the title's tank, turned by 40 degrees, solid (the same frame as
-     * games2.5d/TinyBattlezone's, in lines) *)
-    ("games3d/software/TinyBattlezone3d", "", 40);
-    (* the station turning, solid (games2.5d/TinyElite's title frame) *)
-    ("games3d/software/TinyElite3d", "", 5);
+     * TinyBattlezone's, in lines) *)
+    ("games/fps/software/TinyBattlezone3d", "", 40);
+    (* the station turning, solid (TinyElite's title frame) *)
+    ("games/flight/software/TinyElite3d", "", 5);
     (* the heist from above: the house, the vault, the water tower and
      * its crate *)
-    ("games3d/software/TinyTeardown", "", 5);
-    ("games3d/software/TinyPinball3d", "", 5);
-    ("games3d/software/TinyHalfLife2", "", 5);
-    ("games3d/software/TinyPortal", "", 5);
-    (* claude: the same view as games2.5d/TinyWolfenstein's golden frame, in 3D *)
-    ("games3d/software/TinyWolfenstein3d", "", 5);
-    ("games3d/software/TinyVirtuaRacing", "", 5);
+    ("games/fps/software/TinyTeardown", "", 5);
+    ("games/sports/software/TinyPinball3d", "", 5);
+    ("games/fps/software/TinyHalfLife2", "", 5);
+    ("games/puzzle/software/TinyPortal", "", 5);
+    (* claude: the same view as TinyWolfenstein's golden frame, in 3D *)
+    ("games/fps/software/TinyWolfenstein3d", "", 5);
+    ("games/racing/software/TinyVirtuaRacing", "", 5);
     (* claude: the grid on the start line, from the camera turning
      * round it: the karts are drawings, the lorries and the item
      * boxes polygons -- the mix the game is about *)
-    ("games3d/software/TinyMarioKart64", "", 5);
+    ("games/racing/software/TinyMarioKart64", "", 5);
     (* claude: two skeletons of boxes on the ring, in their guard: the
      * pose is the angles of their joints, and nothing else *)
-    ("games3d/software/TinyVirtuaFighter", "", 5);
+    ("games/fighting/software/TinyVirtuaFighter", "", 5);
     (* claude: the canyon from the title's camera, turning round the
      * start: the ribbon of the racing kit, flown over *)
-    ("games3d/software/TinyStarFox", "", 5);
+    ("games/shmup/software/TinyStarFox", "", 5);
     (* claude: the hall, from its corner, behind the title *)
-    ("games3d/software/TinyAloneInTheDark", "", 5);
-    ("games3d/software/TinyTron3d", "", 5);
-    ("games3d/software/TinyMario64", "", 5);
-    ("games3d/software/TinyMarbleMadness", "", 5);
-    (* claude: the same view as games2.5d/TinyDoom's golden frame, in 3D *)
-    ("games3d/software/TinyDoom3d", "", 5);
+    ("games/adventure/software/TinyAloneInTheDark", "", 5);
+    ("games/arcade/software/TinyTron3d", "", 5);
+    ("games/platform/software/TinyMario64", "", 5);
+    ("games/arcade/software/TinyMarbleMadness", "", 5);
+    (* claude: the same view as TinyDoom's golden frame, in 3D *)
+    ("games/fps/software/TinyDoom3d", "", 5);
     (* claude: "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
-    ("games3d/software/TinyDoom3d", "rr", 5);
-    (* claude: the same view as games2.5d/TinyComanche's golden frame *)
-    ("games3d/software/TinyComanche3d", "", 5);
-    (* claude: the same view as games2.5d/TinyDescent's golden frame *)
-    ("games3d/software/TinyDescent3d", "", 5);
+    ("games/fps/software/TinyDoom3d", "rr", 5);
+    (* claude: the same view as TinyComanche's golden frame *)
+    ("games/flight/software/TinyComanche3d", "", 5);
+    (* claude: the same view as TinyDescent's golden frame *)
+    ("games/flight/software/TinyDescent3d", "", 5);
     (* claude: the start room, its pillar's shadow, the lit doorway *)
-    ("games3d/software/TinyQuake", "", 5);
-    ("games3d/software/TinyBlockout", "", 5);
-    ("games3d/software/TinyTombRaider", "", 5);
+    ("games/fps/software/TinyQuake", "", 5);
+    ("games/puzzle/software/TinyBlockout", "", 5);
+    ("games/adventure/software/TinyTombRaider", "", 5);
     (* claude: frame 60, not 5: the world's chunks are built a few per
      * frame, and at 5 most of it is not there yet *)
-    ("games3d/software/TinyMinecraft", "", 60);
+    ("games/fps/software/TinyMinecraft", "", 60);
     (* claude: the title's four foods on their turning arena *)
-    ("games3d/software/TinyBoomerangFu", "", 5);
+    ("games/fighting/software/TinyBoomerangFu", "", 5);
     (* claude: the first chamber, its three shades, and the hero the
      * arcade angle looks down on *)
-    ("games3d/software/TinyHades", "", 5);
+    ("games/rpg/software/TinyHades", "", 5);
     (* claude: the first monument, which is two structures three
      * blocks apart drawn as one beam: the whole game in one frame *)
-    ("games3d/software/TinyMonumentValley", "", 5);
+    ("games/puzzle/software/TinyMonumentValley", "", 5);
     (* claude: the band on its stage: the four highways, the fret pads
      * of the guitar and the bass, the drum pads and the pedal, the
      * keyboard of the keys, and the difficulty to pick *)
@@ -132,15 +132,15 @@ let scenes : Testutil_golden.scene list =
 
 (* claude: played with keys (-script, see Input_script) *)
 let scripted : Testutil_golden.scripted list =
-  [ ("games3d/software/StarCollector3d", "move", 40, "up:1-40,right:10-25");
+  [ ("games/arcade/software/StarCollector3d", "move", 40, "up:1-40,right:10-25");
     (* the camera turned, the time sped up to 80 days a second *)
     ("examples/software/PhysicsSolarSystem3d", "turned", 90, "w:2,w:4,left:10-60");
-    (* the same battle as games2.5d/TinyBattlezone's golden frame: the
+    (* the same battle as TinyBattlezone's golden frame: the
      * pyramid now hides the enemy tank *)
-    ("games3d/software/TinyBattlezone3d", "play", 150, "space:1,right:5-20,up:30-140,space:100");
-    (* the same launch as games2.5d/TinyElite's: the station ahead, the
+    ("games/fps/software/TinyBattlezone3d", "play", 150, "space:1,right:5-20,up:30-140,space:100");
+    (* the same launch as TinyElite's: the station ahead, the
      * slot turning, Lave a sphere behind it *)
-    ("games3d/software/TinyElite3d", "flight", 200, "space:1");
+    ("games/flight/software/TinyElite3d", "flight", 200, "space:1");
     (* three blows at the house's south wall: the hole, and the greedy
      * mesh cut round it *)
     (* the flippers raised, turned by the game (kinematic bodies); the
@@ -150,77 +150,77 @@ let scripted : Testutil_golden.scripted list =
     (* a portal in the floor, one on the wall over the ledge (seen
      * through: the ceiling, from the floor portal); walked into the
      * floor, flung out of the wall onto the ledge, looking out *)
-    ("games3d/software/TinyPortal", "portals", 62, "space:1,right:2-6,down:7-25,z:27,up:30-58,x:61,down:64-73,w:75-110");
-    ("games3d/software/TinyPortal", "fling", 150, "space:1,right:2-6,down:7-25,z:27,up:30-58,x:61,down:64-73,w:75-110");
-    ("games3d/software/TinyHalfLife2", "grab", 240, "space:1,w:2-166,down:170-185,z:190,up:195-215");
-    ("games3d/software/TinyPinball3d", "flippers", 15, "space:1,left:2-15,right:2-15");
-    ("games3d/software/TinyPinball3d", "launch", 95, "space:1,space:3-62");
-    ("games3d/software/TinyTeardown", "hole", 130, "space:1,w:2-99,x:101,down:102-109,x:121,left:122-124,x:141");
+    ("games/puzzle/software/TinyPortal", "portals", 62, "space:1,right:2-6,down:7-25,z:27,up:30-58,x:61,down:64-73,w:75-110");
+    ("games/puzzle/software/TinyPortal", "fling", 150, "space:1,right:2-6,down:7-25,z:27,up:30-58,x:61,down:64-73,w:75-110");
+    ("games/fps/software/TinyHalfLife2", "grab", 240, "space:1,w:2-166,down:170-185,z:190,up:195-215");
+    ("games/sports/software/TinyPinball3d", "flippers", 15, "space:1,left:2-15,right:2-15");
+    ("games/sports/software/TinyPinball3d", "launch", 95, "space:1,space:3-62");
+    ("games/fps/software/TinyTeardown", "hole", 130, "space:1,w:2-99,x:101,down:102-109,x:121,left:122-124,x:141");
     (* under the water tower, its four legs knocked out one by one, then
      * back out to look: the tank came down onto the stumps *)
-    ( "games3d/software/TinyTeardown",
+    ( "games/fps/software/TinyTeardown",
       "tower",
       600,
       "space:1,right:2-37,w:38-105,left:106-141,w:142-224,down:225-235,left:236-253,x:255,left:256-291,x:293,left:294-329,x:331,left:332-367,x:369,right:370-423,w:424-513,right:514-585,up:586-593"
     );
-    (* the same walk as games2.5d/TinyWolfenstein's *)
-    ("games3d/software/TinyWolfenstein3d", "treasure", 60, "right:1-16,up:20-60");
-    (* the same drive as games2.5d/TinyOutRun's golden frame, in polygons *)
-    ("games3d/software/TinyVirtuaRacing", "curve", 230, "space:1,up:2-230");
+    (* the same walk as TinyWolfenstein's *)
+    ("games/fps/software/TinyWolfenstein3d", "treasure", 60, "right:1-16,up:20-60");
+    (* the same drive as TinyOutRun's golden frame, in polygons *)
+    ("games/racing/software/TinyVirtuaRacing", "curve", 230, "space:1,up:2-230");
     (* the grid, on the last second of the countdown: eight karts drawn
      * four abreast, the chequered line under them, and the road
      * climbing away to the crest *)
-    ("games3d/software/TinyMarioKart64", "grid", 90, "space:1");
+    ("games/racing/software/TinyMarioKart64", "grid", 90, "space:1");
     (* a kick landing, held still by the hitstop the hit itself caused:
      * the leg is out exactly while the move is active, because the
      * keyframes and the frame data are the same numbers *)
-    ("games3d/software/TinyVirtuaFighter", "kick", 150, "space:1,right:20-80,g:110-200");
+    ("games/fighting/software/TinyVirtuaFighter", "kick", 150, "space:1,right:20-80,g:110-200");
     (* down the canyon on rails, the arwing slid to the left, its bolts
      * streaming ahead and a wave crossing below *)
-    ("games3d/software/TinyStarFox", "canyon", 200, "space:1,space:150-200,left:120-150");
+    ("games/shmup/software/TinyStarFox", "canyon", 200, "space:1,space:150-200,left:120-150");
     (* through the hall's south door: the cut to the corridor, Carnby
      * small at the far end and the thing in the foreground walking at
      * him *)
-    ("games3d/software/TinyAloneInTheDark", "corridor", 240, "space:1,right:20-47,up:48-128,right:129-156,up:157-240");
+    ("games/adventure/software/TinyAloneInTheDark", "corridor", 240, "space:1,right:20-47,up:48-128,right:129-156,up:157-240");
     (* the ramp at the top of the climb: the field in the air, each
      * kart's shadow left on the boards below it *)
-    ("games3d/software/TinyMarioKart64", "jump", 395, "space:1,up:2-450");
+    ("games/racing/software/TinyMarioKart64", "jump", 395, "space:1,up:2-450");
     (* a powerslide into the banked right-hander, taken downhill: the
      * kart shows its side (the drawing is chosen by the angle it is
      * seen from), and the sparks say the mini-turbo is charged *)
-    ("games3d/software/TinyMarioKart64", "slide", 560, "space:1,up:2-620,right:470-545,Shift:470-580");
+    ("games/racing/software/TinyMarioKart64", "slide", 560, "space:1,up:2-620,right:470-545,Shift:470-580");
     (* claude: four players, the screen in quadrants as on the N64: the
        race without the computer's karts, each view its own camera and
        HUD *)
-    ("games3d/software/TinyMarioKart64", "four", 300, "4:1,space:3");
+    ("games/racing/software/TinyMarioKart64", "four", 300, "4:1,space:3");
     (* claude: the battle, four players on Block Fort: the forts, the
        bridges, three balloons each, an item in every hand *)
-    ("games3d/software/TinyMarioKart64", "battle", 230, "4:1,b:3");
+    ("games/racing/software/TinyMarioKart64", "battle", 230, "4:1,b:3");
     (* v three times: the view from above *)
-    ("games3d/software/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
-    (* games/TinyTron's "computer" game, seen from behind the blue cycle,
+    ("games/racing/software/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
+    (* TinyTron's "computer" game, seen from behind the blue cycle,
      * then from above *)
-    ("games3d/software/TinyTron3d", "behind", 150, "1:1,up:40,right:80,down:120,right:150");
-    ("games3d/software/TinyTron3d", "above", 150, "1:1,up:40,right:80,down:120,right:150,v:3,v:6");
+    ("games/arcade/software/TinyTron3d", "behind", 150, "1:1,up:40,right:80,down:120,right:150");
+    ("games/arcade/software/TinyTron3d", "above", 150, "1:1,up:40,right:80,down:120,right:150,v:3,v:6");
     (* a jump onto the first platform: Mario in the air, his shadow on
      * it; then the camera turned with d *)
-    ("games3d/software/TinyMario64", "jump", 160, "space:1,left:2-63,up:64-175,space:145-165");
-    ("games3d/software/TinyMario64", "camera", 200, "space:1,left:2-63,up:64-175,space:145-165,d:170-193");
+    ("games/platform/software/TinyMario64", "jump", 160, "space:1,left:2-63,up:64-175,space:145-165");
+    ("games/platform/software/TinyMario64", "camera", 200, "space:1,left:2-63,up:64-175,space:145-165,d:170-193");
     (* rolling south (down and left: the screen's diagonals) down the
      * first ramp, its band turned; then on over the cliff, broken *)
-    ("games3d/software/TinyMarbleMadness", "ramp", 45, "space:1,down:2-200,left:2-200");
-    ("games3d/software/TinyMarbleMadness", "broken", 125, "space:1,down:2-200,left:2-200");
-    (* the same walks as games2.5d/TinyDoom's *)
-    ("games3d/software/TinyDoom3d", "stairs", 80, "left:1-10,up:11-80");
-    ("games3d/software/TinyDoom3d", "window", 60, "right:1-5,up:6-55");
-    (* the same flight as games2.5d/TinyComanche's *)
-    ("games3d/software/TinyComanche3d", "island", 70, "up:1-70,w:1-20");
-    (* the same flight as games2.5d/TinyDescent's *)
-    ("games3d/software/TinyDescent3d", "corridor", 30, "w:1-30");
+    ("games/arcade/software/TinyMarbleMadness", "ramp", 45, "space:1,down:2-200,left:2-200");
+    ("games/arcade/software/TinyMarbleMadness", "broken", 125, "space:1,down:2-200,left:2-200");
+    (* the same walks as TinyDoom's *)
+    ("games/fps/software/TinyDoom3d", "stairs", 80, "left:1-10,up:11-80");
+    ("games/fps/software/TinyDoom3d", "window", 60, "right:1-5,up:6-55");
+    (* the same flight as TinyComanche's *)
+    ("games/flight/software/TinyComanche3d", "island", 70, "up:1-70,w:1-20");
+    (* the same flight as TinyDescent's *)
+    ("games/flight/software/TinyDescent3d", "corridor", 30, "w:1-30");
     (* through the doorway into the corridor: the visibility set drops
      * to a few leaves, and "v" (the second one) draws the whole level *)
-    ("games3d/software/TinyQuake", "doorway", 60, "w:1-60");
-    ("games3d/software/TinyQuake", "everything", 60, "v:2,w:1-60");
+    ("games/fps/software/TinyQuake", "doorway", 60, "w:1-60");
+    ("games/fps/software/TinyQuake", "everything", 60, "v:2,w:1-60");
     (* four seconds in: thrown about the middle axis the handle has
      * turned itself over once, with nothing acting on it; thrown about
      * the largest axis it has not, and will not. The purple arrow (L)
@@ -272,18 +272,18 @@ let scripted : Testutil_golden.scripted list =
     (* four pieces dropped around the pit, a fifth on its way down: the
      * settled cubes darker the deeper they lie, and the lit ring of the
      * well marking the level this one will land on *)
-    ( "games3d/software/TinyBlockout",
+    ( "games/puzzle/software/TinyBlockout",
       "pit",
       95,
       "space:1,left:5,left:10,space:15,right:20,right:25,right:30,space:35,up:40,up:45,space:50,down:55,down:60,down:65,space:70,x:75" );
     (* down the entrance corridor: the texture page on the walls, one
      * square of it per square of wall, hieroglyphs along the north side *)
-    ("games3d/software/TinyTombRaider", "corridor", 90, "space:1,up:10-88");
+    ("games/adventure/software/TinyTombRaider", "corridor", 90, "space:1,up:10-88");
     (* a boomerang in the air with its shadow under it (the one depth
      * cue this fixed, nearly isometric camera gets), all four still
      * standing; then, further in, the avocado in two halves, its cut
      * faces pale, and the flight that did it *)
-    ("games3d/software/TinyBoomerangFu", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
+    ("games/fighting/software/TinyBoomerangFu", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
     (* claude: the song under way on the drums, on Easy (a pad a beat,
        no pedal): the count-in's hi-hat, the crash, snare, hi-hat,
        snare, each struck on its beat, the band playing its own parts
@@ -294,11 +294,11 @@ let scripted : Testutil_golden.scripted list =
     (* claude: the figure part way along the impossible beam, having
        stepped from the ground path onto a terrace three blocks up and
        three away without anything in between *)
-    ("games3d/software/TinyMonumentValley", "walked", 120, "space:2,at(120;-40):20-40,click:30");
+    ("games/puzzle/software/TinyMonumentValley", "walked", 120, "space:2,at(120;-40):20-40,click:30");
     (* claude: a run in progress: one death already paid for, so the
        gauge says run 2 and the life kept from the first *)
-    ("games3d/software/TinyHades", "run", 300,
+    ("games/rpg/software/TinyHades", "run", 300,
      "space:1,down:10-80,right:10-80,space:90,space:110,up:120-200,left:150-200,space:210,x:220,space:240,space:270,space:290");
-    ("games3d/software/TinyBoomerangFu", "cut", 95, "space:1,up:5-40,right:41-70,space:71,right:75-140") ]
+    ("games/fighting/software/TinyBoomerangFu", "cut", 95, "space:1,up:5-40,right:41-70,space:71,right:75-140") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

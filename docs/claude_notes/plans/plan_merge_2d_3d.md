@@ -128,7 +128,7 @@ examples/gui4/     unchanged
   (`js`, `website`), `CLAUDE.md`, `README-3d.md` (every `dune exec
   examples3d/...` line).
 
-## Step 3: `games/` by genre
+## Step 3: `games/` by genre (done, 2026-09-22)
 
 ### The directories
 
@@ -226,10 +226,21 @@ texture rules move to `games/fps/dune` and `games/adventure/dune`.
    (golden directory `None`: from the Dir column) and its dune deps;
    the rows' links in `CATALOG.md`. Checked with `make test-lite` and
    the genre's golden scenes (`Test.exe -s <Name>`, GOLDEN=all).
-2. The other twelve genres, one commit each, or all together once rhythm
-   has shown the pattern.
+2. The other twelve genres, all together once rhythm had shown the
+   pattern. **Done** (2026-09-22): the dune files written by hand from
+   a game-to-libraries table (each game's modules mapped to their
+   libraries); the paths rewritten by one script, exact per-game
+   substitutions from a game-to-genre table read off `CATALOG.md`'s
+   sections -- executables, pages and test deps to their new paths,
+   comments to basenames -- and the mentions of the directories
+   themselves by hand. The texture-embedding rules live once, in the
+   genre's own dune file: `software/` and `web/` get the generated
+   module through their `(copy_files ../*.ml)`.
 3. Remove `games2.5d/`, `games3d/` once they are empty; update
-   `CLAUDE.md`, `README*.md`.
+   `CLAUDE.md`, `README*.md`. **Done**, with the central
+   `games/software/` and `games/web/`; `games/` keeps `template.ml`
+   and `template.html`, and `games2.5d/README.md` is
+   `games/README-2.5d.md`.
 
 ## Step 4: `README-3d.md` into `README.md`
 

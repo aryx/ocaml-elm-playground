@@ -1,0 +1,39 @@
+; claude: the action-adventure and horror games (CATALOG.md's section),
+; 2D and 3D side by side; on the software rasterizers in software/, in
+; the browser in web/.
+(executables
+  (names TinyZelda)
+  (modules TinyZelda)
+  (libraries
+    elm_playground
+    kit_platformer ; TinyZelda's Tile_move
+    kit_shmup ; TinyZelda's shots
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyAloneInTheDark TinyTombRaider)
+  (modules TinyAloneInTheDark TinyTombRaider Tomb_atlas)
+  (libraries
+    elm_core
+    kit_brawler3d ; TinyAloneInTheDark's Skeleton
+    kit_puzzle ; TinyTombRaider's Push, the same one TinySokoban uses
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)
+
+; claude: the tomb's texture atlas, embedded in the program: tomb.png
+; becomes Tomb_atlas.base64 at build time, so TinyTombRaider carries
+; its walls with it and runs from anywhere (see
+; scripts/build/make_tomb_atlas.py, which drew it, and
+; Playground3d.embedded_texture)
+(rule
+ (targets Tomb_atlas.ml)
+ (deps tomb.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml tomb.png))))

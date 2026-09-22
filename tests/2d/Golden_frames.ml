@@ -100,42 +100,42 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/Animation", "", 5);
     ("examples/software/Mouse", "", 5);
     ("examples/software/Keyboard", "", 5);
-    ("games/software/Pong", "", 5);
-    ("games/software/Asteroid", "", 5);
-    ("games/software/Asteroid", "f", 5);
+    ("games/arcade/software/Pong", "", 5);
+    ("games/shmup/software/Asteroid", "", 5);
+    ("games/shmup/software/Asteroid", "f", 5);
     (* claude: random, but with the runner's seed=1 flag the same every
      * run (see Testutil_golden.render) *)
-    ("games/software/Snake", "", 5);
-    ("games/software/Tetris", "", 5);
-    ("games/software/TinyMario", "", 5);
-    ("games/software/TinyInvaders", "", 5);
-    ("games/software/TinySokoban", "", 5);
-    ("games/software/TinyPacman", "", 5);
-    ("games2.5d/software/TinyWolfenstein", "", 5);
-    ("games2.5d/software/TinyOutRun", "", 5);
-    ("games/software/TinyBomberman", "", 5);
-    ("games/software/TinyTron", "", 5);
-    ("games/software/TinyMicroMachines", "", 5);
+    ("games/arcade/software/Snake", "", 5);
+    ("games/puzzle/software/Tetris", "", 5);
+    ("games/platform/software/TinyMario", "", 5);
+    ("games/shmup/software/TinyInvaders", "", 5);
+    ("games/puzzle/software/TinySokoban", "", 5);
+    ("games/arcade/software/TinyPacman", "", 5);
+    ("games/fps/software/TinyWolfenstein", "", 5);
+    ("games/racing/software/TinyOutRun", "", 5);
+    ("games/arcade/software/TinyBomberman", "", 5);
+    ("games/arcade/software/TinyTron", "", 5);
+    ("games/racing/software/TinyMicroMachines", "", 5);
     (* the physics plan's: explicit Euler's orbit, spiraling out after 8
      * seconds; the artillery and Spacewar! titles *)
     ("examples/software/PhysicsOrbit", "", 480);
-    ("games/software/TinyWorms", "", 5);
-    ("games/software/TinySpacewar", "", 5);
+    ("games/strategy/software/TinyWorms", "", 5);
+    ("games/arcade/software/TinySpacewar", "", 5);
     (* the bounces after 5 seconds: clay flat, the superball back up;
      * Pong's title *)
     ("examples/software/PhysicsBounce", "", 300);
-    ("games/software/TinyPong", "", 5);
+    ("games/arcade/software/TinyPong", "", 5);
     (* 300 marbles after 2 seconds, all pairs: 44850 box tests *)
     ("examples/software/PhysicsMarbles", "", 120);
     (* rotation: boxes tipping over and tumbling, a ball rolling down *)
     ("examples/software/PhysicsBoxes", "", 120);
-    ("games/software/TinyCameltry", "", 5);
+    ("games/arcade/software/TinyCameltry", "", 5);
     (* stacking: the pyramid standing still after 5 seconds *)
     ("examples/software/PhysicsPyramid", "", 300);
-    ("games/software/TinySlingshot", "", 5);
+    ("games/puzzle/software/TinySlingshot", "", 5);
     (* a mass on a spring, a chain of springs, a rope of sticks *)
     ("examples/software/PhysicsElastic", "", 60);
-    ("games/software/TinySoldat", "", 5);
+    ("games/shmup/software/TinySoldat", "", 5);
     (* the planets on 2000-01-02, Jupiter and Saturn near their May 2000
      * conjunction *)
     ("examples/software/PhysicsSolarSystem", "", 2);
@@ -150,69 +150,69 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AiFlock", "", 90);
     (* claude: the first wave, scatter: each ghost's target its corner *)
     ("examples/software/AiGhosts", "", 60);
-    ("games/software/AiOthello", "", 3);
-    ("games/software/AiChess", "", 3);
-    ("games/software/TinyTowerDefense", "", 5);
-    ("games/software/TinyDune2", "", 5);
-    ("games/software/TinyWarcraft2", "", 5);
-    ("games/software/TinySonic", "", 5);
-    ("games/software/TinyRobotron", "", 5);
-    ("games/software/TinyPinball", "", 5);
-    ("games/software/TinyPortal2D", "", 5);
-    ("games/software/TinyGauntlet2", "", 5);
-    ("games/software/TinyKickOff2", "", 5);
-    ("games/software/TinySpeedball2", "", 5);
-    ("games/software/TinySensibleSoccer", "", 5);
-    ("games/software/TinyJoust", "", 5);
-    ("games/software/TinyDefender", "", 5);
-    ("games/software/TinyCeleste", "", 5);
+    ("games/puzzle/software/AiOthello", "", 3);
+    ("games/puzzle/software/AiChess", "", 3);
+    ("games/strategy/software/TinyTowerDefense", "", 5);
+    ("games/strategy/software/TinyDune2", "", 5);
+    ("games/strategy/software/TinyWarcraft2", "", 5);
+    ("games/platform/software/TinySonic", "", 5);
+    ("games/shmup/software/TinyRobotron", "", 5);
+    ("games/sports/software/TinyPinball", "", 5);
+    ("games/puzzle/software/TinyPortal2D", "", 5);
+    ("games/rpg/software/TinyGauntlet2", "", 5);
+    ("games/sports/software/TinyKickOff2", "", 5);
+    ("games/sports/software/TinySpeedball2", "", 5);
+    ("games/sports/software/TinySensibleSoccer", "", 5);
+    ("games/platform/software/TinyJoust", "", 5);
+    ("games/shmup/software/TinyDefender", "", 5);
+    ("games/platform/software/TinyCeleste", "", 5);
     ("games/rhythm/software/TinyDDR", "", 5);
-    ("games/software/TinySimCity", "", 5);
-    ("games/software/TinyCivilization", "", 5);
-    ("games/software/TinyMarioWorld", "", 5);
-    ("games/software/TinyRType", "", 5);
-    ("games/software/TinyIncredibleMachine", "", 5);
-    ("games/software/TinyXCOM", "", 5);
-    ("games/software/TinyMetroid", "", 5);
+    ("games/strategy/software/TinySimCity", "", 5);
+    ("games/strategy/software/TinyCivilization", "", 5);
+    ("games/platform/software/TinyMarioWorld", "", 5);
+    ("games/shmup/software/TinyRType", "", 5);
+    ("games/puzzle/software/TinyIncredibleMachine", "", 5);
+    ("games/strategy/software/TinyXCOM", "", 5);
+    ("games/platform/software/TinyMetroid", "", 5);
     ("games/rhythm/software/TinyGuitarHero", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
-    ("games/software/TinyMario", "v", 60);
-    ("games/software/TinyMario", "vv", 60);
-    ("games/software/TinyFlappyBird", "", 5);
-    ("games/software/TinyBreakout", "", 5);
-    ("games/software/TinyXpilot", "", 5);
-    ("games/software/TinyGalaga", "", 5);
-    ("games/software/TinyDonkeyKong", "", 5);
-    ("games/software/TinyLodeRunner", "", 5);
-    ("games/software/TinyRick", "", 5);
-    ("games/software/TinyGradius", "", 5);
-    ("games/software/TinyZelda", "", 5);
-    ("games/software/TinyRogue", "", 5);
-    ("games/software/TinyStreetFighter", "", 5);
-    ("games/software/TinyFinalFight", "", 5);
+    ("games/platform/software/TinyMario", "v", 60);
+    ("games/platform/software/TinyMario", "vv", 60);
+    ("games/arcade/software/TinyFlappyBird", "", 5);
+    ("games/arcade/software/TinyBreakout", "", 5);
+    ("games/flight/software/TinyXpilot", "", 5);
+    ("games/shmup/software/TinyGalaga", "", 5);
+    ("games/platform/software/TinyDonkeyKong", "", 5);
+    ("games/platform/software/TinyLodeRunner", "", 5);
+    ("games/platform/software/TinyRick", "", 5);
+    ("games/shmup/software/TinyGradius", "", 5);
+    ("games/adventure/software/TinyZelda", "", 5);
+    ("games/rpg/software/TinyRogue", "", 5);
+    ("games/fighting/software/TinyStreetFighter", "", 5);
+    ("games/fighting/software/TinyFinalFight", "", 5);
     (* the world programs of How to Design Programs (Bigbang.mli): the
      * rocket coming down; the worm dead against the border, its
      * epitaph (last_picture) *)
     ("examples/software/BigBangRocket", "", 60);
-    ("games/software/TinyBabaIsYou", "", 5);
+    ("games/puzzle/software/TinyBabaIsYou", "", 5);
     ("examples/software/BigBangWorm", "", 400);
-    ("games2.5d/software/TinyMarioKart", "", 5);
-    ("games2.5d/software/TinyDoom", "", 5);
+    ("games/racing/software/TinyMarioKart", "", 5);
+    ("games/fps/software/TinyDoom", "", 5);
     (* "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
-    ("games2.5d/software/TinyDoom", "rr", 5);
-    ("games2.5d/software/TinyComanche", "", 5);
-    ("games2.5d/software/TinyDescent", "", 5);
-    ("games2.5d/software/TinyElite", "", 5);
+    ("games/fps/software/TinyDoom", "rr", 5);
+    ("games/flight/software/TinyComanche", "", 5);
+    ("games/flight/software/TinyDescent", "", 5);
+    ("games/flight/software/TinyElite", "", 5);
     (* the title's tank, turned by 40 degrees *)
-    ("games2.5d/software/TinyBattlezone", "", 40);
-    ("games2.5d/software/TinyShufflePuck", "", 5);
-    ("games/software/TinyMissileCommand", "", 5);
-    ("games/software/TinyLemmings", "", 5);
-    ("games/software/TinyPuzzleBobble", "", 5);
-    ("games2.5d/software/TinyDungeonMaster", "", 5);
-    ("games2.5d/software/TinyZaxxon", "", 5);
-    ("games2.5d/software/TinyDiablo", "", 5);
+    ("games/fps/software/TinyBattlezone", "", 40);
+    ("games/sports/software/TinyShufflePuck", "", 5);
+    ("games/shmup/software/TinyMissileCommand", "", 5);
+    ("games/puzzle/software/TinyLemmings", "", 5);
+    ("games/puzzle/software/TinyPuzzleBobble", "", 5);
+    ("games/rpg/software/TinyDungeonMaster", "", 5);
+    ("games/shmup/software/TinyZaxxon", "", 5);
+    ("games/rpg/software/TinyDiablo", "", 5);
     (* a whole game as a map and one rule (playground/Puzzlescript) *)
     ("examples/software/PuzzleScriptSokoban", "", 5);
     ("examples/software/PuzzleScriptBoulders", "", 5);
@@ -256,80 +256,80 @@ let mario_world_keyhole =
  * formation shot at, stepped down, a bunker bitten *)
 let scripted : Testutil_golden.scripted list =
   [
-    ("games/software/TinyMario", "run", 150, "right:1-150,up:30-34,up:95-99");
-    ( "games/software/TinyInvaders",
+    ("games/platform/software/TinyMario", "run", 150, "right:1-150,up:30-34,up:95-99");
+    ( "games/shmup/software/TinyInvaders",
       "play",
       300,
       "space:1,space:10,space:50,space:90,right:100-116,space:130,space:170,left:180-212,space:220,space:260,space:280" );
     (* the first level's shortest solution, uldurrd, a key every 5 frames *)
-    ( "games/software/TinySokoban",
+    ( "games/puzzle/software/TinySokoban",
       "solve1",
       40,
       "space:1,up:5,left:10,down:15,up:20,right:25,right:30,down:35" );
     (* after READY!, left, up, right along the top: dots eaten, the
      * ghosts out of the house, scattering *)
-    ("games/software/TinyPacman", "play", 300, "space:1,left:120-170,up:160-230,right:220-300");
+    ("games/arcade/software/TinyPacman", "play", 300, "space:1,left:120-170,up:160-230,right:220-300");
     (* turned towards a treasure, walking to it: the billboard in front
      * of the far wall, a near wall on the right *)
-    ("games2.5d/software/TinyWolfenstein", "treasure", 60, "right:1-16,up:20-60");
+    ("games/fps/software/TinyWolfenstein", "treasure", 60, "right:1-16,up:20-60");
     (* flat out into the first curve, which bends right *)
-    ("games2.5d/software/TinyOutRun", "curve", 230, "space:1,up:2-230");
+    ("games/racing/software/TinyOutRun", "curve", 230, "space:1,up:2-230");
     (* a bomb dropped in the corner, the bomber walking away, the fire *)
-    ("games/software/TinyBomberman", "bomb", 165, "space:1,space:5,right:8-30,down:31-45");
+    ("games/arcade/software/TinyBomberman", "bomb", 165, "space:1,space:5,right:8-30,down:31-45");
     (* two bombs, the first one's fire setting off the second: a chain *)
-    ( "games/software/TinyBomberman",
+    ( "games/arcade/software/TinyBomberman",
       "chain",
       178,
       "space:1,right:3-22,space:25,left:27-46,space:49,down:51-90,right:91-110" );
     (* against the computer, blue turning around into its trail *)
-    ("games/software/TinyTron", "computer", 200, "1:1,up:40,right:80,down:120,right:150");
+    ("games/arcade/software/TinyTron", "computer", 200, "1:1,up:40,right:80,down:120,right:150");
     (* two players, both turning *)
-    ("games/software/TinyTron", "duel", 150, "2:1,up:30,w:40,right:70,s:90,a:120");
+    ("games/arcade/software/TinyTron", "duel", 150, "2:1,up:30,w:40,right:70,s:90,a:120");
     (* against the computer, north up; then with the camera turning *)
-    ("games/software/TinyMicroMachines", "race", 200, "1:1,up:62-200");
-    ("games/software/TinyMicroMachines", "turning", 200, "1:1,up:62-200,v:2");
+    ("games/racing/software/TinyMicroMachines", "race", 200, "1:1,up:62-200");
+    ("games/racing/software/TinyMicroMachines", "turning", 200, "1:1,up:62-200,v:2");
     (* semi-implicit Euler: the same orbit, closed *)
     ("examples/software/PhysicsOrbit", "semi", 480, "space:1-2");
     (* a shot, pushed back by the wind, digging its crater *)
     (* the bazooka: aimed up, charged, fired -- through a girder, the
        terrain's steel as destructible as its earth -- and the turn
        passed, with a new wind *)
-    ("games/software/TinyWorms", "shot", 190, "space:1,up:6-25,space:30-75");
+    ("games/strategy/software/TinyWorms", "shot", 190, "space:1,up:6-25,space:30-75");
     (* the ninja rope hooked on a girder, the worm swinging from it *)
-    ("games/software/TinyWorms", "rope", 150, "space:1,3:4,up:6-35,space:40,up:45-80,right:85-105,left:110-130,right:135-150");
+    ("games/strategy/software/TinyWorms", "rope", 150, "space:1,3:4,up:6-35,space:40,up:45-80,right:85-105,left:110-130,right:135-150");
     (* a grenade in flight, its fuse counting *)
-    ("games/software/TinyWorms", "grenade", 140, "space:1,2:4,up:6-20,space:30-60");
+    ("games/strategy/software/TinyWorms", "grenade", 140, "space:1,2:4,up:6-20,space:30-60");
     (* both ships thrusting, turning and firing around the star *)
-    ("games/software/TinySpacewar", "duel", 120, "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75");
+    ("games/arcade/software/TinySpacewar", "duel", 120, "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75");
     (* a serve, returned by the computer, missed by the player *)
-    ("games/software/TinyPong", "rally", 150, "space:2-3,w:100-160");
+    ("games/arcade/software/TinyPong", "rally", 150, "space:2-3,w:100-160");
     (* the same marbles, the same frame (the three methods find the same
      * pairs), with the grid and its count *)
     ("examples/software/PhysicsMarbles", "grid", 120, "space:60-61");
     (* rotation off: boxes balanced on their corners, stuck on the ramp *)
     ("examples/software/PhysicsBoxes", "upright", 300, "u:2-3");
     (* the maze turned right then left, the moon rolling, a target taken *)
-    ("games/software/TinyCameltry", "turns", 200, "space:2-3,right:30-75,left:150-200");
+    ("games/arcade/software/TinyCameltry", "turns", 200, "space:2-3,right:30-75,left:150-200");
     (* the maze turned 30 degrees: the moon rolls away; upright, it
      * slides, and friction holds it (up to 39 degrees): still there *)
-    ("games/software/TinyCameltry", "tilt", 150, "space:2-3,right:60-74");
-    ("games/software/TinyCameltry", "tilt_upright", 150, "space:2-3,u:5,right:60-74");
+    ("games/arcade/software/TinyCameltry", "tilt", 150, "space:2-3,right:60-74");
+    ("games/arcade/software/TinyCameltry", "tilt_upright", 150, "space:2-3,u:5,right:60-74");
     (* the same pyramid without the solver (phase 7's engine): a heap;
      * and hit by the ball, its top knocked off *)
     ("examples/software/PhysicsPyramid", "no_solver", 300, "s:2");
     ("examples/software/PhysicsPyramid", "ball", 200, "space:120");
     (* a shot along the dotted arc, the tower tumbling; and without the
      * solver, the tower slumping by itself, no shot *)
-    ("games/software/TinySlingshot", "shot", 130, "space:2,space:60");
-    ("games/software/TinySlingshot", "no_solver", 120, "space:2,s:5");
+    ("games/puzzle/software/TinySlingshot", "shot", 130, "space:2,space:60");
+    ("games/puzzle/software/TinySlingshot", "no_solver", 120, "space:2,s:5");
     (* all three kicked; and the chain too stiff for the time step,
      * exploding in 8 steps *)
     ("examples/software/PhysicsElastic", "kick", 60, "space:30");
     ("examples/software/PhysicsElastic", "stiff", 8, "x:2");
     (* the bots' fight, GREEN's ragdoll tumbling; the player running,
      * jumping, flying on the jets, shooting, a grenade, the blasts *)
-    ("games/software/TinySoldat", "bots", 260, "space:2");
-    ("games/software/TinySoldat", "jets", 130, "space:2,d:10-70,w:30,w:40-90,space:100-160,q:120");
+    ("games/shmup/software/TinySoldat", "bots", 260, "space:2");
+    ("games/shmup/software/TinySoldat", "jets", 130, "space:2,d:10-70,w:30,w:40-90,space:100-160,q:120");
     (* the true distances, the inner planets crowded; and 80 days a
      * second for 2 seconds: mid-2000 *)
     ("examples/software/PhysicsSolarSystem", "true_distances", 3, "d:2");
@@ -352,37 +352,37 @@ let scripted : Testutil_golden.scripted list =
     (* claude: chase, Pac-Man walked up and right: Pinky ahead of him,
      * Inky's doubled vector from Blinky, Clyde's circle *)
     ("examples/software/AiGhosts", "chase", 500, "left:1-60,up:61-140,right:141-500");
-    ("games/software/AiOthello", "values", 3, "v:2");
-    ("games/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
-    ("games/software/TinySonic", "loop", 330, "space:1,right:5-330");
+    ("games/puzzle/software/AiOthello", "values", 3, "v:2");
+    ("games/strategy/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
+    ("games/platform/software/TinySonic", "loop", 330, "space:1,right:5-330");
     (* the two sticks: running right, shooting left, the grunts closing
        in and two of them shot down *)
-    ("games/software/TinyRobotron", "twin_stick", 95, "space:1,a:20-95,right:20-60,up:62-95");
+    ("games/shmup/software/TinyRobotron", "twin_stick", 95, "space:1,a:20-95,right:20-60,up:62-95");
     (* the plunger pulled and let go: the ball up the lane, under the
        dome and into the table, past the bumpers *)
-    ("games/software/TinyPinball", "launch", 90, "space:1-40");
-    ("games/software/TinyGauntlet2", "crowd", 400, "space:1,down:30-90,right:100-200,space:220-400");
-    ("games/software/TinyKickOff2", "shot", 260, "space:1,up:70-200,space:150-170,right:171-260");
-    ("games/software/TinySpeedball2", "match", 700, "space:1,up:60-200,space:120-140,left:210-400,space:260-280");
-    ("games/software/TinySensibleSoccer", "loft", 300, "space:1,up:40-150,space:160-200,right:201-300");
+    ("games/sports/software/TinyPinball", "launch", 90, "space:1-40");
+    ("games/rpg/software/TinyGauntlet2", "crowd", 400, "space:1,down:30-90,right:100-200,space:220-400");
+    ("games/sports/software/TinyKickOff2", "shot", 260, "space:1,up:70-200,space:150-170,right:171-260");
+    ("games/sports/software/TinySpeedball2", "match", 700, "space:1,up:60-200,space:120-140,left:210-400,space:260-280");
+    ("games/sports/software/TinySensibleSoccer", "loft", 300, "space:1,up:40-150,space:160-200,right:201-300");
     (* the planet, the scanner reading it, and a lander on its way
        down to a human *)
-    ("games/software/TinyDefender", "patrol", 95,
+    ("games/shmup/software/TinyDefender", "patrol", 95,
      "space:1,right:5-200,space:60,space:90,space:120,down:130-170,space:150,space:200,right:210-320,space:240,space:280,space:310");
     (* the dungeon, the dark around it, and a click being walked to:
        the first golden frames here that are played with a mouse *)
-    ("games2.5d/software/TinyDiablo", "dungeon", 95,
+    ("games/rpg/software/TinyDiablo", "dungeon", 95,
      "click:2,at(150;20):6-60,click:8,at(-120;-40):70-140,click:72,at(60;120):150-260,click:152,rclick:200,click:230");
     (* a bolt cast (the mana orb half down), an imp at arm's length *)
-    ("games2.5d/software/TinyDiablo", "fight", 260,
+    ("games/rpg/software/TinyDiablo", "fight", 260,
      "click:2,at(150;20):6-60,click:8,at(-120;-40):70-140,click:72,at(60;120):150-260,click:152,rclick:200,click:230");
     (* the fortress, a wall flown through and the next one coming, and
        the fighter over its own shadow: the gap between the two is the
        altitude, which is the whole game *)
-    ("games2.5d/software/TinyZaxxon", "fortress", 95,
+    ("games/shmup/software/TinyZaxxon", "fortress", 95,
      "space:1,space:60,right:120-150,up:180-210,space:200,left:260-300,space:300,down:330-360,space:380,right:400-430,up:430-470,space:470");
     (* deeper in: three walls, a tower, and a shot on its way *)
-    ("games2.5d/software/TinyZaxxon", "deep", 260,
+    ("games/shmup/software/TinyZaxxon", "deep", 260,
      "space:1,space:60,right:120-150,up:180-210,space:200,left:260-300,space:300,down:330-360,space:380,right:400-430,up:430-470,space:470");
     (* the first four steps danced, judged by the music's clock: the
        card is fed 735 samples a frame here, so the song's time is
@@ -391,170 +391,170 @@ let scripted : Testutil_golden.scripted list =
     ("games/rhythm/software/TinyDDR", "steps", 318, "space:1,left:228,up:256,up:284,down:312");
     (* the town five years on: grown, and the homes across the road
        from the factories empty again -- the smog *)
-    ("games/software/TinySimCity", "town", 600, simcity_town);
+    ("games/strategy/software/TinySimCity", "town", 600, simcity_town);
     (* and why, in the pollution view: the air around the factories and
        the plant *)
-    ("games/software/TinySimCity", "smog", 610, simcity_town ^ ",v:600,v:602");
+    ("games/strategy/software/TinySimCity", "smog", 610, simcity_town ^ ",v:600,v:602");
     (* 3400 BC: Rome, the strip its warriors uncovered, the rival's
        first advance in the news *)
-    ("games/software/TinyCivilization", "rome", 90, civ_thirty_turns);
+    ("games/strategy/software/TinyCivilization", "rome", 90, civ_thirty_turns);
     (* and the tree of advances at that point: Alphabet known, Bronze
        Working under way, what is open and what is not *)
-    ("games/software/TinyCivilization", "tree", 96, civ_thirty_turns ^ ",t:94");
+    ("games/strategy/software/TinyCivilization", "tree", 96, civ_thirty_turns ^ ",t:94");
     (* the world map, one path open, Mario at home *)
-    ("games/software/TinyMarioWorld", "map", 10, "space:1");
+    ("games/platform/software/TinyMarioWorld", "map", 10, "space:1");
     (* crouched on the long slope of Donut Hills: the slide *)
-    ("games/software/TinyMarioWorld", "slide", 435, mario_world_keyhole);
+    ("games/platform/software/TinyMarioWorld", "slide", 435, mario_world_keyhole);
     (* the cape: taken off at the end of the runway, rising to the
        island in the sky and its keyhole *)
-    ("games/software/TinyMarioWorld", "flight", 690, mario_world_keyhole);
+    ("games/platform/software/TinyMarioWorld", "flight", 690, mario_world_keyhole);
     (* back on the map: the secret exit found, the Star Road open *)
-    ("games/software/TinyMarioWorld", "secret", 800, mario_world_keyhole);
+    ("games/platform/software/TinyMarioWorld", "secret", 800, mario_world_keyhole);
     (* the Force sent out ahead, hanging there at the ship's height, the
        first wave coming in *)
-    ("games/software/TinyRType", "force", 150, "space:1,f:60,up:70-85");
+    ("games/shmup/software/TinyRType", "force", 150, "space:1,f:60,up:70-85");
     (* the beam: space held two seconds, let go *)
-    ("games/software/TinyRType", "beam", 176, "space:1,space:100-170");
+    ("games/shmup/software/TinyRType", "beam", 176, "space:1,space:100-170");
     (* the pulley puzzle, built with the mouse: the ramp picked from the
        bin, tilted, put under the bowling ball -- then run, the bowling
        ball in the bucket and the tray on its way up *)
-    ("games/software/TinyIncredibleMachine", "built", 14, "space:1,n:3,n:5,at(-330;-410):7-9,click:8,r:10,at(-380;240):11-14,click:13");
-    ("games/software/TinyIncredibleMachine", "pulley", 200, "space:1,n:3,n:5,at(-330;-410):7-9,click:8,r:10,at(-380;240):11-14,click:13,space:16");
+    ("games/puzzle/software/TinyIncredibleMachine", "built", 14, "space:1,n:3,n:5,at(-330;-410):7-9,click:8,r:10,at(-380;240):11-14,click:13");
+    ("games/puzzle/software/TinyIncredibleMachine", "pulley", 200, "space:1,n:3,n:5,at(-330;-410):7-9,click:8,r:10,at(-380;240):11-14,click:13,space:16");
     (* the fan puzzle: the ball on the switch, the fan on, the balloon
        blown out from under the ledge *)
-    ("games/software/TinyIncredibleMachine", "fan", 260, "space:1,n:3,n:5,n:7,at(-330;-410):9-11,click:10,r:12,r:14,r:16,r:18,at(400;50):20-23,click:22,space:25");
+    ("games/puzzle/software/TinyIncredibleMachine", "fan", 260, "space:1,n:3,n:5,n:7,at(-330;-410):9-11,click:10,r:12,r:14,r:16,r:18,at(400;50):20-23,click:22,space:25");
     (* two soldiers walked out, the second shot at by reaction fire,
        and the chances shown over the alien who fired; then the aliens'
        turn, closing in *)
-    ("games/software/TinyXCOM", "aim", 130, "space:1,at(-119;136):3-40,click:5,at(-85;102):41-110,n:60,at(-119;68):62-80,click:65,at(85;-34):111-130");
-    ("games/software/TinyXCOM", "aliens", 400, "space:1,at(-119;136):3-40,click:5,at(-85;102):41-200,n:60,at(-119;68):62-80,click:65,return:120");
+    ("games/strategy/software/TinyXCOM", "aim", 130, "space:1,at(-119;136):3-40,click:5,at(-85;102):41-110,n:60,at(-119;68):62-80,click:65,at(85;-34):111-130");
+    ("games/strategy/software/TinyXCOM", "aliens", 400, "space:1,at(-119;136):3-40,click:5,at(-85;102):41-200,n:60,at(-119;68):62-80,click:65,return:120");
     (* the morph ball taken; rolled up through the tunnel out of the
        start; the map, two areas been to *)
-    ("games/software/TinyMetroid", "morph", 85, "space:1,left:5-80");
-    ("games/software/TinyMetroid", "ball", 230, "space:1,left:5-80,right:90-235,down:200");
-    ("games/software/TinyMetroid", "map", 330, "space:1,left:5-80,right:90-235,down:200,right:237-300,up:302,return:320");
+    ("games/platform/software/TinyMetroid", "morph", 85, "space:1,left:5-80");
+    ("games/platform/software/TinyMetroid", "ball", 230, "space:1,left:5-80,right:90-235,down:200");
+    ("games/platform/software/TinyMetroid", "map", 330, "space:1,left:5-80,right:90-235,down:200,right:237-300,up:302,return:320");
     (* the riff's first four notes on Medium, every fret held and each
        strummed on its beat (132 a minute, an eighth 0.227 s) *)
     ("games/rhythm/software/TinyGuitarHero", "riff", 305,
      "space:1,a:200-305,s:200-305,d:200-305,f:200-305,g:200-305,space:217,space:245,space:272,space:299");
     (* the first ledge reached with a held jump, the four lies all on *)
-    ("games/software/TinyCeleste", "climb", 60, "space:1,right:10-40,space:22-34");
+    ("games/platform/software/TinyCeleste", "climb", 60, "space:1,right:10-40,space:22-34");
     (* a jump, then a dash spent straight up: the hair gone blue, which
        is the only interface Celeste needs *)
-    ("games/software/TinyCeleste", "dash", 48, "space:1,right:10-60,space:22-40,up:36-50,x:38");
+    ("games/platform/software/TinyCeleste", "dash", 48, "space:1,right:10-60,space:22-40,up:36-50,x:38");
     (* off the bank on six flaps, the buzzards already coming *)
-    ("games/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
+    ("games/platform/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
     (* the scanner is the game: three abductions are under way in the
        strip while the screen shows one lander and a laser *)
-    ("games/software/TinyDefender", "hunt", 320,
+    ("games/shmup/software/TinyDefender", "hunt", 320,
      "space:1,right:5-200,space:60,space:90,space:120,down:130-170,space:150,space:200,right:210-320,space:240,space:280,space:310");
     (* a flap every quarter of a second is a climb: he ends up under
        the eyries with a buzzard coming up at him, which is the whole
        game -- be the higher one when you meet *)
-    ("games/software/TinyJoust", "flight", 200,
+    ("games/platform/software/TinyJoust", "flight", 200,
      "space:1,space:20,space:35,space:50,space:65,space:80,space:95,space:110,space:125,space:140,space:155,space:170,space:185,right:10-105,left:125-200");
     (* the first chamber: the goo between him and the way out (the
        portals themselves want a mouse, which a script has none of, so
        they are in tests/games/ instead) *)
-    ("games/software/TinyPortal2D", "chamber1", 60, "space:1,right:12-55");
+    ("games/puzzle/software/TinyPortal2D", "chamber1", 60, "space:1,right:12-55");
     (* the dungeon, and later the crowd the generators have poured
        into it (chase=field is a flag, which a golden cannot pass: the
        two chases are compared in tests/games/ instead) *)
-    ("games/software/TinyGauntlet2", "dungeon", 95, "space:1,down:30-95");
+    ("games/rpg/software/TinyGauntlet2", "dungeon", 95, "space:1,down:30-95");
     (* the kick off, and (heavy) a shot bent in the air by the
        aftertouch, which is the game's other idea *)
-    ("games/software/TinyKickOff2", "kickoff", 95, "space:1,up:20-95");
+    ("games/sports/software/TinyKickOff2", "kickoff", 95, "space:1,up:20-95");
     (* the metal, its furniture, and (heavy) a match well under way:
        the score is mostly what the arena paid *)
-    ("games/software/TinySpeedball2", "arena", 95, "space:1,up:20-95");
+    ("games/sports/software/TinySpeedball2", "arena", 95, "space:1,up:20-95");
     (* the pitch pulled back, and (heavy) a lofted ball bent in the
        air, which is the game everybody remembers *)
-    ("games/software/TinySensibleSoccer", "pitch", 95, "space:1,up:20-95");
-    ("games/software/TinyWarcraft2", "crowd", 300, "space:1,a:10,p:14,right:20-44,space:50");
-    ("games/software/TinyTowerDefense", "maze", 400, "space:1,right:20-40,space:45,up:50-56,space:60,up:64-70,space:74,left:80-84,space:90");
-    ("games/software/AiOthello", "reply", 60, "space:2");
+    ("games/sports/software/TinySensibleSoccer", "pitch", 95, "space:1,up:20-95");
+    ("games/strategy/software/TinyWarcraft2", "crowd", 300, "space:1,a:10,p:14,right:20-44,space:50");
+    ("games/strategy/software/TinyTowerDefense", "maze", 400, "space:1,right:20-40,space:45,up:50-56,space:60,up:64-70,space:74,left:80-84,space:90");
+    ("games/puzzle/software/AiOthello", "reply", 60, "space:2");
     (* claude: the knight on g1 clicked, its two squares shown *)
-    ("games/software/AiChess", "selected", 10, "at(250;-350):1-10,click:3");
+    ("games/puzzle/software/AiChess", "selected", 10, "at(250;-350):1-10,click:3");
     (* claude: e2-e4 in two clicks, and the computer's answer *)
-    ("games/software/AiChess", "reply", 60, "at(50;-250):1-6,click:3,at(50;-50):7-60,click:9");
+    ("games/puzzle/software/AiChess", "reply", 60, "at(50;-250):1-6,click:3,at(50;-50):7-60,click:9");
     (* flaps timed to thread 5 pipes (the pipes from the LFSR's seed=1);
      * and no flap after the first: the bird on the ground, game over *)
-    ( "games/software/TinyFlappyBird",
+    ( "games/arcade/software/TinyFlappyBird",
       "fly",
       600,
       "space:1,space:5,space:51,space:91,space:131,space:172,space:212,space:258,space:299,space:346,space:386,space:426,space:447,space:472,space:512,space:555,space:596" );
-    ("games/software/TinyFlappyBird", "crash", 200, "space:1,space:5");
+    ("games/arcade/software/TinyFlappyBird", "crash", 200, "space:1,space:5");
     (* a take-off from the base, a turn, two shots; by the fuel station,
      * its beam refueling the ship, the shield up *)
-    ("games/software/TinyXpilot", "refuel", 150, "space:1,up:5-40,right:22-28,up:60-80,space:100,space:115,down:140-150");
+    ("games/flight/software/TinyXpilot", "refuel", 150, "space:1,up:5-40,right:22-28,up:60-80,space:100,space:115,down:140-150");
     (* the first waves flying in along their curves; the formation, all
      * in, a boss diving, the fighter having fired *)
-    ("games/software/TinyGalaga", "waves", 200, "space:1");
-    ("games/software/TinyGalaga", "formation", 1100, "space:1,space:900,space:930,left:950-980,space:990");
+    ("games/shmup/software/TinyGalaga", "waves", 200, "space:1");
+    ("games/shmup/software/TinyGalaga", "formation", 1100, "space:1,space:900,space:930,left:950-980,space:990");
     (* the first waves, a turret firing; later, a red one shot down *)
-    ("games/software/TinyGradius", "waves", 200, "space:1,right:5-30,space:40,space:60,space:80,space:100,space:130,space:150,space:170,space:190,up:120-150");
-    ("games/software/TinyGradius", "later", 600, "space:1,right:5-30,space:40,space:60,space:80,space:100,space:130,space:150,space:170,space:190,up:120-150,space:220,space:240,space:260,space:300,space:330");
+    ("games/shmup/software/TinyGradius", "waves", 200, "space:1,right:5-30,space:40,space:60,space:80,space:100,space:130,space:150,space:170,space:190,up:120-150");
+    ("games/shmup/software/TinyGradius", "later", 600, "space:1,right:5-30,space:40,space:60,space:80,space:100,space:130,space:150,space:170,space:190,up:120-150,space:220,space:240,space:260,space:300,space:330");
     (* the sword taken, and swung; walking into the next room, the
      * screen sliding to it *)
-    ("games/software/TinyZelda", "sword", 130, "space:1,right:3-42,up:43-110,space:120");
-    ("games/software/TinyZelda", "slide", 370, "space:1,right:3-42,up:43-110,down:130-200,right:210-400");
+    ("games/adventure/software/TinyZelda", "sword", 130, "space:1,right:3-42,up:43-110,space:120");
+    ("games/adventure/software/TinyZelda", "slide", 370, "space:1,right:3-42,up:43-110,down:130-200,right:210-400");
     (* the first room, walked around, a bat fought *)
-    ("games/software/TinyRogue", "level", 120, "space:2,right:10,right:14,right:18,right:22,right:26,right:30,up:40,up:44,up:48,left:60,left:64,down:80,down:84,down:88,down:92");
+    ("games/rpg/software/TinyRogue", "level", 120, "space:2,right:10,right:14,right:18,right:22,right:26,right:30,up:40,up:44,up:48,left:60,left:64,down:80,down:84,down:88,down:92");
     (* a fireball thrown (down, down-forward, forward, punch), the
      * computer jumping it; later, trading blows *)
-    ("games/software/TinyStreetFighter", "fireball", 40, "space:1,s:3-8,d:6-12,f:11");
-    ("games/software/TinyStreetFighter", "fight", 150, "space:1,d:95-120,f:122,g:135");
+    ("games/fighting/software/TinyStreetFighter", "fireball", 40, "space:1,s:3-8,d:6-12,f:11");
+    ("games/fighting/software/TinyStreetFighter", "fight", 150, "space:1,d:95-120,f:122,g:135");
     (* the first wave on the street; the spin *)
-    ("games/software/TinyFinalFight", "wave", 160, "space:1,right:3-60,space:100,space:108,space:116,space:124,space:132");
-    ("games/software/TinyFinalFight", "spin", 206, "space:1,right:3-60,space:100,space:108,space:116,space:124,space:132,z:200");
+    ("games/fighting/software/TinyFinalFight", "wave", 160, "space:1,right:3-60,space:100,space:108,space:116,space:124,space:132");
+    ("games/fighting/software/TinyFinalFight", "spin", 206, "space:1,right:3-60,space:100,space:108,space:116,space:124,space:132,z:200");
     (* level 1, Baba pushing the rocks; ten moves right: won *)
-    ("games/software/TinyBabaIsYou", "pushing", 30, "space:1,right:5,right:10,right:15,right:20,right:25,right:30,right:35,right:40,right:45,right:50");
-    ("games/software/TinyBabaIsYou", "won", 60, "space:1,right:5,right:10,right:15,right:20,right:25,right:30,right:35,right:40,right:45,right:50");
+    ("games/puzzle/software/TinyBabaIsYou", "pushing", 30, "space:1,right:5,right:10,right:15,right:20,right:25,right:30,right:35,right:40,right:45,right:50");
+    ("games/puzzle/software/TinyBabaIsYou", "won", 60, "space:1,right:5,right:10,right:15,right:20,right:25,right:30,right:35,right:40,right:45,right:50");
     (* running from the boulder; through the hole, the boulder stopped
      * over it (too big to fall in) *)
     (* the grid, GO!; the first corner, the karts passed on the way
      * coming up behind *)
-    ("games2.5d/software/TinyMarioKart", "grid", 200, "space:1");
-    ("games2.5d/software/TinyMarioKart", "corner", 430, "space:1,up:2-430,right:370-405");
+    ("games/racing/software/TinyMarioKart", "grid", 200, "space:1");
+    ("games/racing/software/TinyMarioKart", "corner", 430, "space:1,up:2-430,right:370-405");
     (* two players, the screen split as on the SNES: the first on top
        (the arrows), the second below (w a s d), both on the gas *)
-    ("games2.5d/software/TinyMarioKart", "split", 260, "2:1,up:2-260,w:2-260,d:200-215");
+    ("games/racing/software/TinyMarioKart", "split", 260, "2:1,up:2-260,w:2-260,d:200-215");
     (* on the stairs, upstairs ahead; at the window onto the dark room
-     * (games3d/TinyDoom3d's golden frames are the same walks) *)
-    ("games2.5d/software/TinyDoom", "stairs", 80, "left:1-10,up:11-80");
-    ("games2.5d/software/TinyDoom", "window", 60, "right:1-5,up:6-55");
-    (* over the island, climbing a little (games3d/TinyComanche3d's
+     * (TinyDoom3d's golden frames are the same walks) *)
+    ("games/fps/software/TinyDoom", "stairs", 80, "left:1-10,up:11-80");
+    ("games/fps/software/TinyDoom", "window", 60, "right:1-5,up:6-55");
+    (* over the island, climbing a little (TinyComanche3d's
      * golden frame is the same flight) *)
-    ("games2.5d/software/TinyComanche", "island", 70, "up:1-70,w:1-20");
+    ("games/flight/software/TinyComanche", "island", 70, "up:1-70,w:1-20");
     (* down the corridor, the robot of the next cell ahead
-     * (games3d/TinyDescent3d's golden frames are the same flight) *)
-    ("games2.5d/software/TinyDescent", "corridor", 30, "w:1-30");
+     * (TinyDescent3d's golden frames are the same flight) *)
+    ("games/flight/software/TinyDescent", "corridor", 30, "w:1-30");
     (* launched from the station: Coriolis ahead, its slot turning, in
      * front of Lave; the three Sidewinders coming *)
-    ("games2.5d/software/TinyElite", "flight", 200, "space:1");
+    ("games/flight/software/TinyElite", "flight", 200, "space:1");
     (* turned, driving towards a pyramid (cut by the near plane), a shell
      * flying at the enemy tank, at the height of its hull *)
-    ("games2.5d/software/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100");
+    ("games/fps/software/TinyBattlezone", "play", 150, "space:1,right:5-20,up:30-140,space:100");
     (* the served puck struck up the table, Ned's paddle coming to meet it *)
-    ("games2.5d/software/TinyShufflePuck", "rally", 45, "space:1,up:3-14");
-    ("games/software/TinyRick", "boulder", 70, "space:1,right:2-160");
-    ("games/software/TinyRick", "hole", 160, "space:1,right:2-160");
+    ("games/sports/software/TinyShufflePuck", "rally", 45, "space:1,up:3-14");
+    ("games/platform/software/TinyRick", "boulder", 70, "space:1,right:2-160");
+    ("games/platform/software/TinyRick", "hole", 160, "space:1,right:2-160");
     (* right to the ladder, up it, a hole dug on the right; the guards
      * coming *)
-    ("games/software/TinyLodeRunner", "dig", 110, "space:1,right:2-41,up:42-81,x:86");
+    ("games/platform/software/TinyLodeRunner", "dig", 110, "space:1,right:2-41,up:42-81,x:86");
     (* Jumpman walks to the first ladder and climbs it, the barrels
      * rolling down *)
-    ("games/software/TinyDonkeyKong", "climb", 400, "space:1,right:5-230,up:231-300");
+    ("games/platform/software/TinyDonkeyKong", "climb", 400, "space:1,right:5-230,up:231-300");
     (* two players: both take off, turn, fire; the camera zoomed out to
      * frame them both, blue's shield up *)
-    ("games/software/TinyXpilot", "duel", 200, "2:1,w:5-60,d:20-26,up:5-60,left:20-26,w:100-110,up:100-110,space:120,space:140,return:130,s:190-200");
+    ("games/flight/software/TinyXpilot", "duel", 200, "2:1,w:5-60,d:20-26,up:5-60,left:20-26,w:100-110,up:100-110,space:120,space:140,return:130,s:190-200");
     (* the same, the screen split: a camera for each, the walls cut at
      * each view's edge *)
-    ("games/software/TinyXpilot", "split", 200, "3:1,w:5-60,d:20-26,up:5-60,left:20-26,w:100-110,up:100-110,space:120,space:140,return:130,s:190-200");
+    ("games/flight/software/TinyXpilot", "split", 200, "3:1,w:5-60,d:20-26,up:5-60,left:20-26,w:100-110,up:100-110,space:120,space:140,return:130,s:190-200");
     (* a serve, the paddle moved to where the ball comes down each time
      * (aiming off-center, so the ball goes to the side): 15 seconds,
      * 11 points, the ball sped up *)
-    ( "games/software/TinyBreakout",
+    ( "games/arcade/software/TinyBreakout",
       "play",
       900,
       "space:1,space:5,right:6-11,right:210-229,left:396-403,right:570-570,right:740-740" );
@@ -564,14 +564,14 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/LogoFractals", "dragon", 10, "right:2,right:4,right:6,a:8");
     (* the crosshair raised, a counter-missile from each base: flying,
      * then exploding there, the three explosions one *)
-    ("games/software/TinyMissileCommand", "fire", 45, "space:1,up:2-30,a:32,s:33,d:34");
-    ("games/software/TinyMissileCommand", "explosions", 95, "space:1,up:2-30,a:32,s:33,d:34");
+    ("games/shmup/software/TinyMissileCommand", "fire", 45, "space:1,up:2-30,a:32,s:33,d:34");
+    ("games/shmup/software/TinyMissileCommand", "explosions", 95, "space:1,up:2-30,a:32,s:33,d:34");
     (* the lemmings out of the hatch, walking, "4" picking the diggers *)
-    ("games/software/TinyLemmings", "walking", 500, "space:1,4:10");
-    ("games/software/TinyPuzzleBobble", "pop", 52, "space:1,left:3-12,space:20");
+    ("games/puzzle/software/TinyLemmings", "walking", 500, "space:1,4:10");
+    ("games/puzzle/software/TinyPuzzleBobble", "pop", 52, "space:1,left:3-12,space:20");
     (* turned east and walked down the corridor: the torch ahead in
      * its slot, a wall on the right, the dark past the light's reach *)
-    ("games2.5d/software/TinyDungeonMaster", "corridor", 80, "space:1,right:5-6,up:15-60");
+    ("games/rpg/software/TinyDungeonMaster", "corridor", 80, "space:1,right:5-6,up:15-60");
     (* the one push that solves the first level, and the banner *)
     ("examples/software/PuzzleScriptSokoban", "solved", 40, "left:2-3");
     (* claude: the first scenes here that use the mouse (-script's

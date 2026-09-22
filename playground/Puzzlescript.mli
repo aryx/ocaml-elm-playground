@@ -56,7 +56,7 @@
    standing on a target needs a character of its own, and so does the
    hero on a target, and every rule about crates has to be written
    twice. That is how a hand-written Sokoban grows (see
-   games/TinySokoban.ml, which does it by hand). Here a cell holds one
+   TinySokoban.ml, which does it by hand). Here a cell holds one
    thing per layer:
 
         layer 1    . . @ $ .      what moves: hero, crates, walls

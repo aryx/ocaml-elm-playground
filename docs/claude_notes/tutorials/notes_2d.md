@@ -418,7 +418,7 @@ any key); the window title shows the state of each key
 | `n` | antialiasing | anything, with `z` on an edge |
 | `o` | optimizations: the original, simple code | watch the fps counter |
 | `z` | the pixel magnifier, following the mouse | everything |
-| `r` | resolution: full, a half, a third, a quarter, each pixel shown as a 2x2 to 4x4 block, without antialiasing (`graphics/core/Pixelate.mli`) | `games2.5d/software/TinyWolfenstein.exe`: 10 times faster at a third |
+| `r` | resolution: full, a half, a third, a quarter, each pixel shown as a 2x2 to 4x4 block, without antialiasing (`graphics/core/Pixelate.mli`) | `games/fps/software/TinyWolfenstein.exe`: 10 times faster at a third |
 | `h` | help: all the keys and their state, over the frame | everything |
 
 The magnifier (`graphics/2d/Magnifier.ml`) shows the 32x32 pixels under the

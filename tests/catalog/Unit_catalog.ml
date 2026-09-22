@@ -19,11 +19,13 @@ let read file = In_channel.with_open_bin (path file) In_channel.input_all
  * pages are. claude: a genre's directory has 2D and 3D games side by
  * side, so its golden frames are where the catalogue's Dir column says
  * (None): tests/3d for a 3D game, tests/2d for the others *)
-let dirs = [ ("games", Some "tests/2d", "games/web");
-             ("games/rhythm", None, "games/rhythm/web");
-             ("games2.5d", Some "tests/2d", "games2.5d/web");
-             ("games3d", Some "tests/3d", "games3d/webgl");
-             ("apps", Some "tests/2d", "apps/web") ]
+let genres =
+  [ "shmup"; "fighting"; "platform"; "arcade"; "puzzle"; "adventure"; "rpg";
+    "fps"; "flight"; "racing"; "sports"; "strategy"; "rhythm" ]
+
+let dirs =
+  List.map (fun g -> ("games/" ^ g, None, "games/" ^ g ^ "/web")) genres
+  @ [ ("apps", Some "tests/2d", "apps/web") ]
 
 (* the position of [sub] in [s] from [from], if any *)
 let rec find (s : string) (sub : string) (from : int) : int option =

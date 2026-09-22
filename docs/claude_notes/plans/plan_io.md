@@ -121,7 +121,7 @@ browser, for that site, and survives a reload.
    (kind, saved text) -- TinyOffice by making its records polymorphic
    in the part, so the saved form is the same records.
 3. Import by drop: `computer.dropped`, from SDL's drop event.
-4. `apps/web/`: the apps built for the browser (like `games/web/`:
+4. `apps/web/`: the apps built for the browser (like `games/<genre>/web/`:
    `copy_files` of `../Foo.ml`, `(modes js)`, an `.html` each) -- to
    check on the way that `Stroke_text`'s Hershey data (`graphics_font`)
    compiles to JavaScript and that the text area and menus behave with

@@ -2,7 +2,7 @@
 ; "kits"): what the RTS games share on top of the playground and ai/ --
 ; the tile map as a search problem, the three kinds of order (a path, a
 ; search for the nearest anything, a flow field for a crowd) and the
-; walking (Orders). Used by games/TinyDune2 and games/TinyWarcraft2. A
+; walking (Orders). Used by TinyDune2 and TinyWarcraft2. A
 ; private library, not installed: only the games use it.
 (library
  (name kit_rts)

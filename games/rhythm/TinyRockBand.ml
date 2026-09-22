@@ -66,7 +66,7 @@
  *    only when you hit them (TinyGuitarHero's rule, Rhythm.struck), so
  *    a miss is a hole in the song -- a missing chord, a missing snare.
  *
- * And it is in games3d/ because the highway is a road into the
+ * And it is a 3D game because the highway is a road into the
  * distance, which a camera draws for free: four of them in real 3D,
  * each looking like its instrument -- coloured fret pads for guitar and
  * bass, drum pads and a pedal bar for the drums, a row of piano keys

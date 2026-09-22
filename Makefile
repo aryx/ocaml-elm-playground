@@ -20,7 +20,7 @@ OPAMS=\
 default: all
 
 # claude: @default (recursive) rather than plain 'dune build' so the
-# 'default' alias in examples/web/ and games/web/ is used and their .html
+# 'default' alias in examples/web/ and games/*/web/ is used and their .html
 # files are copied into _build/ next to the generated .bc.js
 all: $(OPAMS)
 	dune build @default
@@ -30,9 +30,9 @@ install:
 	dune install
 
 # to test the native programs, run make and then go to
-# _build/default/examples/ (or games/) and run the .exe there
+# _build/default/examples/ (or games/<genre>/) and run the .exe there
 # to test the web programs, run also make and then go to
-# _build/default/examples/web/ (or games/web/) under chrome for instance
+# _build/default/examples/web/ (or games/<genre>/web/) under chrome for instance
 # with open -a "Google Chrome" _build/default/examples/web
 # claude: or use 'make serve-build' below, required for the WebGL
 # pages with textures.
@@ -125,11 +125,12 @@ doc:
 # which is hand-edited, nor the toy-game/toy-web-game docs that odoc also
 # generates from docs/toy-*-example/), and copy each freshly built web
 # example/game (.bc.js + its .html page) to docs/examples/ and docs/games/.
-# claude: examples/web/ has the 3D examples on WebGL too; the SVG ones
+# claude: a genre's games go to docs/games/<genre>/ (3D ones on WebGL
+# too); examples/web/ has the 3D examples on WebGL too; the SVG ones
 # (examples/svg/) go to docs/examples/svg/, a subdirectory since they
-# have the same names. The WebGL 3D games (games3d/webgl/) go to
-# docs/games3d/webgl/. Plus the textures, at the path the pages look
-# for them (relative to the page, see examples/web/examples/dune).
+# have the same names. Plus the texture, at the path the pages look for
+# it (relative to the page, see examples/web/examples/dune); the games'
+# textures travel inside their programs.
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
 ODOC_DIRS=odoc.support \
   elm_playground elm_playground_native elm_playground_web\
@@ -143,7 +144,7 @@ website:
 	  chmod -R u+w docs/$$d; \
 	done
 	make js
-	for d in examples games games2.5d $(GENRES); do \
+	for d in examples $(GENRES); do \
 	  mkdir -p docs/$$d; \
 	  for js in _build/default/$$d/web/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
@@ -155,32 +156,22 @@ website:
 	  b=`basename $$js .bc.js`; \
 	  install -m 644 $$js examples/svg/$$b.html docs/examples/svg/; \
 	done
-	for d in games3d; do \
-	  mkdir -p docs/$$d/webgl; \
-	  for js in _build/default/$$d/webgl/*.bc.js; do \
-	    b=`basename $$js .bc.js`; \
-	    install -m 644 $$js $$d/webgl/$$b.html docs/$$d/webgl/; \
-	  done; \
-	done
 	mkdir -p docs/examples/examples
 	install -m 644 examples/checker.png docs/examples/examples/
-	mkdir -p docs/games3d/webgl/games3d
-	install -m 644 games3d/texture.png docs/games3d/webgl/games3d/
 
 # Preview the site at http://localhost:8000
 serve:
 	python3 -m http.server --directory docs 8000
 
 # claude: the games' genres' directories (games/<genre>/, each with its
-# own web/), see docs/claude_notes/plans/plan_merge_2d_3d.md
-GENRES=games/rhythm
+# own web/), in CATALOG.md's order
+GENRES=$(addprefix games/,shmup fighting platform arcade puzzle adventure \
+  rpg fps flight racing sports strategy rhythm)
 
 js:
-	dune build games/web $(GENRES:%=%/web) --profile=release-js
-	dune build games2.5d/web --profile=release-js
+	dune build $(GENRES:%=%/web) --profile=release-js
 	dune build examples/web --profile=release-js
 	dune build examples/svg --profile=release-js
-	dune build games3d/webgl --profile=release-js
 	dune build apps/web --profile=release-js
 
 ###############################################################################

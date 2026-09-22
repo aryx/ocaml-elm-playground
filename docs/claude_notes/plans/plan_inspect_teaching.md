@@ -219,7 +219,7 @@ flags stay working; they become thin wrappers over `Physics_debug`.
   physics engine ships one, and for the same reason); RenderDoc
   (Baldur Karlsson, 2013) and PIX for what a *frame* inspector shows.
 - **Trails**: Victor's platformer; and, already in this repository,
-  `games/TinySlingshot.ml`, which draws its aim arc by stepping the
+  `TinySlingshot.ml`, which draws its aim arc by stepping the
   physics engine 60 times and plotting the result -- Victor's "see the
   future" done by hand, by a game, before this plan existed.
 
@@ -233,9 +233,9 @@ flags stay working; they become thin wrappers over `Physics_debug`.
   turn -- physics contacts, the broad-phase grid, the audio
   oscilloscope, A*'s frontier, the graphics counters -- so the panels
   can be compared, and golden-framed, in one place.
-- **Existing games, no edit**: `games/TinySlingshot.ml` (whose own arc
+- **Existing games, no edit**: `TinySlingshot.ml` (whose own arc
   and the inspector's future-trail should coincide exactly -- a good
-  test), `games/TinyPong.ml`, `games3d/TinyMario64.ml`.
+  test), `TinyPong.ml`, `TinyMario64.ml`.
 
 ## Phasing
 

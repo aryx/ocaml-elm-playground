@@ -3,11 +3,11 @@
 ; its joints, its moves key poses with the frames between interpolated
 ; (Skeleton) -- gamekits/brawler/Stickman.ml in three dimensions, and the
 ; hierarchical transforms that three dimensions need. Used by
-; games3d/TinyVirtuaFighter.
+; TinyVirtuaFighter.
 ;
 ; Its own library rather than part of kit_brawler next door, because it
 ; draws: elm_playground_3d is a virtual library, so the 2D games
-; linking the brawler kit (games/TinyStreetFighter, games/TinyFinalFight)
+; linking the brawler kit (TinyStreetFighter, TinyFinalFight)
 ; would have to link a 3D backend too. The rules of a fight -- a move's
 ; frames, the boxes it hits with -- are the same in 2D and 3D and stay
 ; next door. A private library, not installed.

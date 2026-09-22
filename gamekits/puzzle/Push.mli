@@ -14,8 +14,8 @@
    The grid isn't this module's: the game says which cells hold
    something pushable, and which are blocked (walls, the map's edges),
    and moves what the chain says. What's in a cell is the game's too: a
-   character of a Tilemap (games/TinySokoban), a list of objects
-   (games/TinyBabaIsYou).
+   character of a Tilemap (TinySokoban), a list of objects
+   (TinyBabaIsYou).
 
    Part of the puzzle kit (gamekits/puzzle/), with Undo.mli. *)
 

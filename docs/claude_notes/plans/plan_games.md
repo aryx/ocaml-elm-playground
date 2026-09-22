@@ -18,7 +18,7 @@ such games needs. (`plan_games3d.md`, later, will do the same for 3D:
 first-person shooters, flight simulators, 3D platformers, kart racing.)
 
 The first two layers exist: `playground/Camera2d.mli` and
-`playground/Tilemap.mli`, both used by `games/TinyMario.ml`. They
+`playground/Tilemap.mli`, both used by `TinyMario.ml`. They
 are the model for the others: not in `Playground.mli` (which stays
 Evan's API), built only from its shapes (so every backend gets them for
 free), with the history of the games that needed them and related work
@@ -100,7 +100,7 @@ its genre games -- Spacewar!, Slingshot -- are in the physics plan.)
 
 Before writing a toy from scratch, look for an existing version in a
 functional language: its model/update/view split is usually already
-there, and porting it is mostly syntax (how `games/Tetris.ml` came from
+there, and porting it is mostly syntax (how `Tetris.ml` came from
 elm-flatris).
 Check each one's license, and credit it in the game's header, like
 `examples/Mario.ml` credits elm-lang.org.
@@ -123,7 +123,7 @@ Known ones, by genre (found, not yet read):
 | fixed shooter | Antony Courtney, Henrik Nilsson, John Peterson, "The Yampa Arcade" (Haskell Workshop, 2003) | Haskell | a Space Invaders explained, to teach functional reactive programming |
 | shmup | Monadius | Haskell | Gradius, with its power-up bar |
 | shmup | elm-shooter | Elm | a side-scrolling shooter (in rofrol/elm-games) |
-| puzzle | [elm-flatris](https://github.com/w0rm/elm-flatris) | Elm | Tetris, Andrey Kuzmin (w0rm); already ported: `games/Tetris.ml` |
+| puzzle | [elm-flatris](https://github.com/w0rm/elm-flatris) | Elm | Tetris, Andrey Kuzmin (w0rm); already ported: `Tetris.ml` |
 | platformer | [MariOCaml](https://github.com/mahsu/MariOCaml) | OCaml (js_of_ocaml) | Super Mario Bros., procedurally generated levels; a BuckleScript port by Hongbo Zhang |
 | platformer | Nikki and the Robots, Raincat | Haskell | puzzle-platformers |
 | maze / pathing | [elm-street-404](https://github.com/w0rm/elm-street-404) | Elm (WebGL) | a delivery game, made at Zalando in five days (2016) |
@@ -152,11 +152,11 @@ kit, and what it teaches.
 ### 1. Ball and paddle
 
 Tennis for Two (William Higinbotham, 1958, on an oscilloscope), Pong
-(Atari, 1972, done: `games/Pong.ml`, and `games/TinyPong.ml` on the
+(Atari, 1972, done: `Pong.ml`, and `TinyPong.ml` on the
 physics plan's `bounce`), Breakout (Atari, 1976, Nolan
 Bushnell and Steve Wozniak), Arkanoid (Taito, 1986: power-ups).
 
-- **Toy**: TinyBreakout (DONE: `games/TinyBreakout.ml`) -- the best
+- **Toy**: TinyBreakout (DONE: `TinyBreakout.ml`) -- the best
   first game to write after Pong. Bricks are a `Tilemap` (a brick two
   tiles, "Rr"), the original's rules: speed-ups, the paddle halved
   after breaking through, two walls; the paddle's angle a rule, not
@@ -168,7 +168,7 @@ Bushnell and Steve Wozniak), Arkanoid (Taito, 1986: power-ups).
 Helicopter games (SFCave, Helicopter Game, 2000s), Canabalt (Adam
 Saltsman, 2009), Flappy Bird (Dong Nguyen, 2013).
 
-- **Toy**: TinyFlappyBird (DONE: `games/TinyFlappyBird.ml`): a flap
+- **Toy**: TinyFlappyBird (DONE: `TinyFlappyBird.ml`): a flap
   *sets* the velocity; an endless world, pipes made at the screen's
   right edge and dropped at its left; the pipes' heights from an LFSR
   whose state is in the model (Pitfall!'s and River Raid's trick), so
@@ -178,11 +178,11 @@ Saltsman, 2009), Flappy Bird (Dong Nguyen, 2013).
 ### 2. Snake and the grid
 
 Blockade (Gremlin, 1976), Tron's light cycles (Bally Midway, 1982),
-Snake on Nokia phones (1997; done: `games/Snake.ml`).
+Snake on Nokia phones (1997; done: `Snake.ml`).
 
-- **Toy**: TinyTron (DONE: `games/TinyTron.ml`, two players on one
+- **Toy**: TinyTron (DONE: `TinyTron.ml`, two players on one
   keyboard, or against the computer choosing the way with the most
-  room, a flood fill; and `games3d/TinyTron3d.ml`, the same
+  room, a flood fill; and `TinyTron3d.ml`, the same
   model in 3D, four views: both on the light cycles kit,
   `gamekits/lightcycles/`, only their views differing).
 
@@ -193,14 +193,14 @@ a coin shortage in Japan, legend says), Galaxian (Namco, 1979:
 colors, diving aliens), Galaga (Namco, 1981), Centipede (Atari, 1981:
 the trackball).
 
-- **Toys**: TinyInvaders (DONE: `games/TinyInvaders.ml`, with
+- **Toys**: TinyInvaders (DONE: `TinyInvaders.ml`, with
   `Sprite`, `Scene2d`, and bunkers as eroding `Tilemap`s; the formation marches, speeds up as it
   shrinks -- an accident of the hardware, which drew faster with fewer
-  aliens, kept as the design), TinyGalaga (DONE: `games/TinyGalaga.ml`,
+  aliens, kept as the design), TinyGalaga (DONE: `TinyGalaga.ml`,
   the waves flying in and the dives along Catmull-Rom splines, moved
   along by arc length; the formation breathing; bosses taking two hits;
   a robot in `tests/games/` clears stage 1), TinyMissileCommand (DONE:
-  `games/TinyMissileCommand.ml`, Missile Command, Dave Theurer, Atari,
+  `TinyMissileCommand.ml`, Missile Command, Dave Theurer, Atari,
   1980: aiming at a point, the counter-missile exploding there; the
   explosions growing and shrinking, the chain reaction; MIRVs; its
   missiles `Shots`; a robot in the tests aims at the intercept and
@@ -214,11 +214,11 @@ the trackball).
 
 ### 4. Multi-directional shooters
 
-Asteroids (Atari, 1979; done: `games/Asteroid.ml`), Robotron: 2084
+Asteroids (Atari, 1979; done: `Asteroid.ml`), Robotron: 2084
 (Eugene Jarvis, 1982: two joysticks, the twin-stick), Geometry Wars
 (2003).
 
-- **Toy**: TinyRobotron (DONE: `games/TinyRobotron.ml`, arrows to move,
+- **Toy**: TinyRobotron (DONE: `TinyRobotron.ml`, arrows to move,
   w/a/s/d to shoot -- `to_xy` and `to_x2`/`to_y2`'s first user, and the
   point of the game: running one way while shooting the other. One
   screen, seven kinds of robot each with one line of AI (a step towards
@@ -239,10 +239,10 @@ targets), Gradius (Konami, 1985: the power-up bar), R-Type (Irem,
 1987), then "bullet hell" (danmaku): DonPachi (Cave, 1995), Touhou
 Project (ZUN, 1996-).
 
-- **Toys**: TinyGradius (DONE: `games/TinyGradius.ml`, the cave as two
+- **Toys**: TinyGradius (DONE: `TinyGradius.ml`, the cave as two
   strings of digits, the waves a timeline of the kit's Paths, the
   power-up bar, the options on the ship's trail, the Big Core; a robot
-  clears it), TinyRType (DONE: `games/TinyRType.ml`, Irem, 1987: the
+  clears it), TinyRType (DONE: `TinyRType.ml`, Irem, 1987: the
   Force, a pod nothing destroys, docked in front or behind, sent out and
   called back to dock on the side it comes to -- a state machine, and
   a part of yourself you place, a shield docked and a grinder loose;
@@ -270,8 +270,8 @@ Pac-Man (Toru Iwatani, Namco, 1980: the first game character, and
 ghosts with personalities), Bomberman (Hudson, 1983), Boulder Dash
 (First Star, 1984: rocks fall, diamonds roll).
 
-- **Toys**: TinyPacman (DONE: `games/TinyPacman.ml`, our own 19x21
-  maze), TinyBomberman (DONE: `games/TinyBomberman.ml`, bombs, fire in
+- **Toys**: TinyPacman (DONE: `TinyPacman.ml`, our own 19x21
+  maze), TinyBomberman (DONE: `TinyBomberman.ml`, bombs, fire in
   a cross, chain reactions); both on the maze kit, `gamekits/maze/`
   (`Grid_move`, `Chase`; the ghosts' personalities stay in TinyPacman).
 - **Kit**, the maze kit:
@@ -286,25 +286,25 @@ ghosts with personalities), Bomberman (Hudson, 1983), Boulder Dash
 ### 7. Puzzle games on grids
 
 Sokoban (Hiroyuki Imabayashi, Thinking Rabbit, 1982), Tetris (Alexey
-Pajitnov, 1984; done: `games/Tetris.ml`), Lemmings (DMA Design,
+Pajitnov, 1984; done: `Tetris.ml`), Lemmings (DMA Design,
 1991), Puzzle Bobble (Taito, 1994; its free clone Frozen Bubble,
 2002), Baba Is You (2019: the rules are tiles you push).
 
-- **Toys**: TinySokoban (DONE: `games/TinySokoban.ml`, three levels of
+- **Toys**: TinySokoban (DONE: `TinySokoban.ml`, three levels of
   our own checked by a breadth-first solver; undo in Elm style, the
-  list of past boards), TinyBabaIsYou (DONE: `games/TinyBabaIsYou.ml`,
+  list of past boards), TinyBabaIsYou (DONE: `TinyBabaIsYou.ml`,
   the rules as words on the board, read as sentences after each move,
   YOU, WIN, STOP, PUSH, DEFEAT, SINK and NOUN IS NOUN; four levels, each
   solved by a breadth-first search in the tests). Both on the puzzle
   kit, `gamekits/puzzle/`: `Push` (a chain pushed, TinySokoban's limited to
-  one box) and `Undo`. TinyLemmings (DONE: `games/TinyLemmings.ml`, the
+  one box) and `Undo`. TinyLemmings (DONE: `TinyLemmings.ml`, the
   terrain a bitmap of 4-pixel cells in the model, copied once per tick
   and drawn as row runs; walkers as tiny state machines reading the
   cells around them; Blocker, Builder, Basher, Digger; three levels as
   ASCII, each solved by a one-job plan in the tests). Not on the
   puzzle kit: no grid, no pushing; its bitmap is section 14's kit, the
   day TinyWorms wants caves. TinyPuzzleBobble (DONE:
-  `games/TinyPuzzleBobble.ml`, a hexagonal grid in offset coordinates,
+  `TinyPuzzleBobble.ml`, a hexagonal grid in offset coordinates,
   the shot snapped to its nearest empty cell, then two flood fills: its
   color's group pops, what no longer hangs from the ceiling falls; the
   aiming guide is the shot flown ahead; three rounds, cleared by a
@@ -336,11 +336,11 @@ Pitfall! (David Crane, Activision, 1982), Super Mario Bros. (Nintendo,
 1985), Sonic the Hedgehog (Sega, 1991: speed, slopes, loops), Celeste
 (2018: precise controls, and assist mode).
 
-- **Toys**: `games/TinyMario.ml` (DONE, without enemies yet),
-  TinyDonkeyKong (DONE: `games/TinyDonkeyKong.ml`, the first stage:
+- **Toys**: `TinyMario.ml` (DONE, without enemies yet),
+  TinyDonkeyKong (DONE: `TinyDonkeyKong.ml`, the first stage:
   slanted girders as segments, ladders, barrels zigzagging down; the
   hero and the barrels as state machines; a robot rescues Pauline),
-  TinyCeleste (DONE: `games/TinyCeleste.ml`, Maddy Thorson and Noel
+  TinyCeleste (DONE: `TinyCeleste.ml`, Maddy Thorson and Noel
   Berry, 2018: three rooms -- the climb, the gap, the shaft -- for the
   jump, the dash and the wall jump; and **game feel** as four small,
   named lies told in the player's favour, each a function and each
@@ -350,15 +350,15 @@ Pitfall! (David Crane, Activision, 1982), Super Mario Bros. (Nintendo,
   clipping a ceiling by 2 px gets to 58, above it, and without, stops
   at 3. The first game written on `Tile_move` after it, whose header
   already cited Celeste's way of moving), TinyLodeRunner (DONE:
-  `games/TinyLodeRunner.ml`, Doug Smith, 1983: digging holes that grow
+  `TinyLodeRunner.ml`, Doug Smith, 1983: digging holes that grow
   back, guards trapped in them, the escape ladder), TinyRick (DONE:
-  `games/TinyRick.ml`, Rick Dangerous, Core Design, 1989: traps as
+  `TinyRick.ml`, Rick Dangerous, Core Design, 1989: traps as
   tiles, the boulder, a pistol, dynamite, flip-screen rooms),
-  TinySonic (DONE: `games/TinySonic.ml`, Sega, 1991: not losing speed
+  TinySonic (DONE: `TinySonic.ml`, Sega, 1991: not losing speed
   rather than jumping exactly -- the ground felt as a *surface* with an
   angle rather than as solid tiles, so the hero runs up the hill and
   round the loop; the spindash; rings as life), TinyMarioWorld (DONE:
-  `games/TinyMarioWorld.ml`, Nintendo, 1990: `Slope`'s second user, on
+  `TinyMarioWorld.ml`, Nintendo, 1990: `Slope`'s second user, on
   floors only -- a slope capping the speed uphill, and the slide
   crouched down it knocking enemies out; the cape, flight as a trade
   of speed for height and back, which the numbers keep lossy so every
@@ -387,7 +387,7 @@ Kung-Fu Master (Irem, 1984), Renegade (Technōs, 1986), Double Dragon
 (Technōs, 1987: two players together), Final Fight (Capcom, 1989),
 Streets of Rage (Sega, 1991).
 
-- **Toy**: TinyFinalFight (DONE: `games/TinyFinalFight.ml`, one street
+- **Toy**: TinyFinalFight (DONE: `TinyFinalFight.ml`, one street
   on the belt, drawn back to front; the jab-jab-hook combo chained in
   the recoveries; waves locking the screen; a barrel's roast chicken;
   the boss; a robot clears it).
@@ -408,7 +408,7 @@ Karate Champ (Technōs, 1984), Street Fighter II (Capcom, 1991: the
 genre as we know it, combos by accident), Mortal Kombat (Midway,
 1992).
 
-- **Toy**: TinyStreetFighter (DONE: `games/TinyStreetFighter.ml`, vs
+- **Toy**: TinyStreetFighter (DONE: `TinyStreetFighter.ml`, vs
   the computer or two players on one keyboard; frame data, hitboxes,
   blocking high and low, the fireball's quarter circle read from the
   input history, hitstop; the brawler kit, `gamekits/brawler/`: `Hitbox`,
@@ -427,16 +427,16 @@ Run (Yu Suzuki, Sega, 1986: hills, forks, the radio), Micro Machines
 (Codemasters, 1991: top-down again), Super Mario Kart (Nintendo, 1992:
 Mode 7, see `plan_games3d.md`).
 
-- **Toys**: TinyOutRun (DONE: `games2.5d/TinyOutRun.ml`, on the racing
+- **Toys**: TinyOutRun (DONE: `TinyOutRun.ml`, on the racing
   kit `gamekits/racing/` (`Road`, `Car`), shared with
-  `games3d/TinyVirtuaRacing.ml`;
+  `TinyVirtuaRacing.ml`;
   pseudo-3D: all 2D shapes, so a perfect fit
   for the 2D playground -- the road is trapezoids, the scenery scaled
-  sprites), TinyMicroMachines (DONE: `games/TinyMicroMachines.ml`, the
+  sprites), TinyMicroMachines (DONE: `TinyMicroMachines.ml`, the
   head-to-head mode, drifting cars, the computer on the waypoints; a
   `Camera2d` looking ahead of the leader, or turning with it: the
   `angle` added to `Camera2d`), TinyMarioKart (DONE:
-  `games2.5d/TinyMarioKart.ml`, Mode 7, see `plan_games3d.md`, on
+  `TinyMarioKart.ml`, Mode 7, see `plan_games3d.md`, on
   TinyMicroMachines' model; two players on one keyboard, the screen
   split top and bottom as on the SNES -- Mode 7 drawn twice in screens
   half as tall, the playground unable to clip, so each half is drawn
@@ -460,7 +460,7 @@ Adventure (Warren Robinett, Atari 2600, 1980: the first action-
 adventure, and the first Easter egg), The Legend of Zelda (Miyamoto
 and Takashi Tezuka, Nintendo, 1986).
 
-- **Toy**: TinyZelda (DONE: `games/TinyZelda.ml`, 3 x 2 rooms of 16 x
+- **Toy**: TinyZelda (DONE: `TinyZelda.ml`, 3 x 2 rooms of 16 x
   11 tiles sliding in, a sword, a key, a locked door, a dungeon, the
   Triforce; octoroks and keese; `Camera2d.room` and `flip`, with
   TinyRick).
@@ -474,7 +474,7 @@ and Takashi Tezuka, Nintendo, 1986).
 Rogue (Michael Toy, Glenn Wichman, 1980), NetHack (1987), Dragon
 Quest (Enix, 1986), Pokémon (Game Freak, 1996).
 
-- **Toys**: TinyRogue (DONE: `games/TinyRogue.ml`, Rogue's own
+- **Toys**: TinyRogue (DONE: `TinyRogue.ml`, Rogue's own
   generator -- 3 x 3 cells, a room or a crossing in each, corridors --
   its lit rooms as the field of view, turns, three levels to the
   Amulet; a robot gets it), TinyDragonQuest (walk, then turn-based battles).
@@ -494,7 +494,7 @@ Artillery (on mainframes and home computers, late 1970s), Gorillas
 Birds (Rovio, 2009: the physics plan's Slingshot).
 
 - **Toy**: TinyWorms, with destructible terrain. (DONE:
-  `games/TinyWorms.ml`, on the physics plan's `Physics` layer. First a
+  `TinyWorms.ml`, on the physics plan's `Physics` layer. First a
   Scorched Earth -- two cannons on a height map -- then Worms: the
   terrain a bitmap, TinyLemmings' way (a byte per 4x4 cell: earth,
   girder, air), with caves, girders in the sky and water below, an
@@ -508,7 +508,7 @@ Birds (Rovio, 2009: the physics plan's Slingshot).
   step that goes *deeper* into the ground, so a worm roped from where
   it stands can be lifted off it.)
 - **Kit**: terrain as a bitmap, explosions carving circles out of it
-  -- now written twice, in games/TinyLemmings and games/TinyWorms: a
+  -- now written twice, in TinyLemmings and TinyWorms: a
   destructible-terrain kit would have them as its two users.
 
 ### 15. Strategy and tower defense
@@ -517,15 +517,15 @@ Dune II (Westwood, 1992: the RTS), Warcraft (Blizzard, 1994),
 Command & Conquer (Westwood, 1995); Rampart (Atari, 1990), Desktop
 Tower Defense (2007: tower defense in a browser).
 
-- **Toys**: TinyTowerDefense (DONE: `games/TinyTowerDefense.ml`, the
+- **Toys**: TinyTowerDefense (DONE: `TinyTowerDefense.ml`, the
   *maze* tower defense of Desktop Tower Defense rather than a fixed
   road: there is no road, the towers are the road, and every tower
   placed makes the monsters' way longer -- so the game is the
   pathfinding, `ai/Pathfind`, recomputed as you build, and you may
   never close the way completely), TinyDune2 (DONE:
-  `games/TinyDune2.ml`, Westwood, 1992: harvest, build, and orders as
+  `TinyDune2.ml`, Westwood, 1992: harvest, build, and orders as
   paths -- a click on the ground is an A* for the selected unit), and
-  TinyWarcraft2 (DONE: `games/TinyWarcraft2.ml`, Blizzard, 1995: what
+  TinyWarcraft2 (DONE: `TinyWarcraft2.ml`, Blizzard, 1995: what
   Dune II lacks -- a box dragged round several units, one search for a
   whole crowd as a flow field that each unit walks downhill
   (`Pathfind.field` and `downhill`), and the fog of war as two bitmaps,
@@ -534,7 +534,7 @@ Tower Defense (2007: tower defense in a browser).
   `ai/Pathfind`'s searches and a game -- the grid as a search problem,
   and the walking -- used by TinyDune2, TinyWarcraft2 and later
   TinyGauntlet2. Not done: a minimap (a second, zoomed-out camera,
-  which is `games/TinyDefender.ml`'s scanner), and fog as roguelike
+  which is `TinyDefender.ml`'s scanner), and fog as roguelike
   field of view rather than a radius.
 
 ### 16. Rhythm games
@@ -568,7 +568,7 @@ Guitar Hero (2005).
   `Rhythm.mli`). And you hear what you play: the song loops with the
   guitar muted (`Rhythm.muted`), a note hit sounds when strummed
   (`Rhythm.struck`, `Audio.of_tune`), a note missed is silence. The
-  song has a drummer (an ABC `clef=perc` voice, below). In games2.5d
+  song has a drummer (an ABC `clef=perc` voice, below). A 2.5D game
   because the highway is Out Run's road
   straightened: one division by the depth per point, the trick of the
   game, 23 lines.
@@ -615,7 +615,7 @@ seen from the side, soldiers with jet boots, dozens of weapons,
 polygon maps, ragdoll deaths, bots, and online play -- the genre's
 peak, and a favorite of this project's author.
 
-- **Toy**: TinySoldat (DONE: `games/TinySoldat.ml`, one screen, you
+- **Toy**: TinySoldat (DONE: `TinySoldat.ml`, one screen, you
   against two bots, first to 5 kills; Opensoldat, the open-sourced
   Soldat, is MIT: https://github.com/Soldat/soldat), the capstone of
   the physics plan: soldiers as
@@ -644,7 +644,7 @@ levels in `~/software-src/game/OCAML-games/rolling-moon`) is a
 version of it: the ball a moon, touch every target. LocoRoco (Sony,
 2006) tilts its world the same way.
 
-- **Toy**: TinyCameltry (DONE: `games/TinyCameltry.ml`, written from
+- **Toy**: TinyCameltry (DONE: `TinyCameltry.ml`, written from
   scratch, not from Rolling-Moon's GPL code or levels): turning the
   maze is turning gravity (`push`), the moon rolls (the physics plan's
   rotation, phase 7: friction at its bottom point spins it), space
@@ -660,7 +660,7 @@ Schouten, University of Tromsø, 1991: the same, multiplayer over the
 Internet, on X terminals, with ASCII maps, cannons, fuel, teams and the
 ball game). (Names and dates from memory, to check.)
 
-- **Toy**: TinyXpilot (DONE: `games/TinyXpilot.ml`): the ball game
+- **Toy**: TinyXpilot (DONE: `TinyXpilot.ml`): the ball game
   alone against the cannons; the connector a rope that only pulls,
   the same force on the ship and the ball, opposite (Newton's third
   law, by hand with `Physics.push`); crashing when a bounce changes
@@ -681,7 +681,7 @@ Dreams and Pinball Fantasies (Digital Illusions, 1992-93), 3D Pinball:
 Space Cadet (Cinematronics/Maxis, 1995). (Names and dates from memory,
 to check.)
 
-- **Toy**: TinyPinball (DONE: `games/TinyPinball.ml`, one screen, a
+- **Toy**: TinyPinball (DONE: `TinyPinball.ml`, one screen, a
   plunger, two flippers, three pop bumpers, two slingshots, two banks
   of drop targets, a drain, and the tilt; the table is a list of
   segments and circles, each with its restitution, its kick and its
@@ -702,7 +702,7 @@ to check.)
   ball resting on them and throw nothing.
 - **Kit**: none. There is one pinball, and what it would share with a
   second one is already in `physics/2d`.
-- **Later**: `games3d/TinyPinball3d.ml`, the same game with 3D
+- **Later**: `TinyPinball3d.ml`, the same game with 3D
   graphics and the 3D physics of `plan_physics3d_teaching.md` -- a
   bigger game, not a port of this one.
 
@@ -713,7 +713,7 @@ hired), Portal (Valve, 2007), and in two dimensions Portal: The Flash
 Version (We Create Stuff, 2007), which showed the idea survives losing
 a dimension. (Names and dates from memory, to check.)
 
-- **Toy**: TinyPortal2D (DONE: `games/TinyPortal2D.ml`, three test
+- **Toy**: TinyPortal2D (DONE: `TinyPortal2D.ml`, three test
   chambers: a goo pit crossed through the side walls, the fling, and a
   cube on a button behind a wall you can only shoot over. Left click
   the blue portal, right click the orange, on the white walls only;
@@ -755,7 +755,7 @@ Gauntlet II (1986: four of the same hero, the deflecting walls, and
 the voice), then every crawl with a spawner in it. (Names and dates
 from memory, to check.)
 
-- **Toy**: TinyGauntlet2 (DONE: `games/TinyGauntlet2.ml`, two dungeons
+- **Toy**: TinyGauntlet2 (DONE: `TinyGauntlet2.ml`, two dungeons
   read as strings, four heroes that differ only by a row of numbers,
   the generators, keys and doors, food, potions, treasure, and the
   voice saying what just happened).
@@ -787,7 +787,7 @@ from memory, to check.)
   the zoom costs is the map, so the corner has one --
   `Sprite.pixels` over `Tilemap.to_strings`, since the dungeon is
   already a list of strings and so is a sprite (the trick
-  `games3d/TinyComanche3d` draws its terrain with).
+  `TinyComanche3d` draws its terrain with).
 - **Kit**: none of its own. The flow field is `ai/Pathfind` through
   `gamekits/rts`' `Orders` (its third user, after TinyDune2 and
   TinyWarcraft2: a crowd walking to one place is the same problem
@@ -806,7 +806,7 @@ game seen from above. Kick Off (Dino Dini, Anco, 1989) and Kick Off 2
 Deluxe (The Bitmap Brothers, 1990), which is a sport the way Rollerball
 is. (Names and dates from memory, to check.)
 
-- **Toy**: TinyKickOff2 (DONE: `games/TinyKickOff2.ml`, a pitch taller
+- **Toy**: TinyKickOff2 (DONE: `TinyKickOff2.ml`, a pitch taller
   than the screen, five a side, a two-minute half, throw-ins and
   goals).
 - **The one idea**: the ball is **not glued to your feet**. Every other
@@ -826,7 +826,7 @@ is. (Names and dates from memory, to check.)
   has his place in a formation, pulled a third of the way towards the
   ball; only the nearest one chases. Ten lines, and it looks like
   football -- the same trick as a flock.
-- **Second toy**: TinySpeedball2 (DONE: `games/TinySpeedball2.ml`,
+- **Second toy**: TinySpeedball2 (DONE: `TinySpeedball2.ml`,
   Speedball 2: Brutal Deluxe, The Bitmap Brothers, 1990). Its ball is
   the *opposite* of Kick Off's, which is the first thing to say about
   it: this is handball, so **the ball is carried** -- run near it and
@@ -841,7 +841,7 @@ is. (Names and dates from memory, to check.)
     everything a side scores for ten seconds, flattening an opponent
     is 10. The thing on the screen is a *table*, not a pitch, and a
     match is usually won by whoever used the furniture -- it is
-    `games/TinyPinball.ml`'s table with players on it;
+    `TinyPinball.ml`'s table with players on it;
   - **the loose ball never stops**: no touchlines, no referee, walls
     that give it back keeping four fifths of its speed
     (`Free_ball.bounce_in`), and a mouth at each end which is a *gap*
@@ -852,7 +852,7 @@ is. (Names and dates from memory, to check.)
   - **violence is a move**, not a foul: space with no ball is a
     tackle, two seconds on the floor and ten points.
 - **Third toy**: TinySensibleSoccer (DONE:
-  `games/TinySensibleSoccer.ml`, Sensible Software -- Jon Hare and
+  `TinySensibleSoccer.ml`, Sensible Software -- Jon Hare and
   Chris Yates -- 1992). It is worth writing after the other two
   because it is the third answer to their one question, and the three
   differ by a single number, how fast a touch sends the ball against
@@ -873,7 +873,7 @@ is. (Names and dates from memory, to check.)
   **aftertouch is the game**: over the same 45 frames a lofted shot
   held right ends 321 pixels to the side of the one left alone, a tap
   along the grass 163.
-- **Where it goes**: `games/`, not `games2.5d/`. That directory is for
+- **Where it goes**: a 2D game, not a 2.5D one. Those are the
   games that fake a 3D *view* on the 2D playground -- a raycaster,
   Mode 7, voxels -- and say so ("the trick of this game"). A ball with
   a height and a shadow is a coordinate, not a trick of rendering.
@@ -908,7 +908,7 @@ first. It was also the first arcade game two people could play at the
 same time on the same screen, and co-operation was optional: flying
 into your friend jousted him just as well.
 
-- **Toy**: TinyJoust (DONE: `games/TinyJoust.ml`, left/right to push,
+- **Toy**: TinyJoust (DONE: `TinyJoust.ml`, left/right to push,
   space or up to flap -- once per press, so the key is hammered).
 - **Kit**: none, and that is the point of writing it here. A whole
   arcade game -- waves, lives, a score, an enemy with a mind of its
@@ -946,7 +946,7 @@ the hardest game of the arcade and the highest-grossing of its year,
 and those are the same fact. Jarvis went on to Robotron: 2084 (section
 4) and to the flap of Joust's team-mates down the hall (section 24).
 
-- **Toy**: TinyDefender (DONE: `games/TinyDefender.ml`, left/right
+- **Toy**: TinyDefender (DONE: `TinyDefender.ml`, left/right
   thrust and flip, up/down, space the laser, b a smart bomb).
 - **Kit**: none. Two layers and one kit do the work: `Camera2d` (the
   scroll that *leads* the ship, and the scanner), the shmup kit's
@@ -985,7 +985,7 @@ and those are the same fact. Jarvis went on to Robotron: 2084 (section
 SimCity (Will Wright, Maxis, 1989), out of the level editor of his
 Raid on Bungeling Bay; its source GPL'd in 2008 as Micropolis.
 
-- **Toy**: TinySimCity (DONE: `games/TinySimCity.ml`, tools 1 to 7 or
+- **Toy**: TinySimCity (DONE: `TinySimCity.ml`, tools 1 to 7 or
   the toolbar, the mouse or the arrows and space, v the view, - = the
   tax, f fast).
 - **Kit**: none; `Scene2d`, and a `tile array` as TinyTowerDefense has.
@@ -1016,7 +1016,7 @@ Civilization (Sid Meier and Bruce Shelley, MicroProse, 1991), after
 Walter Bright's Empire and Francis Tresham's board game; the "4X" genre
 (explore, expand, exploit, exterminate) was named after it.
 
-- **Toy**: TinyCivilization (DONE: `games/TinyCivilization.ml`, arrows
+- **Toy**: TinyCivilization (DONE: `TinyCivilization.ml`, arrows
   move the blinking unit, b builds a city, p production, r research,
   t the tree, Enter ends the turn).
 - **Kit**: none; `Scene2d`. Turns are TinyRogue's and the black map
@@ -1047,7 +1047,7 @@ The Incredible Machine (Kevin Ryan, Jeff Tunnell, Dynamix / Sierra,
 1993), after Rube Goldberg's cartoons: a machine to finish from a bin
 of parts, that then runs on its own.
 
-- **Toy**: TinyIncredibleMachine (DONE: `games/TinyIncredibleMachine.ml`,
+- **Toy**: TinyIncredibleMachine (DONE: `TinyIncredibleMachine.ml`,
   click a part in the bin and click where it goes, r tilts a ramp,
   space runs the machine and stops it, n the next of four puzzles:
   ramps, a seesaw, a pulley, a switch and a fan).
@@ -1082,7 +1082,7 @@ X-COM: UFO Defense (Julian Gollop, Mythos Games / MicroProse, 1994),
 after Gollop's Laser Squad; Jagged Alliance, Firaxis's XCOM (2012) and
 Into the Breach come from it.
 
-- **Toy**: TinyXCOM (DONE: `games/TinyXCOM.ml`), the battles only:
+- **Toy**: TinyXCOM (DONE: `TinyXCOM.ml`), the battles only:
   four soldiers against five sectoids around a crashed UFO; click a
   soldier, a tile to walk to, a seen alien to shoot, right-click to
   turn, s/a snap or aimed shot, n the next soldier, Enter ends the
@@ -1120,7 +1120,7 @@ Metroid (Yoshio Sakamoto, Makoto Kano, Gunpei Yokoi, Nintendo R&D1 and
 Intelligent Systems, 1986); with Castlevania: Symphony of the Night
 (1997), the "Metroidvania": one world, closed by abilities.
 
-- **Toy**: TinyMetroid (DONE: `games/TinyMetroid.ml`), a small Zebes:
+- **Toy**: TinyMetroid (DONE: `TinyMetroid.ml`), a small Zebes:
   the morph ball, the missiles, the high jump boots, the bombs, an
   energy tank, and Kraid (missiles only); arrows, space to jump, x to
   fire, up to aim up, c to arm missiles, down for the ball, Enter the

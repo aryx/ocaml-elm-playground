@@ -16,8 +16,8 @@
 # Usage:
 #   scripts/frames/render_frame.sh <exe, from the build root> <frame> <out.png> [script] [flags...]
 # e.g.
-#   scripts/frames/render_frame.sh games/software/TinyMario.exe 150 /tmp/run.png "right:1-150,up:30-34"
-#   scripts/frames/render_frame.sh games3d/TinyTron3d.exe 150 /tmp/t.png "1:1,up:40" 
+#   scripts/frames/render_frame.sh games/platform/software/TinyMario.exe 150 /tmp/run.png "right:1-150,up:30-34"
+#   scripts/frames/render_frame.sh games/arcade/TinyTron3d.exe 150 /tmp/t.png "1:1,up:40" 
 # Env: BUILD_DIR (default _build), TIME (the frozen clock, default 1000).
 
 set -euo pipefail

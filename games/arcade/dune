@@ -1,0 +1,30 @@
+; claude: the maze and arcade classics (CATALOG.md's section), 2D and 3D
+; side by side; on the software rasterizers in software/, in the
+; browser in web/.
+(executables
+  (names Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
+    TinyPacman TinyPong TinySpacewar TinyTron)
+  (modules Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
+    TinyPacman TinyPong TinySpacewar TinyTron)
+  (libraries
+    unix ; Pong's clock
+    elm_playground
+    ai ; TinyPacman's ghosts (ai=engine)
+    kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
+    kit_lightcycles ; TinyTron's rules
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names StarCollector3d TinyMarbleMadness TinyTron3d)
+  (modules StarCollector3d TinyMarbleMadness TinyTron3d)
+  (libraries
+    elm_core
+    kit_lightcycles ; TinyTron3d's rules, TinyTron's own
+    physics_3d ; TinyMarbleMadness's marble
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

@@ -24,7 +24,7 @@ line of stars. Exactly 77 stars, so the line is 79 characters:
 ```
 
 It is in `~/xix/` throughout (`builder/CLI.ml`, `Env.ml`, …), in this
-repository's games (`games/TinySokoban.ml`) and in its teaching
+repository's games (`TinySokoban.ml`) and in its teaching
 libraries (`graphics/2d/Fill.ml`). A file with three or more parts
 gets them; a twenty-line module does not need any.
 

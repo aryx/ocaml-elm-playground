@@ -12,7 +12,7 @@
  *
  * A sphere let go on a slope of angle a rolls down at 5/7 g sin a, not
  * g sin a, because two sevenths of the energy go into its spin.
- * games3d/TinyMarbleMadness.ml derives that 5/7 by hand in its header
+ * TinyMarbleMadness.ml derives that 5/7 by hand in its header
  * -- a ball on a height map was ten lines and needed no engine -- so
  * this is a cross-check in both directions: physics/3d knows only
  * tensors, contact points and friction impulses, and has to arrive at

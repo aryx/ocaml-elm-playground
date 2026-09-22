@@ -160,7 +160,7 @@ https://aryx.github.io/ocaml-elm-playground/elm_playground/
 
 Look at the code under [examples/](examples/) and [games/](games/).
 
-Here is a screenshot of the [Tetris](games/Tetris.ml) Playgound game running:
+Here is a screenshot of the [Tetris](games/puzzle/Tetris.ml) Playgound game running:
 <img src="docs/screenshots/game-tetris.png" alt="Toy app screenshot"
  width="50%">
 
@@ -179,8 +179,9 @@ idea explained in its `.mli` and checked by tests and golden frames:
 - **pictures**: `graphics/`, the 2D and 3D software rasterizers behind
   the `software` backends, and `Playground3d` for 3D programs (see
   [README-3d.md](README-3d.md));
-- **games**: `games/`, `games2.5d/` (each pseudo-3D trick written out
-  in its game) and `games3d/`, over the genre kits of `gamekits/`;
+- **games**: `games/`, a directory per genre (see
+  [CATALOG.md](CATALOG.md)), 2D, 2.5D (each pseudo-3D trick written out
+  in its game) and 3D side by side, over the genre kits of `gamekits/`;
 - **motion, sound, decisions, networks**: `physics/`, `audio/`, `ai/`,
   `networking/`;
 - **applications**: `gui/`, a small toolkit with the same widgets

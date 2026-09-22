@@ -67,7 +67,7 @@ subject:
   the sun? it has no idea), reflections (what is over there? no idea)
   or refraction. Everything a rasterizer does about those is a trick
   played with extra passes and stored textures -- shadow maps,
-  environment maps, and `games3d/TinyQuake.ml`'s baked lightmaps.
+  environment maps, and `TinyQuake.ml`'s baked lightmaps.
 - **The ray tracer has the whole scene in hand at every pixel**, so
   each of those is just another ray: one towards the light (shadow),
   one bounced off the surface (mirror), one bent through it (glass).

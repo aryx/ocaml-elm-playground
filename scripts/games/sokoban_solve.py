@@ -8,13 +8,13 @@
 # (LGPL) as published by the Free Software Foundation; either version
 # 2 of the License, or (at your option) any later version.
 #
-# Solve games/TinySokoban.ml's levels (read from its source), by a
+# Solve TinySokoban.ml's levels (read from its source), by a
 # breadth-first search over the positions (the player's cell and the
 # boxes' cells): each level's shortest solution in moves, or "no
 # solution" -- to check a new level before adding it. u d l r are the
 # moves (up is a row up).
 #
-# Usage: scripts/games/sokoban_solve.py [games/TinySokoban.ml]
+# Usage: scripts/games/sokoban_solve.py [TinySokoban.ml]
 # A position count grows fast with the boxes: fine for small levels.
 
 import sys
@@ -51,7 +51,7 @@ def solve(rows):
                 seen.add(state); queue.append((state, path + k))
     return None, f"{len(seen)} positions explored"
 
-path = sys.argv[1] if len(sys.argv) > 1 else "games/TinySokoban.ml"
+path = sys.argv[1] if len(sys.argv) > 1 else "TinySokoban.ml"
 for i, level in enumerate(lists_of_strings(block(path, "levels"))):
     solution, info = solve(level)
     print(f"level {i + 1}: " + (f"{len(solution)} moves: {solution}" if solution else "no solution") + f" ({info})")

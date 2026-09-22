@@ -47,7 +47,7 @@
 
    The same projection is available from a real 3D camera --
    [Playground3d]'s [Camera3d.orthographic], which is a camera with the
-   divide taken out -- and games3d/TinyMonumentValley.ml uses it. This
+   divide taken out -- and TinyMonumentValley.ml uses it. This
    kit is the arithmetic done by hand instead, on the 2D playground,
    with no camera and no z-buffer anywhere.
 
@@ -78,7 +78,7 @@
      towards the eye as well. The order is exact as long as no two
      things interleave (one thing per place in the world, nothing
      leaning over anything else), which is the same restriction the
-     rest of games2.5d/ lives by.
+     rest of the 2.5D games live by.
 
    {1 What stands between a thing and the eye}
 
@@ -98,7 +98,7 @@
    before, which is exact; or draw him again over them, faintly, so
    that he is never lost behind one (Knight Lore, 1984, and most
    isometric games with a roof). The first is what
-   games2.5d/TinyZaxxon does: being hidden by what is in front of you
+   TinyZaxxon does: being hidden by what is in front of you
    is the view telling the truth, and worth keeping.
 
    Related work: the tile-based isometric renderers of the 1990s

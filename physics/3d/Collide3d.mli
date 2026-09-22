@@ -169,7 +169,7 @@ val touching : placed -> placed -> bool
    the contact normal, the other box's nearest face is the incident
    one, and the incident face is cut down by the reference face's four
    side planes (Sutherland-Hodgman, the same clipping
-   games2.5d/TinyDescent.ml does through its portals):
+   TinyDescent.ml does through its portals):
 
         reference face (the floor's top)      the incident face, clipped
         +----------------------+              +--------+

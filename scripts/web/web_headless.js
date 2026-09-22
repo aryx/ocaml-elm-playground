@@ -7,15 +7,15 @@
 // version 2.1 as published by the Free Software Foundation.
 //
 // Run a compiled web Playground app (a .bc.js from examples/web/ or
-// games/web/) in node, without a browser, with a tiny fake DOM, to debug
+// games/<genre>/web/) in node, without a browser, with a tiny fake DOM, to debug
 // hangs and exceptions that are hard to observe in Chrome (a tab stuck in
 // an infinite loop can't even show its console).
 //
 // usage:
-//   node docs/claude_notes/web_headless.js _build/default/games/web/Tetris.bc.js [frames] [keys]
+//   node docs/claude_notes/web_headless.js _build/default/games/puzzle/web/Tetris.bc.js [frames] [keys]
 // e.g.
 //   timeout 10 node docs/claude_notes/web_headless.js \
-//     _build/default/games/web/Tetris.bc.js 300 ArrowLeft,ArrowUp,' '
+//     _build/default/games/puzzle/web/Tetris.bc.js 300 ArrowLeft,ArrowUp,' '
 //
 // It simulates [frames] animation frames at 60Hz (default 300 = 5s),
 // pressing (keydown then keyup) the comma-separated [keys] one after the

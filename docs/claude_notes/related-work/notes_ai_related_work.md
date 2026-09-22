@@ -102,7 +102,7 @@ argument for why `ai/` teaches what it teaches.
 - **Othello**: Rosenbloom's IAGO (1982); Michael Buro's **Logistello
   beat the world champion 6-0 in 1997**; in 2023 Hiroki Takizawa's
   computation indicated the game is a draw with perfect play. This is
-  why `games/AiOthello.ml` is a fair fight only at depth 4.
+  why `AiOthello.ml` is a fair fight only at depth 4.
 - **Backgammon**: Tesauro's **TD-Gammon (1992)**, 80 hidden units,
   trained by self-play, near world class -- and it changed human
   opening theory. The cheapest counterexample to "you need scale".

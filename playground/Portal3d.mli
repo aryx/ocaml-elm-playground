@@ -29,7 +29,7 @@
  * (so that what is in front of B lands behind A), and cutting them to
  * what the eye can see through A: the four planes through the eye and
  * A's four edges, and A's own plane -- Sutherland-Hodgman, as
- * games2.5d/TinyDescent.ml cuts its rooms to its portals' windows. The
+ * TinyDescent.ml cuts its rooms to its portals' windows. The
  * cut polygons are then ordinary polygons behind a hole in the wall,
  * and the z-buffer does the rest. *)
 

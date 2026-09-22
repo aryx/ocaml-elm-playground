@@ -16,9 +16,9 @@
    It can't have a cave or an overhang (one height per point: "2.5D",
    like Doom's sectors, gamekits/sectors/Sectors.mli), but it's compact, and
    everything is quick to ask: the ground under a point, a line of
-   sight. Drawn two ways: games2.5d/TinyComanche.ml, Comanche's "Voxel Space"
+   sight. Drawn two ways: TinyComanche.ml, Comanche's "Voxel Space"
    (each cell a column, drawn screen column by screen column), and
-   games3d/TinyComanche3d.ml, the same grid as triangles, the way flight
+   TinyComanche3d.ml, the same grid as triangles, the way flight
    simulators drew it.
 
    The heights are made up ([generate]), by "diamond-square" (Alain

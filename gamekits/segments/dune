@@ -1,8 +1,8 @@
 ; claude: the segments kit (see docs/claude_notes/plans/plan_games3d.md,
 ; section 3): a Descent mine, a level as boxes with the openings where
 ; they touch, and Sixdof, a ship that can point anywhere. Used by
-; games2.5d/TinyDescent (drawn through the openings, as portals) and
-; games3d/TinyDescent3d (with a z-buffer). A private library, not
+; TinyDescent (drawn through the openings, as portals) and
+; TinyDescent3d (with a z-buffer). A private library, not
 ; installed: only the games use it.
 (library
  (name kit_segments)

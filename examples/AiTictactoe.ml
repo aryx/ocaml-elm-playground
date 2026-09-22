@@ -29,7 +29,7 @@
  * MIT students built a computer out of Tinkertoy sticks that played it
  * (1978). (Names and dates from memory, to check.)
  *
- * What it uses: ai/'s Minimax, Scene2d. Where games/AiOthello has to
+ * What it uses: ai/'s Minimax, Scene2d. Where AiOthello has to
  * guess with a table of what each square is worth, here the search
  * reaches the end of the game and the values are exact.
  *

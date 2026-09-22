@@ -14,7 +14,7 @@
 // Why not just `chrome --headless --screenshot`: that takes the shot as
 // soon as the page "loads", and --virtual-time-budget runs on virtual
 // time, which stops while the page's own JavaScript is busy. A page
-// that spends its first seconds building a world (games3d/webgl/
+// that spends its first seconds building a world (games/fps/web/
 // TinyMinecraft.html) is therefore screenshotted blank, whether or not
 // it works. Here the waiting is real.
 //
@@ -22,7 +22,7 @@
 //   node scripts/web/chrome_cdp.js <url> [seconds] [out.png]
 // e.g.
 //   node scripts/web/chrome_cdp.js \
-//     file://$PWD/_build/default/games3d/webgl/TinyMinecraft.html 30 /tmp/mc.png
+//     file://$PWD/_build/default/games/fps/web/TinyMinecraft.html 30 /tmp/mc.png
 //
 // It prints the page's console messages and uncaught errors, and a line
 // per second with the number of animation frames the page has drawn

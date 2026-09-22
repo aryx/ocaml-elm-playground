@@ -30,8 +30,8 @@
    matrix, written a row at a time; quaternions are the other usual
    answer, smaller and smoother to interpolate, but harder to read.
 
-   Used by games2.5d/TinyDescent (which makes its own camera out of
-   these three, no 3D engine) and games3d/TinyDescent3d (which hands
+   Used by TinyDescent (which makes its own camera out of
+   these three, no 3D engine) and TinyDescent3d (which hands
    [forward] and [up] to Playground3d's camera, hence its [up]). *)
 
 type vec = float * float * float

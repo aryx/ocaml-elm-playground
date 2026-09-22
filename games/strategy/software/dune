@@ -1,0 +1,17 @@
+; claude: the same games as ../dune, on the software rasterizer (see
+; examples/software/dune for how copy_files works)
+(copy_files ../*.ml)
+
+(executables
+  (names TinyCivilization TinyDune2 TinySimCity TinyTowerDefense
+    TinyWarcraft2 TinyWorms TinyXCOM)
+  (modules TinyCivilization TinyDune2 TinySimCity TinyTowerDefense
+    TinyWarcraft2 TinyWorms TinyXCOM)
+  (libraries
+    elm_playground
+    ai
+    kit_rts
+    physics_2d
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

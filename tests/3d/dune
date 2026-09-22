@@ -35,33 +35,33 @@
    %{project_root}/examples/software/FloatingCity3d.exe
    %{project_root}/examples/software/Corridor3d.exe
    %{project_root}/examples/software/CachedGrid3d.exe
-   %{project_root}/games3d/software/StarCollector3d.exe
-   %{project_root}/games3d/software/TinyBattlezone3d.exe
-   %{project_root}/games3d/software/TinyElite3d.exe
-   %{project_root}/games3d/software/TinyTeardown.exe
-   %{project_root}/games3d/software/TinyPinball3d.exe
-   %{project_root}/games3d/software/TinyHalfLife2.exe
-   %{project_root}/games3d/software/TinyPortal.exe
-   %{project_root}/games3d/software/TinyWolfenstein3d.exe
-   %{project_root}/games3d/software/TinyVirtuaRacing.exe
-   %{project_root}/games3d/software/TinyMarioKart64.exe
-   %{project_root}/games3d/software/TinyVirtuaFighter.exe
-   %{project_root}/games3d/software/TinyStarFox.exe
-   %{project_root}/games3d/software/TinyAloneInTheDark.exe
-   %{project_root}/games3d/software/TinyTron3d.exe
-   %{project_root}/games3d/software/TinyMario64.exe
-   %{project_root}/games3d/software/TinyMarbleMadness.exe
-   %{project_root}/games3d/software/TinyDoom3d.exe
-   %{project_root}/games3d/software/TinyComanche3d.exe
-   %{project_root}/games3d/software/TinyDescent3d.exe
-   %{project_root}/games3d/software/TinyQuake.exe
-   %{project_root}/games3d/software/TinyBlockout.exe
-   %{project_root}/games3d/software/TinyTombRaider.exe
-   %{project_root}/games3d/software/TinyBoomerangFu.exe
-   %{project_root}/games3d/software/TinyHades.exe
-   %{project_root}/games3d/software/TinyMonumentValley.exe
+   %{project_root}/games/arcade/software/StarCollector3d.exe
+   %{project_root}/games/fps/software/TinyBattlezone3d.exe
+   %{project_root}/games/flight/software/TinyElite3d.exe
+   %{project_root}/games/fps/software/TinyTeardown.exe
+   %{project_root}/games/sports/software/TinyPinball3d.exe
+   %{project_root}/games/fps/software/TinyHalfLife2.exe
+   %{project_root}/games/puzzle/software/TinyPortal.exe
+   %{project_root}/games/fps/software/TinyWolfenstein3d.exe
+   %{project_root}/games/racing/software/TinyVirtuaRacing.exe
+   %{project_root}/games/racing/software/TinyMarioKart64.exe
+   %{project_root}/games/fighting/software/TinyVirtuaFighter.exe
+   %{project_root}/games/shmup/software/TinyStarFox.exe
+   %{project_root}/games/adventure/software/TinyAloneInTheDark.exe
+   %{project_root}/games/arcade/software/TinyTron3d.exe
+   %{project_root}/games/platform/software/TinyMario64.exe
+   %{project_root}/games/arcade/software/TinyMarbleMadness.exe
+   %{project_root}/games/fps/software/TinyDoom3d.exe
+   %{project_root}/games/flight/software/TinyComanche3d.exe
+   %{project_root}/games/flight/software/TinyDescent3d.exe
+   %{project_root}/games/fps/software/TinyQuake.exe
+   %{project_root}/games/puzzle/software/TinyBlockout.exe
+   %{project_root}/games/adventure/software/TinyTombRaider.exe
+   %{project_root}/games/fighting/software/TinyBoomerangFu.exe
+   %{project_root}/games/rpg/software/TinyHades.exe
+   %{project_root}/games/puzzle/software/TinyMonumentValley.exe
    %{project_root}/games/rhythm/software/TinyRockBand.exe
-   %{project_root}/games3d/software/TinyMinecraft.exe
+   %{project_root}/games/fps/software/TinyMinecraft.exe
    %{project_root}/examples/checker.png ; TexturedCube3d's texture
  )
 )

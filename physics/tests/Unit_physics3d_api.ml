@@ -44,7 +44,7 @@ let top_speed () =
   let b = repeat 3000 (fun b -> b |> fall 9.8 |> slow 2. |> step) (body (cube red 1.)) in
   close "falling at 4.9 m/s" (-4.9) b.vy
 
-(* a body faces its own -z, the direction games3d/ characters face;
+(* a body faces its own -z, the direction 3D games' characters face;
  * [pointing] turns it, [thrust] pushes it that way *)
 let directions () =
   let b = body (cube red 1.) in

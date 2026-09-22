@@ -8,12 +8,12 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* A build-time script (run by `ocaml`, from a dune rule: see
- * games3d/dune), turning any file into an OCaml module holding it as
+ * games/fps/dune), turning any file into an OCaml module holding it as
  * base64, so that a program carries its data around instead of looking
  * for a file at run time -- graphics/font/dune does the same for the
  * Hershey font, with `cat`, which only works for text.
  *
- *   ocaml scripts/build/file_to_base64_ml.ml games3d/minecraft.png > Foo.ml
+ *   ocaml scripts/build/file_to_base64_ml.ml games/fps/minecraft.png > Foo.ml
  *
  * Its own base64 encoder, not graphics/images/Base64.ml's: this runs
  * before anything is built. *)

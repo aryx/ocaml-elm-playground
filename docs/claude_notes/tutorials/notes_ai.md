@@ -269,12 +269,12 @@ repository found it independently:
    could know                       keys fill
 ```
 
-`games/TinySoldat.ml` has exactly that: a record `intent` (`run`,
+`TinySoldat.ml` has exactly that: a record `intent` (`run`,
 `jump`, `jet`, `shoot`, `grenade`, `aim`), filled either by `human`
 from the keyboard and mouse or by `bot` from the world, and an update
 that cannot tell which. `gamekits/racing/Topdown.computer` returns
 `(gas, steer)` -- the two numbers the player's keys produce.
-`games/TinyPong.ml`'s paddle follows the ball *at a limited speed*,
+`TinyPong.ml`'s paddle follows the ball *at a limited speed*,
 and that limit is the entire difficulty setting.
 
 Why the restriction matters, and why it is the interesting part: a bot

@@ -38,8 +38,8 @@
    stands, TinyWarcraft2's peasant works the tile beside it), and how a
    blow lands (a shell at range, a sword next to you).
 
-   Part of the RTS kit (gamekits/rts/); used by games/TinyDune2 and
-   games/TinyWarcraft2. *)
+   Part of the RTS kit (gamekits/rts/); used by TinyDune2 and
+   TinyWarcraft2. *)
 
 open Playground
 

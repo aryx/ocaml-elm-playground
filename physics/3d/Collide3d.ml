@@ -237,7 +237,7 @@ let box_faces (p : placed) : (Vec3.t * Vec3.t list) list =
   | _ -> []
 
 (* Sutherland-Hodgman against one plane, keeping the side where
- * n . p <= d -- the same clipping games2.5d/TinyDescent.ml does
+ * n . p <= d -- the same clipping TinyDescent.ml does
  * through its portals, here in 3D and against a box's sides *)
 let clip_by_plane (poly : Vec3.t list) (n : Vec3.t) (d : float) : Vec3.t list =
   let count = List.length poly in

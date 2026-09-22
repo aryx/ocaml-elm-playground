@@ -35,7 +35,7 @@ that takes ten seconds a frame can live in this project without
 slowing any game down by a microsecond.
 
 **What it buys, and why it is the best remaining 3D lesson**: the
-rasterizer here has no shadows at all (`games3d/TinyQuake.ml` bakes
+rasterizer here has no shadows at all (`TinyQuake.ml` bakes
 lightmaps offline precisely to fake them -- which is itself a ray
 caster, run once at startup), no reflections and no refraction.
 A ray tracer gets each of those for a few lines, *on the same scene*,
@@ -366,7 +366,7 @@ default, ray traced with "y" or `-raytrace`, which is the point:
   half and ray traced on the right, with the two timings on screen.
   The whole plan in one window.
 - **Existing scenes, no edit**: `Cubes3d.ml`, `Spheres3d.ml`,
-  `games3d/TinyQuake.ml` and `TinyMinecraft.ml` ray traced with
+  `TinyQuake.ml` and `TinyMinecraft.ml` ray traced with
   `-raytrace` for the README's stills -- and TinyQuake in
   particular is the interesting one, since its *baked* lightmaps and
   the ray tracer's real shadows can be compared on the same level.

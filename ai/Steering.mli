@@ -24,7 +24,7 @@
  *
  * And a second form, for characters with no velocity to steer: a
  * character that walks at a fixed speed and dashes on commitment
- * (games3d/TinyBoomerangFu.ml's) has nothing a force could act on, so
+ * (TinyBoomerangFu.ml's) has nothing a force could act on, so
  * it takes the [direction] of the desired velocity and walks that way.
  * The same behaviours, a different body.
  *

@@ -80,7 +80,7 @@ val minimax : ('state, 'move) game -> depth:int -> 'state -> 'move result
  * of [score], told the window there: whatever it answers below [alpha]
  * or above [beta] only needs to stay below or above it. A game that
  * searches on at its leaves -- chess's quiescence, the captures played
- * out until the board is quiet (games/AiChess.ml) -- can then cut
+ * out until the board is quiet (AiChess.ml) -- can then cut
  * that search too, where [score] would have to search with no window
  * at all. *)
 val alphabeta :

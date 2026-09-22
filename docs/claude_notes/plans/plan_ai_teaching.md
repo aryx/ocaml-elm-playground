@@ -11,7 +11,7 @@ pictures and `Physics` for motion, a small **Evan-style API** over them
 how the search works.
 
 It has already started: `ai/Minimax` (with `examples/AiTictactoe.ml`
-and `games/AiOthello.ml`) and `ai/Pathfind` (with
+and `AiOthello.ml`) and `ai/Pathfind` (with
 `examples/AiPathfinding.ml`, and `gamekits/rts/Orders` over it, which is
 how TinyDune2's and TinyWarcraft2's units walk). This plan is written
 after those two, to say where the rest goes: the real-time side
@@ -113,7 +113,7 @@ and the notes are split the same way.
 Three games in this repository have already written the same thing by
 hand, independently, which is the usual sign that a layer is missing:
 
-- `games/TinySoldat.ml` has a record `intent` (`run`, `jump`, `jet`,
+- `TinySoldat.ml` has a record `intent` (`run`, `jump`, `jet`,
   `shoot`, `grenade`, `aim`) and **two functions that fill it**:
   `human computer scenes p` from the keys and the mouse, and
   `bot p i` from the world. The update loop does not know which is
@@ -124,9 +124,9 @@ hand, independently, which is the usual sign that a layer is missing:
 - `gamekits/racing/Topdown.mli` has `Topdown.computer track car`, which
   returns **a `(gas, steer)` pair** -- exactly the two numbers the
   player's keys produce -- by steering at the next waypoint. That is a
-  bot living in a genre kit, and `games/TinyMicroMachines.ml` drives
+  bot living in a genre kit, and `TinyMicroMachines.ml` drives
   its rivals with it.
-- `games/TinyPong.ml`'s `computer_player` moves the right paddle
+- `TinyPong.ml`'s `computer_player` moves the right paddle
   towards the ball at a limited speed. The limit *is* the difficulty,
   and it is the smallest possible example of the whole idea.
 
@@ -188,7 +188,7 @@ because the evidence above cuts both ways. The proposal:
   nothing in common but the word "bot", and the one thing they *do*
   have in common is going into `ai/` anyway. The case to revisit it is
   concrete and worth watching for: **a deathmatch bot wanted by both a
-  2D and a 3D shooter** (`games/TinySoldat.ml` and a 3D one on
+  2D and a 3D shooter** (`TinySoldat.ml` and a 3D one on
   `Character3d`, see
   [`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)) would
   share map awareness, waypoints, cover and weapon choice across two
@@ -454,7 +454,7 @@ from memory until then.)
   Monte Carlo Tree Search Methods" (2012).
 - **Steering**: Craig Reynolds, "Steering Behaviors For Autonomous
   Characters" (GDC 1999). Waiting user:
-  `games3d/TinyBoomerangFu.ml`'s `brain` (seek, flee, and an evade
+  `TinyBoomerangFu.ml`'s `brain` (seek, flee, and an evade
   that projects the player onto a flying boomerang's line to pick the
   side to step off it) -- and a warning from it, for the `.mli`: its
   characters have no velocity (a fixed speed, a committed dash), so a
@@ -466,7 +466,7 @@ from memory until then.)
 - **Fsm**: Pac-Man (1980) and its four ghosts, whose chase/scatter
   timing and per-ghost target tiles are documented down to the frame in
   the Pac-Man Dossier (Jamey Pittman, 2009). Second waiting user:
-  `games3d/TinyBoomerangFu.ml`, whose computer is three states in all
+  `TinyBoomerangFu.ml`, whose computer is three states in all
   but name -- dodge what is in the air, hunt while it holds its
   boomerang, keep away while it does not -- and whose hardest lesson is
   that the states need *hysteresis*, or the agent flips between two
@@ -485,14 +485,14 @@ from memory until then.)
   whose stated goal was bots that are fun rather than strong.
   Alongside them, the honest-difficulty practice every game has:
   rubber-banding in racing games (Mario Kart the famous case, and
-  `games3d/TinyMarioKart64.ml`'s `rubber` and `roll`: the computer's
+  `TinyMarioKart64.ml`'s `rubber` and `roll`: the computer's
   karts drive faster when the player is ahead, and an item box hands
   out what your place needs), and
   fighting-game opponents that read the player's inputs -- the thing
   players can feel and resent ("SNK boss syndrome"). The 2010 Google
   AI Challenge, whose game was Tron, is a nice small corpus of bots
   that play on exactly the same inputs a player has
-  (`games/TinyTron.ml`'s header already points at it). (Names and
+  (`TinyTron.ml`'s header already points at it). (Names and
   dates from memory, to check.)
 - **Utility**: utility AI, The Sims (1997-2000) -- needs scored, the
   highest wins; Dave Mark's "Behavioral Mathematics for Game AI" (2009).
@@ -550,7 +550,7 @@ from memory until then.)
 
 ## Games with AI
 
-- `games/AiOthello.ml` **done**: alpha-beta 4 deep, a square-weights
+- `AiOthello.ml` **done**: alpha-beta 4 deep, a square-weights
   evaluation, the cuts counted against plain minimax.
 - `examples/AiTictactoe.ml` **done**: searched to the very end, so no
   evaluation at all: 549,946 nodes against 18,297.
@@ -568,20 +568,20 @@ from memory until then.)
   to 2005 Go programs were hand-written and weak, and in 2006 Monte
   Carlo playouts made a better 9x9 player than thirty years of
   handcrafting. That is a story a 200-line program can actually retell.
-- `games/AiChess.ml`: the big one, and the one to be honest about --
+- `AiChess.ml`: the big one, and the one to be honest about --
   the rules (castling, en passant, promotion, repetition, the 50-move
   rule) are more code than the search. Worth it for what it shows:
   material plus piece-square tables, ordering, quiescence, a
   transposition table, and a board that can be set up from a FEN string
   so the classic test positions can be pasted in.
 - **The existing games' bots, rewritten on `ai/Bot`** (each proposed
-  here, decided in the game): `games/TinySoldat.ml`'s two soldiers
+  here, decided in the game): `TinySoldat.ml`'s two soldiers
   (its `intent`/`human`/`bot` triple is the model the module is being
   designed from, so it is the first user and the one that decides the
-  API), `games/TinyPong.ml`'s paddle (the smallest one: skill is a
-  speed limit), `games/TinyMicroMachines.ml`'s rivals through
+  API), `TinyPong.ml`'s paddle (the smallest one: skill is a
+  speed limit), `TinyMicroMachines.ml`'s rivals through
   `gamekits/racing/Topdown.computer` (which stays in the kit, gaining the
-  delay and error knobs), and `games/TinyXpilot.ml`'s "robots", which
+  delay and error knobs), and `TinyXpilot.ml`'s "robots", which
   its header already lists as an exercise.
 - **A 3D bot**, once `Character3d` exists
   ([`plan_physics3d_teaching.md`](plan_physics3d_teaching.md) phase
@@ -600,7 +600,7 @@ from memory until then.)
 0. **Groundwork, DONE**: `ai/` (library `ai`, package elm_playground,
    unwrapped, pure OCaml) and `ai/tests/`.
 1. **Game-tree search, DONE**: `Minimax` (minimax, alpha-beta, the node
-   counts), `examples/AiTictactoe.ml`, `games/AiOthello.ml`.
+   counts), `examples/AiTictactoe.ml`, `AiOthello.ml`.
 2. **Pathfinding, DONE**: `Pathfind` (breadth-first, Dijkstra, A*,
    flow fields), `examples/AiPathfinding.ml`, and `gamekits/rts/Orders`
    over it for TinyDune2 and TinyWarcraft2.
@@ -655,7 +655,7 @@ from memory until then.)
   Norvig's 3-12-8 / 2-4-6 / 14-5-2 tree, 13 nodes against 11.
   `examples/AiTictactoe.ml` (searched to the end, every square labelled
   WIN/DRAW/LOSS, 549,946 nodes against 18,297 -- 3%) and
-  `games/AiOthello.ml` (depth 4, square weights, "v" for what it thinks
+  `AiOthello.ml` (depth 4, square weights, "v" for what it thinks
   of your moves).
 - **Phase 2, DONE** (`ai/Pathfind`): one search with three queues, plus
   `field`/`downhill` for a crowd. Worked examples: an empty 13x9 grid,
@@ -705,7 +705,7 @@ from memory until then.)
   dog in their `.mli`s, and a test that they agree where the situation
   is clear-cut, and that only the machine remembers (hysteresis: it
   flees on until healed past 0.8, the others stop at 0.5).
-  `games/TinyPacman.ml` with `ai=engine`: each ghost an `Fsm` machine,
+  `TinyPacman.ml` with `ai=engine`: each ghost an `Fsm` machine,
   its whole life one table (released, out, a power pellet, the wave
   turns, eaten, another pellet, time's up, home), the scatter/chase
   waves a second machine -- which the tests check agrees with the
@@ -716,7 +716,7 @@ from memory until then.)
   each ghost's target tile drawn as its rule computes it (Pinky's line
   ahead, Inky's doubled vector from Blinky, Clyde's 8-tile circle), the
   waves as a timeline, on the maze kit.
-- **Phase 9, mostly DONE, ahead of phases 4-8** (`games/AiChess.ml`):
+- **Phase 9, mostly DONE, ahead of phases 4-8** (`AiChess.ml`):
   the rules checked by perft (20/400/8902 from the start; Kiwipete,
   positions 3 and 4), material and Michniewski's piece-square tables,
   MVV-LVA ordering (2,305 positions instead of 25,206 on Kiwipete,

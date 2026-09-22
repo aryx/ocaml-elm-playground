@@ -3,8 +3,8 @@
    and the computer's driving.
 
    The world is a plane, the car a point on it with a heading, as seen
-   from above -- whatever the game then draws: games/TinyMicroMachines
-   draws it from above, games2.5d/TinyMarioKart from behind the car, in Mode 7.
+   from above -- whatever the game then draws: TinyMicroMachines
+   draws it from above, TinyMarioKart from behind the car, in Mode 7.
    The same model, two pictures (Car.mli's lesson again, where one road
    is raced in pseudo-3D and in polygons).
 

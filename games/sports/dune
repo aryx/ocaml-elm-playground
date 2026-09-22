@@ -1,0 +1,27 @@
+; claude: the sports and table games (CATALOG.md's section), 2D, 2.5D
+; (TinyShufflePuck's table drawn in perspective by the game itself) and
+; 3D side by side; on the software rasterizers in software/, in the
+; browser in web/.
+(executables
+  (names TinyKickOff2 TinyPinball TinySensibleSoccer TinyShufflePuck
+    TinySpeedball2)
+  (modules TinyKickOff2 TinyPinball TinySensibleSoccer TinyShufflePuck
+    TinySpeedball2)
+  (libraries
+    elm_playground
+    kit_sports ; the free ball and formation of TinyKickOff2, TinySpeedball2 and TinySensibleSoccer
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyPinball3d)
+  (modules TinyPinball3d)
+  (libraries
+    elm_core
+    physics_3d graphics_3d_geometry ; TinyPinball3d's ball, swept
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

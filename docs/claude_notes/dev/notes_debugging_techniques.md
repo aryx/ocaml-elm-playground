@@ -189,7 +189,7 @@ time too), optionally pressing keys, and prints progress:
 ```bash
 make
 timeout 10 node docs/claude_notes/web_headless.js \
-  _build/default/games/web/Tetris.bc.js 120 "ArrowLeft,ArrowUp, "
+  _build/default/games/puzzle/web/Tetris.bc.js 120 "ArrowLeft,ArrowUp, "
 echo "exit $?"      # 124 = hang, like in section 1
 
 # DUMP=1 prints the DOM tree (= the rendered shapes) every 30 frames
@@ -197,7 +197,7 @@ DUMP=1 timeout 10 node docs/claude_notes/web_headless.js \
   _build/default/examples/web/Animation.bc.js 91
 
 # smoke test of all the web apps
-for f in examples/web/*.html games/web/*.html; do
+for f in examples/web/*.html games/*/web/*.html; do
   b=$(basename $f .html); d=$(dirname $f)
   [ -f _build/default/$d/$b.bc.js ] || continue
   timeout 10 node docs/claude_notes/web_headless.js \
@@ -275,7 +275,7 @@ together:
    remove the cap while benchmarking, and revert after.
 
 **A real bug this technique found, not just numbers**: benchmarking
-`games3d/StarCollector3d.exe` on the OpenGL backend surfaced an
+`games/arcade/StarCollector3d.exe` on the OpenGL backend surfaced an
 intermittent `Fatal error: OpenGL shader compile error` pointing at
 GLSL syntax errors that were never in the actual shader source string
 (confirmed by dumping the exact string passed to `Gl.shader_source`
@@ -417,7 +417,7 @@ into memory and write it to a file.
 
 ```bash
 cd _build/default     # the examples find their images relative to it
-SDL_VIDEODRIVER=dummy ./games/software/TinyMario.exe \
+SDL_VIDEODRIVER=dummy ./games/platform/software/TinyMario.exe \
   -fixed-time 1000 -dump-frame 150 /tmp/frame.ppm -script "right:1-150,up:30-34"
 python3 -c "from PIL import Image; Image.open('/tmp/frame.ppm').save('/tmp/frame.png')"
 ```
@@ -469,9 +469,9 @@ cat > tmpcheck/dune <<'DUNE'
 DUNE
 # tmpcheck/Sim.ml: build a computer (initial_computer with keys held),
 # call TinyPacman.update in a loop, Printf the fields of interest
-sed -i 's|^let main = |let main () = |' games/TinyPacman.ml   # see below
+sed -i 's|^let main = |let main () = |' TinyPacman.ml   # see below
 dune build ./tmpcheck/Sim.exe && ./_build/default/tmpcheck/Sim.exe
-sed -i 's|^let main () = |let main = |' games/TinyPacman.ml; rm -rf tmpcheck
+sed -i 's|^let main () = |let main = |' TinyPacman.ml; rm -rf tmpcheck
 ```
 
 Once a check is worth keeping, it goes in `tests/games/` instead

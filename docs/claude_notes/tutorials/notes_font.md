@@ -248,7 +248,7 @@ Every step, in ~200 lines, with a stroke font:
    PostScript do for thick lines.
 
 Try it: `dune exec examples/software/Words.exe` and
-`dune exec games/software/Pong.exe`, with the debug keys: "f"
+`dune exec games/arcade/software/Pong.exe`, with the debug keys: "f"
 (wireframe) shows the pen's centerlines, "z" magnifies the pixels,
 "b" shows each text's box.
 

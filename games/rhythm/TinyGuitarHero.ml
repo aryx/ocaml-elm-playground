@@ -40,7 +40,7 @@
  *    Guitar Hero mutes its guitar track on a miss for the same reason:
  *    the ear judges before the score does.
  *
- * The highway -- the trick of this game -- is games2.5d/TinyOutRun.ml's
+ * The highway -- the trick of this game -- is TinyOutRun.ml's
  * road, straightened. A flat strip seen from above and behind: a point
  * z ahead of the line is drawn at
  *

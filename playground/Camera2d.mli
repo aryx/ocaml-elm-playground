@@ -41,7 +41,7 @@
      Itay Keren, "Scroll Back: The Theory and Practice of Cameras in
      Side-Scrollers", GDC 2015 (and its Gamasutra article).
    Each technique is a separate function below, so they can be learned
-   (and compared, see games/TinyMario.ml's camera= flag) one by one.
+   (and compared, see TinyMario.ml's camera= flag) one by one.
 
    Alternatives: a camera inside Playground (a field of [computer], or
    a [camera] function in Playground.mli applied by the backends, as
@@ -77,7 +77,7 @@ open Playground
  * under it -- the view from its driving seat, flattened; the SNES's
  * Mode 7 turned whole maps this way (F-Zero, 1990). Most 2D games keep
  * it at 0: north stays up, which is easier to read (Micro Machines,
- * 1991, did, see games/TinyMicroMachines.ml, whose v key compares). *)
+ * 1991, did, see TinyMicroMachines.ml, whose v key compares). *)
 type t = { x : number; y : number; zoom : number; angle : number }
 
 (* at (0, 0), a zoom of 1, not turned: the world coordinates are the
@@ -192,8 +192,8 @@ val clamp : screen -> rect -> t -> t
 (* A world cut in screens, and the camera jumping from one to the next
  * when the player crosses into it, rather than following: the
  * "flip-screen" of the 8-bit computers, which could redraw a screen but
- * not scroll one (games/TinyRick), and The Legend of Zelda's overworld
- * (games/TinyZelda, which slides from one to the next). *)
+ * not scroll one (TinyRick), and The Legend of Zelda's overworld
+ * (TinyZelda, which slides from one to the next). *)
 
 (* [room bounds (w, h) x y]: the w x h room (x, y) is in, of the rooms
  * tiling [bounds] from its top-left corner: (column, row), rows going

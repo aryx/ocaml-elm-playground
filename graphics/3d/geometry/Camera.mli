@@ -77,7 +77,7 @@ type t = {
    * the view direction (1, 1, 1), the points (0, 0, 0) and (3, 3, 3)
    * land on the same pixel, and nothing in the picture can tell them
    * apart. An isometric game therefore draws a shadow to say how high
-   * a thing is -- and games3d/TinyMonumentValley builds its impossible
+   * a thing is -- and TinyMonumentValley builds its impossible
    * staircases out of exactly that ambiguity. *)
   ortho : float;
   (* only what's between these two depths is drawn *)

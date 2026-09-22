@@ -91,7 +91,7 @@ let kept_or_lost () =
  * step it meets it. (Left to go on turning, it catches the ball again
  * farther out and throws it harder: 3.4 m/s after six steps -- a
  * flipper carries the ball rather than batting it, as
- * games/TinyPinball.ml's header says.) Without the sweep, the paddle's
+ * TinyPinball.ml's header says.) Without the sweep, the paddle's
  * face goes past the ball between two steps and throws nothing *)
 let a_kinematic_paddle () =
   let throw continuous steps =

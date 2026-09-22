@@ -18,7 +18,7 @@
    ball, which is the thing you actually see.
 
    Part of the sports kit (gamekits/sports/), with Free_ball.mli; used by
-   games/TinyKickOff2 and games/TinySpeedball2. *)
+   TinyKickOff2 and TinySpeedball2. *)
 
 open Playground
 

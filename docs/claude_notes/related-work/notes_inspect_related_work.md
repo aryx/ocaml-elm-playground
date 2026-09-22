@@ -134,7 +134,7 @@ and stays separate.
   mostly assembly rather than invention: `Audio_debug`'s oscilloscope
   and spectrum, `Physics.debug`'s hitboxes, the backends' rendering
   keys, `Input_script`'s scripted keys, `-fixed-time`, `-dump-frame`,
-  the golden-frame machinery, and `games/TinySlingshot.ml`, which
+  the golden-frame machinery, and `TinySlingshot.ml`, which
   draws the future of its ball by stepping the engine sixty times --
   Victor's trail, hand-written by a game, before anyone planned one.
 

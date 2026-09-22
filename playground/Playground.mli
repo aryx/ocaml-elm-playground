@@ -625,7 +625,7 @@ You could also use [computer.mouse.down] to change the color of the circle
 while the mouse button is down.
 
 [mdown] is the left (main) button; [mrdown], not in the original Elm
-playground, is the right one (e.g. games3d/Minecraft3d: left click
+playground, is the right one (e.g. TinyMinecraft: left click
 removes a block, right click places one).
 
 [mdx] and [mdy], not in the original Elm playground either, are how far
@@ -857,7 +857,7 @@ type computer = {
     [update] sees them in [computer.flags], unchanged from start to end.
 
     Natively, they are the command line's arguments without a dash,
-    [name=value] or [name] ([dune exec games/Snake.exe -- level=5 fast]),
+    [name=value] or [name] ([dune exec games/arcade/Snake.exe -- level=5 fast]),
     the dashed ones being the playground's own ([-debug], ...); on the
     web, the page's URL parameters ([Snake.html?level=5&fast]).
 

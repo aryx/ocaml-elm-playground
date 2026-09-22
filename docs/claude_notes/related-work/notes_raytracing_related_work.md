@@ -43,7 +43,7 @@ graphics.
   sequences of Disney's *Tron* (1982), including its light cycles
   (the *Tron* attribution is the one fact here from memory, to check).
   A pleasing local coincidence: this repository already has a
-  `games3d/TinyTron3d.ml`.
+  `TinyTron3d.ml`.
 - **Turner Whitted, 1979-80** (Bell Labs): the recursive model --
   a ray that reflects, refracts and asks the light whether it can be
   seen -- shown in the short film *The Compleat Angler* (1979) and
@@ -205,9 +205,9 @@ graphics.
   renderer in Elm itself would be far too slow. elm-3d-scene, which
   `playground3d` follows in spirit, is a rasterizer.
 - **In this repository, three things are already ray-ish**, and the
-  plan connects to all three: `games2.5d/TinyWolfenstein.ml`'s raycaster (the
+  plan connects to all three: `TinyWolfenstein.ml`'s raycaster (the
   2D grid ancestor: one ray per screen column, DDA),
-  `games3d/TinyQuake.ml`'s `light` tool (patches asking every lamp
+  `TinyQuake.ml`'s `light` tool (patches asking every lamp
   whether it can see them -- a *baked* ray caster, run once at
   startup, which is how a rasterizer buys shadows), and
   `physics/3d`'s planned `Collide3d` rays, which share the very same
@@ -243,7 +243,7 @@ anybody's film.
 ## Postscript: the numbers (to come)
 
 Once built: rays per second, brute force against the BVH, on the ICFP
-`spheres` scene and on `games3d/TinyQuake.ml`'s level; the frame time
+`spheres` scene and on `TinyQuake.ml`'s level; the frame time
 at 1 and 4 samples per pixel against the rasterizer's milliseconds on
 the identical frame; the rays saved by the attenuation cutoff; the
 line count of `graphics/3d/Raytrace` and friends against smallpt's 99

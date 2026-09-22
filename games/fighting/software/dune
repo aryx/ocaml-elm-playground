@@ -1,0 +1,26 @@
+; claude: the same games as ../dune, on the software rasterizers (see
+; examples/software/dune for how copy_files works)
+(copy_files ../*.ml)
+
+(executables
+  (names TinyFinalFight TinyStreetFighter)
+  (modules TinyFinalFight TinyStreetFighter)
+  (libraries
+    elm_playground
+    kit_brawler
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyBoomerangFu TinyVirtuaFighter)
+  (modules TinyBoomerangFu TinyVirtuaFighter)
+  (libraries
+    elm_core
+    kit_brawler
+    kit_brawler3d
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_software ; implem of virtual elm_playground_3d
+  )
+)

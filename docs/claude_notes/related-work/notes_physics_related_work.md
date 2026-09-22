@@ -39,7 +39,7 @@ games the playground now wants are the classics:
   kilobytes. The game `games/Spacewar.ml` will recreate.
 - **Lunar Lander** (text version 1969, Atari's vector arcade game
   1979), **Asteroids** (Atari, Lyle Rains and Ed Logg, 1979: inertia,
-  thrust, a wrap-around screen -- `games/Asteroid.ml`'s original),
+  thrust, a wrap-around screen -- `Asteroid.ml`'s original),
   **Gravitar** (Atari, 1982: planets with gravity), **Thrust** (Jeremy
   Smith, 1986: a pod on a rope, a swinging pendulum under gravity), and
   **XPilot** (Bjørn Stabell and Ken Ronny Schouten, 1991: multiplayer
@@ -153,7 +153,7 @@ conservation laws.
 
 - **elm-physics** (Andrey Kuzmin): 3D rigid-body physics for Elm,
   ported from cannon.js, pairing with elm-3d-scene for drawing. The
-  same author wrote elm-flatris, which `games/Tetris.ml` ports. Its
+  same author wrote elm-flatris, which `Tetris.ml` ports. Its
   API is functional (bodies are values, the world is stepped as a
   value), the natural reference for `Physics`'s design; its engine is a
   port of a real one rather than a teaching one.

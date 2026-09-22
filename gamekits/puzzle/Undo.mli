@@ -13,7 +13,7 @@
         (now first)                                     (the start stays)
 
    Part of the puzzle kit (gamekits/puzzle/), with Push.mli; used by
-   games/TinySokoban and games/TinyBabaIsYou. *)
+   TinySokoban and TinyBabaIsYou. *)
 
 (* the state now, and the ones before it, the last one first *)
 type 'a t = { now : 'a; past : 'a list }

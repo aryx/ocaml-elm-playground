@@ -19,9 +19,9 @@
 #   [REPEAT=n] scripts/perf/bench_playground.sh <path-to-exe> [key ...]
 #
 # Examples:
-#   scripts/perf/bench_playground.sh _build/default/games/Pong.exe            # Cairo
-#   scripts/perf/bench_playground.sh _build/default/games/software/Pong.exe   # ours
-#   scripts/perf/bench_playground.sh _build/default/games/software/Pong.exe n # ours, no antialiasing
+#   scripts/perf/bench_playground.sh _build/default/games/arcade/Pong.exe            # Cairo
+#   scripts/perf/bench_playground.sh _build/default/games/arcade/software/Pong.exe   # ours
+#   scripts/perf/bench_playground.sh _build/default/games/arcade/software/Pong.exe n # ours, no antialiasing
 #   REPEAT=3 scripts/perf/bench_playground.sh ...   # median of 3 runs (min-max)
 
 set -euo pipefail

@@ -199,7 +199,7 @@ let apply (f : Force3d.t) (b : body) : body = accelerate (f (b.x, b.y, b.z) (b.v
 let fall g (b : body) : body = accelerate (0., -.g, 0.) b
 let push fx fy fz (b : body) : body = accelerate (fx /. b.mass, fy /. b.mass, fz /. b.mass) b
 
-(* the body's own -z, turned: the direction games3d/ characters face *)
+(* the body's own -z, turned: the direction 3D games' characters face *)
 let forward (b : body) : number * number * number = Quat.rotate b.orientation (0., 0., -1.)
 
 let thrust f (b : body) : body =

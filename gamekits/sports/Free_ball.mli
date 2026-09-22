@@ -27,7 +27,7 @@
    that is the game's, not the ball's.
 
    Part of the sports kit (gamekits/sports/), with Formation.mli; used by
-   games/TinyKickOff2 and games/TinySpeedball2. *)
+   TinyKickOff2 and TinySpeedball2. *)
 
 open Playground
 

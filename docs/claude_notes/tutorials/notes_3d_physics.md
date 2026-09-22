@@ -34,18 +34,18 @@ three numbers.
 | `Quat`, `Mat3` | orientation, and the inertia tensor | §3, §4 | `PhysicsSpin3d.ml` |
 | `Body3d` | a body's state: position, velocity, orientation, spin, tensor | §3, §5 | |
 | `Integrate3d` | one time step, and the orientation's own update | §5 | `PhysicsSpin3d.ml` |
-| `Force3d` | gravity, gravitation, springs, drag, buoyancy | §6 | `games3d/TinyHalfLife2.ml` |
+| `Force3d` | gravity, gravitation, springs, drag, buoyancy | §6 | `TinyHalfLife2.ml` |
 | `Energy3d` | energy, momentum, angular momentum: the referee | §4, §5 | `PhysicsSpin3d.ml` |
 | `Hitbox3d` | sphere, box (an OBB), capsule, plane | §7 | `PhysicsHitbox3d.ml` |
-| `Collide3d`, `Contact3d` | the narrow phase, and rays | §7 | `games3d/StarCollector3d.ml` |
+| `Collide3d`, `Contact3d` | the narrow phase, and rays | §7 | `StarCollector3d.ml` |
 | `Broadphase3d` | which pairs to test | §8 | `PhysicsStack3d.ml` |
 | `Resolve3d` | impulses with the tensor, friction | §9 | `PhysicsBounce3d.ml` |
 | `Solver3d` | manifolds, sequential impulses, warm starting, sleeping | §10 | `PhysicsStack3d.ml` |
-| `Sweep3d` | continuous collision: the fast small ball | §12 | `games3d/TinyPinball3d.ml` |
+| `Sweep3d` | continuous collision: the fast small ball | §12 | `TinyPinball3d.ml` |
 | `Joint3d` | distance, hinge, ball-and-socket, motors, limits | §13 | `PhysicsRagdoll3d.ml`, `TinyHalfLife2.ml` |
 | `Character3d` | the capsule controller: a player is not a body | §14 | `PhysicsWalk3d.ml`, `TinyMinecraft.ml` |
 | `Ragdoll3d` | ten boxes and nine joints | §13 | `PhysicsRagdoll3d.ml`, `TinyHalfLife2.ml` |
-| `Portal3d` | a portal pair's motion, crossing, seeing through | §15 | `games3d/TinyPortal.ml` |
+| `Portal3d` | a portal pair's motion, crossing, seeing through | §15 | `TinyPortal.ml` |
 | `Physics3d` | the Evan-style API over all of it | §16 | every game above |
 
 Read §1-§6 for the mechanics (the part a simulation of the solar
@@ -504,7 +504,7 @@ A sphere on a plane touches at one point. A box lying on the floor
 touches over a whole face, and one point cannot hold it up -- it would
 pivot. The manifold is built by **clipping the incident face against
 the reference face's side planes** (Sutherland-Hodgman, 1974, the same
-clipping `games2.5d/TinyDescent.ml` already does for its portals),
+clipping `TinyDescent.ml` already does for its portals),
 then keeping 4 of the resulting points -- the deepest, and then each
 time the one farthest from those already kept, so that the four span
 the face rather than huddle in a corner (`Collide3d.spread_out`):
@@ -595,7 +595,7 @@ spin, because `I = 2/5 m r^2`. Galileo timed balls down inclined
 planes (*Two New Sciences*, 1638) precisely to slow falling down
 enough to measure it, and missed the 5/7.
 
-The nice part for us is that `games3d/TinyMarbleMadness.ml` *already*
+The nice part for us is that `TinyMarbleMadness.ml` *already*
 computes that number by hand -- its header derives it, because a ball
 on a height map was ten lines and an engine was not needed. So
 `PhysicsRoll3d.ml` is a cross-check in both directions: the engine,
@@ -655,7 +655,7 @@ Three fixes, in increasing order of honesty and cost:
   (`Sweep3d`), and answer the first hit -- or let the solver see the
   contact *before* it happens (a speculative contact) and brake the
   body over the step. The 2D engine already has the segment version
-  (`Physics.went_through`, `games/TinySoldat.ml`'s bullets), and so
+  (`Physics.went_through`, `TinySoldat.ml`'s bullets), and so
   does this one; both are a bullet's question, worked out from where
   the body is going now, and wrong for a body that has just bounced
   (§16).
@@ -738,7 +738,7 @@ engine ever had, is smaller than it looks:
 
 Three engine calls, and the whole game's vocabulary changes. The
 seesaw beside it is one hinge; the barrels are §6's buoyancy; the
-crate stack is §10. All four are `games3d/TinyHalfLife2.ml`, and its
+crate stack is §10. All four are `TinyHalfLife2.ml`, and its
 zombies are the ragdoll's best argument: each walks as one upright
 body, and the moment something knocks it faster than it walks it is
 swapped for a ragdoll going on at that speed -- no animation of a fall
@@ -841,11 +841,11 @@ render-to-texture in any of the four backends, a portal view is drawn
 by transforming the destination room's polygons into the source room
 and clipping them against the portal's four side planes plus its own
 plane -- Sutherland-Hodgman again, and exactly the technique
-`games2.5d/TinyDescent.ml` uses to draw through its mine's portals.
+`TinyDescent.ml` uses to draw through its mine's portals.
 One level of recursion (a portal seen through a portal), and no more:
 the cost is a second copy of the room's geometry per level.
 
-`games3d/TinyPortal.ml` does exactly this, one level deep (a portal
+`TinyPortal.ml` does exactly this, one level deep (a portal
 seen through a portal shows its colour, not a view), with
 `Portal3d.mli`'s motion, crossing and cut. The one
 surprise was the eye rather than the body: walking forward into a
@@ -858,7 +858,7 @@ back upright, which Portal does over a moment and this game at once.
 The API (`Physics3d.mli`) hides all of the above behind
 the same one concept the 2D API has -- a **body**, a `shape3d` that
 moves -- and the same verbs, so that someone who wrote
-`games/TinySlingshot.ml` recognizes every one: `fall`, `push`,
+`TinySlingshot.ml` recognizes every one: `fall`, `push`,
 `thrust`, `slow`, `attracted_by` accumulate what pushes it (§6),
 `step` moves it one tick (§5), `touching` and `bounce` handle a pair
 (§7, §9), and a `world` stepped by `simulate` solves a pile together

@@ -1,0 +1,30 @@
+; claude: the shoot 'em ups (CATALOG.md's section), 2D, 2.5D (TinyZaxxon,
+; the isometric view drawn by the game itself) and 3D side by side; on
+; the software rasterizers in software/, in the browser in web/.
+(executables
+  (names Asteroid TinyDefender TinyGalaga TinyGradius TinyInvaders
+    TinyMissileCommand TinyRType TinyRobotron TinySoldat TinyZaxxon)
+  (modules Asteroid TinyDefender TinyGalaga TinyGradius TinyInvaders
+    TinyMissileCommand TinyRType TinyRobotron TinySoldat TinyZaxxon)
+  (libraries
+    unix ; Asteroid's clock
+    elm_playground
+    kit_shmup ; the Shots and Path of TinyInvaders, TinyGalaga, TinyRobotron, ...
+    kit_isometric ; TinyZaxxon's projection
+    physics_2d graphics_2d_geometry ; TinySoldat's bodies
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyStarFox)
+  (modules TinyStarFox)
+  (libraries
+    elm_core
+    kit_shmup ; TinyStarFox's Path and Shots, the 2D games' own
+    kit_racing3d ; TinyStarFox's canyon (Track3d)
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

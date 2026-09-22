@@ -19,7 +19,7 @@
    is padded with '=' (one or two).
 
    Here it is what lets a texture live inside the program: a dune rule
-   turns games3d/texture.png into an OCaml string of base64 (like
+   turns minecraft.png into an OCaml string of base64 (like
    graphics/font/dune does for the Hershey font), the game hands that
    string to Playground3d.embedded_texture, and the backends turn it
    back into pixels -- [decode] here for the ones that decode images

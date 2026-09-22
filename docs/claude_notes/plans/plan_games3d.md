@@ -61,7 +61,7 @@ game needs it, teaching, game culture -- plus two for 3D:
 
 Where: generic 3D layers in `playground/` (next to `Gpu_scene`), 3D
 kits in `gamekits/<genre>/` like the 2D ones. Two layers exist in all but
-name, both inside `games3d/TinyMinecraft.ml`: its player section (a
+name, both inside `TinyMinecraft.ml`: its player section (a
 first-person controller: walking, jumping, gravity, looking with
 yaw/pitch, colliding with blocks) and its world section (a voxel grid,
 with a ray walk to find the targeted block). They become layers when a
@@ -117,23 +117,23 @@ Wars (Atari, 1983), and Elite (David Braben and Ian Bell, 1984: a whole
 galaxy of trading and dogfights, generated from a few numbers, on a
 32 KB BBC Micro).
 
-- **Toy**: TinyBattlezone (DONE: `games2.5d/TinyBattlezone.ml`, on
+- **Toy**: TinyBattlezone (DONE: `TinyBattlezone.ml`, on
   the 2D playground, its segments taken into the eye's coordinates,
   near-clipped and divided by the depth in the game itself; its twin
-  `games3d/TinyBattlezone3d.ml` is the same battle in solid faces, a
+  `TinyBattlezone3d.ml` is the same battle in solid faces, a
   z-buffer hiding the tank behind the pyramid) -- tanks
   and pyramids as wireframes, a radar. The first 3D game to write: no hidden surfaces, no shading,
   just `project`; the software backend's wireframe mode ("f") is
-  already its look. TinyElite (DONE: `games2.5d/TinyElite.ml`, a
+  already its look. TinyElite (DONE: `TinyElite.ml`, a
   ship, a space station to dock in, spinning; its whole engine written
   in the game, on the 2D playground: the universe turning round you,
   the 6502's small-angle turns and TIDY, hidden lines on convex hulls,
-  and the galaxy out of its seed; its twin `games3d/TinyElite3d.ml`
+  and the galaxy out of its seed; its twin `TinyElite3d.ml`
   hands the same hulls to playground3d as faces, whose backface
   culling is Elite's hidden lines, tested as such).
 - **Kit**: `Vector` (not needed): shapes as lists of 3D line segments,
   drawn into 2D lines with near-plane clipping. Both vector games
-  write that pipeline themselves, in `games2.5d/`, which is the point
+  write that pipeline themselves, as 2.5D games, which is the point
   of them; a kit would hide it.
 
 ### 2. First-person mazes and dungeon crawlers
@@ -144,13 +144,13 @@ Monster Maze (Malcolm Evans, ZX81, 1981), Wizardry (Sir-Tech, 1981:
 step by step, turn by turn), Dungeon Master (FTL, 1987: in real time).
 
 - **Toy**: TinyDungeonMaster (DONE, and in the *2D* playground:
-  `games2.5d/TinyDungeonMaster.ml`, since the trick needs no 3D at
+  `TinyDungeonMaster.ml`, since the trick needs no 3D at
   all). A `Tilemap` of walls, the hero moving one cell and turning 90
   degrees at a time, so each cell in view has one fixed place on the
   screen: at depth d the 2d + 1 cells across, each a square (the face
   it shows) and a trapezoid (the face along the corridor), drawn
   farthest first. The step between a 2D map and real 3D, and the
-  shortest renderer of `games2.5d/` -- 24 lines for the slots. Around
+  shortest renderer of the 2.5D games -- 24 lines for the slots. Around
   it, what actually made Dungeon Master: the iron key and the door,
   the lever and the portcullis, monsters on their own clock (the
   "dance": one that has just moved cannot strike yet), the torch
@@ -165,7 +165,7 @@ step by step, turn by turn), Dungeon Master (FTL, 1987: in real time).
   where the hero may stand and which way it may look, and the whole
   game is built on it -- cell steps, quarter turns, the dance. Give the
   camera its freedom and nothing of the game is left, only TinyWolfenstein3d
-  with a smaller map. See `games2.5d/README.md`.
+  with a smaller map. See `README-2.5d.md`.
 
 ### 3. Raycasting: Wolfenstein 3D
 
@@ -173,7 +173,7 @@ Hovertank 3D and Catacomb 3-D (id Software, 1991), Wolfenstein 3D (id,
 1992: John Carmack's raycaster, one ray per screen column, walls all
 the same height on a grid).
 
-- **Toys** (DONE: `games2.5d/TinyWolfenstein.ml` and `games3d/TinyWolfenstein3d.ml`,
+- **Toys** (DONE: `TinyWolfenstein.ml` and `TinyWolfenstein3d.ml`,
   the same map, walk and golden frames; the 2D one with billboards
   hidden per column and a minimap of the rays): TinyWolfenstein in the **2D playground** (one rectangle per
   column, its height 1 / distance: a raycaster needs no 3D at all),
@@ -191,7 +191,7 @@ sectors joined by portals). Levels are a 2D floor plan of sectors,
 each with a floor and a ceiling height (`notes_vs_doom_quake.md`,
 "Doom: not actually 3D").
 
-- **Toys** (DONE: `games2.5d/TinyDoom.ml`, `games3d/TinyDoom3d.ml`), a
+- **Toys** (DONE: `TinyDoom.ml`, `TinyDoom3d.ml`), a
   pair, like TinyWolfenstein and TinyWolfenstein3d:
   - TinyDoom, in the *2D* playground, Doom's own renderer in small:
     the level's segs split into a BSP tree by a node builder at
@@ -222,7 +222,7 @@ Ultima Underworld (Blue Sky, 1992), Descent (Parallax, 1995: the first
 through portals), Quake (id, 1996: real 3D levels, lightmaps, and
 online play), then Half-Life (1998).
 
-- **Toys** (DONE: `games2.5d/TinyDescent.ml`, `games3d/TinyDescent3d.ml`),
+- **Toys** (DONE: `TinyDescent.ml`, `TinyDescent3d.ml`),
   a pair again:
   - TinyDescent, in the *2D* playground, with its own projection,
     near-plane clipping and Sutherland-Hodgman window clipping: the
@@ -235,7 +235,7 @@ online play), then Half-Life (1998).
     out.
   - It needed `Playground3d.camera` to take an `?up` (a ship that
     rolls), honored by the four 3D backends.
-- **Toy** (DONE: `games3d/TinyQuake.ml`): Quake's three offline tools
+- **Toy** (DONE: `TinyQuake.ml`): Quake's three offline tools
   in small, all run at startup -- `qbsp` (the map's solid boxes, their
   hidden faces removed as CSGFaces does, then a BSP tree whose leaves
   are rock or air), `vis` (each leaf's potentially visible set; ours
@@ -262,7 +262,7 @@ Flight Simulator (Bruce Artwick, subLOGIC, 1979-80; Microsoft's from
 FX chip, polygons on a SNES), Comanche (NovaLogic, 1992: voxel
 terrain).
 
-- **Toys**: TinyStarFox (DONE: `games3d/TinyStarFox.ml`), on rails: the
+- **Toys**: TinyStarFox (DONE: `TinyStarFox.ml`), on rails: the
   ship flies forward by itself and the player dodges and shoots. On
   rails is two numbers instead of six -- how far down the canyon, and
   where across it -- which are exactly what `Track3d` hands out, so the
@@ -272,10 +272,10 @@ terrain).
   unaltered: `Path` (Galaga's curves) is where an enemy flies across the
   canyon's cross-section, `Shots` carries the bolts across it, so a 2D
   pattern becomes a 3D flight. TinyComanche (DONE:
-  `games2.5d/TinyComanche.ml`, voxel terrain in the *2D* playground: a
+  `TinyComanche.ml`, voxel terrain in the *2D* playground: a
   height map drawn column by column, front to back, a y-buffer; after
   Sebastian Macke's VoxelSpace explainer on GitHub; and
-  `games3d/TinyComanche3d.ml`, the same island as `cached3d` triangles
+  `TinyComanche3d.ml`, the same island as `cached3d` triangles
   with a z-buffer, the teaching comparison, like the TinyDoom pair).
 - **Kit**: `Heightmap` (DONE: `gamekits/heightmap/`, shared by the
   TinyComanche pair): a grid of heights, an island made up by
@@ -286,10 +286,10 @@ terrain).
 ### 7. Voxels and sandboxes
 
 Infiniminer (Zachtronics, 2009), Minecraft (Markus Persson, 2009-).
-Done: `games3d/TinyMinecraft.ml` (see `plan_minecraft_remaining.md` for
+Done: `TinyMinecraft.ml` (see `plan_minecraft_remaining.md` for
 what's left).
 
-- **Second toy**: TinyTeardown (DONE: `games3d/TinyTeardown.ml`, after
+- **Second toy**: TinyTeardown (DONE: `TinyTeardown.ml`, after
   Teardown, Tuxedo Labs 2020-22): a heist in a level of quarter-metre
   voxels, drawn by greedy meshing; a hammer (Amanatides-Woo's ray
   through the grid), a flood fill from the ground for what no longer
@@ -308,11 +308,11 @@ the first 3D platformer), Super Mario 64 (Nintendo, 1996: the analog
 stick, and a camera operated by a character, Lakitu, filming Mario),
 Crash Bandicoot (Naughty Dog, 1996: a corridor, the camera behind).
 
-- **Toys**: TinyMario64 (DONE: `games3d/TinyMario64.ml`, controls
+- **Toys**: TinyMario64 (DONE: `TinyMario64.ml`, controls
   relative to the camera, a/d turning it, a drop shadow, coyote time,
   jump buffering, variable jump height; a few platforms, jumping,
   stars: a StarCollector3d with a real jump), TinyMarbleMadness (DONE:
-  `games3d/TinyMarbleMadness.ml`, after Marble Madness (Mark Cerny, Atari,
+  `TinyMarbleMadness.ml`, after Marble Madness (Mark Cerny, Atari,
   1984): a course of heights in an ASCII map, the nearly isometric
   `Camera3d.from_far`, the controls on the screen's diagonals (or the
   mouse as a trackball), a rolling ball's 5/7 g sin(a), marbles
@@ -342,17 +342,17 @@ And the console's own answer, Mario Kart 64 (Nintendo, 1996): a
 polygon circuit whose karts are still drawings, one per viewing
 angle, standing in it.
 
-- **Toys**: TinyMarioKart in Mode 7 (DONE: `games2.5d/TinyMarioKart.ml`, in the 2D
+- **Toys**: TinyMarioKart in Mode 7 (DONE: `TinyMarioKart.ml`, in the 2D
   playground: a `Tilemap` track sampled row by row with a per-row scale
   into a 200x130 picture of characters drawn by `Sprite.pixels`, TinyWolfenstein
   turned sideways; the karts billboards, four drawings by the viewing
   angle; three laps against three computer karts, on the racing kit's
   `Topdown`, TinyMicroMachines' model; two players on one keyboard,
-  the screen split top and bottom as on the SNES), and TinyVirtuaRacing (DONE: `games3d/TinyVirtuaRacing.ml`, a stage on
+  the screen split top and bottom as on the SNES), and TinyVirtuaRacing (DONE: `TinyVirtuaRacing.ml`, a stage on
   TinyOutRun's course, with the racing kit `gamekits/racing/`) --
   flat-shaded polygons are exactly `playground3d`'s look, so this may
   be the most satisfying 3D toy. Then TinyMarioKart64 (DONE:
-  `games3d/TinyMarioKart64.ml`), the same `Topdown` model as TinyMarioKart
+  `TinyMarioKart64.ml`), the same `Topdown` model as TinyMarioKart
   and TinyMicroMachines drawn a third way, and the one toy that mixes
   the two pictures: polygons for the circuit, the rails, the item
   boxes and the traffic, sprites (`billboard`, pixel art as quads on a
@@ -395,7 +395,7 @@ Alone in the Dark (Frédérick Raynal, Infogrames, 1992: 3D characters
 over pre-drawn backgrounds, fixed camera angles, the start of survival
 horror), Tomb Raider (Core Design, 1996).
 
-- **Toys**: TinyTombRaider (DONE: `games3d/TinyTombRaider.ml`, a tomb,
+- **Toys**: TinyTombRaider (DONE: `TinyTombRaider.ml`, a tomb,
   an idol, a chasm, a block to push, and a boulder). Its lesson is not
   the renderer but the *movement*, and it is the one character in this
   repository who has no velocity: every other one integrates an
@@ -412,7 +412,7 @@ horror), Tomb Raider (Core Design, 1996).
   "random stone" speckle came from. Also the first 3D game to use a 2D
   kit: `gamekits/puzzle`'s `Push`, the one TinySokoban uses, on the tomb's
   floor grid.
-- **Toy**: TinyAloneInTheDark (DONE: `games3d/TinyAloneInTheDark.ml`), a
+- **Toy**: TinyAloneInTheDark (DONE: `TinyAloneInTheDark.ml`), a
   house of four rooms on a `Tilemap`, each with its camera bolted in a
   corner: when you cross a doorway the shot *cuts*, with no smoothing at
   all. The first camera here that follows nobody. The cut is placed past
@@ -433,11 +433,11 @@ horror), Tomb Raider (Core Design, 1996).
 Virtua Fighter (Yu Suzuki, Sega AM2, 1993: the first 3D fighting game,
 flat-shaded, like Virtua Racing), Tekken (Namco, 1994).
 
-- **Toy**: TinyVirtuaFighter (DONE: `games3d/TinyVirtuaFighter.ml`),
+- **Toy**: TinyVirtuaFighter (DONE: `TinyVirtuaFighter.ml`),
   two box-figures on a raised ring, best of three rounds, and a round
   won by knocking the other *off* it -- Virtua Fighter's own rule, and
   the one thing a wall-bounded 2D fighter cannot have. The rules are
-  games/TinyStreetFighter's, unaltered and out of the same kit
+  TinyStreetFighter's, unaltered and out of the same kit
   (`Frame_data`, `Hitbox`): what changed is what a character *is*.
 - **Kit**: `Skeleton` (DONE: `gamekits/brawler/3d/Skeleton.ml`, its own
   library beside `kit_brawler` because it draws): a figure as a tree of
@@ -456,12 +456,12 @@ Blockout (1989: Tetris in a 3D pit), Monument Valley (ustwo, 2014:
 impossible architecture, an orthographic camera making far and near
 paths connect).
 
-- **Toys**: TinyBlockout (DONE: `games3d/TinyBlockout.ml`, Tetris down
+- **Toys**: TinyBlockout (DONE: `TinyBlockout.ml`, Tetris down
   a well -- the pit an array of cols x levels x rows, a layer full when
   its cols x rows cells are, and a quarter turn nothing but the piece's
   bounding box turned: integers, no trigonometry, and four turns about
   any axis the identity, which `tests/games` checks for every piece.
-  Not `games/Tetris.ml`'s logic in the end: that came from elm-flatris
+  Not `Tetris.ml`'s logic in the end: that came from elm-flatris
   and is written around a 2D grid, so the three rules here were shorter
   re-derived. The lesson is that the rules are the easy half -- most of
   the file is *depth cues*, since from up there you cannot tell how
@@ -472,7 +472,7 @@ paths connect).
   shadow under the falling piece and one seen from straight above
   cannot, because the shadow is always exactly behind the thing casting
   it), TinyMonumentValley (DONE:
-  `games3d/TinyMonumentValley.ml`, and it brought the orthographic
+  `TinyMonumentValley.ml`, and it brought the orthographic
   camera with it: `Playground3d.camera` gained an `ortho` field --
   the height of the view in world units instead of a `fov`, and no
   divide by the depth at all -- with `Camera3d.orthographic` to set
@@ -485,7 +485,7 @@ paths connect).
   adjacent -- and `connected` lets the figure step between any two
   blocks that look adjacent, which is Escher's staircase. A piece that
   turns decides which of those lies is currently being told. It is the
-  opposite lesson to `games2.5d/TinyZaxxon.ml`, which has the same
+  opposite lesson to `TinyZaxxon.ml`, which has the same
   ambiguity and spends a shadow on removing it; here it is the
   material. Four tests, two golden frames.
 
@@ -504,9 +504,9 @@ They are in *this* plan and not `plan_games.md`'s because the modern
 ones are drawn in 3D -- low-poly, flat-shaded, a fixed high camera --
 while being, underneath, exactly the 2D arena game Bomberman was.
 
-- **Toy**: TinyBoomerangFu (DONE: `games3d/TinyBoomerangFu.ml`),
+- **Toy**: TinyBoomerangFu (DONE: `TinyBoomerangFu.ml`),
   four foods, a boomerang each. Its lesson is a design one, and it is
-  the cleanest example in `games3d/` of a whole game falling out of a
+  the cleanest example among the 3D games of a whole game falling out of a
   single rule: **your only weapon leaves your hand**. Throw and you are
   unarmed for the second it takes to come back, with only the dash;
   hold it and the dash becomes a slash that kills, but at arm's length
@@ -541,29 +541,29 @@ Not 3D rendering at all: a projection of a 3D grid to 2D with shapes
 sorted back to front, so they belong in the 2D playground; listed here
 because players see them as 3D.
 
-- **Toy**: TinyZaxxon (DONE: `games2.5d/TinyZaxxon.ml`), and it went
-  to `games2.5d/` rather than `games/` because that directory's rule
+- **Toy**: TinyZaxxon (DONE: `TinyZaxxon.ml`), and it is a
+  2.5D game rather than a 2D one because the 2.5D games' rule
   is "a 3D look on the 2D playground, with the trick written out in
   the game" -- which an isometric projection is. It is the oldest and
-  the smallest trick there (two lines and a sort, 33 of its 404), and
-  the fourth family of `games2.5d/README.md` next to cell by cell, row
+  the smallest trick of them (two lines and a sort, 33 of its 404), and
+  the fourth family of `README-2.5d.md` next to cell by cell, row
   by row and column by column: **object by object**.
 - **What it alone has to deal with**: its world keeps the same
-  restriction as the rest of `games2.5d/`, one height per point (a
+  restriction as the rest of the 2.5D games, one height per point (a
   wall is blocks on the floor, and nothing is ever above you), but the
   *player* has a height where the others fix the eye at one level --
   and a projection that keeps no depth cannot say what that height is.
   Hence the shadow: every flying thing drawn twice, and the gap
   between the two *is* the altitude. Every isometric game since
   inherits both the problem and the answer.
-- **Second toy**: TinyDiablo (DONE: `games2.5d/TinyDiablo.ml`,
+- **Second toy**: TinyDiablo (DONE: `TinyDiablo.ml`,
   Blizzard North, 1996), which is what paid for the kit. Its own
   subject is not the view but what the view makes possible: **the
   mouse**. A click is not a direction but a place, and turning the
   pixel into a place is the projection run backwards
   (`Isometric.ground`, a 2x2 determinant that exists only because
   there is no perspective); then A* from `ai/Pathfind` walks there.
-  Next to `games/TinyRogue.ml` it is the same dungeon with the turns
+  Next to `TinyRogue.ml` it is the same dungeon with the turns
   taken out -- monsters on their own clock, a health orb rather than a
   number, loot on the floor -- which is the whole difference between
   the roguelike and the action RPG.
@@ -583,16 +583,16 @@ one line of the model:
 
 | game | a death is |
 |---|---|
-| `games/TinyRogue` | final; the dungeon is forgotten |
-| `games2.5d/TinyDiablo` | the end of a life; the character keeps what it carried |
-| `games3d/TinyHades` | the end of a *run*, and it pays for the next one |
+| `TinyRogue` | final; the dungeon is forgotten |
+| `TinyDiablo` | the end of a life; the character keeps what it carried |
+| `TinyHades` | the end of a *run*, and it pays for the next one |
 
-- **Toy**: TinyHades (DONE: `games3d/TinyHades.ml`, arrows to move,
+- **Toy**: TinyHades (DONE: `TinyHades.ml`, arrows to move,
   space to strike, x to dash, 1/2/3 for the boon between chambers).
-- **Why `games3d/` and not `games2.5d/`**: Hades is drawn in 2D from a
+- **Why a 3D game and not a 2.5D one**: Hades is drawn in 2D from a
   fixed angle, like Diablo, so the *honest* twin of TinyDiablo would
   be that same dungeon with a camera over it. This is not that -- it
-  shares no world with it -- and it sits here to be the same genre
+  shares no world with it -- and it is a 3D game to be the same genre
   with the engine doing the drawing: a camera, triangles and a
   z-buffer, where TinyDiablo has two lines of arithmetic and a sort.
   Read side by side, `chamber_camera` is exactly what
@@ -609,7 +609,7 @@ one line of the model:
   - **the dash with invulnerability**: eight frames in which nothing
     lands, which turns every fight from a question of position into a
     question of timing. That is Dark Souls' roll (2011) and everything
-    after it; compare `games3d/TinyBoomerangFu.ml`, whose dash is
+    after it; compare `TinyBoomerangFu.ml`, whose dash is
     only speed.
 - **Kit**: none. An arena is a floor and four walls, and there is no
   second game to share one with yet.
@@ -647,4 +647,4 @@ one line of the model:
 6. Descent with TinyDescent and TinyDescent3d, on the segments kit
    (DONE); TinyQuake after it.
 7. The rest as they come: fighting with the 2D brawler kit, puzzles,
-   TinyElite (DONE, in `games2.5d/`).
+   TinyElite (DONE, a 2.5D game).

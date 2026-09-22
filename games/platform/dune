@@ -1,0 +1,26 @@
+; claude: the platform games (CATALOG.md's section), 2D and 3D side by
+; side; on the software rasterizers in software/, in the browser in
+; web/.
+(executables
+  (names TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
+    TinyMarioWorld TinyMetroid TinyRick TinySonic)
+  (modules TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
+    TinyMarioWorld TinyMetroid TinyRick TinySonic)
+  (libraries
+    elm_playground
+    kit_platformer ; Tile_move, Ladder, and the Slope of TinySonic and TinyMarioWorld
+    kit_shmup ; TinyRick's shots
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyMario64)
+  (modules TinyMario64)
+  (libraries
+    elm_core
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

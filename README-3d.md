@@ -27,7 +27,7 @@ eye/target camera, and the trick of compiling a 3D scene down to plain
 itself built on Evan Czaplicki's original
 [elm-playground](https://github.com/evancz/elm-playground) (the same
 library [`elm_playground`](README.md) ports to OCaml). The
-`games3d/StarCollector3d.ml` game's mechanics are adapted from Nate
+`StarCollector3d.ml` game's mechanics are adapted from Nate
 Abele's [elm-3d-playground](https://github.com/nateabele/elm-3d-playground)
 (a different lineage, wrapping `elm-3d-scene`'s real WebGL rendering in
 an elm-playground-style API). See
@@ -79,9 +79,9 @@ dune exec examples/TexturedCube3d.exe  # a cube wrapped with a test texture
 dune exec examples/software/InteractiveCube3d.exe  # arrow keys/mouse move a cube around a small scene
 dune exec examples/software/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see the "z" toggle below
 dune exec examples/software/Corridor3d.exe  # walk down a corridor (up/down arrows); see the "c" toggle below
-dune exec games3d/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
-dune exec games3d/TinyDescent3d.exe      # fly a ship through a mine, in any direction (arrows, a/d, w/s)
-dune exec games3d/TinyQuake.exe          # a Quake level: qbsp, vis and light at startup, "v" shows what vis saves
+dune exec games/arcade/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
+dune exec games/flight/TinyDescent3d.exe      # fly a ship through a mine, in any direction (arrows, a/d, w/s)
+dune exec games/fps/TinyQuake.exe          # a Quake level: qbsp, vis and light at startup, "v" shows what vis saves
 ```
 
 The examples above already run on the GPU by default; the same, on the
@@ -110,17 +110,17 @@ and why). Without the flag they're off, so a game can use any key:
 | `c` | Near-plane clipping on/off -- try `Corridor3d.exe`: off, the floor and walls going behind the camera vanish, leaving holes |
 | `o` | Optimizations on/off: the original simple code instead of the optimized one (see `graphics/core/Opti.mli`); watch the fps |
 | `x` | Pixel magnifier, following the mouse |
-| `r` | Resolution: full, a half, a third, a quarter, each pixel shown as a 2x2 to 4x4 block (see `graphics/core/Pixelate.mli`): about k^2 times less per-pixel work (z-buffer, shading, texturing), and the look of 320x200 games; try `games3d/TinyDoom3d.exe` |
+| `r` | Resolution: full, a half, a third, a quarter, each pixel shown as a 2x2 to 4x4 block (see `graphics/core/Pixelate.mli`): about k^2 times less per-pixel work (z-buffer, shading, texturing), and the look of 320x200 games; try `games/fps/TinyDoom3d.exe` |
 | `h` | Help: all these keys and their current state, over the frame |
 | `Q` | Quit |
 
 The window title shows every toggle's current state.
 
-The OpenGL backend (the default of `examples/` and `games3d/`) has `m`
+The OpenGL backend (the default of the 3D examples and games) has `m`
 (no lighting, flat, smooth), `b`, `f`, and `i` too, with `-debug-keys`
 as well, and `o`: its optimization, keeping the GPU buffers of
 `Playground3d.cached3d` shapes from frame to frame (try
-`games3d/TinyMinecraft.exe` or `examples/CachedGrid3d.exe`
+`games/fps/TinyMinecraft.exe` or `examples/CachedGrid3d.exe`
 with `-debug`, which logs the draw calls and vertices uploaded), and `u`:
 the HUD off, to tell whether a slow frame is the scene's fault or the
 HUD's, which this backend draws on the CPU (with `-debug`, the log
@@ -181,13 +181,13 @@ let main = Playground3d_platform.run_app3d app
 
 The camera keeps (0, 1, 0) as up unless told otherwise; a game whose
 ship rolls or looks straight up gives its own (`camera ~eye ~target
-~up ()`, see `games3d/TinyDescent3d.ml`).
+~up ()`, see `TinyDescent3d.ml`).
 
 A texture can also travel inside the program, with no file to find at
 run time and nothing to copy next to a web page: a dune rule turns the
 image into base64 (`scripts/build/file_to_base64_ml.ml`), and
 `Playground3d.embedded_texture ~name ~base64` gives it a name to use as
-a `src` -- see `games3d/TinyMinecraft.ml` and `games3d/dune`.
+a `src` -- see `TinyMinecraft.ml` and its dune file.
 
 `cube`/`box`/`plane` are procedurally generated, single-flat-color
 shapes -- no assets needed, same philosophy as 2D's `circle`/`square`.

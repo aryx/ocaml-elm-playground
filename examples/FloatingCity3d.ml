@@ -58,7 +58,7 @@ let stack_tiers tiers x z y0 =
 let base = stack_tiers base_tiers 0. 0. 0.
 
 (* claude: a fixed seed, not Random.self_init, so this example demo
- * looks the same every run (unlike e.g. games3d/StarCollector3d.ml,
+ * looks the same every run (unlike e.g. StarCollector3d.ml,
  * where varying each run is the point) *)
 let () = Random.init 42
 

@@ -83,7 +83,7 @@ project, and a nice example game).
 `of_strings`, `get`/`set`/`find` (a map is a value, changed when a coin
 is taken), `center`/`cell`/`tile_at`, `view` and `view_visible` (only
 the cells a `Camera2d.rect` touches), `hits` (box vs. grid). Both used
-by `games/TinyMario.ml` (with a golden frame; its `camera=` and
+by `TinyMario.ml` (with a golden frame; its `camera=` and
 `zoom=` flags compare the camera techniques).
 
 ## 4. Sprite sheets and animation frames
@@ -122,7 +122,7 @@ The Elm way needs no new API: a variant in the model
 game's, wrapped in a record keeping the time spent in the scene
 (`elapsed`, `frames`, `blink`) and the previous frame's keyboard, for
 keys `pressed` rather than held (without it, a space held on the title
-skips the game over). Used by `games/TinyInvaders.ml`, with `Sprite`
+skips the game over). Used by `TinyInvaders.ml`, with `Sprite`
 and `Tilemap` (its eroding bunkers). Transitions wait for a group's
 alpha in the renderers.
 

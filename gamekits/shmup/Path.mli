@@ -32,8 +32,8 @@
    plan_games.md section 5.
 
    Part of the shoot 'em up kit (gamekits/shmup/), with Shots.mli; used by
-   games/TinyGalaga (the waves' ways in, the dives) and
-   games/TinyGradius (the fans and sine waves flying in from the
+   TinyGalaga (the waves' ways in, the dives) and
+   TinyGradius (the fans and sine waves flying in from the
    right). *)
 
 open Playground

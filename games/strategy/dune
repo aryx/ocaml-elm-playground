@@ -1,0 +1,16 @@
+; claude: the strategy and simulation games (CATALOG.md's section), all
+; 2D so far; on the software rasterizer in software/, in the browser in
+; web/.
+(executables
+  (names TinyCivilization TinyDune2 TinySimCity TinyTowerDefense
+    TinyWarcraft2 TinyWorms TinyXCOM)
+  (modules TinyCivilization TinyDune2 TinySimCity TinyTowerDefense
+    TinyWarcraft2 TinyWorms TinyXCOM)
+  (libraries
+    elm_playground
+    ai ; the Pathfind of TinyTowerDefense, TinyWarcraft2 and TinyXCOM
+    kit_rts ; TinyDune2's and TinyWarcraft2's orders and paths
+    physics_2d ; TinyWorms' terrain and shells
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)

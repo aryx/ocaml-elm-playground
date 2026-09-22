@@ -34,7 +34,7 @@
  *
  * What it uses: the maze kit (gamekits/maze: Grid_move for moving
  * along the corridors, Chase for the choice at a junction), ai/Fsm for
- * the waves. games/TinyPacman.ml is the whole game, with the same rules
+ * the waves. TinyPacman.ml is the whole game, with the same rules
  * (and its ghosts' states on ai/Fsm too, with ai=engine). *)
 open Playground
 
@@ -42,7 +42,7 @@ open Playground
 (* The maze *)
 (*****************************************************************************)
 
-(* coupling: games/TinyPacman.ml's maze, without its dots *)
+(* coupling: TinyPacman.ml's maze, without its dots *)
 let maze_rows =
   [ "###################";
     "#        #        #";

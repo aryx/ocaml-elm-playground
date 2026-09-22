@@ -44,7 +44,7 @@
    The falling off comes for free from speed, not from a test of where
    the hero is: on the ground the speed is a scalar along the surface,
    and the game gives it up when it is too small on a steep angle (see
-   games/TinySonic's [slip]).
+   TinySonic's [slip]).
 
    Reference: the Sonic Physics Guide (the Sonic Retro community's
    reverse engineering of Sonic 1 to 3, 2010s), which named the sensors
@@ -52,8 +52,8 @@
    Ohshima, Sega, 1991.
 
    Part of the platformer kit (gamekits/platformer/), with Tile_move.mli
-   (blocks) and Ladder.mli; used by games/TinySonic, and on floors only by
-   games/TinyMarioWorld. *)
+   (blocks) and Ladder.mli; used by TinySonic, and on floors only by
+   TinyMarioWorld. *)
 
 open Playground
 

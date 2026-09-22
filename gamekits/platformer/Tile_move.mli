@@ -24,7 +24,7 @@
    way, every shape centered on its position.
 
    Part of the platformer kit (gamekits/platformer/), with Ladder.mli; used
-   by games/TinyMario, games/TinyLodeRunner and games/TinyRick. *)
+   by TinyMario, TinyLodeRunner and TinyRick. *)
 
 open Playground
 

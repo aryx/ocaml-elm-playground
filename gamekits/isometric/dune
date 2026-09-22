@@ -2,8 +2,8 @@
 ; "Isometric: 3D worlds drawn in 2D"): a world seen from one fixed
 ; angle, drawn with two lines of arithmetic and a sort -- the trick
 ; Zaxxon invented in 1982 and Q*bert, Knight Lore, Populous and Diablo
-; all use. Used by games2.5d/TinyZaxxon (a fortress flown over) and
-; games2.5d/TinyDiablo (a dungeon walked through). A private library,
+; all use. Used by TinyZaxxon (a fortress flown over) and
+; TinyDiablo (a dungeon walked through). A private library,
 ; not installed: only the games use it.
 (library
  (name kit_isometric)

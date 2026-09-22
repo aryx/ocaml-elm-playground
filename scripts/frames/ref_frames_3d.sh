@@ -23,7 +23,7 @@
 #   scripts/frames/ref_frames_3d.sh capture <dir>   # before: write the references
 #   scripts/frames/ref_frames_3d.sh check <dir>     # after: compare with them
 #
-# Not included: games3d/StarCollector3d.exe (Random.self_init: its
+# Not included: games/arcade/StarCollector3d.exe (Random.self_init: its
 # stars are somewhere else on every run).
 
 set -uo pipefail
@@ -56,7 +56,7 @@ examples/software/InteractiveCube3d.exe - 3
 examples/software/PaintersAlgorithmFail3d.exe - 3
 examples/software/PaintersAlgorithmFail3d.exe z 3
 examples/software/FloatingCity3d.exe - 3
-games3d/TinyMinecraft.exe - 1
+games/fps/TinyMinecraft.exe - 1
 "
 
 FAILED=0

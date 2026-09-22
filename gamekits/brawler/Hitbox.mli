@@ -22,7 +22,7 @@
    the world for a fighter facing either way.
 
    Part of the brawler kit (gamekits/brawler/), with Frame_data.mli and
-   Stickman.mli; used by games/TinyFinalFight and games/TinyStreetFighter. *)
+   Stickman.mli; used by TinyFinalFight and TinyStreetFighter. *)
 
 open Playground
 

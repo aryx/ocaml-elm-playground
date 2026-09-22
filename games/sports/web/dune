@@ -1,0 +1,38 @@
+; claude: the same games as ../dune, in the browser: the 2D ones on
+; elm_playground_web, the 3D ones on WebGL
+(copy_files ../*.ml)
+
+(executables
+  (names TinyKickOff2 TinyPinball TinySensibleSoccer TinyShufflePuck
+    TinySpeedball2)
+  (modules TinyKickOff2 TinyPinball TinySensibleSoccer TinyShufflePuck
+    TinySpeedball2)
+  (libraries
+    elm_playground
+    kit_sports
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+(executables
+  (names TinyPinball3d)
+  (modules TinyPinball3d)
+  (libraries
+    elm_core
+    physics_3d graphics_3d_geometry
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_webgl ; implem of virtual elm_playground_3d
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; the .html pages next to the .bc.js
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))

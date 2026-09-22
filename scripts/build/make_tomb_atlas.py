@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2026 Yoann Padioleau
 #
-# Draws games3d/tomb.png, the texture atlas of games3d/TinyTombRaider.ml:
+# Draws games/adventure/tomb.png, the texture atlas of TinyTombRaider.ml:
 # a 2 x 2 grid of 64 x 64 tiles, addressed by (col, row) in the game.
 #
 #     (0,0) wall stone      (1,0) wall with hieroglyphs
@@ -24,7 +24,7 @@
 #
 # Procedural and seeded, so the file can be made again and comes out the
 # same; committed all the same, because dune builds it into the program
-# as base64 (see games3d/dune) and a build should not need Python.
+# as base64 (see games/adventure/dune) and a build should not need Python.
 #
 #     python3 scripts/build/make_tomb_atlas.py
 import random
@@ -154,5 +154,5 @@ plinth(px, TILE, TILE)
 # palette, and everything on them was quantised and dithered into it.
 # The speckle you remember on those walls is mostly this, not the art.
 img = img.convert("P", palette=Image.ADAPTIVE, colors=16, dither=Image.FLOYDSTEINBERG).convert("RGB")
-img.save("games3d/tomb.png", optimize=True)
-print("games3d/tomb.png", img.size)
+img.save("games/adventure/tomb.png", optimize=True)
+print("games/adventure/tomb.png", img.size)

@@ -1,0 +1,25 @@
+; claude: the beat 'em ups and fighting games (CATALOG.md's section),
+; 2D and 3D side by side; on the software rasterizers in software/, in
+; the browser in web/.
+(executables
+  (names TinyFinalFight TinyStreetFighter)
+  (modules TinyFinalFight TinyStreetFighter)
+  (libraries
+    elm_playground
+    kit_brawler ; Hitbox, Frame_data and Stickman
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyBoomerangFu TinyVirtuaFighter)
+  (modules TinyBoomerangFu TinyVirtuaFighter)
+  (libraries
+    elm_core
+    kit_brawler ; TinyVirtuaFighter's Frame_data and Hitbox, the 2D fighters' own
+    kit_brawler3d ; TinyVirtuaFighter's Skeleton
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

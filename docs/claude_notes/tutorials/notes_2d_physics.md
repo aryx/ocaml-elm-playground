@@ -31,12 +31,12 @@ Two halves, the second built on the first:
 | `Body` | a body's state: position, velocity, mass, spin, inertia | §3, §11 | |
 | `Integrate` | one time step: explicit Euler, semi-implicit Euler, Verlet, RK4 | §4, §5 | `examples/PhysicsOrbit.ml` |
 | `Energy` | kinetic and potential energy, momentum, angular momentum: the checks | §5 | `examples/PhysicsOrbit.ml` |
-| `Force` | gravity, gravitation, a spring to a point, drag | §6 | `games/TinySpacewar.ml` |
-| `Springs`, `Particles` | springs between bodies; Jakobsen's particles and sticks | §6, §12 | `examples/PhysicsElastic.ml`, `games/TinySoldat.ml` |
-| `Shape`, `Collide`, `Contact` | collision detection: hitboxes, the tests, manifolds, swept tests | §8, §12 | `games/Asteroid.ml`, `games/TinySoldat.ml` |
+| `Force` | gravity, gravitation, a spring to a point, drag | §6 | `TinySpacewar.ml` |
+| `Springs`, `Particles` | springs between bodies; Jakobsen's particles and sticks | §6, §12 | `examples/PhysicsElastic.ml`, `TinySoldat.ml` |
+| `Shape`, `Collide`, `Contact` | collision detection: hitboxes, the tests, manifolds, swept tests | §8, §12 | `Asteroid.ml`, `TinySoldat.ml` |
 | `Broadphase` | which pairs to test | §9 | `examples/PhysicsMarbles.ml` |
 | `Resolve` | collision response: impulses, friction, rotation | §10, §11 | `examples/PhysicsBounce.ml`, `examples/PhysicsBoxes.ml` |
-| `Solver` | stacking: all the contacts together, sequential impulses | §12 | `examples/PhysicsPyramid.ml`, `games/TinySlingshot.ml` |
+| `Solver` | stacking: all the contacts together, sequential impulses | §12 | `examples/PhysicsPyramid.ml`, `TinySlingshot.ml` |
 | `playground/Physics` | the Evan-style API over all of it; `step` and `simulate`, the whole step (§7) | §13 | every game above |
 
 There is no `World` module (the plan had one): the whole step, forces
@@ -427,7 +427,7 @@ step by step).
   new) instead of the position -- **continuous collision detection** --
   or making walls thick. Asteroid's bullets against small rocks need
   the swept test. (Done: `Collide.segment_polygon` and
-  `segment_circle`, `Physics.went_through`; `games/TinySoldat.ml`'s
+  `segment_circle`, `Physics.went_through`; `TinySoldat.ml`'s
   bullets, 25 pixels a tick.)
 - **Stiffness.** Very stiff springs, or very heavy things on very light
   ones, need tiny steps or implicit integrators (§5-6).
@@ -441,22 +441,22 @@ pushes the body, and `step` (§4: one tick of semi-implicit Euler)
 moves it; `touching` (§8) tells whether two bodies overlap, their
 hitboxes read from their shapes (`debug` draws them), and `bounce`
 (§10) makes them bounce off each other (`bouncy`, `rough`,
-`immovable` for walls; `examples/PhysicsBounce.ml`, `games/TinyPong.ml`),
+`immovable` for walls; `examples/PhysicsBounce.ml`, `TinyPong.ml`),
 spinning when hit off center (§11; `upright` to never turn:
-`examples/PhysicsBoxes.ml`, and the rolling moon of `games/TinyCameltry.ml`);
+`examples/PhysicsBoxes.ml`, and the rolling moon of `TinyCameltry.ml`);
 and a `world` stepped by `simulate` solves all the contacts of a pile
 together (§12: `examples/PhysicsPyramid.ml`, whose `s` key switches back to
-`bounce_all` to see the pyramid collapse without it). `games/TinyWorms.ml`, an artillery game, was
+`bounce_all` to see the pyramid collapse without it). `TinyWorms.ml`, an artillery game, was
 its first user (a shell `launched`, then `fall`, `push` for the wind,
-`step`), `games/TinySpacewar.ml` its second (ships and torpedoes
+`step`), `TinySpacewar.ml` its second (ships and torpedoes
 `attracted_by` the star); `examples/PhysicsOrbit.ml` goes under it, to
 compare the four integrators. Then, each game adding a chapter:
-`games/Asteroid.ml` ported with a `physics=engine` flag next to its
+`Asteroid.ml` ported with a `physics=engine` flag next to its
 hand-written physics (inertia, thrust, drag, wrap-around, exact
-polygon hits, §3-8), `games/TinyPong.ml` (bouncing, friction, §10),
-`games/TinyCameltry.ml` (rolling, §11), `games/TinySlingshot.ml` (an
+polygon hits, §3-8), `TinyPong.ml` (bouncing, friction, §10),
+`TinyCameltry.ml` (rolling, §11), `TinySlingshot.ml` (an
 Angry Birds: the arc, a stacked tower, §4 and §12), and
-`games/TinySoldat.ml`, the capstone (swept bullets, grenades, ragdolls:
+`TinySoldat.ml`, the capstone (swept bullets, grenades, ragdolls:
 §8, §12, §6). Several of them, and the examples, have a key or a flag
 switching a phase off (`rotation=off`, `solver=off`, `physics=engine`),
 to see what it brings.

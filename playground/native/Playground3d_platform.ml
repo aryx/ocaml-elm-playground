@@ -339,7 +339,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * in vertex_shader_source/fragment_shader_source (confirmed by
    * eprintf-dumping the exact string passed to Gl.shader_source right
    * before the call: it was always the correct, uncorrupted source).
-   * Reproduced reliably (10/10) on games3d/StarCollector3d.exe
+   * Reproduced reliably (10/10) on games/arcade/StarCollector3d.exe
    * specifically -- a scene with more shapes/allocation before this
    * point than Cubes3d.exe or Spheres3d.exe, which never
    * triggered it -- and, tellingly, adding *any* extra allocation
@@ -496,7 +496,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
       let changed = List.filter (fun s -> not (List.mem s old)) shapes @ List.filter (fun s -> not (List.mem s shapes)) old in
       (* claude: optimization, the same bugfix again: one box per place
        * that changed, not one box around them all. A HUD changing in
-       * two far corners every frame (games3d/TinyDoom3d's timer on the
+       * two far corners every frame (TinyDoom3d's timer on the
        * left, its minimap's player on the right) made that box most of
        * the window's bottom: 40-75ms every few frames, felt as a choppy
        * walk while the fps in the title stayed high. Each changed

@@ -1,0 +1,40 @@
+; claude: the same games as ../dune, in the browser: the 2D ones on
+; elm_playground_web, the 3D ones on WebGL; and ../dune's
+; Texture_atlas.ml with them: TinyMinecraft's texture needs no copy next
+; to the page, it travels inside the program
+(copy_files ../*.ml)
+
+(executables
+  (names TinyBattlezone TinyDoom TinyWolfenstein)
+  (modules TinyBattlezone TinyDoom TinyWolfenstein)
+  (libraries
+    elm_playground
+    kit_sectors
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+(executables
+  (names TinyBattlezone3d TinyDoom3d TinyHalfLife2 TinyMinecraft TinyQuake
+    TinyTeardown TinyWolfenstein3d)
+  (modules TinyBattlezone3d TinyDoom3d TinyHalfLife2 TinyMinecraft TinyQuake
+    TinyTeardown TinyWolfenstein3d Texture_atlas)
+  (libraries
+    elm_core
+    kit_sectors
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_webgl ; implem of virtual elm_playground_3d
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; the .html pages next to the .bc.js
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))

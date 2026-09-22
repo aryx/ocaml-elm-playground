@@ -39,7 +39,7 @@
    the game only gave their position, as our shapes have. Space Invaders
    (Tomohiro Nishikado, 1978) had no such chip: its aliens are 1-bit
    bitmaps, 8 to 12 pixels wide and 8 high, each with two frames that
-   alternate as the formation marches (see games/TinyInvaders.ml). The
+   alternate as the formation marches (see TinyInvaders.ml). The
    NES's sprites are 8x8 tiles of 3 colors plus transparency (Mario is
    four of them); Susan Kare drew the Macintosh's icons (1984) on graph
    paper, 32x32 pixels, a "happy Mac" among them. The limits made the

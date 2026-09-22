@@ -3,7 +3,7 @@
    The 3D twin of playground/Physics, and deliberately the same API: a
    *body* is a shape3d that moves -- where it is, how fast it goes,
    which way it points -- and everything else is verbs on bodies.
-   Someone who wrote games/TinySlingshot.ml already knows this module.
+   Someone who wrote TinySlingshot.ml already knows this module.
 
      let ball = body (sphere red 0.2) |> at 0. 3. 0. |> moving 2. 0. 0.
 
@@ -55,7 +55,7 @@
    [simulate], phase 8 of
    docs/claude_notes/plans/plan_physics3d_teaching.md, and the
    character controller and the joints come with 9 and 11. A game that
-   needs a stack today does its own contacts, as games3d/TinyMario64.ml
+   needs a stack today does its own contacts, as TinyMario64.ml
    does.
 *)
 
@@ -149,7 +149,7 @@ val rough : number -> body -> body
  * [simulate] moves and turns it by them, nothing can change them, and a
  * body it meets is hit by its surface's speed at the contact -- a
  * pinball flipper is exactly that, driven by the game from one tick to
- * the next rather than by forces (games3d/TinyPinball3d.ml). *)
+ * the next rather than by forces (TinyPinball3d.ml). *)
 val immovable : body -> body
 
 (* [upright b]: nothing can turn it. A player, a pinball flipper: a
@@ -173,7 +173,7 @@ val fall : number -> body -> body
 val push : number -> number -> number -> body -> body
 
 (* [thrust f b]: a push of [f] the way the body points -- its own -z,
- * the direction Camera3d's headings and every character in games3d/
+ * the direction Camera3d's headings and every 3D game's character
  * face when they are not turned *)
 val thrust : number -> body -> body
 
@@ -379,7 +379,7 @@ val simulate :
  * out from where it is going now, so the answer is for a body that did
  * not bounce during the tick: one that did has its velocity turned
  * round, and its path is drawn through the very wall it bounced off
- * (games3d/TinyPinball3d.ml compares its two positions instead). *)
+ * (TinyPinball3d.ml compares its two positions instead). *)
 val went_through : body -> body -> bool
 
 

@@ -33,7 +33,7 @@
  * simulation measured this run: the engine knows nothing about slopes,
  * only tensors, contact points and friction impulses
  * (Resolve3d.mli), and it arrives at 5/7 by itself. That same 5/7 is
- * derived by hand in games3d/TinyMarbleMadness.ml's header, which
+ * derived by hand in TinyMarbleMadness.ml's header, which
  * makes this a cross-check between a game written from a textbook and
  * an engine written from Newton.
  *

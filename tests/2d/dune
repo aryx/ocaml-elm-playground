@@ -35,31 +35,31 @@
    %{project_root}/examples/software/Animation.exe
    %{project_root}/examples/software/Mouse.exe
    %{project_root}/examples/software/Keyboard.exe
-   %{project_root}/games/software/Pong.exe
-   %{project_root}/games/software/Asteroid.exe
-   %{project_root}/games/software/Snake.exe
-   %{project_root}/games/software/Tetris.exe
-   %{project_root}/games/software/TinyMario.exe
-   %{project_root}/games/software/TinyInvaders.exe
-   %{project_root}/games/software/TinySokoban.exe
-   %{project_root}/games/software/TinyPacman.exe
-   %{project_root}/games2.5d/software/TinyWolfenstein.exe
-   %{project_root}/games2.5d/software/TinyOutRun.exe
-   %{project_root}/games/software/TinyBomberman.exe
-   %{project_root}/games/software/TinyTron.exe
-   %{project_root}/games/software/TinyMicroMachines.exe
+   %{project_root}/games/arcade/software/Pong.exe
+   %{project_root}/games/shmup/software/Asteroid.exe
+   %{project_root}/games/arcade/software/Snake.exe
+   %{project_root}/games/puzzle/software/Tetris.exe
+   %{project_root}/games/platform/software/TinyMario.exe
+   %{project_root}/games/shmup/software/TinyInvaders.exe
+   %{project_root}/games/puzzle/software/TinySokoban.exe
+   %{project_root}/games/arcade/software/TinyPacman.exe
+   %{project_root}/games/fps/software/TinyWolfenstein.exe
+   %{project_root}/games/racing/software/TinyOutRun.exe
+   %{project_root}/games/arcade/software/TinyBomberman.exe
+   %{project_root}/games/arcade/software/TinyTron.exe
+   %{project_root}/games/racing/software/TinyMicroMachines.exe
    %{project_root}/examples/software/PhysicsOrbit.exe
-   %{project_root}/games/software/TinyWorms.exe
-   %{project_root}/games/software/TinySpacewar.exe
+   %{project_root}/games/strategy/software/TinyWorms.exe
+   %{project_root}/games/arcade/software/TinySpacewar.exe
    %{project_root}/examples/software/PhysicsBounce.exe
-   %{project_root}/games/software/TinyPong.exe
+   %{project_root}/games/arcade/software/TinyPong.exe
    %{project_root}/examples/software/PhysicsMarbles.exe
    %{project_root}/examples/software/PhysicsBoxes.exe
-   %{project_root}/games/software/TinyCameltry.exe
+   %{project_root}/games/arcade/software/TinyCameltry.exe
    %{project_root}/examples/software/PhysicsPyramid.exe
-   %{project_root}/games/software/TinySlingshot.exe
+   %{project_root}/games/puzzle/software/TinySlingshot.exe
    %{project_root}/examples/software/PhysicsElastic.exe
-   %{project_root}/games/software/TinySoldat.exe
+   %{project_root}/games/shmup/software/TinySoldat.exe
    %{project_root}/examples/software/PhysicsSolarSystem.exe
    %{project_root}/examples/software/AudioTheremin.exe
    %{project_root}/examples/software/AudioPiano.exe
@@ -68,60 +68,60 @@
    %{project_root}/examples/software/AiSteering.exe
    %{project_root}/examples/software/AiFlock.exe
    %{project_root}/examples/software/AiGhosts.exe
-   %{project_root}/games/software/TinyFlappyBird.exe
-   %{project_root}/games/software/TinyBreakout.exe
-   %{project_root}/games/software/TinyXpilot.exe
-   %{project_root}/games/software/TinyGalaga.exe
-   %{project_root}/games/software/TinyDonkeyKong.exe
-   %{project_root}/games/software/TinyLodeRunner.exe
-   %{project_root}/games/software/TinyRick.exe
-   %{project_root}/games/software/TinyGradius.exe
-   %{project_root}/games/software/TinyZelda.exe
-   %{project_root}/games/software/TinyRogue.exe
-   %{project_root}/games/software/TinyStreetFighter.exe
-   %{project_root}/games/software/TinyFinalFight.exe
+   %{project_root}/games/arcade/software/TinyFlappyBird.exe
+   %{project_root}/games/arcade/software/TinyBreakout.exe
+   %{project_root}/games/flight/software/TinyXpilot.exe
+   %{project_root}/games/shmup/software/TinyGalaga.exe
+   %{project_root}/games/platform/software/TinyDonkeyKong.exe
+   %{project_root}/games/platform/software/TinyLodeRunner.exe
+   %{project_root}/games/platform/software/TinyRick.exe
+   %{project_root}/games/shmup/software/TinyGradius.exe
+   %{project_root}/games/adventure/software/TinyZelda.exe
+   %{project_root}/games/rpg/software/TinyRogue.exe
+   %{project_root}/games/fighting/software/TinyStreetFighter.exe
+   %{project_root}/games/fighting/software/TinyFinalFight.exe
    %{project_root}/examples/software/BigBangRocket.exe
    %{project_root}/examples/software/BigBangWorm.exe
-   %{project_root}/games/software/TinyBabaIsYou.exe
-   %{project_root}/games2.5d/software/TinyMarioKart.exe
-   %{project_root}/games2.5d/software/TinyDoom.exe
-   %{project_root}/games2.5d/software/TinyComanche.exe
-   %{project_root}/games2.5d/software/TinyDescent.exe
-   %{project_root}/games2.5d/software/TinyElite.exe
-   %{project_root}/games2.5d/software/TinyBattlezone.exe
-   %{project_root}/games2.5d/software/TinyShufflePuck.exe
-   %{project_root}/games/software/TinyMissileCommand.exe
-   %{project_root}/games/software/TinyLemmings.exe
-   %{project_root}/games/software/TinyPuzzleBobble.exe
-   %{project_root}/games2.5d/software/TinyDungeonMaster.exe
-   %{project_root}/games2.5d/software/TinyZaxxon.exe
-   %{project_root}/games2.5d/software/TinyDiablo.exe
+   %{project_root}/games/puzzle/software/TinyBabaIsYou.exe
+   %{project_root}/games/racing/software/TinyMarioKart.exe
+   %{project_root}/games/fps/software/TinyDoom.exe
+   %{project_root}/games/flight/software/TinyComanche.exe
+   %{project_root}/games/flight/software/TinyDescent.exe
+   %{project_root}/games/flight/software/TinyElite.exe
+   %{project_root}/games/fps/software/TinyBattlezone.exe
+   %{project_root}/games/sports/software/TinyShufflePuck.exe
+   %{project_root}/games/shmup/software/TinyMissileCommand.exe
+   %{project_root}/games/puzzle/software/TinyLemmings.exe
+   %{project_root}/games/puzzle/software/TinyPuzzleBobble.exe
+   %{project_root}/games/rpg/software/TinyDungeonMaster.exe
+   %{project_root}/games/shmup/software/TinyZaxxon.exe
+   %{project_root}/games/rpg/software/TinyDiablo.exe
    %{project_root}/examples/software/PuzzleScriptSokoban.exe
    %{project_root}/examples/software/PuzzleScriptBoulders.exe
-   %{project_root}/games/software/AiOthello.exe
-   %{project_root}/games/software/AiChess.exe
-   %{project_root}/games/software/TinyTowerDefense.exe
-   %{project_root}/games/software/TinyDune2.exe
-   %{project_root}/games/software/TinyWarcraft2.exe
-   %{project_root}/games/software/TinySonic.exe
-   %{project_root}/games/software/TinyRobotron.exe
-   %{project_root}/games/software/TinyPinball.exe
-   %{project_root}/games/software/TinyPortal2D.exe
-   %{project_root}/games/software/TinyGauntlet2.exe
-   %{project_root}/games/software/TinyKickOff2.exe
-   %{project_root}/games/software/TinySpeedball2.exe
-   %{project_root}/games/software/TinySensibleSoccer.exe
-   %{project_root}/games/software/TinyJoust.exe
-   %{project_root}/games/software/TinyDefender.exe
-   %{project_root}/games/software/TinyCeleste.exe
+   %{project_root}/games/puzzle/software/AiOthello.exe
+   %{project_root}/games/puzzle/software/AiChess.exe
+   %{project_root}/games/strategy/software/TinyTowerDefense.exe
+   %{project_root}/games/strategy/software/TinyDune2.exe
+   %{project_root}/games/strategy/software/TinyWarcraft2.exe
+   %{project_root}/games/platform/software/TinySonic.exe
+   %{project_root}/games/shmup/software/TinyRobotron.exe
+   %{project_root}/games/sports/software/TinyPinball.exe
+   %{project_root}/games/puzzle/software/TinyPortal2D.exe
+   %{project_root}/games/rpg/software/TinyGauntlet2.exe
+   %{project_root}/games/sports/software/TinyKickOff2.exe
+   %{project_root}/games/sports/software/TinySpeedball2.exe
+   %{project_root}/games/sports/software/TinySensibleSoccer.exe
+   %{project_root}/games/platform/software/TinyJoust.exe
+   %{project_root}/games/shmup/software/TinyDefender.exe
+   %{project_root}/games/platform/software/TinyCeleste.exe
    %{project_root}/games/rhythm/software/TinyDDR.exe
-   %{project_root}/games/software/TinySimCity.exe
-   %{project_root}/games/software/TinyCivilization.exe
-   %{project_root}/games/software/TinyMarioWorld.exe
-   %{project_root}/games/software/TinyRType.exe
-   %{project_root}/games/software/TinyIncredibleMachine.exe
-   %{project_root}/games/software/TinyXCOM.exe
-   %{project_root}/games/software/TinyMetroid.exe
+   %{project_root}/games/strategy/software/TinySimCity.exe
+   %{project_root}/games/strategy/software/TinyCivilization.exe
+   %{project_root}/games/platform/software/TinyMarioWorld.exe
+   %{project_root}/games/shmup/software/TinyRType.exe
+   %{project_root}/games/puzzle/software/TinyIncredibleMachine.exe
+   %{project_root}/games/strategy/software/TinyXCOM.exe
+   %{project_root}/games/platform/software/TinyMetroid.exe
    %{project_root}/games/rhythm/software/TinyGuitarHero.exe
    %{project_root}/examples/software/LogoFractals.exe
  )

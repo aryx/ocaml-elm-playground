@@ -113,7 +113,7 @@ with its paper, each drawn while it runs. The sketch that was here
 and Monte Carlo as the modern twist) became
 [`plan_ai_teaching.md`](plan_ai_teaching.md) once the first two
 modules were written -- `ai/Minimax` (with `examples/AiTictactoe.ml`
-and `games/AiOthello.ml`) and `ai/Pathfind` (with
+and `AiOthello.ml`) and `ai/Pathfind` (with
 `examples/AiPathfinding.ml`, and `gamekits/rts/Orders` over it). That plan
 also adds what the sketch didn't have: **learning** -- a neural
 network from scratch, trained while you watch, and behind a Monte

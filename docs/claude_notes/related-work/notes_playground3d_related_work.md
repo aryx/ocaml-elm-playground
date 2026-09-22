@@ -79,7 +79,7 @@ shape (`sphere`/`box`/`group`, `move`/`rotate`, a `Computer` parameter
 for keyboard/mouse, explicitly aimed at making 3D approachable for
 students). This is the closest thing to `Playground3d`'s own ambition
 that already existed -- "Evan-light API, but for 3D" -- and it's the
-project `games3d/StarCollector3d.ml`'s mechanics (not code) were
+project `StarCollector3d.ml`'s mechanics (not code) were
 adapted from (see that file's header comment). The difference is
 exactly the one-line summary at the top of this doc: nateabele's
 project gets the *API ergonomics* of elm-playground while keeping

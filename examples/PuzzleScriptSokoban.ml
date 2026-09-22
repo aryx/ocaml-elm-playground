@@ -22,7 +22,7 @@
  * may walk on an empty floor either -- it is marked as moving by the key
  * and simply goes, if it can.
  *
- * Compare with games/TinySokoban.ml, which is the same game written out
+ * Compare with TinySokoban.ml, which is the same game written out
  * by hand, with gamekits/puzzle's Push and Undo: three hundred lines against
  * these thirty. What the hand-written one has that this has not is a
  * solver in its tests, a move and push counter, and levels that look

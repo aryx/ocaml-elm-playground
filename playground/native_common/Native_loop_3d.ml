@@ -94,7 +94,7 @@ let mouse_move mx my (mouse : Playground.mouse) : Playground.mouse = { mouse wit
  * loop gets it out of its event queue; this one keeps the computer
  * itself, so it has to say so. Without it a 3D game can only be told
  * that a button is held, and one driven by clicking
- * (games3d/TinyMonumentValley) cannot be played at all. *)
+ * (TinyMonumentValley) cannot be played at all. *)
 let mouse_down mdown (mouse : Playground.mouse) : Playground.mouse =
   { mouse with mdown; mclick = ((not mdown) || mouse.mclick) }
 
@@ -134,7 +134,7 @@ let update_keyboard (is_down : bool) (key : string) (keyboard : Playground.keybo
   (* claude: the same three the 2D loop sets (see the playground's
    * [update_keyboard]): this loop is a copy that never gained them, so
    * on this backend a 3D game reading [kshift] -- as
-   * games3d/TinyMarioKart64.ml does, to hop into a slide -- was reading
+   * TinyMarioKart64.ml does, to hop into a slide -- was reading
    * a field nothing ever set *)
   | "Backspace" -> { keyboard with keys; kbackspace = is_down }
   | "Enter" -> { keyboard with keys; kenter = is_down }
@@ -350,7 +350,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
 
     let elapsed = Unix.gettimeofday () -. frame_start in
     (* claude: -debug shows this every frame, so a scene that suddenly
-     * gets slow (e.g. games3d/TinyMinecraft.ml's ~50k-block world, see
+     * gets slow (e.g. TinyMinecraft.ml's ~50k-block world, see
      * plan_tiny_minecraft.md's Phase 2) can be diagnosed without
      * adding a throwaway Printf.eprintf each time -- is [view] itself
      * slow (building the shape3d list), or [draw] (turning it into

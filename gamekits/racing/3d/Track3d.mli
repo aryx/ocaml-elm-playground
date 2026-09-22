@@ -4,7 +4,7 @@
 
    Where gamekits/racing/Road.mli describes a course as a *list of
    segments* read as the car advances -- the way the arcade's pseudo-3D
-   racers did, and what games2.5d/TinyOutRun and games3d/TinyVirtuaRacing
+   racers did, and what TinyOutRun and TinyVirtuaRacing
    drive on -- this one describes it as a *shape in space*, which is
    what a polygon racer with hills and banked corners needs:
 
@@ -99,8 +99,8 @@ val build : ?step:number -> control list -> t
  *
  * The result is a *stage*, not a circuit: [Road.coast] ends somewhere
  * else than it started, so distances do not wrap and [at] stops at the
- * end. games3d/TinyVirtuaRacing drives this, on the same Road.t that
- * games2.5d/TinyOutRun reads segment by segment -- which is the whole
+ * end. TinyVirtuaRacing drives this, on the same Road.t that
+ * TinyOutRun reads segment by segment -- which is the whole
  * point of having both games. *)
 val of_road : ?width:number -> ?degrees_per_curve:number -> ?bank_per_curve:number -> Road.t -> t
 

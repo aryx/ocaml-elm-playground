@@ -13,7 +13,7 @@
  *                            +---- home ---- Eyes <-----------+
  *
  * In OCaml a state machine is already a variant and a [match] -- which
- * is how games/TinyPacman.ml writes its ghosts by default -- so a
+ * is how TinyPacman.ml writes its ghosts by default -- so a
  * library has to earn its place, and this one is small because it only
  * adds three things the [match] doesn't give:
  *
@@ -32,7 +32,7 @@
  * the current state whose guard holds: the order of the rules is their
  * priority, so "eaten" is written before "time's up".
  *
- * The lesson of the guards, from games3d/TinyBoomerangFu.ml's computer:
+ * The lesson of the guards, from TinyBoomerangFu.ml's computer:
  * two rules out of each other's states on the same threshold ("close"
  * and "not close") make an agent flip between them every frame and go
  * nowhere, when it sits on the threshold. The cure is hysteresis --

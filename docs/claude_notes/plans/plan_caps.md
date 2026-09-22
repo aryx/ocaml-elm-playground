@@ -44,10 +44,10 @@ and can take `Cap.main` in their mains later.
   (the file, and its downloaded copy) -- network and file system.
 - **Warnings** (`playground/Audio.ml`, `playground/native/
   Playground_platform.ml`): `prerr_endline`.
-- **Randomness** (`games/Tetris.ml`, `games/Snake.ml`):
+- **Randomness** (`Tetris.ml`, `Snake.ml`):
   `Random.self_init` -- the one place the games are not deterministic,
   and exactly what `Cap.random` is for.
-- **Time** in a game (`games/Tetris.ml`: `Unix.gettimeofday`), and
+- **Time** in a game (`Tetris.ml`: `Unix.gettimeofday`), and
   `core/Basics.ml`'s `Printf.printf` (Elm's `Debug.log`).
 
 ## The design

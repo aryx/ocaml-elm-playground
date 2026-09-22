@@ -1,0 +1,24 @@
+; claude: the same games as ../dune, in the browser
+(copy_files ../*.ml)
+
+(executables
+  (names TinyCivilization TinyDune2 TinySimCity TinyTowerDefense
+    TinyWarcraft2 TinyWorms TinyXCOM)
+  (modules TinyCivilization TinyDune2 TinySimCity TinyTowerDefense
+    TinyWarcraft2 TinyWorms TinyXCOM)
+  (libraries
+    elm_playground
+    ai
+    kit_rts
+    physics_2d
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; the .html pages next to the .bc.js
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))

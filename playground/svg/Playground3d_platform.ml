@@ -31,7 +31,7 @@
  * polygons can't be clipped to it by the playground, so each polygon
  * is cut to the rectangle here (Sutherland and Hodgman's clipping,
  * 1974: the polygon cut by each of the four edges in turn, the way
- * games/TinyXpilot.ml cuts its walls to its halves). The HUD shapes are
+ * TinyXpilot.ml cuts its walls to its halves). The HUD shapes are
  * left whole. *)
 let clip_polygon (s : Playground.screen) (points : (float * float) list) : (float * float) list =
   let cut inside at points =

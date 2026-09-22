@@ -83,7 +83,7 @@ and they are the whole chapter:
 - **The future is computable.** Given a model, running `update`
   forward with no input says where the ball *will* be -- which is
   §6's trail, and which one game in this repository already does by
-  hand (`games/TinySlingshot.ml` steps the physics engine 60 times to
+  hand (`TinySlingshot.ml` steps the physics engine 60 times to
   draw its aim arc).
 
 Elm shipped this debugger in 0.18, and this is the same idea in OCaml
@@ -196,7 +196,7 @@ Victor's platformer, and the reason this section exists:
   A pure `update` is what makes that safe: running it does nothing to
   the world.
 
-`games/TinySlingshot.ml` already does exactly this by hand, and its
+`TinySlingshot.ml` already does exactly this by hand, and its
 comment says why it looks right: the dots are the engine's own steps,
 so the ball follows them precisely. The generic version has to agree
 with the hand-written one -- a good test, and a good demonstration

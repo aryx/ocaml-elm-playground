@@ -142,7 +142,7 @@ val sphere : Playground.color -> number -> shape3d
     carries with it -- the bytes of a .png, base64-encoded (see
     [graphics/images/Base64.mli]), usually generated from the file at
     build time by a dune rule, the way [graphics/font/dune] embeds the
-    Hershey font and [games3d/dune] this project's one texture -- and
+    Hershey font and [games/fps/dune] TinyMinecraft's texture -- and
     returns [name], to be used as the [src] of {!textured_quad} and
     friends.
 
@@ -279,7 +279,7 @@ type camera = {
   target : number * number * number;
   (* claude: which way is up on the screen: (0, 1, 0) for a camera
    * that doesn't roll; turned around [target - eye], the picture turns
-   * the other way (a plane banking, games3d/TinyDescent3d's ship) *)
+   * the other way (a plane banking, TinyDescent3d's ship) *)
   up : number * number * number;
   fov : number;
   (** 0 for the usual camera, which has perspective. Otherwise the

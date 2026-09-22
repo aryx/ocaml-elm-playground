@@ -25,8 +25,8 @@
    a hall's side is cut where the stairs start ([make] splits an edge at
    every other polygon's point lying on it, as a map editor does).
 
-   What the games do with a level is theirs: games2.5d/TinyDoom draws it the
-   way Doom did, with a BSP tree and no z-buffer; games3d/TinyDoom3d
+   What the games do with a level is theirs: TinyDoom draws it the
+   way Doom did, with a BSP tree and no z-buffer; TinyDoom3d
    turns it into polygons for a z-buffer. What they share is here: the
    level, finding the sector at a point, and moving the player in it.
 
@@ -80,7 +80,7 @@ val hole : float -> float -> float -> float -> point list
  * an edge two sectors have the same way round (overlapping sectors). *)
 val make : sector list -> start:float * float * float -> exit:int -> level
 
-(* the level of games2.5d/TinyDoom and games3d/TinyDoom3d: a hall with a
+(* the level of TinyDoom and TinyDoom3d: a hall with a
  * pillar, stairs up to a room, a corridor, stairs down to a dark room
  * with the exit, seen from the hall through a window *)
 val outpost : level
@@ -101,7 +101,7 @@ val distance : line -> float -> float -> float
 val inside : sector -> float -> float -> bool
 
 (* [sector_at level x y]: the sector (x, y) is in, by trying them all
- * (the simple way; Doom walked its BSP tree, see games2.5d/TinyDoom); 0 if
+ * (the simple way; Doom walked its BSP tree, see TinyDoom); 0 if
  * none *)
 val sector_at : level -> float -> float -> int
 

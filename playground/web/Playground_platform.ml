@@ -890,7 +890,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
        * what requestAnimationFrame gives us). That's what the native
        * backend passes (Unix.gettimeofday) and what Elm's
        * onAnimationFrame passes (Time.Posix), and games rely on it:
-       * games/Tetris.ml and games/Asteroid.ml initialize their last_tick
+       * Tetris.ml and Asteroid.ml initialize their last_tick
        * with Unix.gettimeofday() and compute [now -. last_tick] on each
        * Tick. With [time], that delta was about -1.8 billion seconds:
        * Tetris' piece started 1.8 billion rows above the well (and a

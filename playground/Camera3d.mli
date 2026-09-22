@@ -16,7 +16,7 @@
             thing, [back] behind it, [height] above: [behind]
 
    The thing a camera follows is a [pose]: where it is, and which way it
-   faces on the ground (its heading, as in games3d/TinyVirtuaRacing.ml,
+   faces on the ground (its heading, as in TinyVirtuaRacing.ml,
    TinyBattlezone.ml: 0 towards -z, 90 towards +x).
 
    A camera rigidly attached to what it follows jerks with it: a Tron
@@ -29,8 +29,8 @@
    camera a character, Lakitu filming Mario, whose view you could
    change (and blame); John Nesky's "50 Game Camera Mistakes" (GDC 2014)
    lists what goes wrong. Virtua Racing (1992) had four views on four
-   buttons (games3d/TinyVirtuaRacing.ml's v key), and so does
-   games3d/TinyTron3d.ml. Not here yet (exercises): a camera avoiding
+   buttons (TinyVirtuaRacing.ml's v key), and so does
+   TinyTron3d.ml. Not here yet (exercises): a camera avoiding
    walls between it and the player (a ray cast back from the player),
    and a camera the mouse turns around the player (orbit with mdx).
 
@@ -145,9 +145,9 @@ val follow : number -> camera -> camera -> camera
  *
  *   - an isometric game must therefore draw a *shadow* under anything
  *     off the ground, or the player cannot tell how high it is
- *     (games2.5d/TinyZaxxon.ml is built around that shadow);
+ *     (TinyZaxxon.ml is built around that shadow);
  *   - and a game can instead take the ambiguity as its material:
- *     games3d/TinyMonumentValley.ml joins a near stair to a far one
+ *     TinyMonumentValley.ml joins a near stair to a far one
  *     because, from here, they touch.
  *
  * The depth still decides what is in front of what -- the z-buffer

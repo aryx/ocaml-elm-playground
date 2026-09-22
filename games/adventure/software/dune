@@ -1,0 +1,28 @@
+; claude: the same games as ../dune, on the software rasterizers (see
+; examples/software/dune for how copy_files works), and ../dune's
+; Tomb_atlas.ml with them
+(copy_files ../*.ml)
+
+(executables
+  (names TinyZelda)
+  (modules TinyZelda)
+  (libraries
+    elm_playground
+    kit_platformer
+    kit_shmup
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyAloneInTheDark TinyTombRaider)
+  (modules TinyAloneInTheDark TinyTombRaider Tomb_atlas)
+  (libraries
+    elm_core
+    kit_brawler3d
+    kit_puzzle
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_software ; implem of virtual elm_playground_3d
+  )
+)

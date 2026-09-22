@@ -20,7 +20,7 @@
 # Usage:
 #   scripts/perf/fps.sh <exe, from the build root> <frames> [script] [flags...]
 # e.g.
-#   scripts/perf/fps.sh games3d/TinyVirtuaRacing.exe 300 "space:1,up:2-300"
+#   scripts/perf/fps.sh games/racing/TinyVirtuaRacing.exe 300 "space:1,up:2-300"
 # Env: BUILD_DIR (default _build).
 
 set -euo pipefail

@@ -91,7 +91,7 @@ worth a measurement first:
 
 ## 6. WebGL, checked in a real browser
 
-`games3d/webgl/TinyMinecraft` draws the same picture in headless Chrome,
+`games/fps/web/TinyMinecraft` draws the same picture in headless Chrome,
 but was never played: the keys and the right click (the web backend's
 `button` = 2, and the context menu it suppresses) are untested there,
 and its fps unmeasured (headless Chrome renders WebGL in software). Also

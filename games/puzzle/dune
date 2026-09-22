@@ -1,0 +1,28 @@
+; claude: the puzzle and board games (CATALOG.md's section), 2D and 3D
+; side by side; on the software rasterizers in software/, in the
+; browser in web/.
+(executables
+  (names AiChess AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban)
+  (modules AiChess AiOthello Tetris TinyBabaIsYou TinyIncredibleMachine
+    TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban)
+  (libraries
+    unix ; Tetris's clock
+    elm_playground
+    ai ; AiChess's and AiOthello's Minimax
+    kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyBlockout TinyMonumentValley TinyPortal)
+  (modules TinyBlockout TinyMonumentValley TinyPortal)
+  (libraries
+    elm_core
+    physics_3d graphics_3d_geometry ; TinyPortal's bodies
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

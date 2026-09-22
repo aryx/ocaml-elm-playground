@@ -13,13 +13,13 @@
 
    Aiming at a target is the one bit of math ([aimed]): the direction to
    it, divided by its length, times the speed. Aiming where the target
-   will be, not where it is, is a quadratic (games/TinyXpilot's
+   will be, not where it is, is a quadratic (TinyXpilot's
    intercept): an exercise here.
 
    Part of the shoot 'em up kit (gamekits/shmup/), with Path.mli; used by
-   games/TinyInvaders (the cannon's shot, the aliens' bombs),
-   games/TinyGalaga (the fighter's shots, the divers' aimed bullets)
-   and games/TinyRobotron (the man's shots, in any of eight directions,
+   TinyInvaders (the cannon's shot, the aliens' bombs),
+   TinyGalaga (the fighter's shots, the divers' aimed bullets)
+   and TinyRobotron (the man's shots, in any of eight directions,
    and the enforcers' sparks). *)
 
 open Playground

@@ -2,8 +2,8 @@
 ; 9 and 10, and "kits"): what beat 'em ups and fighting games share, on
 ; top of the playground -- boxes that hit and boxes that get hit
 ; (Hitbox), a move's frames (Frame_data), fighters as stick figures in
-; poses (Stickman). Used by games/TinyFinalFight and
-; games/TinyStreetFighter. A private library, not installed: only the
+; poses (Stickman). Used by TinyFinalFight and
+; TinyStreetFighter. A private library, not installed: only the
 ; games use it.
 (library
  (name kit_brawler)

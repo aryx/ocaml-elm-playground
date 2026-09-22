@@ -2696,7 +2696,7 @@ let puzzlescript_boulders_run () =
 (*****************************************************************************)
 
 (* Turning a solid is turning its bounding box, an integer trick with no
- * centre and no rounding (see the header of games3d/TinyBlockout.ml).
+ * centre and no rounding (see the header of TinyBlockout.ml).
  * The proof that it really is a rotation: four quarter turns about any
  * axis put every cube back where it was, and no cube is ever lost. *)
 let blockout_turns () =
@@ -2752,7 +2752,7 @@ let blockout_walls () =
  * raider has, in order, from the entrance to the idol and back. It is
  * worth reading as the level's answer written down -- which is the
  * point of a game whose moves are fixed lengths (see the header of
- * games3d/TinyTombRaider.ml). Each move is asked for and must be
+ * TinyTombRaider.ml). Each move is asked for and must be
  * granted: a refusal here means the tomb cannot be finished. *)
 let tomb_raider_route () =
   let open TinyTombRaider in

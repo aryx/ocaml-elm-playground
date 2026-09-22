@@ -47,7 +47,7 @@ let title = "Playground (software rasterizer)"
  *    of the optimized one (see Opti); watch the fps
  *  - "z": the pixel magnifier (Magnifier), following the mouse
  *  - "v": the sound, seen: an oscilloscope, then a spectrum, then off
- *    (Audio_debug); try games/TinyMario.exe (its music) or
+ *    (Audio_debug); try games/platform/TinyMario.exe (its music) or
  *    examples/AudioPiano.exe (space: the waveforms' harmonics)
  *  - "r": the resolution, full, then a half, a third, a quarter, each
  *    pixel shown as a 2x2, 3x3, 4x4 block (Pixelate): faster (less

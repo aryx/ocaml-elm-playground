@@ -2,8 +2,8 @@
    the arena, the two cycles, their trails, the crashes, the rounds, the
    computer player, the title and winner scenes.
 
-   The pictures are the games': games/TinyTron.ml draws it in 2D, from
-   above, a pixel per cell; games3d/TinyTron3d.ml in 3D, the trails as
+   The pictures are the games': TinyTron.ml draws it in 2D, from
+   above, a pixel per cell; TinyTron3d.ml in 3D, the trails as
    walls, seen from behind a cycle, from inside it, from above, or from
    far away. The same model, the same update, two views: that's the Elm
    architecture's promise (the view is a function of the model, and
@@ -18,7 +18,7 @@
    The computer ([computer_turn]) takes, at each step, the way leading
    to the most room: the free cells it could still reach from there, a
    flood fill ([room]); straight on when it's as good. See
-   games/TinyTron.ml's header for the history.
+   TinyTron.ml's header for the history.
 
    A kit (gamekits/, see docs/claude_notes/plan_games.md): a layer on top of
    the playground for the games of a family.

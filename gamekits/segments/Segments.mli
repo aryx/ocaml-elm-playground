@@ -31,8 +31,8 @@
        flat rectangles: "portals".
    So from the cell holding the eye, everything else is seen through a
    portal, and through a portal of that one, and so on -- which is how
-   games2.5d/TinyDescent draws the mine, nearest cell last, with no
-   z-buffer. (games3d/TinyDescent3d hands all of it to a z-buffer
+   TinyDescent draws the mine, nearest cell last, with no
+   z-buffer. (TinyDescent3d hands all of it to a z-buffer
    instead; it's the same mine.)
 
    Moving is the cells' job too ([move]): a point is in the mine if
@@ -89,7 +89,7 @@ type level = {
  * overlap. *)
 val make : segment list -> start:vec -> exit:int -> level
 
-(* the mine of games2.5d/TinyDescent and games3d/TinyDescent3d: a
+(* the mine of TinyDescent and TinyDescent3d: a
  * start room, two ways round to the reactor room (a corridor and a
  * shaft each), and the exit beyond it *)
 val mine : level
