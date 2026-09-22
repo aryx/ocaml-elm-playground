@@ -295,6 +295,16 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyManiacMansion.ml)
+ (deps (:src %{project_root}/games/adventure/TinyManiacMansion.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyZork.ml)
+ (deps (:src %{project_root}/games/adventure/TinyZork.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyGTA.ml)
  (deps (:src %{project_root}/games/adventure/TinyGTA.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
@@ -499,6 +509,7 @@
    ai ; AiOthello's Minimax, TinyDungeonMaster's Pathfind
    kit_rts
    kit_cards ; TinyFreeCell's and TinySolitaire's cards and deals
+   kit_adventure ; TinyZork's and TinyManiacMansion's world, Adventure
  )
  ; claude: 4 workers, not Testo's default of one per core: each worker
  ; starts by paying for every game's setup again, so on 64 cores this

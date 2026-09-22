@@ -253,12 +253,17 @@ longer true. See Adventure below.
   virtual machine so it shipped on every micro of 1980 -- a VM next to
   TinyCoreWar's. The game that is nearly all model and hardly any
   view: the Elm architecture with the picture taken away.
+  (DONE: `TinyZork.ml`, on a new adventure kit, gamekits/adventure's
+  `Adventure`, the world and the rules; the Z-machine left to the
+  header and an exercise.)
 - **TinyManiacMansion** (P2, ~600; Maniac Mansion, Ron Gilbert and
   Gary Winnick, Lucasfilm Games, 1987; The Secret of Monkey Island,
   1990): the text adventure given a picture. SCUMM's verbs (a sentence
   built by clicking: "use key on door"), walkboxes (the floor as
   polygons, a path through them), a script per object; the parser
   becomes a menu, the world model stays.
+  (DONE: `TinyManiacMansion.ml`, on the same kit; walkboxes searched
+  with ai/Pathfind; one kid, "New kid" left as an exercise.)
 - **TinyMetalGear** (P2, ~400; Metal Gear, Hideo Kojima, Konami, 1987;
   Metal Gear Solid, 1998): stealth, the genre where you win by not
   being seen. The guards' cones of vision are TinyXCOM's, and the

@@ -186,6 +186,8 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyBraid", "", 5);
     ("games/adventure/software/TinyMetalGearSolid", "", 5);
     ("games/adventure/software/TinyGTA", "", 5);
+    ("games/adventure/software/TinyZork", "", 5);
+    ("games/adventure/software/TinyManiacMansion", "", 5);
     ("games/rhythm/software/TinyDDR", "", 5);
     ("games/strategy/software/TinySimCity", "", 5);
     ("games/strategy/software/TinyCivilization", "", 5);
@@ -541,6 +543,14 @@ let scripted : Testutil_golden.scripted list =
     (* into the parked car and full gas: the camera higher the faster,
        the buildings leaning out from the middle of the screen *)
     ("games/adventure/software/TinyGTA", "drive", 160, "space:1,right:5-50,up:5-45,space:55,up:60-160");
+    (* three commands typed, and a fourth being typed: the terminal, a
+       character per column *)
+    ("games/adventure/software/TinyZork", "typed", 80,
+     "type(open mailbox):5,Enter:20,type(take leaflet):30,Enter:45,type(read leaflet):55,Enter:70,type(nor):75");
+    (* Push, the doormat: Dave walks to it, and finds the key; the mouse
+       over the key, the sentence line says what a click would do *)
+    ("games/adventure/software/TinyManiacMansion", "mat", 100,
+     "at(0;0):1-3,click:2,at(-330;-140):5-10,click:8,at(0;135):12-20,click:15,at(30;135):21-100");
     (* off the bank on six flaps, the buzzards already coming *)
     ("games/platform/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
     (* the scanner is the game: three abductions are under way in the

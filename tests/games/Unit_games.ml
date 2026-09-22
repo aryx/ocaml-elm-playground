@@ -4736,6 +4736,122 @@ let gta_missions () =
   Alcotest.(check bool) "too late: nothing, the next phone" true (late.money = 0 && late.phone = 1)
 
 (*****************************************************************************)
+(* TinyZork *)
+(*****************************************************************************)
+
+let zork_play (lines : string list) (g : TinyZork.game) : TinyZork.game =
+  List.fold_left (fun g l -> TinyZork.command l g) g lines
+
+let zork_last (g : TinyZork.game) : string = List.nth g.out (List.length g.out - 1)
+
+(* The parser: noise words dropped, synonyms folded, two-word verbs
+ * joined, the second object after its preposition. *)
+let zork_parser () =
+  let open TinyZork in
+  let say verb obj with_ = Say { Adventure.verb; obj; with_ } in
+  Alcotest.(check bool) "pick up the brass lantern" true (parse "Pick up the brass lantern" = say "take" (Some "lamp") None);
+  Alcotest.(check bool) "put the egg in the case" true
+    (parse "put the jewel-encrusted egg in the trophy case" = say "put" (Some "egg") (Some "case"));
+  Alcotest.(check bool) "kill troll with sword" true (parse "kill the troll with the sword" = say "attack" (Some "troll") (Some "sword"));
+  Alcotest.(check bool) "go north" true (parse "go north" = Move "north");
+  Alcotest.(check bool) "n" true (parse "n" = Move "north");
+  Alcotest.(check bool) "climb tree" true (parse "climb tree" = Move "up");
+  Alcotest.(check bool) "an unknown word, said back" true (parse "frobozz the lamp" = Unknown "frobozz")
+
+(* The whole game, walked through: the mailbox, the window, the lamp and
+ * the sword, the rug and the trap door, the troll, the painting, the
+ * egg up the tree; both treasures in the case. *)
+let zork_walkthrough () =
+  let open TinyZork in
+  let g =
+    zork_play
+      [ "open mailbox"; "take leaflet"; "read leaflet"; "north"; "east"; "open window"; "west"; "west"; "take lamp";
+        "take sword"; "move rug"; "open trap door"; "turn on lamp"; "down"; "north"; "kill troll with sword"; "east";
+        "east"; "take painting"; "west"; "west"; "south"; "up"; "put painting in case" ]
+      (start ())
+  in
+  Alcotest.(check int) "the painting, 50" 50 g.world.score;
+  let g =
+    zork_play
+      [ "east"; "east"; "north"; "north"; "climb tree"; "take egg"; "climb down"; "south"; "east"; "west"; "west";
+        "put egg in case" ]
+      g
+  in
+  Printf.eprintf "DBG zork:\n%s\n%!" (String.concat "\n" g.out);
+  Alcotest.(check int) "the egg too, 100" 100 g.world.score;
+  Alcotest.(check bool) "won" true (Adventure.has g.world "won");
+  Alcotest.(check string) "and told so" "****  You have won  ****" (zork_last g)
+
+(* The dark: in the cellar without the lamp lit nothing can be seen,
+ * and going on is the grue. *)
+let zork_grue () =
+  let open TinyZork in
+  let g = zork_play [ "north"; "east"; "open window"; "west"; "west"; "move rug"; "open trap door"; "down" ] (start ()) in
+  Alcotest.(check string) "pitch black" "It is pitch black. You are likely to be eaten by a grue." (zork_last g);
+  Alcotest.(check string) "nothing to see" "It's too dark to see!" (zork_last (command "take lamp" g));
+  let g = command "north" g in
+  Alcotest.(check bool) "eaten" true g.dead;
+  Alcotest.(check string) "and told so" "****  You have died  ****" (zork_last g)
+
+(* The troll: in the way until killed, and not with bare hands. *)
+let zork_troll () =
+  let open TinyZork in
+  let g =
+    zork_play [ "north"; "east"; "open window"; "west"; "west"; "take lamp"; "move rug"; "open trap door"; "turn on lamp"; "down"; "north" ]
+      (start ())
+  in
+  Alcotest.(check string) "in the way" "The troll fends you off with a menacing gesture." (zork_last (command "east" g));
+  Alcotest.(check string) "bare hands" "Attacking the troll with your bare hands is suicidal." (zork_last (command "kill troll" g));
+  Alcotest.(check string) "the sword, not carried" "You see no sword here." (zork_last (command "kill troll with sword" g))
+
+(*****************************************************************************)
+(* TinyManiacMansion *)
+(*****************************************************************************)
+
+(* a verb clicked, then objects, then Dave left to walk there and do it *)
+let mm_do (verb : string) (objs : string list) (p : TinyManiacMansion.play) : TinyManiacMansion.play =
+  let open TinyManiacMansion in
+  let p = List.fold_left (fun p o -> click_object o p) { p with verb; first = None } objs in
+  let rec go n p = if n = 0 || (p.path = [] && p.doing = None) then p else go (n - 1) (step_walk p) in
+  go 2000 p
+
+(* Walkboxes: across the hall, round its table, by the front strip:
+ * the middle of each edge crossed, then the spot. *)
+let mm_walkboxes () =
+  let open TinyManiacMansion in
+  let pts = route "hall" (-300., -120.) (300., -120.) in
+  Alcotest.(check (list (pair (float 0.01) (float 0.01)))) "round the table" [ (-295., -160.); (295., -160.); (300., -120.) ] pts;
+  Alcotest.(check (list (pair (float 0.01) (float 0.01)))) "in one box, straight there" [ (-200., -130.) ] (route "hall" (-300., -120.) (-200., -130.));
+  Alcotest.(check (list (pair (float 0.01) (float 0.01)))) "a click on the table: the floor nearest" [ (0., -160.) ] (route "hall" (-100., -180.) (0., -120.))
+
+(* The whole game, verb by verb: the key under the mat, the door, the
+ * soda for the tentacle, the flashlight for the dark, the odd book;
+ * into the lab. *)
+let mm_walkthrough () =
+  let open TinyManiacMansion in
+  let p = start () in
+  let p = mm_do "Push" [ "mat" ] p in
+  Alcotest.(check string) "a key" "Hey, there's a key under here!" p.saying;
+  let p = mm_do "Pick up" [ "key" ] p |> mm_do "Open" [ "front door" ] in
+  Alcotest.(check string) "locked" "It's locked." p.saying;
+  let p = mm_do "Use" [ "key"; "front door" ] p |> mm_do "Open" [ "front door" ] |> mm_do "Walk to" [ "front door" ] in
+  Alcotest.(check string) "in the hall" "hall" p.world.here;
+  let p = mm_do "Walk to" [ "library door" ] p in
+  Alcotest.(check string) "the tentacle" "Purple Tentacle: Stop right there, kid! Nobody goes in the library." p.saying;
+  let p =
+    p |> mm_do "Walk to" [ "kitchen door" ] |> mm_do "Open" [ "fridge" ] |> mm_do "Pick up" [ "soda" ] |> mm_do "Open" [ "drawer" ]
+    |> mm_do "Pick up" [ "flashlight" ] |> mm_do "Walk to" [ "hall door" ] |> mm_do "Give" [ "soda"; "tentacle" ]
+  in
+  Alcotest.(check bool) "the tentacle gone" true (Adventure.where p.world "tentacle" = Adventure.Nowhere);
+  let p = mm_do "Walk to" [ "library door" ] p in
+  Alcotest.(check string) "in the library" "library" p.world.here;
+  Alcotest.(check (list string)) "dark: only the way out" [ "library exit" ] (clickable p.world);
+  let p = mm_do "Turn on" [ "flashlight" ] p in
+  Alcotest.(check bool) "light: the book" true (List.mem "odd book" (clickable p.world));
+  let p = mm_do "Pull" [ "odd book" ] p |> mm_do "Walk to" [ "secret door" ] in
+  Alcotest.(check string) "into the lab" "lab" p.world.here
+
+(*****************************************************************************)
 (* TinyPrinceOfPersia *)
 (*****************************************************************************)
 
@@ -6450,6 +6566,12 @@ let tests =
       t "TinyGTA, running someone over" gta_run_over;
       t "TinyGTA, the police, and the stars" gta_police;
       t "TinyGTA, the phones" gta_missions;
+      t "TinyZork, the parser" zork_parser;
+      t "TinyZork, a walkthrough to the win" zork_walkthrough;
+      t "TinyZork, the grue" zork_grue;
+      t "TinyZork, the troll" zork_troll;
+      t "TinyManiacMansion, the walkboxes" mm_walkboxes;
+      t "TinyManiacMansion, a walkthrough to the lab" mm_walkthrough;
       t "TinyPrinceOfPersia, the distances are the tables' sums" pop_tables;
       t "TinyPrinceOfPersia, a robot escapes the dungeon" pop_robot;
       t "TinyPrinceOfPersia, the gate closes, the shaft hurts" pop_gate_and_fall;

@@ -157,14 +157,17 @@ number (Microsoft's, the cards kit's), so a game can be played again.
 
 ## Action-adventure and horror
 
-`games/adventure/`: a world explored in real time, whose rooms, items
-and keys open the way on; the hero does not grow, the player's
+`games/adventure/`: a world explored -- in words and turns at first
+(the text adventure), then in pictures, then in real time -- whose
+rooms, items and keys open the way on; the hero does not grow, the player's
 knowledge of the world does. In horror, the camera and the dark are
 part of the game.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
+| [TinyZork](games/adventure/TinyZork.ml) | 2D | Zork (Tim Anderson, Marc Blank, Bruce Daniels and Dave Lebling, MIT, 1977; Infocom, 1980) | A white house, a trap door, a troll, and a grue in the dark, in words only. | The text adventure: the world as data and a rule per thing to try (the adventure kit), a parser of whole sentences, the dark; the game nearly all model, a terminal for its view. |
 | [TinyZelda](games/adventure/TinyZelda.ml) | 2D | The Legend of Zelda (Shigeru Miyamoto and Takashi Tezuka, Nintendo, 1986) | An overworld of screens, a sword, a key, and a dungeon. | A land to explore in any order: rooms that slide in, an inventory as locks and keys, monsters wandering on a generator in the model. |
+| [TinyManiacMansion](games/adventure/TinyManiacMansion.ml) | 2D | Maniac Mansion (Ron Gilbert and Gary Winnick, Lucasfilm Games, 1987) | Past the purple tentacle and into Dr. Fred's lab, a verb and a click at a time. | The parser become a menu: SCUMM's verbs and sentence line, on the same world model as TinyZork; walkboxes, the floor as boxes and a path through them; a script per object. |
 | [TinyAloneInTheDark](games/adventure/TinyAloneInTheDark.ml) | 3D | Alone in the Dark (Frédérick Raynal, Infogrames, 1992) | A house at night seen by fixed cameras, a locked study, and something in the corridor. | Fixed cameras that cut between rooms (cinematography); tank controls, the only ones that survive a cut; a doorway's hysteresis. |
 | [TinyTombRaider](games/adventure/TinyTombRaider.ml) | 3D | Tomb Raider (Toby Gard, Core Design, 1996) | A raider in a stone tomb, an idol on a pedestal, and a boulder. | Committed moves of fixed length, and a level measured in them (no collision code); textured stone from one atlas page. |
 | [TinyGTA](games/adventure/TinyGTA.ml) | 2.5D | Grand Theft Auto (DMA Design, 1997) | A city from above: any car is yours, phones ring with work, and the police count your crimes in stars. | The open world: a city that runs without you (traffic and people on a road graph), any car taken, the wanted level; the camera rising with speed; buildings leaning out of the screen. |

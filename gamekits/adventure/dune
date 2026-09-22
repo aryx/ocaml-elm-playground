@@ -1,0 +1,10 @@
+; claude: the adventure kit: what adventure games share, on top of the
+; playground -- the world as data (rooms, objects each somewhere, flags)
+; and the player's sentences acted on it by rules (Adventure). TinyZork
+; makes its sentences by parsing what is typed, TinyManiacMansion by
+; clicking a verb and objects: the same model under both. A private
+; library, not installed: only the games use it.
+(library
+ (name kit_adventure)
+ (wrapped false)
+)

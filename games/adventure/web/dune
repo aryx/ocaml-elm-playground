@@ -4,14 +4,15 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyGTA TinyMetalGearSolid TinyZelda)
-  (modules TinyGTA TinyMetalGearSolid TinyZelda)
+  (names TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZork)
+  (modules TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZork)
   (libraries
     elm_playground
     kit_platformer
     kit_shmup
     ai
     kit_racing
+    kit_adventure
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)
