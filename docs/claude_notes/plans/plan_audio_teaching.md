@@ -270,6 +270,28 @@ audio meeting).
 
 ## Status
 
+**Summary (2026-09-22).** Every phase is done but for what is listed
+as left below; the log that follows, phase by phase, has the numbers
+measured on the way and the mistakes caught.
+
+| phase | done | left |
+|---|---|---|
+| 0-2 | samples, WAVs, oscillators, noise, envelopes, mixing | |
+| 3 | `Synth`, `Mixer`, `playground/Audio`, SDL | |
+| 4 | the web: our samples in an AudioBuffer | Web Audio's own nodes, for comparison |
+| 5 | `Spectrum`, the oscilloscope and spectrum overlay | |
+| 6 | PolyBLEP, PolyBLAMP, `Filter`, `Fm` | |
+| 7 | `Effect` (vibrato, jump, arpeggio, echo, reverb), `Sfx` (presets, vary, random) | |
+| 8 | ABC, solfège, MIDI files, drums, the music's clock, tempo, Karplus-Strong tuned | a live MIDI keyboard; MIDI's pitch bend and control changes |
+| 9 | `notes_audio.md` checked against the code (2026-09-22) | |
+| 10 | stereo, `Space` (pan laws, the ears' delay, distance, air, Doppler), `Audio3d`, WAV files read, `Resample` | |
+
+Examples: AudioTheremin, AudioPiano, AudioAliasing, AudioSfx,
+AudioSpace, AudioSampler. Games heard: TinyMario, the rhythm games,
+TinyBreakout, Asteroid, Pong, TinyPong, Snake, Tetris, TinyStarFox,
+and some thirty with the ready-made sounds. Open exercises:
+`notes_audio.md` section 12.
+
 - **The API decision (2026-09-19), before phase 3**: `playground/Audio.mli`
   (not `Sound`), Evan-style like `Physics.mli`, but **stateful** for
   the triggering, as the user suggested: sounds fit the pure
@@ -577,6 +599,44 @@ audio meeting).
   right, loudest in front, 120 Hz coming, 100 going); Asteroid's bangs,
   shots and crash placed. Tests (`Unit_space`). Left: the time between
   the ears, HRTFs, air absorption, positional sound in the 3D games.
+- **Phase 10, DONE: sound in the 3D games, air, the ears' delay**:
+  `Space.air_loss`/`air_cutoff` (a power law through ISO 9613-1's 4 and
+  8 kHz values: 3 dB at 8 kHz after 40 m, 4 kHz after 130 m) and
+  `Space.interaural_delay` (Woodworth's r (theta + sin theta) / c: 29
+  samples to the side), applied to a panned one-shot's far channel by
+  `render_stereo`, switched by `Space.ears_apart`; continuous sounds
+  keep to the level (a moving delay: an exercise). `playground/Audio3d`
+  (in the 3D library): the camera as the listener, its right ahead x
+  up, checked against `Playground3d.project` for four cameras (a point
+  drawn on the right is heard on the right); `heard` pans, delays,
+  fades, dulls and Doppler-shifts. TinyStarFox heard from its camera:
+  lasers, enemy shots, explosions, the nearest three enemies' engines
+  (measured coming at ~77 Hz for 70 x 1.11, lower gone).
+- **Phase 10, DONE: recordings**: `Wav.of_string` walks the chunks,
+  mixes stereo down, resamples other rates; `audio/Resample`, nearest,
+  linear, cubic (a fifth up: -39.6, -79.2, -112.5 dB to 689 Hz; -27.3,
+  -54.6, -75.3 to 2756 Hz; at exactly 1.5 the cubic looked -133 dB, the
+  reads falling on two phases only: measured at a real fifth instead).
+  `Synth.pitched` on Samples reads faster, pitch and time together.
+  `Audio.wav`, `Audio.recorded`, `.wav` in `loop_from`;
+  `examples/AudioSampler.ml` (one FM recording at C4, every key; C5
+  measured at 523.5 Hz and 0.60 s).
+- **The exercises, DONE**: Schroeder's reverb (`Effect.reverb`,
+  `Synth.Reverb`, `Audio.reverb`: 30 dB down T / 2 later, measured
+  -29.9; 1552 samples of 4410 non-zero where one comb has 3);
+  `Sfx.random`, sfxr's category buttons (200 seeds a category, each
+  keeping its character), `Audio.random_sound`; AudioSfx's `n` and `c`.
+  The plucked string tuned (Jaffe and Smith's all-pass: within 0.25
+  cents at 440, 1000, 2000 Hz, from -4.7, -15.6, -35.0 untuned) -- and
+  on the way its recurrence corrected: it had averaged a sample with
+  the *next* one, period p - 1/2, 12.5 cents sharp at 440 Hz where the
+  .mli said 4.7 flat; the golden WAVs of the string redone.
+- **Phase 9, DONE**: `notes_audio.md` read against the code: the
+  specification's "not written" gone, §0's table, §5 (the ears' delay,
+  air, Audio3d), §8 (the reverb, sfxr's buttons, the string's three
+  details), §9's "Samples", §11 (no longer "nothing is loaded", nor
+  without stereo, 3D, reverb), §12's exercises (the done ones out, the
+  next ones in), §13, the glossary, the references in order.
 - **Asked by the user (phase 5)**: subtractive synthesis (a rich wave
   through a resonant low-pass: phase 6's Filter), FM synthesis
   (Chowning: to add with phase 6, small, and made for the spectrum),
@@ -594,12 +654,14 @@ audio meeting).
 - `make test`: the worked examples, the spectra (frequencies present
   and absent), and golden WAVs of the examples' sounds, compared
   sample by sample (and a `make approve-golden-audio`).
-- By ear: each example and game, on native and in the browser.
+- By ear: each example and game, on native and in the browser -- a
+  person's job: the checks here were on dumped WAVs (-dump-audio),
+  their pitches and levels measured, not listened to.
 - Latency: a key press to a sound, under a frame or two.
 
 ## Out of scope
 
-- Sampled instruments, music files (MOD, MIDI), recording from a
-  microphone.
-- Reverb beyond a simple echo, 3D audio beyond panning (phase 10).
+- Recording from a microphone; compressed formats (OGG, MP3); MOD
+  files (an exercise: a sampler with a sequencer).
+- HRTFs, convolution reverb (exercises in `notes_audio.md` §12).
 - Real-time safety beyond the queue (no audio thread in OCaml).

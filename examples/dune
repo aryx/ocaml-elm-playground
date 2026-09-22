@@ -7,7 +7,7 @@
     TypesetParagraph
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
-    AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace
+    AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts
     LogoFractals
     BigBangRocket BigBangWorm

@@ -3,9 +3,9 @@
  *
  * The ear finds a sound's direction mostly from two differences
  * between the ears: the level (the head shadows the far ear) and the
- * time (the far ear hears it later, by up to 0.66 ms: 17 cm of head at
- * 343 m/s). Stereo speakers or headphones can give both; here, the
- * level only -- panning -- the time difference is an exercise.
+ * time (the far ear hears it later, by up to 0.66 ms). Stereo speakers
+ * or headphones can give both; here, the level (panning), and the time
+ * for the sounds played once (below).
  *
  * {2 The pan law}
  *
@@ -29,15 +29,34 @@
  * was.) Alan Blumlein's stereo patent (EMI, 1931) had already panned
  * with two gains; the constant power law is the mixing desk's.
  *
+ * {2 The time between the ears}
+ *
+ * A sound from the side reaches the far ear later: around the head, a
+ * sphere of radius r = 8.75 cm, the path is longer by r (theta + sin
+ * theta) at an angle theta from straight ahead (Robert Woodworth,
+ * 1938): at most (pi/2 + 1) r / c = 0.656 ms, 29 samples, for a sound
+ * straight to the side. [ears_apart]: the far ear's channel delayed by
+ * that, for a sound played once (Synth.render_stereo); a continuous
+ * sound, its pan changing every frame, keeps to the level (a delay that
+ * moves needs a fractional delay line, or it clicks: an exercise).
+ *
  * {2 Distance}
  *
  * A sound spreads over a sphere, its intensity falling as 1 / d^2 and
  * its amplitude as 1 / d: half as loud (-6.02 dB) each time the
  * distance doubles, the inverse distance law. Up to a [reference]
  * distance it stays at full volume (closer than that, 1 / d would grow
- * without bound): OpenAL's "inverse distance clamped" model. (Air also
- * absorbs the high frequencies over long distances, a far thunder a
- * rumble: an exercise, with a low-pass.)
+ * without bound): OpenAL's "inverse distance clamped" model.
+ *
+ * Air also absorbs, the high frequencies much more than the low: a far
+ * thunder is a rumble. The standard's table (ISO 9613-1, at 20 degrees
+ * and 70% humidity) gives about 0.023 dB a meter at 4 kHz and 0.077 at 8
+ * kHz; a power law through those two, 0.0766 (f / 8000)^1.75 dB a
+ * meter, is close above 4 kHz (below, it says too little: 2.0 dB a km
+ * at 1 kHz for the table's 5.0 -- but there it hardly matters short of
+ * a kilometer). [air_cutoff d]: where that loss reaches 3 dB, the
+ * cutoff of a low-pass standing for the air: 7.9 kHz at 40 m, 4.0 kHz
+ * at 130 m, 20 kHz (nothing) within 7.9 m.
  *
  * {2 Doppler}
  *
@@ -60,7 +79,10 @@
  * Specification, Creative Labs, 2005, sections 3.4 (distance models)
  * and 3.5.2 (velocity and Doppler); Christian Doppler, "Über das
  * farbige Licht der Doppelsterne", 1842; Jens Blauert, Spatial Hearing,
- * MIT Press, 1997 (the two ears' cues). *)
+ * MIT Press, 1997 (the two ears' cues); Robert S. Woodworth,
+ * Experimental Psychology, 1938 (the time between the ears); ISO
+ * 9613-1:1993, Attenuation of sound during propagation outdoors, part
+ * 1: calculation of the absorption of sound by the atmosphere. *)
 
 (* {1 Panning} *)
 
@@ -69,6 +91,14 @@ val pan : float -> float * float
 
 (* [pan_linear p]: 1 - p and 1 + p, the hole in the middle *)
 val pan_linear : float -> float * float
+
+(* true: the far ear's delay applied (see above); false: the level
+ * only, as a pan knob does *)
+val ears_apart : bool ref
+
+(* [interaural_delay p]: the far ear's delay, in samples, for a sound
+ * panned [p] (the sine of its angle): 0 in the middle, 29 at a side *)
+val interaural_delay : float -> int
 
 (* {1 Positions} *)
 
@@ -88,6 +118,14 @@ val distance : vec -> vec -> float
 
 (* [attenuation ~reference d]: 1 up to [reference], then reference / d *)
 val attenuation : reference:float -> float -> float
+
+(* [air_loss ~frequency d]: what [d] meters of air take from [frequency]
+ * Hz, in dB (the power law above) *)
+val air_loss : frequency:float -> float -> float
+
+(* [air_cutoff d]: the frequency that has lost 3 dB over [d] meters,
+ * at most 20 kHz *)
+val air_cutoff : float -> float
 
 (* [doppler ~speed_of_sound ~listener ~listener_velocity ~source
  * ~source_velocity]: f' / f, the formula above *)

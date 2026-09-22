@@ -153,6 +153,44 @@ let test_generations () =
   Alcotest.(check (float 0.001)) "sfxr's, held" 0.391 (rms coin3 0.05 0.06);
   Alcotest.(check (float 0.001)) "where its notes meet" 0.389 (rms coin3 0.069 0.071)
 
+(* Schroeder's reverb on an impulse: the level of its tail at 0.2 s,
+ * and T / 2 later (30 dB down if the combs were set right), and how
+ * dense its echoes are *)
+let test_reverb () =
+  let seconds = 1.5 in
+  let impulse = Array.init 10 (fun i -> if i = 0 then 1. else 0.) in
+  let y = Effect.reverb ~seconds ~mix:1. impulse in
+  let rms from until =
+    let i = Signal.samples from and j = Signal.samples until in
+    sqrt (Array.fold_left (fun e v -> e +. (v *. v)) 0. (Array.sub y i (j - i)) /. float_of_int (j - i))
+  in
+  let drop = 20. *. log10 (rms (0.2 +. (seconds /. 2.)) (0.3 +. (seconds /. 2.)) /. rms 0.2 0.3) in
+  let dense = ref 0 in
+  Array.iteri (fun i v -> if i >= Signal.samples 0.2 && i < Signal.samples 0.3 && Float.abs v > 1e-4 then incr dense) y;
+  Alcotest.(check int) "T longer" (10 + Signal.samples seconds) (Array.length y);
+  Alcotest.(check (float 0.5)) "half of T later: 30 dB down (dB)" (-30.) drop;
+  (* one comb would echo once in 30 to 45 ms, 3 samples in 0.1 s; the
+   * four and the all-passes, 1552: a wash, not echoes *)
+  Alcotest.(check int) "its echoes in 0.1 s (samples)" 1552 !dense
+
+(* sfxr's buttons: over 200 seeds, what makes each category itself
+ * always holds; the same seed, the same sound *)
+let test_random () =
+  let all name check = for seed = 1 to 200 do check (Sfx.random name ~seed) done in
+  let expect what b = if not b then Alcotest.fail what in
+  all "laser" (fun s -> expect "a laser slides down" (s.slide < s.frequency));
+  all "jump" (fun s -> expect "a jump slides up" (s.slide > s.frequency));
+  all "powerup" (fun s -> expect "a powerup rises" (s.slide > s.frequency));
+  all "explosion" (fun s ->
+      expect "an explosion is noise, getting duller" (s.wave = Noise && s.low_pass_to < s.low_pass && s.slide < s.frequency));
+  all "coin" (fun s -> expect "a coin jumps up an interval" (List.mem s.jump [ 5.; 7.; 12. ]));
+  all "hit" (fun s -> expect "a hit is short and falls" (s.sustain = 0. && s.decay <= 0.2 && s.slide < s.frequency));
+  all "blip" (fun s -> expect "a blip holds its note" (s.slide = s.frequency));
+  Alcotest.(check bool) "the same seed: the same" true (Sfx.random "laser" ~seed:3 = Sfx.random "laser" ~seed:3);
+  Alcotest.(check bool) "another: another" true (Sfx.random "laser" ~seed:3 <> Sfx.random "laser" ~seed:4);
+  Alcotest.(check bool) "another category, the same seed: another" true
+    (Sfx.random "laser" ~seed:3 <> Sfx.random "hit" ~seed:3)
+
 let tests =
   Testo.categorize "Effect and Sfx"
     [
@@ -160,4 +198,6 @@ let tests =
       t "the echo: an impulse's echoes, the tail" test_echo;
       t "the presets measured, vary" test_sfx;
       t "the ready-made sounds, three generations" test_generations;
+      t "Schroeder's reverb: the decay, the density" test_reverb;
+      t "sfxr's buttons: each category itself, 200 times" test_random;
     ]

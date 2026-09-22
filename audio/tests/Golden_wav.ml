@@ -78,6 +78,14 @@ let sounds : (string * (unit -> Signal.t)) list =
                   (fun i f -> Synth.After [ Synth.voice (Wave Sine) 0. |> Synth.louder 0. |> Synth.lasting (0.03 *. float_of_int i); Synth.voice Pluck f |> Synth.lasting 1.5 ])
                   [ 196.; 246.94; 293.66 ])
             |> Synth.louder 0.6) ) ]
+  (* a blip in a cave (Schroeder's reverb, 1.5 s: Effect.mli); a
+   * recording (an FM note at C4) read an octave faster, linearly
+   * (Resample.mli): C5, half as long *)
+  @ [ ("sfx_blip_reverb", fun () -> Synth.render (Sfx.to_sound { Sfx.blip with reverb = 1.5 }));
+      ( "resampled_octave_up",
+        fun () ->
+          let note = Synth.render (Synth.voice (Fm { ratio = 1.; index = 3. }) 261.63 |> Synth.lasting 1. |> Synth.fading) in
+          Resample.faster Linear 2. note ) ]
   (* the click: three short beeps cut at once, then the same three
    * enveloped (Envelope.mli) *)
   @ [ ("beeps_cut", fun () -> beeps (fun s -> s));

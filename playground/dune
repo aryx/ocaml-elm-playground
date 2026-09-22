@@ -7,7 +7,7 @@
  (public_name elm_playground)
  (virtual_modules Playground_platform)
  (wrapped false)
- (modules :standard \ Playground3d Playground3d_platform Camera3d
+ (modules :standard \ Playground3d Playground3d_platform Camera3d Audio3d
    Character3d Gpu_scene Logo3d Physics3d Portal3d Ragdoll3d)
  (libraries
    ; commons
@@ -39,7 +39,7 @@
  (public_name elm_playground_3d)
  (virtual_modules Playground3d_platform)
  (wrapped false)
- (modules Playground3d Playground3d_platform Camera3d
+ (modules Playground3d Playground3d_platform Camera3d Audio3d
    Character3d Gpu_scene Logo3d Physics3d Portal3d Ragdoll3d)
  (libraries
    ; commons

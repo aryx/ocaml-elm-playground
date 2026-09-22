@@ -21,7 +21,7 @@
  *     vibrato, jump              pitch effects (Effect.mli)
  *     low_pass, high_pass        filters, the low-pass's cutoff moving
  *                                (Filter.mli): subtractive synthesis
- *     echo                       a delay line (Effect.mli)
+ *     echo, reverb               a delay line, a room (Effect.mli)
  *
  *       level
  *         1 |   ________
@@ -65,6 +65,7 @@ type t = {
   resonance : float; (* the low-pass's Q, 0.707: none *)
   high_pass : float; (* cutoff, Hz; 0: no high-pass *)
   echo : float; (* the delay, seconds; 0: no echo *)
+  reverb : float; (* the room's reverberation time, seconds; 0: none *)
   volume : float; (* 0 to 1 *)
 }
 
@@ -94,3 +95,13 @@ val presets : (string * t) list
  * durations and cutoffs times 0.7 to 1.4, pitches up to 5 semitones up
  * or down; [seed] 0: [s] itself *)
 val vary : seed:int -> t -> t
+
+(* [random category ~seed]: sfxr's buttons, "random laser", "random
+ * explosion": every number drawn afresh, within that category's
+ * ranges, which are what makes it that kind of sound -- a laser always
+ * slides down, a jump up, an explosion is noise getting duller, a coin
+ * jumps up an interval, a powerup rises and warbles, a hit is short
+ * and falls, a blip holds a note; the ranges are ours, after sfxr's.
+ * [category] one of [presets]'s names but "step" (a blip for any other
+ * name); the same seed, the same sound *)
+val random : string -> seed:int -> t

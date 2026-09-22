@@ -127,6 +127,11 @@ val arpeggio : number list -> number -> sound -> sound
    canyon (the sound lasts longer: until the echoes are silent) *)
 val echo : number -> number -> sound -> sound
 
+(* [reverb seconds s]: [s] in a room whose echoes die away in [seconds]
+   (0.5 a bathroom, 2 a hall, 5 a cathedral): Schroeder's reverb,
+   audio/Effect.mli; the sound that much longer *)
+val reverb : number -> sound -> sound
+
 (* [naive s]: the square, triangle and sawtooth waves of [s] computed
    the simple way, a formula, with their aliases: high notes whistle
    out of tune (the default removes most of them: audio/Oscillator.mli;
@@ -179,6 +184,17 @@ val doremi : string -> sound
    parsing -- a voice muted, a single note kept -- played the same way *)
 val of_tune : Abc.tune -> sound
 
+(* [wav bytes]: a recording, a WAV file's sound (its bytes, as read from
+   a .wav file: 16-bit, mono or stereo, any sample rate; audio/Wav.mli);
+   [pitched] then plays it higher or lower, and shorter or longer with
+   it, as a tape would (audio/Resample.mli) *)
+val wav : string -> sound
+
+(* [recorded s]: [s] frozen into a recording, its samples computed once:
+   from then on, like a WAV file's (pitched: faster and higher, as a
+   sampler plays one recording at every key; examples/AudioSampler.ml) *)
+val recorded : sound -> sound
+
 (* [midi bytes]: a Standard MIDI File's music (its bytes, as read from
    a .mid file: audio/Midi.mli), General MIDI's instruments played by
    our 8-bit ones, drums on noise (audio/Music.mli) *)
@@ -205,6 +221,12 @@ val powerup : sound (* a rising, warbling square *)
    same [seed]: ten shots in a row that don't all sound alike,
      Audio.play (Audio.varied "laser" shots_fired) *)
 val varied : string -> int -> sound
+
+(* [random_sound category seed]: sfxr's "random" buttons: a new sound of
+   that kind ("laser", "explosion", "coin", "jump", "powerup", "hit",
+   "blip"), its numbers drawn afresh, the same for the same [seed]: a
+   game's sounds found by pressing a button until one sounds right *)
+val random_sound : string -> int -> sound
 
 (* [sfx numbers]: your own, from sfxr's numbers (audio/Sfx.mli):
      let zap = sfx { Sfx.laser with frequency = 2000.; echo = 0.1 } *)
@@ -244,7 +266,7 @@ val change_loop : string -> sound -> unit
 
 (* [loop_from name source]: a tune from a file or a URL, looping once
    it's there: a MIDI file if [source] ends in .mid, an ABC one in .abc,
-   else solfège; a local path natively, a URL anywhere (natively
+   a recording in .wav, else solfège; a local path natively, a URL anywhere (natively
    downloaded, blocking the first time; in a browser fetched in the
    background, from the page's own server for a plain name). Like
    [loop], calling it again while it plays (or downloads) does nothing:

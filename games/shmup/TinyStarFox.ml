@@ -58,7 +58,13 @@
  *
  * Uses: Track3d (the canyon, with TinyMarioKart64 and
  * TinyVirtuaRacing), the shmup kit's Path and Shots (with
- * TinyGalaga and TinyGradius), Scene2d, Camera3d. Not
+ * TinyGalaga and TinyGradius), Scene2d, Camera3d, and Audio3d: every
+ * sound heard from the camera -- your lasers, the enemies' shots, their
+ * explosions, and the nearest enemies' engines, panned, fading and
+ * dulled with the distance, and Doppler-shifted, the stage carrying you
+ * at 34 m/s past things that stand still: each engine a tenth higher
+ * coming, a tenth lower gone, the drop of 3.6 semitones of a fly-by
+ * (audio/Space.mli). Not
  * Physics3d (a ship on rails has no forces), not Topdown or Car (there
  * is nothing to drive).
  *
@@ -329,13 +335,68 @@ let step_run (keys : keyboard) (r : run) : run =
   let r = step_bolts r in
   step_collisions r
 
+(*****************************************************************************)
+(* The camera, and what it hears *)
+(*****************************************************************************)
+
+(* a point of the canyon's cross-section, in the world: [offset] across
+ * the floor, [height] above it *)
+let world_at (s : number) (offset : number) (height : number) : number * number * number =
+  let x, y, z = Track3d.across track s offset in
+  (x, y +. height, z)
+
+(* behind and above the ship, looking down the canyon: on rails, the
+ * camera is on rails too. It follows most of the ship's slide across
+ * but not all of it -- all of it and the canyon swings with every
+ * dodge, too little and a ship near the wall slides off the screen,
+ * which a first version of this did at 45% *)
+let camera_of (r : run) : camera =
+  let eye = world_at (r.s -. 14.) (r.ship.offset *. 0.8) (r.ship.height +. 3.4) in
+  let target = world_at (r.s +. 26.) (r.ship.offset *. 0.55) (r.ship.height +. 1.2) in
+  camera ~eye ~target ~far:2400. ()
+
+(* the ears: the camera, carried down the canyon at the ship's speed *)
+let ears (r : run) : Audio3d.listener =
+  let x0, y0, z0 = world_at r.s 0. 0. and x1, y1, z1 = world_at (r.s +. 1.) 0. 0. in
+  let n = Float.max 1e-6 (sqrt (((x1 -. x0) ** 2.) +. ((y1 -. y0) ** 2.) +. ((z1 -. z0) ** 2.))) in
+  let k = ship_speed /. n in
+  Audio3d.listener ~velocity:((x1 -. x0) *. k, (y1 -. y0) *. k, (z1 -. z0) *. k) (camera_of r)
+
+let enemy_at (e : enemy) : number * number * number =
+  let x, y = enemy_across e in
+  world_at e.es x y
+
+let engine = Audio.square 70. |> Audio.low_pass 500. |> Audio.louder 0.9
+let zap = Audio.sfx { Sfx.laser with frequency = 700.; slide = 300.; volume = 0.35 }
+
+(* what happened between [before] and [after], heard *)
+let sounds (before : run) (after : run) : unit =
+  let heard = Audio3d.heard (ears after) in
+  if after.cooldown > before.cooldown then
+    Audio.play (Audio.laser |> Audio.louder 0.5 |> heard (world_at after.s after.ship.offset after.ship.height));
+  List.iter2
+    (fun (b : enemy) (a : enemy) ->
+      if b.alive && not a.alive then Audio.play (Audio.explosion |> heard (enemy_at a));
+      (* step_enemies's condition for a shot *)
+      if a.alive && a.fire = 0 && a.es > after.s && a.es -. after.s < 120. then Audio.play (zap |> heard (enemy_at a)))
+    before.enemies after.enemies;
+  if after.ship.shield < before.ship.shield then Audio.play Audio.hit;
+  (* the three nearest enemies ahead or just passed, each its engine,
+   * named by its place in the list (the same enemy, frame after frame) *)
+  List.mapi (fun i (e : enemy) -> (i, e)) after.enemies
+  |> List.filter (fun (_, (e : enemy)) -> e.alive && e.es > after.s -. 15. && e.es < after.s +. 90.)
+  |> List.sort (fun (_, (a : enemy)) (_, (b : enemy)) -> compare (Float.abs (a.es -. after.s)) (Float.abs (b.es -. after.s)))
+  |> List.filteri (fun k _ -> k < 3)
+  |> List.iter (fun (i, e) -> Audio.keep_playing (Printf.sprintf "enemy%d" i) (engine |> heard (enemy_at e)))
+
 let update (computer : computer) (m : model) : model =
   let m = Scene2d.update computer m in
   let space = Scene2d.pressed (fun k -> k.kspace) m in
   match m.scene with
   | Title -> if space then Scene2d.go (Flying (new_run ())) m else m
-  | Flying r ->
-      let r = step_run computer.keyboard r in
+  | Flying before ->
+      let r = step_run computer.keyboard before in
+      sounds before r;
       if r.ship.shield <= 0 then Scene2d.go (Ended (r, false)) m
       else if r.s >= finish_s then Scene2d.go (Ended (r, true)) m
       else { m with scene = Flying r }
@@ -344,12 +405,6 @@ let update (computer : computer) (m : model) : model =
 (*****************************************************************************)
 (* View *)
 (*****************************************************************************)
-
-(* a point of the canyon's cross-section, in the world: [offset] across
- * the floor, [height] above it *)
-let world_at (s : number) (offset : number) (height : number) : number * number * number =
-  let x, y, z = Track3d.across track s offset in
-  (x, y +. height, z)
 
 let arwing : shape3d =
   let body = rgb 210 215 225 and wing = rgb 90 120 200 and glass = rgb 120 190 230 in
@@ -402,17 +457,10 @@ let text (color : color) (size : number) (str : string) : shape = words color st
 let view (computer : computer) (m : model) : camera * shape3d list =
   let screen = computer.screen in
   let r = match m.scene with Title -> new_run () | Flying r | Ended (r, _) -> r in
-  (* behind and above the ship, looking down the canyon: on rails, the
-   * camera is on rails too. It follows most of the ship's slide across
-   * but not all of it -- all of it and the canyon swings with every
-   * dodge, too little and a ship near the wall slides off the screen,
-   * which a first version of this did at 45% *)
-  let eye = world_at (r.s -. 14.) (r.ship.offset *. 0.8) (r.ship.height +. 3.4) in
-  let target = world_at (r.s +. 26.) (r.ship.offset *. 0.55) (r.ship.height +. 1.2) in
   (* the title too: an orbit round the start sees only the outside of a
    * canyon wall twenty-six high, so the title is the first frame of the
    * run, the arwing at the mouth of the canyon *)
-  let cam = camera ~eye ~target ~far:2400. () in
+  let cam = camera_of r in
   let sky =
     Camera3d.sky ~sky:(rgb 96 130 190) ~horizon:(rgb 92 78 60) ~ground:(-30.) cam
     @ [ Camera3d.floor ~color:(rgb 86 74 58) ~ground:(-30.) cam ]

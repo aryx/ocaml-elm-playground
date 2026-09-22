@@ -3,10 +3,10 @@
 How a computer makes sound: the few ideas every synthesizer, from Max
 Mathews's first computer music at Bell Labs (1957) to the NES's five
 channels and a modern game's mixer, is built from, where they came
-from, and what goes wrong when they're done naively. It's also the
-specification of `audio/` (see
-[`plan_audio_teaching.md`](../plans/plan_audio_teaching.md)): written before the
-code, its pointers name the modules (§0 says which are written). Companions:
+from, and what goes wrong when they're done naively. It was written
+before `audio/`, as its specification (see
+[`plan_audio_teaching.md`](../plans/plan_audio_teaching.md)), and has
+been kept in step with it since: its numbers are the tests'. Companions:
 [`notes_2d.md`](notes_2d.md) (pictures), [`notes_2d_physics.md`](notes_2d_physics.md)
 (motion), and [`notes_audio_related_work.md`](../related-work/notes_audio_related_work.md).
 
@@ -29,13 +29,14 @@ same mistake, with the same cure.
 | `Filter` | low-pass, high-pass, resonance | §7 |
 | `Fm` | FM synthesis: sidebands from two sines | §7 |
 | `Synth` | a sound as a tree of voices, rendered; slides | §8 |
-| `Effect`, `Sfx` | vibrato, jump, arpeggio, echo; sfxr's parameters | §8 |
-| `Pluck` | a plucked string: Karplus-Strong | §8 |
-| `Space` | stereo: the pan laws, distance, Doppler | §5 |
+| `Effect`, `Sfx` | vibrato, jump, arpeggio, echo, reverb; sfxr's parameters and buttons | §8 |
+| `Pluck` | a plucked string: Karplus-Strong, tuned | §8 |
+| `Space` | stereo: the pan laws, the ears' delay, distance, air, Doppler | §5 |
 | `Music`, `Abc`, `Doremi`, `Midi` | notes, equal temperament, tunes as text, MIDI files | §9 |
+| `Resample` | recordings at other pitches and rates: nearest, linear, cubic | §9 |
 | `Mixer` | the sounds playing, pulled by the sound card | §10 |
-| `Wav` | writing samples to a file | §2 |
-| `playground/Audio`, `Audio_debug` | the Evan-style API over all of it; the sound seen | §13 |
+| `Wav` | samples in a file, written and read | §2, §9 |
+| `playground/Audio`, `Audio3d`, `Audio_debug` | the Evan-style API over all of it; heard from a 3D camera; the sound seen | §13 |
 
 ## 1. What a sound is
 
@@ -92,7 +93,8 @@ remove what's too fine *before* sampling (§6).
 
 (A sound is written to a file with `Wav`: a small header -- sample
 rate, channels, bits per sample -- then the samples: the PPM of sound,
-and what the golden tests compare.)
+and what the golden tests compare. Read back, a file from elsewhere
+may have other chunks, two channels, another rate: §9.)
 
 ## 3. Oscillators: the waveforms
 
@@ -169,19 +171,29 @@ feels even (and one in plain amplitude doesn't).
 
 The ear finds a sound's direction mostly from two differences between
 the ears: the **level** (the head shadows the far ear) and the **time**
-(the far ear hears it later, by up to 0.66 ms). Two channels, left and
-right, can give both; the mixer gives the level: each sound played gets
-a **pan**, from -1 (left) to 1 (right), turned into two gains. The
+(the far ear hears it later). Two channels, left and right, can give
+both. The level: each sound played gets a **pan**, from -1 (left) to 1
+(right), turned into two gains. The
 obvious gains, linear, `1 - p` and `1 + p`, have a **hole in the
 middle**: what we hear as loudness is the power, the sum of the gains'
 squares, 2 in the middle but 4 at a side, so a sound crossing from left
 to right dips by 3 dB as it passes the centre. The **constant power
 law** puts the two gains on a quarter circle, `sqrt 2 cos a` and `sqrt 2
-sin a`, the squares always adding up to 2 (`Space.pan`).
+sin a`, the squares always adding up to 2 (`Space.pan`). The time:
+around the head, a sphere of 8.75 cm, the far ear's path is longer by
+r (theta + sin theta) at an angle theta (Woodworth, 1938), 0.656 ms,
+29 samples, for a sound straight to the side; a sound played once has
+its far channel that much later (`Space.interaural_delay`), a
+continuous one, whose pan moves every frame, only its level (a moving
+delay needs a fractional delay line: §12).
 
 Where a sound is also says how loud it is: it spreads over a sphere,
 its amplitude falling as 1 / distance -- half as loud (-6 dB) each time
-the distance doubles, the **inverse distance law**. And how it moves
+the distance doubles, the **inverse distance law**. The air takes the
+highs too, a far thunder a rumble: fitted to the standard's table (ISO
+9613-1), a loss of 0.0766 (f / 8000)^1.75 dB a meter, so 3 dB at 8 kHz
+after 40 m, at 4 kHz after 130 m -- a low-pass whose cutoff falls with
+the distance (`Space.air_cutoff`). And how it moves
 says its pitch: a source coming towards you squeezes its waves, higher;
 going away, lower -- the **Doppler** effect, `f' = f (c - v_listener) /
 (c - v_source)`, each speed along the line between them. A car at 30
@@ -193,7 +205,12 @@ is a node of the tree (`Synth.Panned`), which only `Synth.render_stereo`
 hears: a tree with no pan in it renders once, the same array in both
 channels. The mixer, the platforms and the dumped WAVs carry two
 channels; the software backend's `m` key mixes them back down to one,
-to hear what panning does.
+to hear what panning does. In a 3D world the listener is the camera:
+its eye the ears, the direction it looks straight ahead, its right the
+right ear's side, and a sound made anywhere is panned, delayed, faded,
+dulled and Doppler-shifted from there (`playground/Audio3d`;
+`TinyStarFox.ml`'s enemies go by a tenth higher coming, a tenth lower
+gone, the stage carrying you at 34 m/s).
 
 ## 6. The spectrum: which frequencies a sound contains
 
@@ -267,8 +284,11 @@ a record of sfxr's sliders -- `jump` is a square from 300 Hz sliding to
 650, held 0.04 s, decaying over 0.14 s; the explosion noise sliding
 from 1500 steps a second to 150 under a low-pass falling from 4000 Hz
 to 150 -- and `Sfx.vary`, sfxr's "mutate", nudges every number for a
-family of sounds from one. `playground/Audio`'s ready-made sounds are
-its presets.
+family of sounds from one; `Sfx.random`, sfxr's other buttons, draws a
+new sound within a category's ranges -- the ranges are what make it that
+kind of sound (a laser always slides down, a jump up, an explosion is
+noise getting duller: 200 seeds each, checked). `playground/Audio`'s
+ready-made sounds are its presets.
 
 The **arpeggio** is worth a second look: the notes of a chord one after
 the other, every 1/60 s, around and around -- the chiptune trick of the
@@ -284,21 +304,39 @@ reverberation. Its echoes die away geometrically, the sound lasting
 until they fall below -60 dB: 2.5 s for a delay of 0.25 s and a
 feedback of 0.5 (`Effect.echo`, `Effect.tail`).
 
+A **reverb** is a room's thousands of echoes, too many and too close to
+hear one by one. Manfred Schroeder (Bell Labs, 1962) built one from the
+echo: four feedback combs in parallel, their delays 30 to 45 ms and
+mutually prime so their echoes never line up, then two **all-pass**
+filters, which multiply the echoes and let every frequency through at
+the same level. Each comb's feedback comes from the reverberation time
+T asked for, 10^(-3 D / T), and on an impulse the tail is indeed 30 dB
+down T / 2 later, 1552 of the samples of a tenth of a second non-zero
+where one comb would have 3: a wash, not echoes (`Effect.reverb`,
+`Audio.reverb`).
+
 A delay line makes an instrument too. **Karplus-Strong** (Kevin Karplus
 and Alex Strong, Stanford, 1983): fill a delay line one period long
 with noise, read it around and around, and write each sample back as
-the average of it and its neighbour. Going round, the line repeats, so
+the average of it and the one before. Going round, the line repeats, so
 the noise becomes a periodic wave with every harmonic, like a string
 just plucked; the average, a gentle low-pass once a period, kills the
 high harmonics first and the low ones last, which is what a real
 string does -- the twang turning into a hum. Nothing in it models a
 string, and it sounds like one (`Pluck`, `Audio.pluck`: an A3's
-brightness falls from 4312 Hz at the pluck to 644 Hz 1.5 s later). Two
-details make it right: the average is half a sample late, so the
-period is the line's length plus a half; and the noise must add up to
-0, or the averaging, which lets 0 Hz through, keeps its offset forever
--- a first version, filled from the NES's shift register started at 1,
-was three quarters -1s.
+brightness falls from 3803 Hz at the pluck to 642 Hz 1.5 s later).
+Three details make it right. The noise must add up to 0, or the
+averaging, which lets 0 Hz through, keeps its offset forever: a first
+version, filled from the NES's shift register started at 1, was three
+quarters -1s. The average is of a sample and the one *before* it, half a
+sample late, so the period is the line plus a half: a first version
+averaged with the one after, half a sample early, and was 12.5 cents
+sharp at 440 Hz where the formula said 4.7 flat -- a test measuring the
+pitch to a tenth of a cent caught it. And the line is a whole number of
+samples, so the pitch is off by up to half a sample, 35 cents at 2 kHz:
+a first-order all-pass in the loop adds the missing fraction (David
+Jaffe and Julius Smith, 1983), and every note is then within a quarter
+of a cent.
 
 ### The ready-made sounds, three generations
 
@@ -394,6 +432,24 @@ so a playing loop is swapped for the faster one at the same point of
 the tune, the same fraction of the way through (`Mixer.change`,
 `Audio.change_loop`).
 
+### Samples: playing recordings
+
+A recording has no frequency to change: to play it an octave up, read
+it twice as fast -- and it lasts half as long. Pitch and time go
+together, as on a tape, and the samplers (the Fairlight, 1979) and the
+Amiga's trackers made every note of an instrument from one recording
+that way (`Audio.pitched` on a `wav` or a `recorded` sound;
+`examples/AudioSampler.ml`). Read a fifth faster, most reads land
+between two samples, and making one up is the audio twin of scaling an
+image (`notes_2d.md`'s image filtering), with the same answers: the
+nearest sample, a line between the two neighbours, a curve through four
+(Catmull-Rom). A sine read a fifth faster shows each one's error: to
+689 Hz, -39.6, -79.2 and -112.5 dB; to 2756 Hz, -27.3, -54.6 and -75.3
+-- the higher the note, the fewer samples a period to guess between
+(`Resample`). The same reading converts a file's rate: a WAV recorded at
+22,050 is read at half speed to play at 44,100 (`Wav.of_string` also
+walks the file's chunks and mixes stereo down).
+
 ## 10. The audio loop: latency and the two clocks
 
 The sound card pulls samples at its own steady rate, in **blocks** (say
@@ -414,11 +470,13 @@ for a shoot-em-up. The same trade-off as the physics' fixed time step
 **Playing vs synthesizing.** SDL_mixer, OpenAL, FMOD and elm-audio
 *play recordings*: they decode WAV, OGG or MP3 files, resample them,
 mix channels, stream music from disk, and (OpenAL, FMOD) place them in
-3D. Synthesis is the exception there, and the rule here: every sample
-is computed, nothing is loaded, and the only thing we ask of SDL is a
-queue of samples (`SDL_QueueAudio`, topped up to 3 frames, 50 ms,
-ahead). What they have that we don't: compressed formats, stereo and
-3D positioning, a real-time audio thread, and reverb.
+3D. Synthesis is the exception there, and the rule here: nearly every
+sample is computed, a WAV file played the exception (§9), and the only
+thing we ask of SDL is a queue of samples (`SDL_QueueAudio`, topped up
+to 3 frames, 50 ms, ahead). Stereo, 3D positioning (OpenAL's own
+distance model and Doppler, §5) and a reverb (§8) we have now; what
+they have that we don't: compressed formats, streaming from disk, a
+real-time audio thread, and HRTFs.
 
 **Web Audio.** The browser's API is a graph of nodes
 (`OscillatorNode`, `BiquadFilterNode`, `GainNode`) run in native code
@@ -444,28 +502,22 @@ In rough order of difficulty:
 
 - **pink noise** (§3): white noise through a few one-pole low-passes
   summed, or Voss's algorithm; in `Noise`, next to the LFSR;
-- **sfxr's random buttons** (§8): `Sfx.vary` nudges a preset; sfxr
-  also picks a new sound at random within a category's ranges ("random
-  laser"), each category its own ranges;
-- **a reverb** (§8): `Effect.echo` is one feedback comb; Schroeder's
-  reverb (1962) is four of them in parallel, their delays mutually
-  prime, then two all-pass filters in series;
 - **a wah on a continuous sound**: `keep_playing` filters with the
   cutoff of the frame (the biquad's memory carried from pull to pull),
   but ignores a `wah`'s sweep, which is over a sound's length;
-- **a plucked string in tune**: `Pluck`'s delay line is a whole number
-  of samples, so its pitch can be off by half a sample (35 cents at
-  2 kHz); an all-pass filter in the loop, a fractional delay (Jaffe
-  and Smith, 1983), tunes it exactly;
-- **the time between the ears**: `Space` pans by level only; the far
-  ear's delay, up to 0.66 ms (29 samples), is the other half of how we
-  hear a direction -- a delay line per ear; then HRTFs, the ear's own
-  filtering, which also tell front from back and above from below;
-- **air absorption**: far sounds lose their highs (a far thunder is a
-  rumble): a low-pass whose cutoff falls with the distance, next to
-  `Space.attenuation`;
-- **loaded sounds**: `Wav.read` exists, but no `Audio` function plays a
-  file; then a `Resample` to play it at other pitches, and a MOD player
+- **a low-pass before reading faster** (§9): a recording read an octave
+  up has its highs above Nyquist, folded (§2); a good sampler filters
+  first, as a good image scaler does;
+- **the ears' delay on a moving sound** (§5): a continuous voice's pan
+  changes every frame, and so would its delay -- a fractional delay
+  line per ear, read with the interpolation of §9, or it clicks; then
+  HRTFs, the ear's own filtering, which also tell front from back and
+  above from below;
+- **a better reverb** (§8): Schroeder's is metallic, its echoes too
+  regular; Freeverb (2000) uses eight combs with low-passes in them, and
+  a convolution with a real room's recorded echo is exact;
+- **a MOD player**: Amiga music is recordings played at the notes of a
+  tracker's patterns -- §9's sampler with a sequencer
   (`notes_audio_midi.md` §9);
 - **the audio off the frame**: rendering in an OCaml 5 domain, a block
   at a time, so a long sound doesn't cost the frame it starts;
@@ -478,15 +530,19 @@ In rough order of difficulty:
 The API is `playground/Audio.mli`, in the `elm_playground` library, so
 every backend has it. A **sound** is a value, like a shape: made from a
 few numbers (`tone`, `square`, `triangle`, `sawtooth`, `noise`, §3;
-`fm`, §7; `pluck`, §8; `note "C4"`, §9), shaped by verbs like `move` and `scale`
-(`lasting`, `fading`, §4; `louder`, §5; `sliding`, `vibrato`,
-`arpeggio`, `echo`, §8; `faster`, §9; `low_pass`, `high_pass`, `wah`, §7; `naive`,
-§6; `pan`, `from`, `pitched`, §5), and combined with `after` and `together`, Euterpea's two
-operators; `blip`, `coin`, `jump`, `laser`, `hit`, `explosion`, `step`
-and `powerup` are ready-made, `audio/Sfx`'s presets (§8), `varied`
-nudges one (a new seed, a new shot), and `sfx` makes one's own from
-sfxr's numbers. Tunes are text, `abc` and `doremi`, or a MIDI file, `midi` (§9,
-`notes_audio_midi.md`).
+`fm`, §7; `pluck`, §8; `note "C4"`, §9) or a recording (`wav`, a
+file's; `recorded`, a sound frozen; §9), shaped by verbs like `move`
+and `scale` (`lasting`, `fading`, §4; `louder`, §5; `naive`, §6;
+`low_pass`, `high_pass`, `wah`, §7; `sliding`, `vibrato`, `arpeggio`,
+`echo`, `reverb`, §8; `faster`, §9; `pan`, `from`, `pitched`, §5), and
+combined with `after` and `together`, Euterpea's two operators;
+`blip`, `coin`, `jump`, `laser`, `hit`, `explosion`, `step` and
+`powerup` are ready-made, `audio/Sfx`'s presets (§8), `varied` nudges
+one (a new seed, a new shot), `random_sound` draws a new one of a
+kind, and `sfx` makes one's own from sfxr's numbers. Tunes are text,
+`abc` and `doremi`, or a MIDI file, `midi` (§9, `notes_audio_midi.md`).
+In a 3D world, `Audio3d.heard` places a sound as the camera hears it
+(§5).
 
 Unlike pictures, sounds are *commands*: `Audio.play` in `update`, when
 the ball bounces, fire and forget -- the one impure call of the
@@ -508,8 +564,11 @@ notes); `examples/AudioAliasing.ml`, a square's spectrum, its aliases
 in red, space switching naive and band-limited (§2, §6);
 `examples/AudioSpace.ml`, a car going by, panned, fading with the
 distance and Doppler-shifted, each of the three switchable (§5);
+`examples/AudioSampler.ml`, one recording played at every key, the
+three ways of reading between samples on space (§9);
 `examples/AudioSfx.ml`, the ready-made sounds on keys 1 to 8, their
-numbers and their shape on screen, `r` a variation (§8). The games:
+numbers and their shape on screen, `r` a variation, `n` a random one,
+`c` a cave (§8). The games:
 `TinyBreakout.ml` (a brick's pitch from its row), `TinyMario.ml` (a
 jump, footsteps, coins, a flag's arpeggio made with `after`, and its
 music, an ABC tune or `music=` a `.mid` file), and the rhythm games,
@@ -518,8 +577,10 @@ music, an ABC tune or `music=` a `.mid` file), and the rhythm games,
 noise through a low-pass brightening with speed, kept playing, the
 heartbeat speeding up as the asteroids get fewer), `Pong.ml` and
 `TinyPong.ml` (Pong's three blips, TinyPong's rising with the rally's
-speed), `Snake.ml` (a crunch, a fall), `Tetris.ml` (Korobeiniki, faster at each
-level, `change_loop`; a thud, a chime, a "Tetris"); about thirty more play the
+speed), `Snake.ml` (a crunch, a fall), `Tetris.ml` (Korobeiniki,
+faster at each level, `change_loop`; a thud, a chime, a "Tetris"),
+`TinyStarFox.ml` (every sound heard from the camera, the enemies'
+engines Doppler-shifted as they go by); about thirty more play the
 ready-made sounds. No game uses `fm` or `wah` yet: only the golden WAVs
 do.
 
@@ -555,6 +616,14 @@ sound to a WAV.
 - **Sequencer**, **tracker**: notes played at times, in patterns.
 - **Latency**: the delay from an event to its sound; **buffer**, **block**:
   the samples handed to the sound card at a time.
+- **Pan**: where between the left and the right a sound is; **pan law**:
+  how that becomes two gains (constant power: as loud everywhere).
+- **Doppler shift**: the pitch changed by a source's or a listener's
+  motion.
+- **Delay line**: a circular buffer of the last samples; **comb**,
+  **all-pass**: filters built on one; **reverb**: many echoes, a room.
+- **Resampling**: reading a recording at another rate; **interpolation**:
+  guessing between its samples (nearest, linear, cubic).
 
 ## References
 
@@ -562,6 +631,8 @@ sound to a WAV.
   1822.
 - H. Nyquist, "Certain Topics in Telegraph Transmission Theory",
   Transactions of the AIEE, 1928.
+- Robert S. Woodworth, "Experimental Psychology", Holt, 1938 (the time
+  between the ears).
 - C. E. Shannon, "Communication in the Presence of Noise", Proceedings
   of the IRE, 1949.
 - M. R. Schroeder, "Natural Sounding Artificial Reverberation", Journal
@@ -576,8 +647,14 @@ sound to a WAV.
 - John M. Chowning, "The Synthesis of Complex Audio Spectra by Means of
   Frequency Modulation", Journal of the Audio Engineering Society
   21(7), 1973.
+- Edwin Catmull, Raphael Rom, "A Class of Local Interpolating Splines",
+  1974.
 - Kevin Karplus, Alex Strong, "Digital Synthesis of Plucked-String and
-  Drum Timbres", Computer Music Journal 7(2), 1983.
+  Drum Timbres", Computer Music Journal 7(2), 1983; David Jaffe, Julius
+  O. Smith, "Extensions of the Karplus-Strong Plucked-String
+  Algorithm", same issue (the tuning).
+- ISO 9613-1:1993, "Attenuation of sound during propagation outdoors,
+  part 1: calculation of the absorption of sound by the atmosphere".
 - Tim Stilson, Julius O. Smith, "Alias-Free Digital Synthesis of
   Classic Analog Waveforms", International Computer Music Conference
   (ICMC), 1996 (BLIT, the band-limited impulse train).
@@ -586,6 +663,8 @@ sound to a WAV.
   coefficients" (the Audio EQ Cookbook), 1998.
 - James McCartney, "Rethinking the Computer Music Language:
   SuperCollider", Computer Music Journal 26(4), 2002.
+- Creative Labs, "OpenAL 1.1 Specification and Reference", 2005 (the
+  distance models, Doppler).
 - Vesa Välimäki, Antti Huovilainen, "Antialiasing Oscillators in
   Subtractive Synthesis", IEEE Signal Processing Magazine, 2007
   (PolyBLEP).

@@ -47,6 +47,15 @@ let abc = tune "Audio.abc" Abc.parse
 let doremi = tune "Audio.doremi" Doremi.parse
 let of_tune = Music.to_sound
 
+let wav (bytes : string) : sound =
+  match Wav.of_string bytes with
+  | Ok samples -> Synth.Samples samples
+  | Error e ->
+      prerr_endline ("Audio.wav: " ^ e);
+      Synth.After []
+
+let recorded (s : sound) : sound = Synth.Samples (Synth.render s)
+
 let midi (bytes : string) : sound =
   match Midi.parse bytes with
   | Ok score -> Synth.Samples (Music.render_score score)
@@ -57,9 +66,11 @@ let midi (bytes : string) : sound =
 let vibrato rate depth = Synth.with_effect (Vibrato { rate; depth })
 let arpeggio semitones step = Synth.with_effect (Arpeggio { semitones; step })
 let echo delay feedback s = Synth.Echo ({ delay; feedback = Float.min 0.95 (Float.max 0. feedback) }, s)
+let reverb seconds s = Synth.Reverb (Float.max 0.01 seconds, s)
 
 (* the ready-made sounds: audio/Sfx's presets, after sfxr's categories *)
 let sfx = Sfx.to_sound
+let random_sound (category : string) (seed : int) : sound = sfx (Sfx.random category ~seed)
 let blip = sfx Sfx.blip
 let coin = sfx Sfx.coin
 let jump = sfx Sfx.jump
@@ -87,7 +98,7 @@ let rec voices ?filter ?pan (s : sound) : (Synth.voice * Synth.filter option * f
   match s with
   | Voice v -> [ (v, filter, pan) ]
   | Together l -> List.concat_map (voices ?filter ?pan) l
-  | After (s :: _) | Echo (_, s) -> voices ?filter ?pan s
+  | After (s :: _) | Echo (_, s) | Reverb (_, s) -> voices ?filter ?pan s
   | Filtered (f, s) -> voices ~filter:(Option.value filter ~default:f) ?pan s
   | Panned (p, s) -> voices ?filter ~pan:p s
   | After [] | Samples _ -> []
@@ -117,7 +128,12 @@ let loop_from (name : string) (source : string) : unit =
           Hashtbl.remove requested name
       | Some bytes ->
           let ends_with = Filename.check_suffix (String.lowercase_ascii source) in
-          let read = if ends_with ".mid" || ends_with ".midi" then midi else if ends_with ".abc" then abc else doremi in
+          let read =
+            if ends_with ".mid" || ends_with ".midi" then midi
+            else if ends_with ".abc" then abc
+            else if ends_with ".wav" then wav
+            else doremi
+          in
           Mixer.loop mixer name (Synth.render_stereo (read bytes))))
 
 let faster = Synth.faster

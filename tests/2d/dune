@@ -72,6 +72,7 @@
    %{project_root}/examples/software/AudioAliasing.exe
    %{project_root}/examples/software/AudioSfx.exe
    %{project_root}/examples/software/AudioSpace.exe
+   %{project_root}/examples/software/AudioSampler.exe
    %{project_root}/examples/software/AiTictactoe.exe
    %{project_root}/examples/software/AiPathfinding.exe
    %{project_root}/examples/software/AiSteering.exe

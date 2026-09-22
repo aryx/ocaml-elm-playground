@@ -35,15 +35,38 @@ let to_string_channels (channels : Signal.t list) : string =
 
 let to_string (samples : Signal.t) : string = to_string_channels [ samples ]
 
+(* the chunks after "RIFF" size "WAVE": each a 4-letter name, a size,
+ * its bytes (padded to an even size); "fmt " and "data" are the two we
+ * need, and a file may have others (LIST, fact, ...) before, between,
+ * after *)
+let chunks (s : string) : (string * int * int) list =
+  let rec go i acc =
+    if i + 8 > String.length s then List.rev acc
+    else
+      let size = Int32.to_int (String.get_int32_le s (i + 4)) in
+      go (i + 8 + size + (size land 1)) ((String.sub s i 4, i + 8, size) :: acc)
+  in
+  go 12 []
+
 let of_string (s : string) : (Signal.t, string) result =
-  let u16 i = String.get_uint16_le s i and u32 i = Int32.to_int (String.get_int32_le s i) in
-  if String.length s < 44 || String.sub s 0 4 <> "RIFF" || String.sub s 8 8 <> "WAVEfmt " || String.sub s 36 4 <> "data"
-  then Error "not a WAV file (or not a plain one)"
-  else if u16 20 <> 1 || u16 22 <> 1 || u32 24 <> Signal.rate || u16 34 <> 16 then Error "not 16-bit mono PCM at 44,100 Hz"
+  if String.length s < 12 || String.sub s 0 4 <> "RIFF" || String.sub s 8 4 <> "WAVE" then Error "not a WAV file"
   else
-    let n = u32 40 / 2 in
-    if String.length s < 44 + (2 * n) then Error "truncated"
-    else Ok (Array.init n (fun i -> float_of_int (String.get_int16_le s (44 + (2 * i))) /. 32767.))
+    let cs = chunks s in
+    match (List.find_opt (fun (n, _, _) -> n = "fmt ") cs, List.find_opt (fun (n, _, _) -> n = "data") cs) with
+    | Some (_, fmt, _), Some (_, data, size) ->
+        let u16 i = String.get_uint16_le s (fmt + i) in
+        let channels = u16 2 and rate = Int32.to_int (String.get_int32_le s (fmt + 4)) in
+        if u16 0 <> 1 || u16 14 <> 16 || (channels <> 1 && channels <> 2) then Error "not 16-bit PCM, mono or stereo"
+        else
+          let size = min size (String.length s - data) in
+          let frames = size / (2 * channels) in
+          let sample i c = float_of_int (String.get_int16_le s (data + (2 * ((i * channels) + c)))) /. 32767. in
+          (* stereo mixed down: a sound here is mono until panned *)
+          let mono =
+            Array.init frames (fun i -> if channels = 1 then sample i 0 else (sample i 0 +. sample i 1) /. 2.)
+          in
+          Ok (Resample.to_rate Linear rate mono)
+    | _ -> Error "no fmt or no data chunk"
 
 let write (path : string) (samples : Signal.t) : unit =
   Out_channel.with_open_bin path (fun oc -> Out_channel.output_string oc (to_string samples))

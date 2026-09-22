@@ -28,9 +28,13 @@
  * period is p + 1/2 samples, and p = round (rate / frequency - 1/2).
  * Being whole, p can be off by up to half a sample: at A4, p = 100,
  * 438.8 Hz, 5 cents flat (up to 9 at that length); more for high notes
- * (2 kHz: p = 22, 1960 Hz, 35 cents, a third of a semitone); the fix,
- * a fractional delay (an all-pass filter, David Jaffe and Julius Smith,
- * 1983), is an exercise. [decay] shortens the ring a little more at
+ * (2 kHz: p = 22, 1960 Hz, 35 cents, a third of a semitone). The fix
+ * (David Jaffe and Julius Smith, 1983): a first-order all-pass filter in
+ * the loop, which delays by a fraction of a sample, delta, the part the
+ * line can't: y[n] = C x[n] + x[n-1] - C y[n-1], C = (1 - delta) / (1 +
+ * delta); every frequency through at the same level (it doesn't dull
+ * the string), only later. [tuned] (the default) adds it; measured
+ * (Unit_pluck): at 2 kHz, from 35 cents flat to within a cent. [decay] shortens the ring a little more at
  * each pass, for the high notes, whose line is short and goes round
  * often. The noise comes from 5000 steps into the LFSR's sequence (its
  * first bits, from 1, are mostly 0s: a first try averaged -0.49, a
@@ -40,9 +44,13 @@
  * offset.
  *
  * Example: A3 (220 Hz): p = round (200.45 - 0.5) = 200, the period 200.5
- * samples, 219.95 Hz. Its spectrum's centroid falls as it rings, from
- * 4312 Hz at the pluck to 644 Hz 1.5 s later (Unit_pluck): the twang,
- * then the hum.
+ * samples, 219.95 Hz untuned; tuned, the line 199 and the all-pass's
+ * 0.95, 220 Hz. Its spectrum's centroid falls as it rings, from 3803 Hz
+ * at the pluck to 642 Hz 1.5 s later (Unit_pluck): the twang, then the
+ * hum. (A first version wrote back the average of a sample and the
+ * *next* one, y[n + p] = (y[n] + y[n + 1]) / 2, half a sample early:
+ * its period p - 1/2, 12.5 cents sharp at 440 Hz where the formula
+ * said 4.7 flat -- the tuning test caught it.)
  *
  * References: Kevin Karplus, Alex Strong, "Digital Synthesis of
  * Plucked-String and Drum Timbres", Computer Music Journal 7(2), 1983;
@@ -52,8 +60,9 @@
 (* [period frequency]: p, the delay line's length (200 for 220 Hz) *)
 val period : float -> int
 
-(* [render ?decay ~frequency seconds]: the string plucked and ringing;
- * [decay], 0.996 by default, the loss at each pass on top of the
- * averaging's (1: none); its noise from the NES's LFSR, so the same
- * every time *)
-val render : ?decay:float -> frequency:float -> float -> Signal.t
+(* [render ?decay ?tuned ~frequency seconds]: the string plucked and
+ * ringing; [decay], 0.996 by default, the loss at each pass on top of
+ * the averaging's (1: none); [tuned], true by default, the all-pass's
+ * fraction of a sample (false: the whole samples only, the first
+ * version); its noise from the NES's LFSR, so the same every time *)
+val render : ?decay:float -> ?tuned:bool -> frequency:float -> float -> Signal.t

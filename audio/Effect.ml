@@ -27,6 +27,42 @@ let factor (p : pitch) (t : float) : float =
 let tail ~(delay : float) ~(feedback : float) : float =
   if feedback <= 0. then delay else delay *. Float.ceil (log 0.001 /. log feedback)
 
+(* a feedback comb of [d] samples (the input already padded with the
+ * tail): y[n] = x[n] + g y[n - d] *)
+let comb (d : int) (g : float) (x : Signal.t) : Signal.t =
+  let line = Array.make d 0. and pos = ref 0 in
+  Array.map
+    (fun v ->
+      let y = v +. (g *. line.(!pos)) in
+      line.(!pos) <- y;
+      pos := (!pos + 1) mod d;
+      y)
+    x
+
+(* an all-pass: y[n] = -g x[n] + x[n - d] + g y[n - d] *)
+let all_pass (d : int) (g : float) (x : Signal.t) : Signal.t =
+  let xs = Array.make d 0. and ys = Array.make d 0. and pos = ref 0 in
+  Array.map
+    (fun v ->
+      let y = (-.g *. v) +. xs.(!pos) +. (g *. ys.(!pos)) in
+      xs.(!pos) <- v;
+      ys.(!pos) <- y;
+      pos := (!pos + 1) mod d;
+      y)
+    x
+
+let reverb ~(seconds : float) ?(mix = 0.3) (s : Signal.t) : Signal.t =
+  let x = Array.append s (Array.make (Signal.samples seconds) 0.) in
+  let combs =
+    List.map
+      (fun ms ->
+        let d = Signal.samples (ms /. 1000.) in
+        comb d (10. ** (-3. *. (ms /. 1000.) /. seconds)) x)
+      [ 29.7; 37.1; 41.1; 43.7 ]
+  in
+  let wet = Mix.gain 0.25 (Mix.add combs) |> all_pass (Signal.samples 0.005) 0.7 |> all_pass (Signal.samples 0.0017) 0.7 in
+  Array.mapi (fun i w -> x.(i) +. (mix *. w)) wet
+
 let echo ~(delay : float) ~(feedback : float) (s : Signal.t) : Signal.t =
   let d = max 1 (Signal.samples delay) in
   let n = Array.length s + Signal.samples (tail ~delay ~feedback) in

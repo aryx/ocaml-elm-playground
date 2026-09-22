@@ -21,8 +21,11 @@
  * "r" is sfxr's "mutate" button: the same sound with every number
  * nudged (Sfx.vary, a new seed each time), a variation in the same
  * family -- what a game plays so that ten shots in a row don't sound
- * like a machine gun of identical samples. Space plays it again, "e"
- * adds an echo.
+ * like a machine gun of identical samples. "n" is sfxr's other button,
+ * "random laser" or "random explosion": a new sound of that category,
+ * every number drawn afresh within the category's ranges (Sfx.random).
+ * Space plays it again, "e" adds an echo, "c" puts it in a cave (a
+ * reverb, 1.5 s: Schroeder's, Effect.mli).
  *
  * What it uses: the Playground, Scene2d (the keys pressed), Audio (sfx,
  * play) and audio/'s Sfx and Synth directly (the samples drawn).
@@ -30,15 +33,18 @@
 open Playground
 open Basics (* float arithmetics *)
 
-type state = { preset : int; seed : int; echo : bool }
+(* [random]: 0, the preset (varied by [seed]); otherwise the seed of a
+ * random sound of its category *)
+type state = { preset : int; seed : int; random : int; echo : bool; cave : bool }
 type model = state Scene2d.t
 
-let initial_model : model = Scene2d.start { preset = 5; seed = 0; echo = false }
+let initial_model : model = Scene2d.start { preset = 5; seed = 0; random = 0; echo = false; cave = false }
 
 (* the sound shown and played: the preset, varied, maybe echoed *)
 let current (s : state) : Sfx.t =
-  let p = Sfx.vary ~seed:s.seed (snd (List.nth Sfx.presets s.preset)) in
-  if s.echo then { p with echo = 0.15 } else p
+  let (name, preset) = List.nth Sfx.presets s.preset in
+  let p = if s.random > 0 then Sfx.random name ~seed:s.random else Sfx.vary ~seed:s.seed preset in
+  { p with echo = (if s.echo then 0.15 else p.echo); reverb = (if s.cave then 1.5 else p.reverb) }
 
 let update (computer : computer) (model : model) : model =
   let scenes = Scene2d.update computer model in
@@ -47,8 +53,10 @@ let update (computer : computer) (model : model) : model =
   let chosen = List.find_opt (fun i -> pressed (string_of_int (i +.. 1))) (List.init (List.length Sfx.presets) Fun.id) in
   let s' =
     match chosen with
-    | Some i -> Some { s with preset = i; seed = 0 }
-    | None when pressed "r" -> Some { s with seed = s.seed +.. 1 }
+    | Some i -> Some { s with preset = i; seed = 0; random = 0 }
+    | None when pressed "r" -> Some { s with seed = s.seed +.. 1; random = 0 }
+    | None when pressed "n" -> Some { s with random = s.random +.. 1 }
+    | None when pressed "c" -> Some { s with cave = not s.cave }
     | None when pressed "e" -> Some { s with echo = not s.echo }
     | None when Scene2d.pressed (fun k -> k.kspace) scenes -> Some s
     | None -> None
@@ -73,6 +81,7 @@ let numbers (p : Sfx.t) : (string * string) list =
       ("low-pass", Printf.sprintf "%.0f Hz%s" p.low_pass (if p.low_pass_to > 0. then Printf.sprintf ", falling to %.0f" p.low_pass_to else ""))
   @ opt (p.high_pass > 0.) ("high-pass", Printf.sprintf "%.0f Hz" p.high_pass)
   @ opt (p.echo > 0.) ("echo", Printf.sprintf "every %.2f s, each 0.4 of the last" p.echo)
+  @ opt (p.reverb > 0.) ("reverb", Printf.sprintf "a room, %.1f s to die away" p.reverb)
 
 (* the samples, 400 columns, each its highest and lowest *)
 let waveform (p : Sfx.t) : shape list =
@@ -100,7 +109,13 @@ let view (computer : computer) (model : model) : shape list =
         |> scale 1.8 |> move ((-.400.) + (float_of_int i * 110.)) 420.)
       Sfx.presets
   in
-  let title = fst (List.nth Sfx.presets s.preset) ^ if s.seed > 0 then Printf.sprintf ", varied (seed %d)" s.seed else "" in
+  let title =
+    fst (List.nth Sfx.presets s.preset)
+    ^
+    if s.random > 0 then Printf.sprintf ", random (seed %d)" s.random
+    else if s.seed > 0 then Printf.sprintf ", varied (seed %d)" s.seed
+    else ""
+  in
   (rectangle (rgb 20 22 30) screen.width screen.height :: menu)
   @ [ words white title |> scale 2.5 |> move_y 350. ]
   @ List.concat
@@ -110,14 +125,17 @@ let view (computer : computer) (model : model) : shape list =
            [ words (rgb 150 150 170) name |> scale 1.6 |> move (-.300.) y; words (rgb 220 220 235) value |> scale 1.6 |> move 60. y ])
          (numbers p))
   @ (waveform p |> List.map (move_y (-.130.)))
-  @ [ words (rgb 150 150 170) "1-8: a sound   r: a variation   e: echo   space: again" |> scale 1.6 |> move_y (-.440.) ]
+  @ [ words (rgb 150 150 170) "1-8: a sound   r: a variation   n: a random one   e: echo   c: a cave   space: again"
+      |> scale 1.5 |> move_y (-.400.) ]
 
 let help =
   {|Sfx
   keys:  1 to 8  the ready-made sounds (blip, coin, jump, laser, hit,
                  explosion, step, powerup)
          r       a variation of it (sfxr's mutate)
+         n       a random one of its kind (sfxr's random buttons)
          e       an echo, on or off
+         c       a cave: a reverb, on or off
          space   again
 |}
 

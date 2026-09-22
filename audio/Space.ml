@@ -17,6 +17,14 @@ let pan (p : float) : float * float =
   (sqrt 2. *. cos angle, sqrt 2. *. sin angle)
 
 let pan_linear (p : float) : float * float = (1. -. clamp p, 1. +. clamp p)
+let ears_apart = ref true
+
+(* Woodworth's r (theta + sin theta) / c, theta = asin p *)
+let head_radius = 0.0875
+
+let interaural_delay (p : float) : int =
+  let theta = asin (Float.abs (clamp p)) in
+  int_of_float (Float.round (head_radius *. (theta +. sin theta) /. 343. *. float_of_int Signal.rate))
 
 type vec = { x : float; y : float; z : float }
 
@@ -30,6 +38,11 @@ let direction ~(listener : vec) ~(right : vec) (source : vec) : float =
   if d = 0. then 0. else clamp (dot (sub source listener) right /. d)
 
 let attenuation ~(reference : float) (d : float) : float = if d <= reference then 1. else reference /. d
+let air_loss ~(frequency : float) (d : float) : float = 0.0766 *. ((frequency /. 8000.) ** 1.75) *. d
+
+(* solving air_loss f d = 3 for f *)
+let air_cutoff (d : float) : float =
+  if d <= 0. then 20000. else Float.min 20000. (8000. *. ((3. /. (0.0766 *. d)) ** (1. /. 1.75)))
 
 let doppler ~(speed_of_sound : float) ~(listener : vec) ~(listener_velocity : vec) ~(source : vec)
     ~(source_velocity : vec) : float =

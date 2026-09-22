@@ -30,8 +30,11 @@
  * Signal.to_int16) *)
 val to_string : Signal.t -> string
 
-(* [of_string s]: the samples of a file [to_string] wrote (16-bit mono
- * PCM at Signal.rate), as floats (x / 32,767); Error for anything else *)
+(* [of_string s]: the samples of a WAV file, 16-bit PCM, as floats (x /
+ * 32,767): its chunks walked for "fmt " and "data" (a file may carry
+ * others), stereo mixed down to one channel, another sample rate
+ * resampled to Signal.rate (Resample.to_rate); Error for anything else
+ * (8, 24 or 32-bit, compressed) *)
 val of_string : string -> (Signal.t, string) result
 
 (* [write path samples], [read path] *)

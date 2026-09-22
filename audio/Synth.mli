@@ -69,6 +69,9 @@ type t =
   | Filtered of filter * t
   (* the sound echoed (Effect.echo), [Effect.tail] longer *)
   | Echo of echo * t
+  (* the sound in a room (Effect.reverb), its reverberation time in
+   * seconds, the sound that much longer *)
+  | Reverb of float * t
   (* the sound panned, -1 left to 1 right (Space.pan): only
    * [render_stereo] hears it, [render] mixes it down to one channel *)
   | Panned of float * t
@@ -100,8 +103,11 @@ val with_effect : Effect.pitch -> t -> t (* one more *)
 val faster : float -> t -> t
 
 (* [pitched k s]: every frequency of [s] times [k] (slides too), the
- * durations kept (Samples untouched): with [faster k], a Doppler shift,
- * a sound squeezed or stretched as a whole *)
+ * durations kept -- but a recording, Samples, has no frequency: read
+ * [k] times as fast (Resample, with !Resample.kind), it is higher and
+ * shorter, pitch and time together. With [faster k] (which leaves
+ * Samples alone), a Doppler shift, a sound squeezed or stretched as a
+ * whole *)
 val pitched : float -> t -> t
 
 (* [duration s]: in seconds (see above) *)
@@ -112,8 +118,10 @@ val duration : t -> float
 val render : t -> Signal.t
 
 (* [render_stereo s]: the same in two channels, each [Panned] subtree's
- * gains (Space.pan) applied, pans nested multiplied; a tree with no pan
- * is [render] in both (the same array, not copied) *)
+ * gains (Space.pan) applied, and its far ear delayed
+ * (Space.interaural_delay, both channels then that much longer), pans
+ * nested multiplied; a tree with no pan is [render] in both (the same
+ * array, not copied) *)
 val render_stereo : t -> Signal.stereo
 
 (* a continuous voice's state, frame after frame: its oscillator's

@@ -154,6 +154,8 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AudioSfx", "", 2);
     (* the car coming from the left: its pan, gain and Doppler shown *)
     ("examples/software/AudioSpace", "", 2);
+    (* one recording, every note: each key's ratio and length *)
+    ("examples/software/AudioSampler", "", 2);
     ("examples/software/AiTictactoe", "", 3);
     ("examples/software/AiPathfinding", "", 60);
     (* claude: seek, the mouse at the centre: a curve into it *)
@@ -392,6 +394,8 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/AudioSfx", "laser_echo", 10, "4:2,e:5");
     (* panning and Doppler off, the car nearly in front of you *)
     ("examples/software/AudioSpace", "effects_off", 100, "1:2,3:4");
+    (* cubic, and C5 played: half as long *)
+    ("examples/software/AudioSampler", "cubic", 10, "space:2,k:6");
     ("examples/software/AiTictactoe", "played", 40, "space:2");
     ("examples/software/AiPathfinding", "breadth_first", 120, "b:2");
     ("examples/software/AiPathfinding", "dijkstra", 120, "d:2");

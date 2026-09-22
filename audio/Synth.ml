@@ -30,6 +30,7 @@ type t =
   | Samples of Signal.t
   | Filtered of filter * t
   | Echo of echo * t
+  | Reverb of float * t
   | Panned of float * t
 
 and echo = { delay : float; feedback : float }
@@ -46,6 +47,7 @@ let rec map_voices (f : voice -> voice) (s : t) : t =
   | Samples s -> Samples s
   | Filtered (filter, s) -> Filtered (filter, map_voices f s)
   | Echo (echo, s) -> Echo (echo, map_voices f s)
+  | Reverb (r, s) -> Reverb (r, map_voices f s)
   | Panned (p, s) -> Panned (p, map_voices f s)
 
 let lasting (seconds : float) = map_voices (fun v -> { v with seconds })
@@ -68,10 +70,22 @@ let rec faster (k : float) (s : t) : t =
   | Samples s -> Samples s
   | Filtered (f, s) -> Filtered (f, faster k s)
   | Echo (e, s) -> Echo ({ e with delay = e.delay /. k }, faster k s)
+  (* the room's time is the room's *)
+  | Reverb (r, s) -> Reverb (r, faster k s)
   | Panned (p, s) -> Panned (p, faster k s)
 
-let pitched (k : float) =
-  map_voices (fun v -> { v with frequency = v.frequency *. k; slide = Option.map (fun f -> f *. k) v.slide })
+let rec pitched (k : float) (s : t) : t =
+  match s with
+  (* a recording has no frequency to change: read faster, it's higher
+   * and shorter (Resample.mli) *)
+  | Samples x -> Samples (Resample.faster !Resample.kind k x)
+  | Voice v -> Voice { v with frequency = v.frequency *. k; slide = Option.map (fun f -> f *. k) v.slide }
+  | Together l -> Together (List.map (pitched k) l)
+  | After l -> After (List.map (pitched k) l)
+  | Filtered (f, s) -> Filtered (f, pitched k s)
+  | Echo (e, s) -> Echo (e, pitched k s)
+  | Reverb (r, s) -> Reverb (r, pitched k s)
+  | Panned (p, s) -> Panned (p, pitched k s)
 
 let naive = map_voices (fun v -> match v.source with Wave w -> { v with source = Naive w } | _ -> v)
 
@@ -83,6 +97,7 @@ let rec duration (s : t) : float =
   | Samples s -> float_of_int (Array.length s) /. float_of_int Signal.rate
   | Filtered (_, s) -> duration s
   | Echo (e, s) -> duration s +. Effect.tail ~delay:e.delay ~feedback:e.feedback
+  | Reverb (r, s) -> duration s +. r
   | Panned (_, s) -> duration s
 
 (* the source's state: an oscillator's phase (and FM's modulator's), or
@@ -161,13 +176,14 @@ let rec render (s : t) : Signal.t =
       if f.cutoff = f.cutoff_to then Filter.run (Filter.biquad f.kind ~cutoff:f.cutoff ~q:f.q) samples
       else Filter.sweep f.kind ~q:f.q ~from:f.cutoff ~to_:f.cutoff_to samples
   | Echo (e, s) -> Effect.echo ~delay:e.delay ~feedback:e.feedback (render s)
+  | Reverb (r, s) -> Effect.reverb ~seconds:r (render s)
   | Panned (_, s) -> render s
 
 let rec panned (s : t) : bool =
   match s with
   | Voice _ | Samples _ -> false
   | Together l | After l -> List.exists panned l
-  | Filtered (_, s) | Echo (_, s) -> panned s
+  | Filtered (_, s) | Echo (_, s) | Reverb (_, s) -> panned s
   | Panned _ -> true
 
 let rec render_stereo (s : t) : Signal.stereo =
@@ -183,10 +199,17 @@ let rec render_stereo (s : t) : Signal.stereo =
         { left = Array.concat (List.map (fun (st : Signal.stereo) -> st.left) l); right = Array.concat (List.map (fun (st : Signal.stereo) -> st.right) l) }
     | Filtered (f, s) -> each (fun x -> render (Filtered (f, Samples x))) (render_stereo s)
     | Echo (e, s) -> each (Effect.echo ~delay:e.delay ~feedback:e.feedback) (render_stereo s)
+    | Reverb (r, s) -> each (Effect.reverb ~seconds:r) (render_stereo s)
     | Panned (p, s) ->
         let (l, r) = Space.pan p in
         let st = render_stereo s in
-        { left = Mix.gain l st.left; right = Mix.gain r st.right }
+        (* the far ear later (Space.mli): the left one for a sound on the
+         * right *)
+        let d = if !Space.ears_apart then Space.interaural_delay p else 0 in
+        let later x = if d = 0 then x else Array.append (Array.make d 0.) x
+        and sooner x = if d = 0 then x else Array.append x (Array.make d 0.) in
+        let left = Mix.gain l st.left and right = Mix.gain r st.right in
+        if p > 0. then { left = later left; right = sooner right } else { left = sooner left; right = later right }
     | Voice _ | Samples _ -> Signal.both (render s)
 
 let continue (r : running) (v : voice) (n : int) : Signal.t * running =

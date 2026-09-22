@@ -34,17 +34,41 @@
  * [delay] seconds of output (a circular buffer: 13,230 samples for 0.3
  * s). The echoes die away geometrically: the output lasts [tail] longer
  * than the input, the time for them to fall below -60 dB (a thousandth:
- * reverberation time's convention, Wallace Sabine's RT60, 1900). Many
- * short echoes at once, dense and irregular, would be a reverb: out of
- * scope.
+ * reverberation time's convention, Wallace Sabine's RT60, 1900).
  *
  * Example: feedback 0.5 and a delay of 0.25 s, the echoes at 0.5, 0.25,
  * 0.125...; the tenth (0.001) at 2.5 s: the tail.
  *
+ * A reverb is a room's thousands of echoes, off every wall, too many
+ * and too close together to hear one by one: a wash that dies away.
+ * Manfred Schroeder (Bell Labs, 1962) made one out of the echo above:
+ * four feedback combs in parallel, their delays around 30 to 45 ms and
+ * mutually prime (29.7, 37.1, 41.1, 43.7 ms: their echoes never line up,
+ * so they don't ring at one pitch), then two all-pass filters in series
+ * (5.0 and 1.7 ms), which multiply the echoes without colouring the
+ * sound -- an all-pass lets every frequency through at the same level,
+ * only later:
+ *
+ *     y[n] = -g x[n] + x[n - D] + g y[n - D]
+ *
+ *     in --+--> comb 29.7 ms --+
+ *          +--> comb 37.1 ms --+--> / 4 --> all-pass 5 ms --> all-pass 1.7 ms --> wet
+ *          +--> comb 41.1 ms --+
+ *          +--> comb 43.7 ms --+
+ *
+ * Each comb's feedback is set from the reverberation time asked for, T
+ * (60 dB down after T seconds): a comb of delay D loses 60 dB in T when
+ * its feedback is 10^(-3 D / T). A bathroom is about 0.5 s, a hall 2, a
+ * cathedral 5 or more. It sounds metallic next to a modern reverb (the
+ * combs' echoes are regular; Freeverb, 2000, uses eight, and a
+ * convolution with a real room's recorded echo is exact): an exercise.
+ *
  * References: Tomas Pettersson, sfxr, 2007 (vibrato and "change" among
  * its parameters); Julius O. Smith III, Physical Audio Signal
- * Processing, 2010, "Feedback Comb Filters",
- * https://ccrma.stanford.edu/~jos/pasp/ *)
+ * Processing, 2010, "Feedback Comb Filters" and "Schroeder
+ * Reverberators", https://ccrma.stanford.edu/~jos/pasp/; Manfred R.
+ * Schroeder, "Natural Sounding Artificial Reverberation", Journal of
+ * the Audio Engineering Society 10(3), 1962. *)
 
 type pitch =
   | Vibrato of { rate : float; depth : float } (* Hz, semitones *)
@@ -62,3 +86,8 @@ val tail : delay:float -> feedback:float -> float
 
 (* [echo ~delay ~feedback s]: [s] echoed, [tail] longer *)
 val echo : delay:float -> feedback:float -> Signal.t -> Signal.t
+
+(* [reverb ~seconds ?mix s]: [s] plus [mix] (0.3 by default) of
+ * Schroeder's reverb, [seconds] its reverberation time, the sound that
+ * much longer *)
+val reverb : seconds:float -> ?mix:float -> Signal.t -> Signal.t

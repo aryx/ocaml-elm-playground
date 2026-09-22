@@ -30,6 +30,17 @@ let test_pan () =
   Alcotest.(check (float 0.01)) "linear: the middle against a side (dB)" (-3.01)
     (db (power (Space.pan_linear 0.) /. power (Space.pan_linear 1.)))
 
+(* Woodworth's delay: 0 ahead, 12 samples at 30 degrees, 29 to the side;
+ * the air: the .mli's numbers *)
+let test_ears_and_air () =
+  Alcotest.(check (list int)) "the far ear's delay (samples)" [ 0; 12; 29; 29 ]
+    (List.map Space.interaural_delay [ 0.; 0.5; 1.; -1. ]);
+  Alcotest.(check (float 0.001)) "4 kHz: 0.023 dB a meter" 0.023 (Space.air_loss ~frequency:4000. 1.);
+  Alcotest.(check (float 0.01)) "1 kHz: 2.0 dB a km" 2.01 (Space.air_loss ~frequency:1000. 1000.);
+  Alcotest.(check (float 5.)) "the air's cutoff at 40 m (Hz)" 7904. (Space.air_cutoff 40.);
+  Alcotest.(check (float 5.)) "at 130 m" 4030. (Space.air_cutoff 130.);
+  Alcotest.(check (float 1e-9)) "within 7.9 m: nothing" 20000. (Space.air_cutoff 7.8)
+
 let test_positions () =
   let listener = Space.vec 0. 0. 0. and right = Space.vec 1. 0. 0. in
   Alcotest.(check (float 1e-9)) "ahead: the middle" 0. (Space.direction ~listener ~right (Space.vec 0. 10. 0.));
@@ -64,9 +75,14 @@ let test_stereo () =
   let plain = Synth.render_stereo beep in
   Alcotest.(check bool) "not panned: one array, in both" true (plain.left == plain.right);
   let right = Synth.render_stereo (Panned (0.5, beep)) and mono = Synth.render beep in
-  let (l, r) = Space.pan 0.5 in
-  Alcotest.(check (float 1e-9)) "panned right: the left channel" (l *. mono.(1000)) right.left.(1000);
-  Alcotest.(check (float 1e-9)) "and the right" (r *. mono.(1000)) right.right.(1000);
+  let (l, r) = Space.pan 0.5 and d = Space.interaural_delay 0.5 in
+  Alcotest.(check (float 1e-9)) "panned right: the right channel, on time" (r *. mono.(1000)) right.right.(1000);
+  Alcotest.(check (float 1e-9)) "the left, quieter and 12 samples later" (l *. mono.(1000)) right.left.(1000 + d);
+  Alcotest.(check int) "both that much longer" (Array.length mono + d) (Array.length right.left);
+  Space.ears_apart := false;
+  let level_only = Synth.render_stereo (Panned (0.5, beep)) in
+  Space.ears_apart := true;
+  Alcotest.(check (float 1e-9)) "ears_apart off: on time" (l *. mono.(1000)) level_only.left.(1000);
   (* a continuous voice moved from the left to the right between two
    * pulls: the pull after glides from one to the other *)
   let m = Mixer.create () in
@@ -98,6 +114,7 @@ let tests =
     [
       t "the pan laws: constant power, and the hole in the middle" test_pan;
       t "directions and distances" test_positions;
+      t "the time between the ears, the air" test_ears_and_air;
       t "Doppler: the passing car" test_doppler;
       t "stereo: Synth, the Mixer's gliding pans, Wav" test_stereo;
     ]
