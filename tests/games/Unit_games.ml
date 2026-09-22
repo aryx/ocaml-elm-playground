@@ -3062,6 +3062,97 @@ let tomb_raider_jumps () =
   | None -> Alcotest.fail "the standing jump was refused"
 
 (*****************************************************************************)
+(* TinyZeldaOcarina *)
+(*****************************************************************************)
+
+(* Link at [d] in front of the Stalfos (which stands at the origin,
+ * facing +z, towards him), facing it *)
+let ocarina_facing (d : number) : TinyZeldaOcarina.play =
+  let open TinyZeldaOcarina in
+  let p = new_play () in
+  { p with link = { p.link with x = 0.; z = d; heading = 0. }; foe = { p.foe with x = 0.; z = 0.; heading = 180. } }
+
+(* Locked on, a key held sideways is an orbit: the distance stays what
+ * it was, and Link faces the Stalfos all the way round. Unlocked, the
+ * same key runs him off along the camera's right, facing where he
+ * goes. *)
+let ocarina_orbit () =
+  let open TinyZeldaOcarina in
+  let p = ocarina_facing 2.5 in
+  let right = { fwd = 0.; side = 1. } in
+  let locked = ref p in
+  for _ = 1 to 60 do
+    locked := { !locked with link = move_link true true right !locked }
+  done;
+  let l = !locked in
+  Alcotest.(check bool) "locked: still at arm's length" true (Float.abs (dist l.link l.foe -. 2.5) < 1e-6);
+  Alcotest.(check bool) "and facing it" true (off_facing l.link l.foe < 1e-6);
+  (* 60 steps of 0.11 at 2.5: 2.64 radians, 151 degrees round *)
+  Alcotest.(check bool) "having gone most of the way to its back" true (Float.abs (diff l.link.heading 0.) > 140.);
+  let free = ref p in
+  for _ = 1 to 60 do
+    free := { !free with link = move_link false false right !free }
+  done;
+  let f = !free in
+  Alcotest.(check bool) "free: further off" true (dist f.link f.foe > 5.);
+  Alcotest.(check bool) "and facing away from it" true (off_facing f.link f.foe > 60.)
+
+(* the shield: a slash from the front clangs off it; from behind, or
+ * while the Stalfos is bent over after its chop, it lands *)
+let ocarina_shield () =
+  let open TinyZeldaOcarina in
+  let p = ocarina_facing 2. in
+  Alcotest.(check bool) "from the front: blocked" true (strike p = Blocked);
+  let behind = { p with foe = { p.foe with heading = 0. } } in
+  Alcotest.(check bool) "from behind: a hit" true (strike behind = Hit);
+  let after_chop = { p with foe_state = Chop (chop.startup + chop.active + 5) } in
+  Alcotest.(check bool) "after its chop: a hit" true (strike after_chop = Hit);
+  let far = ocarina_facing 4. in
+  Alcotest.(check bool) "out of reach: nothing" true (strike { far with foe = behind.foe } = Miss)
+
+(* The fight is two numbers: circling at arm's length, locked on, Link
+ * goes round faster than the Stalfos turns, so its back comes round.
+ * Played through the whole update, the Stalfos stalking and chopping. *)
+let ocarina_circle_to_its_back () =
+  let open TinyZeldaOcarina in
+  let keys = { initial_computer.keyboard with kright = true; keys = Set_.of_list [ "z" ] } in
+  let p = ref (ocarina_facing 2.5) in
+  let reached = ref false in
+  for _ = 1 to 150 do
+    p := step_play keys false !p;
+    if !p.locked && off_facing !p.foe !p.link > 90. then reached := true
+  done;
+  Alcotest.(check bool) "behind it, still locked on" true !reached
+
+(* The room can be won with the lock-on alone: hold z, circle, and
+ * slash when the Stalfos' back is towards you. Played through the
+ * whole update from the start, until the bars are up. *)
+let ocarina_won_by_circling () =
+  let open TinyZeldaOcarina in
+  let p = ref (new_play ()) in
+  let frames = ref 0 in
+  while !frames < 3000 && not (door_open !p) do
+    let q = !p in
+    let close = dist q.link q.foe < reach in
+    let keys =
+      { initial_computer.keyboard with kup = not close; kright = close; keys = Set_.of_list [ "z" ] }
+    in
+    let swing = close && q.swing = 0 && off_facing q.foe q.link > 90. in
+    p := step_play keys swing q;
+    incr frames
+  done;
+  Alcotest.(check bool) "the bars are up" true (door_open !p);
+  Alcotest.(check bool) "and Link is alive" true (!p.hearts > 0)
+
+(* locking on reaches 10, and once locked it holds to 16 *)
+let ocarina_lock_ranges () =
+  let open TinyZeldaOcarina in
+  let p = ocarina_facing 12. in
+  Alcotest.(check bool) "at 12, it does not lock" false (lock_on true p);
+  Alcotest.(check bool) "but a lock held from nearer holds" true (lock_on true { p with locked = true });
+  Alcotest.(check bool) "and z let go lets go" false (lock_on false { p with locked = true })
+
+(*****************************************************************************)
 (* TinyRobotron *)
 (*****************************************************************************)
 
@@ -6858,6 +6949,11 @@ let tests =
       t "TinyBlockout, the pit refuses what does not fit" blockout_walls;
       t "TinyTombRaider, the tomb can be got out of" tomb_raider_route;
       t "TinyTombRaider, the two jumps, and the chasm between them" tomb_raider_jumps;
+      t "TinyZeldaOcarina, locked on, sideways is an orbit" ocarina_orbit;
+      t "TinyZeldaOcarina, the Stalfos' shield" ocarina_shield;
+      t "TinyZeldaOcarina, circling reaches its back" ocarina_circle_to_its_back;
+      t "TinyZeldaOcarina, the lock's two ranges" ocarina_lock_ranges;
+      t "TinyZeldaOcarina, won by circling" ocarina_won_by_circling;
       t "TinyRobotron, the two sticks" robotron_twin_stick;
       t "TinyRobotron, a grunt on an electrode, a hulk on the family" robotron_walks_into_things;
       t "TinyRobotron, the brain rebuilds a human" robotron_brain_rebuilds;

@@ -16,11 +16,12 @@
 )
 
 (executables
-  (names TinyAloneInTheDark TinyTombRaider)
-  (modules TinyAloneInTheDark TinyTombRaider Tomb_atlas)
+  (names TinyAloneInTheDark TinyTombRaider TinyZeldaOcarina)
+  (modules TinyAloneInTheDark TinyTombRaider TinyZeldaOcarina Tomb_atlas)
   (libraries
     elm_core
     kit_brawler3d ; TinyAloneInTheDark's Skeleton
+    kit_brawler ; TinyZeldaOcarina's Frame_data
     kit_puzzle ; TinyTombRaider's Push, the same one TinySokoban uses
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d

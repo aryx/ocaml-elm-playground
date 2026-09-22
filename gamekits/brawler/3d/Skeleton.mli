@@ -85,7 +85,7 @@ val at : (int * pose) list -> int -> pose
 
 (* {1 Drawing} *)
 
-(* [draw ~body ~back ~skin height heading pose]: the figure [height]
+(* [draw ?front_hand ?back_hand ~body ~back ~skin height heading pose]: the figure [height]
  * tall standing straight, its feet on y = 0, built at the origin and
  * turned to [heading] -- degrees, the playground's own (0 faces -z, 90
  * faces +x, as Camera3d and every 3D game here use). [back] darkens
@@ -93,8 +93,18 @@ val at : (int * pose) list -> int -> pose
  * does; [skin] is the head, and the nose that says which way it looks.
  *
  * The lowest foot is not planted: a pose with a raised knee stands on
- * the other foot, and the caller places the figure. *)
+ * the other foot, and the caller places the figure.
+ *
+ * [front_hand] and [back_hand] are what the hands hold, a sword, a
+ * shield: built with the fist at the origin and the forearm going on
+ * down -y, as the arm hangs at pitch 0. The thing becomes one more
+ * level of the hierarchy, carried by the elbow and the shoulder, so a
+ * sword held that way points wherever the forearm does -- a blade of
+ * length l is [box c w l d |> move_y3d (-. l /. 2.)] -- and a swing is
+ * the arm's keyframes, nothing more (TinyZeldaOcarina's). *)
 val draw :
+  ?front_hand:shape3d ->
+  ?back_hand:shape3d ->
   body:color -> back:color -> skin:color -> number -> number -> pose -> shape3d
 
 (* [hand height heading pose]: where the front fist ends up, for a

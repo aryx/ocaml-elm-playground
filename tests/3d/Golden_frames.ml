@@ -98,6 +98,9 @@ let scenes : Testutil_golden.scene list =
     ("games/shmup/software/TinyStarFox", "", 5);
     (* claude: the hall, from its corner, behind the title *)
     ("games/adventure/software/TinyAloneInTheDark", "", 5);
+    (* claude: the room turning round the title: Link and the Stalfos,
+     * each holding what the Skeleton's hands carry *)
+    ("games/adventure/software/TinyZeldaOcarina", "", 5);
     ("games/arcade/software/TinyTron3d", "", 5);
     ("games/platform/software/TinyMario64", "", 5);
     ("games/arcade/software/TinyMarbleMadness", "", 5);
@@ -182,6 +185,10 @@ let scripted : Testutil_golden.scripted list =
      * small at the far end and the thing in the foreground walking at
      * him *)
     ("games/adventure/software/TinyAloneInTheDark", "corridor", 240, "space:1,right:20-47,up:48-128,right:129-156,up:157-240");
+    (* locked on and circling: the black bars, the fairy over the
+     * Stalfos, and the camera over Link's shoulder on the line through
+     * the two *)
+    ("games/adventure/software/TinyZeldaOcarina", "locked", 90, "space:1,z:10-90,up:10-55,right:60-90");
     (* the ramp at the top of the climb: the field in the air, each
      * kart's shadow left on the boards below it *)
     ("games/racing/software/TinyMarioKart64", "jump", 395, "space:1,up:2-450");

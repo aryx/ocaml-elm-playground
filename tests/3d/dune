@@ -48,6 +48,7 @@
    %{project_root}/games/fighting/software/TinyVirtuaFighter.exe
    %{project_root}/games/shmup/software/TinyStarFox.exe
    %{project_root}/games/adventure/software/TinyAloneInTheDark.exe
+   %{project_root}/games/adventure/software/TinyZeldaOcarina.exe
    %{project_root}/games/arcade/software/TinyTron3d.exe
    %{project_root}/games/platform/software/TinyMario64.exe
    %{project_root}/games/arcade/software/TinyMarbleMadness.exe

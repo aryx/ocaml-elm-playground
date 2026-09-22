@@ -82,9 +82,12 @@ let thick_of (h : number) = h *. 0.085
  * turned by the shoulder's own angles, and the lower part goes along
  * without knowing it. That is the whole of hierarchical transforms,
  * and the only interesting thing in this file. *)
-let jointed (color : color) (thick : number) (upper : number) (lower : number) (l : limb) : shape3d =
+let jointed ?held (color : color) (thick : number) (upper : number) (lower : number) (l : limb) : shape3d =
   let part (len : number) = box color thick len thick |> move_y3d (-.len /. 2.) in
-  group3d [ part upper; part lower |> rotate3d l.bend 0. 0. |> move_y3d (-.upper) ]
+  (* what the hand holds is one more level down: moved to the end of the
+   * lower part, and from there carried by the elbow and the shoulder *)
+  let held = match held with Some s -> [ s |> move_y3d (-.lower) ] | None -> [] in
+  group3d [ part upper; group3d (part lower :: held) |> rotate3d l.bend 0. 0. |> move_y3d (-.upper) ]
   |> rotate3d l.pitch l.yaw 0.
 
 (* Where the end of such a limb lands, the same two rotations done with
@@ -101,11 +104,11 @@ let jointed_end (upper : number) (lower : number) (l : limb) : number * number *
 
 (* the figure, built facing -z (the playground's heading 0), its feet
  * on y = 0 *)
-let figure ~(body : color) ~(back : color) ~(skin : color) (h : number) (p : pose) : shape3d =
+let figure ?front_hand ?back_hand ~(body : color) ~(back : color) ~(skin : color) (h : number) (p : pose) : shape3d =
   let leg = leg_of h and torso = torso_of h and arm = arm_of h and head = head_of h in
   let thick = thick_of h in
-  let side (l : limb) (color : color) (upper : number) (lower : number) (at_y : number) (across : number) =
-    jointed color (thick *. 0.95) upper lower l |> move3d (across *. thick *. 0.9) at_y 0.
+  let side ?held (l : limb) (color : color) (upper : number) (lower : number) (at_y : number) (across : number) =
+    jointed ?held color (thick *. 0.95) upper lower l |> move3d (across *. thick *. 0.9) at_y 0.
   in
   let trunk =
     group3d
@@ -114,8 +117,8 @@ let figure ~(body : color) ~(back : color) ~(skin : color) (h : number) (p : pos
         (* the nose says which way it faces, which boxes otherwise do not *)
         box skin (head *. 0.3) (head *. 0.25) (head *. 0.3)
         |> move3d 0. (torso +. (head /. 2.)) (-.head *. 0.5);
-        side p.back_arm back (arm *. 0.5) (arm *. 0.5) (torso -. (thick *. 0.3)) (-1.);
-        side p.front_arm body (arm *. 0.5) (arm *. 0.5) (torso -. (thick *. 0.3)) 1. ]
+        side ?held:back_hand p.back_arm back (arm *. 0.5) (arm *. 0.5) (torso -. (thick *. 0.3)) (-1.);
+        side ?held:front_hand p.front_arm body (arm *. 0.5) (arm *. 0.5) (torso -. (thick *. 0.3)) 1. ]
     (* the lean and the twist carry the arms and the head with them,
      * because they are inside the group before it turns *)
     |> rotate3d p.lean p.turn 0.
@@ -126,8 +129,9 @@ let figure ~(body : color) ~(back : color) ~(skin : color) (h : number) (p : pos
       side p.back_leg back (leg *. 0.5) (leg *. 0.5) leg (-1.);
       side p.front_leg body (leg *. 0.5) (leg *. 0.5) leg 1. ]
 
-let draw ~(body : color) ~(back : color) ~(skin : color) (h : number) (heading : number) (p : pose) : shape3d =
-  figure ~body ~back ~skin h p |> rotate3d 0. (-.heading) 0.
+let draw ?front_hand ?back_hand ~(body : color) ~(back : color) ~(skin : color) (h : number) (heading : number)
+    (p : pose) : shape3d =
+  figure ?front_hand ?back_hand ~body ~back ~skin h p |> rotate3d 0. (-.heading) 0.
 
 (* the same rotation, by hand: [rotate3d 0 (-heading) 0] takes (x, z)
  * to (x cos h + z sin h, -x sin h + z cos h) *)
