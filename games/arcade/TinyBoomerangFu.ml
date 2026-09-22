@@ -68,17 +68,26 @@
  * ([wits]): how close each likes to be, how straight a shot it wants,
  * how early it dodges, and how obliquely it comes at you.
  *
- * Its [brain] stays in this file rather than in ai/. What ai/ has today
- * is Minimax (a turn to choose) and Pathfind (a grid to cross), and
- * this is neither: an open floor, 60 frames a second, and one decision
- * -- step where? The pieces it would want, Steering and Fsm (dodge,
- * hunt, keep away *is* a state machine), are the unwritten half of
- * plan_ai_teaching.md, and the one shape that plan sketches for
- * steering is forces on Physics bodies, which these characters do not
- * have: they move at a fixed speed and their dash is committed, on
- * purpose. So: written out here, the way TinyPacman.ml's ghosts
- * and gamekits/lightcycles' computer are, and noted in that plan as a
- * waiting user of both modules.
+ * Two ways of writing that computer, chosen with the flag ai=engine
+ * (?ai=engine on the web), as TinySoldat.ml and TinyPacman.ml choose
+ * theirs:
+ *
+ *  - by default, [brain] below: written out in this file, reading the
+ *    game directly and answering every frame.
+ *  - with ai=engine, on ai/Sense, ai/Bot and ai/Fsm: the same tactics
+ *    and the same [wits], but it sees an enemy only when no pillar is
+ *    between them (and remembers it for a second and a half after
+ *    that), it acts on what it saw six frames ago, it changes its mind
+ *    twenty times a second rather than sixty, and dodge / hunt / keep
+ *    away are three states with the rules between them written down --
+ *    hysteresis included, as a guard rather than as an if.
+ *
+ * What stays out of it is ai/Steering: its verbs are forces on
+ * Physics bodies, and these characters have no velocity to steer --
+ * they move at a fixed speed and their dash is committed, on purpose.
+ * (ai/Steering.direction is the form for characters like these; the
+ * one thing it would replace here, [clear_way], is not a steering
+ * behaviour but an obstacle check, so it stays.)
  *
  * Exercises: the original's power-ups (fire, ice, and above all the
  * teleport, which drops you where your boomerang is -- the one that
@@ -174,12 +183,46 @@ type rang = {
   age : int;
 }
 
+(* What one player asks for this frame: where to go, and the two
+ * buttons. A human fills it from the keyboard, the computer from
+ * [brain] (or, with ai=engine, from [decide]); nothing downstream
+ * knows which. *)
+type intent = { go : (number * number) option; throw : bool; dash_now : bool }
+
+(* what the computer is doing, with ai=engine: three states and the
+ * rules between them are [modes], below *)
+type mode = Dodge | Hunt | Away
+
+(* and what it may know, with ai=engine. The mode lives in here
+ * because ai/Bot hands the last senses to the next sensing (Bot.mli):
+ * a bot's memory -- where it last saw someone, and what it was doing
+ * about it -- is part of what it senses, not something the game keeps
+ * for it *)
+type senses = {
+  at : number * number;
+  facing : number;
+  armed : bool; (* its boomerang in its hand *)
+  cool : int;
+  think : int;
+  seed : int; (* which cook: its wits, and its own wobble *)
+  last_way : number * number;
+  enemy : (number * number) Sense.target;
+  (* a boomerang on its way at it: how far along its line, how far off
+   * it, and the line's direction *)
+  incoming : (number * number * number * number) option;
+  mind : mode Fsm.run;
+}
+
 type game = {
   players : player list;
   rangs : rang list;
   ended : int option; (* frames since the round was decided *)
   clock : int; (* frames this round has lasted *)
   round_no : int;
+  (* claude: with ai=engine, one per cook: the senses it has seen but
+   * not yet acted on, and the intent it is repeating (ai/Bot.mli) *)
+  minds : (senses, intent) Bot.running array;
+  ai_engine : bool;
 }
 
 type scene = Title | Playing of game | Winner of game
@@ -195,13 +238,14 @@ let place (p : player) : player =
   let heading = atan2 (-.x) z *. 180. /. Float.pi in
   { p with px = x; pz = z; heading; holds = true; dash = 0; cool = 0; think = 45; way = Camera3d.forward heading; state = Alive }
 
-let new_game () : game =
+let new_game ?(ai_engine = false) () : game =
   { players =
       List.mapi
         (fun i kind ->
           place { idx = i; kind; px = 0.; pz = 0.; heading = 0.; holds = true; dash = 0; cool = 0; think = 45; way = (0., 1.); state = Alive; wins = 0 })
         foods;
-    rangs = []; ended = None; clock = 0; round_no = 1 }
+    rangs = []; ended = None; clock = 0; round_no = 1;
+    minds = Array.init 4 (fun _ -> Bot.start { go = None; throw = false; dash_now = false }); ai_engine }
 
 let initial_model : model = Scene2d.start Title
 
@@ -213,11 +257,6 @@ let d2 (ax : number) (az : number) (bx : number) (bz : number) : number =
 (*****************************************************************************)
 (* Intents *)
 (*****************************************************************************)
-
-(* What one player asks for this frame: where to go, and the two
- * buttons. A human fills it from the keyboard, the computer from
- * [brain]; nothing downstream knows which. *)
-type intent = { go : (number * number) option; throw : bool; dash_now : bool }
 
 let idle : intent = { go = None; throw = false; dash_now = false }
 
@@ -437,9 +476,9 @@ let angle_to (from : number) (dx, dz) : number =
  * where it is going: two units for a step, four for a dash, which
  * covers the whole 9 frames of one. (A human gets no such check: you
  * may dash into a pit, and you will.) *)
-let way_ok (p : player) (ahead : number) (ux, uz) : bool =
+let way_ok_from ((px, pz) : number * number) (ahead : number) (ux, uz) : bool =
   let at t =
-    let x = p.px +. (ux *. t) and z = p.pz +. (uz *. t) in
+    let x = px +. (ux *. t) and z = pz +. (uz *. t) in
     (* the pits with a margin: walking along the very edge of one, a
      * step that ends outside it can still clip its corner. The fence
      * counts too -- it stops nobody dead, it just takes the part of
@@ -451,6 +490,8 @@ let way_ok (p : player) (ahead : number) (ux, uz) : bool =
     && not (hits_pillar ~grow:radius x z)
   in
   List.for_all (fun f -> at (ahead *. f)) [ 0.25; 0.5; 0.75; 1. ]
+
+let way_ok (p : player) (ahead : number) (dir : number * number) : bool = way_ok_from (p.px, p.pz) ahead dir
 
 (* A direction that doesn't walk into a pit, a pillar or the fence: the
  * wanted one if it is clear; else the one it walked last frame, while
@@ -467,11 +508,11 @@ let way_ok (p : player) (ahead : number) (ux, uz) : bool =
  * Keeping last frame's way until that way itself is blocked breaks the
  * loop, and costs one field. (Steering behaviours call this hysteresis;
  * it is the same reason a thermostat has two temperatures.) *)
-let clear_way (p : player) (dx, dz) : number * number =
-  let ok = way_ok p 2. in
+let clear_way_from ((px, pz) : number * number) ~(last : number * number) (dx, dz) : number * number =
+  let ok = way_ok_from (px, pz) 2. in
   let d = norm (dx, dz) in
   if ok d then d
-  else if ok p.way then p.way
+  else if ok last then last
   else
     let ux, uz = d in
     let sign v = if v >= 0. then 1. else -1. in
@@ -480,6 +521,8 @@ let clear_way (p : player) (dx, dz) : number * number =
       @ [ (-.sign ux, 0.); (0., -.sign uz) ]
     in
     match List.find_opt ok sideways with Some c -> c | None -> d
+
+let clear_way (p : player) (dir : number * number) : number * number = clear_way_from (p.px, p.pz) ~last:p.way dir
 
 let brain (g : game) (p : player) : intent =
   let w = wits_of p.idx in
@@ -547,12 +590,161 @@ let brain (g : game) (p : player) : intent =
             { go = Some (clear_way p (-.fst to_target, -.snd to_target)); throw = false; dash_now = false })
 
 (*****************************************************************************)
+(* The same three, on ai/ (ai=engine) *)
+(*****************************************************************************)
+(* claude: with the flag ai=engine (?ai=engine on the web), the same
+ * three cooks on the ai/ layer, as TinySoldat's soldiers and
+ * TinyPacman's ghosts are. The tactics are [brain]'s and the numbers
+ * are [wits]'s; what changes is what a bot is allowed to know and how
+ * quickly it may act on it:
+ *
+ *   ai/Sense    its enemy is seen only when no pillar is between them,
+ *               and remembered for a second and a half after that
+ *   ai/Bot      it acts on what it saw 6 frames ago and changes its
+ *               mind 20 times a second, not 60
+ *   ai/Fsm      dodge / hunt / keep away as three states and the rules
+ *               between them, with the hysteresis written into a guard
+ *               ([Fsm.after]) instead of into an if
+ *
+ * The delay is what you feel: the hand-written one steps out of a
+ * boomerang's line the frame it becomes dangerous, and this one steps
+ * a tenth of a second later, which is about when you would. *)
+
+(* a pillar between us and nothing else: the pits and the fence are
+ * holes and edges, not walls, and you can see across both *)
+let in_sight ((ax, az) : number * number) ((bx, bz) : number * number) : bool =
+  let steps = 12 in
+  not
+    (List.exists
+       (fun i ->
+         let t = float_of_int i /. float_of_int steps in
+         hits_pillar (ax +. ((bx -. ax) *. t)) (az +. ((bz -. az) *. t)))
+       (List.init (steps + 1) (fun i -> i)))
+
+let look (g : game) (p : player) (was : (number * number) Sense.target) : (number * number) Sense.target =
+  let enemies = List.filter (fun q -> alive q && q.idx <> p.idx) g.players in
+  match List.sort (fun a b -> compare (d2 p.px p.pz a.px a.pz) (d2 p.px p.pz b.px b.pz)) enemies with
+  | [] -> Sense.forget ~after:90 (Sense.update ~distance:Float.infinity ~clear:false ~position:(p.px, p.pz) was)
+  | q :: _ ->
+      Sense.update ~sight:40. ~distance:(sqrt (d2 p.px p.pz q.px q.pz)) ~clear:(in_sight (p.px, p.pz) (q.px, q.pz))
+        ~position:(q.px, q.pz) was
+      |> Sense.forget ~after:90
+
+(* the nearest boomerang whose line it is standing in, as [brain] reads
+ * it: the same two numbers a player reads off the screen *)
+let threat_to (g : game) (p : player) (w : wits) : (number * number * number * number) option =
+  List.fold_left
+    (fun best r ->
+      let ux, uz = norm (r.rvx, r.rvz) in
+      let relx = p.px -. r.rx and relz = p.pz -. r.rz in
+      let along = (relx *. ux) +. (relz *. uz) in
+      let across = (relx *. uz) -. (relz *. ux) in
+      if along > 0. && along < w.nerve && Float.abs across < 1.9 && (r.owner <> p.idx || own_risk r) then
+        match best with Some (a, _, _, _) when a < along -> best | _ -> Some (along, across, ux, uz)
+      else best)
+    None g.rangs
+
+(* three states, and the rules between them. The one that matters is
+ * the third: a bot that leaves Dodge the instant the line is clear
+ * steps back into it, which is the flip-flop [clear_way]'s comment
+ * describes; [Fsm.after] keeps it stepping aside for another eight
+ * frames, and the state machine says so where an if would hide it *)
+let modes : (mode, senses) Fsm.machine =
+  [
+    { from = Hunt; label = "a boomerang"; guard = (fun s _ -> s.incoming <> None); target = Dodge };
+    { from = Away; label = "a boomerang"; guard = (fun s _ -> s.incoming <> None); target = Dodge };
+    { from = Dodge; label = "it passed"; guard = (fun s since -> s.incoming = None && since >= 8 && s.armed); target = Hunt };
+    { from = Dodge; label = "it passed"; guard = (fun s since -> s.incoming = None && since >= 8 && not s.armed); target = Away };
+    { from = Hunt; label = "thrown"; guard = (fun s _ -> not s.armed); target = Away };
+    { from = Away; label = "caught"; guard = (fun s _ -> s.armed); target = Hunt };
+  ]
+
+let senses_of (was : senses option) ((g, idx) : game * int) : senses =
+  let p = List.find (fun q -> q.idx = idx) g.players in
+  let w = wits_of idx in
+  let s =
+    {
+      at = (p.px, p.pz);
+      facing = p.heading;
+      armed = p.holds;
+      cool = p.cool;
+      think = p.think;
+      seed = idx;
+      last_way = p.way;
+      enemy = look g p (match was with Some s -> s.enemy | None -> Sense.unknown);
+      incoming = threat_to g p w;
+      mind = (match was with Some s -> s.mind | None -> Fsm.start Hunt);
+    }
+  in
+  { s with mind = Fsm.step modes s s.mind }
+
+(* the tactics, from the senses alone. [brain] reads the game; this
+ * reads what it was given, and the two differ in one visible way:
+ * when the enemy is behind a pillar this one walks to where it last
+ * saw it, and can be wrong *)
+let decide (s : senses) : intent =
+  let w = wits_of s.seed in
+  let go dir = clear_way_from s.at ~last:s.last_way dir in
+  match s.enemy.position with
+  | None -> idle
+  | Some (tx, tz) -> (
+      let px, pz = s.at in
+      let to_target = (tx -. px, tz -. pz) in
+      let dist = Float.hypot (fst to_target) (snd to_target) in
+      match s.mind.state with
+      | Dodge -> (
+          match s.incoming with
+          | Some (along, across, ux, uz) ->
+              let side = if across >= 0. then 1. else -1. in
+              let away = go (uz *. side, -.ux *. side) in
+              { go = Some away; throw = false; dash_now = along < 2.8 && s.cool = 0 && way_ok_from s.at 4.2 away }
+          (* the eight frames after it passed: keep going that way *)
+          | None -> { go = Some (go s.last_way); throw = false; dash_now = false })
+      | Away -> { go = Some (go (-.fst to_target, -.snd to_target)); throw = false; dash_now = false }
+      | Hunt ->
+          (* it aims by facing where it walks, exactly as you do, and
+             its aim wobbles while the enemy is freshly seen
+             (ai/Bot.aim_error): a shot taken the moment someone
+             appears is a worse shot *)
+          let wobble = Bot.aim_error ~spread:6. ~settle:20. ~seen_for:s.enemy.seen_for ~seed:s.seed () in
+          let aimed = Float.abs (angle_to s.facing to_target +. wobble) < w.aim in
+          let ready = s.think = 0 && aimed && dist < w.range && s.enemy.visible in
+          if dist < 2.4 then
+            let at_him = go to_target in
+            let slash = s.cool = 0 && way_ok_from s.at 4.2 at_him in
+            { go = Some at_him; throw = (not slash) && ready; dash_now = slash }
+          else
+            let want =
+              if dist > w.range then turn_vec w.slant to_target
+              else if s.think > 0 then (-.snd to_target, fst to_target)
+              else to_target
+            in
+            { go = Some (go want); throw = ready; dash_now = false })
+
+(* a person's reaction is about a tenth of a second, and no hand
+ * changes its mind sixty times a second (ai/Bot.mli) *)
+let mind : (game * int, senses, intent) Bot.t = Bot.make ~delay:6 ~rate:3 ~sense:senses_of ~decide ()
+
+(*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
 
 let step_game (s : model) (k : keyboard) (g : game) : game =
-  (* one intent per player, from the keyboard or from [brain] *)
-  let intents = List.map (fun p -> if not (alive p) then idle else if p.idx = 0 then keys_intent s k else brain g p) g.players in
+  (* one intent per player, from the keyboard, from [brain], or -- with
+     ai=engine -- from ai/Bot, which sees less and answers later *)
+  let minds = Array.copy g.minds in
+  let intents =
+    List.map
+      (fun p ->
+        if not (alive p) then idle
+        else if p.idx = 0 then keys_intent s k
+        else if not g.ai_engine then brain g p
+        else
+          let it, running = Bot.step mind (g, p.idx) minds.(p.idx) in
+          minds.(p.idx) <- running;
+          it)
+      g.players
+  in
   let stepped = List.map2 (fun it p -> if alive p then step_player it p else (step_dead p, None)) intents g.players in
   let players = List.map fst stepped in
   let thrown = List.filter_map snd stepped in
@@ -572,7 +764,7 @@ let step_game (s : model) (k : keyboard) (g : game) : game =
     | Some n -> Some (n + 1)
     | None -> if List.length standing <= 1 || clock > time_up then Some 0 else None
   in
-  { g with players; rangs; ended; clock }
+  { g with players; rangs; ended; clock; minds }
 
 (* the round's point, to the one left standing (nobody, if the clock ran
  * out on two of them) -- counted where the round ends, so that the last
@@ -583,12 +775,15 @@ let score (g : game) : game =
 
 (* the next round: everyone back in their corner, the scores kept *)
 let next_round (g : game) : game =
-  { players = List.map place g.players; rangs = []; ended = None; clock = 0; round_no = g.round_no + 1 }
+  { g with players = List.map place g.players; rangs = []; ended = None; clock = 0; round_no = g.round_no + 1;
+    minds = Array.init 4 (fun _ -> Bot.start idle) }
 
 let update (computer : computer) (s : model) : model =
   let s = Scene2d.update computer s in
   match s.scene with
-  | Title -> if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Playing (new_game ())) s else s
+  | Title ->
+      let ai_engine = List.assoc_opt "ai" computer.flags = Some "engine" in
+      if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Playing (new_game ~ai_engine ())) s else s
   | Playing g -> (
       let g = step_game s computer.keyboard g in
       match g.ended with

@@ -317,6 +317,21 @@ patrolling when it knows nothing, and hunting the place where it last
 saw you. Honest senses are not a smaller program -- that game grew by
 a quarter -- they are a different one.
 
+`TinyBoomerangFu.ml` is the second one with the flag, and it shows a
+different face of the same layer: its three cooks keep their tactics
+and their four numbers, and lose three things. They see an enemy only
+when no pillar stands between them (and remember it for ninety frames
+after it disappears behind one), they act on what they saw six frames
+ago, and they change their mind twenty times a second rather than
+sixty. Its `dodge / hunt / keep away` becomes an `Fsm`, which is worth
+it for one reason: the hysteresis that game learned the hard way -- an
+agent that leaves *dodge* the instant a boomerang's line is clear
+steps straight back into it -- is a guard on a transition
+(`Fsm.after 8`) instead of a condition buried in an if. What it does
+*not* take is steering: its characters have a fixed speed and a
+committed dash, so there is no velocity to steer, and `Ai.seek` and
+its family have nothing to offer them (§14).
+
 ## 7. The game tree: minimax
 
 The turn-taking half. A two-player game where both sides see everything
@@ -687,7 +702,9 @@ flow field (§3) by `gamekits/rts/Orders`, for `TinyDune2.ml` and
 `TinyWarcraft2.ml`, the
 three searches side by side in `examples/AiPathfinding.ml` (§2);
 `Fsm` by the ghosts of `TinyPacman.ml` and `examples/AiGhosts.ml` (§6);
-`Sense` and `Bot` by `TinySoldat.ml`'s soldiers with `ai=engine` and by
+`Sense` and `Bot` by `TinySoldat.ml`'s soldiers and
+`TinyBoomerangFu.ml`'s cooks, both with `ai=engine` (the second also
+on `Fsm`, for its dodge/hunt/keep away and their hysteresis), and by
 `examples/AiBots.ml`, where the four handicaps are four keys to turn
 off -- the last of them its senses, after which it sees you through the
 walls, and the demonstration is how quickly that stops being a game

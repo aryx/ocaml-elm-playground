@@ -479,24 +479,31 @@ from memory until then.)
   and Fischer, 2002) applied to a tree; Browne et al., "A Survey of
   Monte Carlo Tree Search Methods" (2012).
 - **Steering**: Craig Reynolds, "Steering Behaviors For Autonomous
-  Characters" (GDC 1999). Waiting user:
-  `TinyBoomerangFu.ml`'s `brain` (seek, flee, and an evade
-  that projects the player onto a flying boomerang's line to pick the
-  side to step off it) -- and a warning from it, for the `.mli`: its
-  characters have no velocity (a fixed speed, a committed dash), so a
-  steering API that is only forces on `Physics` bodies would have
-  nothing to offer them. Both forms, then: a force, and a direction.
+  Characters" (GDC 1999). Its warning came from
+  `TinyBoomerangFu.ml`, whose characters have no velocity (a fixed
+  speed, a committed dash), so a steering API that is only forces on
+  `Physics` bodies would have nothing to offer them; hence both forms,
+  a force and a direction. **Settled, 2026-09-22**: that game's
+  `ai=engine` bot does *not* use `Steering` after all. Its three ways
+  of walking are a direction each, which `Steering.direction` would
+  wrap without simplifying, and the one piece worth sharing --
+  `clear_way`, last frame's way kept until it is itself blocked -- is
+  an obstacle check, not a steering behaviour. It uses `Sense`, `Bot`
+  and `Fsm`, which is where its difficulty actually lives.
 - **Flock**: Craig Reynolds, "Flocks, Herds and Schools: A Distributed
   Behavioral Model" (SIGGRAPH 1987) -- three rules, and the birds of
   *Batman Returns*.
 - **Fsm**: Pac-Man (1980) and its four ghosts, whose chase/scatter
   timing and per-ghost target tiles are documented down to the frame in
-  the Pac-Man Dossier (Jamey Pittman, 2009). Second waiting user:
-  `TinyBoomerangFu.ml`, whose computer is three states in all
-  but name -- dodge what is in the air, hunt while it holds its
+  the Pac-Man Dossier (Jamey Pittman, 2009). Second user, DONE:
+  `TinyBoomerangFu.ml` with `ai=engine`, whose computer is three states
+  in all but name -- dodge what is in the air, hunt while it holds its
   boomerang, keep away while it does not -- and whose hardest lesson is
   that the states need *hysteresis*, or the agent flips between two
-  every frame and goes nowhere.
+  every frame and goes nowhere. On `Fsm` that lesson is a guard
+  (`Fsm.after 8` before leaving Dodge) instead of a condition buried in
+  an if, which is the clearest case in this repository for the module
+  existing at all.
 - **Behavior**: behavior trees, Halo 2 (Damian Isla, GDC 2005); the
   successor everyone copied, and its costs (the blackboard).
 - **Bot, Sense**: the deathmatch bots, which are where this was worked
@@ -722,8 +729,8 @@ from memory until then.)
   behaviour's thinking drawn: the slowing circle, the predicted point,
   the corridor, the road) and `examples/AiFlock.ml` (60 fish, a slider
   per weight and for the radius, s/a/c to switch a rule off, one fish's
-  neighbourhood drawn). TinyBoomerangFu's `brain` on `Steering` stays a
-  proposal, to decide in the game.
+  neighbourhood drawn). TinyBoomerangFu's `brain` on `Steering`:
+  decided against, in the game (see **Steering** under the modules).
 - **Phase 4, DONE** (`ai/Fsm`, `ai/Behavior`, `ai/Utility`). The open
   decision settled: `Fsm` is a module, a small one, earning its place
   by what a `match` doesn't give -- the rules as data (a list of
@@ -890,6 +897,22 @@ from memory until then.)
   rather than from running it. `examples/AiPerceptron.ml` shows the
   line walking into place and stopping dead on AND, and swinging for
   ever on XOR, with the weights drawn as the line's normal.
+- **TinyBoomerangFu on the layer, 2026-09-22** (the author asked
+  whether it used `ai/` for its bots; it did not). Now it does, behind
+  `ai=engine`, the hand-written `brain` still the default, as
+  TinySoldat and TinyPacman do it. What the layer takes away from the
+  three cooks: sight through a pillar (`Sense`, with the enemy
+  remembered for 90 frames after it goes behind one), an answer on the
+  same frame (`Bot`, delay 6 and rate 3), and hysteresis hidden inside
+  an if (`Fsm`, `after 8` before leaving Dodge). What it does not use
+  is `Steering` -- see the module's entry. Three tests in
+  `tests/games`: a pillar blocks sight and a pit does not, the three
+  modes and the eight frames of hysteresis, and the delay seen for what
+  it is -- when the enemy jumps to the other side of the arena the bot
+  keeps walking the old way for six frames. `ai/Bot`'s own answer to a
+  bot that has only just started is worth knowing, and the test says
+  it: it acts on the oldest senses it has, so the delay is a memory,
+  not a blindfold.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

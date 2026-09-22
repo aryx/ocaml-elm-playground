@@ -150,6 +150,86 @@ let soldat_senses () =
   Alcotest.(check bool) "GREEN neither" false (knows 2)
 
 (*****************************************************************************)
+(* TinyBoomerangFu, with ai=engine *)
+(*****************************************************************************)
+
+(* claude: the three things the ai/ layer adds to this game's
+   hand-written brain, which are the three things it takes away from a
+   bot: sight through a wall, a decision the same frame, and a state
+   machine's hysteresis hidden in an if *)
+
+(* a cook behind a pillar is out of sight; one across an open pit is
+   not -- a pit is a hole, not a wall *)
+let boomerang_sight () =
+  let open TinyBoomerangFu in
+  Alcotest.(check bool) "straight across the middle" true (in_sight (-2., 0.) (2., 0.));
+  Alcotest.(check bool) "through the pillar at (-6, -6)" false (in_sight (-9., -9.) (-3., -3.));
+  Alcotest.(check bool) "over the pit at (-8, 0)" true (in_sight (-9., -3.) (-9., 3.))
+
+(* dodge, hunt, keep away -- and the guard that keeps it dodging for
+   eight frames after the boomerang's line is clear, which is what
+   stops it stepping back into it *)
+let boomerang_modes () =
+  let open TinyBoomerangFu in
+  let senses ~armed ~incoming (run : mode Fsm.run) : senses =
+    { at = (0., 0.); facing = 0.; armed; cool = 0; think = 0; seed = 1; last_way = (0., 1.);
+      enemy = Sense.unknown; incoming; mind = run }
+  in
+  let step ~armed ~incoming run = Fsm.step modes (senses ~armed ~incoming run) run in
+  let hunting = Fsm.start Hunt in
+  let dodging = step ~armed:true ~incoming:(Some (1., 0.5, 1., 0.)) hunting in
+  Alcotest.(check bool) "a boomerang beats everything else" true (dodging.state = Dodge);
+  (* the line is clear again at once, and it keeps stepping aside *)
+  let after_1 = step ~armed:true ~incoming:None dodging in
+  Alcotest.(check bool) "still dodging one frame later" true (after_1.state = Dodge);
+  let rec settle run n = if n = 0 then run else settle (step ~armed:true ~incoming:None run) (n - 1) in
+  Alcotest.(check bool) "and only after eight" true ((settle after_1 8).state = Hunt);
+  (* and the other two: thrown, keep away; caught, hunt again *)
+  Alcotest.(check bool) "unarmed, it keeps away" true ((step ~armed:false ~incoming:None hunting).state = Away);
+  Alcotest.(check bool) "with it back, it hunts" true
+    ((step ~armed:true ~incoming:None (Fsm.start Away)).state = Hunt)
+
+(* the delay: it acts on what it saw six frames ago, so when the world
+   changes under it, it keeps answering the old world for six frames.
+   (A bot that has only just started acts on the oldest senses it has,
+   which is this frame's -- ai/Bot.mli: the delay is a memory, not a
+   blindfold.) *)
+let boomerang_delay () =
+  let open TinyBoomerangFu in
+  let at (i : int) (x : number) (z : number) (g : game) : game =
+    { g with players = List.map (fun (p : player) -> if p.idx = i then { p with px = x; pz = z } else p) g.players }
+  in
+  (* the strawberry in the middle, ready to throw (a fresh cook waits
+     45 frames before its first throw and circles meanwhile), and its
+     enemy out east, beyond its range, so it walks at it *)
+  let ready (g : game) : game =
+    { g with players = List.map (fun (p : player) -> if p.idx = 1 then { p with think = 0 } else p) g.players }
+  in
+  let g = ready (at 1 0. 0. (at 0 9. 0. (new_game ~ai_engine:true ()))) in
+  Alcotest.(check bool) "the hand-written one answers this frame" true
+    ((brain g (List.nth g.players 1)).go <> None);
+  (* eight frames of hunting an enemy to the east *)
+  let rec frames g n r last =
+    if n = 0 then (r, last)
+    else
+      let (it, r) = Bot.step mind (g, 1) r in
+      frames g (n - 1) r it
+  in
+  let (running, east) = frames g 8 (Bot.start idle) idle in
+  let towards (i : intent) = match i.go with Some (dx, _) -> dx | None -> 0. in
+  Alcotest.(check bool) "it heads east" true (towards east > 0.);
+  (* the enemy jumps to the other side; it goes on heading east *)
+  let g = at 0 (-9.) 0. g in
+  let rec steps g n r acc = if n = 0 then List.rev acc else
+    let (it, r) = Bot.step mind (g, 1) r in
+    steps g (n - 1) r (towards it :: acc)
+  in
+  let after = steps g 12 running [] in
+  let first_six = List.filteri (fun i _ -> i < 6) after in
+  Alcotest.(check bool) "six frames still heading the old way" true (List.for_all (fun dx -> dx > 0.) first_six);
+  Alcotest.(check bool) "and then it turns round" true (List.exists (fun dx -> dx < 0.) after)
+
+(*****************************************************************************)
 (* AiConnect4 *)
 (*****************************************************************************)
 
@@ -6640,6 +6720,9 @@ let tests =
       t "TinySoldat, the bots fight" soldat_fight;
       t "TinySoldat ai=engine, the bots fight" (soldat_fight ~ai_engine:true);
       t "TinySoldat ai=engine, a bot knows only what it has seen" soldat_senses;
+      t "TinyBoomerangFu ai=engine, a pillar blocks sight" boomerang_sight;
+      t "TinyBoomerangFu ai=engine, dodge, hunt, keep away" boomerang_modes;
+      t "TinyBoomerangFu ai=engine, it answers late" boomerang_delay;
       t "AiConnect4, what each trick saves" connect4_nodes;
       t "AiConnect4, the tricks do not change the move" connect4_same_move;
       t "AiGo, a capture and a suicide" go_captures;
