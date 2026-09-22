@@ -128,6 +128,8 @@
    %{project_root}/games/shmup/software/TinyDefender.exe
    %{project_root}/games/platform/software/TinyCeleste.exe
    %{project_root}/games/platform/software/TinyBraid.exe
+   %{project_root}/games/adventure/software/TinyMetalGearSolid.exe
+   %{project_root}/games/adventure/software/TinyGTA.exe
    %{project_root}/games/rhythm/software/TinyDDR.exe
    %{project_root}/games/strategy/software/TinySimCity.exe
    %{project_root}/games/strategy/software/TinyCivilization.exe

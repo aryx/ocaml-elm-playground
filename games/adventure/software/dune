@@ -4,12 +4,14 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyZelda)
-  (modules TinyZelda)
+  (names TinyGTA TinyMetalGearSolid TinyZelda)
+  (modules TinyGTA TinyMetalGearSolid TinyZelda)
   (libraries
     elm_playground
     kit_platformer
     kit_shmup
+    ai
+    kit_racing
     elm_playground_software ; implem of virtual elm_playground
   )
 )

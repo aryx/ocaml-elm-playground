@@ -263,6 +263,8 @@ longer true. See Adventure below.
   Metal Gear Solid, 1998): stealth, the genre where you win by not
   being seen. The guards' cones of vision are TinyXCOM's, and the
   guards a state machine (patrol, suspicious, alert, search).
+  (DONE: `TinyMetalGearSolid.ml`, the guards on ai/Fsm and
+  ai/Pathfind, the radar, the knock, the box, the choke.)
 - **TinyMyst** (P2, ~400; Myst, Rand and Robyn Miller, Cyan, 1993): a
   world of pre-rendered nodes, a click to go to the next; in 3D, every
   node a fixed camera -- TinyAloneInTheDark's cuts with the character
@@ -276,6 +278,8 @@ longer true. See Adventure below.
   world seen from above, as the first one was -- any car yours,
   traffic and pedestrians walking a road graph, the police's wanted
   level. The top-down racers' `Topdown` on a few city blocks.
+  (DONE: `TinyGTA.ml`, with the phones' missions, and GTA's leaning
+  buildings as its 2.5D trick.)
 - Seen but not planned: Adventure (Warren Robinett, Atari 2600, 1980:
   the first action-adventure, and the first Easter egg); Knight Lore
   (Ultimate, 1984: the isometric flip-screen, things standing on

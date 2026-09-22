@@ -4489,6 +4489,206 @@ let braid_decision () =
   Alcotest.(check bool) "with the shadow on the plate, out" true (reached_exit helped)
 
 (*****************************************************************************)
+(* TinyMetalGearSolid *)
+(*****************************************************************************)
+
+(* A base with one guard standing on [at], facing [facing] (its patrol
+ * that one cell, so it stays), and Snake on [snake]: cells of the top
+ * yard. *)
+let mgs_with (at : int * int) (facing : float) (snake : int * int) : TinyMetalGearSolid.game =
+  let open TinyMetalGearSolid in
+  let g = start () in
+  let gx, gy = center at and x, y = center snake in
+  let guard = { (List.hd g.guards) with gx; gy; facing; patrol = [| at |]; goal = at; noise = at } in
+  { g with guards = [ guard ]; snake = { g.snake with x; y } }
+
+let mgs_frames (n : int) (i : TinyMetalGearSolid.input) (g : TinyMetalGearSolid.game) : TinyMetalGearSolid.game =
+  List.fold_left (fun g i -> TinyMetalGearSolid.step i g) g (List.init n (fun _ -> i))
+
+let mgs_mode (g : TinyMetalGearSolid.game) : TinyMetalGearSolid.mode = (List.hd g.guards).run.state
+
+(* Seeing: in front and near, seen; the same distance behind the
+ * crates, or behind the guard's back, not. *)
+let mgs_seeing () =
+  let open TinyMetalGearSolid in
+  Alcotest.(check bool) "in front: '!'" true (mgs_mode (step nothing (mgs_with (18, 5) 0. (22, 5))) = Alert);
+  Alcotest.(check bool) "behind the crates: nothing" true (mgs_mode (step nothing (mgs_with (21, 4) 0. (25, 4))) = Patrol);
+  Alcotest.(check bool) "behind its back: nothing" true (mgs_mode (step nothing (mgs_with (18, 5) 180. (22, 5))) = Patrol)
+
+(* The box: still, a box in plain sight is not Snake; moving, it is
+ * worth a look ('?'), not an alert. *)
+let mgs_box () =
+  let open TinyMetalGearSolid in
+  let boxed = step { nothing with box = true } (mgs_with (18, 5) 0. (22, 5)) in
+  Alcotest.(check bool) "the box hides him" true (mgs_mode boxed = Patrol);
+  Alcotest.(check bool) "still, it stays hidden" true (mgs_mode (mgs_frames 60 nothing boxed) = Patrol);
+  Alcotest.(check bool) "moving, a '?'" true (mgs_mode (step { nothing with dy = 1. } boxed) = Suspicious)
+
+(* The knock: the guard hears it, walks there by A* (round the wall
+ * between), finds nothing, and goes back to its patrol. *)
+let mgs_knock () =
+  let open TinyMetalGearSolid in
+  (* Snake in his room, against its wall; the guard beyond it, facing away *)
+  let knocked = step { nothing with knock = true } (mgs_with (12, 3) 0. (8, 3)) in
+  Alcotest.(check bool) "heard: '?'" true (mgs_mode knocked = Suspicious);
+  Alcotest.(check bool) "a way there, round the wall" true (List.length (List.hd knocked.guards).path > 4);
+  (* and Snake gone to the far corner of his room, out of its sight *)
+  let x, y = center (1, 8) in
+  let knocked = { knocked with snake = { knocked.snake with x; y } } in
+  let there = mgs_frames 300 nothing knocked in
+  let guard = List.hd there.guards in
+  Alcotest.(check bool) "it came to the noise" true (cell_of guard.gx guard.gy = (8, 3));
+  Alcotest.(check bool) "and looks around" true (mgs_mode there = Suspicious);
+  Alcotest.(check bool) "nothing there: the patrol again" true (mgs_mode (mgs_frames 150 nothing there) = Patrol)
+
+(* The choke: from behind, the guard sleeps; from in front, he sees you
+ * first. *)
+let mgs_choke () =
+  let open TinyMetalGearSolid in
+  let behind = mgs_with (20, 5) 0. (20, 5) in
+  let behind = { behind with snake = { behind.snake with x = behind.snake.x -. 28. } } in
+  Alcotest.(check bool) "from behind: asleep" true (mgs_mode (step { nothing with choke = true } behind) = Asleep);
+  let front = mgs_with (20, 5) 180. (20, 5) in
+  let front = { front with snake = { front.snake with x = front.snake.x -. 28. } } in
+  Alcotest.(check bool) "from in front: '!'" true (mgs_mode (step { nothing with choke = true } front) = Alert);
+  Alcotest.(check bool) "and he wakes up" true (mgs_mode (mgs_frames 1000 nothing (step { nothing with choke = true } behind)) <> Asleep)
+
+(* The alert: one guard sees him, all of them know (the radio); he
+ * gets out of sight, and they search (evasion), then give up. One
+ * alert counted. *)
+let mgs_alert () =
+  let open TinyMetalGearSolid in
+  let g = start () in
+  let one = List.hd g.guards in
+  (* in his room's doorway, in front of the first guard, facing west *)
+  let x, y = center (7, 5) in
+  let seen = step nothing { g with snake = { g.snake with x; y }; guards = { one with facing = 180. } :: List.tl g.guards } in
+  Alcotest.(check bool) "every guard on alert" true (List.for_all (fun (gd : guard) -> gd.run.state = Alert) seen.guards);
+  Alcotest.(check int) "one alert" 1 seen.alerts;
+  (* he vanishes (to a corner of the bottom yard, far from all of them) *)
+  let sx, sy = center (1, 24) in
+  let hidden = { seen with snake = { seen.snake with x = sx; y = sy } } in
+  let rec until n g = if n = 0 || not (alert g) then (g, n) else until (n - 1) (step nothing g) in
+  let evading, _ = until 600 hidden in
+  Alcotest.(check bool) "lost him: evasion" true (evasion evading && not (alert evading));
+  let calm = mgs_frames 700 nothing evading in
+  Alcotest.(check bool) "then back to their patrols" true (List.for_all (fun (gd : guard) -> gd.run.state = Patrol) calm.guards);
+  Alcotest.(check int) "still one alert" 1 calm.alerts
+
+(* Caught: a guard on alert next to him. And there is a way out: A*
+ * finds the elevator from the start. *)
+let mgs_caught_and_way_out () =
+  let open TinyMetalGearSolid in
+  let g = mgs_with (20, 5) 180. (20, 5) in
+  let g = { g with snake = { g.snake with x = g.snake.x -. 20. } } in
+  Alcotest.(check bool) "caught" true (caught (step nothing g));
+  let s = List.hd (Tilemap.find base 'S') and e = List.hd (Tilemap.find base 'E') in
+  Alcotest.(check bool) "a way to the elevator" true (List.length (route s e) > 30)
+
+(*****************************************************************************)
+(* TinyGTA *)
+(*****************************************************************************)
+
+let gta_frames (n : int) (i : TinyGTA.input) (c : TinyGTA.city) : TinyGTA.city =
+  List.fold_left (fun c i -> TinyGTA.step i c) c (List.init n (fun _ -> i))
+
+(* you standing next to car [k] *)
+let gta_next_to (k : int) (c : TinyGTA.city) : TinyGTA.city =
+  let b = (List.nth c.cars k).body in
+  { c with you = { x = b.x +. 20.; y = b.y; car = None } }
+
+let gta_index (d : TinyGTA.driver) (c : TinyGTA.city) : int =
+  let rec go i = function [] -> -1 | (car : TinyGTA.car) :: rest -> if car.driver = d then i else go (i + 1) rest in
+  go 0 c.cars
+
+(* The traffic keeps to the roads: a minute on, no car in a building,
+ * every one of them having driven through several crossroads. *)
+let gta_traffic () =
+  let open TinyGTA in
+  let c = start () in
+  let seen = Array.make (List.length c.cars) [] in
+  let c = ref c in
+  for _ = 1 to 3600 do
+    c := step nothing !c;
+    List.iteri (fun k (car : car) -> if not (List.mem car.toward seen.(k)) then seen.(k) <- car.toward :: seen.(k)) !c.cars
+  done;
+  Alcotest.(check bool) "no car in a building" true (List.for_all (fun (car : car) -> not (blocked car.body.x car.body.y)) !c.cars);
+  List.iteri
+    (fun k (car : car) ->
+      if car.driver = Civilian then Alcotest.(check bool) "it went places" true (List.length seen.(k) >= 4))
+    !c.cars
+
+(* Any car yours: a parked one is only taken; one with its driver in it
+ * is stolen, a star, and a police car after you. *)
+let gta_cars_are_yours () =
+  let open TinyGTA in
+  let c = start () in
+  let parked = gta_index Nobody c in
+  let taken = step { nothing with enter = true } (gta_next_to parked c) in
+  Alcotest.(check bool) "in the parked car" true (taken.you.car = Some parked && (List.nth taken.cars parked).driver = Player);
+  Alcotest.(check int) "no crime" 0 taken.wanted;
+  let out = step { nothing with enter = true } taken in
+  Alcotest.(check bool) "and out again" true (out.you.car = None && (List.nth out.cars parked).driver = Nobody);
+  let k = gta_index Civilian c in
+  let stolen = step { nothing with enter = true } (gta_next_to k c) in
+  Alcotest.(check bool) "in someone's car" true (stolen.you.car = Some k);
+  Alcotest.(check int) "a star" 1 stolen.wanted;
+  Alcotest.(check bool) "and a police car" true (gta_index Cop stolen >= 0)
+
+(* Driving over someone is a crime too. *)
+let gta_run_over () =
+  let open TinyGTA in
+  let c = start () in
+  let p = List.hd c.peds in
+  let x, y = ped_at p in
+  let k = gta_index Nobody c in
+  let car = List.nth c.cars k in
+  let car = { car with driver = Player; body = { car.body with x = x -. 12.; y; speed = 300.; vx = 300.; vy = 0.; heading = 0. } } in
+  let c = { c with cars = List.mapi (fun i x -> if i = k then car else x) c.cars; you = { x = x -. 12.; y; car = Some k } } in
+  let after = run_over c in
+  Alcotest.(check bool) "knocked down" false (List.hd after.peds).alive;
+  Alcotest.(check int) "a star" 1 after.wanted
+
+(* Out of the police's sight ten seconds, a star less; caught on foot
+ * by one, busted. *)
+let gta_police () =
+  let open TinyGTA in
+  let c = crime (start ()) in
+  let cop = gta_index Cop c in
+  Alcotest.(check int) "wanted" 1 c.wanted;
+  let calm = List.fold_left (fun c _ -> cool_down c) c (List.init 601 Fun.id) in
+  Alcotest.(check int) "they gave up" 0 calm.wanted;
+  Alcotest.(check int) "and went home" (-1) (gta_index Cop calm);
+  let b = (List.nth c.cars cop).body in
+  Alcotest.(check bool) "on foot, next to one: busted" true (busted { c with you = { x = b.x +. 20.; y = b.y; car = None } });
+  (* and a police car, from the far end of the city, finds you standing
+   * in the street: through the roads, then straight at you *)
+  let rec wait n c = if n = 0 || busted c then (c, n) else wait (n - 1) (step nothing c) in
+  let _, left = wait 1800 c in
+  Printf.eprintf "DBG gta police: busted after %d frames\n%!" (1800 - left);
+  Alcotest.(check bool) "they come for you" true (left > 0)
+
+(* The phones: answered, a mission; its place reached in a car, paid,
+ * and the next phone rings. And every phone and place is on a
+ * pavement, not in a building. *)
+let gta_missions () =
+  let open TinyGTA in
+  Array.iter
+    (fun ((px, py), (tx, ty)) ->
+      Alcotest.(check bool) "phones outside" false (blocked px py);
+      Alcotest.(check bool) "places outside" false (blocked tx ty))
+    phones;
+  let c = start () in
+  let (px, py), (tx, ty) = phones.(0) in
+  let answered = missions { c with you = { x = px; y = py; car = None } } in
+  Alcotest.(check bool) "a mission" true (answered.mission <> None);
+  let there = missions { answered with you = { x = tx; y = ty; car = Some 0 } } in
+  Alcotest.(check bool) "paid" true (there.money > 1000);
+  Alcotest.(check int) "the next phone" 1 there.phone;
+  let late = missions { answered with mission = Some (0, 0) } in
+  Alcotest.(check bool) "too late: nothing, the next phone" true (late.money = 0 && late.phone = 1)
+
+(*****************************************************************************)
 (* TinyPrinceOfPersia *)
 (*****************************************************************************)
 
@@ -6189,6 +6389,17 @@ let tests =
       t "TinyBraid, mystery: the green key stays in hand" braid_mystery;
       t "TinyBraid, place: time is where you stand" braid_place;
       t "TinyBraid, decision: the shadow holds the plate" braid_decision;
+      t "TinyMetalGearSolid, seen in the cone, not behind walls" mgs_seeing;
+      t "TinyMetalGearSolid, the box" mgs_box;
+      t "TinyMetalGearSolid, the knock" mgs_knock;
+      t "TinyMetalGearSolid, the choke, from behind" mgs_choke;
+      t "TinyMetalGearSolid, alert, evasion, infiltration" mgs_alert;
+      t "TinyMetalGearSolid, caught, and a way out" mgs_caught_and_way_out;
+      t "TinyGTA, the traffic keeps to the roads" gta_traffic;
+      t "TinyGTA, any car is yours" gta_cars_are_yours;
+      t "TinyGTA, running someone over" gta_run_over;
+      t "TinyGTA, the police, and the stars" gta_police;
+      t "TinyGTA, the phones" gta_missions;
       t "TinyPrinceOfPersia, the distances are the tables' sums" pop_tables;
       t "TinyPrinceOfPersia, a robot escapes the dungeon" pop_robot;
       t "TinyPrinceOfPersia, the gate closes, the shaft hurts" pop_gate_and_fall;

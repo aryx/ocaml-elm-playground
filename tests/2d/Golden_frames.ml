@@ -181,6 +181,8 @@ let scenes : Testutil_golden.scene list =
     ("games/shmup/software/TinyDefender", "", 5);
     ("games/platform/software/TinyCeleste", "", 5);
     ("games/platform/software/TinyBraid", "", 5);
+    ("games/adventure/software/TinyMetalGearSolid", "", 5);
+    ("games/adventure/software/TinyGTA", "", 5);
     ("games/rhythm/software/TinyDDR", "", 5);
     ("games/strategy/software/TinySimCity", "", 5);
     ("games/strategy/software/TinyCivilization", "", 5);
@@ -524,6 +526,15 @@ let scripted : Testutil_golden.scripted list =
     (* run into the first pit, die on its spikes, and hold shift: the
        picture gone sepia, Tim going back up out of the pit *)
     ("games/platform/software/TinyBraid", "rewind", 90, "space:1,right:5-70,Shift:75-90");
+    (* a knock on his room's wall: the guard next door has heard it
+       ('?'), and comes round through the door by A*; the radar in the
+       corner is the only place the cones are drawn *)
+    ("games/adventure/software/TinyMetalGearSolid", "knock", 200, "space:1,right:5-115,x:118");
+    (* he came in, saw Snake ('!'), the radar jammed, and caught him *)
+    ("games/adventure/software/TinyMetalGearSolid", "caught", 380, "space:1,right:5-115,x:118");
+    (* into the parked car and full gas: the camera higher the faster,
+       the buildings leaning out from the middle of the screen *)
+    ("games/adventure/software/TinyGTA", "drive", 160, "space:1,right:5-50,up:5-45,space:55,up:60-160");
     (* off the bank on six flaps, the buzzards already coming *)
     ("games/platform/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
     (* the scanner is the game: three abductions are under way in the
