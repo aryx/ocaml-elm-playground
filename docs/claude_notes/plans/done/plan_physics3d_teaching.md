@@ -7,8 +7,8 @@ forces, collisions, impulses, stacking, one idea per module, each
 `.mli` with its diagram, its worked example and the paper behind it,
 and the `playground/Physics` API over it, so a game says what happens
 rather than how
-([`done/plan_physics_teaching.md`](done/plan_physics_teaching.md),
-[`notes_2d_physics.md`](../tutorials/notes_2d_physics.md)). It ends
+([`done/plan_physics_teaching.md`](plan_physics_teaching.md),
+[`notes_2d_physics.md`](../../tutorials/notes_2d_physics.md)). It ends
 with a "later": *3D*. This is that plan.
 
 A dimension up is not the same code with a `z` added, and saying where
@@ -74,17 +74,17 @@ part of the engine:**
    "speedy thing goes in, speedy thing comes out" is one matrix
    multiply plus the honesty to say what the rendering costs.
 
-Companions: [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md),
+Companions: [`notes_3d_physics.md`](../../tutorials/notes_3d_physics.md),
 the tutorial (written ahead of the code, as its specification, like
 `notes_audio.md` and `notes_ai.md` were), and
-[`notes_physics3d_related_work.md`](../related-work/notes_physics3d_related_work.md)
+[`notes_physics3d_related_work.md`](../../related-work/notes_physics3d_related_work.md)
 (Havok, Bullet, Jolt, elm-physics, the games that made 3D physics a
 feature, and the ceiling here), beside the 2D note's own
-[`notes_physics_related_work.md`](../related-work/notes_physics_related_work.md).
+[`notes_physics_related_work.md`](../../related-work/notes_physics_related_work.md).
 
 ## Principles
 
-The eight of [`../README.md`](../README.md) unchanged, plus what this
+The eight of [`../README.md`](../../README.md) unchanged, plus what this
 area needs of its own:
 
 - **Independent of the Playground**, like `physics/2d/`: `physics/3d/`
@@ -517,7 +517,7 @@ Each phase builds, tests and ships on its own.
 
 **Phases 0 to 13 done**, the plan finished (2026-09-20; phase 7's game port, phases 9 to 13 2026-09-21); the
 rest not started. Written as the specification, with
-[`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) beside it:
+[`notes_3d_physics.md`](../../tutorials/notes_3d_physics.md) beside it:
 the tutorial is the design review, the plan is the order. Decisions
 already taken and the reasons, so they are not re-argued later:
 

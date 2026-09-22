@@ -190,7 +190,7 @@ because the evidence above cuts both ways. The proposal:
   concrete and worth watching for: **a deathmatch bot wanted by both a
   2D and a 3D shooter** (`TinySoldat.ml` and a 3D one on
   `Character3d`, see
-  [`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)) would
+  [`plan_physics3d_teaching.md`](done/plan_physics3d_teaching.md)) would
   share map awareness, waypoints, cover and weapon choice across two
   genres' kits -- and *that* is the day `gamekits/bots/` (or a
   `gamekits/shooter/`) earns its place, with the shared part moved into it
@@ -584,7 +584,7 @@ from memory until then.)
   delay and error knobs), and `TinyXpilot.ml`'s "robots", which
   its header already lists as an exercise.
 - **A 3D bot**, once `Character3d` exists
-  ([`plan_physics3d_teaching.md`](plan_physics3d_teaching.md) phase
+  ([`plan_physics3d_teaching.md`](done/plan_physics3d_teaching.md) phase
   9): the same `Bot` with rays for senses and a capsule to drive --
   the proof that the layer is dimension-independent, and the case that
   would justify a shared shooter kit (see the bots section).

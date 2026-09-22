@@ -9,7 +9,7 @@ code. If you read this once, the code in `Playground3d.ml` and
 `graphics/3d/` should stop looking like a wall of trigonometry and start
 looking like a small, recognizable set of standard building blocks.
 
-See also [`plan_playground3d.md`](plan_playground3d.md) (the original
+See also [`plan_playground3d.md`](../plans/done/plan_playground3d.md) (the original
 design plan) for *why* this library exists and how it's organized as
 OCaml packages; this note is about the 3D *concepts*, not the OCaml
 architecture.

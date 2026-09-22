@@ -282,7 +282,7 @@ order is by cost:
 - **Tweakables** -- a number a game registers (`Inspect.tweak
   "gravity" 800.`) that the panel can slide while the game runs
   (the slider itself comes from
-  [`plan_gui_teaching.md`](plan_gui_teaching.md), whose first users
+  [`plan_gui_teaching.md`](done/plan_gui_teaching.md), whose first users
   are this plan's timeline and panels), so
   the jump arc changes under your hand. This is Victor's actual demo
   and it is *cheap* (a registry, a slider, a lookup), but it adds API

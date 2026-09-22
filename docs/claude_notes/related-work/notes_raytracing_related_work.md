@@ -212,7 +212,7 @@ graphics.
   startup, which is how a rasterizer buys shadows), and
   `physics/3d`'s planned `Collide3d` rays, which share the very same
   Möller-Trumbore routine
-  ([`plan_physics3d_teaching.md`](../plans/plan_physics3d_teaching.md)).
+  ([`plan_physics3d_teaching.md`](../plans/done/plan_physics3d_teaching.md)).
 
 ## Where `Raytrace` and the playground's "y" key actually sit
 

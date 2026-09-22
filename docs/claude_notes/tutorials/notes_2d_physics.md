@@ -4,12 +4,12 @@ How a computer makes things move: the few ideas every physics engine,
 from Spacewar! on a 1962 PDP-1 to Box2D in Angry Birds, is built from,
 where they came from, and what goes wrong when they're done naively.
 It was also the specification of `physics/2d/` (see
-[`done/plan_physics_teaching.md`](done/plan_physics_teaching.md)):
+[`done/plan_physics_teaching.md`](../plans/done/plan_physics_teaching.md)):
 written before the code, then checked against it once it was all
 there; each section points to the module, the tests and the example
 that make it concrete. Companions: [`notes_2d.md`](notes_2d.md) and
 [`notes_3d.md`](notes_3d.md) (the graphics side), and
-[`notes_physics_related_work.md`](notes_physics_related_work.md)
+[`notes_physics_related_work.md`](../related-work/notes_physics_related_work.md)
 (Chipmunk, Box2D and the rest).
 
 Two halves, the second built on the first:

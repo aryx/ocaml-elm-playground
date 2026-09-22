@@ -9,7 +9,7 @@ this note is about what the third dimension changes, in the field as
 much as in the code. Companions:
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md) (how it
 works) and
-[`plan_physics3d_teaching.md`](../plans/plan_physics3d_teaching.md)
+[`plan_physics3d_teaching.md`](../plans/done/plan_physics3d_teaching.md)
 (what gets built, in what order).
 
 ## The one-line version

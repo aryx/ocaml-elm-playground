@@ -3,7 +3,7 @@
 ## Context
 
 `graphics/` teaches how pictures are computed, `physics/` (planned,
-[`plan_physics_teaching.md`](plan_physics_teaching.md)) how motion is;
+[`plan_physics_teaching.md`](done/plan_physics_teaching.md)) how motion is;
 this plan does the same for **sound**: a small software synthesizer
 under `audio/` that computes every sample itself, and teaches **digital
 audio and signal processing** -- sampling and the Nyquist limit,
@@ -19,10 +19,10 @@ beeps, Asteroid's thrust, shots and explosions (and the arcade game's
 famous two-note heartbeat, speeding up), Spacewar!'s torpedoes,
 Slingshot's impacts, Snake's crunch, Tetris's theme.
 
-Companions: [`notes_audio.md`](notes_audio.md), the tutorial (written
+Companions: [`notes_audio.md`](../tutorials/notes_audio.md), the tutorial (written
 ahead of the code, as its specification),
-[`notes_audio_midi.md`](notes_audio_midi.md) (music as data: MIDI), and
-[`notes_audio_related_work.md`](notes_audio_related_work.md) (the
+[`notes_audio_midi.md`](../tutorials/notes_audio_midi.md) (music as data: MIDI), and
+[`notes_audio_related_work.md`](../related-work/notes_audio_related_work.md) (the
 chips, the synthesizers, the languages and libraries, and the teaching
 lineage).
 

@@ -9,7 +9,7 @@ why the "simpler" code before it wasn't good enough, and (for the perf
 ones) measured before/after FPS -- so the reasoning stays visible even
 as the code accumulates optimizations. Companion to
 [`notes_3d.md`](notes_3d.md) (the concepts) and
-[`plan_playground3d.md`](plan_playground3d.md) (the overall design).
+[`plan_playground3d.md`](../plans/done/plan_playground3d.md) (the overall design).
 
 Benchmarks below are the on-screen FPS counter (the window title) each
 3D demo already shows, at the default 1000x1000 window, on this

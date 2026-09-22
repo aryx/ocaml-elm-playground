@@ -6,7 +6,7 @@ document systems that tried to make applications out of parts. What
 they do that this will not, and which of their ideas fit in a few
 hundred readable lines. Companions:
 [`notes_gui.md`](../tutorials/notes_gui.md) (how it works) and
-[`plan_gui_teaching.md`](../plans/plan_gui_teaching.md) (what gets
+[`plan_gui_teaching.md`](../plans/done/plan_gui_teaching.md) (what gets
 built, in what order).
 
 ## The one-line version

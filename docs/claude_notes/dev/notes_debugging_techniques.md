@@ -179,7 +179,7 @@ never exited, since the page never stops requesting animation frames).
 work well for pages that don't hang. See `note_headless.md`.)
 
 What worked: run the compiled `.bc.js` directly in node with a tiny fake
-DOM, `docs/claude_notes/web_headless.js`. It fakes only the DOM calls
+DOM, `web_headless.js`. It fakes only the DOM calls
 made by `playground/web/Playground_platform.ml` (`createElementNS`,
 `setAttribute`, `appendChild`, `requestAnimationFrame`,
 `addEventListener`, ...), calls `window.onload`, then drives N animation
@@ -188,19 +188,19 @@ time too), optionally pressing keys, and prints progress:
 
 ```bash
 make
-timeout 10 node docs/claude_notes/web_headless.js \
+timeout 10 node scripts/web/web_headless.js \
   _build/default/games/puzzle/web/Tetris.bc.js 120 "ArrowLeft,ArrowUp, "
 echo "exit $?"      # 124 = hang, like in section 1
 
 # DUMP=1 prints the DOM tree (= the rendered shapes) every 30 frames
-DUMP=1 timeout 10 node docs/claude_notes/web_headless.js \
+DUMP=1 timeout 10 node scripts/web/web_headless.js \
   _build/default/examples/web/Animation.bc.js 91
 
 # smoke test of all the web apps
 for f in examples/web/*.html games/*/web/*.html; do
   b=$(basename $f .html); d=$(dirname $f)
   [ -f _build/default/$d/$b.bc.js ] || continue
-  timeout 10 node docs/claude_notes/web_headless.js \
+  timeout 10 node scripts/web/web_headless.js \
     _build/default/$d/$b.bc.js 120 "ArrowLeft, " >/dev/null 2>&1
   echo "$b: exit $?"
 done

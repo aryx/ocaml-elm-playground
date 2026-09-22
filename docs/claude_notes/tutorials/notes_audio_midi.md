@@ -8,7 +8,7 @@ old, everywhere, and a good lesson in designing a binary protocol and a
 file format. Where it fits in the playground: `audio/`'s `Music`
 sequencer can read MIDI files and play them with its own synthesizer,
 and a real MIDI keyboard can play the `AudioPiano` example (see
-[`plan_audio_teaching.md`](plan_audio_teaching.md)); planned modules:
+[`plan_audio_teaching.md`](../plans/plan_audio_teaching.md)); planned modules:
 `audio/Midi` (messages, files) and `audio/Music` (playing them).
 
 ## 1. What MIDI is (1983)

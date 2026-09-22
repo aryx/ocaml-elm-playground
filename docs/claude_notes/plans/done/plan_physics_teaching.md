@@ -33,9 +33,9 @@ with gravity, Spacewar!** (two ships around a star), **and a new
 Angry Birds-like game, Slingshot** (towers of boxes to knock down: the
 real test of an engine, see "Games"); Mario and Pong after them.
 
-Companions: [`notes_2d_physics.md`](notes_2d_physics.md), the tutorial
+Companions: [`notes_2d_physics.md`](../../tutorials/notes_2d_physics.md), the tutorial
 (written ahead of the code, as its specification), and
-[`notes_physics_related_work.md`](notes_physics_related_work.md)
+[`notes_physics_related_work.md`](../../related-work/notes_physics_related_work.md)
 (Chipmunk, Box2D and the rest, and the teaching lineage).
 
 ## Principles (the same as `graphics/`)

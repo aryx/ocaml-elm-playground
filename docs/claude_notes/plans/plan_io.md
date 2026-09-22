@@ -2,7 +2,7 @@
 
 ## Context
 
-The applications of [`plan_gui_teaching.md`](plan_gui_teaching.md)
+The applications of [`plan_gui_teaching.md`](done/plan_gui_teaching.md)
 (TinyExcel, TinyWord, TinyMacPaint, TinyOpenDoc, TinyPowerPoint) edit
 documents that never leave memory. Each can already write itself down
 -- as a value (`Sheet.t`, `Rich.t`, `Bitmap.t`, an outline) or as text

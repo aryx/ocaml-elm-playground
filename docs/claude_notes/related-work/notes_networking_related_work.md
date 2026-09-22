@@ -111,7 +111,7 @@ communities had already published.**
   **collaborative editing** (operational transformation, CRDTs), where
   the state is a document rather than a simulation and convergence
   replaces determinism -- named in
-  [`plan_gui_teaching.md`](../plans/plan_gui_teaching.md)'s out of
+  [`plan_gui_teaching.md`](../plans/done/plan_gui_teaching.md)'s out of
   scope.
 
 ## Part 4: the teaching lineage

@@ -12,9 +12,9 @@
 // an infinite loop can't even show its console).
 //
 // usage:
-//   node docs/claude_notes/web_headless.js _build/default/games/puzzle/web/Tetris.bc.js [frames] [keys]
+//   node scripts/web/web_headless.js _build/default/games/puzzle/web/Tetris.bc.js [frames] [keys]
 // e.g.
-//   timeout 10 node docs/claude_notes/web_headless.js \
+//   timeout 10 node scripts/web/web_headless.js \
 //     _build/default/games/puzzle/web/Tetris.bc.js 300 ArrowLeft,ArrowUp,' '
 //
 // It simulates [frames] animation frames at 60Hz (default 300 = 5s),

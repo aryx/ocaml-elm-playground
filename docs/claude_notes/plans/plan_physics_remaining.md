@@ -7,7 +7,7 @@ rotation, the broad phase, stacking, springs and particles; the
 `playground/Physics` API; Orbit, Bounce, Marbles, Boxes, Pyramid,
 Elastic; TinyWorms, TinySpacewar, TinyPong, TinyCameltry,
 TinySlingshot, TinySoldat, and Asteroid's `physics=engine`) and the
-tutorial, [`notes_2d_physics.md`](notes_2d_physics.md). What's left,
+tutorial, [`notes_2d_physics.md`](../tutorials/notes_2d_physics.md). What's left,
 roughly from most to least worth doing. Like the rest, each piece with
 its worked example, its test, and where it helps a switch to see its
 difference (`solver=off`, `rotation=off`).
@@ -95,7 +95,7 @@ their demos run on the same machine, the same scene sizes.
 ## 5. 3D (the plan's "later")
 
 Started, so it is a plan of its own:
-[`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)
+[`plan_physics3d_teaching.md`](done/plan_physics3d_teaching.md)
 (`physics/3d/` and a `Physics3d` API; the tutorial
 [`notes_3d_physics.md`](../tutorials/notes_3d_physics.md), the
 related-work note

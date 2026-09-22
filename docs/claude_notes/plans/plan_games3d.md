@@ -16,7 +16,7 @@ Wolfenstein 3D what a raycaster could, Doom what a BSP tree could,
 Super Mario 64 what a GPU and an analog stick could. So this plan is
 also a history of 3D rendering, told through the games -- which fits
 `graphics/3d`'s teaching (`notes_3d.md`) and
-[`notes_vs_doom_quake.md`](notes_vs_doom_quake.md), which it
+[`notes_vs_doom_quake.md`](../related-work/notes_vs_doom_quake.md), which it
 references rather than repeats.
 
 What `playground3d` already gives a game (see `Playground3d.mli`):
@@ -250,7 +250,7 @@ online play), then Half-Life (1998).
   jump, gravity, mouse look), with collisions against boxes instead of
   blocks (`Collide3d`); shared with TinyWolfenstein3d and TinyDoom. Both are
   phases 4 and 9 of
-  [`plan_physics3d_teaching.md`](plan_physics3d_teaching.md), which
+  [`plan_physics3d_teaching.md`](done/plan_physics3d_teaching.md), which
   builds `Collide3d` and the capsule controller
   (`Character3d`) that this kit wants -- and whose own
   games are TinyPinball, TinyHalfLife2 and TinyPortal.
@@ -625,7 +625,7 @@ one line of the model:
 - **The web**: WebGL's `Mesh_cache` (`plan_webgl_remaining.md` section
   1) before any big `cached3d` world runs in the browser.
 - **An orthographic camera** (for isometric-looking 3D and puzzles).
-- **3D physics** ([`plan_physics3d_teaching.md`](plan_physics3d_teaching.md)):
+- **3D physics** ([`plan_physics3d_teaching.md`](done/plan_physics3d_teaching.md)):
   today each game does its own (a box one axis at a time in
   TinyMinecraft and TinyMario64, a ball on a height map in TinyMarbleMadness),
   and keeps it -- the engine arrives beside them behind a

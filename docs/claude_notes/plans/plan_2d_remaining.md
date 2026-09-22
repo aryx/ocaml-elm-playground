@@ -3,7 +3,7 @@
 The software 2D backend is done: see
 [`done/plan_software_2d.md`](done/plan_software_2d.md) (the backend and
 `graphics/2d/`, phases 0-7 and 9) and its tutorial,
-[`notes_2d.md`](notes_2d.md). Since then: golden frame tests
+[`notes_2d.md`](../tutorials/notes_2d.md). Since then: golden frame tests
 (`tests/2d/`), the "h" help panel, and `-debug-keys`. What's left,
 roughly from most to least worth doing (the 3D side has its own list,
 [`plan_3d_remaining.md`](plan_3d_remaining.md)). Anything that changes

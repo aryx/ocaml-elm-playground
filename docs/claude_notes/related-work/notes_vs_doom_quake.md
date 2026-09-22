@@ -4,8 +4,8 @@ You asked for a comparison between this project's rendering strategy
 and id Software's *Doom* (1993) and *Quake* (1996) -- two of the most
 historically important 3D-graphics engines ever shipped, and a good
 lens for understanding *why* our renderer is built the way it is versus
-the ways it isn't. Companion to [`notes_3d.md`](notes_3d.md) (the
-concepts) and [`notes_3d_opti.md`](notes_3d_opti.md) (our own
+the ways it isn't. Companion to [`notes_3d.md`](../tutorials/notes_3d.md) (the
+concepts) and [`notes_3d_opti.md`](../tutorials/notes_3d_opti.md) (our own
 optimization history) -- read those first if a term here (BSP, z-buffer,
 perspective-correct) is unfamiliar.
 
@@ -129,7 +129,7 @@ not because it looked better, but because it was 4x less memory
 bandwidth and storage than direct 24-bit RGB, which mattered enormously
 on 1990s hardware. `Playground3d`'s native texture sampling
 (`Texture_decode`/`sample_texture`) decodes straight to full RGB(A) via
-`stb_image` (see `docs/claude_notes/notes_3d_opti.md`'s pixel-packing
+`stb_image` (see `notes_3d_opti.md`'s pixel-packing
 section) with no palette anywhere -- direct color has simply stopped
 being expensive enough to avoid.
 

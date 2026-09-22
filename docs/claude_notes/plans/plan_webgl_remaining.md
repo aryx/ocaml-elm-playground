@@ -5,16 +5,16 @@ The backend itself is done: see
 phases 1-5: the shared `Gpu_scene`, the canvas under `run_app`'s
 `<svg>`, real scenes with the rendering hints, textures from `<img>`,
 `make serve-build`, publishing) and the shader tutorial,
-[`notes_opengl_shaders.md`](notes_opengl_shaders.md). What's left,
+[`notes_opengl_shaders.md`](../tutorials/notes_opengl_shaders.md). What's left,
 roughly from most to least worth doing.
 
 ## 1. `Mesh_cache`, then TinyMinecraft in the browser
 
-**DONE**, except its fps: see [`plan_opengl_perf.md`](plan_opengl_perf.md),
+**DONE**, except its fps: see [`plan_opengl_perf.md`](done/plan_opengl_perf.md),
 Phases 3-4 and Results (headless Chrome renders WebGL in software, so
 the fps needs a real browser).
 
-The big one, owned by [`plan_opengl_perf.md`](plan_opengl_perf.md):
+The big one, owned by [`plan_opengl_perf.md`](done/plan_opengl_perf.md):
 its Phase 3 is WebGL's upload/draw/free for
 `Mesh_cache` (`Gpu_scene.group_by_material`'s `on_cached`, a WebGL
 buffer and vertex count per material of a cached mesh, `deleteBuffer`

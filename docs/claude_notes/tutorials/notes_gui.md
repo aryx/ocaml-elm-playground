@@ -6,7 +6,7 @@ this playground already is), how things are laid out, how text is
 edited, and how one document ends up inside another.
 
 It began as the specification of the toolkit planned in
-[`plan_gui_teaching.md`](../plans/plan_gui_teaching.md), written
+[`plan_gui_teaching.md`](../plans/done/plan_gui_teaching.md), written
 before the code; it has since been checked against the code
 (2026-09-21), its numbers filled in (§16), and what writing each part
 showed added where it belongs. Companions:
@@ -616,7 +616,7 @@ all four ways in `examples/gui4/` and run side by side in
 `examples/GuiFourWays.ml` (§4); the 7GUIs tasks are also in
 `examples/Gui7*.ml`, once each, in immediate mode -- CRUD included,
 with the list box it needed. The apps are what
-the toolkit is *for* ([`plan_gui_teaching.md`](../plans/plan_gui_teaching.md)),
+the toolkit is *for* ([`plan_gui_teaching.md`](../plans/done/plan_gui_teaching.md)),
 mostly in pairs of the same engine under two interfaces a few years
 apart: TinyVisiCalc and TinyExcel (§11), TinyBravo and TinyWord (§12);
 then TinyMacPaint (§13), TinyOpenDoc (§9), TinyPowerPoint (§14) and

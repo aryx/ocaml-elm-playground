@@ -5,10 +5,10 @@ Mathews's first computer music at Bell Labs (1957) to the NES's five
 channels and a modern game's mixer, is built from, where they came
 from, and what goes wrong when they're done naively. It's also the
 specification of `audio/` (see
-[`plan_audio_teaching.md`](plan_audio_teaching.md)): written before the
+[`plan_audio_teaching.md`](../plans/plan_audio_teaching.md)): written before the
 code, its pointers name the planned modules. Companions:
 [`notes_2d.md`](notes_2d.md) (pictures), [`notes_2d_physics.md`](notes_2d_physics.md)
-(motion), and [`notes_audio_related_work.md`](notes_audio_related_work.md).
+(motion), and [`notes_audio_related_work.md`](../related-work/notes_audio_related_work.md).
 
 The parallel with pictures runs all the way through, and is worth
 keeping in mind: a picture is a grid of pixels, a sound is a row of

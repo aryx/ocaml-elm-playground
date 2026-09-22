@@ -3,7 +3,7 @@
 The physics twin of [`notes_playground_related_work.md`](notes_playground_related_work.md)
 (2D graphics) and [`notes_playground3d_related_work.md`](notes_playground3d_related_work.md)
 (3D): where the planned `physics/` engine and its Evan-style
-`Physics` API (see [`plan_physics_teaching.md`](plan_physics_teaching.md))
+`Physics` API (see [`plan_physics_teaching.md`](../plans/done/plan_physics_teaching.md))
 come from, and where they sit among the real engines -- Chipmunk, Box2D
 and the others. The same through-line as the other two notes: **the
 real engines are designed to be as fast, as stable and as capable as

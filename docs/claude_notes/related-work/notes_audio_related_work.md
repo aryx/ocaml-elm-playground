@@ -3,7 +3,7 @@
 The sound twin of [`notes_playground_related_work.md`](notes_playground_related_work.md)
 (2D graphics) and [`notes_physics_related_work.md`](notes_physics_related_work.md)
 (physics): where the planned `audio/` synthesizer and its Evan-style
-`Sound` API (see [`plan_audio_teaching.md`](plan_audio_teaching.md))
+`Sound` API (see [`plan_audio_teaching.md`](../plans/plan_audio_teaching.md))
 come from, and where they sit among the chips, synthesizers, languages
 and libraries that make computer sound. The same through-line: **the
 real systems are designed to sound as good, or run as fast, as
@@ -42,7 +42,7 @@ Early game consoles had no samples to play; they had tiny
   1973, licensed to Yamaha: the DX7, 1983): one sine modulating
   another's frequency, rich timbres from two oscillators.
 - **MIDI** (1983): notes as messages between instruments, then as
-  files; see [`notes_audio_midi.md`](notes_audio_midi.md).
+  files; see [`notes_audio_midi.md`](../tutorials/notes_audio_midi.md).
 - **Trackers** (Ultimate Soundtracker, Amiga, 1987): music as rows of
   notes playing short samples, the MOD format; the ancestor of the
   sequencers in PICO-8 and every chiptune tool.

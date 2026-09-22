@@ -3,7 +3,7 @@
 What actually changes when a physics engine gains a third dimension --
 which is much more than an added `z`, and much less than a rewrite. It
 was the specification of `physics/3d/` (see
-[`plan_physics3d_teaching.md`](../plans/plan_physics3d_teaching.md)),
+[`plan_physics3d_teaching.md`](../plans/done/plan_physics3d_teaching.md)),
 written before the code; it has since been checked against the code
 (the plan's phase 13), and where the two disagreed it now says what
 was built, and its numbers are measured ones. Companions:
@@ -878,7 +878,7 @@ bullet and wrong for anything that has just bounced -- `TinyPinball3d`
 counts its tunnellings from the ball's two positions instead.
 
 The games arrived in the order the engine could support them
-([`plan_physics3d_teaching.md`](../plans/plan_physics3d_teaching.md)):
+([`plan_physics3d_teaching.md`](../plans/done/plan_physics3d_teaching.md)):
 `StarCollector3d.ml` ported behind a `physics=engine` flag first (the
 2D plan's pattern: the hand-written physics stays, beside the
 engine's, in the same file), then `TinyMarbleMadness.ml`'s rolling against

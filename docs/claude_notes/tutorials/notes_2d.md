@@ -13,12 +13,12 @@ the framebuffer and images, `graphics/2d/geometry/` transforms,
 `playground/software/` (the Playground backend using them).
 
 The 2D counterpart of [`notes_3d.md`](notes_3d.md). Companions:
-[`done/plan_software_2d.md`](done/plan_software_2d.md) (how the backend was built,
+[`done/plan_software_2d.md`](../plans/done/plan_software_2d.md) (how the backend was built,
 phase by phase), [`notes_font.md`](notes_font.md) (text, in depth) and
 [`notes_opti.md`](notes_opti.md) (what each feature costs, and the
 optimizations); and for where all this comes from, and how it compares
 with PostScript, SVG, Cairo, Skia, Processing, Gloss and the rest,
-[`notes_playground_related_work.md`](notes_playground_related_work.md).
+[`notes_playground_related_work.md`](../related-work/notes_playground_related_work.md).
 
 The same Playground programs also run on two other backends: Cairo
 (`playground/native/`), a C library that does all of this for us, and

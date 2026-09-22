@@ -230,7 +230,7 @@ has it as an ordinary OCaml closure) and drop the parser.
 `Ray` goes in `graphics/3d/geometry/`, beside `Vec3`, `Mat4`,
 `Camera` and `Lighting`, rather than in `graphics/3d/`. The reason is
 concrete: `physics/3d`'s `Collide3d`
-([`plan_physics3d_teaching.md`](plan_physics3d_teaching.md), phase 4)
+([`plan_physics3d_teaching.md`](done/plan_physics3d_teaching.md), phase 4)
 needs Möller-Trumbore too, for picking, bullets, ground checks and the
 gravity gun, and `physics_3d` already depends on `graphics_3d_geometry`
 and on nothing else. One implementation, tested once, used by the

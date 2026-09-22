@@ -249,7 +249,7 @@ lucamug's flatten-to-2D-SVG trick alone.
 
 Everything above was written when `Playground3d` had exactly the two
 backends this doc contrasts against the industry (native, no GPU at
-all; web, an SVG projection). `docs/claude_notes/plan_opengl.md`
+all; web, an SVG projection). `plan_opengl.md`
 followed up on this doc's own comparison table by actually building
 the OpenGL end of the spectrum too (`elm_playground_3d_opengl`) --
 closing this doc out with the measured answer, not just the

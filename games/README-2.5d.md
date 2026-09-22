@@ -61,7 +61,7 @@ nobody minds.
 Four families, then:
 
 - **Object by object**, the projection: Zaxxon, and every isometric
-  game after it. The oldest trick here and the smallest -- two lines
+  game after it. The smallest trick here -- two lines
   that turn three world axes into two screen ones, and a sort. Its
   world keeps the same restriction as the others, one height per point
   (a wall is blocks on the floor; there is nothing to fly under), but

@@ -17,8 +17,8 @@
  *               -- the gauge's red mark is the wall ahead of you
  *   space       fire
  *
- * The trick of this game is the oldest of the 2.5D games, and the
- * smallest: one projection, and an order to draw in.
+ * The trick of this game is the smallest of the 2.5D games: one
+ * projection, and an order to draw in.
  *
  *   sx = 0.85 x + 0.34 z
  *   sy = -0.30 x + 0.42 z + y

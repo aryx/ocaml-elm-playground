@@ -8,7 +8,7 @@ what this repository's from-scratch software rasterizer does -- with
 pointers into the code (`graphics/font/Hershey.ml`,
 `graphics/2d/Stroke.ml`, `playground/software/Shape_render_software.ml`).
 
-Companion to [`done/plan_software_2d.md`](done/plan_software_2d.md) (the software
+Companion to [`done/plan_software_2d.md`](../plans/done/plan_software_2d.md) (the software
 2D backend's plan, phase 5 being text) and to the future `notes_2d.md`
 (2D rasterization in general).
 

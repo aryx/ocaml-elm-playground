@@ -24,7 +24,7 @@ three rivals so a reader can see why MVU looks the way it does.
 
 There is a practical argument too: **three planned things already need
 widgets and would each hand-roll them.**
-[`plan_inspect_teaching.md`](plan_inspect_teaching.md)'s timeline is a
+[`plan_inspect_teaching.md`](../plan_inspect_teaching.md)'s timeline is a
 scrubber and its tweakables are sliders; `games/TinySoldat.ml`,
 `TinyCameltry.ml` and `TinySlingshot.ml` all list a level or map
 editor in their exercises; and every game's menu is currently a
@@ -46,15 +46,15 @@ the code, and the shape of the Groundwork section below):
 - `Scene2d` switches whole screens, which is as close to a window
   manager as the repo gets.
 
-Companions: [`notes_gui.md`](../tutorials/notes_gui.md), the tutorial
+Companions: [`notes_gui.md`](../../tutorials/notes_gui.md), the tutorial
 (written ahead of the code, as its specification), and
-[`notes_gui_related_work.md`](../related-work/notes_gui_related_work.md)
+[`notes_gui_related_work.md`](../../related-work/notes_gui_related_work.md)
 (Smalltalk, Tk, Motif, Qt, Flutter, React, Dear ImGui, Plan 9's
 libpanel and acme, OLE and OpenDoc, and the ceiling here).
 
 ## Principles
 
-The eight of [`../README.md`](../README.md), with four of this area's
+The eight of [`../README.md`](../../README.md), with four of this area's
 own:
 
 - **We draw everything.** No native widgets, ever: a button is shapes,
@@ -199,7 +199,7 @@ examples/Gui7*.ml         the 7GUIs tasks, four ways
 `appkits/` sits beside `gamekits/` deliberately, and the name says the
 relation: `gamekits/` is what games of a genre share, `appkits/` is what
 *apps* share. If `apps/` grows past a handful, a catalog plan splits
-off the way [`plan_games.md`](plan_games.md) did for games.
+off the way [`plan_games.md`](../plan_games.md) did for games.
 
 ## appkits/embed: compound documents, the Bean/OLE idea
 
@@ -262,7 +262,7 @@ saying what it deliberately does not do:
   The engine is the lesson: **cells as a dependency graph,
   topological order, recalculation of only what changed** -- plus a
   formula parser, which is where
-  [`plan_teaching_languages.md`](plan_teaching_languages.md) meets
+  [`plan_teaching_languages.md`](../plan_teaching_languages.md) meets
   this plan.
 - **TinyWord**: **Knuth and Plass's line-breaking algorithm** (1981 --
   paragraphs broken optimally by dynamic programming, the reason TeX's
@@ -358,7 +358,7 @@ good advertisement for the whole architecture.
 ## Status
 
 **Not started** (2026-09-20). Written as the specification, with
-[`notes_gui.md`](../tutorials/notes_gui.md) beside it. Decisions taken,
+[`notes_gui.md`](../../tutorials/notes_gui.md) beside it. Decisions taken,
 with their reasons:
 
 - **the author asked for it** (2026-09-20), wanting the Tiny spirit
@@ -1520,7 +1520,7 @@ answer at ten, the script editor, a new button dragged into place.
   text format, and say so.
 - Printing, page setup, and anything about paper.
 - Collaborative editing (CRDTs, OT) -- a good later plan of its own,
-  next to [`plan_networking_teaching.md`](plan_networking_teaching.md).
+  next to [`plan_networking_teaching.md`](../plan_networking_teaching.md).
 - A window manager: `Scene2d` switches screens, apps are full-window,
   and overlapping windows are a *later* (Plan 9's rio is the model if
   it happens).
