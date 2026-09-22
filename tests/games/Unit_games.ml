@@ -5636,14 +5636,14 @@ let tests =
       t "TinyStreetFighter, the computer fights" sf_computer;
       t "TinyFinalFight, the combo, on the line" ff_combo;
       t "TinyFinalFight, a robot clears the street" ff_robot;
-      t "TinyBabaIsYou, every level solvable" baba_levels;
+      Testutil_heavy.t "TinyBabaIsYou, every level solvable" baba_levels;
       t "TinyMissileCommand, a robot survives two waves" missile_robot;
       t "TinyMissileCommand, a chain reaction" missile_chain;
       t "TinyLemmings, a job per level" lemmings_levels;
       t "TinyLemmings, the fall that splats" lemmings_splat;
       t "TinyPuzzleBobble, the hexagonal grid" bobble_hex;
       t "TinyPuzzleBobble, popped and fallen" bobble_drop;
-      t "TinyPuzzleBobble, a robot clears the rounds" bobble_robot;
+      Testutil_heavy.t "TinyPuzzleBobble, a robot clears the rounds" bobble_robot;
       t "TinyTowerDefense, the maze and the referee" tower_maze;
       t "TinyTowerDefense, a monster finds its way again" tower_repath;
       t "TinyTowerDefense, towers hold the first waves" tower_waves;
@@ -5657,7 +5657,7 @@ let tests =
       t "TinyDune2, the enemy takes an undefended base" dune2_war;
       t "TinyDune2, tanks take their refinery" dune2_attack;
       t "AiOthello, the rules" othello_rules;
-      t "AiOthello, alpha-beta agrees with minimax" othello_alphabeta;
+      Testutil_heavy.t "AiOthello, alpha-beta agrees with minimax" othello_alphabeta;
       t "AiOthello, the computer beats a greedy player" othello_greedy;
       t "AiChess, perft" chess_perft;
       t "AiChess, en passant, castling, promotion" chess_special_moves;

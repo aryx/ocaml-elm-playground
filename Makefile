@@ -62,10 +62,12 @@ test:
 # things: the whole tree built (what a move breaks: a module in the
 # wrong stanza, a missing copy_files, a library dep), and every test
 # but the golden frames (a frame rendered on the CPU each, all at
-# once). 'make test' before a change that can alter a pixel.
+# once) and the ones tagged heavy (seconds of search each, see
+# tests/common/Testutil_heavy.mli). 'make test' before a change that
+# can alter a pixel or a game.
 test-lite:
 	dune build
-	GOLDEN=none dune runtest -f
+	GOLDEN=none HEAVY=skip dune runtest -f
 
 # 'make test' skips the golden frames deep into a game (more than 100
 # frames to render: seconds of CPU each, all at once), keeping every

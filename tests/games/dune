@@ -412,6 +412,7 @@
  (libraries
    alcotest
    testo
+   testutil ; Testutil_heavy, the searches make test-lite skips
    elm_core
    elm_playground
    elm_playground_software ; an implem of virtual elm_playground
@@ -436,4 +437,8 @@
    ai ; AiOthello's Minimax, TinyDungeonMaster's Pathfind
    kit_rts
  )
+ ; claude: 4 workers, not Testo's default of one per core: each worker
+ ; starts by paying for every game's setup again, so on 64 cores this
+ ; suite took 197 s of CPU for the 15 it takes here, in the same 5 s
+ (action (run %{test} -j 4))
 )
