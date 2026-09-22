@@ -78,7 +78,9 @@
  * What it uses: gamekits/platformer's Tile_move (the movement: one pixel at
  * a time, x and then y, which is Celeste's own way of moving -- the
  * kit's header cites it, and this is the first game here written after
- * it), Tilemap (the three rooms, as strings), Scene2d. Not Physics:
+ * it), Tilemap (the three rooms, as strings), Scene2d, Sprite (Madeline
+ * in pixel art, celeste_madeline.xpm, her hair recolored as the dash is
+ * spent; artwork=shapes draws her as circles instead). Not Physics:
  * nothing here is physical, every number is a feel, tuned. Not
  * Camera2d: a room is exactly one screen, as the original's are.
  *
@@ -355,16 +357,30 @@ let tile_shape (c : char) : shape =
   | 'E' -> square summit_glow tile |> fade 0.35
   | _ -> group []
 
-(* Madeline: the hair is red when the dash is there to be spent, and
- * blue when it has been -- the one piece of interface Celeste needs *)
-let climber (p : play) : shape =
+(* Madeline, 10x12 pixels drawn in a sprite editor
+ * (celeste_madeline.xpm, beside this file, embedded by dune): Celeste
+ * is pixel art, so that is the default; artwork=shapes draws her as the
+ * circles and the box below instead, which is all the game needs.
+ *
+ * Her hair is red when the dash is there to be spent, and blue when it
+ * has been -- the one piece of interface Celeste needs -- and she turns
+ * white while dashing. The picture does not change: only the two colors
+ * its 'H' and 'S' characters stand for, a palette swap (Sprite.mli),
+ * which is how one sprite made Mario and Luigi. *)
+let madeline_palette, madeline_rows = Sprite.of_xpm Celeste_xpm.madeline
+
+let climber (computer : computer) (p : play) : shape =
   let hair = if p.dash_ready then rgb 220 60 60 else rgb 80 150 230 in
   let body = if p.dashing > 0 then white else rgb 240 220 200 in
-  group
-    [ rectangle (rgb 60 70 120) 20. 20. |> move_y (-7.);
-      circle body 9. |> move_y 9.;
-      circle hair 8. |> move (-4. * p.facing) 13.;
-      circle hair 6. |> move (-11. * p.facing) 9. ]
+  (if not (Sprite.artwork ~default:true computer.flags) then
+     group
+       [ rectangle (rgb 60 70 120) 20. 20. |> move_y (-7.);
+         circle body 9. |> move_y 9.;
+         circle hair 8. |> move (-4. * p.facing) 13.;
+         circle hair 6. |> move (-11. * p.facing) 9. ]
+   else
+     let palette = List.map (fun (c, color) -> if c = 'H' then (c, hair) else if c = 'S' then (c, body) else (c, color)) madeline_palette in
+     Sprite.pixels 3.5 palette (if p.facing < 0. then Sprite.flip madeline_rows else madeline_rows))
   |> move p.x p.y
 
 let view_play (computer : computer) (p : play) : shape list =
@@ -372,7 +388,7 @@ let view_play (computer : computer) (p : play) : shape list =
   let on b = if b then "on" else "OFF" in
   [ rectangle night screen.width screen.height; Tilemap.view tile_shape p.map ]
   @ (if p.dead > 0 then [ circle (rgb 220 60 60) (float_of_int (12 -.. p.dead) * 5.) |> fade 0.6 |> move p.x p.y ]
-     else [ climber p ])
+     else [ climber computer p ])
   @ [ text snow 2.2 (Printf.sprintf "room %d of %d    deaths %d" (p.room +.. 1) (Array.length rooms) p.deaths)
       |> move_y (screen.top - 40.);
       text (rgb 170 170 200) 1.7

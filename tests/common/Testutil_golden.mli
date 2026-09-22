@@ -39,6 +39,13 @@ type scene = string * string * int
  * golden/<basename>_<label>.png (e.g. golden/TinyMario_jump.png). *)
 type scripted = string * string * int * string
 
+(* A scene started with flags (see Playground.flags): an executable, a
+ * label, the frame to compare, and the flags, e.g.
+ * ("games/platform/software/TinyMario", "shapes", 5, [ "artwork=shapes" ])
+ * -- the other look of a game that has two. Its golden frame is
+ * golden/<basename>_<label>.png, as a scripted scene's is. *)
+type flagged = string * string * int * string list
+
 (* Scenes deep into a game (more than 100 frames) cost seconds of CPU
    each, and they all run at once: those are skipped unless the
    environment variable GOLDEN is "all". "make test" then keeps every
@@ -49,8 +56,9 @@ type scripted = string * string * int * string
    change that only moves or renames things, where the build is the
    check that matters. *)
 
-(* [tests ~dir ~approve ?scripted scenes]: a test per scene and per
- * scripted scene, for a test running in _build/default/<dir>, with its
- * golden frames in <dir>/golden/ and its Makefile target [approve]
- * (named in the failure messages) *)
-val tests : dir:string -> approve:string -> ?scripted:scripted list -> scene list -> Testo.t list
+(* [tests ~dir ~approve ?scripted ?flagged scenes]: a test per scene and
+ * per scripted and flagged scene, for a test running in
+ * _build/default/<dir>, with its golden frames in <dir>/golden/ and its
+ * Makefile target [approve] (named in the failure messages) *)
+val tests :
+  dir:string -> approve:string -> ?scripted:scripted list -> ?flagged:flagged list -> scene list -> Testo.t list

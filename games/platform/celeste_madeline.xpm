@@ -1,0 +1,22 @@
+/* XPM */
+static char *celeste_madeline[] = {
+"10 12 6 1",
+". c None",
+"H c #dc3c3c",
+"S c #f0dcc8",
+"B c #3c6ec8",
+"D c #3c4678",
+"K c #1e1e28",
+"...HHHH...",
+"..HHHHHH..",
+"..HSSSSH..",
+"..SSKSKS..",
+"...SSSS...",
+"..HBBBB...",
+".HHBBBBB..",
+"HH.BBBB...",
+"...BBBB...",
+"...DDDD...",
+"..DD..DD..",
+"..KK..KK.."
+};

@@ -14,6 +14,7 @@ let t = Testo.create
 
 type scene = string * string * int
 type scripted = string * string * int * string
+type flagged = string * string * int * string list
 
 (* Rendering frame n means playing the game for n frames, so a scene
  * deep into a game costs real seconds of CPU, and dune runs them all at
@@ -56,13 +57,17 @@ let read_ppm (file : string) : frame =
   close_in ic;
   { width; height; rgb }
 
-let render ~dir ~(exe : string) ~(keys : string) ~(script : string option) ~(frame : int) : frame =
+let render ~dir ~(exe : string) ~(keys : string) ~(script : string option) ~(flags : string list) ~(frame : int) :
+    frame =
   let ppm = Filename.temp_file "golden3d" ".ppm" in
   (* claude: seed=1, a flag (see Playground.flags) for the games drawing
    * random numbers (Snake, Tetris, StarCollector3d): the same numbers
    * every run; the other programs ignore it *)
   let args = [| exe; "-fixed-time"; "1000"; "-keys"; keys; "-dump-frame"; string_of_int frame; ppm; "seed=1" |] in
   let args = match script with Some s -> Array.append args [| "-script"; s |] | None -> args in
+  (* claude: the program's own flags, e.g. artwork=shapes: a game with
+   * two looks, frozen in both *)
+  let args = Array.append args (Array.of_list flags) in
   (* claude: SDL's dummy video driver: the window is only a surface in
    * memory, never shown, which the software backends draw into as into
    * a real one; no display needed, nothing popping up on the screen,
@@ -139,10 +144,10 @@ let compare_frames (golden : frame) (actual : frame) : int * (int * int) option 
   (!count, !first)
 
 (* [name]: the golden file's, see Testutil_golden.mli *)
-let test_scene ~dir ~approve ~name ~exe ~keys ~script ~frame () =
+let test_scene ~dir ~approve ~name ~exe ~keys ~script ?(flags = []) ~frame () =
   let golden_file = Filename.concat golden_dir (name ^ ".png") in
   let actual_file = Filename.concat actual_dir (name ^ ".png") in
-  let actual = render ~dir ~exe:(exe ^ ".exe") ~keys ~script ~frame in
+  let actual = render ~dir ~exe:(exe ^ ".exe") ~keys ~script ~flags ~frame in
   let save_actual () =
     if not (Sys.file_exists actual_dir) then Sys.mkdir actual_dir 0o755;
     write_png actual_file actual
@@ -167,7 +172,8 @@ let test_scene ~dir ~approve ~name ~exe ~keys ~script ~frame () =
       Alcotest.failf "%s: %d pixels differ from the golden frame, the first at (%d, %d); the new frame is %s ('make %s')"
         name n x y (shown ~dir actual_file) approve
 
-let tests ~dir ~approve ?(scripted : scripted list = []) (scenes : scene list) : Testo.t list =
+let tests ~dir ~approve ?(scripted : scripted list = []) ?(flagged : flagged list = []) (scenes : scene list) :
+    Testo.t list =
   let one ~frame title body =
     if run_none then t ~skipped:skip_none title body
     else if frame > heavy_frames && not run_heavy then t ~skipped:skip_heavy title body
@@ -188,4 +194,12 @@ let tests ~dir ~approve ?(scripted : scripted list = []) (scenes : scene list) :
              (Filename.basename exe ^ " -script " ^ label)
              (test_scene ~dir ~approve ~name ~exe ~keys:"" ~script:(Some script) ~frame))
   in
-  Testo.categorize "golden frames" (plain @ with_script)
+  let with_flags =
+    flagged
+    |> List.map (fun (exe, label, frame, flags) ->
+           let name = Filename.basename exe ^ "_" ^ label in
+           one ~frame
+             (Filename.basename exe ^ " " ^ String.concat " " flags)
+             (test_scene ~dir ~approve ~name ~exe ~keys:"" ~script:None ~flags ~frame))
+  in
+  Testo.categorize "golden frames" (plain @ with_script @ with_flags)

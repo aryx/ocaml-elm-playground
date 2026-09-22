@@ -17,6 +17,19 @@
  (deps (:src %{project_root}/games/puzzle/TinySokoban.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
+; claude: TinyCeleste's Madeline, embedded as games/platform/dune does
+; (the copied game expects the module here too)
+(rule
+ (targets Celeste_xpm.ml)
+ (deps %{project_root}/games/platform/celeste_madeline.xpm)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let madeline = {|")
+    (cat %{deps})
+    (echo "|}\n")))))
+
 ; claude: and its levels, embedded as games/puzzle/dune does
 (rule
  (targets Sokoban_levels.ml)

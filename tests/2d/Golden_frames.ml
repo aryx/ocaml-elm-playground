@@ -1109,4 +1109,14 @@ let scripted : Testutil_golden.scripted list =
       "at(122;84):1-6,click:5-13,at(122;40):8-10,at(122;0):11-13,at(-45;227):15-18,click:16,at(-45;120):19-24,click:21,at(70;227):26-29,click:27,at(70;156):30-36,click:32,at(122;0):37-40" );
   ]
 
-let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted scenes
+(* claude: the other look of the games that have two (Sprite.mli, the
+ * artwork flag): each draws in its original's own medium by default,
+ * and artwork=shapes asks for the playground's plain shapes -- the
+ * teaching version, where nothing hides behind a picture. *)
+let flagged : Testutil_golden.flagged list =
+  [
+    ("games/platform/software/TinyMario", "shapes", 5, [ "artwork=shapes" ]);
+    ("games/platform/software/TinyCeleste", "shapes", 5, [ "artwork=shapes" ]);
+  ]
+
+let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged scenes

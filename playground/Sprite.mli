@@ -109,6 +109,33 @@ val runs : string -> (int * int * char) list
  * completed first, so the columns stay aligned. *)
 val flip : string list -> string list
 
+(* {1 Two looks: the artwork flag} *)
+
+(* A game here can be drawn two ways: with its pixel art, or with the
+   plain shapes of the playground -- a red square for a plumber, a
+   circle for a ghost. The shapes are the teaching version: the game is
+   all there, in a few dozen lines, and nothing is hidden behind a
+   picture. The artwork is what the player of the time saw.
+
+   Which one a game draws by default is a question of history, not of
+   taste: each draws in the medium its original really used. Space
+   Invaders' aliens (1978) were bitmaps and Pac-Man's ghosts (1980)
+   were sprites, so those games draw their pixel art; Asteroids (1979),
+   Battlezone (1980) and Tron ran on vector displays, and Pong and
+   Breakout were rectangles, so those games draw shapes -- and have no
+   artwork to switch to. The flag [artwork] changes it either way:
+
+     dune exec games/arcade/TinyPacman.exe -- artwork=shapes
+     (in a browser, TinyPacman.html?artwork=sprites)
+
+   A game with two looks reads the flag once, in its view, and says in
+   its header which one is its default and why. *)
+
+(* [artwork ~default flags]: whether to draw the pixel art, the flag
+ * artwork=sprites or artwork=shapes deciding, and [default] (the
+ * original's own medium) when the flag is absent or is neither. *)
+val artwork : default:bool -> flags -> bool
+
 (* {1 Files} *)
 
 (* A sprite drawn in an editor is saved as an XPM file (graphics/images/

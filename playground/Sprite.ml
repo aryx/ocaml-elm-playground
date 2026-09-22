@@ -64,6 +64,13 @@ let flip (rows : string list) : string list =
     String.init cols (fun i -> row.[cols - 1 - i]))
 
 (*****************************************************************************)
+(* Two looks: the artwork flag *)
+(*****************************************************************************)
+
+let artwork ~(default : bool) (flags : flags) : bool =
+  match List.assoc_opt "artwork" flags with Some "sprites" -> true | Some "shapes" -> false | Some _ | None -> default
+
+(*****************************************************************************)
 (* Files *)
 (*****************************************************************************)
 

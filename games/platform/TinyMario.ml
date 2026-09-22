@@ -29,7 +29,10 @@
  *
  * camera= is window (the default), lock, or lerp.
  *
- * A third flag chooses the physics engine: physics=engine for the
+ * A third flag chooses how the hero is drawn: artwork=shapes for a red
+ * square instead of the pixel art (Sprite.mli).
+ *
+ * A fourth chooses the physics engine: physics=engine for the
  * playground's (playground/Physics.mli), the dumb one, this file's own
  * two lines of arithmetic, by default; see [fall] below.
  *
@@ -266,10 +269,11 @@ let update (computer : computer) (model : model) : model =
 (* View *)
 (*****************************************************************************)
 
-(* false: the player is a red square, the simplest code, and all a game
- * needs to be played; true: a little plumber in pixel art (see Sprite),
- * animated *)
-let use_sprites = true
+(* Super Mario Bros. ran on sprites, so that is what this draws: a
+ * little plumber in pixel art (see Sprite), animated. With
+ * artwork=shapes he is a red square instead -- the simplest code, and
+ * all a game needs to be played. *)
+let use_sprites (computer : computer) = Sprite.artwork ~default:true computer.flags
 
 (* Our hero, 10x10 pixels of 4 (the player's 40x40 box), facing right:
  * 'R' the cap and shirt, 'S' the skin, 'B' the overalls, 'K' the hair
@@ -300,8 +304,8 @@ let poses : (string list * (shape * shape)) list =
 (* In the air: jumping. Running: the walk cycle, one pose every 15
  * pixels -- driven by the distance run, not by time, so the legs move
  * as fast as he goes, and stop when he stops. *)
-let hero (model : model) : shape =
-  if not use_sprites then square red player_size
+let hero (computer : computer) (model : model) : shape =
+  if not (use_sprites computer) then square red player_size
   else
     let on_ground = blocked model.map model.x (model.y - 1.) in
     let rows =
@@ -320,7 +324,7 @@ let view (computer : computer) (model : model) : shape list =
   let cam = model.cam in
   let world =
     [ Tilemap.view_visible (Camera2d.visible screen cam) tile model.map;
-      hero model |> move model.x model.y ]
+      hero computer model |> move model.x model.y ]
   in
   let hud =
     [ words black (Printf.sprintf "coins: %d" model.coins) |> scale 3. |> move (screen.left + 120.) (screen.top - 40.);
