@@ -31,6 +31,7 @@ same mistake, with the same cure.
 | `Synth` | a sound as a tree of voices, rendered; slides | §8 |
 | `Effect`, `Sfx` | vibrato, jump, arpeggio, echo; sfxr's parameters | §8 |
 | `Pluck` | a plucked string: Karplus-Strong | §8 |
+| `Space` | stereo: the pan laws, distance, Doppler | §5 |
 | `Music`, `Abc`, `Doremi`, `Midi` | notes, equal temperament, tunes as text, MIDI files | §9 |
 | `Mixer` | the sounds playing, pulled by the sound card | §10 |
 | `Wav` | writing samples to a file | §2 |
@@ -163,6 +164,36 @@ Loudness is measured in **decibels** (dB), a logarithm: 20 log10 of the
 amplitude ratio. Halving the amplitude is **-6.02 dB**, a tenth is -20
 dB; the ear perceives ratios, not differences, so a volume slider in dB
 feels even (and one in plain amplitude doesn't).
+
+### Two ears: stereo, and where a sound comes from
+
+The ear finds a sound's direction mostly from two differences between
+the ears: the **level** (the head shadows the far ear) and the **time**
+(the far ear hears it later, by up to 0.66 ms). Two channels, left and
+right, can give both; the mixer gives the level: each sound played gets
+a **pan**, from -1 (left) to 1 (right), turned into two gains. The
+obvious gains, linear, `1 - p` and `1 + p`, have a **hole in the
+middle**: what we hear as loudness is the power, the sum of the gains'
+squares, 2 in the middle but 4 at a side, so a sound crossing from left
+to right dips by 3 dB as it passes the centre. The **constant power
+law** puts the two gains on a quarter circle, `sqrt 2 cos a` and `sqrt 2
+sin a`, the squares always adding up to 2 (`Space.pan`).
+
+Where a sound is also says how loud it is: it spreads over a sphere,
+its amplitude falling as 1 / distance -- half as loud (-6 dB) each time
+the distance doubles, the **inverse distance law**. And how it moves
+says its pitch: a source coming towards you squeezes its waves, higher;
+going away, lower -- the **Doppler** effect, `f' = f (c - v_listener) /
+(c - v_source)`, each speed along the line between them. A car at 30
+m/s: 1.096 coming, 0.920 going, a drop of 3 semitones as it passes, the
+"neeee-owww" (`Space.doppler`: the formulas as OpenAL 1.1 has them).
+
+In the code, sounds stay mono -- voices, filters, effects -- and a pan
+is a node of the tree (`Synth.Panned`), which only `Synth.render_stereo`
+hears: a tree with no pan in it renders once, the same array in both
+channels. The mixer, the platforms and the dumped WAVs carry two
+channels; the software backend's `m` key mixes them back down to one,
+to hear what panning does.
 
 ## 6. The spectrum: which frequencies a sound contains
 
@@ -426,9 +457,13 @@ In rough order of difficulty:
   of samples, so its pitch can be off by half a sample (35 cents at
   2 kHz); an all-pass filter in the loop, a fractional delay (Jaffe
   and Smith, 1983), tunes it exactly;
-- **stereo and panning**: `Signal.t` and `Wav` are mono; then
-  distance and Doppler from a physics body's position and velocity
-  (the plan's phase 10);
+- **the time between the ears**: `Space` pans by level only; the far
+  ear's delay, up to 0.66 ms (29 samples), is the other half of how we
+  hear a direction -- a delay line per ear; then HRTFs, the ear's own
+  filtering, which also tell front from back and above from below;
+- **air absorption**: far sounds lose their highs (a far thunder is a
+  rumble): a low-pass whose cutoff falls with the distance, next to
+  `Space.attenuation`;
 - **loaded sounds**: `Wav.read` exists, but no `Audio` function plays a
   file; then a `Resample` to play it at other pitches, and a MOD player
   (`notes_audio_midi.md` §9);
@@ -446,7 +481,7 @@ few numbers (`tone`, `square`, `triangle`, `sawtooth`, `noise`, §3;
 `fm`, §7; `pluck`, §8; `note "C4"`, §9), shaped by verbs like `move` and `scale`
 (`lasting`, `fading`, §4; `louder`, §5; `sliding`, `vibrato`,
 `arpeggio`, `echo`, §8; `faster`, §9; `low_pass`, `high_pass`, `wah`, §7; `naive`,
-§6), and combined with `after` and `together`, Euterpea's two
+§6; `pan`, `from`, `pitched`, §5), and combined with `after` and `together`, Euterpea's two
 operators; `blip`, `coin`, `jump`, `laser`, `hit`, `explosion`, `step`
 and `powerup` are ready-made, `audio/Sfx`'s presets (§8), `varied`
 nudges one (a new seed, a new shot), and `sfx` makes one's own from
@@ -471,6 +506,8 @@ keyboard as a piano, space switching the waveform (and a fifth
 timbre, the plucked string) (§3's timbre, §9's
 notes); `examples/AudioAliasing.ml`, a square's spectrum, its aliases
 in red, space switching naive and band-limited (§2, §6);
+`examples/AudioSpace.ml`, a car going by, panned, fading with the
+distance and Doppler-shifted, each of the three switchable (§5);
 `examples/AudioSfx.ml`, the ready-made sounds on keys 1 to 8, their
 numbers and their shape on screen, `r` a variation (§8). The games:
 `TinyBreakout.ml` (a brick's pitch from its row), `TinyMario.ml` (a
@@ -488,7 +525,8 @@ do.
 
 To see the sound: the software backend's `v` key (with `-debug-keys`)
 draws `Audio_debug`'s oscilloscope, then spectrum (§6), over the frame;
-its `l` key turns the band-limited oscillators off, the aliases back.
+its `l` key turns the band-limited oscillators off, the aliases back,
+and its `m` key stereo off, one channel.
 To test it: the golden WAVs of `audio/tests/`, compared sample by
 sample, and `-dump-audio file` with `-dump-frame` writing a game's
 sound to a WAV.

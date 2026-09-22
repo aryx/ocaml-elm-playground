@@ -318,9 +318,11 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     (* claude: the sounds this frame's update played, to the card *)
     (match audio_device with
     | Some device ->
-        let queued = Sdl.get_queued_audio_size device / 2 in
-        if queued < Native_loop_2d.queue_ahead then
-          Native_loop_2d.queue_samples device (Audio.pull (Native_loop_2d.queue_ahead - queued))
+        (* claude: 4 bytes a sample frame: two channels of 16 bits *)
+        let queued = Sdl.get_queued_audio_size device / 4 in
+        if queued < Native_loop_2d.queue_ahead then (
+          let s = Audio.pull (Native_loop_2d.queue_ahead - queued) in
+          Native_loop_2d.queue_samples device (s.left, s.right))
     | None ->
         let samples = Audio.pull Native_loop_2d.frame_samples in
         if !dump_audio_file <> "" then dumped_audio := samples :: !dumped_audio);
@@ -343,7 +345,11 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
         (match dump_frame with
         | Some dump ->
             dump !dump_frame_file;
-            if !dump_audio_file <> "" then Wav.write !dump_audio_file (Array.concat (List.rev !dumped_audio))
+            if !dump_audio_file <> "" then (
+              let frames = List.rev !dumped_audio in
+              Wav.write_stereo !dump_audio_file
+                { left = Array.concat (List.map (fun (s : Signal.stereo) -> s.left) frames);
+                  right = Array.concat (List.map (fun (s : Signal.stereo) -> s.right) frames) })
         | None -> Logs.err (fun m -> m "-dump-frame: this backend can't dump its frames"));
         exit 0
     | _ -> ());

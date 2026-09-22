@@ -252,7 +252,7 @@ let open_audio () : Sdl.audio_device_id option =
   | Error (`Msg msg) -> warn msg
   | Ok () -> (
       let spec =
-        { Sdl.as_freq = audio_rate; as_format = Sdl.Audio.s16_sys; as_channels = 1; as_silence = 0;
+        { Sdl.as_freq = audio_rate; as_format = Sdl.Audio.s16_sys; as_channels = 2; as_silence = 0;
           as_samples = 1024; as_size = 0l; as_callback = None }
       in
       match Sdl.open_audio_device None false spec 0 with
@@ -261,10 +261,16 @@ let open_audio () : Sdl.audio_device_id option =
           Sdl.pause_audio_device device false;
           Some device)
 
-let queue_samples (device : Sdl.audio_device_id) (samples : float array) : unit =
-  let n = Array.length samples in
-  let ba = Bigarray.Array1.create Bigarray.int16_signed Bigarray.c_layout n in
-  Array.iteri (fun i x -> ba.{i} <- max (-32768) (min 32767 (int_of_float (Float.round (x *. 32767.))))) samples;
+(* claude: the two channels interleaved, as SDL (and WAV files) want
+ * them: left, right, left, right... *)
+let queue_samples (device : Sdl.audio_device_id) ((left, right) : float array * float array) : unit =
+  let n = Array.length left in
+  let ba = Bigarray.Array1.create Bigarray.int16_signed Bigarray.c_layout (2 * n) in
+  let int16 x = max (-32768) (min 32767 (int_of_float (Float.round (x *. 32767.)))) in
+  for i = 0 to n - 1 do
+    ba.{2 * i} <- int16 left.(i);
+    ba.{(2 * i) + 1} <- int16 right.(i)
+  done;
   match Sdl.queue_audio device ba with
   | Ok () -> ()
   | Error (`Msg msg) -> Logs.warn (fun m -> m "queue_audio: %s" msg)
@@ -274,7 +280,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
     ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
     ~(dump_frame : string -> unit)
-    ~(pull_audio : int -> float array) ~(dump_audio : string -> float array -> unit) =
+    ~(pull_audio : int -> float array * float array) ~(dump_audio : string -> float array * float array -> unit) =
   (* claude: without this, SDL sends no text_input events at all (it is
    * off until a program says it wants text); with it, every key press
    * that produces a character also produces one, which is what
@@ -443,7 +449,8 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     (* claude: the sounds this frame's update played, to the card *)
     (match audio_device with
     | Some device ->
-        let queued = Sdl.get_queued_audio_size device / 2 in
+        (* claude: 4 bytes a sample frame: two channels of 16 bits *)
+        let queued = Sdl.get_queued_audio_size device / 4 in
         if queued < queue_ahead then queue_samples device (pull_audio (queue_ahead - queued))
     | None ->
         let samples = pull_audio frame_samples in
@@ -462,7 +469,9 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     (match !dump_frame_number with
     | Some n when n = !frame_number ->
         dump_frame !dump_frame_file;
-        if !dump_audio_file <> "" then dump_audio !dump_audio_file (Array.concat (List.rev !dumped_audio));
+        if !dump_audio_file <> "" then (
+          let frames = List.rev !dumped_audio in
+          dump_audio !dump_audio_file (Array.concat (List.map fst frames), Array.concat (List.map snd frames)));
         exit 0
     | _ -> ());
 

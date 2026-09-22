@@ -11,6 +11,11 @@
 (* See Signal.mli *)
 
 type t = float array
+type stereo = { left : t; right : t }
+
+(* the same array twice: nothing here writes into a sound once made *)
+let both (s : t) : stereo = { left = s; right = s }
+let mono (s : stereo) : t = Array.map2 (fun l r -> (l +. r) /. 2.) s.left s.right
 
 let rate = 44100
 let nyquist = float_of_int rate /. 2.

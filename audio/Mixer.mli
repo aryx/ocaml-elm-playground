@@ -33,19 +33,24 @@ val create : unit -> t
 (* one-shots at most at once *)
 val max_playing : int
 
+(* false: every pull mixed down to one channel, the same in both (the
+ * software backend's "m" key, to hear what panning does); true by
+ * default *)
+val stereo : bool ref
+
 (* [play m s]: [s] from the next sample pulled *)
-val play : t -> Signal.t -> unit
+val play : t -> Signal.stereo -> unit
 
 (* [loop m name s]: [s] played over and over, from the next sample,
  * unless a loop [name] is already playing (so calling it every frame
  * is harmless): background music *)
-val loop : t -> string -> Signal.t -> unit
+val loop : t -> string -> Signal.stereo -> unit
 
 (* [change m name s]: the loop [name] now [s], from the same point of
  * it (the same fraction of the way through: a tune made faster goes
  * on from the same note), its clock ([played]) going on; a new loop if
  * none is playing *)
-val change : t -> string -> Signal.t -> unit
+val change : t -> string -> Signal.stereo -> unit
 
 (* [stop m name]: the loop [name] stopped (faded out over its next
  * pull), if playing *)
@@ -53,11 +58,13 @@ val stop : t -> string -> unit
 
 (* [keep m name v]: the continuous voice [name] playing [v] until the
  * next pull at least, through [filter] if given (its cutoff fixed at
- * [cutoff]; changed from frame to frame, the filter's memory kept) *)
-val keep : ?filter:Synth.filter -> t -> string -> Synth.voice -> unit
+ * [cutoff]; changed from frame to frame, the filter's memory kept),
+ * panned by [pan] (0, the middle, by default; changed from frame to
+ * frame, it glides over the pull) *)
+val keep : ?filter:Synth.filter -> ?pan:float -> t -> string -> Synth.voice -> unit
 
-(* [pull m n]: the next [n] samples *)
-val pull : t -> int -> Signal.t
+(* [pull m n]: the next [n] samples, in both channels *)
+val pull : t -> int -> Signal.stereo
 
 (* one-shots playing, continuous voices kept (for tests, debug) *)
 val playing : t -> int * int

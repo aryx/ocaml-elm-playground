@@ -70,8 +70,9 @@ val queue_ahead : int
 (* the card, opened and started; None, with a warning, if there is none *)
 val open_audio : unit -> Tsdl.Sdl.audio_device_id option
 
-(* [queue_samples device samples]: queued as 16-bit, clipped *)
-val queue_samples : Tsdl.Sdl.audio_device_id -> float array -> unit
+(* [queue_samples device (left, right)]: queued as 16-bit, clipped,
+ * the two channels interleaved *)
+val queue_samples : Tsdl.Sdl.audio_device_id -> float array * float array -> unit
 
 (* [run ~sdl_window ~sx ~sy ~init ~update ~subscriptions ~view ~draw
  * ... ~pull_audio ~dump_audio]
@@ -87,7 +88,8 @@ val queue_samples : Tsdl.Sdl.audio_device_id -> float array -> unit
  * still gets the key too.
  *
  * The sound: [pull_audio n] gives the next [n] samples of what's
- * playing (Audio.pull), at 44,100 a second, which [run] queues for
+ * playing (Audio.pull), left and right, at 44,100 a second, which
+ * [run] queues for
  * SDL's audio device, kept about 3 frames (50 ms) ahead; with
  * -dump-frame, no device, exactly a frame's worth (735) pulled each
  * frame, and with -dump-audio file, [dump_audio file samples] writes
@@ -111,6 +113,6 @@ val run :
   draw:(fps:float -> 'view -> unit) ->
   on_key_press:(string -> unit) ->
   dump_frame:(string -> unit) ->
-  pull_audio:(int -> float array) ->
-  dump_audio:(string -> float array -> unit) ->
+  pull_audio:(int -> float array * float array) ->
+  dump_audio:(string -> float array * float array -> unit) ->
   unit

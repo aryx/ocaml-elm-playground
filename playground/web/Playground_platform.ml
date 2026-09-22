@@ -778,9 +778,13 @@ let play_audio (ticks : int) : unit =
       let n = int_of_float ((0.1 -. (!next_start -. now)) *. 44100.) in
       if n > 0 then (
         let samples = Audio.pull n in
-        let buffer = Ojs.call ctx "createBuffer" [| Ojs.int_to_js 1; Ojs.int_to_js n; Ojs.int_to_js 44100 |] in
-        let data = Ojs.call buffer "getChannelData" [| Ojs.int_to_js 0 |] in
-        Array.iteri (fun i x -> Ojs.array_set data i (Ojs.float_to_js x)) samples;
+        (* two channels, left then right *)
+        let buffer = Ojs.call ctx "createBuffer" [| Ojs.int_to_js 2; Ojs.int_to_js n; Ojs.int_to_js 44100 |] in
+        List.iteri
+          (fun channel samples ->
+            let data = Ojs.call buffer "getChannelData" [| Ojs.int_to_js channel |] in
+            Array.iteri (fun i x -> Ojs.array_set data i (Ojs.float_to_js x)) samples)
+          [ samples.Signal.left; samples.right ];
         let source = Ojs.call ctx "createBufferSource" [||] in
         Ojs.set_prop_ascii source "buffer" buffer;
         ignore (Ojs.call source "connect" [| Ojs.get_prop_ascii ctx "destination" |]);

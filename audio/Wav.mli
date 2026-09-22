@@ -37,3 +37,9 @@ val of_string : string -> (Signal.t, string) result
 (* [write path samples], [read path] *)
 val write : string -> Signal.t -> unit
 val read : string -> (Signal.t, string) result
+
+(* [write_stereo path s]: two channels, the header's channels 2, the
+ * bytes a second and per sample frame doubled, and the samples
+ * interleaved, left then right: L0 R0 L1 R1 ... (what a game's
+ * -dump-audio writes) *)
+val write_stereo : string -> Signal.stereo -> unit

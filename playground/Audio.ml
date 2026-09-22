@@ -78,26 +78,27 @@ let varied (name : string) (seed : int) : sound =
 
 (* the mixer every sound goes to; the platform pulls its samples *)
 let mixer = Mixer.create ()
-let play (s : sound) : unit = Mixer.play mixer (Synth.render s)
+let play (s : sound) : unit = Mixer.play mixer (Synth.render_stereo s)
 
 (* a continuous sound's voices, each kept under its own name, with the
-   filter it's under (after: only the first sound goes on; filters
-   nested: the outermost) *)
-let rec voices ?filter (s : sound) : (Synth.voice * Synth.filter option) list =
+   filter it's under and its pan (after: only the first sound goes on;
+   filters nested: the outermost; pans nested: the innermost) *)
+let rec voices ?filter ?pan (s : sound) : (Synth.voice * Synth.filter option * float option) list =
   match s with
-  | Voice v -> [ (v, filter) ]
-  | Together l -> List.concat_map (voices ?filter) l
-  | After (s :: _) | Echo (_, s) -> voices ?filter s
-  | Filtered (f, s) -> voices ~filter:(Option.value filter ~default:f) s
+  | Voice v -> [ (v, filter, pan) ]
+  | Together l -> List.concat_map (voices ?filter ?pan) l
+  | After (s :: _) | Echo (_, s) -> voices ?filter ?pan s
+  | Filtered (f, s) -> voices ~filter:(Option.value filter ~default:f) ?pan s
+  | Panned (p, s) -> voices ?filter ~pan:p s
   | After [] | Samples _ -> []
 
 let keep_playing (name : string) (s : sound) : unit =
-  List.iteri (fun i (v, filter) -> Mixer.keep ?filter mixer (Printf.sprintf "%s#%d" name i) v) (voices s)
+  List.iteri (fun i (v, filter, pan) -> Mixer.keep ?filter ?pan mixer (Printf.sprintf "%s#%d" name i) v) (voices s)
 
 (* a loop's samples, rendered once (a tune of a minute: 2.6 million
  * samples, rendered each frame it's asked for would be too slow) *)
 let loop (name : string) (s : sound) : unit =
-  if not (List.mem name (Mixer.looping mixer)) then Mixer.loop mixer name (Synth.render s)
+  if not (List.mem name (Mixer.looping mixer)) then Mixer.loop mixer name (Synth.render_stereo s)
 
 (* the platform's way to get a file's bytes; none until run_app *)
 let fetcher : (string -> (string option -> unit) -> unit) ref = ref (fun _ k -> k None)
@@ -117,15 +118,23 @@ let loop_from (name : string) (source : string) : unit =
       | Some bytes ->
           let ends_with = Filename.check_suffix (String.lowercase_ascii source) in
           let read = if ends_with ".mid" || ends_with ".midi" then midi else if ends_with ".abc" then abc else doremi in
-          Mixer.loop mixer name (Synth.render (read bytes))))
+          Mixer.loop mixer name (Synth.render_stereo (read bytes))))
 
 let faster = Synth.faster
-let change_loop (name : string) (s : sound) : unit = Mixer.change mixer name (Synth.render s)
+let change_loop (name : string) (s : sound) : unit = Mixer.change mixer name (Synth.render_stereo s)
+
+let pan (p : float) (s : sound) : sound = Synth.Panned (p, s)
+let pitched = Synth.pitched
+
+(* the screen's centre the listener; half the width (500) the side *)
+let from (x : float) (y : float) (s : sound) : sound =
+  let d = Float.hypot x y in
+  Synth.Panned (x /. 500., s) |> Synth.louder (Space.attenuation ~reference:700. d)
 
 let stop (name : string) : unit =
   Hashtbl.remove requested name;
   Mixer.stop mixer name
-let pull (n : int) : float array = Mixer.pull mixer n
+let pull (n : int) : Signal.stereo = Mixer.pull mixer n
 
 let position (name : string) : float option =
   Option.map (fun n -> float_of_int n /. float_of_int Signal.rate) (Mixer.played mixer name)

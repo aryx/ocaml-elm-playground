@@ -49,7 +49,7 @@ let test_synth () =
 
 let test_mixer () =
   let m = Mixer.create () in
-  Mixer.play m (Synth.render beep);
+  Mixer.play m (Synth.render_stereo beep);
   Alcotest.(check (pair int int)) "a one-shot playing" (1, 0) (Mixer.playing m);
   ignore (Mixer.pull m 4000);
   ignore (Mixer.pull m 1000);
@@ -58,22 +58,22 @@ let test_mixer () =
   Mixer.keep m "hum" v;
   let first = Mixer.pull m 735 in
   Alcotest.(check (pair int int)) "a continuous voice" (0, 1) (Mixer.playing m);
-  Alcotest.(check bool) "its volume rising from 0: no click" true (Float.abs first.(0) < 0.01);
+  Alcotest.(check bool) "its volume rising from 0: no click" true (Float.abs first.left.(0) < 0.01);
   let last = Mixer.pull m 735 in
   Alcotest.(check (pair int int)) "not kept: gone after that pull" (0, 0) (Mixer.playing m);
-  Alcotest.(check bool) "... having faded out" true (Float.abs last.(734) < 0.01);
+  Alcotest.(check bool) "... having faded out" true (Float.abs last.left.(734) < 0.01);
   (* a loop: asked again, not restarted; stopped, gone after a pull *)
-  Mixer.loop m "music" (Synth.render beep);
+  Mixer.loop m "music" (Synth.render_stereo beep);
   ignore (Mixer.pull m 1000);
-  Mixer.loop m "music" (Synth.render beep);
+  Mixer.loop m "music" (Synth.render_stereo beep);
   Alcotest.(check (list string)) "a loop playing" [ "music" ] (Mixer.looping m);
   let wrapped = Mixer.pull m 4000 in
   (* 1000 + 4000 > 4410: it came around, the beep's start again at 3410 *)
-  Alcotest.(check bool) "going around" true (Float.abs wrapped.(3410) < 1e-9 && Float.abs wrapped.(3500) > 0.1);
+  Alcotest.(check bool) "going around" true (Float.abs wrapped.left.(3410) < 1e-9 && Float.abs wrapped.left.(3500) > 0.1);
   Mixer.stop m "music";
   ignore (Mixer.pull m 735);
   Alcotest.(check (list string)) "stopped" [] (Mixer.looping m);
-  for _ = 1 to 40 do Mixer.play m (Synth.render beep) done;
+  for _ = 1 to 40 do Mixer.play m (Synth.render_stereo beep) done;
   Alcotest.(check int) "at most 32 one-shots" Mixer.max_playing (fst (Mixer.playing m))
 
 (* A loop's clock: the samples of it that have gone out, which keeps
@@ -83,7 +83,7 @@ let test_mixer () =
 let test_loop_clock () =
   let m = Mixer.create () in
   Alcotest.(check (option int)) "nothing playing, no clock" None (Mixer.played m "song");
-  Mixer.loop m "song" (Synth.render beep);
+  Mixer.loop m "song" (Synth.render_stereo beep);
   Alcotest.(check (option int)) "started, nothing out yet" (Some 0) (Mixer.played m "song");
   for _ = 1 to 10 do ignore (Mixer.pull m 735) done;
   Alcotest.(check (option int)) "ten frames of it" (Some 7350) (Mixer.played m "song");
@@ -125,7 +125,7 @@ let test_sources () =
   let v = { Synth.source = Noise; frequency = 3000.; slide = None; seconds = 0.; volume = 0.5; fade = false; effects = []; envelope = None } in
   let f = { Synth.kind = Low_pass; cutoff = 300.; cutoff_to = 300.; q = 0.707 } in
   let frames (m : Mixer.t) ?filter () =
-    Array.concat (List.init 3 (fun _ -> Mixer.keep ?filter m "engine" v; Array.map Float.atanh (Mixer.pull m 735)))
+    Array.concat (List.init 3 (fun _ -> Mixer.keep ?filter m "engine" v; Array.map Float.atanh (Mixer.pull m 735).left))
   in
   let filtered = frames (Mixer.create ()) ~filter:f () and plain = frames (Mixer.create ()) () in
   let expected = Filter.run (Filter.biquad Low_pass ~cutoff:300. ~q:0.707) plain in
@@ -148,14 +148,14 @@ let test_tempo () =
   Alcotest.(check int) "the same second: 880 Hz, 132 in its 0.15 s" 132 (downs 0.05 0.2);
   let m = Mixer.create () in
   let slow = Synth.render tune in
-  Mixer.loop m "music" slow;
+  Mixer.loop m "music" (Signal.both slow);
   ignore (Mixer.pull m (Array.length slow / 4));
-  Mixer.change m "music" fast;
+  Mixer.change m "music" (Signal.both fast);
   Alcotest.(check (option int)) "the clock goes on" (Some (Array.length slow / 4)) (Mixer.played m "music");
   (* a quarter through the slow tune, a quarter through the fast one:
    * the next sample the fast tune's at its quarter *)
   let next = Mixer.pull m 1 in
-  Alcotest.(check (float 1e-6)) "from the same point" (Float.tanh fast.(Array.length fast / 4)) next.(0)
+  Alcotest.(check (float 1e-6)) "from the same point" (Float.tanh fast.(Array.length fast / 4)) next.left.(0)
 
 let tests =
   Testo.categorize "Synth and Mixer"

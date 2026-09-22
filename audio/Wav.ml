@@ -10,24 +10,30 @@
 
 (* See Wav.mli *)
 
-let to_string (samples : Signal.t) : string =
-  let n = Array.length samples in
-  let b = Buffer.create (44 + (2 * n)) in
+(* [channels] interleaved: the frames, each a sample per channel *)
+let to_string_channels (channels : Signal.t list) : string =
+  let c = List.length channels in
+  let n = match channels with [] -> 0 | s :: _ -> Array.length s in
+  let b = Buffer.create (44 + (2 * c * n)) in
   let u32 v = Buffer.add_int32_le b (Int32.of_int v) and u16 v = Buffer.add_uint16_le b v in
   Buffer.add_string b "RIFF";
-  u32 (36 + (2 * n));
+  u32 (36 + (2 * c * n));
   Buffer.add_string b "WAVEfmt ";
   u32 16;
   u16 1;
-  u16 1;
+  u16 c;
   u32 Signal.rate;
-  u32 (2 * Signal.rate);
-  u16 2;
+  u32 (2 * c * Signal.rate);
+  u16 (2 * c);
   u16 16;
   Buffer.add_string b "data";
-  u32 (2 * n);
-  Array.iter (fun x -> Buffer.add_int16_le b (Signal.to_int16 x)) samples;
+  u32 (2 * c * n);
+  for i = 0 to n - 1 do
+    List.iter (fun s -> Buffer.add_int16_le b (Signal.to_int16 s.(i))) channels
+  done;
   Buffer.contents b
+
+let to_string (samples : Signal.t) : string = to_string_channels [ samples ]
 
 let of_string (s : string) : (Signal.t, string) result =
   let u16 i = String.get_uint16_le s i and u32 i = Int32.to_int (String.get_int32_le s i) in
@@ -43,3 +49,6 @@ let write (path : string) (samples : Signal.t) : unit =
   Out_channel.with_open_bin path (fun oc -> Out_channel.output_string oc (to_string samples))
 
 let read (path : string) : (Signal.t, string) result = of_string (In_channel.with_open_bin path In_channel.input_all)
+
+let write_stereo (path : string) (s : Signal.stereo) : unit =
+  Out_channel.with_open_bin path (fun oc -> Out_channel.output_string oc (to_string_channels [ s.left; s.right ]))

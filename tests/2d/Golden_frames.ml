@@ -151,6 +151,8 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AudioAliasing", "", 2);
     (* the explosion's numbers, and its shape: a burst, then a rumble *)
     ("examples/software/AudioSfx", "", 2);
+    (* the car coming from the left: its pan, gain and Doppler shown *)
+    ("examples/software/AudioSpace", "", 2);
     ("examples/software/AiTictactoe", "", 3);
     ("examples/software/AiPathfinding", "", 60);
     (* claude: seek, the mouse at the centre: a curve into it *)
@@ -387,6 +389,8 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/AudioAliasing", "band_limited", 20, "space:2,right:5-16");
     (* the laser, echoed: its copies, each 0.4 of the last *)
     ("examples/software/AudioSfx", "laser_echo", 10, "4:2,e:5");
+    (* panning and Doppler off, the car nearly in front of you *)
+    ("examples/software/AudioSpace", "effects_off", 100, "1:2,3:4");
     ("examples/software/AiTictactoe", "played", 40, "space:2");
     ("examples/software/AiPathfinding", "breadth_first", 120, "b:2");
     ("examples/software/AiPathfinding", "dijkstra", 120, "d:2");

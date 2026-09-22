@@ -69,6 +69,9 @@ type t =
   | Filtered of filter * t
   (* the sound echoed (Effect.echo), [Effect.tail] longer *)
   | Echo of echo * t
+  (* the sound panned, -1 left to 1 right (Space.pan): only
+   * [render_stereo] hears it, [render] mixes it down to one channel *)
+  | Panned of float * t
 
 and echo = { delay : float; feedback : float }
 
@@ -96,11 +99,22 @@ val with_effect : Effect.pitch -> t -> t (* one more *)
  * kept: a tune's tempo (Samples, already computed, untouched) *)
 val faster : float -> t -> t
 
+(* [pitched k s]: every frequency of [s] times [k] (slides too), the
+ * durations kept (Samples untouched): with [faster k], a Doppler shift,
+ * a sound squeezed or stretched as a whole *)
+val pitched : float -> t -> t
+
 (* [duration s]: in seconds (see above) *)
 val duration : t -> float
 
-(* [render s]: its samples, [duration s] long *)
+(* [render s]: its samples, [duration s] long, in one channel (pans
+ * ignored) *)
 val render : t -> Signal.t
+
+(* [render_stereo s]: the same in two channels, each [Panned] subtree's
+ * gains (Space.pan) applied, pans nested multiplied; a tree with no pan
+ * is [render] in both (the same array, not copied) *)
+val render_stereo : t -> Signal.stereo
 
 (* a continuous voice's state, frame after frame: its oscillator's
  * phase (or its noise's register and clock), its last volume, its

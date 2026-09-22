@@ -479,7 +479,8 @@ let physics_bullet (ship : ship obj) : bullet obj =
  *    so a burst of them doesn't sound like one sample repeated;
  *  - an asteroid breaking: a bang by its size, as the arcade had three,
  *    the large one deepest and longest (the noise slower, the low-pass
- *    lower);
+ *    lower), from where the asteroid was (Audio.from: panned, in
+ *    stereo; the shots and the crash from where the ship is);
  *  - the ship crashing: the longest, falling to a rumble;
  *  - the thrust: noise through a low-pass, playing while the thrust is
  *    on (Audio.keep_playing, called at every frame), brighter the faster
@@ -544,13 +545,13 @@ let collide model =
   let asteroids = check_asteroids ~hit model in
   (* claude: a bang for each asteroid broken, a crash for the ship *)
   model.asteroids |> List.iter (fun a ->
-    if List.exists (hit a) model.bullets then Audio.play (bang a.xtra.size));
+    if List.exists (hit a) model.bullets then Audio.play (bang a.xtra.size |> Audio.from a.pos.x a.pos.y));
   let state =
     if ship_crashed ~crash model
     then Stop
     else Play
   in
-  if state = Stop then Audio.play crash_sound;
+  if state = Stop then Audio.play (crash_sound |> Audio.from model.ship.pos.x model.ship.pos.y);
   { model with state; asteroids }
 
 let update msg model =
@@ -589,7 +590,8 @@ let update msg model =
   | Shoot ->
     let ship = model.ship in 
     (* claude: a new seed for each shot *)
-    if model.state = Play then Audio.play (Audio.varied "laser" (List.length model.bullets + 1));
+    if model.state = Play then
+      Audio.play (Audio.varied "laser" (List.length model.bullets + 1) |> Audio.from ship.pos.x ship.pos.y);
     let bullet = match model.engine with Dumb -> new_bullet ship | Physics_engine -> physics_bullet ship in
     { model with bullets = bullet::model.bullets }
 

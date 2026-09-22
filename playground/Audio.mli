@@ -133,6 +133,26 @@ val echo : number -> number -> sound -> sound
    examples/AudioAliasing.ml lets you hear both) *)
 val naive : sound -> sound
 
+(* {1 Where it comes from} *)
+
+(* [pan p s]: [s] from the left (-1), the middle (0), the right (1), or
+   in between; its loudness the same wherever it is (audio/Space.mli:
+   the constant power law) *)
+val pan : number -> sound -> sound
+
+(* [from x y s]: [s] from that point of the screen, heard from its
+   centre: panned by x (the screen's edges, x = -500 and 500, the
+   speakers), and quieter off the screen, further than 700 (half as loud
+   at 1400: the inverse distance law):
+     Audio.play (explosion |> Audio.from asteroid.x asteroid.y) *)
+val from : number -> number -> sound -> sound
+
+(* [pitched k s]: every pitch of [s] times [k] (2: an octave up), its
+   length kept; with [faster k], a Doppler shift: [k] from
+   audio/Space.mli's [doppler], the pitch of a car rising as it comes
+   and falling as it goes *)
+val pitched : number -> sound -> sound
+
 (* [together sounds]: at the same time, a chord; lasting as long as the
    longest *)
 val together : sound list -> sound
@@ -195,7 +215,8 @@ val sfx : Sfx.t -> sound
 (* [play s]: from now until its end (see the top) *)
 val play : sound -> unit
 
-(* [keep_playing name s]: [s] playing while this is called every frame,
+(* [keep_playing name s]: [s] playing while this is called every frame
+   (its pan too, gliding when it changes: a car going by),
    [name] saying it's the same sound from frame to frame (its length
    and fading ignored: it lasts as long as it's kept); a filter's cutoff
    may change from frame to frame, a ship's engine brighter as it
@@ -269,7 +290,7 @@ val position : string -> number option
  * next [n] samples of everything playing, at 44,100 a second, which the
  * native backend queues for SDL and a golden run writes to a WAV
  * (audio/Mixer.mli) *)
-val pull : int -> float array
+val pull : int -> Signal.stereo
 
 (* claude: for the platforms too: how [loop_from] gets a file's bytes,
  * [fetch source k] calling [k] with them (None if it can't), now or

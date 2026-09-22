@@ -25,6 +25,15 @@
 (* samples, one per 1 / rate second *)
 type t = float array
 
+(* two channels, for the two ears (Space.mli), as long as each other *)
+type stereo = { left : t; right : t }
+
+(* [both s]: [s] in both channels, the same: a mono sound, in the middle *)
+val both : t -> stereo
+
+(* [mono s]: the two channels mixed down to one, (left + right) / 2 *)
+val mono : stereo -> t
+
 (* 44,100 samples a second, the CD's rate *)
 val rate : int
 

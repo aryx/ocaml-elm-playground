@@ -49,6 +49,8 @@ let title = "Playground (software rasterizer)"
  *  - "l": band-limited oscillators on/off (audio/Oscillator.mli), the
  *    sounds' aliases back; hear it on examples/AudioPiano.exe's high
  *    notes, see it with "v"
+ *  - "m": stereo on/off, everything mixed down to one channel (the
+ *    pans gone, audio/Space.mli); try examples/AudioSpace.exe
  *  - "v": the sound, seen: an oscilloscope, then a spectrum, then off
  *    (Audio_debug); try games/platform/TinyMario.exe (its music) or
  *    examples/AudioPiano.exe (space: the waveforms' harmonics)
@@ -75,6 +77,7 @@ let on_key_press (key : string) =
   | "n" -> options := { !options with antialiasing = not !options.antialiasing }
   | "o" -> Opti.enabled := not !Opti.enabled
   | "l" -> Synth.band_limited := not !Synth.band_limited
+  | "m" -> Mixer.stereo := not !Mixer.stereo
   | "z" -> magnifier := not !magnifier
   | "v" -> audio_view := Audio_debug.next !audio_view
   | "r" -> Pixelate.next ()
@@ -88,11 +91,11 @@ let window_title ~fps =
   let on_off b = if b then "on" else "off" in
   if not (Native_loop_2d.debug_keys_enabled ()) then Printf.sprintf "%s -- %.0f fps" title fps
   else
-    Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s l:bandlimit=%s z:zoom=%s v:%s r:%s h:help"
+    Printf.sprintf "%s -- %.0f fps -- t:alpha=%s b:boxes=%s f:wire=%s i:%s n:aa=%s o:opti=%s l:bandlimit=%s m:stereo=%s z:zoom=%s v:%s r:%s h:help"
       title fps (on_off !options.alpha_blending) (on_off !options.bounding_boxes)
       (on_off !options.wireframe)
       (if !options.bilinear then "bilinear" else "nearest")
-      (on_off !options.antialiasing) (on_off !Opti.enabled) (on_off !Synth.band_limited) (on_off !magnifier) (Audio_debug.name !audio_view)
+      (on_off !options.antialiasing) (on_off !Opti.enabled) (on_off !Synth.band_limited) (on_off !Mixer.stereo) (on_off !magnifier) (Audio_debug.name !audio_view)
       (Pixelate.name ~width:(int_of_float Playground.default_width) ~height:(int_of_float Playground.default_height))
 
 (* the same, one line per key, for "h" (Help_overlay) *)
@@ -108,6 +111,7 @@ let help_lines () =
     ("n", "antialiasing: " ^ on_off o.antialiasing);
     ("o", "optimizations: " ^ on_off !Opti.enabled);
     ("l", "band-limited oscillators (no aliases): " ^ on_off !Synth.band_limited);
+    ("m", "stereo (off: one channel, no pans): " ^ on_off !Mixer.stereo);
     ("z", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
     ("v", "the sound, seen: " ^ Audio_debug.name !audio_view);
     ( "r",
@@ -198,5 +202,6 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) (app : _ P
     Tsdl.Sdl.set_window_title sdl_window (window_title ~fps)
   in
   Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_ppm pixels)
-    ~pull_audio:(fun n -> let s = Audio.pull n in Audio_debug.record s; s) ~dump_audio:Wav.write
+    ~pull_audio:(fun n -> let s = Audio.pull n in Audio_debug.record (Signal.mono s); (s.left, s.right))
+    ~dump_audio:(fun file (left, right) -> Wav.write_stereo file { left; right })
     ~init:(fun () -> app.init flags) ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

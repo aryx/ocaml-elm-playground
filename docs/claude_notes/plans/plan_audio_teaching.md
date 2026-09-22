@@ -555,6 +555,28 @@ audio meeting).
   timbre (C4 and G4 measured at 263 and 395.5 Hz, within the DFT's
   resolution). Left: the live MIDI keyboard, MIDI's pitch bend and
   control changes, a fractional delay to tune the string exactly.
+- **Phase 10's first half, DONE: stereo, and sound in space**: sounds
+  stay mono (voices, filters, effects, the golden WAVs untouched); a pan
+  is a node of the tree (`Synth.Panned`), heard only by
+  `Synth.render_stereo` (a tree with no pan: `render`, the same array in
+  both channels). `Signal.stereo`, `Wav.write_stereo` (interleaved), the
+  `Mixer` in two channels (a continuous voice's pan gliding over a pull,
+  like its volume; `Mixer.stereo`, the software backend's "m" key, back
+  to one channel: the user's idea of an Opti-like switch, kept as a
+  runtime one since the mono code path stays whole), SDL opened with two
+  channels (Native_loop_2d speaks `float array * float array`, not
+  depending on audio/), the web's AudioBuffer with two, -dump-audio
+  writing stereo WAVs. `audio/Space`: the constant power pan law
+  (normalised so the middle is 1 and 1, as loud as before stereo) next
+  to the linear one's hole in the middle (-3.01 dB), the direction's pan,
+  the inverse distance law clamped (OpenAL's), Doppler (OpenAL 1.1's
+  formula: the .mli's car at 30 m/s, 1.096 then 0.920, 3.04 semitones).
+  `Audio.pan`, `from x y` (a point of the screen), `pitched` (with
+  `faster`, a Doppler shift). `examples/AudioSpace.ml`, a car going by,
+  panning, distance and Doppler each switchable (its dump: left to
+  right, loudest in front, 120 Hz coming, 100 going); Asteroid's bangs,
+  shots and crash placed. Tests (`Unit_space`). Left: the time between
+  the ears, HRTFs, air absorption, positional sound in the 3D games.
 - **Asked by the user (phase 5)**: subtractive synthesis (a rich wave
   through a resonant low-pass: phase 6's Filter), FM synthesis
   (Chowning: to add with phase 6, small, and made for the spectrum),
