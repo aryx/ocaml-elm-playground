@@ -25,6 +25,7 @@
 (copy_files ../AiPathfinding.ml)
 (copy_files ../AiSteering.ml)
 (copy_files ../AiFlock.ml)
+(copy_files ../AiGhosts.ml)
 (copy_files ../LogoFractals.{ml,mli})
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
@@ -40,7 +41,7 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano
-    AiTictactoe AiPathfinding AiSteering AiFlock
+    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts
     LogoFractals
     BigBangRocket
     BigBangWorm
@@ -50,6 +51,7 @@
   (libraries
     elm_playground
     ai ; AiTictactoe's Minimax
+    kit_maze ; AiGhosts' Grid_move and Chase
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)

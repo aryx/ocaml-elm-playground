@@ -327,13 +327,13 @@ ai/                    (private, package elm_playground, pure OCaml:
   Steering      DONE  seek, flee, arrive, pursue, evade, wander, avoid,
                       path following
   Flock         DONE  separation, alignment, cohesion
-  Fsm                 states and transitions; Pac-Man's four ghosts
+  Fsm           DONE  states and transitions; Pac-Man's four ghosts
   Sense               what a bot is allowed to know: line of sight,
                       hearing, a memory of where the target was
   Bot                 the player's inputs, filled by a machine: the
                       intent loop, reaction delay, aim error, skill
-  Behavior            behavior trees: sequence, selector, decorator
-  Utility             scoring the options instead of branching
+  Behavior      DONE  behavior trees: sequence, selector, decorator
+  Utility       DONE  scoring the options instead of branching
   Influence           an influence map: whose ground is this
   Matrix              small dense matrices, the naive loops (and a
                       faster version beside them, like graphics/Opti)
@@ -608,8 +608,12 @@ from memory until then.)
    `AiSteering`, `AiFlock`; the `Ai.mli` forces above, which is the
    first piece of the Evan-style layer and the one most likely to be
    right on the first try.
-4. **Deciding**: `Fsm`, then `Behavior` and `Utility` as the
-   comparison; `AiGhosts`; TinyPacman's ghosts on it.
+4. **Deciding, DONE**: `Fsm`, then `Behavior` and `Utility` as the
+   comparison; `AiGhosts`; TinyPacman's ghosts on it, behind the flag
+   `ai=engine` (the author's choice, 2026-09-22, the same pattern as
+   `physics=engine`): the original hand-written ghosts stay the
+   default and the code beside it, the ones on `ai/` are the flag, so
+   the two can be read and played side by side.
 5. **Bots**: `Sense` (line of sight over `Physics`, hearing, the
    memory of a last seen position) and `Bot` (the intent loop, the
    reaction delay, the aim error, `skill`); `examples/AiBots.ml`.
@@ -687,6 +691,31 @@ from memory until then.)
   per weight and for the radius, s/a/c to switch a rule off, one fish's
   neighbourhood drawn). TinyBoomerangFu's `brain` on `Steering` stays a
   proposal, to decide in the game.
+- **Phase 4, DONE** (`ai/Fsm`, `ai/Behavior`, `ai/Utility`). The open
+  decision settled: `Fsm` is a module, a small one, earning its place
+  by what a `match` doesn't give -- the rules as data (a list of
+  from/label/guard/target, so a machine can be drawn and checked), the
+  steps spent in the state counted for you (`after n`), and the
+  transition that fired (for what happens on entering a state). One
+  transition per step, the first rule that holds: the list's order is
+  the priority. `Behavior` is pure: a tree *decides* an action and
+  `path` says what it thought, no running status and no blackboard
+  (the model is the memory); `Utility` scores the options, with
+  `inertia` against flip-flopping. The three written as the same guard
+  dog in their `.mli`s, and a test that they agree where the situation
+  is clear-cut, and that only the machine remembers (hysteresis: it
+  flees on until healed past 0.8, the others stop at 0.5).
+  `games/TinyPacman.ml` with `ai=engine`: each ghost an `Fsm` machine,
+  its whole life one table (released, out, a power pellet, the wave
+  turns, eaten, another pellet, time's up, home), the scatter/chase
+  waves a second machine -- which the tests check agrees with the
+  original clock on all 6000 frames of its schedule; the default code
+  untouched but for `move_ghost` split into its move and its arrivals.
+  The cost, said in the game: a state changes a frame after its event,
+  so `collide` remembers who it caught in between. `examples/AiGhosts.ml`:
+  each ghost's target tile drawn as its rule computes it (Pinky's line
+  ahead, Inky's doubled vector from Blinky, Clyde's 8-tile circle), the
+  waves as a timeline, on the maze kit.
 - **Phase 9, mostly DONE, ahead of phases 4-8** (`games/AiChess.ml`):
   the rules checked by perft (20/400/8902 from the start; Kiwipete,
   positions 3 and 4), material and Michniewski's piece-square tables,

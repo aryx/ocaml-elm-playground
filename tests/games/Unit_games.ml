@@ -42,17 +42,17 @@ let sokoban_solution () =
 
 (* the ghosts leave their house, one after the other: Pinky is out,
  * hunting, 5 seconds into the game (READY! 2 s, 1 s waiting, leaving) *)
-let pacman_ghosts_leave () =
+let pacman_ghosts_leave ?(ai_engine = false) () =
   let open TinyPacman in
-  let g = ref (new_game ()) in
+  let g = ref (new_game ~ai_engine ()) in
   for i = 1 to 300 do g := update_game (computer i) !g done;
   let pinky = List.find (fun gh -> gh.name = Pinky) !g.ghosts in
   Alcotest.(check bool) "Pinky hunting" true (pinky.state = Hunting)
 
 (* a power pellet turns the hunting ghosts blue, and back the other way *)
-let pacman_blue () =
+let pacman_blue ?(ai_engine = false) () =
   let open TinyPacman in
-  let g = new_game () in
+  let g = new_game ~ai_engine () in
   let g =
     { g with pause = None; pac = { (mover_at (3, 1)) with dir = Left; wanted = Left };
       ghosts = List.map (fun gh -> if gh.name = Blinky then { gh with m = { (mover_at (7, 1)) with dir = Left } } else gh) g.ghosts }
@@ -63,6 +63,32 @@ let pacman_blue () =
   Alcotest.(check bool) "blue" true blinky.blue;
   Alcotest.(check bool) "blue for a while" true (!g.blue_frames > 300);
   Alcotest.(check int) "the pellet's 50, and the dots on the way" 70 !g.score
+
+(* a blue ghost on Pac-Man's tile is eaten: 200 points, once, and it
+ * goes home as eyes (the machine's a frame later, the points at once) *)
+let pacman_eaten ?(ai_engine = false) () =
+  let open TinyPacman in
+  let g = new_game ~ai_engine () in
+  let blue (gh : ghost) =
+    if gh.name = Blinky then { gh with m = g.pac; blue = true; mind = Fsm.start Mind.Frightened } else gh
+  in
+  let g = ref { g with pause = None; blue_frames = 300; ghosts = List.map blue g.ghosts } in
+  for i = 1 to 3 do g := update_game (computer i) !g done;
+  let blinky = List.find (fun gh -> gh.name = Blinky) !g.ghosts in
+  Alcotest.(check bool) "eyes" true (blinky.state = Eyes);
+  Alcotest.(check int) "200 points, not twice" 200 !g.score
+
+(* the waves as a machine agree with the clock: in chase at the same
+ * frames, 6000 of them (all seven changes of the schedule) *)
+let pacman_waves () =
+  let open TinyPacman in
+  let run = ref (Fsm.start (Scatter 1)) in
+  for frames = 1 to 6000 do
+    run := Fsm.step wave_rules () !run;
+    let machine = match !run.state with Chase _ -> true | Scatter _ -> false in
+    if machine <> chasing frames then Alcotest.failf "frame %d: the machine and the clock disagree" frames
+  done;
+  Alcotest.(check bool) "chasing for good at the end" true (!run.state = Chase 4)
 
 (*****************************************************************************)
 (* TinyBomberman *)
@@ -5514,6 +5540,11 @@ let tests =
     [ t "TinySokoban, level 1 solved" sokoban_solution;
       t "TinyPacman, the ghosts leave the house" pacman_ghosts_leave;
       t "TinyPacman, a power pellet" pacman_blue;
+      t "TinyPacman, a ghost eaten" pacman_eaten;
+      t "TinyPacman ai=engine, the ghosts leave the house" (pacman_ghosts_leave ~ai_engine:true);
+      t "TinyPacman ai=engine, a power pellet" (pacman_blue ~ai_engine:true);
+      t "TinyPacman ai=engine, a ghost eaten" (pacman_eaten ~ai_engine:true);
+      t "TinyPacman ai=engine, the waves agree with the clock" pacman_waves;
       t "TinyBomberman, a chain reaction" bomberman_chain;
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
       t "TinyMarioKart, Mode 7 there and back" kart_mode7;

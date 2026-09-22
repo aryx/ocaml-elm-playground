@@ -16,7 +16,7 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano
-    AiTictactoe AiPathfinding AiSteering AiFlock
+    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts
     LogoFractals
     BigBangRocket
     BigBangWorm
@@ -26,6 +26,7 @@
   (libraries
     elm_playground
     ai ; AiTictactoe's Minimax
+    kit_maze ; AiGhosts' Grid_move and Chase
     gui ; GuiWidgets' Layout
     gui4 ; GuiFourWays' tasks, examples/gui4
     appkit_document ; Gui7Circles' Undo

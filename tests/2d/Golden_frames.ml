@@ -148,6 +148,8 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AiSteering", "", 90);
     (* claude: the school forming, one fish's neighbours drawn *)
     ("examples/software/AiFlock", "", 90);
+    (* claude: the first wave, scatter: each ghost's target its corner *)
+    ("examples/software/AiGhosts", "", 60);
     ("games/software/AiOthello", "", 3);
     ("games/software/AiChess", "", 3);
     ("games/software/TinyTowerDefense", "", 5);
@@ -347,6 +349,9 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/AiSteering", "follow", 90, "7:2");
     (* claude: cohesion off: the school spreading out *)
     ("examples/software/AiFlock", "no_cohesion", 90, "c:2");
+    (* claude: chase, Pac-Man walked up and right: Pinky ahead of him,
+     * Inky's doubled vector from Blinky, Clyde's circle *)
+    ("examples/software/AiGhosts", "chase", 500, "left:1-60,up:61-140,right:141-500");
     ("games/software/AiOthello", "values", 3, "v:2");
     ("games/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
     ("games/software/TinySonic", "loop", 330, "space:1,right:5-330");

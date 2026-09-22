@@ -35,6 +35,16 @@
  * game with the same inputs is the same -- which is why expert players
  * could learn "patterns", memorized routes that always work.
  *
+ * Two ways of writing the ghosts' lives, chosen with the flag ai=engine
+ * (?ai=engine on the web), as Asteroid and TinyMario choose their
+ * physics: by default, the states change wherever the event happens --
+ * a pellet eaten in [eat], a ghost caught in [collide], arrivals in
+ * [move_ghost]; with ai=engine, a ghost is an ai/Fsm machine, its whole
+ * life one table of rules ([mind_rules]), and the scatter/chase waves a
+ * second machine ([wave_rules]). The same game either way (the tests
+ * play both); the table is easier to read, and changes a state a frame
+ * later than the event.
+ *
  * Exercises: the fruits, the intermission cartoons, the speed-up of the
  * later levels, Pac-Man cutting corners (he may turn a few pixels before
  * the center, the ghosts may not: a reason he can outrun them), the
@@ -112,7 +122,19 @@ type name = Blinky | Pinky | Inky | Clyde
  * eaten: its eyes going back to the house *)
 type state = Waiting of int | Leaving | Hunting | Eyes
 
-type ghost = { name : name; m : mover; state : state; blue : bool }
+(* the same states as a machine for ai/Fsm (the ai=engine flag, see
+ * "The ghosts as state machines" below), blue a state of its own *)
+module Mind = struct
+  type t = Waiting | Leaving | Hunting | Frightened | Eyes
+end
+
+type ghost = {
+  name : name;
+  m : mover;
+  state : state;
+  blue : bool;
+  mind : Mind.t Fsm.run; (* only with ai=engine *)
+}
 
 (* The game alternates between "scatter", each ghost going to its own
  * corner, and "chase", each hunting Pac-Man its own way: a few seconds
@@ -189,6 +211,81 @@ let ghost_open (g : ghost) ((col, row) : int * int) : bool =
 let next_random = Chase.next_random
 
 (*****************************************************************************)
+(* The ghosts as state machines (ai=engine) *)
+(*****************************************************************************)
+
+(* With the flag ai=engine (?ai=engine on the web), the ghosts' states
+ * change by the rules below, run by ai/Fsm, instead of by the lines of
+ * [eat], [collide], [move_ghost] and [update_game] that change them by
+ * default. Everything else -- the targets, the moves, the scoring, the
+ * drawing -- is the same code for both. What the machine version buys
+ * is the whole of a ghost's life in one table, readable top to bottom,
+ * in its order of priority:
+ *
+ *              released                  a power pellet
+ *   Waiting ------------> Leaving ----> Hunting ---------> Frightened
+ *                            ^      out    ^   time's up      |
+ *                            |             +------------------+ eaten
+ *                            +---- home ---- Eyes <-----------+
+ *
+ * and what it costs: a transition waits for the ghost's step, once a
+ * frame, where the default code changes a state wherever the event
+ * happens -- so an eaten ghost turns into eyes a frame later, and
+ * [collide] has to remember it was caught in between ([caught]). *)
+
+(* what a ghost's machine is told, each frame *)
+type facts = {
+  pellet : bool; (* Pac-Man ate a power pellet *)
+  caught : bool; (* Pac-Man ate this ghost *)
+  time_up : bool; (* the blue time is over *)
+  home : bool; (* at the center of the house's tile *)
+  out : bool; (* at the center of the tile outside its door *)
+  wave : bool; (* scatter turned to chase, or back *)
+  release : int; (* frames before it may leave the house *)
+}
+
+let mind_rules : (Mind.t, facts) Fsm.machine =
+  let rule from label guard target : (Mind.t, facts) Fsm.rule = { from; label; guard; target } in
+  Mind.
+    [ rule Waiting "released" (fun f since -> since >= f.release) Leaving;
+      rule Leaving "out" (fun f _ -> f.out) Hunting;
+      rule Hunting "a power pellet" (fun f _ -> f.pellet) Frightened;
+      rule Hunting "the wave turns" (fun f _ -> f.wave) Hunting;
+      rule Frightened "eaten" (fun f _ -> f.caught) Eyes;
+      rule Frightened "another pellet" (fun f _ -> f.pellet) Frightened;
+      rule Frightened "time's up" (fun f _ -> f.time_up) Hunting;
+      rule Eyes "home" (fun f _ -> f.home) Leaving ]
+
+(* the transitions after which a ghost turns back: a sign to the player *)
+let turns_back = [ "a power pellet"; "another pellet"; "the wave turns" ]
+
+(* the default code's (state, blue) for a machine's state, which the
+ * rest of the game reads *)
+let of_mind (s : Mind.t) : state * bool =
+  match s with
+  | Mind.Waiting -> (Waiting 1, false)
+  | Mind.Leaving -> (Leaving, false)
+  | Mind.Hunting -> (Hunting, false)
+  | Mind.Frightened -> (Hunting, true)
+  | Mind.Eyes -> (Eyes, false)
+
+(* when each ghost may leave the house: [Waiting n] counts n frames,
+ * and leaves the frame after *)
+let release (n : name) : int = match n with Blinky -> 0 | Pinky -> 61 | Inky -> 241 | Clyde -> 421
+
+(* and the scatter/chase waves: [schedule] as a machine, a state per
+ * wave *)
+type wave = Scatter of int | Chase of int
+
+let wave_rules : (wave, unit) Fsm.machine =
+  List.mapi
+    (fun i frames : (wave, unit) Fsm.rule ->
+      let k = (i / 2) + 1 in
+      if i mod 2 = 0 then { from = Scatter k; label = "chase"; guard = Fsm.after frames; target = Chase k }
+      else { from = Chase k; label = "scatter"; guard = Fsm.after frames; target = Scatter (k + 1) })
+    schedule
+
+(*****************************************************************************)
 (* The model *)
 (*****************************************************************************)
 
@@ -207,6 +304,11 @@ type game = {
   pause : (pause * int) option; (* a pause, and its frames left *)
   rng : int;
   frames : int;
+  (* the ghosts on ai/Fsm (ai=engine) *)
+  ai_engine : bool;
+  waves : wave Fsm.run; (* in place of [mode_frames] *)
+  pellet : bool; (* a power pellet eaten this frame *)
+  caught : name list; (* ghosts eaten, not yet turned to eyes *)
 }
 
 type scene = Title | Playing of game | Game_over of int
@@ -218,19 +320,29 @@ let pac_start = match Tilemap.find maze 'P' with p :: _ -> p | [] -> (9, 15)
 (* Blinky starts outside the house; the others wait inside, released
  * one after the other *)
 let new_ghosts () : ghost list =
-  [ { name = Blinky; m = mover_at outside; state = Hunting; blue = false };
-    { name = Pinky; m = mover_at inside; state = Waiting 60; blue = false };
-    { name = Inky; m = mover_at (8, 9); state = Waiting 240; blue = false };
-    { name = Clyde; m = mover_at (10, 9); state = Waiting 420; blue = false } ]
+  let waiting = Fsm.start Mind.Waiting in
+  [ { name = Blinky; m = mover_at outside; state = Hunting; blue = false; mind = Fsm.start Mind.Hunting };
+    { name = Pinky; m = mover_at inside; state = Waiting 60; blue = false; mind = waiting };
+    { name = Inky; m = mover_at (8, 9); state = Waiting 240; blue = false; mind = waiting };
+    { name = Clyde; m = mover_at (10, 9); state = Waiting 420; blue = false; mind = waiting } ]
 
 (* a new life: everybody back at the start, the dots as they are *)
 let restart (g : game) : game =
-  { g with pac = mover_at pac_start; ghosts = new_ghosts (); mode_frames = 0; blue_frames = 0; pause = Some (Ready, 120) }
+  { g with
+    pac = mover_at pac_start;
+    ghosts = new_ghosts ();
+    mode_frames = 0;
+    blue_frames = 0;
+    pause = Some (Ready, 120);
+    waves = Fsm.start (Scatter 1);
+    pellet = false;
+    caught = [] }
 
-let new_game () : game =
+let new_game ?(ai_engine = false) () : game =
   restart
     { map = maze; pac = mover_at pac_start; ghosts = []; score = 0; lives = 3; level = 1; mode_frames = 0;
-      blue_frames = 0; eaten = 0; pause = None; rng = 0; frames = 0 }
+      blue_frames = 0; eaten = 0; pause = None; rng = 0; frames = 0; ai_engine; waves = Fsm.start (Scatter 1);
+      pellet = false; caught = [] }
 
 let initial_model = { scenes = Scene2d.start Title; hi_score = 0 }
 
@@ -249,6 +361,9 @@ let eat (g : game) : game =
   let col, row = tile_of g.pac in
   match Tilemap.get g.map col row with
   | Some '.' -> { g with map = Tilemap.set g.map col row ' '; score = g.score + 10 }
+  | Some 'o' when g.ai_engine ->
+      (* the ghosts' machines hear of it, in [think] *)
+      { g with map = Tilemap.set g.map col row ' '; score = g.score + 50; blue_frames = 360; eaten = 0; pellet = true }
   | Some 'o' ->
       { g with
         map = Tilemap.set g.map col row ' ';
@@ -263,25 +378,51 @@ let eat (g : game) : game =
             g.ghosts }
   | _ -> g
 
-let move_ghost (g : game) (gh : ghost) : ghost =
-  let chase = chasing g.mode_frames in
+(* chasing, or scattering: by the clock, or by the waves' machine *)
+let chase_now (g : game) : bool =
+  if g.ai_engine then (match g.waves.state with Chase _ -> true | Scatter _ -> false) else chasing g.mode_frames
+
+(* a ghost one frame along its way to its target *)
+let glide (g : game) (gh : ghost) : ghost =
   let blinky = (List.find (fun gh -> gh.name = Blinky) g.ghosts).m in
+  let speed = match gh.state with Eyes -> 8 | _ when gh.blue -> 2 | Leaving -> 2 | _ -> 4 in
+  let random = if gh.blue then Some g.rng else None in
+  let goal = target ~chase:(chase_now g) ~pac:g.pac ~blinky gh in
+  { gh with m = slide ~choose:(ghost_choose ~open_:(ghost_open gh) ~goal ~random) speed gh.m }
+
+let move_ghost (g : game) (gh : ghost) : ghost =
   match gh.state with
+  | Waiting _ when g.ai_engine -> gh (* released by its machine *)
+  | _ when g.ai_engine -> glide g gh
   | Waiting 0 -> { gh with state = Leaving }
   | Waiting n -> { gh with state = Waiting (n - 1) }
   | _ ->
-      let speed = match gh.state with Eyes -> 8 | _ when gh.blue -> 2 | Leaving -> 2 | _ -> 4 in
-      let random = if gh.blue then Some g.rng else None in
-      let goal = target ~chase ~pac:g.pac ~blinky gh in
-      let m = slide ~choose:(ghost_choose ~open_:(ghost_open gh) ~goal ~random) speed gh.m in
+      let gh = glide g gh in
       (* arrived: out of the house, or back in it as eyes *)
       let state =
         match gh.state with
-        | Leaving when at_center m && tile_of m = outside -> Hunting
-        | Eyes when at_center m && tile_of m = inside -> Leaving
+        | Leaving when at_center gh.m && tile_of gh.m = outside -> Hunting
+        | Eyes when at_center gh.m && tile_of gh.m = inside -> Leaving
         | s -> s
       in
-      { gh with m; state }
+      { gh with state }
+
+(* each ghost's machine told this frame's facts and stepped; turning
+ * back after the transitions in [turns_back] *)
+let think (g : game) : game =
+  let wave = g.waves.fired <> None in
+  let step gh =
+    let at tile = at_center gh.m && tile_of gh.m = tile in
+    let facts =
+      { pellet = g.pellet; caught = List.mem gh.name g.caught; time_up = g.blue_frames = 0; home = at inside;
+        out = at outside; wave; release = release gh.name }
+    in
+    let mind = Fsm.step mind_rules facts gh.mind in
+    let m = match mind.fired with Some l when List.mem l turns_back -> { gh.m with dir = opposite gh.m.dir } | _ -> gh.m in
+    let state, blue = of_mind mind.state in
+    { gh with mind; m; state; blue }
+  in
+  { g with ghosts = List.map step g.ghosts; pellet = false; caught = [] }
 
 (* Pac-Man and a ghost on the same tile: a blue ghost is eaten, any
  * other hunting one eats Pac-Man *)
@@ -290,6 +431,11 @@ let collide (g : game) : game =
   List.fold_left
     (fun g gh ->
       if tile_of gh.m <> pac || gh.state = Eyes || (match gh.state with Waiting _ -> true | _ -> false) then g
+      else if gh.blue && g.ai_engine then
+        (* scored now, turned to eyes by its machine; until then, not
+         * eaten twice *)
+        if List.mem gh.name g.caught then g
+        else { g with score = g.score + (200 * (1 lsl g.eaten)); eaten = g.eaten + 1; caught = gh.name :: g.caught }
       else if gh.blue then
         let points = 200 * (1 lsl g.eaten) in
         { g with
@@ -313,8 +459,16 @@ let update_game (computer : computer) (g : game) : game =
       let g =
         { g with
           blue_frames = max 0 (g.blue_frames - 1);
-          mode_frames = (if g.blue_frames > 0 then g.mode_frames else g.mode_frames + 1) }
+          mode_frames = (if g.blue_frames > 0 then g.mode_frames else g.mode_frames + 1);
+          (* the waves stopped while blue, as the clock is *)
+          waves = (if g.blue_frames > 0 then { g.waves with fired = None } else Fsm.step wave_rules () g.waves) }
       in
+      if g.ai_engine then
+        let g = collide g |> think in
+        let g = { g with ghosts = List.map (move_ghost g) g.ghosts } in
+        let g = collide g in
+        if Tilemap.find g.map '.' = [] && Tilemap.find g.map 'o' = [] then { g with pause = Some (Cleared, 120) } else g
+      else
       let g = if g.blue_frames = 0 then { g with ghosts = List.map (fun gh -> { gh with blue = false }) g.ghosts } else g in
       (* claude: a change of mode makes the hunting ghosts turn back, a
        * sign to the player that the wave changed *)
@@ -333,7 +487,9 @@ let update (computer : computer) (model : model) : model =
   let scenes = Scene2d.update computer model.scenes in
   let space = Scene2d.pressed (fun k -> k.kspace) scenes in
   match scenes.scene with
-  | Title -> if space then { model with scenes = Scene2d.go (Playing (new_game ())) scenes } else { model with scenes }
+  | Title ->
+      let ai_engine = List.assoc_opt "ai" computer.flags = Some "engine" in
+      if space then { model with scenes = Scene2d.go (Playing (new_game ~ai_engine ())) scenes } else { model with scenes }
   | Playing g ->
       let g = update_game computer g in
       let hi_score = max model.hi_score g.score in
@@ -466,4 +622,4 @@ let view (computer : computer) (model : model) : shape list =
 
 let app = game view update initial_model
 
-let main = Playground_platform.run_app app
+let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
