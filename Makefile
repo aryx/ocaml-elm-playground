@@ -65,6 +65,9 @@ doc:
 # generates from docs/toy-*-example/), and copy each freshly built web
 # example/game (.bc.js + its .html page) to docs/examples/ and docs/games/.
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
+# claude: since docs/index.html is not regenerated, its package version
+# numbers are refreshed from dune-project instead.
+VERSION=$(shell sed -n 's/^(version "\(.*\)")/\1/p' dune-project)
 ODOC_DIRS=odoc.support \
   elm_core elm_system elm_playground elm_playground_native elm_playground_web
 
@@ -75,6 +78,7 @@ website:
 	  cp -R _build/default/_doc/_html/$$d docs/$$d; \
 	  chmod -R u+w docs/$$d; \
 	done
+	perl -pi -e 's|<span class="version">[^<]*</span>|<span class="version">$(VERSION)</span>|' docs/index.html
 	make js
 	for d in examples games; do \
 	  for js in _build/default/$${d}_js/*.bc.js; do \
