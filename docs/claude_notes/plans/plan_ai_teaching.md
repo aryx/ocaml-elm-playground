@@ -530,7 +530,13 @@ from memory until then.)
 - **Utility**: utility AI, The Sims (1997-2000) -- needs scored, the
   highest wins; Dave Mark's "Behavioral Mathematics for Game AI" (2009).
 - **Influence**: influence maps (Andrew Zobrist's Go program, 1969 --
-  the same Zobrist).
+  the same Zobrist). **Not written, and no phase ever claimed it**:
+  the target layout lists it and the phases do not, which is how it
+  came to be the one module of that list with nothing behind it. It is
+  a small thing -- `Pathfind.field` run from every enemy at once, read
+  as danger per tile rather than distance -- and the game that would
+  want it is a strategy game deciding where not to walk. Left as the
+  first thing to pick up after phase 13.
 - **Neuron**: McCulloch and Pitts (1943); Rosenblatt's perceptron
   (1958) and its learning rule; Minsky and Papert, *Perceptrons*
   (1969), and XOR.
@@ -679,9 +685,13 @@ from memory until then.)
     -- measured on tic-tac-toe with a perfect value function standing
     in for a trained one. Wiring an actual network into `AiGo` is left
     undone on purpose: see the status entry.
-12. **Docs**: `notes_ai.md` and `notes_ai_learning.md` checked against
-    the code, the numbers filled in;
-    `notes_ai_related_work.md`'s postscript.
+12. **Docs, in progress**: `notes_ai.md` and `notes_ai_learning.md`
+    checked against the code, the numbers filled in;
+    `notes_ai_related_work.md`'s postscript **written**, from
+    measurements (how much code, 115k nodes a second for alpha-beta,
+    depth 4 inside a 16 ms frame, 180k playouts a second at
+    tic-tac-toe against 830 at 9x9 Go, and a digit network at 89%
+    after five seconds of training).
 13. *(later)* Navigation meshes (funnel/string-pulling) instead of
     grids; crowd avoidance (RVO/ORCA); planning (STRIPS, and GOAP as
     F.E.A.R. used it); genetic algorithms and neuroevolution (NEAT);

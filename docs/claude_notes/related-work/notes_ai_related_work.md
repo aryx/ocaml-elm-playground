@@ -216,12 +216,54 @@ Blue's 200 million positions a second and AlphaGo Zero's thousands of
 TPUs, that is nothing -- and the algorithms are the same ones, which is
 exactly the point worth teaching.
 
-## Postscript: the numbers (to come)
+## Postscript: the numbers
 
-Once built: lines of code per module; nodes per second for alpha-beta
-and for MCTS, native and in the browser; the depth reachable inside a
-16 ms frame; training time and accuracy for the digit network; and the
-`AiGo` player's score against its own random-playout version.
+Measured on one laptop, native, with the code as it stands. They are
+the honest answer to "what does a legible implementation cost", and
+every one of them comes from a test or a run that can be repeated.
+
+**How much code.** Nineteen modules in `ai/`: 1,607 lines of
+implementation and 1,911 of interface -- more explanation than program,
+which is the intended ratio. The largest implementation is `Mcts.ml`
+at 180 lines, and Monte Carlo tree search, the transposition table and
+reverse-mode autodiff are 180, 177 and 91 lines respectively. The
+tests are 1,710 lines, about as much as the code they check. On top:
+`playground/Ai` (272 lines over 288 of interface), `Ai_debug` (154),
+and eleven examples totalling 2,445.
+
+**How fast it searches.** Alpha-beta on Connect 4's opening, seven
+moves ahead: 62,467 nodes in 543 ms, about **115,000 nodes a second**.
+Deep Blue did 200 million positions a second in 1997 hardware; the
+factor is about two thousand, and the algorithm is the same one.
+
+**What fits in a frame.** Give that search a budget of one 16 ms frame
+-- 1,839 nodes -- and iterative deepening finishes **depth 4** and
+abandons depth 5. That is the number that decides what a game can
+actually ask for at 60 frames a second, and it is why `Deepening` has
+a node budget rather than a depth.
+
+**How fast it plays out.** MCTS on tic-tac-toe: **180,000 playouts a
+second**. The same code on 9x9 Go: about **830 a second**, one playout
+being 1.2 ms of a hundred-odd moves each scanning the board. A factor
+of two hundred between two games with the same search, which is the
+whole reason Go needed a different idea rather than a faster machine.
+
+**Training a network.** The digit reader is 17,098 weights (256-64-10)
+on 320 training digits and 80 held out. One epoch is **147 ms**, after
+which it is 26% right; after thirty more (4.7 seconds) it is **89%**.
+A network worth calling small, trained in the time it takes to read
+this sentence -- and still visibly worse on a digit drawn with a mouse
+than on one its own font drew, which is the lesson it was built for.
+
+**A network inside the search.** `AiGo` is not wired to one (see
+`plan_ai_teaching.md` for why: the compute, not the code). What is
+measured instead is the mechanism, on tic-tac-toe, with a perfect
+value function standing in for a trained one: at twelve playouts the
+search with a value head finds the winning move in 12 of 12 won
+positions against 10 of 12 for random playouts, and over twenty games
+at forty playouts each it wins 11 and loses 0 to the version without.
+That is AlphaGo's shape working at a size where the numbers can be
+checked in a second.
 
 Sources: from memory, to be checked before relying on them for
 teaching -- the books and papers named above, the GDC talks, the
