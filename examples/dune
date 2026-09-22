@@ -8,7 +8,7 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
-    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug
+    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron
     LogoFractals
     BigBangRocket BigBangWorm
     PuzzleScriptSokoban PuzzleScriptBoulders
@@ -73,7 +73,7 @@
 ; claude: five 3D examples aren't in this list, only in software/ (and
 ; the web ones): Cube3d, InteractiveCube3d, PaintersAlgorithmFail3d,
 ; FloatingCity3d, Corridor3d. The OpenGL backend's own
-; "m"/"b"/"f"/"i"/"o" debug keys (see README-3d.md) don't include
+; "m"/"b"/"f"/"i"/"o" debug keys (see README.md) don't include
 ; PaintersAlgorithmFail3d's "z" or Corridor3d's "c" (plan_opengl.md
 ; scoped painter's-algorithm out, since a hardware z-buffer makes the
 ; toggle moot); InteractiveCube3d needs a HUD. None of that explains

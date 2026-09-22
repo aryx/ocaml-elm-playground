@@ -168,6 +168,7 @@ let scenes : Testutil_golden.scene list =
     (* the bot on its rounds, having seen nobody yet *)
     ("examples/software/AiBots", "", 2);
     ("examples/software/AiDebug", "", 3);
+    ("examples/software/AiPerceptron", "", 3);
     ("games/puzzle/software/AiConnect4", "", 3);
     ("games/puzzle/software/AiGo", "", 3);
     ("games/puzzle/software/AiOthello", "", 3);
@@ -433,6 +434,11 @@ let scripted : Testutil_golden.scripted list =
      * flag with its way and the field drawn, its mind resting, and the
      * opponent's opinion of a Nim position it has already won *)
     ("examples/software/AiDebug", "thinking", 95, "2:5");
+    (* claude: the perceptron settles on AND -- nought of four wrong,
+     * the line drawn where its weighted sum is zero -- and never
+     * settles on XOR, where it ends up worse than the best line *)
+    ("examples/software/AiPerceptron", "and", 95, "a:3");
+    ("examples/software/AiPerceptron", "xor", 95, "x:3");
     ("games/puzzle/software/AiOthello", "values", 3, "v:2");
     ("games/strategy/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
     ("games/platform/software/TinySonic", "loop", 330, "space:1,right:5-330");

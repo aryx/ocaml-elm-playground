@@ -663,8 +663,9 @@ from memory until then.)
 9. **Chess, mostly DONE (ahead of its turn)**: `AiChess`, rules first (perft counts as the test: the
    standard node counts per depth from the start position are a
    ruthless check on a move generator), search second.
-10. **Learning**: `Matrix`, `Neuron`, `Net`, `Backprop`, `Grad`,
-    `Train`; `AiPerceptron`, `AiNeuralNet`, `AiDigits`.
+10. **Learning, started**: `Matrix` and `Neuron` written, with
+    `AiPerceptron`; `Net`, `Backprop`, `Grad`, `Train` and the other
+    two examples (`AiNeuralNet`, `AiDigits`) still to come.
 11. **Learning to play**: `Qlearn`; `AiQlearn`; tic-tac-toe learned by
     self-play, then measured against the minimax player it cannot beat
     but can learn to draw with; and the network as `AiGo`'s playout
@@ -876,6 +877,19 @@ from memory until then.)
   The negative result is worth as much as the layer is: the loop is
   thirty readable lines a game, and the part each game does
   differently is the part that gives it its character.
+- **Learning, the first slice, 2026-09-22**: `Matrix` (the flat
+  array in the open, the three loops, and a version that reads along
+  rows instead of down columns -- 1.6x at n=64 to 2.2x at n=256, which
+  is twice and not ten times, and the .mli says why: the arithmetic is
+  the same and only the reading changes) and `Neuron` (Rosenblatt's
+  rule, which moves only on a mistake). The measurement worth keeping
+  from it: on XOR the rule gets *two* of four, while the best line
+  that exists gets three -- a rule that cannot converge does not stop
+  at the best approximation, it wanders. Both the plan and the
+  tutorial had said 75%, from reasoning about what a line can do
+  rather than from running it. `examples/AiPerceptron.ml` shows the
+  line walking into place and stopping dead on AND, and swinging for
+  ever on XOR, with the weights drawn as the line's normal.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

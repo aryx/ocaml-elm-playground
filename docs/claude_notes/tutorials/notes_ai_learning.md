@@ -17,10 +17,10 @@ formula is one a reader can check with a pen.
 
 ## 0. Where the code is, and a reading order
 
-| module (`ai/`, planned) | what | section |
+| module (`ai/`) | what | section |
 |---|---|---|
-| `Matrix` | dense float matrices, the naive loops | §2 |
-| `Neuron` | the perceptron, its rule, and what it cannot do | §1 |
+| `Matrix` (done) | dense float matrices, the naive loops | §2 |
+| `Neuron` (done) | the perceptron, its rule, and what it cannot do | §1 |
 | `Net` | layers, activations, the forward pass | §2 |
 | `Backprop` | the loss, gradient descent, the chain rule | §3, §4 |
 | `Grad` | reverse-mode autodiff: the same, written once | §5 |
@@ -66,7 +66,19 @@ Then show it XOR:
 ```
 
 and it never settles. A perceptron computes a line (a hyperplane); XOR
-is not a line. Minsky and Papert's *Perceptrons* (1969) made that point
+is not a line.
+
+Measured, now that it is written (`Unit_neuron`, and the numbers are
+worth more than the story): AND and OR, four of four, and it *stops* --
+no example moves it again. XOR, two of four, at every seed and every
+number of epochs tried. And the best line that exists gets **three** of
+the four, by cutting off one corner. So the rule does not merely fail
+to converge: it ends up worse than the best line it could have drawn,
+because it moves on every mistake and the mistakes never stop. A
+learning rule that cannot converge does not politely stop at the best
+approximation; it wanders. `examples/AiPerceptron.ml` shows both: the
+line walking into place and stopping dead on AND, and swinging for ever
+on XOR. Minsky and Papert's *Perceptrons* (1969) made that point
 precisely, and the field's funding went with it for over a decade --
 the first "AI winter". The fix was known in principle (stack the
 neurons) and useless in practice (nobody could train a stack), and that
@@ -94,9 +106,20 @@ matrix of weights, a vector of `m` biases, and an activation:
 
 The whole forward pass of a network is that line, once per layer.
 `Matrix` is three nested loops over a flat float array; that is the
-naive version, and it stays in the module beside a faster one
-(blocking and unrolling, with the measured numbers) exactly as
-`graphics/Opti` keeps the simple rasterizer beside the fast one.
+naive version, and it stays in the module beside a faster one exactly
+as `graphics/Opti` keeps the simple rasterizer beside the fast one
+(`Matrix.fast` switches, and both are tested to agree).
+
+What the faster one changes is not the arithmetic but the reading:
+walking down a column of the right-hand matrix jumps a whole row at
+every step, so it copies that matrix transposed first and then walks
+both along rows, four products at a time. Measured on this machine,
+for one square product: 0.9 ms against 0.6 at n = 64, 7.5 against 4.0
+at 128, 65 against 30 at 256 -- between 1.6x and 2.2x, growing with n
+as a column stops fitting in cache. Twice, not ten times, and that is
+the honest shape of the thing: the next factor of five is blocking the
+work so that a *piece* of each matrix stays in cache across many
+products, which is what BLAS does and what this deliberately does not.
 
 `f` has to be non-linear, or the stack collapses: `W2 (W1 x)` is just
 `(W2 W1) x`, one layer again. Three choices, and the history is in

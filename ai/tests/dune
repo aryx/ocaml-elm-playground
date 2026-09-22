@@ -2,5 +2,5 @@
 ; .mli's worked examples, and alpha-beta always agreeing with minimax
 (test
  (name Test)
- (libraries alcotest testo ai)
+ (libraries alcotest testo unix ai) ; unix: Unit_matrix times the two products
 )
