@@ -4,7 +4,7 @@
  (wrapped false)
  (libraries
    ; commons
-   elm_core elm_system
+   elm_core
    ; claude: the capabilities Playground_platform's store/fetch/export
    ; take (plan_caps.md)
    caps

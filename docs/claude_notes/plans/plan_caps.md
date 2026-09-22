@@ -119,5 +119,5 @@ document named this"), whatever the storage behind them is.
 adopting once the above works, so that capability-taking code reads and
 writes through `FS` rather than `CapStdlib` directly. To settle first:
 it has modules named **`Cmd`** and **`Set_`**, the same names as this
-repository's `system/Cmd` and `core/Set_` (all unwrapped libraries), so
+repository's `core/Cmd` and `core/Set_` (all unwrapped libraries), so
 linking both would clash -- a rename on one side, or wrapping.

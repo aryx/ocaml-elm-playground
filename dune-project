@@ -81,7 +81,7 @@
     tsdl
     (stb_image (>= "0.4"))
     ocurl
-    (elm_playground (= :version)) ; elm_playground.system (Sub/Cmd)
+    (elm_playground (= :version)) ; elm_playground.core (Sub/Cmd)
   )
 )
 (package (name elm_playground_software)

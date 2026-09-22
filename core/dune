@@ -1,3 +1,5 @@
+; claude: Cmd and Sub are here too, as in Elm, whose core has them
+; (Platform.Cmd, Platform.Sub)
 (library
  (name elm_core)
  (public_name elm_playground.core)
