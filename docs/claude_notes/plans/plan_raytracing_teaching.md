@@ -416,7 +416,7 @@ default, ray traced with "y" or `-raytrace`, which is the point:
    labelled as such.
 10. **Docs**: `notes_raytracing.md` checked against the code and its
     numbers filled in; `notes_3d.md` section 6's pointer; the
-    README-3d stills regenerated with `-raytrace`.
+    README.md's stills regenerated with `-raytrace`.
 
 ## Status
 

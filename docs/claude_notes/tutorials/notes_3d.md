@@ -687,8 +687,8 @@ filtering (§9), `c` near-plane clipping and `t` the top-left fill rule
 (§7), `o` the simple versions of the optimizations (a quick way to see
 what they buy, on the fps counter), and `x` a pixel magnifier following
 the mouse (the one from the 2D rasterizer, `graphics/2d/Magnifier`),
-to look at edges and the fill rule up close. `README-3d.md` has the
-table.
+to look at edges and the fill rule up close. Section 11 below has the
+table of the debug keys.
 
 ## 12. HUD: a 2D overlay on top of the 3D scene
 

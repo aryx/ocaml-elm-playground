@@ -242,7 +242,16 @@ texture rules move to `games/fps/dune` and `games/adventure/dune`.
    and `template.html`, and `games2.5d/README.md` is
    `games/README-2.5d.md`.
 
-## Step 4: `README-3d.md` into `README.md`
+## Step 4: `README-3d.md` into `README.md` (done, 2026-09-22)
+
+Done with three changes to the plan below: the debug keys are named in
+a paragraph rather than tabled, with notes_3d.md's section 11 for what
+each demonstrates; 3D is no longer called experimental (the packages
+are released like the others); and the disclaimer now counts what the
+repository has become (about 135,000 lines of OCaml, 117 games, 13
+applications, the rasterizers, physics, audio, AI and the toolkit)
+against the playground itself, still about 5,000 lines in 2D and 1,300
+in 3D.
 
 Last, once the paths have stopped moving: steps 1-3 update both READMEs'
 paths in passing, this step only merges them. `README.md` (215 lines)

@@ -84,7 +84,7 @@ is [`notes_raytracing.md`](../tutorials/notes_raytracing.md).
 - **Hershey's colon** at small sizes, e.g. the HUD's "Mouse:": see
   [`plan_2d_remaining.md`](plan_2d_remaining.md), item 3.
 - **Transparency on the software 3D backend**: `fade3d` is ignored
-  (README-3d's limitations). The classic way: draw the opaque faces
+  (README.md's 3D limitations). The classic way: draw the opaque faces
   with the z-buffer, then the transparent ones sorted far to near
   (`Painter`), blended (`Framebuffer.blend`), testing but not writing
   the z-buffer.

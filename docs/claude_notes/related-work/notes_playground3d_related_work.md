@@ -33,7 +33,7 @@ fuller picture that plan only sketched.
 ### lucamug/elm-playground-3d -- the direct ancestor
 
 Already covered in detail in `notes_3d.md` §10 (a side-by-side table)
-and credited in `README-3d.md`. The one-sentence summary for context
+and credited in `README.md`. The one-sentence summary for context
 here: it adds 3D shapes to Evan Czaplicki's original 2D elm-playground
 by projecting every 3D point down to a 2D one and handing the result to
 elm-playground's *existing*, unmodified SVG renderer -- no WebGL, no
