@@ -6,9 +6,11 @@
 ; browser in web/.
 (executables
   (names Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
-    TinyPacman TinyPong TinySoldat TinySpacewar TinyTron)
+    TinyFrogger TinyLunarLander TinyPacman TinyPong TinySoldat TinySpacewar
+    TinyTron)
   (modules Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
-    TinyPacman TinyPong TinySoldat TinySpacewar TinyTron)
+    TinyFrogger TinyLunarLander TinyPacman TinyPong TinySoldat TinySpacewar
+    TinyTron)
   (libraries
     unix ; Pong's clock
     elm_playground

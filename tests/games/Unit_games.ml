@@ -4368,6 +4368,70 @@ let celeste_wall_jump () =
   Alcotest.(check bool) "and up" true (off.vy > 0.)
 
 (*****************************************************************************)
+(* TinyPrinceOfPersia *)
+(*****************************************************************************)
+
+(* The distances are the tables' sums: a stride is a tile, a standing
+ * jump two, a running jump three, and the jumps come down where they
+ * took off; climbing up rises by what hanging lowers. *)
+let pop_tables () =
+  let open TinyPrinceOfPersia in
+  let sum field m = Array.fold_left (fun a fr -> a +. field fr) 0. (anims m).frames in
+  let dx fr = fr.dx and dy fr = fr.dy in
+  Alcotest.(check (float 0.01)) "a stride" tile_w (sum dx Run);
+  Alcotest.(check (float 0.01)) "a standing jump" (2. *. tile_w) (sum dx Stand_jump);
+  Alcotest.(check (float 0.01)) "a running jump" (3. *. tile_w) (sum dx Run_jump);
+  Alcotest.(check (float 0.01)) "down where it took off" 0. (sum dy Stand_jump);
+  Alcotest.(check (float 0.01)) "down where it took off, running" 0. (sum dy Run_jump);
+  Alcotest.(check (float 0.01)) "climbing up" hang_drop (sum dy Climb_up);
+  Alcotest.(check (float 0.01)) "climbing down" (-.hang_drop) (sum dy Climb_down);
+  Alcotest.(check (float 0.01)) "jumping up to the ledge, then hanging" tile_h (sum dy Jump_grab +. hang_drop)
+
+(* [pop_play script frames]: the game played from its title, [script]
+ * the keys held, as -script says them (e.g. "right:10-40"; space at
+ * frame 1 starts the game); the scenes seen, one per frame *)
+let pop_play (script : string) (frames : int) : TinyPrinceOfPersia.scene list =
+  let open TinyPrinceOfPersia in
+  let held = List.map (fun e -> Scanf.sscanf e "%[^:]:%d-%d" (fun k a b -> (k, a, b))) (String.split_on_char ',' script) in
+  let s = ref initial_model and seen = ref [] in
+  for i = 1 to frames do
+    let down k = List.exists (fun (k', a, b) -> k' = k && a <= i && i <= b) held in
+    let keyboard = { initial_computer.keyboard with kspace = i = 1; kup = down "up"; kdown = down "down"; kleft = down "left"; kright = down "right"; kshift = down "Shift" } in
+    s := update (computer ~keyboard i) !s;
+    seen := !s.scene :: !seen
+  done;
+  List.rev !seen
+
+(* the golden frames' way through the dungeon: a standing jump over the
+ * first gap, a running jump over the spikes, down the hole onto the
+ * plate, through the gate before it closes, a careful step to the
+ * shaft's edge, hanging, the drop, a standing jump over the second
+ * spikes, up to the ledge, and the door; never hurt *)
+let pop_way_out =
+  "right:10-40,up:54-58,right:54-58,right:100-290,up:193-197,left:330-550,left:600-601,Shift:600-601,down:630-634,down:690-694,\
+   right:745-768,up:790-794,right:790-794,right:840-1060,up:1070-1074,up:1110-1114,right:1150-1190,up:1200-1240"
+
+let pop_robot () =
+  let open TinyPrinceOfPersia in
+  let seen = pop_play pop_way_out 1300 in
+  let games = List.filter_map (function Playing g -> Some g | _ -> None) seen in
+  Alcotest.(check bool) "hung from a ledge" true (List.exists (fun g -> g.prince.move = Hang) games);
+  Alcotest.(check int) "never hurt" 3 (List.fold_left (fun m g -> min m g.prince.hp) 3 games);
+  Alcotest.(check bool) "escaped" true (List.exists (function Escaped _ -> true | _ -> false) seen)
+
+(* the same way, but waiting too long off the plate: the gate closes
+ * and stops him; running into the shaft instead of hanging from its
+ * edge is a fall of two floors, a triangle *)
+let pop_gate_and_fall () =
+  let open TinyPrinceOfPersia in
+  let last seen = match List.rev seen with Playing g :: _ -> g | _ -> Alcotest.fail "not playing" in
+  let g = last (pop_play "right:10-40,up:54-58,right:54-58,right:100-290,up:193-197,left:330-370,left:800-1200" 1200) in
+  Alcotest.(check int) "stopped by the gate" 5 (col_at g.prince.x);
+  let g = last (pop_play "right:10-40,up:54-58,right:54-58,right:100-290,up:193-197,left:330-600" 800) in
+  Alcotest.(check int) "down the shaft" 3 (row_at g.prince.y);
+  Alcotest.(check int) "a triangle less" 2 g.prince.hp
+
+(*****************************************************************************)
 (* TinyDDR *)
 (*****************************************************************************)
 
@@ -5657,6 +5721,128 @@ let corewar_fights () =
     m.cycles (List.length m.warriors.(0).queue);
   Alcotest.(check bool) "the Mice win" true (result m = Wins 0)
 
+(*****************************************************************************)
+(* TinyLunarLander *)
+(*****************************************************************************)
+
+(* the module put upright 60 units above the middle of a pad of the
+ * first moon (seed=1), or above a point of the moon that is no pad's,
+ * then flown by [pilot] until it touches down *)
+let lander_down ?(mult = 3) ?(off_pad = false) (pilot : TinyLunarLander.lander -> bool) : TinyLunarLander.game =
+  let open TinyLunarLander in
+  let g = new_game 1 in
+  let x =
+    if off_pad then
+      (* the first point, and the one after, both off every pad *)
+      let i = List.find (fun i -> List.for_all (fun p -> i < p.first - 1 || i > p.first + p.len + 1) g.moon.pads) (List.init segments Fun.id) in
+      point_x i +. (seg_w /. 2.)
+    else
+      let p = List.find (fun p -> p.mult = mult) g.moon.pads in
+      (point_x p.first +. point_x (p.first + p.len)) /. 2.
+  in
+  let g = { g with lander = { x; y = ground_at g.moon x +. feet_y +. 60.; vx = 0.; vy = 0.; angle = 0.; firing = false } } in
+  let rec go n (g : game) =
+    if n = 0 then Alcotest.fail "never touched down"
+    else match g.touched with Some _ -> g | None -> go (n - 1) (update_game { initial_computer.keyboard with kup = pilot g.lander } g)
+  in
+  go 1000 g
+
+(* a pilot keeping the fall at 10 units a second lands well, and is
+ * paid the pad's multiplier; the camera went close on the way *)
+let lander_good () =
+  let open TinyLunarLander in
+  let g = lander_down (fun l -> l.vy < -10.) in
+  Alcotest.(check bool) "a good landing, x3" true (match g.touched with Some (Good, 3, _) -> true | _ -> false);
+  Alcotest.(check int) "50 x 3" 150 g.score;
+  Alcotest.(check bool) "close up" true g.close;
+  let g = lander_down ~mult:5 (fun l -> l.vy < -22.) in
+  Alcotest.(check bool) "a hard landing, x5" true (match g.touched with Some (Hard, 5, _) -> true | _ -> false)
+
+(* no engine: 60 units fallen, 49 units a second at the end, a crash;
+ * slowly but on a slope, a crash too *)
+let lander_crashes () =
+  let open TinyLunarLander in
+  let g = lander_down (fun _ -> false) in
+  Alcotest.(check bool) "falling" true (match g.touched with Some (Crashed, 0, _) -> true | _ -> false);
+  let g = lander_down ~off_pad:true (fun l -> l.vy < -10.) in
+  Alcotest.(check bool) "on a slope" true (match g.touched with Some (Crashed, 0, _) -> true | _ -> false)
+
+(* the tank is 25 seconds of thrust, then the engine stops for good *)
+let lander_fuel () =
+  let open TinyLunarLander in
+  let k = { initial_computer.keyboard with kup = true } in
+  let g = ref (new_game 1) in
+  (* straight up, stopped by the ceiling, never touching down *)
+  g := { !g with lander = { !g.lander with angle = 0.; vx = 0. } };
+  for _ = 1 to 60 * 26 do g := update_game k !g done;
+  Alcotest.(check (float 0.)) "empty" 0. !g.fuel;
+  Alcotest.(check bool) "the engine out" false !g.lander.firing
+
+(*****************************************************************************)
+(* TinyFrogger *)
+(*****************************************************************************)
+
+(* the traffic is a formula of time: every lane is back where it was one
+ * of its periods later, and row 4's car is where [spans]'s comment says *)
+let frogger_lanes () =
+  let open TinyFrogger in
+  lanes
+  |> List.iter (fun (l : lane) ->
+         let later = 3. +. (l.period /. Float.abs l.speed) in
+         List.iter2
+           (fun (a, _) (b, _) -> Alcotest.(check (float 0.001)) "the same place a period later" a b)
+           (spans 1 3. l) (spans 1 later l));
+  Alcotest.(check (list (pair (float 0.001) (float 0.001))))
+    "row 4 at 2 s" [ (-110., -50.) ] (spans 1 2. (List.nth lanes 3))
+
+(* the game played frame by frame, [presses] the frames an arrow (or
+ * space) goes down, as the golden frames' scripts do *)
+let frogger_play (presses : (int * string) list) (frames : int) : TinyFrogger.game =
+  let k0 = initial_computer.keyboard in
+  let rec go i (m : TinyFrogger.model) =
+    if i > frames then m
+    else
+      let keyboard =
+        match List.assoc_opt i presses with
+        | Some "up" -> { k0 with kup = true }
+        | Some "space" -> { k0 with kspace = true }
+        | _ -> k0
+      in
+      go (i + 1) (TinyFrogger.update (computer ~keyboard i) m)
+  in
+  match (go 1 TinyFrogger.initial_model).scenes.scene with
+  | Playing g -> g
+  | _ -> Alcotest.fail "not playing"
+
+(* the golden frame's crossing: between the cars, onto a log, onto the
+ * long log; then, waiting there, carried off the edge: a frog lost *)
+let frogger_crossing () =
+  let presses =
+    (1, "space") :: List.map (fun f -> (f, "up")) [ 10; 20; 30; 40; 109; 119; 135; 145; 250 ]
+  in
+  let g = frogger_play presses 280 in
+  Alcotest.(check int) "on the long log" 9 g.frog.row;
+  Alcotest.(check bool) "alive" true (g.dying = None);
+  Alcotest.(check int) "no frog lost" 2 g.lives;
+  Alcotest.(check int) "10 a row" 90 g.score;
+  let g = frogger_play presses 600 in
+  Alcotest.(check int) "carried off: a frog lost" 1 g.lives;
+  Alcotest.(check int) "the next frog at the start" 0 g.frog.row
+
+(* a frog landing in the bays' row: home in an empty bay, dead against
+ * the hedge or in a bay taken; the fifth one home, the next level *)
+let frogger_bays () =
+  let open TinyFrogger in
+  let at ?(homes = new_game.homes) x = { new_game with homes; frog = { new_frog with x; row = home_row } } in
+  let g = arrive (at 0.) in
+  Alcotest.(check bool) "the middle bay filled" true (List.nth g.homes 2);
+  Alcotest.(check int) "the next frog at the start" start_row g.frog.row;
+  Alcotest.(check bool) "the hedge kills" true ((arrive (at 90.)).dying <> None);
+  Alcotest.(check bool) "a bay taken kills" true ((arrive (at ~homes:g.homes 0.)).dying <> None);
+  let g = arrive (at ~homes:[ true; true; false; true; true ] 0.) in
+  Alcotest.(check int) "the five: the next level" 2 g.level;
+  Alcotest.(check bool) "the bays emptied" true (List.for_all not g.homes)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -5875,6 +6061,9 @@ let tests =
       t "TinyCeleste, corner correction" celeste_corners;
       t "TinyCeleste, one dash until you land" celeste_one_dash;
       t "TinyCeleste, the wall jump" celeste_wall_jump;
+      t "TinyPrinceOfPersia, the distances are the tables' sums" pop_tables;
+      t "TinyPrinceOfPersia, a robot escapes the dungeon" pop_robot;
+      t "TinyPrinceOfPersia, the gate closes, the shaft hurts" pop_gate_and_fall;
       t "TinyDDR, the chart is the tune" ddr_chart_is_the_tune;
       t "TinyDDR, judging a step" ddr_judging;
       t "TinyDDR, the average error is the calibration" ddr_average_error_is_the_calibration;
@@ -5945,4 +6134,10 @@ let tests =
       t "TinyCoreWar, the assembler" corewar_assemble;
       t "TinyCoreWar, the assembler's mistakes, and their lines" corewar_mistakes;
       t "TinyCoreWar, the Imp walks, the Dwarf bombs" corewar_imp_and_dwarf;
-      t "TinyCoreWar, three fights" corewar_fights ]
+      t "TinyCoreWar, three fights" corewar_fights;
+      t "TinyFrogger, the lanes are a formula of time" frogger_lanes;
+      t "TinyFrogger, across the road, onto the logs, off the edge" frogger_crossing;
+      t "TinyFrogger, the bays" frogger_bays;
+      t "TinyLunarLander, good and hard landings" lander_good;
+      t "TinyLunarLander, crashes" lander_crashes;
+      t "TinyLunarLander, the tank" lander_fuel ]

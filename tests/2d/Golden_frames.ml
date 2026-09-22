@@ -187,12 +187,15 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyMario", "v", 60);
     ("games/platform/software/TinyMario", "vv", 60);
     ("games/arcade/software/TinyFlappyBird", "", 5);
+    ("games/arcade/software/TinyFrogger", "", 5);
+    ("games/arcade/software/TinyLunarLander", "", 5);
     ("games/arcade/software/TinyBreakout", "", 5);
     ("games/flight/software/TinyXpilot", "", 5);
     ("games/shmup/software/TinyGalaga", "", 5);
     ("games/platform/software/TinyDonkeyKong", "", 5);
     ("games/platform/software/TinyLodeRunner", "", 5);
     ("games/platform/software/TinyRick", "", 5);
+    ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
     ("games/adventure/software/TinyZelda", "", 5);
     ("games/rpg/software/TinyRogue", "", 5);
@@ -249,6 +252,17 @@ let civ_thirty_turns =
   ^ "return:46,return:48,return:50,return:52,return:54,return:56,return:58,"
   ^ "return:60,return:62,return:64,return:66,return:68,return:70,return:72,"
   ^ "return:74,return:76,return:78,return:80"
+
+(* claude: TinyLunarLander's first moon (seed=1), from the start down to
+ * the x2 pad: turned left to kill the drift, a long burn to brake, then
+ * short ones holding the fall at 10 units a second; touchdown at frame
+ * 1170 *)
+let lunar_lander_x2 =
+  "space:1,left:2-21,left:89-98,left:117-126,right:533-543,right:560-570,"
+  ^ "up:365-590,right:595-604,up:605-619,right:645-653,left:682-690,"
+  ^ "up:658-691,up:710-734,up:754-777,left:778-783,up:799-819,up:841-860,"
+  ^ "up:882-899,left:893-899,up:922-940,up:964-980,up:1006-1022,"
+  ^ "up:1048-1064,up:1091-1107,up:1133-1149"
 
 (* claude: TinyMarioWorld's Donut Hills played to its secret exit: the
  * keys tests/games' pilot pressed (mw_keyhole prints them), from the
@@ -512,6 +526,21 @@ let scripted : Testutil_golden.scripted list =
       600,
       "space:1,space:5,space:51,space:91,space:131,space:172,space:212,space:258,space:299,space:346,space:386,space:426,space:447,space:472,space:512,space:555,space:596" );
     ("games/arcade/software/TinyFlappyBird", "crash", 200, "space:1,space:5");
+    (* hops timed between the cars (the traffic is the same every game,
+     * a formula of time), then onto a log, then the long log, which
+     * carries the frog right *)
+    ( "games/arcade/software/TinyFrogger",
+      "log",
+      280,
+      "space:1,up:10,up:20,up:30,up:40,up:109,up:119,up:135,up:145,up:250" );
+    (* the first moon of seed=1, flown by keys an autopilot pressed (a
+     * throwaway one, in the style of the test pilots of tests/games):
+     * turned and braking high up, the whole moon on the screen; then
+     * down on the x2 pad, close up, a good landing; and no key at all,
+     * a crash on a slope, the module in pieces *)
+    ("games/arcade/software/TinyLunarLander", "descent", 450, lunar_lander_x2);
+    ("games/arcade/software/TinyLunarLander", "landed", 1200, lunar_lander_x2);
+    ("games/arcade/software/TinyLunarLander", "crash", 520, "space:1");
     (* a take-off from the base, a turn, two shots; by the fuel station,
      * its beam refueling the ship, the shield up *)
     ("games/flight/software/TinyXpilot", "refuel", 150, "space:1,up:5-40,right:22-28,up:60-80,space:100,space:115,down:140-150");
@@ -567,6 +596,16 @@ let scripted : Testutil_golden.scripted list =
     ("games/sports/software/TinyShufflePuck", "rally", 45, "space:1,up:3-14");
     ("games/platform/software/TinyRick", "boulder", 70, "space:1,right:2-160");
     ("games/platform/software/TinyRick", "hole", 160, "space:1,right:2-160");
+    (* claude: a standing jump over the first gap, in the air; then,
+     * the plate stepped on and the gate run through, hanging from the
+     * shaft's edge (the loose floor fallen, the gate closing); and
+     * climbing onto the ledge below the door (tests/games' robot plays
+     * the whole way) *)
+    ("games/platform/software/TinyPrinceOfPersia", "jump", 72, "space:1,right:10-40,up:54-58,right:54-58");
+    ("games/platform/software/TinyPrinceOfPersia", "hang", 670,
+     "space:1,right:10-40,up:54-58,right:54-58,right:100-290,up:193-197,left:330-550,left:600-601,Shift:600-601,down:630-634");
+    ("games/platform/software/TinyPrinceOfPersia", "climb", 1122,
+     "space:1,right:10-40,up:54-58,right:54-58,right:100-290,up:193-197,left:330-550,left:600-601,Shift:600-601,down:630-634,down:690-694,right:745-768,up:790-794,right:790-794,right:840-1060,up:1070-1074,up:1110-1114");
     (* right to the ladder, up it, a hole dug on the right; the guards
      * coming *)
     ("games/platform/software/TinyLodeRunner", "dig", 110, "space:1,right:2-41,up:42-81,x:86");

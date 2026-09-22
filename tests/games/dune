@@ -422,6 +422,21 @@
  (deps (:src %{project_root}/games/programming/TinyCoreWar.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
+(rule
+ (target TinyLunarLander.ml)
+ (deps (:src %{project_root}/games/arcade/TinyLunarLander.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyFrogger.ml)
+ (deps (:src %{project_root}/games/arcade/TinyFrogger.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyPrinceOfPersia.ml)
+ (deps (:src %{project_root}/games/platform/TinyPrinceOfPersia.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
 (test
  (name Test)
  (libraries

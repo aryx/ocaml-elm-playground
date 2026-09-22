@@ -3,13 +3,14 @@
 ; web/.
 (executables
   (names TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
-    TinyMarioWorld TinyMetroid TinyRick TinySonic)
+    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic)
   (modules TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
-    TinyMarioWorld TinyMetroid TinyRick TinySonic)
+    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic)
   (libraries
     elm_playground
     kit_platformer ; Tile_move, Ladder, and the Slope of TinySonic and TinyMarioWorld
     kit_shmup ; TinyRick's shots
+    kit_brawler ; TinyPrinceOfPersia's Stickman
     elm_playground_native ; implem of virtual elm_playground
   )
 )
