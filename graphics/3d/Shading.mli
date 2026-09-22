@@ -1,6 +1,6 @@
 (* How bright each pixel of a triangle is: where, and how often, the
  * lighting formula (Lighting.brightness_of_normal) is applied. See
- * docs/claude_notes/notes_3d_shading.md.
+ * notes_3d_shading.md.
  *
  *  - Flat_color: no lighting at all, brightness is always 1 (a
  *    constant function, ignoring the weights entirely).

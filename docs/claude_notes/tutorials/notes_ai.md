@@ -4,9 +4,9 @@ How a computer decides: the handful of ideas behind every ghost that
 chases you, every unit that walks around a rock, and every opponent
 that beats you at a board game -- where they came from, and what each
 one costs. It is also the specification of `ai/` (see
-[`plan_ai_teaching.md`](../plans/plan_ai_teaching.md)): the first two
-modules exist, the rest is written here first, so its pointers name
-planned modules too. Companions:
+[`plan_ai_teaching.md`](../plans/plan_ai_teaching.md)): the modules
+§0 marks done exist, the rest is written here first, so its pointers
+name planned modules too. Companions:
 [`notes_ai_learning.md`](notes_ai_learning.md) (the same subject when
 nobody writes the rules: neural networks and self-play), and
 [`notes_ai_related_work.md`](../related-work/notes_ai_related_work.md).
@@ -22,14 +22,14 @@ because it means a page of code can produce something that looks alive.
 | module (`ai/`) | what | section |
 |---|---|---|
 | `Pathfind` (done) | breadth-first, Dijkstra, A*, flow fields | §2, §3 |
-| `Steering` | seek, flee, arrive, wander, pursue, avoid | §4 |
-| `Flock` | separation, alignment, cohesion | §5 |
-| `Fsm`, `Behavior`, `Utility` | choosing what to do | §6 |
+| `Steering` (done) | seek, flee, arrive, wander, pursue, avoid | §4 |
+| `Flock` (done) | separation, alignment, cohesion | §5 |
+| `Fsm`, `Behavior`, `Utility` (done) | choosing what to do | §6 |
 | `Sense`, `Bot` | a mind that plays through the player's own inputs | §6 |
 | `Minimax` (done) | the game tree, and alpha-beta | §7, §8 |
 | `Deepening`, `Zobrist` | making the search go deeper | §9 |
 | `Mcts` | playing without an evaluation function | §10 |
-| `playground/Ai` | the Evan-style API over all of it | §14 |
+| `playground/Ai` (steering done) | the Evan-style API over all of it | §14 |
 
 Read §2 to §5 for the real-time half (a world at 60 fps), §7 to §10
 for the turn-taking half (an opponent). They barely touch. §6 is where
@@ -534,7 +534,7 @@ other:
 let update _ fish = fish |> List.map (fun f -> f |> flocking fish |> step)
 ```
 
-Paths come back as a list of tiles (`Ai.way ~walkable from to_`), a
+Planned for the rest: paths come back as a list of tiles (`Ai.way ~walkable from to_`), a
 crowd shares one `Ai.flow`, and an opponent is a value you ask for a
 move (`Ai.thinking_ahead 4 rules |> Ai.best_move`), with
 `Ai.within 0.2` for a time budget instead of a depth. A bot is a value

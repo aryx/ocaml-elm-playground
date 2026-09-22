@@ -87,5 +87,5 @@ type filter = Nearest | Bilinear
  * matrix product per pixel, then [sample_nearest] or
  * [sample_bilinear]), and an optimized one computing the same pixels
  * (forward differencing, samplers inlined; see Blit.ml and
- * docs/claude_notes/notes_opti.md). *)
+ * notes_opti.md). *)
 val draw : Framebuffer.t -> image -> Affine.t -> filter:filter -> alpha:float -> unit

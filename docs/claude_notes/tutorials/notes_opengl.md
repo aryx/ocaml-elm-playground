@@ -108,7 +108,7 @@ the diagram is hardware.
 
 ## 3. Stage by stage: software rasterizer vs. OpenGL
 
-| Stage | Software backend (`software/Playground3d_platform.ml`) | OpenGL backend (`opengl/` + `Gpu_scene.ml`) |
+| Stage | Software backend (`software/Playground3d_platform.ml`) | OpenGL backend (`native/Playground3d_platform.ml` + `Gpu_scene.ml`) |
 |---|---|---|
 | Scene -> triangles | `flatten_faces`, `fan_triangles`, per frame | `Gpu_scene.collect_batches`/`group_by_material`, per frame, then uploaded to a VBO; a `cached3d`'s only once (see section 6) |
 | Camera | `view_space` (right/up/forward dot products per point) | `Mat4.look_at`, one 4x4 matrix per frame |

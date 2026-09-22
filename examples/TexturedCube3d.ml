@@ -9,10 +9,10 @@
  *)
 (* A spinning cube textured with checker.png (a 4-quadrant test image:
  * red top-left, green top-right, blue bottom-left, yellow bottom-right)
- * -- validates textured_cube's UV mapping end to end on the native
- * backend (the only one that actually samples it; see
- * Playground3d.textured_quad's doc comment for why the web backend
- * only shows a flat placeholder color for now). *)
+ * -- validates textured_cube's UV mapping end to end on the software,
+ * OpenGL and WebGL backends (see Playground3d.textured_quad's doc
+ * comment for why the SVG backend only shows a flat placeholder color
+ * for now). *)
 open Playground
 open Playground3d
 

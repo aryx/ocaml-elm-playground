@@ -129,8 +129,8 @@ val sphere : Playground.color -> number -> shape3d
     time instead (e.g. during a game's [init]) so the render loop never
     has to block on a network fetch mid-game.
 
-    {b Current limitation:} only the native backend actually samples the
-    image (per pixel, in its rasterizer). The web backend cannot yet
+    {b Current limitation:} only the software, OpenGL and WebGL backends
+    actually sample the image, per pixel. The SVG backend cannot yet
     warp an image onto an arbitrary projected quad -- {!Playground.image}
     only draws an upright, unrotated rectangle -- so for now it renders
     textured faces as a flat gray placeholder there instead of dropping

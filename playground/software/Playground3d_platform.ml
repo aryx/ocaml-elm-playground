@@ -30,12 +30,11 @@ open Tsdl
  * into their inputs, and this file runs the window.
  *
  * Deliberately simple: alpha/fade3d is not honored here, unlike the
- * web backend -- true alpha blending would need back-to-front
- * ordering, which the z-buffer approach doesn't give us for free; and
- * no near-plane clipping (a triangle with any vertex behind the near
- * plane is dropped whole, rather than clipped into visible
- * sub-triangles). Good enough for the modest scenes this library
- * targets so far; revisit if needed.
+ * SVG backend -- true alpha blending would need back-to-front
+ * ordering, which the z-buffer approach doesn't give us for free.
+ * Good enough for the modest scenes this library targets so far;
+ * revisit if needed. (Triangles crossing the near plane are clipped,
+ * see Clip.mli and the "c" key below.)
  *)
 open Playground3d
 

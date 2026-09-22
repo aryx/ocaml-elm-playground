@@ -6,7 +6,7 @@
  * craft, and switching between them while a game runs (the "o" key,
  * see playground/software/Playground_platform.ml) shows what each
  * optimization buys, on the fps counter. The measured numbers are in
- * docs/claude_notes/notes_opti.md.
+ * notes_opti.md.
  *
  * Code checking [enabled] (search for "Opti.enabled"):
  * - Framebuffer.plot: write the pixel directly, not through fill_span;

@@ -74,7 +74,7 @@ let mouse_double_event (sdl_event : Sdl.event) : E.event option =
  * Logs.info calls (e.g. "loading image ...", visible with -v) actually
  * show up. *)
 (* claude: -uncapped: no 60 fps cap, to measure how fast a backend can
- * draw (see docs/claude_notes/notes_opti.md); games then run too fast *)
+ * draw (see notes_opti.md); games then run too fast *)
 let uncapped = ref false
 
 (* claude: -debug-keys: the backend's debug keys (e.g. the software

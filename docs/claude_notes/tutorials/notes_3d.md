@@ -40,7 +40,7 @@ Around them: `geometry/Mat4` (the same camera as matrices, for the
 OpenGL backend); `Shape3d_render_software.ml`,
 which turns the Playground's `shape3d`s and `camera` into `Render`'s
 faces; and its `Playground3d_platform.ml`, the window, the debug keys (§11),
-the HUD (§12) and the loop. The web backend (`Playground3d.ml`'s
+the HUD (§12) and the loop. The SVG backend (`Playground3d.ml`'s
 `render3d_to_2d`) shares `Camera` and `Lighting`. `tests/3d/` checks
 whole frames of every example against golden images.
 
@@ -70,7 +70,7 @@ some version of these four steps. `Playground3d`'s pipeline is exactly
 this, and you can see all four stages as separate, named functions:
 step 1 is `move3d`/`rotate3d`/`scale3d` (`Playground3d.ml`), steps 2-4
 are `Camera.view`, `Camera.ndc` and `Project.vertex` in `graphics/3d/`
-(or `project` in `Playground3d.ml` for the web backend's simpler
+(or `project` in `Playground3d.ml` for the SVG backend's simpler
 2D-point-only version, which uses the same `Camera` functions).
 
 ## 2. Points, vectors, and the two operations everything is built from
@@ -110,7 +110,7 @@ is just one of these two:
     up_hint` gives you a true "right" direction that *is* perpendicular
     to forward.
 
-The software rasterizer and the web backend use no matrices -- no 4x4
+The software rasterizer and the SVG backend use no matrices -- no 4x4
 matrices, no matrix-vector multiplication. This is a deliberate
 simplification (see `plan_playground3d.md`): everything is done with
 these two operations on plain 3-tuples instead. (`geometry/Mat4` builds
@@ -157,7 +157,7 @@ triangles glued together along a diagonal. You can see this literally
 in `Render`'s `fan_triangles`: it takes a face's point list
 (e.g. a cube face's 4 corners) and splits it into a *fan* of triangles
 -- `(p0,p1,p2), (p0,p2,p3), ...` -- before rasterizing each one
-separately. The web backend never does this, because it hands whole
+separately. The SVG backend never does this, because it hands whole
 polygons (not triangles) to `Playground.polygon`, which is fine there
 since SVG (unlike a low-level rasterizer) is happy to fill an arbitrary
 polygon directly.
@@ -308,7 +308,7 @@ other.
   it). Sort whole faces by distance from the camera, farthest first,
   and draw them in that order. This is exactly what
   `Playground3d.render3d_to_2d` does (`List.sort` by `dist_to_eye`,
-  farthest-first) for the *web* backend, and `Painter.sort_far_to_near`
+  farthest-first) for the *SVG* backend, and `Painter.sort_far_to_near`
   for the native one when you press `z` (§11). It's simple and cheap, but has
   a well-known failure mode: it only works if you can put every face
   into one single consistent front-to-back order, which is impossible
@@ -373,7 +373,7 @@ of this note -- shadows, mirrors and glass on the same scenes, for
 `Playground3d` is a rasterizer, not a ray tracer, on both backends;
 its two backends land on two different points in the painter's-algorithm
 vs. z-buffer trade-off above, purely because of what each platform
-makes possible (the web backend has no way to touch individual pixels
+makes possible (the SVG backend has no way to touch individual pixels
 at all, so a per-pixel z-buffer isn't an option there; see
 `plan_playground3d.md`).
 
@@ -381,7 +381,7 @@ at all, so a per-pixel z-buffer isn't an option there; see
 
 Given a triangle already projected to 2D screen coordinates (§4), how
 do you decide exactly which pixels it covers? `Triangle.fill`
-(native backend only -- the web backend hands whole polygons to
+(native backend only -- the SVG backend hands whole polygons to
 `Playground.polygon`/SVG and never rasterizes by hand at all) uses the
 **edge function** technique, essentially the same algorithm real GPU
 hardware rasterizers use (formalized for graphics by Juan Pineda in a
@@ -506,7 +506,7 @@ easy to conflate:
 pluggable at runtime** (native backend only -- see §11's `m` toggle and
 `notes_3d_shading.md` for the full writeup; the code is `Shading`,
 and the lighting formula itself, Lambert's cosine law with an ambient
-floor, is `geometry/Lighting`, shared with the web and OpenGL backends).
+floor, is `geometry/Lighting`, shared with the SVG, OpenGL and WebGL backends).
 `flat_color`/`flat_shading` work exactly as described above, flat
 shading using the same winding-based normal as backface culling (§5). Gouraud/Phong needed one more
 piece first: a normal *per vertex*, which `cube`/`box`/`plane` have no
@@ -568,8 +568,8 @@ implemented (and switchable, §11):
 | Camera | Eye + target ("look-at"), fixed presets (`camera1`..`camera4`) | Same eye/target model, but a real record you construct with your own values, and (unlike lucamug's) usable as a genuinely *moving* value computed fresh each frame from your game's model |
 | Backface culling | None | Yes (§5) |
 | Hidden surface removal | None (relies on manual face ordering + specific camera angles) | Painter's algorithm on web (§6); a real z-buffer on native, or the painter's algorithm with `z` (§6) |
-| Rendering target | SVG only (via elm-playground's existing renderer) | SVG (via `elm_playground_web`, reusing the same "compile 3D down to 2D shapes" trick) *and* a real hand-written software rasterizer for native |
-| Textures | None | `textured_quad`/`textured_cube`, real per-pixel sampling on native (§9); flat placeholder color on web |
+| Rendering target | SVG only (via elm-playground's existing renderer) | SVG (via `elm_playground_web`, reusing the same "compile 3D down to 2D shapes" trick), a real hand-written software rasterizer for native, and OpenGL and WebGL |
+| Textures | None | `textured_quad`/`textured_cube`, real per-pixel sampling in software (§9), OpenGL and WebGL; flat placeholder color in SVG |
 | Shading | None | flat_color/flat_shading/Gouraud/Phong, pluggable at runtime (§8, §11) |
 
 The one approach neither library uses at all, worth knowing about as
@@ -741,7 +741,7 @@ made in the first place:
   alpha-blending step of its own to write: drawing a shape already only
   overwrites the pixels it actually covers. So the whole native 3D
   backend is from scratch, Cairo-free.
-- **Web**: since this backend already compiles the whole 3D scene down
+- **SVG**: since this backend already compiles the whole 3D scene down
   to ordinary `Playground.shape` values every frame (`render3d_to_2d`,
   §10) and hands them to the existing SVG renderer, a `Hud` shape just
   needs to ride along in that same list, unprojected -- appended
@@ -754,6 +754,8 @@ made in the first place:
   into an image, uploaded as a texture, and blended over the scene as a
   rectangle covering the window, in a separate pass (the HUD section of
   its `run_app3d`).
+- **WebGL**: the scene goes to a `<canvas>`, and the HUD shapes to the
+  usual `<svg>` laid over it, drawn by the 2D web backend unchanged.
 
 See `docs/claude_notes/done/plan_hud.md` for the full design writeup
 (including the one non-obvious implementation wrinkle: dune seals a

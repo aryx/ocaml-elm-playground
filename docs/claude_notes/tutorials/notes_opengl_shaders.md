@@ -93,9 +93,9 @@ It's also why a typo is only found then, and only if you ask
   dialect is **GLSL ES 1.00**. Desktop OpenGL deprecated them in 3.0
   (2008) and removed them from the *core profile* in 3.2 (2009);
   OpenGL 3.3 (2010) aligned its version numbers with GLSL's: **GLSL
-  3.30**, what `opengl/` asks for with `#version 330 core`.
+  3.30**, what the OpenGL backend asks for with `#version 330 core`.
 - **The web (2011, 2017).** WebGL 1 (2011) is OpenGL ES 2.0 for
-  JavaScript, hence GLSL ES 1.00 in `webgl/`; WebGL 2 (2017) is ES
+  JavaScript, hence GLSL ES 1.00 in the WebGL backend; WebGL 2 (2017) is ES
   3.0, with GLSL ES 3.00, very close to GLSL 3.30 (js_of_ocaml only
   binds WebGL 1, see `done/plan_webgl.md`). Browsers don't necessarily hand
   your GLSL to an OpenGL driver: Chrome's and Firefox's ANGLE
@@ -110,7 +110,7 @@ It's also why a typo is only found then, and only if you ask
 
 For the programs themselves, there is no real alternative on today's
 APIs: fixed-function lighting only exists in legacy OpenGL
-(compatibility profile), not in the core 3.3 profile `opengl/` uses,
+(compatibility profile), not in the core 3.3 profile the OpenGL backend uses,
 nor in WebGL. The choices are about *how the shader source reaches the
 driver*:
 
@@ -308,7 +308,9 @@ void main() {
   Lambert plus an ambient floor (`graphics/3d/geometry/Lighting.mli`
   explains the formula). `uLightDir` and `uAmbient` come from
   `Lighting.light_dir` and `Lighting.ambient`, so the constants are
-  written once, in OCaml, for all backends.
+  written once, in OCaml -- except that the OpenGL shader still spells
+  the ambient out, `const float ambient = 0.25;` (section 10's first
+  exercise).
 - **`gl_FragColor`**: the output, RGBA in 0..1 (alpha 1: opaque). In
   GLSL 3.30 it's any `out vec4` variable we declare (`FragColor`).
 - **The `?:` on uniforms**: `uShading` and `uUseTexture` are the same
@@ -395,12 +397,12 @@ what a visible face's outward normal does. The result is the same for
 every pixel of the face, so the face is uniformly lit: flat shading,
 with no change to the vertex data. The price: it needs the
 derivatives, core in GLSL 3.30 but an extension in WebGL 1; without
-it, `webgl/` uses the vertex normals for `Flat` too, i.e. `Smooth`,
+it, the WebGL backend uses the vertex normals for `Flat` too, i.e. `Smooth`,
 which only looks different on curved shapes.
 
 ## 9. OpenGL (GLSL 3.30) vs. WebGL (GLSL ES 1.00), side by side
 
-| | `opengl/` | `webgl/` |
+| | OpenGL (`native/`) | WebGL (`web/`) |
 |---|---|---|
 | first line | `#version 330 core` | none (1.00 is the default) |
 | per-vertex input | `layout (location = 0) in vec3 aPos;` | `attribute vec3 aPos;` + `getAttribLocation` |
@@ -433,7 +435,7 @@ OCaml), and a good way to learn the language:
 Bigger ones, still in the shaders but touching the OCaml side more, in
 rough order of difficulty:
 
-- **`uAmbient` in `opengl/` too.** Only the WebGL fragment shader takes
+- **`uAmbient` in the OpenGL shader too.** Only the WebGL fragment shader takes
   the ambient light as a uniform set from `Lighting.ambient`; the
   OpenGL one has it as a literal (`const float ambient = 0.25;`).
   Make them agree, then change `Lighting.ambient` and check all
