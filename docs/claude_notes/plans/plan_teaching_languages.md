@@ -28,6 +28,25 @@ program?", which is the question the systems below were built to ask
 children, and they can be read side by side, in one library, each in a
 few hundred lines.
 
+### Three homes for a language
+
+A teaching language can be written in the repository in three ways.
+Which one depends on who writes the program, and in what language:
+
+| Where | Who programs, in what | Example |
+| --- | --- | --- |
+| `playground/` | the OCaml programmer, in OCaml: the language is an API (a `command list`, records, rules as data) | `Logo`, `Bigbang`, `Puzzlescript` |
+| `games/programming/` | the *player*, in a small language the game parses, typed into the game's editor; the levels are problems and you win when the program solves one | `TinyCoreWar` (Redcode) |
+| `apps/devtools/` | the user, in a language, with the tools around it: edit, run, the error on its line, a REPL (Turbo Pascal, a notebook); the language is the tool's subject, not a puzzle | none yet (its dune file names this plan) |
+
+One language can live in more than one place: the world and the
+interpreter are written once, and the playground layer, the game and
+the environment each put a different surface on them. The text
+languages already here are `appkits/sheet`'s `Formula`,
+`appkits/hypertalk` and TinyCoreWar's Redcode assembler, so a parser
+with its errors shown on their lines is a solved problem to copy, not
+a new one.
+
 ## Done
 
 - **Logo** (`playground/Logo.mli`, `examples/LogoFractals.ml`): the
@@ -109,15 +128,28 @@ front, a beeper here, which way am I facing), and one real idea: you
 `harvest` is a field of them. Forty years of first lectures (Stanford's
 CS106A still opens with it, in Java now).
 
-- **What it would be here**: `playground/Karel.mli`, the smallest of
-  these by far -- a world of walls and beepers read from strings (a
-  `Tilemap`), a program as a `command list` the way Logo's is, and the
-  same `picture`/`animation` pair so you can watch it walk.
+- **What it would be here**: two surfaces on one world.
+  - `games/programming/TinyKarel.ml`, the main one, because it is what
+    Karel was: a beginner types a program in Pattis's language
+    (`BEGINNING-OF-PROGRAM`, `DEFINE-NEW-INSTRUCTION turnright AS`,
+    `ITERATE 3 TIMES`, `WHILE front-is-clear DO`) into the game's
+    editor, presses Run, and watches the robot. The exercises below are
+    its levels, a level won when the beepers end up where the level
+    says. Laid out like TinyCoreWar: the editor, the parse errors on
+    their lines, Run/Step/speed.
+  - `playground/Karel.mli`, the smallest of these layers by far -- a
+    world of walls and beepers read from strings (a `Tilemap`), a
+    program as a `command list` the way Logo's is, and the same
+    `picture`/`animation` pair so you can watch it walk.
+
+  The world, the commands and the stepping are the layer's; the game
+  adds the parser and the levels on top of it, the way `Puzzlescript`
+  takes a level as data.
 - **What it teaches**: procedures and decomposition, before variables,
   before arithmetic. It is the anti-Logo: no coordinates, no turtle
   geometry, only "what can I see from here".
-- **The examples**, which are Pattis's own exercises and still the
-  first week of a lot of courses:
+- **The levels** (as `examples/` of the layer too), which are Pattis's
+  own exercises and still the first week of a lot of courses:
   - `KarelHarvest.ml` -- a field of beepers picked row by row, where
     the whole lesson is that you write `harvestRow` once and the
     program is then five lines;
@@ -128,7 +160,14 @@ CS106A still opens with it, in Java now).
     world it has never seen;
   - `KarelNewspaper.ml` -- fetch the newspaper from the porch and come
     back, Stanford's opening exercise.
-- **Cost**: small. A good afternoon, and a good bookend to Logo.
+- **Cost**: small for the layer, a good afternoon and a good bookend
+  to Logo; the game adds a parser and an editor, both done once
+  already in TinyCoreWar.
+- **Its descendants**, the same idea as commercial games, for
+  TinyKarel's header or later levels: Lightbot (Danny Yaroslavski,
+  2008: the program as tiles, procedures as a second row of slots),
+  and Human Resource Machine (Tomorrow Corporation, 2015: assembly
+  language disguised as an office job).
 
 ### 3. Actors on a grid: Greenfoot
 
@@ -163,19 +202,22 @@ left and not on the right is taken away" is, with a theory behind it.
   tiles and blocks, which is a user interface, not an API.
 - **Alice** (Randy Pausch, CMU): 3D storytelling; `playground3d` could
   host something like it, but the idea is the authoring tool.
-- **HyperCard** (Bill Atkinson, 1987): cards and scripts. The closest
-  thing to a "way of programming" that a document can be.
 - **VGDL** (Tom Schaul, 2013): PuzzleScript's compression done so that
   one AI can play hundreds of games; interesting next to
   `ai/` more than next to `playground/`.
 
 ## Where this meets the GUI plan
 
-[`plan_gui_teaching.md`](done/plan_gui_teaching.md)'s TinyVisiCalc needs a
-**formula parser and evaluator** (`=B1*2+SUM(A1:A9)`), which is the
-smallest useful language in this repository and a natural first
-customer for anything built here; its TinyHyperCard, if it happens,
-wants a small scripting language of the same kind.
+[`plan_gui_teaching.md`](done/plan_gui_teaching.md) gave the
+repository its first two text languages: TinyVisiCalc's formulas
+(`appkits/sheet`'s `Formula`, the smallest useful language here) and
+TinyHyperCard's HyperTalk (`appkits/hypertalk`, cards and scripts, the
+closest thing to a "way of programming" that a document can be). With
+TinyCoreWar's Redcode they are what a new parser should look like.
+`apps/devtools/`'s integrated environment (Turbo Pascal: edit, compile,
+run, the error on its line) wants one of these small languages as its
+subject -- Karel's would do, and would make TinyKarel's editor and the
+environment's the same code.
 
 ## Ordering
 
@@ -183,13 +225,15 @@ wants a small scripting language of the same kind.
    it is Logo grown up, and Logo is already here. Flocking and the ants
    first: they are the two that make people want to write one.
 2. **Karel**, small, and it completes the pair: one turtle that draws,
-   one robot that cannot see coordinates at all. Harvest and the
-   staircase first, since both exist to show the same thing -- that you
-   can teach it a word.
+   one robot that cannot see coordinates at all. The layer first, then
+   TinyKarel in `games/programming/` on it. Harvest and the staircase
+   first, since both exist to show the same thing -- that you can
+   teach it a word.
 3. The rest as reading, folded into the .mli related-work sections
    where they belong.
 
 Each new one needs, as the three done ones have: an `.mli` that says
 where it comes from and what it does *differently* (not a manual), one
 or two `examples/`, worked examples in `playground/tests/`, and a
-golden frame.
+golden frame. A game in `games/programming/` needs, as any game, its
+`CATALOG.md` row, its golden frame and its web page.
