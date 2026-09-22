@@ -1076,7 +1076,44 @@ of parts, that then runs on its own.
   with a motor a switch turns on), the candle burning a rope, the
   mouse in its cage, a puzzle editor, saving your machines.
 
-### Later, or never
+### 29. Squad tactics in turns: X-COM
+
+X-COM: UFO Defense (Julian Gollop, Mythos Games / MicroProse, 1994),
+after Gollop's Laser Squad; Jagged Alliance, Firaxis's XCOM (2012) and
+Into the Breach come from it.
+
+- **Toy**: TinyXCOM (DONE: `games/TinyXCOM.ml`), the battles only:
+  four soldiers against five sectoids around a crashed UFO; click a
+  soldier, a tile to walk to, a seen alien to shoot, right-click to
+  turn, s/a snap or aimed shot, n the next soldier, Enter ends the
+  turn.
+- **Kit**: none; `ai/Pathfind` (A* with a step's time units as its
+  cost, the soldiers' ways and the aliens'), `Tilemap` (hedges shot
+  away), `Scene2d`.
+- **What it is here for**:
+  - **time units**: one budget for walking, turning and shooting, so
+    each move is a trade, and what you keep back is your reaction
+    fire in the aliens' turn;
+  - **the chance to hit, shown before the shot**: accuracy times the
+    shot's (snap or aimed), less for distance and cover; a miss the
+    hedge was in the way of hits the hedge, which may go;
+  - **what each soldier sees**: a cone of 90 degrees the way it
+    faces, nine tiles, Bresenham's line to each tile; walls block it,
+    hedges don't. The fog is per squad (seen now, ever seen, never),
+    and aliens not seen now aren't drawn -- TinyCivilization's fog,
+    made directional;
+  - **reaction fire**: the enemy who sees you step, with more of its
+    turn kept back than you, shoots in the middle of your walk and
+    stops it;
+  - **an enemy turn that is a small AI**: shoot the nearest seen
+    soldier (aimed if it can afford it), else walk towards one keeping
+    a snap shot's time back. Dice are a hash of the rolls made, so a
+    battle replays the same (the tests, the golden frames).
+- **Left undone** (exercises in the header): the world map (bases,
+  research, interception), turning costing per eighth, grenades and
+  walls that fall, kneeling, morale and panic, the Chryssalid, night
+  missions.
+
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,
 walkboxes), text adventures (Colossal Cave Adventure, 1976; Zork) --

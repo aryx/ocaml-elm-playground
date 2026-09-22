@@ -5264,6 +5264,128 @@ let worms_blast () =
   Alcotest.(check bool) "the far worm untouched" true (g.worms.(1).health = 100.);
   Alcotest.(check bool) "in the water: drowned" true (drowned { w with y = water -. 10. })
 
+(*****************************************************************************)
+(* TinyXCOM *)
+(*****************************************************************************)
+
+let xcom_soldier (at : int * int) (facing : int * int) : TinyXCOM.unit_ =
+  { id = 0; side = Squad; name = "T"; at; facing; tu = 50; max_tu = 50; hp = 40; accuracy = 65; reactions = 55 }
+
+let xcom_alien (at : int * int) (facing : int * int) : TinyXCOM.unit_ =
+  { id = 10; side = Aliens; name = "A"; at; facing; tu = 54; max_tu = 54; hp = 30; accuracy = 60; reactions = 60 }
+
+let xcom_game (rows : string list) (units : TinyXCOM.unit_ list) : TinyXCOM.game =
+  { (TinyXCOM.new_game ()) with map = Tilemap.of_strings TinyXCOM.tile rows; units; selected = 0; seen = [] }
+
+let xcom_open = [ "##############"; "#............#"; "#............#"; "#............#"; "##############" ]
+
+(* A step is 4 time units, 6 diagonally; a walk goes as far as they pay
+ * for, and stops there *)
+let xcom_time_units () =
+  let open TinyXCOM in
+  Alcotest.(check int) "straight" 4 (step_cost (1, 1) (2, 1));
+  Alcotest.(check int) "diagonal" 6 (step_cost (1, 1) (2, 2));
+  let s = xcom_soldier (1, 2) (1, 0) in
+  Alcotest.(check int) "snap" 13 (shot_cost s Snap);
+  Alcotest.(check int) "aimed" 25 (shot_cost s Aimed);
+  let g = xcom_game xcom_open [ s ] in
+  Alcotest.(check int) "all the way with 50" 8 (List.length (affordable g s (9, 2)));
+  Alcotest.(check (list (pair int int))) "two steps with 10" [ (2, 2); (3, 2) ] (affordable g { s with tu = 10 } (9, 2));
+  Alcotest.(check (list (pair int int))) "not into a wall" [] (affordable g s (0, 2))
+
+(* Seeing: a cone of 90 degrees ahead; a wall hides what is behind it, a
+ * hedge doesn't (it only stops you walking) *)
+let xcom_sight () =
+  let open TinyXCOM in
+  let rows = [ "##########"; "#..o.....#"; "#...#....#"; "#........#"; "##########" ] in
+  let m = Tilemap.of_strings tile rows in
+  let s = xcom_soldier (1, 2) (1, 0) in
+  Alcotest.(check bool) "ahead" true (sees m s (3, 2));
+  Alcotest.(check bool) "behind the wall" false (sees m s (7, 2));
+  Alcotest.(check bool) "past the hedge" true (sees m (xcom_soldier (1, 1) (1, 0)) (6, 1));
+  Alcotest.(check bool) "the hedge blocks walking" true (blocks_move m (3, 1));
+  Alcotest.(check bool) "not behind itself" false (sees m { s with at = (6, 2) } (3, 3));
+  Alcotest.(check bool) "turned round, it does" true (sees m { s with at = (6, 3); facing = (-1, 0) } (3, 3));
+  Alcotest.(check bool) "out of range" false (sees (Tilemap.of_strings tile [ String.make 30 '.' ]) { s with at = (0, 0) } (12, 0))
+
+(* The chance shown before shooting: an aimed shot better than a snap,
+ * less far away, less behind a hedge *)
+let xcom_hit_chance () =
+  let open TinyXCOM in
+  let g = xcom_game xcom_open [] in
+  let s = xcom_soldier (1, 2) (1, 0) in
+  let a at = xcom_alien at (-1, 0) in
+  Alcotest.(check int) "snap, near" 39 (hit_chance g.map s (a (5, 2)) Snap);
+  Alcotest.(check int) "aimed, near" 71 (hit_chance g.map s (a (5, 2)) Aimed);
+  Alcotest.(check int) "aimed, far" 63 (hit_chance g.map s (a (11, 2)) Aimed);
+  let hedged = Tilemap.set g.map 10 2 'o' in
+  Alcotest.(check (option (pair int int))) "the hedge is between" (Some (10, 2)) (cover_between hedged s.at (11, 2));
+  Alcotest.(check int) "aimed, far, behind a hedge" 38 (hit_chance hedged s (a (11, 2)) Aimed);
+  Alcotest.(check int) "never under 5" 5 (hit_chance hedged { s with accuracy = 0 } (a (11, 2)) Snap)
+
+(* A miss the hedge was in the way of hits the hedge, which goes or
+ * stays by the dice; a shot either wounds or doesn't, whatever the dice *)
+let xcom_cover_wears () =
+  let open TinyXCOM in
+  let g = xcom_game xcom_open [ xcom_soldier (1, 2) (1, 0); xcom_alien (11, 2) (-1, 0) ] in
+  let g = { g with map = Tilemap.set g.map 10 2 'o' } in
+  let outcomes =
+    List.init 100 (fun rolls ->
+        let g = { g with rolls } in
+        let g' = shoot g (unit_by g 0) (unit_by g 10) Snap in
+        ((unit_by g' 10).hp < 30, Tilemap.get g'.map 10 2 = Some '.'))
+  in
+  Alcotest.(check bool) "some hit" true (List.exists fst outcomes);
+  Alcotest.(check bool) "some wear the hedge away" true (List.exists snd outcomes);
+  Alcotest.(check bool) "some leave it" true (List.exists (fun (hit, gone) -> not hit && not gone) outcomes);
+  Alcotest.(check bool) "a hit never takes the hedge" false (List.exists (fun (hit, gone) -> hit && gone) outcomes);
+  let g' = shoot g (unit_by g 0) (unit_by g 10) Snap in
+  Alcotest.(check int) "the time units spent" 37 (unit_by g' 0).tu
+
+(* Reaction fire: the alien who sees you step, with more of its turn
+ * kept back than you, shoots in the middle of your walk -- which stops
+ * it; with no time units left, it can't *)
+let xcom_reaction_fire () =
+  let open TinyXCOM in
+  let g = xcom_game xcom_open [ xcom_soldier (1, 2) (1, 0); xcom_alien (9, 2) (-1, 0) ] in
+  let g', stopped = walk_step g 0 (2, 2) in
+  Alcotest.(check int) "a shot" 1 (List.length g'.shots);
+  Alcotest.(check bool) "the walk stops" true stopped;
+  Alcotest.(check bool) "the alien spent its time" true ((unit_by g' 10).tu < 54);
+  let tired = set_unit g { (unit_by g 10) with tu = 10 } in
+  let g', _ = walk_step tired 0 (2, 2) in
+  Alcotest.(check int) "no time, no shot" 0 (List.length g'.shots);
+  let away = set_unit g { (unit_by g 10) with facing = (1, 0) } in
+  let g', _ = walk_step away 0 (2, 2) in
+  Alcotest.(check int) "looking away, no shot" 0 (List.length g'.shots)
+
+let xcom_run_aliens (g : TinyXCOM.game) : TinyXCOM.game =
+  let rec go n (g : TinyXCOM.game) = match g.phase with Aliens_turn _ when n > 0 -> go (n - 1) (TinyXCOM.step g) | _ -> g in
+  go 5000 (TinyXCOM.end_turn g)
+
+(* The aliens' turn: they come towards the squad, keeping a snap shot's
+ * time units back for your turn, and hand it back; the same turn twice
+ * is the same *)
+let xcom_aliens_turn () =
+  let open TinyXCOM in
+  let g = reveal (new_game ()) in
+  let g' = xcom_run_aliens g in
+  Alcotest.(check bool) "the squad's turn again" true (g'.phase = Squad_turn || g'.phase = Lost);
+  Alcotest.(check int) "turn 2" 2 g'.turn;
+  let at (g : game) = List.map (fun (u : unit_) -> u.at) (List.filter (fun (u : unit_) -> u.side = Aliens) g.units) in
+  Alcotest.(check bool) "they moved" true (at g <> at g');
+  let far (g : game) = List.fold_left (fun acc (a : unit_) -> acc + fst a.at) 0 (enemies g Squad) in
+  Alcotest.(check bool) "towards the squad" true (far g' < far g);
+  Alcotest.(check bool) "the same twice" true ((xcom_run_aliens g).units = g'.units)
+
+(* A squad that only ends its turn still fights, by reaction fire, and
+ * the battle ends one way or the other *)
+let xcom_battle_ends () =
+  let open TinyXCOM in
+  let rec go n (g : game) = if n = 0 || g.phase = Won || g.phase = Lost then g else go (n - 1) (xcom_run_aliens g) in
+  let g = go 40 (reveal (new_game ())) in
+  Alcotest.(check bool) "over" true (g.phase = Won || g.phase = Lost)
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -5523,4 +5645,11 @@ let tests =
       t "TinyWorms, walking" worms_walk;
       t "TinyWorms, the ninja rope" worms_rope;
       t "TinyWorms, the grenade bounces" worms_grenade;
-      t "TinyWorms, the blast and the water" worms_blast ]
+      t "TinyWorms, the blast and the water" worms_blast;
+      t "TinyXCOM, time units" xcom_time_units;
+      t "TinyXCOM, what a soldier sees" xcom_sight;
+      t "TinyXCOM, the chance to hit" xcom_hit_chance;
+      t "TinyXCOM, cover wears away" xcom_cover_wears;
+      t "TinyXCOM, reaction fire" xcom_reaction_fire;
+      t "TinyXCOM, the aliens' turn" xcom_aliens_turn;
+      t "TinyXCOM, a battle ends" xcom_battle_ends ]
