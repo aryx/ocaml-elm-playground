@@ -117,7 +117,7 @@ let scenes : Testutil_golden.scene list =
      * frame, and at 5 most of it is not there yet *)
     ("games/fps/software/TinyMinecraft", "", 60);
     (* claude: the title's four foods on their turning arena *)
-    ("games/fighting/software/TinyBoomerangFu", "", 5);
+    ("games/arcade/software/TinyBoomerangFu", "", 5);
     (* claude: the first chamber, its three shades, and the hero the
      * arcade angle looks down on *)
     ("games/rpg/software/TinyHades", "", 5);
@@ -283,7 +283,7 @@ let scripted : Testutil_golden.scripted list =
      * cue this fixed, nearly isometric camera gets), all four still
      * standing; then, further in, the avocado in two halves, its cut
      * faces pale, and the flight that did it *)
-    ("games/fighting/software/TinyBoomerangFu", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
+    ("games/arcade/software/TinyBoomerangFu", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
     (* claude: the song under way on the drums, on Easy (a pad a beat,
        no pedal): the count-in's hi-hat, the crash, snare, hi-hat,
        snare, each struck on its beat, the band playing its own parts
@@ -299,6 +299,6 @@ let scripted : Testutil_golden.scripted list =
        gauge says run 2 and the life kept from the first *)
     ("games/rpg/software/TinyHades", "run", 300,
      "space:1,down:10-80,right:10-80,space:90,space:110,up:120-200,left:150-200,space:210,x:220,space:240,space:270,space:290");
-    ("games/fighting/software/TinyBoomerangFu", "cut", 95, "space:1,up:5-40,right:41-70,space:71,right:75-140") ]
+    ("games/arcade/software/TinyBoomerangFu", "cut", 95, "space:1,up:5-40,right:41-70,space:71,right:75-140") ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes

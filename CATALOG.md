@@ -47,7 +47,6 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyGradius](games/shmup/TinyGradius.ml) | 2D | Gradius (Konami, 1985) | A cave scrolling by itself, waves of enemies, and the power-up bar. | The power-up bar; the level as a timeline of waves; options trailing where the ship was. |
 | [TinyRType](games/shmup/TinyRType.ml) | 2D | R-Type (Irem, 1987) | The Force at your ship's nose, a beam to charge, a battleship at the end. | The Force, a pod you place (a five-state machine); the charged beam; the level itself as the boss. |
 | [TinyStarFox](games/shmup/TinyStarFox.ml) | 3D | Star Fox (Nintendo and Argonaut, 1993) | An arwing down a canyon on rails: dodge and shoot. | Polygons on a SNES by staying on rails: the ship is two coordinates on a canyon ribbon, and Galaga's 2D paths fly across it. |
-| [TinySoldat](games/shmup/TinySoldat.ml) | 2D | Soldat (Michał Marcinkowski, 2002) | A side-view deathmatch on jet boots against two bots, and ragdolls. | The 2D physics engine's capstone: a stacking world, swept bullets against tunnelling, grenade blasts, particle ragdolls. |
 
 ## Beat 'em up and fighting
 
@@ -56,7 +55,6 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyFinalFight](games/fighting/TinyFinalFight.ml) | 2D | Final Fight (Capcom, 1989) | Walk down a street beating up wave after wave of thugs, then their boss. | The belt: depth along a street, and fighters drawn sorted by it; combos by chaining; the screen that locks until the wave is down. |
 | [TinyStreetFighter](games/fighting/TinyStreetFighter.ml) | 2D | Street Fighter II (Capcom, 1991) | Two fighters, one screen, best of three rounds, and a fireball. | Moves measured in frames (startup, active, recovery); hitboxes against hurtboxes; high and low blocks; special moves read from the input history; hitstop. |
 | [TinyVirtuaFighter](games/fighting/TinyVirtuaFighter.ml) | 3D | Virtua Fighter (Yu Suzuki, Sega AM2, 1993) | Two fighters of flat-shaded boxes on a ring you can be knocked out of. | The fighter as a skeleton: hierarchical transforms and keyframed poses; the ring-out; a camera framing two subjects. |
-| [TinyBoomerangFu](games/fighting/TinyBoomerangFu.ml) | 3D | Boomerang Fu (Cranky Watermelon, 2020) | Four foods in an arena, one boomerang each, one hit kills. | Your only weapon leaves your hand: a return arc homing on its owner; a fixed party-game camera, and shadows to read height. |
 
 ## Platform
 
@@ -73,7 +71,7 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyMario64](games/platform/TinyMario64.ml) | 3D | Super Mario 64 (Shigeru Miyamoto, Nintendo, 1996) | Floating platforms and five stars, running and jumping in 3D. | The platformer in 3D: controls relative to the camera, a camera you steer, a shadow to judge landings. |
 | [TinyCeleste](games/platform/TinyCeleste.ml) | 2D | Celeste (Maddy Thorson and Noel Berry, 2018) | Climb a mountain a screen at a time, with a jump, a dash, and the walls. | Game feel as small named lies, each switchable: coyote time, jump buffering, variable jump, corner correction; the dash and the wall jump. |
 
-## Maze and arcade classics
+## Arcade and party games
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
@@ -86,6 +84,8 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyTron](games/arcade/TinyTron.ml) | 2D | Tron's light cycles (Bally Midway, 1982) | Two cycles leaving walls of light: the first to crash loses. | A computer that goes where there is most room (a flood fill); the rules in a kit, shared with a 3D view. |
 | [TinyTron3d](games/arcade/TinyTron3d.ml) | 3D | TinyTron | The same light cycles, the trails as walls you can look at from behind. | The Elm architecture's promise: the same model, another view, with four cameras. |
 | [TinyBomberman](games/arcade/TinyBomberman.ml) | 2D | Bomberman (Hudson Soft, 1983) | Pillars, soft blocks, bombs exploding in a cross, and balloons. | Fire spreading tile by tile, and chain reactions; random moves that replay. |
+| [TinyBoomerangFu](games/arcade/TinyBoomerangFu.ml) | 3D | Boomerang Fu (Cranky Watermelon, 2020) | Four foods in an arena, one boomerang each, one hit kills. | Your only weapon leaves your hand: a return arc homing on its owner; a fixed party-game camera, and shadows to read height. |
+| [TinySoldat](games/arcade/TinySoldat.ml) | 2D | Soldat (Michał Marcinkowski, 2002) | A side-view deathmatch on jet boots against two bots, and ragdolls. | The 2D physics engine's capstone: a stacking world, swept bullets against tunnelling, grenade blasts, particle ragdolls. |
 | [TinyMarbleMadness](games/arcade/TinyMarbleMadness.ml) | 3D | Marble Madness (Mark Cerny, Atari Games, 1984) | Roll a marble down a course floating in space, against the clock. | A ball rolling on a height map (5/7 of g sin a), falls that break it, collisions between balls; a far, nearly isometric camera. |
 | [TinyCameltry](games/arcade/TinyCameltry.ml) | 2D | Cameltry (Taito, 1989) | You don't move the ball, you turn the maze. | Turning the maze is turning gravity; rotation, so the ball rolls instead of sliding (`rotation=off` to compare). |
 | [TinyFlappyBird](games/arcade/TinyFlappyBird.ml) | 2D | Flappy Bird (Dong Nguyen, .GEARS, 2013) | One button: flap through the gaps between pipes. | A flap that sets the velocity; an endless world made and dropped as you fly; randomness from an LFSR kept in the model. |

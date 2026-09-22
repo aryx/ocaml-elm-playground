@@ -15,8 +15,8 @@
 )
 
 (executables
-  (names TinyBoomerangFu TinyVirtuaFighter)
-  (modules TinyBoomerangFu TinyVirtuaFighter)
+  (names TinyVirtuaFighter)
+  (modules TinyVirtuaFighter)
   (libraries
     elm_core
     kit_brawler

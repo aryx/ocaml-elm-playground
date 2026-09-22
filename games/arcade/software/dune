@@ -4,22 +4,23 @@
 
 (executables
   (names Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
-    TinyPacman TinyPong TinySpacewar TinyTron)
+    TinyPacman TinyPong TinySoldat TinySpacewar TinyTron)
   (modules Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
-    TinyPacman TinyPong TinySpacewar TinyTron)
+    TinyPacman TinyPong TinySoldat TinySpacewar TinyTron)
   (libraries
     unix
     elm_playground
     ai
     kit_maze
     kit_lightcycles
+    physics_2d graphics_2d_geometry
     elm_playground_software ; implem of virtual elm_playground
   )
 )
 
 (executables
-  (names TinyMarbleMadness TinyTron3d)
-  (modules TinyMarbleMadness TinyTron3d)
+  (names TinyBoomerangFu TinyMarbleMadness TinyTron3d)
+  (modules TinyBoomerangFu TinyMarbleMadness TinyTron3d)
   (libraries
     elm_core
     kit_lightcycles

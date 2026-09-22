@@ -135,7 +135,7 @@ let scenes : Testutil_golden.scene list =
     ("games/puzzle/software/TinySlingshot", "", 5);
     (* a mass on a spring, a chain of springs, a rope of sticks *)
     ("examples/software/PhysicsElastic", "", 60);
-    ("games/shmup/software/TinySoldat", "", 5);
+    ("games/arcade/software/TinySoldat", "", 5);
     (* the planets on 2000-01-02, Jupiter and Saturn near their May 2000
      * conjunction *)
     ("examples/software/PhysicsSolarSystem", "", 2);
@@ -328,8 +328,8 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/PhysicsElastic", "stiff", 8, "x:2");
     (* the bots' fight, GREEN's ragdoll tumbling; the player running,
      * jumping, flying on the jets, shooting, a grenade, the blasts *)
-    ("games/shmup/software/TinySoldat", "bots", 260, "space:2");
-    ("games/shmup/software/TinySoldat", "jets", 130, "space:2,d:10-70,w:30,w:40-90,space:100-160,q:120");
+    ("games/arcade/software/TinySoldat", "bots", 260, "space:2");
+    ("games/arcade/software/TinySoldat", "jets", 130, "space:2,d:10-70,w:30,w:40-90,space:100-160,q:120");
     (* the true distances, the inner planets crowded; and 80 days a
      * second for 2 seconds: mid-2000 *)
     ("examples/software/PhysicsSolarSystem", "true_distances", 3, "d:2");

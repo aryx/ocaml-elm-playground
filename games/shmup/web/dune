@@ -4,15 +4,14 @@
 
 (executables
   (names Asteroid TinyDefender TinyGalaga TinyGradius TinyInvaders
-    TinyMissileCommand TinyRType TinyRobotron TinySoldat TinyZaxxon)
+    TinyMissileCommand TinyRType TinyRobotron TinyZaxxon)
   (modules Asteroid TinyDefender TinyGalaga TinyGradius TinyInvaders
-    TinyMissileCommand TinyRType TinyRobotron TinySoldat TinyZaxxon)
+    TinyMissileCommand TinyRType TinyRobotron TinyZaxxon)
   (libraries
     unix
     elm_playground
     kit_shmup
     kit_isometric
-    physics_2d graphics_2d_geometry
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)

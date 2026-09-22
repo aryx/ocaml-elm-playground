@@ -1,24 +1,28 @@
-; claude: the maze and arcade classics (CATALOG.md's section), 2D and 3D
-; side by side; on the software rasterizers in software/, in the
+; claude: the arcade and party games (CATALOG.md's section): one screen
+; or one arena, one rule learned in seconds, short rounds played again
+; at once, nothing carried from one to the next, often several players
+; in the same arena (Pong, Tron, Bomberman, Boomerang Fu, Soldat). 2D
+; and 3D side by side; on the software rasterizers in software/, in the
 ; browser in web/.
 (executables
   (names Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
-    TinyPacman TinyPong TinySpacewar TinyTron)
+    TinyPacman TinyPong TinySoldat TinySpacewar TinyTron)
   (modules Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
-    TinyPacman TinyPong TinySpacewar TinyTron)
+    TinyPacman TinyPong TinySoldat TinySpacewar TinyTron)
   (libraries
     unix ; Pong's clock
     elm_playground
     ai ; TinyPacman's ghosts (ai=engine)
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
     kit_lightcycles ; TinyTron's rules
+    physics_2d graphics_2d_geometry ; TinySoldat's bodies
     elm_playground_native ; implem of virtual elm_playground
   )
 )
 
 (executables
-  (names TinyMarbleMadness TinyTron3d)
-  (modules TinyMarbleMadness TinyTron3d)
+  (names TinyBoomerangFu TinyMarbleMadness TinyTron3d)
+  (modules TinyBoomerangFu TinyMarbleMadness TinyTron3d)
   (libraries
     elm_core
     kit_lightcycles ; TinyTron3d's rules, TinyTron's own

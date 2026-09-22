@@ -12,8 +12,8 @@
 )
 
 (executables
-  (names TinyBoomerangFu TinyVirtuaFighter)
-  (modules TinyBoomerangFu TinyVirtuaFighter)
+  (names TinyVirtuaFighter)
+  (modules TinyVirtuaFighter)
   (libraries
     elm_core
     kit_brawler ; TinyVirtuaFighter's Frame_data and Hitbox, the 2D fighters' own

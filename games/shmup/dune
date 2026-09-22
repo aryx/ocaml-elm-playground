@@ -3,15 +3,14 @@
 ; the software rasterizers in software/, in the browser in web/.
 (executables
   (names Asteroid TinyDefender TinyGalaga TinyGradius TinyInvaders
-    TinyMissileCommand TinyRType TinyRobotron TinySoldat TinyZaxxon)
+    TinyMissileCommand TinyRType TinyRobotron TinyZaxxon)
   (modules Asteroid TinyDefender TinyGalaga TinyGradius TinyInvaders
-    TinyMissileCommand TinyRType TinyRobotron TinySoldat TinyZaxxon)
+    TinyMissileCommand TinyRType TinyRobotron TinyZaxxon)
   (libraries
     unix ; Asteroid's clock
     elm_playground
     kit_shmup ; the Shots and Path of TinyInvaders, TinyGalaga, TinyRobotron, ...
     kit_isometric ; TinyZaxxon's projection
-    physics_2d graphics_2d_geometry ; TinySoldat's bodies
     elm_playground_native ; implem of virtual elm_playground
   )
 )

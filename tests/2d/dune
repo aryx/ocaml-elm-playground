@@ -59,7 +59,7 @@
    %{project_root}/examples/software/PhysicsPyramid.exe
    %{project_root}/games/puzzle/software/TinySlingshot.exe
    %{project_root}/examples/software/PhysicsElastic.exe
-   %{project_root}/games/shmup/software/TinySoldat.exe
+   %{project_root}/games/arcade/software/TinySoldat.exe
    %{project_root}/examples/software/PhysicsSolarSystem.exe
    %{project_root}/examples/software/AudioTheremin.exe
    %{project_root}/examples/software/AudioPiano.exe

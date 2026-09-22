@@ -455,7 +455,7 @@ let help =
          space  shoot            q      a grenade
   mouse: aim; click to shoot
   flags: hitboxes  draw what the physics sees
-  e.g.   dune exec games/shmup/TinySoldat.exe -- hitboxes
+  e.g.   dune exec games/arcade/TinySoldat.exe -- hitboxes
 |}
 
 let app = game view update initial_model
