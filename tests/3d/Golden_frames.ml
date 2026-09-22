@@ -127,7 +127,7 @@ let scenes : Testutil_golden.scene list =
     (* claude: the band on its stage: the four highways, the fret pads
      * of the guitar and the bass, the drum pads and the pedal, the
      * keyboard of the keys, and the difficulty to pick *)
-    ("games3d/software/TinyRockBand", "", 5);
+    ("games/rhythm/software/TinyRockBand", "", 5);
   ]
 
 (* claude: played with keys (-script, see Input_script) *)
@@ -289,7 +289,7 @@ let scripted : Testutil_golden.scripted list =
        snare, each struck on its beat, the band playing its own parts
        beside you; the sound card fed 735 samples a frame, so the
        song's clock is exact *)
-    ("games3d/software/TinyRockBand", "gig", 340,
+    ("games/rhythm/software/TinyRockBand", "gig", 340,
      "3:1,up:2,space:3,d:123,d:153,d:183,d:213,g:243,s:273,d:303,s:333");
     (* claude: the figure part way along the impossible beam, having
        stepped from the ground path onto a terrace three blocks up and

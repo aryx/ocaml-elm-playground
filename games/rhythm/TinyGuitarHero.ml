@@ -17,9 +17,9 @@
  *   - =        the calibration, 10 ms at a time
  *
  * The second of this repository's three rhythm games, and each adds one
- * idea to the one before: games/TinyDDR.ml is the music's clock (the
+ * idea to the one before: TinyDDR.ml is the music's clock (the
  * steps judged by what you hear, not by the frames); this one is the
- * instrument; games3d/TinyRockBand.ml is the band. What this one adds:
+ * instrument; TinyRockBand.ml is the band. What this one adds:
  *
  *  - An instrument is a way of pressing. A note is two hands: the left
  *    holds the fret, the right strums, and only the strum, on the beat,

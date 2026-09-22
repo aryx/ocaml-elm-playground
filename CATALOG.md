@@ -20,12 +20,10 @@ this list without more information:
 
 - **Source**: the link on the name, `<dir>/<Name>.ml`.
 - **Screenshot**: the golden frame `tests/2d/golden/<Name>.png` (for
-  `games/`, `games2.5d/`, `apps/`) or `tests/3d/golden/<Name>.png` (for
-  `games3d/`); other frames of the same program are next to it, as
-  `<Name>_<scene>.png`.
-- **Run online**: `games/web/<Name>.html`, `games2.5d/web/<Name>.html`,
-  `games3d/webgl/<Name>.html`, `apps/web/<Name>.html`, once built with
-  `make js`.
+  2D, 2.5D and apps) or `tests/3d/golden/<Name>.png` (for 3D); other
+  frames of the same program are next to it, as `<Name>_<scene>.png`.
+- **Run online**: `<dir>/web/<Name>.html` (`games3d/webgl/<Name>.html`
+  for `games3d/`), once built with `make js`.
 - **Run natively**: `dune exec <dir>/<Name>.exe`.
 
 A **2.5D** or **3D** game with a twin in another directory says so:
@@ -192,9 +190,9 @@ own trick and once by playground3d (see `games2.5d/README.md`).
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
-| [TinyDDR](games/TinyDDR.ml) | 2D | Dance Dance Revolution (Konami, 1998) | Press each arrow as it reaches the top, in time with the music. | What time is it? Steps judged by the music's clock, the calibration measured from the player; charts computed from the melody. |
-| [TinyGuitarHero](games2.5d/TinyGuitarHero.ml) | 2.5D | Guitar Hero (Harmonix, 2005) | Hold the fret and strum as each note reaches the line. | The instrument: fret and strum, long notes, a difficulty as the same song reduced; the highway as Out Run's road straightened. |
-| [TinyRockBand](games3d/TinyRockBand.ml) | 3D | Rock Band (Harmonix, 2007) | A band on four highways: play guitar, bass, drums or keys. | The band: four parts from a tune's four voices, four ways of pressing, drums from a percussion voice, one crowd meter. |
+| [TinyDDR](games/rhythm/TinyDDR.ml) | 2D | Dance Dance Revolution (Konami, 1998) | Press each arrow as it reaches the top, in time with the music. | What time is it? Steps judged by the music's clock, the calibration measured from the player; charts computed from the melody. |
+| [TinyGuitarHero](games/rhythm/TinyGuitarHero.ml) | 2.5D | Guitar Hero (Harmonix, 2005) | Hold the fret and strum as each note reaches the line. | The instrument: fret and strum, long notes, a difficulty as the same song reduced; the highway as Out Run's road straightened. |
+| [TinyRockBand](games/rhythm/TinyRockBand.ml) | 3D | Rock Band (Harmonix, 2007) | A band on four highways: play guitar, bass, drums or keys. | The band: four parts from a tune's four voices, four ways of pressing, drums from a percussion voice, one crowd meter. |
 
 # Apps
 

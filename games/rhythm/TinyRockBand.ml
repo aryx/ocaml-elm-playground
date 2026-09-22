@@ -25,8 +25,8 @@
  * dates from memory, to check.)
  *
  * The third of the repository's rhythm games, and each adds one idea to
- * the one before: games/TinyDDR.ml is the music's clock,
- * games2.5d/TinyGuitarHero.ml the instrument (fret and strum, long
+ * the one before: TinyDDR.ml is the music's clock,
+ * TinyGuitarHero.ml the instrument (fret and strum, long
  * notes, a difficulty as the same song reduced), and this one the band.
  * All of the first two is in gamekits/rhythm, shared. What is new here is
  * what makes it a *band*:
@@ -70,7 +70,7 @@
  * distance, which a camera draws for free: four of them in real 3D,
  * each looking like its instrument -- coloured fret pads for guitar and
  * bass, drum pads and a pedal bar for the drums, a row of piano keys
- * for the keyboard. games2.5d/TinyGuitarHero.ml draws one highway by
+ * for the keyboard. TinyGuitarHero.ml draws one highway by
  * hand, Out Run's road straightened; a camera is what makes four
  * cheap.
  *

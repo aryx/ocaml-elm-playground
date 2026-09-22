@@ -542,7 +542,7 @@ Tower Defense (2007: tower defense in a browser).
 PaRappa the Rapper (1996), Dance Dance Revolution (Konami, 1998),
 Guitar Hero (2005).
 
-- **Toy**: TinyDDR (DONE: `games/TinyDDR.ml`, Konami, 1998): arrows
+- **Toy**: TinyDDR (DONE: `TinyDDR.ml`, Konami, 1998): arrows
   rising in time with an original tune, pressed as each reaches its
   outline. What the genre is about underneath is *what time it is*:
   every other game here runs on the frame clock, but the player is
@@ -557,7 +557,7 @@ Guitar Hero (2005).
   a step on each note of the melody at the note's start (from
   `audio/Abc`), the arrow following the tune's shape (up, down, a leap
   sideways, a repeat the same arrow).
-- **Second toy**: TinyGuitarHero (DONE: `games2.5d/TinyGuitarHero.ml`,
+- **Second toy**: TinyGuitarHero (DONE: `TinyGuitarHero.ml`,
   Harmonix, 2005): **the instrument**. One highway, five frets, and a
   note is two hands -- the fret held, then the strum (the frets down at
   the strum are the ones played). Plus the long notes (a sustain held
@@ -572,7 +572,7 @@ Guitar Hero (2005).
   because the highway is Out Run's road
   straightened: one division by the depth per point, the trick of the
   game, 23 lines.
-- **Third toy**: TinyRockBand (DONE: `games3d/TinyRockBand.ml`,
+- **Third toy**: TinyRockBand (DONE: `TinyRockBand.ml`,
   Harmonix, 2007, with Rock Band 3's keyboard): **the band**. Four
   highways -- guitar, bass, drums, keys -- in real 3D because a
   highway is a road into the distance and a camera draws four for

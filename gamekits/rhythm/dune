@@ -1,7 +1,8 @@
 ; claude: the rhythm kit (see docs/claude_notes/plans/plan_games.md,
 ; section 16): what time it is by the music's clock, how close a press
 ; was, a chart played through, and charts made from a tune's notes.
-; Used by games/TinyDDR (arrows) and games3d/TinyRockBand (a band). A
+; Used by TinyDDR (arrows), TinyGuitarHero (a guitar) and TinyRockBand
+; (a band). A
 ; private library, not installed: only the games use it.
 (library
  (name kit_rhythm)

@@ -1,0 +1,25 @@
+; claude: the rhythm games, one per way of drawing them: TinyDDR in 2D,
+; TinyGuitarHero in 2.5D (its highway drawn by the game itself on the
+; 2D playground), TinyRockBand in 3D; all three on the rhythm kit. On
+; the software rasterizers in software/, in the browser in web/.
+(executables
+  (names TinyDDR TinyGuitarHero)
+  (modules TinyDDR TinyGuitarHero)
+  (libraries
+    elm_playground
+    kit_rhythm ; the music's clock, the grades, the charts and the difficulty
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyRockBand)
+  (modules TinyRockBand)
+  (libraries
+    elm_core ; Set_
+    kit_rhythm
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

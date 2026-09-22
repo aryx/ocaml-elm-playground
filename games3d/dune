@@ -25,13 +25,11 @@
     TinyBoomerangFu
     TinyHades
     TinyMonumentValley
-    TinyRockBand
   )
-  (modules StarCollector3d TinyBattlezone3d TinyElite3d TinyTeardown TinyPinball3d TinyHalfLife2 TinyPortal TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyVirtuaFighter TinyStarFox TinyAloneInTheDark TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu TinyHades TinyMonumentValley TinyRockBand Tomb_atlas)
+  (modules StarCollector3d TinyBattlezone3d TinyElite3d TinyTeardown TinyPinball3d TinyHalfLife2 TinyPortal TinyWolfenstein3d TinyVirtuaRacing TinyMarioKart64 TinyVirtuaFighter TinyStarFox TinyAloneInTheDark TinyTron3d TinyMario64 TinyMarbleMadness TinyDoom3d TinyComanche3d TinyDescent3d TinyQuake TinyBlockout TinyTombRaider TinyBoomerangFu TinyHades TinyMonumentValley Tomb_atlas)
   (libraries
     kit_puzzle ; TinyTombRaider's Push, the same one TinySokoban uses
     kit_lightcycles ; TinyTron3d's rules
-    kit_rhythm ; TinyRockBand's clock, grades and charts, shared with games/TinyDDR
     kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown
     kit_racing3d ; TinyMarioKart64's circuit (Track3d)
     kit_brawler ; TinyVirtuaFighter's Frame_data and Hitbox, shared with the 2D fighters

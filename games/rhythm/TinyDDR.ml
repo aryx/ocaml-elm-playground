@@ -62,7 +62,7 @@
  * What it uses: gamekits/rhythm (the grades and their windows, the clock
  * less the calibration, a chart played through, the notes of a tune's
  * voice -- written for this game and moved to a kit when
- * games3d/TinyRockBand wanted the same), the playground's Audio (the
+ * TinyRockBand wanted the same), the playground's Audio (the
  * song, played as a loop, and its clock -- Audio.position: the mixer
  * counts, for each loop, the samples it has sent), audio/Abc (the
  * song's notes and their times), Scene2d. The tune is
@@ -145,7 +145,7 @@ let steps : step list = chart tune
 (*****************************************************************************)
 
 (* the grades, the windows and the clock are gamekits/rhythm's, shared with
- * games3d/TinyRockBand; see Rhythm.mli for the windows, drawn *)
+ * TinyRockBand; see Rhythm.mli for the windows, drawn *)
 type judgement = Rhythm.judgement = Perfect | Great | Good | Almost | Miss
 
 let judge = Rhythm.judge

@@ -46,8 +46,8 @@
    the melody's shape, a guitar by pitch. The arrows then land exactly
    on the notes, because they are the notes.
 
-   Part of the rhythm kit (gamekits/rhythm/); used by games/TinyDDR,
-   games2.5d/TinyGuitarHero and games3d/TinyRockBand. *)
+   Part of the rhythm kit (gamekits/rhythm/); used by TinyDDR,
+   TinyGuitarHero and TinyRockBand. *)
 
 (* {1 Judging} *)
 

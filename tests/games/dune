@@ -224,12 +224,12 @@
 
 (rule
  (target TinyGuitarHero.ml)
- (deps (:src %{project_root}/games2.5d/TinyGuitarHero.ml))
+ (deps (:src %{project_root}/games/rhythm/TinyGuitarHero.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
  (target TinyRockBand.ml)
- (deps (:src %{project_root}/games3d/TinyRockBand.ml))
+ (deps (:src %{project_root}/games/rhythm/TinyRockBand.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
@@ -274,7 +274,7 @@
 
 (rule
  (target TinyDDR.ml)
- (deps (:src %{project_root}/games/TinyDDR.ml))
+ (deps (:src %{project_root}/games/rhythm/TinyDDR.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule

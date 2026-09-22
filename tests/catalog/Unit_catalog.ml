@@ -16,11 +16,14 @@ let path file = Filename.concat root file
 let read file = In_channel.with_open_bin (path file) In_channel.input_all
 
 (* a directory of programs, where its golden frames are, where its web
- * pages are *)
-let dirs = [ ("games", "tests/2d", "games/web");
-             ("games2.5d", "tests/2d", "games2.5d/web");
-             ("games3d", "tests/3d", "games3d/webgl");
-             ("apps", "tests/2d", "apps/web") ]
+ * pages are. claude: a genre's directory has 2D and 3D games side by
+ * side, so its golden frames are where the catalogue's Dir column says
+ * (None): tests/3d for a 3D game, tests/2d for the others *)
+let dirs = [ ("games", Some "tests/2d", "games/web");
+             ("games/rhythm", None, "games/rhythm/web");
+             ("games2.5d", Some "tests/2d", "games2.5d/web");
+             ("games3d", Some "tests/3d", "games3d/webgl");
+             ("apps", Some "tests/2d", "apps/web") ]
 
 (* the position of [sub] in [s] from [from], if any *)
 let rec find (s : string) (sub : string) (from : int) : int option =
@@ -65,8 +68,17 @@ let rows (text : string) : string list =
 
 let catalogue = lazy (rows (read "CATALOG.md"))
 
+(* claude: the Dir column of the row linking to [source] ("2D", "2.5D",
+ * "3D", "app"), the second cell of "| [Name](dir/Name.ml) | 3D | ..." *)
+let dim (source : string) : string option =
+  String.split_on_char '\n' (read "CATALOG.md")
+  |> List.find_map (fun line ->
+         match String.split_on_char '|' line with
+         | _ :: name :: dir :: _ when find name ("(" ^ source ^ ")") 0 <> None -> Some (String.trim dir)
+         | _ -> None)
+
 (* (dir, name, goldens, web) of every program *)
-let programs : (string * string * string * string) list Lazy.t =
+let programs : (string * string * string option * string) list Lazy.t =
   lazy
     (List.concat_map
        (fun (dir, goldens, web) ->
@@ -79,6 +91,11 @@ let program_test (dir, name, goldens, web) =
       let source = Printf.sprintf "%s/%s.ml" dir name in
       if not (List.mem source (Lazy.force catalogue)) then
         Alcotest.failf "%s has no row in CATALOG.md (a link to %s)" name source;
+      let goldens =
+        match goldens with
+        | Some goldens -> goldens
+        | None -> if dim source = Some "3D" then "tests/3d" else "tests/2d"
+      in
       let golden = Printf.sprintf "%s/golden/%s.png" goldens name in
       if not (Sys.file_exists (path golden)) then
         Alcotest.failf "%s has no screenshot: no golden frame %s" name golden;

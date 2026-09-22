@@ -162,15 +162,17 @@ twins end in `3d` or are named after another original, e.g.
 
 ### The dune files
 
-Backends stay **central**, as today, rather than a `software/`, `web/`
-per genre (which would be 13 x 3 more dune files):
+Each genre has its own `software/` and `web/`, like `examples/` (first
+planned central, `games/software/` and `games/web/`, but then `games/`
+would list two directories that are not genres; decided with the
+rhythm pilot):
 
 ```
-games/<genre>/dune   native: a 2D stanza (2D + 2.5D, Cairo) and a 3D stanza (OpenGL),
-                     each with (modules ...), each only as needed
-games/software/dune  (copy_files ../<genre>/X.ml) for all; a 2D stanza + a 3D stanza
-games/web/dune       (copy_files ../<genre>/X.ml) for all; a 2D (vdom) stanza + a 3D (WebGL)
-                     stanza; all the .html pages
+games/<genre>/dune           native: a 2D stanza (2D + 2.5D, Cairo) and a 3D stanza
+                             (OpenGL), each with (modules ...), each only as needed
+games/<genre>/software/dune  (copy_files ../*.ml); the same two stanzas, software
+games/<genre>/web/dune       (copy_files ../*.ml); a 2D (vdom) stanza + a 3D (WebGL)
+                             stanza; the genre's .html pages
 ```
 
 The kits a genre needs move from the three current `(libraries ...)`
@@ -208,6 +210,22 @@ texture rules move to `games/fps/dune` and `games/adventure/dune`.
    exercises both native stanzas, the software and web backends,
    `tests/2d`, `tests/3d` and the catalogue test. Meanwhile the flat
    directories keep working (the catalogue test lists both kinds).
+   **Done** (2026-09-22), with one change to the layout above: the
+   `software/` and `web/` builds are the genre's own
+   (`games/<genre>/software/`, `games/<genre>/web/`, like `examples/`),
+   not central ones, so that `games/` lists only genres, and a genre is
+   self-contained. What it took, per genre: `games/<genre>/dune` (a 2D
+   and a 3D stanza with their `(modules ...)`), `software/dune` and
+   `web/dune` (`(copy_files ../*.ml)`, the same two stanzas on the
+   software rasterizers and on vdom/WebGL), the `.html` pages moved to
+   its `web/`; the genre in the Makefile's `GENRES`; the names out of
+   the old dune files (and a `kit_` no one there uses any more); the
+   paths in
+   `tests/{2d,3d}/dune`, their `Golden_frames.ml` and
+   `tests/games/dune`'s rules; the genre in `tests/catalog`'s `dirs`
+   (golden directory `None`: from the Dir column) and its dune deps;
+   the rows' links in `CATALOG.md`. Checked with `make test-lite` and
+   the genre's golden scenes (`Test.exe -s <Name>`, GOLDEN=all).
 2. The other twelve genres, one commit each, or all together once rhythm
    has shown the pattern.
 3. Remove `games2.5d/`, `games3d/` once they are empty; update

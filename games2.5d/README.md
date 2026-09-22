@@ -145,7 +145,7 @@ anything. The pseudo-3D one shows what the engine does, and why games
 could run in 1992 without one. TinyMarioKart's model is shared the other way,
 with the top-down `games/TinyMicroMachines` (`gamekits/racing`: `Topdown`):
 the same race, seen from above. And TinyGuitarHero's highway, drawn by
-hand here, is drawn by a camera in `games3d/TinyRockBand`, four of them
+hand here, is drawn by a camera in `TinyRockBand`, four of them
 side by side for a whole band (`gamekits/rhythm`: the clock, the charts,
 the difficulty): not a twin, the next game.
 

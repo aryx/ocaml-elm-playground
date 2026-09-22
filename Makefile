@@ -143,7 +143,8 @@ website:
 	  chmod -R u+w docs/$$d; \
 	done
 	make js
-	for d in examples games games2.5d; do \
+	for d in examples games games2.5d $(GENRES); do \
+	  mkdir -p docs/$$d; \
 	  for js in _build/default/$$d/web/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
 	    install -m 644 $$js $$d/web/$$b.html docs/$$d/; \
@@ -170,8 +171,12 @@ website:
 serve:
 	python3 -m http.server --directory docs 8000
 
+# claude: the games' genres' directories (games/<genre>/, each with its
+# own web/), see docs/claude_notes/plans/plan_merge_2d_3d.md
+GENRES=games/rhythm
+
 js:
-	dune build games/web --profile=release-js
+	dune build games/web $(GENRES:%=%/web) --profile=release-js
 	dune build games2.5d/web --profile=release-js
 	dune build examples/web --profile=release-js
 	dune build examples/svg --profile=release-js

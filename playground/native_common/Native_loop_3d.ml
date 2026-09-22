@@ -165,7 +165,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
    * 2D loop's device and queue, kept ~3 frames ahead; with -dump-frame
    * no device, exactly a frame's samples each frame instead, so that a
    * golden run's music -- and Audio.position, its clock -- are the same
-   * every time. A 3D rhythm game (games3d/TinyRockBand) is what needed
+   * every time. A 3D rhythm game (TinyRockBand) is what needed
    * it: without a pull, the music never starts and its clock never
    * moves. *)
   let audio_device = if !dump_frame_number <> None then None else Native_loop_2d.open_audio () in
