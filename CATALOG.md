@@ -33,7 +33,18 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 
 # Games
 
+Each section, and its directory under `games/`, starts with its
+definition. A game goes where its design puts it -- what the player
+does, what the game is about -- and not where the original ran (half
+of these were arcade cabinets) nor how it is drawn (that is the Dir
+column).
+
 ## Shoot 'em up
+
+`games/shmup/`: a ship, or a gun, against waves of enemies, the screen
+scrolling past or the enemies coming down at you; you shoot and dodge,
+and a level is a timeline of waves. Not a deathmatch against other
+fighters in one arena (arcade and party).
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
@@ -50,6 +61,11 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 
 ## Beat 'em up and fighting
 
+`games/fighting/`: the fighters' own mechanics are the game -- moves
+timed in frames, hitboxes against hurtboxes, blocks, combos, a body
+as a skeleton of joints; one against one, or one against waves of
+thugs down a street.
+
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyFinalFight](games/fighting/TinyFinalFight.ml) | 2D | Final Fight (Capcom, 1989) | Walk down a street beating up wave after wave of thugs, then their boss. | The belt: depth along a street, and fighters drawn sorted by it; combos by chaining; the screen that locks until the wave is down. |
@@ -57,6 +73,10 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyVirtuaFighter](games/fighting/TinyVirtuaFighter.ml) | 3D | Virtua Fighter (Yu Suzuki, Sega AM2, 1993) | Two fighters of flat-shaded boxes on a ring you can be knocked out of. | The fighter as a skeleton: hierarchical transforms and keyframed poses; the ring-out; a camera framing two subjects. |
 
 ## Platform
+
+`games/platform/`: crossing a level by running, jumping and climbing,
+gravity and the ground being the challenge; the level bigger than the
+screen, or cut into rooms to go through.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
@@ -72,6 +92,12 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyCeleste](games/platform/TinyCeleste.ml) | 2D | Celeste (Maddy Thorson and Noel Berry, 2018) | Climb a mountain a screen at a time, with a jump, a dash, and the walls. | Game feel as small named lies, each switchable: coyote time, jump buffering, variable jump, corner correction; the dash and the wall jump. |
 
 ## Arcade and party games
+
+`games/arcade/`: one screen, or one arena (or a screen wrapping round),
+with nothing to explore and no level to cross; one rule learned in
+seconds; short rounds, played again at once, for a score, the last
+one standing or the first to five; nothing carried from one round to
+the next; often several players in the same arena.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
@@ -92,6 +118,10 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 
 ## Puzzle and board games
 
+`games/puzzle/`: thinking over reflexes -- a set of rules to master, a
+level to solve or a board to win; time pressure, when there is some
+(Tetris), only adds to the thinking.
+
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [AiChess](games/puzzle/AiChess.ml) | 2D | Chess, as Claude Shannon's "Programming a Computer for Playing Chess" (1950) set it for computers | Chess against a computer thinking 3 moves ahead with alpha-beta. | Rules checked by perft; move ordering (most valuable victim first); quiescence, the captures played out at the leaves against the horizon effect. |
@@ -110,6 +140,11 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 
 ## Action-adventure and horror
 
+`games/adventure/`: a world explored in real time, whose rooms, items
+and keys open the way on; the hero does not grow, the player's
+knowledge of the world does. In horror, the camera and the dark are
+part of the game.
+
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyZelda](games/adventure/TinyZelda.ml) | 2D | The Legend of Zelda (Shigeru Miyamoto and Takashi Tezuka, Nintendo, 1986) | An overworld of screens, a sword, a key, and a dungeon. | A land to explore in any order: rooms that slide in, an inventory as locks and keys, monsters wandering on a generator in the model. |
@@ -117,6 +152,10 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyTombRaider](games/adventure/TinyTombRaider.ml) | 3D | Tomb Raider (Toby Gard, Core Design, 1996) | A raider in a stone tomb, an idol on a pedestal, and a boulder. | Committed moves of fixed length, and a level measured in them (no collision code); textured stone from one atlas page. |
 
 ## Role-playing and dungeons
+
+`games/rpg/`: a character who grows -- hit points, levels, items --
+through a dungeon of many rooms or levels, often generated, fought in
+turns or in real time.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
@@ -127,6 +166,10 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyHades](games/rpg/TinyHades.ml) | 3D | Hades (Supergiant, 2020) | Out of the underworld a chamber at a time, a boon from a god after each. | The roguelite: death pays for the next run; boons as numbers changed for a run; the invulnerable dash. |
 
 ## First-person
+
+`games/fps/`: the world seen through the eyes of whoever you play, on
+foot -- shooting, building or breaking; and each game here is also
+about its view, from a raycaster to a real 3D renderer.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
@@ -143,6 +186,10 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 
 ## Flight and space
 
+`games/flight/`: flying a craft in three dimensions (or its top-down
+shadow), over terrain, through space or down a mine; the controls of
+a vehicle that is not on the ground.
+
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyElite](games/flight/TinyElite.ml) | 2.5D | Elite (David Braben and Ian Bell, Acornsoft, 1984) | A Cobra in orbit round Lave, pirates, and docking in the Coriolis station. | Full 3D in 32 KB: the universe turning round a ship that never moves, small-angle rotations, hidden lines on convex hulls, a generated galaxy. |
@@ -155,6 +202,9 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 
 ## Racing
 
+`games/racing/`: a course driven round against the clock or against
+other drivers; the road, the track or the map, and the car on it.
+
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyOutRun](games/racing/TinyOutRun.ml) | 2.5D | Out Run (Yu Suzuki, Sega, 1986) | A red convertible on a road of curves and hills, palm trees going by. | The pseudo-3D road: segments projected as trapezoids, curves as shifts that add up, hills that hide, fog. |
@@ -164,6 +214,13 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyMarioKart64](games/racing/TinyMarioKart64.ml) | 3D | Mario Kart 64 (Nintendo, 1996) | Three laps against seven karts, item boxes, and a four-player battle. | Polygons for the world and sprites for the karts; four players on one screen; a battle arena with two heights. |
 
 ## Sports and tables
+
+`games/sports/`: a sport or a table game played on the screen as it is
+played off it -- a ball or a puck, a pitch or a table, its physics and
+its rules (or, like Speedball's, rules it could have), and a team or
+an opponent to beat. The table games count: pinball and air hockey
+(Shufflepuck) are simulated tables. Pong is not here: it only borrowed
+tennis's idea, two paddles and a ball, and is an arcade game.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
@@ -176,6 +233,10 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 
 ## Strategy and simulation
 
+`games/strategy/`: planning over reflexes, at a scale above one
+character -- an army, a squad in turns, a city, a civilization -- or a
+system to run and keep alive.
+
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinySimCity](games/strategy/TinySimCity.ml) | 2D | SimCity (Will Wright, Maxis, 1989) | Lay out roads, power and zones, and the city builds itself. | The game is the simulation: zones that need each other (the RCI bars), power as a flood fill, pollution as a blur. |
@@ -187,6 +248,9 @@ playground3d, side by side in `games/fps/` (see `games/README-2.5d.md`).
 | [TinyTowerDefense](games/strategy/TinyTowerDefense.ml) | 2D | Desktop Tower Defense (Paul Preece, 2007) | Build the maze the monsters must walk, out of towers. | The player builds the maze: A* redone at every tower, and the search as a referee that forbids closing the way. |
 
 ## Rhythm
+
+`games/rhythm/`: pressing in time with music, judged by the music's
+clock rather than the screen's.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
