@@ -115,6 +115,13 @@ let canonical_key (key : string) : string =
   | "left alt" | "right alt" -> "Alt"
   | "return" | "Enter" -> "Enter"
   | "backspace" -> "Backspace"
+  (* claude: the rest of the 2D loop's names, which this copy lacked: a
+   * 3D game reading "Tab" (TinyCrush3d's turn) got SDL's "tab" *)
+  | "tab" -> "Tab"
+  | "escape" -> "Escape"
+  | "delete" -> "Delete"
+  | "home" -> "Home"
+  | "end" -> "End"
   | key -> key
 
 let update_keyboard (is_down : bool) (key : string) (keyboard : Playground.keyboard) :

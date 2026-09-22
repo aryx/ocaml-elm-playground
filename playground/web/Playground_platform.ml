@@ -975,4 +975,10 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
     (* claude: a right click is the game's (Playground.mouse.mrdown), not
      * the browser's context menu *)
     Window.add_event_listener window Event.Contextmenu Event.prevent_default true;
+    (* claude: and Tab is the game's key too (TinyCrush's turn), not the
+     * browser's move to the next focusable element -- which would also
+     * swallow its keyup, leaving it held *)
+    Window.add_event_listener window Event.Keydown
+      (fun evt -> if Event.key evt = "Tab" then Event.prevent_default evt)
+      true;
   )
