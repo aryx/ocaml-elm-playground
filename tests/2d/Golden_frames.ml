@@ -453,8 +453,14 @@ let scripted : Testutil_golden.scripted list =
     (* claude: cycle 360: the Imp has walked through the Dwarf and made it
      * an Imp, two walking the core, which neither can kill *)
     ("games/programming/software/TinyCoreWar", "imp", 90, "");
-    (* claude: fight 2: the Mice have multiplied, and the Dwarf is dead *)
-    ("games/programming/software/TinyCoreWar", "mice", 60, "2:2");
+    (* claude: the Mice chosen in warrior 2's menu, and Fight: they have
+     * multiplied, and the Dwarf is dead *)
+    ("games/programming/software/TinyCoreWar", "mice", 90,
+     "at(360;100):1-6,click:2,at(360;10):7-20,click:8,at(-420;-385):21-90,click:22");
+    (* claude: a mistake typed into the Imp -- a word that is no opcode,
+     * so a label with no instruction -- shown with its line, and Fight
+     * greyed out *)
+    ("games/programming/software/TinyCoreWar", "mistake", 12, "at(250;-250):1-12,click:3,type(HALT):6");
     (* the riff's first four notes on Medium, every fret held and each
        strummed on its beat (132 a minute, an eighth 0.227 s) *)
     ("games/rhythm/software/TinyGuitarHero", "riff", 305,

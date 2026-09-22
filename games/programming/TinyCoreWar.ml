@@ -13,16 +13,19 @@
  * called Redcode, share one circular memory, the core, and take turns
  * running one instruction each. A program that executes a DAT
  * instruction dies; the last one running wins. You do not play Core
- * War, you write the program that plays it -- here, you pick the fight
- * and watch.
+ * War, you write the program that plays it.
  *
- *   1 2 3      a fight: Dwarf against Imp, Mice against Dwarf, Imp
- *              against Mice
- *   space      pause, and on pause, right: one cycle at a time
- *   up/down    faster, slower           r: the fight again
+ * So the screen is an editor and a machine. Each warrior's Redcode is
+ * text you type into (a menu loads one of the classics to start from);
+ * Fight assembles both and loads them into the core, and the fight
+ * runs, drawn cell by cell in the color of the warrior who wrote there
+ * last, the running processes as white squares. A mistake in a
+ * program is shown under it, with its line, and there is no fight
+ * until both assemble. As in the tournaments, a program is fixed once
+ * loaded: an edit counts from the next Fight.
  *
- * The core is drawn cell by cell, in the color of the warrior who wrote
- * there last, and each program's running processes as white squares.
+ *   Fight      assemble, load, run       Pause, Step: one cycle
+ *   speed      how many cycles a frame
  *
  * Its ancestor is Darwin (Victor Vyssotsky, Robert Morris and Doug
  * McIlroy, at Bell Labs, 1961), the same fight between programs on an
@@ -43,13 +46,16 @@
  *   the opcodes     DAT (die), MOV, ADD, SUB, JMP, JMZ, JMN, DJN, CMP
  *                   (skip the next instruction if equal) and SPL (a
  *                   new process, as a thread)
+ *   the rest        a label before an opcode; an operand may be one (the
+ *                   distance to its line); ';' starts a comment; END,
+ *                   or END and a label, where the program starts
  *
  * Every address is relative to the instruction and taken modulo the
  * core's size, so a program can be loaded anywhere and cannot tell
  * where it is: the core has no beginning. The tournaments' core has
  * 8000 cells; this one 800, so that each can be seen.
  *
- * The three warriors are the classics, as they were printed:
+ * The classics in the menu, as they were printed:
  *
  *   Imp (Dewdney)   MOV 0, 1        copies itself one cell ahead, then
  *                                   runs the copy: a program that walks
@@ -59,17 +65,21 @@
  *                   itself far away and starts the copy with SPL: more
  *                   and more mice, which a bomb can no longer all kill
  *
- * What it uses: nothing but the Playground and Scene2d (the keys
- * pressed): the assembler and the machine are here, a page each.
+ * The Imp walking through the Dwarf turns it into an Imp (a draw: two
+ * imps cannot kill each other); the Mice outbreed the Dwarf.
  *
- * Exercises: writing your own warrior (an editor in the game: the gui
- * library's text field, then [assemble]); the 1994 standard's
- * modifiers (MOV.A, MOV.I ...) and its SEQ/SNE/SLT; a tournament (every
- * warrior against every other, 100 fights each from random places, the
- * scores in a table); the famous strategies: the stone (a faster
- * bomber), the paper (a faster replicator, like Mice), the scissors (a
- * scanner looking for the enemy before bombing it), and why each beats
- * the next.
+ * What it uses: the Playground's Gui (the text areas -- gui/Text_edit,
+ * a piece table with its own undo -- the menus, the buttons, the
+ * slider); the assembler and the machine are here, a page each.
+ *
+ * Exercises: saving a warrior to a file and opening one (the office
+ * apps' File_menu, over the store); the 1994 standard's modifiers
+ * (MOV.A, MOV.I ...) and its SEQ/SNE/SLT; a tournament (every warrior
+ * against every other, 100 fights each from random places, the scores
+ * in a table); the famous strategies, written in the editor: the stone
+ * (a faster bomber), the paper (a faster replicator, like Mice), the
+ * scissors (a scanner looking for the enemy before bombing it), and why
+ * each beats the next.
  *)
 open Playground
 
@@ -87,23 +97,41 @@ let opcodes =
   [ ("DAT", DAT); ("MOV", MOV); ("ADD", ADD); ("SUB", SUB); ("JMP", JMP); ("JMZ", JMZ); ("JMN", JMN);
     ("DJN", DJN); ("CMP", CMP); ("SPL", SPL) ]
 
-(* [assemble text]: the instructions of a program, one a line, with ';'
- * starting a comment and an optional label before the opcode; an
- * operand is a number or a label (the distance to its line). With one
- * operand, DAT's is the B-field, the others' the A-field. *)
-let assemble (text : string) : instr list =
+(* a warrior's program, and the instruction it starts at *)
+type program = { code : instr list; entry : int }
+
+exception Wrong of int * string
+
+(* [assemble text]: the program, or the first mistake and its line
+ * (counted from 1, as an editor shows them). One instruction a line,
+ * with an optional label before the opcode; ';' starts a comment; an
+ * operand is a number or a label (the distance to its line); with one
+ * operand, DAT's is the B-field, the others' the A-field; END, alone
+ * or with a label, says where the program starts. *)
+let assemble (text : string) : (program, int * string) result =
   let lines =
     String.split_on_char '\n' text
-    |> List.map (fun l -> match String.index_opt l ';' with Some i -> String.sub l 0 i | None -> l)
-    |> List.map (fun l -> String.map (fun c -> if c = ',' || c = '\t' then ' ' else c) l)
-    |> List.map (fun l -> String.split_on_char ' ' l |> List.filter (( <> ) ""))
-    |> List.filter (( <> ) [])
+    |> List.mapi (fun i l -> (i + 1, l))
+    |> List.map (fun (n, l) -> (n, match String.index_opt l ';' with Some i -> String.sub l 0 i | None -> l))
+    |> List.map (fun (n, l) -> (n, String.map (fun c -> if c = ',' || c = '\t' || c = '\r' then ' ' else c) l))
+    |> List.map (fun (n, l) -> (n, String.split_on_char ' ' l |> List.filter (( <> ) "")))
+    |> List.filter (fun (_, words) -> words <> [])
   in
-  (* the labels: a first word that is not an opcode *)
   let is_op w = List.mem_assoc (String.uppercase_ascii w) opcodes in
-  let labels = List.mapi (fun i words -> match words with w :: _ when not (is_op w) -> [ (w, i) ] | _ -> []) lines in
-  let labels = List.concat labels in
-  let operand i s =
+  let is_end w = String.uppercase_ascii w = "END" in
+  (* the instructions' lines, up to END, and END's label and line if
+   * any *)
+  let rec split acc = function
+    | [] -> (List.rev acc, None)
+    | (n, w :: rest) :: _ when is_end w -> (List.rev acc, match rest with l :: _ -> Some (n, l) | [] -> None)
+    | line :: tl -> split (line :: acc) tl
+  in
+  let code_lines, start = split [] lines in
+  let labels =
+    List.concat (List.mapi (fun i (_, words) -> match words with w :: _ when not (is_op w) -> [ (w, i) ] | _ -> []) code_lines)
+  in
+  let where n label = match List.assoc_opt label labels with Some i -> i | None -> raise (Wrong (n, "no label " ^ label)) in
+  let operand n i s =
     let mode, rest =
       match s.[0] with
       | '#' -> (Immediate, String.sub s 1 (String.length s - 1))
@@ -112,62 +140,63 @@ let assemble (text : string) : instr list =
       | '<' -> (Predecrement, String.sub s 1 (String.length s - 1))
       | _ -> (Direct, s)
     in
-    let value =
-      match int_of_string_opt rest with
-      | Some n -> n
-      | None -> ( match List.assoc_opt rest labels with Some line -> line - i | None -> failwith ("no label " ^ rest))
-    in
-    (mode, value)
+    if rest = "" then raise (Wrong (n, "an operand with no value"));
+    (mode, match int_of_string_opt rest with Some v -> v | None -> where n rest - i)
   in
-  List.mapi
-    (fun i words ->
-      let words = match words with w :: rest when not (is_op w) -> rest | ws -> ws in
-      match words with
-      | op :: args -> (
-          let op = List.assoc (String.uppercase_ascii op) opcodes in
-          match (op, List.map (operand i) args) with
-          | DAT, [ (bm, b) ] -> { op; amode = Immediate; a = 0; bmode = bm; b }
-          | _, [ (am, a) ] -> { op; amode = am; a; bmode = Immediate; b = 0 }
-          | _, [ (am, a); (bm, b) ] -> { op; amode = am; a; bmode = bm; b }
-          | _ -> failwith "an instruction takes one or two operands")
-      | [] -> dat0)
-    lines
+  try
+    let code =
+      List.mapi
+        (fun i (n, words) ->
+          let words = match words with w :: rest when not (is_op w) -> rest | ws -> ws in
+          match words with
+          | [] -> raise (Wrong (n, "a label with no instruction"))
+          | op :: args -> (
+              match List.assoc_opt (String.uppercase_ascii op) opcodes with
+              | None -> raise (Wrong (n, "no opcode " ^ op))
+              | Some op -> (
+                  match (op, List.map (operand n i) args) with
+                  | DAT, [ (bm, b) ] -> { op; amode = Immediate; a = 0; bmode = bm; b }
+                  | _, [ (am, a) ] -> { op; amode = am; a; bmode = Immediate; b = 0 }
+                  | _, [ (am, a); (bm, b) ] -> { op; amode = am; a; bmode = bm; b }
+                  | _ -> raise (Wrong (n, "one or two operands")))))
+        code_lines
+    in
+    if code = [] then raise (Wrong (1, "no instruction"));
+    let entry = match start with Some (n, l) -> where n l | None -> 0 in
+    Ok { code; entry }
+  with Wrong (n, msg) -> Error (n, msg)
 
 (*****************************************************************************)
-(* The warriors *)
+(* The classics *)
 (*****************************************************************************)
 
-(* a warrior's program, and the line it starts at (Redcode's "END
- * start", later ORG) *)
-type program = { name : string; code : instr list; entry : int }
-
-let imp = { name = "IMP"; code = assemble "MOV 0, 1"; entry = 0 }
-
-let dwarf =
-  { name = "DWARF";
-    entry = 0;
-    code =
-    assemble
-      "        ADD #4, bomb   ; the next place to bomb, 4 cells further\n\
-      \        MOV bomb, @bomb ; the bomb, to where it points\n\
+let classics =
+  [ ("Imp", "; Dewdney: copy yourself one cell\n\
+             ; ahead, and run the copy\n\
+             MOV 0, 1\n");
+    ("Dwarf",
+     "; Dewdney: a bomb every 4 cells\n\
+      \        ADD #4, bomb    ; where next\n\
+      \        MOV bomb, @bomb ; drop it\n\
       \        JMP -2\n\
-       bomb    DAT #0" }
-
-let mice =
-  { name = "MICE";
-    entry = 1 (* start *);
-    code =
-    assemble
-      "ptr     DAT #0\n\
-       start   MOV #12, ptr    ; 12 cells to copy\n\
-       loop    MOV @ptr, <copy ; one, from the end\n\
+       bomb    DAT #0\n");
+    ("Mice",
+     "; Chip Wendell, 1986: copy yourself\n\
+      ; and run the copy too\n\
+      ptr     DAT #0\n\
+      start   MOV #12, ptr    ; 12 to copy\n\
+      loop    MOV @ptr, <copy ; copy one\n\
       \        DJN loop, ptr\n\
-      \        SPL @copy, 0    ; the copy runs too\n\
-      \        ADD #653, copy  ; the next copy, far away\n\
+      \        SPL @copy, 0    ; run it too\n\
+      \        ADD #653, copy  ; far away\n\
       \        JMZ start, ptr\n\
-       copy    DAT 833" }
+      copy    DAT 833\n\
+      \        END start\n") ]
 
-let fights = [| (dwarf, imp); (mice, dwarf); (imp, mice) |]
+let classic name = Result.get_ok (assemble (List.assoc name classics))
+let imp = classic "Imp"
+let dwarf = classic "Dwarf"
+let mice = classic "Mice"
 
 (*****************************************************************************)
 (* The machine *)
@@ -176,7 +205,8 @@ let fights = [| (dwarf, imp); (mice, dwarf); (imp, mice) |]
 let size = 800
 let wrap n = ((n mod size) + size) mod size
 
-type warrior = { name : string; code : instr list; queue : int list (* the processes' next instructions *) }
+(* a warrior loaded: its processes' next instructions, in turn *)
+type warrior = { queue : int list }
 
 type mars = {
   core : instr array;
@@ -194,7 +224,7 @@ let load ((p1, p2) : program * program) : mars =
   let core = Array.make size dat0 and owner = Array.make size 0 in
   let put at w (p : program) =
     List.iteri (fun i ins -> core.(wrap (at + i)) <- ins; owner.(wrap (at + i)) <- w) p.code;
-    { name = p.name; code = p.code; queue = [ at + p.entry ] }
+    { queue = [ wrap (at + p.entry) ] }
   in
   let w1 = put 0 1 p1 in
   let w2 = put (size / 2) 2 p2 in
@@ -250,7 +280,7 @@ let step (m : mars) : mars =
         | SPL -> if List.length rest + 2 <= max_processes then [ next; aptr ] else [ next ]
       in
       let warriors = Array.copy m.warriors in
-      warriors.(me) <- { w with queue = rest @ continue_at };
+      warriors.(me) <- { queue = rest @ continue_at };
       { m with warriors; turn = 1 - me; cycles = (if me = 1 then m.cycles + 1 else m.cycles) }
 
 (* the winner (0 or 1) once the other has no process left, a draw after
@@ -272,85 +302,112 @@ let rec run (m : mars) (n : int) : mars =
 (* The model *)
 (*****************************************************************************)
 
-type play = { fight : int; mars : mars; speed : int; paused : bool }
-type model = play Scene2d.t
+(* for each side, the classic last chosen in its menu and its text; the
+ * fight, with the names it was loaded under *)
+type model = {
+  chosen : int array;
+  texts : Text_edit.t array;
+  mars : mars;
+  names : string array;
+  running : bool;
+  speed : number;
+}
 
-let start fight = { fight; mars = load fights.(fight); speed = 4; paused = false }
-let initial_model : model = Scene2d.start (start 0)
+let names = List.map fst classics
+let text_of i = Text_edit.of_string (snd (List.nth classics i))
+
+(* Dwarf against Imp, running *)
+let initial_model : model =
+  { chosen = [| 1; 0 |]; texts = [| text_of 1; text_of 0 |]; mars = load (dwarf, imp);
+    names = [| "Dwarf"; "Imp" |]; running = true; speed = 4. }
+
+(*****************************************************************************)
+(* The screen *)
+(*****************************************************************************)
+
+let box x y w h : Widget.box = { x; y; w; h }
+let side_x i = if i = 0 then -250. else 250.
+let colors = [| rgb 40 40 50; rgb 60 200 90; rgb 230 80 70 |]
+let cell = 16.
+let columns = 40
+let cell_xy i = (-312. +. (cell *. float_of_int (i mod columns)), 460. -. (cell *. float_of_int (i / columns)))
 
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
 
-let update (computer : computer) (s : model) : model =
-  let s = Scene2d.update computer s in
-  let pressed f = Scene2d.pressed f s in
-  let key name = pressed (fun k -> Set_.mem name k.keys) in
-  let p = s.scene in
-  let p =
-    if key "1" then start 0
-    else if key "2" then start 1
-    else if key "3" then start 2
-    else if key "r" then start p.fight
-    else if pressed (fun k -> k.kspace) then { p with paused = not p.paused }
-    else if pressed (fun k -> k.kup) then { p with speed = min 64 (p.speed * 2) }
-    else if pressed (fun k -> k.kdown) then { p with speed = max 1 (p.speed / 2) }
-    else if p.paused && pressed (fun k -> k.kright) then { p with mars = run p.mars 1 }
-    else if p.paused then p
-    else { p with mars = run p.mars p.speed }
-  in
-  { s with scene = p }
+let update (computer : computer) (m : model) : model =
+  (* the two warriors: a menu of the classics over each text *)
+  let chosen = Array.copy m.chosen and texts = Array.copy m.texts in
+  for i = 0 to 1 do
+    let c = Gui.menu_in computer (box (side_x i +. 110.) 100. 220. 30.) names m.chosen.(i) in
+    if c <> m.chosen.(i) then (chosen.(i) <- c; texts.(i) <- text_of c);
+    texts.(i) <- Gui.text_area_in computer (box (side_x i) (-120.) 460. 360.) texts.(i)
+  done;
+  let programs = Array.map (fun t -> assemble (Text_edit.to_string t)) texts in
+  let ready = Array.for_all Result.is_ok programs in
+  let fight = Gui.button_in ~enabled:ready computer (box (-420.) (-385.) 110. 36.) "Fight" in
+  let pause = Gui.button_in computer (box (-295.) (-385.) 110. 36.) (if m.running then "Pause" else "Run") in
+  let one = Gui.button_in ~enabled:(not m.running) computer (box (-170.) (-385.) 110. 36.) "Step" in
+  let speed = Gui.slider_in computer (box 60. (-385.) 200. 36.) ~from:1. ~to_:32. m.speed in
+  let m = { m with chosen; texts; speed } in
+  if fight then
+    let p i = Result.get_ok programs.(i) in
+    let name i =
+      let t = Text_edit.to_string texts.(i) and c = List.nth classics chosen.(i) in
+      if t = snd c then fst c else fst c ^ ", edited"
+    in
+    { m with mars = load (p 0, p 1); names = [| name 0; name 1 |]; running = true }
+  else if pause then { m with running = not m.running }
+  else if one then { m with mars = run m.mars 1 }
+  else if m.running then { m with mars = run m.mars (int_of_float speed) }
+  else m
 
 (*****************************************************************************)
 (* View *)
 (*****************************************************************************)
 
-let colors = [| rgb 40 40 50; rgb 60 200 90; rgb 230 80 70 |]
-let cell = 22.
-let columns = 40
-let cell_xy i = (-429. +. (cell *. float_of_int (i mod columns)), 440. -. (cell *. float_of_int (i / columns)))
-
-let view (_computer : computer) (s : model) : shape list =
-  let p = s.scene and m = s.scene.mars in
+let view (_computer : computer) (m : model) : shape list =
+  let core = m.mars in
   let cells =
     List.init size (fun i ->
         let x, y = cell_xy i in
-        move x y (square colors.(m.owner.(i)) (cell -. 3.)))
+        move x y (square colors.(core.owner.(i)) (cell -. 2.)))
   in
   let bombs =
     (* a DAT written by a warrior: a dark dot, what kills *)
     List.init size Fun.id
-    |> List.filter (fun i -> m.core.(i).op = DAT && m.owner.(i) <> 0)
-    |> List.map (fun i -> let x, y = cell_xy i in move x y (square (rgb 20 20 20) 7.))
+    |> List.filter (fun i -> core.core.(i).op = DAT && core.owner.(i) <> 0)
+    |> List.map (fun i -> let x, y = cell_xy i in move x y (square (rgb 20 20 20) 5.))
   in
   let processes =
-    Array.to_list m.warriors
-    |> List.concat_map (fun w -> List.map (fun pc -> let x, y = cell_xy pc in move x y (square white 9.)) w.queue)
+    Array.to_list core.warriors
+    |> List.concat_map (fun (w : warrior) -> List.map (fun pc -> let x, y = cell_xy pc in move x y (square white 7.)) w.queue)
   in
-  let listing i =
-    let w = m.warriors.(i) in
-    let x = if i = 0 then -300. else 150. in
-    let title = Printf.sprintf "%s  %d process%s" w.name (List.length w.queue) (if List.length w.queue = 1 then "" else "es") in
-    move x (-40.) (words colors.(i + 1) title)
-    :: List.mapi
-         (fun j ins ->
-           let name = fst (List.find (fun (_, o) -> o = ins.op) opcodes) in
-           let operand mode v =
-             (match mode with Immediate -> "#" | Direct -> "" | Indirect -> "@" | Predecrement -> "<") ^ string_of_int v
-           in
-           move x (-80. -. (26. *. float_of_int j))
-             (scale 0.8 (words white (Printf.sprintf "%s %s, %s" name (operand ins.amode ins.a) (operand ins.bmode ins.b)))))
-         w.code
+  (* each side's title, in its color, and its program's mistake or its
+   * processes *)
+  let side i =
+    let programs = assemble (Text_edit.to_string m.texts.(i)) in
+    let n = List.length core.warriors.(i).queue in
+    let below =
+      match programs with
+      | Error (line, msg) -> (rgb 250 120 100, Printf.sprintf "line %d: %s" line msg)
+      | Ok _ -> (gray, Printf.sprintf "%s: %d process%s" m.names.(i) n (if n = 1 then "" else "es"))
+    in
+    [ move (side_x i -. 150.) 100. (words colors.(i + 1) (Printf.sprintf "WARRIOR %d" (i + 1)));
+      move (side_x i) (-322.) (words (fst below) (snd below)) ]
   in
   let status =
-    match result m with
-    | Running -> Printf.sprintf "cycle %d    %d cycles a frame%s" m.cycles p.speed (if p.paused then "    PAUSED" else "")
-    | Wins w -> Printf.sprintf "%s WINS, cycle %d    r: again" m.warriors.(w).name m.cycles
-    | Draw -> Printf.sprintf "A DRAW after %d cycles    r: again" m.cycles
+    match result core with
+    | Running -> Printf.sprintf "cycle %d, %d a frame%s" core.cycles (int_of_float m.speed) (if m.running then "" else ", paused")
+    | Wins w -> Printf.sprintf "%s WINS, cycle %d" (String.uppercase_ascii m.names.(w)) core.cycles
+    | Draw -> Printf.sprintf "A DRAW, cycle %d" core.cycles
   in
-  [ rectangle black 1000. 1000. ] @ cells @ bombs @ processes @ listing 0 @ listing 1
-  @ [ move 0. (-400.) (words white status);
-      move 0. (-440.) (scale 0.8 (words gray "1 2 3: a fight    space: pause    up/down: speed")) ]
+  (* the widgets last: an open menu over everything *)
+  let gui = Gui.draw () in
+  [ rectangle black 1000. 1000. ] @ cells @ bombs @ processes @ side 0 @ side 1
+  @ [ move 330. (-385.) (words white status) ]
+  @ gui
 
 (*****************************************************************************)
 (* Entry point *)

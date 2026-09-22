@@ -5619,7 +5619,21 @@ let corewar_assemble () =
   Alcotest.(check bool) "ADD #4, 3" true (List.nth d.code 0 = { op = ADD; amode = Immediate; a = 4; bmode = Direct; b = 3 });
   Alcotest.(check bool) "MOV 2, @2" true (List.nth d.code 1 = { op = MOV; amode = Direct; a = 2; bmode = Indirect; b = 2 });
   Alcotest.(check bool) "JMP -2" true ((List.nth d.code 2).a = -2);
-  Alcotest.(check bool) "SPL @3, 0" true (List.nth mice.code 4 = { op = SPL; amode = Indirect; a = 3; bmode = Direct; b = 0 })
+  Alcotest.(check bool) "SPL @3, 0" true (List.nth mice.code 4 = { op = SPL; amode = Indirect; a = 3; bmode = Direct; b = 0 });
+  Alcotest.(check int) "Mice's END start" 1 mice.entry
+
+(* a mistake is shown with its line, counted from 1 as the editor shows
+ * them, comments and blank lines included *)
+let corewar_mistakes () =
+  let open TinyCoreWar in
+  let mistake text = match assemble text with Error e -> Some e | Ok _ -> None in
+  Alcotest.(check (option (pair int string))) "a label no line has" (Some (3, "no label bmb"))
+    (mistake "; a comment\n\n  ADD #4, bmb\nbomb DAT #0");
+  Alcotest.(check (option (pair int string))) "a label alone" (Some (2, "a label with no instruction"))
+    (mistake "MOV 0, 1\nHALT");
+  Alcotest.(check (option (pair int string))) "three operands" (Some (1, "one or two operands")) (mistake "MOV 0, 1, 2");
+  Alcotest.(check (option (pair int string))) "nothing" (Some (1, "no instruction")) (mistake "; only a comment");
+  Alcotest.(check (option (pair int string))) "END's label" (Some (2, "no label go")) (mistake "MOV 0, 1\nEND go")
 
 (* the Imp walks a cell a cycle; the Dwarf's first bomb lands 7 cells
  * from its start, the next 4 further *)
@@ -5634,7 +5648,7 @@ let corewar_imp_and_dwarf () =
  * Imp, a draw; the Mice multiply and kill the Dwarf *)
 let corewar_fights () =
   let open TinyCoreWar in
-  let dead = { name = "DAT"; code = [ dat0 ]; entry = 0 } in
+  let dead = { code = [ dat0 ]; entry = 0 } in
   Alcotest.(check bool) "DAT kills" true (result (run (load (dead, imp)) 5) = Wins 1);
   Alcotest.(check bool) "Dwarf and Imp: a draw" true (result (run (load (dwarf, imp)) max_cycles) = Draw);
   let m = run (load (mice, dwarf)) max_cycles in
@@ -5929,5 +5943,6 @@ let tests =
       t "TinySolitaire, deal 1 the Klondike way" solitaire_deal;
       t "TinySolitaire, a card home, the stock round" solitaire_moves;
       t "TinyCoreWar, the assembler" corewar_assemble;
+      t "TinyCoreWar, the assembler's mistakes, and their lines" corewar_mistakes;
       t "TinyCoreWar, the Imp walks, the Dwarf bombs" corewar_imp_and_dwarf;
       t "TinyCoreWar, three fights" corewar_fights ]

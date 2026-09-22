@@ -278,7 +278,7 @@ match is programs run against the machine or against each other.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
-| [TinyCoreWar](games/programming/TinyCoreWar.ml) | 2D | Core War (A. K. Dewdney and D. G. Jones, 1984) | Two programs in one circular memory, each trying to make the other execute a DAT. | A virtual machine and its assembler, a page each (Redcode, MARS); the classic warriors -- the Imp, the Dwarf, the Mice -- and why each beats the next. |
+| [TinyCoreWar](games/programming/TinyCoreWar.ml) | 2D | Core War (A. K. Dewdney and D. G. Jones, 1984) | Write two programs in its editor, then watch them fight in one circular memory, each trying to make the other execute a DAT. | A virtual machine and its assembler, a page each (Redcode, MARS), the assembler's mistakes shown on their lines; the classic warriors to start from -- the Imp, the Dwarf, the Mice -- and why each beats the next. |
 
 # Apps
 
