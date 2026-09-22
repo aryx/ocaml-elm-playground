@@ -15,4 +15,6 @@
    elm_playground_3d ; Logo3d
    elm_playground_3d_software ; an implem of virtual elm_playground_3d, to link
  )
+ ; claude: TinyMario's sprites, which Unit_sprite reads and writes back
+ (deps (glob_files %{project_root}/games/platform/*.xpm))
 )

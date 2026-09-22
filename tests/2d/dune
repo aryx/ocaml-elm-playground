@@ -22,6 +22,7 @@
    %{project_root}/apps/office/software/TinyBravo.exe
    %{project_root}/apps/office/software/TinyWord.exe
    %{project_root}/apps/office/software/TinyMacPaint.exe
+   %{project_root}/apps/gamedev/software/TinyAseprite.exe
    %{project_root}/apps/office/software/TinyOpenDoc.exe
    %{project_root}/apps/office/software/TinyPowerPoint.exe
    %{project_root}/apps/office/software/TinyHyperCard.exe

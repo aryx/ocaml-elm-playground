@@ -64,6 +64,32 @@ let flip (rows : string list) : string list =
     String.init cols (fun i -> row.[cols - 1 - i]))
 
 (*****************************************************************************)
+(* Files *)
+(*****************************************************************************)
+
+let of_xpm (text : string) : (char * color) list * string list =
+  let xpm = Xpm.parse text in
+  (List.filter_map (fun (c, v) -> Option.map (fun (r, g, b) -> (c, rgb r g b)) v) xpm.colors, xpm.rows)
+
+(* the color as red, green, blue: the playground's colors are either *)
+let triple (c : color) : int * int * int =
+  match c with
+  | Rgb (r, g, b) -> (r, g, b)
+  | Hex s ->
+      let byte i = int_of_string ("0x" ^ String.sub s i 2) in
+      (byte 1, byte 3, byte 5)
+
+let to_xpm (name : string) (palette : (char * color) list) (rows : string list) : string =
+  let rows = List.map (pad (width rows)) rows in
+  let transparent =
+    List.concat_map (fun r -> List.init (String.length r) (String.get r)) rows
+    |> List.filter (fun c -> not (List.mem_assoc c palette))
+    |> List.sort_uniq compare
+  in
+  Xpm.print
+    { name; colors = List.map (fun c -> (c, None)) transparent @ List.map (fun (c, col) -> (c, Some (triple col))) palette; rows }
+
+(*****************************************************************************)
 (* Animation *)
 (*****************************************************************************)
 

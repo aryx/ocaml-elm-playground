@@ -20,7 +20,7 @@ The question is who reads what the tool makes.
 | Who reads it | Where the tool goes | Examples |
 | --- | --- | --- |
 | one genre's games only (a Sokoban level, a Doom map, a race track) | `games/<genre>/`, beside its game, as `Tiny<Game>Ed`; what the editor and the game share (rules, look, format) in the genre's kit, `gamekits/<genre>/` | `TinySokobanEd` (and the kit's `Sokoban`); a `TinyDoomEd` over `Sectors`, a track editor over `Track3d` |
-| any game, through a playground layer (`Sprite`, `Tilemap`, `audio/`'s sound effects) | `apps/gamedev/`, as `Tiny<Original>` | a sprite editor, a tile-map editor (Tiled), a sound-effect maker (sfxr), PICO-8's editors |
+| any game, through a playground layer (`Sprite`, `Tilemap`, `audio/`'s sound effects) | `apps/gamedev/`, as `Tiny<Original>` | `TinyAseprite`, the sprite editor; a tile-map editor (Tiled), a sound-effect maker (sfxr), PICO-8's editors |
 | any program at all (a picture, a tune) | the medium's category, `apps/graphics/` or `apps/music/` | a paint program (Deluxe Paint), a tracker (ProTracker) |
 
 A level editor goes with its genre and not in `apps/`, for three
@@ -37,26 +37,29 @@ How a game gets what a tool made
 --------------------------------
 
 1. **The format belongs to whoever reads it**: the kit for a genre's
-   levels (`Sokoban.of_xsb`), the playground layer for the rest (the
-   strings `Sprite.pixels` and `Tilemap.of_strings` take). The tool
-   writes that format and nothing of its own, so that its work can
-   also be written by hand, and read in a diff. Where the game's world
-   already has a text format, use it (Sokoban's `.xsb`); otherwise
-   strings, one character per pixel or cell, as `Sprite` and `Tilemap`
-   do.
+   levels (`Sokoban.of_xsb`), the playground layer for the rest
+   (`Sprite.of_xpm`). The tool writes that format and nothing of its
+   own, so that its work can also be written by hand, and read in a
+   diff. Where the world already has a text format, use it (Sokoban's
+   `.xsb`; XPM for sprites, which GIMP and ImageMagick open too, read
+   and written by our own code, `graphics/images/xpm/`); otherwise
+   strings, one character per pixel or cell, as `Tilemap` takes.
 2. **The work is a file in the game's directory**, next to the game
-   (`games/puzzle/TinySokoban.xsb`), committed with it.
+   (`games/puzzle/TinySokoban.xsb`, `games/platform/mario_walk1.xpm`),
+   committed with it.
 3. **dune embeds the file in the game at build time**, as a module
    holding it as a string (`Sokoban_levels.xsb`), so that the game
    still needs no file at run time, natively or in the browser, and
    its `web/` and `software/` copies get it with `copy_files ../*.ml`.
-   Text is embedded with `cat` (`games/puzzle/dune`, and
+   Text is embedded with `cat` (`games/puzzle/dune`,
+   `games/platform/dune` for TinyMario's sprites, and
    `graphics/font/dune` for the Hershey font); anything else (a PNG, a
    WAV) as base64 with `scripts/build/file_to_base64_ml.ml`
    (`games/fps/dune`'s `minecraft.png`, `games/adventure/dune`'s
    `tomb.png`).
 4. **The tool starts from the game's own file** (the same embedded
-   module) and **exports it back** with `Playground_platform.export`:
+   module; a tool for any game from one game's, TinyAseprite from
+   TinyMario's hero) and **exports it back** with `Playground_platform.export`:
    natively a file in the current directory, in the browser a
    download. Copied over the game's file, it is the game's at the next
    build. The export needs `Cap.open_out`, which the tool's `main` gets
@@ -64,8 +67,9 @@ How a game gets what a tool made
    that it does.
 5. **A test checks the round trip**: the file the tool would export,
    nothing changed, is the one the game was built with, byte for byte
-   (`tests/games/Unit_games.ml`). Otherwise the first export of an
-   untouched level makes a diff that no one asked for.
+   (`tests/games/Unit_games.ml` for the levels, `Unit_sprite.ml` for
+   the sprites). Otherwise the first export of an untouched level
+   makes a diff that no one asked for.
 
 Checklist for a new tool
 ------------------------

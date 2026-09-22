@@ -5,7 +5,8 @@
   (names TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
     TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic)
   (modules TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
-    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic)
+    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic
+    Mario_xpm)
   (libraries
     elm_playground
     kit_platformer ; Tile_move, Ladder, and the Slope of TinySonic and TinyMarioWorld
@@ -14,6 +15,28 @@
     elm_playground_native ; implem of virtual elm_playground
   )
 )
+
+; claude: TinyMario's hero, four poses drawn as XPM files (see
+; Sprite.of_xpm), embedded as strings: mario_stand.xpm becomes
+; Mario_xpm.stand at build time, and so on, so the game still needs no
+; file at run time (see games/README-tools.md)
+(rule
+ (targets Mario_xpm.ml)
+ (deps mario_stand.xpm mario_walk1.xpm mario_walk2.xpm mario_jump.xpm)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from mario_*.xpm by games/platform/dune *)\n")
+    (echo "let stand = {|")
+    (cat mario_stand.xpm)
+    (echo "|}\nlet walk1 = {|")
+    (cat mario_walk1.xpm)
+    (echo "|}\nlet walk2 = {|")
+    (cat mario_walk2.xpm)
+    (echo "|}\nlet jump = {|")
+    (cat mario_jump.xpm)
+    (echo "|}\n")))))
 
 (executables
   (names TinyMario64)

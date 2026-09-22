@@ -1,0 +1,14 @@
+; claude: the same tools against the software rasterizer, for the golden
+; frames (see examples/software/dune): ../Foo.ml reused as-is by a
+; build-time copy, not a committed duplicate.
+(copy_files ../*.ml)
+
+(executables
+  (names TinyAseprite)
+  (modules TinyAseprite Mario_xpm)
+  (libraries
+    caps
+    elm_playground
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

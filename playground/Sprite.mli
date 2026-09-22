@@ -109,6 +109,28 @@ val runs : string -> (int * int * char) list
  * completed first, so the columns stay aligned. *)
 val flip : string list -> string list
 
+(* {1 Files} *)
+
+(* A sprite drawn in an editor is saved as an XPM file (graphics/images/
+ * xpm/Xpm.mli): a palette and rows of characters, what [pixels] takes,
+ * and a file GIMP and ImageMagick open too. A game embeds the file at
+ * build time (games/README-tools.md), e.g.
+ *
+ *   let palette, rows = Sprite.of_xpm Mario_sprites.stand
+ *   let stand = Sprite.pixels 4. palette rows
+ *)
+
+(* [of_xpm text]: the palette and the rows of an XPM file, for [pixels];
+ * the transparent colors (None) are left out of the palette, so their
+ * characters draw nothing. Raises Failure (see Xpm.parse). *)
+val of_xpm : string -> (char * color) list * string list
+
+(* [to_xpm name palette rows]: the XPM file, the C array called [name];
+ * the characters of [rows] not in [palette] are written as transparent
+ * (None), first, and short rows completed with '.'. [of_xpm] gives the
+ * palette and rows back. *)
+val to_xpm : string -> (char * color) list -> string list -> string
+
 (* {1 Animation} *)
 
 (* [cycle n frames]: frame [n] of an animation that loops, e.g. [cycle 5

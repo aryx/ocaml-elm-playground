@@ -6,7 +6,8 @@
   (names TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
     TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic)
   (modules TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
-    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic)
+    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic
+    Mario_xpm)
   (libraries
     elm_playground
     kit_platformer

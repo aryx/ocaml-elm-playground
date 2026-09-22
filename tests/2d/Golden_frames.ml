@@ -78,6 +78,7 @@ let scenes : Testutil_golden.scene list =
     (* 1984: a picture as dots, drawn as rectangles -- a run of black
      * dots merged with the runs under it *)
     ("apps/office/software/TinyMacPaint", "", 5);
+    ("apps/gamedev/software/TinyAseprite", "", 5);
     (* 1994: a document of parts -- a text, a sheet and a picture side
      * by side, and a part of a kind nobody here can read, kept *)
     ("apps/office/software/TinyOpenDoc", "", 5);
@@ -779,6 +780,14 @@ let scripted : Testutil_golden.scripted list =
       26,
       "at(-440;370):1-3,click:2,at(190;350):4-7,click:6-12,at(310;230):9-14,at(250;290):15-17,click:17-24,at(100;290):20,at(0;290):21-26"
     );
+    (* the sprite editor: on the first walking frame, three red pixels
+     * typed at the cursor, the frame copied (n) and flipped (f), then a
+     * red pixel painted with the mouse in its top-left corner, over the
+     * onion skin *)
+    ( "apps/gamedev/software/TinyAseprite",
+      "edited",
+      22,
+      "Tab:3,right:5,down:7,type(RRR):9,type(n):12,type(f):15,at(-310;240):17-20,click:18-19" );
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

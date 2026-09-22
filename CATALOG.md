@@ -290,13 +290,13 @@ match is programs run against the machine or against each other.
 
 # Apps
 
-All in `apps/office/` so far, the sections below being its kinds of
-program. The other categories are waiting for their first app, each
-with a dune file saying what it might hold: `apps/music/`,
-`apps/internet/`, `apps/devtools/`, `apps/graphics/`, `apps/system/`,
-and `apps/gamedev/`, the tools making what any game can use (a
-genre's level editor is with its games instead, as TinySokobanEd is:
-see `games/README-tools.md`).
+In `apps/office/`, the sections below up to PIM being its kinds of
+program, and in `apps/gamedev/`, the tools making what any game can
+use (a genre's level editor is with its games instead, as
+TinySokobanEd is: see `games/README-tools.md`). The other categories
+are waiting for their first app, each with a dune file saying what it
+might hold: `apps/music/`, `apps/internet/`, `apps/devtools/`,
+`apps/graphics/`, `apps/system/`.
 
 ## Word processing and publishing
 
@@ -337,3 +337,13 @@ see `games/README-tools.md`).
 ## PIM
 
 None yet (a calendar, an address book, a to-do list would go here).
+
+## Game making
+
+`apps/gamedev/`: the tools making what any game can use -- sprites,
+maps, sounds -- written in the format of the playground layer that
+reads them, in files the games embed at build time.
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinyAseprite](apps/gamedev/TinyAseprite.ml) | app | Aseprite (David Capello, 2001) | TinyMario's hero, four frames of pixel art: paint them, play them, export them. | The sprite as text: XPM files (a palette and rows of characters) that GIMP opens and a game embeds; the onion skin; the keys as the file's own characters. |

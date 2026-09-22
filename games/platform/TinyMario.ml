@@ -293,15 +293,25 @@ let use_sprites = true
 
 (* Our hero, 10x10 pixels of 4 (the player's 40x40 box), facing right:
  * 'R' the cap and shirt, 'S' the skin, 'B' the overalls, 'K' the hair
- * and shoes. The poses differ only in their lower rows. *)
-let head = [ "...RRRR..."; "..RRRRRRR."; "..KKSSKS.."; ".KSKSSSKS."; "..SSSSSS.." ]
-
-let stand = head @ [ "..RRBRR..."; ".RRRBBRRR."; ".SSBBBBSS."; "..BBB.BBB."; ".KKK...KKK" ]
-let walk1 = head @ [ "..RRBRR..."; ".RRRBBRRR."; ".SSBBBBSS."; ".BBB..BBB."; "KKK....KKK" ]
-let walk2 = head @ [ "..RRBRR..."; ".RRRBBRRR."; ".SSBBBBSS."; "...BBBB..."; "...KKKK..." ]
-let jump = head @ [ "S.RRBRRR.S"; "SRRRBBRRRS"; "..BBBBBB.."; ".BBB..BBB."; "KK......KK" ]
-
-let palette = [ ('R', rgb 220 40 30); ('S', rgb 250 190 140); ('B', rgb 40 60 200); ('K', rgb 100 50 20) ]
+ * and shoes. The poses are XPM files beside this one (mario_walk1.xpm,
+ * ...), which a sprite editor writes and dune embeds (Mario_xpm), e.g.
+ * walking:
+ *
+ *     ...RRRR...
+ *     ..RRRRRRR.
+ *     ..KKSSKS..
+ *     .KSKSSSKS.
+ *     ..SSSSSS..
+ *     ..RRBRR...
+ *     .RRRBBRRR.
+ *     .SSBBBBSS.
+ *     .BBB..BBB.
+ *     KKK....KKK
+ *)
+let palette, stand = Sprite.of_xpm Mario_xpm.stand
+let walk1 = snd (Sprite.of_xpm Mario_xpm.walk1)
+let walk2 = snd (Sprite.of_xpm Mario_xpm.walk2)
+let jump = snd (Sprite.of_xpm Mario_xpm.jump)
 
 (* each pose drawn once, facing right, and mirrored (Sprite.flip) *)
 let poses : (string list * (shape * shape)) list =

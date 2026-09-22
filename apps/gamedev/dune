@@ -1,7 +1,6 @@
-; claude: the game-making tools -- none yet, a placeholder for the
-; category (CATALOG.md gets its section with the first one). Laid out
-; like office/: the programs here, software/ for the golden frames,
-; web/ for the browser.
+; claude: the game-making tools (CATALOG.md's section). Laid out like
+; office/: the programs here, software/ for the golden frames, web/ for
+; the browser.
 ;
 ; The tools making what any game can use: not one genre's levels,
 ; whose editor goes with the genre (TinySokobanEd, in games/puzzle/),
@@ -11,10 +10,8 @@
 ; the format of the playground layer that reads it, in a file the game
 ; embeds at build time.
 ;
-; What it might contain, each Tiny and after a famous original:
-;  - a sprite editor (STOS's 1988 and AMOS's 1990, Aseprite 2001):
-;    pixel art in a palette, animation frames, written as the strings
-;    Sprite.pixels draws;
+; So far TinyAseprite, the sprite editor (XPM files, read by Sprite).
+; What it might contain next, each Tiny and after a famous original:
 ;  - a tile-map editor (Tiled, Thorbjorn Lindeijer, 2008): a level
 ;    painted with a tile set, written as Tilemap's strings;
 ;  - a sound-effect maker (sfxr, Tomas Pettersson, 2007, for the Ludum
@@ -22,4 +19,36 @@
 ;    button per kind of sound (a pickup, a laser, an explosion);
 ;  - a fantasy console's editors in one program (PICO-8, Joseph White,
 ;    2015): the sprites, map, sounds and music of one game.
-; Built on gui/, the paint appkit and audio/.
+(executables
+  (names TinyAseprite)
+  (modules TinyAseprite Mario_xpm)
+  (libraries
+    caps ; the authority to export files
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+; the sprites TinyAseprite starts from: TinyMario's hero, the same files
+; and the same rule as games/platform/dune's
+(rule
+ (targets Mario_xpm.ml)
+ (deps
+  (:stand %{project_root}/games/platform/mario_stand.xpm)
+  (:walk1 %{project_root}/games/platform/mario_walk1.xpm)
+  (:walk2 %{project_root}/games/platform/mario_walk2.xpm)
+  (:jump %{project_root}/games/platform/mario_jump.xpm))
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from games/platform/mario_*.xpm by apps/gamedev/dune *)\n")
+    (echo "let stand = {|")
+    (cat %{stand})
+    (echo "|}\nlet walk1 = {|")
+    (cat %{walk1})
+    (echo "|}\nlet walk2 = {|")
+    (cat %{walk2})
+    (echo "|}\nlet jump = {|")
+    (cat %{jump})
+    (echo "|}\n")))))

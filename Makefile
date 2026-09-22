@@ -172,6 +172,7 @@ js:
 	dune build examples/web --profile=release-js
 	dune build examples/svg --profile=release-js
 	dune build apps/office/web --profile=release-js
+	dune build apps/gamedev/web --profile=release-js
 
 ###############################################################################
 # Developer targets
