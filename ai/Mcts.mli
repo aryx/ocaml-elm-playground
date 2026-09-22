@@ -46,19 +46,56 @@
  * Example (Unit_mcts): tic-tac-toe, where nothing in the code knows
  * what a line of three is worth. With 2000 playouts a move it opens in
  * the centre, blocks a threat and takes a win when it has one -- and
- * blocks 20 times out of 20 over 20 seeds; with 10 playouts, 5 times
- * out of 20, which is what a guess looks like.
+ * blocks 20 times out of 20 over 20 seeds; with 10 playouts, 8 times
+ * out of 20, which is barely better than chance.
+ *
+ * {1 Where a network goes}
+ *
+ * Two places in this loop are a guess, and a network fits each
+ * (notes_ai_learning.md section 9, and this is AlphaGo's shape):
+ *
+ *     select     ... plus a prior, which moves are worth trying at all
+ *     expand
+ *     simulate   replaced entirely: how good is this position
+ *     backup
+ *
+ * [prior] is a policy: what it thinks of each move before anything has
+ * been tried, used by the selection rule (which becomes PUCT, Rosin
+ * 2011 and AlphaGo 2016):
+ *
+ *                  wins(c)                      sqrt N(parent)
+ *     score(c) =  ---------  +  C * P(c) * ----------------------
+ *                   N(c)                        1 + N(c)
+ *
+ * so an unvisited move is no longer infinitely attractive; it is as
+ * attractive as the policy says. On a board with 250 moves that is
+ * the difference between a search and a lottery.
+ *
+ * [evaluate] is a value: it replaces the playout with an opinion, a
+ * number between 0 (MIN wins) and 1 (MAX wins). A playout is one
+ * sample of a random game; an evaluation is a guess at the average of
+ * all of them, and it costs one forward pass instead of two hundred
+ * moves.
+ *
+ * Both are optional and independent, which is the point of writing
+ * them this way: the same search is Coulom's 2006 program with
+ * neither, AlphaGo with both, and anything in between while you are
+ * training one of them.
  *
  * References: Rémi Coulom, "Efficient Selectivity and Backup Operators
  * in Monte-Carlo Tree Search", 2006 (Crazy Stone); Levente Kocsis,
  * Csaba Szepesvari, "Bandit based Monte-Carlo Planning", 2006 (UCT);
  * Peter Auer, Nicolo Cesa-Bianchi, Paul Fischer, "Finite-time Analysis
  * of the Multiarmed Bandit Problem", 2002 (UCB1); Cameron Browne et
- * al., "A Survey of Monte Carlo Tree Search Methods", 2012. *)
+ * al., "A Survey of Monte Carlo Tree Search Methods", 2012;
+ * Christopher Rosin, "Multi-armed bandits with episode context", 2011
+ * (PUCT); David Silver et al., "Mastering the game of Go with deep
+ * neural networks and tree search", 2016, and "Mastering the game of
+ * Go without human knowledge", 2017. *)
 
 (* what the search came back with *)
 type 'move result = {
-  best : 'move option; (* the most visited move: MCTS's answer *)
+  best : 'move option; (* the most visited move (ties by win rate): MCTS's answer *)
   tried : ('move * int * float) list; (* each root move: its visits, and its wins per visit *)
   playouts : int; (* the games played at random, in all *)
   nodes : int; (* the positions in the tree it grew *)
@@ -77,6 +114,8 @@ val search :
   ?exploration:float ->
   ?seed:int ->
   ?playout:(Random.State.t -> ('state, 'move) Minimax.game -> 'state -> 'state) ->
+  ?prior:('state -> ('move * float) list) ->
+  ?evaluate:('state -> float) ->
   ('state, 'move) Minimax.game ->
   playouts:int ->
   'state ->
@@ -101,6 +140,8 @@ val start :
   ?exploration:float ->
   ?seed:int ->
   ?playout:(Random.State.t -> ('state, 'move) Minimax.game -> 'state -> 'state) ->
+  ?prior:('state -> ('move * float) list) ->
+  ?evaluate:('state -> float) ->
   ('state, 'move) Minimax.game ->
   'state ->
   ('state, 'move) thinking

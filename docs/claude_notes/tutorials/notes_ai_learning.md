@@ -395,8 +395,39 @@ the search makes the network better, the network makes the search
 better. Written out, the loop is perhaps two hundred lines, and every
 piece of it is in this directory.
 
-What is *not* here is the compute: AlphaGo Zero was thousands of TPUs
-for days. On a laptop, in OCaml, on 9x9, with a few thousand weights
+**Both hooks are now in `Mcts`** (`?prior` and `?evaluate`), which is
+the mechanical half of that paragraph. The selection rule becomes PUCT
+when a policy is given -- an unvisited move is no longer infinitely
+attractive, it is as attractive as the policy says -- and the value,
+when given, replaces the playout entirely. Measured on tic-tac-toe
+with a *perfect* value function standing in for a trained one
+(`Unit_mcts`, so that the hook is measured and not the network): at
+twelve playouts it finds the winning move in 12 of 12 won positions
+against 10 of 12 for random playouts, a pointed policy takes 93% of
+the visits where a flat one takes 73%, and over twenty games at forty
+playouts each the searcher with both wins 11 and loses 0 to the
+2006-style version of itself.
+
+Two things fell out of writing it, and both are worth more than the
+numbers. A policy must be a *distribution*: priors that do not sum to
+1 make PUCT's exploring term swamp the win rate, and the search then
+spreads its visits evenly over good moves and bad -- which is how the
+first version of that twenty-game match came out 8-4 instead of 11-0.
+And "the most visited move" decides nothing at small budgets, where
+every child has been visited once: ties now go to the better win rate,
+without which a search with a *perfect* evaluation was picking losing
+moves at twelve playouts.
+
+The last surprise is about the game rather than the code. From an
+empty board, random playouts choose the centre, which everyone knows
+is right. The perfect evaluation does not: with best play every
+opening move draws, so all nine are worth exactly the same and it
+takes any of them. "The centre is best" is not a fact about
+tic-tac-toe, it is a fact about opponents who make mistakes -- which
+is what playouts measure and a perfect value has no opinion about.
+
+What is *not* here is the compute, nor `AiGo` wired to a network:
+AlphaGo Zero was thousands of TPUs for days. On a laptop, in OCaml, on 9x9, with a few thousand weights
 and a few thousand self-play games, the realistic outcome is a player
 that beats its own random-playout version and loses to a decent human
 -- and that is the result to report. The thing being taught is that the

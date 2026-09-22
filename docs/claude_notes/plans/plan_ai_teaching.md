@@ -672,11 +672,13 @@ from memory until then.)
    ruthless check on a move generator), search second.
 10. **Learning, DONE**: `Matrix`, `Neuron`, `Net`, `Backprop`, `Grad`
     and `Train`, with `AiPerceptron`, `AiNeuralNet` and `AiDigits`.
-11. **Learning to play, mostly DONE**: `Qlearn` and `AiQlearn` written,
-    and tic-tac-toe learned by playing the minimax player it cannot
-    beat -- after four thousand games it draws every time. What is
-    left is the last piece: the network as `AiGo`'s playout policy and
-    evaluation, AlphaGo's shape at a size that runs here.
+11. **Learning to play, DONE but for the compute**: `Qlearn` and
+    `AiQlearn`; tic-tac-toe learned by playing the minimax player it
+    cannot beat (four thousand games, then it draws every time); and
+    AlphaGo's two hooks in `Mcts` -- `?prior` (PUCT) and `?evaluate`
+    -- measured on tic-tac-toe with a perfect value function standing
+    in for a trained one. Wiring an actual network into `AiGo` is left
+    undone on purpose: see the status entry.
 12. **Docs**: `notes_ai.md` and `notes_ai_learning.md` checked against
     the code, the numbers filled in;
     `notes_ai_related_work.md`'s postscript.
@@ -961,6 +963,34 @@ from memory until then.)
   planned. And the old result, working: as X against a perfect player
   it loses at first and draws after four thousand games (400 positions
   learned), which is Samuel 1959 in twenty lines.
+- **The two halves joined, 2026-09-22**: `Mcts` now takes `?prior`
+  and `?evaluate`, which is AlphaGo's shape as a mechanism; the
+  selection rule becomes PUCT with a policy, and a value replaces the
+  playout. Measured with a perfect value function in place of a
+  trained one (deliberately: it measures the hook, not the network) --
+  12 of 12 won positions found at twelve playouts against 10 of 12 for
+  random playouts, 93% of the visits on the pointed move against 73%
+  with a flat policy, and 11-0 over twenty games against the
+  random-playout version of the same search. Two bugs the measuring
+  found: PUCT needs a *normalised* policy (unnormalised priors make
+  the exploring term swamp the win rate, and that match was 8-4 until
+  it was fixed), and `plan`'s "most visited move" decides nothing at
+  small budgets -- every child has one visit -- so ties now go to the
+  better win rate, without which a search with a perfect evaluation
+  picked losing moves. That change also made the weak ten-playout
+  searcher better, 8 blocks of 20 rather than 5, and the numbers in
+  Mcts.mli and notes_ai.md now say 8.
+- **AiGo with a network: not done, and the reason**. Everything it
+  needs is written (`Net`, `Backprop`, `Train`, `Mcts`'s two hooks),
+  and what is missing is a machine. A 9x9 self-play run that produced
+  a network worth having would be hours of this laptop, and a network
+  trained on a few thousand playouts would be worse than the playouts
+  it replaced -- so the honest result would be "no better", which
+  teaches nothing the tic-tac-toe measurement does not teach in a
+  second. The piece to write when someone wants it is a `scripts/train/`
+  run that plays self-play games offline and writes a small weights
+  file, with `AiGo` loading it behind a flag. Recorded here so the
+  gap is a decision rather than an oversight.
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and
