@@ -72,7 +72,9 @@ Switching between 3D and 2D:
   and a first step towards Idea 1's projections.)
 - **Fez** (Phil Fish / Polytron, 2012): a 3D world played in a 2D
   projection, turned a quarter at a time; depth is ignored, so what
-  lines up in the projection is connected.
+  lines up in the projection is connected. (Now in the catalogue:
+  `TinyFez.ml`, with Fez's own rules -- any top a floor, only what is
+  at your depth a wall -- and its pixel art, from XPM files.)
 - **Super Paper Mario** (Intelligent Systems, Wii, 2007): a 2D
   side-scroller flipped into 3D to walk around obstacles, then back.
 - **Perspective** (DigiPen student game, 2012): move a 3D camera, then

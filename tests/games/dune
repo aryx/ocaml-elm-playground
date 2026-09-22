@@ -318,6 +318,37 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyFez.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyFez.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+; claude: and its pixel art, embedded as games/puzzle/dune does (the
+; copied game expects the module here too)
+(rule
+ (targets Fez_xpm.ml)
+ (deps
+  (:brick %{project_root}/games/puzzle/fez_brick.xpm)
+  (:grass %{project_root}/games/puzzle/fez_grass.xpm)
+  (:stand %{project_root}/games/puzzle/fez_gomez_stand.xpm)
+  (:walk %{project_root}/games/puzzle/fez_gomez_walk.xpm)
+  (:bit %{project_root}/games/puzzle/fez_bit.xpm))
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let brick = {|")
+    (cat %{brick})
+    (echo "|}\nlet grass = {|")
+    (cat %{grass})
+    (echo "|}\nlet gomez_stand = {|")
+    (cat %{stand})
+    (echo "|}\nlet gomez_walk = {|")
+    (cat %{walk})
+    (echo "|}\nlet bit = {|")
+    (cat %{bit})
+    (echo "|}\n")))))
+
+(rule
  (target TinyMazeWar.ml)
  (deps (:src %{project_root}/games/fps/TinyMazeWar.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

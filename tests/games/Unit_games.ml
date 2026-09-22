@@ -5321,6 +5321,88 @@ let mazewar_robots () =
   Alcotest.(check bool) "someone got shot" true (kills > 0)
 
 (*****************************************************************************)
+(* TinyFez *)
+(*****************************************************************************)
+
+let fez_frames (n : int) (i : TinyFez.input) (p : TinyFez.play) : TinyFez.play =
+  List.fold_left (fun p i -> TinyFez.step i p) p (List.init n (fun _ -> i))
+
+(* run to column [u] (in the view), then stand still *)
+let fez_walk_to (u : int) (p : TinyFez.play) : TinyFez.play =
+  let open TinyFez in
+  let rec go k p =
+    let target = center_u u in
+    if k = 0 || Float.abs (p.u -. target) < 3. then fez_frames 5 nothing p
+    else go (k - 1) (step { nothing with dx = (if p.u < target then 1. else -1.) } p)
+  in
+  go 300 p
+
+(* a jump [cells] columns across (12 frames of running a column), then
+ * waiting to land *)
+let fez_hop (dir : float) (cells : int) (p : TinyFez.play) : TinyFez.play =
+  let open TinyFez in
+  let p = step { nothing with dx = dir; jump = true } p in
+  let p = fez_frames ((cells * 12) - 1) { nothing with dx = dir } p in
+  let rec down k p = if k = 0 || p.ground then p else down (k - 1) (step nothing p) in
+  fez_frames 3 nothing (down 120 p)
+
+let fez_turn (dir : int) (p : TinyFez.play) : TinyFez.play = fez_frames 20 TinyFez.nothing (TinyFez.step { TinyFez.nothing with turn = dir } p)
+
+(* The views: each a quarter turn of the others, and [of_grid] undoes
+ * [to_grid]. *)
+let fez_views () =
+  let open TinyFez in
+  for view = 0 to 3 do
+    for u = 0 to n - 1 do
+      for d = 0 to n - 1 do
+        let x, z = to_grid view u d in
+        Alcotest.(check (pair int int)) "back again" (u, d) (of_grid view x z)
+      done
+    done
+  done;
+  (* the tower's east ledge, (5, 3): across at 5 from the front, in the
+   * middle of the right view, and at 1 from the back *)
+  Alcotest.(check (pair int int)) "front" (5, 3) (of_grid 0 5 3);
+  Alcotest.(check (pair int int)) "right" (3, 1) (of_grid 1 5 3);
+  Alcotest.(check (pair int int)) "back" (1, 3) (of_grid 2 5 3)
+
+(* Fez's rules: in front of the tower (behind him: background) Gomez
+ * walks across it; at the tower's depth or behind it, it is a wall. *)
+let fez_background_and_walls () =
+  let open TinyFez in
+  let p = fez_frames 10 nothing (start ()) in
+  Alcotest.(check int) "on the island's front row" 2 p.depth;
+  let across = fez_walk_to 4 p in
+  Alcotest.(check bool) "walked across the tower's column" true (cell_u across = 4);
+  (* the walls from the front: the tower's column, at the tower's depth
+   * or behind it; not in front of it *)
+  let tower_at depth = Tilemap.get (walls 0 depth) 3 (h - 1 - 4) = Some '#' in
+  Alcotest.(check bool) "at its depth, a wall" true (tower_at 3);
+  Alcotest.(check bool) "in front, background" false (tower_at 2)
+
+(* The whole level, played: the east ledge; turned, the south ledge
+ * and its bit; turned back, the west ledge; turned, the north ledge
+ * and its bit (in front of the tower, which the turn put behind him);
+ * turned back, the high east ledge, and the tower's top and its bit. *)
+let fez_the_cube () =
+  let open TinyFez in
+  let p = fez_frames 10 nothing (start ()) in
+  let show what (p : play) =
+    Printf.eprintf "DBG fez %s: view %d, u %d (%.0f), y %.0f, depth %d on %d, ground %b, bits %d\n%!" what p.view (cell_u p) p.u p.y
+      p.depth p.on_depth p.ground (List.length p.bits);
+    p
+  in
+  let p = p |> fez_walk_to 4 |> show "at 4" |> fez_hop 1. 1 |> show "east" |> fez_turn 1 |> show "turned" |> fez_hop (-1.) 2 |> show "south" in
+  Alcotest.(check int) "the south bit" 2 (List.length p.bits);
+  let p = p |> fez_turn (-1) |> show "back" |> fez_hop (-1.) 2 |> show "west" |> fez_turn 1 |> show "turned" in
+  Alcotest.(check bool) "turned, brought in front of the tower" true (p.depth < 3);
+  let p = p |> fez_hop 1. 2 |> show "north" in
+  Alcotest.(check int) "the north bit" 1 (List.length p.bits);
+  let p = p |> fez_turn (-1) |> fez_hop 1. 2 |> fez_hop (-1.) 2 in
+  Printf.eprintf "DBG fez: view %d, u %.0f, y %.0f, depth %d, bits %d\n%!" p.view p.u p.y p.depth (List.length p.bits);
+  Alcotest.(check int) "the cube is whole" 0 (List.length p.bits)
+
+(*****************************************************************************)
 (* TinyPrinceOfPersia *)
 (*****************************************************************************)
 
@@ -7066,6 +7148,9 @@ let tests =
       t "TinyMazeWar, a step, and a shot" mazewar_move_and_shoot;
       t "TinyMazeWar, back from the dead" mazewar_respawn;
       t "TinyMazeWar, the robots" mazewar_robots;
+      t "TinyFez, the four views" fez_views;
+      t "TinyFez, background and walls" fez_background_and_walls;
+      t "TinyFez, the cube" fez_the_cube;
       t "TinyPrinceOfPersia, the distances are the tables' sums" pop_tables;
       t "TinyPrinceOfPersia, a robot escapes the dungeon" pop_robot;
       t "TinyPrinceOfPersia, the gate closes, the shaft hurts" pop_gate_and_fall;

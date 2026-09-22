@@ -199,6 +199,7 @@ let scenes : Testutil_golden.scene list =
     ("games/sports/software/TinyTennisForTwo", "", 5);
     ("games/fps/software/TinyMazeWar", "", 5);
     ("games/puzzle/software/TinyCrush", "", 5);
+    ("games/puzzle/software/TinyFez", "", 5);
     ("games/rhythm/software/TinyDDR", "", 5);
     ("games/strategy/software/TinySimCity", "", 5);
     ("games/strategy/software/TinyCivilization", "", 5);
@@ -599,6 +600,15 @@ let scripted : Testutil_golden.scripted list =
     (* crushed, and a few steps: the bridge fills the gap, the wall
        from the back slice stands in the way *)
     ("games/puzzle/software/TinyCrush", "crushed", 60, "space:1,c:22,right:45-60");
+    (* the front: the tower, the ledges of its east and west sides, the
+       ones in front and behind hidden in its column *)
+    ("games/puzzle/software/TinyFez", "front", 20, "space:1");
+    (* half a quarter turn: each cube two faces, the pixel art squashed
+       to the cosine and the sine *)
+    ("games/puzzle/software/TinyFez", "turning", 32, "space:1,e:24");
+    (* turned: the south and north ledges, and their bits, where the
+       east and west ones were *)
+    ("games/puzzle/software/TinyFez", "turned", 60, "space:1,e:24");
     (* off the bank on six flaps, the buzzards already coming *)
     ("games/platform/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
     (* the scanner is the game: three abductions are under way in the

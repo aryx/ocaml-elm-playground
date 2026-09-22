@@ -1,0 +1,15 @@
+/* XPM */
+static char *fez_brick[] = {
+"8 8 3 1",
+"a c #d0b8e6",
+"c c #b896d6",
+"b c #6e4f8c",
+"aaabaaaa",
+"cccbcccc",
+"bbbbbbbb",
+"aaaaaaba",
+"ccccccbc",
+"bbbbbbbb",
+"aabaaaaa",
+"ccbccccc"
+};

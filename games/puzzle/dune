@@ -2,12 +2,12 @@
 ; side by side; on the software rasterizers in software/, in the
 ; browser in web/.
 (executables
-  (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyIncredibleMachine
+  (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd)
-  (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyIncredibleMachine
+  (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
-    TinySokobanEd Sokoban_levels)
+    TinySokobanEd Sokoban_levels Fez_xpm)
   (libraries
     unix ; Tetris's clock
     caps ; TinySokobanEd's authority to export its file
@@ -15,6 +15,7 @@
     ai ; AiChess's and AiOthello's Minimax
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo, Sokoban's rules
     kit_crush ; TinyCrush's levels and rules, Crush
+    kit_platformer ; TinyFez's running and jumping, Tile_move
     elm_playground_native ; implem of virtual elm_playground
   )
 )
@@ -34,6 +35,30 @@
     (echo "(* generated from TinySokoban.xsb by games/puzzle/dune *)\n")
     (echo "let xsb = {|")
     (cat %{deps})
+    (echo "|}\n")))))
+
+; claude: TinyFez's pixel art -- the brick and grass faces, Gomez's two
+; poses, the cube bit -- drawn as XPM files, embedded as strings:
+; fez_brick.xpm becomes Fez_xpm.brick at build time, and so on, as
+; TinyMario's are (see README-tools.md)
+(rule
+ (targets Fez_xpm.ml)
+ (deps fez_brick.xpm fez_grass.xpm fez_gomez_stand.xpm fez_gomez_walk.xpm fez_bit.xpm)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from fez_*.xpm by games/puzzle/dune *)\n")
+    (echo "let brick = {|")
+    (cat fez_brick.xpm)
+    (echo "|}\nlet grass = {|")
+    (cat fez_grass.xpm)
+    (echo "|}\nlet gomez_stand = {|")
+    (cat fez_gomez_stand.xpm)
+    (echo "|}\nlet gomez_walk = {|")
+    (cat fez_gomez_walk.xpm)
+    (echo "|}\nlet bit = {|")
+    (cat fez_bit.xpm)
     (echo "|}\n")))))
 
 (executables
