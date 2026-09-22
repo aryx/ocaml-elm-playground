@@ -6,11 +6,11 @@
 ; compound documents (CATALOG.md's sections). Laid out like a genre of
 ; games/, with software/ for the golden frames and web/ for the browser.
 ;
-; The modules here that are not programs are shared by them: File_menu
-; (nearly every app's File menu), Stroke_text (Hershey text), the parts
-; of a compound document (Part_text, Part_sheet, Part_picture,
-; Part_drawing, Part_chart) and Figure_shapes. When an app of another
-; category needs one (a music app's File menu), it becomes an appkit.
+; The modules here that are not programs are shared by them:
+; Stroke_text (Hershey text), the parts of a compound document
+; (Part_text, Part_sheet, Part_picture, Part_drawing, Part_chart) and
+; Figure_shapes. When an app of another category needs one, it becomes
+; an appkit, as File_menu did (appkits/file_menu).
 (executables
   (names
     TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint TinyOpenDoc TinyPowerPoint TinyHyperCard TinyMacDraw TinyFrameMaker TinyOffice
@@ -22,6 +22,7 @@
     appkit_sheet ; Formula and Sheet, the engine
     appkit_sheet_view ; a sheet drawn into a rectangle (TinyExcel)
     appkit_document ; Undo (TinyBravo, TinyWord)
+    appkit_file_menu ; File_menu
     appkit_richtext ; text with looks, and its page (TinyBravo, TinyWord)
     appkit_paint ; a picture as bits, and what paints it (TinyMacPaint)
     appkit_embed ; a document of parts (TinyOpenDoc, TinyPowerPoint)

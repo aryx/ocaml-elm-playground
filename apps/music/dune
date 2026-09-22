@@ -13,5 +13,5 @@
 ;  - a synthesizer (a Minimoog on screen): knobs over audio/'s voices,
 ;    played from the keyboard;
 ;  - a score editor (Finale, MuseScore): ABC in, staff notation out.
-; Built on audio/ (synth, mixer, ABC, MIDI) and gui/; the office apps'
-; File_menu would become an appkit for them.
+; Built on audio/ (synth, mixer, ABC, MIDI), gui/, and appkits/file_menu
+; for their File menu.

@@ -1,0 +1,21 @@
+; claude: the File menu every application shares, whatever its
+; category (see File_menu.mli): New, Open..., Save, Save As..., Export,
+; and their dialogs, saving an application's data with
+; appkit_document's Saved. First the office apps', then the music
+; apps' patches (plan_synth_teaching.md).
+;
+; Unlike appkit_document it needs the toolkit and the playground (its
+; dialogs are drawn, and Playground_platform is where files go); a
+; private library, installed as part of elm_playground.
+(library
+ (name appkit_file_menu)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   elm_core
+   elm_playground
+   caps ; the authority to save (plan_caps.md)
+   gui
+   appkit_document ; Saved
+ )
+)

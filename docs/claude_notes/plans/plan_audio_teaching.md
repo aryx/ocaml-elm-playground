@@ -641,7 +641,9 @@ and some thirty with the ready-made sounds. Open exercises:
   through a resonant low-pass: phase 6's Filter), FM synthesis
   (Chowning: to add with phase 6, small, and made for the spectrum),
   additive (already: together of tones), vibrato and echo (phase 7's
-  Effect).
+  Effect). Taken further (2026-09-23), as instruments played live, LFOs,
+  a ladder filter and an effects rack (drive, EQ, chorus, delay, reverb,
+  compression): `plan_synth_teaching.md`, TinyMinimoog first.
 - **The goal set by the user**: TinyMario with music and sounds when
   moving. So after phases 2 and 3, phase 8's `Music` (notes, the
   sequencer) comes before phases 5-7. The classic Super Mario Bros.

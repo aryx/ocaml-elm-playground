@@ -14,6 +14,7 @@
     appkit_sheet
     appkit_sheet_view
     appkit_document
+    appkit_file_menu
     appkit_richtext
     appkit_paint
     appkit_embed
