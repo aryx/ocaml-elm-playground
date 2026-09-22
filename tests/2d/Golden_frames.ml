@@ -165,6 +165,8 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AiFlock", "", 90);
     (* claude: the first wave, scatter: each ghost's target its corner *)
     ("examples/software/AiGhosts", "", 60);
+    (* the bot on its rounds, having seen nobody yet *)
+    ("examples/software/AiBots", "", 2);
     ("games/puzzle/software/AiOthello", "", 3);
     ("games/puzzle/software/AiChess", "", 3);
     ("games/strategy/software/TinyTowerDefense", "", 5);
@@ -416,6 +418,9 @@ let scripted : Testutil_golden.scripted list =
     (* claude: chase, Pac-Man walked up and right: Pinky ahead of him,
      * Inky's doubled vector from Blinky, Clyde's circle *)
     ("examples/software/AiGhosts", "chase", 500, "left:1-60,up:61-140,right:141-500");
+    (* its rounds bring it round the corner: it sees you, aims (a little
+     * off: the error has not settled yet) and fires *)
+    ("examples/software/AiBots", "seen", 330, "right:5-60");
     ("games/puzzle/software/AiOthello", "values", 3, "v:2");
     ("games/strategy/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
     ("games/platform/software/TinySonic", "loop", 330, "space:1,right:5-330");

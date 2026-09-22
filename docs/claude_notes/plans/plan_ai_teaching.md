@@ -620,7 +620,7 @@ from memory until then.)
    it behind `ai=engine`, its hand-written ones still the default --
    and on the criterion below, see the status entry: the file grew, and
    the reason is worth more than the rule was. `examples/AiBots.ml`:
-   not written yet.
+   the four handicaps on four keys, and what the bot knows drawn.
 6. **Deeper search**: `Deepening` (iterative deepening, ordering, a
    budget, resumable), `Zobrist`; `AiConnect4`, whose node counts are
    the test of every one of them.
@@ -760,6 +760,17 @@ from memory until then.)
   pattern fits it -- `ai=engine`, the author's rule from phase 4, the
   two bots side by side in one file, the default unchanged (its golden
   frames did not move).
+- **`examples/AiBots.ml`, DONE**: an arena with four walls, you and a
+  bot that walks its rounds until it sees you; keys 1 to 4 turn off the
+  reaction delay, the input rate, the aim error and the senses (the
+  last of which lets it see through walls: the cheat, to feel). What it
+  knows is drawn -- a green line while it sees you, a fading marker
+  where it last saw you, with the frames since, and nothing while it
+  has never seen you. Two things the writing taught, both now in the
+  file: a patrol has to *sweep* (its first version shuffled left and
+  right where it stood, and the bot never found anyone), and anything
+  that walks into a wall must slide along it (its first version stopped
+  dead, and the bot stuck in a corner for good).
 - **Open decisions**, to settle while writing, not now: the board-game
   app builder (§ The Playground API); whether `Fsm` is a module or just
   a pattern shown in a game (a state machine in OCaml is a variant and

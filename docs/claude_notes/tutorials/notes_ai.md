@@ -577,7 +577,11 @@ flow field (§3) by `gamekits/rts/Orders`, for `TinyDune2.ml` and
 `TinyWarcraft2.ml`, the
 three searches side by side in `examples/AiPathfinding.ml` (§2);
 `Fsm` by the ghosts of `TinyPacman.ml` and `examples/AiGhosts.ml` (§6);
-`Sense` and `Bot` by `TinySoldat.ml`'s soldiers with `ai=engine` (§6);
+`Sense` and `Bot` by `TinySoldat.ml`'s soldiers with `ai=engine` and by
+`examples/AiBots.ml`, where the four handicaps are four keys to turn
+off -- the last of them its senses, after which it sees you through the
+walls, and the demonstration is how quickly that stops being a game
+(§6);
 `Minimax` by `examples/AiTictactoe.ml` (§7, §8), `AiOthello.ml` and
 `AiChess.ml` (with its quiescence, §9). `Behavior` and `Utility` have
 only their tests so far.

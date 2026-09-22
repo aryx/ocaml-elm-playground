@@ -8,7 +8,7 @@
     Flags
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
-    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts
+    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots
     LogoFractals
     BigBangRocket BigBangWorm
     PuzzleScriptSokoban PuzzleScriptBoulders

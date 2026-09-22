@@ -79,6 +79,7 @@
    %{project_root}/examples/software/AiSteering.exe
    %{project_root}/examples/software/AiFlock.exe
    %{project_root}/examples/software/AiGhosts.exe
+   %{project_root}/examples/software/AiBots.exe
    %{project_root}/games/arcade/software/TinyFlappyBird.exe
    %{project_root}/games/arcade/software/TinyFrogger.exe
    %{project_root}/games/arcade/software/TinyLunarLander.exe
