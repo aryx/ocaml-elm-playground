@@ -4,8 +4,8 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyBattlezone TinyDoom TinyWolfenstein)
-  (modules TinyBattlezone TinyDoom TinyWolfenstein)
+  (names TinyBattlezone TinyDoom TinyMazeWar TinyWolfenstein)
+  (modules TinyBattlezone TinyDoom TinyMazeWar TinyWolfenstein)
   (libraries
     elm_playground
     kit_sectors

@@ -4,9 +4,9 @@
 ; browser in web/.
 (executables
   (names TinyKickOff2 TinyPinball TinySensibleSoccer TinyShufflePuck
-    TinySpeedball2)
+    TinySpeedball2 TinyTennisForTwo)
   (modules TinyKickOff2 TinyPinball TinySensibleSoccer TinyShufflePuck
-    TinySpeedball2)
+    TinySpeedball2 TinyTennisForTwo)
   (libraries
     elm_playground
     kit_sports ; the free ball and formation of TinyKickOff2, TinySpeedball2 and TinySensibleSoccer

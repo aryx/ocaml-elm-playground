@@ -331,6 +331,8 @@ longer true. See Adventure below.
   and the first networked one -- eyeballs in a maze, a player per
   machine. A game for `plan_networking_teaching.md`:
   TinyDungeonMaster's view and a protocol.
+  (DONE: `TinyMazeWar.ml`, in lines; every player a command per tick,
+  robots until the network plan brings remote players.)
 - Kits waiting for a user: `Raycaster` (TinyWolfenstein's DDA, fisheye
   and textures, one game so far); `Fps_controller`, TinyMinecraft's
   player (compare `playground/Character3d`, which may already be it);
@@ -383,6 +385,8 @@ longer true. See Adventure below.
   a ball with gravity and a bounce, a net, a knob for the angle. The
   second user that moves the ball's height (TinySensibleSoccer's z and
   shadow) into `Free_ball`.
+  (DONE: `TinyTennisForTwo.ml`. Not `Free_ball`'s second user after all:
+  seen from the side, the ball's height is its y, no z or shadow.)
 - **TinyTrackAndField** (P1, ~300; Track & Field, Konami, 1983):
   hammering two buttons for speed, a third for the jump's angle; the
   sports game of the golden age.
@@ -406,6 +410,7 @@ longer true. See Adventure below.
   first game designed by a woman -- ten years of a city, each typed as
   three numbers (land bought, grain eaten, grain sown), rats and
   plague as dice. Text only: SimCity's ancestor on a teletype.
+  (DONE: `TinyHamurabi.ml`, the dice a record the tests choose.)
 - **TinyMULE** (P1, ~500; M.U.L.E., Dani Bunten Berry, Ozark
   Softscape, 1983): four players settling a planet, and an economy --
   supply, demand, and the auction where prices are made, walking your

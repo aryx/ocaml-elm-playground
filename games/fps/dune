@@ -3,8 +3,8 @@
 ; ../README-2.5d.md) next to their 3D twins; on the software
 ; rasterizers in software/, in the browser in web/.
 (executables
-  (names TinyBattlezone TinyDoom TinyWolfenstein)
-  (modules TinyBattlezone TinyDoom TinyWolfenstein)
+  (names TinyBattlezone TinyDoom TinyMazeWar TinyWolfenstein)
+  (modules TinyBattlezone TinyDoom TinyMazeWar TinyWolfenstein)
   (libraries
     elm_playground
     kit_sectors ; TinyDoom's level

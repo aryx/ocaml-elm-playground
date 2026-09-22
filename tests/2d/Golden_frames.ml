@@ -191,6 +191,9 @@ let scenes : Testutil_golden.scene list =
     ("games/adventure/software/TinyGTA", "", 5);
     ("games/adventure/software/TinyZork", "", 5);
     ("games/adventure/software/TinyManiacMansion", "", 5);
+    ("games/strategy/software/TinyHamurabi", "", 5);
+    ("games/sports/software/TinyTennisForTwo", "", 5);
+    ("games/fps/software/TinyMazeWar", "", 5);
     ("games/rhythm/software/TinyDDR", "", 5);
     ("games/strategy/software/TinySimCity", "", 5);
     ("games/strategy/software/TinyCivilization", "", 5);
@@ -558,6 +561,15 @@ let scripted : Testutil_golden.scripted list =
        over the key, the sentence line says what a click would do *)
     ("games/adventure/software/TinyManiacMansion", "mat", 100,
      "at(0;0):1-3,click:2,at(-330;-140):5-10,click:8,at(0;135):12-20,click:15,at(30;135):21-100");
+    (* the first year's three answers typed, the second year's report,
+       and the next answer being typed, on the teletype's paper *)
+    ("games/strategy/software/TinyHamurabi", "year", 60,
+     "type(0):5,Enter:10,type(2000):15,Enter:25,type(1000):30,Enter:40,type(5):50");
+    (* the serve, over the net, its trail on the phosphor *)
+    ("games/sports/software/TinyTennisForTwo", "rally", 70, "d:3");
+    (* five steps down the first corridor, to its side opening, and a
+       quarter turn into it: the frames of a new corridor *)
+    ("games/fps/software/TinyMazeWar", "walk", 50, "up:3,up:10,up:17,up:24,up:31,right:38");
     (* off the bank on six flaps, the buzzards already coming *)
     ("games/platform/software/TinyJoust", "flaps", 95, "space:1,space:20,space:35,space:50,space:65,space:80,right:10-95");
     (* the scanner is the game: three abductions are under way in the

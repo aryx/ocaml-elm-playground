@@ -4961,6 +4961,195 @@ let mm_walkthrough () =
   Alcotest.(check string) "into the lab" "lab" p.world.here
 
 (*****************************************************************************)
+(* TinyHamurabi *)
+(*****************************************************************************)
+
+(* A year, with the dice chosen: everyone fed, all the land sown, a
+ * yield of 3, rats on an even throw of 2 (half the store), one
+ * newcomer's die, no plague. *)
+let hamurabi_year () =
+  let open TinyHamurabi in
+  let dice = { d_yield = 3; d_rats = 2; d_come = 1; d_plague = false; d_price = 20 } in
+  match harvest dice { bought = 0; food = 2000; sown = 1000 } start_city with
+  | Impeached _ -> Alcotest.fail "impeached"
+  | Reigning c ->
+      (* 2800 - 2000 eaten - 500 of seed + 3000 harvested = 3300, half to the rats *)
+      Alcotest.(check int) "the rats' half" 1650 c.rats;
+      Alcotest.(check int) "the store" 1650 c.grain;
+      (* 1 * (20 * 1000 + 1650) / 100 / 100 + 1 *)
+      Alcotest.(check int) "newcomers" 3 c.arrived;
+      Alcotest.(check int) "the people" 103 c.people;
+      Alcotest.(check int) "next year's price" 20 c.price;
+      Alcotest.(check int) "year 2" 2 c.year
+
+(* More than 45% starved in one year: the reign ends. The plague halves
+ * the people. *)
+let hamurabi_impeached_and_plague () =
+  let open TinyHamurabi in
+  let dice = { d_yield = 3; d_rats = 1; d_come = 1; d_plague = false; d_price = 20 } in
+  (match harvest dice { bought = 0; food = 1000; sown = 0 } start_city with
+   | Impeached (_, starved) -> Alcotest.(check int) "half starved" 50 starved
+   | Reigning _ -> Alcotest.fail "still reigning");
+  (match harvest dice { bought = 0; food = 1200; sown = 0 } start_city with
+   | Reigning c -> Alcotest.(check int) "40 starved is survivable" 40 c.starved
+   | Impeached _ -> Alcotest.fail "impeached at 40%");
+  match harvest { dice with d_plague = true } { bought = 0; food = 2000; sown = 0 } start_city with
+  | Reigning c -> Alcotest.(check bool) "the plague" true (c.plague && c.people < 100)
+  | Impeached _ -> Alcotest.fail "impeached"
+
+(* The questions check what is typed against the store, and say what
+ * is lacking. *)
+let hamurabi_think_again () =
+  let open TinyHamurabi in
+  let g = start 1 in
+  let last g = List.nth g.out (List.length g.out - 2) in
+  Alcotest.(check string) "not enough grain" "HAMURABI: THINK AGAIN. YOU HAVE ONLY 2800 BUSHELS OF GRAIN." (last (answer "1000" g));
+  Alcotest.(check string) "not a number" "HAMURABI: A NUMBER, PLEASE." (last (answer "lots" g));
+  let g = answer "0" g |> answer "2000" in
+  Alcotest.(check string) "not enough land" "HAMURABI: THINK AGAIN. YOU OWN ONLY 1000 ACRES." (last (answer "1200" g));
+  let g = { g with city = { g.city with people = 50 } } in
+  Alcotest.(check string) "not enough hands" "HAMURABI: BUT YOU HAVE ONLY 50 PEOPLE TO TEND THE FIELDS!" (last (answer "900" g))
+
+(* Ten years played through the questions, a careful king: no land
+ * traded, the seed for all the land the people can farm kept first,
+ * the rest eaten -- but never so little that 45% starve. The reign
+ * ends in the verdict, not in impeachment. *)
+let hamurabi_ten_years () =
+  let open TinyHamurabi in
+  let rec reign n g =
+    if n = 0 || g.asked = Over then g
+    else
+      let c = g.city in
+      let seed = min c.acres (10 * c.people) / 2 in
+      let food = min c.grain (max (min (20 * c.people) (c.grain - seed)) (11 * c.people)) in
+      let sown = min c.acres (min (10 * c.people) (2 * (c.grain - food))) in
+      reign (n - 1) (g |> answer "0" |> answer (string_of_int food) |> answer (string_of_int sown))
+  in
+  let g = reign 20 (start 1968) in
+  Printf.eprintf "DBG hamurabi:\n%s\n%!" (String.concat "\n" g.out);
+  Alcotest.(check bool) "over" true (g.asked = Over);
+  Alcotest.(check bool) "ten years, not impeached" true (g.city.year = 11);
+  Alcotest.(check bool) "and judged" true
+    (List.exists (fun l -> String.length l > 20 && String.sub l 0 20 = "IN YOUR 10-YEAR TERM") g.out)
+
+(*****************************************************************************)
+(* TinyTennisForTwo *)
+(*****************************************************************************)
+
+(* frames of [step] until the rally is over, or [n] frames *)
+let tennis_until_point (n : int) (i : TinyTennisForTwo.input) (g : TinyTennisForTwo.game) : TinyTennisForTwo.game =
+  let rec go n (g : TinyTennisForTwo.game) =
+    match g.rally with TinyTennisForTwo.Point _ -> g | Flying -> if n = 0 then g else go (n - 1) (TinyTennisForTwo.step i g)
+  in
+  go n g
+
+(* The serve: hit at 45 degrees, over the net, bouncing on the other
+ * side; flat at 5 degrees, into the net, and the point to the
+ * receiver. *)
+let tennis_serve_and_net () =
+  let open TinyTennisForTwo in
+  let g = { start with computer = false } in
+  let served = step { nothing with hit_l = true } g in
+  Alcotest.(check bool) "the ball goes" true (served.ball.vx > 0.);
+  let rec until_bounce n (g : game) = if n = 0 || g.ball.bounces > 0 || g.rally <> Flying then g else until_bounce (n - 1) (step nothing g) in
+  let bounced = until_bounce 300 served in
+  Alcotest.(check bool) "over the net, a bounce on the right" true (bounced.ball.x > 0. && bounced.ball.bounces = 1);
+  let flat = tennis_until_point 300 nothing (step { nothing with hit_l = true } { g with knob_l = 5. }) in
+  Alcotest.(check bool) "into the net: the right's point" true (flat.rally = Point (Right, 60));
+  Alcotest.(check bool) "dead against the net" true (Float.abs flat.ball.x <= 1.)
+
+(* Nobody hits it back: it bounces twice on the right, the left's
+ * point; and after the pause, counted, and the right serves. *)
+let tennis_two_bounces () =
+  let open TinyTennisForTwo in
+  let g = { start with computer = false } in
+  let over = tennis_until_point 600 nothing (step { nothing with hit_l = true } g) in
+  Alcotest.(check bool) "the left's point" true (over.rally = Point (Left, 60));
+  let rec wait n g = if n = 0 then g else wait (n - 1) (step nothing g) in
+  let next = wait 61 over in
+  Alcotest.(check int) "counted" 1 next.score_l;
+  Alcotest.(check bool) "the right serves" true (next.server = Right && next.ball.x > 0.)
+
+(* The computer returns a serve: the ball comes back over the net, hit
+ * by the right. *)
+let tennis_computer_returns () =
+  let open TinyTennisForTwo in
+  let g = step { nothing with hit_l = true } start in
+  let rec until_back n (g : game) =
+    if n = 0 || g.rally <> Flying || (g.ball.hitter = Right && g.ball.crossed) then g else until_back (n - 1) (step nothing g)
+  in
+  let back = until_back 600 g in
+  Printf.eprintf "DBG tennis: x %.0f, hitter right %b, crossed %b\n%!" back.ball.x (back.ball.hitter = Right) back.ball.crossed;
+  Alcotest.(check bool) "hit back over the net" true (back.ball.hitter = Right && back.ball.crossed && back.ball.x < 0.)
+
+(*****************************************************************************)
+(* TinyMazeWar *)
+(*****************************************************************************)
+
+(* a game with only the eyes given, (col, row, dir) each, you first *)
+let mazewar_with (eyes : (int * int * int) list) : TinyMazeWar.game =
+  let open TinyMazeWar in
+  { (start ()) with eyes = Array.of_list (List.mapi (fun i (c, r, d) -> eye (Printf.sprintf "e%d" i) c r d) eyes) }
+
+let mazewar_cmds (n : int) (you : TinyMazeWar.command) : TinyMazeWar.command array =
+  Array.init n (fun k -> if k = 0 then you else TinyMazeWar.Nothing)
+
+(* The view's frames: a division by the distance. *)
+let mazewar_frames () =
+  let open TinyMazeWar in
+  Alcotest.(check (float 0.001)) "frame 0: the view's edge" box_half (frame 0);
+  Alcotest.(check (float 0.001)) "frame 1: a third" (box_half /. 3.) (frame 1);
+  Alcotest.(check (float 0.001)) "frame 2: a fifth" (box_half /. 5.) (frame 2)
+
+(* Moving: a step along the corridor, none into a wall. Shooting: the
+ * first one down the corridor, not the one behind a wall. *)
+let mazewar_move_and_shoot () =
+  let open TinyMazeWar in
+  (* you at (1, 1) facing east, along row 1; e1 at (5, 1), e2 at (1, 3)
+   * down the other corridor *)
+  let g = mazewar_with [ (1, 1, 1); (5, 1, 3); (1, 3, 0) ] in
+  let moved = tick (mazewar_cmds 3 Forward) g in
+  Alcotest.(check int) "a step" 2 moved.eyes.(0).c;
+  let blocked = tick (mazewar_cmds 3 Forward) (mazewar_with [ (1, 1, 0); (5, 1, 3); (1, 3, 0) ]) in
+  Alcotest.(check int) "not into the wall" 1 blocked.eyes.(0).r;
+  let shot = tick (mazewar_cmds 3 Fire) g in
+  Alcotest.(check bool) "e1 shot" true (shot.eyes.(1).dead > 0);
+  Alcotest.(check int) "a kill" 1 shot.eyes.(0).kills;
+  Alcotest.(check int) "e2 untouched" 0 shot.eyes.(2).dead;
+  (* the wall between (5, 1) and (5, 3): e1 can't see e2 *)
+  Alcotest.(check bool) "no one down a walled way" true (down_the_corridor g 5 1 2 = None);
+  let again = tick (mazewar_cmds 3 Fire) shot in
+  Alcotest.(check int) "reloading: no second shot yet" 1 again.eyes.(0).kills
+
+(* The dead come back, after a while, somewhere free and away from the
+ * others. *)
+let mazewar_respawn () =
+  let open TinyMazeWar in
+  let g = tick (mazewar_cmds 2 Fire) (mazewar_with [ (1, 1, 1); (5, 1, 3) ]) in
+  let rec wait n g = if n = 0 then g else wait (n - 1) (tick (mazewar_cmds 2 Nothing) g) in
+  let back = wait 100 g in
+  let e = back.eyes.(1) in
+  Alcotest.(check int) "alive again" 0 e.dead;
+  Alcotest.(check bool) "on a free cell" false (wall e.c e.r);
+  Alcotest.(check bool) "away from you" true (abs (e.c - 1) + abs (e.r - 1) >= 5)
+
+(* A robot facing you down a corridor shoots you. And robots left to
+ * themselves hunt each other: in a minute, someone has been shot. *)
+let mazewar_robots () =
+  let open TinyMazeWar in
+  let g = mazewar_with [ (1, 1, 1); (5, 1, 3) ] in
+  let rec until_shot n g = if n = 0 || g.eyes.(0).dead > 0 then g else until_shot (n - 1) (tick [| Nothing; robot g 1 |] g) in
+  Alcotest.(check bool) "it shoots you" true ((until_shot 60 g).eyes.(0).deaths = 1);
+  let g = ref (start ()) in
+  for _ = 1 to 3600 do
+    let cur = !g in
+    g := { (tick (Array.init (Array.length cur.eyes) (fun k -> robot cur k)) cur) with rng = next cur.rng }
+  done;
+  let kills = Array.fold_left (fun a e -> a + e.kills) 0 !g.eyes in
+  Printf.eprintf "DBG mazewar: %d kills in a minute of robots\n%!" kills;
+  Alcotest.(check bool) "someone got shot" true (kills > 0)
+
+(*****************************************************************************)
 (* TinyPrinceOfPersia *)
 (*****************************************************************************)
 
@@ -6687,6 +6876,17 @@ let tests =
       t "TinyZork, the troll" zork_troll;
       t "TinyManiacMansion, the walkboxes" mm_walkboxes;
       t "TinyManiacMansion, a walkthrough to the lab" mm_walkthrough;
+      t "TinyHamurabi, a year" hamurabi_year;
+      t "TinyHamurabi, impeachment and the plague" hamurabi_impeached_and_plague;
+      t "TinyHamurabi, think again" hamurabi_think_again;
+      t "TinyHamurabi, ten years" hamurabi_ten_years;
+      t "TinyTennisForTwo, the serve, and the net" tennis_serve_and_net;
+      t "TinyTennisForTwo, two bounces" tennis_two_bounces;
+      t "TinyTennisForTwo, the computer returns" tennis_computer_returns;
+      t "TinyMazeWar, the frames" mazewar_frames;
+      t "TinyMazeWar, a step, and a shot" mazewar_move_and_shoot;
+      t "TinyMazeWar, back from the dead" mazewar_respawn;
+      t "TinyMazeWar, the robots" mazewar_robots;
       t "TinyPrinceOfPersia, the distances are the tables' sums" pop_tables;
       t "TinyPrinceOfPersia, a robot escapes the dungeon" pop_robot;
       t "TinyPrinceOfPersia, the gate closes, the shaft hurts" pop_gate_and_fall;

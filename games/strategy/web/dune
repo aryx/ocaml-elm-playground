@@ -2,10 +2,10 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyCivilization TinyDune2 TinySimCity TinyTowerDefense
-    TinyWarcraft2 TinyWorms TinyXCOM)
-  (modules TinyCivilization TinyDune2 TinySimCity TinyTowerDefense
-    TinyWarcraft2 TinyWorms TinyXCOM)
+  (names TinyCivilization TinyDune2 TinyHamurabi TinySimCity
+    TinyTowerDefense TinyWarcraft2 TinyWorms TinyXCOM)
+  (modules TinyCivilization TinyDune2 TinyHamurabi TinySimCity
+    TinyTowerDefense TinyWarcraft2 TinyWorms TinyXCOM)
   (libraries
     elm_playground
     ai

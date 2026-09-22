@@ -207,6 +207,7 @@ about its view, from a raycaster to a real 3D renderer.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
+| [TinyMazeWar](games/fps/TinyMazeWar.ml) | 2.5D | Maze War (Steve Colley, Greg Thompson and Howard Palmer, NASA Ames, 1973-74) | Eyeballs hunting each other down the corridors of a maze, in lines. | The first first-person game and shooter: nested frames, a cell at a time, in lines only; every player a command per tick, the shape of lockstep networking; robots. |
 | [TinyBattlezone](games/fps/TinyBattlezone.ml) | 2.5D | Battlezone (Ed Rotberg, Atari, 1980) | A tank's periscope over a plain of wireframe pyramids and blocks. | The first 3D arcade hit: wireframes taken into the eye's coordinates, clipped at the near plane, divided by the depth. |
 | [TinyBattlezone3d](games/fps/TinyBattlezone3d.ml) | 3D | TinyBattlezone | The same plain and the same enemy, with solid faces. | A z-buffer turns obstacles into cover. |
 | [TinyWolfenstein](games/fps/TinyWolfenstein.ml) | 2.5D | Wolfenstein 3D (id Software, 1992) | A maze walked in first person. | The raycaster: one ray per screen column through a grid (DDA); billboards hidden by a one-dimensional z-buffer. |
@@ -262,6 +263,7 @@ tennis's idea, two paddles and a ball, and is an arcade game.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
+| [TinyTennisForTwo](games/sports/TinyTennisForTwo.ml) | 2D | Tennis for Two (William Higinbotham and Robert Dvorak, Brookhaven National Laboratory, 1958) | Tennis from the side on an oscilloscope, a knob and a button each. | The first video game made to entertain: a ballistic trajectory, its bounces, a net; the volley; the phosphor's trail. |
 | [TinyShufflePuck](games/sports/TinyShufflePuck.ml) | 2.5D | Shufflepuck Café (Christopher Gross, Brøderbund, 1988) | Air hockey down a table in perspective against a bar's regulars. | The table seen from your end: one division of perspective, and its inverse for the mouse; opponents as a few knobs; substeps against tunnelling. |
 | [TinyKickOff2](games/sports/TinyKickOff2.ml) | 2D | Kick Off 2 (Dino Dini, Anco, 1990) | Football from above, where the ball is not glued to your feet. | The free ball (`ball=glued` to compare); aftertouch; a team as a formation pulled towards the ball. |
 | [TinySpeedball2](games/sports/TinySpeedball2.ml) | 2D | Speedball 2: Brutal Deluxe (The Bitmap Brothers, 1990) | Handball, ice hockey and a fist fight on a sheet of metal. | The ball carried; an arena that scores like a pinball table; walls instead of touchlines; the tackle as a move. |
@@ -277,6 +279,7 @@ system to run and keep alive.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
+| [TinyHamurabi](games/strategy/TinyHamurabi.ml) | 2D | Hamurabi (Doug Dyment, 1968, after The Sumer Game, Mabel Addis and William McKay, IBM, 1964) | Ten years of ancient Sumer, a harvest at a time, typed on a teletype. | The first simulation game, and the first designed by a woman: a city of five numbers, a year one function of three answers and four dice; the rules as David Ahl's BASIC printed them. |
 | [TinySimCity](games/strategy/TinySimCity.ml) | 2D | SimCity (Will Wright, Maxis, 1989) | Lay out roads, power and zones, and the city builds itself. | The game is the simulation: zones that need each other (the RCI bars), power as a flood fill, pollution as a blur. |
 | [TinyCivilization](games/strategy/TinyCivilization.ml) | 2D | Civilization (Sid Meier and Bruce Shelley, MicroProse, 1991) | Found cities from 4000 BC and climb a tree of technologies. | The tech tree as a DAG; a city as an economy of food, shields and trade; a world made from noise; a rival playing by the same rules. |
 | [TinyXCOM](games/strategy/TinyXCOM.ml) | 2D | X-COM: UFO Defense (Julian Gollop, Mythos Games / MicroProse, 1994) | Four soldiers, a crashed UFO, and a fight in turns. | Time units spent on every step and shot; the chance to hit shown before shooting; a vision cone per soldier; reaction fire in the enemy's turn. |
