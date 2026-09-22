@@ -132,9 +132,9 @@ own:
 - **Every existing example and game must ray trace with no change at
   all.** The lighting model (`Lighting`: one directional sun plus
   ambient) is kept for the first phases, so `-raytrace` on
-  `examples3d/Cubes3d.exe` is *the same picture, with shadows*. New
-  material verbs (`shiny`, `glassy`) are additions a scene may opt
-  into, which the rasterizer ignores.
+  `Cubes3d.exe` is *the same picture, with shadows*. New material
+  verbs (`shiny`, `glassy`) are additions a scene may opt into, which
+  the rasterizer ignores.
 
 ## The Playground API, Evan-style
 
@@ -192,7 +192,7 @@ playground/software/
                         a `raytrace` entry point beside `render`
   Playground3d_platform (exists) the -raytrace flag, the preview key,
                         the ray-traced dump
-examples3d/
+examples/
   Raytracing*.ml        the new scenes (below), including the ICFP ones
 graphics/tests/         ray/triangle against the analytic answers, the
                         BVH against brute force, the acne regression
@@ -338,7 +338,7 @@ for a reason. (Dates from memory, to check.)
 
 ## New examples
 
-In `examples3d/`, named `Raytracing*` (the `Physics*` precedent), each
+In `examples/`, named `Raytracing*` (the `Physics*` precedent), each
 with golden frames, each runnable on every backend -- rasterized by
 default, ray traced with "y" or `-raytrace`, which is the point:
 
@@ -365,9 +365,9 @@ default, ray traced with "y" or `-raytrace`, which is the point:
 - **`RaytracingSplit3d.ml`** -- the same frame rasterized on the left
   half and ray traced on the right, with the two timings on screen.
   The whole plan in one window.
-- **Existing scenes, no edit**: `examples3d/Cubes3d.ml`,
-  `Spheres3d.ml`, `games3d/TinyQuake.ml` and `TinyMinecraft.ml` ray
-  traced with `-raytrace` for the README's stills -- and TinyQuake in
+- **Existing scenes, no edit**: `Cubes3d.ml`, `Spheres3d.ml`,
+  `games3d/TinyQuake.ml` and `TinyMinecraft.ml` ray traced with
+  `-raytrace` for the README's stills -- and TinyQuake in
   particular is the interesting one, since its *baked* lightmaps and
   the ray tracer's real shadows can be compared on the same level.
 
@@ -431,7 +431,7 @@ Decisions taken, with their reasons, so they are not re-argued:
 - **no GML parser** (the author's call): scenes are written with the
   existing 3D constructors. The `.gml` files stay as a reference for
   *what* to draw, not as input;
-- **the ICFP scenes are reproduced as `examples3d/Raytracing*.ml`**,
+- **the ICFP scenes are reproduced as `Raytracing*.ml`**,
   at the author's asking -- `spheres.gml` and `fib.gml` first;
 - the contest was **ICFP 2000**, not 2020 (the local folder is
   misnamed; noted here so the next reader does not repeat it);
@@ -458,7 +458,7 @@ Decisions taken, with their reasons, so they are not re-argued:
   point lit by three lights stays at most white).
 - **Golden frames** in `tests/3d/`, small and deterministic: the
   golden runner cannot pass flags, but it *can* press keys, so a
-  ray-traced golden scene is `("examples3d/RaytracingSpheres3d", "ry", 1)`
+  ray-traced golden scene is `("examples/software/RaytracingSpheres3d", "ry", 1)`
   -- quarter resolution with "r", then "y". Cheap enough to run in
   `make test`; the big ones stay behind `make test-golden-all`.
 - **The numbers, measured rather than asserted**: rays per second

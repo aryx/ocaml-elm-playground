@@ -54,8 +54,8 @@ let orders () =
 (* The intermediate axis *)
 (*****************************************************************************)
 
-(* the T-handle of examples3d/PhysicsSpin3d.ml, in metres and kg: a bar
- * with a stem hanging off it, whose three principal moments are all
+(* the T-handle of PhysicsSpin3d.ml, in metres and kg: a bar with a
+ * stem hanging off it, whose three principal moments are all
  * different -- which is what the flip needs *)
 let bar_sides = (0.30, 0.04, 0.04)
 let bar_mass = 0.30

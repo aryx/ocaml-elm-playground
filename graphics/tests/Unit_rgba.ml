@@ -13,7 +13,7 @@
 let t = Testo.create
 
 (* a 64x64 RGB PNG (see graphics/tests/dune's deps) *)
-let rgb_png = "../../examples3d/checker.png"
+let rgb_png = "../../examples/checker.png"
 
 let load ?channels file =
   match Stb_image.load ?channels file with Ok img -> img | Error (`Msg m) -> failwith m

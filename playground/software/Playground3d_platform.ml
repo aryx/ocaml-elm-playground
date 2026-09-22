@@ -60,15 +60,14 @@ open Playground3d
  *    fps); switch to wireframe first to actually *see* it
  *  - "f": wireframe, only the triangles' edges
  *  - "z": the z-buffer or the painter's algorithm (see
- *    graphics/3d/Painter.mli); try examples3d/PaintersAlgorithmFail3d
+ *    graphics/3d/Painter.mli); try PaintersAlgorithmFail3d
  *  - "p": perspective-correct or linear interpolation (see
- *    graphics/3d/Interpolate.mli); try examples3d/TexturedCube3d
+ *    graphics/3d/Interpolate.mli); try TexturedCube3d
  *  - "i": texture filtering, bilinear or nearest texel
  *  - "t": the top-left fill rule, or the epsilon (see
  *    graphics/3d/Triangle.mli); with the magnifier on a shared edge
  *  - "c": near-plane clipping on/off (see graphics/3d/Clip.mli): off,
- *    the triangles going behind the camera vanish; try
- *    examples3d/Corridor3d
+ *    the triangles going behind the camera vanish; try Corridor3d
  *  - "o": optimizations on/off, i.e. the original simple code instead
  *    of the optimized one (see graphics/core/Opti.mli); watch the fps
  *  - "x": the pixel magnifier (graphics/2d/Magnifier), following the

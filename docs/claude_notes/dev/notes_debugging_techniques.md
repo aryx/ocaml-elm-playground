@@ -240,8 +240,8 @@ wrong) every time: `scripts/frames/screenshot_playground3d.sh` and
 `scripts/smoke/smoke_test_playground3d.sh`.
 
 ```bash
-scripts/frames/screenshot_playground3d.sh _build/default/examples3d/Cubes3d.exe /tmp/cubes.png
-scripts/smoke/smoke_test_playground3d.sh          # every examples3d/games3d (+opengl) demo, 3s each
+scripts/frames/screenshot_playground3d.sh _build/default/examples/Cubes3d.exe /tmp/cubes.png
+scripts/smoke/smoke_test_playground3d.sh          # every example and 3D game (+opengl), 3s each
 ```
 
 **The gotcha the screenshot script exists to avoid**: `import -window

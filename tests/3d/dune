@@ -14,27 +14,27 @@
  )
  (deps
    (glob_files golden/*.png)
-   %{project_root}/examples3d/software/Triangle3d.exe
-   %{project_root}/examples3d/software/Cube3d.exe
-   %{project_root}/examples3d/software/Cubes3d.exe
-   %{project_root}/examples3d/software/Spheres3d.exe
-   %{project_root}/examples3d/software/PhysicsSolarSystem3d.exe
-   %{project_root}/examples3d/software/PhysicsSpin3d.exe
-   %{project_root}/examples3d/software/PhysicsFloat3d.exe
-   %{project_root}/examples3d/software/PhysicsHitbox3d.exe
-   %{project_root}/examples3d/software/PhysicsBounce3d.exe
-   %{project_root}/examples3d/software/PhysicsMarbles3d.exe
-   %{project_root}/examples3d/software/PhysicsRoll3d.exe
-   %{project_root}/examples3d/software/PhysicsStack3d.exe
-   %{project_root}/examples3d/software/PhysicsWalk3d.exe
-   %{project_root}/examples3d/software/PhysicsRagdoll3d.exe
-   %{project_root}/examples3d/software/LogoFractals3d.exe
-   %{project_root}/examples3d/software/TexturedCube3d.exe
-   %{project_root}/examples3d/software/InteractiveCube3d.exe
-   %{project_root}/examples3d/software/PaintersAlgorithmFail3d.exe
-   %{project_root}/examples3d/software/FloatingCity3d.exe
-   %{project_root}/examples3d/software/Corridor3d.exe
-   %{project_root}/examples3d/software/CachedGrid3d.exe
+   %{project_root}/examples/software/Triangle3d.exe
+   %{project_root}/examples/software/Cube3d.exe
+   %{project_root}/examples/software/Cubes3d.exe
+   %{project_root}/examples/software/Spheres3d.exe
+   %{project_root}/examples/software/PhysicsSolarSystem3d.exe
+   %{project_root}/examples/software/PhysicsSpin3d.exe
+   %{project_root}/examples/software/PhysicsFloat3d.exe
+   %{project_root}/examples/software/PhysicsHitbox3d.exe
+   %{project_root}/examples/software/PhysicsBounce3d.exe
+   %{project_root}/examples/software/PhysicsMarbles3d.exe
+   %{project_root}/examples/software/PhysicsRoll3d.exe
+   %{project_root}/examples/software/PhysicsStack3d.exe
+   %{project_root}/examples/software/PhysicsWalk3d.exe
+   %{project_root}/examples/software/PhysicsRagdoll3d.exe
+   %{project_root}/examples/software/LogoFractals3d.exe
+   %{project_root}/examples/software/TexturedCube3d.exe
+   %{project_root}/examples/software/InteractiveCube3d.exe
+   %{project_root}/examples/software/PaintersAlgorithmFail3d.exe
+   %{project_root}/examples/software/FloatingCity3d.exe
+   %{project_root}/examples/software/Corridor3d.exe
+   %{project_root}/examples/software/CachedGrid3d.exe
    %{project_root}/games3d/software/StarCollector3d.exe
    %{project_root}/games3d/software/TinyBattlezone3d.exe
    %{project_root}/games3d/software/TinyElite3d.exe
@@ -62,6 +62,6 @@
    %{project_root}/games3d/software/TinyMonumentValley.exe
    %{project_root}/games3d/software/TinyRockBand.exe
    %{project_root}/games3d/software/TinyMinecraft.exe
-   %{project_root}/examples3d/checker.png ; TexturedCube3d's texture
+   %{project_root}/examples/checker.png ; TexturedCube3d's texture
  )
 )

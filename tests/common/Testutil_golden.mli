@@ -26,7 +26,7 @@
  * pixels you can see in <dir>/actual/. *)
 
 (* A scene: an executable, from the project's root and without its .exe
- * (e.g. "examples3d/Cubes3d"), the debug keys to press ("" for none),
+ * (e.g. "examples/software/Cubes3d"), the debug keys to press ("" for none),
  * and the frame to compare. Its golden frame is golden/<name>.png, with
  * <name> the executable's basename, plus "_" and the keys if any (e.g.
  * golden/Cubes3d_bf.png). *)

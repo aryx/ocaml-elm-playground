@@ -19,7 +19,7 @@
  *              eye
  *
  * which is the historical reason the z-buffer approach (see Zbuffer)
- * won out. Run examples3d/PaintersAlgorithmFail3d.ml and toggle "z" to
+ * won out. Run PaintersAlgorithmFail3d.ml and toggle "z" to
  * see it fail: its two genuinely intersecting boxes cannot be correctly
  * ordered by any single per-face decision. (Cubes3d's grid of separate,
  * same-size, non-overlapping cubes doesn't stress it enough: the order

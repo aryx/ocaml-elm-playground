@@ -108,6 +108,5 @@ val solid_sphere : mass:float -> radius:float -> Mat3.t
 (* [shifted ~mass offset i]: the parallel-axis theorem in 3D,
  * i + m (|r|^2 E - r r^T): the tensor of a part whose centre sits
  * [offset] from the whole body's. Adding two of these is how a
- * compound body (examples3d/PhysicsSpin3d.ml's T-handle) gets its
- * tensor. *)
+ * compound body (PhysicsSpin3d.ml's T-handle) gets its tensor. *)
 val shifted : mass:float -> Vec3.t -> Mat3.t -> Mat3.t

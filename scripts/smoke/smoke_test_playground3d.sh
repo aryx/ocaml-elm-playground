@@ -21,7 +21,7 @@
 #
 # Example (defaults to the usual example/game dirs under _build):
 #   scripts/smoke/smoke_test_playground3d.sh
-#   scripts/smoke/smoke_test_playground3d.sh 5 _build/default/examples3d _build/default/games3d
+#   scripts/smoke/smoke_test_playground3d.sh 5 _build/default/examples _build/default/games3d
 
 set -uo pipefail
 
@@ -31,9 +31,8 @@ DIRS=("$@")
 if [ ${#DIRS[@]} -eq 0 ]; then
   DIRS=(
     _build/default/examples
+    _build/default/examples/software
     _build/default/games
-    _build/default/examples3d
-    _build/default/examples3d/software
     _build/default/games3d
     _build/default/games3d/software
   )

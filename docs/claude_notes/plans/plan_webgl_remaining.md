@@ -28,7 +28,7 @@ Then the WebGL-specific part of TinyMinecraft:
   js_of_ocaml as is);
 - its texture atlas, `"games3d/minecraft.png"`, copied where the page
   looks for it, `games3d/webgl/games3d/minecraft.png` (a one-rule dune
-  file, like `examples3d/webgl/examples3d/dune`), and by `make website`;
+  file, like the one for the web examples' checker.png), and by `make website`;
 - its fps next to OpenGL's and software's. js_of_ocaml-compiled OCaml
   is several times slower than native at `view` and `Gpu_scene`'s list
   code, so the cache matters even more here.

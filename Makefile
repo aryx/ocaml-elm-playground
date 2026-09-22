@@ -39,7 +39,7 @@ install:
 
 # claude: build, then serve _build/default/ over HTTP, for the web
 # programs, e.g.
-#   http://localhost:8001/examples3d/webgl/TexturedCube3d.html
+#   http://localhost:8001/examples/web/TexturedCube3d.html
 #   http://localhost:8001/examples/web/Mario.html
 # Opening their .html directly (file://) works for most of them, but
 # not for a WebGL page with textures: WebGL refuses to read the pixels
@@ -114,12 +114,11 @@ doc:
 # which is hand-edited, nor the toy-game/toy-web-game docs that odoc also
 # generates from docs/toy-*-example/), and copy each freshly built web
 # example/game (.bc.js + its .html page) to docs/examples/ and docs/games/.
-# claude: and the 3D examples (examples3d/web/) to docs/examples3d/.
-# claude: and the WebGL 3D examples/games (examples3d/webgl/,
-# games3d/webgl/) to docs/examples3d/webgl/ and docs/games3d/webgl/,
-# a subdirectory since the same names exist for both web backends;
-# plus the textures, at the path the pages look for them (relative to
-# the page, see examples3d/webgl/examples3d/dune).
+# claude: examples/web/ has the 3D examples on WebGL too; the SVG ones
+# (examples/svg/) go to docs/examples/svg/, a subdirectory since they
+# have the same names. The WebGL 3D games (games3d/webgl/) go to
+# docs/games3d/webgl/. Plus the textures, at the path the pages look
+# for them (relative to the page, see examples/web/examples/dune).
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
 ODOC_DIRS=odoc.support \
   elm_playground elm_playground_native elm_playground_web\
@@ -133,21 +132,26 @@ website:
 	  chmod -R u+w docs/$$d; \
 	done
 	make js
-	for d in examples examples3d games games2.5d; do \
+	for d in examples games games2.5d; do \
 	  for js in _build/default/$$d/web/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
 	    install -m 644 $$js $$d/web/$$b.html docs/$$d/; \
 	  done; \
 	done
-	for d in examples3d games3d; do \
+	mkdir -p docs/examples/svg
+	for js in _build/default/examples/svg/*.bc.js; do \
+	  b=`basename $$js .bc.js`; \
+	  install -m 644 $$js examples/svg/$$b.html docs/examples/svg/; \
+	done
+	for d in games3d; do \
 	  mkdir -p docs/$$d/webgl; \
 	  for js in _build/default/$$d/webgl/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
 	    install -m 644 $$js $$d/webgl/$$b.html docs/$$d/webgl/; \
 	  done; \
 	done
-	mkdir -p docs/examples3d/webgl/examples3d
-	install -m 644 examples3d/checker.png docs/examples3d/webgl/examples3d/
+	mkdir -p docs/examples/examples
+	install -m 644 examples/checker.png docs/examples/examples/
 	mkdir -p docs/games3d/webgl/games3d
 	install -m 644 games3d/texture.png docs/games3d/webgl/games3d/
 
@@ -159,8 +163,7 @@ js:
 	dune build games/web --profile=release-js
 	dune build games2.5d/web --profile=release-js
 	dune build examples/web --profile=release-js
-	dune build examples3d/web --profile=release-js
-	dune build examples3d/webgl --profile=release-js
+	dune build examples/svg --profile=release-js
 	dune build games3d/webgl --profile=release-js
 	dune build apps/web --profile=release-js
 

@@ -53,7 +53,7 @@ Each as an `Opti`, the simple version kept, measured with
 - **Images**: Turtle and Mario download theirs, so they're left out
   (tests shouldn't need the network), and so are `Blit`'s paths, "i"
   and the image optimization. An example with a local image (like
-  `examples3d/checker.png` for 3D) would let a golden cover them.
+  `checker.png` for 3D) would let a golden cover them.
 - **Random games**: Snake and Tetris call `Random.self_init`; a
   `-seed n` flag (in `Native_loop_2d`) would make them testable.
 - **Transparency**: only examples/Mouse fades a shape, while the mouse

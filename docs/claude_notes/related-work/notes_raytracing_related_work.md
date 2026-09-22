@@ -50,8 +50,8 @@ graphics.
   published as "An Improved Illumination Model for Shaded Display"
   (CACM, 1980). Its chrome-and-glass spheres over a checkerboard are
   still the first thing a new ray tracer is pointed at, and are
-  `examples3d/RaytracingWhitted3d.ml` in the plan. Minutes to hours a
-  frame on the hardware of the day (to check).
+  `RaytracingWhitted3d.ml` in the plan. Minutes to hours a frame on
+  the hardware of the day (to check).
 - **Cook, Porter and Carpenter, 1984** (Lucasfilm): "Distributed Ray
   Tracing" -- jitter the rays and the *same* machinery gives soft
   shadows, glossy reflections, depth of field and motion blur.

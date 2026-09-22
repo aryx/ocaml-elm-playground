@@ -39,23 +39,23 @@ BUILD=_build/default
 
 # executable, debug keys to press first, frame to dump
 SCENES="
-examples3d/Cube3d.exe - 3
-examples3d/Cubes3d.exe - 3
-examples3d/Cubes3d.exe f 3
-examples3d/Cubes3d.exe z 3
-examples3d/Cubes3d.exe b 3
-examples3d/Cubes3d.exe bf 3
-examples3d/Spheres3d.exe - 3
-examples3d/Spheres3d.exe m 3
-examples3d/Spheres3d.exe mm 3
-examples3d/Spheres3d.exe mmm 3
-examples3d/TexturedCube3d.exe - 3
-examples3d/TexturedCube3d.exe p 3
-examples3d/TexturedCube3d.exe i 3
-examples3d/InteractiveCube3d.exe - 3
-examples3d/PaintersAlgorithmFail3d.exe - 3
-examples3d/PaintersAlgorithmFail3d.exe z 3
-examples3d/FloatingCity3d.exe - 3
+examples/software/Cube3d.exe - 3
+examples/software/Cubes3d.exe - 3
+examples/software/Cubes3d.exe f 3
+examples/software/Cubes3d.exe z 3
+examples/software/Cubes3d.exe b 3
+examples/software/Cubes3d.exe bf 3
+examples/software/Spheres3d.exe - 3
+examples/software/Spheres3d.exe m 3
+examples/software/Spheres3d.exe mm 3
+examples/software/Spheres3d.exe mmm 3
+examples/software/TexturedCube3d.exe - 3
+examples/software/TexturedCube3d.exe p 3
+examples/software/TexturedCube3d.exe i 3
+examples/software/InteractiveCube3d.exe - 3
+examples/software/PaintersAlgorithmFail3d.exe - 3
+examples/software/PaintersAlgorithmFail3d.exe z 3
+examples/software/FloatingCity3d.exe - 3
 games3d/TinyMinecraft.exe - 1
 "
 

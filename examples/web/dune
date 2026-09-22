@@ -31,6 +31,28 @@
 (copy_files ../BigBangWorm.ml)
 (copy_files ../PuzzleScriptSokoban.ml)
 (copy_files ../PuzzleScriptBoulders.ml)
+; the 3D ones, for the WebGL stanza below
+(copy_files ../Triangle3d.ml)
+(copy_files ../Cube3d.ml)
+(copy_files ../Cubes3d.ml)
+(copy_files ../Spheres3d.ml)
+(copy_files ../TexturedCube3d.ml)
+(copy_files ../InteractiveCube3d.ml)
+(copy_files ../PaintersAlgorithmFail3d.ml)
+(copy_files ../FloatingCity3d.ml)
+(copy_files ../Corridor3d.ml)
+(copy_files ../CachedGrid3d.ml)
+(copy_files ../PhysicsSolarSystem3d.ml)
+(copy_files ../PhysicsSpin3d.ml)
+(copy_files ../PhysicsFloat3d.ml)
+(copy_files ../PhysicsHitbox3d.ml)
+(copy_files ../PhysicsBounce3d.ml)
+(copy_files ../PhysicsMarbles3d.ml)
+(copy_files ../PhysicsRoll3d.ml)
+(copy_files ../PhysicsStack3d.ml)
+(copy_files ../PhysicsWalk3d.ml)
+(copy_files ../PhysicsRagdoll3d.ml)
+(copy_files ../LogoFractals3d.ml)
 
 (executables
   (names
@@ -48,6 +70,11 @@
     PuzzleScriptSokoban
     PuzzleScriptBoulders
   )
+  (modules :standard \ Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
+    InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
+    CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
+    PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d)
   (libraries
     elm_playground
     ai ; AiTictactoe's Minimax
@@ -58,11 +85,56 @@
   (link_flags -no-check-prims)
 )
 
+; claude: and the 3D examples, on WebGL (../svg/ has them drawn as SVG)
+(executables
+  (names
+    Triangle3d
+    Cube3d
+    Cubes3d
+    Spheres3d
+    TexturedCube3d
+    InteractiveCube3d
+    PaintersAlgorithmFail3d
+    FloatingCity3d
+    Corridor3d
+    CachedGrid3d
+    PhysicsSolarSystem3d
+    PhysicsSpin3d
+    PhysicsFloat3d
+    PhysicsHitbox3d
+    PhysicsBounce3d
+    PhysicsMarbles3d
+    PhysicsRoll3d
+    PhysicsStack3d
+    PhysicsWalk3d
+    PhysicsRagdoll3d
+    LogoFractals3d
+  )
+  (modules Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
+    InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
+    CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
+    PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d)
+  (libraries
+    elm_core ; Set_.mem, Basics.clamp
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_webgl ; implem of virtual elm_playground_3d
+    physics_2d ; PhysicsSolarSystem3d's Kepler and Planets
+    physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d; PhysicsFloat3d's Force3d; PhysicsHitbox3d's Hitbox3d; PhysicsBounce3d's Resolve3d; PhysicsMarbles3d's Broadphase3d; PhysicsRoll3d's rolling; PhysicsStack3d's Solver3d
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
 ; claude: copy the .html pages into _build/default/<dir>/ next to the
 ; generated .bc.js so the directory can be opened directly in a browser.
 ; Defining the 'default' alias overrides dune's implicit one, hence the
 ; explicit (alias all) to still build the executables.
+; claude: and the textures, where the WebGL pages look for them (see
+; examples/dune in this directory)
 (rule
   (alias default)
-  (deps (glob_files *.html) (alias all))
+  (deps (glob_files *.html) (alias all) examples/checker.png)
   (action (progn)))

@@ -1,10 +1,8 @@
-; Reuses ../Triangle3d.ml etc. as-is via copy_files (a build-time rule,
-; not a committed duplicate/symlink -- see ../opengl/dune's identical
-; pattern before this swap, docs/claude_notes/plans/done/plan_opengl.md)
-; so the exact same backend-agnostic source runs against
-; elm_playground_3d_software here and elm_playground_3d_opengl in
-; ../dune, with only one real file per example. Four extra ones stay
-; software-only (see ../dune's trailing comment).
+; claude: reuse ../*.ml as-is (a build-time copy, not a committed
+; symlink/duplicate) so the same backend-agnostic source runs against
+; elm_playground_3d_web here, elm_playground_3d_opengl in ../dune, and
+; elm_playground_3d_software in ../software/dune, with only one real
+; file per example.
 (copy_files ../Triangle3d.ml)
 (copy_files ../Cube3d.ml)
 (copy_files ../Cubes3d.ml)
@@ -14,7 +12,6 @@
 (copy_files ../PaintersAlgorithmFail3d.ml)
 (copy_files ../FloatingCity3d.ml)
 (copy_files ../Corridor3d.ml)
-(copy_files ../CachedGrid3d.{ml,mli})
 (copy_files ../PhysicsSolarSystem3d.{ml,mli})
 (copy_files ../PhysicsSpin3d.ml)
 (copy_files ../PhysicsFloat3d.ml)
@@ -38,7 +35,6 @@
     PaintersAlgorithmFail3d
     FloatingCity3d
     Corridor3d
-    CachedGrid3d
     PhysicsSolarSystem3d
     PhysicsSpin3d
     PhysicsFloat3d
@@ -53,10 +49,21 @@
   )
   (libraries
     elm_core ; Set_.mem, Basics.clamp
-    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
-    elm_playground_3d_software ; implem of virtual elm_playground_3d
+    elm_playground_3d_web ; implem of virtual elm_playground_3d
     physics_2d ; PhysicsSolarSystem3d's Kepler and Planets
     physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d; PhysicsFloat3d's Force3d; PhysicsHitbox3d's Hitbox3d; PhysicsBounce3d's Resolve3d; PhysicsMarbles3d's Broadphase3d; PhysicsRoll3d's rolling; PhysicsStack3d's Solver3d
   )
+  (modes js)
+  (link_flags -no-check-prims)
 )
+
+; claude: copy the .html pages into this directory's _build/ next to
+; the generated .bc.js so the directory can be opened directly in a
+; browser (same trick as ../web/dune).
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))

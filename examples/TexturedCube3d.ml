@@ -18,7 +18,7 @@ open Playground3d
 
 let view (computer : Playground.computer) () =
   let angle = spin 8. computer.time in
-  let scene = textured_cube "examples3d/checker.png" 1.5 |> rotate3d 0. angle 0. in
+  let scene = textured_cube "examples/checker.png" 1.5 |> rotate3d 0. angle 0. in
   let cam = camera ~eye:(3., 2., 5.) ~target:(0., 0., 0.) () in
   (cam, [ scene ])
 

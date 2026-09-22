@@ -4,7 +4,7 @@ Every program in this repository that you can play or use, sorted by
 genre: the video games of `games/` (2D), `games2.5d/` (a 3D look drawn
 by the game itself on the 2D playground) and `games3d/` (drawn by
 playground3d), and the applications of `apps/`. The demos of one
-feature (`examples/`, `examples3d/`) and the unit programs are not
+feature (`examples/`) and the unit programs are not
 listed here.
 
 Most programs are a toy version of a famous one; the **After** column

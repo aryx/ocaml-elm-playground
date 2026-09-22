@@ -12,8 +12,8 @@ as the code accumulates optimizations. Companion to
 [`plan_playground3d.md`](plan_playground3d.md) (the overall design).
 
 Benchmarks below are the on-screen FPS counter (the window title) each
-`examples3d/` demo already shows, at the default 1000x1000 window, on
-this machine. Not a rigorous benchmark suite (no fixed camera/scene
+3D demo already shows, at the default 1000x1000 window, on this
+machine. Not a rigorous benchmark suite (no fixed camera/scene
 across runs, single sample each) -- order-of-magnitude comparisons, not
 precise numbers.
 
@@ -25,7 +25,7 @@ precise numbers.
 
 ## Fix 1: rasterizer "crack" (missing pixels along a triangle seam)
 
-- **Symptom**: thin box-shaped markers (`examples3d/InteractiveCube3d.ml`'s
+- **Symptom**: thin box-shaped markers (`InteractiveCube3d.ml`'s
   axis indicators) intermittently showed a gap in the middle as the
   scene rotated.
 - **Cause**: every rectangular face is rasterized as 2 triangles
@@ -178,7 +178,7 @@ precise numbers.
 
 Not optimizations, but the two "not done" items of the first version:
 `graphics/3d/Clip` cuts the triangles crossing the near plane to their
-part in front of the camera ("c", see `examples3d/Corridor3d.ml`), and
+part in front of the camera ("c", see `Corridor3d.ml`), and
 `Triangle.fill` has the top-left fill rule with sub-pixel precision
 ("t"), the rigorous version of Fix 1's epsilon (see
 `graphics/3d/Triangle.mli`). The epsilon stays the default.

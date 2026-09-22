@@ -231,9 +231,9 @@ them worth a test:
   than the light?" has to compare against infinity rather than a
   distance. Forget it and nothing is ever in shadow.
 
-With shadows in place, `examples3d/Cubes3d.ml` ray traced is the same
-picture as rasterized, *plus* the cubes' shadows on each other -- the
-plan's argument for keeping the existing lighting model.
+With shadows in place, `Cubes3d.ml` ray traced is the same picture as
+rasterized, *plus* the cubes' shadows on each other -- the plan's
+argument for keeping the existing lighting model.
 
 ## 6. Not testing every triangle: the BVH
 

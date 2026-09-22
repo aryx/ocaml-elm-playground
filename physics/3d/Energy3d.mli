@@ -22,7 +22,7 @@
  * one. A free body's L is fixed in space; its w is not, because the
  * tensor between them turns with the body. So w moves -- the body
  * wobbles, and about the intermediate axis it flips over, with no
- * force acting at all (examples3d/PhysicsSpin3d.ml).
+ * force acting at all (PhysicsSpin3d.ml).
  *
  *     spin about a principal axis     spin about the in-between one
  *

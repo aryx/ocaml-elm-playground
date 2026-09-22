@@ -133,7 +133,7 @@ let rec collect_batches ?on_cached (shape : Playground3d.shape3d) : (material * 
  * claude: [concat] is List.concat, but tail-recursive (concat_map is,
  * concat isn't, in OCaml < 5.1). List.concat recurses once per list,
  * i.e. once per face here: fine for native code's big stack, but a
- * 1600-cube scene (examples3d/CachedGrid3d, 9600 faces) overflowed the
+ * 1600-cube scene (CachedGrid3d, 9600 faces) overflowed the
  * browser's much smaller one on the WebGL backend ("Maximum call stack
  * size exceeded"). *)
 let concat (lists : 'a list list) : 'a list = List.concat_map Fun.id lists

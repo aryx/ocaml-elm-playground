@@ -108,7 +108,7 @@ let centroid (points : t list) : t =
  * artifact" before anyone asked. (Even this comment first said
  * the normal was NaN, until someone read [normalize] again.)
  *
- * Found by eye, on a screenshot of examples3d/Spheres3d.exe.
+ * Found by eye, on a screenshot of Spheres3d.exe.
  *
  * Reference: Martin Newell's method, as described in Ivan Sutherland,
  * Robert Sproull, Robert Schumacker, "A Characterization of Ten

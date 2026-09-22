@@ -30,7 +30,7 @@
    symbols"), whose L-systems are 3D turtle programs: + and - are
    left/right, & and ^ down/up, | a U-turn, and \ and / the rolls
    (their \, "roll left", lifts the left side: here [roll_right], named
-   after where the turtle banks); see examples3d/LogoFractals3d.ml. The 3D
+   after where the turtle banks); see LogoFractals3d.ml. The 3D
    turtle itself is from Abelson and diSessa's "Turtle Geometry" (MIT
    Press, 1981), chapter 10, "The Three-Dimensional Turtle".
 

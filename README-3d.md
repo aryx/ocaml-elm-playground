@@ -44,8 +44,8 @@ the pixels itself and one handing the scene to the GPU:
 
 |         | CPU                         | GPU                                  |
 | ------- | --------------------------- | ------------------------------------ |
-| native  | **software** (`examples3d/software/`) | **opengl** (`examples3d/`)   |
-| browser | **web**, SVG (`examples3d/web/`) | **webgl** (`examples3d/webgl/`)  |
+| native  | **software** (`examples/software/`) | **opengl** (`examples/`)   |
+| browser | **web**, SVG (`examples/svg/`) | **webgl** (`examples/web/`)  |
 
 - **software** (`elm_playground_3d_software`): a real, from-scratch
   software rasterizer -- perspective projection, backface culling,
@@ -73,27 +73,27 @@ Try it
 ------
 
 ```bash
-dune exec examples3d/software/Cube3d.exe # a single spinning cube
-dune exec examples3d/Cubes3d.exe         # a grid of overlapping cubes, orbited by the camera
-dune exec examples3d/TexturedCube3d.exe  # a cube wrapped with a test texture
-dune exec examples3d/software/InteractiveCube3d.exe  # arrow keys/mouse move a cube around a small scene
-dune exec examples3d/software/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see the "z" toggle below
-dune exec examples3d/software/Corridor3d.exe  # walk down a corridor (up/down arrows); see the "c" toggle below
+dune exec examples/software/Cube3d.exe # a single spinning cube
+dune exec examples/Cubes3d.exe         # a grid of overlapping cubes, orbited by the camera
+dune exec examples/TexturedCube3d.exe  # a cube wrapped with a test texture
+dune exec examples/software/InteractiveCube3d.exe  # arrow keys/mouse move a cube around a small scene
+dune exec examples/software/PaintersAlgorithmFail3d.exe  # two intersecting boxes; see the "z" toggle below
+dune exec examples/software/Corridor3d.exe  # walk down a corridor (up/down arrows); see the "c" toggle below
 dune exec games3d/StarCollector3d.exe    # move a box, collect randomly-spawning stars for points
 dune exec games3d/TinyDescent3d.exe      # fly a ship through a mine, in any direction (arrows, a/d, w/s)
 dune exec games3d/TinyQuake.exe          # a Quake level: qbsp, vis and light at startup, "v" shows what vis saves
 ```
 
 The examples above already run on the GPU by default; the same, on the
-software rasterizer: `dune exec examples3d/software/Cubes3d.exe`. In a
+software rasterizer: `dune exec examples/software/Cubes3d.exe`. In a
 browser: `make serve-build`, then e.g.
-http://localhost:8001/examples3d/webgl/TexturedCube3d.html (or
-`web/` instead of `webgl/` for the SVG backend). The pages must be
+http://localhost:8001/examples/web/TexturedCube3d.html (or
+`svg/` instead of `web/` for the SVG backend). The pages must be
 served over HTTP, not opened as files, for the WebGL ones' textures to
 load (the Makefile's comment above `serve-build` says why).
 
 Run any native example/game with `-debug-keys` (e.g.
-`dune exec examples3d/Cubes3d.exe -- -debug-keys`), and a few keys are
+`dune exec examples/Cubes3d.exe -- -debug-keys`), and a few keys are
 wired up as live debug toggles for comparing rendering strategies side
 by side (see `notes_3d.md` section 11 for what each one demonstrates
 and why). Without the flag they're off, so a game can use any key:
@@ -116,12 +116,11 @@ and why). Without the flag they're off, so a game can use any key:
 
 The window title shows every toggle's current state.
 
-The OpenGL backend (`examples3d/` and `games3d/` -- both top-level
-defaults now) has `m`
+The OpenGL backend (the default of `examples/` and `games3d/`) has `m`
 (no lighting, flat, smooth), `b`, `f`, and `i` too, with `-debug-keys`
 as well, and `o`: its optimization, keeping the GPU buffers of
 `Playground3d.cached3d` shapes from frame to frame (try
-`games3d/TinyMinecraft.exe` or `examples3d/CachedGrid3d.exe`
+`games3d/TinyMinecraft.exe` or `examples/CachedGrid3d.exe`
 with `-debug`, which logs the draw calls and vertices uploaded), and `u`:
 the HUD off, to tell whether a slow frame is the scene's fault or the
 HUD's, which this backend draws on the CPU (with `-debug`, the log
@@ -131,7 +130,7 @@ The WebGL pages take the same flags as URL parameters, since a page has
 no command line: `?debug-keys` for `m`, `b`, `i`, `f` and `o` (their
 state in the page's title), `?keys=mb` to press some before the first
 frame, and `?fixed-time=1000` to freeze the clock, e.g.
-http://localhost:8001/examples3d/webgl/Spheres3d.html?fixed-time=1000&keys=m
+http://localhost:8001/examples/web/Spheres3d.html?fixed-time=1000&keys=m
 (with `make serve-build`). In a 1000x1000 window, such a frame can be
 compared with the software rasterizer's golden frame
 (`tests/3d/golden/`), made the same way.

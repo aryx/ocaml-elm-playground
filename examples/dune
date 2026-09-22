@@ -13,6 +13,13 @@
     BigBangRocket BigBangWorm
     PuzzleScriptSokoban PuzzleScriptBoulders
   )
+  ; claude: every example but the 3D ones, which are the stanza below's
+  ; (five of them in no stanza here, see the comment at the end)
+  (modules :standard \ Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
+    InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
+    CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
+    PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d)
   (libraries
     elm_playground
     ai ; AiTictactoe's Minimax
@@ -26,3 +33,49 @@
     elm_playground_native ; implem of virtual elm_playground
   )
 )
+
+; claude: the 3D examples, on the GPU (OpenGL); software/ has them on
+; the software rasterizer, web/ on WebGL, svg/ drawn as SVG
+(executables
+  (names
+    Triangle3d
+    Cubes3d
+    Spheres3d
+    TexturedCube3d
+    CachedGrid3d
+    PhysicsSolarSystem3d
+    PhysicsSpin3d
+    PhysicsFloat3d
+    PhysicsHitbox3d
+    PhysicsBounce3d
+    PhysicsMarbles3d
+    PhysicsRoll3d
+    PhysicsStack3d
+    PhysicsWalk3d
+    PhysicsRagdoll3d
+    LogoFractals3d
+  )
+  (modules Triangle3d Cubes3d Spheres3d TexturedCube3d CachedGrid3d
+    PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d PhysicsHitbox3d
+    PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d PhysicsStack3d
+    PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d)
+  (libraries
+    elm_core
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+    physics_2d ; PhysicsSolarSystem3d's Kepler and Planets
+    physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d; PhysicsFloat3d's Force3d; PhysicsHitbox3d's Hitbox3d; PhysicsBounce3d's Resolve3d; PhysicsMarbles3d's Broadphase3d; PhysicsRoll3d's rolling; PhysicsStack3d's Solver3d
+  )
+)
+
+; claude: five 3D examples aren't in this list, only in software/ (and
+; the web ones): Cube3d, InteractiveCube3d, PaintersAlgorithmFail3d,
+; FloatingCity3d, Corridor3d. The OpenGL backend's own
+; "m"/"b"/"f"/"i"/"o" debug keys (see README-3d.md) don't include
+; PaintersAlgorithmFail3d's "z" or Corridor3d's "c" (plan_opengl.md
+; scoped painter's-algorithm out, since a hardware z-buffer makes the
+; toggle moot); InteractiveCube3d needs a HUD. None of that explains
+; Cube3d or FloatingCity3d, which render fine on every other backend
+; (including WebGL, see plan_webgl.md) -- they're just not wired into
+; this executable list yet.

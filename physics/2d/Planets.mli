@@ -2,7 +2,7 @@
  * (2000-01-01, 12:00), for Kepler.position, and its size; the Moon's
  * orbit and size; the Sun's. Numbers only (the examples choose the
  * colors), shared by examples/PhysicsSolarSystem.ml and
- * examples3d/PhysicsSolarSystem3d.ml.
+ * PhysicsSolarSystem3d.ml.
  *
  * The scale of it, the reason every picture of the Solar System lies
  * about it: the Earth is 12,756 km across, 149.6 million km from the

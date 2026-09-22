@@ -45,7 +45,7 @@
  *   Earth: its true 0.00257 AU would be inside the Earth's disk).
  *
  * - The planets move in 3D (Mercury's orbit is tilted 7 degrees): seen
- *   from above, the z is dropped; examples3d/PhysicsSolarSystem3d.ml keeps it.
+ *   from above, the z is dropped; PhysicsSolarSystem3d.ml keeps it.
  *
  * - Left out: the Moon's real phase and tilt (it starts at an
  *   arbitrary place), the planets' pulls on each other (the elements'

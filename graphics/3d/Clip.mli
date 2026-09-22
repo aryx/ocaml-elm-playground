@@ -8,7 +8,7 @@
  * projected. The simplest renderer drops every triangle with a vertex
  * behind it; but a big triangle that goes behind the camera, like the
  * floor under your feet, is mostly in front of it, and dropping it
- * leaves a hole (see examples3d/Corridor3d.ml, "c" to toggle). So: cut
+ * leaves a hole (see Corridor3d.ml, "c" to toggle). So: cut
  * it along the near plane, and keep the part in front.
  *
  * Seen from above, a triangle crossing the near plane:

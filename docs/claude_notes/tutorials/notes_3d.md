@@ -448,9 +448,9 @@ Three refinements, each its own debug key (§11):
 - **Near-plane clipping** (`c`). Projection divides by depth, so a
   vertex behind the camera has no sensible pixel. Dropping every
   triangle with such a vertex leaves holes near the camera, e.g. the
-  floor under your feet in `examples3d/Corridor3d.ml`; `Clip` cuts the
-  triangle to its part in front of the near plane instead (Sutherland
-  and Hodgman, 1974), which gives 0, 1 or 2 triangles.
+  floor under your feet in `Corridor3d.ml`; `Clip` cuts the triangle
+  to its part in front of the near plane instead (Sutherland and
+  Hodgman, 1974), which gives 0, 1 or 2 triangles.
 
 ## 8. Shading models: flat, Gouraud, Phong (and where we are)
 
@@ -515,7 +515,7 @@ neighboring faces, so a per-vertex normal would just equal that one
 face's flat normal) -- so they only look different from `flat_shading`
 on a curved shape approximated by many small faces with genuinely
 varying normals, like the `sphere` primitive added alongside this
-(`examples3d/Spheres3d.ml` is the demo built to show it).
+(`Spheres3d.ml` is the demo built to show it).
 
 ## 9. Texture mapping: UV coordinates
 
@@ -622,7 +622,7 @@ state, over the frame; the window title too. The main ones:
   brightness computed at every pixel). `cube`/`box`/`plane` render
   pixel-for-pixel identically in the 3 lit modes, since each face's
   corners are independent points, not shared with neighboring faces --
-  run `examples3d/Spheres3d.exe` and press `m` there instead, where the
+  run `Spheres3d.exe` and press `m` there instead, where the
   `sphere` primitive's genuinely varying per-vertex normals make all 4
   modes look visibly different from each other (`notes_3d_shading.md`
   has the full implementation writeup).
@@ -651,7 +651,7 @@ state, over the frame; the window title too. The main ones:
   currently draws that internal diagonal too, not just each shape's
   true edges).
 - **`z` -- painter's algorithm vs z-buffer** (§6): **run
-  `examples3d/PaintersAlgorithmFail3d.ml` for this one, not `Cubes3d.ml`.**
+  `PaintersAlgorithmFail3d.ml` for this one, not `Cubes3d.ml`.**
   `Cubes3d.ml`'s grid of separate, same-size, non-overlapping cubes
   turns out not to stress painter's algorithm enough to visibly break --
   a whole-face centroid-distance sort happens to get the order right

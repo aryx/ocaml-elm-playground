@@ -95,7 +95,7 @@ playground/tests/         unchanged (already tests both)
   the `.ml`/`.mli` comments, the notes and open plans, `CLAUDE.md`,
   `README*.md`, the Makefile's comments.
 
-## Step 2: `examples3d/` into `examples/`
+## Step 2: `examples3d/` into `examples/` (done, 2026-09-22)
 
 ```
 examples/          2D native (Cairo) stanza + 3D native (OpenGL) stanza

@@ -135,7 +135,7 @@ being expensive enough to avoid.
 
 ## Resolution and the hardware gap, in one comparison
 
-Doom shipped rendering **320x200** pixels; our `examples3d/` demos run
+Doom shipped rendering **320x200** pixels; our 3D demos run
 at **1000x1000** by default -- about 25x as many pixels -- on top of
 also doing genuinely more expensive per-pixel work (an exact
 perspective divide, a real per-pixel z-buffer test, texture sampling)

@@ -341,7 +341,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * before the call: it was always the correct, uncorrupted source).
    * Reproduced reliably (10/10) on games3d/StarCollector3d.exe
    * specifically -- a scene with more shapes/allocation before this
-   * point than examples3d/Cubes3d.exe or Spheres3d.exe, which never
+   * point than Cubes3d.exe or Spheres3d.exe, which never
    * triggered it -- and, tellingly, adding *any* extra allocation
    * (even an unrelated Printf.eprintf) right before this call made it
    * disappear just as reliably. That points at a GC-timing-sensitive

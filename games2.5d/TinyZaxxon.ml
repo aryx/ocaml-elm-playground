@@ -86,7 +86,7 @@
  * far ones first
  * ([painted]). With no overlapping allowed to be ambiguous -- one
  * thing per place on the fortress -- the painter's algorithm is exact,
- * and costs a sort. (examples3d/PaintersAlgorithmFail3d.ml is what it
+ * and costs a sort. (PaintersAlgorithmFail3d.ml is what it
  * cannot do, and why a z-buffer was worth inventing.)
  *
  * The fourth family of this directory, then, next to cell by cell

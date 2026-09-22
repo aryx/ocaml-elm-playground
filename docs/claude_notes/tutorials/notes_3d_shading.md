@@ -140,7 +140,7 @@ Built in the same pass as Gouraud (see above): instead of blending
 themselves via `l0`/`l1`/`l2`, renormalizes (an interpolated blend of
 unit vectors isn't unit-length in general), and calls
 `brightness_of_normal` on the result -- one dot product per pixel
-instead of per vertex. `examples3d/Spheres3d.ml` is the demo built to
+instead of per vertex. `Spheres3d.ml` is the demo built to
 actually show all 4 modes differing from each other (press "m"): two
 spheres, since `cube`/`box`/`plane` render identically under all 3 lit
 modes. No FPS regression worth calling out was observed in casual

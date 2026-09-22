@@ -23,6 +23,11 @@
     PuzzleScriptSokoban
     PuzzleScriptBoulders
   )
+  (modules :standard \ Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
+    InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
+    CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
+    PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d)
   (libraries
     elm_playground
     ai ; AiTictactoe's Minimax
@@ -34,5 +39,46 @@
     appkit_sheet_view ; and how it is drawn
     appkit_typeset ; TypesetParagraph's two line breakers
     elm_playground_software ; implem of virtual elm_playground
+  )
+)
+
+; claude: and the 3D examples, on the software rasterizer (all of them,
+; unlike ../dune's OpenGL list, see its trailing comment)
+(executables
+  (names
+    Triangle3d
+    Cube3d
+    Cubes3d
+    Spheres3d
+    TexturedCube3d
+    InteractiveCube3d
+    PaintersAlgorithmFail3d
+    FloatingCity3d
+    Corridor3d
+    CachedGrid3d
+    PhysicsSolarSystem3d
+    PhysicsSpin3d
+    PhysicsFloat3d
+    PhysicsHitbox3d
+    PhysicsBounce3d
+    PhysicsMarbles3d
+    PhysicsRoll3d
+    PhysicsStack3d
+    PhysicsWalk3d
+    PhysicsRagdoll3d
+    LogoFractals3d
+  )
+  (modules Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
+    InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
+    CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
+    PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d)
+  (libraries
+    elm_core ; Set_.mem, Basics.clamp
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_software ; implem of virtual elm_playground_3d
+    physics_2d ; PhysicsSolarSystem3d's Kepler and Planets
+    physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d; PhysicsFloat3d's Force3d; PhysicsHitbox3d's Hitbox3d; PhysicsBounce3d's Resolve3d; PhysicsMarbles3d's Broadphase3d; PhysicsRoll3d's rolling; PhysicsStack3d's Solver3d
   )
 )

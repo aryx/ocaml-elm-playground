@@ -34,7 +34,7 @@
      into the three angles Playground3d.rotate3d takes;
    - a body's resistance to being spun is a matrix that turns with it,
      so a body left to itself can wobble, and about its middle axis
-     turn itself over (examples3d/PhysicsSpin3d.ml). [body] gives every
+     turn itself over (PhysicsSpin3d.ml). [body] gives every
      body the tensor of its own bounding box, so this happens by
      itself; [upright] takes it away, for a player or a flipper that
      must never topple;
@@ -265,7 +265,7 @@ val bounce_all : ?broad_phase:Broadphase3d.method_ -> body list -> body list
 
 (* [broad_phase m bodies]: the pairs [bounce_all] would test, and how
  * many boxes [m] compared to find them -- for drawing the count on
- * screen, as examples3d/PhysicsMarbles3d.ml does *)
+ * screen, as PhysicsMarbles3d.ml does *)
 val broad_phase : Broadphase3d.method_ -> body list -> Broadphase3d.result
 
 (* the body's hitbox's axis-aligned box in the world *)

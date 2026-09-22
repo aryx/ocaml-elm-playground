@@ -1,6 +1,5 @@
 ; Reuses ../StarCollector3d.ml as-is via copy_files (a build-time rule, not
-; a committed duplicate/symlink -- see examples3d/software/dune's identical
-; pattern) so the exact same backend-agnostic source runs against
+; a committed duplicate/symlink -- the 3D examples' identical pattern) so the exact same backend-agnostic source runs against
 ; elm_playground_3d_software here and elm_playground_3d_opengl in ../dune,
 ; with only one real file per game.
 (copy_files ../StarCollector3d.ml)

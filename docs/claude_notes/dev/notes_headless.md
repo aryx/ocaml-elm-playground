@@ -1,9 +1,9 @@
 # Testing the web backends with headless Chrome
 
 A short tutorial on checking that a web Playground app (a `.bc.js` built
-from `examples/web/`, `games/web/`, `examples3d/web/`, ...) actually
+from `examples/web/`, `games/web/`, `examples/svg/`, ...) actually
 *renders* something, from a shell, without opening a browser window.
-First used to smoke-test the new `examples3d/web/` (the
+First used to smoke-test the new SVG 3D examples (the
 `elm_playground_3d_web` backend) in one command.
 
 See also `notes_debugging_techniques.md` section 6. That section covers
@@ -59,7 +59,7 @@ pages next to the `.bc.js` files in `_build/`:
 
 ```bash
 make
-cd _build/default/examples3d/web
+cd _build/default/examples/svg
 ```
 
 Which binary: on this machine `google-chrome`, `/snap/bin/chromium` and
@@ -91,7 +91,7 @@ for f in *.html; do
 done
 ```
 
-This printed, for `examples3d/web/`:
+This printed, for the SVG 3D examples:
 
 ```
 Cube3d:                   3 <polygon

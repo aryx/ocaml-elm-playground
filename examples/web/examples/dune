@@ -1,0 +1,7 @@
+; claude: the examples name their textures by a path relative to the
+; repo root ("examples/checker.png"), which a web page resolves
+; relative to itself, i.e. to this directory; a dune rule can only
+; create files in its own directory, hence this one, with only the
+; copy. See ../dune's default alias, which builds it.
+(rule
+  (copy ../../checker.png checker.png))

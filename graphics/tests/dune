@@ -18,5 +18,5 @@
    graphics_gpu
    stb_image ; Unit_rgba loads a real RGB PNG
  )
- (deps %{project_root}/examples3d/checker.png)
+ (deps %{project_root}/examples/checker.png)
 )

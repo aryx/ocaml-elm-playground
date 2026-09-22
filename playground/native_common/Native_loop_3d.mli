@@ -36,7 +36,7 @@ val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
 (* claude: a straight copy of playground/native_common/Native_loop_2d.ml's
  * own parse_cli_and_setup_logging (2D run_app calls it as its first
  * action) -- same -v/-verbose/-debug/-quiet convention, so individual
- * playground3d examples3d/games3d files don't each need their own
+ * 3D examples and games don't each need their own
  * Arg.parse boilerplate either. Duplicated rather than shared only
  * because a virtual module's implementation is sealed to exactly its
  * own .mli, the same reason Shape_render_native had to be extracted

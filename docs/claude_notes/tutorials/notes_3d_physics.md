@@ -31,7 +31,7 @@ three numbers.
 | module (`physics/3d/`) | what | section | see it in |
 |---|---|---|---|
 | `graphics/3d/geometry/Vec3` | vectors (exists: the renderers use it) | §2 | |
-| `Quat`, `Mat3` | orientation, and the inertia tensor | §3, §4 | `examples3d/PhysicsSpin3d.ml` |
+| `Quat`, `Mat3` | orientation, and the inertia tensor | §3, §4 | `PhysicsSpin3d.ml` |
 | `Body3d` | a body's state: position, velocity, orientation, spin, tensor | §3, §5 | |
 | `Integrate3d` | one time step, and the orientation's own update | §5 | `PhysicsSpin3d.ml` |
 | `Force3d` | gravity, gravitation, springs, drag, buoyancy | §6 | `games3d/TinyHalfLife2.ml` |
@@ -278,7 +278,7 @@ the third one is the trap: drop the gyroscopic term and the handle
 spins about a fixed axis for ever while `|L|` and the energy are
 conserved to the last bit. Every diagnostic says the simulation is
 perfect. It is just not this universe -- which is why
-`examples3d/PhysicsSpin3d.ml` puts that switch on a key.
+`PhysicsSpin3d.ml` puts that switch on a key.
 
 Verlet and RK4 exist here too, for the same comparisons as in 2D, but
 the orientation is where the methods differ most and it is worth
@@ -310,9 +310,9 @@ of its set pieces:
 A barrel of density 0.6 floats with 60% of its height under water, and
 the rest depth is exactly what the tests check against the analytic
 waterline (0.6000, 0.2000, 0.9500 in `Unit_force3d`).
-`examples3d/PhysicsFloat3d.ml` makes the same check visible: each
-block wears a stripe painted at its density, nothing lines those
-stripes up with the surface, and the simulation puts them there.
+`PhysicsFloat3d.ml` makes the same check visible: each block wears a
+stripe painted at its density, nothing lines those stripes up with the
+surface, and the simulation puts them there.
 
 Torque would come for free -- apply the force at the *centre of the
 submerged part* rather than the body's centre and a barrel pushed
@@ -401,10 +401,10 @@ And every test here answers with *one* contact point, which is what a
 bounce needs; a box resting on a box touches along a whole face, and
 the four points that keeps a stack still are phase 8's job (§10).
 
-`examples3d/PhysicsHitbox3d.ml` is where all of this is visible: four
-shapes wearing their hitboxes as wireframes, one more that you push
-through them, and the contact drawn as an arrow along the way out, as
-long as the overlap is deep.
+`PhysicsHitbox3d.ml` is where all of this is visible: four shapes
+wearing their hitboxes as wireframes, one more that you push through
+them, and the contact drawn as an arrow along the way out, as long as
+the overlap is deep.
 
 ## 8. The broad phase: the same three, one dimension up
 
@@ -435,8 +435,8 @@ comparisons and spends the winnings on its hash table, and sweep and
 prune -- a sort and a list -- is the fastest of the three.
 
 Two things are genuinely different here. The grid's memory, as above:
-ours hashes its cells, and `examples3d/PhysicsMarbles3d.ml` draws the
-ones that exist. And the sweep's *axis*, which in 2D one never has to
+ours hashes its cells, and `PhysicsMarbles3d.ml` draws the ones that
+exist. And the sweep's *axis*, which in 2D one never has to
 think about: on that same pile, wide in x and z and thin in y,
 
 ```
@@ -491,10 +491,10 @@ and `Resolve3d.mli` draws the picture of what it gets wrong (the
 diagonals grip `sqrt 2` times too hard, and which way the diagonals
 lie is an implementation detail of `Resolve3d.tangents`).
 
-`examples3d/PhysicsBounce3d.ml` is the phase's demo and checks itself:
-the bar beside each ball is drawn at `e^2` of its fall from `e` alone,
-and the simulation comes back and touches it, about 2% under -- the
-discrete step's cost, printed rather than hidden. The crate dropped on
+`PhysicsBounce3d.ml` is the phase's demo and checks itself: the bar
+beside each ball is drawn at `e^2` of its fall from `e` alone, and the
+simulation comes back and touches it, about 2% under -- the discrete
+step's cost, printed rather than hidden. The crate dropped on
 a corner is the part with no 2D version: the impulse lands far from
 its centre, so most of what it gets is spin.
 
@@ -550,8 +550,8 @@ Measured, a crate dropped on the floor and left for 300 steps:
 and a tower of five crates, after 600 steps: each resting within the
 slop of the contacts under it (5 mm each, so the top crate 2.1 cm low
 of 2.5 allowed), 3 mm of sideways creep, the whole tower asleep.
-`examples3d/PhysicsStack3d.ml` is the same argument with bricks: "s"
-turns the solver off, and the wall comes apart into a heap.
+`PhysicsStack3d.ml` is the same argument with bricks: "s" turns the
+solver off, and the wall comes apart into a heap.
 
 Three things went wrong while writing it, all of them the kind that
 look like physics bugs and are not. The single-point box/box contact
@@ -618,8 +618,8 @@ told only about a tensor, a contact point and a friction impulse. With
 
 The formula generalises to any shape as `a = g sin a / (1 + k)` with
 `k = I / m r^2` read off the body's own tensor, which is what
-`examples3d/PhysicsRoll3d.ml` races: a frictionless ball (k = 0, and it
-wins), a solid sphere (k = 0.40) and a capsule lying across the slope
+`PhysicsRoll3d.ml` races: a frictionless ball (k = 0, and it wins), a
+solid sphere (k = 0.40) and a capsule lying across the slope
 (k = 0.47), each labelled with its prediction and its measurement.
 
 One more distinction the example puts on a key, because the two are

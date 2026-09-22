@@ -6,7 +6,7 @@ The 3D counterpart of [`plan_games.md`](plan_games.md) (read it first:
 the principles, the "kits" and the "layers", the references are the
 same). `games3d/` has two games: StarCollector3d (a third-person toy)
 and TinyMinecraft (a voxel sandbox, the port of the Python tiny-minecraft,
-see `done/plan_tiny_minecraft.md`), plus the scenes of `examples3d/`
+see `done/plan_tiny_minecraft.md`), plus the scenes of the 3D examples
 (Corridor3d walks down a corridor first-person, CachedGrid3d draws a big
 static world, FloatingCity3d a composition).
 

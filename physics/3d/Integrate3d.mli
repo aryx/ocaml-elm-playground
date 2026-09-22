@@ -52,7 +52,7 @@
  *                                 engine that "has no gyroscopic term"
  *                                 is this one.
  *
- * Measured (the T-handle of examples3d/PhysicsSpin3d.ml, tensor
+ * Measured (the T-handle of PhysicsSpin3d.ml, tensor
  * diag(0.00149, 0.00233, 0.00370) kg m^2, spun at 10 rad/s with a
  * 0.02 rad/s nudge on the other two axes, 30 s, dt = 1/600 s):
  *

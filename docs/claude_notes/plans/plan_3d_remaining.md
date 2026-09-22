@@ -97,8 +97,8 @@ is [`notes_raytracing.md`](../tutorials/notes_raytracing.md).
   multiplying per pixel.
 - **The web backend drops triangles crossing the near plane**
   (`Playground3d.render3d_to_2d`): `Clip` could be used there too, in
-  view coordinates, before projecting each polygon (e.g.
-  `examples3d/Corridor3d` in a browser).
+  view coordinates, before projecting each polygon (e.g. `Corridor3d`
+  in a browser).
 - **The OpenGL backend has no "h" help.** (Its HUD is done: drawn by
   the 2D software rasterizer, its transparency recovered by
   `graphics/core/Matting`, blended by the GPU. It costs ~20ms each time

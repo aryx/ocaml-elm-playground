@@ -25,7 +25,7 @@
 #   scripts/frames/screenshot_playground3d.sh <path-to-exe> <output.png> [wait-seconds] [run-timeout-seconds]
 #
 # Example:
-#   scripts/frames/screenshot_playground3d.sh _build/default/examples3d/Cubes3d.exe /tmp/cubes.png
+#   scripts/frames/screenshot_playground3d.sh _build/default/examples/Cubes3d.exe /tmp/cubes.png
 
 set -euo pipefail
 
