@@ -5386,6 +5386,129 @@ let xcom_battle_ends () =
   let g = go 40 (reveal (new_game ())) in
   Alcotest.(check bool) "over" true (g.phase = Won || g.phase = Lost)
 
+(*****************************************************************************)
+(* TinyMetroid *)
+(*****************************************************************************)
+
+(* The checker's verdict on the world: one item a round, in the
+ * designed order, and Kraid only with all four *)
+let metroid_progression () =
+  let open TinyMetroid in
+  Alcotest.(check (list (list string)))
+    "one key a round"
+    [ [ "o" ]; [ "m" ]; [ "j" ]; [ "b" ] ]
+    (List.map (List.map (function Morph_ball -> "o" | Missiles -> "m" | High_jump -> "j" | Bombs -> "b")) (progression level));
+  let kraid = List.hd (Tilemap.find level 'K') in
+  Alcotest.(check bool) "Kraid with everything" true (reaches level [ Morph_ball; Missiles; High_jump; Bombs ] kraid);
+  Alcotest.(check bool) "not without the bombs" false (reaches level [ Morph_ball; Missiles; High_jump ] kraid);
+  let tank = List.hd (Tilemap.find level 'e') in
+  Alcotest.(check bool) "the tank needs the bombs" false (reaches level [ Morph_ball; Missiles; High_jump ] tank);
+  Alcotest.(check bool) "and has them" true (reaches level [ Morph_ball; Missiles; High_jump; Bombs ] tank)
+
+(* The checker catches a broken world: the red door left out, the boots
+ * come with the missiles, in the same round *)
+let metroid_broken () =
+  let open TinyMetroid in
+  let doorless = List.fold_left (fun m (c, r) -> Tilemap.set m c r ' ') level [ (41, 26); (41, 27); (41, 28) ] in
+  Alcotest.(check int) "three rounds, not four" 3 (List.length (progression doorless));
+  Alcotest.(check bool) "the boots in the second" true (List.mem High_jump (List.nth (progression doorless) 1))
+
+let metroid_run (c : TinyMetroid.controls) (n : int) (g : TinyMetroid.game) : TinyMetroid.game =
+  let g = ref g in
+  for _ = 1 to n do g := TinyMetroid.step c !g done;
+  !g
+
+(* The game's jump against the checker's: 3 tiles and not 4, 5 with the
+ * boots and not 6 *)
+let metroid_jump () =
+  let open TinyMetroid in
+  let g = new_game () in
+  let rise (s : samus) =
+    let rec go (g : game) best n = if n = 0 then best else let g = step { idle with jump = true } g in go g (Float.max best (g.samus.y -. s.y)) (n - 1) in
+    go (step { idle with jump = true; jump_now = true } { g with samus = s }) 0. 80 /. tile
+  in
+  let h = rise g.samus in
+  Alcotest.(check bool) (Printf.sprintf "3 to 4 tiles (%.2f)" h) true (h >= 3. && h < 4.);
+  let h = rise { g.samus with has = [ High_jump ] } in
+  Alcotest.(check bool) (Printf.sprintf "5 to 6 tiles (%.2f)" h) true (h >= 5. && h < 6.)
+
+(* The first lock: the tunnel out of the start room lets only the ball
+ * through *)
+let metroid_tunnel () =
+  let open TinyMetroid in
+  let g = new_game () in
+  let g = metroid_run { idle with dir = 1. } 300 g in
+  Alcotest.(check bool) "standing, stopped by the wall" true (g.samus.x < fst (center (18, 28)));
+  let g = { g with samus = { g.samus with has = [ Morph_ball ] } } in
+  let g = step { idle with down_now = true } g in
+  Alcotest.(check bool) "rolled up" true g.samus.ball;
+  let g = metroid_run { idle with dir = 1. } 200 g in
+  Alcotest.(check bool) "through" true (g.samus.x > fst (center (22, 28)));
+  let g = step { idle with up_now = true } g in
+  Alcotest.(check bool) "standing again, out of it" false g.samus.ball
+
+(* A red door: the beam bounces off it, a missile opens it, all of it *)
+let metroid_door () =
+  let open TinyMetroid in
+  let g = new_game () in
+  let x, y = on_floor 70. (39, 28) in
+  let g = { g with samus = { g.samus with x; y; facing = 1.; has = [ Missiles ]; missiles = 10 }; enemies = [] } in
+  let g = metroid_run idle 40 (step { idle with fire_now = true } g) in
+  Alcotest.(check (option char)) "the beam: still shut" (Some 'R') (Tilemap.get g.map 41 27);
+  let g = step { idle with switch_now = true } g in
+  let g = metroid_run idle 40 (step { idle with fire_now = true } g) in
+  Alcotest.(check (list (option char))) "a missile: open" [ Some ' '; Some ' '; Some ' ' ] (List.map (Tilemap.get g.map 41) [ 26; 27; 28 ]);
+  Alcotest.(check int) "one missile spent" 9 g.samus.missiles
+
+(* A bomb laid in the ball breaks the blocks around it, and only after
+ * its fuse *)
+let metroid_bomb () =
+  let open TinyMetroid in
+  let g = new_game () in
+  let x, y = on_floor 24. (5, 11) in
+  let g = { g with samus = { g.samus with x; y; ball = true; has = [ Morph_ball; Bombs ] }; enemies = [] } in
+  let g = step { idle with fire_now = true } g in
+  Alcotest.(check (option char)) "ticking" (Some 'x') (Tilemap.get g.map 5 12);
+  let g = metroid_run idle 45 g in
+  Alcotest.(check (list (option char))) "blown" [ Some ' '; Some ' '; Some ' ' ] (List.map (fun c -> Tilemap.get g.map c 12) [ 4; 5; 6 ]);
+  Alcotest.(check bool) "and the ball falls to the tank" true (g.samus.y < y)
+
+(* Kraid feels only missiles *)
+let metroid_kraid () =
+  let open TinyMetroid in
+  let g = new_game () in
+  let b = g.boss in
+  let g = { g with samus = { g.samus with x = b.kx -. 200.; y = b.ky -. 20.; facing = 1.; has = [ Missiles ]; missiles = 10 }; enemies = [] } in
+  let g = metroid_run idle 30 (step { idle with fire_now = true } g) in
+  Alcotest.(check int) "the beam: nothing" 8 g.boss.khp;
+  let g = step { idle with switch_now = true } g in
+  let g = metroid_run idle 30 (step { idle with fire_now = true } g) in
+  Alcotest.(check int) "a missile: one" 7 g.boss.khp
+
+(* The climbs the checker counts on, done with the game's own jump:
+ * straight up, then across at the top (the tile the feet end on); and
+ * the ledge that needs the boots, without them *)
+let metroid_climbs () =
+  let open TinyMetroid in
+  let leap (g : game) wait dir frames =
+    let g = step { idle with jump = true; jump_now = true } g in
+    let g = metroid_run { idle with jump = true } (wait - 1) g in
+    let g = metroid_run { idle with jump = true; dir } frames g in
+    metroid_run idle 60 g
+  in
+  let from has (c, r) = let g = new_game () in let x, y = on_floor 70. (c, r) in { g with samus = { g.samus with x; y; has }; enemies = [] } in
+  let feet (g : game) = Tilemap.cell g.map g.samus.x (g.samus.y -. 30.) in
+  List.iter
+    (fun (what, has, start, wait, dir, frames, expected) ->
+      Alcotest.(check (pair int int)) what expected (feet (leap (from has start) wait dir frames)))
+    [ ("onto the missiles' ledge", [], (35, 28), 10, 1., 20, (37, 25));
+      ("onto the high ledge, with the boots", [ High_jump ], (24, 28), 14, 1., 15, (26, 24));
+      ("not without", [], (24, 28), 14, 1., 15, (24, 28));
+      ("up the shaft", [ High_jump ], (26, 24), 10, 1., 15, (27, 20));
+      ("up the shaft, again", [ High_jump ], (27, 20), 10, -1., 20, (25, 16));
+      ("and again", [ High_jump ], (25, 16), 10, 1., 15, (27, 12));
+      ("out, into the corridor", [ High_jump ], (27, 12), 10, 1., 10, (28, 11)) ]
+
 let tests =
   Testo.categorize "games"
     [ t "TinySokoban, level 1 solved" sokoban_solution;
@@ -5652,4 +5775,12 @@ let tests =
       t "TinyXCOM, cover wears away" xcom_cover_wears;
       t "TinyXCOM, reaction fire" xcom_reaction_fire;
       t "TinyXCOM, the aliens' turn" xcom_aliens_turn;
-      t "TinyXCOM, a battle ends" xcom_battle_ends ]
+      t "TinyXCOM, a battle ends" xcom_battle_ends;
+      t "TinyMetroid, the checker: one key a round" metroid_progression;
+      t "TinyMetroid, the checker catches a broken world" metroid_broken;
+      t "TinyMetroid, the jump against the checker's" metroid_jump;
+      t "TinyMetroid, the tunnel and the ball" metroid_tunnel;
+      t "TinyMetroid, a red door" metroid_door;
+      t "TinyMetroid, a bomb" metroid_bomb;
+      t "TinyMetroid, Kraid feels only missiles" metroid_kraid;
+      t "TinyMetroid, the climbs, with the game's jump" metroid_climbs ]

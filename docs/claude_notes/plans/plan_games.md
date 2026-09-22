@@ -1114,6 +1114,46 @@ Into the Breach come from it.
   walls that fall, kneeling, morale and panic, the Chryssalid, night
   missions.
 
+### 30. The world as locks and keys: Metroid
+
+Metroid (Yoshio Sakamoto, Makoto Kano, Gunpei Yokoi, Nintendo R&D1 and
+Intelligent Systems, 1986); with Castlevania: Symphony of the Night
+(1997), the "Metroidvania": one world, closed by abilities.
+
+- **Toy**: TinyMetroid (DONE: `games/TinyMetroid.ml`), a small Zebes:
+  the morph ball, the missiles, the high jump boots, the bombs, an
+  energy tank, and Kraid (missiles only); arrows, space to jump, x to
+  fire, up to aim up, c to arm missiles, down for the ball, Enter the
+  map.
+- **Kit**: the platformer kit's `Tile_move`; `Tilemap`, `Camera2d`
+  (follow, clamp, zoom), `Scene2d`.
+- **What it is here for**:
+  - **locks as tiles, keys as abilities** (`passable`): a tunnel one
+    tile high, a red door, a ledge 4 tiles up, bomb blocks;
+  - **a checker** (`reachable`, `progression`): a breadth-first
+    search over Samus's poses (a tile, standing or rolled up), with
+    the game's moves -- walk, fall, roll up, stand, and a jump 3 tiles
+    up (5 with the boots) going across only as far as the jump stays
+    that high long enough to (1 tile at the top, 2 lower, 3 lower
+    still). Then all the items it reaches are taken, and it searches
+    again: for this world one key a round, in the designed order,
+    Kraid only at the end. A test breaks the world (a red door left
+    out) and sees the order change;
+  - **the checker against the game**: cautious on purpose, never
+    promising a jump the game can't make -- pilot tests do each climb
+    it counts on with the game's own jump. What it doesn't know (the
+    bomb jump, the wall jump) is where sequence breaks come from;
+  - **the map**, the areas been to and the items seen there.
+- **What it taught**: the first checker went 3 tiles across at any
+  height of a jump; the numbers said otherwise (at a jump's top it
+  stays up 13 frames, a tile of running), so its jump got the shape
+  of the game's, and the shaft 4-tile steps (the boots rise 5.2: a
+  5-tile step left a window of a few frames).
+- **Left undone** (exercises in the header): the bomb jump (and
+  teaching it to the checker), the wall jump, the ice beam, blue doors
+  that close, more of Zebes, the endings by time.
+
+### Later, or never
 
 Point-and-click adventures (Maniac Mansion and SCUMM: verbs,
 walkboxes), text adventures (Colossal Cave Adventure, 1976; Zork) --

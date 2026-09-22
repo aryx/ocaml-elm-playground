@@ -171,6 +171,7 @@ let scenes : Testutil_golden.scene list =
     ("games/software/TinyRType", "", 5);
     ("games/software/TinyIncredibleMachine", "", 5);
     ("games/software/TinyXCOM", "", 5);
+    ("games/software/TinyMetroid", "", 5);
     ("games2.5d/software/TinyGuitarHero", "", 5);
     (* the sound, seen (the "v" debug key, Audio_debug): TinyMario's
      * music at 1 s, as an oscilloscope, then a spectrum *)
@@ -422,6 +423,11 @@ let scripted : Testutil_golden.scripted list =
        turn, closing in *)
     ("games/software/TinyXCOM", "aim", 130, "space:1,at(-119;136):3-40,click:5,at(-85;102):41-110,n:60,at(-119;68):62-80,click:65,at(85;-34):111-130");
     ("games/software/TinyXCOM", "aliens", 400, "space:1,at(-119;136):3-40,click:5,at(-85;102):41-200,n:60,at(-119;68):62-80,click:65,return:120");
+    (* the morph ball taken; rolled up through the tunnel out of the
+       start; the map, two areas been to *)
+    ("games/software/TinyMetroid", "morph", 85, "space:1,left:5-80");
+    ("games/software/TinyMetroid", "ball", 230, "space:1,left:5-80,right:90-235,down:200");
+    ("games/software/TinyMetroid", "map", 330, "space:1,left:5-80,right:90-235,down:200,right:237-300,up:302,return:320");
     (* the riff's first four notes on Medium, every fret held and each
        strummed on its beat (132 a minute, an eighth 0.227 s) *)
     ("games2.5d/software/TinyGuitarHero", "riff", 305,

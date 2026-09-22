@@ -58,6 +58,7 @@
 (copy_files ../TinyRType.ml)
 (copy_files ../TinyIncredibleMachine.ml)
 (copy_files ../TinyXCOM.ml)
+(copy_files ../TinyMetroid.ml)
 
 (executables
   (names
@@ -117,6 +118,7 @@
     TinyRType
     TinyIncredibleMachine
     TinyXCOM
+    TinyMetroid
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind

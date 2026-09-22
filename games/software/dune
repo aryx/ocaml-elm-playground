@@ -60,6 +60,7 @@
     TinyRType
     TinyIncredibleMachine
     TinyXCOM
+    TinyMetroid
   )
   (libraries
     ai ; AiOthello's Minimax, TinyTowerDefense's and the RTS games' Pathfind
