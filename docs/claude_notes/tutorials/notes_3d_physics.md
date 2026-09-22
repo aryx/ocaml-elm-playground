@@ -46,7 +46,7 @@ three numbers.
 | `Character3d` | the capsule controller: a player is not a body | §14 | `PhysicsWalk3d.ml`, `TinyMinecraft.ml` |
 | `Ragdoll3d` | ten boxes and nine joints | §13 | `PhysicsRagdoll3d.ml`, `TinyHalfLife2.ml` |
 | `Portal3d` | a portal pair's motion, crossing, seeing through | §15 | `TinyPortal.ml` |
-| `Physics3d` | the Evan-style API over all of it | §16 | every game above |
+| `Physics3d` | the Evan-style API over all of it | §18 | every game above |
 
 Read §1-§6 for the mechanics (the part a simulation of the solar
 system shares with a video game), §7-§12 for the collisions (the part
@@ -658,7 +658,7 @@ Three fixes, in increasing order of honesty and cost:
   (`Physics.went_through`, `TinySoldat.ml`'s bullets), and so
   does this one; both are a bullet's question, worked out from where
   the body is going now, and wrong for a body that has just bounced
-  (§16).
+  (§18).
 
 `TinyPinball3d` takes the third, and gets a key to switch it off, so
 that the ball can be watched going through the table -- the switch is
@@ -853,7 +853,64 @@ floor portal, looking ahead, is looking along that portal's up, which
 comes out of a wall portal as straight up -- the view has to be turned
 back upright, which Portal does over a moment and this game at once.
 
-## 16. In the playground
+## 16. Compared with Bullet, PhysX and Jolt
+
+The landscape is in
+[`notes_physics3d_related_work.md`](../related-work/notes_physics3d_related_work.md).
+
+**The same solver.** Bullet's default solver is sequential impulses
+too (`btSequentialImpulseConstraintSolver`), and so is Jolt's: 10
+velocity iterations, as here, then 2 position iterations that move
+the bodies directly. That position pass is the one thing ours lacks
+at the core, and it is the cure §13 names for the ragdoll's opening
+elbows. PhysX offers a second solver, TGS, which sub-steps instead of
+iterating.
+
+**Where they are bigger.** Shapes, first: any convex hull through GJK
+and EPA, triangle meshes and height fields for the level, compound
+shapes, and a margin (Bullet) or convex radius (Jolt) around each
+shape so that contacts are found just before the overlap. Ours is four
+primitives and SAT (§7). Scale, second: islands solved in parallel on
+every core (Jolt, PhysX), or on the GPU (PhysX), where ours runs on
+one core, with a hundred awake bodies to a frame (§10). And the
+features the ceiling of the related-work note leaves out: vehicles,
+soft bodies, cloth, destruction.
+
+## 17. What's missing, and exercises
+
+In rough order of difficulty:
+
+- collision filtering: a category and a mask per `Physics3d.body`,
+  checked before a pair is tested;
+- the friction cone instead of the pyramid (§9): clamp the length of
+  the tangent impulse, a 2D vector, in `Resolve3d` and `Solver3d`, and
+  watch the diagonals stop gripping `sqrt 2` too hard;
+- buoyancy's torque (§6): push at the centre of the submerged part in
+  `Force3d.buoyancy`, and let `PhysicsFloat3d.ml`'s blocks go free, to
+  right themselves;
+- sweep and prune keeping its sorted order between steps, with an
+  insertion sort (`Broadphase3d.mli`'s "What is not here"; §8);
+- a capsule sweep in `Sweep3d`, so that `Character3d` sweeps instead
+  of tracing in small pieces (§14);
+- speculative contacts in `Solver3d` (§12), measured against `Sweep3d`
+  on `TinyPinball3d`'s wall: the ball kept, the bounce's energy lost;
+- a position pass after the velocity iterations in `Solver3d`, for
+  the joints and the contacts (non-linear Gauss-Seidel, §13), measured
+  on the ragdoll's elbow;
+- a dynamic AABB tree in `Broadphase3d`, answering `Physics3d.ray`
+  too (§8);
+- a static triangle mesh in `Hitbox3d`, from `Collide3d.sphere_triangle`
+  and `ray_triangle`, with a tree over its triangles (§7);
+- a convex hull in `Hitbox3d`, with SAT on hulls (§7);
+- GJK and EPA in `Collide3d` (its `.mli` names them as the next
+  step), one test for every pair of convex shapes;
+- the Moser-Veselov step in `Integrate3d`, conserving both `|L|` and
+  the energy through `PhysicsSpin3d.ml`'s flips (§5);
+- a reduced-coordinates ragdoll (Featherstone's articulated-body
+  algorithm) instead of `Ragdoll3d`'s ten bodies and nine joints: the
+  elbow can then not open at all (§13).
+
+## 18. In the playground
 
 The API (`Physics3d.mli`) hides all of the above behind
 the same one concept the 2D API has -- a **body**, a `shape3d` that
@@ -933,3 +990,43 @@ What this note added:
   body (§14).
 - **Portal transform**: the rigid transform between two portal mouths,
   applied to position, velocity and orientation (§15).
+
+## References
+
+- Archimedes, "On Floating Bodies", c. 250 BC.
+- Galileo Galilei, "Discorsi e dimostrazioni matematiche intorno a due
+  nuove scienze" (Two New Sciences), Leiden, 1638.
+- J. Baumgarte, "Stabilization of constraints and integrals of motion
+  in dynamical systems", Computer Methods in Applied Mechanics and
+  Engineering 1(1):1-16, 1972.
+- Ivan E. Sutherland, Gary W. Hodgman, "Reentrant polygon clipping",
+  Communications of the ACM 17(1):32-42, 1974.
+- Roy Featherstone, "Robot Dynamics Algorithms", Kluwer, 1987.
+- E. G. Gilbert, D. W. Johnson, S. S. Keerthi, "A fast procedure for
+  computing the distance between complex objects in three-dimensional
+  space", IEEE Journal of Robotics and Automation 4(2):193-203, 1988.
+- J. Moser, A. P. Veselov, "Discrete versions of some classical
+  integrable systems and factorization of matrix polynomials",
+  Communications in Mathematical Physics 139, 1991.
+- David Baraff, "Dynamic Simulation of Non-Penetrating Rigid Bodies",
+  PhD thesis, Cornell University, 1992.
+- Jonathan D. Cohen, Ming C. Lin, Dinesh Manocha, Madhav K. Ponamgi,
+  "I-COLLIDE: An Interactive and Exact Collision Detection System for
+  Large-Scale Environments", Symposium on Interactive 3D Graphics,
+  1995.
+- S. Gottschalk, M. C. Lin, D. Manocha, "OBBTree: A Hierarchical
+  Structure for Rapid Interference Detection", SIGGRAPH '96.
+- Brian Mirtich, "Impulse-based Dynamic Simulation of Rigid Body
+  Systems", PhD thesis, UC Berkeley, 1996 (conservative advancement).
+- Tomas Möller, Ben Trumbore, "Fast, Minimum Storage Ray-Triangle
+  Intersection", Journal of Graphics Tools 2(1):21-28, 1997.
+- David Baraff, Andrew Witkin, "Physically Based Modeling", SIGGRAPH
+  course notes, 1997-2001.
+- id Software, Quake's source code (`SV_FlyMove`, in `sv_phys.c`),
+  released under the GPL, 1999.
+- Erin Catto, "Iterative Dynamics with Temporal Coherence", Game
+  Developers Conference, 2005.
+- Christer Ericson, "Real-Time Collision Detection", Morgan Kaufmann,
+  2005.
+- Erin Catto, "Fast and Simple Physics using Sequential Impulses",
+  Game Developers Conference, 2006 (Box2D Lite).

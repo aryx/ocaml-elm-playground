@@ -27,12 +27,13 @@ this library's precondition.
 | `Snapshot` (later) | a server owns the game; clients predict and interpolate | §6 |
 | `network/relay/` | the little server the browser needs | §7 |
 | `playground/Universe` | HtDP's other shape: worlds with a mailbox, and a server | §9 |
-| `playground/Multiplayer` | the Evan-style API over all of it | §10 |
+| `playground/Multiplayer` | the Evan-style API over all of it | §12 |
 
 Read §1-§2 for what the network is, §3 for the tool that makes the
 rest testable, §4-§6 for the three architectures in increasing order
-of ambition, §8 for the property all of them stand on, and §9 for the
-gentler shape that needs none of it.
+of ambition, §8 for the property all of them stand on, §9 for the
+gentler shape that needs none of it, and §10-§11 for how it compares
+with what games ship and what is left as exercises.
 
 ## 1. The network is not a wire
 
@@ -312,7 +313,84 @@ The two APIs therefore both exist here: `Multiplayer` (§4-§6, one
 simulation, everywhere) and `Universe` (this section, many worlds, one
 postbox), with the same transport underneath.
 
-## 10. In the playground
+## 10. Compared with GGPO, ENet, Quake 3, Source and WebRTC
+
+Who invented what, and the whole landscape, is
+[`notes_networking_related_work.md`](../related-work/notes_networking_related_work.md).
+
+**State as a value.** GGPO, the rollback library, is C++,
+and the game hands it callbacks -- `save_game_state`,
+`load_game_state`, `advance_frame` -- because a C++ game's state is
+mutable memory that must be copied into a buffer every tick and
+copied back on a rollback. Here "save" is keeping a value and "load"
+is using an old one (§5), which is where §5's "about twenty lines"
+comes from, to be checked against the code. ENet is the other
+reference point: reliable and unreliable sequenced channels,
+fragmentation, a connection handshake, bandwidth throttling -- a
+transport. We have none of that: one message type per tick and
+redundancy instead of retransmission (§2), which is enough for inputs
+and nothing else.
+
+**Snapshots, counted.** A back-of-the-envelope snapshot for
+`TinySpacewar.ml`: a ship's `Physics.body` needs `x`, `y`, `vx`, `vy`,
+`angle`, `spin` -- 24 bytes as 32-bit floats -- and a torpedo 16. Two
+ships and four torpedoes are 112 bytes; at 20 packets a second with
+§2's 28 bytes of headers, (112 + 28) x 20 = 2,800 bytes/s, 4.5 times
+lockstep's 620, and growing with every torpedo, where lockstep's does
+not. Quake 3's answer is to send each snapshot as a **delta** against
+the last one the client acknowledged, all over plain UDP: a lost
+packet costs nothing but a larger next delta, against an older base.
+Valve's Source engine adds §6's other half: other players drawn 100
+ms in the past by default (`cl_interp`), and the server rewinding
+them by the shooter's latency to judge a hit (Bernier, 2001).
+
+**The browser.** WebRTC data channels are SCTP over DTLS over UDP,
+each channel choosing ordered or not and how many times to
+retransmit: an ENet built into the browser, with ICE, STUN and TURN
+doing §7's hole punching and relaying. The price is a signalling
+server and a tall stack of specifications -- which is why the plan
+starts with WebSockets and a relay, the dumbest thing that works, and
+accepts §1's head-of-line blocking in the browser.
+
+## 11. What's missing, and exercises
+
+Beyond the plan's phases (the snapshot engine, the relay, WebRTC are
+already there as "later"), in rough order of difficulty:
+
+- **adaptive input delay**: measure the round trip and pick the delay
+  from it (half the RTT, in ticks, plus one) instead of §4's fixed
+  three, and change it smoothly when the RTT does (`Lockstep`);
+- **a demo file**: write the tick-by-tick inputs lockstep already
+  exchanges to disk, and replay them, Doom's way -- which is
+  [`notes_inspect.md`](notes_inspect.md)'s recording by another
+  route (`Lockstep`);
+- **finding the first bad tick**: on a checksum mismatch, exchange
+  the checksums of the last N ticks to find the first that differs,
+  and print both models there (needs a printer, like `Inspect`'s
+  `?show`) (`Checksum`, §4);
+- **time synchronisation for rollback**: a peer that runs ahead makes
+  the other roll back further every frame; measure each side's
+  "frame advantage" and let the one ahead wait a frame now and then,
+  as GGPO does (`Rollback`, §5);
+- **a reliable channel** for the few messages that must arrive (the
+  seed and the starting model, a chat line): sequence numbers, acks
+  piggybacked on the input packets, resend on timeout -- a small
+  ENet (`Wire`, §2);
+- **congestion avoidance**: drop from 20 packets a second to 10 when
+  the RTT climbs, back when it recovers (Fiedler's articles)
+  (`Sim_net` can make the congestion, §3);
+- **dead reckoning** in the snapshot engine: extrapolate another ship
+  from its last velocity instead of interpolating in the past, and
+  compare the two on the latency keys (`Snapshot`, §6);
+- **delta compression against the acknowledged snapshot**, Quake 3's
+  way (`Snapshot`, §6);
+- **hole punching** through a rendezvous server, so two homes can play
+  without the relay carrying every packet (§7);
+- **cross-platform determinism**: run the lockstep test of §8 between
+  the native and the web backends; if floats diverge (and whether they
+  do is the experiment), make the physics fixed-point (§8).
+
+## 12. In the playground
 
 Evan-style, the new concept is the **player** -- everyone's input,
 where `computer` is yours:
@@ -353,3 +431,37 @@ Pong the simplest test.
   world and a mailbox, and the server that carries the mail (§9) --
   the shape that needs none of the determinism above.
 - **Determinism**: the property everything here stands on (§8).
+
+## References
+
+- Leslie Lamport, "Time, Clocks, and the Ordering of Events in a
+  Distributed System", Communications of the ACM 21(7):558-565, 1978
+  (lockstep's total order of inputs).
+- Jon Postel, "User Datagram Protocol", RFC 768, 1980.
+- Jon Postel (ed.), "Transmission Control Protocol", RFC 793, 1981.
+- David R. Jefferson, "Virtual Time", ACM Transactions on Programming
+  Languages and Systems 7(3):404-425, 1985 (Time Warp, rollback's
+  ancestor).
+- Matthias Felleisen, Robert Bruce Findler, Matthew Flatt, Shriram
+  Krishnamurthi, "How to Design Programs", MIT Press, 2001 (2nd ed.
+  2018).
+- Paul Bettner, Mark Terrano, "1500 Archers on a 28.8: Network
+  Programming in Age of Empires and Beyond", Game Developers
+  Conference, 2001.
+- Yahn W. Bernier, "Latency Compensating Methods in Client/Server
+  In-game Protocol Design and Optimization", Game Developers
+  Conference, 2001.
+- Glenn Fiedler, "Fix Your Timestep!", gafferongames.com, 2004.
+- Bryan Ford, Pyda Srisuresh, Dan Kegel, "Peer-to-Peer Communication
+  Across Network Address Translators", USENIX Annual Technical
+  Conference, 2005.
+- Tony Cannon, GGPO, 2006 (open sourced 2019).
+- Glenn Fiedler, "Networking for Game Programmers" (article series),
+  gafferongames.com, 2008.
+- Matthias Felleisen, Robert Bruce Findler, Matthew Flatt, Shriram
+  Krishnamurthi, "A Functional I/O System, or, Fun for Freshman
+  Kids", ICFP 2009 (`2htdp/universe`).
+- Ian Fette, Alexey Melnikov, "The WebSocket Protocol", RFC 6455,
+  2011.
+- Randell Jesup, Salvatore Loreto, Michael Tüxen, "WebRTC Data
+  Channels", RFC 8831, 2021.

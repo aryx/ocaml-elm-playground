@@ -12,9 +12,9 @@ It is the specification of the ray tracer planned in
 written before the code, to be checked against it and have its numbers
 filled in. Companions: [`notes_3d.md`](notes_3d.md) (whose section 6
 introduces the two strategies and points here),
-[`notes_3d_shading.md`](notes_3d_shading.md) (the lighting formula
+[`notes_3d_shading.md`](../dev/notes_3d_shading.md) (the lighting formula
 both renderers share) and
-[`notes_3d_opti.md`](notes_3d_opti.md) (making the rasterizer fast,
+[`notes_3d_opti.md`](../dev/notes_3d_opti.md) (making the rasterizer fast,
 the same kind of story as section 6 below), and
 [`notes_raytracing_related_work.md`](../related-work/notes_raytracing_related_work.md)
 (where this sits among POV-Ray, PBRT, Cycles and the RTX hardware).
@@ -37,11 +37,11 @@ rasterized twin one key away.
 | `graphics/3d/Bvh` | not testing every triangle | §6 |
 | `graphics/3d/Material` | matte, mirror, glass | §7, §8 |
 | `graphics/3d/Render` (exists) | the rasterizer, for comparison | `notes_3d.md` |
-| the software backend's `Playground3d_platform` | the `-raytrace` flag, the "y" key, the dump | §11 |
+| the software backend's `Playground3d_platform` | the `-raytrace` flag, the "y" key, the dump | §12 |
 
 Read §1-§5 for a working ray tracer (visibility, light, shadows),
 §6 for the part that makes it usable, §7-§9 for what it can do that
-a rasterizer cannot, and §10-§11 for where it sits in this project.
+a rasterizer cannot, and §10-§12 for where it sits in this project.
 
 ## 1. The reversal
 
@@ -374,7 +374,45 @@ the only one that can do this, and the highest-fidelity image the
 playground can produce comes from the renderer written in OCaml, not
 from the GPU.
 
-## 11. In the playground
+**The ray caster already here.** The one the repository has is `TinyQuake.ml`'s
+`clear`: it has no intersection formula at all, it walks the segment in steps
+of 8 units asking the level's BSP tree `solid_at`, fine for baking
+lightmaps once at startup and hopeless per pixel. And its `lit` starts
+from half a unit along the normal: §5's epsilon, found again.
+
+## 11. What's missing, and exercises
+
+Beyond the plan's phases (which stop at soft shadows and a small path
+tracer), each an exercise, in rough order of difficulty:
+
+- **depth of field**: jitter the eye over a lens disc and aim every
+  ray at the point it had on the focal plane (§2's camera gains an
+  aperture and a focal distance); §9's samples average it out;
+- **motion blur** (Cook, Porter, Carpenter, 1984): give each sample a
+  time within the frame and ask the game's `view` for the scene at
+  that time -- which makes the BVH (§6) a per-sample cost;
+- **absorption in glass** (Beer's law): tint a refracted ray by the
+  distance it travelled inside, so thick glass is darker than thin
+  (§8);
+- **dispersion**: an index of refraction per color channel, and the
+  prism's rainbow (§8);
+- **progressive rendering**: keep adding samples to the "y" key's
+  frame while the camera doesn't move, instead of one fixed count;
+- **all the cores**: the rows of the image are independent, so OCaml
+  5's `Domain`s would divide the time by the number of cores (the
+  project builds with OCaml 4.08, so behind a flag);
+- **CSG**: the ICFP 2000 scenes had union, intersection and
+  difference of solids, which need the ray's whole list of entries and
+  exits, not just the nearest hit -- and our scene is faces, not
+  solids;
+- **explicit light sampling** in the path tracer (next event
+  estimation): aim one ray per bounce at a light instead of waiting to
+  hit one by chance, the difference between minutes and seconds per
+  frame;
+- **denoising**, what the RTX games do with 1 or 2 samples per pixel
+  (§10): blur where the normals and depth agree, stop at the edges.
+
+## 12. In the playground
 
 Nothing in the scene changes. The same `shape3d` tree, the same
 camera, the same examples:
@@ -428,3 +466,37 @@ The plan for all of it, and the order:
   illumination; **smallpt**: the 99-line one.
 - **Hybrid rendering**: what RTX-era games do -- rasterize visibility,
   ray trace the rest, denoise.
+
+## References
+
+- Arthur Appel, "Some Techniques for Shading Machine Renderings of
+  Solids", AFIPS Spring Joint Computer Conference, 1968.
+- Turner Whitted, "An Improved Illumination Model for Shaded
+  Display", Communications of the ACM 23(6), 1980.
+- Robert L. Cook, Thomas Porter, Loren Carpenter, "Distributed Ray
+  Tracing", SIGGRAPH '84.
+- James T. Kajiya, "The Rendering Equation", SIGGRAPH '86.
+- Timothy L. Kay, James T. Kajiya, "Ray Tracing Complex Scenes",
+  SIGGRAPH '86 (bounding volume hierarchies, the slab test).
+- Robert L. Cook, "Stochastic Sampling in Computer Graphics", ACM
+  Transactions on Graphics 5(1), 1986.
+- Jeffrey Goldsmith, John Salmon, "Automatic Creation of Object
+  Hierarchies for Ray Tracing", IEEE Computer Graphics and
+  Applications 7(5), 1987.
+- Andrew S. Glassner (ed.), "An Introduction to Ray Tracing", Academic
+  Press, 1989 (Heckbert's chapter 7, "Writing a ray tracer").
+- J. David MacDonald, Kellogg S. Booth, "Heuristics for ray tracing
+  using space subdivision", The Visual Computer 6(3), 1990 (the
+  surface area heuristic).
+- Christophe Schlick, "An Inexpensive BRDF Model for Physically-based
+  Rendering", Computer Graphics Forum 13(3), 1994.
+- Tomas Möller, Ben Trumbore, "Fast, Minimum Storage Ray/Triangle
+  Intersection", Journal of Graphics Tools 2(1), 1997.
+- Christer Ericson, "Real-Time Collision Detection", Morgan Kaufmann,
+  2005 (chapter 5: ray/sphere, ray/box).
+- Kevin Beason, "smallpt: Global Illumination in 99 lines of C++",
+  2007.
+- Peter Shirley, "Ray Tracing in One Weekend", 2016.
+- Matt Pharr, Wenzel Jakob, Greg Humphreys, "Physically Based
+  Rendering: From Theory to Implementation", 4th ed., MIT Press, 2023
+  (1st ed. 2004).

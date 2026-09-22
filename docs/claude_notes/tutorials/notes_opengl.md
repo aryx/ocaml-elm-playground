@@ -470,7 +470,112 @@ to keep everything in one material.
   allocations (lists of millions of boxed vertex tuples) get promoted
   to the major heap, and frame time *grows* over time. See section 6.
 
-## 10. Glossary
+## 10. Compared with Vulkan, Metal, WebGPU, and engines
+
+Section 3 compares us with our own software rasterizer, and
+`notes_playground3d_related_work.md` tells the history (OpenGL, WebGL,
+Vulkan, Unity). What's left is what our code would become on the newer
+APIs, and what an engine adds on top.
+
+**The newer APIs.** Vulkan (2016), Metal (2014) and WebGPU (2023)
+keep the pipeline of section 2 and its two shaders; they drop the
+"bind, then act" state machine of section 5. The shaders, the vertex
+layout (our four `vertex_attrib_pointer` calls) and most fixed-function
+settings are baked together, once, into an immutable *pipeline*
+object; in Vulkan and WebGPU face culling is part of it, so our "b" key
+would switch between two pipelines instead of calling
+`Gl.enable`/`Gl.disable`, and WebGPU has no wireframe mode at all ("f").
+Uniforms and textures go in explicit descriptor sets (bind groups in
+WebGPU). And the command queue of section 1 becomes visible: you record
+command buffers and submit them yourself, allocate GPU memory yourself,
+and synchronize with fences. Nothing in our frame is expensive enough
+to need what that buys (recording from several threads, no hidden
+driver validation), and shader source goes through an offline compiler
+first (`notes_opengl_shaders.md` section 2).
+
+**Engines.** three.js, Unity or Godot sit where `Playground3d` sits,
+between a scene description and the GPU, but do per frame what sections
+4 and 7 say we don't: a model matrix per object (moving one costs 16
+floats, not its vertices), frustum culling of each object against its
+bounding volume, indexed meshes, transparent objects sorted back to
+front and blended, shadow maps from extra render passes, mipmapped
+textures. Each is a few dozen lines on its own; section 11 lists them
+as exercises.
+
+## 11. What's missing, and exercises
+
+Things real OpenGL programs do that our backends don't, in rough order
+of difficulty:
+
+- **Error checking**: call `glGetError` after each frame (or install a
+  `KHR_debug` message callback, core since OpenGL 4.3, so not in our
+  3.3 context without the extension) and log what it says; see how many
+  silent bugs of section 5 it would have caught.
+- **Mipmaps**: `Gl.generate_mipmap` after the upload in
+  `upload_texture`, and a `Gl.linear_mipmap_linear` minification
+  filter, so a far face reads a smaller copy of its texture instead
+  of skipping texels (the shimmer of distant faces when the camera
+  moves; Williams 1983).
+- **Indexed drawing** (section 7): 4 vertices and 6 indices per quad in
+  `Gpu_scene.vertex_floats_of_group`, an index buffer next to each VBO,
+  `glDrawElements` instead of `draw_arrays`; a third fewer vertices to
+  upload and transform.
+- **Antialiasing (MSAA)**: ask SDL for a multisampled framebuffer
+  (`Sdl.Gl.multisamplebuffers`, `Sdl.Gl.multisamplesamples`, before
+  the window is created, next to the `context_profile_mask` attribute),
+  and compare edges with the software backend's.
+- **Frustum culling of cached meshes** (section 7): keep a bounding
+  box with each `Mesh_cache` mesh, test it against the six planes of
+  the `uMVP` frustum, and skip its `draw_arrays`; count the draw calls
+  saved in TinyMinecraft.
+- **Transparency**: `fade3d`'s alpha is ignored by both GPU backends
+  (`Gpu_scene` never reads it). Pass it as a fourth color component,
+  draw the opaque batches first, then the translucent ones sorted back
+  to front with `Gl.blend` on and depth writes off.
+- **A model matrix** (section 4): a `uModel` uniform, so that a
+  `move3d`/`rotate3d` of a `cached3d` keeps the cache (see
+  `plan_3d_remaining.md`'s "per-node model matrix").
+- **Shadow maps**: render the scene's depth from the light into a
+  texture (a framebuffer object), then compare with it in the fragment
+  shader; the first render pass that isn't to the window.
+- **WebGL 2**: VAOs and GLSL ES 3.00 built in, so `web/`'s
+  `set_attribute_pointers` and most of `notes_opengl_shaders.md`
+  section 9 disappear; needs bindings js_of_ocaml doesn't ship.
+
+## 12. In the playground
+
+A program sees none of this: it builds `shape3d`s and calls
+`Playground3d_platform.run_app3d` (`Playground3d_platform.mli`), and the
+library it links picks the backend: `elm_playground_3d_opengl`
+(`playground/native/Playground3d_platform.ml`, SDL + tgls),
+`elm_playground_3d_webgl` (`playground/web/`, the same pipeline over
+js_of_ocaml's WebGL 1 bindings), or the software one of section 3. Both
+GPU backends share `Gpu_scene.ml` (shapes to batches, one per
+material, and the 11-float layout of section 5) and
+`graphics/gpu/Mesh_cache` (the id -> mesh table behind `cached3d`,
+section 6). From `Playground3d.mli`, three things reach the GPU:
+`cached3d` (section 6: upload once, draw many times), the `rendering`
+record (`shading`, `backface_culling`, `smooth_textures`, turned into
+a uniform, `Gl.enable`/`disable` and the texture filter), and `hud`
+(the 2D overlay, drawn by the 2D software renderer into a texture and
+blended over the scene, the only blending we do). With `-debug-keys`,
+the OpenGL backend's "f", "m", "b", "i", "o" and "u" toggle wireframe,
+shading, culling, texture filtering, the cache and the HUD; `-debug`
+prints the vertices uploaded per frame.
+
+The examples, in the order of this note: `Triangle3d` (the smallest
+scene; one pixel of it is computed by hand in `notes_opengl_shaders.md`),
+`Cubes3d` (depth test and culling) and `Spheres3d` (the shading
+modes), section 3,
+`TexturedCube3d` (a texture, `upload_texture`), and `CachedGrid3d`
+(1600 static cubes as one `cached3d`, orbited by the camera: section 6
+in miniature, "o" to see the cost of rebuilding). Then the games:
+TinyMinecraft, where section 6's numbers come from (121 cached chunks,
+a texture atlas), and the other 3D games made of static levels, which
+all wrap them in `cached3d`: TinyQuake, TinyDoom3d, TinyWolfenstein3d,
+TinyTombRaider, TinyMarioKart64, TinyDescent3d, among others.
+
+## Glossary
 
 - **VBO**: vertex buffer object, raw vertex bytes in GPU memory.
 - **VAO**: vertex array object, the recipe for reading a VBO's bytes as
@@ -498,3 +603,33 @@ to keep everything in one material.
   depth precision.
 - **Core vs. compatibility profile**: modern OpenGL without vs. with
   the legacy fixed-function API.
+
+## References
+
+- Lawrence G. Roberts, "Homogeneous Matrix Representation and
+  Manipulation of N-Dimensional Constructs", MIT Lincoln Laboratory
+  MS-1405, 1965 (section 4).
+- Edwin Catmull, "A Subdivision Algorithm for Computer Display of
+  Curved Surfaces", PhD thesis, University of Utah, 1974 (the
+  z-buffer).
+- James H. Clark, "The Geometry Engine: A VLSI Geometry System for
+  Graphics", SIGGRAPH '82 (the transform stage in hardware).
+- Lance Williams, "Pyramidal Parametrics", SIGGRAPH '83 (mipmaps).
+- Juan Pineda, "A Parallel Algorithm for Polygon Rasterization",
+  SIGGRAPH '88 (edge functions, what the hardware rasterizer does).
+- Mark Segal, Kurt Akeley, "The OpenGL Graphics System: A
+  Specification, Version 1.0", Silicon Graphics, 1992.
+- Jackie Neider, Tom Davis, Mason Woo, "OpenGL Programming Guide" (the
+  red book), Addison-Wesley, 1993.
+- Kurt Akeley, "RealityEngine Graphics", SIGGRAPH '93.
+- Ned Greene, Michael Kass, Gavin Miller, "Hierarchical Z-Buffer
+  Visibility", SIGGRAPH '93 (rejecting hidden fragments early).
+- Hugues Hoppe, "Optimization of mesh locality for transparent vertex
+  caching", SIGGRAPH '99 (the post-transform vertex cache).
+- Mark Segal, Kurt Akeley, "The OpenGL Graphics System: A
+  Specification, Version 3.3 (Core Profile)", Khronos Group, 2010.
+- Khronos Group, "WebGL Specification, Version 1.0", 2011.
+- Fabian Giesen, "A trip through the Graphics Pipeline 2011", blog
+  series, 2011 (what the driver and the hardware do with each call).
+- Tomas Akenine-Möller, Eric Haines, Naty Hoffman et al., "Real-Time
+  Rendering", 4th ed., CRC Press, 2018.

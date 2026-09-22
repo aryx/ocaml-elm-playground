@@ -5,7 +5,7 @@ and id Software's *Doom* (1993) and *Quake* (1996) -- two of the most
 historically important 3D-graphics engines ever shipped, and a good
 lens for understanding *why* our renderer is built the way it is versus
 the ways it isn't. Companion to [`notes_3d.md`](../tutorials/notes_3d.md) (the
-concepts) and [`notes_3d_opti.md`](../tutorials/notes_3d_opti.md) (our own
+concepts) and [`notes_3d_opti.md`](../dev/notes_3d_opti.md) (our own
 optimization history) -- read those first if a term here (BSP, z-buffer,
 perspective-correct) is unfamiliar.
 

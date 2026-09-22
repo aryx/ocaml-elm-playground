@@ -9,7 +9,7 @@ pointers into the code (`graphics/font/Hershey.ml`,
 `graphics/2d/Stroke.ml`, `playground/software/Shape_render_software.ml`).
 
 Companion to [`done/plan_software_2d.md`](../plans/done/plan_software_2d.md) (the software
-2D backend's plan, phase 5 being text) and to the future `notes_2d.md`
+2D backend's plan, phase 5 being text) and to [`notes_2d.md`](notes_2d.md)
 (2D rasterization in general).
 
 ## 1. The big picture
@@ -245,15 +245,42 @@ Every step, in ~200 lines, with a stroke font:
    a rectangle per segment and a disk per point, all filled in one
    `Fill.polygons` call so the nonzero rule makes their union and no
    pixel is painted twice (`Stroke`). That's "stroking", what Cairo and
-   PostScript do for thick lines.
+   PostScript do for thick lines. With antialiasing on (the default,
+   the "n" key), thin strokes are Wu lines (`Line.draw_aa`) and thick
+   ones the same polygons (`Stroke.contours`) filled with coverage
+   (`Fill.polygons_aa`), see `notes_2d.md` section 10.
 
 Try it: `dune exec examples/software/Words.exe` and
 `dune exec games/arcade/software/Pong.exe`, with the debug keys: "f"
 (wireframe) shows the pen's centerlines, "z" magnifies the pixels,
 "b" shows each text's box.
 
-### What we don't do (yet)
+### What we don't do (yet), and exercises
 
+No hinting, no kerning, no shaping beyond one glyph per character,
+ASCII only. Each missing piece is an exercise, in rough order of
+difficulty:
+
+- **Line breaks**: `Hershey.layout` draws a "\n" as the '?' glyph;
+  make it start a new line, one em lower, and center the block.
+- **UTF-8**: `layout` walks bytes, so "é" is two '?'s; decode code
+  points, and draw "é" as section 1 says fonts do, two glyphs: the
+  "e", and an accent (a stroke or two of your own) above it.
+- **Kerning**: a table of pairs ("AV", "To", "LT") and their
+  adjustment, applied in `layout`'s fold, where `x` advances.
+- **More faces**: Hershey's other fonts ("Roman duplex", "Roman
+  triplex", script, Greek) are the same JHF format; embed one more next
+  to `futural.jhf` (`graphics/font/dune`) and choose by name.
+- **A glyph cache**: every frame, `draw_words` decodes nothing (the
+  font is decoded once, lazily) but re-strokes every glyph; rasterize
+  each (glyph, size) once into a small coverage bitmap and blit it, the
+  way FreeType's cache and every game's glyph atlas do. Measure it with
+  `notes_opti.md`'s method on a text-heavy program
+  (`examples/TypesetParagraph.ml`, a `words` per character).
+- **Exact coverage**: thick text's edges go through `Fill.polygons_aa`'s
+  4 sub-rows per pixel; font-rs's signed-area accumulation (section 8)
+  computes the exact covered area instead, and compare them with the
+  magnifier ("z").
 - **No outlines**: Hershey's single-width strokes don't look like the
   other backends' sans-serif. A TrueType rasterizer is the natural next
   step (the plan's stretch phase 8): parse a `.ttf` file's `cmap` (which
@@ -262,9 +289,9 @@ Try it: `dune exec examples/software/Words.exe` and
   Casteljau), and fill each glyph with `Fill.polygons` and the nonzero
   rule -- contours turned opposite ways make the holes of "O", "A",
   "e", as in section 3. About what `stb_truetype.h` does, in a few
-  hundred lines.
-- **No antialiasing** (plan phase 6), **no hinting**, **no kerning**,
-  **no shaping** beyond one glyph per character, **ASCII only**.
+  hundred lines. Then, the hardest: **hinting**, at least the
+  "autohinter" kind (section 4), snapping stems' edges to whole pixels
+  at small sizes.
 
 ## 8. Related libraries
 
@@ -288,13 +315,59 @@ Try it: `dune exec examples/software/Words.exe` and
   vector graphics library with text support; `cairo2`'s text functions
   are the ones our Cairo backend uses.
 
+## 9. Compared with FreeType and stb_truetype
+
+**What they do that we don't.** `stb_truetype.h` parses TrueType and
+CFF outlines, flattens their curves and fills them with an
+antialiasing rasterizer (even into signed distance fields); FreeType
+adds the bytecode interpreter of section 4, a dozen font formats, and,
+with HarfBuzz, the shaping of section 5 for every script of Unicode.
+That is sections 4 and 5: outlines with thick and thin, and hinting
+for sharp small text, where our strokes have one width and no grid
+fitting.
+
+**Where the work goes.** FreeType rasterizes a glyph once per size
+into a bitmap, and a program caches and blits it (Cairo does); games
+put the bitmaps, or distance fields (Green 2007), into one texture, a
+*glyph atlas*, and draw each letter as a textured quad. We re-stroke
+every glyph every frame, with no cache (an exercise of section 7): it
+costs little because a Hershey glyph is a few segments, where an
+outline glyph is dozens of curves. Even the OpenGL 3D backend's HUD
+text is Hershey, drawn on the CPU by `Shape_render_software` into an
+image that becomes a texture, redrawn only when the HUD changes.
+
+## 10. In the playground
+
+The API has one text function, `words color str` (`Playground.mli`),
+centered on its position, sized by `scale` (not a font size), and
+nothing to measure text, since each backend draws a different font:
+Cairo and the web a system sans-serif (`words_font_family`, at
+`words_font_size`, 10 units), the software backends Hershey (section 7),
+10 units per em too, so that a string takes roughly the same room
+everywhere. On the software backend, `words` is `draw_words`, and
+`Hershey.layout` also measures the text where the backend needs a
+width: its fps counter, left-aligned at the bottom, and the help
+overlay of the "h" key (`Help_overlay.ml`). `examples/Words.ml` rotates
+and scales words, `examples/Typing.ml` edits a line of them,
+`games/arcade/Pong.ml`'s score is thick strokes (`scale 10.`), and
+`examples/TypesetParagraph.ml` sets a justified paragraph with a
+`words` per character. The office apps go one step further:
+`apps/office/Stroke_text.ml` reads Hershey's glyphs itself
+(`Hershey.glyph`) and draws their strokes as `rectangle`s, so a
+program gets the same letters on every backend, with widths it can
+measure (the caret of `TinyWord.ml` and `TinyBravo.ml`), and bold (a
+thicker pen), italic (the points sheared), underline and strike out.
+
 ## References
 
+- Jack E. Bresenham, "Algorithm for computer control of a digital
+  plotter", IBM Systems Journal 4(1):25-30, 1965.
 - A. V. Hershey, "Calligraphy for Computers", NWL Report No. 2101, U.S.
   Naval Weapons Laboratory, Dahlgren, Virginia, 1967.
 - Donald E. Knuth, "The METAFONTbook", Addison-Wesley, 1986.
 - Adobe Systems, "PostScript Language Reference Manual",
   Addison-Wesley, 1985; "Adobe Type 1 Font Format", 1990.
+- Xiaolin Wu, "An efficient antialiasing technique", SIGGRAPH '91.
 - Apple Computer, "TrueType Reference Manual" (online).
 - Microsoft and Adobe, "OpenType specification" (online).
 - Chris Green, "Improved Alpha-Tested Magnification for Vector Textures

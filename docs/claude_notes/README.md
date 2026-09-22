@@ -67,10 +67,8 @@ comment goes, and the traps met on the way -- is in
 A reading order, from the simplest:
 
 1. `notes_2d.md`: pictures as pixels, the 2D software rasterizer
-   (`graphics/2d/`); `notes_font.md`, text with Hershey's vector fonts;
-   `notes_opti.md`, making it fast without losing the simple version.
-2. `notes_3d.md`: 3D, from a camera to pixels (`graphics/3d/`);
-   `notes_3d_shading.md`, light and color; `notes_3d_opti.md`, speed.
+   (`graphics/2d/`); `notes_font.md`, text with Hershey's vector fonts.
+2. `notes_3d.md`: 3D, from a camera to pixels (`graphics/3d/`).
 3. `notes_opengl.md` and `notes_opengl_shaders.md`: the same done by a
    GPU, and what changes; `notes_raytracing.md`, the other renderer --
    a pixel asking what the eye sees, and the shadows, mirrors and
@@ -119,6 +117,11 @@ A reading order, from the simplest:
   (offscreen frames, scripted keys, golden tests, ...).
 - `notes_headless.md`: running the web programs without a browser
   (headless Chrome, or `scripts/web/web_headless.js`).
+- `notes_opti.md`: what each feature of the 2D software rasterizer
+  costs, and the optimizations that keep the simple version beside
+  the fast one; `notes_3d_opti.md`, the same log for the 3D one.
+- `notes_3d_shading.md`: the shading code of the 3D rasterizer, light
+  and color, and a roadmap for extending it.
 
 The tools themselves are in `scripts/` (see `scripts/README.md`).
 

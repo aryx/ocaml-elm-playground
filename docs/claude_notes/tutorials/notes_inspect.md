@@ -27,7 +27,8 @@ frames, scripted keys, headless runs -- and stays that way.
 | `playground/Playground` (exists) | `app`: `init`, `update`, `view` -- why any of this works | §2 |
 
 Read §1-§2 for why this is possible at all, §3-§6 for the recorded
-run, §7 for the per-engine panels, and §8-§9 for what is deliberately
+run, §7 for the per-engine panels, §8 for a run as a test, and §9-§10
+for how it compares with the real tools and what is deliberately
 missing.
 
 ## 1. The principle
@@ -258,7 +259,38 @@ Elm's debugger has the same feature (export and import a history), and
 it is the one that matters most in a teaching repository: a student
 who finds a bug can hand over the run rather than describe it.
 
-## 9. What this does not do, and what it would cost
+## 9. Compared with Elm's debugger, Redux DevTools and `rr`
+
+The whole landscape, from Smalltalk to RenderDoc, is
+[`notes_inspect_related_work.md`](../related-work/notes_inspect_related_work.md).
+
+**A viewer for any value.** What Elm's debugger and Redux DevTools
+spend most of their code on is what we deliberately lack: showing
+*any* model, folding and unfolding its fields (§2).
+
+**Where determinism comes from.** `rr` replays any Linux process, and
+pays for it: it records the result of every system call and signal,
+runs all threads on one core, and uses the CPU's performance counters
+(retired branches) to replay an asynchronous event at the exact
+instruction it hit. We get the same property from the architecture:
+the only thing a frame reads from outside is `computer`, a record of
+five fields (`mouse`, `keyboard`, `screen`, `time`, `flags`). The
+price is that we replay only programs that keep the rule of §4 --
+and six programs of this repository do not yet, calling
+`Random.self_init` (`Snake.ml`, `Tetris.ml`, `TinyBlockout.ml`,
+`TinyWorms.ml`, `StarCollector3d.ml`, `FloatingCity3d.ml`): exactly
+what the plan's phase 0 is for, and exactly what `rr` never has to
+ask of anybody.
+
+**Messages or frames.** Elm and Redux record *messages* -- a click, a
+key, a fetched response -- and show them as a list you can click; a
+Redux action can even be switched off and the history recomputed
+without it. A playground `game` has one message, the tick, so we
+record the `computer` of each frame and show a timeline instead. That
+is simpler and uniform, but it loses the list: "which frame did
+something" is invisible until you scrub to it (§10's exercises).
+
+## 10. What this does not do, what it would cost, and exercises
 
 - **Live code editing** -- Victor's most famous demo, and the
   expensive one: it needs the OCaml toplevel compiled to JavaScript in
@@ -277,7 +309,37 @@ who finds a bug can hand over the run rather than describe it.
 - **Profiling** -- flamegraphs and allocation tracking are the shell's
   job (`dev/notes_debugging_techniques.md`), not the frame's.
 
-## 10. In the playground
+And things the real tools have, as exercises once `Inspect` exists, in
+rough order of difficulty:
+
+- **a smaller recording**: most frames' `computer` equals the
+  previous one except for `time`; store only the frames where it
+  changed (run-length), and measure against §3's estimate;
+- **a message list**, Elm's: mark on the timeline the frames whose
+  input changed (a key down, a click), so "which frame did
+  something" is a click, not a scrub (§5);
+- **a watchpoint**: run until a predicate on the model becomes true
+  (`fun m -> m.lives < 3`), replaying from the keyframes -- the
+  conditional breakpoint of a debugger, over frames (§3);
+- **a bounded recording**: keep every keyframe for the last minute
+  and thin the older ones, so a long session fits a fixed memory
+  budget, at the price of slower scrubs into the distant past (§3);
+- **onion skin**: draw the pictures of the frames around the current
+  one, faded, the animator's trick -- `view` of old models, which §5
+  already recomputes;
+- **recording `msg`s** for a full `app` (the GUI programs, with their
+  `Cmd` and `Sub`), not only a game's ticks: Elm's model exactly, and
+  a message printer needed for the same reason as `?show` (§2);
+- **two runs compared**: replay one recording against two builds of
+  the game and stop at the first frame whose model differs (a hash of
+  the model, as networking's desync check does), which turns "the
+  fix changed something" into a frame number (§8);
+- **omniscient queries** (Lewis, 2003): "when did `m.hero.x` last
+  change?", answered by replaying and asking the question at every
+  frame -- cheap here; for a native program, Pernosco builds a
+  database of the whole `rr` recording to answer it.
+
+## 11. In the playground
 
 `-inspect` (or "g" with `-debug-keys`) wraps the running app; the
 game needs no change, because the inspector wraps the `app` the way
@@ -314,4 +376,20 @@ plan for all of it is
 - **Determinism**: the same inputs giving the same run -- the property
   every one of the above depends on.
 - **Tweakable**: a number the panel can change while the game runs
-  (later; §9).
+  (later; §10).
+
+## References
+
+- Bil Lewis, "Debugging Backwards in Time", AADEBUG (Fifth
+  International Workshop on Automated Debugging), 2003.
+- Bret Victor, "Up and Down the Ladder of Abstraction",
+  worrydream.com, 2011.
+- Bret Victor, "Inventing on Principle", talk at CUSEC, 2012.
+- Bret Victor, "Learnable Programming", worrydream.com, 2012.
+- Dan Abramov, "Live React: Hot Reloading with Time Travel", React
+  Europe, 2015.
+- Evan Czaplicki, "Time Travel made Easy", elm-lang.org, 2016 (the
+  Elm 0.18 debugger).
+- Robert O'Callahan, Chris Jones, Nathan Froyd, Kyle Huey, Albert
+  Noll, Nimrod Partush, "Engineering Record and Replay for
+  Deployability", USENIX Annual Technical Conference, 2017 (`rr`).

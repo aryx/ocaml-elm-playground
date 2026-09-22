@@ -37,7 +37,7 @@ Two halves, the second built on the first:
 | `Broadphase` | which pairs to test | §9 | `examples/PhysicsMarbles.ml` |
 | `Resolve` | collision response: impulses, friction, rotation | §10, §11 | `examples/PhysicsBounce.ml`, `examples/PhysicsBoxes.ml` |
 | `Solver` | stacking: all the contacts together, sequential impulses | §12 | `examples/PhysicsPyramid.ml`, `TinySlingshot.ml` |
-| `playground/Physics` | the Evan-style API over all of it; `step` and `simulate`, the whole step (§7) | §13 | every game above |
+| `playground/Physics` | the Evan-style API over all of it; `step` and `simulate`, the whole step (§7) | §15 | every game above |
 
 There is no `World` module (the plan had one): the whole step, forces
 then contacts then moves, is `Physics.step` for a single body and
@@ -432,7 +432,71 @@ step by step).
 - **Stiffness.** Very stiff springs, or very heavy things on very light
   ones, need tiny steps or implicit integrators (§5-6).
 
-## 13. In the playground
+## 13. Compared with Box2D and Chipmunk
+
+Their history, and the rest of the landscape, is in
+[`notes_physics_related_work.md`](../related-work/notes_physics_related_work.md).
+
+**The same core.** At the centre, nothing differs: semi-implicit Euler
+(§5), SAT for polygons (§8), a grid or sort and sweep (§9; Chipmunk's
+spatial hash is our grid), sequential impulses with warm starting and
+Baumgarte's bias (§12), which is Box2D's solver as Catto presented it
+in 2005 and 2006. What the real ones add is around that core: a
+dynamic AABB tree for the broad phase, which also answers ray and area
+queries; GJK, for any two convex shapes; a time of impact for
+*rotating* bodies, where ours sweeps a point along a segment; sleeping;
+collision filtering; and a pass that corrects positions directly
+instead of through a velocity bias (Box2D v2's non-linear
+Gauss-Seidel). Box2D v3 (2024) went further, to sub-stepping with soft
+constraints in Baumgarte's place.
+
+**What we have that they don't.** The computational physics under the
+game physics: four integrators side by side, and `Energy` to referee
+them (§4-5); Kepler's orbits in closed form (`Kepler`,
+`examples/PhysicsSolarSystem.ml`); Jakobsen's particles (`Particles`).
+Box2D has one integrator and no notion of energy. And the style:
+bodies are values and `simulate` is a function from one world to the
+next, with no handles or callbacks. That is what makes the golden-frame
+tests and the keys that switch a phase off cheap. Box2D's world is
+mutated in place.
+
+## 14. What's missing, and exercises
+
+In rough order of difficulty:
+
+- a ray query in `Physics`, like `Physics3d.ray`: the first body a
+  segment hits, from `Collide.segment_polygon` and `segment_circle`
+  (§8, §12);
+- collision filtering: a category and a mask per `Physics.body`,
+  checked before a pair is tested, so that a player's own bullets
+  don't hit him;
+- rolling friction, `Physics3d.spin_slow`'s torque against the spin,
+  in `Physics` (§11), the loss that stops a ball once contact friction
+  has made it roll;
+- an implicit (backward) Euler in `Integrate` for a stiff spring,
+  solved in closed form for the linear case, and compared with
+  semi-implicit Euler past its limit dt < 2 / sqrt(k / m) (§5-6);
+- Fiedler's accumulator (§7): a game consuming the real time in fixed
+  ticks, and drawing between the last two states;
+- sleeping, in `Solver` (its `.mli` says it is left out): skip a body
+  still for a second, by islands of touching bodies, as
+  `Physics3d.simulate` does (`notes_3d_physics.md` §10);
+- sort and sweep keeping its order from one step to the next, with an
+  insertion sort (`Broadphase.sort_and_sweep` sorts from scratch each
+  time; §9);
+- a position pass after the velocity iterations in `Solver`, moving
+  the bodies out of each other directly (non-linear Gauss-Seidel),
+  compared with Baumgarte's bias on `examples/PhysicsPyramid.ml`;
+- a time of impact for a rotating polygon: `physics/3d/Sweep3d`'s
+  conservative advancement brought to 2D, next to
+  `Physics.went_through` (§12);
+- a dynamic AABB tree in `Broadphase`, measured against §9's table;
+- GJK (§8) in `Collide`, with EPA for the depth, replacing `sat` and
+  `circle_convex` by one test on support functions;
+- convex decomposition of a concave polygon (§8's last paragraph), so
+  that an Asteroids rock can bounce with SAT's contacts.
+
+## 15. In the playground
 
 The API (`playground/Physics.mli`) hides all of the above behind one
 concept, a **body** -- a shape that moves -- and verbs in `update`:
@@ -446,7 +510,11 @@ spinning when hit off center (§11; `upright` to never turn:
 `examples/PhysicsBoxes.ml`, and the rolling moon of `TinyCameltry.ml`);
 and a `world` stepped by `simulate` solves all the contacts of a pile
 together (§12: `examples/PhysicsPyramid.ml`, whose `s` key switches back to
-`bounce_all` to see the pyramid collapse without it). `TinyWorms.ml`, an artillery game, was
+`bounce_all` to see the pyramid collapse without it). The same
+`world` takes joints, solved in the same loop as the contacts
+(`Joint2d`): `pin` (with a motor), `rod`, `rope` and `pulley`, used by
+`TinyIncredibleMachine.ml`'s seesaws and pulleys and `TinyWorms.ml`'s
+ninja rope. `TinyWorms.ml`, an artillery game, was
 its first user (a shell `launched`, then `fall`, `push` for the wind,
 `step`), `TinySpacewar.ml` its second (ships and torpedoes
 `attracted_by` the star); `examples/PhysicsOrbit.ml` goes under it, to
@@ -484,3 +552,49 @@ to see what it brings.
 - **Moment of inertia (I)**, **torque**: rotation's mass and force.
 - **Tunneling**: a fast body passing through a thin one between two
   steps; **CCD**: continuous collision detection, its fix.
+
+## References
+
+- Robert Hooke, "Lectures de Potentia Restitutiva, or of Spring",
+  London, 1678.
+- Isaac Newton, "Philosophiae Naturalis Principia Mathematica", London,
+  1687.
+- Leonhard Euler, "Institutionum Calculi Integralis", vol. 1, St.
+  Petersburg, 1768.
+- Carl Runge, "Über die numerische Auflösung von
+  Differentialgleichungen", Mathematische Annalen 46, 1895.
+- Wilhelm Kutta, "Beitrag zur näherungsweisen Integration totaler
+  Differentialgleichungen", Zeitschrift für Mathematik und Physik 46,
+  1901.
+- Richard P. Feynman, Robert B. Leighton, Matthew Sands, "The Feynman
+  Lectures on Physics", vol. 1, Addison-Wesley, 1963 (chapter 9).
+- Loup Verlet, "Computer 'Experiments' on Classical Fluids. I.
+  Thermodynamical Properties of Lennard-Jones Molecules", Physical
+  Review 159(1):98-103, 1967.
+- J. Baumgarte, "Stabilization of constraints and integrals of motion
+  in dynamical systems", Computer Methods in Applied Mechanics and
+  Engineering 1(1):1-16, 1972.
+- Josh Barnes, Piet Hut, "A hierarchical O(N log N) force-calculation
+  algorithm", Nature 324:446-449, 1986.
+- E. G. Gilbert, D. W. Johnson, S. S. Keerthi, "A fast procedure for
+  computing the distance between complex objects in three-dimensional
+  space", IEEE Journal of Robotics and Automation 4(2):193-203, 1988.
+- David Baraff, "Dynamic Simulation of Non-Penetrating Rigid Bodies",
+  PhD thesis, Cornell University, 1992.
+- Jonathan D. Cohen, Ming C. Lin, Dinesh Manocha, Madhav K. Ponamgi,
+  "I-COLLIDE: An Interactive and Exact Collision Detection System for
+  Large-Scale Environments", Symposium on Interactive 3D Graphics,
+  1995.
+- Chris Hecker, "Physics, Part 3: Collision Response", Game Developer,
+  1997.
+- Thomas Jakobsen, "Advanced Character Physics", Game Developers
+  Conference, 2001.
+- Ernst Hairer, Christian Lubich, Gerhard Wanner, "Geometric Numerical
+  Integration", Springer, 2002.
+- Glenn Fiedler, "Fix Your Timestep!", gafferongames.com, 2004.
+- Erin Catto, "Iterative Dynamics with Temporal Coherence", Game
+  Developers Conference, 2005.
+- Christer Ericson, "Real-Time Collision Detection", Morgan Kaufmann,
+  2005.
+- Erin Catto, "Fast and Simple Physics using Sequential Impulses",
+  Game Developers Conference, 2006 (Box2D Lite).

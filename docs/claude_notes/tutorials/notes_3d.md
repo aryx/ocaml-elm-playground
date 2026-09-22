@@ -748,12 +748,12 @@ made in the first place:
   *after* the 3D-derived shapes (SVG draws later elements on top), so
   it reaches the unmodified web renderer exactly like any other 2D
   shape would. Genuinely free: zero new rendering code at all.
-- **OpenGL**: not supported yet (see `docs/claude_notes/done/plan_opengl.md`'s
-  Scope) -- that backend owns its own GPU-side framebuffer rather than
-  a plain CPU pixel buffer, so native's "just draw into the same
-  memory" trick doesn't transfer directly; it would need rendering the
-  HUD to an offscreen surface, uploading it as a texture, and drawing
-  a screen-aligned quad with it in a separate pass.
+- **OpenGL**: that backend owns its own GPU-side framebuffer rather
+  than a plain CPU pixel buffer, so native's "just draw into the same
+  memory" trick doesn't transfer directly: the HUD is drawn on the CPU
+  into an image, uploaded as a texture, and blended over the scene as a
+  rectangle covering the window, in a separate pass (the HUD section of
+  its `run_app3d`).
 
 See `docs/claude_notes/done/plan_hud.md` for the full design writeup
 (including the one non-obvious implementation wrinkle: dune seals a
@@ -761,6 +761,113 @@ virtual module's implementation to exactly its virtual `.mli`, so the
 3D software backend's `Playground3d_platform.ml` can only call a 2D
 backend's shape-drawing code through a plain sibling module of its
 `Playground_platform`, like `Shape_render_software`).
+
+## 13. Compared with OpenGL and the GPU
+
+[`notes_opengl.md`](notes_opengl.md) §3 compares the two stage by
+stage.
+
+**Speed.** Measured when the OpenGL backend was built
+([`notes_playground3d_related_work.md`](../related-work/notes_playground3d_related_work.md),
+postscript): `Cubes3d.ml`, 300 triangles, about 23 fps in software and
+750-840 with OpenGL; 7,500 triangles, 6 against 37-40. The gap shrinks
+with the scene because the GPU backend's cost is then the OCaml work
+of building its vertex buffers every frame, not the drawing -- which
+is what `cached3d` removes.
+
+**What the GPU has that we don't**, beyond speed: clipping against the
+whole frustum, not just the near plane (§7); blending, so transparent
+faces (our software backend ignores `fade3d`); mipmaps and anisotropic
+filtering (§9 only magnifies well); multisample antialiasing; early
+depth rejection before the fragment shader runs; and a shader per
+pixel, so any lighting formula. **What we have that it doesn't**: the
+wrong versions. A GPU is always perspective-correct, always
+z-buffered, always top-left: nothing to toggle, so nothing to *see*
+(§11). The SVG backend is the other extreme: the painter's
+algorithm and flat shading in `Playground3d.render3d_to_2d`, and the
+browser fills the polygons.
+
+## 14. What's missing, and exercises
+
+Things real renderers do that ours doesn't, each an exercise, in rough
+order of difficulty:
+
+- draw only a face's true edges in wireframe (§11's `f`): outline the
+  face's own polygon in `Render.render`'s wireframe branch, not each
+  triangle of `fan_triangles`;
+- concave faces: `Render.face` must be convex, since `fan_triangles`
+  fans from the first point; ear clipping (Meisters, 1975) triangulates
+  any simple polygon;
+- a specular highlight (Blinn-Phong): `Lighting.brightness_of_normal`
+  is Lambert's law only, and has no eye to compute the half vector
+  from; `Phong` shading (§8) is where it would show;
+- several lights, colored lights, and Gouraud/Phong interpolated
+  perspective-correctly: the roadmap of
+  [`notes_3d_shading.md`](../dev/notes_3d_shading.md);
+- transparency: honor `fade3d` in the software backend by drawing the
+  opaque faces first (z-buffer on), then the transparent ones
+  back-to-front with `Painter.sort_far_to_near`, testing the z-buffer
+  without writing it, and a real `~alpha` instead of `Triangle.fill`'s
+  `~alpha:1.`;
+- mipmaps (Williams, 1983; `Texture.mli` says "No mipmaps yet"): a
+  pyramid of halved textures, and pick the level from how many texels
+  a pixel covers;
+- clipping against the far and side planes: `Clip` has only
+  `near_plane`, and a triangle with a vertex beyond `far` is dropped
+  whole (`Render.render`); the same Sutherland-Hodgman loop, six times;
+- whole-object culling: a bounding sphere per `group3d`, tested
+  against the frustum before any of its faces is projected;
+- antialiasing: render at twice the size and average down (`r`'s
+  `Pixelate` does the opposite), or keep coverage per pixel at the
+  triangle's edges as the 2D rasterizer does
+  ([`notes_2d.md`](notes_2d.md));
+- shadows with a shadow map (Williams, 1978): a second z-buffer
+  rendered from `Lighting.light_dir`, looked up before shading each
+  pixel -- or with shadow rays, [`notes_raytracing.md`](notes_raytracing.md);
+- a BSP tree (Fuchs, Kedem, Naylor, 1980) as a third `visibility`
+  mode next to `Painter` and `Zbuffer`, splitting faces that cross a
+  plane, which fixes `PaintersAlgorithmFail3d.ml` without a z-buffer
+  (`TinyQuake.ml` builds one, for its levels).
+
+## 15. In the playground
+
+The API is `playground/Playground3d.mli`, and it keeps all of the
+above out of sight: a program only says what is where, and from where
+it is seen. The shapes: `polygon3d` (a face, §3), `cube`, `box`,
+`plane`, `sphere` (whose corners carry their own normals, for §8's
+smooth shading), `textured_quad` and `textured_cube` (§9), `group3d`;
+moved by `move3d`, `rotate3d`, `scale3d` (§1's world space) and faded
+by `fade3d`. The camera is a record built by `camera` (§4: `eye`,
+`target`, `up`, `fov`, `near`, `far`, and `ortho` for an orthographic
+one), with ready-made ones in `Camera3d` (`chase`, `cockpit`, `orbit`,
+`orthographic`, ...); `project` gives the 2D point of a 3D one, to put
+a label on it (`PhysicsSolarSystem3d.ml`, `TinyMonumentValley.ml`).
+`game3d` is `Playground.game` with a camera returned by the view;
+`rendering` sets the starting values of §5, §8 and §9 (`shading`,
+`backface_culling`, `smooth_textures` -- `TinyMinecraft.ml` turns the
+last off for its blocky textures); `hud` is §12; `cached3d` is for the
+GPU backends (`CachedGrid3d.ml`); `split3d` draws the scene once per
+player (`TinyMarioKart64.ml`).
+
+Four backends implement `Playground3d_platform.run_app3d`, so the same
+program runs on each: the software rasterizer of this note
+(`playground/software/`, with §11's debug keys), OpenGL
+(`playground/native/`, [`notes_opengl.md`](notes_opengl.md)), WebGL
+(`playground/web/`) and SVG (`playground/svg/`, §5-§6's painter's
+algorithm, no textures).
+
+The examples, in this note's order: `Triangle3d.ml` (one face, §3),
+`Cube3d.ml` (§1-§5), `InteractiveCube3d.ml` (a mouse-driven turntable
+and a HUD, §12), `Cubes3d.ml`, `PaintersAlgorithmFail3d.ml` (§6),
+`Corridor3d.ml` (near-plane clipping, §7), `Spheres3d.ml` (the four
+shading modes, §8), `TexturedCube3d.ml` (§9), and `FloatingCity3d.ml`
+(the scene of lucamug's demo, §10). The 3D games are the rest
+(`CATALOG.md`, the "3D" rows); the 3D twins of the 2.5D games --
+`TinyWolfenstein3d.ml`, `TinyDoom3d.ml`, `TinyComanche3d.ml`,
+`TinyDescent3d.ml`, `TinyElite3d.ml`, `TinyBattlezone3d.ml` -- are the
+ones to read with §6: each redraws its original's world with a
+z-buffer, replacing the original's trick
+(`games/README-2.5d.md`).
 
 ## Glossary (quick reference)
 
@@ -831,3 +938,46 @@ backend's shape-drawing code through a plain sibling module of its
   interpolated (via barycentric coordinates) across each triangle.
 - **Phong shading**: normals interpolated across each triangle, full
   lighting calculation done at every pixel.
+
+## References
+
+- Johann Heinrich Lambert, "Photometria", 1760 (the cosine law of
+  `Lighting`).
+- Lawrence G. Roberts, "Machine Perception of Three-Dimensional
+  Solids", MIT PhD thesis, 1963.
+- Lawrence G. Roberts, "Homogeneous Matrix Representation and
+  Manipulation of N-Dimensional Constructs", MIT Lincoln Laboratory
+  MS-1405, 1965 (the 4x4 matrices of `Mat4`).
+- Henri Gouraud, "Continuous Shading of Curved Surfaces", IEEE
+  Transactions on Computers C-20(6), 1971.
+- M. E. Newell, R. G. Newell, T. L. Sancha, "A Solution to the Hidden
+  Surface Problem", Proceedings of the ACM Annual Conference, 1972
+  (the painter's algorithm, with the splitting that fixes it).
+- Ivan E. Sutherland, Robert F. Sproull, Robert A. Schumacker, "A
+  Characterization of Ten Hidden-Surface Algorithms", ACM Computing
+  Surveys 6(1), 1974.
+- Ivan E. Sutherland, Gary W. Hodgman, "Reentrant polygon clipping",
+  Communications of the ACM 17(1):32-42, 1974.
+- Edwin Catmull, "A Subdivision Algorithm for Computer Display of
+  Curved Surfaces", PhD thesis, University of Utah, 1974 (the z-buffer,
+  and texture mapping).
+- Bui Tuong Phong, "Illumination for Computer Generated Pictures",
+  Communications of the ACM 18(6), 1975.
+- Gary H. Meisters, "Polygons Have Ears", American Mathematical
+  Monthly 82(6), 1975.
+- James F. Blinn, "Models of Light Reflection for Computer Synthesized
+  Pictures", SIGGRAPH '77.
+- Lance Williams, "Casting Curved Shadows on Curved Surfaces",
+  SIGGRAPH '78 (shadow maps).
+- Henry Fuchs, Zvi M. Kedem, Bruce F. Naylor, "On Visible Surface
+  Generation by A Priori Tree Structures", SIGGRAPH '80 (BSP trees).
+- Turner Whitted, "An Improved Illumination Model for Shaded
+  Display", Communications of the ACM 23(6), 1980.
+- Lance Williams, "Pyramidal Parametrics", SIGGRAPH '83 (mipmaps).
+- Juan Pineda, "A Parallel Algorithm for Polygon Rasterization",
+  SIGGRAPH '88.
+- Paul S. Heckbert, "Fundamentals of Texture Mapping and Image
+  Warping", Master's thesis, UC Berkeley, 1989 (perspective-correct
+  interpolation).
+- Foley, van Dam, Feiner, Hughes, "Computer Graphics: Principles and
+  Practice", 2nd ed., Addison-Wesley, 1990.

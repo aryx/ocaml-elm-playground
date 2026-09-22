@@ -29,7 +29,7 @@ because it means a page of code can produce something that looks alive.
 | `Minimax` (done) | the game tree, and alpha-beta | §7, §8 |
 | `Deepening`, `Zobrist` | making the search go deeper | §9 |
 | `Mcts` | playing without an evaluation function | §10 |
-| `playground/Ai` | the Evan-style API over all of it | §12 |
+| `playground/Ai` | the Evan-style API over all of it | §14 |
 
 Read §2 to §5 for the real-time half (a world at 60 fps), §7 to §10
 for the turn-taking half (an opponent). They barely touch. §6 is where
@@ -468,9 +468,64 @@ is in the plan as a first-class piece rather than a convenience:
 Debugging an AI by reading its code is nearly hopeless; debugging it by
 watching the arrows takes seconds.
 
-## 12. In the playground
+## 12. Compared with Stockfish, Recast/Detour and the engines
 
-The API (`playground/Ai.mli`, planned) follows Evan's rule -- values
+**Search.** Stockfish is still §8's alpha-beta, with all four of §9's
+tricks and dozens more (null-move pruning, late-move reductions,
+aspiration windows, a search spread over many threads), on a board
+held as 64-bit **bitboards** so that a move is a few shifts and ands,
+and a small neural network as its evaluation (NNUE, since 2020) instead
+of a hand-written table. Ours has no move generator in `ai/` at all:
+`Minimax` takes the game's `moves`, `play` and `score` as functions,
+so the same search plays tic-tac-toe, Othello and chess, and
+`AiChess.ml` thinks 3 moves ahead where Stockfish, in the same second,
+goes twenty and more.
+
+**Navigation.** Recast turns a level's triangles into a **navigation
+mesh** (the floor as convex polygons, not tiles), and Detour runs A* on
+it, then straightens the zigzag with the funnel algorithm, and keeps a
+crowd of agents apart with local avoidance. `Pathfind`'s nodes are
+whatever the game says they are (`problem` is a `neighbors` function),
+so a navmesh would fit in the same A*; what is missing is building one,
+and the string-pulling after. Behavior-tree libraries
+(BehaviorTree.CPP in robotics, Unreal's, Unity's assets) differ from
+`Behavior` in the one way its `.mli` states: their nodes *run* over
+many frames and answer "running", with a blackboard beside them; ours
+only decides, and the game's model is the memory. The landscape at
+length -- the games, the champions, the teaching lineage -- is in
+[`notes_ai_related_work.md`](../related-work/notes_ai_related_work.md).
+
+## 13. What's missing, and exercises
+
+In rough order of difficulty:
+
+- a binary heap for `Pathfind`'s frontier, which is a list kept in
+  order (its `.mli` says so); time A* on a large map before and after;
+- eight directions in `Pathfind`, with a diagonal step costing √2 and
+  the octile distance as the heuristic instead of `manhattan`;
+- the neighbour search of `Flock.neighbours` through a grid
+  (`physics/2d/Broadphase`, §5) instead of every pair, and the number
+  of boids a frame can hold, before and after;
+- iterative deepening with a time limit (§9), around
+  `Minimax.alphabeta` -- listed as an exercise in both `AiChess.ml` and
+  `AiOthello.ml`;
+- a transposition table with a Zobrist hash (§9), for `AiChess.ml`;
+- nested states in `Fsm` (Harel's statecharts, which its `.mli` notes
+  it does not do);
+- a "running" status and a blackboard for `Behavior` (§6), for actions
+  that take several frames;
+- Jump Point Search (Harabor and Grastien, 2011), `Pathfind.astar`
+  skipping the symmetric paths of an open grid;
+- goal-oriented action planning (Orkin's F.E.A.R., 2005): `Pathfind`'s
+  A* searching over *world states*, an action's preconditions and
+  effects as the edges, which `Pathfind.problem`'s polymorphic `'node`
+  already allows;
+- `Mcts` (§10) and the 9x9 Go it is meant for;
+- `Sense` and `Bot` (§6), with the handicap knobs as parameters.
+
+## 14. In the playground
+
+The API (`playground/Ai.mli`) follows Evan's rule -- values
 and small named things, not machinery. Steering behaviours are forces
 on `Physics.body`, so they stack with gravity and thrust and each
 other:
@@ -487,6 +542,20 @@ too -- `Ai.bot mind |> Ai.skill 0.6 |> Ai.thinks senses` -- returning
 the game's own intent record, so the update stays one line for a human
 and a machine alike (§6). The search, the
 table, the frontier and the seeds stay on the other side of the door.
+
+Of that door, the steering part is built: `Ai.seek`, `flee`, `arrive`,
+`chase`, `escaping`, `wandering`, `avoiding`, `following` (§4),
+`flocking` (§5) and `facing`, each a verb on a `Physics.body`, used by
+`examples/AiSteering.ml` and `examples/AiFlock.ml`. The rest is used
+straight from `ai/` for now: `Pathfind.astar` by `TinyDiablo.ml`,
+`TinyDungeonMaster.ml`, `TinyTowerDefense.ml` and `TinyXCOM.ml`, the
+flow field (§3) by `gamekits/rts/Orders`, for `TinyDune2.ml` and
+`TinyWarcraft2.ml`, the
+three searches side by side in `examples/AiPathfinding.ml` (§2);
+`Fsm` by the ghosts of `TinyPacman.ml` and `examples/AiGhosts.ml` (§6);
+`Minimax` by `examples/AiTictactoe.ml` (§7, §8), `AiOthello.ml` and
+`AiChess.ml` (with its quiescence, §9). `Behavior` and `Utility` have
+only their tests so far.
 
 ## Glossary
 
@@ -523,3 +592,49 @@ table, the frontier and the seeds stay on the other side of the door.
   answer ready.
 - **Branching factor** (b), **depth** (d): why b^d is the enemy and
   b^(d/2) is the prize.
+
+## References
+
+- John von Neumann, "Zur Theorie der Gesellschaftsspiele",
+  Mathematische Annalen 100, 1928 (the minimax theorem).
+- Claude E. Shannon, "Programming a Computer for Playing Chess",
+  Philosophical Magazine 41(314), 1950.
+- Edsger W. Dijkstra, "A Note on Two Problems in Connexion with
+  Graphs", Numerische Mathematik 1:269-271, 1959.
+- Peter E. Hart, Nils J. Nilsson, Bertram Raphael, "A Formal Basis for
+  the Heuristic Determination of Minimum Cost Paths", IEEE Transactions
+  on Systems Science and Cybernetics 4(2):100-107, 1968.
+- Albert L. Zobrist, "A New Hashing Method with Application for Game
+  Playing", Technical Report 88, University of Wisconsin, 1970.
+- Donald E. Knuth, Ronald W. Moore, "An Analysis of Alpha-Beta
+  Pruning", Artificial Intelligence 6(4):293-326, 1975.
+- Craig W. Reynolds, "Flocks, Herds, and Schools: A Distributed
+  Behavioral Model", SIGGRAPH '87.
+- David Harel, "Statecharts: A Visual Formalism for Complex Systems",
+  Science of Computer Programming 8(3):231-274, 1987.
+- Stuart Russell, Peter Norvig, "Artificial Intelligence: A Modern
+  Approach", Prentice Hall, 1995 (in the 3rd edition, 2009: chapter 3,
+  search; chapter 5, games, whose tree is §7's).
+- Craig W. Reynolds, "Steering Behaviors For Autonomous Characters",
+  Game Developers Conference, 1999.
+- Peter Auer, Nicolò Cesa-Bianchi, Paul Fischer, "Finite-time Analysis
+  of the Multiarmed Bandit Problem", Machine Learning 47, 2002 (UCB).
+- Damian Isla, "Handling Complexity in the Halo 2 AI", Game Developers
+  Conference, 2005.
+- Mat Buckland, "Programming Game AI by Example", Wordware, 2005.
+- Jeff Orkin, "Three States and a Plan: The A.I. of F.E.A.R.", Game
+  Developers Conference, 2006.
+- Levente Kocsis, Csaba Szepesvári, "Bandit based Monte-Carlo
+  Planning", ECML 2006 (UCT).
+- Rémi Coulom, "Efficient Selectivity and Backup Operators in
+  Monte-Carlo Tree Search", Computers and Games 2006.
+- Dave Mark, "Behavioral Mathematics for Game AI", Course Technology,
+  2009.
+- Jamey Pittman, "The Pac-Man Dossier", 2009.
+- Daniel Harabor, Alban Grastien, "Online Graph Pruning for Pathfinding
+  on Grid Maps", AAAI 2011 (Jump Point Search).
+- Cameron B. Browne et al., "A Survey of Monte Carlo Tree Search
+  Methods", IEEE Transactions on Computational Intelligence and AI in
+  Games 4(1), 2012.
+- Michele Colledanchise, Petter Ögren, "Behavior Trees in Robotics and
+  AI: An Introduction", CRC Press, 2018.

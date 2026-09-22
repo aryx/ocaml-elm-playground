@@ -620,7 +620,9 @@ the toolkit is *for* ([`plan_gui_teaching.md`](../plans/done/plan_gui_teaching.m
 mostly in pairs of the same engine under two interfaces a few years
 apart: TinyVisiCalc and TinyExcel (§11), TinyBravo and TinyWord (§12);
 then TinyMacPaint (§13), TinyOpenDoc (§9), TinyPowerPoint (§14) and
-TinyHyperCard (§15).
+TinyHyperCard (§15). Outside `apps/`, a game or an example uses it as a
+control panel: `examples/AiFlock.ml`'s sliders, TinyCoreWar's menus
+and text areas.
 
 ## 11. A spreadsheet is a graph
 
@@ -985,6 +987,68 @@ GuiFourWays' Flight Booker and Timer); unit tests: 55 in `gui/tests`
 Circle Drawer), 79 in
 `appkits/tests`.
 
+## 17. Compared with GTK, Qt, Dear ImGui, Flutter, React, Elm, and the real office
+
+**What they have that we don't.** Mostly things that do not change the
+architecture: an accessibility tree for
+screen readers, input methods for scripts typed in several keystrokes,
+text shaping and right-to-left text (HarfBuzz, Pango), high-DPI
+scaling, the system clipboard and drag and drop between programs,
+printing. The real office adds file formats (OOXML's specification is
+thousands of pages), compatibility with every earlier version of
+itself, macros, and several people editing at once. None of these is
+here; §18 has the few that would fit.
+
+**Where each one sits against ours.** GTK and Qt are §4's callbacks
+(signals), and Qt's item views are MVC with the controller folded into
+the view. Flutter and React are MVU with a diff -- and both keep a
+retained tree underneath, whose nodes hold what the rebuilt description
+cannot: a Flutter `State`, a React hook's value, found by the node's
+place in the tree (or its key). That is §3's id problem again, keyed by
+position in the tree where `gui/Immediate` keys by rectangle and Dear
+ImGui by a hash of the label. Dear ImGui is `gui/Immediate` with its
+drawing batched for the GPU and ten years of widgets. Elm is
+`Playground.game` with a message type, and the browser underneath
+holding the caret (§4). The landscape at length is
+[`notes_gui_related_work.md`](../related-work/notes_gui_related_work.md).
+
+## 18. What's missing, and exercises
+
+Checked against the code; in rough order of difficulty:
+
+- scrolling a list box with the wheel: `Immediate.list` does not show
+  rows past its bottom, and `Widget.input` already has `wheel`;
+- undo that groups typing -- a word, or a pause, as one step:
+  `Text_edit` makes every edit its own, and §8's "what counts as one
+  edit" is the same question for keys;
+- find and replace in TinyWord: a search over `Rich`'s text, the match
+  made the selection, the replacement typed over it (which keeps its
+  look, §15b);
+- absolute references (`$A$1`) in `Formula`'s parser and in
+  `Formula.shift`, which leaves them alone -- until then TinyExcel's
+  Fill Down of a formula that reads a fixed cell gives nonsense;
+- the system clipboard: `Clipboard` lives in the program; a
+  `Playground_platform` function for it (SDL's clipboard natively, the
+  browser's asynchronous one on the web), behind a capability as
+  `store` is (§15c);
+- acting on a resize: `Playground`'s `Resized` is a TODO; pass the
+  window's size to the app and let `gui/Layout`'s constraints start
+  from it (§5);
+- Knuth-Plass in the word processors: `Page.layout` breaks greedily;
+  give it `Linebreak.optimal`'s breaks, then justify them. In
+  `Linebreak` itself: TeX's active nodes (it is O(n^2) as written),
+  fitness classes, and hyphenation with Liang's patterns;
+- a piece *tree* instead of `Text_edit`'s list (VS Code's), for edits
+  in O(log n) in a long text;
+- a bitmap shape in the Playground, so that TinyMacPaint stops drawing
+  its picture as thousands of rectangles (§13) -- a change to every
+  backend;
+- an accessibility tree: `gui/Immediate` knows, every frame, every
+  widget's kind, label and box; collect them into a list a screen
+  reader could walk. The list is the easy half; handing it to the
+  platform (AT-SPI, UI Automation, NSAccessibility, ARIA in the
+  browser) is the hard one.
+
 ## Glossary
 
 - **Widget**: a rectangle with a drawing, a hit test and some state.
@@ -1019,3 +1083,57 @@ Circle Drawer), 79 in
 - **Message path**: button, card, background, stack -- where a
   HyperTalk message goes until something answers it; **pass**: answer
   it and send it on anyway.
+
+## References
+
+- A. B. Kahn, "Topological sorting of large networks", Communications
+  of the ACM 5(11):558-562, 1962.
+- Jack E. Bresenham, "Algorithm for computer control of a digital
+  plotter", IBM Systems Journal 4(1):25-30, 1965.
+- Douglas C. Engelbart, William K. English, "A Research Center for
+  Augmenting Human Intellect", AFIPS Fall Joint Computer Conference,
+  1968.
+- Alan Kay, Adele Goldberg, "Personal Dynamic Media", IEEE Computer
+  10(3), 1977.
+- Trygve Reenskaug, "Models - Views - Controllers", Xerox PARC
+  technical note, 1979.
+- C. P. Thacker, E. M. McCreight, B. W. Lampson, R. F. Sproull, D. R.
+  Boggs, "Alto: A Personal Computer", Xerox PARC report CSL-79-11,
+  1979.
+- Alvy Ray Smith, "Tint Fill", SIGGRAPH '79.
+- Donald E. Knuth, Michael F. Plass, "Breaking Paragraphs into Lines",
+  Software: Practice and Experience 11(11):1119-1184, 1981.
+- David Canfield Smith, Charles Irby, Ralph Kimball, Bill Verplank,
+  Eric Harslem, "Designing the Star User Interface", Byte 7(4), 1982.
+- Adele Goldberg, David Robson, "Smalltalk-80: The Language and its
+  Implementation", Addison-Wesley, 1983.
+- Franklin Mark Liang, "Word Hy-phen-a-tion by Com-put-er", PhD thesis,
+  Stanford University, 1983.
+- Donald E. Knuth, "The TeXbook", Addison-Wesley, 1984 (boxes and
+  glue).
+- Butler W. Lampson, "Personal Distributed Computing: The Alto and
+  Ethernet Software", ACM Conference on the History of Personal
+  Workstations, 1986 (Bravo).
+- Danny Goodman, "The Complete HyperCard Handbook", Bantam Books, 1987.
+- Glenn E. Krasner, Stephen T. Pope, "A Cookbook for Using the
+  Model-View-Controller User Interface Paradigm in Smalltalk-80",
+  Journal of Object-Oriented Programming 1(3), 1988.
+- Andrew J. Palay et al., "The Andrew Toolkit: An Overview", USENIX
+  Winter Conference, 1988.
+- Alan C. Kay, "The Early History of Smalltalk", HOPL-II, ACM SIGPLAN
+  Notices 28(3), 1993.
+- John K. Ousterhout, "Tcl and the Tk Toolkit", Addison-Wesley, 1994.
+- Charles Crowley, "Data Structures for Text Sequences", University of
+  New Mexico, 1998 (the gap buffer and the piece table compared).
+- Casey Muratori, "Immediate-Mode Graphical User Interfaces", video
+  lecture, 2005.
+- Computer History Museum, the MacPaint and QuickDraw source code,
+  released 2010.
+- Evan Czaplicki, "Elm: Concurrent FRP for Functional GUIs", senior
+  thesis, Harvard University, 2012.
+- Robert Gaskins, "Sweating Bullets: Notes about Inventing
+  PowerPoint", Vinland Books, 2012.
+- Evan Czaplicki, Stephen Chong, "Asynchronous Functional Reactive
+  Programming for GUIs", PLDI 2013.
+- Eugen Kiss, 7GUIs, master's thesis, Leibniz University Hannover,
+  2014.

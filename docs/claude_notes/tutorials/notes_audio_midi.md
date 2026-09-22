@@ -5,11 +5,11 @@ that note is about *sound* (samples, oscillators, filters); this one is
 about *music as data* -- not what a note sounds like, but which note,
 when, how hard, on which instrument. That's MIDI, and it's small,
 old, everywhere, and a good lesson in designing a binary protocol and a
-file format. Where it fits in the playground: `audio/`'s `Music`
-sequencer can read MIDI files and play them with its own synthesizer,
-and a real MIDI keyboard can play the `AudioPiano` example (see
-[`plan_audio_teaching.md`](../plans/plan_audio_teaching.md)); planned modules:
-`audio/Midi` (messages, files) and `audio/Music` (playing them).
+file format. Where it fits in the playground: `audio/Midi` reads and
+writes MIDI files, and `audio/Music` plays them with `audio/`'s own
+synthesizer (§12; see
+[`plan_audio_teaching.md`](../plans/plan_audio_teaching.md)); a real
+MIDI keyboard playing the `AudioPiano` example is planned (§11).
 
 ## 1. What MIDI is (1983)
 
@@ -129,8 +129,9 @@ and TiMidity do.
 In the other direction, a MIDI keyboard's messages arrive in real time:
 on native through the OS (ALSA on Linux, CoreMIDI, Windows' MIDI API,
 or PortMidi over all three), in the browser through the **Web MIDI
-API**. The `AudioPiano` example with a real keyboard: each "note on" a
-`note` in the game's model, its `since` the time it arrived.
+API**. The `AudioPiano` example with a real keyboard: each "note on" an
+`Audio.play` of its note, louder with the velocity (not written yet:
+§11).
 
 ## 8. A few histories
 
@@ -182,6 +183,64 @@ sequencer; a tracker is the music's editor in the same grid spirit as
 cover the notes; a module's samples would need `Resample`): a
 possible exercise, MOD first, the simplest.
 
+## 10. Compared with FluidSynth and TiMidity
+
+**What it ignores.** Of the messages of §3, `Midi.parse` keeps the
+notes, the program changes and the tempo, and reads past the rest:
+control changes (the sustain pedal, the volume, the pan), pitch bend,
+aftertouch, system exclusive messages; a file timed in SMPTE frames
+instead of ticks is refused. A real player -- FluidSynth, TiMidity, a
+Roland Sound Canvas -- obeys all of them, and plays SoundFont samples
+(§7) rather than a square wave: the same file, a piano instead of an
+NES.
+
+**Rendered ahead, not played live.** A player like FluidSynth is a
+real-time sequencer: its voices start and stop as the events come,
+with a limited polyphony and a voice stolen when it runs out (§7).
+`Music.render_score` renders the whole score into one buffer before it
+plays, each note added at its start: unlimited polyphony, but a long
+song costs its whole rendering at once, and it can't react to anything
+-- no iMUSE (§8). The wider landscape, the trackers and the sound
+chips: [`notes_audio_related_work.md`](../related-work/notes_audio_related_work.md).
+
+## 11. What's missing, and exercises
+
+In rough order of difficulty:
+
+- **running status on write**: `Midi.of_tune` writes the status byte
+  of every message; drop the repeated ones (§3), and count the bytes
+  saved on a tune (`Midi.parse` already reads them);
+- **controllers**: the volume (7) and the sustain pedal (64): a note
+  released while the pedal is down lasts until it's up -- in
+  `Midi.parse`'s `0xB0` case, now skipped;
+- **pitch bend**: a note's frequency moving while it plays, `Synth`'s
+  `sliding` from the bend's 14-bit value (§3, the `0xE0` case);
+- **polyphony**: at most N voices at once in `Music.render_score`,
+  stealing the oldest (§7), and hear what a 1980s synthesizer's limit
+  did to a busy song;
+- **a live player**: the events handed to the `Mixer` as their time
+  comes instead of one rendering, so that a game can change the music
+  as it plays (a tempo, a muted voice: the iMUSE of §8);
+- **a MIDI keyboard for `AudioPiano`**: the Web MIDI API in the
+  browser, ALSA or PortMidi natively (§7); each note on, an
+  `Audio.play`;
+- **a MOD player** (§9): the samples in the file, played at each note's
+  pitch -- which needs `Resample` first.
+
+## 12. In the playground
+
+`playground/Audio.mli`'s `midi bytes` is a sound made from a Standard
+MIDI File's bytes (`Midi.parse`, then `Music.render_score`), played
+like any other: `Audio.loop "music" (Audio.midi bytes)`. `loop_from`
+fetches it too, from a path or a URL, as a MIDI file when the name ends
+in `.mid`: `TinyMario.ml`'s `music=` flag
+(`dune exec games/platform/TinyMario.exe -- music=song.mid`) replaces
+its own ABC tune with any MIDI file. The other way round,
+`Midi.of_tune` writes an ABC or solfège tune as a MIDI file (format 1,
+a track per voice), and `audio/tests/`'s golden WAV
+`frere_jacques_midi.wav` is the round trip: Frère Jacques written as
+MIDI, read back, and played.
+
 ## Glossary
 
 - **MIDI**: a protocol of musical events, not sound.
@@ -207,3 +266,19 @@ Sources: from memory, to be checked before relying on them for
 teaching -- the MIDI 1.0 specification and the Standard MIDI File
 specification (MIDI Manufacturers Association), General MIDI's
 instrument list, and general knowledge of the history.
+
+## References
+
+- Dave Smith, Chet Wood, "The 'USI', or Universal Synthesizer
+  Interface", Audio Engineering Society Convention, 1981 (MIDI's
+  precursor proposal).
+- MIDI Manufacturers Association, Japan MIDI Standards Committee,
+  "MIDI 1.0 Detailed Specification", 1983.
+- MIDI Manufacturers Association, "Standard MIDI Files 1.0", 1988.
+- MIDI Manufacturers Association, "General MIDI System Level 1", 1991.
+- Chris Walshaw, "The abc music standard 2.1", 2011
+  (https://abcnotation.com/wiki/abc:standard:v2.1; what `Midi.of_tune`
+  writes as MIDI).
+- MIDI Manufacturers Association, Association of Musical Electronics
+  Industry, "MIDI 2.0" specifications, 2020.
+- The MIDI specifications today: https://midi.org/specifications

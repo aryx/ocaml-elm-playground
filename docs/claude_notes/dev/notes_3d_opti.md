@@ -8,7 +8,7 @@ entries below name the functions of their time, e.g.
 why the "simpler" code before it wasn't good enough, and (for the perf
 ones) measured before/after FPS -- so the reasoning stays visible even
 as the code accumulates optimizations. Companion to
-[`notes_3d.md`](notes_3d.md) (the concepts) and
+[`notes_3d.md`](../tutorials/notes_3d.md) (the concepts) and
 [`plan_playground3d.md`](../plans/done/plan_playground3d.md) (the overall design).
 
 Benchmarks below are the on-screen FPS counter (the window title) each

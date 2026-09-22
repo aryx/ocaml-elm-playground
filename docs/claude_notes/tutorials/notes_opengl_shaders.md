@@ -429,3 +429,82 @@ OCaml), and a good way to learn the language:
 - **Specular highlights** (Phong's full model, the shiny spot): needs
   the direction to the camera, `normalize(uEye - vPos)`, and a
   `pow(max(dot(reflect(-uLightDir, n), toEye), 0.0), 32.0)` term.
+
+Bigger ones, still in the shaders but touching the OCaml side more, in
+rough order of difficulty:
+
+- **`uAmbient` in `opengl/` too.** Only the WebGL fragment shader takes
+  the ambient light as a uniform set from `Lighting.ambient`; the
+  OpenGL one has it as a literal (`const float ambient = 0.25;`).
+  Make them agree, then change `Lighting.ambient` and check all
+  backends follow.
+- **A point light**: a `uLightPos` instead of `uLightDir`, the
+  direction `normalize(uLightPos - vPos)` per pixel, and a falloff
+  with the distance. With Gouraud (lighting in the vertex shader) the
+  bright spot on a big face is lost; with Phong it isn't
+  (`notes_3d_shading.md`).
+- **Linear light**: our colors are sRGB, and multiplying them by
+  `brightness` darkens too fast. Convert to linear (roughly
+  `pow(c, vec3(2.2))`), light, convert back (`pow(c, vec3(1.0/2.2))`),
+  and compare the one pixel of section 6.
+- **Cut-outs**: `discard` the fragments whose texture alpha is below
+  0.5 (leaves, fences; the texture must have an alpha channel, which
+  `upload_texture` keeps): transparency without sorting, since what's
+  left is opaque.
+- **One source for both dialects**: write the shaders once in the ES
+  1.00 spelling, and prefix the OpenGL version with `#version 330 core`
+  and `#define`s (`#define texture2D texture`, `#define varying out`
+  in the vertex shader, `in` in the fragment one), halving section 9's
+  table.
+- **Normal maps**: a second texture holding a normal per texel,
+  replacing `n`; needs a tangent per vertex, so a longer layout in
+  `Gpu_scene.vertex_floats_of_group` (section 4) and one more
+  attribute.
+
+## 11. In the playground
+
+The shaders are OCaml strings in each GPU backend's
+`Playground3d_platform.ml` (`vertex_shader_source`,
+`fragment_shader_source`; `playground/native/` for OpenGL,
+`playground/web/` for WebGL, whose fragment shader is a function of
+`~derivatives`, section 8), compiled when the app starts. The OpenGL
+backend has a second pair, `hud_vertex_shader_source` and
+`hud_fragment_shader_source`, that draws the `hud` overlay as one
+textured rectangle, with no matrix and no lighting. A program never
+writes GLSL: its only handles on the shaders are in
+`Playground3d.mli`'s `rendering` record, passed to `run_app3d`:
+`shading` becomes `uShading` (`shading_code`: `No_lighting` 0, `Flat`
+1, `Smooth` 2), `smooth_textures` the texture filter the sampler reads
+with; and a textured shape (`textured_quad`, `textured_cube`) turns
+on `uUseTexture` for its draw call. The light itself is not in the
+API: `Lighting.light_dir` and `Lighting.ambient`, the same for every
+app and backend. With `-debug-keys` (`?debug-keys` on a web page), "m"
+cycles `uShading`.
+
+The examples: `Triangle3d` (the pixel of section 6), `Spheres3d`
+(the three shading modes on curved surfaces, where `Flat`'s `dFdx`
+trick of section 8 shows), and `TexturedCube3d` (the sampler). Among
+the games, TinyMinecraft turns `smooth_textures` off for its pixelated
+atlas.
+
+## References
+
+- Henri Gouraud, "Continuous Shading of Curved Surfaces", IEEE
+  Transactions on Computers C-20(6), 1971.
+- Bui Tuong Phong, "Illumination for Computer Generated Pictures",
+  Communications of the ACM 18(6), 1975.
+- Robert L. Cook, "Shade Trees", SIGGRAPH '84.
+- Ken Perlin, "An Image Synthesizer", SIGGRAPH '85.
+- Pat Hanrahan, Jim Lawson, "A Language for Shading and Lighting
+  Calculations", SIGGRAPH '90.
+- Erik Lindholm, Mark J. Kilgard, Henry Moreton, "A User-Programmable
+  Vertex Engine", SIGGRAPH 2001 (the GeForce 3's vertex programs).
+- William R. Mark, R. Steven Glanville, Kurt Akeley, Mark J. Kilgard,
+  "Cg: A System for Programming Graphics Hardware in a C-like
+  Language", SIGGRAPH 2003.
+- John Kessenich, Dave Baldwin, Randi Rost, "The OpenGL Shading
+  Language, Version 1.10", 3Dlabs, 2004.
+- Randi J. Rost, "OpenGL Shading Language" (the orange book),
+  Addison-Wesley, 2004.
+- Khronos Group, "The OpenGL ES Shading Language, Version 1.00", 2009.
+- Khronos Group, "The OpenGL Shading Language, Version 3.30", 2010.

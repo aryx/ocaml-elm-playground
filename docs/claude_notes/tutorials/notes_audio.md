@@ -6,7 +6,7 @@ channels and a modern game's mixer, is built from, where they came
 from, and what goes wrong when they're done naively. It's also the
 specification of `audio/` (see
 [`plan_audio_teaching.md`](../plans/plan_audio_teaching.md)): written before the
-code, its pointers name the planned modules. Companions:
+code, its pointers name the modules (§0 says which are written). Companions:
 [`notes_2d.md`](notes_2d.md) (pictures), [`notes_2d_physics.md`](notes_2d_physics.md)
 (motion), and [`notes_audio_related_work.md`](../related-work/notes_audio_related_work.md).
 
@@ -18,7 +18,7 @@ same mistake, with the same cure.
 
 ## 0. Where the code is, and a reading order
 
-| module (`audio/`, planned) | what | section |
+| module (`audio/`) | what | section |
 |---|---|---|
 | `Signal` | samples, sample rate, time | §1, §2 |
 | `Oscillator` | sine, square, triangle, sawtooth; naive and band-limited | §3, §6 |
@@ -28,10 +28,12 @@ same mistake, with the same cure.
 | `Spectrum` | the Fourier transform: which frequencies a sound has | §6 |
 | `Filter` | low-pass, high-pass, resonance | §7 |
 | `Fm` | FM synthesis: sidebands from two sines | §7 |
-| `Effect`, `Sfx` | slides, vibrato, echo; game sounds from parameters | §8 |
-| `Music` | notes, equal temperament, a sequencer | §9 |
+| `Synth` | a sound as a tree of voices, rendered; slides | §8 |
+| `Effect`, `Sfx` | vibrato, echo; sfxr's parameters (not written: §12) | §8 |
+| `Music`, `Abc`, `Doremi`, `Midi` | notes, equal temperament, tunes as text, MIDI files | §9 |
+| `Mixer` | the sounds playing, pulled by the sound card | §10 |
 | `Wav` | writing samples to a file | §2 |
-| `playground/Sound` | the Evan-style API over all of it | §11 |
+| `playground/Audio`, `Audio_debug` | the Evan-style API over all of it; the sound seen | §13 |
 
 ## 1. What a sound is
 
@@ -228,9 +230,10 @@ modulations: a **pitch slide** (a jump goes up, a laser goes down, a
 coin jumps up by a step), a **vibrato** (the pitch wobbling), an
 **arpeggio**, filtered noise for impacts. **sfxr** (Tomas Pettersson,
 2007, written for game jams) turned that into a generator: a dozen
-parameters, a "random laser" button. `Sfx` is the same, readable:
-`jump` is a square wave, an attack of 0, a decay of 0.2 s, a slide up
--- five numbers.
+parameters, a "random laser" button. `playground/Audio`'s ready-made
+sounds are the same, readable: `jump` is `square 300 |> sliding 650 |>
+lasting 0.18 |> fading` -- a square wave, a slide up, a length, a
+decay to 0.
 
 An **echo** is the sound plus itself delayed and quieter, from a
 **delay line** (a circular buffer of the last samples): the simplest
@@ -258,24 +261,119 @@ The sound card pulls samples at its own steady rate, in **blocks** (say
 plays silence or garbage, an audible **click** -- unlike a late frame,
 which just shows a bit later. The game, meanwhile, runs at 60 frames
 per second, 735 samples per frame. So the two run apart: each frame
-decides *what* should be playing (the game's `sounds`), and the audio
-side renders it ahead, into a queue, a few blocks in advance. The
+decides *what* should be playing (the sounds its `update` starts or
+keeps), and the audio side renders it ahead, into a queue, a few
+blocks in advance. The
 cost of the margin is **latency**, the time from a key press to its
 sound: a couple of blocks is 50 ms, noticeable in a rhythm game, fine
 for a shoot-em-up. The same trade-off as the physics' fixed time step
 (`notes_2d_physics.md` §7): determinism and safety vs responsiveness.
 
-## 11. In the playground
+## 11. Compared with SDL_mixer, Web Audio, and SuperCollider
 
-The API (`playground/Sound.mli`, planned) follows Evan's rule, values
-not commands: a **sound** is a value (`tone 440`, `note "C4"`, `blip`,
-`explosion`) shaped by functions (`lasting`, `fading`, `louder`,
-`sliding`, `together`), and a game says **what's playing**, as a
-function of its model, beside its `view`: each sound *since* the time
-of its event (`blip |> since game.last_bounce`). The backend compares
-with what's already playing and starts or stops sounds -- the game
-never says "play". Pong gets its beeps in two lines, a theremin fits in
-three, and every sound is reproducible, so testable.
+**Playing vs synthesizing.** SDL_mixer, OpenAL, FMOD and elm-audio
+*play recordings*: they decode WAV, OGG or MP3 files, resample them,
+mix channels, stream music from disk, and (OpenAL, FMOD) place them in
+3D. Synthesis is the exception there, and the rule here: every sample
+is computed, nothing is loaded, and the only thing we ask of SDL is a
+queue of samples (`SDL_QueueAudio`, topped up to 3 frames, 50 ms,
+ahead). What they have that we don't: compressed formats, stereo and
+3D positioning, a real-time audio thread, and reverb.
+
+**Web Audio.** The browser's API is a graph of nodes
+(`OscillatorNode`, `BiquadFilterNode`, `GainNode`) run in native code
+on the browser's audio thread: §3 and §7 without computing a sample.
+The web backend uses none of them, only an `AudioBuffer` per frame
+filled with our samples, so a sound is the same, sample for sample, as
+natively and in the golden WAVs. The price: synthesis in JavaScript on
+the main thread, and about 100 ms of latency.
+
+**Synthesis languages.** SuperCollider, Csound or Pure Data compute
+their unit generators a block at a time (64 samples, say) on a
+real-time thread, and the graph can change while it plays. `Synth`
+renders a one-shot whole, the frame it's played (`Synth.render`), and a
+loop once; only the continuous voices (`keep_playing`) are computed a
+pull at a time. Simple, and deterministic, but a two-second bell costs
+its two seconds of samples in one frame. The whole landscape (the
+chips, the languages, the middleware):
+[`notes_audio_related_work.md`](../related-work/notes_audio_related_work.md).
+
+## 12. What's missing, and exercises
+
+In rough order of difficulty:
+
+- **pink noise** (§3): white noise through a few one-pole low-passes
+  summed, or Voss's algorithm; in `Noise`, next to the LFSR;
+- **PolyBLAMP** for the triangle's corners (§6), the band-limited
+  ramp, in `Oscillator.wave_band_limited`, which leaves the triangle
+  naive; measure its aliases the way `Unit_oscillator` does the
+  square's;
+- **vibrato and arpeggio** (§8): a `Synth.voice` only `slide`s; a
+  frequency modulated by a slow sine, or stepping through a chord, is
+  the `Effect` of §0;
+- **sfxr's generator** (§8): the `Sfx` of §0, its dozen parameters and
+  random buttons, over `Synth`;
+- **an echo** (§8): a delay line, a circular buffer fed back quieter
+  (`Mix.delay` only shifts a sound); then a reverb, Schroeder's comb
+  and all-pass filters;
+- **filters on continuous sounds**: `keep_playing` ignores `low_pass`
+  and `wah`; `Synth.continue` would have to carry the biquad's two
+  samples of memory in its `running` state, like the phase;
+- **a plucked string**, Karplus-Strong: a delay line of noise, averaged
+  as it goes round -- a new `Synth.source`, a guitar in a few lines;
+- **stereo and panning**: `Signal.t` and `Wav` are mono; then
+  distance and Doppler from a physics body's position and velocity
+  (the plan's phase 10);
+- **loaded sounds**: `Wav.read` exists, but no `Audio` function plays a
+  file; then a `Resample` to play it at other pitches, and a MOD player
+  (`notes_audio_midi.md` §9);
+- **the audio off the frame**: rendering in an OCaml 5 domain, a block
+  at a time, so a long sound doesn't cost the frame it starts;
+- **Web Audio's own nodes** (the plan's phase 4, left): a web backend
+  building an `OscillatorNode` and a `BiquadFilterNode` per voice
+  instead of our samples, and the two compared, by ear and in latency.
+
+## 13. In the playground
+
+The API is `playground/Audio.mli`, in the `elm_playground` library, so
+every backend has it. A **sound** is a value, like a shape: made from a
+few numbers (`tone`, `square`, `triangle`, `sawtooth`, `noise`, §3;
+`fm`, §7; `note "C4"`, §9), shaped by verbs like `move` and `scale`
+(`lasting`, `fading`, §4; `louder`, §5; `sliding`, §8; `low_pass`,
+`high_pass`, `wah`, §7; `naive`, §6), and combined with `after` and
+`together`, Euterpea's two operators; `blip`, `coin`, `jump`, `laser`,
+`hit`, `explosion` and `step` are ready-made, after sfxr's categories
+(§8). Tunes are text, `abc` and `doremi`, or a MIDI file, `midi` (§9,
+`notes_audio_midi.md`).
+
+Unlike pictures, sounds are *commands*: `Audio.play` in `update`, when
+the ball bounces, fire and forget -- the one impure call of the
+playground (the `.mli` says why, and what elm-audio does instead).
+`keep_playing name s`, called every frame, is a continuous sound whose
+pitch and volume change smoothly (§10's two clocks: the phase goes on
+between pulls); `loop` and `stop` are the music, `loop_from` a tune
+from a file or a URL, and `position` the music's own clock, what a
+rhythm game judges a step by (§10). Underneath, `Mixer` sums them
+through tanh (§5), and the platform pulls its samples: the SDL queue
+natively, an `AudioBuffer` in the browser (§10).
+
+The examples, one idea each: `examples/AudioTheremin.ml`, the whole
+instrument one `keep_playing` line; `examples/AudioPiano.ml`, the
+keyboard as a piano, space switching the waveform (§3's timbre, §9's
+notes); `examples/AudioAliasing.ml`, a square's spectrum, its aliases
+in red, space switching naive and band-limited (§2, §6). The games:
+`TinyBreakout.ml` (a brick's pitch from its row), `TinyMario.ml` (a
+jump, footsteps, coins, a flag's arpeggio made with `after`, and its
+music, an ABC tune or `music=` a `.mid` file), and the rhythm games,
+`TinyDDR.ml`, `TinyGuitarHero.ml`, `TinyRockBand.ml`, judged by
+`Audio.position`; about thirty more play the ready-made sounds. No
+game uses `fm`, the filters or `wah` yet: only the golden WAVs do.
+
+To see the sound: the software backend's `v` key (with `-debug-keys`)
+draws `Audio_debug`'s oscilloscope, then spectrum (§6), over the frame.
+To test it: the golden WAVs of `audio/tests/`, compared sample by
+sample, and `-dump-audio file` with `-dump-frame` writing a game's
+sound to a WAV.
 
 ## Glossary
 
@@ -301,3 +399,47 @@ three, and every sound is reproducible, so testable.
 - **Sequencer**, **tracker**: notes played at times, in patterns.
 - **Latency**: the delay from an event to its sound; **buffer**, **block**:
   the samples handed to the sound card at a time.
+
+## References
+
+- Joseph Fourier, "Théorie analytique de la chaleur", Firmin Didot,
+  1822.
+- H. Nyquist, "Certain Topics in Telegraph Transmission Theory",
+  Transactions of the AIEE, 1928.
+- C. E. Shannon, "Communication in the Presence of Noise", Proceedings
+  of the IRE, 1949.
+- M. R. Schroeder, "Natural Sounding Artificial Reverberation", Journal
+  of the Audio Engineering Society, 1962.
+- M. V. Mathews, "The Digital Computer as a Musical Instrument",
+  Science, 1963.
+- James W. Cooley, John W. Tukey, "An Algorithm for the Machine
+  Calculation of Complex Fourier Series", Mathematics of Computation
+  19(90):297-301, 1965.
+- Solomon W. Golomb, "Shift Register Sequences", Holden-Day, 1967 (the
+  LFSR).
+- John M. Chowning, "The Synthesis of Complex Audio Spectra by Means of
+  Frequency Modulation", Journal of the Audio Engineering Society
+  21(7), 1973.
+- Kevin Karplus, Alex Strong, "Digital Synthesis of Plucked-String and
+  Drum Timbres", Computer Music Journal 7(2), 1983.
+- Tim Stilson, Julius O. Smith, "Alias-Free Digital Synthesis of
+  Classic Analog Waveforms", International Computer Music Conference
+  (ICMC), 1996 (BLIT, the band-limited impulse train).
+- Curtis Roads, "The Computer Music Tutorial", MIT Press, 1996.
+- Robert Bristow-Johnson, "Cookbook formulae for audio EQ biquad filter
+  coefficients" (the Audio EQ Cookbook), 1998.
+- James McCartney, "Rethinking the Computer Music Language:
+  SuperCollider", Computer Music Journal 26(4), 2002.
+- Vesa Välimäki, Antti Huovilainen, "Antialiasing Oscillators in
+  Subtractive Synthesis", IEEE Signal Processing Magazine, 2007
+  (PolyBLEP).
+- Miller Puckette, "The Theory and Technique of Electronic Music",
+  World Scientific, 2007.
+- Julius O. Smith III, "Mathematics of the Discrete Fourier Transform"
+  and "Introduction to Digital Filters", W3K Publishing, 2007; online
+  at https://ccrma.stanford.edu/~jos/ with his other books.
+- Andy Farnell, "Designing Sound", MIT Press, 2010.
+- Paul Hudak, Donovan Quick, "The Haskell School of Music: From Signals
+  to Symphonies", Cambridge University Press, 2018 (`after` and
+  `together`).
+- W3C, "Web Audio API", W3C Recommendation, 2021.

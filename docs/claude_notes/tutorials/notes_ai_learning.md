@@ -324,7 +324,7 @@ that beats its own random-playout version and loses to a decent human
 mechanism is small and the scale is not, which is a more useful thing
 to know about modern AI than any benchmark.
 
-## 10. What this deliberately isn't
+## 10. What this deliberately isn't, and exercises
 
 No GPU, no convolutions at real scale, no transformers, no pretrained
 weights, nothing that needs a download. Those are engineering at a size
@@ -333,6 +333,42 @@ here: every idea above -- the neuron, the chain rule, the gradient, the
 value function, the search guided by a guess -- is exactly the same at
 seventeen thousand weights as at seventeen billion. The rest is
 hardware.
+
+**PyTorch.** `Grad` is PyTorch's `autograd` with the tensors taken out:
+PyTorch's graph nodes hold whole arrays, so one node of its graph is a
+matrix multiply that ours spells out as thousands of scalar nodes, and
+the arithmetic under it is BLAS on a CPU or CUDA kernels on a GPU,
+where `Matrix` is three OCaml loops. That is the whole difference in
+speed, several orders of magnitude, and none in what gets computed:
+the finite-difference test of §4 passes the same way for both.
+**micrograd** is the nearest relative, scalar autodiff in about a
+hundred lines of Python; `Grad` is the same idea in OCaml, and
+`Backprop` beside it is what micrograd leaves out on purpose -- the
+derivatives written by hand once. The libraries, the games that learned
+and the teaching lineage are in
+[`notes_ai_related_work.md`](../related-work/notes_ai_related_work.md).
+
+What real systems have that this design leaves out, each a good
+exercise once its module exists, in rough order of difficulty:
+
+- momentum, then Adam (Kingma and Ba, 2015), in `Train`'s step instead
+  of §3's plain `w <- w - rate * dL/dw`, and the spiral's loss curve
+  with each;
+- early stopping, `Train` watching §6's held-out curve and keeping the
+  weights from where it turned;
+- weight decay and dropout (Srivastava et al., 2014), and the gap
+  between the two curves of §6 shrinking;
+- forward-mode autodiff (dual numbers) beside `Grad`'s reverse mode,
+  and why reverse wins when there are many weights and one loss;
+- TD(λ)'s eligibility traces in `Qlearn` (§8), which TD-Gammon used
+  instead of the one-step update;
+- a network instead of `Qlearn`'s table, with DQN's experience replay
+  and target network (Mnih et al., 2015), which are what keep it from
+  diverging;
+- one small convolutional layer for `AiDigits.ml` (LeCun et al., 1998),
+  its weights shared across the image, against the 256-64-10 network;
+- §9's loop on tic-tac-toe or connect four before 9x9 Go, where a
+  result comes in minutes and perfect play is known to check it.
 
 ## Glossary
 
@@ -358,3 +394,50 @@ hardware.
   **self-play**.
 - **Policy head**, **value head**: a network's two answers inside a
   search.
+
+## References
+
+- Frank Rosenblatt, "The Perceptron: A Probabilistic Model for
+  Information Storage and Organization in the Brain", Psychological
+  Review 65(6), 1958.
+- Arthur L. Samuel, "Some Studies in Machine Learning Using the Game of
+  Checkers", IBM Journal of Research and Development 3(3), 1959.
+- Marvin Minsky, Seymour Papert, "Perceptrons", MIT Press, 1969.
+- Seppo Linnainmaa, master's thesis, University of Helsinki, 1970
+  (reverse-mode differentiation).
+- David E. Rumelhart, Geoffrey E. Hinton, Ronald J. Williams, "Learning
+  representations by back-propagating errors", Nature 323, 1986.
+- Richard S. Sutton, "Learning to Predict by the Methods of Temporal
+  Differences", Machine Learning 3, 1988.
+- Christopher J. C. H. Watkins, "Learning from Delayed Rewards", PhD
+  thesis, University of Cambridge, 1989.
+- Gerald Tesauro, "Practical Issues in Temporal Difference Learning",
+  Machine Learning 8, 1992.
+- Gerald Tesauro, "Temporal Difference Learning and TD-Gammon",
+  Communications of the ACM 38(3), 1995.
+- Yann LeCun, Léon Bottou, Yoshua Bengio, Patrick Haffner,
+  "Gradient-Based Learning Applied to Document Recognition",
+  Proceedings of the IEEE 86(11), 1998.
+- Richard S. Sutton, Andrew G. Barto, "Reinforcement Learning: An
+  Introduction", MIT Press, 1998.
+- Xavier Glorot, Yoshua Bengio, "Understanding the difficulty of
+  training deep feedforward neural networks", AISTATS 2010.
+- Vinod Nair, Geoffrey E. Hinton, "Rectified Linear Units Improve
+  Restricted Boltzmann Machines", ICML 2010.
+- Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya Sutskever,
+  Ruslan Salakhutdinov, "Dropout: A Simple Way to Prevent Neural
+  Networks from Overfitting", Journal of Machine Learning Research 15,
+  2014.
+- Diederik P. Kingma, Jimmy Ba, "Adam: A Method for Stochastic
+  Optimization", ICLR 2015.
+- Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun, "Delving Deep into
+  Rectifiers", ICCV 2015.
+- Volodymyr Mnih et al., "Human-level control through deep
+  reinforcement learning", Nature 518, 2015 (DQN).
+- David Silver et al., "Mastering the game of Go with deep neural
+  networks and tree search", Nature 529, 2016 (AlphaGo).
+- Daniel Smilkov, Shan Carter, "A Neural Network Playground",
+  playground.tensorflow.org, 2016.
+- David Silver et al., "Mastering the game of Go without human
+  knowledge", Nature 550, 2017 (AlphaGo Zero).
+- Andrej Karpathy, "micrograd", github.com/karpathy/micrograd, 2020.

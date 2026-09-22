@@ -15,7 +15,7 @@ the framebuffer and images, `graphics/2d/geometry/` transforms,
 The 2D counterpart of [`notes_3d.md`](notes_3d.md). Companions:
 [`done/plan_software_2d.md`](../plans/done/plan_software_2d.md) (how the backend was built,
 phase by phase), [`notes_font.md`](notes_font.md) (text, in depth) and
-[`notes_opti.md`](notes_opti.md) (what each feature costs, and the
+[`notes_opti.md`](../dev/notes_opti.md) (what each feature costs, and the
 optimizations); and for where all this comes from, and how it compares
 with PostScript, SVG, Cairo, Skia, Processing, Gloss and the rest,
 [`notes_playground_related_work.md`](../related-work/notes_playground_related_work.md).
@@ -436,7 +436,7 @@ of the `.mli` files, so they can't silently become wrong.
 
 ## 13. Performance
 
-Measured in [`notes_opti.md`](notes_opti.md): Cairo (tuned C, SIMD) is
+Measured in [`notes_opti.md`](../dev/notes_opti.md): Cairo (tuned C, SIMD) is
 1.5 to 7 times faster than our plain OCaml, and each feature has its
 price (antialiasing 1.1x to 3x). Three optimizations made the software
 backend playable, each keeping its original, simple version runnable
@@ -497,6 +497,52 @@ exercise, in rough order of difficulty:
   the paint program's bucket tool;
 - a TrueType outline font instead of Hershey (see `notes_font.md`,
   section 7).
+
+## 16. In the playground
+
+Everything above is reached through `playground/Playground.mli`'s
+shapes, and nothing else: a program's `view` returns a list of them,
+and `Shape_render_software.render` walks it (`render_shape`, then
+`render_form` for each leaf). `move`, `rotate` and `scale` become one
+affine matrix per shape, and `group` composes its own with its
+children's (§3; `examples/Animation.ml` spins octagons with
+`rotate (spin ...)`, `Misc.ml` rotates stars and a scaled square);
+`rectangle`, `square`, `triangle`, `pentagon`, `hexagon`, `octagon`
+and `polygon` are all corners through that matrix, then `Fill.polygon`
+(§4; `Asteroid.ml`'s rocks are `polygon`s); `circle` stays a circle
+when the matrix keeps it round (`Circle.fill`, §6), and `oval`
+becomes a polygon (§6; `Smiley.ml`'s mouth, two ovals); `fade` is the
+alpha of Porter-Duff "over" (§7; `Mouse.ml`, button held), except on
+a `group`, where it's ignored (the group alpha of §15); `image` is
+`Blit.draw` through the inverse matrix (§8; `Turtle.ml`, and
+`Mario.ml`'s animated GIFs); `words` is Hershey's strokes, thin lines
+or a `Stroke` (§9; `Words.ml` rotates and scales them, `Tetris.ml`'s
+title is `words` scaled 5 times); and the wireframe and bounding-box
+keys are two more branches of `render_form` (§12). The layers of
+`playground/` add no shape of their own, so they need nothing from a
+backend: `Camera2d.view` is one `group`, moved and scaled; `Tilemap.view`
+a `group` of a shape per tile (`view_visible` only the tiles in the
+camera's rectangle, clipping before the rasterizer's own, §11);
+`Sprite.pixels` pixel art as rectangles, one per run of same-colored
+pixels (`pixels_squares`, one per pixel, to compare the number of
+polygons to fill); `Scene2d` only switches views.
+`TinyMario.ml` (a `Tilemap` scrolled by a `Camera2d`, `Sprite`s),
+`TinyInvaders.ml` (`Sprite`, `Scene2d`) and `TinyZelda.ml` (all four)
+use them together.
+
+Any 2D example or game runs on this backend from the *same* source:
+`examples/software/` and each `games/<genre>/software/` `copy_files`
+the `.ml` files of their parent directory and link them with
+`elm_playground_software` instead of Cairo's, so `dune exec
+examples/software/Smiley.exe` or `dune exec
+games/platform/software/TinyMario.exe` is the program of this note,
+and adding `-- -debug-keys` gives it the keys of §12. A program can
+ask for its starting rendering, portably, with
+`Playground_platform.run_app ~rendering:{ antialiasing; smooth_images }`
+(`Playground.rendering`): here the "n" (§10) and "i" (§8) keys'
+starting values, in Cairo its antialias mode and image filter, on the
+web SVG's `shape-rendering` and CSS's `image-rendering`; `Mario.ml`
+turns `smooth_images` off, to keep its pixel art crisp when enlarged.
 
 ## References
 
