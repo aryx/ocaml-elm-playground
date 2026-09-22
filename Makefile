@@ -58,13 +58,22 @@ serve-build: all
 test:
 	dune runtest -f
 
+# claude: the quick check for a change that only moves or renames
+# things: the whole tree built (what a move breaks: a module in the
+# wrong stanza, a missing copy_files, a library dep), and every test
+# but the golden frames (a frame rendered on the CPU each, all at
+# once). 'make test' before a change that can alter a pixel.
+test-lite:
+	dune build
+	GOLDEN=none dune runtest -f
+
 # 'make test' skips the golden frames deep into a game (more than 100
 # frames to render: seconds of CPU each, all at once), keeping every
 # example's and the first frame of each game. This runs those too;
 # worth it before a release, or after touching a renderer. See
 # tests/common/Testutil_golden.mli
 test-golden-all:
-	GOLDEN_ALL=1 dune runtest -f tests/2d tests/3d
+	GOLDEN=all dune runtest -f tests/2d tests/3d
 
 # after 'make test' reported 2D or 3D golden frames that differ on
 # purpose (look at them first), make the new frames the golden ones;

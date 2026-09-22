@@ -17,12 +17,16 @@ type scripted = string * string * int * string
 
 (* Rendering frame n means playing the game for n frames, so a scene
  * deep into a game costs real seconds of CPU, and dune runs them all at
- * once. The heavy ones are skipped unless GOLDEN_ALL is set: 'make
+ * once. The heavy ones are skipped unless GOLDEN=all: 'make
  * test' keeps the cheap frames (every example, and one of each game),
- * 'make test-golden-all' runs the lot. *)
+ * 'make test-golden-all' runs the lot. And GOLDEN=none skips them all
+ * ('make test-lite', for a change that only moves things around). *)
 let heavy_frames = 100
-let run_heavy = Sys.getenv_opt "GOLDEN_ALL" <> None
+let golden = Sys.getenv_opt "GOLDEN"
+let run_heavy = golden = Some "all"
+let run_none = golden = Some "none"
 let skip_heavy = "heavy (deep into a game): make test-golden-all"
+let skip_none = "GOLDEN=none (make test-lite)"
 
 (* the tests run in _build/default/<dir>/, e.g. tests/3d/; the
  * examples, from _build/default/, the root their image and texture
@@ -164,7 +168,11 @@ let test_scene ~dir ~approve ~name ~exe ~keys ~script ~frame () =
         name n x y (shown ~dir actual_file) approve
 
 let tests ~dir ~approve ?(scripted : scripted list = []) (scenes : scene list) : Testo.t list =
-  let one ~frame title body = if frame > heavy_frames && not run_heavy then t ~skipped:skip_heavy title body else t title body in
+  let one ~frame title body =
+    if run_none then t ~skipped:skip_none title body
+    else if frame > heavy_frames && not run_heavy then t ~skipped:skip_heavy title body
+    else t title body
+  in
   let plain =
     scenes
     |> List.map (fun (exe, keys, frame) ->
