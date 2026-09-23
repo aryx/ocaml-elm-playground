@@ -978,6 +978,10 @@ let scripted : Testutil_golden.scripted list =
     (* claude: and our first video, raw Y4M filmed by the 2D rasterizer,
      * 0.8 s in: 4:2:0's fringes at the square's and the ball's edges *)
     ("apps/media/software/TinyMediaPlayer", "video", 80, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30");
+    (* claude: the same clip as FLC, d pressed: what each delta frame
+     * stores, the ball's two crescents and the square's corners, the
+     * rest dimmed *)
+    ("apps/media/software/TinyMediaPlayer", "changes", 80, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,d:40");
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

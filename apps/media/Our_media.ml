@@ -107,7 +107,8 @@ let bouncing_ball_gif : string =
  * backend's own), then written raw as Y4M, in 4:2:0 and the studio
  * range (Y4m.mli) -- 160 x 120, 25 frames a second for 2 s: 50 frames
  * of 28,800 bytes, 1.4 MB for two seconds of a small picture, the size
- * the next formats of graphics/videos/ are about. A ball bounces twice
+ * the next formats of graphics/videos/ are about -- and as FLC, only
+ * what changed from a frame to the next (Fli.mli). A ball bounces twice
  * and a square turns a quarter, so the clip loops without a jump; flat
  * colors, whose sharp edges show what 4:2:0 does to color. *)
 let clip_frame (k : int) : Rgba_image.t =
@@ -138,6 +139,8 @@ let clip_frame (k : int) : Rgba_image.t =
   done;
   img
 
+let clip : Rgba_image.t list = List.init 50 clip_frame
+
 let playlist : (string * string) list =
   let midi = match Abc.parse frere_jacques with Ok tune -> Midi.of_tune tune | Error e -> failwith e in
   let bell = Synth.render (Synth.voice (Fm { ratio = 1.4; index = 5. }) 440. |> Synth.lasting 2. |> Synth.fading) in
@@ -152,5 +155,6 @@ let playlist : (string * string) list =
     ("bouncing_ball.gif", bouncing_ball_gif);
     ("demo_picture.jpg", Our_pictures.demo_picture_jpg);
     ("mario_stand.xpm", Our_pictures.mario_stand_xpm);
-    ("ball_and_square.y4m", Y4m.to_string ~rate:(25, 1) (List.init 50 clip_frame));
+    ("ball_and_square.y4m", Y4m.to_string ~rate:(25, 1) clip);
+    ("ball_and_square.flc", Fli.to_string ~delay:0.04 clip);
   ]

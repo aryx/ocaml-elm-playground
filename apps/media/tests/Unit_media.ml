@@ -30,6 +30,7 @@ let test_sniff () =
       ("demo_picture.jpg", Jpeg);
       ("mario_stand.xpm", Xpm);
       ("ball_and_square.y4m", Y4m);
+      ("ball_and_square.flc", Flic);
     ];
   (* the bytes decide, not the name *)
   Alcotest.(check (option kind)) "a PNG called bell.wav" (Some Png) (Media.sniff ~name:"bell.wav" (bytes "demo_picture.png"));
@@ -61,6 +62,16 @@ let test_open () =
       Alcotest.(check (float 1e-9)) "2 s" 2. movie.duration;
       Alcotest.(check (pair int int)) "160 x 120" (160, 120) (movie.width, movie.height)
   | _ -> Alcotest.fail "not a movie");
+  (* the same clip as FLC: the same pixels, exactly (5 colors: no
+   * palette to reduce), in a fraction of the bytes *)
+  (match (open_ "ball_and_square.flc", open_ "ball_and_square.y4m") with
+  | Movie flc, Movie _ ->
+      Alcotest.(check int) "FLC: 50 frames" 50 (Movie.frame_count flc);
+      Alcotest.(check (float 1e-9)) "FLC: 2 s" 2. flc.duration;
+      List.iter (fun i -> if Psnr.mse (List.nth Our_media.clip i) (flc.frame i) <> 0. then Alcotest.failf "FLC frame %d" i) [ 0; 1; 25; 49 ];
+      let flc = String.length (bytes "ball_and_square.flc") and y4m = String.length (bytes "ball_and_square.y4m") in
+      if flc * 20 > y4m then Alcotest.failf "FLC %d bytes, Y4M %d" flc y4m
+  | _ -> Alcotest.fail "not movies");
   (* our GIF: six frames, 0.15 s each, the ball moving *)
   match open_ "bouncing_ball.gif" with
   | Movie movie ->

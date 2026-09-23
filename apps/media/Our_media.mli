@@ -9,5 +9,9 @@
  * picture as PNG, GIF and JPEG (the Image examples' demo picture), an
  * animated GIF (a ball bouncing, written here without compression: see
  * Our_media.ml), a sprite as XPM (TinyMario's), and a video, raw as
- * Y4M, filmed by our own 2D rasterizer *)
+ * Y4M and as FLC, filmed by our own 2D rasterizer *)
 val playlist : (string * string) list
+
+(* the frames of our video, drawn by graphics/2d: the pictures the Y4M
+ * and FLC items hold, for the tests to compare with *)
+val clip : Rgba_image.t list

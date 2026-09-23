@@ -74,7 +74,7 @@ graphics/videos/          video formats, one library each
                           Psnr (done, phase 1; JPEG keeps its own
                           conversion, Jpeg.mli's same formulas)
   y4m/                    Y4m: YUV4MPEG2 read and written (done, phase 1)
-  fli/                    Fli: FLI and FLC read and written
+  fli/                    Fli: FLI and FLC read and written (done, phase 2)
   avi/                    Avi: the RIFF walk (Wav's), MJPEG frames, PCM
                           audio; written once the JPEG writer exists
   mpeg1/                  Bits (the bit reader), Vlc (the variable-length
@@ -180,8 +180,17 @@ commercial stream analyzers); here it is the lesson made visible.
    for 2 s, drawn by the 2D rasterizer in `Our_media` and written as
    Y4M when the player starts (1.4 MB: no file in the repository); the
    player plays it, a golden frame showing 4:2:0's fringes.
-2. **FLI/FLC**: read and written, the clip quantized to 256 colors;
-   sizes against Y4M's; the analyzer's changed pixels.
+2. **FLI/FLC** (done): `Fli` read (BRUN, LC, DELTA_FLC, the palettes,
+   BLACK, COPY) and written (FLC by DELTA_FLC, FLI by LC), decoded
+   forward only through `Movie.sequential` (which now keeps the frame
+   before the last, for the comparison below); `ball_and_square.flc` in
+   the player, the same frames as the Y4M. Our clip has 5 colors, so no
+   quantization: more than 256 is refused, a median cut left as an
+   exercise. Sizes of the 2 s clip: raw RGB 2,880,000 bytes, Y4M
+   1,440,363, FLC 19,818, FLI 13,314 -- FLI smaller, its byte packets
+   fitting edges that FLC's word packets (faster on a 386) round up to
+   pairs of pixels. The analyzer's first view, `d` in the player, for
+   any movie: what changed from the frame before, the rest dimmed.
 3. **AVI with Motion JPEG and PCM**: the RIFF walk shared with `Wav`,
    the index, audio and video in sync in the player; written once
    `plan_images_remaining.md`'s JPEG writer exists.

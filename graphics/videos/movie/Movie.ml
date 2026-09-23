@@ -33,19 +33,21 @@ let of_frames (frames : (Rgba_image.t * float) list) : t =
   { width = pictures.(0).width; height = pictures.(0).height; times; duration = !t; frame = (fun i -> pictures.(i)) }
 
 let sequential ~width ~height ~(times : float array) ~(duration : float) ~(start : unit -> 's) ~(next : 's -> 's * Rgba_image.t) : t =
-  (* the decoder where it last stopped: its state, and the frame it gave *)
-  let at : ('s * int * Rgba_image.t) option ref = ref None in
+  (* the decoder where it last stopped: its state, the frame it gave,
+   * and the frame before that one *)
+  let at : ('s * int * Rgba_image.t * Rgba_image.t option) option ref = ref None in
   let rec frame i =
     match !at with
-    | Some (_, j, img) when j = i -> img
-    | Some (s, j, _) when j < i ->
-        let s, img = next s in
-        at := Some (s, j + 1, img);
+    | Some (_, j, img, _) when j = i -> img
+    | Some (_, j, _, Some before) when j = i + 1 -> before
+    | Some (s, j, img, _) when j < i ->
+        let s, next_img = next s in
+        at := Some (s, j + 1, next_img, Some img);
         frame i
     | _ ->
-        (* nothing yet, or behind us: from the start *)
+        (* nothing yet, or too far behind: from the start *)
         let s, img = next (start ()) in
-        at := Some (s, 0, img);
+        at := Some (s, 0, img, None);
         frame i
   in
   { width; height; times; duration; frame }

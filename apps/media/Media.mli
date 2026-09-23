@@ -17,6 +17,9 @@
  *     FF D8 FF                  JPEG (a start-of-image marker, then the next)
  *     "/* XPM */"               XPM (a C comment: the file is C source)
  *     "YUV4MPEG2 "              Y4M, raw video (mjpegtools, 2001)
+ *     11 AF, 12 AF at byte 4    FLI, FLC (Autodesk Animator, 1989):
+ *                               (two bytes only: a weak magic, trusted
+ *                               only in a file of the header's 128 bytes)
  *     "X:" first                an ABC tune (its first field, the number)
  *
  * and only then the name: Ultimate Soundtracker's modules have no tag
@@ -30,7 +33,7 @@
  * (Movie.mli): so far a GIF's frames, and as graphics/videos/ grows,
  * the video formats (plan_video_teaching.md). *)
 
-type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m
+type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic
 
 val kind_name : kind -> string
 

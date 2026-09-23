@@ -27,7 +27,9 @@
  *   - a module: its four channels around the row playing, as a tracker
  *     shows them (TinySoundtracker.ml);
  *   - a picture: fitted to the screen, for 5 s; a movie, each frame at
- *     its time, decoded when shown (Movie.mli), looped for 5 s if shorter.
+ *     its time, decoded when shown (Movie.mli), looped for 5 s if shorter;
+ *     d shows it as what changed from a frame to the next, the rest
+ *     dimmed: what a delta frame (FLC's) stores.
  *
  * Under it, what just played, as an oscilloscope and a spectrum; then
  * the position (a slider: drag it to seek), the buttons, and the
@@ -107,6 +109,7 @@ type model = {
   shown : int; (* the frames the current item has been on the screen *)
   held : string list;
   asked : bool; (* file= asked for *)
+  changes : bool; (* a movie shown as what changed from a frame to the next *)
 }
 
 (* files given by file=, arriving (now natively, later in a browser) *)
@@ -125,7 +128,7 @@ let load (items : (string * string) list) (i : int) ~(playing : bool) : model ->
   { m with items; current = i; opened; playing; shown = 0 }
 
 let initial_model : model =
-  let m = { items = []; current = 0; opened = Error ""; playing = true; shown = 0; held = []; asked = false } in
+  let m = { items = []; current = 0; opened = Error ""; playing = true; shown = 0; held = []; asked = false; changes = false } in
   load Our_media.playlist 0 ~playing:true m
 
 (*****************************************************************************)
@@ -203,6 +206,7 @@ let update (computer : computer) (m : model) : model =
           { m with playing = false })
         else if nxt || pressed "n" then next m 1
         else if prev || pressed "p" then next m (-1)
+        else if pressed "d" then { m with changes = not m.changes }
         else if pressed "ArrowRight" || pressed "ArrowLeft" then (
           (match deck.media with
           | Some (Sound s) ->
@@ -309,7 +313,27 @@ let picture (img : Rgba_image.t) : shape list =
   [ Sprite.of_rgba size img |> move vx vy ]
 
 (* the frame the movie is at, [shown] frames (1/60 s) in, looping *)
-let movie (movie : Movie.t) (shown : int) : shape list = picture (Movie.frame_at movie (Float.rem (float_of_int shown / 60.) movie.duration))
+let movie_frame (movie : Movie.t) (shown : int) : int = Movie.index_at movie (Float.rem (float_of_int shown / 60.) movie.duration)
+
+(* what changed: the pixels the same as the frame before's at a quarter
+ * of their brightness, the ones that changed as they are -- what a
+ * delta frame stores (Fli.mli), seen; the first frame all changed *)
+let changes (movie : Movie.t) (i : int) : Rgba_image.t =
+  let img = movie.frame i in
+  if i = 0 then img
+  else
+    let before = movie.frame (i -.. 1) in
+    let out = Rgba_image.create ~width:img.width ~height:img.height in
+    for p = 0 to (img.width *.. img.height) -.. 1 do
+      let same = img.rgba.{4 *.. p} = before.rgba.{4 *.. p} && img.rgba.{(4 *.. p) +.. 1} = before.rgba.{(4 *.. p) +.. 1} && img.rgba.{(4 *.. p) +.. 2} = before.rgba.{(4 *.. p) +.. 2} in
+      for c = 0 to 2 do out.rgba.{(4 *.. p) +.. c} <- (if same then img.rgba.{(4 *.. p) +.. c} /.. 4 else img.rgba.{(4 *.. p) +.. c}) done;
+      out.rgba.{(4 *.. p) +.. 3} <- 255
+    done;
+    out
+
+let movie (m : model) (movie : Movie.t) : shape list =
+  let i = movie_frame movie m.shown in
+  picture (if m.changes then changes movie i else movie.frame i)
 
 let scope_and_spectrum () : shape list =
   let samples = recent () in
@@ -348,7 +372,7 @@ let where (m : model) : string =
   | Ok (_, Module song) -> (
       match deck.player with Some p -> let pos, row = Mod_player.position p in Printf.sprintf "position %d/%d, row %d" pos (Array.length song.positions) row | None -> "")
   | Ok (_, Picture img) -> Printf.sprintf "%d x %d pixels" img.width img.height
-  | Ok (_, Movie movie) -> Printf.sprintf "%d frames" (Movie.frame_count movie)
+  | Ok (_, Movie movie) -> Printf.sprintf "frame %d of %d   d: %s" (movie_frame movie m.shown +.. 1) (Movie.frame_count movie) (if m.changes then "the frames" else "what changed")
 
 let view (_computer : computer) (m : model) : shape list =
   let name = fst (List.nth m.items m.current) in
@@ -359,7 +383,7 @@ let view (_computer : computer) (m : model) : shape list =
     | Ok (_, Sound s) -> waveform s.samples.left (fraction ())
     | Ok (_, Module song) -> tracker song
     | Ok (_, Picture img) -> picture img
-    | Ok (_, Movie mv) -> movie mv m.shown
+    | Ok (_, Movie mv) -> movie m mv
     | Error e -> [ txt 18. ink e |> move vx vy ]
   in
   [ rectangle (rgb 50 50 62) 1000. 1000.; rectangle panel vw vh |> move vx vy ]

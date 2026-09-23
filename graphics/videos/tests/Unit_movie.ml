@@ -47,10 +47,11 @@ let test_sequential () =
   ask 1 1;
   ask 3 2 (* 2, then 3 *);
   ask 3 0 (* the same again: nothing *);
-  ask 2 3 (* back: from the start, 0, 1, 2 *);
-  ask 9 7;
+  ask 2 0 (* the one before: kept *);
+  ask 1 2 (* further back: from the start, 0, 1 *);
+  ask 9 8;
   Alcotest.(check int) "at 0.2 s, 25 a second" 5 (Movie.index_at m 0.2)
 
 let tests =
   Testo.categorize "Movie"
-    [ t "the frame showing at a time" test_times; t "decoded forward only, a seek back from the start" test_sequential ]
+    [ t "the frame showing at a time" test_times; t "decoded forward only, the frame before kept, a seek further back from the start" test_sequential ]

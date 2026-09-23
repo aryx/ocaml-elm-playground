@@ -3,5 +3,5 @@
 ; bytes and opened into what it holds
 (test
  (name Test)
- (libraries alcotest testo audio graphics_movie media_player)
+ (libraries alcotest testo audio graphics_movie graphics_yuv media_player)
 )

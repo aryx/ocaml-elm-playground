@@ -22,7 +22,7 @@ after the first is a way of not storing the same thing twice.
 | `movie/` | `Movie`, a video as a player sees it | §3, §4 | done |
 | `yuv/` | `Yuv`, `Psnr` | §2, §6 | done |
 | `y4m/` | `Y4m` | §2 | done |
-| `fli/` | `Fli` | §3 | |
+| `fli/` | `Fli` | §3 | done |
 | `avi/` | `Avi` | §4 | |
 | `mpeg1/` | `Bits`, `Vlc`, `Mpeg1`, later `Motion` | §5, §7 | |
 | `apps/media/` | TinyMediaPlayer's `Movie` kind (done: GIFs), the analyzer | §8 | |
@@ -98,10 +98,15 @@ is chunks:
 ```
 
 A still background costs nothing; a moving sprite costs its outline
-(the pixels it left and the ones it reached). Worked example, to
-compute when writing: a 16 x 16 ball moving 2 pixels across a still
-320 x 200 background -- the raw frame's 64,000 bytes against the
-delta's few hundred. And the limit: a camera that pans changes every
+(the pixels it left and the ones it reached). Measured on our clip
+(`Our_media.ml`: 160 x 120, a ball and a turning square, 50 frames): a
+raw frame is 19,200 bytes of palette indices (28,800 as Y4M's 4:2:0),
+the first frame run-length coded about 720 (and the palette's 772),
+and each delta frame
+about 370 as FLC, 240 as FLI -- the whole clip 19,818 bytes and 13,314,
+against Y4M's 1,440,363. FLI's byte-sized packets win: FLC's go by
+words, two pixels, faster to copy on a 386, but an edge between two
+pixels costs a pair. And the limit: a camera that pans changes every
 pixel, and the delta is the whole frame again. FLC (Animator Pro, early
 1990s) widened the idea to bigger screens and word-sized runs.
 
@@ -216,7 +221,9 @@ same; a ball: a few arrows on the ball), the residual alone (the
 prediction switched off: what the encoder actually sent, mostly grey),
 the Y, Cb and Cr planes apart; for FLI, the pixels a delta frame
 touched. The trade's own tools do this; here it is the lesson made
-visible.
+visible. (Its first view is built: `d` dims what didn't change from
+the frame before, for any movie -- on the FLC, exactly what each delta
+frame stores.)
 
 ## Exercises
 

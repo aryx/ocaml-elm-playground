@@ -8,10 +8,13 @@
    (FLI's, MPEG's P frames) is the one before it plus what changed, so
    frame 100 needs frame 99, which needs 98... back to the last frame
    stored whole, a **key frame**. [sequential] keeps the decoder's
-   state at the last frame given, and goes on from there:
+   state at the last frame given, and goes on from there; it keeps the
+   frame before that one too, as decoders keep their reference frames
+   (and a player comparing a frame with the one before it needs):
 
-     asked:    0   1   2   3   2          (a seek back)
-     decoded:  0   1   2   3   0 1 2      from the start again
+     asked:    0   1   2   3   2   0      (seeks back)
+     decoded:  0   1   2   3   -   0      the one before is kept; further
+                                          back, from the start again
 
    which is why a player seeks to key frames, and why a movie that is
    only key frames (Motion JPEG) seeks anywhere at once.
@@ -38,8 +41,9 @@ val of_frames : (Rgba_image.t * float) list -> t
 (* [sequential ~width ~height ~times ~start ~next]: a movie decoded
  * forward only -- [start ()] the decoder's state before frame 0,
  * [next s] frame i from the state after frame i - 1, and the state
- * after it. Asking the frame just given again costs nothing; the next,
- * one [next]; an earlier one, [start] again and every frame up to it. *)
+ * after it. Asking the frame just given again, or the one before it,
+ * costs nothing; the next, one [next]; an earlier one, [start] again
+ * and every frame up to it. *)
 val sequential : width:int -> height:int -> times:float array -> duration:float -> start:(unit -> 's) -> next:('s -> 's * Rgba_image.t) -> t
 
 (* [index_at m t]: the frame showing at [t] seconds (the first before

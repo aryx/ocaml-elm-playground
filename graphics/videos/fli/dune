@@ -1,0 +1,9 @@
+; claude: FLI and FLC, Autodesk Animator's delta frames, read and
+; written (Fli.mli). Pure OCaml. A private library (see
+; graphics/core/dune), installed as part of elm_playground.
+(library
+ (name graphics_fli)
+ (package elm_playground)
+ (wrapped false)
+ (libraries graphics_rgba graphics_movie)
+)
