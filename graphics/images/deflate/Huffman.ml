@@ -10,7 +10,7 @@
 
 (* See Huffman.mli *)
 
-let max_bits = 15
+let max_bits = 16
 
 type t = {
   (* how many codes of each length, 0 to max_bits *)
@@ -44,6 +44,18 @@ let of_lengths (lengths : int array) : t =
     lengths;
   count.(0) <- 0;
   { count; symbol }
+
+let of_counts (counts : int array) (symbols : int array) : t =
+  if Array.length counts <> max_bits then failwith "Huffman: a count for each length from 1 to 16";
+  let count = Array.append [| 0 |] counts in
+  let left = ref 1 in
+  for len = 1 to max_bits do
+    left := (!left * 2) - count.(len);
+    if !left < 0 then failwith "Huffman: over-subscribed code lengths"
+  done;
+  if Array.fold_left ( + ) 0 counts <> Array.length symbols then
+    failwith "Huffman: not as many symbols as codes";
+  { count; symbol = Array.copy symbols }
 
 (* [code] is the bits read so far, [first] the first code of length
  * [len], [index] where that length's symbols start in [symbol] *)

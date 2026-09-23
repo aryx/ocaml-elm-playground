@@ -35,7 +35,12 @@
    most 15 steps a symbol, which is slow next to zlib's lookup tables
    and plenty for the playground's pictures.
 
-   Lengths are at most 15 (DEFLATE's limit; JPEG's is 16). A set of
+   JPEG (Jpeg.mli) sends a table differently: how many codes of each
+   length, 1 to 16, then the symbols in the order of their codes -- not
+   sorted by value, so [of_counts] rather than [of_lengths]; the codes
+   are the same canonical ones.
+
+   Lengths are at most 16 (JPEG's limit; DEFLATE's is 15). A set of
    lengths can be *over-subscribed* (more codes than bits allow, e.g.
    three codes of length 1): an error. It can be *incomplete* (codes
    left over, e.g. a single code of length 1, which DEFLATE uses for a
@@ -57,6 +62,12 @@ val max_bits : int
  * of [lengths.(i)] bits, 0 meaning the symbol has no code. Raises
  * Failure if the lengths are over-subscribed. *)
 val of_lengths : int array -> t
+
+(* [of_counts counts symbols]: JPEG's form, [counts.(i)] codes of
+ * length [i + 1] (16 counts), given to [symbols] in order. Raises
+ * Failure if the counts are over-subscribed, or don't add up to the
+ * symbols. *)
+val of_counts : int array -> int array -> t
 
 (* [decode next_bit code]: the next symbol, reading its code one bit at
  * a time with [next_bit] (first the code's most significant bit).

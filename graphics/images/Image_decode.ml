@@ -68,13 +68,13 @@ let read_file (file : string) : string =
   Bytes.unsafe_to_string buf
 
 (* claude: the decoder is chosen by the file's first bytes, never by its
- * name (see notes_images.md section 1): our own for PNG (Png.mli) and
- * GIF (Gif.mli), stb_image for the others, until
- * plan_images_teaching.md's JPEG phase *)
+ * name (see notes_images.md section 1): our own for PNG (Png.mli), GIF
+ * (Gif.mli) and JPEG (Jpeg.mli), stb_image for the others *)
 let decode_string (s : string) : image =
   let starts_with magic = String.length s >= String.length magic && String.sub s 0 (String.length magic) = magic in
   if starts_with Png.signature then Png.decode s
   else if starts_with "GIF8" then Gif.decode s
+  else if starts_with "\xFF\xD8\xFF" then Jpeg.decode s
   else begin
     let buf = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout
         (String.length s) in

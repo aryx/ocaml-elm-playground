@@ -335,6 +335,25 @@ itself is small: the consumers already take a Bigarray of RGBA bytes.
   of Mario's six GIFs, the turtle and the fixtures identical; the
   still picture of an animated GIF differs only in the color of fully
   transparent pixels (stb_image kept the palette's, we write 0).
+- **Phase 4: done.** `graphics/images/jpeg/` (`Dct`, `Jpeg`; library
+  `graphics_jpeg`, in `elm_playground`). No `Jpeg_huffman`: deflate's
+  `Huffman` gained `of_counts` (JPEG's tables: counts per length, the
+  symbols in code order) and 16-bit codes; the bit reader, with its
+  byte stuffing and restart markers, is in `Jpeg`. Two switches for
+  teaching, parameters of `Jpeg.decode` (the pure libraries can't use
+  graphics/core's `Opti`): the IDCT (`Dct.idct`, the formula, or
+  `Dct.idct_aan`, the default; they agree to 1e-5) and the upsampling
+  (`Box`, or libjpeg's `Triangle`, the default: box is up to 80 levels
+  off on color edges). Fixtures in `graphics/tests/jpegs/`, made by
+  `make_jpegs.py` there with PIL: 45 x 29 (partial MCUs) at 4:4:4,
+  4:2:2, 4:2:0, gray, and 4:2:0 with restart markers and optimized
+  Huffman tables, each next to the pixels libjpeg-turbo decodes it to
+  (as a PNG, read by our `Png`): within 2 levels; a progressive and a
+  CMYK file, refused. A 1024 x 768 photo-like JPEG: 0.3 s, within 3
+  levels. Not done: the textured example using a JPEG (none of the
+  repository's programs uses one); a baseline file with one scan per
+  component is decoded by the same code as a gray one's scan, but no
+  fixture has one (PIL can't write it).
 
 ## Demos: seeing the compression
 
