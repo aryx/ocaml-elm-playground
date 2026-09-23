@@ -22,11 +22,11 @@ let fails msg f =
   | exception Failure _ -> ()
 
 let test_checksums () =
-  Alcotest.(check int) "CRC-32 (123456789)" 0xCBF43926 (Crc32.string "123456789");
-  Alcotest.(check int) "CRC-32, in two parts" 0xCBF43926
+  Alcotest.(check int32) "CRC-32 (123456789)" 0xCBF43926l (Crc32.string "123456789");
+  Alcotest.(check int32) "CRC-32, in two parts" 0xCBF43926l
     (Crc32.update (Crc32.string "1234") "123456789" ~pos:4 ~len:5);
-  Alcotest.(check int) "Adler-32 (hi)" 0x013B00D2 (Adler32.string "hi");
-  Alcotest.(check int) "Adler-32 (Wikipedia)" 0x11E60398 (Adler32.string "Wikipedia")
+  Alcotest.(check int32) "Adler-32 (hi)" 0x013B00D2l (Adler32.string "hi");
+  Alcotest.(check int32) "Adler-32 (Wikipedia)" 0x11E60398l (Adler32.string "Wikipedia")
 
 (* A 1, B 2, C 3, D 3 *)
 let abcd = [| 1; 2; 3; 3 |]

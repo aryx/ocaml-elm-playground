@@ -372,7 +372,14 @@ itself is small: the consumers already take a Bigarray of RGBA bytes.
   frames re-encoded, ours are 10% smaller than imagelib's (fixed codes
   suit flat colors), PIL reads them to the same pixels; 0.36 s to
   write a 1000 x 1000 frame (only a new or differing one is written),
-  0.07-0.18 s to read one. Not done: `-dump-frame` still writes PPM
+  0.07-0.18 s to read one. Since: `Crc32` and `Adler32` compute and
+  return `Int32` (phase 2's loose end), so the codecs are right in
+  JavaScript too, where an int has 32 bits; `Png` reads a CRC as an
+  `Int32`, and refuses a length of 2^31 or more (the spec's limit).
+  Checked by compiling the codecs with js_of_ocaml (no more overflow
+  warnings) and running them under node: the same checksums, zlib
+  round trip, PNG read and written, GIF and JPEG as natively. Not
+  done: a test run under node in `make test`. Not done: `-dump-frame` still writes PPM
   (the tests read it back as such); lazy matching and dynamic blocks,
   exercises in `Deflate.mli`.
 

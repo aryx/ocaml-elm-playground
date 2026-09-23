@@ -22,6 +22,10 @@ let read_file (file : string) : string =
 
 let suite (name : string) : string = Filename.concat "pngsuite" (name ^ ".png")
 
+(* the CRC-32 of [s] as an unsigned int, as the tables below write it
+ * (the tests run natively, where an int has 63 bits) *)
+let crc32 (s : string) : int = Int32.to_int (Crc32.string s) land 0xFFFF_FFFF
+
 let test_paeth () =
   Alcotest.(check int) "a 100, b 120, c 90: b" 120 (Png.paeth 100 120 90);
   Alcotest.(check int) "a flat area: a" 7 (Png.paeth 7 7 7);
@@ -156,7 +160,7 @@ let test_pngsuite () =
     |> List.filter_map (fun (name, w, h, crc) ->
            let img = Png.decode (read_file (suite name)) in
            let pixels = String.init (Bigarray.Array1.dim img.rgba) (fun i -> Char.chr img.rgba.{i}) in
-           let got = (img.width, img.height, Crc32.string pixels) in
+           let got = (img.width, img.height, crc32 pixels) in
            if got = (w, h, crc) then None
            else
              let gw, gh, gcrc = got in
@@ -187,7 +191,7 @@ let test_ours () =
          let img = Png.decode (read_file file) in
          let pixels = String.init (Bigarray.Array1.dim img.rgba) (fun i -> Char.chr img.rgba.{i}) in
          Alcotest.(check (pair int int)) (file ^ ": size") (w, h) (img.width, img.height);
-         Alcotest.(check int) (file ^ ": CRC-32 of the pixels") crc (Crc32.string pixels))
+         Alcotest.(check int) (file ^ ": CRC-32 of the pixels") crc (crc32 pixels))
 
 (* every PngSuite picture written and read back: the same pixels, and
  * without alpha the same colors, opaque *)

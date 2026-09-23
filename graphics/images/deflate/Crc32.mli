@@ -31,9 +31,13 @@
    Error Detection", Proceedings of the IRE 49 (1961); the table method
    as in the PNG specification, annex D "Sample CRC implementation". *)
 
+(* The CRC is an int32 (0xCBF43926 is -873187034l, the same 32 bits):
+   an int has 63 bits natively but 32 in JavaScript, Int32 is the same
+   everywhere. *)
+
 (* [update crc s ~pos ~len]: the CRC-32 of what gave [crc], followed by
- * the [len] bytes of [s] from [pos]; start from 0 *)
-val update : int -> string -> pos:int -> len:int -> int
+ * the [len] bytes of [s] from [pos]; start from 0l *)
+val update : int32 -> string -> pos:int -> len:int -> int32
 
 (* [string s]: the CRC-32 of all of [s] *)
-val string : string -> int
+val string : string -> int32

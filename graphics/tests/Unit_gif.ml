@@ -59,7 +59,8 @@ let expected =
   ]
 
 let crc (img : Rgba_image.t) : int =
-  Crc32.string (String.init (Bigarray.Array1.dim img.rgba) (fun i -> Char.chr img.rgba.{i}))
+  (* unsigned, as the table above writes it (natively, 63-bit ints) *)
+  Int32.to_int (Crc32.string (String.init (Bigarray.Array1.dim img.rgba) (fun i -> Char.chr img.rgba.{i}))) land 0xFFFF_FFFF
 
 let test_frames () =
   expected

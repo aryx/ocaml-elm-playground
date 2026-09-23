@@ -12,12 +12,15 @@
 
 let base = 65521
 
-let update (adler : int) (s : string) ~(pos : int) ~(len : int) : int =
-  let a = ref (adler land 0xFFFF) and b = ref (adler lsr 16) in
+(* claude: a and b are small ints, below 65521; only b * 65536 + a
+ * needs 32 bits, hence an Int32 (see Crc32.mli) *)
+let update (adler : int32) (s : string) ~(pos : int) ~(len : int) : int32 =
+  let a = ref (Int32.to_int (Int32.logand adler 0xFFFFl)) in
+  let b = ref (Int32.to_int (Int32.shift_right_logical adler 16)) in
   for i = pos to pos + len - 1 do
-    a := (!a + Char.code s.[i]) mod base;
+    a := (!a + Char.code (String.unsafe_get s i)) mod base;
     b := (!b + !a) mod base
   done;
-  (!b lsl 16) lor !a
+  Int32.logor (Int32.shift_left (Int32.of_int !b) 16) (Int32.of_int !a)
 
-let string (s : string) : int = update 1 s ~pos:0 ~len:(String.length s)
+let string (s : string) : int32 = update 1l s ~pos:0 ~len:(String.length s)

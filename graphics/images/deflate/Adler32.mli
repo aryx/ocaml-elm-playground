@@ -26,9 +26,12 @@
    Compressed Data Format Specification version 3.3" (1996), section
    8.2. *)
 
+(* The checksum is an int32, as Crc32's is, for JavaScript's 32-bit
+   ints. *)
+
 (* [update adler s ~pos ~len]: the Adler-32 of what gave [adler],
- * followed by the [len] bytes of [s] from [pos]; start from 1 *)
-val update : int -> string -> pos:int -> len:int -> int
+ * followed by the [len] bytes of [s] from [pos]; start from 1l *)
+val update : int32 -> string -> pos:int -> len:int -> int32
 
 (* [string s]: the Adler-32 of all of [s] *)
-val string : string -> int
+val string : string -> int32

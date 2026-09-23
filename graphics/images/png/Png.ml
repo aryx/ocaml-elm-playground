@@ -16,9 +16,17 @@ let signature = "\x89PNG\r\n\x1a\n"
 (* Chunks *)
 (*****************************************************************************)
 
+(* a length, a width or a height: at most 2^31 - 1, says the spec,
+ * which fits an int in JavaScript too *)
 let u32 (s : string) (i : int) : int =
   let byte k = Char.code s.[i + k] in
+  if byte 0 >= 0x80 then failwith "PNG: a number of 2^31 or more";
   (byte 0 lsl 24) lor (byte 1 lsl 16) lor (byte 2 lsl 8) lor byte 3
+
+(* a CRC: all 32 bits, an Int32 (see Crc32.mli) *)
+let i32 (s : string) (i : int) : int32 =
+  let byte k = Char.code s.[i + k] in
+  Int32.logor (Int32.shift_left (Int32.of_int (byte 0)) 24) (Int32.of_int ((byte 1 lsl 16) lor (byte 2 lsl 8) lor byte 3))
 
 let chunks (s : string) : (string * string) list =
   if String.length s < 8 || String.sub s 0 8 <> signature then failwith "PNG: not a PNG (bad signature)";
@@ -27,7 +35,7 @@ let chunks (s : string) : (string * string) list =
     let len = u32 s pos in
     if pos + 12 + len > String.length s then failwith "PNG: the file ends inside a chunk";
     let typ = String.sub s (pos + 4) 4 in
-    if Crc32.update 0 s ~pos:(pos + 4) ~len:(4 + len) <> u32 s (pos + 8 + len) then
+    if Crc32.update 0l s ~pos:(pos + 4) ~len:(4 + len) <> i32 s (pos + 8 + len) then
       failwith (Printf.sprintf "PNG: bad CRC in chunk %s, the file is corrupt" typ);
     let acc = (typ, String.sub s (pos + 8) len) :: acc in
     if typ = "IEND" then List.rev acc else loop (pos + 12 + len) acc
@@ -213,12 +221,16 @@ let decode (s : string) : Rgba_image.t =
 (* Writing *)
 (*****************************************************************************)
 
+(* u32 and i32 the other way *)
+let string_of_u32 (n : int) : string = String.init 4 (fun k -> Char.chr ((n lsr (8 * (3 - k))) land 0xFF))
+let string_of_i32 (v : int32) : string =
+  String.init 4 (fun k -> Char.chr (Int32.to_int (Int32.logand (Int32.shift_right_logical v (8 * (3 - k))) 0xFFl)))
+
 let chunk (b : Buffer.t) (typ : string) (data : string) : unit =
-  let u32 n = String.init 4 (fun k -> Char.chr ((n lsr (8 * (3 - k))) land 0xFF)) in
   let body = typ ^ data in
-  Buffer.add_string b (u32 (String.length data));
+  Buffer.add_string b (string_of_u32 (String.length data));
   Buffer.add_string b body;
-  Buffer.add_string b (u32 (Crc32.string body))
+  Buffer.add_string b (string_of_i32 (Crc32.string body))
 
 (* the sum of the filtered bytes read as signed, a guess at how well
  * DEFLATE will do: small differences compress *)
@@ -245,10 +257,12 @@ let encode ?(alpha = true) (img : Rgba_image.t) : string =
     Buffer.add_bytes raw filtered.(!best);
     prev := cur
   done;
-  let u32 n = String.init 4 (fun k -> Char.chr ((n lsr (8 * (3 - k))) land 0xFF)) in
   let b = Buffer.create (Buffer.length raw / 8) in
   Buffer.add_string b signature;
-  chunk b "IHDR" (u32 img.width ^ u32 img.height ^ String.make 1 '\008' ^ String.make 1 (if alpha then '\006' else '\002') ^ "\000\000\000");
+  chunk b "IHDR"
+    (string_of_u32 img.width ^ string_of_u32 img.height ^ String.make 1 '\008'
+    ^ String.make 1 (if alpha then '\006' else '\002')
+    ^ "\000\000\000");
   chunk b "IDAT" (Zlib.compress (Buffer.contents raw));
   chunk b "IEND" "";
   Buffer.contents b
