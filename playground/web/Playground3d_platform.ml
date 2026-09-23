@@ -294,7 +294,7 @@ let letterbox ~(canvas_w : int) ~(canvas_h : int) (screen : Playground.screen) :
 (* Textures *)
 (*****************************************************************************)
 (* The other backends decode their textures themselves
- * (graphics/images/Texture_decode, stb_image, blocking); here the
+ * (graphics/images/Texture_decode, blocking); here the
  * browser does it, from an <img>, which also means **asynchronously**:
  * setting img.src starts the download and returns at once. So a
  * texture goes through two steps, in two caches:
@@ -357,7 +357,7 @@ let create_texture (gl : WebGL.renderingContext Js.t) : WebGL.texture Js.t =
 (* No v-flip: from an <img>, texImage2D puts the image's top row at
  * v = 0 (UNPACK_FLIP_Y_WEBGL is false by default), the convention of
  * the playground's UVs (see Playground3d.textured_quad), like the
- * OpenGL backend's upload of stb_image's rows.
+ * OpenGL backend's upload of Texture_decode's rows.
  *
  * A complete image with no width failed to load (e.g. a 404): it stays
  * magenta. texImage2D itself can fail too, with a SecurityError, on an

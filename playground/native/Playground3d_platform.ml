@@ -84,11 +84,11 @@ let vertex_shader_source =
    }\n"
 
 (* claude: no v-flip here, on purpose. glTexImage2D's row 0 (below,
- * always stb_image's own unmodified top-to-bottom buffer) becomes
+ * always Texture_decode's own unmodified top-to-bottom buffer) becomes
  * texture coordinate v=0 -- mechanically the same "v=0 is the image's
  * first/top row" rule this project's own UV convention already uses
  * (see textured_quad's doc comment and native's sample_texture, which
- * reads stb_image's row 0 directly at v=0 too). Verified empirically
+ * reads the decoded row 0 directly at v=0 too). Verified empirically
  * against TexturedCube3d.exe's checker pattern (see plan_opengl.md's
  * verification notes) rather than assumed -- OpenGL's "textures are
  * upside down" folklore is real for some pipelines, but only when a

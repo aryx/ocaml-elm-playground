@@ -19,7 +19,6 @@ depends: [
   "logs"
   "cairo2" {>= "0.6.4"}
   "tsdl"
-  "stb_image" {>= "0.4"}
   "elm_playground" {= version}
   "elm_playground_software" {= version}
   "odoc" {with-doc}

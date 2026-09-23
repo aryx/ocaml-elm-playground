@@ -6,57 +6,37 @@
  * convert them to what they draw with (e.g., Cairo surfaces in
  * playground/native/Image_native.ml).
  *
- * claude: survey of OCaml image-decoding libraries considered here, and
- * why we ended up on stb_image:
+ * claude: the decoders are our own, pure OCaml, one library a format
+ * (png/, gif/, jpeg/, with deflate/ under PNG; see notes_images.md and
+ * plan_images_teaching.md): code to read and learn from, like the rest
+ * of graphics/, and no C library to build. The OCaml libraries
+ * considered, and why none was kept:
  *
- * - imagelib (what we used before): pure OCaml (PNG/GIF/BMP/PPM/... decoders
- *   written from scratch), so no C toolchain/system library needed, which
- *   is attractive for portability. In practice though its from-scratch GIF
- *   LZW decoder has a real correctness bug: [calc_clear_code] in
- *   src/imageGIF.ml derives the LZW "clear code" as [1 lsl (lzw_min_size-1)]
- *   instead of [1 lsl lzw_min_size], which desyncs the decoder on some
- *   perfectly valid real-world GIFs (e.g. elm-lang.org's Mario jump
- *   sprites) and raises [Image.Corrupted_image] instead of decoding them.
- *   Confirmed this is still unfixed as of the latest opam release
- *   (20221222) *and* the current upstream git master. It's the only pure-OCaml
- *   option, but "pure OCaml" isn't worth much if the decoder is wrong.
- * - stb_image (what we use now): OCaml bindings to Sean Barrett's
- *   stb_image.h, a public-domain single-header C library that's one of the
- *   most widely deployed image loaders in the game/graphics world (used by
- *   countless engines and tools), so its PNG/JPEG/GIF/BMP/... decoders are
- *   exercised by a vastly bigger and more adversarial corpus of real files
- *   than imagelib's. Decodes straight to a raw RGBA8 pixel buffer, which we
- *   convert to a Cairo surface ourselves (see [cairo_surface_of_image]
- *   in playground/native/Image_native.ml) -- no intermediate PNG round-trip needed. Verified it correctly
- *   decodes the exact GIFs that broke imagelib. Downside: the OCaml binding
- *   package itself is old and builds via a plain Makefile rather than dune,
- *   which is a bit more fragile on non-Unix platforms (Windows) than a
- *   dune-native C-stub library would be -- though [tsdl], which this native
- *   backend already depends on for SDL2 windowing, has its own known
- *   Windows issues (see playground/native/dune), so this isn't a new
- *   platform-support regression.
- * - camlimages: broader format coverage and a long track record, but it's a
- *   heavier/older-style library: C bindings to system libjpeg/libpng/giflib
- *   etc, meaning more system library dependencies to install on every
- *   platform (and in the Dockerfile/CI) versus stb_image's self-contained,
- *   vendored C source.
- * - tsdl-image (SDL2_image bindings): would be a very natural fit since we
- *   already depend on [tsdl] for the window, but it requires a system
- *   SDL2_image install (conf-sdl2-image), another moving part for
- *   Dockerfile/CI/macOS/Windows setups that stb_image avoids entirely.
- * - bimage-unix: can decode via ImageMagick or stb_image under the hood,
- *   but pulls in the whole bimage stack for what we need here; simpler to
- *   depend on stb_image directly.
+ * - imagelib: pure OCaml, but its GIF LZW decoder derives the clear
+ *   code as [1 lsl (lzw_min_size-1)] instead of [1 lsl lzw_min_size]
+ *   ([calc_clear_code] in src/imageGIF.ml, unfixed in the 20221222
+ *   release and upstream), which desyncs it on valid GIFs such as
+ *   elm-lang.org's Mario jump sprites (Lzw.mli has a test for it).
+ * - stb_image: bindings to Sean Barrett's single-header C decoder, the
+ *   game world's default, but the binding (0.5) is old, builds with a
+ *   plain Makefile, and bundles an old stb_image.h: it truncates an RGB
+ *   image asked for 4 channels, misdecodes interlaced 16-bit PNGs,
+ *   ignores a PNG's tRNS color on gray and RGB pictures (Unit_png's
+ *   PngSuite comment), and returns only a GIF's first frame.
+ * - camlimages: C bindings to the system's libjpeg, libpng, giflib:
+ *   more system libraries to install on every platform and in CI.
+ * - tsdl-image (SDL2_image): a natural fit next to tsdl, but another
+ *   system library (conf-sdl2-image) to install.
+ * - bimage-unix: decodes through ImageMagick or stb_image, and brings
+ *   the whole bimage stack.
  *)
 
 (*****************************************************************************)
 (* Decoding *)
 (*****************************************************************************)
 
-(* claude: an interleaved, row-major, top-to-bottom RGBA8 buffer: stb_image
- * decodes the file with its own channels, and Rgba.of_stb_image expands
- * them to 4 (not Stb_image.load ~channels:4, which the pinned binding
- * gets wrong for e.g. an RGB JPEG, see Rgba.mli) *)
+(* claude: an interleaved, row-major, top-to-bottom RGBA8 buffer, whatever
+ * the file's channels (see Rgba_image.mli) *)
 type image = Rgba_image.t
 
 let read_file (file : string) : string =
@@ -68,21 +48,13 @@ let read_file (file : string) : string =
   Bytes.unsafe_to_string buf
 
 (* claude: the decoder is chosen by the file's first bytes, never by its
- * name (see notes_images.md section 1): our own for PNG (Png.mli), GIF
- * (Gif.mli) and JPEG (Jpeg.mli), stb_image for the others *)
+ * name (see notes_images.md section 1) *)
 let decode_string (s : string) : image =
   let starts_with magic = String.length s >= String.length magic && String.sub s 0 (String.length magic) = magic in
   if starts_with Png.signature then Png.decode s
   else if starts_with "GIF8" then Gif.decode s
   else if starts_with "\xFF\xD8\xFF" then Jpeg.decode s
-  else begin
-    let buf = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout
-        (String.length s) in
-    String.iteri (fun i c -> buf.{i} <- Char.code c) s;
-    match Stb_image.decode buf with
-    | Ok img -> Rgba.of_stb_image img
-    | Error (`Msg msg) -> failwith msg
-  end
+  else failwith "not a PNG, a GIF or a JPEG: an image format not read here"
 
 (* claude: url -> local file (downloaded, for a URL), so the "Animated
  * GIFs" section below can read the file again to extract all the

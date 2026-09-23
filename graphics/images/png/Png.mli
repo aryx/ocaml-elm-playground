@@ -75,7 +75,7 @@
    Read here: every color type, bit depth and filter, Adam7, tRNS; each
    chunk's CRC checked. 16-bit channels keep their high byte; 1-, 2-
    and 4-bit gray is scaled to 0..255 (2-bit 3 is 255). Ignored, as
-   stb_image ignores them: color management (gAMA, cHRM, sRGB, iCCP),
+   most decoders do: color management (gAMA, cHRM, sRGB, iCCP),
    the background (bKGD), text, APNG's extra frames (the default image
    is shown).
 

@@ -6,8 +6,8 @@
 type image = Rgba_image.t
 
 (* [decode_string s]: the picture in [s], the bytes of an image file,
- * its format told by its first bytes (PNG, GIF, JPEG, ...). Raises
- * Failure if it can't be decoded. *)
+ * its format told by its first bytes: PNG, GIF or JPEG. Raises Failure
+ * if it can't be decoded. *)
 val decode_string : string -> image
 
 (* [read_file file]: the bytes of [file] *)

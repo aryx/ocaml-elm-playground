@@ -177,18 +177,17 @@ let test_corrupt () =
          | exception Failure msg -> print_endline (name ^ ": " ^ msg))
 
 (* What the games draw: the repository's PNGs (see graphics/tests/dune's
- * deps) decode to the pixels stb_image gave them so far *)
+ * deps), their size and the CRC-32 of their pixels -- the pixels
+ * stb_image, which decoded them before Png, gave them too *)
 let test_ours () =
-  [ "../../examples/checker.png"; "../../games/adventure/tomb.png"; "../../games/fps/minecraft.png" ]
-  |> List.iter (fun file ->
-         let ours = Png.decode (read_file file) in
-         let theirs =
-           match Stb_image.load file with
-           | Ok img -> Rgba.of_stb_image img
-           | Error (`Msg m) -> Alcotest.failf "%s: stb_image fails: %s" file m
-         in
-         Alcotest.(check (pair int int)) (file ^ ": size") (theirs.width, theirs.height) (ours.width, ours.height);
-         if ours.rgba <> theirs.rgba then Alcotest.failf "%s: not the same pixels" file)
+  [ ("../../examples/checker.png", 64, 64, 0x268573CE);
+    ("../../games/adventure/tomb.png", 128, 128, 0x60AE66E3);
+    ("../../games/fps/minecraft.png", 256, 256, 0xF95C0E51) ]
+  |> List.iter (fun (file, w, h, crc) ->
+         let img = Png.decode (read_file file) in
+         let pixels = String.init (Bigarray.Array1.dim img.rgba) (fun i -> Char.chr img.rgba.{i}) in
+         Alcotest.(check (pair int int)) (file ^ ": size") (w, h) (img.width, img.height);
+         Alcotest.(check int) (file ^ ": CRC-32 of the pixels") crc (Crc32.string pixels))
 
 let tests =
   Testo.categorize "Png"
@@ -197,5 +196,5 @@ let tests =
       t "chunks" test_chunks;
       t "PngSuite, the pixels pypng reads" test_pngsuite;
       t "PngSuite's corrupt files, refused" test_corrupt;
-      t "our textures, the pixels stb_image gave" test_ours;
+      t "our textures, the pixels the games draw" test_ours;
     ]

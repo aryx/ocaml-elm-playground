@@ -354,6 +354,15 @@ itself is small: the consumers already take a Bigarray of RGBA bytes.
   repository's programs uses one); a baseline file with one scan per
   component is decoded by the same code as a gray one's scan, but no
   fixture has one (PIL can't write it).
+- **Phase 5: done.** stb_image is gone: `Rgba` and `Unit_rgba`
+  deleted, `Image_decode.decode_string` refuses what isn't PNG, GIF or
+  JPEG (BMP, TGA, PSD, ...: stb_image read them, none of the
+  repository's programs uses them), no `stb_image` in any dune file,
+  in `dune-project` or the `.opam` files. `Unit_png` checks the
+  repository's three PNGs against the CRC-32 of the pixels stb_image
+  gave them (equal, the phase 2 test showed). The survey at the top of
+  `Image_decode.ml` now says why our own decoders, and why not each
+  library considered, stb_image's bugs included. `CLAUDE.md` updated.
 
 ## Demos: seeing the compression
 

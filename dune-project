@@ -79,11 +79,6 @@
     logs
     (cairo2 (>= "0.6.4"))
     tsdl
-    ; 0.1's `result` type is [ `Ok of 'a | `Error of string ], incompatible
-    ; with the Ok/Error (`Msg _) pattern used since; 0.3 introduced the
-    ; current API but Stb_image.image (used to compose GIF frames) was only
-    ; added in 0.4.
-    (stb_image (>= "0.4"))
     (elm_playground (= :version))
     ; claude: for playground/native_common/ and graphics/images/, private
     ; libraries installed as part of it (see native_common/dune for why)
@@ -109,7 +104,6 @@
     (ocaml (>= "4.08.0"))
     logs
     tsdl
-    (stb_image (>= "0.4"))
     ocurl
     (elm_playground (= :version))
     (testo :with-test)

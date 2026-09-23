@@ -1,6 +1,6 @@
 ; claude: image files: getting them from the disk or the network
-; (Download), decoding them (PNG, GIF and JPEG with our own png/, gif/
-; and jpeg/, the rarer formats via stb_image) and
+; (Download), decoding them (PNG, GIF and JPEG, by our own png/, gif/
+; and jpeg/) and
 ; caching them, down to plain pixel buffers, as 2D images with their GIF
 ; animation (Image_decode) or as 3D textures (Texture_decode); drawing
 ; them is up to the user (Cairo surfaces in playground/native/,
@@ -20,7 +20,6 @@
    graphics_png ; our own PNG reader
    graphics_gif ; our own GIF reader
    graphics_jpeg ; our own JPEG reader
-   stb_image
    curl
  )
 )

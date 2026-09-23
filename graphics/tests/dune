@@ -22,7 +22,6 @@
    graphics_jpeg
    graphics_xpm
    graphics_gpu
-   stb_image ; Unit_rgba loads a real RGB PNG; Unit_png compares our PNGs
  )
  (deps
    %{project_root}/examples/checker.png
