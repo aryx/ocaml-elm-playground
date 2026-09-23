@@ -407,6 +407,19 @@ Juice.view m.fx world   (* in view: the particles drawn, shaken, flashed *)
 clock, the effects that are functions of it, and the effects that
 last.
 
+**Juice written by hand before.** `TinyStreetFighter` had its hitstop
+(a counter) and its sparks (a list of stars) before this library, and
+`TinyDefender` its smart bomb's flash (a counter, a white rectangle).
+They keep them: that is the simple version, and the default. The flag
+`juice=engine` does the same moments with `Juice` instead -- `freeze`
+for the hitstop, a burst of `sparks`, `flash` -- plus a shake, and
+`juice=off` does neither (`Juice.mode ~default:Hand flags` reads it).
+The engine's code is a section of its own in each game, as
+`physics=engine` and `ai=engine` are in other games. Since the
+engine's freeze lasts the same 6 frames as the hand's counter, the
+same keys play the same fight in both, and a golden frame of each
+catches the same hit.
+
 ## Glossary
 
 - **juice**: the effects that change how a game feels and not what it

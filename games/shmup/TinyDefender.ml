@@ -67,7 +67,11 @@
  * and nothing else. Not Physics for the rest: a lander is five
  * numbers, and the arcade's enemies move at their speed or not at all.
  * Not Tilemap: the ground is [ground]. Not Random: the waves are laid
- * out from the wave number, so a run replays exactly.
+ * out from the wave number, so a run replays exactly. Juice, with the
+ * flag juice=engine: the smart bomb's flash is written by hand here (a
+ * counter, a white rectangle: the default), and juice=engine does it
+ * with Juice.flash instead, and knocks the screen too; juice=off, no
+ * flash (see the juice section).
  *
  * Left as exercises: the rest of the zoo (baiters when you dawdle,
  * bombers and their mines, pods that burst into swarmers);
@@ -166,6 +170,7 @@ type play = {
   planet : bool;
   (* frames of the smart bomb's flash *)
   flash : int;
+  juice : Juice.t; (* the effects of juice=engine *)
 }
 
 type scene = Title | Playing of play | Over of int (* score *)
@@ -205,6 +210,7 @@ let start () : play =
     dead = 0;
     planet = true;
     flash = 0;
+    juice = Juice.none ~seed:1;
   }
 
 let initial_model : model = Scene2d.start Title
@@ -272,6 +278,20 @@ let step_enemy (p : play) (e : enemy) : enemy =
 (* a lander that carries him this high has him: the human is gone for
  * good, and the lander is a mutant from now on *)
 let top = ceiling
+
+(*****************************************************************************)
+(* The juice (juice=hand, juice=engine, juice=off) *)
+(*****************************************************************************)
+
+(* The smart bomb's flash, a counter in [update_play] and a white
+ * rectangle in [view_play], is the juice written by hand: juice=hand,
+ * the default. juice=engine says the same moment to the Juice module
+ * -- the flash, and the screen knocked hard -- and [view_play] draws it
+ * around the world, under the scanner and the score. juice=off:
+ * neither. *)
+let mode (computer : computer) : Juice.mode = Juice.mode ~default:Juice.Hand computer.flags
+
+let engine_bomb (juice : Juice.t) : Juice.t = juice |> Juice.flash white 10 |> Juice.shake 0.8
 
 (*****************************************************************************)
 (* Update *)
@@ -402,7 +422,8 @@ let update_play (computer : computer) (scenes : model) (p : play) : play =
     bombs = (if bombing then p.bombs -.. 1 else p.bombs);
     dead = (if lost then 100 else max 0 (p.dead -.. 1));
     planet;
-    flash = (if bombing then 10 else max 0 (p.flash -.. 1));
+    flash = (if bombing && mode computer = Juice.Hand then 10 else max 0 (p.flash -.. 1));
+    juice = (let juice = Juice.step computer p.juice in if bombing && mode computer = Juice.Engine then engine_bomb juice else juice);
   }
 
 let update (computer : computer) (model : model) : model =
@@ -479,7 +500,7 @@ let view_play (computer : computer) (p : play) : shape list =
     @ List.map (fun (s : Shots.t) -> at s.x s.y (circle (rgb 255 150 60) 4.)) p.bullets
     @ (if p.dead > 0 then [] else [ at p.ship.b.x p.ship.b.y (ship_shape p.ship) ])
   in
-  [ rectangle sky_color screen.width screen.height; Camera2d.view cam world ]
+  (rectangle sky_color screen.width screen.height :: Juice.view p.juice [ Camera2d.view cam world ])
   @ (if p.flash > 0 then [ rectangle white screen.width screen.height |> fade (float_of_int p.flash / 20.) ] else [])
   @ scanner p
   @ [ text white 2.2

@@ -24,14 +24,17 @@ type t = {
   (* the flag juice=off, seen at the last step *)
   off : bool;
   trauma : number;
+  (* the frames left to stand still, and whether this frame does: seen
+   * at [step], before it counts down, so that freeze n is n frames *)
   freeze : int;
+  frozen : bool;
   (* the color, the frames left, the frames it lasts *)
   flash : (color * int * int) option;
   particles : color Emitter.t;
 }
 
 let none ~(seed : int) : t =
-  { seed; frames = 0; off = false; trauma = 0.; freeze = 0; flash = None; particles = Emitter.empty ~seed () }
+  { seed; frames = 0; off = false; trauma = 0.; freeze = 0; frozen = false; flash = None; particles = Emitter.empty ~seed () }
 
 let dt = 1. /. 60.
 
@@ -46,11 +49,17 @@ let step (computer : computer) (fx : t) : t =
       off = false;
       trauma = Trauma.decay ~dt fx.trauma;
       freeze = max 0 (fx.freeze - 1);
+      frozen = fx.freeze > 0;
       flash = (match fx.flash with Some (c, left, total) when left > 1 -> Some (c, left - 1, total) | _ -> None);
       particles = Emitter.step ~dt fx.particles;
     }
 
 let now (fx : t) : time = Time (clock fx)
+
+type mode = Off | Hand | Engine
+
+let mode ~(default : mode) (flags : flags) : mode =
+  match List.assoc_opt "juice" flags with Some "off" -> Off | Some "hand" -> Hand | Some "engine" -> Engine | _ -> default
 
 (*****************************************************************************)
 (* Effects as functions of time *)
@@ -189,7 +198,7 @@ let toward (target : number) (fx : t) (f : follow) : follow =
 
 let value (f : follow) : number = f.spring.value
 
-let frozen (fx : t) : bool = fx.freeze > 0
+let frozen (fx : t) : bool = fx.frozen
 
 let on (fx : t) : bool = not fx.off
 
@@ -199,7 +208,7 @@ type burst = { recipe : Emitter.recipe; palette : color list }
 let sparks : burst =
   {
     recipe =
-      { count = 16; speed = (150., 450.); direction = 90.; spread = 360.; life = (0.15, 0.45); size = (2., 5.); spin = 0.;
+      { count = 24; speed = (250., 650.); direction = 90.; spread = 360.; life = (0.2, 0.45); size = (5., 10.); spin = 0.;
         gravity = -300.; drag = 3. };
     palette = [ white; yellow; orange ];
   }

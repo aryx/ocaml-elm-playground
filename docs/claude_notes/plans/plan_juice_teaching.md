@@ -578,6 +578,38 @@ start; `Juice.mli`'s header lists which do.
     `JuiceBreakout` example is not needed. Left: the retrofits of
     `TinyStreetFighter` (hitstop, sparks) and `TinyDefender` (the
     flash), and `Juice3d`, if a 3D game asks.
+- 2026-09-23, phase 6 DONE: the retrofits, `juice=hand|engine|off`.
+  - `Juice.mode ~default flags` (`Off | Hand | Engine`), as the plan's
+    flag section had it.
+  - A bug found on the way: `freeze n` stood a game still for n − 1
+    frames, not n -- the game steps the effects and then asks `frozen`,
+    and `step` had already counted down. `step` now records whether
+    this frame is frozen before counting (`frozen` a field); the unit
+    test, which had encoded the wrong count ("not frozen after 2
+    frames" for `freeze 2`), was fixed with it.
+  - `TinyStreetFighter`: `juice=hand` (default) keeps its counter and
+    stars; `juice=engine` leaves them empty and does `Juice.freeze 6`,
+    a `sparks` burst at each hit and a 0.35 shake, and at the round's
+    end a 0.9 shake and a white flash; `juice=off`, neither (and so no
+    pauses). The engine's code in a section of its own
+    (`engine_hits`, `engine_round_over`); its field is `juice`, not
+    `fx`, `fireball` having an `fx` already. The 3 goldens passed
+    unchanged (hand). The `sparks` preset, first used here, was too
+    small and faint on the evening sky: 16 particles of 2–5 px became
+    24 of 5–10 px, faster.
+  - `TinyDefender`: `juice=hand` keeps the bomb's white rectangle;
+    `juice=engine`: `Juice.flash white 10` and a 0.8 shake, around the
+    camera's view, under the scanner and the score. No debris for the
+    bombed landers: the shake is in screen space and debris would be in
+    the scrolling world, and `Juice.view` does both in one place; left
+    out. The 3 goldens passed unchanged.
+  - `Testutil_golden`: a fourth kind of scene, `scripted_flagged` (a
+    script and flags, which the runner already passed together; only
+    the lists could not say it), for the two new goldens,
+    `TinyStreetFighter_engine.png` (frame 136, the kick's sparks, the
+    same hit as the hand's "fight") and `TinyDefender_engine.png`
+    (frame 42, a bomb 2 frames earlier).
+  - `notes_juice.md` §8: the three modes.
 
 ## Verification
 

@@ -46,6 +46,12 @@ type scripted = string * string * int * string
  * golden/<basename>_<label>.png, as a scripted scene's is. *)
 type flagged = string * string * int * string list
 
+(* claude: a scene both played and flagged: an executable, a label, the
+ * frame, the -script and the flags, e.g. a juiced game's hit with
+ * juice=engine (Juice.mode). Its golden frame is
+ * golden/<basename>_<label>.png, as the others'. *)
+type scripted_flagged = string * string * int * string * string list
+
 (* Scenes deep into a game (more than 100 frames) cost seconds of CPU
    each, and they all run at once: those are skipped unless the
    environment variable GOLDEN is "all". "make test" then keeps every
@@ -56,9 +62,16 @@ type flagged = string * string * int * string list
    change that only moves or renames things, where the build is the
    check that matters. *)
 
-(* [tests ~dir ~approve ?scripted ?flagged scenes]: a test per scene and
- * per scripted and flagged scene, for a test running in
- * _build/default/<dir>, with its golden frames in <dir>/golden/ and its
- * Makefile target [approve] (named in the failure messages) *)
+(* [tests ~dir ~approve ?scripted ?flagged ?scripted_flagged scenes]: a
+ * test per scene and per scripted, flagged, and scripted and flagged
+ * scene, for a test running in _build/default/<dir>, with its golden
+ * frames in <dir>/golden/ and its Makefile target [approve] (named in
+ * the failure messages) *)
 val tests :
-  dir:string -> approve:string -> ?scripted:scripted list -> ?flagged:flagged list -> scene list -> Testo.t list
+  dir:string ->
+  approve:string ->
+  ?scripted:scripted list ->
+  ?flagged:flagged list ->
+  ?scripted_flagged:scripted_flagged list ->
+  scene list ->
+  Testo.t list

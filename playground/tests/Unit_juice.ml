@@ -93,11 +93,13 @@ let tests =
           let world = [ circle red 10. ] in
           (* shaken, and the flash on top *)
           Alcotest.(check int) "two shapes" 2 (List.length (Juice.view (Juice.step c fx) world));
+          (* freeze 2: the next two frames stand still, not one *)
           let fx = Juice.step c fx in
-          Alcotest.(check bool) "frozen, 1 frame left" true (Juice.frozen fx);
+          Alcotest.(check bool) "the first frame: frozen" true (Juice.frozen fx);
           let fx = Juice.step c fx in
-          Alcotest.(check bool) "not frozen after 2 frames" false (Juice.frozen fx);
+          Alcotest.(check bool) "the second: frozen" true (Juice.frozen fx);
           let fx = Juice.step c fx in
+          Alcotest.(check bool) "the third: moving again" false (Juice.frozen fx);
           (* 3 frames: the flash gone; 0.5 s of trauma not yet *)
           (match Juice.view fx world with
           | [ s ] -> Alcotest.(check bool) "still shaken" true (s.form <> (List.hd world).form)

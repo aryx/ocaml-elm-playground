@@ -15,6 +15,7 @@ let t = Testo.create
 type scene = string * string * int
 type scripted = string * string * int * string
 type flagged = string * string * int * string list
+type scripted_flagged = string * string * int * string * string list
 
 (* Rendering frame n means playing the game for n frames, so a scene
  * deep into a game costs real seconds of CPU, and dune runs them all at
@@ -171,8 +172,8 @@ let test_scene ~dir ~approve ~name ~exe ~keys ~script ?(flags = []) ~frame () =
       Alcotest.failf "%s: %d pixels differ from the golden frame, the first at (%d, %d); the new frame is %s ('make %s')"
         name n x y (shown ~dir actual_file) approve
 
-let tests ~dir ~approve ?(scripted : scripted list = []) ?(flagged : flagged list = []) (scenes : scene list) :
-    Testo.t list =
+let tests ~dir ~approve ?(scripted : scripted list = []) ?(flagged : flagged list = [])
+    ?(scripted_flagged : scripted_flagged list = []) (scenes : scene list) : Testo.t list =
   let one ~frame title body =
     if run_none then t ~skipped:skip_none title body
     else if frame > heavy_frames && not run_heavy then t ~skipped:skip_heavy title body
@@ -201,4 +202,14 @@ let tests ~dir ~approve ?(scripted : scripted list = []) ?(flagged : flagged lis
              (Filename.basename exe ^ " " ^ String.concat " " flags)
              (test_scene ~dir ~approve ~name ~exe ~keys:"" ~script:None ~flags ~frame))
   in
-  Testo.categorize "golden frames" (plain @ with_script @ with_flags)
+  (* claude: both a script and flags, e.g. a juiced game's hit with
+   * juice=engine *)
+  let with_both =
+    scripted_flagged
+    |> List.map (fun (exe, label, frame, script, flags) ->
+           let name = Filename.basename exe ^ "_" ^ label in
+           one ~frame
+             (Filename.basename exe ^ " -script " ^ label ^ " " ^ String.concat " " flags)
+             (test_scene ~dir ~approve ~name ~exe ~keys:"" ~script:(Some script) ~flags ~frame))
+  in
+  Testo.categorize "golden frames" (plain @ with_script @ with_flags @ with_both)

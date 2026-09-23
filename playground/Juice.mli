@@ -60,6 +60,16 @@ val step : computer -> t -> t
 (* [now fx]: the effects' clock, to remember when something happened *)
 val now : t -> time
 
+(* A game that had juice written by hand before this module (hitstop
+ * counters, sparks as a list of its own) keeps it, as the simple
+ * version, and gets this module's as the other: the flag juice=hand or
+ * juice=engine chooses, juice=off neither. [mode ~default flags]: which
+ * one, [default] when the flag is absent or is none of the three --
+ * [Hand] for such a game, whose original look stays its default. *)
+type mode = Off | Hand | Engine
+
+val mode : default:mode -> flags -> mode
+
 (*****************************************************************************)
 (* {1 Effects as functions of time} *)
 (*****************************************************************************)

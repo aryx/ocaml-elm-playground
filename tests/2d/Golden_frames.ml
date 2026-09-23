@@ -1253,4 +1253,16 @@ let flagged : Testutil_golden.flagged list =
     ("examples/software/JuiceSquash", "off", 75, [ "juice=off" ]);
   ]
 
-let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged scenes
+(* claude: played and flagged: the games whose juice was written by
+ * hand, with juice=engine (Juice.mode) at the moment of a hit *)
+let scripted_flagged : Testutil_golden.scripted_flagged list =
+  [
+    (* the computer's kick landing: sparks bursting, the screen knocked
+     * (the same hit as "fight"'s, the same 6 frames of hitstop) *)
+    ("games/fighting/software/TinyStreetFighter", "engine", 136, "space:1,d:95-120,f:122,g:135", [ "juice=engine" ]);
+    (* a smart bomb, 2 frames after: the flash, and the world knocked
+     * under the still scanner *)
+    ("games/shmup/software/TinyDefender", "engine", 42, "space:1,right:5-60,b:40", [ "juice=engine" ]);
+  ]
+
+let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged ~scripted_flagged scenes

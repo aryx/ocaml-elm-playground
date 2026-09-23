@@ -48,8 +48,16 @@
  *    frames. A punch is felt more than it's seen; the pause says it
  *    connected. (Every fighting game does it; so do action games since.)
  *
+ * The hitstop and the sparks (stars of light at each hit) are written by
+ * hand here, a counter and a list -- the simple version, and the
+ * default. The flag juice=engine does the same moments with the Juice
+ * module instead (Juice.freeze, a burst of sparks), plus a shake at each
+ * hit and a white flash at the knockout; juice=off does neither, and
+ * the fight has no pauses (see the juice section).
+ *
  * What it uses: the brawler kit (Hitbox, Frame_data, Stickman: the
- * fighters are stick figures, their moves key poses), Scene2d. Not
+ * fighters are stick figures, their moves key poses), Scene2d, Juice
+ * (with juice=engine). Not
  * Physics: a jump is the same arc every time, as in the arcade, and the
  * fighters push each other apart by a rule ([separate]), not by forces.
  *
@@ -128,6 +136,7 @@ type game = {
   plan : input list; (* the computer's next inputs, a fireball's motion *)
   seed : int;
   frames : int;
+  juice : Juice.t; (* the effects of juice=engine *)
 }
 
 type scene = Title | Fight of game | Winner of game
@@ -144,7 +153,7 @@ let new_round (g : game) : game =
   { g with p1 = new_fighter (-200.) 1. g.p1.wins; p2 = new_fighter 200. (-1.) g.p2.wins; fireballs = []; sparks = []; hitstop = 0; timer = 60 *.. 60; round = g.round +.. 1; over = 0 }
 
 let new_game (two_players : bool) : game =
-  new_round { p1 = new_fighter 0. 1. 0; p2 = new_fighter 0. (-1.) 0; fireballs = []; sparks = []; hitstop = 0; timer = 0; round = 0; over = 0; two_players; plan = []; seed = 7; frames = 0 }
+  new_round { p1 = new_fighter 0. 1. 0; p2 = new_fighter 0. (-1.) 0; fireballs = []; sparks = []; hitstop = 0; timer = 0; round = 0; over = 0; two_players; plan = []; seed = 7; frames = 0; juice = Juice.none ~seed:7 }
 
 let initial_model : model = Scene2d.start Title
 
@@ -276,14 +285,36 @@ let computer_input (g : game) (me : fighter) (other : fighter) : input * input l
       else (just none, [], seed)
 
 (*****************************************************************************)
+(* The juice (juice=hand, juice=engine, juice=off) *)
+(*****************************************************************************)
+
+(* The hitstop counter and the sparks list below, in [update_fight] and
+ * [view_fight], are the juice written by hand: juice=hand, the default.
+ * juice=engine leaves them empty and says the same moments to the Juice
+ * module here -- the fight frozen, sparks flying where the hit landed,
+ * the screen knocked -- and [view] draws them around the fight.
+ * juice=off: neither. *)
+let mode (computer : computer) : Juice.mode = Juice.mode ~default:Juice.Hand computer.flags
+
+(* the hits of a frame, the engine's way *)
+let engine_hits (frames : int) (hits : (number * number) list) (juice : Juice.t) : Juice.t =
+  if hits = [] then juice
+  else List.fold_left (fun juice at -> Juice.burst ~at Juice.sparks juice) (juice |> Juice.freeze frames |> Juice.shake 0.35) hits
+
+(* the knockout, or the time out *)
+let engine_round_over (juice : Juice.t) : Juice.t = juice |> Juice.shake 0.9 |> Juice.flash white 20
+
+(*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
 
 let hitstop = 6
 
 let update_fight (computer : computer) (scenes : model) (g : game) : game =
-  let g = { g with frames = g.frames +.. 1; sparks = List.filter_map (fun (x, y, n) -> if n < 12 then Some (x, y, n +.. 1) else None) g.sparks } in
+  let mode = mode computer in
+  let g = { g with frames = g.frames +.. 1; sparks = List.filter_map (fun (x, y, n) -> if n < 12 then Some (x, y, n +.. 1) else None) g.sparks; juice = Juice.step computer g.juice } in
   if g.hitstop > 0 then { g with hitstop = g.hitstop -.. 1 }
+  else if Juice.frozen g.juice then g
   else if g.over > 0 then { g with over = g.over +.. 1 }
   else
     let k = computer.keyboard in
@@ -317,12 +348,17 @@ let update_fight (computer : computer) (scenes : model) (g : game) : game =
     let p1, p2 = separate (face p1 p2) (face p2 p1) in
     let sparks = List.filter_map (fun s -> Option.map (fun (x, y) -> (x, floor_y + y, 0)) s) [ s1; s2; s3; s4 ] in
     if sparks <> [] then Audio.play Audio.hit;
-    let g = { g with p1; p2; fireballs; sparks = sparks @ g.sparks; hitstop = (if sparks <> [] then hitstop else 0); timer = g.timer -.. 1 } in
+    let hand = mode = Juice.Hand in
+    let juice = if mode = Juice.Engine then engine_hits hitstop (List.map (fun (x, y, _) -> (x, y)) sparks) g.juice else g.juice in
+    let g =
+      { g with p1; p2; fireballs; sparks = (if hand then sparks else []) @ g.sparks; hitstop = (if hand && sparks <> [] then hitstop else 0);
+        timer = g.timer -.. 1; juice }
+    in
     (* the round's end: a knockout, or the time out *)
     if g.p1.hp = 0 || g.p2.hp = 0 || g.timer <= 0 then begin
       Audio.play Audio.explosion;
       let p1_wins = g.p1.hp > g.p2.hp and p2_wins = g.p2.hp > g.p1.hp in
-      { g with over = 1; p1 = { g.p1 with wins = g.p1.wins +.. (if p1_wins then 1 else 0); state = (if g.p1.hp = 0 then Down else g.p1.state) };
+      { g with over = 1; juice = (if mode = Juice.Engine then engine_round_over g.juice else g.juice); p1 = { g.p1 with wins = g.p1.wins +.. (if p1_wins then 1 else 0); state = (if g.p1.hp = 0 then Down else g.p1.state) };
         p2 = { g.p2 with wins = g.p2.wins +.. (if p2_wins then 1 else 0); state = (if g.p2.hp = 0 then Down else g.p2.state) } }
     end
     else g
@@ -427,9 +463,9 @@ let view (computer : computer) (s : model) : shape list =
           text white 2.2 "down, down-forward, forward + punch: a fireball" |> move_y 35.;
           text white 2.2 "2 players: the arrows, k punch, l kick" |> move_y 0. ]
       @ Scene2d.blink 1. s [ text yellow 3. "SPACE OR 1: VS COMPUTER   2: TWO PLAYERS" |> move_y (-60.) ]
-  | Fight g -> view_fight computer g
+  | Fight g -> Juice.view g.juice (view_fight computer g)
   | Winner g ->
-      view_fight computer g @ [ text (rgb 240 200 40) 6. (if g.p1.wins >= 2 then "WHITE WINS" else if g.two_players then "RED WINS" else "YOU LOSE") |> move_y 100. ]
+      Juice.view g.juice (view_fight computer g) @ [ text (rgb 240 200 40) 6. (if g.p1.wins >= 2 then "WHITE WINS" else if g.two_players then "RED WINS" else "YOU LOSE") |> move_y 100. ]
       @ Scene2d.blink 1. s [ text yellow 3. "PRESS SPACE" |> move_y 20. ])
 
 let app = game view update initial_model
