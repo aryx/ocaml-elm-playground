@@ -184,9 +184,9 @@ let test_corrupt () =
  * deps), their size and the CRC-32 of their pixels -- the pixels
  * stb_image, which decoded them before Png, gave them too *)
 let test_ours () =
-  [ ("../../examples/checker.png", 64, 64, 0x268573CE);
-    ("../../games/adventure/tomb.png", 128, 128, 0x60AE66E3);
-    ("../../games/fps/minecraft.png", 256, 256, 0xF95C0E51) ]
+  [ ("../../../examples/checker.png", 64, 64, 0x268573CE);
+    ("../../../games/adventure/tomb.png", 128, 128, 0x60AE66E3);
+    ("../../../games/fps/minecraft.png", 256, 256, 0xF95C0E51) ]
   |> List.iter (fun (file, w, h, crc) ->
          let img = Png.decode (read_file file) in
          let pixels = String.init (Bigarray.Array1.dim img.rgba) (fun i -> Char.chr img.rgba.{i}) in

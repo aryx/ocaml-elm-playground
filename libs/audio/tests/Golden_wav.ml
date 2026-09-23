@@ -17,7 +17,7 @@ let check (name : string) (samples : Signal.t) () =
   (* the tests run in parallel: another one may have just made it *)
   (try Sys.mkdir "actual" 0o755 with Sys_error _ -> ());
   Wav.write (Filename.concat "actual" file) samples;
-  let hint = Printf.sprintf "the new sound is _build/default/audio/tests/actual/%s ('make approve-golden-audio' after listening)" file in
+  let hint = Printf.sprintf "the new sound is _build/default/libs/audio/tests/actual/%s ('make approve-golden-audio' after listening)" file in
   match Wav.read (Filename.concat "golden" file) with
   | exception Sys_error _ -> Alcotest.failf "no golden WAV golden/%s yet; %s" file hint
   | Error e -> Alcotest.failf "golden/%s: %s" file e

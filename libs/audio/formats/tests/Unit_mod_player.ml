@@ -224,7 +224,7 @@ let demo : Mod.song =
 let golden reading name () =
   let p = Mod_player.create demo in
   Mod_player.set_reading p reading;
-  Testutil_wav.check_stereo ~dir:"audio/formats/tests" name (play p (Signal.samples 4.))
+  Testutil_wav.check_stereo ~dir:"libs/audio/formats/tests" name (play p (Signal.samples 4.))
 
 let tests =
   Testo.categorize "MOD player"

@@ -36,7 +36,7 @@
    %{project_root}/examples/demo_picture.gif
    %{project_root}/examples/demo_picture.jpg
    %{project_root}/games/platform/mario_stand.xpm
-   %{project_root}/graphics/videos/tests/clips/ball_and_square.m1v
+   %{project_root}/libs/graphics/videos/tests/clips/ball_and_square.m1v
    %{project_root}/scripts/build/files_to_string_ml.ml)
  (action
   (with-stdout-to
@@ -44,7 +44,7 @@
    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml
      %{project_root}/examples/demo_picture.png %{project_root}/examples/demo_picture.gif
      %{project_root}/examples/demo_picture.jpg %{project_root}/games/platform/mario_stand.xpm
-     %{project_root}/graphics/videos/tests/clips/ball_and_square.m1v))))
+     %{project_root}/libs/graphics/videos/tests/clips/ball_and_square.m1v))))
 
 (executables
   (names TinyMediaPlayer)

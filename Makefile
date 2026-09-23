@@ -87,16 +87,16 @@ approve-golden3d:
 	chmod 644 tests/3d/golden/*.png
 # the same for audio/'s golden WAVs (listen to them first)
 approve-golden-audio:
-	cp _build/default/audio/tests/actual/*.wav audio/tests/golden/
-	chmod 644 audio/tests/golden/*.wav
+	cp _build/default/libs/audio/tests/actual/*.wav libs/audio/tests/golden/
+	chmod 644 libs/audio/tests/golden/*.wav
 # and the music applications' voices' (apps/music/tests)
 approve-golden-music:
 	cp _build/default/apps/music/tests/actual/*.wav apps/music/tests/golden/
 	chmod 644 apps/music/tests/golden/*.wav
 # and the formats' players' (audio/formats/tests)
 approve-golden-formats:
-	cp _build/default/audio/formats/tests/actual/*.wav audio/formats/tests/golden/
-	chmod 644 audio/formats/tests/golden/*.wav
+	cp _build/default/libs/audio/formats/tests/actual/*.wav libs/audio/formats/tests/golden/
+	chmod 644 libs/audio/formats/tests/golden/*.wav
 
 # This will fail if the .opam isn't up-to-date (in git),
 # and dune isn't installed yet. You can always install dune

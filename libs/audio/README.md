@@ -54,5 +54,5 @@ might use in `synthesis/`, one that only makes sense live in
 
 `audio/tests/` (`make test`): each `.mli`'s worked example measured,
 and golden WAVs compared sample by sample (`make approve-golden-audio`
-after listening to `_build/default/audio/tests/actual/*.wav`); the
+after listening to `_build/default/libs/audio/tests/actual/*.wav`); the
 formats' in `formats/tests/`.
