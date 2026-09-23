@@ -27,7 +27,7 @@
 )
 
 ; claude: minecraft.png, embedded in TinyMinecraft as base64 (see
-; Playground3d.embedded_texture and graphics/images/Base64.mli), so it
+; Playground3d.embedded_texture and core/'s Base64.mli), so it
 ; runs from any directory and its texture comes along to the browser --
 ; the same trick graphics/font/dune uses for the Hershey font, through a
 ; script since a .png is not text.

@@ -141,7 +141,7 @@ val sphere : Playground.color -> number -> shape3d
 
 (** [embedded_texture ~name ~base64] registers an image the program
     carries with it -- the bytes of a .png, base64-encoded (see
-    [graphics/images/Base64.mli]), usually generated from the file at
+    [Base64.mli], in core/), usually generated from the file at
     build time by a dune rule, the way [graphics/font/dune] embeds the
     Hershey font and [games/fps/dune] TinyMinecraft's texture -- and
     returns [name], to be used as the [src] of {!textured_quad} and

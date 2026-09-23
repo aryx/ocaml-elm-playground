@@ -810,6 +810,53 @@ let fetch_web (source : string) (k : string option -> unit) : unit =
   Ojs.set_prop_ascii xhr "onerror" (Ojs.fun_to_js 1 (fun _ -> k None));
   ignore (Ojs.call xhr "send" [||])
 
+(* claude: Multiplayer's net=relay in a browser: its own WebSocket
+ * (what networking/unix/Relay_client.ml does by hand natively), the
+ * packets as binary messages (ArrayBuffers); the relay's first one, 02
+ * then a number, says which player this is. A web page has no UDP:
+ * net=host and net=join are for native programs. *)
+let connect_web (_caps : Cap.network) (role : Transport.role) : (Transport.t, string) result =
+  match role with
+  | Host _ | Join _ -> Error "a browser has no UDP: use net=relay"
+  | Relay { host; port } -> (
+      let url = Printf.sprintf "ws://%s:%d/" host port in
+      match Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "WebSocket") [| Ojs.string_to_js url |] with
+      | exception _ -> Error ("can't open " ^ url)
+      | ws ->
+          Ojs.set_prop_ascii ws "binaryType" (Ojs.string_to_js "arraybuffer");
+          let inbox = ref [] and player = ref None and closed = ref false in
+          Ojs.set_prop_ascii ws "onclose" (Ojs.fun_to_js 1 (fun _ -> closed := true));
+          Ojs.set_prop_ascii ws "onmessage"
+            (Ojs.fun_to_js 1 (fun ev ->
+                 let bytes = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Uint8Array") [| Ojs.get_prop_ascii ev "data" |] in
+                 let n = Ojs.int_of_js (Ojs.get_prop_ascii bytes "length") in
+                 let s = String.init n (fun i -> Char.chr (Ojs.int_of_js (Ojs.array_get bytes i))) in
+                 if !player = None && n = 2 && s.[0] = '\002' then player := Some (Char.code s.[1]) else inbox := s :: !inbox));
+          Ok
+            {
+              send =
+                (fun s ->
+                  (* only once open (readyState 1): a packet lost before
+                   * is sent again by the next one (Inputs.mli) *)
+                  if Ojs.int_of_js (Ojs.get_prop_ascii ws "readyState") = 1 then begin
+                    let bytes = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Uint8Array") [| Ojs.int_to_js (String.length s) |] in
+                    String.iteri (fun i c -> Ojs.array_set bytes i (Ojs.int_to_js (Char.code c))) s;
+                    ignore (Ojs.call ws "send" [| bytes |])
+                  end);
+              receive =
+                (fun () ->
+                  let packets = List.rev !inbox in
+                  inbox := [];
+                  packets);
+              status =
+                (fun () ->
+                  match (!closed, !player) with
+                  | true, _ -> Printf.sprintf "the relay at %s closed the connection (full, or not running?)" url
+                  | false, None -> Printf.sprintf "connecting to the relay at %s" url
+                  | false, Some _ -> Printf.sprintf "through the relay at %s" url);
+              player = (fun () -> !player);
+            })
+
 (* claude: Cmd.Http_get, performed by the browser: an XMLHttpRequest
  * for text, its answer turned into Elm's (a 2xx is the body, another
  * status Bad_status, no answer at all -- status 0: the network, or a
@@ -835,6 +882,7 @@ let fetch_text (url : string) (k : (string, Cmd.http_error) result -> unit) : un
  * own rules (the page's site, or CORS) *)
 let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_ app =
   Audio.set_fetcher fetch_web;
+  Multiplayer.set_connect connect_web;
   Window.set_onload window (fun () ->
 
     let sx = Playground.default_width in

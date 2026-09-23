@@ -15,9 +15,8 @@
  *
  * gives Foo.demo_picture_png and Foo.demo_picture_gif. The bytes are
  * written as an escaped string literal ("\137PNG..."), which, unlike
- * file_to_base64_ml.ml's base64, needs no decoder at run time --
- * graphics/images/Base64 is only in the native backends, and a web
- * program can use these too. *)
+ * file_to_base64_ml.ml's base64, needs no decoder at run time: the
+ * string is the bytes. *)
 
 let read (path : string) : string =
   let ic = open_in_bin path in

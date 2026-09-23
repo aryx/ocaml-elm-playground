@@ -24,7 +24,9 @@
    string to Playground3d.embedded_texture, and the backends turn it
    back into pixels -- [decode] here for the ones that decode images
    themselves, and the browser's own "data:" URL for the WebGL one,
-   which wants exactly this encoding.
+   which wants exactly this encoding. And the WebSocket handshake
+   (Websocket.mli) answers a key with the base64 of a SHA-1. Pure, in
+   core/, so that everything can reach it, natively and in a browser.
 
    Reference: RFC 4648, "The Base16, Base32, and Base64 Data
    Encodings" (Simon Josefsson, 2006). *)

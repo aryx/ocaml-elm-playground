@@ -498,8 +498,25 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    rollback reaches 180). Rule tests (`tests/games/Unit_tronscroll.ml`):
    head-on, own trail and clear, swap, freeze (from the tick after, as
    the original), speed. Left: 8 players (a relay, phase 5).
-5. **The web**: the relay server, WebSockets; a browser against a
+5. *(done, 2026-09-23, the browser untested)* **The web**: the relay server, WebSockets; a browser against a
    native player.
+   Done as: `crypto/Sha1` (the first module of `crypto/`, FIPS 180's
+   vectors) for the handshake; `networking/Websocket` (pure: the
+   handshake and its accept, frames, masking, a stream cut anywhere;
+   RFC 6455's examples); `networking/unix/Relay` (the server: one event
+   loop, non-blocking sockets, seats numbered as players come, each
+   packet copied to the others, a slow player's bytes waiting in its
+   outbox) and its program `networking/relay/relay_server.exe`;
+   `Relay_client` (the native WebSocket client) and `Connect` (the
+   transport for a role); `Transport.player` (learned from the relay)
+   and a `Connecting` state in `Multiplayer`; `net=relay`; in the
+   browser, its own WebSocket (`connect_web`). Tests over localhost:
+   the seats (a third player refused), the copies, Lockstep through the
+   relay for 300 ticks; by hand, the relay program and two TinySpacewar
+   processes. The browser side compiles but hasn't run here (the
+   machine's Node, 18, has no WebSocket): to try with `make
+   serve-build` and a browser. `Base64` moved to `core/`, where
+   `Websocket` and `graphics/images` both reach it.
 5b. **The universe** (HtDP): `playground/Universe.ml` over the relay --
    `on_receive` and `register` for a `Bigbang` world, `on_new` and
    `on_msg` for the server; a chat, a shared whiteboard and a

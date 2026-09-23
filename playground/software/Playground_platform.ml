@@ -166,8 +166,9 @@ let fetch_file (source : string) (k : string option -> unit) : unit =
 let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network (app : _ Playground.app) =
   Option.iter Download.grant network;
   Audio.set_fetcher fetch_file;
-  (* claude: Multiplayer's net=host and net=join, over UDP *)
-  Multiplayer.set_connect Udp.connect;
+  (* claude: Multiplayer's net=host and net=join (UDP), net=relay
+   * (WebSocket) *)
+  Multiplayer.set_connect Connect.connect;
   (* the app's choices are the starting values; the keys can change them *)
   options :=
     { !options with antialiasing = rendering.antialiasing; bilinear = rendering.smooth_images };

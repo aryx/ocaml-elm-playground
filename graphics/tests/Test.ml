@@ -19,7 +19,6 @@ let () =
           Unit_line.tests;
           Unit_circle.tests;
           Unit_blit.tests;
-          Unit_base64.tests;
           Unit_text.tests;
           Unit_antialiasing.tests;
           Unit_vec3.tests;

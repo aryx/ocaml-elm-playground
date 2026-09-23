@@ -44,5 +44,5 @@ val host : < Cap.network ; .. > -> bind:string -> port:int -> Transport.t * int
  * Unix.Unix_error or Failure (a name that doesn't resolve) *)
 val join : < Cap.network ; .. > -> host:string -> port:int -> Transport.t
 
-(* the transport for a role: what Multiplayer.set_connect wants *)
+(* the transport for a Host or Join role (Connect.connect picks) *)
 val connect : < Cap.network ; .. > -> Transport.role -> (Transport.t, string) result

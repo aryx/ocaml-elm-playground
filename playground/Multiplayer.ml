@@ -132,7 +132,10 @@ let set_connect f = connect := f
 type 'model state =
   | Starting of 'model
   | Local of 'model side
-  (* one peer, me, and the other one over a real network *)
+  (* connected, waiting to know which player I am (a relay says so);
+   * the packets arrived meanwhile, kept *)
+  | Connecting of { transport : Transport.t; model : 'model; netcode : string; delay : int; early : string list }
+  (* one peer, me, and the other ones over a real network *)
   | Remote of { transport : Transport.t; peer : 'model peer; me : int; netcode : string }
   (* the network couldn't be opened: why, shown on the screen *)
   | Failed of string * 'model
@@ -176,18 +179,20 @@ let start ~players ?(network : Cap.network option) update (flags : flags) (model
   | Some "simulate" ->
       let knobs = { latency = int_flag flags "latency" 50; jitter = int_flag flags "jitter" 10; loss = int_flag flags "loss" 5; delay; netcode } in
       simulate ~players update flags knobs model
-  | Some (("host" | "join") as net) -> (
-      let port = int_flag flags "port" 7777 in
-      let role, me =
-        if net = "host" then
-          (Transport.Host { bind = Option.value (List.assoc_opt "bind" flags) ~default:"127.0.0.1"; port }, 0)
-        else (Transport.Join { host = Option.value (List.assoc_opt "host" flags) ~default:"127.0.0.1"; port }, 1)
+  | Some (("host" | "join" | "relay") as net) -> (
+      let flag name default = Option.value (List.assoc_opt name flags) ~default in
+      let role : Transport.role =
+        match net with
+        | "host" -> Host { bind = flag "bind" "127.0.0.1"; port = int_flag flags "port" 7777 }
+        | "join" -> Join { host = flag "host" "127.0.0.1"; port = int_flag flags "port" 7777 }
+        | _ -> Relay { host = flag "host" "127.0.0.1"; port = int_flag flags "port" 8765 }
       in
+      ignore side;
       match network with
       | None -> Failed (Printf.sprintf "net=%s: this program wasn't granted the network (Cap.network)" net, model)
       | Some caps -> (
           match !connect caps role with
-          | Ok transport -> Remote { transport; peer = new_peer ~netcode ~me ~players ~delay update flags side; me; netcode }
+          | Ok transport -> Connecting { transport; model; netcode; delay; early = [] }
           | Error why -> Failed (Printf.sprintf "net=%s: %s" net why, model)))
   | _ -> Local side
 
@@ -318,6 +323,15 @@ let game ?(network : < Cap.network ; .. > option) ?(split = false) ~(players : i
           simulate_frame update computer s.net s.peers s.frame;
           Simulate { s with frame = s.frame + 1; knobs; held }
         end
+    | Connecting c -> (
+        let early = c.early @ c.transport.receive () in
+        match c.transport.player () with
+        | None -> Connecting { c with early }
+        | Some me ->
+            let side = { model = c.model; last = Array.make players empty; tick = 0 } in
+            let peer = new_peer ~netcode:c.netcode ~me ~players ~delay:c.delay update computer.flags side in
+            List.iter (receive peer) early;
+            Remote { transport = c.transport; peer; me; netcode = c.netcode })
     | Remote r ->
         remote_frame update computer r.transport r.peer;
         state
@@ -329,6 +343,7 @@ let game ?(network : < Cap.network ; .. > option) ?(split = false) ~(players : i
     | Local side when split -> rectangle black 1000. 1000. :: panels (List.init players (fun n -> view computer n side.model))
     | Local side -> view computer 0 side.model
     | Simulate s -> side_by_side view computer s.knobs s.peers
+    | Connecting c -> view computer 0 c.model @ [ text white (c.transport.status ()) |> scale 0.7 |> move_y (-440.) ]
     | Remote r -> view computer r.me (side_of r.peer).model @ remote_hud r.transport r.peer r.me r.netcode
     | Failed (why, model) -> view computer 0 model @ [ text red why |> move_y (-450.) ]
   in

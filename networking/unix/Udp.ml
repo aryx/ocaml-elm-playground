@@ -61,6 +61,7 @@ let host (caps : < Cap.network ; .. >) ~(bind : string) ~(port : int) : Transpor
           match !player with
           | None -> Printf.sprintf "hosting on %s:%d, waiting for a player" bind port
           | Some a -> Printf.sprintf "hosting on %s:%d, playing with %s" bind port (show a));
+      player = (fun () -> Some 0);
     }
   in
   (transport, port)
@@ -84,6 +85,7 @@ let join (caps : < Cap.network ; .. >) ~(host : string) ~(port : int) : Transpor
       (fun () ->
         if !heard then Printf.sprintf "playing with %s" (show there)
         else Printf.sprintf "joining %s, waiting for an answer" (show there));
+    player = (fun () -> Some 1);
   }
 
 let connect (caps : < Cap.network ; .. >) (role : Transport.role) : (Transport.t, string) result =
@@ -91,6 +93,7 @@ let connect (caps : < Cap.network ; .. >) (role : Transport.role) : (Transport.t
     match role with
     | Host { bind; port } -> Ok (fst (host caps ~bind ~port))
     | Join { host = h; port } -> Ok (join caps ~host:h ~port)
+    | Relay _ -> Error "a relay is a WebSocket, not UDP (Relay_client.mli)"
   with
   | Unix.Unix_error (e, _, _) -> Error (Unix.error_message e)
   | Failure why -> Error why

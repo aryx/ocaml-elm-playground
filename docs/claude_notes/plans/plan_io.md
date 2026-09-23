@@ -62,8 +62,8 @@ Synchronous, so it fits `update` as it is:
 Natively: files in a directory -- the current one (simplest, visible)
 or a per-app one (`~/.elm-playground/TinyExcel/`), to decide. On the
 web: the browser's **`localStorage`** -- strings only, so the bytes are
-base64-encoded (`graphics/images/Base64` exists but belongs to the
-native package: a copy, or a move after asking). It lives in that
+base64-encoded (`Base64` is in `core/` since 2026-09-23; the web's
+`Web_store` still has its own copy, from before). It lives in that
 browser, for that site, and survives a reload.
 
 ## Export / Import: real files

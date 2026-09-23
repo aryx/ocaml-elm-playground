@@ -10,5 +10,9 @@
 
 (* See Transport.mli *)
 
-type t = { send : string -> unit; receive : unit -> string list; status : unit -> string }
-type role = Host of { bind : string; port : int } | Join of { host : string; port : int }
+type t = { send : string -> unit; receive : unit -> string list; status : unit -> string; player : unit -> int option }
+
+type role =
+  | Host of { bind : string; port : int }
+  | Join of { host : string; port : int }
+  | Relay of { host : string; port : int }

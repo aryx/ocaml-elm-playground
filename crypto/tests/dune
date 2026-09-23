@@ -1,0 +1,6 @@
+; claude: unit tests for crypto/, run by 'make test': the standards'
+; test vectors
+(test
+ (name Test)
+ (libraries alcotest testo crypto)
+)

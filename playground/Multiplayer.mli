@@ -35,7 +35,14 @@
      ([port=]), of this computer only unless given [bind=0.0.0.0] (a
      LAN); the other one joins, [net=join host=192.168.1.12], and is
      player 1. Each plays with its arrows. No handshake: the host plays
-     its first [delay] ticks and stalls until the first inputs arrive.
+     its first [delay] ticks and stalls until the first inputs arrive;
+   - [net=relay] ([host=], [port=] 8765): through a relay server
+     (networking/relay/, Relay.mli), which every player connects to and
+     which copies each one's packets to the others -- the way for a
+     browser to play (a web page can't listen, nor use UDP; it has
+     WebSocket), and for players behind home routers. The relay numbers
+     the players as they come; the same game, a native program and a
+     browser playing it together.
 
    Three netcodes, by the flag [netcode=] (and, in net=simulate, the
    key n, which starts the game again with the next one, to feel the

@@ -72,8 +72,9 @@ let fetch_file (source : string) (k : string option -> unit) : unit =
 let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network app =
   Option.iter Download.grant network;
   Audio.set_fetcher fetch_file;
-  (* claude: Multiplayer's net=host and net=join, over UDP *)
-  Multiplayer.set_connect Udp.connect;
+  (* claude: Multiplayer's net=host and net=join (UDP), net=relay
+   * (WebSocket) *)
+  Multiplayer.set_connect Connect.connect;
   Native_loop_2d.parse_cli_and_setup_logging ();
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in

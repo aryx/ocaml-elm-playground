@@ -9,15 +9,20 @@
    functions, so that the pure libraries can use a transport a
    platform opens (the sockets are the operating system's).
 
-   Two players only, for now: one peer on the other side. *)
+   Over UDP, two players, one on each side; through a relay
+   (Relay.mli), any number, the relay forwarding each packet to all the
+   others -- and saying which player you are, which you learn once
+   connected. *)
 
 type t = {
   send : string -> unit; (* a packet to the other side (dropped if it isn't known yet) *)
   receive : unit -> string list; (* the packets arrived since last time, never waiting *)
   status : unit -> string; (* for the screen: "hosting on 127.0.0.1:7777, waiting for a player" *)
+  player : unit -> int option; (* which player I am, once known *)
 }
 
 (* how to find the other side *)
 type role =
   | Host of { bind : string; port : int } (* wait for a player on this address and port *)
   | Join of { host : string; port : int } (* play with the host there *)
+  | Relay of { host : string; port : int } (* play through the relay there *)

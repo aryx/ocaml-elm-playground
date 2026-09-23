@@ -15,7 +15,7 @@
  *
  *   ocaml scripts/build/file_to_base64_ml.ml games/fps/minecraft.png > Foo.ml
  *
- * Its own base64 encoder, not graphics/images/Base64.ml's: this runs
+ * Its own base64 encoder, not core/'s Base64.ml: this runs
  * before anything is built. *)
 
 let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"

@@ -13,5 +13,7 @@
  (wrapped false)
  (libraries
    random ; Lehmer, Sim_net's seeded network
+   crypto ; Sha1, for Websocket's handshake
+   elm_core ; Base64, for it too
  )
 )

@@ -1,0 +1,12 @@
+; claude: cryptography, from scratch, for teaching (plan_teaching_other.md
+; section 4b): one idea per module, each .mli with its diagram, worked
+; example (the standards' own test vectors) and references, like
+; graphics/, audio/ and networking/. So far SHA-1, for the WebSocket
+; handshake (networking/Websocket.mli). A private library, installed as
+; part of elm_playground: pure OCaml, the same bits natively and in a
+; browser.
+(library
+ (name crypto)
+ (package elm_playground)
+ (wrapped false)
+)

@@ -16,6 +16,7 @@
  (wrapped false)
  (libraries
    logs
+   elm_core ; Base64, for Texture_decode's embedded textures
    graphics_rgba ; Rgba_image, the decoded pictures
    graphics_png ; our own PNG reader
    graphics_gif ; our own GIF reader

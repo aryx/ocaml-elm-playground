@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* graphics/images: Base64 *)
+(* core: Base64 *)
 
 let t = Testo.create
 
