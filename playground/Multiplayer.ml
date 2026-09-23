@@ -61,9 +61,20 @@ type 'model side = { model : 'model; last : keyboard array; tick : int }
 
 type knobs = { latency : int (* ms *); jitter : int; loss : int (* % *); delay : int }
 
+(* the transport of net=host and net=join, installed by a platform
+ * that has sockets (Udp.connect, natively) *)
+let connect : (Transport.role -> (Transport.t, string) result) ref =
+  ref (fun _ -> Error "no sockets here (in a browser: WebSockets, plan_networking_teaching.md phase 5)")
+
+let set_connect f = connect := f
+
 type 'model state =
   | Starting of 'model
   | Local of 'model side
+  (* one peer, me, and the other one over a real network *)
+  | Remote of { transport : Transport.t; lockstep : Lockstep.t; side : 'model side; me : int }
+  (* the network couldn't be opened: why, shown on the screen *)
+  | Failed of string * 'model
   | Simulate of {
       net : Sim_net.t;
       peers : (Lockstep.t * 'model side) array;
@@ -98,6 +109,16 @@ let start ~players (flags : flags) (model : 'model) : 'model state =
           knobs;
           held = [];
         }
+  | Some (("host" | "join") as net) -> (
+      let port = int_flag flags "port" 7777 in
+      let role, me =
+        if net = "host" then
+          (Transport.Host { bind = Option.value (List.assoc_opt "bind" flags) ~default:"127.0.0.1"; port }, 0)
+        else (Transport.Join { host = Option.value (List.assoc_opt "host" flags) ~default:"127.0.0.1"; port }, 1)
+      in
+      match !connect role with
+      | Ok transport -> Remote { transport; lockstep = Lockstep.create ~me ~players ~delay:(int_flag flags "delay" 3); side; me }
+      | Error why -> Failed (Printf.sprintf "net=%s: %s" net why, model))
   | _ -> Local side
 
 (*****************************************************************************)
@@ -140,6 +161,26 @@ let simulate_frame update (computer : computer) net peers frame players =
     peers
 
 (*****************************************************************************)
+(* Remote: me here, the other peer over a real network *)
+(*****************************************************************************)
+
+(* the same as a simulated peer's frame, the transport instead of
+ * Sim_net; my keys are the arrows, whichever player I am *)
+let remote_frame update (computer : computer) (transport : Transport.t) (lockstep : Lockstep.t) (side : 'model side) =
+  List.iter (Lockstep.receive lockstep) (transport.receive ());
+  let side =
+    match Lockstep.step lockstep (encode (local_keyboard computer.keyboard 0)) with
+    | None -> side
+    | Some inputs ->
+        let tick = side.tick in
+        let side = one_tick update computer.flags side (Array.map decode inputs) in
+        if tick mod 60 = 0 then Lockstep.checksum lockstep ~tick (Checksum.of_model side.model);
+        side
+  in
+  transport.send (Lockstep.packet lockstep);
+  side
+
+(*****************************************************************************)
 (* The views *)
 (*****************************************************************************)
 
@@ -156,6 +197,15 @@ let hud (knobs : knobs) peers : shape list =
     (match desync with
     | None -> text green "the two games agree (checksums every second)"
     | Some (tick, peer) -> text red (Printf.sprintf "DESYNC at tick %d, with peer %d" tick peer))
+    |> move_y (-470.) ]
+
+let remote_hud (transport : Transport.t) (lockstep : Lockstep.t) (side : 'model side) (me : int) : shape list =
+  [ text white (Printf.sprintf "%s -- you are player %d, tick %d, %d stalls" (transport.status ()) me side.tick
+      (Lockstep.stats lockstep).stalls)
+    |> move_y (-440.);
+    (match Lockstep.desync lockstep with
+    | None -> text green "the two games agree (checksums every second)"
+    | Some (tick, peer) -> text red (Printf.sprintf "DESYNC at tick %d, with player %d" tick peer))
     |> move_y (-470.) ]
 
 let side_by_side view (computer : computer) (knobs : knobs) peers : shape list =
@@ -188,11 +238,15 @@ let game ~(players : int) view update (model : 'model) =
         let knobs, held = turn_knobs computer.keyboard s.held s.knobs in
         if knobs <> s.knobs then Sim_net.set_config s.net (config_of knobs);
         Simulate { s with peers = simulate_frame update computer s.net s.peers s.frame players; frame = s.frame + 1; knobs; held }
+    | Remote r -> Remote { r with side = remote_frame update computer r.transport r.lockstep r.side }
+    | Failed _ -> state
   in
   let view_state (computer : computer) (state : 'model state) : shape list =
     match state with
     | Starting model -> view computer 0 model
     | Local side -> view computer 0 side.model
     | Simulate s -> side_by_side view computer s.knobs s.peers
+    | Remote r -> view computer r.me r.side.model @ remote_hud r.transport r.lockstep r.side r.me
+    | Failed (why, model) -> view computer 0 model @ [ text red why |> move_y (-450.) ]
   in
   Playground.game view_state update_state (Starting model)

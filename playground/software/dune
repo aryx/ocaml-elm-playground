@@ -12,6 +12,7 @@
     ; the from-scratch graphics algorithms, see graphics/
     graphics_core graphics_2d_geometry graphics_2d graphics_font
     elm_playground_native_common ; Native_loop_2d
+    networking_unix ; Udp, for Multiplayer's net=host and net=join
     graphics_images ; Image_decode
   )
 )

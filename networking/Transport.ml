@@ -8,4 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"networking_unix" (fun _env -> Unit_http_client.tests @ Unit_http_request.tests @ Unit_udp.tests)
+(* See Transport.mli *)
+
+type t = { send : string -> unit; receive : unit -> string list; status : unit -> string }
+type role = Host of { bind : string; port : int } | Join of { host : string; port : int }

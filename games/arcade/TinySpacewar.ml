@@ -16,9 +16,15 @@
  *
  * or on two computers, simulated in one window, side by side, through
  * a fake network (net=simulate, and latency=, loss=; [ ] and - = change
- * them while it runs): playground/Multiplayer.mli. The game is written
- * for two players, each with their own keyboard, and Multiplayer gives
- * player 1 the w/a/s/d of a shared one.
+ * them while it runs), or on two real computers, each player with the
+ * arrows (natively, over UDP):
+ *
+ *   dune exec games/arcade/TinySpacewar.exe -- net=host bind=0.0.0.0
+ *   dune exec games/arcade/TinySpacewar.exe -- net=join host=192.168.1.12
+ *
+ * (playground/Multiplayer.mli). The game is written for two players,
+ * each with their own keyboard, and Multiplayer gives player 1 the
+ * w/a/s/d of a shared one when they share it.
  *
  * Steve Russell wrote it on the PDP-1 at MIT with Martin Graetz, Wayne
  * Wiitanen and friends of the Tech Model Railroad Club; Dan Edwards
@@ -49,8 +55,8 @@
  *
  * Left as exercises: hyperspace (the original's panic button: vanish,
  * reappear somewhere at random, maybe exploding), limited fuel and
- * torpedoes per round, the sounds (plan_audio_teaching.md), two
- * players on two real computers (plan_networking_teaching.md, phase 3).
+ * torpedoes per round, the sounds (plan_audio_teaching.md), a player
+ * in a browser (plan_networking_teaching.md, phase 5).
  *)
 open Playground
 open Basics (* float arithmetics *)

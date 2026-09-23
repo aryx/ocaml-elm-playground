@@ -11,6 +11,7 @@
 
     elm_playground
     elm_playground_native_common ; Native_loop_2d
+    networking_unix ; Udp, for Multiplayer's net=host and net=join
     graphics_images ; Image_decode
   )
 )

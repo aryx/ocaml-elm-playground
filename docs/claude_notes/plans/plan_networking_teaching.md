@@ -448,7 +448,18 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    last model; the seed is shared by the flags. TinySpacewar converted
    (its local golden frames unchanged to the pixel), with a golden
    frame of the simulated duel.
-3. **Real UDP, native**: `-host`, `-join`; Spacewar! on a LAN.
+3. *(done, 2026-09-23)* **Real UDP, native**: `-host`, `-join`; Spacewar! on a LAN.
+   Done as flags rather than command-line options (the playground's
+   way, a browser's URL too): `net=host` (player 0, port 7777 or
+   `port=`, 127.0.0.1 unless `bind=0.0.0.0`) and `net=join host=...`
+   (player 1). `networking/Transport` (pure: send, receive, status),
+   `networking/unix/Udp` (non-blocking datagrams; the host learns its
+   player from the first one, ignores anyone else; no handshake, the
+   host stalls until the first inputs), installed by the native
+   platforms with `Multiplayer.set_connect` (a browser says phase 5).
+   Tests: Lockstep over real localhost sockets, 300 ticks, one game;
+   and two TinySpacewar processes played by hand, their checksums
+   agreeing.
 4. **Rollback**: `Rollback`, switchable with lockstep (a key), to feel
    the difference with 100 ms of simulated latency. Tests: rollback's
    final models equal lockstep's. Then **TinyTronscroll**, the

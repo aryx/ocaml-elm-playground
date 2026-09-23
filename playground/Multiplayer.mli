@@ -27,7 +27,12 @@
      changes how late the keys answer, and whether the game stalls.
      Each half shows what that computer shows, and the checksums say
      whether the two games still agree (Checksum.mli);
-   - two real computers: plan_networking_teaching.md phase 3.
+   - [net=host] and [net=join]: two real computers, over UDP (natively
+     only: Udp.mli). The host is player 0 and waits, on port 7777
+     ([port=]), of this computer only unless given [bind=0.0.0.0] (a
+     LAN); the other one joins, [net=join host=192.168.1.12], and is
+     player 1. Each plays with its arrows. No handshake: the host plays
+     its first [delay] ticks and stalls until the first inputs arrive.
 
    Underneath is Lockstep.mli: each tick, every player's input (a
    byte: the arrows, space, enter and shift, a bit each -- the letters
@@ -56,6 +61,11 @@ type player = {
 }
 
 type 'model state
+
+(* how net=host and net=join reach the other computer: installed by a
+ * platform that has sockets (the native ones, Udp.connect); without
+ * it, the modes say so on the screen *)
+val set_connect : (Transport.role -> (Transport.t, string) result) -> unit
 
 (* [game ~players view update model]: [view computer n model] draws
  * what player n sees (the real computer: its screen, its time);
