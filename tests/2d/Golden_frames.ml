@@ -233,6 +233,7 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
     ("games/adventure/software/TinyZelda", "", 5);
+    ("games/adventure/software/TinyZeldaLinkPast", "", 5);
     ("games/rpg/software/TinyRogue", "", 5);
     ("games/fighting/software/TinyStreetFighter", "", 5);
     ("games/fighting/software/TinyFinalFight", "", 5);
@@ -703,6 +704,11 @@ let scripted : Testutil_golden.scripted list =
      * screen sliding to it *)
     ("games/adventure/software/TinyZelda", "sword", 130, "space:1,right:3-42,up:43-110,space:120");
     ("games/adventure/software/TinyZelda", "slide", 370, "space:1,right:3-42,up:43-110,down:130-200,right:210-400");
+    (* the three-quarter view: Link walked into the woods, right above a
+     * trunk, hidden by its canopy but for his cap; and a swing at the
+     * soldier come down to the path *)
+    ("games/adventure/software/TinyZeldaLinkPast", "woods", 310, "space:1,up:2-250,left:250-305");
+    ("games/adventure/software/TinyZeldaLinkPast", "sword", 95, "space:1,up:2-80,left:84,space:90");
     (* the first room, walked around, a bat fought *)
     ("games/rpg/software/TinyRogue", "level", 120, "space:2,right:10,right:14,right:18,right:22,right:26,right:30,up:40,up:44,up:48,left:60,left:64,down:80,down:84,down:88,down:92");
     (* a fireball thrown (down, down-forward, forward, punch), the

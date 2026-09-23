@@ -188,6 +188,39 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyZeldaLinkPast.ml)
+ (deps (:src %{project_root}/games/adventure/TinyZeldaLinkPast.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+; claude: and its pixel art, embedded as games/adventure/dune does
+(rule
+ (targets Lttp_xpm.ml)
+ (deps
+  (:link %{project_root}/games/adventure/lttp_link.xpm)
+  (:soldier %{project_root}/games/adventure/lttp_soldier.xpm)
+  (:tree %{project_root}/games/adventure/lttp_tree.xpm)
+  (:tiles %{project_root}/games/adventure/lttp_tiles.xpm)
+  (:items %{project_root}/games/adventure/lttp_items.xpm)
+  (:pedestal %{project_root}/games/adventure/lttp_pedestal.xpm))
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let link = {|")
+    (cat %{link})
+    (echo "|}\nlet soldier = {|")
+    (cat %{soldier})
+    (echo "|}\nlet tree = {|")
+    (cat %{tree})
+    (echo "|}\nlet tiles = {|")
+    (cat %{tiles})
+    (echo "|}\nlet items = {|")
+    (cat %{items})
+    (echo "|}\nlet pedestal = {|")
+    (cat %{pedestal})
+    (echo "|}\n")))))
+
+(rule
  (target TinyRogue.ml)
  (deps (:src %{project_root}/games/rpg/TinyRogue.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

@@ -24,6 +24,7 @@ games/*/*.ml`) against the whole game.
 | --- | --- | --- | --- | --- | --- |
 | `TinyZaxxon` | Zaxxon (Sega, 1982) | two lines of projection (`x` across the fortress, `z` along it, `y` up), then everything sorted back to front; the altitude of a thing is the gap on screen between it and its shadow | object (a shape, and its shadow at y = 0) | 54 / 478 | tell you how high anything is without drawing it twice; turn, tilt or look from anywhere else (one fixed angle, for ever); two things whose order the sort cannot settle |
 | `TinyDiablo` | Diablo (Blizzard North, 1996) | the same two lines as `TinyZaxxon`, from the kit now (`gamekits/isometric`), on a grid of diamond tiles; and the two lines run *backwards*, which is what turns a mouse click into a place in the dungeon | tile, and one cube per wall | 0 / 567 (the trick is the kit's) | tell you what is under a pixel without the floor being flat; a room above a room; anything the sort cannot order (a long wall against a body inside it) |
+| `TinyZeldaLinkPast` | The Legend of Zelda: A Link to the Past (Nintendo, 1991) | the three-quarter view: the ground drawn flat, from above; everything standing on it a picture facing the camera, its bottom on its base line, drawn farthest first (the higher its base up the screen, the farther) -- nothing in the model has a height, the cliffs' is painted in their tiles | object (a sprite) | 7 / 608 | anything lying along the depth (a wall going north); a bridge to walk under (the original's second layer of tiles); looking from anywhere but the one angle |
 | `TinySuperOffRoad` | Ironman Ivan Stewart's Super Off Road (Leland, 1989) | the isometric kit's two lines again, seen from the stands (x across, the depth squeezed to 0.6, the height up): every ground cell a quad lifted by its corners' heights and lit by its slope, flat runs merged, sorted far to near with the trucks' boxes; the truck's height a second number beside the ground's, flying when the ground falls away faster than gravity | cell (a run of cells), and a box's face | 110 / 473 | an overhang or a tunnel; the stadium seen from anywhere else; a truck sorted wrong against a steep hill just in front of it (one key per truck) |
 | `TinyMazeWar` | Maze War (Colley, Thompson and Palmer, NASA Ames, 1973-74) | TinyDungeonMaster's nested frames fourteen years earlier, and in lines only: a frame per cell boundary, `half * 0.5 / (d + 0.5)` from the middle; a side wall two edges from one frame's corners to the next, an opening the side corridor's far wall, the end a whole frame | cell (lines) | 49 / 341 | anything off the grid, a wall hiding a line behind it (nothing is filled: the far lines are simply not drawn past the end wall) |
 | `TinyDungeonMaster` | Dungeon Master (FTL, 1987) | the hero stands in the middle of a cell facing one of four ways, so every cell in view has one fixed place on the screen: nested frames, filled in farthest first | cell (a square and a trapezoid) | 24 / 624 | anything off the grid: a diagonal, a step, standing between two cells, looking up |
@@ -85,7 +86,12 @@ Four families, then:
   the same two lines turned to face the stands, and its ground not
   blocks but a surface -- every cell's corners lifted by their heights,
   the one game here whose driving, not only its picture, depends on the
-  height (slower up, faster down, and off a crest into the air).
+  height (slower up, faster down, and off a crest into the air). And
+  `TinyZeldaLinkPast` is the family with the projection taken away:
+  the ground is the screen, only moved, and the height is not a
+  number but the pictures themselves, standing up from their base
+  line -- so the sort by that line never meets Zaxxon's ambiguous
+  pairs, every picture facing the camera flat.
 - **Cell by cell**, the grid: Dungeon Master. If the eye is always at a
   cell's center and looks along an axis, there is a small, fixed set of
   cells it can see, and each one has one place on the screen -- so the

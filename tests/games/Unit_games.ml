@@ -3062,6 +3062,55 @@ let tomb_raider_jumps () =
   | None -> Alcotest.fail "the standing jump was refused"
 
 (*****************************************************************************)
+(* TinyZeldaLinkPast *)
+(*****************************************************************************)
+
+(* the three-quarter view's one sort: a tree's trunk on row 5, Link a
+ * cell north of it (under its canopy) is drawn before it, hidden; a
+ * cell south, after it, in front *)
+let lttp_behind_tree () =
+  let open TinyZeldaLinkPast in
+  let tx, ty = Tilemap.center level 8 5 in
+  let tree_base = ty -. (tile /. 2.) in
+  let tree = standing 40 (circle green 10.) tx tree_base in
+  let link y = standing 0 (circle red 10.) tx (y -. 12.) in
+  let north = link (ty +. tile) and south = link (ty -. tile) in
+  Alcotest.(check bool) "north: Link first" true (draw_standing [ tree; north ] = [ north.picture; tree.picture ]);
+  Alcotest.(check bool) "south: the tree first" true (draw_standing [ south; tree ] = [ tree.picture; south.picture ])
+
+(* Link in cell (col, row), facing [facing], in a game started *)
+let lttp_at (col : int) (row : int) (facing : number * number) : TinyZeldaLinkPast.model =
+  let open TinyZeldaLinkPast in
+  let x, y = Tilemap.center level col row in
+  let g = new_game () in
+  Scene2d.go (Playing { g with x; y; facing; cam = camera x y g.cam }) initial_model
+
+(* [lttp_play s n]: [n] frames, space pressed at the first *)
+let lttp_play (s : TinyZeldaLinkPast.model) (n : int) : TinyZeldaLinkPast.model =
+  let s = ref s in
+  for i = 1 to n do
+    s := TinyZeldaLinkPast.update (computer ~keyboard:{ initial_computer.keyboard with kspace = i = 1 } i) !s
+  done;
+  !s
+
+(* the bushes before the bridge: one cut by a swing, the way across *)
+let lttp_bush () =
+  let open TinyZeldaLinkPast in
+  Alcotest.(check bool) "a bush there" true (Tilemap.get level 15 24 = Some '*');
+  match (lttp_play (lttp_at 15 25 (0., 1.)) 20).scene with
+  | Playing g -> Alcotest.(check bool) "the bush above cut" true (Tilemap.get g.map 15 24 <> Some '*')
+  | _ -> Alcotest.fail "not playing"
+
+(* the pedestal: the sword stays in it without the three pendants, and
+ * comes with them *)
+let lttp_pedestal () =
+  let open TinyZeldaLinkPast in
+  let s = lttp_at 19 3 (0., 1.) in
+  (match (lttp_play s 2).scene with Playing _ -> () | _ -> Alcotest.fail "the sword came without the pendants");
+  let s = match s.scene with Playing g -> { s with scene = Playing { g with pendants = [ '1'; '2'; '3' ] } } | _ -> s in
+  match (lttp_play s 2).scene with Won _ -> () | _ -> Alcotest.fail "the sword stayed, with the three pendants"
+
+(*****************************************************************************)
 (* TinyZeldaOcarina *)
 (*****************************************************************************)
 
@@ -7377,6 +7426,9 @@ let tests =
       t "TinyGradius, the power-up bar" gradius_bar;
       t "TinyGradius, a robot clears the stage" gradius_robot;
       t "TinyZelda, a robot's quest" zelda_robot;
+      t "TinyZeldaLinkPast, behind a tree or in front" lttp_behind_tree;
+      t "TinyZeldaLinkPast, a bush cut" lttp_bush;
+      t "TinyZeldaLinkPast, the pedestal and the pendants" lttp_pedestal;
       t "TinyRogue, the dungeons connected" rogue_connected;
       t "TinyRogue, a robot gets the Amulet" rogue_robot;
       t "TinyStreetFighter, the quarter circle" sf_quarter_circle;

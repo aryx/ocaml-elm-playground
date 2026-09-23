@@ -2,11 +2,11 @@
 ; 2D and 3D side by side; on the software rasterizers in software/, in
 ; the browser in web/.
 (executables
-  (names TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZork)
-  (modules TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZork)
+  (names TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork)
+  (modules TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork Lttp_xpm)
   (libraries
     elm_playground
-    kit_platformer ; TinyZelda's Tile_move
+    kit_platformer ; TinyZelda's and TinyZeldaLinkPast's Tile_move
     kit_shmup ; TinyZelda's shots
     ai ; TinyMetalGearSolid's guards (Fsm, Pathfind), TinyManiacMansion's walkboxes (Pathfind)
     kit_racing ; TinyGTA's cars, Topdown
@@ -14,6 +14,33 @@
     elm_playground_native ; implem of virtual elm_playground
   )
 )
+
+; claude: TinyZeldaLinkPast's pixel art -- Link's and the soldier's
+; sheets, the tree, the ground tiles, the items, the pedestal -- drawn
+; as XPM files, embedded as strings: lttp_link.xpm becomes
+; Lttp_xpm.link at build time, and so on, as TinyFez's are (see
+; README-tools.md)
+(rule
+ (targets Lttp_xpm.ml)
+ (deps lttp_link.xpm lttp_soldier.xpm lttp_tree.xpm lttp_tiles.xpm lttp_items.xpm lttp_pedestal.xpm)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from lttp_*.xpm by games/adventure/dune *)\n")
+    (echo "let link = {|")
+    (cat lttp_link.xpm)
+    (echo "|}\nlet soldier = {|")
+    (cat lttp_soldier.xpm)
+    (echo "|}\nlet tree = {|")
+    (cat lttp_tree.xpm)
+    (echo "|}\nlet tiles = {|")
+    (cat lttp_tiles.xpm)
+    (echo "|}\nlet items = {|")
+    (cat lttp_items.xpm)
+    (echo "|}\nlet pedestal = {|")
+    (cat lttp_pedestal.xpm)
+    (echo "|}\n")))))
 
 (executables
   (names TinyAloneInTheDark TinyTombRaider TinyZeldaOcarina)
