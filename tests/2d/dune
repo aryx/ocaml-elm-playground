@@ -25,6 +25,7 @@
    %{project_root}/apps/gamedev/software/TinyAseprite.exe
    %{project_root}/apps/gamedev/software/TinyTiled.exe
    %{project_root}/apps/internet/software/TinyIRC.exe
+   %{project_root}/apps/pim/software/TinyClock.exe
    %{project_root}/apps/music/software/TinyMinimoog.exe
    %{project_root}/apps/music/software/TinySoundtracker.exe
    %{project_root}/apps/media/software/TinyMediaPlayer.exe

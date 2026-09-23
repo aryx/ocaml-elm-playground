@@ -327,8 +327,8 @@ match is programs run against the machine or against each other.
 
 # Apps
 
-In `apps/office/`, the sections below up to PIM being its kinds of
-program, and in `apps/gamedev/`, the tools making what any game can
+In `apps/office/`, the sections below up to PIM (excluded) being its
+kinds of program, and in `apps/gamedev/`, the tools making what any game can
 use (a genre's level editor is with its games instead, as
 TinySokobanEd is: see `games/README-tools.md`). The other categories
 are waiting for their first app, each with a dune file saying what it
@@ -372,7 +372,13 @@ might hold: `apps/devtools/`, `apps/graphics/`, `apps/system/`.
 
 ## PIM
 
-None yet (a calendar, an address book, a to-do list would go here).
+`apps/pim/`: the personal information managers -- the time, the
+calendar, and the Palm Pilot's address book and to-do list to come
+(`plan_pim.md`), over core's `Civil` and `Clock`.
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinyClock](apps/pim/TinyClock.ml) | app | the Alarm Clock (Apple, Macintosh, 1984), xclock (X Window System, mid-1980s) | The time here and in six cities, on hands or in a strip, and an alarm. | The wall clock's time, seconds since 1970 and the offset only the platform knows; hands keeping every fraction where the strip truncates; cities with no daylight saving, so one offset all year. |
 
 ## Game making
 

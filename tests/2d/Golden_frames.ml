@@ -83,6 +83,10 @@ let scenes : Testutil_golden.scene list =
     (* claude: its server not there (localhost:6667 refused -- unless a
      * tiny_ircd happens to run on this computer during the tests) *)
     ("apps/internet/software/TinyIRC", "", 5);
+    (* 1984: -fixed-time's 1000 seconds after the epoch, in UTC (the
+     * offset is 0 under -fixed-time), 12:16:40 AM on the first day of
+     * 1970; the six cities at their own offsets *)
+    ("apps/pim/software/TinyClock", "", 5);
     (* 1970: the Model D's panel, black between wooden cheeks, left to
      * right; the bass preset *)
     ("apps/music/software/TinyMinimoog", "", 5);
@@ -1320,6 +1324,10 @@ let flagged : Testutil_golden.flagged list =
     (* claude: a world of HtDP's first universe, its universe not there
      * (port 1): resting, and saying why *)
     ("examples/software/UniverseBall", "refused", 5, [ "port=1" ]);
+    (* claude: the Alarm Clock's strip, and the alarm set for the minute
+     * -fixed-time stands in, ringing (its first half-second, shown) *)
+    ("apps/pim/software/TinyClock", "digital", 5, [ "face=digital" ]);
+    ("apps/pim/software/TinyClock", "ringing", 5, [ "alarm=0:16" ]);
   ]
 
 (* claude: played and flagged: the games whose juice was written by
