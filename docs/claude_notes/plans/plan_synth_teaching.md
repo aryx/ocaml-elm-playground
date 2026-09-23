@@ -379,8 +379,8 @@ microphone, which is out of scope) likewise later.
    `Audio.instrument`, `note_on`, `note_off`, `set`, with a trivial
    instrument (one sine) to test them: a scripted run's dumped WAV has
    its notes at the right frames.
-1. **Sources**: `Oscillator`'s pulse, PWM, triangle-saw, hard sync,
-   streaming; `Drift`; `Lfo`. Tests: the pulse's harmonics (a width of
+1. **Sources**: `Oscillator`'s pulse, PWM, hard sync, streaming
+   (`Vco`); `Drift`; `Lfo`. Tests: the pulse's harmonics (a width of
    1/3 has no 3rd, 6th, ...), sync's aliases under -60 dB below 5 kHz,
    an LFO's period, S&H's seeded values.
 2. **Envelopes and voicing**: the streaming, exponential `Envelope`;
@@ -440,6 +440,32 @@ microphone, which is out of scope) likewise later.
   `playground/tests/Unit_audio`: made once by name, made afresh after
   `stop`. Also done before it: `File_menu` an appkit
   (`appkits/file_menu`).
+- **Phase 1, DONE (2026-09-23)**: the sources. `Oscillator.pulse` and
+  `pulse_band_limited` (any width, two PolyBLEPs, the average 2w - 1
+  taken away so PWM doesn't thump); the live oscillator is its own
+  module, `audio/Vco`, rather than more of `Oscillator` (the waveforms'
+  formulas stay there): a frequency and a width per sample, and hard
+  sync, the master recording where in each step it wraps, the slave
+  correcting the sample before and the one after at that fraction, its
+  own phase-0 jump's correction left out where the restart replaced
+  it. `audio/Lfo` (six shapes, naive on purpose, sample and hold,
+  `of_tempo`); `audio/Drift` (Ornstein-Uhlenbeck, stepped every 64
+  samples of the audio clock); `Noise.lcg` and `uniform` (the LFSR's
+  states are shifts of each other, poor random numbers; 32-bit ints in
+  a browser handled). Tests (`Unit_vco`): the pulse's harmonics
+  against (4 / (pi k)) |sin (pi k w)| within 3% (PolyBLEP dulls the 4th
+  by 2.7%), the 3rd missing at w = 1/3, no average; PWM from 0.1 to 0.9
+  with every period's average within 0.02; sync's loudest alias below 5
+  kHz -29.5 dB naive, -30.7 corrected on the sample, -69.9 at the
+  fraction; the LFO's shapes, 5 periods a second across blocks, the
+  vibrato's 0.98282 and 1.01748; the generator from 0 (1013904223),
+  sample and hold's 9 changes a second, seeded; the drift's spread
+  2.97 cents, correlated by 0.35 two seconds apart (e^-1: 0.37), the
+  same in blocks of 735 or 500. Golden WAVs, plotted before approving:
+  `vco_sync_sweep` (a saw synced to 110 Hz, swept from 1 to 4 times
+  it) and `vco_pwm` (a 110 Hz pulse, its width moved at 0.5 Hz). Left
+  for phase 4, with the Model D's manual: the triangle-saw ("shark
+  tooth") waveform, whose exact shape is to check there.
 
 ## Verification
 

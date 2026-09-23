@@ -61,6 +61,12 @@ let wave_band_limited (w : waveform) ~(dt : float) (phase : float) : float =
   (* down at 0 *)
   | Sawtooth -> wave w phase -. polyblep ~dt phase
 
+let pulse ~(width : float) (phase : float) : float = (if phase < width then 1. else -1.) -. ((2. *. width) -. 1.)
+
+(* up at 0, down at [width] *)
+let pulse_band_limited ~(width : float) ~(dt : float) (phase : float) : float =
+  pulse ~width phase +. polyblep ~dt phase -. polyblep ~dt (wrap (phase -. width))
+
 type t = { waveform : waveform; frequency : float; phase : float }
 
 let make (waveform : waveform) (frequency : float) : t = { waveform; frequency; phase = 0. }

@@ -27,9 +27,11 @@ module here.
 | module | what | section | status |
 |---|---|---|---|
 | `audio/Instrument` | a sound played live: events, blocks, ramps | §1 | done |
-| `audio/Oscillator` (extended) | the pulse and its width, hard sync | §3 | |
-| `audio/Drift` | analog imprecision | §3 | |
-| `audio/Lfo` | the slow oscillators that turn knobs | §4 | |
+| `audio/Oscillator` (extended) | the pulse and its width | §3 | done |
+| `audio/Vco` | the live oscillator: a frequency and a width per sample, hard sync | §3 | done |
+| `audio/Drift` | analog imprecision | §3 | done |
+| `audio/Lfo` | the slow oscillators that turn knobs | §4 | done |
+| `audio/Noise` (extended) | random numbers for them: a linear congruential generator | §4 | done |
 | `audio/Envelope` (extended) | gated, exponential | §4 | |
 | `audio/Voicing` | keys to voices: priority, legato, glide, stealing | §5 | |
 | `audio/Ladder` | the Moog filter: naive, zero-delay, nonlinear | §6 | |
@@ -150,16 +152,24 @@ and of the contours, what the modulation switches route.
 
 `Oscillator` already has the four waveforms, naive and band-limited
 (`notes_audio.md` §6: PolyBLEP corrects each jump over two samples).
-A synthesizer needs three more things.
+A synthesizer needs three more things, and an oscillator run live,
+`Vco` (the voltage-controlled oscillator), a block at a time with a
+frequency *per sample*, so a vibrato or a glide moves it smoothly
+within a block.
 
 **The pulse, and its width.** A pulse is high for a fraction w of its
-period: w = 0.5 is the square. Its harmonic k has an amplitude
-proportional to |sin(pi k w)| / k, so a width of 1/3 has no 3rd, 6th,
-9th harmonics, a width of 1/2 no even ones: the width *is* the timbre,
-thin and nasal as it narrows. Band-limited, it is two PolyBLEPs, at
-phase 0 (up) and at w (down). **Pulse-width modulation** (PWM): w moved
-by an LFO, the harmonics' recipe shifting all the time -- a single
-oscillator sounding like several (the Juno's strings).
+period: w = 0.5 is the square. Its harmonic k is (4 / (pi k)) |sin(pi
+k w)| loud, so a width of 1/3 has no 3rd, 6th, 9th harmonics (the
+others 1.103, 0.551, 0.276 for the 1st, 2nd, 4th: measured within 3%,
+PolyBLEP dulling the 4th by 2.7%), a width of 1/2 no even ones: the
+width *is* the timbre, thin and nasal as it narrows. Band-limited, it
+is two PolyBLEPs, at phase 0 (up) and at w (down). Its average, 2w - 1,
+is taken away, as an analog oscillator's output capacitor does: so
+that **pulse-width modulation** (PWM), w moved by an LFO, shifts the
+harmonics' recipe all the time -- a single oscillator sounding like
+several (the Juno's strings) -- without moving the whole wave up and
+down (tested: w swept from 0.1 to 0.9, every period's average within
+0.02 of 0).
 
 **Hard sync.** Oscillator 2 restarted whenever oscillator 1 starts a
 period: its pitch is then oscillator 1's, and moving its own frequency
@@ -167,15 +177,26 @@ changes only its *shape*, the harmonics sweeping like a vowel (the
 Prophet-5's sync lead). The teaching point: the restart is a jump, and
 it falls *between* two samples, at a fraction of one; the BLEP
 correcting it has to be placed at that fraction, or the aliases come
-back. Measured when written: sync's aliases below 5 kHz, naive vs
-corrected.
+back. The master says, at each sample, whether and where in the step
+to the next one it wraps, so the slave corrects the sample before the
+jump too. Measured: a sawtooth synced to a 1001 Hz master at 2.37 times
+its frequency, the loudest alias below 5 kHz -29.5 dB naive, -69.9 dB
+corrected at the fraction -- and -30.7 dB corrected as if the jump fell
+on the next sample: hardly better than nothing, since a jump moved in
+time is itself an error the ear hears as an alias.
 
 **Drift.** An analog oscillator is never quite in tune: its frequency
 wanders by a few cents as the circuit warms. Two "perfect" detuned saws
 beat at a fixed rate, mechanically; with drift, the beating breathes.
-`Drift`: a slow random walk per oscillator (from a seeded generator:
-deterministic, testable), switchable, the first of the "simple vs
-better" switches that are really "exact vs analog".
+`Drift`: a random walk pulled back towards 0 (an Ornstein-Uhlenbeck
+process), one per oscillator, from a seeded generator (deterministic,
+testable), switchable, the first of the "simple vs better" switches
+that are really "exact vs analog". Its spread is set in cents (3 by
+default: measured 2.97 over 290 s) and its wandering time tau (2 s:
+two seconds apart the values are correlated by 0.35, e^-1 being
+0.37). It steps every 64 samples *of the audio clock*, whatever the
+size of the blocks it is advanced by, so a golden run's pulls of 735
+and SDL's give the same drift.
 
 ## 4. Modulation: the knobs turned by the synthesizer itself
 
@@ -183,7 +204,11 @@ A **modulator** is a signal too slow to hear, used to turn a knob.
 
 **The LFO** (low-frequency oscillator), 0.1 to 20 Hz: sine, triangle,
 square, sawtooth up and down, and **sample-and-hold** (a random value
-held for each period: the "computer" burble of 1970s films). Naive
+held for each period: the "computer" burble of 1970s films). Its random
+values are not the NES's LFSR's, whose successive states are each other
+shifted by a bit (16384, 8192, 4096...), but a linear congruential
+generator's (`Noise.lcg`, Numerical Recipes' constants: from 0,
+-0.528, -0.443, 0.639 as numbers from -1 to 1). Naive
 waveforms are right here: a 5 Hz square's harmonics are far below
 Nyquist, so PolyBLEP (needed at 440 Hz) has nothing to correct. Worked
 example, a vibrato of 6 Hz and 0.3 semitone: the frequency f

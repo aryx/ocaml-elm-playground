@@ -44,3 +44,26 @@ val period : mode -> int
  * stepped [rate] times a second (each value held in between), from 1;
  * the lowest bit as 1. or -1. *)
 val render : ?mode:mode -> rate:float -> float -> Signal.t
+
+(* {1 Random numbers, not noise}
+ *
+ * A sample-and-hold's steps and an oscillator's drift need a random
+ * *number* every so often, and the LFSR is a poor source of those: one
+ * state is the last one shifted by a bit, so successive values (16384,
+ * 8192, 4096 from 1) are halves of each other. A linear congruential
+ * generator (Lehmer, 1949) is the classic one:
+ *
+ *     x' = (1664525 x + 1013904223) mod 2^32
+ *
+ * (the constants of Numerical Recipes, Press et al., 1986). From 0:
+ * 1013904223, 1196435762, 3519870697; as numbers from -1 to 1 (x /
+ * 2^32, stretched): -0.528, -0.443, 0.639. Its low bits are poor (the
+ * lowest one alternates), so a value is read from all of them, x /
+ * 2^32, never x mod something small. Deterministic, from a seed: the
+ * same drift, the same random steps, every run. *)
+
+(* [lcg x]: the next state *)
+val lcg : int -> int
+
+(* [uniform x]: a state as a number from -1 to 1 *)
+val uniform : int -> float

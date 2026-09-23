@@ -110,4 +110,24 @@ let sounds : (string * (unit -> Signal.t)) list =
               | Error e -> failwith e)
           | Error e -> failwith e ) ]
 
+  (* a synthesizer's sources (Vco.mli), 2 s each at a quarter volume:
+   * a sawtooth synced to 110 Hz, swept from 1 to 4 times its master's
+   * frequency (the pitch staying, the vowel moving); a 110 Hz pulse
+   * whose width an LFO moves at 0.5 Hz, from 0.1 to 0.9 *)
+  @ [ ( "vco_sync_sweep",
+        fun () ->
+          let len = Signal.samples 2. in
+          let master = Vco.create () and slave = Vco.create () and m = Array.make len 0. and s = Array.make len 0. in
+          Vco.fill master Sawtooth ~frequency:(Array.make len 110.) m;
+          let sweep = Array.init len (fun i -> 110. *. (1. +. (3. *. float_of_int i /. float_of_int len))) in
+          Vco.fill ~sync:master slave Sawtooth ~frequency:sweep s;
+          Mix.gain 0.25 s );
+      ( "vco_pwm",
+        fun () ->
+          let len = Signal.samples 2. in
+          let w = Array.make len 0. and s = Array.make len 0. in
+          Lfo.fill (Lfo.create ()) Sine ~rate:0.5 w;
+          Vco.fill ~width:(Array.map (fun x -> 0.5 +. (0.4 *. x)) w) (Vco.create ()) Pulse ~frequency:(Array.make len 110.) s;
+          Mix.gain 0.25 s ) ]
+
 let tests = Testo.categorize "golden WAVs" (List.map (fun (name, f) -> t name (fun () -> check name (f ()) ())) sounds)

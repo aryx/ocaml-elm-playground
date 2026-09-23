@@ -33,3 +33,13 @@ let render ?(mode = Long) ~(rate : float) (seconds : float) : Signal.t =
         clock := !clock -. 1.
       done;
       out)
+
+(* in a browser (js_of_ocaml) ints are 32 bits: the product wraps by
+ * itself, mod 2^32 but signed, hence [uniform]'s correction; natively
+ * the mask does it: the same sequence either way *)
+let lcg (x : int) : int = ((1664525 * x) + 1013904223) land 0xFFFF_FFFF
+
+let uniform (x : int) : float =
+  let x = float_of_int x in
+  let x = if x < 0. then x +. 4294967296. else x in
+  (2. *. x /. 4294967296.) -. 1.

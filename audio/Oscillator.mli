@@ -108,6 +108,39 @@ val polyblamp : dt:float -> float -> float
  * smoothed, [dt] the phase step, frequency / rate *)
 val wave_band_limited : waveform -> dt:float -> float -> float
 
+(* {1 The pulse, and its width}
+ *
+ * A pulse is high for a fraction [width] of its period, low for the
+ * rest; the square is the pulse of width 0.5:
+ *
+ *     width 0.5 (the square)       width 1/3             width 0.1
+ *      .--.  .--.                 .-.   .-.             .   .
+ *      |  |  |  |                 | |   | |             |   |
+ *      '  '--'  '--               ' '---' '---          '---'---
+ *
+ * Its harmonic k is (4 / (pi k)) |sin (pi k width)| loud (from the
+ * Fourier series of a pulse of amplitude 1): the width *is* the timbre.
+ * At 0.5, sin (pi k / 2) is 0 for every even k: the square's odd
+ * harmonics. At 1/3, 0 for k = 3, 6, 9...: harmonic 1 at 1.103,
+ * harmonic 2 at 0.551, harmonic 3 missing, harmonic 4 at 0.276. The
+ * narrower, the more alike the harmonics, thin and nasal: at 0.1 they
+ * go 0.39, 0.37, 0.34, ... slowly down to 0 at the 10th, the
+ * fundamental no longer standing out.
+ *
+ * Its average is width - (1 - width) = 2 width - 1, not 0 (a pulse of
+ * width 0.1 is -1 most of the time): taken away here, as an analog
+ * oscillator's output capacitor takes it away, so that moving the width
+ * (pulse-width modulation, Vco.mli) doesn't move the whole wave up and
+ * down, a thump at the modulation's rate. The square's average is 0: it
+ * doesn't change. Band-limited, a pulse is two PolyBLEPs: up at phase 0,
+ * down at [width]. *)
+
+(* [pulse ~width phase]: the pulse, its average taken away *)
+val pulse : width:float -> float -> float
+
+(* [pulse_band_limited ~width ~dt phase]: with its two jumps smoothed *)
+val pulse_band_limited : width:float -> dt:float -> float -> float
+
 (* an oscillator: its waveform, its frequency (Hz), where it is in its
  * period *)
 type t = { waveform : waveform; frequency : float; phase : float }
