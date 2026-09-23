@@ -33,7 +33,8 @@
    Underneath is juice/ (see docs/claude_notes/tutorials/notes_juice.md):
    Ease.mli, the curves and why [out] is [in] run backwards,
    Tween.mli, the tween as a function of its start time, Squash.mli,
-   squash and stretch, and Trauma.mli, screen shake. *)
+   squash and stretch, Trauma.mli, screen shake, Emitter.mli,
+   particles, and Hash.mli, the random numbers they share. *)
 
 open Playground
 
@@ -166,9 +167,31 @@ val freeze : int -> t -> t
  * over [frames] frames: an explosion, a smart bomb *)
 val flash : color -> int -> t -> t
 
+(* Particles: a burst of small squares, each flying off, spinning,
+ * falling and fading by itself (William Reeves, 1983; juice/Emitter.mli).
+ * The same seed, the same bursts: a replay sees the same sparks. *)
+type burst
+
+(* white, yellow and orange, fast, all around, gone in half a second: a
+ * hit, a spark off metal *)
+val sparks : burst
+
+(* gray puffs, slow, rising and fading: something burning, a landing in
+ * dust *)
+val smoke : burst
+
+(* pieces of [color], thrown up and falling, tumbling: a brick broken,
+ * a ship blown up *)
+val debris : color -> burst
+
+(* [burst ~at b fx]: a burst at the point [at] (at most 400 particles
+ * in all, the oldest dropped first); nothing with juice=off *)
+val burst : at:number * number -> burst -> t -> t
+
 (* [frozen fx]: whether the game should skip its own update this frame *)
 val frozen : t -> bool
 
-(* [view fx world]: the world shaken, and the flash over it. Draw what
- * must not shake (the background, the score) outside it. *)
+(* [view fx world]: the world and the particles, shaken, and the flash
+ * over it. Draw what must not shake (the background, the score)
+ * outside it. *)
 val view : t -> shape list -> shape list

@@ -105,9 +105,19 @@ let tests =
           let fx = List.fold_left (fun fx _ -> Juice.step c fx) fx (List.init 30 Fun.id) in
           Alcotest.(check bool) "calm again: the world as it is" true (Juice.view fx world = world));
       Testo.create "the effects with juice=off: none" (fun () ->
-          let fx = Juice.none ~seed:1 |> Juice.shake 1. |> Juice.freeze 8 |> Juice.flash white 10 in
+          let fx = Juice.none ~seed:1 |> Juice.shake 1. |> Juice.freeze 8 |> Juice.flash white 10 |> Juice.burst ~at:(0., 0.) Juice.sparks in
           let fx = Juice.step (computer_at 0. [ ("juice", "off") ]) fx in
           let world = [ circle red 10. ] in
           Alcotest.(check bool) "not frozen" false (Juice.frozen fx);
-          Alcotest.(check bool) "the world as it is" true (Juice.view fx world = world));
+          Alcotest.(check bool) "the world as it is" true (Juice.view fx world = world);
+          (* and a burst after the flag is seen: nothing either *)
+          let fx = Juice.burst ~at:(0., 0.) (Juice.debris red) fx in
+          Alcotest.(check bool) "no particle" true (Juice.view fx world = world));
+      Testo.create "a burst: its particles drawn over the world, then gone" (fun () ->
+          let c = computer_at 0. [] in
+          let world = [ circle red 10. ] in
+          let fx = Juice.none ~seed:1 |> Juice.burst ~at:(0., 0.) (Juice.debris blue) |> Juice.step c in
+          Alcotest.(check int) "the world, then 10 pieces" 11 (List.length (Juice.view fx world));
+          let fx = List.fold_left (fun fx _ -> Juice.step c fx) fx (List.init 60 Fun.id) in
+          Alcotest.(check int) "a second later, all gone" 1 (List.length (Juice.view fx world)));
     ]

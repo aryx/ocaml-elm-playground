@@ -17,40 +17,14 @@ let decay ?(per_second = 1.) ~(dt : float) (trauma : float) : float = Float.max 
 let shake (trauma : float) : float = trauma *. trauma
 
 (*****************************************************************************)
-(* The random values *)
-(*****************************************************************************)
-
-(* Park and Miller's minimal standard, one step: 16807 x mod (2^31 - 1)
- * by Schrage's method, every product below 2^31 (127773 = m / 16807,
- * 2836 = m mod 16807) *)
-let m = 2147483647
-
-let park_miller (x : int) : int =
-  let hi = x / 127773 and lo = x mod 127773 in
-  let t = (16807 * lo) - (2836 * hi) in
-  if t > 0 then t else t + m
-
-(* the high bits folded into the low ones: breaks the linearity that
- * leaves neighbouring points correlated (see Trauma.mli) *)
-let mix (x : int) : int =
-  let x = x lxor (x lsr 13) in
-  if x = 0 then 1 else x
-
-let hash ~(seed : int) (i : int) : float =
-  (* 20 bits of point, 10 of seed: below 2^30, positive *)
-  let x = ((i land 0xfffff) * 1024) + (seed land 0x3ff) + 1 in
-  let x = park_miller (mix (park_miller (mix (park_miller x)))) in
-  (2. *. float_of_int x /. float_of_int m) -. 1.
-
-(*****************************************************************************)
 (* Smooth or not *)
 (*****************************************************************************)
 
 let noise ~(seed : int) (x : float) : float =
   let i = Float.to_int (Float.floor x) in
-  Tween.lerp (hash ~seed i) (hash ~seed (i + 1)) (Ease.smoothstep (x -. Float.floor x))
+  Tween.lerp (Hash.hash ~seed i) (Hash.hash ~seed (i + 1)) (Ease.smoothstep (x -. Float.floor x))
 
-let jitter ~(seed : int) (x : float) : float = hash ~seed (Float.to_int (Float.floor x))
+let jitter ~(seed : int) (x : float) : float = Hash.hash ~seed (Float.to_int (Float.floor x))
 
 type offset = { dx : float; dy : float; angle : float }
 

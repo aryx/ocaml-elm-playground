@@ -523,6 +523,37 @@ start; `Juice.mli`'s header lists which do.
   - `notes_juice.md`: §3 gained "whose time?", §5 in full (trauma,
     noise, the hash, hitstop, flash, juice watching the game), §8
     rewritten for the clock.
+- 2026-09-23, phase 4 DONE: particles.
+  - `juice/Hash`: the hash moved out of `Trauma` (it was about random
+    numbers, not shaking), for `Trauma` and `Emitter` to share, with
+    its explanation and its tests (`Unit_hash`: seed 1 at 0, 1, 2;
+    mean and correlations), and `unit`, the same number in [0, 1].
+  - `juice/Emitter`: Reeves's model -- a recipe (count, speed,
+    direction, spread, life, size, spin, gravity, drag: each a pair of
+    bounds or a number), a burst of particles born from it, stepped by
+    semi-implicit Euler, gone when their life is spent; six draws a
+    particle from `Hash` and a count of draws, so the same seed gives
+    the same bursts; a cap (400), the oldest dropped. Generic: a
+    particle carries a payload made from a random tone, so `juice/`
+    knows nothing of colors. 5 tests (thrown up at 400 under 800: the
+    top 96.67 at frames 29 and 30, −6.67 after a second, where the
+    continuous answer is 100 and 0; drag 2: 36.17 and 30.85 after half
+    a second; the same seed the same burst; lives spent; the cap -- whose
+    test first expected 3 bursts of 20 under a cap of 50 to lose the
+    whole first burst: it loses 10 of its 20, and the test, not the
+    code, was wrong).
+  - `Juice.burst ~at b fx` with `sparks`, `smoke` and `debris color`
+    (the plan's three); the particles in `Juice.t`, stepped by `step`,
+    drawn by `view` inside the shake, fading with age; nothing with
+    `juice=off`. 2 new tests (a burst drawn then gone; `juice=off`).
+    `smoke`'s comment first promised puffs "growing thin"; particles
+    don't grow, so the comment was fixed rather than the feature added.
+  - `TinyBreakout`: each brick broken bursts `debris` of its color at
+    its center, found by comparing the wall before and after the rules'
+    update (`broken`, in the juice section). A new golden,
+    `TinyBreakout_debris.png` (frame 116, 8 frames after the first
+    brick broke); `pop` and the 900-frame `play` passed unchanged, no
+    particle being in flight at frames 12 and 900.
 
 ## Verification
 

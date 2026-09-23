@@ -27,9 +27,11 @@ type t = {
   freeze : int;
   (* the color, the frames left, the frames it lasts *)
   flash : (color * int * int) option;
+  particles : color Emitter.t;
 }
 
-let none ~(seed : int) : t = { seed; frames = 0; off = false; trauma = 0.; freeze = 0; flash = None }
+let none ~(seed : int) : t =
+  { seed; frames = 0; off = false; trauma = 0.; freeze = 0; flash = None; particles = Emitter.empty ~seed () }
 
 let dt = 1. /. 60.
 
@@ -45,6 +47,7 @@ let step (computer : computer) (fx : t) : t =
       trauma = Trauma.decay ~dt fx.trauma;
       freeze = max 0 (fx.freeze - 1);
       flash = (match fx.flash with Some (c, left, total) when left > 1 -> Some (c, left - 1, total) | _ -> None);
+      particles = Emitter.step ~dt fx.particles;
     }
 
 let now (fx : t) : time = Time (clock fx)
@@ -178,8 +181,47 @@ let flash (color : color) (frames : int) (fx : t) : t = { fx with flash = Some (
 
 let frozen (fx : t) : bool = fx.freeze > 0
 
+(* a recipe (Emitter.mli), and the colors its particles are drawn in *)
+type burst = { recipe : Emitter.recipe; palette : color list }
+
+let sparks : burst =
+  {
+    recipe =
+      { count = 16; speed = (150., 450.); direction = 90.; spread = 360.; life = (0.15, 0.45); size = (2., 5.); spin = 0.;
+        gravity = -300.; drag = 3. };
+    palette = [ white; yellow; orange ];
+  }
+
+let smoke : burst =
+  {
+    recipe =
+      { count = 10; speed = (20., 60.); direction = 90.; spread = 90.; life = (0.8, 1.5); size = (10., 22.); spin = 60.;
+        gravity = 40.; drag = 1. };
+    palette = [ gray; darkGray; rgb 180 180 180 ];
+  }
+
+let debris (c : color) : burst =
+  {
+    recipe =
+      { count = 10; speed = (100., 300.); direction = 90.; spread = 160.; life = (0.6, 1.); size = (5., 10.); spin = 400.;
+        gravity = -900.; drag = 0.5 };
+    palette = [ c ];
+  }
+
+let burst ~(at : number * number) (b : burst) (fx : t) : t =
+  if fx.off then fx
+  else
+    let n = List.length b.palette in
+    let color tone = List.nth b.palette (min (n - 1) (int_of_float (tone *. float_of_int n))) in
+    { fx with particles = Emitter.burst b.recipe ~data:color (fst at) (snd at) fx.particles }
+
+(* a particle, fading out as it ages *)
+let particle (p : color Emitter.particle) : shape =
+  rectangle p.data p.size p.size |> rotate p.angle |> move p.x p.y |> fade (1. -. (p.age /. p.life))
+
 let view (fx : t) (world : shape list) : shape list =
   let o = Trauma.offset ~seed:fx.seed ~trauma:fx.trauma (clock fx) in
+  let world = world @ List.map particle (Emitter.particles fx.particles) in
   let shaken = if fx.trauma > 0. then [ group world |> rotate o.angle |> move o.dx o.dy ] else world in
   match fx.flash with
   (* bigger than any screen: the view doesn't know the screen's size *)

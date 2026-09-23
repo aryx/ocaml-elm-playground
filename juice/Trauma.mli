@@ -37,20 +37,12 @@
    different seeds make the three offsets: across, up, and a slight
    turn.
 
-   The random values themselves come from a hash: a number from the
-   seed and the lattice point, the same every time. It is Park and
-   Miller's minimal standard generator (1988), x -> 16807 x mod
-   (2^31 - 1), computed by Schrage's method so that no product reaches
-   2^31 -- which matters here, because OCaml's ints have 63 bits
-   natively but 32 in a browser (js_of_ocaml), and an overflowing hash
-   would shake the two differently. A first version started the
-   generator from seed and point and took three steps: neighbouring
-   points then came out correlated (-0.15), the generator being linear;
-   an xor of the high bits between the steps (x lxor (x lsr 13)) brings
-   it to 0.002.
+   The random values themselves come from Hash.mli: a number from the
+   seed and the lattice point, the same every time, natively and in a
+   browser.
 
-   Worked example (checked by the tests): [hash ~seed:1] is -0.1084 at
-   point 0 and 0.5113 at point 1, so [noise ~seed:1] is -0.1084 at 0,
+   Worked example (checked by the tests): [Hash.hash ~seed:1] is -0.1084
+   at point 0 and 0.5113 at point 1, so [noise ~seed:1] is -0.1084 at 0,
    their mean 0.2014 at 0.5, and -0.0116 at 0.25 (smoothstep 0.25 =
    0.156 of the way). A trauma of 0.5 falls to 0.25 in a quarter of a
    second at the default rate, 1 a second.
@@ -69,15 +61,11 @@ val decay : ?per_second:float -> dt:float -> float -> float
 (* [shake trauma]: trauma squared *)
 val shake : float -> float
 
-(* [hash ~seed i]: a number in [-1, 1], the same for the same seed and
- * point, unrelated to its neighbours' *)
-val hash : seed:int -> int -> float
-
-(* [noise ~seed x]: smooth, in [-1, 1]: [hash] at the whole numbers,
+(* [noise ~seed x]: smooth, in [-1, 1]: [Hash.hash] at the whole numbers,
  * smoothstep between them *)
 val noise : seed:int -> float -> float
 
-(* [jitter ~seed x]: [hash] at the whole number below [x]: a new random
+(* [jitter ~seed x]: [Hash.hash] at the whole number below [x]: a new random
  * value at each whole number, the simple shake *)
 val jitter : seed:int -> float -> float
 

@@ -32,8 +32,9 @@ what makes each effect safe to add, and what keeps this out of
 | `juice/Squash` (done) | squash and stretch | §4 |
 | `examples/JuiceSquash` (done) | a ball dry, squashed, and flashed | §4 |
 | `juice/Trauma` (done) | screen shake | §5 |
+| `juice/Hash` (done) | random numbers that are the same every time | §5 |
+| `juice/Emitter` (done) | particles | §6 |
 | `games/arcade/TinyBreakout` (done) | the talk's game, juiced (`juice=off`: dry) | §5 |
-| `juice/Emitter` (planned) | particles | §6 |
 | `juice/Follow` (planned) | a value that follows a target | §7 |
 
 §1 to §4 are things that are a function of time and nothing else.
@@ -263,8 +264,9 @@ one to the next along smoothstep (`Trauma.noise`, 1D value noise), is a
 camera knocked. Three noises of different seeds give the offset across,
 up, and a slight turn.
 
-The random values come from a hash of the seed and the point, and one
-detail of it teaches something: OCaml's ints have 63 bits natively and
+The random values come from a hash of the seed and the point
+(`juice/Hash`, shared with the particles of §6), and one detail of it
+teaches something: OCaml's ints have 63 bits natively and
 32 in a browser, so a hash whose products overflow shakes differently
 on the two. Park and Miller's minimal standard generator (1988), by
 Schrage's method, never makes a product above 2³¹. It is linear,
@@ -291,12 +293,47 @@ goes up, a bounce, squash both. Run the same keys with `juice=off` and
 the game is the same, to the pixel once the effects have faded: its
 900-frame golden test passes unchanged, juiced.
 
-## 6. Particles (planned, `juice/Emitter`)
+## 6. Particles
 
-William Reeves, "Particle Systems" (SIGGRAPH 1983, the Genesis effect
-of *Star Trek II*): things born at a rate, each with a life, moving by
-a fixed step, dying. Seeded, so a burst is the same burst every run,
-and capped, since each is a shape to draw.
+William Reeves named them, for the Genesis effect of *Star Trek II*
+(1982): a wall of fire over a planet, "a class of fuzzy objects" that no
+surface can model, made instead of thousands of points, each a few
+numbers, none of them designed ("Particle Systems", SIGGRAPH 1983).
+Every engine has one since, and a game's sparks, dust and debris are
+still his model (`juice/Emitter`):
+
+```
+  born      at a place, with a speed, a direction within a cone, a
+            life, a size, a spin -- each drawn between two bounds
+  moving    by its velocity, pulled by gravity, slowed by drag
+  dying     when its life is spent
+```
+
+A *recipe* is those bounds; a *burst* is `count` particles born at
+once from it. Nothing collides: a particle is decoration, which is why
+`TinyBreakout`'s pieces may fly over its side walls. The motion is
+still the physics engine's step, semi-implicit Euler, and the worked
+example is its error: thrown up at 400 pixels a second under a gravity
+of 800, a particle should rise 100 pixels in half a second; stepped at
+60 frames a second it rises 96.67 and is at −6.67, not 0, a second
+later. Invisible in a spark -- and the same lesson as
+`physics/2d/Integrate.mli`'s orbit.
+
+Two things make it fit the rest of this library. **Randomness is a
+seed**: each draw is `juice/Hash`'s number for the seed and the count
+of draws so far (six a particle), so the same seed and bursts give the
+same particles, frame for frame -- a golden frame catches
+`TinyBreakout`'s first brick breaking, pieces mid-flight, every time.
+**A cap**: each particle is a shape to draw, so at most 400, the oldest
+dropped first.
+
+`juice/Emitter` knows nothing of shapes or colors: a particle carries
+a payload, made from a random *tone* in [0, 1] at its birth, and
+`Juice` makes it a color out of a palette -- `sparks` (white, yellow,
+orange, fast, all around), `smoke` (grays, slow, rising), `debris c`
+(pieces of `c`, thrown up, tumbling, falling). `TinyBreakout` bursts
+`debris` of each brick's color where it broke, finding the bricks
+broken by comparing the wall before and after the rules' update.
 
 ## 7. Follow: a value with a spring (planned, `juice/Follow`)
 
@@ -329,9 +366,9 @@ and `Juice.whiten`, while `Juice.during 0.08 hit m.fx`, draws the hit
 flash. The effects that last are said once, in `update`, and play out:
 
 ```ocaml
-let fx = if hit then m.fx |> Juice.shake 0.5 |> Juice.flash red 15 else m.fx in
+let fx = if hit then m.fx |> Juice.shake 0.5 |> Juice.burst ~at:(x, y) Juice.sparks else m.fx in
 ...
-Juice.view m.fx world   (* in view: shaken, and flashed *)
+Juice.view m.fx world   (* in view: the particles drawn, shaken, flashed *)
 ```
 
 `Juice.mli` has three sections, as the code has three kinds: the
@@ -362,3 +399,6 @@ last.
   going on.
 - **the effects' clock**: the frames `Juice.step` has counted, which
   every effect reads instead of the wall clock.
+- **particle system**: many small things each born, moving and dying
+  by itself (Reeves, 1983); a **recipe** gives the bounds each one's
+  numbers are drawn between, a **burst** is many born at once.

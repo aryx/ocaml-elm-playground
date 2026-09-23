@@ -12,20 +12,10 @@
 
 let near = Alcotest.float 1e-4
 
-(* the mean of [f i] for i from 0 to 99_999 *)
-let mean (f : int -> float) : float =
-  let s = ref 0. in
-  for i = 0 to 99_999 do
-    s := !s +. f i
-  done;
-  !s /. 100_000.
-
 let tests =
   Testo.categorize "Trauma"
     [
-      Testo.create "the worked example: the hash and the noise at seed 1" (fun () ->
-          Alcotest.check near "hash at 0" (-0.1084) (Trauma.hash ~seed:1 0);
-          Alcotest.check near "hash at 1" 0.5113 (Trauma.hash ~seed:1 1);
+      Testo.create "the worked example: the noise at seed 1" (fun () ->
           Alcotest.check near "noise at 0: the hash" (-0.1084) (Trauma.noise ~seed:1 0.);
           Alcotest.check near "noise at 0.5: the mean" 0.2014 (Trauma.noise ~seed:1 0.5);
           Alcotest.check near "noise at 0.25: smoothstep's 0.156 of the way" (-0.0116) (Trauma.noise ~seed:1 0.25));
@@ -44,10 +34,4 @@ let tests =
             let o = Trauma.offset ~seed:5 ~trauma:1. (float_of_int i /. 60.) in
             if Float.abs o.dx > 40. || Float.abs o.dy > 40. || Float.abs o.angle > 5. then Alcotest.failf "out of bounds at frame %d" i
           done);
-      Testo.create "the hash: mean 0, neighbours and seeds unrelated" (fun () ->
-          (* a correlation estimated from 100000 samples: 3 E[xy], the
-           * values being uniform in [-1, 1] (variance 1/3) *)
-          Alcotest.check (Alcotest.float 0.01) "mean" 0. (mean (Trauma.hash ~seed:7));
-          Alcotest.check (Alcotest.float 0.02) "neighbours" 0. (3. *. mean (fun i -> Trauma.hash ~seed:7 i *. Trauma.hash ~seed:7 (i + 1)));
-          Alcotest.check (Alcotest.float 0.02) "seeds" 0. (3. *. mean (fun i -> Trauma.hash ~seed:7 i *. Trauma.hash ~seed:8 i)));
     ]

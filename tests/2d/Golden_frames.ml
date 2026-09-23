@@ -810,6 +810,9 @@ let scripted : Testutil_golden.scripted list =
      * after the game started, the yellow rows overshooting, the green
      * ones growing, the orange and red ones not there yet *)
     ("games/arcade/software/TinyBreakout", "pop", 12, "space:1");
+    (* claude: and the first brick broken (at frame 108), its pieces
+     * thrown up and falling, 8 frames later *)
+    ("games/arcade/software/TinyBreakout", "debris", 116, "space:1,space:5,right:6-11");
     (* the turtle's drawings, all at once (the clock frozen, it wouldn't
      * move): Koch's filled snowflake; the dragon, 4096 lines *)
     ("examples/software/LogoFractals", "snowflake", 5, "a:2");

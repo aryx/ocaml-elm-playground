@@ -57,7 +57,8 @@
  * one effect at a time, in "Juice it or lose it" (GDC Europe 2012), and
  * this one has the first of those effects: the bricks pop in when a
  * wall appears, bottom row first; the ball and the paddle squash when
- * they meet; a broken brick shakes the screen a little, which adds up
+ * they meet; a broken brick bursts into pieces of its color, falling
+ * and tumbling, and shakes the screen a little, which adds up
  * when the ball is behind the wall and the points pour in; a lost ball
  * shakes it hard, and flashes it red. The juice is on by default; the
  * flag juice=off gives the dry game, the original's (dune exec
@@ -69,7 +70,7 @@
  * tiles, "Rr": the map draws it, says which brick a point is in, and a
  * brick broken is its 2 tiles set to ' '), Scene2d (title, play, game
  * over), Audio (a pitch per row, like the original's beeps), Juice
- * (tween, squash, stretch, shake, flash). Not
+ * (tween, squash, stretch, shake, flash, burst). Not
  * Physics: the ball's motion is 2 additions, and its bounces are rules
  * (the paddle's above, a wall's or brick's plain reversal); nor
  * Tilemap.hits, which says whether a box hits a tile, where Breakout
@@ -80,8 +81,8 @@
  * never breaking (a new letter in the wall's strings); more walls, typed
  * as strings; the original's two players, taking turns; the ball
  * stuck in a loop between unbreakable bricks, which Arkanoid breaks by
- * nudging its angle. The rest of the talk's juice: bricks bursting into
- * pieces, a trail behind the ball, the paddle's eyes following it.
+ * nudging its angle. The rest of the talk's juice: a trail behind the
+ * ball, the paddle's eyes following it.
  * Hitstop (Juice.freeze), a few frames' pause at each brick, is left
  * out on purpose: it is the one effect that changes *when* things
  * happen, and the golden test's scripted game, keys pressed at given
@@ -367,12 +368,32 @@ let update_rules (computer : computer) (model : model) : model =
  * did -- the scene or the game before and after -- and turns it into
  * effects; the view calls [pop] and [squashed] where it draws a brick,
  * the ball and the paddle, and [Juice.view] around the picture. *)
+
+(* the bricks the last update broke: each one's center and color *)
+let broken (before : Tilemap.t) (after : Tilemap.t) : ((number * number) * color) list =
+  List.concat_map
+    (fun c ->
+      List.filter_map
+        (fun (col, row) ->
+          if Tilemap.get after col row = Some ' ' then
+            let x, y = Tilemap.center before col row in
+            Some ((x + 12.5, y + wall_y), color c)
+          else None)
+        (Tilemap.find before c))
+    [ 'R'; 'O'; 'G'; 'Y' ]
+
 let juiced (before : scene) (model : model) : model =
   let now = Juice.now model.fx in
   match (before, model.scenes.scene) with
   | Title, Playing _ -> { model with wall_shown = now }
   | Playing g, Playing g' ->
-      let fx = if g'.score > g.score then Juice.shake 0.15 model.fx else model.fx in
+      (* a brick broken: it bursts into pieces of its color, and the
+       * screen shakes a little *)
+      let fx =
+        if g'.score > g.score then
+          List.fold_left (fun fx (at, c) -> Juice.burst ~at (Juice.debris c) fx) (Juice.shake 0.15 model.fx) (broken g.bricks g'.bricks)
+        else model.fx
+      in
       let fx = if g'.balls < g.balls then fx |> Juice.shake 0.7 |> Juice.flash red 15 else fx in
       let wall_shown = if g'.second_wall && not g.second_wall then now else model.wall_shown in
       (* off the paddle: going down before, up after, down there *)
