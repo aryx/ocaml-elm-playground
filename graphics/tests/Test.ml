@@ -38,6 +38,7 @@ let () =
           Unit_rgba.tests;
           Unit_deflate.tests;
           Unit_png.tests;
+          Unit_gif.tests;
           Unit_xpm.tests;
           Unit_mesh_cache.tests;
           Unit_matting.tests;

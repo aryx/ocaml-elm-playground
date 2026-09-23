@@ -68,11 +68,13 @@ let read_file (file : string) : string =
   Bytes.unsafe_to_string buf
 
 (* claude: the decoder is chosen by the file's first bytes, never by its
- * name (see notes_images.md section 1): our own for PNG (Png.mli),
- * stb_image for the others, until plan_images_teaching.md's GIF and
- * JPEG phases *)
+ * name (see notes_images.md section 1): our own for PNG (Png.mli) and
+ * GIF (Gif.mli), stb_image for the others, until
+ * plan_images_teaching.md's JPEG phase *)
 let decode_string (s : string) : image =
-  if String.length s >= 8 && String.sub s 0 8 = Png.signature then Png.decode s
+  let starts_with magic = String.length s >= String.length magic && String.sub s 0 (String.length magic) = magic in
+  if starts_with Png.signature then Png.decode s
+  else if starts_with "GIF8" then Gif.decode s
   else begin
     let buf = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout
         (String.length s) in
@@ -143,28 +145,11 @@ let image_of_url src =
 (*****************************************************************************)
 (* Animated GIFs *)
 (*****************************************************************************)
-(* claude: stb_image only returns the *first* frame of a GIF: the OCaml
- * binding (stb_image 0.5) only exposes load/decode, i.e., the C
- * stbi_load(), and the old stb_image.h it bundles does not even have
- * stbi_load_gif_from_memory() (the newer API returning all the frames).
- * So animated GIFs, e.g., elm-lang.org's Mario "walk" sprites (8 frames)
- * or turtle.gif (8 frames), were not animated natively, while the
- * browser animates them on the web.
- *
- * The approach here, which does not need another library:
- *  1) parse the GIF file format ourselves, just enough to cut the file
- *     into its frames (this is easy: a GIF is a sequence of blocks, and
- *     we don't need to decompress the pixel data, only to copy it);
- *  2) for each frame, build in memory a standalone, single-frame GIF
- *     file with the same colors and pixel data, and decode it with
- *     stb_image as before;
- *  3) compose the frames like a browser does: a frame is often just a
- *     small patch (e.g., Mario's frames 2-8 are about 16x26 pixels at
- *     some (x, y) offset in the 35x35 image) to draw over the previous
- *     full image, which must then be "disposed" of in a way specified
- *     in each frame;
- *  4) at render time, choose the frame to display according to the
- *     current time (see frame_at).
+(* claude: an animated GIF, e.g., elm-lang.org's Mario "walk" sprites (8
+ * frames) or turtle.gif (8 frames), is animated natively as the browser
+ * animates it on the web: Gif.animation composes its frames into full
+ * pictures once, when it's loaded, and at render time frame_at chooses
+ * the one to display according to the current time.
  *
  * Background: frames, delays, and the game's 60Hz
  * -----------------------------------------------
@@ -186,35 +171,9 @@ let image_of_url src =
  * delay of 0 (or 1) as 10, i.e., 0.1s. We do the same, hence the 0.1s,
  * so that the native version looks like the web one.
  *
- * Frames are often just patches
- * -----------------------------
- * To make files smaller, a frame does not have to be a full picture: it
- * can be a smaller rectangle ("patch") drawn at some (x, y) position over
- * what is already displayed. In mario/walk/left.gif, frame 1 is the full
- * 35x35 image, but frames 2 to 8 are only the area around Mario's body
- * that changes, e.g., frame 2 is a 16x26 patch at (9, 5):
- *
- *        0         9                  25       35
- *      0 +-----------------------------------+
- *        |          full image (35x35)       |
- *      5 |         +----------------+        |
- *        |         |  frame 2 patch |        |
- *        |         |   (16x26)      |        |
- *     31 |         +----------------+        |
- *     35 +-----------------------------------+
- *
- * Each frame also says what to do with its patch once its delay is over,
- * before drawing the next frame (its "disposal method"):
- *  - 0 or 1: leave it, the next patch is drawn on top of it;
- *  - 2: erase the patch area (browsers make it transparent; the spec says
- *       "restore to background color", but browsers do not do that);
- *  - 3: restore what was there before the patch was drawn.
- * Mario's frames mostly use 2: each pose is drawn on an empty
- * (transparent) area, so the previous pose does not show through. Inside
- * a patch, transparent pixels also let what is below show through.
- * This is why animation_of_gif below keeps a "canvas" of the full image
- * size, draws each patch on it, takes a snapshot of it (the full picture
- * for that frame), then applies the disposal method.
+ * A frame is often just a patch, drawn over the picture so far and then
+ * disposed of (see Gif.mli): Mario's frames mostly clear their patch,
+ * so the previous pose does not show through the next.
  *
  * The GIF animation has its own clock, independent from the game loop.
  * The game loop (Playground_platform.run_app) runs 60 times per second
@@ -244,124 +203,7 @@ let image_of_url src =
  *
  * Making your own animated sprites: see playground/making_sprites.mld
  * (published as docs/elm_playground/making_sprites.html by make website).
- *
- * The GIF format (GIF89a spec, https://www.w3.org/Graphics/GIF/spec-gif89a.txt):
- *
- *   "GIF89a"                             6 bytes header ("GIF87a" also ok)
- *   logical screen descriptor            7 bytes: width (2 bytes, little
- *                                        endian), height (2), flags (1),
- *                                        background color index (1),
- *                                        pixel aspect ratio (1)
- *   [global color table]                 3 * 2^(1 + (flags land 7)) bytes,
- *                                        if flags land 0x80
- *   blocks, each starting with a byte:
- *    0x21 = extension:                   0x21 label sub-blocks...
- *      label 0xF9 = graphic control ext. (applies to the next image):
- *                                        0x21 0xF9 0x04 packed delay(2)
- *                                        transparent_index 0x00
- *                                        where packed = disposal method
- *                                        (bits 2-4) and has_transparency
- *                                        (bit 0); delay in 1/100s
- *      other labels (comments, NETSCAPE looping, ...): ignored
- *    0x2C = image (a frame):             0x2C x(2) y(2) width(2) height(2)
- *                                        flags(1)
- *                                        [local color table] (same rule
- *                                        as the global one)
- *                                        lzw_min_code_size(1) sub-blocks...
- *    0x3B = end of file
- *   sub-blocks = sequence of (size byte, size bytes of data), ending with
- *                a 0 size byte
  *)
-
-type gif_frame = {
-  (* position and size of the frame patch in the full image *)
-  fx: int; fy: int; fw: int; fh: int;
-  (* how long to display this frame, in seconds *)
-  delay: float;
-  (* disposal method: what to do with the frame patch before drawing the
-   * next frame: 0 or 1 = leave it, 2 = clear the patch area (to
-   * transparent, like browsers do), 3 = restore what was there before *)
-  disposal: int;
-  (* a standalone GIF file containing just this frame, at (0, 0) *)
-  gif: string;
-}
-
-(* Parse a GIF file content; returns the full image size and the frames,
- * or raises Failure/Invalid_argument if the content is not a valid GIF.
- *)
-let gif_frames (s : string) : (int * int) * gif_frame list =
-  let byte i = Char.code s.[i] in
-  let u16 i = byte i lor (byte (i + 1) lsl 8) in
-  if String.length s < 13 || String.sub s 0 3 <> "GIF"
-  then failwith "not a GIF";
-  let width = u16 6 and height = u16 8 in
-  let color_table_size flags =
-    if flags land 0x80 <> 0 then 3 * (1 lsl (1 + (flags land 7))) else 0 in
-  (* the header, screen descriptor, and global color table are copied in
-   * each single-frame GIF, with the screen size replaced by the frame
-   * size *)
-  let global_end = 13 + color_table_size (byte 10) in
-  let global_table = String.sub s 13 (global_end - 13) in
-  (* returns the position after the sub-blocks starting at i *)
-  let rec skip_sub_blocks i =
-    let size = byte i in
-    if size = 0 then i + 1 else skip_sub_blocks (i + 1 + size)
-  in
-  (* the last graphic control extension seen, for the next frame:
-   * (packed, delay, transparent_index) *)
-  let rec loop i gce acc =
-    match byte i with
-    | 0x3B -> List.rev acc
-    | 0x21 when byte (i + 1) = 0xF9 ->
-        let gce = Some (byte (i + 3), u16 (i + 4), byte (i + 6)) in
-        loop (skip_sub_blocks (i + 2)) gce acc
-    | 0x21 ->
-        loop (skip_sub_blocks (i + 2)) gce acc
-    | 0x2C ->
-        let fx = u16 (i + 1) and fy = u16 (i + 3) in
-        let fw = u16 (i + 5) and fh = u16 (i + 7) in
-        let flags = byte (i + 9) in
-        let data_start = i + 10 + color_table_size flags in
-        (* data_start is the lzw_min_code_size byte *)
-        let data_end = skip_sub_blocks (data_start + 1) in
-        let packed, delay_cs, transparent =
-          match gce with
-          | Some (p, d, t) -> p, d, t
-          | None -> 0, 0, 0
-        in
-        let b = Buffer.create (data_end - i + 64) in
-        let add_u16 n =
-          Buffer.add_char b (Char.chr (n land 0xFF));
-          Buffer.add_char b (Char.chr (n lsr 8)) in
-        Buffer.add_string b "GIF89a";
-        add_u16 fw; add_u16 fh;
-        Buffer.add_string b (String.sub s 10 3);
-        Buffer.add_string b global_table;
-        (* keep only the transparency flag of the graphic control
-         * extension (disposal and delay are handled by us) *)
-        Buffer.add_string b "\x21\xF9\x04";
-        Buffer.add_char b (Char.chr (packed land 1));
-        add_u16 0;
-        Buffer.add_char b (Char.chr transparent);
-        Buffer.add_char b '\x00';
-        (* the image descriptor, moved to (0, 0), then the local color
-         * table and the compressed pixel data, copied as is *)
-        Buffer.add_char b '\x2C';
-        add_u16 0; add_u16 0;
-        Buffer.add_string b (String.sub s (i + 5) (data_end - (i + 5)));
-        Buffer.add_char b '\x3B';
-        let frame = {
-          fx; fy; fw; fh;
-          (* like Chrome and Firefox: a delay of 0 or 1/100s (common in
-           * old GIFs, including Mario's) means 1/10s *)
-          delay = (if delay_cs <= 1 then 0.1 else float delay_cs /. 100.);
-          disposal = (packed lsr 2) land 7;
-          gif = Buffer.contents b;
-        } in
-        loop data_end None (frame :: acc)
-    | c -> failwith (Printf.sprintf "unexpected GIF block 0x%02X at %d" c i)
-  in
-  (width, height), loop global_end None []
 
 (* claude: polymorphic in the frame type so a backend can convert every
  * frame once (see [map_animation]) to whatever it draws with, e.g. a
@@ -373,56 +215,8 @@ type 'a animation = {
   duration: float;
 }
 
-(* Compose the frames into full images; the "canvas" is an RGBA8 buffer
- * of the full image size, in the layout of Rgba_image.t, so a snapshot
- * of it is just another [image].
- *)
 let animation_of_gif (s : string) : image animation =
-  let (w, h), frames = gif_frames s in
-  let new_canvas () =
-    let c = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout
-        (w * h * 4) in
-    Bigarray.Array1.fill c 0;
-    c
-  in
-  let copy_canvas c =
-    let c' = new_canvas () in
-    Bigarray.Array1.blit c c';
-    c'
-  in
-  let canvas = new_canvas () in
-  (* iterate over the pixels of the frame patch that are inside the
-   * canvas; f gets the offset in the canvas, and in the patch *)
-  let iter_patch (fr : gif_frame) f =
-    for y = 0 to fr.fh - 1 do
-      for x = 0 to fr.fw - 1 do
-        let cx = fr.fx + x and cy = fr.fy + y in
-        if cx < w && cy < h
-        then f ((cy * w + cx) * 4) ((y * fr.fw + x) * 4)
-      done
-    done
-  in
-  let images =
-    frames |> List.map (fun (fr : gif_frame) ->
-      let before = if fr.disposal = 3 then Some (copy_canvas canvas) else None in
-      (* draw the patch; its transparent pixels (alpha 0) let the
-       * previous image show through *)
-      let patch = decode_string fr.gif in
-      let data = patch.rgba in
-      iter_patch fr (fun co po ->
-        if data.{po + 3} <> 0 then
-          for k = 0 to 3 do canvas.{co + k} <- data.{po + k} done
-      );
-      let snapshot : image = { width = w; height = h; rgba = copy_canvas canvas } in
-      (* dispose of the patch before the next frame *)
-      (match fr.disposal, before with
-      | 2, _ -> iter_patch fr (fun co _ -> for k = 0 to 3 do canvas.{co + k} <- 0 done)
-      | 3, Some c -> Bigarray.Array1.blit c canvas
-      | _ -> ()
-      );
-      (snapshot, fr.delay)
-    ) |> Array.of_list
-  in
+  let images = Array.of_list (Gif.animation s) in
   { frames = images;
     duration = Array.fold_left (fun acc (_, d) -> acc +. d) 0. images }
 

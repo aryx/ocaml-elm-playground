@@ -319,6 +319,22 @@ itself is small: the consumers already take a Bigarray of RGBA bytes.
   frames unchanged. Not done: pure-OCaml code meant for the web too,
   `Crc32` and `Adler32` assume 63-bit ints (js_of_ocaml's are 32);
   to check if they're ever compiled to JavaScript.
+- **Phase 3: done.** `graphics/images/gif/` (`Lzw`, `Gif`; library
+  `graphics_gif`, in `elm_playground`). `Gif` decodes the frames
+  itself (no more one-frame GIFs rebuilt for stb_image) and composes
+  them, the composition and the format's explanation taken over from
+  `Image_decode`, which keeps the animation's clock (`frame_at`).
+  Fixtures of our own rather than elm-lang.org's (Nintendo's) Mario:
+  `graphics/tests/gifs/`, made by `make_gifs.py` there -- the LZW
+  worked example as a file, 256 random colors (the dictionary full),
+  an interlaced one, and an animation with patches, local palettes,
+  transparency and the three disposals. `Unit_gif` checks them
+  against PIL's pixels, except where PIL follows the spec's
+  "background color" for disposal 2 and browsers (and we) clear to
+  transparent. Checked by hand against the old pipeline: every frame
+  of Mario's six GIFs, the turtle and the fixtures identical; the
+  still picture of an animated GIF differs only in the color of fully
+  transparent pixels (stb_image kept the palette's, we write 0).
 
 ## Demos: seeing the compression
 
