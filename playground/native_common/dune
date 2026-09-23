@@ -28,6 +28,7 @@
  (libraries
    unix
    networking networking_unix ; Http_request, for the Cmd.Http_get of Commands
+   caps ; the Cap.network a Cmd.Http_get carries
    logs
    tsdl
    elm_core ; Sub/Cmd, to turn SDL events into the app's msgs

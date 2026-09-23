@@ -63,8 +63,8 @@ type knobs = { latency : int (* ms *); jitter : int; loss : int (* % *); delay :
 
 (* the transport of net=host and net=join, installed by a platform
  * that has sockets (Udp.connect, natively) *)
-let connect : (Transport.role -> (Transport.t, string) result) ref =
-  ref (fun _ -> Error "no sockets here (in a browser: WebSockets, plan_networking_teaching.md phase 5)")
+let connect : (Cap.network -> Transport.role -> (Transport.t, string) result) ref =
+  ref (fun _ _ -> Error "no sockets here (in a browser: WebSockets, plan_networking_teaching.md phase 5)")
 
 let set_connect f = connect := f
 
@@ -93,7 +93,7 @@ let config_of (k : knobs) : Sim_net.config =
 let int_flag (flags : flags) (name : string) (default : int) : int =
   Option.value (Option.bind (List.assoc_opt name flags) int_of_string_opt) ~default
 
-let start ~players (flags : flags) (model : 'model) : 'model state =
+let start ~players ?(network : Cap.network option) (flags : flags) (model : 'model) : 'model state =
   let side = { model; last = Array.make players empty; tick = 0 } in
   match List.assoc_opt "net" flags with
   | Some "simulate" ->
@@ -116,9 +116,12 @@ let start ~players (flags : flags) (model : 'model) : 'model state =
           (Transport.Host { bind = Option.value (List.assoc_opt "bind" flags) ~default:"127.0.0.1"; port }, 0)
         else (Transport.Join { host = Option.value (List.assoc_opt "host" flags) ~default:"127.0.0.1"; port }, 1)
       in
-      match !connect role with
-      | Ok transport -> Remote { transport; lockstep = Lockstep.create ~me ~players ~delay:(int_flag flags "delay" 3); side; me }
-      | Error why -> Failed (Printf.sprintf "net=%s: %s" net why, model))
+      match network with
+      | None -> Failed (Printf.sprintf "net=%s: this program wasn't granted the network (Cap.network)" net, model)
+      | Some caps -> (
+          match !connect caps role with
+          | Ok transport -> Remote { transport; lockstep = Lockstep.create ~me ~players ~delay:(int_flag flags "delay" 3); side; me }
+          | Error why -> Failed (Printf.sprintf "net=%s: %s" net why, model)))
   | _ -> Local side
 
 (*****************************************************************************)
@@ -227,12 +230,13 @@ let side_by_side view (computer : computer) (knobs : knobs) peers : shape list =
 (* Entry point *)
 (*****************************************************************************)
 
-let game ~(players : int) view update (model : 'model) =
+let game ?(network : < Cap.network ; .. > option) ~(players : int) view update (model : 'model) =
+  let network = Option.map (fun caps -> (caps :> Cap.network)) network in
   let rec update_state (computer : computer) (state : 'model state) : 'model state =
     match state with
     (* the flags known at last: the mode chosen, and this frame's tick
      * played in it, as a one-player game would *)
-    | Starting model -> update_state computer (start ~players computer.flags model)
+    | Starting model -> update_state computer (start ~players ?network computer.flags model)
     | Local side -> Local (one_tick update computer.flags side (Array.init players (local_keyboard computer.keyboard)))
     | Simulate s ->
         let knobs, held = turn_knobs computer.keyboard s.held s.knobs in

@@ -70,7 +70,7 @@ let rec clip (s : Playground.screen) (shape : Playground.shape) : Playground.sha
   | Group shapes -> { shape with form = Group (List.map (clip s) shapes) }
   | _ -> shape
 
-let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse:_ ?flags
+let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse:_ ?flags ?network:_
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   let view2d (computer : Playground.computer) (model : 'model) : Playground.shape list =
     match Playground3d.views3d app3d computer model with

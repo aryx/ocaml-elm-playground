@@ -7,7 +7,17 @@
  * to the app's init, and so end up in computer.flags, see
  * Playground.flags *)
 val run_app:
-  ?rendering:Playground.rendering -> ?flags:Playground.flags -> ('a, 'b) Playground.app -> unit
+  ?rendering:Playground.rendering -> ?flags:Playground.flags -> ?network:< Cap.network ; .. > ->
+  ('a, 'b) Playground.app -> unit
+(* claude: [network], the program's capability to reach the network
+ * (plan_caps.md), for what the platform does on its behalf: download
+ * an image given by URL (Download.grant). A program granting it says
+ * so in its main (run_app takes [< Cap.network; .. >]: only the network
+ * of the capabilities it is given):
+ *   let main = Cap.main (fun caps ->
+ *     Playground_platform.run_app ~network:caps app)
+ * Without it, an image URL is refused. (The Http.get command and
+ * Multiplayer's net=host carry their own, given where they are made.) *)
 
 (* The parameters the program was started with (see Playground.flags):
  * natively, the command line's arguments without a dash, name=value or

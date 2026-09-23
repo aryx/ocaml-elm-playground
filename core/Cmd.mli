@@ -15,6 +15,11 @@
    network, and the same program runs natively and in a browser, each
    platform performing the command its own way.
 
+   A command that reaches the network carries the program's capability
+   to do so (Cap.network, plan_caps.md): it was checked where the
+   command was built, in the program, and the platform only performs
+   it -- a program that wasn't given the network can't even write one.
+
    Programs build them with Playground.Http.get (Elm's spelling); the
    constructors are here for the platforms. *)
 
@@ -30,8 +35,9 @@ type 'msg t =
   | None
   (* the message given back to [update] at the next frame *)
   | Msg of 'msg
-  (* a GET of the URL, its body given back as a message (or why not) *)
-  | Http_get of string * ((string, http_error) result -> 'msg)
+  (* a GET of the URL, its body given back as a message (or why not);
+   * with the authority to reach the network *)
+  | Http_get of Cap.network * string * ((string, http_error) result -> 'msg)
   | Batch of 'msg t list
 
 (* nothing to do *)

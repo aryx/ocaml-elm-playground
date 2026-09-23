@@ -115,8 +115,10 @@ let update computer mario =
 let app = game view update initial_model
 
 (* claude: pixel art: keep the sprites' pixels sharp when enlarged, on
- * every backend (see Playground.rendering) *)
+ * every backend (see Playground.rendering); and the network granted,
+ * its sprites coming from elm-lang.org (plan_caps.md) *)
 let main =
-  Playground_platform.run_app ~rendering:{ default_rendering with smooth_images = false }
-    ~flags:(Playground_platform.flags ()) app
+  Cap.main (fun caps ->
+      Playground_platform.run_app ~rendering:{ default_rendering with smooth_images = false }
+        ~flags:(Playground_platform.flags ()) ~network:caps app)
 

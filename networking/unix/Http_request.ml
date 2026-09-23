@@ -21,6 +21,8 @@ type state =
   | Done of (Http.response, error) result
 
 type t = {
+  (* the authority to reach the network, for the redirections too *)
+  caps : Cap.network;
   mutable state : state;
   mutable url : Url.t;
   mutable request : string;
@@ -63,6 +65,7 @@ let begin_request (t : t) : state =
   | Error why -> Done (Error (Bad_url why))
   | Ok (host, port, request) -> (
       t.request <- request;
+      let (_ : Cap.Network.t) = t.caps#network host in
       match Unix.getaddrinfo host (string_of_int port) [ Unix.AI_SOCKTYPE Unix.SOCK_STREAM ] with
       | [] -> failed t (Printf.sprintf "can't resolve %S" host)
       | addresses -> connect t addresses)
@@ -89,9 +92,10 @@ let answered (t : t) (bytes : string) : state =
 (* Entry points *)
 (*****************************************************************************)
 
-let start ?(max_redirects = 5) ?(timeout = 30.) (s : string) : t =
+let start ?(max_redirects = 5) ?(timeout = 30.) (caps : < Cap.network ; .. >) (s : string) : t =
   let t =
     {
+      caps = (caps :> Cap.network);
       state = Done (Error (Bad_url s));
       url = Url.{ scheme = None; authority = None; path = s; query = None; fragment = None };
       request = "";

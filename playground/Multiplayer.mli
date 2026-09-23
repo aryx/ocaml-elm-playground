@@ -28,7 +28,10 @@
      Each half shows what that computer shows, and the checksums say
      whether the two games still agree (Checksum.mli);
    - [net=host] and [net=join]: two real computers, over UDP (natively
-     only: Udp.mli). The host is player 0 and waits, on port 7777
+     only: Udp.mli), for a program granted the network: it passes
+     [~network:caps], from its Cap.main (only the network of them is used)
+     (plan_caps.md); without it, these two modes say so on the screen,
+     and the program's type says it can't reach the network. The host is player 0 and waits, on port 7777
      ([port=]), of this computer only unless given [bind=0.0.0.0] (a
      LAN); the other one joins, [net=join host=192.168.1.12], and is
      player 1. Each plays with its arrows. No handshake: the host plays
@@ -65,12 +68,13 @@ type 'model state
 (* how net=host and net=join reach the other computer: installed by a
  * platform that has sockets (the native ones, Udp.connect); without
  * it, the modes say so on the screen *)
-val set_connect : (Transport.role -> (Transport.t, string) result) -> unit
+val set_connect : (Cap.network -> Transport.role -> (Transport.t, string) result) -> unit
 
 (* [game ~players view update model]: [view computer n model] draws
  * what player n sees (the real computer: its screen, its time);
  * [update computer players model] is one tick, everyone's input *)
 val game :
+  ?network:< Cap.network ; .. > ->
   players:int ->
   (Playground.computer -> int -> 'model -> Playground.shape list) ->
   (Playground.computer -> player list -> 'model -> 'model) ->

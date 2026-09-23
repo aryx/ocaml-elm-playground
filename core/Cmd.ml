@@ -10,7 +10,7 @@ type http_error =
 type 'msg t =
   | None
   | Msg of 'msg
-  | Http_get of string * ((string, http_error) result -> 'msg)
+  | Http_get of Cap.network * string * ((string, http_error) result -> 'msg)
   | Batch of 'msg t list
 
 let none = None

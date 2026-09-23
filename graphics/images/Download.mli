@@ -4,6 +4,12 @@
  * https:// still by curl, until TLS is ours too
  * (plan_dependencies_remaining.md, section 2). *)
 
+(* Reaching the network is the program's authority, not the platform's
+ * (plan_caps.md): a URL is downloaded only once [grant] has been given
+ * the program's Cap.network, which the platforms do in run_app
+ * ~network; otherwise [local_file] refuses it. *)
+val grant : < Cap.network ; .. > -> unit
+
 (* "http://..." or "https://..." *)
 val is_url : string -> bool
 

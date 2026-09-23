@@ -163,7 +163,8 @@ let fetch_file (source : string) (k : string option -> unit) : unit =
       Logs.warn (fun m -> m "can't get %s: %s" source (Printexc.to_string e));
       k None
 
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) (app : _ Playground.app) =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network (app : _ Playground.app) =
+  Option.iter Download.grant network;
   Audio.set_fetcher fetch_file;
   (* claude: Multiplayer's net=host and net=join, over UDP *)
   Multiplayer.set_connect Udp.connect;

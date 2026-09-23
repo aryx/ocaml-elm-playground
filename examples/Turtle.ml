@@ -30,4 +30,7 @@ let update computer turtle =
 
 let app = game view update initial_turtle
 
-let main = Playground_platform.run_app app
+(* claude: its picture comes from elm-lang.org: the program grants the
+ * network, its only capability, for the platform to download it
+ * (plan_caps.md) *)
+let main = Cap.main (fun caps -> Playground_platform.run_app ~network:caps app)

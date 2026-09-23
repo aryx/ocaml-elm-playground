@@ -39,7 +39,8 @@ let drain (fd : Unix.file_descr) : (Unix.sockaddr * string) list =
 let send_to (fd : Unix.file_descr) (a : Unix.sockaddr) (s : string) : unit =
   try ignore (Unix.sendto_substring fd s 0 (String.length s) [] a) with Unix.Unix_error _ -> ()
 
-let host ~(bind : string) ~(port : int) : Transport.t * int =
+let host (caps : < Cap.network ; .. >) ~(bind : string) ~(port : int) : Transport.t * int =
+  let (_ : Cap.Network.t) = caps#network bind in
   let fd = socket () in
   Unix.setsockopt fd Unix.SO_REUSEADDR true;
   Unix.bind fd (address bind port);
@@ -64,7 +65,8 @@ let host ~(bind : string) ~(port : int) : Transport.t * int =
   in
   (transport, port)
 
-let join ~(host : string) ~(port : int) : Transport.t =
+let join (caps : < Cap.network ; .. >) ~(host : string) ~(port : int) : Transport.t =
+  let (_ : Cap.Network.t) = caps#network host in
   let fd = socket () in
   let there = address host port in
   let heard = ref false in
@@ -84,11 +86,11 @@ let join ~(host : string) ~(port : int) : Transport.t =
         else Printf.sprintf "joining %s, waiting for an answer" (show there));
   }
 
-let connect (role : Transport.role) : (Transport.t, string) result =
+let connect (caps : < Cap.network ; .. >) (role : Transport.role) : (Transport.t, string) result =
   try
     match role with
-    | Host { bind; port } -> Ok (fst (host ~bind ~port))
-    | Join { host = h; port } -> Ok (join ~host:h ~port)
+    | Host { bind; port } -> Ok (fst (host caps ~bind ~port))
+    | Join { host = h; port } -> Ok (join caps ~host:h ~port)
   with
   | Unix.Unix_error (e, _, _) -> Error (Unix.error_message e)
   | Failure why -> Error why

@@ -104,6 +104,33 @@ document named this"), whatever the storage behind them is.
    with `Cap.main` in it). **Done**: it links and runs, with no
    missing-primitive warning.
 3. `Cap.random` for Tetris and Snake.
+3b. **The network** (done, 2026-09-23, with the networking work:
+   `plan_networking_teaching.md`, `plan_dependencies_remaining.md`).
+   The rule: the capability goes where it is used, and the caller
+   restricts it with a coercion, `(caps :> < Cap.network >)`.
+   - Every function opening a socket takes `< Cap.network; .. >` and asks
+     it for the host before the socket (`caps#network host`): `Tcp`,
+     `Udp`, `Http_client`, `Http_request` in `networking/unix/`. The pure
+     `networking/` needs none, and can't reach the network.
+   - A command carries it: `Playground.Http.get caps ~url ~expect` builds
+     a `Cmd.Http_get` holding the `Cap.network` (so `core/` depends on
+     `caps`), checked where the program made the command; the platform
+     only performs it.
+   - `Multiplayer.game ?network`: `net=host`/`net=join` need it, and
+     say so on the screen without it.
+   - What the platform does on the program's behalf with no call site to
+     hold a capability -- an `image` or a texture given by URL, fetched
+     while drawing -- takes the program's grant at the start:
+     `run_app ~network` (2D and 3D), kept by `Download.grant`; without
+     it, a URL is refused.
+   - Programs granting it: Turtle and Mario (their pictures from
+     elm-lang.org), HttpText, TinySpacewar; each `main` is `Cap.main`,
+     restricted to `< Cap.network >`. The tests of `networking/unix/`
+     take theirs from `Cap.main` in their `Test.ml`.
+   - Later, in ocaml-caps (the author's): finer capabilities than
+     `Cap.network` -- to connect, to listen on this machine, to listen on
+     the network (`bind=0.0.0.0`, the one real exposure) -- so that
+     TinySpacewar's type says which; `Cap.network` their union meanwhile.
 4. The Semgrep rules of `ocaml-caps/rules/` added to this repository's
    `semgrep.jsonnet`, with the platform (the TCB) excluded, and `make
    check` clean -- which is where the inventory above either gets its

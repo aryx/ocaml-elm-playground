@@ -19,6 +19,10 @@
  *   http://localhost:8001/examples/web/HttpText.html
  *   dune exec examples/HttpText.exe -- url=http://example.com/
  *
+ * The network is the program's to grant (plan_caps.md): main gets the
+ * capabilities from Cap.main, and the functions below take only the
+ * network of them ([< Cap.network; .. >]).
+ *
  * "r" asks again: a command can come from [update] too. Natively, the
  * request is networking/unix/Http_request's, stepped every frame
  * (http:// only); in a browser, an XMLHttpRequest. Without the server:
@@ -31,18 +35,19 @@ type state = Loading | Success of string | Failure of string
 type model = { url : string; state : state; time : float }
 type msg = GotText of (string, Http.error) result | Tick of float | Key of string
 
-let get (url : string) : msg Cmd.t = Http.get ~url ~expect:(Http.expect_string (fun result -> GotText result))
+let get (caps : < Cap.network ; .. >) (url : string) : msg Cmd.t =
+  Http.get caps ~url ~expect:(Http.expect_string (fun result -> GotText result))
 
-let init (flags : flags) : model * msg Cmd.t =
+let init (caps : < Cap.network ; .. >) (flags : flags) : model * msg Cmd.t =
   let url = Option.value (List.assoc_opt "url" flags) ~default:default_url in
-  ({ url; state = Loading; time = 0. }, get url)
+  ({ url; state = Loading; time = 0. }, get caps url)
 
-let update (msg : msg) (model : model) : model * msg Cmd.t =
+let update (caps : < Cap.network ; .. >) (msg : msg) (model : model) : model * msg Cmd.t =
   match msg with
   | GotText (Ok text) -> ({ model with state = Success text }, Cmd.none)
   | GotText (Error e) -> ({ model with state = Failure (Http.error_to_string e) }, Cmd.none)
   | Tick time -> ({ model with time }, Cmd.none)
-  | Key "r" -> ({ model with state = Loading }, get model.url)
+  | Key "r" -> ({ model with state = Loading }, get caps model.url)
   | Key _ -> (model, Cmd.none)
 
 (* the text's first lines, cut to fit, tabs as spaces *)
@@ -81,13 +86,13 @@ let view (model : model) : shape list =
   :: words_from (-430.) 445. color status
   :: List.mapi (fun i line -> monospace (-460.) (410. -. (14. *. float_of_int i)) darkGray line) body
 
-let app =
+let app (caps : < Cap.network ; .. >) =
   {
-    Playground.init;
-    update;
+    Playground.init = init caps;
+    update = update caps;
     view;
     subscriptions =
       (fun _ -> Sub.batch [ Sub.on_animation_frame (fun t -> Tick t); Sub.on_key_down (fun key -> Key key) ]);
   }
 
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app caps))

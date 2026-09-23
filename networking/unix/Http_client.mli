@@ -30,7 +30,7 @@
 (* the final response (whatever its status, 404 included: the caller
  * decides), or why there is none: a URL we can't get, a network error,
  * a response that doesn't parse, too many redirections *)
-val get : ?max_redirects:int -> ?timeout:float -> string -> (Http.response, string) result
+val get : ?max_redirects:int -> ?timeout:float -> < Cap.network ; .. > -> string -> (Http.response, string) result
 
 (* what to connect to and what to send for [url]: the host for the
  * resolver, the port, the request's bytes; Error for a URL that isn't

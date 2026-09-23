@@ -12,7 +12,10 @@
 
 let default_timeout = 30.
 
-let connect ?(timeout = default_timeout) ~(host : string) ~(port : int) () : Unix.file_descr =
+let connect ?(timeout = default_timeout) (caps : < Cap.network ; .. >) ~(host : string) ~(port : int) () :
+    Unix.file_descr =
+  (* the authority to reach [host], asked for before any socket *)
+  let (_ : Cap.Network.t) = caps#network host in
   let addresses = Unix.getaddrinfo host (string_of_int port) [ Unix.AI_SOCKTYPE Unix.SOCK_STREAM ] in
   if addresses = [] then failwith (Printf.sprintf "Tcp.connect: can't resolve %S" host);
   (* each address in turn, the last one's error raised *)
@@ -47,8 +50,8 @@ let receive_all (fd : Unix.file_descr) : string =
   in
   go ()
 
-let exchange ?timeout ~(host : string) ~(port : int) (s : string) : string =
-  let fd = connect ?timeout ~host ~port () in
+let exchange ?timeout (caps : < Cap.network ; .. >) ~(host : string) ~(port : int) (s : string) : string =
+  let fd = connect ?timeout caps ~host ~port () in
   Fun.protect
     ~finally:(fun () -> Unix.close fd)
     (fun () ->

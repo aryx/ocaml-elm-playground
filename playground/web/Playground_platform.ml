@@ -831,7 +831,9 @@ let fetch_text (url : string) (k : (string, Cmd.http_error) result -> unit) : un
       ignore (Ojs.call xhr "send" [||])
 
 (* when using the simple DOM *)
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
+(* claude: [network] unused: the browser downloads the images, by its
+ * own rules (the page's site, or CORS) *)
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_ app =
   Audio.set_fetcher fetch_web;
   Window.set_onload window (fun () ->
 
@@ -855,7 +857,9 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
       |> List.iter (fun (c : _ Cmd.t) ->
              match c with
              | Msg msg -> next_frame_msgs := !next_frame_msgs @ [ msg ]
-             | Http_get (url, k) -> fetch_text url (fun result -> apply_msg (k result))
+             (* the capability checked where the command was built; the
+              * browser has its own rules (the same site, or CORS) *)
+             | Http_get (_caps, url, k) -> fetch_text url (fun result -> apply_msg (k result))
              | None | Batch _ -> ())
     in
     perform init_cmd;

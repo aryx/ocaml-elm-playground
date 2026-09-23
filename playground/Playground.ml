@@ -539,7 +539,8 @@ module Http = struct
   type 'msg expect = (string, error) result -> 'msg
 
   let expect_string (f : (string, error) result -> 'msg) : 'msg expect = f
-  let get ~(url : string) ~(expect : 'msg expect) : 'msg Cmd.t = Cmd.Http_get (url, expect)
+  let get (caps : < Cap.network ; .. >) ~(url : string) ~(expect : 'msg expect) : 'msg Cmd.t =
+    Cmd.Http_get ((caps :> Cap.network), url, expect)
 
   let error_to_string (e : error) : string =
     match e with

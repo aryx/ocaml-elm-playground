@@ -20,7 +20,7 @@ let perform (t : 'msg t) (cmd : 'msg Cmd.t) : unit =
   |> List.iter (fun (c : 'msg Cmd.t) ->
          match c with
          | Msg msg -> t.in_flight <- t.in_flight @ [ Now msg ]
-         | Http_get (url, k) -> t.in_flight <- t.in_flight @ [ Request (Http_request.start url, k) ]
+         | Http_get (caps, url, k) -> t.in_flight <- t.in_flight @ [ Request (Http_request.start caps url, k) ]
          | None | Batch _ -> (* to_list flattened them *) ())
 
 (* Http_request's answer as Elm's: a 2xx is the body, another status an

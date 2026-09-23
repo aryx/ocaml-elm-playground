@@ -24,10 +24,14 @@ val run_app3d :
   ?rendering:Playground3d.rendering ->
   ?capture_mouse:bool ->
   ?flags:Playground.flags ->
+  ?network:< Cap.network ; .. > ->
   ('a, 'b) Playground3d.app3d ->
   unit
 (* claude: [rendering] (default: Playground3d.default_rendering) sets how
  * to draw, see Playground3d.rendering.
+ *
+ * [network]: the program's capability to reach the network, for the
+ * textures given by URL, as 2D's run_app ~network.
  *
  * [flags] (default: none): the app's computer.flags, as for 2D's
  * Playground_platform.run_app, and read the same way, with 2D's

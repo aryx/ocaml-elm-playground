@@ -234,5 +234,7 @@ let view (computer : computer) (_player : int) (model : model) : shape list =
       @ [ text red 3. (Printf.sprintf "WEDGE %d" g.wedge.score) |> move (-350.) 460.;
           text (rgb 90 150 255) 3. (Printf.sprintf "NEEDLE %d" g.needle.score) |> move 350. 460. ]
 
-let app = Multiplayer.game ~players:2 view update initial_model
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+(* the network granted, for net=host and net=join only (plan_caps.md):
+ * the rest of the game can't reach it *)
+let app (network : < Cap.network ; .. >) = Multiplayer.game ~network ~players:2 view update initial_model
+let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app caps))

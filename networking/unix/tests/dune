@@ -3,5 +3,5 @@
 ; without the Internet
 (test
  (name Test)
- (libraries unix alcotest testo networking networking_unix)
+ (libraries unix caps alcotest testo networking networking_unix)
 )

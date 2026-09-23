@@ -110,8 +110,9 @@ teaches the layering every protocol since has kept:
   is an optional later module, since it is a nice small binary
   protocol).
 - **A TCP connection** (`Unix.socket`, `connect`): the OS boundary,
-  in `networking/unix/` (native only), and one day behind a capability
-  (`Cap.network`, [`plan_caps.md`](plan_caps.md), with `Download`).
+  in `networking/unix/` (native only), behind a capability
+  (`Cap.network`, [`plan_caps.md`](plan_caps.md) phase 3b, `Download`
+  included: a URL needs the program's grant).
 - **The request and the response**, pure OCaml in `networking/` like the
   rest of that plan's modules (no sockets there): the request line and
   headers written, the status line and headers parsed, the body read

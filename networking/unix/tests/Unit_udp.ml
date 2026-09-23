@@ -31,12 +31,12 @@ let update (inputs : string array) (m : model) : model =
 
 let input (p : int) (tick : int) : string = String.make 1 (Char.chr (((p * 7919) + (tick * 104729)) land 255))
 
-let tests =
+let tests (caps : < Cap.network ; .. >) =
   Testo.categorize "Udp"
     [
       Testo.create "the host learns its player from the first datagram" (fun () ->
-          let host, port = Udp.host ~bind:"127.0.0.1" ~port:0 in
-          let player = Udp.join ~host:"127.0.0.1" ~port in
+          let host, port = Udp.host caps ~bind:"127.0.0.1" ~port:0 in
+          let player = Udp.join caps ~host:"127.0.0.1" ~port in
           host.send "lost: nobody to send to yet";
           player.send "hello";
           Alcotest.(check (list string)) "the host hears" [ "hello" ] (gather host 1);
@@ -44,8 +44,8 @@ let tests =
           Alcotest.(check (list string)) "the player hears back" [ "welcome" ] (gather player 1);
           Alcotest.(check bool) "the status says so" true (String.length (host.status ()) > 0));
       Testo.create "a third sender, ignored" (fun () ->
-          let host, port = Udp.host ~bind:"127.0.0.1" ~port:0 in
-          let player = Udp.join ~host:"127.0.0.1" ~port and intruder = Udp.join ~host:"127.0.0.1" ~port in
+          let host, port = Udp.host caps ~bind:"127.0.0.1" ~port:0 in
+          let player = Udp.join caps ~host:"127.0.0.1" ~port and intruder = Udp.join caps ~host:"127.0.0.1" ~port in
           player.send "me";
           ignore (gather host 1);
           intruder.send "let me in";
@@ -53,8 +53,8 @@ let tests =
           Alcotest.(check (list string)) "only the player" [ "me again" ] (gather host 2));
       Testo.create "Lockstep over real sockets: 300 ticks, one game" (fun () ->
           let ticks = 300 and delay = 3 in
-          let host, port = Udp.host ~bind:"127.0.0.1" ~port:0 in
-          let player = Udp.join ~host:"127.0.0.1" ~port in
+          let host, port = Udp.host caps ~bind:"127.0.0.1" ~port:0 in
+          let player = Udp.join caps ~host:"127.0.0.1" ~port in
           let transports = [| host; player |] in
           let peers = Array.init 2 (fun me -> Lockstep.create ~me ~players:2 ~delay) in
           let models = Array.make 2 { positions = [| 0; 0 |]; mix = 17 } in

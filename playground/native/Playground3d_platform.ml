@@ -306,8 +306,9 @@ let link_program ~(vertex_source : string) ~(fragment_source : string) : int =
 
 let preload_texture : string -> unit = Texture_decode.preload
 
-let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flags
+let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flags ?network
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
+  Option.iter Download.grant network;
   (* claude: -v, -debug, and the -fixed-time/-keys/-dump-frame flags (see
    * Native_loop_3d) *)
   Native_loop_3d.parse_cli_and_setup_logging ();

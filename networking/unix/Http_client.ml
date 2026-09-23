@@ -28,16 +28,16 @@ let prepare (url : Url.t) : (string * int * string, string) result =
   | _ -> Error (Printf.sprintf "%s: not an http:// URL" (Url.to_string url))
 
 (* one request, no redirection followed *)
-let get_once ?timeout (url : Url.t) : (Http.response, string) result =
+let get_once ?timeout (caps : < Cap.network ; .. >) (url : Url.t) : (Http.response, string) result =
   let* host, port, request = prepare url in
-  match Tcp.exchange ?timeout ~host ~port request with
+  match Tcp.exchange ?timeout caps ~host ~port request with
   | answer -> Http.parse_response answer
   | exception Unix.Unix_error (e, _, _) -> Error (Printf.sprintf "%s: %s" (Url.to_string url) (Unix.error_message e))
   | exception Failure msg -> Error msg
 
-let get ?(max_redirects = 5) ?timeout (s : string) : (Http.response, string) result =
+let get ?(max_redirects = 5) ?timeout (caps : < Cap.network ; .. >) (s : string) : (Http.response, string) result =
   let rec follow (url : Url.t) (left : int) =
-    let* (response : Http.response) = get_once ?timeout url in
+    let* (response : Http.response) = get_once ?timeout caps url in
     match (Http.is_redirect response.status, Http.header "Location" response.headers) with
     | true, Some location ->
         if left = 0 then Error (Printf.sprintf "%s: too many redirections" s)

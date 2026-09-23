@@ -651,7 +651,7 @@ let capture_mouse_on_click () : unit =
     Js._true
   |> ignore
 
-let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = false) ?flags
+let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = false) ?flags ?network:_
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   if capture_mouse then capture_mouse_on_click ();
   shading := rendering.shading;

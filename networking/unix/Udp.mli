@@ -22,6 +22,9 @@
    socket is non-blocking (Http_request.mli): a frame asks for what
    has arrived and never waits.
 
+   Like Tcp.mli's, these take the capability to reach the network
+   (Cap.network), asked for the address before the socket.
+
    Safe by default: the host listens on 127.0.0.1, this computer only,
    unless told another address (bind=0.0.0.0 for every network the
    computer is on: a LAN party). A datagram from anyone but the player
@@ -35,11 +38,11 @@
 (* a host's transport, bound to [bind]:[port], and the port it got
  * (port 0 asks the system for a free one: the tests); raises
  * Unix.Unix_error (the port taken, the address not this computer's) *)
-val host : bind:string -> port:int -> Transport.t * int
+val host : < Cap.network ; .. > -> bind:string -> port:int -> Transport.t * int
 
 (* a player's transport, sending to [host]:[port]; raises
  * Unix.Unix_error or Failure (a name that doesn't resolve) *)
-val join : host:string -> port:int -> Transport.t
+val join : < Cap.network ; .. > -> host:string -> port:int -> Transport.t
 
 (* the transport for a role: what Multiplayer.set_connect wants *)
-val connect : Transport.role -> (Transport.t, string) result
+val connect : < Cap.network ; .. > -> Transport.role -> (Transport.t, string) result

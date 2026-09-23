@@ -29,6 +29,14 @@
    freeze the program; the connect itself still waits for the kernel's
    own timeout (a minute or two) on a host that doesn't answer at all.
 
+   Reaching another computer is an authority, not a right: every
+   function here takes a capability, [< Cap.network; .. >] (plan_caps.md),
+   which a program gets only from Cap.main and hands down to the code it
+   trusts with it (the open row [..]: any capabilities that include the
+   network, with no coercion at the call); the
+   capability is asked for the host before any socket is opened. A
+   function without one in its type can't reach the network.
+
    Reference: W. Richard Stevens, "UNIX Network Programming" (1990;
    the calls above in the third edition's volume 1, 2003, chapter 4,
    "Elementary TCP Sockets");
@@ -37,7 +45,7 @@
 (* a connection to [host] (a name, or an address: "127.0.0.1", "::1")
  * on [port], each of its addresses tried in turn; raises Unix.Unix_error
  * (or Failure for a name that doesn't resolve) *)
-val connect : ?timeout:float -> host:string -> port:int -> unit -> Unix.file_descr
+val connect : ?timeout:float -> < Cap.network ; .. > -> host:string -> port:int -> unit -> Unix.file_descr
 
 (* write all of [s] (a write may take only part of it) *)
 val send_all : Unix.file_descr -> string -> unit
@@ -48,4 +56,4 @@ val receive_all : Unix.file_descr -> string
 (* [exchange ~host ~port s]: connect, send [s], read everything the
  * other side sends until it closes, close: one request of a protocol
  * that closes after answering (HTTP with "Connection: close") *)
-val exchange : ?timeout:float -> host:string -> port:int -> string -> string
+val exchange : ?timeout:float -> < Cap.network ; .. > -> host:string -> port:int -> string -> string

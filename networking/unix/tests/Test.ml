@@ -8,4 +8,8 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"networking_unix" (fun _env -> Unit_http_client.tests @ Unit_http_request.tests @ Unit_udp.tests)
+(* the tests reach the network (localhost): the capability from here *)
+let () =
+  Cap.main (fun caps ->
+      Testo.interpret_argv ~project_name:"networking_unix" (fun _env ->
+          Unit_http_client.tests caps @ Unit_http_request.tests caps @ Unit_udp.tests caps))

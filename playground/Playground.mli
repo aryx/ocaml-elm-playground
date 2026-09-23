@@ -953,8 +953,8 @@ type ('model, 'msg) app = {
 {[
     type msg = GotText of (string, Http.error) result
 
-    let init _flags =
-      (Loading, Http.get ~url:"http://localhost:8001/examples/HttpText.ml"
+    let init caps _flags =
+      (Loading, Http.get caps ~url:"http://localhost:8001/examples/HttpText.ml"
                   ~expect:(Http.expect_string (fun result -> GotText result)))
 
     let update msg _model =
@@ -966,7 +966,9 @@ type ('model, 'msg) app = {
     until TLS is written); in a browser, whatever the browser allows
     (the page's own server, or another that says so: CORS). Only for
     the {!app} level: [picture], [animation] and [game] have no
-    commands, as in Evan's playground. See examples/HttpText.ml. *)
+    commands, as in Evan's playground. It takes the capability to reach
+    the network ([< Cap.network; .. >]: any capabilities that include it,
+    from the program's [Cap.main]), which the command carries. See examples/HttpText.ml. *)
 module Http : sig
   type error = Cmd.http_error =
     | Bad_url of string
@@ -981,7 +983,7 @@ module Http : sig
   (** the body as text *)
   val expect_string : ((string, error) result -> 'msg) -> 'msg expect
 
-  val get : url:string -> expect:'msg expect -> 'msg Cmd.t
+  val get : < Cap.network ; .. > -> url:string -> expect:'msg expect -> 'msg Cmd.t
 
   (** for showing: "status 404", "network error: ... Connection refused" *)
   val error_to_string : error -> string

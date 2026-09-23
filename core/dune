@@ -6,6 +6,7 @@
  (wrapped false)
  (libraries
    ; commons; was for Set_.ml but now included here
+   caps ; claude: Cmd.Http_get carries the program's Cap.network
  )
  ; (preprocess (pps profiling.ppx))
 )
