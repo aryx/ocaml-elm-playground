@@ -4,5 +4,6 @@
 ; or recording in the repository: plan_audio_formats.md)
 (test
  (name Test)
- (libraries alcotest testo audio_mod)
+ (libraries alcotest testo audio_signal audio_mod audio_testutil)
+ (deps (glob_files golden/*.wav))
 )

@@ -523,7 +523,8 @@ In rough order of difficulty:
   a convolution with a real room's recorded echo is exact;
 - **a MOD player**: Amiga music is recordings played at the notes of a
   tracker's patterns -- §9's sampler with a sequencer
-  (`notes_audio_midi.md` §9);
+  (`notes_audio_midi.md` §9). Done: `audio/formats/mod/`
+  (`notes_audio_formats.md` §1), `Audio.play_module`;
 - **the audio off the frame**: rendering in an OCaml 5 domain, a block
   at a time, so a long sound doesn't cost the frame it starts;
 - **Web Audio's own nodes** (the plan's phase 4, left): a web backend

@@ -1,0 +1,7 @@
+; claude: what the tests of sound share: golden WAVs (Testutil_wav),
+; for audio/formats/tests and apps/music/tests
+(library
+ (name audio_testutil)
+ (wrapped false)
+ (libraries alcotest audio_signal audio_wav)
+)

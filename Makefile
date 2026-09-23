@@ -93,6 +93,10 @@ approve-golden-audio:
 approve-golden-music:
 	cp _build/default/apps/music/tests/actual/*.wav apps/music/tests/golden/
 	chmod 644 apps/music/tests/golden/*.wav
+# and the formats' players' (audio/formats/tests)
+approve-golden-formats:
+	cp _build/default/audio/formats/tests/actual/*.wav audio/formats/tests/golden/
+	chmod 644 audio/formats/tests/golden/*.wav
 
 # This will fail if the .opam isn't up-to-date (in git),
 # and dune isn't installed yet. You can always install dune

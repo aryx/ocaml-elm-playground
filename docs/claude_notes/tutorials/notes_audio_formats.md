@@ -30,7 +30,7 @@ which, and by how they squeeze it**.
 | `wav/` | `Wav` | §2 | done (the audio plan) |
 | `midi/` | `Midi` | `notes_audio_midi.md` | done |
 | `abc/` | `Abc`, `Doremi` | `notes_audio.md` §9 | done |
-| `mod/` | `Mod`, `Paula`, `Mod_player` | §1 | `Mod` done |
+| `mod/` | `Mod`, `Paula`, `Mod_player` | §1 | done (`Audio.play_module`) |
 | `iff/` | `Iff`, 8SVX, AIFF | §2 | |
 | `au/` | `Au`, `Mulaw` | §3 | |
 | `adpcm/` | `Ima_adpcm` | §4 | |

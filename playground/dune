@@ -22,6 +22,8 @@
    ; claude: the synthesizer under Audio.ml (private, pure OCaml, this
    ; same package), see docs/claude_notes/plan_audio_teaching.md
    audio
+   ; claude: and the MOD player, for Audio.play_module (plan_audio_formats.md)
+   audio_mod
    ; claude: the widgets under Gui.ml (private, pure OCaml, this same
    ; package), see docs/claude_notes/plans/plan_gui_teaching.md
    gui

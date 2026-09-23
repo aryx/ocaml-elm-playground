@@ -264,9 +264,17 @@ val faster : number -> sound -> sound
      Audio.change_loop "music" (tune |> Audio.faster (1 + 0.1 * level)) *)
 val change_loop : string -> sound -> unit
 
+(* [play_module name bytes]: a MOD file's song (its bytes, as read from
+   a .mod: audio/formats/mod/Mod.mli), its own instruments playing its
+   patterns on the Amiga's four channels (Mod_player.mli), looping until
+   [stop name]; nothing if it isn't a module (the reason printed on the
+   error output) *)
+val play_module : string -> string -> unit
+
 (* [loop_from name source]: a tune from a file or a URL, looping once
    it's there: a MIDI file if [source] ends in .mid, an ABC one in .abc,
-   a recording in .wav, else solfège; a local path natively, a URL anywhere (natively
+   a recording in .wav, a module in .mod, else solfège; a local path
+   natively, a URL anywhere (natively
    downloaded, blocking the first time; in a browser fetched in the
    background, from the page's own server for a plain name). Like
    [loop], calling it again while it plays (or downloads) does nothing:

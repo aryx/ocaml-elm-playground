@@ -132,5 +132,5 @@ let tests =
        t "the mixer overloading the filter" test_overload;
      ]
     @ List.map
-        (fun (name, p) -> t ("golden WAV: " ^ name) (fun () -> Testutil_wav.check ("minimoog_" ^ name) (snd (play p riff 150))))
+        (fun (name, p) -> t ("golden WAV: " ^ name) (fun () -> Testutil_wav.check ~dir:"apps/music/tests" ("minimoog_" ^ name) (snd (play p riff 150))))
         Minimoog_voice.presets)

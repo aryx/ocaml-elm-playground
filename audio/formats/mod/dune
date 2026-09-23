@@ -6,4 +6,5 @@
  (name audio_mod)
  (package elm_playground)
  (wrapped false)
+ (libraries audio_signal) ; Paula's samples and their reading
 )

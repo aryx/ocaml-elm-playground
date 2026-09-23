@@ -260,6 +260,32 @@ solfège, so everything that plays a tune plays it.
   file too short and one cut inside its patterns. (My own first
   expectation of a cell's bytes had instrument 1's nibble in the wrong
   byte; the code had it right.)
+- **Phase 2, DONE (2026-09-23)**: `Paula` (a channel: the sample read at
+  3,546,895 / period bytes a second, looped or ending, at its volume;
+  read as Paula held each byte, or linearly, or cubically through
+  `Resample` -- the library now depends on `audio_signal`) and
+  `Mod_player` (ticks of 2.5 / tempo seconds, rows every [speed] ticks,
+  the order list with its breaks and jumps, looping or finishing; the
+  effects 0, 1, 2, 3, 4, 5, 6, 9, A, B, C, D, F, E1, E2, EA, EB, EC; the
+  Amiga's hard stereo and a separation for a softer one). `Audio.
+  play_module name bytes` plays one through the mixer as an instrument
+  (not rendered ahead: minutes of song would be hundreds of megabytes),
+  and `loop_from` takes `.mod`. Tests (`Unit_mod_player`): C-2 and C-3
+  of a 32-byte square at 259.0 and 517.9 Hz; the row's 5,292 samples,
+  2,646 after F03; Paula's hold holding a byte 6 samples, Linear never
+  twice the same; C40 and C20; the arpeggio's C, E, G a tick each; a
+  slide up to 348 after a row; the slide to a note stopping at C-3; D00,
+  D16 (row 16, decimal), B02; the end, silent or round again; A01's 59,
+  EC2's cut; channel 1 left, 2 right, the middle at separation 0; a note
+  alone keeping the channel's instrument (a bug caught while writing
+  the player: it took instrument 1). A tune of ours (four instruments
+  made in the test: a pulse lead, a triangle bass, a kick, a snare; 32
+  rows) as golden WAVs, Paula's reading and cubic, each channel its own
+  file (plotted before approving). `Testutil_wav` (from
+  `apps/music/tests`, where the Minimoog's tests used it) is now
+  `audio/testutil/`'s `audio_testutil`, shared, with `check_stereo`;
+  `make approve-golden-formats`. `playground/tests/Unit_audio`: a
+  module played by name, heard, stopped; a non-module, nothing.
 
 ## Verification
 

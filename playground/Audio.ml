@@ -119,6 +119,17 @@ let set_fetcher f = fetcher := f
  * asked once *)
 let requested : (string, unit) Hashtbl.t = Hashtbl.create 2
 
+(* a module's song, played by its own player (not rendered ahead: a
+ * song of minutes would be hundreds of megabytes of samples), pulled by
+ * the mixer as an instrument *)
+let play_module (name : string) (bytes : string) : unit =
+  match Mod.of_string bytes with
+  | Error e -> prerr_endline ("Audio.play_module: " ^ e)
+  | Ok song ->
+      let p = Mod_player.create song in
+      Mixer.instrument mixer name
+        { note_on = (fun _ _ -> ()); note_off = ignore; set = (fun _ _ -> ()); fill = Mod_player.fill p }
+
 let loop_from (name : string) (source : string) : unit =
   if not (Hashtbl.mem requested name) then (
     Hashtbl.replace requested name ();
@@ -128,13 +139,15 @@ let loop_from (name : string) (source : string) : unit =
           Hashtbl.remove requested name
       | Some bytes ->
           let ends_with = Filename.check_suffix (String.lowercase_ascii source) in
-          let read =
-            if ends_with ".mid" || ends_with ".midi" then midi
-            else if ends_with ".abc" then abc
-            else if ends_with ".wav" then wav
-            else doremi
-          in
-          Mixer.loop mixer name (Synth.render_stereo (read bytes))))
+          if ends_with ".mod" then play_module name bytes
+          else
+            let read =
+              if ends_with ".mid" || ends_with ".midi" then midi
+              else if ends_with ".abc" then abc
+              else if ends_with ".wav" then wav
+              else doremi
+            in
+            Mixer.loop mixer name (Synth.render_stereo (read bytes))))
 
 let faster = Synth.faster
 let change_loop (name : string) (s : sound) : unit = Mixer.change mixer name (Synth.render_stereo s)

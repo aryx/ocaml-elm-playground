@@ -38,4 +38,27 @@ let test_instrument () =
   Audio.stop "test-keys";
   ignore (Audio.pull 735)
 
-let tests = Testo.categorize "Audio" [ t "an instrument, by name" test_instrument ]
+(* a module of ours, a looped square on C-2 in the first row: heard,
+ * then stopped; a file that isn't one, nothing *)
+let test_module () =
+  let square = Mod.data_of_floats (Array.init 32 (fun i -> if i < 16 then 0.5 else -0.5)) in
+  let blank : Mod.instrument = { name = ""; finetune = 0; volume = 0; loop_start = 0; loop_length = 0; data = "" } in
+  let song : Mod.song =
+    {
+      title = "";
+      instruments = Array.init 31 (fun k -> if k = 0 then { blank with volume = 64; loop_length = 32; data = square } else blank);
+      restart = 127;
+      positions = [| 0 |];
+      patterns = [| Array.init 64 (fun r -> Array.init 4 (fun c -> if r = 0 && c = 0 then { Mod.empty_cell with instrument = 1; period = 428 } else Mod.empty_cell)) |];
+      tag = "M.K.";
+    }
+  in
+  Audio.play_module "test-module" (Mod.to_string song);
+  if loudest (Audio.pull 735) < 0.1 then Alcotest.fail "the module isn't heard";
+  Audio.stop "test-module";
+  ignore (Audio.pull 735);
+  Alcotest.(check (float 0.)) "stopped" 0. (loudest (Audio.pull 735));
+  Audio.play_module "test-not-a-module" "not a module";
+  Alcotest.(check (float 0.)) "not a module: nothing" 0. (loudest (Audio.pull 735))
+
+let tests = Testo.categorize "Audio" [ t "an instrument, by name" test_instrument; t "a module, by name" test_module ]

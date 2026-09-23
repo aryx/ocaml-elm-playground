@@ -4,6 +4,6 @@
 ; sample; 'make approve-golden-music' after listening to actual/*.wav)
 (test
  (name Test)
- (libraries alcotest testo audio music_voices)
+ (libraries alcotest testo audio music_voices audio_testutil)
  (deps (glob_files golden/*.wav))
 )
