@@ -64,7 +64,7 @@ specification (phase 0).
 - **Our own test files**: no module or song by someone else in the
   repository -- a module's samples and patterns are its author's work
   (as the Mario theme is Nintendo's: `plan_audio_teaching.md`). The
-  tests write their files with our writers (a MOD made by `Mod.write`,
+  tests write their files with our writers (a MOD made by `Mod.to_string`,
   a FLAC by our encoder, checked against the reference decoder when
   one is installed, never needed by the tests); the apps take the
   user's own files by a flag or a URL, as TinyMario's `music=` does.
@@ -243,7 +243,23 @@ solfège, so everything that plays a tune plays it.
   `Music` only in comments: no cycle. The existing tests stay in
   `audio/tests/` (they play the tunes through `Music`); the new
   formats' go in `audio/formats/tests/`. test-lite passing, the golden
-  WAVs untouched. Left in phase 0: `notes_audio_formats.md`.
+  WAVs untouched. Then `notes_audio_formats.md`, written ahead.
+- **Phase 1, DONE (2026-09-23)**: `audio/formats/mod/Mod` (library
+  `audio_mod`, no dependency): both headers (31 instruments and a tag,
+  its channels from it: "M.K." four, "6CHN" six, "16CH" sixteen; no tag,
+  Ultimate Soundtracker's 15 and 600 bytes, its loop start in bytes),
+  the cells, the samples kept as the file's bytes, the order list's
+  played part as `positions` (the patterns counted from all 128
+  entries, so the samples are found where they are); `to_string`; the
+  periods C-1 to B-3, their names, `rate` (Paula's 3,546,895 Hz);
+  `data_of_floats` to make instruments. Tests (`audio/formats/tests/
+  Unit_mod`): the .mli's cells (01 AC 1C 20, 11 AC 1C 20), the table
+  within one of 856 / 2^(i/12), C-2 at 8,287.1 Hz, a module of ours
+  (a looped square, a sine) written, read back equal and written again
+  byte for byte, in both forms; finetune -1, the loops, the tags, a
+  file too short and one cut inside its patterns. (My own first
+  expectation of a cell's bytes had instrument 1's nibble in the wrong
+  byte; the code had it right.)
 
 ## Verification
 

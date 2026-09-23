@@ -1,0 +1,9 @@
+; claude: MOD files, read and written (Mod.mli): Ultimate Soundtracker's
+; modules and ProTracker's, a song with its instruments inside (see
+; plan_audio_formats.md). A private library, installed as part of
+; elm_playground.
+(library
+ (name audio_mod)
+ (package elm_playground)
+ (wrapped false)
+)

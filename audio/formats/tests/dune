@@ -1,0 +1,8 @@
+; claude: unit tests for audio/formats/, run by 'make test' (dune
+; runtest): each format's worked examples, files we make with our own
+; writers read back, and what the readers refuse (no one else's module
+; or recording in the repository: plan_audio_formats.md)
+(test
+ (name Test)
+ (libraries alcotest testo audio_mod)
+)
