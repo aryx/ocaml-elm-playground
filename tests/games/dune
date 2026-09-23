@@ -12,6 +12,12 @@
 ; (the games themselves unchanged; see notes_debugging_techniques.md
 ; section 9 for the same trick done by hand).
 
+; claude: TinyTronscroll, for Unit_tronscroll (its options' rules)
+(rule
+ (target TinyTronscroll.ml)
+ (deps (:src %{project_root}/games/arcade/TinyTronscroll.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
 ; claude: Tetris, for Unit_determinism (its randomness in the model)
 (rule
  (target Tetris.ml)

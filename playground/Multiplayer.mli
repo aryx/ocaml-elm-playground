@@ -17,7 +17,7 @@
 
    - [net=local] (the default): both players on one keyboard, as
      Spacewar! in 1962 -- player 0 the arrows (and space, enter, shift),
-     player 1 w, a, s, d;
+     player 1 w, a, s, d, and q for its space;
    - [net=simulate]: two computers in one window, side by side, each
      peer its own model, their inputs going through a fake network
      (Sim_net.mli) with [latency=] and [loss=] (milliseconds, percent;
@@ -37,8 +37,8 @@
      player 1. Each plays with its arrows. No handshake: the host plays
      its first [delay] ticks and stalls until the first inputs arrive.
 
-   Two netcodes, by the flag [netcode=] (and, in net=simulate, the key
-   n, which starts the game again with the other one, to feel the
+   Three netcodes, by the flag [netcode=] (and, in net=simulate, the
+   key n, which starts the game again with the next one, to feel the
    difference at the same latency):
 
    - [lockstep] (the default, Lockstep.mli): every player's input (a
@@ -49,7 +49,11 @@
    - [rollback] (Rollback.mli): my keys applied at once, the others'
      guessed, and the game played again from the tick a guess was
      wrong when their real keys arrive: full speed, the other player
-     snapping now and then.
+     snapping now and then;
+   - [1997]: lockstep with no delay, how a first network game is
+     written (send, then wait for the answer, every tick): a trip across
+     the network per tick, the frame rate capped by it -- kept to be
+     felt (TinyTronscroll's original did exactly this).
 
    Either way, the peers exchange only their inputs. It works only if [update] is *deterministic*: the same inputs
    give the same model, on every computer. So the [computer] it gets is
@@ -84,8 +88,12 @@ val set_connect : (Cap.network -> Transport.role -> (Transport.t, string) result
 (* [game ~players view update model]: [view computer n model] draws
  * what player n sees (the real computer: its screen, its time);
  * [update computer players model] is one tick, everyone's input *)
+(* [split]: in net=local, each player sees their own view, side by side
+ * (a split screen); by default, player 0's view only, for a game whose
+ * screen is the same for everyone *)
 val game :
   ?network:< Cap.network ; .. > ->
+  ?split:bool ->
   players:int ->
   (Playground.computer -> int -> 'model -> Playground.shape list) ->
   (Playground.computer -> player list -> 'model -> 'model) ->

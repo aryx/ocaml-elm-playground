@@ -40,11 +40,13 @@ let rising (now : keyboard) (before : keyboard) : keyboard =
     kshift = now.kshift && not before.kshift })
 
 (* one physical keyboard, shared: player 0 the arrows (and space, enter,
- * shift), player 1 w a s d, the others nothing *)
+ * shift), player 1 w a s d (and q for its space), the others nothing *)
 let local_keyboard (physical : keyboard) (n : int) : keyboard =
   match n with
   | 0 -> decode (encode physical)
-  | 1 -> { empty with kup = physical.kw; kdown = physical.ks; kleft = physical.ka; kright = physical.kd }
+  | 1 ->
+      { empty with kup = physical.kw; kdown = physical.ks; kleft = physical.ka; kright = physical.kd;
+        kspace = Set_.mem "q" physical.keys }
   | _ -> empty
 
 (* what update may see of the computer: what every peer agrees on *)
@@ -149,11 +151,11 @@ let config_of (k : knobs) : Sim_net.config =
 let int_flag (flags : flags) (name : string) (default : int) : int =
   Option.value (Option.bind (List.assoc_opt name flags) int_of_string_opt) ~default
 
-(* netcode=lockstep (the default) or netcode=rollback; the input delay
- * 3 ticks for lockstep, none for rollback, unless delay= *)
+(* netcode=lockstep (the default), rollback, or 1997; the input delay
+ * 3 ticks for lockstep, none for the others, unless delay= *)
 let netcode_of (flags : flags) : string * int =
-  let netcode = if List.assoc_opt "netcode" flags = Some "rollback" then "rollback" else "lockstep" in
-  (netcode, int_flag flags "delay" (if netcode = "rollback" then 0 else 3))
+  let netcode = match List.assoc_opt "netcode" flags with Some (("rollback" | "1997") as n) -> n | _ -> "lockstep" in
+  (netcode, if netcode = "1997" then 0 else int_flag flags "delay" (if netcode = "rollback" then 0 else 3))
 
 let simulate ~players update (flags : flags) (knobs : knobs) (model : 'model) : 'model state =
   let side = { model; last = Array.make players empty; tick = 0 } in
@@ -193,8 +195,8 @@ let start ~players ?(network : Cap.network option) update (flags : flags) (model
 (* Simulate: the peers, the fake network between them *)
 (*****************************************************************************)
 
-(* [ and ] the latency by 20 ms, - and = the loss by 5%; n the other
- * netcode (the game starts again) *)
+(* [ and ] the latency by 20 ms, - and = the loss by 5%; n the next
+ * netcode, lockstep, rollback, 1997 (the game starts again) *)
 let turn_knobs (physical : keyboard) (held : string list) (k : knobs) : knobs * string list =
   let keys = [ "["; "]"; "-"; "="; "n" ] in
   let now = List.filter (fun key -> Set_.mem key physical.keys) keys in
@@ -206,7 +208,10 @@ let turn_knobs (physical : keyboard) (held : string list) (k : knobs) : knobs * 
   let k = if pressed "=" then { k with loss = clamp 0 100 (k.loss + 5) } else k in
   let k =
     if pressed "n" then
-      if k.netcode = "rollback" then { k with netcode = "lockstep"; delay = 3 } else { k with netcode = "rollback"; delay = 0 }
+      match k.netcode with
+      | "lockstep" -> { k with netcode = "rollback"; delay = 0 }
+      | "rollback" -> { k with netcode = "1997"; delay = 0 }
+      | _ -> { k with netcode = "lockstep"; delay = 3 }
     else k
   in
   (k, now)
@@ -249,7 +254,10 @@ let agree (d : (int * int) option) : shape =
   | Some (tick, peer) -> text red (Printf.sprintf "DESYNC at tick %d, with player %d" tick peer)
 
 let netcode_line (netcode : string) (delay : int) : string =
-  if netcode = "rollback" then Printf.sprintf "rollback, input delay %d" delay else Printf.sprintf "lockstep, input delay %d ticks" delay
+  match netcode with
+  | "rollback" -> Printf.sprintf "rollback, input delay %d" delay
+  | "1997" -> "1997: send, then wait for the answer, every tick"
+  | _ -> Printf.sprintf "lockstep, input delay %d ticks" delay
 
 let hud (knobs : knobs) (peers : 'model peer array) : shape list =
   [ text white
@@ -281,7 +289,16 @@ let side_by_side view (computer : computer) (knobs : knobs) (peers : 'model peer
 (* Entry point *)
 (*****************************************************************************)
 
-let game ?(network : < Cap.network ; .. > option) ~(players : int) view update (model : 'model) =
+(* several views side by side, [scale]d to share the screen *)
+let panels (views : shape list list) : shape list =
+  let n = List.length views in
+  let width = 1000. /. float_of_int n in
+  List.concat
+    (List.mapi
+       (fun i shapes -> [ group shapes |> scale (1. /. float_of_int n) |> move_x ((-500.) +. (width *. (float_of_int i +. 0.5))) ])
+       views)
+
+let game ?(network : < Cap.network ; .. > option) ?(split = false) ~(players : int) view update (model : 'model) =
   let network = Option.map (fun caps -> (caps :> Cap.network)) network in
   let rec update_state (computer : computer) (state : 'model state) : 'model state =
     match state with
@@ -309,6 +326,7 @@ let game ?(network : < Cap.network ; .. > option) ~(players : int) view update (
   let view_state (computer : computer) (state : 'model state) : shape list =
     match state with
     | Starting model -> view computer 0 model
+    | Local side when split -> rectangle black 1000. 1000. :: panels (List.init players (fun n -> view computer n side.model))
     | Local side -> view computer 0 side.model
     | Simulate s -> side_by_side view computer s.knobs s.peers
     | Remote r -> view computer r.me (side_of r.peer).model @ remote_hud r.transport r.peer r.me r.netcode

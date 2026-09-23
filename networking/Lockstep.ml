@@ -28,9 +28,14 @@ let tick (t : t) : int = t.tick
 (* wait for every player's input of the tick: lockstep's one rule *)
 let step (t : t) (input : string) : string array option =
   let players = Inputs.players t.inputs in
+  (* no delay (1997's way): my input of this very tick is sent first,
+   * then the tick waits for everybody else's; kept as first read, since
+   * it may be sent already when the tick stalls *)
+  if t.delay = 0 && Inputs.find t.inputs ~tick:t.tick (Inputs.me t.inputs) = None then
+    Inputs.add_mine t.inputs ~tick:t.tick input;
   if List.for_all (fun p -> Inputs.known_upto t.inputs p >= t.tick) (List.init players Fun.id) then begin
     let inputs = Array.init players (fun p -> Option.get (Inputs.find t.inputs ~tick:t.tick p)) in
-    Inputs.add_mine t.inputs ~tick:(t.tick + t.delay) input;
+    if t.delay > 0 then Inputs.add_mine t.inputs ~tick:(t.tick + t.delay) input;
     t.tick <- t.tick + 1;
     Some inputs
   end

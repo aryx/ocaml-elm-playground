@@ -460,7 +460,7 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    Tests: Lockstep over real localhost sockets, 300 ticks, one game;
    and two TinySpacewar processes played by hand, their checksums
    agreeing.
-4. *(rollback done, 2026-09-23; TinyTronscroll to do)* **Rollback**: `Rollback`, switchable with lockstep (a key), to feel
+4. *(done, 2026-09-23)* **Rollback**: `Rollback`, switchable with lockstep (a key), to feel
    the difference with 100 ms of simulated latency. Tests: rollback's
    final models equal lockstep's. Then **TinyTronscroll**, the
    milestone: the scrolling map, the 8 players, the power-ups, and the
@@ -481,7 +481,23 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    (lockstep by default, delay 3; rollback, delay 0) in net=simulate
    (the key n switches, starting again) and over UDP; a golden frame of
    the simulated duel under each (tick 60 against 118 after 120 frames
-   at 80 ms). Left: TinyTronscroll, the milestone.
+   at 80 ms). Then **TinyTronscroll** (`games/arcade/`), written after
+   reading the original's 1,144 lines of C (motor.c, network.c,
+   tron_scroll.c): the pixel riders, the 320 x 192 window scrolling on
+   an 800 x 600 map (map=1600x1200 the original's), the six options
+   with their durations and warning star, the arena shrinking after
+   2,000 ticks, the original's starting places. Its trails a Tilemap
+   (immutable, so rollback keeps old ones for free), clear as a new
+   generation of cells, each tick in three passes (order-independent).
+   `netcode=1997` added to `Multiplayer` as Lockstep with no delay
+   (my input of the tick sent, then the wait: a trip per tick, 100
+   ticks in some 700 frames at 100 ms), the key n cycling the three;
+   `Multiplayer.game ?split` (each player's window on one screen).
+   Golden frames: the title, the split-screen duel, and the duel under
+   1997 at 100 ms (tick 22 after 180 frames, still near the title;
+   rollback reaches 180). Rule tests (`tests/games/Unit_tronscroll.ml`):
+   head-on, own trail and clear, swap, freeze (from the tick after, as
+   the original), speed. Left: 8 players (a relay, phase 5).
 5. **The web**: the relay server, WebSockets; a browser against a
    native player.
 5b. **The universe** (HtDP): `playground/Universe.ml` over the relay --

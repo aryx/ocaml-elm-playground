@@ -129,6 +129,7 @@ let scenes : Testutil_golden.scene list =
     ("games/racing/software/TinyOutRun", "", 5);
     ("games/arcade/software/TinyBomberman", "", 5);
     ("games/arcade/software/TinyTron", "", 5);
+    ("games/arcade/software/TinyTronscroll", "", 5);
     ("games/racing/software/TinyMicroMachines", "", 5);
     ("games/racing/software/TinyGranTrak10", "", 5);
     ("games/racing/software/TinySuperSprint", "", 5);
@@ -377,6 +378,8 @@ let scripted : Testutil_golden.scripted list =
     ("games/arcade/software/TinyTron", "computer", 200, "1:1,up:40,right:80,down:120,right:150");
     (* two players, both turning *)
     ("games/arcade/software/TinyTron", "duel", 150, "2:1,up:30,w:40,right:70,s:90,a:120");
+    (* claude: a split screen, each window scrolling with its rider *)
+    ("games/arcade/software/TinyTronscroll", "duel", 180, "space:2-3,up:40,right:90,down:140,s:60,d:110,w:150");
     (* against the computer, north up; then with the camera turning *)
     ("games/racing/software/TinyMicroMachines", "race", 200, "1:1,up:62-200");
     ("games/racing/software/TinyMicroMachines", "turning", 200, "1:1,up:62-200,v:2");
@@ -1311,6 +1314,14 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
       120,
       "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75",
       [ "net=simulate"; "latency=80"; "loss=10"; "netcode=rollback" ] );
+    (* claude: the same duel as 1997 played it (Multiplayer.mli): a trip
+     * across the network every tick, at 100 ms still near the title
+     * after 180 frames (tick 22), where rollback is at tick 180 *)
+    ( "games/arcade/software/TinyTronscroll",
+      "1997",
+      180,
+      "space:2-3,up:40,right:90,down:140,s:60,d:110,w:150",
+      [ "net=simulate"; "latency=100"; "netcode=1997" ] );
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged ~scripted_flagged scenes

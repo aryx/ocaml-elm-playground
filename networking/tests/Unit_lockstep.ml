@@ -101,6 +101,10 @@ let stalls (latency : float) : int =
   let r = together ~players:2 ~delay:3 ~seed:1 { Sim_net.perfect with latency } 600 in
   Array.fold_left (fun n p -> n + (Lockstep.stats p).stalls) 0 r.peers
 
+(* 1997's way: no delay, a trip across the network every tick *)
+let no_delay_frames (latency : float) : int =
+  (together ~players:2 ~delay:0 ~seed:1 { Sim_net.perfect with latency } 100).frames
+
 let tests =
   Testo.categorize "Lockstep"
     [
@@ -111,6 +115,12 @@ let tests =
           Alcotest.(check int) "30 ms" 0 (stalls 0.030);
           let n = stalls 0.100 in
           Alcotest.(check bool) (Printf.sprintf "100 ms: %d stalls" n) true (n > 0));
+      Testo.create "the worked example: no delay, 1997's way: a trip every tick" (fun () ->
+          let r = together ~players:2 ~delay:0 ~seed:3 rough 300 in
+          let expected = Array.map Checksum.to_hex (alone ~players:2 ~delay:0 300) in
+          Alcotest.(check (array string)) "the game alone, still" expected (Array.map Checksum.to_hex r.sums.(0));
+          let n = no_delay_frames 0.100 in
+          Alcotest.(check bool) (Printf.sprintf "100 ticks at 100 ms: %d frames" n) true (n >= 600 && n <= 800));
       Testo.create "the worked example: a disagreement at tick 500, caught at 540" (fun () ->
           let r = together ~cheat:(1, 500) ~players:2 ~delay:3 ~seed:5 rough 700 in
           Alcotest.(check (option (pair int int))) "peer 0 sees peer 1 differ" (Some (540, 1)) (Lockstep.desync r.peers.(0));

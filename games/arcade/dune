@@ -7,10 +7,10 @@
 (executables
   (names Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
     TinyFrogger TinyLunarLander TinyPacman TinyPong TinySoldat TinySpacewar
-    TinyTron)
+    TinyTron TinyTronscroll)
   (modules Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
     TinyFrogger TinyLunarLander TinyPacman TinyPong TinySoldat TinySpacewar
-    TinyTron)
+    TinyTron TinyTronscroll)
   (libraries
     unix ; Pong's clock
     elm_playground

@@ -28,6 +28,15 @@
    than that one way never stalls; slower, the game waits -- a
    *stall* -- and the slowest peer sets everybody's pace.
 
+   **No delay at all** is how a first network game is written (the
+   author's tronscroll, 1997: send my state, then block until the
+   answer comes, every frame): each tick waits for the others' input
+   of that same tick, so every tick costs a trip across the network,
+   and the frame rate is capped by it -- at 100 ms, about 8 ticks a
+   second. A delay of 0 does exactly that: my input of the tick sent
+   first, then the wait. Input delay is the fix: pay the trip once,
+   not every tick.
+
    The inputs travel as Inputs.mli says: each packet carries every
    input not yet acknowledged, so a lost packet costs nothing, and the
    checksums of the models, so that a desync is caught.
@@ -39,7 +48,8 @@
    one machine. With a delay of 3, 30 ms of latency never stalls; 100
    ms (6 frames) stalls about every other frame: 600 ticks take some
    1,230 frames, the game at half speed -- 3 ticks of delay for 6
-   frames of travel. A game whose update reads something only one peer has
+   frames of travel; with no delay, 100 ticks take some 700 frames, 7
+   frames a tick: 1997's frame rate. A game whose update reads something only one peer has
    (a disagreement injected at tick 500) is caught at the first
    checksum after it.
 
