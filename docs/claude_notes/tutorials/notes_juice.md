@@ -35,7 +35,7 @@ what makes each effect safe to add, and what keeps this out of
 | `juice/Hash` (done) | random numbers that are the same every time | §5 |
 | `juice/Emitter` (done) | particles | §6 |
 | `games/arcade/TinyBreakout` (done) | the talk's game, juiced (`juice=off`: dry) | §5 |
-| `juice/Follow` (planned) | a value that follows a target | §7 |
+| `juice/Follow` (done) | a value that follows a target | §7 |
 
 §1 to §4 are things that are a function of time and nothing else.
 §5 to §7 need a little state in the model. All of them run on the
@@ -335,12 +335,44 @@ orange, fast, all around), `smoke` (grays, slow, rising), `debris c`
 `debris` of each brick's color where it broke, finding the bricks
 broken by comparing the wall before and after the rules' update.
 
-## 7. Follow: a value with a spring (planned, `juice/Follow`)
+## 7. Follow: a value with a spring
 
-Second-order dynamics (t3ssel8r, 2022; the smooth-damp of every
-engine): a frequency, a damping, and a state stepped each frame --
-what a camera, a health bar or a pair of eyes needs when its target
-moves.
+A tween knows its end from the start (§3). A camera following the
+player, a health bar draining, a pair of eyes following a ball: their
+target moves while they go, so they are a state, stepped each frame
+towards wherever the target is now (`juice/Follow`). The simple way and
+the better one:
+
+**Close a fraction of the gap.** Everyone writes `x += (target - x) *
+0.1` first. Its flaw: 0.1 a frame is a different speed at 30 and at 144
+frames a second. Written with the time, the fraction is 1 − e^(−rate·dt),
+exponential decay, 63.2% of the way after 1/rate seconds whatever the
+frame rate (the tests step it at 30 and at 144 and get the same
+number). It never overshoots, and it starts at full speed: it follows
+like a string, not like a thing that weighs something.
+
+**A spring.** The value has a velocity, pulled towards the target and
+slowed by damping, a mass on a spring in a bath:
+
+```
+  acceleration = w² (target − value) − 2 z w velocity,     w = 2π f
+```
+
+Two numbers to think in (t3ssel8r, "Giving Personality to Procedural
+Animations using Math", 2022): the frequency f, how fast it answers,
+and the damping z. At 1 it is critically damped, as fast as it can go
+without going past (Unity's `SmoothDamp`); below 1 it overshoots and
+settles; above 1, sluggish. Worked example, from 0 to 1 at 2 Hz: at
+z = 1, 0.830 after a quarter second and 95% at 0.40 s, never past 1; at
+z = 0.5, up to 1.142 -- the continuous answer is e^(−πz/√(1−z²)), 16.3%
+too far, and stepping by frames loses some of it.
+
+`TinyBreakout`'s paddle has eyes, as in the talk, and each of the two
+numbers of where they look is
+a spring at 3 Hz and z = 0.5, pulled towards the direction of the ball:
+they dart after it, go a little past, and settle. With `juice=off`
+there are no eyes (`Juice.on`, for the juice a game draws itself), and
+a follower is at its target at once.
 
 ## 8. In the playground
 
@@ -402,3 +434,5 @@ last.
 - **particle system**: many small things each born, moving and dying
   by itself (Reeves, 1983); a **recipe** gives the bounds each one's
   numbers are drawn between, a **burst** is many born at once.
+- **follower**: a value going after a target that moves; **critically
+  damped**: a spring as fast as it can be without overshooting.

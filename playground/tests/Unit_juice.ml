@@ -113,6 +113,14 @@ let tests =
           (* and a burst after the flag is seen: nothing either *)
           let fx = Juice.burst ~at:(0., 0.) (Juice.debris red) fx in
           Alcotest.(check bool) "no particle" true (Juice.view fx world = world));
+      Testo.create "a follower: after its target, or on it at once with juice=off" (fun () ->
+          let fx = Juice.none ~seed:1 |> Juice.step (computer_at 0. []) in
+          let f = List.fold_left (fun f _ -> Juice.toward 1. fx f) (Juice.follow 0.) (List.init 15 Fun.id) in
+          Alcotest.check (Alcotest.float 1e-3) "a quarter second: 0.830" 0.830 (Juice.value f);
+          let off = Juice.none ~seed:1 |> Juice.step (computer_at 0. [ ("juice", "off") ]) in
+          Alcotest.check near "off: there" 1. (Juice.value (Juice.toward 1. off (Juice.follow 0.)));
+          Alcotest.(check bool) "on" true (Juice.on fx);
+          Alcotest.(check bool) "off" false (Juice.on off));
       Testo.create "a burst: its particles drawn over the world, then gone" (fun () ->
           let c = computer_at 0. [] in
           let world = [ circle red 10. ] in

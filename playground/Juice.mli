@@ -188,8 +188,36 @@ val debris : color -> burst
  * in all, the oldest dropped first); nothing with juice=off *)
 val burst : at:number * number -> burst -> t -> t
 
+(* Followers: a number going after a target that moves -- a camera
+ * after the player, a health bar draining, eyes following a ball --
+ * like a mass on a spring (juice/Follow.mli). Where a tween knows its
+ * end from the start, a follower is told where its target is, frame
+ * after frame:
+ *
+ *     let look = Juice.toward ball.x m.fx m.look in    (* update *)
+ *     ... Juice.value m.look ...                         (* view *)
+ *)
+type follow
+
+(* [follow ?frequency ?damping x]: a follower at [x], still. [frequency]
+ * (2 Hz by default): how fast it answers; [damping] (1 by default): 1
+ * gets there as fast as it can without going past, less goes past and
+ * swings back (0.5: 14% too far), more is sluggish. *)
+val follow : ?frequency:number -> ?damping:number -> number -> follow
+
+(* [toward target fx f]: one frame later, pulled towards [target]; at
+ * [target] at once with juice=off *)
+val toward : number -> t -> follow -> follow
+
+(* [value f]: where it is *)
+val value : follow -> number
+
 (* [frozen fx]: whether the game should skip its own update this frame *)
 val frozen : t -> bool
+
+(* [on fx]: whether the juice is on (not juice=off): for juice a game
+ * draws itself, to leave it out of the dry game *)
+val on : t -> bool
 
 (* [view fx world]: the world and the particles, shaken, and the flash
  * over it. Draw what must not shake (the background, the score)

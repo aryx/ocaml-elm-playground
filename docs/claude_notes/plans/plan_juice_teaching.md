@@ -554,6 +554,30 @@ start; `Juice.mli`'s header lists which do.
     `TinyBreakout_debris.png` (frame 116, 8 frames after the first
     brick broke); `pop` and the 900-frame `play` passed unchanged, no
     particle being in flight at frames 12 and 900.
+- 2026-09-23, phase 5 DONE: followers, and the eyes.
+  - `juice/Follow`: the simple way beside the better one -- `smooth`,
+    exponential decay by 1 − e^(−rate·dt) (the frame-rate-proof form
+    of `x += (target - x) * 0.1`), and `chase`, a mass-spring-damper
+    in frequency and damping, semi-implicit Euler. t3ssel8r's third
+    number, the response (anticipation), left out and said so. 4 tests
+    (2 Hz, z = 1: 0.830 at 0.25 s, 95% at frame 24, never past 1;
+    z = 0.5: up to 1.142, where the continuous overshoot is 16.3%;
+    `smooth` at 10: 1 − 1/e after 0.1 s, the same at 30 and at 144
+    frames a second).
+  - `Juice.follow`, `toward` (at the target at once with `juice=off`),
+    `value`, and `Juice.on`, for juice a game draws itself. 1 new test.
+  - `TinyBreakout`: eyes on the paddle, black with white pupils, the
+    two numbers of where they look each a follower (3 Hz, z = 0.5)
+    pulled towards the ball's direction, in the juice section
+    (`look_at_ball`, `eyes`); none with `juice=off`. The `play`, `pop`
+    and `debris` goldens changed only in a 60 × 10 box on the paddle
+    (about 164 pixels each: the eyes) and were re-approved; the title's
+    passed unchanged.
+  - With the eyes, `TinyBreakout` has the talk's effects but the trail,
+    the smile and the music (its header's exercises), and the plan's
+    `JuiceBreakout` example is not needed. Left: the retrofits of
+    `TinyStreetFighter` (hitstop, sparks) and `TinyDefender` (the
+    flash), and `Juice3d`, if a 3D game asks.
 
 ## Verification
 

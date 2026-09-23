@@ -60,7 +60,9 @@
  * they meet; a broken brick bursts into pieces of its color, falling
  * and tumbling, and shakes the screen a little, which adds up
  * when the ball is behind the wall and the points pour in; a lost ball
- * shakes it hard, and flashes it red. The juice is on by default; the
+ * shakes it hard, and flashes it red; and the paddle has eyes, which
+ * follow the ball, darting after it and settling, as in the talk. The
+ * juice is on by default; the
  * flag juice=off gives the dry game, the original's (dune exec
  * games/arcade/TinyBreakout.exe -- juice=off). The effects watch the
  * game from outside ([juiced]): the rules above don't know about them,
@@ -70,7 +72,7 @@
  * tiles, "Rr": the map draws it, says which brick a point is in, and a
  * brick broken is its 2 tiles set to ' '), Scene2d (title, play, game
  * over), Audio (a pitch per row, like the original's beeps), Juice
- * (tween, squash, stretch, shake, flash, burst). Not
+ * (tween, squash, stretch, shake, flash, burst, follow). Not
  * Physics: the ball's motion is 2 additions, and its bounces are rules
  * (the paddle's above, a wall's or brick's plain reversal); nor
  * Tilemap.hits, which says whether a box hits a tile, where Breakout
@@ -82,7 +84,7 @@
  * as strings; the original's two players, taking turns; the ball
  * stuck in a loop between unbreakable bricks, which Arkanoid breaks by
  * nudging its angle. The rest of the talk's juice: a trail behind the
- * ball, the paddle's eyes following it.
+ * ball, a mouth that smiles at each brick, music.
  * Hitstop (Juice.freeze), a few frames' pause at each brick, is left
  * out on purpose: it is the one effect that changes *when* things
  * happen, and the golden test's scripted game, keys pressed at given
@@ -166,10 +168,12 @@ type model = {
   scenes : scene Scene2d.t;
   hi_score : int;
   (* the juice: the effects, when the wall appeared (its bricks pop
-   * in), when the ball last bounced off the paddle (both squash) *)
+   * in), when the ball last bounced off the paddle (both squash),
+   * where the paddle's eyes look (across, up) *)
   fx : Juice.t;
   wall_shown : time;
   bounced : time;
+  look : Juice.follow * Juice.follow;
 }
 
 let new_game (mouse_x : number) : game =
@@ -177,7 +181,8 @@ let new_game (mouse_x : number) : game =
     hits = 0; reached_orange = false; reached_red = false; shrunk = false; second_wall = false }
 
 let initial_model : model =
-  { scenes = Scene2d.start Title; hi_score = 0; fx = Juice.none ~seed:1; wall_shown = Time 0.; bounced = Time (-10.) }
+  { scenes = Scene2d.start Title; hi_score = 0; fx = Juice.none ~seed:1; wall_shown = Time 0.; bounced = Time (-10.);
+    look = (Juice.follow ~frequency:3. ~damping:0.5 0., Juice.follow ~frequency:3. ~damping:0.5 1.) }
 
 let paddle_width (g : game) : number = if g.shrunk then 50. else 100.
 
@@ -366,8 +371,9 @@ let update_rules (computer : computer) (model : model) : model =
 (* Everything the juice does is here, and the rules above don't know
  * about it: [update] runs them, then [juiced] looks at what they just
  * did -- the scene or the game before and after -- and turns it into
- * effects; the view calls [pop] and [squashed] where it draws a brick,
- * the ball and the paddle, and [Juice.view] around the picture. *)
+ * effects, and [look_at_ball] points the paddle's eyes; the view calls
+ * [pop], [squashed] and [eyes] where it draws a brick, the ball and the
+ * paddle, and [Juice.view] around the picture. *)
 
 (* the bricks the last update broke: each one's center and color *)
 let broken (before : Tilemap.t) (after : Tilemap.t) : ((number * number) * color) list =
@@ -407,9 +413,31 @@ let juiced (before : scene) (model : model) : model =
   | Playing _, Game_over score -> { model with fx = model.fx |> Juice.shake 0.8 |> Juice.flash (if score >= 896 then white else red) 20 }
   | _ -> model
 
+(* the eyes look at the ball, or up when there's none: a direction,
+ * each of its two numbers followed by a spring that overshoots a
+ * little (damping 0.5), so the eyes dart after the ball and settle *)
+let look_at_ball (model : model) : model =
+  let tx, ty =
+    match model.scenes.scene with
+    | Playing ({ ball = Some b; _ } as g) ->
+        let dx = b.x - g.paddle_x and dy = b.y - paddle_y in
+        let d = Float.max 1. (sqrt ((dx * dx) + (dy * dy))) in
+        (dx / d, dy / d)
+    | _ -> (0., 1.)
+  in
+  let lx, ly = model.look in
+  { model with look = (Juice.toward tx model.fx lx, Juice.toward ty model.fx ly) }
+
 let update (computer : computer) (model : model) : model =
   let model = { model with fx = Juice.step computer model.fx } in
-  juiced model.scenes.scene (update_rules computer model)
+  look_at_ball (juiced model.scenes.scene (update_rules computer model))
+
+(* the paddle's two eyes, black, their pupils looking where [look] is
+ * (the paddle's center at (0, 0)); none in the dry game *)
+let eyes (model : model) (width : number) : shape list =
+  let lx, ly = model.look in
+  let eye x = group [ circle black 5.; circle white 2. |> move (2.5 * Juice.value lx) (2.5 * Juice.value ly) ] |> move_x x in
+  if Juice.on model.fx then [ eye (-.width / 4.); eye (width / 4.) ] else []
 
 (* a brick's size as the wall appears: popping in, a row of colors
  * after the other, from the bottom up *)
@@ -448,7 +476,7 @@ let view_game (model : model) (g : game) : shape list =
    * at (0, 0), for [squashed] *)
   let ball (b : ball) = square white ball_size |> move_up half |> squashed 0.5 model |> move b.x (b.y - half) in
   let paddle =
-    rectangle white (paddle_width g) paddle_height
+    group (rectangle white (paddle_width g) paddle_height :: eyes model (paddle_width g))
     |> move_down (paddle_height / 2.)
     |> squashed 0.3 model
     |> move g.paddle_x (paddle_y + (paddle_height / 2.))

@@ -179,7 +179,19 @@ let shake (amount : number) (fx : t) : t = { fx with trauma = Trauma.add amount 
 let freeze (frames : int) (fx : t) : t = { fx with freeze = max fx.freeze frames }
 let flash (color : color) (frames : int) (fx : t) : t = { fx with flash = Some (color, frames, frames) }
 
+type follow = { spring : Follow.t; frequency : number; damping : number }
+
+let follow ?(frequency = 2.) ?(damping = 1.) (x : number) : follow = { spring = Follow.at x; frequency; damping }
+
+let toward (target : number) (fx : t) (f : follow) : follow =
+  if fx.off then { f with spring = Follow.at target }
+  else { f with spring = Follow.chase ~frequency:f.frequency ~damping:f.damping ~dt target f.spring }
+
+let value (f : follow) : number = f.spring.value
+
 let frozen (fx : t) : bool = fx.freeze > 0
+
+let on (fx : t) : bool = not fx.off
 
 (* a recipe (Emitter.mli), and the colors its particles are drawn in *)
 type burst = { recipe : Emitter.recipe; palette : color list }
