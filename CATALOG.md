@@ -327,8 +327,7 @@ program, and in `apps/gamedev/`, the tools making what any game can
 use (a genre's level editor is with its games instead, as
 TinySokobanEd is: see `games/README-tools.md`). The other categories
 are waiting for their first app, each with a dune file saying what it
-might hold: `apps/music/`, `apps/internet/`, `apps/devtools/`,
-`apps/graphics/`, `apps/system/`.
+might hold: `apps/devtools/`, `apps/graphics/`, `apps/system/`.
 
 ## Word processing and publishing
 
@@ -400,3 +399,13 @@ pictures, and videos as `graphics/videos/` comes
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyMediaPlayer](apps/media/TinyMediaPlayer.ml) | app | Media Player (Microsoft, 1991), VLC (VideoLAN, 2001) | One player for every file this repository reads: recordings, tunes, modules, pictures, an animation, a video. | A file's kind found from its bytes (magic numbers), not its name; each kind shown as what it is: a piano roll, a wave, a tracker's rows, a picture; a playlist, a scope and a spectrum. |
+
+## Internet
+
+`apps/internet/`: programs that talk to other computers, over
+`networking/`, the servers they talk to small enough to run beside
+them.
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinyIRC](apps/internet/TinyIRC.ml) | app | ircII (Michael Sandrof, 1989), for IRC (Jarkko Oikarinen, 1988) | Channels and nicks: join #tiny, type a line, everyone in it reads it. | A protocol a person can read, a line of text a message (networking/Irc); its own server (networking/ircd), over WebSocket so that a browser joins too; /raw to type the protocol itself. |

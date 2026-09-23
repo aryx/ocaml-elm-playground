@@ -1,0 +1,7 @@
+; claude: the IRC server (networking/unix/Irc_server.mli), a program of
+; its own, for TinyIRC (apps/internet/):
+;   dune exec networking/ircd/tiny_ircd.exe -- port=6667 bind=0.0.0.0
+(executable
+ (name tiny_ircd)
+ (libraries caps networking_unix)
+)

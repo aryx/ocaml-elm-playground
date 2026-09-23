@@ -824,8 +824,18 @@ let connect_web (_caps : Cap.network) (role : Transport.role) : (Transport.t, st
       | exception _ -> Error ("can't open " ^ url)
       | ws ->
           Ojs.set_prop_ascii ws "binaryType" (Ojs.string_to_js "arraybuffer");
-          let inbox = ref [] and player = ref None and closed = ref false in
+          let inbox = ref [] and player = ref None and closed = ref false and waiting = ref [] in
+          let send_now s =
+            let bytes = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Uint8Array") [| Ojs.int_to_js (String.length s) |] in
+            String.iteri (fun i c -> Ojs.array_set bytes i (Ojs.int_to_js (Char.code c))) s;
+            ignore (Ojs.call ws "send" [| bytes |])
+          in
           Ojs.set_prop_ascii ws "onclose" (Ojs.fun_to_js 1 (fun _ -> closed := true));
+          (* what was sent before the connection opened, now *)
+          Ojs.set_prop_ascii ws "onopen"
+            (Ojs.fun_to_js 1 (fun _ ->
+                 List.iter send_now (List.rev !waiting);
+                 waiting := []));
           Ojs.set_prop_ascii ws "onmessage"
             (Ojs.fun_to_js 1 (fun ev ->
                  let bytes = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Uint8Array") [| Ojs.get_prop_ascii ev "data" |] in
@@ -836,13 +846,9 @@ let connect_web (_caps : Cap.network) (role : Transport.role) : (Transport.t, st
             {
               send =
                 (fun s ->
-                  (* only once open (readyState 1): a packet lost before
-                   * is sent again by the next one (Inputs.mli) *)
-                  if Ojs.int_of_js (Ojs.get_prop_ascii ws "readyState") = 1 then begin
-                    let bytes = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Uint8Array") [| Ojs.int_to_js (String.length s) |] in
-                    String.iteri (fun i c -> Ojs.array_set bytes i (Ojs.int_to_js (Char.code c))) s;
-                    ignore (Ojs.call ws "send" [| bytes |])
-                  end);
+                  (* once open (readyState 1) at once; before, kept for
+                   * onopen *)
+                  if Ojs.int_of_js (Ojs.get_prop_ascii ws "readyState") = 1 then send_now s else waiting := s :: !waiting);
               receive =
                 (fun () ->
                   let packets = List.rev !inbox in

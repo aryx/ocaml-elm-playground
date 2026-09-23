@@ -80,6 +80,9 @@ let scenes : Testutil_golden.scene list =
     ("apps/office/software/TinyMacPaint", "", 5);
     ("apps/gamedev/software/TinyAseprite", "", 5);
     ("apps/gamedev/software/TinyTiled", "", 5);
+    (* claude: its server not there (localhost:6667 refused -- unless a
+     * tiny_ircd happens to run on this computer during the tests) *)
+    ("apps/internet/software/TinyIRC", "", 5);
     (* 1970: the Model D's panel, black between wooden cheeks, left to
      * right; the bass preset *)
     ("apps/music/software/TinyMinimoog", "", 5);

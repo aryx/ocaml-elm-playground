@@ -534,8 +534,13 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    `examples/UniverseBall.ml` (a world) and `UniverseBallServer.ml`
    (the universe, native only), a ball passed from world to world, run
    by hand with four world processes; a golden frame of a world whose
-   universe isn't there. Left: the chat, the whiteboard and a turn-based
-   game.
+   universe isn't there. Then the chat, as its own protocol rather
+   than a universe: `apps/internet/TinyIRC` (after ircII, 1989) over
+   `networking/Irc` (RFC 1459's lines) and `Irc_server` (nicks,
+   channels, the numerics that matter, over `Server`: IRC over
+   WebSocket, as IRCv3 has it, so that a browser joins), its program
+   `networking/ircd/tiny_ircd.exe`. Left: the whiteboard and a
+   turn-based game on the universe.
 6. *(later)* **Client-server**: `Snapshot`, prediction, reconciliation,
    interpolation; the XPilot-like arena.
 7. **Docs**: `notes_networking.md` checked against the code and its

@@ -10,7 +10,8 @@
    The socket is non-blocking once connected (the connect itself waits,
    as Tcp.connect does): [send] queues a frame and writes what the
    socket takes, [receive] reads what has arrived, and neither waits --
-   a frame loop calls them every frame.
+   a frame loop calls them every frame. What is sent before the
+   handshake's answer waits behind the request, in order.
 
    The mask is taken from a Lehmer sequence seeded by the clock: it
    should be unpredictable to a script in a page (Websocket.mli), and

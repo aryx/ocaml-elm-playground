@@ -73,7 +73,10 @@ let connect (caps : < Cap.network ; .. >) ~(host : string) ~(port : int) : Trans
   {
     send =
       (fun packet ->
-        if !upgraded then outbox := !outbox ^ Websocket.encode ~mask:(bytes 4) { fin = true; opcode = Binary; payload = packet };
+        (* before the handshake's answer too: the frame waits in the
+         * outbox, behind the request, and the server reads them in
+         * order (IRC's NICK and USER are sent at once) *)
+        outbox := !outbox ^ Websocket.encode ~mask:(bytes 4) { fin = true; opcode = Binary; payload = packet };
         flush ());
     receive =
       (fun () ->
