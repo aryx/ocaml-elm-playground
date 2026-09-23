@@ -18,6 +18,10 @@ same mistake, with the same cure.
 
 ## 0. Where the code is, and a reading order
 
+(`Abc`, `Doremi`, `Midi` and `Wav`, the files tunes and sounds are kept
+in, are under `audio/formats/`, a directory and a library each; the
+others are in `audio/` itself.)
+
 | module (`audio/`) | what | section |
 |---|---|---|
 | `Signal` | samples, sample rate, time | §1, §2 |

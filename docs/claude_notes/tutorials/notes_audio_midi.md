@@ -5,7 +5,8 @@ that note is about *sound* (samples, oscillators, filters); this one is
 about *music as data* -- not what a note sounds like, but which note,
 when, how hard, on which instrument. That's MIDI, and it's small,
 old, everywhere, and a good lesson in designing a binary protocol and a
-file format. Where it fits in the playground: `audio/Midi` reads and
+file format. Where it fits in the playground: `Midi` (in
+`audio/formats/midi/`, beside the other formats) reads and
 writes MIDI files, and `audio/Music` plays them with `audio/`'s own
 synthesizer (§12; see
 [`plan_audio_teaching.md`](../plans/plan_audio_teaching.md)); a real

@@ -5,8 +5,22 @@
 ; Independent of the Playground (playground/Audio.ml is the adapter).
 ; A private library, installed as part of elm_playground: pure OCaml,
 ; so every backend, the web one included, can use it.
+;
+; The files sounds and songs are kept in are in formats/, a library
+; each (WAV, MIDI, ABC and solfege: plan_audio_formats.md); they need
+; samples and resampling, and the synthesizer needs them, so Signal and
+; Resample are a library of their own, below both.
+(library
+ (name audio_signal)
+ (package elm_playground)
+ (wrapped false)
+ (modules Signal Resample)
+)
+
 (library
  (name audio)
  (package elm_playground)
  (wrapped false)
+ (modules :standard \ Signal Resample)
+ (libraries audio_signal audio_wav audio_midi audio_abc)
 )
