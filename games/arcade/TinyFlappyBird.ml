@@ -56,9 +56,22 @@
  *    River Raid (Carol Shaw, 1982) its endless river from a 16-bit one,
  *    the same river every game. (Details from memory, to check.)
  *
+ * Juice: the bird squashes at each flap, flattened by the push and
+ * springing back taller, the rhythm of the fingers seen in its body; a
+ * point pops the score, which swells and settles, in a burst of
+ * sparks; and the crash shakes the screen hard, flashes it white (as
+ * Flappy Bird does) and throws feathers of the bird's colors where it
+ * hit. The juice is on by default; the flag juice=off gives the dry
+ * game (dune exec games/arcade/TinyFlappyBird.exe -- juice=off). The
+ * effects watch the game from outside ([juiced]): the rules don't know
+ * about them, and the same keys give the same flight, dry or juiced.
+ * No hitstop (Juice.freeze) at the crash, on purpose: it would change
+ * *when* things happen, and a replay's flaps would come too early.
+ *
  * What it uses: Scene2d (title, play, game over), Camera2d (the camera
  * following the bird, [look_at]; the city and the clouds behind with
- * [parallax]), Audio (flap, point, hit, fall). Not Physics: the bird is
+ * [parallax]), Audio (flap, point, hit, fall), Juice (squash, stretch,
+ * tween, shake, flash, burst). Not Physics: the bird is
  * two numbers, y and vy, one line of gravity (semi-implicit Euler, as in
  * TinyMario.ml), and its flap is not a force; its collisions are a
  * circle against a few boxes ([circle_hits_box]), which the engine
@@ -170,7 +183,15 @@ type game = {
 
 type scene = Title | Playing of game | Game_over of game
 
-type model = { scenes : scene Scene2d.t; best : int }
+type model = {
+  scenes : scene Scene2d.t;
+  best : int;
+  (* the juice: the effects, when the bird last flapped (it squashes),
+   * when the last point was scored (the score pops) *)
+  fx : Juice.t;
+  flapped : time;
+  scored : time;
+}
 
 (* the next pipe, [pipe_spacing] after [x], its gap's center between 60
  * pixels above the ground plus half the gap and 60 below the top of the
@@ -197,7 +218,8 @@ let flag_seed (computer : computer) : int =
   | Some n when n land 0xFFFF <> 0 -> n land 0xFFFF
   | _ -> default_seed
 
-let initial_model : model = { scenes = Scene2d.start Title; best = 0 }
+let initial_model : model =
+  { scenes = Scene2d.start Title; best = 0; fx = Juice.none ~seed:1; flapped = Time (-10.); scored = Time (-10.) }
 
 (*****************************************************************************)
 (* The endless world *)
@@ -316,7 +338,7 @@ let update_game (computer : computer) (scenes : scene Scene2d.t) (g : game) : ga
     else g
   end
 
-let update (computer : computer) (model : model) : model =
+let update_rules (computer : computer) (model : model) : model =
   let scenes = Scene2d.update computer model.scenes in
   match scenes.scene with
   | Title ->
@@ -325,8 +347,8 @@ let update (computer : computer) (model : model) : model =
   | Playing g ->
       let g = update_game computer scenes g in
       let best = max model.best g.score in
-      if g.dead && g.bird.y <= ground_y + bird_radius then { best; scenes = Scene2d.go (Game_over g) scenes }
-      else { best; scenes = { scenes with scene = Playing g } }
+      if g.dead && g.bird.y <= ground_y + bird_radius then { model with best; scenes = Scene2d.go (Game_over g) scenes }
+      else { model with best; scenes = { scenes with scene = Playing g } }
   | Game_over g ->
       (* the next game goes on from the LFSR's state: other pipes, but
        * the whole session is still a function of the first seed; after
@@ -334,6 +356,59 @@ let update (computer : computer) (model : model) : model =
       if scenes.elapsed > 1. && flapped computer scenes then { model with scenes = Scene2d.go (Playing (new_game g.seed)) scenes }
       else if scenes.elapsed > 10. then { model with scenes = Scene2d.go Title scenes }
       else { model with scenes }
+
+(*****************************************************************************)
+(* The juice (juice=off: none of it) *)
+(*****************************************************************************)
+
+(* Everything the juice does is here, and the rules above don't know
+ * about it: [update] runs them, then [juiced] looks at what they just
+ * did -- the game before and after -- and turns it into effects; the
+ * view calls [flap_squash] where it draws the bird, [pop] where it
+ * draws the score, and [Juice.view] around the picture. *)
+
+(* the crash, if this update was it: the screen shaken hard and
+ * flashed white, and feathers of the bird's three colors thrown from
+ * where it hit (on the screen: the camera doesn't move after a crash,
+ * the world stopped) *)
+let crashed (g : game) (g' : game) (fx : Juice.t) : Juice.t =
+  if g'.dead && not g.dead then
+    let at = Camera2d.to_screen g'.cam g'.bird.x g'.bird.y in
+    fx |> Juice.shake 0.8 |> Juice.flash white 12
+    |> Juice.burst ~at (Juice.debris yellow)
+    |> Juice.burst ~at (Juice.debris (rgb 250 250 200))
+    |> Juice.burst ~at (Juice.debris orange)
+  else fx
+
+let juiced (before : scene) (model : model) : model =
+  let now = Juice.now model.fx in
+  match (before, model.scenes.scene) with
+  | Playing g, Playing g' ->
+      (* a flap: the velocity just set (a flap *sets* it, see
+       * [update_bird]: exactly [flap_speed] only on the frame of one) *)
+      let flapped = if g'.started && (not g'.dead) && g'.bird.vy = flap_speed then now else model.flapped in
+      (* a point: the score pops, in sparks *)
+      let scored, fx =
+        if g'.score > g.score then (now, Juice.burst ~at:(0., 400.) Juice.sparks model.fx) else (model.scored, model.fx)
+      in
+      { model with flapped; scored; fx = crashed g g' fx }
+  (* on the ground: the crash, if it was the ground, else a thud *)
+  | Playing g, Game_over g' ->
+      let fx = if g.dead then Juice.shake 0.3 model.fx else model.fx in
+      { model with fx = crashed g g' fx }
+  | _ -> model
+
+let update (computer : computer) (model : model) : model =
+  let model = { model with fx = Juice.step computer model.fx } in
+  juiced model.scenes.scene (update_rules computer model)
+
+(* the bird at a flap: flattened by the push, springing back past round
+ * (the elastic stretch), settled in 0.3 s; the bird built around its
+ * center, since it squashes against the air *)
+let flap_squash (model : model) (bird : shape) : shape = Juice.stretch (Juice.squash 0.35 0.3 model.flapped model.fx) bird
+
+(* the score's size just after a point: swollen, and settling *)
+let pop (model : model) : number = Juice.tween Juice.out_back 1.5 1. 0.3 model.scored model.fx
 
 (*****************************************************************************)
 (* View *)
@@ -388,8 +463,9 @@ let view_pipe (p : pipe) : shape list =
 let stripe (_ : int) : shape = rectangle (rgb 200 190 120) 20. 30. |> move_y (ground_y - 40.) |> rotate 30.
 
 (* the bird: a body, an eye, a beak, and a wing flapping when it goes up;
- * tilted up when rising, diving when falling fast *)
-let view_bird (time : time) (b : bird) : shape =
+ * squashed at a flap (the juice); tilted up when rising, diving when
+ * falling fast *)
+let view_bird (model : model) (time : time) (b : bird) : shape =
   let wing_y = if b.vy > 0. then wave (-8.) 8. 0.15 time else 0. in
   group
     [ oval yellow 52. 40.;
@@ -397,6 +473,7 @@ let view_bird (time : time) (b : bird) : shape =
       circle white 9. |> move 12. 8.;
       circle black 4. |> move 15. 8.;
       oval orange 22. 10. |> move 26. (-4.) ]
+  |> flap_squash model
   |> rotate (clamp (-80.) 25. (b.vy / 12.))
   |> move b.x b.y
 
@@ -406,53 +483,56 @@ let text (color : color) (size : number) (s : string) : shape =
   group [ words (rgb 60 60 60) s |> move 0.6 (-0.6); words color s ] |> scale size
 
 (* the world as the camera sees it, the city and the clouds behind *)
-let view_world (computer : computer) (g : game) : shape list =
+let view_world (computer : computer) (model : model) (g : game) : shape list =
   let screen = computer.screen in
   let hitbox = if List.mem_assoc "hitboxes" computer.flags then [ circle red bird_radius |> fade 0.5 |> move g.bird.x g.bird.y ] else [] in
   [ repeated screen (Camera2d.parallax 0.1 g.cam) 400. cloud;
     repeated screen (Camera2d.parallax 0.25 g.cam) 90. building;
     Camera2d.view g.cam (List.concat_map view_pipe g.pipes);
     (* the ground, in front of the pipes: glued to the screen, only its
-     * stripes scrolling *)
-    rectangle ground_color screen.width (ground_y - screen.bottom) |> move_y ((ground_y + screen.bottom) / 2.);
-    rectangle grass screen.width 16. |> move_y (ground_y - 8.);
+     * stripes scrolling; 100 pixels past the screen's sides and bottom,
+     * so that a shake (the juice) doesn't show the sky under it *)
+    rectangle ground_color (screen.width + 200.) (ground_y - screen.bottom + 100.)
+    |> move_y ((ground_y + screen.bottom - 100.) / 2.);
+    rectangle grass (screen.width + 200.) 16. |> move_y (ground_y - 8.);
     repeated screen g.cam 60. stripe;
-    Camera2d.view g.cam (view_bird computer.time g.bird :: hitbox) ]
+    Camera2d.view g.cam (view_bird model computer.time g.bird :: hitbox) ]
 
 let view (computer : computer) (model : model) : shape list =
   let screen = computer.screen in
   let scenes = model.scenes in
   rectangle sky screen.width screen.height
-  ::
-  (match scenes.scene with
-  | Title ->
-      (* the world of a game not started, the bird bobbing *)
-      let g = new_game default_seed in
-      view_world computer { g with bird = { g.bird with y = 50. + wave (-10.) 10. 1. computer.time } }
-      @ [ text white 5. "TINY FLAPPY BIRD" |> move_y 300.;
-          text white 2.5 "space, up or click: flap" |> move_y 200. ]
-      @ Scene2d.blink 1. scenes [ text white 3. "PRESS SPACE" |> move_y (-200.) ]
-  | Playing g ->
-      view_world computer g
-      @ [ text white 8. (string_of_int g.score) |> move_y 380. ]
-      @ if g.started then [] else [ text white 3. "GET READY" |> move_y 200. ]
-  | Game_over g ->
-      (* Flappy Bird's medals: bronze from 10 points, silver from 20, gold
-       * from 30, platinum from 40 *)
-      let medal =
-        if g.score >= 40 then [ circle (rgb 229 228 226) 30. ]
-        else if g.score >= 30 then [ circle (rgb 255 215 0) 30. ]
-        else if g.score >= 20 then [ circle (rgb 192 192 192) 30. ]
-        else if g.score >= 10 then [ circle (rgb 205 127 50) 30. ]
-        else []
-      in
-      view_world computer g
-      @ [ text orange 6. "GAME OVER" |> move_y 280.;
-          rectangle (rgb 222 216 149) 400. 180. |> move_y 80.;
-          text black 3. (Printf.sprintf "SCORE %d" g.score) |> move 30. 120.;
-          text black 3. (Printf.sprintf "BEST %d" model.best) |> move 30. 50. ]
-      @ List.map (move (-130.) 85.) medal
-      @ if scenes.elapsed > 1. then Scene2d.blink 1. scenes [ text white 3. "PRESS SPACE" |> move_y (-150.) ] else [])
+  (* the sky still, everything else shaken (the juice) *)
+  :: Juice.view model.fx
+       (match scenes.scene with
+       | Title ->
+           (* the world of a game not started, the bird bobbing *)
+           let g = new_game default_seed in
+           view_world computer model { g with bird = { g.bird with y = 50. + wave (-10.) 10. 1. computer.time } }
+           @ [ text white 5. "TINY FLAPPY BIRD" |> move_y 300.;
+               text white 2.5 "space, up or click: flap" |> move_y 200. ]
+           @ Scene2d.blink 1. scenes [ text white 3. "PRESS SPACE" |> move_y (-200.) ]
+       | Playing g ->
+           view_world computer model g
+           @ [ text white 8. (string_of_int g.score) |> scale (pop model) |> move_y 380. ]
+           @ if g.started then [] else [ text white 3. "GET READY" |> move_y 200. ]
+       | Game_over g ->
+           (* Flappy Bird's medals: bronze from 10 points, silver from 20,
+            * gold from 30, platinum from 40 *)
+           let medal =
+             if g.score >= 40 then [ circle (rgb 229 228 226) 30. ]
+             else if g.score >= 30 then [ circle (rgb 255 215 0) 30. ]
+             else if g.score >= 20 then [ circle (rgb 192 192 192) 30. ]
+             else if g.score >= 10 then [ circle (rgb 205 127 50) 30. ]
+             else []
+           in
+           view_world computer model g
+           @ [ text orange 6. "GAME OVER" |> move_y 280.;
+               rectangle (rgb 222 216 149) 400. 180. |> move_y 80.;
+               text black 3. (Printf.sprintf "SCORE %d" g.score) |> move 30. 120.;
+               text black 3. (Printf.sprintf "BEST %d" model.best) |> move 30. 50. ]
+           @ List.map (move (-130.) 85.) medal
+           @ if scenes.elapsed > 1. then Scene2d.blink 1. scenes [ text white 3. "PRESS SPACE" |> move_y (-150.) ] else [])
 
 let app = game view update initial_model
 let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

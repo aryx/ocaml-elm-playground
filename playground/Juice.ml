@@ -164,7 +164,11 @@ let rec transform (m : linear) (s : shape) : shape =
   | Ngon (color, n, r) -> polygon color (ngon n r)
   | Polygon (color, points) -> polygon color points
 
-let stretch ((across, up) : number * number) (s : shape) : shape = transform { a = across; b = 0.; c = 0.; d = up } s
+(* (1, 1), no stretch, the shape as it is: through [transform] a circle
+ * would become an oval of the same size, which draws a few pixels
+ * differently *)
+let stretch ((across, up) : number * number) (s : shape) : shape =
+  if across = 1. && up = 1. then s else transform { a = across; b = 0.; c = 0.; d = up } s
 
 let rec whiten (s : shape) : shape =
   let form =

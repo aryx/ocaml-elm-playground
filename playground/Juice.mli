@@ -140,7 +140,8 @@ val squash : number -> number -> time -> t -> number * number
  * it squashes against the ground, not in the air. A circle becomes an
  * oval; a rotated rectangle, or anything inside a rotated group, the
  * polygon it becomes (ovals by 32 points). Words and images inside a
- * rotated group, and words anywhere, are only scaled evenly. *)
+ * rotated group, and words anywhere, are only scaled evenly. By
+ * (1, 1), the shape is left exactly as it is. *)
 val stretch : number * number -> shape -> shape
 
 (* [whiten shape]: the same shape, all white: the hit flash, drawn for

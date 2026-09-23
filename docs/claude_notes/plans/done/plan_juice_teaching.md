@@ -610,6 +610,35 @@ start; `Juice.mli`'s header lists which do.
     same hit as the hand's "fight") and `TinyDefender_engine.png`
     (frame 42, a bomb 2 frames earlier).
   - `notes_juice.md` §8: the three modes.
+- 2026-09-23, the showcase (the author: "add some juice to a few games,
+  by default"): juice on, `juice=off` for the dry game, each game's
+  juice in a section of its own watching the rules, no hitstop.
+  - `TinyTetris`, new (`games/puzzle/`), beside the author's `Tetris`
+    (a port in Elm's message architecture, which `Juice.step`, taking
+    the `computer`, doesn't fit; `Asteroid` likewise): the Nintendo
+    version's scores and gravity, the 7-bag, the ghost, the lock delay,
+    simple kicks; locked pieces flash, a hard drop knocks the screen
+    and squashes the well, cleared lines burst into their colors, a
+    Tetris flashes white. Goldens: its title, and "line" (the first
+    bag's four pieces laid flat, cleared at frame 31). An upside-down
+    NEXT preview caught before approving.
+  - By three agents in parallel, one game each, their frames checked
+    before approving: `TinyInvaders` (aliens bursting into white
+    pixels, the wave popping in, the cannon hit red; its goldens
+    unchanged, a new "burst"), `Snake` (the food popping in, crumbs and
+    a gulp, red at the end; its frame 5 re-approved, the food mid-pop;
+    no golden of eating: its rules move by the wall clock, which the
+    runner freezes, and they are the author's), `TinyFlappyBird` (the
+    flap squashed, the score popping with sparks, the crash shaken,
+    white, feathers; "fly" re-approved, juice pixels only; a new
+    "feathers").
+  - `Juice.stretch (1, 1)` now leaves the shape as it is: through the
+    matrix a circle became an oval of the same size, drawing the bird's
+    eye a few pixels differently even in the dry game (the Flappy
+    agent's find; it had worked around it in the game, workaround
+    removed). No other golden changed.
+- 2026-09-23: the plan moved to `done/`; what is left is
+  `plan_juice_remaining.md`.
 
 ## Verification
 

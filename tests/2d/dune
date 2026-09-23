@@ -44,6 +44,7 @@
    %{project_root}/games/shmup/software/Asteroid.exe
    %{project_root}/games/arcade/software/Snake.exe
    %{project_root}/games/puzzle/software/Tetris.exe
+   %{project_root}/games/puzzle/software/TinyTetris.exe
    %{project_root}/games/platform/software/TinyMario.exe
    %{project_root}/games/shmup/software/TinyInvaders.exe
    %{project_root}/games/puzzle/software/TinySokoban.exe

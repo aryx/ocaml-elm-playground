@@ -25,10 +25,22 @@
  * game over), and Tilemap (each bunker is a tile map of small tiles,
  * eroded one tile at a time where shots hit it); and the shoot 'em up
  * kit's Shots (gamekits/shmup/, with TinyGalaga) for the cannon's
- * shot and the aliens' bombs. No randomness: the
+ * shot and the aliens' bombs; and Juice (tween, shake, flash, burst),
+ * for the effects below. No randomness: the
  * aliens choose who shoots from a fixed table of columns, or the column
  * above you, as the original did, so every game is the same (and golden
  * frames are possible).
+ *
+ * Juice: a new wave pops in, the bottom row first; an alien shot bursts
+ * into white pieces, tumbling and falling, and shakes the screen a
+ * little, which adds up as the last aliens run and fall one after the
+ * other; the cannon hit shakes it hard and flashes it red, and so do
+ * the aliens landing. The juice is on by default; the flag juice=off
+ * gives the dry game, the original's (dune exec
+ * games/shmup/TinyInvaders.exe -- juice=off). The effects watch the
+ * game from outside ([juiced]): the rules don't know about them, and
+ * the same keys give the same game, dry or juiced. No hitstop
+ * (Juice.freeze): it would change when things happen.
  *
  * Left as exercises: the mystery ship crossing the top, the aliens'
  * explosion sprite, the sounds (the four-note bass march, speeding up
@@ -103,7 +115,14 @@ type game = {
 
 type scene = Title | Playing of game | Game_over of int
 
-type model = { scenes : scene Scene2d.t; hi_score : int }
+type model = {
+  scenes : scene Scene2d.t;
+  hi_score : int;
+  (* the juice: the effects, and when the wave appeared (its aliens pop
+   * in) *)
+  fx : Juice.t;
+  wave_shown : time;
+}
 
 let cannon_y = -400.
 let bunker_y = -280.
@@ -143,7 +162,7 @@ let new_game () : game =
     bunkers = List.map (fun bx -> (bx, bunker ())) [ -300.; -100.; 100.; 300. ];
     score = 0; lives = 3; hit_frames = 0; frames = 0 }
 
-let initial_model = { scenes = Scene2d.start Title; hi_score = 0 }
+let initial_model = { scenes = Scene2d.start Title; hi_score = 0; fx = Juice.none ~seed:1; wave_shown = Time 0. }
 
 (*****************************************************************************)
 (* The march *)
@@ -269,7 +288,7 @@ let update_game (computer : computer) (scenes : scene Scene2d.t) (g : game) : ga
     let g = if g.frames mod 40 = 0 then drop_bomb g else g in
     g |> move_shot |> move_bombs
 
-let update (computer : computer) (model : model) : model =
+let update_rules (computer : computer) (model : model) : model =
   let scenes = Scene2d.update computer model.scenes in
   match scenes.scene with
   | Title -> if fire scenes then { model with scenes = Scene2d.go (Playing (new_game ())) scenes } else { model with scenes }
@@ -278,13 +297,65 @@ let update (computer : computer) (model : model) : model =
       let hi_score = max model.hi_score g.score in
       let landed = List.exists (fun a -> a.ay < bunker_y) g.aliens in
       if (g.lives = 0 && g.hit_frames = 0) || landed then
-        { hi_score; scenes = Scene2d.go (Game_over g.score) scenes }
+        { model with hi_score; scenes = Scene2d.go (Game_over g.score) scenes }
       else if g.aliens = [] then
         (* a new wave, keeping the score, the lives, the damaged bunkers *)
-        { hi_score; scenes = Scene2d.go (Playing { g with aliens = formation (); next = 0; dir = 1.; shot = None; bombs = [] }) scenes }
-      else { hi_score; scenes = { scenes with scene = Playing g } }
+        { model with hi_score; scenes = Scene2d.go (Playing { g with aliens = formation (); next = 0; dir = 1.; shot = None; bombs = [] }) scenes }
+      else { model with hi_score; scenes = { scenes with scene = Playing g } }
   | Game_over _ ->
       if fire scenes || scenes.elapsed > 10. then { model with scenes = Scene2d.go Title scenes } else { model with scenes }
+
+(*****************************************************************************)
+(* The juice (juice=off: none of it) *)
+(*****************************************************************************)
+
+(* Everything the juice does is here, and the rules above don't know
+ * about it: [update] runs them, then [juiced] looks at what they just
+ * did -- the scene or the game before and after -- and turns it into
+ * effects; the view calls [pop] where it draws an alien, and
+ * [Juice.view] around the picture. *)
+
+(* the aliens the last update shot: the ones gone, or, when the last
+ * one was shot and a new wave came in its place, that one *)
+let shot_down (g : game) (g' : game) : alien list =
+  if g'.score = g.score then []
+  else if List.length g'.aliens > List.length g.aliens then g.aliens
+  else List.filter (fun a -> not (List.exists (fun b -> b.id = a.id) g'.aliens)) g.aliens
+
+let juiced (before : scene) (model : model) : model =
+  let now = Juice.now model.fx in
+  match (before, model.scenes.scene) with
+  | Title, Playing _ -> { model with wave_shown = now }
+  | Playing g, Playing g' ->
+      (* an alien shot: it bursts into pieces the size of its pixels,
+       * two bursts of 10, from its two halves, and the screen shakes a
+       * little *)
+      let fx =
+        List.fold_left
+          (fun fx a ->
+            fx |> Juice.shake 0.2
+            |> Juice.burst ~at:(a.ax - 12., a.ay) (Juice.debris white)
+            |> Juice.burst ~at:(a.ax + 12., a.ay) (Juice.debris white))
+          model.fx (shot_down g g')
+      in
+      (* the cannon hit *)
+      let fx = if g'.lives < g.lives then fx |> Juice.shake 0.7 |> Juice.flash red 15 else fx in
+      let wave_shown = if List.length g'.aliens > List.length g.aliens then now else model.wave_shown in
+      { model with fx; wave_shown }
+  (* the last life lost, or the aliens landed *)
+  | Playing _, Game_over _ -> { model with fx = model.fx |> Juice.shake 0.8 |> Juice.flash red 20 }
+  | _ -> model
+
+let update (computer : computer) (model : model) : model =
+  let model = { model with fx = Juice.step computer model.fx } in
+  juiced model.scenes.scene (update_rules computer model)
+
+(* an alien's size as the wave appears: popping in, a row after the
+ * other, from the bottom up *)
+let pop (model : model) (a : alien) : number =
+  let (Time shown) = model.wave_shown in
+  let row = float_of_int (a.id /.. 11) in
+  Juice.tween Juice.out_back 0. 1. 0.3 (Time (shown + (0.08 * row))) model.fx
 
 (*****************************************************************************)
 (* View *)
@@ -296,8 +367,8 @@ let header (model : model) (score : int) : shape list =
   [ text white 3. (Printf.sprintf "SCORE %04d" score) |> move (-300.) 450.;
     text white 3. (Printf.sprintf "HI-SCORE %04d" model.hi_score) |> move 250. 450. ]
 
-let view_game (g : game) : shape list =
-  List.map (fun a -> Sprite.cycle a.steps alien_shapes.(a.kind) |> move a.ax a.ay) g.aliens
+let view_game (model : model) (g : game) : shape list =
+  List.map (fun a -> Sprite.cycle a.steps alien_shapes.(a.kind) |> scale (pop model a) |> move a.ax a.ay) g.aliens
   (* a bunker's tiles as pixel art: its runs of '#' are drawn as one
    * rectangle each (see Sprite.runs), a few dozen shapes, not hundreds *)
   @ List.map (fun (bx, map) -> Sprite.pixels 4. [ ('#', green) ] (Tilemap.to_strings map) |> move bx bunker_y) g.bunkers
@@ -322,16 +393,16 @@ let view (computer : computer) (model : model) : shape list =
   let screen = computer.screen in
   let background = rectangle black screen.width screen.height in
   let scenes = model.scenes in
-  background
-  ::
-  (match scenes.scene with
-  | Title -> header model 0 @ view_title scenes
-  | Playing g -> header model g.score @ view_game g
-  | Game_over score ->
-      header model score
-      @ [ text red 6. "GAME OVER" ]
-      @ Scene2d.blink 1. scenes [ text green 3. "PRESS SPACE" |> move_y (-150.) ])
+  let score = match scenes.scene with Title -> 0 | Playing g -> g.score | Game_over score -> score in
+  (* the background and the score still, everything else shaken (the
+   * juice) *)
+  (background :: header model score)
+  @ Juice.view model.fx
+      (match scenes.scene with
+      | Title -> view_title scenes
+      | Playing g -> view_game model g
+      | Game_over _ -> [ text red 6. "GAME OVER" ] @ Scene2d.blink 1. scenes [ text green 3. "PRESS SPACE" |> move_y (-150.) ])
 
 let app = game view update initial_model
 
-let main = Playground_platform.run_app app
+let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

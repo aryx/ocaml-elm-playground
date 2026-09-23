@@ -5,10 +5,10 @@
 (executables
   (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
-    TinySokobanEd)
+    TinySokobanEd TinyTetris)
   (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
-    TinySokobanEd Sokoban_levels Fez_xpm)
+    TinySokobanEd TinyTetris Sokoban_levels Fez_xpm)
   (libraries
     unix
     caps

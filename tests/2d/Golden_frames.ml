@@ -119,6 +119,7 @@ let scenes : Testutil_golden.scene list =
      * run (see Testutil_golden.render) *)
     ("games/arcade/software/Snake", "", 5);
     ("games/puzzle/software/Tetris", "", 5);
+    ("games/puzzle/software/TinyTetris", "", 5);
     ("games/platform/software/TinyMario", "", 5);
     ("games/shmup/software/TinyInvaders", "", 5);
     ("games/puzzle/software/TinySokoban", "", 5);
@@ -339,6 +340,9 @@ let scripted : Testutil_golden.scripted list =
       "play",
       300,
       "space:1,space:10,space:50,space:90,right:100-116,space:130,space:170,left:180-212,space:220,space:260,space:280" );
+    (* claude: the juice (Juice.mli): the first alien shot (frame 38),
+     * its pieces mid-flight *)
+    ("games/shmup/software/TinyInvaders", "burst", 50, "space:1,space:10");
     (* the first level's shortest solution, uldurrd, a key every 5 frames *)
     ( "games/puzzle/software/TinySokoban",
       "solve1",
@@ -706,6 +710,9 @@ let scripted : Testutil_golden.scripted list =
       600,
       "space:1,space:5,space:51,space:91,space:131,space:172,space:212,space:258,space:299,space:346,space:386,space:426,space:447,space:472,space:512,space:555,space:596" );
     ("games/arcade/software/TinyFlappyBird", "crash", 200, "space:1,space:5");
+    (* claude: the same crash, juiced (Juice.mli), 7 frames after the
+     * bird hit the ground: the world tilted, feathers thrown *)
+    ("games/arcade/software/TinyFlappyBird", "feathers", 80, "space:1,space:5");
     (* hops timed between the cars (the traffic is the same every game,
      * a formula of time), then onto a log, then the long log, which
      * carries the frog right *)
@@ -817,6 +824,14 @@ let scripted : Testutil_golden.scripted list =
     (* claude: and the first brick broken (at frame 108), its pieces
      * thrown up and falling, 8 frames later *)
     ("games/arcade/software/TinyBreakout", "debris", 116, "space:1,space:5,right:6-11");
+    (* claude: the first bag's four pieces laid flat, filling the floor
+     * (O, J, S, L with seed=1): the line cleared at frame 31, bursting
+     * into its colors, the well knocked *)
+    ( "games/puzzle/software/TinyTetris",
+      "line",
+      36,
+      "space:1,left:3,left:5,left:7,left:9,space:11,right:13,right:15,right:17,right:19,space:21,right:23,right:25,space:27,left:29,space:31"
+    );
     (* the turtle's drawings, all at once (the clock frozen, it wouldn't
      * move): Koch's filled snowflake; the dragon, 4096 lines *)
     ("examples/software/LogoFractals", "snowflake", 5, "a:2");
