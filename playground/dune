@@ -8,7 +8,7 @@
  (virtual_modules Playground_platform)
  (wrapped false)
  (modules :standard \ Playground3d Playground3d_platform Camera3d Audio3d
-   Character3d Gpu_scene Logo3d Physics3d Portal3d Ragdoll3d)
+   Character3d Gpu_scene Juice3d Logo3d Physics3d Portal3d Ragdoll3d)
  (libraries
    ; commons
    elm_core
@@ -52,10 +52,11 @@
  (virtual_modules Playground3d_platform)
  (wrapped false)
  (modules Playground3d Playground3d_platform Camera3d Audio3d
-   Character3d Gpu_scene Logo3d Physics3d Portal3d Ragdoll3d)
+   Character3d Gpu_scene Juice3d Logo3d Physics3d Portal3d Ragdoll3d)
  (libraries
    ; commons
    elm_core elm_playground
+   juice ; Trauma and Hash, under Juice3d's shake and particles
    graphics_3d_geometry ; Vec3, Mat4, Camera, Lighting
    physics_3d ; Quat, Mat3, Body3d, Integrate3d, Force3d: what Physics3d is an API over
  )

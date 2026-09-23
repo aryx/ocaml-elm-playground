@@ -75,6 +75,9 @@ let scenes : Testutil_golden.scene list =
     (* the title's tank, turned by 40 degrees, solid (the same frame as
      * TinyBattlezone's, in lines) *)
     ("games/fps/software/TinyBattlezone3d", "", 40);
+    (* claude: the arena from the title's camera, the two sleds face
+     * to face beside the pillar in its middle *)
+    ("games/fps/software/TinyCyberSled", "", 5);
     (* the station turning, solid (TinyElite's title frame) *)
     ("games/flight/software/TinyElite3d", "", 5);
     (* the heist from above: the house, the vault, the water tower and
@@ -143,6 +146,16 @@ let scripted : Testutil_golden.scripted list =
     (* the same battle as TinyBattlezone's golden frame: the
      * pyramid now hides the enemy tank *)
     ("games/fps/software/TinyBattlezone3d", "play", 150, "space:1,right:5-20,up:30-140,space:100");
+    (* claude: the view from behind (v); the right tread alone turns
+     * the sled left, both ahead, then both sticks sideways: strafing
+     * right, firing, the computer's sled beyond the pillar *)
+    ( "games/fps/software/TinyCyberSled",
+      "fight",
+      150,
+      "space:1,v:3,up:5-30,w:40-90,up:40-90,space:100-150,d:100-150,right:100-150" );
+    (* claude: strafing against the wall and firing, hit: the juice's
+     * sparks round the sled (Juice3d) *)
+    ("games/fps/software/TinyCyberSled", "hit", 1100, "space:1,v:3,space:5-1500,d:5-1500,right:5-1500");
     (* the same launch as TinyElite's: the station ahead, the
      * slot turning, Lave a sphere behind it *)
     ("games/flight/software/TinyElite3d", "flight", 200, "space:1");
@@ -328,4 +341,24 @@ let scripted : Testutil_golden.scripted list =
      "space:1,down:10-80,right:10-80,space:90,space:110,up:120-200,left:150-200,space:210,x:220,space:240,space:270,space:290");
     ("games/arcade/software/TinyBoomerangFu", "cut", 95, "space:1,up:5-40,right:41-70,space:71,right:75-140") ]
 
-let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted scenes
+(* claude: played and flagged: TinyCyberSled's variants, each its own
+ * section of the game *)
+let scripted_flagged : Testutil_golden.scripted_flagged list =
+  [ (* two missiles away, the second's smoke trailing towards the
+     * computer's sled, beyond the pillar *)
+    ("games/fps/software/TinyCyberSled", "missiles", 120, "space:1,v:2,Enter:5,Enter:60", [ "missiles=on" ]);
+    (* the screen split, both players driving ahead and firing *)
+    ( "games/fps/software/TinyCyberSled",
+      "players2",
+      100,
+      "space:1,w:2-50,up:2-50,i:2-50,ArrowUp:2-50,q:40-100,Enter:40-100",
+      [ "players=2" ] );
+    (* across the arena, up the west ramp and off its high end: in the
+     * air *)
+    ( "games/fps/software/TinyCyberSled",
+      "jump",
+      520,
+      "space:1,v:2,s:3-37,up:3-37,w:38-285,up:38-285,w:286-321,down:286-321,w:322-560,up:322-560",
+      [ "ramps=on" ] ) ]
+
+let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted ~scripted_flagged scenes

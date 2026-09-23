@@ -13,10 +13,10 @@
 )
 
 (executables
-  (names TinyBattlezone3d TinyDoom3d TinyHalfLife2 TinyMinecraft TinyQuake
-    TinyTeardown TinyWolfenstein3d)
-  (modules TinyBattlezone3d TinyDoom3d TinyHalfLife2 TinyMinecraft TinyQuake
-    TinyTeardown TinyWolfenstein3d Texture_atlas)
+  (names TinyBattlezone3d TinyCyberSled TinyDoom3d TinyHalfLife2 TinyMinecraft
+    TinyQuake TinyTeardown TinyWolfenstein3d)
+  (modules TinyBattlezone3d TinyCyberSled TinyDoom3d TinyHalfLife2 TinyMinecraft
+    TinyQuake TinyTeardown TinyWolfenstein3d Texture_atlas)
   (libraries
     elm_core
     kit_sectors ; TinyDoom3d's level, TinyDoom's own
