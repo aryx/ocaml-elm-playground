@@ -466,6 +466,27 @@ microphone, which is out of scope) likewise later.
   it) and `vco_pwm` (a 110 Hz pulse, its width moved at 0.5 Hz). Left
   for phase 4, with the Model D's manual: the triangle-saw ("shark
   tooth") waveform, whose exact shape is to check there.
+- **Phase 2, DONE (2026-09-23)**: envelopes and voicing. `Envelope`,
+  live: `start`, `gate_on`, `gate_off`, `fill` with a curve, the ADSR
+  record kept as the knobs' values, read at each block; a state machine
+  (Idle, Attack, Decay, Sustain, Release), the attack from the current
+  level; `Linear` (the offline `level`'s values within a sample's step)
+  or `Exponential` (one-poles towards targets, the attack aiming at 1.5
+  to arrive at 1 in its time, the decay and release reaching a
+  thousandth of the distance in theirs). `audio/Voicing`, mono: the
+  keys held, priority `Low` (the Minimoog), `High`, `Last`; events
+  `Begin`, `Change`, `End` for the voice; legato or `~retrigger`;
+  `glide`, a one-pole in semitones, kept when the keys come up. Tests
+  (`Unit_envelope`, `Unit_voicing`): the exponential's 0.633 halfway up
+  (half a sample short of 0.634), 1 after 441 samples, 0.5158, 0.5005,
+  0.0158, 0.0005; released mid-attack and pressed again from there,
+  idle when silent; the three priorities on C4, E4, D4; a trill,
+  legato and retriggered; the glide's 67.59 and 405.5 Hz, 71.92 and
+  520.8 Hz, an octave up and down in the same time. Golden WAVs,
+  plotted before approving: `envelope_linear_vs_exponential`, and
+  `mono_legato_glide`, a phrase from Voicing, Vco and Envelope put
+  together as `Minimoog_voice` will be. Polyphony (voice stealing) left
+  for the Juno.
 
 ## Verification
 

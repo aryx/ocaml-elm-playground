@@ -32,8 +32,8 @@ module here.
 | `audio/Drift` | analog imprecision | §3 | done |
 | `audio/Lfo` | the slow oscillators that turn knobs | §4 | done |
 | `audio/Noise` (extended) | random numbers for them: a linear congruential generator | §4 | done |
-| `audio/Envelope` (extended) | gated, exponential | §4 | |
-| `audio/Voicing` | keys to voices: priority, legato, glide, stealing | §5 | |
+| `audio/Envelope` (extended) | gated, exponential | §4 | done |
+| `audio/Voicing` | keys to a voice: priority, legato, glide (stealing: later) | §5 | done (mono) |
 | `audio/Ladder` | the Moog filter: naive, zero-delay, nonlinear | §6 | |
 | `audio/Svf` | the state-variable filter | §7 | |
 | `audio/Drive`, `Filter` (EQ) | gain, waveshaping, oversampling; shelves, peaks | §8 | |
@@ -216,8 +216,8 @@ example, a vibrato of 6 Hz and 0.3 semitone: the frequency f
 `Vibrato` is this, rendered ahead; `Lfo` is the live one.) Its rate can
 follow a tempo (a quarter note at 120 BPM: 2 Hz).
 
-**Envelopes, live and exponential.** `Envelope` today is straight
-lines, computed over a known length. Live, an envelope is a **state
+**Envelopes, live and exponential.** `Envelope` was straight lines,
+computed over a known length (`level`, `apply`). Live, an envelope is a **state
 machine** driven by a gate:
 
 ```
@@ -225,8 +225,13 @@ machine** driven by a gate:
       |                   |
  idle --> attack --> decay --> sustain --> release --> idle
              ^                                |
-             '---- a key pressed again: retrigger (or not: legato)
+             '---- a key pressed again: the attack, from where it is
 ```
+
+The attack restarts from the current level, not from 0: a note played
+again while the last one dies away rises from there, without a jump.
+The ADSR's knobs are read at every block; turning the sustain while a
+note is held moves the level to it at the decay's pace.
 
 and an analog one's segments are a capacitor charging through a
 resistor: exponential, each a one-pole towards a target. The catch:
@@ -237,7 +242,15 @@ decay and release fall towards their targets for good; "their time"
 is the time to fall most of the way (to 1/1000 of the distance, -60
 dB: tau = time / 6.91). Heard, the exponential attack is punchier and
 the release more natural: our ears hear loudness in decibels, and an
-exponential is a straight line in decibels.
+exponential is a straight line in decibels -- the straight release
+loses little at first and plunges at the end (-6 dB at half its time,
+-20 at 90%, -40 at 99%): it sounds cut off. Measured on the ADSR of
+`notes_audio.md` §4 (A 0.01, D 0.1, S 0.5, R 0.2, let go at 0.5 s):
+0.633 halfway up (the straight one: 0.5), 1 after 441 samples, 0.5158
+halfway through the decay, 0.5005 at its end, 0.0158 halfway through
+the release, 0.0005 at its end (-60 dB). The straight live envelope
+gives `Envelope.level`'s values within one sample's step. Heard side by
+side: the golden WAV `envelope_linear_vs_exponential`.
 
 **Where modulation goes.** The Minimoog's mod wheel scales one source
 into two destinations; later synthesizers (the ARP 2600's patch
@@ -254,13 +267,20 @@ pressing E4, *low-note* priority (the Minimoog) stays on C4, *last-note*
 (most monosynths since) goes to E4 and, E4 released, back to C4, the
 stack remembering; *high-note* keeps E4. Trills are played that way:
 hold one key, tap another. **Legato**: a new key while one is held
-changes the pitch without restarting the envelopes.
+changes the pitch without restarting the envelopes; **retrigger**
+reopens their gate at every change. `Voicing` turns each key into an
+event for the voice -- a note begins (the gate opens), changes (the
+gate stays), or ends -- so the voice itself knows nothing of keys.
 
 **Glide** (portamento): the pitch not jumping to the new note but
 moving there, a one-pole in *semitones* (not in hertz: a glide of an
 octave up and one down take the same time, as the ear expects). Its
 knob is a time constant tau: after tau, 63% of the way; after 5 tau,
-99.3%.
+99.3%. C4 to C5 with tau = 0.1 s: 67.59 after 0.1 s (405.5 Hz, between
+G4 and G#4), 71.92 after 0.5 s (8 cents flat). The pitch is kept when
+the keys come up, so the next note glides from the last one, as the
+Minimoog's did. A phrase put together from the blocks, legato with a
+50 ms glide: the golden WAV `mono_legato_glide`.
 
 **Polyphonic** (the Juno, later): N voices, and which one a new note
 takes -- a free one, else one **stolen**: the oldest, the quietest (in

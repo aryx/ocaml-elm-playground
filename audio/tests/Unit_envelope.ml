@@ -46,6 +46,76 @@ let test_mix () =
   Alcotest.(check int) "added: as long as the longest" 4410 (Array.length (Mix.add [ sine; Array.sub sine 0 100 ]));
   Alcotest.(check int) "delayed by 0.1 s" 8820 (Array.length (Mix.delay 0.1 sine))
 
+(* the live envelope, played as the example: the gate on at 0, off at
+ * 0.5 s, 0.8 s of it in blocks of 735 *)
+let live (curve : Envelope.curve) : Signal.t =
+  let r = Envelope.start () and block = Array.make 735 0. in
+  Envelope.gate_on r;
+  Array.concat
+    (List.init 48 (fun b ->
+         (* the gate closes at the block holding 0.5 s: sample 22,050 is
+          * block 30's first *)
+         if b = 30 then Envelope.gate_off r;
+         Envelope.fill curve adsr r block;
+         Array.copy block))
+
+let test_live_linear () =
+  let x = live Linear in
+  (* the same levels as the offline envelope, within a sample's step of
+   * the attack (1 / 441: the live one steps, then says) *)
+  Array.iteri
+    (fun i v ->
+      let expected = Envelope.level adsr ~held:0.5 (float_of_int i /. float_of_int Signal.rate) in
+      if Float.abs (v -. expected) > 0.0023 then Alcotest.failf "sample %d: %g, offline %g" i v expected)
+    x
+
+let at (x : Signal.t) (seconds : float) : float = x.(int_of_float (seconds *. float_of_int Signal.rate) - 1)
+
+let test_live_exponential () =
+  let x = live Exponential in
+  (* the .mli's worked example *)
+  (* halfway, 220 of the attack's 441 samples: 0.633, half a sample
+   * short of the 0.634 at 220.5 *)
+  Alcotest.(check (float 0.0015)) "halfway up: 0.634, not 0.5" 0.634 (at x 0.005);
+  let first_full = ref 0 in
+  (try Array.iteri (fun i v -> if v >= 1. then (first_full := i + 1; raise Exit)) x with Exit -> ());
+  Alcotest.(check int) "at 1 after 441 samples, 10 ms" 441 !first_full;
+  Alcotest.(check (float 0.0001)) "halfway through the decay: 0.5158" 0.5158 (at x 0.06);
+  Alcotest.(check (float 0.0001)) "at its end: 0.5005" 0.5005 (at x 0.11);
+  Alcotest.(check (float 0.0001)) "halfway through the release: 0.0158" 0.0158 (at x 0.6);
+  Alcotest.(check (float 0.0001)) "at its end, -60 dB: 0.0005" 0.0005 (at x 0.7)
+
+let test_gate () =
+  let r = Envelope.start () and block = Array.make 100 0. in
+  let e : Envelope.t = { attack = 0.01; decay = 0.1; sustain = 0.5; release = 0.01 } in
+  Alcotest.(check bool) "idle at first" true (Envelope.stage r = Idle);
+  Envelope.gate_on r;
+  Envelope.fill Linear e r block;
+  let level = Envelope.current r in
+  (* let go during the attack, then pressed again: the attack goes on
+   * from the level reached, down a little, no jump to 0 *)
+  Envelope.gate_off r;
+  Envelope.fill Linear e r block;
+  Alcotest.(check bool) "released" true (Envelope.stage r = Release);
+  let down = Envelope.current r in
+  if not (down < level && down > 0.) then Alcotest.failf "the release from %g: %g" level down;
+  Envelope.gate_on r;
+  Envelope.fill Linear e r block;
+  Alcotest.(check (float 1e-9)) "again from there, not from 0" (down +. (100. /. 441.)) block.(99);
+  Envelope.gate_off r;
+  for _ = 1 to 10 do
+    Envelope.fill Exponential e r block
+  done;
+  Alcotest.(check bool) "silent: idle again" true (Envelope.stage r = Idle);
+  Alcotest.(check (float 0.)) "at 0" 0. (Envelope.current r)
+
 let tests =
   Testo.categorize "Envelopes and mixing"
-    [ t "ADSR: the worked example" test_adsr; t "the click, and the envelope's cure" test_click; t "Mix: decibels, clipping" test_mix ]
+    [
+      t "ADSR: the worked example" test_adsr;
+      t "the click, and the envelope's cure" test_click;
+      t "Mix: decibels, clipping" test_mix;
+      t "live, straight: the same levels" test_live_linear;
+      t "live, exponential: the worked example" test_live_exponential;
+      t "the gate: released and pressed again" test_gate;
+    ]

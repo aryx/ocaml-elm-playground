@@ -130,4 +130,47 @@ let sounds : (string * (unit -> Signal.t)) list =
           Vco.fill ~width:(Array.map (fun x -> 0.5 +. (0.4 *. x)) w) (Vco.create ()) Pulse ~frequency:(Array.make len 110.) s;
           Mix.gain 0.25 s ) ]
 
+(* a mono voice from the blocks (Voicing, Vco, Envelope), played by
+ * [keys] (frame, key, down?) over [frames] frames of 735 samples:
+ * the way a synthesizer's voice is put together *)
+let mono_voice ~(curve : Envelope.curve) ~(adsr : Envelope.t) ~(glide : float) ~(frames : int) (keys : (int * int * bool) list) : Signal.t =
+  let v = Voicing.create () and g = Voicing.glide () and o = Vco.create () and env = Envelope.start () in
+  let f = Array.make 735 0. and wave = Array.make 735 0. and level = Array.make 735 0. in
+  Array.concat
+    (List.init frames (fun frame ->
+         List.iter
+           (fun (at, key, down) ->
+             if at = frame then
+               match if down then Voicing.press v key else Voicing.release v key with
+               | Begin n ->
+                   Voicing.glide_to g n;
+                   Envelope.gate_on env
+               | Change n -> Voicing.glide_to g n
+               | End -> Envelope.gate_off env
+               | Nothing -> ())
+           keys;
+         Voicing.fill_frequency g ~seconds:glide f;
+         Vco.fill o Sawtooth ~frequency:f wave;
+         Envelope.fill curve adsr env level;
+         Array.init 735 (fun i -> 0.25 *. wave.(i) *. level.(i))))
+
+let sounds =
+  sounds
+  (* the same note, 0.4 s held, 0.5 s released, straight then
+   * exponential: the exponential's punchier attack and natural fade *)
+  @ [ ( "envelope_linear_vs_exponential",
+        fun () ->
+          let adsr : Envelope.t = { attack = 0.05; decay = 0.2; sustain = 0.4; release = 0.5 } in
+          let note curve = mono_voice ~curve ~adsr ~glide:0. ~frames:60 [ (0, 57, true); (24, 57, false) ] in
+          Array.append (note Linear) (note Exponential) );
+      (* a phrase, legato with a 50 ms glide: C4, E4 pressed over it and
+       * let go (back to the held C4, gliding), then G4 alone, gliding
+       * from C4 though the keys were up *)
+      ( "mono_legato_glide",
+        fun () ->
+          mono_voice ~curve:Exponential
+            ~adsr:{ attack = 0.01; decay = 0.3; sustain = 0.6; release = 0.2 }
+            ~glide:0.05 ~frames:120
+            [ (0, 60, true); (15, 64, true); (30, 64, false); (45, 60, false); (60, 67, true); (90, 67, false) ] ) ]
+
 let tests = Testo.categorize "golden WAVs" (List.map (fun (name, f) -> t name (fun () -> check name (f ()) ())) sounds)
