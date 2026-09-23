@@ -8,5 +8,6 @@
  * TinySoundtracker's song as a MOD (Our_songs.mli), a bell as a WAV, a
  * picture as PNG, GIF and JPEG (the Image examples' demo picture), an
  * animated GIF (a ball bouncing, written here without compression: see
- * Our_media.ml), a sprite as XPM (TinyMario's) *)
+ * Our_media.ml), a sprite as XPM (TinyMario's), and a video, raw as
+ * Y4M, filmed by our own 2D rasterizer *)
 val playlist : (string * string) list

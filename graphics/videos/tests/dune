@@ -3,5 +3,5 @@
 (test
  (name Test)
  (package elm_playground)
- (libraries alcotest testo graphics_rgba graphics_movie)
+ (libraries alcotest testo graphics_rgba graphics_movie graphics_yuv graphics_y4m)
 )

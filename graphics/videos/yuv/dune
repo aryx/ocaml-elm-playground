@@ -1,0 +1,10 @@
+; claude: the pixels of video, luma and color differences, the color
+; subsampled (Yuv.mli), and PSNR, how a lossy picture is measured
+; (Psnr.mli). Pure OCaml. A private library (see graphics/core/dune),
+; installed as part of elm_playground.
+(library
+ (name graphics_yuv)
+ (package elm_playground)
+ (wrapped false)
+ (libraries graphics_rgba)
+)

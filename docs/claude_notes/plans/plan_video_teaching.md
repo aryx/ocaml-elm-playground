@@ -70,9 +70,10 @@ codecs before and after, the players, the books).
 graphics/videos/          video formats, one library each
   movie/                  Movie: what every reader gives, frames decoded
                           on demand at their times (done, phase 0)
-  yuv/                    Yuv: RGB <-> YCbCr (BT.601), 4:2:0 and back
-                          (shared with JPEG's color conversion if it fits)
-  y4m/                    Y4m: YUV4MPEG2 read and written
+  yuv/                    Yuv: RGB <-> YCbCr (BT.601), 4:2:0 and back;
+                          Psnr (done, phase 1; JPEG keeps its own
+                          conversion, Jpeg.mli's same formulas)
+  y4m/                    Y4m: YUV4MPEG2 read and written (done, phase 1)
   fli/                    Fli: FLI and FLC read and written
   avi/                    Avi: the RIFF walk (Wav's), MJPEG frames, PCM
                           audio; written once the JPEG writer exists
@@ -172,9 +173,13 @@ commercial stream analyzers); here it is the lesson made visible.
    in TinyMediaPlayer, the GIF animation moved onto it. The sound of a
    movie, and the audio clock driving it, wait for phase 3's AVI, the
    first format with both.
-1. **Y4M and YCbCr**: `Yuv` (BT.601, 4:2:0, round trips measured by
-   PSNR), `Y4m` read and written; our first clip, rendered by the 2D
-   rasterizer, written as Y4M; the player plays it.
+1. **Y4M and YCbCr** (done): `Yuv` (BT.601, both ranges, 4:2:0 and
+   4:4:4, round trips measured by `Psnr`), `Y4m` read and written (its
+   frames at known places: any one decoded at once, no
+   `Movie.sequential`); our first clip, `ball_and_square.y4m`, 160 x 120
+   for 2 s, drawn by the 2D rasterizer in `Our_media` and written as
+   Y4M when the player starts (1.4 MB: no file in the repository); the
+   player plays it, a golden frame showing 4:2:0's fringes.
 2. **FLI/FLC**: read and written, the clip quantized to 256 colors;
    sizes against Y4M's; the analyzer's changed pixels.
 3. **AVI with Motion JPEG and PCM**: the RIFF walk shared with `Wav`,

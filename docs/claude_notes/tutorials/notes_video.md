@@ -20,8 +20,8 @@ after the first is a way of not storing the same thing twice.
 | directory (`graphics/videos/`) | modules | section | status |
 |---|---|---|---|
 | `movie/` | `Movie`, a video as a player sees it | §3, §4 | done |
-| `yuv/` | `Yuv` | §2 | |
-| `y4m/` | `Y4m` | §2 | |
+| `yuv/` | `Yuv`, `Psnr` | §2, §6 | done |
+| `y4m/` | `Y4m` | §2 | done |
 | `fli/` | `Fli` | §3 | |
 | `avi/` | `Avi` | §4 | |
 | `mpeg1/` | `Bits`, `Vlc`, `Mpeg1`, later `Motion` | §5, §7 | |
@@ -61,8 +61,11 @@ and say, in `Yuv.mli`.)
 Then the color is **subsampled**: **4:2:0** keeps one Cb and one Cr for
 each 2 x 2 square of Y. A frame of W x H is W x H bytes of Y and W x H /
 4 of each color: 1.5 bytes a pixel instead of 3, half the data, and
-very hard to see (the tests will say how hard: the PSNR, §6, of a
-picture through 4:2:0 and back).
+very hard to see -- except at a sharp edge between two colors: a 2 x 2
+checker of red and blue keeps its four brightnesses and becomes one
+purple (Cb 170, Cr 181, `Yuv.mli`'s worked example). The tests measure
+it by the PSNR (§6) of a picture through 4:2:0 and back: over 35 dB
+for a smooth gradient, under 15 for that checker.
 
 **Y4M** (YUV4MPEG2, mjpegtools, 2001) is exactly this and nothing more,
 the raw format video tools pass each other:

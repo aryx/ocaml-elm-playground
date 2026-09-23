@@ -16,6 +16,7 @@
  *     "GIF87a", "GIF89a"        GIF (1987, 1989)
  *     FF D8 FF                  JPEG (a start-of-image marker, then the next)
  *     "/* XPM */"               XPM (a C comment: the file is C source)
+ *     "YUV4MPEG2 "              Y4M, raw video (mjpegtools, 2001)
  *     "X:" first                an ABC tune (its first field, the number)
  *
  * and only then the name: Ultimate Soundtracker's modules have no tag
@@ -29,7 +30,7 @@
  * (Movie.mli): so far a GIF's frames, and as graphics/videos/ grows,
  * the video formats (plan_video_teaching.md). *)
 
-type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm
+type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m
 
 val kind_name : kind -> string
 

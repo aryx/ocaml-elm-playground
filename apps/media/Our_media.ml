@@ -102,6 +102,42 @@ let bouncing_ball_gif : string =
   u8 0x3B;
   Buffer.contents b
 
+(* Our first video: the repository filming itself. Each frame drawn by
+ * the 2D rasterizer of graphics/2d (Fill, Circle: the software
+ * backend's own), then written raw as Y4M, in 4:2:0 and the studio
+ * range (Y4m.mli) -- 160 x 120, 25 frames a second for 2 s: 50 frames
+ * of 28,800 bytes, 1.4 MB for two seconds of a small picture, the size
+ * the next formats of graphics/videos/ are about. A ball bounces twice
+ * and a square turns a quarter, so the clip loops without a jump; flat
+ * colors, whose sharp edges show what 4:2:0 does to color. *)
+let clip_frame (k : int) : Rgba_image.t =
+  let w = 160 and h = 120 and ground = 96 in
+  let fb = Framebuffer.create ~width:w ~height:h in
+  Framebuffer.clear fb ~rgb:0x1e2a50;
+  for y = ground to h - 1 do
+    Framebuffer.fill_span fb ~y ~x0:0 ~x1:w ~rgb:0x3c8c46 ~alpha:1.
+  done;
+  let t = float_of_int k /. 50. (* 0 to 1 over the clip *) in
+  (* the square, turning a quarter around (40, 50) *)
+  let a = t *. Float.pi /. 2. in
+  let corner i = let a = a +. (float_of_int i *. Float.pi /. 2.) in (40. +. (20. *. cos a), 50. +. (20. *. sin a)) in
+  Fill.polygon fb (List.init 4 corner) ~rgb:0xf0c83c ~alpha:1.;
+  (* the ball, two bounces: a parabola's height each half *)
+  let phase = Float.rem (t *. 2.) 1. in
+  let height = 240. *. phase *. (1. -. phase) in
+  Circle.fill fb ~cx:(110 + int_of_float (20. *. sin (2. *. Float.pi *. t))) ~cy:(ground - 10 - int_of_float height) ~r:10 ~rgb:0xe03c32 ~alpha:1.;
+  let img = Rgba_image.create ~width:w ~height:h in
+  for y = 0 to h - 1 do
+    for x = 0 to w - 1 do
+      let rgb = Framebuffer.get_rgb fb ~x ~y and o = 4 * ((y * w) + x) in
+      img.rgba.{o} <- (rgb lsr 16) land 0xFF;
+      img.rgba.{o + 1} <- (rgb lsr 8) land 0xFF;
+      img.rgba.{o + 2} <- rgb land 0xFF;
+      img.rgba.{o + 3} <- 255
+    done
+  done;
+  img
+
 let playlist : (string * string) list =
   let midi = match Abc.parse frere_jacques with Ok tune -> Midi.of_tune tune | Error e -> failwith e in
   let bell = Synth.render (Synth.voice (Fm { ratio = 1.4; index = 5. }) 440. |> Synth.lasting 2. |> Synth.fading) in
@@ -116,4 +152,5 @@ let playlist : (string * string) list =
     ("bouncing_ball.gif", bouncing_ball_gif);
     ("demo_picture.jpg", Our_pictures.demo_picture_jpg);
     ("mario_stand.xpm", Our_pictures.mario_stand_xpm);
+    ("ball_and_square.y4m", Y4m.to_string ~rate:(25, 1) (List.init 50 clip_frame));
   ]

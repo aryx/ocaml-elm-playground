@@ -29,6 +29,7 @@ let test_sniff () =
       ("bouncing_ball.gif", Gif);
       ("demo_picture.jpg", Jpeg);
       ("mario_stand.xpm", Xpm);
+      ("ball_and_square.y4m", Y4m);
     ];
   (* the bytes decide, not the name *)
   Alcotest.(check (option kind)) "a PNG called bell.wav" (Some Png) (Media.sniff ~name:"bell.wav" (bytes "demo_picture.png"));
@@ -54,6 +55,12 @@ let test_open () =
   (match open_ "tiny_soundtracker.mod" with Module song -> Alcotest.(check int) "two positions" 2 (Array.length song.positions) | _ -> Alcotest.fail "not a module");
   (match open_ "demo_picture.png" with Picture img -> Alcotest.(check (pair int int)) "64 x 48" (64, 48) (img.width, img.height) | _ -> Alcotest.fail "not a picture");
   (match open_ "mario_stand.xpm" with Picture img -> if img.width < 8 then Alcotest.fail "the sprite too small" | _ -> Alcotest.fail "not a picture");
+  (match open_ "ball_and_square.y4m" with
+  | Movie movie ->
+      Alcotest.(check int) "the clip: 50 frames" 50 (Movie.frame_count movie);
+      Alcotest.(check (float 1e-9)) "2 s" 2. movie.duration;
+      Alcotest.(check (pair int int)) "160 x 120" (160, 120) (movie.width, movie.height)
+  | _ -> Alcotest.fail "not a movie");
   (* our GIF: six frames, 0.15 s each, the ball moving *)
   match open_ "bouncing_ball.gif" with
   | Movie movie ->

@@ -971,6 +971,9 @@ let scripted : Testutil_golden.scripted list =
     ("apps/media/software/TinyMediaPlayer", "module", 60, "n:3,n:6,n:9");
     ("apps/media/software/TinyMediaPlayer", "recording", 60, "n:3,n:6,n:9,n:12");
     ("apps/media/software/TinyMediaPlayer", "animation", 70, "n:3,n:6,n:9,n:12,n:15,n:18,n:21");
+    (* claude: and our first video, raw Y4M filmed by the 2D rasterizer,
+     * 0.8 s in: 4:2:0's fringes at the square's and the ball's edges *)
+    ("apps/media/software/TinyMediaPlayer", "video", 80, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30");
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

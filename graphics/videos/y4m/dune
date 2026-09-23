@@ -1,0 +1,9 @@
+; claude: Y4M, raw video, read and written (Y4m.mli). Pure OCaml. A
+; private library (see graphics/core/dune), installed as part of
+; elm_playground.
+(library
+ (name graphics_y4m)
+ (package elm_playground)
+ (wrapped false)
+ (libraries graphics_rgba graphics_yuv graphics_movie)
+)

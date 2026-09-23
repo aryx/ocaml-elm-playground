@@ -10,7 +10,7 @@
 
 (* See Media.mli *)
 
-type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm
+type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m
 
 let kind_name = function
   | Wav -> "WAV"
@@ -22,6 +22,7 @@ let kind_name = function
   | Gif -> "GIF"
   | Jpeg -> "JPEG"
   | Xpm -> "XPM"
+  | Y4m -> "Y4M"
 
 (*****************************************************************************)
 (* What it is *)
@@ -38,6 +39,7 @@ let by_bytes (s : string) : kind option =
   else if starts s 0 "GIF87a" || starts s 0 "GIF89a" then Some Gif
   else if starts s 0 "\255\216\255" then Some Jpeg
   else if starts s 0 "/* XPM */" then Some Xpm
+  else if starts s 0 "YUV4MPEG2 " then Some Y4m
   else if starts s 0 "X:" then Some Abc
   else None
 
@@ -110,6 +112,7 @@ let open_ ~(name : string) (bytes : string) : (kind * media, string) result =
         | Jpeg -> Ok (Picture (Jpeg.decode bytes))
         | Gif -> Ok (match Gif.animation bytes with [ (image, _) ] -> Picture image | frames -> Movie (gif_movie frames))
         | Xpm -> Ok (Picture (xpm_picture (Xpm.parse bytes)))
+        | Y4m -> Ok (Movie (snd (Y4m.of_string bytes)))
       in
       match media with Ok m -> Ok (kind, m) | Error e -> Error (name ^ ": " ^ e) | exception e -> Error (name ^ ": " ^ Printexc.to_string e))
 
