@@ -5004,6 +5004,99 @@ let vvvvvv_wrap () =
   Alcotest.(check bool) "home" true (arrived p)
 
 (*****************************************************************************)
+(* TinyMarioGalaxy2D *)
+(*****************************************************************************)
+
+let mg_turning : TinyMarioGalaxy2D.config = { turning = true; latch = true }
+
+(* [i] played until [stop], or [n] frames *)
+let mg_until ?(c = mg_turning) ?(n = 600) (i : TinyMarioGalaxy2D.input) (stop : TinyMarioGalaxy2D.play -> bool)
+    (p : TinyMarioGalaxy2D.play) : TinyMarioGalaxy2D.play =
+  let rec go n p = if n = 0 || stop p then p else go (n - 1) (TinyMarioGalaxy2D.step c i p) in
+  go n p
+
+let mg_frames ?c (n : int) (i : TinyMarioGalaxy2D.input) (p : TinyMarioGalaxy2D.play) : TinyMarioGalaxy2D.play =
+  mg_until ?c ~n i (fun _ -> false) p
+
+(* the goomba out of the way *)
+let mg_start : TinyMarioGalaxy2D.play = { TinyMarioGalaxy2D.start with squashed = 1 }
+
+let mg_down (p : float * float) : string =
+  match TinyMarioGalaxy2D.gravity_at p with Some (x, y) -> Printf.sprintf "(%.2f, %.2f)" (x +. 0.) (y +. 0.) | None -> "none"
+
+(* Down is towards the planet from all round it, a fixed direction in
+ * the platform's box, which wins where it overlaps the home planet's
+ * pull, and nothing in the void. *)
+let galaxy_zones () =
+  Alcotest.(check string) "on top of home" "(0.00, -1.00)" (mg_down (0., 150.));
+  Alcotest.(check string) "under home" "(0.00, 1.00)" (mg_down (0., -150.));
+  Alcotest.(check string) "right of home" "(-1.00, 0.00)" (mg_down (150., 0.));
+  Alcotest.(check string) "the box, over the home planet's pull" "(0.00, -1.00)" (mg_down (0., -250.));
+  Alcotest.(check string) "the tiny planet's own" "(1.00, 0.00)" (mg_down (500., -300.));
+  Alcotest.(check string) "the void" "none" (mg_down (0., -700.))
+
+(* Standing under the planet, upside down, and staying there. *)
+let galaxy_underneath () =
+  let open TinyMarioGalaxy2D in
+  let p = mg_frames 60 nothing { mg_start with pos = (0., -.(home.radius +. size)); up = (0., -1.) } in
+  Alcotest.(check bool) "standing" true p.standing;
+  Alcotest.(check bool) "still under" true (snd p.pos < -.home.radius)
+
+(* Right held, the camera fixed: all the way round the planet, the arrow
+ * kept for what it meant when pressed; re-read each frame, it means
+ * nothing on the planet's side, and Mario stops there. *)
+let galaxy_latch () =
+  let open TinyMarioGalaxy2D in
+  let right = { dx = 1.; jump = false } in
+  let fixed = { turning = false; latch = true } in
+  let under = mg_until ~c:fixed right (fun p -> snd p.pos < -100.) mg_start in
+  Alcotest.(check bool) "under, on foot" true (snd under.pos < -100. && under.standing);
+  let back = mg_until ~c:fixed right (fun p -> snd p.pos > 100.) under in
+  Alcotest.(check bool) "back on top" true (snd back.pos > 100. && back.deaths = 0);
+  let stuck = mg_frames ~c:{ fixed with latch = false } 300 right mg_start in
+  Alcotest.(check bool) "stopped on the side" true (fst stuck.pos > 100. && Float.abs (snd stuck.pos) < 40.);
+  (* and the turning camera needs no latch: right is always along *)
+  let turning = mg_until ~c:{ turning = true; latch = false } right (fun p -> snd p.pos < -100.) mg_start in
+  Alcotest.(check bool) "under, the camera turned" true (snd turning.pos < -100.)
+
+(* Coming down on the goomba squashes it, down being the goomba's own
+ * down; walking into it hurts. *)
+let galaxy_goomba () =
+  let open TinyMarioGalaxy2D in
+  let g, up = goomba_at start.goomba in
+  let p = { start with pos = add g (mul 40. up); vel = mul (-3.) up; up; standing = false } in
+  let stomped = mg_until nothing (fun p -> p.squashed > 0 || p.dying > 0) p in
+  Alcotest.(check (pair int int)) "squashed, unhurt" (1, 0) (stomped.squashed, stomped.deaths);
+  let hurt = mg_frames 2 nothing { start with pos = add g (mul 25. (clockwise up)); up } in
+  Alcotest.(check int) "hurt" 1 hurt.deaths
+
+(* Off the platform's edge, nothing pulls: adrift, lost, and back on the
+ * home planet. *)
+let galaxy_void () =
+  let open TinyMarioGalaxy2D in
+  let p = { mg_start with pos = (-100., -440.); standing = false } in
+  let lost = mg_until { dx = -1.; jump = false } (fun p -> p.dying > 0) p in
+  Alcotest.(check int) "lost" 1 lost.deaths;
+  Alcotest.(check bool) "adrift first" true (lost.adrift > lost_frames);
+  let back = mg_frames dying_frames nothing lost in
+  Alcotest.(check bool) "home" true (back.pos = start.pos && back.dying = 0)
+
+(* The galaxy played through: right held round the home planet, a
+ * standing jump from its underside into the platform's box, right held
+ * along it, a jump off its end into the tiny planet's pull, and round
+ * it to the Power Star. *)
+let galaxy_played_through () =
+  let open TinyMarioGalaxy2D in
+  let right = { dx = 1.; jump = false } and jump = { dx = 1.; jump = true } in
+  let angle (p : play) = degrees (sub p.pos home.a) in
+  let p = mg_frames 20 nothing (mg_until right (fun p -> angle p < -80.) mg_start) in
+  let p = mg_until nothing (fun p -> p.standing && snd p.pos < -400.) (step mg_turning { nothing with jump = true } p) in
+  let p = mg_until right (fun p -> fst p.pos > 380.) p in
+  let p = mg_until right (fun p -> got_star p || p.dying > 0) (step mg_turning jump p) in
+  Alcotest.(check bool) "the Power Star" true (got_star p);
+  Alcotest.(check int) "without dying" 0 p.deaths
+
+(*****************************************************************************)
 (* TinySuperMeatBoy *)
 (*****************************************************************************)
 
@@ -7571,6 +7664,12 @@ let tests =
       t "TinyVVVVVV, back at the checkpoint" vvvvvv_checkpoint;
       t "TinyVVVVVV, the gravity line" vvvvvv_gravity_line;
       t "TinyVVVVVV, off the bottom, in at the top" vvvvvv_wrap;
+      t "TinyMarioGalaxy2D, a down per zone" galaxy_zones;
+      t "TinyMarioGalaxy2D, standing underneath" galaxy_underneath;
+      t "TinyMarioGalaxy2D, the arrow kept while held" galaxy_latch;
+      t "TinyMarioGalaxy2D, the goomba's own down" galaxy_goomba;
+      t "TinyMarioGalaxy2D, adrift in the void" galaxy_void;
+      t "TinyMarioGalaxy2D, the galaxy played through" galaxy_played_through;
       t "TinySuperMeatBoy, a try is its inputs" smb_replay_is_the_inputs;
       t "TinySuperMeatBoy, dying costs nothing" smb_death_is_cheap;
       t "TinySuperMeatBoy, Hello World" smb_hello_world;

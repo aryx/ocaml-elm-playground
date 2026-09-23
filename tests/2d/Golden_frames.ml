@@ -218,6 +218,7 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyCeleste", "", 5);
     ("games/platform/software/TinyBraid", "", 5);
     ("games/platform/software/TinyVVVVVV", "", 5);
+    ("games/platform/software/TinyMarioGalaxy2D", "", 5);
     ("games/platform/software/TinySuperMeatBoy", "", 5);
     ("games/adventure/software/TinyMetalGearSolid", "", 5);
     ("games/adventure/software/TinyGTA", "", 5);
@@ -616,6 +617,9 @@ let scripted : Testutil_golden.scripted list =
     (* flipped up to the ceiling, walking along it over the wall, the
        spikes below: upside down, and still smiling *)
     ("games/platform/software/TinyVVVVVV", "ceiling", 90, "space:1,space:12,right:30-100");
+    (* right held from the top of the home planet to its underside: Mario
+       upside down in the world, and the world turned so he isn't *)
+    ("games/platform/software/TinyMarioGalaxy2D", "underside", 95, "space:1,right:3-95");
     (* straight into the pit's saw: the splat, and the smear along the
        floor the run left *)
     ("games/platform/software/TinySuperMeatBoy", "splat", 45, "space:1,right:2-37");
@@ -1281,6 +1285,7 @@ let flagged : Testutil_golden.flagged list =
     ("games/platform/software/TinyMario", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyCeleste", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyVVVVVV", "shapes", 5, [ "artwork=shapes" ]);
+    ("games/platform/software/TinyMarioGalaxy2D", "shapes", 5, [ "artwork=shapes" ]);
     (* claude: and juice=off (Juice.mli): every tween at its end at once *)
     ("examples/software/JuiceCurves", "off", 60, [ "juice=off" ]);
     ("examples/software/JuiceSquash", "off", 75, [ "juice=off" ]);

@@ -152,6 +152,7 @@
    %{project_root}/games/platform/software/TinyCeleste.exe
    %{project_root}/games/platform/software/TinyBraid.exe
    %{project_root}/games/platform/software/TinyVVVVVV.exe
+   %{project_root}/games/platform/software/TinyMarioGalaxy2D.exe
    %{project_root}/games/platform/software/TinySuperMeatBoy.exe
    %{project_root}/games/adventure/software/TinyMetalGearSolid.exe
    %{project_root}/games/adventure/software/TinyGTA.exe
