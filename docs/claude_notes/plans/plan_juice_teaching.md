@@ -106,8 +106,8 @@ will be the smallest of the teaching ones (six modules), and that is
 fine: `ai/` started with two.
 
 Name: `juice/` (Jonasson and Purho's word, the one people search for)
-rather than `feel/` (Swink's). Undecided -- to be settled by the
-author before phase 1. The feel of the *controls* (coyote time, jump
+rather than `feel/` (Swink's), the popular term winning (the author,
+2026-09-23). The feel of the *controls* (coyote time, jump
 buffering) stays where it is, in the games and `Character3d`: it
 changes rules, so by the principle above it is not juice.
 
@@ -157,6 +157,11 @@ architecture does:
 Sketch of `playground/Juice.mli`:
 
 ```ocaml
+(*****************************************************************************)
+(* {1 Effects as functions of time} *)
+(*****************************************************************************)
+(* Nothing in the model but when it started; called in view, like wave. *)
+
 (* curves: [0,1] -> [0,1], Penner's, named as everyone names them *)
 type ease
 val linear : ease
@@ -165,16 +170,21 @@ val out_back : ease  val out_elastic : ease  val out_bounce : ease
 val tween : ease -> number -> number -> number -> time -> computer -> number
   (* [tween e from to seconds started computer] *)
 
-(* a value that follows a target like a spring: state, stepped *)
-type follow
-val follow : ?frequency:number -> ?damping:number -> number -> follow
-val toward : number -> follow -> follow   (* one tick *)
-val value : follow -> number
-
 (* squash and stretch: no new backend primitive, see below *)
 val squash : number -> time -> computer -> number * number
 val stretch : number * number -> shape -> shape
 val whiten : shape -> shape               (* the hit flash *)
+
+(*****************************************************************************)
+(* {1 Effects kept in the model} *)
+(*****************************************************************************)
+(* Values in the model, stepped in update, drawn in view, like a body. *)
+
+(* a value that follows a target like a spring *)
+type follow
+val follow : ?frequency:number -> ?damping:number -> number -> follow
+val toward : number -> follow -> follow   (* one tick *)
+val value : follow -> number
 
 (* the bag of effects *)
 type t
@@ -393,9 +403,18 @@ start; `Juice.mli`'s header lists which do.
 ## Status
 
 - 2026-09-23: plan written, from the author's question "any other
-  field we miss?". Open before phase 1: the name (`juice/` or
-  `feel/`), and whether `playground/Juice.mli` is one module or splits
-  the stateless curves from the stateful bag.
+  field we miss?".
+- 2026-09-23: the `juice=off|hand|engine` flag added, the author's
+  idea, after `artwork=`.
+- 2026-09-23: the name settled, `juice/` rather than `feel/`: the
+  popular term, the one people search for (the author).
+- 2026-09-23: `playground/Juice.mli` is one module, in two sections --
+  the effects that are functions of time (tweens, squash, stretch,
+  whiten) first, then the bag kept in the model (`Juice.t`: bursts,
+  shake, freeze, flash) -- rather than two modules (a second name, and
+  one that would clash with `juice/Ease` in the unwrapped libraries).
+  Split later only if `JuiceBreakout` shows the halves used apart (the
+  author).
 
 ## Verification
 
