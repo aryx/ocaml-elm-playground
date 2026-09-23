@@ -13,8 +13,8 @@
  * playlist, and whatever the file is shown its own way -- here every
  * format this repository reads: a recording (WAV), tunes (MIDI, ABC,
  * solfege), a song with its instruments (MOD), pictures (PNG, JPEG,
- * XPM) and movies (so far an animated GIF's frames; the video formats
- * as graphics/videos/ grows, plan_video_teaching.md).
+ * XPM) and movies (an animated GIF, Y4M, FLI and FLC, AVI with its
+ * sound: graphics/videos/, plan_video_teaching.md).
  *
  * The file's kind is found from its bytes, not its name (Media.mli: the
  * magic numbers file(1) and VLC's demuxers look for), and each kind is
@@ -29,7 +29,9 @@
  *   - a picture: fitted to the screen, for 5 s; a movie, each frame at
  *     its time, decoded when shown (Movie.mli), looped for 5 s if shorter;
  *     d shows it as what changed from a frame to the next, the rest
- *     dimmed: what a delta frame (FLC's) stores.
+ *     dimmed: what a delta frame (FLC's) stores. A movie with a sound
+ *     (an AVI's) plays once, its frame the one at the sound's position:
+ *     paused, sought, the picture follows the sound.
  *
  * Under it, what just played, as an oscilloscope and a spectrum; then
  * the position (a slider: drag it to seek), the buttons, and the
@@ -73,20 +75,24 @@ type deck = {
 
 let deck = { media = None; pos = 0; player = None; paused = true; finished = false; ring = Array.make 2048 0.; at = 0 }
 
+(* the samples the deck plays: a sound's, or a movie's sound *)
+let samples_of (media : Media.media option) : Signal.stereo option =
+  match media with Some (Sound s) -> Some s.samples | Some (Movie { sound = Some s; _ }) -> Some s | _ -> None
+
 let fill (out : Signal.stereo) : unit =
   let n = Array.length out.left in
   Array.fill out.left 0 n 0.;
   Array.fill out.right 0 n 0.;
   if not deck.paused then (
-    match (deck.media, deck.player) with
-    | Some (Sound s), _ ->
-        let len = Array.length s.samples.left in
+    match (samples_of deck.media, deck.media, deck.player) with
+    | Some samples, _, _ ->
+        let len = Array.length samples.left in
         let k = max 0 (min n (len -.. deck.pos)) in
-        Array.blit s.samples.left deck.pos out.left 0 k;
-        Array.blit s.samples.right deck.pos out.right 0 k;
+        Array.blit samples.left deck.pos out.left 0 k;
+        Array.blit samples.right deck.pos out.right 0 k;
         deck.pos <- deck.pos +.. k;
         if deck.pos >= len then deck.finished <- true
-    | Some (Module _), Some p ->
+    | None, Some (Module _), Some p ->
         Mod_player.fill p out;
         if Mod_player.finished p then deck.finished <- true
     | _ -> ());
@@ -129,7 +135,7 @@ let load (items : (string * string) list) (i : int) ~(playing : bool) : model ->
 
 let initial_model : model =
   let m = { items = []; current = 0; opened = Error ""; playing = true; shown = 0; held = []; asked = false; changes = false } in
-  load Our_media.playlist 0 ~playing:true m
+  load (Lazy.force Our_media.playlist) 0 ~playing:true m
 
 (*****************************************************************************)
 (* update *)
@@ -138,18 +144,18 @@ let initial_model : model =
 let picture_frames = 300 (* 5 s *)
 
 let seek (m : model) (fraction : float) : unit =
-  match (deck.media, deck.player) with
-  | Some (Sound s), _ -> deck.pos <- int_of_float (fraction * float_of_int (Array.length s.samples.left))
-  | Some (Module song), Some p ->
+  match (samples_of deck.media, deck.media, deck.player) with
+  | Some samples, _, _ -> deck.pos <- int_of_float (fraction * float_of_int (Array.length samples.left))
+  | None, Some (Module song), Some p ->
       Mod_player.seek p ~position:(int_of_float (fraction * float_of_int (Array.length song.positions))) ~row:0;
       deck.finished <- false
   | _ -> ignore m
 
 (* where it is, from 0 to 1 *)
 let fraction () : float =
-  match (deck.media, deck.player) with
-  | Some (Sound s), _ -> float_of_int deck.pos / float_of_int (max 1 (Array.length s.samples.left))
-  | Some (Module song), Some p ->
+  match (samples_of deck.media, deck.media, deck.player) with
+  | Some samples, _, _ -> float_of_int deck.pos / float_of_int (max 1 (Array.length samples.left))
+  | None, Some (Module song), Some p ->
       let position, row = Mod_player.position p in
       (float_of_int position + (float_of_int row / 64.)) / float_of_int (Array.length song.positions)
   | _ -> 0.
@@ -163,6 +169,10 @@ let next (m : model) (step : int) : model =
   else load m.items i ~playing:m.playing m
 
 let playlist_box : Widget.box = { Widget.x = 370.; y = 170.; w = 230.; h = 460. }
+
+(* the rows the box holds; a longer playlist scrolls, just enough to
+ * show the item playing *)
+let playlist_rows = 12
 
 let update (computer : computer) (m : model) : model =
   ignore (Audio.instrument "mediaplayer" (fun () -> { Instrument.note_on = (fun _ _ -> ()); note_off = ignore; set = (fun _ _ -> ()); fill }));
@@ -186,7 +196,9 @@ let update (computer : computer) (m : model) : model =
   let pressed k = List.mem k now && not (List.mem k m.held) in
   let m = { m with held = now; shown = m.shown +.. 1 } in
   (* the widgets: the playlist, the slider, the buttons *)
-  let chosen = Gui.list_in computer playlist_box (List.map fst m.items) (Some m.current) in
+  let first = max 0 (m.current -.. playlist_rows +.. 1) in
+  let shown = List.filteri (fun i _ -> i >= first && i < first +.. playlist_rows) (List.map fst m.items) in
+  let chosen = Option.map (fun i -> i +.. first) (Gui.list_in computer playlist_box shown (Some (m.current -.. first))) in
   let before = fraction () in
   let after = Gui.slider computer ~at:(-120., -225.) ~from:0. ~to_:1. before in
   if after <> before then seek m after;
@@ -208,10 +220,10 @@ let update (computer : computer) (m : model) : model =
         else if prev || pressed "p" then next m (-1)
         else if pressed "d" then { m with changes = not m.changes }
         else if pressed "ArrowRight" || pressed "ArrowLeft" then (
-          (match deck.media with
-          | Some (Sound s) ->
+          (match samples_of deck.media with
+          | Some samples ->
               let d = if pressed "ArrowRight" then 5. else -5. in
-              let len = Array.length s.samples.left in
+              let len = Array.length samples.left in
               deck.pos <- max 0 (min (len -.. 1) (deck.pos +.. int_of_float (d * float_of_int Signal.rate)))
           | _ -> ());
           m)
@@ -221,7 +233,8 @@ let update (computer : computer) (m : model) : model =
   let over =
     match m.opened with
     | Ok (_, Picture _) -> m.playing && m.shown >= picture_frames
-    | Ok (_, Movie movie) -> m.playing && m.shown >= max picture_frames (int_of_float (movie.duration * 60.))
+    | Ok (_, Movie { sound = Some _; _ }) -> deck.finished
+    | Ok (_, Movie { movie; sound = None }) -> m.playing && m.shown >= max picture_frames (int_of_float (movie.duration * 60.))
     | Ok _ -> deck.finished
     | Error _ -> m.playing && m.shown >= 60
   in
@@ -312,8 +325,13 @@ let picture (img : Rgba_image.t) : shape list =
   let size = Float.floor (Float.min ((vw - 40.) / float_of_int img.width) ((vh - 40.) / float_of_int img.height)) in
   [ Sprite.of_rgba size img |> move vx vy ]
 
-(* the frame the movie is at, [shown] frames (1/60 s) in, looping *)
-let movie_frame (movie : Movie.t) (shown : int) : int = Movie.index_at movie (Float.rem (float_of_int shown / 60.) movie.duration)
+(* the frame the movie is at: with a sound, the sound's -- the audio
+ * clock drives the picture, a late frame skipped, never the sound
+ * delayed (notes_video.md, section 4); without, [shown] frames (1/60
+ * s) in, looping *)
+let movie_frame (movie : Movie.t) ~(sound : bool) (shown : int) : int =
+  if sound then Movie.index_at movie (float_of_int deck.pos / float_of_int Signal.rate)
+  else Movie.index_at movie (Float.rem (float_of_int shown / 60.) movie.duration)
 
 (* what changed: the pixels the same as the frame before's at a quarter
  * of their brightness, the ones that changed as they are -- what a
@@ -331,8 +349,8 @@ let changes (movie : Movie.t) (i : int) : Rgba_image.t =
     done;
     out
 
-let movie (m : model) (movie : Movie.t) : shape list =
-  let i = movie_frame movie m.shown in
+let movie (m : model) (movie : Movie.t) ~(sound : bool) : shape list =
+  let i = movie_frame movie ~sound m.shown in
   picture (if m.changes then changes movie i else movie.frame i)
 
 let scope_and_spectrum () : shape list =
@@ -372,7 +390,7 @@ let where (m : model) : string =
   | Ok (_, Module song) -> (
       match deck.player with Some p -> let pos, row = Mod_player.position p in Printf.sprintf "position %d/%d, row %d" pos (Array.length song.positions) row | None -> "")
   | Ok (_, Picture img) -> Printf.sprintf "%d x %d pixels" img.width img.height
-  | Ok (_, Movie movie) -> Printf.sprintf "frame %d of %d   d: %s" (movie_frame movie m.shown +.. 1) (Movie.frame_count movie) (if m.changes then "the frames" else "what changed")
+  | Ok (_, Movie { movie; sound }) -> Printf.sprintf "frame %d of %d   d: %s" (movie_frame movie ~sound:(sound <> None) m.shown +.. 1) (Movie.frame_count movie) (if m.changes then "the frames" else "what changed")
 
 let view (_computer : computer) (m : model) : shape list =
   let name = fst (List.nth m.items m.current) in
@@ -383,7 +401,7 @@ let view (_computer : computer) (m : model) : shape list =
     | Ok (_, Sound s) -> waveform s.samples.left (fraction ())
     | Ok (_, Module song) -> tracker song
     | Ok (_, Picture img) -> picture img
-    | Ok (_, Movie mv) -> movie m mv
+    | Ok (_, Movie { movie = mv; sound }) -> movie m mv ~sound:(sound <> None)
     | Error e -> [ txt 18. ink e |> move vx vy ]
   in
   [ rectangle (rgb 50 50 62) 1000. 1000.; rectangle panel vw vh |> move vx vy ]

@@ -17,6 +17,8 @@
  *     FF D8 FF                  JPEG (a start-of-image marker, then the next)
  *     "/* XPM */"               XPM (a C comment: the file is C source)
  *     "YUV4MPEG2 "              Y4M, raw video (mjpegtools, 2001)
+ *     "RIFF" .... "AVI "        AVI (Video for Windows, 1992): WAV's
+ *                               container, another type
  *     11 AF, 12 AF at byte 4    FLI, FLC (Autodesk Animator, 1989):
  *                               (two bytes only: a weak magic, trusted
  *                               only in a file of the header's 128 bytes)
@@ -30,10 +32,10 @@
  * with its notes for a piano roll); a [Module], a song played live by
  * its own player (Mod_player.mli), too long to render ahead; a
  * [Picture]; a [Movie], pictures in time, decoded as they're shown
- * (Movie.mli): so far a GIF's frames, and as graphics/videos/ grows,
- * the video formats (plan_video_teaching.md). *)
+ * (Movie.mli), and its sound if it has one (an AVI's): a GIF's frames,
+ * Y4M, FLI and FLC, AVI (plan_video_teaching.md). *)
 
-type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic
+type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi
 
 val kind_name : kind -> string
 
@@ -45,7 +47,7 @@ type media =
   | Sound of { samples : Signal.stereo; notes : Midi.note list (* none for a recording *) }
   | Module of Mod.song
   | Picture of Rgba_image.t
-  | Movie of Movie.t
+  | Movie of { movie : Movie.t; sound : Signal.stereo option (* played with it, its clock *) }
 
 (* [open_ ~name bytes]: what it is and what it holds, or why not *)
 val open_ : name:string -> string -> (kind * media, string) result

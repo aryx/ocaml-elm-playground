@@ -989,6 +989,10 @@ let scripted : Testutil_golden.scripted list =
      * stores, the ball's two crescents and the square's corners, the
      * rest dimmed *)
     ("apps/media/software/TinyMediaPlayer", "changes", 80, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,d:40");
+    (* claude: and as AVI, Motion JPEG and a sound, 1.02 s in: the frame
+     * the sound's position says (the audio clock), the second landing's
+     * blip in the scope; the playlist scrolled to show it *)
+    ("apps/media/software/TinyMediaPlayer", "avi", 97, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36");
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

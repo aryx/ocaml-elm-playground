@@ -10,7 +10,7 @@
 
 (* See Media.mli *)
 
-type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic
+type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi
 
 let kind_name = function
   | Wav -> "WAV"
@@ -24,6 +24,7 @@ let kind_name = function
   | Xpm -> "XPM"
   | Y4m -> "Y4M"
   | Flic -> "FLIC"
+  | Avi -> "AVI"
 
 (*****************************************************************************)
 (* What it is *)
@@ -34,6 +35,7 @@ let starts (s : string) (at : int) (magic : string) : bool =
 
 let by_bytes (s : string) : kind option =
   if starts s 0 "RIFF" && starts s 8 "WAVE" then Some Wav
+  else if starts s 0 "RIFF" && starts s 8 "AVI " then Some Avi
   else if starts s 0 "MThd" then Some Midi
   else if String.length s >= 1084 && Mod.channels_of_tag (String.sub s 1080 4) <> None then Some Mod
   else if starts s 0 "\137PNG\r\n\026\n" then Some Png
@@ -63,7 +65,7 @@ type media =
   | Sound of { samples : Signal.stereo; notes : Midi.note list }
   | Module of Mod.song
   | Picture of Rgba_image.t
-  | Movie of Movie.t
+  | Movie of { movie : Movie.t; sound : Signal.stereo option }
 
 (* an XPM's characters as pixels: each its palette's color, or
  * transparent ("None") *)
@@ -112,15 +114,18 @@ let open_ ~(name : string) (bytes : string) : (kind * media, string) result =
         (* the decoders raise on a broken file: caught below *)
         | Png -> Ok (Picture (Png.decode bytes))
         | Jpeg -> Ok (Picture (Jpeg.decode bytes))
-        | Gif -> Ok (match Gif.animation bytes with [ (image, _) ] -> Picture image | frames -> Movie (gif_movie frames))
+        | Gif -> Ok (match Gif.animation bytes with [ (image, _) ] -> Picture image | frames -> Movie { movie = gif_movie frames; sound = None })
         | Xpm -> Ok (Picture (xpm_picture (Xpm.parse bytes)))
-        | Y4m -> Ok (Movie (snd (Y4m.of_string bytes)))
-        | Flic -> Ok (Movie (snd (Fli.of_string bytes)))
+        | Y4m -> Ok (Movie { movie = snd (Y4m.of_string bytes); sound = None })
+        | Flic -> Ok (Movie { movie = snd (Fli.of_string bytes); sound = None })
+        | Avi ->
+            let _, movie, sound = Avi.of_string bytes in
+            Ok (Movie { movie; sound = Option.map Signal.both sound })
       in
       match media with Ok m -> Ok (kind, m) | Error e -> Error (name ^ ": " ^ e) | exception e -> Error (name ^ ": " ^ Printexc.to_string e))
 
 let duration (m : media) : float option =
   match m with
   | Sound s -> Some (float_of_int (Array.length s.samples.left) /. float_of_int Signal.rate)
-  | Movie movie -> Some movie.duration
+  | Movie { movie; _ } -> Some movie.duration
   | Module _ | Picture _ -> None

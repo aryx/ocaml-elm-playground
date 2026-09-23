@@ -23,9 +23,9 @@ after the first is a way of not storing the same thing twice.
 | `yuv/` | `Yuv`, `Psnr` | §2, §6 | done |
 | `y4m/` | `Y4m` | §2 | done |
 | `fli/` | `Fli` | §3 | done |
-| `avi/` | `Avi` | §4 | |
+| `avi/` | `Avi` | §4 | done |
 | `mpeg1/` | `Bits`, `Vlc`, `Mpeg1`, later `Motion` | §5, §7 | |
-| `apps/media/` | TinyMediaPlayer's `Movie` kind (done: GIFs), the analyzer | §8 | |
+| `apps/media/` | TinyMediaPlayer's `Movie` kind (done), the analyzer (its first view done) | §4, §8 | |
 
 ## 1. How big video is
 
@@ -138,6 +138,16 @@ nobody notices. So the **audio clock drives the video**: the frame
 shown is the one at the sound's position, frame = position x frame rate,
 and a slow frame is dropped rather than the sound delayed -- the
 music's clock of `Audio.position`, which TinyDDR judges steps by, again.
+In TinyMediaPlayer the frame of a movie with a sound is the one at the
+deck's position in its samples: pause, and the picture stops; drag the
+slider, and it follows.
+
+Our clip as AVI (`Our_media.ml`, 160 x 120, 50 frames, quality 75, a
+blip at each landing): 263,050 bytes, of which the sound, 2 s of 16-bit
+samples, is 176,400 -- raw sound is big too -- and the 50 JPEGs about
+86,600, 1.7 KB each: a seventeenth of Y4M's raw frames, four times
+FLC's deltas, since each frame is whole; the price of cutting
+anywhere.
 
 ## 5. Motion compensation: MPEG-1
 

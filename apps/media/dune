@@ -20,7 +20,7 @@
  (libraries
    audio audio_wav audio_midi audio_abc audio_mod
    graphics_rgba graphics_png graphics_gif graphics_jpeg graphics_xpm
-   graphics_movie graphics_y4m graphics_fli
+   graphics_movie graphics_y4m graphics_fli graphics_avi
    graphics_core graphics_2d ; Our_media's clip, filmed by the 2D rasterizer
    music_voices ; Our_songs: the tracker's song
  ))

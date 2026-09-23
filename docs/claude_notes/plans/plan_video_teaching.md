@@ -76,8 +76,7 @@ graphics/videos/          video formats, one library each
   y4m/                    Y4m: YUV4MPEG2 read and written (done, phase 1)
   fli/                    Fli: FLI and FLC read and written (done, phase 2)
   avi/                    Avi: the RIFF walk (Wav's), MJPEG frames, PCM
-                          audio; written with Jpeg_encode (the JPEG
-                          writer, done for it)
+                          audio; written with Jpeg_encode (done, phase 3)
   mpeg1/                  Bits (the bit reader), Vlc (the variable-length
                           code tables), Mpeg1 (headers, macroblocks,
                           motion, B-frame reordering), later Motion (an
@@ -192,9 +191,24 @@ commercial stream analyzers); here it is the lesson made visible.
    fitting edges that FLC's word packets (faster on a 386) round up to
    pairs of pixels. The analyzer's first view, `d` in the player, for
    any movie: what changed from the frame before, the rest dimmed.
-3. **AVI with Motion JPEG and PCM**: the RIFF walk shared with `Wav`,
-   the index, audio and video in sync in the player; written once
-   `plan_images_remaining.md`'s JPEG writer exists (done: `Jpeg_encode`).
+3. **AVI with Motion JPEG and PCM** (done): `Avi` read (the RIFF walked,
+   "rec " lists opened; MJPG only; PCM 8 or 16 bits, mono or stereo,
+   mixed and resampled as `Wav` does) and written (Motion JPEG through
+   `Jpeg_encode`, 16-bit mono PCM interleaved a frame at a time, the
+   index), ffprobe and ffmpeg reading it whole. The RIFF walk is its own
+   dozen lines, not shared with `Wav`'s (sharing it means a library
+   below both, and changing `Wav`: not worth it for a dozen lines).
+   `Media`'s movies got their sound (`Movie of { movie; sound }`), and
+   TinyMediaPlayer its audio clock: a movie with a sound plays once, its
+   frame the sound's position's, so pausing and seeking move the picture
+   with the sound. `ball_and_square.avi`: the clip as JPEGs at quality
+   75 with a blip at each landing, 263,050 bytes: 176,400 of sound (2 s
+   of 16-bit samples), about 86,600 of JPEGs (Y4M's frames 1,440,363,
+   FLC's 19,818: every frame whole, so bigger than the deltas, but any
+   frame at once). Found on the way: the playlist box doesn't scroll (a
+   window of 12 rows now, scrolled to the item playing), and every
+   process linking `Our_media` built the whole playlist when it started
+   (the tests' 64 workers: 143 s of CPU; now lazy, 2 s).
 4. **MPEG-1 video**: I frames (a stream of them decodes like a JPEG
    sequence), then P (motion compensation, half-pel), then B and the
    reordering; our clip encoded once by a committed script (ffmpeg, from
