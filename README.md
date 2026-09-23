@@ -11,6 +11,66 @@ https://github.com/evancz/elm-playground to OCaml.
 > package will be fun for a broad range of ages and backgrounds!
 > *- Evan Czaplicki*
 
+A place to learn, by reading
+----------------------------
+
+Evan's playground is for learning to *write* programs. This repository
+is also for learning by *reading* them. Everything a game or an
+application needs is written here from scratch, in plain OCaml: the
+pixels, the sound, the physics, the AI, the widgets. There is no game
+engine, no GPU requirement, and no C library doing the interesting part.
+Each module holds one idea, and its `.mli` explains that idea, often
+with an ASCII diagram, the paper or machine it comes from, and a worked
+example checked by a test. So when you wonder how a triangle becomes
+pixels, how a PNG is decompressed, how a Moog filter gets its sound, or
+how a chess program picks its move, the answer is a few hundred lines
+you can open and read.
+
+All of it fits in **about 50,000 lines of OCaml**. That counts only the
+library, `.mli` files and their explanations included, and leaves out
+the tests, the games and the applications:
+
+| area | lines | what you can read there |
+| ---- | ----: | ----------------------- |
+| **the playground** (`playground/`, `core/`) | 16,500 | the 2D and 3D APIs and their seven backends (Cairo/SDL, vdom/SVG, OpenGL, WebGL, software), cameras, sprites, tilemaps, 3D characters, ragdolls and portals, and other ways to program: Logo's turtle, HtDP's big-bang, PuzzleScript |
+| **graphics** (`graphics/`) | 7,100 | a 2D rasterizer (lines, circles, polygon fill, strokes), a 3D one (projection, clipping, culling, z-buffer and painter's algorithm, flat/Gouraud/Phong shading, texture mapping), Hershey fonts, and image decoders: PNG with its own inflate, Huffman and CRC, GIF (LZW), baseline JPEG (DCT), and XPM |
+| **physics** (`physics/`) | 5,200 | 2D and 3D rigid bodies: integrators, broadphase, collision detection, contact resolution, an iterative solver, joints, springs, quaternions, continuous collision, particles, and gravity (Kepler's orbits) |
+| **audio** (`audio/`) | 4,700 | oscillators, noise, envelopes, LFOs, filters (state-variable and Moog ladder), FM synthesis, Karplus-Strong strings, a Fourier spectrum, stereo space, effects, a mixer, sound effects and music, and WAV, MIDI and ABC files |
+| **AI** (`ai/`) | 3,500 | pathfinding, state machines, behavior trees, utility AI, steering and flocking, minimax with iterative deepening and Zobrist hashing, Monte Carlo tree search, Q-learning, and neural networks trained by backpropagation and by our own automatic differentiation |
+| **GUI** (`gui/`) | 3,400 | a toolkit: widgets, layout, focus, text editing, grids and themes, wired four ways (callbacks, MVC, MVU, immediate mode) |
+| **application engines** (`appkits/`) | 4,800 | a spreadsheet (formula language, dependency graph, recalculation), rich text poured into pages with Knuth-Plass line breaking, bitmap painting (seed fill, PackBits), structured drawing, compound documents, slides, HyperTalk, undo and the clipboard |
+| **game kits** (`gamekits/`) | 5,700 | how each genre works: Doom's sectors, heightmap terrains, Descent's mines, isometric projection, racing roads and 3D tracks, platformer slopes and ladders, hitboxes and frame data for fighting games, animated skeletons, rhythm charts, a Sokoban solver, playing cards, ... |
+
+With the library doing the heavy lifting, a program built on it stays
+short enough to read in one sitting. It is not a toy sketch either, but
+a working version of a famous original:
+
+- [TinyMario](games/platform/TinyMario.ml): **350 lines**;
+- [TinyStreetFighter](games/fighting/TinyStreetFighter.ml): 450 lines;
+- [TinyZelda](games/adventure/TinyZelda.ml): 380 lines;
+- [TinyDoom](games/fps/TinyDoom.ml): 500 lines, and its 3D twin
+  [TinyDoom3d](games/fps/TinyDoom3d.ml), over the same level: 180;
+- [TinyQuake](games/fps/TinyQuake.ml), whose level is compiled by its
+  own qbsp, vis and light at startup: 600 lines;
+- [TinySimCity](games/strategy/TinySimCity.ml): 530 lines;
+- [TinyExcel](apps/office/TinyExcel.ml), a spreadsheet with a menu bar,
+  a formula bar and range selection: **300 lines**. It uses the same
+  engine as [TinyVisiCalc](apps/office/TinyVisiCalc.ml), and the header
+  explains what changed between 1979 and 1985;
+- [TinyWord](apps/office/TinyWord.ml), a word processor: 450 lines;
+- [TinyMacPaint](apps/office/TinyMacPaint.ml), with its patterns and
+  flood fill: 540 lines;
+- [TinyMinimoog](apps/music/TinyMinimoog.ml), the Model D synthesizer
+  with its panel of knobs: 400 lines.
+
+There are 126 games and 14 applications like these, listed in
+[CATALOG.md](CATALOG.md). Each one starts with a header about its
+original and what it borrows from the library, and the games that fake
+3D point out the trick they use. The
+tutorials in [docs/claude_notes/tutorials/](docs/claude_notes/tutorials/)
+(3D, 2D, physics, audio, synthesizers, AI, images, fonts, GUI, ...) walk
+through each subject module by module.
+
 
 Documentation
 ---------------------------------------------------
@@ -21,7 +81,9 @@ Documentation
 * [Basic games](https://aryx.github.io/ocaml-elm-playground/games/)
 * [API reference](https://aryx.github.io/ocaml-elm-playground/elm_playground/Playground/)
 * [Catalogue of the games and applications](CATALOG.md)
-* [3D, from scratch: a tutorial](docs/claude_notes/tutorials/notes_3d.md)
+* [3D, from scratch: a tutorial](docs/claude_notes/tutorials/notes_3d.md),
+  and the [other tutorials](docs/claude_notes/tutorials/) (2D, physics,
+  audio, AI, images, GUI, ...)
 * [Index](https://aryx.github.io/ocaml-elm-playground)
 * [Changelog](changes.txt)
 
@@ -339,8 +401,10 @@ What the project has become
 
 The playground is still the small library above, but around it this
 repository has grown into a place to learn how the things it draws are
-made, each subject written from scratch, one idea per module, with the
-idea explained in its `.mli` and checked by tests and golden frames:
+made (see [A place to learn, by reading](#a-place-to-learn-by-reading)
+for the numbers), each subject written from scratch, one idea per
+module, with the idea explained in its `.mli` and checked by tests and
+golden frames:
 
 - **pictures**: `graphics/`, the 2D and 3D software rasterizers behind
   the `software` backends, and `Playground3d` for 3D programs;
@@ -366,19 +430,24 @@ with [notes_gui.md](docs/claude_notes/tutorials/notes_gui.md).
 AI disclaimer
 ------------
 
-The API and ideas behind the code of this library are the work of
-Evan Czaplicki for Elm at https://github.com/evancz/elm-playground
+The 2D playground API (`Playground.mli`) and the ideas behind it are the
+work of Evan Czaplicki for Elm at https://github.com/evancz/elm-playground
 I (Pad) mostly ported the API and ideas, as well as some of the web backend code,
 to OCaml. I then added also a native backend (using tsdl), which was not
 in the Elm version (Elm is a web language).
+The other APIs, written in the same spirit as Evan's (a few records and
+functions, called from the same `view` and `update`), are Claude Code's: `Physics`,
+`Audio`, `Ai`, `Gui`, `Sprite`, `Tilemap`, `Logo`, and the rest of
+`playground/`. The exception is `Playground3d`, which is adapted from
+Luca Mugnaini's elm-playground-3d (see the credits above).
 The playground itself is still very small: the 2D API with its Cairo
 and vdom backends is about 5,000 lines, and the 3D one about 1,300 over
 a 900-line rasterizer.
 
 I recently (Sep 2026) used Claude Code to fix many small bugs, and then
 to grow everything around that library: the repository is now about
-135,000 lines of OCaml, and most of it is Claude Code's. And yet it
-stays small for what it holds -- 117 games and 13 applications, the 2D
+150,000 lines of OCaml, and most of it is Claude Code's. And yet it
+stays small for what it holds -- 126 games and 14 applications, the 2D
 and 3D rasterizers, a physics engine, a synthesizer, game AI, a GUI
 toolkit, all written from scratch, with no engine, no asset pipeline
 and no dependency doing the work underneath.
