@@ -1,0 +1,7 @@
+; claude: networking/unix/ over localhost: a tiny HTTP server forked by
+; the test itself, so a real GET (DNS, connect, redirections) runs
+; without the Internet
+(test
+ (name Test)
+ (libraries unix alcotest testo networking networking_unix)
+)

@@ -30,16 +30,23 @@ let curl_url fname url =
   Curl.cleanup conn;
   save fname result
 
+(* http:// by our own client; curl is for https:// only *)
+let http_url fname url =
+  match Http_client.get url with
+  | Ok (r : Http.response) when r.status / 100 = 2 -> Out_channel.with_open_bin fname (fun oc -> Out_channel.output_string oc r.body)
+  | Ok r -> failwith (Printf.sprintf "%s: %d %s" url r.status r.reason)
+  | Error msg -> failwith msg
+
+let has_prefix (src : string) (p : string) : bool =
+  String.length src >= String.length p && String.sub src 0 (String.length p) = p
+
 let is_url (src : string) : bool =
-  let has_prefix p =
-    String.length src >= String.length p && String.sub src 0 (String.length p) = p
-  in
-  has_prefix "http://" || has_prefix "https://"
+  has_prefix src "http://" || has_prefix src "https://"
 
 let local_file ~prefix (src : string) : string =
   if is_url src then begin
     let fn = Filename.temp_file prefix (Filename.extension src) in
-    curl_url fn src;
+    if has_prefix src "http://" then http_url fn src else curl_url fn src;
     fn
   end
   else src

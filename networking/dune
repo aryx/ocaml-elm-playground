@@ -1,0 +1,14 @@
+; claude: networking, from scratch, for teaching: one idea per module,
+; each .mli with its diagram, worked example and references, like
+; physics/, audio/ and ai/ (see
+; docs/claude_notes/plans/plan_dependencies_remaining.md section 2, and
+; plan_networking_teaching.md for the games' part). The protocols only,
+; pure OCaml, no sockets: a message is bytes in, bytes out, so the
+; tests need no network and every backend, the web one included, can
+; use them. The sockets are networking/unix/. A private library,
+; installed as part of elm_playground.
+(library
+ (name networking)
+ (package elm_playground)
+ (wrapped false)
+)

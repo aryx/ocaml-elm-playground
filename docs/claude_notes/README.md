@@ -9,7 +9,7 @@ tutorials point to them.)
 ## The principles
 
 The teaching libraries -- `graphics/`, `physics/`, `audio/`, `ai/`,
-and the planned `network/` -- and the documents here all follow the
+and the planned `networking/` -- and the documents here all follow the
 same rules. Each plan restates the ones that matter to it, which is
 fine and deliberate; this is the full list.
 
@@ -91,7 +91,7 @@ A reading order, from the simplest:
    this playground already is (`gui/`, `appkits/`, `apps/`).
 9. `notes_networking.md`: other players -- packets and latency in
    frames, lockstep, rollback, client-server, and the determinism
-   every one of them rests on (`network/`).
+   every one of them rests on (`networking/`).
 
 ## related-work/: where this project stands
 

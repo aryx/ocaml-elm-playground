@@ -20,6 +20,7 @@
    graphics_png ; our own PNG reader
    graphics_gif ; our own GIF reader
    graphics_jpeg ; our own JPEG reader
-   curl
+   networking_unix ; Http_client, for http://
+   curl ; for https://
  )
 )

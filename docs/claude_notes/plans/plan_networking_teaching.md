@@ -1,4 +1,4 @@
-# Plan: multiplayer for the playground, from scratch, for teaching (`network/`)
+# Plan: multiplayer for the playground, from scratch, for teaching (`networking/`)
 
 Companions, like every other area here (they started inside this
 document and were split out of it on 2026-09-20, which is what its
@@ -82,12 +82,12 @@ ones.
 
 ## Principles (the same as the other plans)
 
-- **Independent of the Playground.** `network/` knows messages, bytes,
+- **Independent of the Playground.** `networking/` knows messages, bytes,
   ticks and peers; `playground/Multiplayer.ml` is the adapter.
 - **One idea per module, the simple and the better version side by
   side** (lockstep, then rollback; the same game, switchable),
   explained in `.mli`s with diagrams, worked examples and references;
-  `network/tests/` checks them.
+  `networking/tests/` checks them.
 - **A simulated network first.** The teaching tool, the testing tool,
   and the debug keys all in one: an in-process network where two (or
   more) players run in the same program, each with its own model, their
@@ -213,6 +213,72 @@ It also costs almost nothing here: the universe server *is* the relay
 server this plan already builds for the browser (Target layout), with
 handlers instead of a fixed forwarding rule.
 
+### The first API: Elm's `Http.get`, a request as a `Cmd`
+
+*(Added 2026-09-23, after `Url`, `Http` and `Http_client` were
+written to replace curl, [`plan_dependencies_remaining.md`](plan_dependencies_remaining.md)
+section 2.)*
+
+Before other players, the simplest use of a network: **ask a server
+for something, and get the answer later**. Elm's own answer is the one
+to copy, since the playground already has its architecture: `update`
+returns a `Cmd`, the runtime performs it, and the result comes back as
+a message, like a key press. In Elm (the guide's "HTTP" chapter):
+
+```elm
+getBook = Http.get { url = "https://elm-lang.org/assets/public-opinion.txt"
+                   , expect = Http.expectString GotText }
+
+update msg model = case msg of
+  GotText (Ok text) -> (Success text, Cmd.none)
+  GotText (Err _)   -> (Failure, Cmd.none)
+```
+
+and here, for an `app` (the Elm-architecture level of `Playground.mli`,
+whose `init` and `update` already return a `'msg Cmd.t`):
+
+```ocaml
+type msg = GotText of (string, Playground.Http.error) result | ...
+
+let init _flags =
+  (Loading, Http.get ~url:"http://localhost:8001/public-opinion.txt"
+              ~expect:(Http.expect_string (fun r -> GotText r)))
+```
+
+What it takes:
+
+- **`Cmd` made real.** `core/Cmd.ml` is a stub today (`None | Msg of
+  'msg`): it grows an effect the platform performs -- `Http of
+  request * (response -> 'msg)`, and `batch`, Elm's `Cmd.batch` -- a
+  value describing the request, never the request done: `update` stays
+  pure, and a test can look at the `Cmd` it returned.
+- **`Playground.Http`**, a submodule, so that `open Playground` gives
+  Elm's spelling `Http.get` (the protocol module `networking/Http` is
+  the platforms' business, not the programs'). Its error type is
+  Elm's `Http.Error`: `Bad_url`, `Timeout`, `Network_error`,
+  `Bad_status of int`, `Bad_body of string`.
+- **Natively, without blocking the frame.** `Download` blocks, which a
+  picture loaded once can afford and a game can't: 200 ms without a
+  frame is a visible freeze. So `networking/unix/` gets the request as
+  a *state machine* -- connecting, sending, receiving, done --
+  advanced a little each frame over non-blocking sockets, `select`
+  (4.2BSD, 1983) with a zero timeout telling which sockets are ready.
+  That is the **event loop**, the idea under every server and every
+  browser, taught here on one request, and exactly what lockstep's
+  UDP (phase 3) needs next: a frame loop that also listens to the
+  network. `Http.parse_response` doesn't change -- the bytes arrive in
+  pieces, it still parses them once the server has closed.
+- **On the web**, the browser does it: `fetch` or `XMLHttpRequest`, as
+  `Playground_platform.fetch_web` already does for `Audio.loop_from`'s
+  files. Same `Cmd`, two runtimes -- the point of the virtual module.
+- **https://** is still refused natively (a `Network_error` saying
+  why) until TLS is ours; the browser has it.
+
+The game-level API (`game view update`) gets nothing here, as in Evan's
+playground: a beginner's network is `multiplayer`, below, where the
+other player's keys arrive like one's own and no request is ever
+written. `Cmd` is for the `app` level, where Elm's programmers are.
+
 ## The modules, with their references
 
 The ideas themselves, with their diagrams and their arithmetic, are
@@ -255,8 +321,9 @@ each `.mli` is written.)
 ## Target layout
 
 ```
-network/                  (network, private, package elm_playground: pure
-                          OCaml, no sockets)
+networking/               (networking, private, package elm_playground: pure
+                          OCaml, no sockets; already Url and Http, see
+                          plan_dependencies_remaining.md)
   Wire                    serialization: bytes, varints, messages; parsing
                           that rejects garbage
   Sim_net                 the simulated network: latency, jitter, loss,
@@ -266,13 +333,19 @@ network/                  (network, private, package elm_playground: pure
   Checksum                desync detection
   Snapshot                (later) server snapshots, interpolation,
                           client prediction and reconciliation
-network/tests/            protocols over Sim_net: every peer ends with the
+networking/tests/         protocols over Sim_net: every peer ends with the
                           same model, whatever the loss and latency
-native transport          UDP sockets (Unix), in native_common
+native transport          UDP sockets (Unix), in networking/unix/, beside
+                          Tcp
 web transport             WebSockets to the relay (later: WebRTC)
-network/relay/            a tiny relay server, native OCaml -- the same
+networking/relay/         a tiny relay server, native OCaml -- the same
                           program as the universe server, with a fixed
                           forwarding rule instead of handlers
+playground/Playground.ml  Playground.Http, Elm's Http.get as a Cmd (the
+                          platforms perform it: native_common's loops,
+                          the web's fetch)
+networking/unix/          (already Tcp, Http_client) and the request as a
+                          non-blocking state machine, for the Cmd
 playground/Multiplayer.ml the Evan-style API above
 playground/Universe.ml    HtDP's universe: a Bigbang world with a
   (and Universe.mli)      mailbox, and the server that carries the mail;
@@ -312,6 +385,18 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    randomness seeded from the model (not `Random.self_init`), a
    checksum of a model (a hash of its serialized form); `-local` mode
    for Spacewar! (two players, one keyboard).
+0b. **Http as a `Cmd`** (the section "The first API" above), over
+   `Url` and `Http`, already written: `Cmd` with effects and `batch`;
+   `Playground.Http` (`get`, `expect_string`, the errors); the native
+   request as a state machine over non-blocking sockets and `select`,
+   stepped by the frame loops; the web's through `fetch_web`; an
+   example after the Elm guide's, reading a text and showing it (a
+   golden frame from a file served by the test itself, never the
+   Internet). Tests: the state machine fed its bytes one at a time
+   gives the same response as `Http.parse_response`; a slow server
+   doesn't stop the frames. Independent of phases 0 to 2, and the
+   first to do: it reuses what exists, and builds the event loop
+   phase 3 needs.
 1. **Wire and Sim_net**: serialization and its tests (round trips,
    garbage rejected), the simulated network (its statistics tested).
 2. **Lockstep over Sim_net**: `Lockstep`, `Checksum`, input delay; the
