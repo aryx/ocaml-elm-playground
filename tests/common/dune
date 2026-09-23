@@ -6,7 +6,7 @@
    unix
    alcotest
    testo
-   imagelib ; reading and writing the golden frames' PNGs
-   imagelib.unix
+   graphics_png ; reading and writing the golden frames' PNGs
+   graphics_rgba
  )
 )

@@ -92,6 +92,13 @@ val signature : string
  * unknown critical chunk, a palette index out of the palette, ...). *)
 val decode : string -> Rgba_image.t
 
+(* [encode ?alpha img]: a PNG file of [img], RGBA (color type 6), or RGB
+ * (2) with [~alpha:false], its alpha dropped; 8 bits, not interlaced.
+ * Each row gets the filter whose output, read as signed bytes, sums
+ * the smallest (the heuristic the PNG specification suggests, section
+ * 12.8), then Zlib.compress. *)
+val encode : ?alpha:bool -> Rgba_image.t -> string
+
 (* [chunks s]: the chunks of [s], (type, data), up to IEND, their CRCs
  * checked *)
 val chunks : string -> (string * string) list

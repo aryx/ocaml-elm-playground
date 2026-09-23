@@ -28,3 +28,7 @@
  * bad header, a preset dictionary, a corrupt DEFLATE stream or a wrong
  * Adler-32. *)
 val decompress : string -> string
+
+(* [compress s]: [s] as a zlib stream, 78 01 then Deflate.deflate's
+ * block then the Adler-32 *)
+val compress : string -> string

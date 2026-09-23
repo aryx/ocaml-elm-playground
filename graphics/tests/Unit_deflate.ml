@@ -83,9 +83,25 @@ let test_zlib () =
   fails "NLEN not LEN's complement" (fun () -> Zlib.decompress (Bytes.to_string bad_nlen));
   fails "header not a multiple of 31" (fun () -> Zlib.decompress ("\x78\x02" ^ String.sub hi 2 11))
 
+let test_deflate () =
+  (* Deflate.mli's worked example: Inflate.mli's 6 bytes *)
+  Alcotest.(check string) "abcabcabcabc" (bytes [ 0x4B; 0x4C; 0x4A; 0x86; 0x23; 0x00 ]) (Deflate.deflate abc12);
+  Random.init 1;
+  List.iter
+    (fun (what, s) ->
+      let z = Zlib.compress s in
+      Alcotest.(check string) (what ^ ": compressed and back") s (Zlib.decompress z))
+    [ ("nothing", "");
+      ("one byte", "a");
+      ("a run longer than 258", String.make 100_000 'x');
+      ("repeats further than 32 KB", String.concat "" (List.init 20 (fun i -> String.make 5000 (Char.chr (65 + (i mod 3))))));
+      ("random bytes", String.init 100_000 (fun _ -> Char.chr (Random.int 256)));
+      ("text", String.concat " " (List.init 2000 (fun i -> string_of_int (i * i)))) ]
+
 let tests =
   Testo.categorize "Deflate"
     [
+      t "Deflate: abcabcabcabc, and round trips" test_deflate;
       t "CRC-32 and Adler-32" test_checksums;
       t "Huffman: canonical codes from lengths" test_huffman_codes;
       t "Huffman: decoding AAAABBCD" test_huffman_decode;

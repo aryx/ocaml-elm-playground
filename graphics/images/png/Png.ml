@@ -43,6 +43,16 @@ let paeth (a : int) (b : int) (c : int) : int =
   let pa = abs (p - a) and pb = abs (p - b) and pc = abs (p - c) in
   if pa <= pb && pa <= pc then a else if pb <= pc then b else c
 
+(* what [filter] predicts from left, up and up-left *)
+let predict (filter : int) (a : int) (b : int) (c : int) : int =
+  match filter with
+  | 0 -> 0
+  | 1 -> a
+  | 2 -> b
+  | 3 -> (a + b) / 2
+  | 4 -> paeth a b c
+  | f -> failwith (Printf.sprintf "PNG: unknown filter %d" f)
+
 (* undo row [cur]'s filter in place; [prev] is the row above, already
  * unfiltered (zeros above the first row); [bpp] the bytes a pixel, at
  * least 1, which is how far back "left" is *)
@@ -53,16 +63,16 @@ let unfilter (filter : int) ~(bpp : int) ~(prev : Bytes.t) (cur : Bytes.t) : uni
     let a = if i >= bpp then get cur (i - bpp) else 0 in
     let b = get prev i in
     let c = if i >= bpp then get prev (i - bpp) else 0 in
-    let predicted =
-      match filter with
-      | 0 -> 0
-      | 1 -> a
-      | 2 -> b
-      | 3 -> (a + b) / 2
-      | 4 -> paeth a b c
-      | f -> failwith (Printf.sprintf "PNG: unknown filter %d" f)
-    in
-    Bytes.set cur i (Char.chr ((x + predicted) land 0xFF))
+    Bytes.set cur i (Char.chr ((x + predict filter a b c) land 0xFF))
+  done
+
+(* the other way: row [cur] filtered by [filter], into [out] *)
+let filter_row (filter : int) ~(bpp : int) ~(prev : Bytes.t) (cur : Bytes.t) (out : Bytes.t) : unit =
+  let get r i = Char.code (Bytes.unsafe_get r i) in
+  for i = 0 to Bytes.length cur - 1 do
+    let a = if i >= bpp then get cur (i - bpp) else 0 in
+    let c = if i >= bpp then get prev (i - bpp) else 0 in
+    Bytes.unsafe_set out i (Char.unsafe_chr ((get cur i - predict filter a (get prev i) c) land 0xFF))
   done
 
 (*****************************************************************************)
@@ -198,3 +208,47 @@ let decode (s : string) : Rgba_image.t =
       end)
     passes;
   img
+
+(*****************************************************************************)
+(* Writing *)
+(*****************************************************************************)
+
+let chunk (b : Buffer.t) (typ : string) (data : string) : unit =
+  let u32 n = String.init 4 (fun k -> Char.chr ((n lsr (8 * (3 - k))) land 0xFF)) in
+  let body = typ ^ data in
+  Buffer.add_string b (u32 (String.length data));
+  Buffer.add_string b body;
+  Buffer.add_string b (u32 (Crc32.string body))
+
+(* the sum of the filtered bytes read as signed, a guess at how well
+ * DEFLATE will do: small differences compress *)
+let cost (row : Bytes.t) : int =
+  let sum = ref 0 in
+  Bytes.iter (fun ch -> let v = Char.code ch in sum := !sum + if v < 128 then v else 256 - v) row;
+  !sum
+
+let encode ?(alpha = true) (img : Rgba_image.t) : string =
+  let bpp = if alpha then 4 else 3 in
+  let rowbytes = img.width * bpp in
+  let raw = Buffer.create ((rowbytes + 1) * img.height) in
+  let prev = ref (Bytes.make rowbytes '\000') in
+  let filtered = Array.init 5 (fun _ -> Bytes.create rowbytes) in
+  for y = 0 to img.height - 1 do
+    let cur = Bytes.init rowbytes (fun i -> Char.unsafe_chr img.rgba.{(((y * img.width) + (i / bpp)) * 4) + (i mod bpp)}) in
+    (* each filter, and the one that costs least *)
+    Array.iteri (fun f out -> filter_row f ~bpp ~prev:!prev cur out) filtered;
+    let best = ref 0 in
+    for f = 1 to 4 do
+      if cost filtered.(f) < cost filtered.(!best) then best := f
+    done;
+    Buffer.add_char raw (Char.chr !best);
+    Buffer.add_bytes raw filtered.(!best);
+    prev := cur
+  done;
+  let u32 n = String.init 4 (fun k -> Char.chr ((n lsr (8 * (3 - k))) land 0xFF)) in
+  let b = Buffer.create (Buffer.length raw / 8) in
+  Buffer.add_string b signature;
+  chunk b "IHDR" (u32 img.width ^ u32 img.height ^ String.make 1 '\008' ^ String.make 1 (if alpha then '\006' else '\002') ^ "\000\000\000");
+  chunk b "IDAT" (Zlib.compress (Buffer.contents raw));
+  chunk b "IEND" "";
+  Buffer.contents b

@@ -363,6 +363,18 @@ itself is small: the consumers already take a Bigarray of RGBA bytes.
   gave them (equal, the phase 2 test showed). The survey at the top of
   `Image_decode.ml` now says why our own decoders, and why not each
   library considered, stb_image's bugs included. `CLAUDE.md` updated.
+- **Phase 6: done.** `Deflate` (LZ77 by zlib's hash chains, greedy,
+  one fixed-code block; it writes `Inflate.mli`'s worked example byte
+  for byte), `Zlib.compress`, `Png.encode` (RGBA or RGB, each row's
+  filter by the spec's minimum-sum heuristic, sharing `predict` with
+  the decoder). `Testutil_golden` reads and writes the golden frames
+  with `Png`: imagelib is gone from the repository. On 42 golden
+  frames re-encoded, ours are 10% smaller than imagelib's (fixed codes
+  suit flat colors), PIL reads them to the same pixels; 0.36 s to
+  write a 1000 x 1000 frame (only a new or differing one is written),
+  0.07-0.18 s to read one. Not done: `-dump-frame` still writes PPM
+  (the tests read it back as such); lazy matching and dynamic blocks,
+  exercises in `Deflate.mli`.
 
 ## Demos: seeing the compression
 

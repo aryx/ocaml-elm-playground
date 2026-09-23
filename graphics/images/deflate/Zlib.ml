@@ -23,3 +23,13 @@ let decompress (s : string) : string =
   let adler = (byte pos lsl 24) lor (byte (pos + 1) lsl 16) lor (byte (pos + 2) lsl 8) lor byte (pos + 3) in
   if adler <> Adler32.string data then failwith "zlib: wrong Adler-32, the data is corrupt";
   data
+
+let compress (s : string) : string =
+  let adler = Adler32.string s in
+  let b = Buffer.create ((String.length s / 4) + 16) in
+  (* deflate, a 32 KB window; the fastest level, and 0x7801 is a
+   * multiple of 31 *)
+  Buffer.add_string b "\x78\x01";
+  Buffer.add_string b (Deflate.deflate s);
+  List.iter (fun shift -> Buffer.add_char b (Char.chr ((adler lsr shift) land 0xFF))) [ 24; 16; 8; 0 ];
+  Buffer.contents b

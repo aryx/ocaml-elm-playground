@@ -71,6 +71,14 @@
    Transactions on Information Theory 23 (1977); Mark Adler, puff.c,
    in zlib's contrib/puff/ (this module follows it). *)
 
+(* the lengths of the codes 257 to 285: [length_base.(c - 257)] plus
+ * the value of [length_extra.(c - 257)] extra bits; the same for the
+ * distances of the codes 0 to 29 (Deflate writes them too) *)
+val length_base : int array
+val length_extra : int array
+val dist_base : int array
+val dist_extra : int array
+
 (* [inflate s ~pos]: the bytes of the raw DEFLATE stream starting at
  * [pos] in [s], and the position just after its last byte (where
  * zlib's Adler-32 is). Raises Failure on a corrupt stream. *)

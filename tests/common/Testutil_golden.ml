@@ -101,31 +101,30 @@ let render ~dir ~(exe : string) ~(keys : string) ~(script : string option) ~(fla
 (* PNG files *)
 (*****************************************************************************)
 
+(* claude: by our own Png (graphics/images/png/), in RGB: the frames
+ * have no alpha *)
 let read_png (file : string) : frame =
-  let image = ImageLib_unix.openfile file in
-  let width = image.width and height = image.height in
-  let rgb = Bytes.create (width * height * 3) in
-  for y = 0 to height - 1 do
-    for x = 0 to width - 1 do
-      Image.read_rgb image x y (fun r g b ->
-          let i = ((y * width) + x) * 3 in
-          Bytes.set_uint8 rgb i r;
-          Bytes.set_uint8 rgb (i + 1) g;
-          Bytes.set_uint8 rgb (i + 2) b)
+  let ic = open_in_bin file in
+  let img = Png.decode (really_input_string ic (in_channel_length ic)) in
+  close_in ic;
+  let rgb = Bytes.create (img.width * img.height * 3) in
+  for i = 0 to (img.width * img.height) - 1 do
+    for k = 0 to 2 do
+      Bytes.set_uint8 rgb ((i * 3) + k) img.rgba.{(i * 4) + k}
     done
   done;
-  { width; height; rgb }
+  { width = img.width; height = img.height; rgb }
 
 let write_png (file : string) (frame : frame) : unit =
-  let image = Image.create_rgb frame.width frame.height in
-  for y = 0 to frame.height - 1 do
-    for x = 0 to frame.width - 1 do
-      let i = ((y * frame.width) + x) * 3 in
-      Image.write_rgb image x y (Bytes.get_uint8 frame.rgb i) (Bytes.get_uint8 frame.rgb (i + 1))
-        (Bytes.get_uint8 frame.rgb (i + 2))
+  let img = Rgba_image.create ~width:frame.width ~height:frame.height in
+  for i = 0 to (frame.width * frame.height) - 1 do
+    for k = 0 to 2 do
+      img.rgba.{(i * 4) + k} <- Bytes.get_uint8 frame.rgb ((i * 3) + k)
     done
   done;
-  ImageLib_unix.writefile file image
+  let oc = open_out_bin file in
+  output_string oc (Png.encode ~alpha:false img);
+  close_out oc
 
 (*****************************************************************************)
 (* The tests *)

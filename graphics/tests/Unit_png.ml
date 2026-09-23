@@ -189,6 +189,22 @@ let test_ours () =
          Alcotest.(check (pair int int)) (file ^ ": size") (w, h) (img.width, img.height);
          Alcotest.(check int) (file ^ ": CRC-32 of the pixels") crc (Crc32.string pixels))
 
+(* every PngSuite picture written and read back: the same pixels, and
+ * without alpha the same colors, opaque *)
+let test_encode () =
+  pngsuite
+  |> List.iter (fun (name, _, _, _) ->
+         let img = Png.decode (read_file (suite name)) in
+         let back = Png.decode (Png.encode img) in
+         if back.rgba <> img.rgba then Alcotest.failf "%s: written and read back, not the same" name;
+         let rgb = Png.decode (Png.encode ~alpha:false img) in
+         for i = 0 to (img.width * img.height) - 1 do
+           for k = 0 to 2 do
+             if rgb.rgba.{(i * 4) + k} <> img.rgba.{(i * 4) + k} then Alcotest.failf "%s: RGB, pixel %d" name i
+           done;
+           if rgb.rgba.{(i * 4) + 3} <> 255 then Alcotest.failf "%s: RGB, pixel %d not opaque" name i
+         done)
+
 let tests =
   Testo.categorize "Png"
     [
@@ -197,4 +213,5 @@ let tests =
       t "PngSuite, the pixels pypng reads" test_pngsuite;
       t "PngSuite's corrupt files, refused" test_corrupt;
       t "our textures, the pixels the games draw" test_ours;
+      t "written and read back" test_encode;
     ]
