@@ -460,11 +460,28 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    Tests: Lockstep over real localhost sockets, 300 ticks, one game;
    and two TinySpacewar processes played by hand, their checksums
    agreeing.
-4. **Rollback**: `Rollback`, switchable with lockstep (a key), to feel
+4. *(rollback done, 2026-09-23; TinyTronscroll to do)* **Rollback**: `Rollback`, switchable with lockstep (a key), to feel
    the difference with 100 ms of simulated latency. Tests: rollback's
    final models equal lockstep's. Then **TinyTronscroll**, the
    milestone: the scrolling map, the 8 players, the power-ups, and the
    `netcode=` key with its three eras (1997, lockstep, rollback).
+   Done as: `networking/Inputs` (the exchange lockstep and rollback
+   share, taken out of `Lockstep`: the known inputs, the packets with
+   their acks, the checksums), `Lockstep` over it (unchanged API and
+   tests), and `Rollback` over it (my input at once, the others'
+   guessed from their last known one; the model before each guessed
+   tick kept -- immutable, so free -- and the game replayed from the
+   first wrong guess; a tick confirmed when all its inputs are real,
+   its model then final and checksummed; at most 8 ticks guessed ahead,
+   GGPO's cap). Tests over `Sim_net`: two and three peers, 1,000 ticks
+   under latency, jitter, loss and duplication, every confirmed model
+   the game alone's; at 100 ms, 600 ticks in 606 frames (lockstep: some
+   1,230), 30 rollbacks, 183 ticks replayed, 7 at most; a disagreement
+   caught at the next confirmed checksum. `Multiplayer`: `netcode=`
+   (lockstep by default, delay 3; rollback, delay 0) in net=simulate
+   (the key n switches, starting again) and over UDP; a golden frame of
+   the simulated duel under each (tick 60 against 118 after 120 frames
+   at 80 ms). Left: TinyTronscroll, the milestone.
 5. **The web**: the relay server, WebSockets; a browser against a
    native player.
 5b. **The universe** (HtDP): `playground/Universe.ml` over the relay --

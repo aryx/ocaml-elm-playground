@@ -1303,6 +1303,14 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
       120,
       "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75",
       [ "net=simulate"; "latency=80"; "loss=10" ] );
+    (* claude: the same duel, the same network, with rollback
+     * (Rollback.mli): twice as far after 120 frames (tick 118), paid in
+     * rollbacks and replayed ticks, the checksums agreeing *)
+    ( "games/arcade/software/TinySpacewar",
+      "rollback",
+      120,
+      "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75",
+      [ "net=simulate"; "latency=80"; "loss=10"; "netcode=rollback" ] );
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged ~scripted_flagged scenes

@@ -37,10 +37,21 @@
      player 1. Each plays with its arrows. No handshake: the host plays
      its first [delay] ticks and stalls until the first inputs arrive.
 
-   Underneath is Lockstep.mli: each tick, every player's input (a
-   byte: the arrows, space, enter and shift, a bit each -- the letters
-   don't travel), applied [delay] ticks after it is read, on every
-   peer. It works only if [update] is *deterministic*: the same inputs
+   Two netcodes, by the flag [netcode=] (and, in net=simulate, the key
+   n, which starts the game again with the other one, to feel the
+   difference at the same latency):
+
+   - [lockstep] (the default, Lockstep.mli): every player's input (a
+     byte: the arrows, space, enter and shift, a bit each -- the letters
+     don't travel) applied [delay] ticks after it is read (3), on every
+     peer, which waits for the late ones: the keys answer late, and a
+     slow network slows the game;
+   - [rollback] (Rollback.mli): my keys applied at once, the others'
+     guessed, and the game played again from the tick a guess was
+     wrong when their real keys arrive: full speed, the other player
+     snapping now and then.
+
+   Either way, the peers exchange only their inputs. It works only if [update] is *deterministic*: the same inputs
    give the same model, on every computer. So the [computer] it gets is
    cleaned of what differs between computers: no keyboard, no mouse
    (they are in the players), a fixed screen (1000 x 1000, whatever the

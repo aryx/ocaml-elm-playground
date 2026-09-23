@@ -28,28 +28,9 @@
    than that one way never stalls; slower, the game waits -- a
    *stall* -- and the slowest peer sets everybody's pace.
 
-   **Loss, without stalling forever.** Each packet carries every input
-   of mine the other side hasn't acknowledged yet, and acknowledges
-   what I have of theirs (the highest tick up to which I have them
-   all). A lost packet costs nothing: the next one carries the same
-   inputs again. That is reliability built over an unreliable network
-   -- TCP's idea in a few lines, without TCP's waiting for the lost
-   one (the inputs after it are carried too).
-
-   **Desyncs.** Determinism can break (a clock read, an unseeded
-   Random, notes_networking.md section 8), and then the games drift
-   apart silently. So each peer sends the checksum of its model
-   (Checksum.mli) at the ticks the game chooses (every second), and the
-   first one that differs is reported: which tick, which peer.
-
-   The packet, in Wire's bytes (Wire.mli):
-
-     01                     the type: inputs
-     from                   varint, the sender
-     n, (player, ack)*n     what I have of each other player: all up to
-                            tick ack (zigzag: -1 is nothing yet)
-     first, count, input*   my inputs for the ticks first, first+1, ...
-     0 | 1 tick hi lo       my latest checksum, if any (two u16s)
+   The inputs travel as Inputs.mli says: each packet carries every
+   input not yet acknowledged, so a lost packet costs nothing, and the
+   checksums of the models, so that a desync is caught.
 
    Worked example (checked by the tests, Sim_net as the network): two
    and three peers, 1,000 ticks each, their inputs from a seed, under

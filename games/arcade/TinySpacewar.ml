@@ -16,7 +16,8 @@
  *
  * or on two computers, simulated in one window, side by side, through
  * a fake network (net=simulate, and latency=, loss=; [ ] and - = change
- * them while it runs), or on two real computers, each player with the
+ * them while it runs, n the netcode: lockstep or rollback, also
+ * netcode=rollback), or on two real computers, each player with the
  * arrows (natively, over UDP):
  *
  *   dune exec games/arcade/TinySpacewar.exe -- net=host bind=0.0.0.0

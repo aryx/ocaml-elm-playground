@@ -59,7 +59,66 @@ let cleaned (flags : flags) (tick : int) : computer =
  * before (for [pressed]) *)
 type 'model side = { model : 'model; last : keyboard array; tick : int }
 
-type knobs = { latency : int (* ms *); jitter : int; loss : int (* % *); delay : int }
+let one_tick update flags (s : 'model side) (keyboards : keyboard array) : 'model side =
+  let players = Array.to_list (Array.mapi (fun id k -> { id; keyboard = k; pressed = rising k s.last.(id) }) keyboards) in
+  { model = update (cleaned flags s.tick) players s.model; last = keyboards; tick = s.tick + 1 }
+
+(*****************************************************************************)
+(* A peer: its netcode, and its game *)
+(*****************************************************************************)
+
+(* lockstep waits for every input (Lockstep.mli); rollback guesses the
+ * missing ones and fixes its game when they arrive (Rollback.mli) *)
+type 'model peer = Waiting of Lockstep.t * 'model side ref | Guessing of 'model side Rollback.t
+
+let new_peer ~(netcode : string) ~(me : int) ~(players : int) ~(delay : int) update flags (side : 'model side) : 'model peer =
+  match netcode with
+  | "rollback" ->
+      let rec peer =
+        lazy
+          (Rollback.create ~me ~players ~delay
+             ~update:(fun inputs s -> one_tick update flags s (Array.map decode inputs))
+             (* the checksums of confirmed models only: a guessed one
+              * differs between peers, and means nothing *)
+             ~on_confirm:(fun tick (s : 'model side) ->
+               if tick mod 60 = 0 then Rollback.checksum (Lazy.force peer) ~tick (Checksum.of_model s.model))
+             side)
+      in
+      Guessing (Lazy.force peer)
+  | _ -> Waiting (Lockstep.create ~me ~players ~delay, ref side)
+
+let receive (peer : 'model peer) (bytes : string) : unit =
+  match peer with Waiting (l, _) -> Lockstep.receive l bytes | Guessing r -> Rollback.receive r bytes
+
+let packet (peer : 'model peer) : string = match peer with Waiting (l, _) -> Lockstep.packet l | Guessing r -> Rollback.packet r
+
+(* one frame of a peer, my keys read now *)
+let play update flags (peer : 'model peer) (keys : keyboard) : unit =
+  match peer with
+  | Waiting (l, side) -> (
+      match Lockstep.step l (encode keys) with
+      | None -> ()
+      | Some inputs ->
+          let tick = !side.tick in
+          side := one_tick update flags !side (Array.map decode inputs);
+          if tick mod 60 = 0 then Lockstep.checksum l ~tick (Checksum.of_model !side.model))
+  | Guessing r -> Rollback.step r (encode keys)
+
+let side_of (peer : 'model peer) : 'model side = match peer with Waiting (_, s) -> !s | Guessing r -> Rollback.model r
+let desync (peer : 'model peer) = match peer with Waiting (l, _) -> Lockstep.desync l | Guessing r -> Rollback.desync r
+
+let describe (peer : 'model peer) : string =
+  match peer with
+  | Waiting (l, s) -> Printf.sprintf "tick %d, %d stalls" !s.tick (Lockstep.stats l).stalls
+  | Guessing r ->
+      let st = Rollback.stats r in
+      Printf.sprintf "tick %d, %d rollbacks, %d ticks replayed, %d stalls" (Rollback.tick r) st.rollbacks st.replayed st.stalls
+
+(*****************************************************************************)
+(* The modes *)
+(*****************************************************************************)
+
+type knobs = { latency : int (* ms *); jitter : int; loss : int (* % *); delay : int; netcode : string }
 
 (* the transport of net=host and net=join, installed by a platform
  * that has sockets (Udp.connect, natively) *)
@@ -72,20 +131,17 @@ type 'model state =
   | Starting of 'model
   | Local of 'model side
   (* one peer, me, and the other one over a real network *)
-  | Remote of { transport : Transport.t; lockstep : Lockstep.t; side : 'model side; me : int }
+  | Remote of { transport : Transport.t; peer : 'model peer; me : int; netcode : string }
   (* the network couldn't be opened: why, shown on the screen *)
   | Failed of string * 'model
   | Simulate of {
       net : Sim_net.t;
-      peers : (Lockstep.t * 'model side) array;
+      peers : 'model peer array;
       frame : int;
       knobs : knobs;
       held : string list; (* the knob keys held, for their rising edge *)
+      initial : 'model; (* to start again with the other netcode *)
     }
-
-let one_tick update flags (s : 'model side) (keyboards : keyboard array) : 'model side =
-  let players = Array.to_list (Array.mapi (fun id k -> { id; keyboard = k; pressed = rising k s.last.(id) }) keyboards) in
-  { model = update (cleaned flags s.tick) players s.model; last = keyboards; tick = s.tick + 1 }
 
 let config_of (k : knobs) : Sim_net.config =
   { latency = float_of_int k.latency /. 1000.; jitter = float_of_int k.jitter /. 1000.; loss = float_of_int k.loss /. 100.; duplication = 0. }
@@ -93,22 +149,31 @@ let config_of (k : knobs) : Sim_net.config =
 let int_flag (flags : flags) (name : string) (default : int) : int =
   Option.value (Option.bind (List.assoc_opt name flags) int_of_string_opt) ~default
 
-let start ~players ?(network : Cap.network option) (flags : flags) (model : 'model) : 'model state =
+(* netcode=lockstep (the default) or netcode=rollback; the input delay
+ * 3 ticks for lockstep, none for rollback, unless delay= *)
+let netcode_of (flags : flags) : string * int =
+  let netcode = if List.assoc_opt "netcode" flags = Some "rollback" then "rollback" else "lockstep" in
+  (netcode, int_flag flags "delay" (if netcode = "rollback" then 0 else 3))
+
+let simulate ~players update (flags : flags) (knobs : knobs) (model : 'model) : 'model state =
   let side = { model; last = Array.make players empty; tick = 0 } in
+  Simulate
+    {
+      net = Sim_net.create ~seed:(int_flag flags "seed" 1) (config_of knobs);
+      peers = Array.init players (fun me -> new_peer ~netcode:knobs.netcode ~me ~players ~delay:knobs.delay update flags side);
+      frame = 0;
+      knobs;
+      held = [];
+      initial = model;
+    }
+
+let start ~players ?(network : Cap.network option) update (flags : flags) (model : 'model) : 'model state =
+  let side = { model; last = Array.make players empty; tick = 0 } in
+  let netcode, delay = netcode_of flags in
   match List.assoc_opt "net" flags with
   | Some "simulate" ->
-      let knobs =
-        { latency = int_flag flags "latency" 50; jitter = int_flag flags "jitter" 10; loss = int_flag flags "loss" 5;
-          delay = int_flag flags "delay" 3 }
-      in
-      Simulate
-        {
-          net = Sim_net.create ~seed:(int_flag flags "seed" 1) (config_of knobs);
-          peers = Array.init players (fun me -> (Lockstep.create ~me ~players ~delay:knobs.delay, side));
-          frame = 0;
-          knobs;
-          held = [];
-        }
+      let knobs = { latency = int_flag flags "latency" 50; jitter = int_flag flags "jitter" 10; loss = int_flag flags "loss" 5; delay; netcode } in
+      simulate ~players update flags knobs model
   | Some (("host" | "join") as net) -> (
       let port = int_flag flags "port" 7777 in
       let role, me =
@@ -120,7 +185,7 @@ let start ~players ?(network : Cap.network option) (flags : flags) (model : 'mod
       | None -> Failed (Printf.sprintf "net=%s: this program wasn't granted the network (Cap.network)" net, model)
       | Some caps -> (
           match !connect caps role with
-          | Ok transport -> Remote { transport; lockstep = Lockstep.create ~me ~players ~delay:(int_flag flags "delay" 3); side; me }
+          | Ok transport -> Remote { transport; peer = new_peer ~netcode ~me ~players ~delay update flags side; me; netcode }
           | Error why -> Failed (Printf.sprintf "net=%s: %s" net why, model)))
   | _ -> Local side
 
@@ -128,9 +193,10 @@ let start ~players ?(network : Cap.network option) (flags : flags) (model : 'mod
 (* Simulate: the peers, the fake network between them *)
 (*****************************************************************************)
 
-(* [ and ] the latency by 20 ms, - and = the loss by 5% *)
+(* [ and ] the latency by 20 ms, - and = the loss by 5%; n the other
+ * netcode (the game starts again) *)
 let turn_knobs (physical : keyboard) (held : string list) (k : knobs) : knobs * string list =
-  let keys = [ "["; "]"; "-"; "=" ] in
+  let keys = [ "["; "]"; "-"; "="; "n" ] in
   let now = List.filter (fun key -> Set_.mem key physical.keys) keys in
   let pressed key = List.mem key now && not (List.mem key held) in
   let clamp lo hi x = max lo (min hi x) in
@@ -138,29 +204,26 @@ let turn_knobs (physical : keyboard) (held : string list) (k : knobs) : knobs * 
   let k = if pressed "]" then { k with latency = clamp 0 1000 (k.latency + 20) } else k in
   let k = if pressed "-" then { k with loss = clamp 0 100 (k.loss - 5) } else k in
   let k = if pressed "=" then { k with loss = clamp 0 100 (k.loss + 5) } else k in
+  let k =
+    if pressed "n" then
+      if k.netcode = "rollback" then { k with netcode = "lockstep"; delay = 3 } else { k with netcode = "rollback"; delay = 0 }
+    else k
+  in
   (k, now)
 
-(* one frame of every peer: its packets read, its tick simulated if it
- * has every input (else it stalls, its model frozen), its packet sent *)
-let simulate_frame update (computer : computer) net peers frame players =
+(* one frame of every peer: its packets read, its tick played (or not:
+ * a stall), its packet sent *)
+let simulate_frame update (computer : computer) net (peers : 'model peer array) frame =
   let now = float_of_int frame /. 60. in
-  Array.mapi
-    (fun me (lockstep, (side : 'model side)) ->
-      List.iter (fun (_, bytes) -> Lockstep.receive lockstep bytes) (Sim_net.receive net ~now me);
-      let side =
-        match Lockstep.step lockstep (encode (local_keyboard computer.keyboard me)) with
-        | None -> side
-        | Some inputs ->
-            let tick = side.tick in
-            let side = one_tick update computer.flags side (Array.map decode inputs) in
-            if tick mod 60 = 0 then Lockstep.checksum lockstep ~tick (Checksum.of_model side.model);
-            side
-      in
-      let packet = Lockstep.packet lockstep in
+  let players = Array.length peers in
+  Array.iteri
+    (fun me peer ->
+      List.iter (fun (_, bytes) -> receive peer bytes) (Sim_net.receive net ~now me);
+      play update computer.flags peer (local_keyboard computer.keyboard me);
+      let bytes = packet peer in
       for other = 0 to players - 1 do
-        if other <> me then Sim_net.send net ~now ~src:me ~dst:other packet
-      done;
-      (lockstep, side))
+        if other <> me then Sim_net.send net ~now ~src:me ~dst:other bytes
+      done)
     peers
 
 (*****************************************************************************)
@@ -169,19 +232,10 @@ let simulate_frame update (computer : computer) net peers frame players =
 
 (* the same as a simulated peer's frame, the transport instead of
  * Sim_net; my keys are the arrows, whichever player I am *)
-let remote_frame update (computer : computer) (transport : Transport.t) (lockstep : Lockstep.t) (side : 'model side) =
-  List.iter (Lockstep.receive lockstep) (transport.receive ());
-  let side =
-    match Lockstep.step lockstep (encode (local_keyboard computer.keyboard 0)) with
-    | None -> side
-    | Some inputs ->
-        let tick = side.tick in
-        let side = one_tick update computer.flags side (Array.map decode inputs) in
-        if tick mod 60 = 0 then Lockstep.checksum lockstep ~tick (Checksum.of_model side.model);
-        side
-  in
-  transport.send (Lockstep.packet lockstep);
-  side
+let remote_frame update (computer : computer) (transport : Transport.t) (peer : 'model peer) : unit =
+  List.iter (receive peer) (transport.receive ());
+  play update computer.flags peer (local_keyboard computer.keyboard 0);
+  transport.send (packet peer)
 
 (*****************************************************************************)
 (* The views *)
@@ -189,39 +243,36 @@ let remote_frame update (computer : computer) (transport : Transport.t) (lockste
 
 let text (color : color) (s : string) : shape = words color s |> scale 1.6
 
-let hud (knobs : knobs) peers : shape list =
-  let desync =
-    Array.to_list peers |> List.find_map (fun (l, _) -> Lockstep.desync l)
-  in
+let agree (d : (int * int) option) : shape =
+  match d with
+  | None -> text green "the two games agree (checksums every second)"
+  | Some (tick, peer) -> text red (Printf.sprintf "DESYNC at tick %d, with player %d" tick peer)
+
+let netcode_line (netcode : string) (delay : int) : string =
+  if netcode = "rollback" then Printf.sprintf "rollback, input delay %d" delay else Printf.sprintf "lockstep, input delay %d ticks" delay
+
+let hud (knobs : knobs) (peers : 'model peer array) : shape list =
   [ text white
-      (Printf.sprintf "latency %d ms ([ ])   jitter %d ms   loss %d%% (- =)   input delay %d ticks" knobs.latency
-         knobs.jitter knobs.loss knobs.delay)
+      (Printf.sprintf "latency %d ms ([ ])   jitter %d ms   loss %d%% (- =)   %s (n)" knobs.latency knobs.jitter
+         knobs.loss (netcode_line knobs.netcode knobs.delay))
     |> move_y (-440.);
-    (match desync with
-    | None -> text green "the two games agree (checksums every second)"
-    | Some (tick, peer) -> text red (Printf.sprintf "DESYNC at tick %d, with peer %d" tick peer))
-    |> move_y (-470.) ]
+    agree (Array.to_list peers |> List.find_map desync) |> move_y (-470.) ]
 
-let remote_hud (transport : Transport.t) (lockstep : Lockstep.t) (side : 'model side) (me : int) : shape list =
-  [ text white (Printf.sprintf "%s -- you are player %d, tick %d, %d stalls" (transport.status ()) me side.tick
-      (Lockstep.stats lockstep).stalls)
-    |> move_y (-440.);
-    (match Lockstep.desync lockstep with
-    | None -> text green "the two games agree (checksums every second)"
-    | Some (tick, peer) -> text red (Printf.sprintf "DESYNC at tick %d, with player %d" tick peer))
-    |> move_y (-470.) ]
+let remote_hud (transport : Transport.t) (peer : 'model peer) (me : int) (netcode : string) : shape list =
+  [ text white (Printf.sprintf "%s -- you are player %d, %s, %s" (transport.status ()) me netcode (describe peer))
+    |> scale 0.7 |> move_y (-440.);
+    agree (desync peer) |> move_y (-470.) ]
 
-let side_by_side view (computer : computer) (knobs : knobs) peers : shape list =
+let side_by_side view (computer : computer) (knobs : knobs) (peers : 'model peer array) : shape list =
   let n = Array.length peers in
   let width = 1000. /. float_of_int n in
   let halves =
     Array.to_list
       (Array.mapi
-         (fun me (lockstep, (side : 'model side)) ->
+         (fun me peer ->
            let x = (-500.) +. (width *. (float_of_int me +. 0.5)) in
-           let stats = Lockstep.stats lockstep in
-           [ group (view computer me side.model) |> scale (1. /. float_of_int n) |> move_x x;
-             text white (Printf.sprintf "computer %d: tick %d, %d stalls" me side.tick stats.stalls) |> move x 300. ])
+           [ group (view computer me (side_of peer).model) |> scale (1. /. float_of_int n) |> move_x x;
+             text white (Printf.sprintf "computer %d: %s" me (describe peer)) |> scale 0.8 |> move x 300. ])
          peers)
   in
   (rectangle (rgb 40 40 40) 1000. 1000. :: List.concat halves) @ hud knobs peers
@@ -236,13 +287,23 @@ let game ?(network : < Cap.network ; .. > option) ~(players : int) view update (
     match state with
     (* the flags known at last: the mode chosen, and this frame's tick
      * played in it, as a one-player game would *)
-    | Starting model -> update_state computer (start ~players ?network computer.flags model)
+    | Starting model -> update_state computer (start ~players ?network update computer.flags model)
     | Local side -> Local (one_tick update computer.flags side (Array.init players (local_keyboard computer.keyboard)))
     | Simulate s ->
         let knobs, held = turn_knobs computer.keyboard s.held s.knobs in
-        if knobs <> s.knobs then Sim_net.set_config s.net (config_of knobs);
-        Simulate { s with peers = simulate_frame update computer s.net s.peers s.frame players; frame = s.frame + 1; knobs; held }
-    | Remote r -> Remote { r with side = remote_frame update computer r.transport r.lockstep r.side }
+        if knobs.netcode <> s.knobs.netcode then
+          (* the other netcode: the game again, from its start *)
+          match simulate ~players update computer.flags knobs s.initial with
+          | Simulate s' -> Simulate { s' with held }
+          | other -> other
+        else begin
+          if knobs <> s.knobs then Sim_net.set_config s.net (config_of knobs);
+          simulate_frame update computer s.net s.peers s.frame;
+          Simulate { s with frame = s.frame + 1; knobs; held }
+        end
+    | Remote r ->
+        remote_frame update computer r.transport r.peer;
+        state
     | Failed _ -> state
   in
   let view_state (computer : computer) (state : 'model state) : shape list =
@@ -250,7 +311,7 @@ let game ?(network : < Cap.network ; .. > option) ~(players : int) view update (
     | Starting model -> view computer 0 model
     | Local side -> view computer 0 side.model
     | Simulate s -> side_by_side view computer s.knobs s.peers
-    | Remote r -> view computer r.me r.side.model @ remote_hud r.transport r.lockstep r.side r.me
+    | Remote r -> view computer r.me (side_of r.peer).model @ remote_hud r.transport r.peer r.me r.netcode
     | Failed (why, model) -> view computer 0 model @ [ text red why |> move_y (-450.) ]
   in
   Playground.game view_state update_state (Starting model)
