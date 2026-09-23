@@ -157,8 +157,25 @@ let test_tempo () =
   let next = Mixer.pull m 1 in
   Alcotest.(check (float 1e-6)) "from the same point" (Float.tanh fast.(Array.length fast / 4)) next.left.(0)
 
+(* a processor over a rendered sound: here one that halves the left side
+ * and counts how often it was made -- once per rendering *)
+let test_processed () =
+  let made = ref 0 in
+  let halve () =
+    incr made;
+    fun (st : Signal.stereo) -> Array.iteri (fun i x -> st.left.(i) <- x /. 2.) st.left
+  in
+  let s = Synth.Processed ({ make = halve; tail = 0.05 }, beep) in
+  Alcotest.(check (float 1e-9)) "the tail added to its duration" 0.15 (Synth.duration s);
+  let plain = Synth.render beep and st = Synth.render_stereo s in
+  Alcotest.(check int) "a tail of silence after it" (Array.length plain + Signal.samples 0.05) (Array.length st.left);
+  Alcotest.(check (float 1e-9)) "the left side halved" (plain.(1000) /. 2.) st.left.(1000);
+  Alcotest.(check (float 1e-9)) "the right one not: a stereo processor" plain.(1000) st.right.(1000);
+  Alcotest.(check (float 1e-9)) "mono: the two mixed" (0.75 *. plain.(1000)) (Synth.render s).(1000);
+  Alcotest.(check int) "a processor made for each rendering" 2 !made
+
 let tests =
   Testo.categorize "Synth and Mixer"
     [ t "Music: notes and frequencies" test_notes; t "Synth: durations, no clicks, slides" test_synth; t "Mixer: one-shots, continuous voices" test_mixer;
       t "Mixer: a loop's own clock" test_loop_clock; t "Synth: naive, FM darkening, filters" test_sources;
-      t "tempo: faster, and a loop changed while playing" test_tempo ]
+      t "tempo: faster, and a loop changed while playing" test_tempo; t "Synth: a sound through a processor" test_processed ]

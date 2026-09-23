@@ -260,4 +260,25 @@ let sounds =
                  through (Reverb.process r { kind; seconds = 1.5; damping = 0.3; mix = 0.5 }) (note 2.))
                Reverb.kinds) ) ]
 
+(* phase 7's: a 110 Hz sawtooth held 2 s, through the chorus, the
+ * flanger and the phaser (Modulated_delay.mli, Phaser.mli, faster LFOs
+ * than their defaults, so a sweep fits in 2 s): the flanger's notches
+ * evenly spaced, sweeping; the phaser's two, not *)
+let sounds =
+  sounds
+  @ [ ( "modulation_chorus_flanger_phaser",
+        fun () ->
+          let len = Signal.samples 2. in
+          let saw () =
+            let x = Array.make len 0. in
+            Vco.fill (Vco.create ()) Sawtooth ~frequency:(Array.make len 110.) x;
+            Array.map (fun v -> 0.25 *. v) x
+          in
+          Array.concat
+            [
+              through (Modulated_delay.process (Modulated_delay.create ()) { Modulated_delay.chorus with rate = 1. }) (saw ());
+              through (Modulated_delay.process (Modulated_delay.create ()) { Modulated_delay.flanger with rate = 0.5 }) (saw ());
+              through (Phaser.process (Phaser.create ()) { Phaser.initial with rate = 0.5 }) (saw ());
+            ] ) ]
+
 let tests = Testo.categorize "golden WAVs" (List.map (fun (name, f) -> t name (fun () -> check name (f ()) ())) sounds)

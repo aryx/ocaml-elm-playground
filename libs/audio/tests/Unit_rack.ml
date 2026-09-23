@@ -69,13 +69,50 @@ let test_order () =
   let usual = through (Rack.process (rack on)) in
   let r = rack on in
   Rack.reorder r [ "reverb" ];
-  Alcotest.(check (list string)) "the reverb first" [ "reverb"; "drive"; "eq"; "delay" ] (Rack.order r);
+  Alcotest.(check (list string)) "the reverb first" [ "reverb"; "drive"; "eq"; "modulation"; "delay"; "dynamics" ] (Rack.order r);
   let mud = through (Rack.process r) in
   Alcotest.(check bool) "another sound" true (largest_difference usual.left mud.left > 0.1);
   let r = rack on in
   Rack.reorder r [ "reverb" ];
-  Rack.reorder r [ "drive"; "eq"; "delay"; "reverb" ];
+  Rack.reorder r [ "drive"; "eq"; "modulation"; "delay"; "reverb"; "dynamics" ];
   Alcotest.(check (float 0.)) "put back" 0. (largest_difference usual.left (through (Rack.process r)).left)
+
+(* a knob turned between two blocks, a gain 16 times bigger at once: a
+ * quiet 100 Hz sine (0.0005: the drive's curve still straight, under
+ * the compressor's threshold) moves by at most 0.000007 a sample,
+ * 16 times that after, well under the bounds; unramped, the block's
+ * edge would be a step of up to 0.0075 *)
+let test_ramps () =
+  let largest_step knob on value =
+    let r = rack [ (on, 1.) ] in
+    let x = Array.map (fun v -> 0.0005 *. v) (Oscillator.render Sine ~frequency:100. 0.1) in
+    let block k =
+      let b = Array.sub x (k * 735) 735 in
+      let s = { Signal.left = b; right = Array.copy b } in
+      Rack.process r s;
+      s.left
+    in
+    let first = block 0 in
+    Rack.set r knob value;
+    let y = Array.append first (Array.concat (List.init 4 (fun k -> block (k + 1)))) in
+    let step = ref 0. in
+    for i = 1 to Array.length y - 1 do
+      step := Float.max !step (Float.abs (y.(i) -. y.(i - 1)))
+    done;
+    !step
+  in
+  Alcotest.(check bool) "the drive from 12 to 36 dB: no step" true (largest_step "drive.gain" "drive.on" 36. < 0.001);
+  Alcotest.(check bool) "the compressor's makeup from 0 to 24 dB: no step" true
+    (largest_step "dynamics.makeup" "dynamics.on" 24. < 0.0005)
+
+(* the compressor's needle: its meter through the rack *)
+let test_meter () =
+  let r = rack [ ("dynamics.on", 1.) ] in
+  Alcotest.(check (float 0.)) "no sound, no reduction" 0. (Rack.meter r "dynamics.reduction");
+  let x = Array.sub (chord 22050) 0 (Signal.samples 0.2) in
+  Rack.process r { left = Array.copy x; right = x };
+  Alcotest.(check bool) "while a chord sounds: turned down" true (Rack.meter r "dynamics.reduction" > 3.);
+  Alcotest.(check (float 0.)) "no such meter" 0. (Rack.meter r "delay.reduction")
 
 let tests =
   Testo.categorize "Rack"
@@ -84,4 +121,6 @@ let tests =
       t "the knobs' names" test_knobs;
       t "the effects' knobs = their typed settings" test_wrappers;
       t "the order: the reverb before the drive" test_order;
+      t "the knobs ramped: no step at a block's edge" test_ramps;
+      t "the meters" test_meter;
     ]

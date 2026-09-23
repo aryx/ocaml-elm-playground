@@ -68,6 +68,32 @@ let arpeggio semitones step = Synth.with_effect (Arpeggio { semitones; step })
 let echo delay feedback s = Synth.Echo ({ delay; feedback = Float.min 0.95 (Float.max 0. feedback) }, s)
 let reverb seconds s = Synth.Reverb (Float.max 0.01 seconds, s)
 
+(* the live effects (effects/), run over the sound rendered: a fresh
+ * effect for each rendering *)
+let processed ?(tail = 0.) (make : unit -> Signal.stereo -> unit) (s : sound) : sound = Synth.Processed ({ make; tail }, s)
+
+(* [gain] dB in, [gain] dB back out: a pedal's drive knob with its level
+ * knob turned to match *)
+let drive gain =
+  processed (fun () ->
+      let left = Drive.create ~oversampling:4 () and right = Drive.create ~oversampling:4 () in
+      let back = 1. /. Mix.of_decibels gain in
+      fun st ->
+        Drive.process left Tanh ~drive:gain ~mix:1. st.left;
+        Drive.process right Tanh ~drive:gain ~mix:1. st.right;
+        Array.iteri (fun i x -> st.left.(i) <- back *. x) st.left;
+        Array.iteri (fun i x -> st.right.(i) <- back *. x) st.right)
+
+let modulated (settings : Modulated_delay.settings) =
+  processed ~tail:0.02 (fun () -> Modulated_delay.process (Modulated_delay.create ()) settings)
+
+let chorus = modulated Modulated_delay.chorus
+let flanger = modulated Modulated_delay.flanger
+let phaser = processed (fun () -> Phaser.process (Phaser.create ()) Phaser.initial)
+
+let compressed threshold ratio =
+  processed (fun () -> Dynamics.process (Dynamics.create ()) { Dynamics.compressor with threshold; ratio = Float.max 1. ratio })
+
 (* the ready-made sounds: audio/Sfx's presets, after sfxr's categories *)
 let sfx = Sfx.to_sound
 let random_sound (category : string) (seed : int) : sound = sfx (Sfx.random category ~seed)
@@ -98,7 +124,7 @@ let rec voices ?filter ?pan (s : sound) : (Synth.voice * Synth.filter option * f
   match s with
   | Voice v -> [ (v, filter, pan) ]
   | Together l -> List.concat_map (voices ?filter ?pan) l
-  | After (s :: _) | Echo (_, s) | Reverb (_, s) -> voices ?filter ?pan s
+  | After (s :: _) | Echo (_, s) | Reverb (_, s) | Processed (_, s) -> voices ?filter ?pan s
   | Filtered (f, s) -> voices ~filter:(Option.value filter ~default:f) ?pan s
   | Panned (p, s) -> voices ?filter ~pan:p s
   | After [] | Samples _ -> []

@@ -31,6 +31,8 @@
    audio
    ; claude: and the MOD player, for Audio.play_module (plan_audio_formats.md)
    audio_mod
+   ; the live effects, for Audio.drive, chorus, compressed (plan_synth_teaching.md)
+   audio_effects
    ; claude: the widgets under Gui.ml (private, pure OCaml, this same
    ; package), see docs/claude_notes/plans/plan_gui_teaching.md
    gui

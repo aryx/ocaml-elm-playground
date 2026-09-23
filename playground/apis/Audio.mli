@@ -136,6 +136,31 @@ val echo : number -> number -> sound -> sound
    Synth.mli; the sound that much longer *)
 val reverb : number -> sound -> sound
 
+(* The live effects of a synthesizer's rack (notes_synth.md section 8),
+   on a sound:
+
+     let guitar = pluck 110 |> lasting 1 |> drive 18 |> chorus
+
+   [drive gain s]: [s] pushed [gain] dB into a tanh, oversampled
+   (Drive.mli), and brought [gain] dB back down: an overdriven
+   amplifier at the sound's own level, a quiet sound passing as it was,
+   a loud one flattened (its peaks at most 1 / 10^(gain / 20): 0.25 for
+   12 dB), what's left the distortion *)
+val drive : number -> sound -> sound
+
+(* [chorus s]: [s] with a copy wobbling slightly out of tune, 15 ms
+   behind, the two sides differently: several players, wide
+   (Modulated_delay.mli); [flanger s]: the jet plane, notches sweeping;
+   [phaser s]: a softer sweep (Phaser.mli) *)
+val chorus : sound -> sound
+val flanger : sound -> sound
+val phaser : sound -> sound
+
+(* [compressed threshold ratio s]: [s]'s loud parts turned down, above
+   [threshold] dB, [ratio] dB in for 1 out (4: a gentle compressor, 20:
+   nearly a limiter) (Dynamics.mli) *)
+val compressed : number -> number -> sound -> sound
+
 (* [naive s]: the square, triangle and sawtooth waves of [s] computed
    the simple way, a formula, with their aliases: high notes whistle
    out of tune (the default removes most of them: Oscillator.mli;

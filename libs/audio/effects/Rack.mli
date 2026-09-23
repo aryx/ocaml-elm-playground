@@ -1,8 +1,8 @@
 (* The rack: effects one after the other, each switched on or not, in
  * an order that can change (see notes_synth.md section 8).
  *
- *     voice --> drive --> EQ --> delay --> reverb --> out     [standard]
- *               (phase 7: chorus after the EQ, the compressor last)
+ *     voice --> drive --> EQ --> modulation --> delay --> reverb --> dynamics --> out
+ *                                                                  [standard]
  *
  * The order matters, because the effects don't commute, and the
  * nonlinear one least of all: a drive after a reverb distorts the
@@ -12,8 +12,11 @@
  * room is added, clean. The EQ after the drive shapes what the drive
  * made (a treble cut tames its fizz); the delay before the reverb so
  * that its echoes are in the room too, as a guitarist's pedals go into
- * the amplifier in the hall. [reorder] puts the reverb first, to hear
- * the mud.
+ * the amplifier in the hall. The modulation (a chorus, a flanger, a
+ * phaser: Modulation.mli) between the tone and the time effects, so the
+ * echoes repeat the chorused sound; the dynamics last, to hold the
+ * level of everything before (a compressor on a mix bus, a limiter on
+ * the master). [reorder] puts the reverb first, to hear the mud.
  *
  * The rack holds Effect.t's, not knowing what they are; their knobs
  * are its knobs, named "effect.knob" ("delay.time"), with an "on"
@@ -25,7 +28,8 @@ type t
 (* [create effects]: a rack of [effects], in that order, all off *)
 val create : Effect.t list -> t
 
-(* drive, eq, delay, reverb: Drive, Eq, Delay and Reverb's effects *)
+(* drive, eq, modulation, delay, reverb, dynamics: Drive, Eq, Modulation,
+ * Delay, Reverb and Dynamics's effects *)
 val standard : unit -> t
 
 (* [standard]'s knobs, without making one (a patch's controls are
@@ -48,3 +52,7 @@ val reorder : t -> string list -> unit
 
 (* [process t s]: [s] through the effects that are on, in place *)
 val process : t -> Signal.stereo -> unit
+
+(* [meter t name]: an effect's meter, "dynamics.reduction" (0 when
+ * there's no such meter) *)
+val meter : t -> string -> float

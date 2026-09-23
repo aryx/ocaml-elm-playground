@@ -14,7 +14,8 @@ type stage = { effect : Effect.t; mutable on : bool }
 type t = { mutable stages : stage list }
 
 let create (effects : Effect.t list) : t = { stages = List.map (fun effect -> { effect; on = false }) effects }
-let standard () : t = create [ Drive.effect (); Eq.effect (); Delay.effect (); Reverb.effect () ]
+let standard () : t =
+  create [ Drive.effect (); Eq.effect (); Modulation.effect (); Delay.effect (); Reverb.effect (); Dynamics.effect () ]
 
 (* an effect's knobs under its name, its switch first *)
 let prefixed (name : string) (knobs : Effect.knob list) : Effect.knob list =
@@ -22,7 +23,16 @@ let prefixed (name : string) (knobs : Effect.knob list) : Effect.knob list =
   :: List.map (fun (k : Effect.knob) -> { k with name = name ^ "." ^ k.name }) knobs
 
 let standard_knobs : Effect.knob list =
-  List.concat_map (fun (name, knobs) -> prefixed name knobs) [ ("drive", Drive.knobs); ("eq", Eq.knobs); ("delay", Delay.knobs); ("reverb", Reverb.knobs) ]
+  List.concat_map
+    (fun (name, knobs) -> prefixed name knobs)
+    [
+      ("drive", Drive.knobs);
+      ("eq", Eq.knobs);
+      ("modulation", Modulation.knobs);
+      ("delay", Delay.knobs);
+      ("reverb", Reverb.knobs);
+      ("dynamics", Dynamics.knobs);
+    ]
 
 let knobs (t : t) : Effect.knob list = List.concat_map (fun s -> prefixed s.effect.name s.effect.knobs) t.stages
 
@@ -42,3 +52,9 @@ let reorder (t : t) (names : string list) : unit =
   t.stages <- named @ List.filter (fun s -> not (List.memq s named)) t.stages
 
 let process (t : t) (out : Signal.stereo) : unit = List.iter (fun s -> if s.on then s.effect.process out) t.stages
+
+let meter (t : t) (name : string) : float =
+  List.find_map
+    (fun s -> List.find_map (fun (m, x) -> if s.effect.name ^ "." ^ m = name then Some x else None) (s.effect.meters ()))
+    t.stages
+  |> Option.value ~default:0.

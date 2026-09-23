@@ -36,6 +36,9 @@ type t = {
   up : Filter.memory array;
   down : Filter.memory array;
   mutable dc : float; (* the high-pass's low-pass, taken away *)
+  (* the last block's knobs, ramped from (nan: none yet) *)
+  mutable last_drive : float;
+  mutable last_mix : float;
 }
 
 let create ~(oversampling : int) () : t =
@@ -46,6 +49,8 @@ let create ~(oversampling : int) () : t =
     up = Array.init 4 (fun _ -> Filter.silence ());
     down = Array.init 4 (fun _ -> Filter.silence ());
     dc = 0.;
+    last_drive = Float.nan;
+    last_mix = Float.nan;
   }
 
 let chain (t : t) (memories : Filter.memory array) (x : float) : float =
@@ -58,9 +63,13 @@ let chain (t : t) (memories : Filter.memory array) (x : float) : float =
 let dc_coefficient = Filter.one_pole_coefficient 10.
 
 let process (t : t) (shape : shape) ~(drive : float) ~(mix : float) (s : Signal.t) : unit =
-  let g = Mix.of_decibels drive and l = t.oversampling in
+  let l = t.oversampling and n = Array.length s in
+  let from_drive = if Float.is_nan t.last_drive then drive else t.last_drive
+  and from_mix = if Float.is_nan t.last_mix then mix else t.last_mix in
   Array.iteri
     (fun i x ->
+      (* the knobs ramped over the block, the drive in dB *)
+      let g = Mix.of_decibels (Effect.ramp from_drive drive i n) and mix = Effect.ramp from_mix mix i n in
       let wet =
         if l = 1 then curve shape (g *. x)
         else begin
@@ -77,7 +86,9 @@ let process (t : t) (shape : shape) ~(drive : float) ~(mix : float) (s : Signal.
       in
       t.dc <- t.dc +. (dc_coefficient *. (wet -. t.dc));
       s.(i) <- ((1. -. mix) *. x) +. (mix *. (wet -. t.dc)))
-    s
+    s;
+  t.last_drive <- drive;
+  t.last_mix <- mix
 
 let knobs : Effect.knob list =
   [
@@ -104,4 +115,4 @@ let effect () : Effect.t =
     process left !shape ~drive:!gain ~mix:1. s.left;
     process right !shape ~drive:!gain ~mix:1. s.right
   in
-  { name = "drive"; knobs; set; process }
+  { name = "drive"; knobs; set; process; meters = (fun () -> []) }

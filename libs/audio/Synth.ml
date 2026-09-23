@@ -32,9 +32,11 @@ type t =
   | Echo of echo * t
   | Reverb of float * t
   | Panned of float * t
+  | Processed of processed * t
 
 and echo = { delay : float; feedback : float }
 and filter = { kind : Filter.kind; cutoff : float; cutoff_to : float; q : float }
+and processed = { make : unit -> Signal.stereo -> unit; tail : float }
 
 let voice (source : source) (frequency : float) : t =
   Voice { source; frequency; slide = None; seconds = 0.3; volume = 0.5; fade = false; effects = []; envelope = None }
@@ -49,6 +51,7 @@ let rec map_voices (f : voice -> voice) (s : t) : t =
   | Echo (echo, s) -> Echo (echo, map_voices f s)
   | Reverb (r, s) -> Reverb (r, map_voices f s)
   | Panned (p, s) -> Panned (p, map_voices f s)
+  | Processed (p, s) -> Processed (p, map_voices f s)
 
 let lasting (seconds : float) = map_voices (fun v -> { v with seconds })
 let fading = map_voices (fun v -> { v with fade = true })
@@ -73,6 +76,7 @@ let rec faster (k : float) (s : t) : t =
   (* the room's time is the room's *)
   | Reverb (r, s) -> Reverb (r, faster k s)
   | Panned (p, s) -> Panned (p, faster k s)
+  | Processed (p, s) -> Processed (p, faster k s)
 
 let rec pitched (k : float) (s : t) : t =
   match s with
@@ -86,6 +90,7 @@ let rec pitched (k : float) (s : t) : t =
   | Echo (e, s) -> Echo (e, pitched k s)
   | Reverb (r, s) -> Reverb (r, pitched k s)
   | Panned (p, s) -> Panned (p, pitched k s)
+  | Processed (p, s) -> Processed (p, pitched k s)
 
 let naive = map_voices (fun v -> match v.source with Wave w -> { v with source = Naive w } | _ -> v)
 
@@ -152,6 +157,7 @@ let rec duration (s : t) : float =
   | Echo (e, s) -> duration s +. tail ~delay:e.delay ~feedback:e.feedback
   | Reverb (r, s) -> duration s +. r
   | Panned (_, s) -> duration s
+  | Processed (p, s) -> duration s +. p.tail
 
 (* the source's state: an oscillator's phase (and FM's modulator's), or
  * noise's register and clock *)
@@ -231,13 +237,23 @@ let rec render (s : t) : Signal.t =
   | Echo (e, s) -> echo ~delay:e.delay ~feedback:e.feedback (render s)
   | Reverb (r, s) -> reverb ~seconds:r (render s)
   | Panned (_, s) -> render s
+  | Processed (p, s) -> Signal.mono (processed p (Signal.both (render s)))
 
+(* [st], a tail of silence after it, through a processor made for it *)
+and processed (p : processed) (st : Signal.stereo) : Signal.stereo =
+  let pad x = Array.append x (Array.make (Signal.samples p.tail) 0.) in
+  let out : Signal.stereo = { left = pad st.left; right = pad st.right } in
+  p.make () out;
+  out
+
+(* whether a stereo rendering can differ from the mono one: a pan, or a
+ * processor (a chorus makes two sides of one) *)
 let rec panned (s : t) : bool =
   match s with
   | Voice _ | Samples _ -> false
   | Together l | After l -> List.exists panned l
   | Filtered (_, s) | Echo (_, s) | Reverb (_, s) -> panned s
-  | Panned _ -> true
+  | Panned _ | Processed _ -> true
 
 let rec render_stereo (s : t) : Signal.stereo =
   if not (panned s) then Signal.both (render s)
@@ -263,6 +279,10 @@ let rec render_stereo (s : t) : Signal.stereo =
         and sooner x = if d = 0 then x else Array.append x (Array.make d 0.) in
         let left = Mix.gain l st.left and right = Mix.gain r st.right in
         if p > 0. then { left = later left; right = sooner right } else { left = sooner left; right = later right }
+    | Processed (p, s) ->
+        (* its own copy: render_stereo may share one array for both *)
+        let st = render_stereo s in
+        processed p { left = Array.copy st.left; right = Array.copy st.right }
     | Voice _ | Samples _ -> Signal.both (render s)
 
 let continue (r : running) (v : voice) (n : int) : Signal.t * running =

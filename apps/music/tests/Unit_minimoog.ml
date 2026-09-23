@@ -63,6 +63,10 @@ let test_text () =
   (match Minimoog_voice.of_string (Minimoog_voice.to_string p) with
   | Ok p' -> if p' <> p then Alcotest.fail "the effects: not the same after writing and reading"
   | Error e -> Alcotest.fail e);
+  (* the panel's controls and the rack's under different names (the
+   * rack's modulation once shared "mod.mix" with the Model D's own) *)
+  let names = List.map (fun (k : Minimoog_voice.knob) -> k.name) Minimoog_voice.knobs in
+  Alcotest.(check int) "every control's name its own" (List.length names) (List.length (List.sort_uniq compare names));
   let error s = match Minimoog_voice.of_string s with Ok _ -> "" | Error e -> e in
   Alcotest.(check string) "an unknown control" "no such control: osc4.range" (error "osc4.range = 8'");
   Alcotest.(check string) "a bad value" "osc1.range: not a value: 7'" (error "osc1.range = 7'");

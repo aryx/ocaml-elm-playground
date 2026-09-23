@@ -79,10 +79,21 @@ type t =
   (* the sound panned, -1 left to 1 right (Space.pan): only
    * [render_stereo] hears it, [render] mixes it down to one channel *)
   | Panned of float * t
+  (* the sound, rendered in stereo, through a live processor, [tail]
+   * seconds of silence after it for what the processor adds (a delay's
+   * echoes): a live effect (effects/'s Drive, Modulation, Dynamics,
+   * ...) run once over a sound rendered ahead. [make] makes a fresh
+   * processor for each rendering: an effect keeps state, and a sound is
+   * rendered each time it is played. So that playground/'s Audio can
+   * offer the live effects to games' sounds, the engine not knowing
+   * them (effects/ is above it). *)
+  | Processed of processed * t
 
 and echo = { delay : float; feedback : float }
 
 and filter = { kind : Filter.kind; cutoff : float; cutoff_to : float; q : float }
+
+and processed = { make : unit -> Signal.stereo -> unit; tail : float }
 
 (* false: every Wave played as Naive, the band-limited oscillators off,
  * for the backends' debug key (the software backend's "l"): the sounds

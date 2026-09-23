@@ -8,7 +8,10 @@
  *
  * each from -12 to +12 dB; at 0 dB a band is exactly no filter (its
  * numerator and denominator the same), so a flat EQ changes nothing.
- * Its curve, the three multiplied, is Filter.response's. *)
+ * Its curve, the three multiplied, is Filter.response's. A gain turned
+ * is ramped over the next block as Effect.mli's knobs are, but a
+ * filter's coefficients can't be multiplied in: they are recomputed
+ * every 32 samples (0.7 ms), each time the gains a step nearer. *)
 
 type t
 

@@ -150,7 +150,8 @@ val to_string : patch -> string
 val of_string : string -> (patch, string) result
 
 (* our presets: bass, lead, brass, flute, whistle (the filter alone,
- * oscillating, played by the keyboard), wind *)
+ * oscillating, played by the keyboard), wind, and space (the lead
+ * through the rack: chorus, delay, plate, compressor) *)
 val presets : (string * patch) list
 
 (*****************************************************************************)

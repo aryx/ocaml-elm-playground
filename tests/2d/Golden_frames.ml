@@ -1012,6 +1012,13 @@ let scripted : Testutil_golden.scripted list =
       "effects",
       20,
       "at(95;482):1-5,click:3,at(-455;-60):6-9,click:8,at(190;-60):10-13,click:12,at(-62;-60):14-17,click:16" );
+    (* claude: the rack's second page (the button pressed twice), the
+     * modulation and the compressor switched on, C3 held: the needle
+     * showing the gain reduction *)
+    ( "apps/music/software/TinyMinimoog",
+      "effects2",
+      40,
+      "at(95;482):1-9,click:3,click:7,at(-455;-60):10-13,click:12,at(-125;-60):14-17,click:16,a:18-40" );
     (* the tracker edited: C-2 and D-2 typed on the piano's lower row
      * (the cursor going down after each), then C20 typed in hex on the
      * next row's effect *)

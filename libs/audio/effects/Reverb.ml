@@ -221,11 +221,12 @@ let plate_sample (p : plate) (seconds : float) (damping : float) (x : float) : f
 (* The effect *)
 (*****************************************************************************)
 
-type t = { schroeder : schroeder; freeverb : freeverb; plate : plate }
+type t = { schroeder : schroeder; freeverb : freeverb; plate : plate; mutable last_mix : float (* nan: none yet *) }
 
-let create () : t = { schroeder = schroeder (); freeverb = freeverb (); plate = plate () }
+let create () : t = { schroeder = schroeder (); freeverb = freeverb (); plate = plate (); last_mix = Float.nan }
 
 let process (t : t) (s : settings) (out : Signal.stereo) : unit =
+  let n = Array.length out.left and from_mix = if Float.is_nan t.last_mix then s.mix else t.last_mix in
   Array.iteri
     (fun i xl ->
       let xr = out.right.(i) in
@@ -242,9 +243,11 @@ let process (t : t) (s : settings) (out : Signal.stereo) : unit =
             (3. *. freeverb_sample t.freeverb.fleft 0 s.seconds damp x, 3. *. freeverb_sample t.freeverb.fright spread s.seconds damp x)
         | Plate -> plate_sample t.plate s.seconds (0.7 *. s.damping) x
       in
-      out.left.(i) <- xl +. (s.mix *. wl);
-      out.right.(i) <- xr +. (s.mix *. wr))
-    out.left
+      let mix = Effect.ramp from_mix s.mix i n in
+      out.left.(i) <- xl +. (mix *. wl);
+      out.right.(i) <- xr +. (mix *. wr))
+    out.left;
+  t.last_mix <- s.mix
 
 let knobs : Effect.knob list =
   [
@@ -265,4 +268,4 @@ let effect () : Effect.t =
     | _ -> ()
   in
   List.iter (fun (k : Effect.knob) -> set k.name k.initial) knobs;
-  { name = "reverb"; knobs; set; process = (fun out -> process t !s out) }
+  { name = "reverb"; knobs; set; process = (fun out -> process t !s out); meters = (fun () -> []) }

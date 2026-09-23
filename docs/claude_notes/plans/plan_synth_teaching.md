@@ -735,6 +735,63 @@ Things decided, and to decide:
   reverb rockers clicked by a script). Left: the effects' knobs aren't
   ramped over a block (a drive's dB jumped clicks a little); a preset
   using the rack; the effects offered to the games, with phase 7's.
+- **Phase 6b, DONE (2026-09-24)**: `Effect.t`, an effect as a rack
+  holds it (a name, knobs by name, `set`, `process`: `Instrument.t`'s
+  shape), made by each effect beside its typed interface; `Rack` an
+  ordered list of them, `reorder`, "effect.knob" names with an "on"
+  each, `standard_knobs` known before any rack is made; `Control` (a
+  knob, a switch, a selector, and their text), shared by the effects and
+  `Minimoog_voice`, whose patch keeps the rack's knobs as named numbers.
+  The old `Effect` split: `Pitch_effect`, and the offline echo and
+  reverb into `Synth`. TinyMinimoog's key 5, the reverb before the
+  drive. Then audio/ in layers (signal, synthesis, the engine,
+  instruments, effects), ai/, networking/ and playground/ in folders,
+  and the from-scratch libraries under libs/.
+- **Phase 7, DONE (2026-09-24)**: the modulated effects and dynamics.
+  `Modulated_delay` (chorus and flanger: a delay an LFO moves, read
+  between samples, the right side's LFO a quarter turn ahead):
+  measured, the chorus's copy of a 1 kHz sine at 1009.42 and 990.58 Hz
+  (+16.2, -16.4 cents, notes_synth.md's +-16), the flanger at 1 ms
+  cancelling 500 and 1500 Hz (0.0002, 0.002) and doubling 1 kHz, 4.05
+  with feedback 0.7. `Phaser`, four first-order all-passes: 2.000 at fc
+  and the notches found at 415 and 2395 Hz where the analog formula says
+  414 and 2414 (the bilinear's warping), 5.8 times apart where the
+  flanger's are evenly spaced. `Dynamics` after Giannoulis, Massberg and
+  Reiss: the static curve (-8 in, -17 out; the knee's -20.56), the
+  reduction smoothed (63% in 4.99 ms for 5, 37% in 99.96 for 100,
+  measured on a square wave so the detector's ripple is out of the
+  way), the gate (-50 in, -140 out), the side-chain (a bass ducked 13.7
+  dB by kicks). A lesson found by the test: the limiter's 0.5 ms attack
+  let a 441 Hz sine through at -5.24 dB against a -6 dB ceiling, a
+  one-pole can't follow a peak a third of a millisecond wide; now it
+  hears the loudest sample of its look-ahead window and turns down at
+  once, and nothing passes (0.5012). `Modulation`, the rack's one slot
+  for the three, the same knobs; the rack's order drive, EQ, modulation,
+  delay, reverb, dynamics. `Effect.t` got `meters` (the compressor's
+  gain reduction) and `Effect.ramp`: the knobs that multiply the sound
+  ramped over the next block (the drive's gain, the mixes, the
+  feedbacks, the makeup), the EQ's gains in steps of 32 samples; tested
+  as no step at a block's edge. For the games: `Synth.Processed`, a
+  sound rendered then run through a processor made fresh at each
+  rendering (the engine not knowing the effects, above it), and
+  `Audio.drive` (its gain in, the same back out: the level kept),
+  `chorus`, `flanger`, `phaser`, `compressed`; TinyRockBand's guitar
+  notes as power chords through the drive, the difference tone an
+  octave under (196 Hz, 36.5 dB under the note, 79 clean). TinyMinimoog:
+  the rack's second page (the button: scope, effects, more), the
+  compressor's needle, and the preset "space" (the lead chorused,
+  echoed, in the plate, compressed; its golden WAV). A second lesson:
+  the rack's slot first named "mod" shared "mod.mix" with the Model D's
+  own modulation mix -- the patch's initial text no longer read back,
+  and the second page's MIX knob turned the panel's; renamed
+  "modulation", and a test that the patch's control names are unique.
+  Golden frames: `effects` moved by the button's label, `effects2` new.
+  Golden WAV `modulation_chorus_flanger_phaser` (a sawtooth through the
+  three, its spectrogram looked at before approving: the flanger's comb
+  sweeping, the phaser's two notches). Left: an all-pass interpolator
+  for the delays (the exercise in `Modulated_delay.mli`), the rendering
+  cost of `Audio.drive` on a long loop in a browser (x4 oversampling),
+  to measure in phase 8.
 
 ## Verification
 

@@ -300,6 +300,37 @@ loudness.attack = 0.5
 loudness.decay = 0.8
 loudness.sustain = 0.8|}
     );
+    ( "space",
+      {|# the lead through the rack: chorused, a dotted eighth's echoes
+# ping-ponging, in the plate, held together by the compressor
+osc1.wave = sawtooth
+osc2.wave = sawtooth
+osc2.on = on
+osc2.frequency = 0.006
+osc2.level = 0.7
+glide.on = on
+glide = 0.3
+filter.cutoff = 0.5
+filter.emphasis = 0.45
+filter.contour = 0.4
+filter.keyboard1 = on
+filter.keyboard2 = on
+filter.decay = 0.5
+filter.sustain = 0.5
+modulation.on = on
+modulation.kind = chorus
+modulation.depth = 0.6
+delay.on = on
+delay.pingpong = on
+delay.feedback = 0.45
+delay.mix = 0.35
+reverb.on = on
+reverb.time = 3
+reverb.mix = 0.3
+dynamics.on = on
+dynamics.threshold = -18
+dynamics.makeup = 3|}
+    );
   ]
 
 let presets : (string * patch) list =

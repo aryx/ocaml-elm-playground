@@ -38,9 +38,9 @@ module here.
 | `audio/instruments/Svf` | the state-variable filter: Chamberlin's, zero-delay | §7 | done |
 | `audio/effects/Effect` | an effect as a rack holds it: knobs by name, blocks | §8 | done |
 | `audio/effects/Drive`, `Eq` (over `audio/synthesis/Filter`'s EQ) | gain, waveshaping, oversampling; shelves, peaks | §8 | done |
-| `audio/effects/Modulated_delay`, `Phaser` | chorus, flanger; phaser | §8 | |
+| `audio/effects/Modulated_delay`, `Phaser`, `Modulation` | chorus, flanger; phaser; the rack's slot for the three | §8 | done |
 | `audio/effects/Delay`, `Reverb` | echoes in time with the music; rooms | §8 | done |
-| `audio/effects/Dynamics` | compressor, limiter, gate | §8 | |
+| `audio/effects/Dynamics` | compressor, limiter, gate, side-chain | §8 | done |
 | `audio/effects/Rack` | effects in an order | §8 | done |
 | `apps/music/Minimoog_voice` | the Model D's signal path | §2 | done |
 | `apps/music/TinyMinimoog` | its panel | §9 | done (patches not saved yet) |

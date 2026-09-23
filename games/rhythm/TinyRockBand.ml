@@ -79,7 +79,9 @@
  * playground3d (the highways, a perspective camera), Audio (the band,
  * a note per hit, Audio.position -- which in 3D needed the 3D loop to feed the
  * sound card at all, plan_audio_teaching.md's phase 4 item, done for
- * this game), audio's ABC percussion (the drums), Scene2d.
+ * this game; Audio.drive, the guitar's power chords through an
+ * overdriven amplifier: [power_chord]), audio's ABC percussion (the
+ * drums), Scene2d.
  *
  * One simplification, worth knowing: here the frets held at a strum are
  * all played, so holding every fret and strumming every beat cannot
@@ -195,10 +197,30 @@ let chart (i : instrument) (level : Rhythm.difficulty) : int Rhythm.note list =
   | Drums -> drum_part level (drum_chart tune)
   | Guitar | Bass | Keys -> Rhythm.reduce level (Rhythm.on_frets tune (voice_of i))
 
+(* The guitar's sound: each note a power chord, the note and its fifth,
+ * through an overdriven amplifier (Audio.drive). A drive adds a single
+ * note's harmonics, a square wave's barely; two notes it mixes, tones at
+ * their sums and differences, and a fifth's difference is the note an
+ * octave down: a power chord through a distortion is why a rock guitar
+ * sounds bigger than itself (Drive.mli). Measured on the tune's first
+ * G (392 Hz) and its D: the G an octave down, 196 Hz, 36.5 dB under
+ * the note driven, 79 dB under (nothing) clean. The drive keeps the
+ * level: the chord peaks at -9.8 dB, the square guitar it replaces at
+ * -10.5. *)
+let power_chord (s : Audio.sound) : Audio.sound = Audio.together [ s; Audio.pitched (Float.pow 2. (7. / 12.)) s ] |> Audio.drive 12.
+
+(* the song's voices but [kept], as a tune *)
+let only (kept : instrument) : Abc.tune =
+  List.fold_left (fun t i -> if i = kept then t else Rhythm.muted (voice_of i) t) tune instruments
+
 (* the band as each player hears it: the song with that player's part
- * muted, made once *)
+ * muted, the guitar apart, through its amplifier; made once *)
 let bands : (instrument * Audio.sound) list =
-  List.map (fun i -> (i, Audio.of_tune (Rhythm.muted (voice_of i) tune))) instruments
+  List.map
+    (fun i ->
+      let others = Audio.of_tune (Rhythm.muted (voice_of Guitar) (Rhythm.muted (voice_of i) tune)) in
+      (i, if i = Guitar then others else Audio.together [ others; power_chord (Audio.of_tune (only Guitar)) ]))
+    instruments
 
 (*****************************************************************************)
 (* The model *)
@@ -306,7 +328,9 @@ let update (computer : computer) (model : model) : model =
       in
       (* your notes just hit, heard; the ones missed never are *)
       List.iter
-        (fun at -> Audio.play (Audio.of_tune (Rhythm.struck tune (voice_of p.mine) at)))
+        (fun at ->
+          let note = Audio.of_tune (Rhythm.struck tune (voice_of p.mine) at) in
+          Audio.play (if p.mine = Guitar then power_chord note else note))
         (Rhythm.newly_hit before.perf p.perf);
       if booed p then begin
         Audio.stop "rockband";
