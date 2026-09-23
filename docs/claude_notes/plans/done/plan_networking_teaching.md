@@ -561,12 +561,20 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    draw from the past), netcode=server over a real network, lag
    compensation, delta compression, and the XPilot-like arena
    (TinyXpilot on a server).
-7. **Docs**: `notes_networking.md` checked against the code and its
+7. *(done, 2026-09-23)* **Docs**: `notes_networking.md` checked against the code and its
    numbers measured (bandwidth, delay, rollback's replays per frame),
    and the related-work note's postscript filled in. (The split into
    a tutorial and a related-work note this phase anticipated already
    happened, on 2026-09-20, before the code: the author noticed
    networking was the one area without them.)
+   Done as: the tutorial's §0 table the real modules, each section an
+   "as built" or "measured" paragraph where the code differs from the
+   design (bandwidth four times §2's, the packets sent every frame;
+   rollback's bookkeeping 63 lines, not "about twenty"; the knobs keys
+   in net=simulate, not -debug-keys; §12 the real API), a §13 for HTTP,
+   IRC and the universe; the related-work note's postscript filled with
+   numbers measured over Sim_net (a script over the real Lockstep and
+   Rollback). What is left is `plan_networking_remaining.md`.
 
 ## Verification
 

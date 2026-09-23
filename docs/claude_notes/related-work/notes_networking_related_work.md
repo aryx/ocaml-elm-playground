@@ -1,4 +1,4 @@
-# network/ vs. the rest of the multiplayer world
+# networking/ vs. the rest of the multiplayer world
 
 Where a small teaching netcode sits among the architectures the games
 industry actually ships -- lockstep RTSs, client-server shooters,
@@ -21,7 +21,7 @@ works) and
 | ENet, RakNet, GameNetworkingSockets, netcode.io, QUIC | Reliable-and-unreliable channels over UDP, done properly | A transport API: channels, fragmentation, congestion, encryption |
 | Croquet / TeaTime, distributed simulation (DIS, HLA) | Replicated computation as a platform | A deterministic world and a reflector that orders external events |
 | HtDP's `2htdp/universe` | Teaching beginners that programs can talk | A world with `on-receive`, and a server with `on-new` / `on-msg` -- no determinism asked for |
-| `network/` + `playground/Multiplayer` | Seeing *why* each of those exists, on a game you already have | `multiplayer ~players:2`, and a fake network with latency and loss on a key |
+| `networking/` + `playground/Multiplayer` | Seeing *why* each of those exists, on a game you already have | `Multiplayer.game ~players:2`, and a fake network with latency and loss on a key |
 
 ## Part 1: the games that invented it
 
@@ -198,16 +198,19 @@ inside a computer room in Rennes.
 reason: the same game, with the 1997 behaviour kept on a key beside
 lockstep and rollback.
 
-## Where `network/` and `Multiplayer` actually sit
+## Where `networking/` and `Multiplayer` actually sit
 
 Two levels, as everywhere here:
 
-- **`network/`, the library**, at the legible end: `Wire`, `Sim_net`,
-  `Lockstep`, `Rollback`, `Checksum` -- one idea each, with the
+- **`networking/`, the library**, at the legible end: `Wire`, `Sim_net`,
+  `Inputs`, `Lockstep`, `Rollback`, `Checksum`, `Snapshot`,
+  `Prediction`, `Interpolation` -- one idea each, with the
   simulated network making every one of them testable without a
   socket, and the two architectures switchable on a key so the
   difference between three frames of input delay and a rollback snap
-  can be *felt* rather than described.
+  can be *felt* rather than described (four netcodes, in fact, on the
+  key n: lockstep, rollback, 1997's wait for every answer, and a
+  server).
 - **`playground/Multiplayer`, the API**, at the simple end: one new
   concept (the `player`), and the same game running local,
   simulated, hosting or joining without a line changing -- beside
@@ -216,22 +219,51 @@ Two levels, as everywhere here:
 
 **The ceiling, stated now**: a handful of players, a LAN or a local
 relay, no matchmaking, no accounts, no encryption or authentication,
-no anti-cheat beyond what a server's own checks give, and no
-client-server snapshot engine until the "later" phase. What it is for
+no anti-cheat beyond what a server's own checks give; a client-server
+engine that predicts and reconciles, but only inside one program
+(`net=simulate`: its world travels as Marshal's bytes), without
+interpolation wired in, lag compensation or delta compression. What it is for
 is that two computers should be able to play Spacewar!, and that a
 reader should understand exactly which lie each technique tells to
 hide the speed of light.
 
-## Postscript: the numbers (to come)
+## Postscript: the numbers (measured, 2026-09-23)
 
-Once built: bytes per second on the wire for lockstep and for
-rollback; the input delay in frames at 0, 50 and 150 ms of simulated
-latency; rollback's replayed ticks per frame at the same latencies,
-and the frame time that costs; the loss rate at which lockstep starts
-stalling; and how many of this repository's games pass the
-determinism check of
-[`notes_networking.md`](../tutorials/notes_networking.md) §8 without
-changes (the honest number, and probably small at first).
+Two peers over `Sim_net`, 600 ticks, a byte of input a tick, the keys
+changing every 20 ticks (the tests' tiny game; a real game's update
+makes rollback's replays cost more, the rest the same):
+
+| one way | lockstep, delay 3: frames for 600 ticks | its bytes/s per peer | rollback: frames | ticks replayed (a frame) | deepest | its bytes/s |
+|---|---|---|---|---|---|---|
+| 0 ms | 600 (1.00x) | 2,381 | 601 | 30 (0.05) | 1 | 2,381 |
+| 30 ms | 600 (1.00x) | 2,740 | | | | |
+| 50 ms | 655 (1.09x) | 2,959 | 603 | 93 (0.15) | 4 | 3,016 |
+| 100 ms | 1,231 (2.05x) | 2,977 | 606 | 183 (0.30) | 7 | 3,708 |
+| 150 ms | 1,825 (3.04x) | 2,978 | 714 | 238 (0.33) | 8 (the cap) | 4,115 |
+
+- **Bytes on the wire**: a packet every frame, 12 to 22 bytes of
+  inputs and acks plus 28 of IP and UDP headers: 2,400 to 4,100 bytes a
+  second per peer, four times the tutorial's 620 for 20 packets a
+  second -- the headers, not the game.
+- **Input delay**: a fixed 3 ticks (50 ms), stalling past it: the game
+  at half speed at 100 ms, a third at 150.
+- **Loss**: at 30 ms, lockstep loses 2.5% of its speed to 10% loss, 6%
+  to 20%, 39% to 50% (every packet repeats the unacknowledged inputs).
+- **Rollback**: full speed to 100 ms, one rollback per change of the
+  other's keys, never more than 7 ticks replayed at once; at 150 ms
+  its 8-tick cap stalls it a little; its worst frame, 0.15 ms.
+- **No delay (1997's way)**: 1.5 frames a tick on a LAN, 3 at 30 ms, 7
+  at 100 ms.
+- **Client-server** (`Snapshot`, `Prediction`, 50 ms, 10% loss): a
+  client alone never mispredicted; two players 27 and 23
+  mispredictions in 600 ticks (about one per change of the other's
+  keys), the worlds agreeing at the end; at 100 ms, the clients a
+  handful of ticks ahead of the server (127 against 120).
+- **Determinism**: of this repository's games, the two written for
+  networking (`TinySpacewar`, `TinyTronscroll`) and `Tetris`
+  (converted, and tested with two clocks) pass the checklist; eight
+  still draw from the global `Random` -- the honest number, small, as
+  predicted.
 
 Sources: from memory unless linked, and to be checked before relying
 on them for teaching -- particularly the GGPO and rollback-in-shipped-

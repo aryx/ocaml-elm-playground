@@ -1,4 +1,4 @@
-# Multiplayer, from scratch: a tutorial for `network/`
+# Multiplayer, from scratch: a tutorial for `networking/`
 
 How two computers run the same game: what the network actually gives
 you (packets, late and lost), the three architectures built on top of
@@ -6,10 +6,11 @@ that (lockstep, rollback, client-server), and why this playground is
 an unusually good place to learn them -- a model that is a pure
 function of its inputs is already half of a netcode.
 
-It is the specification of the library planned in
-[`plan_networking_teaching.md`](../plans/plan_networking_teaching.md):
-written before the code, to be checked against it and have its numbers
-measured. Companions:
+It was the specification of the library planned in
+[`plan_networking_teaching.md`](../plans/done/plan_networking_teaching.md),
+written before the code; it has since been checked against it
+(2026-09-23), what was built differently said where it was, and its
+numbers measured (all of them in the related-work note's postscript). Companions:
 [`notes_networking_related_work.md`](../related-work/notes_networking_related_work.md)
 (Doom, Quake, Age of Empires, GGPO, and where ours stops) and
 [`notes_2d_physics.md`](notes_2d_physics.md), whose fixed time step is
@@ -17,17 +18,25 @@ this library's precondition.
 
 ## 0. Where the code is, and a reading order
 
-| module (`network/`) | what | section |
+The protocols are in `networking/`, pure OCaml, bytes in and bytes
+out, no system call -- so the tests need no network, and the browser
+runs them too; what opens sockets is in `networking/unix/`, native
+only.
+
+| module | what | section |
 |---|---|---|
-| `Wire` | values to bytes and back: varints, message headers, rejecting garbage | §2 |
+| `Wire` | values to bytes and back: varints, zigzag, garbage refused | §2 |
 | `Sim_net` | a network in one process: latency, jitter, loss, duplication, from a seed | §3 |
-| `Lockstep` | exchange inputs, simulate everywhere | §4 |
+| `Inputs` | the input exchange lockstep and rollback share: unacked inputs resent, acks, checksums | §4 |
+| `Lockstep` | wait for every input, with an input delay (0: 1997's way) | §4 |
 | `Checksum` | catching a desync before it becomes a mystery | §4 |
 | `Rollback` | predict the others, correct when wrong | §5 |
-| `Snapshot` (later) | a server owns the game; clients predict and interpolate | §6 |
-| `network/relay/` | the little server the browser needs | §7 |
-| `playground/Universe` | HtDP's other shape: worlds with a mailbox, and a server | §9 |
+| `Snapshot`, `Prediction`, `Interpolation` | a server owns the game; clients predict and interpolate | §6 |
+| `Transport`; `unix/Udp`, `unix/Tcp` | what carries packets; UDP between two computers | §7 |
+| `Websocket`; `unix/Server`, `unix/Relay`, `unix/Relay_client` | the browser's socket, and the relay it needs | §7 |
+| `playground/Universe`, `unix/Universe_server` | HtDP's other shape: worlds with a mailbox, and a server | §9 |
 | `playground/Multiplayer` | the Evan-style API over all of it | §12 |
+| `Url`, `Http`, `Irc`; `unix/Http_client`, `unix/Http_request`, `unix/Irc_server` | the protocols of §13, beyond games | §13 |
 
 Read §1-§2 for what the network is, §3 for the tool that makes the
 rest testable, §4-§6 for the three architectures in increasing order
@@ -104,6 +113,17 @@ Redundancy instead of retransmission: by the time you could ask for a
 lost input again, you have already received the next three. That one
 idea is most of what "handle loss yourself" means in practice.
 
+**As built** (`Inputs`), simpler than the above and more generous: a
+packet *every frame*, carrying every input the other side hasn't
+acknowledged yet, and acknowledging theirs -- so a lost packet is
+covered by the next one whatever the loss, and nothing ever waits for
+a resend. Measured (two peers, a byte of input a tick): 12 bytes a
+packet on a LAN, 22 at 100 ms (more inputs unacknowledged in flight),
+so 2,400 to 3,000 bytes a second per peer with the headers -- four
+times the 620 above, the price of 60 packets a second instead of 20.
+Sending a packet every third frame is the exercise that gets the 620
+back.
+
 ## 3. Build the fake network first
 
 The most useful module in the library is the one that never touches a
@@ -114,8 +134,9 @@ reordering, deterministically from a seed**.
 It is three tools at once:
 
 - **a teaching tool**: play both sides side by side in one window, and
-  *see* what player 2 sees -- with `-debug-keys`, one key adds 100 ms,
-  another 10% loss, the way the graphics keys toggle shading;
+  *see* what player 2 sees -- `net=simulate` (§12), where `[` and `]`
+  change the latency, `-` and `=` the loss, and `n` the netcode, the
+  way the graphics keys toggle shading;
 - **a testing tool**: the whole protocol runs in `make test`, with no
   sockets, no ports, no flakiness -- "after 1,000 ticks, every peer's
   model is identical, under any latency and loss" is a *unit test*;
@@ -180,6 +201,17 @@ Everything in §4 and §5 is machinery for not doing that: input delay
 pays 3 frames *once* instead of a round trip *every* frame, and
 rollback pays none at all and apologises afterwards.
 
+**Measured** (`Lockstep` over `Sim_net`, two peers, 600 ticks): with a
+delay of 3, full speed up to 30 ms one way; 1.09 times slower at 50
+(exactly the delay's budget); 2.05 times at 100 (600 ticks in 1,231
+frames: half speed); 3.04 at 150. Loss is cheap: at 30 ms, 10% of the
+packets lost costs 2.5% of the speed, 50% lost costs 39%, since every
+packet repeats what the lost ones carried. And with no delay at all
+-- tronscroll's way, `netcode=1997`, peer to peer here so a trip one
+way rather than a round trip -- a tick costs 1.5 frames even at 0 ms
+(each peer steps before the other's input of the tick has come), 3 at
+30 ms, 7 at 100: the slide show, measured.
+
 ## 5. Rollback: guess, and fix it afterwards
 
 Lockstep's three-frame delay is exactly what a fighting game cannot
@@ -207,7 +239,18 @@ Saving every tick's state is the part that is painful in C++ and free
 here: **old models are immutable values**, so "save state" is keeping
 the last few in a list, with all the unchanged parts shared. The
 rollback library the fighting-game world standardised on is, in this
-architecture, about twenty lines of bookkeeping.
+architecture, a page of bookkeeping: `Rollback.ml`'s guessing, fixing
+and confirming are 63 lines, and not one of them copies a model.
+(This note first said "about twenty"; three times that, honestly
+counted.)
+
+**Measured** (600 ticks, the keys changing every 20 ticks): full speed
+up to 100 ms (606 frames), paid in replays -- 30 rollbacks (one a
+change of the other's keys), 30 ticks replayed at 0 ms, 93 at 50, 183
+at 100, never more than 7 at once; at 150 ms the 8 ticks it may guess
+ahead run out, and it stalls a little (714 frames). The worst frame
+costs 0.15 ms with the tests' tiny game: a real game's replays cost its
+update times the depth, the budget to watch.
 
 ## 6. Client and server: more players, and the browser
 
@@ -233,6 +276,21 @@ send only what changed), but no desyncs possible and cheating gets
 harder: in lockstep every peer holds the whole world, so a hacked
 client sees through walls by construction.
 
+**As built**: `Snapshot` (the server applies each player's inputs in
+order, one a tick, and repeats the last when the next is late -- the
+game never waits for a slow client; the world goes out every 3 ticks,
+20 a second, with each client's last input applied), `Prediction` (the
+client plays its own inputs at once, the others' guessed from their
+latest, and reconciles on each snapshot), `Interpolation` (a buffer
+drawn 100 ms behind). Measured over 600 ticks at 50 ms: a client alone
+is never mispredicted; with another player whose keys change 30 times,
+27 and 23 mispredictions, about one a change, each corrected, the
+worlds agreeing at the end. In `net=simulate` the server's screen sits
+between the two clients', and the clients run a few ticks *ahead* of
+it (127 against 120 at 100 ms): each lives in the server's near future.
+Not built: interpolation in `Multiplayer` (the game must say which
+parts are "the others"), lag compensation, delta compression.
+
 ## 7. Getting connected at all
 
 Two homes cannot usually reach each other: each router's **NAT**
@@ -247,6 +305,16 @@ channels**, which can be unreliable and unordered like UDP and do the
 hole punching for you, at the price of a signalling server. Either
 way the web backend needs a small server, which is why the plan
 includes one.
+
+**As built**: UDP between two computers (`net=host`, `net=join`: the
+host learns its player from the first datagram, no handshake), and the
+relay (`net=relay`): a WebSocket server (`Websocket`, RFC 6455, its
+handshake needing SHA-1, `crypto/Sha1`) that every player connects out
+to, which numbers the players as they come and copies each one's
+packets to the others -- the game still peer to peer, only the route
+through a middleman everyone can reach. Its event loop, `unix/Server`,
+also serves §9's universe and §13's IRC. Not built: hole punching,
+WebRTC.
 
 ## 8. What makes a game networkable
 
@@ -265,7 +333,13 @@ checklist because it is what actually fails:
 
 This project has been quietly paying for that property since the
 physics plan's fixed step, and the golden-frame tests are its proof at
-one machine's scale. Lockstep is simply the same property, checked by
+one machine's scale. For randomness, `Playground.random` and `pick`
+keep a seed in the model (`random/Lehmer`, the same numbers natively
+and in a browser); `Tetris.ml` was converted and is checked by a test
+(one seed, the same keys, Ticks from two different clocks: the same
+checksum every second). The honest count of networkable games: the two
+written for it, `TinySpacewar` and `TinyTronscroll`, and Tetris; eight
+games still draw from the global `Random`. Lockstep is simply the same property, checked by
 a second computer -- which is also why the networking phases wait for
 `plan_playground_other.md`'s seeded randomness.
 
@@ -313,6 +387,15 @@ The two APIs therefore both exist here: `Multiplayer` (§4-§6, one
 simulation, everywhere) and `Universe` (this section, many worlds, one
 postbox), with the same transport underneath.
 
+**As built**: `playground/Universe` (a Bigbang world whose handlers
+return a package, the world and the messages to send, and
+`on_receive`), `unix/Universe_server` (the universe: a state and
+`on_new`, `on_msg`, `on_disconnect` returning bundles, on HtDP's port,
+4567) -- the relay's event loop with the program's handlers where the
+relay has its rule. Messages are strings. The example is
+2htdp/universe's first: `examples/UniverseBall.ml`, a ball passed from
+world to world.
+
 ## 10. Compared with GGPO, ENet, Quake 3, Source and WebRTC
 
 Who invented what, and the whole landscape, is
@@ -323,8 +406,8 @@ and the game hands it callbacks -- `save_game_state`,
 `load_game_state`, `advance_frame` -- because a C++ game's state is
 mutable memory that must be copied into a buffer every tick and
 copied back on a rollback. Here "save" is keeping a value and "load"
-is using an old one (§5), which is where §5's "about twenty lines"
-comes from, to be checked against the code. ENet is the other
+is using an old one (§5), which is where §5's page of bookkeeping
+comes from (63 lines, measured). ENet is the other
 reference point: reliable and unreliable sequenced channels,
 fragmentation, a connection handshake, bandwidth throttling -- a
 transport. We have none of that: one message type per tick and
@@ -337,7 +420,10 @@ and nothing else.
 ships and four torpedoes are 112 bytes; at 20 packets a second with
 §2's 28 bytes of headers, (112 + 28) x 20 = 2,800 bytes/s, 4.5 times
 lockstep's 620, and growing with every torpedo, where lockstep's does
-not. Quake 3's answer is to send each snapshot as a **delta** against
+not. The playground's `netcode=server` sends Marshal's bytes of the whole
+model instead, bigger still, and readable only by a copy of the same
+program -- a codec of the game's own over `Wire` is what a real
+network needs. Quake 3's answer is to send each snapshot as a **delta** against
 the last one the client acknowledged, all over plain UDP: a lost
 packet costs nothing but a larger next delta, against an older base.
 Valve's Source engine adds §6's other half: other players drawn 100
@@ -354,8 +440,9 @@ accepts §1's head-of-line blocking in the browser.
 
 ## 11. What's missing, and exercises
 
-Beyond the plan's phases (the snapshot engine, the relay, WebRTC are
-already there as "later"), in rough order of difficulty:
+Beyond what was built (WebRTC and the rest are in
+[`plan_networking_remaining.md`](../plans/plan_networking_remaining.md)),
+in rough order of difficulty:
 
 - **adaptive input delay**: measure the round trip and pick the delay
   from it (half the RTT, in ticks, plus one) instead of §4's fixed
@@ -388,7 +475,19 @@ already there as "later"), in rough order of difficulty:
   without the relay carrying every packet (§7);
 - **cross-platform determinism**: run the lockstep test of §8 between
   the native and the web backends; if floats diverge (and whether they
-  do is the experiment), make the physics fixed-point (§8).
+  do is the experiment), make the physics fixed-point (§8);
+- **a packet every third frame**, three inputs in each, to bring §2's
+  measured 2,400 bytes a second down to its 620 (`Inputs`);
+- **interpolation in `Multiplayer`**: a hook where the game says what
+  of the others to draw from the past, so that `netcode=server` shows
+  them smoothly (`Interpolation`, §6);
+- **`netcode=server` between computers**, the world encoded by the
+  game over `Wire` instead of Marshal (§6);
+- **TinyTronscroll's 8 players**, as the original had: a `players=`
+  flag, and more panels in `net=simulate` -- the relay already seats
+  any number (§7);
+- **plain TCP for IRC**, so that `irssi` talks to our server and
+  TinyIRC to the real networks (§13).
 
 ## 12. In the playground
 
@@ -396,20 +495,45 @@ Evan-style, the new concept is the **player** -- everyone's input,
 where `computer` is yours:
 
 ```ocaml
-type player = { id : int; keyboard : keyboard; mouse : mouse }
+type player = { id : int; keyboard : keyboard; pressed : keyboard }
 
-val multiplayer :
-  players:int ->
-  (computer -> int -> 'model -> shape list) ->   (* view, for player n *)
-  (time -> player list -> 'model -> 'model) ->   (* update, everyone's input *)
-  'model -> ('model, msg) app
+val Multiplayer.game :
+  ?network:< Cap.network ; .. > -> ?split:bool -> players:int ->
+  (computer -> int -> 'model -> shape list) ->            (* view, for player n *)
+  (computer -> player list -> 'model -> 'model) ->        (* update, everyone's input *)
+  'model -> ('model state game, msg) app
 ```
 
-and the same game runs four ways without a line changing: `-local`
-(two players, one keyboard, as in 1962), `-simulate` (both sides in
-one window through §3's fake network, with latency and loss on keys),
-`-host` / `-join address` (two machines). Spacewar! is the flagship,
-Pong the simplest test.
+`update` gets a *cleaned* computer -- no keyboard, no mouse (they are
+in the players), a fixed screen, ticks for time, the flags -- since
+anything that differs between computers breaks §8; `pressed` is each
+player's keys that went down this tick, from the inputs themselves.
+The same game then runs without a line changing, chosen by flags:
+`net=local` (one keyboard; `?split` gives each player a window),
+`net=simulate` (two computers side by side through §3's fake network,
+`latency=`, `loss=` and the keys), `net=host` / `net=join` (UDP),
+`net=relay` (WebSocket, a browser too); and `netcode=lockstep`,
+`rollback`, `1997` or `server`. `TinySpacewar` is the flagship,
+`TinyTronscroll` (the author's own 1997 game) the three eras side by
+side. A program reaching the network says so in its type: it passes
+its `Cap.network` (plan_caps.md).
+
+## 13. Beyond games: requests and chat
+
+The plan was about games; three protocols came along, each teaching
+one idea:
+
+- **HTTP** (`Url`, `Http`, `unix/Http_client`): a request and its
+  answer, the four ways a body ends, redirections resolved by RFC
+  3986's algorithm -- written to replace curl for `http://` (`https://`
+  needs TLS: `crypto/` is its start). `Playground.Http.get`, Elm's, is a
+  command performed without blocking the frames (`unix/Http_request`:
+  a non-blocking state machine over `select`, the event loop on one
+  socket).
+- **IRC** (`Irc`, `unix/Irc_server`, `apps/internet/TinyIRC`): chat as
+  lines of text a person could type, a server keeping nicks and
+  channels, over WebSocket so that a browser joins.
+- **The universe** (§9): messages between programs, no determinism.
 
 ## Glossary
 
