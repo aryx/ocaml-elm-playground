@@ -1,0 +1,15 @@
+; claude: the protocols, the bytes other programs agree on: Url (RFC
+; 3986), Http (HTTP/1.1 messages), Websocket (RFC 6455), Irc (RFC 1459),
+; Wire (values as bytes: varints, zigzag, garbage refused), and
+; Transport, where a peer's packets go whatever carries them. Pure
+; OCaml, no sockets (networking/unix/ has them). See networking/README.md.
+(library
+ (name networking_protocols)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   crypto ; Sha1, for Websocket's handshake
+   elm_core ; Base64, for it too
+   caps ; Cap.network, which opening a Transport takes
+ )
+)

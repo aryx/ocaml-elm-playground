@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Oscillator's band-limited waveforms: PolyBLEP's two samples
+(* Oscillator's band-limited waveforms: PolyBLEP's two samples
  * per jump, and the aliases gone from the spectrum *)
 
 let t = Testo.create

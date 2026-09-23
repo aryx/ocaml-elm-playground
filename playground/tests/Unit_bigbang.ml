@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/Bigbang: the worked examples of Bigbang.mli *)
+(* Bigbang: the worked examples of Bigbang.mli *)
 
 open Playground
 

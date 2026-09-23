@@ -30,11 +30,14 @@
  * zero-delay, nonlinear), the contours' curves (straight or
  * exponential), the oscillators' drift, and their band-limiting -- the
  * simple and the better versions of notes_synth.md, on the same patch,
- * heard and seen on the spectrum.
+ * heard and seen on the spectrum. Key 5 puts the reverb before the
+ * drive in the effects rack: the order's lesson (Rack.mli), the mud.
+ * The effects (the button above the panel): drive, EQ, delay, reverb,
+ * each switched on by its rocker.
  *
  * Uses: Minimoog_voice (the voice), Audio's instruments (the voice
- * played live), Gui (the knobs, rockers and rotary switches), Spectrum
- * (the display). Not: Scene2d, Sprite, the physics, File_menu yet.
+ * played live), Rack (the effects, audio/effects/), Gui (the knobs,
+ * rockers and rotary switches), Spectrum (the display). Not: Scene2d, Sprite, the physics, File_menu yet.
  *
  * Exercises: saving and opening patches with the File menu
  * (appkits/file_menu; the text is Minimoog_voice.to_string); the
@@ -59,6 +62,8 @@ type model = {
   held : string list; (* the letters held at the last frame *)
   mouse_note : int option; (* the key the mouse holds down *)
   options : Minimoog_voice.options;
+  rack_shown : bool; (* under the panel, the effects instead of the scope *)
+  reverb_first : bool; (* the rack's order: the mud of a drive after a reverb *)
 }
 
 let presets = Minimoog_voice.presets
@@ -73,6 +78,8 @@ let initial_model : model =
     held = [];
     mouse_note = None;
     options = Minimoog_voice.analog;
+    rack_shown = false;
+    reverb_first = false;
   }
 
 (* the voice lives with the sound, not in the model: the mixer pulls
@@ -153,12 +160,42 @@ let places =
     place "glide.on" 455. 250. "GLIDE";
   ]
 
+(* the effects rack, in the strip under the panel, in the rack's order *)
+let rack_y = -60.
+
+let rack_places =
+  [
+    place "drive.on" (-455.) rack_y "";
+    place "drive.shape" (-390.) rack_y "SHAPE";
+    place "drive.gain" (-315.) rack_y "DRIVE";
+    place "drive.oversampling" (-275.) rack_y "X4";
+    place "eq.on" (-240.) rack_y "";
+    place "eq.bass" (-206.) rack_y "BASS";
+    place "eq.middle" (-160.) rack_y "MID";
+    place "eq.treble" (-114.) rack_y "TREBLE";
+    place "delay.on" (-62.) rack_y "";
+    place "delay.time" (-22.) rack_y "TIME";
+    place "delay.feedback" 26. rack_y "REPEAT";
+    place "delay.tone" 74. rack_y "TONE";
+    place "delay.pingpong" 112. rack_y "PING";
+    place "delay.mix" 150. rack_y "MIX";
+    place "reverb.on" 190. rack_y "";
+    place "reverb.kind" 255. rack_y "ROOM";
+    place "reverb.time" 330. rack_y "TIME";
+    place "reverb.damping" 378. rack_y "DAMP";
+    place "reverb.mix" 426. rack_y "MIX";
+  ]
+
+let rack_headers = [ ("DRIVE", -365.); ("EQ", -170.); ("DELAY", 44.); ("REVERB", 308.) ]
+
 let headers =
   [ ("CONTROLLERS", -425.); ("OSCILLATOR BANK", -210.); ("MIXER", 15.); ("MODIFIERS", 195.); ("OUTPUT", 430.) ]
 
 (* the rotary switches' positions, short enough to fit around them *)
 let short (name : string) : string list =
-  if Filename.check_suffix name ".range" then [ "LO"; "32"; "16"; "8"; "4"; "2" ]
+  if name = "drive.shape" then [ "hard"; "tanh"; "x3"; "asym" ]
+  else if name = "reverb.kind" then [ "1962"; "free"; "plate" ]
+  else if Filename.check_suffix name ".range" then [ "LO"; "32"; "16"; "8"; "4"; "2" ]
   else if name = "osc3.wave" then [ "tri"; "rev"; "saw"; "sq"; "wide"; "narr" ]
   else [ "tri"; "shark"; "saw"; "sq"; "wide"; "narr" ]
 
@@ -218,8 +255,12 @@ let update (computer : computer) (m : model) : model =
   Gui.set_theme Theme.default;
   let preset = Gui.menu computer ~at:(330., 482.) (List.map fst presets) m.preset in
   let patch = if preset <> m.preset then snd (List.nth presets preset) else m.patch in
+  let rack_shown = if Gui.button computer ~at:(95., 482.) (if m.rack_shown then "scope" else "effects") then not m.rack_shown else m.rack_shown in
   Gui.set_theme panel_theme;
   let patch = List.fold_left (control computer) patch places in
+  (* the rack's controls only when shown: hidden, they'd still take the
+   * mouse *)
+  let patch = if m.rack_shown then List.fold_left (control computer) patch rack_places else patch in
   (* the letters: pressed and let go since the last frame *)
   let now = Set_.elements computer.keyboard.keys in
   let pressed k = List.mem k now && not (List.mem k m.held) and released k = List.mem k m.held && not (List.mem k now) in
@@ -257,11 +298,14 @@ let update (computer : computer) (m : model) : model =
     else if pressed "4" then { o with band_limited = not o.band_limited }
     else o
   in
+  let reverb_first = if pressed "5" then not m.reverb_first else m.reverb_first in
+  if reverb_first <> m.reverb_first then
+    Rack.reorder (Minimoog_voice.rack voice) (if reverb_first then [ "reverb"; "drive"; "eq"; "delay" ] else [ "drive"; "eq"; "delay"; "reverb" ]);
   Minimoog_voice.set_patch voice patch;
   Minimoog_voice.set_options voice options;
   inst.set "mod_wheel" mod_wheel;
   inst.set "pitch_wheel" pitch_wheel;
-  { patch; preset; octave; mod_wheel; pitch_wheel; held = now; mouse_note = under; options }
+  { patch; preset; octave; mod_wheel; pitch_wheel; held = now; mouse_note = under; options; rack_shown; reverb_first }
 
 (* {1 view} *)
 
@@ -326,6 +370,20 @@ let spectrum_view (samples : Signal.t) : shape list =
   in
   (rectangle (rgb 25 20 10) w h |> move cx cy) :: List.init bars bar
 
+(* the rack: its sections, black as the panel, between the same lines;
+ * the rockers switch each stage on *)
+let rack_view : shape list =
+  [ rectangle (rgb 25 25 25) 960. 140. |> move 0. (-55.) ]
+  @ List.map (fun (h, x) -> words white_ink h |> scale 1.3 |> move x 0.) rack_headers
+  @ List.map (fun x -> rectangle (rgb 90 90 90) 2. 120. |> move x (-55.)) [ -258.; -80.; 170. ]
+  @ List.filter_map
+      (fun pl ->
+        if pl.label = "" then None
+        else
+          let below = if Filename.check_suffix pl.name ".shape" || Filename.check_suffix pl.name ".kind" then 30. else 38. in
+          Some (text pl.label |> move pl.x (pl.y - below)))
+      rack_places
+
 let keyboard_view (computer : computer) (m : model) : shape list =
   let letter_of s = List.find_map (fun (k, s') -> if s' = s then Some k else None) letters in
   let down s =
@@ -355,16 +413,18 @@ let wheel_view (x : number) (value : number) (label : string) : shape list =
 
 let status (m : model) : string =
   let o = m.options in
-  Printf.sprintf "1 ladder: %s   2 contours: %s   3 drift: %s   4 oscillators: %s" (Moog_ladder.name o.ladder)
+  Printf.sprintf "1 ladder: %s   2 contours: %s   3 drift: %s   4 oscillators: %s   5 rack: %s" (Moog_ladder.name o.ladder)
     (match o.curve with Linear -> "straight" | Exponential -> "exponential")
     (if o.drift then "on" else "off")
     (if o.band_limited then "band-limited" else "naive")
+    (if m.reverb_first then "reverb first" else "drive first")
 
 let view (computer : computer) (m : model) : shape list =
   let samples = Minimoog_voice.recent voice in
   [ rectangle (rgb 215 205 190) computer.screen.width computer.screen.height ]
   @ [ words black "TinyMinimoog" |> scale 2.4 |> move (-360.) 482.; words black "preset" |> scale 1.5 |> move 230. 482. ]
-  @ panel_view @ scope_view samples @ spectrum_view samples
+  @ panel_view
+  @ (if m.rack_shown then rack_view else scope_view samples @ spectrum_view samples)
   @ [ words (rgb 70 70 70) (status m) |> scale 1.4 |> move 0. (-137.) ]
   @ wheel_view pitch_wheel_x m.pitch_wheel "PITCH"
   @ wheel_view mod_wheel_x ((m.mod_wheel * 2.) - 1.) "MOD"

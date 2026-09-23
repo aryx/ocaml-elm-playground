@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Zobrist and ai/Deepening: the keys and the table, and a search
+(* Zobrist and Deepening: the keys and the table, and a search
  * that goes deeper -- it must answer what alpha-beta answers, however
  * many tricks are switched on *)
 

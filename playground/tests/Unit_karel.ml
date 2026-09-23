@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/Karel: the worked examples of Karel.mli *)
+(* Karel: the worked examples of Karel.mli *)
 
 open Karel
 

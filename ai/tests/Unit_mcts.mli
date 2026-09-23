@@ -1,2 +1,2 @@
-(* ai/Mcts *)
+(* Mcts *)
 val tests : Testo.t list

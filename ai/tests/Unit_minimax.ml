@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Minimax: the .mli's tree, alpha-beta agreeing with minimax, and
+(* Minimax: the .mli's tree, alpha-beta agreeing with minimax, and
  * tic-tac-toe searched to the end *)
 
 let t = Testo.create

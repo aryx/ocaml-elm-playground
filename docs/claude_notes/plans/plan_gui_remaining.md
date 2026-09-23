@@ -2,7 +2,7 @@
 
 The GUI plan is done: see
 [`done/plan_gui_teaching.md`](done/plan_gui_teaching.md) (`gui/`, the
-four architectures, `playground/Gui`, `appkits/`, and the eight apps of
+four architectures, `Gui`, `appkits/`, and the eight apps of
 `apps/`, phases 0-12) and its tutorial,
 [`notes_gui.md`](../tutorials/notes_gui.md), whose §16 has the numbers.
 What's left, roughly from most to least worth doing. Anything that

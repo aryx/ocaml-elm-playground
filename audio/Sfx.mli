@@ -18,10 +18,10 @@
  *     attack, sustain, decay     its envelope: up, held, down
  *                                (Envelope.mli; an attack of at least
  *                                5 ms, the no-click ramp)
- *     vibrato, jump              pitch effects (Effect.mli)
+ *     vibrato, jump              pitch effects (Pitch_effect.mli)
  *     low_pass, high_pass        filters, the low-pass's cutoff moving
  *                                (Filter.mli): subtractive synthesis
- *     echo, reverb               a delay line, a room (Effect.mli)
+ *     echo, reverb               a delay line, a room (Synth.mli)
  *
  *       level
  *         1 |   ________

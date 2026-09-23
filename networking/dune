@@ -1,20 +1,20 @@
 ; claude: networking, from scratch, for teaching: one idea per module,
 ; each .mli with its diagram, worked example and references, like
-; physics/, audio/ and ai/ (see
-; docs/claude_notes/plans/plan_dependencies_remaining.md section 2, and
-; plan_networking_teaching.md for the games' part). The protocols only,
-; pure OCaml, no sockets: a message is bytes in, bytes out, so the
-; tests need no network and every backend, the web one included, can
-; use them. The sockets are networking/unix/. A private library,
-; installed as part of elm_playground.
+; physics/, audio/ and ai/ (see networking/README.md,
+; plan_dependencies_remaining.md section 2, and
+; plan_networking_teaching.md for the games' part). Pure OCaml, no
+; sockets: a message is bytes in, bytes out, so the tests need no
+; network and every backend, the web one included, can use them. The
+; sockets are networking/unix/.
+;
+; A library per subdirectory, protocols/ then netcode/ on it; this one,
+; 'networking', has no module of its own: it is both, for what says
+; (libraries networking). Unwrapped, or dune would make it a module
+; Networking.
 (library
  (name networking)
  (package elm_playground)
  (wrapped false)
- (libraries
-   random ; Lehmer, Sim_net's seeded network
-   crypto ; Sha1, for Websocket's handshake
-   elm_core ; Base64, for it too
-   caps ; Cap.network, which opening a Transport takes
- )
+ (modules)
+ (libraries networking_protocols networking_netcode)
 )

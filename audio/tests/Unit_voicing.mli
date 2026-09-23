@@ -1,3 +1,3 @@
-(* audio/Voicing: priorities, legato, glide *)
+(* Voicing: priorities, legato, glide *)
 
 val tests : Testo.t list

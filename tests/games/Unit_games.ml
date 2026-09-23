@@ -192,7 +192,7 @@ let boomerang_modes () =
 (* the delay: it acts on what it saw six frames ago, so when the world
    changes under it, it keeps answering the old world for six frames.
    (A bot that has only just started acts on the oldest senses it has,
-   which is this frame's -- ai/Bot.mli: the delay is a memory, not a
+   which is this frame's -- Bot.mli: the delay is a memory, not a
    blindfold.) *)
 let boomerang_delay () =
   let open TinyBoomerangFu in
@@ -233,7 +233,7 @@ let boomerang_delay () =
 (* AiConnect4 *)
 (*****************************************************************************)
 
-(* claude: what each trick of ai/Deepening saves, on the opening
+(* claude: what each trick of Deepening saves, on the opening
    position searched 7 moves ahead -- the numbers Deepening.mli quotes.
    Each line adds one thing to the line above *)
 let connect4_nodes () =

@@ -6,7 +6,7 @@ The algorithms and their games are done: see
 trees and utility, senses and bots, minimax and alpha-beta, iterative
 deepening with a transposition table, Monte Carlo tree search and the
 two hooks a network goes in, and the learning half from one neuron to
-Q-learning), the Evan-style layer `playground/Ai` with `Ai_debug`, the
+Q-learning), the Evan-style layer `Ai` with `Ai_debug`, the
 eleven `examples/Ai*.ml`, the demo games `AiTictactoe`, `AiOthello`,
 `AiConnect4`, `AiChess`, `AiGo`, and the tutorials
 [`notes_ai.md`](../tutorials/notes_ai.md),

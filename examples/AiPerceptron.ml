@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* The first learning machine, learning while you watch (ai/Neuron.mli,
+(* The first learning machine, learning while you watch (Neuron.mli,
  * notes_ai_learning.md section 1). Click to drop a blue point, hold
  * shift (or right-click) for a red one, and the line walks into place:
  * one example at a time, and it only ever moves when it is wrong.
@@ -45,8 +45,8 @@
  * Keys: click blue, shift-click (or right-click) red, "x" XOR, "a" AND,
  * "c" clear, "space" one example at a time or running, "r" new weights.
  *
- * What it uses: ai/Neuron (the whole of the learning), Scene2d (the
- * keys). Not playground/Ai: this is the algorithm itself, not a game
+ * What it uses: Neuron (the whole of the learning), Scene2d (the
+ * keys). Not the Ai layer: this is the algorithm itself, not a game
  * asking for an opponent. *)
 open Playground
 open Basics (* float arithmetics *)

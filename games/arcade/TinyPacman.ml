@@ -39,7 +39,7 @@
  * (?ai=engine on the web), as Asteroid and TinyMario choose their
  * physics: by default, the states change wherever the event happens --
  * a pellet eaten in [eat], a ghost caught in [collide], arrivals in
- * [move_ghost]; with ai=engine, a ghost is an ai/Fsm machine, its whole
+ * [move_ghost]; with ai=engine, a ghost is an Fsm machine, its whole
  * life one table of rules ([mind_rules]), and the scatter/chase waves a
  * second machine ([wave_rules]). The same game either way (the tests
  * play both); the table is easier to read, and changes a state a frame
@@ -122,7 +122,7 @@ type name = Blinky | Pinky | Inky | Clyde
  * eaten: its eyes going back to the house *)
 type state = Waiting of int | Leaving | Hunting | Eyes
 
-(* the same states as a machine for ai/Fsm (the ai=engine flag, see
+(* the same states as a machine for Fsm (the ai=engine flag, see
  * "The ghosts as state machines" below), blue a state of its own *)
 module Mind = struct
   type t = Waiting | Leaving | Hunting | Frightened | Eyes
@@ -215,7 +215,7 @@ let next_random = Chase.next_random
 (*****************************************************************************)
 
 (* With the flag ai=engine (?ai=engine on the web), the ghosts' states
- * change by the rules below, run by ai/Fsm, instead of by the lines of
+ * change by the rules below, run by Fsm, instead of by the lines of
  * [eat], [collide], [move_ghost] and [update_game] that change them by
  * default. Everything else -- the targets, the moves, the scoring, the
  * drawing -- is the same code for both. What the machine version buys
@@ -304,7 +304,7 @@ type game = {
   pause : (pause * int) option; (* a pause, and its frames left *)
   rng : int;
   frames : int;
-  (* the ghosts on ai/Fsm (ai=engine) *)
+  (* the ghosts on Fsm (ai=engine) *)
   ai_engine : bool;
   waves : wave Fsm.run; (* in place of [mode_frames] *)
   pellet : bool; (* a power pellet eaten this frame *)

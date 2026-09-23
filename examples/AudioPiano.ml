@@ -18,8 +18,8 @@
  *
  * Space switches the waveform (sine, square, triangle, sawtooth): the
  * same notes, a flute, a clarinet-ish NES pulse, a soft bass, brass --
- * the timbre, the recipe of harmonics (audio/Oscillator.mli); and a
- * fifth, not a waveform at all: a plucked string (audio/Pluck.mli,
+ * the timbre, the recipe of harmonics (Oscillator.mli); and a
+ * fifth, not a waveform at all: a plucked string (Pluck.mli,
  * noise in a delay line, bright then mellow as it rings). Each note
  * is an equal-tempered frequency (audio/Music.mli: A4 = 440 Hz, a
  * semitone 2^(1/12) higher each) and fades like a plucked string.

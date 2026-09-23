@@ -18,25 +18,27 @@ this library's precondition.
 
 ## 0. Where the code is, and a reading order
 
-The protocols are in `networking/`, pure OCaml, bytes in and bytes
-out, no system call -- so the tests need no network, and the browser
-runs them too; what opens sockets is in `networking/unix/`, native
-only.
+The protocols and the netcode are in `networking/`, pure OCaml, bytes
+in and bytes out, no system call -- so the tests need no network, and
+the browser runs them too: `protocols/` the bytes other programs agree
+on, `netcode/` the multiplayer games' machinery on top of them
+(`networking/README.md`); what opens sockets is in `networking/unix/`,
+native only.
 
 | module | what | section |
 |---|---|---|
-| `Wire` | values to bytes and back: varints, zigzag, garbage refused | §2 |
-| `Sim_net` | a network in one process: latency, jitter, loss, duplication, from a seed | §3 |
-| `Inputs` | the input exchange lockstep and rollback share: unacked inputs resent, acks, checksums | §4 |
-| `Lockstep` | wait for every input, with an input delay (0: 1997's way) | §4 |
-| `Checksum` | catching a desync before it becomes a mystery | §4 |
-| `Rollback` | predict the others, correct when wrong | §5 |
-| `Snapshot`, `Prediction`, `Interpolation` | a server owns the game; clients predict and interpolate | §6 |
-| `Transport`; `unix/Udp`, `unix/Tcp` | what carries packets; UDP between two computers | §7 |
-| `Websocket`; `unix/Server`, `unix/Relay`, `unix/Relay_client` | the browser's socket, and the relay it needs | §7 |
-| `playground/Universe`, `unix/Universe_server` | HtDP's other shape: worlds with a mailbox, and a server | §9 |
-| `playground/Multiplayer` | the Evan-style API over all of it | §12 |
-| `Url`, `Http`, `Irc`; `unix/Http_client`, `unix/Http_request`, `unix/Irc_server` | the protocols of §13, beyond games | §13 |
+| `protocols/Wire` | values to bytes and back: varints, zigzag, garbage refused | §2 |
+| `netcode/Sim_net` | a network in one process: latency, jitter, loss, duplication, from a seed | §3 |
+| `netcode/Inputs` | the input exchange lockstep and rollback share: unacked inputs resent, acks, checksums | §4 |
+| `netcode/Lockstep` | wait for every input, with an input delay (0: 1997's way) | §4 |
+| `netcode/Checksum` | catching a desync before it becomes a mystery | §4 |
+| `netcode/Rollback` | predict the others, correct when wrong | §5 |
+| `netcode/Snapshot`, `Prediction`, `Interpolation` | a server owns the game; clients predict and interpolate | §6 |
+| `protocols/Transport`; `unix/Udp`, `unix/Tcp` | what carries packets; UDP between two computers | §7 |
+| `protocols/Websocket`; `unix/Server`, `unix/Relay`, `unix/Relay_client` | the browser's socket, and the relay it needs | §7 |
+| `playground/ways/Universe`, `unix/Universe_server` | HtDP's other shape: worlds with a mailbox, and a server | §9 |
+| `playground/apis/Multiplayer` | the Evan-style API over all of it | §12 |
+| `protocols/Url`, `Http`, `Irc`; `unix/Http_client`, `unix/Http_request`, `unix/Irc_server` | the protocols of §13, beyond games | §13 |
 
 Read §1-§2 for what the network is, §3 for the tool that makes the
 rest testable, §4-§6 for the three architectures in increasing order
@@ -352,7 +354,7 @@ world, sending each other messages through a server.**
 
 That is HtDP's `2htdp/universe` (Felleisen, Findler, Flatt and
 Krishnamurthi, *How to Design Programs*), and this playground already
-has its other half: `playground/Bigbang` runs a *world program* -- a
+has its other half: `Bigbang` runs a *world program* -- a
 world, `to_draw`, `on_tick`, `on_key`. Its `.mli` even names the
 missing piece, in its list of what big-bang has and we do not:
 "universe, several world programs and a server exchanging messages:
@@ -387,7 +389,7 @@ The two APIs therefore both exist here: `Multiplayer` (§4-§6, one
 simulation, everywhere) and `Universe` (this section, many worlds, one
 postbox), with the same transport underneath.
 
-**As built**: `playground/Universe` (a Bigbang world whose handlers
+**As built**: `Universe` (a Bigbang world whose handlers
 return a package, the world and the messages to send, and
 `on_receive`), `unix/Universe_server` (the universe: a state and
 `on_new`, `on_msg`, `on_disconnect` returning bundles, on HtDP's port,

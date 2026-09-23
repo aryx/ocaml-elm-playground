@@ -46,7 +46,7 @@ let title = "Playground (software rasterizer)"
  *  - "o": optimizations on/off, i.e. the original simple code instead
  *    of the optimized one (see Opti); watch the fps
  *  - "z": the pixel magnifier (Magnifier), following the mouse
- *  - "l": band-limited oscillators on/off (audio/Oscillator.mli), the
+ *  - "l": band-limited oscillators on/off (Oscillator.mli), the
  *    sounds' aliases back; hear it on examples/AudioPiano.exe's high
  *    notes, see it with "v"
  *  - "m": stereo on/off, everything mixed down to one channel (the

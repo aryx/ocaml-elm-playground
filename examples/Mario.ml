@@ -62,7 +62,7 @@ let view computer mario =
  *    per 1/100 of a second (x moves dt * vx per frame, dt = 1.666, so
  *    vx = 1 is 100 pixels per second), gravity subtracting dt / 8 from
  *    vy at every frame;
- *  - the physics engine (playground/Physics.mli): the same Mario as a
+ *  - the physics engine (Physics.mli): the same Mario as a
  *    body, in pixels and seconds -- walking at 100 px/s, jumping at
  *    500 px/s, falling at 1250 px/s^2 (the same numbers, converted).
  *

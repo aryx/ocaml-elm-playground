@@ -277,7 +277,7 @@ measured on the way and the mistakes caught.
 | phase | done | left |
 |---|---|---|
 | 0-2 | samples, WAVs, oscillators, noise, envelopes, mixing | |
-| 3 | `Synth`, `Mixer`, `playground/Audio`, SDL | |
+| 3 | `Synth`, `Mixer`, `Audio`, SDL | |
 | 4 | the web: our samples in an AudioBuffer | Web Audio's own nodes, for comparison |
 | 5 | `Spectrum`, the oscilloscope and spectrum overlay | |
 | 6 | PolyBLEP, PolyBLAMP, `Filter`, `Fm` | |
@@ -292,7 +292,7 @@ TinyBreakout, Asteroid, Pong, TinyPong, Snake, Tetris, TinyStarFox,
 and some thirty with the ready-made sounds. Open exercises:
 `notes_audio.md` section 12.
 
-- **The API decision (2026-09-19), before phase 3**: `playground/Audio.mli`
+- **The API decision (2026-09-19), before phase 3**: `Audio.mli`
   (not `Sound`), Evan-style like `Physics.mli`, but **stateful** for
   the triggering, as the user suggested: sounds fit the pure
   Model-View-Update loop badly, and a beginner's "play a blip when the
@@ -343,7 +343,7 @@ and some thirty with the ready-made sounds. Open exercises:
   pull, no zipper noise) and `Mixer` (the stateful part: one-shots read
   through, continuous voices kept by name, the sum through tanh, at
   most 32 one-shots so a backend not pulling can't pile them up).
-  `playground/Audio.mli`, Evan-style: `tone`, `square`, `triangle`,
+  `Audio.mli`, Evan-style: `tone`, `square`, `triangle`,
   `sawtooth`, `noise`, `note`; `lasting`, `fading`, `louder`,
   `sliding`, `together`, `after`; ready-made sounds after sfxr's
   categories (our own recipes, credited to sfxr's idea; the coin C6 then
@@ -476,7 +476,7 @@ and some thirty with the ready-made sounds. Open exercises:
   noise in a percussion one (ten times the zero crossings). Used by
   TinyGuitarHero's backing drummer and by TinyRockBand's drum part,
   charted from the keys.
-- **Phase 5, DONE**: `audio/Spectrum`: the DFT by its definition (N^2)
+- **Phase 5, DONE**: `Spectrum`: the DFT by its definition (N^2)
   and the FFT (Cooley-Tukey, radix 2, recursive: the butterfly), both
   kept, the first checking the second; magnitudes scaled so a sine of
   amplitude A reads A; the Hann window; bins to frequencies. Tests
@@ -484,7 +484,7 @@ and some thirty with the ready-made sounds. Open exercises:
   spectrum, a cosine's bins 1 and 7 at 4), FFT = DFT on random
   signals, a sine on a bin's one peak at its amplitude, a square of
   period 64's odd harmonics within 2% of 4 / (pi k) and its even ones
-  at 0, Parseval. The debug overlay, `playground/Audio_debug`
+  at 0, Parseval. The debug overlay, `Audio_debug`
   (Playground shapes, so any backend could draw it): the software
   backend's "v" key (with -debug-keys) cycles an oscilloscope (the
   last 23 ms, triggered on a rising zero crossing) and a spectrum (an
@@ -503,12 +503,12 @@ and some thirty with the ready-made sounds. Open exercises:
   price the 9th harmonic 1.2 dB quieter. `Synth`'s `Wave` is now the
   band-limited one, `Naive` the old one (`Audio.naive`): the Frere
   Jacques golden WAVs changed only on the jumps (3667 of 3669 samples),
-  TinyMario's spectrum frame barely (its notes are low). `audio/Filter`:
+  TinyMario's spectrum frame barely (its notes are low). `Filter`:
   the one-pole (a = 0.133 at 1 kHz: -3.00 dB at the cutoff) and the
   biquad (Bristow-Johnson's cookbook: low, high, band-pass; -3.01 dB at
   the cutoff, Q = 10's +20 dB), `response` from the transfer function
   equal to the gain measured on filtered sines, and `sweep` (the wah:
-  +14 dB as the cutoff passes a 1 kHz sine, Q = 5). `audio/Fm`
+  +14 dB as the cutoff passes a 1 kHz sine, Q = 5). `Fm`
   (Chowning): the sidebands' amplitudes checked against the Bessel
   functions to 0.001; a fading FM voice's index follows its envelope (a
   bell's spectral centroid 1948 Hz at 0.1 s, 687 at 1.5 s). `Synth`'s
@@ -568,7 +568,7 @@ and some thirty with the ready-made sounds. Open exercises:
   rounding); levels, one every 10 lines, the fall 30% faster each, the
   theme 10% faster (`change_loop` at a new level); a thud when a piece
   lands, a chime for lines, an arpeggiated chord for four; `music=off`.
-  `audio/Pluck`: Karplus-Strong, the delay line from the NES's LFSR
+  `Pluck`: Karplus-Strong, the delay line from the NES's LFSR
   (warmed up 5000 steps: from 1 its first 200 bits average -0.49, a
   first version rang around an offset) less its mean; tests
   (`Unit_pluck`): A3's line 200 samples, its pitch, its ring dying
@@ -605,7 +605,7 @@ and some thirty with the ready-made sounds. Open exercises:
   `Space.interaural_delay` (Woodworth's r (theta + sin theta) / c: 29
   samples to the side), applied to a panned one-shot's far channel by
   `render_stereo`, switched by `Space.ears_apart`; continuous sounds
-  keep to the level (a moving delay: an exercise). `playground/Audio3d`
+  keep to the level (a moving delay: an exercise). `Audio3d`
   (in the 3D library): the camera as the listener, its right ahead x
   up, checked against `Playground3d.project` for four cameras (a point
   drawn on the right is heard on the right); `heard` pans, delays,
@@ -613,7 +613,7 @@ and some thirty with the ready-made sounds. Open exercises:
   lasers, enemy shots, explosions, the nearest three enemies' engines
   (measured coming at ~77 Hz for 70 x 1.11, lower gone).
 - **Phase 10, DONE: recordings**: `Wav.of_string` walks the chunks,
-  mixes stereo down, resamples other rates; `audio/Resample`, nearest,
+  mixes stereo down, resamples other rates; `Resample`, nearest,
   linear, cubic (a fifth up: -39.6, -79.2, -112.5 dB to 689 Hz; -27.3,
   -54.6, -75.3 to 2756 Hz; at exactly 1.5 the cubic looked -133 dB, the
   reads falling on two phases only: measured at a real fifth instead).

@@ -14,7 +14,7 @@
  *
  * This module knows nothing of the playground: a widget draws itself
  * as [paint], a list of coloured rectangles and pieces of text, and
- * playground/Gui.ml turns those into shapes. That is what lets the
+ * Gui.ml turns those into shapes. That is what lets the
  * toolkit be tested without a screen, and drawn by every backend.
  *
  * Coordinates are the playground's: (0, 0) at the center of the
@@ -57,7 +57,7 @@ val bottom : box -> float
 
 (* What a widget knows about the person, this frame: everything the
  * playground's [computer] has that a widget can use, and nothing else
- * (playground/Gui.ml fills it in). [mclick] is the frame the button
+ * (Gui.ml fills it in). [mclick] is the frame the button
  * was released, [typed] the characters that frame produced. *)
 type input = {
   mx : float;

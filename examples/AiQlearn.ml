@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* A walker learning a grid world by falling off a cliff
- * (ai/Qlearn.mli, notes_ai_learning.md section 8). Nobody tells it
+ * (Qlearn.mli, notes_ai_learning.md section 8). Nobody tells it
  * where to go: it is told only what each step costs, and the way to
  * the goal appears out of that, one episode at a time.
  *
@@ -45,7 +45,7 @@
  * Keys: space pause, f faster, e exploring on/off, p the other
  * rewards, g the greedy walk, r start over.
  *
- * What it uses: ai/Qlearn (all of it), Scene2d (the keys). *)
+ * What it uses: Qlearn (all of it), Scene2d (the keys). *)
 open Playground
 
 (*****************************************************************************)

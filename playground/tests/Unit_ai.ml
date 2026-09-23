@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/Ai: the four families that wrap ai/ (steering, the
+(* Ai: the four families that wrap ai/ (steering, the
  * fifth, is drawn by examples/AiSteering and examples/AiFlock) *)
 
 let t = Testo.create

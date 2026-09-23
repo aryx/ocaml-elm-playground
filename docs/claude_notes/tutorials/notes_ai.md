@@ -19,18 +19,18 @@ because it means a page of code can produce something that looks alive.
 
 ## 0. Where the code is, and a reading order
 
-| module (`ai/`) | what | section |
+| module (`ai/`, a folder per question: `ai/README.md`) | what | section |
 |---|---|---|
-| `Pathfind` (done) | breadth-first, Dijkstra, A*, flow fields | §2, §3 |
-| `Steering` (done) | seek, flee, arrive, wander, pursue, avoid | §4 |
-| `Flock` (done) | separation, alignment, cohesion | §5 |
-| `Fsm`, `Behavior`, `Utility` (done) | choosing what to do | §6 |
-| `Sense`, `Bot` (done) | a mind that plays through the player's own inputs | §6 |
-| `Minimax` (done) | the game tree, and alpha-beta | §7, §8 |
-| `Deepening`, `Zobrist` (done) | making the search go deeper | §9 |
-| `Mcts` (done) | playing without an evaluation function | §10 |
-| `playground/Ai` (done) | the Evan-style API over all of it | §14 |
-| `playground/Ai_debug` (done) | drawing what it thinks | §11 |
+| `movement/Pathfind` (done) | breadth-first, Dijkstra, A*, flow fields | §2, §3 |
+| `movement/Steering` (done) | seek, flee, arrive, wander, pursue, avoid | §4 |
+| `movement/Flock` (done) | separation, alignment, cohesion | §5 |
+| `decision/Fsm`, `Behavior`, `Utility` (done) | choosing what to do | §6 |
+| `bots/Sense`, `Bot` (done) | a mind that plays through the player's own inputs | §6 |
+| `search/Minimax` (done) | the game tree, and alpha-beta | §7, §8 |
+| `search/Deepening`, `Zobrist` (done) | making the search go deeper | §9 |
+| `search/Mcts` (done) | playing without an evaluation function | §10 |
+| `playground/apis/Ai` (done) | the Evan-style API over all of it | §14 |
+| `playground/apis/Ai_debug` (done) | drawing what it thinks | §11 |
 
 Read §2 to §5 for the real-time half (a world at 60 fps), §7 to §10
 for the turn-taking half (an opponent). They barely touch. §6 is where
@@ -294,7 +294,7 @@ walk -- are mostly this: careful restriction, not clever search.
 It is also the one place in game AI where the type system does the
 teaching. If a bot's mind is `senses -> intent`, then a bot that peeks
 at the whole world *does not compile*, and "no cheating" stops being a
-promise and becomes a signature. `ai/Sense` and `ai/Bot` are that
+promise and becomes a signature. `Sense` and `Bot` are that
 door, and nothing more: the mind behind them is the steering, the
 state machine and the pathfinding of the sections above, unchanged.
 `Sense` keeps, per target, whether it is visible (the game says
@@ -431,7 +431,7 @@ Every one of these is in the engines, and every one is small:
   elsewhere (killer moves). Cheap, and worth more than a whole extra
   ply of search.
 
-Three of the four are `ai/Deepening` and `ai/Zobrist`, and Connect 4's
+Three of the four are `Deepening` and `Zobrist`, and Connect 4's
 opening searched 7 moves ahead says what each is worth
 (`AiConnect4.ml`, the numbers checked in `tests/games`):
 
@@ -537,7 +537,7 @@ needs is why AiGo still plays out at random.
 ## 11. Seeing what it thinks
 
 Every algorithm here is invisible by default and obvious once drawn,
-which is why `playground/Ai_debug` is a first-class piece rather than
+which is why `Ai_debug` is a first-class piece rather than
 a convenience. Four drawings, one per thing an AI does, each a single
 call and each returning plain shapes:
 
@@ -640,7 +640,7 @@ In rough order of difficulty:
 
 ## 14. In the playground
 
-The API (`playground/Ai.mli`) follows Evan's rule -- values
+The API (`Ai.mli`) follows Evan's rule -- values
 and small named things, not machinery. Steering behaviours are forces
 on `Physics.body`, so they stack with gravity and thrust and each
 other:

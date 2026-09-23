@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/Sprite *)
+(* Sprite *)
 
 let t = Testo.create
 

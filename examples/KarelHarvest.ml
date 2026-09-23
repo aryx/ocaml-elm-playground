@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* Pattis's harvest (playground/Karel.mli), written in OCaml: Karel
+(* Pattis's harvest (Karel.mli), written in OCaml: Karel
  * picks up a field of beepers, row by row, as you watch (space: again).
  *
  * The whole lesson is in the three lets: a row is harvested once, in

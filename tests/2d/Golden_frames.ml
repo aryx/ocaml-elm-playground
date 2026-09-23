@@ -290,7 +290,7 @@ let scenes : Testutil_golden.scene list =
     ("games/rpg/software/TinyDungeonMaster", "", 5);
     ("games/shmup/software/TinyZaxxon", "", 5);
     ("games/rpg/software/TinyDiablo", "", 5);
-    (* a whole game as a map and one rule (playground/Puzzlescript) *)
+    (* a whole game as a map and one rule (Puzzlescript) *)
     ("examples/software/PuzzleScriptSokoban", "", 5);
     ("examples/software/PuzzleScriptBoulders", "", 5);
   ]
@@ -1005,6 +1005,13 @@ let scripted : Testutil_golden.scripted list =
       "playing",
       40,
       "at(115;360):1-10,at(115;380):11-14,at(115;400):15-40,click:5-30,a:5-40,d:20-40" );
+    (* claude: the effects rack instead of the scope (the button at the
+     * top), the drive, the delay and the reverb switched on by their
+     * rockers *)
+    ( "apps/music/software/TinyMinimoog",
+      "effects",
+      20,
+      "at(95;482):1-5,click:3,at(-455;-60):6-9,click:8,at(190;-60):10-13,click:12,at(-62;-60):14-17,click:16" );
     (* the tracker edited: C-2 and D-2 typed on the piano's lower row
      * (the cursor going down after each), then C20 typed in hex on the
      * next row's effect *)

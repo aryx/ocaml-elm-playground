@@ -28,7 +28,9 @@ two envelopes, glide, oscillator 3 turned into an LFO, the modulation
 wheel. Its panel is a fixed signal path you read left to right, no
 patch cords: the right size for a Tiny program and for a first
 lesson. Its successors come in the same order the history went (see
-"The collection" below): the TB-303, the DX7, the Juno.
+"The collection" below): the TB-303, the DX7, the Juno, and the
+originals behind Yamaha's Reface series, the Hammond, the Rhodes and
+the CS-80.
 
 Companion, written ahead of the code as its specification, like
 `notes_audio.md`: `docs/claude_notes/tutorials/notes_synth.md`, and
@@ -139,7 +141,7 @@ block from.
 (* audio/Mixer.mli *)
 val instrument : t -> string -> (int -> Signal.stereo) -> unit
 
-(* playground/Audio.mli, Evan-style *)
+(* Audio.mli, Evan-style *)
 type instrument
 val instrument : string -> instrument     (* made once, kept by name *)
 val note_on : instrument -> string -> unit  (* "C4" *)
@@ -366,11 +368,65 @@ blocks:
 | **TinyTB303** | TB-303 Bass Line (Roland, 1981) | a sequencer in the audio clock (16 steps, accent, slide), the diode ladder (18 dB/octave-ish, why it squelches), an envelope whose decay the accent shortens: acid, playing itself |
 | **TinyDX7** | DX7 (Yamaha, 1983) | FM with six operators, the 32 algorithms as small graphs, operator feedback, the 4-rate/4-level envelopes; reading real `.syx` cartridges (the published 4096-byte format; the user brings their own, as for music=) |
 | **TinyJuno** | Juno-106 (Roland, 1984) | polyphony (six voices, `Voicing`'s stealing), a digitally controlled oscillator with a sub-oscillator, PWM, and its stereo chorus |
+| **TinyHammond** | Hammond B-3 (1955) and the Leslie 122 | **additive synthesis**: nine drawbars mixing sines, the tonewheels' not-quite-equal temperament, percussion, key click, the scanner vibrato; the Leslie, a rotating speaker, as a Doppler shift plus a tremolo (`Space.doppler`) |
+| **TinyRhodes** | Fender Rhodes Mark I (1970), and the Wurlitzer 200A and Clavinet D6 as variants | **modal / physical modelling**: a struck tine as a few decaying sine modes, the pickup's asymmetric nonlinearity (the "bark"), the Suitcase's stereo tremolo; the Clavinet a struck string (`Pluck`) |
+| **TinyCS80** | Yamaha CS-80 (1977) | **polyphony with two layers** per voice, the ribbon controller, polyphonic aftertouch, the ring modulator: Vangelis's Blade Runner brass |
+
+The last three, with TinyDX7, are the originals behind Yamaha's
+Reface series (next section). Between them they cover the four ways
+of making a sound: subtractive (TinyMinimoog, TinyCS80), FM
+(TinyDX7), additive (TinyHammond), physical (TinyRhodes).
 
 A **TinyVirtualSynth** hub (the collection in one program, as
-TinyOffice gathers the office apps) only if the four make it worth
-it; a **pedalboard** app (the effects alone, on a recording or the
+TinyOffice gathers the office apps) only if the instruments make it
+worth it; the Reface-shaped **TinyReface** (below) is one such hub. A
+**pedalboard** app (the effects alone, on a recording or the
 microphone, which is out of scope) likewise later.
+
+## The Reface series, and the originals it revives
+
+Yamaha's Reface (2015) is four small keyboards, the same case and 37
+mini keys each, and each a modern tribute to a family of classic
+instruments. Building the Reface keyboards themselves would copy
+tributes; the **originals** are the machines with the history, the
+famous sounds and the published papers -- the same choice as
+TinyMinimoog, after the Model D, not a modern Moog. The Reface is
+then the map, and its reductions (4 operators in place of 6, one
+organ in five types) useful as "the simple version" switches.
+
+| Reface | What it revives | Tiny version | What it teaches that's new |
+|---|---|---|---|
+| **YC** (organs) | Yamaha YC-45D, Hammond, Vox Continental, Farfisa, Ace Tone | **TinyHammond** (B-3 + Leslie, 1955) | **Additive synthesis**: 9 drawbars mixing sines, percussion, key click. The Leslie: a Doppler shift plus a tremolo, `Space.doppler` already there. The Vox and Farfisa as variants: square/divider organs, filtered, a subtractive organ next to the additive one. |
+| **CP** (electric pianos) | Rhodes, Wurlitzer, Clavinet, CP-80 (and a toy piano) | **TinyRhodes** (Fender Rhodes Mark I, 1970) | **Physical/modal modelling**: a struck tine as a few decaying modes, the pickup's nonlinearity. The Wurlitzer a reed and an electrostatic pickup (another nonlinearity), the Clavinet a struck string (`Pluck`, Karplus-Strong). The Reface CP's effects row (drive, tremolo/wah, chorus/phaser, delay, reverb) is this plan's phases 6 and 7 in order. |
+| **DX** (4-operator FM) | DX7 | **TinyDX7** (in the collection above) | **FM**. The Reface DX's 4 operators (and its feedback on every operator) as the "simple version" switch next to the DX7's 6. Four operators is the Sega Genesis's YM2612 too, and two the AdLib's OPL2 (`Fm.mli`): the games' FM chips, one lesson apart. |
+| **CS** (virtual analog) | CS-80 (1977), CS-01, CS-15 | **TinyCS80** | **Polyphony with two layers** per voice, the ribbon, polyphonic aftertouch. The Reface CS's five oscillator types (multi saw, pulse, sync, ring, FM) are mostly `Vco`'s already; the multi saw (a supersaw: several detuned saws) is the one new block. |
+
+Things decided, and to decide:
+
+- **Polyphony is the prerequisite.** Every Reface is polyphonic, and
+  `Voicing` is mono; stealing is planned for TinyJuno. The organ is
+  the easy start: a voice per key and nothing stolen (on a Hammond
+  every tonewheel is always turning; a key only connects it), so
+  polyphony comes in two steps -- `Voicing`'s keys held as a set
+  (TinyHammond, TinyRhodes: a voice per key, freed when silent), then
+  a fixed number of voices and stealing (TinyDX7's 16, TinyCS80's 8,
+  TinyJuno's 6).
+- **TinyCS80 overlaps TinyJuno**: both polyphonic subtractive. Keep
+  one, or keep both with the CS-80's lesson strictly its two layers,
+  the ribbon and the aftertouch (the Juno's its DCO and chorus). To
+  decide when the first of the two starts.
+- **Order**: TinyHammond first (additive, the simplest polyphony, the
+  Leslie a striking effect), then TinyRhodes, then TinyDX7 with its
+  4-operator switch, then TinyCS80 or TinyJuno.
+- **Facts looked up first**, as for the Model D (phase 4): the
+  B-3's service manual (the tonewheels' gear ratios, the drawbars'
+  foldback, the percussion's times, the scanner's taps), the Leslie
+  122's speeds and ramp times, the Rhodes service manual, the CS-80's
+  owner's manual, the Reface manuals (the DX's 12 algorithms). What is
+  not documented is ours, and said so in the `.mli`.
+- **A TinyReface hub** (the four behind one 37-key keyboard, a switch
+  for YC, CP, DX, CS), only once the four exist: a thin program over
+  their `music_voices` modules, as TinyOffice is over its parts.
 
 ## Phasing
 
@@ -422,6 +478,58 @@ microphone, which is out of scope) likewise later.
    phase list here when started; a live MIDI keyboard (the audio
    plan's leftover: an instrument is where it matters) with MIDI's
    control changes mapped to the knobs.
+11. *(later)* The Reface originals, in the order above, each with the
+   same shape as TinyMinimoog's phases 4 and 5 (the facts looked up,
+   the voice in `music_voices` with its presets and golden WAVs, then
+   the panel with its golden frames, `CATALOG.md`'s row, its web
+   page):
+   - **H1, polyphony step one**: `Voicing`'s keys held as a set, a
+     voice per key, freed once its envelope is idle; `Instrument`'s
+     voices summed. Tests: a chord's three voices, one freed after its
+     release, none leaking.
+   - **H2, TinyHammond's sound**: `Tonewheel` (91 wheels, their gear
+     ratios' frequencies against equal temperament, measured in
+     cents), the drawbars' nine footages (16', 5 1/3', 8', 4', 2 2/3',
+     2', 1 3/5', 1 1/3', 1') and their foldback at the ends of the
+     keyboard; percussion (2nd or 3rd harmonic, single-triggered, fast
+     or slow); key click; the scanner vibrato (a delay line tapped,
+     V1-V3, C1-C3). Tests: a drawbar setting's spectrum (888000000
+     its three sines, their levels), the percussion's decay times, the
+     tonewheels' A4 against 440.
+   - **H3, the Leslie**: horn and drum turning opposite ways, chorale
+     and tremolo, the ramp between speeds (the horn faster than the
+     drum): the Doppler and the amplitude from each rotor's angle, the
+     crossover splitting the sound between them. Tests: the horn's
+     pitch swing at a known speed and radius, the ramp's time
+     constant. Offered to the games too (`Audio.rotary`), as the
+     other effects.
+   - **H4, TinyHammond's panel**: the drawbars pulled with the mouse,
+     two manuals (upper and lower, the letters the upper), the Leslie's
+     switch, the presets as registrations ("888000000", "808808008").
+   - **R1, TinyRhodes's sound**: `Modal` (a mode as a two-pole
+     resonator struck, or a sine and its decay), a tine of a few
+     modes, their ratios and decays per key; the hammer's velocity
+     brightening it; the pickup (an asymmetric curve of the tine's
+     displacement: the bark), the Suitcase's stereo tremolo. The
+     Wurlitzer (a reed, the electrostatic pickup) and the Clavinet
+     (`Pluck` struck, the damper on release) as `~model` variants.
+     Tests: the modes' frequencies and decay times as set, the
+     pickup's 2nd harmonic growing with velocity, golden WAVs of each
+     model on the same phrase.
+   - **R2, TinyRhodes's panel**: the Stage 73's case, the tremolo's
+     rate and depth, the model switch, the effects row once phases 6
+     and 7 exist.
+   - **D1, TinyDX7** (its own list when started, as the collection
+     says), with the 4-operator, 12-algorithm Reface mode, and polyphony
+     step two (a fixed number of voices, stealing the oldest released
+     first, then the oldest).
+   - **C1, TinyCS80** (or TinyJuno, whichever is kept first): two
+     layers per voice, each a `Vco`, a high-pass and a low-pass
+     (`Svf`), an envelope; the ribbon (a pitch bend by position,
+     anywhere along it); polyphonic aftertouch (from a MIDI keyboard's
+     pressure, else the mouse's vertical position on a held key); the
+     ring modulator; the supersaw as a `Vco` option.
+   - **T1, TinyReface**, the hub, if the four make it worth it.
 
 ## Status
 
@@ -445,13 +553,13 @@ microphone, which is out of scope) likewise later.
 - **Phase 1, DONE (2026-09-23)**: the sources. `Oscillator.pulse` and
   `pulse_band_limited` (any width, two PolyBLEPs, the average 2w - 1
   taken away so PWM doesn't thump); the live oscillator is its own
-  module, `audio/Vco`, rather than more of `Oscillator` (the waveforms'
+  module, `Vco`, rather than more of `Oscillator` (the waveforms'
   formulas stay there): a frequency and a width per sample, and hard
   sync, the master recording where in each step it wraps, the slave
   correcting the sample before and the one after at that fraction, its
   own phase-0 jump's correction left out where the restart replaced
-  it. `audio/Lfo` (six shapes, naive on purpose, sample and hold,
-  `of_tempo`); `audio/Drift` (Ornstein-Uhlenbeck, stepped every 64
+  it. `Lfo` (six shapes, naive on purpose, sample and hold,
+  `of_tempo`); `Drift` (Ornstein-Uhlenbeck, stepped every 64
   samples of the audio clock); `Noise.lcg` and `uniform` (the LFSR's
   states are shifts of each other, poor random numbers; 32-bit ints in
   a browser handled). Tests (`Unit_vco`): the pulse's harmonics
@@ -475,7 +583,7 @@ microphone, which is out of scope) likewise later.
   level; `Linear` (the offline `level`'s values within a sample's step)
   or `Exponential` (one-poles towards targets, the attack aiming at 1.5
   to arrive at 1 in its time, the decay and release reaching a
-  thousandth of the distance in theirs). `audio/Voicing`, mono: the
+  thousandth of the distance in theirs). `Voicing`, mono: the
   keys held, priority `Low` (the Minimoog), `High`, `Last`; events
   `Begin`, `Change`, `End` for the voice; legato or `~retrigger`;
   `glide`, a one-pole in semitones, kept when the keys come up. Tests
@@ -489,7 +597,7 @@ microphone, which is out of scope) likewise later.
   `mono_legato_glide`, a phrase from Voicing, Vco and Envelope put
   together as `Minimoog_voice` will be. Polyphony (voice stealing) left
   for the Juno.
-- **Phase 3, DONE (2026-09-23)**: the filters. `audio/Moog_ladder` (not
+- **Phase 3, DONE (2026-09-23)**: the filters. `Moog_ladder` (not
   `Ladder`: the platformer kit has one, and both libraries are
   unwrapped), three
   models behind one `process` (the cutoff per sample, the resonance k,
@@ -508,7 +616,7 @@ microphone, which is out of scope) likewise later.
   = 4.2) and 0.12 (4.5), its 3rd harmonic 49.9, 24.3, 16.8, 10.6 dB
   under as the input goes 0.1, 0.5, 1, 4. A lesson on the way: at k = 4
   the zero-delay filter's 0 Hz gain first measured 0.0845, not 0.2 --
-  exactly at its threshold, a step sets off an undamped ring. `audio/Svf`,
+  exactly at its threshold, a step sets off an undamped ring. `Svf`,
   Chamberlin's and the zero-delay one (Simper's form), low, band, high,
   notch: -3.01 dB at the cutoff to 12 kHz; Chamberlin's blown up at 8
   kHz (stable to 7,637 Hz at Q = 0.707); a cutoff swept at audio rate,
@@ -558,7 +666,7 @@ microphone, which is out of scope) likewise later.
 - **Phase 5, DONE (2026-09-23)**: the panel. `gui/`: `Widget.paint`
   got a `Disc` and a `Segment` (a knob's face and pointer; the
   toolkit had drawn everything with rectangles and text), drawn by
-  `playground/Gui.ml`, printed by the gui and gui4 tests; `Theme` a
+  `Gui.ml`, printed by the gui and gui4 tests; `Theme` a
   `dial` size, `dial_face`, `pointer`; `Look.knob` (eleven ticks,
   270 degrees), `Look.rocker`, `Look.selector` (a rotary switch, its
   labels around it); `Immediate.knob` (dragged up or down, *relatively*:
@@ -582,6 +690,51 @@ microphone, which is out of scope) likewise later.
   0.52, C3 and E3 held). Left: saving patches with the File menu (an
   exercise in the header), the panel's own knob look (cream skirts, as
   the Model D's) and the wood's grain.
+- **Phase 6, DONE (2026-09-23)**: the gain and time effects, each a
+  streaming processor in `audio/`. `Drive`: four curves (hard, tanh,
+  the cubic, an asymmetric one, tanh biased by 0.3, for the even
+  harmonics), a 10 Hz DC blocker after them, oversampling x1, x2 or x4
+  (zeros stuffed, an 8th-order Butterworth at 18 kHz either side of the
+  curve; `Filter.biquad` got `?rate` for it). `Filter`: the cookbook's
+  `peaking`, `low_shelf`, `high_shelf`, and `process` (a block in
+  place). `Delay`: stereo, the time gliding to a new setting (a one-pole,
+  63% in 50 ms: the tape's pitch bend), read between samples, the
+  feedback through a one-pole low-pass, ping-pong, `beats`. `Reverb`:
+  Schroeder's streaming, Freeverb (Jezar's numbers, his all-pass as he
+  wrote it, each comb's feedback set from the time rather than his room
+  size), Dattorro's plate (the paper's lengths scaled from 29,761 Hz,
+  the tank's first all-passes modulated by 16 samples at 1 Hz, read
+  linearly), all three with the time to fall 60 dB as the knob, the
+  plate's decay from the loop's 0.725 s. `Rack`: drive, EQ (200 Hz
+  shelf, 1 kHz bell, 4 kHz shelf), delay, reverb, each switched on
+  separately; the order's reasons in its `.mli`. Tests
+  (`Unit_filter`'s EQ, `Unit_drive`, `Unit_delay`, `Unit_reverb`,
+  `Unit_rack`): the EQ's table at six frequencies, measured = formula;
+  the 5 kHz sine's loudest alias through tanh at +12 dB, -32.6 dB at
+  904 Hz (the 9th, folded, as notes_synth.md predicted), -58.6 dB at
+  3198 Hz with x2 (the 17th), -81.7 dB with x4; tanh without a 2nd
+  harmonic, the asymmetric curve with one; the echoes of a 200 Hz
+  burst 1, 0.499, 0.249, of an 8 kHz one 0.842, 0.131, 0.033 -- the
+  first echo's 0.842 the linear read's own low-pass (16,537.5 samples,
+  half-way between two: cos (pi 8000 / 44100)), a lesson found by the
+  test and written into `Delay.mli`; ping-pong left, right, left; T60
+  measured (T30 doubled) against 1 and 2 s: Schroeder 1.02 and 2.00,
+  Freeverb 1.00 and 2.00, the plate 1.14 and 1.94; damped, Freeverb's
+  highs dying in 0.58 s, the plate's in 1.24; a bypassed rack and a
+  flat EQ changing nothing. Golden WAVs, their spectrograms looked at
+  before approving (ffmpeg's `showspectrumpic`): `drive_sweep_naive_vs_x4`
+  (the aliases falling as the note rises, then gone),
+  `delay_dotted_eighth`, `reverb_rooms`. TinyMinimoog: the patch has an
+  `effects` field (`Rack.settings`, all off at first, so the presets'
+  golden WAVs didn't move), 19 controls in `knobs` in their own units,
+  so the text format carries them; the rack after the output, the
+  scope showing the sound as heard; under the panel, an "effects"
+  button swapping the scope and spectrum for the rack (its controls
+  only run while shown). Golden frames: the two old ones moved by the
+  button alone (3312 pixels each), `effects` new (the drive, delay and
+  reverb rockers clicked by a script). Left: the effects' knobs aren't
+  ramped over a block (a drive's dB jumped clicks a little); a preset
+  using the rack; the effects offered to the games, with phase 7's.
 
 ## Verification
 
@@ -603,4 +756,5 @@ microphone, which is out of scope) likewise later.
   equations, SPICE-like): the plan stops at Huovilainen's model.
 - Plugin formats (VST, AU, LV2), audio input, a DAW.
 - Sampled instruments (the Mellotron, the Fairlight): `AudioSampler`
-  and a MOD player are the audio plan's.
+  and a MOD player are the audio plan's. TinyRhodes and TinyHammond
+  are models, not recordings: that is their lesson.

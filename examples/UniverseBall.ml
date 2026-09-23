@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* The first universe of How to Design Programs' 2htdp/universe: a ball
- * passed from world to world (see playground/Universe.mli). This is a
+ * passed from world to world (see Universe.mli). This is a
  * world: it rests until the universe tells it "go", then lets its ball
  * fall, and says "done" when the ball reaches the bottom; the universe
  * (UniverseBallServer.ml) then gives the ball to the next world. Run

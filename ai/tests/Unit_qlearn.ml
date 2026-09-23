@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Qlearn: the cliff world of Sutton and Barto, what exploring is
+(* Qlearn: the cliff world of Sutton and Barto, what exploring is
  * for, and the oldest result in the subject -- a program that learns
  * a game by playing it, until it stops losing *)
 

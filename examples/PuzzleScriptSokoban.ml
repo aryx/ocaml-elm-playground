@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* Sokoban, written the PuzzleScript way (see playground/Puzzlescript.mli):
+(* Sokoban, written the PuzzleScript way (see Puzzlescript.mli):
  * there is no update function here and no view, only things, three maps,
  * one rule and what winning means. Arrows move, z undoes, r restarts.
  *

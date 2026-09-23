@@ -44,7 +44,7 @@
  *    time, so every game replays the same), runs towards or away, jumps
  *    or flies when the enemy is above, and throws a grenade at what it
  *    cannot see;
- *  - with ai=engine, on ai/Sense and ai/Bot: what a bot may know is a
+ *  - with ai=engine, on Sense and Bot: what a bot may know is a
  *    value rather than the world -- an enemy seen when nothing of the
  *    map is on the segment between them, remembered for 90 frames where
  *    it was last seen, nothing at all before that -- and it acts on
@@ -135,7 +135,7 @@ type soldier = {
  * mind *)
 type intent = { run : number; (* -1, 0, 1 *) jump : bool; jet : bool; shoot : bool; grenade : bool; aim : number }
 
-(* what a bot may know (ai/Sense.mli): where it is and how it is, and
+(* what a bot may know (Sense.mli): where it is and how it is, and
  * its nearest enemy -- seen now, or remembered where it was last seen,
  * or not known at all. Not the world: a bot cannot read through a wall
  * what it hasn't got *)
@@ -159,7 +159,7 @@ type play = {
   soldiers : soldier array;
   (* claude: with ai=engine, one per soldier: the senses it has seen
    * but not yet acted on, its memory of its enemy among them
-   * (ai/Bot.mli) *)
+   * (Bot.mli) *)
   minds : (senses, intent) Bot.running array;
   ai_engine : bool;
   bullets : bullet list;
@@ -259,7 +259,7 @@ let bot (p : play) (i : int) : intent =
 (*****************************************************************************)
 (* claude: with the flag ai=engine (?ai=engine on the web), the same
  * three soldiers on the ai/ layer, as TinyPacman's ghosts choose
- * between hand-written lives and ai/Fsm machines. The difference is
+ * between hand-written lives and Fsm machines. The difference is
  * not the tactics -- those are the same numbers below -- but what a
  * bot is allowed to know and how fast it may act on it. *)
 
@@ -284,9 +284,9 @@ let senses_of (was : senses option) ((p, i) : play * int) : senses =
 (* the mind: nearer than 120, back off; farther than 260, go; in
  * between, strafe. Shoot what it sees, lob a grenade at what it
  * remembers, and aim with an error that settles the longer the enemy
- * stays in sight (ai/Bot.mli).
+ * stays in sight (Bot.mli).
  *
- * claude: a bot that knows only what it can see (ai/Sense.mli) needs
+ * claude: a bot that knows only what it can see (Sense.mli) needs
  * one thing the old one didn't: somewhere to go when it sees nobody.
  * The old bot took the nearest enemy through the walls and never had
  * to look for anyone -- which is exactly the cheat this layer is here
@@ -315,7 +315,7 @@ let decide (s : senses) : intent =
       }
 
 (* a human's reaction is about a quarter of a second, and no hand
- * changes its mind sixty times a second (ai/Bot.mli) *)
+ * changes its mind sixty times a second (Bot.mli) *)
 let mind : (play * int, senses, intent) Bot.t =
   Bot.make ~delay:12 ~rate:4 ~sense:senses_of ~decide ()
 
@@ -577,7 +577,7 @@ let help =
          space  shoot            q      a grenade
   mouse: aim; click to shoot
   flags: hitboxes  draw what the physics sees
-         ai=engine the bots on ai/Sense and ai/Bot instead of by hand
+         ai=engine the bots on Sense and Bot instead of by hand
   e.g.   dune exec games/arcade/TinySoldat.exe -- hitboxes
 |}
 

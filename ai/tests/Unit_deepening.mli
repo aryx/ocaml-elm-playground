@@ -1,2 +1,2 @@
-(* ai/Zobrist and ai/Deepening *)
+(* Zobrist and Deepening *)
 val tests : Testo.t list

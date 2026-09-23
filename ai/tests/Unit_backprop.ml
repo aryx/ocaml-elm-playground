@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Net and ai/Backprop: the worked example by hand, the backward
+(* Net and Backprop: the worked example by hand, the backward
  * pass against finite differences, the vanishing gradient measured,
  * and XOR -- the thing one neuron could not do *)
 

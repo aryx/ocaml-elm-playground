@@ -9,7 +9,7 @@
  *)
 (* A cave after Boulder Dash (Peter Liepa and Chris Gray, First Star,
  * 1984): dig through the dirt, take every diamond, and mind the
- * boulders. Written on playground/Puzzlescript.mli, like
+ * boulders. Written on Puzzlescript.mli, like
  * examples/PuzzleScriptSokoban.ml -- the same engine, four other rules,
  * and it is another game. That is the whole argument for the thing.
  *

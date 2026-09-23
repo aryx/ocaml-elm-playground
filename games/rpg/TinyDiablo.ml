@@ -39,7 +39,7 @@
  *    Populous, Syndicate, Age of Empires, Diablo -- is played with one.
  *
  *  - **Click to walk is a path, not a step**: A* from the cell you are
- *    in to the cell you clicked (one line of Ai.way, over ai/Pathfind:
+ *    in to the cell you clicked (one line of Ai.way, over Pathfind:
  *    the same search TinyTowerDefense uses for its creeps), then walked one cell at a
  *    time. The pathfinding is the *player's*, which is unusual: in
  *    most games it belongs to the enemies. Here the monsters are the

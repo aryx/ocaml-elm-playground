@@ -4,7 +4,7 @@ The engine and its games are done: see
 [`done/plan_physics_teaching.md`](done/plan_physics_teaching.md)
 (`physics/2d/`, phases 0-9: integrators, forces, collisions,
 rotation, the broad phase, stacking, springs and particles; the
-`playground/Physics` API; Orbit, Bounce, Marbles, Boxes, Pyramid,
+`Physics` API; Orbit, Bounce, Marbles, Boxes, Pyramid,
 Elastic; TinyWorms, TinySpacewar, TinyPong, TinyCameltry,
 TinySlingshot, TinySoldat, and Asteroid's `physics=engine`) and the
 tutorial, [`notes_2d_physics.md`](../tutorials/notes_2d_physics.md). What's left,

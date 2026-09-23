@@ -1,3 +1,6 @@
+; claude: its own stanzas, not part of playground/dune's include_subdirs
+(include_subdirs no)
+
 (library
  (public_name elm_playground_web)
  (implements elm_playground)

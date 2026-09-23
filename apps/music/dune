@@ -28,7 +28,7 @@
  (name music_voices)
  (wrapped false)
  (modules Minimoog_voice Our_songs)
- (libraries audio audio_mod))
+ (libraries audio audio_instruments audio_effects audio_mod))
 
 (executables
   (names TinyMinimoog TinySoundtracker)

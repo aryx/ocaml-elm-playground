@@ -18,30 +18,34 @@ same mistake, with the same cure.
 
 ## 0. Where the code is, and a reading order
 
-(`Abc`, `Doremi`, `Midi` and `Wav`, the files tunes and sounds are kept
-in, are under `audio/formats/`, a directory and a library each; the
-others are in `audio/` itself.)
+(`audio/` is a library per subdirectory: `signal/` the samples and
+what's computed on them, `synthesis/` the building blocks of a sound,
+`audio/` itself the engine; `Abc`, `Doremi`, `Midi` and `Wav`, the
+files tunes and sounds are kept in, are under `formats/`, a directory
+and a library each; the live blocks of a synthesizer's voice under
+`instruments/` and the live effects under `effects/`, both in
+`notes_synth.md`.)
 
-| module (`audio/`) | what | section |
+| module | what | section |
 |---|---|---|
-| `Signal` | samples, sample rate, time | §1, §2 |
-| `Oscillator` | sine, square, triangle, sawtooth; naive and band-limited | §3, §6 |
-| `Noise` | random signals; the NES's LFSR | §3 |
-| `Envelope` | ADSR: how a sound starts and ends | §4 |
-| `Mix` | adding sounds, volume, decibels, clipping | §5 |
-| `Spectrum` | the Fourier transform: which frequencies a sound has | §6 |
-| `Filter` | low-pass, high-pass, resonance | §7 |
-| `Fm` | FM synthesis: sidebands from two sines | §7 |
+| `signal/Signal` | samples, sample rate, time | §1, §2 |
+| `synthesis/Oscillator` | sine, square, triangle, sawtooth; naive and band-limited | §3, §6 |
+| `synthesis/Noise` | random signals; the NES's LFSR | §3 |
+| `synthesis/Envelope` | ADSR: how a sound starts and ends | §4 |
+| `signal/Mix` | adding sounds, volume, decibels, clipping | §5 |
+| `signal/Spectrum` | the Fourier transform: which frequencies a sound has | §6 |
+| `synthesis/Filter` | low-pass, high-pass, resonance | §7 |
+| `synthesis/Fm` | FM synthesis: sidebands from two sines | §7 |
 | `Synth` | a sound as a tree of voices, rendered; slides | §8 |
-| `Effect`, `Sfx` | vibrato, jump, arpeggio, echo, reverb; sfxr's parameters and buttons | §8 |
-| `Pluck` | a plucked string: Karplus-Strong, tuned | §8 |
+| `Pitch_effect`, `Sfx` | vibrato, jump, arpeggio; sfxr's parameters and buttons (the echo and the reverb: `Synth`'s) | §8 |
+| `synthesis/Pluck` | a plucked string: Karplus-Strong, tuned | §8 |
 | `Space` | stereo: the pan laws, the ears' delay, distance, air, Doppler | §5 |
-| `Music`, `Abc`, `Doremi`, `Midi` | notes, equal temperament, tunes as text, MIDI files | §9 |
-| `Resample` | recordings at other pitches and rates: nearest, linear, cubic | §9 |
+| `Music`, `formats/`' `Abc`, `Doremi`, `Midi` | notes, equal temperament, tunes as text, MIDI files | §9 |
+| `signal/Resample` | recordings at other pitches and rates: nearest, linear, cubic | §9 |
 | `Mixer` | the sounds playing, pulled by the sound card | §10 |
 | `Instrument` | a sound played live, a block at a time: see [`notes_synth.md`](notes_synth.md) | §10 |
-| `Wav` | samples in a file, written and read | §2, §9 |
-| `playground/Audio`, `Audio3d`, `Audio_debug` | the Evan-style API over all of it; heard from a 3D camera; the sound seen | §13 |
+| `formats/Wav` | samples in a file, written and read | §2, §9 |
+| `playground/apis/Audio`, `Audio3d`, `Audio_debug` | the Evan-style API over all of it; heard from a 3D camera; the sound seen | §13 |
 
 ## 1. What a sound is
 
@@ -213,7 +217,7 @@ channels; the software backend's `m` key mixes them back down to one,
 to hear what panning does. In a 3D world the listener is the camera:
 its eye the ears, the direction it looks straight ahead, its right the
 right ear's side, and a sound made anywhere is panned, delayed, faded,
-dulled and Doppler-shifted from there (`playground/Audio3d`;
+dulled and Doppler-shifted from there (`Audio3d`;
 `TinyStarFox.ml`'s enemies go by a tenth higher coming, a tenth lower
 gone, the stage carrying you at 34 m/s).
 
@@ -275,7 +279,7 @@ number on the harmonics, an instrument; otherwise between them, a bell),
 the index I how many are loud (the brightness), and making the index
 follow the envelope gives a note bright when struck and darker as it
 dies. Two sines and three numbers: the Yamaha DX7's sound, and the Sega
-Genesis's and the Sound Blaster's (`audio/Fm`).
+Genesis's and the Sound Blaster's (`Fm`).
 
 ## 8. Game sounds from a few parameters
 
@@ -292,13 +296,13 @@ to 150 -- and `Sfx.vary`, sfxr's "mutate", nudges every number for a
 family of sounds from one; `Sfx.random`, sfxr's other buttons, draws a
 new sound within a category's ranges -- the ranges are what make it that
 kind of sound (a laser always slides down, a jump up, an explosion is
-noise getting duller: 200 seeds each, checked). `playground/Audio`'s
+noise getting duller: 200 seeds each, checked). `Audio`'s
 ready-made sounds are its presets.
 
 The **arpeggio** is worth a second look: the notes of a chord one after
 the other, every 1/60 s, around and around -- the chiptune trick of the
 NES and the C64, whose two or three voices were too few to play chords:
-fast enough, the notes blur into one warbling chord (`Effect.Arpeggio`,
+fast enough, the notes blur into one warbling chord (`Pitch_effect.Arpeggio`,
 and a tracker's `0xy` effect).
 
 An **echo** is the sound plus itself delayed and quieter, fed back so
@@ -307,7 +311,7 @@ line** (a circular buffer of the last D samples): a feedback comb
 filter, the simplest effect with memory, and the start of
 reverberation. Its echoes die away geometrically, the sound lasting
 until they fall below -60 dB: 2.5 s for a delay of 0.25 s and a
-feedback of 0.5 (`Effect.echo`, `Effect.tail`).
+feedback of 0.5 (`Synth.echo`, `Synth.tail`).
 
 A **reverb** is a room's thousands of echoes, too many and too close to
 hear one by one. Manfred Schroeder (Bell Labs, 1962) built one from the
@@ -317,7 +321,7 @@ filters, which multiply the echoes and let every frequency through at
 the same level. Each comb's feedback comes from the reverberation time
 T asked for, 10^(-3 D / T), and on an impulse the tail is indeed 30 dB
 down T / 2 later, 1552 of the samples of a tenth of a second non-zero
-where one comb would have 3: a wash, not echoes (`Effect.reverb`,
+where one comb would have 3: a wash, not echoes (`Synth.reverb`,
 `Audio.reverb`).
 
 A delay line makes an instrument too. **Karplus-Strong** (Kevin Karplus
@@ -345,7 +349,7 @@ of a cent.
 
 ### The ready-made sounds, three generations
 
-`playground/Audio`'s `blip`, `coin`, `laser`, `explosion`... were
+`Audio`'s `blip`, `coin`, `laser`, `explosion`... were
 written three times, each generation keeping the sounds' idea and
 changing only how they were made, so the difference each technique
 makes can be measured on the same sounds (`Unit_effect`'s "three
@@ -390,7 +394,7 @@ The lessons, one per row:
   sounds one `after` the other, each fading in and out over 5 ms so
   as not to click (§4): where they met, the level dropped to a ninth,
   an audible hiccup between the notes. sfxr's "change" -- a jump in
-  pitch inside a single voice, `Effect.Jump` -- keeps the phase and the
+  pitch inside a single voice, `Pitch_effect.Jump` -- keeps the phase and the
   envelope going: 0.389 where it was 0.045.
 - **Slowing noise doesn't darken it; a filter does.** The first
   explosion slid its noise from 1500 steps a second to 150, meaning a
@@ -533,7 +537,7 @@ In rough order of difficulty:
 
 ## 13. In the playground
 
-The API is `playground/Audio.mli`, in the `elm_playground` library, so
+The API is `Audio.mli`, in the `elm_playground` library, so
 every backend has it. A **sound** is a value, like a shape: made from a
 few numbers (`tone`, `square`, `triangle`, `sawtooth`, `noise`, §3;
 `fm`, §7; `pluck`, §8; `note "C4"`, §9) or a recording (`wav`, a

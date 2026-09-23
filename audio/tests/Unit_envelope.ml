@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Envelope and Mix: the .mli's worked examples, the click *)
+(* Envelope and Mix: the .mli's worked examples, the click *)
 
 let t = Testo.create
 

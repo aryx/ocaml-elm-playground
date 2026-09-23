@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* The three searches of ai/Pathfind.mli, watched while they work:
+(* The three searches of Pathfind.mli, watched while they work:
  * breadth-first ("b"), Dijkstra ("d") and A* ("a"), from the green
  * square to the red one. The cells each one takes out of its frontier
  * light up in the order it takes them, dark blue first, so the shape of

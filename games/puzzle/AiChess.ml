@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* Chess against the computer, which thinks 3 moves ahead with
- * alpha-beta (ai/Minimax.mli, the same search as AiOthello.ml).
+ * alpha-beta (Minimax.mli, the same search as AiOthello.ml).
  * You are white: click a piece, then where it goes (or move the cursor
  * with the arrows, and space twice); a pawn reaching the last rank
  * becomes a queen. u takes back your last move and the computer's

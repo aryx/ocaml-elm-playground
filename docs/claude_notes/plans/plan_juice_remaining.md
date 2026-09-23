@@ -1,6 +1,6 @@
 # Plan: what is left of juice/
 
-`juice/` and `playground/Juice` are built (see
+`juice/` and `Juice` are built (see
 [`done/plan_juice_teaching.md`](done/plan_juice_teaching.md), its
 Status the log of how), and eight programs use them: `JuiceCurves`,
 `JuiceSquash`, `TinyBreakout`, `TinyTetris`, `TinyInvaders`, `Snake`,

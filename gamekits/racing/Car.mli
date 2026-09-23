@@ -1,6 +1,6 @@
 (* A car driven on a Road: how fast it goes, and where across the road.
 
-   Not physics (compare the Physics layer, playground/Physics.mli): an
+   Not physics (compare the Physics layer, Physics.mli): an
    arcade car is a few rules that feel right, the ones of Jake Gordon's
    racer, from Out Run's era:
      - up accelerates, down brakes, nothing lets it slow down by itself;

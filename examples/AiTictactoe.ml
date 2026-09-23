@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* Tic-tac-toe against the computer, which can't lose: the game is
- * small enough to search to the very end (ai/Minimax.mli), so it needs
+ * small enough to search to the very end (Minimax.mli), so it needs
  * no evaluation function, no guess -- every move is known to win, draw
  * or lose. You are X and play first: click a square, or move with the
  * arrows and press space. Each empty square says what playing there is

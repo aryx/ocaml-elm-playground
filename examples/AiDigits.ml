@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* Draw a digit with the mouse and a network says which it is
- * (ai/Net.mli, ai/Backprop.mli, ai/Train.mli, notes_ai_learning.md
+ * (Net.mli, Backprop.mli, Train.mli, notes_ai_learning.md
  * section 7). 256 inputs (a 16 by 16 square of ink), 64 hidden, ten
  * outputs -- about 17,000 numbers -- trained while you watch, a few
  * dozen examples a frame.
@@ -39,7 +39,7 @@
  * Keys: draw with the mouse, "c" clear, "n" a training digit, space
  * pause training, "r" start over with new weights.
  *
- * What it uses: ai/Net, ai/Backprop, ai/Train (the loop), graphics/font
+ * What it uses: Net, Backprop, Train (the loop), graphics/font
  * (the digits it trains on), Scene2d (the keys). *)
 open Playground
 

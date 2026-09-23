@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Pluck: the .mli's example (A3's delay line, its pitch), the
+(* Pluck: the .mli's example (A3's delay line, its pitch), the
  * string dying away, its brightness falling as it rings, and its tuning
  * with and without the all-pass *)
 

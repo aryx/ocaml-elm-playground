@@ -4,7 +4,7 @@
    A real-time strategy game is mostly this: a tile map where some tiles
    can be walked on, units standing between tiles at fractional
    positions, and orders that turn a place on the map into a way to walk
-   there. The searches themselves are ai/Pathfind's; this is the layer
+   there. The searches themselves are Pathfind's; this is the layer
    between them and a game -- the grid as a search problem, and the
    walking.
 

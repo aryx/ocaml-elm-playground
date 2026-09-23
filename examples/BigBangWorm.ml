@@ -9,7 +9,7 @@
  *)
 (* How to Design Programs's worm game (its exercises 215 to 219): a worm
  * crawling on a grid, turned with the arrows, growing when it eats; it
- * dies hitting the border or itself (see playground/Bigbang.mli). The
+ * dies hitting the border or itself (see Bigbang.mli). The
  * world is a record, the worm a list of segments, head first -- HtDP's
  * data definitions, in OCaml's types.
  *

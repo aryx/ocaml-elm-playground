@@ -27,7 +27,7 @@ what makes each effect safe to add, and what keeps this out of
 |---|---|---|
 | `juice/Ease` (done) | the curves: how a thing starts and stops | §1, §2 |
 | `juice/Tween` (done) | a value between two, from when it started | §3 |
-| `playground/Juice` (done: the clock, tweens, squash, stretch, whiten, shake, freeze, flash) | the Evan-style API | §3, §4, §5, §8 |
+| `playground/apis/Juice` (done: the clock, tweens, squash, stretch, whiten, shake, freeze, flash) | the Evan-style API | §3, §4, §5, §8 |
 | `examples/JuiceCurves` (done) | every curve, plotted and played | §1 |
 | `juice/Squash` (done) | squash and stretch | §4 |
 | `examples/JuiceSquash` (done) | a ball dry, squashed, and flashed | §4 |

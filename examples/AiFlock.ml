@@ -26,8 +26,8 @@
  * The fish in white is one like the others, with its radius drawn and
  * the fish it can see joined to it: its whole world.
  *
- * What it uses: playground/Ai (flocking, facing) over ai/Flock, Physics
- * for the bodies, playground/Gui for the sliders. *)
+ * What it uses: Ai (flocking, facing) over Flock, Physics
+ * for the bodies, Gui for the sliders. *)
 open Playground
 
 (*****************************************************************************)

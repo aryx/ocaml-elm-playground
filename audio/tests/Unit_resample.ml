@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Resample: a sine read a fifth faster, the three methods'
+(* Resample: a sine read a fifth faster, the three methods'
  * errors measured; the lengths; a file's rate *)
 
 let t = Testo.create

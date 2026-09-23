@@ -24,7 +24,7 @@
  * What it teaches is physics, three ways:
  *
  *  - The projectiles are bodies of the playground's Physics layer
- *    (playground/Physics.mli), stepped with semi-implicit Euler: the
+ *    (Physics.mli), stepped with semi-implicit Euler: the
  *    bazooka's shell falls and is pushed by the wind (a parabola, bent
  *    by a constant sideways push: notes_2d_physics.md section 4), and
  *    explodes where it touches; the grenade falls too, but bounces off

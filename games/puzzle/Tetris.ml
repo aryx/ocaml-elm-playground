@@ -408,7 +408,7 @@ let music_at level = theme |> Audio.faster (1. +. (0.1 *. float level))
 
 let landed = Audio.sfx { Sfx.step with frequency = 120.; slide = 60.; decay = 0.08; volume = 0.4 }
 let cleared = Audio.sfx { Sfx.coin with frequency = 784.; slide = 784.; jump = 5.; jump_at = 0.06 }
-(* four lines, a "Tetris": a major chord, arpeggiated (Effect.mli) *)
+(* four lines, a "Tetris": a major chord, arpeggiated (Pitch_effect.mli) *)
 let tetris = Audio.sfx { Sfx.powerup with frequency = 523.; slide = 523.; sustain = 0.4 } |> Audio.arpeggio [ 0.; 4.; 7.; 12. ] 0.05
 let level_up = Audio.powerup
 

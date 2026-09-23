@@ -55,6 +55,7 @@ type patch = {
   filter_contour : contour;
   loudness_contour : contour;
   volume : float;
+  effects : (string * float) list;
 }
 
 let off : oscillator = { range = 3; wave = 2; frequency = 0.; on = false; level = 0.6 }
@@ -82,14 +83,15 @@ let initial : patch =
     filter_contour = { attack = 0.; decay = 0.4; sustain = 0.3 };
     loudness_contour = { attack = 0.; decay = 0.4; sustain = 0.8 };
     volume = 0.7;
+    effects = List.map (fun (k : Effect.knob) -> (k.name, k.initial)) Rack.standard_knobs;
   }
 
-type control = Knob of float * float | Switch | Selector of string list
+type control = Control.t = Knob of float * float | Switch | Selector of string list
 type knob = { name : string; control : control; get : patch -> float; put : patch -> float -> patch }
 
-let bool (x : float) : bool = x >= 0.5
-let of_bool (b : bool) : float = if b then 1. else 0.
-let index (x : float) : int = int_of_float (Float.round x)
+let bool = Control.on
+let of_bool = Control.of_bool
+let index = Control.index
 let knob name get put = { name; control = Knob (0., 1.); get; put }
 let detune name get put = { name; control = Knob (-1., 1.); get; put }
 let switch name get put = { name; control = Switch; get = (fun p -> of_bool (get p)); put = (fun p x -> put p (bool x)) }
@@ -118,6 +120,20 @@ let contour_knobs (name : string) (get : patch -> contour) (put : patch -> conto
     knob (c ^ "sustain") (fun p -> (get p).sustain) (fun p x -> put p { (get p) with sustain = x });
   ]
 
+(* the rack after the output (the Model D has none; Arturia's Mini V
+ * adds one the same way): its controls, "delay.time", ..., each a
+ * number stored under its name *)
+let effect_knobs : knob list =
+  List.map
+    (fun (k : Effect.knob) ->
+      {
+        name = k.name;
+        control = k.control;
+        get = (fun p -> List.assoc k.name p.effects);
+        put = (fun p x -> { p with effects = List.map (fun (n, v) -> if n = k.name then (n, x) else (n, v)) p.effects });
+      })
+    Rack.standard_knobs
+
 let knobs : knob list =
   let labels l = List.map wave_name l in
   [
@@ -145,23 +161,14 @@ let knobs : knob list =
   @ contour_knobs "filter" (fun p -> p.filter_contour) (fun p c -> { p with filter_contour = c })
   @ contour_knobs "loudness" (fun p -> p.loudness_contour) (fun p c -> { p with loudness_contour = c })
   @ [ knob "volume" (fun p -> p.volume) (fun p x -> { p with volume = x }) ]
+  @ effect_knobs
 
-let value_to_string (k : knob) (x : float) : string =
-  match k.control with
-  | Knob _ -> Printf.sprintf "%.3f" x
-  | Switch -> if bool x then "on" else "off"
-  | Selector labels -> List.nth labels (index x)
+let value_to_string (k : knob) (x : float) : string = Control.to_string k.control x
 
 let to_string (p : patch) : string =
   String.concat "" (List.map (fun k -> Printf.sprintf "%s = %s\n" k.name (value_to_string k (k.get p))) knobs)
 
-let value_of_string (k : knob) (s : string) : float option =
-  match k.control with
-  | Knob (lo, hi) -> Option.map (fun x -> Float.min hi (Float.max lo x)) (float_of_string_opt s)
-  | Switch -> ( match s with "on" -> Some 1. | "off" -> Some 0. | _ -> None)
-  | Selector labels ->
-      let rec find i = function [] -> None | l :: rest -> if l = s then Some (float_of_int i) else find (i + 1) rest in
-      find 0 labels
+let value_of_string (k : knob) (s : string) : float option = Control.of_string k.control s
 
 let of_string (text : string) : (patch, string) result =
   let line (acc : (patch, string) result) (l : string) =
@@ -352,6 +359,7 @@ type t = {
   glide : Voicing.glide;
   oscillators : vco array;
   ladder : Moog_ladder.t;
+  rack : Rack.t;
   filter_contour : Envelope.running;
   loudness_contour : Envelope.running;
   mutable random : int;
@@ -375,6 +383,7 @@ let create ?(options = analog) (patch : patch) : t =
     glide = Voicing.glide ();
     oscillators = [| vco 1; vco 2; vco 3 |];
     ladder = Moog_ladder.create ();
+    rack = Rack.standard ();
     filter_contour = Envelope.start ();
     loudness_contour = Envelope.start ();
     random = 0;
@@ -407,6 +416,7 @@ let options (v : t) : options = v.options
 let set_options (v : t) (o : options) : unit = v.options <- o
 let pitch (v : t) : float = Voicing.pitch v.glide
 let cutoff_now (v : t) : float = v.cutoff_now
+let rack (v : t) : Rack.t = v.rack
 let recent (v : t) : Signal.t = Array.init 2048 (fun i -> v.ring.((v.at + i) mod 2048))
 
 let grow (b : buffers) (n : int) : unit =
@@ -524,8 +534,14 @@ let fill (v : t) (out : Signal.stereo) : unit =
   for i = 0 to n - 1 do
     let x = mixed.(i) *. loudness_env.(i) *. ramp last.volume p.volume i n in
     out.left.(i) <- x;
-    out.right.(i) <- x;
-    v.ring.(v.at) <- x;
+    out.right.(i) <- x
+  done;
+  (* the effects, their knobs from the patch, then what the scope shows:
+   * the sound as heard *)
+  List.iter (fun (name, x) -> Rack.set v.rack name x) p.effects;
+  Rack.process v.rack out;
+  for i = 0 to n - 1 do
+    v.ring.(v.at) <- out.left.(i);
     v.at <- (v.at + 1) mod 2048
   done;
   v.last <- p

@@ -73,7 +73,7 @@
  *    tile dies with it -- stacking is a risk.
  *
  * What it uses: Scene2d. No kit (gamekits/rts is units walking paths in
- * real time; here a unit steps one tile a turn), no ai/Pathfind (the
+ * real time; here a unit steps one tile a turn), no Pathfind (the
  * rival walks greedily towards its goal, and a coast can stop it).
  *
  * Exercises: the 21-tile "fat cross" a city really works, and the tiles

@@ -37,7 +37,7 @@
  *
  * What it teaches is networking (plan_networking_teaching.md, the
  * milestone of its phase 4), and the three netcodes of
- * playground/Multiplayer.mli, by the flag netcode= or the key n in
+ * Multiplayer.mli, by the flag netcode= or the key n in
  * net=simulate (two computers side by side, latency= and loss=):
  *
  * - netcode=1997: the original's. Each frame, motor.c sent its state

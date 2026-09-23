@@ -4,6 +4,6 @@
 ; after listening to actual/*.wav)
 (test
  (name Test)
- (libraries alcotest testo audio)
+ (libraries alcotest testo audio audio_instruments audio_effects)
  (deps (glob_files golden/*.wav))
 )

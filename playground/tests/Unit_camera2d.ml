@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/Camera2d *)
+(* Camera2d *)
 
 let t = Testo.create
 

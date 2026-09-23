@@ -1,4 +1,4 @@
-(* networking/Rollback over Sim_net: the .mli's worked example -- two
+(* Rollback over Sim_net: the .mli's worked example -- two
  * and three peers, 1,000 ticks, under latency, jitter, loss and
  * duplication, every confirmed model the one of the same inputs on one
  * machine; at 100 ms, full speed where lockstep runs at half, paid in

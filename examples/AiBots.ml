@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* What makes a bot fair rather than strong (ai/Sense.mli, ai/Bot.mli).
+(* What makes a bot fair rather than strong (Sense.mli, Bot.mli).
  *
  * A bot that knows everything and reacts instantly is the easiest one
  * to write and the least pleasant to play against. Every knob that
@@ -37,8 +37,8 @@
  * a shot that reaches you flashes the screen (nothing else happens:
  * this is a demonstration, not a game).
  *
- * What it uses: the Playground, Scene2d (the keys pressed), ai/Sense
- * and ai/Bot, and physics/2d's Collide for the line of sight (one
+ * What it uses: the Playground, Scene2d (the keys pressed), Sense
+ * and Bot, and physics/2d's Collide for the line of sight (one
  * segment against the walls).
  *)
 open Playground
@@ -60,7 +60,7 @@ let hits_wall ((x, y) : number * number) : bool =
 (* {1 The bot} *)
 
 (* what it may know: where it is, and you -- seen, or remembered, or
-   not at all (ai/Sense.mli) *)
+   not at all (Sense.mli) *)
 type senses = { me : number * number; frame : int; you : (number * number) Sense.target }
 
 (* what it does: where it walks, where it aims, whether it fires --

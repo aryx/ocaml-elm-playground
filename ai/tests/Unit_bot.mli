@@ -1,2 +1,2 @@
-(* ai/Sense and ai/Bot *)
+(* Sense and Bot *)
 val tests : Testo.t list

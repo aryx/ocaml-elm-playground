@@ -37,7 +37,7 @@ Two halves, the second built on the first:
 | `Broadphase` | which pairs to test | §9 | `examples/PhysicsMarbles.ml` |
 | `Resolve` | collision response: impulses, friction, rotation | §10, §11 | `examples/PhysicsBounce.ml`, `examples/PhysicsBoxes.ml` |
 | `Solver` | stacking: all the contacts together, sequential impulses | §12 | `examples/PhysicsPyramid.ml`, `TinySlingshot.ml` |
-| `playground/Physics` | the Evan-style API over all of it; `step` and `simulate`, the whole step (§7) | §15 | every game above |
+| `playground/apis/Physics` | the Evan-style API over all of it; `step` and `simulate`, the whole step (§7) | §15 | every game above |
 
 There is no `World` module (the plan had one): the whole step, forces
 then contacts then moves, is `Physics.step` for a single body and
@@ -498,7 +498,7 @@ In rough order of difficulty:
 
 ## 15. In the playground
 
-The API (`playground/Physics.mli`) hides all of the above behind one
+The API (`Physics.mli`) hides all of the above behind one
 concept, a **body** -- a shape that moves -- and verbs in `update`:
 `fall`, `push`, `thrust`, `slow`, `attracted_by` (§6) add up what
 pushes the body, and `step` (§4: one tick of semi-implicit Euler)

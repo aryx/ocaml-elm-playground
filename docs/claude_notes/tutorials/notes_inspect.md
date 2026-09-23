@@ -20,10 +20,10 @@ frames, scripted keys, headless runs -- and stays that way.
 | module | what | section |
 |---|---|---|
 | `playground/Inspect` | the wrapper: recording, timeline, panels, trails | §3-§7 |
-| `playground/Audio_debug` (exists) | the oscilloscope and the spectrum | §7 |
+| `playground/apis/Audio_debug` (exists) | the oscilloscope and the spectrum | §7 |
 | `playground/Physics_debug` | hitboxes, contacts, normals, the broad phase, impulses | §7 |
 | `playground/Graphics_debug` | the frame's numbers: shapes, triangles, overdraw, times | §7 |
-| `playground/Ai_debug` | the frontier, flow fields, steering forces, search values | §7 |
+| `playground/apis/Ai_debug` | the frontier, flow fields, steering forces, search values | §7 |
 | `playground/Playground` (exists) | `app`: `init`, `update`, `view` -- why any of this works | §2 |
 
 Read §1-§2 for why this is possible at all, §3-§6 for the recorded
@@ -137,7 +137,7 @@ milliseconds of CPU, instead of replaying from the beginning.
 URL. Re-running a frame re-produces the command, and that is where a
 naive time-travel debugger becomes a noise machine: this project
 already wrote the hazard down before the debugger existed
-(`playground/Audio.mli`: an `update` run twice for the same frame --
+(`Audio.mli`: an `update` run twice for the same frame --
 "a time-travel debugger replaying it" -- plays its sound twice).
 
 So a replayed frame runs **silent**: the command is computed, because

@@ -413,4 +413,4 @@ them.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
-| [TinyIRC](apps/internet/TinyIRC.ml) | app | ircII (Michael Sandrof, 1989), for IRC (Jarkko Oikarinen, 1988) | Channels and nicks: join #tiny, type a line, everyone in it reads it. | A protocol a person can read, a line of text a message (networking/Irc); its own server (networking/ircd), over WebSocket so that a browser joins too; /raw to type the protocol itself. |
+| [TinyIRC](apps/internet/TinyIRC.ml) | app | ircII (Michael Sandrof, 1989), for IRC (Jarkko Oikarinen, 1988) | Channels and nicks: join #tiny, type a line, everyone in it reads it. | A protocol a person can read, a line of text a message (Irc); its own server (networking/ircd), over WebSocket so that a browser joins too; /raw to type the protocol itself. |

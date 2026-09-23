@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* The classic fractals, each a few lines of Logo (playground/Logo.mli),
+(* The classic fractals, each a few lines of Logo (Logo.mli),
  * drawn by the turtle as you watch:
  *
  *   left/right  another fractal       up/down  its level of recursion

@@ -1,3 +1,6 @@
+; claude: its own stanzas, not part of playground/dune's include_subdirs
+(include_subdirs no)
+
 ; claude: code shared by the SDL-based 2D playground backends --
 ; playground/native/ (Cairo) and the planned playground/software/ (see
 ; docs/claude_notes/done/plan_software_2d.md). A plain library, not an

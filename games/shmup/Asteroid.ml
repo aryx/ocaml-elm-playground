@@ -20,7 +20,7 @@ open Playground
  *    wall-clock time, each object's velocity (pixels per 30 ms) is added
  *    to its position, the thrust to the ship's velocity, and a ship
  *    faster than v_max is a [failwith "Todo"];
- *  - the physics engine (playground/Physics.mli): the same objects, at
+ *  - the physics engine (Physics.mli): the same objects, at
  *    every frame (1/60 s: a fixed time step), in pixels and seconds, with
  *    the same numbers converted (see "The physics engine" below), and
  *    three things the dumb engine didn't have: drag (Physics.slow),
@@ -37,7 +37,7 @@ open Playground
  * claude: and the arcade game's sounds (see "Sound" below): shots,
  * asteroids breaking with a bang by size, the ship's thrust, the ship
  * crashing, and the heartbeat speeding up as the asteroids get fewer;
- * from playground/Audio (its ready-made laser and explosion, varied or
+ * from Audio (its ready-made laser and explosion, varied or
  * with their numbers changed: audio/Sfx.mli; keep_playing and low_pass
  * for the thrust).
  *
@@ -413,7 +413,7 @@ let move_asteroids screen xs =
 (*****************************************************************************)
 (* The physics engine *)
 (*****************************************************************************)
-(* claude: the same objects, moved by playground/Physics at every frame
+(* claude: the same objects, moved by Physics at every frame
  * (1/60 s) instead of every 30 ms. The model's velocities stay in
  * pixels per 30 ms tick, the dumb engine's unit (the explosions reuse
  * them); Physics wants pixels per second: divide by [tick], and back.

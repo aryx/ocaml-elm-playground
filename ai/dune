@@ -1,10 +1,15 @@
 ; claude: game AI, from scratch, for teaching: one idea per module, each
 ; .mli with its diagram, worked example and references, like physics/
-; and audio/. Independent of the Playground. A private library,
-; installed as part of elm_playground: pure OCaml, so every backend, the
-; web one included, can use it.
+; and audio/. Independent of the Playground. Pure OCaml, so every
+; backend, the web one included, can use it.
+;
+; A library per subdirectory (ai/README.md says which and why); this
+; one, 'ai', has no module of its own: it is all of them, for the games
+; and examples that say (libraries ai).
 (library
  (name ai)
  (package elm_playground)
- (wrapped false)
+ (wrapped false) ; claude: wrapped, dune would make it a module Ai, hiding the Playground's Ai
+ (modules)
+ (libraries ai_movement ai_decision ai_search ai_bots ai_learning)
 )

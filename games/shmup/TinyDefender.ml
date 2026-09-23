@@ -41,7 +41,7 @@
  *    planet is squashed into the strip at the top ([scanner]), which
  *    is nothing but a second view of the same model at another scale:
  *    a minimap is a camera, not a picture. Defender invented it, and
- *    playground/Camera2d.mli says so in its history. Playing it is
+ *    Camera2d.mli says so in its history. Playing it is
  *    reading the scanner: the game is at the top of the screen, and
  *    the picture below is where you are only now arriving.
  *

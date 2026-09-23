@@ -10,7 +10,7 @@
 (* Pong (Atari, 1972: Allan Alcorn, for Nolan Bushnell), with a physics
  * engine instead of Pong's rules: the ball, the walls and the paddles
  * are bodies, and the ball does what the collisions say
- * (playground/Physics.mli's bounce, docs/claude_notes/notes_2d_physics.md
+ * (Physics.mli's bounce, docs/claude_notes/notes_2d_physics.md
  * section 10):
  *
  *   ball |> step |> bounce_off top |> bounce_off bottom

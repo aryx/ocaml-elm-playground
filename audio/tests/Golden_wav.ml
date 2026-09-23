@@ -58,7 +58,7 @@ let sounds : (string * (unit -> Signal.t)) list =
       ("noise_low_pass", fun () -> Filter.low_pass ~cutoff:300. (Noise.render ~rate:22050. 0.25));
       ("sawtooth_wah", fun () -> Filter.sweep Low_pass ~q:5. ~from:200. ~to_:4000. (Mix.gain 0.25 (Oscillator.render ~band_limited:true Sawtooth ~frequency:110. 1.))) ]
   (* phase 7: sfxr's categories (Sfx.mli), each preset; a C major chord
-   * as an arpeggio (Effect.mli: one voice, 0 4 7 semitones every 1/60
+   * as an arpeggio (Pitch_effect.mli: one voice, 0 4 7 semitones every 1/60
    * s); a blip echoed (0.15 s, each echo 0.4 of the last) *)
   @ List.map (fun (name, s) -> ("sfx_" ^ name, fun () -> Synth.render (Sfx.to_sound s))) Sfx.presets
   @ [ ( "arpeggio_c_major",
@@ -78,7 +78,7 @@ let sounds : (string * (unit -> Signal.t)) list =
                   (fun i f -> Synth.After [ Synth.voice (Wave Sine) 0. |> Synth.louder 0. |> Synth.lasting (0.03 *. float_of_int i); Synth.voice Pluck f |> Synth.lasting 1.5 ])
                   [ 196.; 246.94; 293.66 ])
             |> Synth.louder 0.6) ) ]
-  (* a blip in a cave (Schroeder's reverb, 1.5 s: Effect.mli); a
+  (* a blip in a cave (Schroeder's reverb, 1.5 s: Synth.mli); a
    * recording (an FM note at C4) read an octave faster, linearly
    * (Resample.mli): C5, half as long *)
   @ [ ("sfx_blip_reverb", fun () -> Synth.render (Sfx.to_sound { Sfx.blip with reverb = 1.5 }));
@@ -202,5 +202,62 @@ let sounds =
           x.(0) <- 1.;
           Moog_ladder.process (Moog_ladder.create ()) Nonlinear ~cutoff ~resonance:4.3 x;
           Mix.gain 2. x ) ]
+
+(* [x] through a stereo effect a block of 735 at a time, its left side *)
+let through (effect : Signal.stereo -> unit) (x : Signal.t) : Signal.t =
+  let left = Array.copy x and right = Array.copy x and k = ref 0 in
+  while !k < Array.length x do
+    let n = min 735 (Array.length x - !k) in
+    let b = { Signal.left = Array.sub left !k n; right = Array.sub right !k n } in
+    effect b;
+    Array.blit b.left 0 left !k n;
+    Array.blit b.right 0 right !k n;
+    k := !k + n
+  done;
+  left
+
+(* a short 110 Hz sawtooth note, 0.2 s, then silence: what the time
+ * effects answer *)
+let note (seconds : float) : Signal.t =
+  let len = Signal.samples seconds and on = Signal.samples 0.2 in
+  let saw = Array.make len 0. in
+  Vco.fill (Vco.create ()) Sawtooth ~frequency:(Array.make len 110.) saw;
+  Array.mapi (fun i v -> if i < on then 0.3 *. v *. Float.min 1. (float_of_int (on - i) /. 200.) else 0.) saw
+
+let sounds =
+  sounds
+  (* the effects (plan_synth_teaching.md phase 6): a sine swept from 1
+   * to 8 kHz through tanh at +12 dB, naive then oversampled x4 (the
+   * aliases heard as tones going *down* while the note goes up, then
+   * gone: Drive.mli); the note through a dotted eighth's echoes, darker
+   * each time (Delay.mli); the note in the three rooms, 1.5 s each
+   * (Reverb.mli) *)
+  @ [ ( "drive_sweep_naive_vs_x4",
+        fun () ->
+          let len = Signal.samples 1. in
+          let phase = ref 0. in
+          let sweep =
+            Array.init len (fun i ->
+                phase := !phase +. (1000. *. Float.pow 8. (float_of_int i /. float_of_int len) /. float_of_int Signal.rate);
+                0.5 *. sin (2. *. Float.pi *. !phase))
+          in
+          let driven l =
+            let x = Array.copy sweep in
+            Drive.process (Drive.create ~oversampling:l ()) Tanh ~drive:12. ~mix:1. x;
+            Mix.gain 0.5 x
+          in
+          Array.append (driven 1) (driven 4) );
+      ( "delay_dotted_eighth",
+        fun () ->
+          let d = Delay.create () in
+          through (Delay.process d { time = Delay.beats ~bpm:120. 0.75; feedback = 0.5; tone = 2000.; ping_pong = false; mix = 0.7 }) (note 2.) );
+      ( "reverb_rooms",
+        fun () ->
+          Array.concat
+            (List.map
+               (fun kind ->
+                 let r = Reverb.create () in
+                 through (Reverb.process r { kind; seconds = 1.5; damping = 0.3; mix = 0.5 }) (note 2.))
+               Reverb.kinds) ) ]
 
 let tests = Testo.categorize "golden WAVs" (List.map (fun (name, f) -> t name (fun () -> check name (f ()) ())) sounds)

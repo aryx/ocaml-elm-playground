@@ -69,7 +69,7 @@ screen coordinates, and a way to put HUD shapes on top that don't move
 is `camera` applied per layer.
 
 **Status**: DONE, not in `Playground.mli` but as a layer on top of it,
-`playground/Camera2d.mli`: a camera record in the model, `view` (a
+`Camera2d.mli`: a camera record in the model, `view` (a
 group scaled and moved), `to_world` for the mouse, `visible` for
 culling, and one function per way of following the player (Keren's
 "Scroll Back" GDC talk: `look_at`, `follow`, `window`, `clamp`), plus
@@ -91,7 +91,7 @@ A level becomes a string literal in the game's code -- readable, easy
 to edit, no level editor needed (a level editor is a nice later
 project, and a nice example game).
 
-**Status**: DONE, `playground/Tilemap.mli`, also a layer on top:
+**Status**: DONE, `Tilemap.mli`, also a layer on top:
 `of_strings`, `get`/`set`/`find` (a map is a value, changed when a coin
 is taken), `center`/`cell`/`tile_at`, `view` and `view_visible` (only
 the cells a `Camera2d.rect` touches), `hits` (box vs. grid). Both used
@@ -112,7 +112,7 @@ Mario today loads six GIFs from the network (`examples/Mario.ml`); with
 a sheet, one local file (which also lets its golden frames exist: the
 2D goldens exclude it because of the network).
 
-**Status**: half DONE, as a layer on top, `playground/Sprite.mli`:
+**Status**: half DONE, as a layer on top, `Sprite.mli`:
 pixel art typed as strings (drawn as rectangles, one per run of a
 row's pixels), `flip`, and the animation frames (`cycle` by steps,
 `frame` by time, for shapes or image urls). Left: sprite *sheets*,
@@ -130,7 +130,7 @@ The Elm way needs no new API: a variant in the model
 `games/template.ml` showing it, not an API -- unless transitions
 (fades between scenes) are wanted, then a small helper.
 
-**Status**: DONE, `playground/Scene2d.mli`: the variant stays the
+**Status**: DONE, `Scene2d.mli`: the variant stays the
 game's, wrapped in a record keeping the time spent in the scene
 (`elapsed`, `frames`, `blink`) and the previous frame's keyboard, for
 keys `pressed` rather than held (without it, a space held on the title

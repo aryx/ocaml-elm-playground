@@ -23,7 +23,7 @@
  *   dune exec games/arcade/TinySpacewar.exe -- net=host bind=0.0.0.0
  *   dune exec games/arcade/TinySpacewar.exe -- net=join host=192.168.1.12
  *
- * (playground/Multiplayer.mli). The game is written for two players,
+ * (Multiplayer.mli). The game is written for two players,
  * each with their own keyboard, and Multiplayer gives player 1 the
  * w/a/s/d of a shared one when they share it.
  *
@@ -34,7 +34,7 @@
  * computer lab; its heirs are Asteroids (1979, Asteroid.ml) and
  * the whole arcade.
  *
- * What it teaches is physics, with playground/Physics.mli: the ships
+ * What it teaches is physics, with Physics.mli: the ships
  * have inertia (let go of thrust and they keep going), turn without
  * changing course, and fall around the star -- every ship, every
  * torpedo:

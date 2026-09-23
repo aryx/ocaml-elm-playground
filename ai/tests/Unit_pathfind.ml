@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Pathfind: the .mli's worked example, and A* agreeing with Dijkstra *)
+(* Pathfind: the .mli's worked example, and A* agreeing with Dijkstra *)
 
 let t = Testo.create
 

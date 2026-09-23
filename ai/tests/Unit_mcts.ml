@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Mcts: tic-tac-toe played by random playouts alone -- no
+(* Mcts: tic-tac-toe played by random playouts alone -- no
  * evaluation function anywhere in this file *)
 
 let t = Testo.create

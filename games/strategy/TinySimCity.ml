@@ -66,7 +66,7 @@
  *
  * What it uses: Scene2d. No kit, no Tilemap (the tiles change every
  * month and are drawn from the model's array, as TinyTowerDefense
- * does), no ai/Pathfind: nobody walks here -- which is the first
+ * does), no Pathfind: nobody walks here -- which is the first
  * exercise.
  *
  * Exercises: traffic (SimCity's cars: from each zone a random walk

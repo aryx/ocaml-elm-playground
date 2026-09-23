@@ -12,10 +12,10 @@
  * in yellow, its aliases in red.
  *
  * A square wave at f is a sum of sines at f, 3f, 5f, ... forever
- * (audio/Oscillator.mli). Computed the simple way, a formula of the
+ * (Oscillator.mli). Computed the simple way, a formula of the
  * phase (1 for the first half of a period, -1 for the second), its
  * harmonics above Nyquist don't disappear: they fold back below it
- * (audio/Signal.mli), where they are not harmonics of f any more -- the
+ * (Signal.mli), where they are not harmonics of f any more -- the
  * red bars, all over the spectrum, out of tune with the note: a thin
  * whistle over it, worse the higher the note (hold right, and listen to
  * it get harsher). Space switches to the band-limited square
@@ -28,7 +28,7 @@
  * Hold the mouse button to hear it, left to right the pitch (220 to
  * 7040 Hz, five octaves), or hold the left and right arrows (a
  * semitone a frame). The spectrum is computed here, each frame, from
- * the same oscillator the sound uses (audio/Spectrum.mli, an FFT of
+ * the same oscillator the sound uses (Spectrum.mli, an FFT of
  * 4096 samples): what is shown is what is heard. One trick keeps it
  * honest: the pitch is kept on a multiple of 44,100 / 4096 = 10.77 Hz
  * (the FFT's bins; a few cents off the pitch asked for, at most), so

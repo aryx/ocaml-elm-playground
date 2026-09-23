@@ -230,7 +230,7 @@ In rough order of difficulty:
 
 ## 12. In the playground
 
-`playground/Audio.mli`'s `midi bytes` is a sound made from a Standard
+`Audio.mli`'s `midi bytes` is a sound made from a Standard
 MIDI File's bytes (`Midi.parse`, then `Music.render_score`), played
 like any other: `Audio.loop "music" (Audio.midi bytes)`. `loop_from`
 fetches it too, from a path or a URL, as a MIDI file when the name ends

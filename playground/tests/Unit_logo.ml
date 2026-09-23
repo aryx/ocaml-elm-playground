@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/Logo: the worked examples of Logo.mli, and turtle
+(* Logo: the worked examples of Logo.mli, and turtle
  * geometry's theorems *)
 
 open Logo

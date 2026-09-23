@@ -5,7 +5,7 @@
 
    Not computer.time. The player is listening to the music, and the
    music runs on the sound card's clock, which never waits for a late
-   frame (playground/Audio.mli draws the two clocks). So a rhythm game
+   frame (Audio.mli draws the two clocks). So a rhythm game
    asks Audio.position how far into the song the card has been fed,
    and takes off the machine's latency -- the gap between feeding the
    card and hearing it, ~50 ms natively, ~100 ms in a browser -- which

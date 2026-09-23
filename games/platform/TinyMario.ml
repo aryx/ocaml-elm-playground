@@ -33,10 +33,10 @@
  * square instead of the pixel art (Sprite.mli).
  *
  * A fourth chooses the physics engine: physics=engine for the
- * playground's (playground/Physics.mli), the dumb one, this file's own
+ * playground's (Physics.mli), the dumb one, this file's own
  * two lines of arithmetic, by default; see [fall] below.
  *
- * Sounds (playground/Audio.mli), played in [update] when things happen:
+ * Sounds (Audio.mli), played in [update] when things happen:
  * a jump, the steps (a foot lands every 30 pixels of the walk cycle),
  * the coins, a fall into a pit, and an arpeggio at the flag (a plain
  * C major chord, up: not Nintendo's fanfare).

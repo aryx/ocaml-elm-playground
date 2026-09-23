@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* Go on a 9x9 board, against a computer that knows nothing about Go
- * (ai/Mcts.mli). You are black, it is white: click a point to put a
+ * (Mcts.mli). You are black, it is white: click a point to put a
  * stone down (or move the cursor with the arrows and press space),
  * "p" to pass; two passes in a row end the game, and the
  * score is counted Chinese style -- your stones plus the empty points

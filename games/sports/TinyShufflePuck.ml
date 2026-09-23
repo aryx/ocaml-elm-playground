@@ -17,7 +17,7 @@
  *   space            start, and on to the next opponent
  *
  * The rules are Pong's (TinyPong.ml), and the physics the
- * playground's engine's (playground/Physics). What Shufflepuck added
+ * playground's engine's (Physics). What Shufflepuck added
  * is the *view* -- you look down the table from your end of it, as you
  * would standing at a real one -- and the *people*.
  *
@@ -64,7 +64,7 @@
  * a straight shot and never plays anything else, which is how you beat
  * it.
  *
- * The table is playground/Physics's, in metres, as TinyPinball.ml's
+ * The table is Physics's, in metres, as TinyPinball.ml's
  * physics=engine is in pixels: the rails are immovable boxes, the puck
  * a circle, and a paddle an immovable circle *given the velocity your
  * hand moved it with* -- so that Physics.bounce_off, which takes the
@@ -77,7 +77,7 @@
  * in eight steps a frame ([substeps]), never more than a centimetre in
  * one, and asks the engine about each touch -- TinyPinball's way.
  *
- * Uses: playground/Physics (bodies, touching, bounce_off), Scene2d. No
+ * Uses: Physics (bodies, touching, bounce_off), Scene2d. No
  * 3D twin: a flat table in a real 3D engine would teach nothing the
  * projection here does not, which is also why TinyDungeonMaster has
  * none.

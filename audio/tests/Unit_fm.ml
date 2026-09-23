@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Fm: the sidebands where Chowning says, at the Bessel functions'
+(* Fm: the sidebands where Chowning says, at the Bessel functions'
  * amplitudes *)
 
 let t = Testo.create

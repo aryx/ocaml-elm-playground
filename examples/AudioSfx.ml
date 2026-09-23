@@ -25,7 +25,7 @@
  * "random laser" or "random explosion": a new sound of that category,
  * every number drawn afresh within the category's ranges (Sfx.random).
  * Space plays it again, "e" adds an echo, "c" puts it in a cave (a
- * reverb, 1.5 s: Schroeder's, Effect.mli).
+ * reverb, 1.5 s: Schroeder's, Synth.mli).
  *
  * What it uses: the Playground, Scene2d (the keys pressed), Audio (sfx,
  * play) and audio/'s Sfx and Synth directly (the samples drawn).

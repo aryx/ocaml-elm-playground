@@ -41,7 +41,7 @@
  *    towards the hero along whichever axis it is furthest from, and
  *    tries the other one when that is a wall. With chase=field the
  *    game builds one Dijkstra flow field from the hero every frame
- *    (ai/Pathfind, through gamekits/rts' Orders -- the same "one search
+ *    (Pathfind, through gamekits/rts' Orders -- the same "one search
  *    for a whole crowd" that moves TinyWarcraft2's peasants) and every
  *    monster walks down it; it costs one search a frame however many
  *    monsters there are.
@@ -64,7 +64,7 @@
  *    against the near wall of a room, looks the way it does.
  *
  * What it uses: Tilemap (the dungeons, as strings), Camera2d (the
- * dungeon is bigger than the screen), Scene2d, Audio, ai/Pathfind
+ * dungeon is bigger than the screen), Scene2d, Audio, Pathfind
  * through gamekits/rts' Orders for the flow field. Not gamekits/maze: its
  * Grid_move locks a mover to the middle of a tile, which is what
  * Pac-Man wants and Gauntlet does not -- here everything walks in

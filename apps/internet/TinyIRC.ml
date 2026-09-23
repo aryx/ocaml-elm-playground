@@ -29,7 +29,7 @@
  * flags host= and port= (6667) for a server elsewhere, nick= (guest),
  * channel= (#tiny, joined once welcomed).
  *
- * What it teaches is networking/Irc.mli: a protocol a person can read,
+ * What it teaches is Irc.mli: a protocol a person can read,
  * every message a line of text ("PRIVMSG #tiny :hello"), which is what
  * this client sends when you type "hello"; and /raw sends a line of the
  * protocol itself, as the telnet sessions of 1988 typed it

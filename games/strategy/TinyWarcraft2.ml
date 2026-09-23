@@ -23,7 +23,7 @@
  * What's new here (TinyDune2 has the same genre without them):
  *
  *  - One search for a whole crowd ([send]): ordering ten units to the
- *    same place is one Dijkstra from that place (ai/Pathfind.field),
+ *    same place is one Dijkstra from that place (Pathfind.field),
  *    which gives the cost from it to every tile. Each unit then walks
  *    downhill on that field, looking only at the tile under its feet
  *    (Pathfind.downhill). A* per unit would be ten searches, redone

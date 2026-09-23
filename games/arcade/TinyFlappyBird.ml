@@ -135,7 +135,7 @@ let bird_screen_x = -250.
  * numbers before coming back (a "maximal" LFSR); 0 would stay 0 forever,
  * so it's never a seed. In hardware it's a shift register and a few xor
  * gates, the cheapest random numbers there are: the NES's noise channel
- * is one (audio/Noise.mli), and the Atari 2600 games had it in software.
+ * is one (Noise.mli), and the Atari 2600 games had it in software.
  * Not good randomness: a state is the previous one shifted by a bit, 15
  * of their 16 bits the same, which is why [random_byte] steps it 8
  * times, so that all 8 bits of a byte are new.

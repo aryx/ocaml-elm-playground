@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Train: the loop, the split, and the two things it is for --
+(* Train: the loop, the split, and the two things it is for --
  * learning something in a few epochs, and showing when it stops
  * learning and starts memorising *)
 

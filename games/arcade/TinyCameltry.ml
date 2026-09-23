@@ -14,7 +14,7 @@
  * Monnier's Rolling-Moon (2008, OCaml on the Chipmunk engine), whose
  * ball is a moon: so is this one.
  *
- * What it teaches is rotation (playground/Physics.mli, the phase 7 of
+ * What it teaches is rotation (Physics.mli, the phase 7 of
  * docs/claude_notes/plan_physics_teaching.md): the moon isn't upright,
  * so friction at its bottom point makes it roll -- watch its craters
  * turn -- instead of sliding; and turning the maze is only turning

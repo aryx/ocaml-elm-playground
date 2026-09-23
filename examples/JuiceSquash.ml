@@ -25,7 +25,7 @@
  * With the flag juice=off (dune exec examples/JuiceSquash.exe --
  * juice=off, or JuiceSquash.html?juice=off), the three are the same.
  *
- * What it uses: playground/Juice (squash, stretch, whiten, during for
+ * What it uses: Juice (squash, stretch, whiten, during for
  * the flash; the model is only the effects' clock, Juice.t), over
  * juice/Squash. The bounce is a parabola of that clock, not Physics:
  * every bounce the same, so the three stay together. *)

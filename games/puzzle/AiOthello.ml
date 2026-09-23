@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* Othello against the computer, which thinks 4 moves ahead with
- * alpha-beta (ai/Minimax.mli). You are black: click a square (or move
+ * alpha-beta (Minimax.mli). You are black: click a square (or move
  * the cursor with the arrows, and space); a disk placed must trap a
  * line of white ones between it and another black one, and they all
  * turn black. No move: you pass. Neither player can move: the most

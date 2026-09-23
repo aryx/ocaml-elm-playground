@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/Physics, the Evan-style API over physics/2d *)
+(* Physics, the Evan-style API over physics/2d *)
 
 open Playground
 open Physics

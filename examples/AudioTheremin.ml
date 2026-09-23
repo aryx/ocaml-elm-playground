@@ -13,7 +13,7 @@
  * octaves, as a real one's is spread along its antenna: each octave
  * the same width), bottom to top the volume.
  *
- * The whole instrument is one line (playground/Audio.mli):
+ * The whole instrument is one line (Audio.mli):
  *
  *   Audio.keep_playing "theremin" (Audio.tone pitch |> Audio.louder volume)
  *

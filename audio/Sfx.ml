@@ -75,8 +75,8 @@ let to_sound (s : t) : Synth.t =
       volume = s.volume;
       fade = false;
       effects =
-        (if s.vibrato_depth > 0. then [ Effect.Vibrato { rate = s.vibrato_rate; depth = s.vibrato_depth } ] else [])
-        @ if s.jump <> 0. then [ Effect.Jump { semitones = s.jump; at = s.jump_at } ] else [];
+        (if s.vibrato_depth > 0. then [ Pitch_effect.Vibrato { rate = s.vibrato_rate; depth = s.vibrato_depth } ] else [])
+        @ if s.jump <> 0. then [ Pitch_effect.Jump { semitones = s.jump; at = s.jump_at } ] else [];
       envelope = Some { attack; decay = 0.; sustain = 1.; release = s.decay };
     }
   in

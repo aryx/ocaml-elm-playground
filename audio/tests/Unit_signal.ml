@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Signal, Oscillator, Noise, Wav: the .mli's worked examples *)
+(* Signal, Oscillator, Noise, Wav: the .mli's worked examples *)
 
 let t = Testo.create
 

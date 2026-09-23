@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* A network learning two spirals, at sixty frames a second
- * (ai/Net.mli, ai/Backprop.mli, notes_ai_learning.md sections 2 to 6).
+ * (Net.mli, Backprop.mli, notes_ai_learning.md sections 2 to 6).
  * The colour behind the points is what the network answers everywhere
  * -- its decision boundary, redrawn every frame while it trains -- and
  * the curve underneath is the loss falling.
@@ -42,8 +42,8 @@
  * The ancestor is TensorFlow Playground (playground.tensorflow.org),
  * which this project shares a name with by coincidence.
  *
- * What it uses: ai/Net and ai/Backprop (everything), Scene2d (keys).
- * Not playground/Ai: this is the algorithm itself. *)
+ * What it uses: Net and Backprop (everything), Scene2d (keys).
+ * Not the Ai layer: this is the algorithm itself. *)
 open Playground
 
 (*****************************************************************************)

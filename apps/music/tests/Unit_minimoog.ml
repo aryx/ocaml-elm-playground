@@ -53,6 +53,16 @@ let test_text () =
       | Ok p' -> if p' <> p then Alcotest.failf "%s: not the same after writing and reading" name
       | Error e -> Alcotest.failf "%s: %s" name e)
     (("initial", Minimoog_voice.initial) :: Minimoog_voice.presets);
+  (* the effects too *)
+  let turned = [ ("drive.on", 1.); ("drive.shape", 3.); ("eq.on", 1.); ("eq.bass", -3.5); ("reverb.kind", 1.); ("reverb.time", 4.2) ] in
+  let p =
+    { Minimoog_voice.initial with
+      effects = List.map (fun (n, x) -> (n, Option.value (List.assoc_opt n turned) ~default:x)) Minimoog_voice.initial.effects }
+  in
+  Alcotest.(check bool) "the effects, turned" true (List.for_all (fun (n, x) -> List.assoc n p.effects = x) turned);
+  (match Minimoog_voice.of_string (Minimoog_voice.to_string p) with
+  | Ok p' -> if p' <> p then Alcotest.fail "the effects: not the same after writing and reading"
+  | Error e -> Alcotest.fail e);
   let error s = match Minimoog_voice.of_string s with Ok _ -> "" | Error e -> e in
   Alcotest.(check string) "an unknown control" "no such control: osc4.range" (error "osc4.range = 8'");
   Alcotest.(check string) "a bad value" "osc1.range: not a value: 7'" (error "osc1.range = 7'");

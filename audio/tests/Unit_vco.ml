@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Vco, Lfo, Drift, and Oscillator's pulse: a synthesizer's
+(* Vco, Lfo, Drift, and Oscillator's pulse: a synthesizer's
  * sources (notes_synth.md sections 3 and 4) *)
 
 let t = Testo.create

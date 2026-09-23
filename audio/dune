@@ -2,25 +2,26 @@
 ; audio and signal processing: one idea per module, each .mli with its
 ; diagram, worked example and references (see
 ; docs/claude_notes/plan_audio_teaching.md and notes_audio.md).
-; Independent of the Playground (playground/Audio.ml is the adapter).
-; A private library, installed as part of elm_playground: pure OCaml,
-; so every backend, the web one included, can use it.
+; Independent of the Playground (Audio.ml is the adapter).
+; Private libraries, installed as part of elm_playground: pure OCaml,
+; so every backend, the web one included, can use them.
 ;
-; The files sounds and songs are kept in are in formats/, a library
-; each (WAV, MIDI, ABC and solfege: plan_audio_formats.md); they need
-; samples and resampling, and the synthesizer needs them, so Signal and
-; Resample are a library of their own, below both.
-(library
- (name audio_signal)
- (package elm_playground)
- (wrapped false)
- (modules Signal Resample)
-)
-
+; A library per subdirectory, each on the ones before it:
+;  - signal/: the samples, and what's computed on them (Signal,
+;    Resample, Mix, Spectrum);
+;  - formats/: the files sounds and songs are kept in (WAV, MIDI, ABC
+;    and solfege, MOD: plan_audio_formats.md), a library each;
+;  - synthesis/: the building blocks of a sound (Oscillator, Noise, Fm,
+;    Pluck, Envelope, Filter);
+;  - here, the engine: a sound as a tree rendered ahead (Synth, Sfx,
+;    Pitch_effect), tunes (Music), stereo and 3D (Space), the sounds
+;    playing, pulled by the sound card (Mixer), and the interfaces of
+;    what's played live (Instrument, Control);
+;  - instruments/ and effects/: the live blocks of a synthesizer's voice,
+;    and the live effects (plan_synth_teaching.md, notes_synth.md).
 (library
  (name audio)
  (package elm_playground)
  (wrapped false)
- (modules :standard \ Signal Resample)
- (libraries audio_signal audio_wav audio_midi audio_abc)
+ (libraries audio_signal audio_synthesis audio_wav audio_midi audio_abc)
 )

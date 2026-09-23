@@ -27,15 +27,15 @@
  * closing the gap. No ghost knows the others are there.
  *
  * And the rhythm that makes the game breathe: the waves, a state
- * machine (ai/Fsm.mli), scatter (each ghost off to its own corner, the
+ * machine (Fsm.mli), scatter (each ghost off to its own corner, the
  * targets there) then chase, then scatter again, on the arcade's
  * first-level clock (7 s, 20 s, 7 s, 20 s, 5 s, 20 s, 5 s, then chase
  * for good) -- the timeline at the bottom, the current wave lit.
  *
  * What it uses: the maze kit (gamekits/maze: Grid_move for moving
- * along the corridors, Chase for the choice at a junction), ai/Fsm for
+ * along the corridors, Chase for the choice at a junction), Fsm for
  * the waves. TinyPacman.ml is the whole game, with the same rules
- * (and its ghosts' states on ai/Fsm too, with ai=engine). *)
+ * (and its ghosts' states on Fsm too, with ai=engine). *)
 open Playground
 
 (*****************************************************************************)
@@ -113,7 +113,7 @@ let target ~(chase : bool) ~(pac : Grid_move.mover) ~(blinky : Grid_move.mover) 
         ((2 * xc) - bc, (2 * xr) - br)
     | Clyde -> if dist2 (Grid_move.tile_of grid me) p > 64 then p else corner n
 
-(* the waves, as ai/Fsm's machine: the arcade's first level *)
+(* the waves, as Fsm's machine: the arcade's first level *)
 type wave = Scatter of int | Chase of int
 
 let schedule = [ 420; 1200; 420; 1200; 300; 1200; 300 ]

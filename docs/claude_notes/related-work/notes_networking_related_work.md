@@ -21,7 +21,7 @@ works) and
 | ENet, RakNet, GameNetworkingSockets, netcode.io, QUIC | Reliable-and-unreliable channels over UDP, done properly | A transport API: channels, fragmentation, congestion, encryption |
 | Croquet / TeaTime, distributed simulation (DIS, HLA) | Replicated computation as a platform | A deterministic world and a reflector that orders external events |
 | HtDP's `2htdp/universe` | Teaching beginners that programs can talk | A world with `on-receive`, and a server with `on-new` / `on-msg` -- no determinism asked for |
-| `networking/` + `playground/Multiplayer` | Seeing *why* each of those exists, on a game you already have | `Multiplayer.game ~players:2`, and a fake network with latency and loss on a key |
+| `networking/` + `Multiplayer` | Seeing *why* each of those exists, on a game you already have | `Multiplayer.game ~players:2`, and a fake network with latency and loss on a key |
 
 ## Part 1: the games that invented it
 
@@ -137,7 +137,7 @@ communities had already published.**
   for no determinism, no prediction and no checksums, which is why a
   fourteen-year-old can write a networked program with it in an
   afternoon. This repository already has its other half
-  (`playground/Bigbang`), so the universe is a layer rather than a
+  (`Bigbang`), so the universe is a layer rather than a
   project, and the plan treats it as the gentle door into everything
   the rest of this note is about.
 
@@ -211,10 +211,10 @@ Two levels, as everywhere here:
   can be *felt* rather than described (four netcodes, in fact, on the
   key n: lockstep, rollback, 1997's wait for every answer, and a
   server).
-- **`playground/Multiplayer`, the API**, at the simple end: one new
+- **`Multiplayer`, the API**, at the simple end: one new
   concept (the `player`), and the same game running local,
   simulated, hosting or joining without a line changing -- beside
-  **`playground/Universe`**, HtDP's shape for the other half of the
+  **`Universe`**, HtDP's shape for the other half of the
   subject: many worlds, one postbox, and nothing to keep in sync.
 
 **The ceiling, stated now**: a handful of players, a LAN or a local

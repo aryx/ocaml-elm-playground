@@ -19,7 +19,7 @@ type voice = {
   seconds : float;
   volume : float;
   fade : bool;
-  effects : Effect.pitch list;
+  effects : Pitch_effect.t list;
   envelope : Envelope.t option;
 }
 
@@ -54,10 +54,10 @@ let lasting (seconds : float) = map_voices (fun v -> { v with seconds })
 let fading = map_voices (fun v -> { v with fade = true })
 let louder (k : float) = map_voices (fun v -> { v with volume = v.volume *. k })
 let sliding (target : float) = map_voices (fun v -> { v with slide = Some target })
-let with_effect (e : Effect.pitch) = map_voices (fun v -> { v with effects = v.effects @ [ e ] })
+let with_effect (e : Pitch_effect.t) = map_voices (fun v -> { v with effects = v.effects @ [ e ] })
 
 let rec faster (k : float) (s : t) : t =
-  let effect (e : Effect.pitch) : Effect.pitch =
+  let effect (e : Pitch_effect.t) : Pitch_effect.t =
     match e with
     | Vibrato { rate; depth } -> Vibrato { rate = rate *. k; depth }
     | Jump { semitones; at } -> Jump { semitones; at = at /. k }
@@ -89,6 +89,59 @@ let rec pitched (k : float) (s : t) : t =
 
 let naive = map_voices (fun v -> match v.source with Wave w -> { v with source = Naive w } | _ -> v)
 
+(* the echo and the reverb, rendered *)
+
+let tail ~(delay : float) ~(feedback : float) : float =
+  if feedback <= 0. then delay else delay *. Float.ceil (log 0.001 /. log feedback)
+
+(* a feedback comb of [d] samples (the input already padded with the
+ * tail): y[n] = x[n] + g y[n - d] *)
+let comb (d : int) (g : float) (x : Signal.t) : Signal.t =
+  let line = Array.make d 0. and pos = ref 0 in
+  Array.map
+    (fun v ->
+      let y = v +. (g *. line.(!pos)) in
+      line.(!pos) <- y;
+      pos := (!pos + 1) mod d;
+      y)
+    x
+
+(* an all-pass: y[n] = -g x[n] + x[n - d] + g y[n - d] *)
+let all_pass (d : int) (g : float) (x : Signal.t) : Signal.t =
+  let xs = Array.make d 0. and ys = Array.make d 0. and pos = ref 0 in
+  Array.map
+    (fun v ->
+      let y = (-.g *. v) +. xs.(!pos) +. (g *. ys.(!pos)) in
+      xs.(!pos) <- v;
+      ys.(!pos) <- y;
+      pos := (!pos + 1) mod d;
+      y)
+    x
+
+let reverb ~(seconds : float) ?(mix = 0.3) (s : Signal.t) : Signal.t =
+  let x = Array.append s (Array.make (Signal.samples seconds) 0.) in
+  let combs =
+    List.map
+      (fun ms ->
+        let d = Signal.samples (ms /. 1000.) in
+        comb d (10. ** (-3. *. (ms /. 1000.) /. seconds)) x)
+      [ 29.7; 37.1; 41.1; 43.7 ]
+  in
+  let wet = Mix.gain 0.25 (Mix.add combs) |> all_pass (Signal.samples 0.005) 0.7 |> all_pass (Signal.samples 0.0017) 0.7 in
+  Array.mapi (fun i w -> x.(i) +. (mix *. w)) wet
+
+let echo ~(delay : float) ~(feedback : float) (s : Signal.t) : Signal.t =
+  let d = max 1 (Signal.samples delay) in
+  let n = Array.length s + Signal.samples (tail ~delay ~feedback) in
+  (* the delay line: the last d outputs, the oldest at [pos] *)
+  let line = Array.make d 0. and pos = ref 0 in
+  Array.init n (fun i ->
+      let x = if i < Array.length s then s.(i) else 0. in
+      let y = x +. (feedback *. line.(!pos)) in
+      line.(!pos) <- y;
+      pos := (!pos + 1) mod d;
+      y)
+
 let rec duration (s : t) : float =
   match s with
   | Voice v -> v.seconds
@@ -96,7 +149,7 @@ let rec duration (s : t) : float =
   | After l -> List.fold_left (fun sum s -> sum +. duration s) 0. l
   | Samples s -> float_of_int (Array.length s) /. float_of_int Signal.rate
   | Filtered (_, s) -> duration s
-  | Echo (e, s) -> duration s +. Effect.tail ~delay:e.delay ~feedback:e.feedback
+  | Echo (e, s) -> duration s +. tail ~delay:e.delay ~feedback:e.feedback
   | Reverb (r, s) -> duration s +. r
   | Panned (_, s) -> duration s
 
@@ -137,7 +190,7 @@ let rec sample ?(brightness = 1.) (source : source) (frequency : float) (r : run
 let ramp = 0.005
 
 (* the pitch effects' factors at [t], multiplied *)
-let effects_factor (v : voice) (t : float) : float = List.fold_left (fun k e -> k *. Effect.factor e t) 1. v.effects
+let effects_factor (v : voice) (t : float) : float = List.fold_left (fun k e -> k *. Pitch_effect.factor e t) 1. v.effects
 
 let render_voice (v : voice) : Signal.t =
   let n = Signal.samples v.seconds in
@@ -175,8 +228,8 @@ let rec render (s : t) : Signal.t =
       let samples = render s in
       if f.cutoff = f.cutoff_to then Filter.run (Filter.biquad f.kind ~cutoff:f.cutoff ~q:f.q) samples
       else Filter.sweep f.kind ~q:f.q ~from:f.cutoff ~to_:f.cutoff_to samples
-  | Echo (e, s) -> Effect.echo ~delay:e.delay ~feedback:e.feedback (render s)
-  | Reverb (r, s) -> Effect.reverb ~seconds:r (render s)
+  | Echo (e, s) -> echo ~delay:e.delay ~feedback:e.feedback (render s)
+  | Reverb (r, s) -> reverb ~seconds:r (render s)
   | Panned (_, s) -> render s
 
 let rec panned (s : t) : bool =
@@ -198,8 +251,8 @@ let rec render_stereo (s : t) : Signal.stereo =
         let l = List.map render_stereo l in
         { left = Array.concat (List.map (fun (st : Signal.stereo) -> st.left) l); right = Array.concat (List.map (fun (st : Signal.stereo) -> st.right) l) }
     | Filtered (f, s) -> each (fun x -> render (Filtered (f, Samples x))) (render_stereo s)
-    | Echo (e, s) -> each (Effect.echo ~delay:e.delay ~feedback:e.feedback) (render_stereo s)
-    | Reverb (r, s) -> each (Effect.reverb ~seconds:r) (render_stereo s)
+    | Echo (e, s) -> each (echo ~delay:e.delay ~feedback:e.feedback) (render_stereo s)
+    | Reverb (r, s) -> each (reverb ~seconds:r) (render_stereo s)
     | Panned (p, s) ->
         let (l, r) = Space.pan p in
         let st = render_stereo s in

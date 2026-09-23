@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Voicing: the priorities of the .mli, legato and retrigger, the
+(* Voicing: the priorities of the .mli, legato and retrigger, the
  * glide's worked example *)
 
 let t = Testo.create

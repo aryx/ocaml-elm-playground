@@ -49,13 +49,13 @@ a new one.
 
 ## Done
 
-- **Logo** (`playground/Logo.mli`, `examples/LogoFractals.ml`): the
+- **Logo** (`Logo.mli`, `examples/LogoFractals.ml`): the
   turtle, and recursion as drawing. `Logo3d` too.
-- **Big bang** (`playground/Bigbang.mli`, `examples/BigBangRocket.ml`,
+- **Big bang** (`Bigbang.mli`, `examples/BigBangRocket.ml`,
   `examples/BigBangWorm.ml`): images that know their size and compose,
   events rather than polled state, HtDP's top-left coordinates. Elm's
   architecture before Elm.
-- **PuzzleScript** (`playground/Puzzlescript.mli`,
+- **PuzzleScript** (`Puzzlescript.mli`,
   `examples/PuzzleScriptSokoban.ml`, `examples/PuzzleScriptBoulders.ml`):
   a game as a map and a few rules, where Sokoban is one rule. Its .mli
   carries the lineage this whole plan sits in: Papert, then KidSim /
@@ -137,7 +137,7 @@ CS106A still opens with it, in Java now).
     its levels, a level won when the beepers end up where the level
     says. Laid out like TinyCoreWar: the editor, the parse errors on
     their lines, Run/Step/speed.
-  - `playground/Karel.mli`, the smallest of these layers by far -- a
+  - `Karel.mli`, the smallest of these layers by far -- a
     world of walls and beepers read from strings (a `Tilemap`), a
     program as a `command list` the way Logo's is, and the same
     `picture`/`animation` pair so you can watch it walk.

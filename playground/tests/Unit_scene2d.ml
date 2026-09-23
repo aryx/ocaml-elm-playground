@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/Scene2d *)
+(* Scene2d *)
 
 open Playground
 

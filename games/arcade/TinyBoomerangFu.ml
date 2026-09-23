@@ -74,7 +74,7 @@
  *
  *  - by default, [brain] below: written out in this file, reading the
  *    game directly and answering every frame.
- *  - with ai=engine, on ai/Sense, ai/Bot and ai/Fsm: the same tactics
+ *  - with ai=engine, on Sense, Bot and Fsm: the same tactics
  *    and the same [wits], but it sees an enemy only when no pillar is
  *    between them (and remembers it for a second and a half after
  *    that), it acts on what it saw six frames ago, it changes its mind
@@ -82,10 +82,10 @@
  *    away are three states with the rules between them written down --
  *    hysteresis included, as a guard rather than as an if.
  *
- * What stays out of it is ai/Steering: its verbs are forces on
+ * What stays out of it is Steering: its verbs are forces on
  * Physics bodies, and these characters have no velocity to steer --
  * they move at a fixed speed and their dash is committed, on purpose.
- * (ai/Steering.direction is the form for characters like these; the
+ * (Steering.direction is the form for characters like these; the
  * one thing it would replace here, [clear_way], is not a steering
  * behaviour but an obstacle check, so it stays.)
  *
@@ -194,7 +194,7 @@ type intent = { go : (number * number) option; throw : bool; dash_now : bool }
 type mode = Dodge | Hunt | Away
 
 (* and what it may know, with ai=engine. The mode lives in here
- * because ai/Bot hands the last senses to the next sensing (Bot.mli):
+ * because Bot hands the last senses to the next sensing (Bot.mli):
  * a bot's memory -- where it last saw someone, and what it was doing
  * about it -- is part of what it senses, not something the game keeps
  * for it *)
@@ -220,7 +220,7 @@ type game = {
   clock : int; (* frames this round has lasted *)
   round_no : int;
   (* claude: with ai=engine, one per cook: the senses it has seen but
-   * not yet acted on, and the intent it is repeating (ai/Bot.mli) *)
+   * not yet acted on, and the intent it is repeating (Bot.mli) *)
   minds : (senses, intent) Bot.running array;
   ai_engine : bool;
 }
@@ -598,11 +598,11 @@ let brain (g : game) (p : player) : intent =
  * are [wits]'s; what changes is what a bot is allowed to know and how
  * quickly it may act on it:
  *
- *   ai/Sense    its enemy is seen only when no pillar is between them,
+ *   Sense       its enemy is seen only when no pillar is between them,
  *               and remembered for a second and a half after that
- *   ai/Bot      it acts on what it saw 6 frames ago and changes its
+ *   Bot         it acts on what it saw 6 frames ago and changes its
  *               mind 20 times a second, not 60
- *   ai/Fsm      dodge / hunt / keep away as three states and the rules
+ *   Fsm         dodge / hunt / keep away as three states and the rules
  *               between them, with the hysteresis written into a
  *               transition's guard instead of into an if
  *
@@ -706,7 +706,7 @@ let decide (s : senses) : intent =
       | Hunt ->
           (* it aims by facing where it walks, exactly as you do, and
              its aim wobbles while the enemy is freshly seen
-             (ai/Bot.aim_error): a shot taken the moment someone
+             (Bot.aim_error): a shot taken the moment someone
              appears is a worse shot *)
           let wobble = Bot.aim_error ~spread:6. ~settle:20. ~seen_for:s.enemy.seen_for ~seed:s.seed () in
           let aimed = Float.abs (angle_to s.facing to_target +. wobble) < w.aim in
@@ -724,7 +724,7 @@ let decide (s : senses) : intent =
             { go = Some (go want); throw = ready; dash_now = false })
 
 (* a person's reaction is about a tenth of a second, and no hand
- * changes its mind sixty times a second (ai/Bot.mli) *)
+ * changes its mind sixty times a second (Bot.mli) *)
 let mind : (game * int, senses, intent) Bot.t = Bot.make ~delay:6 ~rate:3 ~sense:senses_of ~decide ()
 
 (*****************************************************************************)
@@ -733,7 +733,7 @@ let mind : (game * int, senses, intent) Bot.t = Bot.make ~delay:6 ~rate:3 ~sense
 
 let step_game (s : model) (k : keyboard) (g : game) : game =
   (* one intent per player, from the keyboard, from [brain], or -- with
-     ai=engine -- from ai/Bot, which sees less and answers later *)
+     ai=engine -- from Bot, which sees less and answers later *)
   let minds = Array.copy g.minds in
   let intents =
     List.map

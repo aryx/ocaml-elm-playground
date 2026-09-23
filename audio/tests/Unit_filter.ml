@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Filter: the .mli's numbers, and each filter's gain measured on
+(* Filter: the .mli's numbers, and each filter's gain measured on
  * a sine actually filtered *)
 
 let t = Testo.create
@@ -73,9 +73,38 @@ let test_sweep () =
   Alcotest.(check (float 0.1)) "at 0.5 s, the cutoff at 1000 Hz (dB)" 14. (db (peak_around 0.5));
   Alcotest.(check (float 0.1)) "at 0.9 s (dB)" 0.69 (db (peak_around 0.9))
 
+(* the EQ's table, measured on sines through [process] a block at a
+ * time, and the formula equal to the measure *)
+let test_eq () =
+  let through f s =
+    let m = Filter.silence () and y = Array.copy s in
+    let k = ref 0 in
+    while !k < Array.length y do
+      let n = min 735 (Array.length y - !k) in
+      let b = Array.sub y !k n in
+      Filter.process f m b;
+      Array.blit b 0 y !k n;
+      k := !k + n
+    done;
+    y
+  in
+  let row name f expected =
+    List.iter2
+      (fun hz e ->
+        let g = measured (through f) hz in
+        Alcotest.(check (float 0.01)) (Printf.sprintf "%s at %.0f Hz (dB)" name hz) e (db g);
+        Alcotest.(check (float 0.01)) (Printf.sprintf "%s at %.0f Hz, the formula (dB)" name hz) (db g) (db (Filter.response f hz)))
+      [ 50.; 200.; 500.; 1000.; 2000.; 8000. ]
+      expected
+  in
+  row "peaking" (Filter.peaking ~frequency:1000. ~q:1. ~gain:6.) [ 0.02; 0.27; 1.88; 6.00; 1.86; 0.08 ];
+  row "low shelf" (Filter.low_shelf ~frequency:200. ~gain:6.) [ 5.97; 3.00; 0.16; 0.01; 0.00; 0.00 ];
+  row "high shelf" (Filter.high_shelf ~frequency:4000. ~gain:(-6.)) [ 0.00; 0.00; 0.00; -0.02; -0.35; -5.73 ]
+
 let tests =
   Testo.categorize "Filter"
     [
+      t "the EQ: peaking and shelves, the table" test_eq;
       t "the one-pole: a, -3 dB at the cutoff, then -6 dB an octave" test_one_pole;
       t "the biquad: the cookbook's gains, the formula = the measure" test_biquad;
       t "the sweep: the wah" test_sweep;

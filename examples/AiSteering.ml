@@ -26,11 +26,11 @@
  * (it overshoots, like a homing missile), arrive's straight line that
  * stops, wander's lazy S.
  *
- * What it uses: playground/Ai (seek, flee, arrive, chase, wandering,
+ * What it uses: Ai (seek, flee, arrive, chase, wandering,
  * avoiding, following, facing: each a verb on a Physics.body, next to
- * fall and push), over ai/Steering; Physics for the body. The overlays
+ * fall and push), over Steering; Physics for the body. The overlays
  * (the slowing circle, the predicted point, the corridor ahead) are
- * drawn here from the same numbers as ai/Steering's defaults. *)
+ * drawn here from the same numbers as Steering's defaults. *)
 open Playground
 
 (*****************************************************************************)
@@ -139,7 +139,7 @@ let view (computer : computer) (m : model) : shape list =
     | Arrive -> [ cross (rgb 200 40 40) |> move mx my; ring (rgb 200 120 120) 100. |> move mx my ]
     | Pursue ->
         let p = prey t in
-        (* ai/Steering.pursue's guess: the prey's distance over the top
+        (* Steering.pursue's guess: the prey's distance over the top
          * speed (the Ai layer's 200) is the time to catch it *)
         let time = Float.hypot (p.x -. b.x) (p.y -. b.y) /. 200. in
         let px = p.x +. (time *. p.vx) and py = p.y +. (time *. p.vy) in
@@ -147,7 +147,7 @@ let view (computer : computer) (m : model) : shape list =
     | Wander -> [ ring (rgb 120 140 200) 40. |> move (b.x +. (80. *. hx)) (b.y +. (80. *. hy)) ]
     | Avoid ->
         (* the corridor ahead: 100 long, the creature's size (10) wide
-         * on each side (ai/Steering.avoid's defaults) *)
+         * on each side (Steering.avoid's defaults) *)
         List.map (fun (x, y, r) -> circle (rgb 150 140 130) r |> move x y) rocks
         @ [ rectangle (rgb 120 140 200) 100. 20.
             |> fade 0.4

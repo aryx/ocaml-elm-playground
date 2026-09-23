@@ -37,7 +37,7 @@
  *     of the screen, as it did in 1998. And in an alert it is jammed:
  *     when you most need it, you lose it.
  *   - The guards' minds ([machine]): a state machine, written as data
- *     with ai/Fsm (so the rules can be read in one place, in order of
+ *     with Fsm (so the rules can be read in one place, in order of
  *     priority, and the time in a state is counted for us):
  *
  *                 heard a knock           nothing there, 7 s
@@ -54,7 +54,7 @@
  *     run to where he was ([last_seen]); the phase in the corner says
  *     ALERT, then EVASION while they search, then INFILTRATION again.
  *   - Walking ([route]): every guard walks the base with A*
- *     (ai/Pathfind) on the tiles, to the next point of its patrol, to
+ *     (Pathfind) on the tiles, to the next point of its patrol, to
  *     the noise, to where Snake was last seen, to the places around it
  *     it searches -- one way of moving for every state.
  *   - The player's tools, each a lie told to the guards: the knock (a
@@ -65,7 +65,7 @@
  * The count of alerts is the score, and the ending gives a rank by it,
  * as Metal Gear Solid did (its best, Big Boss, asked for no alert).
  *
- * What it uses: ai/Fsm (the guards' states), ai/Pathfind (their
+ * What it uses: Fsm (the guards' states), Pathfind (their
  * walking), gamekits/platformer's Tile_move (Snake against the walls,
  * seen from above, as TinyZelda moves Link), Tilemap (the base, and
  * its picture shown only where the camera looks), Camera2d (a base

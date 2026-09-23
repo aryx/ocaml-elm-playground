@@ -21,7 +21,7 @@
  *
  * What's new here:
  *
- *  - Orders as paths (ai/Pathfind.mli): an order is a click, and what
+ *  - Orders as paths (Pathfind.mli): an order is a click, and what
  *    the unit does with it is an A* search around the rocks ([order]).
  *    The 1992 original searched much more cheaply, and units famously
  *    got stuck on corners; ours don't, at the price of a search per

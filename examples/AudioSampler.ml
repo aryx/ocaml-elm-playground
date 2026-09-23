@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* A sampler: one recording, every note (audio/Resample.mli).
+(* A sampler: one recording, every note (Resample.mli).
  *
  * The Fairlight CMI (1979) and the Emulator (1981) played real
  * recordings from a keyboard, and the Amiga's trackers (1987) did the

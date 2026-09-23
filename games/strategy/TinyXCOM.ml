@@ -51,7 +51,7 @@
  * The dice are a hash of the shot count, so a battle replays the same
  * (the tests, the golden frames).
  *
- * What it uses: ai/Pathfind (A*, the soldiers' and the aliens' ways,
+ * What it uses: Pathfind (A*, the soldiers' and the aliens' ways,
  * with a step's time units as its cost), Tilemap (the battlefield, its
  * hedges destroyed as they are shot), Scene2d.
  *

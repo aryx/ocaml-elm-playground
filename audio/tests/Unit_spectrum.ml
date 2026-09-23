@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* audio/Spectrum: the .mli's examples, the DFT against the FFT, a
+(* Spectrum: the .mli's examples, the DFT against the FFT, a
  * sine's one peak, a square's odd harmonics, Parseval *)
 
 let t = Testo.create

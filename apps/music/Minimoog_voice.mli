@@ -126,13 +126,18 @@ type patch = {
   filter_contour : contour;
   loudness_contour : contour;
   volume : float;
+  (* the effects after the output (the Model D has none; Arturia's
+   * Mini V adds a rack the same way): Rack.standard's knobs, by name
+   * ("drive.on", "delay.time", ...: Rack.standard_knobs, all off at
+   * first), in their own units (dB, seconds, hertz); in [knobs] too *)
+  effects : (string * float) list;
 }
 
 (* the patch the panel starts with: osc 1 alone, a sawtooth at 8', the
  * filter half open *)
 val initial : patch
 
-type control = Knob of float * float (* from, to *) | Switch | Selector of string list
+type control = Control.t = Knob of float * float (* from, to *) | Switch | Selector of string list
 
 (* a control of the panel: its name, in the text and in [set] *)
 type knob = { name : string; control : control; get : patch -> float; put : patch -> float -> patch }
@@ -195,6 +200,9 @@ val instrument : t -> Instrument.t
 val pitch : t -> float
 val cutoff_now : t -> float
 
-(* the last 2048 samples it played, oldest first: for a panel's
- * oscilloscope and spectrum, on any backend *)
+(* its effects, to change their order (Rack.reorder) *)
+val rack : t -> Rack.t
+
+(* the last 2048 samples it played (the effects' left side), oldest
+ * first: for a panel's oscilloscope and spectrum, on any backend *)
 val recent : t -> Signal.t

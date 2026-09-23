@@ -27,23 +27,24 @@ module here.
 | module | what | section | status |
 |---|---|---|---|
 | `audio/Instrument` | a sound played live: events, blocks, ramps | §1 | done |
-| `audio/Oscillator` (extended) | the pulse and its width | §3 | done |
-| `audio/Vco` | the live oscillator: a frequency and a width per sample, hard sync | §3 | done |
-| `audio/Drift` | analog imprecision | §3 | done |
-| `audio/Lfo` | the slow oscillators that turn knobs | §4 | done |
-| `audio/Noise` (extended) | random numbers for them: a linear congruential generator | §4 | done |
-| `audio/Envelope` (extended) | gated, exponential | §4 | done |
-| `audio/Voicing` | keys to a voice: priority, legato, glide (stealing: later) | §5 | done (mono) |
-| `audio/Moog_ladder` | the Moog filter: naive, zero-delay, nonlinear | §6 | done |
-| `audio/Svf` | the state-variable filter: Chamberlin's, zero-delay | §7 | done |
-| `audio/Drive`, `Filter` (EQ) | gain, waveshaping, oversampling; shelves, peaks | §8 | |
-| `audio/Modulated_delay`, `Phaser` | chorus, flanger; phaser | §8 | |
-| `audio/Delay`, `Reverb` | echoes in time with the music; rooms | §8 | |
-| `audio/Dynamics` | compressor, limiter, gate | §8 | |
-| `audio/Rack` | effects in an order | §8 | |
+| `audio/synthesis/Oscillator` (extended) | the pulse and its width | §3 | done |
+| `audio/instruments/Vco` | the live oscillator: a frequency and a width per sample, hard sync | §3 | done |
+| `audio/instruments/Drift` | analog imprecision | §3 | done |
+| `audio/instruments/Lfo` | the slow oscillators that turn knobs | §4 | done |
+| `audio/synthesis/Noise` (extended) | random numbers for them: a linear congruential generator | §4 | done |
+| `audio/synthesis/Envelope` (extended) | gated, exponential | §4 | done |
+| `audio/instruments/Voicing` | keys to a voice: priority, legato, glide (stealing: later) | §5 | done (mono) |
+| `audio/instruments/Moog_ladder` | the Moog filter: naive, zero-delay, nonlinear | §6 | done |
+| `audio/instruments/Svf` | the state-variable filter: Chamberlin's, zero-delay | §7 | done |
+| `audio/effects/Effect` | an effect as a rack holds it: knobs by name, blocks | §8 | done |
+| `audio/effects/Drive`, `Eq` (over `audio/synthesis/Filter`'s EQ) | gain, waveshaping, oversampling; shelves, peaks | §8 | done |
+| `audio/effects/Modulated_delay`, `Phaser` | chorus, flanger; phaser | §8 | |
+| `audio/effects/Delay`, `Reverb` | echoes in time with the music; rooms | §8 | done |
+| `audio/effects/Dynamics` | compressor, limiter, gate | §8 | |
+| `audio/effects/Rack` | effects in an order | §8 | done |
 | `apps/music/Minimoog_voice` | the Model D's signal path | §2 | done |
 | `apps/music/TinyMinimoog` | its panel | §9 | done (patches not saved yet) |
-| `playground/Audio`'s instruments, `Mixer.instrument` | playing one from a game or an app | §1 | done |
+| `playground/apis/Audio`'s instruments, `Mixer.instrument` | playing one from a game or an app | §1 | done |
 
 ## 1. Playing live: instruments
 
@@ -239,7 +240,7 @@ generator's (`Noise.lcg`, Numerical Recipes' constants: from 0,
 waveforms are right here: a 5 Hz square's harmonics are far below
 Nyquist, so PolyBLEP (needed at 440 Hz) has nothing to correct. Worked
 example, a vibrato of 6 Hz and 0.3 semitone: the frequency f
-2^(0.3 sin(2 pi 6 t) / 12), between 0.983 f and 1.017 f. (`Effect`'s
+2^(0.3 sin(2 pi 6 t) / 12), between 0.983 f and 1.017 f. (`Pitch_effect`'s
 `Vibrato` is this, rendered ahead; `Lfo` is the live one.) Its rate can
 follow a tempo (a quarter note at 120 BPM: 2 Hz).
 
@@ -459,7 +460,7 @@ all-passes' frequency (the MXR Phase 90, 1974).
 
 ### 8.5 Delay
 
-`Effect.echo`, live: the time in seconds or **in beats** (at 120 BPM a
+`Synth.echo`, live: the time in seconds or **in beats** (at 120 BPM a
 dotted eighth is 0.375 s: the echoes fall between the notes), the
 feedback through a **low-pass** so each repeat is darker than the one
 before (the tape echo's sound: the Roland Space Echo, 1974), and
@@ -467,7 +468,7 @@ before (the tape echo's sound: the Roland Space Echo, 1974), and
 
 ### 8.6 Reverb
 
-`Effect.reverb` is Schroeder's (1962): four combs, two all-passes; its
+`Synth.reverb` is Schroeder's (1962): four combs, two all-passes; its
 echoes are too regular, metallic on a drum. **Freeverb** (Jezar
 Wakefield, 2000, public domain): eight combs, each with a low-pass in
 its feedback (a room's air and walls absorb the highs, so a hall's tail

@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* Connect 4 against the computer, which is the game that needs all of
- * ai/Deepening at once (notes_ai.md section 9). You are yellow: click a
+ * Deepening at once (notes_ai.md section 9). You are yellow: click a
  * column, or move with the arrows and drop with space. Four in a row,
  * any direction, wins. "v" shows what the computer thinks of each
  * column (the lower, the better for you); space after the end plays
@@ -24,7 +24,7 @@
  *   + 1, 2, ... up to the depth                   iterative deepening
  *   + what it learned about a position kept       the table (Zobrist)
  *
- * The middle columns first is the game's own hint (ai/Deepening's
+ * The middle columns first is the game's own hint (Deepening's
  * [order]): a piece in the middle is in more fours than one at the
  * edge -- 13 of them against 3 -- so middle moves are likelier to be
  * good, and a good move tried first is what makes alpha-beta cut.

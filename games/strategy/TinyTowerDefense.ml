@@ -21,7 +21,7 @@
  *
  * What's new here:
  *
- *  - The game is the pathfinding (ai/Pathfind.mli): the monsters take
+ *  - The game is the pathfinding (Pathfind.mli): the monsters take
  *    the cheapest way A* can find through what you've built, and they
  *    find it again the moment you build ([repath]), turning around
  *    mid-step. Placing a tower is really an edit of a graph.

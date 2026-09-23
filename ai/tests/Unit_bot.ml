@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Sense and ai/Bot: what a bot may know, and the knobs that make it
+(* Sense and Bot: what a bot may know, and the knobs that make it
  * fair -- the .mli's examples, frame by frame *)
 
 let t = Testo.create

@@ -39,7 +39,7 @@
  * The second idea is that the crowd needs no intelligence. Every robot
  * here is one line -- a step towards the man, or towards the nearest
  * human -- and thirty of them on the screen read as a swarm. There is
- * no pathfinding (ai/Pathfind, which TinyTowerDefense uses) on
+ * no pathfinding (Pathfind, which TinyTowerDefense uses) on
  * purpose: grunts walk into electrodes and die there, as they do in
  * the arcade, and that is the design rather than a bug.
  *

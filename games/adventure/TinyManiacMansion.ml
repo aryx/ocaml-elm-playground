@@ -33,7 +33,7 @@
  *   - Walkboxes ([walkboxes], [route]): the floor of each room as boxes
  *     the kid may stand in; two boxes that touch are a way from one to
  *     the other. To walk somewhere is a search among the boxes
- *     (breadth-first, ai/Pathfind), then a straight line to the middle
+ *     (breadth-first, Pathfind), then a straight line to the middle
  *     of each edge crossed, then to the spot. The hall's table stands in
  *     the middle of its floor, and Dave walks round it:
  *
@@ -54,7 +54,7 @@
  *     world and the rules unchanged, only the way a sentence is made.
  *
  * What it uses: gamekits/adventure's Adventure (the world, and the rules
- * answering a sentence), ai/Pathfind (the search among the walkboxes),
+ * answering a sentence), Pathfind (the search among the walkboxes),
  * Scene2d. Not Tilemap nor Camera2d: a room is one picture.
  *
  * Left undone, exercises: the three kids and "New kid" -- Maniac

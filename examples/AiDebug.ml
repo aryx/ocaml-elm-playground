@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* What a computer player is thinking, drawn (playground/Ai_debug.mli).
+(* What a computer player is thinking, drawn (Ai_debug.mli).
  * Click a tile to move the flag; the walker takes the way to it, rests
  * when it is tired, and waits when it is there. On the right, a game
  * of Nim: take 1, 2 or 3 sticks with the keys, and whoever takes the

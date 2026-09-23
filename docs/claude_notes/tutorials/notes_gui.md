@@ -20,7 +20,7 @@ this toolkit's first customer.
 | module | what | section |
 |---|---|---|
 | `gui/Widget`, `gui/Theme`, `gui/Look` | what a widget is: a rectangle, a drawing, a hit test, some state; the colours; the drawing all four architectures share | §2 |
-| `gui/Immediate` | the toolkit `playground/Gui` is built on | §3 |
+| `gui/Immediate` | the toolkit `playground/apis/Gui` is built on | §3 |
 | `gui/Retained`, `gui/Mvc`, `gui/Mvu` | the same widgets, wired the other three ways | §4 |
 | `examples/gui4` | four 7GUIs tasks, each written the four ways | §4 |
 | `gui/Layout`, `gui/Grid` | constraints down, sizes up; Tk's grid | §5 |
@@ -29,7 +29,7 @@ this toolkit's first customer.
 | `appkits/typeset` | where to break a paragraph, greedily and Knuth-Plass | §7 |
 | `appkits/document` | a document as a value; undo; the clipboard | §8 |
 | `appkits/embed` | a document made of parts | §9 |
-| `playground/Gui` | the Evan-style API over all of it | §10 |
+| `playground/apis/Gui` | the Evan-style API over all of it | §10 |
 | `appkits/sheet`, `appkits/sheet_view` | a spreadsheet's engine, and its drawing | §11 |
 | `appkits/richtext` | text with looks, its page, and its flow through columns | §12, §13b |
 | `appkits/paint` | a picture as bits, and what paints it | §13 |
@@ -599,7 +599,7 @@ video: compound documents won the web and lost the desktop.
 
 ## 10. In the playground
 
-`playground/Gui` is the immediate-mode toolkit of §3, threaded through
+`Gui` is the immediate-mode toolkit of §3, threaded through
 the `computer` your `update` already has:
 
 ```ocaml
@@ -954,7 +954,7 @@ teaches with:
 | `gui/`, the four architectures and everything under them (12 modules) | 1,073 (1,645) |
 | of which `Immediate`, the one the playground uses | 221 (326) |
 | `Retained` 84, `Mvc` 13, `Mvu` 94 -- the other three, over the same `Look` | |
-| `playground/Gui`, the API | 67 (122) |
+| `Gui`, the API | 67 (122) |
 | 7GUIs four ways (`examples/gui4/`), per task and architecture | see §4 |
 | `appkits/`, the engines (19 modules) | 1,708 (2,404) |
 | `apps/`, the eight applications and their parts | 2,421 (3,649) |

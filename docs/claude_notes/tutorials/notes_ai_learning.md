@@ -17,7 +17,7 @@ formula is one a reader can check with a pen.
 
 ## 0. Where the code is, and a reading order
 
-| module (`ai/`) | what | section |
+| module (`ai/learning/`) | what | section |
 |---|---|---|
 | `Matrix` (done) | dense float matrices, the naive loops | §2 |
 | `Neuron` (done) | the perceptron, its rule, and what it cannot do | §1 |

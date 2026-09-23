@@ -27,7 +27,7 @@
  * juice=off, or JuiceCurves.html?juice=off), every ball is at its end
  * at once: no juice.
  *
- * What it uses: playground/Juice (the curves, Juice.curve for the
+ * What it uses: Juice (the curves, Juice.curve for the
  * graphs, Juice.tween for every ball and dot; the model is only the
  * effects' clock, Juice.t), over juice/Ease and juice/Tween. *)
 open Playground

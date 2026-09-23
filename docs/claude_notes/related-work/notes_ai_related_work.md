@@ -228,7 +228,7 @@ which is the intended ratio. The largest implementation is `Mcts.ml`
 at 180 lines, and Monte Carlo tree search, the transposition table and
 reverse-mode autodiff are 180, 177 and 91 lines respectively. The
 tests are 1,710 lines, about as much as the code they check. On top:
-`playground/Ai` (272 lines over 288 of interface), `Ai_debug` (154),
+`Ai` (272 lines over 288 of interface), `Ai_debug` (154),
 and eleven examples totalling 2,445.
 
 **How fast it searches.** Alpha-beta on Connect 4's opening, seven

@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Matrix: the worked examples of Matrix.mli, and the two products
+(* Matrix: the worked examples of Matrix.mli, and the two products
  * measured against each other *)
 
 let t = Testo.create

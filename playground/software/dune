@@ -1,3 +1,6 @@
+; claude: its own stanzas, not part of playground/dune's include_subdirs
+(include_subdirs no)
+
 ; claude: the software-rendering backend, see Playground_platform.ml and
 ; docs/claude_notes/done/plan_software_2d.md. No Cairo, on purpose.
 (library

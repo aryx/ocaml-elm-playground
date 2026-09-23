@@ -8,8 +8,8 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Grad: the graph, the chain rule walked backwards once, and the
- * same gradient as the hand-written pass of ai/Backprop -- which is
+(* Grad: the graph, the chain rule walked backwards once, and the
+ * same gradient as the hand-written pass of Backprop -- which is
  * the whole claim of automatic differentiation *)
 
 let t = Testo.create

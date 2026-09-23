@@ -8,11 +8,11 @@ open Playground
  *
  * See https://en.wikipedia.org/wiki/Snake_(video_game_genre) for more info.
  *
- * claude: two sounds (playground/Audio): a crunch when the snake eats,
+ * claude: two sounds (Audio): a crunch when the snake eats,
  * a short burst of noise and a rising blip at once; and a falling
  * tone, the end, when it bites itself.
  *
- * claude: juice (playground/Juice.mli): the food pops in where it
+ * claude: juice (Juice.mli): the food pops in where it
  * appears, growing from nothing and overshooting a little; eaten, it
  * bursts into black crumbs and sparks, the screen shakes a little and
  * the snake's head gulps (squashes and springs back); the snake biting

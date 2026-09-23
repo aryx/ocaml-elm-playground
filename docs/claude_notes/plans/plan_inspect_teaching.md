@@ -22,7 +22,7 @@ did not plan for:
   exactly this debugger in 0.18; here it is the same idea in OCaml.
 - **The teaching libraries.** `graphics/`, `physics/`, `audio/` and
   `ai/` each compute things worth *looking at*, and one of them
-  already proves the shape works: `playground/Audio_debug` draws an
+  already proves the shape works: `Audio_debug` draws an
   oscilloscope and a spectrum over the frame ("v" with `-debug-keys`),
   as ordinary Playground shapes, so any backend can show them. The
   same trick is waiting for contacts and broad-phase grids, for
@@ -34,7 +34,7 @@ for this plan:
 
 | what | where | how it is reached |
 |---|---|---|
-| oscilloscope, spectrum | `playground/Audio_debug` | "v", `-debug-keys` |
+| oscilloscope, spectrum | `Audio_debug` | "v", `-debug-keys` |
 | hitboxes, velocity arrows | `Physics.debug` | each game's own `hitboxes=1` flag |
 | broad-phase counts | `Physics.broad_phase` | printed by `examples/PhysicsMarbles.ml` only |
 | contacts, normals, the grid, the integrator | *planned, never done* | `plan_physics_remaining.md` §2 |

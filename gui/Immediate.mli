@@ -35,7 +35,7 @@
  * Everything here is a value: a widget takes the toolkit's state and
  * gives back a new one, plus its answer. The mutable frame buffer
  * that makes the playground's [Gui] read as it does is in
- * playground/Gui.ml, and nowhere else.
+ * Gui.ml, and nowhere else.
  *
  * Worked example, a button at (0, 100) of 200 x 40, the mouse
  * resting at (0, 100) on it:

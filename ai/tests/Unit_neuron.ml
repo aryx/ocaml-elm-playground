@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* ai/Neuron: Rosenblatt's rule, what it always learns, and what it
+(* Neuron: Rosenblatt's rule, what it always learns, and what it
  * cannot learn however long it is given *)
 
 let t = Testo.create

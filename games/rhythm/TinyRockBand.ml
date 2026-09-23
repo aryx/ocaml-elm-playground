@@ -88,7 +88,7 @@
  * first exercise, and the real difficulty of the guitar.
  *
  * Exercises: vocals (which need a microphone and pitch detection,
- * audio/Spectrum's peaks), two players on one keyboard, overdrive (Rock
+ * Spectrum's peaks), two players on one keyboard, overdrive (Rock
  * Band's star power: a streak charges it, spending it doubles the score
  * and can save a failing bandmate), hammer-ons, and the drum fills.
  *)

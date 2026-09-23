@@ -21,7 +21,7 @@ built, in what order).
 | Dear ImGui | Tools and debug UI inside a program that already renders | `if (Button("OK"))` -- no objects, no state, one frame |
 | Smalltalk, Self/Morphic, HyperCard | A world you can open, poke and change while it runs | Objects all the way down, and no line between using and building |
 | Plan 9: libpanel, rio, acme | The smallest thing that works, text as the interface | A panel tree in C, or: no widgets at all, just text and mouse chords |
-| `gui/` + `playground/Gui` + `apps/` | Seeing *why* each of the above is shaped the way it is | `if Gui.button computer ~at "Reset" then ...`, and the same app written four ways |
+| `gui/` + `Gui` + `apps/` | Seeing *why* each of the above is shaped the way it is | `if Gui.button computer ~at "Reset" then ...`, and the same app written four ways |
 
 ## Part 1: where it came from
 
@@ -184,7 +184,7 @@ extreme from Qt:
   That makes `appkits/embed` the part of this plan with no upstream
   to copy, and the most interesting to design.
 
-## Where `gui/` and `playground/Gui` actually sit
+## Where `gui/` and `Gui` actually sit
 
 Two levels, as everywhere here:
 
@@ -194,7 +194,7 @@ Two levels, as everywhere here:
   (`Immediate`, `Retained`, `Mvc`, `Mvu`, all drawing through one
   `Look`), with 7GUIs as the shared harness, so the architectures can
   be compared by reading and by running rather than by argument.
-- **`playground/Gui`, the API**, at the simple end: immediate mode,
+- **`Gui`, the API**, at the simple end: immediate mode,
   because `game`'s update has no message type, so a button is a
   question you ask in `update` and nothing else.
 

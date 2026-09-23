@@ -36,7 +36,7 @@
  *
  * What it uses: appkits/sheet (the engine), appkits/sheet_view (a
  * sheet drawn into a rectangle, shared with what comes after),
- * gui/ through playground/Gui -- menu, field, button, label -- and
+ * gui/ through Gui -- menu, field, button, label -- and
  * gui/Layout. What it does not use: gui/Grid (the sheet's cells are
  * uniform, so they are arithmetic rather than layout; a grid is for
  * forms, and examples/Gui7Cells has one), and gui/Text_edit (a

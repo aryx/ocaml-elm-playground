@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* How to Design Programs's first world program, in its Prologue: a
- * rocket coming down, and landing (see playground/Bigbang.mli). The
+ * rocket coming down, and landing (see Bigbang.mli). The
  * world is a number, how far the rocket is from the top of the scene;
  * each tick adds 3; it stops at the ground. Space starts it over.
  *

@@ -263,13 +263,13 @@ longer true. See Adventure below.
   polygons, a path through them), a script per object; the parser
   becomes a menu, the world model stays.
   (DONE: `TinyManiacMansion.ml`, on the same kit; walkboxes searched
-  with ai/Pathfind; one kid, "New kid" left as an exercise.)
+  with Pathfind; one kid, "New kid" left as an exercise.)
 - **TinyMetalGear** (P2, ~400; Metal Gear, Hideo Kojima, Konami, 1987;
   Metal Gear Solid, 1998): stealth, the genre where you win by not
   being seen. The guards' cones of vision are TinyXCOM's, and the
   guards a state machine (patrol, suspicious, alert, search).
-  (DONE: `TinyMetalGearSolid.ml`, the guards on ai/Fsm and
-  ai/Pathfind, the radar, the knock, the box, the choke.)
+  (DONE: `TinyMetalGearSolid.ml`, the guards on Fsm and
+  Pathfind, the radar, the knock, the box, the choke.)
 - **TinyMyst** (P2, ~400; Myst, Rand and Robyn Miller, Cyan, 1993): a
   world of pre-rendered nodes, a click to go to the next; in 3D, every
   node a fixed camera -- TinyAloneInTheDark's cuts with the character
@@ -340,7 +340,7 @@ longer true. See Adventure below.
   robots until the network plan brings remote players.)
 - Kits waiting for a user: `Raycaster` (TinyWolfenstein's DDA, fisheye
   and textures, one game so far); `Fps_controller`, TinyMinecraft's
-  player (compare `playground/Character3d`, which may already be it);
+  player (compare `Character3d`, which may already be it);
   `Voxels`, once a third voxel game says whether TinyMinecraft's hash
   table or TinyTeardown's flat array is the kit.
 - Seen but not planned: Superhot (2016), time moving only when you

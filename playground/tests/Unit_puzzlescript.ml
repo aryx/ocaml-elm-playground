@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/Puzzlescript: the engine, on the smallest games that show
+(* Puzzlescript: the engine, on the smallest games that show
  * each of its parts -- the one rule that is Sokoban, the layers under
  * it, the sweep that turns a mark into a push, and a late rule. The two
  * real games are examples/PuzzleScript*.ml, played in tests/games. *)
