@@ -4955,6 +4955,96 @@ let vvvvvv_wrap () =
   Alcotest.(check bool) "home" true (arrived p)
 
 (*****************************************************************************)
+(* TinySuperMeatBoy *)
+(*****************************************************************************)
+
+(* [policy] played in a room, frame after frame, until Bandage Girl or
+ * a death, or [n] frames *)
+let smb_play ?(n = 1200) (policy : TinySuperMeatBoy.run -> TinySuperMeatBoy.input) (r : TinySuperMeatBoy.run) :
+    TinySuperMeatBoy.run =
+  let open TinySuperMeatBoy in
+  let rec go n r =
+    if n = 0 || r.play.dead || rescued levels.(r.level) r.play then r else go (n - 1) (advance (policy r) r)
+  in
+  go n r
+
+(* run right, and jump at [xs], holding the jump while rising *)
+let smb_run_jumping (xs : float list) (r : TinySuperMeatBoy.run) : TinySuperMeatBoy.input =
+  let p = r.play in
+  let jump = p.airborne = 0 && List.exists (fun x -> p.x > x && p.x < x +. 12.) xs in
+  { dx = 1.; jump; jump_held = jump || p.vy > 0. }
+
+(* A try is its inputs: fed to [step] again from the start, they give
+ * the same run, to the same death. *)
+let smb_replay_is_the_inputs () =
+  let open TinySuperMeatBoy in
+  let dead = smb_play (fun _ -> { nothing with dx = 1. }) (enter 0 0) in
+  Alcotest.(check bool) "into the saw" true dead.play.dead;
+  let again = List.fold_left (fun p i -> step hello_world i p) (start_of hello_world) (List.rev dead.inputs) in
+  Alcotest.(check bool) "the same run, to the pixel" true (again = dead.play)
+
+(* Dying costs a quarter of a second: back at the start, the try kept,
+ * the smears too. *)
+let smb_death_is_cheap () =
+  let open TinySuperMeatBoy in
+  let dead = smb_play (fun _ -> { nothing with dx = 1. }) (enter 0 0) in
+  let back = List.fold_left (fun r i -> advance i r) dead (List.init dying_frames (fun _ -> nothing)) in
+  Alcotest.(check bool) "at the start" true (back.play = start_of hello_world && back.splat = 0);
+  Alcotest.(check int) "one death" 1 back.deaths;
+  Alcotest.(check int) "one try kept" 1 (List.length back.tries);
+  Alcotest.(check bool) "and the smears stay" true (List.length back.smears > 5)
+
+(* Hello World: a jump over the pit, one onto the step. *)
+let smb_hello_world () =
+  let open TinySuperMeatBoy in
+  let r = smb_play (smb_run_jumping [ -190.; 120. ]) (enter 0 0) in
+  Alcotest.(check bool) "Bandage Girl" true (rescued hello_world r.play)
+
+(* Wall to Wall: up the shaft by jumping from wall to wall, the saw
+ * coming up behind. *)
+let smb_wall_to_wall () =
+  let open TinySuperMeatBoy in
+  let policy (r : run) =
+    let p = r.play in
+    let side = wall_side wall_to_wall.map p in
+    if p.y > 170. then { dx = 1.; jump = side <> 0. && p.airborne > 0 && p.vy < 3.; jump_held = p.vy > 0. }
+    else
+      let jump = p.airborne = 0 || (side <> 0. && p.vy < 3.) in
+      { dx = p.facing; jump; jump_held = jump || p.vy > 0. }
+  in
+  let r = smb_play policy (enter 1 0) in
+  Printf.eprintf "DBG smb shaft: x %.0f y %.0f dead %b frame %d\n%!" r.play.x r.play.y r.play.dead r.play.frame;
+  Alcotest.(check bool) "Bandage Girl" true (rescued wall_to_wall r.play)
+
+(* Pendulums: running straight at them dies; waiting for them to be up
+ * gets through. *)
+let smb_pendulums () =
+  let open TinySuperMeatBoy in
+  let after wait = smb_play (fun r -> if r.play.frame < wait then nothing else { nothing with dx = 1. }) (enter 2 0) in
+  let waits = List.filter (fun w -> rescued pendulums (after w).play) (List.init 23 (fun k -> k * 5)) in
+  Printf.eprintf "DBG smb pendulums: %d of 23 waits get through\n%!" (List.length waits);
+  Alcotest.(check bool) "some wait gets through" true (waits <> []);
+  Alcotest.(check bool) "not every one" true (List.length waits < 23)
+
+(* The replay: every try from the start at once, the dead ones dying
+ * where they died, the last one at Bandage Girl. *)
+let smb_every_try () =
+  let open TinySuperMeatBoy in
+  let dead = smb_play (fun _ -> { nothing with dx = 1. }) (enter 0 0) in
+  let back = List.fold_left (fun r i -> advance i r) dead (List.init dying_frames (fun _ -> nothing)) in
+  let won = smb_play (smb_run_jumping [ -190.; 120. ]) back in
+  Printf.eprintf "DBG smb first try: %d frames\n%!" (List.length (List.hd won.tries));
+  Printf.eprintf "DBG smb winning try: %d frames, jumps at %s\n%!" (List.length won.inputs)
+    (String.concat "," (List.filteri (fun _ s -> s <> "") (List.mapi (fun k (i : TinySuperMeatBoy.input) -> if i.jump then string_of_int k else "") (List.rev won.inputs))));
+  let rec play rp = if replay_over rp then rp else play (replay_step rp) in
+  let rp = play (ghosts won) in
+  match rp.ghosts with
+  | [ (first, _); (last, _) ] ->
+      Alcotest.(check bool) "the first try dies again" true first.dead;
+      Alcotest.(check bool) "the last one makes it" true (rescued hello_world last)
+  | g -> Alcotest.failf "%d ghosts, not 2" (List.length g)
+
+(*****************************************************************************)
 (* TinyMetalGearSolid *)
 (*****************************************************************************)
 
@@ -7429,6 +7519,12 @@ let tests =
       t "TinyVVVVVV, back at the checkpoint" vvvvvv_checkpoint;
       t "TinyVVVVVV, the gravity line" vvvvvv_gravity_line;
       t "TinyVVVVVV, off the bottom, in at the top" vvvvvv_wrap;
+      t "TinySuperMeatBoy, a try is its inputs" smb_replay_is_the_inputs;
+      t "TinySuperMeatBoy, dying costs nothing" smb_death_is_cheap;
+      t "TinySuperMeatBoy, Hello World" smb_hello_world;
+      t "TinySuperMeatBoy, wall to wall" smb_wall_to_wall;
+      t "TinySuperMeatBoy, pendulums" smb_pendulums;
+      t "TinySuperMeatBoy, every try at once" smb_every_try;
       t "TinyMetalGearSolid, seen in the cone, not behind walls" mgs_seeing;
       t "TinyMetalGearSolid, the box" mgs_box;
       t "TinyMetalGearSolid, the knock" mgs_knock;

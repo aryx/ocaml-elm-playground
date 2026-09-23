@@ -192,6 +192,7 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyCeleste", "", 5);
     ("games/platform/software/TinyBraid", "", 5);
     ("games/platform/software/TinyVVVVVV", "", 5);
+    ("games/platform/software/TinySuperMeatBoy", "", 5);
     ("games/adventure/software/TinyMetalGearSolid", "", 5);
     ("games/adventure/software/TinyGTA", "", 5);
     ("games/adventure/software/TinyZork", "", 5);
@@ -573,6 +574,13 @@ let scripted : Testutil_golden.scripted list =
     (* flipped up to the ceiling, walking along it over the wall, the
        spikes below: upside down, and still smiling *)
     ("games/platform/software/TinyVVVVVV", "ceiling", 90, "space:1,space:12,right:30-100");
+    (* straight into the pit's saw: the splat, and the smear along the
+       floor the run left *)
+    ("games/platform/software/TinySuperMeatBoy", "splat", 45, "space:1,right:2-37");
+    (* that death, then a try that makes it, and every try at once: the
+       first dead in the pit again, the second in the air over it *)
+    ("games/platform/software/TinySuperMeatBoy", "replay", 191,
+     "space:1,right:2-37,right:53-140,space:76-88,space:112-124");
     (* a knock on his room's wall: the guard next door has heard it
        ('?'), and comes round through the door by A*; the radar in the
        corner is the only place the cones are drawn *)

@@ -20,7 +20,9 @@
  * depth but side by side on the screen are side by side, and he walks
  * from one to the other. Five years of one designer's work, told in a
  * documentary (Indie Game: The Movie, 2012) that made it the emblem of
- * the indie game; and a pixel-art world in pastel colours, a tribute to
+ * the indie game, with Super Meat Boy and Braid (TinySuperMeatBoy.ml
+ * and TinyBraid.ml, the film's other two); and a pixel-art world in
+ * pastel colours, a tribute to
  * the 8-bit games whose look it took and whose limits it did not have.
  * (Names and dates from memory, to check.)
  *

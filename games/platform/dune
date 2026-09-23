@@ -3,9 +3,9 @@
 ; web/.
 (executables
   (names TinyBraid TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
-    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic TinyVVVVVV)
+    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic TinySuperMeatBoy TinyVVVVVV)
   (modules TinyBraid TinyCeleste TinyDonkeyKong TinyJoust TinyLodeRunner TinyMario
-    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic TinyVVVVVV
+    TinyMarioWorld TinyMetroid TinyPrinceOfPersia TinyRick TinySonic TinySuperMeatBoy TinyVVVVVV
     Mario_xpm Celeste_xpm)
   (libraries
     elm_playground

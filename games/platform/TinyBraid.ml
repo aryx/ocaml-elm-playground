@@ -21,7 +21,11 @@
  * rather than about content. The idea is time. Its worlds are Mario's
  * (a castle at the end, a princess in another castle, enemies to
  * stomp), but every world changes what time does, and each change is
- * a new set of puzzles. (Names and dates from memory, to check.)
+ * a new set of puzzles. In Indie Game: The Movie (Lisanne Pajot and
+ * James Swirsky, 2012), Blow is the one who has already shipped,
+ * looking back, while Team Meat finishes Super Meat Boy and Phil Fish
+ * Fez (TinySuperMeatBoy.ml and TinyFez.ml). (Names and dates from
+ * memory, to check.)
  *
  * This is the game this project was made for. With an immutable
  * model, rewinding is keeping the past models in a list and going
