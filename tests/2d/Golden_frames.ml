@@ -86,6 +86,10 @@ let scenes : Testutil_golden.scene list =
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
+    (* 1991-2001: the media player, the first item of our playlist, an
+     * ABC round, as a piano roll (the note sounding lit, mid-note: its
+     * scope and spectrum full) *)
+    ("apps/music/software/TinyMediaPlayer", "", 80);
     (* 1994: a document of parts -- a text, a sheet and a picture side
      * by side, and a part of a kind nobody here can read, kept *)
     ("apps/office/software/TinyOpenDoc", "", 5);
@@ -959,6 +963,11 @@ let scripted : Testutil_golden.scripted list =
     (* and played: 57 frames in, row 8 (120 ms a row), the grid following
      * the playhead, the channels' volumes lit *)
     ("apps/music/software/TinySoundtracker", "playing", 60, "space:3");
+    (* the media player, n pressed to the next items: the module as a
+     * tracker shows it, the recording's whole wave, our animated GIF *)
+    ("apps/music/software/TinyMediaPlayer", "module", 60, "n:3,n:6,n:9");
+    ("apps/music/software/TinyMediaPlayer", "recording", 60, "n:3,n:6,n:9,n:12");
+    ("apps/music/software/TinyMediaPlayer", "animation", 70, "n:3,n:6,n:9,n:12,n:15,n:18,n:21");
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

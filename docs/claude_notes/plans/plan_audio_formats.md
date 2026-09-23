@@ -305,6 +305,35 @@ solfège, so everything that plays a tune plays it.
   samples), reopened by mod= with the note there. Golden frames: at
   rest, editing (C-2, D-2, C20), playing (row 8 after 57 frames, 120 ms
   a row); CATALOG.md's row; its web page.
+- **Phase 4, DONE (2026-09-23)**: `apps/music/TinyMediaPlayer`, widened
+  at the user's wish from a MIDI player to a small VLC, every format the
+  repository reads (a teaching toy, not a VLC rival): recordings (WAV),
+  tunes (MIDI, ABC, solfege), modules (MOD), pictures (PNG, JPEG, XPM),
+  animations (GIF). The machinery apart, in `music_media`: `Media` (the
+  kind found from the bytes, magic numbers first, the name only after
+  -- a PNG called bell.wav is a PNG; opened into a `Sound` with its
+  notes, a `Module`, a `Picture`, an `Animation`), and `Our_media` (the
+  playlist of our own: the round in ABC and as MIDI, a tune in solfege,
+  the tracker's song, moved there from TinySoundtracker, an FM bell as
+  a WAV, the Image examples' picture in its three formats and
+  TinyMario's sprite, embedded by a rule, and an animated GIF written
+  there: a ball bouncing, its LZW codes uncompressed -- a clear code
+  every two pixels, so the dictionary never grows; there is no GIF
+  writer in graphics/images). Each kind shown as what it is: a piano
+  roll (the notes read from the MIDI file a tune is or becomes, a color
+  per channel, the sounding note lit), a recording's whole wave, a
+  module's four channels around the row playing, a picture fitted (a
+  whole number of pixels a pixel: at 8.75 the rows left seams), an
+  animation's frames at their delays; a scope and a spectrum; a seek
+  slider, buttons, the playlist clickable; the next item when one ends,
+  pictures 5 s. file= adds yours. Tests (`Unit_media`): each item's
+  kind by its bytes, a PNG under a WAV's name, the name only for plain
+  text; the round 16 s in ABC and as MIDI, its 58 notes (my first count
+  said 80: voice 2 plays only six bars), the bell 2 s, the module's two
+  positions, the picture 64 x 48, our GIF's six frames at 0.15 s, the
+  ball moving; an unknown file refused. Golden frames: the roll, the
+  module, the recording, the animation. MIDI's pitch bend and control
+  changes are still not heard: an exercise in its header.
 
 ## Verification
 

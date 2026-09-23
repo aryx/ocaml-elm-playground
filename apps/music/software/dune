@@ -3,15 +3,17 @@
 ; as-is by a build-time copy, not a committed duplicate.
 (copy_files ../TinyMinimoog.ml)
 (copy_files ../TinySoundtracker.ml)
+(copy_files ../TinyMediaPlayer.ml)
 
 (executables
-  (names TinyMinimoog TinySoundtracker)
-  (modules TinyMinimoog TinySoundtracker)
+  (names TinyMinimoog TinySoundtracker TinyMediaPlayer)
+  (modules TinyMinimoog TinySoundtracker TinyMediaPlayer)
   (libraries
     caps
     elm_core
     elm_playground
     music_voices
+    music_media
     elm_playground_software ; implem of virtual elm_playground
   )
 )

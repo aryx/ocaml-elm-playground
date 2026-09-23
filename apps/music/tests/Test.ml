@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"music" (fun _env -> Unit_minimoog.tests)
+let () = Testo.interpret_argv ~project_name:"music" (fun _env -> Unit_minimoog.tests @ Unit_media.tests)
