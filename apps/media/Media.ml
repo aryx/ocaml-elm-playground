@@ -59,7 +59,7 @@ type media =
   | Sound of { samples : Signal.stereo; notes : Midi.note list }
   | Module of Mod.song
   | Picture of Rgba_image.t
-  | Animation of (Rgba_image.t * float) list
+  | Movie of Movie.t
 
 (* an XPM's characters as pixels: each its palette's color, or
  * transparent ("None") *)
@@ -83,6 +83,11 @@ let xpm_picture (x : Xpm.t) : Rgba_image.t =
     x.rows;
   img
 
+(* a GIF's frames as a movie; a delay under 0.02 s taken as 0.02 (the
+ * browsers go further, making 0 and 0.01 s 0.1 s) -- a GIF of zero
+ * delays would otherwise be frames of no time at all *)
+let gif_movie (frames : (Rgba_image.t * float) list) : Movie.t = Movie.of_frames (List.map (fun (img, d) -> (img, Float.max 0.02 d)) frames)
+
 (* a tune: played by the synthesizer's band, its notes read back from
  * the MIDI file it makes (Midi.of_tune), for the piano roll *)
 let tune (t : Abc.tune) : media =
@@ -103,10 +108,13 @@ let open_ ~(name : string) (bytes : string) : (kind * media, string) result =
         (* the decoders raise on a broken file: caught below *)
         | Png -> Ok (Picture (Png.decode bytes))
         | Jpeg -> Ok (Picture (Jpeg.decode bytes))
-        | Gif -> Ok (match Gif.animation bytes with [ (image, _) ] -> Picture image | frames -> Animation frames)
+        | Gif -> Ok (match Gif.animation bytes with [ (image, _) ] -> Picture image | frames -> Movie (gif_movie frames))
         | Xpm -> Ok (Picture (xpm_picture (Xpm.parse bytes)))
       in
       match media with Ok m -> Ok (kind, m) | Error e -> Error (name ^ ": " ^ e) | exception e -> Error (name ^ ": " ^ Printexc.to_string e))
 
 let duration (m : media) : float option =
-  match m with Sound s -> Some (float_of_int (Array.length s.samples.left) /. float_of_int Signal.rate) | _ -> None
+  match m with
+  | Sound s -> Some (float_of_int (Array.length s.samples.left) /. float_of_int Signal.rate)
+  | Movie movie -> Some movie.duration
+  | Module _ | Picture _ -> None

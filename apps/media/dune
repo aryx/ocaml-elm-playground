@@ -20,6 +20,7 @@
  (libraries
    audio audio_wav audio_midi audio_abc audio_mod
    graphics_rgba graphics_png graphics_gif graphics_jpeg graphics_xpm
+   graphics_movie
    music_voices ; Our_songs: the tracker's song
  ))
 

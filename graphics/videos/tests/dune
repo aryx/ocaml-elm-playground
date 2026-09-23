@@ -1,0 +1,7 @@
+; claude: unit tests for the video formats of graphics/videos/, run by
+; 'make test' (dune runtest)
+(test
+ (name Test)
+ (package elm_playground)
+ (libraries alcotest testo graphics_rgba graphics_movie)
+)

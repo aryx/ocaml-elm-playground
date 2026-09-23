@@ -68,6 +68,8 @@ codecs before and after, the players, the books).
 
 ```
 graphics/videos/          video formats, one library each
+  movie/                  Movie: what every reader gives, frames decoded
+                          on demand at their times (done, phase 0)
   yuv/                    Yuv: RGB <-> YCbCr (BT.601), 4:2:0 and back
                           (shared with JPEG's color conversion if it fits)
   y4m/                    Y4m: YUV4MPEG2 read and written
@@ -162,10 +164,14 @@ commercial stream analyzers); here it is the lesson made visible.
 
 ## Phasing
 
-0. **The notes and the groundwork**: `notes_video.md` written ahead;
-   `graphics/videos/` and its tests; `Media`'s `Movie` kind (frames on
-   demand, a frame rate, audio or not) in TinyMediaPlayer, the GIF
-   animation moved onto it.
+0. **The notes and the groundwork** (done): `notes_video.md` and
+   `notes_video_related_work.md` written ahead; `graphics/videos/movie/`
+   (`Movie`: the frames' start times, a frame decoded when asked, and
+   `Movie.sequential` for the decoders that only go forward, a seek back
+   starting over) and `graphics/videos/tests/`; `Media`'s `Movie` kind
+   in TinyMediaPlayer, the GIF animation moved onto it. The sound of a
+   movie, and the audio clock driving it, wait for phase 3's AVI, the
+   first format with both.
 1. **Y4M and YCbCr**: `Yuv` (BT.601, 4:2:0, round trips measured by
    PSNR), `Y4m` read and written; our first clip, rendered by the 2D
    rasterizer, written as Y4M; the player plays it.

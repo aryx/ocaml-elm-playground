@@ -56,12 +56,12 @@ let test_open () =
   (match open_ "mario_stand.xpm" with Picture img -> if img.width < 8 then Alcotest.fail "the sprite too small" | _ -> Alcotest.fail "not a picture");
   (* our GIF: six frames, 0.15 s each, the ball moving *)
   match open_ "bouncing_ball.gif" with
-  | Animation frames ->
-      Alcotest.(check int) "six frames" 6 (List.length frames);
-      List.iter (fun (_, d) -> Alcotest.(check (float 1e-9)) "0.15 s" 0.15 d) frames;
-      let first = fst (List.hd frames) and second = fst (List.nth frames 1) in
-      if first.rgba = second.rgba then Alcotest.fail "the ball didn't move"
-  | _ -> Alcotest.fail "not an animation"
+  | Movie movie ->
+      Alcotest.(check int) "six frames" 6 (Movie.frame_count movie);
+      Alcotest.(check (float 1e-9)) "0.15 s each" 0.9 movie.duration;
+      Alcotest.(check (float 1e-9)) "the third at 0.3 s" 0.3 movie.times.(2);
+      if (movie.frame 0).rgba = (movie.frame 1).rgba then Alcotest.fail "the ball didn't move"
+  | _ -> Alcotest.fail "not a movie"
 
 let test_refused () =
   match Media.open_ ~name:"x.bin" "\000\001" with
@@ -72,6 +72,6 @@ let tests =
   Testo.categorize "Media"
     [
       t "each file recognized by its bytes" test_sniff;
-      t "each file opened: sounds, a module, pictures, an animation" test_open;
+      t "each file opened: sounds, a module, pictures, a movie" test_open;
       t "what isn't a known kind" test_refused;
     ]

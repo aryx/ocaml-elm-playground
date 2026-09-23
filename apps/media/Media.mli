@@ -25,8 +25,9 @@
  * to play (a recording, or a tune rendered by audio/'s synthesizer,
  * with its notes for a piano roll); a [Module], a song played live by
  * its own player (Mod_player.mli), too long to render ahead; a
- * [Picture]; an [Animation], a GIF's frames and their delays -- the
- * video of this player. *)
+ * [Picture]; a [Movie], pictures in time, decoded as they're shown
+ * (Movie.mli): so far a GIF's frames, and as graphics/videos/ grows,
+ * the video formats (plan_video_teaching.md). *)
 
 type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm
 
@@ -40,10 +41,10 @@ type media =
   | Sound of { samples : Signal.stereo; notes : Midi.note list (* none for a recording *) }
   | Module of Mod.song
   | Picture of Rgba_image.t
-  | Animation of (Rgba_image.t * float) list (* the frames, their delays in seconds *)
+  | Movie of Movie.t
 
 (* [open_ ~name bytes]: what it is and what it holds, or why not *)
 val open_ : name:string -> string -> (kind * media, string) result
 
-(* how long a sound lasts, in seconds; None for the others *)
+(* how long a sound or a movie lasts, in seconds; None for the others *)
 val duration : media -> float option

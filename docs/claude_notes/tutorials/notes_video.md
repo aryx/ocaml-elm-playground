@@ -19,12 +19,13 @@ after the first is a way of not storing the same thing twice.
 
 | directory (`graphics/videos/`) | modules | section | status |
 |---|---|---|---|
+| `movie/` | `Movie`, a video as a player sees it | §3, §4 | done |
 | `yuv/` | `Yuv` | §2 | |
 | `y4m/` | `Y4m` | §2 | |
 | `fli/` | `Fli` | §3 | |
 | `avi/` | `Avi` | §4 | |
 | `mpeg1/` | `Bits`, `Vlc`, `Mpeg1`, later `Motion` | §5, §7 | |
-| `apps/media/` | TinyMediaPlayer's `Movie` kind, the analyzer | §8 | |
+| `apps/media/` | TinyMediaPlayer's `Movie` kind (done: GIFs), the analyzer | §8 | |
 
 ## 1. How big video is
 

@@ -13,7 +13,8 @@
  * playlist, and whatever the file is shown its own way -- here every
  * format this repository reads: a recording (WAV), tunes (MIDI, ABC,
  * solfege), a song with its instruments (MOD), pictures (PNG, JPEG,
- * XPM) and an animation (a GIF's frames: the video of this player).
+ * XPM) and movies (so far an animated GIF's frames; the video formats
+ * as graphics/videos/ grows, plan_video_teaching.md).
  *
  * The file's kind is found from its bytes, not its name (Media.mli: the
  * magic numbers file(1) and VLC's demuxers look for), and each kind is
@@ -25,8 +26,8 @@
  *   - a recording: its whole wave, the playhead crossing it;
  *   - a module: its four channels around the row playing, as a tracker
  *     shows them (TinySoundtracker.ml);
- *   - a picture: fitted to the screen, for 5 s; an animation, its frames
- *     at their delays.
+ *   - a picture: fitted to the screen, for 5 s; a movie, each frame at
+ *     its time, decoded when shown (Movie.mli), looped for 5 s if shorter.
  *
  * Under it, what just played, as an oscilloscope and a spectrum; then
  * the position (a slider: drag it to seek), the buttons, and the
@@ -215,7 +216,8 @@ let update (computer : computer) (m : model) : model =
   (* the item over: the next one; a picture after its time *)
   let over =
     match m.opened with
-    | Ok (_, (Picture _ | Animation _)) -> m.playing && m.shown >= picture_frames
+    | Ok (_, Picture _) -> m.playing && m.shown >= picture_frames
+    | Ok (_, Movie movie) -> m.playing && m.shown >= max picture_frames (int_of_float (movie.duration * 60.))
     | Ok _ -> deck.finished
     | Error _ -> m.playing && m.shown >= 60
   in
@@ -306,12 +308,8 @@ let picture (img : Rgba_image.t) : shape list =
   let size = Float.floor (Float.min ((vw - 40.) / float_of_int img.width) ((vh - 40.) / float_of_int img.height)) in
   [ Sprite.of_rgba size img |> move vx vy ]
 
-(* the frame the animation is at, [frames] frames (1/60 s) in *)
-let animation (frames : (Rgba_image.t * float) list) (shown : int) : shape list =
-  let total = List.fold_left (fun t (_, d) -> t + Float.max 0.02 d) 0. frames in
-  let t = Float.rem (float_of_int shown / 60.) total in
-  let rec at t = function [] -> [] | [ (img, _) ] -> picture img | (img, d) :: rest -> if t < Float.max 0.02 d then picture img else at (t - Float.max 0.02 d) rest in
-  at t frames
+(* the frame the movie is at, [shown] frames (1/60 s) in, looping *)
+let movie (movie : Movie.t) (shown : int) : shape list = picture (Movie.frame_at movie (Float.rem (float_of_int shown / 60.) movie.duration))
 
 let scope_and_spectrum () : shape list =
   let samples = recent () in
@@ -350,7 +348,7 @@ let where (m : model) : string =
   | Ok (_, Module song) -> (
       match deck.player with Some p -> let pos, row = Mod_player.position p in Printf.sprintf "position %d/%d, row %d" pos (Array.length song.positions) row | None -> "")
   | Ok (_, Picture img) -> Printf.sprintf "%d x %d pixels" img.width img.height
-  | Ok (_, Animation frames) -> Printf.sprintf "%d frames" (List.length frames)
+  | Ok (_, Movie movie) -> Printf.sprintf "%d frames" (Movie.frame_count movie)
 
 let view (_computer : computer) (m : model) : shape list =
   let name = fst (List.nth m.items m.current) in
@@ -361,7 +359,7 @@ let view (_computer : computer) (m : model) : shape list =
     | Ok (_, Sound s) -> waveform s.samples.left (fraction ())
     | Ok (_, Module song) -> tracker song
     | Ok (_, Picture img) -> picture img
-    | Ok (_, Animation frames) -> animation frames m.shown
+    | Ok (_, Movie mv) -> movie mv m.shown
     | Error e -> [ txt 18. ink e |> move vx vy ]
   in
   [ rectangle (rgb 50 50 62) 1000. 1000.; rectangle panel vw vh |> move vx vy ]
