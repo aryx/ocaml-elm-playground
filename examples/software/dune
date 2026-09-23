@@ -18,6 +18,7 @@
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
     ImageJpeg ImagePng ImageLzw
+    JuiceCurves
     LogoFractals
     BigBangRocket
     BigBangWorm

@@ -415,6 +415,27 @@ start; `Juice.mli`'s header lists which do.
   one that would clash with `juice/Ease` in the unwrapped libraries).
   Split later only if `JuiceBreakout` shows the halves used apart (the
   author).
+- 2026-09-23, phase 1 DONE: `juice/Ease` (six families as their `in`
+  curves, `out` and `in_out` as two functions over any curve --
+  Penner's eighteen formulas from six curves, and `smoothstep`) and
+  `juice/Tween` (`progress`, `lerp`, `value`, `finished`), 9 tests
+  (the worked examples: quad 0.25/0.75 at a half; `out back` peaking at
+  1.1000 at t = 0.580, which is what Penner's 1.70158 is for; the
+  tween figure 0/75/100; the laws: every one of the 20 curves 0 at 0
+  and 1 at 1, `out (out f) = f`, the bounces touching 1, the gentle
+  curves monotone in [0, 1]). `playground/Juice` with the first
+  section only: 19 named eases (no `smoothstep`: not one of Penner's
+  names), `tween`, and one addition to the sketch, `curve` (an ease
+  read directly, to draw it): `JuiceCurves` first plotted its graphs
+  by calling `tween` with a rigged `computer`, a hack in a teaching
+  example. `tween` takes the `computer` and honours `juice=off` (at its
+  end at once); `curve` does not, a curve being data, not an effect.
+  `examples/JuiceCurves` (native, software, web), golden frames
+  `JuiceCurves.png` (the balls halfway: the frozen clock of the golden
+  runner, 1000 s, is 1 s into the 3 s cycle) and `JuiceCurves_off.png`
+  (flagged `juice=off`, the first use of a flagged scene outside
+  `artwork=`). `notes_juice.md` written, §1 to §3 in full, §4 to §7
+  sketched.
 
 ## Verification
 

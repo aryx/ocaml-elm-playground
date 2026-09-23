@@ -30,6 +30,9 @@
    ; claude: the game AI under Ai.ml (private, pure OCaml, this same
    ; package), see docs/claude_notes/plans/plan_ai_teaching.md
    ai
+   ; claude: the game feel under Juice.ml (private, pure OCaml, this
+   ; same package), see docs/claude_notes/plans/plan_juice_teaching.md
+   juice
    ; claude: the XPM files under Sprite.of_xpm (private, pure OCaml,
    ; this same package), see graphics/images/xpm/Xpm.mli
    graphics_xpm
