@@ -80,6 +80,9 @@ let scenes : Testutil_golden.scene list =
     ("apps/office/software/TinyMacPaint", "", 5);
     ("apps/gamedev/software/TinyAseprite", "", 5);
     ("apps/gamedev/software/TinyTiled", "", 5);
+    (* 1970: the Model D's controls, a slider, a box or a menu each, from
+     * the voice's own table of knobs; the bass preset *)
+    ("apps/music/software/TinyMinimoog", "", 5);
     (* 1994: a document of parts -- a text, a sheet and a picture side
      * by side, and a part of a kind nobody here can read, kept *)
     ("apps/office/software/TinyOpenDoc", "", 5);

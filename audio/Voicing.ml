@@ -50,9 +50,13 @@ let glide_to (g : glide) (note : int) : unit = g.target <- float_of_int note
 let pitch (g : glide) : float = g.pitch
 let frequency (pitch : float) : float = 440. *. Float.pow 2. ((pitch -. 69.) /. 12.)
 
-let fill_frequency (g : glide) ~(seconds : float) (out : Signal.t) : unit =
+let fill_pitch (g : glide) ~(seconds : float) (out : Signal.t) : unit =
   let c = if seconds <= 0. then 1. else 1. -. exp (-1. /. (seconds *. float_of_int Signal.rate)) in
   for i = 0 to Array.length out - 1 do
     g.pitch <- g.pitch +. ((g.target -. g.pitch) *. c);
-    out.(i) <- frequency g.pitch
+    out.(i) <- g.pitch
   done
+
+let fill_frequency (g : glide) ~(seconds : float) (out : Signal.t) : unit =
+  fill_pitch g ~seconds out;
+  Array.iteri (fun i p -> out.(i) <- frequency p) out

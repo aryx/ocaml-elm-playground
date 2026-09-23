@@ -34,10 +34,10 @@ let render ?(mode = Long) ~(rate : float) (seconds : float) : Signal.t =
       done;
       out)
 
-(* in a browser (js_of_ocaml) ints are 32 bits: the product wraps by
- * itself, mod 2^32 but signed, hence [uniform]'s correction; natively
- * the mask does it: the same sequence either way *)
-let lcg (x : int) : int = ((1664525 * x) + 1013904223) land 0xFFFF_FFFF
+(* mod 2^32 by computing in 32 bits, which wrap by themselves, natively
+ * and in a browser alike (where OCaml's ints are 32 bits anyway); the
+ * state comes out signed, hence [uniform]'s correction *)
+let lcg (x : int) : int = Int32.to_int (Int32.add (Int32.mul 1664525l (Int32.of_int x)) 1013904223l)
 
 let uniform (x : int) : float =
   let x = float_of_int x in

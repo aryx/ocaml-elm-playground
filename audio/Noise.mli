@@ -62,7 +62,9 @@ val render : ?mode:mode -> rate:float -> float -> Signal.t
  * 2^32, never x mod something small. Deterministic, from a seed: the
  * same drift, the same random steps, every run. *)
 
-(* [lcg x]: the next state *)
+(* [lcg x]: the next state, as a signed 32-bit number (3519870697 above
+ * comes out as 3519870697 - 2^32 = -775096599), the same natively and
+ * in a browser *)
 val lcg : int -> int
 
 (* [uniform x]: a state as a number from -1 to 1 *)

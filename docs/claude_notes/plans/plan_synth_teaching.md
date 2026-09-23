@@ -88,13 +88,15 @@ Left to right on its panel, as it will be on the screen:
   "decay" switch makes the release equal to the decay. Their curves are
   a capacitor charging, not straight lines.
 - **Modulation**: the mod wheel sends the modulation mix (oscillator 3
-  and/or noise, *or* the filter envelope) to the oscillators' pitch
-  (vibrato, or sweeps) and/or the filter's cutoff (growl, wah).
+  and/or noise; the 2016 reissue adds the filter envelope as a source)
+  to the oscillators' pitch (vibrato, or sweeps) and/or the filter's
+  cutoff (growl, wah).
 - **Monophonic**: one voice, low-note priority, glide (portamento) as
   a time constant.
 
-To check against the Model D's owner's manual and schematics when
-writing each module (the ranges, the priority, the curves).
+Checked in phase 4 against the documentation (see its status entry
+below, and `Minimoog_voice.mli` for which ranges are the Model D's and
+which are ours).
 
 ## Groundwork decisions
 
@@ -514,6 +516,45 @@ microphone, which is out of scope) likewise later.
   Hz and blown up at 3 kHz, the SVF steady. Golden WAVs, plotted before
   approving: `ladder_sweep` and `ladder_self_oscillation` (C4, E4, G4,
   C5 on the cutoff alone, each measured within 0.3 cents).
+- **Phase 4, DONE (2026-09-23)**: TinyMinimoog's sound. The Model D's
+  facts looked up first (its manual, the 2016 reissue's, its service
+  manual, reviews): oscillator 3's reverse sawtooth in place of the
+  shark tooth, the shark tooth a passive mix (about 75% triangle, 25%
+  sawtooth), the contours' 1 ms-10 s and 4 ms-35 s, glide 1 ms-10 s,
+  the filter contour's 4 octaves, the tracking's thirds, 7 semitones of
+  detune, the modulation mix of oscillator 3 and noise; the reissue's
+  additions (a separate LFO, the filter contour as a source, a choice
+  of note priority) left out. Not documented, so ours, said so in the
+  `.mli`: LO 6 octaves under 8', the rectangles 30% and 10% wide, the
+  modulation's depths, k = 4.5 at the emphasis's top (4.2 first: the
+  whistle preset too quiet, 0.06). `apps/music/Minimoog_voice` (library
+  `music_voices`): the patch a record of the panel's positions, `knobs`
+  the table of its controls (name, kind, get, put) that makes both the
+  text format ("name = value" lines, a switch on/off, a selector by
+  its label) and TinyMinimoog's panel; six presets of our own written
+  in that text; the voice as an `Instrument.t` (Voicing low note and
+  legato, three Vcos with Drift, white noise from Noise.lcg, the two
+  contours, Moog_ladder, the knobs ramped over each block). `Voicing`
+  got `fill_pitch` (the pitch in semitones, the voice adding the
+  wheel, the tune, the ranges before turning it into hertz).
+  `TinyMinimoog` plain: a slider, a box or a menu per control,
+  generated from `knobs`; the letters as keys, z/x the octave, the
+  arrows the pitch wheel, 1-4 the teaching switches; the voice outside
+  the model, as the mixer's. Tests (`apps/music/tests/Unit_minimoog`):
+  every preset written and read back unchanged, the parser's errors;
+  the laws (632.46 Hz at 0.5, 1 ms / 100 ms / 10 s, 35 s, the four
+  trackings); low note and legato (C3 held under E3); the whistle
+  within 2.5 cents at C3, C4, G4, C5, its cutoff doubled an octave up;
+  the mixer's overload (0.123, 0.312, 0.446 at levels 0.1, 0.33, 1);
+  a golden WAV per preset playing the same riff (plotted before
+  approving; the brass's attacks lengthened after the plot showed no
+  swell). A scripted run of the app (-dump-audio) measured: C3 on the
+  bass preset's 32' at 32.7 Hz, held under E3, G3 at 49.1 Hz. Its
+  golden frame, CATALOG.md's Music section, its web page. On the way:
+  `Noise.lcg` in Int32 (the same numbers, and no more js_of_ocaml
+  warning on a 32-bit mask); a stray `actual/` of golden WAVs at the
+  repository's root removed, left by running the audio tests' binary
+  from there.
 
 ## Verification
 

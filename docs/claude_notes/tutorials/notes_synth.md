@@ -41,8 +41,8 @@ module here.
 | `audio/Delay`, `Reverb` | echoes in time with the music; rooms | §8 | |
 | `audio/Dynamics` | compressor, limiter, gate | §8 | |
 | `audio/Rack` | effects in an order | §8 | |
-| `apps/music/Minimoog_voice` | the Model D's signal path | §2 | |
-| `apps/music/TinyMinimoog` | its panel | §9 | |
+| `apps/music/Minimoog_voice` | the Model D's signal path | §2 | done |
+| `apps/music/TinyMinimoog` | its panel | §9 | plain (a slider per knob) |
 | `playground/Audio`'s instruments, `Mixer.instrument` | playing one from a game or an app | §1 | done |
 
 ## 1. Playing live: instruments
@@ -132,7 +132,8 @@ studio, fixed the path left to right on its panel:
   triangle-saw, sawtooth, square, wide and narrow pulses), the second
   and third detunable: two saws a few cents apart **beat**, the thick
   sound;
-- a **mixer**: their levels, and noise, white or pink;
+- a **mixer**: their levels, and noise, white or pink (white only
+  here: pink noise is `notes_audio.md` §12's exercise);
 - the **ladder filter** (§6), -24 dB per octave, its cutoff, its
   "emphasis" (resonance), its "amount of contour" (how far the filter
   envelope opens it) and its keyboard tracking (a third, two thirds, or
@@ -144,9 +145,35 @@ studio, fixed the path left to right on its panel:
   an LFO; the mod wheel sends it (or noise) to the oscillators' pitch
   (vibrato, trills) and the filter's cutoff (growl, wah).
 
-To check against the Model D's owner's manual when writing
-`Minimoog_voice`: the ranges of the knobs, the curves of the cutoff
-and of the contours, what the modulation switches route.
+`Minimoog_voice` is that path, over the blocks of the sections below,
+and the knobs' ranges are the Model D's where its documentation gives
+them: the contours' attack from 1 ms to 10 s and decay from 4 ms to 35
+s, the glide from 1 ms to 10 s, the filter contour up to 4 octaves,
+the tracking a third, two thirds or all of the note, oscillators 2 and
+3 detuned 7 semitones either way, the pitch wheel a fifth. Oscillator
+3's six waveforms swap the shark tooth for a *reverse* sawtooth, the
+ramp an LFO wants; the shark tooth itself is a passive mix on the
+waveform switch, about three quarters triangle and a quarter
+sawtooth. The modulation mix blends oscillator 3 and noise (the 2016
+reissue adds a separate LFO, the filter contour as a source, and a
+choice of note priority: not here). Where nothing says, the choices
+are ours and said so in its `.mli`: LO 6 octaves under 8' (oscillator
+3 off the keyboard then runs at 2.7 to 6.1 Hz, a vibrato's rates), the
+wide and narrow rectangles 30% and 10% wide, the modulation's depths
+(12 semitones and 3 octaves at the wheel's top), the emphasis knob
+reaching k = 4.5 (oscillating from 0.89 of its turn).
+
+Two measurements that are the Model D's character: the **mixer
+overloads the filter** -- three sawtooths at a tenth of their level
+come out at 0.123, at a third 0.312, at full 0.446: 3.3 times the input
+gives 2.5 times the output, the next 3 times only 1.4, the ladder's
+tanh (§6) thickening the sound instead; and with no oscillator at all,
+the **filter played as an oscillator** -- the "whistle" preset, the
+emphasis at its top and the tracking full, sings C3, C4, G4 and C5
+within 2.5 cents. A patch is the panel's positions, written as "name =
+value" lines, and the presets (bass, lead, brass, flute, whistle,
+wind) are our settings in that text; each plays the same riff as a
+golden WAV (`apps/music/tests/`).
 
 ## 3. Oscillators for a synthesizer
 

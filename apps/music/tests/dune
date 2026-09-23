@@ -1,0 +1,9 @@
+; claude: unit tests for the music applications' voices, run by 'make
+; test' (dune runtest): the .mli's worked examples, and golden WAVs of
+; each preset playing the same riff (golden/*.wav, compared sample by
+; sample; 'make approve-golden-music' after listening to actual/*.wav)
+(test
+ (name Test)
+ (libraries alcotest testo audio music_voices)
+ (deps (glob_files golden/*.wav))
+)
