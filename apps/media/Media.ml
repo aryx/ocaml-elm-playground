@@ -67,7 +67,7 @@ type media =
   | Sound of { samples : Signal.stereo; notes : Midi.note list }
   | Module of Mod.song
   | Picture of Rgba_image.t
-  | Movie of { movie : Movie.t; sound : Signal.stereo option; mpeg : (Mpeg1.header * (int -> Mpeg1.info)) option }
+  | Movie of { movie : Movie.t; sound : Signal.stereo option; mpeg : (Mpeg1.header * (int -> Mpeg1.info) * Movie.t Lazy.t) option }
 
 (* an XPM's characters as pixels: each its palette's color, or
  * transparent ("None") *)
@@ -125,7 +125,8 @@ let open_ ~(name : string) (bytes : string) : (kind * media, string) result =
             Ok (Movie { movie; sound = Option.map Signal.both sound; mpeg = None })
         | Mpeg1 ->
             let header, movie, info = Mpeg1.of_string bytes in
-            Ok (Movie { movie; sound = None; mpeg = Some (header, info) })
+            let sent = lazy (let _, m, _ = Mpeg1.of_string ~residual:true bytes in m) in
+            Ok (Movie { movie; sound = None; mpeg = Some (header, info, sent) })
       in
       match media with Ok m -> Ok (kind, m) | Error e -> Error (name ^ ": " ^ e) | exception e -> Error (name ^ ": " ^ Printexc.to_string e))
 

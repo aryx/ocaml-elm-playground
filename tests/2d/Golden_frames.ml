@@ -1015,6 +1015,10 @@ let scripted : Testutil_golden.scripted list =
     (* claude: and by our own encoder (Mpeg1_encode.mli), the analyzer
      * on: I and P only, the still sky skipped, the ball and the square
      * moved by their vectors *)
+    (* claude: ffmpeg's clip again, r pressed: what was sent for a B
+     * frame -- gray but for the corrections, at the ball's and the
+     * square's edges *)
+    ("apps/media/software/TinyMediaPlayer", "residual", 92, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36,n:39,r:45");
     ("apps/media/software/TinyMediaPlayer", "mpeg1_ours", 97, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36,n:39,n:42,a:48");
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and

@@ -5,8 +5,9 @@ each idea: raw frames and the color model every codec works in, frames
 stored as what changed, a container holding pictures and sound in step,
 and motion compensation, the idea that makes video small. Written
 before the code, as its specification
-([`plan_video_teaching.md`](../plans/plan_video_teaching.md)); the
-numbers of what is built will be the tests'. Companions:
+([`plan_video_teaching.md`](../plans/plan_video_teaching.md)), then
+checked against it: the numbers are the tests' and the measurements'.
+Companions:
 [`notes_images.md`](notes_images.md) (the pictures a video is made of:
 JPEG's DCT comes back in §5), [`notes_audio.md`](notes_audio.md) (the
 sound, and the audio clock of §4), and
@@ -25,7 +26,15 @@ after the first is a way of not storing the same thing twice.
 | `fli/` | `Fli` | §3 | done |
 | `avi/` | `Avi` | §4 | done |
 | `mpeg1/` | `Bits`, `Vlc`, `Mpeg1`, `Motion`, `Mpeg1_encode` | §5, §7 | done |
-| `apps/media/` | TinyMediaPlayer's `Movie` kind (done), the analyzer (`d` and `a` done, the residual not yet) | §4, §8 | |
+| `apps/media/` | TinyMediaPlayer's movies, and the analyzer (`d`, `a`, `r`) | §4, §8 | done |
+
+A reading order: `Yuv` and `Psnr` (the pixels, and how a loss is
+measured), `Y4m` (raw video, how big it is), `Movie` (frames on demand,
+and why a decoder only goes forward), `Fli` (frames as what changed),
+`Avi` (the container apart from the codec), then `Bits`, `Vlc` and
+`Mpeg1` (motion compensation), and last the encoder's side, `Motion`
+and `Mpeg1_encode`. Then TinyMediaPlayer's playlist, the same clip in
+each format, with `d`, `a` and `r` on.
 
 ## 1. How big video is
 
@@ -55,8 +64,9 @@ brightness), BT.601's recipe (1982, for digital television):
 Worked example: pure red (255, 0, 0) is Y = 76, Cb = 85, Cr = 255 --
 dark (the eye finds red dim next to green) and all red difference.
 (Video proper squeezes Y into 16-235 and Cb, Cr into 16-240, the
-"studio range", and MPEG-1 does; JPEG uses the full 0-255. To check,
-and say, in `Yuv.mli`.)
+"studio range": red is 81, 90, 240 there, black 16. Y4M and MPEG-1
+carry it, JPEG the full 0-255; `Yuv` does both, and shows the classic
+bug -- a video's black read as full range is a washed-out 16.)
 
 Then the color is **subsampled**: **4:2:0** keeps one Cb and one Cr for
 each 2 x 2 square of Y. A frame of W x H is W x H bytes of Y and W x H /
@@ -176,8 +186,8 @@ The frames come in three kinds:
 
 **Half a pixel.** A vector's unit is half a pixel: between two pixels,
 the prediction is their average, (a + b + 1) / 2, rounded up; between
-four, the average of four. Worked example, to compute when writing: a
-row 10, 20, 30, 40 moved by +1.5 pixels.
+four, the average of four. Worked example (`Mpeg1.mli`'s, tested): the
+row 10, 20, 30, 40 read 1.5 pixels further on gives 25 and 35.
 
 **The bitstream**, layer inside layer: a sequence header (the size,
 the frame rate, the quantization matrices), groups of pictures, a
@@ -249,9 +259,14 @@ same; a ball: a few arrows on the ball), the residual alone (the
 prediction switched off: what the encoder actually sent, mostly grey),
 the Y, Cb and Cr planes apart; for FLI, the pixels a delta frame
 touched. The trade's own tools do this; here it is the lesson made
-visible. (Its first view is built: `d` dims what didn't change from
-the frame before, for any movie -- on the FLC, exactly what each delta
-frame stores.)
+visible. Built, in TinyMediaPlayer: `d` dims what didn't change from
+the frame before, for any movie (on the FLC, exactly what each delta
+frame stores); `a` tints an MPEG-1's macroblocks by their coding and
+draws their vectors over the picture, the frames' kinds in a strip
+under it; `r` shows what was sent, the prediction switched off (the
+decoder's `~residual`): on a B frame of our clip, gray but for a few
+corrections at the square's and the ball's edges. Not built: the Y,
+Cb and Cr planes apart (an exercise).
 
 ## Exercises
 
@@ -262,6 +277,15 @@ frame stores.)
 - **MP4's boxes**: the container of today, IFF's chunks once more.
 - **Scene cuts**: an encoder that puts an I frame where the picture
   changes entirely, found by the SAD of the whole frame.
+- **B pictures in our encoder**: a search both ways, the average of
+  the two predictions tried as a third, and the frames written out of
+  display order; then its size against ffmpeg's clip's.
+- **Rate control**: a bitrate asked for, the quantizer chosen per frame
+  (or per macroblock) to meet it -- the knob real encoders expose.
+- **More than 256 colors in FLI**: a median cut (Heckbert, 1982) to
+  choose the palette, the frames' colors mapped to it.
+- **The planes apart**: Y, Cb and Cr side by side in the player, the
+  color's quarter resolution seen.
 
 ## Glossary
 
@@ -274,11 +298,14 @@ frame stores.)
 - **Macroblock**, **motion vector**, **motion compensation**,
   **residual**. **I, P, B frames**, **GOP**, **display** vs **decode
   order**.
-- **PSNR**, **MSE**. **Motion estimation**, **SAD**, **full search**.
+- **PSNR**, **MSE**. **Motion estimation**, **SAD**, **full search**,
+  **logarithmic** (three-step) **search**, **half-pixel refinement**.
 
 ## References
 
-(To check when writing each module.)
+(The formats' details were checked against other tools -- ffmpeg reads
+what we write, our decoders agree with its -- the citations below were
+not: from memory, to verify before quoting them.)
 
 - ITU-R BT.601, "Studio encoding parameters of digital television",
   1982 (YCbCr).

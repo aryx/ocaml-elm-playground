@@ -248,7 +248,12 @@ commercial stream analyzers); here it is the lesson made visible.
    the analyzer on; its playlist's items are now made when played, the
    encoding taking seconds. Left: B pictures in the encoder (the search
    both ways, the reordering), rate control, the residual view.
-6. **Docs**: `notes_video.md` checked against the code.
+6. **Docs** (done): `notes_video.md` checked against the code (its
+   "to check" items answered, the numbers measured, a reading order,
+   exercises for what's left), and the analyzer's third view, `r`:
+   what was sent, the prediction switched off (`Mpeg1.of_string
+   ~residual`), a golden frame of a B frame. What's left:
+   `plan_video_remaining.md`.
 
 ## Verification
 

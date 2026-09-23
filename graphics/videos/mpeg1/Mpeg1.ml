@@ -190,7 +190,7 @@ let motion (b : Bits.t) ~(f_code : int) ~(full : bool) (pred : int array) (c : i
   pred.(c) <- v;
   if full then 2 * v else v
 
-let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame option) ~(future : frame option) (cur : frame) (mbs : (how * (int * int) * (int * int)) array) (row : int) : unit =
+let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame option) ~(future : frame option) (cur : frame) ~(sent : frame) (mbs : (how * (int * int) * (int * int)) array) (row : int) : unit =
   let q = ref (Bits.read b 5) in
   while Bits.read b 1 = 1 do Bits.skip b 8 done;
   let addr = ref ((row * sq.mbw) - 1) in
@@ -240,6 +240,7 @@ let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame opti
       let r v = int_of_float (Float.round v) in
       let py = Array.init 256 (fun k -> let x = k mod 16 and y = k / 16 in r values.((y / 8 * 2) + (x / 8)).((y mod 8 * 8) + (x mod 8))) in
       write_macroblock sq cur ~mx ~my (py, Array.map r values.(4), Array.map r values.(5));
+      write_macroblock sq sent ~mx ~my (py, Array.map r values.(4), Array.map r values.(5));
       mbs.(a) <- (Intra, (0, 0), (0, 0)))
     else (
       reset_dc ();
@@ -249,14 +250,18 @@ let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame opti
       let fwd = t.forward || ph.kind = P in
       let r = refs fwd t.backward fv bv in
       let py, pbl, prl = if r = [] then (Array.make 256 128, Array.make 64 128, Array.make 64 128) else predict_macroblock sq ~mx ~my r in
-      (* the residual of the coded blocks, added *)
+      (* the residual of the coded blocks, added -- and, for the
+       * analyzer, added to gray alone: what was sent *)
+      let ry = Array.make 256 128 and rb = Array.make 64 128 and rr = Array.make 64 128 in
       for i = 0 to 5 do
         if cbp land (32 lsr i) <> 0 then (
           let res = block b ~intra:false ~q:!q ~matrix:sq.non_intra_m ~dc ~component:0 in
           let add (target : int array) ~size ~x0 ~y0 = Array.iteri (fun k v -> let t = ((y0 + (k / 8)) * size) + x0 + (k mod 8) in target.(t) <- target.(t) + int_of_float (Float.round v)) res in
-          if i < 4 then add py ~size:16 ~x0:(i land 1 * 8) ~y0:(i lsr 1 * 8) else add (if i = 4 then pbl else prl) ~size:8 ~x0:0 ~y0:0)
+          if i < 4 then (add py ~size:16 ~x0:(i land 1 * 8) ~y0:(i lsr 1 * 8); add ry ~size:16 ~x0:(i land 1 * 8) ~y0:(i lsr 1 * 8))
+          else (add (if i = 4 then pbl else prl) ~size:8 ~x0:0 ~y0:0; add (if i = 4 then rb else rr) ~size:8 ~x0:0 ~y0:0))
       done;
       write_macroblock sq cur ~mx ~my (py, pbl, prl);
+      write_macroblock sq sent ~mx ~my (ry, rb, rr);
       last := (fwd, t.backward, fv, bv);
       mbs.(a) <- ((match (t.forward, t.backward) with true, true -> Both | true, false -> Forward | false, true -> Backward | false, false -> Zero), fv, bv));
     (* the slice ends where a start code begins: 23 zero bits *)
@@ -265,7 +270,7 @@ let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame opti
 
 (* a picture, after its start code; the reader left after the start
  * code that follows it (returned) *)
-let picture (b : Bits.t) (sq : sequence) ~(past : frame option) ~(future : frame option) : frame * info * int option =
+let picture (b : Bits.t) (sq : sequence) ~(past : frame option) ~(future : frame option) : frame * frame * info * int option =
   Bits.skip b 10 (* its place in display order: the reordering below doesn't need it *);
   let kind = match Bits.read b 3 with 1 -> I | 2 -> P | 3 -> B | 4 -> failwith "MPEG-1: a D picture, not read here" | _ -> failwith "MPEG-1: a picture of no kind" in
   Bits.skip b 16;
@@ -274,16 +279,18 @@ let picture (b : Bits.t) (sq : sequence) ~(past : frame option) ~(future : frame
   while Bits.read b 1 = 1 do Bits.skip b 8 done;
   let ph = { kind; fwd_full; fwd_f; bwd_full; bwd_f } in
   let cur = new_frame sq in
+  (* what was sent: gray where nothing was *)
+  let sent = { (new_frame sq) with y = Bytes.make (sq.mbw * sq.mbh * 256) '\128' } in
   let mbs = Array.make (sq.mbw * sq.mbh) (Skipped, (0, 0), (0, 0)) in
   let code = ref (Bits.next_start_code b) in
   while !code = Some 0xB5 || !code = Some 0xB2 do code := Bits.next_start_code b done;
   while (match !code with Some c -> c >= 0x01 && c <= 0xAF | None -> false) do
     let row = Option.get !code - 1 in
     (* a corrupt slice: what was decoded of it kept, on to the next *)
-    (try slice b sq ph ~past:(if kind = B then past else future) ~future cur mbs row with Failure _ | Invalid_argument _ -> ());
+    (try slice b sq ph ~past:(if kind = B then past else future) ~future cur ~sent mbs row with Failure _ | Invalid_argument _ -> ());
     code := Bits.next_start_code b
   done;
-  (cur, { kind; macroblocks = mbs; mb_width = sq.mbw }, !code)
+  (cur, sent, { kind; macroblocks = mbs; mb_width = sq.mbw }, !code)
 
 (*****************************************************************************)
 (* The stream, in display order *)
@@ -292,9 +299,9 @@ let picture (b : Bits.t) (sq : sequence) ~(past : frame option) ~(future : frame
 (* the decoder between two frames shown: where it is in the stream, the
  * sequence's parameters, the two references (the older, and the latest
  * with whether it was shown) *)
-type state = { pos : int; sq : sequence; older : frame option; latest : (frame * info) option; shown : bool }
+type state = { pos : int; sq : sequence; older : frame option; latest : (frame * frame * info) option; shown : bool }
 
-let of_string (s : string) : header * Movie.t * (int -> info) =
+let of_string ?(residual = false) (s : string) : header * Movie.t * (int -> info) =
   let b = Bits.of_string s in
   let sq = match Bits.next_start_code b with Some 0xB3 -> sequence_header b | _ -> failwith "MPEG-1: not a video stream (no sequence header)" in
   let start_pos = Bits.position b in
@@ -319,10 +326,10 @@ let of_string (s : string) : header * Movie.t * (int -> info) =
   let infos = Hashtbl.create 64 and shown_count = ref 0 in
   (* on to the next frame to show: decode until one is ready *)
   let rec next (st : state) : state * Rgba_image.t =
-    let show (f, info) st =
+    let show (f, sent, info) st =
       Hashtbl.replace infos !shown_count info;
       incr shown_count;
-      (st, to_image st.sq f)
+      (st, to_image st.sq (if residual then sent else f))
     in
     Bits.seek b st.pos;
     let rec code () =
@@ -340,14 +347,14 @@ let of_string (s : string) : header * Movie.t * (int -> info) =
         | Some l when not st.shown -> show l { st with pos = 8 * String.length s; shown = true }
         | _ -> failwith "MPEG-1: no more frames")
     | Some `Picture -> (
-        let latest = Option.map fst st.latest in
-        let f, info, after = picture b st.sq ~past:st.older ~future:latest in
+        let latest = Option.map (fun (f, _, _) -> f) st.latest in
+        let f, sent, info, after = picture b st.sq ~past:st.older ~future:latest in
         (* the next start code's own bytes, to read again *)
         let pos = match after with Some _ -> Bits.position b - 32 | None -> 8 * String.length s in
         match info.kind with
-        | B -> show (f, info) { st with pos }
+        | B -> show (f, sent, info) { st with pos }
         | I | P -> (
-            let st' = { st with pos; older = latest; latest = Some (f, info); shown = false } in
+            let st' = { st with pos; older = latest; latest = Some (f, sent, info); shown = false } in
             match st.latest with Some l when not st.shown -> show l st' | _ -> next st'))
   in
   let start () =

@@ -73,6 +73,16 @@ let test_clip () =
   Alcotest.(check bool) "a vector somewhere" true
     (List.exists (fun i -> Array.exists (fun (_, f, b) -> f <> (0, 0) || b <> (0, 0)) (info i).macroblocks) [ 1; 2; 3; 4; 5; 6 ])
 
+let test_residual () =
+  (* what was sent: an I frame, everything (the picture itself); a B,
+   * little -- its pixels mostly the gray of "nothing to correct" *)
+  let _, movie, _ = Mpeg1.of_string (clip ()) and _, sent, _ = Mpeg1.of_string ~residual:true (clip ()) in
+  Alcotest.(check (float 0.)) "the I: all of it" infinity (Psnr.psnr (movie.frame 0) (sent.frame 0));
+  let b = sent.frame 1 in
+  let gray = ref 0 in
+  for p = 0 to (b.width * b.height) - 1 do if abs (b.rgba.{4 * p} - 128) <= 2 then incr gray done;
+  if !gray * 10 < b.width * b.height * 9 then Alcotest.failf "the B: only %d of %d pixels gray" !gray (b.width * b.height)
+
 let test_refused () =
   match Mpeg1.of_string "not a video" with _ -> Alcotest.fail "read" | exception Failure _ -> ()
 
@@ -82,5 +92,6 @@ let tests =
       t "the tables: prefix-free codes" test_tables;
       t "half a pixel: Mpeg1.mli's worked example" test_half_pixel;
       t "our clip, as ffmpeg decodes it, in display order" test_clip;
+      t "what was sent: the residual" test_residual;
       t "not a video stream" test_refused;
     ]

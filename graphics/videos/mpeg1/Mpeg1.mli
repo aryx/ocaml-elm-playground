@@ -83,8 +83,13 @@ type header = { width : int; height : int; rate : int * int; kinds : kind array 
 
 (* [of_string s]: the header, the frames in display order, decoded
  * forward only (Movie.sequential), and each frame's info (decoding it
- * if need be). Raises Failure if [s] isn't an MPEG-1 video stream. *)
-val of_string : string -> header * Movie.t * (int -> info)
+ * if need be). With [residual], each frame shown is instead **what was
+ * sent** for it: the intra macroblocks as they are, the predicted ones
+ * as their residual on gray (128), the skipped ones gray -- the
+ * prediction switched off, for the analyzer (the references are still
+ * the true pictures). Raises Failure if [s] isn't an MPEG-1 video
+ * stream. *)
+val of_string : ?residual:bool -> string -> header * Movie.t * (int -> info)
 
 (* the half-pixel prediction of Mpeg1.mli's worked example: [predict
  * row x v] the prediction of pixel [x] of [row] moved by [v] half

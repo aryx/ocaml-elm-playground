@@ -34,7 +34,8 @@
  *     paused, sought, the picture follows the sound. An MPEG-1's frames
  *     say their kind (I, P, B), and a shows what the encoder decided:
  *     each macroblock's coding, its motion vectors, and the frames'
- *     kinds in a strip (Mpeg1.mli).
+ *     kinds in a strip (Mpeg1.mli); r, what was sent for each frame,
+ *     the prediction switched off: the residual on gray.
  *
  * Under it, what just played, as an oscilloscope and a spectrum; then
  * the position (a slider: drag it to seek), the buttons, and the
@@ -120,6 +121,7 @@ type model = {
   asked : bool; (* file= asked for *)
   changes : bool; (* a movie shown as what changed from a frame to the next *)
   analyzer : bool; (* an MPEG-1's macroblocks and vectors drawn over it *)
+  residual : bool; (* an MPEG-1 shown as what was sent, the prediction off *)
 }
 
 (* files given by file=, arriving (now natively, later in a browser) *)
@@ -138,7 +140,7 @@ let load (items : (string * string Lazy.t) list) (i : int) ~(playing : bool) : m
   { m with items; current = i; opened; playing; shown = 0 }
 
 let initial_model : model =
-  let m = { items = []; current = 0; opened = Error ""; playing = true; shown = 0; held = []; asked = false; changes = false; analyzer = false } in
+  let m = { items = []; current = 0; opened = Error ""; playing = true; shown = 0; held = []; asked = false; changes = false; analyzer = false; residual = false } in
   load Our_media.playlist 0 ~playing:true m
 
 (*****************************************************************************)
@@ -224,6 +226,7 @@ let update (computer : computer) (m : model) : model =
         else if prev || pressed "p" then next m (-1)
         else if pressed "d" then { m with changes = not m.changes }
         else if pressed "a" then { m with analyzer = not m.analyzer }
+        else if pressed "r" then { m with residual = not m.residual }
         else if pressed "ArrowRight" || pressed "ArrowLeft" then (
           (match samples_of deck.media with
           | Some samples ->
@@ -360,7 +363,7 @@ let changes (movie : Movie.t) (i : int) : Rgba_image.t =
  * vectors drawn from its center to where its pixels come from (white
  * forward, cyan backward); under the picture, the frames' kinds in
  * display order, I red, P green, B blue, the one shown tall *)
-let analysis (movie : Movie.t) ((h, info) : Mpeg1.header * (int -> Mpeg1.info)) (i : int) : shape list =
+let analysis (movie : Movie.t) ((h, info, _) : Mpeg1.header * (int -> Mpeg1.info) * Movie.t Lazy.t) (i : int) : shape list =
   let size = Float.floor (Float.min ((vw - 40.) / float_of_int movie.width) ((vh - 40.) / float_of_int movie.height)) in
   let left = vx - (float_of_int movie.width * size / 2.) and top = vy + (float_of_int movie.height * size / 2.) in
   let inf = info i and cell = 16. * size in
@@ -393,7 +396,9 @@ let analysis (movie : Movie.t) ((h, info) : Mpeg1.header * (int -> Mpeg1.info)) 
 
 let movie (m : model) (movie : Movie.t) ~(sound : bool) ~mpeg : shape list =
   let i = movie_frame movie ~sound m.shown in
-  picture (if m.changes then changes movie i else movie.frame i)
+  (* r: what was sent instead of what is shown (Mpeg1.mli) *)
+  let shown = match mpeg with Some (_, _, sent) when m.residual -> Lazy.force sent | _ -> movie in
+  picture (if m.changes then changes shown i else shown.frame i)
   @ match mpeg with Some a when m.analyzer -> analysis movie a i | _ -> []
 
 let scope_and_spectrum () : shape list =
@@ -435,10 +440,12 @@ let where (m : model) : string =
   | Ok (_, Picture img) -> Printf.sprintf "%d x %d pixels" img.width img.height
   | Ok (_, Movie { movie; sound; mpeg }) ->
       let i = movie_frame movie ~sound:(sound <> None) m.shown in
-      Printf.sprintf "frame %d of %d%s   d: %s%s" (i +.. 1) (Movie.frame_count movie)
-        (match mpeg with Some (h, _) -> (match h.kinds.(i) with I -> " (I)" | P -> " (P)" | B -> " (B)") | None -> "")
-        (if m.changes then "the frames" else "what changed")
-        (match mpeg with Some _ -> if m.analyzer then "   a: the picture" else "   a: macroblocks" | None -> "")
+      (match mpeg with
+      | None -> Printf.sprintf "frame %d of %d   d: %s" (i +.. 1) (Movie.frame_count movie) (if m.changes then "the frames" else "what changed")
+      | Some (h, _, _) ->
+          (* the three views' keys at once: the line has no room for each's state *)
+          Printf.sprintf "frame %d of %d (%s)   d a r: changes, blocks, residual" (i +.. 1) (Movie.frame_count movie)
+            (match h.kinds.(i) with I -> "I" | P -> "P" | B -> "B"))
 
 let view (_computer : computer) (m : model) : shape list =
   let name = fst (List.nth m.items m.current) in

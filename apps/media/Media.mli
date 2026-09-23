@@ -52,7 +52,8 @@ type media =
   | Movie of {
       movie : Movie.t;
       sound : Signal.stereo option; (* played with it, its clock *)
-      mpeg : (Mpeg1.header * (int -> Mpeg1.info)) option; (* an MPEG-1's decisions, for the analyzer *)
+      mpeg : (Mpeg1.header * (int -> Mpeg1.info) * Movie.t Lazy.t) option;
+          (* an MPEG-1's decisions, and what was sent (the residual), for the analyzer *)
     }
 
 (* [open_ ~name bytes]: what it is and what it holds, or why not *)
