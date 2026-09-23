@@ -14,6 +14,12 @@
  *   the wedge (red):   left/right turn, up thrust, down fires
  *   the needle (blue): a/d turn,        w thrust,  s fires
  *
+ * or on two computers, simulated in one window, side by side, through
+ * a fake network (net=simulate, and latency=, loss=; [ ] and - = change
+ * them while it runs): playground/Multiplayer.mli. The game is written
+ * for two players, each with their own keyboard, and Multiplayer gives
+ * player 1 the w/a/s/d of a shared one.
+ *
  * Steve Russell wrote it on the PDP-1 at MIT with Martin Graetz, Wayne
  * Wiitanen and friends of the Tech Model Railroad Club; Dan Edwards
  * added the star's gravity, Peter Samson the real night sky behind
@@ -44,7 +50,7 @@
  * Left as exercises: hyperspace (the original's panic button: vanish,
  * reappear somewhere at random, maybe exploding), limited fuel and
  * torpedoes per round, the sounds (plan_audio_teaching.md), two
- * players on two computers (plan_networking_teaching.md).
+ * players on two real computers (plan_networking_teaching.md, phase 3).
  *)
 open Playground
 open Basics (* float arithmetics *)
@@ -64,6 +70,8 @@ type ship = {
   body : Physics.body;
   (* None while flying; Some n once hit, n frames ago *)
   exploded : int option;
+  (* the flame, in the model: the view can't see the other player's keys *)
+  thrusting : bool;
   score : int;
 }
 
@@ -84,10 +92,10 @@ let start_ships (wedge_score : int) (needle_score : int) : game =
   {
     wedge =
       { body = Physics.body wedge_shape |> Physics.at (-300.) 0. |> Physics.moving 0. (-.v) |> Physics.pointing (-90.);
-        exploded = None; score = wedge_score };
+        exploded = None; thrusting = false; score = wedge_score };
     needle =
       { body = Physics.body needle_shape |> Physics.at 300. 0. |> Physics.moving 0. v |> Physics.pointing 90.;
-        exploded = None; score = needle_score };
+        exploded = None; thrusting = false; score = needle_score };
     torpedoes = [];
   }
 
@@ -97,50 +105,46 @@ let initial_model : model = Scene2d.start Title
 (* Update *)
 (*****************************************************************************)
 
-(* a pilot's controls: turn left, turn right, thrust, fire *)
-type controls = { left : keyboard -> bool; right : keyboard -> bool; forward : keyboard -> bool; fire : keyboard -> bool }
-
-let arrows = { left = (fun k -> k.kleft); right = (fun k -> k.kright); forward = (fun k -> k.kup); fire = (fun k -> k.kdown) }
-let wasd = { left = (fun k -> k.ka); right = (fun k -> k.kd); forward = (fun k -> k.kw); fire = (fun k -> k.ks) }
-
-let fly (screen : screen) (keys : keyboard) (c : controls) (s : ship) : ship =
+(* a pilot's controls, on their keyboard: left/right turn, up thrust,
+ * down fires *)
+let fly (screen : screen) (keys : keyboard) (s : ship) : ship =
   match s.exploded with
-  | Some n -> { s with exploded = Some (n +.. 1) }
+  | Some n -> { s with exploded = Some (n +.. 1); thrusting = false }
   | None ->
-      let turning = (if c.left keys then 200. else 0.) - if c.right keys then 200. else 0. in
+      let turning = (if keys.kleft then 200. else 0.) - if keys.kright then 200. else 0. in
       let body =
         s.body
         |> Physics.turn turning
-        |> Physics.thrust (if c.forward keys then 120. else 0.)
+        |> Physics.thrust (if keys.kup then 120. else 0.)
         |> Physics.attracted_by star
         |> Physics.step
         |> Physics.wrap screen
       in
-      { s with body }
+      { s with body; thrusting = keys.kup }
 
 let torpedo_shape = circle white 2.5
 
-(* a new torpedo from [s], if it fired this frame and has fewer than 4
- * in flight *)
-let fire (scenes : model) (c : controls) (owner : pilot) (s : ship) (torpedoes : torpedo list) : torpedo list =
+(* a new torpedo from [s], if its pilot pressed fire this frame and it
+ * has fewer than 4 in flight *)
+let fire (pilot : Multiplayer.player) (owner : pilot) (s : ship) (torpedoes : torpedo list) : torpedo list =
   let mine = List.filter (fun tp -> tp.owner = owner) torpedoes in
-  if s.exploded = None && Scene2d.pressed c.fire scenes && List.length mine < 4 then
+  if s.exploded = None && pilot.pressed.kdown && List.length mine < 4 then
     [ { t = Physics.body torpedo_shape |> Physics.shot_from 250. 28. s.body; ttl = 180; owner } ]
   else []
 
 let hit_by (things : Physics.body list) (s : ship) : bool =
   s.exploded = None && List.exists (fun b -> Physics.touching b s.body) things
 
-let update_game (computer : computer) (scenes : model) (g : game) : game =
-  let screen = computer.screen and keys = computer.keyboard in
-  let wedge = fly screen keys arrows g.wedge and needle = fly screen keys wasd g.needle in
+let update_game (computer : computer) (wedge_pilot : Multiplayer.player) (needle_pilot : Multiplayer.player) (g : game) : game =
+  let screen = computer.screen in
+  let wedge = fly screen wedge_pilot.keyboard g.wedge and needle = fly screen needle_pilot.keyboard g.needle in
   (* the torpedoes fly, fall towards the star, and burn out after 3 s *)
   let torpedoes =
     g.torpedoes
     |> List.map (fun tp -> { tp with t = tp.t |> Physics.attracted_by star |> Physics.step |> Physics.wrap screen; ttl = tp.ttl -.. 1 })
     |> List.filter (fun tp -> tp.ttl > 0 && not (Physics.touching tp.t star))
   in
-  let torpedoes = torpedoes @ fire scenes arrows Wedge wedge torpedoes @ fire scenes wasd Needle needle torpedoes in
+  let torpedoes = torpedoes @ fire wedge_pilot Wedge wedge torpedoes @ fire needle_pilot Needle needle torpedoes in
   let bodies = List.map (fun tp -> tp.t) torpedoes in
   let explode (other : ship) (s : ship) =
     if hit_by [ star ] s || hit_by bodies s || (other.exploded = None && hit_by [ other.body ] s) then
@@ -160,13 +164,17 @@ let end_of_round (g : game) : game option =
     Some (start_ships (g.wedge.score +.. point g.wedge) (g.needle.score +.. point g.needle))
   else None
 
-let update (computer : computer) (model : model) : model =
+(* one tick, both players' input: Multiplayer's [update] *)
+let update (computer : computer) (players : Multiplayer.player list) (model : model) : model =
   let scenes = Scene2d.update computer model in
-  match scenes.scene with
-  | Title -> if Scene2d.pressed (fun k -> k.kspace) scenes then Scene2d.go (Playing (start_ships 0 0)) scenes else scenes
-  | Playing g -> (
-      let g = update_game computer scenes g in
+  match (scenes.scene, players) with
+  | Title, _ ->
+      if List.exists (fun (p : Multiplayer.player) -> p.pressed.kspace) players then Scene2d.go (Playing (start_ships 0 0)) scenes
+      else scenes
+  | Playing g, [ wedge_pilot; needle_pilot ] -> (
+      let g = update_game computer wedge_pilot needle_pilot g in
       match end_of_round g with Some g -> Scene2d.go (Playing g) scenes | None -> { scenes with scene = Playing g })
+  | Playing _, _ -> scenes
 
 (*****************************************************************************)
 (* View *)
@@ -186,18 +194,19 @@ let sky : shape list =
   in
   go 120 7 []
 
-let view_ship (keys : keyboard) (c : controls) (s : ship) : shape list =
+let view_ship (s : ship) : shape list =
   match s.exploded with
   | None ->
       (* the flame, behind, while thrusting *)
-      let flame = if c.forward keys then [ polygon orange [ (-10., 0.); (-27., 6.); (-27., -6.) ] |> rotate s.body.angle |> move s.body.x s.body.y ] else [] in
+      let flame = if s.thrusting then [ polygon orange [ (-10., 0.); (-27., 6.); (-27., -6.) ] |> rotate s.body.angle |> move s.body.x s.body.y ] else [] in
       flame @ [ Physics.draw s.body ]
   | Some n ->
       (* an expanding, fading ring *)
       let r = 5. + float_of_int n in
       [ circle orange r |> fade (max 0. (1. - (float_of_int n / 90.))) |> move s.body.x s.body.y ]
 
-let view (computer : computer) (model : model) : shape list =
+(* what either player sees: the same screen *)
+let view (computer : computer) (_player : int) (model : model) : shape list =
   let screen = computer.screen in
   let flicker = 18. + (2. * sin (float_of_int model.frames / 4.)) in
   (rectangle black screen.width screen.height :: sky)
@@ -210,8 +219,8 @@ let view (computer : computer) (model : model) : shape list =
         text (rgb 90 150 255) 2. "needle: a/d turn  w thrust  s fire" |> move_y 110. ]
       @ Scene2d.blink 1. model [ text yellow 3. "PRESS SPACE" |> move_y (-250.) ]
   | Playing g ->
-      view_ship computer.keyboard arrows g.wedge
-      @ view_ship computer.keyboard wasd g.needle
+      view_ship g.wedge
+      @ view_ship g.needle
       @ List.map (fun tp -> Physics.draw tp.t) g.torpedoes
       @ (if List.mem_assoc "hitboxes" computer.flags then
            List.map Physics.debug (star :: g.wedge.body :: g.needle.body :: List.map (fun tp -> tp.t) g.torpedoes)
@@ -219,5 +228,5 @@ let view (computer : computer) (model : model) : shape list =
       @ [ text red 3. (Printf.sprintf "WEDGE %d" g.wedge.score) |> move (-350.) 460.;
           text (rgb 90 150 255) 3. (Printf.sprintf "NEEDLE %d" g.needle.score) |> move 350. 460. ]
 
-let app = game view update initial_model
+let app = Multiplayer.game ~players:2 view update initial_model
 let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

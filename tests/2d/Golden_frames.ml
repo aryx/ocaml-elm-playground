@@ -1294,6 +1294,15 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
     (* a smart bomb, 2 frames after: the flash, and the world knocked
      * under the still scanner *)
     ("games/shmup/software/TinyDefender", "engine", 42, "space:1,right:5-60,b:40", [ "juice=engine" ]);
+    (* claude: the duel on two computers simulated side by side
+     * (Multiplayer.mli), through 80 ms and 10% loss: half speed (60
+     * stalls in 120 frames), computer 1 a tick ahead, the checksums
+     * agreeing *)
+    ( "games/arcade/software/TinySpacewar",
+      "simulate",
+      120,
+      "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75",
+      [ "net=simulate"; "latency=80"; "loss=10" ] );
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged ~scripted_flagged scenes

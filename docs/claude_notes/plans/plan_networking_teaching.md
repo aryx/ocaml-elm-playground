@@ -426,11 +426,28 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    from a seed, reordering from the jitter; the laws tested: 10% of
    10,000 lost within 3 sigma, delays between latency and latency +
    jitter with the mean in the middle, no reordering without jitter).
-2. **Lockstep over Sim_net**: `Lockstep`, `Checksum`, input delay; the
+2. *(done, 2026-09-23)* **Lockstep over Sim_net**: `Lockstep`, `Checksum`, input delay; the
    `multiplayer` API; `-simulate` (both players side by side), with
    latency and loss keys. Tests: identical models after 1000 ticks under
    any latency, loss and reordering; an injected nondeterminism caught
    as a desync.
+   Done as: `networking/Lockstep` (input delay; each packet carries
+   every input the other side hasn't acknowledged, and acks theirs --
+   loss never stalls forever; the latest checksum, the first mismatch a
+   desync), tested over `Sim_net` (two and three peers, 1,000 ticks
+   under latency, jitter, 10% loss and duplication, every tick's model
+   the same as the game alone; 30 ms never stalls a delay of 3, 100 ms
+   runs at half speed; a disagreement at tick 500 caught at 540), and
+   `playground/Multiplayer` (`Multiplayer.game ~players view update`,
+   `update computer players model` with a cleaned computer -- no
+   keyboard, no mouse, a fixed screen, ticks for time -- and each
+   player's `keyboard` and `pressed`; the flag `net=local`, the default,
+   or `net=simulate` with `latency=`, `loss=`, `jitter=`, `delay=` and
+   the keys [ ] - =). The open questions answered so: update gets no
+   wall time (a cleaned computer instead); a stalled peer shows its
+   last model; the seed is shared by the flags. TinySpacewar converted
+   (its local golden frames unchanged to the pixel), with a golden
+   frame of the simulated duel.
 3. **Real UDP, native**: `-host`, `-join`; Spacewar! on a LAN.
 4. **Rollback**: `Rollback`, switchable with lockstep (a key), to feel
    the difference with 100 ms of simulated latency. Tests: rollback's

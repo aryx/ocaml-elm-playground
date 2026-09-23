@@ -40,6 +40,9 @@
    ; claude: the generator under Playground.random (private, pure
    ; OCaml, this same package), see random/Lehmer.mli
    random
+   ; claude: Lockstep, Sim_net, Checksum under Multiplayer.ml (private,
+   ; pure OCaml, this same package), see Multiplayer.mli
+   networking
  )
  ; (preprocess (pps profiling.ppx))
 )
