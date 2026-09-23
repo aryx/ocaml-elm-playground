@@ -905,6 +905,46 @@ type ('model, 'msg) app = {
   subscriptions : 'model -> 'msg Sub.t;
 }
 
+(** claude: Elm's [Http], asking a server for something from [init] or
+    [update]: a command ({!Cmd.t}) the platform performs, the answer
+    coming back as a message, without the frames stopping meanwhile.
+{[
+    type msg = GotText of (string, Http.error) result
+
+    let init _flags =
+      (Loading, Http.get ~url:"http://localhost:8001/examples/HttpText.ml"
+                  ~expect:(Http.expect_string (fun result -> GotText result)))
+
+    let update msg _model =
+      match msg with
+      | GotText (Ok text) -> (Success text, Cmd.none)
+      | GotText (Error e) -> (Failure (Http.error_to_string e), Cmd.none)
+]}
+    Natively, http:// only (https:// is refused with a [Network_error],
+    until TLS is written); in a browser, whatever the browser allows
+    (the page's own server, or another that says so: CORS). Only for
+    the {!app} level: [picture], [animation] and [game] have no
+    commands, as in Evan's playground. See examples/HttpText.ml. *)
+module Http : sig
+  type error = Cmd.http_error =
+    | Bad_url of string
+    | Timeout
+    | Network_error of string
+    | Bad_status of int
+    | Bad_body of string
+
+  (** what to do with the answer: Elm's [Http.Expect] *)
+  type 'msg expect
+
+  (** the body as text *)
+  val expect_string : ((string, error) result -> 'msg) -> 'msg expect
+
+  val get : url:string -> expect:'msg expect -> 'msg Cmd.t
+
+  (** for showing: "status 404", "network error: ... Connection refused" *)
+  val error_to_string : error -> string
+end
+
 (** How to draw, for the backends that can honor it, given to
     [Playground_platform.run_app ~rendering]:
     - [antialiasing]: smooth edges (true), or all-or-nothing pixels,

@@ -506,6 +506,29 @@ type ('model, 'msg) app =
     subscriptions: ('model -> 'msg Sub.t);
   }
 
+(* claude: see Playground.mli *)
+module Http = struct
+  type error = Cmd.http_error =
+    | Bad_url of string
+    | Timeout
+    | Network_error of string
+    | Bad_status of int
+    | Bad_body of string
+
+  type 'msg expect = (string, error) result -> 'msg
+
+  let expect_string (f : (string, error) result -> 'msg) : 'msg expect = f
+  let get ~(url : string) ~(expect : 'msg expect) : 'msg Cmd.t = Cmd.Http_get (url, expect)
+
+  let error_to_string (e : error) : string =
+    match e with
+    | Bad_url url -> "bad URL: " ^ url
+    | Timeout -> "timeout"
+    | Network_error why -> "network error: " ^ why
+    | Bad_status status -> Printf.sprintf "status %d" status
+    | Bad_body why -> "bad body: " ^ why
+end
+
 (*****************************************************************************)
 (* Playground: picture *)
 (*****************************************************************************)

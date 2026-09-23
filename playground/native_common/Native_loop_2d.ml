@@ -314,8 +314,17 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
   String.iter (fun c -> on_key_press (String.make 1 c)) !startup_keys;
   let frame_number = ref 0 in
 
-  let initmodel, _cmdsTODO = init () in
+  (* claude: the commands of init and update, performed while the
+   * frames go on (Commands.mli) *)
+  let commands = Commands.create () in
+  let initmodel, cmd = init () in
   let model = ref initmodel in
+  Commands.perform commands cmd;
+  let apply_msg msg =
+    let newmodel, cmd = update msg !model in
+    model := newmodel;
+    Commands.perform commands cmd
+  in
 
   (* claude: the loop below has no vsync (we blit to a plain SDL window
    * surface, not an accelerated/vsync'd renderer), so without this cap it
@@ -338,9 +347,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
       let subs = subscriptions !model in
       match E.event_to_msgopt pevent subs with
       | None -> ()
-      | Some msg ->
-        let newmodel, _cmds = update msg !model in
-        model := newmodel
+      | Some msg -> apply_msg msg
     in
 
     (* claude: drain the *whole* pending SDL event queue every frame,
@@ -463,6 +470,8 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
         | "" -> ()
         | s -> apply_playground_event (E.ETyped s))
     | None -> ());
+    (* claude: the answers of the commands finished since last frame *)
+    List.iter apply_msg (Commands.step commands);
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
     apply_playground_event (E.ETick now);
     (* claude: the sounds this frame's update played, to the card *)

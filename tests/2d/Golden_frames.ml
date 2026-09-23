@@ -1255,6 +1255,10 @@ let flagged : Testutil_golden.flagged list =
     (* claude: and juice=off (Juice.mli): every tween at its end at once *)
     ("examples/software/JuiceCurves", "off", 60, [ "juice=off" ]);
     ("examples/software/JuiceSquash", "off", 75, [ "juice=off" ]);
+    (* claude: its request refused (port 1: nobody listens), the one
+     * answer that doesn't depend on a server running on the machine;
+     * the answered one is networking/unix/tests/' *)
+    ("examples/software/HttpText", "refused", 5, [ "url=http://127.0.0.1:1/x" ]);
   ]
 
 (* claude: played and flagged: the games whose juice was written by

@@ -5,7 +5,7 @@
     Mouse Keyboard Turtle Mario Typing GuiWidgets
     Gui7Counter Gui7Temperature Gui7Flight Gui7Timer GuiFourWays GuiEditor Gui7Circles Gui7Cells Gui7Crud
     TypesetParagraph
-    Flags
+    Flags HttpText
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn

@@ -12,6 +12,7 @@
 (copy_files ../Turtle.ml)
 (copy_files ../Mario.ml)
 (copy_files ../Flags.{ml,mli})
+(copy_files ../HttpText.ml)
 (copy_files ../PhysicsOrbit.{ml,mli})
 (copy_files ../PhysicsBounce.{ml,mli})
 (copy_files ../PhysicsMarbles.{ml,mli})
@@ -77,7 +78,7 @@
     Animation
     Mouse Keyboard
     Turtle Mario
-    Flags
+    Flags HttpText
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn

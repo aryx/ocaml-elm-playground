@@ -20,9 +20,19 @@
    is a protocol of its own not written yet
    (plan_dependencies_remaining.md, section 2). A redirection to
    https:// -- what most http:// sites answer today -- is refused the
-   same way, with the new URL in the message. *)
+   same way, with the new URL in the message.
+
+   This one blocks: the program waits, doing nothing else, until the
+   answer is in -- the simple version, fine for a file loaded once
+   (Download.mli). Http_request.mli is the same request that doesn't
+   block, for a program that must go on drawing its frames. *)
 
 (* the final response (whatever its status, 404 included: the caller
  * decides), or why there is none: a URL we can't get, a network error,
  * a response that doesn't parse, too many redirections *)
 val get : ?max_redirects:int -> ?timeout:float -> string -> (Http.response, string) result
+
+(* what to connect to and what to send for [url]: the host for the
+ * resolver, the port, the request's bytes; Error for a URL that isn't
+ * http:// (the message says why) *)
+val prepare : Url.t -> (string * int * string, string) result

@@ -385,7 +385,7 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    randomness seeded from the model (not `Random.self_init`), a
    checksum of a model (a hash of its serialized form); `-local` mode
    for Spacewar! (two players, one keyboard).
-0b. **Http as a `Cmd`** (the section "The first API" above), over
+0b. *(done, 2026-09-23)* **Http as a `Cmd`** (the section "The first API" above), over
    `Url` and `Http`, already written: `Cmd` with effects and `batch`;
    `Playground.Http` (`get`, `expect_string`, the errors); the native
    request as a state machine over non-blocking sockets and `select`,
@@ -397,6 +397,14 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    doesn't stop the frames. Independent of phases 0 to 2, and the
    first to do: it reuses what exists, and builds the event loop
    phase 3 needs.
+   Done as: `Cmd.Http_get` and `Cmd.Batch` (`core/Cmd.mli`),
+   `Playground.Http`, `networking/unix/Http_request` (the state
+   machine, beside the blocking `Http_client` it is tested against),
+   `native_common/Commands` (the loop's side), the web's
+   `fetch_text` (an XMLHttpRequest), and `examples/HttpText.ml`,
+   which fetches its own source from `make serve-build`'s server; its
+   golden frame is the request refused (port 1), the one answer that
+   doesn't depend on the machine.
 1. **Wire and Sim_net**: serialization and its tests (round trips,
    garbage rejected), the simulated network (its statistics tested).
 2. **Lockstep over Sim_net**: `Lockstep`, `Checksum`, input delay; the

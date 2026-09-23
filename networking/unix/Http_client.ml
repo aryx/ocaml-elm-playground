@@ -12,26 +12,28 @@
 
 let ( let* ) = Result.bind
 
-(* one request, no redirection followed *)
-let get_once ?timeout (url : Url.t) : (Http.response, string) result =
+let prepare (url : Url.t) : (string * int * string, string) result =
   match (url.scheme, url.authority, Url.port url) with
-  | Some "http", Some (a : Url.authority), Some port -> (
+  | Some "http", Some (a : Url.authority), Some port ->
       (* the Host header says the port only when it isn't the default *)
       let host_header = match a.port with Some p -> Printf.sprintf "%s:%d" a.host p | None -> a.host in
       (* "[::1]" in a URL, "::1" for the resolver *)
       let host =
         if String.starts_with ~prefix:"[" a.host then String.sub a.host 1 (String.length a.host - 2) else a.host
       in
-      let request = Http.request_to_string (Http.get ~host:host_header (Url.request_target url)) in
-      match Tcp.exchange ?timeout ~host ~port request with
-      | answer -> Http.parse_response answer
-      | exception Unix.Unix_error (e, _, _) ->
-          Error (Printf.sprintf "%s: %s" (Url.to_string url) (Unix.error_message e))
-      | exception Failure msg -> Error msg)
+      Ok (host, port, Http.request_to_string (Http.get ~host:host_header (Url.request_target url)))
   | Some "http", _, _ -> Error (Printf.sprintf "%s: no host" (Url.to_string url))
   | Some "https", _, _ ->
       Error (Printf.sprintf "%s: https (HTTP inside TLS) is not ours yet, only http://" (Url.to_string url))
   | _ -> Error (Printf.sprintf "%s: not an http:// URL" (Url.to_string url))
+
+(* one request, no redirection followed *)
+let get_once ?timeout (url : Url.t) : (Http.response, string) result =
+  let* host, port, request = prepare url in
+  match Tcp.exchange ?timeout ~host ~port request with
+  | answer -> Http.parse_response answer
+  | exception Unix.Unix_error (e, _, _) -> Error (Printf.sprintf "%s: %s" (Url.to_string url) (Unix.error_message e))
+  | exception Failure msg -> Error msg
 
 let get ?(max_redirects = 5) ?timeout (s : string) : (Http.response, string) result =
   let rec follow (url : Url.t) (left : int) =

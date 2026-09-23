@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"networking_unix" (fun _env -> Unit_http_client.tests)
+let () = Testo.interpret_argv ~project_name:"networking_unix" (fun _env -> Unit_http_client.tests @ Unit_http_request.tests)

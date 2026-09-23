@@ -1,0 +1,17 @@
+(* The commands of a native program ([init]'s and [update]'s Cmd.t)
+ * performed while the frames go on: each request an Http_request,
+ * stepped once a frame by the loop (Native_loop_2d), its answer given
+ * back as the message the command asked for. Cmd.Msg's message is
+ * given back at the next frame. *)
+
+(* the commands in flight *)
+type 'msg t
+
+val create : unit -> 'msg t
+
+(* start what [cmd] asks (nothing waits: a request only begins) *)
+val perform : 'msg t -> 'msg Cmd.t -> unit
+
+(* advance every request; the messages of the commands now finished,
+ * in the order they were performed *)
+val step : 'msg t -> 'msg list

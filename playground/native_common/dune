@@ -24,9 +24,10 @@
  (name elm_playground_native_common)
  (package elm_playground_software)
  (wrapped false)
- (modules Input_script Native_loop_2d Store)
+ (modules Input_script Native_loop_2d Store Commands)
  (libraries
    unix
+   networking networking_unix ; Http_request, for the Cmd.Http_get of Commands
    logs
    tsdl
    elm_core ; Sub/Cmd, to turn SDL events into the app's msgs

@@ -810,6 +810,26 @@ let fetch_web (source : string) (k : string option -> unit) : unit =
   Ojs.set_prop_ascii xhr "onerror" (Ojs.fun_to_js 1 (fun _ -> k None));
   ignore (Ojs.call xhr "send" [||])
 
+(* claude: Cmd.Http_get, performed by the browser: an XMLHttpRequest
+ * for text, its answer turned into Elm's (a 2xx is the body, another
+ * status Bad_status, no answer at all -- status 0: the network, or a
+ * server refusing another site's page, CORS -- Network_error) *)
+let fetch_text (url : string) (k : (string, Cmd.http_error) result -> unit) : unit =
+  let xhr = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "XMLHttpRequest") [||] in
+  match Ojs.call xhr "open" [| Ojs.string_to_js "GET"; Ojs.string_to_js url |] with
+  | exception _ -> k (Error (Cmd.Bad_url url))
+  | _ ->
+      Ojs.set_prop_ascii xhr "timeout" (Ojs.int_to_js 30000);
+      Ojs.set_prop_ascii xhr "onload"
+        (Ojs.fun_to_js 1 (fun _ ->
+             let status = Ojs.int_of_js (Ojs.get_prop_ascii xhr "status") in
+             if status >= 200 && status < 300 then k (Ok (Ojs.string_of_js (Ojs.get_prop_ascii xhr "responseText")))
+             else k (Error (Cmd.Bad_status status))));
+      Ojs.set_prop_ascii xhr "onerror"
+        (Ojs.fun_to_js 1 (fun _ -> k (Error (Cmd.Network_error (url ^ ": no answer (network, or CORS)")))));
+      Ojs.set_prop_ascii xhr "ontimeout" (Ojs.fun_to_js 1 (fun _ -> k (Error Cmd.Timeout)));
+      ignore (Ojs.call xhr "send" [||])
+
 (* when using the simple DOM *)
 let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
   Audio.set_fetcher fetch_web;
@@ -819,17 +839,33 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
     let sy = Playground.default_height in
     let screen = Playground.to_screen sx sy in
 
-    let (initmodel, _cmdsTODO) = app.Playground.init flags in
+    let (initmodel, init_cmd) = app.Playground.init flags in
     let model = ref initmodel in
+
+    (* claude: the commands of init and update: a request's answer
+     * comes back when the browser has it, a Cmd.Msg at the next frame
+     * (as natively, Commands.mli) *)
+    let next_frame_msgs = ref [] in
+    let rec apply_msg msg =
+      let newmodel, cmd = app.Playground.update msg !model in
+      model := newmodel;
+      perform cmd
+    and perform cmd =
+      Cmd.to_list cmd
+      |> List.iter (fun (c : _ Cmd.t) ->
+             match c with
+             | Msg msg -> next_frame_msgs := !next_frame_msgs @ [ msg ]
+             | Http_get (url, k) -> fetch_text url (fun result -> apply_msg (k result))
+             | None | Batch _ -> ())
+    in
+    perform init_cmd;
 
     let process_playground_event event = 
       let subs = app.Playground.subscriptions !model in
       let msg_opt = E.event_to_msgopt event subs in
       (match msg_opt with
       | None -> ()
-      | Some msg ->
-          let newmodel, _cmds = app.Playground.update msg !model in
-          model := newmodel;
+      | Some msg -> apply_msg msg
      );
     in
    
@@ -902,6 +938,9 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) app =
        * tab), and Asteroid ignored all Ticks (delta < tick) so it never
        * started. *)
       let wall_clock = Date.now () /. 1000. in
+      (let msgs = !next_frame_msgs in
+       next_frame_msgs := [];
+       List.iter apply_msg msgs);
       let ticks = ref 0 in
       while !pending >= tick_period -. tick_slack do
         process_playground_event (E.ETick wall_clock);
