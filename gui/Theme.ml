@@ -26,6 +26,9 @@ type t = {
   knob : float;
   field_face : Color.t;
   field_width : float;
+  dial : float;
+  dial_face : Color.t;
+  pointer : Color.t;
 }
 
 let default =
@@ -45,4 +48,7 @@ let default =
     knob = 18.;
     field_face = Color.white;
     field_width = 220.;
+    dial = 48.;
+    dial_face = Color.rgb 40 40 40;
+    pointer = Color.white;
   }

@@ -42,7 +42,7 @@ module here.
 | `audio/Dynamics` | compressor, limiter, gate | §8 | |
 | `audio/Rack` | effects in an order | §8 | |
 | `apps/music/Minimoog_voice` | the Model D's signal path | §2 | done |
-| `apps/music/TinyMinimoog` | its panel | §9 | plain (a slider per knob) |
+| `apps/music/TinyMinimoog` | its panel | §9 | done (patches not saved yet) |
 | `playground/Audio`'s instruments, `Mixer.instrument` | playing one from a game or an app | §1 | done |
 
 ## 1. Playing live: instruments
@@ -504,18 +504,33 @@ the whole. `Rack` is that list, each effect bypassable.
 **Knobs**, dragged *vertically* (up is more) rather than turned around
 their center: a mouse moves in straight lines, and a circular drag
 needs aiming; every software synthesizer since the 1990s does this,
-often with a modifier key for fine moves. A knob's value is not
-always linear: the cutoff over ~10 octaves is exponential (each
-equal turn an equal *ratio*), times are too. **Rocker switches** and
-**selectors** for the oscillators' range and waveform. The keyboard:
-the computer's letters (two rows as a piano's white and black keys, as
-`examples/AudioPiano.ml`), a drawn one, clickable, and the two wheels.
+often with a modifier key for fine moves. And *relatively*: each
+frame's move of the mouse turns it by that much (`Gui.knob`: 200
+pixels for the whole range), so pressing a knob doesn't make it jump
+to the mouse, as a slider's does -- the tests turn one from 0.3 by
+20 pixels a frame: 0.3 at the press, then 0.4, 0.5, 0.6. A knob's
+value is not always linear: the cutoff over ~10 octaves is exponential
+(each equal turn an equal *ratio*), times are too -- that is the
+voice's business (`Minimoog_voice`'s laws), the knob only turns from
+0 to 1. **Rocker switches**, rocked by a click, and **rotary switches**
+(`Gui.selector`) for the oscillators' range and waveform, a position
+per 24 pixels of drag or the next on a click. They needed two more
+kinds of paint in the toolkit (`gui/Widget.mli`), a disc and a
+segment -- a knob's face and its pointer -- where it had drawn
+everything with rectangles and text. The keyboard: the computer's
+letters (two rows as a piano's white and black keys, as
+`examples/AudioPiano.ml`), a drawn one of two octaves, played with
+the mouse too (sliding from key to key), and the two wheels, pitch
+(springing back) and modulation (staying). Under the panel, what the
+voice just played (its last 2048 samples, kept by the voice itself so
+every backend can show them): an oscilloscope and a spectrum.
 
 **A patch** is the panel's positions -- a record, and on paper, a
 Minimoog "patch chart": knobs drawn with their pointers marked. Presets
-of our own (a bass, a lead, a brass, a flute, a sweep of noise);
+of our own (a bass, a lead, a brass, a flute, a whistle, a wind);
 saved and opened through the File menu every app shares
-(`appkits/file_menu`), exported as text.
+(`appkits/file_menu`), exported as text: an exercise left in
+`TinyMinimoog.ml`'s header.
 
 ## 10. After the Minimoog
 

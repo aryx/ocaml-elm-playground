@@ -80,8 +80,8 @@ let scenes : Testutil_golden.scene list =
     ("apps/office/software/TinyMacPaint", "", 5);
     ("apps/gamedev/software/TinyAseprite", "", 5);
     ("apps/gamedev/software/TinyTiled", "", 5);
-    (* 1970: the Model D's controls, a slider, a box or a menu each, from
-     * the voice's own table of knobs; the bass preset *)
+    (* 1970: the Model D's panel, black between wooden cheeks, left to
+     * right; the bass preset *)
     ("apps/music/software/TinyMinimoog", "", 5);
     (* 1994: a document of parts -- a text, a sheet and a picture side
      * by side, and a part of a kind nobody here can read, kept *)
@@ -927,6 +927,14 @@ let scripted : Testutil_golden.scripted list =
       "edited",
       55,
       "right:3-40,up:6,type(BBB):45,type(+):50" );
+    (* the synthesizer played: the cutoff knob pressed and dragged up 40
+     * pixels (from 0.32 to 0.52: the Gui's knob turns by the drag), C3
+     * held and E3 over it -- the keys lit, the scope ringing at the
+     * resonance, the spectrum brighter *)
+    ( "apps/music/software/TinyMinimoog",
+      "playing",
+      40,
+      "at(115;360):1-10,at(115;380):11-14,at(115;400):15-40,click:5-30,a:5-40,d:20-40" );
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

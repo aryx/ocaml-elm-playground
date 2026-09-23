@@ -51,7 +51,11 @@ type canvas_event = Hover of (float * float) | Press of (float * float) | Right_
 (* What a widget draws *)
 (*****************************************************************************)
 
-type paint = Fill of Color.t * box | Text of Color.t * box * string
+type paint =
+  | Fill of Color.t * box
+  | Text of Color.t * box * string
+  | Disc of Color.t * float * float * float
+  | Segment of Color.t * float * float * float * float * float
 
 let frame color thickness (b : box) =
   let t = min thickness (min (b.w /. 2.) (b.h /. 2.)) in

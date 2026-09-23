@@ -65,6 +65,25 @@ val slider :
   Playground.number ->
   Playground.number
 
+(* [knob computer ~at ~from ~to_ v]: a knob, as on a synthesizer's panel,
+   and its value after this frame: dragged up to turn it up, down to turn
+   it down, 200 pixels for its whole range (gui/Immediate.mli) *)
+val knob :
+  Playground.computer ->
+  at:Playground.number * Playground.number ->
+  from:Playground.number ->
+  to_:Playground.number ->
+  Playground.number ->
+  Playground.number
+
+(* [rocker computer ~at on]: a rocker switch, rocked by a click *)
+val rocker : Playground.computer -> at:Playground.number * Playground.number -> bool -> bool
+
+(* [selector computer ~at labels i]: a rotary switch at the [i]th label,
+   and where it is after this frame: dragged a position at a time, or
+   clicked to the next *)
+val selector : Playground.computer -> at:Playground.number * Playground.number -> string list -> int -> int
+
 (* [field computer ~at text]: a box to type in, and the text it holds
    after this frame. Click it to give it the keys (or Tab to it), and
    the characters go there:
@@ -139,6 +158,17 @@ val slider_in :
   Playground.number ->
   Playground.number
 
+val knob_in :
+  Playground.computer ->
+  Widget.box ->
+  from:Playground.number ->
+  to_:Playground.number ->
+  Playground.number ->
+  Playground.number
+
+val rocker_in : Playground.computer -> Widget.box -> bool -> bool
+val selector_in : Playground.computer -> Widget.box -> string list -> int -> int
+
 val label_in : Playground.computer -> Widget.box -> string -> unit
 val field_in : ?enabled:bool -> Playground.computer -> Widget.box -> string -> string
 val text_area_in : Playground.computer -> Widget.box -> Text_edit.t -> Text_edit.t
@@ -153,6 +183,9 @@ val list_in : Playground.computer -> Widget.box -> string list -> int option -> 
 val button_size : string -> Playground.number * Playground.number
 val checkbox_size : string -> Playground.number * Playground.number
 val slider_size : unit -> Playground.number * Playground.number
+val knob_size : unit -> Playground.number * Playground.number
+val rocker_size : unit -> Playground.number * Playground.number
+val selector_size : string list -> Playground.number * Playground.number
 val label_size : string -> Playground.number * Playground.number
 val field_size : unit -> Playground.number * Playground.number
 val text_area_size : unit -> Playground.number * Playground.number

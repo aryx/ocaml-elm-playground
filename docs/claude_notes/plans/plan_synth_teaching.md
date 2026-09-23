@@ -555,6 +555,33 @@ microphone, which is out of scope) likewise later.
   warning on a 32-bit mask); a stray `actual/` of golden WAVs at the
   repository's root removed, left by running the audio tests' binary
   from there.
+- **Phase 5, DONE (2026-09-23)**: the panel. `gui/`: `Widget.paint`
+  got a `Disc` and a `Segment` (a knob's face and pointer; the
+  toolkit had drawn everything with rectangles and text), drawn by
+  `playground/Gui.ml`, printed by the gui and gui4 tests; `Theme` a
+  `dial` size, `dial_face`, `pointer`; `Look.knob` (eleven ticks,
+  270 degrees), `Look.rocker`, `Look.selector` (a rotary switch, its
+  labels around it); `Immediate.knob` (dragged up or down, *relatively*:
+  the mouse's move since the last frame, 200 pixels for the range, so
+  a press doesn't jump it -- `Immediate` now keeps the move since the
+  last frame and since the press), `Immediate.rocker` (a click), and
+  `Immediate.selector` (a step per 24 pixels, the next on a click);
+  the Playground's `Gui.knob`, `rocker`, `selector` and their `_in` and
+  `_size`. Tests (`Unit_immediate`): the knob's worked example (0.3,
+  0.3, 0.4, 0.5, 0.6), clamped, not turned by a drag begun elsewhere;
+  the rocker; the selector two steps up, stopped at the end, back
+  down, a click round to the first. No other golden frame moved.
+  TinyMinimoog: the Model D's layout, CONTROLLERS, OSCILLATOR BANK,
+  MIXER, MODIFIERS, OUTPUT, in black between wooden cheeks, the knobs
+  placed by name over `Minimoog_voice.knobs`, the rotary switches with
+  short labels; a two-octave keyboard played with the mouse too, the
+  pitch and mod wheels; an oscilloscope and a spectrum of the voice's
+  last 2048 samples (`Minimoog_voice.recent`, since `Audio_debug` is
+  fed only by the software backend). Golden frames: at rest, and
+  `playing` (the cutoff knob dragged up 40 pixels by a script, 0.32 to
+  0.52, C3 and E3 held). Left: saving patches with the File menu (an
+  exercise in the header), the panel's own knob look (cream skirts, as
+  the Model D's) and the wood's grain.
 
 ## Verification
 

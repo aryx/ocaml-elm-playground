@@ -158,8 +158,51 @@ let test_an_unfocused_field_leaves_the_caret () =
   let _, _, b = List.fold_left (fun st i -> frame i st) (Immediate.empty, "ab", "abcdef") frames in
   Alcotest.(check string) "typed at the end of the long one" "abcdef!" b
 
+(* run [frames] over a widget [w] (the toolkit, the value: the new
+ * ones), collecting its value after each frame *)
+let values_of (w : Immediate.t -> 'a -> Immediate.t * 'a) (v0 : 'a) frames =
+  List.fold_left
+    (fun (ui, v, answers) i ->
+      let ui, v = w (Immediate.frame i ui) v in
+      (ui, v, answers @ [ v ]))
+    (Immediate.empty, v0, []) frames
+  |> fun (_, _, answers) -> answers
+
+let knob : Widget.box = { Widget.x = 0.; y = 0.; w = 68.; h = 68. }
+
+(* the .mli's worked example: pressed at 0.3, the mouse 20 pixels higher
+ * each frame; the press itself changes nothing, however far the mouse
+ * is from the knob's center *)
+let test_knob_turns_by_the_drag () =
+  let values = values_of (fun ui v -> Immediate.knob ui knob ~from:0. ~to_:1. v) 0.3 [ hover 10. (-20.); press 10. (-20.); press 10. 0.; press 10. 20.; press 10. 40.; release 10. 40. ] in
+  List.iter2 (fun e v -> Alcotest.(check (float 1e-9)) "the knob" e v) [ 0.3; 0.3; 0.4; 0.5; 0.6; 0.6 ] values;
+  (* turned past its end, it stays there *)
+  let values = values_of (fun ui v -> Immediate.knob ui knob ~from:0. ~to_:10. v) 9. [ press 0. 0.; press 0. 100.; release 0. 100. ] in
+  Alcotest.(check (float 1e-9)) "at most 10" 10. (List.nth values 1);
+  (* a drag that began elsewhere doesn't turn it *)
+  let values = values_of (fun ui v -> Immediate.knob ui knob ~from:0. ~to_:1. v) 0.5 [ press 0. 300.; press 0. 0.; press 0. 50. ] in
+  Alcotest.(check (float 1e-9)) "not its drag" 0.5 (List.nth values 2)
+
+let test_rocker_rocks_on_a_click () =
+  let rocker : Widget.box = { Widget.x = 0.; y = 0.; w = 22.; h = 44. } in
+  let values = values_of (fun ui v -> Immediate.rocker ui rocker v) false [ press 0. 0.; release 0. 0.; hover 0. 0.; press 0. 0.; release 0. 0. ] in
+  Alcotest.(check (list bool)) "on at the first release, off at the second" [ false; true; true; true; false ] values
+
+let test_selector_steps () =
+  let labels = [ "LO"; "32'"; "16'"; "8'"; "4'"; "2'" ] in
+  let sel : Widget.box = { Widget.x = 0.; y = 0.; w = 160.; h = 120. } in
+  let run v frames = values_of (fun ui v -> Immediate.selector ui sel labels v) v frames in
+  (* up 50 pixels from 16': two steps of 24, 2 pixels left over *)
+  Alcotest.(check (list int)) "dragged up two positions" [ 2; 3; 4; 4 ] (run 2 [ press 0. 0.; press 0. 30.; press 0. 50.; release 0. 50. ]);
+  Alcotest.(check (list int)) "stopping at the last" [ 5; 5; 5 ] (run 5 [ press 0. 0.; press 0. 100.; release 0. 100. ]);
+  Alcotest.(check (list int)) "down, back" [ 3; 2; 2 ] (run 3 [ press 0. 0.; press 0. (-30.); release 0. (-30.) ]);
+  Alcotest.(check (list int)) "a click: the next, round to the first" [ 5; 0 ] (run 5 [ press 0. 0.; release 0. 0. ])
+
 let tests =
   [
+    t "a knob turns by the drag, relatively" test_knob_turns_by_the_drag;
+    t "a rocker rocks on a click" test_rocker_rocks_on_a_click;
+    t "a rotary switch steps by the drag, or the next on a click" test_selector_steps;
     t "a click is a press and a release, both inside" test_press_and_release_inside;
     t "a press that ends outside is not a click" test_release_outside_is_not_a_click;
     t "a press that began outside is not a click" test_press_outside_is_not_a_click;

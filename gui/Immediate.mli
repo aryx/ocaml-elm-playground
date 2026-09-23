@@ -143,6 +143,35 @@ val field : ?enabled:bool -> t -> Widget.box -> string -> t * string
  * [to_] at x = 101, relative to its center. *)
 val slider : t -> Widget.box -> from:float -> to_:float -> float -> t * float
 
+(* [knob t box ~from ~to_ v]: a knob, a synthesizer's (Look.knob), and
+ * the value it has after this frame. Turned by dragging it up (more) or
+ * down (less), not around: a mouse moves in straight lines, and a
+ * circular drag needs aiming -- every software synthesizer since the
+ * 1990s does it this way. And *relatively*: while it's held, each
+ * frame's move of the mouse turns it by that much, [knob_travel]
+ * pixels for the whole range, so pressing it doesn't make it jump to
+ * the mouse, as a slider's knob does. Worked example: a knob from 0 to
+ * 1 at 0.3, pressed, the mouse then 20 pixels higher at each of the
+ * next three frames: 0.3 (the press), 0.4, 0.5, 0.6. *)
+val knob : t -> Widget.box -> from:float -> to_:float -> float -> t * float
+
+(* the drag for a knob's whole range: 200 pixels *)
+val knob_travel : float
+
+(* [rocker t box on]: a rocker switch, on (its top half lit) or off, and
+ * its state after this frame: a click rocks it *)
+val rocker : t -> Widget.box -> bool -> t * bool
+
+(* [selector t box labels i]: a rotary switch at the [i]th of [labels],
+ * and where it is after this frame: dragged up a position every
+ * [selector_step] pixels (down, back), stopping at the ends; clicked
+ * without a drag, the next position, round to the first after the
+ * last. A synthesizer's range and waveform switches. *)
+val selector : t -> Widget.box -> string list -> int -> t * int
+
+(* the drag for a step: 24 pixels *)
+val selector_step : float
+
 (* [text_area t box edit]: several lines to type into, and what they
  * hold after this frame.
  *
@@ -222,6 +251,12 @@ val checkbox_size : Theme.t -> string -> float * float
 
 (* [slider_size theme]: the theme's, whatever the value *)
 val slider_size : Theme.t -> float * float
+
+(* a knob with its ticks; a rocker; a rotary switch with its labels
+ * around it *)
+val knob_size : Theme.t -> float * float
+val rocker_size : Theme.t -> float * float
+val selector_size : Theme.t -> string list -> float * float
 
 (* [field_size theme]: the theme's, whatever the text -- a field is a
  * window onto its text and scrolls when it is too long, rather than

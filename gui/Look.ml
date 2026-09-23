@@ -51,6 +51,54 @@ let slider (th : Theme.t) (b : Widget.box) ~fraction ~hot ~held =
   [ Widget.Fill (th.face_down, track); Widget.Fill (th.accent, filled) ]
   @ (Widget.Fill (face th ~hot ~held, knob) :: Widget.frame th.edge th.border knob)
 
+(* a point [r] from the box's center, at [degrees] *)
+let polar (b : Widget.box) r degrees =
+  let a = degrees *. Float.pi /. 180. in
+  (b.x +. (r *. cos a), b.y +. (r *. sin a))
+
+(* a dial's face, ringed by the edge, and its pointer at [degrees] *)
+let dial (th : Theme.t) (b : Widget.box) ~degrees ~held =
+  let r = th.dial /. 2. in
+  let x0, y0 = polar b (r *. 0.2) degrees and x1, y1 = polar b (r *. 0.85) degrees in
+  [
+    Widget.Disc (th.edge, b.x, b.y, r);
+    Widget.Disc (th.dial_face, b.x, b.y, r -. th.border);
+    Widget.Segment ((if held then th.accent else th.pointer), 3., x0, y0, x1, y1);
+  ]
+
+let knob_angle fraction = 225. -. (270. *. max 0. (min 1. fraction))
+
+let knob (th : Theme.t) (b : Widget.box) ~fraction ~hot:_ ~held =
+  let r = th.dial /. 2. in
+  let ticks =
+    List.init 11 (fun i ->
+        let degrees = knob_angle (float_of_int i /. 10.) in
+        let x0, y0 = polar b (r +. 3.) degrees and x1, y1 = polar b (r +. 8.) degrees in
+        Widget.Segment (th.edge, 1.5, x0, y0, x1, y1))
+  in
+  ticks @ dial th b ~degrees:(knob_angle fraction) ~held
+
+let rocker (th : Theme.t) (b : Widget.box) ~on ~hot ~held =
+  let half y = { b with y; h = b.h /. 2. } in
+  let top = half (b.y +. (b.h /. 4.)) and bottom = half (b.y -. (b.h /. 4.)) in
+  let lit, unlit = if on then (top, bottom) else (bottom, top) in
+  [ Widget.Fill (th.accent, lit); Widget.Fill (face th ~hot ~held, unlit) ] @ Widget.frame th.edge th.border b
+
+let selector_angle n i =
+  let spread = if n <= 1 then 0. else min 270. (40. *. float_of_int (n - 1)) in
+  90. +. (spread /. 2.) -. if n <= 1 then 0. else spread *. float_of_int i /. float_of_int (n - 1)
+
+let selector (th : Theme.t) (b : Widget.box) labels ~index ~hot:_ ~held =
+  let n = List.length labels and r = th.dial /. 2. in
+  let words =
+    List.mapi
+      (fun i s ->
+        let x, y = polar b (r +. (th.text_size *. 1.3)) (selector_angle n i) in
+        Widget.Text ((if i = index then th.accent else th.text), { Widget.x; y; w = 0.; h = th.text_size *. 0.8 }, s))
+      labels
+  in
+  words @ dial th b ~degrees:(selector_angle n index) ~held
+
 let progress (th : Theme.t) (b : Widget.box) fraction =
   let f = max 0. (min 1. fraction) in
   let inner = Widget.inset th.border b in
@@ -120,8 +168,9 @@ let menu_closed (th : Theme.t) (b : Widget.box) label ~hot ~held =
   (Widget.Fill (face th ~hot ~held, b) :: Widget.frame th.edge th.border b)
   @ [
       text_at th b label;
-      (* the letter v for the arrow every dropdown has: paint is
-       * rectangles and text, and a triangle is neither *)
+      (* the letter v for the arrow every dropdown has: paint has
+       * rectangles, text, discs and segments, and a triangle is none of
+       * them *)
       Widget.Text (th.text, { b with x = Widget.right b -. th.padding; h = th.text_size }, "v");
     ]
 

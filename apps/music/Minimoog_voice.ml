@@ -359,6 +359,9 @@ type t = {
   mutable mod_wheel : float;
   mutable cutoff_now : float;
   b : buffers;
+  (* the last samples played, a ring, [at] the next to write *)
+  ring : Signal.t;
+  mutable at : int;
 }
 
 let create ?(options = analog) (patch : patch) : t =
@@ -394,6 +397,8 @@ let create ?(options = analog) (patch : patch) : t =
         filter_env = empty;
         loudness_env = empty;
       };
+    ring = Array.make 2048 0.;
+    at = 0;
   }
 
 let patch (v : t) : patch = v.patch
@@ -402,6 +407,7 @@ let options (v : t) : options = v.options
 let set_options (v : t) (o : options) : unit = v.options <- o
 let pitch (v : t) : float = Voicing.pitch v.glide
 let cutoff_now (v : t) : float = v.cutoff_now
+let recent (v : t) : Signal.t = Array.init 2048 (fun i -> v.ring.((v.at + i) mod 2048))
 
 let grow (b : buffers) (n : int) : unit =
   if b.size < n then (
@@ -518,7 +524,9 @@ let fill (v : t) (out : Signal.stereo) : unit =
   for i = 0 to n - 1 do
     let x = mixed.(i) *. loudness_env.(i) *. ramp last.volume p.volume i n in
     out.left.(i) <- x;
-    out.right.(i) <- x
+    out.right.(i) <- x;
+    v.ring.(v.at) <- x;
+    v.at <- (v.at + 1) mod 2048
   done;
   v.last <- p
 

@@ -78,14 +78,23 @@ val no_input : input
  * frame a button goes down there; each at the mouse's point. *)
 type canvas_event = Hover of (float * float) | Press of (float * float) | Right_press of (float * float)
 
-(* What a widget draws: rectangles of colour, and text. Two
- * constructors, because that is all a toolkit needs -- a box with an
- * outline is five rectangles ([frame]), a checkbox's tick is one, and
- * a rounded corner is a thing we do not have.
+(* What a widget draws: rectangles of colour, and text -- all a toolkit
+ * of boxes needs: a box with an outline is five rectangles ([frame]), a
+ * checkbox's tick is one, and a rounded corner is a thing we do not
+ * have. And, for the controls that turn rather than slide (a knob, a
+ * rotary switch: a synthesizer's panel), a disc and a segment -- its
+ * face, and the line on it that says where it points.
  *
  * [Text (color, box, s)] centers [s] in [box], at a size of [box.h]:
- * the box is the line the text sits on, not the ink. *)
-type paint = Fill of Color.t * box | Text of Color.t * box * string
+ * the box is the line the text sits on, not the ink.
+ * [Disc (color, x, y, radius)] is centered at (x, y).
+ * [Segment (color, width, x1, y1, x2, y2)] is [width] thick, from
+ * (x1, y1) to (x2, y2). *)
+type paint =
+  | Fill of Color.t * box
+  | Text of Color.t * box * string
+  | Disc of Color.t * float * float * float
+  | Segment of Color.t * float * float * float * float * float
 
 (* [frame color thickness box]: the outline of [box], as four fills
  * (top, bottom, left, right), each [thickness] wide and inside the

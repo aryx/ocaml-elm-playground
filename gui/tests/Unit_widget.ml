@@ -46,7 +46,7 @@ let test_inset () =
 let test_frame () =
   let bars =
     Widget.frame Color.black 4. button
-    |> List.map (function Widget.Fill (_, b) -> b | Widget.Text (_, b, _) -> b)
+    |> List.filter_map (function Widget.Fill (_, b) -> Some b | Widget.Text (_, b, _) -> Some b | Disc _ | Segment _ -> None)
   in
   Alcotest.(check int) "four sides" 4 (List.length bars);
   bars

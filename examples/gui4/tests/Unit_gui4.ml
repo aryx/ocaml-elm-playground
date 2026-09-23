@@ -70,6 +70,8 @@ let check_the_four ~expect make frames =
                       Printf.sprintf "fill %.0f,%.0f %.0fx%.0f %s" b.x b.y b.w b.h
                         (match c with Color.Rgb (r, g, b) -> Printf.sprintf "rgb(%d,%d,%d)" r g b | Color.Hex h -> h)
                   | Widget.Text (_, (b : Widget.box), s) -> Printf.sprintf "text %S at %.0f,%.0f" s b.x b.y
+                  | Widget.Disc (_, x, y, r) -> Printf.sprintf "disc %.0f at %.0f,%.0f" r x y
+                  | Widget.Segment (_, _, x1, y1, x2, y2) -> Printf.sprintf "segment %.0f,%.0f-%.0f,%.0f" x1 y1 x2 y2
                 in
                 Alcotest.failf "%s: frame %d is not the same picture as immediate mode's: only %s has [%s], only immediate [%s]"
                   name frame name

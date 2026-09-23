@@ -188,3 +188,7 @@ val instrument : t -> Instrument.t
  * tests and a display) *)
 val pitch : t -> float
 val cutoff_now : t -> float
+
+(* the last 2048 samples it played, oldest first: for a panel's
+ * oscilloscope and spectrum, on any backend *)
+val recent : t -> Signal.t

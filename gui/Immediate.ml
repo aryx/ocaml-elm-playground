@@ -49,6 +49,12 @@ type t = {
   (* where the caret is in the focused field, in characters; clamped
      by the field, since only it knows how long its text is *)
   cursor : int;
+  (* claude: how the mouse moved up since the last frame, and since the
+   * press, up less down and in all: what a knob or a rotary switch,
+   * dragged, turns by -- and what tells a click on one from a drag *)
+  dy : float;
+  dragged : float;
+  moved : float;
   (* the frame being built, in reverse order *)
   painted : Widget.paint list;
   (* claude: and what goes over all of it, whenever it was asked for:
@@ -82,6 +88,9 @@ let empty =
     keys_before = [];
     pressed = [];
     cursor = 0;
+    dy = 0.;
+    dragged = 0.;
+    moved = 0.;
     painted = [];
     overlay = [];
     fields = [];
@@ -117,10 +126,14 @@ let frame (input : Widget.input) (t : t) =
         else focus
     | _ -> focus
   in
+  let dy = if press then 0. else input.my -. t.input.my in
   {
     t with
     input;
     press;
+    dy;
+    dragged = (if press then 0. else t.dragged +. dy);
+    moved = (if press then 0. else t.moved +. Float.abs dy);
     was_down = input.mdown;
     rpress = input.mrdown && not t.was_rdown;
     was_rdown = input.mrdown;
@@ -210,6 +223,43 @@ let checkbox_size (th : Theme.t) s =
     th.row )
 
 let slider_size (th : Theme.t) = (th.slider_width, th.row)
+
+let knob_travel = 200.
+
+let knob (t : t) (b : Widget.box) ~from ~to_ v =
+  let t, hot, held, _clicked = interact t b in
+  (* turned by the mouse's move since the last frame, not set from where
+   * it is: pressing a knob doesn't make it jump *)
+  let v = if held && not t.press then max (min from to_) (min (max from to_) (v +. (t.dy /. knob_travel *. (to_ -. from)))) else v in
+  let fraction = if to_ = from then 0. else (v -. from) /. (to_ -. from) in
+  (draw t (Look.knob t.theme b ~fraction ~hot ~held), v)
+
+let rocker (t : t) (b : Widget.box) on =
+  let t, hot, held, clicked = interact t b in
+  let on = if clicked then not on else on in
+  (draw t (Look.rocker t.theme b ~on ~hot ~held), on)
+
+let selector_step = 24.
+
+let selector (t : t) (b : Widget.box) (labels : string list) (index : int) =
+  let t, hot, held, clicked = interact t b in
+  let n = List.length labels in
+  (* a step each [selector_step] dragged, the drag spent as it steps; a
+   * click that hardly moved, the next position, round again *)
+  let t, index =
+    if held && t.dragged >= selector_step then ({ t with dragged = t.dragged -. selector_step }, min (n - 1) (index + 1))
+    else if held && t.dragged <= -.selector_step then ({ t with dragged = t.dragged +. selector_step }, max 0 (index - 1))
+    else if clicked && t.moved < 3. && n > 0 then (t, (index + 1) mod n)
+    else (t, index)
+  in
+  (draw t (Look.selector t.theme b labels ~index ~hot ~held), index)
+
+let knob_size (th : Theme.t) = (th.dial +. 20., th.dial +. 20.)
+let rocker_size (th : Theme.t) = (th.row *. 0.6, th.row *. 1.2)
+
+let selector_size (th : Theme.t) labels =
+  let widest = List.fold_left (fun m s -> max m (Widget.text_width ~size:(th.text_size *. 0.8) s)) 0. labels in
+  (th.dial +. (2. *. (th.text_size *. 1.3)) +. widest, th.dial +. (2. *. th.text_size *. 1.3) +. th.text_size)
 
 let field ?(enabled = true) (t : t) (b : Widget.box) (text : string) =
   let th = t.theme in

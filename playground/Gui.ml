@@ -69,6 +69,9 @@ let checkbox_in computer b s checked =
 let slider_in computer b ~from ~to_ v =
   widget computer (fun u -> Immediate.slider u b ~from ~to_ v)
 
+let knob_in computer b ~from ~to_ v = widget computer (fun u -> Immediate.knob u b ~from ~to_ v)
+let rocker_in computer b on = widget computer (fun u -> Immediate.rocker u b on)
+let selector_in computer b labels i = widget computer (fun u -> Immediate.selector u b labels i)
 let label_in computer b s = widget computer (fun u -> (Immediate.label u b s, ()))
 let field_in ?enabled computer b text = widget computer (fun u -> Immediate.field ?enabled u b text)
 let text_area_in computer b edit = widget computer (fun u -> Immediate.text_area u b edit)
@@ -80,6 +83,9 @@ let list_in computer b items selected = widget computer (fun u -> Immediate.list
 let button_size s = Immediate.button_size (theme ()) s
 let checkbox_size s = Immediate.checkbox_size (theme ()) s
 let slider_size () = Immediate.slider_size (theme ())
+let knob_size () = Immediate.knob_size (theme ())
+let rocker_size () = Immediate.rocker_size (theme ())
+let selector_size labels = Immediate.selector_size (theme ()) labels
 let field_size () = Immediate.field_size (theme ())
 let text_area_size () = Immediate.text_area_size (theme ())
 let progress_size () = Immediate.progress_size (theme ())
@@ -100,6 +106,10 @@ let checkbox computer ~at s checked =
 let slider computer ~at ~from ~to_ v =
   slider_in computer (box ~at (slider_size ())) ~from ~to_ v
 
+let knob computer ~at ~from ~to_ v = knob_in computer (box ~at (knob_size ())) ~from ~to_ v
+let rocker computer ~at on = rocker_in computer (box ~at (rocker_size ())) on
+let selector computer ~at labels i = selector_in computer (box ~at (selector_size labels)) labels i
+
 let label computer ~at s = label_in computer (box ~at (label_size s)) s
 let field ?enabled computer ~at text = field_in ?enabled computer (box ~at (field_size ())) text
 let text_area computer ~at edit = text_area_in computer (box ~at (text_area_size ())) edit
@@ -114,6 +124,13 @@ let shape_of_paint = function
   | Widget.Fill (color, (b : Widget.box)) -> rectangle color b.w b.h |> move b.x b.y
   | Widget.Text (color, (b : Widget.box), s) ->
       words color s |> scale (b.h /. words_font_size) |> move b.x b.y
+  | Widget.Disc (color, x, y, r) -> circle color r |> move x y
+  (* a thin rectangle along the segment, turned to its angle *)
+  | Widget.Segment (color, width, x1, y1, x2, y2) ->
+      let dx = x2 -. x1 and dy = y2 -. y1 in
+      rectangle color (Float.hypot dx dy) width
+      |> rotate (atan2 dy dx *. 180. /. Float.pi)
+      |> move ((x1 +. x2) /. 2.) ((y1 +. y2) /. 2.)
 
 let draw () =
   closed := true;

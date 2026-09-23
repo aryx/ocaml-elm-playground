@@ -35,6 +35,31 @@ val checkbox :
 (* [fraction] is where the knob sits, 0 at the left end, 1 at the right *)
 val slider : Theme.t -> Widget.box -> fraction:float -> hot:bool -> held:bool -> Widget.paint list
 
+(* [knob theme box ~fraction]: a dial at the box's center, [theme.dial]
+ * wide, its pointer turned from 225 degrees (0, lower left: seven
+ * o'clock) clockwise through the top to -45 (1, lower right: five
+ * o'clock), 270 degrees in all, the eleven ticks of a synthesizer's
+ * 0 to 10 around it; the pointer in the accent while it is turned *)
+val knob : Theme.t -> Widget.box -> fraction:float -> hot:bool -> held:bool -> Widget.paint list
+
+(* [knob_angle fraction]: where the pointer points, in degrees
+ * (counterclockwise from the right, the playground's way) *)
+val knob_angle : float -> float
+
+(* [rocker theme box ~on]: a rocker switch standing in [box], the lit
+ * half (the accent) the top one when [on] *)
+val rocker : Theme.t -> Widget.box -> on:bool -> hot:bool -> held:bool -> Widget.paint list
+
+(* [selector theme box labels ~index]: a rotary switch, a dial whose
+ * pointer stops at one of the [labels], written around it over the top
+ * (40 degrees apart, at most 270 in all), the chosen one in the
+ * accent *)
+val selector : Theme.t -> Widget.box -> string list -> index:int -> hot:bool -> held:bool -> Widget.paint list
+
+(* [selector_angle n i]: where the [i]th of [n] positions is, in
+ * degrees *)
+val selector_angle : int -> int -> float
+
 (* [slider_value theme box ~from ~to_ mx]: the value of a slider whose
  * knob is dragged to [mx] -- its center under the mouse, kept in the
  * track; None when the box is too narrow to have a track.

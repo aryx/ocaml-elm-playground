@@ -44,6 +44,11 @@ type t = {
      is when nothing says otherwise *)
   field_face : Color.t;
   field_width : float;
+  (* a knob's or a rotary switch's diameter, its face, and the line on it
+     that says where it points *)
+  dial : float;
+  dial_face : Color.t;
+  pointer : Color.t;
 }
 
 (* a light grey theme, readable on every backend *)
