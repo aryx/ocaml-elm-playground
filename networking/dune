@@ -11,4 +11,7 @@
  (name networking)
  (package elm_playground)
  (wrapped false)
+ (libraries
+   random ; Lehmer, Sim_net's seeded network
+ )
 )

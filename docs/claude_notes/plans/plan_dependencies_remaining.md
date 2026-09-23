@@ -69,6 +69,16 @@ pictures, not our PNG/GIF/JPEG readers** (they do run in JavaScript,
 `graphics/tests/js/`, but only the native backends use them). The
 browser is the web's OS boundary; this stays borrowed.
 
+### Below every backend: libm
+
+*(Added 2026-09-23, missed by the first inventory because no dune file
+names it.)* Every `sin`, `cos`, `sqrt`, `exp` of every backend,
+natively, is the C library's `libm` (and in a browser, the JavaScript
+engine's `Math`). Not a dependency to drop -- it is fast and right --
+but the most used code nobody here has read, and a teaching subject:
+`math/libm/`, [`plan_teaching_other.md`](plan_teaching_other.md)
+section 4b.
+
 ### Tests and tools
 
 `alcotest` and `testo`: borrowed, as a compiler is.
@@ -133,7 +143,9 @@ to be decided when we get there:
    checking (X.509, ASN.1, RSA or ECDSA signatures, a trust store) is
    the big part; a first version could skip it and say so loudly
    (encrypted, not authenticated). A plan of its own
-   (`plan_crypto_teaching.md`), and a large one.
+   (`plan_crypto_teaching.md`), and a large one; its primitives in
+   `crypto/` ([`plan_teaching_other.md`](plan_teaching_other.md)
+   section 4b), the handshake in `networking/`.
 3. **The images local**: Turtle and Mario's GIFs downloaded once into
    the repository (as the golden-frame plan wants anyway, see
    [`plan_2d_remaining.md`](plan_2d_remaining.md) section 4), and

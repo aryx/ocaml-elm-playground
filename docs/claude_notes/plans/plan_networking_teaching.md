@@ -415,8 +415,17 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    which fetches its own source from `make serve-build`'s server; its
    golden frame is the request refused (port 1), the one answer that
    doesn't depend on the machine.
-1. **Wire and Sim_net**: serialization and its tests (round trips,
+1. *(done, 2026-09-23)* **Wire and Sim_net**: serialization and its tests (round trips,
    garbage rejected), the simulated network (its statistics tested).
+   Done as: `Wire` (u8, u16, MIDI's varint bounded to 4 bytes, zigzag,
+   strings; one value one encoding -- a varint's useless leading byte
+   refused -- so 10,000 random strings never raise and whatever parses
+   re-encodes to the same bytes; the input message's 7 bytes, 700
+   bytes a second with the headers), `Sim_net` (packets as bytes
+   between numbered peers, latency, jitter, loss and duplication drawn
+   from a seed, reordering from the jitter; the laws tested: 10% of
+   10,000 lost within 3 sigma, delays between latency and latency +
+   jitter with the mean in the middle, no reordering without jitter).
 2. **Lockstep over Sim_net**: `Lockstep`, `Checksum`, input delay; the
    `multiplayer` API; `-simulate` (both players side by side), with
    latency and loss keys. Tests: identical models after 1000 ticks under

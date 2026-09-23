@@ -3,5 +3,5 @@
 ; references, a chunked body), on bytes, no network needed
 (test
  (name Test)
- (libraries str alcotest testo networking) ; str: appendix B's regexp, to check Url.parse against
+ (libraries str alcotest testo random networking) ; str: appendix B's regexp, to check Url.parse against
 )

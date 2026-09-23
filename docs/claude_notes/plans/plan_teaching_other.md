@@ -1,7 +1,7 @@
 # Plan: the other teaching pieces (beyond graphics, physics, audio, network, AI)
 
 The five teaching areas -- `graphics/` (done), `physics/`, `audio/`,
-`ai/`, `network/` (planned: [`plan_physics_teaching.md`](done/plan_physics_teaching.md),
+`ai/`, `networking/` (planned: [`plan_physics_teaching.md`](done/plan_physics_teaching.md),
 [`plan_audio_teaching.md`](plan_audio_teaching.md),
 [`plan_ai_teaching.md`](plan_ai_teaching.md),
 [`plan_networking_teaching.md`](plan_networking_teaching.md)) -- teach
@@ -104,6 +104,44 @@ in 2D and in 3D, a growing plant. References: *The Algorithmic Beauty
 of Plants* (Prusinkiewicz and Lindenmayer, 1990), Knuth's *TAOCP*
 vol. 2 on random numbers, the *Procedural Content Generation in Games*
 book (Shaker, Togelius, Nelson, 2016).
+
+## 4b. Two more areas: `math/libm/` and `crypto/`
+
+*(Added 2026-09-23.)* The rule for a top-level directory: a subject a
+course would give a chapter to (graphics, audio, physics, AI,
+networking, randomness above). Everything is math in the end, so
+`math/` is kept for what has no subject of its own: the numerics under
+everything else. Crypto is a subject, so it is `crypto/`. Each is a
+plan of its own when started, in the same style (one idea per module,
+`.mli`s with diagrams, worked examples and references, tests against
+the field's own check values):
+
+- **`math/libm/`: sin, cos, exp, log, sqrt.** OCaml's floats call the
+  C library's `libm` for them -- the one borrowed library every
+  backend shares, and the most used code nobody reads. How they are
+  computed is a small classic: **range reduction** (sin x from x mod
+  pi/2 -- easy for 3, hard for 1e22: Payne and Hanek's 1983 algorithm,
+  because pi has to be known to hundreds of bits), **polynomials**
+  (Taylor's, then the minimax ones libraries really use, Remez's
+  algorithm, and why a few terms are enough on a small interval),
+  **CORDIC** (Volder, 1959: shifts and adds only, how the HP-35 and
+  the 8087 did it), **Newton's method** for sqrt (and the Quake III
+  inverse square root, 1999), exp and log by splitting exponent and
+  mantissa; and what "correctly rounded" means (the table maker's
+  dilemma). The oracle for the tests is the `libm` we replace: every
+  function against it over a million inputs, the error measured in
+  ulps. Worth it for the teaching, not to replace libm (it is fast,
+  and right); a switch (like `Opti`) could still let the 3D software
+  renderer run on ours, to see the cost. References: Jean-Michel
+  Muller, *Elementary Functions* (1997, 3rd ed. 2016); fdlibm (Sun,
+  1993), the readable libm, with its comments.
+- **`crypto/`: what TLS needs.** SHA-256 (FIPS 180-4), HMAC and
+  HKDF (RFC 5869), ChaCha20 and Poly1305 (RFC 8439), X25519 (RFC
+  7748) -- each a famous, small, well-specified algorithm with test
+  vectors in its RFC; together, with a TLS 1.3 handshake in
+  `networking/`, the way to drop curl for `https://`
+  ([`plan_dependencies_remaining.md`](plan_dependencies_remaining.md)
+  section 2, option 2).
 
 ## 5. Game AI -- started, and now a plan of its own
 
