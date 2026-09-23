@@ -73,9 +73,12 @@ and for photographs.
   differences), about PNG's size and much faster. An afternoon, and a
   good last page for the tutorial: what a format designed in 2021 for
   speed looks like next to one designed in 1995 for size.
-- **A JPEG writer**: the forward DCT exists (`Dct.fdct`), the tables are
-  T.81's Annex K, the quality scaling the IJG's. It gives `ImageJpeg`
-  its quality slider (§5).
+- ~~**A JPEG writer**~~ (done, `Jpeg_encode`: baseline, 4:2:0 or
+  4:4:4, T.81 Annex K's tables and Huffman codes, the IJG's quality
+  scaling; on the fixtures' picture at quality 75, within a few bytes
+  and 0.1 dB of libjpeg's own, and libjpeg reads it). Left: Huffman
+  codes built for the picture (libjpeg's -optimize), gray, restart
+  markers.
 - **APNG** (in PNG since its third edition): `acTL`, `fcTL`, `fdAT`,
   and GIF's disposal rules, which `Gif.animation` already composes.
 - **Arithmetic coding**: in JPEG's standard (and refused), and the
@@ -106,7 +109,8 @@ and for photographs.
 
 ## 5. Seeing it
 
-- `ImageJpeg`'s **quality slider** (with the JPEG writer of §3) and the
+- `ImageJpeg`'s **quality slider** (done: keys 1-9 and 0, our writer's
+  bytes and PSNR shown) and the
   **Y, Cb, Cr planes** apart -- why color can be kept at half size.
 - **LZ77 drawn**: a back-reference as an arrow from the bytes copied to
   the bytes written, over a line of text or a row of pixels -- the one

@@ -486,6 +486,10 @@ let scripted : Testutil_golden.scripted list =
      * mosaic; PNG with no filter, its bytes as they are, bright; GIF's
      * LZW a second into playing, the codes 8 bits wide *)
     ("examples/software/ImageJpeg", "one", 12, "down:1,down:3,down:5,down:7,down:9");
+    (* claude: the picture encoded again by our own writer at quality 20
+     * (Jpeg_encode.mli), every coefficient kept: the quantization's
+     * blocks and ringing *)
+    ("examples/software/ImageJpeg", "quality20", 24, "2:1,right:3,right:5,right:7,right:9,right:11,right:13,right:15,right:17");
     ("examples/software/ImagePng", "none", 4, "0:2");
     ("examples/software/ImageLzw", "played", 60, "space:1");
     ("games/puzzle/software/AiOthello", "values", 3, "v:2");

@@ -76,7 +76,8 @@ graphics/videos/          video formats, one library each
   y4m/                    Y4m: YUV4MPEG2 read and written (done, phase 1)
   fli/                    Fli: FLI and FLC read and written (done, phase 2)
   avi/                    Avi: the RIFF walk (Wav's), MJPEG frames, PCM
-                          audio; written once the JPEG writer exists
+                          audio; written with Jpeg_encode (the JPEG
+                          writer, done for it)
   mpeg1/                  Bits (the bit reader), Vlc (the variable-length
                           code tables), Mpeg1 (headers, macroblocks,
                           motion, B-frame reordering), later Motion (an
@@ -193,7 +194,7 @@ commercial stream analyzers); here it is the lesson made visible.
    any movie: what changed from the frame before, the rest dimmed.
 3. **AVI with Motion JPEG and PCM**: the RIFF walk shared with `Wav`,
    the index, audio and video in sync in the player; written once
-   `plan_images_remaining.md`'s JPEG writer exists.
+   `plan_images_remaining.md`'s JPEG writer exists (done: `Jpeg_encode`).
 4. **MPEG-1 video**: I frames (a stream of them decodes like a JPEG
    sequence), then P (motion compensation, half-pel), then B and the
    reordering; our clip encoded once by a committed script (ffmpeg, from

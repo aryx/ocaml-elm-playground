@@ -39,6 +39,7 @@ let () =
           Unit_png.tests;
           Unit_gif.tests;
           Unit_jpeg.tests;
+          Unit_jpeg_encode.tests;
           Unit_xpm.tests;
           Unit_mesh_cache.tests;
           Unit_matting.tests;

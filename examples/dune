@@ -25,6 +25,7 @@
   (libraries
     graphics_font ; AiDigits trains on digits this font draws
     graphics_rgba graphics_png graphics_gif graphics_jpeg ; the Image* examples take them apart
+    graphics_yuv ; Psnr, ImageJpeg's loss measured
     elm_playground
     ai ; AiTictactoe's Minimax
     kit_maze ; AiGhosts' Grid_move and Chase, TinyPacman's

@@ -25,32 +25,44 @@
  *
  * Up and down: one coefficient more or less; right and left: 8. "b":
  * the color's upsampling, `Triangle (libjpeg's) or `Box (each sample
- * repeated: look at the roof's edge).
+ * repeated: look at the roof's edge). 1 to 9: the PNG encoded again by
+ * our own writer (Jpeg_encode.mli), at quality 10 to 90, 0 at 100 --
+ * the quantization tables scaled, the one thing an encoder decides --
+ * its bytes and its loss, the PSNR against the PNG, shown; j: back to
+ * the JPEG file, as libjpeg made it.
  *
  * This picture is a drawing, flat colors and sharp edges: the JPEG is
  * bigger than the PNG. JPEG is for photographs; ImagePng and ImageLzw
  * take the other two formats apart.
  *
  * What it uses: the Playground, Scene2d (the keys), Sprite.of_rgba (a
- * decoded picture as shapes), and graphics/images's Png, Jpeg and Dct
- * directly; the picture, demo_picture.{png,jpg} (make_demo_pictures.py),
+ * decoded picture as shapes), graphics/images's Png, Jpeg, Jpeg_encode
+ * and Dct directly, and graphics/videos's Psnr; the picture, demo_picture.{png,jpg} (make_demo_pictures.py),
  * embedded at build time (Demo_pictures, see examples/dune).
  *)
 open Playground
 
-type state = { keep : int; box : bool; (* the JPEG decoded so, as shapes *) jpeg : shape }
+type state = {
+  keep : int;
+  box : bool;
+  quality : int option; (* the PNG encoded by our writer at this quality, or the JPEG file *)
+  file : string; (* the JPEG shown *)
+  db : float; (* its loss, against the PNG *)
+  jpeg : shape; (* decoded so, as shapes *)
+}
+
 type model = state Scene2d.t
 
 let pixel_size = 6.
+let picture : Rgba_image.t = Png.decode Demo_pictures.demo_picture_png
 
-let decode ~(keep : int) ~(box : bool) : shape =
-  Sprite.of_rgba pixel_size
-    (Jpeg.decode ~keep ~upsampling:(if box then `Box else `Triangle) Demo_pictures.demo_picture_jpg)
+let with_keep (keep : int) ~(box : bool) ~(quality : int option) : state =
+  let file = match quality with None -> Demo_pictures.demo_picture_jpg | Some quality -> Jpeg_encode.encode ~quality picture in
+  let decoded = Jpeg.decode ~keep ~upsampling:(if box then `Box else `Triangle) file in
+  { keep; box; quality; file; db = Psnr.psnr picture decoded; jpeg = Sprite.of_rgba pixel_size decoded }
 
-let with_keep (keep : int) ~(box : bool) : state = { keep; box; jpeg = decode ~keep ~box }
-
-let initial_model : model = Scene2d.start (with_keep 6 ~box:false)
-let png : shape = Sprite.of_rgba pixel_size (Png.decode Demo_pictures.demo_picture_png)
+let initial_model : model = Scene2d.start (with_keep 6 ~box:false ~quality:None)
+let png : shape = Sprite.of_rgba pixel_size picture
 
 let update (computer : computer) (s : model) : model =
   let scenes = Scene2d.update computer s in
@@ -65,7 +77,14 @@ let update (computer : computer) (s : model) : model =
   in
   let keep = max 1 (min 64 keep) in
   let box = if pressed (fun kb -> Set_.mem "b" kb.keys) then not m.box else m.box in
-  if keep = m.keep && box = m.box then scenes else { scenes with scene = with_keep keep ~box }
+  let digit = List.find_opt (fun d -> pressed (fun kb -> Set_.mem (string_of_int d) kb.keys)) (List.init 10 Fun.id) in
+  let quality =
+    match digit with
+    | Some 0 -> Some 100
+    | Some d -> Some (10 * d)
+    | None -> if pressed (fun kb -> Set_.mem "j" kb.keys) then None else m.quality
+  in
+  if keep = m.keep && box = m.box && quality = m.quality then scenes else { scenes with scene = with_keep keep ~box ~quality }
 
 (*****************************************************************************)
 (* View *)
@@ -104,13 +123,18 @@ let view (computer : computer) (s : model) : shape list =
     text grey 1.3 (Printf.sprintf "the picture: PNG, %d bytes, exact" (String.length Demo_pictures.demo_picture_png))
     |> move (-210.) 0.;
     text grey 1.3
-      (Printf.sprintf "JPEG, %d bytes: %d of 64 coefficients a block" (String.length Demo_pictures.demo_picture_jpg) m.keep)
+      (Printf.sprintf "JPEG, %d bytes: %d of 64 coefficients a block" (String.length m.file) m.keep)
     |> move 210. 0.;
+    text (rgb 240 200 90) 1.3
+      (Printf.sprintf "%s, %.1f dB"
+         (match m.quality with None -> "the file, libjpeg's" | Some q -> Printf.sprintf "ours at quality %d" q) m.db)
+    |> move 210. (-60.);
     text (rgb 240 200 90) 1.3 (if m.box then "color upsampling: box" else "color upsampling: triangle (libjpeg's)")
     |> move 210. (-30.) ]
   @ patterns m.keep
   @ [ text grey 1.2 "the 64 patterns, the kept ones lit" |> move_y (-360.);
       text grey 1.3 "up, down: one coefficient    right, left: eight    b: box or triangle upsampling" |> move_y (-410.);
+      text grey 1.3 "1 to 9, 0: our writer at quality 10 to 90, 100    j: the file" |> move_y (-430.);
       text (rgb 120 125 145) 1.2 "a drawing: the JPEG is bigger than the PNG -- JPEG is for photographs"
       |> move_y (-450.) ]
 

@@ -20,6 +20,7 @@
    graphics_png
    graphics_gif
    graphics_jpeg
+   graphics_yuv ; Psnr, for the JPEG writer's loss
    graphics_xpm
    graphics_gpu
  )
