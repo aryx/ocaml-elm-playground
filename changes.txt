@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.3 (Q4 2026) (3D playground, from-scratch software rasterizers, OpenGL/WebGL, physics, audio, games)
+* 0.3 (Q4 2026) (3D playground, from-scratch software rasterizers, OpenGL/WebGL, physics/ai/audio/juice/gui libs, games and apps)
 # unless mentioned otherwise, everything below was done by Claude Code
 # (with direction from me)
 
