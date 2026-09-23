@@ -32,8 +32,8 @@ type channel = {
 }
 
 type t = {
-  song : Mod.song;
-  samples : Signal.t array; (* the instruments' samples, as numbers *)
+  mutable song : Mod.song;
+  mutable samples : Signal.t array; (* the instruments' samples, as numbers *)
   channels : channel array;
   loop : bool;
   mutable reading : Paula.reading;
@@ -50,6 +50,10 @@ type t = {
 }
 
 let tick_samples (tempo : int) : float = float_of_int Signal.rate *. 2.5 /. float_of_int tempo
+
+(* the instruments' samples as numbers, read once *)
+let samples_of (song : Mod.song) : Signal.t array =
+  Array.map (fun (i : Mod.instrument) -> Array.init (String.length i.data) (Mod.sample i)) song.instruments
 
 let create ?(loop = true) (song : Mod.song) : t =
   let channel () =
@@ -69,7 +73,7 @@ let create ?(loop = true) (song : Mod.song) : t =
   in
   {
     song;
-    samples = Array.map (fun (i : Mod.instrument) -> Array.init (String.length i.data) (Mod.sample i)) song.instruments;
+    samples = samples_of song;
     channels = Array.init (Mod.channels song) (fun _ -> channel ());
     loop;
     reading = Hold;
@@ -87,6 +91,21 @@ let create ?(loop = true) (song : Mod.song) : t =
 let set_reading (p : t) (r : Paula.reading) : unit = p.reading <- r
 let set_separation (p : t) (s : float) : unit = p.separation <- Float.max 0. (Float.min 1. s)
 let position (p : t) : int * int = (p.position, p.row)
+let song (p : t) : Mod.song = p.song
+
+let seek (p : t) ~(position : int) ~(row : int) : unit =
+  p.position <- max 0 (min (Array.length p.song.positions - 1) position);
+  p.row <- max 0 (min 63 row);
+  p.tick <- 0;
+  p.until_tick <- 0.;
+  p.next <- None;
+  p.finished <- Array.length p.song.positions = 0
+
+let set_song (p : t) (song : Mod.song) : unit =
+  if song.instruments != p.song.instruments then p.samples <- samples_of song;
+  p.song <- song;
+  (* a position gone (the order list shortened): back to its last *)
+  if p.position >= Array.length song.positions then p.position <- max 0 (Array.length song.positions - 1)
 let finished (p : t) : bool = p.finished
 let channel_period (p : t) (c : int) : int = p.channels.(c).period
 let channel_volume (p : t) (c : int) : int = p.channels.(c).volume

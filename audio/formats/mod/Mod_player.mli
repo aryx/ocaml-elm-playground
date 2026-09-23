@@ -53,6 +53,16 @@ val set_separation : t -> float -> unit
 (* where it is: the position in the order list, the row *)
 val position : t -> int * int
 
+(* [seek p ~position ~row]: from there, at its first tick *)
+val seek : t -> position:int -> row:int -> unit
+
+(* [set_song p song]: [song] from now on, where it is -- a tracker's edits
+ * heard as they are made (its instruments' samples read again) *)
+val set_song : t -> Mod.song -> unit
+
+(* the song it plays *)
+val song : t -> Mod.song
+
 (* the song played to its end (never, looping) *)
 val finished : t -> bool
 

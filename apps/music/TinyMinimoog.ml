@@ -97,7 +97,7 @@ let panel_theme : Theme.t =
     face = rgb 70 70 70;
     face_hot = rgb 95 95 95;
     face_down = rgb 50 50 50;
-    text_size = 12.;
+    text_size = 15.;
     dial = 40.;
     dial_face = rgb 20 20 20;
     pointer = rgb 245 245 245;
@@ -266,7 +266,7 @@ let update (computer : computer) (m : model) : model =
 (* {1 view} *)
 
 let white_ink = rgb 235 235 235
-let text (s : string) : shape = words white_ink s |> scale 0.6
+let text (s : string) : shape = words white_ink s |> scale 1.2
 
 let segment (color : color) ((x1, y1) : number * number) ((x2, y2) : number * number) : shape =
   rectangle color (Float.hypot (x2 - x1) (y2 - y1) + 1.) 2.
@@ -280,7 +280,7 @@ let panel_view : shape list =
     rectangle wood 22. 470. |> move (-489.) 245.;
     rectangle wood 22. 470. |> move 489. 245.;
   ]
-  @ List.map (fun (h, x) -> words white_ink h |> scale 0.75 |> move x 440.) headers
+  @ List.map (fun (h, x) -> words white_ink h |> scale 1.5 |> move x 440.) headers
   (* the lines between the sections *)
   @ List.map (fun x -> rectangle (rgb 90 90 90) 2. 400. |> move x 240.) [ -375.; -60.; 70.; 390. ]
   @ List.filter_map
@@ -337,20 +337,20 @@ let keyboard_view (computer : computer) (m : model) : shape list =
     let w = if black then white_width * 0.6 else white_width - 3. in
     let h = if black then black_height else white_height in
     let color = if down s then rgb 250 190 80 else if black then rgb 20 20 20 else rgb 250 250 245 in
-    let label = match letter_of s with Some k -> [ words (if black then white else rgb 120 120 120) k |> scale 0.8 |> move_y ((-.h / 2.) + 15.) ] | None -> [] in
+    let label = match letter_of s with Some k -> [ words (if black then white else rgb 120 120 120) k |> scale 1.6 |> move_y ((-.h / 2.) + 18.) ] | None -> [] in
     group (rectangle color w h :: label) |> move (key_x s) (keyboard_top - (h / 2.))
   in
   let keys = List.init keys_count (fun s -> s) in
   List.map key (List.filter (fun s -> not (is_black s)) keys)
   @ List.map key (List.filter is_black keys)
-  @ [ words black (Printf.sprintf "C%d" m.octave) |> scale 0.7 |> move (keyboard_left + 20.) (keyboard_top + 12.) ]
+  @ [ words black (Printf.sprintf "C%d" m.octave) |> scale 1.4 |> move (keyboard_left + 20.) (keyboard_top + 14.) ]
 
 let wheel_view (x : number) (value : number) (label : string) : shape list =
   [
     rectangle (rgb 25 25 25) 36. (wheel_height + 10.) |> move x wheel_y;
     rectangle (rgb 80 80 80) 24. wheel_height |> move x wheel_y;
     rectangle white_ink 24. 6. |> move x (wheel_y + (value * wheel_height / 2.));
-    words black label |> scale 0.6 |> move x (wheel_y - (wheel_height / 2.) - 18.);
+    words black label |> scale 1.2 |> move x (wheel_y - (wheel_height / 2.) - 20.);
   ]
 
 let status (m : model) : string =
@@ -363,9 +363,9 @@ let status (m : model) : string =
 let view (computer : computer) (m : model) : shape list =
   let samples = Minimoog_voice.recent voice in
   [ rectangle (rgb 215 205 190) computer.screen.width computer.screen.height ]
-  @ [ words black "TinyMinimoog" |> scale 1.4 |> move (-380.) 482.; words black "preset" |> move 230. 482. ]
+  @ [ words black "TinyMinimoog" |> scale 2.4 |> move (-360.) 482.; words black "preset" |> scale 1.5 |> move 230. 482. ]
   @ panel_view @ scope_view samples @ spectrum_view samples
-  @ [ words (rgb 70 70 70) (status m) |> scale 0.8 |> move 0. (-137.) ]
+  @ [ words (rgb 70 70 70) (status m) |> scale 1.4 |> move 0. (-137.) ]
   @ wheel_view pitch_wheel_x m.pitch_wheel "PITCH"
   @ wheel_view mod_wheel_x ((m.mod_wheel * 2.) - 1.) "MOD"
   @ keyboard_view computer m @ Gui.draw ()

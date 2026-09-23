@@ -114,6 +114,7 @@ let loop (name : string) (s : sound) : unit =
 (* the platform's way to get a file's bytes; none until run_app *)
 let fetcher : (string -> (string option -> unit) -> unit) ref = ref (fun _ k -> k None)
 let set_fetcher f = fetcher := f
+let fetch (source : string) (k : string option -> unit) : unit = !fetcher source k
 
 (* the loops asked for with loop_from, playing or still downloading:
  * asked once *)

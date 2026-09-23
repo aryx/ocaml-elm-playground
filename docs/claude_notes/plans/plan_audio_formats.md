@@ -286,6 +286,25 @@ solfège, so everything that plays a tune plays it.
   `audio/testutil/`'s `audio_testutil`, shared, with `check_stereo`;
   `make approve-golden-formats`. `playground/tests/Unit_audio`: a
   module played by name, heard, stopped; a non-module, nothing.
+- **Phase 3, DONE (2026-09-23)**: `apps/music/TinySoundtracker`. The
+  grid of four channels, the current row in the middle; notes typed on
+  the two piano rows (z-m, q-i) with the current instrument, the
+  cursor going down; the effect's three digits in hex; Backspace; the
+  order list (, . - = Enter, a new empty pattern past the last); Tab
+  the octave, [ ] the instrument; its sample drawn. Each edit copies
+  the pattern and its row: the song stays a value, and the player,
+  playing it through `Audio.instrument`, is given each new one
+  (`Mod_player.set_song`, kept where it is; `Mod_player.seek` to play
+  from the current position); the grid follows the playhead, the
+  channels' volumes lit. Control-S exports song.mod
+  (`Playground_platform.export`); mod= opens yours (`Audio.fetch`, new:
+  the bytes as `loop_from` gets them). Our song: four instruments
+  synthesized in the app, two patterns (a melody, then its chords as
+  arpeggios over the same bass and drums). Checked by hand: a note
+  typed, exported (7,628 bytes: the header, two patterns, 4,496 bytes of
+  samples), reopened by mod= with the note there. Golden frames: at
+  rest, editing (C-2, D-2, C20), playing (row 8 after 57 frames, 120 ms
+  a row); CATALOG.md's row; its web page.
 
 ## Verification
 

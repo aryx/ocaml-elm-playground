@@ -273,6 +273,12 @@ val faster : number -> sound -> sound
      Audio.change_loop "music" (tune |> Audio.faster (1 + 0.1 * level)) *)
 val change_loop : string -> sound -> unit
 
+(* [fetch source k]: a file's or a URL's bytes, got as [loop_from] gets
+   them, given to [k] -- now natively, later in a browser, None if they
+   can't be had: for a program that edits a song rather than only
+   playing it (apps/music/TinySoundtracker.ml) *)
+val fetch : string -> (string option -> unit) -> unit
+
 (* [play_module name bytes]: a MOD file's song (its bytes, as read from
    a .mod: audio/formats/mod/Mod.mli), its own instruments playing its
    patterns on the Amiga's four channels (Mod_player.mli), looping until

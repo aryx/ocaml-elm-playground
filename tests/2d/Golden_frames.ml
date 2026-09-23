@@ -83,6 +83,9 @@ let scenes : Testutil_golden.scene list =
     (* 1970: the Model D's panel, black between wooden cheeks, left to
      * right; the bass preset *)
     ("apps/music/software/TinyMinimoog", "", 5);
+    (* 1987: the tracker, our song's first pattern, four channels, the
+     * current row in the middle *)
+    ("apps/music/software/TinySoundtracker", "", 5);
     (* 1994: a document of parts -- a text, a sheet and a picture side
      * by side, and a part of a kind nobody here can read, kept *)
     ("apps/office/software/TinyOpenDoc", "", 5);
@@ -946,6 +949,13 @@ let scripted : Testutil_golden.scripted list =
       "playing",
       40,
       "at(115;360):1-10,at(115;380):11-14,at(115;400):15-40,click:5-30,a:5-40,d:20-40" );
+    (* the tracker edited: C-2 and D-2 typed on the piano's lower row
+     * (the cursor going down after each), then C20 typed in hex on the
+     * next row's effect *)
+    ("apps/music/software/TinySoundtracker", "editing", 26, "down:3,z:6,x:9,right:12,c:15,2:18,0:21");
+    (* and played: 57 frames in, row 8 (120 ms a row), the grid following
+     * the playhead, the channels' volumes lit *)
+    ("apps/music/software/TinySoundtracker", "playing", 60, "space:3");
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)
