@@ -16,9 +16,16 @@
    graphics_3d
    graphics_images
    graphics_rgba
+   graphics_deflate
+   graphics_png
    graphics_xpm
    graphics_gpu
-   stb_image ; Unit_rgba loads a real RGB PNG
+   stb_image ; Unit_rgba loads a real RGB PNG; Unit_png compares our PNGs
  )
- (deps %{project_root}/examples/checker.png)
+ (deps
+   %{project_root}/examples/checker.png
+   %{project_root}/games/adventure/tomb.png
+   %{project_root}/games/fps/minecraft.png
+   (source_tree pngsuite) ; Willem van Schaik's PngSuite, a subset
+ )
 )

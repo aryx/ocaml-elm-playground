@@ -1,0 +1,11 @@
+; claude: compression, from scratch: Huffman codes, DEFLATE (LZ77 +
+; Huffman, RFC 1951) and its zlib wrapper (RFC 1950), with their
+; checksums -- what PNG's pixels are compressed with, and what JPEG's
+; Huffman codes share (see notes_images.md, sections 2, 3 and 6). Pure
+; OCaml, like xpm/. A private library (see graphics/core/dune),
+; installed as part of elm_playground.
+(library
+ (name graphics_deflate)
+ (package elm_playground)
+ (wrapped false)
+)

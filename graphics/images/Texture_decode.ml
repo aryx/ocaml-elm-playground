@@ -24,21 +24,18 @@
 
 let load_exn (src : string) : Rgba_image.t =
   let path = Download.local_file ~prefix:"playground3d_texture" src in
-  match Stb_image.load path with
-  | Ok img -> Rgba.of_stb_image img
-  | Error (`Msg msg) -> failwith (Printf.sprintf "could not decode texture %s: %s" src msg)
+  match Image_decode.decode_string (Image_decode.read_file path) with
+  | img -> img
+  | exception Failure msg -> failwith (Printf.sprintf "could not decode texture %s: %s" src msg)
 
 (* claude: a texture carried inside the program rather than read from
  * a file (see Playground3d.embedded_texture and Base64): the bytes are
  * decoded straight from memory, no file involved -- which is what lets
  * a game run from any directory. *)
 let load_base64_exn (base64 : string) : Rgba_image.t =
-  let bytes = Base64.decode base64 in
-  let buffer = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (String.length bytes) in
-  String.iteri (fun i c -> Bigarray.Array1.unsafe_set buffer i (Char.code c)) bytes;
-  match Stb_image.decode buffer with
-  | Ok img -> Rgba.of_stb_image img
-  | Error (`Msg msg) -> failwith (Printf.sprintf "could not decode an embedded texture: %s" msg)
+  match Image_decode.decode_string (Base64.decode base64) with
+  | img -> img
+  | exception Failure msg -> failwith (Printf.sprintf "could not decode an embedded texture: %s" msg)
 
 let cache : (string, Rgba_image.t option) Hashtbl.t = Hashtbl.create 16
 

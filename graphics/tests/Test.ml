@@ -36,6 +36,8 @@ let () =
           Unit_clip.tests;
           Unit_render.tests;
           Unit_rgba.tests;
+          Unit_deflate.tests;
+          Unit_png.tests;
           Unit_xpm.tests;
           Unit_mesh_cache.tests;
           Unit_matting.tests;

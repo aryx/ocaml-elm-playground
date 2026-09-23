@@ -59,6 +59,29 @@
  * gets wrong for e.g. an RGB JPEG, see Rgba.mli) *)
 type image = Rgba_image.t
 
+let read_file (file : string) : string =
+  let ic = open_in_bin file in
+  let len = in_channel_length ic in
+  let buf = Bytes.create len in
+  really_input ic buf 0 len;
+  close_in ic;
+  Bytes.unsafe_to_string buf
+
+(* claude: the decoder is chosen by the file's first bytes, never by its
+ * name (see notes_images.md section 1): our own for PNG (Png.mli),
+ * stb_image for the others, until plan_images_teaching.md's GIF and
+ * JPEG phases *)
+let decode_string (s : string) : image =
+  if String.length s >= 8 && String.sub s 0 8 = Png.signature then Png.decode s
+  else begin
+    let buf = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout
+        (String.length s) in
+    String.iteri (fun i c -> buf.{i} <- Char.code c) s;
+    match Stb_image.decode buf with
+    | Ok img -> Rgba.of_stb_image img
+    | Error (`Msg msg) -> failwith msg
+  end
+
 (* claude: url -> local file (downloaded, for a URL), so the "Animated
  * GIFs" section below can read the file again to extract all the
  * frames *)
@@ -68,11 +91,11 @@ let image_of_url_exn url : image =
   Logs.info (fun m -> m "loading image %s" url);
   let fn = Download.local_file ~prefix:"playground_img" url in
   Hashtbl.replace hfiles url fn;
-  match Stb_image.load fn with
-  | Ok img ->
+  match decode_string (read_file fn) with
+  | img ->
     Logs.info (fun m -> m "loaded image %s (%dx%d)" url img.width img.height);
-    Rgba.of_stb_image img
-  | Error (`Msg msg) ->
+    img
+  | exception Failure msg ->
     failwith (Printf.sprintf "could not decode image %s: %s" url msg)
 
 (*****************************************************************************)
@@ -340,14 +363,6 @@ let gif_frames (s : string) : (int * int) * gif_frame list =
   in
   (width, height), loop global_end None []
 
-let decode_string (s : string) : image =
-  let buf = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout
-      (String.length s) in
-  String.iteri (fun i c -> buf.{i} <- Char.code c) s;
-  match Stb_image.decode buf with
-  | Ok img -> Rgba.of_stb_image img
-  | Error (`Msg msg) -> failwith msg
-
 (* claude: polymorphic in the frame type so a backend can convert every
  * frame once (see [map_animation]) to whatever it draws with, e.g. a
  * Cairo surface, and still use [frame_at] to pick the right one *)
@@ -423,14 +438,7 @@ let animation_of_url (src : string) : image animation option =
       (* make sure the file was downloaded *)
       match image_of_url src, Hashtbl.find_opt hfiles src with
       | Some _, Some file ->
-          let content =
-            let ic = open_in_bin file in
-            let len = in_channel_length ic in
-            let buf = Bytes.create len in
-            really_input ic buf 0 len;
-            close_in ic;
-            Bytes.unsafe_to_string buf
-          in
+          let content = read_file file in
           if String.length content >= 3 && String.sub content 0 3 = "GIF" then
             (try
               let anim = animation_of_gif content in

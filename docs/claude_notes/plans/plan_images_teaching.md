@@ -302,6 +302,23 @@ itself is small: the consumers already take a Bigarray of RGBA bytes.
   unchanged (TexturedCube3d, TinyMinecraft, TinyTombRaider); Mario's
   animated GIFs and the turtle checked by hand (they need the network,
   so have no golden frame).
+- **Phase 2: done.** `graphics/images/deflate/` (`Crc32`, `Adler32`,
+  `Huffman`, `Inflate`, `Zlib`; library `graphics_deflate`) and
+  `graphics/images/png/` (`Png`; `graphics_png`), both in
+  `elm_playground`. `Image_decode.decode_string` picks the decoder
+  from the first bytes, ours for PNG, and `Texture_decode` goes
+  through it. Tests: the `.mli`s' worked examples (`Unit_deflate`),
+  and 101 PngSuite files plus its 14 corrupt ones (`Unit_png`,
+  `graphics/tests/pngsuite/`, 69 KB with its license). The oracle
+  turned out wrong: the stb_image bundled with the OCaml binding
+  misdecodes the interlaced 16-bit files and ignores a tRNS color on
+  gray and RGB pictures (9 files; ours agree with pypng on all 104,
+  checked pixel by pixel), so `Unit_png` checks PngSuite against the
+  CRC-32 of pypng's pixels, and uses stb_image only for the
+  repository's own PNGs (the pixels the games drew so far). Golden
+  frames unchanged. Not done: pure-OCaml code meant for the web too,
+  `Crc32` and `Adler32` assume 63-bit ints (js_of_ocaml's are 32);
+  to check if they're ever compiled to JavaScript.
 
 ## Demos: seeing the compression
 

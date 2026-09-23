@@ -5,6 +5,14 @@
  * (non-premultiplied) alpha; see Rgba_image.mli. *)
 type image = Rgba_image.t
 
+(* [decode_string s]: the picture in [s], the bytes of an image file,
+ * its format told by its first bytes (PNG, GIF, JPEG, ...). Raises
+ * Failure if it can't be decoded. *)
+val decode_string : string -> image
+
+(* [read_file file]: the bytes of [file] *)
+val read_file : string -> string
+
 (* Load an external image (e.g., a URL passed to [Playground.image]),
  * caching the result (or the failure) by url so repeated calls don't
  * re-download/re-decode every frame. Returns [None] (after logging a
