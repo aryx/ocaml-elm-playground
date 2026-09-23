@@ -26,7 +26,7 @@
    %{project_root}/apps/gamedev/software/TinyTiled.exe
    %{project_root}/apps/music/software/TinyMinimoog.exe
    %{project_root}/apps/music/software/TinySoundtracker.exe
-   %{project_root}/apps/music/software/TinyMediaPlayer.exe
+   %{project_root}/apps/media/software/TinyMediaPlayer.exe
    %{project_root}/apps/office/software/TinyOpenDoc.exe
    %{project_root}/apps/office/software/TinyPowerPoint.exe
    %{project_root}/apps/office/software/TinyHyperCard.exe

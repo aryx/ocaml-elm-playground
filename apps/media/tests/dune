@@ -1,0 +1,7 @@
+; claude: unit tests for the media applications' machinery, run by
+; 'make test' (dune runtest): each file of our own recognized by its
+; bytes and opened into what it holds
+(test
+ (name Test)
+ (libraries alcotest testo audio media_player)
+)

@@ -36,7 +36,7 @@
  *
  * The playlist starts with media of our own (Our_media.ml); file= adds
  * yours in front, from a file or a URL, several separated by commas:
- *   dune exec apps/music/TinyMediaPlayer.exe -- file=song.mid,photo.png
+ *   dune exec apps/media/TinyMediaPlayer.exe -- file=song.mid,photo.png
  *
  * Uses: Media (the kinds, opening them), Our_media, Audio (the player as
  * an instrument the mixer pulls; fetch, for file=), Mod_player, Gui (the

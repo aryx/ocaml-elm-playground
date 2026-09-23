@@ -37,7 +37,7 @@
  * the song as song.mod: natively in the current directory, in the
  * browser as a download -- a MOD file every tracker opens.
  *
- * The song it starts with is ours (Our_media.ml): four instruments
+ * The song it starts with is ours (Our_songs.ml): four instruments
  * synthesized there (a pulse lead, a triangle bass, a kick, a snare: a
  * MOD's samples can be anything) and two patterns. mod= opens yours, from a file or a URL
  * (dune exec apps/music/TinySoundtracker.exe -- mod=song.mod).
@@ -75,7 +75,7 @@ type model = {
 }
 
 let initial_model : model =
-  { song = Our_media.soundtracker_song; position = 0; row = 0; channel = 0; column = 0; octave = 2; instrument = 1; playing = false; held = []; said = ""; loaded = false }
+  { song = Our_songs.soundtracker_song; position = 0; row = 0; channel = 0; column = 0; octave = 2; instrument = 1; playing = false; held = []; said = ""; loaded = false }
 
 (* the player lives with the sound, not in the model: the mixer pulls
  * its blocks between frames; a song fetched by mod= arrives here *)

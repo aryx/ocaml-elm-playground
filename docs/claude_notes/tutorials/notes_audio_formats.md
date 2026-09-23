@@ -31,11 +31,11 @@ which, and by how they squeeze it**.
 | `midi/` | `Midi` | `notes_audio_midi.md` | done |
 | `abc/` | `Abc`, `Doremi` | `notes_audio.md` §9 | done |
 | `mod/` | `Mod`, `Paula`, `Mod_player` | §1 | done (`Audio.play_module`) |
-| `iff/` | `Iff`, 8SVX, AIFF | §2 | |
-| `au/` | `Au`, `Mulaw` | §3 | |
-| `adpcm/` | `Ima_adpcm` | §4 | |
-| `flac/` | `Rice`, `Lpc`, `Flac` | §5 | |
-| `mml/` | `Mml` | §6 | |
+| `iff/` | `Iff`, 8SVX, AIFF | §2 | not built: reading only |
+| `au/` | `Au`, `Mulaw` | §3 | not built: reading only |
+| `adpcm/` | `Ima_adpcm` | §4 | not built: reading only |
+| `flac/` | `Rice`, `Lpc`, `Flac` | §5 | not built: reading only |
+| `mml/` | `Mml` | §6 | not built: reading only |
 
 ## 1. MOD: a song that carries its own instruments
 

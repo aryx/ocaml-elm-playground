@@ -1,0 +1,54 @@
+; claude: the media applications (CATALOG.md's Media section). Laid out
+; like office/: the programs here, software/ for the golden frames, web/
+; for the browser.
+;
+; So far TinyMediaPlayer, after Windows' Media Player and VLC: every
+; kind of file the repository reads, sounds, tunes and pictures, each
+; shown as what it is, and videos as graphics/videos/ comes
+; (plan_video_teaching.md). What it might contain next, each Tiny and
+; after a famous original: an image viewer (ACDSee, IrfanView: a
+; folder of pictures as thumbnails), a video editor (the cut, the fade,
+; the frames on a timeline).
+
+; what a file is and what it holds (Media), and media of our own to
+; start from (Our_media): the player's machinery, apart from its screen,
+; for the tests
+(library
+ (name media_player)
+ (wrapped false)
+ (modules Media Our_media Our_pictures)
+ (libraries
+   audio audio_wav audio_midi audio_abc audio_mod
+   graphics_rgba graphics_png graphics_gif graphics_jpeg graphics_xpm
+   music_voices ; Our_songs: the tracker's song
+ ))
+
+; claude: the pictures of our own the player shows, embedded as strings
+; (scripts/build/files_to_string_ml.ml): the Image* examples' picture in
+; its three formats, and TinyMario's sprite
+(rule
+ (targets Our_pictures.ml)
+ (deps
+   %{project_root}/examples/demo_picture.png
+   %{project_root}/examples/demo_picture.gif
+   %{project_root}/examples/demo_picture.jpg
+   %{project_root}/games/platform/mario_stand.xpm
+   %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml
+     %{project_root}/examples/demo_picture.png %{project_root}/examples/demo_picture.gif
+     %{project_root}/examples/demo_picture.jpg %{project_root}/games/platform/mario_stand.xpm))))
+
+(executables
+  (names TinyMediaPlayer)
+  (modules TinyMediaPlayer)
+  (libraries
+    elm_core
+    elm_playground
+    music_voices
+    media_player
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)

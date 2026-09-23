@@ -224,12 +224,14 @@ solfège, so everything that plays a tune plays it.
    frames, CATALOG.md's row, its web page.
 4. **TinyMediaPlayer**: the player and the piano roll; pitch bend and
    control changes; golden frames, its row, its page.
-5. **IFF and AU**: `Iff` (the chunk walk, shared with `Wav`), 8SVX,
-   AIFF (the 80-bit float), `Au`, `Mulaw`; worked examples, round trips.
-6. **IMA ADPCM**, then **FLAC** (`Rice`, `Lpc`, `Flac`): round trips,
-   sizes measured.
-7. **MML**, and the docs: `notes_audio_formats.md` checked against the
-   code.
+5. ~~**IFF and AU**~~, 6. ~~**IMA ADPCM**, then **FLAC**~~, 7. ~~**MML**~~:
+   dropped (2026-09-23, the user's call): formats few people meet,
+   whose ideas the repository already teaches elsewhere (chunks in WAV,
+   prediction in PNG's filters, a score as text in ABC), for more code
+   than they are worth. Left: `notes_audio_formats.md` checked against
+   the code, its sections 2 to 6 (IFF, AU, ADPCM, FLAC, MML) kept as
+   reading, marked not built. The media player went on to pictures and
+   videos instead: `apps/media/`, `plan_video_teaching.md`.
 
 ## Status
 
@@ -334,6 +336,14 @@ solfège, so everything that plays a tune plays it.
   ball moving; an unknown file refused. Golden frames: the roll, the
   module, the recording, the animation. MIDI's pitch bend and control
   changes are still not heard: an exercise in its header.
+- **Then (2026-09-23), a new category**: the player moved to
+  `apps/media/` (the user's idea: it plays every kind of media, and
+  videos are next), with `Media` and `Our_media` (library
+  `media_player`, its own tests in `apps/media/tests/`); the tracker's
+  song went back to `apps/music/` as `Our_songs` (in `music_voices`),
+  which the playlist uses. CATALOG.md's Media section,
+  `tests/catalog`'s categories. The golden frames unchanged, at their
+  new paths.
 
 ## Verification
 

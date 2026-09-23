@@ -5,9 +5,9 @@
 ; So far TinyMinimoog, the Model D's voice (Minimoog_voice, over
 ; audio/'s blocks: plan_synth_teaching.md) played from the keyboard, and
 ; TinySoundtracker, the first tracker, over audio/formats/mod
-; (plan_audio_formats.md), and TinyMediaPlayer, every format the
-; repository reads in one player (Media, Our_media). What it might
-; contain next, each Tiny and after a famous original:
+; (plan_audio_formats.md). Playing files of every kind is apps/media/'s
+; TinyMediaPlayer. What it might contain next, each Tiny and after a
+; famous original:
 ;  - more synthesizers after the Minimoog: the TB-303 (a sequencer in
 ;    the audio clock), the DX7 (FM with six operators), the Juno
 ;    (polyphony, the chorus);
@@ -21,52 +21,23 @@
 ; Built on audio/ (synth, mixer, ABC, MIDI), gui/, and appkits/file_menu
 ; for their File menu.
 
-; the synthesizers' voices, apart from their panels: the tests play
-; them without a screen
+; the synthesizers' voices and our songs, apart from their programs:
+; the tests play them without a screen, and apps/media's playlist has
+; the tracker's song
 (library
  (name music_voices)
  (wrapped false)
- (modules Minimoog_voice)
- (libraries audio))
-
-; what a file is and what it holds (Media), and media of our own to
-; start from (Our_media): the media player's machinery, apart from its
-; screen, for the tests
-(library
- (name music_media)
- (wrapped false)
- (modules Media Our_media Our_pictures)
- (libraries
-   audio audio_wav audio_midi audio_abc audio_mod
-   graphics_rgba graphics_png graphics_gif graphics_jpeg graphics_xpm))
-
-; claude: the pictures of our own the media player shows, embedded as
-; strings (scripts/build/files_to_string_ml.ml): the Image* examples'
-; picture in its three formats, and TinyMario's sprite
-(rule
- (targets Our_pictures.ml)
- (deps
-   %{project_root}/examples/demo_picture.png
-   %{project_root}/examples/demo_picture.gif
-   %{project_root}/examples/demo_picture.jpg
-   %{project_root}/games/platform/mario_stand.xpm
-   %{project_root}/scripts/build/files_to_string_ml.ml)
- (action
-  (with-stdout-to
-   %{targets}
-   (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml
-     %{project_root}/examples/demo_picture.png %{project_root}/examples/demo_picture.gif
-     %{project_root}/examples/demo_picture.jpg %{project_root}/games/platform/mario_stand.xpm))))
+ (modules Minimoog_voice Our_songs)
+ (libraries audio audio_mod))
 
 (executables
-  (names TinyMinimoog TinySoundtracker TinyMediaPlayer)
-  (modules TinyMinimoog TinySoundtracker TinyMediaPlayer)
+  (names TinyMinimoog TinySoundtracker)
+  (modules TinyMinimoog TinySoundtracker)
   (libraries
     caps ; TinySoundtracker's authority to export its song
     elm_core
     elm_playground
     music_voices
-    music_media
     elm_playground_native ; implem of virtual elm_playground
   )
 )

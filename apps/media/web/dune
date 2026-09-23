@@ -1,17 +1,16 @@
 ; claude: the applications in a browser: ../*.ml reused as-is by a
 ; build-time copy, not a committed duplicate (see examples/web/dune), and
 ; linked against elm_playground_web.
-(copy_files ../TinyMinimoog.ml)
-(copy_files ../TinySoundtracker.ml)
+(copy_files ../TinyMediaPlayer.ml)
 
 (executables
-  (names TinyMinimoog TinySoundtracker)
-  (modules TinyMinimoog TinySoundtracker)
+  (names TinyMediaPlayer)
+  (modules TinyMediaPlayer)
   (libraries
-    caps
     elm_core
     elm_playground
     music_voices
+    media_player
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)
