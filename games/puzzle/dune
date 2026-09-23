@@ -4,10 +4,10 @@
 (executables
   (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
-    TinySokobanEd TinyTetris)
+    TinySokobanEd TinyStoneAge TinyTetris)
   (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
-    TinySokobanEd TinyTetris Sokoban_levels Fez_xpm)
+    TinySokobanEd TinyStoneAge TinyTetris Sokoban_levels Fez_xpm)
   (libraries
     unix ; Tetris's clock
     caps ; TinySokobanEd's authority to export its file

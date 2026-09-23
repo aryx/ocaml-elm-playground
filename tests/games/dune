@@ -465,6 +465,16 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinyKarel.ml)
+ (deps (:src %{project_root}/games/programming/TinyKarel.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyStoneAge.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyStoneAge.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyMarioGalaxy.ml)
  (deps (:src %{project_root}/games/platform/TinyMarioGalaxy.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))

@@ -209,6 +209,10 @@ let scenes : Testutil_golden.scene list =
     ("games/shmup/software/TinyRobotron", "", 5);
     ("games/sports/software/TinyPinball", "", 5);
     ("games/puzzle/software/TinyPortal2D", "", 5);
+    ("games/puzzle/software/TinyStoneAge", "", 5);
+    ("games/programming/software/TinyKarel", "", 5);
+    (* a row and a half harvested, six steps a second *)
+    ("examples/software/KarelHarvest", "", 90);
     ("games/rpg/software/TinyGauntlet2", "", 5);
     ("games/sports/software/TinyKickOff2", "", 5);
     ("games/sports/software/TinySpeedball2", "", 5);
@@ -620,6 +624,9 @@ let scripted : Testutil_golden.scripted list =
     (* right held from the top of the home planet to its underside: Mario
        upside down in the world, and the world turned so he isn't *)
     ("games/platform/software/TinyMarioGalaxy2D", "underside", 95, "space:1,right:3-95");
+    (* five steps into the first level: the crumbling stones behind the
+       dinosaur fallen into the void *)
+    ("games/puzzle/software/TinyStoneAge", "crumbled", 25, "space:1,right:4,down:8,down:12,right:16,right:20");
     (* straight into the pit's saw: the splat, and the smear along the
        floor the run left *)
     ("games/platform/software/TinySuperMeatBoy", "splat", 45, "space:1,right:2-37");
@@ -846,6 +853,9 @@ let scripted : Testutil_golden.scripted list =
      * move): Koch's filled snowflake; the dragon, 4096 lines *)
     ("examples/software/LogoFractals", "snowflake", 5, "a:2");
     ("examples/software/LogoFractals", "dragon", 10, "right:2,right:4,right:6,a:8");
+    (* the newspaper's solution, from the Solution button, run: Karel
+       out of the door *)
+    ("games/programming/software/TinyKarel", "solution", 90, "at(-60;-455):1-5,click:3,at(-420;-455):6-10,click:8");
     (* the crosshair raised, a counter-missile from each base: flying,
      * then exploding there, the three explosions one *)
     ("games/shmup/software/TinyMissileCommand", "fire", 45, "space:1,up:2-30,a:32,s:33,d:34");

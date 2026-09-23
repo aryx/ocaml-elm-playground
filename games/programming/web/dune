@@ -2,8 +2,8 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyCoreWar)
-  (modules TinyCoreWar)
+  (names TinyCoreWar TinyKarel)
+  (modules TinyCoreWar TinyKarel)
   (libraries
     elm_playground
     elm_playground_web ; implem of virtual elm_playground

@@ -5196,6 +5196,113 @@ let galaxy3d_played_through () =
   Alcotest.(check int) "without dying" 0 p.deaths
 
 (*****************************************************************************)
+(* TinyKarel *)
+(*****************************************************************************)
+
+let karel_run (text : string) (world : Karel.world) : Karel.run =
+  match TinyKarel.parse text with
+  | Ok p -> Karel.execute ~definitions:p.definitions world p.main
+  | Error (line, msg) -> Alcotest.failf "line %d: %s" line msg
+
+(* Each level's solution does its task; the skeleton, a move, doesn't. *)
+let karel_solutions () =
+  let open TinyKarel in
+  List.iter
+    (fun (l : level) ->
+      let r = karel_run l.solution (level_world l) in
+      Alcotest.(check bool) (l.name ^ ": turned off") true (Karel.status r = Karel.Finished);
+      Alcotest.(check bool) (l.name ^ ": done") true (l.goal (Karel.current r));
+      Alcotest.(check bool) (l.name ^ ": not by the skeleton") false (l.goal (Karel.current (karel_run skeleton (level_world l)))))
+    levels
+
+(* The right-hand rule, in a maze it has never seen. *)
+let karel_other_maze () =
+  let maze = List.nth TinyKarel.levels 3 in
+  let other =
+    Karel.world
+      [ ". . . . .";
+        "  -   -  ";
+        ". .|. .|.";
+        "    -    ";
+        ".|. .|. .";
+        "  -   -  ";
+        ". .|. .|1";
+        "      -  ";
+        "> . .|. ." ]
+  in
+  Alcotest.(check int) "picked up" 0 (Karel.beepers_left (Karel.current (karel_run maze.solution other)))
+
+(* A mistake, and its line. *)
+let karel_errors () =
+  let err text = match TinyKarel.parse text with Ok _ -> None | Error e -> Some e in
+  let program body = "BEGINNING-OF-PROGRAM\nBEGINNING-OF-EXECUTION\n" ^ body ^ "\nEND-OF-EXECUTION\nEND-OF-PROGRAM" in
+  Alcotest.(check (option (pair int string))) "no such instruction" (Some (4, "no instruction turnright"))
+    (err (program "move;\nturnright"));
+  Alcotest.(check (option (pair int string))) "no such condition" (Some (3, "no condition wall-ahead"))
+    (err (program "WHILE wall-ahead DO move"));
+  Alcotest.(check (option (pair int string))) "a missing TIMES" (Some (3, "TIMES expected, not move"))
+    (err (program "ITERATE 3 move"));
+  Alcotest.(check (option (pair int string))) "lower case, and a comment" None (err (program "{ go } iterate 2 times move"))
+
+(*****************************************************************************)
+(* TinyStoneAge *)
+(*****************************************************************************)
+
+(* the level [rows] with the dinosaur on its 'S' *)
+let sa_play (rows : string list) : TinyStoneAge.play =
+  let open TinyStoneAge in
+  let map = Tilemap.of_strings tile_size rows in
+  let col, row = List.hd (Tilemap.find map 'S') in
+  { (load 0) with map = Tilemap.set map col row '#'; col; row }
+
+let sa_step (d : int * int) (p : TinyStoneAge.play) : TinyStoneAge.play =
+  match TinyStoneAge.step d p with Some p -> TinyStoneAge.settle p | None -> p
+
+let sa_right = (1, 0)
+
+(* A crumbling stone falls when he steps off it, and he won't step into
+ * the void. *)
+let stoneage_crumble () =
+  let open TinyStoneAge in
+  let p = sa_play [ "Sc#" ] in
+  let p = sa_step sa_right (sa_step sa_right p) in
+  Alcotest.(check (list string)) "fallen" [ "#.#" ] (Tilemap.to_strings p.map);
+  Alcotest.(check bool) "no way back" true (step (-1, 0) p = None)
+
+(* An arrow block carries him over the void to the next block, and
+ * stays there; the other way, it is an ordinary block. *)
+let stoneage_ride () =
+  let open TinyStoneAge in
+  let p = sa_step sa_right (sa_play [ "S>...#" ]) in
+  let p = sa_step sa_right p in
+  Alcotest.(check (list string)) "carried" [ "#...>#" ] (Tilemap.to_strings p.map);
+  Alcotest.(check (pair int int)) "on it" (4, 0) (p.col, p.row);
+  Alcotest.(check bool) "not back the way it came" true (step (-1, 0) p = None)
+
+(* A lock wants its key, and keeps it. *)
+let stoneage_keys () =
+  let open TinyStoneAge in
+  Alcotest.(check bool) "locked" true (step sa_right (sa_play [ "SR#" ]) = None);
+  let p = sa_step sa_right (sa_step sa_right (sa_play [ "SrR" ])) in
+  Alcotest.(check (pair int (list char))) "through, the key spent" (2, []) (p.col, p.keys)
+
+(* Every level can be finished, and in time: the search's shortest way,
+ * at two seconds a move, fits the clock. The lengths are the header's. *)
+let stoneage_levels () =
+  let open TinyStoneAge in
+  let lengths =
+    List.mapi
+      (fun i (l : level) ->
+        match solve (load i) with
+        | None -> Alcotest.fail (l.name ^ ": no way to the cave")
+        | Some path ->
+            Alcotest.(check bool) (l.name ^ ": in time") true (List.length path * 2 <= l.seconds);
+            List.length path)
+      levels
+  in
+  Alcotest.(check (list int)) "the shortest ways" [ 11; 9; 11; 14; 14 ] lengths
+
+(*****************************************************************************)
 (* TinySuperMeatBoy *)
 (*****************************************************************************)
 
@@ -7774,6 +7881,13 @@ let tests =
       t "TinyMarioGalaxy, round the planet" galaxy3d_round;
       t "TinyMarioGalaxy, the goomba's own down" galaxy3d_goomba;
       t "TinyMarioGalaxy, the galaxy played through" galaxy3d_played_through;
+      t "TinyKarel, the levels' solutions" karel_solutions;
+      t "TinyKarel, another maze" karel_other_maze;
+      t "TinyKarel, mistakes and their lines" karel_errors;
+      t "TinyStoneAge, the crumbling stone" stoneage_crumble;
+      t "TinyStoneAge, the ride over the void" stoneage_ride;
+      t "TinyStoneAge, keys and locks" stoneage_keys;
+      t "TinyStoneAge, every level can be done" stoneage_levels;
       t "TinySuperMeatBoy, a try is its inputs" smb_replay_is_the_inputs;
       t "TinySuperMeatBoy, dying costs nothing" smb_death_is_cheap;
       t "TinySuperMeatBoy, Hello World" smb_hello_world;

@@ -44,6 +44,7 @@
 (copy_files ../JuiceSquash.ml)
 (copy_files ../Demo_pictures.ml) ; generated, see ../dune
 (copy_files ../LogoFractals.{ml,mli})
+(copy_files ../KarelHarvest.ml)
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
 (copy_files ../UniverseBall.ml)
@@ -85,7 +86,7 @@
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
     ImageJpeg ImagePng ImageLzw
     JuiceCurves JuiceSquash
-    LogoFractals
+    LogoFractals KarelHarvest
     BigBangRocket
     BigBangWorm
     UniverseBall
