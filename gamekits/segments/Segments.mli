@@ -94,7 +94,9 @@ val make : segment list -> start:vec -> exit:int -> level
  * shaft each), and the exit beyond it *)
 val mine : level
 
+(*****************************************************************************)
 (* {1 Asking} *)
+(*****************************************************************************)
 
 (* the segment a point is in, None outside the mine *)
 val segment_at : level -> vec -> int option

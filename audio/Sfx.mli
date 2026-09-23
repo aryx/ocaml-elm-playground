@@ -47,6 +47,10 @@
  * https://www.drpetter.se/project_sfxr.html; Stephen Lavelle (increpare),
  * bfxr, 2011. *)
 
+(*****************************************************************************)
+(* {1 A sound as a few numbers} *)
+(*****************************************************************************)
+
 type wave = Square | Sawtooth | Triangle | Sine | Noise
 
 type t = {
@@ -78,6 +82,10 @@ val to_sound : t -> Synth.t
 (* [duration s]: attack + sustain + decay (+ the echo's tail) *)
 val duration : t -> float
 
+(*****************************************************************************)
+(* {1 Presets} *)
+(*****************************************************************************)
+
 (* the presets, after sfxr's categories: our own numbers *)
 val blip : t (* a menu, a ball on a paddle *)
 val coin : t (* a pickup: a note, then a fifth up *)
@@ -90,6 +98,10 @@ val powerup : t (* a rising square, warbling *)
 
 (* all of them, by name *)
 val presets : (string * t) list
+
+(*****************************************************************************)
+(* {1 At random} *)
+(*****************************************************************************)
 
 (* [vary ~seed s]: every number of [s] nudged at random, the wave kept:
  * durations and cutoffs times 0.7 to 1.4, pitches up to 5 semitones up

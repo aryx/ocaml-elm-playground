@@ -50,7 +50,9 @@ type pose = { x : number; y : number; z : number; heading : number }
  * forward 90 = (1, 0) *)
 val forward : number -> number * number
 
+(*****************************************************************************)
 (* {1 Following a pose} *)
+(*****************************************************************************)
 
 (* [behind ~back ~height ~ahead ~look pose]: the eye [back] behind the
  * pose and [height] above it, looking at the point [ahead] of it and
@@ -66,7 +68,9 @@ val chase : pose -> camera
  * 0.9, ahead 10, look 0.7 *)
 val cockpit : pose -> camera
 
+(*****************************************************************************)
 (* {1 Looking at a place} *)
+(*****************************************************************************)
 
 (* [looking_down ~height (x, y, z)]: straight down on (x, y, z) from
  * [height] above (almost straight: a camera needs a direction for its
@@ -85,7 +89,9 @@ val from_far : ?fov:number -> offset:number * number * number -> number * number
  * turning view, with [angle] from Playground.spin *)
 val orbit : ?fov:number -> distance:number -> height:number -> look:number -> number -> number * number * number -> camera
 
+(*****************************************************************************)
 (* {1 Smoothing} *)
+(*****************************************************************************)
 
 (* [follow fraction wanted cam]: [cam]'s eye and target moved [fraction]
  * of the way to [wanted]'s (its other settings taken from [wanted]):
@@ -154,7 +160,9 @@ val follow : number -> camera -> camera -> camera
  * works exactly as before. Only the divide by it is gone. *)
 val orthographic : height:number -> camera -> camera
 
+(*****************************************************************************)
 (* {1 The world around} *)
+(*****************************************************************************)
 
 (* [floor ?color ?ground cam]: a floor at the height [ground],
  * following the camera, 800 around the eye: far enough for the horizon,

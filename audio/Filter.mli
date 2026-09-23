@@ -57,7 +57,9 @@
  * Controlled Electronic Music Modules", Journal of the Audio
  * Engineering Society, 1965. *)
 
+(*****************************************************************************)
 (* {1 The one-pole} *)
+(*****************************************************************************)
 
 (* [one_pole_coefficient cutoff]: a above, 0.133 for 1000 Hz *)
 val one_pole_coefficient : float -> float
@@ -66,7 +68,9 @@ val one_pole_coefficient : float -> float
 val low_pass : cutoff:float -> Signal.t -> Signal.t
 val high_pass : cutoff:float -> Signal.t -> Signal.t
 
+(*****************************************************************************)
 (* {1 The biquad} *)
+(*****************************************************************************)
 
 type kind = Low_pass | High_pass | Band_pass
 

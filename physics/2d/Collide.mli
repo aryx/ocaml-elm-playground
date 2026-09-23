@@ -51,6 +51,10 @@
  * programmers); Gottschalk, Lin, Manocha, "OBBTree", SIGGRAPH 1996 (the
  * separating axis theorem in graphics). *)
 
+(*****************************************************************************)
+(* {1 The tests} *)
+(*****************************************************************************)
+
 (* the tests, each on its own *)
 
 val circles : Vec2.t * float -> Vec2.t * float -> Contact.t option
@@ -89,6 +93,10 @@ val circle_convex : Vec2.t * float -> Vec2.t list -> Contact.t option
  * nearest to [p]: where to push a point out of it (Particles.keep_out) *)
 val nearest_on_outline : Vec2.t -> Vec2.t list -> Vec2.t
 
+(*****************************************************************************)
+(* {1 Swept tests} *)
+(*****************************************************************************)
+
 (* The swept tests. A bullet at 1500 pixels per second moves 25 pixels
  * per step: a wall thinner than that can be jumped over between two
  * steps, never seen overlapping -- tunneling (notes_2d_physics.md
@@ -111,6 +119,10 @@ val segment_polygon : Vec2.t * Vec2.t -> Vec2.t list -> Vec2.t option
 (* [segment_circle (a, b) (c, r)]: the segment's point nearest to the
  * circle's center, if within it *)
 val segment_circle : Vec2.t * Vec2.t -> Vec2.t * float -> Vec2.t option
+
+(*****************************************************************************)
+(* {1 Hitboxes} *)
+(*****************************************************************************)
 
 (* for any two placed hitboxes *)
 

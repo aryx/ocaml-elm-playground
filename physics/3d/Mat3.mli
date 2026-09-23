@@ -48,6 +48,10 @@
  * derivation every engine's is downstream of; Christer Ericson,
  * Real-Time Collision Detection (2005), appendix A for the algebra. *)
 
+(*****************************************************************************)
+(* {1 Making them} *)
+(*****************************************************************************)
+
 type t = {
   m00 : float;
   m01 : float;
@@ -72,6 +76,10 @@ val of_rows : Vec3.t -> Vec3.t -> Vec3.t -> t
  * here starts out *)
 val diagonal : float -> float -> float -> t
 
+(*****************************************************************************)
+(* {1 Arithmetic} *)
+(*****************************************************************************)
+
 val add : t -> t -> t
 val scale : float -> t -> t
 val mul : t -> t -> t
@@ -84,6 +92,10 @@ val mul_vec : t -> Vec3.t -> Vec3.t
  * into. With [r] a rotation this is the tensor's trip from the body
  * frame to the world frame, done every step. *)
 val conjugate : t -> t -> t
+
+(*****************************************************************************)
+(* {1 Inverting} *)
+(*****************************************************************************)
 
 (* the determinant, and the general inverse (None when the determinant
  * is 0: a body that cannot be spun about some axis at all, which here

@@ -49,7 +49,9 @@
    Part of the rhythm kit (gamekits/rhythm/); used by TinyDDR,
    TinyGuitarHero and TinyRockBand. *)
 
+(*****************************************************************************)
 (* {1 Judging} *)
+(*****************************************************************************)
 
 type judgement = Perfect | Great | Good | Almost | Miss
 
@@ -66,13 +68,17 @@ val judge : float -> judgement option
 val points : judgement -> int
 val name : judgement -> string
 
+(*****************************************************************************)
 (* {1 The clock} *)
+(*****************************************************************************)
 
 (* [song_time ~position ~offset]: the song's time as the player hears
  * it: how far into it the card has been fed, less the latency *)
 val song_time : position:float -> offset:float -> float
 
+(*****************************************************************************)
 (* {1 Charts, and a performance of one} *)
+(*****************************************************************************)
 
 (* a note to play: when (seconds into the song), where, how long *)
 type 'lane note = { at : float; lane : 'lane; length : float }
@@ -113,7 +119,9 @@ val play : float -> 'lane list -> 'lane performance -> 'lane performance
  * they hear, the machine's latency -- the calibration to set *)
 val average_error : 'lane performance -> float option
 
+(*****************************************************************************)
 (* {1 Charts from tunes} *)
+(*****************************************************************************)
 
 (* [sounding tune v]: voice [v]'s notes, rests left out: (start, length,
  * pitches as MIDI numbers, several for a chord) *)
@@ -126,9 +134,10 @@ val sounding : Abc.tune -> int -> (float * float * int list) list
  * and down, even though they are not its notes. *)
 val on_frets : Abc.tune -> int -> int note list
 
-(* {1 Difficulty: the same chart, reduced}
-
-   A rhythm game's difficulty levels are not different songs. The
+(*****************************************************************************)
+(* {1 Difficulty: the same chart, reduced} *)
+(*****************************************************************************)
+(* A rhythm game's difficulty levels are not different songs. The
    hardest is the chart as the music has it, and the others are the
    same chart with things taken away -- the frets folded together and
    the chords thinned -- so that an easy part is still recognisably the
@@ -151,7 +160,9 @@ val chord_at : difficulty -> int
  * [frets_at level] out) *)
 val reduce : difficulty -> int note list -> int note list
 
+(*****************************************************************************)
 (* {1 Instruments: ways of pressing} *)
+(*****************************************************************************)
 
 (* [strummed ~strum ~held]: a guitar's notes this frame. A note is two
  * hands -- the fret held, then the strum -- so the frets down *at the
@@ -160,7 +171,9 @@ val reduce : difficulty -> int note list -> int note list
  * chord; here every fret held is played, the forgiving version.) *)
 val strummed : strum:bool -> held:'lane list -> 'lane list
 
+(*****************************************************************************)
 (* {1 Sustains} *)
+(*****************************************************************************)
 
 (* how long a note must be to be a sustain, in seconds: shorter, it is
  * a tap. 0.75: a half note is one at any tempo up to 160 beats a

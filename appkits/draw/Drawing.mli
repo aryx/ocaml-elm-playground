@@ -16,6 +16,10 @@
  * taking the place in the order of the one that was furthest in front;
  * ungrouping puts them back there, in their order, with new ids. *)
 
+(*****************************************************************************)
+(* {1 The figures} *)
+(*****************************************************************************)
+
 type id = int
 type t
 
@@ -28,11 +32,19 @@ val add : Figure.t -> t -> t * id
 val figures : t -> (id * Figure.t) list
 val get : t -> id -> Figure.t option
 
+(*****************************************************************************)
+(* {1 Clicking and selecting} *)
+(*****************************************************************************)
+
 (* [at ~tolerance t point]: the figure in front at that point, if any *)
 val at : tolerance:float -> t -> Figure.point -> id option
 
 (* the figures entirely inside a box: what a marquee drag selects *)
 val within : t -> Figure.box -> id list
+
+(*****************************************************************************)
+(* {1 Editing} *)
+(*****************************************************************************)
 
 val update : id -> (Figure.t -> Figure.t) -> t -> t
 val move : id list -> float -> float -> t -> t
@@ -53,6 +65,10 @@ val ungroup : id -> t -> t * id list
 
 (* copies, a little down and to the right, in front; and their ids *)
 val duplicate : id list -> t -> t * id list
+
+(*****************************************************************************)
+(* {1 Lining up} *)
+(*****************************************************************************)
 
 type side = Lefts | Rights | Tops | Bottoms | Centers
 

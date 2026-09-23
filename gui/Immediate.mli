@@ -87,7 +87,9 @@ val set_theme : Theme.t -> t -> t
  * needs to behave like a widget. *)
 val modal : t -> bool
 
+(*****************************************************************************)
 (* {1 The widgets} *)
+(*****************************************************************************)
 
 (* [label t box s]: [s], centered in [box]. No state, no answer: it is
  * here so that a label is themed like everything else. *)
@@ -236,9 +238,10 @@ val draw : t -> Widget.paint list -> t
  * program closes it -- and [`Open] otherwise. *)
 val context_menu : t -> float * float -> string list -> t * [ `Open | `Chosen of int | `Dismissed ]
 
-(* {1 How big a widget wants to be}
- *
- * The answer immediate mode can give without layout: from the theme
+(*****************************************************************************)
+(* {1 How big a widget wants to be} *)
+(*****************************************************************************)
+(* The answer immediate mode can give without layout: from the theme
  * and the label alone. (What it cannot give is how big it wants to be
  * *given the room available* -- that is phase 2's constraints.) *)
 

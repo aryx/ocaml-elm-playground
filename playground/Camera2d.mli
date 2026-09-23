@@ -89,7 +89,9 @@ val origin : t
  * Tilemap.bounds). *)
 type rect = { left : number; right : number; bottom : number; top : number }
 
+(*****************************************************************************)
 (* {1 Looking through the camera} *)
+(*****************************************************************************)
 
 (* [view cam shapes]: the world's [shapes] as the screen shows them
  * through [cam]; its result goes in [view]'s list, next to shapes that
@@ -129,9 +131,10 @@ val to_world : t -> number -> number -> number * number
  * culling still misses nothing). *)
 val visible : screen -> t -> rect
 
-(* {1 Moving the camera: following the player}
-
-   Each function below is one of Keren's techniques, from the simplest to
+(*****************************************************************************)
+(* {1 Moving the camera: following the player} *)
+(*****************************************************************************)
+(* Each function below is one of Keren's techniques, from the simplest to
    the most refined; a game calls them in its [update], one after the
    other, e.g. [cam |> window 200. 300. px py |> clamp screen level]. *)
 
@@ -187,7 +190,9 @@ val turn_toward : number -> number -> t -> t
  * The angle is ignored: for cameras that don't turn. *)
 val clamp : screen -> rect -> t -> t
 
+(*****************************************************************************)
 (* {1 Rooms: the flip-screen} *)
+(*****************************************************************************)
 
 (* A world cut in screens, and the camera jumping from one to the next
  * when the player crosses into it, rather than following: the
@@ -205,7 +210,9 @@ val room : rect -> number * number -> number -> number -> int * int
  * with the example above, for (500, 0): at (500, 0) *)
 val flip : rect -> number * number -> number -> number -> t -> t
 
+(*****************************************************************************)
 (* {1 Parallax: depth with layers} *)
+(*****************************************************************************)
 
 (* [parallax factor cam]: a camera for a background layer, which moves
  * [factor] times as much as the world: with 0.5, far mountains scroll at

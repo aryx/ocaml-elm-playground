@@ -80,7 +80,9 @@
  * the Model D service manual (the modulation mix of oscillator 3 and
  * noise; the 3 1/2 octave keyboard). *)
 
+(*****************************************************************************)
 (* {1 The panel} *)
+(*****************************************************************************)
 
 type wave = Triangle | Shark_tooth | Reverse_sawtooth | Sawtooth | Square | Wide | Narrow
 
@@ -146,7 +148,9 @@ val of_string : string -> (patch, string) result
  * oscillating, played by the keyboard), wind *)
 val presets : (string * patch) list
 
+(*****************************************************************************)
 (* {1 The knobs' laws} *)
+(*****************************************************************************)
 
 val cutoff_hz : float -> float (* 20 x 1000^k *)
 val attack_seconds : float -> float (* 0.001 x 10000^k *)
@@ -158,7 +162,9 @@ val range_octaves : int -> float (* LO -6, 32' -2 ... 2' +2 *)
 (* the tracking, from the two keyboard control switches: 0, 1/3, 2/3, 1 *)
 val tracking : patch -> float
 
+(*****************************************************************************)
 (* {1 Playing it} *)
+(*****************************************************************************)
 
 type options = { ladder : Moog_ladder.model; curve : Envelope.curve; drift : bool; band_limited : bool }
 

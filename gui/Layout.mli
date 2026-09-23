@@ -89,6 +89,10 @@
  * which fills.
  *)
 
+(*****************************************************************************)
+(* {1 The room offered: constraints} *)
+(*****************************************************************************)
+
 (* How much room a parent offers: a width between [min_w] and
  * [max_w], a height between [min_h] and [max_h] *)
 type constraints = { min_w : float; max_w : float; min_h : float; max_h : float }
@@ -98,6 +102,10 @@ val loose : float -> float -> constraints
 
 (* [tight w h]: exactly w x h, no choice -- what a stretched child gets *)
 val tight : float -> float -> constraints
+
+(*****************************************************************************)
+(* {1 The tree of things to place} *)
+(*****************************************************************************)
 
 (* A tree of things to place. The leaves carry whatever you want to
  * find them by afterwards -- a variant, a string, an int -- since
@@ -149,6 +157,10 @@ val center : 'a t -> 'a t
  * [stretch]ed. *)
 val row : ?gap:float -> 'a t list -> 'a t
 val column : ?gap:float -> 'a t list -> 'a t
+
+(*****************************************************************************)
+(* {1 The two passes} *)
+(*****************************************************************************)
 
 (* Pass one, constraints down and sizes up: how big [t] wants to be in
  * the room [constraints] offers *)

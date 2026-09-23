@@ -48,7 +48,9 @@ type t = {
 (* the portal's third axis, up x normal: its right, seen from the room *)
 val right : t -> vec
 
+(*****************************************************************************)
 (* {1 Going through} *)
+(*****************************************************************************)
 
 (* [point ~from ~into p]: where [p], in front of [from], is in front of
  * [into]; [direction] the same for a direction (turned, not moved) *)
@@ -67,14 +69,18 @@ val carry : from:t -> into:t -> Physics3d.body -> Physics3d.body
  * behind it, inside its rectangle *)
 val crossed : t -> before:vec -> after:vec -> bool
 
+(*****************************************************************************)
 (* {1 Seeing through} *)
+(*****************************************************************************)
 
 (* [clip ~eye p polygon]: the part of [polygon] the eye can see through
  * [p] and behind it: cut by the planes through the eye and each of the
  * portal's edges, and by the portal's own plane ([] when none of it) *)
 val clip : eye:vec -> t -> vec list -> vec list
 
+(*****************************************************************************)
 (* {1 A rotation from its frame} *)
+(*****************************************************************************)
 
 (* the quaternion of the rotation taking the world's x, y, z axes to
  * the three given unit, square, right-handed ones (Shepperd, 1978) *)

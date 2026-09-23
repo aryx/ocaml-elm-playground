@@ -120,9 +120,10 @@ val menu :
 (* [label computer ~at s]: [s], in the theme's color and size *)
 val label : Playground.computer -> at:Playground.number * Playground.number -> string -> unit
 
-(* {1 The same widgets, where a layout put them}
-
-   [~at] places a widget at a point, at the size it asks for, which
+(*****************************************************************************)
+(* {1 The same widgets, where a layout put them} *)
+(*****************************************************************************)
+(* [~at] places a widget at a point, at the size it asks for, which
    is all a settings screen needs. A panel wants them arranged
    instead -- a column, evenly spaced, all of one width -- and that is
    [gui/Layout] (constraints down, sizes up): it takes the sizes the
@@ -207,9 +208,10 @@ val modal : unit -> bool
    [view], and it ends the frame *)
 val draw : unit -> Playground.shape list
 
-(* {1 For the other three architectures}
-
-   [gui/Retained], [gui/Mvc] and [gui/Mvu] do their own wiring and
+(*****************************************************************************)
+(* {1 For the other three architectures} *)
+(*****************************************************************************)
+(* [gui/Retained], [gui/Mvc] and [gui/Mvu] do their own wiring and
    answer in [Widget.paint] rather than shapes, so a program that
    compares them (examples/GuiFourWays.ml) needs the two ends of the
    adapter on their own: what the person is doing, and how to draw the

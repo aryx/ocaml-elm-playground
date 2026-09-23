@@ -20,6 +20,10 @@
  *     Mvu         hot comes from the model, by way of a message
  *)
 
+(*****************************************************************************)
+(* {1 Buttons and labels} *)
+(*****************************************************************************)
+
 (* the face a button shows: alive under the mouse, sunk while pressed *)
 val face : Theme.t -> hot:bool -> held:bool -> Color.t
 
@@ -31,6 +35,10 @@ val button : Theme.t -> Widget.box -> string -> hot:bool -> held:bool -> enabled
 
 val checkbox :
   Theme.t -> Widget.box -> string -> checked:bool -> hot:bool -> held:bool -> Widget.paint list
+
+(*****************************************************************************)
+(* {1 Values: sliders, dials and bars} *)
+(*****************************************************************************)
 
 (* [fraction] is where the knob sits, 0 at the left end, 1 at the right *)
 val slider : Theme.t -> Widget.box -> fraction:float -> hot:bool -> held:bool -> Widget.paint list
@@ -75,6 +83,10 @@ val slider_value : Theme.t -> Widget.box -> from:float -> to_:float -> float -> 
 
 val progress : Theme.t -> Widget.box -> float -> Widget.paint list
 
+(*****************************************************************************)
+(* {1 Text: fields and areas} *)
+(*****************************************************************************)
+
 (* [caret] is the byte index the caret sits at, or [None] when the
  * field does not have the keys; the text scrolls sideways to keep the
  * caret in view *)
@@ -112,6 +124,10 @@ val rows : Theme.t -> Widget.box -> int
 (* [text_area_place theme box ~first x y]: the (line, column) a point
  * falls on -- how a click becomes a caret *)
 val text_area_place : Theme.t -> Widget.box -> first:int -> float -> float -> int * int
+
+(*****************************************************************************)
+(* {1 Lists and menus} *)
+(*****************************************************************************)
 
 (* a dropdown, closed (with its arrow) and open (its items, the one
  * under the mouse lit) *)

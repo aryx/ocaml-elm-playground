@@ -75,9 +75,10 @@ val cells : t -> Formula.cell list
  * whether this is a spreadsheet or a demonstration *)
 val recalculated : t -> int
 
-(* {1 The way it was done in 1979}
- *
- * VisiCalc did not have the graph. It recalculated the sheet in *row
+(*****************************************************************************)
+(* {1 The way it was done in 1979} *)
+(*****************************************************************************)
+(* VisiCalc did not have the graph. It recalculated the sheet in *row
  * order*, or in *column order* -- your choice, with /G O R and
  * /G O C -- one pass, cell after cell, and whatever a formula read
  * was whatever that cell happened to hold at the time.
@@ -106,9 +107,10 @@ type order = Rows | Columns
  * habit it taught. *)
 val recalculate : order -> t -> t
 
-(* {1 Saving}
- *
- * One line per cell, its name and what was typed into it, tab
+(*****************************************************************************)
+(* {1 Saving} *)
+(*****************************************************************************)
+(* One line per cell, its name and what was typed into it, tab
  * separated:
  *
  *   A1<TAB>12

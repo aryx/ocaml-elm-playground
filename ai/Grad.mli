@@ -56,6 +56,10 @@
  * *Evaluating Derivatives*, 2008; Andrej Karpathy, micrograd, 2020,
  * the clearest small implementation and the model for this one. *)
 
+(*****************************************************************************)
+(* {1 Values} *)
+(*****************************************************************************)
+
 type t
 
 (* a number the graph knows about, and its value *)
@@ -65,6 +69,10 @@ val of_ : t -> float
 (* the slope of whatever [backward] was called on, with respect to
  * this value: zero until then *)
 val slope : t -> float
+
+(*****************************************************************************)
+(* {1 Arithmetic} *)
+(*****************************************************************************)
 
 (* the arithmetic. Named with a colon so that ordinary floats keep the
  * plain operators: [a +: b], [a *: b]. *)
@@ -82,6 +90,10 @@ val sigmoid : t -> t
 val relu : t -> t
 val square : t -> t
 val sum : t list -> t
+
+(*****************************************************************************)
+(* {1 Going backwards} *)
+(*****************************************************************************)
 
 (* [backward v]: walk the graph back from [v], filling in every
  * [slope] that led to it. [v]'s own slope is 1 -- it is what

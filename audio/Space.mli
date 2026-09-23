@@ -84,7 +84,9 @@
  * 9613-1:1993, Attenuation of sound during propagation outdoors, part
  * 1: calculation of the absorption of sound by the atmosphere. *)
 
+(*****************************************************************************)
 (* {1 Panning} *)
+(*****************************************************************************)
 
 (* [pan p]: the left and the right gains, the constant power law *)
 val pan : float -> float * float
@@ -100,7 +102,9 @@ val ears_apart : bool ref
  * panned [p] (the sine of its angle): 0 in the middle, 29 at a side *)
 val interaural_delay : float -> int
 
+(*****************************************************************************)
 (* {1 Positions} *)
+(*****************************************************************************)
 
 type vec = { x : float; y : float; z : float }
 

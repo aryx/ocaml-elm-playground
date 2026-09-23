@@ -62,7 +62,9 @@
 open Playground
 open Playground3d
 
+(*****************************************************************************)
 (* {1 Writing a course} *)
+(*****************************************************************************)
 
 (* A control point: where the middle of the road passes, how wide it is
  * there ([width] is *half* the road, since everything across the
@@ -110,7 +112,9 @@ val length : t -> number
 val segments : t -> int
 val step : t -> number
 
+(*****************************************************************************)
 (* {1 Places on it} *)
+(*****************************************************************************)
 
 (* the middle of the road at some distance along: where it is, which
  * way it goes (degrees, 0 towards -z and 90 towards +x, Camera3d's
@@ -150,7 +154,9 @@ val locate : ?near:number -> t -> number -> number -> number * number
  * Camera3d.forward gives for [at t s]'s heading *)
 val forward : t -> number -> number * number
 
+(*****************************************************************************)
 (* {1 Drawing it} *)
+(*****************************************************************************)
 
 (* [strip t color i a b]: the quad of segment [i] (0 to [segments] - 1)
  * from [a] to [b] across, its face up. The road, its kerbs, its verges

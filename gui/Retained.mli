@@ -33,12 +33,20 @@
  * relayout on change, and the event *bubbling* that turns a tree of
  * objects into a tree of handlers. *)
 
+(*****************************************************************************)
+(* {1 The widget and the window} *)
+(*****************************************************************************)
+
 (* a widget: a rectangle, its own state, and what it does *)
 type t
 
 (* the window: the widgets, and the little the toolkit itself
  * remembers (the previous frame's keys and mouse button) *)
 type ui
+
+(*****************************************************************************)
+(* {1 Making widgets} *)
+(*****************************************************************************)
 
 val button : Widget.box -> string -> (unit -> unit) -> t
 val label : Widget.box -> string -> t
@@ -76,6 +84,10 @@ val set_drawing : t -> Widget.paint list -> unit
 val context_menu : string list -> (int option -> unit) -> t
 val popup : t -> float * float -> unit
 
+(*****************************************************************************)
+(* {1 Reaching back into them (from a callback)} *)
+(*****************************************************************************)
+
 (* what a callback reaches back into the widgets with *)
 val text : t -> string
 val set_text : t -> string -> unit
@@ -90,6 +102,10 @@ val set_shown : t -> bool -> unit
 val value : t -> float
 val set_value : t -> float -> unit
 val chosen : t -> int
+
+(*****************************************************************************)
+(* {1 Running the window} *)
+(*****************************************************************************)
 
 val window : t -> ui
 

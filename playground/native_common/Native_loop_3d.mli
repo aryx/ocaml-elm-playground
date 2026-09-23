@@ -27,11 +27,19 @@
  * which is exactly what would happen if this module depended on
  * Playground3d too. *)
 
+(*****************************************************************************)
+(* {1 Tsdl's results} *)
+(*****************************************************************************)
+
 (* [Ok x -> f x], [Error (`Msg msg) -> failwith msg] -- every Tsdl call
  * returns this same result type, so this one operator threads through
  * any sequence of them without a match at every step. Useful in a
  * backend's own window/context-creation code too, not just here. *)
 val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
+
+(*****************************************************************************)
+(* {1 The command line} *)
+(*****************************************************************************)
 
 (* claude: a straight copy of playground/native_common/Native_loop_2d.ml's
  * own parse_cli_and_setup_logging (2D run_app calls it as its first
@@ -59,6 +67,10 @@ val parse_cli_and_setup_logging : unit -> unit
  * a game using "h"). *)
 val debug_keys_enabled : unit -> bool
 
+(*****************************************************************************)
+(* {1 The mouse and the keyboard} *)
+(*****************************************************************************)
+
 val mouse_move : float -> float -> Playground.mouse -> Playground.mouse
 val mouse_down : bool -> Playground.mouse -> Playground.mouse
 val update_keyboard : bool -> string -> Playground.keyboard -> Playground.keyboard
@@ -68,6 +80,10 @@ val update_keyboard : bool -> string -> Playground.keyboard -> Playground.keyboa
  * immediately (matching playground/native's own convention); everything
  * else is passed through lowercased. *)
 val scancode_to_keystring : string -> string
+
+(*****************************************************************************)
+(* {1 The loop} *)
+(*****************************************************************************)
 
 (* [run ~sdl_window ~sx ~sy ~title_prefix ~on_key_press ~init ~update
  *   ~view ~draw ~present]

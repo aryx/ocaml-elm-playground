@@ -25,7 +25,9 @@
 
    Part of the puzzle kit (gamekits/puzzle/), with Push.mli and Undo.mli. *)
 
+(*****************************************************************************)
 (* {1 The rules} *)
+(*****************************************************************************)
 
 (* the map holds the walls, goals and boxes ('#', '.', '$', '*', ' '); the
  * player is at (col, row), apart, so that what is under them stays *)
@@ -43,7 +45,9 @@ val step : board -> int * int -> board option
 (* solved: no box left off a goal *)
 val solved : board -> bool
 
+(*****************************************************************************)
 (* {1 The look} *)
+(*****************************************************************************)
 
 (* a cell of the map, 60 wide, for [Tilemap.view] *)
 val tile : char -> Playground.shape
@@ -51,7 +55,9 @@ val tile : char -> Playground.shape
 (* the player, drawn apart from the map *)
 val player : Playground.shape
 
+(*****************************************************************************)
 (* {1 The file format} *)
+(*****************************************************************************)
 
 (* [of_xsb text]: the levels of a file, each its rows, e.g. "; 1\n###\n#@#\n
  * \n###" gives [["###"; "#@#"]; ["###"]]. '-' and '_' become ' '. *)
@@ -67,7 +73,9 @@ val to_xsb : string list list -> string
  * at the end of a row. E.g. [""; "   ##  "; "   #"; " "] gives ["##"; "#"]. *)
 val trim : string list -> string list
 
+(*****************************************************************************)
 (* {1 Checking a level} *)
+(*****************************************************************************)
 
 (* [problems rows]: what makes the level unplayable, none if it is fine:
  * not exactly one player, no box, not as many boxes as goals, or every

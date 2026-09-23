@@ -38,7 +38,9 @@
    so no coordinates to compute but a division.
 *)
 
+(*****************************************************************************)
 (* {1 The setting} *)
+(*****************************************************************************)
 
 (* The factor: 1, full resolution (the default), 2, 3 or 4 -- the "r"
  * debug key of the software backends (e.g.
@@ -53,7 +55,9 @@ val next : unit -> unit
 (* e.g. "334x334, x3" for a 1000-pixel window at factor 3, "full" at 1 *)
 val name : width:int -> height:int -> string
 
+(*****************************************************************************)
 (* {1 Drawing} *)
+(*****************************************************************************)
 
 (* [draw big render]: [render] drawing the frame, at the factor's
  * resolution: at 1, [render big ~scale:1.] (nothing changes); else
@@ -62,7 +66,9 @@ val name : width:int -> height:int -> string
  * renderer's screen transform: how many pixels a window pixel is. *)
 val draw : Framebuffer.t -> (Framebuffer.t -> scale:float -> unit) -> unit
 
+(*****************************************************************************)
 (* {1 The pieces} *)
+(*****************************************************************************)
 
 (* [small_size ~factor n]: the side of the small framebuffer for a
  * window side of [n], rounded up so that it covers the window, e.g.

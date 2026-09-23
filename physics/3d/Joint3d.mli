@@ -59,7 +59,9 @@ type t = {
   kind : kind;
 }
 
+(*****************************************************************************)
 (* {1 Making joints, from where the bodies are now} *)
+(*****************************************************************************)
 
 (* [ball bodies a b ~at ?cone ()]: a ball-and-socket at the world point
  * [at]; [cone], an axis in the world and the most angle (radians) the
@@ -74,7 +76,9 @@ val hinge : Body3d.t array -> int -> int -> at:Vec3.t -> axis:Vec3.t -> ?limits:
  * points, as long as they are apart now *)
 val distance : Body3d.t array -> int -> int -> at_a:Vec3.t -> at_b:Vec3.t -> unit -> t
 
+(*****************************************************************************)
 (* {1 What the solver does with them} *)
+(*****************************************************************************)
 
 (* one row: a direction, the speed asked along it, and the running
  * total of its impulse, clamped to [lo, hi] *)
@@ -87,7 +91,9 @@ val rows : beta:float -> dt:float -> Body3d.t array -> t -> row list
 (* [solve_row bodies r]: one correction of the row's impulse, applied *)
 val solve_row : Body3d.t array -> row -> unit
 
+(*****************************************************************************)
 (* {1 Measuring} *)
+(*****************************************************************************)
 
 (* where the joint's two anchors are in the world: the same point when
  * it holds *)

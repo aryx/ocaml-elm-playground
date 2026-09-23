@@ -129,7 +129,9 @@ val origin : number -> number -> t -> t
  * a subtraction before the two lines *)
 val follow : number -> number -> t -> t
 
+(*****************************************************************************)
 (* {1 Drawing} *)
+(*****************************************************************************)
 
 (* [project v (x, y, z)]: where that world point lands on the screen *)
 val project : t -> number * number * number -> number * number
@@ -158,7 +160,9 @@ val depth : t -> number * number * number -> number
  * long as nothing interleaves *)
 val sorted : (number * shape) list -> shape list
 
+(*****************************************************************************)
 (* {1 The line of sight} *)
+(*****************************************************************************)
 
 (* [toward_eye v]: the direction, in world units, that this projection
  * flattens to nothing: walk along it from any point and you stay on

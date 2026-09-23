@@ -109,6 +109,10 @@
  * Witkin's "Physically Based Modeling" for dL/dt = torque, and Erin
  * Catto's GDC talks for what game engines do with it in practice. *)
 
+(*****************************************************************************)
+(* {1 The choices} *)
+(*****************************************************************************)
+
 (* the linear half's method; the same four as in 2D *)
 type method_ = Explicit_euler | Semi_implicit_euler | Verlet | Rk4
 
@@ -131,6 +135,10 @@ val name : method_ -> string
 (* a = (0, 0, 0): a body left alone *)
 val no_force : force
 
+(*****************************************************************************)
+(* {1 One step} *)
+(*****************************************************************************)
+
 (* [step m ?law ?turn ?torque ~force ~dt b]: [b] one tick later. The
  * defaults are the ones a game wants: [Momentum], [Exact], no torque. *)
 val step :
@@ -139,6 +147,10 @@ val step :
 (* the rotational half on its own: the orientation and the spin, which
  * is all a body with no forces on it needs *)
 val spin_step : ?law:spin_law -> ?turn:turn -> torque:Vec3.t -> dt:float -> Body3d.t -> Body3d.t
+
+(*****************************************************************************)
+(* {1 The linear methods} *)
+(*****************************************************************************)
 
 (* The linear half's methods, each on its own, leaving the orientation
  * alone. With a the acceleration at (pos, vel): *)

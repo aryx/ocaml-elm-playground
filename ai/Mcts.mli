@@ -121,9 +121,10 @@ val search :
   'state ->
   'move result
 
-(* {1 Thinking a frame at a time}
-
-   MCTS is anytime: its tree is an answer at every moment, better the
+(*****************************************************************************)
+(* {1 Thinking a frame at a time} *)
+(*****************************************************************************)
+(* MCTS is anytime: its tree is an answer at every moment, better the
    longer it is grown. [start] plants it, [think] grows it by so many
    playouts, [plan] reads the answer so far. Unlike a depth-first
    search there is nothing to abandon -- a playout either happened or

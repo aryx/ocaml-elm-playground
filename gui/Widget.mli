@@ -22,6 +22,10 @@
  * here -- so a box at (0, 100) of 200 x 40 spans x from -100 to 100
  * and y from 80 to 120. *)
 
+(*****************************************************************************)
+(* {1 Boxes: where a widget is} *)
+(*****************************************************************************)
+
 (* a rectangle: its center, its width and height *)
 type box = { x : float; y : float; w : float; h : float }
 
@@ -46,6 +50,10 @@ val left : box -> float
 val right : box -> float
 val top : box -> float
 val bottom : box -> float
+
+(*****************************************************************************)
+(* {1 What the person does} *)
+(*****************************************************************************)
 
 (* What a widget knows about the person, this frame: everything the
  * playground's [computer] has that a widget can use, and nothing else
@@ -77,6 +85,10 @@ val no_input : input
  * nothing has grabbed the mouse), then [Press] or [Right_press] the
  * frame a button goes down there; each at the mouse's point. *)
 type canvas_event = Hover of (float * float) | Press of (float * float) | Right_press of (float * float)
+
+(*****************************************************************************)
+(* {1 What a widget draws} *)
+(*****************************************************************************)
 
 (* What a widget draws: rectangles of colour, and text -- all a toolkit
  * of boxes needs: a box with an outline is five rectangles ([frame]), a

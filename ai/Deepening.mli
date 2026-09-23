@@ -93,9 +93,10 @@ val search :
   'state ->
   'move plan
 
-(* {1 Thinking a frame at a time}
-
-   A game at 60 frames a second cannot stop for a search. [start] sets
+(*****************************************************************************)
+(* {1 Thinking a frame at a time} *)
+(*****************************************************************************)
+(* A game at 60 frames a second cannot stop for a search. [start] sets
    one up, [think] gives it another [nodes] of thought (one depth at
    most), [plan] is the best answer so far -- always a finished depth,
    usable from the first frame -- and [done_] says there is no more

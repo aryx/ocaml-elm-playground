@@ -13,9 +13,10 @@
  * LICENSE for more details.
  *)
 
-(** {1 A 3D playground on top of elm_playground}
-
-    Same spirit as {!Playground}: a tiny combinator API to build 3D
+(*****************************************************************************)
+(** {1 A 3D playground on top of elm_playground} *)
+(*****************************************************************************)
+(** Same spirit as {!Playground}: a tiny combinator API to build 3D
     pictures, animations, and games with no asset pipeline needed to get
     started. A 3D shape is built out of world-space triangles/polygons
     (not a local-transform-plus-form pair like 2D {!Playground.shape}),
@@ -326,7 +327,9 @@ val camera :
     geometry. *)
 val project : camera -> Playground.screen -> number * number * number -> (number * number) option
 
+(*****************************************************************************)
 (** {1 Rendering hints} *)
+(*****************************************************************************)
 
 (** How surfaces are lit (by a fixed "sun" up and to the side):
     - [No_lighting]: every face drawn in its own color, as given;
@@ -369,7 +372,9 @@ val default_rendering : rendering
     all the faces. *)
 val render3d_to_2d : ?rendering:rendering -> camera -> Playground.screen -> shape3d -> Playground.shape
 
+(*****************************************************************************)
 (** {1 The 3D Application} *)
+(*****************************************************************************)
 
 type ('model, 'msg) app3d
 

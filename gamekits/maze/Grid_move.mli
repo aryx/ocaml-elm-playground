@@ -28,11 +28,19 @@
 
 open Playground
 
+(*****************************************************************************)
+(* {1 Directions} *)
+(*****************************************************************************)
+
 type dir = Up | Down | Left | Right | Stop
 
 (* [delta Up] = (0, -1): one tile in that direction, rows going down *)
 val delta : dir -> int * int
 val opposite : dir -> dir
+
+(*****************************************************************************)
+(* {1 The grid and its movers} *)
+(*****************************************************************************)
 
 (* The grid: its tiles' size in pixels, and its size in tiles. Moving
  * off one side comes back on the other, horizontally (Pac-Man's tunnel:
@@ -53,6 +61,10 @@ val tile_of : grid -> mover -> int * int
 (* the tile next to the mover's, in a direction *)
 val next_tile : grid -> mover -> dir -> int * int
 
+(*****************************************************************************)
+(* {1 Moving} *)
+(*****************************************************************************)
+
 (* [slide grid ~choose speed m]: [speed] pixels, one at a time; at each
  * tile center reached, [choose] may change the direction (or stop the
  * mover, with Stop). Speeds need not divide the tile's size: going
@@ -68,6 +80,10 @@ val steer : grid -> open_:(int * int -> bool) -> mover -> mover
  * immediate U-turn if [wanted] is the way back (allowed anywhere, not
  * only at centers) *)
 val move_player : grid -> open_:(int * int -> bool) -> int -> mover -> mover
+
+(*****************************************************************************)
+(* {1 In the world} *)
+(*****************************************************************************)
 
 (* [to_world grid bounds m]: the mover's position in the world, for a
  * grid drawn as the Tilemap whose bounds are [bounds] (the map's

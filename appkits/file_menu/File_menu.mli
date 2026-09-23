@@ -19,6 +19,10 @@
  * every frame instead of the application's own input, and [view]
  * under Gui.draw's shapes. *)
 
+(*****************************************************************************)
+(* {1 Setting up} *)
+(*****************************************************************************)
+
 type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir >
 
 (* what an application's files are: the line its documents start with
@@ -31,6 +35,10 @@ type kind = { magic : string; extension : string }
 type t
 
 val start : t
+
+(*****************************************************************************)
+(* {1 The menu} *)
+(*****************************************************************************)
 
 (* the menu, its title first *)
 val items : string list
@@ -54,6 +62,10 @@ val menu_in : ?items:string list -> caps -> kind -> Playground.computer -> Widge
    when it has changed *)
 val autosave : caps -> kind -> current:(unit -> 'd) -> t -> t
 
+(*****************************************************************************)
+(* {1 The dialogs} *)
+(*****************************************************************************)
+
 (* is a dialog up? the application's own input waits while it is *)
 val busy : t -> bool
 
@@ -63,6 +75,10 @@ val dialog : caps -> kind -> Playground.computer -> current:(unit -> 'd) -> t ->
 
 (* the dialog's panel and name field, to draw before Gui.draw () *)
 val view : t -> Playground.shape list
+
+(*****************************************************************************)
+(* {1 The name and the status line} *)
+(*****************************************************************************)
 
 (* the document's name, or "untitled" *)
 val title : t -> string

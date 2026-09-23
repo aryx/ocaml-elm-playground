@@ -115,7 +115,9 @@ val cols : t -> int
 val rows : t -> int
 val bounds : t -> Camera2d.rect
 
+(*****************************************************************************)
 (* {1 Cells} *)
+(*****************************************************************************)
 
 (* [get map col row]: the tile in cell (col, row), [None] outside the map;
  * [set map col row c]: a new map, with [c] in that cell (the map is a
@@ -143,7 +145,9 @@ val center : t -> int -> int -> number * number
 val cell : t -> number -> number -> int * int
 val tile_at : t -> number -> number -> char option
 
+(*****************************************************************************)
 (* {1 Drawing} *)
+(*****************************************************************************)
 
 (* [view tile map]: the map's picture, [tile c] drawn centered on each
  * cell holding [c], e.g.
@@ -164,7 +168,9 @@ val view : (char -> shape) -> t -> shape
  * slow, especially on the software rasterizer. *)
 val view_visible : Camera2d.rect -> (char -> shape) -> t -> shape
 
+(*****************************************************************************)
 (* {1 Collisions} *)
+(*****************************************************************************)
 
 (* [hits solid map x y w h]: whether the w x h box centered on (x, y)
  * overlaps a cell whose tile is [solid]. Only the cells under the box

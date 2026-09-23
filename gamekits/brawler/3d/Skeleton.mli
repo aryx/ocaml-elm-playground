@@ -40,7 +40,9 @@
 open Playground
 open Playground3d
 
+(*****************************************************************************)
 (* {1 Poses} *)
+(*****************************************************************************)
 
 (* A limb: its upper part's two angles at the shoulder or hip, and how
  * far the elbow or knee is bent.
@@ -71,7 +73,9 @@ val stand : pose
 (* a limb, shorter to write than the record *)
 val limb : ?yaw:number -> ?bend:number -> number -> limb
 
+(*****************************************************************************)
 (* {1 Animating} *)
+(*****************************************************************************)
 
 (* [lerp a b t]: each angle of [a] moved [t] of the way (0. to 1.) to
  * [b]'s *)
@@ -83,7 +87,9 @@ val lerp : pose -> pose -> number -> pose
  * four of these and the sixty frames a second fill themselves in. *)
 val at : (int * pose) list -> int -> pose
 
+(*****************************************************************************)
 (* {1 Drawing} *)
+(*****************************************************************************)
 
 (* [draw ?front_hand ?back_hand ~body ~back ~skin height heading pose]: the figure [height]
  * tall standing straight, its feet on y = 0, built at the origin and

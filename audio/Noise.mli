@@ -45,9 +45,10 @@ val period : mode -> int
  * the lowest bit as 1. or -1. *)
 val render : ?mode:mode -> rate:float -> float -> Signal.t
 
-(* {1 Random numbers, not noise}
- *
- * A sample-and-hold's steps and an oscillator's drift need a random
+(*****************************************************************************)
+(* {1 Random numbers, not noise} *)
+(*****************************************************************************)
+(* A sample-and-hold's steps and an oscillator's drift need a random
  * *number* every so often, and the LFSR is a poor source of those: one
  * state is the last one shifted by a bit, so successive values (16384,
  * 8192, 4096 from 1) are halves of each other. A linear congruential

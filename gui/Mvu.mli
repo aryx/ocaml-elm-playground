@@ -38,6 +38,10 @@
  * refs. The architecture is honest about where the truth is, and then
  * quietly leans on the platform for the truth it cannot hold. *)
 
+(*****************************************************************************)
+(* {1 The view: widgets carrying messages} *)
+(*****************************************************************************)
+
 (* what a view is made of: the widgets, each carrying the message it
  * sends *)
 type 'msg element
@@ -70,6 +74,10 @@ val canvas : Widget.box -> Widget.paint list -> (Widget.canvas_event -> 'msg opt
  * sends [to_msg (Some i)] on an item or [to_msg None] elsewhere; the
  * model closes it by leaving it out of the next view. *)
 val context_menu : float * float -> string list -> (int option -> 'msg) -> 'msg element
+
+(*****************************************************************************)
+(* {1 Running the loop} *)
+(*****************************************************************************)
 
 (* what the platform keeps between frames, because the model cannot:
  * who has the keys, and where the caret is *)

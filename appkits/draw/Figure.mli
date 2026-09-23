@@ -31,6 +31,10 @@
  *   (four corners, four sides), or a line's two ends; dragging one
  *   moves that corner, side or end, the opposite one staying put. *)
 
+(*****************************************************************************)
+(* {1 Figures and their boxes} *)
+(*****************************************************************************)
+
 type point = float * float
 type box = { x0 : float; y0 : float; x1 : float; y1 : float }
 
@@ -53,15 +57,27 @@ val bounds : t -> box
 (* the box round two boxes *)
 val union : box -> box -> box
 
+(*****************************************************************************)
+(* {1 Hit testing} *)
+(*****************************************************************************)
+
 (* [hit ~tolerance figure point]: whether the point is on the figure --
  * inside if it is filled (text always is), within [tolerance] of its
  * outline if it is hollow, within [tolerance] of a line *)
 val hit : tolerance:float -> t -> point -> bool
 
+(*****************************************************************************)
+(* {1 Moving and resizing} *)
+(*****************************************************************************)
+
 val translate : float -> float -> t -> t
 
 (* [fit box figure]: the figure resized so that its bounds are [box] *)
 val fit : box -> t -> t
+
+(*****************************************************************************)
+(* {1 Handles} *)
+(*****************************************************************************)
 
 (* the handles, in order: a line's two ends; else the corners from the
  * top-left clockwise, then the sides top, right, bottom, left *)
@@ -71,6 +87,10 @@ val handles : t -> point list
  * dragged past its opposite one makes the box the other way round (it
  * is not mirrored: the corners are sorted again) *)
 val drag_handle : t -> int -> point -> t
+
+(*****************************************************************************)
+(* {1 Restyling} *)
+(*****************************************************************************)
 
 (* every style in it changed, a group's children included *)
 val restyle : (style -> style) -> t -> t

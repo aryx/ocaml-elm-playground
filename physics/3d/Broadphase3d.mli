@@ -78,6 +78,10 @@
  * Ponamgi, "I-COLLIDE" (Symposium on Interactive 3D Graphics, 1995);
  * Christer Ericson, Real-Time Collision Detection (2005), chapter 7. *)
 
+(*****************************************************************************)
+(* {1 Boxes and pairs} *)
+(*****************************************************************************)
+
 (* a bounding box: (min corner, max corner), as Hitbox3d.bounds gives *)
 type box = Vec3.t * Vec3.t
 
@@ -95,6 +99,10 @@ type result = {
   (* how many pairs of boxes were compared to find them *)
   tests : int;
 }
+
+(*****************************************************************************)
+(* {1 The three methods} *)
+(*****************************************************************************)
 
 val all_pairs : box array -> result
 

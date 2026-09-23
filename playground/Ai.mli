@@ -81,9 +81,10 @@ val following : ?speed:number -> ?force:number -> ?width:number -> (number * num
  * a fish nose first *)
 val facing : Physics.body -> Physics.body
 
-(* {1 Ways through a map}
-
-   A way from one tile to another, over whatever grid the game already
+(*****************************************************************************)
+(* {1 Ways through a map} *)
+(*****************************************************************************)
+(* A way from one tile to another, over whatever grid the game already
    has -- a Tilemap, an array of arrays, a function. The game says
    which tiles can be walked and nothing else: no graph to build, no
    frontier, no queue (ai/Pathfind.mli has all three written out).
@@ -122,9 +123,10 @@ val next_step : flow -> int * int -> (int * int) option
  * field as colours (and None off it) *)
 val steps_to_go : flow -> int * int -> number option
 
-(* {1 An opponent}
-
-   A computer to play a turn game against, from its rules alone. The
+(*****************************************************************************)
+(* {1 An opponent} *)
+(*****************************************************************************)
+(* A computer to play a turn game against, from its rules alone. The
    game says what the moves are, what a move does, whose turn it is
    and what a position is worth to the machine; the search
    (ai/Minimax.mli, ai/Deepening.mli, ai/Mcts.mli) stays behind the
@@ -203,9 +205,10 @@ val so_far : ('state, 'move) pondering -> ('move * number) list
  * tic-tac-toe fifty times over. *)
 val a_frame_of : int -> ('state, 'move) opponent -> ('state, 'move) opponent
 
-(* {1 What a character is doing}
-
-   A state machine, in the shape a game wants it: a list of changes of
+(*****************************************************************************)
+(* {1 What a character is doing} *)
+(*****************************************************************************)
+(* A state machine, in the shape a game wants it: a list of changes of
    mind, a mode now, and how long it has been in it (ai/Fsm.mli).
 
      let changes = [ Ai.on Chase (fun g -> lost g) Search;
@@ -240,9 +243,10 @@ val changed : 'mode mind -> string option
 val modes : ('mode, 'context) change list -> 'mode list
 val links : ('mode, 'context) change list -> ('mode * string * 'mode) list
 
-(* {1 A bot}
-
-   A mind that plays the game the way you do: it sees what a player
+(*****************************************************************************)
+(* {1 A bot} *)
+(*****************************************************************************)
+(* A mind that plays the game the way you do: it sees what a player
    could see, and it fills the game's own input record -- which is why
    [senses] and [intent] are the game's types and not ours
    (ai/Bot.mli, ai/Sense.mli).

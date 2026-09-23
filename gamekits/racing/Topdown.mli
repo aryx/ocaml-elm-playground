@@ -25,7 +25,9 @@
 
 open Playground
 
+(*****************************************************************************)
 (* {1 The car} *)
+(*****************************************************************************)
 
 type t = {
   x : number;
@@ -60,9 +62,10 @@ val toy : params
  * [follow]. *)
 val drive : params -> number -> number -> number -> t -> t
 
-(* {1 Hitting things}
-
-   A track with walls (Super Sprint's, Super Off Road's fences) and cars
+(*****************************************************************************)
+(* {1 Hitting things} *)
+(*****************************************************************************)
+(* A track with walls (Super Sprint's, Super Off Road's fences) and cars
    that bump into each other: not rigid bodies (physics/2d would turn the
    car too, by where it was hit), but the arcade's two rules, each a few
    lines. *)
@@ -91,7 +94,9 @@ val bounce : (number -> number -> bool) -> t -> t -> t
  * 100. *)
 val push : number -> t -> t -> t * t
 
+(*****************************************************************************)
 (* {1 The track} *)
+(*****************************************************************************)
 
 (* a loop of waypoints, the track's center line; [reach]: how near one
  * counts as passed; [corner]: from how far the computer starts cutting
@@ -146,7 +151,9 @@ val ribbon : color -> number -> track -> shape
  * less than 10000 apart) *)
 val progress : track -> t -> number
 
+(*****************************************************************************)
 (* {1 The computer} *)
+(*****************************************************************************)
 
 (* [computer track car]: the (gas, steer) the computer drives with:
  * steering towards the next waypoint, and, once within [corner] of it,

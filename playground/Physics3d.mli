@@ -85,7 +85,9 @@ type body = {
   torque : number * number * number; (* and what turns it, set by spin_by *)
 }
 
+(*****************************************************************************)
 (* {1 Making bodies} *)
+(*****************************************************************************)
 
 (* [body shape]: a body looking like [shape], at the origin, not
  * moving, not turned, of mass 1, whose hitbox is the box of its own
@@ -96,9 +98,10 @@ type body = {
  * point. *)
 val body : shape3d -> body
 
-(* {1 What it is to a collision}
-
-   A body's hitbox is what {!touching}, {!contact} and {!ray} work on,
+(*****************************************************************************)
+(* {1 What it is to a collision} *)
+(*****************************************************************************)
+(* A body's hitbox is what {!touching}, {!contact} and {!ray} work on,
    and it is not its drawing: a tree is a cylinder, a character is a
    capsule, a spaceship is a sphere. The default is the box of the
    shape's own bounds, which is right often enough to start with. Each
@@ -163,7 +166,9 @@ val upright : body -> body
  * themselves, and the parallel-axis theorem for putting two together. *)
 val solid_as : number * number * number -> body -> body
 
+(*****************************************************************************)
 (* {1 What pushes it (until the next step)} *)
+(*****************************************************************************)
 
 (* [fall g b]: gravity, pulling down g metres per second, per second
  * (9.8 on Earth) *)
@@ -209,7 +214,9 @@ val spin_slow : number -> body -> body
  * an [upright] body, by design *)
 val spin_by : number -> number -> number -> body -> body
 
+(*****************************************************************************)
 (* {1 Moving} *)
+(*****************************************************************************)
 
 (* [step b]: [b] one tick later: its velocity changed by everything
  * that pushed it, its position by its velocity, its orientation by its
@@ -219,7 +226,9 @@ val step : body -> body
 (* 1/60 s *)
 val tick : number
 
+(*****************************************************************************)
 (* {1 Looking at bodies} *)
+(*****************************************************************************)
 
 (* [draw b]: its shape, turned the way it points and moved where it is *)
 val draw : body -> shape3d
@@ -231,9 +240,10 @@ val draw : body -> shape3d
  * not where the drawing is. *)
 val debug : body -> shape3d
 
-(* {1 Collisions}
-
-   Found, not yet resolved: see the header. *)
+(*****************************************************************************)
+(* {1 Collisions} *)
+(*****************************************************************************)
+(* Found, not yet resolved: see the header. *)
 
 (* do their hitboxes overlap, exactly -- the turned box, the sphere,
  * the capsule, not the bounding boxes *)
@@ -295,9 +305,10 @@ val speed : body -> number
  * {!Playground3d.hud}) gives ((0,0,0), (0,0,0)). *)
 val bounds : shape3d -> (number * number * number) * (number * number * number)
 
-(* {1 A pile: every body at once}
-
-   [bounce] answers one pair, once. In a pile each answer undoes a bit
+(*****************************************************************************)
+(* {1 A pile: every body at once} *)
+(*****************************************************************************)
+(* [bounce] answers one pair, once. In a pile each answer undoes a bit
    of another -- push the top crate up and the one under it goes down,
    and into the floor -- so a stack solved that way jitters and sinks.
    A [world] solves all of a step's contacts together, over and over
@@ -383,9 +394,10 @@ val simulate :
 val went_through : body -> body -> bool
 
 
-(* {1 Joints}
-
-   A joint takes away some of the ways two bodies of a world can move
+(*****************************************************************************)
+(* {1 Joints} *)
+(*****************************************************************************)
+(* A joint takes away some of the ways two bodies of a world can move
    against each other (physics/3d/Joint3d.mli), solved in [simulate]'s
    loop with the contacts. The bodies are named by their place in the
    world's [bodies], and the joint is made from where they are now:

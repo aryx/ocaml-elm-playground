@@ -35,6 +35,10 @@
  * chapter 1 (Music values, (:+:) and (:=:)); Euterpea,
  * https://www.euterpea.com *)
 
+(*****************************************************************************)
+(* {1 Sounds as trees} *)
+(*****************************************************************************)
+
 type source =
   | Wave of Oscillator.waveform (* band-limited (Oscillator.mli) *)
   | Naive of Oscillator.waveform (* the formula of the phase, aliasing *)
@@ -86,6 +90,10 @@ and filter = { kind : Filter.kind; cutoff : float; cutoff_to : float; q : float 
  * continuous voices at once; true by default *)
 val band_limited : bool ref
 
+(*****************************************************************************)
+(* {1 Making them} *)
+(*****************************************************************************)
+
 (* [voice source frequency]: 0.3 s at volume 0.5, not sliding nor fading *)
 val voice : source -> float -> t
 
@@ -110,6 +118,10 @@ val faster : float -> t -> t
  * whole *)
 val pitched : float -> t -> t
 
+(*****************************************************************************)
+(* {1 Rendering} *)
+(*****************************************************************************)
+
 (* [duration s]: in seconds (see above) *)
 val duration : t -> float
 
@@ -123,6 +135,10 @@ val render : t -> Signal.t
  * nested multiplied; a tree with no pan is [render] in both (the same
  * array, not copied) *)
 val render_stereo : t -> Signal.stereo
+
+(*****************************************************************************)
+(* {1 Continuous voices, frame after frame} *)
+(*****************************************************************************)
 
 (* a continuous voice's state, frame after frame: its oscillator's
  * phase (or its noise's register and clock), its last volume, its

@@ -62,7 +62,9 @@ val side : t -> int64
  * (piece, square) pairs on it (in any order) *)
 val of_board : t -> (int * int) list -> int64
 
+(*****************************************************************************)
 (* {1 The transposition table} *)
+(*****************************************************************************)
 
 (* what a search learned about a position: [Exact] the value, or a
  * bound it stopped at ([Lower]: at least [value]; [Upper]: at most) *)

@@ -41,7 +41,9 @@ open Playground
 (* A sound: what [play] and [keep_playing] take. *)
 type sound
 
+(*****************************************************************************)
 (* {1 Making sounds} *)
+(*****************************************************************************)
 
 (* [tone frequency]: a pure tone, a sine wave, in hertz (440 is the A
    orchestras tune to); like every sound here, 0.3 s long at half volume
@@ -79,7 +81,9 @@ val fm : number -> number -> number -> sound
    a note *)
 val note : string -> sound
 
+(*****************************************************************************)
 (* {1 Shaping them, like move and scale for shapes} *)
+(*****************************************************************************)
 
 (* [lasting seconds s] *)
 val lasting : number -> sound -> sound
@@ -138,7 +142,9 @@ val reverb : number -> sound -> sound
    examples/AudioAliasing.ml lets you hear both) *)
 val naive : sound -> sound
 
+(*****************************************************************************)
 (* {1 Where it comes from} *)
+(*****************************************************************************)
 
 (* [pan p s]: [s] from the left (-1), the middle (0), the right (1), or
    in between; its loudness the same wherever it is (audio/Space.mli:
@@ -200,9 +206,10 @@ val recorded : sound -> sound
    our 8-bit ones, drums on noise (audio/Music.mli) *)
 val midi : string -> sound
 
-(* {1 Ready-made sounds}
-
-   In the spirit of sfxr (Tomas Pettersson, 2007), the game jam tool
+(*****************************************************************************)
+(* {1 Ready-made sounds} *)
+(*****************************************************************************)
+(* In the spirit of sfxr (Tomas Pettersson, 2007), the game jam tool
    whose few parameters make most 8-bit game sounds: each here is a
    handful of numbers (audio/Sfx.mli; examples/AudioSfx.ml plays them
    and shows the numbers). *)
@@ -232,7 +239,9 @@ val random_sound : string -> int -> sound
      let zap = sfx { Sfx.laser with frequency = 2000.; echo = 0.1 } *)
 val sfx : Sfx.t -> sound
 
+(*****************************************************************************)
 (* {1 Playing them} *)
+(*****************************************************************************)
 
 (* [play s]: from now until its end (see the top) *)
 val play : sound -> unit
@@ -281,9 +290,10 @@ val play_module : string -> string -> unit
      Audio.loop_from "music" "https://example.com/tune.mid" *)
 val loop_from : string -> string -> unit
 
-(* {1 Instruments: played live}
-
-   A sound above is made whole, then played. An instrument is played
+(*****************************************************************************)
+(* {1 Instruments: played live} *)
+(*****************************************************************************)
+(* A sound above is made whole, then played. An instrument is played
    the way a piano is: a key goes down, and the note sounds until the key
    comes up, however long that is; and its knobs can be turned while it
    plays. In update:
@@ -315,7 +325,9 @@ val note_off : instrument -> string -> unit
    once, so nothing clicks *)
 val set : instrument -> string -> number -> unit
 
+(*****************************************************************************)
 (* {1 The music's own clock} *)
+(*****************************************************************************)
 
 (* [position name]: how far into the loop [name] the sound card has
  * been fed, in seconds, counting every time round (so 35.2 for a 16 s

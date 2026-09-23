@@ -26,6 +26,10 @@
  * made, and hand it on unchanged ever after. [change] is that rule as a
  * function. *)
 
+(*****************************************************************************)
+(* {1 The dots} *)
+(*****************************************************************************)
+
 type t
 
 (* all white *)
@@ -46,6 +50,10 @@ val copy : t -> t
  * bitmap that may be in a history *)
 val change : t -> (t -> unit) -> t
 
+(*****************************************************************************)
+(* {1 Selections} *)
+(*****************************************************************************)
+
 (* [sub b ~x ~y ~w ~h]: the dots of a rectangle, as a bitmap of its own
  * (white where it falls outside [b]) -- what a selection lifts *)
 val sub : t -> x:int -> y:int -> w:int -> h:int -> t
@@ -54,6 +62,10 @@ val sub : t -> x:int -> y:int -> w:int -> h:int -> t
  * ([x], [y]), white dots included -- MacPaint pasted opaque; in place,
  * clipped *)
 val blit : src:t -> dst:t -> x:int -> y:int -> unit
+
+(*****************************************************************************)
+(* {1 Looking at it} *)
+(*****************************************************************************)
 
 (* how many dots are black, for tests *)
 val count : t -> int
@@ -70,6 +82,10 @@ val count : t -> int
  * A grey is the worst case: its runs are single dots that never line
  * up from one row to the next, one rectangle per black dot. *)
 val rectangles : t -> (int * int * int * int) list
+
+(*****************************************************************************)
+(* {1 Saving} *)
+(*****************************************************************************)
 
 (* The picture written down, and read back: its size, then every row
  * compressed by Packbits, as MacPaint wrote its documents (which had a

@@ -67,9 +67,10 @@ val length : t -> int
  * the tests watch *)
 val pieces : t -> int
 
-(* {1 The caret and the selection}
- *
- * A caret is a selection of length zero, so there is one idea here
+(*****************************************************************************)
+(* {1 The caret and the selection} *)
+(*****************************************************************************)
+(* A caret is a selection of length zero, so there is one idea here
  * and not two: the [anchor] is where the selection started and the
  * [caret] is where it ends -- which may be *before* the anchor, when
  * a selection was dragged backwards. *)
@@ -91,7 +92,9 @@ val select : anchor:int -> caret:int -> t -> t
  * is -- which is what shift-clicking and shift-arrows do *)
 val to_ : int -> t -> t
 
+(*****************************************************************************)
 (* {1 Editing} *)
+(*****************************************************************************)
 
 (* [insert s t]: [s] at the caret, replacing the selection if there is
  * one *)
@@ -104,7 +107,9 @@ val delete_forward : t -> t
 (* [delete ~from ~len t]: for a caller that knows what it wants gone *)
 val delete : from:int -> len:int -> t -> t
 
+(*****************************************************************************)
 (* {1 The past} *)
+(*****************************************************************************)
 
 (* the versions it can go back to, and forward to again *)
 val undo : t -> t
@@ -112,7 +117,9 @@ val redo : t -> t
 val undos : t -> int
 val redos : t -> int
 
+(*****************************************************************************)
 (* {1 What a view needs} *)
+(*****************************************************************************)
 
 (* [lines ~width t]: the text broken into lines of at most [width]
  * characters, each with the offset it starts at -- greedy word wrap

@@ -41,7 +41,9 @@
    used sectors too, joined by portals instead of a BSP.
 *)
 
+(*****************************************************************************)
 (* {1 Levels} *)
+(*****************************************************************************)
 
 type point = float * float
 
@@ -85,7 +87,9 @@ val make : sector list -> start:float * float * float -> exit:int -> level
  * with the exit, seen from the hall through a window *)
 val outpost : level
 
+(*****************************************************************************)
 (* {1 Where things are} *)
+(*****************************************************************************)
 
 (* [side line x y]: < 0 when (x, y) is on the line's front side (its
  * right), > 0 on its back side, 0 on it *)
@@ -105,7 +109,9 @@ val inside : sector -> float -> float -> bool
  * none *)
 val sector_at : level -> float -> float -> int
 
+(*****************************************************************************)
 (* {1 Moving} *)
+(*****************************************************************************)
 
 (* the player: a circle of radius 16, 56 high, who can climb steps of
  * up to 24 (Doom's numbers, in its map units) *)

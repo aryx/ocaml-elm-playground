@@ -49,6 +49,10 @@
  * "scaled" if it is, before what it wraps.
  *)
 
+(*****************************************************************************)
+(* {1 The document} *)
+(*****************************************************************************)
+
 (* a height a person gave (None: the part's own), a share of the row
  * the node is in (1 unless changed), and whether the part is scaled
  * to its room (Component.draw_in) rather than negotiated with *)
@@ -56,6 +60,10 @@ type sizing = { height : float option; share : float; scaled : bool }
 
 type t = Part of Component.part | Column of t list | Row of t list | Sized of sizing * t
 type path = int list
+
+(*****************************************************************************)
+(* {1 Layout} *)
+(*****************************************************************************)
 
 (* the room between parts *)
 val gap : float
@@ -68,6 +76,10 @@ val layout : t -> left:float -> top:float -> width:float -> (path * Widget.box) 
 
 (* the part a point is on, in a layout *)
 val at_point : (path * Widget.box) list -> float * float -> path option
+
+(*****************************************************************************)
+(* {1 Resizing parts} *)
+(*****************************************************************************)
 
 (* Where two children of a row meet, for a person to drag: the row's
  * path, the child before the gap, the gap itself, and the left and
@@ -93,6 +105,10 @@ val set_scaled : t -> path -> bool -> t
  * [fraction] of it (kept between a tenth and nine tenths) *)
 val resize_row : t -> path -> int -> float -> t
 
+(*****************************************************************************)
+(* {1 Changing the parts} *)
+(*****************************************************************************)
+
 val get : t -> path -> Component.part option
 
 (* [set doc path part]: the document with that part replaced *)
@@ -107,6 +123,10 @@ val insert_after : t -> path -> t -> t
  * with one child is replaced by that child, and an empty one goes --
  * except the root, which stays *)
 val remove : t -> path -> t
+
+(*****************************************************************************)
+(* {1 Saving} *)
+(*****************************************************************************)
 
 val save : t -> string
 

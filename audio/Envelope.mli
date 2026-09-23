@@ -54,9 +54,10 @@ val duration : t -> held:float -> float
 (* [apply env ~held samples]: each sample times the level at its time *)
 val apply : t -> held:float -> Signal.t -> Signal.t
 
-(* {1 Live: an envelope driven by a gate}
- *
- * Above, the note's length is known ([held]) and the envelope is
+(*****************************************************************************)
+(* {1 Live: an envelope driven by a gate} *)
+(*****************************************************************************)
+(* Above, the note's length is known ([held]) and the envelope is
  * computed whole. Played live (Instrument.mli), nobody knows when the
  * key will come up: the envelope is a state machine, driven by a
  * *gate*, on while the key is held (see notes_synth.md section 4):

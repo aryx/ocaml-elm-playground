@@ -88,7 +88,9 @@
 
 open Hitbox3d
 
+(*****************************************************************************)
 (* {1 Closest points} *)
+(*****************************************************************************)
 
 (* the point of a segment nearest a point *)
 val closest_on_segment : Vec3.t * Vec3.t -> Vec3.t -> Vec3.t
@@ -107,9 +109,10 @@ val closest_on_box : placed -> Vec3.t -> Vec3.t
  * so that an edge or a corner comes out right) *)
 val closest_on_triangle : Vec3.t * Vec3.t * Vec3.t -> Vec3.t -> Vec3.t
 
-(* {1 Pairs}
-
-   Each returns the contact if they overlap, [None] if they miss; the
+(*****************************************************************************)
+(* {1 Pairs} *)
+(*****************************************************************************)
+(* Each returns the contact if they overlap, [None] if they miss; the
    contact's normal points from the *first* argument towards the
    second.
 
@@ -157,9 +160,10 @@ val contact : placed -> placed -> Contact3d.t option
 (* [contact] without the numbers *)
 val touching : placed -> placed -> bool
 
-(* {1 Manifolds}
-
-   [contact] answers with one point, which is all a bounce needs. A box
+(*****************************************************************************)
+(* {1 Manifolds} *)
+(*****************************************************************************)
+(* [contact] answers with one point, which is all a bounce needs. A box
    resting on a box touches along a whole *face*, and holding a stack
    still needs every corner of it: push at one point and the box tips
    about it, again and again, for ever.
@@ -201,9 +205,10 @@ val spread_out : int -> Contact3d.t list -> Contact3d.t list
  * before any of the above (Broadphase3d, phase 6) *)
 val bounds_overlap : Vec3.t * Vec3.t -> Vec3.t * Vec3.t -> bool
 
-(* {1 Rays}
-
-   Each answers the distance in metres from [from] along [direction]
+(*****************************************************************************)
+(* {1 Rays} *)
+(*****************************************************************************)
+(* Each answers the distance in metres from [from] along [direction]
    (which need not be a unit vector) to the first hit, or [None]. A ray
    starting inside a shape hits at 0. *)
 

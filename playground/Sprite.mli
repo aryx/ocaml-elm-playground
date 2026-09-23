@@ -85,7 +85,9 @@
 
 open Playground
 
+(*****************************************************************************)
 (* {1 Pixel art} *)
+(*****************************************************************************)
 
 (* [pixels size palette rows]: the sprite whose pixels are the [rows],
  * from the top, each character a [size] x [size] square of its color
@@ -109,7 +111,9 @@ val runs : string -> (int * int * char) list
  * completed first, so the columns stay aligned. *)
 val flip : string list -> string list
 
+(*****************************************************************************)
 (* {1 Two looks: the artwork flag} *)
+(*****************************************************************************)
 
 (* A game here can be drawn two ways: with its pixel art, or with the
    plain shapes of the playground -- a red square for a plumber, a
@@ -136,7 +140,9 @@ val flip : string list -> string list
  * original's own medium) when the flag is absent or is neither. *)
 val artwork : default:bool -> flags -> bool
 
+(*****************************************************************************)
 (* {1 Files} *)
+(*****************************************************************************)
 
 (* A sprite drawn in an editor is saved as an XPM file (graphics/images/
  * xpm/Xpm.mli): a palette and rows of characters, what [pixels] takes,
@@ -158,7 +164,9 @@ val of_xpm : string -> (char * color) list * string list
  * palette and rows back. *)
 val to_xpm : string -> (char * color) list -> string list -> string
 
+(*****************************************************************************)
 (* {1 Animation} *)
+(*****************************************************************************)
 
 (* [cycle n frames]: frame [n] of an animation that loops, e.g. [cycle 5
  * [a; b]] = b, the frame for the n-th step of something moving step by

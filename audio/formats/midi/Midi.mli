@@ -47,7 +47,9 @@ type note = { start : float; length : float; key : int; velocity : int; channel 
 
 type score = { notes : note list; (* by start time *) duration : float }
 
+(*****************************************************************************)
 (* {1 Variable-length quantities} *)
+(*****************************************************************************)
 
 (* [vlq n]: its bytes (the table above) *)
 val vlq : int -> string
@@ -55,7 +57,9 @@ val vlq : int -> string
 (* [read_vlq s i]: the number at [i], and the position after it *)
 val read_vlq : string -> int -> int * int
 
+(*****************************************************************************)
 (* {1 Files} *)
+(*****************************************************************************)
 
 (* [parse bytes]: a Standard MIDI File's notes (formats 0 and 1: every
  * track's notes merged), or why not *)

@@ -56,9 +56,10 @@ val present : Tsdl.Sdl.window -> unit
  * [dump_frame] for [run] *)
 val dump_ppm : pixels -> string -> unit
 
-(* {1 The sound card}
-
-   44,100 samples a second, 735 a frame; SDL's queue kept about three
+(*****************************************************************************)
+(* {1 The sound card} *)
+(*****************************************************************************)
+(* 44,100 samples a second, 735 a frame; SDL's queue kept about three
    frames (50 ms) ahead of what the card has played, topped up each
    frame by what it used, so that the two clocks never drift apart
    (audio/Mixer.mli). Exposed for playground3d's loop, which plays the

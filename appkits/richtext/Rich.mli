@@ -65,9 +65,10 @@ val runs : t -> (int * int * Style.t) list
 (* the look of the character starting at byte [i] *)
 val style_at : t -> int -> Style.t
 
-(* {1 The caret and the selection}
- *
- * As Text_edit's -- and moving the caret forgets a pending look. *)
+(*****************************************************************************)
+(* {1 The caret and the selection} *)
+(*****************************************************************************)
+(* As Text_edit's -- and moving the caret forgets a pending look. *)
 
 val caret : t -> int
 val range : t -> int * int
@@ -75,7 +76,9 @@ val at : int -> t -> t
 val select : anchor:int -> caret:int -> t -> t
 val to_ : int -> t -> t
 
+(*****************************************************************************)
 (* {1 Editing} *)
+(*****************************************************************************)
 
 (* [insert s t]: [s] at the caret, replacing the selection, in the
  * typing style *)
@@ -84,7 +87,9 @@ val insert : string -> t -> t
 val delete_backward : t -> t
 val delete_forward : t -> t
 
+(*****************************************************************************)
 (* {1 Looks} *)
+(*****************************************************************************)
 
 (* [restyle f t]: [f] applied to the look of every character of the
  * selection -- or, with nothing selected, to the typing style, so

@@ -28,6 +28,23 @@ repository's games (`TinySokoban.ml`) and in its teaching
 libraries (`graphics/2d/Fill.ml`). A file with three or more parts
 gets them; a twenty-line module does not need any.
 
+**In an `.mli`** the title is an odoc heading, `{1 ...}`, and the
+banner goes around it all the same -- the heading is for `dune build
+@doc`, the stars are for the eye scrolling through the file:
+
+```ocaml
+(*****************************************************************************)
+(* {1 Making bodies} *)
+(*****************************************************************************)
+```
+
+When the heading's comment goes on with a paragraph, the heading
+line is closed on its own and the paragraph gets a comment of its own
+under the banner, opened the same way (`(*` or `(**`). An `.mli`
+whose values fall into separate groups -- `Physics.mli`'s making,
+pushing, moving, colliding -- gets these sections, as an `.ml` does.
+`{2 ...}` subsections (Evan's in `Playground.mli`) get no banner.
+
 ## 2. The section names
 
 From `~/xix/`, in the order they usually appear:

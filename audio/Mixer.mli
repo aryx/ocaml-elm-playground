@@ -28,6 +28,10 @@
  * Nystrom, 2014: playing sounds from game code, and why a queue); SDL's
  * SDL_QueueAudio, https://wiki.libsdl.org/SDL2/SDL_QueueAudio *)
 
+(*****************************************************************************)
+(* {1 The mixer} *)
+(*****************************************************************************)
+
 type t
 
 val create : unit -> t
@@ -39,6 +43,10 @@ val max_playing : int
  * software backend's "m" key, to hear what panning does); true by
  * default *)
 val stereo : bool ref
+
+(*****************************************************************************)
+(* {1 Playing sounds} *)
+(*****************************************************************************)
 
 (* [play m s]: [s] from the next sample pulled *)
 val play : t -> Signal.stereo -> unit
@@ -72,8 +80,16 @@ val keep : ?filter:Synth.filter -> ?pan:float -> t -> string -> Synth.voice -> u
  * caller's, through [i]'s functions: the mixer only pulls. *)
 val instrument : t -> string -> Instrument.t -> unit
 
+(*****************************************************************************)
+(* {1 Pulling samples} *)
+(*****************************************************************************)
+
 (* [pull m n]: the next [n] samples, in both channels *)
 val pull : t -> int -> Signal.stereo
+
+(*****************************************************************************)
+(* {1 What is playing} *)
+(*****************************************************************************)
 
 (* one-shots playing, continuous voices kept (for tests, debug) *)
 val playing : t -> int * int

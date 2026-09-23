@@ -114,7 +114,9 @@ val mistakes : t -> example list -> int
  * amount of training moves the second *)
 val learns : ?epochs:int -> ?seed:int -> example list -> float
 
+(*****************************************************************************)
 (* {1 The four two-input problems worth trying} *)
+(*****************************************************************************)
 
 val and_ : example list
 val or_ : example list

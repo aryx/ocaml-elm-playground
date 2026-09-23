@@ -108,9 +108,10 @@ val polyblamp : dt:float -> float -> float
  * smoothed, [dt] the phase step, frequency / rate *)
 val wave_band_limited : waveform -> dt:float -> float -> float
 
-(* {1 The pulse, and its width}
- *
- * A pulse is high for a fraction [width] of its period, low for the
+(*****************************************************************************)
+(* {1 The pulse, and its width} *)
+(*****************************************************************************)
+(* A pulse is high for a fraction [width] of its period, low for the
  * rest; the square is the pulse of width 0.5:
  *
  *     width 0.5 (the square)       width 1/3             width 0.1

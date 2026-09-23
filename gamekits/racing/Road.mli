@@ -35,7 +35,9 @@
 
 open Playground
 
+(*****************************************************************************)
 (* {1 Sections} *)
+(*****************************************************************************)
 
 (* [enter] segments easing into the curve and the height, [hold]
  * segments of them, [leave] easing out; [curve] is the curve while
@@ -54,7 +56,9 @@ val curve_hill : int -> number -> number -> section
  * segments of curves and hills, ending at the height it started from *)
 val coast : section list
 
+(*****************************************************************************)
 (* {1 The track} *)
+(*****************************************************************************)
 
 (* a segment: its index from the start, the height of its near and far
  * edges, its curve *)
@@ -76,7 +80,9 @@ val length : t -> number
  * wrapping around after the end (a loop, for laps) *)
 val segment_at : t -> number -> segment
 
+(*****************************************************************************)
 (* {1 In space} *)
+(*****************************************************************************)
 
 (* a point of the road's center line: where, and which way the road
  * goes, in degrees (0 towards -z, 90 towards +x) *)

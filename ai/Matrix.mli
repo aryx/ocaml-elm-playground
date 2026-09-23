@@ -68,7 +68,9 @@ type t = {
   data : float array; (* rows * cols, row-major *)
 }
 
+(*****************************************************************************)
 (* {1 Making them} *)
+(*****************************************************************************)
 
 val create : int -> int -> t (* rows, cols, all zero *)
 val init : int -> int -> (int -> int -> float) -> t
@@ -87,16 +89,19 @@ val random : seed:int -> ?spread:float -> int -> int -> t
 val vector : float array -> t
 val to_vector : t -> float array
 
+(*****************************************************************************)
 (* {1 Reading and writing} *)
+(*****************************************************************************)
 
 val get : t -> int -> int -> float
 val set : t -> int -> int -> float -> unit
 val row : t -> int -> float array
 val same_shape : t -> t -> bool
 
-(* {1 Arithmetic}
-
-   [add], [sub] and [times] (elementwise, the Hadamard product -- which
+(*****************************************************************************)
+(* {1 Arithmetic} *)
+(*****************************************************************************)
+(* [add], [sub] and [times] (elementwise, the Hadamard product -- which
    is what backpropagation needs, not the matrix product) raise
    [Invalid_argument] on shapes that do not match, as does [mul] when
    the inner dimensions disagree. *)

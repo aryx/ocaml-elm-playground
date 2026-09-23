@@ -61,7 +61,9 @@ type body = {
   ay : number;            (*   accelerations, set by fall, push, ... *)
 }
 
+(*****************************************************************************)
 (* {1 Making bodies} *)
+(*****************************************************************************)
 
 (* [body shape]: a body looking like [shape], at (0, 0), not moving,
  * pointing right (angle 0) *)
@@ -126,7 +128,9 @@ val immovable : body -> body
  * doesn't matter either.) Drawn, its angle never changes. *)
 val upright : body -> body
 
+(*****************************************************************************)
 (* {1 What pushes it (until the next step)} *)
+(*****************************************************************************)
 
 (* [fall g b]: gravity, pulling down g pixels per second, per second,
  * whatever the mass (500 to 1000 feels right on a 1000-pixel screen) *)
@@ -165,7 +169,9 @@ val pulled_to : number -> number -> number -> body -> body
  * counterclockwise, like rotate); 0 to stop *)
 val turn : number -> body -> body
 
+(*****************************************************************************)
 (* {1 Moving} *)
+(*****************************************************************************)
 
 (* [step b]: [b] one tick (1/60 s) later: its velocity changed by what
  * pushed it, its position by its velocity, its angle by its spin; the
@@ -186,7 +192,9 @@ val wrap : screen -> body -> body
  * ball *)
 val bounce_in : screen -> number -> body -> body
 
+(*****************************************************************************)
 (* {1 Collisions} *)
+(*****************************************************************************)
 
 (* [touching a b]: whether they overlap, exactly: the bodies' real
  * shapes, turned the way they point -- a bullet (a small circle) inside
@@ -239,7 +247,9 @@ val went_through : body -> body -> bool
  * the game to see what the physics sees *)
 val debug : body -> shape
 
+(*****************************************************************************)
 (* {1 Piles: many bodies at once} *)
+(*****************************************************************************)
 
 (* [bounce_all] fixes one pair at a time, once: fine for balls in a box,
  * not for a pile of boxes, which jitters and sinks (each fix undoes a
@@ -271,9 +281,10 @@ val world : body list -> world
  * iteration, or without warm starting, a pyramid sags and slides. *)
 val simulate : ?gravity:number -> ?iterations:int -> ?warm_starting:bool -> world -> world
 
-(* {1 Joints}
-
-   A joint takes away some of the ways two bodies of a world can move
+(*****************************************************************************)
+(* {1 Joints} *)
+(*****************************************************************************)
+(* A joint takes away some of the ways two bodies of a world can move
    against each other (physics/2d/Joint2d.mli), solved in [simulate]'s
    loop with the contacts; two bodies joined don't collide. The bodies
    are named by their place in the world's [bodies], and the joint is
@@ -316,7 +327,9 @@ val joint_length : int -> world -> number
    three lines of a pulley *)
 val debug_joints : world -> shape list
 
+(*****************************************************************************)
 (* {1 Looking at bodies} *)
+(*****************************************************************************)
 
 (* [draw b]: its shape, where it is, turned the way it points *)
 val draw : body -> shape

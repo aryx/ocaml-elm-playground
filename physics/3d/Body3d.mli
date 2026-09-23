@@ -93,9 +93,10 @@ val inv_inertia_world : t -> Mat3.t
  * moving: its point at (1, 0, 0) moves at (0, 0, -2). *)
 val point_velocity : t -> Vec3.t -> Vec3.t
 
-(* {1 Tensors of the usual shapes}
-
-   In the body frame, about the centre of mass. These live here until
+(*****************************************************************************)
+(* {1 Tensors of the usual shapes} *)
+(*****************************************************************************)
+(* In the body frame, about the centre of mass. These live here until
    Hitbox3d (the plan's phase 4) gives every shape its own. *)
 
 (* [box ~mass (w, h, d)]: m/12 * diag (h^2+d^2, w^2+d^2, w^2+h^2) *)

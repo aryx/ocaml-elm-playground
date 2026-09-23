@@ -61,7 +61,9 @@ type t = {
   kind : kind;
 }
 
+(*****************************************************************************)
 (* {1 Making joints, from where the bodies are now} *)
+(*****************************************************************************)
 
 (* [pin bodies angles a b ~at ?motor ()]: a pin at the world point
  * [at]; [motor]: the spin of b relative to a asked (radians a second,
@@ -82,7 +84,9 @@ val rope : Body.t array -> float array -> int -> int -> at_a:Vec2.t -> at_b:Vec2
 val pulley :
   Body.t array -> float array -> int -> int -> at_a:Vec2.t -> at_b:Vec2.t -> ground_a:Vec2.t -> ground_b:Vec2.t -> unit -> t
 
+(*****************************************************************************)
 (* {1 What the solver does with them} *)
+(*****************************************************************************)
 
 (* one row: how each body moves along it, the speed asked, the running
  * total of its impulse, clamped to [lo, hi] *)
@@ -96,7 +100,9 @@ val rows : beta:float -> dt:float -> Body.t array -> float array -> t -> row lis
  * the bodies' velocities *)
 val solve_row : Body.t array -> row -> unit
 
+(*****************************************************************************)
 (* {1 Measuring} *)
+(*****************************************************************************)
 
 (* where the joint's two anchors are in the world: the same point when a
  * pin holds *)

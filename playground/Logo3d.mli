@@ -42,7 +42,9 @@ type number = Playground.number
 
 type command
 
+(*****************************************************************************)
 (* {1 Moving} *)
+(*****************************************************************************)
 
 val forward : number -> command
 val back : number -> command
@@ -62,7 +64,9 @@ val roll_right : number -> command
 (* back to (0, 0, 0), in the starting frame, without drawing *)
 val home : command
 
+(*****************************************************************************)
 (* {1 The pen} *)
+(*****************************************************************************)
 
 val pen_up : command
 val pen_down : command
@@ -77,7 +81,9 @@ val dot : number -> command
 val hide_turtle : command
 val show_turtle : command
 
+(*****************************************************************************)
 (* {1 Programs} *)
+(*****************************************************************************)
 
 val repeat : int -> command list -> command
 val block : command list -> command
@@ -91,7 +97,9 @@ val rt : number -> command
 val pu : command
 val pd : command
 
+(*****************************************************************************)
 (* {1 Drawing} *)
+(*****************************************************************************)
 
 (* [draw program]: the drawing, and the turtle (a pyramid pointing
    where it heads, its top towards its up) *)
@@ -108,7 +116,9 @@ val work : command list -> number
    [camera_around program]: keep that function for every frame. *)
 val camera_around : command list -> number -> Playground3d.camera
 
+(*****************************************************************************)
 (* {1 Applications} *)
+(*****************************************************************************)
 
 (* [animation ?speed program]: the turtle drawing it, [speed] units a
    second (default 300), the camera turning around it (once every 20

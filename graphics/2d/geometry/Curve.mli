@@ -83,7 +83,9 @@
 
 type point = float * float
 
+(*****************************************************************************)
 (* {1 Evaluating} *)
+(*****************************************************************************)
 
 (* [cubic p0 p1 p2 p3 t]: the point at [t] (0 to 1) on the Bézier curve
  * from p0 to p3 pulled by p1 and p2:
@@ -119,7 +121,9 @@ val catmull_rom : point -> point -> point -> point -> float -> point
  * Cairo), or to [flatten] it. *)
 val cubic_of_catmull_rom : point -> point -> point -> point -> point * point * point * point
 
+(*****************************************************************************)
 (* {1 Flattening} *)
+(*****************************************************************************)
 
 (* [flatten p0 p1 p2 p3]: the polyline of the Bézier curve, from p0 to
  * p3 included, by de Casteljau subdivision: split until each piece is
@@ -137,7 +141,9 @@ val flatten : ?tolerance:float -> point -> point -> point -> point -> point list
  * between the ends. *)
 val through : ?steps:int -> point list -> point list
 
+(*****************************************************************************)
 (* {1 Walking} *)
+(*****************************************************************************)
 
 (* a flattened curve and, at each of its points, the length from the
  * start: the table a walk reads *)

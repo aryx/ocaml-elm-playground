@@ -38,7 +38,9 @@
    Part of the adventure kit (gamekits/adventure/); used by TinyZork and
    TinyManiacMansion. *)
 
+(*****************************************************************************)
 (* {1 The world} *)
+(*****************************************************************************)
 
 type place =
   | Room of string (* lying in that room *)
@@ -79,7 +81,9 @@ val visible : world -> string -> bool
 val in_room : world -> string list
 val carried : world -> string list
 
+(*****************************************************************************)
 (* {1 Sentences and rules} *)
+(*****************************************************************************)
 
 (* a verb, the object it is done to, and the one it is done with (or to,
  * or in): "take lamp" is { verb = "take"; obj = Some "lamp"; with_ =

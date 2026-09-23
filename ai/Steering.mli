@@ -55,7 +55,9 @@ type vehicle = {
   max_force : float; (* units per second, per second: how hard it turns *)
 }
 
+(*****************************************************************************)
 (* {1 Behaviours: desired velocities} *)
+(*****************************************************************************)
 
 (* straight at the target, at top speed *)
 val seek : vec -> vehicle -> vec
@@ -107,7 +109,9 @@ val avoid : ?ahead:float -> ?size:float -> (vec * float) list -> vehicle -> vec
  * without a rail *)
 val follow : ?ahead:float -> width:float -> vec list -> vehicle -> vec
 
+(*****************************************************************************)
 (* {1 Forces} *)
+(*****************************************************************************)
 
 (* [steer v desired]: the force turning [v]'s velocity towards
  * [desired], clamped to [v.max_force] *)

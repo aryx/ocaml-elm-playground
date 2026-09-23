@@ -32,9 +32,10 @@ val midi_number : string -> int option
 (* [frequency name]: "A4" -> 440.; 0. if it isn't a note *)
 val frequency : string -> float
 
-(* {1 Playing tunes}
- *
- * A tune's voices played by the NES's band (the 2A03 chip, 1983: two
+(*****************************************************************************)
+(* {1 Playing tunes} *)
+(*****************************************************************************)
+(* A tune's voices played by the NES's band (the 2A03 chip, 1983: two
  * square channels and a triangle): the first voice on a square (the
  * melody), the last on the triangle (the bass), those in between on a
  * softer square. Each note sounds for 90% of its length, then a short
@@ -48,9 +49,10 @@ val instrument : voice:int -> voices:int -> Oscillator.waveform * float
 (* [to_sound tune]: its voices together, each a sound after another *)
 val to_sound : Abc.tune -> Synth.t
 
-(* {1 Playing MIDI scores}
- *
- * A MIDI file's notes overlap freely (a chord, a sustained bass under a
+(*****************************************************************************)
+(* {1 Playing MIDI scores} *)
+(*****************************************************************************)
+(* A MIDI file's notes overlap freely (a chord, a sustained bass under a
  * melody), which a tune's one-after-another voices can't hold: a score
  * is rendered straight into one buffer, each note added at its start.
  * General MIDI's instrument families (the program / 8, 1991) mapped to

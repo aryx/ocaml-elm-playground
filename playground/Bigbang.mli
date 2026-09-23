@@ -82,7 +82,9 @@
 
 open Playground
 
+(*****************************************************************************)
 (* {1 Images} *)
+(*****************************************************************************)
 
 (* an image: a picture that knows its width and height *)
 type image
@@ -128,7 +130,9 @@ val height : image -> number
 (* the image as a playground shape, centered on (0, 0) *)
 val to_shape : image -> shape
 
+(*****************************************************************************)
 (* {1 Events} *)
+(*****************************************************************************)
 
 (* [key_events before now]: the keys pressed since [before], and the ones
  * released, by their HtDP names: "left", "right", "up", "down", " ",
@@ -136,7 +140,9 @@ val to_shape : image -> shape
  * down before, and "ArrowLeft" and "a" now: (["a"], []). *)
 val key_events : keyboard -> keyboard -> string list * string list
 
+(*****************************************************************************)
 (* {1 The world} *)
+(*****************************************************************************)
 
 (* big_bang's model: the world, and what it keeps to make events *)
 type 'w world

@@ -59,6 +59,10 @@
  * into graphics; Baraff and Witkin, "Physically Based Modeling"
  * (SIGGRAPH course notes) for q' = 1/2 w q. *)
 
+(*****************************************************************************)
+(* {1 Making them} *)
+(*****************************************************************************)
+
 (* w is the scalar part, v the vector part; a *unit* quaternion is a
  * rotation (see [normalize]) *)
 type t = { w : float; v : Vec3.t }
@@ -73,6 +77,10 @@ val of_axis_angle : Vec3.t -> float -> t
 (* the axis (unit, or (1, 0, 0) for no rotation) and the angle in
  * radians, in [0, pi] *)
 val to_axis_angle : t -> Vec3.t * float
+
+(*****************************************************************************)
+(* {1 Composing and rotating} *)
+(*****************************************************************************)
 
 (* [mul a b] is the rotation "b first, then a", as matrices compose:
  * R (mul a b) = R a * R b. Not commutative, deliberately. *)
@@ -92,6 +100,10 @@ val normalize : t -> t
  * fast one, and is what a renderer would use. *)
 val rotate : t -> Vec3.t -> Vec3.t
 
+(*****************************************************************************)
+(* {1 As a matrix, as angles} *)
+(*****************************************************************************)
+
 (* the same rotation as a matrix, which is what an inertia tensor's
  * R I R^T needs ([Mat3.conjugate]) *)
 val to_mat3 : t -> Mat3.t
@@ -103,6 +115,10 @@ val to_mat3 : t -> Mat3.t
  * degrees many triples describe the same orientation, and every one of
  * them draws the same picture). *)
 val to_euler_xyz : t -> float * float * float
+
+(*****************************************************************************)
+(* {1 Spinning over time} *)
+(*****************************************************************************)
 
 (* [derivative ~spin q] is 1/2 (0, spin) q, the rate at which an
  * orientation changes under an angular velocity -- the equation above,

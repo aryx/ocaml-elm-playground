@@ -65,7 +65,9 @@ type number = Playground.number
 
 type command
 
+(*****************************************************************************)
 (* {1 Moving} *)
+(*****************************************************************************)
 
 (* [forward distance]: walk ahead, drawing a line if the pen is down *)
 val forward : number -> command
@@ -86,7 +88,9 @@ val set_xy : number -> number -> command
 (* [set_heading degrees]: face that way (0 up, 90 right, clockwise) *)
 val set_heading : number -> command
 
+(*****************************************************************************)
 (* {1 The pen} *)
+(*****************************************************************************)
 
 val pen_up : command
 val pen_down : command
@@ -107,7 +111,9 @@ val label : string -> command
 val hide_turtle : command
 val show_turtle : command
 
+(*****************************************************************************)
 (* {1 Programs} *)
+(*****************************************************************************)
 
 (* [repeat n program]: [program], [n] times *)
 val repeat : int -> command list -> command
@@ -126,7 +132,9 @@ val rt : number -> command
 val pu : command
 val pd : command
 
+(*****************************************************************************)
 (* {1 Drawing} *)
+(*****************************************************************************)
 
 (* [draw program]: the drawing, and the turtle on top (a triangle
    pointing where it heads), unless hidden *)
@@ -145,7 +153,9 @@ val draw_upto : number -> command list -> Playground.shape list
    takes to draw at [speed] pixels per second: [work program / speed] *)
 val work : command list -> number
 
+(*****************************************************************************)
 (* {1 Applications} *)
+(*****************************************************************************)
 
 (* [picture program]: the drawing, done *)
 val picture : command list -> (Playground.screen, Playground.msg1) Playground.app

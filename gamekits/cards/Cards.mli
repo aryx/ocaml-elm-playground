@@ -11,6 +11,10 @@
 
 open Playground
 
+(*****************************************************************************)
+(* {1 The cards} *)
+(*****************************************************************************)
+
 type suit = Clubs | Diamonds | Hearts | Spades
 
 (* [rank]: 1 (the ace) to 13 (the king) *)
@@ -29,6 +33,10 @@ val name : card -> string
 
 (* the 52 cards, in the numbering's order *)
 val deck : card list
+
+(*****************************************************************************)
+(* {1 A deal} *)
+(*****************************************************************************)
 
 (* [deal n]: the 52 cards of Microsoft's deal number [n], in the order
    they are dealt. Windows' FreeCell (1991, Jim Horne's port of Paul
@@ -58,6 +66,10 @@ val deck : card list
      6D 8S 8D QS 6C 3D 8C TC
      6S 9C 2H 6H *)
 val deal : int -> card list
+
+(*****************************************************************************)
+(* {1 A card drawn} *)
+(*****************************************************************************)
 
 (* a card's size on the screen, and the offset between two cards fanned
    down a column: [fanned] face up, [stacked] face down *)

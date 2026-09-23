@@ -1,3 +1,7 @@
+(*****************************************************************************)
+(* {1 Running an app} *)
+(*****************************************************************************)
+
 (* claude: [rendering] (default: Playground.default_rendering) sets how
  * to draw, see Playground.rendering; [flags] (default: none) are given
  * to the app's init, and so end up in computer.flags, see
@@ -13,6 +17,10 @@ val run_app:
  *)
 val flags: unit -> Playground.flags
 
+(*****************************************************************************)
+(* {1 Images, loaded ahead} *)
+(*****************************************************************************)
+
 (* Load (and cache) an image url ahead of time, e.g. for all the sprite
  * variants a game will need, so that [Playground.image]/[run_app] never
  * has to load one lazily mid-game. On the web backend this starts an
@@ -22,6 +30,10 @@ val flags: unit -> Playground.flags
  * downloaded and decoded, which is fine to do once up front but would
  * freeze the render loop if done lazily on first use. *)
 val preload_image: string -> unit
+
+(*****************************************************************************)
+(* {1 Documents} *)
+(*****************************************************************************)
 
 (* Documents, saved and opened again (docs/claude_notes/plans/plan_io.md).
  *

@@ -70,7 +70,9 @@ val height : t -> float -> float -> float
  * length) *)
 val clear : t -> float * float * float -> float * float * float -> bool
 
+(*****************************************************************************)
 (* {1 Colors} *)
+(*****************************************************************************)
 
 type kind = Sea | Sand | Grass | Forest | Rock | Snow
 
@@ -89,7 +91,9 @@ val light : t -> int -> int -> int
  * lighter or darker by [light] *)
 val color : kind -> int -> int * int * int
 
+(*****************************************************************************)
 (* {1 The pieces} *)
+(*****************************************************************************)
 
 (* [random seed i j]: between -1 and 1, always the same for the same
  * arguments, on every platform (a hash, computed on 30 bits: js_of_ocaml's

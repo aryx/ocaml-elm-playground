@@ -55,6 +55,10 @@
  * Geoffrey Hinton, "Rectified Linear Units Improve Restricted
  * Boltzmann Machines", 2010. *)
 
+(*****************************************************************************)
+(* {1 The squashes} *)
+(*****************************************************************************)
+
 type activation = Sigmoid | Tanh | Relu | Linear
 
 (* [squash f z] and its slope. [slope] is given both the input [z] and
@@ -64,6 +68,10 @@ type activation = Sigmoid | Tanh | Relu | Linear
  * backward pass cheap (Backprop.mli). *)
 val squash : activation -> float -> float
 val slope : activation -> z:float -> a:float -> float
+
+(*****************************************************************************)
+(* {1 Making one} *)
+(*****************************************************************************)
 
 type layer = {
   w : Matrix.t; (* outputs x inputs *)
@@ -80,6 +88,10 @@ type t = layer list
  * 1). *)
 val make : seed:int -> ?hidden:activation -> ?last:activation -> int list -> t
 
+(*****************************************************************************)
+(* {1 Running it, measuring it} *)
+(*****************************************************************************)
+
 (* [forward net x]: what it answers *)
 val forward : t -> float array -> float array
 
@@ -88,6 +100,10 @@ val forward : t -> float array -> float array
  * be asked to do *)
 val sizes : t -> int list
 val weights : t -> int
+
+(*****************************************************************************)
+(* {1 The workings, for the backward pass} *)
+(*****************************************************************************)
 
 (* the forward pass with its workings kept: the input, then the [z] and
  * [a] of each layer, which is exactly what the backward pass needs

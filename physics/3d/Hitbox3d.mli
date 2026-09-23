@@ -68,7 +68,9 @@ val volume : t -> float
  * -- what Body3d wants. A [Plane] never turns. *)
 val inertia : mass:float -> t -> Mat3.t
 
+(*****************************************************************************)
 (* {1 Reading a placed hitbox} *)
+(*****************************************************************************)
 
 (* a box's 8 corners, in the world; anything else: [] *)
 val corners : placed -> Vec3.t list

@@ -37,7 +37,9 @@
 
 open Playground
 
+(*****************************************************************************)
 (* {1 The levels} *)
+(*****************************************************************************)
 
 (* the slices, front first, each a list of rows from the top: '#' a
  * block, 'E' the exit, 'P' where Danny starts (in the front slice) *)
@@ -57,7 +59,9 @@ val nz : level -> int
  * from the front; outside the grid, '.' *)
 val cell : level -> int -> int -> int -> char
 
+(*****************************************************************************)
 (* {1 The camera's two ways} *)
+(*****************************************************************************)
 
 (* The view: 0 looks along z (the plane is x across), 1 along x (the
  * plane is z across). [across] and [deep_n] are the grid's sizes that
@@ -76,7 +80,9 @@ val project : level -> int -> int -> int -> char
  * across, the bridge of slice 2 filling the gap of slice 0. *)
 val plane : level -> int -> bool -> int -> Tilemap.t
 
+(*****************************************************************************)
 (* {1 The play} *)
+(*****************************************************************************)
 
 type play = {
   level : int;
@@ -110,7 +116,9 @@ val crush : play -> play
 val uncrush : play -> play
 val turn : play -> play
 
+(*****************************************************************************)
 (* {1 A frame} *)
+(*****************************************************************************)
 
 (* what the player does this frame, which is all [step] needs: the
  * games read it off the keyboard ([read_input]), the tests make it up *)

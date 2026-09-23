@@ -74,7 +74,9 @@ val make : ?radius:number -> ?height:number -> ?step:number -> ?slope:number -> 
  * [gravity] 9.8. *)
 val walk : ?gravity:number -> ?jump:number -> Physics3d.body list -> number * number -> t -> t
 
+(*****************************************************************************)
 (* {1 Pieces} *)
+(*****************************************************************************)
 
 (* its capsule, as a body: for drawing its hitbox (Physics3d.debug), or
  * for other bodies to meet *)
