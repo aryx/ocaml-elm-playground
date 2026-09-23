@@ -34,7 +34,8 @@
      and the program's type says it can't reach the network. The host is player 0 and waits, on port 7777
      ([port=]), of this computer only unless given [bind=0.0.0.0] (a
      LAN); the other one joins, [net=join host=192.168.1.12], and is
-     player 1. Each plays with its arrows. No handshake: the host plays
+     player 1. Each plays with its arrows (and w, a, s, d, for a game
+     with two sticks, TinyCyberSled). No handshake: the host plays
      its first [delay] ticks and stalls until the first inputs arrive;
    - [net=relay] ([host=], [port=] 8765): through a relay server
      (networking/relay/, Relay.mli), which every player connects to and
@@ -49,7 +50,8 @@
    difference at the same latency):
 
    - [lockstep] (the default, Lockstep.mli): every player's input (a
-     byte: the arrows, space, enter and shift, a bit each -- the letters
+     byte: the arrows, space, enter and shift, a bit each, and a second
+     byte for w, a, s and d when one of them is held -- the other letters
      don't travel) applied [delay] ticks after it is read (3), on every
      peer, which waits for the late ones: the keys answer late, and a
      slow network slows the game;
@@ -108,3 +110,35 @@ val game :
   (Playground.computer -> player list -> 'model -> 'model) ->
   'model ->
   ('model state Playground.game, Playground.msg) Playground.app
+
+(* claude: the pieces of [game] that don't draw, for Multiplayer3d.mli,
+ * which draws the same modes in 3D *)
+
+(* the state before the first frame, which reads the flags *)
+val initial : 'model -> 'model state
+
+(* [update_state ?network ~players update]: one frame of the mode the
+ * flags chose (the game's ticks, the network's packets) *)
+val update_state :
+  ?network:Cap.network ->
+  players:int ->
+  (Playground.computer -> player list -> 'model -> 'model) ->
+  Playground.computer ->
+  'model state ->
+  'model state
+
+(* what a mode shows: whose game on each screen, with a label
+ * (net=simulate's "computer 0: tick ..."), a background behind
+ * several screens, whether they are the columns of net=simulate
+ * (rather than a split screen), and the network's lines of status,
+ * 2D shapes at the bottom of a 1000 x 1000 screen (y -440 to -470) *)
+type 'model screen = { player : int; model : 'model; label : string option }
+
+type 'model layout = {
+  screens : 'model screen list;
+  background : Playground.color option;
+  columns : bool;
+  status : Playground.shape list;
+}
+
+val layout : split:bool -> players:int -> 'model state -> 'model layout

@@ -654,6 +654,8 @@ let capture_mouse_on_click () : unit =
 let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = false) ?flags ?network:_
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
   if capture_mouse then capture_mouse_on_click ();
+  (* claude: Multiplayer3d's net=relay, as the 2D platform's run_app *)
+  Transport.set_connect Web_connect.connect;
   shading := rendering.shading;
   backface_culling := rendering.backface_culling;
   smooth_textures := rendering.smooth_textures;

@@ -32,6 +32,7 @@
    elm_playground
    elm_playground_3d
    elm_playground_3d_native_common ; SDL event loop
+   networking_unix ; Connect, for Multiplayer3d's net=host, net=join, net=relay
    graphics_3d_geometry ; Mat4
    graphics_gpu ; Mesh_cache
    ; the HUD: drawn by the 2D software rasterizer (Shape_render_software),

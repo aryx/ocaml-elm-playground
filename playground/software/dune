@@ -30,6 +30,7 @@
    elm_playground_3d
    elm_playground_software ; Shape_render_software, for the HUD pass
    elm_playground_3d_native_common ; SDL event loop, shared with the OpenGL backend
+   networking_unix ; Connect, for Multiplayer3d's net=host, net=join, net=relay
    graphics_3d_geometry ; Vec3, Camera
    graphics_3d ; Render, and the modules of its pipeline
    graphics_core ; Framebuffer, Opti

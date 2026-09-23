@@ -364,6 +364,10 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
       "jump",
       520,
       "space:1,v:2,s:3-37,up:3-37,w:38-285,up:38-285,w:286-321,down:286-321,w:322-560,up:322-560",
-      [ "ramps=on" ] ) ]
+      [ "ramps=on" ] );
+    (* two computers side by side through Multiplayer3d, each its own
+     * cockpit, over a simulated network: the strip of its numbers, and
+     * the games agreeing *)
+    ("games/fps/software/TinyCyberSled", "simulate", 150, "space:1,up:5-60,w:20-90,space:30-150", [ "net=simulate" ]) ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted ~scripted_flagged scenes

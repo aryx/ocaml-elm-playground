@@ -1,7 +1,7 @@
 (library
  (public_name elm_playground_web)
  (implements elm_playground)
- (modules Playground_platform Web_store)
+ (modules Playground_platform Web_connect Web_store)
  (libraries
    vdom
    ; commons

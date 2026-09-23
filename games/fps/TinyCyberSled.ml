@@ -48,21 +48,17 @@
  *     as the linked cabinets were played (the keys are on the title);
  *   - juice=off: without the juice, which is on by default -- sparks at
  *     each hit, the camera shaken, the loser blown to pieces, smoke
- *     after the missiles and from the wreck (Juice3d).
+ *     after the missiles and from the wreck (Juice3d);
+ *   - net=host and net=join (or net=relay, or net=simulate to watch the
+ *     netcode): two players on two computers, through Multiplayer3d.
  * E.g. dune exec games/fps/TinyCyberSled.exe -- missiles=on ramps=on players=2
  *
  * What it uses: Playground3d (box, polygon3d, cached3d for the arena,
  * hud, split3d for the split screen) and Camera3d (cockpit, behind,
- * orbit, sky), Juice3d for the juice, Scene2d for the title and the end.
- * No kit, and no physics engine: a sled is a point with a heading,
- * pushed back from the walls and pillars one axis at a time, and with
- * the ramps a height that falls.
- *
- * Exercise: the two players on two computers. Multiplayer.mli runs a
- * game over the network, but only a 2D one (its view gives shapes); a
- * Multiplayer.game3d would be the same machinery around a Playground3d
- * app, and this game's update, deterministic already (no Random, no
- * clock), is all it would need from the game.
+ * orbit, sky), Juice3d for the juice, Multiplayer3d for the network,
+ * Scene2d for the title and the end. No kit, and no physics engine: a
+ * sled is a point with a heading, pushed back from the walls and
+ * pillars one axis at a time, and with the ramps a height that falls.
  *)
 open Playground
 open Playground3d
@@ -133,12 +129,15 @@ let new_game () : game = { p1 = sled_at 20. 45. 0.; p2 = sled_at (-20.) (-45.) 1
 
 let initial_model : model = { scenes = Scene2d.start Title; fx = Juice3d.none ~seed:1 }
 
-(* the flags, read at each frame *)
-type variants = { missiles : bool; ramps : bool; players : int }
+(* the flags, read at each frame; with net= (see its section), two
+ * players, each at a computer *)
+type variants = { missiles : bool; ramps : bool; players : int; net : bool }
 
 let variants (computer : computer) : variants =
   let on name = List.assoc_opt name computer.flags = Some "on" in
-  { missiles = on "missiles"; ramps = on "ramps"; players = (if List.assoc_opt "players" computer.flags = Some "2" then 2 else 1) }
+  let net = List.mem_assoc "net" computer.flags in
+  { missiles = on "missiles"; ramps = on "ramps";
+    players = (if net || List.assoc_opt "players" computer.flags = Some "2" then 2 else 1); net }
 
 let distance (x1 : number) (z1 : number) (x2 : number) (z2 : number) : number =
   Float.sqrt (((x1 -. x2) ** 2.) +. ((z1 -. z2) ** 2.))
@@ -179,8 +178,13 @@ let treads ~(left : number) ~(right : number) ~(left_x : number) ~(right_x : num
   let slide = 0.2 *. (left_x +. right_x) /. 2. in
   (speed, turn, slide)
 
-let sticks (keys : string Set_.t) (pad : pad) : number * number * number =
-  let stick plus minus = (if Set_.mem plus keys then 1. else 0.) -. if Set_.mem minus keys then 1. else 0. in
+(* a player's keys, by name: held now, and pressed this frame (their
+ * rising edge) -- read from this computer's keyboard, or, with net=,
+ * from a player's as the network brought it *)
+type input = { held : string -> bool; pressed : string -> bool }
+
+let sticks (input : input) (pad : pad) : number * number * number =
+  let stick plus minus = (if input.held plus then 1. else 0.) -. if input.held minus then 1. else 0. in
   treads ~left:(stick pad.left_up pad.left_down) ~right:(stick pad.right_up pad.right_down)
     ~left_x:(stick pad.left_right pad.left_left) ~right_x:(stick pad.right_right pad.right_left)
 
@@ -332,14 +336,13 @@ let cpu (v : variants) (g : game) : game =
 
 (* a player's sled: its sticks, its cannon (held down, it keeps
  * firing), its missile *)
-let player (v : variants) (computer : computer) (s : scene Scene2d.t) (pad : pad) (from_p1 : bool) (me : sled)
-    (other : sled) (shells : shell list) : sled * shell list =
-  let keys = computer.keyboard.keys in
-  let me = drive v me other (sticks keys pad) in
+let player (v : variants) ((input, pad) : input * pad) (from_p1 : bool) (me : sled) (other : sled) (shells : shell list) :
+    sled * shell list =
+  let me = drive v me other (sticks input pad) in
   let me, shells =
-    if Set_.mem pad.fire keys && me.reload = 0 then ({ me with reload = 10 }, fire me from_p1 4 :: shells) else (me, shells)
+    if input.held pad.fire && me.reload = 0 then ({ me with reload = 10 }, fire me from_p1 4 :: shells) else (me, shells)
   in
-  player_missile v (Scene2d.pressed (fun k -> Set_.mem pad.missile k.keys) s) from_p1 me shells
+  player_missile v (input.pressed pad.missile) from_p1 me shells
 
 (* a shell in a sled, near enough and at its height: its armor down,
  * and the shell gone *)
@@ -356,33 +359,53 @@ let two_players : pad * pad =
     { left_up = "i"; left_down = "k"; left_left = "j"; left_right = "l"; right_up = "ArrowUp"; right_down = "ArrowDown";
       right_left = "ArrowLeft"; right_right = "ArrowRight"; fire = "Enter"; missile = "Shift" } )
 
-let update_game (computer : computer) (s : scene Scene2d.t) (g : game) : game =
-  let v = variants computer in
-  let behind = if Scene2d.pressed (fun k -> Set_.mem "v" k.keys) s then not g.behind else g.behind in
+(* a frame of the duel: player 1's input and keys, and player 2's, or
+ * none for the computer's sled *)
+let update_game (v : variants) ~(toggle_view : bool) (one : input * pad) (two : (input * pad) option) (g : game) : game =
+  let behind = if toggle_view then not g.behind else g.behind in
   let g = { p1 = cool g.p1; p2 = cool g.p2; behind; frames = g.frames + 1; shells = List.filter_map (move_shell g) g.shells } in
   let g =
-    if v.players = 1 then
-      let p1, shells = player v computer s one_player true g.p1 g.p2 g.shells in
-      cpu v { g with p1; shells }
-    else
-      let pad1, pad2 = two_players in
-      let p1, shells = player v computer s pad1 true g.p1 g.p2 g.shells in
-      let p2, shells = player v computer s pad2 false g.p2 p1 shells in
-      { g with p1; p2; shells }
+    match two with
+    | None ->
+        let p1, shells = player v one true g.p1 g.p2 g.shells in
+        cpu v { g with p1; shells }
+    | Some two ->
+        let p1, shells = player v one true g.p1 g.p2 g.shells in
+        let p2, shells = player v two false g.p2 p1 shells in
+        { g with p1; p2; shells }
   in
   let p1 = damage g.shells false g.p1 and p2 = damage g.shells true g.p2 in
   let shells = List.filter (fun sh -> not (hits sh (if sh.from_p1 then g.p2 else g.p1))) g.shells in
   { g with p1; p2; shells }
 
-let update_rules (computer : computer) (s : scene Scene2d.t) : scene Scene2d.t =
-  let s = Scene2d.update computer s in
-  let space = Scene2d.pressed (fun k -> k.kspace) s in
+(* the title, the duel, the end: space ([start]) goes on *)
+let scenes (v : variants) ~(start : bool) ~(toggle_view : bool) one two (s : scene Scene2d.t) : scene Scene2d.t =
   match s.scene with
-  | Title -> if space then Scene2d.go (Playing (new_game ())) s else s
+  | Title -> if start then Scene2d.go (Playing (new_game ())) s else s
   | Playing g ->
-      let g = update_game computer s g in
+      let g = update_game v ~toggle_view one two g in
       if g.p1.armor <= 0 || g.p2.armor <= 0 then Scene2d.go (Over g) s else { s with scene = Playing g }
-  | Over _ -> if (space && s.elapsed > 1.) || s.elapsed > 10. then Scene2d.go Title s else s
+  | Over _ -> if (start && s.elapsed > 1.) || s.elapsed > 10. then Scene2d.go Title s else s
+
+(* the keys of the two players, with players=2 (see its section) *)
+let two_players : pad * pad =
+  ( { left_up = "w"; left_down = "s"; left_left = "a"; left_right = "d"; right_up = "t"; right_down = "g";
+      right_left = "f"; right_right = "h"; fire = "q"; missile = "e" },
+    { left_up = "i"; left_down = "k"; left_left = "j"; left_right = "l"; right_up = "ArrowUp"; right_down = "ArrowDown";
+      right_left = "ArrowLeft"; right_right = "ArrowRight"; fire = "Enter"; missile = "Shift" } )
+
+(* this computer's keyboard, for one player or two *)
+let update_rules (computer : computer) (s : scene Scene2d.t) : scene Scene2d.t =
+  let v = variants computer in
+  let s = Scene2d.update computer s in
+  let input = { held = (fun k -> Set_.mem k computer.keyboard.keys); pressed = (fun k -> Scene2d.pressed (fun kb -> Set_.mem k kb.keys) s) } in
+  let one, two =
+    if v.players = 1 then ((input, one_player), None)
+    else
+      let pad1, pad2 = two_players in
+      ((input, pad1), Some (input, pad2))
+  in
+  scenes v ~start:(input.pressed "space") ~toggle_view:(input.pressed "v") one two s
 
 (*****************************************************************************)
 (* The juice (juice=off: none of it) *)
@@ -425,12 +448,15 @@ let juiced (before : scene) (after : scene Scene2d.t) (fx : Juice3d.t) : Juice3d
 (* the loser, not drawn once it is in pieces *)
 let wrecked (fx : Juice3d.t) (s : sled) : bool = Juice3d.on fx && s.armor <= 0
 
-let update (computer : computer) (m : model) : model =
+(* [rules], then the juice of what they did *)
+let with_juice (computer : computer) (rules : scene Scene2d.t -> scene Scene2d.t) (m : model) : model =
   let fx = Juice3d.step computer m.fx in
   if Juice3d.frozen fx then { m with fx }
   else
-    let scenes = update_rules computer m.scenes in
+    let scenes = rules m.scenes in
     { scenes; fx = juiced m.scenes.scene scenes fx }
+
+let update (computer : computer) (m : model) : model = with_juice computer (update_rules computer) m
 
 (*****************************************************************************)
 (* View: flat-shaded polygons *)
@@ -518,11 +544,15 @@ let behind (s : sled) : camera =
 
 let text (color : color) (size : number) (s : string) : shape = words color s |> scale size
 
-(* an armor bar, from full (100) to empty *)
-let armor_bar (color : color) (x : number) (y : number) (label : string) (armor : int) : shape list =
-  let w = 240. *. float_of_int (max 0 armor) /. 100. in
-  [ rectangle (rgb 30 30 30) 244. 22. |> move x y;
-    rectangle color w 18. |> move (x -. 120. +. (w /. 2.)) y;
+(* an armor bar, from full (100) to empty, in a top corner of [screen]:
+ * [side] -1 the left one, 1 the right *)
+let armor_bar (screen : screen) (side : number) (color : color) (label : string) (armor : int) : shape list =
+  (* 240 long, but narrower on a narrow screen (net=simulate's columns) *)
+  let full = Float.min 240. (screen.width *. 0.4) in
+  let x = side *. ((screen.width /. 2.) -. 40. -. (full /. 2.)) and y = screen.top -. 60. in
+  let w = full *. float_of_int (max 0 armor) /. 100. in
+  [ rectangle (rgb 30 30 30) (full +. 4.) 22. |> move x y;
+    rectangle color w 18. |> move (x -. (full /. 2.) +. (w /. 2.)) y;
     text color 2. label |> move x (y +. 28.) ]
 
 (* the radar: the other sled's blip, relative to our heading (ahead is
@@ -549,8 +579,8 @@ let view_player (v : variants) (fx : Juice3d.t) (screen : screen) (g : game) (p1
   let names = if v.players = 1 then ("YOU", "CPU") else if p1 then ("P1", "P2") else ("P2", "P1") in
   let huds =
     sight @ radar screen me other other_color
-    @ armor_bar color (screen.left +. 160.) (screen.top -. 60.) (fst names) me.armor
-    @ armor_bar other_color (screen.right -. 160.) (screen.top -. 60.) (snd names) other.armor
+    @ armor_bar screen (-1.) color (fst names) me.armor
+    @ armor_bar screen 1. other_color (snd names) other.armor
     @ (if v.missiles then [ text white 2. (Printf.sprintf "MISSILES %d" me.missiles) |> move (screen.left +. 160.) (screen.top -. 100.) ]
        else [])
     @ if me.hit > 0 then [ rectangle red screen.width screen.height |> fade 0.25 ] else []
@@ -570,11 +600,13 @@ let view_title (v : variants) (s : scene Scene2d.t) : camera * shape3d list =
   (* the two sleds face to face, beside the center's pillar, for the
    * title *)
   let p1 = { g.p1 with x = 14.; z = 8. } and p2 = { g.p2 with x = 14.; z = -8. } in
+  (* one keyboard each, alone or over the network *)
+  let alone = v.players = 1 || v.net in
   let keys =
-    if v.players = 1 then [ "left stick w/s a/d   right stick arrows   space: fire   v: view" ]
+    if alone then [ "left stick w/s a/d   right stick arrows   space: fire" ^ if v.net then "" else "   v: view" ]
     else [ "P1: left stick w/s a/d   right stick t/g f/h   q: fire   e: missile"; "P2: left stick i/k j/l   right stick arrows   enter: fire   shift: missile" ]
   in
-  let keys = if v.missiles && v.players = 1 then keys @ [ "enter: missile" ] else keys in
+  let keys = if v.missiles && alone then keys @ [ "enter: missile" ] else keys in
   ( cam,
     sky cam @ (arena :: ramps_view v) @ [ sled blue p1; sled red_sled p2 ]
     @ List.map hud
@@ -619,9 +651,60 @@ let view (computer : computer) (m : model) : view list =
 
 let app = split3d view update initial_model
 
+(*****************************************************************************)
+(* Over the network (net=simulate, net=host, net=join, net=relay) *)
+(*****************************************************************************)
+
+(* Two computers, a player at each, through Multiplayer3d (see
+ * Multiplayer.mli for the modes and the netcodes). What travels is each
+ * player's keys, never the game: every computer plays the whole duel
+ * from everyone's keys, so the game must come out the same everywhere
+ * -- and it does as it is: no Random, no clock (the time is counted in
+ * ticks), the juice's sparks from a seed. The duel above is unchanged;
+ * only where the keys come from is new: the players' keyboards, as the
+ * network brought them, instead of this computer's. Both play with the
+ * one-player keys, w/s a/d and the arrows (the letters that travel,
+ * with space, enter and shift); v, which does not, is not needed: the
+ * view is the cockpit's.
+ *
+ *   dune exec games/fps/TinyCyberSled.exe -- net=simulate
+ *   dune exec games/fps/TinyCyberSled.exe -- net=host      (one computer)
+ *   dune exec games/fps/TinyCyberSled.exe -- net=join host=192.168.1.12
+ *
+ * (net=simulate shows the two computers side by side, played from this
+ * one keyboard: computer 0 has the arrows, computer 1 w/s a/d as its
+ * arrows, Multiplayer's shared keyboard -- a stick each, enough to see
+ * the netcode at work, not to play.) *)
+
+let input_of (p : Multiplayer.player) : input =
+  { held = (fun k -> Set_.mem k p.keyboard.keys); pressed = (fun k -> Set_.mem k p.pressed.keys) }
+
+let update_net (computer : computer) (players : Multiplayer.player list) (m : model) : model =
+  let v = variants computer in
+  let one = (input_of (List.nth players 0), one_player) and two = (input_of (List.nth players 1), one_player) in
+  let start = List.exists (fun (p : Multiplayer.player) -> Set_.mem "space" p.pressed.keys) players in
+  with_juice computer (fun s -> scenes v ~start ~toggle_view:false one (Some two) (Scene2d.update computer s)) m
+
+(* what player [n] sees, on its computer (or its column of net=simulate) *)
+let view_net (computer : computer) (n : int) (m : model) : camera * shape3d list =
+  let v = variants computer and s = m.scenes in
+  match s.scene with
+  | Title -> view_title v s
+  | Over g -> view_over v m.fx s g
+  | Playing g -> view_player v m.fx computer.screen g (n = 0)
+
+let net_app (network : < Cap.network ; .. >) = Multiplayer3d.game3d ~network ~players:2 view_net update_net initial_model
+
+(*****************************************************************************)
+(* Main *)
+(*****************************************************************************)
+
 (* flat shading, the System 21's look; the back faces drawn, for the sky
  * (seen from below, see Camera3d.sky) *)
+let rendering = { default_rendering with shading = Flat; backface_culling = false }
+
 let main =
-  Playground3d_platform.run_app3d ~flags:(Playground_platform.flags ())
-    ~rendering:{ default_rendering with shading = Flat; backface_culling = false }
-    app
+  Cap.main (fun caps ->
+      let flags = Playground_platform.flags () in
+      if List.mem_assoc "net" flags then Playground3d_platform.run_app3d ~flags ~network:caps ~rendering (net_app caps)
+      else Playground3d_platform.run_app3d ~flags ~rendering app)

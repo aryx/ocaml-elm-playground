@@ -19,17 +19,34 @@ type player = { id : int; keyboard : keyboard; pressed : keyboard }
 
 let empty = initial_computer.keyboard
 
-(* the keys that travel, a bit each *)
+(* the keys that travel, a bit each: the first byte, and w a s d in a
+ * second one, sent only when one of them is held -- so a game played
+ * with the arrows sends the one byte it always did *)
 let bits (k : keyboard) : (bool * int) list =
   [ (k.kup, 1); (k.kdown, 2); (k.kleft, 4); (k.kright, 8); (k.kspace, 16); (k.kenter, 32); (k.kshift, 64) ]
 
-let encode (k : keyboard) : string =
-  String.make 1 (Char.chr (List.fold_left (fun acc (held, bit) -> if held then acc lor bit else acc) 0 (bits k)))
+let bits2 (k : keyboard) : (bool * int) list = [ (k.kw, 1); (k.ks, 2); (k.ka, 4); (k.kd, 8) ]
 
+let byte (bits : (bool * int) list) : int = List.fold_left (fun acc (held, bit) -> if held then acc lor bit else acc) 0 bits
+
+let encode (k : keyboard) : string =
+  let b2 = byte (bits2 k) in
+  String.make 1 (Char.chr (byte (bits k))) ^ if b2 = 0 then "" else String.make 1 (Char.chr b2)
+
+(* the keys by name too ([keyboard.keys]), for a game that asks
+ * Set_.mem "w" *)
 let decode (s : string) : keyboard =
-  let b = if s = "" then 0 else Char.code s.[0] in
-  let on bit = b land bit <> 0 in
-  { empty with kup = on 1; kdown = on 2; kleft = on 4; kright = on 8; kspace = on 16; kenter = on 32; kshift = on 64 }
+  let b = if s = "" then 0 else Char.code s.[0] and b2 = if String.length s < 2 then 0 else Char.code s.[1] in
+  let on bit = b land bit <> 0 and on2 bit = b2 land bit <> 0 in
+  let k =
+    { empty with kup = on 1; kdown = on 2; kleft = on 4; kright = on 8; kspace = on 16; kenter = on 32; kshift = on 64;
+      kw = on2 1; ks = on2 2; ka = on2 4; kd = on2 8 }
+  in
+  let names =
+    [ (k.kup, "ArrowUp"); (k.kdown, "ArrowDown"); (k.kleft, "ArrowLeft"); (k.kright, "ArrowRight"); (k.kspace, "space");
+      (k.kenter, "Enter"); (k.kshift, "Shift"); (k.kw, "w"); (k.ks, "s"); (k.ka, "a"); (k.kd, "d") ]
+  in
+  { k with keys = List.fold_left (fun keys (held, name) -> if held then Set_.add name keys else keys) k.keys names }
 
 (* held now and not before *)
 let rising (now : keyboard) (before : keyboard) : keyboard =
@@ -37,17 +54,23 @@ let rising (now : keyboard) (before : keyboard) : keyboard =
     kup = now.kup && not before.kup; kdown = now.kdown && not before.kdown;
     kleft = now.kleft && not before.kleft; kright = now.kright && not before.kright;
     kspace = now.kspace && not before.kspace; kenter = now.kenter && not before.kenter;
-    kshift = now.kshift && not before.kshift })
+    kshift = now.kshift && not before.kshift;
+    kw = now.kw && not before.kw; ks = now.ks && not before.ks; ka = now.ka && not before.ka; kd = now.kd && not before.kd })
 
 (* one physical keyboard, shared: player 0 the arrows (and space, enter,
  * shift), player 1 w a s d (and q for its space), the others nothing *)
 let local_keyboard (physical : keyboard) (n : int) : keyboard =
   match n with
-  | 0 -> decode (encode physical)
+  | 0 -> decode (encode { physical with kw = false; ks = false; ka = false; kd = false })
   | 1 ->
-      { empty with kup = physical.kw; kdown = physical.ks; kleft = physical.ka; kright = physical.kd;
-        kspace = Set_.mem "q" physical.keys }
+      decode
+        (encode
+           { empty with kup = physical.kw; kdown = physical.ks; kleft = physical.ka; kright = physical.kd;
+             kspace = Set_.mem "q" physical.keys })
   | _ -> empty
+
+(* the whole keyboard, mine: over a real network, I am alone at it *)
+let own_keyboard (physical : keyboard) : keyboard = decode (encode physical)
 
 (* what update may see of the computer: what every peer agrees on *)
 let cleaned (flags : flags) (tick : int) : computer =
@@ -284,10 +307,10 @@ let simulate_frame update (computer : computer) net (peers : 'model peer array) 
 (*****************************************************************************)
 
 (* the same as a simulated peer's frame, the transport instead of
- * Sim_net; my keys are the arrows, whichever player I am *)
+ * Sim_net; my keys are the arrows (and w a s d), whichever player I am *)
 let remote_frame update (computer : computer) (transport : Transport.t) (peer : 'model peer) : unit =
   List.iter (receive peer) (transport.receive ());
-  play update computer.flags peer (local_keyboard computer.keyboard 0);
+  play update computer.flags peer (own_keyboard computer.keyboard);
   transport.send (packet peer)
 
 (*****************************************************************************)
@@ -322,44 +345,74 @@ let remote_hud (transport : Transport.t) (peer : 'model peer) (me : int) (netcod
     |> scale 0.7 |> move_y (-440.);
     agree (desync peer) |> move_y (-470.) ]
 
-let side_by_side view (computer : computer) (knobs : knobs) (peers : 'model peer array) (server : 'model host option) : shape list =
-  (* each computer's screen; the server's, the truth, in the middle *)
-  let clients = Array.to_list (Array.mapi (fun me peer -> (view computer me (side_of peer).model, Printf.sprintf "computer %d: %s" me (describe peer))) peers) in
-  let screens =
-    match server with
-    | None -> clients
-    | Some h ->
-        let half = (List.length clients + 1) / 2 in
-        List.filteri (fun i _ -> i < half) clients
-        @ [ (view computer 0 h.world.model, Printf.sprintf "the server: tick %d, the game itself" h.world.tick) ]
-        @ List.filteri (fun i _ -> i >= half) clients
-  in
-  let n = List.length screens in
-  let width = 1000. /. float_of_int n in
-  let shown =
-    List.mapi
-      (fun i (shapes, label) ->
-        let x = (-500.) +. (width *. (float_of_int i +. 0.5)) in
-        [ group shapes |> scale (1. /. float_of_int n) |> move_x x; text white label |> scale (1.6 /. float_of_int n) |> move x 300. ])
-      screens
-  in
-  (rectangle (rgb 40 40 40) 1000. 1000. :: List.concat shown) @ hud knobs peers
+(* What a mode shows, whatever draws it (here in 2D, Multiplayer3d in
+ * 3D): whose game, and the lines of the network's state *)
+type 'model screen = { player : int; model : 'model; label : string option }
+
+type 'model layout = {
+  screens : 'model screen list;
+  background : color option;
+  columns : bool;
+  status : shape list;
+}
+
+let one (player : int) (model : 'model) (status : shape list) : 'model layout =
+  { screens = [ { player; model; label = None } ]; background = None; columns = false; status }
+
+let layout ~(split : bool) ~(players : int) (state : 'model state) : 'model layout =
+  match state with
+  | Starting model -> one 0 model []
+  | Local side when split ->
+      { screens = List.init players (fun player -> { player; model = side.model; label = None }); background = Some black;
+        columns = false; status = [] }
+  | Local side -> one 0 side.model []
+  | Simulate s ->
+      (* each computer's screen; the server's, the truth, in the middle *)
+      let clients =
+        Array.to_list
+          (Array.mapi
+             (fun me peer -> { player = me; model = (side_of peer).model; label = Some (Printf.sprintf "computer %d: %s" me (describe peer)) })
+             s.peers)
+      in
+      let screens =
+        match s.server with
+        | None -> clients
+        | Some h ->
+            let half = (List.length clients + 1) / 2 in
+            List.filteri (fun i _ -> i < half) clients
+            @ [ { player = 0; model = h.world.model; label = Some (Printf.sprintf "the server: tick %d, the game itself" h.world.tick) } ]
+            @ List.filteri (fun i _ -> i >= half) clients
+      in
+      { screens; background = Some (rgb 40 40 40); columns = true; status = hud s.knobs s.peers }
+  | Connecting c -> one 0 c.model [ text white (c.transport.status ()) |> scale 0.7 |> move_y (-440.) ]
+  | Remote r -> one r.me (side_of r.peer).model (remote_hud r.transport r.peer r.me r.netcode)
+  | Failed (why, model) -> one 0 model [ text red why |> move_y (-450.) ]
+
+(* the layout in 2D: one screen as it is, several side by side, each
+ * [scale]d to share the screen *)
+let draw view (computer : computer) (l : 'model layout) : shape list =
+  match (l.screens, l.background) with
+  | [ { player; model; label = None } ], None -> view computer player model @ l.status
+  | screens, background ->
+      let n = List.length screens in
+      let width = 1000. /. float_of_int n in
+      let shown =
+        List.mapi
+          (fun i (sc : 'model screen) ->
+            let x = (-500.) +. (width *. (float_of_int i +. 0.5)) in
+            (group (view computer sc.player sc.model) |> scale (1. /. float_of_int n) |> move_x x)
+            :: (match sc.label with Some label -> [ text white label |> scale (1.6 /. float_of_int n) |> move x 300. ] | None -> []))
+          screens
+      in
+      (match background with Some c -> [ rectangle c 1000. 1000. ] | None -> []) @ List.concat shown @ l.status
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
-(* several views side by side, [scale]d to share the screen *)
-let panels (views : shape list list) : shape list =
-  let n = List.length views in
-  let width = 1000. /. float_of_int n in
-  List.concat
-    (List.mapi
-       (fun i shapes -> [ group shapes |> scale (1. /. float_of_int n) |> move_x ((-500.) +. (width *. (float_of_int i +. 0.5))) ])
-       views)
+let initial (model : 'model) : 'model state = Starting model
 
-let game ?(network : < Cap.network ; .. > option) ?(split = false) ~(players : int) view update (model : 'model) =
-  let network = Option.map (fun caps -> (caps :> Cap.network)) network in
+let update_state ?(network : Cap.network option) ~(players : int) update : computer -> 'model state -> 'model state =
   let rec update_state (computer : computer) (state : 'model state) : 'model state =
     match state with
     (* the flags known at last: the mode chosen, and this frame's tick
@@ -392,14 +445,11 @@ let game ?(network : < Cap.network ; .. > option) ?(split = false) ~(players : i
         state
     | Failed _ -> state
   in
-  let view_state (computer : computer) (state : 'model state) : shape list =
-    match state with
-    | Starting model -> view computer 0 model
-    | Local side when split -> rectangle black 1000. 1000. :: panels (List.init players (fun n -> view computer n side.model))
-    | Local side -> view computer 0 side.model
-    | Simulate s -> side_by_side view computer s.knobs s.peers s.server
-    | Connecting c -> view computer 0 c.model @ [ text white (c.transport.status ()) |> scale 0.7 |> move_y (-440.) ]
-    | Remote r -> view computer r.me (side_of r.peer).model @ remote_hud r.transport r.peer r.me r.netcode
-    | Failed (why, model) -> view computer 0 model @ [ text red why |> move_y (-450.) ]
-  in
-  Playground.game view_state update_state (Starting model)
+  update_state
+
+let game ?(network : < Cap.network ; .. > option) ?(split = false) ~(players : int) view update (model : 'model) =
+  let network = Option.map (fun caps -> (caps :> Cap.network)) network in
+  Playground.game
+    (fun computer state -> draw view computer (layout ~split ~players state))
+    (update_state ?network ~players update)
+    (initial model)
