@@ -85,11 +85,13 @@ not. One addition, per backend:
 - pinned to 0 (UTC) under `-fixed-time`, so the golden frames do not
   depend on where they are rendered.
 
-Shape: a `Playground` function the apps call with the time they have
-(`local_offset : time -> number`, the offset at that instant, since
-daylight saving changes it), or a field of `computer`. The function is
-the smaller change (no backend's `computer` record touched); decide
-when implementing. The zone *rules* (the tz database) are out of scope:
+Shape (done, phase 2): `Playground_platform.utc_offset : time -> int`,
+minutes east of UTC at that instant, since daylight saving changes it
+-- a function the apps call with the time they have, rather than a
+field of `computer`, which no backend's loop had to learn. Natively in
+`Native_loop_2d` (it knows `-fixed-time`), shared by the Cairo and
+software platforms; the 3D platforms have none until a 3D app wants
+one. The zone *rules* (the tz database) are out of scope:
 the platform knows them, we ask it.
 
 ## The programs

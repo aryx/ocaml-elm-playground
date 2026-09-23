@@ -36,6 +36,10 @@ val app_args : unit -> string list
  * a game using "h"). *)
 val debug_keys_enabled : unit -> bool
 
+(* The local clocks' minutes ahead of UTC at [t], seconds since the
+ * epoch (Playground_platform.utc_offset); 0 under -fixed-time. *)
+val utc_offset : float -> int
+
 (* Tsdl's key names to Playground's ("Left" -> "ArrowLeft", ...);
  * "Q" quits immediately. *)
 val scancode_to_keystring : string -> string

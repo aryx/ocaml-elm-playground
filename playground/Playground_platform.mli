@@ -28,6 +28,19 @@ val run_app:
 val flags: unit -> Playground.flags
 
 (*****************************************************************************)
+(* {1 The local time} *)
+(*****************************************************************************)
+
+(* claude: [utc_offset time]: the minutes the local clocks are ahead of
+ * UTC at [time] (computer.time), for Clock.local: Paris +60 in winter
+ * and +120 in summer, New York -300 and -240, India +330. Which one
+ * applies when is the platform's to know: natively the C library's
+ * (from $TZ, e.g. TZ=Asia/Kolkata, or the system's zone), on the web
+ * the browser's. Natively 0 under -fixed-time, so that a golden frame
+ * is the same wherever it is rendered. *)
+val utc_offset: Playground.time -> int
+
+(*****************************************************************************)
 (* {1 Images, loaded ahead} *)
 (*****************************************************************************)
 

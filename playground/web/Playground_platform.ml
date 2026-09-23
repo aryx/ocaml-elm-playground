@@ -726,6 +726,11 @@ let flags () : Playground.flags =
   in
   Playground.flags_of_strings (String.split_on_char '&' search)
 
+(* claude: the browser's zone; getTimezoneOffset counts the other way,
+ * the minutes UTC is ahead of the local time (-120 in Paris in summer) *)
+let utc_offset (Playground.Time t) : int =
+  Stdlib.( ~- ) (Date.get_timezone_offset (Date.new_date (t *. 1000.)))
+
 (* claude: documents, in localStorage (Web_store); the capability is
  * the caller's proof it may, see the .mli *)
 let store (_ : < Cap.open_out; .. >) name bytes = Web_store.store name bytes

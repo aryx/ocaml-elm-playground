@@ -156,6 +156,20 @@ let parsed_cli : string list Lazy.t = lazy (
 let parse_cli_and_setup_logging () = ignore (Lazy.force parsed_cli)
 let app_args () = Lazy.force parsed_cli
 
+(* claude: the C library knows the zone and its daylight saving; the
+ * offset is its local time less its UTC time of the same instant, both
+ * read back as seconds by Civil (no mktime, which would read the
+ * local time as local again) *)
+let utc_offset (t : float) : int =
+  match !fixed_time with
+  | Some _ -> 0
+  | None ->
+      let seconds (tm : Unix.tm) =
+        (Civil.days_from_civil { year = tm.tm_year + 1900; month = tm.tm_mon + 1; day = tm.tm_mday } * 86400)
+        + (tm.tm_hour * 3600) + (tm.tm_min * 60) + tm.tm_sec
+      in
+      (seconds (Unix.localtime t) - seconds (Unix.gmtime t)) / 60
+
 (*****************************************************************************)
 (* FPS *)
 (*****************************************************************************)

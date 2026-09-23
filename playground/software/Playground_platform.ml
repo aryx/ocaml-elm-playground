@@ -147,6 +147,8 @@ let fps_counter (fb : Framebuffer.t) ~fps : Playground.shape =
 
 let flags () : Playground.flags = Playground.flags_of_strings (Native_loop_2d.app_args ())
 
+let utc_offset (Playground.Time t) : int = Native_loop_2d.utc_offset t
+
 (* claude: documents, in a directory (native_common/Store); the
  * capability is the caller's proof it may, see the .mli *)
 let store (_ : < Cap.open_out; .. >) name bytes = Store.store name bytes
