@@ -72,6 +72,18 @@
  * painted from their main colour ([on_base]); and every picture is
  * drawn in the fewest rectangles its palette's order allows ([paint]).
  *
+ * The rest of the depth is painted too, as it was on a console with no
+ * 3D at all. The light always comes from the top left: every round
+ * thing is lighter up and left, darker down and right, and throws its
+ * shadow down and right ([cast_shadow]: the map drawn a second time,
+ * a shadow per tile). A cliff is a plateau's grass top, a lit lip, and
+ * a face of boulders darker toward its foot ('^' then '#'), its west
+ * side a narrow wall ('|'); the lake's north shore shows the bank's
+ * earth falling into the water ('w'). And Link and the soldiers carry
+ * their own shadow, a small oval drawn apart from them ([shadow]), as
+ * the original's sprites did -- the shadow that stays on the ground
+ * when Link jumps down a ledge.
+ *
  * What it uses: the platformer kit's Tile_move (gamekits/platformer/:
  * Link and the soldiers are boxes against the map's solid cells, one
  * pixel at a time, as in TinyZelda), Tilemap (the world, changed by the
@@ -103,7 +115,8 @@ let px = 3.
 let tile = 16. * px
 
 (* 40 x 30 cells: ' ' grass, ',' flowers, '.' a path, '~' water, '^'
- * the lip of a cliff and '#' its face, '=' stairs, 'H' a bridge; '*' a
+ * the lip of a cliff and '#' its face, '|' its side, '=' stairs, 'H' a
+ * bridge (and 'w', the lake's north shore, found by [start_map]); '*' a
  * bush, 'o' a rock; T a tree (its trunk: the canopy stands over the
  * cells above), M the Master Sword; 1 2 3 the pendants; L Link, s the
  * soldiers *)
@@ -119,15 +132,15 @@ let world_rows =
     "                   ..                   ";
     "T T T T T T T T T  .. T T T T T T T T T ";
     "                   ..                   ";
-    "T                  ..    *  #       *  T";
-    "         o          .       #    o      ";
-    "T    *    s         .   s   # *    2   T";
-    "            *    ** .  *    #           ";
-    "T   ,,     *        .   *   #     s  o T";
-    "   *,,              .     o #           ";
+    "T                  ..    *  |       *  T";
+    "         o          .       |    o      ";
+    "T    *    s         .   s   | *    2   T";
+    "            *    ** .  *    |           ";
+    "T   ,,     *        .   *   |     s  o T";
+    "   *,,              .     o |           ";
     "T             o     .       ^^^=^^^^^^^T";
     "                    . *     ###=####### ";
-    "T ~~~~~~~~~~~~~ *   .                   ";
+    "T ~~~~~~~~~~~~~ *   .       ###=####### ";
     "  ~~~~~~~~~~~~~  s  .  ,,,              ";
     "T ~~~~~~~~~~~~~     .  ,,,    s         ";
     "  ~~~~   *~~~~~*    .                   ";
@@ -141,7 +154,7 @@ let world_rows =
 
 let level = Tilemap.of_strings tile world_rows
 let bounds = Tilemap.bounds level
-let solid (c : char) : bool = match c with '~' | '^' | '#' | '*' | 'o' | 'T' | 'M' -> true | _ -> false
+let solid (c : char) : bool = match c with '~' | 'w' | '^' | '#' | '|' | '*' | 'o' | 'T' | 'M' -> true | _ -> false
 
 (* the boxes that collide: feet, not bodies *)
 let feet = (36., 24.)
@@ -149,12 +162,19 @@ let feet = (36., 24.)
 let places (c : char) : (number * number) list = List.map (fun (col, row) -> Tilemap.center level col row) (Tilemap.find level c)
 
 (* the world to play: Link and the soldiers are not tiles; the grass is
- * 'g', plain, or 'v', a cell in four scattered, with blades *)
+ * 'g', plain, or 'v', a cell in four scattered, with blades; and the
+ * water with land above it is 'w', the north shore, where the bank's
+ * earth face shows, falling into the lake *)
 let start_map : Tilemap.t =
+  let grass =
+    List.fold_left
+      (fun m (c, r) -> Tilemap.set m c r (if ((c *.. 7) +.. (r *.. 5)) mod 4 = 0 then 'v' else 'g'))
+      level
+      (List.concat_map (Tilemap.find level) [ ' '; 'L'; 's' ])
+  in
   List.fold_left
-    (fun m (c, r) -> Tilemap.set m c r (if ((c *.. 7) +.. (r *.. 5)) mod 4 = 0 then 'v' else 'g'))
-    level
-    (List.concat_map (Tilemap.find level) [ ' '; 'L'; 's' ])
+    (fun m (c, r) -> match Tilemap.get level c (r -.. 1) with Some ('~' | 'H') -> m | _ -> Tilemap.set m c r 'w')
+    grass (Tilemap.find level '~')
 
 (*****************************************************************************)
 (* The model *)
@@ -476,6 +496,8 @@ let ground_tile (c : char) : shape =
   | '*' -> tiles.(7)
   | 'o' -> tiles.(8)
   | 'H' -> tiles.(9)
+  | 'w' -> tiles.(10)
+  | '|' -> tiles.(11)
   | 'r' -> rupee
   | 'h' -> heart
   | '1' | '2' | '3' -> List.assoc c pendants
@@ -484,6 +506,27 @@ let ground_tile (c : char) : shape =
 (* the tile shapes are made once, not every frame for every cell *)
 let ground_shapes = Array.init 256 (fun i -> ground_tile (Char.chr i))
 let ground (c : char) : shape = ground_shapes.(Char.code c)
+
+(* The shadows, the map drawn a second time with a shadow for a picture:
+ * the light comes from the top left, as in all of the original's art,
+ * so a shadow falls down and to the right of what throws it -- under a
+ * tree's canopy, a bush, a rock, the pedestal; on the ground at the foot
+ * of the cliff's face; on the water under the bridge. Drawn over the
+ * ground tiles, so a bush's own lower right is darkened a little too,
+ * which is how the original shades it. *)
+let cast_shadow (c : char) : shape =
+  let dark w h = oval black w h |> fade 0.3 in
+  let band h = rectangle black tile h |> fade 0.28 |> move_y ((-.tile / 2.) - (h / 2.)) in
+  match c with
+  | 'T' -> dark 96. 30. |> move 12. ((-.tile / 2.) + 4.)
+  | 'M' -> dark 64. 20. |> move 8. ((-.tile / 2.) + 4.)
+  | '*' | 'o' -> dark 42. 14. |> move 6. ((-.tile / 2.) + 3.)
+  | '#' -> band 18.
+  | 'H' -> band 15.
+  | _ -> group []
+
+let shadow_shapes = Array.init 256 (fun i -> cast_shadow (Char.chr i))
+let shadows (c : char) : shape = shadow_shapes.(Char.code c)
 
 (*****************************************************************************)
 (* View *)
@@ -562,7 +605,8 @@ let view_leaves (frames : int) ((x, y, t) : number * number * int) : shape list 
 let view_world (g : game) : shape =
   let r = Camera2d.visible screen0 g.cam in
   let ground_layer =
-    [ rectangle grass_green (bounds.right - bounds.left) (bounds.top - bounds.bottom); Tilemap.view_visible r ground g.map ]
+    [ rectangle grass_green (bounds.right - bounds.left) (bounds.top - bounds.bottom); Tilemap.view_visible r ground g.map;
+      Tilemap.view_visible r shadows g.map ]
     @ List.map (fun s -> shadow s.sx s.sy) g.soldiers
     @ [ shadow g.x g.y ]
   in
