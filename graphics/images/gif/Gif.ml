@@ -16,6 +16,9 @@ type frame = {
   patch : Rgba_image.t;
   delay : float;
   disposal : int;
+  palette : string;
+  min_code_size : int;
+  lzw : string;
 }
 
 (*****************************************************************************)
@@ -93,7 +96,8 @@ let frames (s : string) : (int * int) * frame list =
             done
           done;
           let frame =
-            { x; y; patch; delay = (if delay <= 1 then 0.1 else float delay /. 100.); disposal = (packed lsr 2) land 7 }
+            { x; y; patch; delay = (if delay <= 1 then 0.1 else float delay /. 100.); disposal = (packed lsr 2) land 7;
+              palette; min_code_size = byte local_end; lzw = data }
           in
           loop after (0, 0, 0) (frame :: acc)
       | c -> failwith (Printf.sprintf "GIF: unexpected block 0x%02X at %d" c i)

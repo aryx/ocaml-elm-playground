@@ -201,7 +201,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) (app : _ P
     (* the keys and their state *)
     Tsdl.Sdl.set_window_title sdl_window (window_title ~fps)
   in
-  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_ppm pixels)
+  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_pixels pixels)
     ~pull_audio:(fun n -> let s = Audio.pull n in Audio_debug.record (Signal.mono s); (s.left, s.right))
     ~dump_audio:(fun file (left, right) -> Wav.write_stereo file { left; right })
     ~init:(fun () -> app.init flags) ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

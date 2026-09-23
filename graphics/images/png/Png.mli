@@ -92,12 +92,19 @@ val signature : string
  * unknown critical chunk, a palette index out of the palette, ...). *)
 val decode : string -> Rgba_image.t
 
+(* [scanlines s]: the rows of a non-interlaced PNG [s] as the file holds
+ * them once inflated: each one's filter (0 to 4) and its filtered
+ * bytes, the differences from the predictions -- what DEFLATE
+ * compressed (examples/ImagePng.ml draws them). Raises Failure on an
+ * interlaced or corrupt file. *)
+val scanlines : string -> (int * Bytes.t) list
+
 (* [encode ?alpha img]: a PNG file of [img], RGBA (color type 6), or RGB
  * (2) with [~alpha:false], its alpha dropped; 8 bits, not interlaced.
  * Each row gets the filter whose output, read as signed bytes, sums
  * the smallest (the heuristic the PNG specification suggests, section
- * 12.8), then Zlib.compress. *)
-val encode : ?alpha:bool -> Rgba_image.t -> string
+ * 12.8), or [filter] (0 to 4) on every row, then Zlib.compress. *)
+val encode : ?alpha:bool -> ?filter:int -> Rgba_image.t -> string
 
 (* [chunks s]: the chunks of [s], (type, data), up to IEND, their CRCs
  * checked *)

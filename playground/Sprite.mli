@@ -158,6 +158,14 @@ val artwork : default:bool -> flags -> bool
  * characters draw nothing. Raises Failure (see Xpm.parse). *)
 val of_xpm : string -> (char * color) list * string list
 
+(* [of_rgba size img]: a decoded picture (graphics/images/rgba/
+ * Rgba_image.mli: what Png, Gif and Jpeg give) as shapes, as [pixels]
+ * draws a sprite: each pixel a [size] x [size] square, a row's runs of
+ * one color one rectangle, the transparent pixels nothing, the others
+ * faded by their alpha; centered on (0, 0). For small pictures: a 64 x
+ * 48 photograph is a few thousand rectangles, a sprite a few dozen. *)
+val of_rgba : number -> Rgba_image.t -> shape
+
 (* [to_xpm name palette rows]: the XPM file, the C array called [name];
  * the characters of [rows] not in [palette] are written as transparent
  * (None), first, and short rows completed with '.'. [of_xpm] gives the

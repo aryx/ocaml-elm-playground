@@ -91,6 +91,21 @@ let test_upsampling () =
   let box = max_difference ~upsampling:`Box "q75_420" in
   if box < 20 then Alcotest.failf "4:2:0, box: only %d levels from libjpeg" box
 
+(* ?keep:1, the first coefficient only: each block its average, flat
+ * (gray, so a block is 8 x 8 pixels; the edges' blocks are cut) *)
+let test_keep () =
+  let img = Jpeg.decode ~keep:1 (jpeg "gray") in
+  for by = 0 to (img.height / 8) - 1 do
+    for bx = 0 to (img.width / 8) - 1 do
+      let at x y = img.rgba.{((((by * 8) + y) * img.width) + (bx * 8) + x) * 4} in
+      for y = 0 to 7 do
+        for x = 0 to 7 do
+          if at x y <> at 0 0 then Alcotest.failf "block (%d, %d) is not flat" bx by
+        done
+      done
+    done
+  done
+
 let test_refused () =
   List.iter
     (fun (msg, s) ->
@@ -110,5 +125,6 @@ let tests =
       t "the DCT: the worked example, the formula and AAN" test_dct;
       t "our JPEGs, the pixels libjpeg decodes" test_libjpeg;
       t "box and triangle upsampling" test_upsampling;
+      t "keeping the first coefficient only: flat blocks" test_keep;
       t "progressive, CMYK, corrupt: refused" test_refused;
     ]

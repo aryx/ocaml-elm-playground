@@ -73,3 +73,16 @@
  * (the pixels not reached are 0: some encoders stop early). Raises
  * Failure on a code that can't be there. *)
 val decode : min_code_size:int -> string -> npixels:int -> Bytes.t
+
+(* one code read, a line of the decoder's table above: the [code], its
+ * [width] in bits, the pixels it wrote (from [start], [length] of them:
+ * none for a clear or the end), and the entry it [added] to the
+ * dictionary, if any *)
+type step = { code : int; width : int; start : int; length : int; added : int option }
+
+(* [steps ~min_code_size data ~npixels]: [decode]'s pixels, and each
+ * code it read, in order (examples/ImageLzw.ml plays them back); for
+ * the worked example: clear, then 1 (no entry), 6 (adds 6), 7 (adds
+ * 7) -- then the six pixels are written, and [decode] stops without
+ * reading the end code *)
+val steps : min_code_size:int -> string -> npixels:int -> step list * Bytes.t

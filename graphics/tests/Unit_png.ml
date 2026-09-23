@@ -209,6 +209,19 @@ let test_encode () =
            if rgb.rgba.{(i * 4) + 3} <> 255 then Alcotest.failf "%s: RGB, pixel %d not opaque" name i
          done)
 
+(* a filter forced on every row, and the rows read back as the file
+ * holds them *)
+let test_filters () =
+  let img = Png.decode (read_file (suite "basn2c08")) in
+  for f = 0 to 4 do
+    let rows = Png.scanlines (Png.encode ~alpha:false ~filter:f img) in
+    Alcotest.(check int) "a row a line" img.height (List.length rows);
+    List.iter (fun (g, bytes) ->
+        Alcotest.(check int) "the filter" f g;
+        Alcotest.(check int) "3 bytes a pixel" (img.width * 3) (Bytes.length bytes)) rows;
+    if (Png.decode (Png.encode ~alpha:false ~filter:f img)).rgba <> img.rgba then Alcotest.failf "filter %d: not the same" f
+  done
+
 let tests =
   Testo.categorize "Png"
     [
@@ -218,4 +231,5 @@ let tests =
       t "PngSuite's corrupt files, refused" test_corrupt;
       t "our textures, the pixels the games draw" test_ours;
       t "written and read back" test_encode;
+      t "one filter on every row, and the scanlines" test_filters;
     ]

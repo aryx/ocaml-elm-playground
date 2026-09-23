@@ -52,9 +52,17 @@ val create_window : title:string -> sx:int -> sy:int -> Tsdl.Sdl.window * pixels
 (* Copy the window surface's pixels to the screen. *)
 val present : Tsdl.Sdl.window -> unit
 
-(* [dump_ppm pixels file]: the pixels as a binary PPM image, the usual
- * [dump_frame] for [run] *)
-val dump_ppm : pixels -> string -> unit
+(* [write_frame ~width ~height rgb file]: the frame whose pixel (x, y) is
+ * [rgb x y] (0xRRGGBB), as a PNG if [file] ends in .png (graphics/
+ * images/png/Png.mli), else as a binary PPM, the simplest image format
+ * there is (a header, then r, g, b bytes for each pixel), which the
+ * golden frame tests read. What every native platform's -dump-frame
+ * writes. *)
+val write_frame : width:int -> height:int -> (int -> int -> int) -> string -> unit
+
+(* [dump_pixels pixels file]: the window's pixels by [write_frame], the
+ * usual [dump_frame] for [run] *)
+val dump_pixels : pixels -> string -> unit
 
 (*****************************************************************************)
 (* {1 The sound card} *)

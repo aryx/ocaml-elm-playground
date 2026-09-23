@@ -98,10 +98,18 @@
 
 (* [decode s]: the picture of the JPEG file [s], its blocks
  * inverse-transformed by [idct] (Dct.idct_aan by default) and its
- * color upsampled by [upsampling] (`Triangle by default). Raises
- * Failure on a corrupt file, or one using what isn't read here. *)
+ * color upsampled by [upsampling] (`Triangle by default). With [keep]
+ * (64 by default), only the first [keep] coefficients of each block,
+ * in zigzag order, are kept, the others made 0: 1 is each block's
+ * average, a mosaic; a dozen, most of the picture -- what quantization
+ * bets on (examples/ImageJpeg.ml shows it). Raises Failure on a
+ * corrupt file, or one using what isn't read here. *)
 val decode :
-  ?idct:(float array -> float array) -> ?upsampling:[ `Box | `Triangle ] -> string -> Rgba_image.t
+  ?idct:(float array -> float array) ->
+  ?upsampling:[ `Box | `Triangle ] ->
+  ?keep:int ->
+  string ->
+  Rgba_image.t
 
 (* [zigzag.(k)]: where the [k]th coefficient of the file goes in a
  * block, row by row: zigzag.(2) = 8, the first of the second row *)

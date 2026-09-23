@@ -378,10 +378,37 @@ itself is small: the consumers already take a Bigarray of RGBA bytes.
   `Int32`, and refuses a length of 2^31 or more (the spec's limit).
   Checked by compiling the codecs with js_of_ocaml (no more overflow
   warnings) and running them under node: the same checksums, zlib
-  round trip, PNG read and written, GIF and JPEG as natively. Not
-  done: a test run under node in `make test`. Not done: `-dump-frame` still writes PPM
-  (the tests read it back as such); lazy matching and dynamic blocks,
-  exercises in `Deflate.mli`.
+  round trip, PNG read and written, GIF and JPEG as natively.
+- **Demos: done.** `examples/ImageJpeg.ml` (the JPEG from its first n
+  coefficients a block, `Jpeg.decode ?keep`; the 64 patterns, the kept
+  ones lit; box or triangle upsampling), `ImagePng.ml` (the filtered
+  bytes as brightness, each row's filter in its color, and the size
+  of each way of filtering: `Png.encode ?filter`, `Png.scanlines`),
+  `ImageLzw.ml` (the codes played back one by one, the pixels each
+  stands for, the entry it adds, the width growing: `Lzw.steps`, and
+  `Gif.frame`'s palette and LZW data), on every backend, web
+  included. Shared: `Sprite.of_rgba` (a decoded picture as shapes,
+  runs of one color one rectangle), one picture in three formats
+  (`examples/demo_picture.*`, made by `make_demo_pictures.py`),
+  embedded by a new build script, `files_to_string_ml.ml` (an escaped
+  string literal: no base64 decoder needed on the web). Golden frames,
+  two each. Two findings the demos made, now in their headers: on
+  this drawing, filter None on every row beats the adaptive choice (595 bytes to 728:
+  flat colors repeat, and LZ77 needs no help), and PIL writes a
+  16-color GIF's codes for 256 colors (minimum code size 8), so the
+  GIF is ImageMagick's.
+- **Since, the loose ends:** `-dump-frame` writes a PNG when the file
+  ends in .png (`Native_loop_2d.write_frame`, shared by the 2D and 3D
+  native backends; the OpenGL one not run, its window can't open
+  under SDL's dummy driver); `graphics/tests/js/`, the codecs under
+  node in `make test` (skipped where node isn't installed), 21 checks
+  with the native tests' values.
+- **Decided against, or left:** the quality slider and the Y, Cb, Cr
+  planes in `ImageJpeg` (the slider needs a JPEG encoder: an
+  exercise); a JPEG-textured example (no program here uses a JPEG);
+  lazy matching and dynamic blocks in `Deflate`, progressive JPEG, a
+  GIF writer, QOI: the exercises of `Deflate.mli`, `Jpeg.mli` and
+  notes_images.md section 11.
 
 ## Demos: seeing the compression
 

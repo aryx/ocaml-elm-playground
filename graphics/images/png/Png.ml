@@ -217,6 +217,17 @@ let decode (s : string) : Rgba_image.t =
     passes;
   img
 
+let scanlines (s : string) : (int * Bytes.t) list =
+  let chunks = chunks s in
+  let h = match chunks with ("IHDR", data) :: _ -> parse_header data | _ -> failwith "PNG: IHDR is not the first chunk" in
+  if h.interlace then failwith "PNG: scanlines of an interlaced picture";
+  let raw = Zlib.decompress (String.concat "" (List.filter_map (fun (t, d) -> if t = "IDAT" then Some d else None) chunks)) in
+  let rowbytes = ((h.width * channels h * h.depth) + 7) / 8 in
+  if String.length raw < (rowbytes + 1) * h.height then failwith "PNG: not enough pixel data";
+  List.init h.height (fun j ->
+      let p = j * (rowbytes + 1) in
+      (Char.code raw.[p], Bytes.of_string (String.sub raw (p + 1) rowbytes)))
+
 (*****************************************************************************)
 (* Writing *)
 (*****************************************************************************)
@@ -239,7 +250,7 @@ let cost (row : Bytes.t) : int =
   Bytes.iter (fun ch -> let v = Char.code ch in sum := !sum + if v < 128 then v else 256 - v) row;
   !sum
 
-let encode ?(alpha = true) (img : Rgba_image.t) : string =
+let encode ?(alpha = true) ?filter (img : Rgba_image.t) : string =
   let bpp = if alpha then 4 else 3 in
   let rowbytes = img.width * bpp in
   let raw = Buffer.create ((rowbytes + 1) * img.height) in
@@ -249,10 +260,11 @@ let encode ?(alpha = true) (img : Rgba_image.t) : string =
     let cur = Bytes.init rowbytes (fun i -> Char.unsafe_chr img.rgba.{(((y * img.width) + (i / bpp)) * 4) + (i mod bpp)}) in
     (* each filter, and the one that costs least *)
     Array.iteri (fun f out -> filter_row f ~bpp ~prev:!prev cur out) filtered;
-    let best = ref 0 in
-    for f = 1 to 4 do
-      if cost filtered.(f) < cost filtered.(!best) then best := f
-    done;
+    let best = ref (match filter with Some f -> f | None -> 0) in
+    if filter = None then
+      for f = 1 to 4 do
+        if cost filtered.(f) < cost filtered.(!best) then best := f
+      done;
     Buffer.add_char raw (Char.chr !best);
     Buffer.add_bytes raw filtered.(!best);
     prev := cur

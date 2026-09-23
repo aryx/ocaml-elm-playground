@@ -313,22 +313,9 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     let* () = Sdl.update_window_surface sdl_window in
     ()
   in
-  (* claude: -dump-frame (see Native_loop_3d): the frame as a binary PPM
-   * image, the simplest image format there is (a header, then r, g, b
-   * bytes for each pixel) *)
-  let dump_frame file =
-    let oc = open_out_bin file in
-    Printf.fprintf oc "P6\n%d %d\n255\n" sx sy;
-    for y = 0 to sy - 1 do
-      for x = 0 to sx - 1 do
-        let rgb = Framebuffer.get_rgb fb ~x ~y in
-        output_byte oc ((rgb lsr 16) land 0xFF);
-        output_byte oc ((rgb lsr 8) land 0xFF);
-        output_byte oc (rgb land 0xFF)
-      done
-    done;
-    close_out oc
-  in
+  (* claude: -dump-frame (see Native_loop_3d): the frame as a PPM or a
+   * PNG (Native_loop_2d.write_frame) *)
+  let dump_frame file = Native_loop_2d.write_frame ~width:sx ~height:sy (fun x y -> Framebuffer.get_rgb fb ~x ~y) file in
   Native_loop_3d.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.views3d app3d)
     ~draw ~present ~dump_frame

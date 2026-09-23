@@ -33,6 +33,7 @@
    ; claude: the XPM files under Sprite.of_xpm (private, pure OCaml,
    ; this same package), see graphics/images/xpm/Xpm.mli
    graphics_xpm
+   graphics_rgba ; Sprite.of_rgba's pictures (private, pure OCaml too)
  )
  ; (preprocess (pps profiling.ppx))
 )

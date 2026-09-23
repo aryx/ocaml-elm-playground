@@ -676,23 +676,21 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
           (if !use_cache then "" else " (cache off)"))
   in
   let present () = Sdl.gl_swap_window sdl_window in
-  (* claude: -dump-frame (see Native_loop_3d): the frame as a binary PPM,
-   * like the software backend's, read back from the GPU before
-   * [present]; OpenGL's rows go bottom to top, a PPM's top to bottom.
-   * The pixels depend on the GPU and its driver: only compare frames
-   * from the same machine (e.g. with and without -keys o). *)
+  (* claude: -dump-frame (see Native_loop_3d): the frame as a PPM or a
+   * PNG (Native_loop_2d.write_frame), like the software backend's, read
+   * back from the GPU before [present]; OpenGL's rows go bottom to top,
+   * a picture file's top to bottom. The pixels depend on the GPU and
+   * its driver: only compare frames from the same machine (e.g. with
+   * and without -keys o). *)
   let dump_frame file =
     let pixels = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (sx * sy * 3) in
     Gl.pixel_storei Gl.pack_alignment 1;
     Gl.read_pixels 0 0 sx sy Gl.rgb Gl.unsigned_byte (`Data pixels);
-    let oc = open_out_bin file in
-    Printf.fprintf oc "P6\n%d %d\n255\n" sx sy;
-    for y = sy - 1 downto 0 do
-      for i = y * sx * 3 to ((y + 1) * sx * 3) - 1 do
-        output_byte oc pixels.{i}
-      done
-    done;
-    close_out oc
+    Native_loop_2d.write_frame ~width:sx ~height:sy
+      (fun x y ->
+        let i = ((((sy - 1 - y) * sx) + x) * 3) in
+        (pixels.{i} lsl 16) lor (pixels.{i + 1} lsl 8) lor pixels.{i + 2})
+      file
   in
   Native_loop_3d.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D (OpenGL)" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.views3d app3d) ~draw

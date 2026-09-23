@@ -175,6 +175,11 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/AiNeuralNet", "", 3);
     ("examples/software/AiDigits", "", 3);
     ("examples/software/AiQlearn", "", 3);
+    (* claude: the image formats taken apart: JPEG from 6 coefficients
+     * a block, PNG's filtered bytes, GIF's LZW 40 codes in *)
+    ("examples/software/ImageJpeg", "", 3);
+    ("examples/software/ImagePng", "", 3);
+    ("examples/software/ImageLzw", "", 3);
     ("games/puzzle/software/AiConnect4", "", 3);
     ("games/puzzle/software/AiGo", "", 3);
     ("games/puzzle/software/AiOthello", "", 3);
@@ -464,6 +469,12 @@ let scripted : Testutil_golden.scripted list =
      * values seeped back across the grid, and the greedy way it has
      * learned drawn over them: thirteen steps along the edge *)
     ("examples/software/AiQlearn", "learned", 95, "f:2,g:90");
+    (* claude: JPEG from one coefficient a block, each its average: the
+     * mosaic; PNG with no filter, its bytes as they are, bright; GIF's
+     * LZW a second into playing, the codes 8 bits wide *)
+    ("examples/software/ImageJpeg", "one", 12, "down:1,down:3,down:5,down:7,down:9");
+    ("examples/software/ImagePng", "none", 4, "0:2");
+    ("examples/software/ImageLzw", "played", 60, "space:1");
     ("games/puzzle/software/AiOthello", "values", 3, "v:2");
     ("games/strategy/software/TinyDune2", "harvesting", 900, "space:1,b:30,f:100-900");
     ("games/platform/software/TinySonic", "loop", 330, "space:1,right:5-330");

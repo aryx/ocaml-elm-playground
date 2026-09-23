@@ -583,8 +583,23 @@ decoder bug, so the fixtures include a file that has them.
 | bad at | photographs (256 colors) | photographs (big files) | sharp edges, text (ringing) |
 | byte order | little-endian | big-endian | big-endian |
 
-The sizes, measured on the same pictures once the codecs exist: to
-come, in the demos' readout (plan's "Demos").
+The sizes, measured on one picture, the demos' (examples/
+`demo_picture.*`, 64 x 48, a drawing: a sky gradient, a sun, hills, a
+house):
+
+| | bytes | |
+|---|---|---|
+| raw RGB | 9,216 | 64 x 48 x 3 |
+| PNG, no filter (our `Deflate`) | 595 | flat colors repeat: LZ77 alone does it |
+| PNG, adaptive filters (ours) | 728 | the spec's heuristic guesses wrong here |
+| PNG (PIL, zlib) | 735 | |
+| GIF, 16 colors (ImageMagick) | 429 | the smallest -- and the sky banded |
+| JPEG, quality 75, 4:2:0 (PIL) | 1,379 | the biggest, and blurred: not a photograph |
+
+A drawing, so JPEG loses and the filters don't help; on a photograph
+the order turns round (JPEG several times smaller than PNG, GIF's 256
+colors visibly wrong). `examples/ImagePng.ml` and `ImageJpeg.ml` show
+these numbers, and why.
 
 ## 11. What's missing, and exercises
 

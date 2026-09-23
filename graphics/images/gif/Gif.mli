@@ -83,6 +83,12 @@ type frame = {
   delay : float;
   (* 0 or 1 leave the patch, 2 clear it, 3 restore what was there *)
   disposal : int;
+  (* what the patch was decoded from: its palette (3 bytes a color, its
+   * own or the global one), and its LZW data, sub-blocks joined (for
+   * Lzw.steps) *)
+  palette : string;
+  min_code_size : int;
+  lzw : string;
 }
 
 (* [frames s]: the logical screen's size and the frames of the GIF file

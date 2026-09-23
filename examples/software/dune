@@ -17,6 +17,7 @@
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
+    ImageJpeg ImagePng ImageLzw
     LogoFractals
     BigBangRocket
     BigBangWorm
@@ -30,6 +31,7 @@
     PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d)
   (libraries
     graphics_font ; AiDigits trains on digits this font draws
+    graphics_rgba graphics_png graphics_gif graphics_jpeg ; the Image* examples take them apart
     elm_playground
     ai ; AiTictactoe's Minimax
     kit_maze ; AiGhosts' Grid_move and Chase

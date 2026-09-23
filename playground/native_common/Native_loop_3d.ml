@@ -57,7 +57,7 @@ let parse_cli_and_setup_logging () =
       ("-keys", Arg.Set_string startup_keys,
        "<keys> debug keys to press before the first frame, e.g. \"fz\"");
       ("-dump-frame", Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
-       "<n> <file> write frame n (from 1) to file, then exit");
+       "<n> <file> write frame n (from 1) to file (a PNG if it ends in .png, else a PPM), then exit");
       ("-script", Arg.String set_script,
        "<script> game keys held over frames, e.g. \"up:1-60,space:30\"");
       ("-uncapped", Arg.Set uncapped, " no 60 fps cap, to measure speed");

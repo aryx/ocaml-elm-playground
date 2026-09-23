@@ -239,14 +239,20 @@ let parse_frame (seg : string) : frame =
 
 (* the scan starting at [pos], just after its header: returns where its
  * data ends, the next marker *)
-let decode_scan (s : string) (pos : int) (f : frame) (scomps : component list) ~dc ~ac ~qt ~restart_interval ~idct : int =
+let decode_scan (s : string) (pos : int) (f : frame) (scomps : component list) ~dc ~ac ~qt ~restart_interval ~idct ~keep
+    : int =
   let r = { s; pos; buf = 0; cnt = 0; marker = false } in
   let table (tables : Huffman.t option array) i =
     match tables.(i) with Some t -> t | None -> failwith "JPEG: a Huffman table used but not defined"
   in
   let block comp ~bx ~by =
     let q = match qt.(comp.tq) with Some q -> q | None -> failwith "JPEG: a quantization table used but not defined" in
-    put_block comp ~bx ~by (idct (decode_block r ~dc:(table dc comp.td) ~ac:(table ac comp.ta) ~q comp))
+    let coefs = decode_block r ~dc:(table dc comp.td) ~ac:(table ac comp.ta) ~q comp in
+    (* only the first [keep], in zigzag order: the lowest frequencies *)
+    for k = keep to 63 do
+      coefs.(zigzag.(k)) <- 0.
+    done;
+    put_block comp ~bx ~by (idct coefs)
   in
   List.iter (fun c -> c.pred <- 0) scomps;
   (* the MCUs of the scan: with one component, a block each, over its
@@ -288,7 +294,7 @@ let decode_scan (s : string) (pos : int) (f : frame) (scomps : component list) ~
 (* Entry point *)
 (*****************************************************************************)
 
-let decode ?(idct = Dct.idct_aan) ?(upsampling = `Triangle) (s : string) : Rgba_image.t =
+let decode ?(idct = Dct.idct_aan) ?(upsampling = `Triangle) ?(keep = 64) (s : string) : Rgba_image.t =
   let len = String.length s in
   if len < 4 || s.[0] <> '\xFF' || s.[1] <> '\xD8' then failwith "JPEG: not a JPEG (no SOI)";
   let qt = Array.make 4 None and dc = Array.make 4 None and ac = Array.make 4 None in
@@ -357,7 +363,7 @@ let decode ?(idct = Dct.idct_aan) ?(upsampling = `Triangle) (s : string) : Rgba_
                   | None -> failwith "JPEG: a scan of an unknown component")
             in
             incr scans;
-            loop (decode_scan s after f scomps ~dc ~ac ~qt ~restart_interval:!restart_interval ~idct)
+            loop (decode_scan s after f scomps ~dc ~ac ~qt ~restart_interval:!restart_interval ~idct ~keep)
         | _ -> loop after (* APPn, COM, ...: skipped *)
       end
   in

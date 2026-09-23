@@ -57,6 +57,28 @@ let pixels_squares (size : number) (palette : (char * color) list) (rows : strin
   let one_per_pixel row = List.init (String.length row) (fun c -> (c, 1, row.[c])) in
   draw one_per_pixel size palette rows
 
+let of_rgba (size : number) (img : Rgba_image.t) : shape =
+  let left = -.(float_of_int img.width *. size /. 2.) and top = float_of_int img.height *. size /. 2. in
+  let pixel x y = let o = ((y * img.width) + x) * 4 in (img.rgba.{o}, img.rgba.{o + 1}, img.rgba.{o + 2}, img.rgba.{o + 3}) in
+  List.init img.height (fun y ->
+      (* the row's runs of one color: (first column, length) *)
+      let rec runs start x acc =
+        if x = img.width then List.rev ((start, x - start) :: acc)
+        else if pixel x y = pixel start y then runs start (x + 1) acc
+        else runs x (x + 1) ((start, x - start) :: acc)
+      in
+      runs 0 1 []
+      |> List.filter_map (fun (c, len) ->
+             let r, g, b, a = pixel c y in
+             if a = 0 then None
+             else
+               let w = float_of_int len *. size in
+               Some
+                 (rectangle (rgb r g b) w size
+                 |> move (left +. (float_of_int c *. size) +. (w /. 2.)) (top -. ((float_of_int y +. 0.5) *. size))
+                 |> if a < 255 then fade (float_of_int a /. 255.) else fun s -> s)))
+  |> List.concat |> group
+
 let flip (rows : string list) : string list =
   let cols = width rows in
   rows |> List.map (fun row ->

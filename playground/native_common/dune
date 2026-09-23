@@ -31,6 +31,7 @@
    tsdl
    elm_core ; Sub/Cmd, to turn SDL events into the app's msgs
    ; NOT elm_playground: see Native_loop_2d.run's comment in the .mli
+   graphics_rgba graphics_png ; -dump-frame's PNGs (Native_loop_2d.write_frame)
  )
 )
 

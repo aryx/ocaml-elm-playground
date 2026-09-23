@@ -9,6 +9,7 @@
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
+    ImageJpeg ImagePng ImageLzw
     LogoFractals
     BigBangRocket BigBangWorm
     PuzzleScriptSokoban PuzzleScriptBoulders
@@ -22,6 +23,7 @@
     PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d)
   (libraries
     graphics_font ; AiDigits trains on digits this font draws
+    graphics_rgba graphics_png graphics_gif graphics_jpeg ; the Image* examples take them apart
     elm_playground
     ai ; AiTictactoe's Minimax
     kit_maze ; AiGhosts' Grid_move and Chase, TinyPacman's
@@ -70,6 +72,20 @@
     physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d; PhysicsFloat3d's Force3d; PhysicsHitbox3d's Hitbox3d; PhysicsBounce3d's Resolve3d; PhysicsMarbles3d's Broadphase3d; PhysicsRoll3d's rolling; PhysicsStack3d's Solver3d
   )
 )
+
+; claude: the picture the Image* examples take apart, in its three
+; formats (made by make_demo_pictures.py), embedded as strings:
+; Demo_pictures.demo_picture_png, _gif, _jpg (see
+; scripts/build/files_to_string_ml.ml), which software/ and web/
+; copy_files like the examples' sources
+(rule
+ (targets Demo_pictures.ml)
+ (deps demo_picture.png demo_picture.gif demo_picture.jpg %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml demo_picture.png demo_picture.gif
+     demo_picture.jpg))))
 
 ; claude: five 3D examples aren't in this list, only in software/ (and
 ; the web ones): Cube3d, InteractiveCube3d, PaintersAlgorithmFail3d,

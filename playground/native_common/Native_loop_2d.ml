@@ -135,7 +135,7 @@ let parsed_cli : string list Lazy.t = lazy (
     "<keys> debug keys to press before the first frame, e.g. \"nf\"";
     "-dump-frame",
     Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
-    "<n> <file> write frame n (from 1) to file, then exit";
+    "<n> <file> write frame n (from 1) to file (a PNG if it ends in .png, else a PPM), then exit";
     "-script", Arg.String set_script,
     "<script> what the person does over frames, e.g. \"right:1-60,space:30,at(0;80):1-60,click:30\"";
     "-dump-audio", Arg.Set_string dump_audio_file,
@@ -217,19 +217,38 @@ let present sdl_window =
 
 (* claude: -dump-frame: the frame as a binary PPM image, the simplest
  * image format there is (a header, then r, g, b bytes for each pixel) *)
-let dump_ppm (pixels : pixels) (file : string) : unit =
-  let sy = Bigarray.Array2.dim1 pixels and sx = Bigarray.Array2.dim2 pixels in
+let write_frame ~(width : int) ~(height : int) (rgb : int -> int -> int) (file : string) : unit =
   let oc = open_out_bin file in
-  Printf.fprintf oc "P6\n%d %d\n255\n" sx sy;
-  for y = 0 to sy - 1 do
-    for x = 0 to sx - 1 do
-      let p = Int32.to_int pixels.{y, x} in
-      output_byte oc ((p lsr 16) land 0xFF);
-      output_byte oc ((p lsr 8) land 0xFF);
-      output_byte oc (p land 0xFF)
+  if Filename.check_suffix file ".png" then begin
+    let img = Rgba_image.create ~width ~height in
+    for y = 0 to height - 1 do
+      for x = 0 to width - 1 do
+        let p = rgb x y and o = ((y * width) + x) * 4 in
+        img.rgba.{o} <- (p lsr 16) land 0xFF;
+        img.rgba.{o + 1} <- (p lsr 8) land 0xFF;
+        img.rgba.{o + 2} <- p land 0xFF;
+        img.rgba.{o + 3} <- 255
+      done
+    done;
+    output_string oc (Png.encode ~alpha:false img)
+  end
+  else begin
+    Printf.fprintf oc "P6\n%d %d\n255\n" width height;
+    for y = 0 to height - 1 do
+      for x = 0 to width - 1 do
+        let p = rgb x y in
+        output_byte oc ((p lsr 16) land 0xFF);
+        output_byte oc ((p lsr 8) land 0xFF);
+        output_byte oc (p land 0xFF)
+      done
     done
-  done;
+  end;
   close_out oc
+
+let dump_pixels (pixels : pixels) (file : string) : unit =
+  write_frame ~width:(Bigarray.Array2.dim2 pixels) ~height:(Bigarray.Array2.dim1 pixels)
+    (fun x y -> Int32.to_int pixels.{y, x})
+    file
 
 (*****************************************************************************)
 (* Run app *)

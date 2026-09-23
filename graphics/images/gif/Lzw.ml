@@ -12,7 +12,10 @@
 
 let max_codes = 4096
 
-let decode ~(min_code_size : int) (data : string) ~(npixels : int) : Bytes.t =
+type step = { code : int; width : int; start : int; length : int; added : int option }
+
+(* [on_step] is told about each code read *)
+let run ~(on_step : step -> unit) ~(min_code_size : int) (data : string) ~(npixels : int) : Bytes.t =
   if min_code_size < 1 || min_code_size > 8 then
     failwith (Printf.sprintf "LZW: a minimum code size of %d" min_code_size);
   let clear = 1 lsl min_code_size in
@@ -51,19 +54,25 @@ let decode ~(min_code_size : int) (data : string) ~(npixels : int) : Bytes.t =
       Some v
     end
   in
+  let step code width ~start ~added = on_step { code; width; start; length = !outpos - start; added } in
   let rec loop ~width ~next ~prev =
     if !outpos < npixels then
       match read width with
       | None -> ()
-      | Some code when code = clear -> loop ~width:(min_code_size + 1) ~next:(end_ + 1) ~prev:(-1)
-      | Some code when code = end_ -> ()
+      | Some code when code = clear ->
+          step code width ~start:!outpos ~added:None;
+          loop ~width:(min_code_size + 1) ~next:(end_ + 1) ~prev:(-1)
+      | Some code when code = end_ -> step code width ~start:!outpos ~added:None
       | Some code when prev < 0 ->
           if code >= clear then failwith "LZW: the first code after a clear is not a color";
+          let start = !outpos in
           emit code;
+          step code width ~start ~added:None;
           loop ~width ~next ~prev:code
       | Some code ->
           if code > next || (code = next && next >= max_codes) then
             failwith (Printf.sprintf "LZW: code %d, beyond the dictionary (%d)" code next);
+          let start = !outpos and added = if next < max_codes then Some next else None in
           let next =
             if next >= max_codes then next
             else begin
@@ -78,8 +87,17 @@ let decode ~(min_code_size : int) (data : string) ~(npixels : int) : Bytes.t =
             end
           in
           emit code;
+          step code width ~start ~added;
           let width = if next = 1 lsl width && width < 12 then width + 1 else width in
           loop ~width ~next ~prev:code
   in
   loop ~width:(min_code_size + 1) ~next:(end_ + 1) ~prev:(-1);
   out
+
+let decode ~(min_code_size : int) (data : string) ~(npixels : int) : Bytes.t =
+  run ~on_step:(fun _ -> ()) ~min_code_size data ~npixels
+
+let steps ~(min_code_size : int) (data : string) ~(npixels : int) : step list * Bytes.t =
+  let acc = ref [] in
+  let pixels = run ~on_step:(fun s -> acc := s :: !acc) ~min_code_size data ~npixels in
+  (List.rev !acc, pixels)
