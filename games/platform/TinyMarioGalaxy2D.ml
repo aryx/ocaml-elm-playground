@@ -76,8 +76,8 @@
  * cone), and its inverted sphere, walked on from the inside; a launch
  * star, flying along a path to a far planet; the spin, which stuns;
  * more goombas, which walk round their planet; a planet with a
- * variable pull, weaker for longer jumps; and the 3D original, as
- * TinyMarioGalaxy.
+ * variable pull, weaker for longer jumps. Its 3D twin, as the
+ * original, is TinyMarioGalaxy.
  *)
 open Playground
 open Basics (* float arithmetics *)

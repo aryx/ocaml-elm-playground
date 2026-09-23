@@ -19,8 +19,8 @@
 )
 
 (executables
-  (names TinyMario64)
-  (modules TinyMario64)
+  (names TinyMario64 TinyMarioGalaxy)
+  (modules TinyMario64 TinyMarioGalaxy)
   (libraries
     elm_core
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)

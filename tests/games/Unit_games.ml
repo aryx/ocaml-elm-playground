@@ -5097,6 +5097,105 @@ let galaxy_played_through () =
   Alcotest.(check int) "without dying" 0 p.deaths
 
 (*****************************************************************************)
+(* TinyMarioGalaxy *)
+(*****************************************************************************)
+
+let g3_until ?(n = 900) (i : TinyMarioGalaxy.input) (stop : TinyMarioGalaxy.play -> bool) (p : TinyMarioGalaxy.play) :
+    TinyMarioGalaxy.play =
+  let rec go n p = if n = 0 || stop p then p else go (n - 1) (TinyMarioGalaxy.step i p) in
+  go n p
+
+let g3_frames (n : int) (i : TinyMarioGalaxy.input) (p : TinyMarioGalaxy.play) : TinyMarioGalaxy.play =
+  g3_until ~n i (fun _ -> false) p
+
+let fst3 ((x, _, _) : float * float * float) : float = x
+let snd3 ((_, y, _) : float * float * float) : float = y
+
+let g3_start : TinyMarioGalaxy.play = { TinyMarioGalaxy.start with squashed = 1 }
+
+(* to the hundredth, and -0 made 0 *)
+let g3_vec ((x, y, z) : float * float * float) : string =
+  let r v = (Float.round (v *. 100.) /. 100.) +. 0. in
+  Printf.sprintf "(%.2f, %.2f, %.2f)" (r x) (r y) (r z)
+
+(* [euler]'s angles, given to rotate3d, take the model's axes where they
+ * should go: x to the right, y to up, -z to the front; even in the
+ * gimbal lock, the right straight along z. *)
+let galaxy3d_euler () =
+  let open TinyMarioGalaxy in
+  let check (up : vec) (front : vec) =
+    match (orient up front (Playground3d.polygon3d Playground.red [ (1., 0., 0.); (0., 1., 0.); (0., 0., -1.) ])).form with
+    | Playground3d.Polygon3d (_, [ r; u; f ]) ->
+        let name = g3_vec up ^ " " ^ g3_vec front in
+        Alcotest.(check string) (name ^ ": right") (g3_vec (cross front up)) (g3_vec r);
+        Alcotest.(check string) (name ^ ": up") (g3_vec up) (g3_vec u);
+        Alcotest.(check string) (name ^ ": front") (g3_vec front) (g3_vec f)
+    | _ -> Alcotest.fail "not a polygon"
+  in
+  check (0., 1., 0.) (0., 0., -1.);
+  check (0., -1., 0.) (0., 0., 1.);
+  check (0.6, 0.8, 0.) (0., 0., -1.);
+  check (0., 0.8, 0.6) (1., 0., 0.);
+  check (1., 0., 0.) (0., 1., 0.) (* the gimbal lock *)
+
+(* The cube's gravity: straight into a face, and round an edge towards
+ * the edge; the box over the home planet's pull *)
+let galaxy3d_zones () =
+  let open TinyMarioGalaxy in
+  let down p = match gravity_at p with Some d -> g3_vec d | None -> "none" in
+  Alcotest.(check string) "a face" "(0.00, 0.00, -1.00)" (down (-13., 3., 3.5));
+  Alcotest.(check string) "an edge" "(-0.71, -0.71, 0.00)" (down (-10., 6., 0.));
+  Alcotest.(check string) "the box" "(0.00, -1.00, 0.00)" (down (0., -9., 0.));
+  Alcotest.(check string) "the void" "none" (down (0., -30., 0.))
+
+(* Up held: over the planet's side, under it, and back on top, the
+ * camera's heading carried round with him. *)
+let galaxy3d_round () =
+  let open TinyMarioGalaxy in
+  let up = { nothing with ahead = 1. } in
+  let under = g3_until up (fun p -> snd3 p.pos < -5.) g3_start in
+  Alcotest.(check bool) "under, on foot" true (under.standing && snd3 under.pos < -5.);
+  let back = g3_until up (fun p -> snd3 p.pos > 5.) under in
+  Alcotest.(check bool) "back on top" true (snd3 back.pos > 5. && back.standing && back.deaths = 0)
+
+(* Coming down on the goomba squashes it, down being its own. *)
+let galaxy3d_goomba () =
+  let open TinyMarioGalaxy in
+  let g, up, _ = goomba_at start.goomba in
+  let p = { start with pos = add g (mul 1.5 up); vel = mul (-0.1) up; up; standing = false } in
+  let stomped = g3_until nothing (fun p -> p.squashed > 0 || p.dying > 0) p in
+  Alcotest.(check (pair int int)) "squashed, unhurt" (1, 0) (stomped.squashed, stomped.deaths)
+
+(* the arrows a player holds to run towards [target]: its direction in
+ * the camera's terms *)
+let g3_toward ?(jump = false) (target : float * float * float) (p : TinyMarioGalaxy.play) : TinyMarioGalaxy.input =
+  let open TinyMarioGalaxy in
+  let ahead = tangent p.up p.facing p.cam_heading in
+  let right = cross ahead p.up in
+  let dir = tangent p.up zero (sub target p.pos) in
+  { nothing with ahead = dot dir ahead; side = dot dir right; jump }
+
+let g3_steer ?(n = 900) (target : float * float * float) (stop : TinyMarioGalaxy.play -> bool) (p : TinyMarioGalaxy.play) :
+    TinyMarioGalaxy.play =
+  let rec go n p = if n = 0 || stop p then p else go (n - 1) (TinyMarioGalaxy.step (g3_toward target p) p) in
+  go n p
+
+(* The galaxy played through: up held to the home planet's underside, a
+ * standing jump into the platform's box, along it, a jump off its end
+ * into the tiny planet's pull, round it to the Power Star. *)
+let galaxy3d_played_through () =
+  let open TinyMarioGalaxy in
+  let p = g3_frames 20 nothing (g3_until { nothing with ahead = 1. } (fun p -> snd3 p.pos < -5.3) g3_start) in
+  let p = g3_until nothing (fun p -> p.standing && snd3 p.pos < -15.) (step { nothing with jump = true } p) in
+  Alcotest.(check bool) "on the platform" true (snd3 p.pos < -15. && p.deaths = 0);
+  let edge = (17., -17., 0.) in
+  let p = g3_steer edge (fun p -> fst3 p.pos > 15. || p.dying > 0) p in
+  let p = step (g3_toward ~jump:true edge p) p in
+  let p = g3_steer power_star (fun p -> got_star p || p.dying > 0) p in
+  Alcotest.(check bool) "the Power Star" true (got_star p);
+  Alcotest.(check int) "without dying" 0 p.deaths
+
+(*****************************************************************************)
 (* TinySuperMeatBoy *)
 (*****************************************************************************)
 
@@ -7670,6 +7769,11 @@ let tests =
       t "TinyMarioGalaxy2D, the goomba's own down" galaxy_goomba;
       t "TinyMarioGalaxy2D, adrift in the void" galaxy_void;
       t "TinyMarioGalaxy2D, the galaxy played through" galaxy_played_through;
+      t "TinyMarioGalaxy, euler's angles" galaxy3d_euler;
+      t "TinyMarioGalaxy, a cube's gravity" galaxy3d_zones;
+      t "TinyMarioGalaxy, round the planet" galaxy3d_round;
+      t "TinyMarioGalaxy, the goomba's own down" galaxy3d_goomba;
+      t "TinyMarioGalaxy, the galaxy played through" galaxy3d_played_through;
       t "TinySuperMeatBoy, a try is its inputs" smb_replay_is_the_inputs;
       t "TinySuperMeatBoy, dying costs nothing" smb_death_is_cheap;
       t "TinySuperMeatBoy, Hello World" smb_hello_world;

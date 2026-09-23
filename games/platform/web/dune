@@ -21,8 +21,8 @@
 )
 
 (executables
-  (names TinyMario64)
-  (modules TinyMario64)
+  (names TinyMario64 TinyMarioGalaxy)
+  (modules TinyMario64 TinyMarioGalaxy)
   (libraries
     elm_core
     elm_playground

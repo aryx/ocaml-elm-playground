@@ -106,6 +106,7 @@ let scenes : Testutil_golden.scene list =
     ("games/adventure/software/TinyZeldaOcarina", "", 5);
     ("games/arcade/software/TinyTron3d", "", 5);
     ("games/platform/software/TinyMario64", "", 5);
+    ("games/platform/software/TinyMarioGalaxy", "", 5);
     ("games/arcade/software/TinyMarbleMadness", "", 5);
     (* claude: the same view as TinyDoom's golden frame, in 3D *)
     ("games/fps/software/TinyDoom3d", "", 5);
@@ -232,6 +233,10 @@ let scripted : Testutil_golden.scripted list =
      * it; then the camera turned with d *)
     ("games/platform/software/TinyMario64", "jump", 160, "space:1,left:2-63,up:64-175,space:145-165");
     ("games/platform/software/TinyMario64", "camera", 200, "space:1,left:2-63,up:64-175,space:145-165,d:170-193");
+    (* up held from the top of the home planet round to its underside:
+       the camera rolled after Mario, the world turned so the sun is
+       over him (sun_over), and the platform below is now above *)
+    ("games/platform/software/TinyMarioGalaxy", "underside", 95, "space:1,up:3-95");
     (* rolling south (down and left: the screen's diagonals) down the
      * first ramp, its band turned; then on over the cliff, broken *)
     ("games/arcade/software/TinyMarbleMadness", "ramp", 45, "space:1,down:2-200,left:2-200");
