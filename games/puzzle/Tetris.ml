@@ -194,10 +194,11 @@ let (tetriminos: piece list) = [
   Color.Rgb (232, 65, 56),  [(0, 0); (1, 0); (1, 1); (2, 1)];
  ] |> List.map (fun (color, xs) -> from_list color xs)
 
-let random_tetrimino () =
-  let len = List.length tetriminos in
-  let n = Random.int len in
-  List.nth tetriminos n
+(* claude: drawn from the seed kept in the model (Playground.pick), not
+ * OCaml's global Random: the same seed, the same pieces, in every run
+ * and on every backend -- what golden frames, replays and two players
+ * on two computers need (plan_networking_teaching.md, phase 0) *)
+let random_tetrimino (seed : seed) : piece * seed = pick tetriminos seed
 
 (*****************************************************************************)
 (* Model *)
@@ -238,24 +239,22 @@ type model = {
 
   state: state;
 
-  last_tick: float;
+  (* claude: the next piece's randomness (see random_tetrimino) *)
+  seed: seed;
 }
 
 let spawn_tetrimino model =
   let active = model.next in
-  let next = random_tetrimino () in
+  let next, seed = random_tetrimino model.seed in
   let {x; y} = init_position model.width active in
-  { model with next; active; position = (x, float y) }
+  { model with next; active; position = (x, float y); seed }
 
-(* claude: seed=n (see Playground.flags), e.g. for the golden frame
- * tests: the same pieces every run; before initial_model, which draws
- * the first ones *)
-let _init =
-  match List.assoc_opt "seed" (Playground_platform.flags ()) with
-  | Some n -> Random.init (int_of_string n)
-  | None -> Random.self_init ()
-
-let initial_model = spawn_tetrimino {
+(* claude: from a seed, the first two pieces drawn: the flag seed=n
+ * (see Playground.flags), e.g. for the golden frame tests, else the
+ * clock, read once here and never again *)
+let initial_model (seed : seed) =
+  let next, seed = random_tetrimino seed in
+  spawn_tetrimino {
 
     (* coupling: Playground.initial_computer.screen *)
     (* size = (600., 600.); *)
@@ -272,11 +271,11 @@ let initial_model = spawn_tetrimino {
 
     active = empty_grid;
     position = (0, 0.);
-    next = random_tetrimino ();
+    next;
 
     state = Stopped;
 
-    last_tick = Unix.gettimeofday();
+    seed;
   }
 
 (*****************************************************************************)
@@ -481,11 +480,11 @@ let rotate_tetrimino model =
 (* less: Resize/GetViewPort *)
 let update msg model =
   (match msg with
-  | Tick t -> 
-    let delta = t -. model.last_tick in
-    let model = { model with last_tick = t } in
-    (* claude: a row a second at level 0, 30% faster each level *)
-    let dy = delta *. (1. +. (0.3 *. float model.level)) in
+  | Tick _ ->
+    (* claude: a row a second at level 0, 30% faster each level; a Tick
+     * is 1/60 s (the platforms' fixed step), not the time between two
+     * Ticks on this machine's clock: the same game on every machine *)
+    let dy = (1. /. 60.) *. (1. +. (0.3 *. float model.level)) in
     (* claude: harmless when already playing (Audio.loop) *)
     if model.music then Audio.loop "music" (music_at model.level);
     drop_tetrimino model dy |> fst
@@ -534,7 +533,13 @@ let app =
   { Playground.
     view;
     update;
-    init = (fun flags -> { initial_model with music = List.assoc_opt "music" flags <> Some "off" }, Cmd.none);
+    init = (fun flags ->
+      let seed =
+        match Option.bind (List.assoc_opt "seed" flags) int_of_string_opt with
+        | Some n -> n
+        | None -> int_of_float (Unix.gettimeofday () *. 1000.)
+      in
+      { (initial_model (initial_seed seed)) with music = List.assoc_opt "music" flags <> Some "off" }, Cmd.none);
     subscriptions  = (fun _ -> Sub.batch [
       Sub.on_animation_frame (fun x -> Tick x);
       Sub.on_key_down (fun key -> msg_of_key key);

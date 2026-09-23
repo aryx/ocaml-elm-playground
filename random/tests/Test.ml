@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"games" (fun _env -> Unit_games.tests @ Unit_determinism.tests)
+let () = Testo.interpret_argv ~project_name:"random" (fun _env -> Unit_lehmer.tests)

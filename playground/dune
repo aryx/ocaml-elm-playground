@@ -37,6 +37,9 @@
    ; this same package), see graphics/images/xpm/Xpm.mli
    graphics_xpm
    graphics_rgba ; Sprite.of_rgba's pictures (private, pure OCaml too)
+   ; claude: the generator under Playground.random (private, pure
+   ; OCaml, this same package), see random/Lehmer.mli
+   random
  )
  ; (preprocess (pps profiling.ppx))
 )

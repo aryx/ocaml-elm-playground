@@ -12,6 +12,12 @@
 ; (the games themselves unchanged; see notes_debugging_techniques.md
 ; section 9 for the same trick done by hand).
 
+; claude: Tetris, for Unit_determinism (its randomness in the model)
+(rule
+ (target Tetris.ml)
+ (deps (:src %{project_root}/games/puzzle/Tetris.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
 (rule
  (target TinySokoban.ml)
  (deps (:src %{project_root}/games/puzzle/TinySokoban.ml))
@@ -637,6 +643,7 @@
    kit_rts
    kit_cards ; TinyFreeCell's and TinySolitaire's cards and deals
    kit_adventure ; TinyZork's and TinyManiacMansion's world, Adventure
+   networking ; Checksum, for Unit_determinism
  )
  ; claude: 4 workers, not Testo's default of one per core: each worker
  ; starts by paying for every game's setup again, so on 64 cores this

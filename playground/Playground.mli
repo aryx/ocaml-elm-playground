@@ -894,6 +894,48 @@ val flags_of_strings : string list -> flags
 
 
 (*****************************************************************************)
+(** {1 Randomness} *)
+(*****************************************************************************)
+
+(** claude: random numbers kept in the model, Elm's [Random] without
+    the command: a {!seed} is a value, and each draw gives a number and
+    the next seed, to keep for the next draw.
+{[
+    type model = { x : number; seed : seed }
+
+    let update computer model =
+      if computer.mouse.click then
+        let x, seed = random (-400.) 400. model.seed in
+        { x; seed }
+      else model
+
+    let app = game view update { x = 0.; seed = initial_seed 42 }
+]}
+    The same seed gives the same numbers, in every run and on every
+    backend, native or web: a game replays the same way (golden frames,
+    a bug caught again), and two computers given one seed draw the same
+    numbers (plan_networking_teaching.md). OCaml's [Random] gives none
+    of that: a hidden global state, seeded from the clock. The
+    generator is random/Lehmer.mli (Park and Miller's minimal standard). *)
+type seed
+
+(** a seed from any number, e.g. the flag seed=n, or the clock at the
+    start for a game different each time -- read once, then kept in the
+    model *)
+val initial_seed : int -> seed
+
+(** [random lo hi seed]: a number between [lo] and [hi] (up to [hi],
+    not included), and the next seed *)
+val random : number -> number -> seed -> number * seed
+
+(** [random_int lo hi seed]: an integer from [lo] to [hi], both
+    included *)
+val random_int : int -> int -> seed -> int * seed
+
+(** one of the list's elements (it must not be empty) *)
+val pick : 'a list -> seed -> 'a * seed
+
+(*****************************************************************************)
 (** {1 The Application} *)
 (*****************************************************************************)
 

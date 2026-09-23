@@ -490,6 +490,27 @@ let flags_of_strings (xs : string list) : flags =
 (*****************************************************************************)
 (* was in Platform.elm but makes its harder to have cross-platform playground*)
 
+(*****************************************************************************)
+(* Randomness *)
+(*****************************************************************************)
+(* claude: see Playground.mli *)
+
+type seed = Lehmer.t
+
+let initial_seed (n : int) : seed = Lehmer.scramble n
+
+let random (lo : number) (hi : number) (seed : seed) : number * seed =
+  let seed = Lehmer.next seed in
+  (lo +. ((hi -. lo) *. Lehmer.to_unit seed), seed)
+
+let random_int (lo : int) (hi : int) (seed : seed) : int * seed =
+  let seed = Lehmer.next seed in
+  (lo +.. int_of_float (float_of_int (hi -.. lo +.. 1) *. Lehmer.to_unit seed), seed)
+
+let pick (xs : 'a list) (seed : seed) : 'a * seed =
+  let i, seed = random_int 0 (List.length xs -.. 1) seed in
+  (List.nth xs i, seed)
+
 (* claude: see Playground.mli *)
 type rendering = { antialiasing : bool; smooth_images : bool }
 

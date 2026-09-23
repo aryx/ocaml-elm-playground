@@ -40,6 +40,18 @@ Tetris, StarCollector3d have golden frames). Left: the pure API above
 (the seed in the model), needed only when replaying from a model
 matters -- the time-travel debugger, rollback networking.
 
+**Status (2026-09-23)**: the pure API is DONE, in the model rather
+than the `computer` (no new field for every program to carry):
+`Playground.seed`, `initial_seed`, `random`, `random_int`, `pick`, over
+`random/Lehmer.mli` (Park and Miller's minimal standard, computed by
+Schrage's trick so that native code and the browser draw the same
+numbers, and a person's seed scrambled first: Lehmer's seeds 1 and 2
+give related sequences). `Tetris.ml` is the worked conversion
+(`tests/games/Unit_determinism.ml` checks it); the other games on the
+global `Random` (Snake, TinyTetris, TinyBlockout, TinyWorms, Asteroid,
+StarCollector3d, FloatingCity3d, TinyMinecraft) move to it one by one,
+when each is next touched.
+
 ## 2. A camera for 2D: worlds bigger than the screen
 
 The 2D playground has one screen, centered on (0, 0): a Mario level, a

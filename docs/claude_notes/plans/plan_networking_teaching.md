@@ -381,10 +381,20 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
 
 ## Phasing
 
-0. **Groundwork**, after the physics plan's fixed step: the games'
+0. *(done, 2026-09-23)* **Groundwork**, after the physics plan's fixed step: the games'
    randomness seeded from the model (not `Random.self_init`), a
    checksum of a model (a hash of its serialized form); `-local` mode
    for Spacewar! (two players, one keyboard).
+   Done as: the seeded randomness of `plan_playground_other.md`
+   section 1 (`random/Lehmer`, `Playground.random` and `pick`, the seed
+   in the model), `networking/Checksum` (FNV-1a of the model's
+   marshalled bytes), and `Tetris.ml` converted -- its pieces from the
+   model's seed, its fall a fixed 1/60 s per Tick instead of the gap
+   between two Ticks on the machine's clock -- with
+   `tests/games/Unit_determinism.ml`: one seed and the same keys, but
+   Ticks from two different clocks, give the same checksum every
+   second. `TinySpacewar` needed nothing: already two players on one
+   keyboard, and no randomness (its stars are a formula).
 0b. *(done, 2026-09-23)* **Http as a `Cmd`** (the section "The first API" above), over
    `Url` and `Http`, already written: `Cmd` with effects and `batch`;
    `Playground.Http` (`get`, `expect_string`, the errors); the native
