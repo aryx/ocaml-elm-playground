@@ -13,7 +13,7 @@
 
 let t = Testo.create
 let kind : Media.kind Alcotest.testable = Alcotest.testable (fun fmt k -> Format.pp_print_string fmt (Media.kind_name k)) ( = )
-let bytes name = List.assoc name (Lazy.force Our_media.playlist)
+let bytes name = Lazy.force (List.assoc name Our_media.playlist)
 
 let test_sniff () =
   List.iter
@@ -33,6 +33,7 @@ let test_sniff () =
       ("ball_and_square.flc", Flic);
       ("ball_and_square.avi", Avi);
       ("ball_and_square.m1v", Mpeg1);
+      ("ffmpeg_encoded.m1v", Mpeg1);
     ];
   (* the bytes decide, not the name *)
   Alcotest.(check (option kind)) "a PNG called bell.wav" (Some Png) (Media.sniff ~name:"bell.wav" (bytes "demo_picture.png"));
@@ -84,11 +85,20 @@ let test_open () =
   | _ -> Alcotest.fail "not a movie with a sound");
   (* and as MPEG-1: 50 frames, I, P and B, close to ours (ffmpeg's
    * encoder at quality 4) *)
-  (match open_ "ball_and_square.m1v" with
+  (match open_ "ffmpeg_encoded.m1v" with
   | Movie { movie; mpeg = Some (h, _); _ } ->
       Alcotest.(check int) "MPEG-1: 50 frames" 50 (Movie.frame_count movie);
       Alcotest.(check char) "an I first" 'I' (match h.kinds.(0) with I -> 'I' | P -> 'P' | B -> 'B');
       List.iter (fun i -> let db = Psnr.psnr (List.nth (Lazy.force Our_media.clip) i) (movie.frame i) in if db < 30. then Alcotest.failf "MPEG-1 frame %d: %.1f dB" i db) [ 0; 1; 3; 49 ]
+  | _ -> Alcotest.fail "not an MPEG-1 movie");
+  (* and by our own encoder: I and P pictures, the same closeness, fewer
+   * bytes than ffmpeg's (which has B pictures, and a finer quantizer) *)
+  (match open_ "ball_and_square.m1v" with
+  | Movie { movie; mpeg = Some (h, _); _ } ->
+      Alcotest.(check int) "ours: 50 frames" 50 (Movie.frame_count movie);
+      Alcotest.(check bool) "ours: no B" true (Array.for_all (fun k -> k <> Mpeg1.B) h.kinds);
+      List.iter (fun i -> let db = Psnr.psnr (List.nth (Lazy.force Our_media.clip) i) (movie.frame i) in if db < 30. then Alcotest.failf "our MPEG-1 frame %d: %.1f dB" i db) [ 0; 1; 25; 49 ];
+      if String.length (bytes "ball_and_square.m1v") >= String.length (bytes "ffmpeg_encoded.m1v") then Alcotest.fail "ours not smaller"
   | _ -> Alcotest.fail "not an MPEG-1 movie");
   (* our GIF: six frames, 0.15 s each, the ball moving *)
   match open_ "bouncing_ball.gif" with

@@ -24,7 +24,7 @@ after the first is a way of not storing the same thing twice.
 | `y4m/` | `Y4m` | §2 | done |
 | `fli/` | `Fli` | §3 | done |
 | `avi/` | `Avi` | §4 | done |
-| `mpeg1/` | `Bits`, `Vlc`, `Mpeg1` (done), later `Motion` | §5, §7 | |
+| `mpeg1/` | `Bits`, `Vlc`, `Mpeg1`, `Motion`, `Mpeg1_encode` | §5, §7 | done |
 | `apps/media/` | TinyMediaPlayer's `Movie` kind (done), the analyzer (`d` and `a` done, the residual not yet) | §4, §8 | |
 
 ## 1. How big video is
@@ -229,8 +229,16 @@ differs least, by the **sum of absolute differences** (SAD) of its 256
 pixels -- 278,784 subtractions a macroblock, the encoder's whole cost.
 Faster searches look at fewer places: the three-step search (Koga et
 al., 1981) tries 9 around the center, halves the step, 9 around the
-best, and so on. Our own encoder, when written, measured both ways:
-its time and the size and PSNR it reaches.
+best, and so on. Our own encoder (`Mpeg1_encode`, I and P pictures)
+measured both ways on our clip, within 10 pixels: full search 358
+candidates a macroblock and 28,091 bytes; logarithmic 34 and 30,460,
+the same quality -- a tenth of the work for 8% more bytes. And where
+the bet fails: on noise, which has no valley leading to the answer, the
+logarithmic search's first coarse step sees nothing better than
+anywhere else and settles wrong; full search still finds the exact
+match (the tests show both). ffmpeg's encoder, with the same structure
+and quantizer and its default settings, made 29,527 bytes, a little
+further from the source.
 
 ## 8. Seeing what the file says: the analyzer
 

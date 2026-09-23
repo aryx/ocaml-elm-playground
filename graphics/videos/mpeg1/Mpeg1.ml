@@ -132,6 +132,12 @@ let dct_next = Vlc.of_list Vlc.dct_next
 
 let sign (v : int) : int = compare v 0
 
+let dequantize ~(intra : bool) ~(q : int) ~(m : int) (level : int) : int =
+  let v = if intra then 2 * level * q * m / 16 else ((2 * level) + sign level) * q * m / 16 in
+  (* made odd, towards 0: the mismatch control *)
+  let v = if v land 1 = 0 && v <> 0 then v - sign v else v in
+  max (-2048) (min 2047 v)
+
 (* a block's 64 values after the IDCT (not yet rounded or added):
  * intra, its DC predicted from [dc.(component)]; else a residual *)
 let block (b : Bits.t) ~(intra : bool) ~(q : int) ~(matrix : int array) ~(dc : int array) ~(component : int) : float array =
@@ -147,11 +153,7 @@ let block (b : Bits.t) ~(intra : bool) ~(q : int) ~(matrix : int array) ~(dc : i
     i := !i + run + 1;
     if !i > 63 then failwith "MPEG-1: a block of more than 64 coefficients";
     let n = Jpeg.zigzag.(!i) in
-    let m = matrix.(n) in
-    let v = if intra then 2 * level * q * m / 16 else ((2 * level) + sign level) * q * m / 16 in
-    (* made odd, towards 0: the mismatch control *)
-    let v = if v land 1 = 0 && v <> 0 then v - sign v else v in
-    coefs.(n) <- float_of_int (max (-2048) (min 2047 v))
+    coefs.(n) <- float_of_int (dequantize ~intra ~q ~m:matrix.(n) level)
   in
   let rec coefficients first =
     match Vlc.read b (if first && not intra then dct_first else dct_next) with

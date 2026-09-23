@@ -90,3 +90,20 @@ val of_string : string -> header * Movie.t * (int -> info)
  * row x v] the prediction of pixel [x] of [row] moved by [v] half
  * pixels *)
 val predict : int array -> int -> int -> int
+
+(* The decoder's arithmetic, for the encoder (Mpeg1_encode.mli): an
+ * encoder predicts from what the decoder will have, not from the
+ * source, or the two drift apart a little more every P frame. *)
+
+(* the intra matrix, natural order *)
+val default_intra : int array
+
+(* [prediction plane ~stride ~rows ~x ~y ~size v]: the [size] x [size]
+ * square at (x, y) of [plane], moved by [v] half pixels *)
+val prediction : Bytes.t -> stride:int -> rows:int -> x:int -> y:int -> size:int -> int * int -> int array
+
+(* [dequantize ~intra ~q ~m level]: a coefficient back from its level *)
+val dequantize : intra:bool -> q:int -> m:int -> int -> int
+
+(* the frame rates' codes: rate (num, den) at index code *)
+val picture_rates : (int * int) array

@@ -109,9 +109,9 @@ let bouncing_ball_gif : string =
  * of 28,800 bytes, 1.4 MB for two seconds of a small picture, the size
  * the next formats of graphics/videos/ are about -- and as FLC, only
  * what changed from a frame to the next (Fli.mli), and as AVI, each
- * frame a JPEG, with a sound (Avi.mli); and as MPEG-1, which ffmpeg
- * encoded once from these frames (make_clips.sh), until we have our own
- * encoder. A ball bounces twice
+ * frame a JPEG, with a sound (Avi.mli); and as MPEG-1, by our own
+ * encoder (Mpeg1_encode.mli, I and P pictures) and by ffmpeg's, once
+ * (make_clips.sh), with B pictures. A ball bounces twice
  * and a square turns a quarter, so the clip loops without a jump; flat
  * colors, whose sharp edges show what 4:2:0 does to color. *)
 let clip_frame (k : int) : Rgba_image.t =
@@ -152,26 +152,27 @@ let clip_sound : Signal.t Lazy.t =
   List.iter (fun at -> Array.iteri (fun i v -> if at + i < Array.length out then out.(at + i) <- out.(at + i) +. v) blip) [ 0; Signal.rate ];
   out)
 
-(* made when first asked for, not when the program starts: rendering
- * the tunes and encoding the clip's 50 JPEGs take a second, which every
- * process linking this module would otherwise pay (the tests' workers
- * among them) *)
-let playlist : (string * string) list Lazy.t =
-  lazy (let midi = match Abc.parse frere_jacques with Ok tune -> Midi.of_tune tune | Error e -> failwith e in
-  let bell = Synth.render (Synth.voice (Fm { ratio = 1.4; index = 5. }) 440. |> Synth.lasting 2. |> Synth.fading) in
+(* each item made when first played, not when the program starts:
+ * rendering the tunes, encoding the clip's 50 JPEGs or its MPEG-1 take
+ * seconds, which every process linking this module would otherwise pay
+ * (the tests' workers among them) *)
+let playlist : (string * string Lazy.t) list =
   [
-    ("frere_jacques.abc", frere_jacques);
-    ("frere_jacques.mid", midi);
-    ("la_lune.doremi", au_clair_de_la_lune);
-    ("tiny_soundtracker.mod", Mod.to_string Our_songs.soundtracker_song);
-    ("bell.wav", Wav.to_string bell);
-    ("demo_picture.png", Our_pictures.demo_picture_png);
-    ("demo_picture.gif", Our_pictures.demo_picture_gif);
-    ("bouncing_ball.gif", bouncing_ball_gif);
-    ("demo_picture.jpg", Our_pictures.demo_picture_jpg);
-    ("mario_stand.xpm", Our_pictures.mario_stand_xpm);
-    ("ball_and_square.y4m", Y4m.to_string ~rate:(25, 1) (Lazy.force clip));
-    ("ball_and_square.flc", Fli.to_string ~delay:0.04 (Lazy.force clip));
-    ("ball_and_square.avi", Avi.to_string ~sound:(Lazy.force clip_sound) ~rate:(25, 1) (Lazy.force clip));
-    ("ball_and_square.m1v", Our_pictures.ball_and_square_m1v);
-  ])
+    ("frere_jacques.abc", Lazy.from_val frere_jacques);
+    ("frere_jacques.mid", lazy (match Abc.parse frere_jacques with Ok tune -> Midi.of_tune tune | Error e -> failwith e));
+    ("la_lune.doremi", Lazy.from_val au_clair_de_la_lune);
+    ("tiny_soundtracker.mod", lazy (Mod.to_string Our_songs.soundtracker_song));
+    ("bell.wav", lazy (Wav.to_string (Synth.render (Synth.voice (Fm { ratio = 1.4; index = 5. }) 440. |> Synth.lasting 2. |> Synth.fading))));
+    ("demo_picture.png", Lazy.from_val Our_pictures.demo_picture_png);
+    ("demo_picture.gif", Lazy.from_val Our_pictures.demo_picture_gif);
+    ("bouncing_ball.gif", Lazy.from_val bouncing_ball_gif);
+    ("demo_picture.jpg", Lazy.from_val Our_pictures.demo_picture_jpg);
+    ("mario_stand.xpm", Lazy.from_val Our_pictures.mario_stand_xpm);
+    ("ball_and_square.y4m", lazy (Y4m.to_string ~rate:(25, 1) (Lazy.force clip)));
+    ("ball_and_square.flc", lazy (Fli.to_string ~delay:0.04 (Lazy.force clip)));
+    ("ball_and_square.avi", lazy (Avi.to_string ~sound:(Lazy.force clip_sound) ~rate:(25, 1) (Lazy.force clip)));
+    ("ffmpeg_encoded.m1v", Lazy.from_val Our_pictures.ball_and_square_m1v);
+    (* our own encoder's, the fast search (the full one: 50% longer, 8%
+     * smaller, Motion.mli) *)
+    ("ball_and_square.m1v", lazy (fst (Mpeg1_encode.encode ~search:Logarithmic ~rate:(25, 1) (Lazy.force clip))));
+  ]

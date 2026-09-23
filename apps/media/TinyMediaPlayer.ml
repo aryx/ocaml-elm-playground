@@ -111,7 +111,7 @@ let recent () : Signal.t = Array.init 2048 (fun i -> deck.ring.((deck.at +.. i) 
 (*****************************************************************************)
 
 type model = {
-  items : (string * string) list; (* the playlist: names and bytes *)
+  items : (string * string Lazy.t) list; (* the playlist: names and bytes, made when played *)
   current : int;
   opened : (Media.kind * Media.media, string) result;
   playing : bool;
@@ -123,13 +123,13 @@ type model = {
 }
 
 (* files given by file=, arriving (now natively, later in a browser) *)
-let arrived : (string * string) list ref = ref []
+let arrived : (string * string Lazy.t) list ref = ref []
 
 (* the item [i] put on the deck, playing or not *)
-let load (items : (string * string) list) (i : int) ~(playing : bool) : model -> model =
+let load (items : (string * string Lazy.t) list) (i : int) ~(playing : bool) : model -> model =
  fun m ->
   let name, bytes = List.nth items i in
-  let opened = Media.open_ ~name bytes in
+  let opened = Media.open_ ~name (Lazy.force bytes) in
   deck.media <- (match opened with Ok (_, media) -> Some media | Error _ -> None);
   deck.pos <- 0;
   deck.player <- (match opened with Ok (_, Module song) -> Some (Mod_player.create ~loop:false song) | _ -> None);
@@ -139,7 +139,7 @@ let load (items : (string * string) list) (i : int) ~(playing : bool) : model ->
 
 let initial_model : model =
   let m = { items = []; current = 0; opened = Error ""; playing = true; shown = 0; held = []; asked = false; changes = false; analyzer = false } in
-  load (Lazy.force Our_media.playlist) 0 ~playing:true m
+  load Our_media.playlist 0 ~playing:true m
 
 (*****************************************************************************)
 (* update *)
@@ -185,7 +185,7 @@ let update (computer : computer) (m : model) : model =
     if m.asked then m
     else (
       (match List.assoc_opt "file" computer.flags with
-      | Some files -> List.iter (fun f -> Audio.fetch f (fun b -> Option.iter (fun b -> arrived := !arrived @ [ (Filename.basename f, b) ]) b)) (String.split_on_char ',' files)
+      | Some files -> List.iter (fun f -> Audio.fetch f (fun b -> Option.iter (fun b -> arrived := !arrived @ [ (Filename.basename f, Lazy.from_val b) ]) b)) (String.split_on_char ',' files)
       | None -> ());
       { m with asked = true })
   in

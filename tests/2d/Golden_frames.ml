@@ -997,6 +997,10 @@ let scripted : Testutil_golden.scripted list =
      * the still sky skipped, the ball predicted both ways (its vectors,
      * white to the past, cyan to the future), the strip of I, P and B *)
     ("apps/media/software/TinyMediaPlayer", "mpeg1", 92, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36,n:39,a:45");
+    (* claude: and by our own encoder (Mpeg1_encode.mli), the analyzer
+     * on: I and P only, the still sky skipped, the ball and the square
+     * moved by their vectors *)
+    ("apps/media/software/TinyMediaPlayer", "mpeg1_ours", 97, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36,n:39,n:42,a:48");
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

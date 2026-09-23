@@ -80,7 +80,8 @@ graphics/videos/          video formats, one library each
   mpeg1/                  Bits (the bit reader), Vlc (the variable-length
                           code tables), Mpeg1 (headers, macroblocks,
                           motion, B-frame reordering) (done, phase 4),
-                          later Motion (an encoder's motion estimation)
+                          Motion (motion estimation) and Mpeg1_encode
+                          (done, phase 5)
   tests/                  worked examples, PSNR against our frames
 apps/media/               TinyMediaPlayer: a Movie kind, the analyzer
 ```
@@ -228,10 +229,25 @@ commercial stream analyzers); here it is the lesson made visible.
    prediction switched off), which needs a decoder option. Found on the
    way: `files_to_string_ml.ml` could wrap a line inside an escaped
    backslash (the stream's bytes had one; the pictures never did).
-5. **Motion estimation**: our own MPEG-1 encoder (I and P frames,
-   full-search block matching by the sum of absolute differences, then
-   a faster search), so the clips are ours end to end and ffmpeg is no
-   longer needed; its size and PSNR against ffmpeg's.
+5. **Motion estimation** (done): `Motion` (the SAD, full search, the
+   logarithmic search -- three steps for 7 pixels -- and the half-pixel
+   refinement, candidates counted) and `Mpeg1_encode` (I and P
+   pictures, a slice a row, one quantizer; skipped, "no vector",
+   "moved" and intra macroblocks chosen; predicting from its own
+   reconstruction, the decoder's arithmetic exposed by `Mpeg1` for it,
+   so nothing drifts: ffmpeg decodes ours within 63.9 dB of our
+   decoder). On our clip, at quantizer 5: full search 28,091 bytes, 358
+   candidates a macroblock; logarithmic 30,460, 34 candidates; ffmpeg's
+   own encoder with the same structure (I and P, groups of 12,
+   quantizer 5, its default settings, not its best) 29,527 -- and by
+   ffmpeg's PSNR, 45.1 dB ours with full search, 44.9 logarithmic, 44.8
+   ffmpeg's. The lesson of the test: on a smooth picture both searches
+   find the vector, on noise only the full one does. The player plays
+   ours (`ball_and_square.m1v`, the logarithmic search) beside ffmpeg's
+   (`ffmpeg_encoded.m1v`, with B pictures), a golden frame of each with
+   the analyzer on; its playlist's items are now made when played, the
+   encoding taking seconds. Left: B pictures in the encoder (the search
+   both ways, the reordering), rate control, the residual view.
 6. **Docs**: `notes_video.md` checked against the code.
 
 ## Verification
