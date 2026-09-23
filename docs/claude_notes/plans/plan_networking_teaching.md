@@ -517,11 +517,25 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    machine's Node, 18, has no WebSocket): to try with `make
    serve-build` and a browser. `Base64` moved to `core/`, where
    `Websocket` and `graphics/images` both reach it.
-5b. **The universe** (HtDP): `playground/Universe.ml` over the relay --
+5b. *(done, 2026-09-23)* **The universe** (HtDP): `playground/Universe.ml` over the relay --
    `on_receive` and `register` for a `Bigbang` world, `on_new` and
    `on_msg` for the server; a chat, a shared whiteboard and a
    turn-based game as its examples. Independent of the lockstep
    phases, and the gentler door into all of this.
+   Done as: `networking/unix/Server` (the WebSocket event loop, taken
+   out of `Relay`: connections, ids, events; `Relay` now its seats and
+   copies over it, its tests unchanged), `Universe_server` (HtDP's
+   universe: a state, on_new, on_msg, on_disconnect returning bundles
+   -- state, mails, drops -- on HtDP's port 4567), `playground/Universe`
+   (a Bigbang world whose handlers return packages, the world and the
+   messages to send, plus on_receive and ~register; the connector moved
+   from Multiplayer to `Transport`, shared). Messages are strings, as
+   planned. The example is the 2htdp/universe documentation's first:
+   `examples/UniverseBall.ml` (a world) and `UniverseBallServer.ml`
+   (the universe, native only), a ball passed from world to world, run
+   by hand with four world processes; a golden frame of a world whose
+   universe isn't there. Left: the chat, the whiteboard and a turn-based
+   game.
 6. *(later)* **Client-server**: `Snapshot`, prediction, reconciliation,
    interpolation; the XPilot-like arena.
 7. **Docs**: `notes_networking.md` checked against the code and its

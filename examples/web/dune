@@ -46,6 +46,7 @@
 (copy_files ../LogoFractals.{ml,mli})
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
+(copy_files ../UniverseBall.ml)
 (copy_files ../PuzzleScriptSokoban.ml)
 (copy_files ../PuzzleScriptBoulders.ml)
 ; the 3D ones, for the WebGL stanza below
@@ -87,6 +88,7 @@
     LogoFractals
     BigBangRocket
     BigBangWorm
+    UniverseBall
     PuzzleScriptSokoban
     PuzzleScriptBoulders
   )

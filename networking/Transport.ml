@@ -16,3 +16,7 @@ type role =
   | Host of { bind : string; port : int }
   | Join of { host : string; port : int }
   | Relay of { host : string; port : int }
+
+let installed : (Cap.network -> role -> (t, string) result) ref = ref (fun _ _ -> Error "no network on this platform")
+let set_connect f = installed := f
+let connect (caps : < Cap.network ; .. >) (role : role) : (t, string) result = !installed (caps :> Cap.network) role

@@ -87,11 +87,6 @@ type player = {
 
 type 'model state
 
-(* how net=host and net=join reach the other computer: installed by a
- * platform that has sockets (the native ones, Udp.connect); without
- * it, the modes say so on the screen *)
-val set_connect : (Cap.network -> Transport.role -> (Transport.t, string) result) -> unit
-
 (* [game ~players view update model]: [view computer n model] draws
  * what player n sees (the real computer: its screen, its time);
  * [update computer players model] is one tick, everyone's input *)

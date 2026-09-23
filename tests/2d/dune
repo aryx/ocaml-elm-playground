@@ -96,6 +96,7 @@
    %{project_root}/examples/software/JuiceCurves.exe
    %{project_root}/examples/software/JuiceSquash.exe
    %{project_root}/examples/software/HttpText.exe
+   %{project_root}/examples/software/UniverseBall.exe
    %{project_root}/games/arcade/software/TinyFlappyBird.exe
    %{project_root}/games/arcade/software/TinyFrogger.exe
    %{project_root}/games/arcade/software/TinyLunarLander.exe

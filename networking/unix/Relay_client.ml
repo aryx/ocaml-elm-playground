@@ -84,8 +84,8 @@ let connect (caps : < Cap.network ; .. >) ~(host : string) ~(port : int) : Trans
     status =
       (fun () ->
         match (!closed, !player) with
-        | true, _ -> Printf.sprintf "the relay at %s:%d closed the connection (full?)" host port
-        | false, None -> Printf.sprintf "connecting to the relay at %s:%d" host port
-        | false, Some _ -> Printf.sprintf "through the relay at %s:%d" host port);
+        | true, _ -> Printf.sprintf "%s:%d closed the connection (full?)" host port
+        | false, None -> Printf.sprintf "connecting to %s:%d" host port
+        | false, Some _ -> Printf.sprintf "through %s:%d" host port);
     player = (fun () -> !player);
   }

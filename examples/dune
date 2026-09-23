@@ -13,6 +13,7 @@
     JuiceCurves JuiceSquash
     LogoFractals
     BigBangRocket BigBangWorm
+    UniverseBall UniverseBallServer
     PuzzleScriptSokoban PuzzleScriptBoulders
   )
   ; claude: every example but the 3D ones, which are the stanza below's
@@ -36,6 +37,7 @@
     appkit_sheet_view ; and how it is drawn
     appkit_typeset ; TypesetParagraph's two line breakers
     elm_playground_native ; implem of virtual elm_playground
+    networking_unix ; UniverseBallServer's Universe_server
   )
 )
 

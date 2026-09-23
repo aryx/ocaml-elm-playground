@@ -167,8 +167,8 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network (
   Option.iter Download.grant network;
   Audio.set_fetcher fetch_file;
   (* claude: Multiplayer's net=host and net=join (UDP), net=relay
-   * (WebSocket) *)
-  Multiplayer.set_connect Connect.connect;
+   * (WebSocket), and Universe's worlds *)
+  Transport.set_connect Connect.connect;
   (* the app's choices are the starting values; the keys can change them *)
   options :=
     { !options with antialiasing = rendering.antialiasing; bilinear = rendering.smooth_images };

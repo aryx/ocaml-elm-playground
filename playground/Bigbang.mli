@@ -63,8 +63,8 @@
         ((check-expect (render w) ...)): shapes are data here, but
         nothing promises it;
      4. universe, several world programs and a server exchanging
-        messages: the playground has no networking yet
-        (plan_networking_teaching.md; a Universe.ml would come with it).
+        messages: Universe.mli (the worlds, this module's big_bang with
+        a mailbox) and Universe_server.mli (the universe).
    And the playground has what big-bang doesn't: animations as functions
    of time (spin, wave), the screen's size, sound (Audio), 3D.
 
@@ -139,6 +139,10 @@ val to_shape : image -> shape
  * "\r", "escape", and the letters as themselves. E.g. with "ArrowLeft"
  * down before, and "ArrowLeft" and "a" now: (["a"], []). *)
 val key_events : keyboard -> keyboard -> string list * string list
+
+(* [mouse_event before now]: what the mouse did since [before], by its
+ * HtDP name ("button-down", "button-up", "drag", "move"), if anything *)
+val mouse_event : mouse -> mouse -> string option
 
 (*****************************************************************************)
 (* {1 The world} *)

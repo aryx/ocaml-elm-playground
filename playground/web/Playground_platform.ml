@@ -851,9 +851,9 @@ let connect_web (_caps : Cap.network) (role : Transport.role) : (Transport.t, st
               status =
                 (fun () ->
                   match (!closed, !player) with
-                  | true, _ -> Printf.sprintf "the relay at %s closed the connection (full, or not running?)" url
-                  | false, None -> Printf.sprintf "connecting to the relay at %s" url
-                  | false, Some _ -> Printf.sprintf "through the relay at %s" url);
+                  | true, _ -> Printf.sprintf "%s closed the connection (full, or not running?)" url
+                  | false, None -> Printf.sprintf "connecting to %s" url
+                  | false, Some _ -> Printf.sprintf "through %s" url);
               player = (fun () -> !player);
             })
 
@@ -882,7 +882,7 @@ let fetch_text (url : string) (k : (string, Cmd.http_error) result -> unit) : un
  * own rules (the page's site, or CORS) *)
 let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_ app =
   Audio.set_fetcher fetch_web;
-  Multiplayer.set_connect connect_web;
+  Transport.set_connect connect_web;
   Window.set_onload window (fun () ->
 
     let sx = Playground.default_width in

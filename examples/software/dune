@@ -22,10 +22,11 @@
     LogoFractals
     BigBangRocket
     BigBangWorm
+    UniverseBall
     PuzzleScriptSokoban
     PuzzleScriptBoulders
   )
-  (modules :standard \ Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
+  (modules :standard \ UniverseBallServer Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
     InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
     CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
     PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d

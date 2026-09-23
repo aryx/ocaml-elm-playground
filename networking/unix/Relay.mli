@@ -33,12 +33,9 @@
    beyond [players] is told no (a close frame). Every other binary
    message is a packet, copied to the other players.
 
-   One program, many connections, no threads: an *event loop*
-   (Http_request.mli), every socket non-blocking, [wait] sleeping in
-   select until one of them has something, [step] doing whatever each
-   one can do without waiting -- accept, read, answer the handshake,
-   copy, write. What can't be written yet (a slow player) waits in its
-   connection's outbox, and a slow player never holds the others up.
+   The connections are Server.mli's (one event loop, non-blocking
+   sockets); this module is only the relay's rule, a seat for who
+   comes and each packet copied to the others.
 
    Safe by default, like Udp: it listens on 127.0.0.1 unless given
    another address; garbage closes the connection that sent it.

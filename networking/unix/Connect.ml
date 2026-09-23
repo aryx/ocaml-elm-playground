@@ -15,5 +15,5 @@ let connect (caps : < Cap.network ; .. >) (role : Transport.role) : (Transport.t
   | Host _ | Join _ -> Udp.connect caps role
   | Relay { host; port } -> (
       try Ok (Relay_client.connect caps ~host ~port) with
-      | Unix.Unix_error (e, _, _) -> Error (Printf.sprintf "the relay at %s:%d: %s" host port (Unix.error_message e))
+      | Unix.Unix_error (e, _, _) -> Error (Printf.sprintf "can't reach %s:%d: %s" host port (Unix.error_message e))
       | Failure why -> Error why)

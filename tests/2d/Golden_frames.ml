@@ -1285,6 +1285,9 @@ let flagged : Testutil_golden.flagged list =
      * answer that doesn't depend on a server running on the machine;
      * the answered one is networking/unix/tests/' *)
     ("examples/software/HttpText", "refused", 5, [ "url=http://127.0.0.1:1/x" ]);
+    (* claude: a world of HtDP's first universe, its universe not there
+     * (port 1): resting, and saying why *)
+    ("examples/software/UniverseBall", "refused", 5, [ "port=1" ]);
   ]
 
 (* claude: played and flagged: the games whose juice was written by

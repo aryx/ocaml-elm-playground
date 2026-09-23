@@ -122,13 +122,6 @@ let describe (peer : 'model peer) : string =
 
 type knobs = { latency : int (* ms *); jitter : int; loss : int (* % *); delay : int; netcode : string }
 
-(* the transport of net=host and net=join, installed by a platform
- * that has sockets (Udp.connect, natively) *)
-let connect : (Cap.network -> Transport.role -> (Transport.t, string) result) ref =
-  ref (fun _ _ -> Error "no sockets here (in a browser: WebSockets, plan_networking_teaching.md phase 5)")
-
-let set_connect f = connect := f
-
 type 'model state =
   | Starting of 'model
   | Local of 'model side
@@ -191,7 +184,7 @@ let start ~players ?(network : Cap.network option) update (flags : flags) (model
       match network with
       | None -> Failed (Printf.sprintf "net=%s: this program wasn't granted the network (Cap.network)" net, model)
       | Some caps -> (
-          match !connect caps role with
+          match Transport.connect caps role with
           | Ok transport -> Connecting { transport; model; netcode; delay; early = [] }
           | Error why -> Failed (Printf.sprintf "net=%s: %s" net why, model)))
   | _ -> Local side

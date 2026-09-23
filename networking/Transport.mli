@@ -26,3 +26,10 @@ type role =
   | Host of { bind : string; port : int } (* wait for a player on this address and port *)
   | Join of { host : string; port : int } (* play with the host there *)
   | Relay of { host : string; port : int } (* play through the relay there *)
+
+(* opening a transport is the operating system's (sockets natively, the
+ * browser's WebSocket in a page): each platform installs how
+ * (Connect.connect natively), and Multiplayer and Universe call it;
+ * without one installed, an Error saying so *)
+val set_connect : (Cap.network -> role -> (t, string) result) -> unit
+val connect : < Cap.network ; .. > -> role -> (t, string) result
