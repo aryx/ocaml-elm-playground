@@ -190,6 +190,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: every easing curve, the balls halfway through the time
      * (the clock is frozen at 1000 s, 1 s into a 2 s tween) *)
     ("examples/software/JuiceCurves", "", 2);
+    (* claude: the moment of landing (1000 s is a landing, every 1.25
+     * s): squashed flattest, the face white *)
+    ("examples/software/JuiceSquash", "", 2);
     ("games/puzzle/software/AiConnect4", "", 3);
     ("games/puzzle/software/AiGo", "", 3);
     ("games/puzzle/software/AiOthello", "", 3);
@@ -1225,6 +1228,7 @@ let flagged : Testutil_golden.flagged list =
     ("games/platform/software/TinyVVVVVV", "shapes", 5, [ "artwork=shapes" ]);
     (* claude: and juice=off (Juice.mli): every tween at its end at once *)
     ("examples/software/JuiceCurves", "off", 2, [ "juice=off" ]);
+    ("examples/software/JuiceSquash", "off", 2, [ "juice=off" ]);
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged scenes

@@ -8,4 +8,9 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"juice" (fun _env -> Unit_ease.tests @ Unit_tween.tests @ Unit_squash.tests)
+(* See Squash.mli *)
+
+let keep_area (k : float) : float * float = (1. /. k, k)
+
+(* the overshoot of out_elastic is the stretch *)
+let landing ~(amount : float) (p : float) : float = Tween.lerp (1. -. amount) 1. (Ease.out Ease.elastic p)

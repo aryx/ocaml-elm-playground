@@ -27,15 +27,16 @@ what makes each effect safe to add, and what keeps this out of
 |---|---|---|
 | `juice/Ease` (done) | the curves: how a thing starts and stops | §1, §2 |
 | `juice/Tween` (done) | a value between two, from when it started | §3 |
-| `playground/Juice` (done: the tweens) | the Evan-style API | §8 |
+| `playground/Juice` (done: tweens, squash, stretch, whiten) | the Evan-style API | §4, §8 |
 | `examples/JuiceCurves` (done) | every curve, plotted and played | §1 |
-| `juice/Squash` (planned) | squash and stretch | §4 |
+| `juice/Squash` (done) | squash and stretch | §4 |
+| `examples/JuiceSquash` (done) | a ball dry, squashed, and flashed | §4 |
 | `juice/Trauma` (planned) | screen shake | §5 |
 | `juice/Emitter` (planned) | particles | §6 |
 | `juice/Follow` (planned) | a value that follows a target | §7 |
 
-§1 to §3 are phase 1: things that are a function of time and nothing
-else. §4 to §7 need a little state in the model.
+§1 to §4 are things that are a function of time and nothing else.
+§5 to §7 need a little state in the model.
 
 ## 1. Easing: how a thing starts and stops
 
@@ -158,12 +159,69 @@ The limit, stated once: a tween knows its end from the start. When the
 end moves while it plays -- a camera following the player -- a curve is
 the wrong tool, and §7's `Follow` is the right one.
 
-## 4. Squash and stretch (planned, `juice/Squash`)
+## 4. Squash and stretch, and the hit flash
 
-The first of Disney's twelve principles: a ball flattens when it lands
-and stretches when it flies, its area kept (sx·sy = 1). No new backend
-primitive: shapes are data, so a stretch rewrites the tree (a circle
-becomes an oval, a rotated rectangle the polygon it is).
+The first of Disney's twelve principles, and every animation student's
+first exercise: the bouncing ball. A ball that stays round when it
+hits the floor looks like a billiard ball on stone; the same ball
+flattening for a tenth of a second reads as rubber, and as *hitting*
+something. `examples/JuiceSquash.ml` shows the two side by side.
+
+Two ideas make it (`juice/Squash`), and neither is new maths.
+
+**Keep the area.** Squashed to 60% of its height and no wider, a ball
+looks like it shrank; squashed and widened by as much, it looks like
+the same ball under a force. Taller by k, narrower by k: (1/k, k).
+
+```
+     k = 1          k = 0.6              k = 1.15
+                                          ___
+     .--.                                /   \
+    /    \       .----------.           |     |
+    \    /       '----------'           |     |
+     '--'                                \___/
+
+   40 x 40        66.7 x 24            34.8 x 46
+            (the same area: 1600 = 66.7 x 24 = 34.8 x 46)
+```
+
+**The landing is a curve** -- §1's `out_elastic`, read on the height:
+flat at the moment it lands, back up, *past* round, and settled. The
+elastic curve's overshoot is the stretch, so no second rule is needed
+for it. Worked example (checked by the tests), 40% flatter at landing:
+0.6 of its height (66.7 × 24 for a 40-pixel ball), 0.859 at 5% of the
+time, 1.1 at 10%, the most, 1.149, at 13%, then 1.006 halfway, and
+exactly round at the end.
+
+**Squashing a shape.** A shape has one `scale`, so a stretch that is
+not the same across and up is not something the playground draws. It
+does not need to: shapes are data, a tree of forms each scaled, rotated
+and moved inside its parent -- all of which a 2×2 matrix and a
+translation say. A stretch is one more matrix, pushed down the tree:
+
+```
+  stretch (sx, sy) of a shape at (x, y), turned a, scaled s:
+
+    its position       (x, y)  ->  (sx·x, sy·y)
+    what is left       S · R(a) · s  for its form (or its children)
+
+    left diagonal?     yes: a circle becomes an oval, a rectangle a
+                       longer one -- exactly
+                       no (something is rotated): the form becomes the
+                       polygon it is (an oval by 32 points)
+```
+
+That is why a stretched thing should be built standing on (0, 0): the
+stretch is about that point, so a ball whose bottom is there squashes
+against the ground; one centred there would squash in the air. And
+the honest limit: text cannot be stretched unevenly, so it is only
+scaled by the mean.
+
+**The hit flash** is the same kind of rewrite: `whiten` gives the same
+tree, every color white, drawn for a frame or two when something is
+hit. It is a silhouette -- the face's eyes vanish in it -- which is the
+point: for 80 ms the thing is only its outline, and the eye reads
+"hit" before it reads the picture.
 
 ## 5. Screen shake (planned, `juice/Trauma`)
 
@@ -200,8 +258,16 @@ and the brick grows from nothing in 0.3 s, overshoots by 10%, and
 settles. `Juice.tween` takes the `computer` rather than its time, like
 nothing else in the playground: it needs the flags too, so that
 `juice=off` puts every tween at its end at once. `Juice.curve` reads a
-curve directly, to draw it. The effects that need state (§4 to §7)
-will be a second section of `Juice.mli`, a value kept in the model.
+curve directly, to draw it. A landing is the same, a start time in
+the model:
+
+```ocaml
+ball |> Juice.stretch (Juice.squash 0.4 0.5 ball.landed computer)
+```
+
+and `Juice.whiten` draws the flash. The effects that need state (§5 to
+§7) will be a second section of `Juice.mli`, a value kept in the
+model.
 
 ## Glossary
 
@@ -217,3 +283,6 @@ will be a second section of `Juice.mli`, a value kept in the model.
   along a curve (the animators' *in-between*).
 - **lerp**: linear interpolation, a + (b − a)·p.
 - **progress**: how far through a tween's time, clamped to [0, 1].
+- **squash and stretch**: flattening on impact and lengthening after,
+  the area kept (Disney's first principle).
+- **hit flash**: the thing drawn all white for a frame or two when hit.

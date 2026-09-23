@@ -436,6 +436,26 @@ start; `Juice.mli`'s header lists which do.
   (flagged `juice=off`, the first use of a flagged scene outside
   `artwork=`). `notes_juice.md` written, §1 to §3 in full, §4 to §7
   sketched.
+- 2026-09-23, phase 2 DONE: `juice/Squash`, two functions and no new
+  maths -- `keep_area` ((1/k, k)) and `landing` (§1's `out_elastic` on
+  the height: its overshoot *is* the stretch, so the plan's separate
+  stretch rule was not needed); 3 tests (40% flatter: 66.7 × 24 for a
+  40-pixel ball, 0.859 at 5%, 1.1 at 10%, the most 1.149 at 13%, round
+  at the end; the area 1 at every moment). `Juice.squash amount
+  seconds landed computer` (the sketch's signature gained the amount;
+  (1, 1) with `juice=off`), `Juice.stretch` (a 2×2 matrix pushed down
+  the shape tree: exact forms while it stays diagonal, polygons when
+  something is rotated; words scaled by the mean) and `Juice.whiten`
+  (images left alone), 6 tests in `playground/tests/Unit_juice.ml` (a
+  ball's bottom staying on the ground, a rotated rectangle's polygon, a
+  rotated group's children, words, whiten through groups, squash and
+  `juice=off`). `examples/JuiceSquash`: dry, squashed, and squashed +
+  flashed, side by side on a dark backdrop (the playground's white
+  background hid the white flash); its bounce a parabola of the time,
+  so the golden runner's 1000 s is exactly a landing. Golden frames
+  `JuiceSquash.png` and `JuiceSquash_off.png`. The flash's 80 ms is a
+  `Juice.tween` counting down, which `juice=off` zeroes -- a stand-in
+  until phase 3's `Juice.flash`. `notes_juice.md` §4 in full.
 
 ## Verification
 

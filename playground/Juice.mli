@@ -23,8 +23,9 @@
    function of the time, like [wave] and [spin].
 
    Underneath is juice/ (see docs/claude_notes/tutorials/notes_juice.md):
-   Ease.mli, the curves and why [out] is [in] run backwards, and
-   Tween.mli, the tween as a function of its start time. *)
+   Ease.mli, the curves and why [out] is [in] run backwards,
+   Tween.mli, the tween as a function of its start time, and
+   Squash.mli, squash and stretch. *)
 
 open Playground
 
@@ -77,3 +78,26 @@ val curve : ease -> number -> number
  * [started], then going to [to] along [ease] for [seconds], then [to].
  * With the flag juice=off, [to] at once. *)
 val tween : ease -> number -> number -> number -> time -> computer -> number
+
+(* Squash and stretch: a thing that lands flattens, and springs back,
+ * its area kept -- a ball that reads as rubber, not stone:
+ *
+ *     ball |> Juice.stretch (Juice.squash 0.4 0.5 landed computer)
+ *
+ * [squash amount seconds landed computer]: how to stretch it (across,
+ * up), [amount] flatter at [landed] (0.4: 60% of its height, and as
+ * much wider), back to (1, 1) after [seconds]; (1, 1) with juice=off. *)
+val squash : number -> number -> time -> computer -> number * number
+
+(* [stretch (across, up) shape]: [shape] wider by [across] and taller by
+ * [up], about the point (0, 0) of its frame: build a thing that lands
+ * with its bottom at (0, 0), stretch it, then move it where it is, and
+ * it squashes against the ground, not in the air. A circle becomes an
+ * oval; a rotated rectangle, or anything inside a rotated group, the
+ * polygon it becomes (ovals by 32 points). Words and images inside a
+ * rotated group, and words anywhere, are only scaled evenly. *)
+val stretch : number * number -> shape -> shape
+
+(* [whiten shape]: the same shape, all white: the hit flash, drawn for
+ * a frame or two when something is hit (images are left as they are) *)
+val whiten : shape -> shape

@@ -92,6 +92,7 @@
    %{project_root}/examples/software/ImagePng.exe
    %{project_root}/examples/software/ImageLzw.exe
    %{project_root}/examples/software/JuiceCurves.exe
+   %{project_root}/examples/software/JuiceSquash.exe
    %{project_root}/games/arcade/software/TinyFlappyBird.exe
    %{project_root}/games/arcade/software/TinyFrogger.exe
    %{project_root}/games/arcade/software/TinyLunarLander.exe
