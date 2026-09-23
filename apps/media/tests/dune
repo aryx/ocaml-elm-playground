@@ -3,5 +3,14 @@
 ; bytes and opened into what it holds
 (test
  (name Test)
- (libraries alcotest testo audio graphics_movie graphics_yuv media_player)
+ (modules Test Unit_media)
+ (libraries alcotest testo audio graphics_movie graphics_yuv graphics_mpeg1 media_player)
+)
+
+; claude: our clip as Y4M on stdout, for the script that has ffmpeg
+; encode it as MPEG-1 once (graphics/videos/tests/clips/make_clips.sh)
+(executable
+ (name Dump_clip)
+ (modules Dump_clip)
+ (libraries graphics_y4m media_player)
 )

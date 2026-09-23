@@ -79,8 +79,8 @@ graphics/videos/          video formats, one library each
                           audio; written with Jpeg_encode (done, phase 3)
   mpeg1/                  Bits (the bit reader), Vlc (the variable-length
                           code tables), Mpeg1 (headers, macroblocks,
-                          motion, B-frame reordering), later Motion (an
-                          encoder's motion estimation)
+                          motion, B-frame reordering) (done, phase 4),
+                          later Motion (an encoder's motion estimation)
   tests/                  worked examples, PSNR against our frames
 apps/media/               TinyMediaPlayer: a Movie kind, the analyzer
 ```
@@ -209,11 +209,25 @@ commercial stream analyzers); here it is the lesson made visible.
    window of 12 rows now, scrolled to the item playing), and every
    process linking `Our_media` built the whole playlist when it started
    (the tests' 64 workers: 143 s of CPU; now lazy, 2 s).
-4. **MPEG-1 video**: I frames (a stream of them decodes like a JPEG
-   sequence), then P (motion compensation, half-pel), then B and the
-   reordering; our clip encoded once by a committed script (ffmpeg, from
-   our frames), decoded, PSNR against our frames; the analyzer's frame
-   types, vectors and residual.
+4. **MPEG-1 video** (done): `Bits`, `Vlc` (annex B's tables, as the
+   standard prints them, checked prefix-free), `Mpeg1` (I, P and B
+   pictures, skipped macroblocks, half-pixel and full-pixel vectors, the
+   matrices, the reordering, frames forward only through
+   `Movie.sequential`), written from the standard's description and
+   right the first time against ffmpeg's decoding: our clip's 50 frames
+   within 65-70 dB (the IDCT's rounding, a pixel off by one here and
+   there), and three harder streams, not kept (noise at quality 1, the
+   long codes and escapes, 1.3 MB for 1.5 s; a moving test pattern at
+   170 x 130; a Mandelbrot zoom) within 57 dB. The clip,
+   `ball_and_square.m1v` (36,487 bytes: I B B P, groups of 12), encoded
+   once by ffmpeg from our frames (`graphics/videos/tests/clips/
+   make_clips.sh`, with `apps/media/tests/Dump_clip.ml`), with three of
+   ffmpeg's decoded frames for the tests. TinyMediaPlayer plays it and
+   its analyzer (`a`) draws each macroblock's coding, the vectors, and
+   the strip of I, P and B. Not done yet: the residual view (the
+   prediction switched off), which needs a decoder option. Found on the
+   way: `files_to_string_ml.ml` could wrap a line inside an escaped
+   backslash (the stream's bytes had one; the pictures never did).
 5. **Motion estimation**: our own MPEG-1 encoder (I and P frames,
    full-search block matching by the sum of absolute differences, then
    a faster search), so the clips are ours end to end and ffmpeg is no

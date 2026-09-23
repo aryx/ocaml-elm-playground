@@ -14,7 +14,7 @@
  * format this repository reads: a recording (WAV), tunes (MIDI, ABC,
  * solfege), a song with its instruments (MOD), pictures (PNG, JPEG,
  * XPM) and movies (an animated GIF, Y4M, FLI and FLC, AVI with its
- * sound: graphics/videos/, plan_video_teaching.md).
+ * sound, MPEG-1: graphics/videos/, plan_video_teaching.md).
  *
  * The file's kind is found from its bytes, not its name (Media.mli: the
  * magic numbers file(1) and VLC's demuxers look for), and each kind is
@@ -31,7 +31,10 @@
  *     d shows it as what changed from a frame to the next, the rest
  *     dimmed: what a delta frame (FLC's) stores. A movie with a sound
  *     (an AVI's) plays once, its frame the one at the sound's position:
- *     paused, sought, the picture follows the sound.
+ *     paused, sought, the picture follows the sound. An MPEG-1's frames
+ *     say their kind (I, P, B), and a shows what the encoder decided:
+ *     each macroblock's coding, its motion vectors, and the frames'
+ *     kinds in a strip (Mpeg1.mli).
  *
  * Under it, what just played, as an oscilloscope and a spectrum; then
  * the position (a slider: drag it to seek), the buttons, and the
@@ -116,6 +119,7 @@ type model = {
   held : string list;
   asked : bool; (* file= asked for *)
   changes : bool; (* a movie shown as what changed from a frame to the next *)
+  analyzer : bool; (* an MPEG-1's macroblocks and vectors drawn over it *)
 }
 
 (* files given by file=, arriving (now natively, later in a browser) *)
@@ -134,7 +138,7 @@ let load (items : (string * string) list) (i : int) ~(playing : bool) : model ->
   { m with items; current = i; opened; playing; shown = 0 }
 
 let initial_model : model =
-  let m = { items = []; current = 0; opened = Error ""; playing = true; shown = 0; held = []; asked = false; changes = false } in
+  let m = { items = []; current = 0; opened = Error ""; playing = true; shown = 0; held = []; asked = false; changes = false; analyzer = false } in
   load (Lazy.force Our_media.playlist) 0 ~playing:true m
 
 (*****************************************************************************)
@@ -219,6 +223,7 @@ let update (computer : computer) (m : model) : model =
         else if nxt || pressed "n" then next m 1
         else if prev || pressed "p" then next m (-1)
         else if pressed "d" then { m with changes = not m.changes }
+        else if pressed "a" then { m with analyzer = not m.analyzer }
         else if pressed "ArrowRight" || pressed "ArrowLeft" then (
           (match samples_of deck.media with
           | Some samples ->
@@ -234,7 +239,7 @@ let update (computer : computer) (m : model) : model =
     match m.opened with
     | Ok (_, Picture _) -> m.playing && m.shown >= picture_frames
     | Ok (_, Movie { sound = Some _; _ }) -> deck.finished
-    | Ok (_, Movie { movie; sound = None }) -> m.playing && m.shown >= max picture_frames (int_of_float (movie.duration * 60.))
+    | Ok (_, Movie { movie; sound = None; _ }) -> m.playing && m.shown >= max picture_frames (int_of_float (movie.duration * 60.))
     | Ok _ -> deck.finished
     | Error _ -> m.playing && m.shown >= 60
   in
@@ -349,9 +354,47 @@ let changes (movie : Movie.t) (i : int) : Rgba_image.t =
     done;
     out
 
-let movie (m : model) (movie : Movie.t) ~(sound : bool) : shape list =
+(* the analyzer, over an MPEG-1: each macroblock tinted by how it was
+ * coded -- intra red, from the past green, from the future blue, from
+ * both purple, a P's with no vector grey, skipped not at all -- its
+ * vectors drawn from its center to where its pixels come from (white
+ * forward, cyan backward); under the picture, the frames' kinds in
+ * display order, I red, P green, B blue, the one shown tall *)
+let analysis (movie : Movie.t) ((h, info) : Mpeg1.header * (int -> Mpeg1.info)) (i : int) : shape list =
+  let size = Float.floor (Float.min ((vw - 40.) / float_of_int movie.width) ((vh - 40.) / float_of_int movie.height)) in
+  let left = vx - (float_of_int movie.width * size / 2.) and top = vy + (float_of_int movie.height * size / 2.) in
+  let inf = info i and cell = 16. * size in
+  let macroblock a ((how : Mpeg1.how), fv, bv) =
+    let cx = left + ((float_of_int (a mod inf.mb_width) + 0.5) * cell) and cy = top - ((float_of_int (a /.. inf.mb_width) + 0.5) * cell) in
+    (* the last row's macroblocks can run past the picture (120 = 7.5 x
+     * 16): their tint cut at its edge *)
+    let bottom = top - (float_of_int movie.height * size) in
+    let tint_h = Float.min (cell - 2.) (cy + (cell / 2.) - bottom - 1.) in
+    let tint =
+      match how with
+      | Intra -> [ rgb 230 60 50 ] | Forward -> [ rgb 60 200 80 ] | Backward -> [ rgb 60 130 240 ]
+      | Both -> [ rgb 180 80 220 ] | Zero -> [ rgb 150 150 150 ] | Skipped -> []
+    in
+    let arrow ((dx, dy) : int * int) (color : color) =
+      if (dx, dy) = (0, 0) then [] else [ segment color (cx, cy) (cx + (float_of_int dx / 2. * size), cy - (float_of_int dy / 2. * size)); circle color 3. |> move cx cy ]
+    in
+    List.map (fun c -> rectangle c (cell - 2.) tint_h |> fade 0.35 |> move cx (cy + (cell / 2.) - 1. - (tint_h / 2.))) tint @ arrow fv (rgb 250 250 250) @ arrow bv (rgb 90 230 230)
+  in
+  let n = Array.length h.kinds in
+  let w = Float.min 14. ((vw - 40.) / float_of_int n) in
+  let strip =
+    List.mapi
+      (fun k (kind : Mpeg1.kind) ->
+        let color = match kind with I -> rgb 230 60 50 | P -> rgb 60 200 80 | B -> rgb 60 130 240 in
+        rectangle color (w - 2.) (if k = i then 22. else 10.) |> move (vx - (float_of_int n * w / 2.) + ((float_of_int k + 0.5) * w)) (vy - (vh / 2.) + 18.))
+      (Array.to_list h.kinds)
+  in
+  List.concat (List.mapi macroblock (Array.to_list inf.macroblocks)) @ strip
+
+let movie (m : model) (movie : Movie.t) ~(sound : bool) ~mpeg : shape list =
   let i = movie_frame movie ~sound m.shown in
   picture (if m.changes then changes movie i else movie.frame i)
+  @ match mpeg with Some a when m.analyzer -> analysis movie a i | _ -> []
 
 let scope_and_spectrum () : shape list =
   let samples = recent () in
@@ -390,7 +433,12 @@ let where (m : model) : string =
   | Ok (_, Module song) -> (
       match deck.player with Some p -> let pos, row = Mod_player.position p in Printf.sprintf "position %d/%d, row %d" pos (Array.length song.positions) row | None -> "")
   | Ok (_, Picture img) -> Printf.sprintf "%d x %d pixels" img.width img.height
-  | Ok (_, Movie { movie; sound }) -> Printf.sprintf "frame %d of %d   d: %s" (movie_frame movie ~sound:(sound <> None) m.shown +.. 1) (Movie.frame_count movie) (if m.changes then "the frames" else "what changed")
+  | Ok (_, Movie { movie; sound; mpeg }) ->
+      let i = movie_frame movie ~sound:(sound <> None) m.shown in
+      Printf.sprintf "frame %d of %d%s   d: %s%s" (i +.. 1) (Movie.frame_count movie)
+        (match mpeg with Some (h, _) -> (match h.kinds.(i) with I -> " (I)" | P -> " (P)" | B -> " (B)") | None -> "")
+        (if m.changes then "the frames" else "what changed")
+        (match mpeg with Some _ -> if m.analyzer then "   a: the picture" else "   a: macroblocks" | None -> "")
 
 let view (_computer : computer) (m : model) : shape list =
   let name = fst (List.nth m.items m.current) in
@@ -401,7 +449,7 @@ let view (_computer : computer) (m : model) : shape list =
     | Ok (_, Sound s) -> waveform s.samples.left (fraction ())
     | Ok (_, Module song) -> tracker song
     | Ok (_, Picture img) -> picture img
-    | Ok (_, Movie { movie = mv; sound }) -> movie m mv ~sound:(sound <> None)
+    | Ok (_, Movie { movie = mv; sound; mpeg }) -> movie m mv ~sound:(sound <> None) ~mpeg
     | Error e -> [ txt 18. ink e |> move vx vy ]
   in
   [ rectangle (rgb 50 50 62) 1000. 1000.; rectangle panel vw vh |> move vx vy ]

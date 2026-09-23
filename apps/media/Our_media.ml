@@ -109,7 +109,9 @@ let bouncing_ball_gif : string =
  * of 28,800 bytes, 1.4 MB for two seconds of a small picture, the size
  * the next formats of graphics/videos/ are about -- and as FLC, only
  * what changed from a frame to the next (Fli.mli), and as AVI, each
- * frame a JPEG, with a sound (Avi.mli). A ball bounces twice
+ * frame a JPEG, with a sound (Avi.mli); and as MPEG-1, which ffmpeg
+ * encoded once from these frames (make_clips.sh), until we have our own
+ * encoder. A ball bounces twice
  * and a square turns a quarter, so the clip loops without a jump; flat
  * colors, whose sharp edges show what 4:2:0 does to color. *)
 let clip_frame (k : int) : Rgba_image.t =
@@ -171,4 +173,5 @@ let playlist : (string * string) list Lazy.t =
     ("ball_and_square.y4m", Y4m.to_string ~rate:(25, 1) (Lazy.force clip));
     ("ball_and_square.flc", Fli.to_string ~delay:0.04 (Lazy.force clip));
     ("ball_and_square.avi", Avi.to_string ~sound:(Lazy.force clip_sound) ~rate:(25, 1) (Lazy.force clip));
+    ("ball_and_square.m1v", Our_pictures.ball_and_square_m1v);
   ])

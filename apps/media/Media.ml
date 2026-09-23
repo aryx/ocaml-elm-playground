@@ -10,7 +10,7 @@
 
 (* See Media.mli *)
 
-type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi
+type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1
 
 let kind_name = function
   | Wav -> "WAV"
@@ -25,6 +25,7 @@ let kind_name = function
   | Y4m -> "Y4M"
   | Flic -> "FLIC"
   | Avi -> "AVI"
+  | Mpeg1 -> "MPEG-1"
 
 (*****************************************************************************)
 (* What it is *)
@@ -43,6 +44,7 @@ let by_bytes (s : string) : kind option =
   else if starts s 0 "\255\216\255" then Some Jpeg
   else if starts s 0 "/* XPM */" then Some Xpm
   else if starts s 0 "YUV4MPEG2 " then Some Y4m
+  else if starts s 0 "\000\000\001\xB3" then Some Mpeg1
   else if String.length s >= 128 && (starts s 4 "\x11\xAF" || starts s 4 "\x12\xAF") then Some Flic
   else if starts s 0 "X:" then Some Abc
   else None
@@ -65,7 +67,7 @@ type media =
   | Sound of { samples : Signal.stereo; notes : Midi.note list }
   | Module of Mod.song
   | Picture of Rgba_image.t
-  | Movie of { movie : Movie.t; sound : Signal.stereo option }
+  | Movie of { movie : Movie.t; sound : Signal.stereo option; mpeg : (Mpeg1.header * (int -> Mpeg1.info)) option }
 
 (* an XPM's characters as pixels: each its palette's color, or
  * transparent ("None") *)
@@ -114,13 +116,16 @@ let open_ ~(name : string) (bytes : string) : (kind * media, string) result =
         (* the decoders raise on a broken file: caught below *)
         | Png -> Ok (Picture (Png.decode bytes))
         | Jpeg -> Ok (Picture (Jpeg.decode bytes))
-        | Gif -> Ok (match Gif.animation bytes with [ (image, _) ] -> Picture image | frames -> Movie { movie = gif_movie frames; sound = None })
+        | Gif -> Ok (match Gif.animation bytes with [ (image, _) ] -> Picture image | frames -> Movie { movie = gif_movie frames; sound = None; mpeg = None })
         | Xpm -> Ok (Picture (xpm_picture (Xpm.parse bytes)))
-        | Y4m -> Ok (Movie { movie = snd (Y4m.of_string bytes); sound = None })
-        | Flic -> Ok (Movie { movie = snd (Fli.of_string bytes); sound = None })
+        | Y4m -> Ok (Movie { movie = snd (Y4m.of_string bytes); sound = None; mpeg = None })
+        | Flic -> Ok (Movie { movie = snd (Fli.of_string bytes); sound = None; mpeg = None })
         | Avi ->
             let _, movie, sound = Avi.of_string bytes in
-            Ok (Movie { movie; sound = Option.map Signal.both sound })
+            Ok (Movie { movie; sound = Option.map Signal.both sound; mpeg = None })
+        | Mpeg1 ->
+            let header, movie, info = Mpeg1.of_string bytes in
+            Ok (Movie { movie; sound = None; mpeg = Some (header, info) })
       in
       match media with Ok m -> Ok (kind, m) | Error e -> Error (name ^ ": " ^ e) | exception e -> Error (name ^ ": " ^ Printexc.to_string e))
 

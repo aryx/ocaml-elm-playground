@@ -19,6 +19,8 @@
  *     "YUV4MPEG2 "              Y4M, raw video (mjpegtools, 2001)
  *     "RIFF" .... "AVI "        AVI (Video for Windows, 1992): WAV's
  *                               container, another type
+ *     00 00 01 B3               MPEG-1 video (1993): a start code, the
+ *                               sequence header's
  *     11 AF, 12 AF at byte 4    FLI, FLC (Autodesk Animator, 1989):
  *                               (two bytes only: a weak magic, trusted
  *                               only in a file of the header's 128 bytes)
@@ -33,9 +35,9 @@
  * its own player (Mod_player.mli), too long to render ahead; a
  * [Picture]; a [Movie], pictures in time, decoded as they're shown
  * (Movie.mli), and its sound if it has one (an AVI's): a GIF's frames,
- * Y4M, FLI and FLC, AVI (plan_video_teaching.md). *)
+ * Y4M, FLI and FLC, AVI, MPEG-1 (plan_video_teaching.md). *)
 
-type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi
+type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1
 
 val kind_name : kind -> string
 
@@ -47,7 +49,11 @@ type media =
   | Sound of { samples : Signal.stereo; notes : Midi.note list (* none for a recording *) }
   | Module of Mod.song
   | Picture of Rgba_image.t
-  | Movie of { movie : Movie.t; sound : Signal.stereo option (* played with it, its clock *) }
+  | Movie of {
+      movie : Movie.t;
+      sound : Signal.stereo option; (* played with it, its clock *)
+      mpeg : (Mpeg1.header * (int -> Mpeg1.info)) option; (* an MPEG-1's decisions, for the analyzer *)
+    }
 
 (* [open_ ~name bytes]: what it is and what it holds, or why not *)
 val open_ : name:string -> string -> (kind * media, string) result

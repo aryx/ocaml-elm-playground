@@ -8,4 +8,8 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"videos" (fun _env -> Unit_movie.tests @ Unit_yuv.tests @ Unit_psnr.tests @ Unit_y4m.tests @ Unit_fli.tests @ Unit_avi.tests @ Unit_mpeg1.tests)
+(* our clip (Our_media.clip, drawn by graphics/2d), 25 frames a second,
+ * as Y4M on stdout: what make_clips.sh gives ffmpeg to encode *)
+let () =
+  set_binary_mode_out stdout true;
+  print_string (Y4m.to_string ~rate:(25, 1) (Lazy.force Our_media.clip))

@@ -42,13 +42,20 @@ let () =
           * the newline and the next line's leading blanks *)
          Printf.printf "let %s =\n  \"" (name path);
          let col = ref 0 in
-         String.iter
-           (fun c ->
+         (* claude: the characters left of the escape being printed: an
+          * escaped backslash is two backslashes, so "just before a
+          * backslash" can be the middle of one *)
+         let inside = ref 0 in
+         String.iteri
+           (fun i c ->
              (* never inside an escape: only just before one *)
-             if !col >= 76 && c = '\\' then begin
+             if !inside = 0 && !col >= 76 && c = '\\' then begin
                print_string "\\\n   ";
                col := 0
              end;
+             if !inside > 0 then decr inside
+             else if c = '\\' then
+               inside := (match escaped.[i + 1] with '0' .. '9' -> 3 | _ -> 1);
              print_char c;
              incr col)
            escaped;

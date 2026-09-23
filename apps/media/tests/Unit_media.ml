@@ -32,6 +32,7 @@ let test_sniff () =
       ("ball_and_square.y4m", Y4m);
       ("ball_and_square.flc", Flic);
       ("ball_and_square.avi", Avi);
+      ("ball_and_square.m1v", Mpeg1);
     ];
   (* the bytes decide, not the name *)
   Alcotest.(check (option kind)) "a PNG called bell.wav" (Some Png) (Media.sniff ~name:"bell.wav" (bytes "demo_picture.png"));
@@ -75,12 +76,20 @@ let test_open () =
   | _ -> Alcotest.fail "not movies");
   (* and as AVI: the frames as JPEGs, close; the sound, the blips *)
   (match open_ "ball_and_square.avi" with
-  | Movie { movie; sound = Some sound } ->
+  | Movie { movie; sound = Some sound; _ } ->
       Alcotest.(check int) "AVI: 50 frames" 50 (Movie.frame_count movie);
       Alcotest.(check (float 1e-9)) "AVI: 2 s" 2. movie.duration;
       Alcotest.(check int) "its sound: 2 s" (2 * Signal.rate) (Array.length sound.left);
       List.iter (fun i -> let db = Psnr.psnr (List.nth (Lazy.force Our_media.clip) i) (movie.frame i) in if db < 30. then Alcotest.failf "AVI frame %d: %.1f dB" i db) [ 0; 25; 49 ]
   | _ -> Alcotest.fail "not a movie with a sound");
+  (* and as MPEG-1: 50 frames, I, P and B, close to ours (ffmpeg's
+   * encoder at quality 4) *)
+  (match open_ "ball_and_square.m1v" with
+  | Movie { movie; mpeg = Some (h, _); _ } ->
+      Alcotest.(check int) "MPEG-1: 50 frames" 50 (Movie.frame_count movie);
+      Alcotest.(check char) "an I first" 'I' (match h.kinds.(0) with I -> 'I' | P -> 'P' | B -> 'B');
+      List.iter (fun i -> let db = Psnr.psnr (List.nth (Lazy.force Our_media.clip) i) (movie.frame i) in if db < 30. then Alcotest.failf "MPEG-1 frame %d: %.1f dB" i db) [ 0; 1; 3; 49 ]
+  | _ -> Alcotest.fail "not an MPEG-1 movie");
   (* our GIF: six frames, 0.15 s each, the ball moving *)
   match open_ "bouncing_ball.gif" with
   | Movie { movie; _ } ->

@@ -3,5 +3,6 @@
 (test
  (name Test)
  (package elm_playground)
- (libraries alcotest testo graphics_rgba graphics_movie graphics_yuv graphics_y4m graphics_fli graphics_avi audio_signal)
+ (libraries alcotest testo graphics_rgba graphics_movie graphics_yuv graphics_y4m graphics_fli graphics_avi audio_signal graphics_mpeg1)
+ (deps (source_tree clips)) ; our clip as ffmpeg encoded it (make_clips.sh)
 )

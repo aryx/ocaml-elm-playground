@@ -9,7 +9,8 @@
  * picture as PNG, GIF and JPEG (the Image examples' demo picture), an
  * animated GIF (a ball bouncing, written here without compression: see
  * Our_media.ml), a sprite as XPM (TinyMario's), and a video, raw as
- * Y4M, FLC and AVI (with a sound), filmed by our own 2D rasterizer;
+ * Y4M, FLC, AVI (with a sound) and MPEG-1, filmed by our own 2D
+ * rasterizer;
  * made when first forced *)
 val playlist : (string * string) list Lazy.t
 

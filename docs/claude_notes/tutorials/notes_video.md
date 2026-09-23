@@ -24,8 +24,8 @@ after the first is a way of not storing the same thing twice.
 | `y4m/` | `Y4m` | §2 | done |
 | `fli/` | `Fli` | §3 | done |
 | `avi/` | `Avi` | §4 | done |
-| `mpeg1/` | `Bits`, `Vlc`, `Mpeg1`, later `Motion` | §5, §7 | |
-| `apps/media/` | TinyMediaPlayer's `Movie` kind (done), the analyzer (its first view done) | §4, §8 | |
+| `mpeg1/` | `Bits`, `Vlc`, `Mpeg1` (done), later `Motion` | §5, §7 | |
+| `apps/media/` | TinyMediaPlayer's `Movie` kind (done), the analyzer (`d` and `a` done, the residual not yet) | §4, §8 | |
 
 ## 1. How big video is
 
@@ -186,6 +186,16 @@ of macroblocks, where a decoder can resynchronize after an error),
 macroblocks (the address skipped to, the kind, the vector, which
 blocks are coded), blocks (the coefficients). Its variable-length codes
 come in tables in the standard; reading them is `Vlc`, the bits `Bits`.
+
+Our clip as MPEG-1 (ffmpeg's encoding at quality 4, groups of 12):
+36,487 bytes -- more than FLC's 19,818 on this picture of five flat
+colors, which is FLC's best case and MPEG's worst (JPEG's blocks ring
+at sharp edges), a third of the AVI's JPEGs, and on a photograph or a
+camera's pan, which FLC can't hold at all, the only one of the three
+that works. The analyzer (`a` in TinyMediaPlayer) shows where the bytes
+went: on a B frame, the still sky skipped, the ball predicted from both
+sides (a vector to the frame before, one to the frame after), the
+square's edges from the past.
 
 That is the skeleton of every codec since: MPEG-2 (DVDs) added
 interlace, H.264 (2003) smaller and many-shaped blocks, several
