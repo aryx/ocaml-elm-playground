@@ -236,7 +236,7 @@ In `audio/` (the building blocks), then in `apps/music/`.
 
 ### Filters
 
-- **`Ladder`**: the Moog ladder, the heart of the plan. Four one-pole
+- **`Moog_ladder`**: the Moog ladder, the heart of the plan. Four one-pole
   low-passes in a row (-6 dB/octave each, so -24), the output fed back
   to the input, inverted, by k (the "emphasis"): the resonance, and at
   k = 4 an oscillator at the cutoff. Three versions, switchable:
@@ -338,7 +338,7 @@ delay lines.
 
 - `Minimoog_voice.ml` (`.mli`): the Model D's signal path over the
   blocks above -- three `Oscillator`s with `Drift`, a mixer with noise,
-  the `Ladder`, two `Envelope`s, `Voicing` (mono, low note, glide), the
+  the `Moog_ladder`, two `Envelope`s, `Voicing` (mono, low note, glide), the
   modulation mix and wheel -- and its knobs' ranges and curves (the
   cutoff exponential over ~10 octaves, the glide's time, the
   envelopes' 1 ms to 10 s). Its `Patch` record, the presets, the text
@@ -487,6 +487,33 @@ microphone, which is out of scope) likewise later.
   `mono_legato_glide`, a phrase from Voicing, Vco and Envelope put
   together as `Minimoog_voice` will be. Polyphony (voice stealing) left
   for the Juno.
+- **Phase 3, DONE (2026-09-23)**: the filters. `audio/Moog_ladder` (not
+  `Ladder`: the platformer kit has one, and both libraries are
+  unwrapped), three
+  models behind one `process` (the cutoff per sample, the resonance k,
+  `~compensation` for the bass): `Naive` (the feedback a sample late),
+  `Zero_delay` (the loop solved, y = (G^4 x + sigma) / (1 + k G^4)),
+  `Nonlinear` (the same with a tanh at the loop's input and each
+  pole's, the linear solution predicting the loop's input). The analog
+  numbers worked out from 1 / ((1 + s)^4 + k) first (the peak at k =
+  3.5 59.3 cents under, +9.25 dB), then the models measured against
+  them (`Unit_moog_ladder`): -12.04 dB at the cutoff, -23.3 then -24.0 dB
+  an octave; the bass at 1 / (1 + k), all of it compensated; the peak
+  at k = 3.5 at -60, -60, -55 cents (zero-delay, 440 Hz, 1 and 5 kHz,
+  a 5-cent grid) against -35, -10, +130 (naive); oscillation from k =
+  4.000 (zero-delay) against 4.06, 4.26, 4.64 and none up to 8 at 5 kHz
+  (naive); the nonlinear one oscillating within a cent, held at 0.08 (k
+  = 4.2) and 0.12 (4.5), its 3rd harmonic 49.9, 24.3, 16.8, 10.6 dB
+  under as the input goes 0.1, 0.5, 1, 4. A lesson on the way: at k = 4
+  the zero-delay filter's 0 Hz gain first measured 0.0845, not 0.2 --
+  exactly at its threshold, a step sets off an undamped ring. `audio/Svf`,
+  Chamberlin's and the zero-delay one (Simper's form), low, band, high,
+  notch: -3.01 dB at the cutoff to 12 kHz; Chamberlin's blown up at 8
+  kHz (stable to 7,637 Hz at Q = 0.707); a cutoff swept at audio rate,
+  the biquad recomputed each sample too loud (6.66 against 2.40) at 500
+  Hz and blown up at 3 kHz, the SVF steady. Golden WAVs, plotted before
+  approving: `ladder_sweep` and `ladder_self_oscillation` (C4, E4, G4,
+  C5 on the cutoff alone, each measured within 0.3 cents).
 
 ## Verification
 

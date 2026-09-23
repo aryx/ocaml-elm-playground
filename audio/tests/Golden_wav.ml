@@ -173,4 +173,34 @@ let sounds =
             ~glide:0.05 ~frames:120
             [ (0, 60, true); (15, 64, true); (30, 64, false); (45, 60, false); (60, 67, true); (90, 67, false) ] ) ]
 
+let sounds =
+  sounds
+  (* the ladder (Moog_ladder.mli), nonlinear: a 110 Hz sawtooth at half
+   * volume, its cutoff swept from 100 Hz to 5 kHz over 1.5 s, at
+   * resonances 0, 2.5 and 3.8 (the peak singing through the harmonics,
+   * the bass thinning) *)
+  @ [ ( "ladder_sweep",
+        fun () ->
+          let len = Signal.samples 1.5 in
+          let cutoff = Array.init len (fun i -> 100. *. Float.pow 50. (float_of_int i /. float_of_int len)) in
+          Array.concat
+            (List.map
+               (fun k ->
+                 let saw = Array.make len 0. in
+                 Vco.fill (Vco.create ()) Sawtooth ~frequency:(Array.make len 110.) saw;
+                 let x = Array.map (fun v -> 0.5 *. v) saw in
+                 Moog_ladder.process (Moog_ladder.create ()) Nonlinear ~cutoff ~resonance:k x;
+                 Mix.gain 0.5 x)
+               [ 0.; 2.5; 3.8 ]) );
+      (* no input but a click, k = 4.3: the filter sings its cutoff, C4,
+       * E4, G4, C5, 0.4 s each, the cutoff as the keyboard *)
+      ( "ladder_self_oscillation",
+        fun () ->
+          let len = Signal.samples 1.6 in
+          let cutoff = Array.init len (fun i -> Voicing.frequency (float_of_int (List.nth [ 60; 64; 67; 72 ] (i * 4 / len)))) in
+          let x = Array.make len 0. in
+          x.(0) <- 1.;
+          Moog_ladder.process (Moog_ladder.create ()) Nonlinear ~cutoff ~resonance:4.3 x;
+          Mix.gain 2. x ) ]
+
 let tests = Testo.categorize "golden WAVs" (List.map (fun (name, f) -> t name (fun () -> check name (f ()) ())) sounds)

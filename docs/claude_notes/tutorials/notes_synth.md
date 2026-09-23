@@ -34,8 +34,8 @@ module here.
 | `audio/Noise` (extended) | random numbers for them: a linear congruential generator | §4 | done |
 | `audio/Envelope` (extended) | gated, exponential | §4 | done |
 | `audio/Voicing` | keys to a voice: priority, legato, glide (stealing: later) | §5 | done (mono) |
-| `audio/Ladder` | the Moog filter: naive, zero-delay, nonlinear | §6 | |
-| `audio/Svf` | the state-variable filter | §7 | |
+| `audio/Moog_ladder` | the Moog filter: naive, zero-delay, nonlinear | §6 | done |
+| `audio/Svf` | the state-variable filter: Chamberlin's, zero-delay | §7 | done |
 | `audio/Drive`, `Filter` (EQ) | gain, waveshaping, oversampling; shelves, peaks | §8 | |
 | `audio/Modulated_delay`, `Phaser` | chorus, flanger; phaser | §8 | |
 | `audio/Delay`, `Reverb` | echoes in time with the music; rooms | §8 | |
@@ -315,29 +315,42 @@ cutoff following the keyboard. And the price, the Minimoog's known
 character: below the cutoff the feedback *subtracts*, the gain at 0 Hz
 is 1 / (1 + k), a fifth (-14 dB) at k = 4: the bass thins as the
 resonance rises. (Some later ladders add the input back to compensate:
-an option.)
+an option, `~compensation`.) Below k = 4 the analog peak lies a little
+*under* the cutoff: 59 cents under and 9.25 dB up at k = 3.5, 11 cents
+at 3.9 (from its transfer function, 1 / ((1 + s)^4 + k)) -- a number
+the digital versions below are measured against.
 
 **Three versions**, switchable:
 
-1. **Naive**: the four poles as one-poles (`y += a (x - y)`), and the
+1. **Naive**: the four poles as one-poles (`y += g (x - y)`), and the
    feedback from the *previous* sample, since the current output isn't
    known yet. That one-sample delay adds phase (8.2 degrees at 1 kHz,
-   44,100 Hz: 360 x 1000 / 44,100), so the resonance lands below the
-   cutoff and oscillation needs a k other than 4 (Stilson and Smith,
-   1996, measured it; our numbers when written).
+   44,100 Hz: 360 x 1000 / 44,100), a different amount at every cutoff
+   (Stilson and Smith, 1996). Measured at k = 3.5: the peak 36 cents
+   under the cutoff at 440 Hz, 10 under at 1 kHz, 129 *over* at 5 kHz;
+   oscillation from k = 4.06 at 110 Hz, 4.26 at 440, 4.64 at 1 kHz, and
+   not at all up to k = 8 at 5 kHz. The resonance knob means something
+   else at every note.
 2. **Zero-delay feedback** (Zavalishin's topology-preserving
-   transform): the loop solved instead of delayed -- the output is a
-   linear function of the input and the poles' states, so it can be
-   computed *before* the poles run. The cutoff where it should be,
-   oscillation at k = 4 within a few cents.
-3. **Nonlinear**: a tanh at each stage, the transistors saturating
-   (Huovilainen, 2004). Driven harder, the filter gets thicker, not
-   just louder, and its resonance tames itself instead of exploding.
-   Its harmonics measured rising with the input's level.
-
-Tests, when written: -24 dB per octave above the cutoff (the linear
-one, on sines), the self-oscillation's pitch against the cutoff (the
-naive error vs ZDF's), the passband at 1 / (1 + k).
+   transform): the loop solved instead of delayed -- each pole a
+   trapezoidal integrator whose output is a known multiple of its input
+   plus a part of its state, so the four in a row give y = G^4 u +
+   sigma, and with u = x - k y, y = (G^4 x + sigma) / (1 + k G^4),
+   computed *before* the poles run. Measured: the analog numbers -- the
+   peak 59 cents under at 440 Hz and 1 kHz (55 at 5 kHz, the trapezoid
+   shifting the frequencies around its pre-warped cutoff a little near
+   Nyquist), oscillation from k = 4.000 at every cutoff.
+3. **Nonlinear**: the zero-delay loop with a tanh at its input and at
+   each pole's, the transistors saturating (after Huovilainen, 2004,
+   whose own model runs on the naive loop): the linear solution predicts
+   the loop's input, the saturation bends it. Driven harder, it gets
+   thicker, not just louder: a 108 Hz sine's 3rd harmonic 50 dB under
+   the fundamental at an amplitude of 0.1, 24 at 0.5, 17 at 1, 11 at 4.
+   Past k = 4 it oscillates without running away, the tanh holding its
+   level, within 1 cent of the cutoff -- the golden WAV
+   `ladder_self_oscillation` plays C4, E4, G4, C5 on the cutoff alone,
+   each within 0.3 cents. And `ladder_sweep`, a sawtooth under a
+   sweeping cutoff at k = 0, 2.5 and 3.8.
 
 ## 7. The state-variable filter
 
@@ -349,9 +362,18 @@ moving one. The **state-variable filter** (Hal Chamberlin, *Musical
 Applications of Microprocessors*, 1980) has the cutoff and the
 resonance themselves as its parameters, and gives low-pass, band-pass,
 high-pass and notch at once from one structure (two integrators in a
-loop). Chamberlin's, then its zero-delay version (Zavalishin; Andrew
-Simper's, 2013), stable at any cutoff. The test: a cutoff swept by an
-audio-rate LFO, the biquad's output against the SVF's.
+loop). Chamberlin's first, integrators as running sums: cheap, right
+at low cutoffs, and unstable high up -- at Q = 0.707 stable only up to
+7,637 Hz (about a sixth of the rate, the classic warning; higher Qs a
+little further, 18.9 kHz at Q = 20). Then its zero-delay version
+(Zavalishin; Andrew Simper's form, 2013), stable at any cutoff: -3.01
+dB at the cutoff in its low, band and high outputs at 1, 5, 8 and 12
+kHz alike. The test that says why a synthesizer wants it: a 110 Hz
+sawtooth low-passed at Q = 5, the cutoff swept between 125 Hz and 8 kHz
+at audio rate. Swept 5 times a second, the loudest sample is 2.38
+through the SVF and through the biquad recomputed at each sample; 500
+times a second, 2.40 through the SVF, 6.66 through the biquad; 3,000
+times, 2.33, and the biquad blown up.
 
 ## 8. Effects: what a sound goes through on its way out
 
