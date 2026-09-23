@@ -1320,6 +1320,14 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
       120,
       "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75",
       [ "net=simulate"; "latency=80"; "loss=10"; "netcode=rollback" ] );
+    (* claude: and with a server owning the game (Snapshot.mli), in the
+     * middle: the clients a few ticks ahead of it, predicting, their
+     * mispredictions corrected by its snapshots *)
+    ( "games/arcade/software/TinySpacewar",
+      "server",
+      120,
+      "space:2-3,up:10-60,left:30-45,down:50,down:70,w:10-40,s:55,s:75",
+      [ "net=simulate"; "latency=80"; "loss=10"; "netcode=server" ] );
     (* claude: the same duel as 1997 played it (Multiplayer.mli): a trip
      * across the network every tick, at 100 ms still near the title
      * after 180 frames (tick 22), where rollback is at tick 180 *)

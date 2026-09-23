@@ -541,8 +541,26 @@ playground/Universe.ml    HtDP's universe: a Bigbang world with a
    WebSocket, as IRCv3 has it, so that a browser joins), its program
    `networking/ircd/tiny_ircd.exe`. Left: the whiteboard and a
    turn-based game on the universe.
-6. *(later)* **Client-server**: `Snapshot`, prediction, reconciliation,
+6. *(done, 2026-09-23, but the arena)* **Client-server**: `Snapshot`, prediction, reconciliation,
    interpolation; the XPilot-like arena.
+   Done as: `networking/Snapshot` (the messages; a server applying
+   each player's inputs in order, one a tick, the last repeated when
+   late, the world to each client every 3 ticks with its acked input and
+   everyone's latest; a client carrying its unacked inputs), `Prediction`
+   (my inputs played at once, the others' guessed from their latest;
+   reconciliation: the server's world, my unacked inputs replayed on it;
+   mispredictions counted by comparing the models), `Interpolation` (a
+   buffer drawn 100 ms behind the newest snapshot). Tests over
+   `Sim_net`: every input applied once, in order; alone never
+   mispredicted; two players 27 and 23 mispredictions in 600 ticks, the
+   worlds agreeing at the end. `Multiplayer`'s `netcode=server` in
+   net=simulate, the server's screen in the middle (the clients a few
+   ticks ahead of it), a golden frame of TinySpacewar so. The world as
+   Marshal's bytes (fine in one program; a codec over Wire for a real
+   network). Left: interpolation in `Multiplayer` (a game hook: what to
+   draw from the past), netcode=server over a real network, lag
+   compensation, delta compression, and the XPilot-like arena
+   (TinyXpilot on a server).
 7. **Docs**: `notes_networking.md` checked against the code and its
    numbers measured (bandwidth, delay, rollback's replays per frame),
    and the related-work note's postscript filled in. (The split into

@@ -44,7 +44,7 @@
      the players as they come; the same game, a native program and a
      browser playing it together.
 
-   Three netcodes, by the flag [netcode=] (and, in net=simulate, the
+   Four netcodes, by the flag [netcode=] (and, in net=simulate, the
    key n, which starts the game again with the next one, to feel the
    difference at the same latency):
 
@@ -60,7 +60,14 @@
    - [1997]: lockstep with no delay, how a first network game is
      written (send, then wait for the answer, every tick): a trip across
      the network per tick, the frame rate capped by it -- kept to be
-     felt (TinyTronscroll's original did exactly this).
+     felt (TinyTronscroll's original did exactly this);
+   - [server] (in net=simulate only, so far): a server owns the game
+     (Snapshot.mli), shown in the middle; the clients send their keys,
+     predict their own game at once and are corrected by its snapshots,
+     20 a second (Prediction.mli) -- a few ticks ahead of the server,
+     the mispredictions counted. No desync possible: there is one game.
+     The others are shown predicted, not interpolated (Interpolation.mli
+     needs the game to say what to draw from the past: a hook to come).
 
    Either way, the peers exchange only their inputs. It works only if [update] is *deterministic*: the same inputs
    give the same model, on every computer. So the [computer] it gets is
