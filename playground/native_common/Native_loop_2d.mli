@@ -83,6 +83,12 @@ val queue_ahead : int
 (* the card, opened and started; None, with a warning, if there is none *)
 val open_audio : unit -> Tsdl.Sdl.audio_device_id option
 
+(* [latency queued]: the seconds before a sample queued behind [queued]
+ * others leaves SDL: those, and the device's own buffer (1024 samples,
+ * 23 ms). With the queue kept 3 frames ahead and topped up each frame,
+ * [queued] is 2 to 3 frames when a frame's sound goes in: 56 to 73 ms. *)
+val latency : int -> float
+
 (* [queue_samples device (left, right)]: queued as 16-bit, clipped,
  * the two channels interleaved *)
 val queue_samples : Tsdl.Sdl.audio_device_id -> float array * float array -> unit
@@ -108,6 +114,8 @@ val queue_samples : Tsdl.Sdl.audio_device_id -> float array * float array -> uni
  * frame, and with -dump-audio file, [dump_audio file samples] writes
  * them all at the end (the platform's Wav.write: this library doesn't
  * know audio/). No device (SDL can't open one): silence, and a warning.
+ * Each time it queues, [audio_latency] is told the frame's [latency]
+ * (Audio.set_latency).
  *
  * The arguments are the fields of a ('model, 'msg) Playground.app
  * ('view = Playground.shape list), passed one by one because this
@@ -128,4 +136,5 @@ val run :
   dump_frame:(string -> unit) ->
   pull_audio:(int -> float array * float array) ->
   dump_audio:(string -> float array * float array -> unit) ->
+  audio_latency:(float -> unit) ->
   unit

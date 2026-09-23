@@ -428,6 +428,26 @@ Things decided, and to decide:
   for YC, CP, DX, CS), only once the four exist: a thin program over
   their `music_voices` modules, as TinyOffice is over its parts.
 
+## The climax: TinyOp1 and TinyOpxy
+
+Everything above builds towards two instruments that are more than
+a synthesizer: Teenage Engineering's OP-1 (2011) and OP-XY (2024),
+small, playful, and versatile enough to make whole songs on (the
+user's favourites; facts here from memory, to check against their
+manuals first, as the Model D's were). Each is a studio in a box, so
+each gathers the collection's lessons, which is why they come last:
+
+| App | Original | Its lesson, and what it adds |
+|---|---|---|
+| **TinyOp1** | OP-1 (Teenage Engineering, 2011) | **the tape as the studio**: a 4-track tape recorder, each track a `Signal.t` recorded from the instrument's output, the tape speed as `Resample` (pitch and time together, as a real tape's), reverse, lift and drop (cut and paste); several **synth engines** behind the same four knobs (a subtractive one, `Fm`'s, `Pluck`'s string, a noise one), as the rack's `Modulation` slot is several effects behind one set; the **four coloured encoders** and a cartoon screen per engine, the whole UI in four knobs; its effects the rack's |
+| **TinyOpxy** | OP-XY (Teenage Engineering, 2024) | **the groovebox**: 8 tracks, a **step sequencer in the audio clock** (TinyTB303's, grown), **parameter locks** (a knob's value stored per step, Elektron's idea: a sequence of sounds, not only of notes), a sampler and drum tracks, chords and scales ("brain"), scenes; its engines TinyOp1's |
+
+What they need first: **polyphony** (H1, a voice per key, then a fixed
+number with stealing), the **audio-clock sequencer** (TinyTB303), and
+for TinyOpxy a **sampler** (samples played at pitches, `Resample`, the
+audio plan's `AudioSampler` made an instrument). The order then: H1,
+TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
+
 ## Phasing
 
 0. **The notes and the groundwork**: `notes_synth.md` written ahead
@@ -530,6 +550,18 @@ Things decided, and to decide:
      pressure, else the mouse's vertical position on a held key); the
      ring modulator; the supersaw as a `Vco` option.
    - **T1, TinyReface**, the hub, if the four make it worth it.
+12. *(later, the climax)* TinyOp1 and TinyOpxy (the section above),
+   their manuals read first:
+   - **O1, the tape**: a `Tape` of 4 tracks in `audio/` (recording an
+     instrument's output block by block, playing back at a speed
+     through `Resample`, reverse, lift and drop), tested on a recorded
+     phrase played back an octave up in half the time.
+   - **O2, TinyOp1's engines** in `music_voices`, polyphonic (after H1),
+     each four knobs; **O3, its panel**: the four encoders, the screens,
+     the keyboard, the tape's transport.
+   - **X1, the sequencer's parameter locks** on TinyTB303's audio-clock
+     sequencer; **X2, the sampler instrument**; **X3, TinyOpxy**: 8
+     tracks, the step grid, the engines, scenes.
 
 ## Status
 
@@ -792,6 +824,28 @@ Things decided, and to decide:
   for the delays (the exercise in `Modulated_delay.mli`), the rendering
   cost of `Audio.drive` on a long loop in a browser (x4 oversampling),
   to measure in phase 8.
+- **Phase 8, DONE (2026-09-24)**: the web, and the latency. The web
+  platform already played our samples (every sound is `Audio.pull`'s,
+  instruments included), so TinyMinimoog runs in a browser as is:
+  checked in headless Chrome, the page drawn whole. `Audio.latency`, set
+  by each platform from what's queued ahead of the card when a frame's
+  sound goes in (natively the SDL queue plus its 1024-sample buffer; in
+  a browser the next buffer's start plus Web Audio's `baseLatency` and
+  `outputLatency`), averaged over a second, shown by TinyMinimoog above
+  its panel (0 in golden runs: no card; the frames moved by that text).
+  Measured natively 56 ms (SDL's dummy driver draining in real time).
+  In a browser: ~83 ms scheduled plus the browser's own, read on the
+  page in Chrome on Linux: 90 ms (headless Chrome's audio clock isn't
+  real time: it showed 12 ms, meaningless). The cost, under Node (js_of_ocaml,
+  release) and natively: the voice 9.6% and 3.3% of real time, with the
+  whole rack 32% and 14%. And `Audio.drive`'s rendering over a 20 s
+  loop, 1.2 s natively and 2.1 s in JavaScript at x4 -- TinyRockBand
+  frozen at every song's start: now x2 (aliases still -58.6 dB), one
+  channel when both are the same, 0.32 and 0.56 s, and the game's
+  driven guitar part rendered once, lazily, shared by the three bands.
+  Written into notes_synth.md section 1. Left: a shorter web queue
+  (the 34 ms more than native are nearly all ours: less latency, more
+  gaps when a frame is late, the trade-off in notes_synth.md).
 
 ## Verification
 

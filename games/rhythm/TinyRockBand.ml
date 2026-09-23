@@ -213,14 +213,20 @@ let power_chord (s : Audio.sound) : Audio.sound = Audio.together [ s; Audio.pitc
 let only (kept : instrument) : Abc.tune =
   List.fold_left (fun t i -> if i = kept then t else Rhythm.muted (voice_of i) t) tune instruments
 
+(* the guitar's part through its amplifier, rendered once, the first
+ * time a band needs it: the whole song through the drive is 0.32 s of
+ * work natively, 0.56 s in a browser (measured), a pause too long to
+ * repeat at every start *)
+let guitar_part : Audio.sound Lazy.t = lazy (Audio.recorded (power_chord (Audio.of_tune (only Guitar))))
+
 (* the band as each player hears it: the song with that player's part
- * muted, the guitar apart, through its amplifier; made once *)
-let bands : (instrument * Audio.sound) list =
-  List.map
-    (fun i ->
-      let others = Audio.of_tune (Rhythm.muted (voice_of Guitar) (Rhythm.muted (voice_of i) tune)) in
-      (i, if i = Guitar then others else Audio.together [ others; power_chord (Audio.of_tune (only Guitar)) ]))
-    instruments
+ * muted, the guitar apart, through its amplifier *)
+let band (i : instrument) : Audio.sound =
+  let others = Audio.of_tune (Rhythm.muted (voice_of Guitar) (Rhythm.muted (voice_of i) tune)) in
+  if i = Guitar then others else Audio.together [ others; Lazy.force guitar_part ]
+
+(* each made once, when first played *)
+let bands : (instrument * Audio.sound Lazy.t) list = List.map (fun i -> (i, lazy (band i))) instruments
 
 (*****************************************************************************)
 (* The model *)
@@ -314,7 +320,7 @@ let update (computer : computer) (model : model) : model =
       end
       else scenes
   | Playing p ->
-      Audio.loop "rockband" (List.assoc p.mine bands);
+      Audio.loop "rockband" (Lazy.force (List.assoc p.mine bands));
       let offset =
         p.perf.offset + (if digit "=" then 0.01 else 0.) - if digit "-" then 0.01 else 0.
       in

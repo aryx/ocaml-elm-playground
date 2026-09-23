@@ -73,16 +73,24 @@ let reverb seconds s = Synth.Reverb (Float.max 0.01 seconds, s)
 let processed ?(tail = 0.) (make : unit -> Signal.stereo -> unit) (s : sound) : sound = Synth.Processed ({ make; tail }, s)
 
 (* [gain] dB in, [gain] dB back out: a pedal's drive knob with its level
- * knob turned to match *)
+ * knob turned to match. Oversampled x2, not x4: a whole sound is
+ * rendered at once, and a 20 s loop took 1.2 s natively at x4 (2.1 s in
+ * a browser), a game frozen that long; x2 halves it, its aliases at -58.6
+ * dB still (Drive.mli). A sound in the middle (both sides the same, the
+ * common case) is driven once and copied, halving it again. *)
 let drive gain =
   processed (fun () ->
-      let left = Drive.create ~oversampling:4 () and right = Drive.create ~oversampling:4 () in
+      let left = Drive.create ~oversampling:2 () and right = Drive.create ~oversampling:2 () in
       let back = 1. /. Mix.of_decibels gain in
       fun st ->
+        let mono = st.left = st.right in
         Drive.process left Tanh ~drive:gain ~mix:1. st.left;
-        Drive.process right Tanh ~drive:gain ~mix:1. st.right;
         Array.iteri (fun i x -> st.left.(i) <- back *. x) st.left;
-        Array.iteri (fun i x -> st.right.(i) <- back *. x) st.right)
+        if mono then Array.blit st.left 0 st.right 0 (Array.length st.left)
+        else begin
+          Drive.process right Tanh ~drive:gain ~mix:1. st.right;
+          Array.iteri (fun i x -> st.right.(i) <- back *. x) st.right
+        end)
 
 let modulated (settings : Modulated_delay.settings) =
   processed ~tail:0.02 (fun () -> Modulated_delay.process (Modulated_delay.create ()) settings)
@@ -213,3 +221,13 @@ let pull (n : int) : Signal.stereo = Mixer.pull mixer n
 
 let position (name : string) : float option =
   Option.map (fun n -> float_of_int n /. float_of_int Signal.rate) (Mixer.played mixer name)
+
+(* the platforms' reports, averaged over about a second (a one-pole, a
+ * 60th of the way each frame): the queue swings by a frame from one
+ * frame to the next, the average is what a player feels *)
+let latest = ref None
+
+let set_latency (seconds : float) : unit =
+  latest := Some (match !latest with None -> seconds | Some l -> l +. ((seconds -. l) /. 60.))
+
+let latency () : float = Option.value !latest ~default:0.

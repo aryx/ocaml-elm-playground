@@ -82,6 +82,33 @@ Three rules, which every live block of this tutorial follows:
   (`notes_audio.md` §10); a frame's 16.7 ms granularity is below what a
   keyboard player notices, but not below what a *sequencer* would:
   the TB-303's steps will run in the audio clock, not in `update`.
+- **The latency, measured** (`Audio.latency`, which TinyMinimoog shows
+  above its panel): the sound already queued ahead of the card when a
+  frame's note goes in, plus the card's own buffer. Natively the queue
+  is topped up to 3 frames each frame and has played about one since,
+  so a note waits 2 to 3 frames (34 to 50 ms) plus SDL's 1024-sample
+  buffer (23 ms): measured, 56 ms on average (SDL's dummy driver, which
+  drains in real time). In a browser the next buffer is scheduled ~100
+  ms ahead of the audio clock, a note waits about 83 ms, plus the
+  browser's own `baseLatency` and `outputLatency`, which vary by
+  browser and system: read on the page in Chrome on Linux, 90 ms, the
+  browser adding about 7 (a headless one has no card, its audio clock
+  not real time: its reading means nothing). So a browser is 34 ms
+  later than native, nearly all of it our own queue. Add the
+  wait for the next frame (8 ms on average) and what the system and the
+  speakers add, which no program sees. The trade-off is the queue's
+  length: shorter is less latency, and a gap in the sound whenever a
+  frame comes late (a garbage collection, a busy machine); a real
+  instrument aims under 10 ms, with a callback on the card's own
+  thread and small buffers, which a frame loop can't offer.
+- **What a voice costs** (a second of sound computed a frame's block at
+  a time, as a share of a second): the Minimoog voice alone 3.3%
+  natively, 9.6% as JavaScript (js_of_ocaml, release, under Node); with
+  the whole rack on, 14% and 32% -- 5 ms of a frame's 16.7 in a browser,
+  room left for the panel. A sound rendered whole is another matter:
+  `Audio.drive` over a 20 s loop took 1.2 s natively and 2.1 s in
+  JavaScript at x4 oversampling, a game frozen that long; at x2, on one
+  channel when both are the same, 0.32 s and 0.56 s, done once.
 - **A knob is ramped, not jumped.** A volume going from 0.2 to 0.8 at
   once is a step in the wave, a click; a knob turned slowly is a step
   every block, a click 60 times a second: **zipper noise**, the sound of

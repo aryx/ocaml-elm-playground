@@ -327,6 +327,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     | Some device ->
         (* claude: 4 bytes a sample frame: two channels of 16 bits *)
         let queued = Sdl.get_queued_audio_size device / 4 in
+        Audio.set_latency (Native_loop_2d.latency queued);
         if queued < Native_loop_2d.queue_ahead then (
           let s = Audio.pull (Native_loop_2d.queue_ahead - queued) in
           Native_loop_2d.queue_samples device (s.left, s.right))

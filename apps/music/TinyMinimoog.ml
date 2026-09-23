@@ -37,7 +37,9 @@
  * scope): drive, EQ, delay, reverb; then the modulation (a chorus, a
  * flanger or a phaser) and the dynamics (a compressor, a limiter or a
  * gate), with the compressor's needle, its gain reduction -- each
- * switched on by its rocker.
+ * switched on by its rocker. Above the panel, the latency: how late a
+ * key's note is, the sound queued ahead of the card (Audio.latency; 0
+ * in a golden run, which has no card).
  *
  * Uses: Minimoog_voice (the voice), Audio's instruments (the voice
  * played live), Rack (the effects, audio/effects/), Gui (the knobs,
@@ -473,6 +475,8 @@ let view (computer : computer) (m : model) : shape list =
   let samples = Minimoog_voice.recent voice in
   [ rectangle (rgb 215 205 190) computer.screen.width computer.screen.height ]
   @ [ words black "TinyMinimoog" |> scale 2.4 |> move (-360.) 482.; words black "preset" |> scale 1.5 |> move 230. 482. ]
+  (* how late a key's note is, as far as the program knows (Audio.mli) *)
+  @ [ words (rgb 70 70 70) (Printf.sprintf "latency %.0f ms" (Audio.latency () * 1000.)) |> scale 1.3 |> move (-110.) 482. ]
   @ panel_view
   @ (if m.lower > 0 then rack_view (m.lower -.. 1) (Rack.meter (Minimoog_voice.rack voice) "dynamics.reduction")
      else scope_view samples @ spectrum_view samples)

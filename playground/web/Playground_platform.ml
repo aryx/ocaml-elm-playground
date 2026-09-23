@@ -780,6 +780,14 @@ let play_audio (ticks : int) : unit =
       (* late (the tab was hidden, or the start): start again a bit
        * ahead *)
       if !next_start < now then next_start := now +. 0.05;
+      (* this frame's sounds start with the next buffer, [next_start];
+       * then the browser's own processing and output (Web Audio's
+       * baseLatency and outputLatency, where it has them) *)
+      let seconds prop =
+        let v = Ojs.get_prop_ascii ctx prop in
+        if Ojs.type_of v = "number" then Ojs.float_of_js v else 0.
+      in
+      Audio.set_latency (!next_start -. now +. seconds "baseLatency" +. seconds "outputLatency");
       let n = int_of_float ((0.1 -. (!next_start -. now)) *. 44100.) in
       if n > 0 then (
         let samples = Audio.pull n in

@@ -294,6 +294,9 @@ let open_audio () : Sdl.audio_device_id option =
           Sdl.pause_audio_device device false;
           Some device)
 
+(* claude: the device's buffer, [as_samples] above *)
+let latency (queued : int) : float = float_of_int (queued + 1024) /. float_of_int audio_rate
+
 (* claude: the two channels interleaved, as SDL (and WAV files) want
  * them: left, right, left, right... *)
 let queue_samples (device : Sdl.audio_device_id) ((left, right) : float array * float array) : unit =
@@ -313,7 +316,8 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
     ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
     ~(dump_frame : string -> unit)
-    ~(pull_audio : int -> float array * float array) ~(dump_audio : string -> float array * float array -> unit) =
+    ~(pull_audio : int -> float array * float array) ~(dump_audio : string -> float array * float array -> unit)
+    ~(audio_latency : float -> unit) =
   (* claude: without this, SDL sends no text_input events at all (it is
    * off until a program says it wants text); with it, every key press
    * that produces a character also produces one, which is what
@@ -493,6 +497,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     | Some device ->
         (* claude: 4 bytes a sample frame: two channels of 16 bits *)
         let queued = Sdl.get_queued_audio_size device / 4 in
+        audio_latency (latency queued);
         if queued < queue_ahead then queue_samples device (pull_audio (queue_ahead - queued))
     | None ->
         let samples = pull_audio frame_samples in

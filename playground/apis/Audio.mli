@@ -141,7 +141,7 @@ val reverb : number -> sound -> sound
 
      let guitar = pluck 110 |> lasting 1 |> drive 18 |> chorus
 
-   [drive gain s]: [s] pushed [gain] dB into a tanh, oversampled
+   [drive gain s]: [s] pushed [gain] dB into a tanh, oversampled x2
    (Drive.mli), and brought [gain] dB back down: an overdriven
    amplifier at the sound's own level, a quiet sound passing as it was,
    a loud one flattened (its peaks at most 1 / 10^(gain / 20): 0.25 for
@@ -391,6 +391,17 @@ val set : instrument -> string -> number -> unit
    player sets, subtracted from this one. *)
 val position : string -> number option
 
+(* [latency ()]: the seconds between a sound started by this frame's
+   [update] (a note played, [play]) and its first sample leaving the
+   sound card, as far as the program can know it: the sound queued
+   ahead of the card when it starts, plus the card's own buffer
+   (averaged over the last second). What an instrument's player feels:
+   a key pressed, the note late by this, plus the wait for the next
+   frame (half a frame, 8 ms, on average), plus what the operating
+   system and the speakers add, which no program sees. 0 when no card
+   plays (a golden run). *)
+val latency : unit -> number
+
 (**/**)
 
 (* claude: for the platforms (Playground_platform), not for games: the
@@ -404,3 +415,7 @@ val pull : int -> Signal.stereo
  * later; installed by Playground_platform.run_app (natively a file read
  * or a curl download, in a browser an XMLHttpRequest) *)
 val set_fetcher : (string -> (string option -> unit) -> unit) -> unit
+
+(* claude: for the platforms too: this frame's latency, in seconds (see
+ * [latency]), each time they give the card samples *)
+val set_latency : float -> unit
