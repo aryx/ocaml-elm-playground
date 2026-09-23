@@ -188,11 +188,11 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/ImagePng", "", 3);
     ("examples/software/ImageLzw", "", 3);
     (* claude: every easing curve, the balls halfway through the time
-     * (the clock is frozen at 1000 s, 1 s into a 2 s tween) *)
-    ("examples/software/JuiceCurves", "", 2);
-    (* claude: the moment of landing (1000 s is a landing, every 1.25
-     * s): squashed flattest, the face white *)
-    ("examples/software/JuiceSquash", "", 2);
+     * (frame 60: 1 s on the effects' clock, into a 2 s tween) *)
+    ("examples/software/JuiceCurves", "", 60);
+    (* claude: the moment of landing (frame 75: 1.25 s on the effects'
+     * clock, a landing): squashed flattest, the face white *)
+    ("examples/software/JuiceSquash", "", 75);
     ("games/puzzle/software/AiConnect4", "", 3);
     ("games/puzzle/software/AiGo", "", 3);
     ("games/puzzle/software/AiOthello", "", 3);
@@ -806,6 +806,10 @@ let scripted : Testutil_golden.scripted list =
       "play",
       900,
       "space:1,space:5,right:6-11,right:210-229,left:396-403,right:570-570,right:740-740" );
+    (* claude: the juice (Juice.mli): the wall popping in, 11 frames
+     * after the game started, the yellow rows overshooting, the green
+     * ones growing, the orange and red ones not there yet *)
+    ("games/arcade/software/TinyBreakout", "pop", 12, "space:1");
     (* the turtle's drawings, all at once (the clock frozen, it wouldn't
      * move): Koch's filled snowflake; the dragon, 4096 lines *)
     ("examples/software/LogoFractals", "snowflake", 5, "a:2");
@@ -1230,8 +1234,8 @@ let flagged : Testutil_golden.flagged list =
     ("games/platform/software/TinyCeleste", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyVVVVVV", "shapes", 5, [ "artwork=shapes" ]);
     (* claude: and juice=off (Juice.mli): every tween at its end at once *)
-    ("examples/software/JuiceCurves", "off", 2, [ "juice=off" ]);
-    ("examples/software/JuiceSquash", "off", 2, [ "juice=off" ]);
+    ("examples/software/JuiceCurves", "off", 60, [ "juice=off" ]);
+    ("examples/software/JuiceSquash", "off", 75, [ "juice=off" ]);
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged scenes

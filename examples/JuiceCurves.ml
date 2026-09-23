@@ -28,8 +28,8 @@
  * at once: no juice.
  *
  * What it uses: playground/Juice (the curves, Juice.curve for the
- * graphs, Juice.tween for every ball and dot), over juice/Ease and
- * juice/Tween. *)
+ * graphs, Juice.tween for every ball and dot; the model is only the
+ * effects' clock, Juice.t), over juice/Ease and juice/Tween. *)
 open Playground
 open Basics (* float arithmetics *)
 
@@ -65,7 +65,7 @@ let segment (color : color) ((x1, y1) : number * number) ((x2, y2) : number * nu
   |> move ((x1 + x2) / 2.) ((y1 + y2) / 2.)
 
 (* the graph of [ease], its box's bottom left corner at (0, 0) *)
-let graph (ease : Juice.ease) (computer : computer) (started : time) : shape =
+let graph (ease : Juice.ease) (fx : Juice.t) (started : time) : shape =
   let steps = 40 in
   let points =
     List.init (steps +.. 1) (fun i ->
@@ -73,37 +73,38 @@ let graph (ease : Juice.ease) (computer : computer) (started : time) : shape =
         (t * graph_size, Juice.curve ease t * graph_size))
   in
   let rec lines = function p :: (q :: _ as rest) -> segment darkGray p q :: lines rest | _ -> [] in
-  let time = Juice.tween Juice.linear 0. 1. going started computer in
-  let value = Juice.tween ease 0. 1. going started computer in
+  let time = Juice.tween Juice.linear 0. 1. going started fx in
+  let value = Juice.tween ease 0. 1. going started fx in
   group
     ([ rectangle (rgb 238 238 238) graph_size graph_size |> move (graph_size / 2.) (graph_size / 2.) ]
     @ lines points
     @ [ circle red 4. |> move (time * graph_size) (value * graph_size) ])
 
-let panel (name : string) (ease : Juice.ease) (computer : computer) (started : time) : shape =
-  let value = Juice.tween ease 0. 1. going started computer in
+let panel (name : string) (ease : Juice.ease) (fx : Juice.t) (started : time) : shape =
+  let value = Juice.tween ease 0. 1. going started fx in
   group
     [
       words black name |> scale 1.3 |> move (-40. + (track / 2.)) 30.;
-      graph ease computer started |> move (-150.) (-40.);
+      graph ease fx started |> move (-150.) (-40.);
       rectangle (rgb 210 210 210) track 4. |> move (-40. + (track / 2.)) 0.;
       circle blue 12. |> move (-40. + (value * track)) 0.;
     ]
 
-let view (computer : computer) () : shape list =
-  let (Time now) = computer.time in
+(* the model is only the effects' clock *)
+let view (_ : computer) (fx : Juice.t) : shape list =
+  let (Time now) = Juice.now fx in
   let started = Time (Float.of_int (int_of_float (now / cycle)) * cycle) in
   let columns = [ -330.; 0.; 330. ] in
   let row y (name, (i, o, io)) =
     List.map2
-      (fun x (prefix, ease) -> panel (prefix ^ name) ease computer started |> move x y)
+      (fun x (prefix, ease) -> panel (prefix ^ name) ease fx started |> move x y)
       columns
       [ ("in_", i); ("out_", o); ("in_out_", io) ]
   in
-  (panel "linear" Juice.linear computer started |> move 0. 400.)
+  (panel "linear" Juice.linear fx started |> move 0. 400.)
   :: List.concat (List.mapi (fun k family -> row (270. - (float_of_int k * 125.)) family) families)
 
-let update (_ : computer) () = ()
+let update (computer : computer) (fx : Juice.t) : Juice.t = Juice.step computer fx
 
-let app = game view update ()
+let app = game view update (Juice.none ~seed:1)
 let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

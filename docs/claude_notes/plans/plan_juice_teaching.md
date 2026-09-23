@@ -456,6 +456,73 @@ start; `Juice.mli`'s header lists which do.
   `JuiceSquash.png` and `JuiceSquash_off.png`. The flash's 80 ms is a
   `Juice.tween` counting down, which `juice=off` zeroes -- a stand-in
   until phase 3's `Juice.flash`. `notes_juice.md` §4 in full.
+- 2026-09-23, phase 3 DONE, and the first retrofit, `TinyBreakout`
+  (the author: "so we can test for real" -- the talk's own game, in
+  place of the planned `JuiceBreakout` example, which is dropped).
+  - `juice/Trauma`: `add`, `decay`, `shake` (trauma²), `hash`, `noise`
+    (1D value noise, smoothstep between lattice points, 25 a second),
+    `jitter` (a new value each frame: the simple shake, kept to
+    compare) and `offset` (40 px, 5° at most); 5 tests (hash −0.1084
+    and 0.5113 at seed 1, noise 0.2014 at 0.5, decay, bounds, and the
+    hash's quality). A wrong turn kept: the hash must give the same
+    numbers natively (63-bit ints) and under js_of_ocaml (32-bit), so
+    Park–Miller by Schrage's method (no product reaches 2³¹, checked
+    against node's 32-bit arithmetic: the same four digits); started
+    from neighbouring points and stepped three times it gave a
+    correlation of −0.15 between neighbours (the generator is linear);
+    an xor of the high bits between the steps brought it to 0.002.
+  - **The wrong turn of phases 1 and 2**: `tween` and `squash` read
+    the wall clock, `computer.time`. The golden runner freezes it (and
+    `Scene2d.elapsed`, computed from it), so a game's bricks popping in
+    would have stayed at scale 0 in every golden frame. Found while
+    designing the `TinyBreakout` retrofit, before writing it. Fixed by
+    making `Juice.t` the clock: it counts frames in `step` (an int, so
+    75 frames is exactly 1.25 s), `Juice.now fx` gives the time to
+    remember, and `tween`/`squash` take `fx` instead of the `computer`
+    (`juice=off`, seen by `step`, travels in `fx`). `Juice.during
+    seconds started fx` replaced the examples' countdown-tween trick.
+    The two examples' models became a `Juice.t`; their golden frames
+    moved to frames 60 and 75 (1 s and 1.25 s on the effects' clock)
+    and matched the old ones to the pixel, which checked the refactor.
+    `Juice.mli` now has three sections, not two: the clock, the
+    functions of time, the effects that last.
+  - `Juice.t`'s effects that last: `shake`, `freeze`, `flash`,
+    `frozen`, `view` (the world grouped, turned and moved; the flash a
+    10000-pixel rectangle over it, faded, since the view doesn't know
+    the screen). `Juice.jitter` and `Juice.trauma` were written into the
+    `.mli` for a planned `JuiceShake` example, then dropped with it (no
+    user). 8 `playground/Juice` tests in all (2 new: the effects
+    playing out, and `juice=off` emptying them).
+  - No `Camera2d.shake`: `Juice.view` shakes the whole picture, and
+    `Camera2d` is untouched until a game with a camera needs it (the
+    author was asked; phase 3 went ahead without it).
+  - `TinyBreakout`: the rules untouched; the old `update` renamed
+    `update_rules`, and a new `update` steps the effects, calls it,
+    and `juiced` compares the scene before and after -- the score up:
+    shake 0.15; a ball lost: shake 0.7, a red flash; the ball going
+    down near the paddle before and up after: a bounce, the ball
+    (0.5) and the paddle (0.3) squashed, each about the side where they
+    meet; a new wall: its bricks popping in (`out_back`, 0.4 s),
+    yellow first, then green, orange, red 0.1 s apart. The background
+    stays out of `Juice.view`, so a shake shows no edge. Hitstop left
+    out on purpose: its 900-frame scripted golden plays by keys at
+    given frames, and a freeze would make it miss the ball. That golden
+    passed unchanged with the juice on, and the same script with
+    `juice=off` gives the same frame 900 (0 pixels differ): the
+    "decoration, never rules" test, done for real. One new golden,
+    `TinyBreakout_pop.png` (frame 12: the yellow rows overshooting, the
+    green ones growing). `main` now passes the flags, so `juice=off`
+    reaches it. Then, at the author's request, all of it moved into one
+    bannered section, "The juice (juice=off: none of it)", as
+    `TinySoldat` keeps its `ai=engine` bots in theirs: `juiced`,
+    `update`, and two view helpers, `pop` (a brick's size) and
+    `squashed` (the ball's and the paddle's stretch); outside it only
+    the model's three fields and `Juice.view` around the picture. The
+    paddle's squash went from 0.3 s to the ball's 0.25 on the way (one
+    duration for both); the three goldens passed unchanged.
+  - `notes_juice.md`: §3 gained "whose time?", §5 in full (trauma,
+    noise, the hash, hitstop, flash, juice watching the game), §8
+    rewritten for the clock.
 
 ## Verification
 

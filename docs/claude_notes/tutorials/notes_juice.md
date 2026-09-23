@@ -27,16 +27,18 @@ what makes each effect safe to add, and what keeps this out of
 |---|---|---|
 | `juice/Ease` (done) | the curves: how a thing starts and stops | §1, §2 |
 | `juice/Tween` (done) | a value between two, from when it started | §3 |
-| `playground/Juice` (done: tweens, squash, stretch, whiten) | the Evan-style API | §4, §8 |
+| `playground/Juice` (done: the clock, tweens, squash, stretch, whiten, shake, freeze, flash) | the Evan-style API | §3, §4, §5, §8 |
 | `examples/JuiceCurves` (done) | every curve, plotted and played | §1 |
 | `juice/Squash` (done) | squash and stretch | §4 |
 | `examples/JuiceSquash` (done) | a ball dry, squashed, and flashed | §4 |
-| `juice/Trauma` (planned) | screen shake | §5 |
+| `juice/Trauma` (done) | screen shake | §5 |
+| `games/arcade/TinyBreakout` (done) | the talk's game, juiced (`juice=off`: dry) | §5 |
 | `juice/Emitter` (planned) | particles | §6 |
 | `juice/Follow` (planned) | a value that follows a target | §7 |
 
 §1 to §4 are things that are a function of time and nothing else.
-§5 to §7 need a little state in the model.
+§5 to §7 need a little state in the model. All of them run on the
+effects' own clock (§3).
 
 ## 1. Easing: how a thing starts and stops
 
@@ -159,6 +161,16 @@ The limit, stated once: a tween knows its end from the start. When the
 end moves while it plays -- a camera following the player -- a curve is
 the wrong tool, and §7's `Follow` is the right one.
 
+**Whose time?** A formula of "the time now" still has to say which
+clock. The first version read the wall clock, `computer.time`, like
+Evan's `wave` -- and in a golden frame test, whose clock is frozen,
+every tween then stayed at its start forever: a game's bricks popping
+in would never have appeared. The effects run on their own clock
+instead, one frame a step, counted in `Juice.t`: the same frames give
+the same effects whatever the wall clock does, in a test, in a replay,
+on a slow machine. It is the physics engine's fixed time step again
+(and the reason `physics/` never reads the wall clock either).
+
 ## 4. Squash and stretch, and the hit flash
 
 The first of Disney's twelve principles, and every animation student's
@@ -223,12 +235,61 @@ hit. It is a silhouette -- the face's eyes vanish in it -- which is the
 point: for 80 ms the thing is only its outline, and the eye reads
 "hit" before it reads the picture.
 
-## 5. Screen shake (planned, `juice/Trauma`)
+## 5. Screen shake, hitstop and the flash
 
-Squirrel Eiserloh's lesson ("Juicing Your Cameras With Math", GDC
-2016): what decays is *trauma*, and the shake is trauma², so small hits
-barely move the screen; and the offset is read from smooth noise, not
-drawn at random each frame, which jitters instead of shaking.
+Squirrel Eiserloh's two lessons ("Juicing Your Cameras With Math", GDC
+2016), each a line of `juice/Trauma`:
+
+**What decays is trauma, not shake.** A hit adds trauma, 0 to 1, which
+falls by 1 a second; the shake is trauma². Small knocks barely move the
+screen, a big one really does, and a string of knocks adds up -- in
+`TinyBreakout`, each brick is 0.15 of trauma, a shake of 2%, nothing;
+but behind the wall, where the ball breaks a brick every few frames,
+they pile up to a real shake, which is the game's best moment made
+felt.
+
+```
+   trauma   shake = trauma^2   at most, with 40 pixels
+    1.0         1.0              40 px
+    0.5         0.25             10 px
+    0.25        0.06              2.5 px
+```
+
+**The shake is read from noise, not drawn at random.** A new random
+offset every frame (`Trauma.jitter`, kept to compare) makes the picture
+jump from anywhere to anywhere, 60 times a second: a broken video
+signal. Random values 25 times a second, and the offset gliding from
+one to the next along smoothstep (`Trauma.noise`, 1D value noise), is a
+camera knocked. Three noises of different seeds give the offset across,
+up, and a slight turn.
+
+The random values come from a hash of the seed and the point, and one
+detail of it teaches something: OCaml's ints have 63 bits natively and
+32 in a browser, so a hash whose products overflow shakes differently
+on the two. Park and Miller's minimal standard generator (1988), by
+Schrage's method, never makes a product above 2³¹. It is linear,
+though, and started from neighbouring points it gave correlated values
+(−0.15, the first version); an xor of the high bits between its steps
+brings it to 0.002.
+
+**Hitstop** (`Juice.freeze`): at a hit, the game stands still for a
+few frames while the shake and the flash go on. A punch is felt more
+than seen; the pause says it connected (`TinyStreetFighter` does it by
+hand). It is the one effect that changes *when* things happen, not only
+how they look, so `TinyBreakout` leaves it out: its golden test plays a
+game by keys pressed at given frames, and a pause would make it miss
+the ball.
+
+**The flash** (`Juice.flash`): the whole screen tinted, fading out over
+a few frames -- red when `TinyBreakout`'s ball is lost.
+
+**Juice watching the game.** `TinyBreakout`'s rules were not touched.
+Its old `update` is called as it was, and a new one compares the game
+before and after it: the score went up, a brick broke, shake; a ball
+went, shake and flash; the ball was going down near the paddle and now
+goes up, a bounce, squash both. Run the same keys with `juice=off` and
+the game is the same, to the pixel once the effects have faded: its
+900-frame golden test passes unchanged, juiced.
 
 ## 6. Particles (planned, `juice/Emitter`)
 
@@ -246,28 +307,36 @@ moves.
 
 ## 8. In the playground
 
-Someone writing a game never opens `juice/`. They write:
+Someone writing a game never opens `juice/`. One value goes in the
+model, `fx : Juice.t` -- the effects' clock and the effects under way --
+stepped in `update` (`Juice.step computer fx`, which also sees the flag
+`juice=off`). Then:
 
 ```ocaml
-(* in the model: when the brick appeared *)
-let size = Juice.tween Juice.out_back 0. 1. 0.3 brick.born computer in
+(* in the model: when the brick appeared, Juice.now fx at the time *)
+let size = Juice.tween Juice.out_back 0. 1. 0.3 brick.born m.fx in
 rectangle red 60. 20. |> scale size
 ```
 
 and the brick grows from nothing in 0.3 s, overshoots by 10%, and
-settles. `Juice.tween` takes the `computer` rather than its time, like
-nothing else in the playground: it needs the flags too, so that
-`juice=off` puts every tween at its end at once. `Juice.curve` reads a
-curve directly, to draw it. A landing is the same, a start time in
-the model:
+settles. A landing is the same, a start time in the model:
 
 ```ocaml
-ball |> Juice.stretch (Juice.squash 0.4 0.5 ball.landed computer)
+ball |> Juice.stretch (Juice.squash 0.4 0.5 ball.landed m.fx)
 ```
 
-and `Juice.whiten` draws the flash. The effects that need state (§5 to
-§7) will be a second section of `Juice.mli`, a value kept in the
-model.
+and `Juice.whiten`, while `Juice.during 0.08 hit m.fx`, draws the hit
+flash. The effects that last are said once, in `update`, and play out:
+
+```ocaml
+let fx = if hit then m.fx |> Juice.shake 0.5 |> Juice.flash red 15 else m.fx in
+...
+Juice.view m.fx world   (* in view: shaken, and flashed *)
+```
+
+`Juice.mli` has three sections, as the code has three kinds: the
+clock, the effects that are functions of it, and the effects that
+last.
 
 ## Glossary
 
@@ -286,3 +355,10 @@ model.
 - **squash and stretch**: flattening on impact and lengthening after,
   the area kept (Disney's first principle).
 - **hit flash**: the thing drawn all white for a frame or two when hit.
+- **trauma**: how shaken things are, 0 to 1, added by hits and decaying;
+  the shake is its square (Eiserloh).
+- **value noise**: random values at whole numbers, smoothed between them.
+- **hitstop**: the game frozen for a few frames at a hit, the effects
+  going on.
+- **the effects' clock**: the frames `Juice.step` has counted, which
+  every effect reads instead of the wall clock.

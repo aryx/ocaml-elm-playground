@@ -12,8 +12,42 @@
 
 open Playground
 
-(* the flag juice=off: every effect does nothing *)
-let off (computer : computer) : bool = List.assoc_opt "juice" computer.flags = Some "off"
+(*****************************************************************************)
+(* The effects' clock *)
+(*****************************************************************************)
+
+type t = {
+  seed : int;
+  (* the clock, counted in frames: 75 frames is exactly 1.25 s, where a
+   * sum of 1/60s would drift off it *)
+  frames : int;
+  (* the flag juice=off, seen at the last step *)
+  off : bool;
+  trauma : number;
+  freeze : int;
+  (* the color, the frames left, the frames it lasts *)
+  flash : (color * int * int) option;
+}
+
+let none ~(seed : int) : t = { seed; frames = 0; off = false; trauma = 0.; freeze = 0; flash = None }
+
+let dt = 1. /. 60.
+
+let clock (fx : t) : number = float_of_int fx.frames /. 60.
+
+let step (computer : computer) (fx : t) : t =
+  if List.assoc_opt "juice" computer.flags = Some "off" then { (none ~seed:fx.seed) with frames = fx.frames + 1; off = true }
+  else
+    {
+      fx with
+      frames = fx.frames + 1;
+      off = false;
+      trauma = Trauma.decay ~dt fx.trauma;
+      freeze = max 0 (fx.freeze - 1);
+      flash = (match fx.flash with Some (c, left, total) when left > 1 -> Some (c, left - 1, total) | _ -> None);
+    }
+
+let now (fx : t) : time = Time (clock fx)
 
 (*****************************************************************************)
 (* Effects as functions of time *)
@@ -49,18 +83,15 @@ let in_out_bounce = Ease.in_out Ease.bounce
 
 let curve (ease : ease) (t : number) : number = ease t
 
-let tween (ease : ease) (from : number) (to_ : number) (seconds : number) (Time started : time) (computer : computer) :
-    number =
-  if off computer then to_
-  else
-    let (Time now) = computer.time in
-    Tween.value ease from to_ ~start:started ~duration:seconds now
+let tween (ease : ease) (from : number) (to_ : number) (seconds : number) (Time started : time) (fx : t) : number =
+  if fx.off then to_ else Tween.value ease from to_ ~start:started ~duration:seconds (clock fx)
 
-let squash (amount : number) (seconds : number) (Time landed : time) (computer : computer) : number * number =
-  if off computer then (1., 1.)
-  else
-    let (Time now) = computer.time in
-    Squash.keep_area (Squash.landing ~amount (Tween.progress ~start:landed ~duration:seconds now))
+let during (seconds : number) (Time started : time) (fx : t) : bool =
+  (not fx.off) && clock fx >= started && clock fx < started +. seconds
+
+let squash (amount : number) (seconds : number) (Time landed : time) (fx : t) : number * number =
+  if fx.off then (1., 1.)
+  else Squash.keep_area (Squash.landing ~amount (Tween.progress ~start:landed ~duration:seconds (clock fx)))
 
 (* Stretching a shape tree. A shape is scaled, then rotated, then moved
  * inside its parent, all of which a 2x2 matrix and a translation can
@@ -136,3 +167,21 @@ let rec whiten (s : shape) : shape =
     | Group shapes -> Group (List.map whiten shapes)
   in
   { s with form }
+
+(*****************************************************************************)
+(* Effects that last *)
+(*****************************************************************************)
+
+let shake (amount : number) (fx : t) : t = { fx with trauma = Trauma.add amount fx.trauma }
+let freeze (frames : int) (fx : t) : t = { fx with freeze = max fx.freeze frames }
+let flash (color : color) (frames : int) (fx : t) : t = { fx with flash = Some (color, frames, frames) }
+
+let frozen (fx : t) : bool = fx.freeze > 0
+
+let view (fx : t) (world : shape list) : shape list =
+  let o = Trauma.offset ~seed:fx.seed ~trauma:fx.trauma (clock fx) in
+  let shaken = if fx.trauma > 0. then [ group world |> rotate o.angle |> move o.dx o.dy ] else world in
+  match fx.flash with
+  (* bigger than any screen: the view doesn't know the screen's size *)
+  | Some (color, left, total) -> shaken @ [ rectangle color 10000. 10000. |> fade (0.7 *. float_of_int left /. float_of_int total) ]
+  | None -> shaken

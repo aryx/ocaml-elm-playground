@@ -25,10 +25,10 @@
  * With the flag juice=off (dune exec examples/JuiceSquash.exe --
  * juice=off, or JuiceSquash.html?juice=off), the three are the same.
  *
- * What it uses: playground/Juice (squash, stretch, whiten, and tween for
- * the flash's countdown), over juice/Squash. The bounce is a parabola of
- * the time, not Physics: every bounce the same, so the three stay
- * together. *)
+ * What it uses: playground/Juice (squash, stretch, whiten, during for
+ * the flash; the model is only the effects' clock, Juice.t), over
+ * juice/Squash. The bounce is a parabola of that clock, not Physics:
+ * every bounce the same, so the three stay together. *)
 open Playground
 open Basics (* float arithmetics *)
 
@@ -42,8 +42,8 @@ let ground = -250.
 
 (* when it last landed, and how high it is now: a parabola between
  * two landings *)
-let bounce (computer : computer) : time * number =
-  let (Time now) = computer.time in
+let bounce (fx : Juice.t) : time * number =
+  let (Time now) = Juice.now fx in
   let landed = Float.of_int (int_of_float (now / period)) * period in
   let u = (now - landed) / period in
   (Time landed, height * 4. * u * (1. - u))
@@ -66,12 +66,12 @@ let face : shape =
     ]
   |> move_up radius
 
-let view (computer : computer) () : shape list =
-  let landed, up = bounce computer in
-  let squash = Juice.squash 0.4 0.5 landed computer in
-  (* white for 0.08 s after landing: a countdown from 1 to 0, which
-   * juice=off puts at 0 at once *)
-  let flashing = Juice.tween Juice.linear 1. 0. 0.08 landed computer > 0. in
+(* the model is only the effects' clock *)
+let view (_ : computer) (fx : Juice.t) : shape list =
+  let landed, up = bounce fx in
+  let squash = Juice.squash 0.4 0.5 landed fx in
+  (* white for 0.08 s after landing *)
+  let flashing = Juice.during 0.08 landed fx in
   let at x shape = shape |> move x (ground + up) in
   [
     rectangle (rgb 40 44 52) 1000. 1000.;
@@ -84,7 +84,7 @@ let view (computer : computer) () : shape list =
     at 300. (face |> Juice.stretch squash |> fun s -> if flashing then Juice.whiten s else s);
   ]
 
-let update (_ : computer) () = ()
+let update (computer : computer) (fx : Juice.t) : Juice.t = Juice.step computer fx
 
-let app = game view update ()
+let app = game view update (Juice.none ~seed:1)
 let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

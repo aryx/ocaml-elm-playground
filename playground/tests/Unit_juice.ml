@@ -66,15 +66,48 @@ let tests =
               Alcotest.(check bool) "the circle" true (c = white);
               (match children inner with [ { form = Rectangle (c, _, _); _ } ] -> Alcotest.(check bool) "the rectangle" true (c = white) | _ -> Alcotest.fail "the inner group")
           | _ -> Alcotest.fail "the group");
-      Testo.create "squash: flat at landing, round after, nothing with juice=off" (fun () ->
-          let landed = Time 100. in
-          let sx, sy = Juice.squash 0.4 0.5 landed (computer_at 100. []) in
+      Testo.create "squash, on the effects' clock: flat at landing, round after, nothing with juice=off" (fun () ->
+          (* the wall clock frozen, as in a golden frame test: only the
+           * steps move the effects' clock *)
+          let c = computer_at 1000. [] in
+          let steps n fx = List.fold_left (fun fx _ -> Juice.step c fx) fx (List.init n Fun.id) in
+          let fx = steps 10 (Juice.none ~seed:1) in
+          let landed = Juice.now fx in
+          let sx, sy = Juice.squash 0.4 0.5 landed fx in
           Alcotest.check near "wider" (1. /. 0.6) sx;
           Alcotest.check near "flatter" 0.6 sy;
-          let sx, sy = Juice.squash 0.4 0.5 landed (computer_at 101. []) in
+          Alcotest.(check bool) "the flash of 3 frames: on" true (Juice.during (3. /. 60.) landed fx);
+          let fx = steps 60 fx in
+          let sx, sy = Juice.squash 0.4 0.5 landed fx in
           Alcotest.check near "round again" 1. (sx *. sy);
           Alcotest.check near "and upright" 1. sy;
-          let sx, sy = Juice.squash 0.4 0.5 landed (computer_at 100. [ ("juice", "off") ]) in
+          Alcotest.(check bool) "the flash: over" false (Juice.during (3. /. 60.) landed fx);
+          let fx = Juice.step (computer_at 1000. [ ("juice", "off") ]) (steps 0 (Juice.none ~seed:1)) in
+          let sx, sy = Juice.squash 0.4 0.5 (Juice.now fx) fx in
           Alcotest.check near "off: as it is" 1. sx;
-          Alcotest.check near "off: as it is" 1. sy);
+          Alcotest.check near "off: as it is" 1. sy;
+          Alcotest.(check bool) "off: no flash" false (Juice.during 1. (Juice.now fx) fx));
+      Testo.create "the effects: freeze counts down, the flash and the shake fade" (fun () ->
+          let c = computer_at 0. [] in
+          let fx = Juice.none ~seed:1 |> Juice.shake 0.5 |> Juice.freeze 2 |> Juice.flash white 3 in
+          let world = [ circle red 10. ] in
+          (* shaken, and the flash on top *)
+          Alcotest.(check int) "two shapes" 2 (List.length (Juice.view (Juice.step c fx) world));
+          let fx = Juice.step c fx in
+          Alcotest.(check bool) "frozen, 1 frame left" true (Juice.frozen fx);
+          let fx = Juice.step c fx in
+          Alcotest.(check bool) "not frozen after 2 frames" false (Juice.frozen fx);
+          let fx = Juice.step c fx in
+          (* 3 frames: the flash gone; 0.5 s of trauma not yet *)
+          (match Juice.view fx world with
+          | [ s ] -> Alcotest.(check bool) "still shaken" true (s.form <> (List.hd world).form)
+          | _ -> Alcotest.fail "the flash still there");
+          let fx = List.fold_left (fun fx _ -> Juice.step c fx) fx (List.init 30 Fun.id) in
+          Alcotest.(check bool) "calm again: the world as it is" true (Juice.view fx world = world));
+      Testo.create "the effects with juice=off: none" (fun () ->
+          let fx = Juice.none ~seed:1 |> Juice.shake 1. |> Juice.freeze 8 |> Juice.flash white 10 in
+          let fx = Juice.step (computer_at 0. [ ("juice", "off") ]) fx in
+          let world = [ circle red 10. ] in
+          Alcotest.(check bool) "not frozen" false (Juice.frozen fx);
+          Alcotest.(check bool) "the world as it is" true (Juice.view fx world = world));
     ]

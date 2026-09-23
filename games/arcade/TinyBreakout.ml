@@ -53,10 +53,23 @@
  * segments, each with its angle (Allan Alcorn, 1972); TinyPong.ml
  * shows the other way, the physics engine's friction dragging the ball.
  *
+ * Juice: Breakout is the game Martin Jonasson and Petri Purho juiced,
+ * one effect at a time, in "Juice it or lose it" (GDC Europe 2012), and
+ * this one has the first of those effects: the bricks pop in when a
+ * wall appears, bottom row first; the ball and the paddle squash when
+ * they meet; a broken brick shakes the screen a little, which adds up
+ * when the ball is behind the wall and the points pour in; a lost ball
+ * shakes it hard, and flashes it red. The juice is on by default; the
+ * flag juice=off gives the dry game, the original's (dune exec
+ * games/arcade/TinyBreakout.exe -- juice=off). The effects watch the
+ * game from outside ([juiced]): the rules above don't know about them,
+ * and the same keys give the same game, dry or juiced.
+ *
  * What it uses: Tilemap (the wall is typed as strings, a brick being 2
  * tiles, "Rr": the map draws it, says which brick a point is in, and a
  * brick broken is its 2 tiles set to ' '), Scene2d (title, play, game
- * over), Audio (a pitch per row, like the original's beeps). Not
+ * over), Audio (a pitch per row, like the original's beeps), Juice
+ * (tween, squash, stretch, shake, flash). Not
  * Physics: the ball's motion is 2 additions, and its bounces are rules
  * (the paddle's above, a wall's or brick's plain reversal); nor
  * Tilemap.hits, which says whether a box hits a tile, where Breakout
@@ -67,7 +80,12 @@
  * never breaking (a new letter in the wall's strings); more walls, typed
  * as strings; the original's two players, taking turns; the ball
  * stuck in a loop between unbreakable bricks, which Arkanoid breaks by
- * nudging its angle.
+ * nudging its angle. The rest of the talk's juice: bricks bursting into
+ * pieces, a trail behind the ball, the paddle's eyes following it.
+ * Hitstop (Juice.freeze), a few frames' pause at each brick, is left
+ * out on purpose: it is the one effect that changes *when* things
+ * happen, and the golden test's scripted game, keys pressed at given
+ * frames, would then miss the ball.
  *)
 open Playground
 open Basics (* float arithmetics *)
@@ -143,13 +161,22 @@ type game = {
 
 type scene = Title | Playing of game | Game_over of int
 
-type model = { scenes : scene Scene2d.t; hi_score : int }
+type model = {
+  scenes : scene Scene2d.t;
+  hi_score : int;
+  (* the juice: the effects, when the wall appeared (its bricks pop
+   * in), when the ball last bounced off the paddle (both squash) *)
+  fx : Juice.t;
+  wall_shown : time;
+  bounced : time;
+}
 
 let new_game (mouse_x : number) : game =
   { bricks = wall; paddle_x = 0.; mouse_x; ball = None; balls = 3; score = 0;
     hits = 0; reached_orange = false; reached_red = false; shrunk = false; second_wall = false }
 
-let initial_model : model = { scenes = Scene2d.start Title; hi_score = 0 }
+let initial_model : model =
+  { scenes = Scene2d.start Title; hi_score = 0; fx = Juice.none ~seed:1; wall_shown = Time 0.; bounced = Time (-10.) }
 
 let paddle_width (g : game) : number = if g.shrunk then 50. else 100.
 
@@ -316,7 +343,7 @@ let update_game (computer : computer) (scenes : scene Scene2d.t) (g : game) : ga
         { g with bricks = wall; ball = None; second_wall = true; shrunk = false }
       else { g with ball = Some b }
 
-let update (computer : computer) (model : model) : model =
+let update_rules (computer : computer) (model : model) : model =
   let scenes = Scene2d.update computer model.scenes in
   match scenes.scene with
   | Title ->
@@ -325,11 +352,55 @@ let update (computer : computer) (model : model) : model =
   | Playing g ->
       let g = update_game computer scenes g in
       let hi_score = max model.hi_score g.score in
-      if g.balls = 0 || cleared g.bricks then { hi_score; scenes = Scene2d.go (Game_over g.score) scenes }
-      else { hi_score; scenes = { scenes with scene = Playing g } }
+      if g.balls = 0 || cleared g.bricks then { model with hi_score; scenes = Scene2d.go (Game_over g.score) scenes }
+      else { model with hi_score; scenes = { scenes with scene = Playing g } }
   | Game_over _ ->
       if serve_pressed scenes || scenes.elapsed > 10. then { model with scenes = Scene2d.go Title scenes }
       else { model with scenes }
+
+(*****************************************************************************)
+(* The juice (juice=off: none of it) *)
+(*****************************************************************************)
+
+(* Everything the juice does is here, and the rules above don't know
+ * about it: [update] runs them, then [juiced] looks at what they just
+ * did -- the scene or the game before and after -- and turns it into
+ * effects; the view calls [pop] and [squashed] where it draws a brick,
+ * the ball and the paddle, and [Juice.view] around the picture. *)
+let juiced (before : scene) (model : model) : model =
+  let now = Juice.now model.fx in
+  match (before, model.scenes.scene) with
+  | Title, Playing _ -> { model with wall_shown = now }
+  | Playing g, Playing g' ->
+      let fx = if g'.score > g.score then Juice.shake 0.15 model.fx else model.fx in
+      let fx = if g'.balls < g.balls then fx |> Juice.shake 0.7 |> Juice.flash red 15 else fx in
+      let wall_shown = if g'.second_wall && not g.second_wall then now else model.wall_shown in
+      (* off the paddle: going down before, up after, down there *)
+      let bounced =
+        match (g.ball, g'.ball) with
+        | Some b, Some b' when b.vy < 0. && b'.vy > 0. && b'.y < paddle_y + 50. -> now
+        | _ -> model.bounced
+      in
+      { model with fx; wall_shown; bounced }
+  (* the last ball lost, or the second wall cleared *)
+  | Playing _, Game_over score -> { model with fx = model.fx |> Juice.shake 0.8 |> Juice.flash (if score >= 896 then white else red) 20 }
+  | _ -> model
+
+let update (computer : computer) (model : model) : model =
+  let model = { model with fx = Juice.step computer model.fx } in
+  juiced model.scenes.scene (update_rules computer model)
+
+(* a brick's size as the wall appears: popping in, a row of colors
+ * after the other, from the bottom up *)
+let pop (model : model) (brick : char) : number =
+  let (Time shown) = model.wall_shown in
+  let delay = match brick with 'Y' -> 0. | 'G' -> 0.1 | 'O' -> 0.2 | _ -> 0.3 in
+  Juice.tween Juice.out_back 0. 1. 0.4 (Time (shown + delay)) model.fx
+
+(* the ball or the paddle, squashed by [amount] at the last bounce: the
+ * shape built with the side where they meet at (0, 0) *)
+let squashed (amount : number) (model : model) (shape : shape) : shape =
+  Juice.stretch (Juice.squash amount 0.25 model.bounced model.fx) shape
 
 (*****************************************************************************)
 (* View *)
@@ -339,9 +410,9 @@ let text (color : color) (size : number) (s : string) : shape = words color s |>
 
 (* a brick, drawn from its left tile: moved right by half a tile to be
  * centered on the two, and a bit smaller, to leave a gap around it *)
-let view_bricks (map : Tilemap.t) : shape =
+let view_bricks (model : model) (map : Tilemap.t) : shape =
   Tilemap.view
-    (fun c -> if c >= 'A' && c <= 'Z' then rectangle (color c) 46. 21. |> move_x 12.5 else group [])
+    (fun c -> if c >= 'A' && c <= 'Z' then rectangle (color c) 46. 21. |> scale (pop model c) |> move_x 12.5 else group [])
     map
   |> move_y wall_y
 
@@ -350,12 +421,21 @@ let side_walls : shape list =
     rectangle gray 20. 900. |> move (field_right + 10.) (field_top - 450.);
     rectangle gray (field_right - field_left + 40.) 20. |> move_y (field_top + 10.) ]
 
-let view_game (g : game) : shape list =
+let view_game (model : model) (g : game) : shape list =
   let ball_shape (x : number) (y : number) = square white ball_size |> move x y in
+  (* the ball and the paddle, each built with the side where they meet
+   * at (0, 0), for [squashed] *)
+  let ball (b : ball) = square white ball_size |> move_up half |> squashed 0.5 model |> move b.x (b.y - half) in
+  let paddle =
+    rectangle white (paddle_width g) paddle_height
+    |> move_down (paddle_height / 2.)
+    |> squashed 0.3 model
+    |> move g.paddle_x (paddle_y + (paddle_height / 2.))
+  in
   side_walls
-  @ [ view_bricks g.bricks; rectangle white (paddle_width g) paddle_height |> move g.paddle_x paddle_y ]
+  @ [ view_bricks model g.bricks; paddle ]
   @ (match g.ball with
-    | Some b -> [ ball_shape b.x b.y ]
+    | Some b -> [ ball b ]
     | None -> [ ball_shape g.paddle_x (paddle_y + (paddle_height / 2.) + half) ])
   (* the balls left in reserve, the one in play or on the paddle excluded *)
   @ List.init (g.balls -.. 1) (fun i -> square white ball_size |> move (field_right - (float_of_int i * 25.)) 470.)
@@ -381,14 +461,15 @@ let view (computer : computer) (model : model) : shape list =
   let screen = computer.screen in
   let scenes = model.scenes in
   rectangle black screen.width screen.height
-  ::
-  (match scenes.scene with
-  | Title -> header model 0 @ view_title scenes
-  | Playing g -> header model g.score @ view_game g
-  | Game_over score ->
-      header model score
-      @ [ text white 6. (if score >= 896 then "YOU WIN" else "GAME OVER") ]
-      @ Scene2d.blink 1. scenes [ text white 3. "PRESS SPACE" |> move_y (-150.) ])
+  (* the background still, everything else shaken (the juice) *)
+  :: Juice.view model.fx
+       (match scenes.scene with
+       | Title -> header model 0 @ view_title scenes
+       | Playing g -> header model g.score @ view_game model g
+       | Game_over score ->
+           header model score
+           @ [ text white 6. (if score >= 896 then "YOU WIN" else "GAME OVER") ]
+           @ Scene2d.blink 1. scenes [ text white 3. "PRESS SPACE" |> move_y (-150.) ])
 
 let app = game view update initial_model
-let main = Playground_platform.run_app app
+let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
