@@ -498,6 +498,51 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
    phase list here when started; a live MIDI keyboard (the audio
    plan's leftover: an instrument is where it matters) with MIDI's
    control changes mapped to the knobs.
+   - **TinyTB303, B1-B3** (started 2026-09-24). The facts first: Robin
+     Whittle's "303 unique" (the Devil Fish's author): the main
+     envelope's decay set by the Decay knob for normal notes and the
+     shortest for accented ones; the *accent sweep*, the accented
+     envelope charging a 1 uF capacitor through a diode and 47k,
+     discharging through 100k and a 100k pot, so a run of accents
+     climbs, each starting where the last left the capacitor; the
+     volume envelope a sharp attack and a long fixed exponential decay;
+     env mod never quite zero. Tim Stinchcombe's analysis of the filter:
+     a 4-pole diode ladder, its poles coupled (unlike the Moog's,
+     buffered), the first an octave up -- why it is called 18 dB an
+     octave, and isn't quite. The cutoff up to about 2.5 kHz (the Devil
+     Fish doubled it to 5). Commonly quoted, to check: the Decay knob's
+     200 ms to 2 s, the slide's 60 ms, the gate half a step long.
+   - **B1, what audio/ gains**: `Diode_ladder` in instruments/, the
+     diode ladder's four coupled poles solved zero-delay (Zavalishin's
+     method, as `Moog_ladder`'s), beside the Moog's for comparison: its
+     slope and resonance measured against the Moog ladder's on the same
+     sweep, why it squelches (the coupling, the resonance's peak moving
+     with the cutoff differently). And `Sequencer` in instruments/, the
+     step sequencer in the *audio clock*: an instrument's events come
+     between blocks (Instrument.mli), a frame's 16.7 ms apart, too
+     coarse for a sequencer (a 16th at 130 BPM is 115 ms: an error of
+     14%); so the sequencer is inside the voice, stepping at the
+     sample, its steps (a note, its octave up or down, accent, slide, a
+     rest, a tie) and its tempo. Tests: the diode ladder's slope and
+     self-oscillation threshold; a step's first sample exactly at
+     60 / (bpm x 4) seconds in, whatever the block size (735, 500,
+     1).
+   - **B2, the voice**: `Tb303_voice` in `music_voices`: a `Vco`, saw or
+     square; the diode ladder; the main envelope, its decay the Decay
+     knob or, accented, the shortest, into the cutoff scaled by Env
+     Mod; the accent sweep capacitor into the cutoff and the volume;
+     the volume envelope; the slide, a one-pole on the pitch with the
+     gate held; the knobs (tuning, cutoff, resonance, env mod, decay,
+     accent, waveform, tempo); patterns as text; a few of our own (an
+     acid line, a bass, a climbing accents study). Tests: accented
+     notes' decays, the accent sweep climbing over three accents in a
+     row, a slide's pitch at its time constant, the gate's length; a
+     golden WAV per pattern.
+   - **B3, the panel**: TinyTB303, the silver box: its six knobs and the
+     waveform switch, the 16 steps as a grid (pitch, up/down, accent,
+     slide, rest) edited with the mouse and the keys, run/stop, tempo,
+     the running step lit; the scope and spectrum. Its golden frames
+     (a pattern, and playing), web page, catalogue row.
 11. *(later)* The Reface originals, in the order above, each with the
    same shape as TinyMinimoog's phases 4 and 5 (the facts looked up,
    the voice in `music_voices` with its presets and golden WAVs, then
@@ -939,6 +984,56 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   2); its web page; `CATALOG.md`'s row. Left, in the header's
   exercises: the lower manual and the pedals, drawbars heard while a
   note sounds, the Leslie's brake, saving registrations.
+- **B1, DONE (2026-09-24)**: what audio/ gains for the TB-303.
+  `Diode_ladder` in instruments/: the diode ladder's four coupled
+  equations (the first capacitor half: its pole an octave up), the
+  trapezoidal rule with a prewarped cutoff, a 4 x 4 linear system solved
+  each sample, a tanh on the input. Measured against the Moog ladder at
+  500 Hz: -21.3 dB at the cutoff (the Moog's -12.0: the poles spread,
+  the knob their scale, not a -3 dB point), -15.8 dB an octave from 1
+  to 2 kHz (the "18 dB"), -20.7, then -25.8; the bass 1 / (1 + k) as the
+  Moog's; ringing on its own from k = 22.1 (the Moog's 4); its peak
+  above the cutoff, 667 Hz at 80% of that. `Sequencer` in instruments/:
+  steps in the audio clock, each event at the first sample at or after
+  its exact time, the voice rendering its block in pieces between them;
+  a note's gate half its step unless it slides into a note (the gate
+  held, the next note glided to). Tests: at 120 BPM, steps at 0, 5513,
+  11025, 16538, gates closing at 2757, 8269, 13782, 19294, the same in
+  blocks of 735, 500 or 1 (a frame's clock would have put the second
+  step at 5880, 8.3 ms late); a slide into a rest is none.
+- **B2, DONE (2026-09-24)**: `Tb303_voice` in `music_voices`. The facts:
+  Robin Whittle's "303 unique" (the accent's shortest decay, the accent
+  sweep's 47k and 1 uF charging, 100k and a 100k pot draining, a run of
+  accents climbing; the volume envelope's long fixed decay; env mod
+  never none), Tim Stinchcombe's diode ladder, the Devil Fish's page
+  (the cutoff to about 2.5 kHz, doubled by the mod); commonly quoted,
+  ours to check: the Decay knob's 200 ms to 2 s, the 60 ms slide, the
+  half-step gate. A `Vco` (saw or square), the diode ladder, the main
+  envelope, the sweep capacitor into the cutoff and the volume, the
+  volume envelope, the slide (`Voicing`'s glide, 60 ms when sliding, a
+  jump otherwise); the sequencer inside, the keys a monophonic line
+  (last note); patterns as text ("C2 C2~ C3* ."), the knobs through
+  `Patch_text` and a "pattern" line; our patterns acid, bass, accents.
+  Tests (`Unit_tb303`, at 120 BPM): an accented note's envelope -60 dB
+  at 200 ms, a normal one's at Decay 0.5 -19 dB; three accents, the
+  sweep's peaks 0.283, 0.374, 0.402, climbing; a slide C2 to C3 63% of
+  the way at 60 ms; the gate's 3 ms close, 60 dB down 25 ms later; the
+  patterns as text. A golden WAV per pattern, the spectrograms looked
+  at (each note's resonant peak falling with its envelope: the squelch).
+  Two test mistakes of mine on the way, the code right: a one-step
+  pattern repeats (its envelope started again at 125 ms), and a 3 ms
+  close can't be -60 dB at 10 ms.
+- **B3, DONE (2026-09-24)**: TinyTB303. The 303's knobs in its order and
+  the waveform, tempo and volume; run and stop (space too); the
+  pattern as a grid instead of the 303's blind keypad: 16 columns, a
+  piano roll of an octave above C2 (a click sets a step's note, the same
+  cell again a rest), then each step's octave, accent and slide
+  toggled, the step playing lit; the letters playing along; the scope
+  and spectrum. Golden frames: stopped, and `running` (RUN clicked,
+  step 5's rest made a G2 by a click, that step lit as it plays); its
+  web page; `CATALOG.md`'s row. Left, in its header's exercises:
+  pattern chains, the gate's and slide's knobs (the Devil Fish's),
+  swing, the effects rack after it, saving patterns.
 
 ## Verification
 

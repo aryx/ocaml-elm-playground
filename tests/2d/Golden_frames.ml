@@ -99,6 +99,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: 1955: the B-3's drawbars and tabs, the jazz registration,
      * the Leslie still *)
     ("apps/music/software/TinyHammond", "", 5);
+    (* claude: 1981: the 303's knobs and its pattern as a grid, the acid
+     * line, stopped *)
+    ("apps/music/software/TinyTB303", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1025,6 +1028,13 @@ let scripted : Testutil_golden.scripted list =
       "effects",
       20,
       "at(95;482):1-5,click:3,at(-455;-60):6-9,click:8,at(190;-60):10-13,click:12,at(-62;-60):14-17,click:16" );
+    (* claude: the 303 running: RUN clicked, then step 5's rest made a
+     * G2 by a click on the grid; 38 frames in, that step lit, the new
+     * note heard, the scope its tail (its gate open half the step) *)
+    ( "apps/music/software/TinyTB303",
+      "running",
+      38,
+      "at(-400;318):1-6,click:3,at(-192;130):7-12,click:9" );
     (* claude: the organ played: the 4' drawbar pulled out to 6 by the
      * mouse, C E G held, the Leslie switched on and fast half a second
      * before -- its horn spun up to 4 turns a second, its drum to 2 *)
