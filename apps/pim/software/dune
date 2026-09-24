@@ -10,6 +10,7 @@
     caps ; the File menu's authority to save, Export's and Import's
     gui ; Widget, Layout, Theme
     appkit_file_menu ; File_menu
+    appkit_pim ; Ics
     elm_playground
     elm_playground_software ; implem of virtual elm_playground
   )

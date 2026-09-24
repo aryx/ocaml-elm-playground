@@ -27,7 +27,8 @@
  * flags date=1752-09-02 (the day shown, as people wrote it then),
  * view=week, switch=rome or switch=none.
  *
- * What it teaches is in core's time/, one module per idea:
+ * What it teaches is in core's time/ and the pim appkit, one module
+ * per idea:
  * - Civil.mli: the Gregorian calendar computed, not looked up -- a date
  *   is a day number and back, so a month is a range of numbers and a
  *   week is 7 of them from a Sunday;
@@ -49,7 +50,7 @@
  * or all of them?", and "this one" is an exception to the rule
  * (iCalendar's EXDATE and RECURRENCE-ID), which Recur does not have.
  *
- * Uses: Civil, Julian, Recur, Ics (core's time/), Clock and
+ * Uses: Civil, Julian, Recur (core's time/), Ics (appkits/pim), Clock and
  * Playground_platform.utc_offset (today), the gui toolkit (menus,
  * buttons, the title field) and File_menu (saved as an Ics.calendar);
  * not Layout for the calendar itself, whose cells are arithmetic, as

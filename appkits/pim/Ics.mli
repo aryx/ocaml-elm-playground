@@ -3,8 +3,8 @@
 
    The format every calendar exchanges since 1998 (RFC 2445, now
    5545): text, a property per line, components between BEGIN and END,
-   the same shape as vCard, the address books' format, from the same
-   Versit consortium:
+   the same shape as vCard (Vcard.mli), the address books' format,
+   from the same Versit consortium:
 
        BEGIN:VCALENDAR
        VERSION:2.0
@@ -74,7 +74,7 @@ val of_string : string -> calendar
  * library reads no clock, the caller gives the time *)
 val to_string : stamp:moment -> calendar -> string
 
-(* {2 The layers} *)
+(* {2 The layers, shared with Vcard} *)
 
 (* the logical lines of a text: CRLF or LF ends, a line starting with
  * a space or a tab continuing the one before (without that character);
@@ -87,7 +87,8 @@ val fold : string -> string
 
 (* [content_line "DTSTART;VALUE=DATE:20261001"]:
  * ("DTSTART", [("VALUE", "DATE")], "20261001"), the names uppercased,
- * a quoted parameter value's ':' and ';' not ending it *)
+ * a quoted parameter value's ':' and ';' not ending it; a bare
+ * parameter (vCard 2.1's TEL;HOME:...) read as ("TYPE", "HOME") *)
 val content_line : string -> (string * (string * string) list * string) option
 
 (* TEXT values: \\ \; \, and \n (or \N) for a newline *)

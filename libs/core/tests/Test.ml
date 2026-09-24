@@ -9,5 +9,4 @@
  *)
 
 let () = Testo.interpret_argv ~project_name:"core" (fun _env ->
-    Unit_base64.tests @ Unit_civil.tests @ Unit_clock.tests @ Unit_julian.tests @ Unit_recur.tests
-    @ Unit_ics.tests)
+    Unit_base64.tests @ Unit_civil.tests @ Unit_clock.tests @ Unit_julian.tests @ Unit_recur.tests)

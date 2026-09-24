@@ -53,11 +53,13 @@ libs/core/time/           (library `elm_core`, unwrapped; a folder only)
   Recur.ml/.mli           repeating events: RFC 5545's RRULE, the subset
                           (DAILY, WEEKLY;BYDAY, MONTHLY;BYMONTHDAY,
                           YEARLY, COUNT, UNTIL), occurrences in a window
+libs/core/tests/          Unit_civil, Unit_clock, Unit_julian, Unit_recur
+                          (beside Unit_base64)
+appkits/pim/              (library `appkit_pim`: the PIM apps' files)
   Ics.ml/.mli             iCalendar read and written: VEVENT, VTODO,
-                          line folding, escaping
+                          line folding, escaping, RRULE's text
   Vcard.ml/.mli           vCard 3.0 read and written: N, FN, TEL, EMAIL, ADR
-libs/core/tests/          Unit_civil, Unit_clock, Unit_julian, Unit_recur,
-                          Unit_ics, Unit_vcard (beside Unit_base64)
+appkits/tests/            Unit_ics, Unit_vcard
 apps/pim/
   TinyClock.ml
   TinyCalendar.ml
@@ -73,9 +75,11 @@ The date modules go in `libs/core/` (the author, 2026-09-24: core is no
 longer only Elm's stand-ins), in its folder `time/` (core's dune says
 `(include_subdirs unqualified)`, as `playground/`'s does) -- and one day
 a `space/` beside it, the coordinates and projections of a map program
-(a TinyGoogleMaps). It is unwrapped, so each name is global:
-none of `Civil`, `Julian`, `Clock`, `Recur`, `Ics`, `Vcard` is taken
-today; grep again before adding one.
+(a TinyGoogleMaps). The files, iCalendar and vCard, are the apps'
+data, so an appkit's (the author, 2026-09-24), `appkit_pim`, where the
+Palm's shared models can go too. Both are unwrapped, so each name is
+global: none of `Civil`, `Julian`, `Clock`, `Recur`, `Ics`, `Vcard` is
+taken today; grep again before adding one.
 
 ## The platform: the local time
 

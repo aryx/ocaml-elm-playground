@@ -16,6 +16,7 @@
    appkit_slides
    appkit_hypertalk
    appkit_draw
+   appkit_pim ; Ics, Vcard
    elm_playground_software ; an implem of virtual elm_playground, to link
    gui ; Text_edit, under Rich
  )

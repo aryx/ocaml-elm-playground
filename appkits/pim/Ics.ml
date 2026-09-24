@@ -69,8 +69,11 @@ let content_line (l : string) : (string * (string * string) list * string) optio
     if i >= n then None
     else if l.[i] = ':' then Some (List.rev acc, String.sub l (i + 1) (n - i - 1))
     else
-      let eq = upto (i + 1) [ '=' ] in
+      let eq = upto (i + 1) [ '='; ';'; ':' ] in
       if eq >= n then None
+      else if l.[eq] <> '=' then
+        (* vCard 2.1's bare parameter: TEL;HOME:... is TYPE=HOME *)
+        params eq (("TYPE", String.uppercase_ascii (String.sub l (i + 1) (eq - i - 1))) :: acc)
       else
         let pname = String.uppercase_ascii (String.sub l (i + 1) (eq - i - 1)) in
         let v_end =

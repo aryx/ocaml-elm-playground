@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* core: Ics *)
+(* appkits/pim: Ics *)
 
 let t = Testo.create
 
@@ -43,6 +43,7 @@ let test_content_lines () =
   check "ATTENDEE;CN=\"Doe; John: Jr\";ROLE=CHAIR:mailto:jd@example.com"
     (Some ("ATTENDEE", [ ("CN", "Doe; John: Jr"); ("ROLE", "CHAIR") ], "mailto:jd@example.com"));
   check "no colon" None;
+  check "TEL;HOME;VOICE:555" (Some ("TEL", [ ("TYPE", "HOME"); ("TYPE", "VOICE") ], "555"));
   let text = "one, two; three\\four\nfive" in
   Alcotest.(check string) "escaped" "one\\, two\\; three\\\\four\\nfive" (Ics.escape text);
   Alcotest.(check string) "and back" text (Ics.unescape (Ics.escape text));
@@ -64,6 +65,26 @@ let test_moments () =
   check "20260230" None;
   check "20260928T250000" None;
   check "2026-09-28" None
+
+(* RRULE's text: read into Recur's rule, what Recur leaves out refused
+ * rather than misread, and written back the same *)
+let test_rules () =
+  Alcotest.(check bool) "the RFC's every-other-week rule, read" true
+    (Ics.rule_of_string "FREQ=WEEKLY;INTERVAL=2;WKST=SU;UNTIL=19971224T000000Z;BYDAY=MO,WE,FR"
+    = Some
+        { (Recur.make Weekly) with
+          interval = 2; week_start = 0; until = Some (Until_time (date 1997 12 24, 0)); by_day = [ 1; 3; 5 ] });
+  List.iter
+    (fun s -> Alcotest.(check bool) (s ^ " refused") true (Ics.rule_of_string s = None))
+    [ "FREQ=MONTHLY;BYDAY=1FR"; "FREQ=YEARLY;BYMONTH=1"; "FREQ=HOURLY"; "INTERVAL=2"; "FREQ=WEEKLY;BYMONTHDAY=3";
+      "FREQ=MONTHLY;BYMONTHDAY=0"; "FREQ=DAILY;COUNT=many" ];
+  List.iter
+    (fun s ->
+      match Ics.rule_of_string s with
+      | Some r -> Alcotest.(check string) s s (Ics.rule_to_string r)
+      | None -> Alcotest.failf "%s not read" s)
+    [ "FREQ=DAILY"; "FREQ=WEEKLY;INTERVAL=2;WKST=SU;BYDAY=MO,WE,FR;UNTIL=19971224T000000";
+      "FREQ=MONTHLY;BYMONTHDAY=2,15,-1;COUNT=10"; "FREQ=YEARLY;UNTIL=20300101" ]
 
 (* RFC 5545, section 4, its first example: folded over three lines,
  * with an escaped comma and newlines *)
@@ -137,6 +158,7 @@ let tests =
     [ t "folding" test_fold;
       t "content lines and escapes" test_content_lines;
       t "dates and times" test_moments;
+      t "rules as text" test_rules;
       t "RFC 5545's first example" test_rfc;
       t "lenient reading" test_lenient;
       t "written and read back" test_round_trip ]

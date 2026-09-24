@@ -1,0 +1,15 @@
+; claude: what the personal information managers share (apps/pim/,
+; plan_pim.md): their files, the formats of the Versit consortium that
+; every calendar and address book exchanges -- iCalendar (Ics) and
+; vCard (Vcard), one family of text, a property per line, read with
+; the same layers. The time they hold is core's time/ (Civil, Recur).
+;
+; Pure OCaml, no gui, no playground: a private library, installed as
+; part of elm_playground, so every backend, the web one included, can
+; use it.
+(library
+ (name appkit_pim)
+ (package elm_playground)
+ (wrapped false)
+ (libraries elm_core)
+)
