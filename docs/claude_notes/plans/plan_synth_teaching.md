@@ -1591,6 +1591,30 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   -5.9 dB; digital from 2029 levels to 5. A golden WAV each (the
   string brought down after peaking at 0.92). Dr wave, d-synth and
   voltage left, the sampler with the OP-XY's.
+- **O3, DONE (2026-09-24)**: `Studio_op1` in `music_voices`, a studio
+  (as `Studio_rebirth`): a sound is an engine (O2), its envelope (ADSR,
+  1 ms to 10 s on the encoders) and play mode (poly, or mono: one voice
+  stolen), an effect (delay: `Delay`; spring: `Reverb`'s Freeverb and a
+  low-pass; punch: a resonant `Svf` low-pass then rounds of drive;
+  nitro: two resonant low-passes, the first following the note), an
+  LFO (tremolo: a vibrato's moving delay line and the volume, faded in
+  or out with the note; value: one encoder of one module moved by a
+  sine). Eight sounds; the tape (O1, 30 s of four tracks: ours) recording
+  the live sound on the armed track while it plays the others back.
+  Measured: the envelope's levels (-18.4, -14.3, -18.1, then -40.8 dB
+  30 ms into the release), each effect changing the sound, the tremolo's
+  swing (0.32), a phrase played back from the tape the same samples at
+  its track's level. A golden WAV per sound. TinyOp1: the screen
+  (T1 the engine and its scope, T2 the envelope drawn, T3 the effect,
+  T4 the LFO's wave; a T key again the next of its kind, ours for the
+  OP-1's shift and browser), the four encoders in their colours as
+  bars on the screen, the keys 1 to 8, tape mode (the tracks around the
+  head, 8 seconds of them; REC, PLAY, STOP, <<; the encoders the armed
+  track's level, the speed, the volume, the head), the keyboard (no
+  velocity, as the OP-1's). Golden frames TinyOp1, TinyOp1_playing and
+  TinyOp1_tape; web page; `CATALOG.md`'s row. Left, in its header: lift
+  and drop, the tape's loop, the mixer page, the sequencers, the drum
+  sampler. Next: X1-X3, TinyOpxy.
 
 ## Verification
 

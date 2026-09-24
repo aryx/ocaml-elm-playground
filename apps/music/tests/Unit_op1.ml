@@ -95,6 +95,113 @@ let test_digital () =
   (* 16 bits, then 2 bits (-1, -0.5, 0, 0.5, 1) *)
   Alcotest.(check (pair int int)) "distinct sample values, digitalness 0 and 1" (2029, 5) (levels 0., levels 1.)
 
+(*****************************************************************************)
+(* The studio *)
+(*****************************************************************************)
+
+(* [studio patch f seconds]: [f frame t] each frame (735 samples), the
+ * left side out *)
+let studio ?(frames = fun _ _ -> ()) (p : Studio_op1.patch) (seconds : float) : Signal.t * Studio_op1.t =
+  let s = Studio_op1.create p in
+  let i = Studio_op1.instrument s in
+  let n = Signal.samples seconds in
+  let out = Array.make n 0. in
+  let k = ref 0 and frame = ref 0 in
+  while !k < n do
+    frames !frame s;
+    let m = min 735 (n - !k) in
+    let b = { Signal.left = Array.make m 0.; right = Array.make m 0. } in
+    i.fill b;
+    Array.blit b.left 0 out !k m;
+    k := !k + m;
+    incr frame
+  done;
+  (out, s)
+
+let rms (x : Signal.t) (a : float) (b : float) : float =
+  let i = Signal.samples a and j = Signal.samples b in
+  sqrt (Array.fold_left ( +. ) 0. (Array.map (fun v -> v *. v) (Array.sub x i (j - i))) /. float_of_int (j - i))
+
+(* a sine (FM at amount 0) through an envelope: attack 0.1 s, sustain
+ * 0.5, release; its level in dB through the note *)
+let sine_sound ?(effect_on = false) ?(effect = 0) ?(lfo_on = false) ?(lfo_params = [| 0.4; 0.; 0.8; 0.5 |]) () : Studio_op1.sound =
+  { (Studio_op1.initial.sounds.(0)) with engine = 0; engine_params = [| 0.; 0.; 0.; 0. |]; envelope = [| 0.5; 0.5; 0.5; 0.5 |]; effect_on; effect; lfo_on; lfo = 0; lfo_params }
+
+let with_sound (s : Studio_op1.sound) : Studio_op1.patch = { Studio_op1.initial with sounds = Array.make 8 s; current = 0 }
+
+let note_held ?(until = 1.) (s : Studio_op1.sound) (seconds : float) : Signal.t =
+  let release = Float.to_int (until *. 60.) in
+  fst (studio ~frames:(fun f st -> let i = Studio_op1.instrument st in if f = 0 then i.note_on 69 1. else if f = release then i.note_off 69) (with_sound s) seconds)
+
+let test_envelope () =
+  let x = note_held (sine_sound ()) 2. in
+  let db a b = Float.round (20. *. log10 (rms x a b) *. 10.) /. 10. in
+  (* full, a sine at 0.35 is -12.1 dB; the sustain 0.5 six under it;
+   * let go at 1 s, the release 0.1 s long *)
+  Alcotest.(check (list (float 0.1))) "the level: rising, at the top, sustained, released (dB)" [ -18.4; -14.3; -18.1; -40.8 ]
+    [ db 0.02 0.05; db 0.1 0.12; db 0.8 0.9; db 1.03 1.05 ]
+
+(* each effect on against off *)
+let test_effects () =
+  let off = note_held (sine_sound ()) 1.5 in
+  List.iteri
+    (fun k name ->
+      let on = note_held (sine_sound ~effect_on:true ~effect:k ()) 1.5 in
+      let d = Array.fold_left Float.max 0. (Array.mapi (fun i x -> Float.abs (x -. off.(i))) on) in
+      Alcotest.(check bool) (Printf.sprintf "%s changes the sound (by %.3f)" name d) true (d > 0.01))
+    Studio_op1.effects
+
+(* the tremolo: the loudness's swing over 20 ms windows *)
+let test_tremolo () =
+  let x = note_held (sine_sound ~lfo_on:true ()) 1.5 in
+  let windows = List.init 20 (fun k -> rms x (0.5 +. (0.02 *. float_of_int k)) (0.52 +. (0.02 *. float_of_int k))) in
+  let lo = List.fold_left Float.min 1. windows and hi = List.fold_left Float.max 0. windows in
+  Alcotest.(check (float 0.01)) "the quietest window against the loudest" 0.32 (lo /. hi)
+
+(* a phrase recorded on track 1, then played back alone: the same, at
+ * the track's level (0.8) *)
+let test_tape () =
+  let s = { (Studio_op1.initial.sounds.(2)) with effect_on = false; lfo_on = false } in
+  let p = with_sound s in
+  let recorded, st =
+    studio
+      ~frames:(fun f st ->
+        let i = Studio_op1.instrument st in
+        if f = 0 then Studio_op1.record st 0;
+        if f = 2 then i.note_on 60 1.;
+        if f = 20 then i.note_off 60;
+        if f = 25 then i.note_on 67 1.;
+        if f = 45 then i.note_off 67)
+      p 1.5
+  in
+  Studio_op1.stop st;
+  Tape.set_head (Studio_op1.tape st) 0.;
+  Studio_op1.play st;
+  let i = Studio_op1.instrument st in
+  let n = Array.length recorded in
+  let back = Array.make n 0. in
+  let k = ref 0 in
+  while !k < n do
+    let m = min 735 (n - !k) in
+    let b = { Signal.left = Array.make m 0.; right = Array.make m 0. } in
+    i.fill b;
+    Array.blit b.left 0 back !k m;
+    k := !k + m
+  done;
+  let d = ref 0. in
+  Array.iteri (fun j x -> d := Float.max !d (Float.abs ((0.8 *. x) -. back.(j)))) recorded;
+  Alcotest.(check (float 1e-9)) "played back: the phrase at 0.8" 0. !d
+
+(* each of the eight sounds on a phrase *)
+let sound_phrase (k : int) : Signal.t =
+  fst
+    (studio
+       ~frames:(fun f st ->
+         let i = Studio_op1.instrument st in
+         List.iter (fun (at, key) -> if f = at then i.note_on key 0.8 else if f = at + 18 then i.note_off key) [ (0, 60); (20, 64); (40, 67); (60, 72) ])
+       { Studio_op1.initial with current = k }
+       2.)
+
 (* each engine at its middle, four notes of an arpeggio *)
 let phrase (e : Op1_engine.t) : Signal.t =
   Array.concat (List.map (fun f -> Array.map (fun x -> 0.5 *. x) (play e [| 0.5; 0.5; 0.5; 0.5 |] f 0.3)) [ 220.; 277.18; 329.63; 440. ])
@@ -108,4 +215,9 @@ let tests =
         t "string: its pitch" test_string;
         t "phase distortion: the harmonics with the amount" test_phase;
         t "digital: its levels" test_digital;
-      ])
+        t "the studio: a note's envelope" test_envelope;
+        t "the studio: the effects" test_effects;
+        t "the studio: the tremolo" test_tremolo;
+        t "the studio: the tape, recorded and played back" test_tape;
+      ]
+    @ List.init 8 (fun k -> t (Printf.sprintf "golden WAV: sound %d" (k + 1)) (fun () -> Testutil_wav.check ~dir:"apps/music/tests" (Printf.sprintf "op1_sound%d" (k + 1)) (sound_phrase k))))

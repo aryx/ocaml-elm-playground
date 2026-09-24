@@ -120,6 +120,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: 1997: ReBirth's four machines as strips, the mixer, the
      * effects and the PCF's bars *)
     ("apps/music/software/TinyReBirth", "", 5);
+    (* claude: 2011: the OP-1's screen on T1, FM's four values in the
+     * encoders' colours, the keys 1 to 8 *)
+    ("apps/music/software/TinyOp1", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1085,6 +1088,13 @@ let scripted : Testutil_golden.scripted list =
     (* claude: the organ played: the 4' drawbar pulled out to 6 by the
      * mouse, C E G held, the Leslie switched on and fast half a second
      * before -- its horn spun up to 4 turns a second, its drum to 2 *)
+    (* claude: the OP-1's T1 pressed again, the next engine (the
+     * cluster), then C E G held -- its supersaw on the screen's scope *)
+    ("apps/music/software/TinyOp1", "playing", 30, "at(-250;110):1-4,click:2,a:5-40,d:5-40,g:5-40");
+    (* claude: the tape: sound 2 (the pad), tape mode, r recording on
+     * track 1 while C E G are played -- the track drawn behind the red
+     * head *)
+    ("apps/music/software/TinyOp1", "tape", 90, "at(-188;50):1-4,click:2,at(-350;110):5-8,click:6,r:10,a:12-50,d:30-70,g:50-80");
     ( "apps/music/software/TinyHammond",
       "playing",
       60,
