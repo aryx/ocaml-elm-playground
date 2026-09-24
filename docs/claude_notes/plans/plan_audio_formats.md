@@ -356,8 +356,10 @@ solfège, so everything that plays a tune plays it.
 
 ## Out of scope
 
-- MP3, AAC, Ogg Vorbis, Opus: the psychoacoustic codecs, a plan of
-  their own (the MDCT, the ear's masking).
+- AAC, Ogg Vorbis, Opus: the psychoacoustic codecs after MP3, a plan
+  of their own. (MP2 and MP3 are decoded, `formats/mpeg_audio/`,
+  MPEG-2's lower rates too; left: Layer III's intensity stereo, Layer
+  I, the free format, the LAME tag's gapless trimming, an encoder.)
 - S3M, XM, IT: the trackers after MOD (`notes_audio_midi.md` §9), an
   exercise once MOD plays.
 - NSF, SID, VGM: music as a sound chip's program, which needs the

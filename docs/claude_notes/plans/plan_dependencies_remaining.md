@@ -169,7 +169,8 @@ left), but the other half of "what we own", each already planned:
   YUV are done.
 - **Sound**: AU, IMA ADPCM, FLAC --
   [`plan_audio_formats.md`](plan_audio_formats.md); WAV, MIDI, ABC and
-  MOD are done. No MP3 or Vorbis, deliberately so far (both big).
+  MOD are done, and MP2 and MP3 decoded (`formats/mpeg_audio/`). No
+  Vorbis, deliberately so far (big).
 - **Fonts**: TrueType, as above
   ([`plan_2d_remaining.md`](plan_2d_remaining.md)).
 

@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"audio_formats" (fun _env -> Unit_mod.tests @ Unit_mod_player.tests)
+let () = Testo.interpret_argv ~project_name:"audio_formats" (fun _env -> Unit_mod.tests @ Unit_mod_player.tests @ Unit_mpeg_audio.tests)

@@ -1,9 +1,18 @@
 ; claude: unit tests for audio/formats/, run by 'make test' (dune
 ; runtest): each format's worked examples, files we make with our own
 ; writers read back, and what the readers refuse (no one else's module
-; or recording in the repository: plan_audio_formats.md)
+; or recording in the repository: plan_audio_formats.md; mpeg/ holds
+; our bell encoded by others' encoders, see make_mpeg.sh there)
 (test
  (name Test)
- (libraries alcotest testo audio_signal audio_mod audio_testutil)
- (deps (glob_files golden/*.wav))
+ (libraries alcotest testo audio_signal audio_mod audio_mpeg compression audio_testutil)
+ (modules Test Unit_mod Unit_mod_player Unit_mpeg_audio)
+ (deps (glob_files golden/*.wav) (glob_files mpeg/*))
+)
+
+; claude: an MP2 or MP3 file decoded into a WAV, to listen to ours
+(executable
+ (name Mpeg_to_wav)
+ (modules Mpeg_to_wav)
+ (libraries unix audio_signal audio_wav audio_mpeg)
 )

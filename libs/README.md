@@ -35,6 +35,7 @@ Among themselves they depend little: `core/`, `random/`, `crypto/` and
 `graphics/` on `compression/` (its formats' codes), on `core/`,
 on `audio/`'s samples (a video's sound) and on `networking/` (an image
 downloaded); `physics/` on `graphics/`' geometry; `gui/` on `core/`;
-`audio/`, `ai/` and `juice/` on nothing of the others. dune finds a
+`audio/` on `compression/` (MP3's codes); `ai/` and `juice/` on
+nothing of the others. dune finds a
 library by its name, not its folder, so a program says `(libraries
 audio ai)`, whatever `libs/` looks like.
