@@ -13,7 +13,7 @@
  * Each pole loses 3 dB at the cutoff and 6 dB an octave above it: the
  * four, 12 dB at the cutoff and 24 dB an octave -- steep, the brightness
  * taken away fast (measured: -12.04 dB at the cutoff; with the cutoff at
- * 100 Hz, -23.3 then -23.8 dB an octave from 400 Hz to 1.6 kHz, going
+ * 100 Hz, -23.3 then -24.0 dB an octave from 400 Hz to 1.6 kHz, going
  * to 24).
  *
  * {1 The resonance, worked out}

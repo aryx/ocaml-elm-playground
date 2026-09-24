@@ -859,6 +859,23 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   (every web page gains, not only TinyMinimoog); the schedule's floor
   then 50 ms, three frames, the native queue's. Left: the new floor read
   in a real browser.
+- **H1, DONE (2026-09-24)**: polyphony, step one. `Polyphony`, its own
+  module in instruments/ (`Voicing` stays the monophonic case): a voice
+  per key, a voice being a record of functions (released, filled a
+  block at a time, silent once its release is over), so the same
+  machinery serves any instrument's voices; a key let go releases its
+  voice, freed only once silent (not at once: a click; not never: a
+  leak); a key pressed again while its voice releases gets a new one
+  beside it; the voices' blocks summed. `Polyphony.sine`, a sine and an
+  exponential envelope, the worked example and an organ's single
+  drawbar. Tests (`Unit_polyphony`): a chord's block the sum of its
+  three voices rendered alone; E let go, three voices still after a
+  block, two after the second (silent is -100 dB, which an exponential
+  release reaches at 5/3 of its time: 25 ms for 15 -- a 10 ms release
+  had it freed right at the block's edge, the test moved to say
+  something); all let go, none left and silence; a key pressed again,
+  two voices, then one. Step two (a fixed number, stealing) with the
+  DX7 or the Juno, as planned.
 
 ## Verification
 

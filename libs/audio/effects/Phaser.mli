@@ -30,7 +30,7 @@
  * deepens the peaks between them. The MXR Phase 90 (1974) is four
  * stages, the Uni-Vibe (1968) four with lamps and photocells.
  *
- * Worked example (Unit_phaser): fc held at 1 kHz (low = high), no
+ * Worked example (Unit_modulated_delay): fc held at 1 kHz (low = high), no
  * feedback, mix 1: the gain 2.000 at 1 kHz, between the notches (where
  * the four have turned 360 degrees: back in phase, 2 = +6 dB), and the
  * notches found at 415 Hz and 2395 Hz, 1 Hz apart, their gains 0.0014
