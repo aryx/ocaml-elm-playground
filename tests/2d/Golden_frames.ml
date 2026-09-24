@@ -298,6 +298,7 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyDonkeyKong", "", 5);
     ("games/platform/software/TinyLodeRunner", "", 5);
     ("games/platform/software/TinyRick", "", 5);
+    ("games/platform/software/TinyVikings", "", 5);
     ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
     ("games/adventure/software/TinyZelda", "", 5);
@@ -842,6 +843,14 @@ let scripted : Testutil_golden.scripted list =
     ("games/sports/software/TinyShufflePuck", "rally", 45, "space:1,up:3-14");
     ("games/platform/software/TinyRick", "boulder", 70, "space:1,right:2-160");
     ("games/platform/software/TinyRick", "hole", 160, "space:1,right:2-160");
+    (* Erik's headbutt through the wall, Baleog's arrow flying at the guard *)
+    ("games/platform/software/TinyVikings", "headbutt", 70, "space:1,right:3-50,space:52,Tab:55,x:57");
+    (* the bridge brought by an arrow, Olaf's shield up against the ledge,
+     * and Erik standing on it, the lever out of his reach still *)
+    ( "games/platform/software/TinyVikings",
+      "shield",
+      712,
+      "space:1,right:3-50,space:52,Tab:55,x:57,x:80,Tab:83,right:85-450,space:452,Tab:455,right:457-672,up:675,right:675-685" );
     (* claude: a standing jump over the first gap, in the air; then,
      * the plate stepped on and the gate run through, hanging from the
      * shaft's edge (the loose floor fallen, the gate closing); and
