@@ -1066,6 +1066,10 @@ let scripted : Testutil_golden.scripted list =
      * button; 40 frames in, step 6 playing, lit on the buttons and the
      * grid *)
     ("apps/music/software/TinyTR808", "running", 40, "space:3,at(435;85):5-8,click:6");
+    (* claude: the 909: its house pattern chosen in the menu, started --
+     * its grey and orange, RD and CR, the kick's TUNE and ATTACK, the
+     * shuffle *)
+    ("apps/music/software/TinyTR808", "909", 40, "at(330;482):1-4,click:2,at(330;302):5-9,click:7,space:12");
     (* claude: the Juno played: the VCF's cutoff slider dragged up, chorus
      * II clicked, then C E G held -- the spectrum opened, II lit *)
     ( "apps/music/software/TinyJuno",

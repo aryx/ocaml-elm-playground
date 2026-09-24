@@ -1498,6 +1498,15 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   samples' levels raised after measuring each instrument alone (10 to
   15 dB under the 808's metal at first: a recording normalized to its
   peak, which a few modes in phase make high), the crash less.
+- **N2, DONE (2026-09-24)**: TinyTR808 switching: the 808 and 909
+  buttons, each machine's labels (`Voice_tr808.label`: RD, CR) and
+  knobs (the 909's kick's tune, attack, decay; its hats' decay; its
+  cymbals' tune), its look (the 808's dark body, cream and red, its
+  coloured step buttons; the 909's grey and orange); the shuffle and
+  flam knobs, FL editing the flams beside AC, the grid's two rows.
+  Golden frames TinyTR808 and TinyTR808_running re-approved (the knobs'
+  rows tightened for the 909's four), TinyTR808_909 new (its house
+  pattern, started).
 
 ## Verification
 

@@ -10,9 +10,13 @@
 
 (* A toy version of the Roland TR-808 Rhythm Composer (1980), the drum
  * machine of electro, hip hop, house and trap: eleven drums
- * synthesized, not sampled, and a 16-step sequencer. The voices and
- * the sequencer are Voice_tr808.ml over Modal, Vco, Svf and Sequencer;
- * this is its panel.
+ * synthesized, not sampled, and a 16-step sequencer; and of its
+ * successor the TR-909 (1983), switched in by the 808 and 909 buttons:
+ * its kick's falling pitch, its cymbals 6-bit samples, its ride and
+ * crash, its grey and orange. The voices and the sequencer are
+ * Voice_tr808.ml over Modal, Vco, Svf, Resample and Sequencer; this is
+ * its panel. The shuffle (the even sixteenths late) and the flam (FL,
+ * the steps struck twice) work on both.
  *
  * The panel: a column per instrument, its knobs over its name (the
  * kick's level, tone and decay; the snare's level, tone and snappy; a
@@ -79,39 +83,56 @@ let panel_theme : Theme.t =
     pointer = rgb 240 240 240;
   }
 
-(* each instrument's knobs, the 808's *)
-let knobs_of : Voice_tr808.instrument -> string list = function
-  | BD -> [ "level"; "tone"; "decay" ]
-  | SD -> [ "level"; "tone"; "snappy" ]
-  | LT | MT | HT -> [ "level"; "tuning" ]
-  | CY -> [ "level"; "tone"; "decay" ]
-  | OH -> [ "level"; "decay" ]
-  | RS | CP | CB | CH -> [ "level" ]
+(* each instrument's knobs on each machine: the patch's field, the word
+ * on the panel (the 909's kick's "attack" is the tone's field) *)
+let knobs_of (machine : int) (i : Voice_tr808.instrument) : (string * string) list =
+  let same = List.map (fun f -> (f, f)) in
+  match (machine, i) with
+  | 0, BD -> same [ "level"; "tone"; "decay" ]
+  | 0, SD -> same [ "level"; "tone"; "snappy" ]
+  | 0, (LT | MT | HT) -> same [ "level"; "tuning" ]
+  | 0, CY -> same [ "level"; "tone"; "decay" ]
+  | 0, OH -> same [ "level"; "decay" ]
+  | 0, _ -> same [ "level" ]
+  | _, BD -> [ ("level", "level"); ("tuning", "tune"); ("tone", "attack"); ("decay", "decay") ]
+  | _, SD -> [ ("level", "level"); ("tuning", "tune"); ("tone", "tone"); ("snappy", "snappy") ]
+  | _, (LT | MT | HT) -> [ ("level", "level"); ("tuning", "tune"); ("decay", "decay") ]
+  | _, (CH | OH) -> same [ "level"; "decay" ]
+  | _, (CY | CB) -> [ ("level", "level"); ("tuning", "tune") ]
+  | _, _ -> same [ "level" ]
 
 let column_x (k : int) : number = -420. + (float_of_int k * 84.)
-let name_y = 238.
-let knob_y (row : int) : number = 420. - (float_of_int row * 55.)
+let name_y = 228.
+let knob_y (row : int) : number = 425. - (float_of_int row * 50.)
 
 (* the controls' row, and the step buttons *)
 let controls_y = 190.
 let step_x (k : int) : number = -435. + (float_of_int k * 58.)
 let step_y = 85.
 
-(* the 808's colours, four by four *)
-let step_color (k : int) : color =
-  match k /.. 4 with 0 -> rgb 205 55 45 | 1 -> rgb 230 130 45 | 2 -> rgb 235 200 70 | _ -> rgb 235 230 210
+(* the 808's colours, four by four; the 909's grey *)
+let step_color (machine : int) (k : int) : color =
+  if machine = 1 then rgb 215 215 212
+  else match k /.. 4 with 0 -> rgb 205 55 45 | 1 -> rgb 230 130 45 | 2 -> rgb 235 200 70 | _ -> rgb 235 230 210
 
 (* the grid under: a row per instrument, a cell per step *)
 let grid_x (k : int) : number = -300. + (float_of_int k * 34.)
-let grid_y (row : int) : number = -65. - (float_of_int row * 25.)
+let grid_y (row : int) : number = -65. - (float_of_int row * 24.)
 
-let track (p : Voice_tr808.patch) (sel : int) : bool array = if sel = 11 then p.accents else p.tracks.(sel)
+(* the tracks the buttons edit: the instruments', then the accents (11)
+ * and the flams (12) *)
+let track (p : Voice_tr808.patch) (sel : int) : bool array = if sel = 11 then p.accents else if sel = 12 then p.flams else p.tracks.(sel)
 
 let with_step (p : Voice_tr808.patch) (sel : int) (k : int) : Voice_tr808.patch =
   if sel = 11 then begin
     let a = Array.copy p.accents in
     a.(k) <- not a.(k);
     { p with accents = a }
+  end
+  else if sel = 12 then begin
+    let f = Array.copy p.flams in
+    f.(k) <- not f.(k);
+    { p with flams = f }
   end
   else begin
     let tracks = Array.map Array.copy p.tracks in
@@ -142,18 +163,24 @@ let update (computer : computer) (m : model) : model =
   let patch =
     List.fold_left
       (fun p (k, i) ->
-        let names = knobs_of i in
+        let names = knobs_of patch.machine i in
         List.fold_left
-          (fun p (row, knob) -> knob_control computer p (Voice_tr808.name i ^ "." ^ knob) (column_x k, knob_y row) ~from:0. ~to_:1.)
+          (fun p (row, (field, _)) -> knob_control computer p (Voice_tr808.name i ^ "." ^ field) (column_x k, knob_y row) ~from:0. ~to_:1.)
           p (List.mapi (fun row n -> (row, n)) names))
       patch
       (List.mapi (fun k i -> (k, i)) Voice_tr808.instruments)
   in
-  (* the tempo, whole beats; the accent; the volume *)
-  let tempo = Float.round (Gui.knob computer ~at:(160., controls_y) ~from:60. ~to_:180. patch.tempo) in
+  (* the tempo, whole beats; the accent, the shuffle, the flam; the
+   * volume *)
+  let tempo = Float.round (Gui.knob computer ~at:(150., controls_y) ~from:60. ~to_:180. patch.tempo) in
   let patch = if tempo <> patch.tempo then { patch with tempo } else patch in
-  let patch = knob_control computer patch "accent" (250., controls_y) ~from:0. ~to_:1. in
-  let patch = knob_control computer patch "volume" (340., controls_y) ~from:0. ~to_:1. in
+  let patch = knob_control computer patch "accent" (220., controls_y) ~from:0. ~to_:1. in
+  let patch = knob_control computer patch "shuffle" (290., controls_y) ~from:0. ~to_:1. in
+  let patch = knob_control computer patch "flam" (360., controls_y) ~from:0. ~to_:1. in
+  let patch = knob_control computer patch "volume" (430., controls_y) ~from:0. ~to_:1. in
+  (* the machine *)
+  let patch = if Gui.button computer ~at:(10., controls_y) "808" then { patch with machine = 0 } else patch in
+  let patch = if Gui.button computer ~at:(65., controls_y) "909" then { patch with machine = 1 } else patch in
   (* start/stop, and space *)
   let space = computer.keyboard.kspace in
   let run = Gui.button computer ~at:(-380., controls_y) (if Voice_tr808.running tr808 then "STOP" else "START") in
@@ -172,7 +199,8 @@ let update (computer : computer) (m : model) : model =
       m.selected
       (List.mapi (fun k i -> (k, i)) Voice_tr808.instruments)
   in
-  let selected = if Gui.button computer ~at:(-260., controls_y) "AC" then 11 else selected in
+  let selected = if Gui.button computer ~at:(-280., controls_y) "AC" then 11 else selected in
+  let selected = if Gui.button computer ~at:(-225., controls_y) "FL" then 12 else selected in
   (* the step buttons, and the grid's cells *)
   let patch =
     List.fold_left
@@ -184,7 +212,7 @@ let update (computer : computer) (m : model) : model =
       (fun p (row, k) ->
         if click && Float.abs (mouse.mx - grid_x k) <= 15. && Float.abs (mouse.my - grid_y row) <= 11. then with_step p row k else p)
       patch
-      (List.concat (List.init 12 (fun row -> List.init 16 (fun k -> (row, k)))))
+      (List.concat (List.init 13 (fun row -> List.init 16 (fun k -> (row, k)))))
   in
   (* the letters, live *)
   let now = Set_.elements computer.keyboard.keys in
@@ -204,17 +232,30 @@ let segment (c : color) (w : number) (x1, y1) (x2, y2) : shape =
   let dx = x2 - x1 and dy = y2 - y1 in
   rectangle c (sqrt ((dx * dx) + (dy * dy))) w |> rotate (atan2 dy dx * 180. / Float.pi) |> move ((x1 + x2) / 2.) ((y1 + y2) / 2.)
 
+(* the machine's colours: the 808's dark body, cream top and red
+ * stripe; the 909's grey and orange *)
+type look = { body : color; top : color; stripe : color; chosen : color; led : color }
+
+let look (machine : int) : look =
+  if machine = 1 then { body = rgb 95 95 98; top = rgb 205 205 202; stripe = rgb 235 120 40; chosen = rgb 235 120 40; led = rgb 255 140 30 }
+  else { body = rgb 45 45 45; top = rgb 230 225 210; stripe = rgb 205 55 45; chosen = rgb 230 130 45; led = rgb 255 50 30 }
+
+let track_name (m : model) : string =
+  match m.selected with 11 -> "the accents" | 12 -> "the flams" | k -> Voice_tr808.label m.patch.machine (List.nth Voice_tr808.instruments k)
+
 let panel_view (m : model) : shape list =
   let running = Voice_tr808.running tr808 and now = Voice_tr808.step tr808 in
+  let machine = m.patch.machine in
+  let l = look machine in
   let columns =
     List.concat
       (List.mapi
          (fun k i ->
-           let names = knobs_of i in
+           let names = knobs_of machine i in
            let chosen = m.selected = k in
-           [ rectangle (if chosen then rgb 230 130 45 else rgb 60 60 60) 76. 24. |> move (column_x k) name_y;
-             words (if chosen then black else white) (Voice_tr808.name i) |> scale 1.3 |> move (column_x k) name_y ]
-           @ List.mapi (fun row n -> words ink (String.uppercase_ascii n) |> scale 0.9 |> move (column_x k) (knob_y row - 25.)) names)
+           [ rectangle (if chosen then l.chosen else rgb 60 60 60) 76. 24. |> move (column_x k) name_y;
+             words (if chosen then black else white) (Voice_tr808.label machine i) |> scale 1.3 |> move (column_x k) name_y ]
+           @ List.mapi (fun row (_, word) -> words ink (String.uppercase_ascii word) |> scale 0.9 |> move (column_x k) (knob_y row - 22.)) names)
          Voice_tr808.instruments)
   in
   let steps =
@@ -222,34 +263,31 @@ let panel_view (m : model) : shape list =
       (List.init 16 (fun k ->
            let on = (track m.patch m.selected).(k) and playing = running && k = now in
            [
-             rectangle (if playing then white else step_color k) 46. 52. |> move (step_x k) step_y;
-             circle (if on then rgb 255 50 30 else rgb 90 30 20) 5. |> move (step_x k) (step_y + 38.);
-             words (rgb 230 225 210) (string_of_int (k +.. 1)) |> scale 0.9 |> move (step_x k) (step_y - 36.);
+             rectangle (if playing then white else step_color machine k) 46. 52. |> move (step_x k) step_y;
+             circle (if on then l.led else rgb 90 40 20) 5. |> move (step_x k) (step_y + 38.);
+             words l.top (string_of_int (k +.. 1)) |> scale 0.9 |> move (step_x k) (step_y - 36.);
            ]))
   in
-  let cream = rgb 230 225 210 in
-  [ rectangle (rgb 45 45 45) 960. 440. |> move 0. 230.; rectangle cream 960. 190. |> move 0. 355.;
-    rectangle (rgb 205 55 45) 960. 6. |> move 0. 257. ]
-  @ [ words cream "Rhythm Composer  TR-808" |> scale 1.3 |> move 330. 20.;
-      words cream (Printf.sprintf "TEMPO %.0f" m.patch.tempo) |> scale 1. |> move 160. (controls_y - 30.);
-      words cream "ACCENT" |> scale 1. |> move 250. (controls_y - 30.); words cream "VOLUME" |> scale 1. |> move 340. (controls_y - 30.);
-      words cream (if m.selected = 11 then "editing: the accents" else "editing: " ^ Voice_tr808.name (List.nth Voice_tr808.instruments m.selected))
-      |> scale 1.1 |> move (-120.) controls_y ]
+  let caption word x = words l.top word |> scale 1. |> move x (controls_y - 30.) in
+  [ rectangle l.body 960. 440. |> move 0. 230.; rectangle l.top 960. 204. |> move 0. 348.; rectangle l.stripe 960. 6. |> move 0. 245. ]
+  @ [ words l.top (if machine = 1 then "Rhythm Composer  TR-909" else "Rhythm Composer  TR-808") |> scale 1.3 |> move 330. 20.;
+      caption (Printf.sprintf "TEMPO %.0f" m.patch.tempo) 150.; caption "ACCENT" 220.; caption "SHUFFLE" 290.; caption "FLAM" 360.;
+      caption "VOLUME" 430.; words l.top ("editing: " ^ track_name m) |> scale 1.1 |> move (-120.) (controls_y - 30.) ]
   @ columns @ steps
 
-(* the whole pattern: a row per instrument and the accents, the step
- * playing a column lit *)
+(* the whole pattern: a row per instrument, the accents and the flams,
+ * the step playing a column lit *)
 let grid_view (m : model) : shape list =
   let running = Voice_tr808.running tr808 and now = Voice_tr808.step tr808 in
-  let rows = List.map Voice_tr808.name Voice_tr808.instruments @ [ "AC" ] in
+  let rows = List.map (Voice_tr808.label m.patch.machine) Voice_tr808.instruments @ [ "AC"; "FL" ] in
   List.concat
     (List.mapi
        (fun row label ->
          (words ink label |> scale 1. |> move (-345.) (grid_y row))
          :: List.init 16 (fun k ->
                 let on = (track m.patch row).(k) in
-                let c = if on then (if row = 11 then rgb 205 55 45 else rgb 40 40 40) else if running && k = now then rgb 200 200 190 else rgb 235 232 222 in
-                rectangle c 30. 21. |> move (grid_x k) (grid_y row)))
+                let c = if on then (if row >= 11 then (look m.patch.machine).stripe else rgb 40 40 40) else if running && k = now then rgb 200 200 190 else rgb 235 232 222 in
+                rectangle c 30. 20. |> move (grid_x k) (grid_y row)))
        rows)
 
 let scope_view (samples : Signal.t) : shape list =
