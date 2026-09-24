@@ -813,10 +813,54 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
      instrument's output block by block, playing back at a speed
      through `Resample`, reverse, lift and drop), tested on a recorded
      phrase played back an octave up in half the time.
-   - **O2, TinyOp1's engines** in `music_voices` (its FM engine
-     `Voice_dx7`, four operators, after D2), polyphonic (after H1),
-     each four knobs; **O3, its panel**: the four encoders, the screens,
-     the keyboard, the tape's transport.
+   - **The OP-1's facts** (2026-09-24), from its user guide v2.2 (2013;
+     the pages' text, and the reference chapter's drawings): a sound is
+     four modules on four soft keys -- T1 the engine, T2 the envelope (an
+     ADSR on the four encoders, blue attack, green decay, white sustain,
+     orange release; the play mode poly, mono, legato or unison, and
+     portamento), T3 the effect, T4 the LFO -- in eight sound slots; its
+     engines "not sample based but modeled sounds", each four
+     parameters on the four coloured encoders: FM ("four operator FM
+     synthesis": FM amount, freq, topology, detune), cluster ("multi
+     layered oscillator cluster": number of waves 0-6, wave envelope,
+     spread, unitor), string ("waveguide string model": tension,
+     impulse decay, detune, impulse type), pulse ("dual pulsetrain
+     oscillator": filter, amplitude, second pulse, mod), phase ("phase
+     distortion": phase shift, distortion amount, phase filter, phase
+     tilt), digital ("true digital synthesis": wave shaper, octave,
+     detune and ring mod, digitalness), dr wave ("frequency domain":
+     wave type and length, filter, phase, chorus), d-synth ("multi
+     envelope dual oscillator"), voltage ("multi oscillator electric
+     synthesis"), and the sampler; its effects delay ("solid state":
+     size, speed, feedback, mix), grid ("three dimensional feedback
+     plate"), nitro ("dual resonant turbo filter"), phone, punch ("hard
+     hitting low pass filter": frequency, punch, rounds, power), spring
+     ("mathematic reverb": tone, turns, damping, send), CWO ("pitch
+     shifting delay"); its LFOs bend, crank, element, MIDI, random,
+     tremolo, value; its sequencers pattern (a 16-step grid), finger,
+     endless (128 steps), tombola (a spinning hexagon), sketch,
+     arpeggio. Four operators, not the DX7's six: its FM engine is
+     `Fm_algorithm`'s six with two silent, the DX7's algorithms giving
+     its topologies.
+   - **O2, TinyOp1's engines** in `music_voices`, `Op1_engine`: six of
+     the engines behind one four-encoder interface (a name, the
+     manual's type, four labels, a generator from four values in 0-1),
+     each read from the manual's four words (ours where the words don't
+     say more, and said so): FM (four of `Fm_algorithm`'s operators,
+     four topologies), cluster (up to six detuned sawtooths, the
+     supersaw), string (a live Karplus-Strong waveguide), pulse (two
+     pulse trains, a filter), phase (Casio's phase distortion), digital
+     (a wave shaper, ring modulation, the bits and rate reduced); dr
+     wave, d-synth and voltage exercises. Tests per engine: its
+     worked example (FM at amount 0 a sine; the string's pitch; phase
+     distortion's harmonics growing with its amount; the digital's
+     levels), a golden WAV each.
+   - **O3, `Studio_op1` and TinyOp1**: the sound (an engine, the
+     envelope and its play mode, an effect -- delay, spring, punch,
+     nitro from the rack's blocks -- an LFO), eight slots, the tape (O1)
+     recording the output, the mixer; the panel: the four coloured
+     encoders, a drawn screen per engine, the keyboard, the tape's
+     transport.
    - **X1, the sequencer's parameter locks** on TinyTB303's audio-clock
      sequencer; **X2, the sampler instrument**; **X3, TinyOpxy**: 8
      tracks, the step grid, the engines, scenes.
@@ -1529,6 +1573,24 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   click. Golden frames TinyReBirth and TinyReBirth_running; web page;
   `CATALOG.md`'s row. Left, in its header: the song mode, a pattern
   edited here, each machine's sends, songs saved.
+- **O2, DONE (2026-09-24)**: `Op1_engine` in `music_voices`: the facts
+  (above) from the OP-1's user guide v2.2, its reference chapter's
+  drawings giving each engine's four encoders. Six engines behind one
+  interface (a name, the manual's type, four labels, a generator from
+  four values): FM (four of `Fm_algorithm`'s operators, the DX7's
+  algorithms 1, 13 and 32 giving the stack, the pairs, the fan, the
+  organ), cluster (up to six sawtooths detuned, `Vco`, a closing
+  low-pass), string (a live Karplus-Strong waveguide, two strings
+  detuned), pulse (two pulse trains, the widths moved, a low-pass, a
+  drive), phase (Casio's phase distortion, a knee from 0.5 to 0.05),
+  digital (a sine folded, ring modulated, its bits and rate reduced).
+  Measured: FM a sine at amount 0, +15.1 dB of harmonics at 0.6 in the
+  stack; the cluster 4 bins wide to 10 with its spread; the string at
+  220 Hz (by autocorrelation: its zero crossings said 1572, counting
+  its bright harmonics); phase distortion from a cosine to -11.7 and
+  -5.9 dB; digital from 2029 levels to 5. A golden WAV each (the
+  string brought down after peaking at 0.92). Dr wave, d-synth and
+  voltage left, the sampler with the OP-XY's.
 
 ## Verification
 
