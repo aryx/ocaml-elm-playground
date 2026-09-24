@@ -273,12 +273,71 @@ let requantize (g : granule) (rate : int) (long : int array) (short : int array 
 (* Stereo, reordering, alias reduction *)
 (*****************************************************************************)
 
-(* mid/side back to left and right *)
-let mid_side (m : float array) (s : float array) : unit =
+(* intensity stereo's directions, line by line, from the right channel's
+ * scalefactors, above the last band where its spectrum isn't zero (per
+ * window in short blocks); 7 where a line isn't intensity-coded. The
+ * last band, which has no scalefactor, takes the one below it's
+ * (2.4.3.4.9.3; MPEG-1's, MPEG-2's variant not done) *)
+let intensity_positions (g : granule) (rate : int) (right : float array) (long : int array) (short : int array array) :
+    int array =
+  let positions = Array.make 576 7 in
+  let lb = Layer3_tables.long_bands rate and sb = Layer3_tables.short_bands rate in
+  let set first last p = Array.fill positions first (last - first) p in
+  if g.block_type = 2 then (
+    let first_short = if g.mixed then 3 else 0 in
+    let all_windows_empty = ref true in
+    for w = 0 to 2 do
+      (* the highest short band with a line of this window not zero *)
+      let top = ref (-1) in
+      for sfb = first_short to 12 do
+        let width = sb.(sfb + 1) - sb.(sfb) in
+        for f = 0 to width - 1 do
+          if right.((3 * sb.(sfb)) + (w * width) + f) <> 0. then top := sfb
+        done
+      done;
+      if !top >= 0 then all_windows_empty := false;
+      for sfb = max (!top + 1) first_short to 12 do
+        let width = sb.(sfb + 1) - sb.(sfb) in
+        let start = (3 * sb.(sfb)) + (w * width) in
+        let p = if sfb < 12 then short.(sfb).(w) else if !top < 11 then short.(11).(w) else 7 in
+        set start (start + width) p
+      done
+    done;
+    (* a mixed block's long bands, when the short ones are all intensity *)
+    if g.mixed && !all_windows_empty then
+      for sfb = 0 to 21 do
+        if lb.(sfb + 1) <= 36 then set lb.(sfb) lb.(sfb + 1) long.(sfb)
+      done)
+  else (
+    (* the band after the one holding the highest line not zero *)
+    let last = ref (-1) in
+    Array.iteri (fun i v -> if v <> 0. then last := i) right;
+    let first = ref 0 in
+    while !first < 22 && lb.(!first) <= !last do
+      incr first
+    done;
+    for sfb = !first to 21 do
+      set lb.(sfb) lb.(sfb + 1) (if sfb < 21 then long.(sfb) else if !first <= 20 then long.(20) else 7)
+    done);
+  positions
+
+(* joint stereo back to left and right, line by line: an intensity
+ * line's single spectrum (sent in the left channel) split between the
+ * two by its direction, ratio tan(is_pos pi / 12) -- 0 all right, 6
+ * all left; the other lines, mid/side if on: M = (L + R) / sqrt 2, S =
+ * (L - R) / sqrt 2 *)
+let joint_stereo ~(mid_side : bool) (positions : int array) (left : float array) (right : float array) : unit =
   for i = 0 to 575 do
-    let a = m.(i) and b = s.(i) in
-    m.(i) <- (a +. b) /. sqrt 2.;
-    s.(i) <- (a -. b) /. sqrt 2.
+    let p = positions.(i) in
+    if p <> 7 then (
+      let ratio = tan (float_of_int p *. Float.pi /. 12.) in
+      let v = left.(i) in
+      left.(i) <- v *. ratio /. (1. +. ratio);
+      right.(i) <- v /. (1. +. ratio))
+    else if mid_side then (
+      let m = left.(i) and s = right.(i) in
+      left.(i) <- (m +. s) /. sqrt 2.;
+      right.(i) <- (m -. s) /. sqrt 2.)
   done
 
 (* short blocks: from each band's window after window, to each line's 3
@@ -378,11 +437,12 @@ let decode (st : state) (h : Mpeg_audio_header.t) (file : string) (at : int) : f
     let b = Bits.of_string main in
     Bits.seek b (8 * start);
     for gr = 0 to granules - 1 do
+      let shorts = Array.init nch (fun _ -> Array.make_matrix 13 3 0) in
       let xr =
         Array.init nch (fun ch ->
             let g = si.granules.(gr).(ch) in
             let part = Bits.position b in
-            let short = Array.make_matrix 13 3 0 in
+            let short = shorts.(ch) in
             if mpeg1 then scalefactors b g si.scfsi.(ch) gr st.long.(ch) short
             else scalefactors_lsf b g ~intensity_right:(intensity_right h ch) st.long.(ch) short;
             let is = Array.make 576 0 in
@@ -390,7 +450,15 @@ let decode (st : state) (h : Mpeg_audio_header.t) (file : string) (at : int) : f
             Bits.seek b (part + g.part2_3_length);
             requantize g h.sample_rate st.long.(ch) short is)
       in
-      if h.mode = Mpeg_audio_header.Joint_stereo && h.mode_extension land 2 <> 0 then mid_side xr.(0) xr.(1);
+      if h.mode = Mpeg_audio_header.Joint_stereo && h.mode_extension <> 0 then (
+        let g = si.granules.(gr).(1) in
+        let positions =
+          (* MPEG-2's intensity stereo codes its directions another way:
+           * not done, its lines left as they are *)
+          if h.mode_extension land 1 <> 0 && mpeg1 then intensity_positions g h.sample_rate xr.(1) st.long.(1) shorts.(1)
+          else Array.make 576 7
+        in
+        joint_stereo ~mid_side:(h.mode_extension land 2 <> 0) positions xr.(0) xr.(1));
       for ch = 0 to nch - 1 do
         let g = si.granules.(gr).(ch) in
         reorder g h.sample_rate xr.(ch);
