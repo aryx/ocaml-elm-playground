@@ -10,10 +10,12 @@
 
 (* See Media.mli *)
 
-type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1
+type kind = Wav | Mp2 | Mp3 | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1
 
 let kind_name = function
   | Wav -> "WAV"
+  | Mp2 -> "MP2"
+  | Mp3 -> "MP3"
   | Midi -> "MIDI"
   | Mod -> "MOD"
   | Abc -> "ABC"
@@ -47,7 +49,11 @@ let by_bytes (s : string) : kind option =
   else if starts s 0 "\000\000\001\xB3" then Some Mpeg1
   else if String.length s >= 128 && (starts s 4 "\x11\xAF" || starts s 4 "\x12\xAF") then Some Flic
   else if starts s 0 "X:" then Some Abc
-  else None
+  else
+    match Mpeg_audio_header.at_start s with
+    | Some { layer = 2; _ } -> Some Mp2
+    | Some { layer = 3; _ } -> Some Mp3
+    | _ -> None
 
 let by_name (name : string) : kind option =
   let ends = Filename.check_suffix (String.lowercase_ascii name) in
@@ -109,6 +115,12 @@ let open_ ~(name : string) (bytes : string) : (kind * media, string) result =
       let media =
         match kind with
         | Wav -> Result.map (fun s -> Sound { samples = Signal.both s; notes = [] }) (Wav.of_string bytes)
+        | Mp2 | Mp3 ->
+            Result.map
+              (fun ((h : Mpeg_audio_header.t), (s : Signal.stereo)) ->
+                let at_our_rate x = if h.sample_rate = Signal.rate then x else Resample.to_rate Cubic h.sample_rate x in
+                Sound { samples = { left = at_our_rate s.left; right = at_our_rate s.right }; notes = [] })
+              (Mpeg_audio.decode bytes)
         | Midi -> Result.map (fun (score : Midi.score) -> Sound { samples = Signal.both (Music.render_score score); notes = score.notes }) (Midi.parse bytes)
         | Mod -> Result.map (fun song -> Module song) (Mod.of_string bytes)
         | Abc -> Result.map tune (Abc.parse bytes)

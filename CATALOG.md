@@ -416,7 +416,7 @@ pictures, and videos as `graphics/videos/` comes
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
-| [TinyMediaPlayer](apps/media/TinyMediaPlayer.ml) | app | Media Player (Microsoft, 1991), VLC (VideoLAN, 2001) | One player for every file this repository reads: recordings, tunes, modules, pictures, an animation, a video. | A file's kind found from its bytes (magic numbers), not its name; each kind shown as what it is: a piano roll, a wave, a tracker's rows, a picture; a playlist, a scope and a spectrum. |
+| [TinyMediaPlayer](apps/media/TinyMediaPlayer.ml) | app | Media Player (Microsoft, 1991), VLC (VideoLAN, 2001) | One player for every file this repository reads: recordings (WAV, MP2, MP3), tunes, modules, pictures, an animation, a video. | A file's kind found from its bytes (magic numbers), not its name; each kind shown as what it is: a piano roll, a wave, a tracker's rows, a picture; a playlist, a scope and a spectrum. |
 
 ## Internet
 

@@ -11,7 +11,8 @@
  * playing .wav and .mid files through MCI) and what VLC (VideoLAN,
  * 2001) made of the idea: one program for every kind of file, a
  * playlist, and whatever the file is shown its own way -- here every
- * format this repository reads: a recording (WAV), tunes (MIDI, ABC,
+ * format this repository reads: a recording (WAV, and compressed: MP2
+ * and MP3, audio/formats/mpeg_audio/), tunes (MIDI, ABC,
  * solfege), a song with its instruments (MOD), pictures (PNG, JPEG,
  * XPM) and movies (an animated GIF, Y4M, FLI and FLC, AVI with its
  * sound, MPEG-1: graphics/videos/, plan_video_teaching.md).
@@ -49,7 +50,8 @@
  *   dune exec apps/media/TinyMediaPlayer.exe -- file=song.mid,photo.png
  *   dune exec apps/media/TinyMediaPlayer.exe -- song.mid photo.png
  *
- * Uses: Media (the kinds, opening them), Our_media, Audio (the player as
+ * Uses: Media (the kinds, opening them: Mpeg_audio for MP2 and MP3,
+ * decoded whole when opened), Our_media, Audio (the player as
  * an instrument the mixer pulls; fetch, for file=), Mod_player, Gui (the
  * slider, the buttons, the list), Sprite.of_rgba (the pictures),
  * Spectrum. Not: Scene2d, the physics, the File menu.

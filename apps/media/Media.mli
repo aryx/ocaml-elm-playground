@@ -21,6 +21,11 @@
  *                               container, another type
  *     00 00 01 B3               MPEG-1 video (1993): a start code, the
  *                               sequence header's
+ *     FF Ex / FF Fx, or "ID3"   MPEG audio, MP2 and MP3 (1993): 11 bits
+ *                               of sync, a frame's header, checked by the
+ *                               next frame's being where it says; or a
+ *                               music player's ID3 tag before it
+ *                               (Mpeg_audio_header.mli)
  *     11 AF, 12 AF at byte 4    FLI, FLC (Autodesk Animator, 1989):
  *                               (two bytes only: a weak magic, trusted
  *                               only in a file of the header's 128 bytes)
@@ -30,14 +35,15 @@
  * (.mod), and a tune in solfege is plain text (.doremi, .txt).
  *
  * Opened, a file is one of four things to a player: a [Sound], samples
- * to play (a recording, or a tune rendered by audio/'s synthesizer,
- * with its notes for a piano roll); a [Module], a song played live by
+ * to play (a recording, decoded first if an MP2 or MP3, Mpeg_audio.mli;
+ * or a tune rendered by audio/'s synthesizer, with its notes for a
+ * piano roll); a [Module], a song played live by
  * its own player (Mod_player.mli), too long to render ahead; a
  * [Picture]; a [Movie], pictures in time, decoded as they're shown
  * (Movie.mli), and its sound if it has one (an AVI's): a GIF's frames,
  * Y4M, FLI and FLC, AVI, MPEG-1 (plan_video_teaching.md). *)
 
-type kind = Wav | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1
+type kind = Wav | Mp2 | Mp3 | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1
 
 val kind_name : kind -> string
 

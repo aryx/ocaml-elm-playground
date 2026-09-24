@@ -34,7 +34,14 @@ let test_sniff () =
       ("ball_and_square.avi", Avi);
       ("ball_and_square.m1v", Mpeg1);
       ("ffmpeg_encoded.m1v", Mpeg1);
+      ("lame_encoded.mp3", Mp3);
+      ("twolame_encoded.mp2", Mp2);
     ];
+  (* the MP3 starts with ffmpeg's ID3v2 tag (its encoder's name, 35
+   * bytes after the tag's 10); without it, the frames first, the same *)
+  let mp3 = bytes "lame_encoded.mp3" in
+  Alcotest.(check string) "an ID3 tag first" "ID3" (String.sub mp3 0 3);
+  Alcotest.(check (option kind)) "the MP3 without its tag" (Some Mp3) (Media.sniff ~name:"" (String.sub mp3 45 (String.length mp3 - 45)));
   (* the bytes decide, not the name *)
   Alcotest.(check (option kind)) "a PNG called bell.wav" (Some Png) (Media.sniff ~name:"bell.wav" (bytes "demo_picture.png"));
   Alcotest.(check (option kind)) "a MIDI file with no name" (Some Midi) (Media.sniff ~name:"" (bytes "frere_jacques.mid"));
@@ -50,6 +57,13 @@ let test_open () =
   Alcotest.(check (float 0.1)) "the round in ABC: 16 s" 16. (seconds "frere_jacques.abc");
   Alcotest.(check (float 0.6)) "and as MIDI" 16. (seconds "frere_jacques.mid");
   Alcotest.(check (float 1e-6)) "the bell: 2 s" 2. (seconds "bell.wav");
+  (* a second of it and the chirps, in stereo, as whole frames of 1152
+   * samples: 40 in MP3 (LAME adds one), 39 in MP2 *)
+  Alcotest.(check (float 1e-6)) "the MP3: 40 frames" (40. *. 1152. /. 44100.) (seconds "lame_encoded.mp3");
+  Alcotest.(check (float 1e-6)) "the MP2: 39 frames" (39. *. 1152. /. 44100.) (seconds "twolame_encoded.mp2");
+  (match open_ "lame_encoded.mp3" with
+  | Sound s -> if s.samples.left = s.samples.right then Alcotest.fail "the MP3's channels the same"
+  | _ -> Alcotest.fail "not a sound");
   (match open_ "frere_jacques.abc" with
   | Sound s ->
       (* voice 1's eight bars, 32 notes; voice 2 two bars late, the first

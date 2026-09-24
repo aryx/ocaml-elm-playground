@@ -18,7 +18,7 @@
  (wrapped false)
  (modules Media Our_media Our_pictures)
  (libraries
-   audio audio_wav audio_midi audio_abc audio_mod
+   audio audio_wav audio_midi audio_abc audio_mod audio_mpeg
    graphics_rgba graphics_png graphics_gif graphics_jpeg graphics_xpm
    graphics_movie graphics_y4m graphics_fli graphics_avi graphics_mpeg1
    graphics_core graphics_2d ; Our_media's clip, filmed by the 2D rasterizer
@@ -27,8 +27,10 @@
 
 ; claude: the pictures of our own the player shows, embedded as strings
 ; (scripts/build/files_to_string_ml.ml): the Image* examples' picture in
-; its three formats, TinyMario's sprite, and our clip as MPEG-1 (made
-; once by ffmpeg, graphics/videos/tests/clips/make_clips.sh)
+; its three formats, TinyMario's sprite, our clip as MPEG-1 (made
+; once by ffmpeg, graphics/videos/tests/clips/make_clips.sh), and our
+; bell and chirps as MP3 and MP2 (made once by LAME and twolame,
+; audio/formats/tests/mpeg/make_mpeg.sh)
 (rule
  (targets Our_pictures.ml)
  (deps
@@ -37,6 +39,8 @@
    %{project_root}/examples/demo_picture.jpg
    %{project_root}/games/platform/mario_stand.xpm
    %{project_root}/libs/graphics/videos/tests/clips/ball_and_square.m1v
+   %{project_root}/libs/audio/formats/tests/mpeg/stereo.mp3
+   %{project_root}/libs/audio/formats/tests/mpeg/stereo.mp2
    %{project_root}/scripts/build/files_to_string_ml.ml)
  (action
   (with-stdout-to
@@ -44,7 +48,9 @@
    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml
      %{project_root}/examples/demo_picture.png %{project_root}/examples/demo_picture.gif
      %{project_root}/examples/demo_picture.jpg %{project_root}/games/platform/mario_stand.xpm
-     %{project_root}/libs/graphics/videos/tests/clips/ball_and_square.m1v))))
+     %{project_root}/libs/graphics/videos/tests/clips/ball_and_square.m1v
+     %{project_root}/libs/audio/formats/tests/mpeg/stereo.mp3
+     %{project_root}/libs/audio/formats/tests/mpeg/stereo.mp2))))
 
 (executables
   (names TinyMediaPlayer)

@@ -175,4 +175,8 @@ let playlist : (string * string Lazy.t) list =
     (* our own encoder's, the fast search (the full one: 50% longer, 8%
      * smaller, Motion.mli) *)
     ("ball_and_square.m1v", lazy (fst (Mpeg1_encode.encode ~search:Logarithmic ~rate:(25, 1) (Lazy.force clip))));
+    (* the bell and chirps, encoded by LAME and twolame, once
+     * (make_mpeg.sh): we decode MP3 and MP2, but have no encoder *)
+    ("lame_encoded.mp3", Lazy.from_val Our_pictures.stereo_mp3);
+    ("twolame_encoded.mp2", Lazy.from_val Our_pictures.stereo_mp2);
   ]
