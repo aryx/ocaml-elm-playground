@@ -146,6 +146,9 @@ and form =
   | Polygon of color * (number (* x *) * number (* y *)) list
 
   | Image of number (* width *) * number (* height *) * string (* url *)
+  (* claude: an image already in memory, its pixels given (a video's
+   * frame, a picture decoded by the program) *)
+  | Bitmap of number (* width *) * number (* height *) * Rgba_image.t
   | Words of color * string
 
   | Group of shape list
@@ -206,6 +209,9 @@ let words_font_family = "sans-serif"
 
 let (image: number -> number -> string -> shape) = fun w h src ->
   shape 0. 0. 0. 1. 1. (Image (w, h, src))
+
+let (bitmap: number -> number -> Rgba_image.t -> shape) = fun w h img ->
+  shape 0. 0. 0. 1. 1. (Bitmap (w, h, img))
 
 let (group: shape list -> shape) = fun xs ->
   shape 0. 0. 0. 1. 1. (Group xs)

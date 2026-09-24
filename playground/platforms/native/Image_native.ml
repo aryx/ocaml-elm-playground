@@ -79,6 +79,19 @@ let surface_of_url_at ~(time : float) (src : string) : Cairo.Surface.t option =
   | None -> surface_of_url src
   | Some anim -> Some (Image_decode.frame_at ~time anim)
 
+(* claude: a bitmap's surface, the last one kept: a video's frame stays
+ * on the screen for 2 or 3 of the app's frames, and a picture for all
+ * of them; a new image (not the same one, ==) is converted again *)
+let last_bitmap : (Rgba_image.t * Cairo.Surface.t) option ref = ref None
+
+let surface_of_bitmap (img : Rgba_image.t) : Cairo.Surface.t =
+  match !last_bitmap with
+  | Some (i, surface) when i == img -> surface
+  | _ ->
+      let surface = cairo_surface_of_image img in
+      last_bitmap := Some (img, surface);
+      surface
+
 (*****************************************************************************)
 (* Preloading *)
 (*****************************************************************************)

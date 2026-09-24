@@ -129,7 +129,7 @@ let local_bounds (form : Playground.form) : (float * float * float * float) opti
   let centered w h = Some (-.w /. 2., -.h /. 2., w /. 2., h /. 2.) in
   match form with
   | Circle (_, r) | Ngon (_, _, r) -> centered (2. *. r) (2. *. r)
-  | Oval (_, w, h) | Rectangle (_, w, h) | Image (w, h, _) -> centered w h
+  | Oval (_, w, h) | Rectangle (_, w, h) | Image (w, h, _) | Bitmap (w, h, _) -> centered w h
   | Polygon (_, []) -> None
   | Polygon (_, points) ->
       let xs = List.map fst points and ys = List.map snd points in
@@ -263,13 +263,16 @@ let outline_circle ~aa fb (((cx, cy), r) as circle) ~rgb ~alpha =
 
 (* The current frame of an animated GIF, e.g. Mario's walk, like
  * browsers do: the animation runs on its own clock *)
+(* an image's pixels in a w x h box: a fetched image's, or a bitmap's *)
+let draw_pixels options fb m ~w ~h (img : Image_decode.image) ~alpha =
+  let image = blit_image img in
+  let filter = if options.bilinear then Blit.Bilinear else Blit.Nearest in
+  Blit.draw fb image (Affine.compose m (image_to_local ~w ~h image)) ~filter ~alpha
+
 let draw_image options fb m ~w ~h src ~alpha =
   match Image_decode.image_of_url_at ~time:(Unix.gettimeofday ()) src with
   | None -> ()
-  | Some img ->
-      let image = blit_image img in
-      let filter = if options.bilinear then Blit.Bilinear else Blit.Nearest in
-      Blit.draw fb image (Affine.compose m (image_to_local ~w ~h image)) ~filter ~alpha
+  | Some img -> draw_pixels options fb m ~w ~h img ~alpha
 
 (* A line through points, 1 pixel wide *)
 let thin_polyline ~aa fb points ~rgb ~alpha =
@@ -307,7 +310,7 @@ let form_rgb (form : Playground.form) : int =
   | Polygon (color, _)
   | Words (color, _) ->
       rgb_of_color color
-  | Image _ | Group _ -> image_placeholder_rgb
+  | Image _ | Bitmap _ | Group _ -> image_placeholder_rgb
 
 (* A (non-group) form, [m] taking its local coordinates to pixels *)
 let render_form (options : options) (fb : Framebuffer.t) (m : Affine.t) (form : Playground.form) ~rgb ~alpha =
@@ -329,6 +332,8 @@ let render_form (options : options) (fb : Framebuffer.t) (m : Affine.t) (form : 
     | Oval (_, w, h) -> draw_polygon fb (ellipse_polygon m ~rx:(w /. 2.) ~ry:(h /. 2.)) ~rgb ~alpha
     | Image (w, h, _) when options.wireframe -> polygon (rectangle_corners w h)
     | Image (w, h, src) -> draw_image options fb m ~w ~h src ~alpha
+    | Bitmap (w, h, _) when options.wireframe -> polygon (rectangle_corners w h)
+    | Bitmap (w, h, img) -> draw_pixels options fb m ~w ~h img ~alpha
     | Words (_, str) -> draw_words options fb m str ~rgb ~alpha
     | Group _ -> ()
 

@@ -300,21 +300,42 @@ let piano_roll (notes : Midi.note list) (now : float) : shape list =
   List.concat_map bar notes @ [ rectangle (rgb 250 250 250) 2. vh |> move (x_of now) vy ]
 
 (* the whole recording, a column's lowest and highest sample *)
-let waveform (samples : Signal.t) (fraction : float) : shape list =
-  let cols = 350 in
+let columns = 350
+
+let peaks (samples : Signal.t) : (float * float) array =
   let n = Array.length samples in
-  let col c =
-    let a = c *.. n /.. cols and b = (c +.. 1) *.. n /.. cols in
-    let lo = ref 0. and hi = ref 0. in
-    for i = a to max a (b -.. 1) do
-      if i < n then (
-        lo := Float.min !lo samples.(i);
-        hi := Float.max !hi samples.(i))
-    done;
-    let x = vx - (vw / 2.) + ((float_of_int c + 0.5) * vw / float_of_int cols) in
-    rectangle (rgb 120 200 250) (vw / float_of_int cols) (Float.max 1. ((!hi - !lo) * vh * 0.45)) |> move x (vy + ((!hi + !lo) * vh * 0.225))
+  Array.init columns (fun c ->
+      let a = c *.. n /.. columns and b = (c +.. 1) *.. n /.. columns in
+      let lo = ref 0. and hi = ref 0. in
+      for i = a to max a (b -.. 1) do
+        if i < n then (
+          lo := Float.min !lo samples.(i);
+          hi := Float.max !hi samples.(i))
+      done;
+      (!lo, !hi))
+
+(* claude: the peaks computed once per recording, and kept. The view
+ * computed them in every frame, each column scanning its samples --
+ * nothing for the 2 s of our bell, but a song's 8 million samples 60
+ * times a second: the frames late, the sound card starved, the sound
+ * cut. A view must cost what's on the screen, not what's in the file
+ * (notes_opti_ocaml.md). *)
+let peaks_of : (Signal.t * (float * float) array) option ref = ref None
+
+let waveform (samples : Signal.t) (fraction : float) : shape list =
+  let columns_peaks =
+    match !peaks_of with
+    | Some (s, p) when s == samples -> p
+    | _ ->
+        let p = peaks samples in
+        peaks_of := Some (samples, p);
+        p
   in
-  List.init cols col @ [ rectangle (rgb 250 250 250) 2. vh |> move (vx - (vw / 2.) + (fraction * vw)) vy ]
+  let col c (lo, hi) =
+    let x = vx - (vw / 2.) + ((float_of_int c + 0.5) * vw / float_of_int columns) in
+    rectangle (rgb 120 200 250) (vw / float_of_int columns) (Float.max 1. ((hi - lo) * vh * 0.45)) |> move x (vy + ((hi + lo) * vh * 0.225))
+  in
+  Array.to_list (Array.mapi col columns_peaks) @ [ rectangle (rgb 250 250 250) 2. vh |> move (vx - (vw / 2.) + (fraction * vw)) vy ]
 
 (* the module's four channels, nine rows around the one playing *)
 let tracker (song : Mod.song) : shape list =
@@ -341,9 +362,24 @@ let tracker (song : Mod.song) : shape list =
 
 (* a whole number of pixels a pixel: at 8.75, the rows' edges fall
  * between pixels and the rasterizer leaves seams *)
-let picture (img : Rgba_image.t) : shape list =
-  let size = Float.floor (Float.min ((vw - 40.) / float_of_int img.width) ((vh - 40.) / float_of_int img.height)) in
-  [ Sprite.of_rgba size img |> move vx vy ]
+let fitted_size (img : Rgba_image.t) : number =
+  Float.floor (Float.min ((vw - 40.) / float_of_int img.width) ((vh - 40.) / float_of_int img.height))
+
+(* a still picture: a rectangle per run of a color, each pixel a crisp
+ * square -- pixel art's look (TinyMario's sprite) *)
+let picture (img : Rgba_image.t) : shape list = [ Sprite.of_rgba (fitted_size img) img |> move vx vy ]
+
+(* claude: a movie's frame: its pixels drawn as they are (Playground's
+ * bitmap), smoothed when enlarged. Sprite.of_rgba's rectangles, right
+ * for pixel art, are one per pixel in a video -- 100,000 for a 352 x
+ * 288 frame, 170 ms each frame to draw, 6 frames a second
+ * (notes_opti_ocaml.md). A small animation (our 16 x 16 GIF) is pixel
+ * art: its squares, crisp, and few *)
+let frame_picture (img : Rgba_image.t) : shape list =
+  if img.width *.. img.height <= 4096 (* 64 x 64 *) then picture img
+  else
+    let size = fitted_size img in
+    [ bitmap (size * float_of_int img.width) (size * float_of_int img.height) img |> move vx vy ]
 
 (* the frame the movie is at: with a sound, the sound's -- the audio
  * clock drives the picture, a late frame skipped, never the sound
@@ -410,7 +446,7 @@ let movie (m : model) (movie : Movie.t) ~(sound : bool) ~mpeg : shape list =
   let i = movie_frame movie ~sound m.shown in
   (* r: what was sent instead of what is shown (Mpeg1.mli) *)
   let shown = match mpeg with Some (_, _, sent) when m.residual -> Lazy.force sent | _ -> movie in
-  picture (if m.changes then changes shown i else shown.frame i)
+  frame_picture (if m.changes then changes shown i else shown.frame i)
   @ match mpeg with Some a when m.analyzer -> analysis movie a i | _ -> []
 
 let scope_and_spectrum () : shape list =

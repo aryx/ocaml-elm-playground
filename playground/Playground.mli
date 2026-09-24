@@ -168,6 +168,7 @@ and form =
   | Ngon of color * int * number
   | Polygon of color * (number * number) list
   | Image of number * number * string
+  | Bitmap of number * number * Rgba_image.t
   | Words of color * string
   | Group of shape list
 
@@ -326,6 +327,22 @@ val polygon : color -> (number * number) list -> shape
 You provide the width, height, and then the URL of the image you want to show.
 *)
 val image : number -> number -> string -> shape
+
+(** claude: Show an image your program has in memory, its pixels
+    ({!Rgba_image.t}: width x height RGBA bytes), stretched to the width
+    and height you give -- a video's frames (TinyMediaPlayer), a picture
+    your program decoded or computed:
+{[
+    let view computer movie = [ bitmap 704. 576. (Movie.frame_at movie computer.time.now) ]
+]}
+    Where {!image} fetches a file once, this is drawn from its pixels as
+    they are when shown: give a new image for a new picture (a backend
+    keeps the last one it converted, and redoes the work when it sees
+    another). A small image enlarged is smoothed, like {!image}'s, unless
+    the program's [rendering] says [smooth_images = false]. On the web,
+    each new image is encoded as a PNG, fine for a picture, slow for a
+    video. *)
+val bitmap : number -> number -> Rgba_image.t -> shape
 
 (** {2 Words } *)
 

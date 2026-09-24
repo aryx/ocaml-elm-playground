@@ -2,6 +2,9 @@ open Basics
 open Playground
 open Color
 module E = Sub
+(* claude: elm_core's Base64, on OCaml strings, named before Js_browser's
+ * (on JsString.t) hides it *)
+module String_base64 = Base64
 
 open Js_browser
 
@@ -472,7 +475,21 @@ let render_image w h src x y angle s alpha =
     []
 
 
-let rec (render_shape: shape -> 'msg Svg.t) = 
+(* claude: a bitmap as an image's URL, its pixels in it: a PNG as a
+ * data: URL -- SVG has nothing else for pixels in memory (and the vdom
+ * no canvas). The last one kept: a picture shown in many frames is
+ * encoded once; a video, a PNG per new frame, slow. *)
+let last_bitmap : (Rgba_image.t * string) option ref = ref None
+
+let bitmap_url (img : Rgba_image.t) : string =
+  match !last_bitmap with
+  | Some (i, url) when i == img -> url
+  | _ ->
+      let url = "data:image/png;base64," ^ String_base64.encode (Png.encode img) in
+      last_bitmap := Some (img, url);
+      url
+
+let rec (render_shape: shape -> 'msg Svg.t) =
   fun { x; y; angle; scale; alpha; form} ->
   match form with
   | Circle (color, radius) -> 
@@ -489,6 +506,8 @@ let rec (render_shape: shape -> 'msg Svg.t) =
      render_words color str x y angle scale alpha
   | Image (w, h, src) ->
      render_image w h src x y angle scale alpha
+  | Bitmap (w, h, img) ->
+     render_image w h (bitmap_url img) x y angle scale alpha
   (* claude: was a failwith "Todo". Same as renderGroup in
    * elm-playground: an svg <g> whose transform and opacity apply to all
    * the shapes in the group, which are positioned relative to the group

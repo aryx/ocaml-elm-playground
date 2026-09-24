@@ -120,6 +120,10 @@ A reading order, from the simplest:
 - `notes_opti.md`: what each feature of the 2D software rasterizer
   costs, and the optimizations that keep the simple version beside
   the fast one; `notes_3d_opti.md`, the same log for the 3D one.
+- `notes_opti_ocaml.md`: OCaml's own performance traps, met again and
+  again in the decoders and renderers (polymorphic comparison, boxed
+  floats, closures, C externals, inlining), how each shows in a
+  profile, the fix with the old code kept beside it, and the numbers.
 - `notes_3d_shading.md`: the shading code of the 3D rasterizer, light
   and color, and a roadmap for extending it.
 

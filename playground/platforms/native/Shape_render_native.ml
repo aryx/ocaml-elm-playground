@@ -139,31 +139,34 @@ let render_words cr hook color str x y angle s alpha =
   Cairo.show_text cr str;
   Cairo.restore cr
 
-let render_image ~smooth_images cr hook w h src x y angle s _alpha =
+(* claude: a surface in a w x h box: an image's, or a bitmap's *)
+let render_surface ~smooth_images cr hook w h surface x y angle s _alpha =
   let (x, y) = convert (x, y) in
+  (* claude: Cairo.set_source_surface only positions a surface's origin,
+   * it never resizes its pixel content to fill (w,h) -- so without this
+   * scale, an image whose native decoded size differs from the
+   * requested (w,h) (e.g. Mario's 35x35 GIF sprites drawn via
+   * "image 70. 70. ...") is drawn at its native size, anchored at the
+   * top-left of the (w,h) box instead of filling/centering it. *)
+  let surface_w = float (Cairo.Image.get_width surface) in
+  let surface_h = float (Cairo.Image.get_height surface) in
+  Cairo.save cr;
+  hook cr;
+  render_transform cr x y angle s;
+  Cairo.scale cr (w /. surface_w) (h /. surface_h);
+  Cairo.set_source_surface cr surface ~x:(-.surface_w /. 2.) ~y:(-.surface_h /. 2.);
+  (* claude: Playground.rendering's smooth_images; NEAREST keeps pixel
+   * art sprites sharp when enlarged *)
+  if not smooth_images then Cairo.Pattern.set_filter (Cairo.get_source cr) Cairo.Pattern.NEAREST;
+  Cairo.paint cr;
+  Cairo.restore cr
+
+let render_image ~smooth_images cr hook w h src x y angle s alpha =
   (* claude: surface_of_url_at to animate animated GIFs (e.g., Mario's
    * walk sprites), like browsers do on the web *)
   match Image_native.surface_of_url_at ~time:(Unix.gettimeofday ()) src with
   | None -> ()
-  | Some surface ->
-      (* claude: Cairo.set_source_surface only positions a surface's origin,
-       * it never resizes its pixel content to fill (w,h) -- so without this
-       * scale, an image whose native decoded size differs from the
-       * requested (w,h) (e.g. Mario's 35x35 GIF sprites drawn via
-       * "image 70. 70. ...") is drawn at its native size, anchored at the
-       * top-left of the (w,h) box instead of filling/centering it. *)
-      let surface_w = float (Cairo.Image.get_width surface) in
-      let surface_h = float (Cairo.Image.get_height surface) in
-      Cairo.save cr;
-      hook cr;
-      render_transform cr x y angle s;
-      Cairo.scale cr (w /. surface_w) (h /. surface_h);
-      Cairo.set_source_surface cr surface ~x:(-.surface_w /. 2.) ~y:(-.surface_h /. 2.);
-      (* claude: Playground.rendering's smooth_images; NEAREST keeps pixel
-       * art sprites sharp when enlarged *)
-      if not smooth_images then Cairo.Pattern.set_filter (Cairo.get_source cr) Cairo.Pattern.NEAREST;
-      Cairo.paint cr;
-      Cairo.restore cr
+  | Some surface -> render_surface ~smooth_images cr hook w h surface x y angle s alpha
 
 (*****************************************************************************)
 (* Render playground *)
@@ -185,6 +188,7 @@ let rec (render_shape : smooth_images:bool -> Cairo.context -> hook -> shape -> 
   | Polygon (color, points) -> render_polygon cr hook color points x y angle scale alpha
   | Words (color, str) -> render_words cr hook color str x y angle scale alpha
   | Image (w, h, src) -> render_image ~smooth_images cr hook w h src x y angle scale alpha
+  | Bitmap (w, h, img) -> render_surface ~smooth_images cr hook w h (Image_native.surface_of_bitmap img) x y angle scale alpha
   | Group xs ->
       (* TODO: alpha *)
       let hook =

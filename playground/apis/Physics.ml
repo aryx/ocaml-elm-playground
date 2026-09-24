@@ -107,7 +107,7 @@ let rec hitboxes_of (world : number * number -> number * number) (scale : number
   let polygon corners = [ Shape.Polygon_at (List.map to_world corners) ] in
   match s.form with
   | Circle (_, r) -> [ Shape.Circle_at (to_world (0., 0.), r *. s.scale *. scale) ]
-  | Rectangle (_, w, h) | Image (w, h, _) -> polygon (Shape.box_corners w h)
+  | Rectangle (_, w, h) | Image (w, h, _) | Bitmap (w, h, _) -> polygon (Shape.box_corners w h)
   | Oval (_, w, h) ->
       polygon (List.init 16 (fun i -> let t = radians (22.5 *. float_of_int i) in (w /. 2. *. cos t, h /. 2. *. sin t)))
   (* like elm-playground: the first corner at the top, then clockwise *)

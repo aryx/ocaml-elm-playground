@@ -10,6 +10,7 @@
    ; commons
 
    elm_playground
+   graphics_png ; claude: Playground.bitmap's pixels, as a PNG data: URL
  )
  ;(preprocess (pps profiling.ppx))
 )
