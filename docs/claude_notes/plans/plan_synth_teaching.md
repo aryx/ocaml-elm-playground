@@ -571,6 +571,25 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
    - **H4, TinyHammond's panel**: the drawbars pulled with the mouse,
      two manuals (upper and lower, the letters the upper), the Leslie's
      switch, the presets as registrations ("888000000", "808808008").
+   - **TinyRhodes, R1-R2** (started 2026-09-24, then the CS-80 and
+     the Juno: the classics in order). The facts first, from Florian
+     Pfeifle's "Real-time physical model of a Wurlitzer and Rhodes
+     electric piano" (DAFx 2017, with high-speed camera measurements):
+     the Rhodes' tine a steel cantilever struck by a neoprene-tipped
+     hammer, coupled to a brass tone bar (the "tuning fork"), its tip
+     moving on an arc in front of an electromagnetic pickup; the voltage
+     the flux's rate of change (-dPsi/dt), the flux a bell-shaped field
+     around the magnet's tip, so a tine centred on it gives mostly the
+     second harmonic and one slightly off centre the Rhodes' tone (the
+     "voicing", the tine's alignment); hit harder, more of the field's
+     curve is swept: a richer spectrum (the bark). The Wurlitzer's reed
+     nearly one mode, its pickup a capacitor whose capacitance varies
+     inversely with the reed's distance, the current u0 dC/dt; harder,
+     richer too. The Suitcase's "vibrato" a stereo tremolo (the sound
+     panned left and right). A clamped-free beam's overtones at 6.27
+     and 17.55 times its fundamental (Euler-Bernoulli): the tine's
+     "ping", quickly gone. Ours, and said so: the decay times, the
+     field's width, the hammer's brightening.
    - **R1, TinyRhodes's sound**: `Modal` (a mode as a two-pole
      resonator struck, or a sine and its decay), a tine of a few
      modes, their ratios and decays per key; the hammer's velocity
@@ -660,6 +679,21 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
      pressure, else the mouse's vertical position on a held key); the
      ring modulator; the supersaw as a `Vco` option.
    - **T1, TinyReface**, the hub, if the four make it worth it.
+   - **The ReBirth line** (after the Juno): Propellerhead's ReBirth
+     RB-338 (1997), the first software studio people made records
+     with, was two TB-303s, a TR-808 and (from 1998) a TR-909 on one
+     clock. **TinyTR808** (Roland TR-808, 1980): its sounds
+     synthesized, not sampled -- the kick a bridged-T resonator struck,
+     its pitch falling, the snare two resonators and filtered noise, the
+     hi-hats six square waves at odd ratios through band-passes, the
+     clap noise in bursts; its 16-step sequencer (TinyTB303's `Sequencer`)
+     and accent; facts from its service notes and the published circuit
+     analyses first. **The 909** as its variant (1983: its kick and toms
+     analogue, its cymbals 6-bit samples -- the first drum machine
+     half sampled). **TinyReBirth**, the hub: two TinyTB303 voices,
+     the 808 and the 909 on one clock, ReBirth's mixer and its effects
+     (delay, distortion, compressor, the "PCF" filter: the rack's), and
+     its pattern mode -- a song made of patterns, as TinyTB303 plays one.
 12. *(later, the climax)* TinyOp1 and TinyOpxy (the section above),
    their manuals read first:
    - **O1, the tape**: a `Tape` of 4 tracks in `audio/` (recording an
@@ -1181,6 +1215,25 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   in a browser (0.73 s of CPU a second for 16 sounding in node). Left,
   in its header's exercises: the Reface DX's mode, saving voices and
   cartridges, the operators switched on and off, a MIDI keyboard.
+- **R1, DONE (2026-09-24)**: `Modal` in instruments/ (a two-pole
+  resonator struck: its peak, frequency and t60 as set, damped while
+  it rings, two strikes the sum: linear), ready for the 808's drums
+  too. `Voice_rhodes` in `music_voices` (the name the start of the
+  `Voice_xxx` renaming, next): the Rhodes' tine as three modes (1,
+  6.27, 17.55) through the pickup's bell (a Lorentzian, ours), the
+  output its rate of change scaled by the period; the Wurlitzer's reed
+  through 1 / (1 - x); the Clavinet as `Pluck`; the dampers; the
+  Suitcase's stereo tremolo, the others' loudness. Measured, C4: the
+  2nd harmonic -24.8 dB at velocity 0.2, +1.2 at 1 (the bark); voicing
+  near the centre +10.5, off it -14.3 (Pfeifle's figure 7, heard); the
+  Wurlitzer's harmonics -25.8 to -11.5; the tremolo's sides 3.3 to 1.
+  My mistake on the way, and the lesson it makes: the upper modes set
+  as if the pickup read position peaked at 5.7 -- it reads a rate of
+  change, so a mode 6.27 times higher is 6.27 times louder. Golden WAVs
+  of the five presets (their brightness falling after the strike, the
+  dampers at the release). Not done: the tine's arc (the paper's), its
+  two polarisations, the hammer's contact as a force (Hunt and
+  Crossley's), the Clavinet's own pickups.
 
 ## Verification
 
