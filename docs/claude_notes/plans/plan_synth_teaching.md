@@ -705,11 +705,35 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
    - **C2, TinyCS80**: its panel (the two sections side by side, the
      touch sliders, the ribbon along the keyboard, dragged), the
      pressure from the mouse's height on a held key.
-   - **J1, J2, TinyJuno** (Juno-106, 1984): the facts first; a DCO
-     (the oscillator's pitch from a digital counter: no drift) with its
-     sub-oscillator an octave down, a 4-pole filter, one ADSR for both
-     the filter and the amplifier, the LFO with its delay, the stereo
-     BBD chorus I and II; 6 voices assigned in turn.
+   - **J1, J2, TinyJuno** (Juno-106, 1984). The facts, from Andy
+     Harman's measurements of a Juno-60 (github.com/pendragon-andyh/Juno60,
+     the 106's voice and chorus the same design) and the manuals: one
+     DCO per voice, its waveforms analogue but its timing a digital
+     clock (no drift: why it stays in tune), a sawtooth, a pulse with
+     PWM (by the LFO or by hand), a square sub-oscillator an octave down,
+     noise; a resonant 4-pole low-pass (self-oscillating at the top),
+     its cutoff moved by the envelope (either way), the LFO and the key;
+     one ADSR for the filter and the amplifier (the amplifier also a
+     plain gate), the attack 1 ms to 3.25 s, the decay and release 2 ms
+     to 19.8 s, Harman's fitted curves; the LFO a triangle with a
+     delay; one high-pass for all six voices, after them, four
+     positions (the 106's: a +6 dB shelf below 65 Hz, flat, 6 dB/octave
+     from 225 Hz, from 720 Hz); the chorus one triangle LFO moving two
+     bucket-brigade lines, the right one's modulation inverted (180
+     degrees), each side the dry sound and its delayed copy -- I at
+     0.513 Hz and II at 0.863 Hz between 1.66 and 5.35 ms (flangers by
+     their delays, Harman notes), I+II at 9.75 Hz between 3.3 and 3.7
+     ms, mono (a vibrato, "a Leslie"). 6 voices.
+   - **J1, the voice**: `Voice_juno` in `music_voices`, a `Voice.S`:
+     the DCO over `Vco` (the sub a pulse at half the frequency), the
+     filter `Moog_ladder`'s nonlinear one (the IR3109 is an OTA
+     four-pole ladder too), `Envelope` for both, the shared high-pass,
+     the chorus (its own: `Modulated_delay` has one sine and a quarter
+     turn); our presets; tests: Harman's times from his curves, the sub
+     an octave down, the high-pass's four positions measured, the
+     chorus's delays at its phases, a golden WAV per preset.
+   - **J2, TinyJuno**: the 106's panel, its sliders in its sections
+     (LFO, DCO, HPF, VCF, VCA, ENV, the chorus's buttons).
    - **T1, TinyReface**, the hub, if the four make it worth it.
    - **The ReBirth line** (after the Juno): Propellerhead's ReBirth
      RB-338 (1997), the first software studio people made records
@@ -1324,6 +1348,27 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   0.75, three voices); web page; `CATALOG.md`'s row. Left, in its
   header: the letters' pressure, the initial pitch bend, portamento,
   the memories, a MIDI keyboard's polyphonic pressure.
+- **J1, DONE (2026-09-24)**: `Voice_juno` in `music_voices`, a
+  `Voice.S`. The facts from Andy Harman's Juno-60 measurements (above).
+  The DCO over `Vco` (sawtooth, a pulse whose width is set or moved by
+  the LFO, the sub a pulse at half the frequency, noise); the filter
+  `Moog_ladder`'s nonlinear one, self-oscillating at the top, moved by
+  the envelope (either way), the LFO and the key; one `Envelope` for
+  both, its times Harman's fitted curves (attack 0.001 to 3.25 s, decay
+  and release 0.002 to 17.5 s), the VCA a gate if asked; the LFO a
+  triangle faded in over its delay; the high-pass one for the six
+  voices, after them (the 106's four positions, one-pole: 1.86 at 30 Hz
+  in position 0, 0.13 in 2, 0.04 in 3); the chorus its own (a triangle,
+  the right line inverted, 1.66-5.35 ms at 0.513 and 0.863 Hz, 3.3-3.7
+  ms at 9.75 Hz mono), each side the dry sound and its copy. Five
+  presets (brass, strings, bass, pad, lead), golden WAVs, peaks 0.34 to
+  0.66 (the gain first guessed at a quarter of that: the nonlinear
+  ladder's loss and the chorus's half). 6 voices: 0.12 s of CPU a
+  second natively, 0.30 in JavaScript. `Modulated_delay.mli`'s claim
+  that the Juno's chorus had its right side a quarter turn ahead
+  corrected (inverted, Harman measured). Not done: the 12 dB low-pass
+  before the chorus's lines, the BBD's own grit, the voices assigned in
+  turn (ours are fresh per note: nothing to rotate).
 
 ## Verification
 

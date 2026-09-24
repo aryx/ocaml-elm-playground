@@ -15,7 +15,9 @@ module _ : Voice.S = Voice_tb303
 module _ : Voice.S = Voice_dx7
 module _ : Voice.S = Voice_rhodes
 module _ : Voice.S = Voice_cs80
+module _ : Voice.S = Voice_juno
 
 let () =
   Testo.interpret_argv ~project_name:"music" (fun _env ->
-      Unit_minimoog.tests @ Unit_hammond.tests @ Unit_tb303.tests @ Unit_dx7.tests @ Unit_rhodes.tests @ Unit_cs80.tests)
+      Unit_minimoog.tests @ Unit_hammond.tests @ Unit_tb303.tests @ Unit_dx7.tests @ Unit_rhodes.tests @ Unit_cs80.tests
+      @ Unit_juno.tests)

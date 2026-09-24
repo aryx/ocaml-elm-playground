@@ -16,9 +16,12 @@
  *
  *  - a *chorus*, the delay around 15 ms (too long to comb, too short to
  *    echo), no feedback: the dry note and a copy wobbling slightly out of
- *    tune, the "several players" sound (the Juno-60's chorus, 1982, a
- *    bucket-brigade chip; the right channel's LFO a quarter turn ahead,
- *    so the two sides go out of tune differently: wide);
+ *    tune, the "several players" sound (the Juno-60's, 1982, a
+ *    bucket-brigade chip). Ours has the right channel's LFO a quarter
+ *    turn ahead, so the two sides go out of tune differently: wide.
+ *    The Juno's own is shorter (1.66 to 5.35 ms), a triangle, the right
+ *    side's modulation inverted: Voice_juno.mli, from Andy Harman's
+ *    measurements;
  *  - a *flanger*, the delay short (1 to 5 ms), with feedback: the sound
  *    plus itself d later cancels where d is half a period, at (2k + 1)
  *    / (2 d), notches *evenly spaced* in frequency, sweeping as d moves:

@@ -27,7 +27,7 @@
 (library
  (name music_voices)
  (wrapped false)
- (modules Patch_text Voice Voice_minimoog Tonewheel Voice_hammond Voice_tb303 Voice_dx7 Voice_rhodes Voice_cs80 Our_songs)
+ (modules Patch_text Voice Voice_minimoog Tonewheel Voice_hammond Voice_tb303 Voice_dx7 Voice_rhodes Voice_cs80 Voice_juno Our_songs)
  (modules_without_implementation Voice)
  (libraries audio audio_instruments audio_effects audio_mod))
 
