@@ -281,4 +281,48 @@ let sounds =
               through (Phaser.process (Phaser.create ()) { Phaser.initial with rate = 0.5 }) (saw ());
             ] ) ]
 
+(* the sampler (Sampler.mli): a plucked string recorded at A3, its
+ * last half looped with a crossfade, played C E G C a quarter second
+ * each (the loop holding it); then a bar of a kit of three pads made of
+ * the same pluck an octave down (the kick), a short and a long noise in
+ * the mute group (the hats), panned apart, eighth notes at 120 BPM *)
+let sampler_phrase () : Signal.t =
+  let pluck : Sampler.sample = { data = Pluck.render ~frequency:220. 1.; root = 57 } in
+  let st = { Sampler.default with loop_start = 0.5; loop_end = 0.9; crossfade = 0.3; loop = Forever; release = Some 0.1 } in
+  let blocks n f = Array.concat (List.init n (fun k -> f k)) in
+  let poly = Polyphony.create () in
+  let melody =
+    blocks 72 (fun frame ->
+        List.iter
+          (fun (at, key) ->
+            if frame = at then Polyphony.press poly key (Sampler.voice pluck st ~key ~velocity:0.5);
+            if frame = at + 15 then Polyphony.release poly key)
+          [ (0, 60); (15, 64); (30, 67); (45, 72) ];
+        let b = Array.make 735 0. in
+        Polyphony.fill poly b;
+        b)
+  in
+  let noise seconds : Sampler.sample = { data = Mix.gain 0.2 (Noise.render ~rate:44100. seconds); root = 60 } in
+  let kit =
+    Sampler.kit
+      [|
+        Sampler.pad ~settings:{ Sampler.default with tune = -12. } { pluck with data = Mix.gain 0.4 pluck.data };
+        Sampler.pad ~play:Mute_group ~pan:0.5 (noise 0.05);
+        Sampler.pad ~play:Mute_group ~pan:(-0.5) (noise 0.5);
+      |]
+  in
+  (* 8 eighths at 120 BPM, 15 frames each: the kick on 1 and 5, the
+   * open hat on 4, choked by the closed one on 6, the closed on the
+   * others; the left side written *)
+  let hits = [ (0, 36); (1, 37); (2, 37); (3, 38); (4, 36); (5, 37); (6, 37); (7, 37) ] in
+  let drums =
+    blocks 120 (fun frame ->
+        List.iter (fun (eighth, key) -> if frame = eighth * 15 then Sampler.press kit key 1.) hits;
+        let b = { Signal.left = Array.make 735 0.; right = Array.make 735 0. } in
+        Sampler.fill kit b;
+        b.left)
+  in
+  Array.append melody drums
+
+let sounds = sounds @ [ ("sampler", sampler_phrase) ]
 let tests = Testo.categorize "golden WAVs" (List.map (fun (name, f) -> t name (fun () -> check name (f ()) ())) sounds)

@@ -1640,6 +1640,27 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   knobs then its locks, CLEAR, the rocker and SMOOTH; golden frame
   TinyTB303_locks. The step components (pulse, hold, multiply, ...)
   left for X3.
+- **X2, DONE (2026-09-24)**: `Sampler` in `audio_instruments`. The
+  facts from TE's guide ("sample"): the one shot synth sampler's
+  start, loop start, loop end, end, direction, tune, loop crossfade,
+  gain, its loop "forever", "until release" or "off", 20 s at most; the
+  drum sampler's 24 one-shot samples across the keyboard, each "key
+  (play while held)", "oneshot (play whole sample)", "mute group (choke
+  when another sample plays)" or "loop", with its tune, region,
+  direction, pan and gain. A voice (a `Polyphony.voice`) reads its
+  region with `Resample`'s cubic at the key's speed, forwards or
+  backwards, loops with a linear crossfade (shortened to what precedes
+  the loop), fades on release; the kit plays its pads at their roots,
+  the play modes as loop and release, the mute group choking in 5 ms
+  (ours), panned. Measured (Unit_sampler): an octave up 880 Hz and half
+  as long; a ramp backwards; the seam of a loop from a crest to a
+  trough, a jump of 2 without crossfade, 0.06 with (the sine's own
+  step), but a quietest period of 0.03 against 0.71 -- the halves in
+  opposite phase cancel, the click traded for a dip; the loop modes
+  after the key; the choke, the pan. A golden WAV: a pluck sampled and
+  played C E G C, looped, and a bar of a kit of pads. No app yet: the
+  sampler and drum tracks are TinyOpxy's (X3), and the OP-1's sampler
+  engine is left with dr wave, d-synth and voltage.
 
 ## Verification
 

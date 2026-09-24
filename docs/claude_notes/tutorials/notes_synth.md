@@ -46,6 +46,7 @@ module here.
 | `audio/instruments/Sequencer` | steps in the audio clock: events at the sample, whatever the blocks; parameter locks, Elektron's (the step's only) and the OP-XY's (points the value goes through, smoothed) | §1 | done |
 | `audio/Tape` | the OP-1's four tracks: a head read and written at any speed (pitch and time together), reverse, loop, lift and drop | §10 | done |
 | `apps/music/Voice_dx7`, `TinyDX7` | the DX7: six operators, Dexed's formulas (ratios, detune, scalings, velocity, pitch envelope, LFO), the voice's bytes and a cartridge's, 16 voices, our six patches; its panel, a parameter at a time on the LCD beside the algorithm drawn and the envelopes | §10 | done |
+| `audio/instruments/Sampler` | a recording played as an instrument: its region, direction, tune and loop (forever, until release, off), the loop's crossfade (the click traded for a dip where the two halves cancel); the drum kit, 24 pads, their play modes, pan and the mute group's choke | §10 | done |
 | `audio/instruments/Modal` | a mode: a two-pole resonator struck, ringing as a decaying sine, damped while it rings | §10 | done |
 | `apps/music/Op1_engine` | the OP-1's engines behind four encoders: FM (four operators), cluster (the supersaw), string (a live waveguide), pulse, phase (Casio's phase distortion), digital | §10 | done |
 | `apps/music/Studio_op1`, `TinyOp1` | the OP-1: a sound of four modules (engine, envelope, effect, LFO) on four coloured encoders, eight sounds, the four-track tape recording what is played while it plays back | §10 | done |
