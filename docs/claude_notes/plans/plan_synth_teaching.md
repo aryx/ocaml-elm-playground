@@ -744,7 +744,40 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
      hi-hats six square waves at odd ratios through band-passes, the
      clap noise in bursts; its 16-step sequencer (TinyTB303's `Sequencer`)
      and accent; facts from its service notes and the published circuit
-     analyses first. **The 909** as its variant (1983: its kick and toms
+     analyses first. The facts (2026-09-24), from Kurt Werner,
+     Jonathan Abel and Julius Smith's two papers (the bass drum, DAFx
+     2014; the cymbal, ICMC 2014): each drum a bridged-T network, a
+     band-pass on the edge of ringing, struck by a 1 ms trigger pulse
+     (the accent its height) -- the bass drum's at about 49.5 Hz
+     (Roland's chart: 56), its frequency and Q raised by more than an
+     octave for its first ~6 ms (the punch, too short to hear as pitch),
+     a retriggering pulse after it, and the "sigh" (the leakage making
+     the pitch follow the level, falling as it dies), its decay a
+     feedback buffer's shelf, its tone a passive low-pass; the snare,
+     toms, congas, rim shot and clave bridged-Ts too; the hi-hats,
+     cymbal and cowbell six Schmitt-trigger square oscillators (205.3,
+     304.4, 369.6, 522.7, and 540 and 800 Hz trimmed, 47.98% duty),
+     summed, through two band-passes (about 3440 and 7100 Hz: the
+     squares' overtones, not their fundamentals), the cymbal three
+     bands with their own envelopes into high-passes (one resonant near
+     10.5 kHz), the cowbell the two trimmed oscillators alone. Ours,
+     and said so: the snare's, toms', clap's frequencies (the commonly
+     quoted ones, not yet checked against the service notes), all the
+     decay times.
+   - **T1, the voices**: `Voice_tr808` in `music_voices`: the drums
+     over `Modal` (the kick with its punch and sigh), filtered noise
+     (the snare's snappy, the clap's bursts), the six squares over
+     `Vco` and `Svf`'s band-passes (hats, cymbal, cowbell; the closed
+     hat choking the open), each instrument's level, tone, decay or
+     tuning; `Sequencer` as the clock (a step a sixteenth, each
+     instrument's track, the accent's); our patterns; golden WAVs.
+     Tests: the kick's frequency after its attack and before it, its
+     sigh; the metal's spectrum (the band-passes' peaks, no
+     fundamentals); a step's hit at its sample whatever the blocks; the
+     choke.
+   - **T2, TinyTR808**: its panel (the knobs over each instrument, the
+     16 step buttons in the 808's red, orange, yellow and white, the
+     instrument selector, start/stop, tempo, accent). **The 909** as its variant (1983: its kick and toms
      analogue, its cymbals 6-bit samples -- the first drum machine
      half sampled). **TinyReBirth**, the hub: two TinyTB303 voices,
      the 808 and the 909 on one clock, ReBirth's mixer and its effects
@@ -1384,6 +1417,31 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   TinyTB303, TinyDX7, TinyRhodes, TinyCS80, TinyJuno. Next in the plan:
   the ReBirth line (TinyTR808, the 909, TinyReBirth), then TinyOp1 and
   TinyOpxy, the climax.
+- **T1, DONE (2026-09-24)**: `Voice_tr808` in `music_voices`, a
+  `Voice.S`. The facts from Werner, Abel and Smith (above). Eleven
+  instruments: the kick and toms a sine whose frequency the model
+  moves (2.2 times higher its first 6 ms: the punch; then 12% of its
+  level above its own: the sigh), the tone a low-pass on the trigger's
+  click; the snare two `Modal` tones and high-passed noise (the
+  snappy); the rim shot two short tones; the clap band-passed noise in
+  three bursts and a tail; the six squares (`Vco`, 47.98%) through the
+  two band-passes (`Svf`, 3440 and 7100 Hz) for the hats and cymbal,
+  the 540 and 800 Hz ones for the cowbell; the closed hat choking the
+  open. The sequencer `Sequencer` itself, each step a `Note_on` with its
+  accent, the tracks as "x..." lines; the General MIDI drum keys for
+  live playing. Four patterns of ours (electro, house, hip hop, latin),
+  golden WAVs. Measured: the sigh 52.7 Hz early, 49.6 late; the closed
+  hat 90% above 5 kHz; the choke; the same samples in blocks of 735 or
+  100 -- which took three fixes, each found by that test: the squares
+  always running (stopped between hits, their phases depended on the
+  blocks: and the 808's never stop), each hit's own noise (one shared
+  generator drawn a segment at a time), a hit's end decided at its
+  sample; the tempo a selector of whole BPMs (127 came back 126.96 as
+  a knob's three decimals). Cost: the busiest pattern 6% of a CPU
+  natively, 12% in JavaScript. Ours and not yet checked against the
+  service notes: the snare's, toms', rim shot's, clap's and cowbell's
+  frequencies, the decays; not done: congas, clave, maracas (the 808's
+  switch-selected alternates), the bridged-T's own retriggering pulse.
 
 ## Verification
 

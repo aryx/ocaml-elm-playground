@@ -1,7 +1,7 @@
 (* What every synthesizer's voice gives its panel (see notes_synth.md;
  * plan_synth_teaching.md): Voice_minimoog, Voice_hammond, Voice_tb303,
- * Voice_dx7, Voice_rhodes, Voice_cs80, Voice_juno, each a module of
- * this type and more.
+ * Voice_dx7, Voice_rhodes, Voice_cs80, Voice_juno, Voice_tr808, each a
+ * module of this type and more.
  *
  * A voice is two things. A *patch*, a record of the instrument's own
  * settings, with its controls by name (Patch_text.mli: the panel's
