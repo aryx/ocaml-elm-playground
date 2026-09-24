@@ -300,6 +300,7 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyRick", "", 5);
     ("games/platform/software/TinyVikings", "", 5);
     ("games/platform/software/TinyTurrican", "", 5);
+    ("games/arcade/software/TinyPang", "", 5);
     ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
     ("games/adventure/software/TinyZelda", "", 5);
@@ -860,6 +861,9 @@ let scripted : Testutil_golden.scripted list =
       "cave",
       610,
       "space:1,space:3-60,right:62-560,space:62-560,up:250,up:300,up:340,down:570,right:575-700" );
+    (* the big balloon burst in two by the first wire, a second wire
+     * rising *)
+    ("games/arcade/software/TinyPang", "burst", 170, "space:1,space:100,space:160");
     (* claude: a standing jump over the first gap, in the air; then,
      * the plate stepped on and the gate run through, hanging from the
      * shaft's edge (the loose floor fallen, the gate closing); and

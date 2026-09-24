@@ -135,6 +135,7 @@ the next; often several players in the same arena.
 | [TinySoldat](games/arcade/TinySoldat.ml) | 2D | Soldat (Michał Marcinkowski, 2002) | A side-view deathmatch on jet boots against two bots, and ragdolls. | The 2D physics engine's capstone: a stacking world, swept bullets against tunnelling, grenade blasts, particle ragdolls. |
 | [TinyMarbleMadness](games/arcade/TinyMarbleMadness.ml) | 3D | Marble Madness (Mark Cerny, Atari Games, 1984) | Roll a marble down a course floating in space, against the clock. | A ball rolling on a height map (5/7 of g sin a), falls that break it, collisions between balls; a far, nearly isometric camera. |
 | [TinyCameltry](games/arcade/TinyCameltry.ml) | 2D | Cameltry (Taito, 1989) | You don't move the ball, you turn the maze. | Turning the maze is turning gravity; rotation, so the ball rolls instead of sliding (`rotation=off` to compare). |
+| [TinyPang](games/arcade/TinyPang.ml) | 2D | Pang (Mitchell, 1989) | Shoot a harpoon up at bouncing balloons: each bursts into two smaller ones, round the world's landmarks. | A bounce that is a rule, not physics: each size bounces to its own height forever; splitting as recursion, one big balloon fifteen hits. |
 | [TinyFlappyBird](games/arcade/TinyFlappyBird.ml) | 2D | Flappy Bird (Dong Nguyen, .GEARS, 2013) | One button: flap through the gaps between pipes. | A flap that sets the velocity; an endless world made and dropped as you fly; randomness from an LFSR kept in the model. |
 
 ## Puzzle and board games
