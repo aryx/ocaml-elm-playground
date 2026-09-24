@@ -1661,6 +1661,42 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   played C E G C, looped, and a bar of a kit of pads. No app yet: the
   sampler and drum tracks are TinyOpxy's (X3), and the OP-1's sampler
   engine is left with dr wave, d-synth and voltage.
+- **X3, DONE (2026-09-25)**: `Studio_opxy` in `music_voices`, and
+  TinyOpxy. The facts from TE's guide: 8 instrument tracks, each four
+  modules (M1 the engine, M2 two ADSR envelopes and the play mode --
+  poly, mono, legato -- M3 the filter: cutoff, resonance, envelope
+  amount, key tracking, M4 the LFO: element, random, tremolo, value),
+  its knobs dark grey, mid grey, light grey and white; 16 patterns a
+  track, a scene "remembers the pattern arrangement as well as the mix
+  settings", "scenes are as long as their longest pattern", 99 scenes,
+  96 in a song, 14 songs; the brain "an intelligent way of transposing
+  your whole song or even just one track", a key and a scale, the
+  tracks linked to it; its nine engines (axis, dissolve, epiano,
+  external, hardsync, organ, prism, simple, wavetable). Ours: 8 tracks
+  of 4 patterns of 16 steps, a step's notes (a chord, a kit's pads),
+  velocity and locks (`Sequencer`'s points, a smoothing per track; each
+  step's index the sequencer's note, so an event says which step);
+  a track an OP-1 sound (`Studio_op1.voice`, now exported), a kit
+  (`Sampler`, its pads our TR-808's instruments recorded once, at
+  their General MIDI keys, the hats in the mute group) or keys
+  (`Sampler`'s voice over our Rhodes' C4); a low-pass, volume, pan, all
+  lockable; 4 scenes (a pattern per track, mutes), a new one set in the
+  bar's last step, heard from the next bar's first; the brain by scale
+  degree (a scale of another size: the nearest note -- the degree's
+  rank moved G to F in a pentatonic, caught by the test). Measured
+  (Unit_opxy): C Eb G Bb from C minor in D dorian D F A C, in D major
+  D F# A C#; a scene asked for in step 6 heard at sample 88200 (16
+  steps of 5512.5); a chord step three voices; a cutoff lock heard; a
+  golden WAV of our song, a bar of each of two scenes. TinyOpxy: the
+  screen (the track, its page, the pattern as dots at their pitch, the
+  knobs as bars in their greys), M1-M4 (again: the next engine, the
+  play mode), the 8 tracks with meters, P and S1-S4, the 16 steps (a
+  click sets them to the notes held, shift+click holds one for its
+  locks), the keyboard (a drum track's letters its pads). Golden frames
+  TinyOpxy, _running, _locks; web page; `CATALOG.md`'s row. Left, in
+  its header: the step components, the OP-XY's own engines, the
+  filter's envelope, the LFOs, the effects sends, longer patterns,
+  songs, the brain's key detection. The plan's climax done.
 
 ## Verification
 

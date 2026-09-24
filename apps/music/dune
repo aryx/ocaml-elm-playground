@@ -10,7 +10,7 @@
 ; famous original:
 ;  - more synthesizers after the Minimoog (TinyHammond, TinyTB303,
 ;    TinyDX7, TinyRhodes, TinyCS80, TinyJuno, TinyTR808 and its 909,
-;    TinyReBirth, TinyOp1): the OP-XY (plan_synth_teaching.md);
+;    TinyReBirth, TinyOp1, TinyOpxy: plan_synth_teaching.md);
 ;  - the trackers after it (ProTracker, FastTracker's XM, Impulse
 ;    Tracker): more channels, instruments with envelopes;
 ;  - a sequencer (Cubase, 1989): tracks of MIDI notes on a timeline, a
@@ -28,13 +28,13 @@
 (library
  (name music_voices)
  (wrapped false)
- (modules Patch_text Voice Voice_minimoog Tonewheel Voice_hammond Voice_tb303 Voice_dx7 Voice_rhodes Voice_cs80 Voice_juno Voice_tr808 Studio_rebirth Op1_engine Studio_op1 Our_songs)
+ (modules Patch_text Voice Voice_minimoog Tonewheel Voice_hammond Voice_tb303 Voice_dx7 Voice_rhodes Voice_cs80 Voice_juno Voice_tr808 Studio_rebirth Op1_engine Studio_op1 Studio_opxy Our_songs)
  (modules_without_implementation Voice)
  (libraries audio audio_instruments audio_effects audio_mod))
 
 (executables
-  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinySoundtracker)
-  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinySoundtracker)
+  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinySoundtracker)
+  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinySoundtracker)
   (libraries
     caps ; TinySoundtracker's authority to export its song
     elm_core

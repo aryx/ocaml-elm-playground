@@ -21,4 +21,4 @@ module _ : Voice.S = Voice_tr808
 let () =
   Testo.interpret_argv ~project_name:"music" (fun _env ->
       Unit_minimoog.tests @ Unit_hammond.tests @ Unit_tb303.tests @ Unit_dx7.tests @ Unit_rhodes.tests @ Unit_cs80.tests
-      @ Unit_juno.tests @ Unit_tr808.tests @ Unit_rebirth.tests @ Unit_op1.tests)
+      @ Unit_juno.tests @ Unit_tr808.tests @ Unit_rebirth.tests @ Unit_op1.tests @ Unit_opxy.tests)

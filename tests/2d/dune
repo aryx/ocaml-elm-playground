@@ -38,6 +38,7 @@
    %{project_root}/apps/music/software/TinyTR808.exe
    %{project_root}/apps/music/software/TinyReBirth.exe
    %{project_root}/apps/music/software/TinyOp1.exe
+   %{project_root}/apps/music/software/TinyOpxy.exe
    %{project_root}/apps/music/software/TinySoundtracker.exe
    %{project_root}/apps/media/software/TinyMediaPlayer.exe
    %{project_root}/apps/office/software/TinyOpenDoc.exe
