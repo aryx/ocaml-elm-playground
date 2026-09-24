@@ -43,7 +43,7 @@ Note Pad) among what it might hold. The author's decisions
 ## Target layout
 
 ```
-libs/core/                (library `elm_core`, unwrapped, beside Time.ml)
+libs/core/time/           (library `elm_core`, unwrapped; a folder only)
   Civil.ml/.mli           days <-> (year, month, day); leap years; weekday
                           (Hinnant's days_from_civil, 2013; Zeller, 1882)
   Julian.ml/.mli          the calendar before 1752-09-14 (England's switch),
@@ -56,8 +56,8 @@ libs/core/                (library `elm_core`, unwrapped, beside Time.ml)
   Ics.ml/.mli             iCalendar read and written: VEVENT, VTODO,
                           line folding, escaping
   Vcard.ml/.mli           vCard 3.0 read and written: N, FN, TEL, EMAIL, ADR
-  tests/                  Unit_civil, Unit_recur, Unit_ics, Unit_vcard
-                          (beside Unit_base64)
+libs/core/tests/          Unit_civil, Unit_clock, Unit_julian, Unit_recur,
+                          Unit_ics, Unit_vcard (beside Unit_base64)
 apps/pim/
   TinyClock.ml
   TinyCalendar.ml
@@ -70,7 +70,10 @@ apps/pim/
 ```
 
 The date modules go in `libs/core/` (the author, 2026-09-24: core is no
-longer only Elm's stand-ins). It is unwrapped, so each name is global:
+longer only Elm's stand-ins), in its folder `time/` (core's dune says
+`(include_subdirs unqualified)`, as `playground/`'s does) -- and one day
+a `space/` beside it, the coordinates and projections of a map program
+(a TinyGoogleMaps). It is unwrapped, so each name is global:
 none of `Civil`, `Julian`, `Clock`, `Recur`, `Ics`, `Vcard` is taken
 today; grep again before adding one.
 

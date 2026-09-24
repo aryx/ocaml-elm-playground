@@ -1,5 +1,10 @@
+(include_subdirs unqualified)
+
 ; claude: Cmd and Sub are here too, as in Elm, whose core has them
-; (Platform.Cmd, Platform.Sub)
+; (Platform.Cmd, Platform.Sub). The folders are folders only, the
+; library the same whichever one a module sits in: time/ (the calendar
+; and the wall clock: Civil, Clock, Julian, Recur, Ics); tests/ has a
+; stanza of its own, so it says (include_subdirs no).
 (library
  (name elm_core)
  (public_name elm_playground.core)

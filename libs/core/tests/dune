@@ -1,4 +1,6 @@
 ; claude: unit tests for core/, run by 'make test' (dune runtest)
+(include_subdirs no)
+
 (test
  (name Test)
  (libraries alcotest testo elm_core)
