@@ -41,7 +41,7 @@ val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
 (* {1 The command line} *)
 (*****************************************************************************)
 
-(* claude: a straight copy of playground/native_common/Native_loop_2d.ml's
+(* claude: a straight copy of playground/platforms/native_common/Native_loop_2d.ml's
  * own parse_cli_and_setup_logging (2D run_app calls it as its first
  * action) -- same -v/-verbose/-debug/-quiet convention, so individual
  * 3D examples and games don't each need their own
@@ -77,7 +77,7 @@ val update_keyboard : bool -> string -> Playground.keyboard -> Playground.keyboa
 
 (* Tsdl's key names for the arrow keys ("Left", "Right", ...) don't match
  * Playground.keyboard's ("ArrowLeft", "ArrowRight", ...); "Q" quits
- * immediately (matching playground/native's own convention); everything
+ * immediately (matching playground/platforms/native's own convention); everything
  * else is passed through lowercased. *)
 val scancode_to_keystring : string -> string
 

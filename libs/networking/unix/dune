@@ -3,7 +3,7 @@
 ; (Http_client), which is what graphics/images/'s Download uses for
 ; http:// URLs. The operating system's side (Unix), so native only. A
 ; private library, installed as part of elm_playground_software, like
-; graphics_images, its user (see playground/native_common/dune for why
+; graphics_images, its user (see playground/platforms/native_common/dune for why
 ; that package).
 (library
  (name networking_unix)

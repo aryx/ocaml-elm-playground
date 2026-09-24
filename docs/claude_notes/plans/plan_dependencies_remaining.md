@@ -26,7 +26,7 @@ libraries --include=dune`) when this document looks stale.
 
 ## 1. The inventory
 
-### The native software backends (`playground/software/`, `native_common/`)
+### The native software backends (`playground/platforms/software/`, `native_common/`)
 
 The path that should end up owning everything above the OS.
 
@@ -37,7 +37,7 @@ The path that should end up owning everything above the OS.
 | **logs** | logging | `native_common`, `graphics/images` | not worth it: no idea in it |
 | **unix** | `gettimeofday`, and tomorrow the sockets | `native_common`, a few old games (`Pong`, `Asteroid`, `Tetris`) | no: the OCaml runtime's own boundary |
 
-### The native Cairo and OpenGL backends (`playground/native/`)
+### The native Cairo and OpenGL backends (`playground/platforms/native/`)
 
 Borrowed on purpose: they are the "real library" our rasterizers are
 compared against, and the fast path. What they still do that the
@@ -60,7 +60,7 @@ software path does not is the interesting part:
   those link): replaced by `graphics/3d` on the software path; the GPU
   runs the shaders, and that stays so.
 
-### The web backends (`playground/web/`, `playground/svg/`)
+### The web backends (`playground/platforms/web/`, `playground/platforms/svg/`)
 
 `js_of_ocaml` and `vdom`, and through them the browser: the DOM and
 SVG renderer, WebGL, WebAudio (`AudioContext`), XMLHttpRequest for the

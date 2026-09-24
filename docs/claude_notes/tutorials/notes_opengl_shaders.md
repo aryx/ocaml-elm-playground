@@ -467,8 +467,8 @@ rough order of difficulty:
 
 The shaders are OCaml strings in each GPU backend's
 `Playground3d_platform.ml` (`vertex_shader_source`,
-`fragment_shader_source`; `playground/native/` for OpenGL,
-`playground/web/` for WebGL, whose fragment shader is a function of
+`fragment_shader_source`; `playground/platforms/native/` for OpenGL,
+`playground/platforms/web/` for WebGL, whose fragment shader is a function of
 `~derivatives`, section 8), compiled when the app starts. The OpenGL
 backend has a second pair, `hud_vertex_shader_source` and
 `hud_fragment_shader_source`, that draws the `hud` overlay as one

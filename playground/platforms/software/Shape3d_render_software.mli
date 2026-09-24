@@ -1,7 +1,7 @@
 (* Draws a 3D Playground scene into a framebuffer with graphics/3d's
  * software rasterizer (Render): turns the Playground's shape3d tree and
  * camera into Render's faces and Camera.t -- the 3D counterpart of
- * playground/software/Shape_render_software.mli. *)
+ * playground/platforms/software/Shape_render_software.mli. *)
 
 (* The Playground's camera, as graphics/3d's *)
 val camera : Playground3d.camera -> Camera.t

@@ -1,6 +1,6 @@
 (* The 3D rendering pipeline: from faces in the world to pixels in a
  * framebuffer, one stage per module of graphics/3d/ (the 3D twin of
- * playground/software/Shape_render_software.mli):
+ * playground/platforms/software/Shape_render_software.mli):
  *
  *   faces (polygons in world coordinates, each with a color or texture)
  *     |

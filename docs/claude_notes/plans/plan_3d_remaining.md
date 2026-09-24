@@ -82,8 +82,8 @@ is [`notes_raytracing.md`](../tutorials/notes_raytracing.md).
 ## Smaller things noticed along the way
 
 - **The SVG backend's package name**: `elm_playground_3d_web` draws
-  through SVG and lives in `playground/svg/`, next to the WebGL one in
-  `playground/web/` (`done/plan_merge_2d_3d.md`). Renaming it
+  through SVG and lives in `playground/platforms/svg/`, next to the WebGL one in
+  `playground/platforms/web/` (`done/plan_merge_2d_3d.md`). Renaming it
   `elm_playground_3d_svg` would say what it is, at the cost of
   renaming an opam package.
 - **Five 3D examples build only on the software rasterizer and the web

@@ -1,7 +1,7 @@
 (include_subdirs unqualified)
 
 ; claude: two libraries in this directory, the 2D playground and the 3D
-; one (each with its own backends, in native/, software/, web/, svg/):
+; one (each with its own backends, in platforms/):
 ; each says which modules it owns. Their modules are in this directory
 ; and in apis/, layers/ and ways/ (playground/README.md), folders only:
 ; the libraries are the same whichever folder a module sits in. The

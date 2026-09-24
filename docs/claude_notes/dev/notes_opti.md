@@ -1,6 +1,6 @@
 # The software 2D rasterizer: what each feature costs, and the optimizations
 
-Purpose: track how fast `playground/software/` (our from-scratch 2D
+Purpose: track how fast `playground/platforms/software/` (our from-scratch 2D
 rasterizer, see [`done/plan_software_2d.md`](../plans/done/plan_software_2d.md)) draws the
 examples and games, what each rendering feature costs, and each
 optimization: what it changed, why the simpler code before it was slow,

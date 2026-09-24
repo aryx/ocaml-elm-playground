@@ -13,7 +13,7 @@
  * the rest of this project's 2D rendering uses. [cr]'s current
  * transform IS the origin -- the caller is responsible for having
  * already translated it to wherever (0, 0) should be (see
- * playground/native/Playground_platform.ml's run_app, which
+ * playground/platforms/native/Playground_platform.ml's run_app, which
  * translates to the window's center every frame before calling this).
  *
  * Extracted out of Playground_platform.ml (see

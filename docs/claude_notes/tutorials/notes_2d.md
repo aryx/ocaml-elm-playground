@@ -1,4 +1,4 @@
-# 2D rendering, from scratch: a tutorial for `playground/software/`
+# 2D rendering, from scratch: a tutorial for `playground/platforms/software/`
 
 How does a list of Playground shapes -- `circle red 50 |> move 100 0`,
 `words black "Score"`, `image 70 70 "mario.gif"` -- become the pixels on
@@ -10,7 +10,7 @@ repository's from-scratch 2D rasterizer, `graphics/` (the algorithms,
 in plain OCaml, knowing nothing of the Playground: `graphics/core/`
 the framebuffer and images, `graphics/2d/geometry/` transforms,
 `graphics/2d/` rasterization, `graphics/font/` text) and
-`playground/software/` (the Playground backend using them).
+`playground/platforms/software/` (the Playground backend using them).
 
 The 2D counterpart of [`notes_3d.md`](notes_3d.md). Companions:
 [`done/plan_software_2d.md`](../plans/done/plan_software_2d.md) (how the backend was built,
@@ -21,9 +21,10 @@ with PostScript, SVG, Cairo, Skia, Processing, Gloss and the rest,
 [`notes_playground_related_work.md`](../related-work/notes_playground_related_work.md).
 
 The same Playground programs also run on two other backends: Cairo
-(`playground/native/`), a C library that does all of this for us, and
-the browser (`playground/web/`), which gets SVG and does it too. Here
-we do it ourselves, which is the only way to *see* how it works.
+(`playground/platforms/native/`), a C library that does all of this for
+us, and the browser (`playground/platforms/web/`), which gets SVG and
+does it too. Here we do it ourselves, which is the only way to *see*
+how it works.
 
 ## 1. The big picture
 
@@ -57,7 +58,7 @@ first into the second, "rasterization" or "scan conversion":
   pixels in the framebuffer
 ```
 
-`playground/software/Shape_render_software.ml` is exactly this
+`playground/platforms/software/Shape_render_software.ml` is exactly this
 pipeline: `shape_transform`, `screen_transform`, then `render_form`,
 which hands the shape, now in pixel coordinates, to one of the
 algorithms of `graphics/`.
@@ -458,7 +459,8 @@ writing it by hand, you appreciate what "free" means.
 ## 14. Compared with Cairo, the GPU, and the 3D rasterizer
 
 **Size.** The whole from-scratch renderer: about 775 lines of code
-(`graphics/`: 540, `playground/software/`: 235), plus about twice as many lines of
+(`graphics/`: 540, `playground/platforms/software/`: 235), plus about twice
+as many lines of
 comments, and 540 lines of tests. The Cairo backend is 235 lines of
 OCaml too -- but it delegates the actual work to Cairo, pixman,
 FreeType and fontconfig, C libraries of tens of thousands of lines

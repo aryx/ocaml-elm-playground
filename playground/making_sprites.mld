@@ -60,7 +60,7 @@ let to_gif mario =
 and the walk GIF animates by itself.
 
 On the web, the browser animates GIFs. In the native version, playground
-does it itself (see [playground/native/Image_native.ml], which also
+does it itself (see [playground/platforms/native/Image_native.ml], which also
 explains how GIF files are structured).
 
 {1 Making your own animated GIF}

@@ -10,7 +10,7 @@
 
 (* See Golden_frames.mli *)
 
-(* the keys (see playground/software/Playground_platform.ml): n
+(* the keys (see playground/platforms/software/Playground_platform.ml): n
  * antialiasing off, f wireframe, b bounding boxes, o the simple code
  * instead of the optimized one (Opti), h the help. Not t (alpha blending off): only
  * examples/Mouse fades a shape, while the mouse button is down. *)

@@ -128,7 +128,7 @@ browser, for that site, and survives a reload.
    DOM key names; then the web `store`/`fetch` (localStorage, base64),
    `export` (download) and the `drop` event. **The store and export
    done** (2026-09-22; built, not yet tried in a browser):
-   `playground/web/Web_store`, localStorage under "elm-playground:" and
+   `playground/platforms/web/Web_store`, localStorage under "elm-playground:" and
    the name, the bytes base64-encoded in OCaml (Marshal's bytes are not
    UTF-8, so the browser's btoa cannot take them), `export` an `<a
    download>` clicked; `caps` links under js_of_ocaml with no warning.

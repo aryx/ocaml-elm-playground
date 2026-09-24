@@ -25,7 +25,7 @@ type t = { width : int; height : int; pixels : pixels }
 val create : width:int -> height:int -> t
 
 (* A framebuffer on top of existing memory, e.g. an SDL window surface's
- * pixels (see playground/software/Playground_platform.ml) *)
+ * pixels (see playground/platforms/software/Playground_platform.ml) *)
 val of_pixels : pixels -> t
 
 (* Fill the whole framebuffer with one (opaque) color *)

@@ -40,7 +40,7 @@ for this plan:
 | contacts, normals, the grid, the integrator | *planned, never done* | `plan_physics_remaining.md` §2 |
 | frontier, flow field, steering forces, weights | *planned* | `plan_ai_teaching.md`'s `Ai_debug` |
 | shading, culling, clipping, wireframe, Opti | the backends' keys | "b f i n o t z r", "m p c x" in 3D |
-| the magnifier, the help overlay, pixelation | `playground/software/` | "z", "h", "r" |
+| the magnifier, the help overlay, pixelation | `playground/platforms/software/` | "z", "h", "r" |
 | the frame rate | `Native_loop_2d`'s `Fps` | `-debug` |
 
 Every one of those is a different mechanism reached a different way,
@@ -139,10 +139,10 @@ playground/
   Graphics_debug.ml      NEW: the frame's numbers -- shapes drawn,
                          triangles, pixels touched, overdraw, the time
                          each stage took; 2D and 3D
-playground/native_common/
+playground/platforms/native_common/
   Native_loop_2d.ml      (exists) -inspect, and the wrap
   Native_loop_3d.ml      (exists) the same, panels drawn through hud
-playground/native/, software/, web/, svg/
+playground/platforms/native/, software/, web/, svg/
                          the same flag, the same shapes
 ```
 

@@ -3,7 +3,8 @@
 This file is about the *technique*, not the specific bugs (see git log /
 the "claude:" comments in the source for those: the imagelib GIF decoder
 bug, and the game-loop timing issue). Kept here so the approach can be
-reused next time something in the native (`playground/native/`) backend
+reused next time something in the native
+(`playground/platforms/native/`) backend
 crashes or just "feels off" in a way that's hard to pin down from reading
 the code alone.
 
@@ -169,7 +170,7 @@ pair; don't spend time on it, just measure.
 
 ## 6. Debugging the web (js_of_ocaml) backend without a browser
 
-Symptoms reported for the web backend (`playground/web/`) were: Tetris
+Symptoms reported for the web backend (`playground/platforms/web/`) were: Tetris
 "not working, and even forces me to close the tab", Asteroid "not
 starting". A tab stuck in an infinite loop can't show its console, and
 headless Chrome was useless here (`chrome --headless --dump-dom
@@ -180,7 +181,7 @@ work well for pages that don't hang. See `note_headless.md`.)
 
 What worked: run the compiled `.bc.js` directly in node with a tiny fake
 DOM, `web_headless.js`. It fakes only the DOM calls
-made by `playground/web/Playground_platform.ml` (`createElementNS`,
+made by `playground/platforms/web/Playground_platform.ml` (`createElementNS`,
 `setAttribute`, `appendChild`, `requestAnimationFrame`,
 `addEventListener`, ...), calls `window.onload`, then drives N animation
 frames at a simulated 60Hz (`Date.now` is faked to follow the simulated
@@ -396,7 +397,7 @@ not the code change under test.
 
 - **Verifying a refactoring of the input path**, which is what it was
   written for: moving the SDL event loop into
-  `playground/native_common/Native_loop_2d.ml` replaced
+  `playground/platforms/native_common/Native_loop_2d.ml` replaced
   `Cairo.device_to_user` with plain arithmetic to turn window pixels
   into Elm coordinates; driving `Mouse.exe` to known pixels and finding
   the circle *exactly* there proves the mapping (including the y-flip
@@ -443,7 +444,7 @@ then `Read` the PNG. Each piece has a reason:
 - **`-dump-frame n file`**: after drawing frame n (from 1), write it as
   a binary PPM and exit. The mouse and keyboard are ignored then: where
   the pointer happens to be would change the frame.
-- **`-script "key:frames,..."`** (`playground/native_common/
+- **`-script "key:frames,..."`** (`playground/platforms/native_common/
   Input_script.mli`): game keys held over given frames, since the real
   keyboard is ignored: what a player would do, replayed exactly. With
   a deterministic game (no wall clock, `seed=1` for the ones drawing

@@ -18,8 +18,9 @@ that mode it can load a page, run its JavaScript, and then either:
 - print the resulting DOM as HTML (`--dump-dom`), or
 - save a PNG of what the page looks like (`--screenshot`).
 
-Our web backends render into the DOM (`playground/web/Playground_platform.ml`
-builds an `<svg>` with one element per shape, and the 3D web backend
+Our web backends render into the DOM
+(`playground/platforms/web/Playground_platform.ml` builds an `<svg>` with
+one element per shape, and the 3D web backend
 compiles the 3D scene down to 2D polygons on that same path). So the
 dumped DOM *is* the rendered picture, in text form. You can `grep` it,
 count shapes, and diff it. The screenshot is for when you want to see it
@@ -113,7 +114,7 @@ What to look for:
 - **the shape kinds**: the 3D web backend should only emit `<polygon>`s.
 
 This is the check I'd rerun after touching `Playground3d.render3d_to_2d`
-or `playground/web/`.
+or `playground/platforms/web/`.
 
 ### 3c. Screenshot, and look at it
 

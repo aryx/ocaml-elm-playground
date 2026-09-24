@@ -1,6 +1,6 @@
 (* Draws a list of Playground shapes into a framebuffer, using only the
  * from-scratch algorithms of graphics/ -- the software
- * rasterizer's counterpart of playground/native/Shape_render_native.ml,
+ * rasterizer's counterpart of playground/platforms/native/Shape_render_native.ml,
  * which asks Cairo to do the same job. *)
 
 (* Rendering features that can be turned on or off, to see what each

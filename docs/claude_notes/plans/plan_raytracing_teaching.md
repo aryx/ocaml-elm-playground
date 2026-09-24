@@ -187,7 +187,7 @@ graphics/3d/
                         supersampling; same signature shape as Render
   Render                (exists) the rasterizer; its `face` gains a
                         `material` field, defaulting to matte
-playground/software/
+playground/platforms/software/
   Shape3d_render_software  (exists) `faces` fills the new field;
                         a `raytrace` entry point beside `render`
   Playground3d_platform (exists) the -raytrace flag, the preview key,

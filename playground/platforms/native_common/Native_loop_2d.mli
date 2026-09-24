@@ -1,5 +1,6 @@
 (* The SDL window/event loop shared by the SDL-based 2D playground
- * backends (playground/native/, and the planned playground/software/ --
+ * backends (playground/platforms/native/, and the planned
+ * playground/platforms/software/ --
  * see docs/claude_notes/done/plan_software_2d.md). Each backend only supplies
  * how a Playground.shape list becomes pixels in the window's pixel
  * array. *)

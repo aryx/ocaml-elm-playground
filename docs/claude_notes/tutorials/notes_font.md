@@ -6,7 +6,7 @@ families of fonts, hinting, antialiasing, shaping), where they came
 from historically, which libraries do it for real today, and exactly
 what this repository's from-scratch software rasterizer does -- with
 pointers into the code (`graphics/font/Hershey.ml`,
-`graphics/2d/Stroke.ml`, `playground/software/Shape_render_software.ml`).
+`graphics/2d/Stroke.ml`, `playground/platforms/software/Shape_render_software.ml`).
 
 Companion to [`done/plan_software_2d.md`](../plans/done/plan_software_2d.md) (the software
 2D backend's plan, phase 5 being text) and to [`notes_2d.md`](notes_2d.md)
@@ -206,7 +206,7 @@ for simple scripts.
 
 ## 7. What this repository does
 
-### The Cairo backend (`playground/native/`)
+### The Cairo backend (`playground/platforms/native/`)
 
 `Shape_render_native.render_words` calls Cairo's "toy" text API:
 `Cairo.select_font_face "sans-serif"`, `Cairo.set_font_size`,
@@ -218,7 +218,7 @@ HarfBuzz on top of Cairo). The web backend asks the browser, which does
 all of section 1 with HarfBuzz, FreeType-or-the-OS's-rasterizer, and
 the GPU.
 
-### The software backend (`playground/software/`), from scratch
+### The software backend (`playground/platforms/software/`), from scratch
 
 Every step, in ~200 lines, with a stroke font:
 

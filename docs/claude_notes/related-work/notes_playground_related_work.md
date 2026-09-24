@@ -114,7 +114,7 @@ outlines).
 The W3C's Scalable Vector Graphics: PostScript's imaging model as XML
 elements in the browser's DOM (`<circle>`, `<path d="...">`,
 `transform="rotate(30)"`), styled with CSS, retained by the browser and
-redrawn by it. The web backend (`playground/web/`) builds exactly this,
+redrawn by it. The web backend (`playground/platforms/web/`) builds exactly this,
 with ocaml-vdom's virtual DOM: the "reuse an existing renderer"
 choice, like lucamug's 3D trick -- zero rendering code, zero control
 over the pixels, and the browser's quality (antialiasing, text) for
@@ -127,7 +127,7 @@ The immediate-mode libraries implementing the same model in code:
 - **Cairo** (Keith Packard and Carl Worth, 2003): C, with output to
   images, X11, PDF, PostScript, SVG, over **pixman**, its pixel
   compositing library (SIMD, span-based). What the native backend
-  (`playground/native/`) uses, and what GTK, Firefox (for years) and
+  (`playground/platforms/native/`) uses, and what GTK, Firefox (for years) and
   many others drew with.
 - **Canvas 2D** (Apple, 2004, then HTML5): the same model as a browser
   API, `ctx.arc`, `ctx.fill`, a mutable canvas -- p5.js's layer.
@@ -183,7 +183,7 @@ how much speed, does the from-scratch version cost? -- answered with
 Cairo in place of the GPU (`notes_2d.md` section 14, `notes_opti.md`):
 
 **Code size**: the whole software renderer is about 775 lines of code
-(its part of `graphics/`: 540, `playground/software/`: 235, when
+(its part of `graphics/`: 540, `playground/platforms/software/`: 235, when
 `notes_2d.md` was written), plus about twice as
 many lines of comments, and 540 lines of tests. The Cairo backend is
 235 lines of OCaml too -- on top of Cairo, pixman, FreeType and

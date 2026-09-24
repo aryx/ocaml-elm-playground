@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/software/Shape_render_software.pixel_bounds: nothing that
+(* playground/platforms/software/Shape_render_software.pixel_bounds: nothing that
  * render paints may fall outside it (the OpenGL HUD would lose it) *)
 
 open Playground

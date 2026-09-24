@@ -4,7 +4,7 @@
 (* Loading of external images (e.g., from a URL) into RGBA8 pixel
  * buffers, for the native (SDL-based) Playground backends, which each
  * convert them to what they draw with (e.g., Cairo surfaces in
- * playground/native/Image_native.ml).
+ * playground/platforms/native/Image_native.ml).
  *
  * claude: the decoders are our own, pure OCaml, one library a format
  * (png/, gif/, jpeg/, with deflate/ under PNG; see notes_images.md and

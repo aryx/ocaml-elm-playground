@@ -26,7 +26,7 @@
 // With DUMP=1 in the environment, it also prints the DOM tree (i.e., the
 // rendered shapes and their attributes) every 30 frames.
 //
-// Only the DOM operations used by playground/web/Playground_platform.ml
+// Only the DOM operations used by playground/platforms/web/Playground_platform.ml
 // are faked; if the app starts calling a new one, you'll get a
 // "... is not a function" TypeError pointing at it.
 

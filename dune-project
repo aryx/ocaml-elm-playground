@@ -42,7 +42,7 @@
 ;;                                            + elm_playground_web
 ;;
 ;; The libraries the platforms share but nobody else should use are
-;; private (no .opam of their own), see playground/native_common/dune.
+;; private (no .opam of their own), see playground/platforms/native_common/dune.
 
 (package (name elm_playground)
   (synopsis "Interface of the Playground: pictures, animations and games")
@@ -80,7 +80,7 @@
     (cairo2 (>= "0.6.4"))
     tsdl
     (elm_playground (= :version))
-    ; claude: for playground/native_common/ and graphics/images/, private
+    ; claude: for playground/platforms/native_common/ and graphics/images/, private
     ; libraries installed as part of it (see native_common/dune for why)
     (elm_playground_software (= :version))
   )

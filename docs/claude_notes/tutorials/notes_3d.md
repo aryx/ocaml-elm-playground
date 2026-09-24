@@ -853,10 +853,10 @@ player (`TinyMarioKart64.ml`).
 
 Four backends implement `Playground3d_platform.run_app3d`, so the same
 program runs on each: the software rasterizer of this note
-(`playground/software/`, with §11's debug keys), OpenGL
-(`playground/native/`, [`notes_opengl.md`](notes_opengl.md)), WebGL
-(`playground/web/`) and SVG (`playground/svg/`, §5-§6's painter's
-algorithm, no textures).
+(`playground/platforms/software/`, with §11's debug keys), OpenGL
+(`playground/platforms/native/`, [`notes_opengl.md`](notes_opengl.md)), WebGL
+(`playground/platforms/web/`) and SVG (`playground/platforms/svg/`,
+§5-§6's painter's algorithm, no textures).
 
 The examples, in this note's order: `Triangle3d.ml` (one face, §3),
 `Cube3d.ml` (§1-§5), `InteractiveCube3d.ml` (a mouse-driven turntable

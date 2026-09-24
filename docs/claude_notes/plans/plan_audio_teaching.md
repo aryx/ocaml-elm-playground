@@ -417,7 +417,7 @@ and some thirty with the ready-made sounds. Open exercises:
   Web MIDI in the browser), MIDI's control changes and pitch bend,
   a voice limit.
 - **Phase 4, DONE (our samples; the browser's own nodes left for the
-  comparison)**: `playground/web/Playground_platform.ml` feeds Web
+  comparison)**: `playground/platforms/web/Playground_platform.ml` feeds Web
   Audio: each frame, `Audio.pull`'s samples into an AudioBuffer (mono,
   44,100, resampled by the browser), a buffer source started right
   after the previous one, ~100 ms ahead of the AudioContext's clock;

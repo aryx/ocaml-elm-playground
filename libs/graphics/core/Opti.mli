@@ -4,7 +4,7 @@
  * Optimizations make code faster but harder to read. For teaching, the
  * simple version explains the idea, the optimized one shows the
  * craft, and switching between them while a game runs (the "o" key,
- * see playground/software/Playground_platform.ml) shows what each
+ * see playground/platforms/software/Playground_platform.ml) shows what each
  * optimization buys, on the fps counter. The measured numbers are in
  * notes_opti.md.
  *

@@ -44,7 +44,7 @@
 
 (* The factor: 1, full resolution (the default), 2, 3 or 4 -- the "r"
  * debug key of the software backends (e.g.
- * playground/software/Playground_platform.ml); a global like
+ * playground/platforms/software/Playground_platform.ml); a global like
  * Opti.enabled, for the same reason: a switch on the renderer, not on
  * the game. *)
 val factor : int ref

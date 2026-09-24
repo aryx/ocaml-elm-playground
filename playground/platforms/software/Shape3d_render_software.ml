@@ -37,7 +37,7 @@ let missing_texture_color = 0xFF00FF
  * per-pixel access to anything. Loading (a local file path or an
  * http(s) URL, with caching and a preload queue) lives in
  * graphics/images/Texture_decode.ml, the same split as
- * playground/native's Playground_platform.ml and
+ * playground/platforms/native's Playground_platform.ml and
  * graphics/images/Image_decode.ml.
  *
  * claude: Texture_decode gives Rgba_image.t textures, whatever the

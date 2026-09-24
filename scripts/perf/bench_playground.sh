@@ -11,7 +11,7 @@
 # How fast can a 2D playground backend draw an example or game? Runs it
 # without the 60 fps cap (-uncapped), optionally presses debug keys (e.g.
 # "n" to turn the software rasterizer's antialiasing off, see
-# playground/software/Playground_platform.ml) with scripts/input/xdrive.py,
+# playground/platforms/software/Playground_platform.ml) with scripts/input/xdrive.py,
 # and prints the median of the fps it logs (-debug) once settled. Used
 # for the numbers in docs/claude_notes/notes_opti.md.
 #

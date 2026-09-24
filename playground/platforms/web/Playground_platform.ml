@@ -913,7 +913,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_
      * that's a Tick every other frame; at 60Hz one per frame; at 30Hz two
      * per frame. The screen is still redrawn every frame. This is the
      * classic "fixed timestep" game loop (same idea as the 60fps cap in
-     * playground/native/).
+     * playground/platforms/native/).
      *)
     let tick_period = 1. /. 60. in
     (* tolerate jitter in rAF timestamps on 60Hz displays, otherwise

@@ -17,11 +17,11 @@ open Tsdl
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Native backend of the 3D playground: unlike playground/native (Cairo
+(* Native backend of the 3D playground: unlike playground/platforms/native (Cairo
  * drawing 2D vector paths), this is a real, from-scratch software
  * rasterizer. SDL is used only for the window, the event loop, and
  * presenting the final image (by writing straight into the window
- * surface's own pixel buffer, the same trick playground/native uses,
+ * surface's own pixel buffer, the same trick playground/platforms/native uses,
  * just without Cairo in front of it): the triangle rasterization, the
  * z-buffer depth test, and the perspective projection are all
  * hand-written OCaml, in graphics/3d/ (one module per idea; see
@@ -46,7 +46,7 @@ open Playground3d
  * side by side without restarting -- the same kind of debug toggle many
  * game engines/games expose (e.g. Quake's r_drawflat console variable,
  * or a "wireframe view" hotkey); the 2D software backend has its own
- * (playground/software/Playground_platform.ml). Only with the
+ * (playground/platforms/software/Playground_platform.ml). Only with the
  * -debug-keys flag (see Native_loop_3d), so that without it a game can use
  * any key. The window title shows their current state. Avoid the keys
  * games use most: arrows, w/a/s/d, space.
@@ -77,7 +77,7 @@ open Playground3d
  *    times less of them), and the look of 320x200 games
  *  - "h": this list, with each key's state, over the frame
  *  - Ctrl + any of them: the debug key alone, not given to the game
- *    (playground/software/Help_overlay)
+ *    (playground/platforms/software/Help_overlay)
  *)
 
 let options = ref Render.default_options
@@ -232,7 +232,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   | 32, 0xFF0000l, 0xFF00l, 0xFFl, _ -> ()
   | _ -> failwith "the window's pixels are not 32-bit xRGB, which this backend needs");
 
-  (* claude: unlike playground/native's run_app, no "Loading..." message
+  (* claude: unlike playground/platforms/native's run_app, no "Loading..." message
    * first -- the window just stays whatever the OS shows it as
    * (typically blank) until the first frame is ready. Fine for now (a
    * texture-heavy game should mostly preload_texture everything it
@@ -298,7 +298,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
         | views -> List.iter (draw_view fb) views);
         (* claude: a HUD pass, once the 3D scene above is fully rasterized
          * into [fb] for this frame: the 2D shapes drawn on top by the 2D
-         * software rasterizer (playground/software/Shape_render_software,
+         * software rasterizer (playground/platforms/software/Shape_render_software,
          * graphics/2d/), into the same framebuffer. No clear here (unlike
          * the 2D backend's per-frame one) -- this must only add pixels on
          * top, never erase the 3D frame underneath. See

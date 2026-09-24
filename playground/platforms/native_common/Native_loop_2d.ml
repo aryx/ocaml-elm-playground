@@ -349,7 +349,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
    * free-runs at several hundred fps. Playground.game's update functions
    * (e.g., examples/Mario.ml) use a fixed per-tick dt inherited from the
    * original Elm code, which assumes browser's requestAnimationFrame's
-   * ~60Hz pacing (see playground/web/Playground_platform.ml's
+   * ~60Hz pacing (see playground/platforms/web/Playground_platform.ml's
    * animation_frame, which re-schedules itself via
    * Window.request_animation_frame); an uncapped native loop breaks that
    * assumption and makes games run several times too fast. *)

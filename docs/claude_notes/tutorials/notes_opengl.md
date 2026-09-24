@@ -547,8 +547,8 @@ of difficulty:
 A program sees none of this: it builds `shape3d`s and calls
 `Playground3d_platform.run_app3d` (`Playground3d_platform.mli`), and the
 library it links picks the backend: `elm_playground_3d_opengl`
-(`playground/native/Playground3d_platform.ml`, SDL + tgls),
-`elm_playground_3d_webgl` (`playground/web/`, the same pipeline over
+(`playground/platforms/native/Playground3d_platform.ml`, SDL + tgls),
+`elm_playground_3d_webgl` (`playground/platforms/web/`, the same pipeline over
 js_of_ocaml's WebGL 1 bindings), or the software one of section 3. Both
 GPU backends share `Gpu_scene.ml` (shapes to batches, one per
 material, and the 11-float layout of section 5) and

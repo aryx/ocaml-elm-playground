@@ -34,7 +34,7 @@ Semgrep rules in `ocaml-caps/rules/` (`forbid_fs`, `forbid_exit`,
 Non-test code only; the tests and `scripts/` are programs of their own
 and can take `Cap.main` in their mains later.
 
-- **The native loops** (`playground/native_common/Native_loop_2d.ml`,
+- **The native loops** (`playground/platforms/native_common/Native_loop_2d.ml`,
   `Native_loop_3d.ml`): `Sys.argv` (the
   `-script`, `-dump-frame`, ... flags), `exit` (on Q, on the window's
   close, after `-dump-frame`), `open_out_bin` (writing the dumped
@@ -42,7 +42,7 @@ and can take `Cap.main` in their mains later.
 - **Images** (`graphics/images/Download.ml`, `Image_decode.ml`):
   `Curl` (downloading an image URL) and `open_in_bin`/`open_out_bin`
   (the file, and its downloaded copy) -- network and file system.
-- **Warnings** (`Audio.ml`, `playground/native/
+- **Warnings** (`Audio.ml`, `playground/platforms/native/
   Playground_platform.ml`): `prerr_endline`.
 - **Randomness** (`Tetris.ml`, `Snake.ml`):
   `Random.self_init` -- the one place the games are not deterministic,

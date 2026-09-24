@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* playground/native_common/Input_script *)
+(* playground/platforms/native_common/Input_script *)
 
 let t = Testo.create
 
