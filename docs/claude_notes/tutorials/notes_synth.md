@@ -37,7 +37,9 @@ module here.
 | `audio/synthesis/Noise` (extended) | random numbers for them: a linear congruential generator | §4 | done |
 | `audio/synthesis/Envelope` (extended) | gated, exponential | §4 | done |
 | `audio/instruments/Voicing` | keys to a voice: priority, legato, glide | §5 | done (mono) |
-| `audio/instruments/Polyphony` | a voice per key, freed once silent (stealing: later) | §5 | done (step one) |
+| `audio/instruments/Polyphony` | a voice per key, freed once silent; a fixed number, the oldest released stolen, else the oldest | §5 | done |
+| `audio/instruments/Dx_envelope` | the DX7's four rates and four levels, in the log domain: the attack's jump and curve, the decay's line | §10 | done |
+| `audio/instruments/Fm_algorithm` | the DX7's 32 algorithms as who modulates whom, checked against Dexed's table; feedback, a sine to a sawtooth to noise | §10 | done |
 | `apps/music/Tonewheel`, `Hammond_voice` | the Hammond's 91 wheels, its drawbars (additive synthesis), percussion, click, scanner vibrato | §10 | done |
 | `apps/music/TinyHammond` | the B-3's panel: the drawbars pulled, the tabs, the Leslie drawn turning, a polyphonic keyboard | §10 | done |
 | `audio/instruments/Diode_ladder` | the TB-303's filter: four coupled poles, the "18 dB" measured against the Moog's | §6 | done |
@@ -380,9 +382,12 @@ struck again while it rings. A voice is a record of functions
 instrument's voices; `Polyphony.sine` (a sine and an envelope, an
 organ's single drawbar) is the worked example.
 
-Step two (the Juno, the DX7, later): N voices, and which one a new
-note takes -- a free one, else one **stolen**: the oldest released, the
-quietest, or the one already playing that note. A classic
+Step two (`Polyphony.create ~voices`, the DX7's 16, the Juno's 6): N
+voices, and which one a new note takes -- a free one, else one
+**stolen**. The choices: the oldest released, the quietest, or the one
+already playing that note; ours is the oldest released, whose sound is
+fading anyway, and if none is, the oldest held. Stolen, the voice is
+cut (a click; a ramp of a few milliseconds is its exercise). A classic
 visible-in-the-code decision, and the voice limit `notes_audio_midi.md`
 left open for the MIDI player.
 

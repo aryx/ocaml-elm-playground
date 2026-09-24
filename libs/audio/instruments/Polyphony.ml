@@ -16,11 +16,17 @@ type voice = { release : unit -> unit; fill : Signal.t -> unit; silent : unit ->
 type sounding = { key : int; voice : voice; mutable held : bool }
 
 type t = {
+  limit : int option;
   mutable sounding : sounding list; (* the oldest first *)
   mutable scratch : Signal.t; (* a voice's block, before it's added *)
 }
 
-let create () : t = { sounding = []; scratch = [||] }
+let create ?voices () : t = { limit = voices; sounding = []; scratch = [||] }
+
+(* the oldest released, else the oldest *)
+let steal (t : t) : unit =
+  let victim = match List.find_opt (fun s -> not s.held) t.sounding with Some s -> Some s | None -> List.nth_opt t.sounding 0 in
+  match victim with Some v -> t.sounding <- List.filter (fun s -> s != v) t.sounding | None -> ()
 
 let release (t : t) (key : int) : unit =
   List.iter
@@ -35,6 +41,7 @@ let release (t : t) (key : int) : unit =
  * release) is let go first: one voice held per key *)
 let press (t : t) (key : int) (voice : voice) : unit =
   release t key;
+  (match t.limit with Some n when n > 0 && List.length t.sounding >= n -> steal t | _ -> ());
   t.sounding <- t.sounding @ [ { key; voice; held = true } ]
 
 let fill (t : t) (out : Signal.t) : unit =

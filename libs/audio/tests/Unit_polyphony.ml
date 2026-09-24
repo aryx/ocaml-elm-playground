@@ -76,9 +76,30 @@ let test_again () =
   Polyphony.press p 60 (Polyphony.sine ~adsr c 0.3);
   Alcotest.(check (list int)) "C held once" [ 60 ] (Polyphony.held p)
 
+(* Polyphony.mli's picture: two voices, C, E, C let go, G steals C's,
+ * A steals E's (none released); and 17 notes into the DX7's 16 *)
+let test_stealing () =
+  let p = Polyphony.create ~voices:2 () in
+  let press k = Polyphony.press p k (Polyphony.sine ~adsr c 0.3) in
+  press 60;
+  press 64;
+  Polyphony.release p 60;
+  press 67;
+  Alcotest.(check (list int)) "G stole the released C" [ 64; 67 ] (Polyphony.held p);
+  Alcotest.(check int) "two voices" 2 (Polyphony.voices p);
+  press 69;
+  Alcotest.(check (list int)) "A stole E, the oldest held" [ 67; 69 ] (Polyphony.held p);
+  let q = Polyphony.create ~voices:16 () in
+  for k = 40 to 56 do
+    Polyphony.press q k (Polyphony.sine ~adsr c 0.3)
+  done;
+  Alcotest.(check int) "17 notes, 16 voices" 16 (Polyphony.voices q);
+  Alcotest.(check (list int)) "the first stolen" (List.init 16 (fun i -> 41 + i)) (Polyphony.held q)
+
 let tests =
   Testo.categorize "Polyphony"
     [
+      t "a fixed number of voices: stealing" test_stealing;
       t "a chord: three voices, their sum" test_chord;
       t "a key let go: its voice releasing, then freed" test_release;
       t "a key pressed again while it releases" test_again;

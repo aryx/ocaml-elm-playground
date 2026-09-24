@@ -25,11 +25,20 @@
  * serves a sine and an envelope ([sine] below, an organ's single
  * drawbar), a Hammond's nine, a Rhodes tine.
  *
- * This is the first step (plan_synth_teaching.md, H1): as many voices
- * as keys. The second, a fixed number of voices and one *stolen* when
- * a key needs one and none is free (the oldest released first, then
- * the oldest), is a real synthesizer's (the Juno's six, the DX7's
- * sixteen), and comes with them.
+ * By default, as many voices as keys (an organ's way: every tonewheel
+ * always turning). A real synthesizer has a fixed number, each its
+ * circuits or its share of the chip's time (the Juno's six, the DX7's
+ * sixteen): a key pressed with all of them sounding *steals* one --
+ * the oldest released, whose sound is fading anyway, and if none is,
+ * the oldest held, the note played longest ago, the least missed:
+ *
+ *     2 voices   C down  E down  C up    G down         A down
+ *                [C]     [C][E]  [C~][E] [G][E]         [A][G]
+ *                                        C~ stolen:     none released:
+ *                                        released       E, the oldest
+ *
+ * Stolen, a voice is cut, not faded: a click, which the DX7 has too
+ * (a real synthesizer ramps it over a few milliseconds: an exercise).
  *
  * Worked example (Unit_polyphony): C, E and G pressed, sines with a 15
  * ms release: three voices, the block their sum; E let go: still three
@@ -50,9 +59,12 @@ type voice = {
 
 type t
 
-val create : unit -> t
+(* [create ?voices ()]: at most [voices] sounding, unlimited by
+ * default *)
+val create : ?voices:int -> unit -> t
 
-(* [press t key voice]: [key] down, [voice] its sound *)
+(* [press t key voice]: [key] down, [voice] its sound, a voice stolen
+ * if they're all sounding *)
 val press : t -> int -> voice -> unit
 
 (* [release t key]: [key] up, its voice releasing (no voice: nothing) *)

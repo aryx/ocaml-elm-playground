@@ -584,10 +584,75 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
    - **R2, TinyRhodes's panel**: the Stage 73's case, the tremolo's
      rate and depth, the model switch, the effects row once phases 6
      and 7 exist.
-   - **D1, TinyDX7** (its own list when started, as the collection
-     says), with the 4-operator, 12-algorithm Reface mode, and polyphony
-     step two (a fixed number of voices, stealing the oldest released
-     first, then the oldest).
+   - **TinyDX7, D1-D3** (started 2026-09-24, before TinyRhodes: the
+     OP-1's FM engine is then this voice, O2 plugging it in). The facts
+     first, from Dexed's engine (Raph Levien's msfa, the DX7
+     reverse-engineered, measured against the hardware; its constants
+     are the best published and said so where used) and the voice
+     format as Dexed reads it:
+     - six operators, each a sine whose phase the operators above it
+       modulate; 32 **algorithms**, Dexed's table a byte per operator
+       (op 6 first: bits for the bus read, the bus written, added to
+       the output, feedback in and out); one operator per algorithm fed
+       back on itself, its last two outputs averaged, scaled by 2^(fb -
+       8) (fb 0 to 7, 0 none);
+     - the frequency: a ratio, coarse 0 to 31 (0 meaning 0.5), fine
+       times (1 + fine / 100); or fixed, 10^(coarse mod 4) x
+       10^(fine / 100) Hz; detune -7 to +7, a few cents, less at the top
+       (Dexed's 0.0209 e^(-0.396 octave) / 7);
+     - levels in 0.75 dB steps: output level 0-99 mapped onto 0-127
+       (Dexed's `scaleoutlevel`: a table below 20, then 28 + level),
+       256 of the envelope's units a doubling; keyboard level scaling
+       (a break point, a depth and a curve, linear or exponential,
+       either sign, on each side, a step every 3 keys); velocity
+       sensitivity 0-7 (Dexed's velocity table); rate scaling 0-7, the
+       envelope faster up the keyboard (a step every 3 keys from the
+       note 21);
+     - the **envelope**, 4 rates and 4 levels, 0 to 99, in the log
+       domain: a rate to a speed as 2^(qrate / 4) (qrate = rate x 41 /
+       64, plus the rate scaling), falling linearly in dB, rising along
+       a curve that slows as it nears the top (Dexed's attack `level +=
+       (17 - level) x inc`: the DX7's snap);
+     - the pitch envelope (4 and 4, 50 the centre), the LFO (triangle,
+       saws down and up, square, sine, sample and hold; speed, delay,
+       pitch and amplitude depths and sensitivities, key sync),
+       transpose;
+     - a cartridge: 32 voices of 128 packed bytes after a 6-byte header
+       (F0 43 00 09 20 00), a checksum (the bytes' negated sum, 7
+       bits), F7; 4104 bytes. Yamaha's ROM voices are Yamaha's: the
+       user brings a `.syx` (flag `cart=`, as TinyMario's `music=`),
+       ours are our own.
+   - **D1, what audio/ gains**: in `instruments/`, `Dx_envelope` (the
+     rate/level envelope in the log domain, tested: a rate's time from
+     0 to 99 and back, the attack's curve against the decay's line) and
+     `Fm_algorithm` (the 32 algorithms as readable lists of who
+     modulates whom, which ones are heard, which one is fed back; drawn
+     as ASCII in the `.mli` for a few; checked in a test against
+     Dexed's byte table decoded), and `Fm`'s operator (a sine read at a
+     phase plus the modulation, the feedback's average of two). And
+     polyphony step two in `Polyphony`: a fixed number of voices,
+     stealing the oldest released first, then the oldest. Tests: a
+     two-operator algorithm against `Fm.render` (the same Bessel
+     sidebands), feedback 7's sawtooth-like spectrum, 17 notes into 16
+     voices stealing the right one.
+   - **D2, the voice**: `Dx7_voice` in `music_voices`: the patch as the
+     155 unpacked parameters with names, read from and written to the
+     128 packed bytes; a cartridge read (header, checksum checked,
+     errors as values); the note's frequencies, levels, rate scaling,
+     velocity, the pitch envelope and the LFO; 16 voices; the Reface
+     DX's reduction as a switch (4 operators, its algorithms); our own
+     patches (an electric piano, a brass, a bass, a bell, a marimba),
+     through `Patch_text` too. Tests: a patch's bytes round trip, a
+     made-up cartridge's checksum, each operator's frequency for the
+     ratios and fixed modes, level scaling's curves at known keys; a
+     golden WAV per patch.
+   - **D3, the panel**: TinyDX7: the membrane buttons and the LCD (two
+     lines of 16 characters), the DX7's "one parameter, one data slider"
+     editing (the lesson: why every synth after it had knobs again),
+     next to it what the DX7 hid: the algorithm drawn as a graph, the six
+     envelopes drawn, each operator's level lit as it plays; the 32
+     patches of the cartridge; keyboard; scope and spectrum. Golden
+     frames (a patch, playing), web page, catalogue row.
    - **C1, TinyCS80** (or TinyJuno, whichever is kept first): two
      layers per voice, each a `Vco`, a high-pass and a low-pass
      (`Svf`), an envelope; the ribbon (a pitch bend by position,
@@ -601,7 +666,8 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
      instrument's output block by block, playing back at a speed
      through `Resample`, reverse, lift and drop), tested on a recorded
      phrase played back an octave up in half the time.
-   - **O2, TinyOp1's engines** in `music_voices`, polyphonic (after H1),
+   - **O2, TinyOp1's engines** in `music_voices` (its FM engine
+     `Dx7_voice`, four operators, after D2), polyphonic (after H1),
      each four knobs; **O3, its panel**: the four encoders, the screens,
      the keyboard, the tape's transport.
    - **X1, the sequencer's parameter locks** on TinyTB303's audio-clock
@@ -1050,6 +1116,25 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   next); overdub doubling the track; lift and drop moving a piece, twice;
   a loop of 100 samples still going round after 1,000. Left for O3: the
   transport on the panel, split and join.
+- **D1, DONE (2026-09-24)**: TinyDX7 moved before TinyRhodes (the
+  OP-1's FM engine will be its voice). The facts from Dexed's msfa
+  (above, in D1-D3's entry). `Dx_envelope`: the rate/level envelope in
+  Dexed's steps (256 a doubling), the attack's jump to 1716 and its
+  curve, the decay's line; tests: an R1 99 attack 33 samples, a decay
+  99 to 0 at R2 50 61,184 samples (-64.8 dB after a second), from 50
+  36,608 (a rate a speed), a release from L3 80 at R4 60 17,323, all
+  as computed by hand from the constants. `Fm_algorithm`: the 32 as
+  (modulator, target) pairs, carriers and the feedback's (from, to),
+  checked against Dexed's byte table decoded in the test; algorithms
+  4 and 6's loops through two operators kept (Dexed runs them as 6 on
+  itself); six operators run a sample at a time; tests: 2 on 1 is
+  `Fm.render`'s pair to 1e-9; a lone operator at full, 431 Hz: fb 5 a
+  darkened sawtooth (harmonics 2-5 at -7.2, -11.6, -14.8, -17.4 dB,
+  the noise 58 dB down), fb 6 buzzing (-7.7), fb 7 noise 5.5 dB above
+  the harmonics -- measured, and the DX7's way to noise. `Polyphony`
+  step two: `?voices`, the oldest released stolen, else the oldest
+  held (cut, a click: its exercise); tested on two voices and on 17
+  notes into 16.
 
 ## Verification
 
