@@ -22,7 +22,7 @@ A library per folder, in layers, each on the ones before it:
 | `signal/` (`audio_signal`) | the samples, and what's computed on them | `Signal`, `Resample`, `Mix`, `Spectrum` |
 | `formats/` (a library each) | the files sounds and songs are kept in | WAV, MIDI, ABC and solfège, MOD |
 | `synthesis/` (`audio_synthesis`) | the building blocks of a sound | `Oscillator`, `Noise`, `Fm`, `Pluck`, `Envelope`, `Filter` |
-| `audio/` itself (`audio`), the engine | a sound as a tree rendered ahead; tunes; stereo and 3D; the sounds playing, pulled by the sound card; the interfaces of what's played live | `Synth`, `Sfx`, `Pitch_effect`, `Music`, `Space`, `Mixer`, `Instrument`, `Control` |
+| `audio/` itself (`audio`), the engine | a sound as a tree rendered ahead; tunes; stereo and 3D; the sounds playing, pulled by the sound card; the interfaces of what's played live | `Synth`, `Sfx`, `Pitch_effect`, `Music`, `Space`, `Mixer`, `Tape` (a multitrack recorder), `Instrument`, `Control` |
 | `instruments/` (`audio_instruments`) | the live blocks of a synthesizer's voice | `Vco`, `Lfo`, `Drift`, `Voicing` (a monophonic voice's keys), `Polyphony` (a voice per key), `Sequencer` (steps in the audio clock), `Moog_ladder`, `Diode_ladder` (the TB-303's), `Svf` |
 | `effects/` (`audio_effects`) | the live effects, and the rack that chains them | `Effect` (the interface), `Drive`, `Eq`, `Modulated_delay` (chorus, flanger), `Phaser`, `Modulation` (the rack's slot for the three), `Delay`, `Reverb`, `Dynamics` (compressor, limiter, gate), `Leslie` (the rotating speaker), `Rack` |
 

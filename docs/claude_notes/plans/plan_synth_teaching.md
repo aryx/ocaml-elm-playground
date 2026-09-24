@@ -1034,6 +1034,22 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   web page; `CATALOG.md`'s row. Left, in its header's exercises:
   pattern chains, the gate's and slide's knobs (the Devil Fish's),
   swing, the effects rack after it, saving patterns.
+- **O1, DONE (2026-09-24)**: `Tape`, in `audio/` beside `Mixer`, from
+  Teenage Engineering's tape-mode guide (6 minutes, 4 tracks, the speed
+  turned even while recording, recording always overdubs, reverse, loop
+  in and out, lift and drop). The head moves `speed` samples a sample;
+  the tracks read at it through `Resample` (linear) and mixed at their
+  levels; the input added at it, spread over the two samples around it
+  (no filter: the lesson, a real head's gap a low-pass for free); loop
+  points; the ends stop it; lift leaves silence, drop adds at the head.
+  Tests (`Unit_tape`, a 344.5 Hz phrase of a second): played at 1, the
+  phrase exactly; at 2, bin 64 (an octave up) and silent after sample
+  22,049; at -1, the samples reversed, then stopped at the start;
+  recorded at 0.5 and played at 1, bin 64 again, over 22,050 samples
+  (the last input sample written at 22,049.5, half spilt onto the
+  next); overdub doubling the track; lift and drop moving a piece, twice;
+  a loop of 100 samples still going round after 1,000. Left for O3: the
+  transport on the panel, split and join.
 
 ## Verification
 
