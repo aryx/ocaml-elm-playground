@@ -1442,6 +1442,20 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   service notes: the snare's, toms', rim shot's, clap's and cowbell's
   frequencies, the decays; not done: congas, clave, maracas (the 808's
   switch-selected alternates), the bridged-T's own retriggering pulse.
+- **T2, DONE (2026-09-24)**: TinyTR808. A column per instrument, its
+  knobs (the 808's: the kick's level, tone and decay; the snare's
+  level, tone, snappy; a tom's level and tuning; ...) over its name, a
+  click on the name striking it and choosing its track (AC the
+  accents'); the 16 step buttons in the 808's red, orange, yellow and
+  cream, four by four, their lights the track's hits, the step playing
+  lit; start/stop and space, the tempo (whole BPMs), the accent, the
+  volume. Under the panel what the 808 never showed: the whole pattern,
+  a row per instrument and the accents, its cells clicked to toggle, the
+  step playing a column lit. The letters strike the drums live. Golden
+  frames TinyTR808 and TinyTR808_running (space, a kick added on step
+  16, step 6 lit); web page; `CATALOG.md`'s row. Left, in its header:
+  patterns chained into a song (A/B, rhythm track), saving them, the
+  swing, the alternate instruments.
 
 ## Verification
 

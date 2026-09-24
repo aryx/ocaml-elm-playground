@@ -9,8 +9,8 @@
 ; TinyMediaPlayer. What it might contain next, each Tiny and after a
 ; famous original:
 ;  - more synthesizers after the Minimoog (TinyHammond, TinyTB303,
-;    TinyDX7, TinyRhodes, TinyCS80, TinyJuno): the TR-808 and ReBirth,
-;    the OP-1 and the OP-XY (plan_synth_teaching.md);
+;    TinyDX7, TinyRhodes, TinyCS80, TinyJuno, TinyTR808): the 909 and
+;    ReBirth, the OP-1 and the OP-XY (plan_synth_teaching.md);
 ;  - the trackers after it (ProTracker, FastTracker's XM, Impulse
 ;    Tracker): more channels, instruments with envelopes;
 ;  - a sequencer (Cubase, 1989): tracks of MIDI notes on a timeline, a
@@ -33,8 +33,8 @@
  (libraries audio audio_instruments audio_effects audio_mod))
 
 (executables
-  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinySoundtracker)
-  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinySoundtracker)
+  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinySoundtracker)
+  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinySoundtracker)
   (libraries
     caps ; TinySoundtracker's authority to export its song
     elm_core

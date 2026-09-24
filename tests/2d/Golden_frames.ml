@@ -114,6 +114,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: 1984: the Juno-106's sliders by section, its buttons and
      * their lights *)
     ("apps/music/software/TinyJuno", "", 5);
+    (* claude: 1980: the 808's knobs over its instruments, its coloured
+     * step buttons, the whole pattern under *)
+    ("apps/music/software/TinyTR808", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1059,6 +1062,10 @@ let scripted : Testutil_golden.scripted list =
      * by the mouse and dragged down to 0.75 -- that note alone brighter,
      * its bar on the key, three voices (E not struck again) *)
     ("apps/music/software/TinyCS80", "playing", 30, "a:5-40,d:5-40,g:5-40,at(-280;-330):10-19,at(-280;-420):20-40,click:10-40");
+    (* claude: the 808 running (space), a kick added on step 16 by its
+     * button; 40 frames in, step 6 playing, lit on the buttons and the
+     * grid *)
+    ("apps/music/software/TinyTR808", "running", 40, "space:3,at(435;85):5-8,click:6");
     (* claude: the Juno played: the VCF's cutoff slider dragged up, chorus
      * II clicked, then C E G held -- the spectrum opened, II lit *)
     ( "apps/music/software/TinyJuno",

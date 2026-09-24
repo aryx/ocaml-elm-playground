@@ -35,6 +35,7 @@
    %{project_root}/apps/music/software/TinyRhodes.exe
    %{project_root}/apps/music/software/TinyCS80.exe
    %{project_root}/apps/music/software/TinyJuno.exe
+   %{project_root}/apps/music/software/TinyTR808.exe
    %{project_root}/apps/music/software/TinySoundtracker.exe
    %{project_root}/apps/media/software/TinyMediaPlayer.exe
    %{project_root}/apps/office/software/TinyOpenDoc.exe
