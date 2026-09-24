@@ -197,6 +197,13 @@ js:
 check:
 	osemgrep --config semgrep.jsonnet .
 
+# lines of OCaml: library, games, apps, examples, tests (loc-v: per
+# subdirectory)
+loc:
+	scripts/stats/loc.py
+loc-v:
+	scripts/stats/loc.py -v
+
 build-docker:
 	docker build -t "elm_playground" .
 build-docker-ocaml5:

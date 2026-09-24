@@ -29,6 +29,10 @@ does, why, and how to use it; the techniques behind them are in
     `docs/claude_notes/dev/notes_headless.md`)
 - `input/`: driving a real window
   - `xdrive.py`: mouse moves, clicks, keys, through X11's XTEST
+- `stats/`: numbers about the repository
+  - `loc.py`: lines of OCaml (code, comments, blank) of the library,
+    the games, the apps, the examples and the tests (`make loc`,
+    `make loc-v`)
 - `games/`: checking the games' data, read from their sources
   - `sokoban_solve.py`: TinySokoban's levels solvable, and how
   - `check_maze.py`: TinyPacman's maze (reachable dots, no dead ends)
