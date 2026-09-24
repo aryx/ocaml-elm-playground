@@ -88,6 +88,12 @@ val key_up : t -> unit
 (* [next t]: the level one sample on, in steps *)
 val next : t -> float
 
+(* [run t n]: the level [n] samples on, in one step of [n] times the
+ * speed, as Dexed moves its envelopes once a block of 64 (a stage's end
+ * reached within the block is reached at the block's end: a few
+ * samples' difference, not heard) *)
+val run : t -> int -> float
+
 (* [stage t]: 0 to 3 going to L1 to L4 (3 held until the key's let
  * go), 4 when L4 is reached *)
 val stage : t -> int

@@ -56,20 +56,21 @@ let key_up (t : t) : unit =
     advance t 3
   end
 
-let next (t : t) : float =
+(* [samples] samples on in one step, the speed times as much *)
+let step (t : t) (samples : float) : float =
   (* L3 held while the key is *)
   if t.stage < 3 || (t.stage = 3 && not t.down) then begin
     if t.rising then begin
       if t.level < 1716. then t.level <- 1716.;
       (* the whole doublings left below 17 *)
-      t.level <- t.level +. (Float.of_int (Float.to_int ((4352. -. t.level) /. 256.)) *. t.speed);
+      t.level <- t.level +. (Float.of_int (Float.to_int ((4352. -. t.level) /. 256.)) *. t.speed *. samples);
       if t.level >= t.target then begin
         t.level <- t.target;
         advance t (t.stage + 1)
       end
     end
     else begin
-      t.level <- t.level -. t.speed;
+      t.level <- t.level -. (t.speed *. samples);
       if t.level <= t.target then begin
         t.level <- t.target;
         advance t (t.stage + 1)
@@ -78,4 +79,6 @@ let next (t : t) : float =
   end;
   t.level
 
+let next (t : t) : float = step t 1.
+let run (t : t) (samples : int) : float = step t (float_of_int samples)
 let stage (t : t) : int = t.stage

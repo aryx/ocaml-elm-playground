@@ -56,37 +56,50 @@ let table = Array.of_list all
 let get (n : int) : t = table.(max 1 (min 32 n) - 1)
 let modulators (alg : t) (op : int) : int list = List.filter_map (fun (m, o) -> if o = op then Some m else None) alg.edges
 
+(* each algorithm's modulators per operator, found once: [sample] runs
+ * 44,100 times a second a voice *)
+let wiring : int list array array = Array.map (fun alg -> Array.init 6 (fun i -> modulators alg (i + 1))) table
+
 (*****************************************************************************)
 (* Running them *)
 (*****************************************************************************)
 
 type state = {
   phases : float array;
-  outputs : float array; (* this sample's *)
-  previous : float array; (* the one before *)
-  mutable earlier : float array; (* and before it: the feedback's average *)
+  (* each operator's last output; until it's computed again in a sample,
+   * the previous sample's *)
+  outputs : float array;
+  (* the fed-back operator's output the sample before its last: the
+   * feedback's average is of the two *)
+  mutable earlier : float;
 }
 
-let create () : state = { phases = Array.make 6 0.; outputs = Array.make 6 0.; previous = Array.make 6 0.; earlier = Array.make 6 0. }
+let create () : state = { phases = Array.make 6 0.; outputs = Array.make 6 0.; earlier = 0. }
+
+(* 2^(fb - 8) for fb 0 to 7: a table, as ldexp is a call in JavaScript *)
+let feedback_scales = Array.init 8 (fun fb -> Float.ldexp 1. (fb - 8))
+
+(* the outputs of [ops], summed *)
+let rec sum (outputs : float array) (acc : float) (ops : int list) : float =
+  match ops with [] -> acc | op :: rest -> sum outputs (acc +. outputs.(op - 1)) rest
 
 let sample (alg : t) (s : state) ~(feedback : int) ~(increments : float array) ~(amplitudes : float array) : float =
-  Array.blit s.previous 0 s.earlier 0 6;
-  Array.blit s.outputs 0 s.previous 0 6;
   let from, into = alg.feedback in
+  let wires = wiring.(alg.number - 1) in
   for op = 6 downto 1 do
     let i = op - 1 in
-    let modulation = List.fold_left (fun acc m -> acc +. s.outputs.(m - 1)) 0. (modulators alg op) in
-    (* the fed-back operator's last two outputs, averaged: from a lower
-     * operator (algorithms 4 and 6) they are the previous samples' *)
+    let modulation = sum s.outputs 0. wires.(i) in
+    (* the fed-back operator's last two outputs, averaged: [into] runs
+     * before or as [from] (the operators go down, and [from] is never
+     * above [into]), so [from]'s output is still the last sample's *)
     let fb =
-      if op = into && feedback > 0 then
-        (s.previous.(from - 1) +. s.earlier.(from - 1)) /. 2. *. Float.pow 2. (float_of_int (feedback - 8))
-      else 0.
+      if op = into && feedback > 0 then (s.outputs.(from - 1) +. s.earlier) /. 2. *. feedback_scales.(min 7 feedback) else 0.
     in
+    if op = from then s.earlier <- s.outputs.(i);
     s.outputs.(i) <- amplitudes.(i) *. sin (2. *. Float.pi *. (s.phases.(i) +. modulation +. fb));
     s.phases.(i) <- s.phases.(i) +. increments.(i);
     if s.phases.(i) >= 1. then s.phases.(i) <- s.phases.(i) -. Float.of_int (Float.to_int s.phases.(i))
   done;
-  List.fold_left (fun acc c -> acc +. s.outputs.(c - 1)) 0. alg.carriers
+  sum s.outputs 0. alg.carriers
 
 let output (s : state) (op : int) : float = s.outputs.(op - 1)

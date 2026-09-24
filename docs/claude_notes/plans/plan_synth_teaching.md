@@ -1135,6 +1135,34 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   step two: `?voices`, the oldest released stolen, else the oldest
   held (cut, a click: its exercise); tested on two voices and on 17
   notes into 16.
+- **D2, DONE (2026-09-24)**: `Dx7_voice` in `music_voices`. The patch
+  as the DX7's own parameters (145 and the name), read from and written
+  to the 128 packed bytes (Dexed's layout; out-of-range clamped); a
+  cartridge read (the header, the length, the checksum, errors as
+  values) and written (filled to 32 with INIT VOICE); the patch as
+  text. Dexed's formulas: the ratio and fixed frequencies, the detune
+  (+6.8 cents at A4, +14.7 at A1: nearly even in Hz), the keyboard level
+  scaling (-lin 99 three octaves away 95 steps, +exp 15), the velocity
+  (Dexed's table: +224 steps at 127, -448 at 64, sensitivity 7), the
+  rate scaling, the pitch envelope's tables, the LFO's speeds and its
+  two-speed delay, the pitch modulation; the amplitude modulation ours
+  (linear in dB, to silence at full: Dexed's own is marked "needs some
+  real tuning"). 16 voices (`Polyphony`'s stealing); a block of 64: the
+  pitch, the LFO and the envelopes (`Dx_envelope.run`) moved once a
+  block, the gains ramped between, as Dexed does. Our six patches (an
+  electric piano on algorithm 5, a brass on 22, a bass on 1, bells and
+  a marimba on 5, an organ on 32), their brightness measured as the
+  spectrum's centroid (the brass's swell 367 to 2568 Hz in 0.1 s, the
+  bass's pluck 504 to 141), a golden WAV each, peaks 0.28 to 0.69 on a
+  riff of four-note chords. The cost, 16 voices sounding: 0.65 s of CPU
+  a second of sound at first, 0.21 after (the modulators found once
+  per algorithm, the gains once a block, the feedback's history two
+  numbers); in JavaScript 0.73 s (4 voices 0.18): the web page's voice
+  count to set in D3. Left: the Reface DX's reduction (4 operators, its
+  own 12 algorithms and feedback on every operator) as a header
+  exercise, its facts to look up; key sync off (every note starts at
+  phase 0); the pitch bend and the modulation wheel (with the MIDI
+  keyboard).
 
 ## Verification
 
