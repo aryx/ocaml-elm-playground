@@ -22,6 +22,8 @@ type patch = {
   soft : bool;
   click : float;
   vibrato : int;
+  leslie : bool;
+  leslie_fast : bool;
   volume : float;
 }
 
@@ -36,7 +38,7 @@ let of_registration (p : patch) : string = String.concat "" (Array.to_list (Arra
 
 let initial : patch =
   registration "888000000"
-    { drawbars = [||]; percussion = false; third = true; fast = true; soft = false; click = 0.3; vibrato = 0; volume = 0.7 }
+    { drawbars = [||]; percussion = false; third = true; fast = true; soft = false; click = 0.3; vibrato = 0; leslie = false; leslie_fast = false; volume = 0.7 }
 
 type knob = patch Patch_text.knob
 
@@ -61,6 +63,8 @@ let knobs : knob list =
       Patch_text.switch "percussion.soft" (fun p -> p.soft) (fun p x -> { p with soft = x });
       Patch_text.knob "click" (fun p -> p.click) (fun p x -> { p with click = x });
       Patch_text.selector "vibrato" vibratos (fun p -> p.vibrato) (fun p x -> { p with vibrato = x });
+      Patch_text.switch "leslie" (fun p -> p.leslie) (fun p x -> { p with leslie = x });
+      Patch_text.switch "leslie.fast" (fun p -> p.leslie_fast) (fun p x -> { p with leslie_fast = x });
       Patch_text.knob "volume" (fun p -> p.volume) (fun p x -> { p with volume = x });
     ]
 
@@ -72,8 +76,8 @@ let presets : (string * patch) list =
   [
     ("jazz", { (registration "888000000" initial) with percussion = true; third = true; fast = true; soft = true });
     ("full", registration "888888888" initial);
-    ("gospel", { (registration "888808008" initial) with vibrato = index_of "C3" vibratos });
-    ("ballad", { (registration "838000000" initial) with vibrato = index_of "C3" vibratos; click = 0.1 });
+    ("gospel", { (registration "888808008" initial) with vibrato = index_of "C3" vibratos; leslie = true; leslie_fast = true });
+    ("ballad", { (registration "838000000" initial) with vibrato = index_of "C3" vibratos; click = 0.1; leslie = true });
     ("flute", { (registration "008000000" initial) with vibrato = index_of "V2" vibratos; click = 0. });
   ]
 
@@ -104,6 +108,7 @@ type t = {
   mutable random : int; (* the clicks' noise *)
   scanner : scanner;
   mutable mixed : Signal.t;
+  cabinet : Leslie.t; (* kept while switched off: back on, its rotors go on as they were *)
 }
 
 let create (patch : patch) : t =
@@ -114,6 +119,7 @@ let create (patch : patch) : t =
     random = 1;
     scanner = { line = Array.make (Signal.samples 0.004) 0.; at = 0; phase = 0. };
     mixed = [||];
+    cabinet = Leslie.create ();
   }
 
 let patch (t : t) : patch = t.patch
@@ -210,7 +216,12 @@ let fill (t : t) (out : Signal.stereo) : unit =
     (fun i x ->
       out.left.(i) <- gain *. x;
       out.right.(i) <- gain *. x)
-    t.mixed
+    t.mixed;
+  (* the organ into its Leslie (Leslie.mli), heard by two microphones *)
+  if t.patch.leslie then Leslie.process t.cabinet ~fast:t.patch.leslie_fast out
+
+(* the cabinet's rotors, turns a second, for a panel to draw *)
+let rotors (t : t) : float * float = (Leslie.horn t.cabinet, Leslie.drum t.cabinet)
 
 let instrument (t : t) : Instrument.t =
   {

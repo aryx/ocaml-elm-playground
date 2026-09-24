@@ -99,6 +99,8 @@ let chorus = modulated Modulated_delay.chorus
 let flanger = modulated Modulated_delay.flanger
 let phaser = processed (fun () -> Phaser.process (Phaser.create ()) Phaser.initial)
 
+let rotary fast = processed (fun () -> Leslie.process (Leslie.create ()) ~fast)
+
 let compressed threshold ratio =
   processed (fun () -> Dynamics.process (Dynamics.create ()) { Dynamics.compressor with threshold; ratio = Float.max 1. ratio })
 

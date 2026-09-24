@@ -156,6 +156,11 @@ val chorus : sound -> sound
 val flanger : sound -> sound
 val phaser : sound -> sound
 
+(* [rotary fast s]: [s] through a Leslie cabinet, its horn and drum
+   turning, fast (tremolo) or not (chorale), heard in stereo: the
+   organ's other half (Leslie.mli) *)
+val rotary : bool -> sound -> sound
+
 (* [compressed threshold ratio s]: [s]'s loud parts turned down, above
    [threshold] dB, [ratio] dB in for 1 out (4: a gentle compressor, 20:
    nearly a limiter) (Dynamics.mli) *)

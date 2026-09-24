@@ -66,6 +66,8 @@ type patch = {
   soft : bool;
   click : float; (* 0 to 1 *)
   vibrato : int; (* an index in [vibratos] *)
+  leslie : bool; (* the organ into its Leslie (Leslie.mli) *)
+  leslie_fast : bool; (* tremolo, else chorale *)
   volume : float; (* 0 to 1 *)
 }
 
@@ -87,7 +89,8 @@ val initial : patch
 
 (* a control, by name: "drawbar.16", "drawbar.5-1/3", ..., "drawbar.1",
  * "percussion", "percussion.third", "percussion.fast",
- * "percussion.soft", "click", "vibrato", "volume" *)
+ * "percussion.soft", "click", "vibrato", "leslie", "leslie.fast",
+ * "volume" *)
 type knob = patch Patch_text.knob
 
 val knobs : knob list
@@ -95,8 +98,9 @@ val to_string : patch -> string
 val of_string : string -> (patch, string) result
 
 (* our registrations, after the classics: jazz (888000000, percussion
- * third, fast, soft), full (888888888), gospel (888808008, C3), ballad
- * (838000000, C3), flute (008000000, V2) *)
+ * third, fast, soft), full (888888888), gospel (888808008, C3, the
+ * Leslie fast), ballad (838000000, C3, the Leslie slow), flute
+ * (008000000, V2) *)
 val presets : (string * patch) list
 
 (* [drawbar_gain level]: 0 silent, then 3 dB a step, 8 at 1 *)
@@ -110,6 +114,10 @@ val set_patch : t -> patch -> unit
 
 (* the voices sounding (Polyphony.voices) *)
 val voices : t -> int
+
+(* the Leslie's rotors now, horn and drum, turns a second (for a panel
+ * to draw them turning) *)
+val rotors : t -> float * float
 
 (* the organ as an instrument (Instrument.mli): polyphonic, velocity
  * ignored (an organ's keys are switches), [set] by a control's name *)

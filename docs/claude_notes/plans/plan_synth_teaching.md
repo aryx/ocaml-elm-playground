@@ -904,6 +904,25 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   each chord, the chorus's sweep); "full" had clipped at an output gain
   of 0.1, now 0.05, peaking at -4.9 dB. Next: H3 (the Leslie), H4 (the
   panel, TinyHammond itself).
+- **H3, DONE (2026-09-24)**: the Leslie. The 122's numbers looked up
+  (its manual, Wikipedia, the Electronic Music Wiki): the horn 0.8 and
+  6.8 turns a second, the drum 0.7 and 5.6, the crossover at 800 Hz,
+  the horn reaching a new speed in 0.5 s, the drum in 1.2; ours, said
+  so: the horn's 15 cm radius, the drum's 10, their levels facing and
+  away. `Leslie` in effects/, modelled from the geometry, not faked: a
+  rotor's sound in a delay line read at its mouth's distance to each
+  microphone over the speed of sound -- the Doppler shift made by the
+  moving delay itself, the tremolo by the mouth's direction; two
+  microphones a quarter turn either side, stereo; the speeds following
+  the switch as one-poles. Its `Effect.t` ("leslie": fast, mix; meters
+  the rotors' speeds, for a panel to draw them turning); `Hammond_voice`
+  into it ("leslie", "leslie.fast"; gospel fast, ballad slow: their
+  golden WAVs moved on purpose, the others not); `Audio.rotary` for the
+  games. Tests (`Unit_leslie`): the horn at 4.59 after 0.5 s, the drum
+  at 3.80 after 1.2 s, 3.01 slowing back after 0.5 s; a 5 kHz sine at
+  tremolo swinging between 5093 and 4907 Hz (5000 x (1 +- 0.0187), v / c
+  with v = 2 pi 0.15 m x 6.8), its level between 1.017 and 0.20; the two
+  microphones differing.
 
 ## Verification
 
