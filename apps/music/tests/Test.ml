@@ -8,4 +8,11 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
+(* the voices against Voice.S: one drifting from it is a compile error *)
+module _ : Voice.S = Voice_minimoog
+module _ : Voice.S = Voice_hammond
+module _ : Voice.S = Voice_tb303
+module _ : Voice.S = Voice_dx7
+module _ : Voice.S = Voice_rhodes
+
 let () = Testo.interpret_argv ~project_name:"music" (fun _env -> Unit_minimoog.tests @ Unit_hammond.tests @ Unit_tb303.tests @ Unit_dx7.tests @ Unit_rhodes.tests)

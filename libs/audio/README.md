@@ -39,7 +39,7 @@ Why these layers:
 - `instruments/` needs only `signal/` and `synthesis/`: an oscillator
   run block after block, a filter moved all the time, the keys to a
   voice. The voices built from them are the apps' (a Minimoog is
-  `apps/music/`'s `Minimoog_voice`).
+  `apps/music/`'s `Voice_minimoog`).
 - `effects/` needs the engine only for `Control`. Each effect has its
   own typed interface (its tests and worked example use it) and an
   `Effect.t`, the same kind of record of functions as `Instrument.t`,

@@ -32,7 +32,7 @@
  * the swing crosses the top, mostly the second harmonic; off, the
  * fundamental and a lopsided curve, the Rhodes' tone. And the harder
  * the key, the wider the swing, the more of the curve it sweeps: the
- * bark, velocity changing the timbre, as FM does (Dx7_voice.mli), for
+ * bark, velocity changing the timbre, as FM does (Voice_dx7.mli), for
  * a physical reason.
  *
  * The Wurlitzer (200A, 1974): a steel *reed* struck, nearly one mode,

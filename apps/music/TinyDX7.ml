@@ -10,7 +10,7 @@
 
 (* A toy version of the Yamaha DX7 (1983), the FM synthesizer of the
  * 1980s: six operators, 32 algorithms, 145 parameters a voice. The
- * voice is Dx7_voice.ml over Fm_algorithm and Dx_envelope; this is its
+ * voice is Voice_dx7.ml over Fm_algorithm and Dx_envelope; this is its
  * panel and a keyboard.
  *
  * The DX7 was edited as its front panel allowed: a two-line display, a
@@ -38,13 +38,13 @@
  * menu after ours, < and > beside it stepping through them:
  *   dune exec apps/music/TinyDX7.exe -- cart=rom1a.syx
  *
- * Uses: Dx7_voice (the voice, its patches, the cartridge), Fm_algorithm
+ * Uses: Voice_dx7 (the voice, its patches, the cartridge), Fm_algorithm
  * (the graph), Polyphony (16 voices, stealing), Audio's instruments and
  * fetch, Gui (the buttons, the slider, the menu), Spectrum. Not: the
  * effects rack, Scene2d, Sprite, File_menu.
  *
  * Exercises: the Reface DX's mode (four operators, its twelve
- * algorithms); saving a voice or a cartridge (File_menu, Dx7_voice's
+ * algorithms); saving a voice or a cartridge (File_menu, Voice_dx7's
  * to_cartridge); the operators switched on and off (the DX7's buttons
  * 1 to 6, for hearing one at a time); a MIDI keyboard's velocity and
  * its pitch bend.
@@ -57,10 +57,10 @@ let letters =
   [ ("a", 0); ("w", 1); ("s", 2); ("e", 3); ("d", 4); ("f", 5); ("t", 6); ("g", 7); ("y", 8); ("h", 9); ("u", 10); ("j", 11); ("k", 12) ]
 
 type model = {
-  patch : Dx7_voice.patch;
-  voices : (string * Dx7_voice.patch) list; (* ours, then a cartridge's *)
+  patch : Voice_dx7.patch;
+  voices : (string * Voice_dx7.patch) list; (* ours, then a cartridge's *)
   voice : int; (* an index in [voices] *)
-  param : int; (* an index in Dx7_voice.knobs: the one the LCD shows *)
+  param : int; (* an index in Voice_dx7.knobs: the one the LCD shows *)
   octave : int;
   held : string list; (* the letters held at the last frame *)
   mouse_note : int option;
@@ -70,8 +70,8 @@ type model = {
 
 let initial_model : model =
   {
-    patch = snd (List.hd Dx7_voice.presets);
-    voices = Dx7_voice.presets;
+    patch = snd (List.hd Voice_dx7.presets);
+    voices = Voice_dx7.presets;
     voice = 0;
     param = 0;
     octave = 4;
@@ -83,13 +83,13 @@ let initial_model : model =
 
 (* the synthesizer lives with the sound, not in the model: the mixer
  * pulls its blocks between frames (Instrument.mli) *)
-let dx7 = Dx7_voice.create initial_model.patch
-let inst : Instrument.t = Dx7_voice.instrument dx7
+let dx7 = Voice_dx7.create initial_model.patch
+let inst : Instrument.t = Voice_dx7.instrument dx7
 let note (octave : int) (semitone : int) : int = (12 *.. (octave +.. 1)) +.. semitone
 
 (* a cartridge fetched by cart= arrives here *)
 let fetched : string option option ref = ref None
-let knobs = Array.of_list Dx7_voice.knobs
+let knobs = Array.of_list Voice_dx7.knobs
 
 (*****************************************************************************)
 (* The keyboard *)
@@ -125,7 +125,7 @@ let key_at (x : number) (y : number) : (int * number) option =
 (*****************************************************************************)
 
 (* a control's positions: a selector's labels, a switch's two *)
-let positions (k : Dx7_voice.knob) : int =
+let positions (k : Voice_dx7.knob) : int =
   match k.control with Selector labels -> List.length labels | Switch -> 2 | Knob _ -> 100
 
 (* the next parameter of another operator: [dir] 1 or -1 *)
@@ -202,7 +202,7 @@ let graph_view (m : model) : shape list =
   let alg = Fm_algorithm.get m.patch.algorithm in
   let places = layout alg in
   let at op = op_position (List.assoc op places) in
-  let levels = Dx7_voice.levels dx7 in
+  let levels = Voice_dx7.levels dx7 in
   let edge (a, b) = segment (rgb 200 190 160) 3. (at a) (at b) in
   let from, into = alg.feedback in
   let fx, fy = at from and ix, iy = at into in
@@ -249,7 +249,7 @@ let op_at (m : model) (x : number) (y : number) : int option =
 (* an operator's envelope as a shape: from L4 to L1, L2, L3, held, then
  * back to L4; each segment as long as its time, square-rooted so a
  * slow rate doesn't hide the others *)
-let envelope_view (o : Dx7_voice.operator) (cx : number) (cy : number) : shape list =
+let envelope_view (o : Voice_dx7.operator) (cx : number) (cy : number) : shape list =
   let w = 150. and h = 60. in
   let time k from to_ =
     let q = float_of_int (o.rates.(k) *.. 41 /.. 64) in
@@ -298,10 +298,10 @@ let update (computer : computer) (m : model) : model =
     | None -> m
     | Some bytes -> (
         fetched := None;
-        match Option.map Dx7_voice.cartridge bytes with
+        match Option.map Voice_dx7.cartridge bytes with
         | Some (Ok voices) ->
-            let named = Array.to_list (Array.map (fun (p : Dx7_voice.patch) -> (String.trim p.name, p)) voices) in
-            { m with voices = Dx7_voice.presets @ named; message = "cartridge: 32 voices" }
+            let named = Array.to_list (Array.map (fun (p : Voice_dx7.patch) -> (String.trim p.name, p)) voices) in
+            { m with voices = Voice_dx7.presets @ named; message = "cartridge: 32 voices" }
         | Some (Error e) -> { m with message = "cartridge: " ^ e }
         | None -> { m with message = "cartridge: can't be read" })
   in
@@ -353,7 +353,7 @@ let update (computer : computer) (m : model) : model =
     Option.iter inst.note_off m.mouse_note;
     Option.iter (fun (s, velocity) -> inst.note_on (note m.octave s) velocity) under
   end;
-  Dx7_voice.set_patch dx7 patch;
+  Voice_dx7.set_patch dx7 patch;
   { m with patch; voice; param; octave; held = now; mouse_note = under_note }
 
 (*****************************************************************************)
@@ -434,11 +434,11 @@ let view (computer : computer) (m : model) : shape list =
   @ [ words (rgb 70 70 70) (Printf.sprintf "latency %.0f ms" (Audio.latency () * 1000.)) |> scale 1.3 |> move (-190.) 482. ]
   @ [ words (rgb 70 70 70) m.message |> scale 1.3 |> move 20. 482. ]
   @ panel_view m @ graph_view m @ envelopes_view m
-  @ spectrum_view (Dx7_voice.recent dx7)
-  @ scope_view (Dx7_voice.recent dx7)
+  @ spectrum_view (Voice_dx7.recent dx7)
+  @ scope_view (Voice_dx7.recent dx7)
   @ [
       words (rgb 70 70 70)
-        (Printf.sprintf "voices %d   the mouse: soft at a key's back, hard at its front" (Dx7_voice.voices dx7))
+        (Printf.sprintf "voices %d   the mouse: soft at a key's back, hard at its front" (Voice_dx7.voices dx7))
       |> scale 1.3 |> move 0. (-162.);
     ]
   @ keyboard_view computer m @ Gui.draw ()

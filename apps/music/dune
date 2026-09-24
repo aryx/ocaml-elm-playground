@@ -2,7 +2,7 @@
 ; like office/: the programs here, software/ for the golden frames, web/
 ; for the browser.
 ;
-; So far TinyMinimoog, the Model D's voice (Minimoog_voice, over
+; So far TinyMinimoog, the Model D's voice (Voice_minimoog, over
 ; audio/'s blocks: plan_synth_teaching.md) played from the keyboard, and
 ; TinySoundtracker, the first tracker, over audio/formats/mod
 ; (plan_audio_formats.md). Playing files of every kind is apps/media/'s
@@ -22,11 +22,13 @@
 
 ; the synthesizers' voices and our songs, apart from their programs:
 ; the tests play them without a screen, and apps/media's playlist has
-; the tracker's song
+; the tracker's song. The voices are Voice_xxx, each a Voice.S (the
+; interface, a module type only: no implementation)
 (library
  (name music_voices)
  (wrapped false)
- (modules Patch_text Minimoog_voice Tonewheel Hammond_voice Tb303_voice Dx7_voice Voice_rhodes Our_songs)
+ (modules Patch_text Voice Voice_minimoog Tonewheel Voice_hammond Voice_tb303 Voice_dx7 Voice_rhodes Our_songs)
+ (modules_without_implementation Voice)
  (libraries audio audio_instruments audio_effects audio_mod))
 
 (executables

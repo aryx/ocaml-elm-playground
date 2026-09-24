@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* See Minimoog_voice.mli *)
+(* See Voice_minimoog.mli *)
 
 (* ------------------------------------------------------------------ *)
 (* The panel *)

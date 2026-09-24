@@ -26,7 +26,7 @@
  * 6.02 / 256 dB (256 steps a doubling of the amplitude, Dexed's unit),
  * and a rate is a speed in steps per sample, doubling every 4 rates
  * (4 + qrate mod 4) x 2^(qrate / 4 + 2) / 65536, qrate = rate x 41 / 64,
- * plus the rate scaling (faster up the keyboard, Dx7_voice's). Falling,
+ * plus the rate scaling (faster up the keyboard, Voice_dx7's). Falling,
  * the level moves by that much each sample: a straight line in
  * decibels, so an exponential in amplitude, as a real sound dies.
  * Rising, it moves by that times how many doublings remain below 17,

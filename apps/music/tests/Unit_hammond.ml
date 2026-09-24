@@ -30,9 +30,9 @@ let test_wheels () =
 
 (* [seconds] of the organ, C4 pressed at 0 (and [others] after), the
  * left side *)
-let play ?(others = []) (p : Hammond_voice.patch) (seconds : float) : Signal.t =
-  let v = Hammond_voice.create p in
-  let i = Hammond_voice.instrument v in
+let play ?(others = []) (p : Voice_hammond.patch) (seconds : float) : Signal.t =
+  let v = Voice_hammond.create p in
+  let i = Voice_hammond.instrument v in
   i.note_on 60 1.;
   List.iter (fun k -> i.note_on k 1.) others;
   let n = Signal.samples seconds in
@@ -61,22 +61,22 @@ let amplitude (x : Signal.t) (f : float) (a : int) (n : int) : float =
   done;
   2. *. Float.hypot !re !im /. !sum
 
-let quiet = { Hammond_voice.initial with click = 0. }
+let quiet = { Voice_hammond.initial with click = 0. }
 let wheel n = Tonewheel.frequency (Tonewheel.of_note n)
 
 let test_drawbars () =
-  let x = play (Hammond_voice.registration "888000000" quiet) 1.1 in
+  let x = play (Voice_hammond.registration "888000000" quiet) 1.1 in
   let at f = amplitude x f 2205 44100 in
   let a16 = at (wheel 48) and a5 = at (wheel 67) and a8 = at (wheel 60) in
   Alcotest.(check (float 0.01)) "16' as loud as 8'" 1. (a16 /. a8);
   Alcotest.(check (float 0.01)) "5 1/3' as loud as 8'" 1. (a5 /. a8);
   Alcotest.(check bool) "nothing at 4' (under -60 dB)" true (db (at (wheel 72) /. a8) < -60.);
   (* a drawbar at 6: two steps, 6 dB under *)
-  let y = play (Hammond_voice.registration "006000000" quiet) 1.1 and z = play (Hammond_voice.registration "008000000" quiet) 1.1 in
+  let y = play (Voice_hammond.registration "006000000" quiet) 1.1 and z = play (Voice_hammond.registration "008000000" quiet) 1.1 in
   Alcotest.(check (float 0.05)) "a drawbar two steps in: -6 dB" (-6.) (db (amplitude y (wheel 60) 2205 44100 /. amplitude z (wheel 60) 2205 44100))
 
 let test_percussion () =
-  let p = { (Hammond_voice.registration "888000000" quiet) with percussion = true; third = true; fast = true } in
+  let p = { (Voice_hammond.registration "888000000" quiet) with percussion = true; third = true; fast = true } in
   let x = play p 1.2 in
   let g5 = wheel 79 in
   let early = amplitude x g5 0 2205 and late = amplitude x g5 (Signal.samples 1.0) 2205 in
@@ -88,8 +88,8 @@ let test_percussion () =
   Alcotest.(check bool) "single-trigger: E4, pressed second, without it" true (db (b5 /. g5') < -40.)
 
 let test_voices () =
-  let v = Hammond_voice.create quiet in
-  let i = Hammond_voice.instrument v in
+  let v = Voice_hammond.create quiet in
+  let i = Voice_hammond.instrument v in
   let run blocks =
     for _ = 1 to blocks do
       i.fill { left = Array.make 735 0.; right = Array.make 735 0. }
@@ -97,27 +97,27 @@ let test_voices () =
   in
   List.iter (fun k -> i.note_on k 1.) [ 60; 64; 67 ];
   run 1;
-  Alcotest.(check int) "a chord: three voices" 3 (Hammond_voice.voices v);
+  Alcotest.(check int) "a chord: three voices" 3 (Voice_hammond.voices v);
   List.iter i.note_off [ 60; 64; 67 ];
   run 1;
-  Alcotest.(check int) "let go: none (2 ms of contacts)" 0 (Hammond_voice.voices v)
+  Alcotest.(check int) "let go: none (2 ms of contacts)" 0 (Voice_hammond.voices v)
 
 let test_text () =
   List.iter
     (fun (name, p) ->
-      match Hammond_voice.of_string (Hammond_voice.to_string p) with
+      match Voice_hammond.of_string (Voice_hammond.to_string p) with
       | Ok p' -> if p' <> p then Alcotest.failf "%s: not the same after writing and reading" name
       | Error e -> Alcotest.failf "%s: %s" name e)
-    (("initial", Hammond_voice.initial) :: Hammond_voice.presets);
-  Alcotest.(check string) "a registration" "838000000" (Hammond_voice.of_registration (Hammond_voice.registration "838" quiet));
-  Alcotest.(check (float 1e-9)) "drawbar 8: full" 1. (Hammond_voice.drawbar_gain 8);
-  Alcotest.(check (float 0.)) "drawbar 0: silent" 0. (Hammond_voice.drawbar_gain 0)
+    (("initial", Voice_hammond.initial) :: Voice_hammond.presets);
+  Alcotest.(check string) "a registration" "838000000" (Voice_hammond.of_registration (Voice_hammond.registration "838" quiet));
+  Alcotest.(check (float 1e-9)) "drawbar 8: full" 1. (Voice_hammond.drawbar_gain 8);
+  Alcotest.(check (float 0.)) "drawbar 0: silent" 0. (Voice_hammond.drawbar_gain 0)
 
 (* each preset playing C, F and G major, 0.5 s each, a frame's block
  * at a time, then 0.3 s after *)
-let riff (p : Hammond_voice.patch) : Signal.t =
-  let v = Hammond_voice.create p in
-  let i = Hammond_voice.instrument v in
+let riff (p : Voice_hammond.patch) : Signal.t =
+  let v = Voice_hammond.create p in
+  let i = Voice_hammond.instrument v in
   let chords = [ (0, [ 60; 64; 67 ]); (30, [ 65; 69; 72 ]); (60, [ 67; 71; 74 ]) ] in
   Array.concat
     (List.init 108 (fun frame ->
@@ -134,7 +134,7 @@ let tests =
   Testo.categorize "Hammond"
     (List.map
        (fun (name, p) -> t ("golden WAV: " ^ name) (fun () -> Testutil_wav.check ~dir:"apps/music/tests" ("hammond_" ^ name) (riff p)))
-       Hammond_voice.presets
+       Voice_hammond.presets
     @ [
       t "the tonewheels: gears, cents, foldback, the tempered harmonic" test_wheels;
       t "the drawbars: three equal lines, 3 dB a step" test_drawbars;

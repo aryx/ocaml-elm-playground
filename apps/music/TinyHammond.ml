@@ -11,7 +11,7 @@
  * its Leslie 122 (1965), the jazz, gospel and rock organ: nine
  * drawbars on a keyboard, sines added (additive synthesis), a
  * percussion on the attack, a vibrato, and a speaker cabinet whose horn
- * and drum turn. The voice is Hammond_voice.ml over Tonewheel.ml, the
+ * and drum turn. The voice is Voice_hammond.ml over Tonewheel.ml, the
  * cabinet Leslie.mli; this is their panel and a keyboard.
  *
  * The drawbars pull down with the mouse, 0 (in) to 8 (all the way
@@ -28,7 +28,7 @@
  * flash, the Leslie's wobble) and the cabinet, its horn and drum drawn
  * turning at their speeds.
  *
- * Uses: Hammond_voice (the voice), Tonewheel, Leslie, Polyphony (a
+ * Uses: Voice_hammond (the voice), Tonewheel, Leslie, Polyphony (a
  * voice per key), Audio's instruments (the organ played live), Gui
  * (the rockers, the selector, the knobs), Spectrum (the display). Not:
  * the effects rack, Scene2d, Sprite, File_menu.
@@ -47,8 +47,8 @@ let letters =
   [ ("a", 0); ("w", 1); ("s", 2); ("e", 3); ("d", 4); ("f", 5); ("t", 6); ("g", 7); ("y", 8); ("h", 9); ("u", 10); ("j", 11); ("k", 12) ]
 
 type model = {
-  patch : Hammond_voice.patch;
-  preset : int; (* an index in Hammond_voice.presets *)
+  patch : Voice_hammond.patch;
+  preset : int; (* an index in Voice_hammond.presets *)
   octave : int; (* the drawn keyboard's lowest C, and the letter a's *)
   held : string list; (* the letters held at the last frame *)
   mouse_note : int option; (* the key the mouse holds down *)
@@ -58,7 +58,7 @@ type model = {
   space : bool; (* space held at the last frame *)
 }
 
-let presets = Hammond_voice.presets
+let presets = Voice_hammond.presets
 
 let initial_model : model =
   {
@@ -75,8 +75,8 @@ let initial_model : model =
 
 (* the organ lives with the sound, not in the model: the mixer pulls its
  * blocks between frames (Instrument.mli) *)
-let organ = Hammond_voice.create initial_model.patch
-let inst : Instrument.t = Hammond_voice.instrument organ
+let organ = Voice_hammond.create initial_model.patch
+let inst : Instrument.t = Voice_hammond.instrument organ
 let note (octave : int) (semitone : int) : int = (12 *.. (octave +.. 1)) +.. semitone
 
 (*****************************************************************************)
@@ -113,7 +113,7 @@ let drawbar_color (i : int) : color =
 (* the level the mouse at [y] pulls a drawbar to *)
 let level_at (y : number) : int = max 0 (min 8 (int_of_float (Float.round ((slot_y - y - (step / 2.)) / step))))
 
-(* the tabs, switches and knobs: a control of Hammond_voice.knobs, where
+(* the tabs, switches and knobs: a control of Voice_hammond.knobs, where
  * it sits, the word under it *)
 type place = { name : string; x : number; y : number; label : string }
 
@@ -134,8 +134,8 @@ let places =
 
 let headers = [ ("DRAWBARS", -84., 455.); ("PERCUSSION", 247., 425.); ("LESLIE", 202., 295.) ]
 
-let control (computer : computer) (p : Hammond_voice.patch) (pl : place) : Hammond_voice.patch =
-  match List.find_opt (fun (k : Hammond_voice.knob) -> k.name = pl.name) Hammond_voice.knobs with
+let control (computer : computer) (p : Voice_hammond.patch) (pl : place) : Voice_hammond.patch =
+  match List.find_opt (fun (k : Voice_hammond.knob) -> k.name = pl.name) Voice_hammond.knobs with
   | None -> p
   | Some k ->
       let v = k.get p in
@@ -223,8 +223,8 @@ let update (computer : computer) (m : model) : model =
   (* space: the Leslie's speed, as the organist's foot switch *)
   let space = computer.keyboard.kspace in
   let patch = if space && not m.space then { patch with leslie_fast = not patch.leslie_fast } else patch in
-  Hammond_voice.set_patch organ patch;
-  let horn, drum = Hammond_voice.rotors organ in
+  Voice_hammond.set_patch organ patch;
+  let horn, drum = Voice_hammond.rotors organ in
   let turn a speed = Float.rem (a + (speed / 60.)) 1. in
   {
     patch;
@@ -245,7 +245,7 @@ let update (computer : computer) (m : model) : model =
 let ink = rgb 240 230 210
 let text (s : string) : shape = words ink s |> scale 1.2
 
-let drawbars_view (p : Hammond_voice.patch) : shape list =
+let drawbars_view (p : Voice_hammond.patch) : shape list =
   List.concat
     (List.mapi
        (fun i footage ->
@@ -260,10 +260,10 @@ let drawbars_view (p : Hammond_voice.patch) : shape list =
            |> scale 1.3 |> move x tip;
            text footage |> move x (slot_y + 22.);
          ])
-       Hammond_voice.footages)
-  @ [ words (rgb 230 170 60) (Hammond_voice.of_registration p) |> scale 2. |> move (-385.) 300.; text "REGISTRATION" |> move (-385.) 335. ]
+       Voice_hammond.footages)
+  @ [ words (rgb 230 170 60) (Voice_hammond.of_registration p) |> scale 2. |> move (-385.) 300.; text "REGISTRATION" |> move (-385.) 335. ]
 
-let panel_view (p : Hammond_voice.patch) : shape list =
+let panel_view (p : Voice_hammond.patch) : shape list =
   let wood = rgb 110 65 35 in
   [ rectangle (rgb 45 30 20) 960. 440. |> move 0. 245.; rectangle wood 22. 470. |> move (-489.) 245.; rectangle wood 22. 470. |> move 489. 245. ]
   @ List.map (fun (h, x, y) -> words ink h |> scale 1.4 |> move x y) headers
@@ -332,16 +332,16 @@ let keyboard_view (computer : computer) (m : model) : shape list =
   @ [ words black (Printf.sprintf "C%d" m.octave) |> scale 1.4 |> move (keyboard_left + 20.) (keyboard_top + 14.) ]
 
 let status (m : model) : string =
-  let horn, drum = Hammond_voice.rotors organ in
+  let horn, drum = Voice_hammond.rotors organ in
   Printf.sprintf "%s   voices %d   horn %.1f, drum %.1f turns a second   space: the Leslie slow or fast"
-    (Hammond_voice.of_registration m.patch) (Hammond_voice.voices organ) horn drum
+    (Voice_hammond.of_registration m.patch) (Voice_hammond.voices organ) horn drum
 
 let view (computer : computer) (m : model) : shape list =
   [ rectangle (rgb 215 205 190) computer.screen.width computer.screen.height ]
   @ [ words black "TinyHammond" |> scale 2.4 |> move (-360.) 482.; words black "preset" |> scale 1.5 |> move 230. 482. ]
   @ [ words (rgb 70 70 70) (Printf.sprintf "latency %.0f ms" (Audio.latency () * 1000.)) |> scale 1.3 |> move (-110.) 482. ]
   @ panel_view m.patch
-  @ spectrum_view (Hammond_voice.recent organ)
+  @ spectrum_view (Voice_hammond.recent organ)
   @ leslie_view m
   @ [ words (rgb 70 70 70) (status m) |> scale 1.3 |> move 0. (-137.) ]
   @ keyboard_view computer m @ Gui.draw ()

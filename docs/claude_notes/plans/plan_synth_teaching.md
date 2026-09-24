@@ -97,7 +97,7 @@ Left to right on its panel, as it will be on the screen:
   a time constant.
 
 Checked in phase 4 against the documentation (see its status entry
-below, and `Minimoog_voice.mli` for which ranges are the Model D's and
+below, and `Voice_minimoog.mli` for which ranges are the Model D's and
 which are ours).
 
 ## Groundwork decisions
@@ -163,7 +163,7 @@ with a MIDI key and a velocity, `note_off`, `set`, `fill` a stereo
 block in place), not an `int -> Signal.stereo`; and
 `Audio.instrument name make` takes the maker, run the first time the
 name is asked for (`Audio.instrument "keys" Instrument.sine`). A
-`Minimoog_voice` will be one more maker; a generic `Patch` that
+`Voice_minimoog` will be one more maker; a generic `Patch` that
 `audio/` interprets is left to the modular exercise.
 
 ### Knobs
@@ -340,7 +340,7 @@ delay lines.
 
 ### The instrument (`apps/music/`)
 
-- `Minimoog_voice.ml` (`.mli`): the Model D's signal path over the
+- `Voice_minimoog.ml` (`.mli`): the Model D's signal path over the
   blocks above -- three `Oscillator`s with `Drift`, a mixer with noise,
   the `Moog_ladder`, two `Envelope`s, `Voicing` (mono, low note, glide), the
   modulation mix and wheel -- and its knobs' ranges and curves (the
@@ -468,7 +468,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
 3. **The ladder**: the three versions, the tests above, golden WAVs (a
    sawtooth swept, at three resonances; the self-oscillation), plotted
    before approving. Then `Svf`.
-4. **TinyMinimoog, the sound**: `Minimoog_voice`, the patches, the
+4. **TinyMinimoog, the sound**: `Voice_minimoog`, the patches, the
    presets; played from the keyboard with a plain panel (sliders).
    Golden WAVs of each preset playing the same riff (a script).
 5. **TinyMinimoog, the panel**: the `gui/` knob, rocker and selector,
@@ -527,7 +527,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
      self-oscillation threshold; a step's first sample exactly at
      60 / (bpm x 4) seconds in, whatever the block size (735, 500,
      1).
-   - **B2, the voice**: `Tb303_voice` in `music_voices`: a `Vco`, saw or
+   - **B2, the voice**: `Voice_tb303` in `music_voices`: a `Vco`, saw or
      square; the diode ladder; the main envelope, its decay the Decay
      knob or, accented, the shortest, into the cutoff scaled by Env
      Mod; the accent sweep capacitor into the cutoff and the volume;
@@ -654,7 +654,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
      two-operator algorithm against `Fm.render` (the same Bessel
      sidebands), feedback 7's sawtooth-like spectrum, 17 notes into 16
      voices stealing the right one.
-   - **D2, the voice**: `Dx7_voice` in `music_voices`: the patch as the
+   - **D2, the voice**: `Voice_dx7` in `music_voices`: the patch as the
      155 unpacked parameters with names, read from and written to the
      128 packed bytes; a cartridge read (header, checksum checked,
      errors as values); the note's frequencies, levels, rate scaling,
@@ -701,7 +701,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
      through `Resample`, reverse, lift and drop), tested on a recorded
      phrase played back an octave up in half the time.
    - **O2, TinyOp1's engines** in `music_voices` (its FM engine
-     `Dx7_voice`, four operators, after D2), polyphonic (after H1),
+     `Voice_dx7`, four operators, after D2), polyphonic (after H1),
      each four knobs; **O3, its panel**: the four encoders, the screens,
      the keyboard, the tape's transport.
    - **X1, the sequencer's parameter locks** on TinyTB303's audio-clock
@@ -772,7 +772,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   520.8 Hz, an octave up and down in the same time. Golden WAVs,
   plotted before approving: `envelope_linear_vs_exponential`, and
   `mono_legato_glide`, a phrase from Voicing, Vco and Envelope put
-  together as `Minimoog_voice` will be. Polyphony (voice stealing) left
+  together as `Voice_minimoog` will be. Polyphony (voice stealing) left
   for the Juno.
 - **Phase 3, DONE (2026-09-23)**: the filters. `Moog_ladder` (not
   `Ladder`: the platformer kit has one, and both libraries are
@@ -812,7 +812,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   of note priority) left out. Not documented, so ours, said so in the
   `.mli`: LO 6 octaves under 8', the rectangles 30% and 10% wide, the
   modulation's depths, k = 4.5 at the emphasis's top (4.2 first: the
-  whistle preset too quiet, 0.06). `apps/music/Minimoog_voice` (library
+  whistle preset too quiet, 0.06). `apps/music/Voice_minimoog` (library
   `music_voices`): the patch a record of the panel's positions, `knobs`
   the table of its controls (name, kind, get, put) that makes both the
   text format ("name = value" lines, a switch on/off, a selector by
@@ -858,10 +858,10 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   down, a click round to the first. No other golden frame moved.
   TinyMinimoog: the Model D's layout, CONTROLLERS, OSCILLATOR BANK,
   MIXER, MODIFIERS, OUTPUT, in black between wooden cheeks, the knobs
-  placed by name over `Minimoog_voice.knobs`, the rotary switches with
+  placed by name over `Voice_minimoog.knobs`, the rotary switches with
   short labels; a two-octave keyboard played with the mouse too, the
   pitch and mod wheels; an oscilloscope and a spectrum of the voice's
-  last 2048 samples (`Minimoog_voice.recent`, since `Audio_debug` is
+  last 2048 samples (`Voice_minimoog.recent`, since `Audio_debug` is
   fed only by the software backend). Golden frames: at rest, and
   `playing` (the cutoff knob dragged up 40 pixels by a script, 0.32 to
   0.52, C3 and E3 held). Left: saving patches with the File menu (an
@@ -918,7 +918,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   ordered list of them, `reorder`, "effect.knob" names with an "on"
   each, `standard_knobs` known before any rack is made; `Control` (a
   knob, a switch, a selector, and their text), shared by the effects and
-  `Minimoog_voice`, whose patch keeps the rack's knobs as named numbers.
+  `Voice_minimoog`, whose patch keeps the rack's knobs as named numbers.
   The old `Effect` split: `Pitch_effect`, and the offline echo and
   reverb into `Synth`. TinyMinimoog's key 5, the reverb before the
   drive. Then audio/ in layers (signal, synthesis, the engine,
@@ -1030,14 +1030,14 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   the percussion's times (fast -60 dB in 0.3 s, slow 1.2 s, soft -6 dB),
   the click's 4 ms, the scanner's 6.9 Hz and depths. `Tonewheel` (the
   91 frequencies, foldback by octaves, cents from equal temperament);
-  `Hammond_voice` over `Polyphony`: nine drawbars on the wheels, read
+  `Voice_hammond` over `Polyphony`: nine drawbars on the wheels, read
   from one clock shared by every voice (the wheels never stop: keys
   sharing a wheel add in phase), the percussion single-triggered and
   taking the 1' drawbar's circuit, the key click, the scanner vibrato
   and chorus (V1-V3, C1-C3) on the whole organ; registrations as nine
   digits; five presets of ours (jazz, full, gospel, ballad, flute).
   `Patch_text`, the patch as "name = value" lines, taken out of
-  `Minimoog_voice` now that two instruments share it (its golden WAVs
+  `Voice_minimoog` now that two instruments share it (its golden WAVs
   unchanged). Tests (`Unit_hammond`): A4 440 exactly, C4 261.538 Hz
   (-0.58 cents), F#8 5924.57, the foldback; the tempered harmonic, C4's
   2 2/3' G5's wheel at 784.0 Hz against the true 784.62, 1.36 cents
@@ -1060,7 +1060,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   moving delay itself, the tremolo by the mouth's direction; two
   microphones a quarter turn either side, stereo; the speeds following
   the switch as one-poles. Its `Effect.t` ("leslie": fast, mix; meters
-  the rotors' speeds, for a panel to draw them turning); `Hammond_voice`
+  the rotors' speeds, for a panel to draw them turning); `Voice_hammond`
   into it ("leslie", "leslie.fast"; gospel fast, ballad slow: their
   golden WAVs moved on purpose, the others not); `Audio.rotary` for the
   games. Tests (`Unit_leslie`): the horn at 4.59 after 0.5 s, the drum
@@ -1073,11 +1073,11 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   note, white the octaves, black the rest), the registration written as
   its digits; the percussion tabs, the vibrato's rotary switch, the
   Leslie's rockers, the click and volume knobs (`Gui`'s, the panel's
-  controls placed by name over `Hammond_voice.knobs`); the keyboard
+  controls placed by name over `Voice_hammond.knobs`); the keyboard
   polyphonic (the letters several at once), space flipping the Leslie's
   speed as an organist's foot; under the panel the spectrum
-  (`Hammond_voice.recent`) and the cabinet seen from above, its horn
-  and drum drawn turning at `Hammond_voice.rotors`' speeds. Its golden
+  (`Voice_hammond.recent`) and the cabinet seen from above, its horn
+  and drum drawn turning at `Voice_hammond.rotors`' speeds. Its golden
   frames: at rest (the jazz registration), and `playing` (the 4'
   drawbar pulled to 6 by the mouse, C E G held, the Leslie switched to
   fast half a second before: the horn at 4 turns a second, the drum at
@@ -1101,7 +1101,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   11025, 16538, gates closing at 2757, 8269, 13782, 19294, the same in
   blocks of 735, 500 or 1 (a frame's clock would have put the second
   step at 5880, 8.3 ms late); a slide into a rest is none.
-- **B2, DONE (2026-09-24)**: `Tb303_voice` in `music_voices`. The facts:
+- **B2, DONE (2026-09-24)**: `Voice_tb303` in `music_voices`. The facts:
   Robin Whittle's "303 unique" (the accent's shortest decay, the accent
   sweep's 47k and 1 uF charging, 100k and a 100k pot draining, a run of
   accents climbing; the volume envelope's long fixed decay; env mod
@@ -1169,7 +1169,7 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   step two: `?voices`, the oldest released stolen, else the oldest
   held (cut, a click: its exercise); tested on two voices and on 17
   notes into 16.
-- **D2, DONE (2026-09-24)**: `Dx7_voice` in `music_voices`. The patch
+- **D2, DONE (2026-09-24)**: `Voice_dx7` in `music_voices`. The patch
   as the DX7's own parameters (145 and the name), read from and written
   to the 128 packed bytes (Dexed's layout; out-of-range clamped); a
   cartridge read (the header, the length, the checksum, errors as

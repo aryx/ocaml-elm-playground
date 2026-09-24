@@ -40,15 +40,15 @@ module here.
 | `audio/instruments/Polyphony` | a voice per key, freed once silent; a fixed number, the oldest released stolen, else the oldest | §5 | done |
 | `audio/instruments/Dx_envelope` | the DX7's four rates and four levels, in the log domain: the attack's jump and curve, the decay's line | §10 | done |
 | `audio/instruments/Fm_algorithm` | the DX7's 32 algorithms as who modulates whom, checked against Dexed's table; feedback, a sine to a sawtooth to noise | §10 | done |
-| `apps/music/Tonewheel`, `Hammond_voice` | the Hammond's 91 wheels, its drawbars (additive synthesis), percussion, click, scanner vibrato | §10 | done |
+| `apps/music/Tonewheel`, `Voice_hammond` | the Hammond's 91 wheels, its drawbars (additive synthesis), percussion, click, scanner vibrato | §10 | done |
 | `apps/music/TinyHammond` | the B-3's panel: the drawbars pulled, the tabs, the Leslie drawn turning, a polyphonic keyboard | §10 | done |
 | `audio/instruments/Diode_ladder` | the TB-303's filter: four coupled poles, the "18 dB" measured against the Moog's | §6 | done |
 | `audio/instruments/Sequencer` | steps in the audio clock: events at the sample, whatever the blocks | §1 | done |
 | `audio/Tape` | the OP-1's four tracks: a head read and written at any speed (pitch and time together), reverse, loop, lift and drop | §10 | done |
-| `apps/music/Dx7_voice`, `TinyDX7` | the DX7: six operators, Dexed's formulas (ratios, detune, scalings, velocity, pitch envelope, LFO), the voice's bytes and a cartridge's, 16 voices, our six patches; its panel, a parameter at a time on the LCD beside the algorithm drawn and the envelopes | §10 | done |
+| `apps/music/Voice_dx7`, `TinyDX7` | the DX7: six operators, Dexed's formulas (ratios, detune, scalings, velocity, pitch envelope, LFO), the voice's bytes and a cartridge's, 16 voices, our six patches; its panel, a parameter at a time on the LCD beside the algorithm drawn and the envelopes | §10 | done |
 | `audio/instruments/Modal` | a mode: a two-pole resonator struck, ringing as a decaying sine, damped while it rings | §10 | done |
 | `apps/music/Voice_rhodes` | the electric pianos: the Rhodes' tine (three modes) through its magnetic pickup's bell (the bark, the voicing), the Wurlitzer's reed and its capacitor, the Clavinet's string, the Suitcase's stereo tremolo | §10 | done |
-| `apps/music/Tb303_voice`, `TinyTB303` | the Bass Line: the accent and its sweep, slides, patterns as text; its panel, the pattern a grid | §10 | done |
+| `apps/music/Voice_tb303`, `TinyTB303` | the Bass Line: the accent and its sweep, slides, patterns as text; its panel, the pattern a grid | §10 | done |
 | `audio/effects/Leslie` | the rotating speaker: horn and drum, the Doppler and the tremolo from their angles, two microphones | §10 | done |
 | `apps/music/Patch_text` | a patch as named controls and "name = value" lines, for every instrument | §9 | done |
 | `audio/instruments/Moog_ladder` | the Moog filter: naive, zero-delay, nonlinear | §6 | done |
@@ -59,7 +59,7 @@ module here.
 | `audio/effects/Delay`, `Reverb` | echoes in time with the music; rooms | §8 | done |
 | `audio/effects/Dynamics` | compressor, limiter, gate, side-chain | §8 | done |
 | `audio/effects/Rack` | effects in an order | §8 | done |
-| `apps/music/Minimoog_voice` | the Model D's signal path | §2 | done |
+| `apps/music/Voice_minimoog` | the Model D's signal path | §2 | done |
 | `apps/music/TinyMinimoog` | its panel | §9 | done (patches not saved yet: an exercise) |
 | `playground/apis/Audio`'s instruments, `Mixer.instrument` | playing one from a game or an app | §1 | done |
 | `playground/apis/Audio`'s effects, `audio/Synth`'s `Processed` | the rack's effects on a game's sounds: `drive`, `chorus`, `flanger`, `phaser`, `compressed` | §8 | done |
@@ -205,7 +205,7 @@ studio, fixed the path left to right on its panel:
   an LFO; the mod wheel sends it (or noise) to the oscillators' pitch
   (vibrato, trills) and the filter's cutoff (growl, wah).
 
-`Minimoog_voice` is that path, over the blocks of the sections below,
+`Voice_minimoog` is that path, over the blocks of the sections below,
 and the knobs' ranges are the Model D's where its documentation gives
 them: the contours' attack from 1 ms to 10 s and decay from 4 ms to 35
 s, the glide from 1 ms to 10 s, the filter contour up to 4 octaves,
@@ -345,7 +345,7 @@ side: the golden WAV `envelope_linear_vs_exponential`.
 **Where modulation goes.** The Minimoog's mod wheel scales one source
 into two destinations; later synthesizers (the ARP 2600's patch
 points, the Oberheim Matrix-12's matrix) let any source reach any
-knob. Here: the Minimoog's routing, fixed, in `Minimoog_voice`; a
+knob. Here: the Minimoog's routing, fixed, in `Voice_minimoog`; a
 general **modulation matrix** is the modular synthesizer's lesson, an
 exercise.
 
@@ -696,7 +696,7 @@ to the mouse, as a slider's does -- the tests turn one from 0.3 by
 20 pixels a frame: 0.3 at the press, then 0.4, 0.5, 0.6. A knob's
 value is not always linear: the cutoff over ~10 octaves is exponential
 (each equal turn an equal *ratio*), times are too -- that is the
-voice's business (`Minimoog_voice`'s laws), the knob only turns from
+voice's business (`Voice_minimoog`'s laws), the knob only turns from
 0 to 1. **Rocker switches**, rocked by a click, and **rotary switches**
 (`Gui.selector`) for the oscillators' range and waveform, a position
 per 24 pixels of drag or the next on a click. They needed two more
@@ -705,7 +705,7 @@ segment -- a knob's face and its pointer -- where it had drawn
 everything with rectangles and text. The panel is the Model D's
 layout, CONTROLLERS, OSCILLATOR BANK, MIXER, MODIFIERS, OUTPUT, in
 black between wooden cheeks, each control placed by its name in
-`Minimoog_voice.knobs` (the table that also makes the text format). The
+`Voice_minimoog.knobs` (the table that also makes the text format). The
 keyboard: the computer's letters (two rows as a piano's white and black
 keys, as `AudioPiano.ml`; z and x an octave down and up), a drawn one of
 two octaves, played with the mouse too (sliding from key to key), and
@@ -722,7 +722,7 @@ dynamics, with the compressor's needle). Above the panel, the latency
 
 **A patch** is the panel's positions -- a record, and on paper, a
 Minimoog "patch chart": knobs drawn with their pointers marked; in
-text, "name = value" lines (`Minimoog_voice.to_string`), a switch on
+text, "name = value" lines (`Voice_minimoog.to_string`), a switch on
 or off, a selector by its label, the effects' knobs among them in their
 own units. Presets of our own (a bass, a lead, a brass, a flute, a
 whistle, a wind, and space, the lead chorused, echoed, in the plate,

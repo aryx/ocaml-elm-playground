@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* See Dx7_voice.mli *)
+(* See Voice_dx7.mli *)
 
 (*****************************************************************************)
 (* The patch *)

@@ -11,7 +11,7 @@
  * synthesizer with its own 16-step sequencer, made for guitarists to
  * practise with, which failed, and then, its knobs turned while it
  * played, became acid house. The voice and its sequencer are
- * Tb303_voice.ml (over Diode_ladder.mli and Sequencer.mli); this is
+ * Voice_tb303.ml (over Diode_ladder.mli and Sequencer.mli); this is
  * its panel and its pattern.
  *
  * The real 303 is famously hard to program (a keypad, pitches and times
@@ -27,7 +27,7 @@
  * x an octave. Under the grid, the scope and the spectrum: the squelch
  * seen.
  *
- * Uses: Tb303_voice (the voice, its patterns), Sequencer (the audio
+ * Uses: Voice_tb303 (the voice, its patterns), Sequencer (the audio
  * clock's steps), Diode_ladder, Audio's instruments (the voice played
  * live), Gui (the knobs, the switch, the buttons), Spectrum. Not: the
  * effects rack, Scene2d, Sprite, File_menu.
@@ -46,20 +46,20 @@ let letters =
   [ ("a", 0); ("w", 1); ("s", 2); ("e", 3); ("d", 4); ("f", 5); ("t", 6); ("g", 7); ("y", 8); ("h", 9); ("u", 10); ("j", 11); ("k", 12) ]
 
 type model = {
-  patch : Tb303_voice.patch;
+  patch : Voice_tb303.patch;
   preset : int;
   octave : int;
   held : string list;
   space : bool; (* space held at the last frame *)
 }
 
-let presets = Tb303_voice.presets
+let presets = Voice_tb303.presets
 let initial_model : model = { patch = snd (List.hd presets); preset = 0; octave = 3; held = []; space = false }
 
 (* the voice lives with the sound: the mixer pulls its blocks, and its
  * sequencer steps in them *)
-let voice = Tb303_voice.create initial_model.patch
-let inst : Instrument.t = Tb303_voice.instrument voice
+let voice = Voice_tb303.create initial_model.patch
+let inst : Instrument.t = Voice_tb303.instrument voice
 
 (*****************************************************************************)
 (* The panel *)
@@ -97,8 +97,8 @@ let places =
     { name = "volume"; x = 400.; label = "VOLUME" };
   ]
 
-let control (computer : computer) (p : Tb303_voice.patch) (pl : place) : Tb303_voice.patch =
-  match List.find_opt (fun (k : Tb303_voice.knob) -> k.name = pl.name) Tb303_voice.knobs with
+let control (computer : computer) (p : Voice_tb303.patch) (pl : place) : Voice_tb303.patch =
+  match List.find_opt (fun (k : Voice_tb303.knob) -> k.name = pl.name) Voice_tb303.knobs with
   | None -> p
   | Some k ->
       let v = k.get p in
@@ -190,9 +190,9 @@ let update (computer : computer) (m : model) : model =
   let patch = if preset <> m.preset then snd (List.nth presets preset) else m.patch in
   Gui.set_theme panel_theme;
   let patch = List.fold_left (control computer) patch places in
-  let run_pressed = Gui.button computer ~at:(-400., 318.) (if Tb303_voice.running voice then "STOP" else "RUN") in
+  let run_pressed = Gui.button computer ~at:(-400., 318.) (if Voice_tb303.running voice then "STOP" else "RUN") in
   let space = computer.keyboard.kspace in
-  if run_pressed || (space && not m.space) then Tb303_voice.run voice (not (Tb303_voice.running voice));
+  if run_pressed || (space && not m.space) then Voice_tb303.run voice (not (Voice_tb303.running voice));
   let mouse = computer.mouse in
   let patch = if mouse.mclick then { patch with pattern = click patch.pattern mouse.mx mouse.my } else patch in
   (* the letters: a line played over it *)
@@ -205,7 +205,7 @@ let update (computer : computer) (m : model) : model =
       if pressed k then inst.note_on n 1.;
       if released k then inst.note_off n)
     letters;
-  Tb303_voice.set_patch voice patch;
+  Voice_tb303.set_patch voice patch;
   { patch; preset; octave; held = now; space }
 
 (*****************************************************************************)
@@ -215,8 +215,8 @@ let update (computer : computer) (m : model) : model =
 let ink = rgb 30 30 30
 let text (s : string) : shape = words ink s |> scale 1.1
 
-let grid_view (p : Tb303_voice.patch) : shape list =
-  let playing = if Tb303_voice.running voice then Some (Tb303_voice.step voice) else None in
+let grid_view (p : Voice_tb303.patch) : shape list =
+  let playing = if Voice_tb303.running voice then Some (Voice_tb303.step voice) else None in
   let names = [| "C"; "C#"; "D"; "Eb"; "E"; "F"; "F#"; "G"; "Ab"; "A"; "Bb"; "B"; "C" |] in
   let cell color x y = rectangle color (cell_w - 3.) (cell_h - 3.) |> move x y in
   let rows =
@@ -293,7 +293,7 @@ let spectrum_view (samples : Signal.t) : shape list =
   (rectangle (rgb 25 20 18) w h |> move cx cy) :: List.init bars bar
 
 let view (computer : computer) (m : model) : shape list =
-  let samples = Tb303_voice.recent voice in
+  let samples = Voice_tb303.recent voice in
   [ rectangle (rgb 215 215 220) computer.screen.width computer.screen.height ]
   @ [ words black "TinyTB303" |> scale 2.4 |> move (-380.) 482.; words black "preset" |> scale 1.5 |> move 230. 482. ]
   @ [ words (rgb 70 70 70) (Printf.sprintf "latency %.0f ms" (Audio.latency () * 1000.)) |> scale 1.3 |> move (-110.) 482. ]
@@ -304,8 +304,8 @@ let view (computer : computer) (m : model) : shape list =
   @ [
       words (rgb 70 70 70)
         (Printf.sprintf "%s   %.0f BPM   cutoff %.0f Hz   letters: play along   space: run / stop"
-           (if Tb303_voice.running voice then Printf.sprintf "step %d" (Tb303_voice.step voice +.. 1) else "stopped")
-           m.patch.bpm (Tb303_voice.cutoff_now voice))
+           (if Voice_tb303.running voice then Printf.sprintf "step %d" (Voice_tb303.step voice +.. 1) else "stopped")
+           m.patch.bpm (Voice_tb303.cutoff_now voice))
       |> scale 1.3 |> move 0. (-360.);
     ]
   @ Gui.draw ()

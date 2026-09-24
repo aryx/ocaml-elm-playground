@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* See Tb303_voice.mli *)
+(* See Voice_tb303.mli *)
 
 (*****************************************************************************)
 (* The patch *)
@@ -58,7 +58,7 @@ let pattern_of_string (text : string) : (Sequencer.step array, string) result =
   |> Result.map Array.of_list
 
 let parse (text : string) : Sequencer.step array =
-  match pattern_of_string text with Ok p -> p | Error e -> failwith ("Tb303_voice: " ^ e)
+  match pattern_of_string text with Ok p -> p | Error e -> failwith ("Voice_tb303: " ^ e)
 
 let initial : patch =
   {

@@ -13,7 +13,7 @@
  * contours, glide and a modulation wheel, wired once and for all behind
  * a panel read left to right -- CONTROLLERS, OSCILLATOR BANK, MIXER,
  * MODIFIERS, OUTPUT -- in black between two wooden cheeks. The voice is
- * Minimoog_voice.ml, over audio/'s blocks; this is its panel and its
+ * Voice_minimoog.ml, over audio/'s blocks; this is its panel and its
  * keyboard.
  *
  * The knobs turn by dragging them up or down, the rotary switches (the
@@ -41,12 +41,12 @@
  * key's note is, the sound queued ahead of the card (Audio.latency; 0
  * in a golden run, which has no card).
  *
- * Uses: Minimoog_voice (the voice), Audio's instruments (the voice
+ * Uses: Voice_minimoog (the voice), Audio's instruments (the voice
  * played live), Rack (the effects, audio/effects/), Gui (the knobs,
  * rockers and rotary switches), Spectrum (the display). Not: Scene2d, Sprite, the physics, File_menu yet.
  *
  * Exercises: saving and opening patches with the File menu
- * (appkits/file_menu; the text is Minimoog_voice.to_string); the
+ * (appkits/file_menu; the text is Voice_minimoog.to_string); the
  * reissue's additions (a separate LFO, a choice of note priority, the
  * filter contour as a modulation source); velocity on the filter, from
  * a MIDI keyboard; a second voice, the Minimoog made duophonic like the
@@ -60,19 +60,19 @@ let letters =
   [ ("a", 0); ("w", 1); ("s", 2); ("e", 3); ("d", 4); ("f", 5); ("t", 6); ("g", 7); ("y", 8); ("h", 9); ("u", 10); ("j", 11); ("k", 12) ]
 
 type model = {
-  patch : Minimoog_voice.patch;
-  preset : int; (* an index in Minimoog_voice.presets *)
+  patch : Voice_minimoog.patch;
+  preset : int; (* an index in Voice_minimoog.presets *)
   octave : int; (* the drawn keyboard's lowest C, and the letter a's *)
   mod_wheel : float;
   pitch_wheel : float;
   held : string list; (* the letters held at the last frame *)
   mouse_note : int option; (* the key the mouse holds down *)
-  options : Minimoog_voice.options;
+  options : Voice_minimoog.options;
   lower : int; (* under the panel: 0 the scope, 1 and 2 the rack's pages *)
   reverb_first : bool; (* the rack's order: the mud of a drive after a reverb *)
 }
 
-let presets = Minimoog_voice.presets
+let presets = Voice_minimoog.presets
 
 let initial_model : model =
   {
@@ -83,15 +83,15 @@ let initial_model : model =
     pitch_wheel = 0.;
     held = [];
     mouse_note = None;
-    options = Minimoog_voice.analog;
+    options = Voice_minimoog.analog;
     lower = 0;
     reverb_first = false;
   }
 
 (* the voice lives with the sound, not in the model: the mixer pulls
  * its blocks between frames (Instrument.mli) *)
-let voice = Minimoog_voice.create initial_model.patch
-let inst : Instrument.t = Minimoog_voice.instrument voice
+let voice = Voice_minimoog.create initial_model.patch
+let inst : Instrument.t = Voice_minimoog.instrument voice
 let note (octave : int) (semitone : int) : int = (12 *.. (octave +.. 1)) +.. semitone
 
 let next_ladder (l : Moog_ladder.model) : Moog_ladder.model =
@@ -236,8 +236,8 @@ let short (name : string) : string list =
   else if name = "osc3.wave" then [ "tri"; "rev"; "saw"; "sq"; "wide"; "narr" ]
   else [ "tri"; "shark"; "saw"; "sq"; "wide"; "narr" ]
 
-let control (computer : computer) (p : Minimoog_voice.patch) (pl : place) : Minimoog_voice.patch =
-  match List.find_opt (fun (k : Minimoog_voice.knob) -> k.name = pl.name) Minimoog_voice.knobs with
+let control (computer : computer) (p : Voice_minimoog.patch) (pl : place) : Voice_minimoog.patch =
+  match List.find_opt (fun (k : Voice_minimoog.knob) -> k.name = pl.name) Voice_minimoog.knobs with
   | None -> p
   | Some k ->
       let v = k.get p in
@@ -347,9 +347,9 @@ let update (computer : computer) (m : model) : model =
   in
   let reverb_first = if pressed "5" then not m.reverb_first else m.reverb_first in
   if reverb_first <> m.reverb_first then
-    Rack.reorder (Minimoog_voice.rack voice) (if reverb_first then reverb_first_order else usual_order);
-  Minimoog_voice.set_patch voice patch;
-  Minimoog_voice.set_options voice options;
+    Rack.reorder (Voice_minimoog.rack voice) (if reverb_first then reverb_first_order else usual_order);
+  Voice_minimoog.set_patch voice patch;
+  Voice_minimoog.set_options voice options;
   inst.set "mod_wheel" mod_wheel;
   inst.set "pitch_wheel" pitch_wheel;
   { patch; preset; octave; mod_wheel; pitch_wheel; held = now; mouse_note = under; options; lower; reverb_first }
@@ -480,13 +480,13 @@ let status (m : model) : string =
     (if m.reverb_first then "reverb first" else "drive first")
 
 let view (computer : computer) (m : model) : shape list =
-  let samples = Minimoog_voice.recent voice in
+  let samples = Voice_minimoog.recent voice in
   [ rectangle (rgb 215 205 190) computer.screen.width computer.screen.height ]
   @ [ words black "TinyMinimoog" |> scale 2.4 |> move (-360.) 482.; words black "preset" |> scale 1.5 |> move 230. 482. ]
   (* how late a key's note is, as far as the program knows (Audio.mli) *)
   @ [ words (rgb 70 70 70) (Printf.sprintf "latency %.0f ms" (Audio.latency () * 1000.)) |> scale 1.3 |> move (-110.) 482. ]
   @ panel_view
-  @ (if m.lower > 0 then rack_view (m.lower -.. 1) (Rack.meter (Minimoog_voice.rack voice) "dynamics.reduction")
+  @ (if m.lower > 0 then rack_view (m.lower -.. 1) (Rack.meter (Voice_minimoog.rack voice) "dynamics.reduction")
      else scope_view samples @ spectrum_view samples)
   @ [ words (rgb 70 70 70) (status m) |> scale 1.4 |> move 0. (-137.) ]
   @ wheel_view pitch_wheel_x m.pitch_wheel "PITCH"
