@@ -672,12 +672,44 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
      envelopes drawn, each operator's level lit as it plays; the 32
      patches of the cartridge; keyboard; scope and spectrum. Golden
      frames (a patch, playing), web page, catalogue row.
-   - **C1, TinyCS80** (or TinyJuno, whichever is kept first): two
-     layers per voice, each a `Vco`, a high-pass and a low-pass
-     (`Svf`), an envelope; the ribbon (a pitch bend by position,
-     anywhere along it); polyphonic aftertouch (from a MIDI keyboard's
-     pressure, else the mouse's vertical position on a held key); the
-     ring modulator; the supersaw as a `Vco` option.
+   - **TinyCS80, C1-C2, then TinyJuno, J1-J2** (both kept, 2026-09-24:
+     the CS-80's lesson its two layers, its touch and its ribbon, the
+     Juno's its DCO, one envelope and its chorus). The CS-80's facts,
+     from Old Crow's panel tour (cs80.com) and the owner's manual: 8
+     voices, each two identical sections; each a VCO (sawtooth, a pulse
+     50 to 90% wide with its own PWM, noise), 12 dB/octave high-pass
+     and low-pass state-variable filters (their resonance kept from
+     self-oscillating by Yamaha's limiting resistors, so the touch can't
+     overdrive them), a filter envelope with an Initial Level and an
+     Attack Level besides its attack, decay and release, a VCA with ADSR
+     mixing the filtered sound with a pure sine; per section, the
+     velocity ("initial") and the pressure ("after") each into the
+     brilliance and the level -- polyphonic aftertouch, each key its
+     own; the sub-oscillator an LFO (sine, saw, ramp, pulse, noise) into
+     VCO, VCF, VCA; the ring modulator, an LFO multiplying the sound
+     with its own attack and decay; section II detuned about half a
+     semitone; a BBD chorus and a tremolo; the ribbon, bending the held
+     notes from where it is first touched.
+   - **C1, the voice**: `Voice_cs80` in `music_voices`: the two layers
+     over `Vco`, `Svf` (high-pass then low-pass), `Envelope` and the
+     filter's IL/AL envelope (ours, a small one: IL to AL in the attack,
+     to the cutoff in the decay, back to IL in the release), the touch
+     (velocity at the key, pressure while held, `pressure t key p`, a
+     panel's extra), the ribbon (`bend`), the sub-oscillator (`Lfo`),
+     the ring modulator, `Modulated_delay`'s chorus; 8 voices
+     (`Polyphony`); our presets (the Blade Runner brass: the filter
+     opening with the pressure), a golden WAV each. Tests: the filter
+     envelope's levels at its times; the pressure brightening a held
+     note and only that one (polyphonic); the ribbon bending the held
+     notes; the resonance never oscillating.
+   - **C2, TinyCS80**: its panel (the two sections side by side, the
+     touch sliders, the ribbon along the keyboard, dragged), the
+     pressure from the mouse's height on a held key.
+   - **J1, J2, TinyJuno** (Juno-106, 1984): the facts first; a DCO
+     (the oscillator's pitch from a digital counter: no drift) with its
+     sub-oscillator an octave down, a 4-pole filter, one ADSR for both
+     the filter and the amplifier, the LFO with its delay, the stereo
+     BBD chorus I and II; 6 voices assigned in turn.
    - **T1, TinyReface**, the hub, if the four make it worth it.
    - **The ReBirth line** (after the Juno): Propellerhead's ReBirth
      RB-338 (1997), the first software studio people made records
@@ -1254,6 +1286,28 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   names shortened (Rhodes, Wurlitzer, Clavinet) for the selector's
   labels. Left, in its header: the Reface CP's effects row, the tine's
   arc, a sustain pedal, the 88 keys.
+- **C1, DONE (2026-09-24)**: `Voice_cs80` in `music_voices`, a
+  `Voice.S`. Two sections per key over `Vco` (sawtooth and a pulse 50
+  to 90% with its own PWM, noise), `Svf` (a high-pass then a low-pass,
+  their Q kept under 4: no self-oscillation), `Envelope` (the VCA's
+  ADSR) and the filter envelope's IL and AL (ours: straight lines, IL
+  to AL, down to the cutoff set, back to IL); the pure sine after the
+  filters; the touch per section (velocity and pressure into
+  brilliance and level, ours: 3 octaves each), `pressure t key p` each
+  key's own, `bend t semitones` the ribbon; the sub-oscillator (`Lfo`)
+  into VCO, VCF and VCA; the ring modulator with its attack and decay;
+  section II's detune; `Modulated_delay`'s chorus, a tremolo; 8 voices.
+  The voice's blocks 64 samples at a time (the LFO, the pressures, the
+  ribbon read between them). Measured: E pressed in C E G, its 5th
+  harmonic 31.0 dB up, C's and G's within a dB; the ribbon's B4; no
+  sound after the release at the resonance's most. Our five presets
+  (brass after Blade Runner, strings, pad, ring bells, lead), golden
+  WAVs; the bells lengthened after their loudness was read (-96 dB at
+  0.5 s at first). The cost 0.33 s of CPU a second for 8 voices
+  natively, 0.84 s in JavaScript, then 0.17 and 0.35 with the envelope
+  and the width once a chunk and the unused noise and sine skipped.
+  Not done: the initial touch's pitch bend (a slide from a semitone
+  below), portamento, the expression pedal's wah.
 
 ## Verification
 
