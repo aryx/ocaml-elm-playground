@@ -401,6 +401,7 @@ reads them, in files the games embed at build time.
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinySoundtracker](apps/music/TinySoundtracker.ml) | app | Ultimate Soundtracker (Karsten Obarski, Amiga, 1987) | A song as a grid of notes in four channels, typed on a piano of letters, played as it's edited. | The tracker: time going down the screen, a cell a note, an instrument and an effect in hex; a song that carries its own instruments (the MOD file, read and written by audio/formats/mod), played on the Amiga's four channels. |
+| [TinyHammond](apps/music/TinyHammond.ml) | app | Hammond B-3 (1955) and its Leslie 122 (1965) | Nine drawbars pulled into a registration, chords on the computer's keys, the Leslie's horn and drum turning slow or fast. | Additive synthesis: sines added, from 91 tonewheels on gears (their harmonics tempered, a cent off); a voice per key, freed once silent; the percussion single-triggered; the Leslie modelled from its geometry, the Doppler made by a moving delay. |
 | [TinyMinimoog](apps/music/TinyMinimoog.ml) | app | Minimoog Model D (Moog Music, 1970) | Three oscillators, the ladder filter and two contours, played from the computer's keys. | Subtractive synthesis in a fixed signal path read left to right; the ladder filter's resonance, overdriven by the mixer, played by the keyboard; low-note priority and legato; a patch as the panel's positions. |
 
 ## Media

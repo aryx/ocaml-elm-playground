@@ -31,8 +31,8 @@
  (libraries audio audio_instruments audio_effects audio_mod))
 
 (executables
-  (names TinyMinimoog TinySoundtracker)
-  (modules TinyMinimoog TinySoundtracker)
+  (names TinyMinimoog TinyHammond TinySoundtracker)
+  (modules TinyMinimoog TinyHammond TinySoundtracker)
   (libraries
     caps ; TinySoundtracker's authority to export its song
     elm_core

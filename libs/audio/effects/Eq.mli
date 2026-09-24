@@ -20,7 +20,9 @@ val create : unit -> t
 (* [process t ~bass ~middle ~treble s]: [s] in place, the gains in dB *)
 val process : t -> bass:float -> middle:float -> treble:float -> Signal.stereo -> unit
 
+(*****************************************************************************)
 (* {1 As an effect} *)
+(*****************************************************************************)
 
 (* bass, middle, treble: -12 to 12 dB, 0 at first *)
 val knobs : Effect.knob list

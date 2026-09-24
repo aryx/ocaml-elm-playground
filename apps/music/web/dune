@@ -2,11 +2,12 @@
 ; build-time copy, not a committed duplicate (see examples/web/dune), and
 ; linked against elm_playground_web.
 (copy_files ../TinyMinimoog.ml)
+(copy_files ../TinyHammond.ml)
 (copy_files ../TinySoundtracker.ml)
 
 (executables
-  (names TinyMinimoog TinySoundtracker)
-  (modules TinyMinimoog TinySoundtracker)
+  (names TinyMinimoog TinyHammond TinySoundtracker)
+  (modules TinyMinimoog TinyHammond TinySoundtracker)
   (libraries
     caps
     elm_core

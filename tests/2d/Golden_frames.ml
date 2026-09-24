@@ -96,6 +96,9 @@ let scenes : Testutil_golden.scene list =
     (* 1970: the Model D's panel, black between wooden cheeks, left to
      * right; the bass preset *)
     ("apps/music/software/TinyMinimoog", "", 5);
+    (* claude: 1955: the B-3's drawbars and tabs, the jazz registration,
+     * the Leslie still *)
+    ("apps/music/software/TinyHammond", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1022,6 +1025,13 @@ let scripted : Testutil_golden.scripted list =
       "effects",
       20,
       "at(95;482):1-5,click:3,at(-455;-60):6-9,click:8,at(190;-60):10-13,click:12,at(-62;-60):14-17,click:16" );
+    (* claude: the organ played: the 4' drawbar pulled out to 6 by the
+     * mouse, C E G held, the Leslie switched on and fast half a second
+     * before -- its horn spun up to 4 turns a second, its drum to 2 *)
+    ( "apps/music/software/TinyHammond",
+      "playing",
+      60,
+      "at(-138;390):1-12,at(-138;220):13-60,click:5-30,a:10-60,d:10-60,g:10-60,at(180;250):31-60,click:33,at(225;250):35-60,click:37" );
     (* claude: the rack's second page (the button pressed twice), the
      * modulation and the compressor switched on, C3 held: the needle
      * showing the gain reduction *)

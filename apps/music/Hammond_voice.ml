@@ -109,6 +109,9 @@ type t = {
   scanner : scanner;
   mutable mixed : Signal.t;
   cabinet : Leslie.t; (* kept while switched off: back on, its rotors go on as they were *)
+  (* the last samples played, a ring, [at] the next to write *)
+  ring : Signal.t;
+  mutable at : int;
 }
 
 let create (patch : patch) : t =
@@ -120,6 +123,8 @@ let create (patch : patch) : t =
     scanner = { line = Array.make (Signal.samples 0.004) 0.; at = 0; phase = 0. };
     mixed = [||];
     cabinet = Leslie.create ();
+    ring = Array.make 2048 0.;
+    at = 0;
   }
 
 let patch (t : t) : patch = t.patch
@@ -218,10 +223,16 @@ let fill (t : t) (out : Signal.stereo) : unit =
       out.right.(i) <- gain *. x)
     t.mixed;
   (* the organ into its Leslie (Leslie.mli), heard by two microphones *)
-  if t.patch.leslie then Leslie.process t.cabinet ~fast:t.patch.leslie_fast out
+  if t.patch.leslie then Leslie.process t.cabinet ~fast:t.patch.leslie_fast out;
+  Array.iter
+    (fun x ->
+      t.ring.(t.at) <- x;
+      t.at <- (t.at + 1) mod 2048)
+    out.left
 
 (* the cabinet's rotors, turns a second, for a panel to draw *)
 let rotors (t : t) : float * float = (Leslie.horn t.cabinet, Leslie.drum t.cabinet)
+let recent (t : t) : Signal.t = Array.init 2048 (fun i -> t.ring.((t.at + i) mod 2048))
 
 let instrument (t : t) : Instrument.t =
   {

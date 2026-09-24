@@ -66,7 +66,9 @@ type settings = {
 (* [process t settings s]: [s] in place, both channels *)
 val process : t -> settings -> Signal.stereo -> unit
 
+(*****************************************************************************)
 (* {1 As an effect} *)
+(*****************************************************************************)
 
 (* time (0.05 to 2 s: a dotted eighth at 120 BPM, 0.375), feedback (0
  * to 0.95: 0.4), tone (300 Hz to 12 kHz: 3 kHz), pingpong (off), mix

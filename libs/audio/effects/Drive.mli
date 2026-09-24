@@ -77,7 +77,9 @@ val create : oversampling:int -> unit -> t
  * the curve, [mix] the shaped part (0: dry, 1: all driven) *)
 val process : t -> shape -> drive:float -> mix:float -> Signal.t -> unit
 
+(*****************************************************************************)
 (* {1 As an effect} *)
+(*****************************************************************************)
 
 (* shape (hard, tanh, cubic, asymmetric: tanh at first), gain (the
  * drive, 0 to 36 dB: 12), oversampling (a switch: x4 or none, on) *)

@@ -97,7 +97,9 @@ let note (octave : int) (semitone : int) : int = (12 *.. (octave +.. 1)) +.. sem
 let next_ladder (l : Moog_ladder.model) : Moog_ladder.model =
   match l with Naive -> Zero_delay | Zero_delay -> Nonlinear | Nonlinear -> Naive
 
-(* {1 The panel} *)
+(*****************************************************************************)
+(* The panel *)
+(*****************************************************************************)
 
 (* white on black, the knobs black with a white pointer, the lit half
  * of a rocker the Model D's blue *)
@@ -247,7 +249,9 @@ let control (computer : computer) (p : Minimoog_voice.patch) (pl : place) : Mini
       in
       if v' <> v then k.put p v' else p
 
-(* {1 The keyboard and the wheels} *)
+(*****************************************************************************)
+(* The keyboard and the wheels *)
+(*****************************************************************************)
 
 let keys_count = 25 (* two octaves and a C *)
 let is_black (s : int) : bool = List.mem (s mod 12) [ 1; 3; 6; 8; 10 ]
@@ -281,7 +285,9 @@ let pitch_wheel_x = -455.
 let mod_wheel_x = -405.
 let in_wheel (x0 : number) (m : mouse) = Float.abs (m.mx - x0) <= 18. && Float.abs (m.my - wheel_y) <= wheel_height / 2.
 
-(* {1 update} *)
+(*****************************************************************************)
+(* update *)
+(*****************************************************************************)
 
 let update (computer : computer) (m : model) : model =
   (* playing from the first frame, and kept playing *)
@@ -348,7 +354,9 @@ let update (computer : computer) (m : model) : model =
   inst.set "pitch_wheel" pitch_wheel;
   { patch; preset; octave; mod_wheel; pitch_wheel; held = now; mouse_note = under; options; lower; reverb_first }
 
-(* {1 view} *)
+(*****************************************************************************)
+(* view *)
+(*****************************************************************************)
 
 let white_ink = rgb 235 235 235
 let text (s : string) : shape = words white_ink s |> scale 1.2

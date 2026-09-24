@@ -108,7 +108,9 @@ val create : unit -> t
  * mix, the reverb in stereo) *)
 val process : t -> settings -> Signal.stereo -> unit
 
+(*****************************************************************************)
 (* {1 As an effect} *)
+(*****************************************************************************)
 
 (* kind (schroeder, freeverb, plate: the plate), time (0.3 to 8 s: 2),
  * damping (0 to 1: 0.3), mix (0 to 1: 0.25) *)

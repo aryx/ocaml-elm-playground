@@ -119,6 +119,10 @@ val voices : t -> int
  * to draw them turning) *)
 val rotors : t -> float * float
 
+(* the last 2048 samples it played (the left microphone), oldest first:
+ * for a panel's spectrum *)
+val recent : t -> Signal.t
+
 (* the organ as an instrument (Instrument.mli): polyphonic, velocity
  * ignored (an organ's keys are switches), [set] by a control's name *)
 val instrument : t -> Instrument.t

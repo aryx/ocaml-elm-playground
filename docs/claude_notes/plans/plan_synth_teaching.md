@@ -923,6 +923,22 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   tremolo swinging between 5093 and 4907 Hz (5000 x (1 +- 0.0187), v / c
   with v = 2 pi 0.15 m x 6.8), its level between 1.017 and 0.20; the two
   microphones differing.
+- **H4, DONE (2026-09-24)**: TinyHammond, the panel. The nine drawbars
+  pulled down with the mouse (0 to 8, the B-3's colours: brown under the
+  note, white the octaves, black the rest), the registration written as
+  its digits; the percussion tabs, the vibrato's rotary switch, the
+  Leslie's rockers, the click and volume knobs (`Gui`'s, the panel's
+  controls placed by name over `Hammond_voice.knobs`); the keyboard
+  polyphonic (the letters several at once), space flipping the Leslie's
+  speed as an organist's foot; under the panel the spectrum
+  (`Hammond_voice.recent`) and the cabinet seen from above, its horn
+  and drum drawn turning at `Hammond_voice.rotors`' speeds. Its golden
+  frames: at rest (the jazz registration), and `playing` (the 4'
+  drawbar pulled to 6 by the mouse, C E G held, the Leslie switched to
+  fast half a second before: the horn at 4 turns a second, the drum at
+  2); its web page; `CATALOG.md`'s row. Left, in the header's
+  exercises: the lower manual and the pedals, drawbars heard while a
+  note sounds, the Leslie's brake, saving registrations.
 
 ## Verification
 

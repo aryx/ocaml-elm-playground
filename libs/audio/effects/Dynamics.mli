@@ -130,7 +130,9 @@ val process : ?key:Signal.stereo -> t -> settings -> Signal.stereo -> unit
 (* the gain reduction at the last block's end, dB (0 or more) *)
 val reduction : t -> float
 
+(*****************************************************************************)
 (* {1 As an effect} *)
+(*****************************************************************************)
 
 (* mode (compressor, limiter, gate: the compressor), threshold (-60 to
  * 0 dB: -20), ratio (1 to 20: 4), attack (0.5 to 100 ms: 5), release

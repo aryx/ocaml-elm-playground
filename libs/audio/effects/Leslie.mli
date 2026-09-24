@@ -76,7 +76,9 @@ val drum_fast : float
 val horn_seconds : float
 val drum_seconds : float
 
+(*****************************************************************************)
 (* {1 As an effect} *)
+(*****************************************************************************)
 
 (* fast (a switch: tremolo, else chorale), mix (0 to 1: the Leslie's
  * share, 1 at first) *)
