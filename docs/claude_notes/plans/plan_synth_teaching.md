@@ -1507,6 +1507,28 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   Golden frames TinyTR808 and TinyTR808_running re-approved (the knobs'
   rows tightened for the 909's four), TinyTR808_909 new (its house
   pattern, started).
+- **TinyReBirth, DONE (2026-09-24)**. The facts (Wikipedia, Sound On
+  Sound's review): ReBirth RB-338, Propellerhead 1997, two TB-303s and
+  a TR-808, the 909 from version 2.0; mixers, the pattern controlled
+  filter, delay, compressor, distortion; 32 patterns a machine, song
+  mode; given away as the ReBirth Museum in 2005. `Studio_rebirth` in
+  `music_voices` (a studio, not a `Voice.S`: several instruments and
+  what goes between them, as `Studio_op1` and `Studio_opxy` will be): two `Voice_tb303`s, a
+  `Voice_tr808` as the 808 and one as the 909, the tempo given to all
+  four; the one clock -- their sample-exact sequencers started in the
+  same update, so on the same sample, and together for ever; the mixer
+  (levels, mutes; every machine runs muted, its clock going on); Drive
+  on the 303s, Delay (three sixteenths, ping-pong), Dynamics'
+  compressor; the PCF, a low-pass on the drums its cutoff the step's of
+  16. Tests: the four steps the same after every block in blocks of
+  735, 100 and 1; all muted, silence; three songs (acid, techno,
+  house), golden WAVs, peaks 0.54 to 0.80 (the volume brought down
+  after house's 0.93). TinyReBirth: a strip per machine (its pattern by
+  < >, level, mute, its 16 steps in its colour, the playing one lit on
+  all four at once), transport, the effects and the PCF's bars to
+  click. Golden frames TinyReBirth and TinyReBirth_running; web page;
+  `CATALOG.md`'s row. Left, in its header: the song mode, a pattern
+  edited here, each machine's sends, songs saved.
 
 ## Verification
 

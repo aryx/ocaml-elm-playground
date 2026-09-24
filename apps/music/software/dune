@@ -9,11 +9,12 @@
 (copy_files ../TinyCS80.ml)
 (copy_files ../TinyJuno.ml)
 (copy_files ../TinyTR808.ml)
+(copy_files ../TinyReBirth.ml)
 (copy_files ../TinySoundtracker.ml)
 
 (executables
-  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinySoundtracker)
-  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinySoundtracker)
+  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinySoundtracker)
+  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinySoundtracker)
   (libraries
     caps
     elm_core

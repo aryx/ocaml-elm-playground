@@ -117,6 +117,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: 1980: the 808's knobs over its instruments, its coloured
      * step buttons, the whole pattern under *)
     ("apps/music/software/TinyTR808", "", 5);
+    (* claude: 1997: ReBirth's four machines as strips, the mixer, the
+     * effects and the PCF's bars *)
+    ("apps/music/software/TinyReBirth", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1070,6 +1073,9 @@ let scripted : Testutil_golden.scripted list =
      * its grey and orange, RD and CR, the kick's TUNE and ATTACK, the
      * shuffle *)
     ("apps/music/software/TinyTR808", "909", 40, "at(330;482):1-4,click:2,at(330;302):5-9,click:7,space:12");
+    (* claude: ReBirth started (space): the four machines' step 6 lit
+     * together -- the one clock -- and the PCF's *)
+    ("apps/music/software/TinyReBirth", "running", 40, "space:3");
     (* claude: the Juno played: the VCF's cutoff slider dragged up, chorus
      * II clicked, then C E G held -- the spectrum opened, II lit *)
     ( "apps/music/software/TinyJuno",
