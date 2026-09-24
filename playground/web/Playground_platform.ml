@@ -88,8 +88,13 @@ let log s =
 
 let spf = Printf.sprintf
 
-let string_of_number x = 
-  spf "%f" x
+(* claude: JavaScript's own String(x), the shortest string that reads
+ * back as x: every number of every shape goes through this each frame,
+ * and sprintf "%f" (OCaml's formatting, emulated in JavaScript) made
+ * turning TinyMinimoog's 800 shapes into a virtual DOM the frame's
+ * largest cost, 9.8 ms of 21 *)
+let js_string = Ojs.get_prop_ascii Ojs.global "String"
+let string_of_number (x : float) : string = Ojs.string_of_js (Ojs.apply js_string [| Ojs.float_to_js x |])
 
 (*****************************************************************************)
 (* (Mini) Virtual DOM *)
@@ -353,35 +358,19 @@ end
 let render_color color =
   match color with
   | Hex str -> str
-  | Rgb (r,g,b) -> Printf.sprintf "rgb(%d,%d,%d)"  r g b
-    
+  | Rgb (r,g,b) -> "rgb(" ^ string_of_int r ^ "," ^ string_of_int g ^ "," ^ string_of_int b ^ ")"
+
+(* claude: the strings joined with ^, not sprintf, for the same reason
+ * as [string_of_number] *)
 let render_transform x y a s =
-  if a = 0. then
-    if s = 1.
-    then
-      spf "translate(%s, %s)" 
-        (string_of_number x) (string_of_number (-. y))
-    else
-      spf "translate(%s, %s) scale(%s)" 
-        (string_of_number x) (string_of_number (-. y))
-        (string_of_number s)
- else
-  if s = 1.
-  then
-      spf "translate(%s, %s) rotate(%s)" 
-        (string_of_number x) (string_of_number (-. y))
-        (string_of_number (-. a))
-  else
-      spf "translate(%s, %s) rotate(%s) scale(%s) " 
-        (string_of_number x) (string_of_number (-. y))
-        (string_of_number (-. a))
-        (string_of_number s)
+  let translate = "translate(" ^ string_of_number x ^ ", " ^ string_of_number (-. y) ^ ")" in
+  let rotate = if a = 0. then "" else " rotate(" ^ string_of_number (-. a) ^ ")" in
+  let scale = if s = 1. then "" else " scale(" ^ string_of_number s ^ ")" in
+  translate ^ rotate ^ scale
 
 let render_rect_transform width height x y angle s =
   render_transform x y angle s ^
-  spf " translate(%s, %s)" 
-     (string_of_number (-. width / 2.))
-     (string_of_number (-. height / 2.))
+  " translate(" ^ string_of_number (-. width / 2.) ^ ", " ^ string_of_number (-. height / 2.) ^ ")"
 
 
 let render_alpha alpha =
@@ -426,7 +415,7 @@ let rec to_ngon_points i n radius str =
     let x = radius * cos a in
     let y = radius * sin a in
     to_ngon_points (Stdlib.(+) i 1) n radius
-      (spf "%s%s,%s " str (string_of_number x) (string_of_number y))
+      (str ^ string_of_number x ^ "," ^ string_of_number y ^ " ")
 
 let render_ngon color n radius x y angle s alpha = 
   Svg.polygon
@@ -460,8 +449,7 @@ let render_words color str x y angle s alpha =
 let render_polygon color points x y angle s alpha =
   let points_str =
     points
-    |> List.map (fun (px, py) ->
-        spf "%s,%s" (string_of_number px) (string_of_number (-. py)))
+    |> List.map (fun (px, py) -> string_of_number px ^ "," ^ string_of_number (-. py))
     |> String.concat " "
   in
   Svg.polygon
@@ -775,15 +763,17 @@ let next_start = ref 0.
 (* claude: how far ahead the sound is scheduled: a jitter buffer, as
  * networking's Interpolation keeps for packets. Each frame tops the
  * schedule up to [ahead]; a frame later than that and the audio clock
- * runs past the end of the sound: a gap, heard as a cut. The frames of
- * a page with a heavy view come far apart (TinyMinimoog's, measured in
- * headless Chrome: about 60 ms, update and sound 16, its 800 shapes built 15,
- * turned into a virtual DOM 18, the page patched 12), and a garbage
- * collection on top is a cut. So [ahead] grows by 30 ms at each gap,
- * up to 300 ms, and comes back by 12 ms a second without one, to its
- * least, 100 ms: a game that keeps up loses nothing, a heavy page pays
- * in latency (Audio.latency, which shows it) instead of in cuts. *)
-let least_ahead = 0.1
+ * runs past the end of the sound: a gap, heard as a cut. A page's
+ * first frame builds it whole (TinyMinimoog's, measured in headless
+ * Chrome: over 200 ms), a heavy view makes every frame long, a garbage
+ * collection one of them. So [ahead] grows by 30 ms at each gap, up to
+ * 300 ms, and comes back by 12 ms a second without one, to its least,
+ * 50 ms, three frames, the native queue's: a game that keeps up loses
+ * nothing, a slow page pays in latency (Audio.latency, which shows it)
+ * instead of in cuts. (TinyMinimoog's frames, measured the same way:
+ * 12 ms, update and sound 2.2, its 800 shapes built 4.2, turned into a
+ * virtual DOM 1.1, the page patched 4.2.) *)
+let least_ahead = 0.05
 let ahead = ref least_ahead
 
 (* after a frame's [ticks] updates *)

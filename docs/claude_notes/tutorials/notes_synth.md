@@ -101,12 +101,16 @@ Three rules, which every live block of this tutorial follows:
   frame comes late (a garbage collection, a busy machine). The web
   platform adapts: a jitter buffer, as the netcode's `Interpolation`
   keeps for packets, the schedule 30 ms deeper at each gap (up to 300)
-  and 12 ms shallower each second without one (down to 100). In
-  Chrome TinyMinimoog's frames take about 60 ms (the view's 800
-  shapes built and patched into the page), its first one over 200 ms:
-  gaps at the start, heard as cuts before the buffer adapted; with it,
-  160 ms at the start, then back to 110 while playing, no cuts. A
-  real
+  and 12 ms shallower each second without one (down to 50, three
+  frames, the native queue's). TinyMinimoog's first frame builds the
+  page whole, over 200 ms: gaps at the start, heard as cuts before the
+  buffer adapted (read in Chrome with a 100 ms floor: 160 ms at the
+  start, then back to 110 while playing, no cuts). Its other frames
+  take 12 ms (headless Chrome, 59 a second): update and sound 2.2, its
+  800 shapes built 4.2, turned into a virtual DOM 1.1, the page patched
+  4.2 -- the conversion was 9.8 ms, most of a 21 ms frame, before the
+  web platform wrote its numbers with JavaScript's own `String(x)`
+  instead of `sprintf "%f"`. A real
   instrument aims under 10 ms, with a callback on the card's own
   thread and small buffers, which a frame loop can't offer.
 - **What a voice costs** (a second of sound computed a frame's block at

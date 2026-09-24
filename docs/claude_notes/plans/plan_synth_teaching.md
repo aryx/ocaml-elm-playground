@@ -851,10 +851,14 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   schedule is now a jitter buffer: 30 ms deeper at each gap, up to 300,
   12 ms shallower each second without one, down to 100; read in
   Chrome, 160 ms after the start's gaps, then 110 while playing, no
-  cuts. Left: a lower floor than 100 ms (it only has to cover a normal
-  frame), and a cheaper view (most of the 800 shapes are the knobs'
-  ticks and the scope's segments, redrawn every frame; at 16 frames a
-  second a key waits half a frame, 30 ms, too).
+  cuts. Then the frames measured again, without the screenshot mode
+  that had slowed headless Chrome's (its 60 ms frames were that): 21 ms,
+  9.8 of them turning the 800 shapes into a virtual DOM -- every number
+  through `sprintf "%f"`, OCaml's formatting emulated in JavaScript. With
+  JavaScript's `String(x)` and `^`, 1.1 ms, the frame 12 ms, 59 a second
+  (every web page gains, not only TinyMinimoog); the schedule's floor
+  then 50 ms, three frames, the native queue's. Left: the new floor read
+  in a real browser.
 
 ## Verification
 
