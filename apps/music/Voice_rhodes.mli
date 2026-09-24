@@ -111,4 +111,9 @@ val recent : t -> Signal.t
 
 (* the tremolo's position, -1 (left) to 1 (right), for a panel *)
 val pan : t -> float
+
+(* where the last note's tip (or reed) went over the last block, its
+ * lowest and highest, in the pickup's units ([pickup]'s x, the
+ * Wurlitzer's fraction of the gap) *)
+val span : t -> float * float
 val instrument : t -> Instrument.t

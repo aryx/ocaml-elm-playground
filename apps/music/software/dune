@@ -5,11 +5,12 @@
 (copy_files ../TinyHammond.ml)
 (copy_files ../TinyTB303.ml)
 (copy_files ../TinyDX7.ml)
+(copy_files ../TinyRhodes.ml)
 (copy_files ../TinySoundtracker.ml)
 
 (executables
-  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinySoundtracker)
-  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinySoundtracker)
+  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinySoundtracker)
+  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinySoundtracker)
   (libraries
     caps
     elm_core

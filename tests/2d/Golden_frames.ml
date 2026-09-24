@@ -105,6 +105,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: 1983: the DX7's LCD and data entry, the e.piano's
      * algorithm 5 drawn as its graph, the six envelopes *)
     ("apps/music/software/TinyDX7", "", 5);
+    (* claude: 1970: the Stage 73's knobs, the pickup's bell, the
+     * Suitcase's speakers *)
+    ("apps/music/software/TinyRhodes", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1043,6 +1046,9 @@ let scripted : Testutil_golden.scripted list =
      * brighter than their modulators, the tine's partials 14 times up
      * in the spectrum *)
     ("apps/music/software/TinyDX7", "playing", 40, "at(-110;300):1-6,click:3,a:10-40,d:10-40,g:10-40");
+    (* claude: the Rhodes played: C E G held on the letters (velocity
+     * 0.8), the last tip's swing across the bell's top lit -- the bark *)
+    ("apps/music/software/TinyRhodes", "playing", 30, "a:5-30,d:5-30,g:5-30");
     (* claude: the organ played: the 4' drawbar pulled out to 6 by the
      * mouse, C E G held, the Leslie switched on and fast half a second
      * before -- its horn spun up to 4 turns a second, its drum to 2 *)

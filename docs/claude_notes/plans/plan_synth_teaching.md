@@ -1234,6 +1234,26 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   dampers at the release). Not done: the tine's arc (the paper's), its
   two polarisations, the hammer's contact as a force (Hunt and
   Crossley's), the Clavinet's own pickups.
+- **The voices renamed (2026-09-24)**: `Voice_minimoog`,
+  `Voice_hammond`, `Voice_tb303`, `Voice_dx7`, `Voice_rhodes`, as the
+  office suite's `Part_xxx`, each checked against `Voice.S` (a module
+  type only: the patch, its knobs and text, the presets; the player's
+  patch, `Instrument.t`, recent samples) in the music tests -- what
+  TinyOp1's engines will be.
+- **R2, DONE (2026-09-24)**: TinyRhodes. The Stage 73's knobs (the
+  model, voicing, hammer, decay, the Suitcase's rate and depth,
+  volume); what the real one hides, the pickup's curve against the
+  tip's position (the Rhodes' bell, the Wurlitzer's 1 / (1 - x)) and on
+  it the span the last note's tip swept over the last block
+  (`Voice_rhodes.span`: a tip sampled once a frame would jump; its span
+  is what teaches -- short on the bell's side soft, across its top
+  hard); the Suitcase's two speakers lit by the pan. The keyboard's
+  velocity by where the key is pressed; spectrum and scope. Golden
+  frames TinyRhodes and TinyRhodes_playing (C E G held, the swing
+  across the bell's top); web page; `CATALOG.md`'s row. The model
+  names shortened (Rhodes, Wurlitzer, Clavinet) for the selector's
+  labels. Left, in its header: the Reface CP's effects row, the tine's
+  arc, a sustain pedal, the 88 keys.
 
 ## Verification
 

@@ -24,7 +24,7 @@ type patch = {
   volume : float;
 }
 
-let models = [ "Rhodes Mark I"; "Wurlitzer 200A"; "Clavinet D6" ]
+let models = [ "Rhodes"; "Wurlitzer"; "Clavinet" ]
 
 let initial : patch =
   { model = 0; voicing = 0.5; hardness = 0.4; decay = 0.6; tremolo_rate = 0.4; tremolo_depth = 0.; volume = 0.7 }
@@ -84,8 +84,9 @@ let ring (p : patch) (f : float) : float = Float.max 0.5 ((1.5 +. (8. *. p.decay
 let damper = 0.12
 
 (* a tine or a reed: its modes, struck, and a pickup reading their
- * sum; [bell] the pickup's curve, [swing] how far the tip goes *)
-let struck (p : patch) (key : int) (velocity : float) : Polyphony.voice =
+ * sum; [swing] how far the tip goes; [span] told each block where the
+ * tip went, lowest and highest (for a panel to draw) *)
+let struck ?(span = fun _ _ -> ()) (p : patch) (key : int) (velocity : float) : Polyphony.voice =
   let f = frequency key in
   let wurlitzer = p.model = 1 in
   let modes =
@@ -114,12 +115,16 @@ let struck (p : patch) (key : int) (velocity : float) : Polyphony.voice =
   let scale = rate /. (2. *. Float.pi *. f) in
   let last = ref (read 0.) and held = ref true in
   let fill (out : Signal.t) =
+    let lo = ref infinity and hi = ref neg_infinity in
     for i = 0 to Array.length out - 1 do
       let x = List.fold_left (fun s m -> s +. Modal.next m) 0. modes in
+      lo := Float.min !lo (swing *. x);
+      hi := Float.max !hi (swing *. x);
       let v = read x in
       out.(i) <- (v -. !last) *. scale;
       last := v
-    done
+    done;
+    span !lo !hi
   in
   let release () =
     held := false;
@@ -150,14 +155,19 @@ type t = {
   mutable mono : Signal.t;
   ring : Signal.t;
   mutable at : int;
+  (* the last note struck, its number, and where its tip went *)
+  mutable notes : int;
+  mutable span : float * float;
 }
 
-let create (patch : patch) : t = { patch; poly = Polyphony.create (); phase = 0.; mono = [||]; ring = Array.make 2048 0.; at = 0 }
+let create (patch : patch) : t =
+  { patch; poly = Polyphony.create (); phase = 0.; mono = [||]; ring = Array.make 2048 0.; at = 0; notes = 0; span = (0., 0.) }
 let patch (t : t) : patch = t.patch
 let set_patch (t : t) (p : patch) : unit = t.patch <- p
 let voices (t : t) : int = Polyphony.voices t.poly
 let recent (t : t) : Signal.t = Array.init 2048 (fun i -> t.ring.((t.at + i) mod 2048))
 let pan (t : t) : float = sin (2. *. Float.pi *. t.phase)
+let span (t : t) : float * float = t.span
 
 (* ours: each model's level, a four-note chord and a line at full
  * peaking under 1 (Unit_rhodes) *)
@@ -191,7 +201,10 @@ let instrument (t : t) : Instrument.t =
   {
     note_on =
       (fun key velocity ->
-        let voice = if t.patch.model = 2 then plucked t.patch key velocity else struck t.patch key velocity in
+        t.notes <- t.notes + 1;
+        let mine = t.notes in
+        let span lo hi = if t.notes = mine then t.span <- (lo, hi) in
+        let voice = if t.patch.model = 2 then plucked t.patch key velocity else struck ~span t.patch key velocity in
         Polyphony.press t.poly key voice);
     note_off = (fun key -> Polyphony.release t.poly key);
     set = (fun name x -> Option.iter (fun (k : knob) -> t.patch <- k.put t.patch x) (List.find_opt (fun (k : knob) -> k.name = name) knobs));

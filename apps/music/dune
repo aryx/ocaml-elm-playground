@@ -32,8 +32,8 @@
  (libraries audio audio_instruments audio_effects audio_mod))
 
 (executables
-  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinySoundtracker)
-  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinySoundtracker)
+  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinySoundtracker)
+  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinySoundtracker)
   (libraries
     caps ; TinySoundtracker's authority to export its song
     elm_core
