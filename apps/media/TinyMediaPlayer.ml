@@ -44,8 +44,10 @@
  * right 5 s back and on. When an item ends, the next one plays.
  *
  * The playlist starts with media of our own (Our_media.ml); file= adds
- * yours in front, from a file or a URL, several separated by commas:
+ * yours in front, from a file or a URL, several separated by commas,
+ * and so does a bare argument, the first one playing at once:
  *   dune exec apps/media/TinyMediaPlayer.exe -- file=song.mid,photo.png
+ *   dune exec apps/media/TinyMediaPlayer.exe -- song.mid photo.png
  *
  * Uses: Media (the kinds, opening them), Our_media, Audio (the player as
  * an instrument the mixer pulls; fetch, for file=), Mod_player, Gui (the
@@ -186,9 +188,16 @@ let update (computer : computer) (m : model) : model =
   let m =
     if m.asked then m
     else (
-      (match List.assoc_opt "file" computer.flags with
-      | Some files -> List.iter (fun f -> Audio.fetch f (fun b -> Option.iter (fun b -> arrived := !arrived @ [ (Filename.basename f, Lazy.from_val b) ]) b)) (String.split_on_char ',' files)
-      | None -> ());
+      (* file=a,b, or a bare argument: a flag with no value is a file *)
+      let files =
+        computer.flags
+        |> List.concat_map (fun (k, v) ->
+               match (k, v) with
+               | "file", files -> String.split_on_char ',' files
+               | f, "" -> [ f ]
+               | _ -> [])
+      in
+      List.iter (fun f -> Audio.fetch f (fun b -> Option.iter (fun b -> arrived := !arrived @ [ (Filename.basename f, Lazy.from_val b) ]) b)) files;
       { m with asked = true })
   in
   let m =

@@ -98,6 +98,14 @@ approve-golden-formats:
 	cp _build/default/libs/audio/formats/tests/actual/*.wav libs/audio/formats/tests/golden/
 	chmod 644 libs/audio/formats/tests/golden/*.wav
 
+# claude: tests/data/'s toy media, one file per format we read, remade
+# from Our_media.playlist; to try a reader by hand, e.g.
+#   dune exec apps/media/TinyMediaPlayer.exe -- tests/data/bell.wav
+test-data:
+	dune build ./apps/media/tests/Dump_media.exe
+	mkdir -p tests/data
+	./_build/default/apps/media/tests/Dump_media.exe tests/data
+
 # This will fail if the .opam isn't up-to-date (in git),
 # and dune isn't installed yet. You can always install dune
 # with 'opam install dune' to get started.

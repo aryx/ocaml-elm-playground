@@ -14,3 +14,11 @@
  (modules Dump_clip)
  (libraries graphics_y4m media_player)
 )
+
+; claude: our media (Our_media.playlist) as files, one per item, in the
+; directory given: tests/data/'s toy files (make test-data)
+(executable
+ (name Dump_media)
+ (modules Dump_media)
+ (libraries media_player)
+)
