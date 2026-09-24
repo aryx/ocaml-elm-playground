@@ -120,6 +120,7 @@
    %{project_root}/games/platform/software/TinyLodeRunner.exe
    %{project_root}/games/platform/software/TinyRick.exe
    %{project_root}/games/platform/software/TinyVikings.exe
+   %{project_root}/games/platform/software/TinyTurrican.exe
    %{project_root}/games/platform/software/TinyPrinceOfPersia.exe
    %{project_root}/games/shmup/software/TinyGradius.exe
    %{project_root}/games/adventure/software/TinyZelda.exe

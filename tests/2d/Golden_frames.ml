@@ -299,6 +299,7 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyLodeRunner", "", 5);
     ("games/platform/software/TinyRick", "", 5);
     ("games/platform/software/TinyVikings", "", 5);
+    ("games/platform/software/TinyTurrican", "", 5);
     ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
     ("games/adventure/software/TinyZelda", "", 5);
@@ -851,6 +852,14 @@ let scripted : Testutil_golden.scripted list =
       "shield",
       712,
       "space:1,right:3-50,space:52,Tab:55,x:57,x:80,Tab:83,right:85-450,space:452,Tab:455,right:457-672,up:675,right:675-685" );
+    (* the lightning beam held, swept up to 45 degrees, its bolt jagged *)
+    ("games/platform/software/TinyTurrican", "beam", 40, "space:1,x:5-60,up:10-25");
+    (* the P door shot open, the pit, the turret, then the wheel rolled
+     * under the rock into the secret cave, a diamond just taken *)
+    ( "games/platform/software/TinyTurrican",
+      "cave",
+      610,
+      "space:1,space:3-60,right:62-560,space:62-560,up:250,up:300,up:340,down:570,right:575-700" );
     (* claude: a standing jump over the first gap, in the air; then,
      * the plate stepped on and the gate run through, hanging from the
      * shaft's edge (the loose floor fallen, the gate closing); and
