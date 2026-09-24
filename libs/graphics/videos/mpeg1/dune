@@ -1,10 +1,11 @@
-; claude: MPEG-1 video, decoded by our own code: the bit reader (Bits),
-; the standard's variable-length codes (Vlc), and the pictures -- intra,
-; predicted, bidirectional -- (Mpeg1.mli). Pure OCaml. A private
-; library (see graphics/core/dune), installed as part of elm_playground.
+; claude: MPEG-1 video, decoded by our own code: the standard's
+; variable-length codes (Mpeg1_vlc, read by compression's Bits and
+; Vlc), and the pictures -- intra, predicted, bidirectional --
+; (Mpeg1.mli). Pure OCaml. A private library (see graphics/core/dune),
+; installed as part of elm_playground.
 (library
  (name graphics_mpeg1)
  (package elm_playground)
  (wrapped false)
- (libraries graphics_rgba graphics_movie graphics_yuv graphics_jpeg)
+ (libraries graphics_rgba graphics_movie graphics_yuv graphics_jpeg compression)
 )

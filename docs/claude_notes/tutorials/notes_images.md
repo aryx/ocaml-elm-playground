@@ -28,14 +28,14 @@ The three formats are also three chapters of one story, the history of
 
 ## 0. Where the code is, and a reading order
 
-| module (`graphics/images/`) | what | section |
+| module (`graphics/images/`, or `libs/compression/`) | what | section |
 |---|---|---|
 | `rgba/Rgba_image` | the decoded picture: width x height x RGBA bytes | §1 |
-| `deflate/Huffman` | canonical Huffman codes, from their lengths | §3 |
-| `gif/Lzw` | GIF's LZW: a dictionary built while reading | §4 |
+| `compression/Huffman` | canonical Huffman codes, from their lengths | §3 |
+| `compression/Lzw` | GIF's LZW: a dictionary built while reading | §4 |
 | `gif/Gif` | blocks, palettes, frames, disposal, interlacing | §5 |
-| `deflate/Crc32`, `Adler32` | checksums | §6 |
-| `deflate/Inflate`, `Deflate`, `Zlib` | LZ77 + Huffman, decoding and encoding | §6 |
+| `compression/Crc32`, `Adler32` | checksums | §6 |
+| `compression/Inflate`, `Deflate`, `Zlib` | LZ77 + Huffman, decoding and encoding | §6 |
 | `png/Png` | chunks, filters, color types, Adam7 | §7 |
 | `jpeg/Dct` | the 8x8 cosine transform, naive and fast | §8 |
 | `jpeg/Jpeg_huffman`, `Jpeg` | quantization, zigzag, runs, YCbCr, subsampling | §9 |

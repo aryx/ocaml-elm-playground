@@ -65,7 +65,7 @@
    for 1.1's body framings: each message must end without the
    connection ending); compression (we don't send "Accept-Encoding", so
    a server must not compress, and a "Content-Encoding" other than
-   identity is refused; gzip would be deflate/'s Inflate); caching;
+   identity is refused; gzip would be compression's Inflate); caching;
    HTTP/2 (2015: the same messages as binary frames, many requests at
    once on one connection) and HTTP/3 (2022: the same over QUIC, over
    UDP) --

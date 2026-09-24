@@ -22,24 +22,24 @@ let test_tables () =
     let k = Vlc.kraft codes in
     if k > 1. then Alcotest.failf "%s: Kraft sum %g" name k
   in
-  check "address_increment" Vlc.address_increment;
-  check "mb_type_i" Vlc.mb_type_i;
-  check "mb_type_p" Vlc.mb_type_p;
-  check "mb_type_b" Vlc.mb_type_b;
-  check "coded_block_pattern" Vlc.coded_block_pattern;
-  check "motion_code" Vlc.motion_code;
-  check "dc_size_luminance" Vlc.dc_size_luminance;
-  check "dc_size_chrominance" Vlc.dc_size_chrominance;
-  check "dct_first" Vlc.dct_first;
-  check "dct_next" Vlc.dct_next;
+  check "address_increment" Mpeg1_vlc.address_increment;
+  check "mb_type_i" Mpeg1_vlc.mb_type_i;
+  check "mb_type_p" Mpeg1_vlc.mb_type_p;
+  check "mb_type_b" Mpeg1_vlc.mb_type_b;
+  check "coded_block_pattern" Mpeg1_vlc.coded_block_pattern;
+  check "motion_code" Mpeg1_vlc.motion_code;
+  check "dc_size_luminance" Mpeg1_vlc.dc_size_luminance;
+  check "dc_size_chrominance" Mpeg1_vlc.dc_size_chrominance;
+  check "dct_first" Mpeg1_vlc.dct_first;
+  check "dct_next" Mpeg1_vlc.dct_next;
   (* every block pattern but "none", once *)
-  Alcotest.(check (list int)) "patterns 1-63" (List.init 63 (( + ) 1)) (List.sort compare (List.map snd Vlc.coded_block_pattern));
+  Alcotest.(check (list int)) "patterns 1-63" (List.init 63 (( + ) 1)) (List.sort compare (List.map snd Mpeg1_vlc.coded_block_pattern));
   (* a motion code of each difference from -16 to 16 *)
-  Alcotest.(check (list int)) "motion -16..16" (List.init 33 (fun i -> i - 16)) (List.sort compare (List.map snd Vlc.motion_code));
+  Alcotest.(check (list int)) "motion -16..16" (List.init 33 (fun i -> i - 16)) (List.sort compare (List.map snd Mpeg1_vlc.motion_code));
   (* the commonest cases, the shortest codes *)
   Alcotest.(check (list string)) "the next macroblock, no vector change, (0, 1)" [ "1"; "1"; "11" ]
-    [ fst (List.find (fun (_, v) -> v = 1) Vlc.address_increment); fst (List.find (fun (_, v) -> v = 0) Vlc.motion_code);
-      fst (List.find (fun (_, v) -> v = Vlc.Coeff (0, 1)) Vlc.dct_next) ]
+    [ fst (List.find (fun (_, v) -> v = 1) Mpeg1_vlc.address_increment); fst (List.find (fun (_, v) -> v = 0) Mpeg1_vlc.motion_code);
+      fst (List.find (fun (_, v) -> v = Mpeg1_vlc.Coeff (0, 1)) Mpeg1_vlc.dct_next) ]
 
 let test_half_pixel () =
   let row = [| 10; 20; 30; 40 |] in

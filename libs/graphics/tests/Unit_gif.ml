@@ -8,8 +8,8 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* graphics/images/gif: Lzw.mli's worked example, and GIFs of our own
- * (gifs/, see make_gifs.py there) *)
+(* Gif: GIFs of our own (gifs/, see make_gifs.py there), Lzw.mli's
+ * worked example among them *)
 
 let t = Testo.create
 
@@ -31,26 +31,12 @@ let check_pixel msg expected img x y =
   Alcotest.check rgba msg ((er, eg), (eb, ea)) ((r, g), (b, a))
 
 let test_lzw () =
-  (* clear(4) 1 6 7 end(5): the KwKwK case twice, the width growing to
-   * 4 bits before the end code *)
-  Alcotest.(check string) "six pixels of color 1" "\001\001\001\001\001\001"
-    (Bytes.to_string (Lzw.decode ~min_code_size:2 "\x8C\x5F" ~npixels:6));
-  (* the decoder's table, line by line: clear, 1, 6 (adds 6), 7 (adds 7);
-   * the six pixels are then written, and the end code isn't read *)
-  let steps, _ = Lzw.steps ~min_code_size:2 "\x8C\x5F" ~npixels:6 in
-  Alcotest.(check (list (pair (pair int int) (pair int (option int)))))
-    "the steps"
-    [ ((4, 3), (0, None)); ((1, 3), (1, None)); ((6, 3), (2, Some 6)); ((7, 3), (3, Some 7)) ]
-    (List.map (fun (s : Lzw.step) -> ((s.code, s.width), (s.length, s.added))) steps);
-  (* the same stream as a file: 6 x 1, color 1 is red *)
+  (* Lzw.mli's worked example (Unit_lzw.ml) as a file: 6 x 1, color 1
+   * is red *)
   let img = Gif.decode (gif "lzw") in
   for x = 0 to 5 do
     check_pixel "red" (255, 0, 0, 255) img x 0
-  done;
-  (* clear(4) then 7: right after a clear, only a color can come *)
-  (match Lzw.decode ~min_code_size:2 "\x3C" ~npixels:6 with
-  | _ -> Alcotest.fail "code 7 right after a clear"
-  | exception Failure _ -> ())
+  done
 
 (* Each frame's size, delay and CRC-32 of its pixels. The same as PIL
  * reads them (fully transparent pixels made 0, 0, 0, 0 as ours are),
@@ -117,7 +103,7 @@ let test_corrupt () =
 let tests =
   Testo.categorize "Gif"
     [
-      t "LZW: the worked example" test_lzw;
+      t "LZW's worked example, as a file" test_lzw;
       t "our GIFs, the pixels PIL reads" test_frames;
       t "an animation: patches, transparency, disposals" test_anim;
       t "corrupt files, refused" test_corrupt;

@@ -119,16 +119,16 @@ let write_macroblock (sq : sequence) (cur : frame) ~(mx : int) ~(my : int) ((py,
 (* Blocks *)
 (*****************************************************************************)
 
-let address_increment = Vlc.of_list Vlc.address_increment
-let mb_type_i = Vlc.of_list Vlc.mb_type_i
-let mb_type_p = Vlc.of_list Vlc.mb_type_p
-let mb_type_b = Vlc.of_list Vlc.mb_type_b
-let coded_block_pattern = Vlc.of_list Vlc.coded_block_pattern
-let motion_code = Vlc.of_list Vlc.motion_code
-let dc_size_luminance = Vlc.of_list Vlc.dc_size_luminance
-let dc_size_chrominance = Vlc.of_list Vlc.dc_size_chrominance
-let dct_first = Vlc.of_list Vlc.dct_first
-let dct_next = Vlc.of_list Vlc.dct_next
+let address_increment = Vlc.of_list Mpeg1_vlc.address_increment
+let mb_type_i = Vlc.of_list Mpeg1_vlc.mb_type_i
+let mb_type_p = Vlc.of_list Mpeg1_vlc.mb_type_p
+let mb_type_b = Vlc.of_list Mpeg1_vlc.mb_type_b
+let coded_block_pattern = Vlc.of_list Mpeg1_vlc.coded_block_pattern
+let motion_code = Vlc.of_list Mpeg1_vlc.motion_code
+let dc_size_luminance = Vlc.of_list Mpeg1_vlc.dc_size_luminance
+let dc_size_chrominance = Vlc.of_list Mpeg1_vlc.dc_size_chrominance
+let dct_first = Vlc.of_list Mpeg1_vlc.dct_first
+let dct_next = Vlc.of_list Mpeg1_vlc.dct_next
 
 let sign (v : int) : int = compare v 0
 
@@ -157,14 +157,14 @@ let block (b : Bits.t) ~(intra : bool) ~(q : int) ~(matrix : int array) ~(dc : i
   in
   let rec coefficients first =
     match Vlc.read b (if first && not intra then dct_first else dct_next) with
-    | Vlc.Eob -> ()
-    | Vlc.Escape ->
+    | Mpeg1_vlc.Eob -> ()
+    | Mpeg1_vlc.Escape ->
         let run = Bits.read b 6 in
         let level = Bits.read b 8 in
         let level = if level = 0 then Bits.read b 8 else if level = 128 then Bits.read b 8 - 256 else if level > 128 then level - 256 else level in
         place run level;
         coefficients false
-    | Vlc.Coeff (run, level) ->
+    | Mpeg1_vlc.Coeff (run, level) ->
         place run (if Bits.read b 1 = 1 then -level else level);
         coefficients false
   in

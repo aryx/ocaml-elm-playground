@@ -6,7 +6,7 @@
 (executable
  (name Test_js)
  (modes js)
- (libraries graphics_rgba graphics_deflate graphics_png graphics_gif graphics_jpeg)
+ (libraries graphics_rgba compression graphics_png graphics_gif graphics_jpeg)
 )
 
 (rule

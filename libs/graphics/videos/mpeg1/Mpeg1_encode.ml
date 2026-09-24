@@ -43,15 +43,15 @@ let lookup (table : (string * 'a) list) : 'a -> string =
   List.iter (fun (c, v) -> if not (Hashtbl.mem h v) then Hashtbl.add h v c) table;
   fun v -> match Hashtbl.find_opt h v with Some c -> c | None -> invalid_arg "Mpeg1_encode: a value with no code"
 
-let address_increment = lookup Vlc.address_increment
-let coded_block_pattern = lookup Vlc.coded_block_pattern
-let motion_code = lookup Vlc.motion_code
-let dc_size_luminance = lookup Vlc.dc_size_luminance
-let dc_size_chrominance = lookup Vlc.dc_size_chrominance
+let address_increment = lookup Mpeg1_vlc.address_increment
+let coded_block_pattern = lookup Mpeg1_vlc.coded_block_pattern
+let motion_code = lookup Mpeg1_vlc.motion_code
+let dc_size_luminance = lookup Mpeg1_vlc.dc_size_luminance
+let dc_size_chrominance = lookup Mpeg1_vlc.dc_size_chrominance
 
 let coefficient : int * int -> string option =
   let h = Hashtbl.create 128 in
-  List.iter (function c, Vlc.Coeff (run, level) -> Hashtbl.replace h (run, level) c | _ -> ()) Vlc.dct_next;
+  List.iter (function c, Mpeg1_vlc.Coeff (run, level) -> Hashtbl.replace h (run, level) c | _ -> ()) Mpeg1_vlc.dct_next;
   Hashtbl.find_opt h
 
 (* a value's size and bits, as JPEG's (Jpeg.extend backwards) *)

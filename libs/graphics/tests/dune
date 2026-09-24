@@ -16,7 +16,7 @@
    graphics_3d
    graphics_images
    graphics_rgba
-   graphics_deflate
+   compression
    graphics_png
    graphics_gif
    graphics_jpeg

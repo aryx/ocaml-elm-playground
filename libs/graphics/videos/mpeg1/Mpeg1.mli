@@ -8,7 +8,7 @@
    Yuv.mli), and each is either
 
      intra       coded alone, as JPEG would (Jpeg.mli): the DCT of each
-                 block, quantized, zigzag, (run, level) codes (Vlc.mli)
+                 block, quantized, zigzag, (run, level) codes (Mpeg1_vlc.mli)
      predicted   copied from a frame already decoded, **moved** by a
                  motion vector, plus the DCT of what still differs, the
                  **residual** -- often nothing: a few bits
@@ -36,7 +36,7 @@
    towards 0: 3 half pixels become 1.
 
    A vector is sent as its difference from the one before (the
-   neighbour's, usually the same: "1", one bit, Vlc.mli), in f_code
+   neighbour's, usually the same: "1", one bit, Mpeg1_vlc.mli), in f_code
    ranges; a skipped macroblock -- none sent at all -- is, in a P
    picture, the one of the reference at the same place, and in a B, the
    previous macroblock's prediction again.

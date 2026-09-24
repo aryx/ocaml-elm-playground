@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* graphics/images/deflate: the worked examples of Crc32.mli,
+(* The worked examples of Crc32.mli,
  * Adler32.mli, Huffman.mli, Inflate.mli and Zlib.mli (and of
  * notes_images.md, sections 3 and 6) *)
 

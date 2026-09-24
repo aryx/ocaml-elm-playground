@@ -1,12 +1,5 @@
-(* Vlc: MPEG-1's variable-length codes -- the standard's tables, as it
- * prints them.
-
-   JPEG sends its Huffman tables in the file (Jpeg.mli), each picture
-   its own; MPEG-1 fixes its codes once, in the standard (ISO/IEC
-   11172-2, annex B), built from statistics of typical video: short
-   codes for what's common, long ones for the rare. A code here is
-   written as the standard prints it, "0000 0101 11", spaces for the
-   eye; read bit by bit down a binary tree until a leaf.
+(* Mpeg1_vlc: MPEG-1's variable-length codes -- the standard's tables
+   (ISO/IEC 11172-2, annex B), as it prints them, read with Vlc.
 
    The tables, each a lesson in what's common in video:
 
@@ -23,26 +16,7 @@
      dct_dc_size_*                  JPEG's DC sizes
      dct_coefficient                (run of zeros, level) pairs: "11s"
        for (0, 1), the commonest; then "s", the sign; EOB "10";
-       escape "0000 01" for the rest, run and level written plainly
-
-   A code table must be **prefix-free** (no code the start of another,
-   so the reader knows where each ends): [of_list] checks it. *)
-
-type 'a t
-
-(* [of_list codes]: the tree of [codes], (code, value); raises
- * Invalid_argument if one is a prefix of another *)
-val of_list : (string * 'a) list -> 'a t
-
-(* [read bits table]: the next code's value; Failure if the bits are no
- * code of the table *)
-val read : Bits.t -> 'a t -> 'a
-
-(* the Kraft sum of [codes]: sum of 2^-length, at most 1 for any
- * prefix-free code, 1 when no bit string is left out *)
-val kraft : (string * 'a) list -> float
-
-(* the tables *)
+       escape "0000 01" for the rest, run and level written plainly *)
 
 type mb_type = { quant : bool; forward : bool; backward : bool; pattern : bool; intra : bool }
 

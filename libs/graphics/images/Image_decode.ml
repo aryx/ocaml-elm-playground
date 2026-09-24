@@ -7,7 +7,7 @@
  * playground/platforms/native/Image_native.ml).
  *
  * claude: the decoders are our own, pure OCaml, one library a format
- * (png/, gif/, jpeg/, with deflate/ under PNG; see notes_images.md and
+ * (png/, gif/, jpeg/, with compression/ under PNG and GIF; see notes_images.md and
  * plan_images_teaching.md): code to read and learn from, like the rest
  * of graphics/, and no C library to build. The OCaml libraries
  * considered, and why none was kept:

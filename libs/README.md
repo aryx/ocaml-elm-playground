@@ -16,6 +16,7 @@ place a game meets them.
 | `core/` | Elm's core, the small part the Playground's programs need (`Basics`, `Color`, `Set`, `Cmd`, `Sub`, ...), and `Base64` | |
 | `random/` | `Lehmer`, the seeded generator under `Playground.random` | |
 | `crypto/` | `Sha1`, for the WebSocket handshake; what TLS needs to come | |
+| `compression/` | `Huffman`, `Inflate`/`Deflate`/`Zlib` and their checksums, `Lzw`, and MPEG's `Bits` and `Vlc`: what the image, video and audio formats share | `notes_images.md` |
 | `graphics/` | the 2D and 3D software rasterizers, fonts, the image and video formats | `notes_2d.md`, `notes_images.md`, ... |
 | `physics/` | 2D and 3D physics engines, collision, gravity | `notes_2d_physics.md`, `notes_3d_physics.md` |
 | `audio/` | a software synthesizer, the audio formats, instruments and effects ([`audio/README.md`](audio/README.md)) | `notes_audio.md`, `notes_synth.md` |
@@ -29,8 +30,9 @@ packages (its dune file's `(package ...)`), pure OCaml unless the
 folder says otherwise (`networking/unix/`: the sockets, native only),
 so every backend, the web one included, can use them.
 
-Among themselves they depend little: `core/`, `random/` and `crypto/`
-at the bottom; `networking/` on those three; `graphics/` on `core/`,
+Among themselves they depend little: `core/`, `random/`, `crypto/` and
+`compression/` at the bottom; `networking/` on the first three;
+`graphics/` on `compression/` (its formats' codes), on `core/`,
 on `audio/`'s samples (a video's sound) and on `networking/` (an image
 downloaded); `physics/` on `graphics/`' geometry; `gui/` on `core/`;
 `audio/`, `ai/` and `juice/` on nothing of the others. dune finds a
