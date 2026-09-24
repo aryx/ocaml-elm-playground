@@ -111,6 +111,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: 1977: the CS-80's two sections, their knobs in rows, the
      * shared row, the ribbon *)
     ("apps/music/software/TinyCS80", "", 5);
+    (* claude: 1984: the Juno-106's sliders by section, its buttons and
+     * their lights *)
+    ("apps/music/software/TinyJuno", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1056,6 +1059,12 @@ let scripted : Testutil_golden.scripted list =
      * by the mouse and dragged down to 0.75 -- that note alone brighter,
      * its bar on the key, three voices (E not struck again) *)
     ("apps/music/software/TinyCS80", "playing", 30, "a:5-40,d:5-40,g:5-40,at(-280;-330):10-19,at(-280;-420):20-40,click:10-40");
+    (* claude: the Juno played: the VCF's cutoff slider dragged up, chorus
+     * II clicked, then C E G held -- the spectrum opened, II lit *)
+    ( "apps/music/software/TinyJuno",
+      "playing",
+      38,
+      "at(-60;255):1-5,at(-60;340):6-12,click:2-12,at(330;95):14-17,click:15,a:20-40,d:20-40,g:20-40" );
     (* claude: the organ played: the 4' drawbar pulled out to 6 by the
      * mouse, C E G held, the Leslie switched on and fast half a second
      * before -- its horn spun up to 4 turns a second, its drum to 2 *)

@@ -1369,6 +1369,21 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   corrected (inverted, Harman measured). Not done: the 12 dB low-pass
   before the chorus's lines, the BBD's own grit, the voices assigned in
   turn (ours are fresh per note: nothing to rotate).
+- **J2, DONE (2026-09-24)**: TinyJuno. The 106's panel as vertical
+  sliders in its sections (LFO, DCO, HPF, VCF, VCA, ENV), drawn and
+  dragged by the panel itself (a slider held follows the mouse; the
+  high-pass's snapping to its four positions), and its buttons with
+  their lights (the range, pulse and sawtooth, the width by the LFO,
+  the envelope's polarity, the gate, the chorus off, I, II, I+II). The
+  keys at full: the 106 has no velocity. Spectrum, scope. Golden frames
+  TinyJuno and TinyJuno_playing (the cutoff slider dragged up, chorus
+  II clicked, C E G held); web page; `CATALOG.md`'s row. Left, in its
+  header: the 128 patches as banks and the 106's SysEx, the bender, the
+  hold button, the 60's arpeggiator.
+- **The classics done (2026-09-24)**: TinyMinimoog, TinyHammond,
+  TinyTB303, TinyDX7, TinyRhodes, TinyCS80, TinyJuno. Next in the plan:
+  the ReBirth line (TinyTR808, the 909, TinyReBirth), then TinyOp1 and
+  TinyOpxy, the climax.
 
 ## Verification
 
