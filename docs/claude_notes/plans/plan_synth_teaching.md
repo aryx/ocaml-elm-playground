@@ -876,6 +876,34 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   something); all let go, none left and silence; a key pressed again,
   two voices, then one. Step two (a fixed number, stealing) with the
   DX7 or the Juno, as planned.
+- **H2, DONE (2026-09-24)**: TinyHammond's sound, in `music_voices`.
+  The facts looked up first: the 12 gear ratios (HammondWiki's "Gear
+  Ratio"), 20 revolutions a second, 91 wheels, 2 to 128 bumps by octave
+  and 192 on the last seven, which take F's to B's gears (goodeveca's
+  tonewheel table: the top wheel 5924.57 Hz, not an exact octave). Not
+  found, so ours and said so: 3 dB a drawbar step, the contacts' 2 ms,
+  the percussion's times (fast -60 dB in 0.3 s, slow 1.2 s, soft -6 dB),
+  the click's 4 ms, the scanner's 6.9 Hz and depths. `Tonewheel` (the
+  91 frequencies, foldback by octaves, cents from equal temperament);
+  `Hammond_voice` over `Polyphony`: nine drawbars on the wheels, read
+  from one clock shared by every voice (the wheels never stop: keys
+  sharing a wheel add in phase), the percussion single-triggered and
+  taking the 1' drawbar's circuit, the key click, the scanner vibrato
+  and chorus (V1-V3, C1-C3) on the whole organ; registrations as nine
+  digits; five presets of ours (jazz, full, gospel, ballad, flute).
+  `Patch_text`, the patch as "name = value" lines, taken out of
+  `Minimoog_voice` now that two instruments share it (its golden WAVs
+  unchanged). Tests (`Unit_hammond`): A4 440 exactly, C4 261.538 Hz
+  (-0.58 cents), F#8 5924.57, the foldback; the tempered harmonic, C4's
+  2 2/3' G5's wheel at 784.0 Hz against the true 784.62, 1.36 cents
+  flat; 888000000's three lines equal within 1%, nothing at 4'; a
+  drawbar two steps in, -6 dB; the percussion struck and 60 dB down a
+  second later, a second key without it; a chord's voices freed; the
+  presets as text. A golden WAV per preset (C, F, G major), their
+  spectrograms looked at before approving (the percussion flaring at
+  each chord, the chorus's sweep); "full" had clipped at an output gain
+  of 0.1, now 0.05, peaking at -4.9 dB. Next: H3 (the Leslie), H4 (the
+  panel, TinyHammond itself).
 
 ## Verification
 

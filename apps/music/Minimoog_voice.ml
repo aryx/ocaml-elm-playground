@@ -87,17 +87,12 @@ let initial : patch =
   }
 
 type control = Control.t = Knob of float * float | Switch | Selector of string list
-type knob = { name : string; control : control; get : patch -> float; put : patch -> float -> patch }
+type knob = patch Patch_text.knob
 
-let bool = Control.on
-let of_bool = Control.of_bool
-let index = Control.index
-let knob name get put = { name; control = Knob (0., 1.); get; put }
-let detune name get put = { name; control = Knob (-1., 1.); get; put }
-let switch name get put = { name; control = Switch; get = (fun p -> of_bool (get p)); put = (fun p x -> put p (bool x)) }
-
-let selector name labels get put =
-  { name; control = Selector labels; get = (fun p -> float_of_int (get p)); put = (fun p x -> put p (index x)) }
+let knob = Patch_text.knob
+let detune = Patch_text.detune
+let switch = Patch_text.switch
+let selector = Patch_text.selector
 
 (* an oscillator's five controls, under its name *)
 let oscillator_knobs (name : string) (labels : string list) (get : patch -> oscillator) (put : patch -> oscillator -> patch) : knob list =
@@ -125,7 +120,7 @@ let contour_knobs (name : string) (get : patch -> contour) (put : patch -> conto
  * number stored under its name *)
 let effect_knobs : knob list =
   List.map
-    (fun (k : Effect.knob) ->
+    (fun (k : Effect.knob) : knob ->
       {
         name = k.name;
         control = k.control;
@@ -163,28 +158,8 @@ let knobs : knob list =
   @ [ knob "volume" (fun p -> p.volume) (fun p x -> { p with volume = x }) ]
   @ effect_knobs
 
-let value_to_string (k : knob) (x : float) : string = Control.to_string k.control x
-
-let to_string (p : patch) : string =
-  String.concat "" (List.map (fun k -> Printf.sprintf "%s = %s\n" k.name (value_to_string k (k.get p))) knobs)
-
-let value_of_string (k : knob) (s : string) : float option = Control.of_string k.control s
-
-let of_string (text : string) : (patch, string) result =
-  let line (acc : (patch, string) result) (l : string) =
-    match acc with
-    | Error _ -> acc
-    | Ok p -> (
-        let l = match String.index_opt l '#' with Some i -> String.sub l 0 i | None -> l in
-        match String.index_opt l '=' with
-        | None -> if String.trim l = "" then acc else Error ("not \"name = value\": " ^ String.trim l)
-        | Some i -> (
-            let name = String.trim (String.sub l 0 i) and v = String.trim (String.sub l (i + 1) (String.length l - i - 1)) in
-            match List.find_opt (fun k -> k.name = name) knobs with
-            | None -> Error ("no such control: " ^ name)
-            | Some k -> ( match value_of_string k v with Some x -> Ok (k.put p x) | None -> Error (Printf.sprintf "%s: not a value: %s" name v))))
-  in
-  List.fold_left line (Ok initial) (String.split_on_char '\n' text)
+let to_string (p : patch) : string = Patch_text.to_string knobs p
+let of_string (text : string) : (patch, string) result = Patch_text.of_string knobs ~initial text
 
 (* our settings, in the patch charts' text *)
 let preset_texts =
@@ -594,6 +569,6 @@ let instrument (v : t) : Instrument.t =
     match name with
     | "pitch_wheel" -> v.pitch_wheel <- Float.min 1. (Float.max (-1.) x)
     | "mod_wheel" -> v.mod_wheel <- Float.min 1. (Float.max 0. x)
-    | _ -> Option.iter (fun k -> v.patch <- k.put v.patch x) (List.find_opt (fun k -> k.name = name) knobs)
+    | _ -> Option.iter (fun (k : knob) -> v.patch <- k.put v.patch x) (List.find_opt (fun (k : knob) -> k.name = name) knobs)
   in
   { note_on = (fun n _velocity -> key (Voicing.press v.keys n)); note_off = (fun n -> key (Voicing.release v.keys n)); set; fill = fill v }

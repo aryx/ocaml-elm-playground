@@ -139,8 +139,9 @@ val initial : patch
 
 type control = Control.t = Knob of float * float (* from, to *) | Switch | Selector of string list
 
-(* a control of the panel: its name, in the text and in [set] *)
-type knob = { name : string; control : control; get : patch -> float; put : patch -> float -> patch }
+(* a control of the panel: its name, in the text and in [set]
+ * (Patch_text.mli) *)
+type knob = patch Patch_text.knob
 
 val knobs : knob list
 

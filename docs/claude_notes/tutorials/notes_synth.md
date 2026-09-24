@@ -38,6 +38,8 @@ module here.
 | `audio/synthesis/Envelope` (extended) | gated, exponential | §4 | done |
 | `audio/instruments/Voicing` | keys to a voice: priority, legato, glide | §5 | done (mono) |
 | `audio/instruments/Polyphony` | a voice per key, freed once silent (stealing: later) | §5 | done (step one) |
+| `apps/music/Tonewheel`, `Hammond_voice` | the Hammond's 91 wheels, its drawbars (additive synthesis), percussion, click, scanner vibrato | §10 | done (the sound; the Leslie and the panel to come) |
+| `apps/music/Patch_text` | a patch as named controls and "name = value" lines, for every instrument | §9 | done |
 | `audio/instruments/Moog_ladder` | the Moog filter: naive, zero-delay, nonlinear | §6 | done |
 | `audio/instruments/Svf` | the state-variable filter: Chamberlin's, zero-delay | §7 | done |
 | `audio/effects/Effect` | an effect as a rack holds it: knobs by name, blocks | §8 | done |
