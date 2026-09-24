@@ -102,6 +102,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: 1981: the 303's knobs and its pattern as a grid, the acid
      * line, stopped *)
     ("apps/music/software/TinyTB303", "", 5);
+    (* claude: 1983: the DX7's LCD and data entry, the e.piano's
+     * algorithm 5 drawn as its graph, the six envelopes *)
+    ("apps/music/software/TinyDX7", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1035,6 +1038,11 @@ let scripted : Testutil_golden.scripted list =
       "running",
       38,
       "at(-400;318):1-6,click:3,at(-192;130):7-12,click:9" );
+    (* claude: the DX7 played: OP > clicked (the LCD on op 1's first
+     * rate), then C, E and G held on the letters: the carriers lit
+     * brighter than their modulators, the tine's partials 14 times up
+     * in the spectrum *)
+    ("apps/music/software/TinyDX7", "playing", 40, "at(-110;300):1-6,click:3,a:10-40,d:10-40,g:10-40");
     (* claude: the organ played: the 4' drawbar pulled out to 6 by the
      * mouse, C E G held, the Leslie switched on and fast half a second
      * before -- its horn spun up to 4 turns a second, its drum to 2 *)

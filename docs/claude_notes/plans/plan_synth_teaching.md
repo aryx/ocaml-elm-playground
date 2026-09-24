@@ -1163,6 +1163,24 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   exercise, its facts to look up; key sync off (every note starts at
   phase 0); the pitch bend and the modulation wheel (with the MIDI
   keyboard).
+- **D3, DONE (2026-09-24)**: TinyDX7. The DX7's front: its two-line LCD
+  (the voice, the parameter and its value), < PARAM > and < OP > (an
+  operator at a time) through the 145, the data slider, -1 and +1 --
+  the lesson, why every synthesizer after it had knobs again. Beside it
+  what the DX7 hid: the algorithm drawn as its graph (the carriers in a
+  row, each modulator above its first target, the feedback's loop),
+  each operator lit by its amplitude on a 60 dB scale, a click on one
+  choosing its output level; the six envelopes drawn (each segment its
+  time, square-rooted). The keyboard's velocity where the mouse presses
+  a key (0.2 at its back to 1 at its front: FM's timbre follows it); the
+  spectrum and the scope. `cart=` a .syx, fetched (natively for now),
+  its voices after ours, < and > stepping through them (a menu of 38 is
+  taller than the screen). Golden frames TinyDX7 and TinyDX7_playing
+  (OP > clicked, C E G held: the carriers lit, the tine's partials);
+  its web page; `CATALOG.md`'s row. 16 voices on the web too, to check
+  in a browser (0.73 s of CPU a second for 16 sounding in node). Left,
+  in its header's exercises: the Reface DX's mode, saving voices and
+  cartridges, the operators switched on and off, a MIDI keyboard.
 
 ## Verification
 

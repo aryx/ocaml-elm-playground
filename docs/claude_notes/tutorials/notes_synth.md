@@ -45,7 +45,7 @@ module here.
 | `audio/instruments/Diode_ladder` | the TB-303's filter: four coupled poles, the "18 dB" measured against the Moog's | §6 | done |
 | `audio/instruments/Sequencer` | steps in the audio clock: events at the sample, whatever the blocks | §1 | done |
 | `audio/Tape` | the OP-1's four tracks: a head read and written at any speed (pitch and time together), reverse, loop, lift and drop | §10 | done |
-| `apps/music/Dx7_voice` | the DX7: six operators, Dexed's formulas (ratios, detune, scalings, velocity, pitch envelope, LFO), the voice's bytes and a cartridge's, 16 voices, our six patches | §10 | done |
+| `apps/music/Dx7_voice`, `TinyDX7` | the DX7: six operators, Dexed's formulas (ratios, detune, scalings, velocity, pitch envelope, LFO), the voice's bytes and a cartridge's, 16 voices, our six patches; its panel, a parameter at a time on the LCD beside the algorithm drawn and the envelopes | §10 | done |
 | `apps/music/Tb303_voice`, `TinyTB303` | the Bass Line: the accent and its sweep, slides, patterns as text; its panel, the pattern a grid | §10 | done |
 | `audio/effects/Leslie` | the rotating speaker: horn and drum, the Doppler and the tremolo from their angles, two microphones | §10 | done |
 | `apps/music/Patch_text` | a patch as named controls and "name = value" lines, for every instrument | §9 | done |
