@@ -10,7 +10,7 @@
 
 (* See Media.mli *)
 
-type kind = Wav | Mp2 | Mp3 | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1
+type kind = Wav | Mp2 | Mp3 | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1 | Mpg
 
 let kind_name = function
   | Wav -> "WAV"
@@ -28,6 +28,7 @@ let kind_name = function
   | Flic -> "FLIC"
   | Avi -> "AVI"
   | Mpeg1 -> "MPEG-1"
+  | Mpg -> "MPEG-1 system"
 
 (*****************************************************************************)
 (* What it is *)
@@ -47,6 +48,7 @@ let by_bytes (s : string) : kind option =
   else if starts s 0 "/* XPM */" then Some Xpm
   else if starts s 0 "YUV4MPEG2 " then Some Y4m
   else if starts s 0 "\000\000\001\xB3" then Some Mpeg1
+  else if starts s 0 "\000\000\001\xBA" then Some Mpg
   else if String.length s >= 128 && (starts s 4 "\x11\xAF" || starts s 4 "\x12\xAF") then Some Flic
   else if starts s 0 "X:" then Some Abc
   else
@@ -108,6 +110,47 @@ let tune (t : Abc.tune) : media =
   let notes = match Midi.parse (Midi.of_tune t) with Ok score -> score.notes | Error _ -> [] in
   Sound { samples = Synth.render_stereo (Music.to_sound t); notes }
 
+(* an MP2 or MP3, at our sample rate *)
+let mpeg_sound (bytes : string) : (Signal.stereo, string) result =
+  Result.map
+    (fun ((h : Mpeg_audio_header.t), (s : Signal.stereo)) ->
+      let at_our_rate x = if h.sample_rate = Signal.rate then x else Resample.to_rate Cubic h.sample_rate x in
+      { Signal.left = at_our_rate s.left; right = at_our_rate s.right })
+    (Mpeg_audio.decode bytes)
+
+(* an MPEG-1 video stream, and for the analyzer its decisions and what
+ * was sent *)
+let mpeg1_movie (bytes : string) ~(sound : Signal.stereo option) : media =
+  let header, movie, info = Mpeg1.of_string bytes in
+  let sent = lazy (let _, m, _ = Mpeg1.of_string ~residual:true bytes in m) in
+  Movie { movie; sound; mpeg = Some (header, info, sent) }
+
+(* [s] starting [seconds] later (earlier if negative): silence added
+ * before it, or its start cut *)
+let delayed (seconds : float) (s : Signal.t) : Signal.t =
+  let n = int_of_float (Float.round (seconds *. float_of_int Signal.rate)) in
+  if n >= 0 then Array.append (Array.make n 0.) s else Array.sub s (min (-n) (Array.length s)) (max 0 (Array.length s + n))
+
+(* an .mpg: its first video stream, and its first audio stream moved so
+ * that its time 0 is the first picture's (their first timestamps) --
+ * the player shows the frame at the sound's position *)
+let mpg (bytes : string) : (media, string) result =
+  let streams = Mpeg_system.of_string bytes in
+  match Mpeg_system.video streams with
+  | None -> Error "no video stream"
+  | Some video ->
+      let sound =
+        match Mpeg_system.audio streams with
+        | None -> None
+        | Some audio -> (
+            match mpeg_sound audio.bytes with
+            | Error _ -> None
+            | Ok s ->
+                let offset = match (audio.first_pts, video.first_pts) with Some a, Some v -> a -. v | _ -> 0. in
+                Some { Signal.left = delayed offset s.left; right = delayed offset s.right })
+      in
+      Ok (mpeg1_movie video.bytes ~sound)
+
 let open_ ~(name : string) (bytes : string) : (kind * media, string) result =
   match sniff ~name bytes with
   | None -> Error (name ^ ": not a kind of file this player knows")
@@ -115,12 +158,7 @@ let open_ ~(name : string) (bytes : string) : (kind * media, string) result =
       let media =
         match kind with
         | Wav -> Result.map (fun s -> Sound { samples = Signal.both s; notes = [] }) (Wav.of_string bytes)
-        | Mp2 | Mp3 ->
-            Result.map
-              (fun ((h : Mpeg_audio_header.t), (s : Signal.stereo)) ->
-                let at_our_rate x = if h.sample_rate = Signal.rate then x else Resample.to_rate Cubic h.sample_rate x in
-                Sound { samples = { left = at_our_rate s.left; right = at_our_rate s.right }; notes = [] })
-              (Mpeg_audio.decode bytes)
+        | Mp2 | Mp3 -> Result.map (fun samples -> Sound { samples; notes = [] }) (mpeg_sound bytes)
         | Midi -> Result.map (fun (score : Midi.score) -> Sound { samples = Signal.both (Music.render_score score); notes = score.notes }) (Midi.parse bytes)
         | Mod -> Result.map (fun song -> Module song) (Mod.of_string bytes)
         | Abc -> Result.map tune (Abc.parse bytes)
@@ -135,10 +173,8 @@ let open_ ~(name : string) (bytes : string) : (kind * media, string) result =
         | Avi ->
             let _, movie, sound = Avi.of_string bytes in
             Ok (Movie { movie; sound = Option.map Signal.both sound; mpeg = None })
-        | Mpeg1 ->
-            let header, movie, info = Mpeg1.of_string bytes in
-            let sent = lazy (let _, m, _ = Mpeg1.of_string ~residual:true bytes in m) in
-            Ok (Movie { movie; sound = None; mpeg = Some (header, info, sent) })
+        | Mpeg1 -> Ok (mpeg1_movie bytes ~sound:None)
+        | Mpg -> mpg bytes
       in
       match media with Ok m -> Ok (kind, m) | Error e -> Error (name ^ ": " ^ e) | exception e -> Error (name ^ ": " ^ Printexc.to_string e))
 

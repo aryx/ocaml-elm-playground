@@ -179,4 +179,7 @@ let playlist : (string * string Lazy.t) list =
      * (make_mpeg.sh): we decode MP3 and MP2, but have no encoder *)
     ("lame_encoded.mp3", Lazy.from_val Our_pictures.stereo_mp3);
     ("twolame_encoded.mp2", Lazy.from_val Our_pictures.stereo_mp2);
+    (* the clip and its blips muxed by ffmpeg as an .mpg (make_clips.sh):
+     * its MPEG-1 video and its MP2, interleaved *)
+    ("ffmpeg_muxed.mpg", Lazy.from_val Our_pictures.ball_and_square_mpg);
   ]

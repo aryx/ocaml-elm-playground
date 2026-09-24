@@ -21,6 +21,9 @@
  *                               container, another type
  *     00 00 01 B3               MPEG-1 video (1993): a start code, the
  *                               sequence header's
+ *     00 00 01 BA               an MPEG-1 system stream, .mpg: the video
+ *                               and its sound interleaved, a pack's
+ *                               start code first (Mpeg_system.mli)
  *     FF Ex / FF Fx, or "ID3"   MPEG audio, MP2 and MP3 (1993): 11 bits
  *                               of sync, a frame's header, checked by the
  *                               next frame's being where it says; or a
@@ -41,9 +44,10 @@
  * its own player (Mod_player.mli), too long to render ahead; a
  * [Picture]; a [Movie], pictures in time, decoded as they're shown
  * (Movie.mli), and its sound if it has one (an AVI's): a GIF's frames,
- * Y4M, FLI and FLC, AVI, MPEG-1 (plan_video_teaching.md). *)
+ * Y4M, FLI and FLC, AVI, MPEG-1, and an .mpg's video with its MP2
+ * (plan_video_teaching.md). *)
 
-type kind = Wav | Mp2 | Mp3 | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1
+type kind = Wav | Mp2 | Mp3 | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1 | Mpg
 
 val kind_name : kind -> string
 

@@ -36,6 +36,7 @@ let test_sniff () =
       ("ffmpeg_encoded.m1v", Mpeg1);
       ("lame_encoded.mp3", Mp3);
       ("twolame_encoded.mp2", Mp2);
+      ("ffmpeg_muxed.mpg", Mpg);
     ];
   (* the MP3 starts with ffmpeg's ID3v2 tag (its encoder's name, 35
    * bytes after the tag's 10); without it, the frames first, the same *)
@@ -64,6 +65,14 @@ let test_open () =
   (match open_ "lame_encoded.mp3" with
   | Sound s -> if s.samples.left = s.samples.right then Alcotest.fail "the MP3's channels the same"
   | _ -> Alcotest.fail "not a sound");
+  (* the .mpg: the clip's 50 frames, and its MP2 (77 frames of 1152
+   * samples) moved to the video's clock: it starts 0.010911 s before
+   * the first picture, so its first 481 samples are cut *)
+  (match open_ "ffmpeg_muxed.mpg" with
+  | Movie { movie; sound = Some sound; mpeg = Some _ } ->
+      Alcotest.(check int) "the .mpg: 50 frames" 50 (Movie.frame_count movie);
+      Alcotest.(check int) "its sound, from the first picture" ((77 * 1152) - 481) (Array.length sound.left)
+  | _ -> Alcotest.fail "not a movie with a sound");
   (match open_ "frere_jacques.abc" with
   | Sound s ->
       (* voice 1's eight bars, 32 notes; voice 2 two bars late, the first

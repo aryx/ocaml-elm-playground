@@ -11,8 +11,9 @@
  * Our_media.ml), a sprite as XPM (TinyMario's), and a video, raw as
  * Y4M, FLC, AVI (with a sound) and MPEG-1 (ours, and ffmpeg's), filmed
  * by our own 2D rasterizer; last, the bell and chirps in stereo as MP3
- * and MP2 (LAME's and twolame's, we have no encoder); each item's bytes
- * made when first forced *)
+ * and MP2 (LAME's and twolame's, we have no encoder), and the clip with
+ * its sound as an .mpg (ffmpeg's); each item's bytes made when first
+ * forced *)
 val playlist : (string * string Lazy.t) list
 
 (* the frames of our video, drawn by graphics/2d: the pictures the Y4M,

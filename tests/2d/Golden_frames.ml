@@ -1109,6 +1109,13 @@ let scripted : Testutil_golden.scripted list =
      * (Mpeg_audio.mli), 0.4 s in: the bell's decay, the chirps' ticks
      * every quarter of a second *)
     ("apps/media/software/TinyMediaPlayer", "mp3", 70, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36,n:39,n:42,n:45");
+    (* claude: ffmpeg's .mpg, the clip's MPEG-1 and its blips' MP2
+     * demultiplexed (Mpeg_system.mli): frame 17, a B frame, the one the
+     * MP2's position says, between two blips *)
+    ( "apps/media/software/TinyMediaPlayer",
+      "mpg",
+      90,
+      "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36,n:39,n:42,n:45,n:48,n:51" );
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

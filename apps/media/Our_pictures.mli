@@ -6,3 +6,4 @@ val mario_stand_xpm : string
 val ball_and_square_m1v : string
 val stereo_mp3 : string
 val stereo_mp2 : string
+val ball_and_square_mpg : string

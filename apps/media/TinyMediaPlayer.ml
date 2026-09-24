@@ -15,7 +15,8 @@
  * and MP3, audio/formats/mpeg_audio/), tunes (MIDI, ABC,
  * solfege), a song with its instruments (MOD), pictures (PNG, JPEG,
  * XPM) and movies (an animated GIF, Y4M, FLI and FLC, AVI with its
- * sound, MPEG-1: graphics/videos/, plan_video_teaching.md).
+ * sound, MPEG-1, and an .mpg's MPEG-1 with its MP2: graphics/videos/,
+ * plan_video_teaching.md).
  *
  * The file's kind is found from its bytes, not its name (Media.mli: the
  * magic numbers file(1) and VLC's demuxers look for), and each kind is
