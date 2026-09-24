@@ -114,12 +114,7 @@ let today (computer : computer) : int =
 
 (* the days [e] happens on between [from] and [upto] *)
 let occurring (e : Ics.event) ~(from : int) ~(upto : int) : int list =
-  match e.rrule with
-  | None ->
-      let s = days e.start.date in
-      if s >= from && s <= upto then [ s ] else []
-  | Some r ->
-      Recur.occurrences ?at:e.start.time r ~start:e.start.date ~from:(date from) ~upto:(date upto) |> List.map days
+  Ics.occurrences e ~from:(date from) ~upto:(date upto) |> List.map days
 
 (* seconds from its start to its end, an hour if it doesn't say *)
 let duration (e : Ics.event) : int =

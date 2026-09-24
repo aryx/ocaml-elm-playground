@@ -66,6 +66,10 @@ type todo = {
 
 type calendar = { events : event list; todos : todo list }
 
+(* the days [e] happens on between [from] and [upto] (both included):
+ * its start's, or its rule's occurrences (Recur.occurrences) *)
+val occurrences : event -> from:Civil.date -> upto:Civil.date -> Civil.date list
+
 (* the file's text, leniently (see above); never raises *)
 val of_string : string -> calendar
 

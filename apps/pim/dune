@@ -1,20 +1,19 @@
 ; claude: the personal information managers (CATALOG.md's section, and
-; plan_pim.md): TinyClock and TinyCalendar so far, over core's time/.
-; Laid out like office/: the programs here, software/ for the golden
-; frames, web/ for the browser.
-;
-; To come, Tiny and after a famous original:
-;  - the Palm Pilot (1996): Date Book, Address, To Do and Memo Pad
-;    behind four buttons -- the address book and the to-do list as its
-;    applications.
+; plan_pim.md): TinyClock, TinyCalendar and TinyPalmPilot, over core's
+; time/ and appkits/pim; the Palm's screen (Palm) and its four
+; applications (Pim_date_book, Pim_address, Pim_todo, Pim_memo) are
+; modules here. Laid out like office/: the programs here, software/
+; for the golden frames, web/ for the browser.
 (executables
-  (names TinyClock TinyCalendar)
-  (modules TinyClock TinyCalendar)
+  (names TinyClock TinyCalendar TinyPalmPilot)
+  (modules TinyClock TinyCalendar TinyPalmPilot Palm Pim_date_book Pim_address Pim_todo Pim_memo)
   (libraries
     caps ; the File menu's authority to save, Export's and Import's
     gui ; Widget, Layout, Theme
     appkit_file_menu ; File_menu
-    appkit_pim ; Ics
+    appkit_pim ; Ics, Vcard
+    appkit_document ; Saved (TinyPalmPilot)
+    graphics_font ; Hershey's strokes, the Palm's font
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

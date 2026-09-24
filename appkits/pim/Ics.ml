@@ -25,6 +25,13 @@ type event = {
 type todo = { uid : string; summary : string; due : moment option; priority : int; completed : bool }
 type calendar = { events : event list; todos : todo list }
 
+let occurrences (e : event) ~(from : Civil.date) ~(upto : Civil.date) : Civil.date list =
+  match e.rrule with
+  | None ->
+      let s = Civil.days_from_civil e.start.date in
+      if s >= Civil.days_from_civil from && s <= Civil.days_from_civil upto then [ e.start.date ] else []
+  | Some r -> Recur.occurrences ?at:e.start.time r ~start:e.start.date ~from ~upto
+
 (*****************************************************************************)
 (* Lines *)
 (*****************************************************************************)

@@ -90,6 +90,9 @@ let scenes : Testutil_golden.scene list =
     (* 1971-2002: the month of -fixed-time's day, January 1970, its
      * sample events repeating by their rules (Recur) *)
     ("apps/pim/software/TinyCalendar", "", 5);
+    (* 1996: the Date Book on -fixed-time's day, its events of the day
+     * (a Thursday: the standup repeats on it), in the Palm's own font *)
+    ("apps/pim/software/TinyPalmPilot", "", 5);
     (* 1970: the Model D's panel, black between wooden cheeks, left to
      * right; the bass preset *)
     ("apps/music/software/TinyMinimoog", "", 5);
@@ -1335,6 +1338,11 @@ let flagged : Testutil_golden.flagged list =
      * 2nd followed by the 14th *)
     ("apps/pim/software/TinyCalendar", "week", 5, [ "view=week" ]);
     ("apps/pim/software/TinyCalendar", "1752", 5, [ "date=1752-09-02" ]);
+    (* claude: the Palm's three other applications: the cards by last
+     * name, the to-dos by priority, the memos by their first line *)
+    ("apps/pim/software/TinyPalmPilot", "address", 5, [ "app=address" ]);
+    ("apps/pim/software/TinyPalmPilot", "todo", 5, [ "app=todo" ]);
+    ("apps/pim/software/TinyPalmPilot", "memo", 5, [ "app=memo" ]);
   ]
 
 (* claude: played and flagged: the games whose juice was written by

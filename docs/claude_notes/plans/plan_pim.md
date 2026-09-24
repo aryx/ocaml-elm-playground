@@ -67,6 +67,8 @@ apps/pim/
   Pim_address.ml/.mli     with its model, update and view, the device
   Pim_todo.ml/.mli        around them in TinyPalmPilot
   Pim_memo.ml/.mli
+  Palm.ml/.mli            the screen (160 x 160 dots, 4 x), the stylus,
+                          the shared data (the four databases)
   TinyPalmPilot.ml
   software/  web/
 ```
@@ -151,6 +153,13 @@ A 160x160 screen, drawn in its greys, and the four buttons under it.
 - **Memo Pad** (`Pim_memo`): plain text memos, the first line their
   title.
 - The device: the four buttons as keys (1-4), the menu, categories.
+  (Done: the buttons clicked on the case or F1..F4 -- the digits are
+  for writing phone numbers -- and the rocker; no menu, no categories,
+  both left as exercises in the header. The data stored at every frame
+  that changed it (Saved, one file in the store) and read back at the
+  start: no Save. The text drawn from Hershey's strokes by Palm itself,
+  not the playground's [words], so that a measured line is the drawn
+  one on every backend.)
 - Later (exercises, or a phase if it goes well): **Graffiti**, the
   single-stroke alphabet recognized from the mouse's path (a small
   recognizer, `ai/`-style, with its worked strokes); **HotSync**, two

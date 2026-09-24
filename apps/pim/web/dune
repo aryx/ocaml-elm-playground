@@ -4,13 +4,15 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyClock TinyCalendar)
-  (modules TinyClock TinyCalendar)
+  (names TinyClock TinyCalendar TinyPalmPilot)
+  (modules TinyClock TinyCalendar TinyPalmPilot Palm Pim_date_book Pim_address Pim_todo Pim_memo)
   (libraries
     caps ; the File menu's authority to save, Export's and Import's
     gui ; Widget, Layout, Theme
     appkit_file_menu ; File_menu
-    appkit_pim ; Ics
+    appkit_pim ; Ics, Vcard
+    appkit_document ; Saved (TinyPalmPilot)
+    graphics_font ; Hershey's strokes, the Palm's font
     elm_playground
     elm_playground_web ; implem of virtual elm_playground
   )
