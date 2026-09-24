@@ -25,6 +25,8 @@ type patch = {
   bpm : float;
   volume : float;
   pattern : Sequencer.step array;
+  locks : int;
+  smoothing : float;
 }
 
 let cutoff_hz (k : float) : float = 100. *. Float.pow 25. k
@@ -35,20 +37,42 @@ let env_octaves (k : float) : float = 1. +. (4. *. k)
 (* the patterns as text: a step a word *)
 let names = [| "C"; "C#"; "D"; "Eb"; "E"; "F"; "F#"; "G"; "Ab"; "A"; "Bb"; "B" |]
 
+(* a step's locks: "[cutoff=0.8,decay=0.2]", in the order locked *)
+let locks_to_string (l : (string * float) list) : string =
+  if l = [] then "" else "[" ^ String.concat "," (List.rev_map (fun (k, v) -> Printf.sprintf "%s=%g" k v) l) ^ "]"
+
 let step_to_string (s : Sequencer.step) : string =
-  match s.note with
+  (match s.note with
   | None -> "."
-  | Some n -> names.(n mod 12) ^ string_of_int ((n / 12) - 1) ^ (if s.accent then "*" else "") ^ if s.slide then "~" else ""
+  | Some n -> names.(n mod 12) ^ string_of_int ((n / 12) - 1) ^ (if s.accent then "*" else "") ^ if s.slide then "~" else "")
+  ^ locks_to_string s.locks
 
 let pattern_to_string (p : Sequencer.step array) : string = String.concat " " (Array.to_list (Array.map step_to_string p))
 
+let locks_of_string (text : string) : ((string * float) list, string) result =
+  List.fold_left
+    (fun acc pair ->
+      match (acc, String.split_on_char '=' pair) with
+      | Ok l, [ k; v ] -> (
+          match float_of_string_opt v with Some x -> Ok ((String.trim k, x) :: l) | None -> Error ("not a lock: " ^ pair))
+      | Ok _, _ -> Error ("not a lock: " ^ pair)
+      | e, _ -> e)
+    (Ok []) (String.split_on_char ',' text)
+
 let step_of_string (w : string) : (Sequencer.step, string) result =
-  if w = "." || w = "-" then Ok Sequencer.rest
+  (* the locks apart, in brackets at the end *)
+  let w, locks =
+    match String.index_opt w '[' with
+    | Some i when w.[String.length w - 1] = ']' -> (String.sub w 0 i, locks_of_string (String.sub w (i + 1) (String.length w - i - 2)))
+    | _ -> (w, Ok [])
+  in
+  let with_locks (s : Sequencer.step) = Result.map (fun locks -> { s with locks }) locks in
+  if w = "." || w = "-" then with_locks Sequencer.rest
   else
     let strip c s = if String.contains s c then (true, String.concat "" (String.split_on_char c s)) else (false, s) in
     let accent, w' = strip '*' w in
     let slide, w' = strip '~' w' in
-    match Music.midi_number w' with Some n -> Ok (Sequencer.note ~accent ~slide n) | None -> Error ("not a step: " ^ w)
+    match Music.midi_number w' with Some n -> with_locks (Sequencer.note ~accent ~slide n) | None -> Error ("not a step: " ^ w)
 
 let pattern_of_string (text : string) : (Sequencer.step array, string) result =
   let words = List.filter (fun w -> w <> "") (String.split_on_char ' ' (String.trim text)) in
@@ -72,6 +96,8 @@ let initial : patch =
     bpm = 125.;
     volume = 0.7;
     pattern = parse "C2 C2 C3* C2 . Eb2 C2~ G2* . C2 Bb1~ C2* C2 . F2* Eb2~";
+    locks = 0;
+    smoothing = 0.5;
   }
 
 type knob = patch Patch_text.knob
@@ -87,7 +113,12 @@ let knobs : knob list =
     Patch_text.selector "waveform" [ "saw"; "square" ] (fun p -> if p.square then 1 else 0) (fun p x -> { p with square = x = 1 });
     { name = "tempo"; control = Knob (60., 200.); get = (fun p -> p.bpm); put = (fun p x -> { p with bpm = x }) };
     Patch_text.knob "volume" (fun p -> p.volume) (fun p x -> { p with volume = x });
+    Patch_text.selector "locks" [ "step"; "points" ] (fun p -> p.locks) (fun p x -> { p with locks = x });
+    Patch_text.knob "smoothing" (fun p -> p.smoothing) (fun p x -> { p with smoothing = x });
   ]
+
+let lockable = [ "tuning"; "cutoff"; "resonance"; "env.mod"; "decay"; "accent" ]
+let locks (p : patch) : Sequencer.locks = if p.locks = 1 then Points p.smoothing else Per_step
 
 let to_string (p : patch) : string = Patch_text.to_string knobs p ^ "pattern = " ^ pattern_to_string p.pattern ^ "\n"
 
@@ -113,6 +144,17 @@ let presets : (string * patch) list =
       { initial with resonance = 0.2; env_mod = 0.25; decay = 0.2; accent = 0.3; pattern = parse "C2 . C2 . G1 . Bb1 C2 C2 . C2 . Eb2 . F2 G1" } );
     ( "accents",
       { initial with cutoff = 0.25; resonance = 0.75; accent = 1.; bpm = 110.; pattern = parse "C2* C2* C2* . C2 . . . C2* C2* C2* . C2 . . ." } );
+    (* the cutoff climbing over the bar and falling back, the decay
+     * long on one note: the OP-XY's points, gliding *)
+    ( "locks",
+      {
+        initial with
+        locks = 1;
+        smoothing = 1.;
+        pattern =
+          parse
+            "C2[cutoff=0.05] C2 C3* C2 . Eb2 C2~ G2* . C2[cutoff=0.6,decay=0.9] Bb1~ C2* C2[decay=0.2] . F2* Eb2~[cutoff=0.3]";
+      } );
   ]
 
 (*****************************************************************************)
@@ -195,15 +237,27 @@ let pitch (t : t) : float = Voicing.pitch t.glide
 let cutoff_now (t : t) : float = t.cutoff_now
 let recent (t : t) : Signal.t = Array.init 2048 (fun i -> t.ring.((t.at + i) mod 2048))
 
+(* the knobs locked where the pattern is, read at the start of each
+ * piece rendered: a gliding lock moves a block at a time, as a hand
+ * on a knob does *)
+let locked (t : t) (offset : int) : patch =
+  let locks = locks t.patch in
+  List.fold_left
+    (fun p (k : knob) ->
+      if List.mem k.name lockable then match Sequencer.locked t.seq locks k.name offset with Some v -> k.put p v | None -> p else p)
+    t.patch knobs
+
 (* a note: slid into (the gate held, the pitch gliding, the envelopes
- * going on), or begun (the pitch jumping, the envelopes starting) *)
-let note_on (t : t) (note : int) ~(accent : bool) ~(glide : bool) : unit =
+ * going on), or begun (the pitch jumping, the envelopes starting);
+ * [p] the patch as locked then *)
+let note_on ?(p : patch option) (t : t) (note : int) ~(accent : bool) ~(glide : bool) : unit =
+  let p = Option.value p ~default:t.patch in
   Voicing.glide_to t.glide note;
   t.accented <- accent;
   t.sliding <- glide;
   if not glide then begin
     t.meg <- 1.;
-    t.meg_seconds <- (if accent then decay_seconds 0. else decay_seconds t.patch.decay);
+    t.meg_seconds <- (if accent then decay_seconds 0. else decay_seconds p.decay);
     t.hold <- 1.;
     t.gate <- true
   end
@@ -211,7 +265,7 @@ let note_on (t : t) (note : int) ~(accent : bool) ~(glide : bool) : unit =
 (* [n] samples of the voice into [out] from [from] *)
 let render (t : t) (out : Signal.t) (from : int) (n : int) : unit =
   if n > 0 then begin
-    let p = t.patch in
+    let p = locked t from in
     let pitch = Array.make n 0. and wave = Array.make n 0. and cutoff = Array.make n 0. in
     Voicing.fill_pitch t.glide ~seconds:(if t.sliding then slide_seconds else 0.) pitch;
     let frequency = Array.map (fun m -> Voicing.frequency (m +. (12. *. p.tuning))) pitch in
@@ -258,7 +312,7 @@ let fill (t : t) (out : Signal.stereo) : unit =
       (fun from (offset, e) ->
         render t out.left from (offset - from);
         (match (e : Sequencer.event) with
-        | Note_on { note; accent; glide } -> note_on t note ~accent ~glide
+        | Note_on { note; accent; glide } -> note_on ~p:(locked t offset) t note ~accent ~glide
         | Note_off -> t.gate <- false);
         offset)
       0 (List.rev !events)

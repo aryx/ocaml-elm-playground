@@ -1065,6 +1065,13 @@ let scripted : Testutil_golden.scripted list =
       "running",
       38,
       "at(-400;318):1-6,click:3,at(-192;130):7-12,click:9" );
+    (* claude: the preset "locks" chosen, step 1 held (its number lit,
+     * the knobs showing its locks: the cutoff at 0.05), run: the dots
+     * on the steps with locks, the rocker on points *)
+    ( "apps/music/software/TinyTB303",
+      "locks",
+      40,
+      "at(330;482):1-4,click:2,at(330;332):5-8,click:6,at(-412;274):9-12,click:10,space:14" );
     (* claude: the DX7 played: OP > clicked (the LCD on op 1's first
      * rate), then C, E and G held on the letters: the carriers lit
      * brighter than their modulators, the tine's partials 14 times up
@@ -1088,6 +1095,13 @@ let scripted : Testutil_golden.scripted list =
     (* claude: ReBirth started (space): the four machines' step 6 lit
      * together -- the one clock -- and the PCF's *)
     ("apps/music/software/TinyReBirth", "running", 40, "space:3");
+    (* claude: the OP-1's T1 pressed again, the next engine (the
+     * cluster), then C E G held -- its supersaw on the screen's scope *)
+    ("apps/music/software/TinyOp1", "playing", 30, "at(-250;110):1-4,click:2,a:5-40,d:5-40,g:5-40");
+    (* claude: the tape: sound 2 (the pad), tape mode, r recording on
+     * track 1 while C E G are played -- the track drawn behind the red
+     * head *)
+    ("apps/music/software/TinyOp1", "tape", 90, "at(-188;50):1-4,click:2,at(-350;110):5-8,click:6,r:10,a:12-50,d:30-70,g:50-80");
     (* claude: the Juno played: the VCF's cutoff slider dragged up, chorus
      * II clicked, then C E G held -- the spectrum opened, II lit *)
     ( "apps/music/software/TinyJuno",
@@ -1097,13 +1111,6 @@ let scripted : Testutil_golden.scripted list =
     (* claude: the organ played: the 4' drawbar pulled out to 6 by the
      * mouse, C E G held, the Leslie switched on and fast half a second
      * before -- its horn spun up to 4 turns a second, its drum to 2 *)
-    (* claude: the OP-1's T1 pressed again, the next engine (the
-     * cluster), then C E G held -- its supersaw on the screen's scope *)
-    ("apps/music/software/TinyOp1", "playing", 30, "at(-250;110):1-4,click:2,a:5-40,d:5-40,g:5-40");
-    (* claude: the tape: sound 2 (the pad), tape mode, r recording on
-     * track 1 while C E G are played -- the track drawn behind the red
-     * head *)
-    ("apps/music/software/TinyOp1", "tape", 90, "at(-188;50):1-4,click:2,at(-350;110):5-8,click:6,r:10,a:12-50,d:30-70,g:50-80");
     ( "apps/music/software/TinyHammond",
       "playing",
       60,

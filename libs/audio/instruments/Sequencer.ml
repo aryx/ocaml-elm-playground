@@ -10,10 +10,12 @@
 
 (* See Sequencer.mli *)
 
-type step = { note : int option; accent : bool; slide : bool }
+type step = { note : int option; accent : bool; slide : bool; locks : (string * float) list }
 
-let rest = { note = None; accent = false; slide = false }
-let note ?(accent = false) ?(slide = false) (n : int) : step = { note = Some n; accent; slide }
+let rest = { note = None; accent = false; slide = false; locks = [] }
+let note ?(accent = false) ?(slide = false) (n : int) : step = { note = Some n; accent; slide; locks = [] }
+let lock (s : step) (name : string) (v : float) : step = { s with locks = (name, v) :: List.remove_assoc name s.locks }
+let unlock (s : step) : step = { s with locks = [] }
 
 type event = Note_on of { note : int; accent : bool; glide : bool } | Note_off
 
@@ -30,10 +32,11 @@ type t = {
   mutable off_at : float option; (* the gate's closing, exact *)
   mutable sliding : bool; (* the step sounding slides into the next *)
   mutable sounding : int; (* the step sounding, for a panel *)
+  mutable block_start : int; (* the block last advanced, for [position] *)
 }
 
 let create ?(bpm = 120.) (pattern : step array) : t =
-  { pattern; bpm; running = false; clock = 0; next = 0; next_at = 0.; off_at = None; sliding = false; sounding = 0 }
+  { pattern; bpm; running = false; clock = 0; next = 0; next_at = 0.; off_at = None; sliding = false; sounding = 0; block_start = 0 }
 
 let set_pattern (t : t) (p : step array) : unit = t.pattern <- p
 let set_bpm (t : t) (bpm : float) : unit = t.bpm <- Float.max 20. bpm
@@ -53,6 +56,7 @@ let stop (t : t) : unit = t.running <- false
 let sample_of (time : float) : int = int_of_float (Float.ceil (time -. 1e-9))
 
 let advance (t : t) (n : int) (f : int -> event -> unit) : unit =
+  t.block_start <- t.clock;
   let block_end = t.clock + n in
   let continue = ref t.running in
   while !continue do
@@ -84,3 +88,47 @@ let advance (t : t) (n : int) (f : int -> event -> unit) : unit =
     | _ -> continue := false
   done;
   t.clock <- block_end
+
+(*****************************************************************************)
+(* Parameter locks *)
+(*****************************************************************************)
+
+type locks = Per_step | Points of float
+
+let lock_value (locks : locks) (pattern : step array) (name : string) (position : float) : float option =
+  let len = Array.length pattern in
+  if len = 0 then None
+  else
+    let p = Float.rem position (float_of_int len) in
+    let p = if p < 0. then p +. float_of_int len else p in
+    match locks with
+    | Per_step -> List.assoc_opt name pattern.(min (len - 1) (Float.to_int p)).locks
+    | Points smoothing -> (
+        (* the lock points, in order: (step, value) *)
+        let points = List.concat (List.init len (fun i -> match List.assoc_opt name pattern.(i).locks with Some v -> [ (float_of_int i, v) ] | None -> [])) in
+        match points with
+        | [] -> None
+        | [ (_, v) ] -> Some v
+        | first :: _ ->
+            let last = List.nth points (List.length points - 1) in
+            (* a, the point at or before p, b the one after: round the
+             * pattern's end if need be *)
+            let a = List.fold_left (fun a (i, v) -> if i <= p then (i, v) else a) (fst last -. float_of_int len, snd last) points in
+            let b = match List.find_opt (fun (i, _) -> i > p) points with Some b -> b | None -> (fst first +. float_of_int len, snd first) in
+            let (ai, av), (bi, bv) = (a, b) in
+            (* held, then a line over the last [smoothing] of the way *)
+            let start = bi -. (smoothing *. (bi -. ai)) in
+            if p < start then Some av else Some (av +. ((bv -. av) *. (p -. start) /. (bi -. start))))
+
+let position (t : t) (offset : int) : float option =
+  if (not t.running) || t.next = 0 then None
+  else
+    (* the last step begun, [next - 1], began at [next_at - sps]; the
+     * steps in a block all [sps] apart *)
+    let sps = samples_per_step t.bpm in
+    let s = float_of_int (t.block_start + offset) in
+    let p = float_of_int (t.next - 1) -. ((t.next_at -. sps -. s) /. sps) in
+    if p < 0. then None else Some p
+
+let locked (t : t) (locks : locks) (name : string) (offset : int) : float option =
+  Option.bind (position t offset) (lock_value locks t.pattern name)

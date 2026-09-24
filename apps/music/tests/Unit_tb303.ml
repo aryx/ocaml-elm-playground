@@ -73,7 +73,41 @@ let test_text () =
       | Error e -> Alcotest.failf "%s: %s" name e)
     Voice_tb303.presets;
   Alcotest.(check string) "a pattern written" "C2 C2~ C3* . Eb2 F#3*~" (Voice_tb303.pattern_to_string (pattern "C2 C2~ C3* - Eb2 F#3*~"));
+  Alcotest.(check string) "locks written" "C2*[cutoff=0.8,decay=0.2] .[accent=1]"
+    (Voice_tb303.pattern_to_string (pattern "C2*[cutoff=0.8,decay=0.2] -[accent=1]"));
+  Alcotest.(check bool) "a bad lock refused" true (Result.is_error (Voice_tb303.pattern_of_string "C2[cutoff]"));
   Alcotest.(check bool) "a bad step refused" true (Result.is_error (Voice_tb303.pattern_of_string "C2 H2"))
+
+(* the preset "locks" at 120 BPM, its cutoff as locked at the middle
+ * of steps 1, 5, 10, 13 and 16, played a frame's block at a time: the
+ * locks at steps 1 (0.05), 10 (0.6) and 16 (0.3) *)
+let test_locks () =
+  let cutoffs (locks, smoothing) =
+    let p = { (List.assoc "locks" Voice_tb303.presets) with bpm = 120.; locks; smoothing } in
+    let v = Voice_tb303.create p in
+    let i = Voice_tb303.instrument v in
+    Voice_tb303.run v true;
+    let at = ref 0 in
+    List.map
+      (fun step ->
+        let s = Float.to_int ((float_of_int (step - 1) +. 0.5) *. 5512.5) in
+        while !at + 735 <= s do
+          i.fill { left = Array.make 735 0.; right = Array.make 735 0. };
+          at := !at + 735
+        done;
+        (* the block holding the middle, then the patch there *)
+        i.fill { left = Array.make 735 0.; right = Array.make 735 0. };
+        let c = (Voice_tb303.locked v (s - !at)).cutoff in
+        at := !at + 735;
+        c)
+      [ 1; 5; 10; 13; 16 ]
+  in
+  let check name expected mode = Alcotest.(check (list (float 1e-3))) name expected (cutoffs mode) in
+  check "per step: the lock on its step, the knob's own (0.35) elsewhere" [ 0.05; 0.35; 0.6; 0.35; 0.3 ] (0, 0.);
+  check "points, smoothing 0: each held till the next" [ 0.05; 0.05; 0.6; 0.6; 0.3 ] (1, 0.);
+  (* gliding, a middle is half a step on from its lock: 0.05 + 0.55 x
+   * 0.5 / 9 at step 1, 0.6 - 0.3 x 0.5 / 6 at step 10 *)
+  check "points, smoothing 1: gliding, round the end to the first" [ 0.0806; 0.325; 0.575; 0.425; 0.175 ] (1, 1.)
 
 (* each preset: a bar of 16 steps and a little after, a frame's block at
  * a time *)
@@ -99,4 +133,5 @@ let tests =
         t "the slide: 63% after 60 ms" test_slide;
         t "the gate: silent after its close" test_gate;
         t "the patterns as text" test_text;
+        t "parameter locks: per step, and points" test_locks;
       ])

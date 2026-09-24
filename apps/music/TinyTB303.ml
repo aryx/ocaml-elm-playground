@@ -27,12 +27,22 @@
  * x an octave. Under the grid, the scope and the spectrum: the squelch
  * seen.
  *
+ * Parameter locks, which the 303 never had (Sequencer.mli): a click on
+ * a step's number holds it -- the OP-XY's "hold a step, turn a knob",
+ * with one mouse -- and the sound's knobs then show and set that step's
+ * locks (a dot on the number: it has some; CLEAR: none). The rocker
+ * says what they mean between steps, the step's only (Elektron's) or
+ * points the knob goes through (the OP-XY's), SMOOTH how it glides
+ * from one to the next. The preset "locks" is a worked example.
+ *
  * Uses: Voice_tb303 (the voice, its patterns), Sequencer (the audio
  * clock's steps), Diode_ladder, Audio's instruments (the voice played
  * live), Gui (the knobs, the switch, the buttons), Spectrum. Not: the
  * effects rack, Scene2d, Sprite, File_menu.
  *
- * Exercises: several patterns and a song (the 303's pattern chains);
+ * Exercises: the locks drawn as the knob's curve over the bar (the
+ * value through the steps, as the OP-XY's screen shows it); a lock per
+ * knob cleared; several patterns and a song (the 303's pattern chains);
  * the gate's length and the slide's time as knobs (the Devil Fish's
  * mods); swing (every other 16th late); the effects rack after it (a
  * delay and a distortion: the acid house of 1988 was mostly that);
@@ -51,10 +61,11 @@ type model = {
   octave : int;
   held : string list;
   space : bool; (* space held at the last frame *)
+  selected : int option; (* the step whose locks the knobs turn *)
 }
 
 let presets = Voice_tb303.presets
-let initial_model : model = { patch = snd (List.hd presets); preset = 0; octave = 3; held = []; space = false }
+let initial_model : model = { patch = snd (List.hd presets); preset = 0; octave = 3; held = []; space = false; selected = None }
 
 (* the voice lives with the sound: the mixer pulls its blocks, and its
  * sequencer steps in them *)
@@ -97,11 +108,23 @@ let places =
     { name = "volume"; x = 400.; label = "VOLUME" };
   ]
 
-let control (computer : computer) (p : Voice_tb303.patch) (pl : place) : Voice_tb303.patch =
+(* a knob, turning the patch's value, or with a step selected and the
+ * knob lockable, that step's lock (the knob showing it, or the
+ * patch's value until locked) *)
+let control (selected : int option) (computer : computer) (p : Voice_tb303.patch) (pl : place) : Voice_tb303.patch =
   match List.find_opt (fun (k : Voice_tb303.knob) -> k.name = pl.name) Voice_tb303.knobs with
   | None -> p
   | Some k ->
-      let v = k.get p in
+      let step = match selected with Some c when List.mem k.name Voice_tb303.lockable && c < Array.length p.pattern -> Some c | _ -> None in
+      let put p v =
+        match step with
+        | None -> k.put p v
+        | Some c ->
+            let pattern = Array.copy p.pattern in
+            pattern.(c) <- Sequencer.lock pattern.(c) k.name v;
+            { p with pattern }
+      in
+      let v = match step with Some c -> Option.value (List.assoc_opt k.name p.pattern.(c).locks) ~default:(k.get p) | None -> k.get p in
       let v' =
         match k.control with
         | Knob (from, to_) -> Gui.knob computer ~at:(pl.x, knob_y) ~from ~to_ v
@@ -111,7 +134,7 @@ let control (computer : computer) (p : Voice_tb303.patch) (pl : place) : Voice_t
             let labels = if pl.name = "waveform" then [ "saw"; "sq" ] else labels in
             float_of_int (Gui.selector computer ~at:(pl.x, knob_y) labels (int_of_float v))
       in
-      if v' <> v then k.put p v' else p
+      if v' <> v then put p v' else p
 
 (*****************************************************************************)
 (* The pattern's grid *)
@@ -189,12 +212,29 @@ let update (computer : computer) (m : model) : model =
   let preset = Gui.menu computer ~at:(330., 482.) (List.map fst presets) m.preset in
   let patch = if preset <> m.preset then snd (List.nth presets preset) else m.patch in
   Gui.set_theme panel_theme;
-  let patch = List.fold_left (control computer) patch places in
+  let selected = if preset <> m.preset then None else m.selected in
+  let patch = List.fold_left (control selected computer) patch places in
   let run_pressed = Gui.button computer ~at:(-400., 318.) (if Voice_tb303.running voice then "STOP" else "RUN") in
   let space = computer.keyboard.kspace in
   if run_pressed || (space && not m.space) then Voice_tb303.run voice (not (Voice_tb303.running voice));
+  (* the locks: the selected step's cleared, what they mean between
+   * steps *)
+  let patch =
+    match selected with
+    | Some c when Gui.button computer ~at:(-300., 312.) "CLEAR" ->
+        let pattern = Array.copy patch.pattern in
+        pattern.(c) <- Sequencer.unlock pattern.(c);
+        { patch with pattern }
+    | _ -> patch
+  in
+  let locks = if Gui.rocker computer ~at:(-120., 303.) (patch.locks = 1) then 1 else 0 in
+  let smoothing = if locks = 1 then Gui.knob computer ~at:(20., 303.) ~from:0. ~to_:1. patch.smoothing else patch.smoothing in
+  let patch = { patch with locks; smoothing } in
   let mouse = computer.mouse in
-  let patch = if mouse.mclick then { patch with pattern = click patch.pattern mouse.mx mouse.my } else patch in
+  (* a click on a step's number selects it (again: none) *)
+  let number = if mouse.mclick then under mouse.mx mouse.my (pitch_top + 12.) else None in
+  let selected = match number with Some c -> if selected = Some c then None else Some c | None -> selected in
+  let patch = if mouse.mclick && number = None then { patch with pattern = click patch.pattern mouse.mx mouse.my } else patch in
   (* the letters: a line played over it *)
   let now = Set_.elements computer.keyboard.keys in
   let pressed k = List.mem k now && not (List.mem k m.held) and released k = List.mem k m.held && not (List.mem k now) in
@@ -206,7 +246,7 @@ let update (computer : computer) (m : model) : model =
       if released k then inst.note_off n)
     letters;
   Voice_tb303.set_patch voice patch;
-  { patch; preset; octave; held = now; space }
+  { patch; preset; octave; held = now; space; selected }
 
 (*****************************************************************************)
 (* view *)
@@ -215,7 +255,8 @@ let update (computer : computer) (m : model) : model =
 let ink = rgb 30 30 30
 let text (s : string) : shape = words ink s |> scale 1.1
 
-let grid_view (p : Voice_tb303.patch) : shape list =
+let grid_view (m : model) : shape list =
+  let p = m.patch in
   let playing = if Voice_tb303.running voice then Some (Voice_tb303.step voice) else None in
   let names = [| "C"; "C#"; "D"; "Eb"; "E"; "F"; "F#"; "G"; "Ab"; "A"; "Bb"; "B"; "C" |] in
   let cell color x y = rectangle color (cell_w - 3.) (cell_h - 3.) |> move x y in
@@ -246,8 +287,11 @@ let grid_view (p : Voice_tb303.patch) : shape list =
            @ [
                cell (if s.accent then rgb 230 80 40 else rgb 200 200 205) (column_x c) accent_y;
                cell (if s.slide then rgb 60 110 200 else rgb 200 200 205) (column_x c) slide_y;
-               text (string_of_int (c +.. 1)) |> move (column_x c) (pitch_top + 12.);
-             ]))
+             ]
+           (* the step's number, lit when selected, a dot when it has locks *)
+           @ (if m.selected = Some c then [ rectangle (rgb 230 80 40) (cell_w - 3.) 20. |> move (column_x c) (pitch_top + 12.) ] else [])
+           @ (if s.locks <> [] then [ circle (rgb 60 110 200) 4. |> move (column_x c + 18.) (pitch_top + 12.) ] else [])
+           @ [ text (string_of_int (c +.. 1)) |> move (column_x c) (pitch_top + 12.) ]))
   in
   [ rectangle (rgb 120 120 125) (float_of_int columns * cell_w + 6.) (13. * cell_h + 6.) |> move 0. (pitch_top - (6.5 * cell_h)) ]
   @ rows @ steps
@@ -299,7 +343,18 @@ let view (computer : computer) (m : model) : shape list =
   @ [ words (rgb 70 70 70) (Printf.sprintf "latency %.0f ms" (Audio.latency () * 1000.)) |> scale 1.3 |> move (-110.) 482. ]
   @ [ rectangle (rgb 195 195 200) 960. 175. |> move 0. 372.; words (rgb 230 80 40) "Bass Line" |> scale 1.6 |> move 380. 312. ]
   @ List.map (fun pl -> text pl.label |> move pl.x (knob_y - (if pl.name = "waveform" then 30. else 38.))) places
-  @ grid_view m.patch
+  @ [
+      text (if m.patch.locks = 1 then "LOCKS: POINTS" else "LOCKS: STEP") |> move (-205.) 303.;
+      text (if m.patch.locks = 1 then "SMOOTH" else "") |> move (-35.) 303.;
+    ]
+  @ [
+      text
+        (match m.selected with
+        | Some c -> Printf.sprintf "step %d held: the sound's knobs lock it" (c +.. 1)
+        | None -> "click a step's number: its locks")
+      |> move 200. 312.;
+    ]
+  @ grid_view m
   @ scope_view samples @ spectrum_view samples
   @ [
       words (rgb 70 70 70)

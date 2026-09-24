@@ -43,7 +43,7 @@ module here.
 | `apps/music/Tonewheel`, `Voice_hammond` | the Hammond's 91 wheels, its drawbars (additive synthesis), percussion, click, scanner vibrato | §10 | done |
 | `apps/music/TinyHammond` | the B-3's panel: the drawbars pulled, the tabs, the Leslie drawn turning, a polyphonic keyboard | §10 | done |
 | `audio/instruments/Diode_ladder` | the TB-303's filter: four coupled poles, the "18 dB" measured against the Moog's | §6 | done |
-| `audio/instruments/Sequencer` | steps in the audio clock: events at the sample, whatever the blocks | §1 | done |
+| `audio/instruments/Sequencer` | steps in the audio clock: events at the sample, whatever the blocks; parameter locks, Elektron's (the step's only) and the OP-XY's (points the value goes through, smoothed) | §1 | done |
 | `audio/Tape` | the OP-1's four tracks: a head read and written at any speed (pitch and time together), reverse, loop, lift and drop | §10 | done |
 | `apps/music/Voice_dx7`, `TinyDX7` | the DX7: six operators, Dexed's formulas (ratios, detune, scalings, velocity, pitch envelope, LFO), the voice's bytes and a cartridge's, 16 voices, our six patches; its panel, a parameter at a time on the LCD beside the algorithm drawn and the envelopes | §10 | done |
 | `audio/instruments/Modal` | a mode: a two-pole resonator struck, ringing as a decaying sine, damped while it rings | §10 | done |

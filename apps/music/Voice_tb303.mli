@@ -30,7 +30,13 @@
  *
  * Its patterns are text, a step a word: a note ("C2", "Eb2", "F#3") or
  * a rest (".", "-"), a note ending in "*" accented, in "~" sliding into
- * the next: "C2 C2~ C3* . Eb2".
+ * the next: "C2 C2~ C3* . Eb2". A step may carry parameter locks
+ * (Sequencer.mli), the knobs' values in brackets after it:
+ * "C2*[cutoff=0.8,decay=0.2]". Not the 303's (it had none: its knobs
+ * were turned by hand, and acid is that hand), but what an Elektron or
+ * an OP-XY would do with one: TinyOpxy's sequencer, tried here first.
+ * The locks read Elektron's way or the OP-XY's (the knobs "locks" and
+ * "smoothing").
  *
  * Worked example (Unit_tb303, at 120 BPM): the filter's envelope 200
  * ms into an accented note 60 dB down, into a normal one at Decay 0.5
@@ -38,7 +44,9 @@
  * 0.283, 0.374, 0.402 -- climbing, each starting where the last left
  * the capacitor, less each time as it nears its top; a slide from C2
  * to C3, the pitch 63% of the way 60 ms after; the gate's close (a 3 ms
- * time constant, ours), the note 60 dB down 25 ms later. *)
+ * time constant, ours), the note 60 dB down 25 ms later. The preset
+ * "locks": its cutoff heard at each step's middle following its locks,
+ * per step or gliding. *)
 
 type patch = {
   tuning : float; (* -1 to 1: an octave down or up *)
@@ -51,9 +59,18 @@ type patch = {
   bpm : float;
   volume : float;
   pattern : Sequencer.step array;
+  locks : int; (* 0 Elektron's (per step), 1 the OP-XY's (points) *)
+  smoothing : float; (* the points', 0 to 1 *)
 }
 
 val initial : patch
+
+(* the knobs a step can lock: the sound's, not the tempo, the waveform
+ * or the volume *)
+val lockable : string list
+
+(* the patch's two knobs as the sequencer's [locks] *)
+val locks : patch -> Sequencer.locks
 
 (* the knobs' laws *)
 val cutoff_hz : float -> float (* 100 x 25^k: 100 Hz to 2.5 kHz *)
@@ -67,7 +84,8 @@ val pattern_of_string : string -> (Sequencer.step array, string) result
 
 (* the knobs, by name: "tuning", "cutoff", "resonance", "env.mod",
  * "decay", "accent", "waveform" (saw, square), "tempo" (60 to 200),
- * "volume"; the text the knobs' lines and a "pattern = ..." line *)
+ * "volume", "locks" (step, points), "smoothing"; the text the knobs'
+ * lines and a "pattern = ..." line *)
 type knob = patch Patch_text.knob
 
 val knobs : knob list
@@ -75,7 +93,7 @@ val to_string : patch -> string
 val of_string : string -> (patch, string) result
 
 (* our patterns: acid, bass, accents (three accents in a row, to hear
- * the sweep climb) *)
+ * the sweep climb), locks (the cutoff and decay locked, gliding) *)
 val presets : (string * patch) list
 
 type t
@@ -88,6 +106,10 @@ val set_patch : t -> patch -> unit
 val run : t -> bool -> unit
 val running : t -> bool
 val step : t -> int
+
+(* [locked t offset]: the patch as the locks make it [offset] samples
+ * into the block last played *)
+val locked : t -> int -> patch
 
 (* for tests and a panel: the filter's envelope, the accent sweep's
  * voltage, the pitch (a MIDI number) and the cutoff (Hz) now *)

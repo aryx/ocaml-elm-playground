@@ -1615,6 +1615,31 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   TinyOp1_tape; web page; `CATALOG.md`'s row. Left, in its header: lift
   and drop, the tape's loop, the mixer page, the sequencers, the drum
   sampler. Next: X1-X3, TinyOpxy.
+- **X1, DONE (2026-09-24)**: parameter locks in `Sequencer`. The facts:
+  on the OP-XY, "hold a step then rotate a knob to record a parameter
+  'lock' to that step" (the four modules lockable, the players not),
+  locks cleared by bar and M2, the white knob "the smoothing between
+  parameter locks" (TE's guide, sequencer page); "lock points are
+  treated as vectors, so automation glides between surrounding values",
+  Elektron-style locks needing the knob's own value anchored on the
+  steps after (Sound On Sound's review). So two readings of the same
+  locks: `Per_step` (Elektron's, the step's only) and `Points
+  smoothing` (the OP-XY's: held till the next lock, or a line over the
+  last part of the way, round the pattern's end); a step's `locks` by
+  knob name; `lock_value` pure, `position` the pattern's place in steps
+  at a sample of the block last advanced, `locked` the two. Measured
+  (Unit_sequencer): the mli's figure read at four steps in each
+  reading; the position half a step into step 3 = 2.5 in blocks of 735,
+  500 and 1. `Voice_tb303`: the sound's knobs lockable, read at each
+  piece rendered and at each note's start (a gliding lock moves a
+  block at a time, as a hand does), the knobs "locks" and "smoothing",
+  the locks in the pattern's text (`C2*[cutoff=0.8,decay=0.2]`), the
+  preset "locks"; tested at steps' middles in the three readings, a
+  golden WAV; the other presets' WAVs unchanged. TinyTB303: a click on
+  a step's number holds it (one mouse: no holding while turning), the
+  knobs then its locks, CLEAR, the rocker and SMOOTH; golden frame
+  TinyTB303_locks. The step components (pulse, hold, multiply, ...)
+  left for X3.
 
 ## Verification
 

@@ -60,10 +60,44 @@ let test_stop () =
   Sequencer.advance s 44100 (fun _ _ -> incr count);
   Alcotest.(check int) "stopped: no more events" 1 !count
 
+(* the worked example: cutoff locked at 0.2 on step 1 and 0.8 on step
+ * 9, read as steps 1, 5, 7 and 15 begin *)
+let test_locks () =
+  let p = Array.make 16 (Sequencer.note 36) in
+  p.(0) <- Sequencer.lock p.(0) "cutoff" 0.2;
+  p.(8) <- Sequencer.lock p.(8) "cutoff" 0.8;
+  let read locks = List.map (fun k -> Sequencer.lock_value locks p "cutoff" (float_of_int (k - 1))) [ 1; 5; 7; 15 ] in
+  let check name expected locks = Alcotest.(check (list (option (float 1e-9)))) name expected (read locks) in
+  check "Per_step: the step's only" [ Some 0.2; None; None; None ] Per_step;
+  check "Points 0: held till the next" [ Some 0.2; Some 0.2; Some 0.2; Some 0.8 ] (Points 0.);
+  check "Points 1: a line to the next, round the end" [ Some 0.2; Some 0.5; Some 0.65; Some 0.35 ] (Points 1.);
+  check "Points 0.5: the last half of the way" [ Some 0.2; Some 0.2; Some 0.5; Some 0.5 ] (Points 0.5);
+  Alcotest.(check (option (float 1e-9))) "no lock: the knob's own" None (Sequencer.lock_value (Points 1.) p "resonance" 3.)
+
+(* the position in the audio clock: half a step into step 3, whatever
+ * the blocks *)
+let test_position () =
+  List.iter
+    (fun block ->
+      let s = Sequencer.create four in
+      Sequencer.start s;
+      let target = 11025 + 2756 (* step 3 begins at 11025, half a step on *) in
+      let at = ref 0 and found = ref None in
+      while !found = None do
+        let n = min block (target + 1 - !at) in
+        Sequencer.advance s n (fun _ _ -> ());
+        if !at + n > target then found := Sequencer.position s (target - !at);
+        at := !at + n
+      done;
+      Alcotest.(check (option (float 1e-3))) (Printf.sprintf "in blocks of %d" block) (Some 2.5) !found)
+    [ 735; 500; 1 ]
+
 let tests =
   Testo.categorize "Sequencer"
     [
       t "the steps in the audio clock, whatever the blocks" test_times;
       t "slides and rests" test_slide;
       t "stopped" test_stop;
+      t "parameter locks: per step, and points" test_locks;
+      t "the position, for the locks" test_position;
     ]
