@@ -87,9 +87,77 @@ let test_steps () =
   let d = ref 0. in
   Array.iteri (fun i x -> d := Float.max !d (Float.abs (x -. b.(i)))) a;
   Alcotest.(check (float 1e-12)) "blocks of 735 and of 100: the same samples" 0. !d;
+  (* and the 909's: its shuffle and flams scheduled across blocks *)
+  let p909 = { (List.assoc "909 techno" Voice_tr808.presets) with shuffle = 0.7 } in
+  let render block =
+    let v = Voice_tr808.create p909 in
+    Voice_tr808.run v true;
+    play ~block v 1.
+  in
+  let a = render 735 and b = render 100 in
+  let d = ref 0. in
+  Array.iteri (fun i x -> d := Float.max !d (Float.abs (x -. b.(i)))) a;
+  Alcotest.(check (float 1e-12)) "the 909, shuffled and flammed: the same samples" 0. !d;
   (* the first kick at sample 0, the second step's cowbell... the step
    * boundaries: 5512.5 samples at 120 BPM *)
   Alcotest.(check (float 1e-9)) "a step at 120 BPM (samples)" 5512.5 (Sequencer.samples_per_step 120.)
+
+(*****************************************************************************)
+(* The 909 *)
+(*****************************************************************************)
+
+let nine = { Voice_tr808.initial with machine = 1 }
+
+(* the 909's kick: its pitch falling from high *)
+let test_909_kick () =
+  let f = Voice_tr808.sweep_frequency ~f_end:50. ~start:4.5 ~tau:0.012 in
+  Alcotest.(check (list (float 0.01))) "at 0, 12 ms, 50 ms (Hz)" [ 225.; 114.38; 52.71 ] [ f ~age:0.; f ~age:0.012; f ~age:0.05 ];
+  let v = Voice_tr808.create nine in
+  Voice_tr808.hit v BD ~accent:true;
+  let s = play v 0.5 in
+  (* from 5 ms: the click's noise (its first 4 ms) crosses zero too *)
+  Alcotest.(check (list (float 0.1))) "measured: 5-30 ms, then 0.2-0.4 s (Hz)" [ 107.8; 50. ] [ crossings s 0.005 0.03; crossings s 0.2 0.4 ]
+
+(* the ROM: 64 levels at most; the hat's tune its speed *)
+let test_909_rom () =
+  let levels r = List.length (List.sort_uniq compare (Array.to_list (Voice_tr808.rom r))) in
+  (* at most 63 (-31 to 31): fewer, a decaying recording spending most of
+   * its time in the lower ones *)
+  Alcotest.(check (list int)) "the hats', the crash's, the ride's distinct levels" [ 26; 28; 35 ] [ levels OH; levels CY; levels CB ];
+  let centroid tuning =
+    let p = { nine with drums = Array.init 11 (fun k -> { nine.drums.(k) with tuning }) } in
+    let v = Voice_tr808.create p in
+    Voice_tr808.hit v OH ~accent:true;
+    let s = play v 0.1 in
+    let n = 2048 in
+    let m = Spectrum.magnitudes (Spectrum.fft (Spectrum.hann (Array.sub s 0 n))) in
+    let num = ref 0. and den = ref 0. in
+    Array.iteri (fun k x -> num := !num +. (x *. Spectrum.bin_frequency ~n k); den := !den +. x) m;
+    !num /. !den
+  in
+  Alcotest.(check (list (float 1.))) "the open hat's centroid, tuned 0.5 and 1 (Hz)" [ 9611.; 11541. ] [ centroid 0.5; centroid 1. ]
+
+(* shuffle and flam: the first sample heard of a lone hit *)
+let onset (p : Voice_tr808.patch) : int =
+  let v = Voice_tr808.create p in
+  Voice_tr808.run v true;
+  let s = play v 0.5 in
+  let rec find i = if i >= Array.length s || s.(i) <> 0. then i else find (i + 1) in
+  find 0
+
+let test_shuffle_flam () =
+  let rim step = Voice_tr808.pattern_for_tests [ (RS, step) ] in
+  (* 5512.5 samples a step at 120 BPM; shuffled, a third of a step later *)
+  Alcotest.(check (list int)) "the second step's rim shot, shuffle 0 and 1 (samples)" [ 5513; 7351 ]
+    [ onset (rim ".x.............."); onset { (rim ".x..............") with shuffle = 1. } ];
+  (* a flam at its closest: the second hit 10 ms after the first *)
+  let flammed = { (rim "x...............") with flams = Array.init 16 (fun k -> k = 0); flam = 0. } in
+  let v = Voice_tr808.create flammed in
+  Voice_tr808.run v true;
+  ignore (play ~block:1 v 0.005);
+  let first = Voice_tr808.sounding v in
+  ignore (play ~block:1 v 0.01);
+  Alcotest.(check (pair int int)) "sounding at 5 ms, and at 15 ms" (1, 2) (first, Voice_tr808.sounding v)
 
 let peak (s : Signal.t) : float = Array.fold_left (fun m x -> Float.max m (Float.abs x)) 0. s
 
@@ -101,7 +169,7 @@ let bars (p : Voice_tr808.patch) : Signal.t =
 
 let test_peaks () =
   Alcotest.(check (list (pair string (float 0.01)))) "the patterns' peaks"
-    [ ("electro", 0.63); ("house", 0.47); ("hip hop", 0.47); ("latin", 0.79) ]
+    [ ("electro", 0.63); ("house", 0.47); ("hip hop", 0.47); ("latin", 0.79); ("909 house", 0.84); ("909 techno", 0.71) ]
     (List.map (fun (name, p) -> (name, peak (bars p))) Voice_tr808.presets)
 
 let test_text () =
@@ -124,6 +192,9 @@ let tests =
         t "the metal: the band-passes, no fundamentals" test_metal;
         t "the choke: the closed hat stopping the open" test_choke;
         t "the sequencer: the same samples whatever the blocks" test_steps;
+        t "the 909's kick: its pitch falling" test_909_kick;
+        t "the 909's ROM: 6 bits, played at its tune" test_909_rom;
+        t "shuffle and flam" test_shuffle_flam;
         t "the patterns' peaks" test_peaks;
         t "the patches as text" test_text;
       ])

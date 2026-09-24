@@ -1,5 +1,6 @@
 (* The Roland TR-808's voices and its sequencer: drums synthesized, not
- * sampled (see notes_synth.md; plan_synth_teaching.md, TinyTR808, T1).
+ * sampled; and the TR-909's, half sampled (see notes_synth.md;
+ * plan_synth_teaching.md, TinyTR808, T1, N1).
  *
  * The TR-808 Rhythm Composer (1980) was a commercial failure -- its
  * drums sounded nothing like drums -- and then the sound of electro,
@@ -38,8 +39,23 @@
  * our Sequencer.mli as its clock, a step a sixteenth, each hit at its
  * own sample whatever the blocks.
  *
+ * The TR-909 (1983), the 808's successor under the same designer as the
+ * TB-303 (Tadao Kikumoto), is the machine switched ([machine] 1): its
+ * kick a sine VCO whose pitch falls fast from high, a click for its
+ * attack -- "punchy" where the 808's is "boomy", the kick of house and
+ * techno; its snare's noise low-passed by its tone; its toms falling
+ * too; and its hats, crash and ride *samples*: recordings of real
+ * cymbals in a ROM, 6 bits (64 levels: the crunch), played at their
+ * tune's speed (Resample.mli: faster, higher and shorter), the first
+ * drum machine half sampled. Roland's recordings are Roland's; ours are
+ * made once from inharmonic struck modes (Modal.mli), quantized so.
+ * Its sequencer's shuffle (the even sixteenths late: the swing) and flam
+ * (a step struck twice, a few ms apart) work for both machines.
+ *
  * Facts from Kurt Werner, Jonathan Abel and Julius Smith's papers on
- * the 808's bass drum (DAFx 2014) and cymbal (ICMC 2014). Ours, and said
+ * the 808's bass drum (DAFx 2014) and cymbal (ICMC 2014), and the 909's
+ * history as told by Wikipedia (its 6-bit cymbals, its designers).
+ * Ours, and said
  * so: the snare's (180 and 330 Hz), toms' (90, 130, 190 Hz), rim shot's,
  * clap's and cowbell's filter frequencies, all the decay times, the
  * sigh's depth (12%), the punch's octave and a bit (2.2 times).
@@ -56,7 +72,17 @@
  * time (as the 808's), each hit's own noise, and a hit's end decided
  * at its sample -- each, first done per block, made two renderings
  * differ. The busiest pattern costs 6% of a CPU natively, 12% in
- * JavaScript. *)
+ * JavaScript.
+ *
+ * And the 909: its kick at 225 Hz struck, 114.4 at 12 ms, 52.7 at 50
+ * (measured: 107.8 on average from 5 to 30 ms, 50.0 later); the ROMs'
+ * distinct levels 26, 28 and 35 (at most 63: a decaying recording
+ * spends its time in the lower ones); an open hat's spectrum's centroid
+ * 9611 Hz tuned in the middle, 11541 tuned up (the sample played
+ * faster); the second step's rim shot at sample 5513, and 7351 at full
+ * shuffle (a third of a step later); a flam's two hits 10 ms apart; the
+ * 909's patterns, shuffled and flammed, the same samples in blocks of
+ * 735 or 100. *)
 
 (*****************************************************************************)
 (* The patch *)
@@ -74,13 +100,33 @@ val index : instrument -> int
 type drum = { level : float; tone : float; decay : float; tuning : float; snappy : float }
 
 type patch = {
+  machine : int; (* an index in [machines]: 808, 909 *)
   drums : drum array; (* by [index] *)
   tracks : bool array array; (* by [index], 16 steps each *)
   accents : bool array; (* 16 steps *)
+  flams : bool array; (* 16 steps: struck twice *)
   accent : float; (* how much louder an accented step, 0 to 1 *)
+  shuffle : float; (* 0 to 1: the even sixteenths up to a third of a step late *)
+  flam : float; (* 0 to 1: a flam's two hits 10 to 40 ms apart *)
   tempo : float; (* BPM *)
   volume : float;
 }
+
+val machines : string list
+
+(* [label machine i]: the instrument's name on that machine's panel:
+ * the 909's ride in the 808's cowbell slot, its crash in the cymbal's *)
+val label : int -> instrument -> string
+
+(* the 909's sampled cymbals: our own recordings (inharmonic struck
+ * modes), quantized to 6 bits -- [rom OH] the hats', [rom CY] the
+ * crash's, [rom CB] the ride's *)
+val rom : instrument -> Signal.t
+
+(* [sweep_frequency ~f_end ~start ~tau ~age]: the 909's kick's and
+ * toms' frequency [age] seconds in, falling from [start] times [f_end]
+ * towards it, e-fold in [tau] *)
+val sweep_frequency : f_end:float -> start:float -> tau:float -> age:float -> float
 
 val initial : patch
 
@@ -91,8 +137,12 @@ val knobs : knob list
 val to_string : patch -> string
 val of_string : string -> (patch, string) result
 
-(* ours: electro, house, hip hop, latin *)
+(* ours: electro, house, hip hop, latin; 909 house, 909 techno *)
 val presets : (string * patch) list
+
+(* [pattern_for_tests tracks]: the initial patch with those tracks
+ * ("x..." each) *)
+val pattern_for_tests : (instrument * string) list -> patch
 
 (* [drum_frequency ~f0 ~sigh ~punch ~age level]: the kick's and toms'
  * frequency [age] seconds in, at [level] (0 to 1): [punch] f0 the first

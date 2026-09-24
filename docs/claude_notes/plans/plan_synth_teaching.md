@@ -779,7 +779,31 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
      16 step buttons in the 808's red, orange, yellow and white, the
      instrument selector, start/stop, tempo, accent). **The 909** as its variant (1983: its kick and toms
      analogue, its cymbals 6-bit samples -- the first drum machine
-     half sampled). **TinyReBirth**, the hub: two TinyTB303 voices,
+     half sampled). The 909's facts (2026-09-24), from its history as
+     Wikipedia tells it (a service-notes analysis like Werner's for the
+     808 not found yet): designed under Tadao Kikumoto (the TB-303's
+     designer too); its kick, snare, toms, rim shot and clap analogue,
+     the kick "punchy" where the 808's is "boomy" (tune, attack,
+     decay), the snare's tone and snappy; its crash, ride and hi-hats
+     recordings of Paiste and Zildjian cymbals made in Roland's office,
+     6-bit, no EQ nor compression; its sequencer's shuffle, flam and
+     accents. Ours, and said so: the kick as a sine VCO whose pitch drops
+     fast from high (the commonly described circuit) with the attack's
+     click, all the frequencies and times, and the cymbals' recordings
+     -- Roland's are Roland's, so ours are made once from many
+     inharmonic struck modes (`Modal`), quantized to 6 bits, a ROM
+     played through `Resample` at its tune: what a sample-playback drum
+     is, the 64 levels' crunch heard.
+   - **N1, the 909 in Voice_tr808**: a machine switch (808, 909), the
+     cowbell's slot the 909's ride and the cymbal's its crash; the 909's
+     kick, snare and toms; the cymbals and hats from the 6-bit ROM;
+     shuffle (the even sixteenths late) and flam (a step struck twice,
+     a few ms apart) in the sequencer, for both. Tests: the kick's pitch
+     falling; the ROM's 64 levels; a hat's tune playing it faster;
+     shuffle and flam at their samples; golden WAVs.
+   - **N2, TinyTR808 switching**: the 808 and the 909's panels (the
+     909's grey and orange), its shuffle and flam.
+     **TinyReBirth**, the hub: two TinyTB303 voices,
      the 808 and the 909 on one clock, ReBirth's mixer and its effects
      (delay, distortion, compressor, the "PCF" filter: the rack's), and
      its pattern mode -- a song made of patterns, as TinyTB303 plays one.
@@ -1456,6 +1480,24 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   16, step 6 lit); web page; `CATALOG.md`'s row. Left, in its header:
   patterns chained into a song (A/B, rhythm track), saving them, the
   swing, the alternate instruments.
+- **N1, DONE (2026-09-24)**: the 909 in `Voice_tr808`, a machine switch
+  (`label` giving the 909's RD and CR in the 808's CB and CY slots).
+  The kick and toms a sine whose pitch falls from high (`sweep_drum`:
+  the kick from 2 + 5 x its tune times 50 Hz, e-fold in 12 ms) with the
+  attack's click; the snare two tones and low-passed noise; the hats,
+  crash and ride from 6-bit ROMs, our own recordings (inharmonic
+  `Modal` partials and a hiss, normalized, quantized), played through
+  `Resample` at their tune. Shuffle (the even steps up to a third of a
+  step late) and flam (twice, 10 to 40 ms apart) for both machines: the
+  hits now scheduled at their samples, a list carried across blocks.
+  Measured: the kick 107.8 Hz on average 5-30 ms, 50.0 later; the ROMs'
+  26, 28, 35 levels; an open hat's centroid 9611 to 11541 Hz tuned up;
+  the shuffle's 5513 to 7351; the flam's second hit; the 909 shuffled
+  and flammed, the same samples whatever the blocks. Two patterns (909
+  house, 909 techno), golden WAVs; the 808's four unchanged. The
+  samples' levels raised after measuring each instrument alone (10 to
+  15 dB under the 808's metal at first: a recording normalized to its
+  peak, which a few modes in phase make high), the crash less.
 
 ## Verification
 

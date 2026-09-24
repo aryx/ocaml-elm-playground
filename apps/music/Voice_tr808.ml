@@ -23,17 +23,40 @@ let index (i : instrument) : int =
   let rec find k = function [] -> 0 | x :: rest -> if x = i then k else find (k + 1) rest in
   find 0 instruments
 
+(* the 909's in the 808's slots: the cowbell's is its ride, the
+ * cymbal's its crash *)
+let label (machine : int) (i : instrument) : string =
+  match (machine, i) with 1, CB -> "RD" | 1, CY -> "CR" | _ -> name i
+
+let machines = [ "808"; "909" ]
+
 type drum = { level : float; tone : float; decay : float; tuning : float; snappy : float }
-type patch = { drums : drum array; tracks : bool array array; accents : bool array; accent : float; tempo : float; volume : float }
+
+type patch = {
+  machine : int;
+  drums : drum array;
+  tracks : bool array array;
+  accents : bool array;
+  flams : bool array;
+  accent : float;
+  shuffle : float;
+  flam : float;
+  tempo : float;
+  volume : float;
+}
 
 let drum0 = { level = 0.8; tone = 0.5; decay = 0.5; tuning = 0.5; snappy = 0.5 }
 
 let initial : patch =
   {
+    machine = 0;
     drums = Array.make 11 drum0;
     tracks = Array.init 11 (fun _ -> Array.make 16 false);
     accents = Array.make 16 false;
+    flams = Array.make 16 false;
     accent = 0.5;
+    shuffle = 0.;
+    flam = 0.3;
     tempo = 120.;
     volume = 0.7;
   }
@@ -62,7 +85,10 @@ let knobs : knob list =
       ])
     instruments
   @ [
+      Patch_text.selector "machine" machines (fun p -> p.machine) (fun p x -> { p with machine = x });
       Patch_text.knob "accent" (fun p -> p.accent) (fun p x -> { p with accent = x });
+      Patch_text.knob "shuffle" (fun p -> p.shuffle) (fun p x -> { p with shuffle = x });
+      Patch_text.knob "flam" (fun p -> p.flam) (fun p x -> { p with flam = x });
       (* whole beats a minute, so a pattern's tempo is written exactly *)
       Patch_text.selector "tempo" (List.init 121 (fun k -> string_of_int (60 + k)))
         (fun p -> Float.to_int p.tempo - 60)
@@ -78,6 +104,7 @@ let to_string (p : patch) : string =
   Patch_text.to_string knobs p
   ^ String.concat "" (List.map (fun i -> Printf.sprintf "%s.steps = %s\n" (name i) (steps_to_string p.tracks.(index i))) instruments)
   ^ Printf.sprintf "accent.steps = %s\n" (steps_to_string p.accents)
+  ^ Printf.sprintf "flam.steps = %s\n" (steps_to_string p.flams)
 
 (* the ".steps" lines read first, the rest by Patch_text *)
 let of_string (text : string) : (patch, string) result =
@@ -98,6 +125,7 @@ let of_string (text : string) : (patch, string) result =
         (fun (p : patch) l ->
           match steps l with
           | Some ("accent", v) -> { p with accents = steps_of_string v }
+          | Some ("flam", v) -> { p with flams = steps_of_string v }
           | Some (who, v) -> (
               match List.find_opt (fun i -> name i = who) instruments with
               | Some i ->
@@ -109,12 +137,16 @@ let of_string (text : string) : (patch, string) result =
         p lines)
     (Patch_text.of_string knobs ~initial (String.concat "\n" others))
 
-(* ours: patterns in the styles the 808 made *)
-let pattern ?(tempo = 120.) ?(accents = "................") (tracks : (instrument * string) list) : patch =
+(* ours: patterns in the styles the 808 and the 909 made *)
+let pattern ?(machine = 0) ?(tempo = 120.) ?(shuffle = 0.) ?(accents = "................") ?(flams = "................")
+    (tracks : (instrument * string) list) : patch =
   {
     initial with
+    machine;
     tempo;
+    shuffle;
     accents = steps_of_string accents;
+    flams = steps_of_string flams;
     tracks = Array.init 11 (fun k -> match List.assoc_opt (List.nth instruments k) tracks with Some s -> steps_of_string s | None -> Array.make 16 false);
   }
 
@@ -134,7 +166,18 @@ let presets : (string * patch) list =
     ( "latin",
       pattern ~tempo:112.
         [ (BD, "x..x..x.x..x..x."); (RS, "..x..x....x..x.."); (LT, "......x.......x."); (MT, "....x.......x..."); (HT, "x.......x......."); (CB, "x.x.x.x.x.x.x.x."); (CY, "x...............") ] );
+    (* the 909: Chicago's four on the floor, its shuffle, the hats
+     * between, a crash to open *)
+    ( "909 house",
+      pattern ~machine:1 ~tempo:122. ~shuffle:0.3 ~accents:"x...x...x...x..."
+        [ (BD, "x...x...x...x..."); (CP, "....x.......x..."); (OH, "..x...x...x...x."); (CH, "x.x.x.x.x.x.x.x."); (CY, "x...............") ] );
+    (* Detroit: the kick, sixteenth hats, the ride, the snare's flams *)
+    ( "909 techno",
+      pattern ~machine:1 ~tempo:132. ~accents:"..x...x...x...x." ~flams:"............x..."
+        [ (BD, "x...x...x...x..."); (SD, "....x.......x.xx"); (CH, "xxxxxxxxxxxxxxxx"); (CB, "..x...x...x...x.") ] );
   ]
+
+let pattern_for_tests (tracks : (instrument * string) list) : patch = pattern tracks
 
 (* the General MIDI drum map *)
 let key = function BD -> 36 | SD -> 38 | LT -> 41 | MT -> 45 | HT -> 48 | RS -> 37 | CP -> 39 | CB -> 56 | CY -> 49 | OH -> 46 | CH -> 42
@@ -233,10 +276,124 @@ let metal_hit ~(bands : ((metal -> Signal.t) * float * float * (int -> float)) l
   in
   h
 
+(*****************************************************************************)
+(* The 909's *)
+(*****************************************************************************)
+
+let sweep_frequency ~(f_end : float) ~(start : float) ~(tau : float) ~(age : float) : float =
+  f_end *. (1. +. ((start -. 1.) *. exp (-.age /. tau)))
+
+(* the 909's kick and toms: a sine whose pitch falls from [start] times
+ * [f_end] towards it; its attack a click (a 1 ms pulse, then 3 ms of
+ * noise) at [click] *)
+let sweep_drum ~(noise : unit -> float) ~(f_end : float) ~(start : float) ~(tau : float) ~(t60 : float) ~(click : float) (amp : float)
+    (who : instrument) : hit =
+  let phase = ref 0. and age = ref 0 in
+  let rec h = { who; add = (fun _ out at m -> add out at m); alive = true; choked = false }
+  and add out at m =
+    for i = at to at + m - 1 do
+      if h.alive then begin
+        let s = float_of_int !age /. rate in
+        let env = decay_env t60 !age in
+        phase := Float.rem (!phase +. (sweep_frequency ~f_end ~start ~tau ~age:s /. rate)) 1.;
+        let c = if s < 0.001 then click else if s < 0.004 then 0.5 *. click *. noise () else 0. in
+        out.(i) <- out.(i) +. (amp *. ((env *. sin (2. *. Float.pi *. !phase)) +. c));
+        incr age;
+        if env < 1e-4 then h.alive <- false
+      end
+    done
+  in
+  h
+
+(* 6 bits: 64 levels, -31 to 31 thirty-firsts *)
+let bits6 (x : float) : float = Float.round (Float.max (-1.) (Float.min 1. x) *. 31.) /. 31.
+
+(* the 909's cymbals were recordings of real ones; Roland's are
+ * Roland's, so ours are made once: [partials] inharmonic struck modes
+ * (Modal) between [lo] and [hi] Hz, their decays about [t60], and a
+ * hiss, normalized, then quantized to 6 bits -- the ROM *)
+let record ~(seed : int) ~(partials : int) ~(lo : float) ~(hi : float) ~(t60 : float) ~(seconds : float) : Signal.t =
+  let r = ref seed in
+  let uniform () =
+    r := Noise.lcg !r;
+    0.5 *. (Noise.uniform !r +. 1.)
+  in
+  let modes =
+    List.init partials (fun _ ->
+        let m = Modal.create ~frequency:(lo *. Float.pow (hi /. lo) (uniform ())) ~t60:(t60 *. (0.5 +. uniform ())) in
+        Modal.strike m (0.5 +. uniform ());
+        m)
+  in
+  let s =
+    Array.init (Signal.samples seconds) (fun i ->
+        List.fold_left (fun a m -> a +. Modal.next m) 0. modes +. (0.3 *. float_of_int partials *. ((2. *. uniform ()) -. 1.) *. decay_env t60 i /. 10.))
+  in
+  let peak = Array.fold_left (fun a x -> Float.max a (Float.abs x)) 1e-9 s in
+  Array.map (fun x -> bits6 (x /. peak)) s
+
+let hat_rom = lazy (record ~seed:909 ~partials:40 ~lo:5000. ~hi:14000. ~t60:0.3 ~seconds:0.4)
+let crash_rom = lazy (record ~seed:1909 ~partials:60 ~lo:2500. ~hi:13000. ~t60:1.6 ~seconds:2.)
+let ride_rom = lazy (record ~seed:2909 ~partials:30 ~lo:2800. ~hi:9000. ~t60:2.5 ~seconds:2.)
+
+let rom (i : instrument) : Signal.t = Lazy.force (match i with CY -> crash_rom | CB -> ride_rom | _ -> hat_rom)
+
+(* a sample played from the ROM at [speed] (the tune: faster, higher
+ * and shorter), under an envelope; choked, gone in 10 ms *)
+let sample_hit ~(rom : Signal.t Lazy.t) ~(speed : float) ~(t60 : float) (amp : float) (who : instrument) : hit =
+  let pos = ref 0. and age = ref 0 and choke = ref 1. in
+  let rec h = { who; add = (fun _ out at m -> add out at m); alive = true; choked = false }
+  and add out at m =
+    let rom = Lazy.force rom in
+    for i = at to at + m - 1 do
+      if h.alive then begin
+        if h.choked then choke := !choke *. exp (-6.9 /. (0.01 *. rate));
+        let env = decay_env t60 !age in
+        out.(i) <- out.(i) +. (amp *. !choke *. env *. Resample.read Linear rom !pos);
+        pos := !pos +. speed;
+        incr age;
+        if !pos >= float_of_int (Array.length rom - 1) || !choke < 1e-4 || env < 1e-4 then h.alive <- false
+      end
+    done
+  in
+  h
+
+(* the 909's instruments where they differ from the 808's; its rim shot
+ * and clap the 808's (ours) *)
+let strike_909 ~(noise : unit -> float) (d : drum) (who : instrument) (amp : float) : hit option =
+  let tune base = base *. Float.pow 2. ((d.tuning -. 0.5) *. 0.5) in
+  let speed = Float.pow 2. (d.tuning -. 0.5) in
+  match who with
+  (* the kick: its tune the fall's depth, its "attack" (the tone knob)
+   * the click *)
+  | BD ->
+      Some (sweep_drum ~noise ~f_end:50. ~start:(2. +. (5. *. d.tuning)) ~tau:0.012 ~t60:(0.2 +. (1.2 *. d.decay)) ~click:d.tone (1.1 *. amp) BD)
+  | LT | MT | HT ->
+      let f = match who with LT -> 95. | MT -> 140. | _ -> 200. in
+      Some (sweep_drum ~noise ~f_end:(tune f) ~start:1.8 ~tau:0.04 ~t60:(0.25 +. (0.6 *. d.decay)) ~click:0.1 (0.8 *. amp) who)
+  | SD ->
+      Some
+        (tones_and_noise ~noise
+           ~tones:[ (tune 190., 0.12, 0.5); (tune 340., 0.1, 0.3) ]
+           ~noise_level:(0.9 *. d.snappy)
+           ~filter:(Low_pass, 2000. *. Float.pow 6. d.tone, 0.7)
+           ~envelope:(decay_env 0.22) (0.8 *. amp) SD)
+  (* the recordings normalized to their peaks, which a few modes in phase
+   * make high: their levels raised near the 808's metal's (measured: 10
+   * to 15 dB under at first), the crash less, as it lands on the first
+   * kick *)
+  | CH -> Some (sample_hit ~rom:hat_rom ~speed ~t60:(0.04 +. (0.2 *. d.decay)) (1.5 *. amp) CH)
+  | OH -> Some (sample_hit ~rom:hat_rom ~speed ~t60:(0.2 +. d.decay) (1.5 *. amp) OH)
+  | CY -> Some (sample_hit ~rom:crash_rom ~speed ~t60:2. (0.9 *. amp) CY)
+  | CB -> Some (sample_hit ~rom:ride_rom ~speed ~t60:2.5 (1.3 *. amp) CB)
+  | RS | CP -> None
+
 (* an instrument struck at [amp] (its level and the accent counted) *)
 let strike ~(noise : unit -> float) (p : patch) (who : instrument) (amp : float) : hit =
-  let tones_and_noise = tones_and_noise ~noise in
   let d = p.drums.(index who) in
+  match if p.machine = 1 then strike_909 ~noise d who amp else None with
+  | Some h -> h
+  | None -> (
+  let tones_and_noise = tones_and_noise ~noise in
   let tune base = base *. Float.pow 2. ((d.tuning -. 0.5) *. 0.5) in
   match who with
   | BD -> sine_drum ~f0:49.5 ~t60:(0.15 +. (1.5 *. d.decay)) ~sigh:0.12 ~punch:2.2 ~tone_hz:(200. *. Float.pow 25. d.tone) (1.2 *. amp) BD
@@ -268,7 +425,7 @@ let strike ~(noise : unit -> float) (p : patch) (who : instrument) (amp : float)
             ((fun m -> m.high), 0., 0.7, decay_env (0.4 +. (1.5 *. d.decay)));
             ((fun m -> m.high), 10500., 1.5, fun a -> (0.5 +. d.tone) *. decay_env (0.3 +. d.decay) a);
           ]
-        (0.6 *. amp) CY
+        (0.6 *. amp) CY)
 
 (*****************************************************************************)
 (* Playing it *)
@@ -282,6 +439,9 @@ type t = {
   seq : Sequencer.t;
   mutable hits : hit list;
   mutable pending : (instrument * bool) list; (* struck live, at the next block *)
+  (* the hits to come, shuffled or flammed later than their step: when
+   * (samples from this block's start), what, accented, how loud *)
+  mutable scheduled : (int * instrument * bool * float) list;
   squares : Vco.t array;
   bp_low : Svf.t;
   bp_high : Svf.t;
@@ -300,6 +460,7 @@ let create (patch : patch) : t =
     seq = Sequencer.create ~bpm:patch.tempo (seq_pattern patch);
     hits = [];
     pending = [];
+    scheduled = [];
     squares = Array.init 6 (fun _ -> Vco.create ());
     bp_low = Svf.create ();
     bp_high = Svf.create ();
@@ -324,9 +485,9 @@ let hit (t : t) (who : instrument) ~(accent : bool) : unit = t.pending <- t.pend
 let sounding (t : t) : int = List.length t.hits
 let recent (t : t) : Signal.t = Array.init 2048 (fun i -> t.ring.((t.at + i) mod 2048))
 
-let start_hit (t : t) (who : instrument) (accent : bool) : unit =
+let start_hit ?(scale = 1.) (t : t) (who : instrument) (accent : bool) : unit =
   let p = t.patch in
-  let amp = p.drums.(index who).level *. if accent then 1. else 1. -. (0.5 *. p.accent) in
+  let amp = scale *. p.drums.(index who).level *. if accent then 1. else 1. -. (0.5 *. p.accent) in
   (* the closed hat stops the open one *)
   if who = CH then List.iter (fun h -> if h.who = OH then h.choked <- true) t.hits;
   (* each hit its own noise, seeded from the voice's generator when
@@ -371,22 +532,41 @@ let render (t : t) (mono : Signal.t) (at : int) (m : int) : unit =
 (* ours: the patterns peaking under 1 (Unit_tr808) *)
 let gain = 0.5
 
+(* the shuffle: the even sixteenths (the second, fourth, ...) late, by
+ * up to a third of a step (ours); the flam: a step struck twice, the
+ * first softer, 10 to 40 ms apart (ours) *)
+let shuffle_samples (p : patch) : int = Float.to_int (Float.round (p.shuffle *. Sequencer.samples_per_step p.tempo /. 3.))
+let flam_samples (p : patch) : int = Signal.samples (0.01 +. (0.03 *. p.flam))
+
 let fill (t : t) (out : Signal.stereo) : unit =
   let n = Array.length out.left in
+  let p = t.patch in
   let mono = Array.make n 0. in
-  List.iter (fun (who, accent) -> start_hit t who accent) t.pending;
+  (* this block's hits: the live ones now, the steps' at their samples,
+   * shuffled and flammed, and those scheduled by earlier blocks *)
+  let hits = ref (t.scheduled @ List.map (fun (who, accent) -> (0, who, accent, 1.)) t.pending) in
   t.pending <- [];
-  let events = ref [] in
-  if running t then Sequencer.advance t.seq n (fun off ev -> events := (off, ev) :: !events);
+  if running t then
+    Sequencer.advance t.seq n (fun off ev ->
+        match ev with
+        | Sequencer.Note_on { note = k; accent; _ } ->
+            let at = off + if k mod 2 = 1 then shuffle_samples p else 0 in
+            List.iter
+              (fun i ->
+                if p.tracks.(index i).(k) then
+                  hits :=
+                    !hits @ if p.flams.(k) then [ (at, i, accent, 0.6); (at + flam_samples p, i, accent, 1.) ] else [ (at, i, accent, 1.) ])
+              instruments
+        | Note_off -> ());
+  let now, later = List.partition (fun (at, _, _, _) -> at < n) (List.stable_sort (fun (a, _, _, _) (b, _, _, _) -> compare a b) !hits) in
+  t.scheduled <- List.map (fun (at, i, accent, scale) -> (at - n, i, accent, scale)) later;
   let pos = ref 0 in
   List.iter
-    (fun (off, ev) ->
-      render t mono !pos (off - !pos);
-      pos := off;
-      match ev with
-      | Sequencer.Note_on { note = k; accent; _ } -> List.iter (fun i -> if t.patch.tracks.(index i).(k) then start_hit t i accent) instruments
-      | Note_off -> ())
-    (List.rev !events);
+    (fun (at, i, accent, scale) ->
+      render t mono !pos (at - !pos);
+      pos := at;
+      start_hit ~scale t i accent)
+    now;
   render t mono !pos (n - !pos);
   let g = gain *. t.patch.volume in
   Array.iteri
