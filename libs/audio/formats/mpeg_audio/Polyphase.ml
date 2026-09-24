@@ -55,14 +55,40 @@ type t = { v : float array; mutable top : int }
 
 let create () : t = { v = Array.make 1024 0.; top = 0 }
 
+(* row i of the matrixing, N[i] . S *)
+let row (i : int) (slot : float array) : float =
+  let r = n.(i) and sum = ref 0. in
+  for k = 0 to 31 do
+    sum := !sum +. (r.(k) *. slot.(k))
+  done;
+  !sum
+
+(* claude: half of the matrixing's 64 rows, the others their mirrors.
+ * The standard's way, all 64 computed, is
+ *
+ *   for i = 0 to 63 do f.v.((f.top + i) land 1023) <- row i slot done
+ *
+ * but the cosines repeat: cos((16 + i)(2k + 1) pi / 64) with 16 + i
+ * replaced by 64 - (16 + i) changes sign (cos((2k + 1) pi - x) = -cos x,
+ * 2k + 1 odd), and by 128 - (16 + i) doesn't (cos(2 pi (2k + 1) - x) =
+ * cos x): V[32 - i] = -V[i] (so V[16] = 0) and V[96 - i] = V[i]. So
+ * rows 0 to 15 and 33 to 48 are computed, 1024 multiplications instead
+ * of 2048 -- the matrixing was 80% of the filterbank, the filterbank
+ * half of an MP3's decoding (notes_opti_ocaml.md). A fast DCT goes much
+ * further (Polyphase.mli), at the price of the formula's plainness. *)
 let synthesize (f : t) (slot : float array) (out : float array) (at : int) : unit =
   f.top <- (f.top + 1024 - 64) land 1023;
-  for i = 0 to 63 do
-    let row = n.(i) and sum = ref 0. in
-    for k = 0 to 31 do
-      sum := !sum +. (row.(k) *. slot.(k))
-    done;
-    f.v.((f.top + i) land 1023) <- !sum
+  let v i x = f.v.((f.top + i) land 1023) <- x in
+  for i = 0 to 15 do
+    let x = row i slot in
+    v i x;
+    v (32 - i) (-.x)
+  done;
+  v 16 0.;
+  for i = 33 to 48 do
+    let x = row i slot in
+    v i x;
+    v (96 - i) x (* row 48 its own mirror *)
   done;
   (* U[i * 64 + j] is V[i * 128 + j], U[i * 64 + 32 + j] is V[i * 128 +
    * 96 + j]: out[j] sums U[j + 32 k], k even from the first, odd from

@@ -20,17 +20,44 @@ let cos36 = cosines 36
 let cos12 = cosines 12
 let table (n : int) = if n = 36 then cos36 else if n = 12 then cos12 else cosines n
 
-(* for loops, not Array.iteri: a float ref a closure captures is boxed,
- * an allocation per addition *)
+(* output i, the formula: a for loop, not Array.iteri, since a float ref
+ * that a closure captures is boxed, an allocation per addition
+ * (notes_opti_ocaml.md) *)
+let output (c : float array array) (coefficients : float array) (i : int) : float =
+  let row = c.(i) and sum = ref 0. in
+  for k = 0 to Array.length coefficients - 1 do
+    sum := !sum +. (coefficients.(k) *. row.(k))
+  done;
+  !sum
+
+(* claude: a quarter of the outputs computed, the others their mirrors,
+ * where it was every output from the formula:
+ *
+ *   Array.init n (fun i -> output c coefficients i)
+ *
+ * With a = 2i + 1 + n/2, output n/2 - 1 - i has 2n - a instead, and
+ * cos((2k + 1) pi - x) = -cos x: x[n/2 - 1 - i] = -x[i]; output 3n/2 - 1
+ * - i has 4n - a, and cos(2 (2k + 1) pi - x) = cos x: x[3n/2 - 1 - i] =
+ * x[i] -- the aliases, the halves mirrored, that the overlap cancels.
+ * And coefficients all zero (the high subbands, mostly) give zeros,
+ * nothing computed. Half the multiplications, and far fewer in quiet
+ * bands (notes_opti_ocaml.md). *)
 let imdct (coefficients : float array) : float array =
   let n = 2 * Array.length coefficients in
-  let c = table n in
-  Array.init n (fun i ->
-      let row = c.(i) and sum = ref 0. in
-      for k = 0 to (n / 2) - 1 do
-        sum := !sum +. (coefficients.(k) *. row.(k))
-      done;
-      !sum)
+  let x = Array.make n 0. in
+  if Array.exists (fun v -> v <> 0.) coefficients then (
+    let c = table n in
+    for i = 0 to (n / 4) - 1 do
+      let v = output c coefficients i in
+      x.(i) <- v;
+      x.((n / 2) - 1 - i) <- -.v
+    done;
+    for i = n / 2 to (3 * n / 4) - 1 do
+      let v = output c coefficients i in
+      x.(i) <- v;
+      x.((3 * n / 2) - 1 - i) <- v
+    done);
+  x
 
 let mdct (samples : float array) : float array =
   let n = Array.length samples in

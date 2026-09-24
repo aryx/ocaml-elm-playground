@@ -145,11 +145,23 @@ let decode_block (r : reader) ~(dc : Huffman.t) ~(ac : Huffman.t) ~(q : int arra
 
 (* the block's samples, level-shifted back to 0..255, at block (bx, by)
  * of the component's plane *)
+(* claude: [v] rounded and kept in 0..255, as ints; where it was
+ *
+ *   max 0 (min 255 (int_of_float (Float.round v)))
+ *
+ * per sample: Stdlib's min and max polymorphic (the runtime's generic
+ * compare), Float.round a call into C. The same integers: for v >= 0,
+ * int_of_float (v +. 0.5) rounds half away from zero, and below 0 both
+ * give 0. Inlined: a float crossing a call that isn't is boxed
+ * (notes_opti_ocaml.md) *)
+let[@inline] clamp (v : float) : int =
+  let i = int_of_float (v +. 0.5) in
+  if i < 0 then 0 else if i > 255 then 255 else i
+
 let put_block (comp : component) ~(bx : int) ~(by : int) (samples : float array) : unit =
   for y = 0 to 7 do
     for x = 0 to 7 do
-      let v = int_of_float (Float.round (samples.((y * 8) + x) +. 128.)) in
-      Bytes.set comp.plane ((((by * 8) + y) * comp.pw) + (bx * 8) + x) (Char.chr (max 0 (min 255 v)))
+      Bytes.set comp.plane ((((by * 8) + y) * comp.pw) + (bx * 8) + x) (Char.chr (clamp (samples.((y * 8) + x) +. 128.)))
     done
   done
 
@@ -192,7 +204,6 @@ let upsample (upsampling : [ `Box | `Triangle ]) (f : frame) (comp : component) 
 let to_rgba (upsampling : [ `Box | `Triangle ]) (f : frame) : Rgba_image.t =
   let img = Rgba_image.create ~width:f.width ~height:f.height in
   let planes = Array.map (upsample upsampling f) f.comps in
-  let clamp v = max 0 (min 255 (int_of_float (Float.round v))) in
   for i = 0 to (f.width * f.height) - 1 do
     let r, g, b =
       if Array.length planes = 1 then

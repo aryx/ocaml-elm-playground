@@ -3,8 +3,16 @@
 (test
  (name Test)
  (package elm_playground)
+ (modules Test Unit_movie Unit_yuv Unit_psnr Unit_y4m Unit_fli Unit_avi Unit_mpeg1 Unit_mpeg1_encode Unit_mpeg_system)
  (libraries alcotest testo graphics_rgba graphics_movie graphics_yuv graphics_y4m graphics_fli graphics_avi audio_signal graphics_mpeg1
    graphics_mpeg_system compression ; Crc32, the streams checked
    audio_mpeg) ; the .mpg's sound
  (deps (source_tree clips)) ; our clip as ffmpeg encoded it (make_clips.sh)
+)
+
+; claude: where an .mpg's decoding spends its time (notes_opti_ocaml.md)
+(executable
+ (name Mpg_bench)
+ (modules Mpg_bench)
+ (libraries unix graphics_movie graphics_mpeg1 graphics_mpeg_system audio_mpeg)
 )

@@ -57,8 +57,19 @@ let new_frame (sq : sequence) : frame =
   let n = sq.mbw * sq.mbh * 256 in
   { y = Bytes.make n '\000'; cb = Bytes.make (n / 4) '\128'; cr = Bytes.make (n / 4) '\128' }
 
+(* claude: crop copies each row whole (Bytes.blit, a memcpy), where it
+ * was a closure, a division and a modulo per pixel:
+ *
+ *   Bytes.init (w * h) (fun i -> Bytes.get plane ((i / w * stride) + (i mod w)))
+ *)
 let to_image (sq : sequence) (f : frame) : Rgba_image.t =
-  let crop (plane : Bytes.t) ~stride ~w ~h = Bytes.init (w * h) (fun i -> Bytes.get plane ((i / w * stride) + (i mod w))) in
+  let crop (plane : Bytes.t) ~stride ~w ~h =
+    let out = Bytes.create (w * h) in
+    for y = 0 to h - 1 do
+      Bytes.blit plane (y * stride) out (y * w) w
+    done;
+    out
+  in
   let cw, ch = Yuv.chroma_size C420 ~width:sq.width ~height:sq.height in
   Yuv.to_image Studio
     { width = sq.width; height = sq.height; chroma = C420;
@@ -70,24 +81,71 @@ let to_image (sq : sequence) (f : frame) : Rgba_image.t =
 (* Motion compensation *)
 (*****************************************************************************)
 
+(* claude: [v] kept in [lo, hi], compared as ints. It replaces, in the
+ * per-pixel code below, the obvious
+ *
+ *   max 0 (min 255 v)
+ *
+ * which is right but slow: Stdlib's min and max are polymorphic, so
+ * each call goes to the runtime's generic compare (do_compare_val in a
+ * profile), whatever the type -- 40% of the decoding time, 65 ms a
+ * frame down to 24 (notes_opti_ocaml.md). *)
+let clamp (lo : int) (hi : int) (v : int) : int = if v < lo then lo else if v > hi then hi else v
+
+(* claude: Float.round's integer, half away from zero, without its call
+ * into C (caml_round, an external: never inlined) -- for each of a
+ * block's 64 values, where it was int_of_float (Float.round v) *)
+let[@inline] round (v : float) : int = if v >= 0. then int_of_float (v +. 0.5) else -int_of_float (0.5 -. v)
+
 let predict (row : int array) (x : int) (v : int) : int =
-  let at i = row.(max 0 (min (Array.length row - 1) i)) in
+  let at i = row.(clamp 0 (Array.length row - 1) i) in
   let full = x + (v asr 1) in
   if v land 1 = 0 then at full else (at full + at (full + 1) + 1) / 2
 
 (* a [size] x [size] square of [plane] (its rows [stride] long, [rows]
  * of them) at (x, y), moved by (vx, vy) half pixels: the pixels, or the
  * averages of two or four of them *)
+(* claude: two loops filling the array, where it was
+ *
+ *   Array.init (size * size) (fun k ->
+ *       let px = x + (k mod size) + fx and py = y + (k / size) + fy in ...)
+ *
+ * -- a closure call, a division and a modulo per pixel, and each value
+ * stored through the garbage collector's write barrier (caml_modify:
+ * Stdlib's Array.init is polymorphic, it can't know the values are
+ * ints) *)
+(* claude: the pixel at (px, py), clamped to the plane: at top level,
+ * its plane passed, where it was a closure inside prediction,
+ *
+ *   let get px py = Char.code (Bytes.get plane (...)) in
+ *
+ * which ocamlopt calls for each of up to 4 pixels read per pixel
+ * predicted: a closure capturing variables is never inlined (without
+ * flambda); a top-level function is, if small enough, or when asked
+ * ([@inline]: its two clamps make it too big for the default) *)
+let[@inline] get (plane : Bytes.t) (stride : int) (rows : int) (px : int) (py : int) : int =
+  Char.code (Bytes.get plane ((clamp 0 (rows - 1) py * stride) + clamp 0 (stride - 1) px))
+
 let prediction (plane : Bytes.t) ~(stride : int) ~(rows : int) ~(x : int) ~(y : int) ~(size : int) ((vx, vy) : int * int) : int array =
-  let get px py = Char.code (Bytes.get plane ((max 0 (min (rows - 1) py) * stride) + max 0 (min (stride - 1) px))) in
+  (* full applications of get, each inlined: a partial one (let g = get
+   * plane stride rows) would be a closure again *)
   let fx = vx asr 1 and hx = vx land 1 and fy = vy asr 1 and hy = vy land 1 in
-  Array.init (size * size) (fun k ->
-      let px = x + (k mod size) + fx and py = y + (k / size) + fy in
-      match (hx, hy) with
-      | 0, 0 -> get px py
-      | 1, 0 -> (get px py + get (px + 1) py + 1) / 2
-      | 0, _ -> (get px py + get px (py + 1) + 1) / 2
-      | _ -> (get px py + get (px + 1) py + get px (py + 1) + get (px + 1) (py + 1) + 2) / 4)
+  let values = Array.make (size * size) 0 in
+  for dy = 0 to size - 1 do
+    for dx = 0 to size - 1 do
+      let px = x + dx + fx and py = y + dy + fy in
+      values.((dy * size) + dx) <-
+        (match (hx, hy) with
+        | 0, 0 -> get plane stride rows px py
+        | 1, 0 -> (get plane stride rows px py + get plane stride rows (px + 1) py + 1) / 2
+        | 0, _ -> (get plane stride rows px py + get plane stride rows px (py + 1) + 1) / 2
+        | _ ->
+            (get plane stride rows px py + get plane stride rows (px + 1) py + get plane stride rows px (py + 1)
+            + get plane stride rows (px + 1) (py + 1) + 2)
+            / 4)
+    done
+  done;
+  values
 
 (* a macroblock's prediction, its three planes: from one reference, or
  * the average of two (a B's "both") *)
@@ -107,9 +165,20 @@ let predict_macroblock (sq : sequence) ~(mx : int) ~(my : int) (refs : (frame * 
   | _ -> invalid_arg "predict_macroblock"
 
 (* a macroblock's planes written: [plane i] block i's 64 values or none *)
+(* claude: two loops, where it was
+ *
+ *   Array.iteri (fun k v -> Bytes.set plane (((y0 + (k / size)) * stride)
+ *     + x0 + (k mod size)) (Char.chr (clamp 0 255 v))) values
+ *
+ * a closure call, a division and a modulo per pixel *)
 let write_macroblock (sq : sequence) (cur : frame) ~(mx : int) ~(my : int) ((py, pb, pr) : int array * int array * int array) : unit =
   let put plane ~stride ~x0 ~y0 ~size values =
-    Array.iteri (fun k v -> Bytes.set plane (((y0 + (k / size)) * stride) + x0 + (k mod size)) (Char.chr (max 0 (min 255 v)))) values
+    for dy = 0 to size - 1 do
+      let row = ((y0 + dy) * stride) + x0 in
+      for dx = 0 to size - 1 do
+        Bytes.set plane (row + dx) (Char.chr (clamp 0 255 values.((dy * size) + dx)))
+      done
+    done
   in
   put cur.y ~stride:(sq.mbw * 16) ~x0:(mx * 16) ~y0:(my * 16) ~size:16 py;
   put cur.cb ~stride:(sq.mbw * 8) ~x0:(mx * 8) ~y0:(my * 8) ~size:8 pb;
@@ -136,7 +205,7 @@ let dequantize ~(intra : bool) ~(q : int) ~(m : int) (level : int) : int =
   let v = if intra then 2 * level * q * m / 16 else ((2 * level) + sign level) * q * m / 16 in
   (* made odd, towards 0: the mismatch control *)
   let v = if v land 1 = 0 && v <> 0 then v - sign v else v in
-  max (-2048) (min 2047 v)
+  clamp (-2048) 2047 v
 
 (* a block's 64 values after the IDCT (not yet rounded or added):
  * intra, its DC predicted from [dc.(component)]; else a residual *)
@@ -190,7 +259,7 @@ let motion (b : Bits.t) ~(f_code : int) ~(full : bool) (pred : int array) (c : i
   pred.(c) <- v;
   if full then 2 * v else v
 
-let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame option) ~(future : frame option) (cur : frame) ~(sent : frame) (mbs : (how * (int * int) * (int * int)) array) (row : int) : unit =
+let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame option) ~(future : frame option) (cur : frame) ~(sent : frame option) (mbs : (how * (int * int) * (int * int)) array) (row : int) : unit =
   let q = ref (Bits.read b 5) in
   while Bits.read b 1 = 1 do Bits.skip b 8 done;
   let addr = ref ((row * sq.mbw) - 1) in
@@ -237,10 +306,10 @@ let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame opti
       Array.fill pb 0 2 0;
       (* each block alone, JPEG's way, its DC from the block before *)
       let values = Array.init 6 (fun i -> block b ~intra:true ~q:!q ~matrix:sq.intra_m ~dc ~component:(if i < 4 then 0 else i - 3)) in
-      let r v = int_of_float (Float.round v) in
+      let r = round in
       let py = Array.init 256 (fun k -> let x = k mod 16 and y = k / 16 in r values.((y / 8 * 2) + (x / 8)).((y mod 8 * 8) + (x mod 8))) in
       write_macroblock sq cur ~mx ~my (py, Array.map r values.(4), Array.map r values.(5));
-      write_macroblock sq sent ~mx ~my (py, Array.map r values.(4), Array.map r values.(5));
+      Option.iter (fun sent -> write_macroblock sq sent ~mx ~my (py, Array.map r values.(4), Array.map r values.(5))) sent;
       mbs.(a) <- (Intra, (0, 0), (0, 0)))
     else (
       reset_dc ();
@@ -251,17 +320,28 @@ let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame opti
       let r = refs fwd t.backward fv bv in
       let py, pbl, prl = if r = [] then (Array.make 256 128, Array.make 64 128, Array.make 64 128) else predict_macroblock sq ~mx ~my r in
       (* the residual of the coded blocks, added -- and, for the
-       * analyzer, added to gray alone: what was sent *)
+       * analyzer when it asks (claude: only then, it doubled the
+       * work), added to gray alone: what was sent *)
+      let residual = Option.is_some sent in
       let ry = Array.make 256 128 and rb = Array.make 64 128 and rr = Array.make 64 128 in
       for i = 0 to 5 do
         if cbp land (32 lsr i) <> 0 then (
           let res = block b ~intra:false ~q:!q ~matrix:sq.non_intra_m ~dc ~component:0 in
-          let add (target : int array) ~size ~x0 ~y0 = Array.iteri (fun k v -> let t = ((y0 + (k / 8)) * size) + x0 + (k mod 8) in target.(t) <- target.(t) + int_of_float (Float.round v)) res in
-          if i < 4 then (add py ~size:16 ~x0:(i land 1 * 8) ~y0:(i lsr 1 * 8); add ry ~size:16 ~x0:(i land 1 * 8) ~y0:(i lsr 1 * 8))
-          else (add (if i = 4 then pbl else prl) ~size:8 ~x0:0 ~y0:0; add (if i = 4 then rb else rr) ~size:8 ~x0:0 ~y0:0))
+          let add (target : int array) ~size ~x0 ~y0 =
+            for k = 0 to 63 do
+              let t = ((y0 + (k lsr 3)) * size) + x0 + (k land 7) in
+              target.(t) <- target.(t) + round res.(k)
+            done
+          in
+          if i < 4 then (
+            add py ~size:16 ~x0:(i land 1 * 8) ~y0:(i lsr 1 * 8);
+            if residual then add ry ~size:16 ~x0:(i land 1 * 8) ~y0:(i lsr 1 * 8))
+          else (
+            add (if i = 4 then pbl else prl) ~size:8 ~x0:0 ~y0:0;
+            if residual then add (if i = 4 then rb else rr) ~size:8 ~x0:0 ~y0:0))
       done;
       write_macroblock sq cur ~mx ~my (py, pbl, prl);
-      write_macroblock sq sent ~mx ~my (ry, rb, rr);
+      Option.iter (fun sent -> write_macroblock sq sent ~mx ~my (ry, rb, rr)) sent;
       last := (fwd, t.backward, fv, bv);
       mbs.(a) <- ((match (t.forward, t.backward) with true, true -> Both | true, false -> Forward | false, true -> Backward | false, false -> Zero), fv, bv));
     (* the slice ends where a start code begins: 23 zero bits *)
@@ -270,7 +350,8 @@ let slice (b : Bits.t) (sq : sequence) (ph : picture_header) ~(past : frame opti
 
 (* a picture, after its start code; the reader left after the start
  * code that follows it (returned) *)
-let picture (b : Bits.t) (sq : sequence) ~(past : frame option) ~(future : frame option) : frame * frame * info * int option =
+let picture (b : Bits.t) (sq : sequence) ~(residual : bool) ~(past : frame option) ~(future : frame option) :
+    frame * frame option * info * int option =
   Bits.skip b 10 (* its place in display order: the reordering below doesn't need it *);
   let kind = match Bits.read b 3 with 1 -> I | 2 -> P | 3 -> B | 4 -> failwith "MPEG-1: a D picture, not read here" | _ -> failwith "MPEG-1: a picture of no kind" in
   Bits.skip b 16;
@@ -279,8 +360,8 @@ let picture (b : Bits.t) (sq : sequence) ~(past : frame option) ~(future : frame
   while Bits.read b 1 = 1 do Bits.skip b 8 done;
   let ph = { kind; fwd_full; fwd_f; bwd_full; bwd_f } in
   let cur = new_frame sq in
-  (* what was sent: gray where nothing was *)
-  let sent = { (new_frame sq) with y = Bytes.make (sq.mbw * sq.mbh * 256) '\128' } in
+  (* what was sent, if asked: gray where nothing was *)
+  let sent = if residual then Some { (new_frame sq) with y = Bytes.make (sq.mbw * sq.mbh * 256) '\128' } else None in
   let mbs = Array.make (sq.mbw * sq.mbh) (Skipped, (0, 0), (0, 0)) in
   let code = ref (Bits.next_start_code b) in
   while !code = Some 0xB5 || !code = Some 0xB2 do code := Bits.next_start_code b done;
@@ -299,7 +380,7 @@ let picture (b : Bits.t) (sq : sequence) ~(past : frame option) ~(future : frame
 (* the decoder between two frames shown: where it is in the stream, the
  * sequence's parameters, the two references (the older, and the latest
  * with whether it was shown) *)
-type state = { pos : int; sq : sequence; older : frame option; latest : (frame * frame * info) option; shown : bool }
+type state = { pos : int; sq : sequence; older : frame option; latest : (frame * frame option * info) option; shown : bool }
 
 let of_string ?(residual = false) (s : string) : header * Movie.t * (int -> info) =
   let b = Bits.of_string s in
@@ -329,7 +410,7 @@ let of_string ?(residual = false) (s : string) : header * Movie.t * (int -> info
     let show (f, sent, info) st =
       Hashtbl.replace infos !shown_count info;
       incr shown_count;
-      (st, to_image st.sq (if residual then sent else f))
+      (st, to_image st.sq (match sent with Some sent -> sent | None -> f))
     in
     Bits.seek b st.pos;
     let rec code () =
@@ -348,7 +429,7 @@ let of_string ?(residual = false) (s : string) : header * Movie.t * (int -> info
         | _ -> failwith "MPEG-1: no more frames")
     | Some `Picture -> (
         let latest = Option.map (fun (f, _, _) -> f) st.latest in
-        let f, sent, info, after = picture b st.sq ~past:st.older ~future:latest in
+        let f, sent, info, after = picture b st.sq ~residual ~past:st.older ~future:latest in
         (* the next start code's own bytes, to read again *)
         let pos = match after with Some _ -> Bits.position b - 32 | None -> 8 * String.length s in
         match info.kind with

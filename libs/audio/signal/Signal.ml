@@ -31,4 +31,12 @@ let alias (frequency : float) : float =
 let of_function (seconds : float) (f : float -> float) : t =
   Array.init (samples seconds) (fun i -> f (float_of_int i /. float_of_int rate))
 
-let to_int16 (x : float) : int = max (-32768) (min 32767 (int_of_float (Float.round (x *. 32767.))))
+(* claude: compared as ints; it was
+ *
+ *   max (-32768) (min 32767 (int_of_float (Float.round (x *. 32767.))))
+ *
+ * Stdlib's min and max are polymorphic, the runtime's generic compare
+ * twice per sample written (notes_opti_ocaml.md) *)
+let to_int16 (x : float) : int =
+  let v = int_of_float (Float.round (x *. 32767.)) in
+  if v < -32768 then -32768 else if v > 32767 then 32767 else v

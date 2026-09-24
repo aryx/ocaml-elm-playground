@@ -12,7 +12,19 @@
 
 type range = Full | Studio
 
-let clamp (v : float) : int = max 0 (min 255 (int_of_float (Float.round v)))
+(* claude: compared as ints, and rounded by adding 0.5; it was
+ *
+ *   max 0 (min 255 (int_of_float (Float.round v)))
+ *
+ * Stdlib's min and max being polymorphic, the runtime's generic compare
+ * twice per component, and Float.round a call into C (caml_round). The
+ * same integers: for v >= 0, int_of_float (v +. 0.5) rounds half away
+ * from zero as Float.round does, and below 0 both clamp to 0. Inlined:
+ * a float crossing a call that isn't is boxed, an allocation per call
+ * (notes_opti_ocaml.md) *)
+let[@inline] clamp (v : float) : int =
+  let i = int_of_float (v +. 0.5) in
+  if i < 0 then 0 else if i > 255 then 255 else i
 
 (* the studio range squeezes the full one: 256 levels of Y into 219
  * (16-235), of Cb and Cr into 224 (16-240), around 128 *)
@@ -61,19 +73,46 @@ let of_image (range : range) (chroma : chroma) (img : Rgba_image.t) : planes =
   in
   { width; height; chroma; y; cb = sample (fun (_, cb, _) -> cb); cr = sample (fun (_, _, cr) -> cr) }
 
+(* claude: to_rgb's terms looked up. Each depends on one byte, Y, Cb or
+ * Cr, so its 256 values are computed once per range; a pixel is then 3
+ * additions and 3 clamps, no product, no division, no allocation --
+ * the classic trick (libjpeg's jdcolor.c). The additions in to_rgb's
+ * order: the same colors, bit for bit. to_image was
+ *
+ *   let r, g, b = to_rgb range (Char.code (Bytes.get p.y ...), ...) in
+ *
+ * per pixel: a tuple allocated for the argument and one for the result,
+ * 2 divisions and 6 products (notes_opti_ocaml.md) *)
+type tables = { luma : float array; r_cr : float array; g_cb : float array; g_cr : float array; b_cb : float array }
+
+let tables_of (range : range) : tables =
+  let y v = match range with Full -> float_of_int v | Studio -> (float_of_int v -. 16.) /. y_scale in
+  let c v = match range with Full -> float_of_int v -. 128. | Studio -> (float_of_int v -. 128.) /. c_scale in
+  let table f = Array.init 256 f in
+  { luma = table y; r_cr = table (fun v -> 1.402 *. c v); g_cb = table (fun v -> 0.344136 *. c v);
+    g_cr = table (fun v -> 0.714136 *. c v); b_cb = table (fun v -> 1.772 *. c v) }
+
+let full_tables = lazy (tables_of Full)
+let studio_tables = lazy (tables_of Studio)
+
 let to_image (range : range) (p : planes) : Rgba_image.t =
+  let t = Lazy.force (match range with Full -> full_tables | Studio -> studio_tables) in
   let img = Rgba_image.create ~width:p.width ~height:p.height in
   let cw, _ = chroma_size p.chroma ~width:p.width ~height:p.height in
-  let side = match p.chroma with C444 -> 1 | C420 -> 2 in
+  (* a pixel's color sample column is px / side, a shift: side is 1 or 2
+   * (claude: not a division per pixel) *)
+  let shift = match p.chroma with C444 -> 0 | C420 -> 1 in
   for py = 0 to p.height - 1 do
+    let chroma_row = (py lsr shift) * cw in
     for px = 0 to p.width - 1 do
       (* the nearest color sample: the one this pixel's square shares *)
-      let c = ((py / side) * cw) + (px / side) in
-      let r, g, b = to_rgb range (Char.code (Bytes.get p.y ((py * p.width) + px)), Char.code (Bytes.get p.cb c), Char.code (Bytes.get p.cr c)) in
+      let c = chroma_row + (px lsr shift) in
+      let y = t.luma.(Char.code (Bytes.get p.y ((py * p.width) + px))) in
+      let cb = Char.code (Bytes.get p.cb c) and cr = Char.code (Bytes.get p.cr c) in
       let o = 4 * ((py * p.width) + px) in
-      img.rgba.{o} <- r;
-      img.rgba.{o + 1} <- g;
-      img.rgba.{o + 2} <- b;
+      img.rgba.{o} <- clamp (y +. t.r_cr.(cr));
+      img.rgba.{o + 1} <- clamp (y -. t.g_cb.(cb) -. t.g_cr.(cr));
+      img.rgba.{o + 2} <- clamp (y +. t.b_cb.(cb));
       img.rgba.{o + 3} <- 255
     done
   done;
