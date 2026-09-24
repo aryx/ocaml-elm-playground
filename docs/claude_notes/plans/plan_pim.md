@@ -125,7 +125,9 @@ counts; a day as 86400 seconds split by an offset.
   window, never stored.
 - Exported and imported as `.ics` (`Ics`), with
   `Playground_platform.export`; saved in the store (`plan_io.md`),
-  through `File_menu`.
+  through `File_menu`. (Done: Import is a menu of the store's `.ics`
+  files, since the platform has no file chooser; their UTC times are
+  shown at the local offset of their own instant.)
 
 What it brought: the Gregorian calendar computed, not looked up; a
 repetition as a rule, not a list; a file every other calendar reads.

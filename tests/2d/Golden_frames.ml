@@ -87,6 +87,9 @@ let scenes : Testutil_golden.scene list =
      * offset is 0 under -fixed-time), 12:16:40 AM on the first day of
      * 1970; the six cities at their own offsets *)
     ("apps/pim/software/TinyClock", "", 5);
+    (* 1971-2002: the month of -fixed-time's day, January 1970, its
+     * sample events repeating by their rules (Recur) *)
+    ("apps/pim/software/TinyCalendar", "", 5);
     (* 1970: the Model D's panel, black between wooden cheeks, left to
      * right; the bass preset *)
     ("apps/music/software/TinyMinimoog", "", 5);
@@ -1328,6 +1331,10 @@ let flagged : Testutil_golden.flagged list =
      * -fixed-time stands in, ringing (its first half-second, shown) *)
     ("apps/pim/software/TinyClock", "digital", 5, [ "face=digital" ]);
     ("apps/pim/software/TinyClock", "ringing", 5, [ "alarm=0:16" ]);
+    (* claude: the week's hours, and cal 9 1752: England's switch, the
+     * 2nd followed by the 14th *)
+    ("apps/pim/software/TinyCalendar", "week", 5, [ "view=week" ]);
+    ("apps/pim/software/TinyCalendar", "1752", 5, [ "date=1752-09-02" ]);
   ]
 
 (* claude: played and flagged: the games whose juice was written by

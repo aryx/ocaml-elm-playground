@@ -1,17 +1,19 @@
 ; claude: the personal information managers (CATALOG.md's section, and
-; plan_pim.md): TinyClock so far. Laid out like office/: the programs
-; here, software/ for the golden frames, web/ for the browser.
+; plan_pim.md): TinyClock and TinyCalendar so far, over core's time/.
+; Laid out like office/: the programs here, software/ for the golden
+; frames, web/ for the browser.
 ;
-; To come, each Tiny and after a famous original:
-;  - a calendar (Unix's cal, iCal 2002): the Gregorian calendar computed
-;    (core's Civil), repeating events, .ics files;
+; To come, Tiny and after a famous original:
 ;  - the Palm Pilot (1996): Date Book, Address, To Do and Memo Pad
 ;    behind four buttons -- the address book and the to-do list as its
 ;    applications.
 (executables
-  (names TinyClock)
-  (modules TinyClock)
+  (names TinyClock TinyCalendar)
+  (modules TinyClock TinyCalendar)
   (libraries
+    caps ; the File menu's authority to save, Export's and Import's
+    gui ; Widget, Layout, Theme
+    appkit_file_menu ; File_menu
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

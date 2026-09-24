@@ -379,6 +379,7 @@ calendar, and the Palm Pilot's address book and to-do list to come
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyClock](apps/pim/TinyClock.ml) | app | the Alarm Clock (Apple, Macintosh, 1984), xclock (X Window System, mid-1980s) | The time here and in six cities, on hands or in a strip, and an alarm. | The wall clock's time, seconds since 1970 and the offset only the platform knows; hands keeping every fraction where the strip truncates; cities with no daylight saving, so one offset all year. |
+| [TinyCalendar](apps/pim/TinyCalendar.ml) | app | cal (Unix, 1971), iCal (Apple, 2002) | A month or a week of events, dragged, stretched and repeated; September 1752 as England lived it. | The calendar computed, not looked up (a date a day number); the Julian calendar before the switch, cal's eleven missing days; a repetition as a rule (RRULE), its occurrences computed for the days shown; iCalendar files, read and written. |
 
 ## Game making
 

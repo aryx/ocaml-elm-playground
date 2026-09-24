@@ -4,9 +4,12 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyClock)
-  (modules TinyClock)
+  (names TinyClock TinyCalendar)
+  (modules TinyClock TinyCalendar)
   (libraries
+    caps ; the File menu's authority to save, Export's and Import's
+    gui ; Widget, Layout, Theme
+    appkit_file_menu ; File_menu
     elm_playground
     elm_playground_web ; implem of virtual elm_playground
   )
