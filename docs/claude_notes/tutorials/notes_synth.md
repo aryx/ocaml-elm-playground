@@ -98,7 +98,15 @@ Three rules, which every live block of this tutorial follows:
   wait for the next frame (8 ms on average) and what the system and the
   speakers add, which no program sees. The trade-off is the queue's
   length: shorter is less latency, and a gap in the sound whenever a
-  frame comes late (a garbage collection, a busy machine); a real
+  frame comes late (a garbage collection, a busy machine). The web
+  platform adapts: a jitter buffer, as the netcode's `Interpolation`
+  keeps for packets, the schedule 30 ms deeper at each gap (up to 300)
+  and 12 ms shallower each second without one (down to 100). In
+  Chrome TinyMinimoog's frames take about 60 ms (the view's 800
+  shapes built and patched into the page), its first one over 200 ms:
+  gaps at the start, heard as cuts before the buffer adapted; with it,
+  160 ms at the start, then back to 110 while playing, no cuts. A
+  real
   instrument aims under 10 ms, with a callback on the card's own
   thread and small buffers, which a frame loop can't offer.
 - **What a voice costs** (a second of sound computed a frame's block at

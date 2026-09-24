@@ -843,9 +843,18 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   frozen at every song's start: now x2 (aliases still -58.6 dB), one
   channel when both are the same, 0.32 and 0.56 s, and the game's
   driven guitar part rendered once, lazily, shared by the three bands.
-  Written into notes_synth.md section 1. Left: a shorter web queue
-  (the 34 ms more than native are nearly all ours: less latency, more
-  gaps when a frame is late, the trade-off in notes_synth.md).
+  Written into notes_synth.md section 1. Then cuts heard in the
+  browser: frames later than the 100 ms schedule. Measured in headless
+  Chrome (a temporary probe): TinyMinimoog's frames about 60 ms (update
+  and sound 16, its 800 shapes built 15, turned into a virtual DOM 18,
+  the page patched 12), the first over 200. The web platform's
+  schedule is now a jitter buffer: 30 ms deeper at each gap, up to 300,
+  12 ms shallower each second without one, down to 100; read in
+  Chrome, 160 ms after the start's gaps, then 110 while playing, no
+  cuts. Left: a lower floor than 100 ms (it only has to cover a normal
+  frame), and a cheaper view (most of the 800 shapes are the knobs'
+  ticks and the scope's segments, redrawn every frame; at 16 frames a
+  second a key waits half a frame, 30 ms, too).
 
 ## Verification
 

@@ -745,7 +745,7 @@ let export (_ : < Cap.open_out; .. >) name bytes = Web_store.export name bytes
 (* claude: the same sound as natively, every sample ours (Audio.pull,
  * audio/Mixer.mli): each frame, the samples the browser's audio clock
  * will need next are copied into an AudioBuffer, scheduled right after
- * the previous one, about 100 ms ahead, so that they play back to back
+ * the previous one, 100 ms ahead or more ([ahead]), so that they play back to back
  * with no gap (the Web Audio API: an AudioContext, its currentTime, a
  * buffer source started at a given time; the browser resamples our
  * 44,100 a second to its own rate). Browsers start an AudioContext
@@ -772,14 +772,32 @@ let resume_audio () : unit =
 (* when the next buffer starts, on the AudioContext's clock *)
 let next_start = ref 0.
 
+(* claude: how far ahead the sound is scheduled: a jitter buffer, as
+ * networking's Interpolation keeps for packets. Each frame tops the
+ * schedule up to [ahead]; a frame later than that and the audio clock
+ * runs past the end of the sound: a gap, heard as a cut. The frames of
+ * a page with a heavy view come far apart (TinyMinimoog's, measured in
+ * headless Chrome: about 60 ms, update and sound 16, its 800 shapes built 15,
+ * turned into a virtual DOM 18, the page patched 12), and a garbage
+ * collection on top is a cut. So [ahead] grows by 30 ms at each gap,
+ * up to 300 ms, and comes back by 12 ms a second without one, to its
+ * least, 100 ms: a game that keeps up loses nothing, a heavy page pays
+ * in latency (Audio.latency, which shows it) instead of in cuts. *)
+let least_ahead = 0.1
+let ahead = ref least_ahead
+
 (* after a frame's [ticks] updates *)
 let play_audio (ticks : int) : unit =
   match Lazy.force audio_context with
   | Some ctx when audio_state ctx = "running" ->
       let now = Ojs.float_of_js (Ojs.get_prop_ascii ctx "currentTime") in
-      (* late (the tab was hidden, or the start): start again a bit
-       * ahead *)
-      if !next_start < now then next_start := now +. 0.05;
+      (* late: a gap (the page too slow, or the tab hidden), or the
+       * start; begin again half the schedule ahead *)
+      if !next_start < now then begin
+        if !next_start > 0. then ahead := Float.min 0.3 (!ahead +. 0.03);
+        next_start := now +. (!ahead /. 2.)
+      end
+      else ahead := Float.max least_ahead (!ahead -. 0.0002);
       (* this frame's sounds start with the next buffer, [next_start];
        * then the browser's own processing and output (Web Audio's
        * baseLatency and outputLatency, where it has them) *)
@@ -788,7 +806,7 @@ let play_audio (ticks : int) : unit =
         if Ojs.type_of v = "number" then Ojs.float_of_js v else 0.
       in
       Audio.set_latency (!next_start -. now +. seconds "baseLatency" +. seconds "outputLatency");
-      let n = int_of_float ((0.1 -. (!next_start -. now)) *. 44100.) in
+      let n = int_of_float ((!ahead -. (!next_start -. now)) *. 44100.) in
       if n > 0 then (
         let samples = Audio.pull n in
         (* two channels, left then right *)
