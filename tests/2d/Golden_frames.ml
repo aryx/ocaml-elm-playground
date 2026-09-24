@@ -108,6 +108,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: 1970: the Stage 73's knobs, the pickup's bell, the
      * Suitcase's speakers *)
     ("apps/music/software/TinyRhodes", "", 5);
+    (* claude: 1977: the CS-80's two sections, their knobs in rows, the
+     * shared row, the ribbon *)
+    ("apps/music/software/TinyCS80", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1049,6 +1052,10 @@ let scripted : Testutil_golden.scripted list =
     (* claude: the Rhodes played: C E G held on the letters (velocity
      * 0.8), the last tip's swing across the bell's top lit -- the bark *)
     ("apps/music/software/TinyRhodes", "playing", 30, "a:5-30,d:5-30,g:5-30");
+    (* claude: polyphonic aftertouch: C E G held on the letters, E pressed
+     * by the mouse and dragged down to 0.75 -- that note alone brighter,
+     * its bar on the key, three voices (E not struck again) *)
+    ("apps/music/software/TinyCS80", "playing", 30, "a:5-40,d:5-40,g:5-40,at(-280;-330):10-19,at(-280;-420):20-40,click:10-40");
     (* claude: the organ played: the 4' drawbar pulled out to 6 by the
      * mouse, C E G held, the Leslie switched on and fast half a second
      * before -- its horn spun up to 4 turns a second, its drum to 2 *)
@@ -1098,6 +1105,10 @@ let scripted : Testutil_golden.scripted list =
      * square's edges *)
     ("apps/media/software/TinyMediaPlayer", "residual", 92, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36,n:39,r:45");
     ("apps/media/software/TinyMediaPlayer", "mpeg1_ours", 97, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36,n:39,n:42,a:48");
+    (* claude: LAME's MP3 of the bell and chirps, decoded by us
+     * (Mpeg_audio.mli), 0.4 s in: the bell's decay, the chirps' ticks
+     * every quarter of a second *)
+    ("apps/media/software/TinyMediaPlayer", "mp3", 70, "n:3,n:6,n:9,n:12,n:15,n:18,n:21,n:24,n:27,n:30,n:33,n:36,n:39,n:42,n:45");
     (* the sheet clicked once (selected), twice (active: the hatched
      * border, and its menu in the document's bar), then B1 clicked and
      * =B2*2 typed into it -- the total follows *)

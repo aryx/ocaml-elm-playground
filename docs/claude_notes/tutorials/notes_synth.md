@@ -47,7 +47,7 @@ module here.
 | `audio/Tape` | the OP-1's four tracks: a head read and written at any speed (pitch and time together), reverse, loop, lift and drop | §10 | done |
 | `apps/music/Voice_dx7`, `TinyDX7` | the DX7: six operators, Dexed's formulas (ratios, detune, scalings, velocity, pitch envelope, LFO), the voice's bytes and a cartridge's, 16 voices, our six patches; its panel, a parameter at a time on the LCD beside the algorithm drawn and the envelopes | §10 | done |
 | `audio/instruments/Modal` | a mode: a two-pole resonator struck, ringing as a decaying sine, damped while it rings | §10 | done |
-| `apps/music/Voice_cs80` | the CS-80: two synthesizers per key, the filter envelope's IL and AL, polyphonic aftertouch (each key's pressure its own), the ribbon, the sub-oscillator and the ring modulator | §10 | done |
+| `apps/music/Voice_cs80`, `TinyCS80` | the CS-80: two synthesizers per key, the filter envelope's IL and AL, polyphonic aftertouch (each key's pressure its own), the ribbon, the sub-oscillator and the ring modulator | §10 | done |
 | `apps/music/Voice_rhodes`, `TinyRhodes` | the electric pianos: the Rhodes' tine (three modes) through its magnetic pickup's bell (the bark, the voicing), the Wurlitzer's reed and its capacitor, the Clavinet's string, the Suitcase's stereo tremolo | §10 | done |
 | `apps/music/Voice_tb303`, `TinyTB303` | the Bass Line: the accent and its sweep, slides, patterns as text; its panel, the pattern a grid | §10 | done |
 | `audio/effects/Leslie` | the rotating speaker: horn and drum, the Doppler and the tremolo from their angles, two microphones | §10 | done |

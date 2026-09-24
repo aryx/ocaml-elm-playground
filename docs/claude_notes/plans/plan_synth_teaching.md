@@ -1308,6 +1308,22 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   and the width once a chunk and the unused noise and sine skipped.
   Not done: the initial touch's pitch bend (a slide from a semitone
   below), portamento, the expression pedal's wah.
+- **C2, DONE (2026-09-24)**: TinyCS80. The panel as the CS-80's rows:
+  each section's sound (feet, saw, pulse, width, PWM, noise, the two
+  filters, the sine) then its shapes and touch (IL, AL, the envelopes'
+  times, level, velocity and pressure into brilliance and level), the
+  shared row (mix, detune, the sub-oscillator, the ring modulator,
+  chorus, tremolo, volume). The touch played by the mouse: pressed on a
+  key, its velocity where (as TinyRhodes); dragged down while held, its
+  pressure (120 pixels for all of it), a bar on the key; a key already
+  held on the letters pressed harder, not struck again -- a chord on
+  the letters, one note pushed by the mouse, only it swelling. The
+  ribbon, a strip over the keys: from where it's first touched, an
+  octave across its width, back to 0 when let go. Spectrum, scope.
+  Golden frames TinyCS80 and TinyCS80_playing (C E G held, E pressed to
+  0.75, three voices); web page; `CATALOG.md`'s row. Left, in its
+  header: the letters' pressure, the initial pitch bend, portamento,
+  the memories, a MIDI keyboard's polyphonic pressure.
 
 ## Verification
 

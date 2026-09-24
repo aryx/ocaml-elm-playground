@@ -33,6 +33,7 @@
    %{project_root}/apps/music/software/TinyTB303.exe
    %{project_root}/apps/music/software/TinyDX7.exe
    %{project_root}/apps/music/software/TinyRhodes.exe
+   %{project_root}/apps/music/software/TinyCS80.exe
    %{project_root}/apps/music/software/TinySoundtracker.exe
    %{project_root}/apps/media/software/TinyMediaPlayer.exe
    %{project_root}/apps/office/software/TinyOpenDoc.exe
