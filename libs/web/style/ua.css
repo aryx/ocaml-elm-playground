@@ -1,0 +1,52 @@
+/* The browser's own style sheet: CSS 2.1's appendix D ("Default style
+   sheet for HTML 4"), with HTML5's elements -- the looks of Looks.mli's
+   table, written in the language the pages use. First in the cascade
+   (Cascade.mli), under the page's. */
+
+html, address, blockquote, body, dd, div, dl, dt, fieldset, form, frame, frameset,
+h1, h2, h3, h4, h5, h6, noframes, ol, p, ul, center, dir, hr, menu, pre,
+header, footer, nav, section, article, aside, main, figure, figcaption,
+details, summary, hgroup, search, legend, optgroup { display: block }
+li              { display: list-item }
+head, script, style, title, meta, link, base, template, datalist, param,
+area, [hidden]  { display: none }
+table           { display: table; border-spacing: 2px }
+caption         { display: table-caption; text-align: center }
+thead, tbody, tfoot { display: table-row-group }
+tr              { display: table-row }
+td, th          { display: table-cell; padding: 1px; vertical-align: middle }
+col, colgroup   { display: none }
+img, input, select, textarea, button, video, audio, svg { display: inline-block }
+
+body            { margin: 8px }
+h1              { font-size: 2em; margin: .67em 0 }
+h2              { font-size: 1.5em; margin: .75em 0 }
+h3              { font-size: 1.17em; margin: .83em 0 }
+h4, p, blockquote, ul, ol, dl, dir, menu, fieldset, figure { margin: 1.12em 0 }
+h5              { font-size: .83em; margin: 1.5em 0 }
+h6              { font-size: .75em; margin: 1.67em 0 }
+h1, h2, h3, h4, h5, h6, b, strong, th { font-weight: bold }
+blockquote, figure { margin-left: 40px; margin-right: 40px }
+i, cite, em, var, address, dfn { font-style: italic }
+pre, tt, code, kbd, samp, listing, xmp { font-family: monospace }
+pre, listing, xmp { white-space: pre; margin: 1em 0 }
+textarea        { white-space: pre-wrap }
+big             { font-size: 1.17em }
+small, sub, sup { font-size: .83em }
+sub             { vertical-align: sub }
+sup             { vertical-align: super }
+s, strike, del  { text-decoration: line-through }
+u, ins          { text-decoration: underline }
+hr              { border: 1px inset gray; margin: .5em 0 }
+ol, ul, dir, menu, dd { margin-left: 0; padding-left: 40px }
+dd              { padding-left: 0; margin-left: 40px }
+ol              { list-style-type: decimal }
+ul ul, ol ul    { list-style-type: circle }
+ol ol, ul ol    { list-style-type: lower-alpha }
+ol ul, ul ul, ol ol, ul ol { margin-top: 0; margin-bottom: 0 }
+center          { text-align: center }
+a:link          { color: #0000EE; text-decoration: underline }
+a:visited       { color: #551A8B; text-decoration: underline }
+button, input[type=submit], input[type=button], input[type=reset] { padding: 1px 6px; border: 2px outset #c0c0c0; background-color: #e0e0e0 }
+input, textarea, select { border: 2px inset #c0c0c0; padding: 1px 2px; background-color: white }
+mark            { background-color: yellow }

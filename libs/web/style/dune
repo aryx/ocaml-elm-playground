@@ -2,7 +2,9 @@
 ; plan_browser_teaching.md): Looks, Mosaic's fixed table computed down
 ; the tree; and the page's style sheets cascaded on top of it: Css_syntax
 ; (the text read: tokens, blocks, rules), Selectors (which elements a
-; rule is for), Css (the cascade). Pure OCaml, no shapes: a
+; rule is for), Css (the cascade); and TinyChrome's (plan_tiny_chrome.md):
+; Css_values (lengths, colours, calc(), var()), Cascade (@media, origins,
+; the rule index), Computed (a style per element, over ua.css: Ua_sheet). Pure OCaml, no shapes: a
 ; look is numbers and flags, the app draws it.
 (library
  (name web_style)
@@ -10,3 +12,16 @@
  (wrapped false)
  (libraries web_html) ; Dom
 )
+
+; claude: the browser's own style sheet, ua.css, embedded as a string
+(rule
+ (targets Ua_sheet.ml)
+ (deps ua.css)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from ua.css by libs/web/style/dune *)\n")
+    (echo "let text = {|")
+    (cat ua.css)
+    (echo "|}\n")))))

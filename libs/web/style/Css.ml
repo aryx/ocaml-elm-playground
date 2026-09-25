@@ -45,16 +45,8 @@ let matches (sel : Selectors.complex) (ancestors : Dom.element list) (e : Dom.el
 
 let page_sheet (root : Dom.element) : string = String.concat "\n" (List.map Dom.text_content (Dom.find_all "style" root))
 
-(* a table from elements, by identity (two equal paragraphs are two) *)
-module Elements = Hashtbl.Make (struct
-  type t = Dom.element
-
-  let equal = ( == )
-  let hash = Hashtbl.hash
-end)
-
 let cascade (sheet : sheet) (root : Dom.element) : Dom.element -> (string * string) list =
-  let table = Elements.create 64 in
+  let table : (int, Dom.element * (string * string) list) Hashtbl.t = Hashtbl.create 64 in
   let rules = List.mapi (fun order r -> (specificity r.selector, order, r)) sheet in
   let rec go ancestors (e : Dom.element) =
     let matching = List.filter (fun (_, _, r) -> Selectors.pseudo_element r.selector = None && matches r.selector ancestors e) rules in
@@ -71,8 +63,8 @@ let cascade (sheet : sheet) (root : Dom.element) : Dom.element -> (string * stri
       @ text_of (List.filter (fun (d : Css_syntax.declaration) -> d.important) inline)
     in
     let winning = List.fold_left (fun acc (p, v) -> (p, v) :: List.remove_assoc p acc) [] all in
-    if winning <> [] then Elements.replace table e (List.rev winning);
+    if winning <> [] then Hashtbl.add table (Hashtbl.hash e) (e, List.rev winning);
     List.iter (fun (n : Dom.node) -> match n with Element c -> go (e :: ancestors) c | Text _ -> ()) e.children
   in
   go [] root;
-  fun e -> match Elements.find_opt table e with Some ds -> ds | None -> []
+  fun e -> match Cascade.find_element table e with Some ds -> ds | None -> []

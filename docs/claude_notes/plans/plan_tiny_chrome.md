@@ -308,6 +308,24 @@ which already reads video and sound:
   `Unit_css_syntax` and `Unit_selectors`. About 700 lines, within C1's
   budget. The style modules stay in `libs/web/style/` (not a `css/`
   folder: one library, three modules more).
+- **C2 done** (2026-09-25): `Css_values` (a length computed as pixels
+  plus a percentage of the containing block, which `calc()` adds to;
+  `min()`, `max()`, `clamp()`; the colours of CSS Color 4, the 148
+  names; `var()` substituted with its fallback, cycles refused),
+  `Cascade` (`@media` evaluated against the window, `@supports` taken
+  as true, origins and importance, the rules indexed by their rightmost
+  id, class or name, and WebKit's **ancestor filter**), `Computed` (a
+  record per element, inherited or initial per property, `inherit`,
+  `initial`, `unset`; the shorthands expanded; the custom properties
+  inherited), `ua.css` (CSS 2.1's appendix D, embedded as `Ua_sheet`).
+  On a saved Wikipedia article (5,637 elements, its 1,557 rules for this
+  window): the body's text #202122 on #f8f9fa in sans-serif, the title
+  in 28.8 px serif, links #36c through `var()` -- Wikipedia's own
+  values; the cascade 0.54 s (0.95 before the ancestor filter), the
+  computed styles 0.2 s more: C10 has the rest to win. Tests:
+  `Unit_cascade`, the notes' examples. TinyChrome's first window moves
+  to C3: shown through `Html_layout` it would need an adapter thrown
+  away one phase later. About 900 lines.
 
 ## Verification
 

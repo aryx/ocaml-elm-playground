@@ -232,6 +232,23 @@ Not OCaml's fault, but the same spirit: don't compute what is known.
   for every frame, doubling the writing; now only when the `r` key
   asks.
 
+## 10. Reject before you match: the ancestor filter
+
+A style sheet's selectors are matched right to left, and a descendant
+selector walks up the element's ancestors, compound by compound, with
+backtracking. On a Wikipedia article (5,637 elements, 1,557 rules,
+most of them long chains like `html.skin-theme-clientpref-night
+.mw-parser-output ...`), the rules left after the index (filed by their
+rightmost id, class or name) still cost 0.95 s: each walked some twenty
+ancestors to fail. WebKit's answer, its "selector filter": while the
+tree is walked, keep the ancestors' ids, classes and names (a Bloom
+filter there, a counted `Hashtbl` here: push on the way down, pop on the
+way up); give each rule the keys its left compounds need (those joined
+by descendant or child combinators: a sibling is not an ancestor); a
+rule whose keys are not all among the ancestors' is rejected before any
+matching. The cascade went from 0.95 s to 0.54 s, its results
+identical (`Cascade.ml`, the old line in a comment).
+
 ## The .mpg decoder, step by step
 
 60 frames of a 352 x 288 VCD .mpg (`albator_78_debut.mpg`), video only,
