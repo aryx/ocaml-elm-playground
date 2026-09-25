@@ -2,7 +2,8 @@
 ; Huffman, RFC 1951) and its zlib wrapper (RFC 1950), with their
 ; checksums -- what PNG's pixels are compressed with, and what JPEG's
 ; Huffman codes share (see notes_images.md, sections 2, 3 and 6); LZW,
-; GIF's; and the pieces of MPEG's bitstreams, a reader of bits most
+; GIF's; PackBits, the Macintosh's run lengths (MacPaint's pictures,
+; and the Amiga's ILBM's as ByteRun1); and the pieces of MPEG's bitstreams, a reader of bits most
 ; significant first (Bits) and fixed code tables (Vlc). Independent of
 ; any format, so that audio's may use them as images' and videos' do.
 ; A private library, installed as part of elm_playground, pure OCaml.

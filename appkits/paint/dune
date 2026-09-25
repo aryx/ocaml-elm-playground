@@ -3,15 +3,16 @@
 ; docs/claude_notes/plans/plan_gui_teaching.md, phase 11): a picture as
 ; a grid of bits (Bitmap), the 8x8 patterns it is painted with
 ; (Pattern), the lines, brushes and ovals painted into it (Paint), the
-; bucket (Seed_fill), and the way a picture was written to a floppy
-; (Packbits).
+; bucket (Seed_fill); the way a picture was written to a floppy,
+; PackBits, is libs/compression's (the Amiga's ILBM pictures use it too).
 ;
-; Independent of everything -- no gui, no playground: a picture is
-; bits. A private library, installed as part of elm_playground: pure
+; Independent of everything but compression -- no gui, no playground: a
+; picture is bits. A private library, installed as part of elm_playground: pure
 ; OCaml, so every backend can use it (graphics/2d is the software
 ; backend's, and cannot be).
 (library
  (name appkit_paint)
  (package elm_playground)
  (wrapped false)
+ (libraries compression) ; Packbits
 )
