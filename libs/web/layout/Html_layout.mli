@@ -199,6 +199,7 @@ type box = {
   lines : line list; (* an Anonymous box's *)
   floats : fragment list; (* an Anonymous box's floats (pictures), placed *)
   marker : marker option; (* a list item's *)
+  background : Looks.color option; (* a style sheet's background-color *)
 }
 
 (* a unit to set: the space before it (in its first word's look) and
@@ -212,15 +213,18 @@ type breaker = measure:float -> unit_ array -> (int * int) list
 (* fill each line, break before what does not fit *)
 val greedy : breaker
 
-(* [layout metrics ?breaker ?picture_size ~root ~width html]: the tree
- * laid out on a page [width] wide, its root's look [root], its lines
- * broken by [breaker] (greedy), the size of an image of src s,
+(* [layout metrics ?breaker ?picture_size ?style ~root ~width html]: the
+ * tree laid out on a page [width] wide, its root's look [root], its
+ * lines broken by [breaker] (greedy), the size of an image of src s,
  * [picture_size s], if the caller has it (none: every image is its
- * width= and height=, or its alt text) *)
+ * width= and height=, or its alt text), each element's look and box
+ * the table's (Looks) then its style sheets' declarations, [style e]
+ * (Css.cascade's; none by default: Mosaic's looks) *)
 val layout :
   metrics ->
   ?breaker:breaker ->
   ?picture_size:(string -> (float * float) option) ->
+  ?style:(Dom.element -> (string * string) list) ->
   root:Looks.t ->
   width:float ->
   Dom.element ->

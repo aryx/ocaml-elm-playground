@@ -39,7 +39,8 @@
  * invented, 1994), here curl's TLS.
  *
  * Keys: arrows, Page Up/Down and the wheel scroll; b and f go back and
- * forward, h home, r reloads, s shows the source (p the page again).
+ * forward, h home, r reloads, s shows the source (p the page again),
+ * c switches the page's style sheets off and on (N5).
  *
  *   dune exec apps/internet/TinyNetscape.exe
  *   dune exec networking/httpd/tiny_httpd.exe      (then Location: http://localhost:8080/home.html)
@@ -47,7 +48,8 @@
  *
  * flags url= (about:netscape, Netscape's welcome page), the first page; images=off, pictures not
  * fetched until the Images button (Netscape's "Auto Load Images",
- * for a 14400 modem); threads=off, no threads (natively).
+ * for a 14400 modem); threads=off, no threads (natively); css=off,
+ * the pages' style sheets not honoured.
  *
  * And Netscape's HTML (N3): the same tree as TinyMosaic's, in which the
  * extensions are marked (Dtd.origin), honoured here and not there
@@ -88,6 +90,7 @@ type model = {
   in_flight : string list; (* on their way: four at most *)
   total : int; (* the page's pictures to fetch, for the progress *)
   images : bool; (* Auto Load Images *)
+  css : bool; (* the pages' style sheets honoured (N5) *)
   location : string; (* the Location field *)
   editing : bool; (* typing into it *)
   fresh : bool; (* just clicked: what is there is selected, typing replaces it *)
@@ -126,6 +129,9 @@ let settings (m : model) : Browser_page.settings =
   {
     (* claude: Netscape's own extensions to HTML (N3) *)
     extensions = true;
+    (* claude: CSS1, Netscape 4's (N5); c or css=off for the page
+     * without its style sheets *)
+    css = m.css;
     width = page_width;
     breaker = Html_layout.greedy;
     visited = (fun url -> List.mem url m.visited);
@@ -355,6 +361,7 @@ let init (network : < Cap.network ; .. >) (flags : flags) : model * msg Cmd.t =
       in_flight = [];
       total = 0;
       images = List.assoc_opt "images" flags <> Some "off";
+      css = List.assoc_opt "css" flags <> Some "off";
       location = target;
       editing = false;
       fresh = false;
@@ -433,6 +440,11 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
       | "h" -> visit network home m
       | "s" -> ({ m with view = Source; scroll = 0 }, Cmd.none)
       | "p" -> ({ m with view = Page; scroll = 0 }, Cmd.none)
+      | "c" -> (
+          (* claude: the style sheets off, or on again: the same tree
+           * laid out again *)
+          let m = { m with css = not m.css } in
+          match m.state with Shown p -> ({ m with state = Shown (laid_out m p) }, Cmd.none) | Loading _ -> (m, Cmd.none))
       | _ -> (m, Cmd.none))
 
 (*****************************************************************************)

@@ -40,6 +40,7 @@ type box = {
   lines : line list;
   floats : fragment list;
   marker : marker option;
+  background : Looks.color option;
 }
 
 type unit_ = { space : float; width : float }
@@ -325,6 +326,7 @@ type ctx = {
   breaker : breaker;
   picture_size : string -> (float * float) option;
   floats : placed list ref; (* the page's, shared *)
+  style : Dom.element -> (string * string) list; (* the style sheets' (Css.cascade) *)
   (* a table's cell laid out to measure its widths: lines not aligned
    * (a centred line at an unlimited width would be far to the right) *)
   measuring : bool;
@@ -409,7 +411,8 @@ let flush_inline (ctx : ctx) : unit =
     let lines, floats, bottom = lines_of ctx.metrics ctx.breaker ctx.floats ctx.look ~x:ctx.x ~width:ctx.width ~top items in
     let height = bottom -. top in
     ctx.children <-
-      { kind = Anonymous; x = ctx.x; y = top; width = ctx.width; height; children = []; lines; floats; marker = None }
+      { kind = Anonymous; x = ctx.x; y = top; width = ctx.width; height; children = []; lines; floats; marker = None;
+        background = None }
       :: ctx.children;
     ctx.cursor <- top +. height;
     ctx.pending <- 0.)
@@ -428,14 +431,23 @@ let flush_inline (ctx : ctx) : unit =
         lines = [ { top; height = 0.; baseline = top; fragments = []; anchors } ];
         floats = [];
         marker = None;
+        background = None;
       }
       :: ctx.children
 
 let rec fragments (b : box) : fragment list =
   List.concat_map (fun (l : line) -> l.fragments) b.lines @ b.floats @ List.concat_map fragments b.children
 
+(* an element's look and box: the table's (Looks), then the style
+ * sheets' declarations for it *)
+let look_of (style : Dom.element -> (string * string) list) (parent : Looks.t) (e : Dom.element) : Looks.t =
+  Looks.styled ~parent (Looks.look parent e) (style e)
+
+let box_of (style : Dom.element -> (string * string) list) (l : Looks.t) (e : Dom.element) : Looks.box =
+  Looks.styled_box l (Looks.box l e) (style e)
+
 let rec layout_block (metrics : metrics) (breaker : breaker) (picture_size : string -> (float * float) option)
-    (floats : placed list ref) ~(measuring : bool) (look : Looks.t) (e : Dom.element) ~(marker : marker option)
+    (style : Dom.element -> (string * string) list) (floats : placed list ref) ~(measuring : bool) (look : Looks.t) (e : Dom.element) ~(marker : marker option)
     ~(x : float) ~(width : float) ~(y : float) : box =
   let look = if measuring then { look with align = Left } else look in
   let ctx =
@@ -444,6 +456,7 @@ let rec layout_block (metrics : metrics) (breaker : breaker) (picture_size : str
       breaker;
       picture_size;
       floats;
+      style;
       measuring;
       name = e.name;
       look;
@@ -469,6 +482,7 @@ let rec layout_block (metrics : metrics) (breaker : breaker) (picture_size : str
     lines = [];
     floats = [];
     marker;
+    background = None;
   }
 
 (* a node inside a block, in the look of what it is in: inline content
@@ -478,8 +492,8 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
   match node with
   | Text s -> if look.pre then add_pre_text ctx look s else add_text ctx look s
   | Element e -> (
-      let l = Looks.look look e in
-      let b = Looks.box l e in
+      let l = look_of ctx.style look e in
+      let b = box_of ctx.style l e in
       match b.display with
       | Hidden -> ()
       | Inline -> (
@@ -552,11 +566,14 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
                   | Some "right" -> ctx.x +. ctx.width -. width
                   | _ -> ctx.x +. ((ctx.width -. width) /. 2.)
                 in
-                { kind = Rule e; x; y; width; height; children = []; lines = []; floats = []; marker = None }
-            | _ when e.name = "table" && l.extensions -> layout_table ctx l e ~y
+                { kind = Rule e; x; y; width; height; children = []; lines = []; floats = []; marker = None; background = None }
+            | _ when e.name = "table" && l.extensions -> layout_table ctx l b e ~y
             | _ ->
-                layout_block ctx.metrics ctx.breaker ctx.picture_size ctx.floats ~measuring:ctx.measuring l e ~marker
-                  ~x:(ctx.x +. b.indent) ~width:(ctx.width -. b.indent -. b.right) ~y
+                let child =
+                  layout_block ctx.metrics ctx.breaker ctx.picture_size ctx.style ctx.floats ~measuring:ctx.measuring l e
+                    ~marker ~x:(ctx.x +. b.indent) ~width:(ctx.width -. b.indent -. b.right) ~y
+                in
+                { child with background = b.background }
           in
           ctx.children <- child :: ctx.children;
           ctx.cursor <- y +. child.height;
@@ -567,7 +584,7 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
  * 0 (every word a line: its widest word) and without limit (all on one
  * line); then its rows, each as tall as its tallest cell, a cell's
  * content in the middle of its row (valign=, Netscape's default) *)
-and layout_table (ctx : ctx) (l : Looks.t) (table : Dom.element) ~(y : float) : box =
+and layout_table (ctx : ctx) (l : Looks.t) (b : Looks.box) (table : Dom.element) ~(y : float) : box =
   let number name default =
     match Option.bind (Dom.attribute name table) float_of_string_opt with Some n when n >= 0. -> n | _ -> default
   in
@@ -577,7 +594,8 @@ and layout_table (ctx : ctx) (l : Looks.t) (table : Dom.element) ~(y : float) : 
   let cells, n = Table_layout.grid table in
   (* a cell laid out, its content [padding] inside; its own floats *)
   let lay_out ~measuring (c : Table_layout.cell) ~x ~width ~y =
-    layout_block ctx.metrics ctx.breaker ctx.picture_size (ref []) ~measuring (Looks.look l c.element) c.element ~marker:None
+    layout_block ctx.metrics ctx.breaker ctx.picture_size ctx.style (ref []) ~measuring (look_of ctx.style l c.element)
+      c.element ~marker:None
       ~x:(x +. padding) ~width:(width -. (2. *. padding)) ~y:(y +. padding)
   in
   let extent (b : box) = List.fold_left (fun m (f : fragment) -> Float.max m (f.x +. f.width -. b.x)) 0. (fragments b) in
@@ -612,7 +630,9 @@ and layout_table (ctx : ctx) (l : Looks.t) (table : Dom.element) ~(y : float) : 
   (* the caption, above, as wide as the table *)
   let caption =
     Option.map
-      (fun e -> layout_block ctx.metrics ctx.breaker ctx.picture_size (ref []) ~measuring:ctx.measuring (Looks.look l e) e ~marker:None ~x ~width ~y)
+      (fun e ->
+        layout_block ctx.metrics ctx.breaker ctx.picture_size ctx.style (ref []) ~measuring:ctx.measuring (look_of ctx.style l e) e
+          ~marker:None ~x ~width ~y)
       (Table_layout.caption table)
   in
   let top = match caption with Some c -> y +. c.height | None -> y in
@@ -633,7 +653,8 @@ and layout_table (ctx : ctx) (l : Looks.t) (table : Dom.element) ~(y : float) : 
         in
         let b = lay_out ~measuring:ctx.measuring c ~x:(column_x c.column) ~width:(cell_width c) ~y:(!row_top +. offset) in
         (* the box is the cell's rectangle; its content inside *)
-        boxes := { b with x = column_x c.column; y = !row_top; width = cell_width c; height = row_height } :: !boxes)
+        let background = (box_of ctx.style (look_of ctx.style l c.element) c.element).background in
+        boxes := { b with x = column_x c.column; y = !row_top; width = cell_width c; height = row_height; background } :: !boxes)
       heights;
     row_top := !row_top +. row_height +. spacing
   done;
@@ -647,13 +668,15 @@ and layout_table (ctx : ctx) (l : Looks.t) (table : Dom.element) ~(y : float) : 
     lines = [];
     floats = [];
     marker = None;
+    background = b.background;
   }
 
-let layout (metrics : metrics) ?(breaker = greedy) ?(picture_size = fun _ -> None) ~(root : Looks.t) ~(width : float)
-    (html : Dom.element) : box =
+let layout (metrics : metrics) ?(breaker = greedy) ?(picture_size = fun _ -> None) ?(style = fun _ -> []) ~(root : Looks.t)
+    ~(width : float) (html : Dom.element) : box =
   let floats = ref [] in
   let page =
-    layout_block metrics breaker picture_size floats ~measuring:false (Looks.look root html) html ~marker:None ~x:0. ~width
+    layout_block metrics breaker picture_size style floats ~measuring:false (look_of style root html) html ~marker:None ~x:0.
+      ~width
       ~y:0.
   in
   (* a float can hang below the last block: the page as long as it *)

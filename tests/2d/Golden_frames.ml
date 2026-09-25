@@ -1537,6 +1537,11 @@ let flagged : Testutil_golden.flagged list =
      * HTML unknown tags (Dtd.origin), the words without the looks --
      * no colours, no centring, the floated pictures inline *)
     ("apps/internet/software/TinyMosaic", "netscape", 5, [ "url=about:netscape" ]);
+    (* claude: TinyNetscape's page of style sheets (N5): the looks of its
+     * <style>, the cascade's worked example; then the same tree with
+     * css=off, the browser's looks and the hidden paragraph shown *)
+    ("apps/internet/software/TinyNetscape", "css", 5, [ "url=about:css" ]);
+    ("apps/internet/software/TinyNetscape", "nocss", 5, [ "url=about:css"; "css=off" ]);
     (* claude: a world of HtDP's first universe, its universe not there
      * (port 1): resting, and saying why *)
     ("examples/software/UniverseBall", "refused", 5, [ "port=1" ]);

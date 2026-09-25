@@ -422,6 +422,16 @@ value (margins). And the table of section 5 becomes the first sheet in
 the cascade, the *user-agent style sheet* -- which is what Mosaic's
 table always was.
 
+In this repository (TinyNetscape's N5): `Css` parses the page's
+`<style>` and matches its rules, the cascade giving each element its
+winning declarations; the layout computes a look as before -- the
+table's, inherited from the parent -- and then applies them
+(`Looks.styled`, `styled_box`). So inheritance comes for free: a rule
+changes an element's look, and its children start from that look.
+TinyNetscape's `about:css` is the example above in a page, and its key
+`c` lays out the same tree without the sheets: the looks are not in the
+HTML, which is the whole point.
+
 ## 11. The other end: a server
 
 `tiny_httpd` is the smallest useful web server: read a request (`Http`

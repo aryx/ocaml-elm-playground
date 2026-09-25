@@ -57,8 +57,11 @@
                              td's lines on the left, th's bold and
                              centred, either's align= otherwise
 
-   Phase 8 turns this table into the first style sheet of a cascade,
-   the "user agent style sheet" -- which is what it always was.
+   With style sheets (Css, TinyNetscape's N5), this table is the first
+   sheet of the cascade, the "user agent style sheet" -- which is what
+   it always was: the page's rules then change what it gave ([styled],
+   below). It stays OCaml here; written as CSS and read by Css, with a
+   test that both give the same looks, is an exercise.
 
    Reference: W3C, CSS 2.1, appendix D (the default style sheet for
    HTML 4) and section 6.2 (inheritance); HTML 3.2 (align=); Mosaic's
@@ -115,8 +118,43 @@ type box = {
   margin_bottom : float;
   indent : float; (* from the parent's left edge: margin and padding *)
   right : float; (* the same from its right edge *)
+  background : color option; (* a style sheet's background-color *)
 }
 
 (* the box of e, its look being [look] (for its ems, and whether
  * Netscape's elements are known) *)
 val box : t -> Dom.element -> box
+
+(*****************************************************************************)
+(* {1 Style sheets} *)
+(*****************************************************************************)
+
+(* What a style sheet's declarations (Css.cascade's, an element's
+ * winning ones) do to the look and the box the table gave -- the table
+ * the first sheet of the cascade, the user agent's, the page's after
+ * it. CSS1's properties, those a look has:
+
+     inherited (the look)        color, font-size (px, em, %, pt, the
+                                 keywords xx-small..xx-large on the
+                                 root's size a step of 1.2, larger,
+                                 smaller), font-weight, font-style,
+                                 font-family (monospace or not: one
+                                 pen), text-decoration, text-align,
+                                 white-space: pre
+     not inherited (the box)     margin and margin-top, -right, -bottom,
+                                 -left, display (none, block, inline),
+                                 background-color (a block's)
+
+ * An em in the element's own look is its parent's size for font-size
+ * (2em is twice the parent's), its own for margins. *)
+
+(* [styled ~parent l declarations]: l (the element's look by the table)
+ * with them *)
+val styled : parent:t -> t -> (string * string) list -> t
+
+(* the element's box by the table, with them, its look being [t] *)
+val styled_box : t -> box -> (string * string) list -> box
+
+(* a CSS length: px (or a number alone), em of [em], pt, and % of
+ * [percent] (em by default) *)
+val length : em:float -> ?percent:float -> string -> float option

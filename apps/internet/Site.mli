@@ -7,5 +7,5 @@
 (* about:NAME: its bytes and their Content-Type -- home, history,
  * form (or form.html, the home page's link being relative so as to be
  * right from tiny_httpd too), netscape (TinyNetscape's home: Netscape's
- * extensions to HTML), and picture.gif, .png, .jpg *)
+ * extensions to HTML), css (style sheets), and picture.gif, .png, .jpg *)
 val about : string -> (string * string) option

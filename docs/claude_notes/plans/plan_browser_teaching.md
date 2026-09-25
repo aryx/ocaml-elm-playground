@@ -801,6 +801,25 @@ before TinyNetscape's N5.
   raised, its cells sunken. Netscape's welcome page has a table of its
   extensions. Not done: rowspan=, a cell's width= and bgcolor= (3.0),
   the fixed layout, caching the measures.
+- **N5 done** (2026-09-25): CSS1. `Css` (new): a sheet parsed
+  (groups, comments, @-rules and pseudo-classes skipped), selectors of
+  names, classes, ids and descendants, specificity as a triple, the
+  cascade (specificity, then order, then style=) into each element's
+  winning declarations, the notes' section 10 example tested. The
+  looks' table stays OCaml, the first layer of the cascade (the user
+  agent's sheet, what it always was; written as CSS, an exercise):
+  `Looks.styled` and `styled_box` apply the declarations -- color,
+  font-size (px, em, %, pt, keywords), font-weight, font-style,
+  font-family (monospace or not), text-decoration, text-align,
+  white-space; margins (and the shorthand), display, background-color.
+  `Html_layout.layout ?style`, boxes with a background;
+  `Browser_page.settings.css` (TinyMosaic false; TinyNetscape its
+  flag css=off and its key c). The CSS hooks in HTML (<style>, style=,
+  class=) are not marked as extensions: CSS is a language of its own,
+  honoured or not by the browser as a whole. `about:css`, a page of
+  style sheets; golden frames with and without them. Not done: a:link
+  and a:visited, !important, <link rel=stylesheet>, padding, borders,
+  an inline element's background.
 
 **Code shared between the two apps' updates.** Their models differ
 (views, fetching, chrome), so each keeps its own `update`; what both do

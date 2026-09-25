@@ -29,6 +29,7 @@ type t = {
 
 type settings = {
   extensions : bool;
+  css : bool;
   width : float;
   breaker : Html_layout.breaker;
   visited : string -> bool;
@@ -103,12 +104,31 @@ let lay_out (s : settings) (base : string) (tree : Dom.element) : Html_layout.bo
   let visited href = s.visited (fst (Browser_url.split_fragment (Browser_url.resolve base href))) in
   let picture_size src = Option.bind (picture src) Browser_picture.size in
   let root = { Browser_text.root_look with extensions = s.extensions } in
-  let layout = Html_layout.layout Browser_text.metrics ~breaker:s.breaker ~picture_size ~root ~width:s.width tree in
+  let style = if s.css then Css.cascade (Css.parse (Css.page_sheet tree)) tree else fun _ -> [] in
+  let layout = Html_layout.layout Browser_text.metrics ~breaker:s.breaker ~picture_size ~style ~root ~width:s.width tree in
   (layout, Browser_draw.draw ~extensions:s.extensions ~visited ~picture_of:picture layout)
+
+(* the page's colour: the style sheets' for its <body> or <html>, else
+ * Netscape's bgcolor= *)
+let background (s : settings) (tree : Dom.element) : Looks.color option =
+  let body = List.nth_opt (Dom.find_all "body" tree) 0 in
+  let css =
+    if not s.css then None
+    else
+      let style = Css.cascade (Css.parse (Css.page_sheet tree)) tree in
+      List.find_map
+        (fun e ->
+          Option.bind (List.find_map (fun (p, v) -> if p = "background-color" || p = "background" then Some v else None) (style e)) Looks.color_of_string)
+        (Option.to_list body @ [ tree ])
+  in
+  match css with
+  | Some c -> Some c
+  | None when s.extensions -> Option.bind (Option.bind body (Dom.attribute ~extensions:true "bgcolor")) Looks.color_of_string
+  | None -> None
 
 let laid_out (s : settings) (p : t) : t =
   let layout, drawn = lay_out s p.url p.tree in
-  { p with layout; drawn }
+  { p with layout; drawn; background = background s p.tree }
 
 let read (s : settings) (url : string) (status : int) (content_type : string option) (bytes : string) : t =
   let charset = Charset.detect ?content_type bytes in
@@ -129,11 +149,7 @@ let read (s : settings) (url : string) (status : int) (content_type : string opt
     title;
     layout;
     drawn;
-    background =
-      (if s.extensions then
-         Option.bind (Option.bind (List.nth_opt (Dom.find_all "body" tree) 0) (Dom.attribute ~extensions:true "bgcolor"))
-           Looks.color_of_string
-       else None);
+    background = background s tree;
     forms = Forms.forms tree;
     values = [];
   }

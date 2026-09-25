@@ -176,7 +176,14 @@ let rec draw ?(extensions = false) ~(visited : string -> bool) ~(picture_of : st
     | _ -> []
   in
   let frame = match b.kind with Block e when extensions && e.name = "table" -> table_frame e b | _ -> [] in
-  lines @ floats @ rule @ marker @ frame @ List.concat_map (draw ~extensions ~visited ~picture_of) b.children
+  (* a style sheet's background-color: under the box's content *)
+  let background =
+    match b.background with
+    | Some (r, g, bl) ->
+        [ (b.y, b.y +. b.height, rectangle (rgb r g bl) b.width b.height |> move (b.x +. (b.width /. 2.)) (-.(b.y +. (b.height /. 2.)))) ]
+    | None -> []
+  in
+  background @ lines @ floats @ rule @ marker @ frame @ List.concat_map (draw ~extensions ~visited ~picture_of) b.children
 
 (*****************************************************************************)
 (* Form controls *)

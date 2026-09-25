@@ -83,15 +83,30 @@ let colors =
 
 let color_of_string (s : string) : color option =
   let s = String.lowercase_ascii (String.trim s) in
-  (* the # was often left out, and browsers took the digits anyway *)
-  let hex = if String.length s = 7 && s.[0] = '#' then Some (String.sub s 1 6) else if String.length s = 6 then Some s else None in
-  match (List.assoc_opt s colors, hex) with
-  | Some c, _ -> Some c
-  | None, Some h -> (
+  (* the # was often left out, and browsers took the digits anyway;
+   * CSS's #rgb is #rrggbb, each digit twice *)
+  let hex =
+    match String.length s with
+    | 7 when s.[0] = '#' -> Some (String.sub s 1 6)
+    | 6 -> Some s
+    | 4 when s.[0] = '#' -> Some (String.concat "" (List.map (fun i -> String.make 2 s.[i]) [ 1; 2; 3 ]))
+    | _ -> None
+  in
+  (* CSS's rgb(r, g, b) *)
+  let rgb =
+    if String.length s > 5 && String.sub s 0 4 = "rgb(" && s.[String.length s - 1] = ')' then
+      match List.map (fun x -> int_of_string_opt (String.trim x)) (String.split_on_char ',' (String.sub s 4 (String.length s - 5))) with
+      | [ Some r; Some g; Some b ] -> Some (min 255 r, min 255 g, min 255 b)
+      | _ -> None
+    else None
+  in
+  match (List.assoc_opt s colors, hex, rgb) with
+  | Some c, _, _ -> Some c
+  | None, Some h, _ -> (
       match int_of_string_opt ("0x" ^ h) with
       | Some n -> Some ((n lsr 16) land 255, (n lsr 8) land 255, n land 255)
       | None -> None)
-  | None, None -> None
+  | None, None, rgb -> rgb
 
 let font_scale (s : string) : float option =
   let scale = [| 0.625; 0.8125; 1.; 1.125; 1.5; 2.; 3. |] in
@@ -150,7 +165,15 @@ let look (parent : t) (e : Dom.element) : t =
 (*****************************************************************************)
 
 type display = Block | Inline | Rule | Hidden
-type box = { display : display; margin_top : float; margin_bottom : float; indent : float; right : float }
+
+type box = {
+  display : display;
+  margin_top : float;
+  margin_bottom : float;
+  indent : float;
+  right : float;
+  background : color option;
+}
 
 let hidden = [ "head"; "title"; "script"; "style"; "meta"; "link"; "base" ]
 
@@ -165,9 +188,9 @@ let lists = [ "ul"; "ol"; "dir"; "menu" ]
 let box (look : t) (e : Dom.element) : box =
   let em k = k *. look.size in
   let block ?(indent = 0.) ?(right = 0.) top bottom =
-    { display = Block; margin_top = top; margin_bottom = bottom; indent; right }
+    { display = Block; margin_top = top; margin_bottom = bottom; indent; right; background = None }
   in
-  let none display = { display; margin_top = 0.; margin_bottom = 0.; indent = 0.; right = 0. } in
+  let none display = { display; margin_top = 0.; margin_bottom = 0.; indent = 0.; right = 0.; background = None } in
   match e.name with
   | _ when e.origin = Netscape && not look.extensions -> none Inline
   | name when List.mem name hidden -> none Hidden
@@ -186,3 +209,82 @@ let box (look : t) (e : Dom.element) : box =
   | "pre" | "listing" | "xmp" -> block (em 1.) (em 1.)
   | name when List.mem name blocks -> block 0. 0.
   | _ -> none Inline
+
+(*****************************************************************************)
+(* Style sheets: what a declaration does *)
+(*****************************************************************************)
+
+(* a length: px, em (of [em]), or a number alone (px); % of [percent] *)
+let length ~(em : float) ?(percent = em) (v : string) : float option =
+  let v = String.trim (String.lowercase_ascii v) in
+  let number suffix =
+    if String.ends_with ~suffix v then float_of_string_opt (String.trim (String.sub v 0 (String.length v - String.length suffix)))
+    else None
+  in
+  match (number "px", number "em", number "%", number "pt") with
+  | Some n, _, _, _ -> Some n
+  | _, Some n, _, _ -> Some (n *. em)
+  | _, _, Some n, _ -> Some (n *. percent /. 100.)
+  (* a point is 1/72 inch, a pixel 1/96 *)
+  | _, _, _, Some n -> Some (n *. 96. /. 72.)
+  | _ -> float_of_string_opt v
+
+(* CSS1's font-size keywords: medium the root's, a step 1.2 *)
+let font_size ~(parent : t) (v : string) : float option =
+  let steps = [ ("xx-small", -3); ("x-small", -2); ("small", -1); ("medium", 0); ("large", 1); ("x-large", 2); ("xx-large", 3) ] in
+  match String.lowercase_ascii v with
+  | k when List.mem_assoc k steps -> Some (parent.base *. (1.2 ** float_of_int (List.assoc k steps)))
+  | "larger" -> Some (parent.size *. 1.2)
+  | "smaller" -> Some (parent.size /. 1.2)
+  | v -> length ~em:parent.size v
+
+let styled ~(parent : t) (l : t) (declarations : (string * string) list) : t =
+  List.fold_left
+    (fun (l : t) (property, value) ->
+      let v = String.lowercase_ascii value in
+      match property with
+      | "color" -> ( match color_of_string value with Some c -> { l with color = c } | None -> l)
+      | "font-size" -> ( match font_size ~parent value with Some s when s > 0. -> { l with size = s } | _ -> l)
+      | "font-weight" -> (
+          match (v, int_of_string_opt v) with
+          | ("bold" | "bolder"), _ -> { l with bold = true }
+          | ("normal" | "lighter"), _ -> { l with bold = false }
+          | _, Some n -> { l with bold = n >= 600 }
+          | _ -> l)
+      | "font-style" -> { l with italic = v = "italic" || v = "oblique" }
+      | "font-family" ->
+          (* one pen: all we can tell is fixed width or not *)
+          { l with monospace = List.exists (fun f -> String.trim f = "monospace" || String.trim f = "courier") (String.split_on_char ',' v) }
+      | "text-decoration" ->
+          { l with underline = v = "underline"; strike = v = "line-through" }
+      | "text-align" -> (
+          match v with "center" -> { l with align = Center } | "right" -> { l with align = Right } | "left" -> { l with align = Left } | _ -> l)
+      | "white-space" -> { l with pre = v = "pre" }
+      | _ -> l)
+    l declarations
+
+let styled_box (l : t) (b : box) (declarations : (string * string) list) : box =
+  let len v = Option.value (length ~em:l.size v) ~default:0. in
+  List.fold_left
+    (fun (b : box) (property, value) ->
+      match (property, String.lowercase_ascii value) with
+      | "display", "none" -> { b with display = Hidden }
+      | "display", "block" when b.display = Inline -> { b with display = Block }
+      | "display", "inline" when b.display = Block -> { b with display = Inline }
+      | "margin-top", v -> { b with margin_top = len v }
+      | "margin-bottom", v -> { b with margin_bottom = len v }
+      | "margin-left", v -> { b with indent = len v }
+      | "margin-right", v -> { b with right = len v }
+      | "margin", v -> (
+          (* 1 to 4 values: top, right, bottom, left, the missing ones
+           * copied from their opposite *)
+          match List.map len (String.split_on_char ' ' v |> List.filter (( <> ) "")) with
+          | [ a ] -> { b with margin_top = a; right = a; margin_bottom = a; indent = a }
+          | [ a; c ] -> { b with margin_top = a; right = c; margin_bottom = a; indent = c }
+          | [ a; c; d ] -> { b with margin_top = a; right = c; margin_bottom = d; indent = c }
+          | [ a; c; d; e ] -> { b with margin_top = a; right = c; margin_bottom = d; indent = e }
+          | _ -> b)
+      | ("background-color" | "background"), _ -> (
+          match color_of_string value with Some c -> { b with background = Some c } | None -> b)
+      | _ -> b)
+    b declarations

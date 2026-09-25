@@ -194,6 +194,25 @@ let tests =
       Testo.create "floats: br clear" (fun () ->
           let p = netscape "<img src=g width=40 height=30 align=left>a<br clear=all>b" in
           Alcotest.(check (list fragment)) "b below the image" [ ("a", 54., 17.); ("b", 8., 47.); ("", 8., 38.) ] (fragments p));
+      Testo.create "style sheets: looks and boxes" (fun () ->
+          let styled sheet html =
+            let tree = Html_tree.of_string html in
+            Html_layout.layout metrics ~style:(Css.cascade (Css.parse sheet) tree) ~root:(Looks.root ~size:10. ()) ~width:200. tree
+          in
+          let f = List.hd (Html_layout.fragments (styled "p { font-size: 2em; color: #f00 } em { font-size: 50% }" "<p>ab <em>c</em>")) in
+          Alcotest.check near "2em of the root's 10" 20. f.look.size;
+          Alcotest.(check (triple int int int)) "#f00 is red" (255, 0, 0) f.look.color;
+          let em = List.nth (Html_layout.fragments (styled "p { font-size: 2em } em { font-size: 50% }" "<p>ab <em>c</em>")) 1 in
+          Alcotest.check near "50% of its parent's 20" 10. em.look.size;
+          (* margin: 5px 20px: the p from 8 + 20, its line 5 below the
+           * body's top (the body's 8 and the p's 5, not collapsed with
+           * each other here) *)
+          Alcotest.(check (list fragment)) "margins" [ ("ab", 28., 22.) ]
+            (fragments (styled "p { margin: 5px 20px }" "<p>ab"));
+          Alcotest.(check (list fragment)) "display: none" [ ("b", 8., 17.) ]
+            (fragments (styled ".x { display: none }" "<div class=x>a</div><div>b</div>"));
+          Alcotest.(check (option (triple int int int))) "a block's background" (Some (0, 0, 255))
+            (List.hd (blocks "div" (styled "div { background-color: blue }" "<div>a</div>"))).background);
       Testo.create "a table" (fun () ->
           (* padding 1, spacing 2, border 1: a's column 12, bb's 22;
            * the table 1 + 2 + 12 + 2 + 22 + 2 + 1 = 42 wide from x 8,
