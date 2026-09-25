@@ -1108,7 +1108,9 @@ let view (m : model) : shape list =
   @ [ label (-490.) 470. ink "Title:" ] @ field (-440.) 470. 860. title
   @ [ label (-490.) 440. ink "URL:" ] @ field (-440.) 440. 860. (current_url m)
   @ globe m
-  @ [ label (-490.) (-428.) ink (status m) ]
+  (* in cells, as the fields: where words start is then the same in
+   * every backend's font *)
+  @ monospace (-490.) (-428.) ink (status m)
   @ List.concat (List.mapi (fun i (text, active) -> button (button_x i) button_y text active) (buttons m))
 
 (*****************************************************************************)

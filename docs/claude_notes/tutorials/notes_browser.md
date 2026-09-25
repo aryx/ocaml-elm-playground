@@ -38,11 +38,11 @@ something changes.
 | `web/style/Looks` | the tree's looks, Mosaic's table | §5 | done |
 | `web/layout/Html_layout` | blocks and lines: boxes with positions | §6, §7 | done (greedy lines; Knuth-Plass plugged in by the app) |
 | `web/layout/Hit` | a point to a link, a name to its place | §8 | done |
-| `apps/internet/TinyMosaic` | the chrome, painting, the history | §8, §9 | done (phases 0-5) |
-| `web/style/Css` | the cascade | §10 | planned |
+| `apps/internet/TinyMosaic` | the chrome, painting, the history, pictures, forms | §7-§11 | done |
+| `web/style/Css` | the cascade | §10 | planned, TinyNetscape's |
 | `networking/httpd/tiny_httpd`, `networking/unix/Http_server` | the other end: a server, and CGI | §11 | done |
 | `web/html/Forms`, `networking/Urlencoded` | a form's controls, what a submission sends, how | §11 | done |
-| `web/layout/Table_layout` | tables | §12 | planned |
+| `web/layout/Table_layout` | tables | §12 | planned, TinyNetscape's |
 
 ## 1. From a URL to bytes
 
@@ -524,8 +524,15 @@ width available  90: < 100, every column at its min, and the table
    own history.
 5. Incremental layout: a dirty bit per block, and only dirty blocks
    laid out again when an image arrives; count the boxes saved.
-6. A `<form>` whose CGI is an OCaml function in `tiny_httpd`: a guest
-   book.
+6. A guest book: a CGI program (in OCaml, over `Urlencoded`) that
+   appends what a form sent to a file and answers with the whole book.
+7. Mosaic's way with pictures exactly: the page not shown until the
+   last picture is in, the view frozen meanwhile (`fetch=mosaic`), and
+   the difference felt against a slow `tiny_httpd`.
+8. A `<select>` that pops a menu of its options, as Motif's did,
+   instead of cycling through them on a click.
+9. XBM, the other inline image format Mosaic read: a C file as a
+   picture, a reader of thirty lines beside `graphics/images/xpm/`.
 
 ## Glossary
 

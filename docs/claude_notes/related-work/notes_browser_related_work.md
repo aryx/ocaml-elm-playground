@@ -135,13 +135,16 @@ broken.
 ## Where TinyMosaic actually sits
 
 Beside *Web Browser Engineering*, in scope: fetch, parse, style,
-layout, paint, click, history; and it stops before JavaScript. It
-differs in being after one original (Mosaic's web, 1993-1995, is small
-enough to do all of), in running natively and in a browser from the
-same source, in its pieces being the house's own (HTTP, the event
-loop, GIF, PNG and JPEG, Hershey's strokes, Knuth-Plass), and in
-putting the simple and the better version of a stage side by side
-(greedy and optimal lines, Mosaic's looks and a cascade, images
-reflowing and reserved). It will not read today's web: no TLS, no
-scripts, CSS1 at most. That is the lesson's shape, not its failure --
-the notes' last section says what the missing half is for.
+layout, paint, click, history, pictures, forms; and it stops before
+JavaScript. It differs in being after one original (Mosaic's web,
+1993, is small enough to do all of), in running natively and in a
+browser from the same source, in its pieces being the house's own
+(HTTP both ways and its server, the event loop, GIF, PNG and JPEG,
+Hershey's strokes, Knuth-Plass), in a view per stage of the pipeline,
+and in putting the simple and the better version of a stage side by
+side (greedy and optimal lines, images reflowing and reserved). What
+came after Mosaic -- pictures fetched several at once, threads, tables,
+CSS -- is TinyNetscape's (plan_browser_teaching.md). It will not read
+much of today's web: `https://` only through curl, no scripts, no
+style sheets. That is the lesson's shape, not its failure -- the
+notes' last section says what the missing half is for.

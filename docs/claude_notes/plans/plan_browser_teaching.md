@@ -592,7 +592,23 @@ answering a POST. The Title and URL fields now drawn in cells, cut at
 their end (a long URL spilled over the label). Golden frames `_form`,
 `_get`, `_post`; every other TinyMosaic frame changed with the fields.
 Next: phase 11 (the docs, and the web build tried in a browser), then
-TinyMosaic is done.
+TinyMosaic is done. Committed as 0241152.
+
+**Phase 11 done, TinyMosaic finished** (2026-09-25). The web build
+tried in a real browser at last (headless Chrome, `--screenshot`,
+served as `make serve-build` does): the home page laid out as natively,
+its three pictures decoded by our readers inside the browser (drawn as
+PNG data URLs), `about:form` drawn, an `http://` page fetched by the
+XMLHttpRequest from the same site (its status line: 95 bytes, status
+200). Found then: the status line, drawn by `words` from a guessed
+width, started 50 units too far right in the browser's narrower font
+-- now in cells, as the fields; every golden frame changed in that row
+only. The notes' table and exercises (a guest book, Mosaic's frozen
+view, a popped-up select, XBM), the related work's last section, the
+CATALOG row: brought up to date. Left for another time, as exercises
+or TinyNetscape's: the adoption agency, frames, incremental layout,
+XBM, a select's menu. **Next: TinyNetscape** -- its plan section first
+(the split above), the shared code as `appkits/browser` first of all.
 
 Written as the specification, with
 [`notes_browser.md`](../tutorials/notes_browser.md) and
