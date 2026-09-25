@@ -1,0 +1,10 @@
+; claude: SVG pictures (Svg.mli): read (a small XML reader), their
+; shapes made polygons, filled and stroked by graphics/2d into an
+; Rgba_image -- the logos and icons of the web's pages (TinyChrome,
+; plan_tiny_chrome.md C6). Pure OCaml, in a browser too.
+(library
+ (name graphics_svg)
+ (package elm_playground)
+ (wrapped false)
+ (libraries graphics_rgba graphics_core graphics_2d graphics_2d_geometry)
+)

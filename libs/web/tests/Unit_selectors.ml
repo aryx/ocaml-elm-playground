@@ -40,6 +40,12 @@ let tests =
           Alcotest.(check bool) "a:unknown" true (Selectors.parse_string "a:unknown" = None);
           Alcotest.(check bool) "a dangling >" true (Selectors.parse_string "ul >" = None);
           Alcotest.(check string) "written back" "ul > li.item:not(.done)" (Selectors.to_string (one "ul>li.item:not( .done )")));
+      Testo.create ":is(), :where(), :enabled" (fun () ->
+          check "any of a list" "li:is(.done, #c)" page [ "b"; "c" ];
+          Alcotest.(check (list (triple int int int))) ":is counts its most specific, :where nothing"
+            [ (1, 0, 1); (0, 0, 1) ]
+            (List.map (fun s -> Selectors.specificity (one s)) [ "li:is(.done, #c)"; "li:where(.done, #c)" ]);
+          check "a control not disabled" ":enabled" "<input id=i><input id=j disabled><p id=p>" [ "i" ]);
       Testo.create "combinators" (fun () ->
           check "descendant" "div li" page [ "a"; "b"; "c" ];
           check "child: li is not the div's" "div > li" page [];

@@ -411,6 +411,36 @@ which already reads video and sound:
   to "enable JavaScript") -- no site of the plan needs one yet, so the
   playground's API keeps its shape until one does; the omnibox's
   searches will be DuckDuckGo's HTML version (C7). About 450 lines.
+- **C6 done** (2026-09-25): `Svg` (`graphics/images/svg/`, library
+  `graphics_svg`: a small XML reader; rect, circle, ellipse, line,
+  polyline, polygon and path with all its commands, arcs by the spec's
+  endpoint-to-centre conversion, curves by `Curve.flatten`;
+  transforms, the viewBox, fill and stroke, their rule, opacities,
+  `style=`, currentColor; each shape's coverage drawn white on black
+  by `Fill.polygons_aa` -- the framebuffer has no alpha -- then laid
+  "over" an RGBA picture). The author's decision: `graphics_core` and
+  `graphics_2d` moved to the package `elm_playground` (their
+  `(package)` field only), so that `graphics_svg` and the browsers
+  (in a browser too) use them. In the browsers: an SVG file is a
+  picture (`Browser_picture`); an inline `<svg>` a replaced element,
+  kept whole by `Html_tree`'s **foreign content** (`/>` honoured, no
+  HTML rule closing inside), drawn from its own tree in its text's
+  colour, cached by element (`Browser_boxes`); **background-image**
+  (fetched with the pictures, a sheet's `url()`s resolved against the
+  sheet, queued again as each sheet arrives; drawn at its size, shrunk
+  to fit) and **mask-image** (the picture tinted with the background's
+  colour); **data: URLs** (`Browser_url.data_url`); `Selectors`'
+  `:is()`, `:where()`, `:enabled` (Wikipedia's quiet buttons' rule had
+  been dropped for one `:enabled` in its list); a hidden word's picture
+  not drawn (GitHub's hidden menus' icons); no Mosaic frame round a
+  picture in a link. Tried live: Hacker News' "Y" and vote arrows,
+  Wikipedia's wordmark, tagline and icons, GitHub's octicons.
+  `about:chrome`'s SVG card (Chrome's logo inline, a `data:` star, the
+  arrow as a background, a bell as a mask) is a second golden frame
+  (`TinyChrome_svg`, Space scrolling a screen). Not done: gradients,
+  `<use>`, text in SVG, a picture's own border and padding (HN's
+  logo's white frame), vertical-align on an empty inline-block. About
+  700 lines.
 
 ## Verification
 

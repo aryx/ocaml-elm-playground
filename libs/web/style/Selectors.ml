@@ -19,6 +19,7 @@ type pseudo_class =
   | Only_child
   | Nth_child of int * int
   | Not of complex list
+  | Is of complex list * bool (* :is() (and :matches), counting as its most specific; :where(), counting nothing *)
   | Link
   | Visited
   | Hover
@@ -28,6 +29,7 @@ type pseudo_class =
   | Empty
   | Checked
   | Disabled
+  | Enabled
 
 and simple =
   | Type of string
@@ -117,6 +119,7 @@ and simple (cs : component list) : simple * component list =
         | "empty" -> Empty
         | "checked" -> Checked
         | "disabled" -> Disabled
+        | "enabled" -> Enabled
         | "first-of-type" -> First_child
         | "last-of-type" -> Last_child
         | _ -> raise Invalid
@@ -125,6 +128,8 @@ and simple (cs : component list) : simple * component list =
   | Token Colon :: Func (f, args) :: rest -> (
       match String.lowercase_ascii f with
       | "not" -> (Pseudo (Not (parse_list args)), rest)
+      | "is" | "matches" | "-webkit-any" -> (Pseudo (Is (parse_list args, true)), rest)
+      | "where" -> (Pseudo (Is (parse_list args, false)), rest)
       | "nth-child" | "nth-of-type" -> (
           let a, b = nth (to_string args) in
           (Pseudo (Nth_child (a, b)), rest))
@@ -173,7 +178,8 @@ and of_simple (s : simple) : int * int * int =
   match s with
   | Id _ -> (1, 0, 0)
   | Class _ | Attr _ -> (0, 1, 0)
-  | Pseudo (Not l) -> List.fold_left (fun m x -> max m (specificity x)) (0, 0, 0) l
+  | Pseudo (Not l) | Pseudo (Is (l, true)) -> List.fold_left (fun m x -> max m (specificity x)) (0, 0, 0) l
+  | Pseudo (Is (_, false)) -> (0, 0, 0)
   | Pseudo _ -> (0, 1, 0)
   | Type _ | Pseudo_element _ -> (0, 0, 1)
   | Universal -> (0, 0, 0)
@@ -237,13 +243,16 @@ let rec matches_simple ~visited (ancestors : Dom.element list) (e : Dom.element)
           let i = List.length before + 1 in
           if a = 0 then i = b else (i - b) mod a = 0 && (i - b) / a >= 0
       | Not l -> not (List.exists (fun sel -> matches_complex ~visited sel ancestors e) l)
+      | Is (l, _) -> List.exists (fun sel -> matches_complex ~visited sel ancestors e) l
       | Link -> e.name = "a" && Dom.attribute "href" e <> None && not (match Dom.attribute "href" e with Some h -> visited h | None -> false)
       | Visited -> e.name = "a" && (match Dom.attribute "href" e with Some h -> visited h | None -> false)
       | Hover | Active | Focus -> false
       | Root -> ancestors = []
       | Empty -> List.for_all (fun (n : Dom.node) -> match n with Text "" -> true | _ -> false) e.children
       | Checked -> Dom.attribute "checked" e <> None || Dom.attribute "selected" e <> None
-      | Disabled -> Dom.attribute "disabled" e <> None)
+      | Disabled -> Dom.attribute "disabled" e <> None
+      (* a form's control that is not disabled *)
+      | Enabled -> List.mem e.name [ "input"; "button"; "select"; "textarea"; "option"; "fieldset" ] && Dom.attribute "disabled" e = None)
 
 and matches_compound ~visited ancestors e (compound : simple list) : bool = List.for_all (matches_simple ~visited ancestors e) compound
 
@@ -308,6 +317,7 @@ and simple_to_string (s : simple) : string =
       | Only_child -> "only-child"
       | Nth_child (a, b) -> Printf.sprintf "nth-child(%dn+%d)" a b
       | Not l -> "not(" ^ String.concat ", " (List.map to_string l) ^ ")"
+      | Is (l, counts) -> (if counts then "is(" else "where(") ^ String.concat ", " (List.map to_string l) ^ ")"
       | Link -> "link"
       | Visited -> "visited"
       | Hover -> "hover"
@@ -316,4 +326,5 @@ and simple_to_string (s : simple) : string =
       | Root -> "root"
       | Empty -> "empty"
       | Checked -> "checked"
-      | Disabled -> "disabled")
+      | Disabled -> "disabled"
+      | Enabled -> "enabled")

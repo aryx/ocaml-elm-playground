@@ -120,13 +120,14 @@ let with_arrived (cfg : 'msg config) (tab : t) (url : string) (pic : Browser_pic
  * it -- its colours, its boxes, as a picture moves the text *)
 let with_sheet (cfg : 'msg config) (tab : t) (url : string) (text : string) : t =
   let tab = relaid cfg { tab with sheets = (url, text) :: List.remove_assoc url tab.sheets } in
-  (* its @imports, first in the queue *)
+  (* its @imports, first in the queue; the backgrounds' pictures it
+   * gave the boxes, last *)
   match tab.state with
   | Shown p ->
-      let more =
-        List.filter (fun u -> not (List.mem u tab.queue || List.mem u tab.in_flight)) (Browser_page.sheets_wanted (cfg.settings tab) p)
-      in
-      { tab with queue = more @ tab.queue; sheet_urls = more @ tab.sheet_urls; total = tab.total + List.length more }
+      let fresh u = not (List.mem u tab.queue || List.mem u tab.in_flight || List.mem_assoc u tab.pictures) in
+      let more = List.filter fresh (Browser_page.sheets_wanted (cfg.settings tab) p) in
+      let pictures = if tab.images then List.filter fresh p.backgrounds else [] in
+      { tab with queue = more @ tab.queue @ pictures; sheet_urls = more @ tab.sheet_urls; total = tab.total + List.length more + List.length pictures }
   | Loading _ -> tab
 
 (* more pictures on their way, while fewer than [connections] are:
@@ -135,6 +136,12 @@ let rec fetch_more (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, c
   match tab.queue with
   | url :: rest when List.length tab.in_flight < cfg.connections ->
       let tab = { tab with queue = rest } in
+      (match Browser_url.data_url url with
+      | Some bytes ->
+          (* a data: URL: its bytes are in it *)
+          if List.mem url tab.sheet_urls then fetch_more cfg network (with_sheet cfg tab url bytes, cmd)
+          else fetch_more cfg network (with_arrived cfg tab url (Browser_picture.decode bytes), cmd)
+      | None ->
       if starts_with "about:" url && List.mem url tab.sheet_urls then
         let text = match cfg.about (String.sub url 6 (String.length url - 6)) with Some (bytes, _) -> bytes | None -> "" in
         fetch_more cfg network (with_sheet cfg tab url text, cmd)
@@ -147,7 +154,7 @@ let rec fetch_more (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, c
         fetch_more cfg network (with_arrived cfg tab url pic, cmd)
       else
         let get = Http.get network ~url ~expect:(Http.expect_response (cfg.got_picture url)) in
-        fetch_more cfg network ({ tab with in_flight = url :: tab.in_flight }, Cmd.batch [ cmd; get ])
+        fetch_more cfg network ({ tab with in_flight = url :: tab.in_flight }, Cmd.batch [ cmd; get ]))
   | _ -> (tab, cmd)
 
 (* a page shown: its style sheets not had yet queued (by the box
@@ -161,8 +168,8 @@ let with_pictures (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, cm
       let fresh = List.fold_left (fun acc u -> if List.mem u acc || List.mem u tab.in_flight then acc else acc @ [ u ]) [] in
       let sheets = fresh (Browser_page.sheets_wanted (cfg.settings tab) p) in
       let pictures =
-        Dom.find_all "img" p.tree
-        |> List.filter_map (fun e -> Option.map (Browser_url.resolve p.url) (Box_layout.picture_src e))
+        (Dom.find_all "img" p.tree |> List.filter_map (fun e -> Option.map (Browser_url.resolve p.url) (Box_layout.picture_src e)))
+        @ p.backgrounds
         |> List.filter (fun u -> not (had u))
         |> fresh
       in

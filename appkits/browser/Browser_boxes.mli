@@ -17,8 +17,17 @@
  * What screen readers are given in a 1-pixel box is so hidden, and a
  * table of contents taller than its column cut at its bottom.
  *
+ * A background-image is drawn once its picture has come, at its own
+ * size at the box's top left, or shrunk to fit the box if larger:
+ * background-size, -position and -repeat read as that.
+ *
+ * A mask-image (Wikipedia's icons: an SVG, the box's background
+ * showing through its shape in currentColor) is drawn as its picture
+ * tinted with the background's colour, its alpha kept, fitted to the
+ * box and centred -- what a mask of one colour gives.
+ *
  * Not drawn: border styles (every border solid), rounded corners,
- * shadows, background images. *)
+ * shadows, gradients. *)
 
 (* the page's shapes, each with its top and bottom on the page (y down,
  * turned over: Browser_draw.drawn) *)

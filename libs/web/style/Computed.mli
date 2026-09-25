@@ -80,6 +80,8 @@ type t = {
   border_box : bool; (* box-sizing: border-box *)
   color : Css_values.color;
   background : Css_values.color;
+  background_image : string option; (* its url(), as written (a sheet's resolved against it: Browser_page) *)
+  mask_image : string option; (* mask-image's url() (or -webkit-'s): the box's background shows through its picture only *)
   font_size : float;
   bold : bool; (* font-weight 600 and more *)
   italic : bool;

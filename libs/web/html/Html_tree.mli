@@ -56,7 +56,16 @@
        the WHATWG's adoption agency algorithm:    b(i("x")), i("y")
 
    Every browser shows y in italics; reproducing it is notes_browser.md's
-   first exercise. Also not done: tables' implied <tbody> and the
+   first exercise.
+
+   **Foreign content**: inside an <svg> (a picture in the page, as
+   pages put their icons), XML's rules instead: an element closes only
+   at its end tag or its "/>" (<path d="..."/>), and no HTML rule closes
+   anything -- so the picture's tree is whole for Box_layout and Svg.
+   (The spec's MathML, and its adjusting of SVG's attribute names'
+   case, not done: attributes stay lower case, as Svg reads them.)
+
+   Also not done: tables' implied <tbody> and the
    "foster parenting" of what is misplaced in a table (phase 10's),
    forms' rules, <frameset>, and the quirks of the spec's 23 insertion
    modes beyond the three above (before the body, in it, after it).

@@ -26,6 +26,7 @@ type t = {
   forms : Forms.form list;
   values : (Dom.element * Forms.value) list;
   quirks : bool;
+  backgrounds : string list;
 }
 
 type settings = {
@@ -113,6 +114,30 @@ let import_of (prelude : Css_syntax.component list) : (string * Css_syntax.compo
       match Css_syntax.trim args with [ Token (String u) ] -> Some (u, media) | _ -> None)
   | _ -> None
 
+(* a sheet's url()s made absolute against it: a background's picture
+ * is the sheet's neighbour, not the page's *)
+let absolute_urls (base : string) (rules : Css_syntax.rule list) : Css_syntax.rule list =
+  let rec fix (cs : Css_syntax.component list) : Css_syntax.component list =
+    List.map
+      (fun (c : Css_syntax.component) : Css_syntax.component ->
+        match c with
+        | Token (Url u) -> Token (Url (Browser_url.resolve base u))
+        | Func (f, args) when String.lowercase_ascii f = "url" -> (
+            match Css_syntax.trim args with [ Token (String u) ] -> Token (Url (Browser_url.resolve base u)) | _ -> c)
+        | Func (f, args) -> Func (f, fix args)
+        | Block (k, inside) -> Block (k, fix inside)
+        | Token _ -> c)
+      cs
+  in
+  List.map
+    (fun (r : Css_syntax.rule) : Css_syntax.rule ->
+      match r with
+      | Style_rule { prelude; declarations } ->
+          Style_rule { prelude; declarations = List.map (fun (d : Css_syntax.declaration) -> { d with value = fix d.value }) declarations }
+      | At_rule { name = "import"; _ } -> r
+      | At_rule { name; prelude; block } -> At_rule { name; prelude; block = Option.map fix block })
+    rules
+
 (* a sheet's rules, its @imports' put in their place (four deep at
  * most: a sheet importing itself stops there); the addresses not had
  * yet added to [missing] *)
@@ -132,7 +157,7 @@ let rec expand (s : settings) (media : Cascade.media) (missing : string list ref
                   [])
           | _ -> [])
       | _ -> [ r ])
-    (Css_syntax.parse_stylesheet text)
+    (absolute_urls url (Css_syntax.parse_stylesheet text))
 
 (* the page's sheets, in the order it gives them: each <link
  * rel=stylesheet> whose media= holds (its text, once it has come) and
@@ -170,7 +195,8 @@ let viewport_height = 768.
  * against its URL; with [boxes], by the box model (Cascade, Computed,
  * Box_layout, Browser_boxes), the page's colour its root's or its
  * body's (CSS 2.1 section 14.2: the canvas) *)
-let lay_out ?(quirks = false) (s : settings) (base : string) (tree : Dom.element) : Html_layout.box * Browser_draw.drawn * Looks.color option option =
+let lay_out ?(quirks = false) (s : settings) (base : string) (tree : Dom.element) :
+    Html_layout.box * Browser_draw.drawn * Looks.color option option * string list =
   let picture src = s.picture (Browser_url.resolve base src) in
   let visited href = s.visited (fst (Browser_url.split_fragment (Browser_url.resolve base href))) in
   let picture_size src = Option.bind (picture src) Browser_picture.size in
@@ -184,12 +210,19 @@ let lay_out ?(quirks = false) (s : settings) (base : string) (tree : Dom.element
         (fun e -> match (styles e).background with c when c.a > 0. -> Some (c.r, c.g, c.b) | _ -> None)
         (tree :: Dom.find_all "body" tree)
     in
-    (Box_layout.as_html_layout boxes, Browser_boxes.draw ~visited ~picture_of:picture boxes, Some canvas)
+    (* the backgrounds' pictures, to fetch: the boxes' that are shown *)
+    let rec backgrounds (b : Box_layout.box) =
+      List.filter_map
+        (fun u -> match u with Some u when b.style.visible && b.element <> None -> Some (Browser_url.resolve base u) | _ -> None)
+        [ b.style.background_image; b.style.mask_image ]
+      @ List.concat_map backgrounds b.children @ List.concat_map backgrounds b.backdrops
+    in
+    (Box_layout.as_html_layout boxes, Browser_boxes.draw ~visited ~picture_of:picture boxes, Some canvas, List.sort_uniq compare (backgrounds boxes))
   else
     let root = { Browser_text.root_look with extensions = s.extensions } in
     let style = if s.css then Css.cascade (Css.parse (Css.page_sheet tree)) tree else fun _ -> [] in
     let layout = Html_layout.layout Browser_text.metrics ~breaker:s.breaker ~picture_size ~style ~root ~width:s.width tree in
-    (layout, Browser_draw.draw ~extensions:s.extensions ~visited ~picture_of:picture layout, None)
+    (layout, Browser_draw.draw ~extensions:s.extensions ~visited ~picture_of:picture layout, None, [])
 
 let sheets_wanted (s : settings) (p : t) : string list =
   if s.boxes && s.css then snd (page_sheets s { width = s.width; height = viewport_height } p.url p.tree) else []
@@ -216,14 +249,14 @@ let background (s : settings) (tree : Dom.element) (canvas : Looks.color option 
       | None -> None
 
 let laid_out (s : settings) (p : t) : t =
-  let layout, drawn, canvas = lay_out ~quirks:p.quirks s p.url p.tree in
-  { p with layout; drawn; background = background s p.tree canvas }
+  let layout, drawn, canvas, backgrounds = lay_out ~quirks:p.quirks s p.url p.tree in
+  { p with layout; drawn; background = background s p.tree canvas; backgrounds }
 
 let title_of (tree : Dom.element) : string =
   match Dom.find_all "title" tree with t :: _ -> String.trim (Dom.text_content t) | [] -> ""
 
 let with_tree (s : settings) (p : t) (tree : Dom.element) : t =
-  let layout, drawn, canvas = lay_out ~quirks:p.quirks s p.url tree in
+  let layout, drawn, canvas, backgrounds = lay_out ~quirks:p.quirks s p.url tree in
   {
     p with
     tree;
@@ -232,6 +265,7 @@ let with_tree (s : settings) (p : t) (tree : Dom.element) : t =
     layout;
     drawn;
     background = background s tree canvas;
+    backgrounds;
     forms = Forms.forms tree;
     (* the values were the old tree's elements'; a script's page keeps
      * a field's text in its value= (Browser_script.input) *)
@@ -246,7 +280,7 @@ let read (s : settings) (url : string) (status : int) (content_type : string opt
   let title = title_of tree in
   (* no DOCTYPE: the page written for the browsers of the 1990s *)
   let quirks = not (List.exists (fun (t : Html_lexer.token) -> match t with Doctype _ -> true | _ -> false) tokens) in
-  let layout, drawn, canvas = lay_out ~quirks s url tree in
+  let layout, drawn, canvas, backgrounds = lay_out ~quirks s url tree in
   {
     url;
     status;
@@ -263,6 +297,7 @@ let read (s : settings) (url : string) (status : int) (content_type : string opt
     forms = Forms.forms tree;
     values = [];
     quirks;
+    backgrounds;
   }
 
 (*****************************************************************************)

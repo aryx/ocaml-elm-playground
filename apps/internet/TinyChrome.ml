@@ -49,19 +49,24 @@
  * own sheet alone (what a page looks like unstyled).
  *
  * Uses: appkits/browser (the tab, the page, Browser_boxes, the
- * forms), libs/web (Cascade, Computed, Box_layout, and Hit through the
- * page's Html_layout view), the built-in site (Site). Its own: the
- * chrome.
+ * forms), libs/web (Cascade, Computed, Box_layout, Flex_layout, and Hit
+ * through the page's Html_layout view), graphics/images/svg (Svg)
+ * through Browser_boxes and Browser_picture, the built-in site (Site).
+ * Its own: the chrome.
  *
  * Tried live: Hacker News (its tables, attributes and news.css), a
  * Wikipedia article (its two sheets from load.php; its header and tabs
  * flex rows; its contents a grid column, here above the article),
  * Google's home page (its no-script version: a search needs
  * JavaScript), a GitHub repository (41 sheets; its file list's
- * messages written by its scripts, so missing).
+ * messages written by its scripts, so missing). Their logos and icons
+ * are SVG (graphics/images/svg: an SVG file a picture, an <svg> in the
+ * page drawn from its own tree, a background-image, a mask-image
+ * tinted): HN's "Y" and vote arrows, Wikipedia's wordmark and icons,
+ * GitHub's octicons.
  *
- * To come (plan_tiny_chrome.md): SVG (C6), several tabs, the omnibox's
- * search and the developer tools (C7), the ES5 core (C8), video (C9).
+ * To come (plan_tiny_chrome.md): several tabs, the omnibox's search and
+ * the developer tools (C7), the ES5 core (C8), video (C9).
  *)
 open Playground
 
@@ -252,7 +257,7 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
       match String.lowercase_ascii key with
       | "arrowdown" | "down" -> (scrolled 2 m, Cmd.none)
       | "arrowup" | "up" -> (scrolled (-2) m, Cmd.none)
-      | "pagedown" | " " -> (scrolled (pages 1) m, Cmd.none)
+      | "pagedown" | " " | "space" -> (scrolled (pages 1) m, Cmd.none)
       | "pageup" -> (scrolled (pages (-1)) m, Cmd.none)
       | "home" -> (scrolled (-m.tab.scroll) m, Cmd.none)
       | "backspace" -> with_tab m (Browser_tab.back cfg network m.tab)

@@ -34,6 +34,7 @@ type t = {
   forms : Forms.form list;
   values : (Dom.element * Forms.value) list; (* the controls changed, by element (==) *)
   quirks : bool; (* no DOCTYPE: quirks mode (Computed.styles), by the box model *)
+  backgrounds : string list; (* by the box model: the pictures of its boxes' background-image, absolute URLs *)
 }
 
 type settings = {

@@ -2,10 +2,11 @@
 ; circles and ellipses (Circle), thick lines (Stroke), and a pixel
 ; magnifier for debugging (Magnifier), all drawing into a
 ; graphics/core/ Framebuffer. See docs/claude_notes/notes_2d.md.
-; A private library, see graphics/core/dune.
+; A private library, see graphics/core/dune (why elm_playground: the
+; SVG pictures rasterize with it).
 (library
  (name graphics_2d)
- (package elm_playground_software)
+ (package elm_playground)
  (wrapped false)
  (libraries graphics_core graphics_2d_geometry)
 )

@@ -253,8 +253,9 @@ let set_line (strut : word_style) (align : Looks.align) ~(x : float) ~(width : f
     List.fold_left
       (fun (frags, boxes) ((w : word), pen) ->
         let fx = x +. shift +. pen in
-        let picture = match w.boxed with Some (Pic p) -> Some p | _ -> None in
-        let control = match w.boxed with Some (Ctl c) -> Some c | _ -> None in
+        (* hidden (visibility, opacity 0): its room, nothing drawn *)
+        let picture = match w.boxed with Some (Pic p) when w.ws.shown -> Some p | _ -> None in
+        let control = match w.boxed with Some (Ctl c) when w.ws.shown -> Some c | _ -> None in
         let text = if w.ws.shown then w.text else "" in
         let frag : Html_layout.fragment =
           { text; look = w.ws.look; x = fx; width = w.width; baseline = baseline +. w.ws.shift; picture; control; element = w.owner }
@@ -975,6 +976,21 @@ and picture_size (ctx : ctx) (e : Dom.element) (s : Computed.t) : (float * float
   | Some (w, h), Some m when w > m && w > 0. -> Some (m, h *. m /. w)
   | _ -> wh
 
+and svg_size (ctx : ctx) (e : Dom.element) (s : Computed.t) : float * float =
+  let view_box =
+    match Option.map (fun v -> List.filter_map float_of_string_opt (String.split_on_char ' ' (String.map (fun c -> if c = ',' then ' ' else c) v))) (Dom.attribute "viewbox" e) with
+    | Some [ _; _; w; h ] when w > 0. && h > 0. -> Some (w, h)
+    | _ -> None
+  in
+  match (size s.width ctx.width, size s.height 0., view_box) with
+  | Some w, Some h, _ -> (w, h)
+  | Some w, None, Some (vw, vh) -> (w, w *. vh /. vw)
+  | None, Some h, Some (vw, vh) -> (h *. vw /. vh, h)
+  | None, None, Some wh -> wh
+  | Some w, None, None -> (w, 150.)
+  | None, Some h, None -> (300., h)
+  | None, None, None -> (300., 150.)
+
 (* a floated picture as a box of one line *)
 and image_box (ctx : ctx) (e : Dom.element) (s : Computed.t) : box =
   let w, h = Option.value (picture_size ctx e s) ~default:(0., 0.) in
@@ -997,6 +1013,13 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
       | _ when s.position = Absolute || s.position = Fixed -> add_absolute ctx e s
       | _ when s.float <> Side_none -> ctx.items <- float_item ctx e s :: ctx.items
       | Contents -> List.iter (walk ctx s (word_style s ~link:ctx.link)) e.children
+      | _ when e.name = "svg" ->
+          (* a picture drawn from its own tree (Browser_boxes): its
+           * size its style's (its width= and height=), else its
+           * viewBox's, else CSS's 300 by 150 *)
+          let w, h = svg_size ctx e s in
+          add_word ctx (word_style s ~link:ctx.link) ~glue:false "" w ~owner:e
+            ~boxed:(Pic { src = ""; height = h; middle = s.vertical_align = Middle })
       | _ when e.name = "img" -> (
           match picture_size ctx e s with
           | Some (w, h) ->

@@ -102,9 +102,18 @@ let start_body (t : t) : unit =
 
 let is_blank (s : string) : bool = String.for_all (fun c -> c = ' ' || c = '\n' || c = '\t') s
 
-let start_tag (t : t) (tag : tag) : unit =
+let start_tag ?(self_closing = false) (t : t) (tag : tag) : unit =
   let name = tag.tag_name in
   match name with
+  (* inside <svg>, "foreign content": XML's rules, not HTML's -- nothing
+   * closes what is open, and <path/> closes itself *)
+  | _ when t.body_started && List.exists (fun (e : open_element) -> e.name = "svg") t.stack ->
+      insert t tag;
+      if self_closing then t.stack <- List.tl t.stack
+  | "svg" when self_closing ->
+      start_body t;
+      insert t tag;
+      t.stack <- List.tl t.stack
   | "html" -> add_attributes t.html tag
   | "head" -> ()
   | "body" ->
@@ -145,8 +154,8 @@ let parse (tokens : Html_lexer.token list) : Dom.element =
       match token with
       | Text "" -> ()
       | Doctype _ | Comment _ -> ()
-      | Start_tag { name; attributes; extensions; origin; _ } ->
-          start_tag t { tag_name = name; origin; attributes; extensions }
+      | Start_tag { name; attributes; extensions; origin; self_closing } ->
+          start_tag ~self_closing t { tag_name = name; origin; attributes; extensions }
       | End_tag name -> end_tag t name
       | Text s ->
           (* in the head itself, only spaces are allowed: other text

@@ -28,3 +28,8 @@ footer { text-align: center; color: var(--muted); font-size: 12px; margin: 24px 
 .tile.wide { flex: 2 }
 .tiles.wrap { flex-wrap: wrap; justify-content: center }
 .chip { padding: 3px 12px; border: 1px solid var(--line); background: #fafafa; color: var(--muted) }
+.svgs svg, .svgs img, .svgs span { vertical-align: middle; margin-right: 24px }
+.vote { display: inline-block; width: 32px; height: 32px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 16' width='32' height='32'%3E%3Cpath d='m2 27 14-29 14 29z' fill='%23999'/%3E%3C/svg%3E") no-repeat }
+.bell { display: inline-block; width: 40px; height: 40px; background-color: var(--accent);
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 2a5 5 0 0 1 5 5v4l2 3H3l2-3V7a5 5 0 0 1 5-5zm-2 14h4a2 2 0 0 1-4 0z'/%3E%3C/svg%3E") }

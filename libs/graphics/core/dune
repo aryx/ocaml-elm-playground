@@ -4,13 +4,15 @@
 ; docs/claude_notes/notes_2d.md.
 ;
 ; A private library (no public_name, so no .opam of its own): the
-; (package ...) field installs it as an internal part of the package of
-; its only public user, elm_playground_software. Like the other
+; (package ...) field installs it as an internal part of the package
+; elm_playground -- the software backends' (elm_playground_software)
+; and the SVG pictures' (graphics/images/svg, which the browsers of
+; appkits/browser read, in a browser too), pure OCaml. Like the other
 ; graphics/ libraries, it depends on nothing of the Playground, only on
 ; plain numbers: points, colors, pixels.
 (library
  (name graphics_core)
- (package elm_playground_software)
+ (package elm_playground)
  (wrapped false)
  (libraries graphics_2d_geometry) ; Affine, for Blit
 )

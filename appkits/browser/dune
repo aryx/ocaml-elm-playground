@@ -20,6 +20,6 @@
    appkit_stroke_text ; the letters
    appkit_richtext ; Style, the pen's look
    appkit_typeset ; Linebreak, for wrap=pretty
-   graphics_rgba graphics_gif graphics_png graphics_jpeg ; the pictures
+   graphics_rgba graphics_gif graphics_png graphics_jpeg graphics_svg ; the pictures
  )
 )

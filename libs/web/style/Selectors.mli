@@ -13,8 +13,10 @@
    (one of its words), [attr|=v], [attr^=v], [attr$=v], [attr*=v]
    (starts, ends, contains; "i" before the "]" to ignore case),
    pseudo-classes -- :first-child, :last-child, :only-child,
-   :nth-child(an+b), :not(...), :link, :visited, :hover, :active,
-   :focus, :root, :empty, :checked, :disabled -- and a pseudo-element
+   :nth-child(an+b), :not(...), :is(...) and :where(...) (any of a
+   list, :where counting nothing in specificity), :link, :visited,
+   :hover, :active, :focus, :root, :empty, :checked, :disabled,
+   :enabled -- and a pseudo-element
    at its end (::before, ::after: boxes the element makes).
 
    **Matching goes right to left**: the element must match the last
@@ -49,6 +51,7 @@ type pseudo_class =
   | Only_child
   | Nth_child of int * int (* an+b *)
   | Not of complex list
+  | Is of complex list * bool (* :is(), counting as its most specific; :where(), counting nothing *)
   | Link
   | Visited
   | Hover
@@ -58,6 +61,7 @@ type pseudo_class =
   | Empty
   | Checked
   | Disabled
+  | Enabled
 
 and simple =
   | Type of string (* lowercased *)

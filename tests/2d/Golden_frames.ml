@@ -1708,6 +1708,10 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
       9,
       "at(-300;-462):1-8,click:2,type(document.title):3,return:4,type(nope.x):5,return:6,type(alert(\"hi\")):7,return:8",
       [ "url=about:counter" ] );
+    (* claude: TinyChrome's home page a screen down (Space): its SVG
+     * card -- Chrome's logo inline, a data: URL's star, HN's vote arrow
+     * as a background, a bell as a mask (plan_tiny_chrome.md C6) *)
+    ("apps/internet/software/TinyChrome", "svg", 5, "space:2", []);
     (* the computer's kick landing: sparks bursting, the screen knocked
      * (the same hit as "fight"'s, the same 6 frames of hitstop) *)
     ("games/fighting/software/TinyStreetFighter", "engine", 136, "space:1,d:95-120,f:122,g:135", [ "juice=engine" ]);

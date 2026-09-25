@@ -61,6 +61,8 @@ type t = {
   border_box : bool;
   color : Css_values.color;
   background : Css_values.color;
+  background_image : string option;
+  mask_image : string option;
   font_size : float;
   bold : bool;
   italic : bool;
@@ -114,6 +116,8 @@ let initial : t =
     border_box = false;
     color = black;
     background = V.transparent;
+    background_image = None;
+    mask_image = None;
     font_size = 16.;
     bold = false;
     italic = false;
@@ -175,6 +179,13 @@ let border_parts (vs : component list) : (string * component list) list =
       | _ -> ("color", [ c ]) :: acc)
     [] (V.parts vs)
 
+(* a url(x) or url("x"): x *)
+let url_of (c : component) : string option =
+  match c with
+  | Token (Url u) -> Some u
+  | Func (f, args) when String.lowercase_ascii f = "url" -> ( match Css_syntax.trim args with [ Token (String u) ] -> Some u | _ -> None)
+  | _ -> None
+
 let expand ((name, value) : string * component list) : (string * component list) list =
   let per_side prefix suffix =
     match four value with
@@ -198,11 +209,13 @@ let expand ((name, value) : string * component list) : (string * component list)
       let ps = border_parts value in
       let ps = ps @ if List.mem_assoc "style" ps then [] else [ ("style", [ Token (Ident "none") ]) ] in
       List.map (fun (k, v) -> (name ^ "-" ^ k, v)) ps
-  | "background" -> (
-      (* its colour, where it has one; an image alone makes it transparent *)
-      match List.find_opt (fun c -> V.color ~current:black [ c ] <> None) (V.parts value) with
+  | "background" ->
+      (* its colour, where it has one (an image alone makes it
+       * transparent), and its picture, its first url() *)
+      (match List.find_opt (fun c -> V.color ~current:black [ c ] <> None) (V.parts value) with
       | Some c -> [ ("background-color", [ c ]) ]
       | None -> [ ("background-color", [ Token (Ident "transparent") ]) ])
+      @ [ ("background-image", match List.find_opt (fun c -> url_of c <> None) (V.parts value) with Some c -> [ c ] | None -> [ Token (Ident "none") ]) ]
   | "font" -> (
       (* [style] [variant] [weight] size[/line-height] family *)
       let rec go acc = function
@@ -406,6 +419,11 @@ let compute (m : Cascade.media) ~(root_font_size : float) ~(parent : t) (declare
     border_box = word "box-sizing" = Some "border-box";
     color;
     background = prop "background-color" ~inh:V.transparent ~init:V.transparent (fun v -> V.color ~current:color v);
+    background_image = (match get "background-image" with Some v -> List.find_map url_of (V.parts v) | None -> None);
+    mask_image =
+      (match get "mask-image" with
+      | Some v -> List.find_map url_of (V.parts v)
+      | None -> ( match get "-webkit-mask-image" with Some v -> List.find_map url_of (V.parts v) | None -> None));
     font_size;
     bold =
       prop "font-weight" ~inh:parent.bold ~init:false (fun v ->

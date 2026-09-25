@@ -10,8 +10,10 @@
  *   GIF8      GIF (1987)
  *   \x89PNG   PNG (1996)
  *   \xFF\xD8  JPEG (1992)
+ *   <svg      SVG (2001), text (after <?xml ...?> perhaps): drawn at its
+ *             own size into pixels (graphics/images/svg's Svg)
  *
- * Decoded by our own readers (graphics/images/: Gif, Png, Jpeg), pure
+ * Decoded by our own readers (graphics/images/: Gif, Png, Jpeg, Svg), pure
  * OCaml, so a browser running in a browser decodes them too. *)
 
 type t = Waiting | Arrived of Rgba_image.t | Broken
