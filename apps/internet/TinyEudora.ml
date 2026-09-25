@@ -30,24 +30,27 @@
  *   Delete       into the Trash (from the Trash: gone)
  *   PageDown/Up  the message scrolled, and the mouse's wheel
  *
- * and the menus: Mailbox (open one, or New...), Message (New Message,
+ * and the menus: File (Check Mail, Send Queued Messages), Mailbox
+ * (open one, or New...), Message (New Message,
  * Reply, Forward, Attach Document..., Delete, Blah Blah Blah),
  * Transfer (Eudora's name for moving a message to a mailbox), Special
  * (Empty Trash, Make Nickname, Nicknames). Flags: message=n, the n-th
  * message of the mailbox opened at the start; mailbox=Out, that
  * mailbox shown (In by default); compose=new|reply|forward, a
  * message begun at the start (to it); user=, who you are ("Bob
- * <bob@tiny>").
+ * <bob@tiny>"); server= (localhost), smtp= (8025) and pop= (8110),
+ * where tiny_maild is.
  *
  * Writing is Eudora's on a dial-up modem: a message written is not
  * sent but *queued* -- put in Out, marked Q -- and Send Queued
- * Messages would send them all at once, connecting once (the plan's
- * phase 5). A reply quotes the message with "> " under Eudora's "At
+ * Messages sends them all at once, connecting once, by SMTP
+ * (Smtp.mli; each sent is marked S). A reply quotes the message with "> " under Eudora's "At
  * 12:00 PM 9/25/26, Alice wrote:", and says what it answers,
  * In-Reply-To: and References:, which is what threads a conversation;
  * the message answered is marked R (forwarded: F) when the reply is
  * queued. Bcc: stays in the queued copy until it is sent: the
- * recipients are the envelope's, not the headers' (Smtp.mli, to come).
+ * recipients are the envelope's, not the headers' (Smtp.envelope takes
+ * it out). Status: and X-Status: stay home too.
  * The signature is added when a message is queued, as Eudora added its
  * Signature file when it sent. To:, Cc: and Bcc: take nicknames --
  * "team" -- expanded when queued: Eudora's address book, kept as
@@ -60,6 +63,18 @@
  * "eudora-nicknames.vcf". The built-in ones are the defaults: a
  * mailbox never changed is not written.
  *
+ * Check Mail is POP3 (Pop3.mli): the password asked once, kept until
+ * TinyEudora quits and never stored (a wrong one forgotten, to be asked
+ * again), the messages fetched into In, unread, and deleted from the
+ * server. Sending asks for no password at all: SMTP never did, which
+ * is what the forged message in In is about. Both talk to tiny_maild
+ * (networking/maild/, Mail_server.mli) over WebSocket, natively and in
+ * a browser:
+ *
+ *   dune exec networking/maild/tiny_maild.exe
+ *   dune exec apps/internet/TinyEudora.exe -- user=alice@tiny
+ *   http://localhost:8001/apps/internet/web/TinyEudora.html?user=bob@tiny
+ *
  * With no server, it opens on the built-in mailboxes, Our_mail --
  * messages written for what they show: a thread of five replies, a
  * forged sender, a digest of two messages, a picture attached,
@@ -69,12 +84,14 @@
  * writing), the picture decoders (Png, Gif, Jpeg, as the browsers'),
  * Stroke_text (text from the left, with Hershey's real widths), Vcard,
  * the gui toolkit's fields and text area (Text_edit), the
- * playground's store. Not the network yet: sending and Check Mail are
- * the plan's next phases. Not the File menu either: a document is
+ * playground's store; Smtp and Pop3, each client a machine fed the
+ * server's lines as they arrive, over Transport. Not File_menu: a document is
  * attached from the store by a list of its names, since Eudora's
  * File menu opened mailboxes, not documents.
  *
- * Exercises: Reply All (the Cc: kept, yourself removed); a nickname
+ * Exercises: Reply All (the Cc: kept, yourself removed); "Leave mail
+ * on server" (Pop3.client's ~leave, the ids known kept with In); a
+ * nickname
  * edited and removed in the Nicknames pane; Eudora's "Keep copies" off,
  * a sent message not kept in Out.
  *
@@ -111,6 +128,16 @@ type pane =
   | Picking of draft * string list * int option (* Attach Document...: the store's documents *)
   | Naming of string (* Mailbox > New...: the name being typed *)
   | Nicknames
+  | Password of string * errand (* asked before Check Mail: what is typed so far *)
+
+(* what the network is being asked to do *)
+and errand = Check | Send
+
+(* a conversation with the server, in progress: the connection, the
+   protocol's machine, and when it began (to give up on a silent one) *)
+type session =
+  | Sending of Transport.t * Smtp.client * Mbox.entry list (* the queued messages, in the order given *)
+  | Checking of Transport.t * Pop3.client
 
 type model = {
   boxes : box list;
@@ -120,6 +147,8 @@ type model = {
   blah : bool; (* every header *)
   scroll : float; (* the message, scrolled, in pixels *)
   pane : pane;
+  session : (session * float) option;
+  password : string option; (* asked once, kept until Eudora quits, never stored *)
   nicknames : Vcard.card list;
   user : Mail.address;
   (* what the store holds, to write only what changed *)
@@ -140,6 +169,8 @@ let initial : model =
     blah = false;
     scroll = 0.;
     pane = Reading;
+    session = None;
+    password = None;
     nicknames = Vcard.of_string Our_mail.nicknames;
     user = { display = "Bob"; mailbox = "bob@tiny" };
     saved = [];
@@ -528,7 +559,7 @@ let queue (computer : computer) (d : draft) (m : model) : model =
 (* The store *)
 (*****************************************************************************)
 
-type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir >
+type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.network >
 
 let prefix = "eudora-"
 let stored_name (box : string) : string = prefix ^ box ^ ".mbox"
@@ -567,6 +598,85 @@ let keep (caps : caps) (m : model) : model =
     { m with saved = m.boxes; saved_nicknames = m.nicknames })
 
 (*****************************************************************************)
+(* The network: Send Queued Messages, Check Mail *)
+(*****************************************************************************)
+
+let flag (computer : computer) (name : string) : string option = List.assoc_opt name computer.flags
+let seconds (computer : computer) : float = match computer.time with Time t -> t
+
+(* the server, tiny_maild's ports by default *)
+let server_at (computer : computer) (port : string) (default : int) : Transport.role =
+  Relay { host = Option.value (flag computer "server") ~default:"localhost"; port = Option.value (Option.bind (flag computer port) int_of_string_opt) ~default }
+
+let queued (m : model) : Mbox.entry list = List.filter (fun e -> has e "x-status" 'Q') (List.concat_map (fun b -> if b.name = "Out" then b.entries else []) m.boxes)
+
+(* Status: and X-Status: are this mailbox's, not the message's: they
+   stay home *)
+let outgoing (e : Mbox.entry) : Mail.t = Mail.remove "status" (Mail.remove "x-status" e.mail)
+
+(* the user's name at the server: "bob" of bob@tiny *)
+let login (m : model) : string = List.hd (String.split_on_char '@' m.user.mailbox)
+
+let errand (caps : caps) (computer : computer) (what : errand) (m : model) : model =
+  let connect port default f =
+    match Transport.connect caps (server_at computer port default) with
+    | Ok t -> { m with session = Some (f t, seconds computer); pane = (match m.pane with Password _ -> Reading | p -> p) }
+    | Error why -> { m with said = why; pane = Reading }
+  in
+  match (m.session, what, m.password) with
+  | Some _, _, _ -> { m with said = "the server is busy with us already" }
+  | None, Send, _ -> (
+      match queued m with
+      | [] -> { m with said = "no message queued" }
+      | q ->
+          (* SMTP asks no password: that is the point of Mallory's message *)
+          connect "smtp" 8025 (fun t -> Sending (t, Smtp.client ~hello:"eudora" (List.map (fun e -> Smtp.envelope ~sender:m.user.mailbox (outgoing e)) q), q)))
+  | None, Check, None -> { m with pane = Password ("", Check) }
+  | None, Check, Some pass -> connect "pop" 8110 (fun t -> Checking (t, Pop3.client ~user:(login m) ~pass ~leave:false ~known:[]))
+
+(* the lines arrived given to the machine, its answers sent *)
+let converse (t : Transport.t) (step : 'c -> string -> 'c * string list) (c : 'c) : 'c =
+  List.fold_left (fun c l -> let c, out = step c l in List.iter t.send out; c) c (List.concat_map (String.split_on_char '\n') (t.receive ()))
+
+(* the messages sent: Q becomes S *)
+let sent (q : Mbox.entry list) (outcomes : Smtp.outcome list) (m : model) : model =
+  let done_ = List.concat (List.map2 (fun e o -> match o with Smtp.Sent _ -> [ e ] | Smtp.Refused _ -> []) q outcomes) in
+  let mark (e : Mbox.entry) = if List.memq e done_ then { e with mail = Mail.set "X-Status" (String.map (fun c -> if c = 'Q' then 'S' else c) (header e "x-status")) e.mail } else e in
+  let refused = List.filter_map (function Smtp.Refused why -> Some why | _ -> None) outcomes in
+  let m = with_entries "Out" (List.map mark) m in
+  { m with said = Printf.sprintf "%d sent%s" (List.length done_) (match refused with [] -> "" | w :: _ -> ", refused: " ^ w) }
+
+(* the messages fetched, into In, unread: the envelope's sender from
+   their From:, as Eudora wrote its own "From " lines *)
+let arrived (computer : computer) (texts : (string * string) list) (m : model) : model =
+  let date = now computer in
+  let entry (_, text) =
+    let mail = Mail.parse text in
+    let sender = match Mail.addresses (Option.value (Mail.get mail "from") ~default:"") with a :: _ -> a.mailbox | [] -> "MAILER-DAEMON" in
+    { Mbox.envelope = Mbox.envelope ~sender date; mail }
+  in
+  let m = with_entries "In" (fun l -> l @ List.map entry texts) m in
+  { m with said = (match List.length texts with 0 -> "no new mail" | 1 -> "you have new mail: 1 message" | n -> Printf.sprintf "you have new mail: %d messages" n) }
+
+let session_step (computer : computer) (m : model) : model =
+  match m.session with
+  | None -> m
+  | Some (_, since) when seconds computer -. since > 10. -> { m with session = None; said = "no answer from the server" }
+  | Some (Sending (t, c, q), since) -> (
+      let c = converse t Smtp.step c in
+      match Smtp.finished c with
+      | None -> { m with session = Some (Sending (t, c, q), since); said = "sending: " ^ t.status () }
+      | Some (Ok outcomes) -> sent q outcomes { m with session = None }
+      | Some (Error why) -> { m with session = None; said = "not sent: " ^ why })
+  | Some (Checking (t, c), since) -> (
+      let c = converse t Pop3.step c in
+      match Pop3.finished c with
+      | None -> { m with session = Some (Checking (t, c), since); said = "checking mail: " ^ t.status () }
+      | Some (Ok texts) -> arrived computer texts { m with session = None }
+      (* a wrong password is forgotten, to be asked again *)
+      | Some (Error why) -> { m with session = None; password = None; said = "Check Mail: " ^ why })
+
+(*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
 
@@ -575,10 +685,17 @@ let menu_message = [ "Message"; "New Message"; "Reply"; "Forward"; "Attach Docum
 let menu_transfer (m : model) = "Transfer" :: List.map (fun b -> "-> " ^ b.name) m.boxes
 let menu_special = [ "Special"; "Empty Trash"; "Sort by arrival"; "Make Nickname"; "Nicknames" ]
 
-let menu_box (i : int) : Widget.box = { Widget.x = -405. +. (float_of_int i *. 155.); y = bar_y; w = 150.; h = 28. }
+let menu_file = [ "File"; "Check Mail"; "Send Queued Messages" ]
+let menu_box (i : int) : Widget.box = { Widget.x = -425. +. (float_of_int i *. 144.); y = bar_y; w = 140.; h = 28. }
 
 let menus (caps : caps) (computer : computer) (m : model) : model =
-  let chose items i = List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) in
+  let chose items i = List.nth_opt items (Gui.menu_in computer (menu_box (i + 1)) items 0) in
+  let m =
+    match List.nth_opt menu_file (Gui.menu_in computer (menu_box 0) menu_file 0) with
+    | Some "Check Mail" -> errand caps computer Check m
+    | Some "Send Queued Messages" -> errand caps computer Send m
+    | _ -> m
+  in
   let m =
     match chose (menu_mailbox m) 0 with
     | Some "New..." -> { m with pane = Naming "" }
@@ -613,8 +730,6 @@ let menus (caps : caps) (computer : computer) (m : model) : model =
   | Some "Make Nickname" -> make_nickname m
   | Some "Nicknames" -> (match m.pane with Reading | Naming _ -> { m with pane = Nicknames } | _ -> m)
   | _ -> m
-
-let flag (computer : computer) (name : string) : string option = List.assoc_opt name computer.flags
 
 let clicked (caps : caps) (computer : computer) (m : model) : model =
   let x = computer.mouse.mx and y = computer.mouse.my in
@@ -699,6 +814,15 @@ let start (caps : caps) (computer : computer) (m : model) : model =
   | Some "forward" -> forward m
   | _ -> m
 
+(* the password, typed, shown as bullets *)
+let password_typed (caps : caps) (computer : computer) (typed : string) (what : errand) (m : model) : model =
+  let k = computer.keyboard in
+  let typed = typed ^ k.typed in
+  let typed = if k.kbackspace && not (List.mem "Backspace" m.was) && typed <> "" then String.sub typed 0 (String.length typed - 1) else typed in
+  if (k.kenter && not (List.mem "Enter" m.was)) || Gui.button_in computer (button_box 0) "OK" then errand caps computer what { m with password = Some typed }
+  else if Gui.button_in computer (button_box 1) "Cancel" then { m with pane = Reading }
+  else { m with pane = Password (typed, what) }
+
 let update (caps : caps) (computer : computer) (m : model) : model =
   Gui.set_theme mac_theme;
   let m = if m.started then m else start caps computer m in
@@ -709,8 +833,10 @@ let update (caps : caps) (computer : computer) (m : model) : model =
     | Picking (d, names, sel) -> pick caps computer d names sel m
     | Naming name -> naming computer name m
     | Nicknames -> if Gui.button_in computer (button_box 0) "Close" then { m with pane = Reading } else m
+    | Password (typed, what) -> password_typed caps computer typed what m
     | Reading -> m
   in
+  let m = session_step computer m in
   let now = Set_.elements computer.keyboard.keys in
   let pressed key = List.mem key now && not (List.mem key m.was) in
   let down = computer.mouse.mdown && not m.was_down in
@@ -851,6 +977,10 @@ let view (_ : computer) (m : model) : shape list =
     | Composing d, _ -> compose_view m d
     | Picking (d, _, _), _ -> window ("Attach to: " ^ ascii (draft_title d)) msg_top msg_bottom @ label 0 "A document of the store:"
     | Naming _, _ -> window "New Mailbox" msg_top msg_bottom @ label 1 "Name:"
+    | Password (typed, _), _ ->
+        window "Password" msg_top msg_bottom
+        @ label 0 (ascii (Printf.sprintf "The password of %s:" m.user.mailbox))
+        @ text ~bold:true ink (left +. 300.) (form_row 0 -. 5.) (String.make (String.length typed) '*')
     | Nicknames, _ -> nicknames_view m
     | Reading, Some e ->
         window (ascii (Printf.sprintf "%s, %s, %s" (who m.box e) (date_text e) (header e "subject"))) msg_top msg_bottom
@@ -863,7 +993,7 @@ let view (_ : computer) (m : model) : shape list =
   @ message
   @ window (Printf.sprintf "%s  (%d messages, %d unread)" m.box n unread) list_top list_bottom
   @ column_titles m @ list_view m
-  @ text ink (left +. 640.) (bar_y -. 5.) (if m.said <> "" then m.said else "TinyEudora")
+  @ text ink (left +. 725.) (bar_y -. 5.) (if m.said <> "" then m.said else "TinyEudora")
   @ Gui.draw ()
 
 let app (caps : caps) = game view (update caps) initial

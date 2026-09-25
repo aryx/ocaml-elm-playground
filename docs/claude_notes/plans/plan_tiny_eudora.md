@@ -368,7 +368,29 @@ DELE, QUIT. `Unit_smtp` replays RFC 5321's D.1 and `Unit_pop3` RFC
 1939's section 10 (USER and PASS for APOP, whose MD5 we lack). Found
 on the way: D.1's "...etc. etc. etc." is sent "....etc. etc. etc." --
 the RFC's line is a placeholder, and a real one starting with a dot
-gets a second. `Mail.remove` added. Next: phase 5, the server.
+gets a second. `Mail.remove` added.
+
+**Phase 5 done** (2026-09-26): `Mail_server` (`networking/unix/`, 230
+lines) and `networking/maild/tiny_maild.exe`: SMTP on 8025 and POP3 on
+8110 over WebSocket, a maildrop per user (made by its first mail), a
+Received: line added, mail for another domain refused 550 (not a
+relay), POP3's deletions at QUIT only (by identity: mail arriving
+during a session is kept), UIDL a digest of the message, any password
+unless `users=alice:x,bob:y`; `spool=dir`, each maildrop an mbox file
+written by tiny_maild as it changes (the server keeps nothing on disk:
+a `changed` callback). `Unit_mail_server`, in one process: alice sends
+and bob checks, twice; not a relay; a connection dropped after DELE
+deletes nothing (a WebSocket made by hand, closed -- with a control,
+the same session with QUIT deleting, which caught the test's first
+version sending text frames the server ignores); a wrong password.
+TinyEudora: a File menu, Check Mail (the password asked once, drawn
+as stars, never stored, forgotten when refused) and Send Queued
+Messages (Status:/X-Status: kept home, Q becoming S), each an errand
+over `Transport`, the machine fed each frame, given up after 10 s of
+silence; flags `server=`, `smtp=`, `pop=`. Done by hand once, natively
+(tiny_maild with a spool, on other ports): bob's reply sent, alice's
+TinyEudora "you have new mail", her spool emptied. Not yet tried in a
+browser. Next: 5b (Gmail), then 6 (plain TCP).
 
 **Phase 5b, added (2026-09-26): your own mailbox, Gmail.** The
 author would like to read their own mail. Gmail speaks POP3 and SMTP

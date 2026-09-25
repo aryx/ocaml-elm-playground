@@ -1,0 +1,7 @@
+; claude: the mail server (networking/unix/Mail_server.mli), a program
+; of its own, for TinyEudora (apps/internet/):
+;   dune exec networking/maild/tiny_maild.exe -- spool=/tmp/spool users=alice:x,bob:y
+(executable
+ (name tiny_maild)
+ (libraries unix caps networking networking_unix)
+)
