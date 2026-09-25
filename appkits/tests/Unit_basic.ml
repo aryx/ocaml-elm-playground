@@ -19,6 +19,11 @@ let output ?(seed = 1) ?(dialect = Basic_run.Integer) (lines : string list) (ans
   Teletype.run ~seed (Basic_run.run dialect (program lines)) answers
 
 let fp = output ~dialect:Basic_run.Applesoft
+
+let contains (s : string) (sub : string) : bool =
+  let n = String.length sub in
+  let rec at i = i + n <= String.length s && (String.sub s i n = sub || at (i + 1)) in
+  at 0
 let check = Alcotest.(check string)
 
 let tests =
@@ -144,7 +149,8 @@ let tests =
           let s = Basic_session.session ~dialect:Integer ~program:Basic_run.empty "" in
           let out = Teletype.run s [ "CATALOG"; "LOAD NOPE"; "10 PRINT \"HI\""; "SAVE HI"; "NEW"; "RUN HI"; "LOAD MANDEL"; "BYE" ] in
           check "transcript"
-            (">CATALOG\nDISK VOLUME 254\n\n I 004 GUESS\n A 005 BAGELS\n A 002 MANDEL\n A 002 SIERPINSKI\n A 001 SINE\n"
+            (">CATALOG\nDISK VOLUME 254\n\n I 005 GUESS\n A 006 BAGELS\n A 003 MANDEL\n A 002 SIERPINSKI\n A 002 SINE\n"
+           ^ " I 003 MATCHES\n A 005 ANIMAL\n A 004 LUNAR\n"
            ^ ">LOAD NOPE\nFILE NOT FOUND\n>10 PRINT \"HI\"\n>SAVE HI\n>NEW\n>RUN HI\nHI\n>LOAD MANDEL\n]BYE\n")
             out);
       Testo.create "MANDEL: the listing draws what the same loop in OCaml does" (fun () ->
@@ -200,4 +206,20 @@ let tests =
             | [] -> 0
           in
           Alcotest.(check int) "twenty clues checked" 20 (checked lines));
+      Testo.create "MATCHES: leaving 4K + 1 each time beats the computer" (fun () ->
+          let d = List.find (fun (f : Basic_disk.file) -> f.name = "MATCHES") Basic_disk.files in
+          (* 23 - 2 = 21; then 3 after each of its forced 1s: 17, 13, 9, 5, 1 *)
+          let out = output d.lines [ "5"; "2"; "3"; "3"; "3"; "3"; "3" ] in
+          Alcotest.(check bool) "refused 5" true (contains out "1, 2 OR 3, PLEASE.");
+          Alcotest.(check bool) "won" true (String.ends_with ~suffix:"I TOOK THE LAST ONE. YOU WIN!\n" out));
+      Testo.create "ANIMAL: it learns a dog, then guesses it" (fun () ->
+          let d = List.find (fun (f : Basic_disk.file) -> f.name = "ANIMAL") Basic_disk.files in
+          let out = fp d.lines [ "N"; "N"; "DOG"; "DOES IT BARK"; "Y"; "N"; "Y"; "Y" ] in
+          Alcotest.(check bool) "a new question" true (contains out "DOES IT SWIM? N\nDOES IT BARK? Y\nIS IT A DOG? Y\n");
+          Alcotest.(check bool) "guessed" true (String.ends_with ~suffix:"WHY NOT TRY ANOTHER ANIMAL?\n\nTHINK OF AN ANIMAL. I WILL TRY TO GUESS IT.\nDOES IT SWIM? " out));
+      Testo.create "LUNAR: no burn at all digs a crater" (fun () ->
+          let d = List.find (fun (f : Basic_disk.file) -> f.name = "LUNAR") Basic_disk.files in
+          let out = fp d.lines (List.init 20 (fun _ -> "0")) in
+          Alcotest.(check bool) "a table" true (contains out "SEC  HEIGHT  SPEED   FUEL\n0    1000    40      60\n");
+          Alcotest.(check bool) "a crater" true (contains out "YOU DUG A CRATER"));
     ]
