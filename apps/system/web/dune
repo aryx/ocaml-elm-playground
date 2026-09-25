@@ -1,0 +1,23 @@
+; claude: the apps in a browser: ../*.ml reused as-is by a build-time
+; copy, not a committed duplicate (see examples/web/dune), and linked
+; against elm_playground_web.
+(copy_files ../*.ml)
+
+(executables
+  (names TinyTerminal)
+  (modules TinyTerminal)
+  (libraries
+    appkit_teletype ; the shell's programs, Tty_hangman and Tty_guess
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; claude: the .html pages next to the generated .bc.js, as in
+; examples/web/dune
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))

@@ -15,18 +15,22 @@ open Playground
 (* Programs *)
 (*****************************************************************************)
 
+type status = Exited | Interrupted
+
 type 'a talk =
   | Done of 'a
   | Print of string * 'a talk
   | Read_line of (string -> 'a talk)
   | Read_key of (string -> 'a talk)
   | Random of int * (int -> 'a talk)
+  | Spawn of unit talk * (status -> 'a talk)
 
 let return x = Done x
 let print s = Print (s, Done ())
 let read_line = Read_line (fun l -> Done l)
 let read_key = Read_key (fun k -> Done k)
 let random n = Random (n, fun i -> Done i)
+let spawn child = Spawn (child, fun st -> Done st)
 
 (* the rest of the program glued after the end of [m]: the requests
    stay the same, and where [m] was Done, [f] takes over *)
@@ -37,6 +41,7 @@ let rec ( let* ) (m : 'a talk) (f : 'a -> 'b talk) : 'b talk =
   | Read_line k -> Read_line (fun l -> ( let* ) (k l) f)
   | Read_key k -> Read_key (fun key -> ( let* ) (k key) f)
   | Random (n, k) -> Random (n, fun i -> ( let* ) (k i) f)
+  | Spawn (child, k) -> Spawn (child, fun st -> ( let* ) (k st) f)
 
 let ask (question : string) : string talk =
   let* () = print question in
@@ -48,9 +53,12 @@ let ask (question : string) : string talk =
 
 let run ?(seed = 1) (program : 'a talk) (answers : string list) : string =
   let out = Buffer.create 256 in
-  let rec go p answers seed =
+  (* the answers and the seed left, if the program reached its end: a
+     spawned child's end is where its parent carries on *)
+  let rec go : 'b. 'b talk -> string list -> seed -> (string list * seed) option =
+   fun p answers seed ->
     match p, answers with
-    | Done _, _ -> ()
+    | Done _, _ -> Some (answers, seed)
     | Print (s, k), _ -> Buffer.add_string out s; go k answers seed
     | Random (n, k), _ ->
         let i, seed = random_int 0 (n - 1) seed in
@@ -58,9 +66,13 @@ let run ?(seed = 1) (program : 'a talk) (answers : string list) : string =
     (* the answer echoed, as the paper would show it *)
     | Read_line k, a :: rest -> Buffer.add_string out (a ^ "\n"); go (k a) rest seed
     | Read_key k, a :: rest -> go (k a) rest seed
-    | (Read_line _ | Read_key _), [] -> ()
+    | (Read_line _ | Read_key _), [] -> None
+    | Spawn (child, k), _ -> (
+        match go child answers seed with
+        | Some (answers, seed) -> go (k Exited) answers seed
+        | None -> None)
   in
-  go program answers (initial_seed seed);
+  ignore (go program answers (initial_seed seed));
   Buffer.contents out
 
 (*****************************************************************************)
@@ -69,6 +81,8 @@ let run ?(seed = 1) (program : 'a talk) (answers : string list) : string =
 
 type machine = {
   program : unit talk;
+  (* the parents waiting for their spawned child, the innermost first *)
+  parents : (status -> unit talk) list;
   vt : Vt.t;
   tty : Line_discipline.t;
   (* bytes printed but not yet on the screen, at a baud rate *)
@@ -94,13 +108,22 @@ let rec advance (m : machine) : machine =
   | Random (n, k) ->
       let i, seed = random_int 0 (n - 1) m.seed in
       advance { m with program = k i; seed }
+  | Spawn (child, k) -> advance { m with program = child; parents = k :: m.parents }
+  | Done () when m.parents <> [] -> exit_child m Exited
   | Read_key _ -> flush { m with tty = Line_discipline.set_mode m.tty Raw }
   | Read_line _ | Done () -> flush { m with tty = Line_discipline.set_mode m.tty Cooked }
+
+(* the innermost program over: its parent carries on, told how *)
+and exit_child (m : machine) (st : status) : machine =
+  match m.parents with
+  | k :: parents -> advance { m with program = k st; parents }
+  | [] -> advance { m with program = Done () }
 
 let start ?baud ~(seed : int) ~(rows : int) ~(cols : int) (program : unit talk) : machine =
   advance
     {
       program;
+      parents = [];
       vt = Vt.create ~rows ~cols;
       tty = Line_discipline.create ();
       outbox = "";
@@ -123,7 +146,7 @@ let input (m : machine) (bytes : string) : machine =
         match ev, m.program with
         | Line l, Read_line k -> advance { m with program = k l }
         | Key s, Read_key k -> advance { m with program = k s }
-        | (Interrupt | End_of_file), (Read_line _ | Read_key _) -> advance { m with program = Done () }
+        | (Interrupt | End_of_file), (Read_line _ | Read_key _) -> exit_child m Interrupted
         (* typed ahead of a question, or after the end: dropped *)
         | _ -> m)
       m events
@@ -181,14 +204,21 @@ let palette (c : Vt.color) ~(default : color) : color =
   | Cyan -> rgb 17 168 205
   | White -> rgb 229 229 229
 
-let draw ?(paper = false) (computer : computer) (m : machine) : shape list =
+(* a cell is 0.6 as wide as it is high, the whole grid as large as the
+   screen lets it be: a cell's height *)
+let cell_height (computer : computer) (vt : Vt.t) : number =
   let screen = computer.screen in
+  0.95 *. min (screen.height /. float_of_int (Vt.rows vt)) (screen.width /. (0.6 *. float_of_int (Vt.cols vt)))
+
+let size (computer : computer) (m : machine) : number * number =
+  let h = cell_height computer m.vt in
+  (0.6 *. h *. float_of_int (Vt.cols m.vt), h *. float_of_int (Vt.rows m.vt))
+
+let draw ?(paper = false) ?(phosphor = phosphor) (computer : computer) (m : machine) : shape list =
   let vt = m.vt in
   let rows = Vt.rows vt and cols = Vt.cols vt in
   let fg0, bg0 = if paper then (ink, roll) else (phosphor, glass) in
-  (* a cell is 0.6 as wide as it is high, the whole grid as large as
-     the screen lets it be *)
-  let h = 0.95 *. min (screen.height /. float_of_int rows) (screen.width /. (0.6 *. float_of_int cols)) in
+  let h = cell_height computer vt in
   let w = 0.6 *. h in
   let x c = (-.w *. float_of_int cols /. 2.) +. ((float_of_int c +. 0.5) *. w) in
   let y r = (h *. float_of_int rows /. 2.) -. ((float_of_int r +. 0.5) *. h) in
@@ -199,7 +229,8 @@ let draw ?(paper = false) (computer : computer) (m : machine) : shape list =
             let cell = Vt.cell vt r c in
             let fg = palette cell.attrs.fg ~default:fg0 and bg = palette cell.attrs.bg ~default:bg0 in
             let fg, bg = if cell.attrs.reverse then (bg, fg) else (fg, bg) in
-            let back = if cell.attrs.reverse || cell.attrs.bg <> Vt.Default then [ rectangle bg w h |> move (x c) (y r) ] else [] in
+            (* a pixel wider and higher, so that neighbours leave no seam *)
+            let back = if cell.attrs.reverse || cell.attrs.bg <> Vt.Default then [ rectangle bg (w +. 1.) (h +. 1.) |> move (x c) (y r) ] else [] in
             let glyph = if paper then String.uppercase_ascii cell.glyph else cell.glyph in
             let letter dx = words fg glyph |> scale size |> move (x c +. dx) (y r) in
             (* bold as a teletype did it: struck twice, a hair apart *)
@@ -213,7 +244,7 @@ let draw ?(paper = false) (computer : computer) (m : machine) : shape list =
     let (Time now) = computer.time in
     if reading m && Vt.cursor_visible vt && Float.rem now 1. < 0.5 then [ rectangle fg0 w h |> fade 0.6 |> move (x c) (y r) ] else []
   in
-  (rectangle bg0 screen.width screen.height :: cells) @ cursor
+  (rectangle bg0 (w *. float_of_int cols) (h *. float_of_int rows) :: cells) @ cursor
 
 (*****************************************************************************)
 (* The application *)
@@ -225,7 +256,7 @@ type state = {
   keys : unit Scene2d.t;
 }
 
-let teletype ?(rows = 24) ?(cols = 80) (program : unit talk) : (state game, msg) app =
+let teletype ?(rows = 24) ?(cols = 80) ?view:user_view (program : unit talk) : (state game, msg) app =
   let flag name = List.assoc_opt name in
   let make (computer : computer) (seed : int) : machine =
     let baud = Option.bind (flag "baud" computer.flags) int_of_string_opt in
@@ -249,7 +280,9 @@ let teletype ?(rows = 24) ?(cols = 80) (program : unit talk) : (state game, msg)
     | None -> []
     | Some m ->
         let paper = flag "paper" computer.flags <> None in
-        draw ~paper computer m
+        (match user_view with
+        | Some v -> v computer m
+        | None -> rectangle (if paper then roll else glass) computer.screen.width computer.screen.height :: draw ~paper computer m)
         @ if finished m then [ words (if paper then ink else phosphor) "(the end -- Enter to run it again)" |> move_y (computer.screen.bottom +. 20.) ] else []
   in
   game view update { machine = None; seed = 1; keys = Scene2d.start () }

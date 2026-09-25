@@ -59,6 +59,29 @@ let tests =
           let m = input (start ~seed:1 ~rows:2 ~cols:30 hello) "BO\x03" in
           Alcotest.(check bool) "the end" true (finished m);
           Alcotest.(check (list string)) "screen" [ "WHAT IS YOUR NAME? BO^C"; "" ] (screen_text m));
+      Testo.create "spawn: a shell running hello, then carrying on" (fun () ->
+          let shell =
+            let* st = spawn hello in
+            print (if st = Exited then "BACK\n" else "INTERRUPTED\n")
+          in
+          Alcotest.(check string) "run" "WHAT IS YOUR NAME? BOB\nHELLO, BOB\nBACK\n" (run shell [ "BOB" ]);
+          let m = input (start ~seed:1 ~rows:4 ~cols:30 shell) "BOB\r" in
+          Alcotest.(check (list string)) "the machine" [ "WHAT IS YOUR NAME? BOB"; "HELLO, BOB"; "BACK"; "" ] (screen_text m));
+      Testo.create "Control-C interrupts the child only, the parent carries on" (fun () ->
+          let rec shell () =
+            let* line = ask "$ " in
+            if line = "exit" then return ()
+            else
+              let* st = spawn hello in
+              let* () = print (if st = Interrupted then "(interrupted)\n" else "") in
+              shell ()
+          in
+          let m = start ~seed:1 ~rows:4 ~cols:30 (shell ()) in
+          let m = input m "go\rBO\x03" in
+          Alcotest.(check (list string)) "screen" [ "$ go"; "WHAT IS YOUR NAME? BO^C"; "(interrupted)"; "$" ] (screen_text m);
+          Alcotest.(check bool) "the shell reads again" true (reading m);
+          let m = input m "\x03" in
+          Alcotest.(check bool) "at the shell, Control-C ends it" true (finished m));
       Testo.create "110 baud: 10 characters a second" (fun () ->
           let m = start ~baud:110 ~seed:1 ~rows:1 ~cols:30 hello in
           Alcotest.(check (list string)) "nothing yet" [ "" ] (screen_text m);

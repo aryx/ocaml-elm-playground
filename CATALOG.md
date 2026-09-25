@@ -440,3 +440,13 @@ them.
 |---|---|---|---|---|
 | [TinyIRC](apps/internet/TinyIRC.ml) | app | ircII (Michael Sandrof, 1989), for IRC (Jarkko Oikarinen, 1988) | Channels and nicks: join #tiny, type a line, everyone in it reads it. | A protocol a person can read, a line of text a message (Irc); its own server (networking/ircd), over WebSocket so that a browser joins too; /raw to type the protocol itself. |
 | [TinyMosaic](apps/internet/TinyMosaic.ml) | app | NCSA Mosaic (Marc Andreessen and Eric Bina, 1993) | A web browser: a page fetched, read and drawn, its links followed. | Built stage by stage as every browser's pipeline (plan_browser_teaching.md); all of them now, in a first form: a page's bytes fetched (a built-in about: page, or http://) and decoded, its encoding decided (web's Charset), cut into tokens (Html_lexer, the WHATWG's state machine), built into a tree, its mistakes repaired (Html_tree, over MMM's DTD-as-data), given Mosaic's looks (Looks), laid out in blocks and lines (Html_layout; lines broken greedily or by Knuth and Plass, w) and drawn by Hershey's pen (Stroke_text); pictures in the text, fetched one after the other as Mosaic did and decoded by our own GIF, PNG and JPEG readers; fill-out forms in Motif's look, sent with GET or POST, answered by the browser (about:echo) or by tiny_httpd's CGI; and back, a click to its link (Hit), a history of two stacks, visited links purple; http:// by our own client, https:// by curl for now, and its own web server, networking/httpd's tiny_httpd; a view per stage, one the 1991 Line Mode Browser's, links followed by their number. |
+
+## System
+
+`apps/system/`: the programs a computer is used through before any
+application -- so far the terminal and its shell, over the
+playground's Teletype way and `libs/terminal/` (`plan_terminal.md`).
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinyTerminal](apps/system/TinyTerminal.ml) | app | the VT100 (DEC, 1978), the Unix shell (Ken Thompson, 1971; Stephen Bourne, 1979) | A screen of 80 by 24 and a prompt: type a command, run Hangman, stop it with Control-C. | A terminal as three machines: the screen reading bytes and escape sequences (Vt), the tty editing the line (Line_discipline), the shell reading it and running programs written as conversations (Teletype), a spawn being Unix's fork, exec and wait, and Control-C interrupting only the program the shell waits for. |

@@ -144,6 +144,16 @@ val run : 'a talk -> string list -> string        (* the transcript, for tests *
 
 ## 3. `apps/system/TinyTerminal`: the terminal itself
 
+Done (2026-09-25): the shell `tsh` is itself a `talk`, and running a
+program is `Teletype.spawn`, added for it -- fork, exec and wait in one
+request, the machine keeping the waiting parents on a stack, so that
+Control-C interrupts only the innermost program. The programs are the
+appkit `appkits/teletype` (`Tty_hangman`, moved from the example, and
+`Tty_guess`), so one value runs alone and under the shell. The
+VT100's white phosphor by default (`phosphor=green|amber`), the
+keyboard's ON LINE and KBD LOCKED lights. What follows is the plan as
+written before.
+
 The first program of `apps/system/`, which starts that section of
 `CATALOG.md`. It is after the VT100: the screen is 80 by 24, with the
 green or amber phosphor as a flag.

@@ -106,6 +106,7 @@
     elm_playground
     ai ; AiTictactoe's Minimax
     kit_maze ; AiGhosts' Grid_move and Chase
+    appkit_teletype ; TeletypeHangman's program, Tty_hangman
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)

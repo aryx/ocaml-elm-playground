@@ -1,15 +1,23 @@
-; claude: the system applications -- none yet, a placeholder for the
-; category (CATALOG.md gets its section with the first one). Laid out
-; like office/: the programs here, software/ for the golden frames,
-; web/ for the browser.
+; claude: the system applications (CATALOG.md's section): TinyTerminal,
+; a VT100 and its shell over the playground's Teletype way and
+; libs/terminal (plan_terminal.md), running appkits/teletype's
+; programs. Laid out like office/: the programs here, software/ for
+; the golden frames, web/ for the browser.
 ;
-; What it might contain, each Tiny and after a famous original:
+; What else it might contain, each Tiny and after a famous original:
 ;  - a desktop (the Xerox Star 1981, the Macintosh Finder 1984): icons,
 ;    windows, the trash, over the documents the office apps save;
 ;  - a file manager (Norton Commander, 1986): two panes of files;
-;  - a terminal and a shell (VT100, the Bourne shell): lines in, lines
-;    out, a few commands;
 ;  - the desk accessories (the Mac's Calculator, Alarm Clock, Note Pad,
 ;    Puzzle): each a page long.
 ; Built on gui/ and the store (plan_io.md); see also the planned ix
 ; series, whose emulator would run on the Playground.
+(executables
+  (names TinyTerminal)
+  (modules TinyTerminal)
+  (libraries
+    appkit_teletype ; the shell's programs, Tty_hangman and Tty_guess
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)

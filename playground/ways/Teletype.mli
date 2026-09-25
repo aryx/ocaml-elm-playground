@@ -22,6 +22,8 @@
      | Read_line of (string -> 'a talk)   a line, and what to do with it
      | Read_key of (string -> 'a talk)    a key, no Enter needed
      | Random of int * (int -> 'a talk)   a number from 0 to n - 1
+     | Spawn of unit talk * (status -> 'a talk)
+                                          another program, then the rest
 
    What comes after a question is a function of the answer: its
    continuation, "the rest of the program" held as a closure. The
@@ -66,6 +68,16 @@
      program can print escape sequences ("\x1b[2J" clears the screen),
      and TinyTerminal can run the same program under its shell.
 
+   A shell is a program that runs programs, and [Spawn] is how: the
+   child runs until it ends, then the parent carries on, told how it
+   ended. It is Unix's fork, exec and wait in one request, and it
+   matters for one key: Control-C interrupts the *innermost* program
+   only, as SIGINT goes to the foreground process and not to the
+   shell waiting for it. So TinyTerminal's shell survives a Hangman
+   interrupted, and prints its prompt again. The machine keeps the
+   parents waiting on a stack, one per spawn -- the process tree,
+   reduced to the one line of it a terminal sees.
+
    A limit: the program is built as it runs, and a [Print] builds its
    continuation at once, so a loop that prints forever without ever
    reading or drawing a random number never returns. A teletype
@@ -80,12 +92,16 @@
 (* {1 Programs} *)
 (*****************************************************************************)
 
+(* how a spawned program ended *)
+type status = Exited | Interrupted
+
 type 'a talk =
   | Done of 'a
   | Print of string * 'a talk
   | Read_line of (string -> 'a talk)
   | Read_key of (string -> 'a talk)
   | Random of int * (int -> 'a talk)
+  | Spawn of unit talk * (status -> 'a talk)
 
 (* "\n" ends a line: the tty turns it into CR LF (Line_discipline.output) *)
 val print : string -> unit talk
@@ -102,6 +118,9 @@ val random : int -> int talk
 
 val return : 'a -> 'a talk
 val ( let* ) : 'a talk -> ('a -> 'b talk) -> 'b talk
+
+(* [spawn child]: run it, then carry on with how it ended *)
+val spawn : unit talk -> status talk
 
 (* [ask question]: print it, then read the line; BASIC's INPUT "Q"; A$ *)
 val ask : string -> string talk
@@ -126,7 +145,8 @@ val start : ?baud:int -> seed:int -> rows:int -> cols:int -> unit talk -> machin
 
 (* [input m bytes]: bytes from the keyboard: echoed, and the program
    given its line (or key) and run until it reads again. Control-C or
-   Control-D ends the program. *)
+   Control-D ends the innermost program: the one last spawned, and
+   when none is, the program itself. *)
 val input : machine -> string -> machine
 
 (* [tick m dt]: [dt] seconds pass; at a baud rate, the printing catches
@@ -145,11 +165,16 @@ val finished : machine -> bool
    Backspace, the arrows, Control and a letter), in Vt's bytes *)
 val keyboard_bytes : Playground.computer -> before:Playground.keyboard -> string
 
-(* [draw ?paper computer m]: the screen, filling the playground's: a
-   cell per character, green on black, or with [paper] black on a roll
-   of paper, in capitals as a Teletype Model 33 printed (it had no
-   lower case) *)
-val draw : ?paper:bool -> Playground.computer -> machine -> Playground.shape list
+(* [draw ?paper ?phosphor computer m]: the grid of characters, as large
+   as the playground's screen lets it be, centered: a cell per
+   character, in [phosphor] (green by default) on black, or with
+   [paper] black on a roll of paper, in capitals as a Teletype Model 33
+   printed (it had no lower case) *)
+(* the width and height [draw]'s grid of characters takes, centered on
+   (0, 0): what a case drawn around it needs *)
+val size : Playground.computer -> machine -> Playground.number * Playground.number
+
+val draw : ?paper:bool -> ?phosphor:Playground.color -> Playground.computer -> machine -> Playground.shape list
 
 (*****************************************************************************)
 (* {1 Applications} *)
@@ -160,5 +185,11 @@ type state
 (* [teletype program]: the program on an 80 by 24 screen; when it
    ends, Enter runs it again (with the seed where the last run left
    it: another game). Flags: seed=n, baud=n (110: the Teletype's 10
-   characters a second), paper. *)
-val teletype : ?rows:int -> ?cols:int -> unit talk -> (state Playground.game, Playground.msg) Playground.app
+   characters a second), paper. [view] draws the machine instead of
+   [draw] (TinyTerminal: a VT100 around the screen). *)
+val teletype :
+  ?rows:int ->
+  ?cols:int ->
+  ?view:(Playground.computer -> machine -> Playground.shape list) ->
+  unit talk ->
+  (state Playground.game, Playground.msg) Playground.app

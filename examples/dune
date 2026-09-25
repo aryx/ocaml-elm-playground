@@ -36,6 +36,7 @@
     appkit_sheet ; Gui7Cells' engine
     appkit_sheet_view ; and how it is drawn
     appkit_typeset ; TypesetParagraph's two line breakers
+    appkit_teletype ; TeletypeHangman's program, Tty_hangman
     elm_playground_native ; implem of virtual elm_playground
     networking_unix ; UniverseBallServer's Universe_server
   )
