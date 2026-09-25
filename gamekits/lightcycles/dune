@@ -6,5 +6,5 @@
 (library
  (name kit_lightcycles)
  (wrapped false)
- (libraries elm_playground)
+ (libraries elm_playground ai) ; ai: the search's Minimax
 )

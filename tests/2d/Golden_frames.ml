@@ -459,9 +459,10 @@ let scripted : Testutil_golden.scripted list =
       "chain",
       178,
       "space:1,right:3-22,space:25,left:27-46,space:49,down:51-90,right:91-110" );
-    (* against the computer, blue turning around into its trail *)
+    (* against the computer's three riders, blue (the keys) out early,
+     * the three others racing on *)
     ("games/arcade/software/TinyTron", "computer", 200, "1:1,up:40,right:80,down:120,right:150");
-    (* two players, both turning *)
+    (* two players, both turning, and two computer riders *)
     ("games/arcade/software/TinyTron", "duel", 150, "2:1,up:30,w:40,right:70,s:90,a:120");
     (* claude: a split screen, each window scrolling with its rider *)
     ("games/arcade/software/TinyTronscroll", "duel", 180, "space:2-3,up:40,right:90,down:140,s:60,d:110,w:150");

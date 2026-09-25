@@ -2856,9 +2856,31 @@ let tron_computer () =
   done;
   match !s.scene with
   | Playing g | Winner g ->
-      Alcotest.(check int) "blue's points" 0 g.score1;
-      Alcotest.(check bool) "the computer's points" true (g.score2 >= 1)
+      Alcotest.(check int) "blue's points" 0 (List.nth g.scores 0);
+      Alcotest.(check bool) "the computer's points" true (List.nth g.scores 1 >= 1)
   | Title -> Alcotest.fail "still on the title"
+
+(* the Voronoi partition: two heads mirroring each other across the
+ * middle of the open grid (its free columns are 1 to 88) share it
+ * evenly; a head in the middle has more of it than one in a corner *)
+let tron_voronoi () =
+  let open Lightcycles in
+  let free cr = Tilemap.get (arena_of (List.hd layouts)) (fst cr) (snd cr) = Some ' ' in
+  Alcotest.(check int) "facing each other across the middle: even" 0 (voronoi free (20, 45) (69, 45));
+  Alcotest.(check bool) "the middle against a corner" true (voronoi free (45, 45) (3, 3) > 0)
+
+(* four riders at HARD, the search's, all of them the computer: the
+ * round ends, someone last *)
+let tron_four () =
+  let open Lightcycles in
+  let g = ref (new_game { riders = 4; humans = 0; brain = Search 4; arenas = layouts }) in
+  let n = ref 0 in
+  while !g.round.over = None && !n < 5000 do
+    incr n;
+    g := update_game initial_computer.keyboard !g
+  done;
+  Alcotest.(check bool) "over" true (!g.round.over <> None);
+  Alcotest.(check bool) "at most one point" true (List.fold_left ( + ) 0 (Option.get !g.round.over) <= 1)
 
 (*****************************************************************************)
 (* TinyDungeonMaster *)
@@ -7832,6 +7854,8 @@ let tests =
       t "AiChess, quiescence against the horizon effect" chess_quiescence;
       t "AiChess, move ordering" chess_ordering;
       t "TinyTron, the computer outlasts a straight line" tron_computer;
+      t "TinyTron, the Voronoi partition" tron_voronoi;
+      t "TinyTron, four riders at HARD" tron_four;
       t "TinyDungeonMaster, the key, the door, the lever, the stairs" dungeon_master_winnable;
       t "TinyDungeonMaster, the dance" dungeon_master_dance;
       t "PuzzleScriptSokoban, every level solvable" puzzlescript_sokoban_levels;

@@ -121,7 +121,7 @@ let update (computer : computer) (m : model) : model =
     match game.scene with
     | Title -> None
     | Playing g | Winner g -> (
-        let wanted = camera_for view g.round.p1 in
+        let wanted = camera_for view (List.hd g.round.cycles) in
         match m.cam with None -> Some wanted | Some cam -> Some (Camera3d.follow 0.2 wanted cam))
   in
   { game; view; cam }
@@ -145,30 +145,34 @@ let view (computer : computer) (m : model) : camera * shape3d list =
         @ List.map hud (Scene2d.blink 1. s [ text orange3 3. "PRESS 1 OR 2" |> move_y (-200.) ]) )
   | Playing g | Winner g ->
       let r = g.round in
-      let cam = match m.cam with Some cam -> cam | None -> camera_for m.view r.p1 in
+      (* the kit's own game: two riders, blue and orange *)
+      let p1 = List.nth r.cycles 0 and p2 = List.nth r.cycles 1 in
+      let score1 = List.nth g.scores 0 and score2 = List.nth g.scores 1 in
+      let computer = g.settings.humans = 1 in
+      let cam = match m.cam with Some cam -> cam | None -> camera_for m.view p1 in
       let horizon = match m.view with Chase | Inside -> Camera3d.sky cam | Above | Far -> [] in
       let result =
         match (s.scene, r.over) with
         | Winner _, _ ->
-            [ (if g.score1 > g.score2 then text blue3 7. "BLUE WINS!"
-               else text orange3 7. (if g.computer then "THE COMPUTER WINS!" else "ORANGE WINS!"))
+            [ (if score1 > score2 then text blue3 7. "BLUE WINS!"
+               else text orange3 7. (if computer then "THE COMPUTER WINS!" else "ORANGE WINS!"))
               |> move_y 150. ]
             @ Scene2d.blink 1. s [ text white 3. "PRESS SPACE" |> move_y (-150.) ]
-        | _, Some (1, 0) -> [ text blue3 5. "BLUE WINS THE ROUND" ]
-        | _, Some (0, 1) -> [ text orange3 5. "ORANGE WINS THE ROUND" ]
+        | _, Some [ 1; 0 ] -> [ text blue3 5. "BLUE WINS THE ROUND" ]
+        | _, Some [ 0; 1 ] -> [ text orange3 5. "ORANGE WINS THE ROUND" ]
         | _, Some _ -> [ text white 5. "BOTH CRASH" ]
         | _, None -> []
       in
       let huds =
-        [ text blue3 3. (Printf.sprintf "BLUE %d" g.score1) |> move (-300.) (screen.top -. 30.);
-          text orange3 3. (Printf.sprintf "%s %d" (if g.computer then "COMPUTER" else "ORANGE") g.score2) |> move 300. (screen.top -. 30.);
+        [ text blue3 3. (Printf.sprintf "BLUE %d" score1) |> move (-300.) (screen.top -. 30.);
+          text orange3 3. (Printf.sprintf "%s %d" (if computer then "COMPUTER" else "ORANGE") score2) |> move 300. (screen.top -. 30.);
           text gray 2. ("view: " ^ view_name m.view ^ "   (v)") |> move_y (screen.bottom +. 30.) ]
         @ result
       in
       (* inside the blue cycle, it's not seen *)
-      let cycles = (if m.view = Inside then [] else [ cycle_shape blue3 r.p1 ]) @ [ cycle_shape orange3 r.p2 ] in
+      let cycles = (if m.view = Inside then [] else [ cycle_shape blue3 p1 ]) @ [ cycle_shape orange3 p2 ] in
       ( cam,
-        horizon @ [ Camera3d.floor cam; arena_shapes ] @ trail blue3 r.p1 @ trail orange3 r.p2 @ cycles @ List.map hud huds )
+        horizon @ [ Camera3d.floor cam; arena_shapes ] @ trail blue3 p1 @ trail orange3 p2 @ cycles @ List.map hud huds )
 
 let app = game3d view update { game = Lightcycles.initial_model; view = Chase; cam = None }
 
