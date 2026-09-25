@@ -171,6 +171,8 @@ let rec step (t : t) : unit =
 let result (t : t) : (Http.response, error) result option =
   match t.state with Done r -> Some r | _ -> None
 
+let url (t : t) : string = Url.to_string t.url
+
 let wait (ts : t list) (timeout : float) : unit =
   let reads, writes =
     List.fold_left

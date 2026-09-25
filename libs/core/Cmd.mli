@@ -9,7 +9,7 @@
      update msg model --(model, Http_get (url, on_answer))--> platform
                                                                  | fetches url,
                                                                  | frames go on
-     update (on_answer (Ok text)) model  <-----------------------'
+     update (on_answer (Ok response)) model  <-------------------'
 
    So a test can look at the command [update] returned, without a
    network, and the same program runs natively and in a browser, each
@@ -31,13 +31,21 @@ type http_error =
   | Bad_status of int (* the server answered, but not 2xx: 404 *)
   | Bad_body of string
 
+(* what the server answered, whatever the status (a 404 has a page
+ * too): the URL it came from, after the redirections (a page's links
+ * are relative to it); the headers, names as the server wrote them
+ * (Http.header compares them ignoring case); the body's bytes,
+ * unchanged -- an image, or a page in whatever encoding it says *)
+type http_response = { url : string; status : int; headers : (string * string) list; body : string }
+
 type 'msg t =
   | None
   (* the message given back to [update] at the next frame *)
   | Msg of 'msg
-  (* a GET of the URL, its body given back as a message (or why not);
-   * with the authority to reach the network *)
-  | Http_get of Cap.network * string * ((string, http_error) result -> 'msg)
+  (* a GET of the URL, its response given back as a message (or why
+   * there is none: never Bad_status, which is Playground.Http's
+   * reading of a response); with the authority to reach the network *)
+  | Http_get of Cap.network * string * ((http_response, http_error) result -> 'msg)
   | Batch of 'msg t list
 
 (* nothing to do *)

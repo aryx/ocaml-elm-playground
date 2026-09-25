@@ -1,0 +1,10 @@
+; claude: HTML read (see web/README.md, plan_browser_teaching.md):
+; the bytes of a page to text (Charset), the characters it names
+; (Entities), its tokens (Html_lexer), its tree (Dom, Dtd, Html_tree),
+; and the tree as text (Line_mode). Pure OCaml, no
+; shapes, so TinyMosaic can use it natively and in a browser.
+(library
+ (name web_html)
+ (package elm_playground)
+ (wrapped false)
+)

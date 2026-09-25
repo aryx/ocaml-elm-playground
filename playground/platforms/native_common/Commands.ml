@@ -10,7 +10,7 @@
 
 (* See Commands.mli *)
 
-type 'msg in_flight = Now of 'msg | Request of Http_request.t * ((string, Cmd.http_error) result -> 'msg)
+type 'msg in_flight = Now of 'msg | Request of Http_request.t * ((Cmd.http_response, Cmd.http_error) result -> 'msg)
 type 'msg t = { mutable in_flight : 'msg in_flight list }
 
 let create () : 'msg t = { in_flight = [] }
@@ -23,12 +23,13 @@ let perform (t : 'msg t) (cmd : 'msg Cmd.t) : unit =
          | Http_get (caps, url, k) -> t.in_flight <- t.in_flight @ [ Request (Http_request.start caps url, k) ]
          | None | Batch _ -> (* to_list flattened them *) ())
 
-(* Http_request's answer as Elm's: a 2xx is the body, another status an
- * error *)
-let answer (r : (Http.response, Http_request.error) result) : (string, Cmd.http_error) result =
+(* Http_request's answer as Cmd's, with the URL of the last
+ * redirection *)
+let answer (request : Http_request.t) (r : (Http.response, Http_request.error) result) :
+    (Cmd.http_response, Cmd.http_error) result =
   match r with
-  | Ok response when response.status / 100 = 2 -> Ok response.body
-  | Ok response -> Error (Bad_status response.status)
+  | Ok response ->
+      Ok { url = Http_request.url request; status = response.status; headers = response.headers; body = response.body }
   | Error (Bad_url why) -> Error (Bad_url why)
   | Error Timeout -> Error Timeout
   | Error (Failed why) -> Error (Network_error why)
@@ -41,7 +42,7 @@ let step (t : 'msg t) : 'msg list =
            | Now msg -> Left msg
            | Request (r, k) -> (
                Http_request.step r;
-               match Http_request.result r with Some result -> Left (k (answer result)) | None -> Right f))
+               match Http_request.result r with Some result -> Left (k (answer r result)) | None -> Right f))
   in
   t.in_flight <- pending;
   finished

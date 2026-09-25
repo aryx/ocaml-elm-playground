@@ -542,9 +542,18 @@ module Http = struct
     | Bad_status of int
     | Bad_body of string
 
-  type 'msg expect = (string, error) result -> 'msg
+  type response = Cmd.http_response = { url : string; status : int; headers : (string * string) list; body : string }
+  type 'msg expect = (response, error) result -> 'msg
 
-  let expect_string (f : (string, error) result -> 'msg) : 'msg expect = f
+  (* claude: Elm's reading: a 2xx is the body, another status an error *)
+  let expect_string (f : (string, error) result -> 'msg) : 'msg expect =
+   fun result ->
+    match result with
+    | Ok response when response.status /.. 100 = 2 -> f (Ok response.body)
+    | Ok response -> f (Error (Bad_status response.status))
+    | Error e -> f (Error e)
+
+  let expect_response (f : (response, error) result -> 'msg) : 'msg expect = f
   let get (caps : < Cap.network ; .. >) ~(url : string) ~(expect : 'msg expect) : 'msg Cmd.t =
     Cmd.Http_get ((caps :> Cap.network), url, expect)
 

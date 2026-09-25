@@ -60,6 +60,10 @@ val step : t -> unit
 (* the final response (a 404 is one), once done *)
 val result : t -> (Http.response, error) result option
 
+(* the URL asked last: the last redirection's, once done -- a page's
+ * links are relative to it, not to the URL first asked *)
+val url : t -> string
+
 (* wait until one of the requests can advance, or [timeout] seconds:
  * for a program with nothing else to do between steps (the tests) *)
 val wait : t list -> float -> unit

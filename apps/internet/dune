@@ -1,11 +1,8 @@
-; claude: the internet applications (CATALOG.md's section): TinyIRC so
-; far. Laid out like office/: the programs here, software/ for the
-; golden frames, web/ for the browser.
+; claude: the internet applications (CATALOG.md's section): TinyIRC and
+; TinyMosaic (plan_browser_teaching.md). Laid out like office/: the
+; programs here, software/ for the golden frames, web/ for the browser.
 ;
 ; What it might contain besides, each Tiny and after a famous original:
-;  - a web browser (WorldWideWeb 1990, Mosaic 1993): a subset of HTML
-;    laid out with the typesetting appkit, links followed (networking's
-;    Http_client and Http_request already fetch);
 ;  - a mail client (Eudora, 1988): a mailbox, a message, a reply (or in
 ;    office/, beside the calendar, as Outlook has it -- see
 ;    plan_gui_remaining.md);
@@ -18,6 +15,39 @@
   (libraries
     caps ; the authority to reach the network
     networking ; Irc, Transport
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+; claude: TinyMosaic's built-in site, the about: pages, embedded as
+; strings: site/home.html becomes Site_pages.home at build time, and so
+; on, so the browser has something to show with no network (and the
+; golden frames something deterministic)
+(rule
+ (targets Site_pages.ml)
+ (deps site/home.html site/history.html)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from site/*.html by apps/internet/dune *)\n")
+    (echo "let home = {|")
+    (cat site/home.html)
+    (echo "|}\n")
+    (echo "let history = {|")
+    (cat site/history.html)
+    (echo "|}\n")))))
+
+(executables
+  (names TinyMosaic)
+  (modules TinyMosaic Site_pages)
+  (libraries
+    caps ; the authority to reach the network
+    web ; the engine: Charset, Html_lexer, Html_tree, Line_mode, ...
+    networking ; Url, a link resolved against its page
+    appkit_stroke_text ; the letters, drawn by Hershey's pen
+    appkit_richtext ; Style, the pen's look
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

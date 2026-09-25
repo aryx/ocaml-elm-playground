@@ -997,8 +997,18 @@ module Http : sig
   (** what to do with the answer: Elm's [Http.Expect] *)
   type 'msg expect
 
-  (** the body as text *)
+  (** what the server answered: the URL it came from after the
+      redirections, the status, the headers, the body's bytes *)
+  type response = Cmd.http_response = { url : string; status : int; headers : (string * string) list; body : string }
+
+  (** the body as text, when the status is 2xx ([Bad_status] otherwise) *)
   val expect_string : ((string, error) result -> 'msg) -> 'msg expect
+
+  (** the whole response, whatever its status (Elm's
+      [expectBytesResponse]): what a browser needs -- a 404's page is
+      shown too, an image's bytes are not text, and the page's links are
+      relative to the URL it finally came from (TinyMosaic) *)
+  val expect_response : ((response, error) result -> 'msg) -> 'msg expect
 
   val get : < Cap.network ; .. > -> url:string -> expect:'msg expect -> 'msg Cmd.t
 

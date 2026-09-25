@@ -7,10 +7,12 @@ type http_error =
   | Bad_status of int
   | Bad_body of string
 
+type http_response = { url : string; status : int; headers : (string * string) list; body : string }
+
 type 'msg t =
   | None
   | Msg of 'msg
-  | Http_get of Cap.network * string * ((string, http_error) result -> 'msg)
+  | Http_get of Cap.network * string * ((http_response, http_error) result -> 'msg)
   | Batch of 'msg t list
 
 let none = None

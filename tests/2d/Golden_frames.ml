@@ -83,6 +83,10 @@ let scenes : Testutil_golden.scene list =
     (* claude: its server not there (localhost:6667 refused -- unless a
      * tiny_ircd happens to run on this computer during the tests) *)
     ("apps/internet/software/TinyIRC", "", 5);
+    (* claude: 1993: the built-in home page (about:home), drawn: looks,
+     * blocks, one line a paragraph for now (plan_browser_teaching.md,
+     * phase 3) *)
+    ("apps/internet/software/TinyMosaic", "", 5);
     (* 1984: -fixed-time's 1000 seconds after the epoch, in UTC (the
      * offset is 0 under -fixed-time), 12:16:40 AM on the first day of
      * 1970; the six cities at their own offsets *)
@@ -1484,6 +1488,14 @@ let flagged : Testutil_golden.flagged list =
      * answer that doesn't depend on a server running on the machine;
      * the answered one is networking/unix/tests/' *)
     ("examples/software/HttpText", "refused", 5, [ "url=http://127.0.0.1:1/x" ]);
+    (* claude: the built-in home page as its source, then as its tokens
+     * (Html_lexer), the pipeline's first stages *)
+    ("apps/internet/software/TinyMosaic", "source", 5, [ "view=source" ]);
+    ("apps/internet/software/TinyMosaic", "tokens", 5, [ "view=tokens" ]);
+    (* claude: then as its tree (Html_tree, the soup repaired), and as
+     * the 1991 Line Mode Browser showed it (Line_mode) *)
+    ("apps/internet/software/TinyMosaic", "tree", 5, [ "view=tree" ]);
+    ("apps/internet/software/TinyMosaic", "line", 5, [ "view=line" ]);
     (* claude: a world of HtDP's first universe, its universe not there
      * (port 1): resting, and saying why *)
     ("examples/software/UniverseBall", "refused", 5, [ "port=1" ]);
@@ -1506,6 +1518,9 @@ let flagged : Testutil_golden.flagged list =
  * hand, with juice=engine (Juice.mode) at the moment of a hit *)
 let scripted_flagged : Testutil_golden.scripted_flagged list =
   [
+    (* claude: TinyMosaic's line-mode view, link 2 typed then Return:
+     * the history page, reached by following a link *)
+    ("apps/internet/software/TinyMosaic", "follow", 20, "type(2):10,return:12", [ "view=line" ]);
     (* the computer's kick landing: sparks bursting, the screen knocked
      * (the same hit as "fight"'s, the same 6 frames of hitstop) *)
     ("games/fighting/software/TinyStreetFighter", "engine", 136, "space:1,d:95-120,f:122,g:135", [ "juice=engine" ]);

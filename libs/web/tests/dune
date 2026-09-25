@@ -1,0 +1,6 @@
+; claude: unit tests for web/, run by 'make test' (dune runtest): the
+; .mlis' worked examples, on strings, no network needed
+(test
+ (name Test)
+ (libraries alcotest testo web)
+)

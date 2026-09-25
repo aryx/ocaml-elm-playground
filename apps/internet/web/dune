@@ -16,6 +16,22 @@
   (link_flags -no-check-prims)
 )
 
+(executables
+  (names TinyMosaic)
+  (modules TinyMosaic Site_pages)
+  (libraries
+    caps
+    web
+    networking
+    appkit_stroke_text
+    appkit_richtext
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
 ; claude: the .html pages next to the generated .bc.js, as in
 ; examples/web/dune
 (rule

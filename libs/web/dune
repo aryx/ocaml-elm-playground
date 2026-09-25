@@ -1,0 +1,17 @@
+; claude: a web browser's engine, from scratch, for teaching: one idea
+; per module, each .mli with its diagram, worked example and
+; references, like networking/ and ai/ (see web/README.md,
+; plan_browser_teaching.md, notes_browser.md). Pure OCaml, no shapes:
+; bytes in, a tree, boxes with positions out; TinyMosaic
+; (apps/internet/) draws them.
+;
+; A library per subdirectory; this one, 'web', has no module of its
+; own: it is all of them, for what says (libraries web). Unwrapped, or
+; dune would make it a module Web.
+(library
+ (name web)
+ (package elm_playground)
+ (wrapped false)
+ (modules)
+ (libraries web_html web_style web_layout)
+)

@@ -43,7 +43,7 @@
  *
  * Uses: Irc (the messages), Transport (the connection: WebSocket
  * natively and in a browser); not the gui toolkit, nor
- * apps/office's Stroke_text (an appkit it isn't yet).
+ * Stroke_text (a terminal's cells need no looks).
  *
  * Exercises: a window per channel, switched with the keys (ircII's
  * /window); the log scrolled back; nicks colored by a hash of the name;

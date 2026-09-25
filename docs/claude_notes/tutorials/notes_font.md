@@ -352,7 +352,7 @@ and scales words, `examples/Typing.ml` edits a line of them,
 `games/arcade/Pong.ml`'s score is thick strokes (`scale 10.`), and
 `examples/TypesetParagraph.ml` sets a justified paragraph with a
 `words` per character. The office apps go one step further:
-`apps/office/Stroke_text.ml` reads Hershey's glyphs itself
+`Stroke_text.ml` (the appkit `appkits/stroke_text`) reads Hershey's glyphs itself
 (`Hershey.glyph`) and draws their strokes as `rectangle`s, so a
 program gets the same letters on every backend, with widths it can
 measure (the caret of `TinyWord.ml` and `TinyBravo.ml`), and bold (a

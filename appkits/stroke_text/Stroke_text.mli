@@ -21,7 +21,8 @@
  * between two letters where they really meet, which is what the rest
  * of the toolkit, measuring with an average width, could not promise.
  *
- * Shared by TinyBravo and TinyWord. *)
+ * Shared by the office apps (TinyBravo and TinyWord first) and
+ * TinyMosaic. *)
 
 (* the width of a character in a look: Hershey's, scaled to its size *)
 val metrics : Page.metrics

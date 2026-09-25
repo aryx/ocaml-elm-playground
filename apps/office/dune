@@ -6,11 +6,11 @@
 ; compound documents (CATALOG.md's sections). Laid out like a genre of
 ; games/, with software/ for the golden frames and web/ for the browser.
 ;
-; The modules here that are not programs are shared by them:
-; Stroke_text (Hershey text), the parts of a compound document
-; (Part_text, Part_sheet, Part_picture, Part_drawing, Part_chart) and
-; Figure_shapes. When an app of another category needs one, it becomes
-; an appkit, as File_menu did (appkits/file_menu).
+; The modules here that are not programs are shared by them: the
+; parts of a compound document (Part_text, Part_sheet, Part_picture,
+; Part_drawing, Part_chart) and Figure_shapes. When an app of another
+; category needs one, it becomes an appkit, as File_menu and
+; Stroke_text did (appkits/file_menu, appkits/stroke_text).
 (executables
   (names
     TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint TinyOpenDoc TinyPowerPoint TinyHyperCard TinyMacDraw TinyFrameMaker TinyOffice
@@ -29,7 +29,7 @@
     appkit_slides ; a talk as an outline (TinyPowerPoint)
     appkit_hypertalk ; HyperCard's language (TinyHyperCard)
     appkit_draw ; a picture as objects (TinyMacDraw)
-    graphics_font ; Hershey's strokes, for Stroke_text
+    appkit_stroke_text ; Hershey's strokes in a look
     elm_playground_native ; implem of virtual elm_playground
   )
 )
