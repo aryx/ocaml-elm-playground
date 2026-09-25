@@ -43,4 +43,5 @@ let () =
           Unit_matting.tests;
           Unit_pixelate.tests;
           Unit_imaging.tests;
+          Unit_ilbm.tests;
         ])

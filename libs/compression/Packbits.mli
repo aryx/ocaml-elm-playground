@@ -25,6 +25,9 @@
  * why "AA AA" inside a literal stretch costs nothing extra. At worst,
  * incompressible bytes grow by one byte in 128. *)
 
+(* The same compression, under another name, is the Amiga's: Electronic
+ * Arts' ILBM pictures (1985) call it ByteRun1 (Ilbm.mli). *)
+
 val encode : Bytes.t -> Bytes.t
 
 (* [decode s ~pos ~len]: [len] bytes decoded from [s] starting at

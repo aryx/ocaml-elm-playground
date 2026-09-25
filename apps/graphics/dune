@@ -1,8 +1,10 @@
 ; claude: the graphics applications (CATALOG.md's section): the
 ; pictures made of dots and of objects, both Apple's of 1984 --
-; TinyMacPaint (appkits/paint) and TinyMacDraw (appkits/draw) -- and
-; what the dots became, TinyPhotoshop (libs/graphics/imaging, the
-; photographs of photos/; plan_photoshop.md).
+; TinyMacPaint (appkits/paint) and TinyMacDraw (appkits/draw) -- the
+; Amiga's dots, colour numbers in a palette that turns, TinyDeluxePaint
+; (appkits/indexed, libs/graphics/images/ilbm), and what the dots
+; became, TinyPhotoshop (libs/graphics/imaging, the photographs of
+; photos/; plan_photoshop.md).
 ; Laid out like office/: the programs here, software/ for the golden
 ; frames, web/ for the browser.
 ;
@@ -15,7 +17,7 @@
 ;  - a font editor (Fontographer, 1986): Bezier outlines, graphics_font's
 ;    strokes seen the other way round.
 (executables
-  (names TinyMacPaint TinyMacDraw TinyPhotoshop)
+  (names TinyMacPaint TinyMacDraw TinyPhotoshop TinyDeluxePaint)
   (libraries
     elm_playground
     caps ; the File menu's authority to save (File_menu, plan_caps.md)
@@ -31,6 +33,9 @@
     graphics_jpeg ; our JPEG reader and writer
     graphics_png ; and PNG writer, for Export
     photos ; NASA's photographs, as strings
+    appkit_indexed ; a picture of colour numbers, and cycling (TinyDeluxePaint)
+    graphics_ilbm ; its file, IFF ILBM
+    random ; Lehmer, the airbrush's dots
     elm_playground_native ; implem of virtual elm_playground
   )
 )

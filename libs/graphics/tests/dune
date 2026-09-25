@@ -24,6 +24,7 @@
    graphics_xpm
    graphics_gpu
    graphics_imaging ; Lut, Mask, Brush... (Unit_imaging)
+   graphics_ilbm ; the Amiga's pictures (Unit_ilbm)
  )
  (deps
    %{project_root}/examples/checker.png

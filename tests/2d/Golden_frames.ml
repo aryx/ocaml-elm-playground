@@ -165,6 +165,10 @@ let scenes : Testutil_golden.scene list =
     ("apps/graphics/software/TinyMacDraw", "", 5);
     (* claude: the Blue Marble in TinyPhotoshop's window, its tools *)
     ("apps/graphics/software/TinyPhotoshop", "", 3);
+    (* claude: Deluxe Paint's scene, 32 colours on the Workbench's blue;
+     * and 40 frames later, the water and the fire turned by the
+     * palette's cycling, not a dot redrawn *)
+    ("apps/graphics/software/TinyDeluxePaint", "", 3);
     (* 1986: one text flowing over pages from a master page, a sheet
      * anchored in it *)
     ("apps/office/software/TinyFrameMaker", "", 5);
@@ -1512,6 +1516,12 @@ let scripted : Testutil_golden.scripted list =
      * Marble, in Screen mode at some 60%, the Moon showing through
      * space; the Layers palette *)
     ("apps/graphics/software/TinyPhotoshop", "layers", 20, "at(430;475):1-3,click:2,at(430;299):4-6,click:5,at(372;255):7-9,click:8,at(372;151):10-12,click:11,at(467;195):13-14,at(430;195):15,at(391;195):16-20,click:14-17");
+    ("apps/graphics/software/TinyDeluxePaint", "cycling", 43, "");
+    (* claude: TinyDeluxePaint: a stroke in symmetry, six times around
+     * the middle; the sun cut as a brush, its band of sky the
+     * transparent colour (a right click on it), stamped thrice *)
+    ("apps/graphics/software/TinyDeluxePaint", "symmetry", 14, "at(238;70):1-3,click:2,at(-300;300):4-5,at(-280;320):6,at(-260;330):7,at(-240;320):8,at(-220;300):9-14,click:5-9");
+    ("apps/graphics/software/TinyDeluxePaint", "brush", 24, "at(-344;-40):1-3,rclick:2,at(261;116):4-6,click:5,at(-412;370):7-8,at(-396;356):9,at(-380;342):10-12,click:8-11,at(-200;380):13-15,click:14,at(-80;372):16-18,click:17,at(40;384):19-24,click:20");
     (* the "Objects" group dragged down, then its corner handle: the box
      * scales, its label goes with it -- the resize a map of the points *)
     ( "apps/graphics/software/TinyMacDraw",

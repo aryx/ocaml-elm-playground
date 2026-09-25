@@ -9,4 +9,4 @@
  *)
 
 let () =
-  Testo.interpret_argv ~project_name:"appkits" (fun _env -> List.concat [ Unit_document.tests; Unit_sheet.tests; Unit_typeset.tests; Unit_rich.tests; Unit_page.tests; Unit_paint.tests; Unit_embed.tests; Unit_slides.tests; Unit_hypertalk.tests; Unit_draw.tests; Unit_flow.tests; Unit_ics.tests; Unit_vcard.tests; Unit_tty.tests; Unit_basic.tests; Unit_tui.tests; Unit_editor.tests; Unit_browser.tests; Unit_browser_script.tests ])
+  Testo.interpret_argv ~project_name:"appkits" (fun _env -> List.concat [ Unit_document.tests; Unit_sheet.tests; Unit_typeset.tests; Unit_rich.tests; Unit_page.tests; Unit_paint.tests; Unit_embed.tests; Unit_slides.tests; Unit_hypertalk.tests; Unit_draw.tests; Unit_flow.tests; Unit_ics.tests; Unit_vcard.tests; Unit_tty.tests; Unit_basic.tests; Unit_tui.tests; Unit_editor.tests; Unit_indexed.tests; Unit_browser.tests; Unit_browser_script.tests ])

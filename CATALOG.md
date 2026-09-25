@@ -373,13 +373,16 @@ each have a section, which names their directory.
 
 `apps/graphics/`: the programs pictures are made with -- the two ways
 of keeping one, as dots (TinyMacPaint) and as objects (TinyMacDraw),
-both Apple's of 1984, and what the dots became with 24 bits each
-(TinyPhotoshop, over `libs/graphics/imaging`: `plan_photoshop.md`).
+both Apple's of 1984; the Amiga's dots, each a colour's number in a
+palette that can turn (TinyDeluxePaint); and what the dots became with
+24 bits each (TinyPhotoshop, over `libs/graphics/imaging`:
+`plan_photoshop.md`).
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyMacPaint](apps/graphics/TinyMacPaint.ml) | app | MacPaint (Bill Atkinson, Apple, 1984) | Paint with dots: pencil, brush, shapes, bucket, and a selection to move. | The picture as bits: palettes of tools and patterns, the seed fill, marching ants, one undo per stroke. |
 | [TinyMacDraw](apps/graphics/TinyMacDraw.ml) | app | MacDraw (Apple, 1984) | A picture made of objects you can select, move and group. | The picture as a list of objects: the order is the depth, handles, grouping, hollow shapes clicked through. |
+| [TinyDeluxePaint](apps/graphics/TinyDeluxePaint.ml) | app | Deluxe Paint (Dan Silva, Electronic Arts, 1985, on the Amiga) | A picture of 32 colours whose waterfall and fire move by the palette alone: Tab, and the colours cycle. | Indexed colour, a dot the number of a colour in a palette of the Amiga's 12 bits; colour cycling, a range of the palette turning at each frame, the picture untouched; the brush cut from the picture, its transparent colour the background's; symmetry; its file IFF ILBM, chunks (RIFF's ancestor), bitplanes, ByteRun1 (MacPaint's PackBits) and the cycling ranges. |
 | [TinyPhotoshop](apps/graphics/TinyPhotoshop.ml) | app | Photoshop 1.0 (Thomas and John Knoll, Adobe, 1990) | NASA's Blue Marble to retouch: select with the magic wand, adjust Levels or Hue/Saturation, filter, paint. | A photograph's 24 bits a dot and image processing as menus: point operations as tables of 256 (Levels with its histogram, Curves, Hue/Saturation in HSL), convolutions (blur, sharpen, emboss; the Gaussian separable; unsharp mask), Sobel's Find Edges, the median, interpolation (nearest, bilinear, bicubic); the selection as a mask a byte a dot, every operation applied through it, the wand a flood fill with a tolerance, feathering a blur of the mask; brushes as dabs with a hardness, a stroke's opacity uniform, the airbrush, rubber stamp and smudge; dialogs with a live preview; the picture drawn as tiles, only the changed ones sent again; and Photoshop 3.0's layers, each with its opacity and blend mode (Multiply, Screen, Overlay, Color...), flattened by Porter and Duff's over, a Layers palette, a photograph placed as a layer. |
 
 ## PIM

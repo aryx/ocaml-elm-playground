@@ -23,6 +23,7 @@
    %{project_root}/apps/office/software/TinyWord.exe
    %{project_root}/apps/graphics/software/TinyMacPaint.exe
    %{project_root}/apps/graphics/software/TinyPhotoshop.exe
+   %{project_root}/apps/graphics/software/TinyDeluxePaint.exe
    %{project_root}/apps/gamedev/software/TinyAseprite.exe
    %{project_root}/apps/gamedev/software/TinyTiled.exe
    %{project_root}/apps/internet/software/TinyIRC.exe

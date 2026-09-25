@@ -4,7 +4,7 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyMacPaint TinyMacDraw TinyPhotoshop)
+  (names TinyMacPaint TinyMacDraw TinyPhotoshop TinyDeluxePaint)
   (libraries
     elm_playground
     caps ; the File menu's authority to save (File_menu, plan_caps.md)
@@ -20,6 +20,9 @@
     graphics_jpeg ; our JPEG reader and writer
     graphics_png ; and PNG writer, for Export
     photos ; NASA's photographs, as strings
+    appkit_indexed ; a picture of colour numbers, and cycling (TinyDeluxePaint)
+    graphics_ilbm ; its file, IFF ILBM
+    random ; Lehmer, the airbrush's dots
     elm_playground_software ; implem of virtual elm_playground
   )
 )
