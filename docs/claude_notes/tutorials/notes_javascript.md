@@ -217,6 +217,11 @@ numbers, strings and booleans by value.
 a mistake of 1995, kept by every engine since, because pages relied on
 it), `"boolean"`, `"number"`, `"string"`, `"function"`.
 
+A string is OCaml's, in UTF-8, and its `length` and indexes count
+bytes: `"é".length` is 2 here, where JavaScript, counting UTF-16 units,
+says 1. The pages here are ASCII where it matters; counting properly is
+an exercise.
+
 ## 5. Scopes and closures
 
 An **environment** is a frame (names to values) and a pointer to the
@@ -310,11 +315,17 @@ true) is an exercise, and the reason every style guide says `===`.
 
 ## 8. Errors, and the built-ins
 
-Three errors, each with its **line** (the token's, kept by the lexer):
-a `SyntaxError` from the parser (`unexpected ')' on line 3`), a
-`ReferenceError` (`x is not defined`), a `TypeError` (`f is not a
-function`, `cannot read property 'y' of undefined`). `throw v` throws
-any value; `try { } catch (e) { }` catches it.
+Three errors, each with its **line** (the statement's, kept by the
+parser), worded as browsers word them: a `SyntaxError` from the parser
+(`expected ')', not ';'`), a `ReferenceError` (`x is not defined`), a
+`TypeError` (`f is not a function`, `Cannot read properties of
+undefined (reading 'y')`). `throw v` throws any value; `try { } catch
+(e) { }` catches it. And two a page must never do: recurse without end
+(`RangeError: Maximum call stack size exceeded`), or loop without end --
+a script runs to its end before the page moves again, so `while (true)
+{}` would freeze the browser; after a budget of steps the engine stops
+it with an error, as browsers ask "a script on this page is busy: stop
+it?".
 
 The built-ins are ordinary host functions in the global frame and on
 strings and arrays: `console.log`, `Math`, `String`, `Number`,

@@ -235,6 +235,21 @@ after an extraction.
   `%left`/`%right` as data (the correspondence written out), and the
   ocamlyacc version of the expressions an exercise. Tests: the notes'
   and the `.mli`s' worked examples, 14.
+- **J2 done** (2026-09-25): `Js_value` (the seven kinds, objects with
+  their keys in order, arrays as growable OCaml arrays, closures
+  keeping their scope; the conversions, `display` for the console,
+  `to_json`), `Js_eval` (a tree walker: scopes as chains of frames, a
+  fresh `let` per iteration, function declarations hoisted in their
+  block, `this` for methods and arrows, an `outcome` for return, break
+  and continue and an OCaml exception for throw; errors named and
+  worded as browsers do, on their statement's line; a depth limit and
+  a budget of steps, so `while (true) {}` ends in an error instead of a
+  frozen page), `Js_builtins` (console, Math with a seeded random,
+  String, Number, parseInt, JSON.stringify, Object.keys, strings' and
+  arrays' methods, called back through the interpreter's `call` passed
+  in: no cycle, no global). Strings are UTF-8, measured in bytes (noted).
+  Tests: 10 more, the notes' closures, `let` per iteration and "Wat"
+  table among them.
 
 ## Decisions
 

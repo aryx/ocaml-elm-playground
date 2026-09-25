@@ -1,7 +1,9 @@
 ; claude: a small JavaScript (plan_tiny_firefox.md, notes_javascript.md):
 ; Js_lexer (the text to tokens), Js_ast (the tree), Js_parse (statements
-; by recursive descent, expressions by Pratt -- and why not yacc);
-; the interpreter to come (J2). The language only: what a script can
+; by recursive descent, expressions by Pratt -- and why not yacc),
+; Js_value (values, objects, the conversions), Js_eval (the tree
+; walked: scopes, closures, this, the errors) and Js_builtins (console,
+; Math, strings' and arrays' methods). The language only: what a script can
 ; touch outside itself is its host's, a record of functions, so
 ; TinyFirefox gives it a page and a test gives it nothing.
 ;
@@ -12,4 +14,5 @@
  (name javascript)
  (package elm_playground)
  (wrapped false)
+ (libraries random) ; Lehmer, Math.random's seeded numbers
 )

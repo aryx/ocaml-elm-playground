@@ -11,7 +11,7 @@ strings and an app against its screen. One library per language, each
 |---|---|---|
 | `formula/` | the spreadsheet's formulas (VisiCalc, 1979): arithmetic over numbers and cells, SUM and its kin over ranges; recursive descent, the parser to know first | `appkits/sheet`, and so TinyVisiCalc and TinyExcel |
 | `basic/` | BASIC as the home computers had it: Tiny BASIC (1976), Integer BASIC and Applesoft (1978); a line read by recursive descent, a program run as a Talk conversation (`libs/terminal`), the prompt and the floppy of listings | TinyBasic, and TinyTerminal's shell (`basic`) |
-| `javascript/` | a small modern core of JavaScript, for TinyFirefox: so far read (`Js_lexer`, `Js_ast`, `Js_parse`: recursive descent and Pratt, and why not yacc); run to come | TinyFirefox (`plan_tiny_firefox.md`) |
+| `javascript/` | a small modern core of JavaScript, for TinyFirefox: read (`Js_lexer`, `Js_ast`, `Js_parse`: recursive descent and Pratt, and why not yacc) and run (`Js_value`, `Js_eval`, a tree walker with closures, `this` and the coercions; `Js_builtins`); the DOM to come | TinyFirefox (`plan_tiny_firefox.md`) |
 
 What is not here, and why: the Playground's *ways* (`playground/ways/`:
 Logo, Big Bang, PuzzleScript, Karel) are OCaml APIs that build an app,
