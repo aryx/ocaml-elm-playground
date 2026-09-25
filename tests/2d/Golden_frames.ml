@@ -309,6 +309,7 @@ let scenes : Testutil_golden.scene list =
     ("games/arcade/software/TinyPang", "", 5);
     ("games/puzzle/software/TinyWitness", "", 5);
     ("games/adventure/software/TinyIco", "", 5);
+    ("games/adventure/software/TinyJourney", "", 5);
     ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
     ("games/adventure/software/TinyZelda", "", 5);
@@ -880,6 +881,9 @@ let scripted : Testutil_golden.scripted list =
     (* her hand taken, the boy up the ledge, Yorda being pulled up after
      * him *)
     ("games/adventure/software/TinyIco", "hand", 92, "space:1,right:3-12,x:14,right:16-60,up:62,right:62-75,right:80-135");
+    (* flying on the scarf over the first dunes, the mountain's light
+     * ahead *)
+    ("games/adventure/software/TinyJourney", "flight", 420, "space:1,right:3-900,space:400-440");
     (* claude: a standing jump over the first gap, in the air; then,
      * the plate stepped on and the gate run through, hanging from the
      * shaft's edge (the loose floor fallen, the gate closing); and
