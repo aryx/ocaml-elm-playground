@@ -23,6 +23,7 @@
    graphics_yuv ; Psnr, for the JPEG writer's loss
    graphics_xpm
    graphics_gpu
+   graphics_imaging ; Lut, Mask, Brush... (Unit_imaging)
  )
  (deps
    %{project_root}/examples/checker.png
@@ -31,5 +32,7 @@
    (source_tree pngsuite) ; Willem van Schaik's PngSuite, a subset
    (source_tree gifs) ; GIFs of our own
    (source_tree jpegs) ; JPEGs of our own, and libjpeg's pixels
+   %{project_root}/apps/graphics/photos/blue_marble.jpg ; TinyPhotoshop's, NASA's
+   %{project_root}/apps/graphics/photos/aldrin.jpg
  )
 )

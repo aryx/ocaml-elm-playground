@@ -4,7 +4,7 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyMacPaint TinyMacDraw)
+  (names TinyMacPaint TinyMacDraw TinyPhotoshop)
   (libraries
     elm_playground
     caps ; the File menu's authority to save (File_menu, plan_caps.md)
@@ -16,6 +16,10 @@
     appkit_draw ; a picture as objects (TinyMacDraw)
     appkit_draw_view ; its figures as shapes, Figure_shapes
     appkit_stroke_text ; Hershey's strokes in a look
+    graphics_imaging ; every operation of TinyPhotoshop (Lut, Mask, Brush...)
+    graphics_jpeg ; our JPEG reader and writer
+    graphics_png ; and PNG writer, for Export
+    photos ; NASA's photographs, as strings
     elm_playground_software ; implem of virtual elm_playground
   )
 )

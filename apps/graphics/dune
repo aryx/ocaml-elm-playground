@@ -1,7 +1,8 @@
 ; claude: the graphics applications (CATALOG.md's section): the
 ; pictures made of dots and of objects, both Apple's of 1984 --
 ; TinyMacPaint (appkits/paint) and TinyMacDraw (appkits/draw) -- and
-; what the dots became (TinyPhotoshop, to come).
+; what the dots became, TinyPhotoshop (libs/graphics/imaging, the
+; photographs of photos/; plan_photoshop.md).
 ; Laid out like office/: the programs here, software/ for the golden
 ; frames, web/ for the browser.
 ;
@@ -14,7 +15,7 @@
 ;  - a font editor (Fontographer, 1986): Bezier outlines, graphics_font's
 ;    strokes seen the other way round.
 (executables
-  (names TinyMacPaint TinyMacDraw)
+  (names TinyMacPaint TinyMacDraw TinyPhotoshop)
   (libraries
     elm_playground
     caps ; the File menu's authority to save (File_menu, plan_caps.md)
@@ -26,6 +27,10 @@
     appkit_draw ; a picture as objects (TinyMacDraw)
     appkit_draw_view ; its figures as shapes, Figure_shapes
     appkit_stroke_text ; Hershey's strokes in a look
+    graphics_imaging ; every operation of TinyPhotoshop (Lut, Mask, Brush...)
+    graphics_jpeg ; our JPEG reader and writer
+    graphics_png ; and PNG writer, for Export
+    photos ; NASA's photographs, as strings
     elm_playground_native ; implem of virtual elm_playground
   )
 )

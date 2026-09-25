@@ -42,4 +42,5 @@ let () =
           Unit_mesh_cache.tests;
           Unit_matting.tests;
           Unit_pixelate.tests;
+          Unit_imaging.tests;
         ])

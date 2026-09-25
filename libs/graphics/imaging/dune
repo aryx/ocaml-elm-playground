@@ -1,0 +1,13 @@
+; claude: image processing, what a photo editor's menus and tools do
+; (plan_photoshop.md): point operations (Lut, Histogram, Hsl), the
+; neighbourhood's (Convolve, Gaussian, Sobel, Median, Add_noise),
+; geometry (Scale), selections (Mask, Composite) and painting (Brush,
+; Gradient), over Rgba_image, each operation giving a new image. Pure
+; OCaml, no Playground; TinyPhotoshop (apps/graphics/) is its program.
+; Tests in graphics/tests/ (Unit_imaging).
+(library
+ (name graphics_imaging)
+ (package elm_playground)
+ (wrapped false)
+ (libraries graphics_rgba random) ; random: Lehmer, Add_noise's seeded numbers
+)

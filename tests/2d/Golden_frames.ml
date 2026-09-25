@@ -163,6 +163,8 @@ let scenes : Testutil_golden.scene list =
     ("apps/office/software/TinyHyperCard", "", 5);
     (* 1984: a picture made of objects, not of dots *)
     ("apps/graphics/software/TinyMacDraw", "", 5);
+    (* claude: the Blue Marble in TinyPhotoshop's window, its tools *)
+    ("apps/graphics/software/TinyPhotoshop", "", 3);
     (* 1986: one text flowing over pages from a master page, a sheet
      * anchored in it *)
     ("apps/office/software/TinyFrameMaker", "", 5);
@@ -1497,6 +1499,14 @@ let scripted : Testutil_golden.scripted list =
     (* a click in the middle of the hollow rectangle goes through it,
      * and selects the grey oval behind *)
     ("apps/graphics/software/TinyMacDraw", "through", 8, "at(-140;135):1-4,click:2,at(600;-600):5-8");
+    (* claude: TinyPhotoshop: Hue/Saturation's preview, the hue turned a
+     * third of the way; the magic wand on space, then Invert through
+     * the selection, the Earth untouched, the marching ants; a soft
+     * paintbrush stroke; Levels on Aldrin, its histogram *)
+    ("apps/graphics/software/TinyPhotoshop", "hue", 14, "at(0;475):1-3,click:2,at(0;263):4-6,click:5,at(372;150):7-8,at(412;150):9,at(432;150):10-14,click:8-11");
+    ("apps/graphics/software/TinyPhotoshop", "wand", 14, "at(-403;338):1-3,click:2,at(-150;210):4-6,click:5,at(0;475):7-9,click:8,at(0;227):10-14,click:11");
+    ("apps/graphics/software/TinyPhotoshop", "paint", 14, "at(-100;0):2-3,at(-50;20):4,at(0;40):5,at(50;30):6,at(100;0):7,at(150;-40):8-14,click:3-8");
+    ("apps/graphics/software/TinyPhotoshop", "levels", 14, "at(430;475):1-3,click:2,at(430;371):4-6,click:5,at(0;475):7-9,click:8,at(0;407):10-14,click:11");
     (* the "Objects" group dragged down, then its corner handle: the box
      * scales, its label goes with it -- the resize a map of the points *)
     ( "apps/graphics/software/TinyMacDraw",

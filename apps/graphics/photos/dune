@@ -1,0 +1,16 @@
+; claude: TinyPhotoshop's photographs (made once by make_photos.sh from
+; NASA's originals, public domain), embedded as strings so that the
+; program has them in a browser too: Photos.blue_marble_jpg and
+; Photos.aldrin_jpg, decoded by our own JPEG reader.
+(library
+ (name photos)
+ (wrapped false)
+ (modules Photos))
+
+(rule
+ (targets Photos.ml)
+ (deps blue_marble.jpg aldrin.jpg %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml blue_marble.jpg aldrin.jpg))))
