@@ -95,6 +95,11 @@ let scenes : Testutil_golden.scene list =
      * the console saying hello, the page's tree beside it
      * (plan_tiny_firefox.md, J5) *)
     ("apps/internet/software/TinyFirefox", "", 5);
+    (* claude: 2008: Chrome's window over its home page, a page in
+     * today's CSS laid out by the box model -- a centred column,
+     * bordered cards, a float, inline-blocks, a table of attributes
+     * (plan_tiny_chrome.md, C3) *)
+    ("apps/internet/software/TinyChrome", "", 5);
     (* 1984: -fixed-time's 1000 seconds after the epoch, in UTC (the
      * offset is 0 under -fixed-time), 12:16:40 AM on the first day of
      * 1970; the six cities at their own offsets *)

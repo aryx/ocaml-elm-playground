@@ -9,5 +9,6 @@
  * right from tiny_httpd too), netscape (TinyNetscape's home: Netscape's
  * extensions to HTML), css (style sheets), firefox (TinyFirefox's home)
  * and its pages that are programs, counter, todo, timer and tictactoe,
- * and picture.gif, .png, .jpg *)
+ * chrome (TinyChrome's: a page in today's CSS), and picture.gif, .png,
+ * .jpg *)
 val about : string -> (string * string) option

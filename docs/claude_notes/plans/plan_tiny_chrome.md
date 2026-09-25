@@ -326,6 +326,32 @@ which already reads video and sound:
   `Unit_cascade`, the notes' examples. TinyChrome's first window moves
   to C3: shown through `Html_layout` it would need an adapter thrown
   away one phase later. About 900 lines.
+- **C3 done** (2026-09-25): `Box_layout` (CSS 2.1's box model over
+  `Computed`: the horizontal equation with its autos, max-width solved
+  again, box-sizing; margins collapsing between siblings, through a
+  parent, through an empty block; inline content on lines with each
+  element's line-height and the block's strut, white-space, sub and
+  super; inline-blocks and floats shrunk to fit; clear; a formatting
+  context narrowed beside a float; relative, absolute and a rough
+  fixed; tables through `Table_layout`, a row's background under its
+  cells; list markers; HTML's "align descendants", a `<center>`
+  centring its blocks), seen as an `Html_layout.box` for `Hit` and the
+  controls; `Browser_boxes`, its drawing (backgrounds, borders, the
+  words by `Browser_draw.glyphs`); `Browser_page`'s setting `boxes`;
+  `Cascade`'s **presentational hints** (bgcolor=, width=, align=,
+  cellpadding=, `<font>`...) and `Computed`'s **quirks mode** (a page
+  without a DOCTYPE: a table's fonts and alignment not inherited). And
+  **TinyChrome's first window**: one tab, the omnibox, the status
+  bubble; `about:chrome`, a page in today's CSS, its golden frame.
+  Tried live: Hacker News laid out as in Chrome, its 85% table centred
+  in its `<center>`, rows and ranks in place -- what is missing is
+  `news.css` (unfetched: C4: the spacing, black header links, the vote
+  arrows) and the logo (SVG: C6). Speed: a frame costs the software
+  rasterizer what TinyFirefox's does (0.08 s, Hershey's strokes), the
+  layout a small part. Not done, in `Box_layout.mli`: an inline
+  element's own margins, borders, paddings and background (the
+  missing yellow of about:chrome's "C3" badge: a first thing for C4 or
+  C5), rowspan=, z-index. About 1,000 lines with TinyChrome's 360.
 
 ## Verification
 

@@ -231,6 +231,10 @@ val layout :
   Dom.element ->
   box
 
+(* a form's control's size (width, height) in the look it is in, by its
+ * kind; None for a hidden one, or what is not a control *)
+val control_size : metrics -> Looks.t -> Dom.element -> (float * float) option
+
 (* the baseline of a box's first line, if it has one *)
 val first_baseline : box -> float option
 

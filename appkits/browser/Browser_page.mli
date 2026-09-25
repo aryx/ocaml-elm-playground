@@ -33,11 +33,13 @@ type t = {
   background : Looks.color option; (* <body bgcolor=>, Netscape's; or its style sheets' *)
   forms : Forms.form list;
   values : (Dom.element * Forms.value) list; (* the controls changed, by element (==) *)
+  quirks : bool; (* no DOCTYPE: quirks mode (Computed.styles), by the box model *)
 }
 
 type settings = {
   extensions : bool; (* Netscape's extensions to HTML honoured (Dtd.origin) *)
   css : bool; (* the page's style sheets honoured (Css): <style>, style= *)
+  boxes : bool; (* laid out by CSS 2.1's box model (Box_layout, Browser_boxes): TinyChrome's *)
   width : float;
   breaker : Html_layout.breaker;
   visited : string -> bool; (* an absolute URL, no #fragment *)

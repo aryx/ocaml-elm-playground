@@ -119,5 +119,7 @@ val compute : Cascade.media -> root_font_size:float -> parent:t -> (string * Css
 val user_agent_sheet : Cascade.sheet
 
 (* [styles media sheets root]: every element's computed style, the
- * browser's sheet first, then [sheets] (the page's) *)
-val styles : ?visited:(string -> bool) -> Cascade.media -> Cascade.sheet list -> Dom.element -> Dom.element -> t
+ * browser's sheet first, then [sheets] (the page's); with [quirks]
+ * (false), quirks mode's rules for a page without a DOCTYPE: a table's
+ * fonts and alignment not inherited *)
+val styles : ?visited:(string -> bool) -> ?quirks:bool -> Cascade.media -> Cascade.sheet list -> Dom.element -> Dom.element -> t

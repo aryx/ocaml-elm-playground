@@ -1,7 +1,8 @@
 ; claude: where everything on a page goes (see web/README.md,
 ; plan_browser_teaching.md): Html_layout, blocks stacked and inline
 ; content on lines, and Hit, the way back, from a point to a link;
-; then, to come, Table_layout. Pure OCaml, no shapes and no font: boxes and
+; Table_layout; and Box_layout, CSS 2.1's box model over Computed's
+; styles (TinyChrome's). Pure OCaml, no shapes and no font: boxes and
 ; fragments with positions, the widths the caller's.
 (library
  (name web_layout)

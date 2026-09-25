@@ -145,6 +145,81 @@ let needs (sel : Selectors.complex) : string list =
 let find_element (table : (int, Dom.element * 'a) Hashtbl.t) (e : Dom.element) : 'a option =
   List.assq_opt e (Hashtbl.find_all table (Hashtbl.hash e))
 
+(*****************************************************************************)
+(* Presentational hints *)
+(*****************************************************************************)
+
+(* the attributes that were style before style sheets, as declarations
+ * (WHATWG HTML, "Rendering"): an author's, under all the page's rules;
+ * [ancestors] the nearest first, for what a table says of its cells *)
+let hints (ancestors : Dom.element list) (e : Dom.element) : string =
+  let attr name (e : Dom.element) = Dom.attribute ~extensions:true name e in
+  let b = Buffer.create 64 in
+  let add prop value = Buffer.add_string b (Printf.sprintf "%s: %s;" prop value) in
+  (* "85%" or "100" (pixels) *)
+  let length v =
+    let v = String.trim v in
+    if String.ends_with ~suffix:"%" v then Option.map (fun _ -> v) (float_of_string_opt (String.sub v 0 (String.length v - 1)))
+    else Option.map (fun n -> Printf.sprintf "%gpx" n) (float_of_string_opt v)
+  in
+  (* "ff6600" as pages wrote it, without its # *)
+  let color v =
+    let v = String.trim v in
+    if String.length v = 6 && String.for_all (function '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' -> true | _ -> false) v then "#" ^ v else v
+  in
+  let lengths props = List.iter (fun (a, prop) -> match Option.bind (attr a e) length with Some l -> add prop l | None -> ()) props in
+  let table = List.find_opt (fun (a : Dom.element) -> a.name = "table") ancestors in
+  let lower name = Option.map String.lowercase_ascii (attr name e) in
+  (match attr "bgcolor" e with Some c -> add "background-color" (color c) | None -> ());
+  (match e.name with
+  | "body" -> ( match attr "text" e with Some c -> add "color" (color c) | None -> ())
+  | "a" when Dom.attribute "href" e <> None -> (
+      (* body link= and vlink=: the page's link colour, visited or not
+       * alike here *)
+      match Option.bind (List.find_opt (fun (a : Dom.element) -> a.name = "body") ancestors) (attr "link") with
+      | Some c -> add "color" (color c)
+      | None -> ())
+  | "font" -> (
+      (match attr "color" e with Some c -> add "color" (color c) | None -> ());
+      match Option.bind (attr "size" e) Looks.font_scale with Some k -> add "font-size" (Printf.sprintf "%gpx" (k *. 16.)) | None -> ())
+  | "table" -> (
+      lengths [ ("width", "width"); ("height", "height") ];
+      (match Option.bind (attr "border" e) (fun v -> if v = "" then Some 1. else float_of_string_opt v) with
+      | Some n when n > 0. -> add "border" (Printf.sprintf "%gpx outset gray" n)
+      | _ -> ());
+      match lower "align" with
+      | Some "center" -> add "margin-left" "auto"; add "margin-right" "auto"
+      | Some ("left" | "right" as side) -> add "float" side
+      | _ -> ())
+  | "td" | "th" -> (
+      lengths [ ("width", "width"); ("height", "height") ];
+      (match Option.bind table (attr "cellpadding") with Some p -> Option.iter (add "padding") (length p) | None -> ());
+      (match Option.bind table (attr "border") with
+      | Some v when v = "" || (match float_of_string_opt v with Some n -> n > 0. | None -> false) -> add "border" "1px inset gray"
+      | _ -> ());
+      if attr "nowrap" e <> None then add "white-space" "nowrap";
+      (* valign=, the cell's or its row's *)
+      match (match lower "valign" with Some v -> Some v | None -> Option.bind (List.nth_opt ancestors 0) (fun tr -> Option.map String.lowercase_ascii (attr "valign" tr))) with
+      | Some ("top" | "middle" | "bottom" | "baseline" as v) -> add "vertical-align" v
+      | _ -> ())
+  | "tr" -> lengths [ ("height", "height") ]
+  | "img" -> (
+      lengths [ ("width", "width"); ("height", "height"); ("hspace", "margin-left"); ("hspace", "margin-right"); ("vspace", "margin-top"); ("vspace", "margin-bottom") ];
+      match lower "align" with
+      | Some ("left" | "right" as side) -> add "float" side
+      | Some ("middle" | "absmiddle") -> add "vertical-align" "middle"
+      | Some ("top" | "texttop") -> add "vertical-align" "top"
+      | _ -> ())
+  | "hr" -> (
+      lengths [ ("width", "width") ];
+      match Option.bind (attr "size" e) float_of_string_opt with Some n -> add "height" (Printf.sprintf "%gpx" (Float.max 0. (n -. 2.))) | None -> ())
+  | "br" -> ( match lower "clear" with Some ("left" | "right" | "both" as v) -> add "clear" v | Some "all" -> add "clear" "both" | _ -> ())
+  | _ -> ());
+  (* align= on a block's lines (a table's is above: its place) *)
+  (if e.name <> "table" && e.name <> "img" then
+     match lower "align" with Some ("left" | "right" | "center" | "justify" as v) -> add "text-align" v | _ -> ());
+  Buffer.contents b
+
 let cascade ?(visited = fun _ -> false) (m : media) (sheets : sheet list) (root : Dom.element) : Dom.element -> (string * component list) list =
   let index : (string, entry) Hashtbl.t = Hashtbl.create 1024 in
   List.iteri
@@ -177,6 +252,8 @@ let cascade ?(visited = fun _ -> false) (m : media) (sheets : sheet list) (root 
             (fun (d : declaration) -> (((if d.important then en.layer_important else en.layer_normal), en.specificity, en.order), d))
             en.declarations)
         matching
+      (* the attributes' hints: the page's, under all its rules *)
+      @ (match hints ancestors e with "" -> [] | h -> List.map (fun (d : declaration) -> ((1, (0, 0, 0), -1), d)) (parse_declarations h))
       @
       match Dom.attribute "style" e with
       | Some s -> List.map (fun (d : declaration) -> (((if d.important then 2 else 1), (max_int, 0, 0), max_int), d)) (parse_declarations s)

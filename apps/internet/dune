@@ -1,5 +1,6 @@
 ; claude: the internet applications (CATALOG.md's section): TinyIRC,
-; TinyMosaic and TinyNetscape (plan_browser_teaching.md). Laid out like office/: the
+; TinyMosaic and TinyNetscape (plan_browser_teaching.md), TinyFirefox
+; (plan_tiny_firefox.md), TinyChrome (plan_tiny_chrome.md). Laid out like office/: the
 ; programs here, software/ for the golden frames, web/ for the browser.
 ;
 ; What it might contain besides, each Tiny and after a famous original:
@@ -34,7 +35,8 @@
 (rule
  (targets Site_pages.ml)
  (deps site/home.html site/history.html site/form.html site/netscape.html site/css.html
-       site/firefox.html site/counter.html site/todo.html site/timer.html site/tictactoe.html)
+       site/firefox.html site/counter.html site/todo.html site/timer.html site/tictactoe.html
+       site/chrome.html)
  (action
   (with-stdout-to
    %{targets}
@@ -69,6 +71,9 @@
     (echo "|}\n")
     (echo "let tictactoe = {|")
     (cat site/tictactoe.html)
+    (echo "|}\n")
+    (echo "let chrome = {|")
+    (cat site/chrome.html)
     (echo "|}\n")))))
 
 ; claude: its pictures, bytes that are not text, embedded escaped
@@ -84,8 +89,8 @@
    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml site/picture.gif site/picture.png site/picture.jpg))))
 
 (executables
-  (names TinyMosaic TinyNetscape TinyFirefox)
-  (modules TinyMosaic TinyNetscape TinyFirefox)
+  (names TinyMosaic TinyNetscape TinyFirefox TinyChrome)
+  (modules TinyMosaic TinyNetscape TinyFirefox TinyChrome)
   (libraries
     caps ; the authority to reach the network
     web ; the engine: Hit, Dom, Html_lexer (the views)

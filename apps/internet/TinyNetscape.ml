@@ -119,6 +119,7 @@ let settings (m : model) (tab : Browser_tab.t) : Browser_page.settings =
      * without its style sheets *)
     css = m.css;
     width = page_width;
+    boxes = false;
     breaker = Html_layout.greedy;
     visited = (fun url -> List.mem url tab.visited);
     picture = (fun url -> List.assoc_opt url tab.pictures);

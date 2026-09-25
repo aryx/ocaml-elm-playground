@@ -42,6 +42,13 @@
    here). On a Wikipedia article (5,637 elements, 1,557 rules), the
    cascade went from 0.95 s to 0.54 s.
 
+   **Presentational hints**: the attributes that were style before
+   style sheets -- bgcolor=, width= and height=, align=, valign=,
+   <table border= cellpadding=>, <font color= size=>, <body text=
+   link=>, <br clear=> -- count as the page's declarations of
+   specificity 0, under all its rules (WHATWG HTML, "Rendering"). Hacker
+   News is made of them: <td bgcolor=#ff6600>.
+
    What is given back is the **declared value** of each property, still
    text (Css_syntax's components): Computed makes values of them,
    var() included, since a custom property is inherited like a colour.

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TinyChrome</title>
+<style>
+  /* a page as sites write them now: custom properties, a centred
+     column, boxes with borders and paddings, inline-blocks, a float */
+  :root { --accent: #1a73e8; --ink: #202124; --muted: #5f6368; --line: #dadce0; --gap: 12px }
+  * { box-sizing: border-box }
+  body { margin: 0; background: #f1f3f4; color: var(--ink); font-family: sans-serif }
+  header { background: var(--accent); color: white; padding: var(--gap) calc(2 * var(--gap)) }
+  header h1 { margin: 0; font-size: 26px; font-weight: normal }
+  header p { margin: 4px 0 0; color: #d2e3fc }
+  main { max-width: 760px; margin: 20px auto; padding: 0 var(--gap) }
+  .card { background: white; border: 1px solid var(--line); padding: 16px 20px; margin-bottom: 16px }
+  .card h2 { margin: 0 0 8px; font-size: 19px; color: var(--accent) }
+  .card p { margin: 6px 0; line-height: 1.4 }
+  figure { float: left; margin: 4px 16px 8px 0; padding: 4px; border: 1px solid var(--line); background: #fafafa }
+  figcaption { text-align: center; color: var(--muted); font-size: 12px }
+  .clear { clear: both }
+  a { color: var(--accent); text-decoration: none }
+  .button { display: inline-block; padding: 6px 14px; margin: 4px 6px 4px 0; border: 1px solid var(--accent);
+            background: #e8f0fe; font-weight: bold }
+  .badge { position: relative; top: -6px; background: #fbbc04; color: var(--ink); padding: 0 6px; font-size: 11px }
+  ul.sites { margin: 6px 0; padding-left: 22px }
+  ul.sites li { margin: 3px 0 }
+  .muted { color: var(--muted) }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin: 24px 0 }
+</style>
+</head>
+<body>
+<header>
+  <h1>TinyChrome</h1>
+  <p>A small browser for the real web: CSS's cascade and box model, from scratch.</p>
+</header>
+<main>
+  <div class="card">
+    <h2>The box model <span class="badge">C3</span></h2>
+    <figure><img src="picture.png" width="96" height="96" alt="a picture"><figcaption>float: left</figcaption></figure>
+    <p>Every box on this page is a content box inside its padding, its
+    border and its margin. The column is <code>max-width: 760px</code>
+    with <code>margin: auto</code>: centred, whatever the window. This
+    picture floats, and the lines beside it are shortened until its
+    bottom.</p>
+    <p>The colours are custom properties (<code>var(--accent)</code>),
+    the header's padding a <code>calc()</code>, the buttons below
+    inline-blocks, shrunk to fit their words.</p>
+    <p class="clear"><a class="button" href="about:css">CSS in TinyNetscape</a><a class="button" href="about:netscape">Netscape's extensions</a><a class="button" href="about:home">TinyMosaic's home</a></p>
+  </div>
+
+  <div class="card">
+    <h2>Before style sheets: attributes</h2>
+    <p class="muted">A table as Hacker News still writes it: <code>bgcolor=</code>,
+    <code>width=</code>, <code>cellpadding=</code> -- presentational hints, read as CSS.</p>
+    <table width="100%" cellpadding="3" cellspacing="0" bgcolor="#f6f6ef">
+      <tr><td bgcolor="#ff6600"><b>Tiny News</b> &nbsp; new | past | comments | ask | show</td></tr>
+      <tr><td>1. <a href="about:firefox">A browser that runs the page's own program</a> <span class="muted">(about:firefox)</span></td></tr>
+      <tr><td>2. <a href="about:history">The first browsers, and what they showed</a> <span class="muted">(about:history)</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Sites to try</h2>
+    <p>Type an address in the omnibox above. What should look mostly
+    right, as the plan grows (plan_tiny_chrome.md):</p>
+    <ul class="sites">
+      <li><b>Hacker News</b>: tables and attributes <span class="muted">(C4)</span></li>
+      <li><b>Wikipedia</b>: a long article, its sheets fetched <span class="muted">(C4)</span></li>
+      <li><b>Google</b>, <b>GitHub</b>: flexbox and icons <span class="muted">(C5, C6)</span></li>
+    </ul>
+  </div>
+</main>
+<footer>TinyChrome -- after Google Chrome (2008) -- ocaml-elm-playground</footer>
+</body>
+</html>

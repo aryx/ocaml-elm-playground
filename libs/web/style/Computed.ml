@@ -493,8 +493,20 @@ let compute (m : Cascade.media) ~(root_font_size : float) ~(parent : t) (declare
 
 let user_agent_sheet : Cascade.sheet = { origin = User_agent; rules = parse_stylesheet Ua_sheet.text }
 
-let styles ?visited (m : Cascade.media) (sheets : Cascade.sheet list) (root : Dom.element) : Dom.element -> t =
-  let declared = Cascade.cascade ?visited m (user_agent_sheet :: sheets) root in
+(* quirks mode's rules (WHATWG HTML, "Rendering", tables in quirks
+ * mode): a table does not inherit its surroundings' fonts and
+ * alignment -- pages of the 1990s <center>ed a table, not its text *)
+let quirks_sheet : Cascade.sheet =
+  {
+    origin = User_agent;
+    rules =
+      parse_stylesheet
+        "table { font-weight: initial; font-style: initial; font-size: initial; line-height: initial; white-space: initial; text-align: initial }";
+  }
+
+let styles ?visited ?(quirks = false) (m : Cascade.media) (sheets : Cascade.sheet list) (root : Dom.element) : Dom.element -> t =
+  let ua = if quirks then [ user_agent_sheet; quirks_sheet ] else [ user_agent_sheet ] in
+  let declared = Cascade.cascade ?visited m (ua @ sheets) root in
   let table : (int, Dom.element * t) Hashtbl.t = Hashtbl.create 1024 in
   let root_style = compute m ~root_font_size:16. ~parent:initial (declared root) in
   (* each element's from its parent's, down the tree *)
