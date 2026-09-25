@@ -1,0 +1,55 @@
+<html>
+<head>
+<title>Tic-tac-toe</title>
+<style>
+td      { font-size: 40px; font-family: monospace; background-color: #FFF8E8 }
+#status { text-align: center; color: #E66000 }
+p       { text-align: center }
+</style>
+</head>
+<body>
+<h1>Tic-tac-toe</h1>
+<center>
+<table id=board border=2 cellpadding=12>
+<tr><td id=c0>.</td><td id=c1>.</td><td id=c2>.</td></tr>
+<tr><td id=c3>.</td><td id=c4>.</td><td id=c5>.</td></tr>
+<tr><td id=c6>.</td><td id=c7>.</td><td id=c8>.</td></tr>
+</table>
+</center>
+<p id=status>X to play</p>
+<p><input type=button id=again value="Play again">
+<p>One handler, on the table, answers every cell: a click bubbles up
+from the cell it fell on, and event.target says which ("event
+delegation").
+<script>
+const lines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+let player = "X", over = false;
+function cell(i) { return document.getElementById("c" + i) }
+function say(s) { document.getElementById("status").textContent = s }
+function winner() {
+  for (const l of lines) {
+    const a = cell(l[0]).textContent;
+    if (a !== "." && a === cell(l[1]).textContent && a === cell(l[2]).textContent) return a;
+  }
+  return null;
+}
+document.getElementById("board").addEventListener("click", e => {
+  const td = e.target;
+  if (over || td.tagName !== "TD" || td.textContent !== ".") return;
+  td.textContent = player;
+  let full = true;
+  for (let i = 0; i < 9; i++) if (cell(i).textContent === ".") full = false;
+  const w = winner();
+  if (w) { over = true; say(w + " wins!") }
+  else if (full) { over = true; say("A draw") }
+  else { player = player === "X" ? "O" : "X"; say(player + " to play") }
+});
+document.getElementById("again").onclick = () => {
+  for (let i = 0; i < 9; i++) cell(i).textContent = ".";
+  player = "X";
+  over = false;
+  say("X to play");
+};
+</script>
+</body>
+</html>

@@ -430,10 +430,18 @@ The browser adds to TinyNetscape's engine (extensions, tables, CSS1,
 all on) the scripts, and a panel after Firebug (2006): the **console**
 (what `console.log` printed, each error with its line) and the **live
 tree** (the page's tree as the scripts leave it, updated after each
-task). Its built-in pages are the classic first programs of the web:
-a counter (a click, a number changed), a to-do list (an item added, a
-class toggled, CSS crossing it out), a clock (`setInterval`), and
+task), with a command line under the console: JavaScript typed into
+the page's own world, its value or its error printed. Its built-in
+pages are the classic first programs of the web: a counter (a click, a
+number changed, three ways to listen), a to-do list (an item added, a
+class toggled, CSS crossing it out), a stopwatch (`setInterval`), and
 tic-tac-toe in a table (event delegation: one handler on the table).
+
+Its page, its history and its pictures are a **tab** (`Browser_tab`),
+the same as TinyNetscape's, taken out of it when a third browser needed
+them: a Firefox tab is that and the page's script world. The page's
+clock is the **frame clock**, a sixtieth of a second a frame, so that
+the same frames see the same timers fire -- in a golden frame too.
 
 ## 12. What the real engines add
 

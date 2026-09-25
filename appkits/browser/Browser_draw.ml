@@ -222,7 +222,7 @@ let control_shapes ~(value : Dom.element -> Forms.value) ~(focused : bool) (f : 
           let center = (f.x +. (w /. 2.), -.(top +. (h /. 2.))) in
           let diamond color side = rectangle color side side |> rotate 45. |> move (fst center) (snd center) in
           [ diamond (rgb 120 120 120) (w *. 0.72); diamond (if v.checked then rgb 60 60 60 else rgb 225 225 225) (w *. 0.5) ]
-      | Submit | Reset ->
+      | Submit | Reset | Button ->
           let label = Forms.label control in
           raised f.x top w h @ text_shapes f.look label ~x:(f.x +. ((w -. metrics f.look label) /. 2.)) ~baseline:f.baseline
       | Select opts ->

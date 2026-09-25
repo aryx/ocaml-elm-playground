@@ -1,0 +1,44 @@
+<html>
+<head>
+<title>Things to do</title>
+<style>
+.done { text-decoration: line-through; color: #909090 }
+#left { color: #E66000 }
+</style>
+</head>
+<body>
+<h1>Things to do</h1>
+<p><input type=text id=item size=30> <input type=button id=add value="Add">
+<ul id=list>
+<li>Read the tutorial
+<li class=done>Write a browser
+<li>Write a JavaScript engine
+</ul>
+<p id=left></p>
+<p>Type a thing to do and press Add. Click an item to cross it out: its
+class= changes, and a rule of the page's style sheet does the rest.
+<script>
+const list = document.getElementById("list");
+function count() {
+  let n = 0;
+  for (const li of list.children) if (li.className !== "done") n++;
+  document.getElementById("left").textContent = n + " left to do";
+}
+document.getElementById("add").addEventListener("click", () => {
+  const field = document.getElementById("item");
+  if (field.value.trim() === "") return;
+  const li = document.createElement("li");
+  li.textContent = field.value;
+  list.appendChild(li);
+  field.value = "";
+  count();
+});
+list.addEventListener("click", e => {
+  if (e.target.tagName !== "LI") return;
+  e.target.className = e.target.className === "done" ? "" : "done";
+  count();
+});
+count();
+</script>
+</body>
+</html>

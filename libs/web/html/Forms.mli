@@ -50,6 +50,7 @@ type kind =
   | Radio
   | Submit
   | Reset
+  | Button (* type=button: nothing sent, a click for the page's scripts (HTML 4, Netscape 2) *)
   | Hidden
   | Select of (string * string) list (* each option's label and value *)
   | Textarea

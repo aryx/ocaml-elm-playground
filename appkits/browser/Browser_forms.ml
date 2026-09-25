@@ -61,7 +61,8 @@ let click (p : Browser_page.t) (e : Dom.element) : effect =
                   values = List.filter (fun (e', _) -> not (List.exists (fun (c : Forms.control) -> c.element == e') f.controls)) p.values;
                 }
           | None -> Nothing)
-      | Hidden -> Nothing)
+      (* a script's business: Browser_script.click *)
+      | Button | Hidden -> Nothing)
 
 let key (p : Browser_page.t) (e : Dom.element) (key : string) : effect =
   let v = value_of p e in

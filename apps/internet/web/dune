@@ -17,8 +17,8 @@
 )
 
 (executables
-  (names TinyMosaic TinyNetscape)
-  (modules TinyMosaic TinyNetscape)
+  (names TinyMosaic TinyNetscape TinyFirefox)
+  (modules TinyMosaic TinyNetscape TinyFirefox)
   (libraries
     caps
     web

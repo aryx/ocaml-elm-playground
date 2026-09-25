@@ -58,9 +58,10 @@
  * has them all; TinyMosaic shows the same page without them.
  *
  * Uses: the appkit appkits/browser (a page read, laid out, drawn; the
- * history; forms), shared with TinyMosaic, as the built-in site is
- * (Site); web's Hit; Playground.Http. Its own: the model, the chrome,
- * the fetching four at a time.
+ * history; forms; the tab, Browser_tab: the page, its history, its
+ * pictures four at a time -- shared with TinyFirefox), and with
+ * TinyMosaic the built-in site (Site); web's Hit; Playground.Http. Its
+ * own: the chrome, and Netscape's settings.
  *
  * Exercises: the page itself drawn as its bytes arrive (Http_request
  * giving its body in pieces, the tokenizer and the tree fed as they
@@ -74,28 +75,14 @@ open Playground
 (*****************************************************************************)
 
 type page = Browser_page.t
-type state = Loading of string | Shown of page
-type view = Page | Source
-type entry = { at : string; kept : page option; scrolled_to : int }
 
 type model = {
-  state : state;
-  view : view;
-  scroll : int; (* the first line shown, 14 of the page's units *)
-  history : entry Browser_history.t;
-  visited : string list;
-  fragment : string option;
-  pictures : (string * Browser_picture.t) list; (* by URL, every page's: a cache *)
-  queue : string list; (* the page's pictures still to fetch *)
-  in_flight : string list; (* on their way: four at most *)
-  total : int; (* the page's pictures to fetch, for the progress *)
-  images : bool; (* Auto Load Images *)
+  tab : Browser_tab.t; (* the page, its history, its pictures: Browser_tab *)
   css : bool; (* the pages' style sheets honoured (N5) *)
-  location : string; (* the Location field *)
+  location : string; (* the Location field's text, while it is typed into *)
   editing : bool; (* typing into it *)
   fresh : bool; (* just clicked: what is there is selected, typing replaces it *)
   mouse : float * float;
-  focus : Dom.element option; (* a form's field typed into *)
   time : float; (* the meteors' *)
 }
 
@@ -116,16 +103,15 @@ let resolve = Browser_url.resolve
 let split_fragment = Browser_url.split_fragment
 let starts_with = Browser_url.starts_with
 
-(* Netscape's four connections at once *)
-let connections = 4
-
 (*****************************************************************************)
-(* Reading a page *)
+(* The tab: Netscape's settings *)
 (*****************************************************************************)
 
 let page_width = 976.
+let visible = 56
+let line_height = 14.
 
-let settings (m : model) : Browser_page.settings =
+let settings (m : model) (tab : Browser_tab.t) : Browser_page.settings =
   {
     (* claude: Netscape's own extensions to HTML (N3) *)
     extensions = true;
@@ -134,164 +120,36 @@ let settings (m : model) : Browser_page.settings =
     css = m.css;
     width = page_width;
     breaker = Html_layout.greedy;
-    visited = (fun url -> List.mem url m.visited);
-    picture = (fun url -> List.assoc_opt url m.pictures);
+    visited = (fun url -> List.mem url tab.visited);
+    picture = (fun url -> List.assoc_opt url tab.pictures);
   }
 
-let page_of (m : model) (url : string) (status : int) (content_type : string option) (bytes : string) : page =
-  Browser_page.read (settings m) url status content_type bytes
+(* Netscape's four connections at once; no scripts (Netscape 2's, 1995,
+ * are TinyFirefox's) *)
+let config (m : model) : msg Browser_tab.config =
+  {
+    settings = settings m;
+    about = Site.about;
+    got = (fun url r -> Got (url, r));
+    got_picture = (fun url r -> Got_picture (url, r));
+    connections = 4;
+    visible;
+    line_height;
+    scripts = false;
+    seed = 1;
+  }
 
-let laid_out (m : model) (p : page) : page = Browser_page.laid_out (settings m) p
-
-(*****************************************************************************)
-(* Scrolling *)
-(*****************************************************************************)
-
-let visible = 56
-let line_height = 14.
-
-let line_count (m : model) : int =
-  match (m.state, m.view) with
-  | Shown p, Page -> int_of_float (Float.ceil (p.layout.height /. line_height))
-  | Shown p, Source -> List.length p.lines
-  | _ -> 0
-
-let scrolled (by : int) (m : model) : model =
-  { m with scroll = max 0 (min (line_count m - visible) (m.scroll + by)) }
-
-let to_fragment (m : model) : model =
-  match (m.state, m.fragment) with
-  | Shown p, Some name -> (
-      let m = { m with fragment = None } in
-      match Hit.anchor p.layout name with
-      | Some y -> scrolled 0 { m with scroll = int_of_float (y /. line_height) }
-      | None -> m)
-  | _ -> m
-
-(*****************************************************************************)
-(* Fetching: pictures four at a time *)
-(*****************************************************************************)
-
-let current_url (m : model) : string = match m.state with Loading url -> url | Shown p -> p.url
-
-(* a page shown: the Location field says where it is *)
-let shown (m : model) (p : page) : model =
-  { m with state = Shown p; location = (if m.editing then m.location else p.url) }
-
-let failed (m : model) (url : string) (why : string) : model =
-  shown m (page_of m url 0 None (Browser_page.error_html url why))
-
-(* a picture had (or not): the page laid out again with it *)
-let with_arrived (m : model) (url : string) (pic : Browser_picture.t) : model =
-  let m = { m with pictures = (url, pic) :: List.remove_assoc url m.pictures } in
-  match m.state with Shown p -> { m with state = Shown (laid_out m p) } | Loading _ -> m
-
-(* more pictures on their way, while fewer than four are: Netscape's
- * way, where Mosaic had one; a built-in one decoded at once *)
-let rec fetch_more (network : < Cap.network ; .. >) ((m, cmd) : model * msg Cmd.t) : model * msg Cmd.t =
-  match m.queue with
-  | url :: rest when List.length m.in_flight < connections ->
-      let m = { m with queue = rest } in
-      if starts_with "about:" url then
-        let pic =
-          match Site.about (String.sub url 6 (String.length url - 6)) with
-          | Some (bytes, _) -> Browser_picture.decode bytes
-          | None -> Browser_picture.Broken
-        in
-        fetch_more network (with_arrived m url pic, cmd)
-      else
-        let get = Http.get network ~url ~expect:(Http.expect_response (fun r -> Got_picture (url, r))) in
-        fetch_more network ({ m with in_flight = url :: m.in_flight }, Cmd.batch [ cmd; get ])
-  | _ -> (m, cmd)
-
-(* a page shown: its pictures not had yet queued (if Auto Load Images),
- * the ones of the page before dropped *)
-let with_pictures (network : < Cap.network ; .. >) ((m, cmd) : model * msg Cmd.t) : model * msg Cmd.t =
-  match m.state with
-  | Loading _ -> (m, cmd)
-  | Shown p ->
-      let had url = match List.assoc_opt url m.pictures with Some (Arrived _ | Broken) -> true | _ -> false in
-      let urls =
-        Dom.find_all "img" p.tree
-        |> List.filter_map (fun e -> Option.map (resolve p.url) (Dom.attribute "src" e))
-        |> List.fold_left (fun acc u -> if List.mem u acc || had u || List.mem u m.in_flight then acc else acc @ [ u ]) []
-      in
-      if not m.images then ({ m with queue = []; total = 0 }, cmd)
-      else fetch_more network ({ m with queue = urls; total = List.length urls + List.length m.in_flight }, cmd)
-
-(*****************************************************************************)
-(* Going places *)
-(*****************************************************************************)
-
-let load ?post (network : < Cap.network ; .. >) (url : string) (m : model) : model * msg Cmd.t =
-  let m = { m with scroll = 0; focus = None; queue = []; total = 0 } in
-  if starts_with "about:" url then
-    let name, query = Browser_url.split_query (String.sub url 6 (String.length url - 6)) in
-    let show bytes content_type =
-      with_pictures network (to_fragment (shown m (page_of m url 200 (Some content_type) bytes)), Cmd.none)
-    in
-    match (name, post) with
-    | "echo", Some (_, body) -> show (Browser_page.echo_html "POST" body) "text/html; charset=utf-8"
-    | "echo", None -> show (Browser_page.echo_html "GET" (Option.value query ~default:"")) "text/html; charset=utf-8"
-    | _ -> (
-        match Site.about name with
-        | Some (bytes, content_type) -> show bytes content_type
-        | None -> (failed m url "There is no such page in the built-in site.", Cmd.none))
-  else
-    let expect = Http.expect_response (fun r -> Got (url, r)) in
-    let m = { m with state = Loading url; location = (if m.editing then m.location else url) } in
-    match post with
-    | None -> (m, Http.get network ~url ~expect)
-    | Some (content_type, body) -> (m, Http.post network ~url ~content_type ~body ~expect)
-
-let entry_of (m : model) : entry =
-  match m.state with
-  | Shown p -> { at = p.url; kept = Some p; scrolled_to = m.scroll }
-  | Loading url -> { at = url; kept = None; scrolled_to = 0 }
-
-let visit ?post (network : < Cap.network ; .. >) (url : string) (m : model) : model * msg Cmd.t =
-  let target, fragment = split_fragment url in
-  let m =
-    {
-      m with
-      history = Browser_history.visit (entry_of m) m.history;
-      visited = (if List.mem target m.visited then m.visited else target :: m.visited);
-      fragment;
-      editing = false;
-    }
-  in
-  match m.state with
-  | Shown p when post = None && fragment <> None && target = fst (split_fragment p.url) ->
-      (to_fragment { m with state = Shown (laid_out m p) }, Cmd.none)
-  | _ -> load ?post network target m
-
-let restore (network : < Cap.network ; .. >) (e : entry) (m : model) : model * msg Cmd.t =
-  match e.kept with
-  | Some p -> with_pictures network (scrolled 0 { (shown m (laid_out m p)) with scroll = e.scrolled_to }, Cmd.none)
-  | None -> load network e.at m
-
-let go_back network m =
-  match Browser_history.back (entry_of m) m.history with Some (e, history) -> restore network e { m with history } | None -> (m, Cmd.none)
-
-let go_forward network m =
-  match Browser_history.forward (entry_of m) m.history with
-  | Some (e, history) -> restore network e { m with history }
-  | None -> (m, Cmd.none)
+let with_tab (m : model) ((tab, cmd) : Browser_tab.t * msg Cmd.t) : model * msg Cmd.t = ({ m with tab }, cmd)
+let current_url (m : model) : string = Browser_tab.current_url m.tab
+let scrolled (by : int) (m : model) : model = { m with tab = Browser_tab.scrolled (config m) by m.tab }
+let visit network url m = with_tab { m with editing = false } (Browser_tab.visit (config m) network url m.tab)
+let load network url m = with_tab m (Browser_tab.load (config m) network url m.tab)
 
 (* what was typed into the Location field, as a URL: one with no
  * scheme is taken for a site's name, as Netscape did ("info.cern.ch") *)
 let typed_url (s : string) : string =
   let s = String.trim s in
   if String.contains s ':' then s else "http://" ^ s
-
-let form_effect (network : < Cap.network ; .. >) ~(keep_focus : bool) (effect : Browser_forms.effect) (m : model) :
-    model * msg Cmd.t =
-  match effect with
-  | Nothing -> (m, Cmd.none)
-  | Focus e -> ({ m with focus = Some e; editing = false }, Cmd.none)
-  | Unfocus -> ({ m with focus = None }, Cmd.none)
-  | Changed p -> ({ m with state = Shown p; focus = (if keep_focus then m.focus else None) }, Cmd.none)
-  | Submit { url; post; page } -> visit ?post network url { m with state = Shown page; focus = None }
 
 (*****************************************************************************)
 (* The pointer *)
@@ -304,24 +162,25 @@ let area_height = 792.
 
 let page_point (m : model) : (float * float) option =
   let mx, my = m.mouse in
-  if m.view = Page && my <= area_top && my >= area_top -. area_height then
-    Some (mx -. area_left, area_top -. my +. (float_of_int m.scroll *. line_height))
+  if m.tab.view = Page && my <= area_top && my >= area_top -. area_height then
+    Some (mx -. area_left, area_top -. my +. (float_of_int m.tab.scroll *. line_height))
   else None
 
 let hovered (m : model) : string option =
-  match (m.state, page_point m) with Shown p, Some (x, y) -> Hit.link_at p.layout ~x ~y | _ -> None
+  match (m.tab.state, page_point m) with Shown p, Some (x, y) -> Hit.link_at p.layout ~x ~y | _ -> None
 
 let pointed_control (m : model) : Dom.element option =
-  match (m.state, page_point m) with
+  match (m.tab.state, page_point m) with
   | Shown p, Some (x, y) -> (
       match Hit.fragment_at p.layout ~x ~y with Some { control = Some c; _ } -> Some c.element | _ -> None)
   | _ -> None
 
+let loading (m : model) : bool = (match m.tab.state with Loading _ -> true | Shown _ -> false) || m.tab.in_flight <> [] || m.tab.queue <> []
+
 (* the toolbar: its buttons, whether each does something now *)
 let buttons (m : model) : (string * bool) list =
-  let loading = (match m.state with Loading _ -> true | Shown _ -> false) || m.in_flight <> [] || m.queue <> [] in
-  [ ("Back", m.history.behind <> []); ("Forward", m.history.ahead <> []); ("Home", true); ("Reload", true);
-    ("Images", not m.images); ("Open", true); ("Print", false); ("Find", false); ("Stop", loading) ]
+  [ ("Back", m.tab.history.behind <> []); ("Forward", m.tab.history.ahead <> []); ("Home", true); ("Reload", true);
+    ("Images", not m.tab.images); ("Open", true); ("Print", false); ("Find", false); ("Stop", loading m) ]
 
 let toolbar_y = 416.
 let button_w = 70.
@@ -348,84 +207,63 @@ let on_location (m : model) : bool =
 
 let init (network : < Cap.network ; .. >) (flags : flags) : model * msg Cmd.t =
   let target, fragment = split_fragment (Option.value (List.assoc_opt "url" flags) ~default:home) in
-  load network target
-    {
-      state = Loading target;
-      view = Page;
-      scroll = 0;
-      history = Browser_history.empty;
-      visited = [ target ];
-      fragment;
-      pictures = [];
-      queue = [];
-      in_flight = [];
-      total = 0;
-      images = List.assoc_opt "images" flags <> Some "off";
-      css = List.assoc_opt "css" flags <> Some "off";
-      location = target;
-      editing = false;
-      fresh = false;
-      mouse = (0., 0.);
-      focus = None;
-      time = 0.;
-    }
+  let tab = { (Browser_tab.empty ~images:(List.assoc_opt "images" flags <> Some "off")) with visited = [ target ]; fragment } in
+  let m =
+    { tab; css = List.assoc_opt "css" flags <> Some "off"; location = target; editing = false; fresh = false; mouse = (0., 0.); time = 0. }
+  in
+  load network target m
 
 (* a key while the Location field is typed into *)
 let edit_location (network : < Cap.network ; .. >) (key : string) (m : model) : model * msg Cmd.t =
   match key with
-  | "enter" | "return" -> visit network (typed_url m.location) { m with editing = false }
-  | "escape" -> ({ m with editing = false; location = current_url m }, Cmd.none)
+  | "enter" | "return" -> visit network (typed_url m.location) m
+  | "escape" -> ({ m with editing = false }, Cmd.none)
   | "backspace" ->
       let cs = characters m.location in
       let location = if m.fresh then "" else String.concat "" (List.filteri (fun i _ -> i < List.length cs - 1) cs) in
       ({ m with location; fresh = false }, Cmd.none)
   | _ -> (m, Cmd.none)
 
+(* the Location field clicked: what is there selected, to be typed over *)
+let start_editing (m : model) : model = { m with editing = true; fresh = true; location = current_url m }
+
+let form (network : < Cap.network ; .. >) ~(keep_focus : bool) (effect : Browser_forms.effect) (m : model) : model * msg Cmd.t =
+  with_tab m (Browser_tab.form_effect (config m) network ~keep_focus effect m.tab)
+
 let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * msg Cmd.t =
+  let cfg = config m in
   match msg with
-  | Got (_, Ok r) ->
-      let content_type =
-        List.find_map (fun (name, value) -> if String.lowercase_ascii name = "content-type" then Some value else None) r.headers
-      in
-      with_pictures network (to_fragment (shown m (page_of m r.url r.status content_type r.body)), Cmd.none)
-  | Got (url, Error e) -> (failed m url (String.capitalize_ascii (Http.error_to_string e) ^ "."), Cmd.none)
-  | Got_picture (url, result) when List.mem url m.in_flight ->
-      let pic = match result with Ok r when r.status / 100 = 2 -> Browser_picture.decode r.body | _ -> Browser_picture.Broken in
-      fetch_more network (with_arrived { m with in_flight = List.filter (( <> ) url) m.in_flight } url pic, Cmd.none)
-  (* one Stop said not to wait for *)
-  | Got_picture _ -> (m, Cmd.none)
+  | Got (url, r) -> with_tab m (Browser_tab.got cfg network url r m.tab)
+  | Got_picture (url, r) -> with_tab m (Browser_tab.got_picture cfg network url r m.tab)
   | Tick time -> ({ m with time }, Cmd.none)
   | Wheel notches -> (scrolled (3 * int_of_float (Float.round notches)) m, Cmd.none)
   | Mouse_move (x, y) -> ({ m with mouse = (x, y) }, Cmd.none)
   | Click -> (
-      if on_location m then ({ m with editing = true; fresh = true; focus = None }, Cmd.none)
+      if on_location m then (start_editing { m with tab = { m.tab with focus = None } }, Cmd.none)
       else
-        let m = { m with editing = false; location = (if m.editing then current_url m else m.location) } in
-        match (button_at m, pointed_control m, hovered m, m.state) with
-        | Some "Back", _, _, _ -> go_back network m
-        | Some "Forward", _, _, _ -> go_forward network m
+        let m = { m with editing = false } in
+        match (button_at m, pointed_control m, hovered m, m.tab.state) with
+        | Some "Back", _, _, _ -> with_tab m (Browser_tab.back cfg network m.tab)
+        | Some "Forward", _, _, _ -> with_tab m (Browser_tab.forward cfg network m.tab)
         | Some "Home", _, _, _ -> visit network home m
         | Some "Reload", _, _, _ -> load network (current_url m) m
-        | Some "Images", _, _, _ -> with_pictures network ({ m with images = true }, Cmd.none)
-        | Some "Open", _, _, _ -> ({ m with editing = true; fresh = true }, Cmd.none)
-        | Some "Stop", _, _, _ ->
-            (* not waiting any more: the pictures on their way forgotten *)
-            let m = match m.state with Loading _ -> { m with state = Shown (page_of m (current_url m) 0 None (Browser_page.error_html (current_url m) "Stopped.")) } | Shown _ -> m in
-            ({ m with queue = []; in_flight = []; total = 0 }, Cmd.none)
-        | _, Some e, _, Shown p -> form_effect network ~keep_focus:false (Browser_forms.click p e) m
+        | Some "Images", _, _, _ -> with_tab m (Browser_tab.load_images cfg network m.tab)
+        | Some "Open", _, _, _ -> (start_editing m, Cmd.none)
+        | Some "Stop", _, _, _ -> ({ m with tab = Browser_tab.stop cfg m.tab }, Cmd.none)
+        | _, Some e, _, Shown p -> form network ~keep_focus:false (Browser_forms.click p e) m
         | _, _, Some href, Shown p -> visit network (resolve p.url href) m
-        | _ -> ({ m with focus = None }, Cmd.none))
+        | _ -> ({ m with tab = { m.tab with focus = None } }, Cmd.none))
   (* the Location field typed into *)
   | Typed s when m.editing -> ({ m with location = (if m.fresh then s else m.location ^ s); fresh = false }, Cmd.none)
   | Key key when m.editing -> edit_location network (String.lowercase_ascii key) m
   (* a form's field *)
-  | Typed s when m.focus <> None -> (
-      match (m.state, m.focus) with
-      | Shown p, Some e -> ({ m with state = Shown (Browser_forms.typed p e s) }, Cmd.none)
+  | Typed s when m.tab.focus <> None -> (
+      match (m.tab.state, m.tab.focus) with
+      | Shown p, Some e -> form network ~keep_focus:true (Changed (Browser_forms.typed p e s)) m
       | _ -> (m, Cmd.none))
-  | Key key when m.focus <> None && not (List.mem (String.lowercase_ascii key) [ "arrowdown"; "arrowup"; "pagedown"; "pageup" ]) -> (
-      match (m.state, m.focus) with
-      | Shown p, Some e -> form_effect network ~keep_focus:true (Browser_forms.key p e (String.lowercase_ascii key)) m
+  | Key key when m.tab.focus <> None && not (List.mem (String.lowercase_ascii key) [ "arrowdown"; "arrowup"; "pagedown"; "pageup" ]) -> (
+      match (m.tab.state, m.tab.focus) with
+      | Shown p, Some e -> form network ~keep_focus:true (Browser_forms.key p e (String.lowercase_ascii key)) m
       | _ -> (m, Cmd.none))
   | Typed _ -> (m, Cmd.none)
   | Key key -> (
@@ -434,17 +272,17 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
       | "arrowup" | "up" -> (scrolled (-1) m, Cmd.none)
       | "pagedown" | " " | "space" -> (scrolled (visible - 2) m, Cmd.none)
       | "pageup" -> (scrolled (-(visible - 2)) m, Cmd.none)
-      | "b" | "backspace" -> go_back network m
-      | "f" -> go_forward network m
+      | "b" | "backspace" -> with_tab m (Browser_tab.back cfg network m.tab)
+      | "f" -> with_tab m (Browser_tab.forward cfg network m.tab)
       | "r" -> load network (current_url m) m
       | "h" -> visit network home m
-      | "s" -> ({ m with view = Source; scroll = 0 }, Cmd.none)
-      | "p" -> ({ m with view = Page; scroll = 0 }, Cmd.none)
-      | "c" -> (
+      | "s" -> ({ m with tab = { m.tab with view = Source; scroll = 0 } }, Cmd.none)
+      | "p" -> ({ m with tab = { m.tab with view = Page; scroll = 0 } }, Cmd.none)
+      | "c" ->
           (* claude: the style sheets off, or on again: the same tree
            * laid out again *)
           let m = { m with css = not m.css } in
-          match m.state with Shown p -> ({ m with state = Shown (laid_out m p) }, Cmd.none) | Loading _ -> (m, Cmd.none))
+          ({ m with tab = Browser_tab.relaid (config m) m.tab }, Cmd.none)
       | _ -> (m, Cmd.none))
 
 (*****************************************************************************)
@@ -499,7 +337,7 @@ let toolbar (m : model) : shape list =
 
 (* the "N", its meteors streaming across while something loads *)
 let logo (m : model) : shape list =
-  let loading = (match m.state with Loading _ -> true | Shown _ -> false) || m.in_flight <> [] in
+  let loading = (match m.tab.state with Loading _ -> true | Shown _ -> false) || m.tab.in_flight <> [] in
   let x, y = (452., 394.) in
   let n = { Browser_text.root_look with size = 48.; bold = true; color = (255, 255, 255) } in
   let meteors =
@@ -525,22 +363,24 @@ let key (m : model) (x : number) (y : number) : shape list =
 
 (* the status line: the link under the pointer, else how far it is *)
 let status (m : model) : string =
-  match (m.state, hovered m) with
+  let tab = m.tab in
+  match (tab.state, hovered m) with
   | Shown p, Some href -> resolve p.url href
   | Loading url, _ -> "Connect: Contacting host: " ^ url
-  | Shown _, None when m.in_flight <> [] || m.queue <> [] ->
-      Printf.sprintf "Transferring pictures: %d of %d" (m.total - List.length m.queue - List.length m.in_flight) m.total
+  | Shown _, None when tab.in_flight <> [] || tab.queue <> [] ->
+      Printf.sprintf "Transferring pictures: %d of %d" (tab.total - List.length tab.queue - List.length tab.in_flight) tab.total
   | Shown p, None when p.status = 0 -> "Failed: " ^ p.url
   | Shown _, None -> "Document: Done."
 
 let progress (m : model) : float option =
-  if m.total > 0 && (m.in_flight <> [] || m.queue <> []) then
-    Some (float_of_int (m.total - List.length m.queue - List.length m.in_flight) /. float_of_int m.total)
+  let tab = m.tab in
+  if tab.total > 0 && (tab.in_flight <> [] || tab.queue <> []) then
+    Some (float_of_int (tab.total - List.length tab.queue - List.length tab.in_flight) /. float_of_int tab.total)
   else None
 
 let page_shapes (m : model) (p : page) : shape list =
-  let scroll = float_of_int m.scroll *. line_height in
-  (p.drawn @ Browser_draw.controls_drawn ~value:(Browser_page.value_of p) ~focus:m.focus p.layout)
+  let scroll = float_of_int m.tab.scroll *. line_height in
+  (p.drawn @ Browser_draw.controls_drawn ~value:(Browser_page.value_of p) ~focus:m.tab.focus p.layout)
   |> List.filter (fun (top, bottom, _) -> bottom > scroll && top < scroll +. area_height)
   |> List.map (fun (_, _, s) -> s)
   |> group
@@ -549,19 +389,19 @@ let page_shapes (m : model) (p : page) : shape list =
 
 let view (m : model) : shape list =
   let body =
-    match (m.state, m.view) with
+    match (m.tab.state, m.tab.view) with
     | Shown p, Page -> page_shapes m p
     | Shown p, Source ->
-        List.filteri (fun i _ -> i >= m.scroll && i < m.scroll + visible) p.lines
+        List.filteri (fun i _ -> i >= m.tab.scroll && i < m.tab.scroll + visible) p.lines
         |> List.mapi (fun i line -> monospace (-480.) (area_top -. 12. -. (14. *. float_of_int i)) ink line)
         |> List.concat
     | Loading _, _ -> []
   in
-  let title = match m.state with Shown p when p.title <> "" -> "Netscape - [" ^ p.title ^ "]" | _ -> "Netscape" in
-  let location = if m.editing then m.location ^ "_" else m.location in
+  let title = match m.tab.state with Shown p when p.title <> "" -> "Netscape - [" ^ p.title ^ "]" | _ -> "Netscape" in
+  let location = if m.editing then m.location ^ "_" else current_url m in
   (* claude: the page's own background, <body bgcolor> (Netscape 1.1) *)
   let background =
-    match (m.state, m.view) with Shown { background = Some (r, g, b); _ }, Page -> rgb r g b | _ -> grey
+    match (m.tab.state, m.tab.view) with Shown { background = Some (r, g, b); _ }, Page -> rgb r g b | _ -> grey
   in
   [ rectangle grey 1000. 1000. ]
   (* the page, sunken, drawn first: the chrome covers what overflows *)

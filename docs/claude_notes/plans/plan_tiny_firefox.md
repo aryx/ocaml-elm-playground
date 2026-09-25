@@ -283,6 +283,29 @@ after an extraction.
   module: nothing more was needed). Tests: 6 more (bubbling,
   stop and prevent, delegation to a table, keys and input, timers,
   alert), and `Hit.element_at`'s.
+- **J5 done** (2026-09-25): TinyFirefox. First, TinyNetscape's
+  navigation taken out into `appkits/browser/Browser_tab` (the author's
+  choice over a copy): a tab's page, scroll, history, pictures (so many
+  at a time), focus, and -- when the browser runs scripts -- its
+  `Browser_script`; what varies a `config` (the looks, the messages,
+  the built-in site, the page area, scripts or not). TinyNetscape over
+  it, 136 lines shorter, its frames unchanged. `Browser_page.with_tree`
+  (a page laid out from the tree a script left). `Forms`' `Button`
+  (`<input type=button>`: drawn, nothing sent, a click for the
+  scripts). `apps/internet/TinyFirefox.ml`: Firefox 1.0's window (the
+  toolbar's five buttons, the location bar, the throbber turning while
+  loading), the page with its scripts (a click to the script first,
+  then, unless prevented, to the form or the link; a key to the page
+  first, then scrolling), the panel after Firebug (the console with its
+  command line, the live tree without the scripts), `alert`'s dialog,
+  the page's clock the frame clock. Its site: `about:firefox`, and the
+  programs `about:counter`, `about:todo`, `about:timer`,
+  `about:tictactoe`. Golden frames: the home page and each program
+  after its clicks, the console's command line (a value, an error, an
+  alert); the web build tried in a real browser (headless Chrome: the
+  page's script ran, in our interpreter compiled to JavaScript).
+  Exercises in its header: tabs, the search box, View Source, the tree
+  scrolled and an element picked, the command line's history.
 
 ## Decisions
 

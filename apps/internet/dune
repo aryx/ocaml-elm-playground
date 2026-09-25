@@ -33,7 +33,8 @@
 
 (rule
  (targets Site_pages.ml)
- (deps site/home.html site/history.html site/form.html site/netscape.html site/css.html)
+ (deps site/home.html site/history.html site/form.html site/netscape.html site/css.html
+       site/firefox.html site/counter.html site/todo.html site/timer.html site/tictactoe.html)
  (action
   (with-stdout-to
    %{targets}
@@ -53,6 +54,21 @@
     (echo "|}\n")
     (echo "let css = {|")
     (cat site/css.html)
+    (echo "|}\n")
+    (echo "let firefox = {|")
+    (cat site/firefox.html)
+    (echo "|}\n")
+    (echo "let counter = {|")
+    (cat site/counter.html)
+    (echo "|}\n")
+    (echo "let todo = {|")
+    (cat site/todo.html)
+    (echo "|}\n")
+    (echo "let timer = {|")
+    (cat site/timer.html)
+    (echo "|}\n")
+    (echo "let tictactoe = {|")
+    (cat site/tictactoe.html)
     (echo "|}\n")))))
 
 ; claude: its pictures, bytes that are not text, embedded escaped
@@ -68,8 +84,8 @@
    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml site/picture.gif site/picture.png site/picture.jpg))))
 
 (executables
-  (names TinyMosaic TinyNetscape)
-  (modules TinyMosaic TinyNetscape)
+  (names TinyMosaic TinyNetscape TinyFirefox)
+  (modules TinyMosaic TinyNetscape TinyFirefox)
   (libraries
     caps ; the authority to reach the network
     web ; the engine: Hit, Dom, Html_lexer (the views)

@@ -532,4 +532,5 @@ let take_alerts (t : t) : string list =
 
 let changed (t : t) : bool = t.changed
 let console (t : t) : string list = List.rev t.console
+let print (t : t) (line : string) : unit = say t line
 let engine (t : t) : Js_eval.t = t.engine

@@ -1,0 +1,42 @@
+<html>
+<head>
+<title>Welcome to TinyFirefox</title>
+<style>
+body  { background-color: #FFFFFF; color: #202020 }
+h1    { color: #E66000 }
+h2    { color: #1F3F7F }
+.card { background-color: #F4F1EA; margin: 6px 2em }
+</style>
+</head>
+<body>
+<h1>Welcome to TinyFirefox</h1>
+
+<p id=greeting>(if you can read this, the page's script did not run)</p>
+
+<p>Mosaic read pages; Netscape made them look like something; since
+Netscape 2 (1995) a page is also a <b>program</b>, written in
+JavaScript, that the browser runs. The pages below are small programs.
+Click, type, and watch the panel under the page: on the left the
+console, what the scripts say and the mistakes they make; on the right
+the page's tree, as the scripts leave it.
+
+<h2>Pages that do something</h2>
+<ul>
+<li><a href="about:counter">A counter</a>: a click, a number changed -- three ways to listen to a click
+<li><a href="about:todo">A to-do list</a>: elements made by the script, a class toggled, CSS crossing it out
+<li><a href="about:timer">A stopwatch</a>: setInterval, the page changing on its own
+<li><a href="about:tictactoe">Tic-tac-toe</a>: one handler for the whole board
+</ul>
+
+<h2>And the pages of the browsers before</h2>
+<p class=card><a href="about:netscape">Netscape's welcome page</a>,
+<a href="about:css">style sheets</a>, and
+<a href="about:home">TinyMosaic's page</a>.
+
+<script>
+document.getElementById("greeting").textContent =
+  "This paragraph was written by the page's own JavaScript, a moment after the page was read.";
+console.log("Hello from the page's script");
+</script>
+</body>
+</html>

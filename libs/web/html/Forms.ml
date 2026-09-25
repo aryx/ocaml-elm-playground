@@ -10,7 +10,7 @@
 
 (* See Forms.mli *)
 
-type kind = Text | Password | Checkbox | Radio | Submit | Reset | Hidden | Select of (string * string) list | Textarea
+type kind = Text | Password | Checkbox | Radio | Submit | Reset | Button | Hidden | Select of (string * string) list | Textarea
 type value = { text : string; checked : bool; selected : int }
 type control = { element : Dom.element; kind : kind; name : string option; initial : value }
 type form = { action : string; post : bool; controls : control list }
@@ -46,6 +46,7 @@ let control (e : Dom.element) : control option =
         | Some "radio" -> Some Radio
         | Some "submit" -> Some Submit
         | Some "reset" -> Some Reset
+        | Some "button" -> Some Button
         | Some "hidden" -> Some Hidden
         | Some _ -> None
       in
@@ -62,6 +63,7 @@ let label (c : control) : string =
   match (Dom.attribute "value" c.element, c.kind) with
   | Some v, _ -> v
   | None, Reset -> "Reset"
+  | None, Button -> ""
   | None, _ -> "Submit Query"
 
 let rec controls_in (e : Dom.element) : control list =
@@ -96,4 +98,4 @@ let submission (f : form) ~(value : Dom.element -> value) ~(submitter : Dom.elem
                  match List.nth_opt opts v.selected with Some (_, value) -> Some (name, value) | None -> None)
              | Submit -> (
                  match submitter with Some s when s == c.element -> Some (name, v.text) | _ -> None)
-             | Reset -> None))
+             | Reset | Button -> None))

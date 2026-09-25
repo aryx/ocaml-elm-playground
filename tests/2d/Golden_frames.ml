@@ -91,6 +91,10 @@ let scenes : Testutil_golden.scene list =
      * toolbar, its Location field, its status bar and its "N"
      * (plan_browser_teaching.md, TinyNetscape's N0) *)
     ("apps/internet/software/TinyNetscape", "", 5);
+    (* claude: 2004: Firefox's home page, a paragraph its script wrote,
+     * the console saying hello, the page's tree beside it
+     * (plan_tiny_firefox.md, J5) *)
+    ("apps/internet/software/TinyFirefox", "", 5);
     (* 1984: -fixed-time's 1000 seconds after the epoch, in UTC (the
      * offset is 0 under -fixed-time), 12:16:40 AM on the first day of
      * 1970; the six cities at their own offsets *)
@@ -1652,6 +1656,30 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
       10,
       "at(0;372):1-5,click:2,type(about:history):3,return:5",
       [] );
+    (* claude: TinyFirefox's pages that are programs (J5): the counter
+     * clicked three times (its console counting); tic-tac-toe won by X
+     * on a diagonal, one handler for the board; an item typed and
+     * added to the to-do list, another crossed out by its class; the
+     * stopwatch a second after Start, its setInterval on the frame
+     * clock; and the console's command line: a value, an error in
+     * red, an alert's dialog *)
+    ("apps/internet/software/TinyFirefox", "counter", 9, "at(-10;169):1-10,click:2,click:4,click:6", [ "url=about:counter" ]);
+    ( "apps/internet/software/TinyFirefox",
+      "tictactoe",
+      14,
+      "at(-2;206):1-2,click:2,at(-52;280):3-4,click:4,at(48;280):5-6,click:6,at(48;132):7-8,click:8,at(-52;132):9-14,click:10",
+      [ "url=about:tictactoe" ] );
+    ( "apps/internet/software/TinyFirefox",
+      "todo",
+      12,
+      "at(-335;313):1-3,click:2,type(Test the engine):4,at(-152;313):5-7,click:6,at(-370;273):8-12,click:9",
+      [ "url=about:todo" ] );
+    ("apps/internet/software/TinyFirefox", "timer", 62, "at(-42;169):1-5,click:2", [ "url=about:timer" ]);
+    ( "apps/internet/software/TinyFirefox",
+      "console",
+      9,
+      "at(-300;-462):1-8,click:2,type(document.title):3,return:4,type(nope.x):5,return:6,type(alert(\"hi\")):7,return:8",
+      [ "url=about:counter" ] );
     (* the computer's kick landing: sparks bursting, the screen knocked
      * (the same hit as "fight"'s, the same 6 frames of hitstop) *)
     ("games/fighting/software/TinyStreetFighter", "engine", 136, "space:1,d:95-120,f:122,g:135", [ "juice=engine" ]);

@@ -120,6 +120,9 @@ val changed : t -> bool
  * the errors as "Uncaught TypeError: ... (line 3)" *)
 val console : t -> string list
 
+(* a line of the host's in the console: a command line's echo *)
+val print : t -> string -> unit
+
 (* the engine: a console's line typed, the host calling a script's
  * function *)
 val engine : t -> Js_eval.t

@@ -3,7 +3,8 @@
 ; letters, pictures, Motif's controls), its pictures (Browser_picture),
 ; its links (Browser_url), the history's two stacks (Browser_history),
 ; a form's clicks and keys (Browser_forms), the page's scripts and the
-; DOM they see (Browser_script, over libs/languages/javascript). Shared by TinyMosaic and
+; DOM they see (Browser_script, over libs/languages/javascript), and a
+; tab, the page and how it goes elsewhere (Browser_tab). Shared by TinyMosaic and
 ; TinyNetscape (apps/internet/, plan_browser_teaching.md); each keeps
 ; its model, its chrome, and how it fetches.
 (library

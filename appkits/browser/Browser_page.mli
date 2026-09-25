@@ -58,6 +58,11 @@ val read : settings -> string -> int -> string option -> string -> t
 (* the same tree laid out and drawn again: a reflow *)
 val laid_out : settings -> t -> t
 
+(* the page with another tree, laid out and drawn (its title, forms and
+ * line mode too; its source stays): what a script left
+ * (Browser_script.tree) *)
+val with_tree : settings -> t -> Dom.element -> t
+
 (* a control's value now: as typed and clicked, else as the page gave
  * it *)
 val value_of : t -> Dom.element -> Forms.value

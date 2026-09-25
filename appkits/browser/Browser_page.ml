@@ -130,12 +130,31 @@ let laid_out (s : settings) (p : t) : t =
   let layout, drawn = lay_out s p.url p.tree in
   { p with layout; drawn; background = background s p.tree }
 
+let title_of (tree : Dom.element) : string =
+  match Dom.find_all "title" tree with t :: _ -> String.trim (Dom.text_content t) | [] -> ""
+
+let with_tree (s : settings) (p : t) (tree : Dom.element) : t =
+  let layout, drawn = lay_out s p.url tree in
+  {
+    p with
+    tree;
+    line_mode = Line_mode.render tree;
+    title = title_of tree;
+    layout;
+    drawn;
+    background = background s tree;
+    forms = Forms.forms tree;
+    (* the values were the old tree's elements'; a script's page keeps
+     * a field's text in its value= (Browser_script.input) *)
+    values = [];
+  }
+
 let read (s : settings) (url : string) (status : int) (content_type : string option) (bytes : string) : t =
   let charset = Charset.detect ?content_type bytes in
   let text = Charset.to_utf_8 charset bytes in
   let tokens = Html_lexer.tokenize (as_html url content_type text (String.length bytes)) in
   let tree = Html_tree.parse tokens in
-  let title = match Dom.find_all "title" tree with t :: _ -> String.trim (Dom.text_content t) | [] -> "" in
+  let title = title_of tree in
   let layout, drawn = lay_out s url tree in
   {
     url;

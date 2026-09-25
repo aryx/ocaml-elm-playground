@@ -399,7 +399,7 @@ let control_size (metrics : metrics) (l : Looks.t) (e : Dom.element) : (float * 
       | Hidden -> None
       | Text | Password -> Some ((number "size" 20. *. cell) +. 8., 1.6 *. l.size)
       | Checkbox | Radio -> Some (0.9 *. l.size, 0.9 *. l.size)
-      | Submit | Reset -> button (Forms.label c)
+      | Submit | Reset | Button -> button (Forms.label c)
       | Select opts ->
           let widest = List.fold_left (fun w (label, _) -> Float.max w (metrics l label)) 0. opts in
           Some (widest +. (2.2 *. l.size), 1.7 *. l.size)
