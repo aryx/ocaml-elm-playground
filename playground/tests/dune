@@ -17,7 +17,6 @@
    elm_playground_native_common ; Input_script
    elm_playground_3d ; Logo3d
    elm_playground_3d_software ; an implem of virtual elm_playground_3d, to link
-   terminal ; Vt, the screen Unit_teletype reads
  )
  ; claude: TinyMario's sprites, which Unit_sprite reads and writes back
  (deps (glob_files %{project_root}/games/platform/*.xpm))

@@ -9,7 +9,7 @@
  *)
 open Talk
 
-(* See Unit_teletype.mli *)
+(* See Unit_talk.mli *)
 
 (* the .mli's example *)
 let hello : unit talk =
@@ -25,7 +25,7 @@ let dice : unit talk =
 let screen_text (m : machine) : string list = Vt.text (screen m)
 
 let tests =
-  Testo.categorize "Teletype"
+  Testo.categorize "Talk"
     [
       Testo.create "run: the name example, the answer echoed" (fun () ->
           Alcotest.(check string) "transcript" "WHAT IS YOUR NAME? BOB\nHELLO, BOB\n" (run hello [ "BOB" ]);

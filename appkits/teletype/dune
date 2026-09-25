@@ -4,12 +4,13 @@
 ; examples/TeletypeHangman.ml) and under TinyTerminal's shell
 ; (apps/system/), a command each. Tty_hangman, Tty_guess, Tty_wumpus.
 ;
-; Over the playground's Teletype, a way (its programs have no model,
-; no update, no view); a private library, installed as part of
-; elm_playground, pure OCaml, so every backend can run them.
+; Over libs/terminal's Talk, no Playground: the Teletype way is what
+; puts them on a screen (its programs have no model, no update, no
+; view). A private library, installed as part of elm_playground, pure
+; OCaml, so every backend can run them.
 (library
  (name appkit_teletype)
  (package elm_playground)
  (wrapped false)
- (libraries elm_playground)
+ (libraries terminal) ; Talk
 )
