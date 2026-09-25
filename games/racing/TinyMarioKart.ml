@@ -13,7 +13,10 @@
  * accelerate, down to brake, left/right to steer; three laps against
  * three computer karts; the grass slows you down. Press 2 on the title
  * for two players, the screen split in two as on the SNES: the second
- * player on w a s d.
+ * player on w a s d. Press b for the battle (v: two players), the
+ * SNES's other game: a square arena, three balloons each, shells and
+ * bananas from the item boxes (space; e for the second player), the
+ * last one with balloons winning -- its own section, [The battle].
  *
  * The SNES had no 3D at all. Its "Mode 7" drew one background, a map of
  * tiles, turned and scaled; the trick (F-Zero, 1990, then Pilotwings and
@@ -70,11 +73,15 @@
  * last so that its sky and ground cover what the bottom one spills
  * upwards, and a strip covers the seam.
  *
- * Exercises: items (bananas, shells: TinyWolfenstein's billboards that move),
+ * The sounds (Sfx's recipes and the ready-made ones, no recording) and
+ * the juice (a hit shaking the screen, a balloon bursting) are in their
+ * own section; music=off and juice=off turn them off.
+ *
+ * Exercises: items in the race (the battle's shells and bananas),
  * coins, jumps (a kart's height, its sprite lifted), a camera looking
  * straight down (Camera2d, turned: Mode 7 with the same scale on every
- * row), the battle mode (a square arena, three balloons each: the SNES's
- * other two-player game), F-Zero's walls.
+ * row), the battle's other arenas and its red shells (which home in),
+ * F-Zero's walls.
  *)
 open Playground
 
@@ -223,7 +230,7 @@ type battle = {
 }
 
 type scene = Title | Racing of race | Finished of race | Battle of battle | Battle_over of battle
-type model = scene Scene2d.t
+type model = { scenes : scene Scene2d.t; fx : Juice.t (* the juice's, see its section *) }
 
 (* the grid, two by two behind the start line, the players last, as in
  * Super Mario Kart's first race; the computer's karts can't go as fast
@@ -245,7 +252,7 @@ let new_race (humans : int) : race =
   { karts = players @ List.filteri (fun i _ -> i < 4 - humans) karts; humans;
     view_angles = List.init humans (fun _ -> 0.); places = List.init humans (fun _ -> None); frames = 0; ready = 180 }
 
-let initial_model : model = Scene2d.start Title
+let initial_model : model = { scenes = Scene2d.start Title; fx = Juice.none ~seed:1 }
 
 (*****************************************************************************)
 (* Update *)
@@ -558,7 +565,7 @@ let step_battle (k : keyboard) (s : 'scene Scene2d.t) (b : battle) : battle =
     { b with fighters; shells; bananas; boxes; minds; views; clock = b.clock + 1; over }
 
 (* the title, the race, the battle *)
-let update (computer : computer) (m : model) : model =
+let rules (computer : computer) (m : scene Scene2d.t) : scene Scene2d.t =
   let m = Scene2d.update computer m in
   let space = Scene2d.pressed (fun k -> k.kspace) m in
   let two = Scene2d.pressed (fun k -> Set_.mem "2" k.keys) m in
@@ -877,7 +884,7 @@ let battle_result (b : battle) : shape list =
       [ text w.kart.color 6. (if i < b.players then (if b.players = 1 then "YOU WIN!" else Printf.sprintf "PLAYER %d WINS!" (i + 1)) else "THE COMPUTER WINS!") |> move_y 60. ]
   | _ -> [ text white 6. "DRAW" |> move_y 60. ]
 
-let view (computer : computer) (m : model) : shape list =
+let view_scene (computer : computer) (m : scene Scene2d.t) : shape list =
   let screen = computer.screen in
   match m.scene with
   | Title ->
@@ -897,6 +904,122 @@ let view (computer : computer) (m : model) : shape list =
   | Finished r -> view_players screen r @ Scene2d.blink 1. m [ text white 3. "PRESS SPACE" |> move_y (-40.) ]
   | Battle b -> view_battle screen b
   | Battle_over b -> view_battle screen b @ battle_result b @ Scene2d.blink 1. m [ text white 3. "PRESS SPACE" |> move_y (-40.) ]
+
+(*****************************************************************************)
+(* Sounds and juice (music=off, juice=off) *)
+(*****************************************************************************)
+(* claude: What a frame did that is heard or felt, found by comparing the
+ * scene before it and after: the countdown's beeps and its GO, a lap,
+ * the finish; in the battle, a box taken, a shell or a banana used, a
+ * balloon lost -- with, when it is yours, the screen shaken, a red
+ * flash and a hitstop, the hit felt as much as seen. The engines hum
+ * all along, higher the faster they go. The sounds are Sfx's recipes
+ * and the ready-made ones, a number or two changed, no recording. *)
+
+let beep = Audio.sfx { Sfx.blip with frequency = 440.; volume = 0.3 }
+let go_beep = Audio.sfx { Sfx.blip with frequency = 880.; sustain = 0.25; volume = 0.3 }
+let lap_sound = Audio.sfx { Sfx.coin with volume = 0.3 }
+let fanfare = Audio.sfx { Sfx.powerup with volume = 0.35 }
+let pickup = Audio.sfx { Sfx.coin with frequency = 700.; volume = 0.25 }
+let zap = Audio.sfx { Sfx.laser with volume = 0.25 }
+let plop = Audio.sfx { Sfx.jump with frequency = 300.; slide = 150.; volume = 0.25 }
+let pop = Audio.sfx { Sfx.hit with volume = 0.4 }
+
+(* an original tune, bright and quiet under the engines: eight bars in
+ * C, a bass on the beat *)
+let music =
+  Audio.abc
+    {|X:1
+T:Tiny Mario Kart (original)
+L:1/8
+Q:1/4=150
+K:C
+V:1
+c2 eg c'2 ge | f2 ac' f'2 c'a | g2 bd' g'2 d'b | c'2 g2 e2 c2 |
+e2 gc' e'2 c'g | f2 ac' a2 fc | d2 fa g2 bd' | c'4 c4 |
+V:2
+C,2 G,2 C,2 G,2 | F,2 C2 F,2 C2 | G,2 D2 G,2 D2 | C,2 G,2 C,2 G,2 |
+C,2 G,2 C,2 G,2 | F,2 C2 F,2 C2 | G,2 D2 G,2 D2 | C,4 C,4 |
+|}
+  |> Audio.louder 0.14
+
+(* the countdown's beeps: one a second, then GO *)
+let countdown_sound (before : int) (after : int) : unit =
+  if before > 0 && after < before then
+    if after = 0 then Audio.play go_beep else if after mod 60 = 0 then Audio.play beep
+
+(* where player 1 sees a point of the ground, alone on the screen *)
+let seen_at (screen : screen) (angle : number) (me : Topdown.t) (x : number) (y : number) : (number * number) option =
+  Option.map (fun (sx, sy, _) -> (sx, sy)) (to_screen (eye screen me.x me.y angle) x y)
+
+let heard_and_felt (screen : screen) (before : scene) (after : scene) (fx : Juice.t) : Juice.t =
+  match (before, after) with
+  | Racing r, (Racing r' | Finished r') ->
+      countdown_sound r.ready r'.ready;
+      List.fold_left
+        (fun fx i ->
+          let c = (List.nth r.karts i).car and c' = (List.nth r'.karts i).car in
+          if Topdown.lap track c' > Topdown.lap track c && Topdown.lap track c' < laps then Audio.play lap_sound;
+          if List.nth r.places i = None && List.nth r'.places i <> None then begin
+            Audio.play fanfare;
+            match (r.humans, seen_at screen (List.nth r'.view_angles i) c' c'.x c'.y) with
+            | 1, Some at -> fx |> Juice.burst ~at Juice.sparks |> Juice.flash white 15
+            | _ -> fx
+          end
+          else fx)
+        fx (List.init r.humans Fun.id)
+  | Battle b, (Battle b' | Battle_over b') ->
+      countdown_sound b.countdown b'.countdown;
+      if List.length b'.shells > List.length b.shells then Audio.play zap;
+      if List.length b'.bananas > List.length b.bananas then Audio.play plop;
+      let me = (List.hd b'.fighters).kart.car in
+      let fx =
+        List.fold_left
+          (fun fx (i, (f : fighter), (f' : fighter)) ->
+            if i < b.players && f.item = None && f'.item <> None then Audio.play pickup;
+            if f'.balloons < f.balloons then begin
+              Audio.play pop;
+              (* the balloon bursting, where player 1 sees it *)
+              let fx =
+                match (b.players, seen_at screen (List.hd b'.views) me f'.kart.car.x f'.kart.car.y) with
+                | 1, Some (x, y) -> Juice.burst ~at:(x, y +. 40.) (Juice.debris f'.kart.color) fx
+                | _ -> fx
+              in
+              if i < b.players then fx |> Juice.shake 0.6 |> Juice.flash (rgb 220 40 40) 12 |> Juice.freeze 5 else fx
+            end
+            else fx)
+          fx
+          (List.mapi (fun i (f, f') -> (i, f, f')) (List.combine b.fighters b'.fighters))
+      in
+      (match after with Battle_over _ -> Audio.play fanfare | _ -> ());
+      fx
+  | _ -> fx
+
+(* each player's engine, its pitch its speed; two players, one on each
+ * side *)
+let engines (s : scene) : unit =
+  let hum i (c : Topdown.t) side =
+    Audio.keep_playing (Printf.sprintf "engine%d" i)
+      (Audio.sawtooth (55. +. (Float.abs c.speed *. 0.12)) |> Audio.low_pass 700. |> Audio.louder 0.05 |> Audio.pan side)
+  in
+  let side n i = if n = 1 then 0. else if i = 0 then -0.4 else 0.4 in
+  match s with
+  | Racing r -> List.iteri (fun i (k : kart) -> if i < r.humans then hum i k.car (side r.humans i)) r.karts
+  | Battle b -> List.iteri (fun i (f : fighter) -> if i < b.players && f.balloons > 0 then hum i f.kart.car (side b.players i)) b.fighters
+  | _ -> ()
+
+(* the rules, then what they did, heard and felt; nothing at all while
+ * the juice freezes the game *)
+let update (computer : computer) (m : model) : model =
+  if List.assoc_opt "music" computer.flags = Some "off" then Audio.stop "music" else Audio.loop "music" music;
+  let fx = Juice.step computer m.fx in
+  if Juice.frozen fx then { m with fx }
+  else
+    let scenes = rules computer m.scenes in
+    engines scenes.scene;
+    { scenes; fx = heard_and_felt computer.screen m.scenes.scene scenes.scene fx }
+
+let view (computer : computer) (m : model) : shape list = Juice.view m.fx (view_scene computer m.scenes)
 
 let app = game view update initial_model
 
