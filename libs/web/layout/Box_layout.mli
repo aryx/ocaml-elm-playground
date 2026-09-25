@@ -99,10 +99,31 @@
    list-style-type counts: decimal, lower-alpha...), drawn outside, left
    of its first line.
 
-   Laid out as blocks, and said: display: flex and inline-flex (C5's
-   Flex_layout), grid (the plan's exercise). Not done: rowspan=, bottom and right of an absolute box
-   whose top and left are auto, fixed boxes staying on screen, z-index
-   (the page's order is the drawing's).
+   **A flex container** (display: flex, inline-flex) lays its children
+   out as items: each blockified (a run of its text an anonymous item),
+   measured here -- its base size its flex-basis, its width, or its
+   content's (shrink-to-fit at an unlimited width), its minimum its
+   widest word, measured only when the line is too full -- then
+   Flex_layout's arithmetic: the lines, the room shared by grow and
+   shrink, the items placed along (justify-content, auto margins) and
+   across (align-items, stretched); a single line as tall as its
+   container when that is given. A column's items are laid out at their
+   width first, their heights then their base sizes.
+
+   **Measuring** (shrink-to-fit, a flex item's base, a table's column)
+   lays the content out at a width without limit (its widest line) and
+   at 0 (its widest word), and so a few things are taken differently
+   there, as CSS's intrinsic sizes say or nearly: lines on the left, a
+   <center> not centring, a percentage width as auto (it would be of
+   the size being measured), a right float on the left, a flex row
+   neither growing nor shrinking nor spread by justify-content, and its
+   end, its last item's margin included, marked by an empty box.
+
+   Laid out as blocks, and said: grid (the plan's exercise: Wikipedia's
+   contents above its article instead of beside it). Not done: rowspan=,
+   bottom and right of an absolute box whose top and left are auto,
+   fixed boxes staying on screen, z-index (the page's order is the
+   drawing's), flex's order and baseline alignment.
 
    Worked example (the tests'), a character as wide as its size, the
    root's font 10 (line-height normal: 12), a page 200 wide:

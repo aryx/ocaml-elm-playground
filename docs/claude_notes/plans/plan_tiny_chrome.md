@@ -383,6 +383,34 @@ which already reads video and sound:
   headers, a change of the playground's API (Cmd, both platforms, the
   client) that neither Hacker News nor Wikipedia needs: C5, with
   Google, whose consent page does. About 400 lines.
+- **C5 done** (2026-09-25): `Flex_layout`, flexbox's arithmetic on
+  numbers as `Table_layout` is a table's (the lines, section 9.7's
+  resolving of flexible lengths with its freezing, the placing along by
+  justify-content or the auto margins, across by align-items), and
+  `Box_layout`'s flex containers over it (items blockified, a run of
+  text an anonymous item, a base size measured, a minimum measured only
+  when the line is too full; rows and columns, wrap, gaps, a single
+  line as tall as its given container). What measuring does
+  differently, found on the live pages and written in
+  `Box_layout.mli`: a percentage width is auto (Wikipedia's
+  `width: 100%` menus had made a toolbar half the page), a right float
+  on the left, a flex row neither growing nor shrinking, its last
+  margin counted; and `display: none` table cells out of the grid
+  (GitHub's small-screen cells), min-height and max-height of the
+  border box with `box-sizing: border-box` (Google's button), a
+  hundredth of a pixel's slack in filling a line. `about:chrome`'s
+  header a flex row, a card of tiles (`flex: 1, 2, 1`) and wrapping
+  chips: the golden frame. Tried live: **Wikipedia**'s header, tabs and
+  toolbar in their rows (its contents still above the article: grid);
+  **Google**'s home page as in Chrome, its no-script version; a
+  **GitHub** repository recognisable (its header the mobile one below
+  1,012 pixels, as in Chrome; the files' messages and dates written by
+  React, so missing without scripts). **Cookies not done, still**:
+  Google's consent page never came (the address decides), and its
+  search needs JavaScript whatever the cookies (its `<noscript>` sends
+  to "enable JavaScript") -- no site of the plan needs one yet, so the
+  playground's API keeps its shape until one does; the omnibox's
+  searches will be DuckDuckGo's HTML version (C7). About 450 lines.
 
 ## Verification
 

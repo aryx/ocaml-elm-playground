@@ -113,6 +113,27 @@ let tests =
       Testo.create "srcset: its first address" (fun () ->
           Alcotest.(check (option string)) "no src" (Some "a.png")
             (Box_layout.picture_src (Dom.element ~attributes:[ ("srcset", "a.png 1x, b.png 2x") ] "img" [])));
+      Testo.create "flex: a row, an auto margin" (fun () ->
+          let p = page {|<body style="margin: 0"><div style="display: flex; width: 200px"><div id=a style="width: 50px">a</div><div id=b style="margin-left: auto">bb</div></div>|} in
+          Alcotest.(check (list near)) "a: x, width" [ 0.; 50. ] (let a = box "a" p in [ a.x; a.width ]);
+          Alcotest.(check (list near)) "b pushed right, shrunk to its word" [ 180.; 20. ] (let b = box "b" p in [ b.x; b.width ]));
+      Testo.create "flex: grow" (fun () ->
+          let p = page {|<body style="margin: 0"><div style="display: flex"><div id=a style="flex: 1">a</div><div id=b style="flex: 2">b</div></div>|} in
+          Alcotest.(check (list near)) "a third, two thirds" [ 200. /. 3.; 400. /. 3. ] [ (box "a" p).width; (box "b" p).width ];
+          Alcotest.check near "b after a" (200. /. 3.) (box "b" p).x);
+      Testo.create "flex: align-items center, the row stretched" (fun () ->
+          let p =
+            page {|<body style="margin: 0"><div style="display: flex; height: 100px; align-items: center"><div id=a>a</div></div><div style="display: flex; height: 50px"><div id=s>s</div></div>|}
+          in
+          Alcotest.check near "centred: (100 - 12) / 2" 44. (box "a" p).y;
+          Alcotest.check near "stretched to the row" 50. (box "s" p).height);
+      Testo.create "flex: wrap, and a column with a gap" (fun () ->
+          let p =
+            page
+              {|<body style="margin: 0"><div style="display: flex; flex-wrap: wrap; width: 100px"><div style="width: 40px">a</div><div style="width: 40px">b</div><div id=c style="width: 40px">c</div></div><div style="display: flex; flex-direction: column; row-gap: 5px"><div id=d>d</div><div id=e>e</div></div>|}
+          in
+          Alcotest.(check (list near)) "c on a second line" [ 0.; 12. ] (let c = box "c" p in [ c.x; c.y ]);
+          Alcotest.check near "e below d and the gap" (24. +. 12. +. 5.) (box "e" p).y);
       Testo.create "a picture: its size, max-width" (fun () ->
           let p = page {|<body style="margin: 0"><img src=a.png width=400 height=100 style="max-width: 100%">|} in
           match List.filter_map (fun (f : Html_layout.fragment) -> Option.map (fun (pic : Html_layout.picture) -> (f.width, pic.height)) f.picture) (Box_layout.fragments p) with

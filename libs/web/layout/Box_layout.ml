@@ -143,7 +143,7 @@ let four (f : 'a -> 'b) ((t, r, b, l) : 'a * 'a * 'a * 'a) : 'b * 'b * 'b * 'b =
 let own_context (s : Computed.t) : bool =
   s.overflow_hidden || s.float <> Side_none
   || (match s.position with Absolute | Fixed -> true | _ -> false)
-  || match s.display with Inline_block | Inline_flex | Table_cell | Table | Table_caption -> true | _ -> false
+  || match s.display with Inline_block | Inline_flex | Flex | Grid | Table_cell | Table | Table_caption -> true | _ -> false
 
 (* the larger margin, a negative one subtracted (CSS 2.1 section 8.3.1) *)
 let collapse (a : float) (b : float) : float = if a >= 0. && b >= 0. then Float.max a b else if a <= 0. && b <= 0. then Float.min a b else a +. b
@@ -396,7 +396,9 @@ let set_lines (floats : placed list ref) (strut : word_style) (align : Looks.ali
               else lines_from top start acc lx lw
           and lines_from top start acc lx lw =
             let rec extend j w =
-              if j + 1 < count && w +. fst sizes.(j + 1) +. snd sizes.(j + 1) <= lw then extend (j + 1) (w +. fst sizes.(j + 1) +. snd sizes.(j + 1)) else j
+              (* a hundredth of a pixel's slack: a box shrunk to fit its
+               * line is exactly as wide as it, give or take rounding *)
+              if j + 1 < count && w +. fst sizes.(j + 1) +. snd sizes.(j + 1) <= lw +. 0.01 then extend (j + 1) (w +. fst sizes.(j + 1) +. snd sizes.(j + 1)) else j
             in
             let j = extend start (snd sizes.(start)) in
             let words = List.concat (List.init (j - start + 1) (fun k -> if k = 0 then starting_line units.(start) else units.(start + k))) in
@@ -600,6 +602,9 @@ let horizontal (s : Computed.t) ~(cb_width : float) ?content () : float * float 
 
 let rec layout_block (env : env) (floats : placed list ref) (e : Dom.element) (s : Computed.t) ~(cb_x : float) ~(cb_width : float)
     ~(y : float) ~(marker : Html_layout.marker option) ?content () : box * float =
+  (* measuring an intrinsic size: a percentage width is auto (it would
+   * be of the size being measured: CSS Sizing, "cyclic percentages") *)
+  let s = match s.width with Len l when env.measuring && l.pct <> 0. -> { s with width = Auto } | _ -> s in
   let ml, cw, _ = horizontal s ~cb_width ?content () in
   let pt, pr, pb, pl = four (fun l -> Css_values.resolve l cb_width) s.padding in
   let bt, br, bb, bl = s.border_width in
@@ -621,8 +626,11 @@ let rec layout_block (env : env) (floats : placed list ref) (e : Dom.element) (s
       absorbed = (not own) && pt +. bt = 0.; children = []; items = []; space = false; owner = e;
       link = (if e.name = "a" then Dom.attribute "href" e else None); counter = 0; decorations = [] }
   in
-  List.iter (walk ctx s (word_style s ~link:ctx.link)) e.children;
-  flush_inline ctx;
+  (match s.display with
+  | Flex | Inline_flex -> flex_children ctx e s
+  | _ ->
+      List.iter (walk ctx s (word_style s ~link:ctx.link)) e.children;
+      flush_inline ctx);
   (* the last child's bottom margin goes through, if nothing holds it *)
   let through = (not own) && pb +. bb = 0. && s.height = Auto in
   let content_bottom = if through then ctx.cursor else ctx.cursor +. ctx.pending in
@@ -633,11 +641,214 @@ let rec layout_block (env : env) (floats : placed list ref) (e : Dom.element) (s
     | Len l when l.pct = 0. -> if s.border_box then Float.max 0. (l.px -. pt -. pb -. bt -. bb) else l.px
     | _ -> auto_height
   in
-  let ch = Float.max ch (Css_values.resolve s.min_height 0.) in
-  let ch = match s.max_height with Len l when l.pct = 0. -> Float.min ch l.px | _ -> ch in
+  (* min-height and max-height, of the border box with box-sizing:
+   * border-box (Google's buttons) *)
+  let vchrome = if s.border_box then pt +. pb +. bt +. bb else 0. in
+  let ch = match s.max_height with Len l when l.pct = 0. -> Float.min ch (l.px -. vchrome) | _ -> ch in
+  let ch = Float.max ch (Css_values.resolve s.min_height 0. -. vchrome) in
   ( { element = Some e; style = s; x; y; width = bl +. pl +. cw +. pr +. br; height = bt +. pt +. ch +. pb +. bb;
       border = (bt, br, bb, bl); children = List.rev ctx.children; lines = []; backdrops = []; marker },
     if through then ctx.pending else 0. )
+
+(* a flex container's items laid out (Flex_layout's arithmetic): each
+ * measured, the lines cut, the room shared, the items placed along and
+ * across *)
+and flex_children (ctx : ctx) (e : Dom.element) (s : Computed.t) : unit =
+  let env = ctx.env in
+  let row = match s.flex_direction with Row | Row_reverse -> true | Column | Column_reverse -> false in
+  let no_margins = (Computed.Len Css_values.zero, Computed.Len Css_values.zero, Computed.Len Css_values.zero, Computed.Len Css_values.zero) in
+  (* an item is a block (an inline one "blockified"); a run of text an
+   * anonymous item in the container's style *)
+  let blockify (cs : Computed.t) : Computed.t =
+    { cs with display = (match cs.display with Inline | Inline_block | List_item -> Block | Inline_flex -> Flex | d -> d); float = Side_none }
+  in
+  let items =
+    List.concat_map
+      (fun (n : Dom.node) ->
+        match n with
+        | Text t when String.for_all is_space t -> []
+        | Text t ->
+            [ ( Dom.element "span" [ Text t ],
+                { s with display = Block; margin = no_margins; padding = (Css_values.zero, Css_values.zero, Css_values.zero, Css_values.zero);
+                  border_width = (0., 0., 0., 0.); width = Auto; height = Auto; min_width = Css_values.zero; max_width = Auto;
+                  flex_grow = 0.; flex_shrink = 1.; flex_basis = Auto; background = Css_values.transparent; position = Static;
+                  overflow_hidden = false; align_self = None } ) ]
+        | Element c -> (
+            let cs = env.style c in
+            match cs.display with
+            | Display_none -> []
+            | _ when cs.position = Absolute || cs.position = Fixed ->
+                add_absolute ctx c cs;
+                []
+            | _ -> [ (c, blockify cs) ]))
+      e.children
+  in
+  let items = match s.flex_direction with Row_reverse | Column_reverse -> List.rev items | _ -> items in
+  let items = Array.of_list items in
+  let measuring = env.measuring in
+  let width = ctx.width in
+  let gap_main = Css_values.resolve (if row then s.column_gap else s.row_gap) width in
+  let gap_cross = Css_values.resolve (if row then s.row_gap else s.column_gap) width in
+  let justify = if measuring then Computed.Start else s.justify_content in
+  (* an item's chrome across the main axis: margins (auto ones 0, and
+   * said), borders and paddings *)
+  let chrome (cs : Computed.t) =
+    let mt, mr, mb, ml = cs.margin in
+    let pt, pr, pb, pl = four (fun l -> Css_values.resolve l width) cs.padding and bt, br, bb, bl = cs.border_width in
+    let m x = Option.value (size x width) ~default:0. in
+    if row then ((m ml, m mr), pl +. pr +. bl +. br, (ml = Auto, mr = Auto))
+    else ((m mt, m mb), pt +. pb +. bt +. bb, (mt = Auto, mb = Auto))
+  in
+  let align_of (cs : Computed.t) =
+    let a = match cs.align_self with Some a -> a | None -> s.align_items in
+    (* stretched only if its cross size is auto *)
+    if a = Stretch && (if row then cs.height <> Auto else cs.width <> Auto) then Computed.Start else a
+  in
+  let content_top = ctx.cursor in
+  let boxes =
+    if row then (
+      (* the base sizes: flex-basis, width, or the content's *)
+      let bases =
+        Array.map
+          (fun (c, (cs : Computed.t)) ->
+            let (ml, mr), ch, _ = chrome cs in
+            let given w = if cs.border_box then Float.max 0. (w -. ch) else w in
+            let base =
+              match (cs.flex_basis, size cs.width width) with
+              | Len l, _ -> given (Css_values.resolve l width)
+              | Auto, Some w -> given w
+              | Auto, None -> shrink env c cs ~available:infinity
+            in
+            ml +. base +. ch +. mr)
+          items
+      in
+      let total = Array.fold_left ( +. ) 0. bases +. (gap_main *. float_of_int (max 0 (Array.length items - 1))) in
+      let fitem i =
+        let _, (cs : Computed.t) = items.(i) in
+        let (ml, mr), ch, (ab, aa) = chrome cs in
+        let outer w = ml +. w +. ch +. mr in
+        (* an item does not shrink below its content (min-width: auto),
+         * measured only when it has to shrink *)
+        let min_size =
+          if cs.min_width.px > 0. || cs.min_width.pct > 0. then outer (Css_values.resolve cs.min_width width)
+          else if total > width && (not cs.overflow_hidden) && not measuring then
+            outer (Float.min (shrink env (fst items.(i)) cs ~available:0.) (bases.(i) -. ml -. ch -. mr))
+          else 0.
+        in
+        (* measuring: no growing, and no shrinking either -- a row that
+         * does not wrap is as wide as its items, even at its narrowest *)
+        { Flex_layout.base = bases.(i); grow = (if measuring then 0. else cs.flex_grow); shrink = (if measuring then 0. else cs.flex_shrink); min_size;
+          max_size = (match size cs.max_width width with Some m -> outer m | None -> infinity);
+          auto_before = ab && not measuring; auto_after = aa && not measuring }
+      in
+      let fitems = Array.init (Array.length items) fitem in
+      let top = ref content_top and boxes = ref [] in
+      List.iter
+        (fun (first, last) ->
+          let line = Array.sub fitems first (last - first + 1) in
+          let sizes = Flex_layout.resolve ~room:width ~gap:gap_main line in
+          let starts = Flex_layout.place ~justify ~room:width ~gap:gap_main line sizes in
+          let laid =
+            Array.mapi
+              (fun k main ->
+                let c, (cs : Computed.t) = items.(first + k) in
+                let (ml, mr), ch, _ = chrome cs in
+                let mt, _, mb, _ = cs.margin in
+                let mt = Option.value (size mt width) ~default:0. and mb = Option.value (size mb width) ~default:0. in
+                let cs_in = { cs with margin = no_margins } in
+                let b, _ =
+                  layout_block env (ref []) c cs_in ~cb_x:(ctx.x +. starts.(k) +. ml) ~cb_width:(main -. ml -. mr) ~y:(!top +. mt) ~marker:None
+                    ~content:(Float.max 0. (main -. ml -. mr -. ch)) ()
+                in
+                (b, cs, mt, mb))
+              sizes
+          in
+          let cross = Array.fold_left (fun m (b, _, mt, mb) -> Float.max m (mt +. b.height +. mb)) 0. laid in
+          (* a single line is as tall as its container, if its height is
+           * given (section 9.4) *)
+          let cross =
+            match s.height with
+            | Len l when l.pct = 0. && (not s.flex_wrap) && not measuring ->
+                let pt, _, pb, _ = four (fun l -> Css_values.resolve l width) s.padding and bt, _, bb, _ = s.border_width in
+                Float.max cross (if s.border_box then l.px -. pt -. pb -. bt -. bb else l.px)
+            | _ -> cross
+          in
+          Array.iter
+            (fun ((b : box), cs, mt, mb) ->
+              let offset, outer = Flex_layout.cross ~align:(align_of cs) ~line:cross ~size:(mt +. b.height +. mb) in
+              boxes := relative ctx cs (moved 0. offset { b with height = outer -. mt -. mb }) :: !boxes)
+            laid;
+          (* measuring: the line's end, its last item's right margin
+           * included, marked by an empty box -- a box's edge is inside
+           * its margin, and the measure reads edges *)
+          (if measuring then
+             let last = Array.length sizes - 1 in
+             let edge = ctx.x +. starts.(last) +. sizes.(last) in
+             boxes :=
+               { element = None; style = s; x = edge; y = !top; width = 0.; height = 0.; border = (0., 0., 0., 0.); children = [];
+                 lines = []; backdrops = []; marker = None }
+               :: !boxes);
+          top := !top +. cross +. gap_cross)
+        (Flex_layout.lines ~wrap:s.flex_wrap ~room:width ~gap:gap_main fitems);
+      ctx.cursor <- (if !boxes = [] then content_top else !top -. gap_cross);
+      List.rev !boxes)
+    else (
+      (* a column: each item laid out at its width first (stretched, or
+       * shrunk to fit), its height its base *)
+      let laid =
+        Array.map
+          (fun (c, (cs : Computed.t)) ->
+            let _, _, _, ml = cs.margin and _, mr, _, _ = cs.margin in
+            let ml' = Option.value (size ml width) ~default:0. and mr' = Option.value (size mr width) ~default:0. in
+            let _, pr, _, pl = four (fun l -> Css_values.resolve l width) cs.padding and _, br, _, bl = cs.border_width in
+            let hchrome = pl +. pr +. bl +. br in
+            let content =
+              match (align_of cs, size cs.width width) with
+              | _, Some _ -> None
+              | Stretch, None -> Some (Float.max 0. (width -. ml' -. mr' -. hchrome))
+              | _, None -> Some (shrink env c cs ~available:(width -. ml' -. mr' -. hchrome))
+            in
+            let b, _ = layout_block env (ref []) c { cs with margin = no_margins } ~cb_x:0. ~cb_width:width ~y:0. ~marker:None ?content () in
+            let x_offset =
+              match align_of cs with
+              | End -> width -. b.width -. mr'
+              | Center -> (width -. b.width) /. 2.
+              | _ -> ml'
+            in
+            (c, cs, b, x_offset))
+          items
+      in
+      let fitems =
+        Array.map
+          (fun (_, (cs : Computed.t), (b : box), _) ->
+            let (mt, mb), _, (ab, aa) = chrome cs in
+            let base = match (cs.flex_basis, size cs.height 0.) with Len l, _ when l.pct = 0. -> l.px | _, Some h -> h | _ -> b.height in
+            { Flex_layout.base = mt +. base +. mb; grow = cs.flex_grow; shrink = cs.flex_shrink;
+              min_size = (if cs.overflow_hidden then 0. else mt +. b.height +. mb); max_size = infinity;
+              auto_before = ab; auto_after = aa })
+          laid
+      in
+      (* the room along: the container's height if it has one, else the
+       * items' own *)
+      let room =
+        match s.height with
+        | Len l when l.pct = 0. && not measuring ->
+            let pt, _, pb, _ = four (fun l -> Css_values.resolve l width) s.padding and bt, _, bb, _ = s.border_width in
+            if s.border_box then l.px -. pt -. pb -. bt -. bb else l.px
+        | _ -> Array.fold_left (fun t (it : Flex_layout.item) -> t +. it.base) 0. fitems +. (gap_main *. float_of_int (max 0 (Array.length fitems - 1)))
+      in
+      let sizes = Flex_layout.resolve ~room ~gap:gap_main fitems in
+      let starts = Flex_layout.place ~justify ~room ~gap:gap_main fitems sizes in
+      ctx.cursor <- content_top +. (if Array.length sizes = 0 then 0. else room);
+      Array.to_list
+        (Array.mapi
+           (fun k (_, cs, (b : box), x_offset) ->
+             let (mt, mb), _, _ = chrome cs in
+             relative ctx cs (moved (ctx.x +. x_offset -. b.x) (content_top +. starts.(k) +. mt -. b.y) { b with height = sizes.(k) -. mt -. mb }))
+           laid))
+  in
+  ctx.children <- List.rev boxes;
+  ctx.pending <- 0.
 
 (* shrink-to-fit (CSS 2.1 section 10.3.5): the content's widest line,
  * at most [available], at least its widest word *)
@@ -741,7 +952,10 @@ and float_item (ctx : ctx) (e : Dom.element) (s : Computed.t) : item =
       let s_in = { s with margin = (Len Css_values.zero, Len Css_values.zero, Len Css_values.zero, Len Css_values.zero) } in
       fst (layout_block env (ref []) e s_in ~cb_x:0. ~cb_width:ctx.width ~y:0. ~marker:None ?content ())
   in
-  Float { fbox = box; fside = (if s.float = Side_right then On_right else On_left); fmargin = margin; placed = false }
+  (* measuring: every float on the left -- only its width counts, and a
+   * right one would be at the far end of an unlimited line *)
+  let fside = if s.float = Side_right && not env.measuring then On_right else On_left in
+  Float { fbox = box; fside; fmargin = margin; placed = false }
 
 (* a picture's size: its style's width and height, one of them and its
  * ratio, or its own once it has come; max-width applied *)
@@ -850,7 +1064,22 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
  * grid and widths, each cell measured at width 0 and without limit,
  * each row as tall as its tallest cell *)
 and layout_table (env : env) (table : Dom.element) (s : Computed.t) ~(cb_x : float) ~(cb_width : float) ~(y : float) : box =
-  let cells, n = Table_layout.grid table in
+  (* measuring: a percentage width is auto, as a block's (layout_block) *)
+  let s = match s.width with Len l when env.measuring && l.pct <> 0. -> { s with width = Auto } | _ -> s in
+  let cells, _ = Table_layout.grid table in
+  (* the cells shown (not display: none: GitHub's small screens' cells),
+   * their columns counted again without the others *)
+  let cells = List.filter (fun (c : Table_layout.cell) -> (env.style c.element).display <> Display_none) cells in
+  let cells =
+    List.rev
+      (snd
+         (List.fold_left
+            (fun ((row, column), acc) (c : Table_layout.cell) ->
+              let column = if c.row = row then column else 0 in
+              ((c.row, column + c.span), { c with column } :: acc))
+            ((-1, 0), []) cells))
+  in
+  let n = List.fold_left (fun n (c : Table_layout.cell) -> max n (c.column + c.span)) 0 cells in
   if cells = [] then fst (layout_block env (ref []) table { s with display = Block } ~cb_x ~cb_width ~y ~marker:None ())
   else
     let spacing =

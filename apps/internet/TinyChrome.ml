@@ -20,7 +20,8 @@
  *   ua.css; @media, var(), the attributes' hints) -> Computed (a record
  *   of values per element) -> Box_layout (CSS 2.1's box model: margins,
  *   borders, paddings, auto margins centring, collapsing margins,
- *   floats, inline-blocks shrunk to fit, positioning, tables, lists)
+ *   floats, inline-blocks shrunk to fit, positioning, tables, lists;
+ *   and flexbox, Flex_layout)
  *   -> Browser_boxes (backgrounds, borders, the words)
  *
  * where the teaching browsers have Mosaic's looks and Html_layout. The
@@ -52,13 +53,15 @@
  * page's Html_layout view), the built-in site (Site). Its own: the
  * chrome.
  *
- * Tried live: Hacker News (its tables, attributes and news.css) and a
- * Wikipedia article (its two sheets from load.php; the article right,
- * its header and tabs waiting for flexbox).
+ * Tried live: Hacker News (its tables, attributes and news.css), a
+ * Wikipedia article (its two sheets from load.php; its header and tabs
+ * flex rows; its contents a grid column, here above the article),
+ * Google's home page (its no-script version: a search needs
+ * JavaScript), a GitHub repository (41 sheets; its file list's
+ * messages written by its scripts, so missing).
  *
- * To come (plan_tiny_chrome.md): flexbox and cookies (C5), SVG (C6),
- * several tabs, the omnibox's search and the developer tools (C7), the
- * ES5 core (C8), video (C9).
+ * To come (plan_tiny_chrome.md): SVG (C6), several tabs, the omnibox's
+ * search and the developer tools (C7), the ES5 core (C8), video (C9).
  *)
 open Playground
 

@@ -11,8 +11,11 @@
 </head>
 <body>
 <header>
-  <h1>TinyChrome</h1>
-  <p>A small browser for the real web: CSS's cascade and box model, from scratch.</p>
+  <div>
+    <h1>TinyChrome</h1>
+    <p>A small browser for the real web: CSS's cascade and box model, from scratch.</p>
+  </div>
+  <nav><a href="about:chrome">Home</a><a href="about:firefox">Firefox</a><a href="about:history">History</a></nav>
 </header>
 <main>
   <div class="card">
@@ -43,13 +46,27 @@
   </div>
 
   <div class="card">
+    <h2>Flexbox</h2>
+    <p>The header above is a flex row, its links pushed right by
+    <code>margin-left: auto</code>. Below, three tiles share a row by
+    <code>flex: 1</code>, <code>2</code> and <code>1</code>; the last
+    row wraps.</p>
+    <div class="tiles">
+      <div class="tile">flex: 1</div><div class="tile wide">flex: 2</div><div class="tile">flex: 1</div>
+    </div>
+    <div class="tiles wrap">
+      <div class="chip">Hacker News</div><div class="chip">Wikipedia</div><div class="chip">Google</div><div class="chip">GitHub</div><div class="chip">Craigslist</div><div class="chip">CNN Lite</div><div class="chip">BBC News</div>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>Sites to try</h2>
     <p>Type an address in the omnibox above. What should look mostly
     right, as the plan grows (plan_tiny_chrome.md):</p>
     <ul class="sites">
       <li><b>Hacker News</b>: tables and attributes <span class="muted">(C4)</span></li>
       <li><b>Wikipedia</b>: a long article, its sheets fetched <span class="muted">(C4)</span></li>
-      <li><b>Google</b>, <b>GitHub</b>: flexbox and icons <span class="muted">(C5, C6)</span></li>
+      <li><b>Google</b>: flexbox <span class="muted">(C5)</span>; <b>GitHub</b>: flexbox and icons <span class="muted">(C5, C6)</span></li>
     </ul>
   </div>
 </main>
