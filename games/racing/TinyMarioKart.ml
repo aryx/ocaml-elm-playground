@@ -316,69 +316,85 @@ let update_race (k : keyboard) (r : race) : race =
 (* claude: Super Mario Kart's other game: a square arena, three balloons
  * each, item boxes; a green shell fired ahead, bouncing off the walls,
  * or a banana dropped behind; hit, a kart spins and loses a balloon,
- * and the last one with balloons wins. The arena is a map too, as the
- * track is: '#' its walls and the square blocks inside, flat tiles as
- * on the SNES, which karts bounce off (Topdown.bounce, TinySuperSprint's
- * walls); its floor coloured by quadrant, four zones round the middle;
- * '?' the item boxes, '1' to '4' where the karts start. *)
+ * and the last one with balloons wins.
+ *
+ * The arena is the SNES's first, Battle Course 1, as the wikis describe
+ * it (their maps are pictures; this is it redrawn from the words, not
+ * copied): a square field in the Donut Plains, "pipes and walls
+ * separating the inner, middle, and outer square, making a concentric
+ * square pattern", the walls "multicolored", "a large open place in the
+ * middle, where players are more likely to be hit", and "many corners
+ * jutting out from the outsides, leading into hidden corners" with a
+ * single way out. Here: the border '#', the middle ring's wall two gaps
+ * a side and the inner one's one, each side of them in its color -- red
+ * 'R' the top, blue 'B' the right, yellow 'Y' the bottom, green 'G' the
+ * left, the colors of the guardrails of its remake in Mario Kart 8
+ * Deluxe -- a pocket in each outer corner, the boxes '?', the karts'
+ * starts '1' to '4' in the middle ring, a side each. Walls are flat
+ * tiles, as on the SNES, which karts bounce off (Topdown.bounce,
+ * TinySuperSprint's walls); the land around is the Donut Plains' lake. *)
 let arena_rows =
-  [ "########################";
-    "#......................#";
-    "#.1..................2.#";
-    "#......................#";
-    "#...?..............?...#";
-    "#....###........###....#";
-    "#....###...??...###....#";
-    "#....###........###....#";
-    "#......................#";
-    "#......................#";
-    "#..........##..........#";
-    "#...?......##......?...#";
-    "#...?......##......?...#";
-    "#..........##..........#";
-    "#......................#";
-    "#......................#";
-    "#....###........###....#";
-    "#....###...??...###....#";
-    "#....###........###....#";
-    "#...?..............?...#";
-    "#......................#";
-    "#.3..................4.#";
-    "#......................#";
-    "########################" ]
+  [ "############################";
+    "#...#..................#...#";
+    "#...#........?.........#...#";
+    "#...#..................#...#";
+    "###.RRRR..RRRRRRRR..RRRR.###";
+    "#...G..................B...#";
+    "#...G.?......1.......?.B...#";
+    "#...G..................B...#";
+    "#.......RRRRR..RRRRR.......#";
+    "#.......G..........B.......#";
+    "#...G...G..........B...B...#";
+    "#...G...G..........B...B...#";
+    "#...G...G...?..?...B...B...#";
+    "#...G.4................B.?.#";
+    "#.?.G................2.B...#";
+    "#...G...G...?..?...B...B...#";
+    "#...G...G..........B...B...#";
+    "#...G...G..........B...B...#";
+    "#.......G..........B.......#";
+    "#.......YYYYY..YYYYY.......#";
+    "#...G..................B...#";
+    "#...G.?.......3......?.B...#";
+    "#...G..................B...#";
+    "###.YYYY..YYYYYYYY..YYYY.###";
+    "#...#..................#...#";
+    "#...#.........?........#...#";
+    "#...#..................#...#";
+    "############################" ]
 
 let arena = Tilemap.of_strings tile arena_rows
 let half_arena = float_of_int (Tilemap.cols arena) *. tile /. 2.
 
-let wall (x : number) (y : number) : bool = match Tilemap.tile_at arena x y with Some '#' | None -> true | _ -> false
+let wall (x : number) (y : number) : bool = match Tilemap.tile_at arena x y with Some ('#' | 'R' | 'B' | 'Y' | 'G') | None -> true | _ -> false
 let outside (x : number) (y : number) : bool = Tilemap.tile_at arena x y = None
 
-(* the floor's four zones, by quadrant: red, blue, green and yellow
- * checkers (the world's y going up, the map's rows down: red is the
- * map's bottom left), the walls grey, the land around dark (mipmapped
- * far away, as the track) *)
+(* the Donut Plains' sandy floor in checkers, the border grey, the rings'
+ * walls in their side's color, the lake around (mipmapped far away, as
+ * the track) *)
 let arena_ground (unit : number) (x : number) (y : number) : char =
   let checker size (c1 : char) (c2 : char) (average : char) : char =
     if size < 2. *. unit then average
     else if (int_of_float (floor (x /. size)) + int_of_float (floor (y /. size))) land 1 = 0 then c1
     else c2
   in
-  if outside x y then checker 200. 'o' 'O' 'n'
-  else if wall x y then checker 50. 'k' 'K' 'l'
-  else
-    match (x < 0., y < 0.) with
-    | true, true -> checker 100. 'r' 'R' 'q'
-    | false, true -> checker 100. 'u' 'U' 'v'
-    | true, false -> checker 100. 'g' 'G' 'h'
-    | false, false -> checker 100. 'y' 'Y' 'z'
+  match Tilemap.tile_at arena x y with
+  | None -> checker 200. 'o' 'O' 'n'
+  | Some '#' -> checker 50. 'k' 'K' 'l'
+  | Some 'R' -> checker 50. 'r' 'R' 'q'
+  | Some 'B' -> checker 50. 'u' 'U' 'v'
+  | Some 'G' -> checker 50. 'g' 'G' 'h'
+  | Some 'Y' -> checker 50. 'y' 'Y' 'z'
+  | _ -> checker 100. 's' 'S' 't'
 
 let arena_palette : (char * color) list =
   [ ('k', rgb 150 150 160); ('K', rgb 120 120 130); ('l', rgb 135 135 145);
-    ('o', rgb 40 90 50); ('O', rgb 35 80 45); ('n', rgb 38 85 48);
-    ('r', rgb 225 110 100); ('R', rgb 205 90 85); ('q', rgb 215 100 92);
-    ('u', rgb 100 150 230); ('U', rgb 85 130 210); ('v', rgb 92 140 220);
-    ('g', rgb 110 190 100); ('G', rgb 95 170 88); ('h', rgb 102 180 94);
-    ('y', rgb 235 205 90); ('Y', rgb 215 185 75); ('z', rgb 225 195 82) ]
+    ('o', rgb 60 120 200); ('O', rgb 50 108 188); ('n', rgb 55 114 194);
+    ('s', rgb 222 196 140); ('S', rgb 208 180 124); ('t', rgb 215 188 132);
+    ('r', rgb 220 50 45); ('R', rgb 180 35 35); ('q', rgb 200 42 40);
+    ('u', rgb 50 100 220); ('U', rgb 35 80 185); ('v', rgb 42 90 202);
+    ('g', rgb 50 170 60); ('G', rgb 35 140 45); ('h', rgb 42 155 52);
+    ('y', rgb 245 205 40); ('Y', rgb 215 175 25); ('z', rgb 230 190 32) ]
 
 let colors = [| rgb 220 30 30; rgb 40 90 220; rgb 40 170 60; rgb 240 200 30 |]
 
@@ -408,7 +424,7 @@ let tile_of (x : number) (y : number) : int * int = Tilemap.cell arena x y
 
 let path_to (x, y) (tx, ty) : (number * number) option =
   let goal = tile_of tx ty in
-  let open_ (c, r) = match Tilemap.get arena c r with Some '#' | None -> false | _ -> true in
+  let open_ (c, r) = match Tilemap.get arena c r with Some ('#' | 'R' | 'B' | 'Y' | 'G') | None -> false | _ -> true in
   let problem : (int * int) Pathfind.problem =
     { neighbors = (fun (c, r) -> List.filter_map (fun n -> if open_ n then Some (n, 1.) else None) [ (c + 1, r); (c - 1, r); (c, r + 1); (c, r - 1) ]);
       goal = (fun n -> n = goal); estimate = Pathfind.manhattan goal }
@@ -869,7 +885,10 @@ let view_battle_map (screen : screen) (b : battle) : shape list =
   let ox = screen.right -. 90. and oy = screen.bottom +. 90. in
   let dot (f : fighter) = circle f.kart.color 6. |> move (ox +. (f.kart.car.x /. tile *. cell)) (oy +. (f.kart.car.y /. tile *. cell)) in
   [ rectangle (rgb 30 30 30) 160. 160. |> move ox oy |> fade 0.7;
-    Sprite.pixels cell [ ('#', gray); ('?', rgb 240 140 30) ] (List.map (String.map (fun c -> if c = '#' || c = '?' then c else '.')) arena_rows) |> move ox oy ]
+    Sprite.pixels cell
+      [ ('#', gray); ('R', rgb 220 50 45); ('B', rgb 50 100 220); ('Y', rgb 245 205 40); ('G', rgb 50 170 60); ('?', rgb 240 140 30) ]
+      (List.map (String.map (fun c -> if String.contains "#RBYG?" c then c else '.')) arena_rows)
+    |> move ox oy ]
   @ List.map dot (List.filter (fun f -> f.balloons > 0) b.fighters)
 
 let view_battle (screen : screen) (b : battle) : shape list =

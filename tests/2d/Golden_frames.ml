@@ -874,9 +874,10 @@ let scripted : Testutil_golden.scripted list =
     (* two players, the screen split as on the SNES: the first on top
        (the arrows), the second below (w a s d), both on the gas *)
     ("games/racing/software/TinyMarioKart", "split", 260, "2:1,up:2-260,w:2-260,d:200-215");
-    (* claude: the battle: you in the green zone, the red beyond, item
-     * boxes, a rival and its balloons far off; then two players, the
-     * screen split, one with a shell *)
+    (* claude: the battle, on Battle Course 1: you against the inner
+     * ring's red wall, the yellow kart across the middle, the boxes, the
+     * lake beyond; then two players, the screen split, blue beside its
+     * side's blue wall *)
     ("games/racing/software/TinyMarioKart", "battle", 240, "b:1,up:185-240,right:200-215");
     ("games/racing/software/TinyMarioKart", "battle2", 250, "v:1,up:185-250,w:185-250,d:200-210");
     (* on the stairs, upstairs ahead; at the window onto the dark room
