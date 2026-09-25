@@ -136,9 +136,9 @@
   )
 )
 
-; claude: TinyEudora's built-in mailboxes (Our_mail.mli), their mbox
-; files embedded as strings: mail/in.mbox becomes Our_mail_files.in_,
-; and so on
+; claude: TinyEudora's built-in mailboxes and nicknames (Our_mail.mli),
+; their mbox and vCard files embedded as strings: mail/in.mbox becomes
+; Our_mail_files.in_, and so on
 (library
  (name internet_mail)
  (wrapped false)
@@ -147,7 +147,7 @@
 
 (rule
  (targets Our_mail_files.ml)
- (deps mail/in.mbox mail/out.mbox mail/trash.mbox mail/projects.mbox)
+ (deps mail/in.mbox mail/out.mbox mail/trash.mbox mail/projects.mbox mail/nicknames.vcf)
  (action
   (with-stdout-to
    %{targets}
@@ -164,6 +164,9 @@
     (echo "|}\n")
     (echo "let projects = {|")
     (cat mail/projects.mbox)
+    (echo "|}\n")
+    (echo "let nicknames = {|")
+    (cat mail/nicknames.vcf)
     (echo "|}\n")))))
 
 (executables
@@ -172,6 +175,7 @@
   (libraries
     caps ; the authority to save an attachment
     networking_mail ; Mail, Mime, Mbox
+    appkit_pim ; Vcard, the nicknames
     internet_mail ; the built-in mailboxes
     appkit_richtext ; Style, a text's look
     appkit_stroke_text ; Hershey's strokes, from the left

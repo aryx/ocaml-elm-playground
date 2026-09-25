@@ -12,3 +12,5 @@
 
 let mailboxes =
   [ ("In", Our_mail_files.in_); ("Out", Our_mail_files.out); ("Trash", Our_mail_files.trash); ("Projects", Our_mail_files.projects) ]
+
+let nicknames = Our_mail_files.nicknames

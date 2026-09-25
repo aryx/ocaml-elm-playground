@@ -1,7 +1,7 @@
 ; claude: unit tests for the internet applications' own libraries, run
 ; by 'make test' (dune runtest): so far TinyEudora's built-in mailboxes,
-; read and written back byte for byte
+; read and written back byte for byte, and its nicknames
 (test
  (name Test)
- (libraries alcotest testo networking_mail internet_mail)
+ (libraries alcotest testo networking_mail internet_mail appkit_pim)
 )

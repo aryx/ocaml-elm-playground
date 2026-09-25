@@ -1592,6 +1592,9 @@ let flagged : Testutil_golden.flagged list =
     (* claude: TinyEudora's multipart message: its text part, and its
      * attachment, a PNG in base64, decoded and shown under it *)
     ("apps/internet/software/TinyEudora", "attachment", 5, [ "message=8" ]);
+    (* claude: a reply to the lunch being written: Eudora's composition
+     * window, the quote under its "At ..., Alice wrote:" (phase 3) *)
+    ("apps/internet/software/TinyEudora", "compose", 5, [ "compose=reply" ]);
     ("apps/internet/software/TinyMosaic", "pretty", 5, [ "url=about:history"; "width=600"; "wrap=pretty" ]);
     (* claude: the built-in fill-out form, its controls in Motif's look *)
     ("apps/internet/software/TinyMosaic", "form", 5, [ "url=about:form" ]);

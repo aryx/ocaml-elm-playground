@@ -333,7 +333,28 @@ Decided in phase 1: `Mail`'s folding is not shared with `Vcard`/`Ics`
 Mail.mli says so); `mail/` as the folder's name; the client's parts
 stay in TinyEudora until a second user comes (no appkit yet); the
 messages are written for the lessons, none historical (the author may
-still add Thuerk's). Next: phase 3, composing.
+still add Thuerk's).
+
+**Phase 3 done** (2026-09-26): the lower window a pane -- reading,
+composing (the gui toolkit's fields and text area, in a black and
+white theme), the store's documents to attach (a list of their names:
+Eudora's File menu opened mailboxes, so no File_menu), a new
+mailbox's name, the nicknames. New Message, Reply (quoted under "At
+..., Alice wrote:", In-Reply-To and References, the original marked
+R once queued), Forward (its attachments kept, marked F); Queue: the
+message built by `Mime`'s new writers (`text_part`, quoted-printable
+when not ASCII; `attachment`, base64 in lines of 76; `multipart`),
+the subject as an encoded word, nicknames expanded, the signature
+added, Bcc: kept until sent, into Out marked Q. Nicknames as vCards
+(`Our_mail.nicknames`, `mail/nicknames.vcf`: alice, carol, dave, and
+team, a card with three addresses), Special > Make Nickname. The
+mailboxes kept in the store as mbox files, `eudora-<name>.mbox`, the
+nicknames as `eudora-nicknames.vcf`, the built-in ones the defaults;
+flags `compose=new|reply|forward`, `mailbox=`, `user=`. Checked by
+script once each: a reply queued and read back from the store, team
+expanded, an attachment picked and queued. Golden frame
+`TinyEudora_compose.png`. TinyEudora is 870 lines, `Mime` 272. Next:
+phase 4, `Smtp` and `Pop3`.
 
 Decisions taken before starting:
 

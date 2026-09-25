@@ -230,3 +230,43 @@ let rec text (m : Mail.t) : string =
        chosen)
 
 let attachments (m : Mail.t) : leaf list = List.filter is_attachment (leaves m)
+
+(*****************************************************************************)
+(* Writing *)
+(*****************************************************************************)
+
+let text_part (s : string) : Mail.t =
+  if String.for_all (fun c -> Char.code c < 128) s then Mail.make [ ("Content-Type", "text/plain; charset=us-ascii") ] s
+  else Mail.make [ ("Content-Type", "text/plain; charset=utf-8"); ("Content-Transfer-Encoding", "quoted-printable") ] (quoted_printable_encode s)
+
+let type_of_filename (name : string) : string =
+  let ext = match String.rindex_opt name '.' with Some i -> String.lowercase_ascii (String.sub name (i + 1) (String.length name - i - 1)) | None -> "" in
+  match ext with
+  | "png" -> "image/png"
+  | "gif" -> "image/gif"
+  | "jpg" | "jpeg" -> "image/jpeg"
+  | "txt" -> "text/plain"
+  | "mbox" -> "application/mbox"
+  | _ -> "application/octet-stream"
+
+(* base64 in lines of 76, as RFC 2045 wants them *)
+let base64_lines (s : string) : string =
+  let e = Base64.encode s in
+  let n = String.length e in
+  String.concat "\n" (List.init ((n + 75) / 76) (fun i -> String.sub e (i * 76) (min 76 (n - (i * 76))))) ^ "\n"
+
+let attachment ~(filename : string) (data : string) : Mail.t =
+  Mail.make
+    [
+      ("Content-Type", Printf.sprintf "%s; name=\"%s\"" (type_of_filename filename) filename);
+      ("Content-Transfer-Encoding", "base64");
+      ("Content-Disposition", Printf.sprintf "attachment; filename=\"%s\"" filename);
+    ]
+    (base64_lines data)
+
+let multipart ~(boundary : string) (parts : Mail.t list) : (string * string) list * string =
+  let chomp s = if s <> "" && s.[String.length s - 1] = '\n' then String.sub s 0 (String.length s - 1) else s in
+  ( [ ("MIME-Version", "1.0"); ("Content-Type", Printf.sprintf "multipart/mixed; boundary=\"%s\"" boundary) ],
+    "This is a multi-part message in MIME format.\n"
+    ^ String.concat "" (List.map (fun p -> "--" ^ boundary ^ "\n" ^ chomp (Mail.to_string p) ^ "\n") parts)
+    ^ "--" ^ boundary ^ "--\n" )

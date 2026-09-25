@@ -30,21 +30,53 @@
  *   Delete       into the Trash (from the Trash: gone)
  *   PageDown/Up  the message scrolled, and the mouse's wheel
  *
- * and the menus: Mailbox (open one), Message (Delete, Blah Blah
- * Blah), Transfer (Eudora's name for moving a message to a mailbox),
- * Special (Empty Trash). Flag message=n: the n-th message of In
- * opened at the start.
+ * and the menus: Mailbox (open one, or New...), Message (New Message,
+ * Reply, Forward, Attach Document..., Delete, Blah Blah Blah),
+ * Transfer (Eudora's name for moving a message to a mailbox), Special
+ * (Empty Trash, Make Nickname, Nicknames). Flags: message=n, the n-th
+ * message of the mailbox opened at the start; mailbox=Out, that
+ * mailbox shown (In by default); compose=new|reply|forward, a
+ * message begun at the start (to it); user=, who you are ("Bob
+ * <bob@tiny>").
+ *
+ * Writing is Eudora's on a dial-up modem: a message written is not
+ * sent but *queued* -- put in Out, marked Q -- and Send Queued
+ * Messages would send them all at once, connecting once (the plan's
+ * phase 5). A reply quotes the message with "> " under Eudora's "At
+ * 12:00 PM 9/25/26, Alice wrote:", and says what it answers,
+ * In-Reply-To: and References:, which is what threads a conversation;
+ * the message answered is marked R (forwarded: F) when the reply is
+ * queued. Bcc: stays in the queued copy until it is sent: the
+ * recipients are the envelope's, not the headers' (Smtp.mli, to come).
+ * The signature is added when a message is queued, as Eudora added its
+ * Signature file when it sent. To:, Cc: and Bcc: take nicknames --
+ * "team" -- expanded when queued: Eudora's address book, kept as
+ * vCards (appkits/pim's Vcard, the one TinyPalmPilot's Address Book
+ * reads), a list being a card with several addresses.
+ *
+ * The mailboxes are kept as they change, each an mbox file in the
+ * platform's store ("eudora-In.mbox"; natively a file you can open
+ * with mutt, in a browser its localStorage), and the nicknames as
+ * "eudora-nicknames.vcf". The built-in ones are the defaults: a
+ * mailbox never changed is not written.
  *
  * With no server, it opens on the built-in mailboxes, Our_mail --
  * messages written for what they show: a thread of five replies, a
  * forged sender, a digest of two messages, a picture attached,
  * quoted-printable French with an encoded-word subject, a ">From" line.
  *
- * What it uses: networking_mail (Mail, Mime, Mbox), the picture
- * decoders (Png, Gif, Jpeg, as the browsers'), Stroke_text (text from
- * the left, with Hershey's real widths), the playground's menus. Not
- * the network yet, nor the File menu: composing, the queue and
- * Check Mail are the plan's next phases.
+ * What it uses: networking_mail (Mail, Mime, Mbox: reading and
+ * writing), the picture decoders (Png, Gif, Jpeg, as the browsers'),
+ * Stroke_text (text from the left, with Hershey's real widths), Vcard,
+ * the gui toolkit's fields and text area (Text_edit), the
+ * playground's store. Not the network yet: sending and Check Mail are
+ * the plan's next phases. Not the File menu either: a document is
+ * attached from the store by a list of its names, since Eudora's
+ * File menu opened mailboxes, not documents.
+ *
+ * Exercises: Reply All (the Cc: kept, yourself removed); a nickname
+ * edited and removed in the Nicknames pane; Eudora's "Keep copies" off,
+ * a sent message not kept in Out.
  *
  * Hershey's font has no accents: "café" is decoded, in UTF-8, and
  * drawn "cafe" (ascii below). Exercise: the accents as strokes over
@@ -59,6 +91,27 @@ open Playground
 type column = Status | Who | Date | Size | Subject
 type box = { name : string; entries : Mbox.entry list }
 
+(* a message being written *)
+type draft = {
+  to_ : string;
+  subject : string;
+  cc : string;
+  bcc : string;
+  body : Text_edit.t;
+  attached : (string * string) list; (* each document's name and bytes *)
+  in_reply_to : string option; (* the Message-ID answered *)
+  references : string list;
+  marks : (string * char) option; (* the original's Message-ID, and its mark once this is queued: A replied, F forwarded *)
+}
+
+(* what the lower window shows *)
+type pane =
+  | Reading
+  | Composing of draft
+  | Picking of draft * string list * int option (* Attach Document...: the store's documents *)
+  | Naming of string (* Mailbox > New...: the name being typed *)
+  | Nicknames
+
 type model = {
   boxes : box list;
   box : string; (* the mailbox shown *)
@@ -66,8 +119,14 @@ type model = {
   sort : column option; (* None: the order of arrival *)
   blah : bool; (* every header *)
   scroll : float; (* the message, scrolled, in pixels *)
+  pane : pane;
+  nicknames : Vcard.card list;
+  user : Mail.address;
+  (* what the store holds, to write only what changed *)
+  saved : box list;
+  saved_nicknames : Vcard.card list;
   said : string;
-  started : bool; (* the flags read *)
+  started : bool; (* the flags and the store read *)
   was : string list;
   was_down : bool;
 }
@@ -80,6 +139,11 @@ let initial : model =
     sort = None;
     blah = false;
     scroll = 0.;
+    pane = Reading;
+    nicknames = Vcard.of_string Our_mail.nicknames;
+    user = { display = "Bob"; mailbox = "bob@tiny" };
+    saved = [];
+    saved_nicknames = [];
     said = "";
     started = false;
     was = [];
@@ -336,20 +400,206 @@ let save (caps : < Cap.open_out ; .. >) (a : Mime.leaf) (m : model) : model =
   { m with said = Printf.sprintf "saved %s, %d bytes" name (String.length a.data) }
 
 (*****************************************************************************)
+(* Nicknames *)
+(*****************************************************************************)
+
+(* a card's nickname: its name, lowercased, without spaces *)
+let nickname (c : Vcard.card) : string = String.lowercase_ascii (String.concat "" (String.split_on_char ' ' c.full_name))
+
+(* the nicknames of a To: replaced by their addresses *)
+let expand (cards : Vcard.card list) (s : string) : string =
+  Mail.addresses s
+  |> List.concat_map (fun (a : Mail.address) ->
+         match List.find_opt (fun c -> a.display = "" && nickname c = String.lowercase_ascii a.mailbox) cards with
+         | Some c ->
+             let one = List.length c.emails = 1 in
+             List.map (fun (e : Vcard.email) -> { Mail.display = (if one then c.full_name else ""); mailbox = e.address }) c.emails
+         | None -> [ a ])
+  |> List.map Mail.address_to_string |> String.concat ", "
+
+(* Special > Make Nickname: the sender of the message shown *)
+let make_nickname (m : model) : model =
+  match Option.map (fun e -> Mail.addresses (header e "from")) (current m) with
+  | Some (a :: _) ->
+      if List.exists (fun (c : Vcard.card) -> List.exists (fun (x : Vcard.email) -> x.address = a.mailbox) c.emails) m.nicknames then
+        { m with said = a.mailbox ^ " has a nickname already" }
+      else
+        let c = { (Vcard.make (Mail.who a)) with emails = [ { address = a.mailbox; kinds = [] } ] } in
+        { m with nicknames = m.nicknames @ [ c ]; said = "nickname " ^ nickname c }
+  | _ -> m
+
+(*****************************************************************************)
+(* Composing *)
+(*****************************************************************************)
+
+let blank : draft =
+  { to_ = ""; subject = ""; cc = ""; bcc = ""; body = Text_edit.of_string ""; attached = []; in_reply_to = None; references = []; marks = None }
+
+(* the caret at the end, where a reply is typed *)
+let at_end (s : string) : Text_edit.t = Text_edit.at (String.length s) (Text_edit.of_string s)
+
+(* the message's text, each line after "> " (after ">" when it was
+   quoted already, so that ">>" counts the replies) *)
+let quoted (e : Mbox.entry) : string =
+  let rec trim = function "" :: rest -> trim rest | l -> l in
+  let lines = List.rev (trim (List.rev (String.split_on_char '\n' (Mime.text e.mail)))) in
+  String.concat "\n" (List.map (fun l -> if l = "" then ">" else if l.[0] = '>' then ">" ^ l else "> " ^ l) lines)
+
+let starts_ci (prefix : string) (s : string) : bool =
+  String.length s >= String.length prefix && String.lowercase_ascii (String.sub s 0 (String.length prefix)) = prefix
+
+let composing (d : draft) (m : model) : model =
+  match m.pane with
+  | Composing _ | Picking _ -> { m with said = "a message is being written: Queue or Cancel it first" }
+  | _ -> { m with pane = Composing d }
+
+let reply (m : model) : model =
+  match current m with
+  | None -> m
+  | Some e ->
+      let subject = header e "subject" in
+      let subject = if starts_ci "re:" subject then subject else "Re: " ^ subject in
+      let to_ = match Mail.get e.mail "reply-to" with Some r -> r | None -> header e "from" in
+      let id = List.nth_opt (Mail.message_ids (header e "message-id")) 0 in
+      (* what it answered, and it: References, or else In-Reply-To (RFC
+         5322, 3.6.4) *)
+      let before = match Mail.message_ids (header e "references") with [] -> Mail.message_ids (header e "in-reply-to") | l -> l in
+      let body = Printf.sprintf "At %s, %s wrote:\n%s\n\n" (date_text e) (who "In" e) (quoted e) in
+      composing
+        { blank with to_; subject; body = at_end body; in_reply_to = id; references = before @ Option.to_list id; marks = Option.map (fun i -> (i, 'A')) id }
+        m
+
+let forward (m : model) : model =
+  match current m with
+  | None -> m
+  | Some e ->
+      let body = Printf.sprintf "\n\n> From: %s\n> Subject: %s\n> Date: %s\n>\n%s\n" (header e "from") (header e "subject") (header e "date") (quoted e) in
+      let attached = List.map (fun (a : Mime.leaf) -> (Option.value a.filename ~default:"attachment", a.data)) (Mime.attachments e.mail) in
+      let id = List.nth_opt (Mail.message_ids (header e "message-id")) 0 in
+      composing { blank with subject = "Fwd: " ^ header e "subject"; body = Text_edit.of_string body; attached; marks = Option.map (fun i -> (i, 'F')) id } m
+
+(* the wall clock, as a Date: header writes it *)
+let now (computer : computer) : Mail.date =
+  let t = match computer.time with Time t -> t in
+  let offset = Playground_platform.utc_offset computer.time in
+  let day, tod = Clock.local ~offset t in
+  { day; time = { tod with second = Float.round (Float.of_int (int_of_float tod.second)) }; offset }
+
+(* the original marked: R, or F *)
+let mark ((id, c) : string * char) (m : model) : model =
+  let marked (e : Mbox.entry) = if Mail.message_ids (header e "message-id") = [ id ] then { e with mail = Mail.set "X-Status" (header e "x-status" ^ String.make 1 c) e.mail } else e in
+  { m with boxes = List.map (fun b -> { b with entries = List.map marked b.entries }) m.boxes }
+
+(* The draft made a message, in Out, queued. Its body is a text part
+   (quoted-printable if it is not ASCII), or a multipart with the
+   documents attached; the headers are what Mail.mli reads back. *)
+let queue (computer : computer) (d : draft) (m : model) : model =
+  let to_ = expand m.nicknames d.to_ and cc = expand m.nicknames d.cc and bcc = expand m.nicknames d.bcc in
+  if to_ = "" then { m with said = "no recipient: To: is empty" }
+  else
+    let date = now computer in
+    let n = List.length (List.concat_map (fun b -> b.entries) m.boxes) in
+    let unique = Printf.sprintf "%.0f.%d" (Mail.seconds date) n in
+    let id = unique ^ "@tiny" in
+    let signature = "\n-- \n" ^ Mail.who m.user ^ "\n" in
+    let text = Text_edit.to_string d.body ^ signature in
+    let content, body =
+      if d.attached = [] then
+        let p = Mime.text_part text in
+        (("MIME-Version", "1.0") :: List.map (fun (f : Mail.field) -> (f.name, String.trim (Mail.unfold f.raw))) p.fields, p.body)
+      else Mime.multipart ~boundary:("=_tiny_" ^ unique) (* no '@': RFC 2046's bchars *) (Mime.text_part text :: List.map (fun (name, bytes) -> Mime.attachment ~filename:name bytes) d.attached)
+    in
+    let some name v = if v = "" then [] else [ (name, v) ] in
+    let fields =
+      [ ("From", Mail.address_to_string m.user); ("To", to_) ]
+      @ some "Cc" cc @ some "Bcc" bcc
+      @ [ ("Subject", Mime.encode_words d.subject); ("Date", Mail.date_to_string date); ("Message-ID", "<" ^ id ^ ">") ]
+      @ some "In-Reply-To" (match d.in_reply_to with Some r -> "<" ^ r ^ ">" | None -> "")
+      @ some "References" (String.concat " " (List.map (fun r -> "<" ^ r ^ ">") d.references))
+      @ content
+      @ [ ("Status", "RO"); ("X-Status", "Q") ]
+    in
+    let e = { Mbox.envelope = Mbox.envelope ~sender:m.user.mailbox date; mail = Mail.make fields body } in
+    let m = match d.marks with Some mk -> mark mk m | None -> m in
+    let m = with_entries "Out" (fun l -> l @ [ e ]) m in
+    { m with pane = Reading; said = "queued in Out: " ^ Mime.decode_words d.subject }
+
+(*****************************************************************************)
+(* The store *)
+(*****************************************************************************)
+
+type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir >
+
+let prefix = "eudora-"
+let stored_name (box : string) : string = prefix ^ box ^ ".mbox"
+let nicknames_name = prefix ^ "nicknames.vcf"
+
+(* the built-in mailboxes, or what the store has of them, then the
+   user's own *)
+let load (caps : caps) (m : model) : model =
+  let fetch = Playground_platform.fetch caps in
+  let builtin = List.map (fun b -> match fetch (stored_name b.name) with Some t -> { b with entries = Mbox.parse t } | None -> b) m.boxes in
+  let own =
+    List.filter_map
+      (fun n ->
+        let p = String.length prefix and k = String.length n in
+        if k > p + 5 && String.sub n 0 p = prefix && String.sub n (k - 5) 5 = ".mbox" then
+          let name = String.sub n p (k - p - 5) in
+          if List.exists (fun b -> b.name = name) builtin then None else Option.map (fun t -> { name; entries = Mbox.parse t }) (fetch n)
+        else None)
+      (Playground_platform.stored caps)
+  in
+  let nicknames = match fetch nicknames_name with Some t -> Vcard.of_string t | None -> m.nicknames in
+  let boxes = builtin @ own in
+  { m with boxes; saved = boxes; nicknames; saved_nicknames = nicknames }
+
+(* what changed, written *)
+let keep (caps : caps) (m : model) : model =
+  if m.boxes == m.saved && m.nicknames == m.saved_nicknames then m
+  else (
+    List.iter
+      (fun b ->
+        match List.find_opt (fun s -> s.name = b.name) m.saved with
+        | Some s when s.entries = b.entries -> ()
+        | _ -> Playground_platform.store caps (stored_name b.name) (Mbox.to_string b.entries))
+      m.boxes;
+    if m.nicknames <> m.saved_nicknames then Playground_platform.store caps nicknames_name (Vcard.to_string m.nicknames);
+    { m with saved = m.boxes; saved_nicknames = m.nicknames })
+
+(*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
 
-let menu_mailbox (m : model) = "Mailbox" :: List.map (fun b -> b.name) m.boxes
-let menu_message = [ "Message"; "Delete"; "Blah Blah Blah" ]
+let menu_mailbox (m : model) = ("Mailbox" :: List.map (fun b -> b.name) m.boxes) @ [ "New..." ]
+let menu_message = [ "Message"; "New Message"; "Reply"; "Forward"; "Attach Document..."; "Delete"; "Blah Blah Blah" ]
 let menu_transfer (m : model) = "Transfer" :: List.map (fun b -> "-> " ^ b.name) m.boxes
-let menu_special = [ "Special"; "Empty Trash"; "Sort by arrival" ]
+let menu_special = [ "Special"; "Empty Trash"; "Sort by arrival"; "Make Nickname"; "Nicknames" ]
 
-let menu_box (i : int) : Widget.box = { Widget.x = -420. +. (float_of_int i *. 120.); y = bar_y; w = 114.; h = 28. }
+let menu_box (i : int) : Widget.box = { Widget.x = -405. +. (float_of_int i *. 155.); y = bar_y; w = 150.; h = 28. }
 
-let menus (computer : computer) (m : model) : model =
+let menus (caps : caps) (computer : computer) (m : model) : model =
   let chose items i = List.nth_opt items (Gui.menu_in computer (menu_box i) items 0) in
-  let m = match chose (menu_mailbox m) 0 with Some name when name <> "Mailbox" -> open_box name m | _ -> m in
-  let m = match chose menu_message 1 with Some "Delete" -> delete m | Some "Blah Blah Blah" -> { m with blah = not m.blah } | _ -> m in
+  let m =
+    match chose (menu_mailbox m) 0 with
+    | Some "New..." -> { m with pane = Naming "" }
+    | Some name when name <> "Mailbox" -> open_box name { m with pane = (match m.pane with Reading | Nicknames | Naming _ -> Reading | p -> p) }
+    | _ -> m
+  in
+  let m =
+    match chose menu_message 1 with
+    | Some "New Message" -> composing blank m
+    | Some "Reply" -> reply m
+    | Some "Forward" -> forward m
+    | Some "Attach Document..." -> (
+        match m.pane with
+        | Composing d ->
+            let names = List.filter (fun n -> not (String.length n > String.length prefix && String.sub n 0 (String.length prefix) = prefix)) (Playground_platform.stored caps) in
+            { m with pane = Picking (d, names, None) }
+        | _ -> { m with said = "attach to a message being written: New Message first" })
+    | Some "Delete" -> delete m
+    | Some "Blah Blah Blah" -> { m with blah = not m.blah }
+    | _ -> m
+  in
   let m =
     match chose (menu_transfer m) 2 with
     | Some s when String.length s > 3 && String.sub s 0 3 = "-> " -> transfer (String.sub s 3 (String.length s - 3)) m
@@ -360,36 +610,107 @@ let menus (computer : computer) (m : model) : model =
       let m = with_entries "Trash" (fun _ -> []) m in
       { (if m.box = "Trash" then { m with selected = None } else m) with said = "the Trash emptied" }
   | Some "Sort by arrival" -> { m with sort = None }
+  | Some "Make Nickname" -> make_nickname m
+  | Some "Nicknames" -> (match m.pane with Reading | Naming _ -> { m with pane = Nicknames } | _ -> m)
   | _ -> m
 
 let flag (computer : computer) (name : string) : string option = List.assoc_opt name computer.flags
 
-let clicked (caps : < Cap.open_out ; .. >) (computer : computer) (m : model) : model =
+let clicked (caps : caps) (computer : computer) (m : model) : model =
   let x = computer.mouse.mx and y = computer.mouse.my in
   if y <= list_top -. 22. && y > first_row_top && x > left && x < right then
     (* a column's title: sorted by it, or back *)
     match column_at x with Some c -> { m with sort = (if m.sort = Some c then None else Some c) } | None -> m
   else if y <= first_row_top && y > list_bottom && x > left && x < right then
     let k = int_of_float ((first_row_top -. y) /. row_h) + first_shown m in
-    match List.nth_opt (order m) k with Some i -> select (Some i) m | None -> m
+    match List.nth_opt (order m) k with Some i -> select (Some i) { m with pane = (if m.pane = Nicknames then Reading else m.pane) } | None -> m
   else
     match current m with
-    | Some e when y < body_top && y > msg_bottom -> (
+    | Some e when m.pane = Reading && y < body_top && y > msg_bottom -> (
         let hit = List.find_opt (fun (r, top) -> (match r with Attachment _ -> true | _ -> false) && y <= top && y > top -. line_h) (placed m e) in
         match hit with Some (Attachment a, _) -> save caps a m | _ -> m)
     | _ -> m
 
-let update (caps : < Cap.open_out ; .. >) (computer : computer) (m : model) : model =
+(* the composition window's rows, from the top: the fields, and the
+   buttons on the right *)
+let form_top = msg_top -. 22.
+let form_row (i : int) : float = form_top -. 18. -. (float_of_int i *. 28.)
+let field_box (i : int) : Widget.box = { Widget.x = left +. 420.; y = form_row i; w = 600.; h = 24. }
+let button_box (i : int) : Widget.box = { Widget.x = right -. 90.; y = form_row i; w = 150.; h = 24. }
+let body_box : Widget.box =
+  let top = form_row 5 -. 22. and bottom = msg_bottom +. 8. in
+  { Widget.x = 0.; y = (top +. bottom) /. 2.; w = right -. left -. 20.; h = top -. bottom }
+
+(* the fields, the body and the buttons of the message being written *)
+let compose (computer : computer) (d : draft) (m : model) : model =
+  let to_ = Gui.field_in computer (field_box 0) d.to_ in
+  let subject = Gui.field_in computer (field_box 2) d.subject in
+  let cc = Gui.field_in computer (field_box 3) d.cc in
+  let bcc = Gui.field_in computer (field_box 4) d.bcc in
+  let body = Gui.text_area_in computer body_box d.body in
+  let d = { d with to_; subject; cc; bcc; body } in
+  let m = { m with pane = Composing d } in
+  if Gui.button_in computer (button_box 0) "Queue" then queue computer d m
+  else if Gui.button_in computer (button_box 2) "Cancel" then { m with pane = Reading; said = "not queued" }
+  else m
+
+(* the store's documents, one to attach *)
+let pick (caps : caps) (computer : computer) (d : draft) (names : string list) (sel : int option) (m : model) : model =
+  let sel = Gui.list_in computer { Widget.x = 0.; y = (msg_top +. msg_bottom) /. 2.; w = 500.; h = 400. } names sel in
+  let m = { m with pane = Picking (d, names, sel) } in
+  if Gui.button_in computer (button_box 0) "Attach" then
+    match Option.bind sel (List.nth_opt names) with
+    | Some name -> (
+        match Playground_platform.fetch caps name with
+        | Some bytes -> { m with pane = Composing { d with attached = d.attached @ [ (name, bytes) ] }; said = "attached " ^ name }
+        | None -> m)
+    | None -> { m with said = "choose a document" }
+  else if Gui.button_in computer (button_box 1) "Cancel" then { m with pane = Composing d }
+  else m
+
+(* Mailbox > New...: a name, and an empty mailbox of that name *)
+let naming (computer : computer) (name : string) (m : model) : model =
+  let name = Gui.field_in computer (field_box 1) name in
+  let m = { m with pane = Naming name } in
+  let ok = name <> "" && String.for_all (fun c -> c = ' ' || c = '-' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) name in
+  if Gui.button_in computer (button_box 0) "Create" || (computer.keyboard.kenter && ok) then
+    if not ok then { m with said = "a name of letters, digits and spaces" }
+    else if List.exists (fun b -> b.name = name) m.boxes then { m with said = name ^ " exists already" }
+    else open_box name { m with boxes = m.boxes @ [ { name; entries = [] } ]; pane = Reading; said = "new mailbox " ^ name }
+  else if Gui.button_in computer (button_box 1) "Cancel" then { m with pane = Reading }
+  else m
+
+(* Macintosh's black and white, for the toolkit's widgets too *)
+let mac_theme = { Theme.default with background = white; face = white; face_hot = rgb 225 225 225; face_down = rgb 190 190 190; edge = black; text = black; accent = black; field_face = white; text_size = 14.; row = 28. }
+
+let start (caps : caps) (computer : computer) (m : model) : model =
+  let m = load caps { m with started = true } in
+  let m = match Option.bind (flag computer "user") Mail.address with Some user -> { m with user } | None -> m in
+  let m = match flag computer "mailbox" with Some name when List.exists (fun b -> b.name = name) m.boxes -> { m with box = name } | _ -> m in
+  let n = List.length (entries m) in
   let m =
-    if m.started then m
-    else
-      let m = { m with started = true } in
-      let n = List.length (entries m) in
-      match Option.bind (flag computer "message") int_of_string_opt with
-      | Some k when k >= 1 && k <= n -> select (Some (k - 1)) m
-      | _ -> select (if n > 0 then Some (n - 1) else None) m
+    match Option.bind (flag computer "message") int_of_string_opt with
+    | Some k when k >= 1 && k <= n -> select (Some (k - 1)) m
+    | _ -> select (if n > 0 then Some (n - 1) else None) m
   in
-  let m = menus computer m in
+  match flag computer "compose" with
+  | Some "new" -> composing blank m
+  | Some "reply" -> reply m
+  | Some "forward" -> forward m
+  | _ -> m
+
+let update (caps : caps) (computer : computer) (m : model) : model =
+  Gui.set_theme mac_theme;
+  let m = if m.started then m else start caps computer m in
+  let m = menus caps computer m in
+  let m =
+    match m.pane with
+    | Composing d -> compose computer d m
+    | Picking (d, names, sel) -> pick caps computer d names sel m
+    | Naming name -> naming computer name m
+    | Nicknames -> if Gui.button_in computer (button_box 0) "Close" then { m with pane = Reading } else m
+    | Reading -> m
+  in
   let now = Set_.elements computer.keyboard.keys in
   let pressed key = List.mem key now && not (List.mem key m.was) in
   let down = computer.mouse.mdown && not m.was_down in
@@ -397,8 +718,9 @@ let update (caps : < Cap.open_out ; .. >) (computer : computer) (m : model) : mo
   let ord = order m in
   let pos = Option.bind m.selected (fun i -> position i ord) in
   let step d = match pos with Some p -> List.nth_opt ord (max 0 (min (List.length ord - 1) (p + d))) | None -> List.nth_opt ord 0 in
+  let reading = m.pane = Reading || m.pane = Nicknames in
   let m =
-    if Gui.modal () then m
+    if Gui.modal () || not reading then m
     else if pressed "ArrowDown" then select (step 1) m
     else if pressed "ArrowUp" then select (step (-1)) m
     else if pressed "Delete" || pressed "Backspace" then delete m
@@ -409,7 +731,7 @@ let update (caps : < Cap.open_out ; .. >) (computer : computer) (m : model) : mo
   let page = body_top -. msg_bottom -. line_h in
   let scroll = m.scroll +. (if pressed "PageDown" then page else 0.) -. (if pressed "PageUp" then page else 0.) +. (computer.mouse.mwheel *. -3. *. line_h) in
   let most = match current m with Some e -> max 0. (total_height m e -. page) | None -> 0. in
-  { m with scroll = max 0. (min most scroll); was = now; was_down = computer.mouse.mdown }
+  keep caps { m with scroll = max 0. (min most scroll); was = now; was_down = computer.mouse.mdown }
 
 (*****************************************************************************)
 (* View *)
@@ -495,25 +817,54 @@ let shown_message (m : model) (e : Mbox.entry) : shape list =
       message_cache := Some (e, m.blah, m.scroll, shapes);
       shapes
 
+(* Eudora's title for a message being written: its first recipient and
+   its subject, "No Recipient, No Subject" until then *)
+let draft_title (d : draft) : string =
+  let to_ = match Mail.addresses d.to_ with a :: _ -> Mail.who a | [] -> "No Recipient" in
+  to_ ^ ", " ^ if d.subject = "" then "No Subject" else d.subject
+
+let label (i : int) (s : string) : shape list = text ~bold:true ink (left +. 20.) (form_row i -. 5.) s
+
+let compose_view (m : model) (d : draft) : shape list =
+  window (ascii (draft_title d)) msg_top msg_bottom
+  @ label 0 "To:" @ label 1 "From:" @ label 2 "Subject:" @ label 3 "Cc:" @ label 4 "Bcc:" @ label 5 "Attachments:"
+  @ text ink (left +. 125.) (form_row 1 -. 5.) (ascii (Mail.address_to_string m.user))
+  @ text ink (left +. 125.) (form_row 5 -. 5.) (fit 700. (ascii (String.concat ", " (List.map fst d.attached))))
+  @ [ rectangle ink (right -. left) 1. |> move 0. (form_row 5 -. 16.) ]
+
+let nicknames_view (m : model) : shape list =
+  window "Nicknames" msg_top msg_bottom
+  @ List.concat
+      (List.mapi
+         (fun i (c : Vcard.card) ->
+           let y = body_top -. 13. -. (float_of_int i *. line_h) in
+           text ~bold:true ink (left +. 20.) y (nickname c)
+           @ text ink (left +. 160.) y (fit 600. (ascii (String.concat ", " (List.map (fun (e : Vcard.email) -> e.address) c.emails)))))
+         m.nicknames)
+
 let view (_ : computer) (m : model) : shape list =
   let th = Gui.theme () in
   let n = List.length (entries m) in
   let unread = List.length (List.filter (fun e -> not (is_read e)) (entries m)) in
   let message =
-    match current m with
-    | Some e ->
+    match (m.pane, current m) with
+    | Composing d, _ -> compose_view m d
+    | Picking (d, _, _), _ -> window ("Attach to: " ^ ascii (draft_title d)) msg_top msg_bottom @ label 0 "A document of the store:"
+    | Naming _, _ -> window "New Mailbox" msg_top msg_bottom @ label 1 "Name:"
+    | Nicknames, _ -> nicknames_view m
+    | Reading, Some e ->
         window (ascii (Printf.sprintf "%s, %s, %s" (who m.box e) (date_text e) (header e "subject"))) msg_top msg_bottom
         @ shown_message m e
         (* the title bar again, over the rows scrolled up under it *)
         @ [ rectangle paper (right -. left) 10. |> move 0. (body_top +. 4.) ]
-    | None -> window "" msg_top msg_bottom
+    | Reading, None -> window "" msg_top msg_bottom
   in
   [ rectangle (rgb 160 160 160) 1000. 1000.; rectangle th.face 1000. 30. |> move 0. bar_y; rectangle ink 1000. 1. |> move 0. (bar_y -. 15.) ]
   @ message
   @ window (Printf.sprintf "%s  (%d messages, %d unread)" m.box n unread) list_top list_bottom
   @ column_titles m @ list_view m
-  @ text ink (left +. 500.) (bar_y -. 5.) (if m.said <> "" then m.said else "TinyEudora")
+  @ text ink (left +. 640.) (bar_y -. 5.) (if m.said <> "" then m.said else "TinyEudora")
   @ Gui.draw ()
 
-let app (caps : < Cap.open_out ; .. >) = game view (update caps) initial
-let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app caps))
+let app (caps : caps) = game view (update caps) initial
+let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> caps)))

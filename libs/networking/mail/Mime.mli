@@ -103,3 +103,28 @@ val text : Mail.t -> string
 
 (* the leaves to save: those with a file name, or not text *)
 val attachments : Mail.t -> leaf list
+
+(*****************************************************************************)
+(* {1 Writing} *)
+(*****************************************************************************)
+
+(* The other way, for a message being sent: each part a Mail.t, its
+   headers saying how to read it, as the reading side above expects. *)
+
+(* a text part, UTF-8: as it is if it is ASCII (7bit), else in
+ * quoted-printable *)
+val text_part : string -> Mail.t
+
+(* [attachment ~filename bytes]: a part in base64, cut in lines of 76,
+ * its type from the name's extension (.png, .gif, .jpg, .txt, .mbox;
+ * application/octet-stream else) *)
+val attachment : filename:string -> string -> Mail.t
+
+(* the type an extension gives *)
+val type_of_filename : string -> string
+
+(* [multipart ~boundary parts]: the headers and the body of a
+ * multipart/mixed holding [parts] -- the boundary must appear in none
+ * of them (a caller makes it unique, as mailers do, from the time and
+ * a counter) *)
+val multipart : boundary:string -> Mail.t list -> (string * string) list * string

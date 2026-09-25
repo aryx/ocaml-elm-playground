@@ -53,6 +53,7 @@
   (libraries
     caps
     networking_mail
+    appkit_pim
     internet_mail
     appkit_richtext
     appkit_stroke_text

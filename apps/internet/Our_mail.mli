@@ -15,3 +15,8 @@
 (* the mailboxes, in the order of Eudora's Mailbox menu: their names
  * and their mbox files *)
 val mailboxes : (string * string) list
+
+(* Eudora's nicknames, its address book, as vCards (mail/nicknames.vcf):
+ * alice, carol, dave, and team, a list -- a card with every address of
+ * the list *)
+val nicknames : string

@@ -35,4 +35,8 @@ let tests =
           Alcotest.(check bool) "quoted-printable, joined" true (Mime.text (nth 9) |> fun t -> String.length t > 0 && not (String.contains t '='));
           Alcotest.(check bool) "the From line unquoted" true
             (List.mem "From the desk of the director: the mail server stays up all" (String.split_on_char '\n' (nth 10).body)));
+      Testo.create "the nicknames: four cards, team a list of three" (fun () ->
+          let cards = Vcard.of_string Our_mail.nicknames in
+          Alcotest.(check (list string)) "names" [ "Alice"; "Carol"; "Dave"; "team" ] (List.map (fun (c : Vcard.card) -> c.full_name) cards);
+          Alcotest.(check int) "team" 3 (List.length (List.nth cards 3).emails));
     ]

@@ -75,4 +75,17 @@ let tests =
           let m = Mail.parse digest in
           str "introduced" "----- From: Carol <carol@tiny>\n----- Subject: first\n\none" (Mime.text m);
           Alcotest.(check int) "nothing to save" 0 (List.length (Mime.attachments m)));
+      Testo.create "written, then read back: a text and an attachment" (fun () ->
+          let bytes = String.init 200 Char.chr in
+          let headers, body = Mime.multipart ~boundary:"=_b" [ Mime.text_part "un café"; Mime.attachment ~filename:"a.png" bytes ] in
+          let m = Mail.make (("Subject", "x") :: headers) body in
+          let m = Mail.parse (Mail.to_string m) in
+          str "the text" "un café" (Mime.text m);
+          (match Mime.attachments m with
+          | [ a ] ->
+              str "its type" "image/png" a.mime;
+              str "its bytes" bytes a.data
+          | l -> Alcotest.failf "%d attachments" (List.length l));
+          Alcotest.(check bool) "7-bit lines of 76 at most" true
+            (List.for_all (fun l -> String.length l <= 76 && String.for_all (fun c -> Char.code c < 128) l) (String.split_on_char '\n' body)));
     ]
