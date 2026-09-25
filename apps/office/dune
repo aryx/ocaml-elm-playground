@@ -2,18 +2,19 @@
 ; docs/claude_notes/plans/plan_gui_teaching.md): whole programs rather
 ; than demonstrations of one idea, each Tiny and each saying in its
 ; header what it deliberately does not do -- word processing and
-; publishing, spreadsheets, presentations, paint and draw, authoring and
-; compound documents (CATALOG.md's sections). Laid out like a genre of
+; publishing, spreadsheets, presentations, authoring and compound
+; documents (CATALOG.md's sections); paint and draw, TinyMacPaint and
+; TinyMacDraw, are apps/graphics/'s. Laid out like a genre of
 ; games/, with software/ for the golden frames and web/ for the browser.
 ;
 ; The modules here that are not programs are shared by them: the
 ; parts of a compound document (Part_text, Part_sheet, Part_picture,
-; Part_drawing, Part_chart) and Figure_shapes. When an app of another
-; category needs one, it becomes an appkit, as File_menu and
-; Stroke_text did (appkits/file_menu, appkits/stroke_text).
+; Part_drawing, Part_chart). When an app of another category needs one,
+; it becomes an appkit, as File_menu, Stroke_text and Figure_shapes did
+; (appkits/file_menu, appkits/stroke_text, appkits/draw_view).
 (executables
   (names
-    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyMacPaint TinyOpenDoc TinyPowerPoint TinyHyperCard TinyMacDraw TinyFrameMaker TinyOffice
+    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyOpenDoc TinyPowerPoint TinyHyperCard TinyFrameMaker TinyOffice
   )
   (libraries
     elm_playground
@@ -24,11 +25,12 @@
     appkit_document ; Undo (TinyBravo, TinyWord)
     appkit_file_menu ; File_menu
     appkit_richtext ; text with looks, and its page (TinyBravo, TinyWord)
-    appkit_paint ; a picture as bits, and what paints it (TinyMacPaint)
+    appkit_paint ; a picture as bits, and what paints it (Part_picture)
     appkit_embed ; a document of parts (TinyOpenDoc, TinyPowerPoint)
     appkit_slides ; a talk as an outline (TinyPowerPoint)
     appkit_hypertalk ; HyperCard's language (TinyHyperCard)
-    appkit_draw ; a picture as objects (TinyMacDraw)
+    appkit_draw ; a picture as objects (Part_drawing)
+    appkit_draw_view ; its figures as shapes, Figure_shapes
     appkit_stroke_text ; Hershey's strokes in a look
     elm_playground_native ; implem of virtual elm_playground
   )

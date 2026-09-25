@@ -21,7 +21,7 @@
    %{project_root}/apps/office/software/TinyExcel.exe
    %{project_root}/apps/office/software/TinyBravo.exe
    %{project_root}/apps/office/software/TinyWord.exe
-   %{project_root}/apps/office/software/TinyMacPaint.exe
+   %{project_root}/apps/graphics/software/TinyMacPaint.exe
    %{project_root}/apps/gamedev/software/TinyAseprite.exe
    %{project_root}/apps/gamedev/software/TinyTiled.exe
    %{project_root}/apps/internet/software/TinyIRC.exe
@@ -53,7 +53,7 @@
    %{project_root}/apps/office/software/TinyOpenDoc.exe
    %{project_root}/apps/office/software/TinyPowerPoint.exe
    %{project_root}/apps/office/software/TinyHyperCard.exe
-   %{project_root}/apps/office/software/TinyMacDraw.exe
+   %{project_root}/apps/graphics/software/TinyMacDraw.exe
    %{project_root}/apps/office/software/TinyFrameMaker.exe
    %{project_root}/apps/office/software/TinyOffice.exe
    %{project_root}/examples/software/TypesetParagraph.exe

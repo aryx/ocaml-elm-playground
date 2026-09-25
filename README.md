@@ -58,7 +58,7 @@ a working version of a famous original:
   engine as [TinyVisiCalc](apps/office/TinyVisiCalc.ml), and the header
   explains what changed between 1979 and 1985;
 - [TinyWord](apps/office/TinyWord.ml), a word processor: 450 lines;
-- [TinyMacPaint](apps/office/TinyMacPaint.ml), with its patterns and
+- [TinyMacPaint](apps/graphics/TinyMacPaint.ml), with its patterns and
   flood fill: 540 lines;
 - [TinyMinimoog](apps/music/TinyMinimoog.ml), the Model D synthesizer
   with its panel of knobs: 400 lines.

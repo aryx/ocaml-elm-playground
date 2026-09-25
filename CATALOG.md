@@ -334,12 +334,11 @@ match is programs run against the machine or against each other.
 
 # Apps
 
-In `apps/office/`, the sections below up to PIM (excluded) being its
-kinds of program, and in `apps/gamedev/`, the tools making what any game can
-use (a genre's level editor is with its games instead, as
+In `apps/office/`, the sections below up to Graphics (excluded) being
+its kinds of program, and in `apps/gamedev/`, the tools making what any
+game can use (a genre's level editor is with its games instead, as
 TinySokobanEd is: see `games/README-tools.md`). The other categories
-are waiting for their first app, each with a dune file saying what it
-might hold: `apps/devtools/`, `apps/graphics/`, `apps/system/`.
+each have a section, which names their directory.
 
 ## Word processing and publishing
 
@@ -362,13 +361,6 @@ might hold: `apps/devtools/`, `apps/graphics/`, `apps/system/`.
 |---|---|---|---|---|
 | [TinyPowerPoint](apps/office/TinyPowerPoint.ml) | app | PowerPoint (Robert Gaskins and Dennis Austin, Forethought, 1987) | Slides, an outline, a master, a sorter, and the show. | A talk written before it is drawn: four views of one outline, and a master slide, a style sheet for pages. |
 
-## Graphics
-
-| Program | Dir | After | In one line | What it brought |
-|---|---|---|---|---|
-| [TinyMacPaint](apps/office/TinyMacPaint.ml) | app | MacPaint (Bill Atkinson, Apple, 1984) | Paint with dots: pencil, brush, shapes, bucket, and a selection to move. | The picture as bits: palettes of tools and patterns, the seed fill, marching ants, one undo per stroke. |
-| [TinyMacDraw](apps/office/TinyMacDraw.ml) | app | MacDraw (Apple, 1984) | A picture made of objects you can select, move and group. | The picture as a list of objects: the order is the depth, handles, grouping, hollow shapes clicked through. |
-
 ## Authoring and compound documents
 
 | Program | Dir | After | In one line | What it brought |
@@ -376,6 +368,17 @@ might hold: `apps/devtools/`, `apps/graphics/`, `apps/system/`.
 | [TinyHyperCard](apps/office/TinyHyperCard.ml) | app | HyperCard (Bill Atkinson, Apple, 1987) | Cards, buttons and scripts: programming for non-programmers. | Using and building as one: backgrounds as a database's columns, the message path, HyperTalk. |
 | [TinyOpenDoc](apps/office/TinyOpenDoc.ml) | app | OpenDoc (Apple, IBM and CI Labs, 1994-97) | A document with no application: text, sheet, picture and drawing parts. | Parts edited in place, the menu bar becoming theirs; unknown parts kept byte for byte; sizes negotiated or scaled. |
 | [TinyOffice](apps/office/TinyOffice.ml) | app | today's office suites (Microsoft 365, iWork, LibreOffice) | Choose a document, sheet, presentation, picture or drawing; each holds the others. | A start screen; every kind a host; objects floating anywhere, dragged and resized; text running round them, each object its own way; pages with headers, footers and page numbers; objects that move with the text; a chart linked to a sheet; a slide show; OLE's menu merging. |
+
+## Graphics
+
+`apps/graphics/`: the programs pictures are made with -- the two ways
+of keeping one, as dots (TinyMacPaint) and as objects (TinyMacDraw),
+both Apple's of 1984.
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinyMacPaint](apps/graphics/TinyMacPaint.ml) | app | MacPaint (Bill Atkinson, Apple, 1984) | Paint with dots: pencil, brush, shapes, bucket, and a selection to move. | The picture as bits: palettes of tools and patterns, the seed fill, marching ants, one undo per stroke. |
+| [TinyMacDraw](apps/graphics/TinyMacDraw.ml) | app | MacDraw (Apple, 1984) | A picture made of objects you can select, move and group. | The picture as a list of objects: the order is the depth, handles, grouping, hollow shapes clicked through. |
 
 ## PIM
 

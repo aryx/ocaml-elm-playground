@@ -77,7 +77,7 @@ let scenes : Testutil_golden.scene list =
     ("apps/office/software/TinyWord", "", 5);
     (* 1984: a picture as dots, drawn as rectangles -- a run of black
      * dots merged with the runs under it *)
-    ("apps/office/software/TinyMacPaint", "", 5);
+    ("apps/graphics/software/TinyMacPaint", "", 5);
     ("apps/gamedev/software/TinyAseprite", "", 5);
     ("apps/gamedev/software/TinyTiled", "", 5);
     (* claude: its server not there (localhost:6667 refused -- unless a
@@ -162,7 +162,7 @@ let scenes : Testutil_golden.scene list =
      * number the stack's script wrote on it when it opened *)
     ("apps/office/software/TinyHyperCard", "", 5);
     (* 1984: a picture made of objects, not of dots *)
-    ("apps/office/software/TinyMacDraw", "", 5);
+    ("apps/graphics/software/TinyMacDraw", "", 5);
     (* 1986: one text flowing over pages from a master page, a sheet
      * anchored in it *)
     ("apps/office/software/TinyFrameMaker", "", 5);
@@ -1085,14 +1085,14 @@ let scripted : Testutil_golden.scripted list =
     (* the filled oval and the diagonal pattern, rubber-banded from one
      * corner to the other; then the bucket and grey, poured into the
      * house's window *)
-    ( "apps/office/software/TinyMacPaint",
+    ( "apps/graphics/software/TinyMacPaint",
       "shapes",
       30,
       "at(-398;202):1-3,click:2,at(88;-160):4-6,click:5,at(-260;350):7-10,click:9-16,at(-200;300):12,at(-120;250):13-17,at(-398;370):18-20,click:19,at(-104;-160):21-23,click:22,at(-4;112):24-27,click:25,at(400;-400):28-30"
     );
     (* the sun selected, then dragged left: lifted, white left behind,
      * put down opaque over the roof, the ants round it *)
-    ( "apps/office/software/TinyMacPaint",
+    ( "apps/graphics/software/TinyMacPaint",
       "move",
       26,
       "at(-440;370):1-3,click:2,at(190;350):4-7,click:6-12,at(310;230):9-14,at(250;290):15-17,click:17-24,at(100;290):20,at(0;290):21-26"
@@ -1496,17 +1496,17 @@ let scripted : Testutil_golden.scripted list =
     );
     (* a click in the middle of the hollow rectangle goes through it,
      * and selects the grey oval behind *)
-    ("apps/office/software/TinyMacDraw", "through", 8, "at(-140;135):1-4,click:2,at(600;-600):5-8");
+    ("apps/graphics/software/TinyMacDraw", "through", 8, "at(-140;135):1-4,click:2,at(600;-600):5-8");
     (* the "Objects" group dragged down, then its corner handle: the box
      * scales, its label goes with it -- the resize a map of the points *)
-    ( "apps/office/software/TinyMacDraw",
+    ( "apps/graphics/software/TinyMacDraw",
       "group",
       24,
       "at(100;280):1-3,click:2-8,at(100;200):5,at(100;60):6-10,at(210;10):12-14,click:13-19,at(260;-30):16,at(320;-60):17-20,at(600;-600):21-24"
     );
     (* a rectangle drawn across the thick line, filled dark grey from the
      * Fill menu, and sent to the back: the line is in front of it *)
-    ( "apps/office/software/TinyMacDraw",
+    ( "apps/graphics/software/TinyMacDraw",
       "draw",
       28,
       "at(-440;262):1-3,click:2,at(0;-150):4-6,click:5-11,at(120;-200):8,at(250;-280):9-12,at(-95;472):13-15,click:14,at(-95;259):16-18,click:17,at(-200;472):19-21,click:20,at(-200;367):22-24,click:23,at(600;-600):25-28"

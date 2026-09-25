@@ -1,0 +1,16 @@
+; claude: a drawing's figures (appkits/draw) as Playground shapes
+; (Figure_shapes): what TinyMacDraw (apps/graphics/) shows, and the
+; drawing part of the office's compound documents (Part_drawing). Its
+; own library beside appkit_draw, which stays pure OCaml, as
+; appkit_sheet_view is beside appkit_sheet.
+(library
+ (name appkit_draw_view)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   elm_playground ; the shapes it draws
+   appkit_draw ; Figure
+   appkit_richtext ; Style, a text's look
+   appkit_stroke_text ; its text
+ )
+)

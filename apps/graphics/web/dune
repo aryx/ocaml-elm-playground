@@ -1,28 +1,21 @@
 ; claude: the applications in a browser: ../*.ml reused as-is by a
 ; build-time copy, not a committed duplicate (see examples/web/dune), and
 ; linked against elm_playground_web.
-(copy_files ../*.{ml,mli})
+(copy_files ../*.ml)
 
 (executables
-  (names
-    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyOpenDoc TinyPowerPoint TinyHyperCard TinyFrameMaker TinyOffice
-  )
+  (names TinyMacPaint TinyMacDraw)
   (libraries
     elm_playground
     caps ; the File menu's authority to save (File_menu, plan_caps.md)
-    gui
-    appkit_sheet
-    appkit_sheet_view
-    appkit_document
-    appkit_file_menu
-    appkit_richtext
-    appkit_paint
-    appkit_embed
-    appkit_slides
-    appkit_hypertalk
-    appkit_draw
-    appkit_draw_view
-    appkit_stroke_text
+    gui ; Widget, for text_width
+    appkit_document ; Undo, Clipboard
+    appkit_file_menu ; File_menu
+    appkit_richtext ; Style, a text's look (TinyMacDraw)
+    appkit_paint ; a picture as bits, and what paints it (TinyMacPaint)
+    appkit_draw ; a picture as objects (TinyMacDraw)
+    appkit_draw_view ; its figures as shapes, Figure_shapes
+    appkit_stroke_text ; Hershey's strokes in a look
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)
