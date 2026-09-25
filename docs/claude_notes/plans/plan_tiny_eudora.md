@@ -353,8 +353,38 @@ nicknames as `eudora-nicknames.vcf`, the built-in ones the defaults;
 flags `compose=new|reply|forward`, `mailbox=`, `user=`. Checked by
 script once each: a reply queued and read back from the store, team
 expanded, an attachment picked and queued. Golden frame
-`TinyEudora_compose.png`. TinyEudora is 870 lines, `Mime` 272. Next:
-phase 4, `Smtp` and `Pop3`.
+`TinyEudora_compose.png`. TinyEudora is 870 lines, `Mime` 272.
+
+**Phase 4 done** (2026-09-26): `Smtp` and `Pop3` in `protocols/`
+(which now uses `networking_mail`), pure, their clients state machines
+stepped by the lines that arrive (`step`, `finished`), 245 lines.
+`Smtp`: replies of one line or several, commands parsed both ways, the
+envelope made from a message (To:, Cc: and Bcc:'s addresses; the text
+less its Bcc:), the dot stuffed and unstuffed; several messages in one
+connection, each sent (to how many, the refusals kept) or refused
+(RSET), HELO when EHLO is refused. `Pop3`: USER, PASS, STAT, LIST or,
+leaving the mail on the server, UIDL and only the ids not known, RETR,
+DELE, QUIT. `Unit_smtp` replays RFC 5321's D.1 and `Unit_pop3` RFC
+1939's section 10 (USER and PASS for APOP, whose MD5 we lack). Found
+on the way: D.1's "...etc. etc. etc." is sent "....etc. etc. etc." --
+the RFC's line is a placeholder, and a real one starting with a dot
+gets a second. `Mail.remove` added. Next: phase 5, the server.
+
+**Phase 5b, added (2026-09-26): your own mailbox, Gmail.** The
+author would like to read their own mail. Gmail speaks POP3 and SMTP
+only over TLS (`pop.gmail.com:995`, `smtp.gmail.com:465`) and takes
+an *app password* (2-step verification on, POP enabled in Gmail's
+settings), not the account's password; OAuth2 otherwise. Until TLS is
+ours, natively only, through curl, as `https://` is
+(`native_common/Commands`): `pop3s://` (LIST, then each message by
+number: our `Mime` and `Mbox` read what it gives) and `smtps://` (the
+envelope from `Smtp.envelope`, the text uploaded). curl then speaks
+the protocols, not our machines, which keep teaching against
+`tiny_maild`; once TLS is ours they can talk to Gmail themselves. The
+app password in a file of the store (`eudora-password`, through the
+capability), never a flag; your mail never in a test. In a browser:
+not possible (no TCP, no TLS sockets; Gmail's HTTP API with OAuth is
+another project).
 
 Decisions taken before starting:
 

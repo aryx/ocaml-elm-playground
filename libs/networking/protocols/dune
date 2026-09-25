@@ -1,5 +1,6 @@
 ; claude: the protocols, the bytes other programs agree on: Url (RFC
 ; 3986), Http (HTTP/1.1 messages), Websocket (RFC 6455), Irc (RFC 1459),
+; Smtp (RFC 5321) and Pop3 (RFC 1939), mail sent and fetched,
 ; Wire (values as bytes: varints, zigzag, garbage refused), and
 ; Transport, where a peer's packets go whatever carries them. Pure
 ; OCaml, no sockets (networking/unix/ has them). See networking/README.md.
@@ -11,5 +12,6 @@
    crypto ; Sha1, for Websocket's handshake
    elm_core ; Base64, for it too
    caps ; Cap.network, which opening a Transport takes
+   networking_mail ; Mail, which Smtp and Pop3 carry
  )
 )

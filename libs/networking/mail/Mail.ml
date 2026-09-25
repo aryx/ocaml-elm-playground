@@ -63,6 +63,7 @@ let set (name : string) (value : string) (m : t) : t =
     { m with fields = go m.fields }
   else { m with fields = m.fields @ [ f ] }
 
+let remove (name : string) (m : t) : t = { m with fields = List.filter (fun f -> not (same f.name name)) m.fields }
 let make (fields : (string * string) list) (body : string) : t = { fields = List.map (fun (name, v) -> { name; raw = " " ^ v }) fields; body }
 
 (*****************************************************************************)

@@ -69,6 +69,9 @@ val get_all : t -> string -> string list
  * (the others removed), or a new one added at the end *)
 val set : string -> string -> t -> t
 
+(* [remove name m]: every field of that name gone *)
+val remove : string -> t -> t
+
 (* [make fields body]: a message from names and values *)
 val make : (string * string) list -> string -> t
 
