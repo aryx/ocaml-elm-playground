@@ -174,6 +174,7 @@ type fragment = {
   baseline : float;
   picture : picture option;
   control : control option;
+  element : Dom.element; (* the innermost element it is in: a click on it is on that *)
 }
 
 (* a line, and the names on it a #fragment can scroll to: <a name=x>,

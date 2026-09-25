@@ -511,7 +511,7 @@ let logo (m : model) : shape list =
   in
   [ rectangle netscape_blue 76. 76. |> move x y ]
   @ meteors
-  @ (Browser_draw.glyphs { text = "N"; look = n; x = x -. 17.; width = 0.; baseline = 0.; picture = None; control = None }
+  @ (Browser_draw.glyphs { text = "N"; look = n; x = x -. 17.; width = 0.; baseline = 0.; picture = None; control = None; element = Dom.element "span" [] }
     |> List.map (fun s -> s |> move 0. (y -. 17.)))
 
 (* the key: broken for http:// (anyone on the way can read), whole for

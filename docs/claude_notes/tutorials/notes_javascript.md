@@ -39,8 +39,7 @@ to run (a click's handler, a timer's function), one at a time.
 | `Js_value` | values, objects, environments | 4, 5 |
 | `Js_eval` | the tree walked | 5, 6, 7 |
 | `Js_builtins` | `console`, `Math`, strings' and arrays' methods | 8 |
-| `Browser_script` | the page seen by a script: the mutable tree, the host objects, the task queue | 9, 10 |
-| `Browser_console` | what the scripts said | 10 |
+| `Browser_script` | the page seen by a script: the mutable tree, the host objects, the events and timers, the console | 9, 10 |
 | `TinyFirefox` | the browser, its console and live tree | 11 |
 
 Read `Formula.mli` (`libs/languages/formula/`) first if you have never

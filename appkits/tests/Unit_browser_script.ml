@@ -36,6 +36,14 @@ let value (t : Browser_script.t) (s : string) : string =
 
 let check_body what t expected = Alcotest.(check (list string)) what expected (body t)
 
+(* the element of id [id] in the frozen tree: what a click is given *)
+let element (t : Browser_script.t) (id : string) : Dom.element =
+  let rec find (e : Dom.element) : Dom.element option =
+    if Dom.attribute "id" e = Some id then Some e
+    else List.find_map (fun (n : Dom.node) -> match n with Element c -> find c | Text _ -> None) e.children
+  in
+  match find (Browser_script.tree t) with Some e -> e | None -> Alcotest.fail ("no element " ^ id)
+
 let tests =
   Testo.categorize "Browser_script"
     [
@@ -92,6 +100,52 @@ let tests =
           Alcotest.(check (option string)) "bgcolor still an extension" (Some "white") (Dom.attribute ~extensions:true "bgcolor" b);
           Alcotest.(check (option string)) "not a core attribute" None (Dom.attribute "bgcolor" b);
           Alcotest.(check bool) "center still Netscape's" true (c.origin = Dtd.Netscape));
+      Testo.create "events: a click bubbles" (fun () ->
+          let t =
+            page
+              "<ul id=l><li id=a>x</ul><script>const log = [];\ndocument.getElementById(\"l\").addEventListener(\"click\", e => log.push(\"ul:\" + e.target.id));\ndocument.getElementById(\"a\").onclick = () => log.push(\"li\");\ndocument.addEventListener(\"click\", () => log.push(\"document\"))</script>"
+          in
+          Alcotest.(check bool) "not prevented" false (Browser_script.click t (element t "a"));
+          Alcotest.(check string) "the li's, the ul's, the document's" "[\"li\", \"ul:a\", \"document\"]" (value t "log"));
+      Testo.create "events: stopped, prevented, onclick=\"...\"" (fun () ->
+          let t =
+            page
+              "<p id=p><a id=k href=next.html onclick=\"this.textContent = 'clicked'; return false\">go</a></p><script>let seen = false;\ndocument.getElementById(\"p\").addEventListener(\"click\", () => { seen = true })</script>"
+          in
+          Alcotest.(check bool) "return false: prevented" true (Browser_script.click t (element t "k"));
+          check_body "this is the element" t [ "p id=\"p\""; "  a id=\"k\" href=\"next.html\" onclick=\"this.textContent = 'clicked'; return false\""; "    \"clicked\"" ];
+          Alcotest.(check string) "and it still bubbled" "true" (value t "seen");
+          ignore (value t "document.getElementById(\"k\").onclick = e => { e.stopPropagation(); e.preventDefault() }; seen = false");
+          Alcotest.(check bool) "preventDefault" true (Browser_script.click t (element t "k"));
+          Alcotest.(check string) "stopped: the p not told" "false" (value t "seen"));
+      Testo.create "events: one handler for a whole table (delegation)" (fun () ->
+          let t =
+            page
+              "<table id=board><tr><td id=c0>.</td><td id=c1>.</td></tr></table><script>document.getElementById(\"board\").addEventListener(\"click\", e => { e.target.textContent = \"X\" })</script>"
+          in
+          ignore (Browser_script.click t (element t "c1"));
+          Alcotest.(check string) "the cell clicked" "[\".\", \"X\"]" (value t "[0, 1].map(i => document.getElementById(\"c\" + i).textContent)"));
+      Testo.create "events: keys, and a field typed into" (fun () ->
+          let t =
+            page
+              "<input id=f><script>let last = \"\", typed = \"\";\ndocument.addEventListener(\"keydown\", e => { last = e.key });\ndocument.getElementById(\"f\").addEventListener(\"input\", e => { typed = e.target.value })</script>"
+          in
+          ignore (Browser_script.key t "ArrowUp");
+          Browser_script.input t (element t "f") "hello";
+          Alcotest.(check string) "the key, the text" "[\"ArrowUp\", \"hello\"]" (value t "[last, typed]"));
+      Testo.create "timers on the page's clock" (fun () ->
+          let t = page "<script>let a = 0, b = 0;\nsetTimeout(() => { a = 1 }, 100);\nconst i = setInterval(() => { b++ }, 100)</script>" in
+          Browser_script.advance t 50.;
+          Alcotest.(check string) "50 ms: nothing yet" "[0, 0]" (value t "[a, b]");
+          Browser_script.advance t 300.;
+          Alcotest.(check string) "350 ms: the timeout once, the interval 3 times" "[1, 3]" (value t "[a, b]");
+          ignore (value t "clearInterval(i)");
+          Browser_script.advance t 1000.;
+          Alcotest.(check string) "cleared" "[1, 3]" (value t "[a, b]"));
+      Testo.create "alert, and DOMContentLoaded" (fun () ->
+          let t = page "<script>document.addEventListener(\"DOMContentLoaded\", () => alert(\"ready\"));\nalert(\"first\")</script>" in
+          Alcotest.(check (list string)) "queued in order" [ "first"; "ready" ] (Browser_script.take_alerts t);
+          Alcotest.(check (list string)) "taken" [] (Browser_script.take_alerts t));
       Testo.create "errors to the console, the next script still run" (fun () ->
           let t = page "<script>\nx.y\n</script><script>console.log(\"next\", [1])</script>" in
           Alcotest.(check (list string)) "the console" [ "Uncaught ReferenceError: x is not defined (line 2)"; "next [1]" ] (Browser_script.console t));

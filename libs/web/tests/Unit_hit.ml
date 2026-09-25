@@ -47,6 +47,14 @@ let tests =
           Alcotest.(check (option (pair string bool))) "on Name:" (Some ("Name:", false)) (at 20.);
           Alcotest.(check (option (pair string bool))) "on the field" (Some ("", true)) (at 100.);
           Alcotest.(check (option (pair string bool))) "in the space" None (at 63.));
+      Testo.create "the element under a point: a word's, else its block" (fun () ->
+          let p = page "<p>ab <span id=s>cd</span></p>" in
+          let name x y = match Hit.element_at p ~x ~y with Some e -> e.name | None -> "none" in
+          (* the line from 19.2, its baseline 28.2: "cd" at 38..58 *)
+          Alcotest.(check string) "on cd: the span" "span" (name 45. 25.);
+          Alcotest.(check string) "on ab: the p" "p" (name 15. 25.);
+          Alcotest.(check string) "beside the words: the p still" "p" (name 150. 25.);
+          Alcotest.(check string) "below the page: nothing" "none" (name 100. 400.));
       Testo.create "an anchor keeps the space around it" (fun () ->
           let p = page "a <a name=x></a>b" in
           Alcotest.(check (list (pair string (float 1e-6))))

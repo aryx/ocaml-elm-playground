@@ -172,7 +172,7 @@ let rec draw ?(extensions = false) ~(visited : string -> bool) ~(picture_of : st
         let width = metrics look text in
         [ ( baseline -. 12.,
             baseline,
-            group (glyphs { text; look; x = b.x -. 6. -. width; width; baseline; picture = None; control = None }) ) ]
+            group (glyphs { text; look; x = b.x -. 6. -. width; width; baseline; picture = None; control = None; element = Dom.element "li" [] }) ) ]
     | _ -> []
   in
   let frame = match b.kind with Block e when extensions && e.name = "table" -> table_frame e b | _ -> [] in
@@ -192,7 +192,7 @@ let rec draw ?(extensions = false) ~(visited : string -> bool) ~(picture_of : st
 (* text in a control: black, plain, fixed-width if [cells] *)
 let text_shapes ?(cells = false) (look : Looks.t) (text : string) ~(x : float) ~(baseline : float) : shape list =
   let look = { look with color = (0, 0, 0); underline = false; link = None; bold = false; italic = false; monospace = cells } in
-  glyphs { text; look; x; width = metrics look text; baseline; picture = None; control = None }
+  glyphs { text; look; x; width = metrics look text; baseline; picture = None; control = None; element = Dom.element "span" [] }
 
 let control_shapes ~(value : Dom.element -> Forms.value) ~(focused : bool) (f : Html_layout.fragment) (c : Html_layout.control)
     : shape list =

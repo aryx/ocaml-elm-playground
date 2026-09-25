@@ -265,6 +265,24 @@ after an extraction.
   with one host object; the `<script>`s run in order after the page is
   read (as `defer`), their errors in the console with their line.
   Tests on fake pages: 10, the notes' two worked examples among them.
+- **J4 done** (2026-09-25): a fragment of the layout knows the
+  innermost element it is in (`Html_layout.fragment.element`), and
+  `Hit.element_at` gives the element under a point (a word's, a
+  picture's, a control's, else the innermost block): what a click is
+  dispatched to; TinyMosaic's and TinyNetscape's frames unchanged.
+  `Browser_script`: listeners (addEventListener, removeEventListener,
+  el.onclick = f, onclick="..." compiled once, `return false`
+  cancelling), dispatch with bubbling to the document,
+  stopPropagation, preventDefault; the host's entry points `click` (an
+  element of the last frozen tree), `key` (keydown at the body),
+  `input` (a field's text, then its input event), `advance` (the
+  page's clock: setTimeout and setInterval due run, each a task, a
+  thousand at most per call), `take_alerts` (alert queues, the browser
+  shows); DOMContentLoaded and load after the scripts. The console
+  stayed a list of lines in `Browser_script` (no `Browser_console`
+  module: nothing more was needed). Tests: 6 more (bubbling,
+  stop and prevent, delegation to a table, keys and input, timers,
+  alert), and `Hit.element_at`'s.
 
 ## Decisions
 

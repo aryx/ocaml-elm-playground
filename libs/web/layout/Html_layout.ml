@@ -22,6 +22,7 @@ type fragment = {
   baseline : float;
   picture : picture option;
   control : control option;
+  element : Dom.element;
 }
 
 (* what a word may be instead of text: a box of its own size *)
@@ -78,7 +79,7 @@ let greedy : breaker =
  * (<a name=...>, an id=), of no width; a word may be an image or a
  * form's control, its width then the box's *)
 type item =
-  | Word of { text : string; look : Looks.t; space_before : bool; boxed : (boxed * float) option }
+  | Word of { text : string; look : Looks.t; space_before : bool; boxed : (boxed * float) option; owner : Dom.element }
   | Break
   | Anchor of string
   | Float of floating (* <img align=left|right> *)
@@ -89,7 +90,7 @@ type item =
  * until its bottom *)
 and side = On_left | On_right
 
-and floating = { side : side; fw : float; fh : float; fpic : picture; flook : Looks.t; mutable placed : bool }
+and floating = { side : side; fw : float; fh : float; fpic : picture; flook : Looks.t; fowner : Dom.element; mutable placed : bool }
 
 (* a word's width: its text's in its look, or its box's *)
 let word_width (metrics : metrics) (look : Looks.t) (text : string) (boxed : (boxed * float) option) : float =
@@ -102,10 +103,10 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
     List.fold_left
       (fun (placed, pen) item ->
         match item with
-        | Word { text; look; space_before; boxed } ->
+        | Word { text; look; space_before; boxed; owner } ->
             let pen = if space_before then pen +. metrics look " " else pen in
             let w = word_width metrics look text boxed in
-            ((text, look, pen, w, Option.map fst boxed) :: placed, pen +. w)
+            ((text, look, pen, w, Option.map fst boxed, owner) :: placed, pen +. w)
         | Break | Anchor _ | Float _ | Clear _ -> (placed, pen))
       ([], 0.) words
   in
@@ -132,7 +133,7 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
     | None -> (above look, below look)
   in
   let extents =
-    match placed with [] -> [ extent (block, None) ] | _ -> List.map (fun (_, l, _, _, p) -> extent (l, p)) placed
+    match placed with [] -> [ extent (block, None) ] | _ -> List.map (fun (_, l, _, _, p, _) -> extent (l, p)) placed
   in
   let up = List.fold_left (fun m (a, _) -> Float.max m a) 0. extents in
   let down = List.fold_left (fun m (_, b) -> Float.max m b) 0. extents in
@@ -143,10 +144,10 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
     baseline;
     fragments =
       List.map
-        (fun (text, look, pen, w, boxed) ->
+        (fun (text, look, pen, w, boxed, element) ->
           let picture = match boxed with Some (Pic p) -> Some p | _ -> None in
           let control = match boxed with Some (Ctl c) -> Some c | _ -> None in
-          { text; look; x = x +. shift +. pen; width = w; baseline; picture; control })
+          { text; look; x = x +. shift +. pen; width = w; baseline; picture; control; element })
         placed;
     anchors = List.filter_map (fun item -> match item with Anchor name -> Some name | _ -> None) words;
   }
@@ -202,7 +203,9 @@ let place (floats : placed list ref) ~(x : float) ~(width : float) ~(top : float
   f.placed <- true;
   let left, w = room !floats ~x ~width ~top ~height:f.fh in
   let fx = match f.side with On_left -> left | On_right -> left +. w -. f.fw in
-  let frag = { text = ""; look = f.flook; x = fx; width = f.fw; baseline = top +. f.fh; picture = Some f.fpic; control = None } in
+  let frag =
+    { text = ""; look = f.flook; x = fx; width = f.fw; baseline = top +. f.fh; picture = Some f.fpic; control = None; element = f.fowner }
+  in
   floats := { pside = f.side; frag; ptop = top; pbottom = top +. f.fh } :: !floats
 
 (* lines filled one at a time, each as wide as the floats beside it
@@ -267,7 +270,7 @@ let lines_of (metrics : metrics) (breaker : breaker) (floats : placed list ref) 
         List.fold_left
           (fun (space, width) item ->
             match item with
-            | Word { text; look; space_before; boxed } ->
+            | Word { text; look; space_before; boxed; _ } ->
                 let w = word_width metrics look text boxed in
                 if width = 0. && space = 0. && space_before then (metrics look " ", w) else (space, width +. w)
             | Break | Anchor _ | Float _ | Clear _ -> (space, width))
@@ -340,17 +343,19 @@ type ctx = {
   mutable items : item list; (* the last first *)
   mutable space : bool; (* a space read since the last word *)
   mutable items_seen : int; (* its <li>s so far *)
+  mutable owner : Dom.element; (* the innermost element the words now read are in *)
 }
 
 let is_space (c : char) : bool = c = ' ' || c = '\n' || c = '\t' || c = '\r'
 
-let add_word ?boxed (ctx : ctx) (look : Looks.t) (text : string) : unit =
+let add_word ?boxed ?owner (ctx : ctx) (look : Looks.t) (text : string) : unit =
   (* a word before this one on the line, anchors (of no width) skipped *)
   let rec after_word items =
     match items with Word _ :: _ -> true | (Anchor _ | Float _) :: rest -> after_word rest | _ -> false
   in
   let after_word = after_word ctx.items in
-  ctx.items <- Word { text; look; space_before = ctx.space && after_word; boxed } :: ctx.items;
+  let owner = Option.value owner ~default:ctx.owner in
+  ctx.items <- Word { text; look; space_before = ctx.space && after_word; boxed; owner } :: ctx.items;
   ctx.space <- false
 
 (* text outside <pre>: its runs of spaces are one space, between words *)
@@ -375,7 +380,7 @@ let add_pre_text (ctx : ctx) (look : Looks.t) (s : string) : unit =
   List.iteri
     (fun i part ->
       if i > 0 then ctx.items <- Break :: ctx.items;
-      if part <> "" then ctx.items <- Word { text = part; look; space_before = false; boxed = None } :: ctx.items)
+      if part <> "" then ctx.items <- Word { text = part; look; space_before = false; boxed = None; owner = ctx.owner } :: ctx.items)
     (String.split_on_char '\n' s)
 
 (* a form's control's size, in the look it is in, by its kind; none for
@@ -468,6 +473,7 @@ let rec layout_block (metrics : metrics) (breaker : breaker) (picture_size : str
       items = [];
       space = false;
       items_seen = 0;
+      owner = e;
     }
   in
   List.iter (walk ctx look) e.children;
@@ -524,17 +530,22 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
               | Some (w, h), Some (("left" | "right") as side) ->
                   let side = if side = "left" then On_left else On_right in
                   ctx.items <-
-                    Float { side; fw = w; fh = h; fpic = { src; height = h; middle = false }; flook = l; placed = false }
+                    Float { side; fw = w; fh = h; fpic = { src; height = h; middle = false }; flook = l; fowner = e; placed = false }
                     :: ctx.items
               | Some (w, h), _ ->
                   let middle = align = Some "middle" in
-                  add_word ctx l "" ~boxed:(Pic { src; height = h; middle }, w)
-              | None, _ -> add_word ctx l (match Dom.attribute "alt" e with Some alt -> alt | None -> "[IMAGE]"))
+                  add_word ctx l "" ~owner:e ~boxed:(Pic { src; height = h; middle }, w)
+              | None, _ -> add_word ctx l ~owner:e (match Dom.attribute "alt" e with Some alt -> alt | None -> "[IMAGE]"))
           | "input" | "select" | "textarea" -> (
               match control_size ctx.metrics l e with
-              | Some (w, h) -> add_word ctx l "" ~boxed:(Ctl { element = e; control_height = h }, w)
+              | Some (w, h) -> add_word ctx l "" ~owner:e ~boxed:(Ctl { element = e; control_height = h }, w)
               | None -> ())
-          | _ -> List.iter (walk ctx l) e.children)
+          | _ ->
+              (* its words are its own: a click on them is on it *)
+              let outer = ctx.owner in
+              ctx.owner <- e;
+              List.iter (walk ctx l) e.children;
+              ctx.owner <- outer)
       | Block | Rule ->
           flush_inline ctx;
           let y = ctx.cursor +. Float.max ctx.pending b.margin_top in

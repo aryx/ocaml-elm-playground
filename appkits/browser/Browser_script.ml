@@ -24,7 +24,12 @@ type node = {
   mutable parent : node option;
   mutable expando : (string * value) list; (* what a script set on it: el.done = true *)
   mutable wrapper : value option; (* its host object, made once *)
+  mutable listeners : (string * value) list; (* addEventListener's, in order *)
+  mutable compiled : (string * value) list; (* its onclick="..." attributes, compiled once *)
 }
+
+(* a setTimeout's or a setInterval's *)
+type timer = { tid : int; mutable due : float; every : float option; fn : value }
 
 type t = {
   engine : Js_eval.t;
@@ -33,11 +38,18 @@ type t = {
   mutable console : string list; (* the newest first *)
   log : string -> unit;
   nodes : (int, node) Hashtbl.t; (* a host object's id to its node *)
+  mutable document_listeners : (string * value) list;
+  mutable frozen : (Dom.element * node) list; (* the last frozen tree's elements, and their nodes *)
+  mutable now : float; (* the page's clock, in ms *)
+  mutable timers : timer list;
+  mutable next_timer : int;
+  mutable alerts : string list; (* the newest first *)
 }
 
 let text_name = "#text"
 let is_text (n : node) : bool = n.name = text_name
-let make ?(text = "") ?(attributes = []) (name : string) : node = { name; text; attributes; children = []; parent = None; expando = []; wrapper = None }
+let make ?(text = "") ?(attributes = []) (name : string) : node =
+  { name; text; attributes; children = []; parent = None; expando = []; wrapper = None; listeners = []; compiled = [] }
 
 let rec thaw (e : Dom.element) : node =
   let n = make e.name ~attributes:(e.attributes @ e.extensions) in
@@ -231,6 +243,15 @@ and get (t : t) (n : node) (k : string) : value =
   | "remove" -> method_ k (fun _ -> detach n; touch t; Undefined)
   | "querySelector" -> method_ k (fun args -> opt (List.nth_opt (select t (str (arg args 0)) ~within:n) 0))
   | "querySelectorAll" -> method_ k (fun args -> nodes_array t (select t (str (arg args 0)) ~within:n))
+  | "addEventListener" ->
+      method_ k (fun args ->
+          n.listeners <- n.listeners @ [ (str (arg args 0), arg args 1) ];
+          Undefined)
+  | "removeEventListener" ->
+      method_ k (fun args ->
+          let typ = str (arg args 0) and f = arg args 1 in
+          n.listeners <- List.filter (fun (ty, g) -> not (ty = typ && strict_equal g f)) n.listeners;
+          Undefined)
   | _ -> Option.value (List.assoc_opt k n.expando) ~default:Undefined
 
 and set (t : t) (n : node) (k : string) (v : value) : unit =
@@ -291,6 +312,15 @@ let document (t : t) : value =
           | "querySelectorAll" -> method_ k (fun args -> nodes_array t (select t (str (arg args 0)) ~within:root))
           | "createElement" -> method_ k (fun args -> wrap t (make (String.lowercase_ascii (str (arg args 0)))))
           | "createTextNode" -> method_ k (fun args -> wrap t (make text_name ~text:(str (arg args 0))))
+          | "addEventListener" ->
+              method_ k (fun args ->
+                  t.document_listeners <- t.document_listeners @ [ (str (arg args 0), arg args 1) ];
+                  Undefined)
+          | "removeEventListener" ->
+              method_ k (fun args ->
+                  let typ = str (arg args 0) and f = arg args 1 in
+                  t.document_listeners <- List.filter (fun (ty, g) -> not (ty = typ && strict_equal g f)) t.document_listeners;
+                  Undefined)
           | _ -> Undefined);
       set =
         (fun k v ->
@@ -325,12 +355,104 @@ let report (t : t) (e : Js_eval.error) : unit =
   let m = e.message in
   say t (Printf.sprintf "%s (line %d)" (if String.starts_with ~prefix:"Uncaught" m then m else "Uncaught " ^ m) e.line)
 
+(*****************************************************************************)
+(* Events *)
+(*****************************************************************************)
+
+(* a handler run, a task of its own: its error in the console, not the
+ * next handler's business; whether it returned false (DOM level 0's way
+ * to cancel, onclick="...; return false") *)
+let run_handler (t : t) (f : value) ~(this : value) (event : value) : bool =
+  match Js_eval.call t.engine f ~this [ event ] with
+  | Ok (Bool false) -> true
+  | Ok _ -> false
+  | Error e -> report t e; false
+
+(* onclick="..." compiled once into a function of event, as browsers
+ * do: the attribute's text is the function's body *)
+let attribute_handler (t : t) (n : node) (typ : string) : value option =
+  match attribute n ("on" ^ typ) with
+  | None -> None
+  | Some src -> (
+      match List.assoc_opt src n.compiled with
+      | Some f -> Some f
+      | None -> (
+          match Js_eval.eval t.engine ("(function (event) {\n" ^ src ^ "\n})") with
+          | Ok f ->
+              n.compiled <- (src, f) :: n.compiled;
+              Some f
+          | Error e -> report t e; None))
+
+(* an event dispatched at [target]: its handlers, then its parent's, up
+ * to the document (bubbling), unless one stops it; whether one
+ * prevented the default *)
+let dispatch (t : t) (target : node) (typ : string) (fields : (string * value) list) : bool =
+  let prevented = ref false and stopped = ref false in
+  let ev = new_object () in
+  set_own ev "type" (String typ);
+  set_own ev "target" (wrap t target);
+  List.iter (fun (k, v) -> set_own ev k v) fields;
+  set_own ev "defaultPrevented" (Bool false);
+  set_own ev "preventDefault" (host_function "preventDefault" (fun ~this:_ _ -> prevented := true; set_own ev "defaultPrevented" (Bool true); Undefined));
+  set_own ev "stopPropagation" (host_function "stopPropagation" (fun ~this:_ _ -> stopped := true; Undefined));
+  let event = Object ev in
+  let handle this (listeners : (string * value) list) (extra : value option) =
+    set_own ev "currentTarget" this;
+    List.iter (fun (ty, f) -> if ty = typ && run_handler t f ~this event then prevented := true) listeners;
+    Option.iter (fun f -> if run_handler t f ~this event then prevented := true) extra
+  in
+  let rec up (n : node option) =
+    match n with
+    | Some n when not !stopped ->
+        (* el.onclick = f, else onclick="..." *)
+        let on = match List.assoc_opt ("on" ^ typ) n.expando with Some (Object _ as f) -> Some f | _ -> attribute_handler t n typ in
+        handle (wrap t n) n.listeners on;
+        up n.parent
+    | _ -> ()
+  in
+  up (Some target);
+  if not !stopped then handle (Js_eval.global t.engine "document" |> Option.value ~default:Undefined) t.document_listeners None;
+  !prevented
+
+(* the node a frozen element came from *)
+let node_of_element (t : t) (e : Dom.element) : node option = List.find_map (fun (e', n) -> if e' == e then Some n else None) t.frozen
+
+(*****************************************************************************)
+(* Timers *)
+(*****************************************************************************)
+
+let add_timer (t : t) (args : value list) ~(repeat : bool) : value =
+  let f = arg args 0 in
+  (* 1 ms at least: a setInterval(f, 0) must let the clock move *)
+  let ms = Float.max 1. (match arg args 1 with Undefined -> 0. | v -> to_number v) in
+  t.next_timer <- t.next_timer + 1;
+  t.timers <- t.timers @ [ { tid = t.next_timer; due = t.now +. ms; every = (if repeat then Some ms else None); fn = f } ];
+  Number (float_of_int t.next_timer)
+
+let clear_timer (t : t) (args : value list) : value =
+  let id = int_of_float (to_number (arg args 0)) in
+  t.timers <- List.filter (fun tm -> tm.tid <> id) t.timers;
+  Undefined
+
+(*****************************************************************************)
+(* Entry points *)
+(*****************************************************************************)
+
 let create ?(seed = 1) ?(log = fun _ -> ()) (tree : Dom.element) : t =
   let lines = ref (fun (_ : string) -> ()) in
   let engine = Js_eval.create ~log:(fun l -> !lines l) ~seed () in
-  let t = { engine; root = thaw tree; changed = false; console = []; log; nodes = Hashtbl.create 64 } in
+  let t =
+    { engine; root = thaw tree; changed = false; console = []; log; nodes = Hashtbl.create 64; document_listeners = []; frozen = [];
+      now = 0.; timers = []; next_timer = 0; alerts = [] }
+  in
   lines := say t;
+  let define name f = Js_eval.define engine name (host_function name (fun ~this:_ args -> f args)) in
   Js_eval.define engine "document" (document t);
+  define "setTimeout" (fun args -> add_timer t args ~repeat:false);
+  define "setInterval" (fun args -> add_timer t args ~repeat:true);
+  define "clearTimeout" (clear_timer t);
+  define "clearInterval" (clear_timer t);
+  define "alert" (fun args -> t.alerts <- str (arg args 0) :: t.alerts; Undefined);
   t
 
 let eval (t : t) (text : string) : (value, Js_eval.error) result =
@@ -344,11 +466,69 @@ let run_scripts (t : t) : unit =
       match attribute s "src" with
       | Some src -> say t (Printf.sprintf "<script src=\"%s\"> not loaded: scripts of their own file are an exercise" src)
       | None -> ignore (eval t (text_content s)))
-    (List.filter (fun e -> e.name = "script") (elements t.root))
+    (List.filter (fun e -> e.name = "script") (elements t.root));
+  (* then the document is loaded: its listeners told *)
+  List.iter
+    (fun typ ->
+      let listeners = List.filter (fun (ty, _) -> ty = typ) t.document_listeners in
+      List.iter (fun (_, f) -> ignore (run_handler t f ~this:Undefined Undefined)) listeners)
+    [ "DOMContentLoaded"; "load" ]
 
 let tree (t : t) : Dom.element =
   t.changed <- false;
-  freeze t.root
+  let pairs = ref [] in
+  let rec go (n : node) : Dom.element =
+    let origin = Dtd.element_origin n.name in
+    let attributes, extensions =
+      match origin with
+      | Netscape -> (n.attributes, [])
+      | Core -> List.partition (fun a -> Dtd.attribute_origin n.name a = Dtd.Core) n.attributes
+    in
+    let children = List.map (fun c -> if is_text c then Dom.Text c.text else Dom.Element (go c)) n.children in
+    let e : Dom.element = { name = n.name; attributes; extensions; origin; children } in
+    pairs := (e, n) :: !pairs;
+    e
+  in
+  let root = go t.root in
+  t.frozen <- !pairs;
+  root
+
+let click (t : t) (e : Dom.element) : bool =
+  match node_of_element t e with Some n -> dispatch t n "click" [] | None -> false
+
+let key (t : t) (k : string) : bool =
+  let body = match List.find_opt (fun n -> n.name = "body") (elements t.root) with Some b -> b | None -> t.root in
+  dispatch t body "keydown" [ ("key", String k) ]
+
+let input (t : t) (e : Dom.element) (text : string) : unit =
+  match node_of_element t e with
+  | Some n ->
+      set_attribute n "value" text;
+      touch t;
+      ignore (dispatch t n "input" [])
+  | None -> ()
+
+let advance (t : t) (ms : float) : unit =
+  t.now <- t.now +. ms;
+  (* the timers due, the earliest first, each a task; an interval put
+   * back at its next time; a thousand at most, so that a page cannot
+   * keep the browser here *)
+  let rec go (runs : int) =
+    match List.sort (fun a b -> compare (a.due, a.tid) (b.due, b.tid)) (List.filter (fun tm -> tm.due <= t.now) t.timers) with
+    | tm :: _ when runs < 1000 ->
+        (match tm.every with
+        | Some every -> tm.due <- tm.due +. every
+        | None -> t.timers <- List.filter (fun x -> x.tid <> tm.tid) t.timers);
+        ignore (run_handler t tm.fn ~this:Undefined Undefined);
+        go (runs + 1)
+    | _ -> ()
+  in
+  go 0
+
+let take_alerts (t : t) : string list =
+  let a = List.rev t.alerts in
+  t.alerts <- [];
+  a
 
 let changed (t : t) : bool = t.changed
 let console (t : t) : string list = List.rev t.console
