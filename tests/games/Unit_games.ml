@@ -171,7 +171,7 @@ let boomerang_sight () =
 let boomerang_modes () =
   let open TinyBoomerangFu in
   let senses ~armed ~incoming (run : mode Fsm.run) : senses =
-    { arena_no = 0; at = (0., 0.); facing = 0.; armed; cool = 0; think = 0; seed = 1; last_way = (0., 1.);
+    { arena_no = 0; level = Normal; at = (0., 0.); facing = 0.; armed; cool = 0; think = 0; seed = 1; last_way = (0., 1.);
       watched = []; enemy = Sense.unknown; incoming; mind = run }
   in
   let step ~armed ~incoming run = Fsm.step modes (senses ~armed ~incoming run) run in
@@ -199,7 +199,7 @@ let boomerang_delay () =
     { g with players = List.map (fun (p : player) -> if p.idx = i then { p with px = x; pz = z } else p) g.players }
   in
   (* the strawberry in the middle of the north side, ready to throw (a
-     fresh cook waits 45 frames before its first throw and circles
+     fresh cook hesitates before its first throw and circles
      meanwhile), and its enemy out east, beyond its range, so it walks
      at it *)
   let ready (g : game) : game =
@@ -3500,15 +3500,15 @@ let boomerang_holes () =
     if n = 0 || not (alive p) then p
     else walk ~jump_at (n - 1) (fst (step_player garden { idle with go = Some (1., 0.); jump = p.px >= jump_at && p.px < jump_at +. 0.2 } p))
   in
-  Alcotest.(check bool) "walk into a hole and you fall" true (match (walk 40 me).state with Falling _ -> true | _ -> false);
-  let over = walk ~jump_at:5.4 40 me in
+  Alcotest.(check bool) "walk into a hole and you fall" true (match (walk 60 me).state with Falling _ -> true | _ -> false);
+  let over = walk ~jump_at:5.4 60 me in
   Alcotest.(check bool) "jump, and you are over it" true (alive over && over.px > 8.);
   (* west of the terrace, at (-7, 3) (the steps onto it are north, at
      (-3, -5)), walking east into its cliff *)
   let low = { me with px = -7.; pz = 3. } in
-  let stuck = walk 40 low in
+  let stuck = walk 60 low in
   Alcotest.(check bool) "the cliff stops you" true (stuck.px < -6. && stuck.py = 0.);
-  let up = walk ~jump_at:(-6.8) 40 low in
+  let up = walk ~jump_at:(-6.8) 60 low in
   Alcotest.(check bool) "a jump puts you on the terrace" true (up.px > -5. && up.py = 1.)
 
 (* The river is crossed by its bridges, which the computer finds with
@@ -3529,22 +3529,24 @@ let boomerang_bridge () =
   Alcotest.(check bool) "it did not fall in" true (alive p);
   Alcotest.(check bool) "and it is across" true (d2 p.px p.pz (fst there) (snd there) < 1.)
 
-(* the computer, which looks where it is going ([way_ok]), must not
- * fall: a round played out with nobody at the keyboard is decided by
- * boomerangs, on either arena, and nobody falls in a hole, off an edge
- * or into the water *)
+(* the computer, which looks where it is going ([way_ok]), and whose
+ * feet do so every frame ([footing]), must not fall: a round played
+ * out with nobody at the keyboard, on either arena and at every level,
+ * ends with nobody in a hole, off an edge or in the water *)
 let boomerang_pits () =
   let open TinyBoomerangFu in
   List.iter
-    (fun arena_no ->
-      let g = ref (new_game ~arena_no ()) in
-      for _ = 1 to 1800 do
-        g := step_game initial_model initial_computer.keyboard !g
-      done;
-      Alcotest.(check bool) "the round was decided" true (!g.ended <> None);
-      Alcotest.(check int) "and the computer kept out of the holes" 0
-        (List.length (List.filter (fun p -> match p.state with Falling _ -> true | _ -> false) !g.players)))
-    [ 0; 1 ]
+    (fun level ->
+      List.iter
+        (fun arena_no ->
+          let g = ref (new_game ~level ~arena_no ()) in
+          while !g.ended = None do
+            g := step_game initial_model initial_computer.keyboard !g
+          done;
+          Alcotest.(check int) "the computer kept out of the holes" 0
+            (List.length (List.filter (fun p -> match p.state with Falling _ -> true | _ -> false) !g.players)))
+        [ 0; 1 ])
+    [ Easy; Normal; Hard ]
 
 (*****************************************************************************)
 (* TinyPortal2D *)
@@ -7671,9 +7673,9 @@ let tests =
       t "TinySoldat, the bots fight" soldat_fight;
       t "TinySoldat ai=engine, the bots fight" (soldat_fight ~ai_engine:true);
       t "TinySoldat ai=engine, a bot knows only what it has seen" soldat_senses;
-      t "TinyBoomerangFu ai=engine, a pillar blocks sight" boomerang_sight;
-      t "TinyBoomerangFu ai=engine, dodge, hunt, keep away" boomerang_modes;
-      t "TinyBoomerangFu ai=engine, it answers late" boomerang_delay;
+      t "TinyBoomerangFu, a stone blocks sight" boomerang_sight;
+      t "TinyBoomerangFu, dodge, hunt, keep away" boomerang_modes;
+      t "TinyBoomerangFu, the computer answers late" boomerang_delay;
       t "AiConnect4, what each trick saves" connect4_nodes;
       t "AiConnect4, the tricks do not change the move" connect4_same_move;
       t "AiGo, a capture and a suicide" go_captures;

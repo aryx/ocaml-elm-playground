@@ -313,8 +313,8 @@ let scripted : Testutil_golden.scripted list =
     (* a boomerang in the air with its shadow under it (the one depth
      * cue this high, nearly isometric camera gets), all four still
      * standing, the whole garden framed; then, further in, the
-     * strawberry in two halves, its cut faces pale, and the camera
-     * zoomed in on the avocado, the last one standing *)
+     * computer's three cooks in halves, cut by each other's throws,
+     * their cut faces pale: the avocado wins the round *)
     ("games/arcade/software/TinyBoomerangFu", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
     (* claude: the song under way on the drums, on Easy (a pad a beat,
        no pedal): the count-in's hi-hat, the crash, snare, hi-hat,
@@ -369,6 +369,10 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
     (* two computers side by side through Multiplayer3d, each its own
      * cockpit, over a simulated network: the strip of its numbers, and
      * the games agreeing *)
-    ("games/fps/software/TinyCyberSled", "simulate", 150, "space:1,up:5-60,w:20-90,space:30-150", [ "net=simulate" ]) ]
+    ("games/fps/software/TinyCyberSled", "simulate", 150, "space:1,up:5-60,w:20-90,space:30-150", [ "net=simulate" ]);
+    (* claude: the second arena, the river: its two bridges, the narrow
+     * stretch between them, the terraces on the banks, and you in the
+     * middle of a jump, your shadow on the grass below *)
+    ("games/arcade/software/TinyBoomerangFu", "river", 50, "space:1,down:5-50,z:40", [ "map=river" ]) ]
 
 let tests = Testutil_golden.tests ~dir:"tests/3d" ~approve:"approve-golden3d" ~scripted ~scripted_flagged scenes

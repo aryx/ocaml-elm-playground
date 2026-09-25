@@ -317,19 +317,40 @@ patrolling when it knows nothing, and hunting the place where it last
 saw you. Honest senses are not a smaller program -- that
 game went from 465 lines to 588 -- they are a different one.
 
-`TinyBoomerangFu.ml` is the second one with the flag, and it shows a
-different face of the same layer: its three cooks keep their tactics
-and their four numbers, and lose three things. They see an enemy only
-when no pillar stands between them (and remember it for ninety frames
-after it disappears behind one), they act on what they saw six frames
-ago, and they change their mind twenty times a second rather than
-sixty. Its `dodge / hunt / keep away` becomes an `Fsm`, which is worth
-it for one reason: the hysteresis that game learned the hard way -- an
-agent that leaves *dodge* the instant a boomerang's line is clear
-steps straight back into it -- is a guard on a transition
-(`since >= 8`, beside the test for what it should go back to) instead
-of a condition buried in an if. What it does
-*not* take is steering: its characters have a fixed speed and a
+`TinyBoomerangFu.ml` shows the other use of the layer: a game whose
+computer is written on it *only*, with no hand-written version beside
+it -- the comparison is TinySoldat's and TinyPacman's job; this one's
+is to show that the layer suffices on its own, in an arena with holes,
+water, a terrace and bridges. Its three cooks see an enemy only when
+no stone or cliff stands between them (one `Sense.target` per enemy,
+the one to think about chosen by `Sense.focus`: the nearest visible,
+else the one seen last), act on what they saw a moment ago, and change
+their mind only so often; the level chosen on its title screen is
+nothing but those two numbers, the aim's wobble (`Bot.aim_error`) and
+a hesitation before each throw. Its `dodge / hunt / keep away` is an
+`Fsm`, which is worth it for one reason: the hysteresis that game
+learned the hard way -- an agent that leaves *dodge* the instant a
+boomerang's line is clear steps straight back into it -- is a guard on
+a transition (`since >= 8`, beside the test for what it should go back
+to) instead of a condition buried in an if. The way to someone across
+the river is `Pathfind.astar` over the arena's cells.
+
+Two things went into the layer because of it, both found by playing
+rounds with nobody at the keyboard. The first is `Bot`'s `reflex`: the
+delay is fair for what a bot perceives of the others, and absurd for
+its own body. Delayed, a cook that decided to walk along the river bank
+walked on into it; one that had planted its feet to aim kept repeating
+that intent after its throw, when without the boomerang the same
+intent walks, into a hole; and one following a path's lane from where
+it stood six frames earlier overshot it, corrected, overshot again,
+forever -- a control loop with a delay in it, which is how an
+oscillator is built. A reflex runs every frame on the world *now* and
+adjusts the (late, repeated) decision: its feet look at the ground. It
+is not a cheat, since it knows nothing of the enemies. The second is
+`Sense.focus`: fed one target with "whoever is nearest", a cook stared
+at the nearest one behind a stone while another stood in plain sight,
+and remembered a place where two different people had been. What it
+does *not* take is steering: its characters have a fixed speed and a
 committed dash, so there is no velocity to steer, and `Ai.seek` and
 its family have nothing to offer them (§14).
 
@@ -712,9 +733,10 @@ flow field (§3) by `gamekits/rts/Orders`, for `TinyDune2.ml` and
 `TinyWarcraft2.ml`, the
 three searches side by side in `examples/AiPathfinding.ml` (§2);
 `Fsm` by the ghosts of `TinyPacman.ml` and `examples/AiGhosts.ml` (§6);
-`Sense` and `Bot` by `TinySoldat.ml`'s soldiers and
-`TinyBoomerangFu.ml`'s cooks, both with `ai=engine` (the second also
-on `Fsm`, for its dodge/hunt/keep away and their hysteresis), and by
+`Sense` and `Bot` by `TinySoldat.ml`'s soldiers (with `ai=engine`)
+and `TinyBoomerangFu.ml`'s cooks (on the layer only, also on `Fsm`, for
+its dodge/hunt/keep away and their hysteresis, on `Pathfind`, and with
+`Bot`'s reflex and `Sense.focus`), and by
 `examples/AiBots.ml`, where the four handicaps are four keys to turn
 off -- the last of them its senses, after which it sees you through the
 walls, and the demonstration is how quickly that stops being a game

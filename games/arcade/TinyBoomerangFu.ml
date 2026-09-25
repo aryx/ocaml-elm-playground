@@ -85,9 +85,12 @@
  * on the ai/ layer and only on it (TinyPacman.ml and TinySoldat.ml are
  * where a hand-written computer and one on ai/ are compared): Sense
  * decides what it sees -- an enemy only when no stone or cliff is
- * between them, remembered for a second and a half after that -- Bot
- * makes it act on what it saw six frames ago and change its mind twenty
- * times a second rather than sixty, Fsm holds dodge / hunt / keep away
+ * between them, remembered for a couple of seconds after that -- Bot
+ * makes it act on what it saw a moment ago and change its mind only so
+ * often (how long a moment and how often are the level you choose on
+ * the title screen, EASY, NORMAL or HARD, with its aim's wobble and
+ * its hesitation before a throw: Bot.mli's honest knobs, never more
+ * speed or more knowledge), Fsm holds dodge / hunt / keep away
  * and the rules between them, hysteresis included, as a guard rather
  * than as an if, and when the way to its man is not straight (the
  * river, the terrace's cliff) Pathfind's A* finds one over the arena's
@@ -297,6 +300,9 @@ type rang = {
  * to walk to, [toward], whose way its feet find ([footing]). *)
 type intent = { go : (number * number) option; plant : bool; throw : bool; dash_now : bool; jump : bool; toward : (number * number) option }
 
+(* claude: how well the computer plays, chosen on the title screen *)
+type level = Easy | Normal | Hard
+
 (* what the computer is doing: three states and the rules between them
  * are [modes], below *)
 type mode = Dodge | Hunt | Away
@@ -308,6 +314,7 @@ type mode = Dodge | Hunt | Away
  * for it *)
 type senses = {
   arena_no : int; (* the ground under its feet, which it may know *)
+  level : level; (* how well it plays: its aim's wobble *)
   at : number * number;
   facing : number;
   armed : bool; (* its boomerang in its hand *)
@@ -327,6 +334,7 @@ type senses = {
 
 type game = {
   arena_no : int; (* in [arenas] *)
+  level : level;
   players : player list;
   rangs : rang list;
   ended : int option; (* frames since the round was decided *)
@@ -338,11 +346,37 @@ type game = {
   cam : camera; (* where [framing] has got to: it glides, see [step_game] *)
 }
 
-type scene = Title | Playing of game | Winner of game
+type scene = Title of level | Playing of game | Winner of game
 type model = scene Scene2d.t
 
 let rounds_to_win = 3
-let time_up = 60 * 45 (* frames a round may last *)
+let time_up_at_1 = 60 * 45 (* frames a round may last, at [pace] 1 *)
+
+(* claude: The pace of the whole game, the original's: at 1 everything
+ * went at the speed it was first tuned at, which was hectic. It is a
+ * slow motion rather than a change of any one speed: every speed is
+ * multiplied by it, every acceleration (gravity) by its square, every
+ * turn per frame by it, a drag raised to its power, and every length
+ * of time counted in frames divided by it. Then every *path* is the
+ * same -- a jump as long and as high, a boomerang's arc the same
+ * curve, a dash as far -- and only takes longer: nothing tuned in
+ * distances (the holes a jump clears, the ranges the computer throws
+ * from) has to be tuned again. What stays in real time is what is
+ * about the watching rather than the game: the camera's glide. The
+ * clock of a round is counted in the game's frames ([time_up]), and so
+ * are the computer's reactions ([mind_of]), its memory and its aim
+ * settling ([look], [decide]): slow the game and leave them alone,
+ * and a boomerang that now takes longer to arrive is dodged every time
+ * -- measured, rounds between the computer's cooks ran out the clock
+ * six times as often. *)
+let pace = 0.72
+let frames (n : int) : int = int_of_float (Float.round (float_of_int n /. pace))
+let time_up = frames time_up_at_1
+
+(* the computer's frames of holding its boomerang before it may throw
+ * (see [wits]), after a catch; a fresh round starts it at one and a
+ * half times that *)
+let hesitation (l : level) : int = frames (match l with Easy -> 50 | Normal -> 30 | Hard -> 18)
 
 let alive (p : player) : bool = match p.state with Alive -> true | _ -> false
 let d2 (ax : number) (az : number) (bx : number) (bz : number) : number =
@@ -390,25 +424,25 @@ let framing (players : player list) : camera =
 (*****************************************************************************)
 
 (* a player at its start, armed, facing the middle *)
-let place (a : arena) (p : player) : player =
+let place (l : level) (a : arena) (p : player) : player =
   let x, z = List.nth a.starts p.idx in
   let heading = atan2 (-.x) z *. 180. /. Float.pi in
-  { p with px = x; py = 0.; pz = z; vy = 0.; heading; holds = true; dash = 0; cool = 0; think = 45; aim = 0; way = Camera3d.forward heading; state = Alive }
+  { p with px = x; py = 0.; pz = z; vy = 0.; heading; holds = true; dash = 0; cool = 0; think = hesitation l * 3 / 2; aim = 0; way = Camera3d.forward heading; state = Alive }
 
-let new_game ?(arena_no = 0) () : game =
+let new_game ?(level = Normal) ?(arena_no = 0) () : game =
   let players =
     List.mapi
       (fun i kind ->
-        place arenas.(arena_no)
+        place level arenas.(arena_no)
           { idx = i; kind; px = 0.; py = 0.; pz = 0.; vy = 0.; heading = 0.; holds = true; dash = 0; cool = 0; think = 45; aim = 0; way = (0., 1.);
             state = Alive; wins = 0 })
       foods
   in
-  { arena_no; players; rangs = []; ended = None; clock = 0; round_no = 1;
+  { arena_no; level; players; rangs = []; ended = None; clock = 0; round_no = 1;
     minds = Array.init 4 (fun _ -> Bot.start { go = None; plant = false; throw = false; dash_now = false; jump = false; toward = None });
     cam = framing players }
 
-let initial_model : model = Scene2d.start Title
+let initial_model : model = Scene2d.start (Title Normal)
 
 (*****************************************************************************)
 (* Intents *)
@@ -437,18 +471,19 @@ let keys_intent (s : model) (k : keyboard) (p : player) : intent =
 (*****************************************************************************)
 
 let radius = 0.55 (* a food's *)
-let speed = 0.155
-let dash_speed = 0.42
-let dash_frames = 9
-let dash_cool = 45
+let speed = 0.155 *. pace
+let dash_speed = 0.42 *. pace
+let dash_frames = frames 9
+let dash_cool = frames 45
 let slash_dist = 1.5 (* the dash of someone still holding their boomerang *)
 
 (* a jump: 1.5 units up (the terrace is 1) and 24 frames in the air,
  * which walking carries 3.7 units -- a hole of one cell, the narrow
  * part of the river; with a dash in the air, the wide part *)
-let gravity = 0.022
-let jump_speed = 0.26
+let gravity = 0.022 *. pace *. pace
+let jump_speed = 0.26 *. pace
 let rang_height = 0.78 (* a boomerang flies this high above the ground *)
+let throw_speed = 0.58 *. pace
 
 let norm (dx, dz) =
   let n = Float.hypot dx dz in
@@ -508,18 +543,18 @@ let step_player (a : arena) (it : intent) (p : player) : player * rang option =
     let hx = px +. (fx *. 0.5) and hz = pz +. (fz *. 0.5) in
     let rx, rz = if top_at a hx hz > ry +. 0.3 then (px, pz) else (hx, hz) in
     ( { p with holds = false; aim = 0 },
-      Some { rx; ry; rz; rvx = fx *. 0.58; rvz = fz *. 0.58; owner = p.idx; leg = Out; bounced = false; away = false; age = 0 } )
+      Some { rx; ry; rz; rvx = fx *. throw_speed; rvz = fz *. throw_speed; owner = p.idx; leg = Out; bounced = false; away = false; age = 0 } )
   else (p, None)
 
 (*****************************************************************************)
 (* The boomerang *)
 (*****************************************************************************)
 
-let curve = 2.2 (* degrees the flight turns each frame, going out *)
-let drag = 0.975
-let turn_back = 0.2 (* the speed at which the way out becomes the way back *)
-let back_speed = 0.62
-let steer = 0.18 (* how fast the way back aims at the owner, who moves *)
+let curve = 2.2 *. pace (* degrees the flight turns each frame, going out *)
+let drag = 0.975 ** pace
+let turn_back = 0.2 *. pace (* the speed at which the way out becomes the way back *)
+let back_speed = 0.62 *. pace
+let steer = 0.18 *. pace (* how fast the way back aims at the owner, who moves *)
 let catch_dist = 0.9
 let cut_dist = 0.95
 
@@ -548,9 +583,9 @@ let step_rang (a : arena) (players : player list) (r : rang) : rang =
       let off x z = top_at a x z > r.ry +. 0.3 in
       let bx = off (r.rx +. vx) r.rz and bz = off r.rx (r.rz +. vz) in
       let vx = if bx then -.vx else vx and vz = if bz then -.vz else vz in
-      let leg = if Float.hypot vx vz < turn_back || r.age > 70 then Back else Out in
+      let leg = if Float.hypot vx vz < turn_back || r.age > frames 70 then Back else Out in
       let rx = r.rx +. vx and rz = r.rz +. vz in
-      let ry = match floor_at a rx rz with Some h -> Float.max (h +. 0.3) (r.ry +. ((h +. rang_height -. r.ry) *. 0.1)) | None -> r.ry in
+      let ry = match floor_at a rx rz with Some h -> Float.max (h +. 0.3) (r.ry +. ((h +. rang_height -. r.ry) *. 0.1 *. pace)) | None -> r.ry in
       { r with rx; ry; rz; rvx = vx; rvz = vz; leg; bounced = r.bounced || bx || bz;
         away = r.away || d2 rx rz owner.px owner.pz > 9.; age = r.age + 1 }
   | Back ->
@@ -584,8 +619,8 @@ let step_rangs (a : arena) (players : player list) (rangs : rang list) : rang li
 let slice (p : player) (dx, dz) : player =
   let sx, sz = norm (-.dz, dx) in
   let h top sign =
-    { hx = p.px; hy = p.py +. (if top then 0.85 else 0.4); hz = p.pz; hvx = sx *. 0.13 *. sign; hvy = (if top then 0.2 else 0.12);
-      hvz = sz *. 0.13 *. sign; hspin = 0.; htop = top }
+    { hx = p.px; hy = p.py +. (if top then 0.85 else 0.4); hz = p.pz; hvx = sx *. 0.13 *. pace *. sign; hvy = (if top then 0.2 else 0.12) *. pace;
+      hvz = sz *. 0.13 *. pace *. sign; hspin = 0.; htop = top }
   in
   { p with state = Cut [ h true 1.; h false (-1.) ]; holds = false }
 
@@ -596,9 +631,9 @@ let step_half (a : arena) (h : half) : half =
   let hy = h.hy +. hvy in
   match floor_at a h.hx h.hz with
   | Some f when hy < f +. 0.22 && h.hy >= f -. 0.3 ->
-      { h with hy = f +. 0.22; hvy = 0.; hvx = h.hvx *. 0.94; hvz = h.hvz *. 0.94; hx = h.hx +. h.hvx;
+      { h with hy = f +. 0.22; hvy = 0.; hvx = h.hvx *. (0.94 ** pace); hvz = h.hvz *. (0.94 ** pace); hx = h.hx +. h.hvx;
         hz = h.hz +. h.hvz; hspin = h.hspin +. (h.hvx *. 40.) }
-  | _ -> { h with hx = h.hx +. h.hvx; hy; hz = h.hz +. h.hvz; hvy; hspin = h.hspin +. 11. }
+  | _ -> { h with hx = h.hx +. h.hvx; hy; hz = h.hz +. h.hvz; hvy; hspin = h.hspin +. (11. *. pace) }
 
 let step_dead (a : arena) (p : player) : player =
   match p.state with
@@ -655,8 +690,8 @@ let cuts (players : player list) (rangs : rang list) : (int * (number * number))
  * how obliquely it comes at you ([slant], so that the three of them
  * don't all arrive along the same line).
  * They also *hesitate*: [think] frames of holding the boomerang before
- * it may be thrown again (45 at the start of a round, 30 after a
- * catch). Without it three opponents who all throw the frame they have
+ * it may be thrown again ([hesitation], half a second after a catch
+ * at NORMAL, half as much again at the start of a round). Without it three opponents who all throw the frame they have
  * a line cut the fourth player down in a second and a half, and the
  * game is not playable -- the single most important number in this
  * file, and there is nothing clever about it. *)
@@ -820,10 +855,12 @@ let approach (a : arena) (at : number * number) (target : number * number) (slan
  * what a bot is allowed to know and how quickly it may act on it:
  *
  *   Sense       its enemy is seen only when no stone (or cliff) is
- *               between them, and remembered for a second and a half
- *               after that
- *   Bot         it acts on what it saw 6 frames ago and changes its
- *               mind 20 times a second, not 60
+ *               between them, and remembered for a couple of seconds
+ *               after that; one target per enemy, the one thought
+ *               about chosen by [Sense.focus]
+ *   Bot         it acts on what it saw 8 frames ago and changes its
+ *               mind every 4 (at NORMAL: [mind_of]), and a [reflex]
+ *               keeps its feet on the ground ([footing])
  *   Fsm         dodge / hunt / keep away as three states and the rules
  *               between them, with the hysteresis written into a
  *               transition's guard instead of into an if
@@ -846,7 +883,7 @@ let look (g : game) (p : player) (was : (int * (number * number) Sense.target) l
         let t =
           if alive q then
             Sense.update ~sight:40. ~distance ~clear:(in_sight arenas.(g.arena_no) (p.px, p.pz) (q.px, q.pz)) ~position:(q.px, q.pz) t
-            |> Sense.forget ~after:90
+            |> Sense.forget ~after:(frames 90)
           else Sense.unknown
         in
         Some (q.idx, distance, t))
@@ -891,6 +928,7 @@ let senses_of (was : senses option) ((g, idx) : game * int) : senses =
   let s =
     {
       arena_no = g.arena_no;
+      level = g.level;
       at = (p.px, p.pz);
       facing = p.heading;
       armed = p.holds;
@@ -908,10 +946,12 @@ let senses_of (was : senses option) ((g, idx) : game * int) : senses =
 
 (* The tactics, from the senses alone: when the enemy is behind a
  * stone it walks to where it last saw him, and can be wrong; when it
- * has forgotten everybody it goes looking, to whichever start is the
- * farthest from where it stands -- from there another one is, so it
- * sweeps the arena back and forth instead of arriving somewhere and
- * waiting there, where the terrace may hide everyone for good *)
+ * has forgotten everybody it goes looking, across to the corner
+ * opposite its own start and, once there, back again -- arriving and
+ * waiting, the terrace may hide everyone for good. (To whichever
+ * corner is the farthest was tried too: measured, the rounds ran out
+ * the clock twice as often, the three of them sweeping the same
+ * diagonals and never the middle.) *)
 let decide (s : senses) : intent =
   let a = arenas.(s.arena_no) in
   let w = wits_of s.seed in
@@ -919,7 +959,8 @@ let decide (s : senses) : intent =
   match s.enemy.position with
   | None ->
       let px, pz = s.at in
-      let there = List.fold_left (fun (bx, bz) (x, z) -> if d2 px pz x z > d2 px pz bx bz then (x, z) else (bx, bz)) s.at a.starts in
+      let ox, oz = List.nth a.starts ((s.seed + 2) mod 4) in
+      let there = if d2 px pz ox oz < 9. then List.nth a.starts s.seed else (ox, oz) in
       { idle with go = Some (fst (approach a s.at there 0.)); toward = Some there }
   | Some (tx, tz) -> (
       let px, pz = s.at in
@@ -946,7 +987,8 @@ let decide (s : senses) : intent =
              its aim wobbles while the enemy is freshly seen
              (Bot.aim_error): a shot taken the moment someone
              appears is a worse shot *)
-          let wobble = Bot.aim_error ~spread:6. ~settle:20. ~seen_for:s.enemy.seen_for ~seed:s.seed () in
+          let spread = match s.level with Easy -> 14. | Normal -> 8. | Hard -> 4. in
+          let wobble = Bot.aim_error ~spread ~settle:(20. /. pace) ~seen_for:s.enemy.seen_for ~seed:s.seed () in
           let aimed = Float.abs (angle_to s.facing to_target +. wobble) < w.aim in
           let ready = s.think = 0 && aimed && dist < w.range && s.enemy.visible in
           if dist < 2.4 then
@@ -979,15 +1021,15 @@ let decide (s : senses) : intent =
             let want = if s.think > 0 then (-.snd to_target, fst to_target) else to_target in
             { idle with go = Some (go want); throw = ready })
 
-(* Its reflex (Bot.mli): whatever the bot decided, six frames
+(* Its reflex (Bot.mli): whatever the bot decided, a few frames
  * late, its feet look at the ground where they are *now*, one unit
- * ahead -- about what six frames of walking cover -- and a dash where
+ * ahead -- about what those frames of walking cover -- and a dash where
  * it is going; and a place to walk to ([toward]) they find the way to
  * from where they are now. The delay is fair for aiming and dodging,
  * and absurd for your own feet: without the first line a bot that
  * decided to walk along the river walks on into it, and without the
  * second one that steps onto the lane of its [route] from where it
- * was six frames ago overshoots it, turns back, overshoots it again,
+ * was those frames ago overshoots it, turns back, overshoots it again,
  * and never gets anywhere -- a control loop with a delay in it,
  * which is a textbook way to build an oscillator. *)
 let footing ((g, idx) : game * int) (it : intent) : intent =
@@ -1005,9 +1047,15 @@ let footing ((g, idx) : game * int) (it : intent) : intent =
       let d = clear_way a p ~ahead:1. d in
       { it with go = Some d; dash_now = it.dash_now && way_ok a p 4.2 d }
 
-(* a person's reaction is about a tenth of a second, and no hand
- * changes its mind sixty times a second (Bot.mli) *)
-let mind : (game * int, senses, intent) Bot.t = Bot.make ~delay:6 ~rate:3 ~reflex:footing ~sense:senses_of ~decide ()
+(* a person's reaction is a tenth to a quarter of a second, and no
+ * hand changes its mind sixty times a second (Bot.mli). The level is
+ * these two numbers, the aim's wobble in [decide] and the [hesitation] --
+ * Bot.mli's honest knobs, and nothing else: the bots of every level
+ * walk, throw and see the same *)
+let mind : (game * int, senses, intent) Bot.t = Bot.make ~delay:(frames 6) ~rate:(frames 3) ~reflex:footing ~sense:senses_of ~decide ()
+
+let mind_of (l : level) : (game * int, senses, intent) Bot.t =
+  match l with Easy -> { mind with delay = frames 15; rate = frames 6 } | Normal -> mind | Hard -> { mind with delay = frames 4; rate = frames 2 }
 
 (*****************************************************************************)
 (* Update *)
@@ -1024,7 +1072,7 @@ let step_game (s : model) (k : keyboard) (g : game) : game =
         if not (alive p) then idle
         else if p.idx = 0 then keys_intent s k p
         else
-          let it, running = Bot.step mind (g, p.idx) minds.(p.idx) in
+          let it, running = Bot.step (mind_of g.level) (g, p.idx) minds.(p.idx) in
           minds.(p.idx) <- running;
           it)
       g.players
@@ -1033,7 +1081,7 @@ let step_game (s : model) (k : keyboard) (g : game) : game =
   let players = List.map fst stepped in
   let thrown = List.filter_map snd stepped in
   let rangs, caught = step_rangs a players (g.rangs @ thrown) in
-  let players = List.map (fun p -> if List.mem p.idx caught then { p with holds = true; think = 30 } else p) players in
+  let players = List.map (fun p -> if List.mem p.idx caught then { p with holds = true; think = hesitation g.level } else p) players in
   let cut = cuts players rangs in
   let players = List.map (fun p -> match List.assoc_opt p.idx cut with Some d -> slice p d | None -> p) players in
   (* the dead take their boomerang with them *)
@@ -1064,7 +1112,7 @@ let score (g : game) : game =
  * scores kept, and the camera gliding out from the last winner *)
 let next_round (g : game) : game =
   let arena_no = (g.arena_no + 1) mod Array.length arenas in
-  { g with arena_no; players = List.map (place arenas.(arena_no)) g.players; rangs = []; ended = None; clock = 0;
+  { g with arena_no; players = List.map (place g.level arenas.(arena_no)) g.players; rangs = []; ended = None; clock = 0;
     round_no = g.round_no + 1; minds = Array.init 4 (fun _ -> Bot.start idle) }
 
 let first_arena (flags : (string * string) list) : int = if List.assoc_opt "map" flags = Some "river" then 1 else 0
@@ -1072,9 +1120,13 @@ let first_arena (flags : (string * string) list) : int = if List.assoc_opt "map"
 let update (computer : computer) (s : model) : model =
   let s = Scene2d.update computer s in
   match s.scene with
-  | Title ->
-      if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Playing (new_game ~arena_no:(first_arena computer.flags) ())) s
-      else s
+  | Title level ->
+      (* left and right choose the level *)
+      let levels = [| Easy; Normal; Hard |] in
+      let i = match level with Easy -> 0 | Normal -> 1 | Hard -> 2 in
+      let i = if Scene2d.pressed (fun k -> k.kleft) s then max 0 (i - 1) else if Scene2d.pressed (fun k -> k.kright) s then min 2 (i + 1) else i in
+      if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Playing (new_game ~level:levels.(i) ~arena_no:(first_arena computer.flags) ())) s
+      else { s with scene = Title levels.(i) }
   | Playing g -> (
       let g = step_game s computer.keyboard g in
       match g.ended with
@@ -1083,7 +1135,7 @@ let update (computer : computer) (s : model) : model =
           if List.exists (fun p -> p.wins >= rounds_to_win) g.players then Scene2d.go (Winner g) s
           else { s with scene = Playing (next_round g) }
       | _ -> { s with scene = Playing g })
-  | Winner _ -> if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go Title s else s
+  | Winner g -> if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Title g.level) s else s
 
 (*****************************************************************************)
 (* View: the arena *)
@@ -1238,7 +1290,7 @@ let rang_shape (c : color) (spin_deg : number) : shape3d =
   let arm a = box c 0.8 0.13 0.22 |> move_x3d 0.34 |> rotate3d 0. a 0. in
   group3d [ arm 58.; arm (-58.) ] |> rotate3d 0. spin_deg 0.
 
-let rang_y (r : rang) : number = r.ry +. (0.08 *. sin (float_of_int r.age *. 0.25))
+let rang_y (r : rang) : number = r.ry +. (0.08 *. sin (float_of_int r.age *. 0.25 *. pace))
 
 (* the rings a food leaves on the water, widening while it sinks *)
 let splash (x : number) (z : number) (n : int) : shape3d list =
@@ -1262,10 +1314,10 @@ let player_shapes (a : arena) (p : player) : shape3d list =
   | Falling n -> (
       match cell_at a p.px p.pz with
       | Water ->
-          let y = p.py -. (0.04 *. float_of_int n) in
+          let y = p.py -. (0.04 *. pace *. float_of_int n) in
           (if n < 30 then splash p.px p.pz n else []) @ if y < -1.6 then [] else [ food_shape p.kind p.heading |> move3d p.px y p.pz ]
       | _ ->
-          let y = p.py -. (0.25 *. float_of_int n) in
+          let y = p.py -. (0.25 *. pace *. float_of_int n) in
           if y < -8. then [] else [ food_shape p.kind p.heading |> move3d p.px y p.pz ])
 
 let rang_shapes (a : arena) (players : player list) (r : rang) : shape3d list =
@@ -1307,7 +1359,7 @@ let view_game (g : game) : shape3d list =
 let view (computer : computer) (s : model) : camera * shape3d list =
   let screen = computer.screen in
   match s.scene with
-  | Title ->
+  | Title level ->
       (* far enough back that the words have somewhere to sit *)
       let cam = Camera3d.orbit ~fov:36. ~distance:33. ~height:23. ~look:7. (spin 24. computer.time) (0., 0., 0.) in
       let n = first_arena computer.flags in
@@ -1328,7 +1380,11 @@ let view (computer : computer) (s : model) : camera * shape3d list =
                text white 2.4 "arrows: move   space: hold to aim, let go to throw   x: dash   z: jump" |> move_y 235.;
                text gray 2.1 "thrown, it cuts anyone -- you too. In hand, the dash is a slash." |> move_y 195.;
                text gray 2.1 (Printf.sprintf "first to %d rounds" rounds_to_win) |> move_y 160. ]
-            @ Scene2d.blink 1. s [ text yellow 3. "PRESS SPACE" |> move_y 110. ]) )
+            @ List.mapi
+                (fun i (l, name) -> text (if l = level then yellow else gray) (if l = level then 3. else 2.4) name |> move ((float_of_int i -. 1.) *. 200.) 110.)
+                [ (Easy, "EASY"); (Normal, "NORMAL"); (Hard, "HARD") ]
+            @ [ text gray 1.8 "left / right: how well the computer plays" |> move_y 75. ]
+            @ Scene2d.blink 1. s [ text yellow 3. "PRESS SPACE" |> move_y 30. ]) )
   | Playing g ->
       ( g.cam,
         view_game g
