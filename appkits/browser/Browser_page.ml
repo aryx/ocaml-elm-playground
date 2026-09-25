@@ -138,11 +138,34 @@ let absolute_urls (base : string) (rules : Css_syntax.rule list) : Css_syntax.ru
       | At_rule { name; prelude; block } -> At_rule { name; prelude; block = Option.map fix block })
     rules
 
+(* a sheet's rules, its url()s absolute: parsed once per text and
+ * address, not again at each relayout -- a picture's arrival lays the
+ * page out again, and GitHub's 41 sheets are 4.9 MB (notes_opti_ocaml.md
+ * section 11) *)
+let parsed_sheets : (string * int * int, string * Css_syntax.rule list) Hashtbl.t = Hashtbl.create 16
+
+let parsed (url : string) (text : string) : Css_syntax.rule list =
+  (* by address and text: a page's <style>s share its address *)
+  let key = (url, String.length text, Hashtbl.hash text) in
+  match Hashtbl.find_opt parsed_sheets key with
+  | Some (t, rules) when t == text || t = text -> rules
+  | _ ->
+      (* before: absolute_urls url (Css_syntax.parse_stylesheet text), each time *)
+      let rules = absolute_urls url (Css_syntax.parse_stylesheet text) in
+      if Hashtbl.length parsed_sheets > 256 then Hashtbl.reset parsed_sheets;
+      Hashtbl.replace parsed_sheets key (text, rules);
+      rules
+
 (* a sheet's rules, its @imports' put in their place (four deep at
  * most: a sheet importing itself stops there); the addresses not had
  * yet added to [missing] *)
 let rec expand (s : settings) (media : Cascade.media) (missing : string list ref) ~(depth : int) (url : string) (text : string) :
     Css_syntax.rule list =
+  let rules = parsed url text in
+  (* a sheet without @import: its parsed rules as they are, the same list
+   * at each relayout (styles_of's memo compares them by ==) *)
+  if not (List.exists (fun (r : Css_syntax.rule) -> match r with At_rule { name = "import"; _ } -> true | _ -> false) rules) then rules
+  else
   List.concat_map
     (fun (r : Css_syntax.rule) ->
       match r with
@@ -157,7 +180,7 @@ let rec expand (s : settings) (media : Cascade.media) (missing : string list ref
                   [])
           | _ -> [])
       | _ -> [ r ])
-    (absolute_urls url (Css_syntax.parse_stylesheet text))
+    rules
 
 (* the page's sheets, in the order it gives them, each with a name (the
  * link's address, or "<style> n"): each <link rel=stylesheet> whose
@@ -194,6 +217,21 @@ let page_sheets s media base tree : Cascade.sheet list * string list =
   let named, missing = named_sheets s media base tree in
   (List.map snd named, missing)
 
+(* the last page's computed styles, and what they were computed from:
+ * its tree (==), its sheets' rules (==, Browser_page.parsed's), quirks,
+ * the window -- the same when a relayout is for a picture that came,
+ * the cascade then not run again (notes_opti_ocaml.md section 11) *)
+let last_styles : (Dom.element * Cascade.sheet list * bool * Cascade.media * (Dom.element -> Computed.t)) option ref = ref None
+
+let styles_of ~visited ~(quirks : bool) (media : Cascade.media) (sheets : Cascade.sheet list) (tree : Dom.element) : Dom.element -> Computed.t =
+  let same_sheets a b = List.length a = List.length b && List.for_all2 (fun (x : Cascade.sheet) (y : Cascade.sheet) -> x.rules == y.rules && x.origin = y.origin) a b in
+  match !last_styles with
+  | Some (t, sh, q, m, styles) when t == tree && q = quirks && m = media && same_sheets sh sheets -> styles
+  | _ ->
+      let styles = Computed.styles ~visited ~quirks media sheets tree in
+      last_styles := Some (tree, sheets, quirks, media, styles);
+      styles
+
 (* the window's height, for media queries and vh: a laptop's screen *)
 let viewport_height = 768.
 
@@ -209,7 +247,9 @@ let lay_out ?(quirks = false) (s : settings) (base : string) (tree : Dom.element
   if s.boxes then
     let media : Cascade.media = { width = s.width; height = viewport_height } in
     let sheets = if s.css then fst (page_sheets s media base tree) else [] in
-    let styles = Computed.styles ~visited ~quirks media sheets tree in
+    (* before: the cascade and the computed styles again at each relayout
+     *   let styles = Computed.styles ~visited ~quirks media sheets tree in *)
+    let styles = styles_of ~visited ~quirks media sheets tree in
     let boxes = Box_layout.layout Browser_text.metrics ~picture_size ~viewport:(s.width, viewport_height) styles tree in
     let canvas =
       List.find_map

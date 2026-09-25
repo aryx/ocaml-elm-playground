@@ -534,6 +534,23 @@ which already reads video and sound:
   would follow the mixer). Not done: seeking, volume and muted, the
   elements' methods for scripts, the real formats (MP4, H.264, AAC:
   plans of their own). About 400 lines.
+- **C10 done** (2026-09-25): measured first (a probe timing each stage
+  on the saved Wikipedia article and GitHub page, the best of 3 runs):
+  a Wikipedia article took 7.7 s to read and lay out, and 8.2 s again
+  for each relayout -- one per picture and sheet arriving, some two
+  minutes a page. Three memos, each exact (the layouts' fragments
+  compared before and after, identical): shrink-to-fit's measures per
+  layout (89,903 blocks laid out, 98% of them measuring the same
+  subtrees again: the layout 2.4 s to 0.1 s), the sheets parsed once per
+  address and text, and the last page's computed styles kept while its
+  tree and sheets stay the same (a picture's relayout skips the
+  cascade). Now: the article read, styled and laid out in 0.7 s, a
+  relayout 0.3 s; GitHub's relayout 0.05 s (0.9). `notes_opti_ocaml.md`
+  section 11. Next, not done: the shapes of the whole page are built
+  at each layout (0.25 s of the 0.3), lazily they would be the
+  window's only (`Browser_draw.drawn`, all four browsers'); the
+  software rasterizer's frame (0.08 s, Hershey's strokes) is the
+  playground's business.
 
 ## What it actually took
 
@@ -592,6 +609,10 @@ no survey showed. Added to as each phase finishes.
   (`media_player` has no package); the golden frames of a clip without
   sound only (the mixer would move one with); the TinyTube logo's
   &#9654; drawn as an inline SVG (Hershey has no such letter).
+- **C10, speed**: the plan budgeted speed for a cascade; it was the
+  layout's measuring (98% of the blocks laid out) and a relayout per
+  picture redoing everything; found only by counting, then kept exact
+  by comparing the layouts before and after.
 - **C7, the browser**: `<meta http-equiv=refresh>` followed
   (DuckDuckGo's result links); the omnibox searching Wikipedia, not
   DuckDuckGo (its page without scripts, then Mojeek's, soon answer a

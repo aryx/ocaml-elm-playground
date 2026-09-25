@@ -433,6 +433,9 @@ type env = {
    * "align descendants", -webkit-center) *)
   centring : bool;
   containing : float * float * float; (* the nearest positioned ancestor's padding box: x, y, width *)
+  (* shrink-to-fit's measures, this layout's: an element's content at an
+   * unlimited width and at 0, by the element (==), its display, the width *)
+  measured : (int, Dom.element * Computed.display * float * float) Hashtbl.t;
 }
 
 (* a block being laid out: where its content goes, what is stacked
@@ -857,9 +860,21 @@ and shrink (env : env) (e : Dom.element) (s : Computed.t) ~(available : float) :
   let env = { env with positioned = ref []; measuring = true } in
   let s' = { s with width = Auto; min_width = Css_values.zero; max_width = Auto; margin = (Len Css_values.zero, Len Css_values.zero, Len Css_values.zero, Len Css_values.zero) } in
   let _, _, _, pl = four (fun l -> Css_values.resolve l 0.) s.padding and _, _, _, bl = s.border_width in
+  (* before the memo (a Wikipedia article: 89,903 blocks laid out, 88,200
+   * of them measuring, each measure measuring its subtree again, at each
+   * level; notes_opti_ocaml.md section 11):
+   *   let measure w =
+   *     let b, _ = layout_block env (ref []) e s' ... ~content:w () in
+   *     Float.max 0. (inner_right b -. b.x -. pl -. bl) *)
   let measure w =
-    let b, _ = layout_block env (ref []) e s' ~cb_x:0. ~cb_width:1e6 ~y:0. ~marker:None ~content:w () in
-    Float.max 0. (inner_right b -. b.x -. pl -. bl)
+    let key = Hashtbl.hash (e, w) in
+    match List.find_opt (fun (e', d, w', _) -> e' == e && d = s.display && w' = w) (Hashtbl.find_all env.measured key) with
+    | Some (_, _, _, r) -> r
+    | None ->
+        let b, _ = layout_block env (ref []) e s' ~cb_x:0. ~cb_width:1e6 ~y:0. ~marker:None ~content:w () in
+        let r = Float.max 0. (inner_right b -. b.x -. pl -. bl) in
+        Hashtbl.add env.measured key (e, s.display, w, r);
+        r
   in
   let preferred = measure 1e6 in
   if preferred <= available then preferred else Float.max (measure 0.) available
@@ -1243,7 +1258,8 @@ and layout_table (env : env) (table : Dom.element) (s : Computed.t) ~(cb_x : flo
 let layout (metrics : Html_layout.metrics) ?(picture_size = fun _ -> None) ~(viewport : float * float) (style : Dom.element -> Computed.t)
     (root : Dom.element) : box =
   let positioned = ref [] in
-  let env = { metrics; picture_size; style; viewport; positioned; measuring = false; centring = false; containing = (0., 0., fst viewport) } in
+  let env = { metrics; picture_size; style; viewport; positioned; measuring = false; centring = false; containing = (0., 0., fst viewport);
+      measured = Hashtbl.create 1024 } in
   let s = style root in
   (* the root is its own formatting context: its floats inside it *)
   let s = { s with overflow_hidden = true } in

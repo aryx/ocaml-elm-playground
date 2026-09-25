@@ -249,6 +249,39 @@ rule whose keys are not all among the ancestors' is rejected before any
 matching. The cascade went from 0.95 s to 0.54 s, its results
 identical (`Cascade.ml`, the old line in a comment).
 
+## 11. Measure first, then memoize what does not change
+
+TinyChrome on a saved Wikipedia article (4,961 words, 13 pictures)
+took 7.7 s to read and lay out, and 8.2 s again for each relayout --
+once per picture and sheet that arrives, so about two minutes for the
+page. A probe timing each stage (the best of 3 runs: other builds share
+the machine) found three things, none a matter of OCaml's code
+generation:
+
+- **Shrink-to-fit measured the same subtrees again and again**
+  (`Box_layout.shrink`): 89,903 blocks laid out for one page, 88,200 of
+  them while measuring -- a flex item measures its content, which holds
+  a table, whose cells are measured, each a flex row... each level
+  measuring everything below it again. A measure depends only on the
+  element, its display and the width asked for (unlimited or 0), not on
+  where it is: memoized per layout (by `==`), 2.4 s to 0.1 s.
+- **The sheets were parsed at each relayout** (`Browser_page.parsed`):
+  memoized by address and text (a page's `<style>`s share its address,
+  so the text is in the key).
+- **The cascade ran at each relayout** although a picture changes
+  neither the tree nor the sheets (`Browser_page.styles_of`): the last
+  styles kept with the tree and the sheets' rule lists they came from,
+  compared by `==` -- which asked the sheets without `@import` to keep
+  their parsed list as it is, not rebuilt by `concat_map` each time.
+
+A memo is only right if nothing it leaves out changes the answer: the
+layout of both pages was compared before and after (an MD5 of every
+fragment's text and position: identical, 4,961 and 1,215 fragments).
+Result: the article read and laid out in 0.7 s, a relayout 0.3 s
+(GitHub's repository page: 0.05 s); what is left of a relayout is
+building every shape of the page (0.25 s), the next thing to make lazy.
+The old lines are in comments beside the memos.
+
 ## The .mpg decoder, step by step
 
 60 frames of a 352 x 288 VCD .mpg (`albator_78_debut.mpg`), video only,
