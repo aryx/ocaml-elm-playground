@@ -441,6 +441,24 @@ which already reads video and sound:
   `<use>`, text in SVG, a picture's own border and padding (HN's
   logo's white frame), vertical-align on an empty inline-block. About
   700 lines.
+- **C7 done** (2026-09-25): **tabs** (a list of `Browser_tab`, each
+  with an id its answers carry, + and x in the strip); the **omnibox**
+  (an address, or words searched: Wikipedia's search by default --
+  DuckDuckGo's page without scripts worked, then soon answered a
+  program asking again and again with its duck-picking challenge, as
+  did Mojeek; `search=duckduckgo` keeps it; Google's needs
+  JavaScript); `<meta http-equiv=refresh>` followed (a second or less;
+  one in a `<noscript>` only when the page's scripts do not run --
+  DuckDuckGo's links); the **developer tools** (F12 or the wrench):
+  Elements -- Inspect, then an element of the page: its path, box
+  (outlined), children, and its styles, each winning declaration with
+  its rule's selector and its sheet's name (`Cascade.explain`,
+  `Browser_page.explain`, the sheets named) -- and Network (the tab's
+  log of requests, `Browser_tab.requests`, timed by TinyChrome's clock
+  as the log changes), all as lines of text from `Browser_devtools`.
+  And a positioned `<select>` stays a control (Wikipedia's search
+  page). Golden frames: `TinyChrome_elements`, `TinyChrome_network`.
+  About 600 lines.
 
 ## Verification
 

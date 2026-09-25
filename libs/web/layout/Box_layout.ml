@@ -1010,6 +1010,13 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
       let s = ctx.env.style e in
       match s.display with
       | Display_none -> ()
+      (* a form's control is one, positioned or not (its options are not
+       * text of the page: Wikipedia's absolute <select>) *)
+      | _ when (e.name = "select" || e.name = "textarea") && (s.position = Absolute || s.position = Fixed || s.float <> Side_none) -> (
+          let look = look_of s ~link:ctx.link in
+          match Html_layout.control_size ctx.env.metrics look e with
+          | Some (w, h) when s.visible -> add_word ctx (word_style s ~link:ctx.link) ~glue:false "" w ~owner:e ~boxed:(Ctl { element = e; control_height = h })
+          | _ -> ())
       | _ when s.position = Absolute || s.position = Fixed -> add_absolute ctx e s
       | _ when s.float <> Side_none -> ctx.items <- float_item ctx e s :: ctx.items
       | Contents -> List.iter (walk ctx s (word_style s ~link:ctx.link)) e.children

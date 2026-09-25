@@ -120,6 +120,10 @@ val compute : Cascade.media -> root_font_size:float -> parent:t -> (string * Css
 (* the browser's own style sheet, parsed *)
 val user_agent_sheet : Cascade.sheet
 
+(* the browser's sheets that come before the page's: the user agent's,
+ * and with [quirks] quirks mode's (Cascade.explain's list starts so) *)
+val browser_sheets : quirks:bool -> Cascade.sheet list
+
 (* [styles media sheets root]: every element's computed style, the
  * browser's sheet first, then [sheets] (the page's); with [quirks]
  * (false), quirks mode's rules for a page without a DOCTYPE: a table's

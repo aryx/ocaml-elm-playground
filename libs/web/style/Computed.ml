@@ -531,8 +531,11 @@ let quirks_sheet : Cascade.sheet =
         "table { font-weight: initial; font-style: initial; font-size: initial; line-height: initial; white-space: initial; text-align: initial }";
   }
 
+(* the browser's sheets, before the page's *)
+let browser_sheets ~(quirks : bool) : Cascade.sheet list = if quirks then [ user_agent_sheet; quirks_sheet ] else [ user_agent_sheet ]
+
 let styles ?visited ?(quirks = false) (m : Cascade.media) (sheets : Cascade.sheet list) (root : Dom.element) : Dom.element -> t =
-  let ua = if quirks then [ user_agent_sheet; quirks_sheet ] else [ user_agent_sheet ] in
+  let ua = browser_sheets ~quirks in
   let declared = Cascade.cascade ?visited m (ua @ sheets) root in
   let table : (int, Dom.element * t) Hashtbl.t = Hashtbl.create 1024 in
   let root_style = compute m ~root_font_size:16. ~parent:initial (declared root) in

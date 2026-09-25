@@ -18,7 +18,12 @@
                    tab Loading until [got] answers
      got           the page read (Browser_page.read), its scripts run if
                    the browser has them, laid out again from the tree
-                   they left; its pictures queued
+                   they left; its pictures queued; a <meta
+                   http-equiv=refresh content="0; url=..."> followed at
+                   once, in its place (a second or less; one in a
+                   <noscript> only if its scripts do not run) -- how
+                   DuckDuckGo's links reach their result without a
+                   script
      back, forward the history's two stacks (Browser_history): a page
                    kept is shown again at once, as it was scrolled
 
@@ -42,6 +47,13 @@
    whether they run scripts. *)
 
 type state = Loading of string | Shown of Browser_page.t
+
+(* what was asked for, for a network panel (TinyChrome's): the page,
+ * its style sheets, its pictures, each pending (no status) or answered
+ * (0 if it could not be had), its size; the log starts again with each
+ * page *)
+type kind = Document | Sheet | Picture
+type request = { url : string; kind : kind; status : int option; bytes : int }
 type view = Page | Source
 
 (* a page in the history: where, and itself if it is kept (with its
@@ -64,6 +76,7 @@ type t = {
   images : bool; (* Auto Load Images *)
   focus : Dom.element option; (* a form's field typed into *)
   script : Browser_script.t option; (* the page's scripts, if the browser runs them *)
+  requests : request list; (* the page's, the newest first *)
 }
 
 type 'msg config = {

@@ -48,6 +48,18 @@ let tests =
           Alcotest.(check (list string)) "then its @import, resolved against it" [ "http://x.org/colours.css" ] (Browser_page.sheets_wanted s p);
           let p, s = styled [ ("http://x.org/a/main.css", {|@import "../colours.css";|}); ("http://x.org/colours.css", "p { color: blue }") ] html in
           Alcotest.(check (list string)) "all had" [] (Browser_page.sheets_wanted s p));
+      Testo.create "the network panel's lines" (fun () ->
+          let requests : Browser_tab.request list =
+            [ { url = "http://x.org/a.png"; kind = Picture; status = None; bytes = 0 };
+              { url = "http://x.org/s.css"; kind = Sheet; status = Some 404; bytes = 10 };
+              { url = "http://x.org/"; kind = Document; status = Some 200; bytes = 2048 } ]
+          in
+          let times url = match url with "http://x.org/" -> Some (1.0, Some 1.25) | "http://x.org/s.css" -> Some (1.25, Some 1.5) | _ -> Some (1.5, None) in
+          match Browser_devtools.network requests ~times with
+          | (summary, _) :: _ :: (page, _) :: _ ->
+              Alcotest.(check string) "the summary: count, size, time, waiting" "3 requests, 2.0 KB, 0.50 s, 1 waiting" summary;
+              Alcotest.(check bool) "the page first, its time" true (String.starts_with ~prefix:"200     page  2.0 KB     250 ms" page)
+          | _ -> Alcotest.fail "lines");
       Testo.create "URLs: resolved, split" (fun () ->
           Alcotest.(check string)
             "relative" "http://info.cern.ch/hypertext/WWW/Help.html#people"

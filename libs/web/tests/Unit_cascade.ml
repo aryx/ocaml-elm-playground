@@ -94,4 +94,19 @@ let tests =
           Alcotest.(check bool) "visible does not" false (style "#a { overflow: visible }" "<div id=a>" "a").overflow_hidden;
           Alcotest.(check bool) "opacity: 0 is not shown" false (style "#a { opacity: 0 }" "<input id=a>" "a").visible;
           Alcotest.(check bool) "opacity: 0.5 is" true (style "#a { opacity: 0.5 }" "<input id=a>" "a").visible);
+      Testo.create "explain: each winning declaration and where it came from" (fun () ->
+          let root = Html_tree.of_string {|<p id=a class=x style="margin: 0">t</p>|} in
+          let css = { Cascade.origin = Author; rules = Css_syntax.parse_stylesheet "p { color: red } .x { color: green }" } in
+          let e = List.hd (Dom.find_all "p" root) in
+          let sheets = Computed.browser_sheets ~quirks:false @ [ css ] in
+          let where name =
+            match List.find_opt (fun (n, _, _, _) -> n = name) (Cascade.explain media sheets root e) with
+            | Some (_, v, Cascade.Rule { sheet; selector }, _) -> Printf.sprintf "%s from %s in sheet %d" (Css_syntax.to_string v) (Selectors.to_string selector) sheet
+            | Some (_, v, Hint, _) -> Css_syntax.to_string v ^ " from a hint"
+            | Some (_, v, Style_attribute, _) -> Css_syntax.to_string v ^ " from style="
+            | None -> "none"
+          in
+          Alcotest.(check string) "the more specific rule" "green from .x in sheet 1" (where "color");
+          Alcotest.(check string) "the browser's sheet" "block from p in sheet 0" (where "display");
+          Alcotest.(check string) "style=" "0 from style=" (where "margin"));
     ]

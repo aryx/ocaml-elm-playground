@@ -1561,6 +1561,9 @@ let flagged : Testutil_golden.flagged list =
      * Browser's entry set on three even lines instead of a full one
      * and a loose one *)
     ("apps/internet/software/TinyMosaic", "narrow", 5, [ "url=about:history"; "width=600" ]);
+    (* claude: TinyChrome's network panel over its home page (C7):
+     * the page, its two sheets, its pictures, their sizes *)
+    ("apps/internet/software/TinyChrome", "network", 5, [ "panel=network" ]);
     ("apps/internet/software/TinyMosaic", "pretty", 5, [ "url=about:history"; "width=600"; "wrap=pretty" ]);
     (* claude: the built-in fill-out form, its controls in Motif's look *)
     ("apps/internet/software/TinyMosaic", "form", 5, [ "url=about:form" ]);
@@ -1712,6 +1715,10 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
      * card -- Chrome's logo inline, a data: URL's star, HN's vote arrow
      * as a background, a bell as a mask (plan_tiny_chrome.md C6) *)
     ("apps/internet/software/TinyChrome", "svg", 5, "space:2", []);
+    (* claude: TinyChrome's Elements view (C7): Inspect clicked, then
+     * the first card's heading -- outlined on the page, its path, its
+     * box, and each winning declaration with its rule and sheet *)
+    ("apps/internet/software/TinyChrome", "elements", 10, "at(-460;-142):1-3,click:2,at(-275;288):4-8,click:6", [ "panel=elements" ]);
     (* the computer's kick landing: sparks bursting, the screen knocked
      * (the same hit as "fight"'s, the same 6 frames of hitstop) *)
     ("games/fighting/software/TinyStreetFighter", "engine", 136, "space:1,d:95-120,f:122,g:135", [ "juice=engine" ]);

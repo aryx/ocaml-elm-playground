@@ -159,14 +159,14 @@ let rec expand (s : settings) (media : Cascade.media) (missing : string list ref
       | _ -> [ r ])
     (absolute_urls url (Css_syntax.parse_stylesheet text))
 
-(* the page's sheets, in the order it gives them: each <link
- * rel=stylesheet> whose media= holds (its text, once it has come) and
- * each <style>; and the addresses still to fetch, the links' and their
- * @imports' *)
-let page_sheets (s : settings) (media : Cascade.media) (base : string) (tree : Dom.element) : Cascade.sheet list * string list =
-  let missing = ref [] in
+(* the page's sheets, in the order it gives them, each with a name (the
+ * link's address, or "<style> n"): each <link rel=stylesheet> whose
+ * media= holds (its text, once it has come) and each <style>; and the
+ * addresses still to fetch, the links' and their @imports' *)
+let named_sheets (s : settings) (media : Cascade.media) (base : string) (tree : Dom.element) : (string * Cascade.sheet) list * string list =
+  let missing = ref [] and styles = ref 0 in
   let holds (e : Dom.element) = match Dom.attribute "media" e with Some m -> Cascade.media_matches media (Css_syntax.components_of m) | None -> true in
-  let rec go (e : Dom.element) : Cascade.sheet list =
+  let rec go (e : Dom.element) : (string * Cascade.sheet) list =
     let own =
       match e.name with
       | "link" -> (
@@ -175,18 +175,24 @@ let page_sheets (s : settings) (media : Cascade.media) (base : string) (tree : D
           | Some href when List.mem "stylesheet" rel && (not (List.mem "alternate" rel)) && holds e -> (
               let url = Browser_url.resolve base href in
               match s.sheet url with
-              | Some text -> [ { Cascade.origin = Author; rules = expand s media missing ~depth:0 url text } ]
+              | Some text -> [ (url, { Cascade.origin = Author; rules = expand s media missing ~depth:0 url text }) ]
               | None ->
                   missing := url :: !missing;
                   [])
           | _ -> [])
-      | "style" when holds e -> [ { Cascade.origin = Author; rules = expand s media missing ~depth:0 base (Dom.text_content e) } ]
+      | "style" when holds e ->
+          incr styles;
+          [ (Printf.sprintf "<style> %d" !styles, { Cascade.origin = Author; rules = expand s media missing ~depth:0 base (Dom.text_content e) }) ]
       | _ -> []
     in
     own @ List.concat_map (fun (n : Dom.node) -> match n with Element c -> go c | Text _ -> []) e.children
   in
   let sheets = go tree in
   (sheets, List.rev !missing)
+
+let page_sheets s media base tree : Cascade.sheet list * string list =
+  let named, missing = named_sheets s media base tree in
+  (List.map snd named, missing)
 
 (* the window's height, for media queries and vh: a laptop's screen *)
 let viewport_height = 768.
@@ -299,6 +305,28 @@ let read (s : settings) (url : string) (status : int) (content_type : string opt
     quirks;
     backgrounds;
   }
+
+(*****************************************************************************)
+(* Explaining a style *)
+(*****************************************************************************)
+
+let explain (s : settings) (p : t) (e : Dom.element) : (string * string * string) list =
+  if not s.boxes then []
+  else
+    let media : Cascade.media = { width = s.width; height = viewport_height } in
+    let visited href = s.visited (fst (Browser_url.split_fragment (Browser_url.resolve p.url href))) in
+    let page = if s.css then fst (named_sheets s media p.url p.tree) else [] in
+    let browser = List.mapi (fun i sh -> ((if i = 0 then "the browser's (ua.css)" else "quirks mode"), sh)) (Computed.browser_sheets ~quirks:p.quirks) in
+    let named = browser @ page in
+    Cascade.explain ~visited media (List.map snd named) p.tree e
+    |> List.map (fun (prop, value, (src : Cascade.source), important) ->
+           let where =
+             match src with
+             | Rule { sheet; selector } -> Printf.sprintf "%s  %s" (Selectors.to_string selector) (fst (List.nth named sheet))
+             | Hint -> "an attribute"
+             | Style_attribute -> "style="
+           in
+           (prop, Css_syntax.to_string value ^ (if important then " !important" else ""), where))
 
 (*****************************************************************************)
 (* Form values *)

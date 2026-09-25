@@ -73,6 +73,12 @@ val with_tree : settings -> t -> Dom.element -> t
  * those it has, to fetch; the page laid out again as each comes *)
 val sheets_wanted : settings -> t -> string list
 
+(* by the box model: an element's winning declarations (Cascade.explain)
+ * as (property, value, where it came from: a rule's selector and its
+ * sheet's name -- its address, <style> n, the browser's -- an
+ * attribute, style=), a developer tools' Styles pane *)
+val explain : settings -> t -> Dom.element -> (string * string * string) list
+
 (* a control's value now: as typed and clicked, else as the page gave
  * it *)
 val value_of : t -> Dom.element -> Forms.value

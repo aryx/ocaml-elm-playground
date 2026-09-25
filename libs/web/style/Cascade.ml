@@ -269,3 +269,49 @@ let cascade ?(visited = fun _ -> false) (m : media) (sheets : sheet list) (root 
   in
   go [] root;
   fun e -> match find_element table e with Some ds -> ds | None -> []
+
+(*****************************************************************************)
+(* Explaining *)
+(*****************************************************************************)
+
+type source = Rule of { sheet : int; selector : Selectors.complex } | Hint | Style_attribute
+
+let explain ?(visited = fun _ -> false) (m : media) (sheets : sheet list) (root : Dom.element) (e : Dom.element) :
+    (string * component list * source * bool) list =
+  (* the element's ancestors, the nearest first *)
+  let rec path (x : Dom.element) (above : Dom.element list) : Dom.element list option =
+    if x == e then Some above
+    else List.find_map (fun (n : Dom.node) -> match n with Element c -> path c (x :: above) | Text _ -> None) x.children
+  in
+  match path root [] with
+  | None -> []
+  | Some ancestors ->
+      let order = ref 0 in
+      let keyed =
+        List.concat
+          (List.mapi
+             (fun i (sh : sheet) ->
+               let layer_normal, layer_important = match sh.origin with User_agent -> (0, 3) | Author -> (1, 2) in
+               List.concat_map
+                 (fun (_, sel, (declarations : declaration list)) ->
+                   incr order;
+                   if Selectors.pseudo_element sel = None && Selectors.matches ~visited sel ancestors e then
+                     List.map
+                       (fun (d : declaration) ->
+                         ( ((if d.important then layer_important else layer_normal), Selectors.specificity sel, !order),
+                           (d, Rule { sheet = i; selector = sel }) ))
+                       declarations
+                   else [])
+                 (flatten m sh.origin sh.rules))
+             sheets)
+        @ (match hints ancestors e with "" -> [] | h -> List.map (fun (d : declaration) -> ((1, (0, 0, 0), -1), (d, Hint))) (parse_declarations h))
+        @
+        match Dom.attribute "style" e with
+        | Some s -> List.map (fun (d : declaration) -> (((if d.important then 2 else 1), (max_int, 0, 0), max_int), (d, Style_attribute))) (parse_declarations s)
+        | None -> []
+      in
+      let sorted = List.stable_sort (fun (a, _) (b, _) -> compare a b) keyed in
+      List.fold_left
+        (fun acc (_, ((d : declaration), src)) -> (d.name, d.value, src, d.important) :: List.filter (fun (n, _, _, _) -> n <> d.name) acc)
+        [] sorted
+      |> List.rev

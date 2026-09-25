@@ -15,6 +15,9 @@ type state = Loading of string | Shown of Browser_page.t
 type view = Page | Source
 type entry = { at : string; kept : (Browser_page.t * Browser_script.t option) option; scrolled_to : int }
 
+type kind = Document | Sheet | Picture
+type request = { url : string; kind : kind; status : int option; bytes : int }
+
 type t = {
   state : state;
   view : view;
@@ -31,6 +34,7 @@ type t = {
   images : bool;
   focus : Dom.element option;
   script : Browser_script.t option;
+  requests : request list;
 }
 
 type 'msg config = {
@@ -62,7 +66,15 @@ let empty ~(images : bool) : t =
     images;
     focus = None;
     script = None;
+    requests = [];
   }
+
+(* a request logged (the network panel's): replacing the one for the
+ * same URL, the newest first *)
+let logged ?status ?(bytes = 0) (kind : kind) (url : string) (tab : t) : t =
+  { tab with requests = { url; kind; status; bytes } :: List.filter (fun (r : request) -> r.url <> url) tab.requests }
+
+let kind_of (tab : t) (url : string) : kind = if List.mem url tab.sheet_urls then Sheet else Picture
 
 let current_url (tab : t) : string = match tab.state with Loading url -> url | Shown p -> p.url
 let starts_with = Browser_url.starts_with
@@ -139,11 +151,13 @@ let rec fetch_more (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, c
       (match Browser_url.data_url url with
       | Some bytes ->
           (* a data: URL: its bytes are in it *)
+          let tab = logged ~status:200 ~bytes:(String.length bytes) (kind_of tab url) url tab in
           if List.mem url tab.sheet_urls then fetch_more cfg network (with_sheet cfg tab url bytes, cmd)
           else fetch_more cfg network (with_arrived cfg tab url (Browser_picture.decode bytes), cmd)
       | None ->
       if starts_with "about:" url && List.mem url tab.sheet_urls then
         let text = match cfg.about (String.sub url 6 (String.length url - 6)) with Some (bytes, _) -> bytes | None -> "" in
+        let tab = logged ~status:(if text = "" then 404 else 200) ~bytes:(String.length text) Sheet url tab in
         fetch_more cfg network (with_sheet cfg tab url text, cmd)
       else if starts_with "about:" url then
         let pic =
@@ -151,10 +165,12 @@ let rec fetch_more (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, c
           | Some (bytes, _) -> Browser_picture.decode bytes
           | None -> Browser_picture.Broken
         in
+        let bytes = match cfg.about (String.sub url 6 (String.length url - 6)) with Some (b, _) -> String.length b | None -> 0 in
+        let tab = logged ~status:(if pic = Browser_picture.Broken then 404 else 200) ~bytes Picture url tab in
         fetch_more cfg network (with_arrived cfg tab url pic, cmd)
       else
         let get = Http.get network ~url ~expect:(Http.expect_response (cfg.got_picture url)) in
-        fetch_more cfg network ({ tab with in_flight = url :: tab.in_flight }, Cmd.batch [ cmd; get ]))
+        fetch_more cfg network (logged (kind_of tab url) url { tab with in_flight = url :: tab.in_flight }, Cmd.batch [ cmd; get ]))
   | _ -> (tab, cmd)
 
 (* a page shown: its style sheets not had yet queued (by the box
@@ -185,10 +201,13 @@ let load_images cfg network tab = with_pictures cfg network ({ tab with images =
 (*****************************************************************************)
 
 let load ?post (cfg : 'msg config) (network : < Cap.network ; .. >) (url : string) (tab : t) : t * 'msg Cmd.t =
-  let tab = { tab with scroll = 0; focus = None; queue = []; total = 0 } in
+  (* a new page: a new network log *)
+  let tab = { tab with scroll = 0; focus = None; queue = []; total = 0; requests = [] } in
   if starts_with "about:" url then
     let name, query = Browser_url.split_query (String.sub url 6 (String.length url - 6)) in
-    let show bytes content_type = with_pictures cfg network (to_fragment cfg (arrive cfg tab url 200 (Some content_type) bytes), Cmd.none) in
+    let show bytes content_type =
+      let tab = logged ~status:200 ~bytes:(String.length bytes) Document url tab in
+      with_pictures cfg network (to_fragment cfg (arrive cfg tab url 200 (Some content_type) bytes), Cmd.none) in
     match (name, post) with
     | "echo", Some (_, body) -> show (Browser_page.echo_html "POST" body) "text/html; charset=utf-8"
     | "echo", None -> show (Browser_page.echo_html "GET" (Option.value query ~default:"")) "text/html; charset=utf-8"
@@ -198,7 +217,7 @@ let load ?post (cfg : 'msg config) (network : < Cap.network ; .. >) (url : strin
         | None -> (failed cfg tab url "There is no such page in the built-in site.", Cmd.none))
   else
     let expect = Http.expect_response (cfg.got url) in
-    let tab = { tab with state = Loading url } in
+    let tab = logged Document url { tab with state = Loading url } in
     match post with
     | None -> (tab, Http.get network ~url ~expect)
     | Some (content_type, body) -> (tab, Http.post network ~url ~content_type ~body ~expect)
@@ -247,15 +266,60 @@ let stop (cfg : 'msg config) (tab : t) : t =
   in
   { tab with queue = []; in_flight = []; total = 0 }
 
+(* the page's <meta http-equiv=refresh content="N; url=X">, N a second
+ * or less (a later one, a slide show's, is not followed); one inside a
+ * <noscript> only when its scripts do not run *)
+let refresh (cfg : 'msg config) (tab : t) : string option =
+  match tab.state with
+  | Loading _ -> None
+  | Shown p ->
+      let scripts = cfg.scripts p.url in
+      let rec find (in_noscript : bool) (e : Dom.element) : string option =
+        let in_noscript = in_noscript || e.name = "noscript" in
+        let here =
+          if e.name = "meta" && (not (in_noscript && scripts))
+             && Option.map String.lowercase_ascii (Dom.attribute "http-equiv" e) = Some "refresh"
+          then
+            match Dom.attribute "content" e with
+            | Some c -> (
+                match String.index_opt c ';' with
+                | Some i -> (
+                    let delay = float_of_string_opt (String.trim (String.sub c 0 i)) in
+                    let rest = String.trim (String.sub c (i + 1) (String.length c - i - 1)) in
+                    let target =
+                      if String.length rest > 4 && String.lowercase_ascii (String.sub rest 0 4) = "url=" then String.sub rest 4 (String.length rest - 4)
+                      else rest
+                    in
+                    let target = String.trim target in
+                    let target =
+                      if String.length target >= 2 && (target.[0] = '\'' || target.[0] = '"') then String.sub target 1 (String.length target - 2) else target
+                    in
+                    match delay with Some d when d <= 1. && target <> "" -> Some (Browser_url.resolve p.url target) | _ -> None)
+                | None -> None)
+            | None -> None
+          else None
+        in
+        match here with
+        | Some _ -> here
+        | None -> List.find_map (fun (n : Dom.node) -> match n with Element c -> find in_noscript c | Text _ -> None) e.children
+      in
+      find false p.tree
+
 let got (cfg : 'msg config) (network : < Cap.network ; .. >) (url : string) (result : (Http.response, Http.error) result) (tab : t) :
     t * 'msg Cmd.t =
   match result with
-  | Ok r ->
+  | Ok r -> (
       let content_type =
         List.find_map (fun (name, value) -> if String.lowercase_ascii name = "content-type" then Some value else None) r.headers
       in
-      with_pictures cfg network (to_fragment cfg (arrive cfg tab r.url r.status content_type r.body), Cmd.none)
-  | Error e -> (failed cfg tab url (String.capitalize_ascii (Http.error_to_string e) ^ "."), Cmd.none)
+      let tab = logged ~status:r.status ~bytes:(String.length r.body) Document url tab in
+      let tab, cmd = with_pictures cfg network (to_fragment cfg (arrive cfg tab r.url r.status content_type r.body), Cmd.none) in
+      (* a <meta http-equiv=refresh content="0;url=...">: gone to at
+       * once, in the page's place (DuckDuckGo's links, sites moved) *)
+      match refresh cfg tab with
+      | Some target when target <> r.url && target <> url -> load cfg network target tab
+      | _ -> (tab, cmd))
+  | Error e -> (failed cfg (logged ~status:0 Document url tab) url (String.capitalize_ascii (Http.error_to_string e) ^ "."), Cmd.none)
 
 let got_picture (cfg : 'msg config) (network : < Cap.network ; .. >) (url : string) (result : (Http.response, Http.error) result)
     (tab : t) : t * 'msg Cmd.t =
@@ -263,9 +327,12 @@ let got_picture (cfg : 'msg config) (network : < Cap.network ; .. >) (url : stri
   else if List.mem url tab.sheet_urls then
     (* a style sheet: laid out with it, its @imports queued *)
     let text = match result with Ok r when r.status / 100 = 2 -> r.body | _ -> "" in
+    let status = match result with Ok r -> r.status | Error _ -> 0 in
+    let tab = logged ~status ~bytes:(String.length text) Sheet url tab in
     fetch_more cfg network (with_sheet cfg { tab with in_flight = List.filter (( <> ) url) tab.in_flight } url text, Cmd.none)
   else
     let pic = match result with Ok r when r.status / 100 = 2 -> Browser_picture.decode r.body | _ -> Browser_picture.Broken in
+    let tab = match result with Ok r -> logged ~status:r.status ~bytes:(String.length r.body) Picture url tab | Error _ -> logged ~status:0 Picture url tab in
     fetch_more cfg network (with_arrived cfg { tab with in_flight = List.filter (( <> ) url) tab.in_flight } url pic, Cmd.none)
 
 (*****************************************************************************)

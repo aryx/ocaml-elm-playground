@@ -87,3 +87,13 @@ val find_element : (int, Dom.element * 'a) Hashtbl.t -> Dom.element -> 'a option
 (* the style rules of the sheets that count for [media], their @media
  * and @supports opened: how many a page has, for the devtools *)
 val rules : media -> sheet list -> (origin * Selectors.complex * Css_syntax.declaration list) list
+
+(* where a declaration came from: a sheet's rule (the sheet's index in
+ * the list given), an attribute's hint, the element's style= *)
+type source = Rule of { sheet : int; selector : Selectors.complex } | Hint | Style_attribute
+
+(* [explain media sheets root e]: e's winning declarations, as [cascade]
+ * gives them, each with where it came from and whether !important --
+ * a developer tools' "Styles" pane; one element, its rules all tried *)
+val explain :
+  ?visited:(string -> bool) -> media -> sheet list -> Dom.element -> Dom.element -> (string * Css_syntax.component list * source * bool) list
