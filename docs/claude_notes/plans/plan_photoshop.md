@@ -16,7 +16,10 @@ Photoshop 1.0 first, layers (Photoshop 3.0, 1994) as a later step.
 Done (2026-09-25): sections 1 and 2 below -- the library and its
 tests (`Unit_imaging`), and the program with five golden frames (the
 window, Hue/Saturation's preview, the wand and Invert, a stroke, Levels
-on Aldrin). Section 3 is left.
+on Aldrin). Then (2026-09-25) section 3's layers: `Blend` (the modes)
+and `Layers` (the stack flattened, Porter and Duff's over with the
+W3C's blending), the document a list of layers, the Layers palette,
+Place.
 
 ## 1. `libs/graphics/imaging/`: the algorithms
 
@@ -71,9 +74,10 @@ window system.
 
 ## 3. Later
 
-- Layers (Photoshop 3.0, 1994): a stack of images, each with its
-  opacity and blend mode (multiply, screen, overlay: the formulas of
-  compositing, Porter and Duff 1984 and after), a layers palette.
+- Layers (Photoshop 3.0, 1994) -- done: a stack of images, each with
+  its opacity and blend mode, a layers palette. Left: moving a layer,
+  layer masks and adjustment layers (Photoshop 4.0, 1996), Soft Light
+  and the other non-separable modes (Hue, Saturation, Luminosity).
 - History (Photoshop 5.0, 1998): the undo list as a palette.
 - Channels shown one at a time, CMYK, Lab; the pen tool's paths;
   adjustment layers; content-aware fill (2010), an exercise at most.

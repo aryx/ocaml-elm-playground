@@ -1508,6 +1508,10 @@ let scripted : Testutil_golden.scripted list =
     ("apps/graphics/software/TinyPhotoshop", "wand", 14, "at(-403;338):1-3,click:2,at(-150;210):4-6,click:5,at(0;475):7-9,click:8,at(0;227):10-14,click:11");
     ("apps/graphics/software/TinyPhotoshop", "paint", 14, "at(-100;0):2-3,at(-50;20):4,at(0;40):5,at(50;30):6,at(100;0):7,at(150;-40):8-14,click:3-8");
     ("apps/graphics/software/TinyPhotoshop", "levels", 14, "at(430;475):1-3,click:2,at(430;371):4-6,click:5,at(0;475):7-9,click:8,at(0;407):10-14,click:11");
+    (* claude: its layers: Aldrin placed as a layer over the Blue
+     * Marble, in Screen mode at some 60%, the Moon showing through
+     * space; the Layers palette *)
+    ("apps/graphics/software/TinyPhotoshop", "layers", 20, "at(430;475):1-3,click:2,at(430;299):4-6,click:5,at(372;255):7-9,click:8,at(372;151):10-12,click:11,at(467;195):13-14,at(430;195):15,at(391;195):16-20,click:14-17");
     (* the "Objects" group dragged down, then its corner handle: the box
      * scales, its label goes with it -- the resize a map of the points *)
     ( "apps/graphics/software/TinyMacDraw",

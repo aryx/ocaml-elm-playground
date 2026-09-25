@@ -110,6 +110,21 @@ let tests =
       Testo.create "Gradient: 55% of the way at x 5" (fun () ->
           let img = Gradient.linear (0., 0.) (10., 0.) (0, 0, 0) (255, 255, 255) (grey [ List.init 10 (fun _ -> 0) ]) in
           check_int "140" 140 (red img 5 0));
+      Testo.create "Blend: Blend.mli's greys" (fun () ->
+          let g = 128. /. 255. in
+          let first (r, _, _) = int_of_float (Float.round (r *. 255.)) in
+          check_int "multiply" 64 (first (Blend.blend Multiply (g, g, g) (g, g, g)));
+          check_int "screen" 192 (first (Blend.blend Screen (g, g, g) (g, g, g)));
+          check_int "difference" 0 (first (Blend.blend Difference (g, g, g) (g, g, g)));
+          check_int "overlay keeps a mid grey on white" 255 (first (Blend.blend Overlay (1., 1., 1.) (g, g, g))));
+      Testo.create "Layers: half red over white; a layer over nothing is itself" (fun () ->
+          let solid (r, g, b) = Pixels.map (fun _ _ _ _ -> (r, g, b, 255)) (Rgba_image.create ~width:1 ~height:1) in
+          let flat = Layers.flatten [ Layers.make "white" (solid (255, 255, 255)); Layers.make ~opacity:0.5 "red" (solid (255, 0, 0)) ] in
+          Alcotest.(check (list int)) "half red" [ 255; 128; 128; 255 ] (List.map (Pixels.get flat 0 0) [ 0; 1; 2; 3 ]);
+          let alone = Layers.flatten [ Layers.transparent "empty" 1 1; Layers.make ~mode:Multiply "red" (solid (255, 0, 0)) ] in
+          Alcotest.(check (list int)) "over nothing" [ 255; 0; 0; 255 ] (List.map (Pixels.get alone 0 0) [ 0; 1; 2; 3 ]);
+          let hidden = Layers.flatten [ Layers.make "white" (solid (255, 255, 255)); { (Layers.make "red" (solid (255, 0, 0))) with visible = false } ] in
+          check_int "hidden" 255 (Pixels.get hidden 0 0 1));
       Testo.create "the photographs, decoded by our own JPEG reader" (fun () ->
           List.iter
             (fun f ->

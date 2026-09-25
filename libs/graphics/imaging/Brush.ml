@@ -62,9 +62,11 @@ let airbrush (b : t) ((r, g, bl) : int * int * int) ~(flow : float) ?selection (
     (fun p ->
       dab b img.width img.height p (fun x y c ->
           let a = c *. flow *. b.opacity *. selected selection x y in
+          (* the alpha too: sprayed on a layer's transparent pixels, the
+             paint builds up there as well *)
           List.iteri
             (fun ch v -> let old = float_of_int (Pixels.get out x y ch) in Pixels.set out x y ch (Pixels.clamp (int_of_float (Float.round (old +. ((float_of_int v -. old) *. a))))))
-            [ r; g; bl ]))
+            [ r; g; bl; 255 ]))
     points;
   out
 

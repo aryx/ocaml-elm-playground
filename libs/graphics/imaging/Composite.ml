@@ -26,5 +26,6 @@ let through (mask : Mask.t) ~(before : Pixels.image) ~(after : Pixels.image) : P
   out
 
 let fill (mask : Mask.t) ((r, g, b) : int * int * int) (img : Pixels.image) : Pixels.image =
-  let colour = Pixels.map (fun _ _ _ a -> (r, g, b, a)) img in
+  (* opaque: paint poured on a layer's transparent pixels shows *)
+  let colour = Pixels.map (fun _ _ _ _ -> (r, g, b, 255)) img in
   through mask ~before:img ~after:colour

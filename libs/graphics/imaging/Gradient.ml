@@ -22,7 +22,8 @@ let linear ?selection ((ax, ay) : float * float) ((bx, by) : float * float) ((r0
       let mix a b = Pixels.clamp (int_of_float (Float.round (float_of_int a +. (float_of_int (b - a) *. t)))) in
       Pixels.set out x y 0 (mix r0 r1);
       Pixels.set out x y 1 (mix g0 g1);
-      Pixels.set out x y 2 (mix b0 b1)
+      Pixels.set out x y 2 (mix b0 b1);
+      Pixels.set out x y 3 255
     done
   done;
   match selection with Some m -> Composite.through m ~before:img ~after:out | None -> out

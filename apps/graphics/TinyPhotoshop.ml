@@ -17,7 +17,10 @@
  *   colour); the two colours below them (click one to change it, x swaps
  *   them, d gives black and white back); the brush's size, hardness and
  *   opacity and the wand's tolerance along the bottom; the menus: Image's
- *   adjustments, Filter, Select, and Photos for NASA's two photographs
+ *   adjustments, Filter, Select, and Photos for NASA's two photographs,
+ *   opened or placed as a layer; the Layers palette at the right (a
+ *   click on a layer to work on it, its eye to hide it; its mode and
+ *   opacity; New, Duplicate, Delete, Flatten)
  *
  * MacPaint (TinyMacPaint, beside this) kept a picture as dots, black or
  * white. Photoshop kept 24 bits a dot, and with them came the
@@ -30,6 +33,14 @@
  * byte a dot (Mask.mli): every operation is applied through it, which is
  * what lets a feathered selection's edge fade the change in.
  *
+ * And the layers of Photoshop 3.0 (1994): the picture a stack of
+ * pictures, each with its transparency, its opacity and its blend mode
+ * (Multiply darkens, as two slides projected through each other; Screen
+ * lightens, as two projectors on one screen: Blend.mli), flattened for
+ * the screen by Porter and Duff's "over" (Layers.mli). The tools and
+ * the menus work on the current layer; on a layer the eraser makes
+ * transparent, on the background it paints the background colour.
+ *
  * The adjustments and filters with dots after their name open a dialog,
  * whose sliders change a preview of the whole picture (through the
  * selection) until OK. The picture on the screen is 64 tiles, each its
@@ -39,14 +50,15 @@
  * stroke doesn't send the whole photograph again (in a browser, each new
  * image is encoded as a PNG).
  *
- * What it uses: libs/graphics/imaging (every operation), our own JPEG
+ * What it uses: libs/graphics/imaging (every operation, the blend
+ * modes and the layers' flattening), our own JPEG
  * and PNG readers and writers, the photographs of photos/ (NASA's,
  * public domain, make_photos.sh), appkits/document (Undo), the File menu
  * (appkits/file_menu), and gui/'s immediate widgets.
  *
- * What it deliberately does not do: layers (Photoshop 3.0, 1994: a
- * stack of pictures, each with its opacity and blend mode -- the next
- * step, plan_photoshop.md); channels, CMYK; the zoom and the hand;
+ * What it deliberately does not do: layer masks and adjustment layers
+ * (Photoshop 4.0, 1996); moving a layer (the move tool); channels,
+ * CMYK; the zoom and the hand;
  * text; the pen tool's paths; the history palette (Photoshop 1.0 had one
  * undo; here TinyMacPaint's Undo keeps them all).
  *
@@ -106,9 +118,13 @@ type drag =
 
 type which = Foreground | Background
 
+(* the document: its layers, the bottom one first, and the one the
+   tools and the menus work on (Photoshop 3.0's) *)
+type doc = { layers : Layers.layer list; current : int }
+
 type model = {
   (* the picture, and every version of it *)
-  history : Rgba_image.t Undo.t;
+  history : doc Undo.t;
   file : File_menu.t;
   name : string;
   tool : tool;
@@ -130,6 +146,8 @@ type model = {
   source : (float * float) option;
   dialog : dialog option;
   noise_seed : int;
+  (* the layer's opacity being dragged: one Undo for the whole drag *)
+  adjusting : bool;
   was : string list;
   was_down : bool;
 }
@@ -145,7 +163,7 @@ and dialog = {
   preview : (float list -> Rgba_image.t -> Rgba_image.t) option;
   ok : float list -> model -> model;
   histogram : bool;
-  cache : (float list * Rgba_image.t) option;
+  cache : (float list * Layers.layer list) option; (* the layers with the current one previewed *)
 }
 
 let decode (jpg : string) : Rgba_image.t = Jpeg.decode jpg
@@ -153,7 +171,7 @@ let blue_marble = lazy (decode Photos.blue_marble_jpg)
 
 let start (name : string) (img : Rgba_image.t) : model =
   {
-    history = Undo.start img;
+    history = Undo.start { layers = [ Layers.make "Background" img ]; current = 0 };
     file = File_menu.start;
     name;
     tool = Paintbrush;
@@ -170,14 +188,39 @@ let start (name : string) (img : Rgba_image.t) : model =
     source = None;
     dialog = None;
     noise_seed = 1;
+    adjusting = false;
     was = [];
     was_down = false;
   }
 
 let initial = lazy (start "The Blue Marble" (Lazy.force blue_marble))
-let picture (m : model) : Rgba_image.t = Undo.now m.history
-let record ~name img (m : model) = { m with history = Undo.record ~name img m.history }
-let amend img (m : model) = { m with history = Undo.amend img m.history }
+let doc (m : model) : doc = Undo.now m.history
+let layers (m : model) : Layers.layer list = (doc m).layers
+let layer (m : model) : Layers.layer = List.nth (layers m) (doc m).current
+
+(* the current layer's picture: what the tools and the menus change *)
+let picture (m : model) : Rgba_image.t = (layer m).image
+
+(* the layers with the current one's picture replaced *)
+let with_image (d : doc) (img : Rgba_image.t) : Layers.layer list = List.mapi (fun i (l : Layers.layer) -> if i = d.current then { l with image = img } else l) d.layers
+let record_doc ~name (d : doc) (m : model) = { m with history = Undo.record ~name d m.history }
+let record ~name img (m : model) = record_doc ~name { (doc m) with layers = with_image (doc m) img } m
+let amend img (m : model) = { m with history = Undo.amend { (doc m) with layers = with_image (doc m) img } m.history }
+
+(* the whole picture as the screen shows it: the layers flattened,
+   computed again only for new layers (the same list, the same
+   picture: the history's documents are never changed in place) *)
+let flat : (Layers.layer list * Rgba_image.t) option ref = ref None
+
+let flatten (ls : Layers.layer list) : Rgba_image.t =
+  match !flat with
+  | Some (ls', img) when ls' == ls -> img
+  | _ ->
+      let img = Layers.flatten ls in
+      flat := Some (ls, img);
+      img
+
+let composite (m : model) : Rgba_image.t = flatten (layers m)
 
 (*****************************************************************************)
 (* The picture's window *)
@@ -216,7 +259,9 @@ let through (m : model) (f : Rgba_image.t -> Rgba_image.t) (img : Rgba_image.t) 
 let apply ~name (f : Rgba_image.t -> Rgba_image.t) (m : model) : model = record ~name (through m f (picture m)) m
 
 (* the operations that change the picture's shape: the selection goes *)
-let reshape ~name (f : Rgba_image.t -> Rgba_image.t) (m : model) : model = { (record ~name (f (picture m)) m) with selection = None }
+let reshape ~name (f : Rgba_image.t -> Rgba_image.t) (m : model) : model =
+  let d = doc m in
+  { (record_doc ~name { d with layers = List.map (fun (l : Layers.layer) -> { l with image = f l.image }) d.layers } m) with selection = None }
 
 let combine (mode : combine) (base : Mask.t option) (fresh : Mask.t) : Mask.t option =
   let result =
@@ -348,16 +393,23 @@ let menu_filter =
   [ "Filter"; "Blur"; "Blur More"; "Gaussian Blur..."; "Sharpen"; "Sharpen More"; "Unsharp Mask..."; "Find Edges"; "Emboss"; "Median...";
     "Add Noise..." ]
 
-let menu_photos = [ "Photos"; "Blue Marble"; "Aldrin"; "Export PNG"; "Export JPEG" ]
+let menu_photos = [ "Photos"; "Blue Marble"; "Aldrin"; "Place Marble"; "Place Aldrin"; "Export PNG"; "Export JPEG" ]
 
 let bar_widths () : float list =
   List.map (fun items -> Float.max 80. (fst (Gui.menu_size items) +. 6.)) [ File_menu.items; menu_edit; menu_select; menu_image; menu_filter; menu_photos ]
+
+(* File > Place: a photograph as a new layer on top, at the picture's size *)
+let place (name : string) (jpg : string) (m : model) : model =
+  let d = doc m and img = picture m in
+  let photo = Scale.resize Bilinear ~width:img.width ~height:img.height (decode jpg) in
+  let layers = d.layers @ [ Layers.make name photo ] in
+  { (record_doc ~name:"Place" { layers; current = List.length layers - 1 } m) with selection = None }
 
 let open_photo (name : string) (jpg : string) (m : model) : model =
   { (start name (decode jpg)) with file = m.file; fg = m.fg; bg = m.bg; radius = m.radius; hardness = m.hardness; opacity = m.opacity; tolerance = m.tolerance }
 
 let export (caps : File_menu.caps) (m : model) (extension : string) : model =
-  let img = picture m in
+  let img = composite m in
   let data = if extension = ".png" then Png.encode img else Jpeg_encode.encode ~quality:90 img in
   let file = String.map (fun c -> if c = ' ' then '_' else Char.lowercase_ascii c) m.name ^ extension in
   Playground_platform.export caps file data;
@@ -392,6 +444,8 @@ let command (caps : File_menu.caps) (item : string) (m : model) : model =
       | "Emboss" -> apply ~name:"Emboss" (Convolve.apply Convolve.emboss) m
       | "Blue Marble" -> open_photo "The Blue Marble" Photos.blue_marble_jpg m
       | "Aldrin" -> open_photo "Aldrin on the Moon" Photos.aldrin_jpg m
+      | "Place Marble" -> place "Blue Marble" Photos.blue_marble_jpg m
+      | "Place Aldrin" -> place "Aldrin" Photos.aldrin_jpg m
       | "Export PNG" -> export caps m ".png"
       | "Export JPEG" -> export caps m ".jpg"
       | _ -> m)
@@ -411,7 +465,13 @@ let stroke (m : model) (points : (float * float) list) : Rgba_image.t =
   | Pencil -> Brush.paint { Brush.radius = 0.8; hardness = 1.; opacity = 1. } m.fg ?selection before points
   | Paintbrush -> Brush.paint (brush m) m.fg ?selection before points
   | Airbrush -> Brush.airbrush (brush m) m.fg ~flow:0.08 ?selection before points
-  | Eraser -> Brush.paint { (brush m) with hardness = 1. } m.bg ?selection before points
+  | Eraser when (doc m).current = 0 -> Brush.paint { (brush m) with hardness = 1. } m.bg ?selection before points
+  | Eraser ->
+      (* on a layer, erasing is making transparent *)
+      let clear = Pixels.map (fun r g b _ -> (r, g, b, 0)) before in
+      let stroke = Brush.stroke_mask { (brush m) with hardness = 1. } before.width before.height points in
+      let stroke = match selection with Some s -> Mask.intersect stroke s | None -> stroke in
+      Composite.through stroke ~before ~after:clear
   | Stamp -> (
       match (m.source, points) with
       | Some (sx, sy), (x0, y0) :: _ ->
@@ -443,8 +503,9 @@ let press (computer : computer) (m : model) (p : float * float) : model =
       let area = Mask.wand ~tolerance:(int_of_float m.tolerance) img (int_of_float x) (int_of_float y) in
       let area = match m.selection with Some s -> Mask.intersect area s | None -> area in
       record ~name:"Fill" (Composite.fill area m.fg img) m
-  | Eyedropper -> if alt then { m with bg = pixel img p } else { m with fg = pixel img p }
-  | Gradient_tool -> { m with drag = Some (Dragging_gradient (x, y)); before = img; history = Undo.record ~name:"Gradient" img m.history }
+  (* the colour as seen: the layers flattened *)
+  | Eyedropper -> if alt then { m with bg = pixel (composite m) p } else { m with fg = pixel (composite m) p }
+  | Gradient_tool -> { (record ~name:"Gradient" img m) with drag = Some (Dragging_gradient (x, y)); before = img }
   | Stamp when alt -> { m with source = Some p }
   | Stamp when m.source = None -> m
   | Pencil | Paintbrush | Airbrush | Eraser | Stamp | Smudge ->
@@ -527,12 +588,77 @@ let dialog_update (computer : computer) (m : model) (d : dialog) : model =
   let d = { d with values } in
   let d =
     match (d.preview, d.cache) with
-    | Some f, cache when (match cache with Some (vs, _) -> vs <> values | None -> true) -> { d with cache = Some (values, through m (f values) (picture m)) }
+    | Some f, cache when (match cache with Some (vs, _) -> vs <> values | None -> true) ->
+        { d with cache = Some (values, with_image (doc m) (through m (f values) (picture m))) }
     | _ -> d
   in
   if Gui.button_in computer ok_box "OK" then d.ok d.values { m with dialog = None }
   else if Gui.button_in computer cancel_box "Cancel" then { m with dialog = None }
   else { m with dialog = Some d }
+
+(* The Layers palette, Photoshop 3.0's: the layers top first, each with
+   its eye (shown or not) and its name, the current one highlighted; its
+   blend mode and opacity above them; New, Duplicate, Delete, Flatten
+   below. A click on a row makes that layer the current one. *)
+let mode_box : Widget.box = { Widget.x = panel_x; y = 255.; w = 190.; h = 28. }
+let opacity_box : Widget.box = { Widget.x = panel_x; y = 195.; w = 190.; h = 24. }
+let row_box i : Widget.box = { Widget.x = panel_x; y = 145. -. (float_of_int i *. 34.); w = 226.; h = 30. }
+let eye_box i : Widget.box = { (row_box i) with x = panel_x -. 96.; w = 28. }
+let rows = 7
+let layer_buttons = [ "New"; "Duplicate"; "Delete"; "Flatten" ]
+let layer_button_box i : Widget.box = { Widget.x = panel_x -. 57. +. (float_of_int (i mod 2) *. 114.); y = -115. -. (float_of_int (i / 2) *. 40.); w = 104.; h = 32. }
+
+(* the current layer changed by [f] *)
+let change_layer (f : Layers.layer -> Layers.layer) (d : doc) : doc = { d with layers = List.mapi (fun i l -> if i = d.current then f l else l) d.layers }
+
+let layer_command (label : string) (m : model) : model =
+  let d = doc m in
+  let n = List.length d.layers in
+  let insert_above (l : Layers.layer) = List.concat (List.mapi (fun i x -> if i = d.current then [ x; l ] else [ x ]) d.layers) in
+  let img = picture m in
+  match label with
+  | "New" -> record_doc ~name:"New Layer" { layers = insert_above (Layers.transparent (Printf.sprintf "Layer %d" n) img.width img.height); current = d.current + 1 } m
+  | "Duplicate" -> record_doc ~name:"Duplicate Layer" { layers = insert_above { (layer m) with name = (layer m).name ^ " copy" }; current = d.current + 1 } m
+  | "Delete" when n > 1 -> record_doc ~name:"Delete Layer" { layers = List.filteri (fun i _ -> i <> d.current) d.layers; current = max 0 (d.current - 1) } m
+  | "Flatten" ->
+      (* over white, as Photoshop's background is: no transparency left *)
+      let white = Composite.fill (Mask.all img.width img.height) (255, 255, 255) (Rgba_image.create ~width:img.width ~height:img.height) in
+      record_doc ~name:"Flatten" { layers = [ Layers.make "Background" (Layers.flatten (Layers.make "white" white :: d.layers)) ]; current = 0 } m
+  | _ -> m
+
+let palette_update (computer : computer) (m : model) : model =
+  let d = doc m and cur = layer m in
+  let names = List.map Blend.name Blend.modes in
+  let index = let rec go i = function [] -> 0 | x :: rest -> if x = cur.mode then i else go (i + 1) rest in go 0 Blend.modes in
+  let chosen = Gui.menu_in computer mode_box names index in
+  let m = if chosen <> index then record_doc ~name:"Blending Mode" (change_layer (fun l -> { l with mode = List.nth Blend.modes chosen }) d) m else m in
+  let v = Gui.slider_in computer opacity_box ~from:0. ~to_:100. ((layer m).opacity *. 100.) in
+  let m =
+    if Float.abs (v -. ((layer m).opacity *. 100.)) > 0.01 then
+      let nd = change_layer (fun l -> { l with opacity = v /. 100. }) (doc m) in
+      if m.adjusting then { m with history = Undo.amend nd m.history } else { (record_doc ~name:"Opacity" nd m) with adjusting = true }
+    else m
+  in
+  let m = if computer.mouse.mdown then m else { m with adjusting = false } in
+  let m = List.fold_left (fun m (i, label) -> if Gui.button_in computer (layer_button_box i) label then layer_command label m else m) m (List.mapi (fun i l -> (i, l)) layer_buttons) in
+  (* a click on a row: its eye, or the row itself *)
+  let mouse = computer.mouse in
+  if mouse.mdown && (not m.was_down) && not (Gui.modal ()) then
+    let d = doc m in
+    let n = List.length d.layers in
+    let rec find i =
+      if i >= min n rows then m
+      else
+        let index = n - 1 - i in
+        if Widget.contains (eye_box i) mouse.mx mouse.my then
+          let l = List.nth d.layers index in
+          record_doc ~name:(if l.visible then "Hide Layer" else "Show Layer")
+            { d with layers = List.mapi (fun j (x : Layers.layer) -> if j = index then { x with visible = not x.visible } else x) d.layers } m
+        else if Widget.contains (row_box i) mouse.mx mouse.my then { m with history = Undo.amend { d with current = index } m.history }
+        else find (i + 1)
+    in
+    find 0
+  else m
 
 let keyboard (caps : File_menu.caps) (computer : computer) (m : model) : model =
   let now = Set_.elements computer.keyboard.keys in
@@ -553,19 +679,19 @@ let keyboard (caps : File_menu.caps) (computer : computer) (m : model) : model =
   { m with was = now }
 
 (* a document is its picture, saved by the File menu as it is *)
-let kind = { File_menu.magic = "TinyPhotoshop 1"; extension = ".photo" }
+let kind = { File_menu.magic = "TinyPhotoshop 2"; extension = ".photo" }
 
-let reopened (r : Rgba_image.t File_menu.result) (m : model) : model =
+let reopened (r : doc File_menu.result) (m : model) : model =
   match r with
   | File_menu.Nothing -> m
   | File_menu.New ->
       let img = Composite.fill (Mask.all 400 400) m.bg (Rgba_image.create ~width:400 ~height:400) in
       let img = Pixels.map (fun r g b _ -> (r, g, b, 255)) img in
       { (start "Untitled" img) with file = m.file }
-  | File_menu.Opened img -> { (start (File_menu.title m.file) img) with file = m.file }
+  | File_menu.Opened d -> { (start (File_menu.title m.file) (List.hd d.layers).image) with file = m.file; history = Undo.start d }
 
 let update (caps : File_menu.caps) (computer : computer) (m : model) : model =
-  let current () = picture m in
+  let current () = doc m in
   if File_menu.busy m.file then
     let file, r = File_menu.dialog caps kind computer ~current m.file in
     reopened r { m with file; was_down = computer.mouse.mdown; was = Set_.elements computer.keyboard.keys }
@@ -585,6 +711,7 @@ let update (caps : File_menu.caps) (computer : computer) (m : model) : model =
       match m.dialog with
       | Some d -> dialog_update computer m d
       | None ->
+          let m = palette_update computer m in
           (* the options, always there *)
           let slide i ~from ~to_ v = Gui.slider_in computer (option_box i) ~from ~to_ v in
           let m = { m with radius = slide 0 ~from:1. ~to_:50. m.radius } in
@@ -721,9 +848,26 @@ let dialog_view (m : model) (d : dialog) : shape list =
   let swatch = if d.preview = None && List.length d.values = 3 && d.title <> "Feather" then match ints d.values with [ r; g; b ] -> [ rectangle (colour (r, g, b)) 120. 40. |> move panel_x (-70.) ] | _ -> [] else [] in
   panel @ hist @ labels @ swatch
 
+let palette_view (m : model) : shape list =
+  let th = Gui.theme () in
+  let d = doc m in
+  let n = List.length d.layers in
+  let panel = [ rectangle black (panel_w +. 4.) 520. |> move panel_x 60.; rectangle th.face panel_w 516. |> move panel_x 60.; words black "Layers" |> move panel_x 305. ] in
+  let labels = [ words black "Mode" |> move panel_x (mode_box.y +. 24.); words black (Printf.sprintf "Opacity: %d%%" (int_of_float (Float.round ((layer m).opacity *. 100.)))) |> move panel_x (opacity_box.y +. 24.) ] in
+  let row i =
+    let index = n - 1 - i in
+    let l = List.nth d.layers index in
+    let b = row_box i and e = eye_box i in
+    let shade = if index = d.current then rgb 170 190 225 else white in
+    [ rectangle black (b.w +. 2.) (b.h +. 2.) |> move b.x b.y; rectangle shade b.w b.h |> move b.x b.y ]
+    @ (if l.visible then [ oval black 16. 9. |> move e.x e.y; circle shade 2.5 |> move e.x e.y ] else [ rectangle (rgb 150 150 150) 14. 1. |> move e.x e.y ])
+    @ [ bitmap 24. 24. l.image |> move (b.x -. 62.) b.y; words black l.name |> move (b.x +. 30.) b.y ]
+  in
+  panel @ labels @ List.concat (List.init (min n rows) row)
+
 let view (computer : computer) (m : model) : shape list =
   let th = Gui.theme () in
-  let img = match m.dialog with Some { cache = Some (_, preview); _ } -> preview | _ -> picture m in
+  let img = match m.dialog with Some { cache = Some (_, preview); _ } -> flatten preview | _ -> composite m in
   let s = scale img and left, top = origin img in
   let w = float_of_int img.width *. s and h = float_of_int img.height *. s in
   let window =
@@ -781,7 +925,7 @@ let view (computer : computer) (m : model) : shape list =
   in
   [ rectangle (rgb 150 150 150) 1000. 1000.; rectangle th.face 1000. 40. |> move 0. 475. ]
   @ window @ picture_shapes @ selection @ lasso @ palette @ colours @ options
-  @ (match m.dialog with Some d -> dialog_view m d | None -> [])
+  @ (match m.dialog with Some d -> dialog_view m d | None -> palette_view m)
   @ [ words (rgb 30 30 30) status |> move 0. (-440.) ]
   @ File_menu.view m.file @ Gui.draw ()
 
