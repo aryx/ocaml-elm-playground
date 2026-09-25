@@ -250,6 +250,21 @@ after an extraction.
   in: no cycle, no global). Strings are UTF-8, measured in bytes (noted).
   Tests: 10 more, the notes' closures, `let` per iteration and "Wat"
   table among them.
+- **J3 done** (2026-09-25): host objects in the engine (`Js_value`'s
+  `Host_object`: reads and writes calling the host's functions, the
+  spec's getters and setters). `appkits/browser/Browser_script`: the
+  mutable copy (nodes with a parent, thawed from `Dom` and frozen back,
+  Netscape's attributes split again by `Dtd.origin`; `changed` for the
+  reflow), `document` (getElementById, querySelector(All) over
+  `Css.matches` on the frozen tree, createElement, createTextNode,
+  body, head, title), the elements (tagName, id, className,
+  textContent, innerHTML written through `Html_tree` and read
+  serialized, get/set/removeAttribute, style over `Css.declarations`,
+  value, checked, children, firstChild, parentNode, appendChild,
+  insertBefore, removeChild, remove, a script's own properties), each
+  with one host object; the `<script>`s run in order after the page is
+  read (as `defer`), their errors in the console with their line.
+  Tests on fake pages: 10, the notes' two worked examples among them.
 
 ## Decisions
 

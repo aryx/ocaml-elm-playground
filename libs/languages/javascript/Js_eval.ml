@@ -73,6 +73,7 @@ let get (t : t) (target : value) (k : string) : value =
       | _, Some i -> if i < a.length then a.elements.(i) else Undefined
       | _ -> (
           match get_own o k with Some v -> v | None -> Option.value (get_own (protos t).arrays k) ~default:Undefined))
+  | Object { kind = Host_object h; _ } -> h.get k
   | Object o -> Option.value (get_own o k) ~default:Undefined
   | Bool _ | Number _ -> Undefined
 
@@ -98,6 +99,7 @@ let set (target : value) (k : string) (v : value) : unit =
           a.elements.(i) <- v;
           a.length <- max a.length (i + 1)
       | _ -> set_own o k v)
+  | Object { kind = Host_object h; _ } -> h.set k v
   | Object o -> set_own o k v
   (* a property of a primitive: lost, as JavaScript loses it *)
   | Bool _ | Number _ | String _ -> ()

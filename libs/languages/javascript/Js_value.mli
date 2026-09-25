@@ -14,6 +14,10 @@
    (a host function: console.log, and the browser's). Objects are
    compared, passed and stored by reference: [{} === {}] is false.
 
+   A **host object** is the browser's: document, an element, whose
+   properties are OCaml functions reading and changing the page (Js_eval
+   calls [get] and [set] where it would look in the table).
+
    A string is OCaml's, UTF-8: its [length] and indexes count bytes, so
    "é".length is 2 where JavaScript, counting UTF-16 units, says 1. The
    pages of this repository are ASCII where it matters; counting code
@@ -45,6 +49,13 @@ and kind =
   | Array of items
   | Closure of closure
   | Host_function of string * (this:value -> value list -> value) (* its name, and it *)
+  | Host_object of host
+
+(* an object whose properties are the host's functions: reading one
+ * calls [get], writing one [set] (the spec's getters and setters) --
+ * a page's element, whose textContent is its tree's text, not a value
+ * stored; [show], how the console shows it *)
+and host = { class_name : string; get : string -> value; set : string -> value -> unit; show : unit -> string }
 
 and items = { mutable elements : value array; mutable length : int }
 
@@ -66,6 +77,7 @@ exception Throw of value
 val new_object : unit -> obj
 val new_array : value list -> obj
 val host_function : string -> (this:value -> value list -> value) -> value
+val host_object : host -> value
 
 (* an own property, if the object has it *)
 val get_own : obj -> string -> value option

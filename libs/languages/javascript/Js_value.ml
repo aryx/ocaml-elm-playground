@@ -18,6 +18,9 @@ and kind =
   | Array of items
   | Closure of closure
   | Host_function of string * (this:value -> value list -> value)
+  | Host_object of host
+
+and host = { class_name : string; get : string -> value; set : string -> value -> unit; show : unit -> string }
 
 and items = { mutable elements : value array; mutable length : int }
 and closure = { func : Js_ast.func; scope : scope; this : value option }
@@ -43,6 +46,7 @@ let new_array (vs : value list) : obj =
   make (Array { elements; length = Array.length elements })
 
 let host_function (name : string) (f : this:value -> value list -> value) : value = Object (make (Host_function (name, f)))
+let host_object (h : host) : value = Object (make (Host_object h))
 let get_own (o : obj) (k : string) : value option = Option.map ( ! ) (List.assoc_opt k o.props)
 
 let set_own (o : obj) (k : string) (v : value) : unit =
@@ -104,6 +108,7 @@ and to_primitive (v : value) : value =
   | Object { kind = Closure { func = { name; _ }; _ }; _ } ->
       String (Printf.sprintf "function %s() { ... }" (Option.value name ~default:""))
   | Object { kind = Host_function (name, _); _ } -> String (Printf.sprintf "function %s() { [native code] }" name)
+  | Object { kind = Host_object h; _ } -> String (Printf.sprintf "[object %s]" h.class_name)
   (* an error, as Error.prototype.toString says it: "TypeError: ..."
    * (with no prototypes, told by its name and message) *)
   | Object ({ kind = Plain; _ } as o) -> (
@@ -157,6 +162,7 @@ let display (v : value) : string =
         "{" ^ String.concat ", " (List.map (fun k -> k ^ ": " ^ go ~top:false (o :: seen) (Option.get (get_own o k))) (keys o)) ^ "}"
     | Object { kind = Closure { func = { name; _ }; _ }; _ } -> "function " ^ Option.value name ~default:"(anonymous)"
     | Object { kind = Host_function (name, _); _ } -> "function " ^ name
+    | Object { kind = Host_object h; _ } -> h.show ()
     | v -> to_string v
   in
   go ~top:true [] v

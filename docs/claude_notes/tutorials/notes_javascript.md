@@ -361,6 +361,17 @@ a `Dom.element` and the page laid out again. The same element keeps
 the same host object across tasks (a table from nodes to objects), so
 `const el = document.getElementById("x")` stays valid.
 
+An element's properties are not values stored in a table: its
+`textContent` *is* its tree's text, computed when read and replacing its
+children when written. So `Js_value` has **host objects**, whose reads
+and writes call the host's functions -- what the specification calls
+getters and setters, here the browser's only.
+
+The page's `<script>`s run in order once the whole page is read (as the
+attribute `defer` asks), rather than as the parser meets them: a script
+finds every element, whatever its place. An error goes to the console,
+with its line, and the next script still runs.
+
 Worked example (the tests', on a fake page):
 
 ```

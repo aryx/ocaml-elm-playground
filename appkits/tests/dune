@@ -22,6 +22,7 @@
    appkit_tui ; Tui_snake
    terminal ; Vt, the screen a BASIC session is read from
    appkit_browser ; Browser_history, Browser_forms, ...
+   javascript ; Js_value, what Unit_browser_script reads
    web ; Dom, Html_layout, for them
    elm_playground_software ; an implem of virtual elm_playground, to link
    gui ; Text_edit, under Rich
