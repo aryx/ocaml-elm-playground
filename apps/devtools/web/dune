@@ -7,7 +7,7 @@
   (names TinyBasic)
   (modules TinyBasic)
   (libraries
-    appkit_basic ; Basic_parse, Basic_run, Basic_session
+    basic ; Basic_parse, Basic_run, Basic_session
     elm_playground
     elm_playground_web ; implem of virtual elm_playground
   )

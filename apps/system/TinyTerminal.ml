@@ -25,7 +25,7 @@
  * tty (Line_discipline.mli), the part between the two that neither
  * owns. The three are three modules here, and this file only puts them
  * together: the screen drawn in its case, the shell written as a
- * conversation (Teletype.mli), its commands in a table.
+ * conversation (Talk.mli), its commands in a table.
  *
  * The shell is the lesson in miniature: read a line, cut it into words,
  * the first word a program's name, run it, wait for it, read again.
@@ -36,8 +36,8 @@
  * (examples/TeletypeHangman.ml).
  *
  * What it uses: the Playground, its Teletype way (over libs/terminal's
- * Vt and Line_discipline), appkits/teletype's programs, and
- * appkits/basic's BASIC. Not gui/: a terminal's only widget is the
+ * Talk, Vt and Line_discipline), appkits/teletype's programs, and
+ * libs/languages' BASIC. Not gui/: a terminal's only widget is the
  * screen.
  *
  * Left undone, exercises: pipes and $VARIABLES (the Bourne shell's
@@ -46,7 +46,7 @@
  * through a pty (plan_terminal.md, section 4); the VT100's SET-UP
  * screen, its 132 columns, its double-height letters.
  *)
-open Teletype
+open Talk
 
 (*****************************************************************************)
 (* The shell *)
@@ -130,7 +130,7 @@ let view (computer : Playground.computer) (m : machine) : Playground.shape list 
   let open Playground in
   let screen = computer.screen in
   let k = 0.9 in
-  let w, h = size computer m in
+  let w, h = Teletype.size computer m in
   let w, h = (w *. k, h *. k) in
   let y = 30. in
   let bottom = y -. (h /. 2.) -. 60. in
@@ -141,11 +141,11 @@ let view (computer : Playground.computer) (m : machine) : Playground.shape list 
   [ rectangle desk screen.width screen.height;
     rectangle case (w +. 80.) (h +. 180.) |> move_y (y -. 30.);
     rectangle dark (w +. 30.) (h +. 30.) |> move_y y;
-    group (draw ~phosphor:(phosphor computer.flags) computer m) |> scale k |> move_y y;
+    group (Teletype.draw ~phosphor:(phosphor computer.flags) computer m) |> scale k |> move_y y;
     words dark "VT100" |> scale 1.4 |> move ((w /. 2.) -. 30.) bottom;
     light true "ON LINE" (-.(w /. 2.) +. 10.);
     light (not (reading m || finished m)) "KBD LOCKED" (-.(w /. 2.) +. 120.) ]
 
-let app = teletype ~view session
+let app = Teletype.teletype ~view session
 
 let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

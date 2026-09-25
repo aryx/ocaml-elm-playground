@@ -16,7 +16,7 @@
    "]"), INT back to Integer BASIC (the prompt a ">"); the program
    stays (Apple's DOS erased it, loading the other language).
 
-   RUN is [Teletype.spawn]: the program runs as a child of the prompt,
+   RUN is [Talk.spawn]: the program runs as a child of the prompt,
    so Control-C (the BREAK key) stops the program and not BASIC, which
    says *** BREAK and prompts again. BYE leaves BASIC, back to
    TinyTerminal's shell when that is where it was started.
@@ -28,4 +28,4 @@
 
 (* [session ~dialect ~program banner]: the prompt, [program] typed in
    already, until BYE *)
-val session : dialect:Basic_run.dialect -> program:Basic_run.program -> string -> unit Teletype.talk
+val session : dialect:Basic_run.dialect -> program:Basic_run.program -> string -> unit Talk.talk

@@ -10,7 +10,7 @@
 
    Run by TinyTerminal's shell as its command guess. *)
 
-val program : unit Teletype.talk
+val program : unit Talk.talk
 
 (* the most guesses halving needs for a number from 1 to [limit]:
    7 for 100, 10 for 1000 *)

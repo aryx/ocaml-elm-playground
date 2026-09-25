@@ -3,7 +3,8 @@
 ; Line_discipline (the tty between the keyboard and the program:
 ; echo, Backspace, a line on Enter). Pure OCaml, bytes in and bytes
 ; out, no Playground: the Teletype way and TinyTerminal are built on
-; it. And Curses (a screen drawn whole, sent as what changed) and Tui (a
+; it. Talk: the programs that ask and wait, as values, and the machine
+; playing one on a Vt (BASIC's, the teletype games', TinyTerminal's). And Curses (a screen drawn whole, sent as what changed) and Tui (a
 ; full-screen program, Model-View-Update), which the Textmode way runs
 ; on the playground and unix/'s Tty_unix in a real terminal. See
 ; docs/claude_notes/plans/plan_terminal.md.
@@ -11,4 +12,5 @@
  (name terminal)
  (package elm_playground)
  (wrapped false)
+ (libraries random) ; Lehmer, Talk's seeded numbers
 )

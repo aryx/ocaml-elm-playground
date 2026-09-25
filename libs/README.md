@@ -25,8 +25,8 @@ place a game meets them.
 | `gui/` | a GUI toolkit: widgets, the four architectures, layout, text | `notes_gui.md` |
 | `web/` | a browser's engine: a page's encoding, tokens and tree (tag soup repaired), its looks, its layout (blocks, lines, pictures), and back from a click ([`web/README.md`](web/README.md)) | `notes_browser.md` |
 | `juice/` | game feel: easing, tweens, squash, trauma, particles | `notes_juice.md` |
-| `languages/` | languages as text, parsed and run against a host of functions: `formula/` (the spreadsheet's expressions); JavaScript to come ([`languages/README.md`](languages/README.md)) | `plan_tiny_firefox.md` |
-| `terminal/` | the VT100's screen (`Vt`: bytes and escape sequences into a grid of cells), the tty's line discipline (`Line_discipline`: echo, Backspace, a line on Enter), `Curses` (a screen drawn whole, sent as what changed) and `Tui` (a full-screen program, Model-View-Update); `unix/`'s `Tty_unix` runs one in a real terminal, native only | `plan_terminal.md` |
+| `languages/` | languages as text, parsed and run against a host of functions: `formula/` (the spreadsheet's expressions), `basic/` (Tiny BASIC, Integer BASIC, Applesoft, over `terminal/`'s `Talk`); JavaScript to come ([`languages/README.md`](languages/README.md)) | `plan_tiny_firefox.md` |
+| `terminal/` | the VT100's screen (`Vt`: bytes and escape sequences into a grid of cells), the tty's line discipline (`Line_discipline`: echo, Backspace, a line on Enter), `Talk` (the programs that ask and wait, as values, and the machine playing one on a `Vt`), `Curses` (a screen drawn whole, sent as what changed) and `Tui` (a full-screen program, Model-View-Update); `unix/`'s `Tty_unix` runs one in a real terminal, native only | `plan_terminal.md` |
 
 They are private libraries, each installed as part of one of the opam
 packages (its dune file's `(package ...)`), pure OCaml unless the
@@ -38,7 +38,8 @@ Among themselves they depend little: `core/`, `random/`, `crypto/` and
 `graphics/` on `compression/` (its formats' codes), on `core/`,
 on `audio/`'s samples (a video's sound) and on `networking/` (an image
 downloaded); `physics/` on `graphics/`' geometry; `gui/` on `core/`;
-`audio/` on `compression/` (MP3's codes); `ai/`, `juice/`, `web/`, `terminal/` and
-`languages/` on nothing of the others. dune finds a
+`audio/` on `compression/` (MP3's codes); `terminal/` on `random/` (`Talk`'s
+seeded numbers); `languages/`' BASIC on `terminal/`; `ai/`, `juice/`, `web/` and
+the other languages on nothing of the others. dune finds a
 library by its name, not its folder, so a program says `(libraries
 audio ai)`, whatever `libs/` looks like.

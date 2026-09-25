@@ -1,7 +1,7 @@
 (* Tui: a full-screen program of the terminal, Model-View-Update.
 
    Rogue, vi, top and Norton Commander don't ask a question and wait
-   for a line, as the Teletype programs do (Teletype.mli): they wait for
+   for a line, as the Teletype programs do (Talk.mli): they wait for
    a key, or for time to pass, then draw the whole screen again. That
    is an event loop, which is Model-View-Update as it stands: a model,
    an update from an event, a view -- the view a Curses screen rather

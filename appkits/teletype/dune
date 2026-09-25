@@ -1,4 +1,4 @@
-; claude: the teletype's programs, as Teletype.talk values
+; claude: the teletype's programs, as Talk.talk values
 ; (plan_terminal.md): the games of David Ahl's "101 BASIC Computer
 ; Games" and their kind, so that one program runs alone (a thin main,
 ; examples/TeletypeHangman.ml) and under TinyTerminal's shell

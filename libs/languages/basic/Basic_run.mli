@@ -26,7 +26,7 @@
    LEFT$ RIGHT$ MID$. Names count by their first two characters, SCALE
    and SC one variable, as in every Microsoft BASIC.
 
-   The interpreter is a Teletype program (Teletype.mli), which is the
+   The interpreter is a Talk program (Talk.mli), which is the
    whole trick of running BASIC on the playground: PRINT is a [Print],
    INPUT a [Read_line] whose continuation is "the rest of the program,
    from this statement on, with the variable set" -- the interpreter
@@ -75,11 +75,11 @@ val text_of : string -> string
 (*****************************************************************************)
 
 (* RUN: from the first line, no variables *)
-val run : dialect -> program -> unit Teletype.talk
+val run : dialect -> program -> unit Talk.talk
 
 (* statements typed without a line number, done at once: PRINT 2 + 2,
    or GOTO 100, which runs the program from line 100 *)
-val direct : dialect -> program -> Basic_parse.stmt list -> unit Teletype.talk
+val direct : dialect -> program -> Basic_parse.stmt list -> unit Talk.talk
 
 (* a number as PRINT shows it in a dialect: 3, 3.5, .333333333, 1E+10 *)
 val show_number : dialect -> float -> string

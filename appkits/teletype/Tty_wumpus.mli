@@ -65,8 +65,8 @@ type outcome = Won | Lost
 (*****************************************************************************)
 
 (* [play cave]: turns until the Wumpus is shot, or you are lost *)
-val play : cave -> outcome Teletype.talk
+val play : cave -> outcome Talk.talk
 
 (* a cave set up at random (six different rooms: you, the Wumpus, two
    pits, two bats), the instructions if asked, games until you stop *)
-val program : unit Teletype.talk
+val program : unit Talk.talk

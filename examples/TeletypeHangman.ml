@@ -14,11 +14,11 @@
  *   (the Model 33's speed), seed=n (another word)
  *
  * The game is Tty_hangman.ml's, a program written as a conversation
- * (the lesson is there, and in Teletype.mli); this file only gives it a
+ * (the lesson is there, and in Talk.mli); this file only gives it a
  * screen of its own. TinyTerminal's shell runs the same program as its
  * command hangman.
  *
- * What it uses: the Playground, Teletype (over Vt and Line_discipline),
+ * What it uses: the Playground, Teletype (over libs/terminal's Talk),
  * and appkits/teletype's Tty_hangman. Nothing else.
  *)
 

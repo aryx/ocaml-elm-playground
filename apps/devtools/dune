@@ -1,5 +1,5 @@
 ; claude: the programming tools (CATALOG.md's section): TinyBasic, Tiny
-; BASIC (1976) on a 1977 home computer's screen, over appkits/basic and
+; BASIC (1976) on a 1977 home computer's screen, over libs/languages/basic and
 ; the playground's Teletype way (plan_terminal.md, section 5). Laid out
 ; like office/: the programs here, software/ for the golden frames,
 ; web/ for the browser.
@@ -19,7 +19,7 @@
   (names TinyBasic)
   (modules TinyBasic)
   (libraries
-    appkit_basic ; Basic_parse, Basic_run, Basic_session
+    basic ; Basic_parse, Basic_run, Basic_session
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

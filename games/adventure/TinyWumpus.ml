@@ -14,14 +14,14 @@
  *   rustles of the next rooms are all you see; flags: paper (the roll
  *   of paper), baud=110 (the Teletype's speed), seed=n (another cave)
  *
- * The game is Tty_wumpus.ml's, written as a conversation (Teletype.mli):
+ * The game is Tty_wumpus.ml's, written as a conversation (Talk.mli):
  * the cave as a table of tunnels, a turn a question, the Wumpus woken
  * three times in four. Its header tells the cave's shape, the
  * dodecahedron flattened into three rings, and why Yob chose it. This
  * file only gives the game a screen of its own; TinyTerminal's shell
  * runs the same program as its command wumpus.
  *
- * What it uses: the Playground, Teletype (over Vt and Line_discipline),
+ * What it uses: the Playground, Teletype (over libs/terminal's Talk),
  * and appkits/teletype's Tty_wumpus. Not kit_adventure (TinyZork's
  * world of objects and rules): a cave of numbered rooms needs a table,
  * not a world.

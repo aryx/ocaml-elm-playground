@@ -16,7 +16,7 @@ let program (lines : string list) : Basic_run.program =
 
 (* what a program prints, run on these answers *)
 let output ?(seed = 1) ?(dialect = Basic_run.Integer) (lines : string list) (answers : string list) : string =
-  Teletype.run ~seed (Basic_run.run dialect (program lines)) answers
+  Talk.run ~seed (Basic_run.run dialect (program lines)) answers
 
 let fp = output ~dialect:Basic_run.Applesoft
 
@@ -112,7 +112,7 @@ let tests =
       Testo.create "the session: lines typed, replaced, deleted, LIST, RUN, FP, BYE" (fun () ->
           let s = Basic_session.session ~dialect:Integer ~program:Basic_run.empty "HI\n" in
           let out =
-            Teletype.run s
+            Talk.run s
               [ "20 print \"B\""; "10 PRINT \"A\""; "20 PRINT \"C\""; "30 X"; "30"; "LIST"; "RUN"; "PRINT 7/2"; "FP"; "PRINT 7/2"; "BYE" ]
           in
           check "transcript"
@@ -121,20 +121,20 @@ let tests =
             out);
       Testo.create "10 GOTO 10 runs a frame at a time, Control-C breaks it" (fun () ->
           let s = Basic_session.session ~dialect:Integer ~program:(program [ "10 GOTO 10" ]) "" in
-          let m = Teletype.start ~seed:1 ~rows:4 ~cols:20 s in
-          let m = Teletype.input m "RUN\r" in
-          Alcotest.(check bool) "running, not reading" false (Teletype.reading m);
-          let m = Teletype.tick m 0.02 in
-          let m = Teletype.input m "\x03" in
-          Alcotest.(check (list string)) "broken" [ ">RUN"; "^C"; "*** BREAK"; ">" ] (Vt.text (Teletype.screen m)));
+          let m = Talk.start ~seed:1 ~rows:4 ~cols:20 s in
+          let m = Talk.input m "RUN\r" in
+          Alcotest.(check bool) "running, not reading" false (Talk.reading m);
+          let m = Talk.tick m 0.02 in
+          let m = Talk.input m "\x03" in
+          Alcotest.(check (list string)) "broken" [ ">RUN"; "^C"; "*** BREAK"; ">" ] (Vt.text (Talk.screen m)));
       Testo.create "differential: the Guess listing plays Tty_guess's games" (fun () ->
           (* the same answers, the same seed: the BASIC program prints
              what the OCaml one does, games again and all *)
           let upto n = List.init n (fun i -> string_of_int (i + 1)) in
           List.iter
             (fun (seed, answers) ->
-              let basic = Teletype.run ~seed (Basic_run.run Integer (program Basic_disk.guess)) answers in
-              let ocaml = Teletype.run ~seed Tty_guess.program answers in
+              let basic = Talk.run ~seed (Basic_run.run Integer (program Basic_disk.guess)) answers in
+              let ocaml = Talk.run ~seed Tty_guess.program answers in
               check (Printf.sprintf "seed %d" seed) ocaml basic)
             (* each game ends with every number up to the limit: a win *)
             [ (1, [ "100"; "50"; "25"; "75" ] @ upto 100 @ [ "Y"; "60"; "30" ] @ upto 100 @ [ "N" ]);
@@ -147,7 +147,7 @@ let tests =
               match Basic_run.of_lines f.lines with Ok _ -> () | Error msg -> Alcotest.fail (f.name ^ ": " ^ msg))
             Basic_disk.files;
           let s = Basic_session.session ~dialect:Integer ~program:Basic_run.empty "" in
-          let out = Teletype.run s [ "CATALOG"; "LOAD NOPE"; "10 PRINT \"HI\""; "SAVE HI"; "NEW"; "RUN HI"; "LOAD MANDEL"; "BYE" ] in
+          let out = Talk.run s [ "CATALOG"; "LOAD NOPE"; "10 PRINT \"HI\""; "SAVE HI"; "NEW"; "RUN HI"; "LOAD MANDEL"; "BYE" ] in
           check "transcript"
             (">CATALOG\nDISK VOLUME 254\n\n I 005 GUESS\n A 006 BAGELS\n A 003 MANDEL\n A 002 SIERPINSKI\n A 002 SINE\n"
            ^ " I 003 MATCHES\n A 005 ANIMAL\n A 004 LUNAR\n"

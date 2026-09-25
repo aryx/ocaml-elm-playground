@@ -30,13 +30,13 @@
  *
  * The prompt is the whole programming environment of 1977
  * (Basic_session.mli): the editor, the calculator and the shell in
- * one. The interpreter is a Teletype program (Basic_run.mli): INPUT a
+ * one. The interpreter is a Talk program (Basic_run.mli): INPUT a
  * question whose continuation is the rest of the program; each line a
  * step, so that 10 GOTO 10 keeps running a frame at a time, and
  * Control-C breaks it.
  *
  * What it uses: the Playground, its Teletype way (over libs/terminal's
- * Vt and Line_discipline), and appkits/basic. TinyTerminal's shell
+ * Talk, Vt and Line_discipline), and libs/languages/basic. TinyTerminal's shell
  * runs the same BASIC as its command basic.
  *
  * Left undone, exercises: a BASIC listing of Hunt the Wumpus to play
@@ -47,7 +47,7 @@
  * colours; the screen editor of Commodore's BASIC, where the cursor
  * goes up to a listed line to change it in place.
  *)
-open Teletype
+open Talk
 
 let banner = "TINY BASIC, 1976, ON A 1977 SCREEN\nGUESS THE NUMBER IS TYPED IN:\nLIST, RUN, OR NEW TO START AFRESH.\nFP FOR APPLESOFT, INT TO COME BACK.\nCATALOG: THE DISK; RUN SIERPINSKI...\n\n"
 
@@ -62,11 +62,11 @@ let phosphor (flags : Playground.flags) : Playground.color =
 (* the screen in a monitor's dark frame *)
 let view (computer : Playground.computer) (m : machine) : Playground.shape list =
   let open Playground in
-  let w, h = size computer m in
+  let w, h = Teletype.size computer m in
   [ rectangle (rgb 40 38 34) computer.screen.width computer.screen.height;
     rectangle (rgb 20 20 18) (w +. 40.) (h +. 40.);
-    group (draw ~capitals:true ~phosphor:(phosphor computer.flags) computer m) ]
+    group (Teletype.draw ~capitals:true ~phosphor:(phosphor computer.flags) computer m) ]
 
-let app = teletype ~rows:24 ~cols:40 ~view (Basic_session.session ~dialect:Integer ~program:guess banner)
+let app = Teletype.teletype ~rows:24 ~cols:40 ~view (Basic_session.session ~dialect:Integer ~program:guess banner)
 
 let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app

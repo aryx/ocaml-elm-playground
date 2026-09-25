@@ -359,7 +359,11 @@ returns **a grid of cells instead of shapes**.
    three programs deep. Then MATCHES, ANIMAL and LUNAR, and every
    listing's sources in its first REMs. Left: an Ahl listing of our own against its
    OCaml port (Wumpus's needs RND(20)'s draws in the same order as
-   Tty_wumpus's).
+   Tty_wumpus's). Then (2026-09-25, plan_tiny_firefox.md) BASIC moved
+   to `libs/languages/basic` (the library `basic`), once `Teletype`'s
+   pure half -- the programs as values, `run`, the machine -- became
+   `libs/terminal/Talk`, `Teletype` keeping the keyboard, the drawing
+   and the app.
 6. `Curses` and the `Textmode` way (the playground and a real
    terminal), then TinyRogue.
 7. Later: the pty (native, then WebSocket); the cell Look for `gui/`,

@@ -1,0 +1,17 @@
+; claude: BASIC -- the Tiny BASIC of 1976, Integer BASIC and Applesoft
+; (plan_terminal.md, section 5): Basic_parse (a line read, by
+; recursive descent), Basic_run (a program run, as a Talk conversation:
+; INPUT a read whose continuation is the rest of the program),
+; Basic_session (the prompt, editor and calculator in one, as in
+; 1977), Basic_disk (the floppy of listings). Run by TinyBasic
+; (apps/devtools/) and by TinyTerminal's shell as its command basic.
+;
+; Over libs/terminal's Talk, no Playground (libs/languages/README.md):
+; the Teletype way is what puts it on a screen. A private library,
+; installed as part of elm_playground.
+(library
+ (name basic)
+ (package elm_playground)
+ (wrapped false)
+ (libraries terminal)
+)

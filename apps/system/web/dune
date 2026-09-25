@@ -8,7 +8,7 @@
   (modules TinyTerminal)
   (libraries
     appkit_teletype ; the shell's programs, Tty_hangman, Tty_guess, Tty_wumpus
-    appkit_basic ; and basic, Basic_session
+    basic ; and basic, Basic_session
     elm_playground
     elm_playground_web ; implem of virtual elm_playground
   )

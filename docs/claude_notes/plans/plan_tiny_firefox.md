@@ -167,7 +167,7 @@ author's yes, each its own step):
 | Language | Where now | Lines | Depends on | Verdict |
 |---|---|---|---|---|
 | HyperTalk | `appkits/hypertalk/Hypertalk` | 430 | nothing | stays (the author's call, 2026-09-25): movable as it is, but unlikely to be used outside HyperCard, the one program that speaks it |
-| BASIC | `appkits/basic/` (`Basic_parse`, `Basic_run`, `Basic_session`, `Basic_disk`) | 1270 | `Basic_run` over the Playground's `Teletype` way | not now: another session is building it (three commits on 2026-09-25); later, `Basic_parse` (pure) could move, `Basic_run` only once split from `Teletype` (its conversation, a continuation, the language's; the terminal, the appkit's) |
+| BASIC | `libs/languages/basic/` (`Basic_parse`, `Basic_run`, `Basic_session`, `Basic_disk`) | 1270 | `terminal` (`Talk`) | moved (the author's yes, 2026-09-25, the other session stopped): first split from the Playground -- `Teletype`'s programs-as-values and machine became `libs/terminal/Talk`, `Teletype` keeping the keyboard, the drawing and the app -- then moved, the library `basic`; its tests stay in `appkits/tests` (`Unit_basic` checks BASIC's GUESS against the appkit's `Tty_guess`) |
 | Spreadsheet formulas | `libs/languages/formula/Formula` | 252 | nothing | moved (the author's yes, 2026-09-25): a library of its own, `formula`, which `appkit_sheet`'s `Sheet` depends on -- a general expression evaluator, the first of the folder; its tests stay in `Unit_sheet` |
 | Karel's language | inside `games/programming/TinyKarel.ml` | (part of 465) | `playground/ways/Karel` | an extraction, not a move: the parser to `libs/languages/karel/` with an AST of its own, the game translating it to the way's commands |
 | Redcode | inside `games/programming/TinyCoreWar.ml` | (part of 417) | the game | an extraction: the assembler and the machine (MARS) as a library, the game its screen |
@@ -176,9 +176,9 @@ author's yes, each its own step):
 
 So the line: a *way* (`playground/ways/`) is an OCaml API that builds
 an app; a *language* (`libs/languages/`) is text, parsed and run, with
-no Playground. The formulas moved (`libs/languages/README.md`);
-HyperTalk qualifies but stays by its app; BASIC could after a split,
-Karel's and Redcode's after an extraction.
+no Playground. The formulas and BASIC moved (`libs/languages/README.md`);
+HyperTalk qualifies but stays by its app; Karel's and Redcode's could
+after an extraction.
 
 ## Phases
 

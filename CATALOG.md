@@ -456,7 +456,7 @@ playground's Teletype way and `libs/terminal/` (`plan_terminal.md`).
 ## Programming tools
 
 `apps/devtools/`: the programs programs are written with -- so far a
-BASIC as a home computer had it, over `appkits/basic`
+BASIC as a home computer had it, over `libs/languages/basic`
 (`plan_terminal.md`, section 5).
 
 | Program | Dir | After | In one line | What it brought |

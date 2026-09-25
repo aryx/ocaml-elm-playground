@@ -10,14 +10,14 @@
    The lesson is in its [turn]: it reads like the BASIC listing -- print
    the gallows, ask, check, go round again -- with no model, no update
    and no view. Every [let*] is a place where the program may wait (for
-   a line, for a random number), and Teletype.mli explains how it waits
+   a line, for a random number), and Talk.mli explains how it waits
    without stopping: what comes after [ask] is a function of the
    answer.
 
    Run by examples/TeletypeHangman.ml alone, and by TinyTerminal's
    shell as its command hangman. *)
 
-val program : unit Teletype.talk
+val program : unit Talk.talk
 
 (* the words, one picked at random *)
 val words : string array

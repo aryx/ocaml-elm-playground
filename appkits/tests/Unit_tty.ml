@@ -21,7 +21,7 @@ let halve (limit : int) : string =
   (* each run replays from the start with one more answer, until the
      game says it's over *)
   let rec play answers lo hi =
-    let out = Teletype.run ~seed:3 Tty_guess.program answers in
+    let out = Talk.run ~seed:3 Tty_guess.program answers in
     if contains out "THAT'S IT" then out
     else
       let lo, hi =
@@ -42,15 +42,15 @@ let tests =
           let out = halve 100 in
           Alcotest.(check bool) "good" true (contains out "GOOD: HALVING WOULDN'T HAVE DONE BETTER."));
       Testo.create "Guess: not a number, asked again" (fun () ->
-          let out = Teletype.run Tty_guess.program [ "lots" ] in
+          let out = Talk.run Tty_guess.program [ "lots" ] in
           Alcotest.(check bool) "asked again" true (String.ends_with ~suffix:"A NUMBER, PLEASE.\nWHAT LIMIT DO YOU WANT? " out));
       Testo.create "Hangman: the word's letters, won; six others, lost" (fun () ->
           let letters w = List.of_seq (String.to_seq w) |> List.map (String.make 1) in
           (* the seed's word: the first of the list whose letters win *)
-          let wins w = contains (Teletype.run Tty_hangman.program (letters w)) "YOU FOUND THE WORD!" in
+          let wins w = contains (Talk.run Tty_hangman.program (letters w)) "YOU FOUND THE WORD!" in
           let word = List.find wins (Array.to_list Tty_hangman.words) in
           let absent = List.filter (fun l -> not (String.contains word l.[0])) (letters "ABCDEFGHIJKLMNOPQRSTUVWXYZ") in
-          let lost = Teletype.run Tty_hangman.program ("1" :: List.hd absent :: List.filteri (fun i _ -> i < 6) absent) in
+          let lost = Talk.run Tty_hangman.program ("1" :: List.hd absent :: List.filteri (fun i _ -> i < 6) absent) in
           Alcotest.(check bool) "a mistyped guess" true (contains lost "ONE LETTER, PLEASE.");
           Alcotest.(check bool) "a letter twice" true (contains lost "YOU GUESSED THAT LETTER BEFORE!");
           Alcotest.(check bool) "lost" true (contains lost ("SORRY, YOU LOSE. THE WORD WAS " ^ word ^ ".")));
@@ -69,24 +69,24 @@ let tests =
             [ (1, 8); (2, 10); (3, 12); (4, 14); (5, 6); (7, 17); (9, 18); (11, 19); (13, 20); (15, 16) ]);
       Testo.create "Wumpus: smelt next door, shot through one room, won" (fun () ->
           let cave = { Tty_wumpus.you = 1; wumpus = 2; pits = [ 19; 20 ]; bats = [ 17; 18 ]; arrows = 5 } in
-          let game = Teletype.( let* ) (Tty_wumpus.play cave) (fun o -> Teletype.print (if o = Tty_wumpus.Won then "=WON" else "=LOST")) in
-          let out = Teletype.run game [ "s"; "1"; "2" ] in
+          let game = Talk.( let* ) (Tty_wumpus.play cave) (fun o -> Talk.print (if o = Tty_wumpus.Won then "=WON" else "=LOST")) in
+          let out = Talk.run game [ "s"; "1"; "2" ] in
           Alcotest.(check bool) "smelt" true (contains out "I SMELL A WUMPUS!");
           Alcotest.(check bool) "tunnels" true (contains out "TUNNELS LEAD TO 2 5 8.");
           Alcotest.(check bool) "won" true (String.ends_with ~suffix:"AHA! YOU GOT THE WUMPUS!\n=WON" out));
       Testo.create "Wumpus: a draft, no tunnel to 7, then into the pit" (fun () ->
           let cave = { Tty_wumpus.you = 1; wumpus = 13; pits = [ 8; 20 ]; bats = [ 17; 18 ]; arrows = 5 } in
-          let game = Teletype.( let* ) (Tty_wumpus.play cave) (fun o -> Teletype.print (if o = Tty_wumpus.Won then "=WON" else "=LOST")) in
-          let out = Teletype.run game [ "m"; "7"; "8" ] in
+          let game = Talk.( let* ) (Tty_wumpus.play cave) (fun o -> Talk.print (if o = Tty_wumpus.Won then "=WON" else "=LOST")) in
+          let out = Talk.run game [ "m"; "7"; "8" ] in
           Alcotest.(check bool) "draft" true (contains out "I FEEL A DRAFT.");
           Alcotest.(check bool) "no tunnel" true (contains out "NO TUNNEL GOES THERE.");
           Alcotest.(check bool) "lost" true (String.ends_with ~suffix:"YOU FELL IN A PIT.\n=LOST" out));
       Testo.create "Wumpus: an arrow can't go back the way it came" (fun () ->
           let cave = { Tty_wumpus.you = 1; wumpus = 13; pits = [ 19; 20 ]; bats = [ 17; 18 ]; arrows = 5 } in
-          let out = Teletype.run (Tty_wumpus.play cave) [ "s"; "3"; "2"; "1"; "2" ] in
+          let out = Talk.run (Tty_wumpus.play cave) [ "s"; "3"; "2"; "1"; "2" ] in
           Alcotest.(check bool) "refused" true (contains out "ARROWS AREN'T THAT CROOKED"));
       Testo.create "Wumpus: a whole program from a seed, instructions and all" (fun () ->
-          let out = Teletype.run ~seed:5 Tty_wumpus.program [ "y" ] in
+          let out = Talk.run ~seed:5 Tty_wumpus.program [ "y" ] in
           Alcotest.(check bool) "instructions" true (contains out "DODECAHEDRON");
           Alcotest.(check bool) "a first turn" true (String.ends_with ~suffix:"SHOOT OR MOVE (S-M)? " out));
     ]
