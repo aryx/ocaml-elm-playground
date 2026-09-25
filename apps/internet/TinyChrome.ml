@@ -78,8 +78,11 @@
  * Their logos and icons are SVG: HN's "Y" and vote arrows, Wikipedia's
  * wordmark and icons, GitHub's octicons.
  *
- * To come (plan_tiny_chrome.md): the ES5 core (C8), video (C9), speed
- * (C10).
+ * <video> and <audio> play (Browser_media, over TinyMediaPlayer's
+ * readers: MPEG-1 and MP2, AVI, FLC, Y4M, GIF, MP3), and about:tube is
+ * a video site of our own (Tube).
+ *
+ * To come (plan_tiny_chrome.md): speed (C10).
  *)
 open Playground
 
@@ -189,7 +192,8 @@ let default_allowed = [ "news.ycombinator.com" ]
 let config (m : model) (id : int) : msg Browser_tab.config =
   {
     settings = settings m.css;
-    about = Site.about;
+    (* the built-in site, and TinyTube in it *)
+    about = (fun name -> match Tube.about name with Some x -> Some x | None -> Site.about name);
     got = (fun url r -> Got (id, url, r));
     got_picture = (fun url r -> Got_picture (id, url, r));
     connections = 6;
@@ -366,6 +370,12 @@ let task (network : < Cap.network ; .. >) (m : model) (f : Browser_script.t -> b
 let click_page (network : < Cap.network ; .. >) (m : model) : model * msg Cmd.t =
   match ((current_tab m).state, page_point m) with
   | Shown p, Some (x, y) when m.inspecting -> ({ m with inspecting = false; selected = Hit.element_at p.layout ~x ~y }, Cmd.none)
+  (* a player: played or paused *)
+  | Shown p, Some (x, y)
+    when (match Hit.fragment_at p.layout ~x ~y with
+         | Some f -> Browser_media.click ~now:m.time ~media:(fun u -> List.assoc_opt u (current_tab m).media) p f.element
+         | None -> false) ->
+      (m, Cmd.none)
   | Shown p, Some (x, y) -> (
       (* the page's scripts first (the element under the pointer, its
        * click bubbling); then, unless one prevented it, the browser's *)
@@ -387,6 +397,7 @@ let pages (m : model) (by : int) : int = by * (int_of_float (area_height m /. li
 let toggle_panel (m : model) : model = { m with panel = (if m.panel = Closed then Elements else Closed); inspecting = false }
 
 let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * msg Cmd.t =
+  Browser_media.install ();
   match msg with
   | Got (id, url, r) -> on_tab m id (fun cfg tab -> Browser_tab.got cfg network url r tab)
   | Got_picture (id, url, r) -> on_tab m id (fun cfg tab -> Browser_tab.got_picture cfg network url r tab)
@@ -529,7 +540,11 @@ let page_shapes (m : model) (p : Browser_page.t) : shape list =
         | None -> [])
     | _ -> []
   in
-  (p.drawn @ Browser_draw.controls_drawn ~value:(Browser_page.value_of p) ~focus:tab.focus p.layout @ outline)
+  (p.drawn
+  @ Browser_draw.controls_drawn ~value:(Browser_page.value_of p) ~focus:tab.focus p.layout
+  (* what plays in its <video>s and <audio>s, drawn at each frame *)
+  @ Browser_media.draw ~now:m.time ~media:(fun u -> List.assoc_opt u tab.media) p
+  @ outline)
   |> List.filter (fun (top, bottom, _) -> bottom > scroll && top < scroll +. area_height m)
   |> List.map (fun (_, _, s) -> s)
   |> group

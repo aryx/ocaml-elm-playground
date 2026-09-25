@@ -1565,6 +1565,12 @@ let flagged : Testutil_golden.flagged list =
     (* claude: TinyChrome's network panel over its home page (C7):
      * the page, its two sheets, its pictures, their sizes *)
     ("apps/internet/software/TinyChrome", "network", 5, [ "panel=network" ]);
+    (* claude: TinyTube (C9): its index, each thumbnail a <video> paused
+     * on its file's first frame -- MPEG-1, Motion JPEG in an AVI, FLC,
+     * Y4M, a GIF, decoded by our own readers -- and an <audio>'s bar;
+     * a clip's page, its FLC playing (no sound: the frame clock) *)
+    ("apps/internet/software/TinyChrome", "tube", 5, [ "url=about:tube" ]);
+    ("apps/internet/software/TinyChrome", "tube_watch", 5, [ "url=about:tube-3" ]);
     ("apps/internet/software/TinyMosaic", "pretty", 5, [ "url=about:history"; "width=600"; "wrap=pretty" ]);
     (* claude: the built-in fill-out form, its controls in Motif's look *)
     ("apps/internet/software/TinyMosaic", "form", 5, [ "url=about:form" ]);

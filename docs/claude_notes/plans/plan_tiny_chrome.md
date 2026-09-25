@@ -510,6 +510,30 @@ which already reads video and sound:
   (`TinyChrome_threads`). Not done: promises, `class`, template
   literals, `switch`, getters and setters, an XMLHttpRequest's answer.
   About 900 lines.
+- **C9 done** (2026-09-25): `<video>` and `<audio controls>` as
+  replaced boxes (their width= and height= hints; 320 by 240; an
+  audio's bar 300 by 32; `audio:not([controls])` hidden by `ua.css`),
+  drawn black by `Browser_boxes`; their files fetched last by the tab
+  (`Browser_tab.media_sources`: src=, or a `<source>`; the `media`
+  cache, kind `Media` in the network panel); `Browser_media`, the
+  players, in `apps/internet` (the library `internet_media`: the
+  media player's library, `media_player`, has no package, and so no
+  appkit may use it): a file opened by `Media.open_` when first had,
+  paused on its first frame, played by a click or by autoplay, looped
+  by loop; one sound deck the mixer pulls (`Audio.instrument`), its
+  samples the clock the picture follows, the frame clock without
+  sound; the controls (play or pause, a progress bar, the time).
+  `Tube`, **TinyTube**, `about:tube`: its index of thumbnails (a
+  paused `<video>` each: the clip in MPEG-1 and MP2, Motion JPEG and
+  PCM in an AVI, FLC, Y4M, an animated GIF) in a flex grid, an MP3 in
+  an `<audio>`, and a watch page per clip (the player with controls and
+  autoplay, a title, what its format is, the next ones); TinyChrome in
+  a stanza of its own, the teaching browsers not linking the media
+  player. Golden frames `TinyChrome_tube` and `TinyChrome_tube_watch`
+  (the FLC's: no sound, so the frozen frame clock; a clip with sound
+  would follow the mixer). Not done: seeking, volume and muted, the
+  elements' methods for scripts, the real formats (MP4, H.264, AAC:
+  plans of their own). About 400 lines.
 
 ## What it actually took
 
@@ -564,6 +588,10 @@ no survey showed. Added to as each phase finishes.
   modules); a table's rows of `display: none` dropped (HN's folded
   replies, hidden by class on their `<tr>`); the network panel's times
   of requests made before the clock's first tick.
+- **C9, video and sound**: the players outside the appkit
+  (`media_player` has no package); the golden frames of a clip without
+  sound only (the mixer would move one with); the TinyTube logo's
+  &#9654; drawn as an inline SVG (Hershey has no such letter).
 - **C7, the browser**: `<meta http-equiv=refresh>` followed
   (DuckDuckGo's result links); the omnibox searching Wikipedia, not
   DuckDuckGo (its page without scripts, then Mojeek's, soon answer a

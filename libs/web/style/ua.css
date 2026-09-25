@@ -17,6 +17,7 @@ tr              { display: table-row }
 td, th          { display: table-cell; padding: 1px; vertical-align: middle }
 col, colgroup   { display: none }
 img, input, select, textarea, button, video, audio, svg { display: inline-block }
+audio:not([controls]) { display: none }
 
 body            { margin: 8px }
 h1              { font-size: 2em; margin: .67em 0 }

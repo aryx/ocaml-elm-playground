@@ -56,6 +56,11 @@ let svg_picture (e : Dom.element) (color : int * int * int) (w : int) (h : int) 
  * by Browser_draw *)
 let glyphs ~visited ~picture_of (f : Html_layout.fragment) : shape list =
   match f.picture with
+  (* a player's place: black, until the browser draws what plays there
+   * (a video's frame, the controls) over it *)
+  | Some { src = ""; height; middle } when (f.element.name = "video" || f.element.name = "audio") && f.width >= 1. ->
+      let centre = if middle then f.baseline else f.baseline -. (height /. 2.) in
+      [ rectangle (if f.element.name = "video" then rgb 0 0 0 else rgb 241 243 244) f.width height |> move (f.x +. (f.width /. 2.)) (-.centre) ]
   | Some { src = ""; height; middle } when f.element.name = "svg" && f.width >= 1. && height >= 1. ->
       let img = svg_picture f.element f.look.color (int_of_float (Float.round f.width)) (int_of_float (Float.round height)) in
       (* its bottom on the baseline, or its middle *)

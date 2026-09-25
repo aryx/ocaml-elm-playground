@@ -203,7 +203,7 @@ let hints (ancestors : Dom.element list) (e : Dom.element) : string =
       | Some ("top" | "middle" | "bottom" | "baseline" as v) -> add "vertical-align" v
       | _ -> ())
   | "tr" -> lengths [ ("height", "height") ]
-  | "svg" -> lengths [ ("width", "width"); ("height", "height") ]
+  | "svg" | "video" -> lengths [ ("width", "width"); ("height", "height") ]
   | "img" -> (
       lengths [ ("width", "width"); ("height", "height"); ("hspace", "margin-left"); ("hspace", "margin-right"); ("vspace", "margin-top"); ("vspace", "margin-bottom") ];
       match lower "align" with

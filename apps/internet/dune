@@ -101,13 +101,38 @@
    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml site/picture.gif site/picture.png site/picture.jpg))))
 
 (executables
-  (names TinyMosaic TinyNetscape TinyFirefox TinyChrome)
-  (modules TinyMosaic TinyNetscape TinyFirefox TinyChrome)
+  (names TinyMosaic TinyNetscape TinyFirefox)
+  (modules TinyMosaic TinyNetscape TinyFirefox)
   (libraries
     caps ; the authority to reach the network
     web ; the engine: Hit, Dom, Html_lexer (the views)
     appkit_browser ; a page read, laid out, drawn; the history; forms
     internet_site ; the about: pages
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+; claude: TinyChrome's players and its video site (Browser_media, Tube:
+; plan_tiny_chrome.md C9), over TinyMediaPlayer's library (media_player:
+; Media, Our_media) -- apart from the teaching browsers, which play
+; nothing
+(library
+ (name internet_media)
+ (wrapped false)
+ (modules Browser_media Tube)
+ (libraries elm_playground web appkit_browser media_player)
+)
+
+(executables
+  (names TinyChrome)
+  (modules TinyChrome)
+  (libraries
+    caps
+    web
+    appkit_browser
+    internet_site
+    internet_media ; <video>, <audio>, about:tube
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

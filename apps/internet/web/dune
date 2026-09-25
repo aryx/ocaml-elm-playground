@@ -17,13 +17,29 @@
 )
 
 (executables
-  (names TinyMosaic TinyNetscape TinyFirefox TinyChrome)
-  (modules TinyMosaic TinyNetscape TinyFirefox TinyChrome)
+  (names TinyMosaic TinyNetscape TinyFirefox)
+  (modules TinyMosaic TinyNetscape TinyFirefox)
   (libraries
     caps
     web
     appkit_browser
     internet_site
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+(executables
+  (names TinyChrome)
+  (modules TinyChrome)
+  (libraries
+    caps
+    web
+    appkit_browser
+    internet_site
+    internet_media
     elm_playground
     elm_playground_web ; implem of virtual elm_playground
   )

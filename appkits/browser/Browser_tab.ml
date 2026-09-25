@@ -15,7 +15,7 @@ type state = Loading of string | Shown of Browser_page.t
 type view = Page | Source
 type entry = { at : string; kept : (Browser_page.t * Browser_script.t option) option; scrolled_to : int }
 
-type kind = Document | Sheet | Script | Picture | Fetch
+type kind = Document | Sheet | Script | Picture | Media | Fetch
 type request = { url : string; kind : kind; status : int option; bytes : int }
 
 type t = {
@@ -37,6 +37,8 @@ type t = {
   requests : request list;
   sources : (string * string) list; (* the texts of the pages' scripts of their own file, by URL: a cache *)
   pending_scripts : string list; (* the page's still to come: its scripts run once they have *)
+  media : (string * string) list; (* the bytes of <video>s' and <audio>s' files, by URL: a cache *)
+  media_urls : string list; (* the URLs asked for as media *)
 }
 
 type 'msg config = {
@@ -71,6 +73,8 @@ let empty ~(images : bool) : t =
     requests = [];
     sources = [];
     pending_scripts = [];
+    media = [];
+    media_urls = [];
   }
 
 (* a request logged (the network panel's): replacing the one for the
@@ -79,7 +83,23 @@ let logged ?status ?(bytes = 0) (kind : kind) (url : string) (tab : t) : t =
   { tab with requests = { url; kind; status; bytes } :: List.filter (fun (r : request) -> r.url <> url) tab.requests }
 
 let kind_of (tab : t) (url : string) : kind =
-  if List.mem url tab.sheet_urls then Sheet else if List.mem url tab.pending_scripts then Script else Picture
+  if List.mem url tab.sheet_urls then Sheet
+  else if List.mem url tab.pending_scripts then Script
+  else if List.mem url tab.media_urls then Media
+  else Picture
+
+(* a media file had (or not: empty), kept for the browser's player *)
+let with_media (tab : t) (url : string) (bytes : string) : t = { tab with media = (url, bytes) :: List.remove_assoc url tab.media }
+
+(* the files of a page's <video>s and <audio>s: their src=, else their
+ * first <source src=> *)
+let media_sources (p : Browser_page.t) : string list =
+  Dom.find_all "video" p.tree @ Dom.find_all "audio" p.tree
+  |> List.filter_map (fun (e : Dom.element) ->
+         match Dom.attribute "src" e with
+         | Some s -> Some s
+         | None -> List.find_map (fun (c : Dom.element) -> Dom.attribute "src" c) (Dom.find_all "source" e))
+  |> List.map (Browser_url.resolve p.url)
 
 let current_url (tab : t) : string = match tab.state with Loading url -> url | Shown p -> p.url
 let starts_with = Browser_url.starts_with
@@ -176,10 +196,15 @@ let rec fetch_more (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, c
           (* a data: URL: its bytes are in it *)
           let tab = logged ~status:200 ~bytes:(String.length bytes) (kind_of tab url) url tab in
           if List.mem url tab.pending_scripts then fetch_more cfg network (with_script cfg tab url bytes, cmd)
+          else if List.mem url tab.media_urls then fetch_more cfg network (with_media tab url bytes, cmd)
           else if List.mem url tab.sheet_urls then fetch_more cfg network (with_sheet cfg tab url bytes, cmd)
           else fetch_more cfg network (with_arrived cfg tab url (Browser_picture.decode bytes), cmd)
       | None ->
-      if starts_with "about:" url && List.mem url tab.pending_scripts then
+      if starts_with "about:" url && List.mem url tab.media_urls then
+        let bytes = match cfg.about (String.sub url 6 (String.length url - 6)) with Some (b, _) -> b | None -> "" in
+        let tab = logged ~status:(if bytes = "" then 404 else 200) ~bytes:(String.length bytes) Media url tab in
+        fetch_more cfg network (with_media tab url bytes, cmd)
+      else if starts_with "about:" url && List.mem url tab.pending_scripts then
         let text = match cfg.about (String.sub url 6 (String.length url - 6)) with Some (bytes, _) -> bytes | None -> "" in
         let tab = logged ~status:(if text = "" then 404 else 200) ~bytes:(String.length text) Script url tab in
         (* the GETs its scripts queue go with the next task's *)
@@ -222,9 +247,11 @@ let with_pictures (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, cm
       (* the scripts' files between: the page's style first, its
        * pictures last *)
       let scripts = fresh (List.filter (fun u -> not (List.mem u sheets)) tab.pending_scripts) in
-      let urls = sheets @ scripts @ pictures in
+      (* the players' files last: the page is whole before *)
+      let media = fresh (List.filter (fun u -> not (List.mem_assoc u tab.media)) (media_sources p)) in
+      let urls = sheets @ scripts @ pictures @ media in
       fetch_more cfg network
-        ({ tab with queue = urls; sheet_urls = sheets @ tab.sheet_urls; total = List.length urls + List.length tab.in_flight }, cmd)
+        ({ tab with queue = urls; sheet_urls = sheets @ tab.sheet_urls; media_urls = media @ tab.media_urls; total = List.length urls + List.length tab.in_flight }, cmd)
 
 (* the GETs the page's scripts queued (XMLHttpRequest, fetch): sent,
  * logged, their answers not waited for (got_picture drops what is not
@@ -376,6 +403,10 @@ let got_picture (cfg : 'msg config) (network : < Cap.network ; .. >) (url : stri
     let tab = logged ~status ~bytes:(String.length text) Script url tab in
     let tab = with_script cfg { tab with in_flight = List.filter (( <> ) url) tab.in_flight } url text in
     send_requests cfg network (fetch_more cfg network (tab, Cmd.none))
+  else if List.mem url tab.media_urls then
+    let bytes = match result with Ok r when r.status / 100 = 2 -> r.body | _ -> "" in
+    let tab = match result with Ok r -> logged ~status:r.status ~bytes:(String.length r.body) Media url tab | Error _ -> logged ~status:0 Media url tab in
+    fetch_more cfg network (with_media { tab with in_flight = List.filter (( <> ) url) tab.in_flight } url bytes, Cmd.none)
   else if List.mem url tab.sheet_urls then
     (* a style sheet: laid out with it, its @imports queued *)
     let text = match result with Ok r when r.status / 100 = 2 -> r.body | _ -> "" in

@@ -1020,6 +1020,20 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
       | _ when s.position = Absolute || s.position = Fixed -> add_absolute ctx e s
       | _ when s.float <> Side_none -> ctx.items <- float_item ctx e s :: ctx.items
       | Contents -> List.iter (walk ctx s (word_style s ~link:ctx.link)) e.children
+      | _ when e.name = "video" || e.name = "audio" ->
+          (* a player's box: a video's size its style's (its width= and
+           * height=, one of them at 4:3), else 320 by 240; an audio's
+           * controls 300 by 32 (the browser draws what plays in it) *)
+          let w, h =
+            if e.name = "audio" then (Option.value (size s.width ctx.width) ~default:300., 32.)
+            else
+              match (size s.width ctx.width, size s.height 0.) with
+              | Some w, Some h -> (w, h)
+              | Some w, None -> (w, w *. 3. /. 4.)
+              | None, Some h -> (h *. 4. /. 3., h)
+              | None, None -> (320., 240.)
+          in
+          add_word ctx (word_style s ~link:ctx.link) ~glue:false "" w ~owner:e ~boxed:(Pic { src = ""; height = h; middle = s.vertical_align = Middle })
       | _ when e.name = "svg" ->
           (* a picture drawn from its own tree (Browser_boxes): its
            * size its style's (its width= and height=), else its

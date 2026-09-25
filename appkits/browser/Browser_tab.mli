@@ -59,7 +59,7 @@ type state = Loading of string | Shown of Browser_page.t
  * its style sheets, its pictures, each pending (no status) or answered
  * (0 if it could not be had), its size; the log starts again with each
  * page *)
-type kind = Document | Sheet | Script | Picture | Fetch (* Fetch: a script's GET, XMLHttpRequest's or fetch's *)
+type kind = Document | Sheet | Script | Picture | Media | Fetch (* Media: a <video>'s or an <audio>'s file; Fetch: a script's GET *)
 type request = { url : string; kind : kind; status : int option; bytes : int }
 type view = Page | Source
 
@@ -86,7 +86,14 @@ type t = {
   requests : request list; (* the page's, the newest first *)
   sources : (string * string) list; (* the texts of the pages' <script src>s, by URL: a cache *)
   pending_scripts : string list; (* the page's <script src>s still to come: its scripts run when none is *)
+  media : (string * string) list; (* the bytes of <video>s' and <audio>s' files, by URL, "" if they could not be had: a cache *)
+  media_urls : string list; (* the URLs asked for as media *)
 }
+
+(* the files of a page's <video>s and <audio>s, resolved: their src=,
+ * else their first <source src=> -- fetched last, for the browser's
+ * player (TinyChrome's Browser_media) *)
+val media_sources : Browser_page.t -> string list
 
 type 'msg config = {
   settings : t -> Browser_page.settings; (* the page's looks: the browser's, the tab's visited links and pictures *)
