@@ -123,8 +123,12 @@ val queue_samples : Tsdl.Sdl.audio_device_id -> float array * float array -> uni
  * library can't depend on elm_playground: a backend that
  * (implements elm_playground) can't also reach that same virtual
  * library through one of its dependencies -- dune forbids it (same
- * reason Native_loop_3d.mli is generic). *)
+ * reason Native_loop_3d.mli is generic).
+ *
+ * With [threads] (the flag threads=on), the
+ * commands' blocking calls are made on a pool of threads (Commands.mli). *)
 val run :
+  threads:bool ->
   sdl_window:Tsdl.Sdl.window ->
   sx:int ->
   sy:int ->

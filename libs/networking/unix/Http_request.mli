@@ -34,8 +34,10 @@
    (getaddrinfo, in [start] and after a redirection), usually a few
    milliseconds from the system's cache, and nothing for an address
    ("127.0.0.1"). Browsers put DNS on threads of its own for that
-   reason; asking a DNS server ourselves, over a non-blocking UDP
-   socket, is the other way, a module of its own
+   reason: given a [resolver], a pool of threads (Worker), the name is
+   resolved on one of them, a state of its own (Resolving) polled by
+   [step] like the sockets. Asking a DNS server ourselves, over a
+   non-blocking UDP socket, is the other way, a module of its own
    (plan_dependencies_remaining.md, section 2).
 
    Reference: W. Richard Stevens, "UNIX Network Programming", volume 1
@@ -53,9 +55,16 @@ type t
 (* the request started (the name resolved, the connection begun): a GET,
  * or a POST of [post] (its content type and body; a redirection makes
  * it a GET, as browsers do); [timeout] (30 s) counts from now to the
- * end, redirections included *)
+ * end, redirections included. With a [resolver], the name is resolved
+ * on one of its threads, and [start] returns at once. *)
 val start :
-  ?max_redirects:int -> ?timeout:float -> ?post:string * string -> < Cap.network ; .. > -> string -> t
+  ?max_redirects:int ->
+  ?timeout:float ->
+  ?post:string * string ->
+  ?resolver:Worker.t ->
+  < Cap.network ; .. > ->
+  string ->
+  t
 
 (* advance as far as possible without waiting; nothing once done *)
 val step : t -> unit

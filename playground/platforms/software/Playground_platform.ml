@@ -207,7 +207,9 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network (
     (* the keys and their state *)
     Tsdl.Sdl.set_window_title sdl_window (window_title ~fps)
   in
-  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_pixels pixels)
+  (* claude: threads=on, the commands' blocking calls on threads *)
+  let threads = List.assoc_opt "threads" flags = Some "on" in
+  Native_loop_2d.run ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_pixels pixels)
     ~pull_audio:(fun n -> let s = Audio.pull n in Audio_debug.record (Signal.mono s); (s.left, s.right))
     ~dump_audio:(fun file (left, right) -> Wav.write_stereo file { left; right })
     ~audio_latency:Audio.set_latency

@@ -13,6 +13,8 @@
 type error = Bad_url of string | Timeout | Failed of string
 
 type state =
+  (* the name being resolved on a thread of the pool (Worker) *)
+  | Resolving of string * Unix.addr_info list Worker.job
   (* the connection begun; the addresses to try if it fails *)
   | Connecting of Unix.file_descr * Unix.addr_info list
   (* the request's bytes, and how many are written *)
@@ -29,6 +31,8 @@ type t = {
   mutable post : (string * string) option; (* a POST's content type and body; a redirection makes it a GET *)
   mutable redirects_left : int;
   deadline : float;
+  (* where getaddrinfo is called: a pool's thread, or this one *)
+  resolver : Worker.t option;
 }
 
 (*****************************************************************************)
@@ -60,16 +64,21 @@ let rec connect (t : t) (addresses : Unix.addr_info list) : state =
           Unix.close fd;
           if others = [] then failed t (Unix.error_message e) else connect t others)
 
-(* the name resolved (the one blocking call), the connection begun *)
+let resolved (t : t) (host : string) (addresses : Unix.addr_info list) : state =
+  match addresses with [] -> failed t (Printf.sprintf "can't resolve %S" host) | addresses -> connect t addresses
+
+(* the name resolved (the one blocking call: here, or on the resolver's
+ * thread), the connection begun *)
 let begin_request (t : t) : state =
   match Http_client.prepare ?post:t.post t.url with
   | Error why -> Done (Error (Bad_url why))
   | Ok (host, port, request) -> (
       t.request <- request;
       let (_ : Cap.Network.t) = t.caps#network host in
-      match Unix.getaddrinfo host (string_of_int port) [ Unix.AI_SOCKTYPE Unix.SOCK_STREAM ] with
-      | [] -> failed t (Printf.sprintf "can't resolve %S" host)
-      | addresses -> connect t addresses)
+      let resolve () = Unix.getaddrinfo host (string_of_int port) [ Unix.AI_SOCKTYPE Unix.SOCK_STREAM ] in
+      match t.resolver with
+      | Some pool -> Resolving (host, Worker.submit pool resolve)
+      | None -> resolved t host (resolve ()))
 
 (* the server closed: the response parsed, or the next request of a
  * redirection begun *)
@@ -99,7 +108,7 @@ let answered (t : t) (bytes : string) : state =
 (* Entry points *)
 (*****************************************************************************)
 
-let start ?(max_redirects = 5) ?(timeout = 30.) ?post (caps : < Cap.network ; .. >) (s : string) : t =
+let start ?(max_redirects = 5) ?(timeout = 30.) ?post ?resolver (caps : < Cap.network ; .. >) (s : string) : t =
   let t =
     {
       caps = (caps :> Cap.network);
@@ -109,6 +118,7 @@ let start ?(max_redirects = 5) ?(timeout = 30.) ?post (caps : < Cap.network ; ..
       post;
       redirects_left = max_redirects;
       deadline = Unix.gettimeofday () +. timeout;
+      resolver;
     }
   in
   (match Url.parse s with
@@ -123,6 +133,11 @@ let start ?(max_redirects = 5) ?(timeout = 30.) ?post (caps : < Cap.network ; ..
 let transition (t : t) : state option =
   match t.state with
   | Done _ -> None
+  | Resolving (host, job) -> (
+      match Worker.poll job with
+      | None -> None
+      | Some (Ok addresses) -> Some (resolved t host addresses)
+      | Some (Error e) -> Some (failed t (Printexc.to_string e)))
   | Connecting (fd, others) ->
       if not (ready_to_write fd) then None
       else (
@@ -161,7 +176,7 @@ let transition (t : t) : state option =
 let fd_of (state : state) : Unix.file_descr option =
   match state with
   | Connecting (fd, _) | Sending (fd, _) | Receiving (fd, _) -> Some fd
-  | Done _ -> None
+  | Resolving _ | Done _ -> None
 
 let rec step (t : t) : unit =
   match t.state with
@@ -188,7 +203,11 @@ let wait (ts : t list) (timeout : float) : unit =
         match t.state with
         | Connecting (fd, _) | Sending (fd, _) -> (reads, fd :: writes)
         | Receiving (fd, _) -> (fd :: reads, writes)
-        | Done _ -> (reads, writes))
+        | Resolving _ | Done _ -> (reads, writes))
       ([], []) ts
   in
   if reads <> [] || writes <> [] then ignore (Unix.select reads writes [] timeout)
+  else if List.exists (fun t -> match t.state with Resolving _ -> true | _ -> false) ts then
+    (* no socket yet, a thread resolving: a moment, not the whole
+     * timeout (the thread can't wake a select) *)
+    Unix.sleepf (Float.min timeout 0.001)

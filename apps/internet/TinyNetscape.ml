@@ -19,9 +19,16 @@
  * progress bar at the bottom, and the words "Document: Done." Here, the
  * pictures of a page are fetched four at a time (TinyMosaic: one), the
  * page laid out again as each arrives, the status bar counting them.
- * The rest of the lesson is in the plan (plan_browser_teaching.md,
- * "TinyNetscape"): threads for what still blocks (N2), Netscape 1.1's
- * HTML (N3), tables (N4), style sheets (N5).
+ *
+ * And what could still freeze the window is done on threads, as
+ * Netscape did on NSPR's: natively, the platform's commands resolve a
+ * host's name and fetch an https:// page (curl) on a pool of four
+ * threads (Worker, Commands), the "N" going on meanwhile; threads=off
+ * for Mosaic's way, the window stopped while it waits (try an https://
+ * page with both). In a browser, the web platform waits for us. The
+ * rest of the lesson is in the plan (plan_browser_teaching.md,
+ * "TinyNetscape"): Netscape 1.1's HTML (N3), tables (N4), style sheets
+ * (N5).
  *
  * The chrome is Netscape's on X, in Motif: a toolbar of labelled
  * buttons (Back, Forward, Home, Reload, Images, Open, Print, Find,
@@ -40,7 +47,7 @@
  *
  * flags url= (about:home), the first page; images=off, pictures not
  * fetched until the Images button (Netscape's "Auto Load Images",
- * for a 14400 modem).
+ * for a 14400 modem); threads=off, no threads (natively).
  *
  * Uses: the appkit appkits/browser (a page read, laid out, drawn; the
  * history; forms), shared with TinyMosaic, as the built-in site is
@@ -574,4 +581,10 @@ let app (network : < Cap.network ; .. >) =
             Sub.on_mouse_move (fun (x, y) -> Mouse_move (x, y)); Sub.on_mouse_down (fun () -> Click) ]);
   }
 
-let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app caps))
+(* claude: threads on unless the command line says otherwise (N2):
+ * what blocks, on the platform's threads *)
+let main =
+  Cap.main (fun caps ->
+      let flags = Playground_platform.flags () in
+      let flags = if List.mem_assoc "threads" flags then flags else ("threads", "on") :: flags in
+      Playground_platform.run_app ~flags (app caps))

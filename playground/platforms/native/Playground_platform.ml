@@ -138,7 +138,9 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network a
   if Native_loop_2d.debug_keys_enabled () then
     prerr_endline
       "-debug-keys: no debug keys in the Cairo backend; they're in the software one, e.g. examples/software/AudioPiano.exe";
-  Native_loop_2d.run ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
+  (* claude: threads=on, the commands' blocking calls on threads *)
+  let threads = List.assoc_opt "threads" flags = Some "on" in
+  Native_loop_2d.run ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
     ~dump_frame:(Native_loop_2d.dump_pixels pixels)
     ~pull_audio:(fun n -> let s = Audio.pull n in (s.left, s.right))
     ~dump_audio:(fun file (left, right) -> Wav.write_stereo file { left; right })

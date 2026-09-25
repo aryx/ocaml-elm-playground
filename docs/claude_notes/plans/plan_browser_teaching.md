@@ -747,6 +747,19 @@ before TinyNetscape's N5.
   splits an entry at its last colon, so a script can type a URL
   (`type(about:history):3`). Golden frames: the home page, `images=off`,
   and the Location field typed into (`location`).
+- **N2 done** (2026-09-25): `Worker` (networking/unix, over
+  `threads.posix`), a pool of threads, a job submitted and polled;
+  `Http_request.start ?resolver`, the name resolved on the pool (the
+  state `Resolving`); `Commands.create ~threads`, curl's `https://` on
+  the pool; the flag `threads=on` read by both native platforms (off
+  by default, every other program unchanged), TinyNetscape on unless
+  told `threads=off`. Measured, the frame asking for the page: 64 ms
+  (`http://info.cern.ch/`'s DNS) and 568 ms (`https://example.com/`,
+  curl) without threads, under 50 ms with. Tests: `Unit_worker`, and
+  `Unit_http_request`'s resolver. Not `tiny_httpd delay=`: a sleep in
+  its handler stops the whole server, so it shows nothing about the
+  client; the slow server is an exercise of the notes (section 14,
+  which tells N2).
 
 **Code shared between the two apps' updates.** Their models differ
 (views, fetching, chrome), so each keeps its own `update`; what both do

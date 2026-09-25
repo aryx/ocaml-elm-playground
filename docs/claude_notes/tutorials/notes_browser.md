@@ -514,6 +514,60 @@ width available  90: < 100, every column at its min, and the table
 - **TLS** (almost every page is `https://` now), HTTP/2 and 3, caches,
   cookies, fonts downloaded, bidirectional text, accessibility trees.
 
+## 14. Not waiting: four connections, and threads
+
+Mosaic (1993) fetched a page, then each picture, one after the other,
+its window frozen in libwww's blocking reads. Netscape (1994) did the
+same work without waiting, and every browser since has: TinyMosaic and
+TinyNetscape are that difference, over the same engine.
+
+**Four connections.** A picture is a request of its own; four in
+flight at once (`connections`, Netscape's default), the next started
+as one ends, and the page laid out again as each arrives -- the text
+readable before the first picture is in. None of this needs a thread:
+`Http_request` is a state machine, stepped once a frame, doing on each
+socket only what won't block (select with a timeout of 0). One thread,
+many sockets: the **event loop**, as in `Http_server`.
+
+**What an event loop can't hide.** Two calls block and are no state
+machine: the host's name resolved (`getaddrinfo`, the C library asking
+a DNS server) and curl's `https://`, the whole transfer. Measured on
+TinyNetscape, the frame that asks for the page: 64 ms for
+`http://info.cern.ch/`'s name, 568 ms for `https://example.com/`,
+the window frozen that long. So those go to **threads**, as Netscape
+did on NSPR's: `Worker`, a pool of four, each thread taking a job from
+a queue, running it, leaving its result; the frame polls the job as it
+steps a socket (`Http_request`'s `Resolving` state; `Commands`' curl).
+Measured again: no frame over 50 ms.
+
+```
+  frame loop                          a thread of the pool
+  submit (getaddrinfo host) --queue-> wait on the condition
+  poll: nothing yet                   getaddrinfo ... (blocks, the
+  poll: nothing yet                     runtime lock released)
+  poll: the addresses <-------------- result, under the mutex
+  connect (non-blocking), ...
+```
+
+**Concurrency, not parallelism.** OCaml 4.14's threads share one
+runtime lock: only the thread holding it runs OCaml code, and a thread
+gives it up in a blocking system call (the DNS query, a read, curl's
+transfer, the frame loop's sleep). That is exactly when another has
+something to do, so waiting overlaps; computing does not -- a JPEG
+decoded on a thread would take the frame's time all the same. Running
+OCaml on several cores at once is OCaml 5's domains. And the queue and
+each result, touched by two threads, are read and written under a
+mutex: without it the lock would still make each word's write whole,
+but not the order of two, and a program should not lean on a runtime's
+detail for its correctness.
+
+**And JavaScript kept one thread.** A browser page has no threads:
+JavaScript's model is the event loop's -- callbacks when a request
+answers, never a blocking call -- and the browser does the waiting
+(on its own threads). So the web build of TinyNetscape has no
+`threads` flag: the web platform's `XMLHttpRequest` is already the
+Worker.
+
 ## Exercises
 
 1. The adoption agency algorithm, for `<b><i>x</b>y</i>` (section 4).
@@ -533,6 +587,11 @@ width available  90: < 100, every column at its min, and the table
    instead of cycling through them on a click.
 9. XBM, the other inline image format Mosaic read: a C file as a
    picture, a reader of thirty lines beside `graphics/images/xpm/`.
+10. The pictures decoded on the pool too (section 14), and measured:
+    no faster under OCaml 4.14's lock; then with OCaml 5's domains.
+11. A slow `tiny_httpd` (`delay=`), to feel four connections against
+    one: `Http_server` answering a request later without stopping the
+    others (a sleep in the handler would stop the whole server).
 
 ## Glossary
 

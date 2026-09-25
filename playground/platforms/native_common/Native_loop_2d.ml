@@ -311,7 +311,7 @@ let queue_samples (device : Sdl.audio_device_id) ((left, right) : float array * 
   | Ok () -> ()
   | Error (`Msg msg) -> Logs.warn (fun m -> m "queue_audio: %s" msg)
 
-let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
+let run ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(update : 'msg -> 'model -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
     ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
@@ -334,7 +334,7 @@ let run ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
 
   (* claude: the commands of init and update, performed while the
    * frames go on (Commands.mli) *)
-  let commands = Commands.create () in
+  let commands = Commands.create ~threads () in
   let initmodel, cmd = init () in
   let model = ref initmodel in
   Commands.perform commands cmd;

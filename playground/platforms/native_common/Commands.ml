@@ -10,12 +10,25 @@
 
 (* See Commands.mli *)
 
+type answer = (Cmd.http_response, Cmd.http_error) result
+
 type 'msg in_flight =
   | Now of 'msg
-  | Request of Cap.network * Http_request.t * ((Cmd.http_response, Cmd.http_error) result -> 'msg)
-type 'msg t = { mutable in_flight : 'msg in_flight list }
+  | Request of Cap.network * Http_request.t * (answer -> 'msg)
+  (* curl, on a thread of the pool *)
+  | Curl of answer Worker.job * (answer -> 'msg)
 
-let create () : 'msg t = { in_flight = [] }
+type 'msg t = {
+  mutable in_flight : 'msg in_flight list;
+  (* with threads (threads=on): where what blocks is done *)
+  pool : Worker.t option;
+}
+
+(* claude: four threads, Netscape's four connections: at most four
+ * names resolved or https:// fetches waiting at once, the others
+ * queued *)
+let create ?(threads = false) () : 'msg t =
+  { in_flight = []; pool = (if threads then Some (Worker.create 4) else None) }
 
 (* claude: https://, until TLS is ours (plan_teaching_other.md 4b):
  * curl, as graphics/images' Download uses it -- blocking, so the frame
@@ -69,28 +82,31 @@ let curl_get ?post (caps : Cap.network) (url : string) : (Cmd.http_response, Cmd
           | exception Curl.CurlException (_, _, why) -> Error (Cmd.Network_error why)))
   | _ -> Error (Cmd.Bad_url url)
 
+(* curl's fetch: at once, the frame waiting, or on a thread *)
+let curl ?post (t : 'msg t) (caps : Cap.network) (url : string) (k : answer -> 'msg) : 'msg in_flight =
+  match t.pool with
+  | None -> Now (k (curl_get ?post caps url))
+  | Some pool -> Curl (Worker.submit pool (fun () -> curl_get ?post caps url), k)
+
 let perform (t : 'msg t) (cmd : 'msg Cmd.t) : unit =
   Cmd.to_list cmd
   |> List.iter (fun (c : 'msg Cmd.t) ->
          match c with
          | Msg msg -> t.in_flight <- t.in_flight @ [ Now msg ]
-         | Http_get (caps, url, k) when is_https url -> t.in_flight <- t.in_flight @ [ Now (k (curl_get caps url)) ]
-         | Http_get (caps, url, k) -> t.in_flight <- t.in_flight @ [ Request (caps, Http_request.start caps url, k) ]
-         | Http_post (caps, url, post, k) when is_https url ->
-             t.in_flight <- t.in_flight @ [ Now (k (curl_get ~post caps url)) ]
+         | Http_get (caps, url, k) when is_https url -> t.in_flight <- t.in_flight @ [ curl t caps url k ]
+         | Http_get (caps, url, k) ->
+             t.in_flight <- t.in_flight @ [ Request (caps, Http_request.start ?resolver:t.pool caps url, k) ]
+         | Http_post (caps, url, post, k) when is_https url -> t.in_flight <- t.in_flight @ [ curl ~post t caps url k ]
          | Http_post (caps, url, post, k) ->
-             t.in_flight <- t.in_flight @ [ Request (caps, Http_request.start ~post caps url, k) ]
+             t.in_flight <- t.in_flight @ [ Request (caps, Http_request.start ~post ?resolver:t.pool caps url, k) ]
          | None | Batch _ -> (* to_list flattened them *) ())
 
 (* Http_request's answer as Cmd's, with the URL of the last
- * redirection; one to https:// (what most http:// sites answer today)
- * refused by our client, and so taken on by curl *)
-let answer (caps : Cap.network) (request : Http_request.t) (r : (Http.response, Http_request.error) result) :
-    (Cmd.http_response, Cmd.http_error) result =
+ * redirection *)
+let answer (request : Http_request.t) (r : (Http.response, Http_request.error) result) : answer =
   match r with
   | Ok response ->
       Ok { url = Http_request.url request; status = response.status; headers = response.headers; body = response.body }
-  | Error (Bad_url _) when is_https (Http_request.url request) -> curl_get caps (Http_request.url request)
   | Error (Bad_url why) -> Error (Bad_url why)
   | Error Timeout -> Error Timeout
   | Error (Failed why) -> Error (Network_error why)
@@ -103,7 +119,18 @@ let step (t : 'msg t) : 'msg list =
            | Now msg -> Left msg
            | Request (caps, r, k) -> (
                Http_request.step r;
-               match Http_request.result r with Some result -> Left (k (answer caps r result)) | None -> Right f))
+               match Http_request.result r with
+               | None -> Right f
+               (* a redirection to https:// (what most http:// sites
+                * answer today), refused by our client: taken on by curl *)
+               | Some (Error (Bad_url _)) when is_https (Http_request.url r) -> (
+                   match curl t caps (Http_request.url r) k with Now msg -> Left msg | f -> Right f)
+               | Some result -> Left (k (answer r result)))
+           | Curl (job, k) -> (
+               match Worker.poll job with
+               | None -> Right f
+               | Some (Ok result) -> Left (k result)
+               | Some (Error e) -> Left (k (Error (Network_error (Printexc.to_string e))))))
   in
   t.in_flight <- pending;
   finished
