@@ -11,8 +11,8 @@
  * (Dan Bricklin and Bob Frankston, 1979; plan_gui_teaching.md, phase
  * 7b).
  *
- * What it uses: appkits/sheet (Formula and Sheet, the engine), and
- * the playground's shapes. What it deliberately uses *nothing* of:
+ * What it uses: appkits/sheet (Sheet, the engine) and its formula
+ * language (Formula, libs/languages), and the playground's shapes. What it deliberately uses *nothing* of:
  * gui/ -- no widget, no layout, no focus, no mouse. That is not
  * minimalism, it is the subject: VisiCalc ran on a 40-column
  * character display with no mouse to point at anything, and every

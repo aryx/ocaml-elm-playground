@@ -1,7 +1,7 @@
 ; claude: a spreadsheet's engine, from scratch, for teaching what a
 ; spreadsheet actually is (see docs/claude_notes/plans/plan_gui_teaching.md,
-; phase 7): a formula language (Formula) and a grid of cells that
-; recalculates only what changed (Sheet). Shared by the pair of apps
+; phase 7): a grid of cells that recalculates only what changed (Sheet),
+; over the formula language (Formula, libs/languages/formula). Shared by the pair of apps
 ; that put two interfaces on it, TinyVisiCalc's of 1979 and
 ; TinyExcel's of 1985.
 ;
@@ -12,4 +12,5 @@
  (name appkit_sheet)
  (package elm_playground)
  (wrapped false)
+ (libraries formula)
 )

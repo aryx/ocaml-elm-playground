@@ -1,0 +1,13 @@
+; claude: the spreadsheet's formula language (Formula): arithmetic over
+; numbers and cells, SUM and its kin over ranges, parsed by recursive
+; descent -- the smallest expression evaluator of the house, and the
+; first to know. Used by appkits/sheet (Sheet, the grid that
+; recalculates) and so by TinyVisiCalc and TinyExcel.
+;
+; Pure OCaml, no Playground (libs/languages/README.md). A private
+; library, installed as part of elm_playground.
+(library
+ (name formula)
+ (package elm_playground)
+ (wrapped false)
+)
