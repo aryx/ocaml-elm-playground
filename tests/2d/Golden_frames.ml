@@ -126,6 +126,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: 2024: the OP-XY's screen on the drums' pattern, the four
      * grey knobs, the tracks, the scenes, the 16 steps *)
     ("apps/music/software/TinyOpxy", "", 5);
+    (* claude: 2015: the Reface's case on its YC face, the B-3's nine
+     * drawbars as footage knobs, the rotary speaker's rockers *)
+    ("apps/music/software/TinyReface", "", 5);
     (* 1987: the tracker, our song's first pattern, four channels, the
      * current row in the middle *)
     ("apps/music/software/TinySoundtracker", "", 5);
@@ -1121,6 +1124,10 @@ let scripted : Testutil_golden.scripted list =
     (* claude: the OP-XY playing our song: step 5 lit on the steps and
      * the screen, the tracks' meters *)
     ("apps/music/software/TinyOpxy", "running", 40, "space:3");
+    (* claude: the Reface switched to CP, then to DX, C E G held on each:
+     * the Rhodes' knobs, the DX7's algorithm and outputs, the scope *)
+    ("apps/music/software/TinyReface", "cp", 30, "at(-30;420):1-4,click:2,a:8-40,d:8-40,g:8-40");
+    ("apps/music/software/TinyReface", "dx", 30, "at(40;420):1-4,click:2,a:8-40,d:8-40,g:8-40");
     (* claude: the lead (track 4) on M3, step 1 held with shift: its
      * cutoff lock (0.3) on the knob and its bar, the steps with locks
      * dotted *)

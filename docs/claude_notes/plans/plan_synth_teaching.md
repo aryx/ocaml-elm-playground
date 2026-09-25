@@ -1697,6 +1697,26 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   its header: the step components, the OP-XY's own engines, the
   filter's envelope, the LFOs, the effects sends, longer patterns,
   songs, the brain's key detection. The plan's climax done.
+- **T1, DONE (2026-09-25)**: TinyReface, the hub. The facts from the
+  Reface owner's manual and its reviews: the YC's five organs
+  (American tonewheel, English, Italian and Japanese transistor organs,
+  Yamaha's YC-45), nine footages, vibrato or chorus, percussion, the
+  rotary speaker (fast, slow, stop, off), distortion, reverb; the CP's
+  six types (Rd I, Rd II, Wr, Clv, Toy, CP) and its effects row
+  (drive, tremolo or wah, chorus or phaser, delay, reverb); the DX's
+  four operators, twelve algorithms, a feedback per operator; the CS's
+  five oscillator types (multi saw, pulse, sync, ring, FM), its LFO
+  assignable to amplitude, filter, pitch or the oscillator's mod, and
+  its effects. Ours: one case of 37 mini keys, a switch, each face a
+  voice packed as a `Voice.S` first-class module and a list of labels
+  and knob names (checked when the face is made: the DX7's "volume",
+  an `Instrument.set` name and no knob, caught), its controls drawn by
+  the knob's kind (a knob, a rocker, a selector as a knob in steps), the
+  TYPE menu the voice's presets, one voice playing (the face left
+  stopped, a face made when first chosen). Golden frames TinyReface,
+  _cp, _dx; web page; `CATALOG.md`'s row. Left, in its header: the CP's
+  effects row as a rack after the voice, the YC's transistor organs,
+  the DX's four operators, the CS's oscillator types, the looper.
 
 ## Verification
 
