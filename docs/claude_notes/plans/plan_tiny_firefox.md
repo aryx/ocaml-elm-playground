@@ -220,6 +220,21 @@ after an extraction.
   with the worked example its tests will check);
   `libs/languages/` opened with `Formula` moved there (its README says
   what belongs in the folder).
+- **J1 done** (2026-09-25): `libs/languages/javascript/`, the library
+  `javascript`: `Js_lexer` (the longest match, a newline remembered,
+  strings' escapes decoded, template literals and regular expressions
+  refused by name), `Js_ast` (ESTree's kinds of node, a statement's
+  line, a printer in full parentheses), `Js_parse` (statements by
+  recursive descent, the simple half of semicolon insertion and
+  `return` alone on its line; expressions by Pratt, the binding powers
+  a table, arrows found by looking ahead for the `)` and the `=>`; what
+  is left out -- class, new, finally, switch -- refused with its name).
+  Its `.mli` says why not yacc (the author's request): arrows, newlines
+  and `{` fight LALR(1), yacc's errors say "syntax error", every real
+  engine parses JavaScript by hand; the binding powers are yacc's
+  `%left`/`%right` as data (the correspondence written out), and the
+  ocamlyacc version of the expressions an exercise. Tests: the notes'
+  and the `.mli`s' worked examples, 14.
 
 ## Decisions
 

@@ -67,8 +67,8 @@ Worked example (the tests'):
 let s = "a" + 'b'; // two strings
 x=>x===1
 
-Let  Name "s"  Punct "="  String "a"  Punct "+"  String "b"  Punct ";"
-Name "x" (after a newline)  Punct "=>"  Name "x"  Punct "==="  Number 1
+Keyword let  Name s  Punct =  String "a"  Punct +  String "b"  Punct ;
+Name x (a newline before)  Punct =>  Name x  Punct ===  Number 1
 ```
 
 ## 2. Expressions: Pratt parsing
@@ -110,11 +110,12 @@ operator of the same power stops it and becomes the next loop's.
 Right-associative: with the same power, so it continues. That one
 "+ 1" is the whole difference.
 
-An arrow function `x => x + 1` looks like a name until the `=>`; the
-parser, having read `x`, sees `=>` and turns the name it has into a
-parameter. With parentheses, `(a, b) => a + b`, it reads what looks like
-a parenthesized expression and turns it into a parameter list when the
-`=>` comes -- which is how real parsers do it too ("cover grammars").
+An arrow function `x => x + 1` looks like a name until the `=>`, and
+`(a, b) => a + b` like a parenthesized expression. The specification
+parses them as expressions and turns them into parameters when the
+`=>` comes ("cover grammars"); `Js_parse` looks ahead instead: seeing
+a name or a `(`, it finds the matching `)` in the token array and
+checks for a `=>` after it -- cheap, since all the tokens are there.
 
 Worked example (the tests'):
 
@@ -122,8 +123,36 @@ Worked example (the tests'):
 1 + 2 * 3 - 4          ((1 + (2 * 3)) - 4)
 a = b = c || d && e    (a = (b = (c || (d && e))))
 -x.y(1)[0]             (-(((x.y)(1))[0]))
-f(x => x * 2, 3)       f((x) => (x * 2), 3)
+f(x => x * 2, 3)       (f((x) => (x * 2), 3))
 ```
+
+**Why not yacc.** yacc (Stephen Johnson, Bell Labs, 1975) is the
+classic way to write a parser, and ocamlyacc comes with OCaml: the
+grammar is the program, and the table above is its precedence
+declarations. The two say the same thing:
+
+```
+yacc                              Pratt (the table above)
+%right '=' PLUS_EQ ...            1, right
+%left OR                          3
+%left AND                         4
+%left '+' '-'                     7
+%left '*' '/' '%'                 8
+%right UMINUS '!' TYPEOF          9 (prefix; "%prec UMINUS" in a rule)
+```
+
+-- the later a line, the higher its power. But JavaScript's grammar
+fights LALR(1) at every turn a teaching parser cares about: an arrow's
+`(a, b` cannot be told from a parenthesized expression with one token
+of lookahead; "a newline may end a statement" and "`return` alone on
+its line" need the lexer and the parser to talk (yacc can only imitate
+them with error productions); `{` is a block at a statement's start and
+an object elsewhere; and yacc's mistakes say "syntax error", where a
+teaching engine should say "expected ')' on line 3". Every real engine
+parses JavaScript by hand (V8, SpiderMonkey, JavaScriptCore, QuickJS,
+and Acorn, Esprima, Babel). `Js_parse.mli` has the whole argument; yacc
+is the right tool for a language designed for it -- Wirth's Pascal, a C
+subset -- and exercise 11 puts the two side by side.
 
 ## 3. Statements: recursive descent
 
@@ -158,7 +187,7 @@ function f() {
 Let a 1
 Let b (a + 1)
 If ((b > a), Block [Expr (b = 0)], Expr (b = 1))
-Function f [] [Return (none); Expr a]
+Function f [] [Return; Expr a]
                    -- the newline ended the return: f() is undefined
 ```
 
@@ -420,6 +449,10 @@ tic-tac-toe in a table (event delegation: one handler on the table).
 9. A bytecode compiler for the same tree, and the speed measured
    against the tree walker.
 10. `<canvas>` and `requestAnimationFrame`: a game in a page.
+11. The expressions of `Js_parse` written again in ocamlyacc (the
+    `%left`/`%right` lines of section 2), the two parsers run on the
+    same tests: what the grammar file makes clearer, and where its
+    conflicts come from when arrows are added.
 
 ## Glossary
 

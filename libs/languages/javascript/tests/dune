@@ -1,0 +1,7 @@
+; claude: unit tests for the JavaScript engine, run by 'make test'
+; (dune runtest): the worked examples of notes_javascript.md and of
+; the .mlis
+(test
+ (name Test)
+ (libraries alcotest testo javascript)
+)
