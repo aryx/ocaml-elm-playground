@@ -26,8 +26,12 @@
  *
  * and a module's T key pressed again changes it: the next engine, the
  * play mode (poly, mono), the next effect, the next LFO -- the OP-1 does
- * that with shift and a browser, ours is one key. The keys 1 to 8 are
- * the eight sounds. In tape mode, T1 to T4 arm a track, the four tracks
+ * that with shift and a browser, ours is one key. The engines are ten
+ * (Op1_engine.mli), the tenth the sampler: its screen its recording and
+ * the four points on it, SAMPLE taking the recording from the armed
+ * tape track (record on the tape, sample it, play it across the keys:
+ * the OP-1's way round). The keys 1 to 8 are the eight sounds. In tape
+ * mode, T1 to T4 arm a track, the four tracks
  * are drawn as the reels' contents with the head over them, and the
  * transport records (on the armed track, the others playing back), plays
  * and stops; the encoders there are ours: the armed track's level, the
@@ -200,6 +204,9 @@ let update (computer : computer) (m : model) : model =
   if Gui.button computer ~at:(150., row_y) "PLAY" then Studio_op1.play op1;
   if Gui.button computer ~at:(220., row_y) "STOP" then Studio_op1.stop op1;
   if Gui.button computer ~at:(280., row_y) "<<" then Tape.set_head tape 0.;
+  (* the sampler engine on T1: its recording taken from the armed track *)
+  if m.mode = Synth && m.page = 0 && (List.nth Op1_engine.all patch.sounds.(patch.current).engine).name = "sampler" then
+    if Gui.button computer ~at:(380., row_y) (Printf.sprintf "SAMPLE T%d" (m.track +.. 1)) then ignore (Studio_op1.sample_track op1 m.track);
   if space && not (List.mem "space" m.held) then if Tape.moving tape then Studio_op1.stop op1 else Studio_op1.play op1;
   (* the encoders: the module's four, or the tape's *)
   let s, speed, levels, volume =
@@ -296,6 +303,25 @@ let envelope_view (s : Studio_op1.sound) : shape list =
   polyline pale [ (px 0., py 0.); (px a, py 1.); (px (a + d), py e.(2)); (px (a + d + hold), py e.(2)); (px total, py 0.) ]
 
 (* the LFO: a few of its periods, or the effect's name big *)
+(* the sampler's recording, a peak a column, its start, loop in, loop
+ * out and end as lines in the encoders' colours *)
+let sample_view (p : float array) : shape list =
+  let data = (Op1_engine.sample ()).data in
+  let n = Array.length data and columns = 130 and w = 260. and h = 50. and cy = screen_y + 15. in
+  let x f = screen_x - (w / 2.) + (f * w) in
+  let peaks =
+    List.init columns (fun c ->
+        let a = c *.. n /.. columns and b = (c +.. 1) *.. n /.. columns in
+        let peak = ref 0. in
+        let i = ref a in
+        while !i < b do
+          peak := Float.max !peak (Float.abs data.(!i));
+          i := !i +.. max 1 ((b -.. a) /.. 32)
+        done;
+        rectangle pale 1.5 (Float.max 0.5 (Float.min h (h * !peak))) |> move (x (float_of_int c / float_of_int columns)) cy)
+  in
+  peaks @ Array.to_list (Array.mapi (fun k f -> segment encoder_colors.(k) 2. (x f, cy - 28.) (x f, cy + 28.)) (Op1_engine.sampler_points p))
+
 let wave_view (speed : number) : shape list =
   let w = 260. and h = 50. and cy = screen_y + 25. and points = 100 in
   let cycles = 1. + (6. * speed) in
@@ -315,6 +341,7 @@ let synth_screen (m : model) : shape list =
   in
   let middle =
     match m.page with
+    | 0 when engine.name = "sampler" -> sample_view s.engine_params
     | 0 -> scope_view (Studio_op1.recent op1)
     | 1 -> envelope_view s
     | 2 -> scope_view (Studio_op1.recent op1)

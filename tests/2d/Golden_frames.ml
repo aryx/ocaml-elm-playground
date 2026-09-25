@@ -1139,6 +1139,14 @@ let scripted : Testutil_golden.scripted list =
      * track 1 while C E G are played -- the track drawn behind the red
      * head *)
     ("apps/music/software/TinyOp1", "tape", 90, "at(-188;50):1-4,click:2,at(-350;110):5-8,click:6,r:10,a:12-50,d:30-70,g:50-80");
+    (* claude: T1 pressed nine times, the tenth engine, the sampler: its
+     * recording (a plucked string) with its start, loop and end in the
+     * encoders' colours, SAMPLE T1 offered, C played *)
+    ( "apps/music/software/TinyOp1",
+      "sampler",
+      50,
+      "at(-250;110):1-4,click:2,at(-250;110):5-8,click:6,at(-250;110):9-12,click:10,at(-250;110):13-16,click:14,at(-250;110):17-20,click:18,at(-250;110):21-24,click:22,at(-250;110):25-28,click:26,at(-250;110):29-32,click:30,at(-250;110):33-36,click:34,a:40-60"
+    );
     (* claude: the OP-XY playing our song: step 5 lit on the steps and
      * the screen, the tracks' meters *)
     ("apps/music/software/TinyOpxy", "running", 40, "space:3");

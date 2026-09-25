@@ -101,6 +101,53 @@ let test_digital () =
 
 (* [studio patch f seconds]: [f frame t] each frame (735 samples), the
  * left side out *)
+(* dr wave: a sawtooth (type 0) long enough, filtered to 7 harmonics at
+ * 220 Hz: the 7th at 1/7, the 8th gone; its phase moved: the peaks
+ * changed, the harmonics the same *)
+let test_dr_wave () =
+  let db x = 20. *. log10 x in
+  let p = [| 0.2; 0.1; 0.; 0. |] in
+  let x = play Op1_engine.dr_wave p 220. 0.5 in
+  let h a k = amplitude a (220. *. float_of_int k) 4410 8192 in
+  Alcotest.(check (float 0.1)) "the 7th harmonic: 1/7 of the first (dB)" (db (1. /. 7.)) (db (h x 7 /. h x 1));
+  Alcotest.(check bool) (Printf.sprintf "the 8th: removed (%.0f dB)" (db (h x 8 /. h x 1))) true (db (h x 8 /. h x 1) < -80.);
+  let y = play Op1_engine.dr_wave [| 0.2; 0.1; 0.5; 0. |] 220. 0.5 in
+  let peak a = Array.fold_left (fun m v -> Float.max m (Float.abs v)) 0. a in
+  let same = List.for_all (fun k -> Float.abs (db (h y k /. h x k)) < 0.05) [ 1; 2; 3; 4; 5; 6; 7 ] in
+  Alcotest.(check (pair bool bool)) "the phase moved: the harmonics the same, the peak not" (true, true)
+    (same, Float.abs ((peak y /. peak x) -. 1.) > 0.1)
+
+(* voltage: a sawtooth crossfading to a square an octave up in 98 ms:
+ * the note's own frequency at first, half a second on 44 dB down (a
+ * square an octave up has nothing there; what's left is the naive
+ * square's aliases, folded back) *)
+let test_voltage () =
+  let x = play Op1_engine.voltage [| 0.3; 0.6; 0.; 0. |] 220. 1. in
+  let at a = amplitude x 220. a 2048 in
+  let down = 20. *. log10 (at 22050 /. at 0) in
+  Alcotest.(check bool) (Printf.sprintf "220 Hz, half a second on: %.0f dB" down) true (down < -40.)
+
+(* d-synth: the pitch falling, the zero crossings in the first 10 ms
+ * against 100 to 110 ms *)
+let test_d_synth () =
+  let x = play Op1_engine.d_synth [| 0.5; 0.; 0.8; 0. |] 261.63 0.2 in
+  let crossings a b = List.length (List.filter (fun i -> x.(i - 1) < 0. && x.(i) >= 0.) (List.init (b - a) (fun i -> a + i))) in
+  let early = crossings 1 441 and late = crossings 4410 4851 in
+  Alcotest.(check bool) (Printf.sprintf "crossings early %d, late %d" early late) true (early >= 2 * late && late >= 0)
+
+(* the sampler: a 440 Hz sine as its recording at C4, played at C4 and
+ * C5: 440 and 880 Hz *)
+let test_sampler () =
+  let before = Op1_engine.sample () in
+  Op1_engine.set_sample { data = Oscillator.render Sine ~frequency:440. 2.; root = 60 };
+  let f key =
+    let x = play Op1_engine.sampler [| 0.; 0.4; 0.8; 1. |] (440. *. Float.pow 2. (float_of_int (key - 69) /. 12.)) 1. in
+    List.length (List.filter (fun i -> x.(i - 1) < 0. && x.(i) >= 0.) (List.init 44099 (fun i -> i + 1)))
+  in
+  let c4 = f 60 and c5 = f 72 in
+  Op1_engine.set_sample before;
+  Alcotest.(check (pair int int)) "rising crossings in a second: 440 and 880" (439, 879) (c4, c5)
+
 let studio ?(frames = fun _ _ -> ()) (p : Studio_op1.patch) (seconds : float) : Signal.t * Studio_op1.t =
   let s = Studio_op1.create p in
   let i = Studio_op1.instrument s in
@@ -208,13 +255,22 @@ let phrase (e : Op1_engine.t) : Signal.t =
 
 let tests =
   Testo.categorize "OP-1"
-    (List.map (fun (e : Op1_engine.t) -> t ("golden WAV: " ^ e.name) (fun () -> Testutil_wav.check ~dir:"apps/music/tests" ("op1_" ^ e.name) (phrase e))) Op1_engine.all
+    (List.map
+       (fun (e : Op1_engine.t) ->
+         (* a file's name without spaces: dr wave's op1_dr_wave *)
+         let file = "op1_" ^ String.map (fun c -> if c = ' ' then '_' else c) e.name in
+         t ("golden WAV: " ^ e.name) (fun () -> Testutil_wav.check ~dir:"apps/music/tests" file (phrase e)))
+       Op1_engine.all
     @ [
         t "FM: four operators, amount 0 a sine" test_fm;
         t "cluster: the spread" test_cluster;
         t "string: its pitch" test_string;
         t "phase distortion: the harmonics with the amount" test_phase;
         t "digital: its levels" test_digital;
+        t "dr wave: the brick wall, the phase unheard" test_dr_wave;
+        t "voltage: the crossfade" test_voltage;
+        t "d-synth: the pitch falling" test_d_synth;
+        t "sampler: the recording at the key's pitch" test_sampler;
         t "the studio: a note's envelope" test_envelope;
         t "the studio: the effects" test_effects;
         t "the studio: the tremolo" test_tremolo;

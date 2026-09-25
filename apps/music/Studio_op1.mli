@@ -103,6 +103,11 @@ val set_patch : t -> patch -> unit
  * track k (while it plays the others back), [play t], [stop t] *)
 val tape : t -> Tape.t
 val record : t -> int -> unit
+
+(* [sample_track t k]: the sampler engine's recording taken from track
+ * [k], from its first sound (over 0.01) for up to 6 s (ours), played at
+ * C4 as recorded; false if the track is silent *)
+val sample_track : t -> int -> bool
 val play : t -> unit
 val stop : t -> unit
 

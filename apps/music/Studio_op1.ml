@@ -160,6 +160,17 @@ let set_patch (t : t) (p : patch) : unit =
 
 let tape (t : t) : Tape.t = t.tape
 let record (t : t) (k : int) : unit = Tape.record t.tape k
+
+let sample_track (t : t) (k : int) : bool =
+  let track = Tape.track t.tape k in
+  let n = Array.length track in
+  let rec first i = if i >= n then None else if Float.abs track.(i) > 0.01 then Some i else first (i + 1) in
+  match first 0 with
+  | None -> false
+  | Some a ->
+      let len = min (n - a) (Signal.samples 6.) in
+      Op1_engine.set_sample { data = Array.sub track a len; root = 60 };
+      true
 let play (t : t) : unit = Tape.play t.tape
 let stop (t : t) : unit = Tape.stop t.tape
 let voices (t : t) : int = Polyphony.voices t.poly

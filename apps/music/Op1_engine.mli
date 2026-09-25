@@ -14,9 +14,17 @@
  *     pulse    filter        amplitude      second pulse   mod
  *     phase    phase shift   distortion     phase filter   phase tilt
  *     digital  wave shaper   octave         detune & ring  digitalness
+ *     dr wave  type & length filter         phase          chorus
+ *     voltage  env crossfader waveform      envelope       cross mod
+ *     d-synth  pitch         waveform       envelope       cross mod
+ *     sampler  start         loop in        loop out       end
  *
- * (the manual's words, its reference chapter). Six methods, a lesson
- * each, most of them already this repository's:
+ * (the manual's words, its reference chapter; its synthesizer chapter
+ * says d-synth "dual oscillator" and voltage "multi oscillator electric
+ * synthesis", the reference chapter d-synth a "teenage drum
+ * synthesizer" and voltage a "multi envelope dual oscillator synth":
+ * ours follow the reference, whose four encoders fit). Ten methods, a
+ * lesson each, most of them already this repository's:
  *
  *  - *FM*, four operators (the OP-1's, not the DX7's six): four of
  *    Fm_algorithm.mli's six, the DX7's algorithms giving the four
@@ -34,7 +42,24 @@
  *    read through a bent phase, fast then slow, the bend the distortion
  *    -- no filter, the harmonics made by the reading alone;
  *  - *digital*, a sine folded by a wave shaper, ring modulated, then
- *    its samples held and its bits dropped: digital's own grit.
+ *    its samples held and its bits dropped: digital's own grit;
+ *  - *dr wave*, "frequency domain synthesis": a period made as the sum
+ *    of its harmonics (a sawtooth's, a square's, a triangle's, a
+ *    formant's), as many as its length, a brick-wall filter removing
+ *    those above it -- no phase shift, no ringing, what only the
+ *    frequency domain allows -- and a phase moving each harmonic by a
+ *    different amount: the waveform's shape changed, the sound not, the
+ *    ear deaf to phase (Ohm's acoustic law, 1843);
+ *  - *voltage*, two oscillators and two envelopes, one crossfading
+ *    from the first to the second, one decaying the second's cross
+ *    modulation of the first: a sound that changes its waveform as it
+ *    lasts;
+ *  - *d-synth*, a drum: a sine falling from a higher pitch (the punch,
+ *    TinyTR808's kick's idea), mixed with noise, decaying, a second
+ *    sine for metal;
+ *  - the *sampler*, Sampler.mli's voice over a recording (a string
+ *    plucked at C4, until Studio_op1 takes one from the tape), its
+ *    start, loop and end on the encoders.
  *
  * What the manual names without saying more is ours, and said at each
  * engine in Op1_engine.ml: the ranges, the FM ratios, the cluster's
@@ -66,9 +91,24 @@ val string : t
 val pulse : t
 val phase : t
 val digital : t
+val dr_wave : t
+val voltage : t
+val d_synth : t
+val sampler : t
 
-(* the six, in the OP-1's browser's order *)
+(* the ten, the first six in the OP-1's browser's order *)
 val all : t list
+
+(* dr wave's period (2048 samples) for its encoders at a frequency *)
+val dr_wave_table : float array -> float -> Signal.t
+
+(* the sampler's four encoders as the start, loop in, loop out and end,
+ * fractions of the recording, in order *)
+val sampler_points : float array -> float array
+
+(* the sampler's recording: set, and the one playing *)
+val set_sample : Sampler.sample -> unit
+val sample : unit -> Sampler.sample
 
 (* FM's topologies, the white encoder's four positions *)
 val topologies : string list

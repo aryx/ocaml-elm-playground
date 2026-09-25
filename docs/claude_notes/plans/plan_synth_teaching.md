@@ -1741,6 +1741,36 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   step (none to 4), a triangle on a step with components, the track's
   own step lit; golden frame TinyOpxy_components. The other ten
   components left in its header.
+- **O4, DONE (2026-09-25)**: the OP-1's last engines in `Op1_engine`.
+  The facts from its guide's reference chapter: dr wave "frequency
+  domain synthesis" (wave type & length, filter, phase, chorus),
+  voltage "multi envelope dual oscillator synth" (envelope crossfader,
+  waveform, envelope, cross mod), d-synth "teenage drum synthesizer"
+  (pitch, waveform, envelope, cross mod), the synth sampler "teenage
+  sample player" (start, loop in, loop out, end); its synthesizer
+  chapter says d-synth "dual oscillator" and voltage "multi oscillator
+  electric synthesis", and the facts above (from manual v2.2) said
+  d-synth "multi envelope dual oscillator": ours follow the reference,
+  whose encoders fit. Dr wave a period as the sum of its harmonics (a
+  saw's, a square's, a triangle's, a formant's: ours), a brick-wall
+  filter on them, a phase moving harmonic k by k^2 x 0.37 turns x the
+  encoder; voltage a sawtooth crossfading to the chosen wave an octave
+  up, its cross modulation decaying (naive oscillators: ours); d-synth a
+  sine falling from up to 9 times higher, noise, a decay, a 1.47 sine
+  for metal; the sampler `Sampler`'s voice, its points laid out so no
+  setting is empty (the golden phrase at 0.5 each was silent at first:
+  a start at the end), its recording a pluck until `Studio_op1.
+  sample_track` takes one from the tape (6 s from the first sound:
+  ours). Measured (Unit_op1): dr wave's 7th harmonic at 1/7 of the
+  first, the 8th removed (under -80 dB), the phase moved: the harmonics
+  the same to 0.05 dB, the peak not (Ohm's acoustic law); voltage's 220
+  Hz 44 dB down half a second on (the naive square's aliases the rest);
+  d-synth's crossings at least twice as many at first; the sampler's
+  sine at C4 and C5, 440 and 880 Hz. A golden WAV each (the file named
+  without its space: op1_dr_wave). TinyOp1: the sampler's screen (the
+  recording, the four points in the encoders' colours), SAMPLE T1-T4;
+  golden frame TinyOp1_sampler. DNA ("CPU id noise") and the drum
+  sampler left.
 
 ## Verification
 
