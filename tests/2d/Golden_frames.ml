@@ -1535,6 +1535,14 @@ let flagged : Testutil_golden.flagged list =
  * hand, with juice=engine (Juice.mode) at the moment of a hit *)
 let scripted_flagged : Testutil_golden.scripted_flagged list =
   [
+    (* claude: TinyMosaic's page view: the pointer over "a short history
+     * of the web" (its URL in the status line); clicked (the history
+     * page, Back lit); then Back (home again, the links there purple,
+     * visited, Forward lit); and "o", the layout's boxes outlined *)
+    ("apps/internet/software/TinyMosaic", "hover", 8, "at(-391;-76):1-10", []);
+    ("apps/internet/software/TinyMosaic", "click", 10, "at(-391;-76):1-20,click:3", []);
+    ("apps/internet/software/TinyMosaic", "back", 14, "at(-391;-76):1-20,click:3,b:8", []);
+    ("apps/internet/software/TinyMosaic", "outline", 5, "o:2", []);
     (* claude: TinyMosaic's line-mode view, link 2 typed then Return:
      * the history page, reached by following a link *)
     ("apps/internet/software/TinyMosaic", "follow", 20, "type(2):10,return:12", [ "view=line" ]);

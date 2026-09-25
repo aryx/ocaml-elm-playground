@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"web" (fun _env -> Unit_charset.tests @ Unit_entities.tests @ Unit_html_lexer.tests @ Unit_html_tree.tests @ Unit_line_mode.tests @ Unit_html_layout.tests)
+let () = Testo.interpret_argv ~project_name:"web" (fun _env -> Unit_charset.tests @ Unit_entities.tests @ Unit_html_lexer.tests @ Unit_html_tree.tests @ Unit_line_mode.tests @ Unit_html_layout.tests @ Unit_hit.tests)

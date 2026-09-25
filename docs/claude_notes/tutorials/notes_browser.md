@@ -37,8 +37,8 @@ something changes.
 | `web/html/Line_mode` | the tree as the 1991 Line Mode Browser showed it | §8 | done |
 | `web/style/Looks` | the tree's looks, Mosaic's table | §5 | done |
 | `web/layout/Html_layout` | blocks and lines: boxes with positions | §6, §7 | done (greedy lines; Knuth-Plass plugged in by the app) |
-| `web/layout/Hit` | a point to a link | §8 | planned |
-| `apps/internet/TinyMosaic` | the chrome, painting, the history | §8, §9 | planned |
+| `web/layout/Hit` | a point to a link, a name to its place | §8 | done |
+| `apps/internet/TinyMosaic` | the chrome, painting, the history | §8, §9 | done (phases 0-5) |
 | `web/style/Css` | the cascade | §10 | planned |
 | `networking/httpd/tiny_httpd` | the other end: a server, and CGI | §11 | planned |
 | `web/layout/Table_layout` | tables | §12 | planned |
@@ -334,11 +334,21 @@ underline under a link. The page is taller than the window, so it is
 the window never emitted (the real engines' *culling*).
 
 **Clicking** is the other way: the point, plus the scroll, is a point
-on the page; `Hit` finds the innermost box containing it, and walks up
-its elements to the nearest `a` with an `href` -- the link. Hovering
-does the same every frame, to show the link's URL in the status line.
-A form's field, later, is found the same way. This is why the layout
-keeps, for each box, the element it came from.
+on the page; `Hit` finds the line holding it, and on it the fragment
+-- and the fragment's look knows its link, the href of the nearest `a`
+around it, inherited down the tree like a colour. A browser finds the
+same `a` by walking up the tree from the box's element (which is also
+the way a click event *bubbles*, for scripts); ours keeps the link in
+the look because a look is all a fragment keeps. A point in the space
+between two words of one link is in it too (Mosaic underlined the
+spaces). Hovering does the same every frame, to show the link's URL in
+the status line.
+
+A **#fragment** is the other lookup: `Hit.anchor` finds the line an
+`<a name>` or an `id=` is on (the layout keeps them there, as items of
+no width among the words), and the page scrolls to its top -- at once
+when the fragment is on the page shown, once it is in when it is on
+another.
 
 The **line-mode view** (the 1991 CERN browser, "www") skips layout
 altogether: the text of the tree, each link followed by a number, and

@@ -94,7 +94,10 @@ type fragment = {
   baseline : float;
 }
 
-type line = { top : float; height : float; baseline : float; fragments : fragment list }
+(* a line, and the names on it a #fragment can scroll to: <a name=x>,
+ * an inline element's id=x (an anchor with no text before it, alone,
+ * is a line of no height where it is) *)
+type line = { top : float; height : float; baseline : float; fragments : fragment list; anchors : string list }
 
 type kind =
   | Block of Dom.element

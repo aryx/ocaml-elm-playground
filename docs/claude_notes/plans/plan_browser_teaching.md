@@ -484,7 +484,27 @@ window's resize is not what drives it. 5 more tests (49 in all). The
 history page got the first web page's URL in its text, the long word
 before which greedy leaves a loose line; golden frames `_narrow` and
 `_pretty` (the history page at 600, greedy and pretty) show the
-difference. Next: phase 5, links clicked and the history.
+difference. Next: phase 5, links clicked and the history. Committed
+as 5228bc3.
+
+**Phase 5 done** (2026-09-25): `Hit` (`libs/web/layout/`): `link_at`,
+the line holding a point, the fragment on it, its look's link (a space
+between two words of one link counts); `anchor`, a name to its y. The
+layout now keeps anchors -- `<a name>` and inline `id=` as items of no
+width on their line (`line.anchors`), a block's `id` on the block, an
+anchor alone as a line of no height -- 4 tests (53 in all).
+TinyMosaic: the pointer over a link shows its resolved URL in the
+status line, a click visits it; the history as two stacks of entries
+(the page kept whole, and its scroll), Back and Forward (buttons, `b`
+or Backspace, `f`) giving a page back as it was, a visit emptying
+what was ahead; a `#fragment` scrolls, at once on the page shown, once
+loaded on another; visited links purple (drawn again on Back, their
+colour changed since); the chrome's buttons clickable, lit when they
+do something; `o` outlines the layout's boxes and lines. Golden
+frames (scripted, the pointer at the home page's "short"): `_hover`,
+`_click`, `_back`, `_outline`. Next: phase 6, http:// for real (the
+globe turning, redirections, errors as pages, curl for https://) and
+`tiny_httpd`.
 
 Written as the specification, with
 [`notes_browser.md`](../tutorials/notes_browser.md) and

@@ -12,7 +12,7 @@
 
 type metrics = Looks.t -> string -> float
 type fragment = { text : string; look : Looks.t; x : float; width : float; baseline : float }
-type line = { top : float; height : float; baseline : float; fragments : fragment list }
+type line = { top : float; height : float; baseline : float; fragments : fragment list; anchors : string list }
 type kind = Block of Dom.element | Anonymous | Rule of Dom.element
 type marker = Bullet | Number of int
 
@@ -57,9 +57,10 @@ let greedy : breaker =
 (* Inline content: words, then lines *)
 (*****************************************************************************)
 
-(* what inline content is cut into: words, and the breaks the page asks
- * for (<br>, a newline in <pre>) *)
-type item = Word of { text : string; look : Looks.t; space_before : bool } | Break
+(* what inline content is cut into: words, the breaks the page asks
+ * for (<br>, a newline in <pre>), and the places a #fragment can name
+ * (<a name=...>, an id=), of no width *)
+type item = Word of { text : string; look : Looks.t; space_before : bool } | Break | Anchor of string
 
 (* a line's words placed: x from the line's start, then shifted by
  * the alignment; the line as tall as its tallest look needs *)
@@ -72,7 +73,7 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
             let pen = if space_before then pen +. metrics look " " else pen in
             let w = metrics look text in
             ((text, look, pen, w) :: placed, pen +. w)
-        | Break -> (placed, pen))
+        | Break | Anchor _ -> (placed, pen))
       ([], 0.) words
   in
   let placed = List.rev placed in
@@ -95,6 +96,7 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
     height = up +. down;
     baseline;
     fragments = List.map (fun (text, look, pen, w) -> { text; look; x = x +. shift +. pen; width = w; baseline }) placed;
+    anchors = List.filter_map (fun item -> match item with Anchor name -> Some name | _ -> None) words;
   }
 
 (* a run of words between two breaks, as units -- the words stuck
@@ -110,8 +112,11 @@ let units_of (words : item list) : item list list =
 
 (* a unit's words, its first without the space before it: it starts
  * a line *)
-let starting_line (unit : item list) : item list =
-  match unit with Word w :: rest -> Word { w with space_before = false } :: rest | _ -> unit
+let rec starting_line (unit : item list) : item list =
+  match unit with
+  | Word w :: rest -> Word { w with space_before = false } :: rest
+  | Anchor a :: rest -> Anchor a :: starting_line rest
+  | _ -> unit
 
 (* the items cut at the breaks, each run of words broken into lines by
  * [breaker] (never in <pre>); an empty line where the page asked for
@@ -138,7 +143,7 @@ let lines_of (metrics : metrics) (breaker : breaker) (block : Looks.t) ~(x : flo
             | Word { text; look; space_before } ->
                 let w = metrics look text in
                 if width = 0. && space = 0. && space_before then (metrics look " ", w) else (space, width +. w)
-            | Break -> (space, width))
+            | Break | Anchor _ -> (space, width))
           (0., 0.) u
       in
       let sizes = Array.map (fun u -> let space, width = measure u in { space; width }) units in
@@ -186,7 +191,9 @@ type ctx = {
 let is_space (c : char) : bool = c = ' ' || c = '\n' || c = '\t' || c = '\r'
 
 let add_word (ctx : ctx) (look : Looks.t) (text : string) : unit =
-  let after_word = match ctx.items with Word _ :: _ -> true | _ -> false in
+  (* a word before this one on the line, anchors (of no width) skipped *)
+  let rec after_word items = match items with Word _ :: _ -> true | Anchor _ :: rest -> after_word rest | _ -> false in
+  let after_word = after_word ctx.items in
   ctx.items <- Word { text; look; space_before = ctx.space && after_word } :: ctx.items;
   ctx.space <- false
 
@@ -220,7 +227,8 @@ let flush_inline (ctx : ctx) : unit =
   let items = List.rev ctx.items in
   ctx.items <- [];
   ctx.space <- false;
-  if List.exists (fun i -> match i with Word _ -> true | Break -> false) items then (
+  let anchors = List.filter_map (fun i -> match i with Anchor a -> Some a | _ -> None) items in
+  if List.exists (fun i -> match i with Word _ -> true | Break | Anchor _ -> false) items then (
     let top = ctx.cursor +. ctx.pending in
     let lines = lines_of ctx.metrics ctx.breaker ctx.look ~x:ctx.x ~width:ctx.width ~top items in
     let height = List.fold_left (fun h (l : line) -> h +. l.height) 0. lines in
@@ -229,6 +237,22 @@ let flush_inline (ctx : ctx) : unit =
       :: ctx.children;
     ctx.cursor <- top +. height;
     ctx.pending <- 0.)
+  else if anchors <> [] then
+    (* anchors with no text (<a name=top></a> before a heading): a line
+     * of no height where they are, so that a #fragment finds them *)
+    let top = ctx.cursor +. ctx.pending in
+    ctx.children <-
+      {
+        kind = Anonymous;
+        x = ctx.x;
+        y = top;
+        width = ctx.width;
+        height = 0.;
+        children = [];
+        lines = [ { top; height = 0.; baseline = top; fragments = []; anchors } ];
+        marker = None;
+      }
+      :: ctx.children
 
 let rec layout_block (metrics : metrics) (breaker : breaker) (look : Looks.t) (e : Dom.element) ~(marker : marker option)
     ~(x : float) ~(width : float) ~(y : float) : box =
@@ -273,6 +297,11 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
       match b.display with
       | Hidden -> ()
       | Inline -> (
+          (* <a name=x> (HTML 2.0's way) or id=x (HTML 4's): a place *)
+          (match (if e.name = "a" then Dom.attribute "name" e else None) with
+          | Some name -> ctx.items <- Anchor name :: ctx.items
+          | None -> ());
+          (match Dom.attribute "id" e with Some id -> ctx.items <- Anchor id :: ctx.items | None -> ());
           match e.name with
           | "br" -> ctx.items <- Break :: ctx.items
           | "img" -> add_word ctx l (match Dom.attribute "alt" e with Some alt -> alt | None -> "[IMAGE]")
