@@ -114,12 +114,25 @@
  * it feels -- which is how you can tell juice from rules: turn it off
  * and the same keys play the same round.
  *
- * Exercises: the original's power-ups (fire, ice, and above all the
- * teleport, which drops you where your boomerang is -- the one that
- * best fits the core rule: your weapon left you, so follow it), a
- * second human player on w/a/s/d, letting anybody catch anybody's
- * boomerang, a computer that jumps (a jump is an edge of the path two
- * cells long, over a hole), arenas that move, bridges that break.
+ * Exercises:
+ *  - the original's power-ups, as pickups on the arena: fire, ice, the
+ *    multi-boomerang, and above all the teleport, which drops you where
+ *    your boomerang is -- the one that best fits the core rule: your
+ *    weapon left you, so follow it;
+ *  - the charged throw, the original's too: space held longer, the
+ *    throw faster and farther (the aim's dots stretching out), and the
+ *    computer charging longer for a man far away;
+ *  - a second human player on w/a/s/d, replacing a cook (the camera
+ *    already frames everybody);
+ *  - a bolder computer at HARD: good dodgers rarely hit each other, and
+ *    a cook that hesitates less and slashes more as the round's clock
+ *    runs down would end those rounds -- honestly, with Bot.mli's
+ *    knobs, not by seeing more;
+ *  - a computer that jumps: a jump as an edge of the path two cells
+ *    long, over a hole or up onto the terrace, taken by the feet's
+ *    reflex at the edge;
+ *  - letting anybody catch anybody's boomerang, arenas that move,
+ *    bridges that break.
  *)
 open Playground
 open Playground3d
@@ -1067,6 +1080,66 @@ let mind_of (l : level) : (game * int, senses, intent) Bot.t =
   match l with Easy -> { mind with delay = frames 15; rate = frames 6 } | Normal -> mind | Hard -> { mind with delay = frames 4; rate = frames 2 }
 
 (*****************************************************************************)
+(* The sounds (music=off: no music) *)
+(*****************************************************************************)
+(* claude: played from [step_game], the moment something happens
+ * (Audio.mli), and made from a few numbers each, no recording: the
+ * ready-made ones where one fits, else a noise or a tone shaped by the
+ * verbs. The one sound that lasts, a boomerang's whir, is kept playing
+ * for as long as it flies. *)
+
+(* where on the screen's left-right a sound comes from, roughly: the
+ * arena's x, the camera looking straight down its z *)
+let side (x : number) : number = Float.max (-1.) (Float.min 1. (x /. 14.))
+let play_at (x : number) (s : Audio.sound) : unit = Audio.play (Audio.pan (side x) s)
+
+let whoosh = Audio.noise 6000. |> Audio.high_pass 1500. |> Audio.lasting 0.18 |> Audio.fading |> Audio.louder 0.3
+let tink = Audio.square 1600. |> Audio.lasting 0.05 |> Audio.fading |> Audio.louder 0.2
+let splat =
+  Audio.together
+    [ Audio.noise 1800. |> Audio.low_pass 900. |> Audio.lasting 0.25 |> Audio.fading;
+      Audio.tone 300. |> Audio.sliding 90. |> Audio.lasting 0.22 |> Audio.fading ]
+  |> Audio.louder 0.35
+let splash = Audio.noise 4000. |> Audio.sliding 600. |> Audio.low_pass 2500. |> Audio.lasting 0.5 |> Audio.fading |> Audio.louder 0.7
+let whistle = Audio.tone 700. |> Audio.sliding 150. |> Audio.lasting 0.9 |> Audio.fading |> Audio.louder 0.35
+let swish = Audio.noise 5000. |> Audio.high_pass 2500. |> Audio.lasting 0.12 |> Audio.fading |> Audio.louder 0.3
+
+(* a boomerang in the air whirs, its filter opening and closing with its
+ * spin, a pulse per turn, and a little higher on its way back *)
+let whir (r : rang) : unit =
+  let pulse = Float.abs (sin (float_of_int r.age *. 0.35 *. pace)) in
+  Audio.keep_playing (Printf.sprintf "rang%d" r.owner)
+    (Audio.noise (if r.leg = Out then 1400. else 1900.) |> Audio.low_pass (500. +. (900. *. pulse)) |> Audio.louder 0.12 |> Audio.pan (side r.rx))
+
+(* the moves' own sounds: a jump, a landing, a dash, a fall *)
+let move_sounds (a : arena) (p : player) (p' : player) : unit =
+  match p'.state with
+  | Falling 0 -> play_at p'.px (if cell_at a p'.px p'.pz = Water then splash else whistle)
+  | Alive ->
+      if p'.vy > 0. && p.vy <= 0. then play_at p'.px (Audio.jump |> Audio.louder 0.25);
+      if p'.vy = 0. && p.vy < -0.1 *. pace then play_at p'.px (Audio.step |> Audio.louder 0.5);
+      if p'.dash = dash_frames && p.dash = 0 then play_at p'.px swish
+  | _ -> ()
+
+(* an original tune, cheerful and quiet under the game: a party game's
+ * loop, eight bars in G, the bass on the beat *)
+let tune =
+  {|X:1
+T:Tiny Boomerang Fu (original)
+L:1/8
+Q:1/4=116
+K:G
+V:1
+G2 Bd g2 fe | d2 B2 G4 | A2 ce a2 gf | e2 c2 A4 |
+B2 dg b2 ag | f2 d2 B2 A2 | G2 Bd e2 dB | A4 G4 |
+V:2
+G,,2 D,2 G,,2 D,2 | G,,2 D,2 G,,2 D,2 | A,,2 E,2 A,,2 E,2 | A,,2 E,2 A,,2 E,2 |
+G,,2 D,2 G,,2 D,2 | D,,2 A,,2 D,,2 A,,2 | C,,2 G,,2 C,,2 G,,2 | D,,2 A,,2 G,,4 |
+|}
+
+let music : Audio.sound = Audio.abc tune |> Audio.louder 0.18
+
+(*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
 
@@ -1088,10 +1161,15 @@ let step_game (s : model) (k : keyboard) (g : game) : game =
   in
   let stepped = List.map2 (fun it p -> if alive p then step_player a it p else (step_dead a p, None)) intents g.players in
   let players = List.map fst stepped in
+  List.iter2 (move_sounds a) g.players players;
   let thrown = List.filter_map snd stepped in
+  List.iter (fun r -> play_at r.rx whoosh) thrown;
   let rangs, caught = step_rangs a players (g.rangs @ thrown) in
+  List.iter (fun r -> if r.bounced && not (List.exists (fun (q : rang) -> q.owner = r.owner && q.bounced) g.rangs) then play_at r.rx tink) rangs;
+  List.iter (fun i -> Audio.play (Audio.varied "blip" i |> Audio.louder 0.35)) caught;
   let players = List.map (fun p -> if List.mem p.idx caught then { p with holds = true; think = hesitation g.level } else p) players in
   let cut = cuts players rangs in
+  List.iter (fun (i, _) -> play_at (List.find (fun p -> p.idx = i) players).px splat) cut;
   let players = List.map (fun p -> match List.assoc_opt p.idx cut with Some d -> slice p d | None -> p) players in
   (* the dead take their boomerang with them *)
   let rangs = List.filter (fun r -> alive (List.find (fun p -> p.idx = r.owner) players)) rangs in
@@ -1105,6 +1183,8 @@ let step_game (s : model) (k : keyboard) (g : game) : game =
     | Some n -> Some (n + 1)
     | None -> if List.length standing <= 1 || clock > time_up then Some 0 else None
   in
+  if g.ended = None && ended <> None then Audio.play ((if standing <> [] then Audio.coin else Audio.hit) |> Audio.louder 0.35);
+  List.iter whir rangs;
   (* the camera glides to its framing rather than jumping to it: 5% of
    * the way a frame, 90% in 45 frames, slow enough that a dash does not
    * shake the picture *)
@@ -1176,6 +1256,7 @@ let first_arena (flags : (string * string) list) : int = if List.assoc_opt "map"
 
 let update (computer : computer) (s : model) : model =
   let s = Scene2d.update computer s in
+  if List.assoc_opt "music" computer.flags = Some "off" then Audio.stop "music" else Audio.loop "music" music;
   match s.scene with
   | Title level ->
       (* left and right choose the level *)
@@ -1189,7 +1270,7 @@ let update (computer : computer) (s : model) : model =
       match g.ended with
       | Some n when n > 100 ->
           let g = score g in
-          if List.exists (fun p -> p.wins >= rounds_to_win) g.players then Scene2d.go (Winner g) s
+          if List.exists (fun p -> p.wins >= rounds_to_win) g.players then (Audio.play (Audio.powerup |> Audio.louder 0.4); Scene2d.go (Winner g) s)
           else { s with scene = Playing (next_round g) }
       | _ -> { s with scene = Playing g })
   | Winner g ->
@@ -1463,6 +1544,6 @@ let app = game3d view update initial_model
 
 (* the foods are spheres, so they are worth shading smoothly; nothing
  * here needs the back faces (no sky: the arena floats over a void).
- * The flags map=river and juice=off come from the command line, or the
+ * The flags map=river, juice=off and music=off come from the command line, or the
  * page's URL *)
 let main = Playground3d_platform.run_app3d ~flags:(Playground_platform.flags ()) app
