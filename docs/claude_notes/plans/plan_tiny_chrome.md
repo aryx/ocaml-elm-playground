@@ -290,6 +290,25 @@ which already reads video and sound:
   under a second natively; what the web build can do (its fetches are
   limited: below).
 
+## Status
+
+- **C0 done** (2026-09-25): this plan (the survey, the tiers, the
+  budget), and `notes_css_engine.md`, the engine's tutorial, each
+  section with the worked example its tests check.
+- **C1 done** (2026-09-25): `Css_syntax` (CSS Syntax Level 3's tokens,
+  blocks by matching brackets, rules and at-rules, declarations with
+  `!important`, errors skipped as the spec says; values written back as
+  text), `Selectors` (Level 3: descendant, child and sibling
+  combinators, attribute tests, `:not()`, `:first-child`,
+  `:nth-child`, `:link`; specificity; matched right to left with
+  backtracking; pseudo-elements set apart). N5's `Css` rewritten over
+  them, its interface kept (a rule now knows its `!important`
+  declarations, which the cascade puts over the rest): TinyNetscape's
+  and TinyFirefox's frames unchanged. Tests: the notes' worked examples,
+  `Unit_css_syntax` and `Unit_selectors`. About 700 lines, within C1's
+  budget. The style modules stay in `libs/web/style/` (not a `css/`
+  folder: one library, three modules more).
+
 ## Verification
 
 - Each module's worked examples as tests (`libs/web/tests/`, the notes'

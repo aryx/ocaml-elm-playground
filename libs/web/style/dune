@@ -1,6 +1,8 @@
 ; claude: what a page's elements look like (see web/README.md,
 ; plan_browser_teaching.md): Looks, Mosaic's fixed table computed down
-; the tree; and Css, the page's style sheets cascaded on top of it. Pure OCaml, no shapes: a
+; the tree; and the page's style sheets cascaded on top of it: Css_syntax
+; (the text read: tokens, blocks, rules), Selectors (which elements a
+; rule is for), Css (the cascade). Pure OCaml, no shapes: a
 ; look is numbers and flags, the app draws it.
 (library
  (name web_style)

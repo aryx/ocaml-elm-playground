@@ -33,8 +33,8 @@ let tests =
           Alcotest.(check (list (option string))) "blue" [ Some "blue" ] (values "p { color: red } p { color: blue }" "<p>x" "p" "color"));
       Testo.create "parsing: groups, comments, @-rules, what does not parse" (fun () ->
           let sheet = Css.parse "/* a comment */ h1, h2 { color: red; margin: 0 } @media print { p { color: black } } a:link { color: blue } em { }" in
-          Alcotest.(check (list string)) "h1 and h2, and em; the @media block and a:link skipped" [ "h1"; "h2"; "em" ]
-            (List.map (fun (r : Css.rule) -> match List.rev r.selector with s :: _ -> Option.value s.name ~default:"*" | [] -> "") sheet);
+          Alcotest.(check (list string)) "h1 and h2, a:link (Selectors: Level 3), em; the @media block skipped" [ "h1"; "h2"; "a:link"; "em" ]
+            (List.map (fun (r : Css.rule) -> Selectors.to_string r.selector) sheet);
           Alcotest.(check (list (pair string string))) "declarations" [ ("color", "red"); ("margin", "0") ] (List.hd sheet).declarations;
           Alcotest.(check (list (pair string string))) "style=" [ ("color", "red"); ("font-size", "2em") ]
             (Css.declarations " COLOR : red;font-size:2em; ;bad"));
@@ -44,6 +44,9 @@ let tests =
             (values "ul li { color: grey }" html "li" "color");
           Alcotest.(check (list (option string))) "ul ol li: b only" [ None; Some "red"; None ]
             (values "ul ol li { color: red }" html "li" "color"));
+      Testo.create "!important beats specificity" (fun () ->
+          Alcotest.(check (list (option string))) "the notes' example: green" [ Some "green" ]
+            (values "p { color: black } .x { color: green !important } #a { color: red }" "<p id=a class=x>" "p" "color"));
       Testo.create "a class is one of the words" (fun () ->
           Alcotest.(check (list (option string))) "class=\"a note\"" [ Some "red" ]
             (values ".note { color: red }" "<p class=\"a note\">x" "p" "color"));

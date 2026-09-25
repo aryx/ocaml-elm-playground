@@ -45,8 +45,12 @@
    Looks' table, the "user agent style sheet", which is what Mosaic's
    table always was.
 
-   Not done: the other selectors (a:link and a:visited, CSS1's pseudo
-   classes; > and +, CSS2's), !important, @import, <link
+   The sheet is read by Css_syntax (tokens and blocks, CSS Syntax Level
+   3: nothing cut in the wrong place, what does not parse skipped), the
+   selectors by Selectors (Level 3: > + ~, attributes, :not(),
+   :first-child, :link...), and a declaration marked !important beats
+   every one that is not, whatever its specificity. Not done here:
+   @media (skipped: TinyChrome's cascade evaluates it), @import, <link
    rel=stylesheet> (a sheet fetched like a picture), the shorthand
    properties but margin.
 
@@ -55,15 +59,9 @@
    properties); Håkon Wium Lie's thesis, "Cascading Style Sheets"
    (2005), chapter 3. *)
 
-(* an element's name, its id and classes: one link of a selector *)
-type simple = { name : string option; id : string option; classes : string list }
-
-(* the simple selectors from the outermost ancestor to the element
- * itself: "ul li" is [ul; li] *)
-type selector = simple list
-
-(* a rule for one selector (a group, "h1, h2 { }", is a rule for each) *)
-type rule = { selector : selector; declarations : (string * string) list }
+(* a rule for one selector (a group, "h1, h2 { }", is a rule for each):
+ * its declarations, and the names of those marked !important *)
+type rule = { selector : Selectors.complex; declarations : (string * string) list; important : string list }
 
 type sheet = rule list
 
@@ -74,16 +72,16 @@ val parse : string -> sheet
 val declarations : string -> (string * string) list
 
 (* (ids, classes, names) *)
-val specificity : selector -> int * int * int
+val specificity : Selectors.complex -> int * int * int
 
 (* [matches selector ancestors e]: [ancestors] the element's, the
  * nearest first *)
-val matches : selector -> Dom.element list -> Dom.element -> bool
+val matches : Selectors.complex -> Dom.element list -> Dom.element -> bool
 
 (* the text of a page's <style> elements, in order *)
 val page_sheet : Dom.element -> string
 
 (* [cascade sheet root]: each element's declarations, cascaded -- the
- * matching rules by specificity then order, then its style=; a
- * property once, its winning value *)
+ * matching rules by specificity then order, then its style=, then the
+ * !important ones the same way; a property once, its winning value *)
 val cascade : sheet -> Dom.element -> Dom.element -> (string * string) list
