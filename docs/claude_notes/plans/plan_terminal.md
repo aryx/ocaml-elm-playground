@@ -271,6 +271,23 @@ returns **a grid of cells instead of shapes**.
   with `Layout` measuring in cells. Then `Widget`, `Focus` and `Mvu`
   work unchanged, and a comparison between the two Looks shows what a
   GUI toolkit owes to pixels and what it doesn't.
+- **The colours it needs**: `Vt` knows the 8 colours of SGR 30-37 and
+  40-47, reads 90-97 as a colour plus bold, and reads 256-colour and
+  24-bit codes only to ignore them. That won't do for Turbo Vision.
+  Its screens are the PC's text mode: 16 foreground colours, where
+  yellow is "bright brown" and not bold brown, and bright backgrounds
+  taken from the blink bit (Turbo Pascal's white on bright cyan). So:
+  - `Vt.color` grows 8 bright colours, kept apart from bold, for
+    SGR 90-97 and 100-107;
+  - the 256-colour palette (`38;5;n`: the 16, a 6x6x6 cube, 24 greys)
+    and 24-bit RGB (`38;2;r;g;b`) become colours too, instead of being
+    skipped;
+  - a view maps each colour to the CGA/VGA palette. It is a palette
+    and not the terminal's choice: the same 16 colours on every PC was
+    what gave Turbo Pascal its blue.
+
+  None of this is needed before TinyTurboPascal: the Ahl games and
+  Rogue are happy with 8 colours.
 - **TinyTurboPascal** (`apps/devtools/`) comes last and brings all of
   this together: the blue editor (`gui/`'s `Text_edit` over the cell
   Look), the menu bar, F9 to compile, and a small Pascal whose `write`

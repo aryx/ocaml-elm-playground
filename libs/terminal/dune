@@ -1,0 +1,11 @@
+; claude: the terminal, from scratch: Vt (the VT100's screen, the
+; bytes a program writes turned into a grid of cells) and
+; Line_discipline (the tty between the keyboard and the program:
+; echo, Backspace, a line on Enter). Pure OCaml, bytes in and bytes
+; out, no Playground: the Teletype way and TinyTerminal are built on
+; it. See docs/claude_notes/plans/plan_terminal.md.
+(library
+ (name terminal)
+ (package elm_playground)
+ (wrapped false)
+)

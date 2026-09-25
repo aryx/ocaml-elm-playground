@@ -25,6 +25,7 @@ place a game meets them.
 | `gui/` | a GUI toolkit: widgets, the four architectures, layout, text | `notes_gui.md` |
 | `web/` | a browser's engine: a page's encoding and entities; to come, its tree, looks and layout ([`web/README.md`](web/README.md)) | `notes_browser.md` |
 | `juice/` | game feel: easing, tweens, squash, trauma, particles | `notes_juice.md` |
+| `terminal/` | the VT100's screen (`Vt`: bytes and escape sequences into a grid of cells) and the tty's line discipline (`Line_discipline`: echo, Backspace, a line on Enter) | `plan_terminal.md` |
 
 They are private libraries, each installed as part of one of the opam
 packages (its dune file's `(package ...)`), pure OCaml unless the
@@ -36,7 +37,7 @@ Among themselves they depend little: `core/`, `random/`, `crypto/` and
 `graphics/` on `compression/` (its formats' codes), on `core/`,
 on `audio/`'s samples (a video's sound) and on `networking/` (an image
 downloaded); `physics/` on `graphics/`' geometry; `gui/` on `core/`;
-`audio/` on `compression/` (MP3's codes); `ai/`, `juice/` and `web/` on
+`audio/` on `compression/` (MP3's codes); `ai/`, `juice/`, `web/` and `terminal/` on
 nothing of the others. dune finds a
 library by its name, not its folder, so a program says `(libraries
 audio ai)`, whatever `libs/` looks like.
