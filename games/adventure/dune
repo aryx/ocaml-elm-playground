@@ -2,8 +2,8 @@
 ; 2D and 3D side by side; on the software rasterizers in software/, in
 ; the browser in web/.
 (executables
-  (names TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork)
-  (modules TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork Lttp_xpm)
+  (names TinyGTA TinyIco TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork)
+  (modules TinyGTA TinyIco TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork Lttp_xpm)
   (libraries
     elm_playground
     kit_platformer ; TinyZelda's and TinyZeldaLinkPast's Tile_move

@@ -4,8 +4,8 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork)
-  (modules TinyGTA TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork Lttp_xpm)
+  (names TinyGTA TinyIco TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork)
+  (modules TinyGTA TinyIco TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork Lttp_xpm)
   (libraries
     elm_playground
     kit_platformer

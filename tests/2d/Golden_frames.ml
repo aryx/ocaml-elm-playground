@@ -308,6 +308,7 @@ let scenes : Testutil_golden.scene list =
     ("games/platform/software/TinyTurrican", "", 5);
     ("games/arcade/software/TinyPang", "", 5);
     ("games/puzzle/software/TinyWitness", "", 5);
+    ("games/adventure/software/TinyIco", "", 5);
     ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
     ("games/adventure/software/TinyZelda", "", 5);
@@ -876,6 +877,9 @@ let scripted : Testutil_golden.scripted list =
     ("games/puzzle/software/TinyWitness", "line", 14, "space:1,right:3,right:5,up:7,up:9,space:11");
     (* five panels solved, the sixth's squares being kept apart *)
     ("games/puzzle/software/TinyWitness", "squares", 440, "space:1,right:3,right:5,up:7,up:9,space:11,right:77,right:79,right:81,right:83,up:85,up:87,up:89,left:91,left:93,up:95,right:97,right:99,space:101,right:167,right:169,up:171,up:173,left:175,left:177,up:179,right:181,right:183,right:185,space:187,up:253,up:255,right:257,up:259,right:261,down:263,right:265,down:267,down:269,right:271,up:273,up:275,up:277,up:279,space:281,right:347,up:349,up:351,right:353,space:355,right:421,right:423,up:425,left:427,up:429,left:431,up:433,right:435,right:437,down:439");
+    (* her hand taken, the boy up the ledge, Yorda being pulled up after
+     * him *)
+    ("games/adventure/software/TinyIco", "hand", 92, "space:1,right:3-12,x:14,right:16-60,up:62,right:62-75,right:80-135");
     (* claude: a standing jump over the first gap, in the air; then,
      * the plate stepped on and the gate run through, hanging from the
      * shaft's edge (the loose floor fallen, the gate closing); and
