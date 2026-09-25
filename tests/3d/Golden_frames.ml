@@ -92,6 +92,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: the grid on the Highlands, the camera turning round it:
      * the road only the terrain's quads painted brown *)
     ("games/racing/software/TinyBigRedRacing", "", 5);
+    (* claude: the grid from the title's turning camera: the three
+     * toys, the road over the fields, the houses and trees *)
+    ("games/racing/software/TinyIgnition", "", 5);
     (* claude: the grid on the start line, from the camera turning
      * round it: the karts are drawings, the lorries and the item
      * boxes polygons -- the mix the game is about *)
@@ -232,6 +235,12 @@ let scripted : Testutil_golden.scripted list =
     (* claude: down the red canyon, its walls the terrain raised away
      * from the road, in bands (the strata) *)
     ("games/racing/software/TinyBigRedRacing", "canyon", 330, "right:2,space:5,up:6-400,v:8");
+    (* claude: off the first ramp, from above: the cars in the air,
+     * their shadows on the road below them *)
+    ("games/racing/software/TinyIgnition", "jump", 324, "space:1,up:190-400");
+    (* claude: two players, the screen split down the middle as in
+     * Ignition, not across *)
+    ("games/racing/software/TinyIgnition", "two", 200, "down:2,space:4,up:190-400,w:190-400");
     (* v three times: the view from above *)
     ("games/racing/software/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
     (* TinyTron's "computer" game, seen from behind the blue cycle,

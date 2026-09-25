@@ -46,6 +46,7 @@
    %{project_root}/games/fps/software/TinyWolfenstein3d.exe
    %{project_root}/games/racing/software/TinyVirtuaRacing.exe
    %{project_root}/games/racing/software/TinyBigRedRacing.exe
+   %{project_root}/games/racing/software/TinyIgnition.exe
    %{project_root}/games/racing/software/TinyMarioKart64.exe
    %{project_root}/games/fighting/software/TinyVirtuaFighter.exe
    %{project_root}/games/shmup/software/TinyStarFox.exe

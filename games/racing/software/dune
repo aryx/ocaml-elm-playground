@@ -16,8 +16,8 @@
 )
 
 (executables
-  (names TinyBigRedRacing TinyMarioKart64 TinyVirtuaRacing)
-  (modules TinyBigRedRacing TinyMarioKart64 TinyVirtuaRacing)
+  (names TinyBigRedRacing TinyIgnition TinyMarioKart64 TinyVirtuaRacing)
+  (modules TinyBigRedRacing TinyIgnition TinyMarioKart64 TinyVirtuaRacing)
   (libraries
     elm_core
     kit_racing

@@ -16,12 +16,12 @@
 )
 
 (executables
-  (names TinyBigRedRacing TinyMarioKart64 TinyVirtuaRacing)
-  (modules TinyBigRedRacing TinyMarioKart64 TinyVirtuaRacing)
+  (names TinyBigRedRacing TinyIgnition TinyMarioKart64 TinyVirtuaRacing)
+  (modules TinyBigRedRacing TinyIgnition TinyMarioKart64 TinyVirtuaRacing)
   (libraries
     elm_core
-    kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown
-    kit_racing3d ; their courses (Track3d)
+    kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown, TinyIgnition's Offroad
+    kit_racing3d ; their courses (Track3d), and TinyIgnition's
     kit_heightmap ; TinyBigRedRacing's ground
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d

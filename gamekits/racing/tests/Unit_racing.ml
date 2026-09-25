@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* gamekits/racing: Road, Car and Topdown *)
+(* gamekits/racing: Road, Car, Topdown and Offroad *)
 
 let t = Testo.create
 
@@ -73,7 +73,47 @@ let test_hitting () =
   let a, b = Topdown.push 10. { still with vx = 100. } { still with x = 10. } in
   Alcotest.(check (list (float 1e-9))) "the one hitting stops, the one hit goes" [ -5.; 0.; 15.; 100. ] [ a.x; a.vx; b.x; b.vx ]
 
+(* Offroad.mli's rules, each on a ground made for it; a car going +x,
+ * its params without engine or friction, so that only the ground acts *)
+let test_offroad () =
+  let coast = { Topdown.accel = 0.; friction = 0.; grip = 1.; steering = 0.; steering_speed = 1. } in
+  let track = { Topdown.points = [| (1000., 0.); (2000., 0.) |]; reach = 1.; corner = 1. } in
+  let ground ?(gravity = 30.) height = { Offroad.height; gravity; lo = -1000.; hi = 1000. } in
+  let car (g : Offroad.ground) x speed =
+    Offroad.start g { Topdown.x; y = 0.; vx = speed; vy = 0.; heading = 0.; speed; next = 0 }
+  in
+  let rec run g n c = if n = 0 then c else run g (n - 1) (Offroad.drive g track coast 100. 0. 0. c) in
+  let flat = ground (fun _ _ -> 0.) in
+  let c = run flat 60 (car flat 0. 30.) in
+  Alcotest.(check (list (float 1e-6))) "flat: a second at 30" [ 30.; 0. ] [ c.body.x; c.h ];
+  (* a ramp rising 1 in 3 up to x = 0, flat after: the car climbs at a
+   * third of its speed, and flies off the top rising at it *)
+  let ramp = ground (fun x _ -> if x < 0. then x /. 3. else 0.) in
+  let rec until_air c = if c.Offroad.air then c else until_air (Offroad.drive ramp track coast 100. 0. 0. c) in
+  let c = run ramp 1 (car ramp (-6.) 30.) in
+  Alcotest.(check (float 0.1)) "climbing at a third of its speed" (c.body.speed /. 3.) c.vh;
+  let c = until_air c in
+  Alcotest.(check bool) "off at the top, not before" true (c.body.x > 0. && c.body.x < 1.);
+  Alcotest.(check (float 0.6)) "rising at a third of its speed" (c.body.speed /. 3.) c.vh;
+  (* a round crest, the same speed, over its top (a quarter of a
+   * second): the Earth pulls the car down onto the far side; the Moon,
+   * a sixth of it, lets it fly *)
+  let crest gravity = ground ~gravity (fun x _ -> -0.03 *. x *. x) in
+  let rec flies g n c = n > 0 && (c.Offroad.air || flies g (n - 1) (Offroad.drive g track coast 100. 0. 0. c)) in
+  let over g = flies g 15 (car g (-3.) 30.) in
+  Alcotest.(check bool) "Earth: stays on" false (over (crest 30.));
+  Alcotest.(check bool) "Moon: flies" true (over (crest 5.));
+  (* a slope going down 1 in 5, the car dropped just above it: it lands,
+   * then stays on the ground all the way down *)
+  let down = ground (fun x _ -> -.x /. 5.) in
+  let c = { (car down 0. 30.) with h = 0.05; air = true } in
+  Alcotest.(check bool) "landed, and not hopping down the slope" false (flies down 60 (run down 40 c));
+  (* a cliff at x = 10: the car bounced back from it *)
+  let cliff = ground (fun x _ -> if x > 10. then 20. else 0.) in
+  let c = run cliff 60 (car cliff 0. 30.) in
+  Alcotest.(check bool) "stopped by the cliff" true (c.body.x <= 10. && c.h = 0.)
+
 let tests =
   Testo.categorize "kit_racing"
     [ t "build" test_build; t "the coast" test_coast; t "centerline" test_centerline; t "car" test_car; t "topdown" test_topdown;
-      t "hitting" test_hitting ]
+      t "hitting" test_hitting; t "offroad" test_offroad ]
