@@ -193,7 +193,11 @@ let across (t : t) (s : number) (offset : number) : number * number * number = a
  * computer that believes it driving in circles. *)
 let project (t : t) (i : int) (x : number) (z : number) : number * number * number =
   let n = segments t in
-  let a = t.points.(((i mod n) + n) mod n) and b = t.points.((((i mod n) + n) mod n + 1) mod n) in
+  let k = ((i mod n) + n) mod n in
+  (* a circuit's last segment goes back to the first sample; a stage's
+   * goes to its own last sample (it has one more than its segments),
+   * not back to the start across the whole course *)
+  let a = t.points.(k) and b = t.points.(if t.closed then (k + 1) mod n else k + 1) in
   let dx = b.px -. a.px and dz = b.pz -. a.pz in
   let len2 = (dx *. dx) +. (dz *. dz) in
   let u = if len2 = 0. then 0. else (((x -. a.px) *. dx) +. ((z -. a.pz) *. dz)) /. len2 in

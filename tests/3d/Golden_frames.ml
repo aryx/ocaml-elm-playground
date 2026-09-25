@@ -95,6 +95,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: the grid from the title's turning camera: the three
      * toys, the road over the fields, the houses and trees *)
     ("games/racing/software/TinyIgnition", "", 5);
+    (* claude: the four riders at the top, the camera turning round
+     * them: the piste between its snow banks, the pines above *)
+    ("games/racing/software/TinySSX", "", 5);
     (* claude: the grid on the start line, from the camera turning
      * round it: the karts are drawings, the lorries and the item
      * boxes polygons -- the mix the game is about *)
@@ -241,6 +244,13 @@ let scripted : Testutil_golden.scripted list =
     (* claude: two players, the screen split down the middle as in
      * Ignition, not across *)
     ("games/racing/software/TinyIgnition", "two", 200, "down:2,space:4,up:190-400,w:190-400");
+    (* claude: a 360 with a grab off the first kicker, the rider in the
+     * air turned side on (the script steers as the computer would, then
+     * lets go of the arrows off the lip) *)
+    ("games/racing/software/TinySSX", "trick", 530, "space:1,up:182-479,up:599-606,up:615-617,up:636,up:676-682,up:686-696,up:701-711,up:716-725,up:729-738,up:741-750,up:752-814,up:866-900,left:182-186,left:215,left:599-606,left:615-617,left:636,left:676-682,left:686-688,left:720-721,left:750,left:767,left:778,left:803,left:866,space:490-519,right:310,right:331-332,right:344,right:358,right:363,right:366,right:377,right:387,right:390,right:392,right:401,right:409,right:413-414,right:421,right:428,right:434-435,right:443,right:450,right:460,right:484-523");
+    (* claude: landed straight: the trick named and scored, the boost
+     * meter filling *)
+    ("games/racing/software/TinySSX", "landed", 605, "space:1,up:182-479,up:599-606,up:615-617,up:636,up:676-682,up:686-696,up:701-711,up:716-725,up:729-738,up:741-750,up:752-814,up:866-900,left:182-186,left:215,left:599-606,left:615-617,left:636,left:676-682,left:686-688,left:720-721,left:750,left:767,left:778,left:803,left:866,space:490-519,right:310,right:331-332,right:344,right:358,right:363,right:366,right:377,right:387,right:390,right:392,right:401,right:409,right:413-414,right:421,right:428,right:434-435,right:443,right:450,right:460,right:484-523");
     (* v three times: the view from above *)
     ("games/racing/software/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
     (* TinyTron's "computer" game, seen from behind the blue cycle,

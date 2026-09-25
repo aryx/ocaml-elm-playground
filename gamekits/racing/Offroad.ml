@@ -67,12 +67,14 @@ let in_air (g : ground) (track : Topdown.track) (c : t) : t =
   if h > ground then { body; h; vh; air = true }
   else
     let hard = vh < -15. in
-    (* landed, going as the ground goes: with no vertical speed, a car
-     * landing on a downhill slope would be above the ground again the
-     * next frame, and hop down it *)
+    (* landed, going down as the ground goes down: with no vertical
+     * speed, a car landing on a downhill slope would be above the
+     * ground again the next frame, and hop down it; but never up (a
+     * car landing at the foot of a wall would take the wall's height as
+     * its speed, and be thrown into the sky) *)
     { body = { body with speed = (if hard then body.speed *. 0.7 else body.speed) };
       h = ground;
-      vh = (ground -. g.height b.x b.y) /. dt;
+      vh = Float.min 0. ((ground -. g.height b.x b.y) /. dt);
       air = false }
 
 let drive (g : ground) (track : Topdown.track) (p : Topdown.params) (top : number) (gas : number) (steer : number) (c : t) : t =
