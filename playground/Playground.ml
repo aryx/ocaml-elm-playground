@@ -423,6 +423,14 @@ let canonical_key key =
   | "delete" -> "Delete"
   | "home" -> "Home"
   | "end" -> "End"
+  (* claude: and the rest of the browser's names, which SDL's
+   * lowercased ones missed: a terminal program reading F9 or PageDown
+   * (TinyTurboPascal's Make, TinyVi's page) got "f9" and "pagedown" *)
+  | "pageup" -> "PageUp"
+  | "pagedown" -> "PageDown"
+  | "insert" -> "Insert"
+  | _ when String.length key >= 2 && key.[0] = 'f' && String.for_all (fun c -> c >= '0' && c <= '9') (String.sub key 1 (Stdlib.( - ) (String.length key) 1)) ->
+      "F" ^ String.sub key 1 (Stdlib.( - ) (String.length key) 1)
   | "left shift" | "right shift" -> "Shift"
   | "left ctrl" | "right ctrl" -> "Control"
   | "left alt" | "right alt" -> "Alt"

@@ -87,6 +87,12 @@ type state = {
   mutable level : int;
   mutable frame : int; (* the words the current frame takes so far *)
   mutable functions : proc list; (* the functions whose body is being compiled *)
+  (* the debugger's information (Pcode.mli): the statements' addresses
+     and lines, the procedures compiled, and the one being compiled *)
+  mutable marks : (int * int) list;
+  mutable procedures : (int * Pcode.procedure) list;
+  mutable nprocedures : int;
+  mutable current : int;
 }
 
 let tok (s : state) : token = s.toks.(s.pos)
@@ -492,7 +498,23 @@ and standard_function (s : state) (f : string) : ty =
 (* Statements *)
 (*****************************************************************************)
 
+(* where a statement's code begins, and its line: where the debugger's
+   steps stop *)
+let mark (s : state) (line : int) : unit = s.marks <- (s.n, line) :: s.marks
+
+let rec vtype (t : ty) : Pcode.vtype =
+  match t with
+  | Integer | Text -> Vint
+  | Boolean -> Vbool
+  | Character -> Vchar
+  | Subrange (b, _, _) -> vtype b
+  | Array (lo, hi, elt) -> Varray (lo, hi, vtype elt)
+  | Record fields -> Vrecord (List.map (fun (n, o, t) -> (n, o, vtype t)) fields)
+
 let rec statement (s : state) : unit =
+  (match kind s with
+  | Name _ | Keyword ("if" | "while" | "repeat" | "for" | "case") -> mark s (tok s).line
+  | _ -> ());
   match kind s with
   | Name n -> (
       advance s;
@@ -709,7 +731,7 @@ and write_argument (s : state) : unit =
 
 (* the declarations, then the body at the label [entry]: its frame's
    size known only at the end, ent patched then *)
-let rec block (s : state) (entry : int) : unit =
+let rec block (s : state) ~(entry : int) ~(id : int) ~(parent : int) ~(pname : string) ~(params : string list) ~(finish : instr) : unit =
   if is_keyword s "const" then begin
     advance s;
     let rec consts () =
@@ -764,9 +786,24 @@ let rec block (s : state) (entry : int) : unit =
   done;
   place s entry;
   let ent = s.n in
+  (* the debugger stops at the begin, and at the end *)
+  mark s (tok s).line;
   emit s (Ent 0);
   compound s;
-  s.code.(ent) <- Ent s.frame
+  s.code.(ent) <- Ent s.frame;
+  mark s s.last.line;
+  emit s finish;
+  let variables =
+    List.rev
+      (List.filter_map
+         (fun (vname, e) ->
+           match e with
+           | Var v -> Some { Pcode.vname; offset = v.offset; vtype = vtype v.vty; by_ref = v.var_param; param = List.mem vname params }
+           | _ -> None)
+         (List.hd s.scopes))
+  in
+  let info = { Pcode.pname; level = s.level; parent; first = ent; last = s.n - 1; variables } in
+  s.procedures <- (id, info) :: s.procedures
 
 (* procedure p(a: integer; var b: t); block; -- or forward; *)
 and procedure (s : state) : unit =
@@ -833,8 +870,12 @@ and procedure (s : state) : unit =
         let offset = allocate s (if param.by_ref then Integer else param.pty) in
         declare s param.pname (Var { vty = param.pty; vlevel = s.level; offset; var_param = param.by_ref }))
       p.params;
-    block s p.label;
-    emit s (if is_function then Retf else Retp);
+    let id = s.nprocedures in
+    s.nprocedures <- id + 1;
+    let parent = s.current in
+    s.current <- id;
+    block s ~entry:p.label ~id ~parent ~pname:n ~params:(List.map (fun (q : param) -> q.pname) p.params) ~finish:(if is_function then Retf else Retp);
+    s.current <- parent;
     s.scopes <- List.tl s.scopes;
     s.level <- s.level - 1;
     s.frame <- saved_frame;
@@ -851,7 +892,7 @@ let standard_names =
 (* program name (input, output); block. *)
 let program (s : state) : Pcode.program =
   expect_keyword s "program";
-  ignore (name s);
+  let pname = name s in
   if is_symbol s "(" then begin
     advance s;
     ignore (name_list s);
@@ -861,8 +902,8 @@ let program (s : state) : Pcode.program =
   let main = new_label s in
   emit s (Ujp main);
   s.scopes <- [] :: s.scopes;
-  block s main;
-  emit s Stp;
+  s.nprocedures <- 1;
+  block s ~entry:main ~id:0 ~parent:(-1) ~pname ~params:[] ~finish:Stp;
   expect_symbol s ".";
   (* forward procedures never given a body *)
   List.iter
@@ -879,7 +920,12 @@ let program (s : state) : Pcode.program =
   let code =
     Array.map (function Ujp l -> Ujp (at l) | Fjp l -> Fjp (at l) | Cup (n, l) -> Cup (n, at l) | i -> i) (Array.sub s.code 0 s.n)
   in
-  { code; lines = Array.sub s.lines 0 s.n }
+  let statements = Array.make s.n (-1) in
+  (* the first mark of an address wins: a statement's, not those of
+     the statements nested in it that start at the same place *)
+  List.iter (fun (a, l) -> if a < s.n then statements.(a) <- l) s.marks;
+  let procedures = Array.of_list (List.map snd (List.sort compare s.procedures)) in
+  { code; lines = Array.sub s.lines 0 s.n; statements; procedures }
 
 let compile (text : string) : (Pcode.program, error) result =
   match Pascal_lexer.tokens text with
@@ -887,6 +933,7 @@ let compile (text : string) : (Pcode.program, error) result =
   | toks -> (
       let s =
         { toks = Array.of_list toks; pos = 0; last = List.hd toks; code = Array.make 64 Stp; lines = Array.make 64 0; n = 0; labels = Array.make 16 (-1); nlabels = 0;
-          scopes = [ standard_names ]; level = 0; frame = Pcode.mark; functions = [] }
+          scopes = [ standard_names ]; level = 0; frame = Pcode.mark; functions = [];
+          marks = []; procedures = []; nprocedures = 0; current = 0 }
       in
       match program s with p -> Ok p | exception Failed e -> Error e)

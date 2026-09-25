@@ -1597,10 +1597,18 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
     (* claude: TinyTurboPascal: Ctrl-F9, the queens on the user screen;
      * the Compile menu, its shadow; the P-code of a line of try; a
      * compilation's error in the red bar *)
-    ("apps/devtools/software/TinyTurboPascal", "run", 12, "Control:3-4,F9:4", []);
+    ("apps/devtools/software/TinyTurboPascal", "run", 16, "Control:3-4,F9:4", []);
     ("apps/devtools/software/TinyTurboPascal", "menu", 6, "Alt:3-4,c:4", []);
     ("apps/devtools/software/TinyTurboPascal", "pcode", 10, "PageDown:2,down:4,Alt:6-7,c:7,type(p):9", []);
     ("apps/devtools/software/TinyTurboPascal", "error", 6, "type(x):2,F9:4", []);
+    (* claude: its debugger: a breakpoint on x[j] := i (line 22, red),
+     * Ctrl-F9 to it twice, the execution bar there, and two watches,
+     * x with one queen placed and j *)
+    ( "apps/devtools/software/TinyTurboPascal",
+      "debug",
+      32,
+      "Alt:2-3,s:3,type(g22):5,Enter:6,Control:8-9,F8:9,Control:11-12,F9:12,Control:15-16,F9:16,Control:19-20,F7:20,type(x):22,Enter:23,Control:25-26,F7:26,type(j):28,Enter:29",
+      [] );
     (* claude: TinyWumpus: the instructions, then the first room and
      * what its neighbours give away (seed 1's cave) *)
     ("games/adventure/software/TinyWumpus", "first", 8, "type(y):2,Enter:3", []);

@@ -15,7 +15,10 @@
  *   screen), Alt-F5 shows that screen again; F10 or Alt and a letter
  *   for the menus (Compile / P-code: the code of the cursor's line);
  *   F2 saves, F3 opens, Alt-X quits; the editor's keys are WordStar's
- *   too (Ctrl-E X S D, Ctrl-Y)
+ *   too (Ctrl-E X S D, Ctrl-Y); the debugger: F7 trace into, F8 step
+ *   over, F4 go to the cursor, Ctrl-F8 a breakpoint, Ctrl-F7 a watch,
+ *   Ctrl-F3 the call stack, Ctrl-F2 reset, Ctrl-C break (and all of it
+ *   in the Run and Debug menus, for the keys a desktop keeps)
  *
  * Turbo Pascal's lesson is the one keystroke from the text to the
  * program running, or to the error with the cursor on it: the editor,
@@ -35,9 +38,16 @@
  * menus and dialogs are drawn cell by cell (the cell Look for gui/ of
  * plan_terminal.md, Turbo Vision's way, would be the other way).
  *
- * Left undone, exercises: the debugger (F7 and F8 stepping a line at a
- * time, the P-machine's pc mapped back to the source, Ctrl-F7 to watch
- * a variable); several windows (F6); blocks (Ctrl-K B, Ctrl-K K); undo;
+ * The debugger is Turbo Pascal's, over what the compiler leaves for it
+ * (Pcode.mli: where each statement begins, each procedure's code and
+ * variables) and a P-machine that pauses (Pdebug.mli): stepping stops
+ * at a statement's start, a watch is a name looked up along the static
+ * links, and the call stack shows them beside the dynamic ones.
+ *
+ * Left undone, exercises: watches of any expression (a[i + 1], a
+ * compiled expression rather than a name and selectors); changing a
+ * variable while paused (Ctrl-F4, Evaluate and modify); a breakpoint
+ * with a condition; several windows (F6); blocks (Ctrl-K B, Ctrl-K K); undo;
  * the mouse; compiling to a machine's own code, as the real one did.
  *)
 

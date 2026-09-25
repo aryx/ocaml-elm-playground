@@ -205,7 +205,7 @@ let turbo_tests =
         let m = turbo.init in
         check "screen" "edit" (Tui_turbo.screen m);
         let r = rows m in
-        Alcotest.(check bool) "the bar" true (contains (List.hd r) "File  Search  Run  Compile  Help");
+        Alcotest.(check bool) "the bar" true (contains (List.hd r) "File  Search  Run  Compile  Debug  Help");
         Alcotest.(check bool) "the title in the frame" true (contains (List.nth r 1) "╔" && contains (List.nth r 1) " QUEENS.PAS ");
         Alcotest.(check bool) "the status line" true (contains (List.nth r 23) "Ctrl+F9 Run"));
     Testo.create "Turbo: F9 compiles, the box says so" (fun () ->
@@ -242,4 +242,57 @@ let turbo_tests =
         let m = tp_type m "{ saved }\x1bOQ" in
         check "saved" "{ saved }program Factorials;" (List.hd (String.split_on_char '\n' (Option.get (Tui_turbo.file m "FACT.PAS"))))) ]
 
-let tests = Testo.categorize "Editor" (gap_tests @ emacs_tests @ vi_tests @ turbo_tests)
+(* the debugger: keys as xterm sends them *)
+let f7 = "\x1b[18~"
+let f8 = "\x1b[19~"
+let ctrl_f7 = "\x1b[18;5~"
+let ctrl_f8 = "\x1b[19;5~"
+let ctrl_f9 = "\x1b[20;5~"
+
+(* the cursor to a line (from 1), by Search / Go to line number *)
+let goto (m : Tui_turbo.model) (l : int) : Tui_turbo.model = tp_type m (Printf.sprintf "\x1bsg%d\r" l)
+
+let line_with (m : Tui_turbo.model) (text : string) : int =
+  let rec go i = function [] -> Alcotest.fail text | l :: rest -> if contains l text then i else go (i + 1) rest in
+  go 1 (Tui_turbo.lines m)
+
+let debugger_tests =
+  [ Testo.create "Turbo's debugger: F7 starts at the main begin, the execution bar there" (fun () ->
+        let m = tp_type turbo.init f7 in
+        let main = line_with m "  for i := 1 to 8 do a[i] := true;" - 1 in
+        Alcotest.(check (option int)) "the bar" (Some (main - 1)) (Tui_turbo.execution_line m);
+        Alcotest.(check int) "the cursor on it" (main - 1) (fst (Tui_turbo.cursor m));
+        check "the editor, no flash of the user screen" "edit" (Tui_turbo.screen m));
+    Testo.create "Turbo's debugger: a breakpoint, Ctrl-F9 to it twice, a watch, the call stack" (fun () ->
+        let m = turbo.init in
+        let bp = line_with m "x[j] := i;" in
+        let m = tp_type (goto m bp) ctrl_f8 in
+        let m = tp_type m ctrl_f9 in
+        let m = tp_ticks m 100 in
+        let m = tp_ticks (tp_type m ctrl_f9) 100 in
+        Alcotest.(check (option int)) "at the breakpoint" (Some (bp - 1)) (Tui_turbo.execution_line m);
+        (* Ctrl-F7 offers the word under the cursor: x, from the line's start *)
+        let m = tp_type m ("\x1b[C\x1b[C\x1b[C\x1b[C\x1b[C\x1b[C" ^ ctrl_f7 ^ "\r") in
+        Alcotest.(check bool) "the watch" true (has m "x: (1,0,0,0,0,0,0,0)");
+        let m = tp_type m "\x1bdc" in
+        Alcotest.(check bool) "TRY(2) in the call stack" true (has m "TRY(2)" && has m "static link 0"));
+    Testo.create "Turbo's debugger: F8 over a readln, the line typed on the user screen" (fun () ->
+        let m = tp_type turbo.init "\x1bOR" in
+        (* GUESS.PAS: the second file, after FACT.PAS *)
+        let m = tp_type m "\x1b[B\r" in
+        check "guess" "program Guess;" (List.hd (Tui_turbo.lines m));
+        let m = goto m (line_with m "readln(guess)") in
+        let m = tp_ticks (tp_type m "\x1bOS") 50 in
+        let m = tp_type m f8 in
+        check "reading: the user screen" "run" (Tui_turbo.screen m);
+        let m = tp_type m "50\r" in
+        Alcotest.(check (option int)) "the next line" (Some (line_with m "tries := tries + 1;" - 1)) (Tui_turbo.execution_line m));
+    Testo.create "Turbo's debugger: Ctrl-C breaks a loop that never ends" (fun () ->
+        let m = tp_type turbo.init "\x1bfn" in
+        let m = tp_type m "program T;\rvar i: integer;\rbegin\r  while true do\ri := i + 1\rend." in
+        let m = tp_ticks (tp_type m ctrl_f9) 5 in
+        check "running" "run" (Tui_turbo.screen m);
+        let m = tp_type m "\x03" in
+        Alcotest.(check bool) "paused in the loop" true (match Tui_turbo.execution_line m with Some l -> l = 3 || l = 4 | None -> false)) ]
+
+let tests = Testo.categorize "Editor" (gap_tests @ emacs_tests @ vi_tests @ turbo_tests @ debugger_tests)

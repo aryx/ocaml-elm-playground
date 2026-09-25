@@ -1087,7 +1087,16 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_
     (* claude: and Tab is the game's key too (TinyCrush's turn), not the
      * browser's move to the next focusable element -- which would also
      * swallow its keyup, leaving it held *)
+    (* claude: and the function keys F1 to F10, a terminal program's
+     * (TinyTurboPascal's F9, its debugger's F7 and F8), not the
+     * browser's help, find, reload and caret browsing; F11 (full
+     * screen) and F12 (the developer tools) stay the browser's *)
+    let game_key k =
+      k = "Tab"
+      || String.length k >= 2 && k.[0] = 'F'
+         && (match int_of_string_opt (String.sub k 1 (Stdlib.( - ) (String.length k) 1)) with Some n -> n >= 1 && n <= 10 | None -> false)
+    in
     Window.add_event_listener window Event.Keydown
-      (fun evt -> if Event.key evt = "Tab" then Event.prevent_default evt)
+      (fun evt -> if game_key (Event.key evt) then Event.prevent_default evt)
       true;
   )

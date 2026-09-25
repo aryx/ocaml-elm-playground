@@ -20,10 +20,11 @@ type machine = {
   mutable line : string option; (* the input line being read, and where *)
   mutable col : int;
   out : Buffer.t;
+  mutable executed : int; (* instructions so far *)
 }
 
 (* what stops the machine for a while, or for good *)
-type stop = Halted | Slice_over | Need_line | Need_random of int | Failed of int * string
+type stop = Halted | Paused | Slice_over | Need_line | Need_random of int | Failed of int * string
 
 exception Runtime of int * string
 
@@ -198,18 +199,50 @@ let instruction (m : machine) : stop option =
           match rest m with None -> again (); Some Need_line | Some r -> push m (if r = "" then 1 else 0); None)
       | Rnd -> let n = pop m in if n <= 0 then raise (Runtime (201, "Range check error")) else Some (Need_random n))
 
-(* instructions until something stops the machine, [slice] at most *)
-let rec slice (m : machine) (k : int) : stop =
+(*****************************************************************************)
+(* A machine to pause *)
+(*****************************************************************************)
+
+let start (program : Pcode.program) : machine =
+  { program; store = Array.make stack_words 0; pc = 0; sp = 0; mp = 0; line = None; col = 0; out = Buffer.create 256; executed = 0 }
+
+(* instructions until something stops the machine, [k] at most; [pause]
+   asked before each *)
+let rec resume ?(pause = fun _ -> false) (m : machine) (k : int) : stop =
   if k = 0 then Slice_over
+  else if pause m then Paused
   else
     match instruction m with
-    | None -> slice m (k - 1)
+    | None ->
+        m.executed <- m.executed + 1;
+        resume ~pause m (k - 1)
     | Some stop -> stop
     | exception Runtime (code, msg) -> Failed (code, msg)
     | exception Invalid_argument _ -> Failed (204, "Invalid address")
 
+let give_line (m : machine) (l : string) : unit =
+  m.line <- Some l;
+  m.col <- 0
+
+let give_random (m : machine) (k : int) : unit = push m k
+
+let output (m : machine) : string =
+  let s = Buffer.contents m.out in
+  Buffer.clear m.out;
+  s
+
+let pc (m : machine) = m.pc
+let sp (m : machine) = m.sp
+let mp (m : machine) = m.mp
+let word (m : machine) (a : int) = m.store.(a)
+let executed (m : machine) = m.executed
+
+(*****************************************************************************)
+(* A machine running on a teletype *)
+(*****************************************************************************)
+
 let run (program : Pcode.program) : unit Talk.talk =
-  let m = { program; store = Array.make stack_words 0; pc = 0; sp = 0; mp = 0; line = None; col = 0; out = Buffer.create 256 } in
+  let m = start program in
   (* what was written, printed before the machine stops *)
   let flush (k : unit -> unit Talk.talk) : unit Talk.talk =
     let s = Buffer.contents m.out in
@@ -217,11 +250,12 @@ let run (program : Pcode.program) : unit Talk.talk =
     if s = "" then k () else Talk.Print (s, k ())
   in
   let rec go () =
-    match slice m 5000 with
+    match resume m 5000 with
+    | Paused -> assert false (* no pause asked *)
     | Halted -> flush (fun () -> Talk.Done ())
     | Slice_over -> flush (fun () -> Talk.Step go)
-    | Need_line -> flush (fun () -> Talk.Read_line (fun l -> m.line <- Some l; m.col <- 0; go ()))
-    | Need_random n -> flush (fun () -> Talk.Random (n, fun k -> push m k; go ()))
+    | Need_line -> flush (fun () -> Talk.Read_line (fun l -> give_line m l; go ()))
+    | Need_random n -> flush (fun () -> Talk.Random (n, fun k -> give_random m k; go ()))
     | Failed (code, msg) ->
         let line = if m.pc > 0 then program.lines.(m.pc - 1) else 0 in
         flush (fun () -> Talk.Print (Printf.sprintf "\nRuntime error %d at line %d: %s\n" code line msg, Talk.Done ()))

@@ -32,12 +32,33 @@
                                      instructions of the cursor's line
                                      highlighted
 
+   And its debugger, Turbo Pascal 5's (1989) and 7's, over Pdebug.mli
+   and a P-machine that pauses (Pmachine.resume):
+
+       F7, F8        trace into, step over: a line at a time, the
+                     execution bar on the line to run next; F7 goes
+                     into the procedures a line calls, F8 runs them
+       F4            go to the cursor's line
+       Ctrl-F8       a breakpoint on the cursor's line, red; Ctrl-F9
+                     runs to the next one
+       Ctrl-F7       a watch: an expression (x, a[i], p.x) whose value
+                     the Watches window shows at each pause
+       Ctrl-F3       the call stack, each frame's static and dynamic
+                     links beside its call (ours: the P-machine's view)
+       Ctrl-F2       reset; Ctrl-C breaks a running program where it is
+
+   The program's screen is shown only while it writes or reads, as
+   Turbo's "smart" screen swapping did: a step that prints nothing
+   doesn't flash it. Editing the text resets the program.
+
    The editor has Turbo's keys, which were WordStar's: the arrows or
    Ctrl-E, Ctrl-X, Ctrl-S, Ctrl-D; Ctrl-A and Ctrl-F a word; Home End
    PgUp PgDn; Ctrl-Y deletes a line; Insert toggles overwriting; Enter
    keeps the indentation (autoindent). The files are the floppy of
    Pascal_disk.mli, QUEENS.PAS open to begin with. F2 saves, F3 opens,
-   F10 or Alt and a letter opens a menu, Alt-X quits. *)
+   F10 or Alt and a letter opens a menu, Alt-X quits. A desktop often
+   keeps some function keys for itself (Alt-F5, Alt-F9, Ctrl-F2): every
+   command is in the menus too. *)
 
 type model
 
@@ -45,9 +66,11 @@ val program : model Tui.program
 
 (* for the tests: the text, the cursor (line and column from 0), the
    error bar, the screen's name ("edit", "menu", "dialog", "run",
-   "user", "p-code"), and the disk *)
+   "user", "p-code"), the disk, and the execution bar's line (from 0)
+   while a program is paused *)
 val lines : model -> string list
 val cursor : model -> int * int
 val error : model -> string option
 val screen : model -> string
 val file : model -> string -> string option
+val execution_line : model -> int option

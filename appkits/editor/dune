@@ -17,5 +17,5 @@
  (name appkit_editor)
  (package elm_playground)
  (wrapped false)
- (libraries terminal lisp pascal)
+ (libraries terminal lisp pascal random)
 )

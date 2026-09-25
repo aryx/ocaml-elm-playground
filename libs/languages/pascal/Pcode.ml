@@ -36,7 +36,10 @@ type instr =
   | Csp of csp
   | Stp
 
-type program = { code : instr array; lines : int array }
+type vtype = Vint | Vbool | Vchar | Varray of int * int * vtype | Vrecord of (string * int * vtype) list
+type variable = { vname : string; offset : int; vtype : vtype; by_ref : bool; param : bool }
+type procedure = { pname : string; level : int; parent : int; first : int; last : int; variables : variable list }
+type program = { code : instr array; lines : int array; statements : int array; procedures : procedure array }
 
 let mark = 4
 

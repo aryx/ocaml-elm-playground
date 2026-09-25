@@ -5,8 +5,10 @@
 ; reads, with no tree), Pcode (the stack machine's instructions, and a
 ; disassembler), Pmachine (the machine: its stack of frames, static
 ; links, run as a Talk conversation so that readln waits for a line
-; and a long loop runs a slice a frame) and Pascal_disk (programs of
-; the classics: Wirth's eight queens, the towers of Hanoi). For
+; and a long loop runs a slice a frame; or paused from outside, the
+; debugger's), Pdebug (a paused machine read as Pascal: frames, links,
+; watches, steps) and Pascal_disk (programs of the classics: Wirth's
+; eight queens, the towers of Hanoi). For
 ; TinyTurboPascal (apps/devtools/, appkits/editor's Tui_turbo;
 ; plan_terminal.md, section 6).
 ;

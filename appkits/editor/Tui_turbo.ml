@@ -14,7 +14,13 @@
 (* The model *)
 (*****************************************************************************)
 
-type action = Open | New | Save | Save_as | Exit | Find | Find_again | Goto_line | Run | User_screen | Compile | Pcode_listing | Keys | About
+type action =
+  | Open | New | Save | Save_as | Exit
+  | Find | Find_again | Goto_line
+  | Run | Go_to_cursor | Trace_into | Step_over | Reset | User_screen
+  | Compile | Pcode_listing
+  | Call_stack | Add_watch | Toggle_breakpoint | Clear_watches
+  | Keys | About
 
 (* a menu's item: its label, the letter that chooses it, its key *)
 type item = { label : string; hot : char; shortcut : string; action : action }
@@ -26,11 +32,16 @@ let menus : (string * item list) list =
       [ item "Open..." 'O' "F3" Open; item "New" 'N' "" New; item "Save" 'S' "F2" Save; item "Save as..." 'a' "" Save_as;
         item "Exit" 'x' "Alt+X" Exit ] );
     ("Search", [ item "Find..." 'F' "" Find; item "Search again" 'S' "Ctrl+L" Find_again; item "Go to line number..." 'G' "" Goto_line ]);
-    ("Run", [ item "Run" 'R' "Ctrl+F9" Run; item "User screen" 'U' "Alt+F5" User_screen ]);
+    ( "Run",
+      [ item "Run" 'R' "Ctrl+F9" Run; item "Step over" 'S' "F8" Step_over; item "Trace into" 'T' "F7" Trace_into;
+        item "Go to cursor" 'G' "F4" Go_to_cursor; item "Program reset" 'P' "Ctrl+F2" Reset; item "User screen" 'U' "Alt+F5" User_screen ] );
     ("Compile", [ item "Compile" 'C' "Alt+F9" Compile; item "Make" 'M' "F9" Compile; item "P-code" 'P' "" Pcode_listing ]);
+    ( "Debug",
+      [ item "Call stack" 'C' "Ctrl+F3" Call_stack; item "Add watch..." 'W' "Ctrl+F7" Add_watch;
+        item "Toggle breakpoint" 'B' "Ctrl+F8" Toggle_breakpoint; item "Remove all watches" 'R' "" Clear_watches ] );
     ("Help", [ item "Keys" 'K' "F1" Keys; item "About..." 'A' "" About ]) ]
 
-type purpose = Saving_as | Finding | Going_to
+type purpose = Saving_as | Finding | Going_to | Watching
 
 type mode =
   | Editing
@@ -38,11 +49,27 @@ type mode =
   | Open_dialog of int (* the file selected *)
   | Input of { title : string; label : string; text : string; purpose : purpose }
   | Info of string * string list (* a box: its title and lines; a key closes it *)
-  | Running of Talk.machine
+  | Executing (* the session's machine running towards its goal *)
   | Finished of Vt.t * (int * string) option (* the user screen, and a run-time error's line and message *)
   | Showing of Vt.t (* the user screen again: Alt-F5 *)
   | Listing of int (* the P-code, from this instruction *)
+  | Stack (* the call stack's window *)
 
+(* A program started: run, stepped, paused at its execution bar. Its
+   machine is Pmachine's, driven a slice a frame towards its goal
+   (Pdebug.step), its output on the user screen, which the IDE shows
+   only when the program writes or reads (Turbo Pascal's "smart" swap:
+   a step that prints nothing doesn't flash the screen) *)
+type session = {
+  program : Pcode.program;
+  machine : Pmachine.machine;
+  user : Vt.t;
+  typing : string option; (* a line the program reads, being typed *)
+  goal : Pdebug.step option; (* None: paused *)
+  pause : Pmachine.machine -> bool; (* the goal's predicate, made when the step began *)
+  seed : Lehmer.t; (* random(n)'s *)
+  swapped : bool; (* the user screen shown *)
+}
 type model = {
   lines : string array; (* never changed in place *)
   row : int;
@@ -59,11 +86,19 @@ type model = {
   last_screen : Vt.t option;
   search : string;
   runs : int; (* each run's seed: another game *)
+  session : session option;
+  breakpoints : int list; (* lines, from 1 *)
+  watches : string list;
   quit : bool;
 }
 
-(* the window's text: 20 lines of 78 columns, inside its frame *)
-let text_rows = 20
+(* the Watches window's height, when there are watches: at the bottom,
+   the edit window above it *)
+let watch_rows (m : model) : int = if m.watches = [] then 0 else min 8 (List.length m.watches + 2)
+
+(* the window's text: 20 lines of 78 columns inside its frame, less
+   the watches' *)
+let text_rows (m : model) = 20 - watch_rows m
 let text_cols = 78
 let noname = "NONAME00.PAS"
 
@@ -75,7 +110,7 @@ let text (m : model) : string = String.concat "\n" (Array.to_list m.lines) ^ "\n
 let follow (m : model) : model =
   let row = max 0 (min (nlines m - 1) m.row) in
   let col = max 0 m.col in
-  let top = if row < m.top then row else if row >= m.top + text_rows then row - text_rows + 1 else m.top in
+  let top = if row < m.top then row else if row >= m.top + text_rows m then row - text_rows m + 1 else m.top in
   let left = if col < m.left then col else if col >= m.left + text_cols then col - text_cols + 1 else m.left in
   { m with row; col; top; left }
 
@@ -83,7 +118,7 @@ let load (m : model) (file : string) : model =
   let content = Option.value (List.assoc_opt file m.disk) ~default:"" in
   let content = if content <> "" && content.[String.length content - 1] = '\n' then String.sub content 0 (String.length content - 1) else content in
   { m with lines = Array.of_list (String.split_on_char '\n' content); file; row = 0; col = 0; top = 0; left = 0; modified = false;
-    compiled = None; error = None }
+    compiled = None; error = None; session = None; breakpoints = [] }
 
 (*****************************************************************************)
 (* Editing *)
@@ -183,8 +218,9 @@ let edit_key (m : model) (k : string) : model =
   | "\x06" -> word_right m
   | "\x1b[H" -> { m with col = 0 }
   | "\x1b[F" -> { m with col = String.length (line m m.row) }
-  | "\x1b[5~" | "\x12" -> { m with row = m.row - text_rows + 1; top = max 0 (m.top - text_rows + 1) }
-  | "\x1b[6~" | "\x03" -> { m with row = min (nlines m - 1) (m.row + text_rows - 1); top = min (max 0 (nlines m - text_rows)) (m.top + text_rows - 1) }
+  | "\x1b[5~" | "\x12" -> { m with row = m.row - text_rows m + 1; top = max 0 (m.top - text_rows m + 1) }
+  | "\x1b[6~" | "\x03" ->
+      { m with row = min (nlines m - 1) (m.row + text_rows m - 1); top = min (max 0 (nlines m - text_rows m)) (m.top + text_rows m - 1) }
   | "\x1b[2~" | "\x16" -> { m with overwrite = not m.overwrite }
   | "\r" -> newline m
   | "\x7f" | "\b" -> backspace m
@@ -214,28 +250,83 @@ let compiled_box (m : model) (p : Pcode.program) : model =
           [ "Main file: " ^ m.file; ""; "Done."; ""; Printf.sprintf "Lines compiled: %d" (nlines m);
             Printf.sprintf "P-code: %d instructions" (Array.length p.code) ] ) }
 
-let run (m : model) : model =
+(*****************************************************************************)
+(* The debugger *)
+(*****************************************************************************)
+
+let note = "\r\n\x1b[7m Press any key to return to Turbo Pascal \x1b[0m"
+
+(* the program compiled and started, paused before its first
+   instruction; its user screen blank *)
+let start (m : model) : (session * model, model) result =
   match compile m with
+  | Error m -> Error m
+  | Ok (program, m) ->
+      let machine = Pmachine.start program in
+      Ok
+        ( { program; machine; user = Vt.create ~rows:24 ~cols:80; typing = None; goal = None; pause = (fun _ -> false);
+            seed = Lehmer.of_int (m.runs + 1); swapped = false },
+          { m with runs = m.runs + 1 } )
+
+(* the execution bar's line, and the cursor put on it *)
+let paused_at (m : model) (s : session) : model =
+  { m with session = Some { s with goal = None; swapped = false; typing = None }; mode = Editing; row = Pdebug.line s.program s.machine - 1; col = 0 }
+
+(* the machine run towards its goal, a slice at most: paused, done,
+   reading, or still going (the next frame goes on) *)
+let rec advance (m : model) (s : session) : model =
+  match s.goal with
+  | None -> paused_at m s
+  | Some _ when s.typing <> None -> { m with session = Some s; mode = Executing }
+  | Some _ -> (
+      (* a hundred thousand instructions a frame: some 4 ms natively,
+         Wirth's queens (677,000) in seven frames *)
+      let stop = Pmachine.resume ~pause:s.pause s.machine 100_000 in
+      let out = Pmachine.output s.machine in
+      let s = if out = "" then s else { s with user = Vt.feed s.user (Line_discipline.output out); swapped = true } in
+      match stop with
+      | Paused -> paused_at m s
+      | Slice_over -> { m with session = Some s; mode = Executing }
+      | Need_line -> { m with session = Some { s with typing = Some ""; swapped = true }; mode = Executing }
+      | Need_random n ->
+          let seed = Lehmer.next s.seed in
+          Pmachine.give_random s.machine (int_of_float (Lehmer.to_unit seed *. float_of_int n));
+          advance m { s with seed }
+      | Halted -> { m with session = None; mode = Finished (Vt.feed s.user note, None); last_screen = Some s.user }
+      | Failed (code, msg) ->
+          let line = s.program.lines.(max 0 (Pmachine.pc s.machine - 1)) in
+          let user = Vt.feed s.user (Printf.sprintf "\r\nRuntime error %d at line %d: %s" code line msg) in
+          { m with session = None; mode = Finished (Vt.feed user note, Some (line, Printf.sprintf "Runtime error %d: %s." code msg)); last_screen = Some user })
+
+(* a step taken (F7, F8, F4) or a run (Ctrl-F9), the program started
+   first if it wasn't *)
+let go (m : model) (step : Pdebug.step) : model =
+  let started = match m.session with Some s -> Ok (s, m) | None -> start m in
+  match started with
   | Error m -> m
-  | Ok (p, m) -> { m with mode = Running (Talk.start ~seed:(m.runs + 1) ~rows:24 ~cols:80 (Pmachine.run p)); runs = m.runs + 1 }
+  | Ok (s, m) -> advance m { s with goal = Some step; pause = Pdebug.pause_for s.program step s.machine; swapped = false }
 
-(* the machine's last words, when a run-time error stopped it:
-   "Runtime error 201 at line 12: Range check error" (Turbo Pascal
-   found the line from the address the program stopped at, the same) *)
-let runtime_error (vt : Vt.t) : (int * string) option =
-  List.find_map
-    (fun l ->
-      try Scanf.sscanf l "Runtime error %d at line %d: %[^\n]" (fun code line msg -> Some (line, Printf.sprintf "Runtime error %d: %s." code msg))
-      with _ -> None)
-    (Vt.text vt)
+(* a key while the program runs: the line it reads typed on the user
+   screen, and Control-C, Turbo's Ctrl-Break, pausing it where it is *)
+let executing_key (m : model) (s : session) (k : string) : model =
+  match (k, s.typing) with
+  | "\x03", _ -> paused_at m s
+  | "\r", Some line ->
+      Pmachine.give_line s.machine line;
+      advance m { s with typing = None; user = Vt.feed s.user "\r\n" }
+  | ("\x7f" | "\b"), Some line when line <> "" ->
+      { m with session = Some { s with typing = Some (String.sub line 0 (String.length line - 1)); user = Vt.feed s.user "\b \b" } }
+  | _, Some line when String.length k = 1 && k.[0] >= ' ' -> { m with session = Some { s with typing = Some (line ^ k); user = Vt.feed s.user k } }
+  | _ -> m
 
-(* the machine still running, or the user screen with a note *)
-let running (m : model) (machine : Talk.machine) : model =
-  if Talk.finished machine then
-    let vt = Talk.screen machine in
-    let shown = Vt.feed vt "\r\n\x1b[7m Press any key to return to Turbo Pascal \x1b[0m" in
-    { m with mode = Finished (shown, runtime_error vt); last_screen = Some vt }
-  else { m with mode = Running machine }
+(* the word under the cursor: what Ctrl-F7 offers to watch *)
+let word_at (m : model) : string =
+  let s = line m m.row in
+  let rec back i = if i > 0 && is_word s.[i - 1] then back (i - 1) else i in
+  let rec forth i = if i < String.length s && is_word s.[i] then forth (i + 1) else i in
+  let c = min m.col (String.length s) in
+  let a = back c and b = forth c in
+  String.sub s a (b - a)
 
 (*****************************************************************************)
 (* Menus and dialogs *)
@@ -257,8 +348,22 @@ let act (m : model) (a : action) : model =
   | Find -> { m with mode = Input { title = "Find"; label = "Text to find"; text = m.search; purpose = Finding } }
   | Find_again -> find m m.search
   | Goto_line -> { m with mode = Input { title = "Go to Line Number"; label = "Enter new line number"; text = ""; purpose = Going_to } }
-  | Run -> run m
-  | User_screen -> ( match m.last_screen with Some vt -> { m with mode = Showing vt } | None -> { m with mode = Showing (Vt.create ~rows:24 ~cols:80) })
+  | Run -> go m (Continue m.breakpoints)
+  | Trace_into -> go m Trace_into
+  | Step_over -> go m Step_over
+  | Go_to_cursor -> go m (To_line (m.row + 1))
+  | Reset -> { m with session = None }
+  | User_screen -> (
+      match (m.session, m.last_screen) with
+      | Some s, _ -> { m with mode = Showing s.user }
+      | None, Some vt -> { m with mode = Showing vt }
+      | None, None -> { m with mode = Showing (Vt.create ~rows:24 ~cols:80) })
+  | Call_stack -> if m.session = None then { m with mode = Info ("Call Stack", [ "No program is running:"; "F7 or F8 starts one." ]) } else { m with mode = Stack }
+  | Add_watch -> { m with mode = Input { title = "Add Watch"; label = "Watch expression"; text = word_at m; purpose = Watching } }
+  | Toggle_breakpoint ->
+      let l = m.row + 1 in
+      { m with breakpoints = (if List.mem l m.breakpoints then List.filter (( <> ) l) m.breakpoints else l :: m.breakpoints) }
+  | Clear_watches -> { m with watches = [] }
   | Compile -> ( match compile m with Ok (p, m) -> compiled_box m p | Error m -> m)
   | Pcode_listing -> (
       match compile m with
@@ -274,6 +379,7 @@ let act (m : model) (a : action) : model =
           Info
             ( "Keys",
               [ "F9 Make   Alt+F9 Compile   Ctrl+F9 Run"; "Alt+F5 User screen   F2 Save   F3 Open"; "F10 or Alt+letter: the menus   Alt+X Exit"; "";
+                "F7 Trace into   F8 Step over   F4 Go to cursor"; "Ctrl+F8 Breakpoint   Ctrl+F7 Watch   Ctrl+F3 Calls"; "Ctrl+F2 Reset   Ctrl+C Break"; "";
                 "Arrows, or Ctrl+E X S D    Ctrl+A F words"; "Ctrl+Y delete a line    Insert: overwrite"; "Ctrl+L search again" ] ) }
   | About ->
       { m with
@@ -316,7 +422,8 @@ let input_key (m : model) (title, label, text, purpose) (k : string) : model =
       match purpose with
       | Saving_as -> if text = "" then m else write m (String.uppercase_ascii text)
       | Finding -> find m text
-      | Going_to -> ( match int_of_string_opt (String.trim text) with Some n -> { m with row = n - 1; col = 0 } | None -> m))
+      | Going_to -> ( match int_of_string_opt (String.trim text) with Some n -> { m with row = n - 1; col = 0 } | None -> m)
+      | Watching -> if String.trim text = "" then m else { m with watches = m.watches @ [ String.trim text ] })
   | "\x7f" | "\b" -> again (if text = "" then "" else String.sub text 0 (String.length text - 1))
   | _ when String.length k = 1 && k.[0] >= ' ' -> again (text ^ k)
   | _ -> m
@@ -327,15 +434,12 @@ let input_key (m : model) (title, label, text, purpose) (k : string) : model =
 
 let key (m : model) (k : string) : model =
   match m.mode with
-  | Running machine ->
-      (* only what a program reads: characters, Enter, Backspace,
-         Control-C to stop it *)
-      if String.length k = 1 then running m (Talk.input machine k) else m
+  | Executing -> ( match m.session with Some s -> executing_key m s k | None -> { m with mode = Editing })
   | Finished (_, err) -> (
       match err with
       | Some (l, msg) -> { m with mode = Editing; error = Some msg; row = l - 1; col = 0 }
       | None -> { m with mode = Editing })
-  | Showing _ | Info _ -> { m with mode = Editing }
+  | Showing _ | Info _ | Stack -> { m with mode = Editing }
   | Listing first -> (
       match k with
       | "\x1b[A" -> { m with mode = Listing (max 0 (first - 1)) }
@@ -363,15 +467,27 @@ let key (m : model) (k : string) : model =
       | "\x1b[20;5~" -> act m Run
       | "\x1b[15;3~" -> act m User_screen
       | "\x1b[21~" -> { m with mode = Menu (0, 0) }
+      (* the debugger's: F7 F8 F4, Ctrl-F2 Ctrl-F3 Ctrl-F7 Ctrl-F8 *)
+      | "\x1b[18~" -> act m Trace_into
+      | "\x1b[19~" -> act m Step_over
+      | "\x1bOS" -> act m Go_to_cursor
+      | "\x1b[1;5Q" -> act m Reset
+      | "\x1b[1;5R" -> act m Call_stack
+      | "\x1b[18;5~" -> act m Add_watch
+      | "\x1b[19;5~" -> act m Toggle_breakpoint
       | _ -> (
           match alt_letter k with
           | Some 'x' -> act m Exit
           | Some c -> ( match menu_of_letter c with Some b -> { m with mode = Menu (b, 0) } | None -> m)
-          | None -> edit_key m k))
+          | None ->
+              (* the text changed: the program running is another's,
+                 reset (Turbo Pascal asked first) *)
+              let m' = edit_key m k in
+              if m'.lines != m.lines then { m' with session = None } else m'))
 
 let update (ev : Tui.event) (m : model) : model =
   match (ev, m.mode) with
-  | Tick dt, Running machine -> running m (Talk.tick machine dt)
+  | Tick _, Executing -> ( match m.session with Some s -> advance m s | None -> { m with mode = Editing })
   | Tick _, _ -> m
   | Key k, _ -> follow (key m k)
 
@@ -447,9 +563,14 @@ let menu_bar (open_ : int option) (s : Curses.t) : Curses.t =
     (List.mapi (fun i menu -> (i, menu)) menus)
     bar_columns
 
-let status_line (s : Curses.t) : Curses.t =
+let status_line (m : model) (s : Curses.t) : Curses.t =
   let s = fill 23 0 1 80 grey s in
-  let keys = [ ("F1", "Help"); ("F2", "Save"); ("F3", "Open"); ("Alt+F9", "Compile"); ("F9", "Make"); ("Ctrl+F9", "Run"); ("F10", "Menu") ] in
+  let keys =
+    match (m.session, m.mode) with
+    | Some _, Executing -> [ ("", "Running..."); ("Ctrl+C", "Break") ]
+    | Some _, _ -> [ ("F7", "Trace"); ("F8", "Step"); ("F4", "Here"); ("Ctrl+F9", "Run"); ("Ctrl+F2", "Reset"); ("Ctrl+F7", "Watch") ]
+    | None, _ -> [ ("F1", "Help"); ("F2", "Save"); ("F3", "Open"); ("Alt+F9", "Compile"); ("F9", "Make"); ("Ctrl+F9", "Run"); ("F10", "Menu") ]
+  in
   fst
     (List.fold_left
        (fun (s, c) (k, what) ->
@@ -511,22 +632,35 @@ let colour_line (l : string) (comment : char option) : (int * string * Vt.attrs)
   let next = go 0 comment in
   (List.rev !out, next)
 
+let exec_attrs = attrs Vt.Black Vt.Cyan
+let break_attrs = attrs ~bold:true Vt.White Vt.Red
+
+(* the line where a paused program is: the execution bar's *)
+let execution_line (m : model) : int option =
+  match m.session with Some s when s.goal = None -> Some (Pdebug.line s.program s.machine - 1) | _ -> None
+
 let edit_window (m : model) (s : Curses.t) : Curses.t =
-  let s = fill 1 0 22 80 text_attrs s in
-  let s = frame ~title:m.file 1 0 22 80 frame_attrs s in
+  let h = 22 - watch_rows m in
+  let s = fill 1 0 h 80 text_attrs s in
+  let s = frame ~title:m.file 1 0 h 80 frame_attrs s in
   let pos = Printf.sprintf " %s%d:%d " (if m.modified then "* " else "") (m.row + 1) (m.col + 1) in
-  let s = Curses.put ~attrs:frame_attrs 22 3 pos s in
+  let s = Curses.put ~attrs:frame_attrs h 3 pos s in
   (* the comments running into the window from above it *)
   let comment = ref None in
   for r = 0 to m.top - 1 do
     comment := snd (colour_line (line m r) !comment)
   done;
   let s = ref s in
-  for i = 0 to text_rows - 1 do
+  let bar = execution_line m in
+  for i = 0 to text_rows m - 1 do
     let r = m.top + i in
     if r < nlines m then begin
       let pieces, next = colour_line (line m r) !comment in
       comment := next;
+      (* the execution bar, or a breakpoint: the whole line in its colour *)
+      let whole = if bar = Some r then Some exec_attrs else if List.mem (r + 1) m.breakpoints then Some break_attrs else None in
+      let pieces = match whole with Some a -> List.map (fun (st, piece, _) -> (st, piece, a)) pieces | None -> pieces in
+      (match whole with Some a -> s := Curses.put ~attrs:a (2 + i) 1 (String.make text_cols ' ') !s | None -> ());
       List.iter
         (fun (start, piece, a) ->
           String.iteri
@@ -539,6 +673,26 @@ let edit_window (m : model) (s : Curses.t) : Curses.t =
   done;
   (* the error, in a red bar over the window's first line *)
   match m.error with Some e -> Curses.put ~attrs:error_attrs 2 1 (Printf.sprintf " %-77s" e) !s | None -> !s
+
+(* the watches, each with its value in the paused program *)
+let watch_window (m : model) (s : Curses.t) : Curses.t =
+  let h = watch_rows m in
+  if h = 0 then s
+  else
+    let top = 23 - h in
+    let window = attrs Vt.Black Vt.Cyan in
+    let s = fill top 0 h 80 window s in
+    let s = frame ~double:false ~title:"Watches" top 0 h 80 window s in
+    let value w =
+      match m.session with
+      | Some sess when sess.goal = None -> Pdebug.watch sess.program sess.machine w
+      | Some _ -> "(running)"
+      | None -> "(no program running: F7 or F8 starts it)"
+    in
+    List.fold_left
+      (fun s (i, w) -> if i < h - 2 then Curses.put ~attrs:window (top + 1 + i) 2 (let t = w ^ ": " ^ value w in if String.length t > 76 then String.sub t 0 76 else t) s else s)
+      s
+      (List.mapi (fun i w -> (i, w)) m.watches)
 
 let dropdown (bar : int) (sel : int) (s : Curses.t) : Curses.t =
   let items = snd (List.nth menus bar) in
@@ -578,7 +732,7 @@ let vt_screen (vt : Vt.t) : Curses.t =
   !s
 
 let listing (m : model) (first : int) (s : Curses.t) : Curses.t =
-  let p = match m.compiled with Some p -> p | None -> { Pcode.code = [||]; lines = [||] } in
+  let p = match m.compiled with Some p -> p | None -> { Pcode.code = [||]; lines = [||]; statements = [||]; procedures = [||] } in
   let top = 3 and left = 8 and h = 18 and w = 64 in
   let window = attrs Vt.Black Vt.Cyan in
   let s = fill top left h w window s in
@@ -588,20 +742,44 @@ let listing (m : model) (first : int) (s : Curses.t) : Curses.t =
     let a = first + i in
     if a < Array.length p.code then begin
       let here = p.lines.(a) = m.row + 1 in
-      let text = Printf.sprintf " %4d  %-24s line %d" a (Pcode.show p.code.(a)) p.lines.(a) in
+      (* where a paused program is, marked *)
+      let at_pc = match m.session with Some sess when sess.goal = None -> Pmachine.pc sess.machine = a | _ -> false in
+      let text = Printf.sprintf "%s%4d  %-24s line %d" (if at_pc then ">" else " ") a (Pcode.show p.code.(a)) p.lines.(a) in
       s := Curses.put ~attrs:(if here then attrs ~bold:true Vt.Yellow Vt.Blue else window) (top + 1 + i) (left + 1) (Printf.sprintf "%-*s" (w - 2) text) !s
     end
   done;
   Curses.put ~attrs:(attrs ~bold:true Vt.White Vt.Cyan) (top + h - 1) (left + 2) " the cursor's line highlighted; Esc " !s
 
+(* the call stack: each frame's call, and its links -- the static one
+   to where its procedure was declared, the dynamic one to its caller *)
+let stack_window (m : model) (s : Curses.t) : Curses.t =
+  match m.session with
+  | None -> s
+  | Some sess ->
+      let frames = Pdebug.frames sess.program sess.machine in
+      let lines =
+        List.map
+          (fun (f : Pdebug.frame) ->
+            if f.procedure = 0 then Printf.sprintf "%-16s frame %d" (Pdebug.call sess.program sess.machine f) f.base
+            else Printf.sprintf "%-16s frame %-5d static link %-5d dynamic link %d" (Pdebug.call sess.program sess.machine f) f.base f.static_link f.dynamic_link)
+          frames
+      in
+      let lines = List.filteri (fun i _ -> i < 12) lines @ [ ""; "static link: the frame of the procedure it is in"; "dynamic link: the frame of its caller" ] in
+      let w = 66 in
+      let s, top, left = dialog "Call Stack" (List.length lines + 4) w s in
+      let s = List.fold_left (fun s (i, l) -> Curses.put ~attrs:grey (top + 2 + i) (left + 3) l s) s (List.mapi (fun i l -> (i, l)) lines) in
+      Curses.cursor None s
+
 let view (m : model) : Curses.t =
-  match m.mode with
-  | Running machine -> Curses.cursor (if Talk.reading machine then Some (Vt.cursor (Talk.screen machine)) else None) (vt_screen (Talk.screen machine))
-  | Finished (vt, _) | Showing vt -> Curses.cursor None (vt_screen vt)
+  let running_user = match (m.mode, m.session) with Executing, Some s when s.swapped -> Some s | _ -> None in
+  match (m.mode, running_user) with
+  | _, Some s -> Curses.cursor (if s.typing <> None then Some (Vt.cursor s.user) else None) (vt_screen s.user)
+  | (Finished (vt, _) | Showing vt), _ -> Curses.cursor None (vt_screen vt)
   | _ -> (
       let s = Curses.create ~rows:24 ~cols:80 in
       let s = edit_window m s in
-      let s = status_line s in
+      let s = watch_window m s in
+      let s = status_line m s in
       let menu_open = match m.mode with Menu (b, _) -> Some b | _ -> None in
       let s = menu_bar menu_open s in
       let editing_cursor = Some (2 + m.row - m.top, 1 + m.col - m.left) in
@@ -631,6 +809,8 @@ let view (m : model) : Curses.t =
           let s = List.fold_left (fun s (i, l) -> Curses.put ~attrs:grey (top + 2 + i) (left + ((w - String.length l) / 2)) l s) s (List.mapi (fun i l -> (i, l)) lines) in
           Curses.cursor None (button (top + List.length lines + 3) (left + (w / 2) - 4) "  OK  " s)
       | Listing first -> Curses.cursor None (listing m first s)
+      | Stack -> stack_window m s
+      | Executing -> Curses.cursor None s
       | _ -> Curses.cursor editing_cursor s)
 
 (*****************************************************************************)
@@ -640,7 +820,8 @@ let view (m : model) : Curses.t =
 let init : model =
   load
     { lines = [| "" |]; row = 0; col = 0; top = 0; left = 0; file = noname; modified = false; overwrite = false; disk = Pascal_disk.files;
-      mode = Editing; error = None; compiled = None; last_screen = None; search = ""; runs = 0; quit = false }
+      mode = Editing; error = None; compiled = None; last_screen = None; search = ""; runs = 0; session = None; breakpoints = []; watches = [];
+      quit = false }
     "QUEENS.PAS"
 
 let program : model Tui.program = { init; update; view; over = (fun m -> m.quit) }
@@ -653,8 +834,10 @@ let screen (m : model) =
   | Editing -> "edit"
   | Menu _ -> "menu"
   | Open_dialog _ | Input _ | Info _ -> "dialog"
-  | Running _ -> "run"
+  | Executing -> "run"
+  | Stack -> "dialog"
   | Finished _ | Showing _ -> "user"
   | Listing _ -> "p-code"
 
 let file (m : model) (name : string) = List.assoc_opt name m.disk
+let execution_line = execution_line

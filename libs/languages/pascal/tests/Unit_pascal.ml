@@ -30,9 +30,67 @@ let contains (s : string) (sub : string) : bool =
 let last_line (s : string) : string =
   match List.rev (List.filter (( <> ) "") (String.split_on_char '\n' s)) with l :: _ -> l | [] -> ""
 
+(* the debugger's helpers: a program started, a step taken to its
+   pause, the line of a text in the source *)
+let debug (source : string) : Pcode.program * Pmachine.machine =
+  match Pascal_compile.compile source with Ok p -> (p, Pmachine.start p) | Error e -> Alcotest.fail e.message
+
+let step (p : Pcode.program) (m : Pmachine.machine) (s : Pdebug.step) : unit =
+  match Pmachine.resume ~pause:(Pdebug.pause_for p s m) m 1_000_000 with
+  | Paused -> ()
+  | _ -> Alcotest.fail "no pause"
+
+let line_of (source : string) (text : string) : int =
+  let rec go i = function [] -> Alcotest.fail text | l :: rest -> if contains l text then i else go (i + 1) rest in
+  go 1 (String.split_on_char '\n' source)
+
 let tests =
   Testo.categorize "Pascal"
     [
+      Testo.create "the debugger: Wirth's queens paused at a breakpoint, its calls and watches" (fun () ->
+          let src = disk "QUEENS.PAS" in
+          let p, m = debug src in
+          step p m Trace_into;
+          Alcotest.(check int) "stopped at the main begin" (line_of src "  for i := 1 to 8 do a[i] := true;" - 1) (Pdebug.line p m);
+          let bp = line_of src "x[j] := i;" in
+          step p m (Continue [ bp ]);
+          step p m (Continue [ bp ]);
+          Alcotest.(check int) "the breakpoint" bp (Pdebug.line p m);
+          check "j" "2" (Pdebug.watch p m "j");
+          check "i" "3" (Pdebug.watch p m "I");
+          check "x, one queen placed" "(1,0,0,0,0,0,0,0)" (Pdebug.watch p m "x");
+          check "a[1], its row taken" "FALSE" (Pdebug.watch p m "a[1]");
+          check "c[j - i] by a variable" "TRUE" (Pdebug.watch p m "c[j]");
+          check "unknown" "Unknown identifier: nope" (Pdebug.watch p m "nope");
+          let fs = Pdebug.frames p m in
+          Alcotest.(check (list string)) "the calls" [ "TRY(2)"; "TRY(1)"; "QUEENS" ] (List.map (Pdebug.call p m) fs);
+          Alcotest.(check (list int)) "every TRY's static link: the main frame" [ 0; 0 ] (List.map (fun (f : Pdebug.frame) -> f.static_link) (List.filteri (fun i _ -> i < 2) fs));
+          Alcotest.(check bool) "the dynamic link: the caller's frame" true ((List.hd fs).dynamic_link = (List.nth fs 1).base));
+      Testo.create "the debugger: F8 steps over a call, F7 goes into it; a watch through a static link" (fun () ->
+          let src = disk "SCOPES.PAS" in
+          let p, m = debug src in
+          step p m Trace_into;
+          step p m Trace_into;
+          Alcotest.(check int) "sum(10)" (line_of src "  sum(10);") (Pdebug.line p m);
+          step p m Step_over;
+          Alcotest.(check int) "stepped over: sum(100)" (line_of src "  sum(100)") (Pdebug.line p m);
+          step p m Trace_into;
+          Alcotest.(check (list string)) "into sum" [ "SUM(100)"; "SCOPES" ] (List.map (Pdebug.call p m) (Pdebug.frames p m));
+          step p m (To_line (line_of src "if k > 1 then add(k - 1)"));
+          step p m (To_line (line_of src "if k > 1 then add(k - 1)"));
+          check "total, sum's, seen from add" "199" (Pdebug.watch p m "total");
+          check "k" "99" (Pdebug.watch p m "k"));
+      Testo.create "the debugger: a breakpoint in a loop's body, hit at each turn" (fun () ->
+          let src = program ~decls:"var i: integer;" "i := 0;\nwhile i < 3 do\n  i := i + 1;\nwriteln(i)" in
+          let p, m = debug src in
+          let hits = ref [] in
+          (try
+             while true do
+               step p m (Continue [ 6 ]);
+               hits := Pdebug.watch p m "i" :: !hits
+             done
+           with _ -> ());
+          Alcotest.(check (list string)) "three turns" [ "0"; "1"; "2" ] (List.rev !hits));
       Testo.create "the lexer: Pascal_lexer.mli's example" (fun () ->
           let toks = Pascal_lexer.tokens "x := a[1] + 'z'; { done }" in
           check "tokens" "x ':=' a '[' 1 ']' '+' 'z' ';' the end of the text"

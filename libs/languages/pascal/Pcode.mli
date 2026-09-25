@@ -102,9 +102,34 @@ type instr =
   | Csp of csp
   | Stp
 
-(* a compiled program: its code, and the source line of each
-   instruction, for the errors at run time *)
-type program = { code : instr array; lines : int array }
+(* What the compiler leaves for the debugger, besides the code: the
+   P-code's DWARF. A debugger sees only a machine running instructions;
+   to show a source line and a variable by its name it needs
+
+   - where each statement's code begins, and its line: [statements] (-1
+     at the addresses inside a statement), where F7 and F8 stop;
+   - each procedure's code, from its entry to its return, and its
+     variables: their names, offsets in its frame and types, so that
+     "x" read in a paused program is the word at mp + 5, or the one a
+     static link away when x belongs to an enclosing procedure. *)
+
+type vtype = Vint | Vbool | Vchar | Varray of int * int * vtype | Vrecord of (string * int * vtype) list
+
+type variable = { vname : string; offset : int; vtype : vtype; by_ref : bool; param : bool }
+
+type procedure = {
+  pname : string;
+  level : int; (* its body's: the main program's is 0 *)
+  parent : int; (* the procedure it is declared in, an index in [procedures]; -1 for the main program *)
+  first : int; (* its code: its entry (ent) to its return (retp, retf, stp) *)
+  last : int;
+  variables : variable list; (* its parameters first *)
+}
+
+(* a compiled program: its code, the source line of each instruction
+   (for the errors at run time), and the debugger's information; the
+   main program is procedures.(0) *)
+type program = { code : instr array; lines : int array; statements : int array; procedures : procedure array }
 
 (* the words a frame's mark takes: result, static and dynamic links,
    return address *)

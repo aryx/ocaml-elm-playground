@@ -436,6 +436,10 @@ let run ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
            * press counts (see Native_loop_3d.ml
            * for the same filter and the bug it fixed) *)
           let first = Sdl.Event.(get sdl_event keyboard_repeat) = 0 in
+          (* claude: what a key press gave, with -debug: SDL's name and
+           * the one passed on (F9's "f9", which Playground's
+           * canonical_key makes "F9" again) *)
+          if first then Logs.debug (fun m -> m "key down: SDL %S, passed on as %S" key str);
           (* claude: Ctrl + a key is the debug key alone, not given to
            * the app: the way to reach a debug key the game uses itself
            * (AudioPiano's "h") *)

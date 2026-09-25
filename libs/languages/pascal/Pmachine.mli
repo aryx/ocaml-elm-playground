@@ -40,6 +40,10 @@
    machine's state is mutable, one per run: a continuation is taken
    once. *)
 
+(*****************************************************************************)
+(* {1 Running} *)
+(*****************************************************************************)
+
 (* [run program]: from its first instruction to stp, or to a run-time
    error ("Runtime error 201 at line 12: Range check error") *)
 val run : Pcode.program -> unit Talk.talk
@@ -48,3 +52,40 @@ val run : Pcode.program -> unit Talk.talk
    what it printed -- or the compiler's error, as Turbo Pascal wrote
    it: "Error at 3:5: ';' expected" *)
 val execute : string -> string list -> string
+
+(*****************************************************************************)
+(* {1 A machine to pause: the debugger's} *)
+(*****************************************************************************)
+
+(* The same machine, driven from outside: [resume] runs it until
+   [pause] says so (asked before each instruction), or until it stops
+   by itself -- its end, a run-time error, a line or a random number
+   to be given. A debugger pauses it at a statement's start (Pdebug.mli)
+   and reads its registers and memory; TinyTurboPascal runs its
+   programs this way, a slice a frame. *)
+
+type machine
+
+type stop =
+  | Halted
+  | Paused
+  | Slice_over (* the instructions asked for, done *)
+  | Need_line (* give_line, then resume: the read is done again *)
+  | Need_random of int (* give_random a number from 0 to n - 1 *)
+  | Failed of int * string (* a run-time error: its number and message *)
+
+val start : Pcode.program -> machine
+val resume : ?pause:(machine -> bool) -> machine -> int -> stop
+val give_line : machine -> string -> unit
+val give_random : machine -> int -> unit
+
+(* what the program wrote since the last call *)
+val output : machine -> string
+
+(* the registers, a word of memory, and the instructions run so far
+   (a step's "at least one instruction" is a count that moved) *)
+val pc : machine -> int
+val sp : machine -> int
+val mp : machine -> int
+val word : machine -> int -> int
+val executed : machine -> int

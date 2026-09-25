@@ -381,7 +381,10 @@ returns **a grid of cells instead of shapes**.
    `Tui_turbo`, Turbo Pascal 7's look; for it the Textmode way's `pc`
    (the CGA's sixteen colours, bold the bright ones), the box-drawing
    characters drawn as lines, and `Vt.key`'s F5-F12 and xterm's
-   modifiers (Ctrl-F9, Alt-F9).
+   modifiers (Ctrl-F9, Alt-F9). Then its debugger (2026-09-25): the
+   compiler's debug information in `Pcode`, a P-machine to pause
+   (`Pmachine.resume`), `Pdebug` (frames, static links, watches, steps),
+   and in the IDE F7, F8, F4, breakpoints, watches, the call stack.
 
 ## Open questions for the author
 
