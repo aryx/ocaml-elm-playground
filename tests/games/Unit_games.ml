@@ -343,13 +343,38 @@ let go_plays () =
  * reaction), and stops at the first block, burning it *)
 let bomberman_chain () =
   let open TinyBomberman in
-  let g = { (new_game ()) with range = 2; bombs = [ { col = 1; row = 1; timer = 0 }; { col = 3; row = 1; timer = 999 } ] } in
+  let g = { (new_game ()) with bombs = [ { col = 1; row = 1; timer = 0; owner = 0; reach = 2 }; { col = 3; row = 1; timer = 999; owner = 0; reach = 2 } ] } in
   let g' = explode g in
   Alcotest.(check int) "both exploded" 0 (List.length g'.bombs);
   Alcotest.(check (option char)) "the block after the second bomb burned" (Some ' ') (Tilemap.get g'.map 4 1);
   Alcotest.(check (option char)) "the one after it still there" (Some '+') (Tilemap.get g'.map 5 1);
-  let g'' = explode { g with range = 1; bombs = [ { col = 8; row = 7; timer = 0 } ] } in
+  let g'' = explode { g with bombs = [ { col = 8; row = 7; timer = 0; owner = 0; reach = 1 } ] } in
   Alcotest.(check (option char)) "the exit revealed" (Some 'e') (Tilemap.get g''.map 9 7)
+
+(* the rule that keeps a computer bomber alive: no bomb where there is
+ * no way out of its cross. In the classic arena's corner (1, 1), the
+ * start has three free tiles, an L: a fire of 2 from the corner covers
+ * them all, while one of 1 dropped at (2, 1) leaves (1, 2) to hide in *)
+let bomberman_safe_drop () =
+  let open TinyBomberman in
+  let map = arena_map 0 in
+  Alcotest.(check bool) "in the corner, fire 2: nowhere to hide" false (safe_drop map [] [] ~reach:2 (1, 1));
+  Alcotest.(check bool) "one step out, fire 1: round the corner" true (safe_drop map [] [] ~reach:1 (2, 1))
+
+(* a battle among the computer's three bombers alone, on each arena, is
+ * decided before the round's clock runs out *)
+let bomberman_battle () =
+  let open TinyBomberman in
+  List.iter
+    (fun round_no ->
+      let b0 = new_round Normal round_no [ 0; 0; 0; 0 ] in
+      let b = ref { b0 with bombers = List.map (fun (x : bomber) -> if x.idx = 0 then { x with alive = false } else x) b0.bombers } in
+      let s = Scene2d.start (Fighting !b) in
+      while !b.ended = None do
+        b := step_battle s initial_computer.keyboard !b
+      done;
+      Alcotest.(check bool) (fst arenas.(!b.arena_no) ^ ": decided before the clock") true (!b.clock <= round_time))
+    [ 1; 2; 3 ]
 
 (*****************************************************************************)
 (* TinyMicroMachines *)
@@ -7683,6 +7708,8 @@ let tests =
       t "AiGo, area scoring" go_scoring;
       t "AiGo, MCTS plays a legal move" go_plays;
       t "TinyBomberman, a chain reaction" bomberman_chain;
+      t "TinyBomberman, no bomb without a way out" bomberman_safe_drop;
+      t "TinyBomberman, a battle among the computer's bombers ends" bomberman_battle;
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
       t "TinyMarioKart, Mode 7 there and back" kart_mode7;
       t "TinyMarioKart, the computer drives the race" kart_race;

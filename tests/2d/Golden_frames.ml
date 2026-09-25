@@ -444,6 +444,9 @@ let scripted : Testutil_golden.scripted list =
     ("games/racing/software/TinyOutRun", "curve", 230, "space:1,up:2-230");
     (* a bomb dropped in the corner, the bomber walking away, the fire *)
     ("games/arcade/software/TinyBomberman", "bomb", 165, "space:1,space:5,right:8-30,down:31-45");
+    (* claude: the battle, in the classic arena: the four bombers out of
+     * their corners, the computer's first bombs against the blocks *)
+    ("games/arcade/software/TinyBomberman", "battle", 150, "down:2,space:4,right:10-30");
     (* two bombs, the first one's fire setting off the second: a chain *)
     ( "games/arcade/software/TinyBomberman",
       "chain",
