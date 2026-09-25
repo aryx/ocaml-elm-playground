@@ -185,6 +185,7 @@ val keyboard_bytes : Playground.computer -> before:Playground.keyboard -> string
 (* the width and height [draw]'s grid of characters takes, centered on
    (0, 0): what a case drawn around it needs *)
 val size : Playground.computer -> machine -> Playground.number * Playground.number
+val screen_size : Playground.computer -> Vt.t -> Playground.number * Playground.number
 
 (* [draw ?paper ?capitals ?phosphor computer m]: the grid of
    characters, as large as the playground's screen lets it be, centered:
@@ -194,6 +195,18 @@ val size : Playground.computer -> machine -> Playground.number * Playground.numb
    neither having lower case *)
 val draw :
   ?paper:bool -> ?capitals:bool -> ?phosphor:Playground.color -> Playground.computer -> machine -> Playground.shape list
+
+(* [draw]'s grid for any screen, the cursor blinking where the screen
+   has it if [cursor] (the Textmode way's, whose screen no machine
+   feeds) *)
+val draw_screen :
+  ?paper:bool ->
+  ?capitals:bool ->
+  ?phosphor:Playground.color ->
+  cursor:bool ->
+  Playground.computer ->
+  Vt.t ->
+  Playground.shape list
 
 (*****************************************************************************)
 (* {1 Applications} *)

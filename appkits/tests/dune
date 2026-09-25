@@ -19,6 +19,7 @@
    appkit_pim ; Ics, Vcard
    appkit_teletype ; Tty_hangman, Tty_guess
    appkit_basic ; Basic_parse, Basic_run, Basic_session
+   appkit_tui ; Tui_snake
    terminal ; Vt, the screen a BASIC session is read from
    appkit_browser ; Browser_history, Browser_forms, ...
    web ; Dom, Html_layout, for them

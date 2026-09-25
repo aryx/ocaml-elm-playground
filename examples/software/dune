@@ -19,7 +19,7 @@
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
     ImageJpeg ImagePng ImageLzw
     JuiceCurves JuiceSquash
-    LogoFractals KarelHarvest TeletypeHangman
+    LogoFractals KarelHarvest TeletypeHangman TextmodeSnake
     BigBangRocket
     BigBangWorm
     UniverseBall
@@ -45,6 +45,7 @@
     appkit_sheet_view ; and how it is drawn
     appkit_typeset ; TypesetParagraph's two line breakers
     appkit_teletype ; TeletypeHangman's program, Tty_hangman
+    appkit_tui ; TextmodeSnake's program, Tui_snake
     elm_playground_software ; implem of virtual elm_playground
   )
 )

@@ -8,4 +8,13 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"terminal" (fun _env -> Unit_vt.tests @ Unit_line_discipline.tests @ Unit_curses.tests)
+(* See Tui.mli *)
+
+type event = Key of string | Tick of float
+
+type 'model program = {
+  init : 'model;
+  update : event -> 'model -> 'model;
+  view : 'model -> Curses.t;
+  over : 'model -> bool;
+}

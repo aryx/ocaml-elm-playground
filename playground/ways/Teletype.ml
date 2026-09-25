@@ -247,12 +247,14 @@ let cell_height (computer : computer) (vt : Vt.t) : number =
   let screen = computer.screen in
   0.95 *. min (screen.height /. float_of_int (Vt.rows vt)) (screen.width /. (0.6 *. float_of_int (Vt.cols vt)))
 
-let size (computer : computer) (m : machine) : number * number =
-  let h = cell_height computer m.vt in
-  (0.6 *. h *. float_of_int (Vt.cols m.vt), h *. float_of_int (Vt.rows m.vt))
+let screen_size (computer : computer) (vt : Vt.t) : number * number =
+  let h = cell_height computer vt in
+  (0.6 *. h *. float_of_int (Vt.cols vt), h *. float_of_int (Vt.rows vt))
 
-let draw ?(paper = false) ?(capitals = paper) ?(phosphor = phosphor) (computer : computer) (m : machine) : shape list =
-  let vt = m.vt in
+let size (computer : computer) (m : machine) : number * number = screen_size computer m.vt
+
+let draw_screen ?(paper = false) ?(capitals = paper) ?(phosphor = phosphor) ~(cursor : bool) (computer : computer) (vt : Vt.t) :
+    shape list =
   let rows = Vt.rows vt and cols = Vt.cols vt in
   let fg0, bg0 = if paper then (ink, roll) else (phosphor, glass) in
   let h = cell_height computer vt in
@@ -279,9 +281,13 @@ let draw ?(paper = false) ?(capitals = paper) ?(phosphor = phosphor) (computer :
   let cursor =
     let r, c = Vt.cursor vt in
     let (Time now) = computer.time in
-    if reading m && Vt.cursor_visible vt && Float.rem now 1. < 0.5 then [ rectangle fg0 w h |> fade 0.6 |> move (x c) (y r) ] else []
+    if cursor && Vt.cursor_visible vt && Float.rem now 1. < 0.5 then [ rectangle fg0 w h |> fade 0.6 |> move (x c) (y r) ] else []
   in
   (rectangle bg0 (w *. float_of_int cols) (h *. float_of_int rows) :: cells) @ cursor
+
+(* the cursor blinks while the program waits for the keyboard *)
+let draw ?paper ?capitals ?phosphor (computer : computer) (m : machine) : shape list =
+  draw_screen ?paper ?capitals ?phosphor ~cursor:(reading m) computer m.vt
 
 (*****************************************************************************)
 (* The application *)

@@ -1,0 +1,14 @@
+; claude: the terminal the program runs in, native only: Tty_unix, a
+; Tui program (../Tui.mli) run in a real terminal -- raw mode, the
+; alternate screen, keys read as they come, curses' bytes written.
+; Installed as part of elm_playground_software, as networking/unix is.
+(library
+ (name terminal_unix)
+ (package elm_playground_software)
+ (wrapped false)
+ (libraries
+   unix
+   caps ; Cap.stdin and Cap.stdout, which running in the terminal takes
+   terminal ; Tui, Curses, Line_discipline
+ )
+)

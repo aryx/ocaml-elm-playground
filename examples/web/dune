@@ -46,6 +46,7 @@
 (copy_files ../LogoFractals.{ml,mli})
 (copy_files ../KarelHarvest.ml)
 (copy_files ../TeletypeHangman.ml)
+(copy_files ../TextmodeSnake.ml)
 (copy_files ../BigBangRocket.ml)
 (copy_files ../BigBangWorm.ml)
 (copy_files ../UniverseBall.ml)
@@ -87,7 +88,7 @@
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
     ImageJpeg ImagePng ImageLzw
     JuiceCurves JuiceSquash
-    LogoFractals KarelHarvest TeletypeHangman
+    LogoFractals KarelHarvest TeletypeHangman TextmodeSnake
     BigBangRocket
     BigBangWorm
     UniverseBall
@@ -107,6 +108,7 @@
     ai ; AiTictactoe's Minimax
     kit_maze ; AiGhosts' Grid_move and Chase
     appkit_teletype ; TeletypeHangman's program, Tty_hangman
+    appkit_tui ; TextmodeSnake's program, Tui_snake
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)

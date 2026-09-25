@@ -266,6 +266,8 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/KarelHarvest", "", 90);
     (* the first question, the gallows empty *)
     ("examples/software/TeletypeHangman", "", 3);
+    (* the snake, its food, and the bytes of the first frame: all of it *)
+    ("examples/software/TextmodeSnake", "", 3);
     (* the VT100 on, the shell's first prompt *)
     ("apps/system/software/TinyTerminal", "", 3);
     (* the first question: the instructions? *)

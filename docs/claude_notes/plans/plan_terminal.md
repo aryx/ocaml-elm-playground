@@ -261,6 +261,16 @@ question.
 
 ## 6. Text mode: full-screen programs, and Turbo Vision
 
+Done (2026-09-25), the first half: `Curses` (a screen as a value,
+`refresh` the bytes that changed, a gap rewritten when cheaper than a
+move; checked by a VT100 fed its bytes on random screens), `Tui` (the
+program, keys and ticks in), the `Textmode` way (the bytes fed to a
+`Vt`, the count shown under the screen), `libs/terminal/unix/`'s
+`Tty_unix` (raw mode, the alternate screen, restored on the way out),
+and Snake (`appkits/tui`'s `Tui_snake`) as the example, on the
+playground and in a real terminal (`examples/tty/`). What follows is
+the plan as written before; TinyRogue and Turbo Vision are left.
+
 Rogue, `vi`, Norton Commander and the Turbo Pascal IDE (Borland, 1983)
 are a different kind of text program than the Ahl games. They don't
 ask and wait. They wait for a key, redraw the screen and wait again,
@@ -346,7 +356,8 @@ returns **a grid of cells instead of shapes**.
    Ahl's style: GUESS, BAGELS (its clues checked by an oracle), MANDEL
    (the Mandelbrot set, checked against the same loop in OCaml),
    SIERPINSKI, SINE -- so TinyTerminal, then basic, then RUN MANDEL:
-   three programs deep. Left: an Ahl listing of our own against its
+   three programs deep. Then MATCHES, ANIMAL and LUNAR, and every
+   listing's sources in its first REMs. Left: an Ahl listing of our own against its
    OCaml port (Wumpus's needs RND(20)'s draws in the same order as
    Tty_wumpus's).
 6. `Curses` and the `Textmode` way (the playground and a real
