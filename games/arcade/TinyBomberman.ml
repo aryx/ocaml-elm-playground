@@ -51,6 +51,12 @@
  * included -- so as never to walk into it, to get out of it in time,
  * and never to drop a bomb without a way out ([safe_drop]).
  *
+ * The battle's rounds end with HURRY UP, Super Bomberman's: after 90
+ * seconds, blocks fall in a spiral from the edge in, crushing whoever
+ * is under them. The sounds (Sfx's recipes, no recording) and the juice
+ * (a blast shaking the screen, the blocks flying apart) are in their
+ * own section; music=off and juice=off turn them off.
+ *
  * Exercises: the power-ups the series added (the kick, the remote
  * detonator, the bomb pass), the other enemies (faster, walking through
  * blocks), a timer, a second human player on w/a/s/d, and the battle
@@ -348,6 +354,7 @@ type senses = {
   fire : (int * int) list;
   danger : (int * int) list; (* where the fire is, or will be *)
   foes : (int * int) list; (* the others standing *)
+  crushed : ((int * int) * int) list; (* the HURRY UP's next cells, and when *)
   bombs_left : int;
   reach : int;
   mind : mood Fsm.run;
@@ -368,6 +375,39 @@ type battle = {
 
 let rounds_to_win = 3
 let round_time = 60 * 150 (* frames: past it, a draw *)
+
+(* HURRY UP, Super Bomberman's (1993) end to a round that drags: after
+ * 90 seconds, blocks fall into the arena one after the other, in a
+ * spiral from its edge inwards, crushing whatever stands under them.
+ * Without it, measured: computer bombers who know where the fire will
+ * be and when rarely catch each other, and a third of their rounds ran
+ * to the clock -- two minutes to watch once you are out. *)
+let hurry_at = 60 * 90
+let hurry_every = 6 (* frames between two blocks *)
+
+(* the arena's cells in the order they are crushed: its rings from the
+ * outside in, each clockwise from its top left corner *)
+let spiral : (int * int) list =
+  let rec rings k =
+    let c1 = 1 + k and c2 = 13 - k and r1 = 1 + k and r2 = 11 - k in
+    if c1 > c2 || r1 > r2 then []
+    else
+      let top = List.init (c2 - c1 + 1) (fun i -> (c1 + i, r1)) in
+      let right = List.init (r2 - r1) (fun i -> (c2, r1 + 1 + i)) in
+      let bottom = if r2 > r1 then List.init (c2 - c1) (fun i -> (c2 - 1 - i, r2)) else [] in
+      let left = if c2 > c1 then List.init (max 0 (r2 - r1 - 1)) (fun i -> (c1, r2 - 1 - i)) else [] in
+      top @ right @ bottom @ left @ rings (k + 1)
+  in
+  rings 0
+
+(* the cells about to be crushed, and in how many frames: what the
+ * computer knows of the blocks to come, as it knows a bomb's fuse *)
+let soon (clock : int) : ((int * int) * int) list =
+  List.filter_map
+    (fun (i, cr) ->
+      let t = hurry_at + (i * hurry_every) - clock in
+      if t > 0 && t <= 90 then Some (cr, t) else None)
+    (List.mapi (fun i cr -> (i, cr)) spiral)
 
 let standing (b : bomber) : bool = b.alive && b.dying = 0
 
@@ -418,18 +458,66 @@ let way ~(ok : int * int -> bool) ~(goal : int * int -> bool) (from : int * int)
   in
   (Pathfind.breadth_first problem from).path
 
+(* When each tile will burn: a bomb goes off at its own time, or when
+ * the first blast that reaches it does, whichever comes first (a chain
+ * runs at the speed of its fastest fuse), and a tile burns when the
+ * first bomb whose cross it is in goes off. *)
+let fuse_times (map : Tilemap.t) (bombs : bomb list) : (int * int, int) Hashtbl.t =
+  let bombs = Array.of_list bombs in
+  let crosses = Array.map (fun (b : bomb) -> fire_from map b.reach (b.col, b.row)) bombs in
+  let t = Array.map (fun (b : bomb) -> b.timer) bombs in
+  for _ = 1 to Array.length bombs do
+    Array.iteri
+      (fun i (b : bomb) -> Array.iteri (fun j cross -> if List.mem (b.col, b.row) cross then t.(i) <- min t.(i) t.(j)) crosses)
+      bombs
+  done;
+  let times = Hashtbl.create 64 in
+  Array.iteri
+    (fun j cross ->
+      List.iter (fun cr -> Hashtbl.replace times cr (match Hashtbl.find_opt times cr with Some t' -> min t' t.(j) | None -> t.(j))) cross)
+    crosses;
+  times
+
+(* The way out: to the nearest tile no bomb's cross covers, through
+ * tiles neither burning nor holding a bomb, and each one entered only
+ * if the bomber will have left it before it burns -- it takes
+ * [per_tile] frames a tile, the next one reached at the next step. A
+ * breadth-first search over (tile, step), so that the same tile may be
+ * safe early and deadly late. [] if there is none within 8 steps.
+ *
+ * Measured, before the clock: a bomber dropped a second bomb and ran
+ * for safety along the shortest way, straight through the cross of its
+ * first bomb, due in 24 frames: that way led somewhere safe, but it
+ * did not get there first. *)
+let escape ?(soon = []) (map : Tilemap.t) (bombs : bomb list) (fire : (int * int) list) ~(per_tile : int) (at : int * int) : (int * int) list =
+  let times = fuse_times map bombs in
+  (* a cell about to be crushed is one about to burn *)
+  List.iter (fun (cr, t) -> Hashtbl.replace times cr (match Hashtbl.find_opt times cr with Some t' -> min t t' | None -> t)) soon;
+  let problem : (int * int * int) Pathfind.problem =
+    { neighbors =
+        (fun (c, r, k) ->
+          if k >= 8 then []
+          else
+            List.filter_map
+              (fun (c', r') ->
+                let cr = (c', r') in
+                let in_time = match Hashtbl.find_opt times cr with None -> true | Some t -> t > (k + 2) * per_tile in
+                if walkable map bombs fire cr && in_time then Some ((c', r', k + 1), 1.) else None)
+              [ (c, r - 1); (c, r + 1); (c - 1, r); (c + 1, r) ]);
+      goal = (fun (c, r, _) -> not (Hashtbl.mem times (c, r)) && not (List.mem (c, r) fire));
+      estimate = (fun _ -> 0.) }
+  in
+  List.map (fun (c, r, _) -> (c, r)) (Pathfind.breadth_first problem (fst at, snd at, 0)).path
+
 (* Can a bomb be dropped here and walked away from? With it, the fire
- * to come is its cross too; there must be a way, through tiles not
- * burning, to a tile out of it all, a few steps away -- a bomb goes off
- * in 150 frames, and a bomber walks a tile in 20 at the start. It is
- * the rule that keeps the computer from blowing itself up, and the one
- * a beginner forgets. *)
-let safe_drop (map : Tilemap.t) (bombs : bomb list) (fire : (int * int) list) ~(reach : int) (at : int * int) : bool =
+ * to come is its cross too, on its 150 frames' fuse; there must be a
+ * way out ([escape]), in time. It is the rule that keeps the computer
+ * from blowing itself up, and the one a beginner forgets. A bomber
+ * walks a tile in 20 frames at the start, faster with the speed
+ * power-up. *)
+let safe_drop ?(per_tile = 20) ?(soon = []) (map : Tilemap.t) (bombs : bomb list) (fire : (int * int) list) ~(reach : int) (at : int * int) : bool =
   let bombs' = { col = fst at; row = snd at; timer = 150; owner = -1; reach } :: bombs in
-  let danger' = danger map bombs' fire in
-  match way ~ok:(walkable map bombs' fire) ~goal:(fun cr -> not (List.mem cr danger')) at with
-  | [] -> false
-  | path -> List.length path <= 7
+  escape ~soon map bombs' fire ~per_tile at <> []
 
 let in_line (s : senses) (foe : int * int) : bool = List.mem foe (fire_from s.map s.reach s.at)
 let reachable (s : senses) (goal : int * int -> bool) : (int * int) list = way ~ok:(walkable s.map s.bombs s.fire) ~goal s.at
@@ -457,7 +545,8 @@ let senses_of (was : senses option) ((b, idx) : battle * int) : senses =
   let fire = List.map fst b.fire in
   let s =
     { me = idx; at = Grid_move.tile_of grid me.m; map = b.map; bombs = b.bombs; fire;
-      danger = danger b.map b.bombs fire;
+      danger = danger b.map b.bombs fire @ List.map fst (soon b.clock);
+      crushed = soon b.clock;
       foes = List.filter_map (fun (x : bomber) -> if x.idx <> idx && standing x then Some (Grid_move.tile_of grid x.m) else None) b.bombers;
       bombs_left = me.most - List.length (List.filter (fun (x : bomb) -> x.owner = idx) b.bombs);
       reach = me.reach;
@@ -470,7 +559,7 @@ let senses_of (was : senses option) ((b, idx) : battle * int) : senses =
  * the bomb again, on the arena as it is now. *)
 let decide (s : senses) : order =
   let target path = match List.rev path with goal :: _ -> Tile goal | [] -> Here in
-  let can_drop = s.bombs_left > 0 && (not (bomb_on s.bombs s.at)) && safe_drop s.map s.bombs s.fire ~reach:s.reach s.at in
+  let can_drop = s.bombs_left > 0 && (not (bomb_on s.bombs s.at)) && safe_drop ~soon:s.crushed s.map s.bombs s.fire ~reach:s.reach s.at in
   match s.mind.state with
   | Escape -> { still with goal = Safety }
   | Hunt ->
@@ -510,13 +599,15 @@ let feet ((b, idx) : battle * int) (o : order) : order =
   let me = List.find (fun (x : bomber) -> x.idx = idx) b.bombers in
   let fire = List.map fst b.fire in
   let at = Grid_move.tile_of grid me.m in
-  let danger_now = danger b.map b.bombs fire in
+  let crushed = soon b.clock in
+  let danger_now = danger b.map b.bombs fire @ List.map fst crushed in
   let mine = List.length (List.filter (fun (x : bomb) -> x.owner = idx) b.bombs) in
   let own = danger b.map (List.filter (fun (x : bomb) -> x.owner = idx) b.bombs) [] in
   (* a decision is repeated until the next one (Bot.mli): the bomb it
    * decided on, dropped, is not dropped again on the way out, where it
    * would shut the way *)
-  let drop = o.drop && mine < me.most && (not (List.mem at own)) && safe_drop b.map b.bombs fire ~reach:me.reach at in
+  let per_tile = t / me.speed in
+  let drop = o.drop && mine < me.most && (not (List.mem at own)) && safe_drop ~per_tile ~soon:crushed b.map b.bombs fire ~reach:me.reach at in
   let risky = List.mem at danger_now in
   let goal = if drop || List.mem at own then Safety else o.goal in
   let ok cr = walkable b.map b.bombs fire cr && (risky || not (List.mem cr danger_now)) in
@@ -525,7 +616,8 @@ let feet ((b, idx) : battle * int) (o : order) : order =
     if arrive at && goal <> Safety || (goal = Safety && not risky) then if Grid_move.at_center grid me.m then Grid_move.Stop else me.m.dir
     else if not (Grid_move.at_center grid me.m) then me.m.dir
     else
-      match way ~ok ~goal:arrive at with
+      let path = if goal = Safety then escape ~soon:crushed b.map b.bombs fire ~per_tile at else way ~ok ~goal:arrive at in
+      match path with
       | _ :: (c, r) :: _ -> if c > fst at then Grid_move.Right else if c < fst at then Left else if r > snd at then Down else Up
       | _ -> Stop
   in
@@ -606,6 +698,19 @@ let step_battle (s : 'scene Scene2d.t) (k : keyboard) (b : battle) : battle =
         else x)
       bombers
   in
+  (* HURRY UP: a block falls, crushing a bomber under it, a bomb, a
+   * power-up *)
+  let map, bombers, bombs =
+    let c = b.clock + 1 in
+    if c < hurry_at || (c - hurry_at) mod hurry_every <> 0 then (map, bombers, bombs)
+    else
+      match List.nth_opt spiral ((c - hurry_at) / hurry_every) with
+      | None -> (map, bombers, bombs)
+      | Some (col, row) ->
+          ( Tilemap.set map col row '#',
+            List.map (fun (x : bomber) -> if standing x && Grid_move.tile_of grid x.m = (col, row) then { x with dying = 60 } else x) bombers,
+            List.filter (fun (y : bomb) -> (y.col, y.row) <> (col, row)) bombs )
+  in
   let clock = b.clock + 1 in
   let ended =
     match b.ended with
@@ -634,11 +739,12 @@ type scene =
   | Fighting of battle
   | Champion of battle
 
-type model = scene Scene2d.t
+type scenes = scene Scene2d.t
+type model = { scenes : scenes; fx : Juice.t (* the juice's, see its section *) }
 
-let initial_model : model = Scene2d.start (Title (Stage, Normal))
+let initial_model : model = { scenes = Scene2d.start (Title (Stage, Normal)); fx = Juice.none ~seed:1 }
 
-let update (computer : computer) (s : model) : model =
+let rules (computer : computer) (s : scenes) : scenes =
   let s = Scene2d.update computer s in
   let space = Scene2d.pressed (fun k -> k.kspace) s in
   let key f = Scene2d.pressed f s in
@@ -745,7 +851,7 @@ let view_game (g : game) : shape list =
   @ [ at g.bomber bomber;
       text white 3. (Printf.sprintf "LIVES %d   SCORE %d   FIRE %d" g.lives g.score g.range) |> move_y (bounds.top +. 40.) ]
 
-let view_battle (s : model) (b : battle) : shape list =
+let view_battle (s : scenes) (b : battle) : shape list =
   let frames = b.clock in
   let bomber_shape (x : bomber) =
     let fr = battle_frames.(x.idx) in
@@ -774,11 +880,12 @@ let view_battle (s : model) (b : battle) : shape list =
   @ List.map bomber_shape b.bombers
   @ score
   @ [ text gray 2. (Printf.sprintf "ROUND %d -- %s" b.round_no (fst arenas.(b.arena_no))) |> move_y (bounds.bottom -. 30.) ]
+  @ (if b.clock >= hurry_at && b.clock < hurry_at + 150 && b.ended = None then Scene2d.blink 0.4 s [ text yellow 5. "HURRY UP!" ] else [])
   @ banner
 
 let level_name = function Easy -> "EASY" | Normal -> "NORMAL" | Hard -> "HARD"
 
-let view (computer : computer) (s : model) : shape list =
+let view_scene (computer : computer) (s : scenes) : shape list =
   let screen = computer.screen in
   rectangle (rgb 30 30 40) screen.width screen.height
   ::
@@ -810,6 +917,110 @@ let view (computer : computer) (s : model) : shape list =
   | Cleared score ->
       [ text yellow 7. "STAGE CLEAR!"; text white 3. (Printf.sprintf "SCORE %d" score) |> move_y (-100.) ]
       @ Scene2d.blink 1. s [ text white 3. "PRESS SPACE" |> move_y (-200.) ])
+
+(*****************************************************************************)
+(* Sounds and juice (music=off, juice=off) *)
+(*****************************************************************************)
+(* claude: What a frame did that is heard or felt, found by comparing the
+ * scene before it and after: a bomb dropped, a blast (the more bombs in
+ * it, the more the screen shakes; each burnt block flying apart), a
+ * power-up taken, a bomber or a balloon caught (a burst of its color,
+ * and a hitstop for a bomber), the HURRY UP and its blocks, a round, a
+ * game. The sounds are Sfx's recipes, a preset and a number or two
+ * changed, no recording. *)
+
+let drop_sound = Audio.sfx { Sfx.blip with frequency = 180.; slide = 120.; volume = 0.25 }
+let blast_sound = Audio.sfx { Sfx.explosion with volume = 0.35 }
+let power_sound = Audio.sfx { Sfx.powerup with volume = 0.3 }
+let caught_sound = Audio.sfx { Sfx.hit with frequency = 400.; slide = 80.; decay = 0.4; volume = 0.35 }
+let pop_sound = Audio.sfx { Sfx.hit with volume = 0.25 }
+let alarm = Audio.sfx { Sfx.blip with frequency = 880.; slide = 660.; sustain = 0.3; volume = 0.3 }
+let thud = Audio.sfx { Sfx.hit with frequency = 120.; volume = 0.12 }
+let chime = Audio.sfx { Sfx.coin with volume = 0.3 }
+let fanfare = Audio.sfx { Sfx.powerup with sustain = 0.3; volume = 0.35 }
+let sad = Audio.sfx { Sfx.default with wave = Triangle; frequency = 440.; slide = 110.; sustain = 0.2; decay = 0.4; volume = 0.3 }
+
+(* an original tune, bouncy and quiet: eight bars in F, the bass on the
+ * beat *)
+let music =
+  Audio.abc
+    {|X:1
+T:Tiny Bomberman (original)
+L:1/8
+Q:1/4=144
+K:F
+V:1
+F2 AC F2 AC | G2 Bd c4 | A2 cF A2 cF | G2 E2 F4 |
+f2 ec d2 cA | B2 dG c4 | A2 GF E2 G2 | F4 z4 |
+V:2
+F,,2 C,2 F,,2 C,2 | C,2 G,2 F,,2 C,2 | F,,2 C,2 F,,2 C,2 | C,2 G,2 F,,2 C,2 |
+D,2 A,2 D,2 A,2 | G,,2 D,2 C,2 G,2 | F,,2 C,2 C,2 G,2 | F,,4 z4 |
+|}
+  |> Audio.louder 0.15
+
+let pan_of (col : int) : number = (float_of_int col -. 7.) /. 7.
+
+(* the blasts of a frame: the tiles newly on fire, and the blocks among
+ * them that burnt -- heard once whatever the number of bombs, felt by
+ * how many there were *)
+let blasts (map : Tilemap.t) (map' : Tilemap.t) (fire' : ((int * int) * int) list) (fx : Juice.t) : Juice.t =
+  let fresh = List.filter_map (fun (cr, n) -> if n = 30 then Some cr else None) fire' in
+  if fresh = [] then fx
+  else begin
+    Audio.play (Audio.pan (pan_of (fst (List.hd fresh))) blast_sound);
+    let burnt = List.filter (fun (c, r) -> is_block (Tilemap.get map c r) && not (is_block (Tilemap.get map' c r))) fresh in
+    let fx = Juice.shake (Float.min 0.8 (0.15 +. (0.02 *. float_of_int (List.length fresh)))) fx in
+    List.fold_left (fun fx (c, r) -> Juice.burst ~at:(Tilemap.center stage c r) (Juice.debris (rgb 170 110 60)) fx) fx burnt
+  end
+
+let new_bomb (bombs : bomb list) : bomb option = List.find_opt (fun (x : bomb) -> x.timer = 149) bombs
+
+let heard_and_felt (before : scene) (after : scene) (fx : Juice.t) : Juice.t =
+  match (before, after) with
+  | Playing g, Playing g' ->
+      Option.iter (fun (x : bomb) -> Audio.play (Audio.pan (pan_of x.col) drop_sound)) (new_bomb g'.bombs);
+      let fx = blasts g.map g'.map g'.fire fx in
+      if g'.range > g.range then Audio.play power_sound;
+      if List.length g'.balloons < List.length g.balloons then Audio.play pop_sound;
+      if g.dying = 0 && g'.dying > 0 then begin
+        Audio.play caught_sound;
+        fx |> Juice.burst ~at:(Grid_move.to_world grid bounds g'.bomber) (Juice.debris white) |> Juice.freeze 5
+      end
+      else fx
+  | Playing _, Cleared _ -> Audio.play fanfare; fx
+  | Playing _, Game_over _ -> Audio.play sad; fx
+  | Fighting b, (Fighting b' | Champion b') when b.round_no = b'.round_no ->
+      Option.iter (fun (x : bomb) -> Audio.play (Audio.pan (pan_of x.col) drop_sound)) (new_bomb b'.bombs);
+      let fx = blasts b.map b'.map b'.fire fx in
+      if b'.clock = hurry_at then Audio.play alarm;
+      if b'.clock > hurry_at && (b'.clock - hurry_at) mod hurry_every = 0 && b'.clock < hurry_at + (List.length spiral * hurry_every) then Audio.play thud;
+      let fx =
+        List.fold_left2
+          (fun fx (x : bomber) (x' : bomber) ->
+            if x'.most > x.most || x'.reach > x.reach || x'.speed > x.speed then Audio.play power_sound;
+            if standing x && x'.dying > 0 then begin
+              Audio.play caught_sound;
+              fx |> Juice.burst ~at:(Grid_move.to_world grid bounds x'.m) (Juice.debris suits.(x'.idx)) |> Juice.freeze 4
+            end
+            else fx)
+          fx b.bombers b'.bombers
+      in
+      if b.ended = None && b'.ended <> None && List.exists (fun (x : bomber) -> x.alive) b'.bombers then Audio.play chime;
+      (match after with Champion _ -> Audio.play fanfare | _ -> ());
+      fx
+  | _ -> fx
+
+(* the rules, then what they did, heard and felt; nothing at all while
+ * the juice freezes the game *)
+let update (computer : computer) (m : model) : model =
+  if List.assoc_opt "music" computer.flags = Some "off" then Audio.stop "music" else Audio.loop "music" music;
+  let fx = Juice.step computer m.fx in
+  if Juice.frozen fx then { m with fx }
+  else
+    let scenes = rules computer m.scenes in
+    { scenes; fx = heard_and_felt m.scenes.scene scenes.scene fx }
+
+let view (computer : computer) (m : model) : shape list = Juice.view m.fx (view_scene computer m.scenes)
 
 let app = game view update initial_model
 
