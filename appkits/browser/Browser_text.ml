@@ -19,7 +19,7 @@ let characters (s : string) : string list =
   in
   go 0 []
 
-let root_look = Looks.root ~size:16.
+let root_look = Looks.root ~size:16. ()
 
 let style_of (l : Looks.t) : Style.t =
   { bold = l.bold; italic = l.italic; underline = l.underline; strike = l.strike; size = l.size }

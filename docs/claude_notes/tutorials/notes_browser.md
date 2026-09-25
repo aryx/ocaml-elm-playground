@@ -568,6 +568,46 @@ answers, never a blocking call -- and the browser does the waiting
 `threads` flag: the web platform's `XMLHttpRequest` is already the
 Worker.
 
+## 15. Extensions: the web's second layer
+
+HTML 2.0 (RFC 1866, November 1995) wrote down what Mosaic read. By
+then Netscape had shipped its own additions for a year, without asking
+anyone: `<font size=+1 color=red>`, `<center>`, `<body bgcolor=silver>`,
+rules of any thickness (`<hr size=4 width=50%>`), and pictures the
+text flows around (`<img align=left>`). HTML 3.2 (1997) took most of
+them in. A page of 1995 mixes the two, often under a DOCTYPE claiming
+HTML 2.0 -- this repository's own home page did, with a `<P
+ALIGN=CENTER>`.
+
+So the tree keeps **where each thing comes from** (`Dtd.origin`): the
+lexer marks a Netscape element's start tag, and keeps a core element's
+Netscape attributes apart; the tree keeps both marks:
+
+```
+<body bgcolor=silver>   Start_tag "body" [] {Netscape: bgcolor = "silver"}
+<font size=+1>          Start_tag "font" [size = "+1"] {Netscape}
+                        the tree:  body {Netscape: bgcolor="silver"}
+                                     font size="+1" {Netscape}
+```
+
+The core reads the core (`Dom.attribute`); the rest is asked for by
+name (`~extensions:true`). One tree for every browser, and each honours
+what it knows: TinyMosaic, HTML 2.0, where an extension is an unknown
+tag (its content shown, the tag ignored: HTML's rule for what a browser
+does not know, which is what let Netscape extend it at all);
+TinyNetscape, the extensions too.
+
+**Floats** are the one extension that changed layout itself. A picture
+with `align=left` leaves the line, goes against the left edge, and the
+lines beside it are shortened until its bottom -- including the next
+paragraph's, so the floats are the page's, not a block's. A line's
+width now depends on where it is, so lines are filled one at a time,
+each as wide as the room at its top (a paragraph scored whole, Knuth
+and Plass, needs one width: beside floats, the breaker is greedy).
+`<br clear=all>` moves the next line below them. CSS 2.1's section 9.5
+wrote down what Netscape did, and added much (see `Html_layout.mli`'s
+worked example, and its list of what is not done).
+
 ## Exercises
 
 1. The adoption agency algorithm, for `<b><i>x</b>y</i>` (section 4).
@@ -592,6 +632,11 @@ Worker.
 11. A slow `tiny_httpd` (`delay=`), to feel four connections against
     one: `Http_server` answering a request later without stopping the
     others (a sleep in the handler would stop the whole server).
+12. `<blink>` (Netscape 1.0's most hated tag): a look that the drawing
+    turns on and off every half second.
+13. A float that does not fit beside another goes below it, as CSS
+    says; and a block's background under a float (only its lines are
+    shortened).
 
 ## Glossary
 

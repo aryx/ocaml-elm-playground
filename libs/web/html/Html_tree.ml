@@ -18,25 +18,37 @@
  * and the tree is frozen into Dom values at the end *)
 type open_element = {
   name : string;
+  origin : Dtd.origin;
   mutable attributes : (string * string) list;
+  mutable extensions : (string * string) list; (* Netscape's, apart *)
   mutable children : child list; (* the last first *)
 }
 
 and child = E of open_element | T of string
 
-let make (name : string) (attributes : (string * string) list) : open_element = { name; attributes; children = [] }
+(* a start tag's name and attributes, with their origins (Html_lexer) *)
+type tag = { tag_name : string; origin : Dtd.origin; attributes : (string * string) list; extensions : (string * string) list }
+
+let core (name : string) : tag = { tag_name = name; origin = Core; attributes = []; extensions = [] }
+
+let make (tag : tag) : open_element =
+  { name = tag.tag_name; origin = tag.origin; attributes = tag.attributes; extensions = tag.extensions; children = [] }
 
 let rec freeze (e : open_element) : Dom.element =
   {
     name = e.name;
     attributes = e.attributes;
+    extensions = e.extensions;
+    origin = e.origin;
     children = List.rev_map (fun c -> match c with E e -> Dom.Element (freeze e) | T s -> Dom.Text s) e.children;
   }
 
 (* attributes given again (a second <body bgcolor=...>): the new ones
  * added, the old ones kept *)
-let add_attributes (e : open_element) (attributes : (string * string) list) : unit =
-  List.iter (fun (n, v) -> if not (List.mem_assoc n e.attributes) then e.attributes <- e.attributes @ [ (n, v) ]) attributes
+let add_attributes (e : open_element) (tag : tag) : unit =
+  let add old (n, v) = if List.mem_assoc n old then old else old @ [ (n, v) ] in
+  e.attributes <- List.fold_left add e.attributes tag.attributes;
+  e.extensions <- List.fold_left add e.extensions tag.extensions
 
 (*****************************************************************************)
 (* The stack of open elements *)
@@ -60,10 +72,10 @@ let append_text (t : t) (s : string) : unit =
   let e = top t in
   match e.children with T before :: rest -> e.children <- T (before ^ s) :: rest | _ -> e.children <- T s :: e.children
 
-let insert (t : t) (name : string) (attributes : (string * string) list) : unit =
-  let e = make name attributes in
+let insert (t : t) (tag : tag) : unit =
+  let e = make tag in
   (top t).children <- E e :: (top t).children;
-  if not (Dtd.is_void name) then t.stack <- e :: t.stack
+  if not (Dtd.is_void tag.tag_name) then t.stack <- e :: t.stack
 
 (* pop down to the first element satisfying [found], looking no further
  * than one satisfying [stop]; false if none was found *)
@@ -90,20 +102,21 @@ let start_body (t : t) : unit =
 
 let is_blank (s : string) : bool = String.for_all (fun c -> c = ' ' || c = '\n' || c = '\t') s
 
-let start_tag (t : t) (name : string) (attributes : (string * string) list) : unit =
+let start_tag (t : t) (tag : tag) : unit =
+  let name = tag.tag_name in
   match name with
-  | "html" -> add_attributes t.html attributes
+  | "html" -> add_attributes t.html tag
   | "head" -> ()
   | "body" ->
       start_body t;
-      add_attributes t.body attributes
-  | _ when Dtd.is_head_element name && not t.body_started -> insert t name attributes
+      add_attributes t.body tag
+  | _ when Dtd.is_head_element name && not t.body_started -> insert t tag
   | _ ->
       start_body t;
       (* 1. what x closes, nearest first, as long as some is found *)
       while pop_to t ~found:(Dtd.closes name) ~stop:(Dtd.stops name) do () done;
       (* 2. and 3. *)
-      insert t name attributes;
+      insert t tag;
       t.skip_newline <- List.mem name [ "pre"; "listing"; "textarea" ]
 
 let end_tag (t : t) (name : string) : unit =
@@ -113,12 +126,12 @@ let end_tag (t : t) (name : string) : unit =
       if not (pop_to t ~found:(( = ) "p") ~stop:(Dtd.stops "p")) then (
         (* </p> with no <p>: an empty one, as the spec says *)
         start_body t;
-        insert t "p" [];
+        insert t (core "p");
         ignore (pop_to t ~found:(( = ) "p") ~stop:(fun _ -> false)))
   | _ -> ignore (pop_to t ~found:(( = ) name) ~stop:(fun y -> List.mem y [ "html"; "table"; "td"; "th"; "caption" ]))
 
 let parse (tokens : Html_lexer.token list) : Dom.element =
-  let html = make "html" [] and head = make "head" [] and body = make "body" [] in
+  let html = make (core "html") and head = make (core "head") and body = make (core "body") in
   html.children <- [ E body; E head ];
   let t = { html; head; body; stack = [ head; html ]; body_started = false; skip_newline = false } in
   List.iter
@@ -132,7 +145,8 @@ let parse (tokens : Html_lexer.token list) : Dom.element =
       match token with
       | Text "" -> ()
       | Doctype _ | Comment _ -> ()
-      | Start_tag { name; attributes; _ } -> start_tag t name attributes
+      | Start_tag { name; attributes; extensions; origin; _ } ->
+          start_tag t { tag_name = name; origin; attributes; extensions }
       | End_tag name -> end_tag t name
       | Text s ->
           (* in the head itself, only spaces are allowed: other text

@@ -30,11 +30,13 @@ type t = {
   title : string; (* the text of its <title>, or "" *)
   layout : Html_layout.box;
   drawn : Browser_draw.drawn; (* all but its controls, drawn once a layout *)
+  background : Looks.color option; (* <body bgcolor=>, Netscape's *)
   forms : Forms.form list;
   values : (Dom.element * Forms.value) list; (* the controls changed, by element (==) *)
 }
 
 type settings = {
+  extensions : bool; (* Netscape's extensions to HTML honoured (Dtd.origin) *)
   width : float;
   breaker : Html_layout.breaker;
   visited : string -> bool; (* an absolute URL, no #fragment *)

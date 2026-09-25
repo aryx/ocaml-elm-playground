@@ -39,6 +39,21 @@
    are not its words' ([box]). An em is the element's own size: an
    h1's 0.67 em margin is 0.67 of its 2 em, 21.4 at a root of 16.
 
+   **Netscape's extensions** (Dtd.origin), honoured only when the
+   root's look says so ([root ~extensions:true], TinyNetscape's);
+   otherwise an extension element is an unknown tag (its content in
+   its parent's look, a box of nothing) and an extension attribute is
+   not seen, as in Mosaic:
+
+     element / attribute     look
+     center                  lines centred, a block
+     font size=1..7, +n, -n  1 to 7 on HTML's scale, 3 the root's size:
+                             x 0.63 0.82 1 1.13 1.5 2 3 (CSS's
+                             keywords, x-small to xx-large, and 48 px)
+     font color=             #rrggbb, or one of HTML 3.2's 16 names
+     body text= link= vlink= the text's, a link's, a visited link's
+     p, h1-h6 align=         as div's
+
    Phase 8 turns this table into the first style sheet of a cascade,
    the "user agent style sheet" -- which is what it always was.
 
@@ -60,10 +75,24 @@ type t = {
   link : string option; (* the href of the link the text is in *)
   pre : bool; (* spaces and newlines kept, lines never broken *)
   align : align; (* where a block's lines go *)
+  link_color : color; (* a link's, blue; body link= *)
+  visited_color : color; (* a visited link's, purple; body vlink= *)
+  base : float; (* the root's size: <font size=3> *)
+  extensions : bool; (* Netscape's honoured *)
 }
 
-(* the root's look: black text of [size], all off *)
-val root : size:float -> t
+(* the root's look: black text of [size], all off; Netscape's extensions
+ * honoured if [extensions] (false) *)
+val root : ?extensions:bool -> size:float -> unit -> t
+
+(* #rrggbb, or one of HTML 3.2's 16 colour names (Windows' VGA palette:
+ * black, silver, gray, white, maroon, red, purple, fuchsia, green,
+ * lime, olive, yellow, navy, blue, teal, aqua), any case *)
+val color_of_string : string -> color option
+
+(* <font size=>'s factor of the root's size: "1" to "7", or "+n", "-n"
+ * from 3, kept within 1..7 *)
+val font_scale : string -> float option
 
 (* the height of a line, in ems: CSS's "normal", about what fonts ask *)
 val leading : float
@@ -85,5 +114,6 @@ type box = {
   right : float; (* the same from its right edge *)
 }
 
-(* the box of e, its look being [look] (for its ems) *)
+(* the box of e, its look being [look] (for its ems, and whether
+ * Netscape's elements are known) *)
 val box : t -> Dom.element -> box

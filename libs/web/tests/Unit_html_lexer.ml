@@ -29,7 +29,7 @@ let tests =
       Testo.create "attributes: three quotes, none, twice" (fun () ->
           check "quoted three ways" "<td align=center valign='top' bgcolor=\"#ffffff\">"
             [ "Start_tag \"td\" [align = \"center\"; valign = \"top\"; bgcolor = \"#ffffff\"]" ];
-          check "no value" "<hr noshade size=2>" [ "Start_tag \"hr\" [noshade = \"\"; size = \"2\"]" ];
+          check "no value" "<hr noshade size=2>" [ "Start_tag \"hr\" [] {Netscape: noshade = \"\"; size = \"2\"}" ];
           check "the first of two" "<a href=a href=b>" [ "Start_tag \"a\" [href = \"a\"]" ];
           check "a quote in the other quotes" "<img alt='say \"hi\"'>"
             [ "Start_tag \"img\" [alt = \"say \\\"hi\\\"\"]" ];
@@ -37,7 +37,13 @@ let tests =
           check "spaces around =" "<a href = \"x\" >" [ "Start_tag \"a\" [href = \"x\"]" ]);
       Testo.create "names are lowercased" (fun () ->
           check "tags and attributes" "<P ALIGN=Center>x</P>"
-            [ "Start_tag \"p\" [align = \"Center\"]"; "Text \"x\""; "End_tag \"p\"" ]);
+            [ "Start_tag \"p\" [] {Netscape: align = \"Center\"}"; "Text \"x\""; "End_tag \"p\"" ]);
+      Testo.create "Netscape's extensions, marked" (fun () ->
+          check "an element of its own" "<font size=+1>" [ "Start_tag \"font\" [size = \"+1\"] {Netscape}" ];
+          check "a core element's attributes, apart" "<body bgcolor=white onload=x>"
+            [ "Start_tag \"body\" [onload = \"x\"] {Netscape: bgcolor = \"white\"}" ];
+          check "a value: img's align=left, not middle" "<img align=left><img align=middle>"
+            [ "Start_tag \"img\" [] {Netscape: align = \"left\"}"; "Start_tag \"img\" [align = \"middle\"]" ]);
       Testo.create "a '<' that starts no tag is text" (fun () ->
           check "a < b" "a < b" [ "Text \"a < b\"" ];
           check "<3" "I <3 you" [ "Text \"I <3 you\"" ];

@@ -760,6 +760,33 @@ before TinyNetscape's N5.
   its handler stops the whole server, so it shows nothing about the
   client; the slow server is an exercise of the notes (section 14,
   which tells N2).
+- **N3 done** (2026-09-25): Netscape's extensions **marked**, as the
+  author asked -- so that what was not HTML 2.0 is known as such, and
+  the core can be studied first: `Dtd.origin` (`Core | Netscape`) and
+  its table (elements: font, basefont, center, blink, nobr, wbr;
+  attributes: body's colours, hr's, br's clear, img's sizes, the lists'
+  types, p's and the headings' align; values: img's align=left|right);
+  the lexer's start tags carry the mark and keep a core element's
+  Netscape attributes apart (`extensions`), and so do `Dom`'s elements
+  (`origin`, `extensions`; `Dom.attribute` reads the core, `~extensions:true`
+  the rest; the tree view shows `{Netscape}`). The same tree for every
+  browser; each honours what it knows: `Looks.root ~extensions`,
+  `Browser_page.settings.extensions` -- TinyMosaic false (an extension
+  is an unknown tag: ignored, its content shown), TinyNetscape true.
+  Honoured: `<font size color>` (HTML's 1..7 scale on CSS's keywords),
+  `<center>`, `<body bgcolor text link vlink>`, p's and headings'
+  align=, img width= height=, `<hr size width align noshade>`, and
+  **floats** (`<img align=left|right>`, `<br clear>`): the page's
+  floats shared by its blocks, lines beside them flowed greedily one at
+  a time, each as wide as the room at its top (`Html_layout`, its
+  worked example tested). TinyNetscape's home is now `about:netscape`
+  (site/netscape.html, every extension); TinyMosaic's golden frame of
+  the same page shows it without them. TinyMosaic's own home page
+  lost its centred pictures: `<P ALIGN=CENTER>` was Netscape's, under
+  a DOCTYPE saying HTML 2.0 -- as 1995's pages did. Not done
+  (exercises): `<blink>`, `<basefont>`, `<nobr>`, a picture's
+  border= hspace= vspace=, list types, `background=` (a tiled
+  picture).
 
 **Code shared between the two apps' updates.** Their models differ
 (views, fetching, chrome), so each keeps its own `update`; what both do

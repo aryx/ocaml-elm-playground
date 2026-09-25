@@ -14,7 +14,13 @@ type attribute = string * string
 
 type token =
   | Doctype of string
-  | Start_tag of { name : string; attributes : attribute list; self_closing : bool }
+  | Start_tag of {
+      name : string;
+      attributes : attribute list;
+      extensions : attribute list;
+      origin : Dtd.origin;
+      self_closing : bool;
+    }
   | End_tag of string
   | Text of string
   | Comment of string
@@ -161,7 +167,15 @@ and emit_tag (t : t) (tag : tag) (i : int) : unit =
     emit t (End_tag tag.name);
     data t i)
   else (
-    emit t (Start_tag { name = tag.name; attributes = List.rev tag.attributes; self_closing = tag.self_closing });
+    (* claude: the names' origins (Dtd): a Netscape element keeps all
+     * its attributes; a core one's Netscape attributes go apart *)
+    let origin = Dtd.element_origin tag.name in
+    let attributes, extensions =
+      match origin with
+      | Netscape -> (List.rev tag.attributes, [])
+      | Core -> List.partition (fun a -> Dtd.attribute_origin tag.name a = Core) (List.rev tag.attributes)
+    in
+    emit t (Start_tag { name = tag.name; attributes; extensions; origin; self_closing = tag.self_closing });
     if List.mem tag.name rawtext then raw_text t tag.name ~decode:false i
     else if List.mem tag.name rcdata then raw_text t tag.name ~decode:true i
     else data t i)
@@ -268,9 +282,13 @@ let quote (s : string) : string =
 let to_string (token : token) : string =
   match token with
   | Doctype d -> "Doctype " ^ quote d
-  | Start_tag { name; attributes; self_closing } ->
-      Printf.sprintf "Start_tag %s [%s]%s" (quote name)
-        (String.concat "; " (List.map (fun (n, v) -> n ^ " = " ^ quote v) attributes))
+  | Start_tag { name; attributes; extensions; origin; self_closing } ->
+      let list attributes = String.concat "; " (List.map (fun (n, v) -> n ^ " = " ^ quote v) attributes) in
+      Printf.sprintf "Start_tag %s [%s]%s%s" (quote name) (list attributes)
+        (match (origin, extensions) with
+        | Netscape, _ -> " {Netscape}"
+        | Core, [] -> ""
+        | Core, extensions -> " {Netscape: " ^ list extensions ^ "}")
         (if self_closing then " /" else "")
   | End_tag name -> "End_tag " ^ quote name
   | Text s -> "Text " ^ quote s

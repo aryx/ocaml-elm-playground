@@ -13,7 +13,7 @@
 (* a page read with no pictures, nothing visited, 976 wide *)
 let page (url : string) (html : string) : Browser_page.t =
   Browser_page.read
-    { width = 976.; breaker = Html_layout.greedy; visited = (fun _ -> false); picture = (fun _ -> None) }
+    { extensions = false; width = 976.; breaker = Html_layout.greedy; visited = (fun _ -> false); picture = (fun _ -> None) }
     url 200 (Some "text/html") html
 
 let element (p : Browser_page.t) (name : string) : Dom.element =

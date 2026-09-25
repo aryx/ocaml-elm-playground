@@ -36,8 +36,10 @@ val sunken : float -> float -> float -> float -> Playground.shape list
 val glyphs :
   ?visited:(string -> bool) -> ?picture_of:(string -> Browser_picture.t option) -> Html_layout.fragment -> Playground.shape list
 
-(* the whole page but its controls: every line, rule and marker *)
-val draw : visited:(string -> bool) -> picture_of:(string -> Browser_picture.t option) -> Html_layout.box -> drawn
+(* the whole page but its controls: every line, float, rule and marker;
+ * Netscape's <hr noshade> a flat bar if [extensions] (false) *)
+val draw :
+  ?extensions:bool -> visited:(string -> bool) -> picture_of:(string -> Browser_picture.t option) -> Html_layout.box -> drawn
 
 (* a control with its [value], its caret if [focused] *)
 val control_shapes :

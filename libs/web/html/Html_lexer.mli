@@ -13,7 +13,13 @@
 
    Nothing here knows that a <p> cannot hold another <p>, or that </a>
    closes the <a>: that is the tree's business (Html_tree). A token is
-   only what the characters say.
+   only what the characters say -- and where its names come from
+   (Dtd.origin): Netscape's extensions added no syntax, only names and
+   values, so a start tag is marked when its element is Netscape's,
+   and a core element's Netscape attributes are kept apart:
+
+     <font size=+1>   Start_tag "font" [size = "+1"] {Netscape}
+     <hr noshade>     Start_tag "hr" [] {Netscape: noshade = ""}
 
    It is a **state machine**, the WHATWG's (HTML, 13.2.5 "Tokenization"),
    reading a character at a time, the state saying what the character
@@ -72,7 +78,13 @@ type attribute = string * string
 
 type token =
   | Doctype of string (* after "<!DOCTYPE", trimmed: "html", "HTML PUBLIC ..." *)
-  | Start_tag of { name : string; attributes : attribute list; self_closing : bool (* <br/> *) }
+  | Start_tag of {
+      name : string;
+      attributes : attribute list; (* all of a Netscape element's *)
+      extensions : attribute list; (* a core element's Netscape ones *)
+      origin : Dtd.origin; (* the element's *)
+      self_closing : bool; (* <br/> *)
+    }
   | End_tag of string
   | Text of string (* consecutive text is one token *)
   | Comment of string

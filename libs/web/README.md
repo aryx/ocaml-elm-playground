@@ -12,7 +12,7 @@ is TinyMosaic (`apps/internet/`). The plan is
 
 | folder (library) | what | modules |
 |---|---|---|
-| `html/` (`web_html`) | a page read | `Charset` (which encoding, and the page in UTF-8), `Entities` (`&eacute;`, `&#233;`), `Html_lexer` (the text to tokens, the WHATWG's state machine), `Dom` (the tree), `Dtd` (HTML's rules as data, MMM's way), `Html_tree` (tokens to a tree, the stack of open elements), `Line_mode` (the tree as the 1991 Line Mode Browser showed it), `Forms` (a page's fill-out forms: controls, values, what a submission sends) |
+| `html/` (`web_html`) | a page read | `Charset` (which encoding, and the page in UTF-8), `Entities` (`&eacute;`, `&#233;`), `Html_lexer` (the text to tokens, the WHATWG's state machine), `Dom` (the tree), `Dtd` (HTML's rules as data, MMM's way, and where each name comes from: HTML 2.0's core or Netscape's extensions, marked in the tokens and the tree), `Html_tree` (tokens to a tree, the stack of open elements), `Line_mode` (the tree as the 1991 Line Mode Browser showed it), `Forms` (a page's fill-out forms: controls, values, what a submission sends) |
 | `style/` (`web_style`) | what each element looks like | `Looks` (Mosaic's fixed table, CSS 2.1's appendix D numbers); to come: `Css` (CSS1's cascade) |
 | `layout/` (`web_layout`) | where everything goes | `Html_layout` (blocks stacked, margins collapsed, inline content on lines sharing a baseline, broken at the width by a breaker, greedy or the caller's; list markers, anchors), `Hit` (a point to the link under it, a #fragment's name to its place); to come: `Table_layout` |
 

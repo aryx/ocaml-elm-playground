@@ -16,9 +16,6 @@ type drawn = (float * float * shape) list
 let characters = Browser_text.characters
 let metrics = Browser_text.metrics
 
-(* a visited link's colour: Mosaic's, and every browser's since *)
-let visited_purple = (85, 26, 139)
-
 let frame ?(t = 1.) (color : color) (x : float) (y : float) (w : float) (h : float) : shape =
   group
     [ rectangle color w t |> move (x +. (w /. 2.)) (-.(y +. (t /. 2.)));
@@ -66,7 +63,9 @@ let picture_shapes (state : Browser_picture.t option) (color : color) (f : Html_
 let glyphs ?(visited = fun (_ : string) -> false) ?(picture_of = fun (_ : string) -> None) (f : Html_layout.fragment) :
     shape list =
   let style = Browser_text.style_of f.look in
-  let (r, g, b) = match f.look.link with Some href when visited href -> visited_purple | _ -> f.look.color in
+  (* a visited link's colour: Mosaic's purple, and every browser's
+   * since (or the page's vlink=) *)
+  let (r, g, b) = match f.look.link with Some href when visited href -> f.look.visited_color | _ -> f.look.color in
   let color = rgb r g b in
   let baseline = -.f.baseline in
   match (f.picture, f.control) with
@@ -91,22 +90,42 @@ let glyphs ?(visited = fun (_ : string) -> false) ?(picture_of = fun (_ : string
         in
         List.concat (List.rev shapes)
 
-let rec draw ~(visited : string -> bool) ~(picture_of : string -> Browser_picture.t option) (b : Html_layout.box) : drawn =
+let rec draw ?(extensions = false) ~(visited : string -> bool) ~(picture_of : string -> Browser_picture.t option)
+    (b : Html_layout.box) : drawn =
   let lines =
     List.map
       (fun (l : Html_layout.line) ->
         (l.top, l.top +. l.height, group (List.concat_map (glyphs ~visited ~picture_of) l.fragments)))
       b.lines
   in
+  (* a box's floats, each drawn over its own height, not its line's *)
+  let floats =
+    List.filter_map
+      (fun (f : Html_layout.fragment) ->
+        match f.picture with
+        | Some pic -> Some (f.baseline -. pic.height, f.baseline, group (glyphs ~visited ~picture_of f))
+        | None -> None)
+      b.floats
+  in
   let rule =
     match b.kind with
+    | Rule e when extensions && Dom.attribute ~extensions "noshade" e <> None ->
+        (* Netscape's noshade: a flat grey bar *)
+        [ (b.y, b.y +. b.height, rectangle (rgb 110 110 110) b.width b.height |> move (b.x +. (b.width /. 2.)) (-.b.y -. (b.height /. 2.))) ]
     | Rule _ ->
-        (* an inset line, as Mosaic's Motif drew it: dark above, light below *)
+        (* an inset line, as Mosaic's Motif drew it: dark above, light
+         * below; its sides too when Netscape's size= makes it thick *)
+        let h = b.height in
         [ ( b.y,
-            b.y +. 2.,
+            b.y +. h,
             group
-              [ rectangle (rgb 130 130 130) b.width 1. |> move (b.x +. (b.width /. 2.)) (-.b.y -. 0.5);
-                rectangle (rgb 235 235 235) b.width 1. |> move (b.x +. (b.width /. 2.)) (-.b.y -. 1.5) ] ) ]
+              ([ rectangle (rgb 130 130 130) b.width 1. |> move (b.x +. (b.width /. 2.)) (-.b.y -. 0.5);
+                 rectangle (rgb 235 235 235) b.width 1. |> move (b.x +. (b.width /. 2.)) (-.b.y -. h +. 0.5) ]
+              @
+              if h > 2. then
+                [ rectangle (rgb 130 130 130) 1. h |> move (b.x +. 0.5) (-.b.y -. (h /. 2.));
+                  rectangle (rgb 235 235 235) 1. h |> move (b.x +. b.width -. 0.5) (-.b.y -. (h /. 2.)) ]
+              else []) ) ]
     | _ -> []
   in
   (* a list item's marker, left of its first line, in its list's indent *)
@@ -123,7 +142,7 @@ let rec draw ~(visited : string -> bool) ~(picture_of : string -> Browser_pictur
             group (glyphs { text; look; x = b.x -. 6. -. width; width; baseline; picture = None; control = None }) ) ]
     | _ -> []
   in
-  lines @ rule @ marker @ List.concat_map (draw ~visited ~picture_of) b.children
+  lines @ floats @ rule @ marker @ List.concat_map (draw ~extensions ~visited ~picture_of) b.children
 
 (*****************************************************************************)
 (* Form controls *)

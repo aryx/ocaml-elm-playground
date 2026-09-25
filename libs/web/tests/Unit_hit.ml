@@ -14,7 +14,7 @@
 let metrics (l : Looks.t) (s : string) : float = l.size *. float_of_int (String.length s)
 
 let page (html : string) : Html_layout.box =
-  Html_layout.layout metrics ~root:(Looks.root ~size:10.) ~width:200. (Html_tree.of_string html)
+  Html_layout.layout metrics ~root:(Looks.root ~size:10. ()) ~width:200. (Html_tree.of_string html)
 
 let tests =
   Testo.categorize "Hit"
@@ -42,7 +42,7 @@ let tests =
           Alcotest.(check (option (float 1e-6))) "none" None (Hit.anchor p "z"));
       Testo.create "the fragment under a point: a control" (fun () ->
           (* "Name:" 8..58, the field 68..136 *)
-          let p = Html_layout.layout metrics ~root:(Looks.root ~size:10.) ~width:400. (Html_tree.of_string "<form>Name: <input name=n size=10></form>") in
+          let p = Html_layout.layout metrics ~root:(Looks.root ~size:10. ()) ~width:400. (Html_tree.of_string "<form>Name: <input name=n size=10></form>") in
           let at x = Option.map (fun (f : Html_layout.fragment) -> (f.text, f.control <> None)) (Hit.fragment_at p ~x ~y:15.) in
           Alcotest.(check (option (pair string bool))) "on Name:" (Some ("Name:", false)) (at 20.);
           Alcotest.(check (option (pair string bool))) "on the field" (Some ("", true)) (at 100.);

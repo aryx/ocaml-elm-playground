@@ -88,6 +88,33 @@
        the line: the image's 50 above the baseline (more than the
        text's 9), the text's 3 below: 53 high, its baseline 50 down
 
+   **Netscape's extensions**, when the root's look honours them
+   (Looks.root ~extensions): an image's width= and height=; <hr
+   size= width= align=> (a rule's thickness, its width in pixels or a
+   percentage, centred by default); and **floats**, Netscape 1.0's
+   <img align=left> and align=right: the picture taken out of the
+   line, put against the left or right edge, and the lines beside it
+   shortened until its bottom -- the page's floats are shared by all
+   its blocks, so a picture floated in a short paragraph shortens the
+   next one's lines too, and <br clear=left|right|all> moves the next
+   line below them. Beside floats, lines are filled one at a time,
+   each as wide as the room at its top (greedy, whatever the breaker:
+   Knuth and Plass set a paragraph of one width), a float met in a
+   line put below that line (at its top if it comes first), a word too
+   wide for the room moved below the float. Worked example (the
+   tests'), the same metrics, a page 200 wide (the body's 184):
+
+     <img src=g.gif width=40 height=30 align=left>aa bb cc dd ee ff
+       the image at x 8..48, y 8..38; the lines beside it start at
+       48 + 6 (the gap), 138 wide: "aa bb cc dd" x 54..164 (with
+       " ee", 170: too wide), from y 8, its baseline 17; "ee ff"
+       from y 20 (still beside it), its baseline 29
+
+   CSS 2.1 wrote down what Netscape did (section 9.5, floats; "clear"),
+   and much more: a float's own margins, floats that do not fit side by
+   side going down, a block's box extending under a float (only its
+   lines are shortened) -- the exercise of the clearfix.
+
    **A form's control** (Mosaic 2.0) is a box in the line too, its size
    from its kind (Forms), in the look it is in: a text field size=
    characters wide (20), a checkbox or a radio button 0.9 em square, a
@@ -151,6 +178,7 @@ type box = {
   height : float;
   children : box list; (* its blocks, in order *)
   lines : line list; (* an Anonymous box's *)
+  floats : fragment list; (* an Anonymous box's floats (pictures), placed *)
   marker : marker option; (* a list item's *)
 }
 
@@ -182,5 +210,6 @@ val layout :
 (* the baseline of a box's first line, if it has one *)
 val first_baseline : box -> float option
 
-(* every fragment of the page, in document order *)
+(* every fragment of the page, in document order (a box's floats after
+ * its lines) *)
 val fragments : box -> fragment list

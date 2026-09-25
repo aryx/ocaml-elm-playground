@@ -38,6 +38,7 @@ type box = {
   height : float;
   children : box list;
   lines : line list;
+  floats : fragment list;
   marker : marker option;
 }
 
@@ -79,6 +80,15 @@ type item =
   | Word of { text : string; look : Looks.t; space_before : bool; boxed : (boxed * float) option }
   | Break
   | Anchor of string
+  | Float of floating (* <img align=left|right> *)
+  | Clear of side list (* <br clear=...>: the next line below those floats *)
+
+(* a picture the text flows around (Netscape 1.0): taken out of the
+ * line, against the left or right edge, the lines beside it shortened
+ * until its bottom *)
+and side = On_left | On_right
+
+and floating = { side : side; fw : float; fh : float; fpic : picture; flook : Looks.t; mutable placed : bool }
 
 (* a word's width: its text's in its look, or its box's *)
 let word_width (metrics : metrics) (look : Looks.t) (text : string) (boxed : (boxed * float) option) : float =
@@ -95,7 +105,7 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
             let pen = if space_before then pen +. metrics look " " else pen in
             let w = word_width metrics look text boxed in
             ((text, look, pen, w, Option.map fst boxed) :: placed, pen +. w)
-        | Break | Anchor _ -> (placed, pen))
+        | Break | Anchor _ | Float _ | Clear _ -> (placed, pen))
       ([], 0.) words
   in
   let placed = List.rev placed in
@@ -157,13 +167,90 @@ let rec starting_line (unit : item list) : item list =
   match unit with
   | Word w :: rest -> Word { w with space_before = false } :: rest
   | Anchor a :: rest -> Anchor a :: starting_line rest
+  | Float f :: rest -> Float f :: starting_line rest
   | _ -> unit
+
+(*****************************************************************************)
+(* Floats *)
+(*****************************************************************************)
+
+(* a float placed: the page's floats, shared by all its blocks -- a
+ * picture floated in one paragraph shortens the lines of the next *)
+type placed = { pside : side; frag : fragment; ptop : float; pbottom : float }
+
+(* between a float and the text beside it *)
+let gap = 6.
+
+(* the room for a line from [top], [height] high, beside the floats:
+ * its left edge and its width *)
+let room (floats : placed list) ~(x : float) ~(width : float) ~(top : float) ~(height : float) : float * float =
+  let left, right =
+    List.fold_left
+      (fun (l, r) p ->
+        if p.ptop >= top +. height || p.pbottom <= top then (l, r)
+        else
+          match p.pside with
+          | On_left -> (Float.max l (p.frag.x +. p.frag.width +. gap), r)
+          | On_right -> (l, Float.min r (p.frag.x -. gap)))
+      (x, x +. width) floats
+  in
+  (left, right -. left)
+
+(* a float put at [top], against the edge of the room there *)
+let place (floats : placed list ref) ~(x : float) ~(width : float) ~(top : float) (f : floating) : unit =
+  f.placed <- true;
+  let left, w = room !floats ~x ~width ~top ~height:f.fh in
+  let fx = match f.side with On_left -> left | On_right -> left +. w -. f.fw in
+  let frag = { text = ""; look = f.flook; x = fx; width = f.fw; baseline = top +. f.fh; picture = Some f.fpic; control = None } in
+  floats := { pside = f.side; frag; ptop = top; pbottom = top +. f.fh } :: !floats
+
+(* lines filled one at a time, each as wide as the floats beside it
+ * leave (greedy: Knuth and Plass score a paragraph of one width); a
+ * float met in a line is put below it, one before a line's first word
+ * at its top; a unit too wide for the room goes below the float *)
+let flow (metrics : metrics) (block : Looks.t) (floats : placed list ref) ~(x : float) ~(width : float) ~(top : float)
+    (units : item list array) (sizes : unit_ array) : line list * float =
+  let n = Array.length units in
+  let line_height = Looks.leading *. block.size in
+  let unplaced items = List.filter_map (fun i -> match i with Float f when not f.placed -> Some f | _ -> None) items in
+  let rec leading items = match items with (Float _ as f) :: rest -> f :: leading rest | Anchor _ :: rest -> leading rest | _ -> [] in
+  let rec go top start acc =
+    if start >= n then (List.rev acc, top)
+    else (
+      List.iter (place floats ~x ~width ~top) (unplaced (leading units.(start)));
+      let lx, lw = room !floats ~x ~width ~top ~height:line_height in
+      if sizes.(start).width > lw && lw < width then
+        (* no room beside the floats: below the first of them to end *)
+        let below =
+          List.fold_left
+            (fun m p -> if p.ptop < top +. line_height && p.pbottom > top then Float.min m p.pbottom else m)
+            infinity !floats
+        in
+        go below start acc
+      else
+        let rec extend j w =
+          if j + 1 < n && w +. sizes.(j + 1).space +. sizes.(j + 1).width <= lw then
+            extend (j + 1) (w +. sizes.(j + 1).space +. sizes.(j + 1).width)
+          else j
+        in
+        let j = extend start sizes.(start).width in
+        let words =
+          List.concat (List.init (j - start + 1) (fun k -> if k = 0 then starting_line units.(start) else units.(start + k)))
+        in
+        let line = set_line metrics block ~x:lx ~width:lw ~top words in
+        List.iter (place floats ~x ~width ~top:(top +. line.height)) (unplaced words);
+        go (top +. line.height) (j + 1) (line :: acc))
+  in
+  go top 0 []
 
 (* the items cut at the breaks, each run of words broken into lines by
  * [breaker] (never in <pre>); an empty line where the page asked for
- * one, not after the last break *)
-let lines_of (metrics : metrics) (breaker : breaker) (block : Looks.t) ~(x : float) ~(width : float) ~(top : float)
-    (items : item list) : line list =
+ * one, not after the last break. Where there are floats (placed and
+ * not yet ended, or among the words), the lines are [flow]ed around
+ * them instead; the floats placed are returned too. *)
+let lines_of (metrics : metrics) (breaker : breaker) (floats : placed list ref) (block : Looks.t) ~(x : float)
+    ~(width : float) ~(top : float) (items : item list) : line list * fragment list * float =
+  let before = List.length !floats in
   let rec groups current acc items =
     match items with
     | [] -> List.rev (List.rev current :: acc)
@@ -172,10 +259,8 @@ let lines_of (metrics : metrics) (breaker : breaker) (block : Looks.t) ~(x : flo
   in
   let groups = groups [] [] items in
   let n = List.length groups in
-  (* a group's lines: its words, broken into lines *)
-  let broken (group : item list) : item list list =
-    if block.pre || group = [] then [ group ]
-    else
+  (* a group's units, and their sizes *)
+  let broken (group : item list) : item list array * unit_ array =
       let units = Array.of_list (units_of group) in
       let measure u =
         List.fold_left
@@ -184,28 +269,49 @@ let lines_of (metrics : metrics) (breaker : breaker) (block : Looks.t) ~(x : flo
             | Word { text; look; space_before; boxed } ->
                 let w = word_width metrics look text boxed in
                 if width = 0. && space = 0. && space_before then (metrics look " ", w) else (space, width +. w)
-            | Break | Anchor _ -> (space, width))
+            | Break | Anchor _ | Float _ | Clear _ -> (space, width))
           (0., 0.) u
       in
-      let sizes = Array.map (fun u -> let space, width = measure u in { space; width }) units in
-      breaker ~measure:width sizes
-      |> List.map (fun (i, j) ->
-             List.concat (List.mapi (fun k u -> if k = 0 then starting_line u else u) (Array.to_list (Array.sub units i (j - i + 1)))))
+      (units, Array.map (fun u -> let space, width = measure u in { space; width }) units)
   in
-  let _, lines =
+  let set (top, lines) words =
+    let line = set_line metrics block ~x ~width ~top words in
+    (top +. line.height, line :: lines)
+  in
+  let bottom, lines =
     List.fold_left
       (fun (top, lines) (i, group) ->
-        if group = [] && i = n - 1 then (top, lines)
-        else
+        (* <br clear=...>: below the floats of those sides *)
+        let top =
           List.fold_left
-            (fun (top, lines) words ->
-              let line = set_line metrics block ~x ~width ~top words in
-              (top +. line.height, line :: lines))
-            (top, lines) (broken group))
+            (fun top item ->
+              match item with
+              | Clear sides -> List.fold_left (fun t p -> if List.mem p.pside sides then Float.max t p.pbottom else t) top !floats
+              | _ -> top)
+            top group
+        in
+        let group = List.filter (fun item -> match item with Clear _ -> false | _ -> true) group in
+        let beside =
+          List.exists (fun p -> p.pbottom > top) !floats || List.exists (fun i -> match i with Float _ -> true | _ -> false) group
+        in
+        if group = [] && i = n - 1 then (top, lines)
+        else if block.pre || group = [] then set (top, lines) group
+        else
+          let units, sizes = broken group in
+          if beside then
+            let flowed, top = flow metrics block floats ~x ~width ~top units sizes in
+            (top, List.rev_append flowed lines)
+          else
+            breaker ~measure:width sizes
+            |> List.map (fun (i, j) ->
+                   List.concat
+                     (List.mapi (fun k u -> if k = 0 then starting_line u else u) (Array.to_list (Array.sub units i (j - i + 1)))))
+            |> List.fold_left set (top, lines))
       (top, [])
       (List.mapi (fun i g -> (i, g)) groups)
   in
-  List.rev lines
+  let placed = List.filteri (fun i _ -> i < List.length !floats - before) !floats in
+  (List.rev lines, List.rev_map (fun p -> p.frag) placed, bottom)
 
 (*****************************************************************************)
 (* Blocks *)
@@ -218,6 +324,7 @@ type ctx = {
   metrics : metrics;
   breaker : breaker;
   picture_size : string -> (float * float) option;
+  floats : placed list ref; (* the page's, shared *)
   name : string; (* the block's element's: a list's items are numbered *)
   look : Looks.t; (* the block's: its alignment, its empty lines *)
   x : float;
@@ -234,7 +341,9 @@ let is_space (c : char) : bool = c = ' ' || c = '\n' || c = '\t' || c = '\r'
 
 let add_word ?boxed (ctx : ctx) (look : Looks.t) (text : string) : unit =
   (* a word before this one on the line, anchors (of no width) skipped *)
-  let rec after_word items = match items with Word _ :: _ -> true | Anchor _ :: rest -> after_word rest | _ -> false in
+  let rec after_word items =
+    match items with Word _ :: _ -> true | (Anchor _ | Float _) :: rest -> after_word rest | _ -> false
+  in
   let after_word = after_word ctx.items in
   ctx.items <- Word { text; look; space_before = ctx.space && after_word; boxed } :: ctx.items;
   ctx.space <- false
@@ -292,12 +401,12 @@ let flush_inline (ctx : ctx) : unit =
   ctx.items <- [];
   ctx.space <- false;
   let anchors = List.filter_map (fun i -> match i with Anchor a -> Some a | _ -> None) items in
-  if List.exists (fun i -> match i with Word _ -> true | Break | Anchor _ -> false) items then (
+  if List.exists (fun i -> match i with Word _ | Float _ | Clear _ -> true | Break | Anchor _ -> false) items then (
     let top = ctx.cursor +. ctx.pending in
-    let lines = lines_of ctx.metrics ctx.breaker ctx.look ~x:ctx.x ~width:ctx.width ~top items in
-    let height = List.fold_left (fun h (l : line) -> h +. l.height) 0. lines in
+    let lines, floats, bottom = lines_of ctx.metrics ctx.breaker ctx.floats ctx.look ~x:ctx.x ~width:ctx.width ~top items in
+    let height = bottom -. top in
     ctx.children <-
-      { kind = Anonymous; x = ctx.x; y = top; width = ctx.width; height; children = []; lines; marker = None }
+      { kind = Anonymous; x = ctx.x; y = top; width = ctx.width; height; children = []; lines; floats; marker = None }
       :: ctx.children;
     ctx.cursor <- top +. height;
     ctx.pending <- 0.)
@@ -314,17 +423,20 @@ let flush_inline (ctx : ctx) : unit =
         height = 0.;
         children = [];
         lines = [ { top; height = 0.; baseline = top; fragments = []; anchors } ];
+        floats = [];
         marker = None;
       }
       :: ctx.children
 
 let rec layout_block (metrics : metrics) (breaker : breaker) (picture_size : string -> (float * float) option)
-    (look : Looks.t) (e : Dom.element) ~(marker : marker option) ~(x : float) ~(width : float) ~(y : float) : box =
+    (floats : placed list ref) (look : Looks.t) (e : Dom.element) ~(marker : marker option) ~(x : float) ~(width : float)
+    ~(y : float) : box =
   let ctx =
     {
       metrics;
       breaker;
       picture_size;
+      floats;
       name = e.name;
       look;
       x;
@@ -347,6 +459,7 @@ let rec layout_block (metrics : metrics) (breaker : breaker) (picture_size : str
     height = ctx.cursor +. ctx.pending -. y;
     children = List.rev ctx.children;
     lines = [];
+    floats = [];
     marker;
   }
 
@@ -367,19 +480,34 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
           | Some name -> ctx.items <- Anchor name :: ctx.items
           | None -> ());
           (match Dom.attribute "id" e with Some id -> ctx.items <- Anchor id :: ctx.items | None -> ());
+          (* Netscape's attributes too, when the browser knows them *)
+          let attribute name = Dom.attribute ~extensions:l.extensions name e in
           match e.name with
-          | "br" -> ctx.items <- Break :: ctx.items
+          | "br" -> (
+              ctx.items <- Break :: ctx.items;
+              match Option.map String.lowercase_ascii (attribute "clear") with
+              | Some "left" -> ctx.items <- Clear [ On_left ] :: ctx.items
+              | Some "right" -> ctx.items <- Clear [ On_right ] :: ctx.items
+              | Some "all" -> ctx.items <- Clear [ On_left; On_right ] :: ctx.items
+              | _ -> ())
           | "img" -> (
-              (* its size: the page's width= and height=, else the
-               * decoded picture's; else its alt text, until then *)
+              (* its size: the page's width= and height= (Netscape's),
+               * else the decoded picture's; else its alt text, until
+               * then *)
               let src = Option.value (Dom.attribute "src" e) ~default:"" in
-              let number a = Option.bind (Dom.attribute a e) float_of_string_opt in
+              let number a = Option.bind (attribute a) float_of_string_opt in
               let size = match (number "width", number "height") with Some w, Some h -> Some (w, h) | _ -> ctx.picture_size src in
-              match size with
-              | Some (w, h) ->
-                  let middle = Option.map String.lowercase_ascii (Dom.attribute "align" e) = Some "middle" in
+              let align = Option.map String.lowercase_ascii (attribute "align") in
+              match (size, align) with
+              | Some (w, h), Some (("left" | "right") as side) ->
+                  let side = if side = "left" then On_left else On_right in
+                  ctx.items <-
+                    Float { side; fw = w; fh = h; fpic = { src; height = h; middle = false }; flook = l; placed = false }
+                    :: ctx.items
+              | Some (w, h), _ ->
+                  let middle = align = Some "middle" in
                   add_word ctx l "" ~boxed:(Pic { src; height = h; middle }, w)
-              | None -> add_word ctx l (match Dom.attribute "alt" e with Some alt -> alt | None -> "[IMAGE]"))
+              | None, _ -> add_word ctx l (match Dom.attribute "alt" e with Some alt -> alt | None -> "[IMAGE]"))
           | "input" | "select" | "textarea" -> (
               match control_size ctx.metrics l e with
               | Some (w, h) -> add_word ctx l "" ~boxed:(Ctl { element = e; control_height = h }, w)
@@ -397,9 +525,28 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
           let child =
             match b.display with
             | Rule ->
-                { kind = Rule e; x = ctx.x; y; width = ctx.width; height = 2.; children = []; lines = []; marker = None }
+                (* Netscape's size= (its thickness), width= (pixels or
+                 * a percentage of the line), align= (centred) *)
+                let attribute name = Dom.attribute ~extensions:l.extensions name e in
+                let height = match Option.bind (attribute "size") float_of_string_opt with Some s when s > 0. -> s | _ -> 2. in
+                let width =
+                  match attribute "width" with
+                  | Some w when String.ends_with ~suffix:"%" w -> (
+                      match float_of_string_opt (String.sub w 0 (String.length w - 1)) with
+                      | Some p -> Float.min ctx.width (ctx.width *. p /. 100.)
+                      | None -> ctx.width)
+                  | Some w -> ( match float_of_string_opt w with Some w -> Float.min ctx.width w | None -> ctx.width)
+                  | None -> ctx.width
+                in
+                let x =
+                  match Option.map String.lowercase_ascii (attribute "align") with
+                  | Some "left" -> ctx.x
+                  | Some "right" -> ctx.x +. ctx.width -. width
+                  | _ -> ctx.x +. ((ctx.width -. width) /. 2.)
+                in
+                { kind = Rule e; x; y; width; height; children = []; lines = []; floats = []; marker = None }
             | _ ->
-                layout_block ctx.metrics ctx.breaker ctx.picture_size l e ~marker ~x:(ctx.x +. b.indent)
+                layout_block ctx.metrics ctx.breaker ctx.picture_size ctx.floats l e ~marker ~x:(ctx.x +. b.indent)
                   ~width:(ctx.width -. b.indent -. b.right) ~y
           in
           ctx.children <- child :: ctx.children;
@@ -408,10 +555,13 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
 
 let layout (metrics : metrics) ?(breaker = greedy) ?(picture_size = fun _ -> None) ~(root : Looks.t) ~(width : float)
     (html : Dom.element) : box =
-  layout_block metrics breaker picture_size (Looks.look root html) html ~marker:None ~x:0. ~width ~y:0.
+  let floats = ref [] in
+  let page = layout_block metrics breaker picture_size floats (Looks.look root html) html ~marker:None ~x:0. ~width ~y:0. in
+  (* a float can hang below the last block: the page as long as it *)
+  { page with height = List.fold_left (fun h p -> Float.max h p.pbottom) page.height !floats }
 
 let rec fragments (b : box) : fragment list =
-  List.concat_map (fun (l : line) -> l.fragments) b.lines @ List.concat_map fragments b.children
+  List.concat_map (fun (l : line) -> l.fragments) b.lines @ b.floats @ List.concat_map fragments b.children
 
 let rec first_baseline (b : box) : float option =
   match b.lines with

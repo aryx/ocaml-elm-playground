@@ -1533,6 +1533,10 @@ let flagged : Testutil_golden.flagged list =
     (* claude: TinyNetscape with its pictures not loaded (the Images
      * button's setting): their alt texts in their place *)
     ("apps/internet/software/TinyNetscape", "noimages", 5, [ "images=off" ]);
+    (* claude: Netscape's welcome page in TinyMosaic: its extensions to
+     * HTML unknown tags (Dtd.origin), the words without the looks --
+     * no colours, no centring, the floated pictures inline *)
+    ("apps/internet/software/TinyMosaic", "netscape", 5, [ "url=about:netscape" ]);
     (* claude: a world of HtDP's first universe, its universe not there
      * (port 1): resting, and saying why *)
     ("examples/software/UniverseBall", "refused", 5, [ "port=1" ]);

@@ -11,9 +11,22 @@
 (* See Dom.mli *)
 
 type node = Element of element | Text of string
-and element = { name : string; attributes : (string * string) list; children : node list }
+and element = {
+  name : string;
+  attributes : (string * string) list;
+  extensions : (string * string) list;
+  origin : Dtd.origin;
+  children : node list;
+}
 
-let attribute (name : string) (e : element) : string option = List.assoc_opt name e.attributes
+let element ?(attributes = []) (name : string) (children : node list) : element =
+  { name; attributes; extensions = []; origin = Core; children }
+
+let attribute ?(extensions = false) (name : string) (e : element) : string option =
+  match List.assoc_opt name e.attributes with
+  | Some v -> Some v
+  | None when extensions -> List.assoc_opt name e.extensions
+  | None -> None
 
 let rec find_all (name : string) (e : element) : element list =
   (if e.name = name then [ e ] else [])
@@ -43,8 +56,14 @@ let to_lines (root : element) : string list =
   let lines = ref [] in
   let add depth s = lines := (String.make (2 * depth) ' ' ^ s) :: !lines in
   let rec go depth (e : element) =
-    add depth
-      (String.concat " " (e.name :: List.map (fun (n, v) -> Printf.sprintf "%s=\"%s\"" n v) e.attributes));
+    let list attributes = List.map (fun (n, v) -> Printf.sprintf "%s=\"%s\"" n v) attributes in
+    let mark =
+      match (e.origin, e.extensions) with
+      | Netscape, _ -> [ "{Netscape}" ]
+      | Core, [] -> []
+      | Core, extensions -> [ "{Netscape: " ^ String.concat " " (list extensions) ^ "}" ]
+    in
+    add depth (String.concat " " ((e.name :: list e.attributes) @ mark));
     List.iter
       (fun n ->
         match n with

@@ -13,8 +13,11 @@
 (* the tests' font: a character as wide as its look's size *)
 let metrics (l : Looks.t) (s : string) : float = l.size *. float_of_int (String.length s)
 
-let page ?(width = 200.) (html : string) : Html_layout.box =
-  Html_layout.layout metrics ~root:(Looks.root ~size:10.) ~width (Html_tree.of_string html)
+(* laid out by Mosaic (HTML 2.0), or by Netscape ([extensions]) *)
+let page ?(extensions = false) ?(width = 200.) (html : string) : Html_layout.box =
+  Html_layout.layout metrics ~root:(Looks.root ~extensions ~size:10. ()) ~width (Html_tree.of_string html)
+
+let netscape = page ~extensions:true
 
 let near = Alcotest.float 1e-6
 
@@ -104,10 +107,11 @@ let tests =
             (fragments (page ~width:208. "<p>xxxxxxxxxxxxxxxx <a href=u>home</a>.")));
       Testo.create "the breaker is the caller's" (fun () ->
           let one_a_line : Html_layout.breaker = fun ~measure:_ units -> List.init (Array.length units) (fun i -> (i, i)) in
-          let p = Html_layout.layout metrics ~breaker:one_a_line ~root:(Looks.root ~size:10.) ~width:200. (Html_tree.of_string "<p>a b c") in
+          let p = Html_layout.layout metrics ~breaker:one_a_line ~root:(Looks.root ~size:10. ()) ~width:200. (Html_tree.of_string "<p>a b c") in
           Alcotest.(check (list fragment)) "a unit a line" [ ("a", 8., 28.2); ("b", 8., 40.2); ("c", 8., 52.2) ] (fragments p));
       Testo.create "images: the worked example" (fun () ->
-          let p = page "<p>A <img src=g.gif width=30 height=50> B" in
+          (* width= and height= are Netscape's *)
+          let p = netscape "<p>A <img src=g.gif width=30 height=50> B" in
           (* the p at 19.2; the image's 50 above the baseline: 69.2 *)
           Alcotest.(check (list fragment)) "A, the image, B" [ ("A", 8., 69.2); ("", 28., 69.2); ("B", 68., 69.2) ] (fragments p);
           let line = List.hd (List.hd (List.hd (blocks "p" p)).children).lines in
@@ -121,11 +125,11 @@ let tests =
           let sized =
             Html_layout.layout metrics
               ~picture_size:(fun src -> if src = "a.gif" then Some (20., 40.) else None)
-              ~root:(Looks.root ~size:10.) ~width:200. (Html_tree.of_string html)
+              ~root:(Looks.root ~size:10. ()) ~width:200. (Html_tree.of_string html)
           in
           Alcotest.(check (list fragment)) "decoded: its size" [ ("", 8., 59.2) ] (fragments sized));
       Testo.create "images: align=middle" (fun () ->
-          let p = page "<p>A <img src=g width=30 height=50 align=middle>" in
+          let p = netscape "<p>A <img src=g width=30 height=50 align=middle>" in
           let line = List.hd (List.hd (List.hd (blocks "p" p)).children).lines in
           Alcotest.(check (pair near near)) "25 above, 25 below" (25., 50.) (line.baseline -. line.top, line.height));
       Testo.create "a form's controls: boxes in the line" (fun () ->
@@ -151,10 +155,53 @@ let tests =
       Testo.create "centred" (fun () ->
           Alcotest.(check (list fragment))
             "center: the slack halved" [ ("ab", 90., 17.) ]
-            (fragments (page "<center>ab</center>"));
+            (fragments (netscape "<center>ab</center>"));
           Alcotest.(check (list fragment))
             "align=right" [ ("ab", 172., 28.2) ]
-            (fragments (page "<p align=right>ab")));
+            (fragments (netscape "<p align=right>ab"));
+          Alcotest.(check (list fragment))
+            "div's align=, HTML 3.2's" [ ("ab", 172., 17.) ]
+            (fragments (page "<div align=right>ab</div>")));
+      Testo.create "Netscape's extensions: unknown to Mosaic" (fun () ->
+          (* claude: an unknown tag is ignored, its content shown *)
+          Alcotest.(check (list fragment)) "center, ignored" [ ("ab", 8., 17.) ] (fragments (page "<center>ab</center>"));
+          Alcotest.(check (list fragment)) "p's align, ignored" [ ("ab", 8., 28.2) ] (fragments (page "<p align=right>ab"));
+          Alcotest.(check (list fragment)) "font size, ignored" [ ("ab", 8., 17.) ] (fragments (page "<font size=7>ab</font>"));
+          Alcotest.(check (list fragment)) "a floated image, inline" [ ("pic", 8., 17.); ("x", 48., 17.) ]
+            (fragments (page "<img src=g width=40 height=30 align=left alt=pic> x")));
+      Testo.create "font sizes and colours" (fun () ->
+          let f = List.hd (Html_layout.fragments (netscape "<font size=+2 color=red>ab</font>")) in
+          Alcotest.check near "size 5: 1.5 of the root's" 15. f.look.size;
+          Alcotest.(check (triple int int int)) "red" (255, 0, 0) f.look.color;
+          let f = List.hd (Html_layout.fragments (netscape "<h1><font size=3>ab</font></h1>")) in
+          Alcotest.check near "size 3 is the root's, in an h1 too" 10. f.look.size;
+          Alcotest.(check (option (triple int int int))) "#rrggbb" (Some (0x99, 0, 0x10)) (Looks.color_of_string "#990010");
+          Alcotest.(check (option near)) "-1 from 3: 2" (Some 0.8125) (Looks.font_scale "-1");
+          Alcotest.(check (option near)) "kept within 1..7" (Some 3.) (Looks.font_scale "+9"));
+      Testo.create "floats: the worked example" (fun () ->
+          let p = netscape "<img src=g.gif width=40 height=30 align=left>aa bb cc dd ee ff" in
+          (* the image at 8..48, 8..38; the lines from 48 + 6 *)
+          Alcotest.(check (list fragment))
+            "two lines beside it, then the image"
+            [ ("aa", 54., 17.); ("bb", 84., 17.); ("cc", 114., 17.); ("dd", 144., 17.); ("ee", 54., 29.); ("ff", 84., 29.);
+              ("", 8., 38.) ]
+            (fragments p));
+      Testo.create "floats: on the right, over the next paragraph" (fun () ->
+          let p = netscape "<p><img src=g width=40 height=30 align=right>a<p>b" in
+          (* the image at 152..192 (the body's right edge 192), from
+           * 19.2; the second p's line, at 42.4, still beside it *)
+          Alcotest.(check (list fragment)) "a, the image, b" [ ("a", 8., 28.2); ("", 152., 49.2); ("b", 8., 51.4) ] (fragments p));
+      Testo.create "floats: br clear" (fun () ->
+          let p = netscape "<img src=g width=40 height=30 align=left>a<br clear=all>b" in
+          Alcotest.(check (list fragment)) "b below the image" [ ("a", 54., 17.); ("b", 8., 47.); ("", 8., 38.) ] (fragments p));
+      Testo.create "rules: Netscape's size, width, align" (fun () ->
+          let rule html = match blocks "body" (netscape html) with [ b ] -> List.hd b.children | _ -> Alcotest.fail "no body" in
+          let r = rule "<hr size=6 width=50%>" in
+          Alcotest.(check (triple near near near)) "centred, half, 6 thick" (54., 92., 6.) (r.x, r.width, r.height);
+          let r = rule "<hr width=40 align=right>" in
+          Alcotest.(check (pair near near)) "40 on the right" (152., 40.) (r.x, r.width);
+          let r = match blocks "body" (page "<hr size=6 width=50%>") with [ b ] -> List.hd b.children | _ -> Alcotest.fail "no body" in
+          Alcotest.(check (triple near near near)) "Mosaic: the whole line, 2 thick" (8., 184., 2.) (r.x, r.width, r.height));
       Testo.create "not shown: the head, scripts" (fun () ->
           Alcotest.(check (list fragment)) "only y" [ ("y", 8., 17.) ] (fragments (page "<title>T</title><script>x</script>y")));
     ]

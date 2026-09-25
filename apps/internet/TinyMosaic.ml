@@ -179,6 +179,9 @@ let page_width = 976.
 (* what the layout and the drawing need of the model *)
 let settings (m : model) : Browser_page.settings =
   {
+    (* HTML 2.0's core only, as Mosaic read it: Netscape's extensions
+     * are unknown tags (Dtd.origin) *)
+    extensions = false;
     width = m.width;
     breaker = (match m.wrap with Greedy -> Html_layout.greedy | Pretty -> Browser_page.pretty);
     visited = (fun url -> List.mem url m.visited);

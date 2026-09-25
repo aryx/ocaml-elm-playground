@@ -10,6 +10,8 @@
 
 (* See Dtd.mli *)
 
+type origin = Core | Netscape
+
 let void = [ "area"; "base"; "basefont"; "br"; "col"; "embed"; "frame"; "hr"; "img"; "input"; "isindex"; "link"; "meta"; "param"; "wbr" ]
 let head = [ "title"; "meta"; "link"; "base"; "style"; "script" ]
 let headings = [ "h1"; "h2"; "h3"; "h4"; "h5"; "h6" ]
@@ -47,3 +49,36 @@ let stops (x : string) (y : string) : bool =
   | "li" -> List.mem y [ "ul"; "ol"; "dir"; "menu" ] || (is_block y && not (List.mem y [ "p"; "div"; "address" ]))
   | "dt" | "dd" -> y = "dl" || (is_block y && not (List.mem y [ "p"; "div"; "address" ]))
   | _ -> false
+
+(*****************************************************************************)
+(* Netscape's extensions *)
+(*****************************************************************************)
+
+let netscape_elements = [ "basefont"; "blink"; "center"; "font"; "nobr"; "wbr" ]
+
+let netscape_attributes =
+  [
+    ("body", [ "bgcolor"; "text"; "link"; "vlink"; "alink"; "background" ]);
+    ("hr", [ "size"; "width"; "align"; "noshade" ]);
+    ("br", [ "clear" ]);
+    ("img", [ "width"; "height"; "border"; "hspace"; "vspace" ]);
+    ("ul", [ "type" ]);
+    ("ol", [ "type"; "start" ]);
+    ("li", [ "type"; "value" ]);
+    ("p", [ "align" ]);
+  ]
+  @ List.map (fun h -> (h, [ "align" ])) headings
+
+(* an attribute of HTML 2.0 given new values *)
+let netscape_values = [ (("img", "align"), [ "left"; "right"; "texttop"; "absmiddle"; "baseline"; "absbottom" ]) ]
+
+let element_origin (name : string) : origin = if List.mem name netscape_elements then Netscape else Core
+
+let attribute_origin (element : string) ((name, value) : string * string) : origin =
+  let listed = match List.assoc_opt element netscape_attributes with Some names -> List.mem name names | None -> false in
+  let value_listed =
+    match List.assoc_opt (element, name) netscape_values with
+    | Some values -> List.mem (String.lowercase_ascii value) values
+    | None -> false
+  in
+  if listed || value_listed then Netscape else Core

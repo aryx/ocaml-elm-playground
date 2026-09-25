@@ -45,9 +45,15 @@
  *   dune exec networking/httpd/tiny_httpd.exe      (then Location: http://localhost:8080/home.html)
  *   http://localhost:8001/apps/internet/web/TinyNetscape.html
  *
- * flags url= (about:home), the first page; images=off, pictures not
+ * flags url= (about:netscape, Netscape's welcome page), the first page; images=off, pictures not
  * fetched until the Images button (Netscape's "Auto Load Images",
  * for a 14400 modem); threads=off, no threads (natively).
+ *
+ * And Netscape's HTML (N3): the same tree as TinyMosaic's, in which the
+ * extensions are marked (Dtd.origin), honoured here and not there
+ * (extensions = true in [settings]): colours, fonts, <center>, rules,
+ * pictures the text flows around (floats). Its home page, about:netscape,
+ * has them all; TinyMosaic shows the same page without them.
  *
  * Uses: the appkit appkits/browser (a page read, laid out, drawn; the
  * history; forms), shared with TinyMosaic, as the built-in site is
@@ -100,7 +106,8 @@ type msg =
   | Mouse_move of float * float
   | Click
 
-let home = "about:home"
+(* claude: Netscape's own welcome page, its extensions to HTML (N3) *)
+let home = "about:netscape"
 let characters = Browser_text.characters
 let resolve = Browser_url.resolve
 let split_fragment = Browser_url.split_fragment
@@ -117,6 +124,8 @@ let page_width = 976.
 
 let settings (m : model) : Browser_page.settings =
   {
+    (* claude: Netscape's own extensions to HTML (N3) *)
+    extensions = true;
     width = page_width;
     breaker = Html_layout.greedy;
     visited = (fun url -> List.mem url m.visited);
@@ -538,9 +547,13 @@ let view (m : model) : shape list =
   in
   let title = match m.state with Shown p when p.title <> "" -> "Netscape - [" ^ p.title ^ "]" | _ -> "Netscape" in
   let location = if m.editing then m.location ^ "_" else m.location in
+  (* claude: the page's own background, <body bgcolor> (Netscape 1.1) *)
+  let background =
+    match (m.state, m.view) with Shown { background = Some (r, g, b); _ }, Page -> rgb r g b | _ -> grey
+  in
   [ rectangle grey 1000. 1000. ]
   (* the page, sunken, drawn first: the chrome covers what overflows *)
-  @ [ rectangle dark_grey 982. (area_height +. 12.) |> move_y (area_top -. (area_height /. 2.)); rectangle grey 980. (area_height +. 10.) |> move_y (area_top -. (area_height /. 2.)) ]
+  @ [ rectangle dark_grey 982. (area_height +. 12.) |> move_y (area_top -. (area_height /. 2.)); rectangle background 980. (area_height +. 10.) |> move_y (area_top -. (area_height /. 2.)) ]
   @ body
   @ [ rectangle grey 1000. (500. -. area_top -. 6.) |> move_y ((500. +. area_top +. 6.) /. 2.);
       rectangle grey 1000. (500. -. area_height +. area_top -. 6.) |> move_y (-.((500. +. area_height -. area_top +. 6.) /. 2.)) ]

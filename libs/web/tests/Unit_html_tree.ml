@@ -79,11 +79,16 @@ let tests =
           check "misnested: ours, not the adoption agency's" "<b><i>x</b>y</i>" [ "b"; "  i"; "    \"x\""; "\"y\"" ]);
       Testo.create "void elements" (fun () ->
           check "never pushed" "<p>a<br>b<img src=x>c" [ "p"; "  \"a\""; "  br"; "  \"b\""; "  img src=\"x\""; "  \"c\"" ]);
+      Testo.create "Netscape's extensions, marked in the tree" (fun () ->
+          check "an element, and a core one's attributes" "<center><hr size=4 noshade>x</center>"
+            [ "center {Netscape}"; "  hr {Netscape: size=\"4\" noshade=\"\"}"; "  \"x\"" ];
+          check "the same repairs: font is inline" "<p>a<font color=red>b<p>c"
+            [ "p"; "  \"a\""; "  font color=\"red\" {Netscape}"; "    \"b\""; "p"; "  \"c\"" ]);
       Testo.create "the head and the body" (fun () ->
           check "<body>'s attributes" "<body bgcolor=white><p>x" [ "p"; "  \"x\"" ];
-          Alcotest.(check (option string))
-            "bgcolor" (Some "white")
-            (Dom.attribute "bgcolor" (List.hd (Dom.find_all "body" (Html_tree.of_string "<body bgcolor=white>"))));
+          let body = List.hd (Dom.find_all "body" (Html_tree.of_string "<body bgcolor=white>")) in
+          Alcotest.(check (option string)) "bgcolor, Netscape's" (Some "white") (Dom.attribute ~extensions:true "bgcolor" body);
+          Alcotest.(check (option string)) "not a core attribute" None (Dom.attribute "bgcolor" body);
           check "after </body>, still the body" "<body>a</body>b" [ "\"ab\"" ];
           check "a title after the body started stays there" "<p>x<title>T</title>"
             [ "p"; "  \"x\""; "  title"; "    \"T\"" ];

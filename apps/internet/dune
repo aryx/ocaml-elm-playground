@@ -33,7 +33,7 @@
 
 (rule
  (targets Site_pages.ml)
- (deps site/home.html site/history.html site/form.html)
+ (deps site/home.html site/history.html site/form.html site/netscape.html)
  (action
   (with-stdout-to
    %{targets}
@@ -47,6 +47,9 @@
     (echo "|}\n")
     (echo "let form = {|")
     (cat site/form.html)
+    (echo "|}\n")
+    (echo "let netscape = {|")
+    (cat site/netscape.html)
     (echo "|}\n")))))
 
 ; claude: its pictures, bytes that are not text, embedded escaped
