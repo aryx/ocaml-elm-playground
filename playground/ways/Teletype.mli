@@ -24,6 +24,7 @@
      | Random of int * (int -> 'a talk)   a number from 0 to n - 1
      | Spawn of unit talk * (status -> 'a talk)
                                           another program, then the rest
+     | Step of (unit -> 'a talk)          a step of a long computation
 
    What comes after a question is a function of the answer: its
    continuation, "the rest of the program" held as a closure. The
@@ -78,6 +79,15 @@
    parents waiting on a stack, one per spawn -- the process tree,
    reduced to the one line of it a terminal sees.
 
+   A program that computes at length without reading -- a BASIC
+   interpreter running 10 GOTO 10 -- would keep the machine in one
+   frame forever: no screen drawn, no Control-C read. [Step] is its
+   way to say "I am still going": the machine takes some thousands of
+   steps a frame, then draws, reads the keyboard, and carries on at the
+   next frame, as a time-sharing system gives each program its slice.
+   And what follows a step is built only when the step is taken, which
+   lifts the limit below for a program that steps.
+
    A limit: the program is built as it runs, and a [Print] builds its
    continuation at once, so a loop that prints forever without ever
    reading or drawing a random number never returns. A teletype
@@ -102,6 +112,7 @@ type 'a talk =
   | Read_key of (string -> 'a talk)
   | Random of int * (int -> 'a talk)
   | Spawn of unit talk * (status -> 'a talk)
+  | Step of (unit -> 'a talk)
 
 (* "\n" ends a line: the tty turns it into CR LF (Line_discipline.output) *)
 val print : string -> unit talk
@@ -122,6 +133,10 @@ val ( let* ) : 'a talk -> ('a -> 'b talk) -> 'b talk
 (* [spawn child]: run it, then carry on with how it ended *)
 val spawn : unit talk -> status talk
 
+(* a step of a long computation: the machine may stop here until the
+   next frame; what follows is built only when the step is taken *)
+val step : unit talk
+
 (* [ask question]: print it, then read the line; BASIC's INPUT "Q"; A$ *)
 val ask : string -> string talk
 
@@ -132,7 +147,8 @@ val ask : string -> string talk
 (* [run ?seed program answers]: the program played with those lines
    typed, in order, without a screen; what it printed (the \n's as
    they were, no \r added). It stops at its end, or when it reads with
-   no answers left. A [Read_key] takes the next answer as its key. *)
+   no answers left. A [Read_key] takes the next answer as its key. A
+   program taking a million [step]s is stopped too. *)
 val run : ?seed:int -> 'a talk -> string list -> string
 
 (* The machine playing a program: its screen, its tty, the program at
@@ -149,8 +165,9 @@ val start : ?baud:int -> seed:int -> rows:int -> cols:int -> unit talk -> machin
    when none is, the program itself. *)
 val input : machine -> string -> machine
 
-(* [tick m dt]: [dt] seconds pass; at a baud rate, the printing catches
-   up (at none, everything is printed at once, and [tick] does nothing) *)
+(* [tick m dt]: a frame, [dt] seconds after the last: a program that
+   [step]s takes its next steps, and at a baud rate the printing
+   catches up (at none, everything is printed at once) *)
 val tick : machine -> float -> machine
 
 val screen : machine -> Vt.t
@@ -165,16 +182,18 @@ val finished : machine -> bool
    Backspace, the arrows, Control and a letter), in Vt's bytes *)
 val keyboard_bytes : Playground.computer -> before:Playground.keyboard -> string
 
-(* [draw ?paper ?phosphor computer m]: the grid of characters, as large
-   as the playground's screen lets it be, centered: a cell per
-   character, in [phosphor] (green by default) on black, or with
-   [paper] black on a roll of paper, in capitals as a Teletype Model 33
-   printed (it had no lower case) *)
 (* the width and height [draw]'s grid of characters takes, centered on
    (0, 0): what a case drawn around it needs *)
 val size : Playground.computer -> machine -> Playground.number * Playground.number
 
-val draw : ?paper:bool -> ?phosphor:Playground.color -> Playground.computer -> machine -> Playground.shape list
+(* [draw ?paper ?capitals ?phosphor computer m]: the grid of
+   characters, as large as the playground's screen lets it be, centered:
+   a cell per character, in [phosphor] (green by default) on black, or
+   with [paper] black on a roll of paper; in [capitals] (by default with
+   [paper]) as a Teletype Model 33 printed and an Apple II showed them,
+   neither having lower case *)
+val draw :
+  ?paper:bool -> ?capitals:bool -> ?phosphor:Playground.color -> Playground.computer -> machine -> Playground.shape list
 
 (*****************************************************************************)
 (* {1 Applications} *)

@@ -1,0 +1,15 @@
+; claude: BASIC, the Tiny BASIC of 1976 (plan_terminal.md, section 5):
+; Basic_parse (a line read, by recursive descent), Basic_run (a
+; program run, as a Teletype conversation: INPUT a read whose
+; continuation is the rest of the program), Basic_session (the prompt,
+; editor and calculator in one, as in 1977). Run by TinyBasic
+; (apps/devtools/) and by TinyTerminal's shell as its command basic.
+;
+; Over the playground's Teletype way; a private library, installed as
+; part of elm_playground, pure OCaml, so every backend can run it.
+(library
+ (name appkit_basic)
+ (package elm_playground)
+ (wrapped false)
+ (libraries elm_playground)
+)

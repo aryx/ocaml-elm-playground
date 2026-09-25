@@ -270,6 +270,8 @@ let scenes : Testutil_golden.scene list =
     ("apps/system/software/TinyTerminal", "", 3);
     (* the first question: the instructions? *)
     ("games/adventure/software/TinyWumpus", "", 3);
+    (* the prompt, Guess the Number typed in already *)
+    ("apps/devtools/software/TinyBasic", "", 3);
     ("games/rpg/software/TinyGauntlet2", "", 5);
     ("games/sports/software/TinyKickOff2", "", 5);
     ("games/sports/software/TinySpeedball2", "", 5);
@@ -1561,6 +1563,16 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
     (* claude: TinyWumpus: the instructions, then the first room and
      * what its neighbours give away (seed 1's cave) *)
     ("games/adventure/software/TinyWumpus", "first", 8, "type(y):2,Enter:3", []);
+    (* claude: TinyBasic: Guess's listing (its end, the screen scrolled);
+     * Guess run, a limit and two guesses; and 10 GOTO 10's kind of
+     * loop typed in, run, broken by Control-C *)
+    ("apps/devtools/software/TinyBasic", "list", 6, "type(list):2,Enter:3", []);
+    ("apps/devtools/software/TinyBasic", "run", 14, "type(run):2,Enter:3,type(100):5,Enter:6,type(50):8,Enter:9,type(25):11,Enter:12", []);
+    ( "apps/devtools/software/TinyBasic",
+      "break",
+      20,
+      "type(new):2,Enter:3,type(10 print \"hello\"):5,Enter:6,type(20 goto 10):8,Enter:9,type(run):11,Enter:12,Control:15-16,c:16",
+      [] );
     (* claude: TeletypeHangman: a hit, a miss and a mistyped guess
      * (seed 1's word), on the teletype's roll of paper *)
     ("examples/software/TeletypeHangman", "paper", 12, "type(e):2,Enter:3,type(z):5,Enter:6,type(xy):8,Enter:9", [ "paper" ]);

@@ -452,3 +452,13 @@ playground's Teletype way and `libs/terminal/` (`plan_terminal.md`).
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyTerminal](apps/system/TinyTerminal.ml) | app | the VT100 (DEC, 1978), the Unix shell (Ken Thompson, 1971; Stephen Bourne, 1979) | A screen of 80 by 24 and a prompt: type a command, run Hangman, stop it with Control-C. | A terminal as three machines: the screen reading bytes and escape sequences (Vt), the tty editing the line (Line_discipline), the shell reading it and running programs written as conversations (Teletype), a spawn being Unix's fork, exec and wait, and Control-C interrupting only the program the shell waits for. |
+
+## Programming tools
+
+`apps/devtools/`: the programs programs are written with -- so far a
+BASIC as a home computer had it, over `appkits/basic`
+(`plan_terminal.md`, section 5).
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinyBasic](apps/devtools/TinyBasic.ml) | app | Tiny BASIC (Dennis Allison, 1975; Li-Chen Wang, Palo Alto, 1976), on the Apple II's screen (Steve Wozniak's Integer BASIC, 1977) | Type a program a numbered line at a time, LIST it, RUN it; Guess the Number is typed in already. | The prompt as the whole environment, editor, calculator and shell; a recursive-descent parser reading characters, as the 4 KB interpreters did; 16-bit integers wrapping; the interpreter a Teletype conversation, INPUT's continuation the rest of the program, a step per line so that 10 GOTO 10 runs and Control-C breaks it; our Guess listing checked against Tty_guess, a differential test. |

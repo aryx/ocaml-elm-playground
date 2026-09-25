@@ -330,7 +330,13 @@ returns **a grid of cells instead of shapes**.
    `appkits/teletype`, `games/adventure/TinyWumpus.ml` its thin main, and
    `wumpus` in TinyTerminal's shell.
 5. TinyBasic (`apps/devtools/`) on `Teletype`, a `basic` command in TinyTerminal, and a
-   differential test of Wumpus against its listing.
+   differential test of Wumpus against its listing. First stage done
+   (2026-09-25): `appkits/basic` (`Basic_parse`, `Basic_run`,
+   `Basic_session`), Tiny BASIC's language, integers of 16 bits;
+   `Teletype.step` added for it (a long computation runs a frame at a
+   time, Control-C reaches it); the differential test is our own Guess
+   listing against `Tty_guess`, up to its PLAY AGAIN (no strings yet).
+   Next stage: Microsoft BASIC's strings, arrays, FOR/NEXT and ":".
 6. `Curses` and the `Textmode` way (the playground and a real
    terminal), then TinyRogue.
 7. Later: the pty (native, then WebSocket); the cell Look for `gui/`,

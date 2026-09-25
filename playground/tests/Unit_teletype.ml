@@ -82,6 +82,29 @@ let tests =
           Alcotest.(check bool) "the shell reads again" true (reading m);
           let m = input m "\x03" in
           Alcotest.(check bool) "at the shell, Control-C ends it" true (finished m));
+      Testo.create "step: a program that never ends, run for a million steps" (fun () ->
+          let rec forever n : unit talk =
+            let* () = step in
+            if n = 3 then
+              let* () = print "3\n" in
+              forever (n + 1)
+            else forever (n + 1)
+          in
+          Alcotest.(check string) "run stops it" "3\n" (run (forever 0) []));
+      Testo.create "step: the machine takes its steps a frame at a time" (fun () ->
+          (* counts to 50,000, printing each 10,000th: more than a frame *)
+          let rec count n : unit talk =
+            let* () = step in
+            if n > 50_000 then return ()
+            else
+              let* () = if n mod 10_000 = 0 then print (Printf.sprintf "%d " n) else return () in
+              count (n + 1)
+          in
+          let m = start ~seed:1 ~rows:1 ~cols:40 (count 1) in
+          Alcotest.(check bool) "not over after the first frame" false (finished m);
+          let m = tick (tick (tick m 0.02) 0.02) 0.02 in
+          Alcotest.(check bool) "over three frames later" true (finished m);
+          Alcotest.(check (list string)) "all printed" [ "10000 20000 30000 40000 50000" ] (screen_text m));
       Testo.create "110 baud: 10 characters a second" (fun () ->
           let m = start ~baud:110 ~seed:1 ~rows:1 ~cols:30 hello in
           Alcotest.(check (list string)) "nothing yet" [ "" ] (screen_text m);

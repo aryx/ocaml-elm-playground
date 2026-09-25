@@ -12,8 +12,8 @@
  * 1979): a screen of 80 by 24 characters, and a prompt that runs
  * programs.
  *
- *   type a command and enter: help, ls, hangman, guess, wumpus, colors,
- *   clear, echo, exit; Control-C stops a program, Control-U erases the line;
+ *   type a command and enter: help, ls, hangman, guess, wumpus, basic,
+ *   colors, clear, echo, exit; Control-C stops a program, Control-U erases the line;
  *   flags: phosphor=green or amber (white, the VT100's, by default),
  *   baud=n (300 or 1200: a modem's speed, the echo included)
  *
@@ -36,8 +36,9 @@
  * (examples/TeletypeHangman.ml).
  *
  * What it uses: the Playground, its Teletype way (over libs/terminal's
- * Vt and Line_discipline), and appkits/teletype's programs. Not gui/:
- * a terminal's only widget is the screen.
+ * Vt and Line_discipline), appkits/teletype's programs, and
+ * appkits/basic's BASIC. Not gui/: a terminal's only widget is the
+ * screen.
  *
  * Left undone, exercises: pipes and $VARIABLES (the Bourne shell's
  * language, of which this has the loop only); the history (up arrow:
@@ -55,7 +56,9 @@ open Teletype
 let programs : (string * string * unit talk) list =
   [ ("hangman", "guess the word before the man is hanged", Tty_hangman.program);
     ("guess", "guess the number, too low or too high", Tty_guess.program);
-    ("wumpus", "hunt the Wumpus in a cave of 20 rooms", Tty_wumpus.program) ]
+    ("wumpus", "hunt the Wumpus in a cave of 20 rooms", Tty_wumpus.program);
+    ("basic", "Tiny BASIC, a numbered line at a time (BYE to leave)",
+     Basic_session.session ~program:Basic_run.empty "TINY BASIC\n") ]
 
 (* the escape sequences at work: SGR's colours, bold and reverse *)
 let colors : string =
