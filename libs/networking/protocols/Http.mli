@@ -129,3 +129,37 @@ val parse_response : string -> (response, string) result
 
 (* 301, 302, 303, 307, 308: the answer is elsewhere, in "Location:" *)
 val is_redirect : int -> bool
+
+(*****************************************************************************)
+(* The server's side *)
+(*****************************************************************************)
+
+(* A server reads the other message: a request line ("GET /x
+ * HTTP/1.1"), headers, the empty line, and a body when the request
+ * says how long ("Content-Length: n": a form POSTed, phase 9 of
+ * plan_browser_teaching.md). The bytes come in pieces, so reading one
+ * says whether it is whole yet:
+ *
+ *   "GET / HTTP/1.1\r\nHost: a\r\n"          Incomplete: no empty line yet
+ *   "GET / HTTP/1.1\r\nHost: a\r\n\r\n"      Request, its body "", 27 bytes used
+ *   "POST /f HTTP/1.1\r\nContent-Length: 3\r\n\r\nab"
+ *                                            Incomplete: 1 byte of body to come
+ *   "HELLO\r\n\r\n"                          Bad: not a request line *)
+type parsed_request =
+  | Incomplete
+  | Bad of string
+  | Request of request * string * int (* the request, its body, the bytes used *)
+
+val parse_request : string -> parsed_request
+
+(* a status's reason phrase, for the people reading the bytes: 200
+ * "OK", 404 "Not Found" *)
+val reason : int -> string
+
+(* a response of [status], its body of [content_type] *)
+val response : int -> content_type:string -> string -> response
+
+(* the bytes to send: the status line, the headers (a Content-Length
+ * added if there is none, and "Connection: close"), the empty line,
+ * the body -- what parse_response reads back *)
+val response_to_string : response -> string

@@ -1513,6 +1513,9 @@ let flagged : Testutil_golden.flagged list =
      * and a loose one *)
     ("apps/internet/software/TinyMosaic", "narrow", 5, [ "url=about:history"; "width=600" ]);
     ("apps/internet/software/TinyMosaic", "pretty", 5, [ "url=about:history"; "width=600"; "wrap=pretty" ]);
+    (* claude: a page that could not be fetched (port 1: nobody
+     * listens), shown as a page, laid out like any *)
+    ("apps/internet/software/TinyMosaic", "failed", 10, [ "url=http://127.0.0.1:1/" ]);
     (* claude: a world of HtDP's first universe, its universe not there
      * (port 1): resting, and saying why *)
     ("examples/software/UniverseBall", "refused", 5, [ "port=1" ]);

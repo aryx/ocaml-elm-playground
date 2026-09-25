@@ -163,3 +163,60 @@ let parse_response (s : string) : (response, string) result =
   Ok { version; status; reason; headers; body }
 
 let is_redirect (status : int) : bool = List.mem status [ 301; 302; 303; 307; 308 ]
+
+(*****************************************************************************)
+(* The server's side *)
+(*****************************************************************************)
+
+type parsed_request = Incomplete | Bad of string | Request of request * string * int
+
+(* where the empty line ending the headers is, from [pos], if it came *)
+let rec headers_end (s : string) (pos : int) : int option =
+  match line_at s pos with None -> None | Some ("", next) -> Some next | Some (_, next) -> headers_end s next
+
+let parse_request (s : string) : parsed_request =
+  match line_at s 0 with
+  | None -> if String.length s > 8192 then Bad "Http: a request line longer than 8 KB" else Incomplete
+  | Some (line, pos) -> (
+      match String.split_on_char ' ' line with
+      | [ meth; target; version ] when String.length version > 5 && String.sub version 0 5 = "HTTP/" -> (
+          match headers_end s pos with
+          | None -> if String.length s > 65536 then Bad "Http: headers longer than 64 KB" else Incomplete
+          | Some _ -> (
+              match parse_headers s pos with
+              | Error e -> Bad e
+              | Ok (headers, start) -> (
+                  match Option.map int_of_string_opt (header "Content-Length" headers) with
+                  | Some None -> Bad "Http: a Content-Length that is not a number"
+                  | length ->
+                      let length = match length with Some (Some n) -> n | _ -> 0 in
+                      if String.length s - start < length then Incomplete
+                      else Request ({ meth; target; headers }, String.sub s start length, start + length))))
+      | _ -> Bad (Printf.sprintf "Http: bad request line %S" line))
+
+let reason (status : int) : string =
+  match status with
+  | 200 -> "OK"
+  | 301 -> "Moved Permanently"
+  | 302 -> "Found"
+  | 304 -> "Not Modified"
+  | 400 -> "Bad Request"
+  | 403 -> "Forbidden"
+  | 404 -> "Not Found"
+  | 405 -> "Method Not Allowed"
+  | 500 -> "Internal Server Error"
+  | 501 -> "Not Implemented"
+  | _ -> "Unknown"
+
+let response (status : int) ~(content_type : string) (body : string) : response =
+  { version = "HTTP/1.1"; status; reason = reason status; headers = [ ("Content-Type", content_type) ]; body }
+
+let response_to_string (r : response) : string =
+  let headers =
+    r.headers
+    @ (if header "Content-Length" r.headers = None then [ ("Content-Length", string_of_int (String.length r.body)) ] else [])
+    @ if header "Connection" r.headers = None then [ ("Connection", "close") ] else []
+  in
+  Printf.sprintf "%s %d %s\r\n" r.version r.status r.reason
+  ^ String.concat "" (List.map (fun (n, v) -> n ^ ": " ^ v ^ "\r\n") headers)
+  ^ "\r\n" ^ r.body

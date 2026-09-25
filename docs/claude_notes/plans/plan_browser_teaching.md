@@ -504,7 +504,25 @@ do something; `o` outlines the layout's boxes and lines. Golden
 frames (scripted, the pointer at the home page's "short"): `_hover`,
 `_click`, `_back`, `_outline`. Next: phase 6, http:// for real (the
 globe turning, redirections, errors as pages, curl for https://) and
-`tiny_httpd`.
+`tiny_httpd`. Committed as 5e14700.
+
+**Phase 6 done** (2026-09-25): the server's side of `Http`
+(`parse_request`, whole or not yet, `reason`, `response`,
+`response_to_string`); `Http_server` (`networking/unix/`), a web
+server's event loop, a connection per request, garbage answered 400;
+`networking/httpd/tiny_httpd.exe` over it: a directory's files, `../`
+refused (403), "Index of" listings, NCSA's log format. Tests: the
+server and three `Http_request`s at once in one process (a page, a
+redirection followed, a 404), and garbage. `https://` natively by curl
+in `native_common/Commands` (blocking, the one request that is), also
+when an `http://` page redirects to `https://` (our client stops at
+it, its URL handed to curl). TinyMosaic: a `Failed` state no more --
+what could not be fetched is an error page through the pipeline
+(status 0, `r` reloads it, the history keeps it); what is not HTML is
+made a page (text in `<pre>`, as Mosaic; anything else said what it
+is). Tried by hand: `tiny_httpd` browsed (its index, its pages),
+`https://example.com/`, a refused port, an `.ml` as `text/plain`.
+Golden frame `_failed` (port 1). Next: phase 7, images.
 
 Written as the specification, with
 [`notes_browser.md`](../tutorials/notes_browser.md) and

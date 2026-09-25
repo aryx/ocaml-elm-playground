@@ -40,7 +40,7 @@ something changes.
 | `web/layout/Hit` | a point to a link, a name to its place | §8 | done |
 | `apps/internet/TinyMosaic` | the chrome, painting, the history | §8, §9 | done (phases 0-5) |
 | `web/style/Css` | the cascade | §10 | planned |
-| `networking/httpd/tiny_httpd` | the other end: a server, and CGI | §11 | planned |
+| `networking/httpd/tiny_httpd`, `networking/unix/Http_server` | the other end: a server, and CGI | §11 | the server done; CGI with forms (phase 9) |
 | `web/layout/Table_layout` | tables | §12 | planned |
 
 ## 1. From a URL to bytes
@@ -412,9 +412,24 @@ table always was.
 ## 11. The other end: a server
 
 `tiny_httpd` is the smallest useful web server: read a request (`Http`
-parses both directions), map the path to a file under a directory, send
-it with its `Content-Type` guessed from its extension, or a 404. The
-event loop is `Server`'s, as `Irc_server`'s. **CGI** (NCSA httpd, 1993,
+parses both directions, `Http.parse_request` saying whether the bytes
+so far are a whole one yet), map the path to a file under a directory,
+send it with its `Content-Type` guessed from its extension, or a 404.
+Three things every web server learned early, each a few lines there: a
+path that climbs out of the directory (`/../../etc/passwd`, the first
+attack) is refused, 403; a directory with no `index.html` is answered
+with a page listing its files (NCSA's "Index of /"); and each request
+is a line in the log, NCSA's Common Log Format, still every server's:
+
+```
+127.0.0.1 - - [25/Sep/2026:07:01:26 +0000] "GET /home.html HTTP/1.1" 200 1411
+```
+
+Its event loop is `Http_server`, the shape of `Server`'s (WebSocket)
+and of `Http_request`'s (the client): non-blocking sockets, a step
+doing what can be done without waiting, select between steps -- so a
+slow client holds up no other, where CERN's and NCSA's servers gave
+each connection a process of its own. **CGI** (NCSA httpd, 1993,
 from the same lab as Mosaic) was the first dynamic page: a URL
 names a *program*, run with the request in environment variables
 (`QUERY_STRING`, `REQUEST_METHOD`), whose output is the response.

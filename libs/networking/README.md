@@ -16,8 +16,8 @@ and the browser runs them too. The tutorial is
 |---|---|---|
 | `protocols/` (`networking_protocols`) | the bytes other programs agree on | `Url` (RFC 3986), `Http` (HTTP/1.1 messages), `Websocket` (RFC 6455), `Irc` (RFC 1459), `Wire` (values as bytes: varints, zigzag, garbage refused), `Transport` (where a peer's packets go, whatever carries them) |
 | `netcode/` (`networking_netcode`) | the machinery of a multiplayer game | `Checksum` (desyncs), `Sim_net` (a network in one process, from a seed), `Inputs` (the input exchange), `Lockstep`, `Rollback`, `Snapshot`, `Prediction`, `Interpolation` (client-server) |
-| `unix/` (`networking_unix`, native only) | the sockets | `Tcp`, `Udp`, `Server`, `Relay`, `Relay_client`, `Universe_server`, `Irc_server`, `Http_client`, `Http_request`, `Connect` |
-| `relay/`, `ircd/` | the servers, programs | `relay_server.exe`, `tiny_ircd.exe` |
+| `unix/` (`networking_unix`, native only) | the sockets | `Tcp`, `Udp`, `Server`, `Relay`, `Relay_client`, `Universe_server`, `Irc_server`, `Http_client`, `Http_request`, `Http_server` (a web server's event loop), `Connect` |
+| `relay/`, `ircd/`, `httpd/` | the servers, programs | `relay_server.exe`, `tiny_ircd.exe`, `tiny_httpd.exe` (a directory's files, for TinyMosaic) |
 
 Why this split:
 

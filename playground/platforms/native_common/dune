@@ -32,6 +32,7 @@
  (libraries
    unix
    networking networking_unix ; Http_request, for the Cmd.Http_get of Commands
+   curl ; its https://, until TLS is ours
    caps ; the Cap.network a Cmd.Http_get carries
    logs
    tsdl

@@ -17,7 +17,7 @@
  *
  *   bytes -> text -> tokens -> tree -> looks -> boxes -> shapes
  *
- * All of them now, and back: a click (phases 0 to 5). A page is
+ * All of them now, and back: a click (phases 0 to 6). A page is
  * fetched (a built-in about: page, or http:// through the platform's
  * Http.get), its bytes decoded into text -- the encoding decided from
  * the header, a <meta>, or a guess (Charset) -- cut into tokens
@@ -52,8 +52,21 @@
  * scrolled with the arrows, Page Up/Down and the wheel, "r" reloading
  * the page, "h" going home. The title at the top is the tree's <title>.
  *
+ * The web, for real: http:// by our own client, stepped each frame
+ * (the globe turns meanwhile, the status line says what is awaited),
+ * its redirections followed, the page's links then relative to where
+ * it ended; https:// by curl natively, blocking, until TLS is ours (in
+ * a browser, the browser's). What is not HTML is made a page: text
+ * shown as Mosaic did, in <pre>, anything else said what it is; what
+ * could not be fetched is an error page, reloaded with "r". And a web
+ * server of our own to browse with no Internet, tiny_httpd:
+ *
+ *   dune exec networking/httpd/tiny_httpd.exe
+ *   dune exec apps/internet/TinyMosaic.exe -- url=http://localhost:8080/
+ *
  *   dune exec apps/internet/TinyMosaic.exe
  *   dune exec apps/internet/TinyMosaic.exe -- url=http://info.cern.ch/
+ *   dune exec apps/internet/TinyMosaic.exe -- url=https://example.com/
  *   http://localhost:8001/apps/internet/web/TinyMosaic.html
  *
  * flags url= (about:home), the first page;
@@ -99,7 +112,9 @@ type page = {
   drawn : (float * float * shape) list;
 }
 
-type state = Loading of string | Shown of page | Failed of string * string (* the URL, why *)
+(* a page that could not be fetched is shown too: an error page, of
+ * status 0 (error_html) *)
+type state = Loading of string | Shown of page
 
 (* which stage of the pipeline is shown *)
 type view = Page | Source | Tokens | Tree | Line
@@ -310,11 +325,38 @@ let laid_out (m : model) (p : page) : page =
   let layout = Html_layout.layout metrics ~breaker:(breaker m.wrap) ~root:root_look ~width:m.width p.tree in
   { p with layout; drawn = draw (is_visited m p.url) layout }
 
+(* a response's media type: "text/html; charset=utf-8" is "text/html" *)
+let media_type (content_type : string option) : string =
+  match content_type with
+  | None -> ""
+  | Some ct -> String.lowercase_ascii (String.trim (List.hd (String.split_on_char ';' ct)))
+
+let escape_html (s : string) : string =
+  String.concat "" (List.map (fun c -> match c with "&" -> "&amp;" | "<" -> "&lt;" | ">" -> "&gt;" | c -> c) (characters s))
+
+(* what is not HTML made a page: text as Mosaic showed it, in <pre>;
+ * anything else said what it is *)
+let as_html (url : string) (content_type : string option) (text : string) (bytes : int) : string =
+  let name = Filename.basename (fst (split_fragment url)) in
+  match media_type content_type with
+  | "" | "text/html" -> text
+  | t when starts_with "text/" t -> Printf.sprintf "<title>%s</title><pre>\n%s</pre>" name (escape_html text)
+  | t ->
+      Printf.sprintf
+        "<title>%s</title><h1>%s</h1><p>A document of type <code>%s</code>, %d bytes. TinyMosaic shows HTML and text; pictures, soon."
+        name name t bytes
+
+(* a page for what went wrong: laid out like any, reloaded with r *)
+let error_html (url : string) (why : string) : string =
+  Printf.sprintf
+    "<title>Failed</title><h1>Could not load the page</h1><p><code>%s</code><p>%s<p>Press <code>r</code> to try again, <code>b</code> to go back."
+    (escape_html url) (escape_html why)
+
 (* the pipeline: bytes -> text -> tokens -> tree -> boxes -> shapes *)
 let page_of (m : model) (url : string) (status : int) (content_type : string option) (bytes : string) : page =
   let charset = Charset.detect ?content_type bytes in
   let text = Charset.to_utf_8 charset bytes in
-  let tokens = Html_lexer.tokenize text in
+  let tokens = Html_lexer.tokenize (as_html url content_type text (String.length bytes)) in
   let tree = Html_tree.parse tokens in
   let title = match Dom.find_all "title" tree with t :: _ -> String.trim (Dom.text_content t) | [] -> "" in
   let layout = Html_layout.layout metrics ~breaker:(breaker m.wrap) ~root:root_look ~width:m.width tree in
@@ -395,7 +437,11 @@ let to_fragment (m : model) : model =
 (* Update: going places *)
 (*****************************************************************************)
 
-let current_url (m : model) : string = match m.state with Loading url | Failed (url, _) -> url | Shown p -> p.url
+let current_url (m : model) : string = match m.state with Loading url -> url | Shown p -> p.url
+
+(* what went wrong fetching [url], shown as a page *)
+let failed (m : model) (url : string) (why : string) : model =
+  { m with state = Shown (page_of m url 0 None (error_html url why)) }
 
 (* the page at [url] (no #fragment): at once for an about: page, else a
  * command; the history untouched (Reload, Back and Forward use it) *)
@@ -406,14 +452,14 @@ let load (network : < Cap.network ; .. >) (url : string) (m : model) : model * m
     match about name with
     | Some bytes ->
         (to_fragment { m with state = Shown (page_of m url 200 (Some "text/html; charset=utf-8") bytes) }, Cmd.none)
-    | None -> ({ m with state = Failed (url, "no such page in the built-in site") }, Cmd.none)
+    | None -> (failed m url "There is no such page in the built-in site.", Cmd.none)
   else ({ m with state = Loading url }, Http.get network ~url ~expect:(Http.expect_response (fun r -> Got (url, r))))
 
 (* where the person is now, as the history keeps it *)
 let entry_of (m : model) : entry =
   match m.state with
   | Shown p -> { at = p.url; kept = Some p; scrolled_to = m.scroll }
-  | Loading url | Failed (url, _) -> { at = url; kept = None; scrolled_to = 0 }
+  | Loading url -> { at = url; kept = None; scrolled_to = 0 }
 
 (* a link followed: where the person was goes on the stack behind, what
  * was ahead is forgotten (a new branch); a #fragment of the page shown
@@ -540,7 +586,7 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
           r.headers
       in
       (to_fragment { m with state = Shown (page_of m r.url r.status content_type r.body) }, Cmd.none)
-  | Got (url, Error e) -> ({ m with state = Failed (url, Http.error_to_string e) }, Cmd.none)
+  | Got (url, Error e) -> (failed m url (String.capitalize_ascii (Http.error_to_string e) ^ "."), Cmd.none)
   | Tick time -> ({ m with time }, Cmd.none)
   | Wheel notches -> (scrolled (3 * int_of_float (Float.round notches)) m, Cmd.none)
   | Mouse_move (x, y) -> ({ m with mouse = (x, y) }, Cmd.none)
@@ -631,7 +677,7 @@ let status (m : model) : string =
   match (m.state, hovered m) with
   | Shown p, Some href -> resolve p.url href
   | Loading url, _ -> "Connecting to " ^ url ^ " ..."
-  | Failed (_, why), _ -> "Failed: " ^ why
+  | Shown p, None when p.status = 0 -> "Failed: " ^ p.url
   | Shown p, None ->
       let n = line_count m in
       Printf.sprintf "%s: %d bytes, %s, status %d, lines %d-%d of %d"
@@ -670,7 +716,6 @@ let view (m : model) : shape list =
         |> List.mapi (fun i (color, line) -> monospace (-480.) (400. -. (14. *. float_of_int i)) color line)
         |> List.concat
     | Loading _ -> []
-    | Failed (url, why) -> [ label (-480.) 400. ink ("Could not load " ^ url); label (-480.) 380. ink why ]
   in
   let title = match m.state with Shown p -> p.title | _ -> "" in
   [ rectangle grey 1000. 1000. ]

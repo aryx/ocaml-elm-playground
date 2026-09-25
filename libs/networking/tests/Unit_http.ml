@@ -62,4 +62,26 @@ let tests =
             (Result.is_error (Http.parse_response "HTTP/1.1 200 OK\r\nX-A : 1\r\n\r\n"));
           Alcotest.(check bool) "gzip" true
             (Result.is_error (Http.parse_response "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\n\r\n...")));
+      Testo.create "the server's side: a request, whole or not yet" (fun () ->
+          let show (p : Http.parsed_request) =
+            match p with
+            | Incomplete -> "incomplete"
+            | Bad _ -> "bad"
+            | Request (r, body, used) -> Printf.sprintf "%s %s body=%S used=%d" r.meth r.target body used
+          in
+          let check what s expected = Alcotest.(check string) what expected (show (Http.parse_request s)) in
+          check "no empty line yet" "GET / HTTP/1.1\r\nHost: a\r\n" "incomplete";
+          check "whole" "GET / HTTP/1.1\r\nHost: a\r\n\r\n" "GET / body=\"\" used=27";
+          check "a body to come" "POST /f HTTP/1.1\r\nContent-Length: 3\r\n\r\nab" "incomplete";
+          check "the body come, and more" "POST /f HTTP/1.1\r\nContent-Length: 3\r\n\r\nabcGET" "POST /f body=\"abc\" used=42";
+          check "not a request line" "HELLO\r\n\r\n" "bad";
+          check "a bad length" "POST / HTTP/1.1\r\nContent-Length: x\r\n\r\n" "bad");
+      Testo.create "the server's side: a response, read back" (fun () ->
+          let bytes = Http.response_to_string (Http.response 404 ~content_type:"text/html" "<p>no") in
+          Alcotest.(check string)
+            "the bytes"
+            "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 5\r\nConnection: close\r\n\r\n<p>no"
+            bytes;
+          let r = ok (Http.parse_response bytes) in
+          Alcotest.(check (pair int string)) "parsed back" (404, "<p>no") (r.status, r.body));
     ]

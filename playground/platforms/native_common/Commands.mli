@@ -1,7 +1,8 @@
 (* The commands of a native program ([init]'s and [update]'s Cmd.t)
  * performed while the frames go on: each request an Http_request,
  * stepped once a frame by the loop (Native_loop_2d), its answer given
- * back as the message the command asked for. Cmd.Msg's message is
+ * back as the message the command asked for; an https:// one fetched
+ * by curl at once, blocking, until TLS is ours. Cmd.Msg's message is
  * given back at the next frame. *)
 
 (* the commands in flight *)

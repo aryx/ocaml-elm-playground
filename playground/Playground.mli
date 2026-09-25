@@ -979,8 +979,9 @@ type ('model, 'msg) app = {
       | GotText (Ok text) -> (Success text, Cmd.none)
       | GotText (Error e) -> (Failure (Http.error_to_string e), Cmd.none)
 ]}
-    Natively, http:// only (https:// is refused with a [Network_error],
-    until TLS is written); in a browser, whatever the browser allows
+    Natively, http:// by our own client, stepped every frame, and
+    https:// by curl, blocking (the frame waits), until TLS is written;
+    in a browser, whatever the browser allows
     (the page's own server, or another that says so: CORS). Only for
     the {!app} level: [picture], [animation] and [game] have no
     commands, as in Evan's playground. It takes the capability to reach
