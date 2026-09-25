@@ -57,8 +57,8 @@ let programs : (string * string * unit talk) list =
   [ ("hangman", "guess the word before the man is hanged", Tty_hangman.program);
     ("guess", "guess the number, too low or too high", Tty_guess.program);
     ("wumpus", "hunt the Wumpus in a cave of 20 rooms", Tty_wumpus.program);
-    ("basic", "Tiny BASIC, a numbered line at a time (BYE to leave)",
-     Basic_session.session ~program:Basic_run.empty "TINY BASIC\n") ]
+    ("basic", "Applesoft BASIC, a numbered line at a time (BYE: back here)",
+     Basic_session.session ~dialect:Applesoft ~program:Basic_run.empty "APPLESOFT BASIC\n") ]
 
 (* the escape sequences at work: SGR's colours, bold and reverse *)
 let colors : string =

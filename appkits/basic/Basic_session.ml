@@ -49,38 +49,37 @@ let guess =
     "350 GOTO 320";
     "360 IF T <= B THEN PRINT \"GOOD: HALVING WOULDN'T HAVE DONE BETTER.\"";
     "370 IF T > B THEN PRINT \"HALVING WHAT IS LEFT NEVER TAKES MORE THAN \"; B; \".\"";
-    "380 END" ]
+    "380 PRINT";
+    "390 PRINT \"PLAY AGAIN\";";
+    "400 INPUT A$";
+    "410 IF LEFT$(A$, 1) = \"Y\" OR LEFT$(A$, 1) = \"y\" THEN 80";
+    "420 PRINT \"BYE!\"";
+    "430 END" ]
 
-(* the text after a line's number, as LIST will show it *)
-let text_of (line : string) : string =
-  let s = String.trim (Basic_parse.capitals line) in
-  let i = ref 0 in
-  while !i < String.length s && s.[!i] >= '0' && s.[!i] <= '9' do
-    incr i
-  done;
-  String.trim (String.sub s !i (String.length s - !i))
-
-let session ~(program : Basic_run.program) (banner : string) : unit talk =
-  let rec prompt (program : Basic_run.program) : unit talk =
-    let* line = ask ">" in
-    if String.trim line = "" then prompt program
+let session ~(dialect : Basic_run.dialect) ~(program : Basic_run.program) (banner : string) : unit talk =
+  let rec prompt (dialect : Basic_run.dialect) (program : Basic_run.program) : unit talk =
+    (* the Apple II's prompts: > for Integer BASIC, ] for Applesoft *)
+    let* line = ask (match dialect with Integer -> ">" | Applesoft -> "]") in
+    if String.trim line = "" then prompt dialect program
     else
       match Basic_parse.parse_line line with
       | Error msg ->
-          let* () = print ("*** SYNTAX ERR: " ^ msg ^ "\n") in
-          prompt program
-      | Ok (Numbered (n, None)) -> prompt (Basic_run.remove program n)
-      | Ok (Numbered (n, Some stmt)) -> prompt (Basic_run.add program n (text_of line) stmt)
-      | Ok (Direct List) ->
+          let* () = print (match dialect with Integer -> "*** SYNTAX ERR: " ^ msg ^ "\n" | Applesoft -> "?SYNTAX ERROR: " ^ msg ^ "\n") in
+          prompt dialect program
+      | Ok (Numbered (n, None)) -> prompt dialect (Basic_run.remove program n)
+      | Ok (Numbered (n, Some stmts)) -> prompt dialect (Basic_run.add program n (Basic_run.text_of line) stmts)
+      | Ok (Direct [ List ]) ->
           let* () = print (Basic_run.listing program) in
-          prompt program
-      | Ok (Direct New) -> prompt Basic_run.empty
-      | Ok (Direct Bye) -> return ()
-      | Ok (Direct stmt) ->
-          let child = match stmt with Run -> Basic_run.run program | _ -> Basic_run.direct program stmt in
+          prompt dialect program
+      | Ok (Direct [ New ]) -> prompt dialect Basic_run.empty
+      | Ok (Direct [ Bye ]) -> return ()
+      | Ok (Direct [ Fp ]) -> prompt Applesoft program
+      | Ok (Direct [ Int ]) -> prompt Integer program
+      | Ok (Direct stmts) ->
+          let child = match stmts with [ Run ] -> Basic_run.run dialect program | _ -> Basic_run.direct dialect program stmts in
           let* status = spawn child in
           let* () = if status = Interrupted then print "*** BREAK\n" else return () in
-          prompt program
+          prompt dialect program
   in
   let* () = print banner in
-  prompt program
+  prompt dialect program

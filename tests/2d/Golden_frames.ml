@@ -1568,9 +1568,16 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
      * what its neighbours give away (seed 1's cave) *)
     ("games/adventure/software/TinyWumpus", "first", 8, "type(y):2,Enter:3", []);
     (* claude: TinyBasic: Guess's listing (its end, the screen scrolled);
-     * Guess run, a limit and two guesses; and 10 GOTO 10's kind of
-     * loop typed in, run, broken by Control-C *)
+     * FP, Applesoft's floating point and a FOR loop on one line; Guess
+     * run, a limit and two guesses; and 10 GOTO 10's kind of loop typed
+     * in, run, broken by Control-C *)
     ("apps/devtools/software/TinyBasic", "list", 6, "type(list):2,Enter:3", []);
+    ( "apps/devtools/software/TinyBasic",
+      "applesoft",
+      12,
+      (* no commas typed: they separate the script's entries *)
+      "type(fp):2,Enter:3,type(print 1/3;\" \";2^.5):5,Enter:6,type(for i=1 to 5:print i*i;\" \";:next):8,Enter:9",
+      [] );
     ("apps/devtools/software/TinyBasic", "run", 14, "type(run):2,Enter:3,type(100):5,Enter:6,type(50):8,Enter:9,type(25):11,Enter:12", []);
     ( "apps/devtools/software/TinyBasic",
       "break",

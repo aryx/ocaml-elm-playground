@@ -336,7 +336,14 @@ returns **a grid of cells instead of shapes**.
    `Teletype.step` added for it (a long computation runs a frame at a
    time, Control-C reaches it); the differential test is our own Guess
    listing against `Tty_guess`, up to its PLAY AGAIN (no strings yet).
-   Next stage: Microsoft BASIC's strings, arrays, FOR/NEXT and ":".
+   Second stage done (2026-09-25): Microsoft BASIC's grammar (strings,
+   arrays, FOR/NEXT, ":", ON, DATA/READ, DEF FN, the functions, the
+   cruncher's keywords inside names), and two dialects as the Apple II
+   had them, Integer (16 bits, ">") and Applesoft (floating point,
+   "]"), switched by FP and INT; the Guess listing now whole, PLAY
+   AGAIN included, against `Tty_guess`. Left: an Ahl listing of our own
+   against its OCaml port (Wumpus's needs RND(20)'s draws in the same
+   order as Tty_wumpus's).
 6. `Curses` and the `Textmode` way (the playground and a real
    terminal), then TinyRogue.
 7. Later: the pty (native, then WebSocket); the cell Look for `gui/`,
