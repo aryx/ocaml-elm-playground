@@ -49,9 +49,9 @@
  *)
 open Teletype
 
-let banner = "TINY BASIC, 1976, ON A 1977 SCREEN\nGUESS THE NUMBER IS TYPED IN:\nLIST, RUN, OR NEW TO START AFRESH.\nFP FOR APPLESOFT, INT TO COME BACK.\n\n"
+let banner = "TINY BASIC, 1976, ON A 1977 SCREEN\nGUESS THE NUMBER IS TYPED IN:\nLIST, RUN, OR NEW TO START AFRESH.\nFP FOR APPLESOFT, INT TO COME BACK.\nCATALOG: THE DISK; RUN SIERPINSKI...\n\n"
 
-let guess = match Basic_run.of_lines Basic_session.guess with Ok p -> p | Error msg -> failwith msg
+let guess = match Basic_run.of_lines Basic_disk.guess with Ok p -> p | Error msg -> failwith msg
 
 let phosphor (flags : Playground.flags) : Playground.color =
   match List.assoc_opt "phosphor" flags with

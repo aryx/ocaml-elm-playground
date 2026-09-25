@@ -504,7 +504,7 @@ and exec (m : machine) (li : int) (si : int) (s : stmt) : unit talk =
       next ()
   | End -> return ()
   | Stop -> print (Printf.sprintf "%sBREAK%s\n" (if m.col > 0 then "\n" else "") (match line_of m li with Some n -> Printf.sprintf " IN %d" n | None -> ""))
-  | List | Run | New | Bye | Fp | Int -> fail "NOT IN A PROGRAM"
+  | List | Run | New | Bye | Fp | Int | Catalog | Load _ | Save _ | Run_file _ -> fail "NOT IN A PROGRAM"
 
 let run (d : dialect) (p : program) : unit talk =
   let m = create d p None in

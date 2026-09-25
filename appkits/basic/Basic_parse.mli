@@ -25,7 +25,8 @@
                   | DIM var(expr { , expr }) { , var(expr { , expr }) }
                   | DATA datum { , datum } | READ lvalue { , lvalue } | RESTORE
                   | DEF FNname(var) = expr | END | STOP | REM text
-                  | LIST | RUN | NEW | BYE | FP | INT
+                  | LIST | RUN [name] | NEW | BYE | FP | INT
+                  | CATALOG | LOAD name | SAVE name
      expr       ::= disjunctions of conjunctions of NOT of comparisons
                     of sums of products of [-] powers of atoms
      atom       ::= number | "string" | var | var(expr { , expr })
@@ -123,6 +124,12 @@ type stmt =
   | Bye
   | Fp (* Applesoft *)
   | Int (* Integer BASIC, Tiny BASIC's arithmetic *)
+  (* the disk's commands, Apple DOS's: a file's name is the rest of the
+     line *)
+  | Catalog
+  | Load of string
+  | Save of string
+  | Run_file of string
 
 type line =
   | Numbered of int * stmt list option (* a number alone deletes its line *)

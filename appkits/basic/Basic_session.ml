@@ -11,75 +11,55 @@ open Teletype
 
 (* See Basic_session.mli *)
 
-let guess =
-  [ "10 PRINT \"GUESS THE NUMBER\"";
-    "20 PRINT";
-    "30 PRINT \"WHAT LIMIT DO YOU WANT\";";
-    "40 INPUT L";
-    "50 IF L > 0 THEN 80";
-    "60 PRINT \"A NUMBER, PLEASE.\"";
-    "70 GOTO 30";
-    "80 N = RND(L)";
-    "90 PRINT";
-    "100 PRINT \"I'M THINKING OF A NUMBER FROM 1 TO \"; L; \".\"";
-    "110 T = 1";
-    "120 PRINT \"YOUR GUESS\";";
-    "130 INPUT G";
-    "140 IF G > 0 THEN 170";
-    "150 PRINT \"A NUMBER, PLEASE.\"";
-    "160 GOTO 120";
-    "170 IF G < N THEN 200";
-    "180 IF G > N THEN 230";
-    "190 GOTO 260";
-    "200 PRINT \"TOO LOW.\"";
-    "210 T = T + 1";
-    "220 GOTO 120";
-    "230 PRINT \"TOO HIGH.\"";
-    "240 T = T + 1";
-    "250 GOTO 120";
-    "260 PRINT \"THAT'S IT! YOU GOT IT IN \"; T;";
-    "270 IF T = 1 THEN PRINT \" TRY.\"";
-    "280 IF T > 1 THEN PRINT \" TRIES.\"";
-    "290 REM B: THE MOST GUESSES HALVING NEEDS";
-    "300 B = 1";
-    "310 M = L";
-    "320 IF M <= 1 THEN 360";
-    "330 M = M / 2";
-    "340 B = B + 1";
-    "350 GOTO 320";
-    "360 IF T <= B THEN PRINT \"GOOD: HALVING WOULDN'T HAVE DONE BETTER.\"";
-    "370 IF T > B THEN PRINT \"HALVING WHAT IS LEFT NEVER TAKES MORE THAN \"; B; \".\"";
-    "380 PRINT";
-    "390 PRINT \"PLAY AGAIN\";";
-    "400 INPUT A$";
-    "410 IF LEFT$(A$, 1) = \"Y\" OR LEFT$(A$, 1) = \"y\" THEN 80";
-    "420 PRINT \"BYE!\"";
-    "430 END" ]
-
 let session ~(dialect : Basic_run.dialect) ~(program : Basic_run.program) (banner : string) : unit talk =
-  let rec prompt (dialect : Basic_run.dialect) (program : Basic_run.program) : unit talk =
+  let rec prompt (disk : Basic_disk.file list) (dialect : Basic_run.dialect) (program : Basic_run.program) : unit talk =
     (* the Apple II's prompts: > for Integer BASIC, ] for Applesoft *)
     let* line = ask (match dialect with Integer -> ">" | Applesoft -> "]") in
-    if String.trim line = "" then prompt dialect program
+    (* a file from the disk, as its BASIC and its program; DOS said
+       FILE NOT FOUND, not in either BASIC's words *)
+    let load name (k : Basic_run.dialect -> Basic_run.program -> unit talk) : unit talk =
+      match List.find_opt (fun (f : Basic_disk.file) -> f.name = name) disk with
+      | None ->
+          let* () = print "FILE NOT FOUND\n" in
+          prompt disk dialect program
+      | Some f -> (
+          match Basic_run.of_lines f.lines with
+          | Ok p -> k f.dialect p
+          | Error msg ->
+              let* () = print ("BAD FILE: " ^ msg ^ "\n") in
+              prompt disk dialect program)
+    in
+    let run dialect program child =
+      let* status = spawn child in
+      let* () = if status = Interrupted then print "*** BREAK\n" else return () in
+      prompt disk dialect program
+    in
+    if String.trim line = "" then prompt disk dialect program
     else
       match Basic_parse.parse_line line with
       | Error msg ->
           let* () = print (match dialect with Integer -> "*** SYNTAX ERR: " ^ msg ^ "\n" | Applesoft -> "?SYNTAX ERROR: " ^ msg ^ "\n") in
-          prompt dialect program
-      | Ok (Numbered (n, None)) -> prompt dialect (Basic_run.remove program n)
-      | Ok (Numbered (n, Some stmts)) -> prompt dialect (Basic_run.add program n (Basic_run.text_of line) stmts)
+          prompt disk dialect program
+      | Ok (Numbered (n, None)) -> prompt disk dialect (Basic_run.remove program n)
+      | Ok (Numbered (n, Some stmts)) -> prompt disk dialect (Basic_run.add program n (Basic_run.text_of line) stmts)
       | Ok (Direct [ List ]) ->
           let* () = print (Basic_run.listing program) in
-          prompt dialect program
-      | Ok (Direct [ New ]) -> prompt dialect Basic_run.empty
+          prompt disk dialect program
+      | Ok (Direct [ New ]) -> prompt disk dialect Basic_run.empty
       | Ok (Direct [ Bye ]) -> return ()
-      | Ok (Direct [ Fp ]) -> prompt Applesoft program
-      | Ok (Direct [ Int ]) -> prompt Integer program
-      | Ok (Direct stmts) ->
-          let child = match stmts with [ Run ] -> Basic_run.run dialect program | _ -> Basic_run.direct dialect program stmts in
-          let* status = spawn child in
-          let* () = if status = Interrupted then print "*** BREAK\n" else return () in
-          prompt dialect program
+      | Ok (Direct [ Fp ]) -> prompt disk Applesoft program
+      | Ok (Direct [ Int ]) -> prompt disk Integer program
+      | Ok (Direct [ Catalog ]) ->
+          let* () = print (Basic_disk.catalog disk) in
+          prompt disk dialect program
+      | Ok (Direct [ Load name ]) -> load name (fun d p -> prompt disk d p)
+      | Ok (Direct [ Run_file name ]) -> load name (fun d p -> run d p (Basic_run.run d p))
+      | Ok (Direct [ Save name ]) ->
+          let lines = String.split_on_char '\n' (Basic_run.listing program) |> List.filter (( <> ) "") in
+          let file = { Basic_disk.name; dialect; lines } in
+          prompt (List.filter (fun (f : Basic_disk.file) -> f.name <> name) disk @ [ file ]) dialect program
+      | Ok (Direct [ Run ]) -> run dialect program (Basic_run.run dialect program)
+      | Ok (Direct stmts) -> run dialect program (Basic_run.direct dialect program stmts)
   in
   let* () = print banner in
-  prompt dialect program
+  prompt Basic_disk.files dialect program

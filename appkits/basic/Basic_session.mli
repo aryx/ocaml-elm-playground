@@ -21,16 +21,10 @@
    says *** BREAK and prompts again. BYE leaves BASIC, back to
    TinyTerminal's shell when that is where it was started.
 
-   [guess] is a program to begin with, typed in already: Guess the
-   Number, our own listing, in Integer BASIC (its halving counts on
-   7 / 2 being 3), the same game as Tty_guess --
-   the same questions, the same random numbers from the same seed, so
-   that the two play the same game on the same answers (the tests
-   check it: a differential test, an interpreter checked against a
-   program written directly). *)
-
-(* Guess the Number, in Integer BASIC: a line each, "10 PRINT ..." *)
-val guess : string list
+   The disk is Basic_disk's: CATALOG lists it, LOAD NAME and RUN NAME
+   read a program from it (in its own BASIC: RUN MANDEL from Integer
+   BASIC goes to Applesoft, as DOS did), SAVE NAME writes the program
+   in memory to it for the rest of the session. *)
 
 (* [session ~dialect ~program banner]: the prompt, [program] typed in
    already, until BYE *)

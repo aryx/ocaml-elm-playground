@@ -1564,6 +1564,9 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
      * prompt again; and the escape sequences' colours, on green *)
     ("apps/system/software/TinyTerminal", "interrupted", 18, "type(hangman):2,Enter:3,type(e):5,Enter:6,Control:8-9,c:9", []);
     ("apps/system/software/TinyTerminal", "colors", 8, "type(colors):2,Enter:3", [ "phosphor=green" ]);
+    (* claude: three programs deep: the shell, BASIC in it, and the
+     * Mandelbrot set from BASIC's disk, drawn a few frames long *)
+    ("apps/system/software/TinyTerminal", "mandel", 30, "type(basic):2,Enter:3,type(run mandel):5,Enter:6", []);
     (* claude: TinyWumpus: the instructions, then the first room and
      * what its neighbours give away (seed 1's cave) *)
     ("games/adventure/software/TinyWumpus", "first", 8, "type(y):2,Enter:3", []);
@@ -1572,6 +1575,7 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
      * run, a limit and two guesses; and 10 GOTO 10's kind of loop typed
      * in, run, broken by Control-C *)
     ("apps/devtools/software/TinyBasic", "list", 6, "type(list):2,Enter:3", []);
+    ("apps/devtools/software/TinyBasic", "sierpinski", 10, "type(run sierpinski):2,Enter:3", []);
     ( "apps/devtools/software/TinyBasic",
       "applesoft",
       12,

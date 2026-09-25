@@ -128,11 +128,76 @@ let tests =
           let upto n = List.init n (fun i -> string_of_int (i + 1)) in
           List.iter
             (fun (seed, answers) ->
-              let basic = Teletype.run ~seed (Basic_run.run Integer (program Basic_session.guess)) answers in
+              let basic = Teletype.run ~seed (Basic_run.run Integer (program Basic_disk.guess)) answers in
               let ocaml = Teletype.run ~seed Tty_guess.program answers in
               check (Printf.sprintf "seed %d" seed) ocaml basic)
             (* each game ends with every number up to the limit: a win *)
             [ (1, [ "100"; "50"; "25"; "75" ] @ upto 100 @ [ "Y"; "60"; "30" ] @ upto 100 @ [ "N" ]);
               (7, [ "0"; "10"; "-3"; "5" ] @ upto 10 @ [ "no" ]);
               (42, [ "1"; "1"; "" ]) ]);
+      (* the disk *)
+      Testo.create "the disk: every listing reads; CATALOG, LOAD, RUN, SAVE" (fun () ->
+          List.iter
+            (fun (f : Basic_disk.file) ->
+              match Basic_run.of_lines f.lines with Ok _ -> () | Error msg -> Alcotest.fail (f.name ^ ": " ^ msg))
+            Basic_disk.files;
+          let s = Basic_session.session ~dialect:Integer ~program:Basic_run.empty "" in
+          let out = Teletype.run s [ "CATALOG"; "LOAD NOPE"; "10 PRINT \"HI\""; "SAVE HI"; "NEW"; "RUN HI"; "LOAD MANDEL"; "BYE" ] in
+          check "transcript"
+            (">CATALOG\nDISK VOLUME 254\n\n I 004 GUESS\n A 005 BAGELS\n A 002 MANDEL\n A 002 SIERPINSKI\n A 001 SINE\n"
+           ^ ">LOAD NOPE\nFILE NOT FOUND\n>10 PRINT \"HI\"\n>SAVE HI\n>NEW\n>RUN HI\nHI\n>LOAD MANDEL\n]BYE\n")
+            out);
+      Testo.create "MANDEL: the listing draws what the same loop in OCaml does" (fun () ->
+          (* a differential test of Applesoft's floating point: the
+             listing's own computation, written directly *)
+          let direct =
+            String.concat ""
+              (List.init 23 (fun r ->
+                   String.init 79 (fun c ->
+                       let ca = (float_of_int (c - 39) *. 0.04) -. 0.6 and cb = float_of_int (r - 11) *. 0.1 in
+                       let rec iterate i a b =
+                         if i > 26 then '@'
+                         else
+                           let a, b = ((a *. a) -. (b *. b) +. ca, (2. *. a *. b) +. cb) in
+                           if (a *. a) +. (b *. b) > 4. then " .:-=+*#%".[i / 3] else iterate (i + 1) a b
+                       in
+                       iterate 0 ca cb)
+                   ^ "\n"))
+          in
+          let d = List.find (fun (f : Basic_disk.file) -> f.name = "MANDEL") Basic_disk.files in
+          check "the set" direct (fp d.lines []));
+      Testo.create "SIERPINSKI: Pascal's triangle's odd numbers" (fun () ->
+          let d = List.find (fun (f : Basic_disk.file) -> f.name = "SIERPINSKI") Basic_disk.files in
+          let rows = String.split_on_char '\n' (fp d.lines []) |> List.filter (( <> ) "") |> List.map String.trim in
+          check "row 1" "*" (List.nth rows 0);
+          check "row 4" "* * * *" (List.nth rows 3);
+          check "row 5" "*       *" (List.nth rows 4);
+          check "row 16" (String.trim (String.concat "" (List.init 16 (fun _ -> "* ")))) (List.nth rows 15));
+      Testo.create "BAGELS: every clue checked, once its number is told" (fun () ->
+          let d = List.find (fun (f : Basic_disk.file) -> f.name = "BAGELS") Basic_disk.files in
+          let guesses = [ "123"; "456"; "789"; "012"; "345"; "678"; "901"; "234"; "567"; "890" ] in
+          let out = fp ~seed:9 d.lines (guesses @ guesses @ [ "NO" ]) in
+          let lines = String.split_on_char '\n' out in
+          (* the number: told after twenty guesses, or the last guess *)
+          let secret =
+            match List.find_opt (fun l -> String.length l > 28 && String.sub l 0 29 = "THAT'S TWENTY. MY NUMBER WAS ") lines with
+            | Some l -> String.sub l 29 3
+            | None -> Alcotest.fail "no twenty guesses: a guess won; pick another seed"
+          in
+          (* the listing's clue: for each digit of the number, each of the
+             guess -- equal in the same place FERMI, elsewhere PICO *)
+          let clue g =
+            let p = ref 0 and f = ref 0 in
+            for i = 0 to 2 do for j = 0 to 2 do if secret.[i] = g.[j] then if i = j then incr f else incr p done done;
+            if !f + !p = 0 then "BAGELS" else String.concat "" (List.init !p (fun _ -> "PICO ") @ List.init !f (fun _ -> "FERMI "))
+          in
+          let rec checked = function
+            | l :: next :: rest when String.length l > 7 && String.sub l 0 7 = "GUESS #" ->
+                let g = String.sub l (String.length l - 3) 3 in
+                check ("guess " ^ g) (clue g) next;
+                1 + checked rest
+            | _ :: rest -> checked rest
+            | [] -> 0
+          in
+          Alcotest.(check int) "twenty clues checked" 20 (checked lines));
     ]

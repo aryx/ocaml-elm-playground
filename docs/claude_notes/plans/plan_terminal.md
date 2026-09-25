@@ -341,9 +341,14 @@ returns **a grid of cells instead of shapes**.
    cruncher's keywords inside names), and two dialects as the Apple II
    had them, Integer (16 bits, ">") and Applesoft (floating point,
    "]"), switched by FP and INT; the Guess listing now whole, PLAY
-   AGAIN included, against `Tty_guess`. Left: an Ahl listing of our own
-   against its OCaml port (Wumpus's needs RND(20)'s draws in the same
-   order as Tty_wumpus's).
+   AGAIN included, against `Tty_guess`. Then a disk (`Basic_disk`,
+   Apple DOS's CATALOG, LOAD, RUN name, SAVE) of our own listings in
+   Ahl's style: GUESS, BAGELS (its clues checked by an oracle), MANDEL
+   (the Mandelbrot set, checked against the same loop in OCaml),
+   SIERPINSKI, SINE -- so TinyTerminal, then basic, then RUN MANDEL:
+   three programs deep. Left: an Ahl listing of our own against its
+   OCaml port (Wumpus's needs RND(20)'s draws in the same order as
+   Tty_wumpus's).
 6. `Curses` and the `Textmode` way (the playground and a real
    terminal), then TinyRogue.
 7. Later: the pty (native, then WebSocket); the cell Look for `gui/`,

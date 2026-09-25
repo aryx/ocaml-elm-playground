@@ -57,6 +57,10 @@ type stmt =
   | Bye
   | Fp
   | Int
+  | Catalog
+  | Load of string
+  | Save of string
+  | Run_file of string
 
 type line = Numbered of int * stmt list option | Direct of stmt list
 
@@ -330,7 +334,22 @@ let rec statement (p : p) : stmt list =
   let command k c = if keyword p k && at_end p then Some c else None in
   let commands = [ ("LIST", List); ("RUN", Run); ("NEW", New); ("BYE", Bye); ("FP", Fp); ("INT", Int) ] in
   let start = p.i in
-  match List.find_map (fun (k, c) -> p.i <- start; command k c) commands with
+  (* and the disk's, followed by a file's name *)
+  let file k c =
+    p.i <- start;
+    if keyword p k && not (at_end p) then begin
+      let name = String.trim (String.sub p.s p.i (String.length p.s - p.i)) in
+      p.i <- String.length p.s;
+      Some (c name)
+    end
+    else None
+  in
+  let files = [ ("LOAD", fun n -> Load n); ("SAVE", fun n -> Save n); ("RUN", fun n -> Run_file n) ] in
+  match
+    match List.find_map (fun (k, c) -> p.i <- start; command k c) (("CATALOG", Catalog) :: commands) with
+    | Some c -> Some c
+    | None -> List.find_map (fun (k, c) -> file k c) files
+  with
   | Some c -> [ c ]
   | None ->
       p.i <- start;
