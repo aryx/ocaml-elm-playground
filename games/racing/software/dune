@@ -16,12 +16,13 @@
 )
 
 (executables
-  (names TinyMarioKart64 TinyVirtuaRacing)
-  (modules TinyMarioKart64 TinyVirtuaRacing)
+  (names TinyBigRedRacing TinyMarioKart64 TinyVirtuaRacing)
+  (modules TinyBigRedRacing TinyMarioKart64 TinyVirtuaRacing)
   (libraries
     elm_core
     kit_racing
     kit_racing3d
+    kit_heightmap
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d
     elm_playground_3d_software ; implem of virtual elm_playground_3d

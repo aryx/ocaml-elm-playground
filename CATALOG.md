@@ -272,6 +272,7 @@ other drivers; the road, the track or the map, and the car on it.
 | [TinyMarioKart](games/racing/TinyMarioKart.ml) | 2.5D | Super Mario Kart (Nintendo, 1992) | A kart race on a Mode 7 floor, and the balloon battle on Battle Course 1, alone or two in a split screen. | Mode 7: the floor sampled a screen row at a time; karts, shells and item boxes as billboards; the split screen. |
 | [TinyVirtuaRacing](games/racing/TinyVirtuaRacing.ml) | 3D | Virtua Racing (Yu Suzuki, Sega AM2, 1992) | TinyOutRun's course in flat-shaded polygons, to the GOAL arch. | The first great polygon racer: the road as a banked ribbon in space, four views, hills hidden by the z-buffer. |
 | [TinyMarioKart64](games/racing/TinyMarioKart64.ml) | 3D | Mario Kart 64 (Nintendo, 1996) | Three laps against seven karts, item boxes, and a four-player battle. | Polygons for the world and sprites for the karts; four players on one screen; a battle arena with two heights. |
+| [TinyBigRedRacing](games/racing/TinyBigRedRacing.ml) | 3D | Big Red Racing (Big Red Software, Domark, 1996) | Three laps against three drivers over the Highlands, down a red canyon and on the Moon, a vehicle per course. | The course in the terrain, not on it: the road painted quads, the canyon's walls the ground raised; a wall is ground too steep to climb; the Moon's sixth of gravity, every crater a ramp. |
 
 ## Sports and tables
 

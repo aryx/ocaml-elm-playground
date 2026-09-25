@@ -89,6 +89,9 @@ let scenes : Testutil_golden.scene list =
     (* claude: the same view as TinyWolfenstein's golden frame, in 3D *)
     ("games/fps/software/TinyWolfenstein3d", "", 5);
     ("games/racing/software/TinyVirtuaRacing", "", 5);
+    (* claude: the grid on the Highlands, the camera turning round it:
+     * the road only the terrain's quads painted brown *)
+    ("games/racing/software/TinyBigRedRacing", "", 5);
     (* claude: the grid on the start line, from the camera turning
      * round it: the karts are drawings, the lorries and the item
      * boxes polygons -- the mix the game is about *)
@@ -223,6 +226,12 @@ let scripted : Testutil_golden.scripted list =
     (* claude: the battle, four players on Block Fort: the forts, the
        bridges, three balloons each, an item in every hand *)
     ("games/racing/software/TinyMarioKart64", "battle", 230, "4:1,b:3");
+    (* claude: the Moon, a second and a half after the start: the buggies
+     * over a crater's rim, a sixth of the Earth's gravity *)
+    ("games/racing/software/TinyBigRedRacing", "moon", 420, "left:2,space:5,up:6-600");
+    (* claude: down the red canyon, its walls the terrain raised away
+     * from the road, in bands (the strata) *)
+    ("games/racing/software/TinyBigRedRacing", "canyon", 330, "right:2,space:5,up:6-400,v:8");
     (* v three times: the view from above *)
     ("games/racing/software/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
     (* TinyTron's "computer" game, seen from behind the blue cycle,
