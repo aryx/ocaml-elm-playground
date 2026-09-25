@@ -4,10 +4,11 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyBasic)
-  (modules TinyBasic)
+  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal)
+  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal)
   (libraries
     basic ; Basic_parse, Basic_run, Basic_session
+    appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
     elm_playground
     elm_playground_web ; implem of virtual elm_playground
   )

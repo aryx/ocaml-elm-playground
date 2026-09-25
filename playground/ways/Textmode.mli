@@ -20,5 +20,6 @@
 
 type 'model state
 
+(* [pc]: the IBM PC's sixteen colours (Teletype.draw_screen) *)
 val textmode :
-  ?phosphor:Playground.color -> 'model Tui.program -> ('model state Playground.game, Playground.msg) Playground.app
+  ?phosphor:Playground.color -> ?pc:bool -> 'model Tui.program -> ('model state Playground.game, Playground.msg) Playground.app

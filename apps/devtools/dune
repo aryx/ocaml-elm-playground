@@ -1,25 +1,25 @@
 ; claude: the programming tools (CATALOG.md's section): TinyBasic, Tiny
 ; BASIC (1976) on a 1977 home computer's screen, over libs/languages/basic and
-; the playground's Teletype way (plan_terminal.md, section 5). Laid out
-; like office/: the programs here, software/ for the golden frames,
-; web/ for the browser.
+; the playground's Teletype way (plan_terminal.md, section 5); TinyVi
+; and TinyEmacs, the two text editors, full-screen programs of the
+; terminal over appkits/editor and the Textmode way (Emacs's Lisp is
+; libs/languages/lisp); TinyTurboPascal, Turbo Pascal 7's IDE in text
+; mode, over the same appkit and libs/languages/pascal's P-code. Laid
+; out like office/: the programs here, software/ for the golden frames,
+; web/ for the browser, tty/ for the editors in a real terminal.
 ;
 ; What else it might contain, each Tiny and after a famous original:
-;  - a text editor (vi 1976, Emacs): a buffer, modes, the undo of
-;    appkit_document;
-;  - an integrated environment (Turbo Pascal, 1983): edit, compile, run,
-;    and the error on its line -- over one of the small languages of
-;    plan_teaching_languages.md (plan_terminal.md, section 6);
 ;  - a debugger (the Smalltalk-80 one): a running program's stack and
 ;    state, the inspector of plan_inspect_teaching.md;
 ;  - a notebook or REPL (Mathematica 1988, Jupyter): cells of code and
 ;    what they print, pictures included.
 ; Built on gui/ and the appkits (richtext, document).
 (executables
-  (names TinyBasic)
-  (modules TinyBasic)
+  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal)
+  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal)
   (libraries
     basic ; Basic_parse, Basic_run, Basic_session
+    appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

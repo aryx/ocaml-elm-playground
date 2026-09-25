@@ -368,10 +368,9 @@ let text (t : t) : string list =
 (* The keyboard *)
 (*****************************************************************************)
 
-let key ~(ctrl : bool) (name : string) : string option =
+(* the bytes of a named key alone *)
+let named_key (name : string) : string option =
   match name with
-  | _ when ctrl && String.length name = 1 && Char.lowercase_ascii name.[0] >= 'a' && Char.lowercase_ascii name.[0] <= 'z' ->
-      Some (String.make 1 (Char.chr (Char.code (Char.lowercase_ascii name.[0]) - Char.code 'a' + 1)))
   | "Enter" -> Some "\r"
   | "Backspace" -> Some "\x7f"
   | "Tab" -> Some "\t"
@@ -390,4 +389,37 @@ let key ~(ctrl : bool) (name : string) : string option =
   | "F2" -> Some "\x1bOQ"
   | "F3" -> Some "\x1bOR"
   | "F4" -> Some "\x1bOS"
+  (* claude: xterm's F5 to F12, numbered with gaps, as the VT220's were *)
+  | "F5" -> Some "\x1b[15~"
+  | "F6" -> Some "\x1b[17~"
+  | "F7" -> Some "\x1b[18~"
+  | "F8" -> Some "\x1b[19~"
+  | "F9" -> Some "\x1b[20~"
+  | "F10" -> Some "\x1b[21~"
+  | "F11" -> Some "\x1b[23~"
+  | "F12" -> Some "\x1b[24~"
   | _ -> None
+
+(* claude: a named key with Control or Alt, as xterm sends it: the
+   modifier as a parameter, 1 + 2 for Alt + 4 for Control -- ESC [ 20 ;
+   5 ~ is Control-F9, ESC [ 1 ; 3 A Alt-up; a key of one byte with Alt
+   is Escape then the byte, Meta as terminals send it *)
+let with_modifiers ~(ctrl : bool) ~(alt : bool) (seq : string) : string =
+  let m = 1 + (if alt then 2 else 0) + if ctrl then 4 else 0 in
+  let n = String.length seq in
+  if m = 1 then seq
+  else if n = 1 then (if alt then "\x1b" ^ seq else seq)
+  else if n = 3 && (seq.[1] = '[' || seq.[1] = 'O') then Printf.sprintf "\x1b[1;%d%c" m seq.[2]
+  else if seq.[n - 1] = '~' then Printf.sprintf "%s;%d~" (String.sub seq 0 (n - 1)) m
+  else seq
+
+let key ?(alt = false) ~(ctrl : bool) (name : string) : string option =
+  match name with
+  | _ when ctrl && String.length name = 1 && Char.lowercase_ascii name.[0] >= 'a' && Char.lowercase_ascii name.[0] <= 'z' ->
+      let c = String.make 1 (Char.chr (Char.code (Char.lowercase_ascii name.[0]) - Char.code 'a' + 1)) in
+      Some (if alt then "\x1b" ^ c else c)
+  (* claude: the two a terminal sends without a letter, Emacs's C-SPC
+     (set the mark: NUL, C-@) and C-/ (undo: 0x1F, C-_) *)
+  | " " | "space" | "Space" | "@" when ctrl -> Some "\x00"
+  | "/" | "_" | "-" when ctrl -> Some "\x1f"
+  | _ -> Option.map (with_modifiers ~ctrl ~alt) (named_key name)

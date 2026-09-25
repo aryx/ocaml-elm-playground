@@ -20,6 +20,7 @@
    appkit_teletype ; Tty_hangman, Tty_guess
    basic ; Basic_parse, Basic_run, Basic_session
    appkit_tui ; Tui_snake
+   appkit_editor ; Gap_buffer, Tui_emacs, Tui_vi
    terminal ; Vt, the screen a BASIC session is read from
    appkit_browser ; Browser_history, Browser_forms, ...
    javascript ; Js_value, what Unit_browser_script reads

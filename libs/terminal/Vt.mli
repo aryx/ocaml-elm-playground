@@ -150,11 +150,15 @@ val text : t -> string list
    "ArrowUp", "Backspace") and whether Control is held. Enter sends
    CR, Backspace DEL (0x7F), an arrow ESC [ A to ESC [ D, Control and a
    letter the letter's control code (Control-C is 0x03, ETX: the
-   "interrupt" of Line_discipline). Printable characters are not keys
+   "interrupt" of Line_discipline), Control and Space NUL and Control
+   and / 0x1F, as xterm sends them; F5 to F12 as xterm numbers them (F9
+   is ESC [ 20 ~), and with Control or [alt] held, a named key carries
+   xterm's modifier (Control-F9 is ESC [ 20 ; 5 ~, Alt-F9 ESC [ 20 ; 3 ~,
+   Alt-Backspace Escape then DEL). Printable characters are not keys
    here: they are what the keyboard typed. None for a key that sends
    nothing (Shift alone).
 
    The VT100 had a second set for the arrows (ESC O A, "application
    mode", asked for by programs like vi); this module always sends the
    first. *)
-val key : ctrl:bool -> string -> string option
+val key : ?alt:bool -> ctrl:bool -> string -> string option

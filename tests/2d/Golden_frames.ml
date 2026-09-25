@@ -274,6 +274,13 @@ let scenes : Testutil_golden.scene list =
     ("games/adventure/software/TinyWumpus", "", 3);
     (* the prompt, Guess the Number typed in already *)
     ("apps/devtools/software/TinyBasic", "", 3);
+    (* claude: vi on its README, which says the keys; Emacs in *scratch*,
+     * its mode line and the welcome in the echo area *)
+    ("apps/devtools/software/TinyVi", "", 3);
+    ("apps/devtools/software/TinyEmacs", "", 3);
+    (* claude: Turbo Pascal 7's IDE, Wirth's eight queens in its blue
+     * window: the PC's colours and its box-drawing characters *)
+    ("apps/devtools/software/TinyTurboPascal", "", 3);
     ("games/rpg/software/TinyGauntlet2", "", 5);
     ("games/sports/software/TinyKickOff2", "", 5);
     ("games/sports/software/TinySpeedball2", "", 5);
@@ -1577,6 +1584,18 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
     (* claude: three programs deep: the shell, BASIC in it, and the
      * Mandelbrot set from BASIC's disk, drawn a few frames long *)
     ("apps/system/software/TinyTerminal", "mandel", 30, "type(basic):2,Enter:3,type(run mandel):5,Enter:6", []);
+    (* claude: vi's sentences: cw changes a word, Escape, w to the next
+     * one, . does it again; Emacs's Lisp: a function defined in
+     * *scratch* and called, C-j printing each value *)
+    ("apps/devtools/software/TinyVi", "dot", 10, "type(:e poem.txt):2,Enter:3,type(cwWhich):5,Escape:6,type(w.):8", []);
+    ("apps/devtools/software/TinyEmacs", "lisp", 12, "type((defun sq (x) (* x x))):2,Control:4-5,j:5,type((sq 12)):7,Control:9-10,j:10", []);
+    (* claude: TinyTurboPascal: Ctrl-F9, the queens on the user screen;
+     * the Compile menu, its shadow; the P-code of a line of try; a
+     * compilation's error in the red bar *)
+    ("apps/devtools/software/TinyTurboPascal", "run", 12, "Control:3-4,F9:4", []);
+    ("apps/devtools/software/TinyTurboPascal", "menu", 6, "Alt:3-4,c:4", []);
+    ("apps/devtools/software/TinyTurboPascal", "pcode", 10, "PageDown:2,down:4,Alt:6-7,c:7,type(p):9", []);
+    ("apps/devtools/software/TinyTurboPascal", "error", 6, "type(x):2,F9:4", []);
     (* claude: TinyWumpus: the instructions, then the first room and
      * what its neighbours give away (seed 1's cave) *)
     ("games/adventure/software/TinyWumpus", "first", 8, "type(y):2,Enter:3", []);

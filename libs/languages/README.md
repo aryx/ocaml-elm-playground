@@ -11,6 +11,8 @@ strings and an app against its screen. One library per language, each
 |---|---|---|
 | `formula/` | the spreadsheet's formulas (VisiCalc, 1979): arithmetic over numbers and cells, SUM and its kin over ranges; recursive descent, the parser to know first | `appkits/sheet`, and so TinyVisiCalc and TinyExcel |
 | `basic/` | BASIC as the home computers had it: Tiny BASIC (1976), Integer BASIC and Applesoft (1978); a line read by recursive descent, a program run as a Talk conversation (`libs/terminal`), the prompt and the floppy of listings | TinyBasic, and TinyTerminal's shell (`basic`) |
+| `lisp/` | a small Emacs Lisp (McCarthy, 1958; Emacs Lisp, 1985): the reader, eval and apply with dynamic scope and the specpdl, macros, condition-case; the evaluator's state a value threaded through it, a host adding its functions (an editor's buffers) | TinyEmacs (`appkits/editor`) |
+| `pascal/` | Pascal (Wirth, 1970) compiled to P-code and run on a P-machine, Pascal-P's scheme (1973) and UCSD Pascal's: a one-pass compiler, recursive descent emitting the code as it parses, no tree; the stack machine's frames and static links; the machine a Talk program, so readln waits | TinyTurboPascal (`appkits/editor`'s `Tui_turbo`) |
 | `javascript/` | a small modern core of JavaScript, for TinyFirefox: read (`Js_lexer`, `Js_ast`, `Js_parse`: recursive descent and Pratt, and why not yacc) and run (`Js_value`, `Js_eval`, a tree walker with closures, `this` and the coercions; `Js_builtins`); the DOM to come | TinyFirefox (`plan_tiny_firefox.md`) |
 
 What is not here, and why: the Playground's *ways* (`playground/ways/`:

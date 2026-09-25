@@ -28,7 +28,7 @@ let start (p : 'model Tui.program) (keys : unit Scene2d.t) : 'model state =
   { model = p.init; shown = screen; vt = Vt.feed (Vt.create ~rows:(Curses.rows screen) ~cols:(Curses.cols screen)) bytes; keys;
     sent = String.length bytes; whole = String.length bytes }
 
-let textmode ?phosphor (p : 'model Tui.program) : ('model state game, msg) app =
+let textmode ?phosphor ?pc (p : 'model Tui.program) : ('model state game, msg) app =
   let update (computer : computer) (s : 'model state) : 'model state =
     let before = s.keys.keys in
     let keys = Scene2d.update computer s.keys in
@@ -52,7 +52,7 @@ let textmode ?phosphor (p : 'model Tui.program) : ('model state game, msg) app =
       if p.over s.model then "(over -- Enter to start again)"
       else Printf.sprintf "curses sent %d bytes this frame; a whole redraw, %d" s.sent s.whole
     in
-    (rectangle (rgb 10 14 10) computer.screen.width computer.screen.height :: Teletype.draw_screen ?phosphor ~cursor:true computer s.vt)
+    (rectangle (if pc = Some true then rgb 0 0 0 else rgb 10 14 10) computer.screen.width computer.screen.height :: Teletype.draw_screen ?phosphor ?pc ~cursor:true computer s.vt)
     @ [ words (rgb 90 120 90) note |> move_y (-.(h /. 2.) -. 20.) ]
   in
   game view update (start p (Scene2d.start ()))

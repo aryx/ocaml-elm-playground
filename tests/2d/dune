@@ -32,6 +32,9 @@
    %{project_root}/apps/pim/software/TinyPalmPilot.exe
    %{project_root}/apps/system/software/TinyTerminal.exe
    %{project_root}/apps/devtools/software/TinyBasic.exe
+   %{project_root}/apps/devtools/software/TinyVi.exe
+   %{project_root}/apps/devtools/software/TinyEmacs.exe
+   %{project_root}/apps/devtools/software/TinyTurboPascal.exe
    %{project_root}/apps/music/software/TinyMinimoog.exe
    %{project_root}/apps/music/software/TinyHammond.exe
    %{project_root}/apps/music/software/TinyTB303.exe

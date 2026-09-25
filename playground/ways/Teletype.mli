@@ -19,7 +19,8 @@
 
 (* the bytes a Playground frame typed: [computer.keyboard.typed], and
    the named keys that went down since the last frame (Enter,
-   Backspace, the arrows, Control and a letter), in Vt's bytes *)
+   Backspace, the arrows, Control and a letter), in Vt's bytes; with
+   Alt held, Escape before each (Meta, as terminals send it) *)
 val keyboard_bytes : Playground.computer -> before:Playground.keyboard -> string
 
 (* the width and height [draw]'s grid of characters takes, centered on
@@ -38,11 +39,15 @@ val draw :
 
 (* [draw]'s grid for any screen, the cursor blinking where the screen
    has it if [cursor] (the Textmode way's, whose screen no machine
-   feeds) *)
+   feeds). With [pc], the IBM PC's colours instead of a phosphor's:
+   the CGA's sixteen, bold the bright ones (Turbo Pascal's blue, grey
+   and yellow). Box-drawing characters, ─ │ ┌ and their double
+   twins ═ ║ ╔, are drawn as lines. *)
 val draw_screen :
   ?paper:bool ->
   ?capitals:bool ->
   ?phosphor:Playground.color ->
+  ?pc:bool ->
   cursor:bool ->
   Playground.computer ->
   Vt.t ->

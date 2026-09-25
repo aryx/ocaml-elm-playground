@@ -1,0 +1,9 @@
+; claude: unit tests for pascal/, run by 'make test' (dune runtest): the
+; .mlis' worked examples (the lexer's tokens, Pcode's x := a + b * 2),
+; the disk's programs run to their known output (Wirth's queens: 92),
+; the static link in the code, the compiler's errors where they are,
+; the machine's run-time errors and Pascal's rules for reading
+(test
+ (name Test)
+ (libraries alcotest testo pascal terminal)
+)

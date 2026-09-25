@@ -1,0 +1,14 @@
+; claude: a small Emacs Lisp (libs/languages/README.md): Lisp (the
+; values, and printing them), Lisp_read (the reader), Lisp_eval (eval
+; and apply, dynamic scope, the state threaded as a value; a host adds
+; its functions and special forms), Lisp_prelude (the macros written
+; in Lisp: when, dolist...). TinyEmacs (apps/devtools/) is its host:
+; appkits/editor's Emacs_editor gives it a buffer to change.
+;
+; Pure OCaml, no Playground. A private library, installed as part of
+; elm_playground.
+(library
+ (name lisp)
+ (package elm_playground)
+ (wrapped false)
+)

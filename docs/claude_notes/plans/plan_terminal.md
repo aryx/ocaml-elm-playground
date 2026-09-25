@@ -365,9 +365,23 @@ returns **a grid of cells instead of shapes**.
    `libs/terminal/Talk`, `Teletype` keeping the keyboard, the drawing
    and the app.
 6. `Curses` and the `Textmode` way (the playground and a real
-   terminal), then TinyRogue.
+   terminal), then TinyRogue. The editors done (2026-09-25): TinyVi and TinyEmacs in
+   `apps/devtools/`, their programs in `appkits/editor` (`Tui_vi`;
+   `Tui_emacs` over `Emacs_editor`, `Emacs_simple`, `Gap_buffer`), Emacs's
+   Lisp `libs/languages/lisp`, both also in a real terminal
+   (`apps/devtools/tty/`).
 7. Later: the pty (native, then WebSocket); the cell Look for `gui/`,
-   then TinyTurboPascal.
+   then TinyTurboPascal. Its language done first (2026-09-25):
+   `libs/languages/pascal`, Pascal-P's scheme -- a one-pass compiler to
+   P-code (`Pascal_compile`, `Pcode`), the P-machine (`Pmachine`, a Talk
+   program: readln waits, loops run a slice a frame) and a disk of
+   programs (`Pascal_disk`: Wirth's eight queens, Hanoi, the sieve). Then TinyTurboPascal
+   itself (2026-09-25), as a Tui program drawn cell by cell rather than
+   over a cell Look for `gui/` (that remains the Turbo Vision step):
+   `Tui_turbo`, Turbo Pascal 7's look; for it the Textmode way's `pc`
+   (the CGA's sixteen colours, bold the bright ones), the box-drawing
+   characters drawn as lines, and `Vt.key`'s F5-F12 and xterm's
+   modifiers (Ctrl-F9, Alt-F9).
 
 ## Open questions for the author
 

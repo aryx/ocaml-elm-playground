@@ -1,0 +1,8 @@
+; claude: unit tests for lisp/, run by 'make test' (dune runtest): the
+; .mlis' worked examples (the reader's position, dynamic scope's
+; search-it), and a Lisp written in itself -- macros, recursion,
+; errors caught with the changes before them kept
+(test
+ (name Test)
+ (libraries alcotest testo lisp)
+)

@@ -1,0 +1,21 @@
+; claude: the text editors, as Tui.program values (plan_terminal.md,
+; section 6): Tui_vi (vi, 1976: modes, and commands as a language of
+; operators and motions, over lines) and Tui_emacs (Emacs, 1985: a
+; Lisp machine with a screen), over Gap_buffer (Emacs's text, a hole
+; where the editing happens), Emacs_editor (the core: buffers, undo
+; list, kill ring, the primitives given to Lisp) and Emacs_simple (the
+; commands, in Lisp, over libs/languages/lisp); and Tui_turbo (Turbo
+; Pascal's IDE, 1992: menus, dialogs and a blue window drawn with the
+; PC's box characters, over libs/languages/pascal). Run on the
+; playground by the Textmode way (apps/devtools' TinyVi, TinyEmacs,
+; TinyTurboPascal) and in a real terminal by Tty_unix
+; (apps/devtools/tty/).
+;
+; Pure OCaml, no playground: a private library, installed as part of
+; elm_playground.
+(library
+ (name appkit_editor)
+ (package elm_playground)
+ (wrapped false)
+ (libraries terminal lisp pascal)
+)

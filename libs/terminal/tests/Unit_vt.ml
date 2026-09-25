@@ -97,5 +97,11 @@ let tests =
           Alcotest.(check (option string)) "Enter" (Some "\r") (Vt.key ~ctrl:false "Enter");
           Alcotest.(check (option string)) "up" (Some "\x1b[A") (Vt.key ~ctrl:false "ArrowUp");
           Alcotest.(check (option string)) "Control-C" (Some "\x03") (Vt.key ~ctrl:true "c");
-          Alcotest.(check (option string)) "a letter is typed, not a key" None (Vt.key ~ctrl:false "a"));
+          Alcotest.(check (option string)) "a letter is typed, not a key" None (Vt.key ~ctrl:false "a");
+          (* claude: xterm's function keys and modifiers, Turbo Pascal's *)
+          Alcotest.(check (option string)) "F9" (Some "\x1b[20~") (Vt.key ~ctrl:false "F9");
+          Alcotest.(check (option string)) "Control-F9" (Some "\x1b[20;5~") (Vt.key ~ctrl:true "F9");
+          Alcotest.(check (option string)) "Alt-F9" (Some "\x1b[20;3~") (Vt.key ~alt:true ~ctrl:false "F9");
+          Alcotest.(check (option string)) "Alt-up" (Some "\x1b[1;3A") (Vt.key ~alt:true ~ctrl:false "ArrowUp");
+          Alcotest.(check (option string)) "Alt-Backspace" (Some "\x1b\x7f") (Vt.key ~alt:true ~ctrl:false "Backspace"));
     ]
