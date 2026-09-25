@@ -15,6 +15,7 @@ and the browser runs them too. The tutorial is
 | folder (library) | what | modules |
 |---|---|---|
 | `protocols/` (`networking_protocols`) | the bytes other programs agree on | `Url` (RFC 3986), `Urlencoded` (a form's fields, both ways), `Http` (HTTP/1.1 messages, both sides), `Websocket` (RFC 6455), `Irc` (RFC 1459), `Wire` (values as bytes: varints, zigzag, garbage refused), `Transport` (where a peer's packets go, whatever carries them) |
+| `mail/` (`networking_mail`) | mail's formats, what a mailbox file holds | `Mail` (a message: RFC 822's fields, folding, addresses, dates), `Mime` (parts, base64, quoted-printable, encoded words: RFCs 2045-2047), `Mbox` (a mailbox file, mboxrd's `>From`) |
 | `netcode/` (`networking_netcode`) | the machinery of a multiplayer game | `Checksum` (desyncs), `Sim_net` (a network in one process, from a seed), `Inputs` (the input exchange), `Lockstep`, `Rollback`, `Snapshot`, `Prediction`, `Interpolation` (client-server) |
 | `unix/` (`networking_unix`, native only) | the sockets | `Tcp`, `Udp`, `Server`, `Relay`, `Relay_client`, `Universe_server`, `Irc_server`, `Http_client`, `Http_request`, `Http_server` (a web server's event loop), `Worker` (a pool of threads, for the calls that block: DNS, curl), `Connect` |
 | `relay/`, `ircd/`, `httpd/` | the servers, programs | `relay_server.exe`, `tiny_ircd.exe`, `tiny_httpd.exe` (a directory's files, for TinyMosaic) |
@@ -31,10 +32,13 @@ Why this split:
   in step (lockstep, rollback) or one copy on a server and the rest
   guessing (snapshots, prediction, interpolation). It writes its
   messages with `Wire`; nothing in `protocols/` knows of it.
+- `mail/` is formats, not protocols: a mailbox is read with no network
+  at all (TinyEudora's built-in one). SMTP and POP3, which carry
+  them, will be `protocols/`'s (plan_tiny_eudora.md).
 - `unix/` opens the sockets, natively; in a browser the web platform
   does it with its own WebSocket.
 
-A new standard's bytes go in `protocols/`, a new way of keeping games
+A new standard's bytes go in `protocols/` (a mail format's in `mail/`), a new way of keeping games
 in step in `netcode/`, anything that makes a system call in `unix/`.
 
 ## Using it

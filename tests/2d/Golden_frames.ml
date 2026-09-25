@@ -100,6 +100,10 @@ let scenes : Testutil_golden.scene list =
      * bordered cards, a float, inline-blocks, a table of attributes
      * (plan_tiny_chrome.md, C3) *)
     ("apps/internet/software/TinyChrome", "", 5);
+    (* claude: 1988: Eudora's window of In, the built-in mailbox, its
+     * newest message (the lunch of Mail.mli) opened under it; the unread
+     * ones bold, with Eudora's bullet (plan_tiny_eudora.md, phase 2) *)
+    ("apps/internet/software/TinyEudora", "", 5);
     (* 1984: -fixed-time's 1000 seconds after the epoch, in UTC (the
      * offset is 0 under -fixed-time), 12:16:40 AM on the first day of
      * 1970; the six cities at their own offsets *)
@@ -1585,6 +1589,9 @@ let flagged : Testutil_golden.flagged list =
      * a clip's page, its FLC playing (no sound: the frame clock) *)
     ("apps/internet/software/TinyChrome", "tube", 5, [ "url=about:tube" ]);
     ("apps/internet/software/TinyChrome", "tube_watch", 5, [ "url=about:tube-3" ]);
+    (* claude: TinyEudora's multipart message: its text part, and its
+     * attachment, a PNG in base64, decoded and shown under it *)
+    ("apps/internet/software/TinyEudora", "attachment", 5, [ "message=8" ]);
     ("apps/internet/software/TinyMosaic", "pretty", 5, [ "url=about:history"; "width=600"; "wrap=pretty" ]);
     (* claude: the built-in fill-out form, its controls in Motif's look *)
     ("apps/internet/software/TinyMosaic", "form", 5, [ "url=about:form" ]);

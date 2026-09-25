@@ -16,5 +16,5 @@
  (package elm_playground)
  (wrapped false)
  (modules)
- (libraries networking_protocols networking_netcode)
+ (libraries networking_protocols networking_netcode networking_mail)
 )

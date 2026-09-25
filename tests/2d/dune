@@ -30,6 +30,7 @@
    %{project_root}/apps/internet/software/TinyMosaic.exe
    %{project_root}/apps/internet/software/TinyNetscape.exe
    %{project_root}/apps/internet/software/TinyFirefox.exe
+   %{project_root}/apps/internet/software/TinyEudora.exe
    %{project_root}/apps/pim/software/TinyClock.exe
    %{project_root}/apps/pim/software/TinyCalendar.exe
    %{project_root}/apps/pim/software/TinyPalmPilot.exe

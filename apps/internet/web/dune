@@ -47,6 +47,24 @@
   (link_flags -no-check-prims)
 )
 
+(executables
+  (names TinyEudora)
+  (modules TinyEudora)
+  (libraries
+    caps
+    networking_mail
+    internet_mail
+    appkit_richtext
+    appkit_stroke_text
+    graphics_rgba graphics_png graphics_gif graphics_jpeg
+    gui
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
 ; claude: the .html pages next to the generated .bc.js, as in
 ; examples/web/dune
 (rule

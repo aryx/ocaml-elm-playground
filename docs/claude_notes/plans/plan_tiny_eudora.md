@@ -317,7 +317,25 @@ protocol and server 218, for scale.
 
 ## Status
 
-**Not started** (2026-09-25). Decisions taken:
+**Phases 1 and 2 done** (2026-09-26): `libs/networking/mail/`
+(`networking_mail`: `Mail`, `Mime`, `Mbox`, 480 lines, with their
+`.mli`s' worked examples in `networking/tests/`'s `Unit_mail` and
+`Unit_mime`), TinyEudora offline over the built-in mailboxes
+(`Our_mail`, `apps/internet/mail/*.mbox`, checked byte for byte by
+`apps/internet/tests/`), 520 lines: In, Out, Trash and Projects, the
+list and its columns sorted by a click, reading, b for every header
+and the envelope, Delete, Transfer, Empty Trash, attachments shown
+and saved; golden frames `TinyEudora.png`, `TinyEudora_attachment.png`
+(flag `message=8`). Found on the way: 25 Sep 2026 is a Friday, not
+the Thursday this plan's examples said -- the `.mli`s say Fri.
+Decided in phase 1: `Mail`'s folding is not shared with `Vcard`/`Ics`
+(RFC 822 keeps the space after the line break, iCalendar removes it,
+Mail.mli says so); `mail/` as the folder's name; the client's parts
+stay in TinyEudora until a second user comes (no appkit yet); the
+messages are written for the lessons, none historical (the author may
+still add Thuerk's). Next: phase 3, composing.
+
+Decisions taken before starting:
 
 - **the author picked it** (2026-09-25), from the list of what is
   missing, over the JRPGs the plans rank low on purpose;

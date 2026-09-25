@@ -1,0 +1,237 @@
+From carol@tiny Tue Sep 22 10:00:05 2026
+Received: from carol.tiny by tiny with SMTP; Tue, 22 Sep 2026 10:00:05 -0700
+From: Carol <carol@tiny>
+To: alice@tiny, bob@tiny, dave@tiny
+Subject: the plan
+Date: Tue, 22 Sep 2026 10:00:00 -0700
+Message-ID: <plan1@carol.tiny>
+Status: RO
+
+Friends,
+
+The server is written; what is missing is a client. I propose we
+write one after Eudora: mailboxes, a list, a message, and a button
+to check the mail. Who takes what?
+
+Carol
+
+From alice@tiny Tue Sep 22 20:02:11 2026
+Received: from alice.tiny by tiny with SMTP; Tue, 22 Sep 2026 20:02:11 +0200
+From: Alice <alice@tiny>
+To: Carol <carol@tiny>
+Cc: bob@tiny, dave@tiny
+Subject: Re: the plan
+Date: Tue, 22 Sep 2026 20:02:00 +0200
+Message-ID: <plan2@alice.tiny>
+In-Reply-To: <plan1@carol.tiny>
+References: <plan1@carol.tiny>
+Status: RO
+
+Carol wrote:
+> I propose we write one after Eudora: mailboxes, a list, a message,
+> and a button to check the mail. Who takes what?
+
+I take the formats: the message, MIME and the mailbox file.
+
+Alice
+
+From dave@tiny Tue Sep 22 23:30:40 2026
+Received: from dave.tiny by tiny with SMTP; Tue, 22 Sep 2026 23:30:40 +0200
+From: Dave <dave@tiny>
+To: Alice <alice@tiny>
+Cc: carol@tiny, bob@tiny
+Subject: Re: the plan
+Date: Tue, 22 Sep 2026 23:30:00 +0200
+Message-ID: <plan3@dave.tiny>
+In-Reply-To: <plan2@alice.tiny>
+References: <plan1@carol.tiny> <plan2@alice.tiny>
+Status: RO
+
+Alice wrote:
+> I take the formats: the message, MIME and the mailbox file.
+
+Then I take SMTP and POP3. Each is a page of the RFC and a state
+machine.
+
+Dave
+
+From carol@tiny Wed Sep 23 09:12:30 2026
+Received: from carol.tiny by tiny with SMTP; Wed, 23 Sep 2026 09:12:30 -0700
+From: Carol <carol@tiny>
+To: Alice <alice@tiny>
+Cc: bob@tiny, dave@tiny
+Subject: Re: the plan
+Date: Wed, 23 Sep 2026 09:12:00 -0700
+Message-ID: <plan4@carol.tiny>
+In-Reply-To: <plan2@alice.tiny>
+References: <plan1@carol.tiny> <plan2@alice.tiny>
+Status: RO
+
+Alice wrote:
+> I take the formats: the message, MIME and the mailbox file.
+
+Good. Do not forget the >From lines.
+
+Carol
+
+From alice@tiny Wed Sep 23 16:45:02 2026
+Received: from alice.tiny by tiny with SMTP; Wed, 23 Sep 2026 16:45:02 +0200
+From: Alice <alice@tiny>
+To: Dave <dave@tiny>
+Cc: carol@tiny, bob@tiny
+Subject: Re: the plan
+Date: Wed, 23 Sep 2026 16:45:00 +0200
+Message-ID: <plan5@alice.tiny>
+In-Reply-To: <plan3@dave.tiny>
+References: <plan1@carol.tiny> <plan2@alice.tiny> <plan3@dave.tiny>
+Status: RO
+X-Status: A
+
+Dave wrote:
+> Then I take SMTP and POP3.
+
+And Bob the client, then. Bob?
+
+Alice
+
+From mallory@evil.example Wed Sep 23 22:13:09 2026
+Received: from evil.example (mallory.evil.example [203.0.113.66])
+  by tiny with SMTP; Wed, 23 Sep 2026 22:13:09 +0200
+From: The President <president@whitehouse.gov>
+To: bob@tiny
+Subject: You have won
+Date: Wed, 23 Sep 2026 22:13:00 +0200
+Message-ID: <0000001@whitehouse.gov>
+Status: RO
+
+Dear Bob,
+
+You have won a prize. Please reply with your password.
+
+(Nothing checked that this came from the White House: the From:
+header is what the sender typed. The Received: line our server wrote
+says where it really came from, and the envelope, the "From " line
+of the mailbox, says who it was: mallory. Press b to see them.)
+
+From tiny-list-request@tiny Thu Sep 24 06:00:00 2026
+Received: from localhost by tiny; Thu, 24 Sep 2026 06:00:00 +0200
+From: tiny-list-request@tiny
+To: tiny-list@tiny
+Subject: tiny-list digest, Vol 1, Issue 7
+Date: Thu, 24 Sep 2026 06:00:00 +0200
+Message-ID: <digest7@tiny>
+MIME-Version: 1.0
+Content-Type: multipart/digest; boundary="==digest7=="
+Status: RO
+
+Today's topics: 1. telnet 2. the dot
+
+--==digest7==
+
+From: Dave <dave@tiny>
+Subject: telnet
+Date: Wed, 23 Sep 2026 10:00:00 +0200
+
+Try it: telnet localhost 2525, and type HELO. The server answers
+with a number and a line. Mail is a conversation you can type.
+
+--==digest7==
+
+From: Erin <erin@tiny>
+Subject: the dot
+Date: Wed, 23 Sep 2026 11:30:00 +0200
+
+A line with a single dot ends the message in SMTP. So a line of
+your letter that starts with a dot is sent with two.
+
+--==digest7==--
+
+From carol@tiny Thu Sep 24 17:41:02 2026
+Received: from carol.tiny by tiny with SMTP; Thu, 24 Sep 2026 17:41:02 -0700
+From: Carol <carol@tiny>
+To: bob@tiny
+Subject: photos
+Date: Thu, 24 Sep 2026 17:40:00 -0700
+Message-ID: <photos@carol.tiny>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="xyz"
+Status: RO
+
+This is a multi-part message in MIME format.
+--xyz
+Content-Type: text/plain; charset=us-ascii
+
+Bob,
+
+Here is the picture from the site, attached. Eudora shows it under
+the text; click its name to save it.
+
+Carol
+--xyz
+Content-Type: image/png; name="picture.png"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="picture.png"
+
+iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAACpklEQVR4nGN0a3rGMJQBCzPT/4F2
+A0Vg1AMDDUY9QAOwKiAazg7bsBS/YsaIvge0dQ4pYLlfDFbxyE1LcGlhjJ5wn2buIQ0s8YnFIxuz
+ZTFWcca4Sfdo4x7SwEKvOIJq4rctwhQcjHkAF8DqVMaUaXfo7xQ0MNstgUiVqbsWoIkMpRhgwBYJ
+ox6gL8B0LWPBvBsD4hQ00G+XQlBN4aE5mIJDKQawl0Jli67R3ylYQadVGh7Z8mOzsIozVi65Shv3
+kAPaLNKxiledmIlLC2PNsis0cw+ZoNksA86uPTUDv2LG+hWXaewe2gLyM7FRXdi5plXUdQ0ZgLF1
+zUUytOnXhEMYF1tWUtU9JAPGjnUXSNWjUxWBzL3StoJqziEdMHZvOE+SBs2KSEzB6x3LqeQekgFj
+36ZzxKtWK4vCJXWraxk13EMyYJy45SyRSpVLogmqudtDoAtLdcDEzPSfGESM6xkYGJRLook0kBi0
++lElQTWM03ecJugs2QJ8vVVM8HgC9v4r8WDpvWpkbrRSKy6VjLN2ncJvllQe4d4qJng2CUv/lSBY
+dKcGj2ycSgumIOPcPSdxaZh/q7Zi0iMy3AEBL6csJF7x/Fu1xCtOVGuGsxkX7DuBqWLOjTpk7vqA
+icSbzsDAELghH8JI0WgiqBjNLuIBxHD0psTMa/VkmNV7jh/OLjb6iOa4dK1GrLrIswvNcBQPTLvS
+QImJuADEoVk6DbSwBeqByZewBxIVAY1Ch4UMp+eHBSJzJ65aTz33kAxYqGIKcrqnM2AaKIupBYa8
+B6iThOgG3mBUrIPOA5hORAYieXJoIvT2AH73MWBzIn5AfQ/YOgXikSXVfQQBo800N5I0UD0IKQRY
+YoDUVDiwgFFDQwNNaLA5ET9gGVrOxQRDviIb8h4AAHcC6VKdv0CHAAAAAElFTkSuQmCC
+--xyz--
+
+From elodie@tiny Thu Sep 24 19:05:44 2026
+Received: from elodie.tiny by tiny with SMTP; Thu, 24 Sep 2026 19:05:44 +0200
+From: =?utf-8?Q?=C3=89lodie?= <elodie@tiny>
+To: bob@tiny
+Subject: =?utf-8?Q?le_caf=C3=A9_de_la_gare?=
+Date: Thu, 24 Sep 2026 19:05:00 +0200
+Message-ID: <cafe@elodie.tiny>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Bob,
+
+Rendez-vous au caf=C3=A9 de la gare, pr=C3=A8s du th=C3=A9=C3=A2tre, =C3=
+=A0 midi ? Cette ligne est trop longue pour un serveur de 1982, alors elle=
+ est coup=C3=A9e, et recoll=C3=A9e par le lecteur.
+
+=C3=89lodie
+
+From dave@tiny Fri Sep 25 08:30:17 2026
+Received: from dave.tiny by tiny with SMTP; Fri, 25 Sep 2026 08:30:17 +0200
+From: Dave <dave@tiny>
+To: bob@tiny
+Subject: a memo
+Date: Fri, 25 Sep 2026 08:30:00 +0200
+Message-ID: <memo@dave.tiny>
+
+Here is the memo, as it came:
+
+>From the desk of the director: the mail server stays up all
+weekend.
+
+The mailbox file has a ">" before that line, which you do not see:
+a line starting with "From " would begin a new message.
+
+Dave
+
+From alice@tiny Fri Sep 25 12:00:01 2026
+Received: from eudora by tiny;
+  Fri, 25 Sep 2026 12:00:01 +0200
+From: Alice <alice@tiny>
+To: bob@tiny
+Subject: lunch
+Date: Fri, 25 Sep 2026 12:00:00 +0200
+Message-ID: <1@tiny>
+
+Noon at the usual place?
+

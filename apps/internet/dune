@@ -1,12 +1,10 @@
 ; claude: the internet applications (CATALOG.md's section): TinyIRC,
 ; TinyMosaic and TinyNetscape (plan_browser_teaching.md), TinyFirefox
-; (plan_tiny_firefox.md), TinyChrome (plan_tiny_chrome.md). Laid out like office/: the
+; (plan_tiny_firefox.md), TinyChrome (plan_tiny_chrome.md), TinyEudora
+; (plan_tiny_eudora.md). Laid out like office/: the
 ; programs here, software/ for the golden frames, web/ for the browser.
 ;
 ; What it might contain besides, each Tiny and after a famous original:
-;  - a mail client (Eudora, 1988): a mailbox, a message, a reply (or in
-;    office/, beside the calendar, as Outlook has it -- see
-;    plan_gui_remaining.md);
 ;  - a news reader (Usenet's rn/trn): threads of articles.
 ; Built on networking/ and gui/, the servers they talk to small enough
 ; to run beside them (TinyIRC's: networking/ircd/).
@@ -133,6 +131,52 @@
     appkit_browser
     internet_site
     internet_media ; <video>, <audio>, about:tube
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+; claude: TinyEudora's built-in mailboxes (Our_mail.mli), their mbox
+; files embedded as strings: mail/in.mbox becomes Our_mail_files.in_,
+; and so on
+(library
+ (name internet_mail)
+ (wrapped false)
+ (modules Our_mail Our_mail_files)
+)
+
+(rule
+ (targets Our_mail_files.ml)
+ (deps mail/in.mbox mail/out.mbox mail/trash.mbox mail/projects.mbox)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from mail/*.mbox by apps/internet/dune *)\n")
+    (echo "let in_ = {|")
+    (cat mail/in.mbox)
+    (echo "|}\n")
+    (echo "let out = {|")
+    (cat mail/out.mbox)
+    (echo "|}\n")
+    (echo "let trash = {|")
+    (cat mail/trash.mbox)
+    (echo "|}\n")
+    (echo "let projects = {|")
+    (cat mail/projects.mbox)
+    (echo "|}\n")))))
+
+(executables
+  (names TinyEudora)
+  (modules TinyEudora)
+  (libraries
+    caps ; the authority to save an attachment
+    networking_mail ; Mail, Mime, Mbox
+    internet_mail ; the built-in mailboxes
+    appkit_richtext ; Style, a text's look
+    appkit_stroke_text ; Hershey's strokes, from the left
+    graphics_rgba graphics_png graphics_gif graphics_jpeg ; the pictures attached
+    gui ; Widget
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

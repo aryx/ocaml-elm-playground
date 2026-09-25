@@ -40,3 +40,19 @@
     elm_playground_software ; implem of virtual elm_playground
   )
 )
+
+(executables
+  (names TinyEudora)
+  (modules TinyEudora)
+  (libraries
+    caps
+    networking_mail
+    internet_mail
+    appkit_richtext
+    appkit_stroke_text
+    graphics_rgba graphics_png graphics_gif graphics_jpeg
+    gui
+    elm_playground
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

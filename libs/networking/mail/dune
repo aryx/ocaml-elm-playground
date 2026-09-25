@@ -1,0 +1,13 @@
+; claude: mail as bytes (plan_tiny_eudora.md): Mail (a message, RFC
+; 822), Mime (its parts and encodings, RFCs 2045-2047), Mbox (a mailbox
+; file). Formats, not protocols -- a mailbox is read with no network at
+; all -- so a folder of their own beside protocols/, which will have
+; the two that carry them, SMTP and POP3. Pure OCaml, no sockets.
+(library
+ (name networking_mail)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   elm_core ; Base64 (MIME's), Civil and Clock (the dates)
+ )
+)
