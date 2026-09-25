@@ -47,7 +47,19 @@ let test_sense () =
   let seen p = Sense.update ~distance:0. ~clear:true ~position:p Sense.unknown in
   Alcotest.(check (option (pair (float 1e-9) (float 1e-9)))) "the nearest visible"
     (Some (2., 0.))
-    (Option.bind (Sense.nearest [ (300., seen (3., 0.)); (100., seen (2., 0.)); (50., hidden) ]) (fun t -> t.position))
+    (Option.bind (Sense.nearest [ (300., seen (3., 0.)); (100., seen (2., 0.)); (50., hidden) ]) (fun t -> t.position));
+  (* Sense.mli's example for [focus]: the visible one first, however
+     far; with none visible, the one seen last *)
+  let hid p frames =
+    let rec age n t = if n = 0 then t else age (n - 1) (Sense.update ~distance:0. ~clear:false ~position:p t) in
+    age frames (seen p)
+  in
+  let pos t = Option.bind t (fun (t : _ Sense.target) -> t.position) in
+  Alcotest.(check (option (pair (float 1e-9) (float 1e-9)))) "focus: the visible one" (Some (3., 0.))
+    (pos (Sense.focus [ (300., seen (3., 0.)); (100., hid (2., 0.) 20); (50., hid (1., 0.) 5) ]));
+  Alcotest.(check (option (pair (float 1e-9) (float 1e-9)))) "none visible: the one seen last" (Some (1., 0.))
+    (pos (Sense.focus [ (100., hid (2., 0.) 20); (50., hid (1., 0.) 5) ]));
+  Alcotest.(check bool) "nothing known: nothing" true (Sense.focus [ (10., Sense.unknown) ] = None)
 
 (* Bot.mli's example: the target steps out at frame 100; with a delay
  * of 15 frames and a rate of 6, the bot shoots at frame 120 *)
@@ -95,6 +107,26 @@ let test_delay_and_rate () =
   done;
   Alcotest.(check int) "seen for six frames" 6 !last
 
+(* the reflex: every frame, on the world now, over a decision that is
+ * late and repeated. The bot decides "go right" from what it saw 5
+ * frames ago, once in 4 frames; its reflex refuses to step past x = 10,
+ * looking at where it is *now*. Without it, it walks to 10 + 5 frames'
+ * worth before its late senses tell it; with it, it stops at 10 *)
+let test_reflex () =
+  (* the world: the bot's x; the intent: a step *)
+  let walk reflex =
+    let bot = Bot.make ~delay:5 ~rate:4 ?reflex ~sense:(fun _ x -> x) ~decide:(fun x -> if x < 10 then 1 else 0) () in
+    let x = ref 0 and r = ref (Bot.start 0) in
+    for _ = 1 to 40 do
+      let (step, r') = Bot.step bot !x !r in
+      r := r';
+      x := !x + step
+    done;
+    !x
+  in
+  Alcotest.(check bool) "late, it overshoots" true (walk None > 10);
+  Alcotest.(check int) "with the reflex, it stops at the edge" 10 (walk (Some (fun x step -> if x + step > 10 then 0 else step)))
+
 (* the aim settles: the error halves every [settle] frames a target
  * stays visible, and is the same every run *)
 let test_aim () =
@@ -114,4 +146,5 @@ let tests =
       t "Sense: seen, remembered, forgotten" test_sense;
       t "Bot: the reaction delay and the input rate" test_delay_and_rate;
       t "Bot: an aim that settles" test_aim;
+      t "Bot: a reflex on the world now" test_reflex;
     ]

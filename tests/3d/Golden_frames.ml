@@ -311,9 +311,10 @@ let scripted : Testutil_golden.scripted list =
      * square of it per square of wall, hieroglyphs along the north side *)
     ("games/adventure/software/TinyTombRaider", "corridor", 90, "space:1,up:10-88");
     (* a boomerang in the air with its shadow under it (the one depth
-     * cue this fixed, nearly isometric camera gets), all four still
-     * standing; then, further in, the avocado in two halves, its cut
-     * faces pale, and the flight that did it *)
+     * cue this high, nearly isometric camera gets), all four still
+     * standing, the whole garden framed; then, further in, the
+     * strawberry in two halves, its cut faces pale, and the camera
+     * zoomed in on the avocado, the last one standing *)
     ("games/arcade/software/TinyBoomerangFu", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
     (* claude: the song under way on the drums, on Easy (a pad a beat,
        no pedal): the count-in's hi-hat, the crash, snare, hi-hat,

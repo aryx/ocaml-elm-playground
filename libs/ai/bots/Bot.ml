@@ -15,11 +15,12 @@ type ('world, 'senses, 'intent) t = {
   decide : 'senses -> 'intent;
   delay : int;
   rate : int;
+  reflex : 'world -> 'intent -> 'intent;
 }
 
-let make ?(delay = 0) ?(rate = 1) ~(sense : 'senses option -> 'world -> 'senses) ~(decide : 'senses -> 'intent) () :
-    ('world, 'senses, 'intent) t =
-  { sense; decide; delay; rate = max 1 rate }
+let make ?(delay = 0) ?(rate = 1) ?(reflex = fun _ intent -> intent) ~(sense : 'senses option -> 'world -> 'senses)
+    ~(decide : 'senses -> 'intent) () : ('world, 'senses, 'intent) t =
+  { sense; decide; delay; rate = max 1 rate; reflex }
 
 (* [memory] holds the last [delay] + 1 senses, the newest first *)
 type ('senses, 'intent) running = { memory : 'senses list; last : 'intent; frame : int }
@@ -38,7 +39,9 @@ let step (bot : ('world, 'senses, 'intent) t) (world : 'world) (r : ('senses, 'i
     if r.frame mod bot.rate <> 0 then r.last
     else match nth_or_last memory bot.delay with Some s -> bot.decide s | None -> r.last
   in
-  (intent, { memory; last = intent; frame = r.frame + 1 })
+  (* claude: the decision is what is kept and repeated; the reflex
+   * adjusts it to the world of this frame, every frame *)
+  (bot.reflex world intent, { memory; last = intent; frame = r.frame + 1 })
 
 let last_senses (r : ('senses, 'intent) running) : 'senses option =
   match r.memory with s :: _ -> Some s | [] -> None

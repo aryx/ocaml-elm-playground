@@ -34,3 +34,13 @@ let nearest (targets : (float * 'v target) list) : 'v target option =
   |> function
   | (_, t) :: _ -> Some t
   | [] -> None
+
+let focus (targets : (float * 'v target) list) : 'v target option =
+  match nearest targets with
+  | Some t -> Some t
+  | None -> (
+      List.filter (fun (_, t) -> t.position <> None) targets
+      |> List.sort (fun (_, a) (_, b) -> compare a.age b.age)
+      |> function
+      | (_, t) :: _ -> Some t
+      | [] -> None)

@@ -76,3 +76,14 @@ val forget : after:int -> 'v target -> 'v target
  * last given to [update] -- the game pairs each target with its
  * distance *)
 val nearest : (float * 'v target) list -> 'v target option
+
+(* [focus targets]: the one to think about among several: the nearest
+ * visible, and when none is visible the one seen most recently (the
+ * smallest [age]), which is where to look for them; None when nothing
+ * is known. A bot needs one [target] per enemy, and this, rather than
+ * one [target] fed with whoever is nearest: that one looks away from a
+ * visible enemy the moment a hidden one comes nearer, and remembers a
+ * place where nobody was. E.g. A visible at 300, B hidden at 100
+ * (seen 20 frames ago), C hidden at 50 (seen 5 frames ago): A; with A
+ * gone too, C. *)
+val focus : (float * 'v target) list -> 'v target option
