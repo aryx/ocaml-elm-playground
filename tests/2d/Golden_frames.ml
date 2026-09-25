@@ -1167,6 +1167,9 @@ let scripted : Testutil_golden.scripted list =
       "components",
       40,
       "Shift:3-8,at(-435;60):3-8,click:5,at(-330;0):9-12,click:10,at(-330;0):13-16,click:14,space:18" );
+    (* claude: track 5, the OP-XY's own wavetable engine, C E G held:
+     * its table, position, warp and drift on the screen's bars *)
+    ("apps/music/software/TinyOpxy", "wavetable", 30, "at(-88;190):1-4,click:2,a:6-30,d:6-30,g:6-30");
     (* claude: the Juno played: the VCF's cutoff slider dragged up, chorus
      * II clicked, then C E G held -- the spectrum opened, II lit *)
     ( "apps/music/software/TinyJuno",

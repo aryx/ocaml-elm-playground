@@ -84,10 +84,12 @@ val initial : patch
 (* the knobs' curves: [seconds k], 1 ms to 10 s, the envelope's *)
 val seconds : float -> float
 
-(* [voice sound params key velocity]: a note of [sound]'s engine and
+(* [voice ?engines sound params key velocity]: a note of [sound]'s
+ * engine (an index in [engines], Op1_engine.all by default) and
  * envelope (its octave, not its effect or LFO), the engine reading
- * [params] each block (for Studio_opxy's tracks too) *)
-val voice : sound -> float array -> int -> float -> Polyphony.voice
+ * [params] each block (for Studio_opxy's tracks too, whose engines are
+ * the OP-XY's as well) *)
+val voice : ?engines:Op1_engine.t list -> sound -> float array -> int -> float -> Polyphony.voice
 
 (*****************************************************************************)
 (* Playing it *)

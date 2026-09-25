@@ -134,6 +134,14 @@ let track ?(linked = true) ?(cutoff = 0.8) ?(volume = 0.7) ?(pan = 0.) name kind
 
 let op1 k = Studio_op1.initial.sounds.(k)
 
+(* the engines a synth track's sound indexes: the OP-1's ten, then the
+ * OP-XY's own four -- appended, so an OP-1 sound's index stays its *)
+let engines = Op1_engine.all @ Opxy_engine.all
+
+(* a sound on the OP-XY's engine [k] (0 to 3), its knobs in the middle *)
+let xy (k : int) : Studio_op1.sound =
+  { (op1 0) with engine = List.length Op1_engine.all + k; engine_params = [| 0.5; 0.5; 0.3; 0.2 |]; effect_on = false }
+
 let initial : patch =
   let kick = 36 and snare = 38 and clap = 39 and closed = 42 and opened = 46 in
   let busy = drums [ (kick, "x...x...x..xx..."); (clap, "....x.......x..."); (closed, "x.x.x.x.x.x.x..."); (opened, "..............x.") ] in
@@ -162,10 +170,11 @@ let initial : patch =
         track ~volume:0.5 ~pan:(-0.3) "keys" Keys
           [ line [ (0, [ "C4"; "Eb4"; "G4"; "Bb4" ]); (8, [ "Ab3"; "C4"; "Eb4"; "G4" ]) ] ];
         track ~volume:0.4 ~pan:0.3 "lead" (Synth (op1 3)) [ lead ];
-        track "bell" (Synth (op1 0)) [];
-        track "pad" (Synth (op1 1)) [];
-        track "string" (Synth (op1 2)) [];
-        track "digital" (Synth (op1 5)) [];
+        (* four tracks to fill, on the OP-XY's own engines *)
+        track "wavetable" (Synth (xy 0)) [];
+        track "organ" (Synth (xy 1)) [];
+        track "hardsync" (Synth (xy 2)) [];
+        track "simple" (Synth (xy 3)) [];
       |];
     scenes =
       [|
@@ -344,7 +353,7 @@ let press (t : t) (k : int) (n : int) (velocity : float) : unit =
         st.poly <- (if s.play_mode = 1 then Polyphony.create ~voices:1 () else Polyphony.create ());
         st.mode <- s.play_mode
       end;
-      Polyphony.press st.poly n (Studio_op1.voice s st.params n velocity)
+      Polyphony.press st.poly n (Studio_op1.voice ~engines s st.params n velocity)
 
 let release (t : t) (k : int) (n : int) : unit =
   match t.states.(k).kit with Some kit -> Sampler.release kit n | None -> Polyphony.release t.states.(k).poly n

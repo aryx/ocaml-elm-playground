@@ -1771,6 +1771,27 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   recording, the four points in the encoders' colours), SAMPLE T1-T4;
   golden frame TinyOp1_sampler. DNA ("CPU id noise") and the drum
   sampler left.
+- **X4, DONE (2026-09-25)**: four of the OP-XY's own engines,
+  `Opxy_engine`, on `Op1_engine`'s interface. The facts from TE's
+  guide ("synth engines"): wavetable ("waveforms arranged one after the
+  other in a look up table": table of 9, position, warp, drift), organ
+  (type, bass, tremolo amount, tremolo speed), hardsync (freq, sub,
+  noise, lowcut), simple (shape, pw, noise, stereo). Ours: the
+  wavetable's four tables of eight periods (sums of up to 32 harmonics,
+  made once), the position crossfading two frames; the organ's four
+  registrations at the drawbars' footages, the last a transistor
+  organ's squares; the hardsync's second sawtooth restarted by the
+  first; simple's sine-triangle-saw-square morph, "stereo" a detuned
+  copy (the engines mono). `Studio_op1.voice ~engines`; Studio_opxy's
+  engines the OP-1's ten then these four (appended: no index moved),
+  its tracks 5 to 8 on them. Measured (Unit_opxy): simple's shape 0 a
+  sine (under -100 dB); hardsync at 441 Hz with its second at 3.59
+  times periodic every 100 samples; the organ's jazz registration
+  nothing at 4', the full one something; the wavetable half-way from a
+  sine to five harmonics, the third at -6.02 dB of its level: the
+  spectra crossfaded. A golden WAV each (the organ's raised 6 dB, to
+  the others'). TinyOpxy: M1 cycling the fourteen; golden frame
+  TinyOpxy_wavetable. Axis, dissolve, epiano, prism left.
 
 ## Verification
 

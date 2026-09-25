@@ -85,8 +85,8 @@ let frequency (key : int) : float = 440. *. Float.pow 2. (float_of_int (key - 69
 
 (* a note: the engine's generator, its four values an array the studio
  * rewrites each block (the value LFO moving them), the envelope *)
-let voice (s : sound) (params : float array) (key : int) (velocity : float) : Polyphony.voice =
-  let engine = List.nth Op1_engine.all s.engine in
+let voice ?(engines = Op1_engine.all) (s : sound) (params : float array) (key : int) (velocity : float) : Polyphony.voice =
+  let engine = List.nth engines s.engine in
   let fill = engine.start params ~frequency:(frequency (key + (12 * s.octave))) ~velocity in
   let env = Envelope.start () and levels = ref [||] in
   Envelope.gate_on env;

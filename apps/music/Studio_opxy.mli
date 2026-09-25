@@ -135,6 +135,11 @@ val put : track -> string -> float -> track
  * four scenes *)
 val initial : patch
 
+(* the engines a synth track's sound indexes (its [engine]): the
+ * OP-1's ten (Op1_engine.all), then the OP-XY's own four
+ * (Opxy_engine.all) *)
+val engines : Op1_engine.t list
+
 (* the drum kit's pads: the TR-808's instruments at their General MIDI
  * keys (36 BD, 38 SD, 42 CH, 46 OH, ...), the hats in a mute group *)
 val pads : (int * string) list

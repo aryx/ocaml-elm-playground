@@ -102,6 +102,62 @@ let test_components () =
     (triggers [ (0, with_ (Hold 3) [ 36 ]); (1, Studio_opxy.note [ 38 ]) ] 0.4);
   Alcotest.(check (list int)) "skip 2: the first and third bars of four" [ 0; 176400 ] (triggers [ (0, with_ (Skip 2) [ 36 ]) ] 8.)
 
+(*****************************************************************************)
+(* The OP-XY's own engines *)
+(*****************************************************************************)
+
+(* an engine's note, in blocks of 735 *)
+let play (e : Op1_engine.t) (params : float array) (f : float) (seconds : float) : Signal.t =
+  let fill = e.start params ~frequency:f ~velocity:1. in
+  let n = Signal.samples seconds in
+  let out = Array.make n 0. and k = ref 0 in
+  while !k < n do
+    let m = min 735 (n - !k) in
+    let b = Array.make m 0. in
+    fill b;
+    Array.blit b 0 out !k m;
+    k := !k + m
+  done;
+  out
+
+(* [f]'s amplitude in [x] from [a] for [n] samples, Hann-windowed *)
+let amplitude (x : Signal.t) (f : float) (a : int) (n : int) : float =
+  let re = ref 0. and im = ref 0. and sum = ref 0. in
+  for i = a to a + n - 1 do
+    let hann = 0.5 -. (0.5 *. cos (2. *. Float.pi *. float_of_int (i - a) /. float_of_int n)) in
+    let w = 2. *. Float.pi *. f *. float_of_int i /. float_of_int Signal.rate in
+    re := !re +. (hann *. x.(i) *. cos w);
+    im := !im +. (hann *. x.(i) *. sin w);
+    sum := !sum +. hann
+  done;
+  2. *. sqrt ((!re *. !re) +. (!im *. !im)) /. !sum
+
+let db (x : float) : float = 20. *. log10 x
+
+let test_engines () =
+  (* simple: shape 0, a sine *)
+  let x = play Opxy_engine.simple [| 0.; 0.; 0.; 0. |] 440. 0.5 in
+  let worst = List.fold_left (fun a k -> Float.max a (db (amplitude x (440. *. float_of_int k) 4410 8192 /. amplitude x 440. 4410 8192))) (-300.) [ 2; 3; 4; 5 ] in
+  Alcotest.(check bool) (Printf.sprintf "simple, shape 0: a sine (harmonics at %.0f dB)" worst) true (worst < -100.);
+  (* hardsync: 441 Hz, a period of 100 samples; the second at 3.59 times *)
+  let y = play Opxy_engine.hardsync [| 0.37; 0.; 0.; 0. |] 441. 0.5 in
+  let apart = ref 0. in
+  for i = 10000 to 10999 do
+    apart := Float.max !apart (Float.abs (y.(i + 100) -. y.(i)))
+  done;
+  Alcotest.(check bool) (Printf.sprintf "hardsync: periodic at the first's period (%.4f apart)" !apart) true (!apart < 0.01);
+  (* the organ: jazz (16', 5 1/3', 8') nothing at 4', full something *)
+  let at4 t = let z = play Opxy_engine.organ [| t; 0.; 0.; 0. |] 220. 0.5 in db (amplitude z 440. 4410 8192 /. amplitude z 220. 4410 8192) in
+  Alcotest.(check (pair bool bool)) "organ: 4' in the full registration, not in jazz" (true, true) (at4 0. < -80., at4 0.3 > -20.);
+  (* the wavetable: table 0, its first wave a sine, its second five
+   * harmonics; half-way, the third at half its level in the second *)
+  let third pos = let w = play Opxy_engine.wavetable [| 0.; pos; 0.; 0. |] 220. 0.5 in amplitude w 660. 4410 8192 in
+  Alcotest.(check (float 0.05)) "wavetable: half-way, the spectra crossfaded (dB)" (-6.02) (db (third (0.5 /. 7.) /. third (1. /. 7.)))
+
+(* each at its middle, four notes of an arpeggio *)
+let engine_phrase (e : Op1_engine.t) : Signal.t =
+  Array.concat (List.map (fun f -> Array.map (fun x -> 0.5 *. x) (play e [| 0.5; 0.5; 0.5; 0.5 |] f 0.3)) [ 220.; 277.18; 329.63; 440. ])
+
 (* our song: a bar of its intro, the second scene asked for at once and
  * heard from the second bar *)
 let song () : Signal.t =
@@ -113,11 +169,15 @@ let song () : Signal.t =
 
 let tests =
   Testo.categorize "OP-XY"
-    [
+    ([
       t "the brain: the same degrees in another scale" test_brain;
       t "a scene at the bar's end" test_scene;
       t "a chord step" test_chord;
       t "a lock on a track's cutoff" test_lock;
       t "the step components: multiply, pulse, hold, skip" test_components;
+      t "the OP-XY's engines: a sine, the sync's period, the registrations, the crossfade" test_engines;
       t "golden WAV: our song" (fun () -> Testutil_wav.check ~dir:"apps/music/tests" "opxy_song" (song ()));
     ]
+    @ List.map
+        (fun (e : Op1_engine.t) -> t ("golden WAV: " ^ e.name) (fun () -> Testutil_wav.check ~dir:"apps/music/tests" ("opxy_" ^ e.name) (engine_phrase e)))
+        Opxy_engine.all)

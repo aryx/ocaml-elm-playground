@@ -19,8 +19,10 @@
  * M1 to M4 choosing what the screen and the knobs show, the eight track
  * buttons, and the keys, which are also the sequencer's 16 steps:
  *
- *     M1 engine    the track's sound: an OP-1 engine's four values
- *                  (again: the next engine), the kit, the keys
+ *     M1 engine    the track's sound: an engine's four values, the
+ *                  OP-1's ten or the OP-XY's own four (wavetable,
+ *                  organ, hardsync, simple: Opxy_engine.mli, tracks 5
+ *                  to 8); again: the next engine; the kit, the keys
  *     M2 envelope  attack decay sustain release (again: the play mode)
  *     M3 filter    cutoff, resonance, volume, pan
  *     M4 brain     key, scale, the track linked to it, the tempo
@@ -47,8 +49,8 @@
  *
  * Exercises: the OP-XY's ten other step components (velocity, ramps,
  * random, portamento, bend, tonality, jump, the skips of a lock or a
- * component); the OP-XY's own engines (axis, dissolve, epiano,
- * hardsync, organ, prism, simple, wavetable); the filter's envelope and
+ * component); the OP-XY's other engines (axis, dissolve, epiano,
+ * prism); the filter's envelope and
  * key tracking; the LFOs; the effects sends (FX I, FX II) and punch-in
  * effects; patterns longer than a bar; songs, scenes in order; the
  * brain's key detected from the notes.
@@ -99,7 +101,7 @@ let knobs (computer : computer) (values : float array) : float array =
 let page_names (m : model) : string array =
   let tr = m.patch.tracks.(m.track) in
   match (m.page, tr.kind) with
-  | 0, Synth s -> (List.nth Op1_engine.all s.engine).encoders
+  | 0, Synth s -> (List.nth Studio_opxy.engines s.engine).encoders
   | 0, _ -> [| ""; ""; ""; "" |]
   | 1, Synth _ -> Studio_op1.envelope_encoders
   | 1, _ -> [| ""; ""; ""; "" |]
@@ -170,7 +172,7 @@ let apply (m : model) (before : float array) (after : float array) : Studio_opxy
 (* a module pressed again: the next engine, the next play mode *)
 let next_kind (tr : Studio_opxy.track) (page : int) : Studio_opxy.track =
   match (tr.kind, page) with
-  | Synth s, 0 -> { tr with kind = Synth { s with engine = (s.engine +.. 1) mod List.length Op1_engine.all } }
+  | Synth s, 0 -> { tr with kind = Synth { s with engine = (s.engine +.. 1) mod List.length Studio_opxy.engines } }
   | Synth s, 1 -> { tr with kind = Synth { s with play_mode = (s.play_mode +.. 1) mod List.length Studio_op1.play_modes } }
   | _ -> tr
 
@@ -341,7 +343,7 @@ let screen_view (m : model) : shape list =
   let p = m.patch in
   let tr = p.tracks.(m.track) in
   let pattern = tr.patterns.(p.scenes.(p.scene).chosen.(m.track)) in
-  let kind = match tr.kind with Synth s -> (List.nth Op1_engine.all s.engine).name | Drums -> "808 kit" | Keys -> "rhodes keys" in
+  let kind = match tr.kind with Synth s -> (List.nth Studio_opxy.engines s.engine).name | Drums -> "808 kit" | Keys -> "rhodes keys" in
   let pages = [| "ENGINE"; "ENVELOPE"; "FILTER"; "BRAIN" |] in
   let title = Printf.sprintf "%d %s  %s  %s" (m.track +.. 1) (String.uppercase_ascii tr.name) kind pages.(m.page) in
   let brain = Printf.sprintf "%s %s   %.0f BPM   scene %d" [| "C"; "C#"; "D"; "Eb"; "E"; "F"; "F#"; "G"; "Ab"; "A"; "Bb"; "B" |].(p.key) (fst (List.nth Studio_opxy.scales p.scale)) p.tempo (Studio_opxy.playing opxy +.. 1) in
