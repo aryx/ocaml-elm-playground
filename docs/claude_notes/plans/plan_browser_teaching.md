@@ -522,7 +522,48 @@ what could not be fetched is an error page through the pipeline
 made a page (text in `<pre>`, as Mosaic; anything else said what it
 is). Tried by hand: `tiny_httpd` browsed (its index, its pages),
 `https://example.com/`, a refused port, an `.ml` as `text/plain`.
-Golden frame `_failed` (port 1). Next: phase 7, images.
+Golden frame `_failed` (port 1). Next: phase 7, images. Committed as
+217f863.
+
+**The split, TinyMosaic and TinyNetscape** (the author's call,
+2026-09-25, after a question on concurrency: Mosaic had no threads --
+blocking reads through libwww, the globe turned by a callback during
+them, images fetched one after the other). TinyMosaic keeps what Mosaic
+had: images (phase 7, fetched one at a time, the Mosaic way, the page
+shown meanwhile), forms and CGI (phase 9), and the docs and the check
+in a real browser (phase 11). **TinyNetscape** (1994-96) gets what came
+after, its own plan section to write: images fetched several at once
+and the page drawn as it arrives, **threads** for what blocks (DNS,
+curl's https://; OCaml 4.14's threads share one lock, so concurrency,
+not parallelism -- domains are OCaml 5's; the web build keeps the
+event loop, behind `Cmd`), `<body bgcolor>` and `align=left/right`
+(floats), tables (phase 10), CSS1 (phase 8), maybe cookies and frames.
+The code the two browsers share (chrome, drawing, history, fetching)
+becomes an appkit, `appkits/browser`, then.
+
+**Phase 7 done** (2026-09-25): images, the Mosaic way. `Html_layout`:
+an `<img>` of known size -- its `width=` and `height=`, or the caller's
+`picture_size` (the decoded picture's) -- is a word that is a picture
+(`fragment.picture`: its src, its height, bottom or `align=middle` on
+the baseline, no leading), else its alt text; 3 tests (56 in all), the
+`.mli`'s worked example. TinyMosaic: once a page is shown, its
+pictures fetched one after the other (a queue, one in flight, the rest
+dropped when another page is shown), decoded by their magic numbers
+(`Gif`, `Png`, `Jpeg`: our own), the page laid out again as each
+arrives; a cache of every page's pictures; drawn by `Playground.bitmap`,
+a reserved frame until then, NCSA's broken image if they could not be
+had, a linked one with a border of the link's colour; the globe turns
+and the status line names the picture while one comes. The built-in
+site has the demo picture in its three formats (`site/picture.*`,
+embedded by `files_to_string_ml.ml` as `Site_pictures`), the home page
+showing them. Tried against `tiny_httpd`: the page at frame 2 with the
+alt texts, the pictures fetched in order (its log), all in by frame 60.
+Found on the way: the Cairo and web backends kept one converted bitmap
+only, so a page of three pictures would convert them again every
+frame; they keep the last 32 now. The home page's pictures moved its
+links down: the hover/click/back scripts point at the new place.
+Deferred to TinyNetscape as planned: `align=left/right`, `bgcolor`.
+XBM (Mosaic's other inline format) not done. Next: phase 9, forms.
 
 Written as the specification, with
 [`notes_browser.md`](../tutorials/notes_browser.md) and

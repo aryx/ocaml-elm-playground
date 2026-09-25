@@ -1542,9 +1542,9 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
      * of the web" (its URL in the status line); clicked (the history
      * page, Back lit); then Back (home again, the links there purple,
      * visited, Forward lit); and "o", the layout's boxes outlined *)
-    ("apps/internet/software/TinyMosaic", "hover", 8, "at(-391;-76):1-10", []);
-    ("apps/internet/software/TinyMosaic", "click", 10, "at(-391;-76):1-20,click:3", []);
-    ("apps/internet/software/TinyMosaic", "back", 14, "at(-391;-76):1-20,click:3,b:8", []);
+    ("apps/internet/software/TinyMosaic", "hover", 8, "at(-391;-161):1-10", []);
+    ("apps/internet/software/TinyMosaic", "click", 10, "at(-391;-161):1-20,click:3", []);
+    ("apps/internet/software/TinyMosaic", "back", 14, "at(-391;-161):1-20,click:3,b:8", []);
     ("apps/internet/software/TinyMosaic", "outline", 5, "o:2", []);
     (* claude: TinyMosaic's line-mode view, link 2 typed then Return:
      * the history page, reached by following a link *)

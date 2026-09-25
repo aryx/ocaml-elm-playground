@@ -106,6 +106,28 @@ let tests =
           let one_a_line : Html_layout.breaker = fun ~measure:_ units -> List.init (Array.length units) (fun i -> (i, i)) in
           let p = Html_layout.layout metrics ~breaker:one_a_line ~root:(Looks.root ~size:10.) ~width:200. (Html_tree.of_string "<p>a b c") in
           Alcotest.(check (list fragment)) "a unit a line" [ ("a", 8., 28.2); ("b", 8., 40.2); ("c", 8., 52.2) ] (fragments p));
+      Testo.create "images: the worked example" (fun () ->
+          let p = page "<p>A <img src=g.gif width=30 height=50> B" in
+          (* the p at 19.2; the image's 50 above the baseline: 69.2 *)
+          Alcotest.(check (list fragment)) "A, the image, B" [ ("A", 8., 69.2); ("", 28., 69.2); ("B", 68., 69.2) ] (fragments p);
+          let line = List.hd (List.hd (List.hd (blocks "p" p)).children).lines in
+          Alcotest.check near "the line: 50 above, the text's 3 below" 53. line.height;
+          Alcotest.(check (option string))
+            "the picture's src" (Some "g.gif")
+            (Option.map (fun (pic : Html_layout.picture) -> pic.src) (List.nth line.fragments 1).picture));
+      Testo.create "images: alt text until the size is known" (fun () ->
+          let html = "<p><img src=a.gif alt=pic>" in
+          Alcotest.(check (list fragment)) "no size: the alt text" [ ("pic", 8., 28.2) ] (fragments (page html));
+          let sized =
+            Html_layout.layout metrics
+              ~picture_size:(fun src -> if src = "a.gif" then Some (20., 40.) else None)
+              ~root:(Looks.root ~size:10.) ~width:200. (Html_tree.of_string html)
+          in
+          Alcotest.(check (list fragment)) "decoded: its size" [ ("", 8., 59.2) ] (fragments sized));
+      Testo.create "images: align=middle" (fun () ->
+          let p = page "<p>A <img src=g width=30 height=50 align=middle>" in
+          let line = List.hd (List.hd (List.hd (blocks "p" p)).children).lines in
+          Alcotest.(check (pair near near)) "25 above, 25 below" (25., 50.) (line.baseline -. line.top, line.height));
       Testo.create "list markers" (fun () ->
           let p = page "<ul><li>a<li>b</ul><ol><li>x<li>y</ol>" in
           let markers = List.map (fun (b : Html_layout.box) -> b.marker) (blocks "li" p) in

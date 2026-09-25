@@ -72,6 +72,22 @@
 
    <pre>'s lines are never broken, and overflow.
 
+   **An image** (<img>, Mosaic's addition, 1993) is a word that is a
+   picture: a unit of its own width, on the baseline, as tall as it is
+   (its bottom on the baseline, no leading; with align=middle, its
+   middle there), the line as tall as it needs. Its size is known two
+   ways: the page says it (width= and height=: the layout is right
+   before the picture arrives, which is what those attributes are for),
+   or the picture has arrived and been decoded ([picture_size]). Until
+   one of them, the image is its alt text, and the page is laid out
+   again when it comes -- the text below it jumps down. Worked example
+   (the tests'), the same metrics, the root's size 10:
+
+     <p>A <img src=g.gif width=30 height=50> B
+       "A" x 8..18;  the image x 28..58;  "B" x 68..78
+       the line: the image's 50 above the baseline (more than the
+       text's 9), the text's 3 below: 53 high, its baseline 50 down
+
    **A list item's marker** -- a bullet, or its number in an <ol> -- is
    the item box's [marker], drawn by the app to the left of the item's
    first line ([first_baseline]), in the indent its list made (CSS's
@@ -85,13 +101,20 @@
 (* the width of a string in a look: the caller's font *)
 type metrics = Looks.t -> string -> float
 
-(* a word (or, in <pre>, a line's text), where it goes *)
+(* an image in a line: its src (as the page wrote it), its size, and
+ * whether its middle or its bottom is on the baseline (align=middle,
+ * or bottom, Mosaic's default) *)
+type picture = { src : string; height : float; middle : bool }
+
+(* a word (or, in <pre>, a line's text; or an image, [text] ""), where
+ * it goes *)
 type fragment = {
   text : string;
   look : Looks.t;
   x : float; (* its left edge *)
   width : float;
   baseline : float;
+  picture : picture option;
 }
 
 (* a line, and the names on it a #fragment can scroll to: <a name=x>,
@@ -129,10 +152,19 @@ type breaker = measure:float -> unit_ array -> (int * int) list
 (* fill each line, break before what does not fit *)
 val greedy : breaker
 
-(* [layout metrics ?breaker ~root ~width html]: the tree laid out on a
- * page [width] wide, its root's look [root], its lines broken by
- * [breaker] (greedy) *)
-val layout : metrics -> ?breaker:breaker -> root:Looks.t -> width:float -> Dom.element -> box
+(* [layout metrics ?breaker ?picture_size ~root ~width html]: the tree
+ * laid out on a page [width] wide, its root's look [root], its lines
+ * broken by [breaker] (greedy), the size of an image of src s,
+ * [picture_size s], if the caller has it (none: every image is its
+ * width= and height=, or its alt text) *)
+val layout :
+  metrics ->
+  ?breaker:breaker ->
+  ?picture_size:(string -> (float * float) option) ->
+  root:Looks.t ->
+  width:float ->
+  Dom.element ->
+  box
 
 (* the baseline of a box's first line, if it has one *)
 val first_baseline : box -> float option

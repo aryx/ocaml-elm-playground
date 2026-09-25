@@ -17,7 +17,7 @@
  *
  *   bytes -> text -> tokens -> tree -> looks -> boxes -> shapes
  *
- * All of them now, and back: a click (phases 0 to 6). A page is
+ * All of them now, and back: a click (phases 0 to 7). A page is
  * fetched (a built-in about: page, or http:// through the platform's
  * Http.get), its bytes decoded into text -- the encoding decided from
  * the header, a <meta>, or a guess (Charset) -- cut into tokens
@@ -38,6 +38,17 @@
  * Forward (the buttons, or "b" and "f") give a page back as it was,
  * scrolled where it was, and a new visit empties what was ahead.
  * Visited links are purple.
+ *
+ * And Mosaic's invention, pictures in the text (<img>, 1993): once the
+ * page is shown, its pictures are fetched one after the other, as
+ * Mosaic did (it waited for them all before showing the page; this one
+ * shows it at once, each picture's alt text until it comes), decoded by
+ * our own readers (GIF, PNG, JPEG, told apart by their first bytes),
+ * and the page laid out again as each arrives -- the text below jumps
+ * down, unless the page gave the picture's width= and height=. A
+ * picture in a link has a border of the link's colour; one that could
+ * not be had is NCSA's broken image. The pictures are kept, for every
+ * page that shows them again.
  *
  * Each stage has its view, switched with a key:
  *
@@ -125,6 +136,9 @@ type wrap = Greedy | Pretty
 (* a page in the history: kept whole, and where it was scrolled to *)
 type entry = { at : string; kept : page option; scrolled_to : int }
 
+(* a page's picture: its turn to come, arrived and decoded, or not *)
+type picture = Waiting | Arrived of Rgba_image.t | Broken
+
 type model = {
   state : state;
   view : view;
@@ -136,6 +150,9 @@ type model = {
   forward : entry list; (* the pages ahead, after a Back *)
   visited : string list; (* the URLs followed: their links purple *)
   fragment : string option; (* where to scroll once the page is in *)
+  pictures : (string * picture) list; (* by URL, every page's: a cache *)
+  queue : string list; (* the page's pictures still to fetch, in order *)
+  fetching : string option; (* the one being fetched: one at a time, Mosaic's way *)
   mouse : float * float;
   outline : bool; (* the layout's boxes drawn over the page *)
   time : float; (* the globe's *)
@@ -143,6 +160,7 @@ type model = {
 
 type msg =
   | Got of string * (Http.response, Http.error) result
+  | Got_picture of string * (Http.response, Http.error) result
   | Tick of float
   | Key of string
   | Typed of string
@@ -219,13 +237,52 @@ let breaker (wrap : wrap) : Html_layout.breaker = match wrap with Greedy -> Html
 (* a visited link's colour: Mosaic's, and every browser's since *)
 let visited_purple = (85, 26, 139)
 
+(* a rectangle's outline, [t] thick, its top-left at (x, y) of the page
+ * (y down), in the page's coordinates turned over *)
+let frame ?(t = 1.) (color : color) (x : float) (y : float) (w : float) (h : float) : shape =
+  group
+    [ rectangle color w t |> move (x +. (w /. 2.)) (-.(y +. (t /. 2.)));
+      rectangle color w t |> move (x +. (w /. 2.)) (-.(y +. h -. (t /. 2.)));
+      rectangle color t h |> move (x +. (t /. 2.)) (-.(y +. (h /. 2.)));
+      rectangle color t h |> move (x +. w -. (t /. 2.)) (-.(y +. (h /. 2.))) ]
+
+(* the size a picture that could not be had takes: the broken image's *)
+let broken_size = 24.
+
+(* a picture in its place: its pixels, once arrived; the room kept for
+ * it (its width= and height=) until then; NCSA's broken image when it
+ * could not be had; in a link, a border of the link's colour, as
+ * Mosaic drew it (the one way to tell a picture that is a link) *)
+let picture_shapes (state : picture option) (color : color) (f : Html_layout.fragment) (pic : Html_layout.picture) :
+    shape list =
+  let w = f.width and h = pic.height in
+  let top = if pic.middle then f.baseline -. (h /. 2.) else f.baseline -. h in
+  let center = (f.x +. (w /. 2.), -.(top +. (h /. 2.))) in
+  let body =
+    match state with
+    | Some (Arrived img) -> [ bitmap w h img |> move (fst center) (snd center) ]
+    | Some Broken ->
+        (* a torn picture: a white card, a red slash across *)
+        [ rectangle (rgb 245 245 245) w h |> move (fst center) (snd center);
+          frame (rgb 90 90 90) f.x top w h;
+          rectangle (rgb 200 30 30) (w *. 1.2) 2. |> rotate 45. |> move (fst center) (snd center) ]
+    | Some Waiting | None ->
+        (* the room kept: a sunken, empty frame *)
+        [ frame (rgb 130 130 130) f.x top w h; frame (rgb 235 235 235) (f.x +. 1.) (top +. 1.) (w -. 2.) (h -. 2.) ]
+  in
+  body @ match f.look.link with Some _ -> [ frame ~t:2. color (f.x -. 2.) (top -. 2.) (w +. 4.) (h +. 4.) ] | None -> []
+
 (* a fragment's glyphs, in the page's coordinates turned over: x from
  * its left, y up from its top (so a line below it is negative) *)
-let glyphs ?(visited = fun (_ : string) -> false) (f : Html_layout.fragment) : shape list =
+let glyphs ?(visited = fun (_ : string) -> false) ?(picture_of = fun (_ : string) -> None) (f : Html_layout.fragment) :
+    shape list =
   let style = style_of f.look in
   let (r, g, b) = match f.look.link with Some href when visited href -> visited_purple | _ -> f.look.color in
   let color = rgb r g b in
   let baseline = -.f.baseline in
+  match f.picture with
+  | Some pic -> picture_shapes (picture_of pic.src) color f pic
+  | None ->
   if f.look.monospace then
     let cell = cell_of f.look in
     characters f.text
@@ -243,11 +300,14 @@ let glyphs ?(visited = fun (_ : string) -> false) (f : Html_layout.fragment) : s
     in
     List.concat (List.rev shapes)
 
-(* every line's glyphs, and every rule and marker, with where it is *)
-let rec draw (visited : string -> bool) (b : Html_layout.box) : (float * float * shape) list =
+(* every line's glyphs and pictures, and every rule and marker, with
+ * where it is *)
+let rec draw (visited : string -> bool) (picture_of : string -> picture option) (b : Html_layout.box) :
+    (float * float * shape) list =
   let lines =
     List.map
-      (fun (l : Html_layout.line) -> (l.top, l.top +. l.height, group (List.concat_map (glyphs ~visited) l.fragments)))
+      (fun (l : Html_layout.line) ->
+        (l.top, l.top +. l.height, group (List.concat_map (glyphs ~visited ~picture_of) l.fragments)))
       b.lines
   in
   let rule =
@@ -270,22 +330,16 @@ let rec draw (visited : string -> bool) (b : Html_layout.box) : (float * float *
         let text = string_of_int n ^ "." in
         let look = root_look in
         let width = metrics look text in
-        [ (baseline -. 12., baseline, group (glyphs { text; look; x = b.x -. 6. -. width; width; baseline })) ]
+        [ ( baseline -. 12.,
+            baseline,
+            group (glyphs { text; look; x = b.x -. 6. -. width; width; baseline; picture = None }) ) ]
     | _ -> []
   in
-  lines @ rule @ marker @ List.concat_map (draw visited) b.children
+  lines @ rule @ marker @ List.concat_map (draw visited picture_of) b.children
 
 (* the layout's boxes outlined, as a browser's inspector does: blocks
  * blue, the anonymous boxes of inline content green, their lines grey *)
 let rec outlines (b : Html_layout.box) : (float * float * shape) list =
-  let frame color x y w h =
-    let t = 1. in
-    group
-      [ rectangle color w t |> move (x +. (w /. 2.)) (-.y);
-        rectangle color w t |> move (x +. (w /. 2.)) (-.(y +. h));
-        rectangle color t h |> move x (-.(y +. (h /. 2.)));
-        rectangle color t h |> move (x +. w) (-.(y +. (h /. 2.))) ]
-  in
   let color = match b.kind with Anonymous -> rgb 0 150 0 | _ -> rgb 0 0 220 in
   ((b.y, b.y +. b.height, frame color b.x b.y b.width b.height)
   :: List.map (fun (l : Html_layout.line) -> (l.top, l.top +. l.height, frame (rgb 150 150 150) b.x l.top b.width l.height)) b.lines)
@@ -295,9 +349,28 @@ let rec outlines (b : Html_layout.box) : (float * float * shape) list =
 (* Fetching and reading *)
 (*****************************************************************************)
 
-(* the built-in site: about:NAME is site/NAME.html *)
-let about (name : string) : string option =
-  match name with "home" -> Some Site_pages.home | "history" -> Some Site_pages.history | _ -> None
+(* the built-in site: about:NAME is site/NAME.html, and its pictures
+ * site/picture.gif and so on; with their type *)
+let about (name : string) : (string * string) option =
+  match name with
+  | "home" -> Some (Site_pages.home, "text/html; charset=utf-8")
+  | "history" -> Some (Site_pages.history, "text/html; charset=utf-8")
+  | "picture.gif" -> Some (Site_pictures.picture_gif, "image/gif")
+  | "picture.png" -> Some (Site_pictures.picture_png, "image/png")
+  | "picture.jpg" -> Some (Site_pictures.picture_jpg, "image/jpeg")
+  | _ -> None
+
+(* a picture's bytes decoded, by the formats' magic numbers (the bytes
+ * say what they are better than a server's Content-Type does): GIF
+ * (1987), JPEG (1992), PNG (1996, three years after Mosaic) *)
+let decode_picture (bytes : string) : picture =
+  let starts magic = String.length bytes >= String.length magic && String.sub bytes 0 (String.length magic) = magic in
+  try
+    if starts "GIF8" then Arrived (Gif.decode bytes)
+    else if starts "\x89PNG" then Arrived (Png.decode bytes)
+    else if starts "\xFF\xD8" then Arrived (Jpeg.decode bytes)
+    else Broken
+  with _ -> Broken
 
 let starts_with (prefix : string) (s : string) : bool =
   String.length s >= String.length prefix && String.sub s 0 (String.length prefix) = prefix
@@ -319,11 +392,30 @@ let expand_tabs (line : string) : string =
 let is_visited (m : model) (base : string) (href : string) : bool =
   List.mem (fst (split_fragment (resolve base href))) m.visited
 
+(* a picture of the page at [base], by its src as the page wrote it *)
+let picture_of (m : model) (base : string) (src : string) : picture option = List.assoc_opt (resolve base src) m.pictures
+
+(* its size, for the layout, once known: its pixels', or the broken
+ * image's *)
+let picture_size (m : model) (base : string) (src : string) : (float * float) option =
+  match picture_of m base src with
+  | Some (Arrived img) -> Some (float_of_int img.width, float_of_int img.height)
+  | Some Broken -> Some (broken_size, broken_size)
+  | Some Waiting | None -> None
+
 (* the tree laid out at the model's width and wrap, and drawn: done
- * again when either changes (a reflow), or the visited links do *)
+ * again when either changes (a reflow), the visited links do, or a
+ * picture arrives *)
+let lay_out (m : model) (base : string) (tree : Dom.element) : Html_layout.box * (float * float * shape) list =
+  let layout =
+    Html_layout.layout metrics ~breaker:(breaker m.wrap) ~picture_size:(picture_size m base) ~root:root_look
+      ~width:m.width tree
+  in
+  (layout, draw (is_visited m base) (picture_of m base) layout)
+
 let laid_out (m : model) (p : page) : page =
-  let layout = Html_layout.layout metrics ~breaker:(breaker m.wrap) ~root:root_look ~width:m.width p.tree in
-  { p with layout; drawn = draw (is_visited m p.url) layout }
+  let layout, drawn = lay_out m p.url p.tree in
+  { p with layout; drawn }
 
 (* a response's media type: "text/html; charset=utf-8" is "text/html" *)
 let media_type (content_type : string option) : string =
@@ -359,7 +451,7 @@ let page_of (m : model) (url : string) (status : int) (content_type : string opt
   let tokens = Html_lexer.tokenize (as_html url content_type text (String.length bytes)) in
   let tree = Html_tree.parse tokens in
   let title = match Dom.find_all "title" tree with t :: _ -> String.trim (Dom.text_content t) | [] -> "" in
-  let layout = Html_layout.layout metrics ~breaker:(breaker m.wrap) ~root:root_look ~width:m.width tree in
+  let layout, drawn = lay_out m url tree in
   {
     url;
     status;
@@ -371,7 +463,7 @@ let page_of (m : model) (url : string) (status : int) (content_type : string opt
     line_mode = Line_mode.render tree;
     title;
     layout;
-    drawn = draw (is_visited m url) layout;
+    drawn;
   }
 
 (*****************************************************************************)
@@ -445,13 +537,53 @@ let failed (m : model) (url : string) (why : string) : model =
 
 (* the page at [url] (no #fragment): at once for an about: page, else a
  * command; the history untouched (Reload, Back and Forward use it) *)
+(* a picture had (or not): the page shown laid out again with it -- the
+ * text after it moves, unless the page gave its size *)
+let with_arrived (m : model) (url : string) (pic : picture) : model =
+  let m = { m with pictures = (url, pic) :: List.remove_assoc url m.pictures } in
+  match m.state with Shown p -> { m with state = Shown (laid_out m p) } | Loading _ -> m
+
+(* the next picture of the page, when none is on its way: one at a
+ * time, as Mosaic fetched them (Netscape's four at once is
+ * TinyNetscape's); a built-in one decoded at once *)
+let rec fetch_next (network : < Cap.network ; .. >) (m : model) : model * msg Cmd.t =
+  match (m.fetching, m.queue) with
+  | Some _, _ | None, [] -> (m, Cmd.none)
+  | None, url :: rest ->
+      let m = { m with queue = rest } in
+      if starts_with "about:" url then
+        let pic =
+          match about (String.sub url 6 (String.length url - 6)) with Some (bytes, _) -> decode_picture bytes | None -> Broken
+        in
+        fetch_next network (with_arrived m url pic)
+      else ({ m with fetching = Some url }, Http.get network ~url ~expect:(Http.expect_response (fun r -> Got_picture (url, r))))
+
+(* a page shown: its pictures not had yet queued, in the page's order
+ * (the ones of the page before, not come yet, dropped: Mosaic's way,
+ * when a link was followed) *)
+let with_pictures (network : < Cap.network ; .. >) ((m, cmd) : model * msg Cmd.t) : model * msg Cmd.t =
+  match m.state with
+  | Loading _ -> (m, cmd)
+  | Shown p ->
+      let wanted url = (List.assoc_opt url m.pictures = None || List.assoc_opt url m.pictures = Some Waiting) && m.fetching <> Some url in
+      let urls =
+        Dom.find_all "img" p.tree
+        |> List.filter_map (fun e -> Option.map (resolve p.url) (Dom.attribute "src" e))
+        |> List.fold_left (fun acc u -> if List.mem u acc || not (wanted u) then acc else acc @ [ u ]) []
+      in
+      let m =
+        { m with queue = urls; pictures = List.map (fun u -> (u, Waiting)) urls @ List.filter (fun (u, _) -> not (List.mem u urls)) m.pictures }
+      in
+      let m, more = fetch_next network m in
+      (m, Cmd.batch [ cmd; more ])
+
 let load (network : < Cap.network ; .. >) (url : string) (m : model) : model * msg Cmd.t =
   let m = { m with scroll = 0; typed = "" } in
   if starts_with "about:" url then
     let name = String.sub url 6 (String.length url - 6) in
     match about name with
-    | Some bytes ->
-        (to_fragment { m with state = Shown (page_of m url 200 (Some "text/html; charset=utf-8") bytes) }, Cmd.none)
+    | Some (bytes, content_type) ->
+        with_pictures network (to_fragment { m with state = Shown (page_of m url 200 (Some content_type) bytes) }, Cmd.none)
     | None -> (failed m url "There is no such page in the built-in site.", Cmd.none)
   else ({ m with state = Loading url }, Http.get network ~url ~expect:(Http.expect_response (fun r -> Got (url, r))))
 
@@ -477,7 +609,7 @@ let visit (network : < Cap.network ; .. >) (url : string) (m : model) : model * 
  * redrawn, some may be purple since), or fetched again *)
 let restore (network : < Cap.network ; .. >) (e : entry) (m : model) : model * msg Cmd.t =
   match e.kept with
-  | Some p -> (scrolled 0 { m with state = Shown (laid_out m p); scroll = e.scrolled_to; typed = "" }, Cmd.none)
+  | Some p -> with_pictures network (scrolled 0 { m with state = Shown (laid_out m p); scroll = e.scrolled_to; typed = "" }, Cmd.none)
   | None -> load network e.at m
 
 let go_back (network : < Cap.network ; .. >) (m : model) : model * msg Cmd.t =
@@ -572,6 +704,9 @@ let init (network : < Cap.network ; .. >) (flags : flags) : model * msg Cmd.t =
       fragment;
       mouse = (0., 0.);
       outline = false;
+      pictures = [];
+      queue = [];
+      fetching = None;
       time = 0.;
     }
 
@@ -585,8 +720,11 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
           (fun (name, value) -> if String.lowercase_ascii name = "content-type" then Some value else None)
           r.headers
       in
-      (to_fragment { m with state = Shown (page_of m r.url r.status content_type r.body) }, Cmd.none)
+      with_pictures network (to_fragment { m with state = Shown (page_of m r.url r.status content_type r.body) }, Cmd.none)
   | Got (url, Error e) -> (failed m url (String.capitalize_ascii (Http.error_to_string e) ^ "."), Cmd.none)
+  | Got_picture (url, result) ->
+      let pic = match result with Ok r when r.status / 100 = 2 -> decode_picture r.body | _ -> Broken in
+      fetch_next network (with_arrived { m with fetching = None } url pic)
   | Tick time -> ({ m with time }, Cmd.none)
   | Wheel notches -> (scrolled (3 * int_of_float (Float.round notches)) m, Cmd.none)
   | Mouse_move (x, y) -> ({ m with mouse = (x, y) }, Cmd.none)
@@ -666,7 +804,7 @@ let button (x : number) (y : number) (text : string) (active : bool) : shape lis
 
 (* the globe, turning while something loads: land passing over the sea *)
 let globe (m : model) : shape list =
-  let turn = match m.state with Loading _ -> m.time *. 2. | _ -> 0. in
+  let turn = match (m.state, m.fetching) with Loading _, _ | _, Some _ -> m.time *. 2. | _ -> 0. in
   let continent = oval (rgb 60 140 70) 12. 22. |> move_x (10. *. sin turn) in
   [ circle (rgb 40 80 170) 18.; continent; oval (rgb 60 140 70) 8. 10. |> move (-.9. *. sin (turn +. 1.5)) 7. ]
   |> List.map (fun s -> s |> move 465. 455.)
@@ -677,6 +815,8 @@ let status (m : model) : string =
   match (m.state, hovered m) with
   | Shown p, Some href -> resolve p.url href
   | Loading url, _ -> "Connecting to " ^ url ^ " ..."
+  | Shown _, None when m.fetching <> None ->
+      Printf.sprintf "Picture: %s ... (%d more)" (Option.get m.fetching) (List.length m.queue)
   | Shown p, None when p.status = 0 -> "Failed: " ^ p.url
   | Shown p, None ->
       let n = line_count m in

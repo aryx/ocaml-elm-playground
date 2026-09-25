@@ -39,9 +39,21 @@
     (cat site/history.html)
     (echo "|}\n")))))
 
+; claude: its pictures, bytes that are not text, embedded escaped
+; (scripts/build/files_to_string_ml.ml): site/picture.gif becomes
+; Site_pictures.picture_gif, and so on -- the same picture in the three
+; formats the browser decodes
+(rule
+ (targets Site_pictures.ml)
+ (deps site/picture.gif site/picture.png site/picture.jpg %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml site/picture.gif site/picture.png site/picture.jpg))))
+
 (executables
   (names TinyMosaic)
-  (modules TinyMosaic Site_pages)
+  (modules TinyMosaic Site_pages Site_pictures)
   (libraries
     caps ; the authority to reach the network
     web ; the engine: Charset, Html_lexer, Html_tree, Line_mode, ...
@@ -49,6 +61,7 @@
     appkit_stroke_text ; the letters, drawn by Hershey's pen
     appkit_richtext ; Style, the pen's look
     appkit_typeset ; Linebreak, Knuth and Plass's lines for wrap=pretty
+    graphics_rgba graphics_gif graphics_png graphics_jpeg ; the pictures, decoded by our own readers
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

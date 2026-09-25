@@ -331,13 +331,13 @@ val image : number -> number -> string -> shape
 (** claude: Show an image your program has in memory, its pixels
     ({!Rgba_image.t}: width x height RGBA bytes), stretched to the width
     and height you give -- a video's frames (TinyMediaPlayer), a picture
-    your program decoded or computed:
+    your program decoded or computed, a web page's pictures (TinyMosaic):
 {[
     let view computer movie = [ bitmap 704. 576. (Movie.frame_at movie computer.time.now) ]
 ]}
     Where {!image} fetches a file once, this is drawn from its pixels as
     they are when shown: give a new image for a new picture (a backend
-    keeps the last one it converted, and redoes the work when it sees
+    keeps the last few it converted, 32, and redoes the work for
     another). A small image enlarged is smoothed, like {!image}'s, unless
     the program's [rendering] says [smooth_images = false]. On the web,
     each new image is encoded as a PNG, fine for a picture, slow for a

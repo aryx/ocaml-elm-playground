@@ -319,6 +319,18 @@ now measures as "cumulative layout shift", and what 1994's pages did
 all the time). TinyMosaic can do both: `alt` text or an empty box of
 the given size until the pixels come.
 
+When they come is the other half. Mosaic fetched a page's pictures
+one after the other, after the page, and showed nothing until the
+last was in: every request a blocking read, through CERN's libwww (a
+callback during the reads turned the globe, and let a click on it
+interrupt). TinyMosaic fetches them one after the other too, but shows
+the page at once and lays it out again as each arrives, since its
+requests never block the frame. Netscape (1994) fetched four at once
+and drew the page as it came, which is TinyNetscape's to show. The
+pictures are decoded by their first bytes, not by what the server
+says they are: `GIF8`, `\x89PNG`, `\xFF\xD8` -- the magic numbers
+(TinyMediaPlayer's `Media.sniff` does it for every format).
+
 `<pre>` keeps its spaces and newlines and never breaks: a line per
 source line, in fixed-width cells. `<br>` ends a line. A list item's
 **marker** (a bullet, or `3.`) is drawn to the left of its first line,

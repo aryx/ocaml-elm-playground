@@ -23,7 +23,7 @@ place a game meets them.
 | `ai/` | game AI: movement, decisions, bots, search, learning ([`ai/README.md`](ai/README.md)) | `notes_ai.md`, `notes_ai_learning.md` |
 | `networking/` | the protocols, the netcode, the sockets ([`networking/README.md`](networking/README.md)) | `notes_networking.md` |
 | `gui/` | a GUI toolkit: widgets, the four architectures, layout, text | `notes_gui.md` |
-| `web/` | a browser's engine: a page's encoding and entities; to come, its tree, looks and layout ([`web/README.md`](web/README.md)) | `notes_browser.md` |
+| `web/` | a browser's engine: a page's encoding, tokens and tree (tag soup repaired), its looks, its layout (blocks, lines, pictures), and back from a click ([`web/README.md`](web/README.md)) | `notes_browser.md` |
 | `juice/` | game feel: easing, tweens, squash, trauma, particles | `notes_juice.md` |
 | `terminal/` | the VT100's screen (`Vt`: bytes and escape sequences into a grid of cells) and the tty's line discipline (`Line_discipline`: echo, Backspace, a line on Enter) | `plan_terminal.md` |
 

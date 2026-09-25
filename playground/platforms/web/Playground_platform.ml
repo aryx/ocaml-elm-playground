@@ -477,16 +477,18 @@ let render_image w h src x y angle s alpha =
 
 (* claude: a bitmap as an image's URL, its pixels in it: a PNG as a
  * data: URL -- SVG has nothing else for pixels in memory (and the vdom
- * no canvas). The last one kept: a picture shown in many frames is
- * encoded once; a video, a PNG per new frame, slow. *)
-let last_bitmap : (Rgba_image.t * string) option ref = ref None
+ * no canvas). The last ones kept: a picture shown in many frames is
+ * encoded once; a video, a PNG per new frame, slow. The last 32, not
+ * the last one: a web page (TinyMosaic) shows several pictures in every
+ * frame, which a single one kept would encode again each time *)
+let last_bitmaps : (Rgba_image.t * string) list ref = ref []
 
 let bitmap_url (img : Rgba_image.t) : string =
-  match !last_bitmap with
-  | Some (i, url) when i == img -> url
-  | _ ->
+  match List.find_opt (fun (i, _) -> i == img) !last_bitmaps with
+  | Some (_, url) -> url
+  | None ->
       let url = "data:image/png;base64," ^ String_base64.encode (Png.encode img) in
-      last_bitmap := Some (img, url);
+      last_bitmaps := List.filteri (fun k _ -> k < 32) ((img, url) :: !last_bitmaps);
       url
 
 let rec (render_shape: shape -> 'msg Svg.t) =

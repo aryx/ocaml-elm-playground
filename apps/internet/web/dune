@@ -18,7 +18,7 @@
 
 (executables
   (names TinyMosaic)
-  (modules TinyMosaic Site_pages)
+  (modules TinyMosaic Site_pages Site_pictures)
   (libraries
     caps
     web
@@ -26,6 +26,7 @@
     appkit_stroke_text
     appkit_richtext
     appkit_typeset
+    graphics_rgba graphics_gif graphics_png graphics_jpeg
     elm_playground
     elm_playground_web ; implem of virtual elm_playground
   )
