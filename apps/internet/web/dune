@@ -25,6 +25,7 @@
     networking
     appkit_stroke_text
     appkit_richtext
+    appkit_typeset
     elm_playground
     elm_playground_web ; implem of virtual elm_playground
   )

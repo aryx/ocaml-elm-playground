@@ -48,6 +48,7 @@
     networking ; Url, a link resolved against its page
     appkit_stroke_text ; the letters, drawn by Hershey's pen
     appkit_richtext ; Style, the pen's look
+    appkit_typeset ; Linebreak, Knuth and Plass's lines for wrap=pretty
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

@@ -14,6 +14,7 @@ type metrics = Looks.t -> string -> float
 type fragment = { text : string; look : Looks.t; x : float; width : float; baseline : float }
 type line = { top : float; height : float; baseline : float; fragments : fragment list }
 type kind = Block of Dom.element | Anonymous | Rule of Dom.element
+type marker = Bullet | Number of int
 
 type box = {
   kind : kind;
@@ -23,7 +24,34 @@ type box = {
   height : float;
   children : box list;
   lines : line list;
+  marker : marker option;
 }
+
+type unit_ = { space : float; width : float }
+type breaker = measure:float -> unit_ array -> (int * int) list
+
+(*****************************************************************************)
+(* Breaking lines *)
+(*****************************************************************************)
+
+(* Linebreak.greedy's rule, with each unit's own space (a page's words
+ * are in several looks, their spaces of several widths) *)
+let greedy : breaker =
+ fun ~measure units ->
+  let n = Array.length units in
+  let rec go start acc =
+    if start >= n then List.rev acc
+    else
+      (* the line from [start], as long as the next unit still fits *)
+      let rec extend j w =
+        if j + 1 < n && w +. units.(j + 1).space +. units.(j + 1).width <= measure then
+          extend (j + 1) (w +. units.(j + 1).space +. units.(j + 1).width)
+        else j
+      in
+      let j = extend start units.(start).width in
+      go (j + 1) ((start, j) :: acc)
+  in
+  go 0 []
 
 (*****************************************************************************)
 (* Inline content: words, then lines *)
@@ -69,11 +97,27 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
     fragments = List.map (fun (text, look, pen, w) -> { text; look; x = x +. shift +. pen; width = w; baseline }) placed;
   }
 
-(* the items cut at the breaks: a line each, for now (phase 4 breaks
- * them at the width too); an empty line where the page asked for one,
- * not after the last break *)
-let lines_of (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float) ~(top : float) (items : item list) :
-    line list =
+(* a run of words between two breaks, as units -- the words stuck
+ * together, a unit starting at each word with a space before it *)
+let units_of (words : item list) : item list list =
+  let rec go current acc words =
+    match words with
+    | [] -> List.rev (if current = [] then acc else List.rev current :: acc)
+    | (Word { space_before = true; _ } as w) :: rest when current <> [] -> go [ w ] (List.rev current :: acc) rest
+    | w :: rest -> go (w :: current) acc rest
+  in
+  go [] [] words
+
+(* a unit's words, its first without the space before it: it starts
+ * a line *)
+let starting_line (unit : item list) : item list =
+  match unit with Word w :: rest -> Word { w with space_before = false } :: rest | _ -> unit
+
+(* the items cut at the breaks, each run of words broken into lines by
+ * [breaker] (never in <pre>); an empty line where the page asked for
+ * one, not after the last break *)
+let lines_of (metrics : metrics) (breaker : breaker) (block : Looks.t) ~(x : float) ~(width : float) ~(top : float)
+    (items : item list) : line list =
   let rec groups current acc items =
     match items with
     | [] -> List.rev (List.rev current :: acc)
@@ -82,13 +126,36 @@ let lines_of (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
   in
   let groups = groups [] [] items in
   let n = List.length groups in
+  (* a group's lines: its words, broken into lines *)
+  let broken (group : item list) : item list list =
+    if block.pre || group = [] then [ group ]
+    else
+      let units = Array.of_list (units_of group) in
+      let measure u =
+        List.fold_left
+          (fun (space, width) item ->
+            match item with
+            | Word { text; look; space_before } ->
+                let w = metrics look text in
+                if width = 0. && space = 0. && space_before then (metrics look " ", w) else (space, width +. w)
+            | Break -> (space, width))
+          (0., 0.) u
+      in
+      let sizes = Array.map (fun u -> let space, width = measure u in { space; width }) units in
+      breaker ~measure:width sizes
+      |> List.map (fun (i, j) ->
+             List.concat (List.mapi (fun k u -> if k = 0 then starting_line u else u) (Array.to_list (Array.sub units i (j - i + 1)))))
+  in
   let _, lines =
     List.fold_left
       (fun (top, lines) (i, group) ->
         if group = [] && i = n - 1 then (top, lines)
         else
-          let line = set_line metrics block ~x ~width ~top group in
-          (top +. line.height, line :: lines))
+          List.fold_left
+            (fun (top, lines) words ->
+              let line = set_line metrics block ~x ~width ~top words in
+              (top +. line.height, line :: lines))
+            (top, lines) (broken group))
       (top, [])
       (List.mapi (fun i g -> (i, g)) groups)
   in
@@ -103,6 +170,8 @@ let lines_of (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
  * child), and the inline content not yet set *)
 type ctx = {
   metrics : metrics;
+  breaker : breaker;
+  name : string; (* the block's element's: a list's items are numbered *)
   look : Looks.t; (* the block's: its alignment, its empty lines *)
   x : float;
   width : float;
@@ -111,6 +180,7 @@ type ctx = {
   mutable children : box list; (* the last first *)
   mutable items : item list; (* the last first *)
   mutable space : bool; (* a space read since the last word *)
+  mutable items_seen : int; (* its <li>s so far *)
 }
 
 let is_space (c : char) : bool = c = ' ' || c = '\n' || c = '\t' || c = '\r'
@@ -152,18 +222,44 @@ let flush_inline (ctx : ctx) : unit =
   ctx.space <- false;
   if List.exists (fun i -> match i with Word _ -> true | Break -> false) items then (
     let top = ctx.cursor +. ctx.pending in
-    let lines = lines_of ctx.metrics ctx.look ~x:ctx.x ~width:ctx.width ~top items in
+    let lines = lines_of ctx.metrics ctx.breaker ctx.look ~x:ctx.x ~width:ctx.width ~top items in
     let height = List.fold_left (fun h (l : line) -> h +. l.height) 0. lines in
-    ctx.children <- { kind = Anonymous; x = ctx.x; y = top; width = ctx.width; height; children = []; lines } :: ctx.children;
+    ctx.children <-
+      { kind = Anonymous; x = ctx.x; y = top; width = ctx.width; height; children = []; lines; marker = None }
+      :: ctx.children;
     ctx.cursor <- top +. height;
     ctx.pending <- 0.)
 
-let rec layout_block (metrics : metrics) (look : Looks.t) (e : Dom.element) ~(x : float) ~(width : float) ~(y : float) :
-    box =
-  let ctx = { metrics; look; x; width; cursor = y; pending = 0.; children = []; items = []; space = false } in
+let rec layout_block (metrics : metrics) (breaker : breaker) (look : Looks.t) (e : Dom.element) ~(marker : marker option)
+    ~(x : float) ~(width : float) ~(y : float) : box =
+  let ctx =
+    {
+      metrics;
+      breaker;
+      name = e.name;
+      look;
+      x;
+      width;
+      cursor = y;
+      pending = 0.;
+      children = [];
+      items = [];
+      space = false;
+      items_seen = 0;
+    }
+  in
   List.iter (walk ctx look) e.children;
   flush_inline ctx;
-  { kind = Block e; x; y; width; height = ctx.cursor +. ctx.pending -. y; children = List.rev ctx.children; lines = [] }
+  {
+    kind = Block e;
+    x;
+    y;
+    width;
+    height = ctx.cursor +. ctx.pending -. y;
+    children = List.rev ctx.children;
+    lines = [];
+    marker;
+  }
 
 (* a node inside a block, in the look of what it is in: inline content
  * gathered, a block placed below what is stacked (the inline content
@@ -184,17 +280,31 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
       | Block | Rule ->
           flush_inline ctx;
           let y = ctx.cursor +. Float.max ctx.pending b.margin_top in
+          let marker =
+            if e.name <> "li" then None
+            else (
+              ctx.items_seen <- ctx.items_seen + 1;
+              Some (if ctx.name = "ol" then Number ctx.items_seen else Bullet))
+          in
           let child =
             match b.display with
-            | Rule -> { kind = Rule e; x = ctx.x; y; width = ctx.width; height = 2.; children = []; lines = [] }
-            | _ -> layout_block ctx.metrics l e ~x:(ctx.x +. b.indent) ~width:(ctx.width -. b.indent -. b.right) ~y
+            | Rule ->
+                { kind = Rule e; x = ctx.x; y; width = ctx.width; height = 2.; children = []; lines = []; marker = None }
+            | _ ->
+                layout_block ctx.metrics ctx.breaker l e ~marker ~x:(ctx.x +. b.indent)
+                  ~width:(ctx.width -. b.indent -. b.right) ~y
           in
           ctx.children <- child :: ctx.children;
           ctx.cursor <- y +. child.height;
           ctx.pending <- b.margin_bottom)
 
-let layout (metrics : metrics) ~(root : Looks.t) ~(width : float) (html : Dom.element) : box =
-  layout_block metrics (Looks.look root html) html ~x:0. ~width ~y:0.
+let layout (metrics : metrics) ?(breaker = greedy) ~(root : Looks.t) ~(width : float) (html : Dom.element) : box =
+  layout_block metrics breaker (Looks.look root html) html ~marker:None ~x:0. ~width ~y:0.
 
 let rec fragments (b : box) : fragment list =
   List.concat_map (fun (l : line) -> l.fragments) b.lines @ List.concat_map fragments b.children
+
+let rec first_baseline (b : box) : float option =
+  match b.lines with
+  | l :: _ -> Some l.baseline
+  | [] -> List.fold_left (fun found c -> match found with Some _ -> found | None -> first_baseline c) None b.children

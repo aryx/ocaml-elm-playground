@@ -24,9 +24,13 @@
  * (Html_lexer), built into a tree, its mistakes repaired (Html_tree),
  * given looks (Looks: Mosaic's table, a heading big and bold, a link
  * blue and underlined), laid out in blocks and lines (Html_layout),
- * and drawn, each letter by Hershey's pen (Stroke_text). A paragraph is
- * still one line, cut off by the window: breaking lines at the width
- * is the next phase. Each stage has its view, switched with a key:
+ * and drawn, each letter by Hershey's pen (Stroke_text), a list's
+ * bullets and numbers in its indent. Lines are broken at the width,
+ * greedily as every browser does, or ("w", wrap=pretty) by Knuth and
+ * Plass's breaker (appkits/typeset's Linebreak), which CSS adopted as
+ * text-wrap: pretty; "[" and "]" narrow and widen the page, and the
+ * same tree is laid out again -- a reflow. Each stage has its view,
+ * switched with a key:
  *
  *   p   the page (the default)
  *   s   the source, Mosaic's "View Source"
@@ -44,13 +48,16 @@
  *   http://localhost:8001/apps/internet/web/TinyMosaic.html
  *
  * flags url= (about:home), the first page;
- * view=page|source|tokens|tree|line (page).
+ * view=page|source|tokens|tree|line (page); wrap=greedy|pretty
+ * (greedy); width= (976, the page area's), the page's width.
  *
  * Uses: web's Charset, Html_lexer, Html_tree, Line_mode, Looks and
  * Html_layout (the pipeline), networking's Url (a link resolved against
  * the page's URL), Playground.Http (the request, its answer with the
- * headers and the final URL), the appkit Stroke_text (the letters, and
- * their widths for the layout); the built-in pages are site/*.html,
+ * headers and the final URL), the appkits Stroke_text (the letters, and
+ * their widths for the layout) and Linebreak (wrap=pretty's lines, the
+ * layout taking its breaker from the app, since libs/ must not depend
+ * on an appkit); the built-in pages are site/*.html,
  * embedded by dune (Site_pages).
  *
  * Exercises: the source coloured as an editor would, from the tokens
@@ -86,9 +93,14 @@ type state = Loading of string | Shown of page | Failed of string * string (* th
 (* which stage of the pipeline is shown *)
 type view = Page | Source | Tokens | Tree | Line
 
+(* how lines are broken: every browser's way, or Knuth and Plass's *)
+type wrap = Greedy | Pretty
+
 type model = {
   state : state;
   view : view;
+  width : float; (* the page's, narrowed with [ and widened with ] *)
+  wrap : wrap;
   scroll : int; (* the first line shown; 14 of the page's units a line in the page view *)
   typed : string; (* in the line-mode view, the number being typed *)
   time : float; (* the globe's *)
@@ -137,8 +149,22 @@ let metrics (l : Looks.t) (s : string) : float =
 (* Drawing a page *)
 (*****************************************************************************)
 
-(* the page's width: the page area's, less a little air *)
+(* the page's widest: the page area's, less a little air *)
 let page_width = 976.
+
+(* wrap=pretty: the paragraph's lines chosen whole, by Knuth and
+ * Plass's breaker (Linebreak.optimal), ragged right as a browser's are
+ * -- the spaces may stretch (a line may end short), not shrink (it may
+ * not end past the edge) -- with the paragraph's first real space for
+ * all (Linebreak's model has one; the words are set with their own) *)
+let pretty : Html_layout.breaker =
+ fun ~measure units ->
+  let space = Array.fold_left (fun s (u : Html_layout.unit_) -> if s = 0. then u.space else s) 0. units in
+  let words = Array.map (fun (u : Html_layout.unit_) -> { Linebreak.text = ""; width = u.width }) units in
+  Linebreak.optimal { measure; space; stretch = space; shrink = 0. } words
+  |> List.map (fun (l : Linebreak.line) -> (l.first, l.last))
+
+let breaker (wrap : wrap) : Html_layout.breaker = match wrap with Greedy -> Html_layout.greedy | Pretty -> pretty
 
 (* a fragment's glyphs, in the page's coordinates turned over: x from
  * its left, y up from its top (so a line below it is negative) *)
@@ -178,7 +204,21 @@ let rec draw (b : Html_layout.box) : (float * float * shape) list =
                 rectangle (rgb 235 235 235) b.width 1. |> move (b.x +. (b.width /. 2.)) (-.b.y -. 1.5) ] ) ]
     | _ -> []
   in
-  lines @ rule @ List.concat_map draw b.children
+  (* a list item's marker, left of its first line, in its list's indent *)
+  let marker =
+    match (b.marker, Html_layout.first_baseline b) with
+    | Some Bullet, Some baseline ->
+        [ (baseline -. 12., baseline, circle (rgb 0 0 0) 3. |> move (b.x -. 12.) (-.(baseline -. 5.))) ]
+    | Some (Number n), Some baseline ->
+        let text = string_of_int n ^ "." in
+        let look = root_look in
+        let width = metrics look text in
+        [ ( baseline -. 12.,
+            baseline,
+            group (glyphs { text; look; x = b.x -. 6. -. width; width; baseline }) ) ]
+    | _ -> []
+  in
+  lines @ rule @ marker @ List.concat_map draw b.children
 
 (*****************************************************************************)
 (* Fetching and reading *)
@@ -204,14 +244,20 @@ let expand_tabs (line : string) : string =
     line;
   Buffer.contents b
 
+(* the tree laid out at the model's width and wrap, and drawn: done
+ * again when either changes (a reflow) *)
+let laid_out (m : model) (p : page) : page =
+  let layout = Html_layout.layout metrics ~breaker:(breaker m.wrap) ~root:root_look ~width:m.width p.tree in
+  { p with layout; drawn = draw layout }
+
 (* the pipeline: bytes -> text -> tokens -> tree -> boxes -> shapes *)
-let page_of (url : string) (status : int) (content_type : string option) (bytes : string) : page =
+let page_of (m : model) (url : string) (status : int) (content_type : string option) (bytes : string) : page =
   let charset = Charset.detect ?content_type bytes in
   let text = Charset.to_utf_8 charset bytes in
   let tokens = Html_lexer.tokenize text in
   let tree = Html_tree.parse tokens in
   let title = match Dom.find_all "title" tree with t :: _ -> String.trim (Dom.text_content t) | [] -> "" in
-  let layout = Html_layout.layout metrics ~root:root_look ~width:page_width tree in
+  let layout = Html_layout.layout metrics ~breaker:(breaker m.wrap) ~root:root_look ~width:m.width tree in
   {
     url;
     status;
@@ -238,7 +284,7 @@ let load (network : < Cap.network ; .. >) (url : string) (m : model) : model * m
   if starts_with "about:" url then
     let name = String.sub url 6 (String.length url - 6) in
     match about name with
-    | Some bytes -> ({ m with state = Shown (page_of url 200 (Some "text/html; charset=utf-8") bytes) }, Cmd.none)
+    | Some bytes -> ({ m with state = Shown (page_of m url 200 (Some "text/html; charset=utf-8") bytes) }, Cmd.none)
     | None -> ({ m with state = Failed (url, "no such page in the built-in site") }, Cmd.none)
   else ({ m with state = Loading url }, Http.get network ~url ~expect:(Http.expect_response (fun r -> Got (url, r))))
 
@@ -300,6 +346,11 @@ let line_count (m : model) : int =
 let scrolled (by : int) (m : model) : model =
   { m with scroll = max 0 (min (line_count m - visible) (m.scroll + by)) }
 
+(* the page laid out again at the model's width and wrap, the scroll
+ * kept inside the new height *)
+let relaid (m : model) : model =
+  match m.state with Shown p -> scrolled 0 { m with state = Shown (laid_out m p) } | _ -> m
+
 let current_url (m : model) : string = match m.state with Loading url | Failed (url, _) -> url | Shown p -> p.url
 
 (* the line-mode view's Return: the link numbered so, if there is one *)
@@ -319,7 +370,13 @@ let init (network : < Cap.network ; .. >) (flags : flags) : model * msg Cmd.t =
     | Some "line" -> Line
     | _ -> Page
   in
-  load network url { state = Loading url; view; scroll = 0; typed = ""; time = 0. }
+  let width =
+    match Option.bind (List.assoc_opt "width" flags) float_of_string_opt with
+    | Some w -> Float.min page_width (Float.max 200. w)
+    | None -> page_width
+  in
+  let wrap = if List.assoc_opt "wrap" flags = Some "pretty" then Pretty else Greedy in
+  load network url { state = Loading url; view; width; wrap; scroll = 0; typed = ""; time = 0. }
 
 let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * msg Cmd.t =
   let switch view = ({ m with view; scroll = 0; typed = "" }, Cmd.none) in
@@ -331,7 +388,7 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
           (fun (name, value) -> if String.lowercase_ascii name = "content-type" then Some value else None)
           r.headers
       in
-      ({ m with state = Shown (page_of r.url r.status content_type r.body) }, Cmd.none)
+      ({ m with state = Shown (page_of m r.url r.status content_type r.body) }, Cmd.none)
   | Got (url, Error e) -> ({ m with state = Failed (url, Http.error_to_string e) }, Cmd.none)
   | Tick time -> ({ m with time }, Cmd.none)
   | Wheel notches -> (scrolled (3 * int_of_float (Float.round notches)) m, Cmd.none)
@@ -355,6 +412,10 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
       | "t" -> switch Tokens
       | "d" -> switch Tree
       | "l" -> switch Line
+      (* a reflow: the same tree laid out again *)
+      | "w" -> (relaid { m with wrap = (if m.wrap = Greedy then Pretty else Greedy) }, Cmd.none)
+      | "[" -> (relaid { m with width = Float.max 200. (m.width -. 100.) }, Cmd.none)
+      | "]" -> (relaid { m with width = Float.min page_width (m.width +. 100.) }, Cmd.none)
       | _ -> (m, Cmd.none))
 
 (*****************************************************************************)
@@ -413,7 +474,8 @@ let status (m : model) : string =
       let n = line_count m in
       Printf.sprintf "%s: %d bytes, %s, status %d, lines %d-%d of %d"
         (match m.view with
-        | Page -> "Page"
+        | Page ->
+            Printf.sprintf "Page (%s lines, %.0f wide)" (match m.wrap with Greedy -> "greedy" | Pretty -> "pretty") m.width
         | Source -> "Document source"
         | Tokens -> "Tokens"
         | Tree -> "Tree"

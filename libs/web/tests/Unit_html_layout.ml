@@ -85,9 +85,34 @@ let tests =
             [ ("  x  y", 8., 27.); (" z", 8., 39.) ]
             (fragments (page "<pre>\n  x  y\n z\n</pre>"));
           Alcotest.(check (list fragment))
-            "a long paragraph stays one line (phase 4 breaks it)"
-            [ ("aaaaaaaaaaaaaaaaaaaaaaaaa", 8., 28.2); ("b", 268., 28.2) ]
+            "pre's lines are never broken"
+            [ ("aaaaaaaaaaaaaaaaaaaaaaaaa b", 8., 27.) ]
+            (fragments (page "<pre>aaaaaaaaaaaaaaaaaaaaaaaaa b</pre>")));
+      Testo.create "lines broken at the width: the worked example" (fun () ->
+          Alcotest.(check (list fragment))
+            "190 fits in 192, 260 does not"
+            [ ("Soup", 8., 28.2); ("of", 58., 28.2); ("the", 88., 28.2); ("day", 128., 28.2); ("and", 168., 28.2); ("salads", 8., 40.2) ]
+            (fragments (page ~width:208. "<p>Soup of the day and salads</p>"));
+          Alcotest.(check (list fragment))
+            "a word wider than a line: a line of its own"
+            [ ("aaaaaaaaaaaaaaaaaaaaaaaaa", 8., 28.2); ("b", 8., 40.2) ]
             (fragments (page "<p>aaaaaaaaaaaaaaaaaaaaaaaaa b")));
+      Testo.create "a unit is not broken: a link and its full stop" (fun () ->
+          Alcotest.(check (list fragment))
+            "home. goes down whole"
+            [ ("xxxxxxxxxxxxxxxx", 8., 28.2); ("home", 8., 40.2); (".", 48., 40.2) ]
+            (fragments (page ~width:208. "<p>xxxxxxxxxxxxxxxx <a href=u>home</a>.")));
+      Testo.create "the breaker is the caller's" (fun () ->
+          let one_a_line : Html_layout.breaker = fun ~measure:_ units -> List.init (Array.length units) (fun i -> (i, i)) in
+          let p = Html_layout.layout metrics ~breaker:one_a_line ~root:(Looks.root ~size:10.) ~width:200. (Html_tree.of_string "<p>a b c") in
+          Alcotest.(check (list fragment)) "a unit a line" [ ("a", 8., 28.2); ("b", 8., 40.2); ("c", 8., 52.2) ] (fragments p));
+      Testo.create "list markers" (fun () ->
+          let p = page "<ul><li>a<li>b</ul><ol><li>x<li>y</ol>" in
+          let markers = List.map (fun (b : Html_layout.box) -> b.marker) (blocks "li" p) in
+          Alcotest.(check (list string))
+            "bullets, then numbers" [ "bullet"; "bullet"; "1"; "2" ]
+            (List.map (function Some Html_layout.Bullet -> "bullet" | Some (Number n) -> string_of_int n | None -> "none") markers);
+          Alcotest.(check (option near)) "at the first line's baseline" (Some 28.2) (Html_layout.first_baseline (List.hd (blocks "li" p))));
       Testo.create "centred" (fun () ->
           Alcotest.(check (list fragment))
             "center: the slack halved" [ ("ab", 90., 17.) ]

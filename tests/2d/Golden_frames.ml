@@ -84,8 +84,8 @@ let scenes : Testutil_golden.scene list =
      * tiny_ircd happens to run on this computer during the tests) *)
     ("apps/internet/software/TinyIRC", "", 5);
     (* claude: 1993: the built-in home page (about:home), drawn: looks,
-     * blocks, one line a paragraph for now (plan_browser_teaching.md,
-     * phase 3) *)
+     * blocks, lines broken at the width, a list's bullets
+     * (plan_browser_teaching.md, phases 3 and 4) *)
     ("apps/internet/software/TinyMosaic", "", 5);
     (* 1984: -fixed-time's 1000 seconds after the epoch, in UTC (the
      * offset is 0 under -fixed-time), 12:16:40 AM on the first day of
@@ -1504,6 +1504,12 @@ let flagged : Testutil_golden.flagged list =
      * the 1991 Line Mode Browser showed it (Line_mode) *)
     ("apps/internet/software/TinyMosaic", "tree", 5, [ "view=tree" ]);
     ("apps/internet/software/TinyMosaic", "line", 5, [ "view=line" ]);
+    (* claude: the history page on a page 600 wide, its lines broken
+     * greedily, then by Knuth and Plass (wrap=pretty): the Line Mode
+     * Browser's entry set on three even lines instead of a full one
+     * and a loose one *)
+    ("apps/internet/software/TinyMosaic", "narrow", 5, [ "url=about:history"; "width=600" ]);
+    ("apps/internet/software/TinyMosaic", "pretty", 5, [ "url=about:history"; "width=600"; "wrap=pretty" ]);
     (* claude: a world of HtDP's first universe, its universe not there
      * (port 1): resting, and saying why *)
     ("examples/software/UniverseBall", "refused", 5, [ "port=1" ]);

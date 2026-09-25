@@ -36,7 +36,7 @@ something changes.
 | `web/html/Dtd`, `Dom`, `Html_tree` | tokens to a tree, tag soup repaired | §4 | done |
 | `web/html/Line_mode` | the tree as the 1991 Line Mode Browser showed it | §8 | done |
 | `web/style/Looks` | the tree's looks, Mosaic's table | §5 | done |
-| `web/layout/Html_layout` | blocks and lines: boxes with positions | §6, §7 | blocks and baselines done; lines broken at the width in phase 4 |
+| `web/layout/Html_layout` | blocks and lines: boxes with positions | §6, §7 | done (greedy lines; Knuth-Plass plugged in by the app) |
 | `web/layout/Hit` | a point to a link | §8 | planned |
 | `apps/internet/TinyMosaic` | the chrome, painting, the history | §8, §9 | planned |
 | `web/style/Css` | the cascade | §10 | planned |
@@ -253,7 +253,7 @@ Inside a block, the **inline** content -- text, `b`, `a`, `img` -- is
 cut into words, each word measured in its look, and the words poured
 into **line boxes** as wide as the block. Worked example, with the
 tests' metrics (a character as wide as its size, a space too), a page
-208 wide, so a paragraph 192 (phase 4's test, planned):
+208 wide, so a paragraph 192 (`Html_layout`'s test):
 
 ```
 <p>Soup of the day and salads</p>
@@ -268,6 +268,21 @@ fill the line, break when the next word does not fit. `wrap=pretty`
 switches to `Linebreak.optimal`, Knuth and Plass's paragraph-wide
 choice (`Linebreak.mli`'s worked example) -- which CSS adopted in 2023
 as `text-wrap: pretty`, forty-two years after their paper.
+
+Two things a browser's breaking has that a word processor's does not.
+What is broken is not a word but a *unit*, the words stuck together
+with no space between them (a link's "home" and the "." after it; the
+two halves of `<b>bo</b>ld`), so the breaker sees units. And the text
+is **ragged right**, not justified: a line's spaces may be left wide
+(the line ends short) but never squeezed (it would end past the
+edge), so TinyMosaic's `wrap=pretty` gives Knuth and Plass a stretch
+and no shrink. Their breaker then counts a line with no space and room
+to spare as infinitely bad, and so avoids the loose line greedy
+leaves before a long word -- a URL in the text, a long entry in a
+list: the history page at 600 wide shows it (`TinyMosaic_narrow.png`
+beside `TinyMosaic_pretty.png`). The last line is free, as in TeX; CSS's
+`pretty` mostly cares for that last line (no word alone on it), an
+exercise.
 
 On a line, words of different sizes share a **baseline**: each word
 has an *ascent* (above the baseline, 0.8 of its size here) and a

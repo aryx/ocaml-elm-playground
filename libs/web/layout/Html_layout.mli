@@ -48,9 +48,34 @@
             line 58.8..70.8, baseline 58.8 + 9 = 67.8
      body   ends at 70.8 + 11.2 (the p's margin) = 82, the page at 90
 
-   Lines are broken only where the page says (<br>, a newline in
-   <pre>) so far: a paragraph is one line, too long for the window and
-   clipped by it. Breaking at the width is phase 4's (Linebreak).
+   **Lines are broken** where the page says (<br>, a newline in <pre>)
+   and where the next word does not fit. What is broken is not a word
+   but a *unit*: the words stuck together with no space between them,
+   which a break must not separate ("home" in a link and the "." after
+   it; "bo" and "ld" in <b>bo</b>ld). How the units are shared out
+   between lines is a [breaker]'s choice:
+
+     greedy    fill a line, break before the unit that does not fit
+               (a unit wider than a line gets a line of its own and
+               overflows): what every browser does, the default here
+     other     the caller's: TinyMosaic's wrap=pretty passes Knuth and
+               Plass's optimal breaker (appkits/typeset's Linebreak),
+               the paragraph scored whole -- CSS's text-wrap: pretty
+
+   Worked example (the tests'), the same metrics, a page 208 wide, so
+   the paragraph 192:
+
+     <p>Soup of the day and salads</p>
+       line 1 "Soup of the day and"   x 8..198   40+10+20+10+30+10+30+10+30 = 190
+       line 2 "salads"                x 8..68    190 + 10 + 60 = 260 > 192: broken
+       (baselines 28.2 and 40.2)
+
+   <pre>'s lines are never broken, and overflow.
+
+   **A list item's marker** -- a bullet, or its number in an <ol> -- is
+   the item box's [marker], drawn by the app to the left of the item's
+   first line ([first_baseline]), in the indent its list made (CSS's
+   "list-style-position: outside").
 
    Reference: W3C, CSS 2.1, chapter 8 (the box model, collapsing
    margins), 9.2 (block and inline boxes, anonymous block boxes) and
@@ -76,6 +101,9 @@ type kind =
   | Anonymous (* the lines of a run of inline content *)
   | Rule of Dom.element (* hr *)
 
+(* a list item's: a bullet (ul, dir, menu), or its number (ol) *)
+type marker = Bullet | Number of int
+
 type box = {
   kind : kind;
   x : float;
@@ -84,11 +112,27 @@ type box = {
   height : float;
   children : box list; (* its blocks, in order *)
   lines : line list; (* an Anonymous box's *)
+  marker : marker option; (* a list item's *)
 }
 
-(* [layout metrics ~root ~width html]: the tree laid out on a page
- * [width] wide, its root's look [root] *)
-val layout : metrics -> root:Looks.t -> width:float -> Dom.element -> box
+(* a unit to set: the space before it (in its first word's look) and
+ * its width *)
+type unit_ = { space : float; width : float }
+
+(* [breaker ~measure units]: the lines, each the indexes of its first
+ * and last unit, in order, together all the units *)
+type breaker = measure:float -> unit_ array -> (int * int) list
+
+(* fill each line, break before what does not fit *)
+val greedy : breaker
+
+(* [layout metrics ?breaker ~root ~width html]: the tree laid out on a
+ * page [width] wide, its root's look [root], its lines broken by
+ * [breaker] (greedy) *)
+val layout : metrics -> ?breaker:breaker -> root:Looks.t -> width:float -> Dom.element -> box
+
+(* the baseline of a box's first line, if it has one *)
+val first_baseline : box -> float option
 
 (* every fragment of the page, in document order *)
 val fragments : box -> fragment list

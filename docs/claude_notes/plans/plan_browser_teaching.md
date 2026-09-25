@@ -467,7 +467,24 @@ chrome drawn over what overflows. Golden frames: `TinyMosaic.png` the
 page, `_source` the old default (pixel-identical). Seen: a link's
 underline stops at the spaces between its words (Mosaic's ran on);
 the first paragraph runs off the window, as planned. Next: phase 4,
-lines broken at the width, lists' markers.
+lines broken at the width, lists' markers. Committed with phases 0-2
+as 07c69f6.
+
+**Phase 4 done** (2026-09-25): lines broken at the width. What is
+broken is a *unit* (words stuck together: a link and its full stop);
+`Html_layout` takes a `breaker` (`greedy`, its own, each unit with its
+own space's width, the default), since `libs/` must not depend on
+`appkits/typeset` -- TinyMosaic passes `Linebreak.optimal` for
+`wrap=pretty` (key `w`), ragged right: a stretch, no shrink. List items
+get a `marker` (a bullet, or their number in an `<ol>`), drawn in the
+list's indent at the item's `first_baseline`. The reflow: `[` and `]`
+(flag `width=`) narrow and widen the page, the tree laid out again --
+the playground's screen is 1000 wide whatever the window, so a real
+window's resize is not what drives it. 5 more tests (49 in all). The
+history page got the first web page's URL in its text, the long word
+before which greedy leaves a loose line; golden frames `_narrow` and
+`_pretty` (the history page at 600, greedy and pretty) show the
+difference. Next: phase 5, links clicked and the history.
 
 Written as the specification, with
 [`notes_browser.md`](../tutorials/notes_browser.md) and
