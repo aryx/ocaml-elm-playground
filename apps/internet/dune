@@ -26,7 +26,7 @@
 ; golden frames something deterministic)
 (rule
  (targets Site_pages.ml)
- (deps site/home.html site/history.html)
+ (deps site/home.html site/history.html site/form.html)
  (action
   (with-stdout-to
    %{targets}
@@ -37,6 +37,9 @@
     (echo "|}\n")
     (echo "let history = {|")
     (cat site/history.html)
+    (echo "|}\n")
+    (echo "let form = {|")
+    (cat site/form.html)
     (echo "|}\n")))))
 
 ; claude: its pictures, bytes that are not text, embedded escaped

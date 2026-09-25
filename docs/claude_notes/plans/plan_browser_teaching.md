@@ -564,6 +564,35 @@ frame; they keep the last 32 now. The home page's pictures moved its
 links down: the hover/click/back scripts point at the new place.
 Deferred to TinyNetscape as planned: `align=left/right`, `bgcolor`.
 XBM (Mosaic's other inline format) not done. Next: phase 9, forms.
+Committed as 6631901.
+
+**Phase 9 done** (2026-09-25): fill-out forms, both ends.
+`networking/protocols/Urlencoded` (a form's fields as one string, both
+ways, the notes' example), `web/html/Forms` (the controls of a page,
+their initial values, HTML's successful controls, Mosaic's "Submit
+Query"; it does not encode, so `web/` still depends on no other
+library); `Html_layout`: a control a box in the line (`fragment.control`,
+its size by its kind; the internal `Word` carries a picture or a
+control); `Hit.fragment_at`. POST through the stack: `Http.post`,
+`request_to_string ?body`, `Http_client.prepare ?post`,
+`Http_request.start ?post` (a redirection makes it a GET), `Cmd.Http_post`,
+`Playground.Http.post`, curl's and the XMLHttpRequest's. `tiny_httpd`:
+CGI, `/cgi-bin/NAME` runs root/cgi-bin/NAME (the request in its
+environment and on its standard input, its output the answer, a
+Status: header honoured); `site/cgi-bin/echo`, a shell script. Tests:
+4 (Urlencoded), 5 (Forms), 1 (layout), 1 (Hit), 1 (a POST over
+sockets, and 303 then GET); 64 in `libs/web/tests/`. TinyMosaic: the
+controls drawn in Motif's look every frame (not in the page's glyphs
+made once: their values change as you type), their values kept with
+the page, a focus taking the keys (Return sends, Escape gives up),
+radio buttons exclusive in their form, a select cycling its options
+on a click (Motif popped a menu), reset; `about:form` (site/form.html),
+answered by `about:echo`; tried by hand against `tiny_httpd`, its CGI
+answering a POST. The Title and URL fields now drawn in cells, cut at
+their end (a long URL spilled over the label). Golden frames `_form`,
+`_get`, `_post`; every other TinyMosaic frame changed with the fields.
+Next: phase 11 (the docs, and the web build tried in a browser), then
+TinyMosaic is done.
 
 Written as the specification, with
 [`notes_browser.md`](../tutorials/notes_browser.md) and

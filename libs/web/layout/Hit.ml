@@ -33,6 +33,19 @@ let rec link_at (b : Html_layout.box) ~(x : float) ~(y : float) : string option 
     in
     match in_lines with Some _ -> in_lines | None -> List.find_map (fun c -> link_at c ~x ~y) b.children
 
+let rec fragment_at (b : Html_layout.box) ~(x : float) ~(y : float) : Html_layout.fragment option =
+  if y < b.y || y > b.y +. b.height then None
+  else
+    let in_lines =
+      List.find_map
+        (fun (l : Html_layout.line) ->
+          if y >= l.top && y <= l.top +. l.height then
+            List.find_opt (fun (f : Html_layout.fragment) -> x >= f.x && x <= f.x +. f.width) l.fragments
+          else None)
+        b.lines
+    in
+    match in_lines with Some _ -> in_lines | None -> List.find_map (fun c -> fragment_at c ~x ~y) b.children
+
 let rec anchor (b : Html_layout.box) (name : string) : float option =
   match b.kind with
   | Block e when Dom.attribute "id" e = Some name -> Some b.y

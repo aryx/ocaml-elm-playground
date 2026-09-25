@@ -12,7 +12,20 @@
 
 type metrics = Looks.t -> string -> float
 type picture = { src : string; height : float; middle : bool }
-type fragment = { text : string; look : Looks.t; x : float; width : float; baseline : float; picture : picture option }
+type control = { element : Dom.element; control_height : float }
+
+type fragment = {
+  text : string;
+  look : Looks.t;
+  x : float;
+  width : float;
+  baseline : float;
+  picture : picture option;
+  control : control option;
+}
+
+(* what a word may be instead of text: a box of its own size *)
+type boxed = Pic of picture | Ctl of control
 type line = { top : float; height : float; baseline : float; fragments : fragment list; anchors : string list }
 type kind = Block of Dom.element | Anonymous | Rule of Dom.element
 type marker = Bullet | Number of int
@@ -60,16 +73,16 @@ let greedy : breaker =
 
 (* what inline content is cut into: words, the breaks the page asks
  * for (<br>, a newline in <pre>), and the places a #fragment can name
- * (<a name=...>, an id=), of no width; a word may be an image, its
- * width then the picture's *)
+ * (<a name=...>, an id=), of no width; a word may be an image or a
+ * form's control, its width then the box's *)
 type item =
-  | Word of { text : string; look : Looks.t; space_before : bool; picture : (picture * float) option }
+  | Word of { text : string; look : Looks.t; space_before : bool; boxed : (boxed * float) option }
   | Break
   | Anchor of string
 
-(* a word's width: its text's in its look, or its picture's *)
-let word_width (metrics : metrics) (look : Looks.t) (text : string) (picture : (picture * float) option) : float =
-  match picture with Some (_, w) -> w | None -> metrics look text
+(* a word's width: its text's in its look, or its box's *)
+let word_width (metrics : metrics) (look : Looks.t) (text : string) (boxed : (boxed * float) option) : float =
+  match boxed with Some (_, w) -> w | None -> metrics look text
 
 (* a line's words placed: x from the line's start, then shifted by
  * the alignment; the line as tall as its tallest look needs *)
@@ -78,10 +91,10 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
     List.fold_left
       (fun (placed, pen) item ->
         match item with
-        | Word { text; look; space_before; picture } ->
+        | Word { text; look; space_before; boxed } ->
             let pen = if space_before then pen +. metrics look " " else pen in
-            let w = word_width metrics look text picture in
-            ((text, look, pen, w, Option.map fst picture) :: placed, pen +. w)
+            let w = word_width metrics look text boxed in
+            ((text, look, pen, w, Option.map fst boxed) :: placed, pen +. w)
         | Break | Anchor _ -> (placed, pen))
       ([], 0.) words
   in
@@ -98,11 +111,13 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
   let below (l : Looks.t) = (0.2 *. l.size) +. (((Looks.leading -. 1.) *. l.size) /. 2.) in
   (* each word's room above and below the baseline: a text's by its
    * look, a picture's by its height (no leading), its bottom or its
-   * middle on the baseline *)
-  let extent (look, picture) =
-    match picture with
-    | Some { height; middle = false; _ } -> (height, 0.)
-    | Some { height; middle = true; _ } -> (height /. 2., height /. 2.)
+   * middle on the baseline; a control's, its bottom a quarter of it
+   * below *)
+  let extent (look, boxed) =
+    match boxed with
+    | Some (Pic { height; middle = false; _ }) -> (height, 0.)
+    | Some (Pic { height; middle = true; _ }) -> (height /. 2., height /. 2.)
+    | Some (Ctl { control_height = h; _ }) -> (0.75 *. h, 0.25 *. h)
     | None -> (above look, below look)
   in
   let extents =
@@ -116,7 +131,12 @@ let set_line (metrics : metrics) (block : Looks.t) ~(x : float) ~(width : float)
     height = up +. down;
     baseline;
     fragments =
-      List.map (fun (text, look, pen, w, picture) -> { text; look; x = x +. shift +. pen; width = w; baseline; picture }) placed;
+      List.map
+        (fun (text, look, pen, w, boxed) ->
+          let picture = match boxed with Some (Pic p) -> Some p | _ -> None in
+          let control = match boxed with Some (Ctl c) -> Some c | _ -> None in
+          { text; look; x = x +. shift +. pen; width = w; baseline; picture; control })
+        placed;
     anchors = List.filter_map (fun item -> match item with Anchor name -> Some name | _ -> None) words;
   }
 
@@ -161,8 +181,8 @@ let lines_of (metrics : metrics) (breaker : breaker) (block : Looks.t) ~(x : flo
         List.fold_left
           (fun (space, width) item ->
             match item with
-            | Word { text; look; space_before; picture } ->
-                let w = word_width metrics look text picture in
+            | Word { text; look; space_before; boxed } ->
+                let w = word_width metrics look text boxed in
                 if width = 0. && space = 0. && space_before then (metrics look " ", w) else (space, width +. w)
             | Break | Anchor _ -> (space, width))
           (0., 0.) u
@@ -212,11 +232,11 @@ type ctx = {
 
 let is_space (c : char) : bool = c = ' ' || c = '\n' || c = '\t' || c = '\r'
 
-let add_word ?picture (ctx : ctx) (look : Looks.t) (text : string) : unit =
+let add_word ?boxed (ctx : ctx) (look : Looks.t) (text : string) : unit =
   (* a word before this one on the line, anchors (of no width) skipped *)
   let rec after_word items = match items with Word _ :: _ -> true | Anchor _ :: rest -> after_word rest | _ -> false in
   let after_word = after_word ctx.items in
-  ctx.items <- Word { text; look; space_before = ctx.space && after_word; picture } :: ctx.items;
+  ctx.items <- Word { text; look; space_before = ctx.space && after_word; boxed } :: ctx.items;
   ctx.space <- false
 
 (* text outside <pre>: its runs of spaces are one space, between words *)
@@ -241,8 +261,30 @@ let add_pre_text (ctx : ctx) (look : Looks.t) (s : string) : unit =
   List.iteri
     (fun i part ->
       if i > 0 then ctx.items <- Break :: ctx.items;
-      if part <> "" then ctx.items <- Word { text = part; look; space_before = false; picture = None } :: ctx.items)
+      if part <> "" then ctx.items <- Word { text = part; look; space_before = false; boxed = None } :: ctx.items)
     (String.split_on_char '\n' s)
+
+(* a form's control's size, in the look it is in, by its kind; none for
+ * a hidden one, or what is not a control *)
+let control_size (metrics : metrics) (l : Looks.t) (e : Dom.element) : (float * float) option =
+  let number name default =
+    match Option.bind (Dom.attribute name e) int_of_string_opt with Some n when n > 0 -> float_of_int n | _ -> default
+  in
+  (* a fixed-width character's cell: a field's text is set on one *)
+  let cell = 0.6 *. l.size in
+  let button label = Some (metrics l label +. (1.4 *. l.size), 1.7 *. l.size) in
+  match Forms.control e with
+  | None -> None
+  | Some c -> (
+      match c.kind with
+      | Hidden -> None
+      | Text | Password -> Some ((number "size" 20. *. cell) +. 8., 1.6 *. l.size)
+      | Checkbox | Radio -> Some (0.9 *. l.size, 0.9 *. l.size)
+      | Submit | Reset -> button (Forms.label c)
+      | Select opts ->
+          let widest = List.fold_left (fun w (label, _) -> Float.max w (metrics l label)) 0. opts in
+          Some (widest +. (2.2 *. l.size), 1.7 *. l.size)
+      | Textarea -> Some ((number "cols" 20. *. cell) +. 8., (number "rows" 2. *. Looks.leading *. l.size) +. 8.))
 
 (* the inline content gathered, set on lines in an anonymous box *)
 let flush_inline (ctx : ctx) : unit =
@@ -336,8 +378,12 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
               match size with
               | Some (w, h) ->
                   let middle = Option.map String.lowercase_ascii (Dom.attribute "align" e) = Some "middle" in
-                  add_word ctx l "" ~picture:({ src; height = h; middle }, w)
+                  add_word ctx l "" ~boxed:(Pic { src; height = h; middle }, w)
               | None -> add_word ctx l (match Dom.attribute "alt" e with Some alt -> alt | None -> "[IMAGE]"))
+          | "input" | "select" | "textarea" -> (
+              match control_size ctx.metrics l e with
+              | Some (w, h) -> add_word ctx l "" ~boxed:(Ctl { element = e; control_height = h }, w)
+              | None -> ())
           | _ -> List.iter (walk ctx l) e.children)
       | Block | Rule ->
           flush_inline ctx;

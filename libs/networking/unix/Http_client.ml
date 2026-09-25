@@ -12,7 +12,7 @@
 
 let ( let* ) = Result.bind
 
-let prepare (url : Url.t) : (string * int * string, string) result =
+let prepare ?post (url : Url.t) : (string * int * string, string) result =
   match (url.scheme, url.authority, Url.port url) with
   | Some "http", Some (a : Url.authority), Some port ->
       (* the Host header says the port only when it isn't the default *)
@@ -21,7 +21,13 @@ let prepare (url : Url.t) : (string * int * string, string) result =
       let host =
         if String.starts_with ~prefix:"[" a.host then String.sub a.host 1 (String.length a.host - 2) else a.host
       in
-      Ok (host, port, Http.request_to_string (Http.get ~host:host_header (Url.request_target url)))
+      let target = Url.request_target url in
+      let bytes =
+        match post with
+        | None -> Http.request_to_string (Http.get ~host:host_header target)
+        | Some (content_type, body) -> Http.request_to_string ~body (Http.post ~host:host_header ~content_type ~body target)
+      in
+      Ok (host, port, bytes)
   | Some "http", _, _ -> Error (Printf.sprintf "%s: no host" (Url.to_string url))
   | Some "https", _, _ ->
       Error (Printf.sprintf "%s: https (HTTP inside TLS) is not ours yet, only http://" (Url.to_string url))

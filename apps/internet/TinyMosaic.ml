@@ -17,7 +17,7 @@
  *
  *   bytes -> text -> tokens -> tree -> looks -> boxes -> shapes
  *
- * All of them now, and back: a click (phases 0 to 7). A page is
+ * All of them now, and back: a click (phases 0 to 9). A page is
  * fetched (a built-in about: page, or http:// through the platform's
  * Http.get), its bytes decoded into text -- the encoding decided from
  * the header, a <meta>, or a guess (Charset) -- cut into tokens
@@ -49,6 +49,16 @@
  * picture in a link has a border of the link's colour; one that could
  * not be had is NCSA's broken image. The pictures are kept, for every
  * page that shows them again.
+ *
+ * And Mosaic 2.0's fill-out forms (1993): text fields, passwords,
+ * checkboxes, radio buttons, selects, textareas, submit and reset
+ * buttons, drawn in Motif's look (web's Forms says what they are and
+ * what a submission sends); a click in a field gives it the keys,
+ * Return or a button sends the form, encoded (networking's
+ * Urlencoded), GET as the URL's query, POST as the body
+ * (Playground.Http.post). The built-in form.html is answered by the
+ * browser itself, about:echo, showing what a server would receive;
+ * from tiny_httpd, a CGI program, cgi-bin/echo, answers.
  *
  * Each stage has its view, switched with a key:
  *
@@ -121,6 +131,11 @@ type page = {
   (* the page drawn: each line's glyphs, made once, with where the line
    * is (its top and bottom), so that a frame shows the visible ones *)
   drawn : (float * float * shape) list;
+  forms : Forms.form list;
+  (* the form controls' values as typed and clicked, by element (==):
+   * the ones not here are as the page gave them; kept with the page,
+   * so that Back gives a half-filled form back half filled *)
+  values : (Dom.element * Forms.value) list;
 }
 
 (* a page that could not be fetched is shown too: an error page, of
@@ -154,6 +169,7 @@ type model = {
   queue : string list; (* the page's pictures still to fetch, in order *)
   fetching : string option; (* the one being fetched: one at a time, Mosaic's way *)
   mouse : float * float;
+  focus : Dom.element option; (* the text field typed into *)
   outline : bool; (* the layout's boxes drawn over the page *)
   time : float; (* the globe's *)
 }
@@ -280,9 +296,11 @@ let glyphs ?(visited = fun (_ : string) -> false) ?(picture_of = fun (_ : string
   let (r, g, b) = match f.look.link with Some href when visited href -> visited_purple | _ -> f.look.color in
   let color = rgb r g b in
   let baseline = -.f.baseline in
-  match f.picture with
-  | Some pic -> picture_shapes (picture_of pic.src) color f pic
-  | None ->
+  match (f.picture, f.control) with
+  | Some pic, _ -> picture_shapes (picture_of pic.src) color f pic
+  (* a form's control: drawn with its value every frame (control_shapes) *)
+  | None, Some _ -> []
+  | None, None ->
   if f.look.monospace then
     let cell = cell_of f.look in
     characters f.text
@@ -332,7 +350,7 @@ let rec draw (visited : string -> bool) (picture_of : string -> picture option) 
         let width = metrics look text in
         [ ( baseline -. 12.,
             baseline,
-            group (glyphs { text; look; x = b.x -. 6. -. width; width; baseline; picture = None }) ) ]
+            group (glyphs { text; look; x = b.x -. 6. -. width; width; baseline; picture = None; control = None }) ) ]
     | _ -> []
   in
   lines @ rule @ marker @ List.concat_map (draw visited picture_of) b.children
@@ -355,6 +373,9 @@ let about (name : string) : (string * string) option =
   match name with
   | "home" -> Some (Site_pages.home, "text/html; charset=utf-8")
   | "history" -> Some (Site_pages.history, "text/html; charset=utf-8")
+  (* the home page's link is relative, form.html, so that it is right
+   * from tiny_httpd too *)
+  | "form" | "form.html" -> Some (Site_pages.form, "text/html; charset=utf-8")
   | "picture.gif" -> Some (Site_pictures.picture_gif, "image/gif")
   | "picture.png" -> Some (Site_pictures.picture_png, "image/png")
   | "picture.jpg" -> Some (Site_pictures.picture_jpg, "image/jpeg")
@@ -464,7 +485,106 @@ let page_of (m : model) (url : string) (status : int) (content_type : string opt
     title;
     layout;
     drawn;
+    forms = Forms.forms tree;
+    values = [];
   }
+
+(*****************************************************************************)
+(* Forms: the controls drawn *)
+(*****************************************************************************)
+
+(* a control's value now: as typed and clicked, else as the page gave it *)
+let value_of (p : page) (e : Dom.element) : Forms.value =
+  match List.find_opt (fun (e', _) -> e' == e) p.values with
+  | Some (_, v) -> v
+  | None -> ( match Forms.control e with Some c -> c.initial | None -> { text = ""; checked = false; selected = 0 })
+
+let with_value (p : page) (e : Dom.element) (v : Forms.value) : page =
+  { p with values = (e, v) :: List.filter (fun (e', _) -> e' != e) p.values }
+
+(* Motif's two bevels: a raised thing (a button) lit from the top left,
+ * a sunken one (a field) the other way *)
+let raised (x : float) (top : float) (w : float) (h : float) : shape list =
+  [ rectangle (rgb 205 205 205) w h |> move (x +. (w /. 2.)) (-.(top +. (h /. 2.)));
+    frame (rgb 120 120 120) x top w h;
+    frame (rgb 240 240 240) x top (w -. 1.) (h -. 1.) ]
+
+let sunken (x : float) (top : float) (w : float) (h : float) : shape list =
+  [ rectangle (rgb 255 255 255) w h |> move (x +. (w /. 2.)) (-.(top +. (h /. 2.)));
+    frame (rgb 240 240 240) x top w h;
+    frame (rgb 120 120 120) x top (w -. 1.) (h -. 1.) ]
+
+(* text in a control: black, plain, fixed-width if [cells] *)
+let text_shapes ?(cells = false) (look : Looks.t) (text : string) ~(x : float) ~(baseline : float) : shape list =
+  let look = { look with color = (0, 0, 0); underline = false; link = None; bold = false; italic = false; monospace = cells } in
+  glyphs { text; look; x; width = metrics look text; baseline; picture = None; control = None }
+
+(* the last characters of [s] that fit in [n] cells *)
+let tail (n : int) (s : string) : string =
+  let cs = characters s in
+  let k = List.length cs in
+  if k <= n then s else String.concat "" (List.filteri (fun i _ -> i >= k - n) cs)
+
+(* a control, with its value, in the page's coordinates turned over;
+ * [focused] draws the caret *)
+let control_shapes (p : page) ~(focused : bool) (f : Html_layout.fragment) (c : Html_layout.control) : shape list =
+  match Forms.control c.element with
+  | None -> []
+  | Some control -> (
+      let v = value_of p c.element in
+      let w = f.width and h = c.control_height and size = f.look.size in
+      let top = f.baseline -. (0.75 *. h) and cell = cell_of f.look in
+      let caret x baseline = if focused then [ rectangle (rgb 0 0 0) 1.5 size |> move x (-.(baseline -. (0.35 *. size))) ] else [] in
+      match control.kind with
+      | Text | Password ->
+          let shown = if control.kind = Password then String.make (List.length (characters v.text)) '*' else v.text in
+          let shown = tail (int_of_float ((w -. 8.) /. cell) - 1) shown in
+          sunken f.x top w h
+          @ text_shapes ~cells:true f.look shown ~x:(f.x +. 4.) ~baseline:f.baseline
+          @ caret (f.x +. 4. +. (cell *. float_of_int (List.length (characters shown)))) f.baseline
+      | Checkbox ->
+          (* Motif's toggle: a square, sunken and filled when on *)
+          (if v.checked then sunken f.x top w h @ [ rectangle (rgb 60 60 60) (w *. 0.5) (h *. 0.5) |> move (f.x +. (w /. 2.)) (-.(top +. (h /. 2.))) ]
+           else raised f.x top w h)
+      | Radio ->
+          (* Motif's radio button: a diamond, filled when on *)
+          let center = (f.x +. (w /. 2.), -.(top +. (h /. 2.))) in
+          let diamond color side = rectangle color side side |> rotate 45. |> move (fst center) (snd center) in
+          [ diamond (rgb 120 120 120) (w *. 0.72); diamond (if v.checked then rgb 60 60 60 else rgb 225 225 225) (w *. 0.5) ]
+      | Submit | Reset ->
+          let label = Forms.label control in
+          raised f.x top w h @ text_shapes f.look label ~x:(f.x +. ((w -. metrics f.look label) /. 2.)) ~baseline:f.baseline
+      | Select opts ->
+          (* Motif's option menu: the choice, and its little bar *)
+          let label = match List.nth_opt opts v.selected with Some (l, _) -> l | None -> "" in
+          raised f.x top w h
+          @ text_shapes f.look label ~x:(f.x +. (0.4 *. size)) ~baseline:f.baseline
+          @ raised (f.x +. w -. (1.3 *. size)) (top +. (h /. 2.) -. (0.2 *. size)) (0.9 *. size) (0.4 *. size)
+      | Textarea ->
+          let rows = max 1 (int_of_float ((h -. 8.) /. (Looks.leading *. size))) in
+          let lines = String.split_on_char '\n' v.text in
+          let n = List.length lines in
+          (* the last rows when typing into it, else the first *)
+          let shown = List.filteri (fun i _ -> if focused then i >= n - rows else i < rows) lines in
+          let baseline i = top +. 4. +. (0.95 *. size) +. (float_of_int i *. Looks.leading *. size) in
+          let columns = int_of_float ((w -. 8.) /. cell) in
+          sunken f.x top w h
+          @ List.concat (List.mapi (fun i line -> text_shapes ~cells:true f.look (tail columns line) ~x:(f.x +. 4.) ~baseline:(baseline i)) shown)
+          @ (match List.rev shown with
+            | last :: _ ->
+                caret (f.x +. 4. +. (cell *. float_of_int (List.length (characters (tail columns last))))) (baseline (List.length shown - 1))
+            | [] -> [])
+      | Hidden -> [])
+
+(* every control of the page, with where it is *)
+let controls_drawn (p : page) (focus : Dom.element option) : (float * float * shape) list =
+  Html_layout.fragments p.layout
+  |> List.filter_map (fun (f : Html_layout.fragment) ->
+         match f.control with
+         | Some c ->
+             let focused = match focus with Some e -> e == c.element | None -> false in
+             Some (f.baseline -. c.control_height, f.baseline +. c.control_height, group (control_shapes p ~focused f c))
+         | None -> None)
 
 (*****************************************************************************)
 (* Scrolling *)
@@ -577,15 +697,47 @@ let with_pictures (network : < Cap.network ; .. >) ((m, cmd) : model * msg Cmd.t
       let m, more = fetch_next network m in
       (m, Cmd.batch [ cmd; more ])
 
-let load (network : < Cap.network ; .. >) (url : string) (m : model) : model * msg Cmd.t =
-  let m = { m with scroll = 0; typed = "" } in
+(* a URL and its ?query, apart *)
+let split_query (url : string) : string * string option =
+  match String.index_opt url '?' with
+  | Some i -> (String.sub url 0 i, Some (String.sub url (i + 1) (String.length url - i - 1)))
+  | None -> (url, None)
+
+(* about:echo, the browser's own answer to a form (the built-in site's
+ * form.html asks it): what the form sent, decoded -- what a CGI
+ * program would read, tiny_httpd's cgi-bin/echo the same from a
+ * server *)
+let echo_html (meth : string) (encoded : string) : string =
+  let fields = Urlencoded.decode encoded in
+  Printf.sprintf
+    "<title>What the form sent</title><h1>What the form sent</h1><p>A %s, its fields encoded (%s):<pre>\n%s</pre><p>Decoded:<dl>%s</dl><p>Back to the form: <code>b</code>."
+    meth
+    (if meth = "GET" then "the URL's query" else "the request's body")
+    (escape_html encoded)
+    (String.concat "" (List.map (fun (n, v) -> Printf.sprintf "<dt><b>%s</b><dd>%s" (escape_html n) (escape_html v)) fields))
+
+(* the page at [url] (no #fragment), fetched with a GET, or a POST of
+ * [post] (a form's): at once for an about: page, else a command; the
+ * history untouched (Reload, Back and Forward use it) *)
+let load ?post (network : < Cap.network ; .. >) (url : string) (m : model) : model * msg Cmd.t =
+  let m = { m with scroll = 0; typed = ""; focus = None } in
   if starts_with "about:" url then
-    let name = String.sub url 6 (String.length url - 6) in
-    match about name with
-    | Some (bytes, content_type) ->
-        with_pictures network (to_fragment { m with state = Shown (page_of m url 200 (Some content_type) bytes) }, Cmd.none)
-    | None -> (failed m url "There is no such page in the built-in site.", Cmd.none)
-  else ({ m with state = Loading url }, Http.get network ~url ~expect:(Http.expect_response (fun r -> Got (url, r))))
+    let name, query = split_query (String.sub url 6 (String.length url - 6)) in
+    let shown bytes content_type =
+      with_pictures network (to_fragment { m with state = Shown (page_of m url 200 (Some content_type) bytes) }, Cmd.none)
+    in
+    match (name, post) with
+    | "echo", Some (_, body) -> shown (echo_html "POST" body) "text/html; charset=utf-8"
+    | "echo", None -> shown (echo_html "GET" (Option.value query ~default:"")) "text/html; charset=utf-8"
+    | _ -> (
+        match about name with
+        | Some (bytes, content_type) -> shown bytes content_type
+        | None -> (failed m url "There is no such page in the built-in site.", Cmd.none))
+  else
+    let expect = Http.expect_response (fun r -> Got (url, r)) in
+    match post with
+    | None -> ({ m with state = Loading url }, Http.get network ~url ~expect)
+    | Some (content_type, body) -> ({ m with state = Loading url }, Http.post network ~url ~content_type ~body ~expect)
 
 (* where the person is now, as the history keeps it *)
 let entry_of (m : model) : entry =
@@ -596,14 +748,76 @@ let entry_of (m : model) : entry =
 (* a link followed: where the person was goes on the stack behind, what
  * was ahead is forgotten (a new branch); a #fragment of the page shown
  * only scrolls *)
-let visit (network : < Cap.network ; .. >) (url : string) (m : model) : model * msg Cmd.t =
+let visit ?post (network : < Cap.network ; .. >) (url : string) (m : model) : model * msg Cmd.t =
   let target, fragment = split_fragment url in
   let m =
     { m with back = entry_of m :: m.back; forward = []; visited = (if List.mem target m.visited then m.visited else target :: m.visited); fragment }
   in
   match m.state with
-  | Shown p when fragment <> None && target = fst (split_fragment p.url) -> (to_fragment { m with state = Shown (laid_out m p) }, Cmd.none)
-  | _ -> load network target m
+  | Shown p when post = None && fragment <> None && target = fst (split_fragment p.url) ->
+      (to_fragment { m with state = Shown (laid_out m p) }, Cmd.none)
+  | _ -> load ?post network target m
+
+(*****************************************************************************)
+(* Update: forms *)
+(*****************************************************************************)
+
+(* a form submitted: its fields encoded, sent to its action -- GET, as
+ * the URL's query, POST, as the body *)
+let submit (network : < Cap.network ; .. >) (p : page) (form : Forms.form) ~(submitter : Dom.element option) (m : model) :
+    model * msg Cmd.t =
+  let fields = Urlencoded.encode (Forms.submission form ~value:(value_of p) ~submitter) in
+  let action = resolve p.url (if form.action = "" then p.url else form.action) in
+  (* the page kept in the history with what was typed in it *)
+  let m = { m with state = Shown p; focus = None } in
+  if form.post then visit ~post:("application/x-www-form-urlencoded", fields) network action m
+  else visit network (fst (split_query (fst (split_fragment action))) ^ "?" ^ fields) m
+
+(* a click on a control: a field takes the keys, a checkbox turns, a
+ * radio button is the one of its name, a select shows its next option
+ * (Motif popped a menu), a button submits or resets its form *)
+let click_control (network : < Cap.network ; .. >) (p : page) (e : Dom.element) (m : model) : model * msg Cmd.t =
+  match Forms.control e with
+  | None -> (m, Cmd.none)
+  | Some control -> (
+      let v = value_of p e in
+      let set p = ({ m with state = Shown p; focus = None }, Cmd.none) in
+      let form = Forms.form_of p.forms e in
+      match control.kind with
+      | Text | Password | Textarea -> ({ m with focus = Some e }, Cmd.none)
+      | Checkbox -> set (with_value p e { v with checked = not v.checked })
+      | Radio ->
+          (* the others of its name, in its form, unchecked *)
+          let others =
+            match form with
+            | Some f -> List.filter (fun (c : Forms.control) -> c.kind = Radio && c.name = control.name && c.element != e) f.controls
+            | None -> []
+          in
+          let p = List.fold_left (fun p (c : Forms.control) -> with_value p c.element { (value_of p c.element) with checked = false }) p others in
+          set (with_value p e { v with checked = true })
+      | Select opts -> set (with_value p e { v with selected = (v.selected + 1) mod max 1 (List.length opts) })
+      | Submit -> ( match form with Some f -> submit network p f ~submitter:(Some e) m | None -> (m, Cmd.none))
+      | Reset -> (
+          match form with
+          | Some f -> set { p with values = List.filter (fun (e', _) -> not (List.exists (fun (c : Forms.control) -> c.element == e') f.controls)) p.values }
+          | None -> (m, Cmd.none))
+      | Hidden -> (m, Cmd.none))
+
+(* a key while a field has the focus: the text typed into it, Backspace,
+ * Return (a field's form submitted, a new line in a textarea), Escape
+ * (the focus given up) *)
+let type_into (network : < Cap.network ; .. >) (p : page) (e : Dom.element) (key : string) (m : model) : model * msg Cmd.t =
+  let v = value_of p e in
+  let set text = ({ m with state = Shown (with_value p e { v with text }) }, Cmd.none) in
+  let is_textarea = match Forms.control e with Some { kind = Textarea; _ } -> true | _ -> false in
+  match key with
+  | "backspace" ->
+      let cs = characters v.text in
+      set (String.concat "" (List.filteri (fun i _ -> i < List.length cs - 1) cs))
+  | "enter" | "return" when is_textarea -> set (v.text ^ "\n")
+  | "enter" | "return" -> ( match Forms.form_of p.forms e with Some f -> submit network p f ~submitter:None m | None -> (m, Cmd.none))
+  | "escape" -> ({ m with focus = None }, Cmd.none)
+  | _ -> (m, Cmd.none)
 
 (* back to a page of the history, as it was: kept whole (its links
  * redrawn, some may be purple since), or fetched again *)
@@ -650,6 +864,17 @@ let hovered (m : model) : string option =
   | Shown p when m.view = Page && my <= area_top && my >= area_top -. area_height ->
       let y = area_top -. my +. (float_of_int m.scroll *. line_height) in
       Hit.link_at p.layout ~x:(mx -. area_left) ~y
+  | _ -> None
+
+(* the form's control under the pointer, in the page view *)
+let pointed_control (m : model) : Dom.element option =
+  let mx, my = m.mouse in
+  match m.state with
+  | Shown p when m.view = Page && my <= area_top && my >= area_top -. area_height -> (
+      let y = area_top -. my +. (float_of_int m.scroll *. line_height) in
+      match Hit.fragment_at p.layout ~x:(mx -. area_left) ~y with
+      | Some { control = Some c; _ } -> Some c.element
+      | _ -> None)
   | _ -> None
 
 (* the buttons at the bottom: their names, and whether they do something
@@ -703,6 +928,7 @@ let init (network : < Cap.network ; .. >) (flags : flags) : model * msg Cmd.t =
       visited = [ target ];
       fragment;
       mouse = (0., 0.);
+      focus = None;
       outline = false;
       pictures = [];
       queue = [];
@@ -729,13 +955,26 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
   | Wheel notches -> (scrolled (3 * int_of_float (Float.round notches)) m, Cmd.none)
   | Mouse_move (x, y) -> ({ m with mouse = (x, y) }, Cmd.none)
   | Click -> (
-      match (button_at m, hovered m, m.state) with
-      | Some "Back", _, _ -> go_back network m
-      | Some "Forward", _, _ -> go_forward network m
-      | Some "Home", _, _ -> visit network home m
-      | Some "Reload", _, _ -> load network (current_url m) m
-      | Some "Source", _, _ -> switch (if m.view = Source then Page else Source)
-      | _, Some href, Shown p -> visit network (resolve p.url href) m
+      match (button_at m, pointed_control m, hovered m, m.state) with
+      | Some "Back", _, _, _ -> go_back network m
+      | Some "Forward", _, _, _ -> go_forward network m
+      | Some "Home", _, _, _ -> visit network home m
+      | Some "Reload", _, _, _ -> load network (current_url m) m
+      | Some "Source", _, _, _ -> switch (if m.view = Source then Page else Source)
+      | _, Some e, _, Shown p -> click_control network p e m
+      | _, _, Some href, Shown p -> visit network (resolve p.url href) m
+      (* anywhere else: the field typed into gives up the keys *)
+      | _ -> ({ m with focus = None }, Cmd.none))
+  (* a field has the focus: what is typed is its, not the browser's *)
+  | Typed s when m.focus <> None -> (
+      match (m.state, m.focus) with
+      | Shown p, Some e ->
+          let v = value_of p e in
+          ({ m with state = Shown (with_value p e { v with text = v.text ^ s }) }, Cmd.none)
+      | _ -> (m, Cmd.none))
+  | Key key when m.focus <> None && not (List.mem (String.lowercase_ascii key) [ "arrowdown"; "arrowup"; "pagedown"; "pageup" ]) -> (
+      match (m.state, m.focus) with
+      | Shown p, Some e -> type_into network p e (String.lowercase_ascii key) m
       | _ -> (m, Cmd.none))
   (* the digits of a link's number, in the line-mode view *)
   | Typed s when m.view = Line && String.for_all (fun c -> c >= '0' && c <= '9') s -> ({ m with typed = m.typed ^ s }, Cmd.none)
@@ -789,11 +1028,13 @@ let monospace (x : number) (y : number) (color : color) (s : string) : shape lis
 let label (x : number) (y : number) (color : color) (s : string) : shape =
   words color s |> move (x +. (3. *. float_of_int (String.length s))) y
 
-(* a field: a sunken white box, its text from the left *)
+(* a field: a sunken white box, its text from the left, a character per
+ * cell (a long URL cut at the field's end, not spilling out of it) *)
 let field (x : number) (y : number) (width : number) (text : string) : shape list =
-  [ rectangle dark_grey (width +. 2.) 22. |> move (x +. (width /. 2.)) y;
-    rectangle white width 20. |> move (x +. (width /. 2.)) y;
-    label (x +. 4.) y ink text ]
+  let fits = int_of_float ((width -. 8.) /. cell) in
+  let text = if List.length (characters text) > fits then String.concat "" (List.filteri (fun i _ -> i < fits) (characters text)) else text in
+  [ rectangle dark_grey (width +. 2.) 22. |> move (x +. (width /. 2.)) y; rectangle white width 20. |> move (x +. (width /. 2.)) y ]
+  @ monospace (x +. 4.) y ink text
 
 (* a raised button, grey when it does nothing now *)
 let button (x : number) (y : number) (text : string) (active : bool) : shape list =
@@ -839,7 +1080,7 @@ let status (m : model) : string =
  * scroll *)
 let page_shapes (m : model) (p : page) : shape list =
   let scroll = float_of_int m.scroll *. line_height in
-  (p.drawn @ if m.outline then outlines p.layout else [])
+  (p.drawn @ controls_drawn p m.focus @ if m.outline then outlines p.layout else [])
   |> List.filter (fun (top, bottom, _) -> bottom > scroll && top < scroll +. area_height)
   |> List.map (fun (_, _, s) -> s)
   |> group

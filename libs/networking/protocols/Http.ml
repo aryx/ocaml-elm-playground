@@ -27,11 +27,16 @@ type request = { meth : string; target : string; headers : header list }
 let get ~(host : string) (target : string) : request =
   { meth = "GET"; target; headers = [ ("Host", host); ("User-Agent", "elm_playground"); ("Connection", "close") ] }
 
-let request_to_string (r : request) : string =
+let post ~(host : string) ~(content_type : string) ~(body : string) (target : string) : request =
+  let r = get ~host target in
+  { r with meth = "POST"; headers = r.headers @ [ ("Content-Type", content_type); ("Content-Length", string_of_int (String.length body)) ] }
+
+let request_to_string ?(body = "") (r : request) : string =
   let b = Buffer.create 128 in
   Buffer.add_string b (Printf.sprintf "%s %s HTTP/1.1\r\n" r.meth r.target);
   List.iter (fun (n, v) -> Buffer.add_string b (Printf.sprintf "%s: %s\r\n" n v)) r.headers;
   Buffer.add_string b "\r\n";
+  Buffer.add_string b body;
   Buffer.contents b
 
 (*****************************************************************************)

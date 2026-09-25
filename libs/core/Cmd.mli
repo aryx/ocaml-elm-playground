@@ -46,6 +46,9 @@ type 'msg t =
    * there is none: never Bad_status, which is Playground.Http's
    * reading of a response); with the authority to reach the network *)
   | Http_get of Cap.network * string * ((http_response, http_error) result -> 'msg)
+  (* a POST of a body (its content type, and it) to the URL: a form's
+   * fields (Urlencoded); answered as a GET is *)
+  | Http_post of Cap.network * string * (string * string) * ((http_response, http_error) result -> 'msg)
   | Batch of 'msg t list
 
 (* nothing to do *)

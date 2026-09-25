@@ -1515,6 +1515,8 @@ let flagged : Testutil_golden.flagged list =
      * and a loose one *)
     ("apps/internet/software/TinyMosaic", "narrow", 5, [ "url=about:history"; "width=600" ]);
     ("apps/internet/software/TinyMosaic", "pretty", 5, [ "url=about:history"; "width=600"; "wrap=pretty" ]);
+    (* claude: the built-in fill-out form, its controls in Motif's look *)
+    ("apps/internet/software/TinyMosaic", "form", 5, [ "url=about:form" ]);
     (* claude: a page that could not be fetched (port 1: nobody
      * listens), shown as a page, laid out like any *)
     ("apps/internet/software/TinyMosaic", "failed", 10, [ "url=http://127.0.0.1:1/" ]);
@@ -1551,6 +1553,19 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
     ("apps/internet/software/TinyMosaic", "click", 10, "at(-391;-161):1-20,click:3", []);
     ("apps/internet/software/TinyMosaic", "back", 14, "at(-391;-161):1-20,click:3,b:8", []);
     ("apps/internet/software/TinyMosaic", "outline", 5, "o:2", []);
+    (* claude: TinyMosaic's form filled (a name typed, the 28800 radio
+     * clicked) and sent: GET, about:echo showing the query; then the
+     * password form, sent with POST: its fields the request's body *)
+    ( "apps/internet/software/TinyMosaic",
+      "get",
+      14,
+      "at(-260;234):1-3,click:2,type(Tim Berners-Lee):4,at(-194;149):5-7,click:6,at(-449;3):8-12,click:9",
+      [ "url=about:form" ] );
+    ( "apps/internet/software/TinyMosaic",
+      "post",
+      12,
+      "at(-330;-114):1-3,click:2,type(swordfish):4,at(-190;-114):5-10,click:6",
+      [ "url=about:form" ] );
     (* claude: TinyMosaic's line-mode view, link 2 typed then Return:
      * the history page, reached by following a link *)
     ("apps/internet/software/TinyMosaic", "follow", 20, "type(2):10,return:12", [ "view=line" ]);

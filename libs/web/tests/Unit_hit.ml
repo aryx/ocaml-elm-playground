@@ -40,6 +40,13 @@ let tests =
           Alcotest.(check (option (float 1e-6))) "a block's id: the block's top" (Some 65.65) (Hit.anchor p "y");
           Alcotest.(check (option (float 1e-6))) "an anchor alone" (Some 94.9) (Hit.anchor p "top");
           Alcotest.(check (option (float 1e-6))) "none" None (Hit.anchor p "z"));
+      Testo.create "the fragment under a point: a control" (fun () ->
+          (* "Name:" 8..58, the field 68..136 *)
+          let p = Html_layout.layout metrics ~root:(Looks.root ~size:10.) ~width:400. (Html_tree.of_string "<form>Name: <input name=n size=10></form>") in
+          let at x = Option.map (fun (f : Html_layout.fragment) -> (f.text, f.control <> None)) (Hit.fragment_at p ~x ~y:15.) in
+          Alcotest.(check (option (pair string bool))) "on Name:" (Some ("Name:", false)) (at 20.);
+          Alcotest.(check (option (pair string bool))) "on the field" (Some ("", true)) (at 100.);
+          Alcotest.(check (option (pair string bool))) "in the space" None (at 63.));
       Testo.create "an anchor keeps the space around it" (fun () ->
           let p = page "a <a name=x></a>b" in
           Alcotest.(check (list (pair string (float 1e-6))))

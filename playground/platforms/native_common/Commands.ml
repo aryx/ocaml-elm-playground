@@ -25,7 +25,7 @@ let create () : 'msg t = { in_flight = [] }
  * dropped when the next status line comes), the body's bytes. *)
 let is_https (url : string) : bool = String.length url >= 8 && String.lowercase_ascii (String.sub url 0 8) = "https://"
 
-let curl_get (caps : Cap.network) (url : string) : (Cmd.http_response, Cmd.http_error) result =
+let curl_get ?post (caps : Cap.network) (url : string) : (Cmd.http_response, Cmd.http_error) result =
   match Url.parse url with
   | Ok { authority = Some a; _ } -> (
       (* the connection only once the host is granted *)
@@ -36,6 +36,12 @@ let curl_get (caps : Cap.network) (url : string) : (Cmd.http_response, Cmd.http_
         ~finally:(fun () -> Curl.cleanup conn)
         (fun () ->
           Curl.set_url conn url;
+          (match post with
+          | Some (content_type, body) ->
+              Curl.set_postfields conn body;
+              Curl.set_postfieldsize conn (String.length body);
+              Curl.set_httpheader conn [ "Content-Type: " ^ content_type ]
+          | None -> ());
           Curl.set_followlocation conn true;
           Curl.set_timeout conn 30;
           Curl.set_writefunction conn (fun s ->
@@ -70,6 +76,10 @@ let perform (t : 'msg t) (cmd : 'msg Cmd.t) : unit =
          | Msg msg -> t.in_flight <- t.in_flight @ [ Now msg ]
          | Http_get (caps, url, k) when is_https url -> t.in_flight <- t.in_flight @ [ Now (k (curl_get caps url)) ]
          | Http_get (caps, url, k) -> t.in_flight <- t.in_flight @ [ Request (caps, Http_request.start caps url, k) ]
+         | Http_post (caps, url, post, k) when is_https url ->
+             t.in_flight <- t.in_flight @ [ Now (k (curl_get ~post caps url)) ]
+         | Http_post (caps, url, post, k) ->
+             t.in_flight <- t.in_flight @ [ Request (caps, Http_request.start ~post caps url, k) ]
          | None | Batch _ -> (* to_list flattened them *) ())
 
 (* Http_request's answer as Cmd's, with the URL of the last

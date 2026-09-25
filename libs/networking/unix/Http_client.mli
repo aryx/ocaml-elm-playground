@@ -33,6 +33,7 @@
 val get : ?max_redirects:int -> ?timeout:float -> < Cap.network ; .. > -> string -> (Http.response, string) result
 
 (* what to connect to and what to send for [url]: the host for the
- * resolver, the port, the request's bytes; Error for a URL that isn't
- * http:// (the message says why) *)
-val prepare : Url.t -> (string * int * string, string) result
+ * resolver, the port, the request's bytes (a GET; a POST of [post], its
+ * content type and body); Error for a URL that isn't http:// (the
+ * message says why) *)
+val prepare : ?post:string * string -> Url.t -> (string * int * string, string) result

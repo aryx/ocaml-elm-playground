@@ -98,8 +98,13 @@ type request = {
  * User-Agent, Connection: close *)
 val get : host:string -> string -> request
 
-(* the bytes to send: the request line, the headers, the empty line *)
-val request_to_string : request -> string
+(* a POST of [body] to [target]: get's headers, and the body's
+ * Content-Type and Content-Length (a form's fields, Urlencoded) *)
+val post : host:string -> content_type:string -> body:string -> string -> request
+
+(* the bytes to send: the request line, the headers, the empty line,
+ * and the body if there is one (a POST's) *)
+val request_to_string : ?body:string -> request -> string
 
 (*****************************************************************************)
 (* The response *)

@@ -88,6 +88,12 @@
        the line: the image's 50 above the baseline (more than the
        text's 9), the text's 3 below: 53 high, its baseline 50 down
 
+   **A form's control** (Mosaic 2.0) is a box in the line too, its size
+   from its kind (Forms), in the look it is in: a text field size=
+   characters wide (20), a checkbox or a radio button 0.9 em square, a
+   button its label and some room, a select its widest option, a
+   textarea cols= by rows=; a hidden one is nothing.
+
    **A list item's marker** -- a bullet, or its number in an <ol> -- is
    the item box's [marker], drawn by the app to the left of the item's
    first line ([first_baseline]), in the indent its list made (CSS's
@@ -106,8 +112,14 @@ type metrics = Looks.t -> string -> float
  * or bottom, Mosaic's default) *)
 type picture = { src : string; height : float; middle : bool }
 
-(* a word (or, in <pre>, a line's text; or an image, [text] ""), where
- * it goes *)
+(* a form's control in a line (Forms): the page's element (the key of
+ * its value, which the browser keeps), and its height; its bottom a
+ * quarter of it below the baseline, where its own text's baseline
+ * falls *)
+type control = { element : Dom.element; control_height : float }
+
+(* a word (or, in <pre>, a line's text; or an image or a control, [text]
+ * ""), where it goes *)
 type fragment = {
   text : string;
   look : Looks.t;
@@ -115,6 +127,7 @@ type fragment = {
   width : float;
   baseline : float;
   picture : picture option;
+  control : control option;
 }
 
 (* a line, and the names on it a #fragment can scroll to: <a name=x>,

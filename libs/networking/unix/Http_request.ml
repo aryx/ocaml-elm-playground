@@ -26,6 +26,7 @@ type t = {
   mutable state : state;
   mutable url : Url.t;
   mutable request : string;
+  mutable post : (string * string) option; (* a POST's content type and body; a redirection makes it a GET *)
   mutable redirects_left : int;
   deadline : float;
 }
@@ -61,7 +62,7 @@ let rec connect (t : t) (addresses : Unix.addr_info list) : state =
 
 (* the name resolved (the one blocking call), the connection begun *)
 let begin_request (t : t) : state =
-  match Http_client.prepare t.url with
+  match Http_client.prepare ?post:t.post t.url with
   | Error why -> Done (Error (Bad_url why))
   | Ok (host, port, request) -> (
       t.request <- request;
@@ -85,6 +86,12 @@ let answered (t : t) (bytes : string) : state =
             | Ok next ->
                 t.url <- Url.resolve t.url next;
                 t.redirects_left <- t.redirects_left - 1;
+                (* the answer to a POST, elsewhere, is fetched with a
+                 * GET: 303 says so, and browsers do it for 301 and 302
+                 * too (RFC 9110 15.4.2-4) -- "POST, then redirect,
+                 * then GET", so that reloading the answer does not
+                 * post again *)
+                t.post <- None;
                 begin_request t)
       | _ -> Done (Ok response))
 
@@ -92,13 +99,14 @@ let answered (t : t) (bytes : string) : state =
 (* Entry points *)
 (*****************************************************************************)
 
-let start ?(max_redirects = 5) ?(timeout = 30.) (caps : < Cap.network ; .. >) (s : string) : t =
+let start ?(max_redirects = 5) ?(timeout = 30.) ?post (caps : < Cap.network ; .. >) (s : string) : t =
   let t =
     {
       caps = (caps :> Cap.network);
       state = Done (Error (Bad_url s));
       url = Url.{ scheme = None; authority = None; path = s; query = None; fragment = None };
       request = "";
+      post;
       redirects_left = max_redirects;
       deadline = Unix.gettimeofday () +. timeout;
     }

@@ -15,10 +15,12 @@
 let asked = ref []
 
 let handler : Http_server.handler =
- fun ~peer (r : Http.request) _body ->
+ fun ~peer (r : Http.request) body ->
   asked := (peer, r.meth, r.target) :: !asked;
   match r.target with
   | "/" -> Http.response 200 ~content_type:"text/html" "<title>Home</title>"
+  | "/echo" -> Http.response 200 ~content_type:"text/plain" (r.meth ^ " " ^ body)
+  | "/order" -> { (Http.response 303 ~content_type:"text/plain" "see /echo") with headers = [ ("Location", "/echo") ] }
   | "/old" -> { (Http.response 301 ~content_type:"text/html" "moved") with headers = [ ("Location", "/") ] }
   | _ -> Http.response 404 ~content_type:"text/html" "<h1>Not here</h1>"
 
@@ -58,6 +60,15 @@ let tests (caps : < Cap.network ; .. >) =
           Alcotest.(check int) "four requests (the redirection's second)" 4 (List.length !asked);
           Alcotest.(check bool) "from this computer" true (List.for_all (fun (peer, _, _) -> peer = "127.0.0.1") !asked);
           Alcotest.(check int) "every connection closed" 0 (Http_server.connections server));
+      Testo.create "a POST: its body sent; redirected, a GET" (fun () ->
+          let server, port = Http_server.listen caps ~bind:"127.0.0.1" ~port:0 in
+          let url path = Printf.sprintf "http://127.0.0.1:%d%s" port path in
+          let post = ("application/x-www-form-urlencoded", "q=caf%C3%A9+au+lait&lang=fr") in
+          let echoed = Http_request.start caps ~post (url "/echo") in
+          let ordered = Http_request.start caps ~post (url "/order") in
+          run server [ echoed; ordered ];
+          Alcotest.(check (pair int string)) "the body reached the server" (200, "POST q=caf%C3%A9+au+lait&lang=fr") (result echoed);
+          Alcotest.(check (pair int string)) "303: the answer fetched with a GET" (200, "GET ") (result ordered));
       Testo.create "garbage: 400, and closed" (fun () ->
           let server, port = Http_server.listen caps ~bind:"127.0.0.1" ~port:0 in
           let fd = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in

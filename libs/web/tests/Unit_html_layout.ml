@@ -128,6 +128,19 @@ let tests =
           let p = page "<p>A <img src=g width=30 height=50 align=middle>" in
           let line = List.hd (List.hd (List.hd (blocks "p" p)).children).lines in
           Alcotest.(check (pair near near)) "25 above, 25 below" (25., 50.) (line.baseline -. line.top, line.height));
+      Testo.create "a form's controls: boxes in the line" (fun () ->
+          (* the field: 10 cells of 6, and 8; the button: "Submit Query"
+           * (120) and 14; the line's top 8 (the form a block of no
+           * margin), its baseline three quarters of the button down *)
+          let p = page ~width:400. "<form>Name: <input name=n size=10> <input type=submit></form>" in
+          let placed = List.map (fun (f : Html_layout.fragment) -> (f.x, f.width)) (Html_layout.fragments p) in
+          Alcotest.(check (list (pair near near))) "Name:, the field, the button" [ (8., 50.); (68., 68.); (146., 134.) ] placed;
+          let line = List.hd (List.hd (List.hd (blocks "form" p)).children).lines in
+          Alcotest.check near "the button's 12.75 above the baseline" 20.75 line.baseline;
+          Alcotest.(check (list bool)) "the two boxes are controls" [ false; true; true ]
+            (List.map (fun (f : Html_layout.fragment) -> f.control <> None) (Html_layout.fragments p));
+          Alcotest.(check (list fragment)) "a hidden one: nothing" [ ("x", 8., 17.) ]
+            (fragments (page "<form><input type=hidden name=h value=v>x</form>")));
       Testo.create "list markers" (fun () ->
           let p = page "<ul><li>a<li>b</ul><ol><li>x<li>y</ol>" in
           let markers = List.map (fun (b : Html_layout.box) -> b.marker) (blocks "li" p) in

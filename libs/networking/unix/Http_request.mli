@@ -50,9 +50,12 @@ type error =
 
 type t
 
-(* the request started (the name resolved, the connection begun);
- * [timeout] (30 s) counts from now to the end, redirections included *)
-val start : ?max_redirects:int -> ?timeout:float -> < Cap.network ; .. > -> string -> t
+(* the request started (the name resolved, the connection begun): a GET,
+ * or a POST of [post] (its content type and body; a redirection makes
+ * it a GET, as browsers do); [timeout] (30 s) counts from now to the
+ * end, redirections included *)
+val start :
+  ?max_redirects:int -> ?timeout:float -> ?post:string * string -> < Cap.network ; .. > -> string -> t
 
 (* advance as far as possible without waiting; nothing once done *)
 val step : t -> unit

@@ -557,6 +557,10 @@ module Http = struct
   let get (caps : < Cap.network ; .. >) ~(url : string) ~(expect : 'msg expect) : 'msg Cmd.t =
     Cmd.Http_get ((caps :> Cap.network), url, expect)
 
+  let post (caps : < Cap.network ; .. >) ~(url : string) ~(content_type : string) ~(body : string)
+      ~(expect : 'msg expect) : 'msg Cmd.t =
+    Cmd.Http_post ((caps :> Cap.network), url, (content_type, body), expect)
+
   let error_to_string (e : error) : string =
     match e with
     | Bad_url url -> "bad URL: " ^ url

@@ -40,7 +40,8 @@ something changes.
 | `web/layout/Hit` | a point to a link, a name to its place | §8 | done |
 | `apps/internet/TinyMosaic` | the chrome, painting, the history | §8, §9 | done (phases 0-5) |
 | `web/style/Css` | the cascade | §10 | planned |
-| `networking/httpd/tiny_httpd`, `networking/unix/Http_server` | the other end: a server, and CGI | §11 | the server done; CGI with forms (phase 9) |
+| `networking/httpd/tiny_httpd`, `networking/unix/Http_server` | the other end: a server, and CGI | §11 | done |
+| `web/html/Forms`, `networking/Urlencoded` | a form's controls, what a submission sends, how | §11 | done |
 | `web/layout/Table_layout` | tables | §12 | planned |
 
 ## 1. From a URL to bytes
@@ -453,7 +454,25 @@ q = "café au lait", lang = "fr"
 ```
 
 (a space is `+`, a byte that is not a letter or a digit is `%` and its
-hexadecimal, and `é` is its two UTF-8 bytes).
+hexadecimal, and `é` is its two UTF-8 bytes: `Urlencoded`, its tests
+this example). Which fields a submission sends is HTML's rule of
+"successful controls" (`Forms`): each named control of the form --
+a field's text, a checkbox or radio button only if checked, a select's
+chosen option, the one button clicked and no other, never a reset.
+GET puts them in the URL (bookmarkable, and in every log on the way),
+POST in the request's body, for a password or an order; answered by a
+redirection, a POST's answer is fetched with a GET, as browsers do, so
+that reloading it does not post again.
+
+The two ends, in this repository: TinyMosaic's built-in form page is
+answered by the browser itself (`about:echo`, the fields decoded), and
+the same page from `tiny_httpd` by a CGI program, `cgi-bin/echo`, a
+shell script reading `QUERY_STRING` and its standard input. The
+controls themselves are the browser's widgets drawn in the page, laid
+out as boxes in the line like pictures; their values are the browser's,
+kept with the page (Back gives a half-filled form back half filled),
+never written into the tree -- changing the tree as you type is what
+JavaScript's DOM made browsers do.
 
 ## 12. Tables
 

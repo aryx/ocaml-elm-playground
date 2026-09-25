@@ -1013,6 +1013,12 @@ module Http : sig
 
   val get : < Cap.network ; .. > -> url:string -> expect:'msg expect -> 'msg Cmd.t
 
+  (** a POST of [body], of [content_type] (a form's fields:
+      "application/x-www-form-urlencoded", TinyMosaic); a redirection
+      answered with a GET, as browsers do *)
+  val post :
+    < Cap.network ; .. > -> url:string -> content_type:string -> body:string -> expect:'msg expect -> 'msg Cmd.t
+
   (** for showing: "status 404", "network error: ... Connection refused" *)
   val error_to_string : error -> string
 end

@@ -866,10 +866,12 @@ let parse_headers (s : string) : (string * string) list =
  * encoding is the program's to decode), its answer whatever the status
  * (Playground.Http reads it), no answer at all -- status 0: the
  * network, or a server refusing another site's page, CORS --
- * Network_error *)
-let fetch_response (url : string) (k : (Cmd.http_response, Cmd.http_error) result -> unit) : unit =
+ * Network_error. A Cmd.Http_post the same, a POST with its body (a
+ * form's fields: ASCII, which the browser sends as they are) *)
+let fetch_response ?post (url : string) (k : (Cmd.http_response, Cmd.http_error) result -> unit) : unit =
   let xhr = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "XMLHttpRequest") [||] in
-  match Ojs.call xhr "open" [| Ojs.string_to_js "GET"; Ojs.string_to_js url |] with
+  let meth = if post = None then "GET" else "POST" in
+  match Ojs.call xhr "open" [| Ojs.string_to_js meth; Ojs.string_to_js url |] with
   | exception _ -> k (Error (Cmd.Bad_url url))
   | _ ->
       Ojs.set_prop_ascii xhr "timeout" (Ojs.int_to_js 30000);
@@ -886,7 +888,11 @@ let fetch_response (url : string) (k : (Cmd.http_response, Cmd.http_error) resul
       Ojs.set_prop_ascii xhr "onerror"
         (Ojs.fun_to_js 1 (fun _ -> k (Error (Cmd.Network_error (url ^ ": no answer (network, or CORS)")))));
       Ojs.set_prop_ascii xhr "ontimeout" (Ojs.fun_to_js 1 (fun _ -> k (Error Cmd.Timeout)));
-      ignore (Ojs.call xhr "send" [||])
+      match post with
+      | Some (content_type, body) ->
+          ignore (Ojs.call xhr "setRequestHeader" [| Ojs.string_to_js "Content-Type"; Ojs.string_to_js content_type |]);
+          ignore (Ojs.call xhr "send" [| Ojs.string_to_js body |])
+      | None -> ignore (Ojs.call xhr "send" [||])
 
 (* when using the simple DOM *)
 (* claude: [network] unused: the browser downloads the images, by its
@@ -919,6 +925,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_
              (* the capability checked where the command was built; the
               * browser has its own rules (the same site, or CORS) *)
              | Http_get (_caps, url, k) -> fetch_response url (fun result -> apply_msg (k result))
+             | Http_post (_caps, url, post, k) -> fetch_response ~post url (fun result -> apply_msg (k result))
              | None | Batch _ -> ())
     in
     perform init_cmd;

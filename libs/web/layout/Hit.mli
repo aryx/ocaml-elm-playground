@@ -40,6 +40,10 @@
 (* the href of the link at a point of the page, if any *)
 val link_at : Html_layout.box -> x:float -> y:float -> string option
 
+(* the fragment at a point of the page, if any: a word, a picture, a
+ * form's control (a click on a control is the control's) *)
+val fragment_at : Html_layout.box -> x:float -> y:float -> Html_layout.fragment option
+
 (* where the page's anchor named so is (its y), if it has one: the
  * first in the page, an element's id or an <a name> *)
 val anchor : Html_layout.box -> string -> float option

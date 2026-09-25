@@ -13,6 +13,7 @@ type 'msg t =
   | None
   | Msg of 'msg
   | Http_get of Cap.network * string * ((http_response, http_error) result -> 'msg)
+  | Http_post of Cap.network * string * (string * string) * ((http_response, http_error) result -> 'msg)
   | Batch of 'msg t list
 
 let none = None
@@ -22,4 +23,4 @@ let rec to_list (cmd : 'msg t) : 'msg t list =
   match cmd with
   | None -> []
   | Batch cmds -> List.concat_map to_list cmds
-  | Msg _ | Http_get _ -> [ cmd ]
+  | Msg _ | Http_get _ | Http_post _ -> [ cmd ]
