@@ -57,6 +57,10 @@ let curl_get ?post (caps : Cap.network) (url : string) : (Cmd.http_response, Cmd
           | None -> ());
           Curl.set_followlocation conn true;
           Curl.set_timeout conn 30;
+          (* claude: who is asking, as Http's requests say it: sites
+           * refuse a request without (Wikipedia: "Please set a
+           * user-agent"), and Wikimedia's policy wants a way to reach us *)
+          Curl.set_useragent conn "elm_playground (https://github.com/aryx/ocaml-elm-playground)";
           Curl.set_writefunction conn (fun s ->
               Buffer.add_string body s;
               String.length s);

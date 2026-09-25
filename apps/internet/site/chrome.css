@@ -1,0 +1,23 @@
+/* about:chrome's style: a page as sites write them now -- custom
+   properties (imported), a centred column, boxes with borders and
+   paddings, inline-blocks, a float */
+@import url("chrome-colours.css");
+* { box-sizing: border-box }
+body { margin: 0; background: #f1f3f4; color: var(--ink); font-family: sans-serif }
+header { background: var(--accent); color: white; padding: var(--gap) calc(2 * var(--gap)) }
+header h1 { margin: 0; font-size: 26px; font-weight: normal }
+header p { margin: 4px 0 0; color: #d2e3fc }
+main { max-width: 760px; margin: 20px auto; padding: 0 var(--gap) }
+.card { background: white; border: 1px solid var(--line); padding: 16px 20px; margin-bottom: 16px }
+.card h2 { margin: 0 0 8px; font-size: 19px; color: var(--accent) }
+.card p { margin: 6px 0; line-height: 1.4 }
+figure { float: left; margin: 4px 16px 8px 0; padding: 4px; border: 1px solid var(--line); background: #fafafa }
+figcaption { text-align: center; color: var(--muted); font-size: 12px }
+.clear { clear: both }
+a { color: var(--accent); text-decoration: none }
+.button { display: inline-block; padding: 6px 14px; margin: 4px 6px 4px 0; border: 1px solid var(--accent);
+          background: #e8f0fe; font-weight: bold }
+ul.sites { margin: 6px 0; padding-left: 22px }
+ul.sites li { margin: 3px 0 }
+.muted { color: var(--muted) }
+footer { text-align: center; color: var(--muted); font-size: 12px; margin: 24px 0 }

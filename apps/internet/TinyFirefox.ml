@@ -136,6 +136,7 @@ let settings (tab : Browser_tab.t) : Browser_page.settings =
     breaker = Html_layout.greedy;
     visited = (fun url -> List.mem url tab.visited);
     picture = (fun url -> List.assoc_opt url tab.pictures);
+    sheet = (fun _ -> None);
   }
 
 let config (m : model) : msg Browser_tab.config =
@@ -148,7 +149,7 @@ let config (m : model) : msg Browser_tab.config =
     connections = 6;
     visible = int_of_float (area_height m /. line_height);
     line_height;
-    scripts = true;
+    scripts = (fun _ -> true);
     seed = m.seed;
   }
 

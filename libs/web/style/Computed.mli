@@ -92,8 +92,8 @@ type t = {
   white_space : white_space;
   vertical_align : vertical_align;
   list_style : string; (* disc, circle, square, decimal, none... *)
-  visible : bool;
-  overflow_hidden : bool;
+  visible : bool; (* visibility: visible, and opacity not 0 *)
+  overflow_hidden : bool; (* overflow other than visible: hidden, clip, auto, scroll (clipped, no scrollbar) *)
   flex_direction : flex_direction;
   flex_wrap : bool;
   justify_content : align;

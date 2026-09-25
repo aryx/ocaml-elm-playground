@@ -46,6 +46,20 @@
    pre-line (spaces collapsed, newlines kept); text-align, text-transform:
    uppercase, vertical-align: sub and super (the baseline moved).
 
+   **An inline element's box** (a <code> on a grey background, a
+   badge, a navigation's link with its padding) is not a block: its
+   left margin, border and padding are a spacer word joined to its
+   first word, its right ones one joined to its last, so the line makes
+   room for them; its background and border, if it has one, are a box
+   per line it is on ([backdrops]), from its first word there to its
+   last, as tall as its font plus its vertical padding and border --
+   which do not make the line taller, and may overlap the lines around,
+   as in every browser:
+
+     a <span style="padding: 0 5px; background: yellow">b</span> c
+       "a" at 0, the span's box from 20 (the space after "a") to 40,
+       "b" at 25, "c" after the box and a space: 50
+
    **An inline-block** (a button, a navigation's item) is laid out as a
    block of its own width -- given, or **shrink-to-fit**: its content's
    widest line, at most the room there is, at least its widest word --
@@ -86,9 +100,7 @@
    of its first line.
 
    Laid out as blocks, and said: display: flex and inline-flex (C5's
-   Flex_layout), grid (the plan's exercise). Not done: an inline
-   element's own margins, borders, paddings and backgrounds (only a
-   block's are drawn), rowspan=, bottom and right of an absolute box
+   Flex_layout), grid (the plan's exercise). Not done: rowspan=, bottom and right of an absolute box
    whose top and left are auto, fixed boxes staying on screen, z-index
    (the page's order is the drawing's).
 
@@ -121,6 +133,7 @@ type box = {
   border : float * float * float * float; (* its widths: top, right, bottom, left *)
   children : box list; (* its blocks; an anonymous box's inline-blocks and floats *)
   lines : Html_layout.line list; (* an anonymous box's *)
+  backdrops : box list; (* an anonymous box's: its inline elements' boxes, a piece per line, drawn under its words *)
   marker : Html_layout.marker option; (* a list item's *)
 }
 
@@ -135,6 +148,10 @@ val layout :
   (Dom.element -> Computed.t) ->
   Dom.element ->
   box
+
+(* a picture's address: its src=, or else the first of its srcset=
+ * (the pages that give only srcset=, the sizes chosen by the browser) *)
+val picture_src : Dom.element -> string option
 
 (* the look a fragment of text in this style is drawn with (Browser_draw
  * draws looks): its size, weight, slant, face, colour, decoration;

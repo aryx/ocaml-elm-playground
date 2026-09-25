@@ -123,6 +123,7 @@ let settings (m : model) (tab : Browser_tab.t) : Browser_page.settings =
     breaker = Html_layout.greedy;
     visited = (fun url -> List.mem url tab.visited);
     picture = (fun url -> List.assoc_opt url tab.pictures);
+    sheet = (fun _ -> None);
   }
 
 (* Netscape's four connections at once; no scripts (Netscape 2's, 1995,
@@ -136,7 +137,7 @@ let config (m : model) : msg Browser_tab.config =
     connections = 4;
     visible;
     line_height;
-    scripts = false;
+    scripts = (fun _ -> false);
     seed = 1;
   }
 

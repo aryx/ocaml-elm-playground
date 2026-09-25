@@ -20,6 +20,7 @@ type box = {
   border : float * float * float * float;
   children : box list;
   lines : Html_layout.line list;
+  backdrops : box list;
   marker : Html_layout.marker option;
 }
 
@@ -40,6 +41,7 @@ let rec moved (dx : float) (dy : float) (b : box) : box =
       x = b.x +. dx;
       y = b.y +. dy;
       children = List.map (moved dx dy) b.children;
+      backdrops = List.map (moved dx dy) b.backdrops;
       lines =
         List.map
           (fun (l : Html_layout.line) ->
@@ -89,6 +91,18 @@ let rec as_html_layout (b : box) : Html_layout.box =
     marker = b.marker;
     background = None;
   }
+
+let picture_src (e : Dom.element) : string option =
+  match Dom.attribute "src" e with
+  | Some s when String.trim s <> "" -> Some s
+  | _ -> (
+      (* "a.png 1x, b.png 2x": its first address *)
+      match Dom.attribute "srcset" e with
+      | Some set -> (
+          match String.split_on_char ' ' (String.trim (List.hd (String.split_on_char ',' set))) with
+          | url :: _ when url <> "" -> Some url
+          | _ -> None)
+      | None -> None)
 
 (*****************************************************************************)
 (* Styles *)
@@ -156,6 +170,14 @@ type boxed =
   | Ctl of Html_layout.control
   | Inline of { ib : box; ml : float; mt : float; mb : float }
 
+(* an inline element whose box is drawn (a background, a border): its
+ * horizontal margins, which its box leaves out *)
+type decoration = { de : Dom.element; ds : Computed.t; dml : float; dmr : float }
+
+(* a spacer word's place at an inline element's edge: its margin,
+ * border and padding, left or right *)
+type edge = Body | Lead | Trail
+
 type word = {
   text : string;
   ws : word_style;
@@ -165,6 +187,8 @@ type word = {
   width : float;
   boxed : boxed option;
   owner : Dom.element;
+  decorations : decoration list; (* the inline elements it is in whose boxes are drawn *)
+  edge : edge;
 }
 
 type item =
@@ -206,7 +230,7 @@ let extent (ws : word_style) (boxed : boxed option) : float * float =
 (* a line's words placed, the line as tall as they need (at least the
  * block's strut); its inline-blocks moved into place *)
 let set_line (strut : word_style) (align : Looks.align) ~(x : float) ~(width : float) ~(top : float) (words : item list) :
-    Html_layout.line * box list =
+    Html_layout.line * box list * box list =
   let placed, line_width =
     List.fold_left
       (fun (placed, pen) item ->
@@ -245,8 +269,33 @@ let set_line (strut : word_style) (align : Looks.align) ~(x : float) ~(width : f
         (frag :: frags, boxes))
       ([], []) placed
   in
+  (* each decorated inline element's box on this line: from its first
+   * word to its last, its margins out where its edges are here, as tall
+   * as its font and its vertical padding and border (which the line's
+   * height ignores) *)
+  let decorations =
+    List.fold_left
+      (fun acc ((w : word), _) -> List.fold_left (fun acc d -> if List.exists (fun d' -> d'.de == d.de) acc then acc else acc @ [ d ]) acc w.decorations)
+      [] placed
+  in
+  let backdrops =
+    List.map
+      (fun d ->
+        let mine = List.filter (fun ((w : word), _) -> List.exists (fun d' -> d'.de == d.de) w.decorations) placed in
+        let at_edge edge = List.exists (fun ((w : word), _) -> w.edge = edge && w.owner == d.de) mine in
+        let left = List.fold_left (fun m (_, pen) -> Float.min m pen) infinity mine in
+        let right = List.fold_left (fun m ((w : word), pen) -> Float.max m (pen +. w.width)) neg_infinity mine in
+        let left = x +. shift +. left +. (if at_edge Lead then d.dml else 0.) in
+        let right = x +. shift +. right -. (if at_edge Trail then d.dmr else 0.) in
+        let pt, _, pb, _ = four (fun l -> Css_values.resolve l 0.) d.ds.padding and bt, br, bb, bl = d.ds.border_width in
+        let size = d.ds.font_size in
+        let y = baseline -. (0.8 *. size) -. pt -. bt in
+        { element = Some d.de; style = d.ds; x = left; y; width = Float.max 0. (right -. left); height = size +. pt +. pb +. bt +. bb;
+          border = (bt, (if at_edge Trail then br else 0.), bb, (if at_edge Lead then bl else 0.)); children = []; lines = []; backdrops = []; marker = None })
+      decorations
+  in
   ( { top; height = up +. down; baseline; fragments = List.rev fragments; anchors = List.filter_map (fun i -> match i with Anchor a -> Some a | _ -> None) words },
-    List.rev boxes )
+    List.rev boxes, backdrops )
 
 (* the words stuck together: a unit starts at a word with a space
  * before it that may break there *)
@@ -297,8 +346,8 @@ let place (floats : placed list ref) ~(x : float) ~(width : float) ~(top : float
  * a line's start put at its top, one inside it below it. The lines,
  * the boxes set in them (inline-blocks, floats), the bottom *)
 let set_lines (floats : placed list ref) (strut : word_style) (align : Looks.align) ~(pre : bool) ~(x : float) ~(width : float) ~(top : float)
-    (items : item list) : Html_layout.line list * box list * float =
-  let boxes = ref [] in
+    (items : item list) : Html_layout.line list * box list * box list * float =
+  let boxes = ref [] and backdrops = ref [] in
   let rec groups current acc items =
     match items with
     | [] -> List.rev (List.rev current :: acc)
@@ -309,8 +358,9 @@ let set_lines (floats : placed list ref) (strut : word_style) (align : Looks.ali
   let n = List.length groups in
   let set top acc words =
     let lx, lw = room !floats ~x ~width ~top ~height:1. in
-    let line, inline_boxes = set_line strut align ~x:lx ~width:lw ~top words in
+    let line, inline_boxes, drops = set_line strut align ~x:lx ~width:lw ~top words in
     boxes := List.rev_append inline_boxes !boxes;
+    backdrops := List.rev_append drops !backdrops;
     (top +. line.height, line :: acc)
   in
   let bottom, lines =
@@ -324,7 +374,7 @@ let set_lines (floats : placed list ref) (strut : word_style) (align : Looks.ali
           List.iter (place floats ~x ~width ~top boxes) group;
           (* anchors alone: a line of no height where they are *)
           if List.exists (fun item -> match item with Anchor _ -> true | _ -> false) group then
-            let line, _ = set_line { strut with above = 0.; below = 0. } align ~x ~width ~top group in
+            let line, _, _ = set_line { strut with above = 0.; below = 0. } align ~x ~width ~top group in
             (top, line :: acc)
           else (top, acc))
         else if pre || group = [] then set top acc group
@@ -350,8 +400,9 @@ let set_lines (floats : placed list ref) (strut : word_style) (align : Looks.ali
             in
             let j = extend start (snd sizes.(start)) in
             let words = List.concat (List.init (j - start + 1) (fun k -> if k = 0 then starting_line units.(start) else units.(start + k))) in
-            let line, inline_boxes = set_line strut align ~x:lx ~width:lw ~top words in
+            let line, inline_boxes, drops = set_line strut align ~x:lx ~width:lw ~top words in
             boxes := List.rev_append inline_boxes !boxes;
+            backdrops := List.rev_append drops !backdrops;
             let bottom = top +. line.height in
             List.iter (place floats ~x ~width ~top:bottom boxes) words;
             lines bottom (j + 1) (line :: acc)
@@ -360,7 +411,7 @@ let set_lines (floats : placed list ref) (strut : word_style) (align : Looks.ali
       (top, [])
       (List.mapi (fun i g -> (i, g)) groups)
   in
-  (List.rev lines, List.rev !boxes, bottom)
+  (List.rev lines, List.rev !boxes, List.rev !backdrops, bottom)
 
 (*****************************************************************************)
 (* Blocks *)
@@ -399,16 +450,18 @@ type ctx = {
   mutable owner : Dom.element;
   mutable link : string option;
   mutable counter : int; (* its list items so far *)
+  mutable decorations : decoration list; (* the inline elements the words now read are in, whose boxes are drawn *)
 }
 
 let is_space (c : char) : bool = c = ' ' || c = '\n' || c = '\t' || c = '\r' || c = '\012'
 
-let add_word ?boxed ?owner (ctx : ctx) (ws : word_style) ~(glue : bool) (text : string) (width : float) : unit =
+let add_word ?boxed ?owner ?(edge = Body) (ctx : ctx) (ws : word_style) ~(glue : bool) (text : string) (width : float) : unit =
   let rec after_word items = match items with Word _ :: _ -> true | (Anchor _ | Float _) :: rest -> after_word rest | _ -> false in
   let space_before = ctx.space && after_word ctx.items in
   let space = if space_before then ctx.env.metrics ws.look " " else 0. in
   let owner = Option.value owner ~default:ctx.owner in
-  ctx.items <- Word { text; ws; space_before; glue = glue && space_before; space; width; boxed; owner } :: ctx.items;
+  ctx.items <-
+    Word { text; ws; space_before; glue = glue && space_before; space; width; boxed; owner; decorations = ctx.decorations; edge } :: ctx.items;
   ctx.space <- false
 
 (* U+00A0 (UTF-8's two bytes C2 A0) as a space *)
@@ -471,12 +524,12 @@ let flush_inline (ctx : ctx) : unit =
     let strut = word_style ctx.block ~link:None in
     let align = if ctx.env.measuring then Looks.Left else (look_of ctx.block ~link:None).align in
     let pre = match ctx.block.white_space with Pre | Pre_wrap -> true | _ -> false in
-    let lines, boxes, bottom =
+    let lines, boxes, backdrops, bottom =
       set_lines ctx.floats strut align ~pre ~x:ctx.x ~width:ctx.width ~top:(if has_content then top else floats_top) items
     in
     ctx.children <-
       { element = None; style = ctx.block; x = ctx.x; y = top; width = ctx.width; height = (if has_content then bottom -. top else 0.);
-        border = (0., 0., 0., 0.); children = boxes; lines; marker = None }
+        border = (0., 0., 0., 0.); children = boxes; lines; backdrops; marker = None }
       :: ctx.children;
     if has_content then (
       ctx.cursor <- bottom;
@@ -566,7 +619,7 @@ let rec layout_block (env : env) (floats : placed list ref) (e : Dom.element) (s
   let ctx =
     { env; floats; block = s; x = x +. bl +. pl; width = cw; cursor = content_top; pending = 0.;
       absorbed = (not own) && pt +. bt = 0.; children = []; items = []; space = false; owner = e;
-      link = (if e.name = "a" then Dom.attribute "href" e else None); counter = 0 }
+      link = (if e.name = "a" then Dom.attribute "href" e else None); counter = 0; decorations = [] }
   in
   List.iter (walk ctx s (word_style s ~link:ctx.link)) e.children;
   flush_inline ctx;
@@ -583,7 +636,7 @@ let rec layout_block (env : env) (floats : placed list ref) (e : Dom.element) (s
   let ch = Float.max ch (Css_values.resolve s.min_height 0.) in
   let ch = match s.max_height with Len l when l.pct = 0. -> Float.min ch l.px | _ -> ch in
   ( { element = Some e; style = s; x; y; width = bl +. pl +. cw +. pr +. br; height = bt +. pt +. ch +. pb +. bb;
-      border = (bt, br, bb, bl); children = List.rev ctx.children; lines = []; marker },
+      border = (bt, br, bb, bl); children = List.rev ctx.children; lines = []; backdrops = []; marker },
     if through then ctx.pending else 0. )
 
 (* shrink-to-fit (CSS 2.1 section 10.3.5): the content's widest line,
@@ -635,7 +688,7 @@ and add_block (ctx : ctx) (e : Dom.element) (s : Computed.t) : unit =
    * auto, centred *)
   let box =
     let _, mr, _, ml = s.margin in
-    if ctx.env.centring && ml <> Auto && mr <> Auto && box.width < cb_width then moved (cb_x +. ((cb_width -. box.width) /. 2.) -. box.x) 0. box
+    if ctx.env.centring && (not ctx.env.measuring) && ml <> Auto && mr <> Auto && box.width < cb_width then moved (cb_x +. ((cb_width -. box.width) /. 2.) -. box.x) 0. box
     else box
   in
   let box = relative ctx s box in
@@ -693,7 +746,7 @@ and float_item (ctx : ctx) (e : Dom.element) (s : Computed.t) : item =
 (* a picture's size: its style's width and height, one of them and its
  * ratio, or its own once it has come; max-width applied *)
 and picture_size (ctx : ctx) (e : Dom.element) (s : Computed.t) : (float * float) option =
-  let src = Option.value (Dom.attribute "src" e) ~default:"" in
+  let src = Option.value (picture_src e) ~default:"" in
   let w = size s.width ctx.width and h = size s.height 0. in
   let own = ctx.env.picture_size src in
   let wh =
@@ -711,13 +764,13 @@ and picture_size (ctx : ctx) (e : Dom.element) (s : Computed.t) : (float * float
 (* a floated picture as a box of one line *)
 and image_box (ctx : ctx) (e : Dom.element) (s : Computed.t) : box =
   let w, h = Option.value (picture_size ctx e s) ~default:(0., 0.) in
-  let src = Option.value (Dom.attribute "src" e) ~default:"" in
+  let src = Option.value (picture_src e) ~default:"" in
   let ws = word_style s ~link:ctx.link in
   let frag : Html_layout.fragment =
     { text = ""; look = ws.look; x = 0.; width = w; baseline = h; picture = Some { src; height = h; middle = false }; control = None; element = e }
   in
   { element = Some e; style = s; x = 0.; y = 0.; width = w; height = h; border = (0., 0., 0., 0.); children = [];
-    lines = [ { top = 0.; height = h; baseline = h; fragments = [ frag ]; anchors = [] } ]; marker = None }
+    lines = [ { top = 0.; height = h; baseline = h; fragments = [ frag ]; anchors = [] } ]; backdrops = []; marker = None }
 
 (* a node inside a block: inline content gathered, a block placed *)
 and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) : unit =
@@ -733,7 +786,7 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
       | _ when e.name = "img" -> (
           match picture_size ctx e s with
           | Some (w, h) ->
-              let src = Option.value (Dom.attribute "src" e) ~default:"" in
+              let src = Option.value (picture_src e) ~default:"" in
               add_word ctx (word_style s ~link:ctx.link) ~glue:false "" w ~owner:e
                 ~boxed:(Pic { src; height = h; middle = s.vertical_align = Middle })
           | None -> (
@@ -743,7 +796,9 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
       | _ when (e.name = "input" || e.name = "select" || e.name = "textarea") -> (
           let look = look_of s ~link:ctx.link in
           match Html_layout.control_size ctx.env.metrics look e with
-          | Some (w, h) -> add_word ctx (word_style s ~link:ctx.link) ~glue:false "" w ~owner:e ~boxed:(Ctl { element = e; control_height = h })
+          | Some (w, h) when s.visible -> add_word ctx (word_style s ~link:ctx.link) ~glue:false "" w ~owner:e ~boxed:(Ctl { element = e; control_height = h })
+          (* hidden (opacity: 0, a styled checkbox's): its room only *)
+          | Some (w, _) -> add_word ctx (word_style s ~link:ctx.link) ~glue:false "" w ~owner:e
           | None -> ())
       | Inline -> (
           (match (if e.name = "a" then Dom.attribute "name" e else None) with Some n -> ctx.items <- Anchor n :: ctx.items | None -> ());
@@ -762,7 +817,21 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
               ctx.owner <- e;
               (if e.name = "a" then match Dom.attribute "href" e with Some h -> ctx.link <- Some h | None -> ());
               let ws = word_style s ~link:ctx.link in
+              (* its margin, border and padding: spacers at its two
+               * ends, joined to its first and last words; its box drawn
+               * under its words if it has a background or a border *)
+              let _, pr, _, pl = four (fun l -> Css_values.resolve l ctx.width) s.padding and bt, br, bb, bl = s.border_width in
+              let _, mr, _, ml = four (fun m -> Option.value (size m ctx.width) ~default:0.) s.margin in
+              let outer_decorations = ctx.decorations in
+              if s.background.a > 0. || bt +. br +. bb +. bl > 0. then ctx.decorations <- ctx.decorations @ [ { de = e; ds = s; dml = ml; dmr = mr } ];
+              if ml +. bl +. pl > 0. then add_word ctx ws ~edge:Lead ~glue:false "" (ml +. bl +. pl);
               List.iter (walk ctx s ws) e.children;
+              if mr +. br +. pr > 0. then (
+                let space = ctx.space in
+                ctx.space <- false;
+                add_word ctx ws ~edge:Trail ~glue:false "" (mr +. br +. pr);
+                ctx.space <- space);
+              ctx.decorations <- outer_decorations;
               ctx.owner <- outer_owner;
               ctx.link <- outer_link)
       | Inline_block | Inline_flex ->
@@ -831,29 +900,36 @@ and layout_table (env : env) (table : Dom.element) (s : Computed.t) ~(cb_x : flo
         (Table_layout.caption table)
     in
     let top = match caption with Some c -> y +. c.height | None -> y in
-    let rows = List.fold_left (fun m (c : Table_layout.cell) -> max m (c.row + 1)) 0 cells in
-    (* each cell's row, for its background *)
-    let rows_of =
+    (* the rows, in Table_layout's order (an empty one too: Hacker News'
+     * spacers), for their heights and backgrounds *)
+    let trs =
       let rec trs (e : Dom.element) =
         List.concat_map
           (fun (n : Dom.node) ->
             match n with
-            | Element ({ name = "tr"; _ } as tr) ->
-                List.filter_map (fun (n : Dom.node) -> match n with Element td -> Some (td, tr) | Text _ -> None) tr.children
+            | Element ({ name = "tr"; _ } as tr) -> [ tr ]
             | Element ({ name = "thead" | "tbody" | "tfoot"; _ } as g) -> trs g
             | _ -> [])
           e.children
       in
-      trs table
+      Array.of_list (trs table)
     in
+    let rows = List.fold_left (fun m (c : Table_layout.cell) -> max m (c.row + 1)) (Array.length trs) cells in
+    let tr_of (c : Table_layout.cell) = if c.row < Array.length trs then Some trs.(c.row) else None in
     let row_top = ref (top +. bt +. spacing) and boxes = ref [] in
     for r = 0 to rows - 1 do
       let row = List.filter (fun (c : Table_layout.cell) -> c.row = r) cells in
       let laid = List.map (fun c -> (c, cell_box c ~x:(column_x c.column) ~width:(cell_width c) ~y:0.)) row in
       let row_height = List.fold_left (fun m (_, (b : box)) -> Float.max m b.height) 0. laid in
-      (* a row's height= (a hint on the row or its cells) *)
+      (* a cell's height *)
       let row_height =
         List.fold_left (fun m ((c : Table_layout.cell), _) -> match size (style_of c).height 0. with Some h -> Float.max m h | None -> m) row_height laid
+      in
+      (* and the row's own (Hacker News' spacer rows, height: 5px) *)
+      let row_height =
+        match (if r < Array.length trs then size (env.style trs.(r)).height 0. else None) with
+        | Some h -> Float.max row_height h
+        | None -> row_height
       in
       List.iter
         (fun ((c : Table_layout.cell), (b : box)) ->
@@ -863,7 +939,7 @@ and layout_table (env : env) (table : Dom.element) (s : Computed.t) ~(cb_x : flo
           (* the cell's box is its rectangle, its row's background if
            * it has none *)
           let style =
-            match List.assq_opt c.element rows_of with
+            match tr_of c with
             | Some tr when b.style.background.a = 0. -> { b.style with background = (env.style tr).background }
             | _ -> b.style
           in
@@ -872,7 +948,7 @@ and layout_table (env : env) (table : Dom.element) (s : Computed.t) ~(cb_x : flo
       row_top := !row_top +. row_height +. spacing
     done;
     { element = Some table; style = s; x; y; width; height = !row_top +. bb -. y; border = (bt, br, bb, bl);
-      children = Option.to_list caption @ List.rev !boxes; lines = []; marker = None }
+      children = Option.to_list caption @ List.rev !boxes; lines = []; backdrops = []; marker = None }
 
 let layout (metrics : Html_layout.metrics) ?(picture_size = fun _ -> None) ~(viewport : float * float) (style : Dom.element -> Computed.t)
     (root : Dom.element) : box =

@@ -89,4 +89,9 @@ let tests =
           Alcotest.(check (list color)) "#f00, rgb with spaces, hsl, a name"
             [ (255, 0, 0); (10, 20, 30); (255, 0, 0); (0x66, 0x33, 0x99) ]
             (List.map c [ "#f00"; "rgb(10 20 30 / 50%)"; "hsl(0, 100%, 50%)"; "rebeccapurple" ]));
+      Testo.create "overflow's two values, opacity" (fun () ->
+          Alcotest.(check bool) "hidden auto clips" true (style "#a { overflow: hidden auto }" "<div id=a>" "a").overflow_hidden;
+          Alcotest.(check bool) "visible does not" false (style "#a { overflow: visible }" "<div id=a>" "a").overflow_hidden;
+          Alcotest.(check bool) "opacity: 0 is not shown" false (style "#a { opacity: 0 }" "<input id=a>" "a").visible;
+          Alcotest.(check bool) "opacity: 0.5 is" true (style "#a { opacity: 0.5 }" "<input id=a>" "a").visible);
     ]

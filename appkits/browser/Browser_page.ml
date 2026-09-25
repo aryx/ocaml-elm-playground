@@ -36,6 +36,7 @@ type settings = {
   breaker : Html_layout.breaker;
   visited : string -> bool;
   picture : string -> Browser_picture.t option;
+  sheet : string -> string option;
 }
 
 let pretty : Html_layout.breaker =
@@ -99,6 +100,69 @@ let expand_tabs (line : string) : string =
     line;
   Buffer.contents b
 
+(*****************************************************************************)
+(* The page's style sheets *)
+(*****************************************************************************)
+
+(* an @import's address and the media it is for: url(x), url("x") or
+ * "x", then a media query list *)
+let import_of (prelude : Css_syntax.component list) : (string * Css_syntax.component list) option =
+  match Css_syntax.trim prelude with
+  | (Token (Url u) | Token (String u)) :: media -> Some (u, media)
+  | Func (f, args) :: media when String.lowercase_ascii f = "url" -> (
+      match Css_syntax.trim args with [ Token (String u) ] -> Some (u, media) | _ -> None)
+  | _ -> None
+
+(* a sheet's rules, its @imports' put in their place (four deep at
+ * most: a sheet importing itself stops there); the addresses not had
+ * yet added to [missing] *)
+let rec expand (s : settings) (media : Cascade.media) (missing : string list ref) ~(depth : int) (url : string) (text : string) :
+    Css_syntax.rule list =
+  List.concat_map
+    (fun (r : Css_syntax.rule) ->
+      match r with
+      | At_rule { name = "import"; prelude; _ } -> (
+          match import_of prelude with
+          | Some (u, m) when depth < 4 && Cascade.media_matches media m -> (
+              let u = Browser_url.resolve url u in
+              match s.sheet u with
+              | Some t -> expand s media missing ~depth:(depth + 1) u t
+              | None ->
+                  missing := u :: !missing;
+                  [])
+          | _ -> [])
+      | _ -> [ r ])
+    (Css_syntax.parse_stylesheet text)
+
+(* the page's sheets, in the order it gives them: each <link
+ * rel=stylesheet> whose media= holds (its text, once it has come) and
+ * each <style>; and the addresses still to fetch, the links' and their
+ * @imports' *)
+let page_sheets (s : settings) (media : Cascade.media) (base : string) (tree : Dom.element) : Cascade.sheet list * string list =
+  let missing = ref [] in
+  let holds (e : Dom.element) = match Dom.attribute "media" e with Some m -> Cascade.media_matches media (Css_syntax.components_of m) | None -> true in
+  let rec go (e : Dom.element) : Cascade.sheet list =
+    let own =
+      match e.name with
+      | "link" -> (
+          let rel = List.map String.lowercase_ascii (String.split_on_char ' ' (Option.value (Dom.attribute "rel" e) ~default:"")) in
+          match Dom.attribute "href" e with
+          | Some href when List.mem "stylesheet" rel && (not (List.mem "alternate" rel)) && holds e -> (
+              let url = Browser_url.resolve base href in
+              match s.sheet url with
+              | Some text -> [ { Cascade.origin = Author; rules = expand s media missing ~depth:0 url text } ]
+              | None ->
+                  missing := url :: !missing;
+                  [])
+          | _ -> [])
+      | "style" when holds e -> [ { Cascade.origin = Author; rules = expand s media missing ~depth:0 base (Dom.text_content e) } ]
+      | _ -> []
+    in
+    own @ List.concat_map (fun (n : Dom.node) -> match n with Element c -> go c | Text _ -> []) e.children
+  in
+  let sheets = go tree in
+  (sheets, List.rev !missing)
+
 (* the window's height, for media queries and vh: a laptop's screen *)
 let viewport_height = 768.
 
@@ -112,7 +176,7 @@ let lay_out ?(quirks = false) (s : settings) (base : string) (tree : Dom.element
   let picture_size src = Option.bind (picture src) Browser_picture.size in
   if s.boxes then
     let media : Cascade.media = { width = s.width; height = viewport_height } in
-    let sheets : Cascade.sheet list = if s.css then [ { origin = Author; rules = Css_syntax.parse_stylesheet (Css.page_sheet tree) } ] else [] in
+    let sheets = if s.css then fst (page_sheets s media base tree) else [] in
     let styles = Computed.styles ~visited ~quirks media sheets tree in
     let boxes = Box_layout.layout Browser_text.metrics ~picture_size ~viewport:(s.width, viewport_height) styles tree in
     let canvas =
@@ -126,6 +190,9 @@ let lay_out ?(quirks = false) (s : settings) (base : string) (tree : Dom.element
     let style = if s.css then Css.cascade (Css.parse (Css.page_sheet tree)) tree else fun _ -> [] in
     let layout = Html_layout.layout Browser_text.metrics ~breaker:s.breaker ~picture_size ~style ~root ~width:s.width tree in
     (layout, Browser_draw.draw ~extensions:s.extensions ~visited ~picture_of:picture layout, None)
+
+let sheets_wanted (s : settings) (p : t) : string list =
+  if s.boxes && s.css then snd (page_sheets s { width = s.width; height = viewport_height } p.url p.tree) else []
 
 (* the page's colour: the style sheets' for its <body> or <html>, else
  * Netscape's bgcolor= -- or the canvas's, by the box model *)

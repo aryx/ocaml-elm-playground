@@ -27,6 +27,15 @@
    in flight, [got_picture] takes one in, decodes it, lays the page out
    again, and asks for the next. Stop forgets the rest.
 
+   A page laid out by the box model (TinyChrome's) has its **style
+   sheets** fetched the same way, ahead of its pictures: its <link
+   rel=stylesheet>s, then the @imports of those that have come
+   (Browser_page.sheets_wanted); [got_picture] takes a sheet in too
+   (it is in [sheet_urls]), and the page is laid out again with it -- a
+   page is shown at once, plain, and dressed as its sheets arrive,
+   where Chrome waits for them (a few hundred milliseconds of a blank
+   window, to avoid that flash).
+
    What varies between browsers is a [config]: their looks (the page's
    settings: Netscape's extensions, CSS), their messages (what a
    response is turned into), their built-in site, the page area's size,
@@ -47,6 +56,8 @@ type t = {
   visited : string list;
   fragment : string option; (* a #name to scroll to once shown *)
   pictures : (string * Browser_picture.t) list; (* by URL, every page's: a cache *)
+  sheets : (string * string) list; (* the style sheets' texts by URL, "" for one that could not be had: a cache *)
+  sheet_urls : string list; (* the URLs asked for as style sheets *)
   queue : string list; (* the page's pictures still to fetch *)
   in_flight : string list; (* on their way *)
   total : int; (* the page's pictures to fetch, for the progress *)
@@ -63,7 +74,7 @@ type 'msg config = {
   connections : int; (* pictures at a time *)
   visible : int; (* the page area's lines *)
   line_height : float;
-  scripts : bool; (* the pages' <script>s run (Browser_script) *)
+  scripts : string -> bool; (* whether a page's <script>s run (Browser_script), by its URL *)
   seed : int; (* Math.random's *)
 }
 

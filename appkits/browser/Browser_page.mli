@@ -44,6 +44,7 @@ type settings = {
   breaker : Html_layout.breaker;
   visited : string -> bool; (* an absolute URL, no #fragment *)
   picture : string -> Browser_picture.t option; (* an absolute URL *)
+  sheet : string -> string option; (* a style sheet's text, once it has come (an absolute URL): with [boxes] *)
 }
 
 (* Knuth and Plass's lines (Linebreak.optimal), ragged right as a
@@ -64,6 +65,12 @@ val laid_out : settings -> t -> t
  * line mode too; its source stays): what a script left
  * (Browser_script.tree) *)
 val with_tree : settings -> t -> Dom.element -> t
+
+(* by the box model, with its style sheets: the addresses of the
+ * sheets the page asks for and does not have yet ([settings.sheet]) --
+ * its <link rel=stylesheet>s whose media= holds, and the @imports of
+ * those it has, to fetch; the page laid out again as each comes *)
+val sheets_wanted : settings -> t -> string list
 
 (* a control's value now: as typed and clicked, else as the page gave
  * it *)

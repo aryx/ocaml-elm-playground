@@ -471,8 +471,17 @@ let compute (m : Cascade.media) ~(root_font_size : float) ~(parent : t) (declare
       | Some "super" -> Super
       | _ -> Baseline);
     list_style = prop "list-style-type" ~inh:parent.list_style ~init:"disc" (fun v -> match V.parts v with [ c ] -> ident c | _ -> None);
-    visible = prop "visibility" ~inh:parent.visible ~init:true (fun v -> match V.parts v with [ c ] -> Option.map (fun s -> s = "visible") (ident c) | _ -> None);
-    overflow_hidden = (match word "overflow" with Some ("hidden" | "clip") -> true | _ -> false);
+    visible =
+      prop "visibility" ~inh:parent.visible ~init:true (fun v -> match V.parts v with [ c ] -> Option.map (fun s -> s = "visible") (ident c) | _ -> None)
+      (* opacity: 0, what hides a checkbox that a label stands for: not
+       * drawn either (and nor is what is in it) *)
+      && (match get "opacity" with Some v -> ( match float_of_string_opt (String.trim (to_string v)) with Some o -> o > 0. | None -> true) | None -> true);
+    (* auto and scroll: a box that scrolls, here clipped (no scrollbar) *)
+    (* "hidden auto": x, then y; either clipping clips here *)
+    overflow_hidden =
+      (match get "overflow" with
+      | Some v -> List.exists (fun c -> match ident c with Some ("hidden" | "clip" | "auto" | "scroll") -> true | _ -> false) (V.parts v)
+      | None -> false);
     flex_direction =
       (match word "flex-direction" with Some "row-reverse" -> Row_reverse | Some "column" -> Column | Some "column-reverse" -> Column_reverse | _ -> Row);
     flex_wrap = (match word "flex-wrap" with Some ("wrap" | "wrap-reverse") -> true | _ -> false);

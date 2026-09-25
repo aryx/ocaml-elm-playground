@@ -23,6 +23,8 @@ let about (name : string) : (string * string) option =
   | "timer" -> Some (Site_pages.timer, "text/html; charset=utf-8")
   | "tictactoe" -> Some (Site_pages.tictactoe, "text/html; charset=utf-8")
   | "chrome" -> Some (Site_pages.chrome, "text/html; charset=utf-8")
+  | "chrome.css" -> Some (Site_pages.chrome_css, "text/css")
+  | "chrome-colours.css" -> Some (Site_pages.chrome_colours_css, "text/css")
   | "picture.gif" -> Some (Site_pictures.picture_gif, "image/gif")
   | "picture.png" -> Some (Site_pictures.picture_png, "image/png")
   | "picture.jpg" -> Some (Site_pictures.picture_jpg, "image/jpeg")

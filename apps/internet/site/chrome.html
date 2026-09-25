@@ -3,30 +3,10 @@
 <head>
 <meta charset="utf-8">
 <title>TinyChrome</title>
+<link rel="stylesheet" href="chrome.css">
 <style>
-  /* a page as sites write them now: custom properties, a centred
-     column, boxes with borders and paddings, inline-blocks, a float */
-  :root { --accent: #1a73e8; --ink: #202124; --muted: #5f6368; --line: #dadce0; --gap: 12px }
-  * { box-sizing: border-box }
-  body { margin: 0; background: #f1f3f4; color: var(--ink); font-family: sans-serif }
-  header { background: var(--accent); color: white; padding: var(--gap) calc(2 * var(--gap)) }
-  header h1 { margin: 0; font-size: 26px; font-weight: normal }
-  header p { margin: 4px 0 0; color: #d2e3fc }
-  main { max-width: 760px; margin: 20px auto; padding: 0 var(--gap) }
-  .card { background: white; border: 1px solid var(--line); padding: 16px 20px; margin-bottom: 16px }
-  .card h2 { margin: 0 0 8px; font-size: 19px; color: var(--accent) }
-  .card p { margin: 6px 0; line-height: 1.4 }
-  figure { float: left; margin: 4px 16px 8px 0; padding: 4px; border: 1px solid var(--line); background: #fafafa }
-  figcaption { text-align: center; color: var(--muted); font-size: 12px }
-  .clear { clear: both }
-  a { color: var(--accent); text-decoration: none }
-  .button { display: inline-block; padding: 6px 14px; margin: 4px 6px 4px 0; border: 1px solid var(--accent);
-            background: #e8f0fe; font-weight: bold }
+  /* the page's own, after its linked sheet: an inline box */
   .badge { position: relative; top: -6px; background: #fbbc04; color: var(--ink); padding: 0 6px; font-size: 11px }
-  ul.sites { margin: 6px 0; padding-left: 22px }
-  ul.sites li { margin: 3px 0 }
-  .muted { color: var(--muted) }
-  footer { text-align: center; color: var(--muted); font-size: 12px; margin: 24px 0 }
 </style>
 </head>
 <body>
@@ -45,7 +25,9 @@
     bottom.</p>
     <p>The colours are custom properties (<code>var(--accent)</code>),
     the header's padding a <code>calc()</code>, the buttons below
-    inline-blocks, shrunk to fit their words.</p>
+    inline-blocks, shrunk to fit their words. The style comes from a
+    linked sheet, <code>chrome.css</code>, fetched like a picture, which
+    <code>@import</code>s its colours.</p>
     <p class="clear"><a class="button" href="about:css">CSS in TinyNetscape</a><a class="button" href="about:netscape">Netscape's extensions</a><a class="button" href="about:home">TinyMosaic's home</a></p>
   </div>
 

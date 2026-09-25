@@ -188,6 +188,7 @@ let settings (m : model) : Browser_page.settings =
     breaker = (match m.wrap with Greedy -> Html_layout.greedy | Pretty -> Browser_page.pretty);
     visited = (fun url -> List.mem url m.visited);
     picture = (fun url -> List.assoc_opt url m.pictures);
+    sheet = (fun _ -> None);
   }
 
 (* the built-in site, shared with TinyNetscape (Site.mli) *)

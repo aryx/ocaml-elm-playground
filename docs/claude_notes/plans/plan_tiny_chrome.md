@@ -352,6 +352,37 @@ which already reads video and sound:
   element's own margins, borders, paddings and background (the
   missing yellow of about:chrome's "C3" badge: a first thing for C4 or
   C5), rowspan=, z-index. About 1,000 lines with TinyChrome's 360.
+- **C4 done** (2026-09-25): the page's **style sheets fetched**
+  (`Browser_page.sheets_wanted`: its `<link rel=stylesheet>`s whose
+  `media=` holds, not the alternates, then the `@import`s of those that
+  have come, resolved against their sheet, four deep; `Browser_tab`
+  queues them ahead of the pictures, in its `sheets` cache, the page
+  laid out again as each arrives); **scripts** per URL (`config.scripts`
+  a function: TinyChrome's run on the built-in pages only, `<noscript>`
+  shown on the web as nothing hides it); `srcset=`'s first address
+  (`Box_layout.picture_src`); an **inline element's box** (its margin,
+  border and padding as spacer words, its background and border drawn
+  under its words: `backdrops`, the badge's yellow); `overflow: auto`
+  and `scroll` clipping, drawn by culling in `Browser_boxes` (no clip in
+  the playground: a line or a word not wholly inside left out -- the
+  screen-reader text in 1-pixel boxes gone, Wikipedia's table of
+  contents cut at its column's bottom); `opacity: 0` not drawn (styled
+  checkboxes); `overflow`'s two values; HN's spacer rows (a row's own
+  height, an empty row counted); no `<center>` centring while measuring
+  (HN's vote column had swallowed the page); curl's User-Agent
+  (`Commands.ml`: Wikipedia refuses a request without one). Tried
+  live: Hacker News as in Chrome but for its SVG logo and vote arrows
+  (C6); a Wikipedia article right -- its text, links, infobox floated
+  with its picture -- above it the header, the tabs and the contents
+  stacked where flexbox and grid put them side by side (C5) and the
+  icons (SVG masks, C6). `about:chrome` now gets its style from
+  `chrome.css`, which `@import`s `chrome-colours.css`: the golden frame
+  goes through the fetching. **Not done, and why**: gzip -- neither curl
+  nor our client asks for it, so servers answer uncompressed (bandwidth,
+  not correctness); cookies -- `Playground.Http.get` takes no request
+  headers, a change of the playground's API (Cmd, both platforms, the
+  client) that neither Hacker News nor Wikipedia needs: C5, with
+  Google, whose consent page does. About 400 lines.
 
 ## Verification
 

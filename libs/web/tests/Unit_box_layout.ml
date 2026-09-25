@@ -103,6 +103,16 @@ let tests =
           Alcotest.check near "width=50%" 100. (box "t" p).width;
           Alcotest.(check (list int)) "bgcolor=" [ 255; 102; 0 ] [ a.style.background.r; a.style.background.g; a.style.background.b ];
           Alcotest.(check (list word)) "no padding" [ ("a", 0.) ] (words p));
+      Testo.create "an inline element's padding and background" (fun () ->
+          let p = page {|<body style="margin: 0">a <span id=s style="padding: 0 5px; background: yellow">b</span> c|} in
+          Alcotest.(check (list word)) "room made for its padding" [ ("a", 0.); ("b", 25.); ("c", 50.) ] (words p);
+          let rec backdrops (b : Box_layout.box) = b.backdrops @ List.concat_map backdrops b.children in
+          match backdrops p with
+          | [ d ] -> Alcotest.(check (list near)) "its box: x, width, height" [ 20.; 20.; 10. ] [ d.x; d.width; d.height ]
+          | _ -> Alcotest.fail "one box");
+      Testo.create "srcset: its first address" (fun () ->
+          Alcotest.(check (option string)) "no src" (Some "a.png")
+            (Box_layout.picture_src (Dom.element ~attributes:[ ("srcset", "a.png 1x, b.png 2x") ] "img" [])));
       Testo.create "a picture: its size, max-width" (fun () ->
           let p = page {|<body style="margin: 0"><img src=a.png width=400 height=100 style="max-width: 100%">|} in
           match List.filter_map (fun (f : Html_layout.fragment) -> Option.map (fun (pic : Html_layout.picture) -> (f.width, pic.height)) f.picture) (Box_layout.fragments p) with

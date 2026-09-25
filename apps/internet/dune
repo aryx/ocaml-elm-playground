@@ -36,7 +36,7 @@
  (targets Site_pages.ml)
  (deps site/home.html site/history.html site/form.html site/netscape.html site/css.html
        site/firefox.html site/counter.html site/todo.html site/timer.html site/tictactoe.html
-       site/chrome.html)
+       site/chrome.html site/chrome.css site/chrome-colours.css)
  (action
   (with-stdout-to
    %{targets}
@@ -74,6 +74,12 @@
     (echo "|}\n")
     (echo "let chrome = {|")
     (cat site/chrome.html)
+    (echo "|}\n")
+    (echo "let chrome_css = {|")
+    (cat site/chrome.css)
+    (echo "|}\n")
+    (echo "let chrome_colours_css = {|")
+    (cat site/chrome-colours.css)
     (echo "|}\n")))))
 
 ; claude: its pictures, bytes that are not text, embedded escaped

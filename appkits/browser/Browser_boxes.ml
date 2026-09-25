@@ -17,18 +17,33 @@ let color (c : Css_values.color) : color option =
     let mix v = int_of_float ((float_of_int v *. c.a) +. (255. *. (1. -. c.a))) in
     Some (rgb (mix c.r) (mix c.g) (mix c.b))
 
-(* a rectangle of the page (y down), [w] by [h] from (x, y) *)
-let fill (c : color) (x : float) (y : float) (w : float) (h : float) : shape =
-  rectangle c w h |> move (x +. (w /. 2.)) (-.(y +. (h /. 2.)))
+(* the rectangle what is drawn must stay in (left, top, right,
+ * bottom): a box with overflow other than visible clips what it holds
+ * -- here by what is drawn, not by pixels: a rectangle is cut to it, a
+ * line or a word not wholly inside is left out *)
+type clip = float * float * float * float
 
-let rec draw ~(visited : string -> bool) ~(picture_of : string -> Browser_picture.t option) (b : Box_layout.box) : Browser_draw.drawn =
+let everywhere : clip = (neg_infinity, neg_infinity, infinity, infinity)
+let meet ((l, t, r, b) : clip) ((l', t', r', b') : clip) : clip = (Float.max l l', Float.max t t', Float.min r r', Float.min b b')
+let inside ((l, t, r, b) : clip) (x : float) (y : float) (w : float) (h : float) : bool =
+  x >= l -. 0.5 && y >= t -. 0.5 && x +. w <= r +. 0.5 && y +. h <= b +. 0.5
+
+(* a rectangle of the page (y down), [w] by [h] from (x, y), cut to
+ * [clip] *)
+let fill ?(clip = everywhere) (c : color) (x : float) (y : float) (w : float) (h : float) : shape list =
+  let l, t, r, b = meet clip (x, y, x +. w, y +. h) in
+  if r <= l || b <= t then [] else [ rectangle c (r -. l) (b -. t) |> move ((l +. r) /. 2.) (-.((t +. b) /. 2.)) ]
+
+let rec draw_in (clip : clip) ~(visited : string -> bool) ~(picture_of : string -> Browser_picture.t option) (b : Box_layout.box) :
+    Browser_draw.drawn =
   let s = b.style in
   let own =
     if b.element = None || not s.visible then []
     else
-      let background = match color s.background with Some c -> [ fill c b.x b.y b.width b.height ] | None -> [] in
+      let fill = fill ~clip in
+      let background = match color s.background with Some c -> fill c b.x b.y b.width b.height | None -> [] in
       let bt, br, bb, bl = b.border and ct, cr, cb, cl = s.border_color in
-      let side width c shape = if width > 0. then match color c with Some c -> [ shape c ] | None -> [] else [] in
+      let side width c shape = if width > 0. then match color c with Some c -> shape c | None -> [] else [] in
       let borders =
         side bt ct (fun c -> fill c b.x b.y b.width bt)
         @ side bb cb (fun c -> fill c b.x (b.y +. b.height -. bb) b.width bb)
@@ -38,16 +53,20 @@ let rec draw ~(visited : string -> bool) ~(picture_of : string -> Browser_pictur
       match background @ borders with [] -> [] | shapes -> [ (b.y, b.y +. b.height, group shapes) ]
   in
   let lines =
-    List.map
+    List.filter_map
       (fun (l : Html_layout.line) ->
-        (l.top, l.top +. l.height, group (List.concat_map (Browser_draw.glyphs ~visited ~picture_of) l.fragments)))
+        let _, t, _, bottom = clip in
+        if l.top < t -. 0.5 || l.top +. l.height > bottom +. 0.5 then None
+        else
+          let shown = List.filter (fun (f : Html_layout.fragment) -> inside clip f.x l.top f.width 0.) l.fragments in
+          Some (l.top, l.top +. l.height, group (List.concat_map (Browser_draw.glyphs ~visited ~picture_of) shown)))
       b.lines
   in
   (* a list item's marker, left of its first line, in the list's colour *)
   let marker =
     let first = List.find_map (fun (c : Box_layout.box) -> match c.lines with l :: _ -> Some l | [] -> None) b.children in
     match (b.marker, first) with
-    | Some m, Some line ->
+    | Some m, Some line when inside clip b.x line.top 0. line.height ->
         let look = Box_layout.look_of s ~link:None in
         let text = match m with Bullet -> "\xe2\x80\xa2" | Number n -> string_of_int n ^ "." in
         let ink = rgb s.color.r s.color.g s.color.b in
@@ -64,4 +83,12 @@ let rec draw ~(visited : string -> bool) ~(picture_of : string -> Browser_pictur
         [ (line.top, line.top +. line.height, shape) ]
     | _ -> []
   in
-  own @ lines @ marker @ List.concat_map (draw ~visited ~picture_of) b.children
+  (* what it holds cut to it, if it clips *)
+  let inner = if b.element <> None && s.overflow_hidden then meet clip (b.x, b.y, b.x +. b.width, b.y +. b.height) else clip in
+  (* its inline elements' boxes under its words *)
+  own
+  @ List.concat_map (draw_in clip ~visited ~picture_of) b.backdrops
+  @ lines @ marker
+  @ List.concat_map (draw_in inner ~visited ~picture_of) b.children
+
+let draw ~visited ~picture_of (b : Box_layout.box) : Browser_draw.drawn = draw_in everywhere ~visited ~picture_of b

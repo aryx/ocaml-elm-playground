@@ -25,15 +25,21 @@
  *
  * where the teaching browsers have Mosaic's looks and Html_layout. The
  * tab is theirs (Browser_tab: the page, its history, its pictures), with
- * Browser_page's setting boxes on.
+ * Browser_page's setting boxes on: a page's <link rel=stylesheet>s and
+ * their @imports are then fetched with its pictures, ahead of them, and
+ * the page laid out again as each arrives -- shown at once plain, then
+ * dressed (Chrome waits a moment instead, to spare that flash).
  *
  * Chrome's window: the tabs on top, in the frame (one here, the page's
  * title); below, Back, Forward, Reload, and the omnibox (click it,
  * type an address, Return). A link's address shows in a bubble at the
  * bottom left when the pointer is on it, as Chrome's status bubble.
- * Scripts do not run (the plan's C4: off on the web by default, a few
- * sites' on); the arrows, Page Up and Down and the wheel scroll,
- * Backspace goes back.
+ * JavaScript is off on the web, as in Chrome with it disabled -- most
+ * sites' scripts are more than our engine reads, and many sites are
+ * written to work without (a <noscript> is then shown, as its content
+ * is when nothing hides it) -- and on for the built-in pages (the
+ * plan's C8: a few sites' too). The arrows, Page Up and Down and the
+ * wheel scroll, Backspace goes back.
  *
  *   dune exec apps/internet/TinyChrome.exe
  *   http://localhost:8001/apps/internet/web/TinyChrome.html
@@ -46,9 +52,13 @@
  * page's Html_layout view), the built-in site (Site). Its own: the
  * chrome.
  *
- * To come (plan_tiny_chrome.md): the pages' linked sheets fetched and
- * cookies (C4), flexbox (C5), SVG (C6), several tabs, the omnibox's
- * search and the developer tools (C7), the ES5 core (C8), video (C9).
+ * Tried live: Hacker News (its tables, attributes and news.css) and a
+ * Wikipedia article (its two sheets from load.php; the article right,
+ * its header and tabs waiting for flexbox).
+ *
+ * To come (plan_tiny_chrome.md): flexbox and cookies (C5), SVG (C6),
+ * several tabs, the omnibox's search and the developer tools (C7), the
+ * ES5 core (C8), video (C9).
  *)
 open Playground
 
@@ -113,6 +123,7 @@ let settings (css : bool) (tab : Browser_tab.t) : Browser_page.settings =
     breaker = Html_layout.greedy;
     visited = (fun url -> List.mem url tab.visited);
     picture = (fun url -> List.assoc_opt url tab.pictures);
+    sheet = (fun url -> List.assoc_opt url tab.sheets);
   }
 
 let config (m : model) : msg Browser_tab.config =
@@ -124,7 +135,8 @@ let config (m : model) : msg Browser_tab.config =
     connections = 6;
     visible = int_of_float (area_height /. line_height);
     line_height;
-    scripts = false;
+    (* the built-in pages' scripts, not the web's (C8: a few sites') *)
+    scripts = (fun url -> Browser_url.starts_with "about:" url);
     seed = 1;
   }
 
@@ -288,6 +300,7 @@ let bubble (m : model) : shape list =
     match (m.tab.state, hovered m) with
     | Shown p, Some href -> Some (resolve p.url href)
     | Loading url, _ -> Some ("Waiting for " ^ url ^ "...")
+    | Shown _, None when List.exists (fun u -> List.mem u m.tab.sheet_urls) m.tab.in_flight -> Some "Loading style sheets..."
     | Shown _, None when m.tab.in_flight <> [] -> Some "Loading pictures..."
     | _ -> None
   in

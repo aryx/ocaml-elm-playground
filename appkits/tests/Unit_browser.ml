@@ -13,8 +13,16 @@
 (* a page read with no pictures, nothing visited, 976 wide *)
 let page (url : string) (html : string) : Browser_page.t =
   Browser_page.read
-    { extensions = false; css = false; boxes = false; width = 976.; breaker = Html_layout.greedy; visited = (fun _ -> false); picture = (fun _ -> None) }
+    { extensions = false; css = false; boxes = false; width = 976.; breaker = Html_layout.greedy; visited = (fun _ -> false); picture = (fun _ -> None); sheet = (fun _ -> None) }
     url 200 (Some "text/html") html
+
+(* by the box model, [sheets] the style sheets it has, by URL *)
+let styled (sheets : (string * string) list) (html : string) : Browser_page.t * Browser_page.settings =
+  let s : Browser_page.settings =
+    { extensions = true; css = true; boxes = true; width = 976.; breaker = Html_layout.greedy; visited = (fun _ -> false);
+      picture = (fun _ -> None); sheet = (fun url -> List.assoc_opt url sheets) }
+  in
+  (Browser_page.read s "http://x.org/a/page.html" 200 (Some "text/html") html, s)
 
 let element (p : Browser_page.t) (name : string) : Dom.element =
   List.find (fun e -> Dom.attribute "name" e = Some name) (Dom.find_all "input" p.tree)
@@ -32,6 +40,14 @@ let tests =
           (* at D now *)
           Alcotest.(check (pair (list string) (list string))) "visit D: C is gone" ([ "B"; "A" ], []) (h.behind, h.ahead);
           Alcotest.(check bool) "no forward" true (Browser_history.forward "D" h = None));
+      Testo.create "the style sheets wanted: links, @imports, media" (fun () ->
+          let html = {|<link rel=stylesheet href=main.css><link rel=stylesheet href=print.css media=print><link rel="alternate stylesheet" href=alt.css><p>x|} in
+          let p, s = styled [] html in
+          Alcotest.(check (list string)) "the link, not print's, not the alternate" [ "http://x.org/a/main.css" ] (Browser_page.sheets_wanted s p);
+          let p, s = styled [ ("http://x.org/a/main.css", {|@import url("../colours.css"); p { color: red }|}) ] html in
+          Alcotest.(check (list string)) "then its @import, resolved against it" [ "http://x.org/colours.css" ] (Browser_page.sheets_wanted s p);
+          let p, s = styled [ ("http://x.org/a/main.css", {|@import "../colours.css";|}); ("http://x.org/colours.css", "p { color: blue }") ] html in
+          Alcotest.(check (list string)) "all had" [] (Browser_page.sheets_wanted s p));
       Testo.create "URLs: resolved, split" (fun () ->
           Alcotest.(check string)
             "relative" "http://info.cern.ch/hypertext/WWW/Help.html#people"

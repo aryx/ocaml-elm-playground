@@ -23,6 +23,8 @@ type t = {
   visited : string list;
   fragment : string option;
   pictures : (string * Browser_picture.t) list;
+  sheets : (string * string) list;
+  sheet_urls : string list;
   queue : string list;
   in_flight : string list;
   total : int;
@@ -39,7 +41,7 @@ type 'msg config = {
   connections : int;
   visible : int;
   line_height : float;
-  scripts : bool;
+  scripts : string -> bool;
   seed : int;
 }
 
@@ -52,6 +54,8 @@ let empty ~(images : bool) : t =
     visited = [];
     fragment = None;
     pictures = [];
+    sheets = [];
+    sheet_urls = [];
     queue = [];
     in_flight = [];
     total = 0;
@@ -96,7 +100,7 @@ let relaid (cfg : 'msg config) (tab : t) : t =
  * and the page laid out from the tree they leave *)
 let arrive (cfg : 'msg config) (tab : t) (url : string) (status : int) (content_type : string option) (bytes : string) : t =
   let p = Browser_page.read (cfg.settings tab) url status content_type bytes in
-  if not cfg.scripts then { tab with state = Shown p; script = None }
+  if not (cfg.scripts url) then { tab with state = Shown p; script = None }
   else
     let s = Browser_script.create ~seed:cfg.seed p.tree in
     Browser_script.run_scripts s;
@@ -105,12 +109,25 @@ let arrive (cfg : 'msg config) (tab : t) (url : string) (status : int) (content_
 let failed (cfg : 'msg config) (tab : t) (url : string) (why : string) : t = arrive cfg tab url 0 None (Browser_page.error_html url why)
 
 (*****************************************************************************)
-(* Pictures, four at a time *)
+(* Pictures, four at a time; style sheets first *)
 (*****************************************************************************)
 
 (* a picture had (or not): the page laid out again with it *)
 let with_arrived (cfg : 'msg config) (tab : t) (url : string) (pic : Browser_picture.t) : t =
   relaid cfg { tab with pictures = (url, pic) :: List.remove_assoc url tab.pictures }
+
+(* a style sheet had (or not: then empty): the page laid out again with
+ * it -- its colours, its boxes, as a picture moves the text *)
+let with_sheet (cfg : 'msg config) (tab : t) (url : string) (text : string) : t =
+  let tab = relaid cfg { tab with sheets = (url, text) :: List.remove_assoc url tab.sheets } in
+  (* its @imports, first in the queue *)
+  match tab.state with
+  | Shown p ->
+      let more =
+        List.filter (fun u -> not (List.mem u tab.queue || List.mem u tab.in_flight)) (Browser_page.sheets_wanted (cfg.settings tab) p)
+      in
+      { tab with queue = more @ tab.queue; sheet_urls = more @ tab.sheet_urls; total = tab.total + List.length more }
+  | Loading _ -> tab
 
 (* more pictures on their way, while fewer than [connections] are:
  * Netscape's way, where Mosaic had one; a built-in one decoded at once *)
@@ -118,7 +135,10 @@ let rec fetch_more (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, c
   match tab.queue with
   | url :: rest when List.length tab.in_flight < cfg.connections ->
       let tab = { tab with queue = rest } in
-      if starts_with "about:" url then
+      if starts_with "about:" url && List.mem url tab.sheet_urls then
+        let text = match cfg.about (String.sub url 6 (String.length url - 6)) with Some (bytes, _) -> bytes | None -> "" in
+        fetch_more cfg network (with_sheet cfg tab url text, cmd)
+      else if starts_with "about:" url then
         let pic =
           match cfg.about (String.sub url 6 (String.length url - 6)) with
           | Some (bytes, _) -> Browser_picture.decode bytes
@@ -130,20 +150,26 @@ let rec fetch_more (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, c
         fetch_more cfg network ({ tab with in_flight = url :: tab.in_flight }, Cmd.batch [ cmd; get ])
   | _ -> (tab, cmd)
 
-(* a page shown: its pictures not had yet queued (if Auto Load Images),
- * the ones of the page before dropped *)
+(* a page shown: its style sheets not had yet queued (by the box
+ * model: Browser_page.sheets_wanted), then its pictures (if Auto Load
+ * Images), the ones of the page before dropped *)
 let with_pictures (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, cmd) : t * 'msg Cmd.t) : t * 'msg Cmd.t =
   match tab.state with
   | Loading _ -> (tab, cmd)
   | Shown p ->
       let had url = match List.assoc_opt url tab.pictures with Some (Arrived _ | Broken) -> true | _ -> false in
-      let urls =
+      let fresh = List.fold_left (fun acc u -> if List.mem u acc || List.mem u tab.in_flight then acc else acc @ [ u ]) [] in
+      let sheets = fresh (Browser_page.sheets_wanted (cfg.settings tab) p) in
+      let pictures =
         Dom.find_all "img" p.tree
-        |> List.filter_map (fun e -> Option.map (Browser_url.resolve p.url) (Dom.attribute "src" e))
-        |> List.fold_left (fun acc u -> if List.mem u acc || had u || List.mem u tab.in_flight then acc else acc @ [ u ]) []
+        |> List.filter_map (fun e -> Option.map (Browser_url.resolve p.url) (Box_layout.picture_src e))
+        |> List.filter (fun u -> not (had u))
+        |> fresh
       in
-      if not tab.images then ({ tab with queue = []; total = 0 }, cmd)
-      else fetch_more cfg network ({ tab with queue = urls; total = List.length urls + List.length tab.in_flight }, cmd)
+      let pictures = if tab.images then pictures else [] in
+      let urls = sheets @ pictures in
+      fetch_more cfg network
+        ({ tab with queue = urls; sheet_urls = sheets @ tab.sheet_urls; total = List.length urls + List.length tab.in_flight }, cmd)
 
 let load_images cfg network tab = with_pictures cfg network ({ tab with images = true }, Cmd.none)
 
@@ -227,6 +253,10 @@ let got (cfg : 'msg config) (network : < Cap.network ; .. >) (url : string) (res
 let got_picture (cfg : 'msg config) (network : < Cap.network ; .. >) (url : string) (result : (Http.response, Http.error) result)
     (tab : t) : t * 'msg Cmd.t =
   if not (List.mem url tab.in_flight) then (* one Stop said not to wait for *) (tab, Cmd.none)
+  else if List.mem url tab.sheet_urls then
+    (* a style sheet: laid out with it, its @imports queued *)
+    let text = match result with Ok r when r.status / 100 = 2 -> r.body | _ -> "" in
+    fetch_more cfg network (with_sheet cfg { tab with in_flight = List.filter (( <> ) url) tab.in_flight } url text, Cmd.none)
   else
     let pic = match result with Ok r when r.status / 100 = 2 -> Browser_picture.decode r.body | _ -> Browser_picture.Broken in
     fetch_more cfg network (with_arrived cfg { tab with in_flight = List.filter (( <> ) url) tab.in_flight } url pic, Cmd.none)
