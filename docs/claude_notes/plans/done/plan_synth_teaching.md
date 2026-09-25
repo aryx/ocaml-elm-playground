@@ -1792,6 +1792,15 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   spectra crossfaded. A golden WAV each (the organ's raised 6 dB, to
   the others'). TinyOpxy: M1 cycling the fourteen; golden frame
   TinyOpxy_wavetable. Axis, dissolve, epiano, prism left.
+- **CLOSED (2026-09-25)**: the plan done, from TinyMinimoog to the
+  climax, TinyOp1 and TinyOpxy, and TinyReface over the classics:
+  twelve instruments and studios in `apps/music/` (with the
+  tracker, thirteen programs), their blocks in
+  `audio/instruments/` and `audio/effects/`, each measured and heard
+  (golden WAVs and frames). What's left -- saving, a MIDI keyboard,
+  the rack after the voices, the next music programs (a sequencer, a
+  sound editor, a score editor), the OP-1's and the OP-XY's rest, each
+  classic's exercises -- is in `plan_synth_remaining.md`.
 
 ## Verification
 
