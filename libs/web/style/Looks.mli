@@ -53,6 +53,9 @@
      font color=             #rrggbb, or one of HTML 3.2's 16 names
      body text= link= vlink= the text's, a link's, a visited link's
      p, h1-h6 align=         as div's
+     table, tr, td, th       blocks (Html_layout lays the table out);
+                             td's lines on the left, th's bold and
+                             centred, either's align= otherwise
 
    Phase 8 turns this table into the first style sheet of a cascade,
    the "user agent style sheet" -- which is what it always was.

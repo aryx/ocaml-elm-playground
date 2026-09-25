@@ -787,6 +787,20 @@ before TinyNetscape's N5.
   (exercises): `<blink>`, `<basefont>`, `<nobr>`, a picture's
   border= hspace= vspace=, list types, `background=` (a tiled
   picture).
+- **N4 done** (2026-09-25): tables, marked as Netscape 1.1's (table,
+  caption, tr, td, th, and HTML 4's row groups), so TinyMosaic runs
+  their cells together as 1994's Mosaic did. `Table_layout` (new): the
+  grid (colspan, through thead/tbody/tfoot) and the automatic column
+  widths of the notes' section 12, its worked example tested;
+  `Html_layout.layout_table`: each cell's two widths by laying it out
+  at width 0 and without limit (a `measuring` flag: lines not aligned),
+  rows as tall as their tallest cell, valign= (middle by default),
+  cellpadding=, cellspacing=, border=, width= (pixels or a
+  percentage), align= or <center>, a caption; `Looks`: th bold and
+  centred, td on the left; `Browser_draw.table_frame`: the table
+  raised, its cells sunken. Netscape's welcome page has a table of its
+  extensions. Not done: rowspan=, a cell's width= and bgcolor= (3.0),
+  the fixed layout, caching the measures.
 
 **Code shared between the two apps' updates.** Their models differ
 (views, fetching, chrome), so each keeps its own `update`; what both do

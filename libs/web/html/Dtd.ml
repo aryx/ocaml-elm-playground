@@ -54,7 +54,11 @@ let stops (x : string) (y : string) : bool =
 (* Netscape's extensions *)
 (*****************************************************************************)
 
-let netscape_elements = [ "basefont"; "blink"; "center"; "font"; "nobr"; "wbr" ]
+let netscape_elements =
+  [ "basefont"; "blink"; "center"; "font"; "nobr"; "wbr" ]
+  (* 1.1's tables (the HTML 3.0 draft's), and the row groups HTML 4
+   * added to them *)
+  @ [ "table"; "caption"; "tr"; "td"; "th"; "thead"; "tbody"; "tfoot" ]
 
 let netscape_attributes =
   [

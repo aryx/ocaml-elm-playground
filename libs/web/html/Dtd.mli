@@ -45,7 +45,9 @@
    is an unknown tag: ignored, its content shown).
 
      Netscape's elements      font (size, color), basefont, center,
-                              blink, nobr, wbr
+                              blink, nobr, wbr; and (1.1) table,
+                              caption, tr, td, th (with HTML 4's
+                              thead, tbody, tfoot)
      Netscape's attributes    body: bgcolor, text, link, vlink, alink,
                                     background (1.1)
                               hr: size, width, align, noshade
@@ -57,8 +59,8 @@
                               middle, bottom): pictures the text flows
                               around, the first floats
 
-   What is not in the table counts as core: HTML 3.2's own (div,
-   tables) are marked by the phases that honour them.
+   What is not in the table counts as core: HTML 3.2's own (div) is
+   left so.
 
    Reference: HTML 3.2 Reference Specification (W3C, 1997), its DTD;
    RFC 1866 (HTML 2.0), section 9, its DTD; Netscape Communications,

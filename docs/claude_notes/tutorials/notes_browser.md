@@ -495,6 +495,17 @@ width available  90: < 100, every column at its min, and the table
                      overflows the window
 ```
 
+In this repository, `Table_layout` (the grid, and these widths) and
+`Html_layout` (the cells laid out) do it for TinyNetscape. A cell's two
+widths come from the layout itself, run twice: at width 0 every word is
+a line of its own, so the widest line is the minimum; without a limit
+nothing wraps, so the widest line is the maximum -- a table in a cell
+measured the same way, for free. Each cell is laid out three times, and
+a table in a table nine: why real engines cache what they measure.
+TinyMosaic, like the Mosaic of 1994, has no tables: its cells are text
+run together, the "table soup" every page designer saw in the browsers
+left behind.
+
 ## 13. What the real engines add
 
 - **Scripts**: JavaScript (Netscape 2, 1995) changes the tree after it

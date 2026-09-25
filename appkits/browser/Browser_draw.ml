@@ -90,6 +90,39 @@ let glyphs ?(visited = fun (_ : string) -> false) ?(picture_of = fun (_ : string
         in
         List.concat (List.rev shapes)
 
+(* a bevelled frame [t] thick: [light] above and on the left, [dark]
+ * below and on the right -- raised; the other way round, sunken *)
+let bevel ~(light : color) ~(dark : color) ~(t : float) (x : float) (y : float) (w : float) (h : float) : shape list =
+  [ rectangle light w t |> move (x +. (w /. 2.)) (-.(y +. (t /. 2.)));
+    rectangle light t h |> move (x +. (t /. 2.)) (-.(y +. (h /. 2.)));
+    rectangle dark w t |> move (x +. (w /. 2.)) (-.(y +. h -. (t /. 2.)));
+    rectangle dark t h |> move (x +. w -. (t /. 2.)) (-.(y +. (h /. 2.))) ]
+
+(* a table's border (Netscape 1.1's <table border=n>): the table raised
+ * by n, each cell sunken by 1 -- Motif's look, the one the first
+ * tables had *)
+let table_frame (table : Dom.element) (b : Html_layout.box) : drawn =
+  let t =
+    match Dom.attribute "border" table with
+    | Some "" -> 1.
+    | Some s -> Option.value (float_of_string_opt s) ~default:1.
+    | None -> 0.
+  in
+  if t <= 0. then []
+  else
+    let light = rgb 240 240 240 and dark = rgb 110 110 110 in
+    (* below its caption *)
+    let top = match b.children with { kind = Block c; y; height; _ } :: _ when c.name = "caption" -> y +. height | _ -> b.y in
+    let cells =
+      List.concat_map
+        (fun (c : Html_layout.box) ->
+          match c.kind with
+          | Block e when e.name = "td" || e.name = "th" -> bevel ~light:dark ~dark:light ~t:1. c.x c.y c.width c.height
+          | _ -> [])
+        b.children
+    in
+    [ (top, b.y +. b.height, group (bevel ~light ~dark ~t b.x top b.width (b.y +. b.height -. top) @ cells)) ]
+
 let rec draw ?(extensions = false) ~(visited : string -> bool) ~(picture_of : string -> Browser_picture.t option)
     (b : Html_layout.box) : drawn =
   let lines =
@@ -142,7 +175,8 @@ let rec draw ?(extensions = false) ~(visited : string -> bool) ~(picture_of : st
             group (glyphs { text; look; x = b.x -. 6. -. width; width; baseline; picture = None; control = None }) ) ]
     | _ -> []
   in
-  lines @ floats @ rule @ marker @ List.concat_map (draw ~extensions ~visited ~picture_of) b.children
+  let frame = match b.kind with Block e when extensions && e.name = "table" -> table_frame e b | _ -> [] in
+  lines @ floats @ rule @ marker @ frame @ List.concat_map (draw ~extensions ~visited ~picture_of) b.children
 
 (*****************************************************************************)
 (* Form controls *)

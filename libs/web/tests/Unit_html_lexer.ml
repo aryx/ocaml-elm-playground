@@ -28,7 +28,7 @@ let tests =
             ]);
       Testo.create "attributes: three quotes, none, twice" (fun () ->
           check "quoted three ways" "<td align=center valign='top' bgcolor=\"#ffffff\">"
-            [ "Start_tag \"td\" [align = \"center\"; valign = \"top\"; bgcolor = \"#ffffff\"]" ];
+            [ "Start_tag \"td\" [align = \"center\"; valign = \"top\"; bgcolor = \"#ffffff\"] {Netscape}" ];
           check "no value" "<hr noshade size=2>" [ "Start_tag \"hr\" [] {Netscape: noshade = \"\"; size = \"2\"}" ];
           check "the first of two" "<a href=a href=b>" [ "Start_tag \"a\" [href = \"a\"]" ];
           check "a quote in the other quotes" "<img alt='say \"hi\"'>"

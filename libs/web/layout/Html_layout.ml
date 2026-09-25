@@ -325,6 +325,9 @@ type ctx = {
   breaker : breaker;
   picture_size : string -> (float * float) option;
   floats : placed list ref; (* the page's, shared *)
+  (* a table's cell laid out to measure its widths: lines not aligned
+   * (a centred line at an unlimited width would be far to the right) *)
+  measuring : bool;
   name : string; (* the block's element's: a list's items are numbered *)
   look : Looks.t; (* the block's: its alignment, its empty lines *)
   x : float;
@@ -428,15 +431,20 @@ let flush_inline (ctx : ctx) : unit =
       }
       :: ctx.children
 
+let rec fragments (b : box) : fragment list =
+  List.concat_map (fun (l : line) -> l.fragments) b.lines @ b.floats @ List.concat_map fragments b.children
+
 let rec layout_block (metrics : metrics) (breaker : breaker) (picture_size : string -> (float * float) option)
-    (floats : placed list ref) (look : Looks.t) (e : Dom.element) ~(marker : marker option) ~(x : float) ~(width : float)
-    ~(y : float) : box =
+    (floats : placed list ref) ~(measuring : bool) (look : Looks.t) (e : Dom.element) ~(marker : marker option)
+    ~(x : float) ~(width : float) ~(y : float) : box =
+  let look = if measuring then { look with align = Left } else look in
   let ctx =
     {
       metrics;
       breaker;
       picture_size;
       floats;
+      measuring;
       name = e.name;
       look;
       x;
@@ -545,23 +553,111 @@ and walk (ctx : ctx) (look : Looks.t) (node : Dom.node) : unit =
                   | _ -> ctx.x +. ((ctx.width -. width) /. 2.)
                 in
                 { kind = Rule e; x; y; width; height; children = []; lines = []; floats = []; marker = None }
+            | _ when e.name = "table" && l.extensions -> layout_table ctx l e ~y
             | _ ->
-                layout_block ctx.metrics ctx.breaker ctx.picture_size ctx.floats l e ~marker ~x:(ctx.x +. b.indent)
-                  ~width:(ctx.width -. b.indent -. b.right) ~y
+                layout_block ctx.metrics ctx.breaker ctx.picture_size ctx.floats ~measuring:ctx.measuring l e ~marker
+                  ~x:(ctx.x +. b.indent) ~width:(ctx.width -. b.indent -. b.right) ~y
           in
           ctx.children <- child :: ctx.children;
           ctx.cursor <- y +. child.height;
           ctx.pending <- b.margin_bottom)
 
+(* a table (Netscape 1.1): its columns' widths from its cells' two
+ * widths (Table_layout), each measured by laying the cell out at width
+ * 0 (every word a line: its widest word) and without limit (all on one
+ * line); then its rows, each as tall as its tallest cell, a cell's
+ * content in the middle of its row (valign=, Netscape's default) *)
+and layout_table (ctx : ctx) (l : Looks.t) (table : Dom.element) ~(y : float) : box =
+  let number name default =
+    match Option.bind (Dom.attribute name table) float_of_string_opt with Some n when n >= 0. -> n | _ -> default
+  in
+  (* <table border> is border=1 *)
+  let border = match Dom.attribute "border" table with Some "" -> 1. | Some _ -> number "border" 1. | None -> 0. in
+  let padding = number "cellpadding" 1. and spacing = number "cellspacing" 2. in
+  let cells, n = Table_layout.grid table in
+  (* a cell laid out, its content [padding] inside; its own floats *)
+  let lay_out ~measuring (c : Table_layout.cell) ~x ~width ~y =
+    layout_block ctx.metrics ctx.breaker ctx.picture_size (ref []) ~measuring (Looks.look l c.element) c.element ~marker:None
+      ~x:(x +. padding) ~width:(width -. (2. *. padding)) ~y:(y +. padding)
+  in
+  let extent (b : box) = List.fold_left (fun m (f : fragment) -> Float.max m (f.x +. f.width -. b.x)) 0. (fragments b) in
+  let measured =
+    List.map
+      (fun c ->
+        let measure width = extent (lay_out ~measuring:true c ~x:0. ~width ~y:0.) +. (2. *. padding) in
+        (c, (measure (2. *. padding), measure 1e6)))
+      cells
+  in
+  let columns = Table_layout.columns n measured ~spacing in
+  let chrome = (2. *. border) +. (spacing *. float_of_int (n + 1)) in
+  let asked =
+    match Dom.attribute "width" table with
+    | Some w when String.ends_with ~suffix:"%" w ->
+        Option.map (fun p -> ctx.width *. p /. 100.) (float_of_string_opt (String.sub w 0 (String.length w - 1)))
+    | Some w -> float_of_string_opt w
+    | None -> None
+  in
+  let widths = Table_layout.widths ~room:(Option.value asked ~default:ctx.width -. chrome) ~fixed:(asked <> None) columns in
+  let width = Array.fold_left ( +. ) chrome widths in
+  let x =
+    match Option.map String.lowercase_ascii (Dom.attribute "align" table) with
+    | Some "center" -> ctx.x +. ((ctx.width -. width) /. 2.)
+    | Some "right" -> ctx.x +. ctx.width -. width
+    | Some _ -> ctx.x
+    | None -> if l.align = Center then ctx.x +. ((ctx.width -. width) /. 2.) else ctx.x
+  in
+  let sum i j = let s = ref 0. in for k = i to j - 1 do s := !s +. widths.(k) done; !s in
+  let column_x i = x +. border +. spacing +. sum 0 i +. (spacing *. float_of_int i) in
+  let cell_width (c : Table_layout.cell) = sum c.column (c.column + c.span) +. (spacing *. float_of_int (c.span - 1)) in
+  (* the caption, above, as wide as the table *)
+  let caption =
+    Option.map
+      (fun e -> layout_block ctx.metrics ctx.breaker ctx.picture_size (ref []) ~measuring:ctx.measuring (Looks.look l e) e ~marker:None ~x ~width ~y)
+      (Table_layout.caption table)
+  in
+  let top = match caption with Some c -> y +. c.height | None -> y in
+  let rows = List.fold_left (fun m (c : Table_layout.cell) -> max m (c.row + 1)) 0 cells in
+  let row_top = ref (top +. border +. spacing) and boxes = ref [] in
+  for r = 0 to rows - 1 do
+    let row = List.filter (fun (c : Table_layout.cell) -> c.row = r) cells in
+    let height c = (lay_out ~measuring:ctx.measuring c ~x:(column_x c.column) ~width:(cell_width c) ~y:0.).height +. (2. *. padding) in
+    let heights = List.map (fun c -> (c, height c)) row in
+    let row_height = List.fold_left (fun m (_, h) -> Float.max m h) 0. heights in
+    List.iter
+      (fun ((c : Table_layout.cell), h) ->
+        let offset =
+          match Option.map String.lowercase_ascii (Dom.attribute "valign" c.element) with
+          | Some "top" -> 0.
+          | Some "bottom" -> row_height -. h
+          | _ -> (row_height -. h) /. 2.
+        in
+        let b = lay_out ~measuring:ctx.measuring c ~x:(column_x c.column) ~width:(cell_width c) ~y:(!row_top +. offset) in
+        (* the box is the cell's rectangle; its content inside *)
+        boxes := { b with x = column_x c.column; y = !row_top; width = cell_width c; height = row_height } :: !boxes)
+      heights;
+    row_top := !row_top +. row_height +. spacing
+  done;
+  {
+    kind = Block table;
+    x;
+    y;
+    width;
+    height = !row_top +. border -. y;
+    children = Option.to_list caption @ List.rev !boxes;
+    lines = [];
+    floats = [];
+    marker = None;
+  }
+
 let layout (metrics : metrics) ?(breaker = greedy) ?(picture_size = fun _ -> None) ~(root : Looks.t) ~(width : float)
     (html : Dom.element) : box =
   let floats = ref [] in
-  let page = layout_block metrics breaker picture_size floats (Looks.look root html) html ~marker:None ~x:0. ~width ~y:0. in
+  let page =
+    layout_block metrics breaker picture_size floats ~measuring:false (Looks.look root html) html ~marker:None ~x:0. ~width
+      ~y:0.
+  in
   (* a float can hang below the last block: the page as long as it *)
   { page with height = List.fold_left (fun h p -> Float.max h p.pbottom) page.height !floats }
-
-let rec fragments (b : box) : fragment list =
-  List.concat_map (fun (l : line) -> l.fragments) b.lines @ b.floats @ List.concat_map fragments b.children
 
 let rec first_baseline (b : box) : float option =
   match b.lines with

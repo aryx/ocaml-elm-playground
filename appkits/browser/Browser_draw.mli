@@ -37,7 +37,9 @@ val glyphs :
   ?visited:(string -> bool) -> ?picture_of:(string -> Browser_picture.t option) -> Html_layout.fragment -> Playground.shape list
 
 (* the whole page but its controls: every line, float, rule and marker;
- * Netscape's <hr noshade> a flat bar if [extensions] (false) *)
+ * with [extensions] (false), Netscape's <hr noshade> a flat bar and a
+ * <table border>'s bevelled frames, the table raised, its cells
+ * sunken *)
 val draw :
   ?extensions:bool -> visited:(string -> bool) -> picture_of:(string -> Browser_picture.t option) -> Html_layout.box -> drawn
 

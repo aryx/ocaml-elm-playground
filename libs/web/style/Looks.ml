@@ -115,6 +115,10 @@ let netscape (l : t) (e : Dom.element) : t =
   | "body" ->
       { l with color = set (color "text") l.color; link_color = set (color "link") l.link_color;
                visited_color = set (color "vlink") l.visited_color }
+  (* a cell starts on the left, whatever it is in (<center>); a heading
+   * cell is bold and centred *)
+  | "td" -> { l with align = align_of l e Left }
+  | "th" -> { l with bold = true; align = align_of l e Center }
   | _ -> l
 
 let look (parent : t) (e : Dom.element) : t =

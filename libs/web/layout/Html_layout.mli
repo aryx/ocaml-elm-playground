@@ -115,6 +115,25 @@
    side going down, a block's box extending under a float (only its
    lines are shortened) -- the exercise of the clearfix.
 
+   **A table** (Netscape 1.1, when honoured) is a block of cells in rows
+   and columns: its grid and its columns' widths are Table_layout's,
+   each cell asked its two widths by being laid out twice -- at width 0,
+   where every word is a line of its own and the widest is its minimum,
+   and without limit, where its lines are whole and the widest is its
+   maximum (lines not aligned then: a centred line at an unlimited
+   width would be far away). Then each row is as tall as its tallest
+   cell, a cell's content in the middle of it (valign=top, bottom
+   otherwise), the cells cellspacing= apart (2) and their content
+   cellpadding= inside (1), the whole border= inside its frame (0); a
+   <caption> above, as wide as the table; the table on the left, or
+   centred by align=center or a <center> around it. A cell's floats are
+   its own. Worked example (the tests'), the same metrics:
+
+     <table border=1><tr><td>a<td>bb</table>
+       columns 1 + 10 + 1 = 12 and 22; the table 1 + 2 + 12 + 2 + 22
+       + 2 + 1 = 42 wide from x 8, its cells from 11 and 25, "a" at 12
+       and "bb" at 26; the row from 11, 14 high: the table 20 high
+
    **A form's control** (Mosaic 2.0) is a box in the line too, its size
    from its kind (Forms), in the look it is in: a text field size=
    characters wide (20), a checkbox or a radio button 0.9 em square, a

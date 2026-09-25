@@ -194,6 +194,25 @@ let tests =
       Testo.create "floats: br clear" (fun () ->
           let p = netscape "<img src=g width=40 height=30 align=left>a<br clear=all>b" in
           Alcotest.(check (list fragment)) "b below the image" [ ("a", 54., 17.); ("b", 8., 47.); ("", 8., 38.) ] (fragments p));
+      Testo.create "a table" (fun () ->
+          (* padding 1, spacing 2, border 1: a's column 12, bb's 22;
+           * the table 1 + 2 + 12 + 2 + 22 + 2 + 1 = 42 wide from x 8,
+           * its cells from 11 and 25, their text 1 inside; the row
+           * from 8 + 1 + 2 = 11, 12 + 2 high *)
+          let p = netscape "<table border=1><tr><td>a<td>bb</table>" in
+          Alcotest.(check (list fragment)) "a, bb" [ ("a", 12., 21.); ("bb", 26., 21.) ] (fragments p);
+          let t = List.hd (blocks "table" p) in
+          Alcotest.(check (pair near near)) "42 wide, 20 high" (42., 20.) (t.width, t.height);
+          Alcotest.(check (list (pair near near))) "the cells' rectangles" [ (11., 12.); (25., 22.) ]
+            (List.map (fun (b : Html_layout.box) -> (b.x, b.width)) (blocks "td" p)));
+      Testo.create "a table: a centred cell measured, not far away" (fun () ->
+          let p = netscape "<table><tr><th>ab</table>" in
+          (* claude: the th's column is its word's 20 and the padding *)
+          Alcotest.(check (list near)) "the column 22 wide" [ 22. ]
+            (List.map (fun (b : Html_layout.box) -> b.width) (blocks "th" p)));
+      Testo.create "a table: unknown to Mosaic" (fun () ->
+          Alcotest.(check (list fragment)) "the cells run together" [ ("a", 8., 17.); ("b", 18., 17.) ]
+            (fragments (page "<table><tr><td>a<td>b</table>")));
       Testo.create "rules: Netscape's size, width, align" (fun () ->
           let rule html = match blocks "body" (netscape html) with [ b ] -> List.hd b.children | _ -> Alcotest.fail "no body" in
           let r = rule "<hr size=6 width=50%>" in

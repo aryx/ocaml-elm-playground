@@ -72,7 +72,7 @@ let tests =
           check "nor across a blockquote" "<li>a<blockquote><li>b"
             [ "li"; "  \"a\""; "  blockquote"; "    li"; "      \"b\"" ];
           check "a cell" "<table><tr><td><p>a</td><td>b</table>"
-            [ "table"; "  tr"; "    td"; "      p"; "        \"a\""; "    td"; "      \"b\"" ]);
+            [ "table {Netscape}"; "  tr {Netscape}"; "    td {Netscape}"; "      p"; "        \"a\""; "    td {Netscape}"; "      \"b\"" ]);
       Testo.create "stray and misnested end tags" (fun () ->
           check "a stray </b> ignored" "<p>a</b>b" [ "p"; "  \"ab\"" ];
           check "</p> alone makes an empty p" "a</p>b" [ "\"a\""; "p"; "\"b\"" ];
