@@ -1720,6 +1720,11 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
      * the first card's heading -- outlined on the page, its path, its
      * box, and each winning declaration with its rule and sheet *)
     ("apps/internet/software/TinyChrome", "elements", 10, "at(-460;-142):1-3,click:2,at(-275;288):4-8,click:6", [ "panel=elements" ]);
+    (* claude: TinyChrome's ES5 (C8): about:threads, its script of its
+     * own file (threads.js: a prototype, a regular expression,
+     * getElementsByClassName) having counted the comments, ada's
+     * thread clicked and folded, its replies hidden by a class *)
+    ("apps/internet/software/TinyChrome", "threads", 6, "at(-214;158):1-4,click:2", [ "url=about:threads" ]);
     (* the computer's kick landing: sparks bursting, the screen knocked
      * (the same hit as "fight"'s, the same 6 frames of hitstop) *)
     ("games/fighting/software/TinyStreetFighter", "engine", 136, "space:1,d:95-120,f:122,g:135", [ "juice=engine" ]);

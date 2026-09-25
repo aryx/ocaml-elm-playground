@@ -38,6 +38,8 @@ type expr =
   | Member of expr * string (* o.x *)
   | Index of expr * expr (* o[i] *)
   | Call of expr * expr list (* f(a, b), o.m(a): a method call when f is a Member or an Index *)
+  | New of expr * expr list (* new F(a): an object made by F, its prototype F.prototype *)
+  | Regex of string * string (* /pattern/flags *)
 
 (* a function: its name if it has one, its parameters, its body; an
  * arrow's expression body is [Return e]; an arrow has no this of its

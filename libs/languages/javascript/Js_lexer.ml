@@ -10,7 +10,7 @@
 
 (* See Js_lexer.mli *)
 
-type kind = Keyword of string | Name of string | Number of float | String of string | Punct of string | Eof
+type kind = Keyword of string | Name of string | Number of float | String of string | Punct of string | Regex of string * string | Eof
 type token = { kind : kind; line : int; newline_before : bool }
 
 exception Error of int * string
@@ -73,6 +73,10 @@ let tokenize (s : string) : token list =
               close (j + 1))
           in
           go (close (i + 2))
+      (* a / where an expression starts is a regular expression's: after
+       * an operator, a "(" or a keyword, not after a value (a name, a
+       * number, ")"), which it would divide *)
+      | '/' when regex_allowed () -> go (regex i)
       | c when is_digit c || (c = '.' && i + 1 < n && is_digit s.[i + 1]) -> go (number i)
       | c when is_name_start c ->
           let j = ref i in
@@ -93,6 +97,32 @@ let tokenize (s : string) : token list =
                 emit (Punct (String.make 1 s.[i])) !line;
                 go (i + 1))
               else error (Printf.sprintf "unexpected character %C" s.[i]))
+  and regex_allowed () =
+    match !tokens with
+    | [] -> true
+    | t :: _ -> (
+        match t.kind with
+        | Number _ | String _ | Name _ | Regex _ -> false
+        | Keyword ("this" | "true" | "false" | "null") -> false
+        | Punct (")" | "]" | "}") -> false
+        | Keyword _ | Punct _ | Eof -> true)
+  (* /pattern/flags: to the / not escaped nor in a [set] *)
+  and regex i =
+    let rec go j in_set =
+      if j >= n || s.[j] = '\n' then error "a regular expression never closed on its line"
+      else
+        match s.[j] with
+        | '\\' -> go (j + 2) in_set
+        | '[' -> go (j + 1) true
+        | ']' -> go (j + 1) false
+        | '/' when not in_set -> j
+        | _ -> go (j + 1) in_set
+    in
+    let close = go (i + 1) false in
+    let k = ref (close + 1) in
+    while !k < n && is_name_char s.[!k] do incr k done;
+    emit (Regex (sub (i + 1) close, sub (close + 1) !k)) !line;
+    !k
   (* digits, a fraction, an exponent; or 0x and hexadecimal digits *)
   and number i =
     if i + 1 < n && s.[i] = '0' && (s.[i + 1] = 'x' || s.[i + 1] = 'X') then (
@@ -154,4 +184,5 @@ let to_string (k : kind) : string =
   | Number f -> "Number " ^ if Float.is_integer f && Float.abs f < 1e15 then Printf.sprintf "%.0f" f else Printf.sprintf "%g" f
   | String s -> "String " ^ Printf.sprintf "%S" s
   | Punct p -> "Punct " ^ p
+  | Regex (r, f) -> Printf.sprintf "Regex /%s/%s" r f
   | Eof -> "Eof"

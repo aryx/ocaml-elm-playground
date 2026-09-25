@@ -15,7 +15,7 @@ type state = Loading of string | Shown of Browser_page.t
 type view = Page | Source
 type entry = { at : string; kept : (Browser_page.t * Browser_script.t option) option; scrolled_to : int }
 
-type kind = Document | Sheet | Picture
+type kind = Document | Sheet | Script | Picture | Fetch
 type request = { url : string; kind : kind; status : int option; bytes : int }
 
 type t = {
@@ -35,6 +35,8 @@ type t = {
   focus : Dom.element option;
   script : Browser_script.t option;
   requests : request list;
+  sources : (string * string) list; (* the texts of the pages' scripts of their own file, by URL: a cache *)
+  pending_scripts : string list; (* the page's still to come: its scripts run once they have *)
 }
 
 type 'msg config = {
@@ -67,6 +69,8 @@ let empty ~(images : bool) : t =
     focus = None;
     script = None;
     requests = [];
+    sources = [];
+    pending_scripts = [];
   }
 
 (* a request logged (the network panel's): replacing the one for the
@@ -74,7 +78,8 @@ let empty ~(images : bool) : t =
 let logged ?status ?(bytes = 0) (kind : kind) (url : string) (tab : t) : t =
   { tab with requests = { url; kind; status; bytes } :: List.filter (fun (r : request) -> r.url <> url) tab.requests }
 
-let kind_of (tab : t) (url : string) : kind = if List.mem url tab.sheet_urls then Sheet else Picture
+let kind_of (tab : t) (url : string) : kind =
+  if List.mem url tab.sheet_urls then Sheet else if List.mem url tab.pending_scripts then Script else Picture
 
 let current_url (tab : t) : string = match tab.state with Loading url -> url | Shown p -> p.url
 let starts_with = Browser_url.starts_with
@@ -110,13 +115,31 @@ let relaid (cfg : 'msg config) (tab : t) : t =
 
 (* a page just read: its scripts run first, if the browser has them,
  * and the page laid out from the tree they leave *)
+(* the page's scripts run, all of them had: the page laid out from the
+ * tree they leave *)
+let run_page_scripts (cfg : 'msg config) (tab : t) : t =
+  match (tab.state, tab.script) with
+  | Shown p, Some s ->
+      Browser_script.run_scripts ~source:(fun u -> List.assoc_opt u tab.sources) s;
+      { tab with state = Shown (Browser_page.with_tree (cfg.settings tab) p (Browser_script.tree s)) }
+  | _ -> tab
+
 let arrive (cfg : 'msg config) (tab : t) (url : string) (status : int) (content_type : string option) (bytes : string) : t =
   let p = Browser_page.read (cfg.settings tab) url status content_type bytes in
-  if not (cfg.scripts url) then { tab with state = Shown p; script = None }
+  if not (cfg.scripts url) then { tab with state = Shown p; script = None; pending_scripts = [] }
   else
-    let s = Browser_script.create ~seed:cfg.seed p.tree in
-    Browser_script.run_scripts s;
-    { tab with state = Shown (Browser_page.with_tree (cfg.settings tab) p (Browser_script.tree s)); script = Some s }
+    let s = Browser_script.create ~seed:cfg.seed ~base:p.url ~viewport:((cfg.settings tab).width, float_of_int cfg.visible *. cfg.line_height) p.tree in
+    (* its scripts of their own file fetched first (the queue's), then
+     * all run in order; the page shown meanwhile, as it came *)
+    let missing = List.filter (fun u -> not (List.mem_assoc u tab.sources)) (Browser_script.script_sources s) in
+    let tab = { tab with state = Shown p; script = Some s; pending_scripts = missing } in
+    if missing = [] then run_page_scripts cfg tab else tab
+
+(* a script's text had (or not: then nothing): the page's scripts run
+ * when it was the last *)
+let with_script (cfg : 'msg config) (tab : t) (url : string) (text : string) : t =
+  let tab = { tab with sources = (url, text) :: List.remove_assoc url tab.sources; pending_scripts = List.filter (( <> ) url) tab.pending_scripts } in
+  if tab.pending_scripts = [] then run_page_scripts cfg tab else tab
 
 let failed (cfg : 'msg config) (tab : t) (url : string) (why : string) : t = arrive cfg tab url 0 None (Browser_page.error_html url why)
 
@@ -152,10 +175,16 @@ let rec fetch_more (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, c
       | Some bytes ->
           (* a data: URL: its bytes are in it *)
           let tab = logged ~status:200 ~bytes:(String.length bytes) (kind_of tab url) url tab in
-          if List.mem url tab.sheet_urls then fetch_more cfg network (with_sheet cfg tab url bytes, cmd)
+          if List.mem url tab.pending_scripts then fetch_more cfg network (with_script cfg tab url bytes, cmd)
+          else if List.mem url tab.sheet_urls then fetch_more cfg network (with_sheet cfg tab url bytes, cmd)
           else fetch_more cfg network (with_arrived cfg tab url (Browser_picture.decode bytes), cmd)
       | None ->
-      if starts_with "about:" url && List.mem url tab.sheet_urls then
+      if starts_with "about:" url && List.mem url tab.pending_scripts then
+        let text = match cfg.about (String.sub url 6 (String.length url - 6)) with Some (bytes, _) -> bytes | None -> "" in
+        let tab = logged ~status:(if text = "" then 404 else 200) ~bytes:(String.length text) Script url tab in
+        (* the GETs its scripts queue go with the next task's *)
+        fetch_more cfg network (with_script cfg tab url text, cmd)
+      else if starts_with "about:" url && List.mem url tab.sheet_urls then
         let text = match cfg.about (String.sub url 6 (String.length url - 6)) with Some (bytes, _) -> bytes | None -> "" in
         let tab = logged ~status:(if text = "" then 404 else 200) ~bytes:(String.length text) Sheet url tab in
         fetch_more cfg network (with_sheet cfg tab url text, cmd)
@@ -190,9 +219,25 @@ let with_pictures (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, cm
         |> fresh
       in
       let pictures = if tab.images then pictures else [] in
-      let urls = sheets @ pictures in
+      (* the scripts' files between: the page's style first, its
+       * pictures last *)
+      let scripts = fresh (List.filter (fun u -> not (List.mem u sheets)) tab.pending_scripts) in
+      let urls = sheets @ scripts @ pictures in
       fetch_more cfg network
         ({ tab with queue = urls; sheet_urls = sheets @ tab.sheet_urls; total = List.length urls + List.length tab.in_flight }, cmd)
+
+(* the GETs the page's scripts queued (XMLHttpRequest, fetch): sent,
+ * logged, their answers not waited for (got_picture drops what is not
+ * in flight) *)
+let send_requests (cfg : 'msg config) (network : < Cap.network ; .. >) ((tab, cmd) : t * 'msg Cmd.t) : t * 'msg Cmd.t =
+  match tab.script with
+  | Some s -> (
+      match Browser_script.take_requests s with
+      | [] -> (tab, cmd)
+      | urls ->
+          let tab = List.fold_left (fun tab u -> logged ~status:0 Fetch u tab) tab urls in
+          (tab, Cmd.batch (cmd :: List.map (fun url -> Http.get network ~url ~expect:(Http.expect_response (cfg.got_picture url))) urls)))
+  | None -> (tab, cmd)
 
 let load_images cfg network tab = with_pictures cfg network ({ tab with images = true }, Cmd.none)
 
@@ -313,7 +358,7 @@ let got (cfg : 'msg config) (network : < Cap.network ; .. >) (url : string) (res
         List.find_map (fun (name, value) -> if String.lowercase_ascii name = "content-type" then Some value else None) r.headers
       in
       let tab = logged ~status:r.status ~bytes:(String.length r.body) Document url tab in
-      let tab, cmd = with_pictures cfg network (to_fragment cfg (arrive cfg tab r.url r.status content_type r.body), Cmd.none) in
+      let tab, cmd = send_requests cfg network (with_pictures cfg network (to_fragment cfg (arrive cfg tab r.url r.status content_type r.body), Cmd.none)) in
       (* a <meta http-equiv=refresh content="0;url=...">: gone to at
        * once, in the page's place (DuckDuckGo's links, sites moved) *)
       match refresh cfg tab with
@@ -323,7 +368,14 @@ let got (cfg : 'msg config) (network : < Cap.network ; .. >) (url : string) (res
 
 let got_picture (cfg : 'msg config) (network : < Cap.network ; .. >) (url : string) (result : (Http.response, Http.error) result)
     (tab : t) : t * 'msg Cmd.t =
-  if not (List.mem url tab.in_flight) then (* one Stop said not to wait for *) (tab, Cmd.none)
+  if not (List.mem url tab.in_flight) then (* one Stop said not to wait for, or a script's GET *) (tab, Cmd.none)
+  else if List.mem url tab.pending_scripts then
+    (* a script's file: the page's scripts run when it is the last *)
+    let text = match result with Ok r when r.status / 100 = 2 -> r.body | _ -> "" in
+    let status = match result with Ok r -> r.status | Error _ -> 0 in
+    let tab = logged ~status ~bytes:(String.length text) Script url tab in
+    let tab = with_script cfg { tab with in_flight = List.filter (( <> ) url) tab.in_flight } url text in
+    send_requests cfg network (fetch_more cfg network (tab, Cmd.none))
   else if List.mem url tab.sheet_urls then
     (* a style sheet: laid out with it, its @imports queued *)
     let text = match result with Ok r when r.status / 100 = 2 -> r.body | _ -> "" in
@@ -356,12 +408,13 @@ let rec at_path (root : Dom.element) (path : int list) : Dom.element option =
       match List.nth_opt children i with Some c -> at_path c rest | None -> None)
 
 let after_task (cfg : 'msg config) (network : < Cap.network ; .. >) (tab : t) : t * 'msg Cmd.t =
-  match (tab.state, tab.script) with
-  | Shown p, Some s when Browser_script.changed s ->
-      let tree = Browser_script.tree s in
-      let focus = Option.bind tab.focus (fun e -> Option.bind (path_to p.tree e) (at_path tree)) in
-      with_pictures cfg network ({ tab with state = Shown (Browser_page.with_tree (cfg.settings tab) p tree); focus }, Cmd.none)
-  | _ -> (tab, Cmd.none)
+  send_requests cfg network
+    (match (tab.state, tab.script) with
+    | Shown p, Some s when Browser_script.changed s ->
+        let tree = Browser_script.tree s in
+        let focus = Option.bind tab.focus (fun e -> Option.bind (path_to p.tree e) (at_path tree)) in
+        with_pictures cfg network ({ tab with state = Shown (Browser_page.with_tree (cfg.settings tab) p tree); focus }, Cmd.none)
+    | _ -> (tab, Cmd.none))
 
 let form_effect (cfg : 'msg config) (network : < Cap.network ; .. >) ~(keep_focus : bool) (effect : Browser_forms.effect) (tab : t) :
     t * 'msg Cmd.t =

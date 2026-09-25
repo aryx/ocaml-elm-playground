@@ -42,6 +42,7 @@ and obj = {
   id : int; (* for printing cycles and for tests; identity is (==) *)
   mutable props : (string * value ref) list; (* the newest first: keys in order, reversed *)
   kind : kind;
+  mutable proto : obj option; (* its prototype: where a property it does not have is looked for next *)
 }
 
 and kind =
@@ -50,6 +51,7 @@ and kind =
   | Closure of closure
   | Host_function of string * (this:value -> value list -> value) (* its name, and it *)
   | Host_object of host
+  | Regexp of Js_regexp.t (* a regular expression (its lastIndex a property) *)
 
 (* an object whose properties are the host's functions: reading one
  * calls [get], writing one [set] (the spec's getters and setters) --

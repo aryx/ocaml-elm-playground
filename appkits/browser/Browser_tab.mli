@@ -32,6 +32,13 @@
    in flight, [got_picture] takes one in, decodes it, lays the page out
    again, and asks for the next. Stop forgets the rest.
 
+   A page whose scripts run has its **scripts of their own file**
+   (<script src>, Browser_script.script_sources) fetched the same way,
+   before its pictures; its scripts run, in order, once the last has
+   come (the page shown meanwhile as it came, where a browser waits);
+   the GETs they queue (XMLHttpRequest, fetch) are sent after each
+   task, their answers dropped.
+
    A page laid out by the box model (TinyChrome's) has its **style
    sheets** fetched the same way, ahead of its pictures: its <link
    rel=stylesheet>s, then the @imports of those that have come
@@ -52,7 +59,7 @@ type state = Loading of string | Shown of Browser_page.t
  * its style sheets, its pictures, each pending (no status) or answered
  * (0 if it could not be had), its size; the log starts again with each
  * page *)
-type kind = Document | Sheet | Picture
+type kind = Document | Sheet | Script | Picture | Fetch (* Fetch: a script's GET, XMLHttpRequest's or fetch's *)
 type request = { url : string; kind : kind; status : int option; bytes : int }
 type view = Page | Source
 
@@ -77,6 +84,8 @@ type t = {
   focus : Dom.element option; (* a form's field typed into *)
   script : Browser_script.t option; (* the page's scripts, if the browser runs them *)
   requests : request list; (* the page's, the newest first *)
+  sources : (string * string) list; (* the texts of the pages' <script src>s, by URL: a cache *)
+  pending_scripts : string list; (* the page's <script src>s still to come: its scripts run when none is *)
 }
 
 type 'msg config = {

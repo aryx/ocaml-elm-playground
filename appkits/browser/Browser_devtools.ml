@@ -80,7 +80,7 @@ let styles (s : Browser_page.settings) (p : Browser_page.t) (e : Dom.element) : 
         (fun (prop, value, where) -> [ (Printf.sprintf "%s: %s;" prop (short 60 value), value_color); ("    " ^ short 100 where, muted) ])
         decls
 
-let kind_name (k : Browser_tab.kind) : string = match k with Document -> "page" | Sheet -> "css" | Picture -> "img"
+let kind_name (k : Browser_tab.kind) : string = match k with Document -> "page" | Sheet -> "css" | Script -> "js" | Picture -> "img" | Fetch -> "xhr"
 
 let network (requests : Browser_tab.request list) ~(times : string -> (float * float option) option) : line list =
   let rs = List.rev requests in

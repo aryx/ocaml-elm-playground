@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Threads</title>
+<link rel="stylesheet" href="chrome.css">
+<style>
+  .comment { margin: 10px 0 }
+  .head { color: var(--muted); font-size: 13px }
+  .togg { color: var(--accent); cursor: pointer }
+  .reply { margin-left: 32px }
+  .noshow { display: none }
+  .folded .text { display: none }
+</style>
+<script src="threads.js"></script>
+</head>
+<body>
+<header><div><h1>Threads</h1><p>A page's script of the old kind, run by our engine: click a [-] to fold its thread.</p></div></header>
+<main>
+  <div class="card">
+    <p class="muted">Like Hacker News' <code>hn.js</code>: ES5 -- a constructor and its
+    prototype, <code>var</code>, a regular expression, <code>Array.prototype.forEach.call</code>
+    on <code>getElementsByClassName</code>'s elements, a class toggled -- in a file of its
+    own, <code>threads.js</code>, fetched before it runs.</p>
+    <p id="count" class="muted">...</p>
+    <div class="comment" id="c1" data-indent="0"><div class="head">ada 3 hours ago <a class="togg" id="t1">[-]</a></div><div class="text">What does a browser do first with a page?</div></div>
+    <div class="comment reply" id="c2" data-indent="1"><div class="head">alan 2 hours ago <a class="togg" id="t2">[-]</a></div><div class="text">It reads its bytes into a tree of elements.</div></div>
+    <div class="comment reply" id="c3" data-indent="1"><div class="head">grace 2 hours ago <a class="togg" id="t3">[-]</a></div><div class="text">Then the style sheets say what each looks like.</div></div>
+    <div class="comment" id="c4" data-indent="0"><div class="head">edsger 1 hour ago <a class="togg" id="t4">[-]</a></div><div class="text">And the boxes are laid out, and drawn.</div></div>
+  </div>
+</main>
+</body>
+</html>

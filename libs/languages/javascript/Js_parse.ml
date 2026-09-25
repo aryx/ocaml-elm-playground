@@ -31,6 +31,7 @@ let describe (k : Js_lexer.kind) : string =
   | Keyword w | Name w | Punct w -> Printf.sprintf "'%s'" w
   | Number f -> Js_ast.number_to_string f
   | String s -> Printf.sprintf "%S" s
+  | Regex (r, f) -> Printf.sprintf "/%s/%s" r f
   | Eof -> "the end"
 
 let fail (p : t) (message : string) = raise (Error { line = (peek p).line; message })
@@ -114,6 +115,10 @@ and loop (p : t) (min : int) (left : expr) : expr =
       let args = arguments p in
       loop p min (Call (left, args))
   (* x++, but not x on one line and ++y on the next: [no LineTerminator here] *)
+  (* x instanceof F: as tight as < *)
+  | Keyword "instanceof" when 6 >= min ->
+      ignore (advance p);
+      loop p min (Binary ("instanceof", left, expression p 7))
   | Punct (("++" | "--") as op) when postfix_power >= min && not t.newline_before ->
       ignore (advance p);
       loop p min (Update (op, false, target p left))
@@ -187,9 +192,27 @@ and prefix (p : t) : expr =
         let kvs = members [] in
         expect p "}";
         Object kvs
-    | Keyword ("new" | "class") as k ->
+    | Regex (r, f) -> Regex (r, f)
+    (* new F(a), new F: F a name and its members, not a call *)
+    | Keyword "new" ->
+        let rec members e =
+          match (peek p).kind with
+          | Punct "." -> (
+              ignore (advance p);
+              match (advance p).kind with Name x | Keyword x -> members (Member (e, x)) | _ -> p.pos <- p.pos - 1; unexpected p "a property name")
+          | Punct "[" ->
+              ignore (advance p);
+              let i = expression p 0 in
+              expect p "]";
+              members (Index (e, i))
+          | _ -> e
+        in
+        let callee = members (prefix p) in
+        let args = if is_punct p "(" then (ignore (advance p); arguments p) else [] in
+        New (callee, args)
+    | Keyword ("class" as k) ->
         p.pos <- p.pos - 1;
-        fail p (Printf.sprintf "%s is not supported here (prototypes and classes: an exercise)" (describe k))
+        fail p (Printf.sprintf "%s is not supported here (an exercise: prototypes and new are)" k)
     | _ ->
         p.pos <- p.pos - 1;
         unexpected p "an expression"

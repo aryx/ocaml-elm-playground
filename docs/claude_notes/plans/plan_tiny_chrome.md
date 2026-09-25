@@ -285,6 +285,27 @@ which already reads video and sound:
   `var` hoisted, `==`, regular expressions, `Date`, `window`; the DOM's
   `getElementsBy...`, `classList`, `XMLHttpRequest`; the per-site
   setting: Hacker News' comments folding with its own `hn.js`.
+  Refined by reading `hn.js` (5 KB, 2026-09-25), in two steps:
+  - *the engine* (`libs/languages/javascript`): `new`, a prototype
+    chain on every object (a function's `prototype` made when first
+    read), `instanceof`, `Function.prototype.call`, `apply`, `bind`
+    (`Array.prototype.indexOf.call(a, x)`, `slice.call`,
+    `forEach.call`), `Object.create`; `var` hoisted to its function;
+    `==`'s conversions; `arguments`; regular expression literals and a
+    backtracking matcher, `Js_regexp` (`s.match(/[0-9]+/)` runs at
+    load: without it the script dies on its first page); `splice`,
+    `lastIndexOf`, `replace`, `match`, `search`, `split` by a regex,
+    `charCodeAt`, `encodeURIComponent`; `Date` on a clock the host
+    gives;
+  - *the page* (`Browser_script`): `getElementsByClassName` and
+    `ByTagName` (the document's and an element's), `nextElementSibling`,
+    `nextSibling`, `classList`, an `a`'s `href` resolved, `event.target`,
+    `stopImmediatePropagation`, `scrollIntoView` (nothing to do),
+    `window` (the global object) and `location`, `new URL(href, base)`
+    and its `searchParams`, `XMLHttpRequest` (a GET queued for the tab,
+    its answer dropped: HN's vote, which needs a login anyway) and
+    `fetch` (a promise that never settles: HN's hide, no promises
+    here); then TinyChrome's per-site setting (Hacker News on).
 - **C9, video and sound**: `<video>`, `<audio>`, `about:tube`.
 - **C10, speed**: a Wikipedia article read, styled and laid out in well
   under a second natively; what the web build can do (its fetches are
@@ -459,6 +480,95 @@ which already reads video and sound:
   And a positioned `<select>` stays a control (Wikipedia's search
   page). Golden frames: `TinyChrome_elements`, `TinyChrome_network`.
   About 600 lines.
+- **C8 done** (2026-09-25): the ES5 core in the engine -- every object
+  a prototype (`proto`), looked up the chain, a function's `prototype`
+  made when first read; `new`, `instanceof`; `Function.prototype.call`,
+  `apply`, `bind`, `Object.create`, `getPrototypeOf`, `assign`, the
+  constructors' `prototype`s (`Array.prototype.indexOf.call(a, x)`);
+  `var` hoisted to its function (a `for`'s `var` one for all its
+  closures); `==`'s conversions; `arguments`; `Js_regexp`, a
+  backtracking matcher (classes, groups, alternation, greedy and lazy
+  repetition, anchors, `\b`, the `g`, `i`, `m` flags, a step budget),
+  regular expression literals (the lexer telling a regex's `/` from a
+  division's), `match`, `replace` (`$1`, a function), `search`,
+  `split`, `test`, `exec`, `RegExp`; `splice`, `lastIndexOf`,
+  `charCodeAt`, `substr`, `toFixed`, `encodeURIComponent` and its kin,
+  `Date` on the page's clock, `Error` and its kinds as constructors;
+  tests `Unit_js_es5`. In the page (`Browser_script`): the DOM's
+  additions of the C8 bullet, `window`, `location`, `navigator`,
+  `URL`, `XMLHttpRequest` and `fetch` (their GETs sent by the tab,
+  their answers dropped); **scripts of their own file** fetched by the
+  tab (`<script src>`: an exercise until now) and all run once the last
+  has come; TinyChrome's **per-site setting** (a "JS" badge in the
+  omnibox; Hacker News on by default; `scripts=`), a click on the page
+  given to its scripts first, the shown tab's timers on the frame
+  clock. **Hacker News' comments fold** live with its own `hn.js`, as
+  the site wrote it: a thread's toggle clicked, `[8 more]`, its
+  replies' rows hidden by `news.css`'s `.noshow` (which asked hidden
+  rows of a table dropped). `about:threads` does the same with its own
+  `threads.js` (ES5 of ours, as HN's is written), a golden frame
+  (`TinyChrome_threads`). Not done: promises, `class`, template
+  literals, `switch`, getters and setters, an XMLHttpRequest's answer.
+  About 900 lines.
+
+## What it actually took
+
+The survey above predicted what the pages ask; the pages, fetched and
+laid out, asked more. Each thing below was found on a live page and
+fixed, the page it was found on in parentheses -- the part of the work
+no survey showed. Added to as each phase finishes.
+
+- **C2, the cascade**: rules indexed but still slow -- WebKit's ancestor
+  filter (Wikipedia, 0.95 s to 0.54 s); `inherit` of a non-inherited
+  property.
+- **C3, the box model**: max-width solved again with auto margins (the
+  column not centred); lines on the left while measuring shrink-to-fit
+  (a float as wide as its card); `&nbsp;` joining words; quirks mode
+  for a page without a DOCTYPE, a table not inheriting `<center>`'s
+  alignment (Hacker News, centred text everywhere); HTML's "align
+  descendants", a `<center>` centring its table (Hacker News'
+  85% table on the left); the attributes as presentational hints
+  (Hacker News is `bgcolor=`, `width=`, `cellpadding=`).
+- **C4, resources**: a sheet's `@import`s queued also when it comes
+  from the built-in site (the colours lost); no `<center>` centring
+  while measuring (HN's vote column swallowing the page); a row's own
+  height and empty rows counted (HN's spacers); a User-Agent for curl
+  (Wikipedia refusing the request); `overflow: auto` and `scroll`
+  clipping, drawn by culling (Wikipedia's contents over its title; the
+  screen-reader texts); `overflow`'s two values (`hidden auto`);
+  `opacity: 0` hiding (styled checkboxes); inline elements' margins,
+  borders, paddings, backgrounds (the badge).
+- **C5, flexbox**: while measuring, a percentage width as auto
+  (Wikipedia's `width: 100%` menus making a toolbar half the page), a
+  right float on the left (the search icon at the far end), a flex row
+  neither growing nor shrinking and its last margin counted
+  (Wikipedia's tabs); a single line as tall as its container
+  (`align-items: center`); `display: none` cells out of a table's grid
+  (GitHub's file list off the screen); min-height of the border box
+  with border-box (Google's button); a hundredth of a pixel's slack
+  in filling a line (a chip's two words on two lines).
+- **C6, SVG**: `graphics_core` and `graphics_2d` moved to the package
+  `elm_playground` (the author's decision) for the browsers to
+  rasterize; Html_tree's foreign content (`<path/>` inside `<svg>`);
+  background images queued again as each sheet arrives (HN's arrows
+  never fetched); `mask-image` tinted (Wikipedia's icons as black
+  squares); `data:` URLs (GitHub's sheets); `:is()`, `:where()`,
+  `:enabled` (one unknown pseudo-class dropping Wikipedia's whole rule
+  for its quiet buttons); a hidden word's picture not drawn (GitHub's
+  hidden menus' icons scattered); no Mosaic frame round a picture in a
+  link.
+- **C8, the ES5 core**: `<script src>` loaded at all -- the teaching
+  browsers ran only inline scripts, and `hn.js` is a file of its own
+  (fetched like a sheet, the scripts run once the last has come, in
+  order); only the scripts of a JavaScript `type=` (not JSON-LD, not
+  modules); a table's rows of `display: none` dropped (HN's folded
+  replies, hidden by class on their `<tr>`); the network panel's times
+  of requests made before the clock's first tick.
+- **C7, the browser**: `<meta http-equiv=refresh>` followed
+  (DuckDuckGo's result links); the omnibox searching Wikipedia, not
+  DuckDuckGo (its page without scripts, then Mojeek's, soon answer a
+  program with a challenge); a positioned `<select>` staying a control
+  (Wikipedia's search page).
 
 ## Verification
 

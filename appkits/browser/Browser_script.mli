@@ -70,7 +70,16 @@
    style, value, children, firstChild, parentNode, appendChild,
    removeChild, insertBefore, remove, addEventListener,
    removeEventListener; setTimeout, setInterval, clearTimeout,
-   clearInterval, alert. Not: the node types but elements
+   clearInterval, alert. And, for the web's old scripts (TinyChrome's
+   C8, Hacker News' hn.js): getElementsByClassName and ByTagName (the
+   document's and an element's), nextSibling, nextElementSibling and
+   their previous, classList, an a's href resolved, insertAdjacentHTML,
+   scrollIntoView and focus (nothing to do), event.stopImmediatePropagation;
+   window (the global object, its size, its listeners the document's),
+   location, navigator, new URL(href, base) and its searchParams;
+   XMLHttpRequest and fetch, whose GETs the browser sends
+   ([take_requests]) without giving their answers back (fetch a
+   promise that never settles: no promises here). Not: the node types but elements
    and text, NodeList's liveness, ranges, the forms' own interface. A
    form's field typed into keeps its text in the browser (Browser_page's
    values), not in the tree; [value] reads the value= attribute. *)
@@ -78,13 +87,24 @@
 (* a page with its scripts: the engine, the copy of its tree, the console *)
 type t
 
-(* [create ?seed ?log tree]: the tree thawed, document defined; the
+(* [create ?seed ?log ?base ?epoch ?viewport tree]: the tree thawed,
+ * document and window defined, [base] the page's address (an a's
+ * href, location, new URL resolved against it), Date's clock the page's
+ * from [epoch] (ms since 1970), [viewport] the window's size; the
  * console's lines also given to [log] as they come *)
-val create : ?seed:int -> ?log:(string -> unit) -> Dom.element -> t
+val create :
+  ?seed:int -> ?log:(string -> unit) -> ?base:string -> ?epoch:float -> ?viewport:float * float -> Dom.element -> t
 
-(* the page's <script>s, in order: each one's error in the console;
- * then the document's DOMContentLoaded and load listeners *)
-val run_scripts : t -> unit
+(* the addresses of the page's scripts of their own file (<script
+ * src=...>, JavaScript by their type=), resolved: for the browser to
+ * fetch before [run_scripts] *)
+val script_sources : t -> string list
+
+(* the page's <script>s, in order, a <script src> its text by [source]
+ * (its resolved address; one it cannot give said in the console),
+ * those of another type= (JSON, modules) not: each one's error in the
+ * console; then the document's DOMContentLoaded and load listeners *)
+val run_scripts : ?source:(string -> string option) -> t -> unit
 
 (* a script of the host's (a console's line typed, a test's): its value,
  * or its error; errors also in the console *)
@@ -109,6 +129,11 @@ val input : t -> Dom.element -> string -> unit
 (* the page's clock moved on by [ms]: the timers due run, the earliest
  * first, each a task (a thousand at most per call) *)
 val advance : t -> float -> unit
+
+(* the GETs XMLHttpRequest and fetch queued since the last call, the
+ * oldest first, resolved: for the browser to send (their answers are
+ * not given back) *)
+val take_requests : t -> string list
 
 (* the messages alert() queued since the last call, the oldest first *)
 val take_alerts : t -> string list

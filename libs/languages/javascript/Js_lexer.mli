@@ -36,6 +36,7 @@ type kind =
   | Number of float
   | String of string (* decoded: "a\nb" is three characters *)
   | Punct of string (* an operator or a punctuation: "===", "{" *)
+  | Regex of string * string (* /[0-9]+/g: its pattern, its flags -- where an expression may start *)
   | Eof
 
 type token = {

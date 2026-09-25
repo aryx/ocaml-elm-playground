@@ -59,6 +59,37 @@ let index_of_key (k : string) : int option =
 
 let key_of (v : value) : string = match v with Number f when Float.is_integer f && f >= 0. -> Printf.sprintf "%.0f" f | v -> to_string v
 
+(* an object's prototype: its own, else its kind's (an array's
+ * Array.prototype...), Object.prototype last, and nothing after it *)
+let proto_of (t : t) (o : obj) : obj option =
+  match o.proto with
+  | Some p -> Some p
+  | None -> (
+      let p = protos t in
+      if o == p.objects then None
+      else
+        match o.kind with
+        | Array _ -> Some p.arrays
+        | Closure _ | Host_function _ -> Some p.functions
+        | Regexp _ -> Some p.regexps
+        | Host_object _ -> None
+        | Plain -> Some p.objects)
+
+(* a property: the object's own, else up its prototypes' chain; a
+ * function's prototype made when first asked for, {constructor: f} *)
+let rec from_chain (t : t) (o : obj) (k : string) : value =
+  match get_own o k with
+  | Some v -> v
+  | None -> (
+      match (o.kind, k) with
+      | Closure _, "prototype" ->
+          let p = new_object () in
+          set_own p "constructor" (Object o);
+          set_own o "prototype" (Object p);
+          Object p
+      | Host_object h, _ -> h.get k
+      | _ -> ( match proto_of t o with Some p -> from_chain t p k | None -> Undefined))
+
 let get (t : t) (target : value) (k : string) : value =
   match target with
   | Undefined | Null -> throw "TypeError" (Printf.sprintf "Cannot read properties of %s (reading '%s')" (to_string target) k)
@@ -66,16 +97,39 @@ let get (t : t) (target : value) (k : string) : value =
       match (k, index_of_key k) with
       | "length", _ -> Number (float_of_int (String.length s))
       | _, Some i -> if i < String.length s then String (String.make 1 s.[i]) else Undefined
-      | _ -> Option.value (get_own (protos t).strings k) ~default:Undefined)
+      | _ -> from_chain t (protos t).strings k)
   | Object ({ kind = Array a; _ } as o) -> (
       match (k, index_of_key k) with
       | "length", _ -> Number (float_of_int a.length)
       | _, Some i -> if i < a.length then a.elements.(i) else Undefined
-      | _ -> (
-          match get_own o k with Some v -> v | None -> Option.value (get_own (protos t).arrays k) ~default:Undefined))
+      | _ -> from_chain t o k)
   | Object { kind = Host_object h; _ } -> h.get k
-  | Object o -> Option.value (get_own o k) ~default:Undefined
-  | Bool _ | Number _ -> Undefined
+  | Object o -> from_chain t o k
+  | Number _ -> from_chain t (protos t).numbers k
+  | Bool _ -> Undefined
+
+(* whether F's prototype is in v's chain: v instanceof F *)
+let instance_of (t : t) (v : value) (f : value) : bool =
+  match (v, get t f "prototype") with
+  | Object o, Object p ->
+      let rec up (x : obj) = match proto_of t x with Some q -> q == p || up q | None -> false in
+      up o
+  | _ -> false
+
+(* ==: the same as === for the same kinds; null and undefined equal
+ * each other only; else numbers compared, a string or a boolean made
+ * one, an object its primitive (ECMA-262 5.1, 11.9.3) *)
+let rec loose_equal (a : value) (b : value) : bool =
+  match (a, b) with
+  | (Undefined | Null), (Undefined | Null) -> true
+  | (Undefined | Null), _ | _, (Undefined | Null) -> false
+  | Number _, Number _ | String _, String _ | Bool _, Bool _ | Object _, Object _ -> strict_equal a b
+  | Number x, String _ -> x = to_number b
+  | String _, Number y -> to_number a = y
+  | Bool _, _ -> loose_equal (Number (to_number a)) b
+  | _, Bool _ -> loose_equal a (Number (to_number b))
+  | Object _, _ -> loose_equal (to_primitive a) b
+  | _, Object _ -> loose_equal a (to_primitive b)
 
 let set (target : value) (k : string) (v : value) : unit =
   match target with
@@ -129,8 +183,10 @@ let arithmetic (op : string) (a : value) (b : value) : value =
       match cmp with
       | None -> Bool false
       | Some c -> Bool (match op with "<" -> c < 0 | ">" -> c > 0 | "<=" -> c <= 0 | _ -> c >= 0))
-  | "===" | "==" -> Bool (strict_equal a b)
-  | "!==" | "!=" -> Bool (not (strict_equal a b))
+  | "===" -> Bool (strict_equal a b)
+  | "!==" -> Bool (not (strict_equal a b))
+  | "==" -> Bool (loose_equal a b)
+  | "!=" -> Bool (not (loose_equal a b))
   | _ -> throw "SyntaxError" ("unknown operator " ^ op)
 
 (* "x", "o.m": what a TypeError names *)
@@ -181,9 +237,26 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
       let now = if op = "++" then old +. 1. else old -. 1. in
       assign t s this target (Number now);
       Number (if prefix then now else old)
+  | Binary ("instanceof", a, f) ->
+      let a = eval_expr t s this a in
+      Bool (instance_of t a (eval_expr t s this f))
   | Binary (op, a, b) ->
       let a = eval_expr t s this a in
       arithmetic op a (eval_expr t s this b)
+  | Regex (source, flags) -> (
+      match Js_regexp.compile source flags with
+      | Ok re -> Js_builtins.regexp_value (protos t).regexps re
+      | Error why -> throw "SyntaxError" ("Invalid regular expression: /" ^ source ^ "/: " ^ why))
+  (* new F(a): an object whose prototype is F.prototype, F called with it
+   * as this; what F returns instead if it is an object (a host
+   * constructor's: Date, URL) *)
+  | New (f, args) ->
+      let fn = eval_expr t s this f in
+      let args = List.map (eval_expr t s this) args in
+      (match fn with Object { kind = Closure _ | Host_function _; _ } -> () | _ -> throw "TypeError" (describe f ^ " is not a constructor"));
+      let o = new_object () in
+      (match get t fn "prototype" with Object p -> o.proto <- Some p | _ -> ());
+      (match call_value t fn ~this:(Object o) args with Object _ as r -> r | _ -> Object o)
   | Logical ("&&", a, b) -> let v = eval_expr t s this a in if truthy v then eval_expr t s this b else v
   | Logical (_, a, b) -> let v = eval_expr t s this a in if truthy v then v else eval_expr t s this b
   | Assign ("=", target, v) ->
@@ -236,6 +309,9 @@ and call_value (t : t) (fn : value) ~(this : value) (args : value list) : value 
       if t.depth >= max_depth then throw "RangeError" "Maximum call stack size exceeded";
       t.depth <- t.depth + 1;
       let frame = new_scope c.scope in
+      (* arguments, the var's hoisted, then the parameters *)
+      if not c.func.arrow then declare frame "arguments" ~constant:false (Object (new_array args));
+      hoist frame c.func.body;
       List.iteri (fun i x -> declare frame x ~constant:false (Option.value (List.nth_opt args i) ~default:Undefined)) c.func.params;
       let this = match c.this with Some captured -> captured | None -> this in
       let line = t.line in
@@ -255,6 +331,24 @@ and call_value (t : t) (fn : value) ~(this : value) (args : value list) : value 
 (* Statements *)
 (*****************************************************************************)
 
+(* var's names, declared (undefined) at the top of their function: a
+ * var in a block or a loop is the function's -- hoisting, ES5's, what
+ * let (block-scoped) came to fix *)
+and hoist (s : scope) (body : A.stmt list) : unit =
+  let rec names (st : A.stmt) : string list =
+    match st.stmt with
+    | Let (Var_kind, decls) -> List.map fst decls
+    | If (_, a, b) -> names a @ (match b with Some b -> names b | None -> [])
+    | While (_, b) -> names b
+    | For (init, _, _, b) -> (match init with Some i -> names i | None -> []) @ names b
+    | For_of (Var_kind, x, _, b) -> x :: names b
+    | For_of (_, _, _, b) -> names b
+    | Try (a, _, b) -> List.concat_map names a @ List.concat_map names b
+    | Block b -> List.concat_map names b
+    | _ -> []
+  in
+  List.iter (fun x -> if not (Hashtbl.mem s.vars x) then declare s x ~constant:false Undefined) (List.concat_map names body)
+
 (* a block's statements in [s]: its function declarations first *)
 and exec_block (t : t) (s : scope) (this : value) (body : A.stmt list) : outcome =
   List.iter
@@ -273,6 +367,16 @@ and exec (t : t) (s : scope) (this : value) (st : A.stmt) : outcome =
   let eval = eval_expr t s this in
   match st.stmt with
   | Expr e -> ignore (eval e); Normal
+  | Let (Var_kind, decls) ->
+      (* the function's binding, hoisted: set, not declared again *)
+      List.iter
+        (fun (x, init) ->
+          match (lookup s x, init) with
+          | Some b, Some e -> b.value <- eval e
+          | Some _, None -> ()
+          | None, init -> declare s x ~constant:false (match init with Some e -> eval e | None -> Undefined))
+        decls;
+      Normal
   | Let (kind, decls) ->
       List.iter (fun (x, init) -> declare s x ~constant:(kind = Const_kind) (match init with Some e -> eval e | None -> Undefined)) decls;
       Normal
@@ -340,11 +444,11 @@ and exec (t : t) (s : scope) (this : value) (st : A.stmt) : outcome =
 
 let default_budget = 10_000_000
 
-let create ?(log = fun _ -> ()) ?(seed = 1) () : t =
+let create ?(log = fun _ -> ()) ?(seed = 1) ?now () : t =
   let globals = { vars = Hashtbl.create 64; parent = None } in
   let t = { globals; protos = None; line = 0; steps = default_budget; budget = default_budget; depth = 0 } in
   let call f ~this args = call_value t f ~this args in
-  t.protos <- Some (Js_builtins.install ~call ~log ~seed (fun x v -> declare globals x ~constant:false v));
+  t.protos <- Some (Js_builtins.install ~call ~log ~seed ?now (fun x v -> declare globals x ~constant:false v));
   t
 
 (* the error a console shows: an error object as "Name: message", any
@@ -373,6 +477,7 @@ let run (t : t) (program : A.program) : (value, error) result =
   guarded t (fun () ->
       (* the value of the last expression statement: a console's echo *)
       let last = ref Undefined in
+      hoist t.globals program;
       List.iter
         (fun (st : A.stmt) -> match st.stmt with Function_decl f -> declare t.globals (Option.get f.name) ~constant:false (closure t.globals Undefined f) | _ -> ())
         program;

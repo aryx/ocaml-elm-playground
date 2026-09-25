@@ -107,6 +107,7 @@ type model = {
   inspecting : bool; (* the next click on the page picks an element *)
   selected : Dom.element option;
   engine : string; (* the omnibox's searches: search_url *)
+  allowed : string list; (* the sites whose scripts run (hosts): Chrome's per-site setting *)
 }
 
 type msg =
@@ -142,6 +143,8 @@ let toolbar_y = 438.
 let button_x (i : int) : float = -476. +. (38. *. float_of_int i)
 let omnibox_x = -362.
 let omnibox_w = 820.
+(* the omnibox's "JS", the page's scripts on (blue) or off (grey) *)
+let js_x = omnibox_x +. omnibox_w -. 30.
 let wrench_x = 478.
 
 (* the panel: its header, its two views' names, the Inspect button *)
@@ -170,6 +173,19 @@ let settings (css : bool) (tab : Browser_tab.t) : Browser_page.settings =
     sheet = (fun url -> List.assoc_opt url tab.sheets);
   }
 
+(* "news.ycombinator.com" of https://news.ycombinator.com/item?id=1 *)
+let host_of (url : string) : string =
+  match String.index_opt url ':' with
+  | Some i when i + 3 <= String.length url && String.sub url (i + 1) 2 = "//" ->
+      let rest = String.sub url (i + 3) (String.length url - i - 3) in
+      let stop = List.fold_left (fun m c -> match String.index_opt rest c with Some j -> min m j | None -> m) (String.length rest) [ '/'; '?'; '#'; ':' ] in
+      String.sub rest 0 stop
+  | _ -> ""
+
+(* the sites whose scripts are small and old enough for our engine
+ * (plan_tiny_chrome.md, "Famous sites with simple scripts") *)
+let default_allowed = [ "news.ycombinator.com" ]
+
 let config (m : model) (id : int) : msg Browser_tab.config =
   {
     settings = settings m.css;
@@ -179,8 +195,8 @@ let config (m : model) (id : int) : msg Browser_tab.config =
     connections = 6;
     visible = int_of_float (area_height m /. line_height);
     line_height;
-    (* the built-in pages' scripts, not the web's (C8: a few sites') *)
-    scripts = (fun url -> Browser_url.starts_with "about:" url);
+    (* the built-in pages' scripts, and the allowed sites' *)
+    scripts = (fun url -> Browser_url.starts_with "about:" url || List.mem (host_of url) m.allowed);
     seed = 1;
   }
 
@@ -193,11 +209,12 @@ let stamp (time : float) (t : tab) : tab =
   let times =
     List.map
       (fun (r : Browser_tab.request) ->
-        match (List.assoc_opt r.url t.times, r.status) with
-        | Some (start, None), Some _ -> (r.url, (start, Some time))
-        | Some times, _ -> (r.url, times)
-        | None, Some _ -> (r.url, (time, Some time))
-        | None, None -> (r.url, (time, None)))
+        match List.assoc_opt r.url t.times with
+        | Some (start, stop) ->
+            (* asked for before the clock's first tick: from its first *)
+            let start = if start = 0. && time > 0. && stop = None then time else start in
+            (r.url, (start, match (stop, r.status) with Some e, _ -> Some e | None, Some _ -> Some time | None, None -> None))
+        | None -> (r.url, (time, if r.status = None then None else Some time)))
       t.tab.requests
   in
   { t with times }
@@ -314,7 +331,8 @@ let init (network : < Cap.network ; .. >) (flags : flags) : model * msg Cmd.t =
   let m =
     { tabs = []; current = 0; next_id = 0; omnibox = url; editing = false; fresh = false; mouse = (1000., 1000.); time = 0.;
       css = List.assoc_opt "css" flags <> Some "off"; panel; inspecting = false; selected = None;
-      engine = Option.value (List.assoc_opt "search" flags) ~default:"wikipedia" }
+      engine = Option.value (List.assoc_opt "search" flags) ~default:"wikipedia";
+      allowed = (match List.assoc_opt "scripts" flags with Some "off" -> [] | Some hosts -> String.split_on_char ',' hosts | None -> default_allowed) }
   in
   let m, cmd = open_tab network url m in
   (* with the elements' view open, the page's <body> shown in it *)
@@ -335,14 +353,34 @@ let edit_omnibox (network : < Cap.network ; .. >) (key : string) (m : model) : m
 let form (network : < Cap.network ; .. >) ~(keep_focus : bool) (effect : Browser_forms.effect) (m : model) : model * msg Cmd.t =
   on_current m (fun cfg tab -> Browser_tab.form_effect cfg network ~keep_focus effect tab)
 
+(* a task of the page's scripts done by [f], then the page laid out
+ * again if its tree changed (Browser_tab.after_task) *)
+let task (network : < Cap.network ; .. >) (m : model) (f : Browser_script.t -> bool) : model * msg Cmd.t * bool =
+  match (current_tab m).script with
+  | Some s ->
+      let r = f s in
+      let m, cmd = on_current m (fun cfg tab -> Browser_tab.after_task cfg network tab) in
+      (m, cmd, r)
+  | None -> (m, Cmd.none, false)
+
 let click_page (network : < Cap.network ; .. >) (m : model) : model * msg Cmd.t =
   match ((current_tab m).state, page_point m) with
   | Shown p, Some (x, y) when m.inspecting -> ({ m with inspecting = false; selected = Hit.element_at p.layout ~x ~y }, Cmd.none)
-  | _ -> (
-      match (pointed_control m, hovered m, (current_tab m).state) with
-      | Some e, _, Shown p -> form network ~keep_focus:false (Browser_forms.click p e) m
-      | _, Some href, Shown p -> visit network (resolve p.url href) m
-      | _ -> on_current m (fun _ tab -> ({ tab with focus = None }, Cmd.none)))
+  | Shown p, Some (x, y) -> (
+      (* the page's scripts first (the element under the pointer, its
+       * click bubbling); then, unless one prevented it, the browser's *)
+      let control = pointed_control m and link = hovered m in
+      let m, cmd, prevented = task network m (fun s -> match Hit.element_at p.layout ~x ~y with Some e -> Browser_script.click s e | None -> false) in
+      if prevented then (m, cmd)
+      else
+        let m, cmd2 =
+          match (control, link, (current_tab m).state) with
+          | Some e, _, Shown p -> form network ~keep_focus:false (Browser_forms.click p e) m
+          | _, Some href, Shown p -> visit network (resolve p.url href) m
+          | _ -> on_current m (fun _ tab -> ({ tab with focus = None }, Cmd.none))
+        in
+        (m, Cmd.batch [ cmd; cmd2 ]))
+  | _ -> (m, Cmd.none)
 
 let pages (m : model) (by : int) : int = by * (int_of_float (area_height m /. line_height) - 2)
 
@@ -352,7 +390,11 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
   match msg with
   | Got (id, url, r) -> on_tab m id (fun cfg tab -> Browser_tab.got cfg network url r tab)
   | Got_picture (id, url, r) -> on_tab m id (fun cfg tab -> Browser_tab.got_picture cfg network url r tab)
-  | Tick time -> ({ m with time }, Cmd.none)
+  | Tick time ->
+      (* the shown tab's timers on the frame clock (the others wait, as
+       * Chrome slows a hidden tab's) *)
+      let m, cmd, _ = task network { m with time } (fun s -> Browser_script.advance s (1000. /. 60.); false) in
+      (m, cmd)
   | Wheel notches -> (scrolled (3 * int_of_float (Float.round notches)) m, Cmd.none)
   | Mouse_move (x, y) -> ({ m with mouse = (x, y) }, Cmd.none)
   | Click -> (
@@ -360,6 +402,11 @@ let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * ms
       if on_omnibox m then
         on_current { m with editing = true; fresh = true; omnibox = current_url m } (fun _ tab -> ({ tab with focus = None }, Cmd.none))
       else if near (wrench_x -. 12.) toolbar_y 24. 28. m then (toggle_panel m, Cmd.none)
+      else if near js_x toolbar_y 22. 20. m then
+        (* the site's scripts on or off, and the page loaded again *)
+        let host = host_of (current_url m) in
+        let allowed = if List.mem host m.allowed then List.filter (( <> ) host) m.allowed else host :: m.allowed in
+        load network (current_url m) { m with allowed }
       else
         match (strip_at m, panel_button m, button_at m) with
         | Some (Close_tab id), _, _ -> close_tab network id m
@@ -530,7 +577,7 @@ let view (m : model) : shape list =
     | Some i when not m.editing -> i
     | _ -> String.length omnibox
   in
-  let shown = Browser_text.tail 134 omnibox in
+  let shown = Browser_text.tail 128 omnibox in
   let dark = String.sub shown 0 (min (String.length shown) host_end) in
   [ rectangle background 1000. 1000. ]
   @ body
@@ -544,6 +591,9 @@ let view (m : model) : shape list =
       rectangle white omnibox_w 28. |> move (omnibox_x +. (omnibox_w /. 2.)) toolbar_y ]
   @ monospace (omnibox_x +. 10.) toolbar_y muted shown
   @ monospace (omnibox_x +. 10.) toolbar_y ink dark
+  @ (let on = tab.script <> None in
+     [ rectangle (if on then inspector_blue else rgb 200 204 210) 22. 16. |> move (js_x +. 11.) toolbar_y ]
+     @ monospace (js_x +. 5.) toolbar_y white "JS")
   (* the wrench: Chrome's one menu, here the developer tools *)
   @ [ rectangle (if m.panel <> Closed then inspector_blue else rgb 70 90 120) 4. 18. |> rotate 45. |> move wrench_x toolbar_y;
       circle (if m.panel <> Closed then inspector_blue else rgb 70 90 120) 5. |> move (wrench_x -. 5.) (toolbar_y +. 5.) ]

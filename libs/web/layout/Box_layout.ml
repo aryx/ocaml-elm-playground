@@ -1099,7 +1099,24 @@ and layout_table (env : env) (table : Dom.element) (s : Computed.t) ~(cb_x : flo
   let cells, _ = Table_layout.grid table in
   (* the cells shown (not display: none: GitHub's small screens' cells),
    * their columns counted again without the others *)
-  let cells = List.filter (fun (c : Table_layout.cell) -> (env.style c.element).display <> Display_none) cells in
+  (* and the rows shown: Hacker News folds a thread by display: none on
+   * its replies' rows *)
+  let hidden_rows =
+    let rec rows (e : Dom.element) =
+      List.concat_map
+        (fun (n : Dom.node) ->
+          match n with
+          | Element ({ name = "tr"; _ } as tr) -> [ tr ]
+          | Element ({ name = "thead" | "tbody" | "tfoot"; _ } as g) -> rows g
+          | _ -> [])
+        e.children
+    in
+    List.filter (fun tr -> (env.style tr).display = Display_none) (rows table)
+  in
+  let in_hidden_row (c : Table_layout.cell) =
+    List.exists (fun (tr : Dom.element) -> List.exists (fun (n : Dom.node) -> match n with Element td -> td == c.element | Text _ -> false) tr.children) hidden_rows
+  in
+  let cells = List.filter (fun (c : Table_layout.cell) -> (env.style c.element).display <> Display_none && not (in_hidden_row c)) cells in
   let cells =
     List.rev
       (snd

@@ -10,5 +10,6 @@
  * extensions to HTML), css (style sheets), firefox (TinyFirefox's home)
  * and its pages that are programs, counter, todo, timer and tictactoe,
  * chrome (TinyChrome's: a page in today's CSS, its sheets chrome.css
- * and chrome-colours.css), and picture.gif, .png, .jpg *)
+ * and chrome-colours.css), threads (comments folded by threads.js, ES5
+ * as Hacker News writes it), and picture.gif, .png, .jpg *)
 val about : string -> (string * string) option

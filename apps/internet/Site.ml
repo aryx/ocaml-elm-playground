@@ -25,6 +25,8 @@ let about (name : string) : (string * string) option =
   | "chrome" -> Some (Site_pages.chrome, "text/html; charset=utf-8")
   | "chrome.css" -> Some (Site_pages.chrome_css, "text/css")
   | "chrome-colours.css" -> Some (Site_pages.chrome_colours_css, "text/css")
+  | "threads" -> Some (Site_pages.threads, "text/html; charset=utf-8")
+  | "threads.js" -> Some (Site_pages.threads_js, "text/javascript")
   | "picture.gif" -> Some (Site_pictures.picture_gif, "image/gif")
   | "picture.png" -> Some (Site_pictures.picture_png, "image/png")
   | "picture.jpg" -> Some (Site_pictures.picture_jpg, "image/jpeg")

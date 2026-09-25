@@ -54,9 +54,10 @@
 (* an interpreter: its global scope, what console.log prints to *)
 type t
 
-(* [create ?log ?seed ()]: the built-ins defined (Js_builtins); console
- * writes to [log] (nothing by default), Math.random from [seed] (1) *)
-val create : ?log:(string -> unit) -> ?seed:int -> unit -> t
+(* [create ?log ?seed ?now ()]: the built-ins defined (Js_builtins);
+ * console writes to [log] (nothing by default), Math.random from [seed]
+ * (1), Date's clock [now] (milliseconds since 1970: 0) *)
+val create : ?log:(string -> unit) -> ?seed:int -> ?now:(unit -> float) -> unit -> t
 
 (* a mistake, as a console shows it: "ReferenceError: x is not
  * defined", on its line; an uncaught throw of any value, "Uncaught "

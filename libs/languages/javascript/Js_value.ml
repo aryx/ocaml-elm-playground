@@ -11,7 +11,7 @@
 (* See Js_value.mli *)
 
 type value = Undefined | Null | Bool of bool | Number of float | String of string | Object of obj
-and obj = { id : int; mutable props : (string * value ref) list; kind : kind }
+and obj = { id : int; mutable props : (string * value ref) list; kind : kind; mutable proto : obj option }
 
 and kind =
   | Plain
@@ -19,6 +19,7 @@ and kind =
   | Closure of closure
   | Host_function of string * (this:value -> value list -> value)
   | Host_object of host
+  | Regexp of Js_regexp.t
 
 and host = { class_name : string; get : string -> value; set : string -> value -> unit; show : unit -> string }
 
@@ -37,7 +38,7 @@ let counter = ref 0
 
 let make (kind : kind) : obj =
   incr counter;
-  { id = !counter; props = []; kind }
+  { id = !counter; props = []; kind; proto = None }
 
 let new_object () : obj = make Plain
 
@@ -109,6 +110,7 @@ and to_primitive (v : value) : value =
       String (Printf.sprintf "function %s() { ... }" (Option.value name ~default:""))
   | Object { kind = Host_function (name, _); _ } -> String (Printf.sprintf "function %s() { [native code] }" name)
   | Object { kind = Host_object h; _ } -> String (Printf.sprintf "[object %s]" h.class_name)
+  | Object { kind = Regexp re; _ } -> String (Printf.sprintf "/%s/%s" (Js_regexp.source re) (Js_regexp.flags re))
   (* an error, as Error.prototype.toString says it: "TypeError: ..."
    * (with no prototypes, told by its name and message) *)
   | Object ({ kind = Plain; _ } as o) -> (
@@ -163,6 +165,7 @@ let display (v : value) : string =
     | Object { kind = Closure { func = { name; _ }; _ }; _ } -> "function " ^ Option.value name ~default:"(anonymous)"
     | Object { kind = Host_function (name, _); _ } -> "function " ^ name
     | Object { kind = Host_object h; _ } -> h.show ()
+    | Object { kind = Regexp _; _ } -> to_string v
     | v -> to_string v
   in
   go ~top:true [] v

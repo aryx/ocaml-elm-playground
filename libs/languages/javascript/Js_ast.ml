@@ -29,6 +29,8 @@ type expr =
   | Member of expr * string
   | Index of expr * expr
   | Call of expr * expr list
+  | New of expr * expr list
+  | Regex of string * string
 
 and func = { name : string option; params : string list; body : stmt list; arrow : bool }
 and stmt = { line : int; stmt : statement }
@@ -99,6 +101,8 @@ let rec expr_to_string (e : expr) : string =
   | Member (o, x) -> p "(%s.%s)" (expr_to_string o) x
   | Index (o, i) -> p "(%s[%s])" (expr_to_string o) (expr_to_string i)
   | Call (f, args) -> p "(%s(%s))" (expr_to_string f) (list expr_to_string args)
+  | New (f, args) -> p "(new %s(%s))" (expr_to_string f) (list expr_to_string args)
+  | Regex (r, f) -> p "/%s/%s" r f
 
 and func_to_string (f : func) : string =
   Printf.sprintf "%s%s [%s] [%s]"

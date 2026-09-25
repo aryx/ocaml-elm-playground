@@ -44,6 +44,8 @@ type t = {
   mutable timers : timer list;
   mutable next_timer : int;
   mutable alerts : string list; (* the newest first *)
+  base : string; (* the page's address: an a's href resolved, location, new URL *)
+  mutable requests : string list; (* XMLHttpRequest's and fetch's GETs, for the browser to send; the newest first *)
 }
 
 let text_name = "#text"
@@ -218,6 +220,45 @@ and get (t : t) (n : node) (k : string) : value =
   | "lastChild" -> opt (List.nth_opt (List.rev n.children) 0)
   | "firstElementChild" -> opt (List.nth_opt (elements_of n.children) 0)
   | "parentNode" | "parentElement" -> opt n.parent
+  (* its siblings: the next or previous node, or element *)
+  | "nextSibling" | "previousSibling" | "nextElementSibling" | "previousElementSibling" -> (
+      match n.parent with
+      | None -> Null
+      | Some p ->
+          let sibs = if String.ends_with ~suffix:"ElementSibling" k then elements_of p.children else p.children in
+          let sibs = if String.starts_with ~prefix:"previous" k then List.rev sibs else sibs in
+          let rec after l = match l with x :: y :: _ when x == n -> Some y | _ :: r -> after r | [] -> None in
+          opt (after sibs))
+  | "getElementsByClassName" ->
+      method_ k (fun args ->
+          let wanted = List.filter (( <> ) "") (String.split_on_char ' ' (str (arg args 0))) in
+          nodes_array t (List.filter (fun e -> e != n && has_classes e wanted) (elements n)))
+  | "getElementsByTagName" ->
+      method_ k (fun args ->
+          let name = String.lowercase_ascii (str (arg args 0)) in
+          nodes_array t (List.filter (fun e -> e != n && (name = "*" || e.name = name)) (elements n)))
+  | "classList" -> class_list t n
+  | "href" when n.name = "a" || n.name = "link" || n.name = "area" -> (
+      match attribute n "href" with Some h -> String (Browser_url.resolve t.base h) | None -> String "")
+  | "src" when n.name = "img" || n.name = "script" -> ( match attribute n "src" with Some h -> String (Browser_url.resolve t.base h) | None -> String "")
+  (* what a page does that has no effect here: nothing to scroll to, no
+   * focus to move *)
+  | "scrollIntoView" | "focus" | "blur" -> method_ k (fun _ -> Undefined)
+  | "insertAdjacentHTML" ->
+      method_ k (fun args ->
+          let nodes = parse_fragment (str (arg args 1)) in
+          (match String.lowercase_ascii (str (arg args 0)) with
+          | "beforeend" -> n.children <- n.children @ nodes; adopt n nodes
+          | "afterbegin" -> n.children <- nodes @ n.children; adopt n nodes
+          | ("beforebegin" | "afterend") as where -> (
+              match n.parent with
+              | Some p ->
+                  p.children <- List.concat_map (fun c -> if c == n then (if where = "beforebegin" then nodes @ [ c ] else c :: nodes) else [ c ]) p.children;
+                  adopt p nodes
+              | None -> ())
+          | _ -> ());
+          touch t;
+          Undefined)
   | "getAttribute" -> method_ k (fun args -> match attribute n (str (arg args 0)) with Some v -> String v | None -> Null)
   | "setAttribute" ->
       method_ k (fun args ->
@@ -253,6 +294,34 @@ and get (t : t) (n : node) (k : string) : value =
           n.listeners <- List.filter (fun (ty, g) -> not (ty = typ && strict_equal g f)) n.listeners;
           Undefined)
   | _ -> Option.value (List.assoc_opt k n.expando) ~default:Undefined
+
+(* whether an element has every class of [wanted] *)
+and has_classes (e : node) (wanted : string list) : bool =
+  let have = match attribute e "class" with Some c -> String.split_on_char ' ' c | None -> [] in
+  wanted <> [] && List.for_all (fun w -> List.mem w have) wanted
+
+(* el.classList: its class= as a set of words *)
+and class_list (t : t) (n : node) : value =
+  let words () = List.filter (( <> ) "") (String.split_on_char ' ' (Option.value (attribute n "class") ~default:"")) in
+  let write ws = set_attribute n "class" (String.concat " " ws); touch t in
+  host_object
+    {
+      class_name = "DOMTokenList";
+      get =
+        (fun k ->
+          match k with
+          | "length" -> Number (float_of_int (List.length (words ())))
+          | "contains" -> method_ k (fun args -> Bool (List.mem (str (arg args 0)) (words ())))
+          | "add" -> method_ k (fun args -> write (words () @ List.filter (fun c -> not (List.mem c (words ()))) (List.map str args)); Undefined)
+          | "remove" -> method_ k (fun args -> write (List.filter (fun c -> not (List.mem (String c) args || List.exists (fun a -> str a = c) args)) (words ())); Undefined)
+          | "toggle" ->
+              method_ k (fun args ->
+                  let c = str (arg args 0) in
+                  if List.mem c (words ()) then (write (List.filter (( <> ) c) (words ())); Bool false) else (write (words () @ [ c ]); Bool true))
+          | _ -> Undefined);
+      set = (fun _ _ -> ());
+      show = (fun () -> String.concat " " (words ()));
+    }
 
 and set (t : t) (n : node) (k : string) (v : value) : unit =
   let replace_children (cs : node list) =
@@ -291,6 +360,40 @@ and insert (t : t) (parent : node) (child_v : value) ~(before : node option) : v
 (* the first element named so, at any depth *)
 let find (n : node) (name : string) : node option = List.find_opt (fun e -> e.name = name) (elements n)
 
+(* a URL's parts, as location and URL give them: href, protocol, host,
+ * pathname, search, hash... *)
+let url_parts (href : string) : (string * string) list =
+  let without_hash, hash = match String.index_opt href '#' with Some i -> (String.sub href 0 i, String.sub href i (String.length href - i)) | None -> (href, "") in
+  let without_query, search =
+    match String.index_opt without_hash '?' with Some i -> (String.sub without_hash 0 i, String.sub without_hash i (String.length without_hash - i)) | None -> (without_hash, "")
+  in
+  let protocol, rest = match String.index_opt without_query ':' with Some i -> (String.sub without_query 0 (i + 1), String.sub without_query (i + 1) (String.length without_query - i - 1)) | None -> ("", without_query) in
+  let host, pathname =
+    if String.starts_with ~prefix:"//" rest then
+      let r = String.sub rest 2 (String.length rest - 2) in
+      match String.index_opt r '/' with Some i -> (String.sub r 0 i, String.sub r i (String.length r - i)) | None -> (r, "/")
+    else ("", rest)
+  in
+  let hostname = match String.index_opt host ':' with Some i -> String.sub host 0 i | None -> host in
+  [ ("href", href); ("protocol", protocol); ("host", host); ("hostname", hostname); ("pathname", pathname); ("search", search); ("hash", hash);
+    ("origin", if host = "" then "null" else protocol ^ "//" ^ host) ]
+
+(* an object of a URL's parts; URL's searchParams, and toString *)
+let url_object (href : string) : value =
+  let parts = url_parts href in
+  let o = new_object () in
+  List.iter (fun (k, v) -> set_own o k (String v)) parts;
+  let query = let s = List.assoc "search" parts in if s = "" then "" else String.sub s 1 (String.length s - 1) in
+  let params = Urlencoded.decode query in
+  let sp = new_object () in
+  set_own sp "get" (host_function "get" (fun ~this:_ args -> match List.assoc_opt (str (arg args 0)) params with Some v -> String v | None -> Null));
+  set_own sp "has" (host_function "has" (fun ~this:_ args -> Bool (List.mem_assoc (str (arg args 0)) params)));
+  set_own o "searchParams" (Object sp);
+  set_own o "toString" (host_function "toString" (fun ~this:_ _ -> String href));
+  Object o
+
+let location (t : t) : value = url_object t.base
+
 let document (t : t) : value =
   let root = t.root in
   let title () = find root "title" in
@@ -311,6 +414,12 @@ let document (t : t) : value =
           | "querySelector" -> method_ k (fun args -> match select t (str (arg args 0)) ~within:root with e :: _ -> wrap t e | [] -> Null)
           | "querySelectorAll" -> method_ k (fun args -> nodes_array t (select t (str (arg args 0)) ~within:root))
           | "createElement" -> method_ k (fun args -> wrap t (make (String.lowercase_ascii (str (arg args 0)))))
+          | "getElementsByClassName" | "getElementsByTagName" -> get t root k
+          | "location" -> location t
+          | "URL" -> String t.base
+          | "cookie" | "referrer" -> String ""
+          | "readyState" -> String "complete"
+          | "defaultView" -> Option.value (Js_eval.global t.engine "window") ~default:Undefined
           | "createTextNode" -> method_ k (fun args -> wrap t (make text_name ~text:(str (arg args 0))))
           | "addEventListener" ->
               method_ k (fun args ->
@@ -387,7 +496,7 @@ let attribute_handler (t : t) (n : node) (typ : string) : value option =
  * to the document (bubbling), unless one stops it; whether one
  * prevented the default *)
 let dispatch (t : t) (target : node) (typ : string) (fields : (string * value) list) : bool =
-  let prevented = ref false and stopped = ref false in
+  let prevented = ref false and stopped = ref false and stopped_now = ref false in
   let ev = new_object () in
   set_own ev "type" (String typ);
   set_own ev "target" (wrap t target);
@@ -395,11 +504,13 @@ let dispatch (t : t) (target : node) (typ : string) (fields : (string * value) l
   set_own ev "defaultPrevented" (Bool false);
   set_own ev "preventDefault" (host_function "preventDefault" (fun ~this:_ _ -> prevented := true; set_own ev "defaultPrevented" (Bool true); Undefined));
   set_own ev "stopPropagation" (host_function "stopPropagation" (fun ~this:_ _ -> stopped := true; Undefined));
+  (* and the other handlers of the same element not run either *)
+  set_own ev "stopImmediatePropagation" (host_function "stopImmediatePropagation" (fun ~this:_ _ -> stopped := true; stopped_now := true; Undefined));
   let event = Object ev in
   let handle this (listeners : (string * value) list) (extra : value option) =
     set_own ev "currentTarget" this;
-    List.iter (fun (ty, f) -> if ty = typ && run_handler t f ~this event then prevented := true) listeners;
-    Option.iter (fun f -> if run_handler t f ~this event then prevented := true) extra
+    List.iter (fun (ty, f) -> if ty = typ && (not !stopped_now) && run_handler t f ~this event then prevented := true) listeners;
+    Option.iter (fun f -> if (not !stopped_now) && run_handler t f ~this event then prevented := true) extra
   in
   let rec up (n : node option) =
     match n with
@@ -438,13 +549,16 @@ let clear_timer (t : t) (args : value list) : value =
 (* Entry points *)
 (*****************************************************************************)
 
-let create ?(seed = 1) ?(log = fun _ -> ()) (tree : Dom.element) : t =
+let create ?(seed = 1) ?(log = fun _ -> ()) ?(base = "about:blank") ?(epoch = 0.) ?(viewport = (1000., 768.)) (tree : Dom.element) : t =
   let lines = ref (fun (_ : string) -> ()) in
-  let engine = Js_eval.create ~log:(fun l -> !lines l) ~seed () in
+  let clock = ref (fun () -> epoch) in
+  let engine = Js_eval.create ~log:(fun l -> !lines l) ~seed ~now:(fun () -> !clock ()) () in
   let t =
     { engine; root = thaw tree; changed = false; console = []; log; nodes = Hashtbl.create 64; document_listeners = []; frozen = [];
-      now = 0.; timers = []; next_timer = 0; alerts = [] }
+      now = 0.; timers = []; next_timer = 0; alerts = []; base; requests = [] }
   in
+  (* Date's clock: the page's, from [epoch] *)
+  clock := (fun () -> epoch +. t.now);
   lines := say t;
   let define name f = Js_eval.define engine name (host_function name (fun ~this:_ args -> f args)) in
   Js_eval.define engine "document" (document t);
@@ -453,6 +567,60 @@ let create ?(seed = 1) ?(log = fun _ -> ()) (tree : Dom.element) : t =
   define "clearTimeout" (clear_timer t);
   define "clearInterval" (clear_timer t);
   define "alert" (fun args -> t.alerts <- str (arg args 0) :: t.alerts; Undefined);
+  (* window: the global object -- a global read or set through it; its
+   * listeners the document's, its size the window's *)
+  let window =
+    host_object
+      {
+        class_name = "Window";
+        get =
+          (fun k ->
+            match k with
+            | "innerWidth" -> Number (fst viewport)
+            | "innerHeight" -> Number (snd viewport)
+            | "location" -> location t
+            | "document" -> Option.value (Js_eval.global engine "document") ~default:Undefined
+            | "addEventListener" | "removeEventListener" -> (
+                match Js_eval.global engine "document" with Some (Object { kind = Host_object h; _ }) -> h.get k | _ -> Undefined)
+            | "scrollTo" | "scrollBy" -> method_ k (fun _ -> Undefined)
+            | k -> Option.value (Js_eval.global engine k) ~default:Undefined);
+        set = (fun k v -> Js_eval.define engine k v);
+        show = (fun () -> "Window");
+      }
+  in
+  Js_eval.define engine "window" window;
+  Js_eval.define engine "self" window;
+  Js_eval.define engine "location" (location t);
+  Js_eval.define engine "navigator"
+    (let o = new_object () in
+     set_own o "userAgent" (String "Mozilla/5.0 (TinyChrome; elm_playground)");
+     set_own o "language" (String "en-US");
+     Object o);
+  (* new URL(href, base) *)
+  define "URL" (fun args ->
+      let base = match arg args 1 with Undefined -> t.base | v -> str v in
+      url_object (Browser_url.resolve base (str (arg args 0))));
+  (* a GET queued for the browser to send ([take_requests]); its answer
+   * not given back (no onload): enough for a vote, not for a page that
+   * reads what it asked *)
+  let queue url = t.requests <- Browser_url.resolve t.base url :: t.requests in
+  define "XMLHttpRequest" (fun _ ->
+      let url = ref None in
+      let o = new_object () in
+      set_own o "readyState" (Number 0.);
+      set_own o "open" (host_function "open" (fun ~this:_ args -> url := Some (str (arg args 1)); Undefined));
+      set_own o "setRequestHeader" (host_function "setRequestHeader" (fun ~this:_ _ -> Undefined));
+      set_own o "send" (host_function "send" (fun ~this:_ _ -> Option.iter queue !url; Undefined));
+      Object o);
+  (* fetch: the GET queued, a promise that never settles (no promises
+   * here: its then's are kept, never called) *)
+  define "fetch" (fun args ->
+      queue (str (arg args 0));
+      let p = new_object () in
+      let self = Object p in
+      set_own p "then" (host_function "then" (fun ~this:_ _ -> self));
+      set_own p "catch" (host_function "catch" (fun ~this:_ _ -> self));
+      self);
   t
 
 let eval (t : t) (text : string) : (value, Js_eval.error) result =
@@ -460,13 +628,28 @@ let eval (t : t) (text : string) : (value, Js_eval.error) result =
   (match r with Error e -> report t e | Ok _ -> ());
   r
 
-let run_scripts (t : t) : unit =
+(* a script the page's: JavaScript by its type= (not JSON-LD, not a
+ * module, not a template) *)
+let runnable (s : node) : bool =
+  match Option.map String.lowercase_ascii (attribute s "type") with
+  | None | Some "" | Some "text/javascript" | Some "application/javascript" -> true
+  | Some _ -> false
+
+let script_sources (t : t) : string list =
+  List.filter_map
+    (fun (s : node) -> if runnable s then Option.map (Browser_url.resolve t.base) (attribute s "src") else None)
+    (List.filter (fun e -> e.name = "script") (elements t.root))
+
+let run_scripts ?(source = fun (_ : string) -> None) (t : t) : unit =
   List.iter
     (fun (s : node) ->
       match attribute s "src" with
-      | Some src -> say t (Printf.sprintf "<script src=\"%s\"> not loaded: scripts of their own file are an exercise" src)
+      | Some src -> (
+          match source (Browser_url.resolve t.base src) with
+          | Some text -> ignore (eval t text)
+          | None -> say t (Printf.sprintf "<script src=\"%s\"> could not be had" src))
       | None -> ignore (eval t (text_content s)))
-    (List.filter (fun e -> e.name = "script") (elements t.root));
+    (List.filter (fun e -> e.name = "script" && runnable e) (elements t.root));
   (* then the document is loaded: its listeners told *)
   List.iter
     (fun typ ->
@@ -524,6 +707,11 @@ let advance (t : t) (ms : float) : unit =
     | _ -> ()
   in
   go 0
+
+let take_requests (t : t) : string list =
+  let r = List.rev t.requests in
+  t.requests <- [];
+  r
 
 let take_alerts (t : t) : string list =
   let a = List.rev t.alerts in
