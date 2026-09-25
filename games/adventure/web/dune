@@ -4,8 +4,8 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork)
-  (modules TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork Lttp_xpm)
+  (names TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork TinyWumpus)
+  (modules TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork TinyWumpus Lttp_xpm)
   (libraries
     elm_playground
     kit_platformer
@@ -13,6 +13,7 @@
     ai
     kit_racing
     kit_adventure
+    appkit_teletype
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)

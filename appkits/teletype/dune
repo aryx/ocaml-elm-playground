@@ -2,7 +2,7 @@
 ; (plan_terminal.md): the games of David Ahl's "101 BASIC Computer
 ; Games" and their kind, so that one program runs alone (a thin main,
 ; examples/TeletypeHangman.ml) and under TinyTerminal's shell
-; (apps/system/), a command each. Tty_hangman, Tty_guess.
+; (apps/system/), a command each. Tty_hangman, Tty_guess, Tty_wumpus.
 ;
 ; Over the playground's Teletype, a way (its programs have no model,
 ; no update, no view); a private library, installed as part of

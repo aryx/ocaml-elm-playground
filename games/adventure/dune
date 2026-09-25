@@ -2,8 +2,8 @@
 ; 2D and 3D side by side; on the software rasterizers in software/, in
 ; the browser in web/.
 (executables
-  (names TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork)
-  (modules TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork Lttp_xpm)
+  (names TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork TinyWumpus)
+  (modules TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork TinyWumpus Lttp_xpm)
   (libraries
     elm_playground
     kit_platformer ; TinyZelda's and TinyZeldaLinkPast's Tile_move
@@ -11,6 +11,7 @@
     ai ; TinyMetalGearSolid's guards (Fsm, Pathfind), TinyManiacMansion's walkboxes (Pathfind)
     kit_racing ; TinyGTA's cars, Topdown
     kit_adventure ; TinyZork's and TinyManiacMansion's world and rules, Adventure
+    appkit_teletype ; TinyWumpus's program, Tty_wumpus
     elm_playground_native ; implem of virtual elm_playground
   )
 )

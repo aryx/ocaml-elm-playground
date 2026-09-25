@@ -268,6 +268,8 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/TeletypeHangman", "", 3);
     (* the VT100 on, the shell's first prompt *)
     ("apps/system/software/TinyTerminal", "", 3);
+    (* the first question: the instructions? *)
+    ("games/adventure/software/TinyWumpus", "", 3);
     ("games/rpg/software/TinyGauntlet2", "", 5);
     ("games/sports/software/TinyKickOff2", "", 5);
     ("games/sports/software/TinySpeedball2", "", 5);
@@ -1556,6 +1558,9 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
      * prompt again; and the escape sequences' colours, on green *)
     ("apps/system/software/TinyTerminal", "interrupted", 18, "type(hangman):2,Enter:3,type(e):5,Enter:6,Control:8-9,c:9", []);
     ("apps/system/software/TinyTerminal", "colors", 8, "type(colors):2,Enter:3", [ "phosphor=green" ]);
+    (* claude: TinyWumpus: the instructions, then the first room and
+     * what its neighbours give away (seed 1's cave) *)
+    ("games/adventure/software/TinyWumpus", "first", 8, "type(y):2,Enter:3", []);
     (* claude: TeletypeHangman: a hit, a miss and a mistyped guess
      * (seed 1's word), on the teletype's roll of paper *)
     ("examples/software/TeletypeHangman", "paper", 12, "type(e):2,Enter:3,type(z):5,Enter:6,type(xy):8,Enter:9", [ "paper" ]);

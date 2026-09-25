@@ -204,5 +204,6 @@
    %{project_root}/examples/software/LogoFractals.exe
    %{project_root}/examples/software/KarelHarvest.exe
    %{project_root}/examples/software/TeletypeHangman.exe
+   %{project_root}/games/adventure/software/TinyWumpus.exe
  )
 )

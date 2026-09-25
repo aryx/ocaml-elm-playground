@@ -12,8 +12,8 @@
  * 1979): a screen of 80 by 24 characters, and a prompt that runs
  * programs.
  *
- *   type a command and enter: help, ls, hangman, guess, colors, clear,
- *   echo, exit; Control-C stops a program, Control-U erases the line;
+ *   type a command and enter: help, ls, hangman, guess, wumpus, colors,
+ *   clear, echo, exit; Control-C stops a program, Control-U erases the line;
  *   flags: phosphor=green or amber (white, the VT100's, by default),
  *   baud=n (300 or 1200: a modem's speed, the echo included)
  *
@@ -54,7 +54,8 @@ open Teletype
 (* the programs, each run by [spawn] *)
 let programs : (string * string * unit talk) list =
   [ ("hangman", "guess the word before the man is hanged", Tty_hangman.program);
-    ("guess", "guess the number, too low or too high", Tty_guess.program) ]
+    ("guess", "guess the number, too low or too high", Tty_guess.program);
+    ("wumpus", "hunt the Wumpus in a cave of 20 rooms", Tty_wumpus.program) ]
 
 (* the escape sequences at work: SGR's colours, bold and reverse *)
 let colors : string =

@@ -326,7 +326,9 @@ returns **a grid of cells instead of shapes**.
 3. TinyTerminal with its built-in shell running the Teletype programs,
    plus its CATALOG row, golden frame and web page.
 4. A first real game on `Teletype` (Hunt the Wumpus), then the others
-   one at a time.
+   one at a time. Wumpus done (2026-09-25): `Tty_wumpus` in
+   `appkits/teletype`, `games/adventure/TinyWumpus.ml` its thin main, and
+   `wumpus` in TinyTerminal's shell.
 5. TinyBasic (`apps/devtools/`) on `Teletype`, a `basic` command in TinyTerminal, and a
    differential test of Wumpus against its listing.
 6. `Curses` and the `Textmode` way (the playground and a real

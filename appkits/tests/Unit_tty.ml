@@ -54,4 +54,39 @@ let tests =
           Alcotest.(check bool) "a mistyped guess" true (contains lost "ONE LETTER, PLEASE.");
           Alcotest.(check bool) "a letter twice" true (contains lost "YOU GUESSED THAT LETTER BEFORE!");
           Alcotest.(check bool) "lost" true (contains lost ("SORRY, YOU LOSE. THE WORD WAS " ^ word ^ ".")));
+      Testo.create "Wumpus: the cave is the .mli's three rings, 30 tunnels both ways" (fun () ->
+          let t = Tty_wumpus.tunnels in
+          let joined a b = Array.mem b t.(a) in
+          for r = 1 to 20 do
+            Alcotest.(check int) (Printf.sprintf "room %d: three tunnels" r) 3 (Array.length t.(r));
+            Array.iter (fun n -> Alcotest.(check bool) (Printf.sprintf "%d-%d both ways" r n) true (n <> r && joined n r)) t.(r)
+          done;
+          let ring l = List.iteri (fun i a -> let b = List.nth l ((i + 1) mod List.length l) in Alcotest.(check bool) (Printf.sprintf "%d-%d" a b) true (joined a b)) l in
+          ring [ 1; 2; 3; 4; 5 ];
+          ring [ 6; 7; 8; 9; 10; 11; 12; 13; 14; 15 ];
+          ring [ 16; 17; 18; 19; 20 ];
+          List.iter (fun (a, b) -> Alcotest.(check bool) (Printf.sprintf "spoke %d-%d" a b) true (joined a b))
+            [ (1, 8); (2, 10); (3, 12); (4, 14); (5, 6); (7, 17); (9, 18); (11, 19); (13, 20); (15, 16) ]);
+      Testo.create "Wumpus: smelt next door, shot through one room, won" (fun () ->
+          let cave = { Tty_wumpus.you = 1; wumpus = 2; pits = [ 19; 20 ]; bats = [ 17; 18 ]; arrows = 5 } in
+          let game = Teletype.( let* ) (Tty_wumpus.play cave) (fun o -> Teletype.print (if o = Tty_wumpus.Won then "=WON" else "=LOST")) in
+          let out = Teletype.run game [ "s"; "1"; "2" ] in
+          Alcotest.(check bool) "smelt" true (contains out "I SMELL A WUMPUS!");
+          Alcotest.(check bool) "tunnels" true (contains out "TUNNELS LEAD TO 2 5 8.");
+          Alcotest.(check bool) "won" true (String.ends_with ~suffix:"AHA! YOU GOT THE WUMPUS!\n=WON" out));
+      Testo.create "Wumpus: a draft, no tunnel to 7, then into the pit" (fun () ->
+          let cave = { Tty_wumpus.you = 1; wumpus = 13; pits = [ 8; 20 ]; bats = [ 17; 18 ]; arrows = 5 } in
+          let game = Teletype.( let* ) (Tty_wumpus.play cave) (fun o -> Teletype.print (if o = Tty_wumpus.Won then "=WON" else "=LOST")) in
+          let out = Teletype.run game [ "m"; "7"; "8" ] in
+          Alcotest.(check bool) "draft" true (contains out "I FEEL A DRAFT.");
+          Alcotest.(check bool) "no tunnel" true (contains out "NO TUNNEL GOES THERE.");
+          Alcotest.(check bool) "lost" true (String.ends_with ~suffix:"YOU FELL IN A PIT.\n=LOST" out));
+      Testo.create "Wumpus: an arrow can't go back the way it came" (fun () ->
+          let cave = { Tty_wumpus.you = 1; wumpus = 13; pits = [ 19; 20 ]; bats = [ 17; 18 ]; arrows = 5 } in
+          let out = Teletype.run (Tty_wumpus.play cave) [ "s"; "3"; "2"; "1"; "2" ] in
+          Alcotest.(check bool) "refused" true (contains out "ARROWS AREN'T THAT CROOKED"));
+      Testo.create "Wumpus: a whole program from a seed, instructions and all" (fun () ->
+          let out = Teletype.run ~seed:5 Tty_wumpus.program [ "y" ] in
+          Alcotest.(check bool) "instructions" true (contains out "DODECAHEDRON");
+          Alcotest.(check bool) "a first turn" true (String.ends_with ~suffix:"SHOOT OR MOVE (S-M)? " out));
     ]

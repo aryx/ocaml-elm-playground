@@ -7,7 +7,7 @@
   (names TinyTerminal)
   (modules TinyTerminal)
   (libraries
-    appkit_teletype ; the shell's programs, Tty_hangman and Tty_guess
+    appkit_teletype ; the shell's programs, Tty_hangman, Tty_guess, Tty_wumpus
     elm_playground
     elm_playground_software ; implem of virtual elm_playground
   )
