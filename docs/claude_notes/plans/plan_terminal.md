@@ -227,10 +227,23 @@ question.
   - the Microsoft BASIC dialect the book targets: `DIM`, strings and
     `LEFT$`/`MID$`, `GOSUB`, `ON ... GOTO`, `DEF FN`, `RND`, `INT`,
     `TAB`.
-  - It could be a command of TinyTerminal's shell (`basic`), or its own
-    entry in `apps/system/` or `apps/devtools/`. Either way it comes
-    after Karel in `plan_teaching_languages.md`'s list of ways of
-    programming.
+  - Where it goes (the author's choice, 2026-09-25): **TinyBasic in
+    `apps/devtools/`**, the category's first program, where
+    TinyTurboPascal will follow it (section 6): both are a language
+    and its environment, not a system program. It is split in the
+    same way as TinyTerminal's programs:
+    - the interpreter is a `unit talk` in an appkit (with the
+      Teletype programs in `appkits/teletype`, or in an
+      `appkits/basic` of its own if it grows past a few modules:
+      lexer, parser, interpreter);
+    - `apps/devtools/TinyBasic.ml` is the machine it runs on: the
+      screen of a 1977 home computer (the Apple II's 40 columns, or
+      the PET's), `READY.` and a blinking cursor;
+    - the same value is `basic` in TinyTerminal's shell, the way BASIC
+      was one command among others on a timesharing system (Dartmouth,
+      1964, where it began).
+  - It comes after Karel in `plan_teaching_languages.md`'s list of
+    ways of programming.
 - **What the two together give: a differential test.** The same
   answers are fed to the OCaml port through `run`, and to the original
   listing through the interpreter, and the transcripts must match. Two
@@ -314,7 +327,7 @@ returns **a grid of cells instead of shapes**.
    plus its CATALOG row, golden frame and web page.
 4. A first real game on `Teletype` (Hunt the Wumpus), then the others
    one at a time.
-5. TinyBasic on `Teletype`, a `basic` command in TinyTerminal, and a
+5. TinyBasic (`apps/devtools/`) on `Teletype`, a `basic` command in TinyTerminal, and a
    differential test of Wumpus against its listing.
 6. `Curses` and the `Textmode` way (the playground and a real
    terminal), then TinyRogue.
