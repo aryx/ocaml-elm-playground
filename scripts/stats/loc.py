@@ -20,7 +20,10 @@
 #
 # Usage: scripts/stats/loc.py [-v]
 #   -v: every subdirectory of libs/, playground/, games/, apps/, ...
-#       rather than one line per group
+#       rather than one line per group (libs/'s are always listed)
+#
+# The lines come first, next to the name they count; files, .ml,
+# .mli, code, comment and blank lines after the name.
 
 import re
 import subprocess
@@ -122,6 +125,8 @@ GROUPS = [
     ("apps", ["appkits", "apps"]),
     ("examples", ["examples"]),
 ]
+# the top directories whose subdirectories are listed even without -v
+DETAILED = ["libs"]
 
 
 def classify(path):
@@ -153,11 +158,14 @@ def files():
 # ---------------------------------------------------------------------
 
 FIELDS = ["files", "ml", "mli", "code", "comment", "blank", "lines"]
+# the lines first, right beside the name they count, the rest after it
+REST = [f for f in FIELDS if f != "lines"]
+WIDTH = 30  # of the name column
 
 
 def row(name, s, indent=0):
-    cells = "".join(f"{s[f]:>9,}" for f in FIELDS)
-    print(f"{' ' * indent}{name:<{32 - indent}}{cells}")
+    cells = "".join(f"{s[f]:>9,}" for f in REST)
+    print(f"{s['lines']:>9,}  {' ' * indent}{name:<{WIDTH - indent}}{cells}")
 
 
 def main():
@@ -186,7 +194,7 @@ def main():
                 t[f] += s[f]
         return t
 
-    print(f"{'':<32}" + "".join(f"{f:>9}" for f in FIELDS))
+    print(f"{'lines':>9}  {'':<{WIDTH}}" + "".join(f"{f:>9}" for f in REST))
     order = [g for g, _ in GROUPS] + ["tests", "other"]
     for group in order:
         subs = stats.get(group, {})
@@ -200,8 +208,14 @@ def main():
             # the two halves of a group: its kits, its programs
             tops = dict(GROUPS).get(group, [])
             for top in tops:
-                row(top + "/", total(s for k, s in subs.items()
-                                      if k.split("/")[0] == top), 2)
+                mine = {k: s for k, s in subs.items()
+                        if k.split("/")[0] == top}
+                # libs/'s libraries are independent of each other: how
+                # much is ai/, audio/, graphics/, ...
+                if top in DETAILED:
+                    for sub in sorted(mine):
+                        row(sub, mine[sub], 4)
+                row(top + "/", total(mine.values()), 2)
         row(group, total(subs.values()))
     print()
     row("total", total(s for g in stats.values() for s in g.values()))
