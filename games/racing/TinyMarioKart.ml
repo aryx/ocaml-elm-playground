@@ -181,7 +181,48 @@ type race = {
   ready : int; (* > 0: the countdown *)
 }
 
-type scene = Title | Racing of race | Finished of race
+(* the battle's model: see its section *)
+type item = Shell | Banana
+
+type fighter = {
+  kart : kart;
+  balloons : int; (* 3 at the start; none: out *)
+  item : item option; (* the one it carries *)
+  spin : int; (* > 0: hit, spinning, for that long *)
+}
+
+type shell = { sx : number; sy : number; vx : number; vy : number; life : int; from : int (* its thrower *) }
+type banana = { bx : number; by : number; dropped_by : int; age : int }
+
+type mood = Collect | Attack
+
+(* what a computer kart sees (all of it: the arena is in view) *)
+type senses = {
+  me : int;
+  own : Topdown.t; (* its own car *)
+  carrying : item option;
+  rivals : (int * Topdown.t) list; (* the others with balloons *)
+  boxes : (number * number) list; (* the boxes there to take *)
+  mind : mood Fsm.run;
+}
+
+(* what it wants: a place to drive to, and whether to use its item *)
+type order = { goal : (number * number) option; use : bool }
+
+type battle = {
+  fighters : fighter list; (* the players' first *)
+  players : int;
+  views : number list; (* each player's camera heading, a little late *)
+  shells : shell list;
+  bananas : banana list;
+  boxes : ((number * number) * int) list; (* each box, and the frames before it is back (0: there) *)
+  minds : (senses, order) Bot.running array;
+  clock : int;
+  countdown : int;
+  over : int option; (* frames since it was decided *)
+}
+
+type scene = Title | Racing of race | Finished of race | Battle of battle | Battle_over of battle
 type model = scene Scene2d.t
 
 (* the grid, two by two behind the start line, the players last, as in
@@ -262,12 +303,276 @@ let update_race (k : keyboard) (r : race) : race =
           (fun i p -> match p with None when Topdown.lap track (List.nth karts i).car >= laps -> Some (place r i) | p -> p)
           r.places }
 
+(*****************************************************************************)
+(* The battle *)
+(*****************************************************************************)
+(* claude: Super Mario Kart's other game: a square arena, three balloons
+ * each, item boxes; a green shell fired ahead, bouncing off the walls,
+ * or a banana dropped behind; hit, a kart spins and loses a balloon,
+ * and the last one with balloons wins. The arena is a map too, as the
+ * track is: '#' its walls and the square blocks inside, flat tiles as
+ * on the SNES, which karts bounce off (Topdown.bounce, TinySuperSprint's
+ * walls); its floor coloured by quadrant, four zones round the middle;
+ * '?' the item boxes, '1' to '4' where the karts start. *)
+let arena_rows =
+  [ "########################";
+    "#......................#";
+    "#.1..................2.#";
+    "#......................#";
+    "#...?..............?...#";
+    "#....###........###....#";
+    "#....###...??...###....#";
+    "#....###........###....#";
+    "#......................#";
+    "#......................#";
+    "#..........##..........#";
+    "#...?......##......?...#";
+    "#...?......##......?...#";
+    "#..........##..........#";
+    "#......................#";
+    "#......................#";
+    "#....###........###....#";
+    "#....###...??...###....#";
+    "#....###........###....#";
+    "#...?..............?...#";
+    "#......................#";
+    "#.3..................4.#";
+    "#......................#";
+    "########################" ]
+
+let arena = Tilemap.of_strings tile arena_rows
+let half_arena = float_of_int (Tilemap.cols arena) *. tile /. 2.
+
+let wall (x : number) (y : number) : bool = match Tilemap.tile_at arena x y with Some '#' | None -> true | _ -> false
+let outside (x : number) (y : number) : bool = Tilemap.tile_at arena x y = None
+
+(* the floor's four zones, by quadrant: red, blue, green and yellow
+ * checkers (the world's y going up, the map's rows down: red is the
+ * map's bottom left), the walls grey, the land around dark (mipmapped
+ * far away, as the track) *)
+let arena_ground (unit : number) (x : number) (y : number) : char =
+  let checker size (c1 : char) (c2 : char) (average : char) : char =
+    if size < 2. *. unit then average
+    else if (int_of_float (floor (x /. size)) + int_of_float (floor (y /. size))) land 1 = 0 then c1
+    else c2
+  in
+  if outside x y then checker 200. 'o' 'O' 'n'
+  else if wall x y then checker 50. 'k' 'K' 'l'
+  else
+    match (x < 0., y < 0.) with
+    | true, true -> checker 100. 'r' 'R' 'q'
+    | false, true -> checker 100. 'u' 'U' 'v'
+    | true, false -> checker 100. 'g' 'G' 'h'
+    | false, false -> checker 100. 'y' 'Y' 'z'
+
+let arena_palette : (char * color) list =
+  [ ('k', rgb 150 150 160); ('K', rgb 120 120 130); ('l', rgb 135 135 145);
+    ('o', rgb 40 90 50); ('O', rgb 35 80 45); ('n', rgb 38 85 48);
+    ('r', rgb 225 110 100); ('R', rgb 205 90 85); ('q', rgb 215 100 92);
+    ('u', rgb 100 150 230); ('U', rgb 85 130 210); ('v', rgb 92 140 220);
+    ('g', rgb 110 190 100); ('G', rgb 95 170 88); ('h', rgb 102 180 94);
+    ('y', rgb 235 205 90); ('Y', rgb 215 185 75); ('z', rgb 225 195 82) ]
+
+let colors = [| rgb 220 30 30; rgb 40 90 220; rgb 40 170 60; rgb 240 200 30 |]
+
+let new_battle (players : int) : battle =
+  let fighter i =
+    let col, row = List.hd (Tilemap.find arena (Char.chr (Char.code '1' + i))) in
+    let x, y = Tilemap.center arena col row in
+    (* facing the middle *)
+    let heading = atan2 (-.y) (-.x) *. 180. /. Float.pi in
+    { kart = { car = { x; y; vx = 0.; vy = 0.; heading; speed = 0.; next = 0 }; top = 650.; color = colors.(i) };
+      balloons = 3; item = None; spin = 0 }
+  in
+  let fighters = List.init 4 fighter in
+  { fighters; players; views = List.map (fun f -> f.kart.car.heading) (List.filteri (fun i _ -> i < players) fighters);
+    shells = []; bananas = [];
+    boxes = List.map (fun (c, r) -> (Tilemap.center arena c r, 0)) (Tilemap.find arena '?');
+    minds = Array.init 4 (fun _ -> Bot.start { goal = None; use = false }); clock = 0; countdown = 180; over = None }
+
+(* The computer's karts, on ai/: A* (Pathfind) over the arena's tiles
+ * round the blocks, the way to a box while it has nothing to throw
+ * and to a rival once it has, as two moods and the rule between them
+ * (Fsm), all of it seen a moment late and changed only so often (Bot);
+ * its hands (Bot's reflex) steer along the way from where the kart is
+ * now. It throws a shell when a rival is ahead and near, drops a
+ * banana when one is on its tail. *)
+let tile_of (x : number) (y : number) : int * int = Tilemap.cell arena x y
+
+let path_to (x, y) (tx, ty) : (number * number) option =
+  let goal = tile_of tx ty in
+  let open_ (c, r) = match Tilemap.get arena c r with Some '#' | None -> false | _ -> true in
+  let problem : (int * int) Pathfind.problem =
+    { neighbors = (fun (c, r) -> List.filter_map (fun n -> if open_ n then Some (n, 1.) else None) [ (c + 1, r); (c - 1, r); (c, r + 1); (c, r - 1) ]);
+      goal = (fun n -> n = goal); estimate = Pathfind.manhattan goal }
+  in
+  match (Pathfind.astar problem (tile_of x y)).path with
+  | _ :: _ :: next :: _ -> Some (let c, r = next in Tilemap.center arena c r)
+  | _ :: [ _ ] | [ _ ] -> Some (tx, ty)
+  | _ -> None
+
+(* the gas and the wheel towards a point, as Topdown.computer does
+ * towards its waypoint *)
+let steer_to (c : Topdown.t) ((tx, ty) : number * number) : number * number =
+  let wanted = atan2 (ty -. c.y) (tx -. c.x) *. 180. /. Float.pi in
+  let diff = angle_diff c.heading wanted in
+  (Float.max 0.3 (0.85 -. (Float.abs diff /. 300.)), Float.max (-1.) (Float.min 1. (diff /. 20.)))
+
+(* a rival ahead, near enough, and roughly where the kart points *)
+let in_sights (c : Topdown.t) ((_, r) : int * Topdown.t) : bool =
+  let d = Float.hypot (r.x -. c.x) (r.y -. c.y) in
+  d < 900. && Float.abs (angle_diff c.heading (atan2 (r.y -. c.y) (r.x -. c.x) *. 180. /. Float.pi)) < 12.
+
+let on_tail (c : Topdown.t) ((_, r) : int * Topdown.t) : bool =
+  Float.hypot (r.x -. c.x) (r.y -. c.y) < 300. && Float.abs (angle_diff c.heading (atan2 (r.y -. c.y) (r.x -. c.x) *. 180. /. Float.pi)) > 150.
+
+let moods : (mood, senses) Fsm.machine =
+  [ { from = Collect; label = "an item"; guard = (fun s _ -> s.carrying <> None); target = Attack };
+    { from = Attack; label = "used it"; guard = (fun s _ -> s.carrying = None); target = Collect } ]
+
+let nearest (c : Topdown.t) (points : (number * number) list) : (number * number) option =
+  List.fold_left
+    (fun best (x, y) -> match best with Some (bx, by) when Float.hypot (bx -. c.x) (by -. c.y) <= Float.hypot (x -. c.x) (y -. c.y) -> best | _ -> Some (x, y))
+    None points
+
+let senses_of (was : senses option) ((b, i) : battle * int) : senses =
+  let f = List.nth b.fighters i in
+  let s =
+    { me = i; own = f.kart.car; carrying = f.item;
+      rivals = List.filter_map (fun (j, g) -> if j <> i && g.balloons > 0 then Some (j, g.kart.car) else None) (List.mapi (fun j g -> (j, g)) b.fighters);
+      boxes = List.filter_map (fun (p, t) -> if t = 0 then Some p else None) b.boxes;
+      mind = (match was with Some s -> s.mind | None -> Fsm.start Collect) }
+  in
+  { s with mind = Fsm.step moods s s.mind }
+
+let decide (s : senses) : order =
+  match s.mind.state with
+  | Collect -> { goal = nearest s.own s.boxes; use = false }
+  | Attack ->
+      let use =
+        match s.carrying with
+        | Some Shell -> List.exists (in_sights s.own) s.rivals
+        | Some Banana -> List.exists (on_tail s.own) s.rivals
+        | None -> false
+      in
+      { goal = nearest s.own (List.map (fun (_, r) -> (r.Topdown.x, r.Topdown.y)) s.rivals); use }
+
+(* its hands: the way to the goal from where it is now *)
+let hands_of ((b, i) : battle * int) (o : order) : order =
+  let f = List.nth b.fighters i in
+  { o with goal = Option.bind o.goal (path_to (f.kart.car.x, f.kart.car.y)) }
+
+let mind : (battle * int, senses, order) Bot.t = Bot.make ~delay:10 ~rate:4 ~reflex:hands_of ~sense:senses_of ~decide ()
+
+(* a shell: straight on, bouncing off the walls, an axis at a time *)
+let step_shell (s : shell) : shell =
+  let dt = 1. /. 60. in
+  let x = s.sx +. (s.vx *. dt) and y = s.sy +. (s.vy *. dt) in
+  let vx = if wall x s.sy then -.s.vx else s.vx and vy = if wall s.sx y then -.s.vy else s.vy in
+  { s with sx = (if wall x s.sy then s.sx else x); sy = (if wall s.sx y then s.sy else y); vx; vy; life = s.life - 1 }
+
+let hit_radius = 45.
+
+let step_battle (k : keyboard) (s : 'scene Scene2d.t) (b : battle) : battle =
+  if b.countdown > 0 then { b with countdown = b.countdown - 1 }
+  else
+    let minds = Array.copy b.minds in
+    let fire_key i = if i = 0 then Scene2d.pressed (fun k -> k.kspace) s else Scene2d.pressed (fun k -> Set_.mem "e" k.keys) s in
+    let orders =
+      List.mapi
+        (fun i f ->
+          if f.balloons = 0 || f.spin > 0 then (0., 0., false)
+          else if i < b.players then
+            let gas, steer = hands k i in
+            (gas, steer, fire_key i)
+          else
+            let o, running = Bot.step mind (b, i) minds.(i) in
+            minds.(i) <- running;
+            let gas, steer = match o.goal with Some p -> steer_to f.kart.car p | None -> (0.3, 0.5) in
+            (gas, steer, o.use))
+        b.fighters
+    in
+    (* the karts: driven, bounced off the walls, a spinning one turning
+     * on itself *)
+    let fighters =
+      List.map2
+        (fun f (gas, steer, _) ->
+          if f.balloons = 0 then f
+          else
+            let before = f.kart.car in
+            let after = Topdown.drive Topdown.toy f.kart.top gas steer before in
+            let after = if f.spin > 0 then { after with heading = after.heading +. 14.; speed = after.speed *. 0.9 } else after in
+            { f with kart = { f.kart with car = Topdown.bounce wall before after }; spin = max 0 (f.spin - 1) })
+        b.fighters orders
+    in
+    let fighters = List.map2 (fun f k -> { f with kart = k }) fighters (bump (List.map (fun f -> f.kart) fighters)) in
+    (* the items used: a shell ahead of the kart, a banana behind it *)
+    let shells, bananas, fighters =
+      List.fold_left
+        (fun (shells, bananas, acc) (i, f, (_, _, use)) ->
+          let c = f.kart.car in
+          let a = c.heading *. Float.pi /. 180. in
+          match (use, f.item) with
+          | true, Some Shell ->
+              let v = Float.max 1100. (c.speed +. 700.) in
+              ( { sx = c.x +. (60. *. cos a); sy = c.y +. (60. *. sin a); vx = v *. cos a; vy = v *. sin a; life = 300; from = i } :: shells,
+                bananas, acc @ [ { f with item = None } ] )
+          | true, Some Banana -> (shells, { bx = c.x -. (60. *. cos a); by = c.y -. (60. *. sin a); dropped_by = i; age = 0 } :: bananas, acc @ [ { f with item = None } ])
+          | _ -> (shells, bananas, acc @ [ f ]))
+        (b.shells, b.bananas, [])
+        (List.mapi (fun i (f, o) -> (i, f, o)) (List.combine fighters orders))
+    in
+    let shells = List.filter (fun s -> s.life > 0) (List.map step_shell shells) in
+    let bananas = List.map (fun b -> { b with age = b.age + 1 }) bananas in
+    (* the boxes taken: an item, shells twice as often as bananas; the
+     * box back three seconds later *)
+    let boxes, fighters =
+      List.fold_left
+        (fun (boxes, fighters) ((bx, by), t) ->
+          if t > 0 then (boxes @ [ ((bx, by), t - 1) ], fighters)
+          else
+            match List.find_opt (fun (_, f) -> f.balloons > 0 && f.item = None && Float.hypot (f.kart.car.x -. bx) (f.kart.car.y -. by) < 60.) (List.mapi (fun i f -> (i, f)) fighters) with
+            | Some (i, _) ->
+                let item = if (b.clock + i) mod 3 = 2 then Banana else Shell in
+                (boxes @ [ ((bx, by), 180) ], List.mapi (fun j f -> if j = i then { f with item = Some item } else f) fighters)
+            | None -> (boxes @ [ ((bx, by), 0) ], fighters))
+        ([], fighters) b.boxes
+    in
+    (* the hits: a shell or a banana on a kart that isn't spinning
+     * already -- a shell spares its thrower for a moment, a banana its
+     * dropper *)
+    let hittable f = f.balloons > 0 && f.spin = 0 in
+    let near (x, y) f = Float.hypot (f.kart.car.x -. x) (f.kart.car.y -. y) < hit_radius in
+    let shell_hits s = List.filter (fun (i, f) -> hittable f && near (s.sx, s.sy) f && (i <> s.from || s.life < 260)) (List.mapi (fun i f -> (i, f)) fighters) in
+    let banana_hits bn = List.filter (fun (i, f) -> hittable f && near (bn.bx, bn.by) f && (i <> bn.dropped_by || bn.age > 60)) (List.mapi (fun i f -> (i, f)) fighters) in
+    let hit = List.sort_uniq compare (List.concat_map (fun s -> List.map fst (shell_hits s)) shells @ List.concat_map (fun bn -> List.map fst (banana_hits bn)) bananas) in
+    let shells = List.filter (fun s -> shell_hits s = []) shells in
+    let bananas = List.filter (fun bn -> banana_hits bn = []) bananas in
+    let fighters = List.mapi (fun i f -> if List.mem i hit then { f with balloons = f.balloons - 1; spin = 60 } else f) fighters in
+    let views = List.mapi (fun i a -> a +. (0.2 *. angle_diff a (List.nth fighters i).kart.car.heading)) b.views in
+    let over =
+      match b.over with
+      | Some n -> Some (n + 1)
+      | None -> if List.length (List.filter (fun f -> f.balloons > 0) fighters) <= 1 then Some 0 else None
+    in
+    { b with fighters; shells; bananas; boxes; minds; views; clock = b.clock + 1; over }
+
+(* the title, the race, the battle *)
 let update (computer : computer) (m : model) : model =
   let m = Scene2d.update computer m in
   let space = Scene2d.pressed (fun k -> k.kspace) m in
   let two = Scene2d.pressed (fun k -> Set_.mem "2" k.keys) m in
   match m.scene with
-  | Title -> if space then Scene2d.go (Racing (new_race 1)) m else if two then Scene2d.go (Racing (new_race 2)) m else m
+  | Title ->
+      if space then Scene2d.go (Racing (new_race 1)) m
+      else if two then Scene2d.go (Racing (new_race 2)) m
+      else if Scene2d.pressed (fun k -> Set_.mem "b" k.keys) m then Scene2d.go (Battle (new_battle 1)) m
+      else if Scene2d.pressed (fun k -> Set_.mem "v" k.keys) m then Scene2d.go (Battle (new_battle 2)) m
+      else m
+  | Battle b -> (
+      let b = step_battle computer.keyboard m b in
+      match b.over with Some n when n > 90 -> Scene2d.go (Battle_over b) m | _ -> { m with scene = Battle b })
+  | Battle_over b -> if space then Scene2d.go Title m else { m with scene = Battle_over { b with clock = b.clock + 1 } }
   | Racing r ->
       let r = update_race computer.keyboard r in
       if List.for_all Option.is_some r.places then Scene2d.go (Finished r) m else { m with scene = Racing r }
@@ -328,7 +633,7 @@ let far = 4500.
 (* The ground, a row at a time: each row's samples across the screen,
  * one per pixel, the ground's character there ([ground]); all the rows
  * a picture of characters, drawn by Sprite.pixels. *)
-let view_ground (screen : screen) (e : eye) : shape =
+let view_ground ?(floor = ground) ?(colors = palette) (screen : screen) (e : eye) : shape =
   let horizon = e.horizon in
   let cols = int_of_float (screen.width /. pixel) in
   let rows = int_of_float ((horizon -. screen.bottom) /. pixel) in
@@ -340,10 +645,10 @@ let view_ground (screen : screen) (e : eye) : shape =
     else
       String.init cols (fun j ->
           match to_ground e (screen.left +. ((float_of_int j +. 0.5) *. pixel)) sy with
-          | Some (x, y) -> ground (d /. e.focal *. pixel) x y
+          | Some (x, y) -> floor (d /. e.focal *. pixel) x y
           | None -> ' ')
   in
-  Sprite.pixels pixel palette (List.init rows row)
+  Sprite.pixels pixel colors (List.init rows row)
   |> move ((screen.left +. screen.right) /. 2.) (horizon -. (float_of_int rows *. pixel /. 2.))
 
 (* a hill, a disc on the horizon, cut at the top of the screen when it
@@ -479,14 +784,98 @@ let view_race (screen : screen) (r : race) (i : int) : shape list =
  * is a screen of its own, centered, drawn and moved into place; the
  * bottom one first, so that the top one's sky and ground cover what it
  * spills over the middle, then a strip over the seam. *)
-let view_split (screen : screen) (r : race) : shape list =
+let view_split (screen : screen) (view_one : screen -> int -> shape list) : shape list =
   let h = screen.height /. 2. in
   let half = { screen with height = h; top = h /. 2.; bottom = -.h /. 2. } in
   let at dy shapes = [ group shapes |> move_y dy ] in
-  at (-.h /. 2.) (view_race half r 1) @ at (h /. 2.) (view_race half r 0) @ [ rectangle black screen.width 6. ]
+  at (-.h /. 2.) (view_one half 1) @ at (h /. 2.) (view_one half 0) @ [ rectangle black screen.width 6. ]
 
 let view_players (screen : screen) (r : race) : shape list =
-  if r.humans = 2 then view_split screen r else view_race screen r 0
+  if r.humans = 2 then view_split screen (fun half i -> view_race half r i) else view_race screen r 0
+
+(*****************************************************************************)
+(* The battle's view *)
+(*****************************************************************************)
+
+(* the battle's billboards: an item box, a shell, a banana, each a
+ * picture standing on the ground and sized by its distance, as the
+ * karts are *)
+let box_art = [ "OOOOOOOO"; "OYYYYYYO"; "OYY..YYO"; "OYYYY.YO"; "OYYY.YYO"; "OYYYYYYO"; "OYYY.YYO"; "OOOOOOOO" ]
+let shell_art = [ ".WWWW."; "WGGGGW"; "WGWGGW"; "WGGGGW"; ".WWWW." ]
+let banana_art = [ "....YB"; "...YY."; "..YY.."; "YYY..."; ".YY..." ]
+
+let billboard (e : eye) (x : number) (y : number) (width : number) (colors : (char * color) list) (art : string list) : (number * shape) option =
+  to_screen e x y
+  |> Option.map (fun (sx, sy, scale) ->
+         let size = width /. float_of_int (String.length (List.hd art)) *. scale in
+         (scale, Sprite.pixels size colors art |> move sx (sy +. (float_of_int (List.length art) /. 2. *. size))))
+
+(* a kart and its balloons, bobbing above it, its color; spinning, its
+ * drawing turns *)
+let view_fighter (e : eye) (view_angle : number) (b : battle) (f : fighter) : (number * shape) option =
+  if f.balloons = 0 then None
+  else
+    Option.map
+      (fun (scale, shape) ->
+        match to_screen e f.kart.car.x f.kart.car.y with
+        | None -> (scale, shape)
+        | Some (sx, sy, sc) ->
+            let r = 9. *. sc in
+            let balloon j =
+              let bob = 2. *. sc *. sin ((float_of_int b.clock /. 10.) +. float_of_int j) in
+              group [ circle f.kart.color r; circle white (r /. 3.) |> move (-.r /. 3.) (r /. 3.) ]
+              |> move (sx +. ((float_of_int j -. (float_of_int (f.balloons - 1) /. 2.)) *. 2.2 *. r)) (sy +. (48. *. sc) +. bob)
+            in
+            (scale, group (shape :: List.init f.balloons balloon)))
+      (view_kart e view_angle f.kart)
+
+let item_name = function Some Shell -> "SHELL" | Some Banana -> "BANANA" | None -> "--"
+
+(* the battle as player [i] sees it, on [screen] *)
+let view_battle_one (screen : screen) (b : battle) (i : int) : shape list =
+  let me = List.nth b.fighters i in
+  let view_angle = List.nth b.views i in
+  let e = eye screen me.kart.car.x me.kart.car.y view_angle in
+  let things =
+    List.filter_map (view_fighter e view_angle b) b.fighters
+    @ List.filter_map (fun ((x, y), t) -> if t = 0 then billboard e x y 50. [ ('O', rgb 240 140 30); ('Y', rgb 250 220 60); ('.', white) ] box_art else None) b.boxes
+    @ List.filter_map (fun sh -> billboard e sh.sx sh.sy 30. [ ('W', white); ('G', rgb 40 180 60) ] shell_art) b.shells
+    @ List.filter_map (fun bn -> billboard e bn.bx bn.by 30. [ ('Y', rgb 250 220 40); ('B', rgb 90 60 30) ] banana_art) b.bananas
+    |> List.sort (fun (a, _) (b, _) -> compare a b)
+    |> List.map snd
+  in
+  let middle = screen.top /. 2. in
+  view_sky screen view_angle e
+  @ [ view_ground ~floor:arena_ground ~colors:arena_palette screen e ]
+  @ things
+  @ [ text white 3. (Printf.sprintf "BALLOONS %d" me.balloons) |> move (screen.left +. 150.) (screen.top -. 40.);
+      text yellow 3. (item_name me.item) |> move (screen.right -. 120.) (screen.top -. 40.) ]
+  @
+  if b.countdown > 0 then [ text yellow 8. (string_of_int ((b.countdown + 59) / 60)) |> move_y middle ]
+  else if me.balloons = 0 then [ text white 5. "OUT!" |> move_y middle ]
+  else if b.clock < 40 then [ text yellow 8. "GO!" |> move_y middle ]
+  else []
+
+(* the arena from above, a dot per kart *)
+let view_battle_map (screen : screen) (b : battle) : shape list =
+  let cell = 6. in
+  let ox = screen.right -. 90. and oy = screen.bottom +. 90. in
+  let dot (f : fighter) = circle f.kart.color 6. |> move (ox +. (f.kart.car.x /. tile *. cell)) (oy +. (f.kart.car.y /. tile *. cell)) in
+  [ rectangle (rgb 30 30 30) 160. 160. |> move ox oy |> fade 0.7;
+    Sprite.pixels cell [ ('#', gray); ('?', rgb 240 140 30) ] (List.map (String.map (fun c -> if c = '#' || c = '?' then c else '.')) arena_rows) |> move ox oy ]
+  @ List.map dot (List.filter (fun f -> f.balloons > 0) b.fighters)
+
+let view_battle (screen : screen) (b : battle) : shape list =
+  if b.players = 2 then view_split screen (fun half i -> view_battle_one half b i)
+  else view_battle_one screen b 0 @ view_battle_map screen b
+
+(* who won: the one kart with balloons left *)
+let battle_result (b : battle) : shape list =
+  match List.filteri (fun _ f -> f.balloons > 0) b.fighters with
+  | [ w ] ->
+      let i = Option.get (List.find_map (fun (i, f) -> if f == w then Some i else None) (List.mapi (fun i f -> (i, f)) b.fighters)) in
+      [ text w.kart.color 6. (if i < b.players then (if b.players = 1 then "YOU WIN!" else Printf.sprintf "PLAYER %d WINS!" (i + 1)) else "THE COMPUTER WINS!") |> move_y 60. ]
+  | _ -> [ text white 6. "DRAW" |> move_y 60. ]
 
 let view (computer : computer) (m : model) : shape list =
   let screen = computer.screen in
@@ -501,10 +890,13 @@ let view (computer : computer) (m : model) : shape list =
           rectangle black 760. 260. |> move_y (-300.) |> fade 0.6;
           text white 3. "up: gas   down: brake   left/right: steer" |> move_y (-230.);
           text white 3. "3 laps, against the computer's karts" |> move_y (-280.);
-          text white 3. "2: two players, split screen (w a s d)" |> move_y (-330.) ]
-      @ Scene2d.blink 1. m [ text yellow 4. "PRESS SPACE" |> move_y (-400.) ]
+          text white 3. "2: two players, split screen (w a s d)" |> move_y (-330.);
+          text white 3. "b: battle   v: battle, two players (space, e: items)" |> move_y (-380.) ]
+      @ Scene2d.blink 1. m [ text yellow 4. "PRESS SPACE" |> move_y (-440.) ]
   | Racing r -> view_players screen r
   | Finished r -> view_players screen r @ Scene2d.blink 1. m [ text white 3. "PRESS SPACE" |> move_y (-40.) ]
+  | Battle b -> view_battle screen b
+  | Battle_over b -> view_battle screen b @ battle_result b @ Scene2d.blink 1. m [ text white 3. "PRESS SPACE" |> move_y (-40.) ]
 
 let app = game view update initial_model
 

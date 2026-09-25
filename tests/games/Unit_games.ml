@@ -376,6 +376,20 @@ let bomberman_battle () =
       Alcotest.(check bool) (fst arenas.(!b.arena_no) ^ ": decided before the clock") true (!b.clock <= round_time))
     [ 1; 2; 3 ]
 
+(* the battle among the computer's three karts alone: they take the
+ * boxes, throw what they get, and one of them is left with balloons
+ * within three minutes *)
+let mario_kart_battle () =
+  let open TinyMarioKart in
+  let b0 = new_battle 1 in
+  let b = ref { b0 with fighters = List.mapi (fun i (f : fighter) -> if i = 0 then { f with balloons = 0 } else f) b0.fighters } in
+  let s = Scene2d.start (Battle !b) in
+  while !b.over = None && !b.clock < 60 * 180 do
+    b := step_battle initial_computer.keyboard s !b
+  done;
+  Alcotest.(check bool) "decided" true (!b.over <> None);
+  Alcotest.(check int) "one left" 1 (List.length (List.filter (fun (f : fighter) -> f.balloons > 0) !b.fighters))
+
 (*****************************************************************************)
 (* TinyMicroMachines *)
 (*****************************************************************************)
@@ -7733,6 +7747,7 @@ let tests =
       t "TinyBomberman, no bomb without a way out" bomberman_safe_drop;
       t "TinyBomberman, a battle among the computer's bombers ends" bomberman_battle;
       t "TinyMicroMachines, the computer drives laps" micro_machines_computer;
+      t "TinyMarioKart, a battle among the computer's karts ends" mario_kart_battle;
       t "TinyMarioKart, Mode 7 there and back" kart_mode7;
       t "TinyMarioKart, the computer drives the race" kart_race;
       t "TinyMarioKart, two players" kart_two_players;
