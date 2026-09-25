@@ -107,6 +107,13 @@ let debris (c : color) : burst =
   { count = 16; speed = (4., 10.); up = 0.6; life = (0.8, 1.5); size = (0.3, 0.7); grow = 0.5; gravity = 20.;
     palette = [ c; darkGray ] }
 
+(* claude: a liquid's: many small ones, thrown up rather than out,
+ * falling back soon, in one color only (debris's dark gray is a
+ * wreck's) *)
+let drops (c : color) : burst =
+  { count = 24; speed = (2.5, 6.); up = 0.85; life = (0.4, 0.8); size = (0.07, 0.15); grow = 0.6; gravity = 18.;
+    palette = [ c ] }
+
 let burst ~(at : number * number * number) (b : burst) (fx : t) : t =
   if not (on fx) then fx
   else

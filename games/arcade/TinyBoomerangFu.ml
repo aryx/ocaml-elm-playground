@@ -102,9 +102,17 @@
  * (Steering.direction is the form for characters like these; the
  * one thing it would replace here, [clear_way], is not a steering
  * behaviour but an obstacle check, so it stays.) Uses Camera3d (its
- * [follow] smooths the zoom), Scene2d, and from ai/ Pathfind, Sense, Bot
- * and Fsm; no gamekit, and no physics engine: a jump is two lines of
- * gravity.
+ * [follow] smooths the zoom), Scene2d, Juice3d, and from ai/ Pathfind,
+ * Sense, Bot and Fsm; no gamekit, and no physics engine: a jump is two
+ * lines of gravity.
+ *
+ * The juice, on by default, all of it gone with the flag juice=off
+ * (?juice=off on the web), in its own section: a cut bursts the food's
+ * flesh and skin, freezes the game for a few frames and shakes the
+ * camera; the water splashes, a boomerang sparks off a stone, a dash
+ * and a landing raise dust. None of it changes what happens, only how
+ * it feels -- which is how you can tell juice from rules: turn it off
+ * and the same keys play the same round.
  *
  * Exercises: the original's power-ups (fire, ice, and above all the
  * teleport, which drops you where your boomerang is -- the one that
@@ -344,6 +352,7 @@ type game = {
    * on, and the intent it is repeating (Bot.mli) *)
   minds : (senses, intent) Bot.running array;
   cam : camera; (* where [framing] has got to: it glides, see [step_game] *)
+  fx : Juice3d.t; (* the juice's, see its section *)
 }
 
 type scene = Title of level | Playing of game | Winner of game
@@ -440,7 +449,7 @@ let new_game ?(level = Normal) ?(arena_no = 0) () : game =
   in
   { arena_no; level; players; rangs = []; ended = None; clock = 0; round_no = 1;
     minds = Array.init 4 (fun _ -> Bot.start { go = None; plant = false; throw = false; dash_now = false; jump = false; toward = None });
-    cam = framing players }
+    cam = framing players; fx = Juice3d.none ~seed:1 }
 
 let initial_model : model = Scene2d.start (Title Normal)
 
@@ -1115,6 +1124,54 @@ let next_round (g : game) : game =
   { g with arena_no; players = List.map (place g.level arenas.(arena_no)) g.players; rangs = []; ended = None; clock = 0;
     round_no = g.round_no + 1; minds = Array.init 4 (fun _ -> Bot.start idle) }
 
+(*****************************************************************************)
+(* The juice (juice=off: none of it) *)
+(*****************************************************************************)
+(* claude: Everything the juice does is here, and the rules above don't
+ * know about it: [update] steps the game, then [juiced] compares it
+ * with the game of the frame before -- who is newly cut, who has just
+ * fallen in, whose boomerang has just bounced, who starts a dash or
+ * touches the ground again -- and starts the effects (Juice3d.mli).
+ * The view draws them through [Juice3d.camera] and [Juice3d.view]. *)
+
+let juiced (before : game) (after : game) (fx : Juice3d.t) : Juice3d.t =
+  let a = arenas.(after.arena_no) in
+  let player_fx fx (p' : player) =
+    let p = List.find (fun (q : player) -> q.idx = p'.idx) before.players in
+    match (p.state, p'.state) with
+    | Alive, Cut _ ->
+        (* the juice of the name: its flesh and bits of its skin, and a
+         * hitstop, the frames that make a hit feel like one *)
+        fx
+        |> Juice3d.burst ~at:(p'.px, p'.py +. 0.6, p'.pz) (Juice3d.drops (flesh_color p'.kind))
+        |> Juice3d.burst ~at:(p'.px, p'.py +. 0.6, p'.pz) (Juice3d.drops (food_color p'.kind))
+        |> Juice3d.freeze 5 |> Juice3d.shake 0.35
+    | Alive, Falling _ when cell_at a p'.px p'.pz = Water ->
+        Juice3d.burst ~at:(p'.px, water_level +. 0.1, p'.pz) (Juice3d.drops (rgb 205 232 250)) fx
+    | Alive, Alive ->
+        let dust = Juice3d.burst ~at:(p'.px, p'.py +. 0.05, p'.pz) Juice3d.smoke in
+        let dashed = p'.dash = dash_frames && p.dash = 0 in
+        let landed = p'.vy = 0. && p.vy < -0.1 *. pace in
+        if dashed || landed then dust fx else fx
+    | _ -> fx
+  in
+  (* one boomerang per owner, so its owner says which it was *)
+  let rang_fx fx (r' : rang) =
+    match List.find_opt (fun (r : rang) -> r.owner = r'.owner) before.rangs with
+    | Some r when r'.bounced && not r.bounced -> Juice3d.burst ~at:(r'.rx, r'.ry, r'.rz) Juice3d.sparks fx
+    | _ -> fx
+  in
+  List.fold_left rang_fx (List.fold_left player_fx fx after.players) after.rangs
+
+(* [step_game], then the juice of what it did; nothing at all while
+ * the juice freezes the game *)
+let with_juice (computer : computer) (s : model) (g : game) : game =
+  let fx = Juice3d.step computer g.fx in
+  if Juice3d.frozen fx then { g with fx }
+  else
+    let g' = step_game s computer.keyboard { g with fx } in
+    { g' with fx = juiced g g' fx }
+
 let first_arena (flags : (string * string) list) : int = if List.assoc_opt "map" flags = Some "river" then 1 else 0
 
 let update (computer : computer) (s : model) : model =
@@ -1128,14 +1185,16 @@ let update (computer : computer) (s : model) : model =
       if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Playing (new_game ~level:levels.(i) ~arena_no:(first_arena computer.flags) ())) s
       else { s with scene = Title levels.(i) }
   | Playing g -> (
-      let g = step_game s computer.keyboard g in
+      let g = with_juice computer s g in
       match g.ended with
       | Some n when n > 100 ->
           let g = score g in
           if List.exists (fun p -> p.wins >= rounds_to_win) g.players then Scene2d.go (Winner g) s
           else { s with scene = Playing (next_round g) }
       | _ -> { s with scene = Playing g })
-  | Winner g -> if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Title g.level) s else s
+  | Winner g ->
+      if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Title g.level) s
+      else { s with scene = Winner { g with fx = Juice3d.step computer g.fx } }
 
 (*****************************************************************************)
 (* View: the arena *)
@@ -1386,15 +1445,15 @@ let view (computer : computer) (s : model) : camera * shape3d list =
             @ [ text gray 1.8 "left / right: how well the computer plays" |> move_y 75. ]
             @ Scene2d.blink 1. s [ text yellow 3. "PRESS SPACE" |> move_y 30. ]) )
   | Playing g ->
-      ( g.cam,
-        view_game g
+      ( Juice3d.camera g.fx g.cam,
+        Juice3d.view g.fx (view_game g)
         @ List.map hud
             (scoreboard screen g @ banner s g
             @ [ text gray 2. (Printf.sprintf "ROUND %d -- %s" g.round_no arenas.(g.arena_no).name) |> move_y (screen.bottom +. 30.) ]) )
   | Winner g ->
       let champion = List.fold_left (fun best p -> if p.wins > best.wins then p else best) (List.hd g.players) g.players in
-      ( g.cam,
-        view_game g
+      ( Juice3d.camera g.fx g.cam,
+        Juice3d.view g.fx (view_game g)
         @ List.map hud
             (scoreboard screen g
             @ [ text (food_color champion.kind) 6. (Printf.sprintf "%s WINS!" (if champion.idx = 0 then "YOU" else food_name champion.kind)) |> move_y 80. ]
@@ -1404,6 +1463,6 @@ let app = game3d view update initial_model
 
 (* the foods are spheres, so they are worth shading smoothly; nothing
  * here needs the back faces (no sky: the arena floats over a void).
- * The flag map=river comes from the command line, or the
+ * The flags map=river and juice=off come from the command line, or the
  * page's URL *)
 let main = Playground3d_platform.run_app3d ~flags:(Playground_platform.flags ()) app

@@ -87,6 +87,10 @@ val smoke : burst
 (* pieces of [color], thrown up and falling, tumbling: a tank blown up *)
 val debris : color -> burst
 
+(* drops of [color], many and small, thrown up and falling back soon:
+ * a fruit cut, a splash of water *)
+val drops : color -> burst
+
 (* [burst ~at b fx]: a burst at the point [at] (at most 300 particles
  * in all, the oldest dropped first); nothing with juice=off *)
 val burst : at:number * number * number -> burst -> t -> t

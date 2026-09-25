@@ -313,8 +313,8 @@ let scripted : Testutil_golden.scripted list =
     (* a boomerang in the air with its shadow under it (the one depth
      * cue this high, nearly isometric camera gets), all four still
      * standing, the whole garden framed; then, further in, the
-     * computer's three cooks in halves, cut by each other's throws,
-     * their cut faces pale: the avocado wins the round *)
+     * strawberry just cut, the hitstop over and its juice spraying,
+     * flesh and skin, as its halves part *)
     ("games/arcade/software/TinyBoomerangFu", "flight", 45, "space:1,right:5-25,space:26,right:30-60");
     (* claude: the song under way on the drums, on Easy (a pad a beat,
        no pedal): the count-in's hi-hat, the crash, snare, hi-hat,
