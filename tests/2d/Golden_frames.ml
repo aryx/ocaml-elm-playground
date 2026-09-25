@@ -260,6 +260,8 @@ let scenes : Testutil_golden.scene list =
     ("games/programming/software/TinyKarel", "", 5);
     (* a row and a half harvested, six steps a second *)
     ("examples/software/KarelHarvest", "", 90);
+    (* the first question, the gallows empty *)
+    ("examples/software/TeletypeHangman", "", 3);
     ("games/rpg/software/TinyGauntlet2", "", 5);
     ("games/sports/software/TinyKickOff2", "", 5);
     ("games/sports/software/TinySpeedball2", "", 5);
@@ -1538,6 +1540,9 @@ let flagged : Testutil_golden.flagged list =
  * hand, with juice=engine (Juice.mode) at the moment of a hit *)
 let scripted_flagged : Testutil_golden.scripted_flagged list =
   [
+    (* claude: TeletypeHangman: a hit, a miss and a mistyped guess
+     * (seed 1's word), on the teletype's roll of paper *)
+    ("examples/software/TeletypeHangman", "paper", 12, "type(e):2,Enter:3,type(z):5,Enter:6,type(xy):8,Enter:9", [ "paper" ]);
     (* claude: TinyMosaic's page view: the pointer over "a short history
      * of the web" (its URL in the status line); clicked (the history
      * page, Back lit); then Back (home again, the links there purple,

@@ -1,0 +1,164 @@
+(* Teletype: the games of the teletype, which ask and wait, on top of
+   the Playground.
+
+   A 1973 BASIC game is written the way a conversation goes:
+
+     10 PRINT "GUESS A LETTER";
+     20 INPUT G$
+     30 IF G$ = MID$(W$, I, 1) THEN ...
+
+   INPUT stops the program until the player has typed a line, and then
+   it carries on from the next statement, its place in the code
+   remembered. The playground can't stop: [update] runs once a frame
+   and must return at once, so a game that asks has to become a state
+   machine (which question are we on? TinyHamurabi and TinyZork keep
+   it in their model). This module gives the BASIC style back, without
+   stopping anything: a program is a *value*, the conversation written
+   down, and this module plays it.
+
+   type 'a talk =
+     | Done of 'a                         the end, with a result
+     | Print of string * 'a talk          these bytes, then the rest
+     | Read_line of (string -> 'a talk)   a line, and what to do with it
+     | Read_key of (string -> 'a talk)    a key, no Enter needed
+     | Random of int * (int -> 'a talk)   a number from 0 to n - 1
+
+   What comes after a question is a function of the answer: its
+   continuation, "the rest of the program" held as a closure. The
+   program never waits; it *is* waiting, as a value, until this module
+   calls the function with the line typed. And [let*] (bind) writes
+   the continuations for us, so the program reads like BASIC:
+
+     BASIC:  10 PRINT "WHAT IS YOUR NAME";
+             20 INPUT N$
+             30 PRINT "HELLO, "; N$
+
+     OCaml:  let* () = print "WHAT IS YOUR NAME? " in
+             let* name = read_line in
+             print ("HELLO, " ^ name ^ "\n")
+
+   (see examples/TeletypeHangman.ml).
+
+   The idea is old: Haskell 1.0 (1990) did all its input and output
+   this way ("dialogue" I/O: a program is a function from responses to
+   requests), before monads made it pleasant; the talk type is what is
+   now called a free monad. The playground's own Cmd (an HTTP request
+   as a value, done by the platform) is the same idea, for one request
+   at a time. The other way to get the BASIC style is to suspend a
+   real function in the middle, which OCaml 5's effects can do: [read_line
+   ()] in direct style, a handler keeping the continuation. An exercise
+   for when the playground moves to OCaml 5; what it would lose is
+   [run] below, since an effect's continuation can be resumed only once
+   and so can't be replayed from a list of answers as cheaply.
+
+   Three things come with the value being a value:
+
+   - **Randomness from a seed**: [Random] is a request like the others,
+     answered from a seed kept by this module (the flag seed=n, 1 by
+     default), so the same seed gives the same game, and a test can
+     play it.
+   - **Tests without a screen**: [run program answers] plays it with
+     those lines typed and returns what it printed -- the sample run
+     that David Ahl's book prints under each game is a test.
+   - **The terminal is somebody else's**: the program writes bytes and
+     reads lines; the screen is a Vt (Vt.mli) and the line editing
+     Line_discipline's (Backspace, Control-U, Control-C to stop), so a
+     program can print escape sequences ("\x1b[2J" clears the screen),
+     and TinyTerminal can run the same program under its shell.
+
+   A limit: the program is built as it runs, and a [Print] builds its
+   continuation at once, so a loop that prints forever without ever
+   reading or drawing a random number never returns. A teletype
+   program reads; a program that doesn't, doesn't need this module.
+
+   References: Paul Hudak et al., "Report on the Programming Language
+   Haskell, version 1.0" (1990), section 7 (dialogues); David H. Ahl,
+   "101 BASIC Computer Games" (Digital Equipment Corporation, 1973;
+   Creative Computing, 1975). *)
+
+(*****************************************************************************)
+(* {1 Programs} *)
+(*****************************************************************************)
+
+type 'a talk =
+  | Done of 'a
+  | Print of string * 'a talk
+  | Read_line of (string -> 'a talk)
+  | Read_key of (string -> 'a talk)
+  | Random of int * (int -> 'a talk)
+
+(* "\n" ends a line: the tty turns it into CR LF (Line_discipline.output) *)
+val print : string -> unit talk
+
+(* the line typed, without its end of line; Enter must be pressed *)
+val read_line : string talk
+
+(* one key, as soon as it is pressed and unechoed: "a", "\r", "\x1b[A"
+   for the up arrow (Vt.key) *)
+val read_key : string talk
+
+(* an integer from 0 to [n - 1] *)
+val random : int -> int talk
+
+val return : 'a -> 'a talk
+val ( let* ) : 'a talk -> ('a -> 'b talk) -> 'b talk
+
+(* [ask question]: print it, then read the line; BASIC's INPUT "Q"; A$ *)
+val ask : string -> string talk
+
+(*****************************************************************************)
+(* {1 Running} *)
+(*****************************************************************************)
+
+(* [run ?seed program answers]: the program played with those lines
+   typed, in order, without a screen; what it printed (the \n's as
+   they were, no \r added). It stops at its end, or when it reads with
+   no answers left. A [Read_key] takes the next answer as its key. *)
+val run : ?seed:int -> 'a talk -> string list -> string
+
+(* The machine playing a program: its screen, its tty, the program at
+   the point it reached. TinyTerminal's shell steps one of these. *)
+type machine
+
+(* [start ~seed ~rows ~cols program]: the program on a blank screen,
+   run until it first reads *)
+val start : ?baud:int -> seed:int -> rows:int -> cols:int -> unit talk -> machine
+
+(* [input m bytes]: bytes from the keyboard: echoed, and the program
+   given its line (or key) and run until it reads again. Control-C or
+   Control-D ends the program. *)
+val input : machine -> string -> machine
+
+(* [tick m dt]: [dt] seconds pass; at a baud rate, the printing catches
+   up (at none, everything is printed at once, and [tick] does nothing) *)
+val tick : machine -> float -> machine
+
+val screen : machine -> Vt.t
+
+(* whether the program is waiting for a line or a key (the cursor
+   blinks), and whether it has ended *)
+val reading : machine -> bool
+val finished : machine -> bool
+
+(* the bytes a Playground frame typed: [computer.keyboard.typed], and
+   the named keys that went down since the last frame (Enter,
+   Backspace, the arrows, Control and a letter), in Vt's bytes *)
+val keyboard_bytes : Playground.computer -> before:Playground.keyboard -> string
+
+(* [draw ?paper computer m]: the screen, filling the playground's: a
+   cell per character, green on black, or with [paper] black on a roll
+   of paper, in capitals as a Teletype Model 33 printed (it had no
+   lower case) *)
+val draw : ?paper:bool -> Playground.computer -> machine -> Playground.shape list
+
+(*****************************************************************************)
+(* {1 Applications} *)
+(*****************************************************************************)
+
+type state
+
+(* [teletype program]: the program on an 80 by 24 screen; when it
+   ends, Enter runs it again (with the seed where the last run left
+   it: another game). Flags: seed=n, baud=n (110: the Teletype's 10
+   characters a second), paper. *)
+val teletype : ?rows:int -> ?cols:int -> unit talk -> (state Playground.game, Playground.msg) Playground.app

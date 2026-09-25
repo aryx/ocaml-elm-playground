@@ -52,6 +52,9 @@
    ; claude: Lockstep, Sim_net, Checksum under Multiplayer.ml (private,
    ; pure OCaml, this same package), see Multiplayer.mli
    networking
+   ; claude: Vt and Line_discipline under Teletype.ml (private, pure
+   ; OCaml, this same package), see docs/claude_notes/plans/plan_terminal.md
+   terminal
  )
  ; (preprocess (pps profiling.ppx))
 )
