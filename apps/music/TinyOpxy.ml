@@ -28,7 +28,10 @@
  * Under them, the steps: a click sets the step to the notes held on the
  * letters (a chord), or the last note played, or clears it; with shift,
  * it *holds* the step, and the knobs of M1 and M3 then set its locks
- * (the OP-XY's hold-a-step-and-turn), its dot lit. The scene buttons
+ * (the OP-XY's hold-a-step-and-turn), its dot lit; and four buttons
+ * under the steps its *components* (Studio_opxy.mli): MULTIPLY (a
+ * ratchet), PULSE (repeated), HOLD (held), SKIP (one time in n), each
+ * clicked from none to 4, the step marked. The scene buttons
  * choose a scene, heard from the next bar; P gives the track its next
  * pattern in this scene.
  *
@@ -42,8 +45,9 @@
  * Audio's instruments, Gui (the knobs, the buttons). Not: Spectrum,
  * Scene2d, Sprite, File_menu.
  *
- * Exercises: the step components (pulse, hold, multiply, skip: the
- * OP-XY's fourteen); the OP-XY's own engines (axis, dissolve, epiano,
+ * Exercises: the OP-XY's ten other step components (velocity, ramps,
+ * random, portamento, bend, tonality, jump, the skips of a lock or a
+ * component); the OP-XY's own engines (axis, dissolve, epiano,
  * hardsync, organ, prism, simple, wavetable); the filter's envelope and
  * key tracking; the LFOs; the effects sends (FX I, FX II) and punch-in
  * effects; patterns longer than a bar; songs, scenes in order; the
@@ -202,6 +206,8 @@ let key_at (x : number) (y : number) : int option =
 
 let row_y = 190.
 let steps_y = 60.
+let components_y = 0.
+let component_x (i : int) : number = -330. + (float_of_int i * 130.)
 let step_x (s : int) : number = -435. + (float_of_int s * 58.)
 let track_x (k : int) : number = -320. + (float_of_int k * 58.)
 let scene_x (k : int) : number = 260. + (float_of_int k * 55.)
@@ -262,6 +268,39 @@ let update (computer : computer) (m : model) : model =
   (* the steps: a click sets or clears, with shift holds *)
   let chosen = p.scenes.(p.scene).chosen.(track) in
   let clicked = if mouse.mclick then List.find_opt (fun s -> Float.abs (mouse.mx - step_x s) <= 26. && Float.abs (mouse.my - steps_y) <= 26.) (List.init 16 (fun s -> s)) else None in
+  (* the held step's components: each button its number, 1 (none) to 4 *)
+  let p =
+    match m.held_step with
+    | None -> p
+    | Some s ->
+        let tr = p.tracks.(track) in
+        let st = tr.patterns.(chosen).(s) in
+        let cycle (make : int -> Studio_opxy.component) (get : Studio_opxy.step -> int) i label =
+          if Gui.button computer ~at:(component_x i, components_y) (Printf.sprintf "%s %d" label (get st)) then
+            let n = (get st mod 4) +.. 1 in
+            let others = List.filter (fun c -> make 2 <> c && make 3 <> c && make 4 <> c) st.components in
+            Some { st with components = (if n = 1 then others else make n :: others) }
+          else None
+        in
+        (* all four called, every frame: the buttons drawn *)
+        let changed =
+          List.find_map (fun c -> c)
+            [
+              cycle (fun n -> Multiply n) Studio_opxy.multiply 0 "MULTIPLY";
+              cycle (fun n -> Pulse n) Studio_opxy.pulse 1 "PULSE";
+              cycle (fun n -> Hold n) Studio_opxy.hold 2 "HOLD";
+              cycle (fun n -> Skip n) Studio_opxy.skip 3 "SKIP";
+            ]
+        in
+        (match changed with
+        | Some st' ->
+            let tracks = Array.copy p.tracks in
+            let patterns = Array.map Array.copy tr.patterns in
+            patterns.(chosen).(s) <- st';
+            tracks.(track) <- { tr with patterns };
+            { p with tracks }
+        | None -> p)
+  in
   let m, p =
     match clicked with
     | Some s when computer.keyboard.kshift -> ({ m with held_step = (if m.held_step = Some s then None else Some s) }, p)
@@ -306,7 +345,8 @@ let screen_view (m : model) : shape list =
   let pages = [| "ENGINE"; "ENVELOPE"; "FILTER"; "BRAIN" |] in
   let title = Printf.sprintf "%d %s  %s  %s" (m.track +.. 1) (String.uppercase_ascii tr.name) kind pages.(m.page) in
   let brain = Printf.sprintf "%s %s   %.0f BPM   scene %d" [| "C"; "C#"; "D"; "Eb"; "E"; "F"; "F#"; "G"; "Ab"; "A"; "Bb"; "B" |].(p.key) (fst (List.nth Studio_opxy.scales p.scale)) p.tempo (Studio_opxy.playing opxy +.. 1) in
-  let playing = if Studio_opxy.running opxy then Some (Studio_opxy.step opxy) else None in
+  (* the track's own step: a pulse or a hold makes it lag the clock *)
+  let playing = if Studio_opxy.running opxy then Some (Studio_opxy.position opxy m.track) else None in
   let lo, hi = List.fold_left (fun (lo, hi) (s : Studio_opxy.step) -> List.fold_left (fun (lo, hi) n -> (min lo n, max hi n)) (lo, hi) s.notes) (127, 0) (Array.to_list pattern) in
   let span = float_of_int (max 12 (hi -.. lo)) in
   let cell s = screen_x - 150. + (float_of_int s * 20.) in
@@ -357,7 +397,7 @@ let view (computer : computer) (m : model) : shape list =
   let lit on = if on then accent else rgb 150 150 150 in
   let tr = p.tracks.(m.track) in
   let pattern = tr.patterns.(p.scenes.(p.scene).chosen.(m.track)) in
-  let playing = if Studio_opxy.running opxy then Some (Studio_opxy.step opxy) else None in
+  let playing = if Studio_opxy.running opxy then Some (Studio_opxy.position opxy m.track) else None in
   [ rectangle (rgb 50 52 56) computer.screen.width computer.screen.height ]
   @ [ words white "TinyOpxy" |> scale 2.4 |> move (-380.) 482.; words (rgb 200 200 200) (Printf.sprintf "latency %.0f ms" (Audio.latency () * 1000.)) |> scale 1.3 |> move (-150.) 482. ]
   @ [ rectangle (rgb 200 202 205) 960. 730. |> move 0. 45. ]
@@ -387,7 +427,9 @@ let view (computer : computer) (m : model) : shape list =
            let face = if playing = Some s then accent else if st.notes <> [] then rgb 60 60 62 else rgb 235 235 232 in
            (if m.held_step = Some s then [ rectangle accent 52. 52. |> move (step_x s) steps_y ] else [])
            @ [ rectangle face 46. 46. |> move (step_x s) steps_y; words (if st.notes <> [] then white else ink) (string_of_int (s +.. 1)) |> scale 0.9 |> move (step_x s) steps_y ]
-           @ if st.locks <> [] then [ circle (rgb 90 140 230) 4. |> move (step_x s + 16.) (steps_y + 16.) ] else []))
+           @ (if st.locks <> [] then [ circle (rgb 90 140 230) 4. |> move (step_x s + 16.) (steps_y + 16.) ] else [])
+           (* a component: a small orange triangle in the corner *)
+           @ if st.components <> [] then [ triangle accent 6. |> move (step_x s - 15.) (steps_y + 15.) ] else []))
   @ keyboard_view computer m
   @ [ words (rgb 220 220 220) "click a step: set/clear   shift+click: hold it, the knobs lock it   M again: next engine/mode   space: play"
       |> scale 1.1 |> move 0. (-350.) ]

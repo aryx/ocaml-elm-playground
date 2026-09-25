@@ -44,7 +44,8 @@ let brain ~(from : int) ~(key : int) ~(scale : int) (note : int) : int =
 (*****************************************************************************)
 
 type kind = Synth of Studio_op1.sound | Drums | Keys
-type step = { notes : int list; velocity : float; locks : (string * float) list }
+type component = Multiply of int | Pulse of int | Hold of int | Skip of int
+type step = { notes : int list; velocity : float; locks : (string * float) list; components : component list }
 
 type track = {
   name : string;
@@ -71,8 +72,14 @@ type patch = {
   volume : float;
 }
 
-let rest = { notes = []; velocity = 0.8; locks = [] }
-let note ?(velocity = 0.8) (notes : int list) : step = { notes; velocity; locks = [] }
+let rest = { notes = []; velocity = 0.8; locks = []; components = [] }
+let note ?(velocity = 0.8) (notes : int list) : step = { notes; velocity; locks = []; components = [] }
+
+(* a step's component's number, 1 without it *)
+let multiply (s : step) : int = List.fold_left (fun a c -> match c with Multiply n -> n | _ -> a) 1 s.components
+let pulse (s : step) : int = List.fold_left (fun a c -> match c with Pulse n -> n | _ -> a) 1 s.components
+let hold (s : step) : int = List.fold_left (fun a c -> match c with Hold n -> n | _ -> a) 1 s.components
+let skip (s : step) : int = List.fold_left (fun a c -> match c with Skip n -> n | _ -> a) 1 s.components
 let lockable = [ "p1"; "p2"; "p3"; "p4"; "cutoff"; "resonance"; "volume"; "pan" ]
 
 let get (tr : track) (name : string) : float =
@@ -129,6 +136,9 @@ let op1 k = Studio_op1.initial.sounds.(k)
 
 let initial : patch =
   let kick = 36 and snare = 38 and clap = 39 and closed = 42 and opened = 46 in
+  let busy = drums [ (kick, "x...x...x..xx..."); (clap, "....x.......x..."); (closed, "x.x.x.x.x.x.x..."); (opened, "..............x.") ] in
+  (* the bar's last step a closed hat struck three times: a ratchet *)
+  busy.(15) <- { (note ~velocity:0.7 [ closed ]) with components = [ Multiply 3 ] };
   let lead =
     let s = line [ (0, [ "G4" ]); (3, [ "Bb4" ]); (6, [ "C5" ]); (8, [ "Eb5" ]); (11, [ "D5" ]); (14, [ "Bb4" ]) ] in
     (* the cutoff opening over the bar, the OP-XY's way: two points *)
@@ -142,7 +152,7 @@ let initial : patch =
         track ~linked:false ~volume:0.8 "drums" Drums
           [
             drums [ (kick, "x...x...x...x..."); (snare, "....x.......x..."); (closed, "..x...x...x...x.") ];
-            drums [ (kick, "x...x...x..xx..."); (clap, "....x.......x..."); (closed, "x.x.x.x.x.x.x..."); (opened, "..............x.") ];
+            busy;
           ];
         track ~cutoff:0.6 "bass" (Synth (op1 4))
           [
@@ -232,6 +242,14 @@ type state = {
   filter : Svf.t;
   mutable held : int list; (* the notes of the step sounding *)
   mutable level : float;
+  (* where the track is in its pattern: the clock's step, but for a
+   * pulse or a hold, which stay on a step for several ticks *)
+  mutable started : bool;
+  mutable pos : int;
+  mutable remaining : int; (* the ticks still to stay on [pos] *)
+  plays : int array; (* each step's arrivals, for Skip *)
+  mutable ratchet : (float * bool) list; (* a Multiply's events: exact samples, true an on *)
+  mutable triggers : int list; (* the samples the notes were pressed at, the last first *)
 }
 
 type t = {
@@ -243,22 +261,25 @@ type t = {
   mutable right : Signal.t;
   ring : Signal.t;
   mutable at : int;
+  mutable clock : int; (* samples since created *)
 }
 
-(* a track's playing pattern for the sequencer: step k's note is k, so
- * an event says which step it is (as Voice_tr808's) *)
-let seq_pattern (p : step array) : Sequencer.step array =
-  Array.mapi (fun k (s : step) -> { (if s.notes = [] then Sequencer.rest else Sequencer.note k) with locks = s.locks }) p
+(* the sequencers are the clock: a tick each step, a gate each half
+ * step; the tracks play their patterns from them (the pulses and holds
+ * making a track's step lag the clock's) *)
+let ticks : Sequencer.step array = Array.make bars (Sequencer.note 0)
 
+(* a pattern's locks, as Sequencer.lock_value reads them *)
+let seq_locks (p : step array) : Sequencer.step array = Array.map (fun (s : step) -> { Sequencer.rest with locks = s.locks }) p
 let pattern_of (p : patch) (scene : int) (k : int) : step array = p.tracks.(k).patterns.(p.scenes.(scene).chosen.(k))
 
 let create (patch : patch) : t =
   {
     patch;
     states =
-      Array.init 8 (fun k ->
+      Array.init 8 (fun _ ->
           {
-            seq = Sequencer.create ~bpm:patch.tempo (seq_pattern (pattern_of patch patch.scene k));
+            seq = Sequencer.create ~bpm:patch.tempo ticks;
             poly = Polyphony.create ();
             mode = 0;
             kit = None;
@@ -266,6 +287,12 @@ let create (patch : patch) : t =
             filter = Svf.create ();
             held = [];
             level = 0.;
+            started = false;
+            pos = 0;
+            remaining = 0;
+            plays = Array.make bars 0;
+            ratchet = [];
+            triggers = [];
           });
     playing = patch.scene;
     live = 0;
@@ -273,17 +300,31 @@ let create (patch : patch) : t =
     right = [||];
     ring = Array.make 2048 0.;
     at = 0;
+    clock = 0;
   }
 
 let patch (t : t) : patch = t.patch
 let set_patch (t : t) (p : patch) : unit = t.patch <- p
 
+(* the tracks back to their patterns' first step, their counts to 0 *)
+let rewind (t : t) : unit =
+  Array.iter
+    (fun st ->
+      st.started <- false;
+      st.remaining <- 0;
+      st.ratchet <- [];
+      Array.fill st.plays 0 bars 0)
+    t.states
+
 let run (t : t) (on : bool) : unit =
   Array.iter (fun st -> if on then Sequencer.start st.seq else Sequencer.stop st.seq) t.states;
+  rewind t;
   if not on then Array.iter (fun st -> st.held <- []) t.states
 
 let running (t : t) : bool = Sequencer.running t.states.(0).seq
 let step (t : t) : int = Sequencer.step t.states.(0).seq
+let position (t : t) (k : int) : int = t.states.(k).pos
+let triggers (t : t) (k : int) : int list = t.states.(k).triggers
 let playing (t : t) : int = t.playing
 let select (t : t) (k : int) : unit = t.live <- k
 let voices (t : t) (k : int) : int = match t.states.(k).kit with Some kit -> Sampler.sounding kit | None -> Polyphony.voices t.states.(k).poly
@@ -308,13 +349,18 @@ let press (t : t) (k : int) (n : int) (velocity : float) : unit =
 let release (t : t) (k : int) (n : int) : unit =
   match t.states.(k).kit with Some kit -> Sampler.release kit n | None -> Polyphony.release t.states.(k).poly n
 
-(* the track as locked [offset] samples into the block *)
+(* the track as locked [offset] samples into the block: at its own
+ * step, the clock's fraction of a step past it *)
 let locked (t : t) (k : int) (offset : int) : track =
-  let tr = t.patch.tracks.(k) in
-  let seq = t.states.(k).seq in
-  List.fold_left
-    (fun tr name -> match Sequencer.locked seq (Points tr.smoothing) name offset with Some v -> put tr name v | None -> tr)
-    tr lockable
+  let tr = t.patch.tracks.(k) and st = t.states.(k) in
+  match Sequencer.position st.seq offset with
+  | Some p when st.started ->
+      let at = float_of_int st.pos +. (p -. Float.of_int (Float.to_int p)) in
+      let locks = seq_locks (pattern_of t.patch t.playing k) in
+      List.fold_left
+        (fun tr name -> match Sequencer.lock_value (Points tr.smoothing) locks name at with Some v -> put tr name v | None -> tr)
+        tr lockable
+  | _ -> tr
 
 (* [n] samples of track [k] from [from], added into the mix *)
 let render_piece (t : t) (k : int) (from : int) (n : int) (mute : bool) : unit =
@@ -350,36 +396,93 @@ let fill (t : t) (out : Signal.stereo) : unit =
   end;
   Array.fill t.left 0 n 0.;
   Array.fill t.right 0 n 0.;
-  (* a new scene waits for the bar's last step: set now, the sequencers
-   * read it from the next step, the bar's first *)
-  if t.playing <> p.scene && ((not (running t)) || step t = bars - 1) then t.playing <- p.scene;
+  (* a new scene waits for the bar's last step: set now, the tracks
+   * start its patterns from the next step, the bar's first *)
+  if t.playing <> p.scene && ((not (running t)) || step t = bars - 1) then begin
+    t.playing <- p.scene;
+    rewind t
+  end;
   let scene = p.scenes.(t.playing) in
+  let sps = Sequencer.samples_per_step p.tempo in
   Array.iteri
     (fun k st ->
       let pattern = pattern_of p t.playing k in
       let tr = p.tracks.(k) in
-      Sequencer.set_pattern st.seq (seq_pattern pattern);
       Sequencer.set_bpm st.seq p.tempo;
-      let events = ref [] in
-      Sequencer.advance st.seq n (fun offset e -> events := (offset, e) :: !events);
-      let mute = scene.mutes.(k) in
-      let from =
-        List.fold_left
-          (fun from (offset, e) ->
-            render_piece t k from (offset - from) mute;
-            (match (e : Sequencer.event) with
-            | Note_on { note = s; _ } ->
-                List.iter (fun m -> release t k m) st.held;
-                let step = pattern.(s) in
-                let notes = if tr.linked then List.map (brain ~from:p.written ~key:p.key ~scale:p.scale) step.notes else step.notes in
-                List.iter (fun m -> press t k m step.velocity) notes;
-                st.held <- notes
-            | Note_off ->
-                List.iter (fun m -> release t k m) st.held;
-                st.held <- []);
-            offset)
-          0 (List.rev !events)
+      (* the clock's ticks and half steps in this block *)
+      let clock = ref [] in
+      Sequencer.advance st.seq n (fun offset e -> clock := (offset, `Clock e) :: !clock);
+      let clock = List.rev !clock in
+      let sample_of x = int_of_float (Float.ceil (x -. 1e-9)) in
+      (* the next event: the clock's, or the ratchet's -- scheduled by a
+       * trigger in this very block, so looked for each time; the clock's
+       * first on a tie *)
+      let next clock =
+        let ratchet = List.filter (fun (x, _) -> sample_of x < t.clock + n) st.ratchet in
+        let earliest = List.fold_left (fun a r -> match a with Some (y, _) when y <= fst r -> a | _ -> Some r) None ratchet in
+        match (clock, earliest) with
+        | (o, e) :: rest, Some (x, _) when o <= sample_of x - t.clock -> Some (o, e, rest)
+        | _, Some ((x, on) as r) ->
+            st.ratchet <- List.filter (fun r' -> r' != r) st.ratchet;
+            Some (sample_of x - t.clock, (if on then `Ratchet_on else `Ratchet_off), clock)
+        | (o, e) :: rest, None -> Some (o, e, rest)
+        | [], None -> None
       in
+      let mute = scene.mutes.(k) in
+      let release_all () =
+        List.iter (fun m -> release t k m) st.held;
+        st.held <- []
+      in
+      let trigger offset (s : step) =
+        release_all ();
+        let notes = if tr.linked then List.map (brain ~from:p.written ~key:p.key ~scale:p.scale) s.notes else s.notes in
+        List.iter (fun m -> press t k m s.velocity) notes;
+        st.held <- notes;
+        st.triggers <- (t.clock + offset) :: List.filteri (fun i _ -> i < 63) st.triggers
+      in
+      let rec loop from clock =
+        match next clock with
+        | None -> from
+        | Some (offset, e, clock) ->
+            render_piece t k from (offset - from) mute;
+            (match e with
+            | `Clock (Sequencer.Note_on _) ->
+                (* the track's step: the next, or the same while a pulse
+                 * or a hold stays on it *)
+                let repeat =
+                  if not st.started then (st.started <- true; st.pos <- 0; false)
+                  else if st.remaining > 0 then (st.remaining <- st.remaining - 1; true)
+                  else (st.pos <- (st.pos + 1) mod bars; false)
+                in
+                let s = pattern.(st.pos) in
+                if not repeat then begin
+                  st.plays.(st.pos) <- st.plays.(st.pos) + 1;
+                  st.remaining <- max (pulse s) (hold s) - 1
+                end;
+                (* skip: one arrival in n; a hold's repeats don't strike
+                 * again, a pulse's do *)
+                let skipped = (st.plays.(st.pos) - 1) mod skip s <> 0 in
+                if s.notes <> [] && (not skipped) && ((not repeat) || pulse s > 1) then begin
+                  trigger offset s;
+                  (* multiply: the step's time cut in n, each a note
+                   * with its half-length gate *)
+                  let m = multiply s in
+                  if m > 1 then begin
+                    let a = float_of_int (t.clock + offset) and d = sps /. float_of_int m in
+                    st.ratchet <- List.init (m - 1) (fun i -> (a +. (float_of_int (i + 1) *. d), true)) @ List.init m (fun i -> (a +. ((float_of_int i +. 0.5) *. d), false))
+                  end
+                end
+                else if not repeat then release_all ()
+            | `Clock Sequencer.Note_off ->
+                let s = pattern.(st.pos) in
+                (* the gate: not a ratchet's (its own offs), not a hold's
+                 * before its last step *)
+                if multiply s = 1 && not (hold s > 1 && st.remaining > 0) then release_all ()
+            | `Ratchet_on -> trigger offset pattern.(st.pos)
+            | `Ratchet_off -> release_all ());
+            loop offset clock
+      in
+      let from = loop 0 clock in
       render_piece t k from (n - from) mute)
     t.states;
   for i = 0 to n - 1 do
@@ -387,7 +490,8 @@ let fill (t : t) (out : Signal.stereo) : unit =
     out.right.(i) <- p.volume *. t.right.(i);
     t.ring.(t.at) <- out.left.(i);
     t.at <- (t.at + 1) mod 2048
-  done
+  done;
+  t.clock <- t.clock + n
 
 let instrument (t : t) : Instrument.t =
   {

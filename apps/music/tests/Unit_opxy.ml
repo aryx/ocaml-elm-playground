@@ -86,6 +86,22 @@ let test_lock () =
   let r = loud locked /. loud held in
   Alcotest.(check bool) (Printf.sprintf "the cutoff locked to 80 Hz: %.2f of the loudness" r) true (r < 0.3)
 
+(* the step components on the drums (unlinked), at 120 BPM: the
+ * samples of the triggers, in order *)
+let test_components () =
+  let triggers (steps : (int * Studio_opxy.step) list) seconds =
+    let pattern = Array.init 16 (fun k -> Option.value (List.assoc_opt k steps) ~default:Studio_opxy.rest) in
+    let _, st = studio { (alone 0 pattern) with scene = 1 } seconds in
+    List.rev (Studio_opxy.triggers st 0)
+  in
+  let with_ c n = { (Studio_opxy.note n) with components = [ c ] } in
+  Alcotest.(check (list int)) "multiply 4: four triggers in the step" [ 0; 1379; 2757; 4135 ] (triggers [ (0, with_ (Multiply 4) [ 36 ]) ] 0.12);
+  Alcotest.(check (list int)) "pulse 3: struck three ticks, the next step three ticks late" [ 0; 5513; 11025; 16538 ]
+    (triggers [ (0, with_ (Pulse 3) [ 36 ]); (1, Studio_opxy.note [ 38 ]) ] 0.4);
+  Alcotest.(check (list int)) "hold 3: struck once, the next step three ticks late" [ 0; 16538 ]
+    (triggers [ (0, with_ (Hold 3) [ 36 ]); (1, Studio_opxy.note [ 38 ]) ] 0.4);
+  Alcotest.(check (list int)) "skip 2: the first and third bars of four" [ 0; 176400 ] (triggers [ (0, with_ (Skip 2) [ 36 ]) ] 8.)
+
 (* our song: a bar of its intro, the second scene asked for at once and
  * heard from the second bar *)
 let song () : Signal.t =
@@ -102,5 +118,6 @@ let tests =
       t "a scene at the bar's end" test_scene;
       t "a chord step" test_chord;
       t "a lock on a track's cutoff" test_lock;
+      t "the step components: multiply, pulse, hold, skip" test_components;
       t "golden WAV: our song" (fun () -> Testutil_wav.check ~dir:"apps/music/tests" "opxy_song" (song ()));
     ]

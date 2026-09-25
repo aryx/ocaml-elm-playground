@@ -35,14 +35,23 @@
  * the Emulator made one in 1981). Each track then a low-pass (the
  * OP-XY's filter module, without its envelope: ours), its volume and
  * its pan. A note's gate is half a step (Sequencer.mli; the OP-XY's
- * is a knob). The step components (pulse, hold, multiply, ...), the
- * LFOs, the effects sends and the auxiliary tracks are exercises.
+ * is a knob). The sequencers are the clock, a tick each step; each track
+ * plays its pattern from the ticks, which is what lets a step change
+ * the track's timing: the *step components* (below), a ratchet's
+ * triggers inside a step, a step repeated or held while the clock goes
+ * on. The other ten components, the LFOs, the effects sends and the
+ * auxiliary tracks are exercises.
  *
  * Worked example (Unit_opxy): the brain's figure; a scene asked for
  * in the middle of a bar heard at the next bar's first sample (88200
  * at 120 BPM: 16 steps of 5512.5); a chord step, three voices; a
  * lock on a track's cutoff changing its sound; a golden WAV of our
- * song, two bars of each of its first two scenes. *)
+ * song, a bar of each of its first two scenes. The components at 120
+ * BPM (a step 5512.5 samples): multiply 4 on the first step, four
+ * triggers at samples 0, 1379, 2757, 4135; pulse 3, the step struck at
+ * the first three ticks and the pattern's next note three ticks late;
+ * hold 3, struck once, the next note three ticks late; skip 2, the
+ * step played in the first and third bars of four. *)
 
 (*****************************************************************************)
 (* The brain *)
@@ -65,9 +74,20 @@ val brain : from:int -> key:int -> scale:int -> int -> int
 
 type kind = Synth of Studio_op1.sound | Drums | Keys
 
+(* the step components (four of the OP-XY's fourteen, TE's guide's
+ * words): [Multiply n] "multiply the number of triggers in a step,
+ * creating a ratchet effect"; [Pulse n] "repeat a step a defined
+ * number of times without progressing the sequence"; [Hold n] "hold a
+ * step a defined number of steps without progressing the sequence";
+ * [Skip n] "play only one in every defined number of repetitions".
+ * Pulse and hold make the track's step lag the clock's -- the track
+ * drifting from the others until the scene changes, which rewinds them
+ * all *)
+type component = Multiply of int | Pulse of int | Hold of int | Skip of int
+
 (* a step: its notes (MIDI; a drum track's, the pads' General MIDI
  * keys), none a rest *)
-type step = { notes : int list; velocity : float; locks : (string * float) list }
+type step = { notes : int list; velocity : float; locks : (string * float) list; components : component list }
 
 type track = {
   name : string;
@@ -96,6 +116,12 @@ type patch = {
 
 val rest : step
 val note : ?velocity:float -> int list -> step
+
+(* a step's components' numbers, 1 without *)
+val multiply : step -> int
+val pulse : step -> int
+val hold : step -> int
+val skip : step -> int
 
 (* the knobs a step can lock: the engine's four ("p1" to "p4"),
  * "cutoff", "resonance", "volume", "pan" *)
@@ -131,6 +157,12 @@ val running : t -> bool
  * is over) *)
 val step : t -> int
 val playing : t -> int
+
+(* a track's own step (the clock's, unless a pulse or a hold made it
+ * lag), and the samples its notes were pressed at, the last first (the
+ * last 64) *)
+val position : t -> int -> int
+val triggers : t -> int -> int list
 
 (* the track the keys play live *)
 val select : t -> int -> unit

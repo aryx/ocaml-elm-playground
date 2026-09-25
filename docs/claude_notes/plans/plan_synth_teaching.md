@@ -1717,6 +1717,30 @@ TinyOp1 (its tape needs no sequencer), TinyTB303, TinyOpxy.
   _cp, _dx; web page; `CATALOG.md`'s row. Left, in its header: the CP's
   effects row as a rack after the voice, the YC's transistor organs,
   the DX's four operators, the CS's oscillator types, the looper.
+- **C1, DONE (2026-09-25)**: the OP-XY's step components, four of its
+  fourteen (TE's guide, "step components": 14 types, 1 to 9 or random
+  each, all combinable): multiply ("multiply the number of triggers in
+  a step, creating a ratchet effect"), pulse ("repeat a step a defined
+  number of times without progressing the sequence"), hold ("hold a
+  step a defined number of steps without progressing the sequence"),
+  skip ("play only one in every defined number of repetitions"). Pulse
+  and hold change a track's timing, so `Studio_opxy`'s sequencers
+  became the clock only (a tick every step, a gate every half), each
+  track playing its pattern from the ticks at its own position (the
+  locks read there: `Sequencer.lock_value` at the track's step and the
+  clock's fraction), a scene change rewinding them all. A ratchet's
+  ons and offs scheduled at their exact samples, looked for at each
+  event (one in the same block as its trigger was first missed: an
+  index out of bounds, caught by the test). Measured (Unit_opxy):
+  multiply 4 at samples 0, 1379, 2757, 4135; pulse 3 at 0, 5513, 11025
+  and the next step at 16538; hold 3 at 0 and 16538; skip 2 in bars 1
+  and 3 of 4 (0, 176400). Our song's golden WAV the same sample for
+  sample under the new clock, then a ratchet of three closed hats on its
+  busy bar's last step (the WAV changed from sample 183094 on: that
+  step, 94500 + 15 x 5906.25). TinyOpxy: four buttons under the held
+  step (none to 4), a triangle on a step with components, the track's
+  own step lit; golden frame TinyOpxy_components. The other ten
+  components left in its header.
 
 ## Verification
 

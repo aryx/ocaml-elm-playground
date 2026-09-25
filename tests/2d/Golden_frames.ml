@@ -1149,6 +1149,12 @@ let scripted : Testutil_golden.scripted list =
       "locks",
       40,
       "at(-146;190):1-4,click:2,at(300;230):5-8,click:6,Shift:9-14,at(-435;60):9-14,click:11,space:16" );
+    (* claude: the drums' step 1 held, MULTIPLY clicked twice (a ratchet
+     * of 3), run: its buttons, its triangle, the track's own step lit *)
+    ( "apps/music/software/TinyOpxy",
+      "components",
+      40,
+      "Shift:3-8,at(-435;60):3-8,click:5,at(-330;0):9-12,click:10,at(-330;0):13-16,click:14,space:18" );
     (* claude: the Juno played: the VCF's cutoff slider dragged up, chorus
      * II clicked, then C E G held -- the spectrum opened, II lit *)
     ( "apps/music/software/TinyJuno",
