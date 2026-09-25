@@ -103,7 +103,7 @@
  * (Browser_forms); web's Hit (a point to a link), Playground.Http (the
  * requests). Its own: the model, the chrome, the one-at-a-time
  * fetching of pictures, the views of each stage, and the built-in site,
- * site/*.html embedded by dune (Site_pages, Site_pictures).
+ * site/*.html embedded by dune (Site, a library TinyNetscape shares).
  *
  * Exercises: the source coloured as an editor would, from the tokens
  * (each token's place in the text is what the lexer would have to
@@ -185,19 +185,8 @@ let settings (m : model) : Browser_page.settings =
     picture = (fun url -> List.assoc_opt url m.pictures);
   }
 
-(* the built-in site: about:NAME is site/NAME.html, and its pictures
- * site/picture.gif and so on; with their type *)
-let about (name : string) : (string * string) option =
-  match name with
-  | "home" -> Some (Site_pages.home, "text/html; charset=utf-8")
-  | "history" -> Some (Site_pages.history, "text/html; charset=utf-8")
-  (* the home page's link is relative, form.html, so that it is right
-   * from tiny_httpd too *)
-  | "form" | "form.html" -> Some (Site_pages.form, "text/html; charset=utf-8")
-  | "picture.gif" -> Some (Site_pictures.picture_gif, "image/gif")
-  | "picture.png" -> Some (Site_pictures.picture_png, "image/png")
-  | "picture.jpg" -> Some (Site_pictures.picture_jpg, "image/jpeg")
-  | _ -> None
+(* the built-in site, shared with TinyNetscape (Site.mli) *)
+let about = Site.about
 
 (* the pipeline: bytes -> text -> tokens -> tree -> boxes -> shapes *)
 let page_of (m : model) (url : string) (status : int) (content_type : string option) (bytes : string) : page =

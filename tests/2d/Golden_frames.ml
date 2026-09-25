@@ -87,6 +87,10 @@ let scenes : Testutil_golden.scene list =
      * blocks, lines broken at the width, a list's bullets
      * (plan_browser_teaching.md, phases 3 and 4) *)
     ("apps/internet/software/TinyMosaic", "", 5);
+    (* claude: 1994: the same home page in Netscape's window: its
+     * toolbar, its Location field, its status bar and its "N"
+     * (plan_browser_teaching.md, TinyNetscape's N0) *)
+    ("apps/internet/software/TinyNetscape", "", 5);
     (* 1984: -fixed-time's 1000 seconds after the epoch, in UTC (the
      * offset is 0 under -fixed-time), 12:16:40 AM on the first day of
      * 1970; the six cities at their own offsets *)
@@ -1522,6 +1526,9 @@ let flagged : Testutil_golden.flagged list =
     (* claude: a page that could not be fetched (port 1: nobody
      * listens), shown as a page, laid out like any *)
     ("apps/internet/software/TinyMosaic", "failed", 10, [ "url=http://127.0.0.1:1/" ]);
+    (* claude: TinyNetscape with its pictures not loaded (the Images
+     * button's setting): their alt texts in their place *)
+    ("apps/internet/software/TinyNetscape", "noimages", 5, [ "images=off" ]);
     (* claude: a world of HtDP's first universe, its universe not there
      * (port 1): resting, and saying why *)
     ("examples/software/UniverseBall", "refused", 5, [ "port=1" ]);
@@ -1576,6 +1583,13 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
     (* claude: TinyMosaic's line-mode view, link 2 typed then Return:
      * the history page, reached by following a link *)
     ("apps/internet/software/TinyMosaic", "follow", 20, "type(2):10,return:12", [ "view=line" ]);
+    (* claude: TinyNetscape's Location field clicked, a URL typed and
+     * Return: the history page, Back now active *)
+    ( "apps/internet/software/TinyNetscape",
+      "location",
+      10,
+      "at(0;372):1-5,click:2,type(about:history):3,return:5",
+      [] );
     (* the computer's kick landing: sparks bursting, the screen knocked
      * (the same hit as "fight"'s, the same 6 frames of hitstop) *)
     ("games/fighting/software/TinyStreetFighter", "engine", 136, "space:1,d:95-120,f:122,g:135", [ "juice=engine" ]);

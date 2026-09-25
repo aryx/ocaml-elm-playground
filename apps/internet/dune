@@ -1,5 +1,5 @@
-; claude: the internet applications (CATALOG.md's section): TinyIRC and
-; TinyMosaic (plan_browser_teaching.md). Laid out like office/: the
+; claude: the internet applications (CATALOG.md's section): TinyIRC,
+; TinyMosaic and TinyNetscape (plan_browser_teaching.md). Laid out like office/: the
 ; programs here, software/ for the golden frames, web/ for the browser.
 ;
 ; What it might contain besides, each Tiny and after a famous original:
@@ -20,10 +20,17 @@
   )
 )
 
-; claude: TinyMosaic's built-in site, the about: pages, embedded as
+; claude: the browsers' built-in site, the about: pages (Site.mli), a
+; library TinyMosaic and TinyNetscape share, its files embedded as
 ; strings: site/home.html becomes Site_pages.home at build time, and so
-; on, so the browser has something to show with no network (and the
+; on, so a browser has something to show with no network (and the
 ; golden frames something deterministic)
+(library
+ (name internet_site)
+ (wrapped false)
+ (modules Site Site_pages Site_pictures)
+)
+
 (rule
  (targets Site_pages.ml)
  (deps site/home.html site/history.html site/form.html)
@@ -55,12 +62,13 @@
    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml site/picture.gif site/picture.png site/picture.jpg))))
 
 (executables
-  (names TinyMosaic)
-  (modules TinyMosaic Site_pages Site_pictures)
+  (names TinyMosaic TinyNetscape)
+  (modules TinyMosaic TinyNetscape)
   (libraries
     caps ; the authority to reach the network
     web ; the engine: Hit, Dom, Html_lexer (the views)
     appkit_browser ; a page read, laid out, drawn; the history; forms
+    internet_site ; the about: pages
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

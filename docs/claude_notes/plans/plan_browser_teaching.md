@@ -652,6 +652,107 @@ re-argued:
   appkit**, **curl for `https://`** until TLS is ours: the author's
   yes to all three (2026-09-24), "for now".
 
+## TinyNetscape, the successor
+
+**Why a second browser.** Netscape Navigator (1994) was written by much
+of Mosaic's team, and what it did differently is what a browser has
+done since: it **did not wait**. Mosaic fetched a page, then its
+pictures one after the other, the window frozen in libwww's blocking
+reads; Netscape opened **four connections at once**, drew the page as
+it came and filled the pictures in, and kept the window alive. Then it
+added to HTML what pages wanted and Mosaic lacked -- `bgcolor`, pictures
+the text flows around, `<font>`, tables -- and, with IE, the style
+sheets. TinyMosaic teaches the pipeline; TinyNetscape teaches
+**concurrency**, and the web's second layer.
+
+**Concurrency, the lesson.** Everything so far is one thread, an
+event loop: `Http_request` a state machine stepped each frame, and the
+servers' `select` loops. What still blocks the frame is what cannot be
+made a state machine cheaply: the name's resolution (`getaddrinfo`),
+curl's `https://`, and CPU work (a big JPEG decoded, a long page laid
+out). Netscape put its network on threads (NSPR, its portable runtime).
+TinyNetscape does the same, natively, and says precisely what it gains:
+
+- OCaml 4.14's threads share one runtime lock: a thread waiting in a
+  system call (a DNS query, a socket read, curl) releases it, so they
+  give **concurrency**, the frame going on meanwhile; they give **no
+  parallelism** for OCaml code -- a decode on a thread still takes the
+  frame's time. Parallelism is OCaml 5's domains: an exercise, stated.
+- In a browser (js_of_ocaml) there are no threads: the web build keeps
+  the event loop, the platform's `Cmd` hiding the difference, as it
+  does already.
+- Golden frames want determinism: they run on the built-in site (no
+  network), and the threads are a flag (`threads=on|off`), off in the
+  tests.
+
+**What it shares, what it has.** `appkits/browser` (a page read, laid
+out, drawn; the history; forms) and the built-in site (`site/`, as a
+private library both use). Its own: the chrome of Netscape 1.x on X
+(a toolbar of labelled buttons -- Back, Forward, Home, Reload, Images,
+Open, Stop --, the Location field one types a URL into, the "N" with
+its meteors while loading, the status bar with its progress and the
+key: broken for `http://`, whole for `https://`), its fetching, and its
+HTML.
+
+**Phases** (N for Netscape):
+
+- **N0, the skeleton**: `TinyNetscape` over the appkit, the site made
+  a library shared with TinyMosaic; Netscape's chrome; the Location
+  field typed into (Return goes there: a thing TinyMosaic lacks); the
+  page view and View Source. Golden frame, CATALOG row, web page.
+- **N1, not waiting**: pictures four at once, the page laid out again
+  as each comes; the progress in the status bar ("3 of 7 pictures");
+  Stop. The page itself still arrives whole (`Cmd.Http_get` answers at
+  the end): drawing a page while its bytes come is `Http_request`
+  giving its body in pieces, an exercise.
+- **N2, threads**: `networking/unix/Worker` (a pool of threads, a job
+  given, its result polled each frame through a queue under a mutex),
+  and `native_common/Commands` using it for what blocks -- curl's
+  `https://`, the DNS of `Http_request`; `threads=off` for the old way,
+  the difference shown by a slow server (`tiny_httpd delay=`). The
+  notes: concurrency against parallelism, the runtime lock, why the
+  web's JavaScript kept one thread.
+- **N3, Netscape 1.1's HTML**: `<body bgcolor text link vlink>`,
+  `<font size color>`, `<img align=left|right>` (the text flowing
+  around: the first floats), `<br clear>`, `<hr size width noshade>`.
+- **N4, tables** (Netscape 1.1, HTML 3.2): `Table_layout`, the automatic
+  layout of notes section 12.
+- **N5, CSS1** (IE 3, 1996; Netscape 4, 1997): `Css`, notes section 10,
+  the looks' table becoming the user agent's style sheet.
+- Exercises: frames (Netscape 2), cookies (Lou Montulli, 1994), a page
+  drawn while it arrives, domains for decoding.
+
+**JavaScript, a third browser.** Netscape 2 (1995) brought JavaScript
+(Brendan Eich's ten days), and a browser that runs a page's program is
+another lesson again: a language (its lexer, parser, interpreter,
+garbage), then the DOM it reaches into, events, and the page laid out
+again when a script changes it. The engine first, as its own library
+and plan (with `plan_teaching_languages.md`), usable without a browser;
+then a third browser over it, after Netscape 2 (`TinyNetscape2`, the
+historical line) or after Firefox (`TinyFirefox`, the modern one: the
+DOM, CSS, JavaScript and one event loop over them). Not decided; not
+before TinyNetscape's N5.
+
+**Status.**
+
+- **N0 and N1 done** (2026-09-25): `TinyNetscape.ml` over the appkit;
+  the built-in site a library, `internet_site` (`Site.about`, the
+  pages and pictures embedded), TinyMosaic's frames unchanged; the
+  chrome (title and menu bars, the toolbar's nine buttons, those that
+  do nothing yet greyed, the "N" and its meteors, the status bar's key,
+  text and progress); the Location field clicked into, typed, Return
+  (a URL without a scheme given `http://`), Escape; View Source (`s`,
+  `p`); pictures four at a time (`connections`), counted in the status
+  bar, Stop, `images=off` and the Images button. `Input_script` now
+  splits an entry at its last colon, so a script can type a URL
+  (`type(about:history):3`). Golden frames: the home page, `images=off`,
+  and the Location field typed into (`location`).
+
+**Code shared between the two apps' updates.** Their models differ
+(views, fetching, chrome), so each keeps its own `update`; what both do
+the same way went to the appkit. Duplication left between the two is
+watched: when a third browser would need it too, it moves.
+
 ## Verification
 
 - Unit tests per module (`libs/web/tests/`), each `.mli`'s worked

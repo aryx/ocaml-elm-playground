@@ -32,7 +32,8 @@
  *
  * types "edit" at frame 30, all four in that one frame's [typed], as a
  * fast typist's keystrokes arrive between two frames. No comma inside
- * the parentheses, since commas separate the entries.
+ * the parentheses, since commas separate the entries; a colon may be
+ * ("type(about:history):3": a URL typed).
  *
  * The same idea as the "input movies" of emulators (the TAS, tool-
  * assisted speedrun, communities' frame-by-frame recordings, e.g.

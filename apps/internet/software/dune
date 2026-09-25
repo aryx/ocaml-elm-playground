@@ -15,12 +15,13 @@
 )
 
 (executables
-  (names TinyMosaic)
-  (modules TinyMosaic Site_pages Site_pictures)
+  (names TinyMosaic TinyNetscape)
+  (modules TinyMosaic TinyNetscape)
   (libraries
     caps
     web
     appkit_browser
+    internet_site
     elm_playground
     elm_playground_software ; implem of virtual elm_playground
   )

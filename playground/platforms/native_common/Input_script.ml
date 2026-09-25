@@ -41,7 +41,9 @@ let parse_entry (entry : string) : (entry, string) result =
          "bad -script entry %S, expected key:n, key:a-b, at(x;y):n, click:n, rclick:n or type(text):n"
          entry)
   in
-  match String.index_opt entry ':' with
+  (* claude: the last ':', not the first: the frames never hold one, and
+   * a text typed may (a URL, "type(about:history):3", TinyNetscape) *)
+  match String.rindex_opt entry ':' with
   | None -> bad ()
   | Some i -> (
       let what = String.sub entry 0 i in
