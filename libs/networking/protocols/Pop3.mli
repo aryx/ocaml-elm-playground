@@ -64,8 +64,10 @@ type client
 
 (* [client ~user ~pass ~leave ~known]: it fetches every message, or,
  * when [leave], the ones whose unique id is not in [known] and deletes
- * none *)
-val client : user:string -> pass:string -> leave:bool -> known:string list -> client
+ * none; with [limit], only the last [limit] of them (the newest: a
+ * maildrop is in the order mail arrived) -- Gmail's, the first time,
+ * is years of mail *)
+val client : user:string -> pass:string -> leave:bool -> known:string list -> ?limit:int -> unit -> client
 
 (* [step c line]: the server said [line]; the machine, and what to send *)
 val step : client -> string -> client * string list

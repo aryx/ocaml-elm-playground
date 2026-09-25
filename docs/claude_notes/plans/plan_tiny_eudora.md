@@ -392,6 +392,34 @@ silence; flags `server=`, `smtp=`, `pop=`. Done by hand once, natively
 TinyEudora "you have new mail", her spool emptied. Not yet tried in a
 browser. Next: 5b (Gmail), then 6 (plain TCP).
 
+**Phase 5b done** (2026-09-26), not over curl after all: the OCaml
+binding of libcurl has its connect-only mode but not
+`curl_easy_send`/`recv`, so curl could only have spoken POP3 itself.
+Instead a TLS *tunnel*, `Tls_tunnel` (`networking/unix/`): openssl's
+`s_client -quiet -verify_return_error` run beside us, a pipe each way,
+as stunnel gave TLS to the plain-text programs of the 1990s -- so our
+own `Pop3` and `Smtp` machines talk to Gmail. `Transport.tunnel`, a
+hook of its own taking `Cap.exec` (it runs a program), installed by
+the two native 2D platforms (the 3D ones have no mail program; a
+browser answers an Error). `Smtp.client ?auth` logs in, AUTH PLAIN
+(RFC 4954, 4616's example in the tests); `Pop3.client ?limit` fetches
+only the newest. TinyEudora `account=gmail user=you@gmail.com`:
+POP3 to pop.gmail.com:995 and SMTP to smtp.gmail.com:465 through the
+tunnel, the login the whole address, an app password asked once
+(before sending too) and never stored, mail left on Gmail and only the
+ids not yet fetched asked (kept in the store, `eudora-gmail-uids`),
+`limit=` (20); the account's own files, `eudora-gmail-*.mbox`, no
+built-in message in them; the silence timeout now counted from the
+last line heard (30 s); the status line moved under the windows,
+where a server's long answer fits. `Unit_tls_tunnel`: a local
+`openssl s_server` with a self-signed certificate is refused (checked
+by hand to fail on the verification itself). Tried against Gmail with
+no account, `nobody@example.invalid`: POP3 answers "[AUTH] Username
+and password not accepted.", SMTP "535 5.7.8 Username and Password not
+accepted", the message staying queued -- the whole path, TLS
+included, working; reading a real mailbox is for the author, with
+their app password.
+
 **Phase 5b, added (2026-09-26): your own mailbox, Gmail.** The
 author would like to read their own mail. Gmail speaks POP3 and SMTP
 only over TLS (`pop.gmail.com:995`, `smtp.gmail.com:465`) and takes

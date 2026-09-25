@@ -56,6 +56,16 @@ let tests =
       Testo.create "no greeting: the connection given up" (fun () ->
           let c, _ = replay (Smtp.client ~hello:"x" [ rfc ]) [ "554 go away" ] in
           Alcotest.(check bool) "an error" true (match Smtp.finished c with Some (Error _) -> true | _ -> false));
+      Testo.create "AUTH PLAIN: RFC 4616's example, and a session through it" (fun () ->
+          Alcotest.(check string) "tim" "AHRpbQB0YW5zdGFhZnRhbnN0YWFm" (Smtp.plain ~user:"tim" ~password:"tanstaaftanstaaf");
+          let c, sent =
+            replay (Smtp.client ~hello:"eudora" ~auth:("tim", "tanstaaftanstaaf") [ { rfc with recipients = [ "Jones@foo.com" ] } ])
+              [ "220 smtp"; "250-smtp at your service"; "250 AUTH LOGIN PLAIN"; "235 2.7.0 Accepted"; "250 OK"; "250 OK"; "354 go"; "250 OK"; "221 bye" ]
+          in
+          lines "AUTH after EHLO" [ "EHLO eudora"; "AUTH PLAIN AHRpbQB0YW5zdGFhZnRhbnN0YWFm"; "MAIL FROM:<Smith@bar.com>"; "RCPT TO:<Jones@foo.com>"; "DATA" ] (List.filteri (fun i _ -> i < 5) sent);
+          Alcotest.(check (option (result (list outcome) string))) "sent" (Some (Ok [ Smtp.Sent (1, []) ])) (Smtp.finished c);
+          let c, _ = replay (Smtp.client ~hello:"eudora" ~auth:("tim", "wrong") [ rfc ]) [ "220 smtp"; "250 smtp"; "535 5.7.8 Username and Password not accepted" ] in
+          Alcotest.(check bool) "refused: given up" true (match Smtp.finished c with Some (Error _) -> true | _ -> false));
       Testo.create "commands parsed, in any case" (fun () ->
           Alcotest.(check bool) "mail" true (Smtp.parse_command "mail from: <a@b>" = Smtp.Mail_from "a@b");
           lines "a reply of two lines" [ "250-tiny"; "250 HELP" ] (Smtp.reply 250 [ "tiny"; "HELP" ]));

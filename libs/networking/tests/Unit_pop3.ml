@@ -29,20 +29,24 @@ let tests =
             @ ("+OK 120 octets" :: Pop3.stuff one) @ [ "+OK message 1 deleted" ]
             @ ("+OK 200 octets" :: Pop3.stuff two) @ [ "+OK message 2 deleted"; "+OK dewey POP3 server signing off (maildrop empty)" ]
           in
-          let c, sent = replay (Pop3.client ~user:"mrose" ~pass:"tanstaaf" ~leave:false ~known:[]) server in
+          let c, sent = replay (Pop3.client ~user:"mrose" ~pass:"tanstaaf" ~leave:false ~known:[] ()) server in
           lines "what the client said" [ "USER mrose"; "PASS tanstaaf"; "STAT"; "LIST"; "RETR 1"; "DELE 1"; "RETR 2"; "DELE 2"; "QUIT" ] sent;
           Alcotest.check fetched "both, the dot taken off" (Some (Ok [ ("", one); ("", two) ])) (Pop3.finished c));
       Testo.create "leave mail on server: UIDL, only the new, no DELE" (fun () ->
           let server = [ "+OK ready"; "+OK"; "+OK"; "+OK 2 320"; "+OK"; "1 whqtswO00WBw418f9t5JxYwZ"; "2 QhdPYR:00WBw1Ph7x7"; "." ] @ ("+OK" :: Pop3.stuff two) @ [ "+OK bye" ] in
-          let c, sent = replay (Pop3.client ~user:"bob" ~pass:"x" ~leave:true ~known:[ "whqtswO00WBw418f9t5JxYwZ" ]) server in
+          let c, sent = replay (Pop3.client ~user:"bob" ~pass:"x" ~leave:true ~known:[ "whqtswO00WBw418f9t5JxYwZ" ] ()) server in
           lines "no DELE" [ "USER bob"; "PASS x"; "STAT"; "UIDL"; "RETR 2"; "QUIT" ] sent;
           Alcotest.check fetched "the new one, with its id" (Some (Ok [ ("QhdPYR:00WBw1Ph7x7", two) ])) (Pop3.finished c));
+      Testo.create "a limit: only the newest" (fun () ->
+          let server = [ "+OK"; "+OK"; "+OK"; "+OK 3 3"; "+OK"; "1 a"; "2 b"; "3 c"; "." ] @ ("+OK" :: Pop3.stuff two) @ [ "+OK bye" ] in
+          let _, sent = replay (Pop3.client ~user:"bob" ~pass:"x" ~leave:true ~known:[] ~limit:1 ()) server in
+          lines "the last one" [ "USER bob"; "PASS x"; "STAT"; "UIDL"; "RETR 3"; "QUIT" ] sent);
       Testo.create "a wrong password: -ERR, and QUIT" (fun () ->
-          let c, sent = replay (Pop3.client ~user:"bob" ~pass:"no" ~leave:false ~known:[]) [ "+OK ready"; "+OK"; "-ERR invalid password"; "+OK bye" ] in
+          let c, sent = replay (Pop3.client ~user:"bob" ~pass:"no" ~leave:false ~known:[] ()) [ "+OK ready"; "+OK"; "-ERR invalid password"; "+OK bye" ] in
           lines "QUIT after" [ "USER bob"; "PASS no"; "QUIT" ] sent;
           Alcotest.check fetched "refused" (Some (Error "invalid password")) (Pop3.finished c));
       Testo.create "an empty maildrop: STAT, QUIT" (fun () ->
-          let c, sent = replay (Pop3.client ~user:"bob" ~pass:"x" ~leave:false ~known:[]) [ "+OK"; "+OK"; "+OK"; "+OK 0 0"; "+OK bye" ] in
+          let c, sent = replay (Pop3.client ~user:"bob" ~pass:"x" ~leave:false ~known:[] ()) [ "+OK"; "+OK"; "+OK"; "+OK 0 0"; "+OK bye" ] in
           lines "nothing asked" [ "USER bob"; "PASS x"; "STAT"; "QUIT" ] sent;
           Alcotest.check fetched "nothing" (Some (Ok [])) (Pop3.finished c));
     ]

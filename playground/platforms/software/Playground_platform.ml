@@ -171,6 +171,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network (
   (* claude: Multiplayer's net=host and net=join (UDP), net=relay
    * (WebSocket), and Universe's worlds *)
   Transport.set_connect Connect.connect;
+  Transport.set_tunnel Tls_tunnel.connect;
   (* the app's choices are the starting values; the keys can change them *)
   options :=
     { !options with antialiasing = rendering.antialiasing; bilinear = rendering.smooth_images };

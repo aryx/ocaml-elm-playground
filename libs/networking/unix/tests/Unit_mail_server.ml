@@ -32,7 +32,7 @@ let send caps server port (envelopes : Smtp.envelope list) =
   drive server (Relay_client.connect caps ~host:"127.0.0.1" ~port) Smtp.step Smtp.finished (Smtp.client ~hello:"eudora" envelopes)
 
 let check caps server port ~user ~pass =
-  drive server (Relay_client.connect caps ~host:"127.0.0.1" ~port) Pop3.step Pop3.finished (Pop3.client ~user ~pass ~leave:false ~known:[])
+  drive server (Relay_client.connect caps ~host:"127.0.0.1" ~port) Pop3.step Pop3.finished (Pop3.client ~user ~pass ~leave:false ~known:[] ())
 
 let letter = Mail.make [ ("From", "Alice <alice@tiny>"); ("To", "bob@tiny"); ("Subject", "lunch") ] "Noon?\n.a dot\n"
 

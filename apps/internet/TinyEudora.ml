@@ -39,7 +39,8 @@
  * mailbox shown (In by default); compose=new|reply|forward, a
  * message begun at the start (to it); user=, who you are ("Bob
  * <bob@tiny>"); server= (localhost), smtp= (8025) and pop= (8110),
- * where tiny_maild is.
+ * where tiny_maild is; account=gmail, your own mail (below), and
+ * limit= (20), how many new messages a Check Mail fetches from it.
  *
  * Writing is Eudora's on a dial-up modem: a message written is not
  * sent but *queued* -- put in Out, marked Q -- and Send Queued
@@ -75,6 +76,19 @@
  *   dune exec apps/internet/TinyEudora.exe -- user=alice@tiny
  *   http://localhost:8001/apps/internet/web/TinyEudora.html?user=bob@tiny
  *
+ * And your own mail, natively: account=gmail user=you@gmail.com. Gmail
+ * speaks POP3 and SMTP only inside TLS, which is not ours yet, so the
+ * connection is a tunnel, openssl run beside us (Tls_tunnel.mli), and
+ * the same Pop3 and Smtp machines talk to Gmail through it; SMTP logs
+ * in first (AUTH PLAIN), as a server of today wants. The password is
+ * an app password (Google's account settings: 2-step verification on,
+ * then App passwords; and POP enabled in Gmail's settings), asked once
+ * and never stored. Gmail keeps its mail: Check Mail fetches only the
+ * messages not fetched before (UIDL, the ids kept in the store), the
+ * newest [limit], and deletes nothing. The account's mailboxes are
+ * files of their own, "eudora-gmail-In.mbox", none of the built-in
+ * messages in them. Not in a browser: a page cannot run openssl.
+ *
  * With no server, it opens on the built-in mailboxes, Our_mail --
  * messages written for what they show: a thread of five replies, a
  * forged sender, a digest of two messages, a picture attached,
@@ -85,7 +99,8 @@
  * Stroke_text (text from the left, with Hershey's real widths), Vcard,
  * the gui toolkit's fields and text area (Text_edit), the
  * playground's store; Smtp and Pop3, each client a machine fed the
- * server's lines as they arrive, over Transport. Not File_menu: a document is
+ * server's lines as they arrive, over Transport (tunnel: Cap.exec,
+ * since it runs openssl). Not File_menu: a document is
  * attached from the store by a list of its names, since Eudora's
  * File menu opened mailboxes, not documents.
  *
@@ -133,6 +148,10 @@ type pane =
 (* what the network is being asked to do *)
 and errand = Check | Send
 
+(* whose mail: tiny_maild's, over WebSocket, or Gmail's, over TLS
+   (Tls_tunnel.mli) *)
+type account = Tiny | Gmail
+
 (* a conversation with the server, in progress: the connection, the
    protocol's machine, and when it began (to give up on a silent one) *)
 type session =
@@ -149,6 +168,10 @@ type model = {
   pane : pane;
   session : (session * float) option;
   password : string option; (* asked once, kept until Eudora quits, never stored *)
+  account : account;
+  prefix : string; (* the store's names of this account's files *)
+  known : string list; (* the unique ids fetched from a server that keeps its mail (Gmail) *)
+  saved_known : string list;
   nicknames : Vcard.card list;
   user : Mail.address;
   (* what the store holds, to write only what changed *)
@@ -171,6 +194,10 @@ let initial : model =
     pane = Reading;
     session = None;
     password = None;
+    account = Tiny;
+    prefix = "eudora-";
+    known = [];
+    saved_known = [];
     nicknames = Vcard.of_string Our_mail.nicknames;
     user = { display = "Bob"; mailbox = "bob@tiny" };
     saved = [];
@@ -559,43 +586,48 @@ let queue (computer : computer) (d : draft) (m : model) : model =
 (* The store *)
 (*****************************************************************************)
 
-type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.network >
+type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.network ; Cap.exec >
 
-let prefix = "eudora-"
-let stored_name (box : string) : string = prefix ^ box ^ ".mbox"
-let nicknames_name = prefix ^ "nicknames.vcf"
+(* each account its own files: "eudora-In.mbox", "eudora-gmail-In.mbox" *)
+let stored_name (m : model) (box : string) : string = m.prefix ^ box ^ ".mbox"
+let nicknames_name = "eudora-nicknames.vcf"
+let known_name (m : model) : string = m.prefix ^ "uids"
 
 (* the built-in mailboxes, or what the store has of them, then the
    user's own *)
 let load (caps : caps) (m : model) : model =
   let fetch = Playground_platform.fetch caps in
-  let builtin = List.map (fun b -> match fetch (stored_name b.name) with Some t -> { b with entries = Mbox.parse t } | None -> b) m.boxes in
+  let builtin = List.map (fun b -> match fetch (stored_name m b.name) with Some t -> { b with entries = Mbox.parse t } | None -> b) m.boxes in
   let own =
     List.filter_map
       (fun n ->
-        let p = String.length prefix and k = String.length n in
-        if k > p + 5 && String.sub n 0 p = prefix && String.sub n (k - 5) 5 = ".mbox" then
+        let p = String.length m.prefix and k = String.length n in
+        if k > p + 5 && String.sub n 0 p = m.prefix && String.sub n (k - 5) 5 = ".mbox" then
           let name = String.sub n p (k - p - 5) in
-          if List.exists (fun b -> b.name = name) builtin then None else Option.map (fun t -> { name; entries = Mbox.parse t }) (fetch n)
+          (* "eudora-gmail-In" is not a mailbox of "eudora-"'s *)
+          if List.exists (fun b -> b.name = name) builtin || String.contains name '-' then None
+          else if List.exists (fun b -> b.name = name) builtin then None else Option.map (fun t -> { name; entries = Mbox.parse t }) (fetch n)
         else None)
       (Playground_platform.stored caps)
   in
   let nicknames = match fetch nicknames_name with Some t -> Vcard.of_string t | None -> m.nicknames in
+  let known = match fetch (known_name m) with Some t -> List.filter (( <> ) "") (String.split_on_char '\n' t) | None -> [] in
   let boxes = builtin @ own in
-  { m with boxes; saved = boxes; nicknames; saved_nicknames = nicknames }
+  { m with boxes; saved = boxes; nicknames; saved_nicknames = nicknames; known; saved_known = known }
 
 (* what changed, written *)
 let keep (caps : caps) (m : model) : model =
-  if m.boxes == m.saved && m.nicknames == m.saved_nicknames then m
+  if m.boxes == m.saved && m.nicknames == m.saved_nicknames && m.known == m.saved_known then m
   else (
     List.iter
       (fun b ->
         match List.find_opt (fun s -> s.name = b.name) m.saved with
         | Some s when s.entries = b.entries -> ()
-        | _ -> Playground_platform.store caps (stored_name b.name) (Mbox.to_string b.entries))
+        | _ -> Playground_platform.store caps (stored_name m b.name) (Mbox.to_string b.entries))
       m.boxes;
     if m.nicknames <> m.saved_nicknames then Playground_platform.store caps nicknames_name (Vcard.to_string m.nicknames);
-    { m with saved = m.boxes; saved_nicknames = m.nicknames })
+    if m.known <> m.saved_known then Playground_platform.store caps (known_name m) (String.concat "\n" m.known);
+    { m with saved = m.boxes; saved_nicknames = m.nicknames; saved_known = m.known })
 
 (*****************************************************************************)
 (* The network: Send Queued Messages, Check Mail *)
@@ -614,29 +646,52 @@ let queued (m : model) : Mbox.entry list = List.filter (fun e -> has e "x-status
    stay home *)
 let outgoing (e : Mbox.entry) : Mail.t = Mail.remove "status" (Mail.remove "x-status" e.mail)
 
-(* the user's name at the server: "bob" of bob@tiny *)
-let login (m : model) : string = List.hd (String.split_on_char '@' m.user.mailbox)
+(* the user's name at the server: "bob" of bob@tiny; Gmail wants the
+   whole address *)
+let login (m : model) : string = match m.account with Gmail -> m.user.mailbox | Tiny -> List.hd (String.split_on_char '@' m.user.mailbox)
+
+(* where: tiny_maild's ports, or Gmail's (POP3 on 995 and SMTP on 465,
+   both inside TLS from the first byte) *)
+let open_connection (caps : caps) (computer : computer) (what : errand) (m : model) : (Transport.t, string) result =
+  match (m.account, what) with
+  | Tiny, Check -> Transport.connect caps (server_at computer "pop" 8110)
+  | Tiny, Send -> Transport.connect caps (server_at computer "smtp" 8025)
+  | Gmail, Check -> Transport.tunnel caps ~host:"pop.gmail.com" ~port:995
+  | Gmail, Send -> Transport.tunnel caps ~host:"smtp.gmail.com" ~port:465
 
 let errand (caps : caps) (computer : computer) (what : errand) (m : model) : model =
-  let connect port default f =
-    match Transport.connect caps (server_at computer port default) with
+  let connect f =
+    match open_connection caps computer what m with
     | Ok t -> { m with session = Some (f t, seconds computer); pane = (match m.pane with Password _ -> Reading | p -> p) }
     | Error why -> { m with said = why; pane = Reading }
   in
-  match (m.session, what, m.password) with
-  | Some _, _, _ -> { m with said = "the server is busy with us already" }
-  | None, Send, _ -> (
-      match queued m with
-      | [] -> { m with said = "no message queued" }
-      | q ->
-          (* SMTP asks no password: that is the point of Mallory's message *)
-          connect "smtp" 8025 (fun t -> Sending (t, Smtp.client ~hello:"eudora" (List.map (fun e -> Smtp.envelope ~sender:m.user.mailbox (outgoing e)) q), q)))
-  | None, Check, None -> { m with pane = Password ("", Check) }
-  | None, Check, Some pass -> connect "pop" 8110 (fun t -> Checking (t, Pop3.client ~user:(login m) ~pass ~leave:false ~known:[]))
+  (* tiny_maild's SMTP asks no password: that is the point of Mallory's
+     message; Gmail's does (AUTH) *)
+  let needs_password = what = Check || m.account = Gmail in
+  match (m.session, m.password) with
+  | Some _, _ -> { m with said = "the server is busy with us already" }
+  | None, None when needs_password && (what = Check || queued m <> []) -> { m with pane = Password ("", what) }
+  | None, pass -> (
+      match what with
+      | Send -> (
+          match queued m with
+          | [] -> { m with said = "no message queued" }
+          | q ->
+              let auth = match (m.account, pass) with Gmail, Some p -> Some (login m, p) | _ -> None in
+              connect (fun t -> Sending (t, Smtp.client ~hello:"eudora" ?auth (List.map (fun e -> Smtp.envelope ~sender:m.user.mailbox (outgoing e)) q), q)))
+      | Check ->
+          let pass = Option.value pass ~default:"" in
+          let limit = Option.value (Option.bind (flag computer "limit") int_of_string_opt) ~default:20 in
+          (* Gmail keeps its mail: fetched by what we have not got yet, and
+             not deleted; tiny_maild gives it, and forgets it *)
+          let leave = m.account = Gmail in
+          connect (fun t -> Checking (t, Pop3.client ~user:(login m) ~pass ~leave ~known:m.known ?limit:(if leave then Some limit else None) ())))
 
-(* the lines arrived given to the machine, its answers sent *)
-let converse (t : Transport.t) (step : 'c -> string -> 'c * string list) (c : 'c) : 'c =
-  List.fold_left (fun c l -> let c, out = step c l in List.iter t.send out; c) c (List.concat_map (String.split_on_char '\n') (t.receive ()))
+(* the lines arrived given to the machine, its answers sent; and
+   whether anything arrived *)
+let converse (t : Transport.t) (step : 'c -> string -> 'c * string list) (c : 'c) : 'c * bool =
+  let lines = List.concat_map (String.split_on_char '\n') (t.receive ()) in
+  (List.fold_left (fun c l -> let c, out = step c l in List.iter t.send out; c) c lines, lines <> [])
 
 (* the messages sent: Q becomes S *)
 let sent (q : Mbox.entry list) (outcomes : Smtp.outcome list) (m : model) : model =
@@ -656,20 +711,25 @@ let arrived (computer : computer) (texts : (string * string) list) (m : model) :
     { Mbox.envelope = Mbox.envelope ~sender date; mail }
   in
   let m = with_entries "In" (fun l -> l @ List.map entry texts) m in
+  let uids = List.filter (( <> ) "") (List.map fst texts) in
+  let m = if uids = [] then m else { m with known = m.known @ uids } in
   { m with said = (match List.length texts with 0 -> "no new mail" | 1 -> "you have new mail: 1 message" | n -> Printf.sprintf "you have new mail: %d messages" n) }
 
 let session_step (computer : computer) (m : model) : model =
   match m.session with
   | None -> m
-  | Some (_, since) when seconds computer -. since > 10. -> { m with session = None; said = "no answer from the server" }
+  (* silent for 30 s: given up (the clock restarts at each line) *)
+  | Some (_, since) when seconds computer -. since > 30. -> { m with session = None; said = "no answer from the server" }
   | Some (Sending (t, c, q), since) -> (
-      let c = converse t Smtp.step c in
+      let c, heard = converse t Smtp.step c in
+      let since = if heard then seconds computer else since in
       match Smtp.finished c with
       | None -> { m with session = Some (Sending (t, c, q), since); said = "sending: " ^ t.status () }
       | Some (Ok outcomes) -> sent q outcomes { m with session = None }
-      | Some (Error why) -> { m with session = None; said = "not sent: " ^ why })
+      | Some (Error why) -> { m with session = None; password = (if m.account = Gmail then None else m.password); said = "not sent: " ^ why })
   | Some (Checking (t, c), since) -> (
-      let c = converse t Pop3.step c in
+      let c, heard = converse t Pop3.step c in
+      let since = if heard then seconds computer else since in
       match Pop3.finished c with
       | None -> { m with session = Some (Checking (t, c), since); said = "checking mail: " ^ t.status () }
       | Some (Ok texts) -> arrived computer texts { m with session = None }
@@ -710,7 +770,7 @@ let menus (caps : caps) (computer : computer) (m : model) : model =
     | Some "Attach Document..." -> (
         match m.pane with
         | Composing d ->
-            let names = List.filter (fun n -> not (String.length n > String.length prefix && String.sub n 0 (String.length prefix) = prefix)) (Playground_platform.stored caps) in
+            let names = List.filter (fun n -> not (starts_ci "eudora-" n)) (Playground_platform.stored caps) in
             { m with pane = Picking (d, names, None) }
         | _ -> { m with said = "attach to a message being written: New Message first" })
     | Some "Delete" -> delete m
@@ -787,7 +847,8 @@ let pick (caps : caps) (computer : computer) (d : draft) (names : string list) (
 let naming (computer : computer) (name : string) (m : model) : model =
   let name = Gui.field_in computer (field_box 1) name in
   let m = { m with pane = Naming name } in
-  let ok = name <> "" && String.for_all (fun c -> c = ' ' || c = '-' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) name in
+  (* no '-': "eudora-gmail-In" must not read as a mailbox "gmail-In" *)
+  let ok = name <> "" && String.for_all (fun c -> c = ' ' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) name in
   if Gui.button_in computer (button_box 0) "Create" || (computer.keyboard.kenter && ok) then
     if not ok then { m with said = "a name of letters, digits and spaces" }
     else if List.exists (fun b -> b.name = name) m.boxes then { m with said = name ^ " exists already" }
@@ -799,6 +860,13 @@ let naming (computer : computer) (name : string) (m : model) : model =
 let mac_theme = { Theme.default with background = white; face = white; face_hot = rgb 225 225 225; face_down = rgb 190 190 190; edge = black; text = black; accent = black; field_face = white; text_size = 14.; row = 28. }
 
 let start (caps : caps) (computer : computer) (m : model) : model =
+  let m =
+    match flag computer "account" with
+    (* your own mail: its own files, and none of the built-in messages *)
+    | Some "gmail" ->
+        { m with account = Gmail; prefix = "eudora-gmail-"; boxes = List.map (fun name -> { name; entries = [] }) [ "In"; "Out"; "Trash" ]; user = { display = ""; mailbox = "you@gmail.com" } }
+    | _ -> m
+  in
   let m = load caps { m with started = true } in
   let m = match Option.bind (flag computer "user") Mail.address with Some user -> { m with user } | None -> m in
   let m = match flag computer "mailbox" with Some name when List.exists (fun b -> b.name = name) m.boxes -> { m with box = name } | _ -> m in
@@ -993,7 +1061,8 @@ let view (_ : computer) (m : model) : shape list =
   @ message
   @ window (Printf.sprintf "%s  (%d messages, %d unread)" m.box n unread) list_top list_bottom
   @ column_titles m @ list_view m
-  @ text ink (left +. 725.) (bar_y -. 5.) (if m.said <> "" then m.said else "TinyEudora")
+  (* the status line, under the windows, on the desktop *)
+  @ text ink (left +. 10.) (msg_bottom -. 25.) (fit 970. (ascii (if m.said <> "" then m.said else "TinyEudora")))
   @ Gui.draw ()
 
 let app (caps : caps) = game view (update caps) initial

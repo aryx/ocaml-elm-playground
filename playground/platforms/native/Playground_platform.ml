@@ -77,6 +77,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network a
   (* claude: Multiplayer's net=host and net=join (UDP), net=relay
    * (WebSocket), and Universe's worlds *)
   Transport.set_connect Connect.connect;
+  Transport.set_tunnel Tls_tunnel.connect;
   Native_loop_2d.parse_cli_and_setup_logging ();
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in

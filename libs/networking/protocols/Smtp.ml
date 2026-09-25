@@ -89,6 +89,7 @@ type outcome = Sent of int * string list | Refused of string
 type phase =
   | Greeting
   | Hello of bool (* EHLO sent; HELO after it was refused *)
+  | Auth
   | Mail
   | Rcpt of string list (* the recipients still to name *)
   | Data_sent
@@ -99,6 +100,7 @@ type phase =
 
 type client = {
   hello : string;
+  auth : (string * string) option;
   todo : envelope list; (* the current one first *)
   phase : phase;
   accepted : int;
@@ -107,8 +109,8 @@ type client = {
   more : string list; (* a reply's lines so far, before its last *)
 }
 
-let client ~(hello : string) (envelopes : envelope list) : client =
-  { hello; todo = envelopes; phase = Greeting; accepted = 0; refusals = []; outcomes = []; more = [] }
+let client ~(hello : string) ?auth (envelopes : envelope list) : client =
+  { hello; auth; todo = envelopes; phase = Greeting; accepted = 0; refusals = []; outcomes = []; more = [] }
 
 let send c phase cmd = ({ c with phase }, [ command_to_string cmd ])
 
@@ -123,6 +125,8 @@ let rec next (c : client) : client * string list =
   | e :: _ -> send c Mail (Mail_from e.sender)
   | [] -> send c Quitting Quit
 
+let plain ~(user : string) ~(password : string) : string = Base64.encode ("\000" ^ user ^ "\000" ^ password)
+
 let refuse (why : string) (c : client) : client * string list = send (done_with (Refused why) c) Reset Rset
 
 let step (c : client) (line : string) : client * string list =
@@ -135,9 +139,10 @@ let step (c : client) (line : string) : client * string list =
       match c.phase with
       | Greeting -> if code = 220 then send c (Hello true) (Ehlo c.hello) else send c (Closed (Some said)) Quit
       | Hello ehlo ->
-          if ok then next c
+          if ok then match c.auth with Some (user, password) -> send c Auth (Unknown ("AUTH PLAIN " ^ plain ~user ~password)) | None -> next c
           else if ehlo then send c (Hello false) (Helo c.hello) (* a server of 1982: no EHLO *)
           else send c (Closed (Some said)) Quit
+      | Auth -> if code = 235 then next c else send c (Closed (Some said)) Quit
       | Mail -> if ok then send c (Rcpt (List.tl (List.hd c.todo).recipients)) (Rcpt_to (List.hd (List.hd c.todo).recipients)) else refuse said c
       | Rcpt rest -> (
           let c = if ok then { c with accepted = c.accepted + 1 } else { c with refusals = c.refusals @ [ said ] } in

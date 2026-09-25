@@ -33,3 +33,14 @@ type role =
  * without one installed, an Error saying so *)
 val set_connect : (Cap.network -> role -> (t, string) result) -> unit
 val connect : < Cap.network ; .. > -> role -> (t, string) result
+
+(* A connection over TLS, which this repository does not have yet
+ * (plan_teaching_other.md): lines to [host]:[port] and lines back, the
+ * encryption done by someone else's program -- natively a *tunnel*,
+ * openssl's s_client run beside us (Tls_tunnel.mli), as stunnel was
+ * used in the 1990s to give a program that spoke plain text a TLS
+ * connection. So it takes Cap.exec, not only Cap.network: it runs a
+ * program. The native 2D platforms install it; elsewhere (a browser,
+ * which cannot run programs) an Error saying so. *)
+val set_tunnel : (Cap.exec -> host:string -> port:int -> (t, string) result) -> unit
+val tunnel : < Cap.exec ; .. > -> host:string -> port:int -> (t, string) result
