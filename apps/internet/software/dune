@@ -20,11 +20,7 @@
   (libraries
     caps
     web
-    networking
-    appkit_stroke_text
-    appkit_richtext
-    appkit_typeset
-    graphics_rgba graphics_gif graphics_png graphics_jpeg
+    appkit_browser
     elm_playground
     elm_playground_software ; implem of virtual elm_playground
   )

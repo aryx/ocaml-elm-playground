@@ -1,0 +1,21 @@
+; claude: what a web browser is made of, beyond the engine (libs/web/):
+; a page read and laid out (Browser_page), drawn (Browser_draw: Hershey's
+; letters, pictures, Motif's controls), its pictures (Browser_picture),
+; its links (Browser_url), the history's two stacks (Browser_history),
+; a form's clicks and keys (Browser_forms). Shared by TinyMosaic and
+; TinyNetscape (apps/internet/, plan_browser_teaching.md); each keeps
+; its model, its chrome, and how it fetches.
+(library
+ (name appkit_browser)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   elm_playground ; the shapes it draws
+   web ; the engine: Charset ... Html_layout, Hit, Forms
+   networking ; Url, Urlencoded
+   appkit_stroke_text ; the letters
+   appkit_richtext ; Style, the pen's look
+   appkit_typeset ; Linebreak, for wrap=pretty
+   graphics_rgba graphics_gif graphics_png graphics_jpeg ; the pictures
+ )
+)

@@ -609,6 +609,27 @@ CATALOG row: brought up to date. Left for another time, as exercises
 or TinyNetscape's: the adoption agency, frames, incremental layout,
 XBM, a select's menu. **Next: TinyNetscape** -- its plan section first
 (the split above), the shared code as `appkits/browser` first of all.
+Committed as 10ca292.
+
+**`appkits/browser` done** (2026-09-25, the author's go): what a
+browser is made of beyond the engine, out of TinyMosaic, for
+TinyNetscape -- `Browser_url` (resolve, the fragment and the query
+apart), `Browser_text` (Hershey's widths, cells, escaping),
+`Browser_picture` (waiting, arrived, broken; decoded by magic numbers),
+`Browser_draw` (a laid-out page as shapes: letters, pictures, rules,
+markers, Motif's controls, the inspector's outlines; a control's value
+given as a function, so that drawing needs no page), `Browser_page` (a
+page read through the whole pipeline, laid out again on a reflow; the
+browser's own pages, an error, a form's echo, text; the controls'
+values; the model's part as `settings`: width, breaker, visited,
+pictures), `Browser_history` (the two stacks, generic), `Browser_forms`
+(a click or a key on a control as an `effect`: focus, a change, a
+submission as a URL and a POST). TinyMosaic over it: 1135 lines down to
+~700, keeping its model, its Motif chrome, its one-at-a-time pictures,
+its views, its built-in site; every golden frame pixel-identical.
+Tests: `appkits/tests/Unit_browser` (the history's worked example, URLs,
+GET and POST requests, a radio's exclusivity, keys). Next: TinyNetscape's
+plan section, then TinyNetscape itself.
 
 Written as the specification, with
 [`notes_browser.md`](../tutorials/notes_browser.md) and

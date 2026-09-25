@@ -59,12 +59,8 @@
   (modules TinyMosaic Site_pages Site_pictures)
   (libraries
     caps ; the authority to reach the network
-    web ; the engine: Charset, Html_lexer, Html_tree, Line_mode, ...
-    networking ; Url, a link resolved against its page
-    appkit_stroke_text ; the letters, drawn by Hershey's pen
-    appkit_richtext ; Style, the pen's look
-    appkit_typeset ; Linebreak, Knuth and Plass's lines for wrap=pretty
-    graphics_rgba graphics_gif graphics_png graphics_jpeg ; the pictures, decoded by our own readers
+    web ; the engine: Hit, Dom, Html_lexer (the views)
+    appkit_browser ; a page read, laid out, drawn; the history; forms
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

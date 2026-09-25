@@ -18,6 +18,8 @@
    appkit_draw
    appkit_pim ; Ics, Vcard
    appkit_teletype ; Tty_hangman, Tty_guess
+   appkit_browser ; Browser_history, Browser_forms, ...
+   web ; Dom, Html_layout, for them
    elm_playground_software ; an implem of virtual elm_playground, to link
    gui ; Text_edit, under Rich
  )
