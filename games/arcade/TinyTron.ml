@@ -45,6 +45,10 @@
  * notices it is being walled in when there is no way out any more;
  * the search sees the wall coming, and races for the door.
  *
+ * The sounds (Sfx's recipes: no recording) and the juice (a crash
+ * bursting, the screen shaking, a hitstop) are in their own section;
+ * music=off and juice=off turn them off.
+ *
  * Exercises: the computer boosting (when is a second of speed worth
  * four of waiting?), a search looking at all the riders at once (the
  * "paranoid" search: everyone against me), the arenas that shrink.
@@ -68,14 +72,14 @@ type level = Easy | Normal | Hard
 let brain_of = function Easy -> Room 40 | Normal -> Room 600 | Hard -> Search 4
 
 type scene = Title of int * level (* riders *) | Playing of game | Winner of game
-type model = scene Scene2d.t
+type model = { scenes : scene Scene2d.t; fx : Juice.t (* the juice's, see its section *) }
 
-let initial_model : model = Scene2d.start (Title (4, Normal))
+let initial_model : model = { scenes = Scene2d.start (Title (4, Normal)); fx = Juice.none ~seed:1 }
 
 let settings (riders : int) (level : level) (humans : int) : settings =
   { riders; humans; brain = brain_of level; arenas = layouts }
 
-let update (computer : computer) (s : model) : model =
+let rules (computer : computer) (s : scene Scene2d.t) : scene Scene2d.t =
   let s = Scene2d.update computer s in
   let key name = Scene2d.pressed (fun k -> Set_.mem name k.keys) s in
   let pressed f = Scene2d.pressed f s in
@@ -94,16 +98,104 @@ let update (computer : computer) (s : model) : model =
   | Winner g ->
       if Scene2d.pressed (fun k -> k.kspace) s then Scene2d.go (Title (g.settings.riders, Normal)) s else s
 
-(*****************************************************************************)
-(* View *)
-(*****************************************************************************)
-
+(* the riders' colors, in the view and in the juice *)
 let blue = rgb 60 200 255
 let orange = rgb 255 150 40
 let green = rgb 90 230 110
 let pink = rgb 240 90 200
 let colors = [| blue; orange; green; pink |]
 let names = [| "BLUE"; "ORANGE"; "GREEN"; "PINK" |]
+
+(*****************************************************************************)
+(* Sounds and juice (music=off, juice=off) *)
+(*****************************************************************************)
+(* claude: What a frame did that is heard or felt: a crash (an
+ * explosion, the rider's pieces and sparks, a shake, a hitstop), a
+ * boost starting (a whoosh), a round won (a chime), the game won. The
+ * rules are the kit's, shared with TinyTron3d, and know nothing of
+ * either: this is where the 2D game finds out, from the game before
+ * the frame and after it. The sounds are Sfx's recipes, a preset and a
+ * number or two changed, no recording. *)
+
+let head_at (r : round) (c : cycle) : number * number = Tilemap.center r.arena c.col c.row
+let side (x : number) : number = Float.max (-1.) (Float.min 1. (x /. 450.))
+
+let crash_sound = Audio.sfx { Sfx.explosion with volume = 0.4 }
+let boost_sound = Audio.sfx { Sfx.laser with frequency = 300.; slide = 900.; sustain = 0.05; decay = 0.15; volume = 0.2 }
+let round_sound = Audio.sfx { Sfx.coin with volume = 0.3 }
+let win_sound = Audio.sfx { Sfx.powerup with volume = 0.35 }
+
+(* an original tune, quiet under the hum: an arpeggio in A minor over
+ * its bass, the synthesizers of the film's years *)
+let music =
+  Audio.abc
+    {|X:1
+T:Tiny Tron (original)
+L:1/8
+Q:1/4=132
+K:Am
+V:1
+A,EAc eAce | A,EAc eAce | F,CFA cFAc | G,DGB dGBd |
+A,EAc eAce | A,EAc eAce | F,CFA cFAc | E,B,EG B4 |
+V:2
+A,,4 A,,4 | A,,4 A,,4 | F,,4 F,,4 | G,,4 G,,4 |
+A,,4 A,,4 | A,,4 A,,4 | F,,4 F,,4 | E,,4 E,,4 |
+|}
+  |> Audio.louder 0.15
+
+(* the frame from [before] to [after]: the sounds played, the effects
+ * started *)
+let heard_and_felt (before : scene) (after : scene) (fx : Juice.t) : Juice.t =
+  match (before, after) with
+  | Playing g, (Playing g' | Winner g') when g.round_no = g'.round_no ->
+      let r = g'.round in
+      let fx =
+        List.fold_left2
+          (fun fx (c : cycle) (c' : cycle) ->
+            let ((x, _) as at) = head_at r c' in
+            if c.alive && not c'.alive then begin
+              Audio.play (Audio.pan (side x) crash_sound);
+              fx |> Juice.burst ~at (Juice.debris colors.(Char.code c'.mark - Char.code '1')) |> Juice.burst ~at Juice.sparks
+              |> Juice.shake 0.5 |> Juice.freeze 4
+            end
+            else begin
+              if c'.boosting && not c.boosting then Audio.play (Audio.pan (side x) boost_sound);
+              fx
+            end)
+          fx g.round.cycles r.cycles
+      in
+      if g.round.over = None && r.over <> None && List.mem 1 (Option.get r.over) then Audio.play round_sound;
+      (match after with Winner _ -> Audio.play win_sound | _ -> ());
+      fx
+  | _ -> fx
+
+(* each human's cycle hums while it rides, higher while it boosts *)
+let hum (s : scene) : unit =
+  match s with
+  | Playing g when g.round.over = None ->
+      List.iteri
+        (fun i (c : cycle) ->
+          if i < g.settings.humans && c.alive then
+            Audio.keep_playing (Printf.sprintf "hum%d" i)
+              (Audio.sawtooth (if c.boosting then 110. else 70.) |> Audio.low_pass 500. |> Audio.louder 0.07
+              |> Audio.pan (side (fst (head_at g.round c)))))
+        g.round.cycles
+  | _ -> ()
+
+(* the rules, then what they did, heard and felt; nothing at all while
+ * the juice freezes the game *)
+let update (computer : computer) (m : model) : model =
+  if List.assoc_opt "music" computer.flags = Some "off" then Audio.stop "music" else Audio.loop "music" music;
+  let fx = Juice.step computer m.fx in
+  if Juice.frozen fx then { m with fx }
+  else
+    let scenes = rules computer m.scenes in
+    hum scenes.scene;
+    { scenes; fx = heard_and_felt m.scenes.scene scenes.scene fx }
+
+(*****************************************************************************)
+(* View *)
+(*****************************************************************************)
 
 let text color size str = words color str |> scale size
 
@@ -161,9 +253,11 @@ let view_round ?(result = true) (g : game) : shape list =
 
 let level_name = function Easy -> "EASY" | Normal -> "NORMAL" | Hard -> "HARD"
 
-let view (computer : computer) (s : model) : shape list =
+let view (computer : computer) (m : model) : shape list =
   let screen = computer.screen in
-  rectangle black screen.width screen.height
+  let s = m.scenes in
+  Juice.view m.fx
+  @@ rectangle black screen.width screen.height
   ::
   (match s.scene with
   | Title (riders, level) ->
