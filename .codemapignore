@@ -10,4 +10,5 @@
 #/examples
 #/appkits
 #/gamekits
-#tests/
+
+tests/
