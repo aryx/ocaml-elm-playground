@@ -22,6 +22,7 @@
    graphics_raytrace ; Raytrace, the rays the camera's projection must agree with
    graphics_3d_geometry ; Vec3
    appkit_pim ; Ics, Vcard
+   appkit_astronomy ; Celestial, Ephemeris, Bright_stars, Stereographic
    appkit_teletype ; Tty_hangman, Tty_guess
    basic ; Basic_parse, Basic_run, Basic_session
    appkit_tui ; Tui_snake

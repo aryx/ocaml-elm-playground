@@ -415,6 +415,13 @@ let scenes : Testutil_golden.scene list =
      * hexagon, three of them sized and turned; the TX-2's scope drawing
      * dots, the push buttons, the knobs *)
     ("apps/cad/software/TinySketchpad", "", 5);
+    (* claude: 2001: Paris's sky facing south, -fixed-time's first
+     * minutes of 1970 in UTC: Orion past the meridian, Sirius under it,
+     * the ground hiding what has set *)
+    ("apps/education/software/TinyStellarium", "", 5);
+    (* claude: 1989: the pendulum lab, drawn and not yet run: the tools,
+     * the tape's buttons, the empty meters *)
+    ("apps/education/software/TinyInteractivePhysics", "", 5);
     (* claude: 1992: a bracket drawn on four layers -- the outline, the
      * red center lines, the green dimensions, the cyan bolts (a block
      * inserted four times); the screen menu, the command line *)
@@ -1728,12 +1735,33 @@ let flagged : Testutil_golden.flagged list =
      * glass ball, a marble ring, a mirror sphere, on a checkered
      * ground, the camera's view ray traced as it sharpens *)
     ("apps/graphics/software/TinyBlender", "demo", 20, [ "scene=demo" ]);
+    (* claude: TinyStellarium's whole dome, the zenith at the centre,
+     * the Moon rising in the east and Saturn in Aries; and Sydney's
+     * summer night, the Southern Cross on its side over the Pointers *)
+    ("apps/education/software/TinyStellarium", "dome", 5, [ "view=dome" ]);
+    ("apps/education/software/TinyStellarium", "sydney", 5, [ "place=sydney"; "date=1970-01-01T12:00" ]);
+    (* claude: TinyInteractivePhysics's labs, a second and a half in: the
+     * spring's energy traded between its three forms; the block on the
+     * ramp sliding behind the rolling disk; the collision done, 1 m/s
+     * back and 2 m/s on, momentum 3 and energy 4.5 J as before *)
+    ("apps/education/software/TinyInteractivePhysics", "spring", 90, [ "lab=spring"; "run" ]);
+    ("apps/education/software/TinyInteractivePhysics", "ramp", 90, [ "lab=ramp"; "run" ]);
+    ("apps/education/software/TinyInteractivePhysics", "collision", 90, [ "lab=collision"; "run" ]);
   ]
 
 (* claude: played and flagged: the games whose juice was written by
  * hand, with juice=engine (Juice.mode) at the moment of a hit *)
 let scripted_flagged : Testutil_golden.scripted_flagged list =
   [
+    (* claude: TinyInteractivePhysics drawn with the mouse: the Disk tool,
+     * a disk dragged to a radius of 50, the Rope tool, a rope from a
+     * point of the background to it, Run -- and it swings over the
+     * collision lab *)
+    ( "apps/education/software/TinyInteractivePhysics",
+      "drawn",
+      95,
+      "at(-460;338):1-6,click:3,at(250;150):7-14,at(300;150):15-24,click:10-18,at(-460;152):25-30,click:27,at(0;400):31-38,at(250;150):39-50,click:34-42,space:55",
+      [ "lab=collision" ] );
     (* claude: TinyTerminal: hangman run from the shell, a letter
      * guessed, then Control-C: the game interrupted, the shell's
      * prompt again; and the escape sequences' colours, on green *)

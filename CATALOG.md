@@ -404,6 +404,18 @@ appear where lines close a loop.
 | [TinyAutoCAD](apps/cad/TinyAutoCAD.ml) | app | AutoCAD Release 12 (Autodesk, 1992; AutoCAD 1982) | A bracket drawn on layers, by a command line that asks and a crosshair that snaps. | Drafting by conversation: commands asking for points typed (absolute, @relative, @polar) or picked; object snaps and ORTHO; TRIM, EXTEND, OFFSET and FILLET as crossings of lines and circles; window and crossing selection; layers; blocks inserted; dimensions that measure; undo by command; DXF, the drawing as text read and written. |
 | [TinySketchup](apps/cad/TinySketchup.ml) | app | SketchUp (Brad Schell and Joe Esch, @Last Software, 2000; Google SketchUp 8, 2010) | A house pushed and pulled out of a rectangle: draw a line across a face, pull the face, lift the ridge. | 3D for everyone: the model as edges and the faces they close, found by themselves in a plane; sticky geometry, vertices shared and edges split; push/pull, a face swept along its normal, sliding, extruding, merging into its neighbours or notching them; holes, the Euler-Poincare formula kept; the inference engine, a 3D point guessed from the screen (endpoint, midpoint, on edge, on face, the red, green and blue axes) and said; the Measurements box; soft edges; orbit, pan, zoom; the faces ordered by a BSP tree, no z-buffer. |
 
+## Education
+
+`apps/education/`: the programs made for a learner of a subject -- the
+sky, geometry, logic, typing -- rather than for getting work done.
+Learning to program is elsewhere (the programming games, the ways, the
+programming tools), and so are the educational games, which are played.
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinyStellarium](apps/education/TinyStellarium.ml) | app | Stellarium (Fabien Chereau, 2001), after the planetarium projector (Zeiss Mark I, 1923) | The sky of a place at an instant, as you would see it standing there; time runs as fast as you like, the sky turns, the Moon waxes and the planets wander. | The celestial sphere turned by the sidereal time and tilted by the latitude; precession, Thuban the pole star of the pyramids; the Sun and the planets by Kepler's ellipses seen from the Earth, and Mars's retrograde loop; the Moon's disturbances and its phase; magnitudes, spectral classes as colours, the sky's brightness hiding the stars; the stereographic projection, the horizon a circle and the ground its outside. |
+| [TinyInteractivePhysics](apps/education/TinyInteractivePhysics.ml) | app | Interactive Physics (Knowledge Revolution: David Baszucki and Erik Cassel, 1989) and Working Model (1993) | Draw disks and blocks, tie them with springs, ropes, rods and pins, press Run: the meters plot the energies, the tape rewinds. | The physics lab as a drawing that moves: the conservation of energy measured (kinetic, turning included, against potential, of height and of springs), friction and inelastic landings taking it away, momentum kept by collisions; SI units over a pixel world; the tape as the list of the simulation's values, rewound and run again from any frame. |
+
 ## PIM
 
 `apps/pim/`: the personal information managers -- the time, the

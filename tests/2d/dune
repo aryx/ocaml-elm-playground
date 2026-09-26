@@ -223,6 +223,8 @@
    %{project_root}/examples/software/TextmodeSnake.exe
    %{project_root}/games/adventure/software/TinyWumpus.exe
    %{project_root}/apps/cad/software/TinySketchpad.exe
+   %{project_root}/apps/education/software/TinyStellarium.exe
+   %{project_root}/apps/education/software/TinyInteractivePhysics.exe
    %{project_root}/apps/cad/software/TinyAutoCAD.exe
    %{project_root}/apps/cad/software/TinySketchup.exe
    %{project_root}/apps/graphics/software/TinyBlender.exe

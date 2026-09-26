@@ -24,7 +24,7 @@ let genres =
     "fps"; "flight"; "racing"; "sports"; "strategy"; "rhythm"; "programming" ]
 
 (* claude: and the apps' categories, most still empty *)
-let categories = [ "office"; "music"; "media"; "internet"; "pim"; "devtools"; "graphics"; "system"; "gamedev"; "cad" ]
+let categories = [ "office"; "music"; "media"; "internet"; "pim"; "devtools"; "graphics"; "system"; "gamedev"; "cad"; "education" ]
 
 let dirs =
   List.map (fun g -> ("games/" ^ g, None, "games/" ^ g ^ "/web")) genres

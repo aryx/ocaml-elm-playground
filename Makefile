@@ -191,6 +191,7 @@ js:
 	dune build apps/graphics/web --profile=release-js
 	dune build apps/gamedev/web --profile=release-js
 	dune build apps/cad/web --profile=release-js
+	dune build apps/education/web --profile=release-js
 
 ###############################################################################
 # Developer targets
