@@ -14,22 +14,55 @@
 (* Types *)
 (*****************************************************************************)
 
-type pattern = Plain | Checker of int * float
+type pattern =
+  | Plain
+  | Checker of int * float
+  | Marble of int * float
+  | Wood of int * float
+  | Solid_function of (Vec3.t -> int)
+  | Uv_function of (u:float -> v:float -> int)
+
 type surface = { color : int; pattern : pattern; material : Material.t }
 
-let color_at (surface : surface) ((x, y, z) : Vec3.t) : int =
+(* [mix a b w]: from colour a (w = 0) to b (w = 1) *)
+let mix (a : int) (b : int) (w : float) : int =
+  let channel shift =
+    let ca = float_of_int ((a lsr shift) land 0xFF) and cb = float_of_int ((b lsr shift) land 0xFF) in
+    int_of_float (ca +. (w *. (cb -. ca)) +. 0.5) lsl shift
+  in
+  channel 16 lor channel 8 lor channel 0
+
+let color_at (surface : surface) ((x, y, z) as p : Vec3.t) : int =
   match surface.pattern with
-  | Plain -> surface.color
+  | Plain | Uv_function _ -> surface.color
   | Checker (other, size) ->
       let cell v = int_of_float (Float.floor ((v /. size) +. 1e-6)) in
       if (cell x + cell y + cell z) land 1 = 0 then surface.color else other
+  | Marble (other, size) ->
+      (* Perlin's marble: stripes across x, their edges shaken by
+       * turbulence; sharpened, so that the veins are thin *)
+      let q = Vec3.scale (1. /. size) p in
+      let s = sin (((x /. size) +. (4. *. Perlin.turbulence 5 q)) *. Float.pi) in
+      mix surface.color other (Float.abs s ** 3.)
+  | Wood (other, size) ->
+      (* rings around the y axis, the distance from it shaken a little:
+       * a year's light wood darkening slowly, then its narrow dark ring *)
+      let qx, qy, qz = Vec3.scale (1. /. size) p in
+      let r = (sqrt ((x *. x) +. (z *. z)) /. size) +. (0.4 *. Perlin.noise qx qy qz) in
+      mix surface.color other ((r -. Float.floor r) ** 4.)
+  | Solid_function f -> f p
 
 type primitive = Ball | Cube | Cylinder | Cone | Torus of float | Half_space
 
 type t =
   | Sphere of Vec3.t * float * surface
   | Plane of Vec3.t * float * surface
-  | Triangle of { points : Vec3.t * Vec3.t * Vec3.t; normals : Vec3.t * Vec3.t * Vec3.t; surface : surface }
+  | Triangle of {
+      points : Vec3.t * Vec3.t * Vec3.t;
+      normals : Vec3.t * Vec3.t * Vec3.t;
+      uvs : (float * float) * (float * float) * (float * float);
+      surface : surface;
+    }
   | Placed of { primitive : primitive; transform : Transform.t; surface : surface }
   | Csg of Csg.op * t * t
 
@@ -47,9 +80,16 @@ let rec surface (solid : t) : surface =
   | Triangle { surface; _ } | Placed { surface; _ } -> surface
   | Csg (_, a, _) -> surface a
 
-let color (leaf : t) (point : Vec3.t) : int =
+let color (leaf : t) (ray : Ray.t) (t : float) : int =
+  let point = Ray.at ray t in
   match leaf with
   | Placed { transform; surface; _ } -> color_at surface (Transform.inverse_point transform point)
+  | Triangle { points; uvs = (u0, v0), (u1, v1), (u2, v2); surface = { pattern = Uv_function f; _ }; _ } -> (
+      match Ray.triangle ray points with
+      | Some (_, b1, b2) ->
+          let b0 = 1. -. b1 -. b2 in
+          f ~u:((b0 *. u0) +. (b1 *. u1) +. (b2 *. u2)) ~v:((b0 *. v0) +. (b1 *. v1) +. (b2 *. v2))
+      | None -> f ~u:u0 ~v:v0)
   | _ -> color_at (surface leaf) point
 
 (*****************************************************************************)
@@ -316,8 +356,8 @@ let rec transform (tr : Transform.t) (solid : t) : t =
         let p0 = Vec3.scale (d /. Vec3.dot n n) n in
         let n' = Transform.normal tr n in
         Plane (n', Vec3.dot n' (Transform.point tr p0), s)
-    | Triangle { points = a, b, c; normals = n0, n1, n2; surface } ->
+    | Triangle ({ points = a, b, c; normals = n0, n1, n2; _ } as tri) ->
         let p = Transform.point tr and n = Transform.normal tr in
-        Triangle { points = (p a, p b, p c); normals = (n n0, n n1, n n2); surface }
+        Triangle { tri with points = (p a, p b, p c); normals = (n n0, n n1, n n2) }
     | Placed p -> Placed { p with transform = Transform.compose tr p.transform }
     | Csg (op, a, b) -> Csg (op, transform tr a, transform tr b)

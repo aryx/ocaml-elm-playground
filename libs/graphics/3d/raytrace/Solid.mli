@@ -40,17 +40,40 @@
  *   Half_space   y <= 0, the plane y = 0 and all below
  *)
 
-(* the colour's pattern over the surface: one colour, or the
- * checkerboard of Whitted's picture, cubes of [size] in space in [color]
- * and the other one, alternating (a solid texture: Peachey 1985) --
- * the first of phase 7's patterns *)
-type pattern = Plain | Checker of int * float
+(* The colour's pattern over the surface, [surface.color] and the
+ * other colour each carries (Peachey's and Perlin's solid textures,
+ * SIGGRAPH 1985: a colour for every point of space, which a solid is
+ * carved from, as from a block of wood):
+ *
+ *   Checker (other, size)   cubes of [size] in space, alternating
+ *   Marble (other, size)    stripes across x, sin (x + turbulence)
+ *                           (Perlin): veins, of [size]
+ *   Wood (other, size)      rings around the y axis, their radius
+ *                           shaken by turbulence, [size] apart
+ *   Solid_function f        any colour, f of the point: GML's surface
+ *                           function, a closure, the interpreter the
+ *                           ICFP 2000 winners had to optimize gone
+ *   Uv_function f           a picture on a triangle, f of the (u, v)
+ *                           its points carry: the 3D Playground's
+ *                           textures, sampled as the rasterizer samples
+ *                           them (the software backend passes
+ *                           Texture.sample_bilinear itself)
+ *
+ * A placed primitive's pattern is in its own space, and moves with it. *)
+type pattern =
+  | Plain
+  | Checker of int * float
+  | Marble of int * float
+  | Wood of int * float
+  | Solid_function of (Vec3.t -> int)
+  | Uv_function of (u:float -> v:float -> int)
 
 (* a surface: a 0xRRGGBB colour, its pattern, and how shiny or glassy
  * it is *)
 type surface = { color : int; pattern : pattern; material : Material.t }
 
-(* a surface's colour at a point of it. The checkerboard's squares are
+(* a surface's colour at a point of it (no (u, v): a [Uv_function] is
+ * its [color]). The checkerboard's squares are
  * cubes counted by floor (x / size) + floor (y / size) + ..., and a
  * floor at y = 0 meets their faces exactly: a hit point computed a
  * hair below (the shadow acne's rounding again) would fall in the cube
@@ -70,7 +93,13 @@ type t =
    * face, the curved surface's for a smooth one, as Render.face's).
    * No inside: a triangle can be in a union, not in an intersection
    * or a difference ([csg] refuses it) *)
-  | Triangle of { points : Vec3.t * Vec3.t * Vec3.t; normals : Vec3.t * Vec3.t * Vec3.t; surface : surface }
+  | Triangle of {
+      points : Vec3.t * Vec3.t * Vec3.t;
+      normals : Vec3.t * Vec3.t * Vec3.t;
+      (* the texture coordinates at each point, for a [Uv_function] *)
+      uvs : (float * float) * (float * float) * (float * float);
+      surface : surface;
+    }
   (* a unit primitive, through a transform *)
   | Placed of { primitive : primitive; transform : Transform.t; surface : surface }
   (* A op B *)
@@ -86,9 +115,11 @@ val csg : Csg.op -> t -> t -> t
  * first operand's *)
 val surface : t -> surface
 
-(* [color leaf point]: the leaf's colour at a point of its surface; a
- * placed primitive's pattern is in its own space, and moves with it *)
-val color : t -> Vec3.t -> int
+(* [color leaf ray t]: the leaf's colour where the ray meets it at t; a
+ * placed primitive's pattern in its own space, a triangle's texture at
+ * the (u, v) mixed from its points' by the hit's barycentric
+ * coordinates (as its normal) *)
+val color : t -> Ray.t -> float -> int
 
 (*****************************************************************************)
 (* {1 A ray and a solid} *)

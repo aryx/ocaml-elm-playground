@@ -228,7 +228,7 @@ let rec radiance (w : world) (ray : Ray.t) ~(min_t : float) ~(max_t : float) ~(d
       in
       let surface = Solid.surface leaf in
       let point = Ray.at ray t in
-      let color = Solid.color leaf point in
+      let color = Solid.color leaf ray t in
       match w.options.algorithm with
       | Ray_casting -> color_of_int color
       | Lambert | Shadow_rays | Whitted -> (

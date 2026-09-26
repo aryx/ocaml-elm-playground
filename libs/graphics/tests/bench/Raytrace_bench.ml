@@ -29,8 +29,8 @@ let cube (color : int) ((cx, cy, cz) : Vec3.t) (s : float) : Solid.t list =
   let h = s /. 2. in
   let p x y z = (cx +. (x *. h), cy +. (y *. h), cz +. (z *. h)) in
   let quad n a b c d =
-    [ Solid.Triangle { points = (a, b, c); normals = (n, n, n); surface = matte color };
-      Solid.Triangle { points = (a, c, d); normals = (n, n, n); surface = matte color } ]
+    [ Solid.Triangle { points = (a, b, c); normals = (n, n, n); uvs = ((0., 0.), (0., 0.), (0., 0.)); surface = matte color };
+      Solid.Triangle { points = (a, c, d); normals = (n, n, n); uvs = ((0., 0.), (0., 0.), (0., 0.)); surface = matte color } ]
   in
   List.concat
     [ quad (0., 0., 1.) (p (-1.) (-1.) 1.) (p 1. (-1.) 1.) (p 1. 1. 1.) (p (-1.) 1. 1.);
@@ -56,8 +56,8 @@ let mesh_sphere (color : int) (c : Vec3.t) (r : float) ~(rings : int) ~(segments
     for j = segments - 1 downto 0 do
       let (a, na) = at i j and (b, nb) = at (i + 1) j and (cc, nc) = at (i + 1) (j + 1) and (d, nd) = at i (j + 1) in
       acc :=
-        Solid.Triangle { points = (a, b, cc); normals = (na, nb, nc); surface = matte color }
-        :: Solid.Triangle { points = (a, cc, d); normals = (na, nc, nd); surface = matte color }
+        Solid.Triangle { points = (a, b, cc); normals = (na, nb, nc); uvs = ((0., 0.), (0., 0.), (0., 0.)); surface = matte color }
+        :: Solid.Triangle { points = (a, cc, d); normals = (na, nc, nd); uvs = ((0., 0.), (0., 0.), (0., 0.)); surface = matte color }
         :: !acc
     done
   done;

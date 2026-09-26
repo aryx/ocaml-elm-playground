@@ -93,6 +93,21 @@ val color : Playground.color -> surface
  * solid can be checkered (a solid texture) *)
 val checker : ?size:Playground.number -> Playground.color -> Playground.color -> surface
 
+(* [marble c1 c2]: Perlin's marble (1985), c1 veined with c2, the veins
+ * [size] apart (default 1): stripes across x, their edges shaken by
+ * turbulence (Perlin.mli) *)
+val marble : ?size:Playground.number -> Playground.color -> Playground.color -> surface
+
+(* [wood c1 c2]: rings around the y axis, from c1 to c2, [size] apart
+ * (default 0.2), shaken a little by noise: turn a cylinder on its side
+ * for a log's end, keep it upright for a plank's grain *)
+val wood : ?size:Playground.number -> Playground.color -> Playground.color -> surface
+
+(* [pattern f]: any colour, [f ~x ~y ~z] at each point of the surface
+ * (in the solid's own space: it moves with it) -- GML's surface
+ * function, the scene's texture as a program *)
+val pattern : (x:Playground.number -> y:Playground.number -> z:Playground.number -> Playground.color) -> surface
+
 (* [shiny s surface]: a mirror, s of it (0. none, 1. a perfect mirror):
  * the reflected ray's colour is that share of its own (Raytrace's
  * Whitted) *)

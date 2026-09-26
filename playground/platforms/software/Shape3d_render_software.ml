@@ -90,22 +90,30 @@ let render ?options (fb : Framebuffer.t) (zbuffer : Zbuffer.t) (cam : Playground
 (* The ray tracer *)
 (*****************************************************************************)
 
-(* claude: until textures are sampled at the hit point (phase 7) *)
-let untextured_color = 0x808080
-
-let solids (shape : Playground3d.shape3d) : Solid.t list =
+let solids ?(bilinear = true) (shape : Playground3d.shape3d) : Solid.t list =
   faces shape
   |> List.concat_map (fun (face : Render.face) ->
          let surface : Solid.surface =
-           { color = (match face.paint with Color c -> c | Texture _ -> untextured_color); pattern = Plain; material = face.material }
+           match face.paint with
+           | Color c -> { color = c; pattern = Plain; material = face.material }
+           | Texture img ->
+               (* claude: sampled at the hit's (u, v) by the rasterizer's
+                * own sampling, so that the two draw the same texels *)
+               let sample = if bilinear then Texture.sample_bilinear else Texture.sample_nearest in
+               let f ~u ~v =
+                 let r, g, b = sample img ~u ~v in
+                 (r lsl 16) lor (g lsl 8) lor b
+               in
+               { color = 0; pattern = Uv_function f; material = face.material }
          in
          (* fanned as the rasterizer does: (p0,p1,p2), (p0,p2,p3), ... *)
          match face.points with
          | [] -> []
-         | (p0, _, n0) :: rest ->
+         | (p0, uv0, n0) :: rest ->
              let rec fan = function
-               | (p1, _, n1) :: ((p2, _, n2) :: _ as rest) ->
-                   Solid.Triangle { points = (p0, p1, p2); normals = (n0, n1, n2); surface } :: fan rest
+               | (p1, uv1, n1) :: ((p2, uv2, n2) :: _ as rest) ->
+                   Solid.Triangle { points = (p0, p1, p2); normals = (n0, n1, n2); uvs = (uv0, uv1, uv2); surface }
+                   :: fan rest
                | _ -> []
              in
              fan rest)
@@ -117,9 +125,9 @@ let sun : Raytrace.light =
   let s = 1. -. Lighting.ambient in
   Sun { towards = Lighting.light_dir; color = (s, s, s) }
 
-let raytrace ?options (fb : Framebuffer.t) (cam : Playground3d.camera) (shape : Playground3d.shape3d) : unit =
+let raytrace ?options ?bilinear (fb : Framebuffer.t) (cam : Playground3d.camera) (shape : Playground3d.shape3d) : unit =
   let scene : Raytrace.scene =
-    { camera = camera cam; solids = solids shape; lights = [ sun ]; ambient = Lighting.ambient; background = 0xFFFFFF }
+    { camera = camera cam; solids = solids ?bilinear shape; lights = [ sun ]; ambient = Lighting.ambient; background = 0xFFFFFF }
   in
   let img = Raytrace.render ?options scene ~width:fb.width ~height:fb.height in
   for y = 0 to fb.height - 1 do

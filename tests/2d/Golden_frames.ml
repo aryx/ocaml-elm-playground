@@ -290,6 +290,11 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/PovrayWhitted", "", 10);
     (* claude: solids made of solids: the drilled cube, the die, the lens *)
     ("examples/software/PovrayCsg", "", 10);
+    (* claude: procedural surfaces, marble, wood, a checker, a function;
+     * and the ICFP 2000 task's fib.gml (its 2000 picture:
+     * libs/graphics/tests/icfp2000/) *)
+    ("examples/software/PovrayMarble", "", 10);
+    ("examples/software/PovrayFib", "", 8);
     (* the first question, the gallows empty *)
     ("examples/software/TeletypeHangman", "", 3);
     (* the snake, its food, and the bytes of the first frame: all of it *)

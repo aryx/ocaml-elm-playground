@@ -40,6 +40,15 @@ let color (c : Playground.color) : surface = { color = rgb_of_color c; pattern =
 let checker ?(size = 1.) (c1 : Playground.color) (c2 : Playground.color) : surface =
   { (color c1) with pattern = Checker (rgb_of_color c2, size) }
 
+let marble ?(size = 1.) (c1 : Playground.color) (c2 : Playground.color) : surface =
+  { (color c1) with pattern = Marble (rgb_of_color c2, size) }
+
+let wood ?(size = 0.2) (c1 : Playground.color) (c2 : Playground.color) : surface =
+  { (color c1) with pattern = Wood (rgb_of_color c2, size) }
+
+let pattern (f : x:float -> y:float -> z:float -> Playground.color) : surface =
+  { (color Color.white) with pattern = Solid_function (fun (x, y, z) -> rgb_of_color (f ~x ~y ~z)) }
+
 let shiny (s : float) (surface : surface) : surface = { surface with material = { surface.material with shiny = s } }
 let glassy (index : float) (surface : surface) : surface =
   { surface with material = { surface.material with glassy = Some index } }

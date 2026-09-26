@@ -214,6 +214,8 @@
    %{project_root}/examples/software/PovraySpheres.exe
    %{project_root}/examples/software/PovrayWhitted.exe
    %{project_root}/examples/software/PovrayCsg.exe
+   %{project_root}/examples/software/PovrayFib.exe
+   %{project_root}/examples/software/PovrayMarble.exe
    %{project_root}/examples/software/TeletypeHangman.exe
    %{project_root}/examples/software/TextmodeSnake.exe
    %{project_root}/games/adventure/software/TinyWumpus.exe

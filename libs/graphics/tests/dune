@@ -34,6 +34,7 @@
    (source_tree pngsuite) ; Willem van Schaik's PngSuite, a subset
    (source_tree gifs) ; GIFs of our own
    (source_tree jpegs) ; JPEGs of our own, and libjpeg's pixels
+   (source_tree icfp2000) ; the author's ICFP 2000 ray tracer's picture (Unit_raytrace)
    %{project_root}/apps/graphics/photos/blue_marble.jpg ; TinyPhotoshop's, NASA's
    %{project_root}/apps/graphics/photos/aldrin.jpg
  )

@@ -946,8 +946,29 @@ cone's two roots are one and the "outside the roots" halves touch
 apart, an empty intersection, the example's own bug, kept in its
 comment.
 
-Next, phase 7, surfaces: textures at the hit point, patterns over
-noise, `pattern` closures.
+**Phase 7 done** (2026-09-26): surfaces. `Perlin` (the planned
+`Noise`, renamed: audio's synthesis library has a `Noise`, and the
+libraries are unwrapped), Perlin's improved noise with his permutation
+table written out, and turbulence; `Solid.pattern`'s `Marble`, `Wood`,
+`Solid_function` (GML's surface function, a closure) and `Uv_function`
+(a texture by the surface's (u, v)); `Triangle.uvs`, mixed at the hit
+by its barycentric coordinates. Textures on the `shape3d` path:
+`Shape3d_render_software.solids` hands the ray tracer the rasterizer's
+own `Texture.sample_bilinear` (or nearest, with "i") as the (u, v)
+function, rather than a copy of it. The way: `marble`, `wood`,
+`pattern` (its `image`, a texture file, not yet: loading a file is the
+platform's). `examples/PovrayMarble.ml`, `examples/PovrayFib.ml`.
+Checked: the table a permutation, and **noise 3.14 42 7 =
+0.13691995878400012, Perlin's own value to the last digit**; a
+textured quad rasterized and ray cast, **0 of 10,800 pixels more than 2
+apart**; and **fib.gml against the picture the author's 2000 entry made
+of it, `libs/graphics/tests/icfp2000/fib_2000.png` (its .ppm, as a
+lossless PNG): 76,770 of 76,800 pixels the same, none more than 1
+apart** -- a regression test twenty-six years long. bigfib and the
+other scenes: the entry's folder keeps no other picture.
+
+Next, phase 8, the still-image pipeline: `-dump-size`, supersampling,
+the optional HUD pass.
 
 Written as the specification, with
 [`notes_raytracing.md`](../tutorials/notes_raytracing.md) beside it.

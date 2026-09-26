@@ -49,6 +49,9 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/TexturedCube3d", "", 3);
     ("examples/software/TexturedCube3d", "p", 3);
     ("examples/software/TexturedCube3d", "i", 3);
+    (* claude: the texture ray cast, sampled at the hit's (u, v) as the
+     * rasterizer samples it *)
+    ("examples/software/TexturedCube3d", "rrry", 1);
     ("examples/software/InteractiveCube3d", "", 3);
     ("examples/software/PaintersAlgorithmFail3d", "", 3);
     ("examples/software/PaintersAlgorithmFail3d", "z", 3);

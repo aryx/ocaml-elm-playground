@@ -89,7 +89,7 @@ let solids_of (faces : Render.face list) : Solid.t list =
       | (p0, _, n0) :: rest ->
           let rec fan = function
             | (p1, _, n1) :: ((p2, _, n2) :: _ as rest) ->
-                Solid.Triangle { points = (p0, p1, p2); normals = (n0, n1, n2); surface = matte color } :: fan rest
+                Solid.Triangle { points = (p0, p1, p2); normals = (n0, n1, n2); uvs = ((0., 0.), (0., 0.), (0., 0.)); surface = matte color } :: fan rest
             | _ -> []
           in
           fan rest)
@@ -308,7 +308,7 @@ let random_scene (rng : Random.State.t) (n : int) : Solid.t list =
     | _ ->
         let a = point () in
         let near () = Vec3.add a (f (-2.) 2., f (-2.) 2., f (-2.) 2.) in
-        Solid.Triangle { points = (a, near (), near ()); normals = ((0., 1., 0.), (0., 1., 0.), (0., 1., 0.)); surface = matte i }
+        Solid.Triangle { points = (a, near (), near ()); normals = ((0., 1., 0.), (0., 1., 0.), (0., 1., 0.)); uvs = ((0., 0.), (0., 0.), (0., 0.)); surface = matte i }
   in
   (* a strip of triangles sharing their edges: ties along them *)
   let strip =
@@ -317,7 +317,7 @@ let random_scene (rng : Random.State.t) (n : int) : Solid.t list =
         let p0 = (x, -1., -5.) and p1 = (x +. 1., -1., -5.) and p2 = (x, 1., -5.) and p3 = (x +. 1., 1., -5.) in
         Solid.Triangle
           { points = (if k mod 2 = 0 then (p0, p1, p2) else (p1, p3, p2));
-            normals = ((0., 0., 1.), (0., 0., 1.), (0., 0., 1.)); surface = matte (1000 + k) })
+            normals = ((0., 0., 1.), (0., 0., 1.), (0., 0., 1.)); uvs = ((0., 0.), (0., 0.), (0., 0.)); surface = matte (1000 + k) })
   in
   List.init n solid @ strip
   @ if n mod 2 = 0 then [ Solid.Plane ((0., 1., 0.), -12., matte 7) ] else []
@@ -529,7 +529,7 @@ let test_csg () =
   pairs "off the hole, at y = 0.75: the whole cube" [ (2., 4.) ] (Solid.intervals (Ray.make (3., 0.75, 0.) (-1., 0., 0.)) drilled);
   Alcotest.check_raises "a triangle in a difference: refused"
     (Invalid_argument "Solid.csg: a triangle has no inside, it cannot be intersected or subtracted") (fun () ->
-      ignore (Solid.csg Diff cube (Solid.Triangle { points = ((0., 0., 0.), (1., 0., 0.), (0., 1., 0.)); normals = ((0., 0., 1.), (0., 0., 1.), (0., 0., 1.)); surface = matte 0 })))
+      ignore (Solid.csg Diff cube (Solid.Triangle { points = ((0., 0., 0.), (1., 0., 0.), (0., 1., 0.)); normals = ((0., 0., 1.), (0., 0., 1.), (0., 0., 1.)); uvs = ((0., 0.), (0., 0.), (0., 0.)); surface = matte 0 })))
 
 (* random solids: a transformed primitive, or a CSG of two *)
 let rec random_solid (rng : Random.State.t) (depth : int) : Solid.t =
@@ -595,6 +595,116 @@ let test_spot () =
   (* 4 below and 3 aside: 37 degrees off its axis, outside its 30 *)
   Alcotest.(check int) "outside its cone: dark" 0 (seen [ spot ] [ floor ] 3. 0.)
 
+(*****************************************************************************)
+(* Surfaces, and the ICFP 2000 entry's own picture *)
+(*****************************************************************************)
+
+let test_perlin () =
+  let sorted = Array.copy Perlin.permutation in
+  Array.sort compare sorted;
+  Alcotest.(check bool) "the table: a permutation of 0..255" true (sorted = Array.init 256 Fun.id);
+  Alcotest.(check (float 0.)) "Perlin's own value: noise 3.14 42 7" 0.13691995878400012 (Perlin.noise 3.14 42. 7.);
+  near "0 at every integer point" 0. (Perlin.noise 3. (-5.) 17.);
+  let v = Perlin.noise 0.3 0.7 0.1 in
+  Alcotest.(check bool) "between -1 and 1" true (v > -1. && v < 1.);
+  Alcotest.(check bool) "the same point, the same value" true (Perlin.noise 0.3 0.7 0.1 = v)
+
+let test_patterns () =
+  let s pattern : Solid.surface = { color = 0xFFFFFF; pattern; material = Material.matte } in
+  let marble = s (Marble (0x000000, 1.)) in
+  let values = List.init 50 (fun i -> Solid.color_at marble (float_of_int i *. 0.037, 0.2, 0.5)) in
+  Alcotest.(check bool) "marble: both colours and between" true (List.length (List.sort_uniq compare values) > 10);
+  Alcotest.(check int) "a function of the point" 0x123456
+    (Solid.color_at (s (Solid_function (fun (x, _, _) -> if x > 0. then 0x123456 else 0))) (1., 0., 0.));
+  (* a texture: (u, v) mixed from the triangle's points as its normal *)
+  let tri : Solid.t =
+    Triangle
+      { points = ((0., 0., 0.), (1., 0., 0.), (0., 1., 0.)); normals = ((0., 0., 1.), (0., 0., 1.), (0., 0., 1.));
+        uvs = ((0., 0.), (1., 0.), (0., 1.));
+        surface = s (Uv_function (fun ~u ~v -> (int_of_float (u *. 100.) lsl 8) lor int_of_float (v *. 100.))) }
+  in
+  let ray = Ray.make (0.25, 0.5, 5.) (0., 0., -1.) in
+  Alcotest.(check int) "the texture at (u, v) = (0.25, 0.5)" ((25 lsl 8) lor 50) (Solid.color tri ray 5.)
+
+(* a textured quad, drawn by the rasterizer and ray cast, both sampling
+ * with Texture.sample_bilinear: the same texels *)
+let test_texture_same_picture () =
+  let tex : Texture.image =
+    let img = Rgba_image.create ~width:8 ~height:8 in
+    for i = 0 to 63 do
+      let on = ((i mod 8) + (i / 8)) mod 2 = 0 in
+      img.rgba.{4 * i} <- (if on then 230 else 20);
+      img.rgba.{(4 * i) + 1} <- i * 3;
+      img.rgba.{(4 * i) + 2} <- (if on then 40 else 200);
+      img.rgba.{(4 * i) + 3} <- 255
+    done;
+    { width = img.width; height = img.height; rgba = img.rgba }
+  in
+  let n = (0., 0., 1.) in
+  let points = [ ((-1., -1., 0.), (0., 1.)); ((1., -1., 0.), (1., 1.)); ((1., 1., 0.), (1., 0.)); ((-1., 1., 0.), (0., 0.)) ] in
+  let face : Render.face = { paint = Texture tex; material = Material.matte; points = List.map (fun (p, uv) -> (p, uv, n)) points } in
+  let f ~u ~v = let r, g, b = Texture.sample_bilinear tex ~u ~v in (r lsl 16) lor (g lsl 8) lor b in
+  let surface : Solid.surface = { color = 0; pattern = Uv_function f; material = Material.matte } in
+  let (p0, uv0), (p1, uv1), (p2, uv2), (p3, uv3) = match points with [ a; b; c; d ] -> (a, b, c, d) | _ -> assert false in
+  let solids : Solid.t list =
+    [ Triangle { points = (p0, p1, p2); normals = (n, n, n); uvs = (uv0, uv1, uv2); surface };
+      Triangle { points = (p0, p2, p3); normals = (n, n, n); uvs = (uv0, uv2, uv3); surface } ]
+  in
+  let camera : Camera.t = { eye = (0.8, 0.6, 2.5); target = (0., 0., 0.); up = (0., 1., 0.); fov = 60.; ortho = 0.; near = 0.1; far = 100. } in
+  let width = 120 and height = 90 in
+  let fb = Framebuffer.create ~width ~height in
+  Framebuffer.clear fb ~rgb:0xFFFFFF;
+  Render.render ~options:{ Render.default_options with shading = Shading.Flat_color; bilinear = true } fb (Zbuffer.create ~width ~height) camera [ face ];
+  let img =
+    Raytrace.render ~options:{ Raytrace.default_options with algorithm = Ray_casting }
+      { camera; solids; lights = []; ambient = 1.; background = 0xFFFFFF } ~width ~height
+  in
+  let apart = ref 0 in
+  for y = 0 to height - 1 do
+    for x = 0 to width - 1 do
+      let i = 4 * ((y * width) + x) in
+      let rgb = (img.rgba.{i} lsl 16) lor (img.rgba.{i + 1} lsl 8) lor img.rgba.{i + 2} and r = Framebuffer.get_rgb fb ~x ~y in
+      let d = List.fold_left (fun m s -> Int.max m (abs (((rgb lsr s) land 0xFF) - ((r lsr s) land 0xFF)))) 0 [ 0; 8; 16 ] in
+      if d > 2 then incr apart
+    done
+  done;
+  Printf.printf "a textured quad: %d of %d pixels more than 2 apart\n" !apart (width * height);
+  if !apart > 20 then Alcotest.failf "%d pixels apart" !apart
+
+(* fib.gml, as examples/PovrayFib.ml writes it, by today's ray tracer,
+ * against the picture the author's ICFP 2000 entry made of it *)
+let test_icfp_2000 () =
+  let rec fib i = if i < 3 then 1 else fib (i - 1) + fib (i - 2) in
+  let colors = [| 0xFF0000; 0x00FF00; 0x0000FF; 0xFF00FF; 0xFFFF00; 0x00FFFF |] in
+  let spheres =
+    List.concat_map
+      (fun x ->
+        List.map
+          (fun z ->
+            let y = fib (1 + ((x + z) / 2)) in
+            Solid.Sphere
+              (((2.5 *. float_of_int x) -. 7., float_of_int y -. 3., -.((2.5 *. float_of_int z) +. 3.)), 1., matte colors.((x + z) mod 6)))
+          [ 1; 2; 3; 4; 5 ])
+      [ 1; 2; 3; 4; 5 ]
+  in
+  let fov = 2. *. atan (tan (Float.pi /. 4.) *. 240. /. 320.) *. 180. /. Float.pi in
+  let scene : Raytrace.scene =
+    { camera = { eye = (0., 0., 1.); target = (0., 0., -10.5); up = (0., 1., 0.); fov; ortho = 0.; near = 0.; far = infinity };
+      solids = spheres; lights = [ Sun { towards = Vec3.normalize (-1., 1., 0.); color = (1., 1., 1.) } ]; ambient = 0.4;
+      background = 0 }
+  in
+  let ours = Raytrace.render scene ~width:320 ~height:240 in
+  let theirs = Png.decode (In_channel.with_open_bin "icfp2000/fib_2000.png" In_channel.input_all) in
+  let same = ref 0 and worst = ref 0 in
+  for i = 0 to (320 * 240) - 1 do
+    let d = List.fold_left (fun m k -> Int.max m (abs (ours.rgba.{(4 * i) + k} - theirs.rgba.{(4 * i) + k}))) 0 [ 0; 1; 2 ] in
+    if d = 0 then incr same;
+    worst := Int.max !worst d
+  done;
+  Printf.printf "fib.gml: %d of 76800 pixels the same as in 2000, the worst %d apart\n" !same !worst;
+  Alcotest.(check bool) "99.9% of the pixels the same as the 2000 entry's" true (!same * 1000 >= 76800 * 999);
+  Alcotest.(check bool) "and none more than 1 apart" true (!worst <= 1)
+
 let tests =
   Testo.categorize "Raytrace"
     [ t "Solid.hit: in front, from inside, moved" test_hit; t "the camera rays" test_camera_ray;
@@ -609,4 +719,5 @@ let tests =
       t "Whitted: glass" test_glass; t "Whitted: the cutoff and the depth" test_cutoff;
       t "the unit primitives, along a ray" test_primitives; t "Transform, the ellipsoid's normal" test_transform;
       t "CSG: the blind hole" test_csg; t "CSG: point membership, random solids" test_membership;
-      t "CSG: the BVH" test_bvh_csg; t "spots" test_spot ]
+      t "CSG: the BVH" test_bvh_csg; t "spots" test_spot; t "Perlin's noise" test_perlin;
+      t "patterns, textures" test_patterns; t "a texture, rasterized and ray cast" test_texture_same_picture; t "fib.gml, against the ICFP 2000 entry's picture" test_icfp_2000 ]

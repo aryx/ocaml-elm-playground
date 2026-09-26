@@ -288,7 +288,8 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   (* claude: the scene of a view, by the renderer "y" chose *)
   let render_scene (fb : Framebuffer.t) (zb : Zbuffer.t) (v : Playground3d.view) : unit =
     match raytraced () with
-    | Some options -> Shape3d_render_software.raytrace ~options fb v.camera (Playground3d.group3d v.shapes)
+    | Some rt ->
+        Shape3d_render_software.raytrace ~options:rt ~bilinear:!options.bilinear fb v.camera (Playground3d.group3d v.shapes)
     | None -> Shape3d_render_software.render ~options:!options fb zb v.camera (Playground3d.group3d v.shapes)
   in
   let view_buffers : (int * int, Framebuffer.t * Zbuffer.t) Hashtbl.t = Hashtbl.create 4 in
