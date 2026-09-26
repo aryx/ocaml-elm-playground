@@ -332,7 +332,8 @@ SMTP asks who you are before taking mail for elsewhere -- **AUTH PLAIN**
 `EHLO` (`Smtp.client ~auth`): the patch, twenty-five years late, for
 §4's lesson. Base64 is no secret, so only over TLS.
 
-The TLS is ours (`plan_tls.md`): `Tls13`, a client machine as pure as
+The TLS is ours (`plan_tls.md`, and its tutorial `notes_tls.md`):
+`Tls13`, a client machine as pure as
 `Pop3`'s -- X25519 for the key exchange, ChaCha20-Poly1305 (or
 AES-128-GCM) for the records, the server's certificate chain checked
 up to one of the system's roots (ECDSA, RSA), all written from the

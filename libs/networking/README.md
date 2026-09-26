@@ -4,8 +4,9 @@ One idea per module, each `.mli` with its diagram, worked example and
 references. The protocols and the netcode are pure OCaml, no system
 call: a message is bytes in, bytes out, so the tests need no network
 and the browser runs them too. The tutorials are
-`docs/claude_notes/tutorials/notes_networking.md`, and for mail
-(`mail/`, `Smtp`, `Pop3`, `Mail_server`) `notes_mail.md`.
+`docs/claude_notes/tutorials/notes_networking.md`, for mail
+(`mail/`, `Smtp`, `Pop3`, `Mail_server`) `notes_mail.md`, and for TLS
+(`tls/`, `Tls_client`, and `crypto/`'s primitives) `notes_tls.md`.
 
 ## The folders
 

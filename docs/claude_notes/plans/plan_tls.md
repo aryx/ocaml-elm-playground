@@ -130,5 +130,13 @@ tried chose ChaCha20-Poly1305, which we offer first (31 ms).
 
 Not done: revocation, resumption and 0-RTT, HelloRetryRequest (we
 offer only X25519), client certificates of our own, TLS 1.2 (a server
-that speaks only 1.2 is refused: none among those tried); a tutorial
-(`notes_tls.md`) is the natural next step.
+that speaks only 1.2 is refused: none among those tried).
+
+**Phase 8, the tutorial** (2026-09-26): `tutorials/notes_tls.md` -- the
+three promises and what they do not cover, one connection end to end
+(a real `tls_get` transcript), X25519 and forward secrecy, the key
+schedule, the records' AEADs and the nonce rule, certificates and their
+chains (Wikipedia's cross-signed Root YE, Gmail's extra root),
+CertificateVerify, the signatures and Montgomery's numbers, how we know
+it is right (and what the method caught), the costs measured, what is
+left out and why it is not hardened, and the history from SSL 2.0.
