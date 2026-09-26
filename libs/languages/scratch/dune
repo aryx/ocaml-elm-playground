@@ -1,0 +1,15 @@
+; claude: Scratch's language (Mitchel Resnick's Lifelong Kindergarten
+; group, MIT Media Lab, 2007): the blocks as one table of specs, as
+; Scratch 3's opcodes are (Scratch_blocks); their text, the
+; scratchblocks notation of the Scratch forums and wiki, read and
+; printed (Scratch_text); and a project run, sprites on a stage, each
+; script a thread that yields at the end of every loop's turn
+; (Scratch_run). Used by TinyScratch (apps/devtools/), whose editor is
+; appkits/blocks. No Playground: the stage is numbers, the app draws
+; it. A private library, installed as part of elm_playground: pure
+; OCaml.
+(library
+ (name scratch)
+ (package elm_playground)
+ (wrapped false)
+)

@@ -1,0 +1,13 @@
+; claude: the block editor's geometry (Scratch, 2007; its blocks after
+; MIT's StarLogo TNG and LogoBlocks, 1996-): where each block, slot and
+; mouth lies, where a dragged stack snaps (Block_layout), and the
+; program changed by a drag, a drop or a slot typed in (Block_edit).
+; Over libs/languages/scratch's blocks, no shapes: TinyScratch draws
+; the pieces. A private library, installed as part of elm_playground:
+; pure OCaml.
+(library
+ (name appkit_blocks)
+ (package elm_playground)
+ (wrapped false)
+ (libraries scratch)
+)

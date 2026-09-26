@@ -324,6 +324,10 @@ let scenes : Testutil_golden.scene list =
      * Book's Rectangle>>center, a Workspace of things to try, the
      * Transcript *)
     ("apps/devtools/software/TinySmalltalk80", "", 3);
+    (* claude: Scratch 2's screen: the stage, the cat and the pencil,
+     * the Motion palette, the cat's three scripts and, under the
+     * sprites, the same scripts as scratchblocks text *)
+    ("apps/devtools/software/TinyScratch", "", 5);
     ("games/rpg/software/TinyGauntlet2", "", 5);
     ("games/sports/software/TinyKickOff2", "", 5);
     ("games/sports/software/TinySpeedball2", "", 5);
@@ -1830,6 +1834,16 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
       16,
       "at(52;75):1-5,click:4,type(fib self < 2 ifTrue: [^self]. ^(self - 1) fib + (self - 2) fib):6,Control:8-9,s:9,at(-205;45):10-16,click:12",
       [ "window=debugger" ] );
+    (* claude: TinyScratch: the green flag, and a second and a half
+     * later (the stage steps every other frame, 30 a second) the cat
+     * walking after its hello while the pencil draws its flower, the
+     * script glowing;
+     * a reporter dragged into the say's slot and the forever dragged
+     * back to the palette, deleted, the text following; the pencil
+     * chosen, the Control palette, its script clicked, run alone *)
+    ("apps/devtools/software/TinyScratch", "flag", 90, "at(-200;452):1-3,click:2,at(300;-400):4-90", []);
+    ("apps/devtools/software/TinyScratch", "edit", 26, "at(-80;-160):1-3,click:2-8,at(50;100):4,at(200;307):5-12,at(120;280):13-15,click:14-20,at(40;200):16,at(-50;100):17-26", []);
+    ("apps/devtools/software/TinyScratch", "pencil", 80, "at(-350;110):1-3,click:2,at(38;403):4-6,click:5,at(150;330):7-9,click:8,at(300;-400):10-80", []);
     (* claude: TinyWumpus: the instructions, then the first room and
      * what its neighbours give away (seed 1's cave) *)
     ("games/adventure/software/TinyWumpus", "first", 8, "type(y):2,Enter:3", []);
