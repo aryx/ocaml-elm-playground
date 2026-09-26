@@ -28,7 +28,7 @@
     appkit_paint ; a picture as bits, and what paints it (Part_picture)
     appkit_embed ; a document of parts (TinyOpenDoc, TinyPowerPoint)
     appkit_slides ; a talk as an outline (TinyPowerPoint)
-    appkit_hypertalk ; HyperCard's language (TinyHyperCard)
+    hypertalk ; HyperCard's language (TinyHyperCard)
     appkit_draw ; a picture as objects (Part_drawing)
     appkit_draw_view ; its figures as shapes, Figure_shapes
     appkit_stroke_text ; Hershey's strokes in a look

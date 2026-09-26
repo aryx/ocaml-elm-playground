@@ -19,7 +19,7 @@
     appkit_paint
     appkit_embed
     appkit_slides
-    appkit_hypertalk
+    hypertalk
     appkit_draw
     appkit_draw_view
     appkit_stroke_text

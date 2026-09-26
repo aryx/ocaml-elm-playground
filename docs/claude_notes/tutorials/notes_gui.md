@@ -35,7 +35,7 @@ this toolkit's first customer.
 | `appkits/paint` | a picture as bits, and what paints it | §13 |
 | `appkits/draw` | a picture as objects | §13 |
 | `appkits/slides` | a talk as an outline | §14 |
-| `appkits/hypertalk` | HyperCard's language, and its message path | §15 |
+| `libs/languages/hypertalk` | HyperCard's language, and its message path | §15 |
 | `apps/` | TinyVisiCalc, TinyExcel, TinyBravo, TinyWord, TinyFrameMaker, TinyMacPaint, TinyMacDraw, TinyOpenDoc, TinyPowerPoint, TinyHyperCard | §10-15 |
 
 ## 1. A GUI is a loop you already have
@@ -802,7 +802,7 @@ table, and two ideas:
   the background, once, but each card keeps its own text in the
   background's fields -- a card is a record, a background field a
   column.
-- **The message path** (`appkits/hypertalk`): a click sends "mouseUp"
+- **The message path** (`libs/languages/hypertalk`): a click sends "mouseUp"
   to the button; what it does not answer, or answers and **passes**,
   goes to the card, then the background, then the stack. So the stack's
   script can number every card on "openCard", and a word on a line of

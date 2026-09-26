@@ -33,10 +33,17 @@ The payoff the plan designed in full (`done/plan_raytracing_teaching.md`,
 cameras, its stills ray traced once by a script and committed, the
 hotspots found by casting the click's ray (the solid it meets named),
 one puzzle, `games/adventure/`. A game more than a lesson in rendering
--- the lesson is that the way is enough to build on -- and its open
-question stays open: the logic as OCaml data, or HyperTalk cards
-through `appkits/hypertalk`. It needs one verb first, `named`, a solid
-with a name for the picking.
+-- the lesson is that the way is enough to build on.
+
+DONE (2026-09-26): `TinyMyst.ml` and `games/adventure/myst/`. The
+logic HyperTalk cards (the author's choice), through
+`libs/languages/hypertalk`. No `named` verb: `Povray.pick` returns the
+very solid given to the scene, and the game keeps each button's name
+beside its solid, found by `==`; a card lists its own buttons, so a
+switch seen from afar is not one. The stills are JPEGs (17, 384 KB),
+made by `myst/make_stills.exe`, checked against the scene by
+`myst/tests/`. Next, the author's idea: a TinyPovray or TinyBlender
+(`apps/graphics/`), a scene edited and ray traced.
 
 ## 3. Small things the phases left
 

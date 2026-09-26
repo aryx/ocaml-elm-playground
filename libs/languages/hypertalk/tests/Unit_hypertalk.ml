@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* appkits/hypertalk: the .mli's example, the values that are all
+(* hypertalk: the .mli's example, the values that are all
  * strings, the control structures, and the message path -- run against
  * a world that is three fields, a card number and a log. *)
 

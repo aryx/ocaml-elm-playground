@@ -13,7 +13,7 @@
     kit_adventure ; TinyZork's and TinyManiacMansion's world and rules, Adventure
     appkit_teletype ; TinyWumpus's program, Tty_wumpus
     myst ; TinyMyst's island and its stills
-    appkit_hypertalk ; TinyMyst's scripts, Hypertalk
+    hypertalk ; TinyMyst's scripts, Hypertalk
     graphics_raytrace ; TinyMyst's pictures made live, Raytrace
     graphics_jpeg ; TinyMyst's stills, Jpeg
     elm_playground_native ; implem of virtual elm_playground

@@ -394,7 +394,7 @@ the element it fell on, and **bubbles**: the handlers of that element
 run, then of its parent, and so on up to `document`, unless one calls
 `event.stopPropagation()`. `event.preventDefault()` cancels what the
 browser would have done after (follow the link, send the form). That
-path is HyperCard's (`appkits/hypertalk`), a quarter century apart:
+path is HyperCard's (`libs/languages/hypertalk`), a quarter century apart:
 
 ```
 HyperCard (1987)                   the DOM (1998)

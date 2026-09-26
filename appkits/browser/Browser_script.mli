@@ -47,7 +47,7 @@
    one calls event.stopPropagation(); event.preventDefault() -- or an
    onclick="..." returning false, Netscape 2's way -- cancels what the
    browser would have done next (follow the link). HyperCard's path,
-   a quarter century before (appkits/hypertalk):
+   a quarter century before (libs/languages/hypertalk):
 
      HyperCard (1987)                        the DOM (1998)
      button -> card -> background -> stack   element -> parents -> body -> document

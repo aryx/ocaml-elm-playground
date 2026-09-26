@@ -7,7 +7,7 @@
    alcotest
    testo
    myst
-   appkit_hypertalk
+   hypertalk
    graphics_raytrace
    graphics_jpeg
    elm_playground

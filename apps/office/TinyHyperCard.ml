@@ -15,7 +15,7 @@
  * size of the Mac's screen (512 by 342 dots), each with buttons, fields
  * of text and a picture; you browse it by clicking, and you make one by
  * choosing a tool, drawing a button, and writing -- in HyperTalk, a
- * language meant to be read aloud (appkits/hypertalk) -- what it does
+ * language meant to be read aloud (libs/languages/hypertalk) -- what it does
  * when clicked. The same thing is a document to read, a program to
  * run, and a program to change while it runs; there is no line
  * between using it and building it. Myst (1993) was made with it.
@@ -37,7 +37,7 @@
  *   numbers the pages), and a card's script answers for all its
  *   buttons: shared behaviour by position, with no classes.
  *
- * What it uses: appkits/hypertalk (the language, run against this
+ * What it uses: libs/languages/hypertalk (the language, run against this
  * stack through a record of functions), appkits/paint (the card's
  * picture and the pencil: Atkinson wrote MacPaint first, and
  * HyperCard's paint tools are MacPaint's), Stroke_text for the

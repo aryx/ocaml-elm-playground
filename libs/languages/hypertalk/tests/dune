@@ -1,0 +1,7 @@
+; claude: unit tests for hypertalk/, run by 'make test' (dune runtest):
+; the .mli's example, the values that are all strings, the control
+; structures, and the message path
+(test
+ (name Test)
+ (libraries alcotest testo hypertalk)
+)

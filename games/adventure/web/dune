@@ -15,7 +15,7 @@
     kit_adventure
     appkit_teletype
     myst
-    appkit_hypertalk
+    hypertalk
     graphics_raytrace
     graphics_jpeg
     elm_playground_web ; implem of virtual elm_playground

@@ -93,7 +93,7 @@ interface, `DocumentFragment`, ranges, selections, shadow DOM,
 - `event.target`, `event.key`, `preventDefault()` (a link not
   followed, a form not sent); **bubbling**: from the element up its
   parents to the document -- HyperCard's message path (button, card,
-  background, stack: `appkits/hypertalk`) under another name, and the
+  background, stack: `libs/languages/hypertalk`) under another name, and the
   notes put the two side by side;
 - `setTimeout`, `setInterval`, `clearInterval`, on the frame clock, so
   that `-fixed-time` and the golden frames stay deterministic;
@@ -166,7 +166,7 @@ author's yes, each its own step):
 
 | Language | Where now | Lines | Depends on | Verdict |
 |---|---|---|---|---|
-| HyperTalk | `appkits/hypertalk/Hypertalk` | 430 | nothing | stays (the author's call, 2026-09-25): movable as it is, but unlikely to be used outside HyperCard, the one program that speaks it |
+| HyperTalk | `libs/languages/hypertalk/Hypertalk` | 430 | nothing | moved (the author's yes, 2026-09-26): stayed beside HyperCard until a second program spoke it, TinyMyst's stack of stills |
 | BASIC | `libs/languages/basic/` (`Basic_parse`, `Basic_run`, `Basic_session`, `Basic_disk`) | 1270 | `terminal` (`Talk`) | moved (the author's yes, 2026-09-25, the other session stopped): first split from the Playground -- `Teletype`'s programs-as-values and machine became `libs/terminal/Talk`, `Teletype` keeping the keyboard, the drawing and the app -- then moved, the library `basic`; its tests stay in `appkits/tests` (`Unit_basic` checks BASIC's GUESS against the appkit's `Tty_guess`) |
 | Spreadsheet formulas | `libs/languages/formula/Formula` | 252 | nothing | moved (the author's yes, 2026-09-25): a library of its own, `formula`, which `appkit_sheet`'s `Sheet` depends on -- a general expression evaluator, the first of the folder; its tests stay in `Unit_sheet` |
 | Karel's language | inside `games/programming/TinyKarel.ml` | (part of 465) | `playground/ways/Karel` | an extraction, not a move: the parser to `libs/languages/karel/` with an AST of its own, the game translating it to the way's commands |
