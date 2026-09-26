@@ -29,7 +29,7 @@
  *
  * This is the game this project was made for. With an immutable
  * model, rewinding is keeping the past models in a list and going
- * back down it: gamekits/puzzle's Undo, which TinySokoban calls once a
+ * back down it: gamekits/puzzle's Puzzle_undo, which TinySokoban calls once a
  * move, called here sixty times a second. Elm's time-travelling
  * debugger (Laszlo Pandy, 2013) was the same observation about Elm
  * programs, and it is the point of the Elm architecture that it costs
@@ -65,7 +65,7 @@
  *                                                   (a shadow's frames,
  *                                                    in the order played)
  *
- * What it uses: gamekits/puzzle's Undo (the history: a whole game's
+ * What it uses: gamekits/puzzle's Puzzle_undo (the history: a whole game's
  * rewind is a list of worlds), gamekits/platformer's Tile_move (running
  * and jumping one pixel at a time), Tilemap (the rooms, as strings),
  * Scene2d. Not Physics: nothing is physical; not Camera2d: a room is a
@@ -221,7 +221,7 @@ type world = {
 
 type play = {
   room : int;
-  history : world Undo.t;
+  history : world Puzzle_undo.t;
   rewinding : bool;
   (* the frames rewound so far, the first to play first *)
   undone : tim list;
@@ -247,7 +247,7 @@ let start (r : room) : world =
     clock = (if r.place then x else 0.) }
 
 let enter (room : int) : play =
-  { room; history = Undo.start (start rooms.(room)); rewinding = false; undone = []; shadow = [] }
+  { room; history = Puzzle_undo.start (start rooms.(room)); rewinding = false; undone = []; shadow = [] }
 
 let initial_model : model = Scene2d.start Title
 
@@ -357,7 +357,7 @@ let rewind (r : room) (p : play) : play =
   match p.history.past with
   | [] -> p
   | _ ->
-      let back = Undo.undo p.history in
+      let back = Puzzle_undo.undo p.history in
       let back = if r.green then { back with now = { back.now with key = p.history.now.key } } else back in
       { p with history = back; rewinding = true; undone = p.history.now.tim :: p.undone }
 
@@ -374,7 +374,7 @@ let step (i : input) (p : play) : play =
     if p.history.now.tim.dead then p
     else
       let shadow, rest = match p.shadow with s :: rest -> (Some s, rest) | [] -> (None, []) in
-      { p with history = Undo.record (advance r shadow i p.history.now) p.history; shadow = rest }
+      { p with history = Puzzle_undo.record (advance r shadow i p.history.now) p.history; shadow = rest }
 
 let reached_exit (p : play) : bool =
   let t = p.history.now.tim in

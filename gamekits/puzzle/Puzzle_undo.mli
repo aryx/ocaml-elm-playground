@@ -1,4 +1,4 @@
-(* Undo: the states before, to go back to.
+(* Puzzle_undo: the states before, to go back to.
 
    A puzzle is solved by trying: a push too far, and the level can't be
    solved anymore; undo, and try another way. In a pure program, undo is

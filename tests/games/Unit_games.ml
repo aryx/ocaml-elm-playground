@@ -5008,7 +5008,7 @@ let braid_forgiveness () =
   (* a monster stomped, one frame, rewound one frame *)
   let w = p.history.now in
   let m = List.hd w.monsters in
-  let above = { p with history = Undo.start { w with tim = { w.tim with x = m.mx; y = m.my +. 25.; vy = -3. } } } in
+  let above = { p with history = Puzzle_undo.start { w with tim = { w.tim with x = m.mx; y = m.my +. 25.; vy = -3. } } } in
   let stomped = step nothing above in
   Alcotest.(check bool) "stomped" false (List.hd stomped.history.now.monsters).alive;
   Alcotest.(check bool) "and it walks again" true (List.hd (step { nothing with rewind = true } stomped).history.now.monsters).alive

@@ -35,3 +35,18 @@ val collect : unit -> unit
 
 (* the entries recorded, in link order *)
 val collected : unit -> (string * (unit -> unit)) list
+
+(* [run name ~argv]: the launcher runs the entry recorded under [name],
+ * with [argv] as the program's command line (see [argv]). Raises
+ * Not_found if no program has that name. *)
+val run : string -> argv:string array -> unit
+
+(* The program's command line, what the platform parses (its dashed
+ * options, and the app's flags, Playground_platform.flags) instead of
+ * Sys.argv: Sys.argv alone; in tinybox, the one [run] was given, as if
+ * the program had been started alone --
+ *
+ *   tinybox TinyWinamp dir=~/Music   ->  [| "TinyWinamp"; "dir=~/Music" |]
+ *
+ * -- so that the launcher's own words never reach the program. *)
+val argv : unit -> string array

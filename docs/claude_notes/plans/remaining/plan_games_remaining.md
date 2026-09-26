@@ -167,7 +167,7 @@ longer true. See Adventure below.
   started the indie decade (with World of Goo and Spelunky, the same
   year), and rewinding time. The one this project was made for: with
   an immutable model, rewind is a list of past models
-  (`gamekits/puzzle`'s `Undo`, at 60 a second), and Elm's time-travel
+  (`gamekits/puzzle`'s `Puzzle_undo`, at 60 a second), and Elm's time-travel
   debugger was the same idea. Braid's worlds are variations on it --
   objects that ignore the rewind (green), a ring slowing time around
   it, time moving only when you move -- each a rule over that list.

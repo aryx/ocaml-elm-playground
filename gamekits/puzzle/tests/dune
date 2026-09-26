@@ -1,4 +1,4 @@
-; claude: the puzzle kit's worked examples (Push.mli, Undo.mli,
+; claude: the puzzle kit's worked examples (Push.mli, Puzzle_undo.mli,
 ; Sokoban.mli), run by 'make test'
 (test
  (name Test)

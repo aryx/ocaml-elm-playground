@@ -32,10 +32,10 @@
  *
  * The rules are the puzzle kit's (gamekits/puzzle/): Sokoban's [step]
  * and [solved], shared with the editor, which plays a level to test
- * it, on Push (a chain of one box at most). Undo is where the Elm
+ * it, on Push (a chain of one box at most). Puzzle_undo is where the Elm
  * architecture shines: the model is a value, so the history is just
  * the list of the past boards, and undoing is taking the head of the
- * list (the kit's Undo). Scene2d gives the title and the "solved"
+ * list (the kit's Puzzle_undo). Scene2d gives the title and the "solved"
  * screens, and keys pressed rather than held: one press, one step.
  *
  * Exercises: more levels (the classic free collections, e.g. David W.
@@ -70,14 +70,14 @@ type board = Sokoban.board
 
 type play = {
   level : int;
-  boards : board Undo.t; (* the board now, and the ones before *)
+  boards : board Puzzle_undo.t; (* the board now, and the ones before *)
 }
 
 type scene = Title | Playing of play | Solved of play
 
 type model = scene Scene2d.t
 
-let load (level : int) : play = { level; boards = Sokoban.start tile_size (List.nth levels level) |> Undo.start }
+let load (level : int) : play = { level; boards = Sokoban.start tile_size (List.nth levels level) |> Puzzle_undo.start }
 
 let initial_model : model = Scene2d.start Title
 
@@ -99,10 +99,10 @@ let update_play (s : model) (p : play) : play =
   match dir with
   | Some d -> (
       match Sokoban.step p.boards.now d with
-      | Some board -> { p with boards = Undo.record board p.boards }
+      | Some board -> { p with boards = Puzzle_undo.record board p.boards }
       | None -> p)
   | None when pressed (fun k -> k.kbackspace) s || pressed (letter "u") s -> (
-      { p with boards = Undo.undo p.boards })
+      { p with boards = Puzzle_undo.undo p.boards })
   | None when pressed (letter "r") s -> load p.level
   | None -> p
 

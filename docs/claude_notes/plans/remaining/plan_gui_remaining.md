@@ -194,9 +194,6 @@ the sheet's cells whenever it is drawn. Next, by what each would give:
 
 ## 9. Small things found on the way
 
-- **Two `Undo` modules**: `gamekits/puzzle/Undo` and
-  `appkits/document/Undo`, both in unwrapped libraries, so nothing can
-  link both; a rename of one (the game's is the smaller) or wrapping.
 - **Scaled text**: the playground's `words`, scaled down (TinyPowerPoint's
   thumbnails of a slide holding a sheet), keeps a minimum pen width and
   comes out heavy -- the software renderer's, worth a look next to

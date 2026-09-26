@@ -24,3 +24,16 @@ let main (name : string) (entry : unit -> unit) : unit =
   else entries := (name, entry) :: !entries
 
 let collected () : (string * (unit -> unit)) list = List.rev !entries
+
+(* None: the process's own, Sys.argv *)
+let given_argv : string array option ref = ref None
+
+let argv () : string array =
+  match !given_argv with
+  | Some a -> a
+  | None -> Sys.argv
+
+let run (name : string) ~(argv : string array) : unit =
+  let entry = List.assoc name !entries in
+  given_argv := Some argv;
+  entry ()

@@ -103,10 +103,12 @@ let parse_cli_and_setup_logging () =
       ("-no-hud", Arg.Set no_hud, " with -dump-frame, the frame without its HUD")
     ]
   in
+  (* claude: the program's command line (Program.argv), as Native_loop_2d *)
+  let argv = Program.argv () in
   let usage =
     Printf.sprintf
       "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-dump-audio file] [-debug-keys] [-raytrace] [-rt-brute] [-rt-samples n] [-rt-bounces n] [-dump-size w h] [-no-hud] [name=value|name]..."
-      Sys.argv.(0)
+      argv.(0)
   in
   (* claude: the arguments without a dash are the app's flags (see
    * Playground.flags), read by the program's main through
@@ -116,7 +118,7 @@ let parse_cli_and_setup_logging () =
    * back to run_app3d ~flags: nothing to do with them here. Parsed with
    * our own [current] rather than Arg.parse's global one, which that
    * earlier parse may have left at the end of argv. *)
-  (try Arg.parse_argv ~current:(ref 0) Sys.argv cli_flags (fun _app_flag -> ()) usage with
+  (try Arg.parse_argv ~current:(ref 0) argv cli_flags (fun _app_flag -> ()) usage with
   | Arg.Bad msg ->
       prerr_string msg;
       exit 2

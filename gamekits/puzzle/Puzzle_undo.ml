@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* See Undo.mli *)
+(* See Puzzle_undo.mli *)
 
 type 'a t = { now : 'a; past : 'a list }
 

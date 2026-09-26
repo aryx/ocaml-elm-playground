@@ -1,2 +1,2 @@
-(* The worked examples of Push.mli, Undo.mli and Sokoban.mli *)
+(* The worked examples of Push.mli, Puzzle_undo.mli and Sokoban.mli *)
 val tests : Testo.t list

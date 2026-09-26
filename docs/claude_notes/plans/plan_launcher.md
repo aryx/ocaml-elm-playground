@@ -220,10 +220,10 @@ thumbnail.
 
 ### Name clashes (fixes 4)
 
-Rename one of the two `Undo`s (`Puzzle_undo`, or `Doc_undo`). This
-touches only its users. A dune rule in the launcher's directory fails
-the build with a readable message if another clash comes later, though
-the linker already fails anyway.
+Rename one of the two `Undo`s. Done (step 2): the puzzle kit's, the
+one with fewer users, is now `Puzzle_undo` (TinySokoban, TinySokobanEd,
+TinyBabaIsYou, TinyBraid). A later clash fails tinybox's link, which
+names the module.
 
 ### Where the launcher gets its data
 
@@ -317,7 +317,9 @@ under a "system" or new "launcher" row, with its golden frame:
    test-lite`. (Pure refactor, no behaviour change.)
 2. `Program.argv ()`, `flags` and the native loops reading
    `Program.argv`; the `Undo` rename. (`Shape_render_software`: done,
-   copied as `Hud_render`, see "Which 2D backend".)
+   copied as `Hud_render`, see "Which 2D backend".) Done 2026-09-27:
+   `Program.run name ~argv` sets the argv the loops parse (lazily,
+   inside the entry, so after `run`); `Unit_program` in core's tests.
 3. `launcher/` with a text-only launcher: `tinybox list`, `tinybox
    <Name>`. The binary exists and every program runs from it. Measure
    start time and binary size, and fix slow top levels.

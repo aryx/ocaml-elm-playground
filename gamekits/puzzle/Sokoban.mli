@@ -23,7 +23,7 @@
    playing it), and the solver because a level editor's first question
    is whether the level can be solved at all.
 
-   Part of the puzzle kit (gamekits/puzzle/), with Push.mli and Undo.mli. *)
+   Part of the puzzle kit (gamekits/puzzle/), with Push.mli and Puzzle_undo.mli. *)
 
 (*****************************************************************************)
 (* {1 The rules} *)

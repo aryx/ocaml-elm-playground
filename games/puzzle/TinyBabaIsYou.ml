@@ -30,7 +30,7 @@
  * memory, to check.)
  *
  * What it uses: the puzzle kit (gamekits/puzzle/: Push, rows of things
- * pushed, no limit; Undo, the boards before), Scene2d. Not Tilemap: a
+ * pushed, no limit; Puzzle_undo, the boards before), Scene2d. Not Tilemap: a
  * cell can hold several things (Baba on the flag, a rock on the water),
  * so the board is a list of objects with their cells.
  *
@@ -160,11 +160,11 @@ let no_you (b : board) : bool = let rs = rules b in not (List.exists (fun o -> i
 (* The model, update *)
 (*****************************************************************************)
 
-type play = { level : int; boards : board Undo.t }
+type play = { level : int; boards : board Puzzle_undo.t }
 type scene = Title | Playing of play | Won_level of play | The_end
 type model = scene Scene2d.t
 
-let start (level : int) : play = { level; boards = Undo.start (load level) }
+let start (level : int) : play = { level; boards = Puzzle_undo.start (load level) }
 let initial_model : model = Scene2d.start Title
 
 let update (computer : computer) (s : model) : model =
@@ -180,8 +180,8 @@ let update (computer : computer) (s : model) : model =
       in
       let p =
         match dir with
-        | Some d -> { p with boards = Undo.record (turn p.boards.now d) p.boards }
-        | None -> if key "z" then { p with boards = Undo.undo p.boards } else if key "r" then start p.level else p
+        | Some d -> { p with boards = Puzzle_undo.record (turn p.boards.now d) p.boards }
+        | None -> if key "z" then { p with boards = Puzzle_undo.undo p.boards } else if key "r" then start p.level else p
       in
       if won p.boards.now then (Audio.play Audio.coin; Scene2d.go (Won_level p) s) else { s with scene = Playing p }
   | Won_level p ->

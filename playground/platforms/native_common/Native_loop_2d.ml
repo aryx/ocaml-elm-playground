@@ -151,12 +151,15 @@ let parsed_cli : string list Lazy.t = lazy (
     "-dump-size", Arg.Tuple [ Arg.Int ignore; Arg.Int ignore ], "<w> <h> (3D, software backend) with -dump-frame, the frame at that size";
     "-no-hud", Arg.Unit (fun () -> ()), " (3D, software backend) with -dump-frame, no HUD";
   ] in
+  (* claude: the program's command line, not the process's: in tinybox,
+   * without the launcher's own words (Program.argv) *)
+  let argv = Program.argv () in
   let usage =
     spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-dump-audio file] [name=value|name]..."
-      Sys.argv.(0)
+      argv.(0)
   in
   (* what Arg.parse does on an error or -help *)
-  (try Arg.parse_argv ~current:(ref 0) Sys.argv cli_flags (fun s -> app_args := s :: !app_args) usage with
+  (try Arg.parse_argv ~current:(ref 0) argv cli_flags (fun s -> app_args := s :: !app_args) usage with
   | Arg.Bad msg -> prerr_string msg; exit 2
   | Arg.Help msg -> print_string msg; exit 0);
   Logs.set_reporter (Logs.format_reporter ());

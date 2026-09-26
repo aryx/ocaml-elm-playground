@@ -48,7 +48,7 @@
  * its music (from descriptions of it; to check).
  *
  * What it uses: Tilemap (the level, and the blocks' strings), Scene2d.
- * Not the puzzle kit's Push (nothing is pushed here) nor Undo: Stone
+ * Not the puzzle kit's Push (nothing is pushed here) nor Puzzle_undo: Stone
  * Age had none, and a mistake costs a life -- r starts the level again.
  *
  * Exercises: the slide drawn smoothly between cells; passwords; the

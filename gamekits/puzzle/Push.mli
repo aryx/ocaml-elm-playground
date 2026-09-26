@@ -17,7 +17,7 @@
    character of a Tilemap (TinySokoban), a list of objects
    (TinyBabaIsYou).
 
-   Part of the puzzle kit (gamekits/puzzle/), with Undo.mli. *)
+   Part of the puzzle kit (gamekits/puzzle/), with Puzzle_undo.mli. *)
 
 (* [chain ~blocked ~pushable ?limit from dir]: moving from the cell [from]
  * one cell in the direction [dir]: the cells whose contents are pushed

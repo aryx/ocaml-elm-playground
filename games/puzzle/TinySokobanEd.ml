@@ -46,14 +46,14 @@
  * at run time, native or in the browser.
  *
  * Uses: Tilemap (the level edited), Scene2d (keys pressed), the puzzle
- * kit (Sokoban, and Undo for the tests), Playground_platform.export
+ * kit (Sokoban, and Puzzle_undo for the tests), Playground_platform.export
  * with its capability (Cap.open_out: the only program of the genre
  * that writes a file). Not: File_menu (apps/office/'s, not a
  * game's), physics.
  *
  * Exercises: delete a level, move one up or down; Open and Save in the
  * store (Playground_platform.fetch/store) to keep work in progress;
- * undo in the editor (the kit's Undo, over the map); a solver that
+ * undo in the editor (the kit's Puzzle_undo, over the map); a solver that
  * searches pushes rather than moves, to answer for bigger levels; show
  * the solution played by itself.
  *)
@@ -90,7 +90,7 @@ let rows_of (map : Tilemap.t) : string list = Sokoban.trim (Tilemap.to_strings m
 (* The model *)
 (*****************************************************************************)
 
-type mode = Editing | Testing of Sokoban.board Undo.t
+type mode = Editing | Testing of Sokoban.board Puzzle_undo.t
 
 type editor = {
   (* the file: every level, the one edited as it was when chosen *)
@@ -182,7 +182,7 @@ let solve (e : editor) : editor =
 let test (e : editor) : editor =
   let rows = rows_of e.map in
   match Sokoban.problems rows with
-  | [] -> { e with mode = Testing (Undo.start (Sokoban.start tile_size rows)); said = "" }
+  | [] -> { e with mode = Testing (Puzzle_undo.start (Sokoban.start tile_size rows)); said = "" }
   | p :: _ -> { e with said = "cannot test: " ^ p }
 
 (* a new level after this one: an empty room *)
@@ -216,7 +216,7 @@ let update_editing (caps : < Cap.open_out >) (computer : computer) (s : model) (
   else if letter "e" then export caps e
   else update_mouse computer.mouse e
 
-let update_testing (s : model) (e : editor) (boards : Sokoban.board Undo.t) : editor =
+let update_testing (s : model) (e : editor) (boards : Sokoban.board Puzzle_undo.t) : editor =
   let pressed (key : keyboard -> bool) = Scene2d.pressed key s in
   let letter (l : string) = pressed (fun k -> Set_.mem l k.keys) in
   let dir =
@@ -230,9 +230,9 @@ let update_testing (s : model) (e : editor) (boards : Sokoban.board Undo.t) : ed
   | _ when pressed (fun k -> k.kenter) || letter "Escape" -> { e with mode = Editing }
   | Some d when not (Sokoban.solved boards.now) -> (
       match Sokoban.step boards.now d with
-      | Some b -> { e with mode = Testing (Undo.record b boards) }
+      | Some b -> { e with mode = Testing (Puzzle_undo.record b boards) }
       | None -> e)
-  | _ when pressed (fun k -> k.kbackspace) || letter "u" -> { e with mode = Testing (Undo.undo boards) }
+  | _ when pressed (fun k -> k.kbackspace) || letter "u" -> { e with mode = Testing (Puzzle_undo.undo boards) }
   | _ when letter "r" -> test e
   | _ -> e
 
@@ -289,7 +289,7 @@ let view_editing (e : editor) : shape list =
   @ [ text gray 1.6 "type a character, or paint with the mouse   arrows: cursor" |> move_y (-415.);
       text gray 1.6 "enter: test   s: solve   tab: next level   n: new   e: export" |> move_y (-445.) ]
 
-let view_testing (boards : Sokoban.board Undo.t) : shape list =
+let view_testing (boards : Sokoban.board Puzzle_undo.t) : shape list =
   let b = boards.now in
   let px, py = Tilemap.center b.map b.col b.row in
   [ group [ Tilemap.view Sokoban.tile b.map; Sokoban.player |> move px py ] |> move_y canvas_y;

@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* gamekits/puzzle: Push, Undo and Sokoban *)
+(* gamekits/puzzle: Push, Puzzle_undo and Sokoban *)
 
 let t = Testo.create
 let cells = Alcotest.(option (list (pair int int)))
@@ -26,10 +26,10 @@ let test_push () =
 
 (* undo's *)
 let test_undo () =
-  let h = Undo.undo (Undo.record 'c' (Undo.record 'b' (Undo.start 'a'))) in
+  let h = Puzzle_undo.undo (Puzzle_undo.record 'c' (Puzzle_undo.record 'b' (Puzzle_undo.start 'a'))) in
   Alcotest.(check char) "b now" 'b' h.now;
   Alcotest.(check (list char)) "a before" [ 'a' ] h.past;
-  Alcotest.(check char) "the start stays" 'a' (Undo.undo (Undo.undo h)).now
+  Alcotest.(check char) "the start stays" 'a' (Puzzle_undo.undo (Puzzle_undo.undo h)).now
 
 (* Sokoban's: the format read, written and trimmed *)
 let test_sokoban_format () =
@@ -52,4 +52,4 @@ let test_sokoban_solve () =
 
 let tests =
   Testo.categorize "kit_puzzle"
-    [ t "Push" test_push; t "Undo" test_undo; t "Sokoban's format" test_sokoban_format; t "Sokoban's solver" test_sokoban_solve ]
+    [ t "Push" test_push; t "Puzzle_undo" test_undo; t "Sokoban's format" test_sokoban_format; t "Sokoban's solver" test_sokoban_solve ]
