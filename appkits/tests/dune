@@ -15,6 +15,7 @@
    appkit_embed
    appkit_slides
    appkit_draw
+   appkit_sketch ; Sketch, Relax
    appkit_pim ; Ics, Vcard
    appkit_teletype ; Tty_hangman, Tty_guess
    basic ; Basic_parse, Basic_run, Basic_session

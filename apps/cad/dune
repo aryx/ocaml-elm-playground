@@ -1,0 +1,19 @@
+; claude: the CAD applications (CATALOG.md's section, and plan_cad.md):
+; the drawings that are models rather than pictures -- geometry that
+; keeps its own rules. TinySketchpad (Sketchpad, 1963), over
+; appkits/sketch. Laid out like graphics/: the programs here,
+; software/ for the golden frames, web/ for the browser.
+;
+; What else it might contain, each Tiny and after a famous original:
+;  - AutoCAD (1982): the command line, snaps, layers, blocks, DXF;
+;  - a parametric solid modeller (CATIA 1977, Pro/ENGINEER 1988): the
+;    history of features, re-run when a dimension changes.
+(executables
+  (names TinySketchpad)
+  (libraries
+    elm_playground
+    gui ; Widget, the knobs and the switch
+    appkit_sketch ; Sketch, Relax
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)

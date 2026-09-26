@@ -403,6 +403,10 @@ let scenes : Testutil_golden.scene list =
     (* a whole game as a map and one rule (Puzzlescript) *)
     ("examples/software/PuzzleScriptSokoban", "", 5);
     ("examples/software/PuzzleScriptBoulders", "", 5);
+    (* claude: 1963: sheet A, a honeycomb of instances of sheet B's
+     * hexagon, three of them sized and turned; the TX-2's scope drawing
+     * dots, the push buttons, the knobs *)
+    ("apps/cad/software/TinySketchpad", "", 5);
   ]
 
 (* claude: TinySimCity's starter town, built with the keys: a road, a
@@ -1669,6 +1673,10 @@ let flagged : Testutil_golden.flagged list =
     ("apps/pim/software/TinyPalmPilot", "address", 5, [ "app=address" ]);
     ("apps/pim/software/TinyPalmPilot", "todo", 5, [ "app=todo" ]);
     ("apps/pim/software/TinyPalmPilot", "memo", 5, [ "app=memo" ]);
+    (* claude: TinySketchpad's construction, sheet D: a rough hexagon,
+     * its corners on a circle and its sides equal, relaxed to a regular
+     * one, a sweep a frame *)
+    ("apps/cad/software/TinySketchpad", "relaxed", 30, [ "sheet=d" ]);
   ]
 
 (* claude: played and flagged: the games whose juice was written by
@@ -1834,6 +1842,21 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
       180,
       "space:2-3,up:40,right:90,down:140,s:60,d:110,w:150",
       [ "net=simulate"; "latency=100"; "netcode=1997" ] );
+    (* claude: TinySketchpad: the linkage's crank dragged round its
+     * circle, the rod and the other crank following; a quadrilateral
+     * drawn with the pen, closed on its first corner, then made a
+     * rectangle by HORIZONTAL, VERTICAL, EQUAL LENGTH and PARALLEL,
+     * their symbols by what they hold *)
+    ( "apps/cad/software/TinySketchpad",
+      "linkage",
+      40,
+      "at(-280;16):1-4,click:3-30,at(-300;10):5-6,at(-331;-5):7-9,at(-345;-30):10-12,at(-352;-56):13-15,at(-345;-82):16-18,at(-331;-107):19-21,at(-305;-122):22-24,at(-280;-128):25-40",
+      [ "sheet=c" ] );
+    ( "apps/cad/software/TinySketchpad",
+      "rectangle",
+      80,
+      "at(400;410):1-3,click:2,at(-300;-180):4-6,click:5,at(0;-170):7-9,click:8,at(20;-320):10-12,click:11,at(-310;-300):13-15,click:14,at(-300;-180):16-18,click:17,at(400;-8):19-21,click:20,at(400;220):22-24,click:23,at(-150;-175):25-27,click:26,at(400;182):28-30,click:29,at(-305;-240):31-33,click:32,at(400;68):34-36,click:35,at(-150;-175):37-39,click:38,at(-143;-310):40-42,click:41,at(400;144):43-45,click:44,at(-150;-175):46-48,click:47,at(-143;-310):49-51,click:50,at(250;300):52-80",
+      [ "sheet=b" ] );
   ]
 
 let tests = Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted ~flagged ~scripted_flagged scenes

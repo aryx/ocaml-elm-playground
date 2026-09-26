@@ -221,5 +221,6 @@
    %{project_root}/examples/software/TeletypeHangman.exe
    %{project_root}/examples/software/TextmodeSnake.exe
    %{project_root}/games/adventure/software/TinyWumpus.exe
+   %{project_root}/apps/cad/software/TinySketchpad.exe
  )
 )

@@ -389,6 +389,16 @@ palette that can turn (TinyDeluxePaint); and what the dots became with
 | [TinyDeluxePaint](apps/graphics/TinyDeluxePaint.ml) | app | Deluxe Paint (Dan Silva, Electronic Arts, 1985, on the Amiga) | A picture of 32 colours whose waterfall and fire move by the palette alone: Tab, and the colours cycle. | Indexed colour, a dot the number of a colour in a palette of the Amiga's 12 bits; colour cycling, a range of the palette turning at each frame, the picture untouched; the brush cut from the picture, its transparent colour the background's; symmetry; its file IFF ILBM, chunks (RIFF's ancestor), bitplanes, ByteRun1 (MacPaint's PackBits) and the cycling ranges. |
 | [TinyPhotoshop](apps/graphics/TinyPhotoshop.ml) | app | Photoshop 1.0 (Thomas and John Knoll, Adobe, 1990) | NASA's Blue Marble to retouch: select with the magic wand, adjust Levels or Hue/Saturation, filter, paint. | A photograph's 24 bits a dot and image processing as menus: point operations as tables of 256 (Levels with its histogram, Curves, Hue/Saturation in HSL), convolutions (blur, sharpen, emboss; the Gaussian separable; unsharp mask), Sobel's Find Edges, the median, interpolation (nearest, bilinear, bicubic); the selection as a mask a byte a dot, every operation applied through it, the wand a flood fill with a tolerance, feathering a blur of the mask; brushes as dabs with a hardness, a stroke's opacity uniform, the airbrush, rubber stamp and smudge; dialogs with a live preview; the picture drawn as tiles, only the changed ones sent again; and Photoshop 3.0's layers, each with its opacity and blend mode (Multiply, Screen, Overlay, Color...), flattened by Porter and Duff's over, a Layers palette, a photograph placed as a layer. |
 
+## CAD
+
+`apps/cad/`: the drawings that are models rather than pictures --
+geometry that keeps its own rules, constraints the program maintains,
+parts placed as instances of other drawings (`plan_cad.md`).
+
+| Program | Dir | After | In one line | What it brought |
+|---|---|---|---|---|
+| [TinySketchpad](apps/cad/TinySketchpad.ml) | app | Sketchpad (Ivan Sutherland, MIT Lincoln Laboratory's TX-2, 1963) | Draw with the light pen, then tell the drawing its rules: a rough hexagon becomes regular, a linkage moves. | The first interactive graphics program: the pen aiming at points and lines; items sharing their points; constraints kept by relaxation, one point at a time by least squares on numerical derivatives; masters and instances, a honeycomb of one hexagon; the window zoomed over a sheet bigger than the screen; the scope's dots. |
+
 ## PIM
 
 `apps/pim/`: the personal information managers -- the time, the
