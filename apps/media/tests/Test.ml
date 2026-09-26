@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"media" (fun _env -> Unit_media.tests)
+let () = Testo.interpret_argv ~project_name:"media" (fun _env -> Unit_media.tests @ Unit_winamp.tests)

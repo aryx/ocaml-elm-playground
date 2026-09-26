@@ -157,6 +157,10 @@ let scenes : Testutil_golden.scene list =
      * ABC round, as a piano roll (the note sounding lit, mid-note: its
      * scope and spectrum full) *)
     ("apps/media/software/TinyMediaPlayer", "", 80);
+    (* claude: 1998: Winamp's three windows in double size, our MP3
+     * playing (its title from the ID3 tag we gave it), the analyzer's
+     * bars and their peaks *)
+    ("apps/media/software/TinyWinamp", "", 40);
     (* 1994: a document of parts -- a text, a sheet and a picture side
      * by side, and a part of a kind nobody here can read, kept *)
     ("apps/office/software/TinyOpenDoc", "", 5);
@@ -1292,6 +1296,12 @@ let scripted : Testutil_golden.scripted list =
     (* and played: 57 frames in, row 8 (120 ms a row), the grid following
      * the playhead, the channels' volumes lit *)
     ("apps/music/software/TinySoundtracker", "playing", 60, "space:3");
+    (* claude: Winamp's EQ on its second preset (Rock), the curve the
+     * bands make, shuffle on, and the volume being dragged: its value
+     * where the title scrolls *)
+    ("apps/media/software/TinyWinamp", "eq", 40, "at(203;184):1-19,click:5,s:10,at(39;337):20-29,click:20-40,at(0;337):30-40");
+    (* claude: the analyzer clicked: the oscilloscope *)
+    ("apps/media/software/TinyWinamp", "scope", 40, "at(-151;362):1-40,click:3");
     (* the media player, n pressed to the next items: the module as a
      * tracker shows it, the recording's whole wave, our animated GIF *)
     ("apps/media/software/TinyMediaPlayer", "module", 60, "n:3,n:6,n:9");

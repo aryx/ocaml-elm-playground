@@ -1,10 +1,10 @@
 ; claude: unit tests for the media applications' machinery, run by
 ; 'make test' (dune runtest): each file of our own recognized by its
-; bytes and opened into what it holds
+; bytes and opened into what it holds; TinyWinamp's tags and EQ
 (test
  (name Test)
- (modules Test Unit_media)
- (libraries alcotest testo audio graphics_movie graphics_yuv graphics_mpeg1 media_player)
+ (modules Test Unit_media Unit_winamp)
+ (libraries alcotest testo audio audio_signal audio_mpeg graphics_movie graphics_yuv graphics_mpeg1 media_player)
 )
 
 ; claude: our clip as Y4M on stdout, for the script that has ffmpeg

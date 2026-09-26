@@ -455,6 +455,7 @@ pictures, and videos as `graphics/videos/` comes
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyMediaPlayer](apps/media/TinyMediaPlayer.ml) | app | Media Player (Microsoft, 1991), VLC (VideoLAN, 2001) | One player for every file this repository reads: recordings (WAV, MP2, MP3), tunes, modules, pictures, an animation, a video, and an .mpg with its sound. | A file's kind found from its bytes (magic numbers), not its name; each kind shown as what it is: a piano roll, a wave, a tracker's rows, a picture; a playlist, a scope and a spectrum. |
+| [TinyWinamp](apps/media/TinyWinamp.ml) | app | Winamp 2 (Nullsoft, 1998) | The MP3 player of the MP3 years in its three windows: the LCD time, the title scrolling, the analyzer, the ten-band equalizer and the playlist. | A song's title from its ID3 tags, not its name; a graphic EQ heard as it is dragged, its curve the real response; the analyzer's bars in decibels on a log scale of frequencies, with falling peaks; the skin as data, its 5 x 6 font. |
 
 ## Internet
 

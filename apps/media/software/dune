@@ -2,10 +2,11 @@
 ; the golden frames (see examples/software/dune): ../Foo.ml reused
 ; as-is by a build-time copy, not a committed duplicate.
 (copy_files ../TinyMediaPlayer.ml)
+(copy_files ../TinyWinamp.ml)
 
 (executables
-  (names TinyMediaPlayer)
-  (modules TinyMediaPlayer)
+  (names TinyMediaPlayer TinyWinamp)
+  (modules TinyMediaPlayer TinyWinamp)
   (libraries
     elm_core
     elm_playground

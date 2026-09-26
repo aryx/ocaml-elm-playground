@@ -5,20 +5,22 @@
 ; So far TinyMediaPlayer, after Windows' Media Player and VLC: every
 ; kind of file the repository reads, sounds, tunes and pictures, each
 ; shown as what it is, and videos as graphics/videos/ comes
-; (plan_video_teaching.md). What it might contain next, each Tiny and
-; after a famous original: an image viewer (ACDSee, IrfanView: a
-; folder of pictures as thumbnails), a video editor (the cut, the fade,
-; the frames on a timeline).
+; (plan_video_teaching.md); and TinyWinamp, after Winamp 2: songs only,
+; by their tags, through a ten-band equalizer. What it might contain
+; next, each Tiny and after a famous original: an image viewer (ACDSee,
+; IrfanView: a folder of pictures as thumbnails), a video editor (the
+; cut, the fade, the frames on a timeline).
 
 ; what a file is and what it holds (Media), and media of our own to
 ; start from (Our_media): the player's machinery, apart from its screen,
-; for the tests
+; for the tests; and TinyWinamp's: an MP3's tags (Id3) and the ten-band
+; equalizer (Graphic_eq)
 (library
  (name media_player)
  (wrapped false)
- (modules Media Our_media Our_pictures)
+ (modules Media Our_media Our_pictures Id3 Graphic_eq)
  (libraries
-   audio audio_wav audio_midi audio_abc audio_mod audio_mpeg
+   audio audio_synthesis audio_wav audio_midi audio_abc audio_mod audio_mpeg
    graphics_rgba graphics_png graphics_gif graphics_jpeg graphics_xpm
    graphics_movie graphics_y4m graphics_fli graphics_avi graphics_mpeg1 graphics_mpeg_system
    graphics_core graphics_2d ; Our_media's clip, filmed by the 2D rasterizer
@@ -56,8 +58,8 @@
      %{project_root}/libs/graphics/videos/tests/clips/ball_and_square.mpg))))
 
 (executables
-  (names TinyMediaPlayer)
-  (modules TinyMediaPlayer)
+  (names TinyMediaPlayer TinyWinamp)
+  (modules TinyMediaPlayer TinyWinamp)
   (libraries
     elm_core
     elm_playground

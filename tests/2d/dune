@@ -53,6 +53,7 @@
    %{project_root}/apps/music/software/TinyReface.exe
    %{project_root}/apps/music/software/TinySoundtracker.exe
    %{project_root}/apps/media/software/TinyMediaPlayer.exe
+   %{project_root}/apps/media/software/TinyWinamp.exe
    %{project_root}/apps/office/software/TinyOpenDoc.exe
    %{project_root}/apps/office/software/TinyPowerPoint.exe
    %{project_root}/apps/office/software/TinyHyperCard.exe
