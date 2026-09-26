@@ -60,7 +60,9 @@ let site (port : int) (request_line : string) : string =
   | "GET /new?v=2 HTTP/1.1" ->
       "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n4\r\nWiki\r\n5\r\npedia\r\n0\r\n\r\n"
   | "GET /loop HTTP/1.1" -> Printf.sprintf "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:%d/loop\r\n\r\n" port
-  | "GET /secure HTTP/1.1" -> "HTTP/1.1 301 Moved Permanently\r\nLocation: https://example.com/\r\n\r\n"
+  (* claude: to https:// where nobody listens, so that following it
+   * needs no Internet *)
+  | "GET /secure HTTP/1.1" -> "HTTP/1.1 301 Moved Permanently\r\nLocation: https://127.0.0.1:1/\r\n\r\n"
   | _ -> "HTTP/1.1 404 Not Found\r\nContent-Length: 9\r\n\r\nnot here\n"
 
 let respond (answer : int -> string -> string) (port : int) (request_line : string) (fd : Unix.file_descr) : unit =

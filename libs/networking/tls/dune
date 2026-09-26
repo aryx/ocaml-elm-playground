@@ -1,0 +1,13 @@
+; claude: TLS 1.3 from scratch (plan_tls.md): Asn1 (DER), Pem, X509
+; (certificates and their chains), Tls13 (the client's handshake and
+; records). Pure OCaml, bytes in and bytes out, no sockets
+; (networking/unix/Tls_client has them); the primitives are crypto's.
+(library
+ (name networking_tls)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   crypto ; the hashes, ciphers and signatures
+   elm_core ; Civil and Clock (certificates' dates), Base64 (PEM)
+ )
+)

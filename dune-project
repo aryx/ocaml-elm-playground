@@ -104,7 +104,6 @@
     (ocaml (>= "4.08.0"))
     logs
     tsdl
-    ocurl
     (elm_playground (= :version))
     (testo :with-test)
     (alcotest :with-test)

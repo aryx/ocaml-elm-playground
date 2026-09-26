@@ -282,6 +282,33 @@ Result: the article read and laid out in 0.7 s, a relayout 0.3 s
 building every shape of the page (0.25 s), the next thing to make lazy.
 The old lines are in comments beside the memos.
 
+## 12. The inner loop allocates: TLS's big numbers
+
+Our TLS 1.3 (plan_tls.md) checks a certificate chain with ECDSA over
+P-256 and P-384: two scalar multiplications a signature, each a few
+hundred point doublings and additions, each a dozen Montgomery
+multiplications and as many modular additions (`Bignum`). Measured
+with a small program timing one check of a real root's self-signature
+(`X509.signed_by` on GTS Root R4), and `tls_get` fetching github.com
+(two handshakes and its 580 KB page; user time):
+
+| change | ECDSA P-384 | `tls_get https://github.com/` |
+|---|---|---|
+| first version | 41 ms | 0.36 s |
+| `redc_mul`'s modulus padded once, in the `modulus` record, not at each product; `mont_add`, `mont_sub` as loops on the fixed n limbs, not add/sub/compare on normalized copies padded again (three arrays each) -- both together | 31 ms | |
+| a chain already checked in this program not checked again (`Tls_client.verified`, until its first certificate expires): the second handshake checks only CertificateVerify | 31 ms | 0.26 s |
+
+The lesson is section 1's again: the arithmetic was right and simple,
+and each call made new arrays -- in a loop run thousands of times a
+signature. The cache is section 11's: a page's twenty pictures from
+one host were twenty identical chains checked.
+
+Not done: a windowed scalar multiplication (a quarter of the additions),
+Shoup's 4-bit tables for GCM's GHASH (it is a bit at a time, 300 ms for
+500 KB; ChaCha20-Poly1305, which we offer first and every server we
+tried chose, is 31 ms), the P-256 prime's special reduction. Each
+would cost the readable version its place in the code.
+
 ## The .mpg decoder, step by step
 
 60 frames of a 352 x 288 VCD .mpg (`albator_78_debut.mpg`), video only,

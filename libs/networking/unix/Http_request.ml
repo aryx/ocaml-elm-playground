@@ -70,6 +70,10 @@ let resolved (t : t) (host : string) (addresses : Unix.addr_info list) : state =
 (* the name resolved (the one blocking call: here, or on the resolver's
  * thread), the connection begun *)
 let begin_request (t : t) : state =
+  (* https:// is Http_client's, blocking, which Commands runs on a
+     thread: this machine speaks to plain sockets only *)
+  if t.url.scheme = Some "https" then Done (Error (Bad_url (Url.to_string t.url ^ ": https:// is Http_client's (blocking), not this machine's")))
+  else
   match Http_client.prepare ?post:t.post t.url with
   | Error why -> Done (Error (Bad_url why))
   | Ok (host, port, request) -> (

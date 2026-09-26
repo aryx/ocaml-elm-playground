@@ -2,11 +2,12 @@
  * performed while the frames go on: each request an Http_request,
  * stepped once a frame by the loop (Native_loop_2d), its answer given
  * back as the message the command asked for; an https:// one fetched
- * by curl at once, blocking, until TLS is ours. Cmd.Msg's message is
+ * by Http_client at once, blocking, over our own TLS 1.3 (Tls_client).
+ * Cmd.Msg's message is
  * given back at the next frame.
  *
  * With threads (the flag threads=on, TinyNetscape's), what still
- * blocks is done on a pool of threads (Worker): curl's fetches, and
+ * blocks is done on a pool of threads (Worker): the https:// fetches, and
  * the names Http_request resolves; the frames go on meanwhile. *)
 
 (* the commands in flight *)

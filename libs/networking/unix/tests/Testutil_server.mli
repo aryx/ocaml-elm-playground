@@ -9,7 +9,8 @@
 val with_server : (int -> string -> Unix.file_descr -> unit) -> (int -> unit) -> unit
 
 (* canned answers: /old redirects (relatively) to /new?v=2, chunked
- * "Wikipedia"; /loop redirects to itself; /secure to https://; others
+ * "Wikipedia"; /loop redirects to itself; /secure to https://127.0.0.1:1/
+ * (nobody there); others
  * are 404 "not here\n" *)
 val site : int -> string -> string
 

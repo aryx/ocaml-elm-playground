@@ -1,8 +1,7 @@
 (* Getting an image file, from the disk or over the network, for
  * Image_decode and Texture_decode (and the native platforms' sounds):
- * http:// by our own client (networking/unix/Http_client.mli),
- * https:// still by curl, until TLS is ours too
- * (plan_dependencies_remaining.md, section 2). *)
+ * http:// and https:// by our own client (networking/unix/Http_client.mli),
+ * https:// over our own TLS 1.3 (Tls_client.mli; plan_tls.md). *)
 
 (* Reaching the network is the program's authority, not the platform's
  * (plan_caps.md): a URL is downloaded only once [grant] has been given

@@ -552,13 +552,14 @@ many sockets: the **event loop**, as in `Http_server`.
 
 **What an event loop can't hide.** Two calls block and are no state
 machine: the host's name resolved (`getaddrinfo`, the C library asking
-a DNS server) and curl's `https://`, the whole transfer. Measured on
+a DNS server) and, then, curl's `https://`, the whole transfer (now
+our own TLS's, `plan_tls.md`, as blocking). Measured on
 TinyNetscape, the frame that asks for the page: 64 ms for
 `http://info.cern.ch/`'s name, 568 ms for `https://example.com/`,
 the window frozen that long. So those go to **threads**, as Netscape
 did on NSPR's: `Worker`, a pool of four, each thread taking a job from
 a queue, running it, leaving its result; the frame polls the job as it
-steps a socket (`Http_request`'s `Resolving` state; `Commands`' curl).
+steps a socket (`Http_request`'s `Resolving` state; `Commands`' `https://`).
 Measured again: no frame over 50 ms.
 
 ```
@@ -572,10 +573,13 @@ Measured again: no frame over 50 ms.
 
 **Concurrency, not parallelism.** OCaml 4.14's threads share one
 runtime lock: only the thread holding it runs OCaml code, and a thread
-gives it up in a blocking system call (the DNS query, a read, curl's
-transfer, the frame loop's sleep). That is exactly when another has
+gives it up in a blocking system call (the DNS query, a read, the frame
+loop's sleep). That is exactly when another has
 something to do, so waiting overlaps; computing does not -- a JPEG
-decoded on a thread would take the frame's time all the same. Running
+decoded on a thread would take the frame's time all the same, and so
+does our TLS's arithmetic (a handshake's signatures, some 30 ms each,
+where curl's, in C, left the lock free: `notes_opti_ocaml.md` §12).
+Running
 OCaml on several cores at once is OCaml 5's domains. And the queue and
 each result, touched by two threads, are read and written under a
 mutex: without it the lock would still make each word's write whole,

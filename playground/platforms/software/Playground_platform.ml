@@ -172,6 +172,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network (
    * (WebSocket), and Universe's worlds *)
   Transport.set_connect Connect.connect;
   Transport.set_tunnel Tls_tunnel.connect;
+  Transport.set_tls (fun caps ~host ~port -> Tls_client.connect_lines caps ~host ~port);
   (* the app's choices are the starting values; the keys can change them *)
   options :=
     { !options with antialiasing = rendering.antialiasing; bilinear = rendering.smooth_images };

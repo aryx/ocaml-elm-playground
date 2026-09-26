@@ -21,8 +21,7 @@
    graphics_png ; our own PNG reader
    graphics_gif ; our own GIF reader
    graphics_jpeg ; our own JPEG reader
-   networking_unix ; Http_client, for http://
+   networking_unix ; Http_client, for http:// and https:// (our own TLS)
    caps ; the program's Cap.network, granted (Download.grant)
-   curl ; for https://
  )
 )

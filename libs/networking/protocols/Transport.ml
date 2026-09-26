@@ -26,3 +26,7 @@ let tunnel_installed : (Cap.exec -> host:string -> port:int -> (t, string) resul
 
 let set_tunnel f = tunnel_installed := f
 let tunnel (caps : < Cap.exec ; .. >) ~(host : string) ~(port : int) : (t, string) result = !tunnel_installed (caps :> Cap.exec) ~host ~port
+
+let tls_installed : (Cap.network -> host:string -> port:int -> (t, string) result) ref = ref (fun _ ~host:_ ~port:_ -> Error "no TLS on this platform")
+let set_tls f = tls_installed := f
+let tls (caps : < Cap.network ; .. >) ~(host : string) ~(port : int) : (t, string) result = !tls_installed (caps :> Cap.network) ~host ~port

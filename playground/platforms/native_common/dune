@@ -14,7 +14,7 @@
 ; (package ...) field installs each as an internal part of
 ; elm_playground_software, the only package all its users can share:
 ; - not elm_playground (or elm_playground_3d): the web backends depend
-;   on it, and their users would have to install tsdl and ocurl;
+;   on it, and their users would have to install tsdl;
 ; - not elm_playground_native: elm_playground_software would then
 ;   depend on it, hence on cairo2, when it must be Cairo-free.
 ; The caveat: elm_playground_native (Cairo) now depends on
@@ -31,8 +31,7 @@
  (modules Input_script Native_loop_2d Store Commands)
  (libraries
    unix
-   networking networking_unix ; Http_request, for the Cmd.Http_get of Commands
-   curl ; its https://, until TLS is ours
+   networking networking_unix ; Http_request and Http_client (https://, our TLS), for the Cmd.Http_get of Commands
    caps ; the Cap.network a Cmd.Http_get carries
    logs
    tsdl

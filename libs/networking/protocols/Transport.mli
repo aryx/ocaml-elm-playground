@@ -44,3 +44,10 @@ val connect : < Cap.network ; .. > -> role -> (t, string) result
  * which cannot run programs) an Error saying so. *)
 val set_tunnel : (Cap.exec -> host:string -> port:int -> (t, string) result) -> unit
 val tunnel : < Cap.exec ; .. > -> host:string -> port:int -> (t, string) result
+
+(* TLS 1.3, ours (Tls13.mli, Tls_client.mli): lines to [host]:[port]
+ * inside TLS, the server's certificate checked with the system's roots;
+ * installed by the native 2D platforms, an Error elsewhere (a browser
+ * does its own TLS, and gives a page no socket) *)
+val set_tls : (Cap.network -> host:string -> port:int -> (t, string) result) -> unit
+val tls : < Cap.network ; .. > -> host:string -> port:int -> (t, string) result

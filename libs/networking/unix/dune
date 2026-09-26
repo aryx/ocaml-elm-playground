@@ -14,6 +14,7 @@
    threads.posix ; Worker's pool
    caps ; Cap.network, which every function opening a socket takes
    networking ; Url, Http, and Smtp, Pop3, Mbox (Mail_server)
+   networking_tls ; Tls13, X509, Pem (Tls_client)
    random ; Lehmer, Relay_client's masks
  )
 )

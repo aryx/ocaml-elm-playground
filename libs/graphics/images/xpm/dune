@@ -1,7 +1,7 @@
 ; claude: XPM, pictures as text (a palette and rows of characters),
 ; read and written by our own code: the sprites' file format (see
 ; Xpm.mli, and Sprite.of_xpm). Pure OCaml, like png/, gif/ and jpeg/
-; (graphics_images, which loads them, needs curl, C code), so the web
+; (graphics_images, which loads them, needs Unix's sockets), so the web
 ; backend can use it too. A private library (see
 ; graphics/core/dune), installed as part of elm_playground, whose
 ; Sprite uses it.

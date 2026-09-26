@@ -15,13 +15,10 @@
      status 301: again, with Url.resolve of the Location, at most
      [max_redirects] times (5 by default; Firefox and Chrome stop at 20)
 
-   A URL of another scheme is refused, https:// included: HTTP inside
-   TLS (RFC 8446), the encryption and the server's certificate checked,
-   is a protocol of its own not written yet
-   (plan_dependencies_remaining.md, section 2). A redirection to
-   https:// -- what most http:// sites answer today -- is refused the
-   same way, with the new URL in the message.
-
+   https:// is the same request inside TLS, our own TLS 1.3
+   (Tls_client.mli, Tls13.mli): the server's certificate checked with
+   the system's roots, then the same bytes, encrypted. A URL of
+   another scheme is refused.
    This one blocks: the program waits, doing nothing else, until the
    answer is in -- the simple version, fine for a file loaded once
    (Download.mli). Http_request.mli is the same request that doesn't
@@ -32,8 +29,12 @@
  * a response that doesn't parse, too many redirections *)
 val get : ?max_redirects:int -> ?timeout:float -> < Cap.network ; .. > -> string -> (Http.response, string) result
 
+(* the same, and the URL the redirections led to; with [post] (its
+ * content type and body), the first request a POST *)
+val fetch : ?post:string * string -> ?max_redirects:int -> ?timeout:float -> < Cap.network ; .. > -> string -> (string * Http.response, string) result
+
 (* what to connect to and what to send for [url]: the host for the
  * resolver, the port, the request's bytes (a GET; a POST of [post], its
- * content type and body); Error for a URL that isn't http:// (the
- * message says why) *)
+ * content type and body); Error for a URL that isn't http:// or
+ * https:// (the message says why) *)
 val prepare : ?post:string * string -> Url.t -> (string * int * string, string) result

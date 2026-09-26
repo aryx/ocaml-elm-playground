@@ -31,14 +31,14 @@ let tests (caps : < Cap.network ; .. >) =
                   Alcotest.(check int) "status" 404 r.status;
                   Alcotest.(check string) "body" "not here\n" r.body
               | Error e -> Alcotest.fail e));
-      Testo.create "refused: too many redirections, https" (fun () ->
+      Testo.create "refused: too many redirections; https:// followed, into TLS" (fun () ->
           Testutil_server.(with_server (respond site)) (fun port ->
               Alcotest.(check bool) "a loop" true (Result.is_error (Http_client.get caps (Testutil_server.url port "/loop")));
-              (match Http_client.get caps (Testutil_server.url port "/secure") with
-              | Error e ->
-                  Alcotest.(check bool) "the new URL in the message" true (String.starts_with ~prefix:"https://example.com/" e)
-              | Ok _ -> Alcotest.fail "followed to https");
-              Alcotest.(check bool) "https" true (Result.is_error (Http_client.get caps "https://example.com/"))));
+              (* https:// is ours now (Tls_client): the redirection is
+                 followed, and fails reaching a port where nobody listens *)
+              match Http_client.get caps (Testutil_server.url port "/secure") with
+              | Error e -> Alcotest.(check bool) ("TLS's connection refused: " ^ e) true (String.starts_with ~prefix:"can't reach 127.0.0.1:1" e)
+              | Ok _ -> Alcotest.fail "nobody listens there"));
       Testo.create "a closed port" (fun () ->
           (* a port the kernel just gave us, and closed again: nobody listens *)
           let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in

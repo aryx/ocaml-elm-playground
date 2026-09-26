@@ -32,7 +32,7 @@ The path that should end up owning everything above the OS.
 
 | borrowed | what it still does for us | where | ours one day? |
 |---|---|---|---|
-| **curl** (ocurl) | downloads an image, texture or sound given as a URL | `Download.ml` (for `Image_decode`, `Texture_decode`, and the two native `Playground_platform`s' audio fetcher) | **yes, next**: section 2 |
+| ~~**curl** (ocurl)~~ | nothing any more (2026-09-26): `https://` is `Http_client` over our own TLS 1.3, `Tls_client` ([`plan_tls.md`](plan_tls.md)) | -- | **done** |
 | **SDL2** (tsdl) | the window and blitting our framebuffer to it (`get_window_surface`, `update_window_surface`); keyboard, mouse and text-input events; the sound card (`open_audio_device`, `queue_audio`: our mixer's samples, SDL only plays them) | `Native_loop_2d.ml`, `Native_loop_3d.ml` | no: the OS boundary. A "TinyX11" client (the X protocol over a Unix socket) would be the one teaching version, Linux only, much later |
 | **logs** | logging | `native_common`, `graphics/images` | not worth it: no idea in it |
 | **unix** | `gettimeofday`, and tomorrow the sockets | `native_common`, a few old games (`Pong`, `Asteroid`, `Tetris`) | no: the OCaml runtime's own boundary |
