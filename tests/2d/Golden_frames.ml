@@ -1610,6 +1610,9 @@ let flagged : Testutil_golden.flagged list =
     (* claude: a reply to the lunch being written: Eudora's composition
      * window, the quote under its "At ..., Alice wrote:" (phase 3) *)
     ("apps/internet/software/TinyEudora", "compose", 5, [ "compose=reply" ]);
+    (* claude: In by conversation (Mail_thread, Zawinski's algorithm):
+     * the plan's five replies nested by their References (phase 7) *)
+    ("apps/internet/software/TinyEudora", "threads", 5, [ "threads=on" ]);
     ("apps/internet/software/TinyMosaic", "pretty", 5, [ "url=about:history"; "width=600"; "wrap=pretty" ]);
     (* claude: the built-in fill-out form, its controls in Motif's look *)
     ("apps/internet/software/TinyMosaic", "form", 5, [ "url=about:form" ]);

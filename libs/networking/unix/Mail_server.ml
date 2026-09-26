@@ -150,7 +150,8 @@ let uid (e : Mbox.entry) : string = String.sub (Digest.to_hex (Digest.string (e.
 
 let pop_line (t : t) (server : Server.t) (id : int) (p : pop) (line : string) : unit =
   let say s = Server.send server id s in
-  let ok s = say ("+OK " ^ s) and err s = say ("-ERR " ^ s) in
+  let ok s = say (if s = "" then "+OK" else "+OK " ^ s) and err s = say ("-ERR " ^ s) in
+  let messages n = Printf.sprintf "%d message%s" n (if n = 1 then "" else "s") in
   let words = String.split_on_char ' ' (String.trim line) in
   let verb = String.uppercase_ascii (List.hd words) and arg = List.nth_opt words 1 in
   (* the messages not marked, with their numbers *)
@@ -172,7 +173,7 @@ let pop_line (t : t) (server : Server.t) (id : int) (p : pop) (line : string) : 
           if right then (
             let drop = maildrop t u in
             p.drop <- Some drop;
-            ok (Printf.sprintf "%s's maildrop has %d messages" u (List.length drop)))
+            ok (Printf.sprintf "%s's maildrop has %s" u (messages (List.length drop))))
           else err "invalid password")
   | "QUIT", None ->
       ok "bye";
@@ -186,7 +187,7 @@ let pop_line (t : t) (server : Server.t) (id : int) (p : pop) (line : string) : 
       match arg with
       | Some _ -> ( match message drop with Some e -> ok (item (Option.get (Option.bind arg int_of_string_opt), e)) | None -> err "no such message")
       | None ->
-          ok (Printf.sprintf "%d messages" (List.length (live drop)));
+          ok (messages (List.length (live drop)));
           List.iter (fun x -> say (item x)) (live drop);
           say ".")
   | "RETR", Some drop -> (

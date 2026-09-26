@@ -35,6 +35,16 @@ let tests =
           Alcotest.(check bool) "quoted-printable, joined" true (Mime.text (nth 9) |> fun t -> String.length t > 0 && not (String.contains t '='));
           Alcotest.(check bool) "the From line unquoted" true
             (List.mem "From the desk of the director: the mail server stays up all" (String.split_on_char '\n' (nth 10).body)));
+      Testo.create "In's threads: the plan's five in one tree" (fun () ->
+          let subjects =
+            Mail_thread.of_mail (fun (e : Mbox.entry) -> e.mail) inbox
+            |> Mail_thread.flatten
+            |> List.filter_map (fun ((e : Mbox.entry), depth) ->
+                   match Mail.message_ids (Option.value (Mail.get e.mail "message-id") ~default:"") with
+                   | [ id ] when String.length id > 4 && String.sub id 0 4 = "plan" -> Some (Printf.sprintf "%d %s" depth (String.sub id 0 5))
+                   | _ -> None)
+          in
+          Alcotest.(check (list string)) "nested by References" [ "0 plan1"; "1 plan2"; "2 plan3"; "3 plan5"; "2 plan4" ] subjects);
       Testo.create "the nicknames: four cards, team a list of three" (fun () ->
           let cards = Vcard.of_string Our_mail.nicknames in
           Alcotest.(check (list string)) "names" [ "Alice"; "Carol"; "Dave"; "team" ] (List.map (fun (c : Vcard.card) -> c.full_name) cards);

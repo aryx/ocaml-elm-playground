@@ -418,7 +418,10 @@ no account, `nobody@example.invalid`: POP3 answers "[AUTH] Username
 and password not accepted.", SMTP "535 5.7.8 Username and Password not
 accepted", the message staying queued -- the whole path, TLS
 included, working; reading a real mailbox is for the author, with
-their app password.
+their app password. **Later the same night**: TLS became ours
+(`plan_tls.md`), and `account=gmail` uses it by default -- POP3 and
+SMTP answered by Gmail through our own TLS 1.3; the tunnel is kept
+behind `tls=openssl`.
 
 **Phase 6 done** (2026-09-26): `Server.listen ?lines:true`, plain TCP
 -- no handshake, a message a line, CR LF taken off and put back -- so
@@ -434,6 +437,40 @@ Python's smtplib and poplib (a relay refused with our 550, STAT, UIDL,
 RETR). Thunderbird itself is for the author: account at localhost,
 POP3 1100, SMTP 2525, no encryption, any password. Next: 7, filters
 and threads.
+
+**Phase 7 done** (2026-09-26): `Mail_thread` (`mail/`, 190 lines),
+Zawinski's algorithm step by step -- containers, the References
+chains linked with no loop, the roots, the empty containers pruned
+(kept at the top to hold several replies to a message never
+received), the roots grouped by subject (`base_subject`: Re:, RE:,
+Re[2]:, Fwd:, Aw:), brothers by date; generic over the message
+(`threads ~id ~references ~subject ~date`), `of_mail` for Mail.t,
+`flatten` for a list. `Unit_mail_thread`: the thread of five in any
+order, a missing parent (two replies: an empty container; one:
+promoted; a missing middle skipped), grouping by subject, a loop
+refused, an id twice kept apart (the essay's rule; my first test had
+called that a loop). `Unit_our_mail`: In's plan thread nested.
+TinyEudora: t / Special > Threads / threads=on, a reply's subject
+indented by its depth (the order is by instant, so Carol's 5:40 PM
+-0700 comes after Elodie's 7:05 PM +0200); filters, Eudora 1.4's: a
+header, a word, a mailbox, on arriving mail and by Filter Messages,
+a mailbox named by a filter made on the way, Special > Filters to
+add and remove, kept in the store; built in, To: "tiny-list" into
+tiny-list (the digest). Fixed on the way: the store's reading skipped
+any mailbox with a '-' in its name (to keep the Gmail account's files
+apart), which would have lost tiny-list at the next start -- now only
+the other accounts' prefixes are skipped. Golden frame
+`TinyEudora_threads.png`. Next: 8, the tutorial.
+
+**Phase 8 done** (2026-09-26): `tutorials/notes_mail.md` -- mail as
+three formats and two protocols, the envelope, the dot, why POP
+deletes at QUIT, why SMTP trusted, the open relays, a real session
+with tiny_maild (captured, not written from memory: it showed three
+blemishes in the server's POP3 replies, "+OK " with a trailing space
+and "1 messages", fixed), threading, filters, TLS and AUTH, what is
+left out; `networking/README.md` points to it. All the phases done;
+what is left is the author's by hand (a browser against tiny_maild,
+their Gmail, Thunderbird) and TLS of our own, `plan_tls.md`.
 
 **Phase 5b, added (2026-09-26): your own mailbox, Gmail.** The
 author would like to read their own mail. Gmail speaks POP3 and SMTP

@@ -24,6 +24,8 @@
  *   up, down     the message before, after (as the list is sorted)
  *   click        a message; a column's title sorts by it (again: back
  *                to the order of arrival); an attachment's name saves it
+ *   t            the list by conversation, a reply under what it answers
+ *                (Mail_thread: Zawinski's algorithm); again: back
  *   b            Eudora's "Blah Blah Blah" button: every header, and
  *                the mbox's "From " line, the envelope -- which is how
  *                the forged message in In is found out
@@ -34,13 +36,16 @@
  * (open one, or New...), Message (New Message,
  * Reply, Forward, Attach Document..., Delete, Blah Blah Blah),
  * Transfer (Eudora's name for moving a message to a mailbox), Special
- * (Empty Trash, Make Nickname, Nicknames). Flags: message=n, the n-th
+ * (Empty Trash, Threads, Filters, Filter Messages, Make Nickname,
+ * Nicknames). Flags: message=n, the n-th
  * message of the mailbox opened at the start; mailbox=Out, that
  * mailbox shown (In by default); compose=new|reply|forward, a
  * message begun at the start (to it); user=, who you are ("Bob
  * <bob@tiny>"); server= (localhost), smtp= (8025) and pop= (8110),
- * where tiny_maild is; account=gmail, your own mail (below), and
- * limit= (20), how many new messages a Check Mail fetches from it.
+ * where tiny_maild is; threads=on, the list by conversation;
+ * account=gmail, your own mail (below), and
+ * limit= (20), how many new messages a Check Mail fetches from it;
+ * tls=openssl, openssl's tunnel instead of our TLS.
  *
  * Writing is Eudora's on a dial-up modem: a message written is not
  * sent but *queued* -- put in Out, marked Q -- and Send Queued
@@ -77,10 +82,11 @@
  *   http://localhost:8001/apps/internet/web/TinyEudora.html?user=bob@tiny
  *
  * And your own mail, natively: account=gmail user=you@gmail.com. Gmail
- * speaks POP3 and SMTP only inside TLS, which is not ours yet, so the
- * connection is a tunnel, openssl run beside us (Tls_tunnel.mli), and
- * the same Pop3 and Smtp machines talk to Gmail through it; SMTP logs
- * in first (AUTH PLAIN), as a server of today wants. The password is
+ * speaks POP3 and SMTP only inside TLS: our own TLS 1.3 (Tls13.mli,
+ * Tls_client.mli), the same Pop3 and Smtp machines talking through it;
+ * SMTP logs in first (AUTH PLAIN), as a server of today wants. With
+ * tls=openssl, openssl's tunnel instead (Tls_tunnel.mli), what was used
+ * before TLS was ours. The password is
  * an app password (Google's account settings: 2-step verification on,
  * then App passwords; and POP enabled in Gmail's settings), asked once
  * and never stored. Gmail keeps its mail: Check Mail fetches only the
@@ -88,6 +94,12 @@
  * newest [limit], and deletes nothing. The account's mailboxes are
  * files of their own, "eudora-gmail-In.mbox", none of the built-in
  * messages in them. Not in a browser: a page cannot run openssl.
+ *
+ * Filters are Eudora 1.4's (1993): a header, a word it contains, a
+ * mailbox to move the message into -- records tried in order, run on
+ * the mail as it arrives and by Filter Messages on the mailbox shown,
+ * kept in the store ("eudora-filters"). One is built in: To: containing
+ * "tiny-list" goes into tiny-list, which takes the digest out of In.
  *
  * With no server, it opens on the built-in mailboxes, Our_mail --
  * messages written for what they show: a thread of five replies, a
@@ -99,12 +111,15 @@
  * Stroke_text (text from the left, with Hershey's real widths), Vcard,
  * the gui toolkit's fields and text area (Text_edit), the
  * playground's store; Smtp and Pop3, each client a machine fed the
- * server's lines as they arrive, over Transport (tunnel: Cap.exec,
- * since it runs openssl). Not File_menu: a document is
+ * server's lines as they arrive, over Transport (tls, ours; tunnel,
+ * openssl's: Cap.exec, since it runs a program). Not File_menu: a document is
  * attached from the store by a list of its names, since Eudora's
  * File menu opened mailboxes, not documents.
  *
- * Exercises: Reply All (the Cc: kept, yourself removed); "Leave mail
+ * Exercises: threads folded, a triangle to open one (Netscape's);
+ * filters with "is" and "starts with" and actions other than moving
+ * (Eudora's: make it urgent, play a sound); Reply All (the Cc: kept,
+ * yourself removed); "Leave mail
  * on server" (Pop3.client's ~leave, the ids known kept with In); a
  * nickname
  * edited and removed in the Nicknames pane; Eudora's "Keep copies" off,
@@ -121,6 +136,11 @@ open Playground
 (*****************************************************************************)
 
 type column = Status | Who | Date | Size | Subject
+
+(* Eudora 1.4's filters (1993): a message whose header [field]
+   contains [word] goes into the mailbox [into] -- a short list of
+   records, tried in order, no language *)
+type filter = { field : string; word : string; into : string }
 type box = { name : string; entries : Mbox.entry list }
 
 (* a message being written *)
@@ -144,12 +164,13 @@ type pane =
   | Naming of string (* Mailbox > New...: the name being typed *)
   | Nicknames
   | Password of string * errand (* asked before Check Mail: what is typed so far *)
+  | Filters of string * string * string (* the filter being written: its header, word, mailbox *)
 
 (* what the network is being asked to do *)
 and errand = Check | Send
 
 (* whose mail: tiny_maild's, over WebSocket, or Gmail's, over TLS
-   (Tls_tunnel.mli) *)
+   (Tls13.mli, ours; or openssl's tunnel, Tls_tunnel.mli) *)
 type account = Tiny | Gmail
 
 (* a conversation with the server, in progress: the connection, the
@@ -164,6 +185,9 @@ type model = {
   selected : int option; (* the message, in the mailbox's own order *)
   sort : column option; (* None: the order of arrival *)
   blah : bool; (* every header *)
+  threads : bool; (* the list by conversation (Mail_thread) *)
+  filters : filter list;
+  saved_filters : filter list;
   scroll : float; (* the message, scrolled, in pixels *)
   pane : pane;
   session : (session * float) option;
@@ -190,6 +214,9 @@ let initial : model =
     selected = None;
     sort = None;
     blah = false;
+    threads = false;
+    filters = [ { field = "To"; word = "tiny-list"; into = "tiny-list" } ];
+    saved_filters = [];
     scroll = 0.;
     pane = Reading;
     session = None;
@@ -257,8 +284,19 @@ let position (x : int) (l : int list) : int option =
   let rec go k = function [] -> None | y :: _ when y = x -> Some k | _ :: rest -> go (k + 1) rest in
   go 0 l
 
+(* the mailbox's messages by conversation: each index with its depth
+   in its thread *)
+let threaded (m : model) : (int * int) list =
+  List.mapi (fun i e -> (i, e)) (entries m)
+  |> Mail_thread.of_mail (fun ((_, e) : int * Mbox.entry) -> e.mail)
+  |> Mail_thread.flatten
+  |> List.map (fun ((i, _), depth) -> (i, depth))
+
 (* the mailbox's messages as the list shows them: their indices *)
-let order (m : model) : int list =
+let rec order (m : model) : int list =
+  if m.threads then List.map fst (threaded m) else sorted m
+
+and sorted (m : model) : int list =
   let l = List.mapi (fun i e -> (i, e)) (entries m) in
   let by f = List.stable_sort (fun (_, a) (_, b) -> compare (f a) (f b)) l in
   let sorted =
@@ -588,10 +626,19 @@ let queue (computer : computer) (d : draft) (m : model) : model =
 
 type caps = < Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.network ; Cap.exec >
 
+(* the filters as a file of the store, a line each: field, word, mailbox *)
+let filters_to_string (fs : filter list) : string = String.concat "" (List.map (fun f -> Printf.sprintf "%s\t%s\t%s\n" f.field f.word f.into) fs)
+
+let filters_of_string (s : string) : filter list =
+  List.filter_map (fun l -> match String.split_on_char '\t' l with [ field; word; into ] -> Some { field; word; into } | _ -> None) (String.split_on_char '\n' s)
+
 (* each account its own files: "eudora-In.mbox", "eudora-gmail-In.mbox" *)
+let account_prefixes = [ "eudora-"; "eudora-gmail-" ]
+
 let stored_name (m : model) (box : string) : string = m.prefix ^ box ^ ".mbox"
 let nicknames_name = "eudora-nicknames.vcf"
 let known_name (m : model) : string = m.prefix ^ "uids"
+let filters_name (m : model) : string = m.prefix ^ "filters"
 
 (* the built-in mailboxes, or what the store has of them, then the
    user's own *)
@@ -604,8 +651,10 @@ let load (caps : caps) (m : model) : model =
         let p = String.length m.prefix and k = String.length n in
         if k > p + 5 && String.sub n 0 p = m.prefix && String.sub n (k - 5) 5 = ".mbox" then
           let name = String.sub n p (k - p - 5) in
-          (* "eudora-gmail-In" is not a mailbox of "eudora-"'s *)
-          if List.exists (fun b -> b.name = name) builtin || String.contains name '-' then None
+          (* "eudora-gmail-In" is the Gmail account's In, not a mailbox
+             "gmail-In" of the teaching one's *)
+          let another = List.exists (fun p -> p <> m.prefix && starts_ci p n) account_prefixes in
+          if List.exists (fun b -> b.name = name) builtin || another then None
           else if List.exists (fun b -> b.name = name) builtin then None else Option.map (fun t -> { name; entries = Mbox.parse t }) (fetch n)
         else None)
       (Playground_platform.stored caps)
@@ -613,11 +662,12 @@ let load (caps : caps) (m : model) : model =
   let nicknames = match fetch nicknames_name with Some t -> Vcard.of_string t | None -> m.nicknames in
   let known = match fetch (known_name m) with Some t -> List.filter (( <> ) "") (String.split_on_char '\n' t) | None -> [] in
   let boxes = builtin @ own in
-  { m with boxes; saved = boxes; nicknames; saved_nicknames = nicknames; known; saved_known = known }
+  let filters = match fetch (filters_name m) with Some t -> filters_of_string t | None -> m.filters in
+  { m with boxes; saved = boxes; nicknames; saved_nicknames = nicknames; known; saved_known = known; filters; saved_filters = filters }
 
 (* what changed, written *)
 let keep (caps : caps) (m : model) : model =
-  if m.boxes == m.saved && m.nicknames == m.saved_nicknames && m.known == m.saved_known then m
+  if m.boxes == m.saved && m.nicknames == m.saved_nicknames && m.known == m.saved_known && m.filters == m.saved_filters then m
   else (
     List.iter
       (fun b ->
@@ -627,7 +677,38 @@ let keep (caps : caps) (m : model) : model =
       m.boxes;
     if m.nicknames <> m.saved_nicknames then Playground_platform.store caps nicknames_name (Vcard.to_string m.nicknames);
     if m.known <> m.saved_known then Playground_platform.store caps (known_name m) (String.concat "\n" m.known);
-    { m with saved = m.boxes; saved_nicknames = m.nicknames; saved_known = m.known })
+    if m.filters <> m.saved_filters then Playground_platform.store caps (filters_name m) (filters_to_string m.filters);
+    { m with saved = m.boxes; saved_nicknames = m.nicknames; saved_known = m.known; saved_filters = m.filters })
+
+(*****************************************************************************)
+(* Filters *)
+(*****************************************************************************)
+
+let contains (s : string) (word : string) : bool =
+  let s = String.lowercase_ascii s and word = String.lowercase_ascii word in
+  let n = String.length s and k = String.length word in
+  let rec at i = i + k <= n && (String.sub s i k = word || at (i + 1)) in
+  k > 0 && at 0
+
+(* the first filter a message matches: where it goes *)
+let filed (m : model) (e : Mbox.entry) : string option = List.find_map (fun f -> if contains (header e f.field) f.word then Some f.into else None) m.filters
+
+(* messages into their mailboxes, [default] when no filter takes them;
+   a mailbox a filter names is made if it does not exist yet *)
+let file (m : model) ~(default : string) (es : Mbox.entry list) : model =
+  List.fold_left
+    (fun m e ->
+      let into = Option.value (filed m e) ~default in
+      let m = if List.exists (fun b -> b.name = into) m.boxes then m else { m with boxes = m.boxes @ [ { name = into; entries = [] } ] } in
+      with_entries into (fun l -> l @ [ e ]) m)
+    m es
+
+(* Special > Filter Messages: the mailbox shown, its messages filed;
+   the ones no filter takes stay *)
+let filter_messages (m : model) : model =
+  let moving, staying = List.partition (fun e -> match filed m e with Some into -> into <> m.box | None -> false) (entries m) in
+  let m = with_entries m.box (fun _ -> staying) { m with selected = None } in
+  { (file m ~default:m.box moving) with said = Printf.sprintf "%d filtered" (List.length moving) }
 
 (*****************************************************************************)
 (* The network: Send Queued Messages, Check Mail *)
@@ -656,8 +737,10 @@ let open_connection (caps : caps) (computer : computer) (what : errand) (m : mod
   match (m.account, what) with
   | Tiny, Check -> Transport.connect caps (server_at computer "pop" 8110)
   | Tiny, Send -> Transport.connect caps (server_at computer "smtp" 8025)
-  | Gmail, Check -> Transport.tunnel caps ~host:"pop.gmail.com" ~port:995
-  | Gmail, Send -> Transport.tunnel caps ~host:"smtp.gmail.com" ~port:465
+  | Gmail, _ ->
+      let host, port = if what = Check then ("pop.gmail.com", 995) else ("smtp.gmail.com", 465) in
+      (* our own TLS (Tls13.mli), or openssl's tunnel with tls=openssl *)
+      if flag computer "tls" = Some "openssl" then Transport.tunnel caps ~host ~port else Transport.tls caps ~host ~port
 
 let errand (caps : caps) (computer : computer) (what : errand) (m : model) : model =
   let connect f =
@@ -710,7 +793,8 @@ let arrived (computer : computer) (texts : (string * string) list) (m : model) :
     let sender = match Mail.addresses (Option.value (Mail.get mail "from") ~default:"") with a :: _ -> a.mailbox | [] -> "MAILER-DAEMON" in
     { Mbox.envelope = Mbox.envelope ~sender date; mail }
   in
-  let m = with_entries "In" (fun l -> l @ List.map entry texts) m in
+  (* the new mail filtered as it arrives, the rest into In *)
+  let m = file m ~default:"In" (List.map entry texts) in
   let uids = List.filter (( <> ) "") (List.map fst texts) in
   let m = if uids = [] then m else { m with known = m.known @ uids } in
   { m with said = (match List.length texts with 0 -> "no new mail" | 1 -> "you have new mail: 1 message" | n -> Printf.sprintf "you have new mail: %d messages" n) }
@@ -743,7 +827,7 @@ let session_step (computer : computer) (m : model) : model =
 let menu_mailbox (m : model) = ("Mailbox" :: List.map (fun b -> b.name) m.boxes) @ [ "New..." ]
 let menu_message = [ "Message"; "New Message"; "Reply"; "Forward"; "Attach Document..."; "Delete"; "Blah Blah Blah" ]
 let menu_transfer (m : model) = "Transfer" :: List.map (fun b -> "-> " ^ b.name) m.boxes
-let menu_special = [ "Special"; "Empty Trash"; "Sort by arrival"; "Make Nickname"; "Nicknames" ]
+let menu_special = [ "Special"; "Empty Trash"; "Sort by arrival"; "Threads"; "Filters"; "Filter Messages"; "Make Nickname"; "Nicknames" ]
 
 let menu_file = [ "File"; "Check Mail"; "Send Queued Messages" ]
 let menu_box (i : int) : Widget.box = { Widget.x = -425. +. (float_of_int i *. 144.); y = bar_y; w = 140.; h = 28. }
@@ -786,16 +870,19 @@ let menus (caps : caps) (computer : computer) (m : model) : model =
   | Some "Empty Trash" ->
       let m = with_entries "Trash" (fun _ -> []) m in
       { (if m.box = "Trash" then { m with selected = None } else m) with said = "the Trash emptied" }
-  | Some "Sort by arrival" -> { m with sort = None }
+  | Some "Sort by arrival" -> { m with sort = None; threads = false }
   | Some "Make Nickname" -> make_nickname m
-  | Some "Nicknames" -> (match m.pane with Reading | Naming _ -> { m with pane = Nicknames } | _ -> m)
+  | Some "Nicknames" -> (match m.pane with Reading | Naming _ | Filters _ -> { m with pane = Nicknames } | _ -> m)
+  | Some "Threads" -> { m with threads = not m.threads }
+  | Some "Filters" -> (match m.pane with Reading | Naming _ | Nicknames -> { m with pane = Filters ("Subject", "", "") } | _ -> m)
+  | Some "Filter Messages" -> filter_messages m
   | _ -> m
 
 let clicked (caps : caps) (computer : computer) (m : model) : model =
   let x = computer.mouse.mx and y = computer.mouse.my in
   if y <= list_top -. 22. && y > first_row_top && x > left && x < right then
     (* a column's title: sorted by it, or back *)
-    match column_at x with Some c -> { m with sort = (if m.sort = Some c then None else Some c) } | None -> m
+    match column_at x with Some c -> { m with threads = false; sort = (if m.sort = Some c then None else Some c) } | None -> m
   else if y <= first_row_top && y > list_bottom && x > left && x < right then
     let k = int_of_float ((first_row_top -. y) /. row_h) + first_shown m in
     match List.nth_opt (order m) k with Some i -> select (Some i) { m with pane = (if m.pane = Nicknames then Reading else m.pane) } | None -> m
@@ -847,8 +934,7 @@ let pick (caps : caps) (computer : computer) (d : draft) (names : string list) (
 let naming (computer : computer) (name : string) (m : model) : model =
   let name = Gui.field_in computer (field_box 1) name in
   let m = { m with pane = Naming name } in
-  (* no '-': "eudora-gmail-In" must not read as a mailbox "gmail-In" *)
-  let ok = name <> "" && String.for_all (fun c -> c = ' ' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) name in
+  let ok = name <> "" && String.for_all (fun c -> c = ' ' || c = '-' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) name in
   if Gui.button_in computer (button_box 0) "Create" || (computer.keyboard.kenter && ok) then
     if not ok then { m with said = "a name of letters, digits and spaces" }
     else if List.exists (fun b -> b.name = name) m.boxes then { m with said = name ^ " exists already" }
@@ -876,6 +962,7 @@ let start (caps : caps) (computer : computer) (m : model) : model =
     | Some k when k >= 1 && k <= n -> select (Some (k - 1)) m
     | _ -> select (if n > 0 then Some (n - 1) else None) m
   in
+  let m = if flag computer "threads" = Some "on" then { m with threads = true } else m in
   match flag computer "compose" with
   | Some "new" -> composing blank m
   | Some "reply" -> reply m
@@ -891,6 +978,20 @@ let password_typed (caps : caps) (computer : computer) (typed : string) (what : 
   else if Gui.button_in computer (button_box 1) "Cancel" then { m with pane = Reading }
   else { m with pane = Password (typed, what) }
 
+(* Special > Filters: the list, and a new one written in three fields *)
+let filters_pane (computer : computer) (field : string) (word : string) (into : string) (m : model) : model =
+  let field = Gui.field_in computer (field_box 0) field in
+  let word = Gui.field_in computer (field_box 1) word in
+  let into = Gui.field_in computer (field_box 2) into in
+  let m = { m with pane = Filters (field, word, into) } in
+  if Gui.button_in computer (button_box 0) "Add" then
+    if field = "" || word = "" || into = "" then { m with said = "a filter needs a header, a word and a mailbox" }
+    else { m with filters = m.filters @ [ { field; word; into } ]; pane = Filters (field, "", ""); said = "filter added" }
+  else if Gui.button_in computer (button_box 1) "Remove Last" then
+    { m with filters = List.filteri (fun i _ -> i < List.length m.filters - 1) m.filters }
+  else if Gui.button_in computer (button_box 2) "Close" then { m with pane = Reading }
+  else m
+
 let update (caps : caps) (computer : computer) (m : model) : model =
   Gui.set_theme mac_theme;
   let m = if m.started then m else start caps computer m in
@@ -901,6 +1002,7 @@ let update (caps : caps) (computer : computer) (m : model) : model =
     | Picking (d, names, sel) -> pick caps computer d names sel m
     | Naming name -> naming computer name m
     | Nicknames -> if Gui.button_in computer (button_box 0) "Close" then { m with pane = Reading } else m
+    | Filters (field, word, into) -> filters_pane computer field word into m
     | Password (typed, what) -> password_typed caps computer typed what m
     | Reading -> m
   in
@@ -919,6 +1021,7 @@ let update (caps : caps) (computer : computer) (m : model) : model =
     else if pressed "ArrowUp" then select (step (-1)) m
     else if pressed "Delete" || pressed "Backspace" then delete m
     else if pressed "b" then { m with blah = not m.blah; scroll = 0. }
+    else if pressed "t" then { m with threads = not m.threads }
     else m
   in
   (* the message scrolled: a page, or the wheel's notches *)
@@ -949,7 +1052,7 @@ let column_titles (m : model) : shape list =
   (rectangle ink (right -. left) 1. |> move 0. (first_row_top +. 1.))
   :: List.concat_map (fun (c, (x, t)) -> text ~bold:(m.sort = Some c) ~size:12. ink x (columns_y -. 5.) t) column_x
 
-let list_row (m : model) (k : int) (i : int) (e : Mbox.entry) : shape list =
+let list_row (m : model) ~(depth : int) (k : int) (i : int) (e : Mbox.entry) : shape list =
   let top = first_row_top -. (float_of_int k *. row_h) in
   let on = m.selected = Some i in
   let fg, bg = if on then (paper, ink) else (ink, paper) in
@@ -962,7 +1065,8 @@ let list_row (m : model) (k : int) (i : int) (e : Mbox.entry) : shape list =
   @ text ~bold:unread fg (x Who) y (fit 190. (ascii (who m.box e)))
   @ text fg (x Date) y (date_text e)
   @ text fg (x Size) y (string_of_int (size e))
-  @ text ~bold:unread fg (x Subject) y (fit 390. (ascii (header e "subject")))
+  (* a reply indented under what it answers, in the threads *)
+  @ text ~bold:unread fg (x Subject +. (14. *. float_of_int depth)) y (fit (390. -. (14. *. float_of_int depth)) (ascii (header e "subject")))
   @
   if attached e then
     (* a page with its corner folded: something enclosed *)
@@ -988,19 +1092,20 @@ let message_view (m : model) (e : Mbox.entry) : shape list =
    what they show changed -- the mailbox (the same list, ==, since an
    update that changes nothing returns it untouched), the selection,
    the order, the scroll: most frames draw the ones before *)
-let list_cache : (Mbox.entry list * int option * column option * string * shape list) option ref = ref None
+let list_cache : (Mbox.entry list * int option * column option * bool * string * shape list) option ref = ref None
 let message_cache : (Mbox.entry * bool * float * shape list) option ref = ref None
 
 let list_view (m : model) : shape list =
   let l = entries m in
   match !list_cache with
-  | Some (l', sel, sort, box, shapes) when l' == l && sel = m.selected && sort = m.sort && box = m.box -> shapes
+  | Some (l', sel, sort, threads, box, shapes) when l' == l && sel = m.selected && sort = m.sort && threads = m.threads && box = m.box -> shapes
   | _ ->
       let first = first_shown m in
+      let shown = if m.threads then threaded m else List.map (fun i -> (i, 0)) (order m) in
       let shapes =
-        List.concat (List.mapi (fun k i -> if k >= first && k < first + rows then list_row m (k - first) i (List.nth l i) else []) (order m))
+        List.concat (List.mapi (fun k (i, depth) -> if k >= first && k < first + rows then list_row m ~depth (k - first) i (List.nth l i) else []) shown)
       in
-      list_cache := Some (l, m.selected, m.sort, m.box, shapes);
+      list_cache := Some (l, m.selected, m.sort, m.threads, m.box, shapes);
       shapes
 
 let shown_message (m : model) (e : Mbox.entry) : shape list =
@@ -1050,6 +1155,15 @@ let view (_ : computer) (m : model) : shape list =
         @ label 0 (ascii (Printf.sprintf "The password of %s:" m.user.mailbox))
         @ text ~bold:true ink (left +. 300.) (form_row 0 -. 5.) (String.make (String.length typed) '*')
     | Nicknames, _ -> nicknames_view m
+    | Filters _, _ ->
+        window "Filters" msg_top msg_bottom
+        @ label 0 "Header:" @ label 1 "Contains:" @ label 2 "Into:"
+        @ List.concat
+            (List.mapi
+               (fun i f ->
+                 text ink (left +. 20.) (form_row 4 -. 5. -. (float_of_int i *. line_h))
+                   (ascii (Printf.sprintf "%d.  if %s: contains \"%s\", into %s" (i + 1) f.field f.word f.into)))
+               m.filters)
     | Reading, Some e ->
         window (ascii (Printf.sprintf "%s, %s, %s" (who m.box e) (date_text e) (header e "subject"))) msg_top msg_bottom
         @ shown_message m e
@@ -1059,7 +1173,7 @@ let view (_ : computer) (m : model) : shape list =
   in
   [ rectangle (rgb 160 160 160) 1000. 1000.; rectangle th.face 1000. 30. |> move 0. bar_y; rectangle ink 1000. 1. |> move 0. (bar_y -. 15.) ]
   @ message
-  @ window (Printf.sprintf "%s  (%d messages, %d unread)" m.box n unread) list_top list_bottom
+  @ window (Printf.sprintf "%s  (%d message%s, %d unread)" m.box n (if n = 1 then "" else "s") unread) list_top list_bottom
   @ column_titles m @ list_view m
   (* the status line, under the windows, on the desktop *)
   @ text ink (left +. 10.) (msg_bottom -. 25.) (fit 970. (ascii (if m.said <> "" then m.said else "TinyEudora")))
