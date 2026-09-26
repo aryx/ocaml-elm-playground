@@ -236,7 +236,7 @@ let test_sun_infinitely_far () =
   let cloud = Solid.Sphere ((0., 1000., 0.), 100., matte 0xFFFFFF) in
   Alcotest.(check int) "a sphere 1000 up still shades the floor from the sun" 0
     (seen [ from_above ] [ floor; cloud ] 0.5 0.);
-  let lamp = Raytrace.Lamp { position = (0., 10., 0.); color = (1., 1., 1.) } in
+  let lamp = Raytrace.Lamp { position = (0., 10., 0.); radius = 0.; color = (1., 1., 1.) } in
   Alcotest.(check int) "but not from a lamp below it" grey (seen [ lamp ] [ floor; cloud ] 0. 0.)
 
 (*****************************************************************************)
@@ -251,7 +251,7 @@ let small_scene : Raytrace.scene =
       [ Solid.Plane ((0., 1., 0.), 0., matte 0xC0C0C0); Solid.Sphere ((-0.8, 1., 0.), 1., matte 0xCC3333);
         Solid.Sphere ((1.2, 0.6, 0.8), 0.6, matte 0x3333CC) ];
     lights = [ Sun { towards = Vec3.normalize (1., 2., 1.); color = (0.6, 0.6, 0.6) };
-               Lamp { position = (-2., 3., 2.); color = (0.5, 0.4, 0.3) } ];
+               Lamp { position = (-2., 3., 2.); radius = 0.; color = (0.5, 0.4, 0.3) } ];
     ambient = 0.2; background = 0x88AAFF }
 
 let bytes (img : Rgba_image.t) : string =
@@ -740,6 +740,62 @@ let test_supersampling () =
   Alcotest.(check bool) "2 x 2, a slice at a time: the same bytes" true (bytes (Raytrace.picture p) = expected);
   Alcotest.(check int) "4 rays a pixel" (21 * 13 * 4) (Raytrace.rays_shot p)
 
+(*****************************************************************************)
+(* Randomness: soft shadows, path tracing *)
+(*****************************************************************************)
+
+(* a floor under a white sky, no light at all: every path bounces off
+ * the floor into the sky, so path tracing gives the floor's own colour,
+ * exactly, whatever the random numbers -- where Whitted's algorithm has
+ * only its ambient guess, 25% of it *)
+let test_path_tracing () =
+  let scene : Raytrace.scene =
+    { camera = { eye = (0., 5., 0.); target = (0., 0., 0.); up = (0., 0., -1.); fov = 60.; ortho = 0.; near = 0.; far = 100. };
+      solids = [ Solid.Plane ((0., 1., 0.), 0., matte 0xDCDCDC) ]; lights = []; ambient = 0.25; background = 0xFFFFFF }
+  in
+  let down = Ray.make (0.3, 5., -0.2) (0., -1., 0.) in
+  let seen algorithm = Raytrace.trace (Raytrace.world ~options:{ Raytrace.default_options with algorithm } scene) down ~min_t:0. ~max_t:infinity in
+  Alcotest.(check int) "path tracing: the sky's light, off the floor, all of it" 0xDCDCDC (seen Path_tracing);
+  Alcotest.(check int) "Whitted: the ambient's quarter" 0x373737 (seen Whitted);
+  (* random, and yet the same bytes whatever the slices *)
+  let options = { Raytrace.default_options with algorithm = Path_tracing; samples = 2 } in
+  let expected = bytes (Raytrace.render ~options small_scene ~width:23 ~height:11) in
+  let p = Raytrace.start ~options small_scene ~width:23 ~height:11 in
+  while not (Raytrace.finished p) do
+    Raytrace.advance p ~rays:29
+  done;
+  Alcotest.(check bool) "path traced, a slice at a time: the same bytes" true (bytes (Raytrace.picture p) = expected);
+  let other = bytes (Raytrace.render ~options:{ options with seed = 2 } small_scene ~width:23 ~height:11) in
+  Alcotest.(check bool) "another seed, another picture" true (other <> expected)
+
+(* a lamp of radius 1 at y = 4, a ball of radius 0.8 at y = 2 between it
+ * and the floor: the share of the light a floor point gets, with the
+ * ball over without it -- 0 under the ball's middle (the umbra), 1 far
+ * aside, and strictly between under its edge (the penumbra), where a
+ * point lamp has only 0 or 1 *)
+let test_soft_shadows () =
+  let floor = Solid.Plane ((0., 1., 0.), 0., matte 0x808080) and ball = Solid.Sphere ((0., 2., 0.), 0.8, matte 0xFF0000) in
+  let lamp : Raytrace.light = Lamp { position = (0., 4., 0.); radius = 1.; color = (1., 1., 1.) } in
+  let light_at solids algorithm x =
+    let scene : Raytrace.scene =
+      { camera = { eye = (0., 5., 0.); target = (0., 0., 0.); up = (0., 0., -1.); fov = 60.; ortho = 0.; near = 0.; far = 100. };
+        solids; lights = [ lamp ]; ambient = 0.; background = 0 }
+    in
+    (* the floor point (x, 0, 0), seen low from the side, under the ball *)
+    let ray = Ray.make (x, 0.3, 3.) (Vec3.sub (x, 0., 0.) (x, 0.3, 3.)) in
+    float_of_int (Raytrace.trace (Raytrace.world ~options:{ Raytrace.default_options with algorithm } scene) ray ~min_t:0. ~max_t:infinity land 0xFF)
+  in
+  let share algorithm x = light_at [ floor; ball ] algorithm x /. light_at [ floor ] algorithm x in
+  let xs = List.init 21 (fun i -> float_of_int i *. 0.15) in
+  let soft = List.map (share Soft_shadows) xs and hard = List.map (share Whitted) xs in
+  Printf.printf "soft shadows, the light's share along x: %s\n" (String.concat " " (List.map (Printf.sprintf "%.2f") soft));
+  near "under the ball's middle: the umbra, none" 0. (List.hd soft);
+  (* measured: none up to x = 0.75, then 0.12, 0.19, 0.31 ... still
+   * 0.88 at x = 3, where the lamp's far side is behind the ball *)
+  near "far aside: all of it" 1. (share Soft_shadows 8.);
+  Alcotest.(check bool) "under its edge: a penumbra, some of it" true (List.exists (fun v -> v > 0.1 && v < 0.9) soft);
+  Alcotest.(check bool) "a point lamp: all or nothing" true (List.for_all (fun v -> v = 0. || v = 1.) hard)
+
 let tests =
   Testo.categorize "Raytrace"
     [ t "Solid.hit: in front, from inside, moved" test_hit; t "the camera rays" test_camera_ray;
@@ -756,4 +812,5 @@ let tests =
       t "CSG: the blind hole" test_csg; t "CSG: point membership, random solids" test_membership;
       t "CSG: the BVH" test_bvh_csg; t "spots" test_spot; t "Perlin's noise" test_perlin;
       t "patterns, textures" test_patterns; t "a texture, rasterized and ray cast" test_texture_same_picture; t "fib.gml, against the ICFP 2000 entry's picture" test_icfp_2000;
-      t "several rays a pixel" test_supersampling ]
+      t "several rays a pixel" test_supersampling; t "path tracing: the sky, and the same bytes" test_path_tracing;
+      t "soft shadows: a penumbra" test_soft_shadows ]

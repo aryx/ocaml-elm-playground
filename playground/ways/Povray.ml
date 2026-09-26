@@ -82,10 +82,13 @@ let rotate (x : float) (y : float) (z : float) (o : obj) : obj =
 (*****************************************************************************)
 
 (* claude: data only in phase 1; phase 2 shades with them *)
-type light = Sun of int * Vec3.t | Lamp of int * Vec3.t | Spot of int * Vec3.t * Vec3.t * float * float
+type light = Sun of int * Vec3.t | Lamp of int * Vec3.t * float | Spot of int * Vec3.t * Vec3.t * float * float
 
 let sun (c : Playground.color) x y z : light = Sun (rgb_of_color c, (x, y, z))
-let lamp (c : Playground.color) x y z : light = Lamp (rgb_of_color c, (x, y, z))
+let lamp (c : Playground.color) x y z : light = Lamp (rgb_of_color c, (x, y, z), 0.)
+
+let area_lamp (radius : float) (l : light) : light =
+  match l with Lamp (c, p, _) -> Lamp (c, p, radius) | other -> other
 
 let spot ?(falloff = 1.) (c : Playground.color) ~(at : Vec3.t) ~(towards : Vec3.t) (angle : float) : light =
   Spot (rgb_of_color c, at, towards, angle, falloff)
@@ -109,7 +112,7 @@ let raytrace_scene (scene : scene) : Raytrace.scene =
     (* GML's and POV-Ray's direction is the one the light goes, the ray
      * tracer's the one towards it *)
     | Sun (rgb, along) -> Raytrace.Sun { towards = Vec3.normalize (Vec3.scale (-1.) along); color = channels rgb }
-    | Lamp (rgb, position) -> Raytrace.Lamp { position; color = channels rgb }
+    | Lamp (rgb, position, radius) -> Raytrace.Lamp { position; radius; color = channels rgb }
     | Spot (rgb, position, target, angle, falloff) ->
         Raytrace.Spot { position; aim = Vec3.normalize (Vec3.sub target position); angle; falloff; color = channels rgb }
   in
@@ -154,8 +157,8 @@ let step (a : Raytrace.algorithm) (by : int) : Raytrace.algorithm =
   let rec index i = function [] -> 0 | x :: rest -> if x = a then i else index (i + 1) rest in
   List.nth all (Int.max 0 (Int.min (List.length all - 1) (index 0 all + by)))
 
-let initial (scene : scene) : model =
-  { camera = scene.camera; algorithm = Raytrace.latest; samples = 1; progresses = []; keys_before = Set_.empty; elapsed = 0.;
+let initial ?(algorithm = Raytrace.default_algorithm) ?(samples = 1) (scene : scene) : model =
+  { camera = scene.camera; algorithm; samples; progresses = []; keys_before = Set_.empty; elapsed = 0.;
     clock = None; said = ""; dragged_from = None }
 
 (* all the pictures thrown away, to be made again from the coarsest
@@ -318,11 +321,22 @@ let view ~(orbit : bool) ~(export : bool) (computer : Playground.computer) (mode
   @ [ Playground.move 0. (screen.bottom +. 45.) (Playground.words Color.black (status model));
       Playground.move 0. (screen.bottom +. 20.) (Playground.words (Color.rgb 120 120 120) keys) ]
 
-let app ~orbit ?export ?(file = "povray.png") ?(rays_per_frame = 20_000) ?size (scene : scene) =
+let app ~orbit ?export ?(file = "povray.png") ?(rays_per_frame = 20_000) ?size ?algorithm ?samples (scene : scene) =
   Playground.game
     (view ~orbit ~export:(export <> None))
     (update ~orbit ?export ~file ~rays_per_frame ?size scene)
-    (initial scene)
+    (initial ?algorithm ?samples scene)
 
-let still ?export ?file ?rays_per_frame ?size (scene : scene) = app ~orbit:false ?export ?file ?rays_per_frame ?size scene
-let orbit ?export ?file ?rays_per_frame ?size (scene : scene) = app ~orbit:true ?export ?file ?rays_per_frame ?size scene
+let still ?export ?file ?rays_per_frame ?size ?algorithm ?samples (scene : scene) =
+  app ~orbit:false ?export ?file ?rays_per_frame ?size ?algorithm ?samples scene
+
+let orbit ?export ?file ?rays_per_frame ?size ?algorithm ?samples (scene : scene) =
+  app ~orbit:true ?export ?file ?rays_per_frame ?size ?algorithm ?samples scene
+
+(*****************************************************************************)
+(* A scene in a program of its own *)
+(*****************************************************************************)
+
+let pick (scene : scene) ~(width : int) ~(height : int) (x : float) (y : float) : obj option =
+  let ray, near, far = Raytrace.camera_ray_through scene.camera ~width ~height x y in
+  Option.map snd (Raytrace.nearest ~min_t:near ~max_t:far ray scene.solids)

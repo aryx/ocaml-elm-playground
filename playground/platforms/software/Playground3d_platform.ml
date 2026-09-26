@@ -80,11 +80,12 @@ open Playground3d
  *    scene, drawn the other way, by each of the ray tracer's
  *    algorithms in turn (Raytrace.algorithms: ray casting, then
  *    Lambert's light, then shadow rays...), and last the shadow acne
- *    bug, the latest one with no epsilon; slow, so try it with "r"
- *    first. Also -raytrace, the latest from the first frame
+ *    bug, Whitted's with no epsilon; slow, so try it with "r" first.
+ *    Also -raytrace, Whitted's (Raytrace.default_algorithm) from the
+ *    first frame
  *  - "v": versus, the frame split down the middle, the rasterizer's on
  *    the left and the ray tracer's on the right (the algorithm "y"
- *    chose, or the latest), with the time each took; with "r", or it
+ *    chose, or Whitted's), with the time each took; with "r", or it
  *    is slow
  *  - "h": this list, with each key's state, over the frame
  *  - Ctrl + any of them: the debug key alone, not given to the game
@@ -237,7 +238,12 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   (* claude: -v, -debug, and the -fixed-time/-keys/-dump-frame flags (see
    * Native_loop_3d) *)
   Native_loop_3d.parse_cli_and_setup_logging ();
-  if Native_loop_3d.raytrace_at_start () then renderer := List.length Raytrace.algorithms;
+  (* claude: the default algorithm's place in the cycle, after the
+   * rasterizer *)
+  if Native_loop_3d.raytrace_at_start () then begin
+    let rec index i = function [] -> 0 | a :: rest -> if a = Raytrace.default_algorithm then i else index (i + 1) rest in
+    renderer := 1 + index 0 Raytrace.algorithms
+  end;
   (* claude: the app's choices are the starting values of the options;
    * the debug keys can still change them (e.g. "m" also cycles through
    * Gouraud, which the portable hints don't name) *)
@@ -386,7 +392,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
        let ms t = if Native_loop_3d.deterministic () then "(not timed: -fixed-time)" else Printf.sprintf "%.0f ms" t in
        match !split_times with
        | Some (raster, rt) ->
-           let name = match raytraced () with Some _ -> renderer_name () | None -> "the ray tracer, " ^ Raytrace.name Raytrace.latest in
+           let name = match raytraced () with Some _ -> renderer_name () | None -> "the ray tracer, " ^ Raytrace.name Raytrace.default_algorithm in
            Help_overlay.draw fb [ ("left", "the rasterizer: " ^ ms raster); ("right", name ^ ": " ^ ms rt) ]
        | None -> ());
     if !help then Help_overlay.draw fb (help_lines ());

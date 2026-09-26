@@ -72,12 +72,12 @@ pure OCaml drawing into an `Rgba_image`, a `Povray` program runs in a
 browser too, compiled by js_of_ocaml: the slow renderer is the most
 portable one.
 
-Companions: [`notes_raytracing.md`](../tutorials/notes_raytracing.md),
+Companions: [`notes_raytracing.md`](../../tutorials/notes_raytracing.md),
 the tutorial (written ahead of the code, as its specification; it
 gains a section on CSG and one on the way),
-[`notes_raytracing_related_work.md`](../related-work/notes_raytracing_related_work.md)
+[`notes_raytracing_related_work.md`](../../related-work/notes_raytracing_related_work.md)
 (POV-Ray, PBRT, Cycles, smallpt, the RTX era, the ICFP entries, and
-the ceiling here), and [`notes_3d.md`](../tutorials/notes_3d.md) (the
+the ceiling here), and [`notes_3d.md`](../../tutorials/notes_3d.md) (the
 rasterizer this is the counterpart of; its section 6 gains a pointer
 here).
 
@@ -150,7 +150,7 @@ is algorithms rather than clock speed.
 
 ## Principles
 
-The eight of [`../README.md`](../README.md), with four of this area's
+The eight of [`../README.md`](../../README.md), with four of this area's
 own:
 
 - **One renderer, two ways in.** `Raytrace` takes one object type:
@@ -438,7 +438,7 @@ same bytes as `Raytrace.render` in one go.
 `Ray` goes in `graphics/3d/geometry/`, beside `Vec3`, `Mat4`,
 `Camera` and `Lighting`, rather than in `graphics/3d/`. The reason is
 concrete: `physics/3d`'s `Collide3d`
-([`plan_physics3d_teaching.md`](done/plan_physics3d_teaching.md), phase 4)
+([`plan_physics3d_teaching.md`](plan_physics3d_teaching.md), phase 4)
 needs Möller-Trumbore too, for picking, bullets, ground checks and the
 gravity gun, and `physics_3d` already depends on `graphics_3d_geometry`
 and on nothing else. One implementation, tested once, used by the
@@ -988,10 +988,48 @@ TinyQuake's level is not a value outside the game); a dump at -dump-size
 also draws the window's own frame first, at the window's size, a cost
 paid twice.
 
-Next, phase 9 (optional), distributed and path tracing.
+**Phase 9 done** (2026-09-26), lean: the two algorithms after Whitted's,
+each a few dozen lines, for the idea each teaches (the author: "we
+should add if it adds moderate LOC for what it teaches").
+`Soft_shadows` (Cook, Porter and Carpenter 1984): a lamp with a
+`radius`, 16 shadow rays to random points of it, the share that reach
+it. `Path_tracing` (Kajiya 1986): at each matte point one bounce more,
+cosine weighted, the ambient term gone -- the light it guessed at
+computed from the sky and the other surfaces -- and one shadow ray to
+the lamp, the many paths a pixel averaging the penumbra. Random but
+deterministic: each pixel's own `Lehmer` seed from its place and
+`options.seed`, so the progressive picture is still the same bytes.
+`Raytrace.default_algorithm`, Whitted's (the last without noise);
+`latest` the last of all. The way: `area_lamp`, `?algorithm` and
+`?samples` for `still` and `orbit`. `examples/PovrayCornell.ml`, the
+Cornell box (Goral et al. 1984), opening on path tracing at 2 x 2;
+`PovrayWhitted`'s lamp given a size. Checked: a floor under a white
+sky, no light, path traced to its own colour exactly (every path
+escapes to the sky), Whitted's to the ambient's quarter; the penumbra
+measured, the light's share 0 to x = 0.75 then 0.12, 0.19, 0.31 ...,
+a point lamp's only 0 or 1; path traced in slices, the same bytes;
+another seed, another picture. Not done, and not needed for the
+lesson: accumulating paths without end (the keys 1 to 4 show 1 /
+sqrt paths), Russian roulette, glossy reflections, motion blur, an
+emissive surface as the light.
+
+**Phase 11 done** (2026-09-26): `notes_raytracing.md`, written as this
+plan's specification, checked against the code and revised -- the
+module table (`geometry/` and `raytrace/`), `Ray`'s whole line, the
+measured numbers in place of its placeholders, the algorithms kept and
+their order, CSG and transforms (§8b), surfaces (§8c), randomness
+(§9), the `Povray` way and the examples by their real names (§12),
+what the work found (the rasterizer's orthographic bug, acne only on a
+tilted plane, a box must never say no, the ICFP 2000 regression);
+`notes_3d.md` section 6's pointer; `playground/README.md`'s `ways/` row.
+
+**The plan is done** (2026-09-26), phase 10, TinyMyst, left with the
+rest in [`plan_raytracing_remaining.md`](../plan_raytracing_remaining.md):
+about 1,700 lines of implementation (3,100 with the `.mli`s' prose),
+1,000 of tests and benchmark, 500 of examples.
 
 Written as the specification, with
-[`notes_raytracing.md`](../tutorials/notes_raytracing.md) beside it.
+[`notes_raytracing.md`](../../tutorials/notes_raytracing.md) beside it.
 Decisions taken, with their reasons, so they are not re-argued:
 
 - **the author asked for it** (2026-09-20), as a high-fidelity mode
@@ -1013,7 +1051,7 @@ Decisions taken, with their reasons, so they are not re-argued:
   **Glassner (ed.), *An Introduction to Ray Tracing* (1989)**, whose
   nine chapters map almost one to one onto this plan's modules (the
   table is in
-  [`notes_raytracing_related_work.md`](../related-work/notes_raytracing_related_work.md)).
+  [`notes_raytracing_related_work.md`](../../related-work/notes_raytracing_related_work.md)).
   It is the reference `Raytrace.mli` opens with; Heckbert's chapter 7,
   "Writing a ray tracer", is the closest thing to this plan written
   thirty-seven years earlier;

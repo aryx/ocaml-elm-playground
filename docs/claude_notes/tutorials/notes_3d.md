@@ -364,11 +364,10 @@ other.
   ray-tracing hardware, e.g. NVIDIA's RTX line from 2018 onwards, is
   what finally made a hybrid of the two approaches practical in games).
 
-A ray tracer for the *software* backend is planned, as the other half
-of this note -- shadows, mirrors and glass on the same scenes, for
-`-dump-frame` stills rather than for the frame loop: see
-[`notes_raytracing.md`](notes_raytracing.md) and
-[`plan_raytracing_teaching.md`](../plans/plan_raytracing_teaching.md).
+A ray tracer for the *software* backend is the other half of this
+note -- shadows, mirrors and glass on the same scenes, the "y" key and
+`-raytrace` on any example, and "v" to see both renderers on one
+frame: see [`notes_raytracing.md`](notes_raytracing.md).
 
 `Playground3d` is a rasterizer, not a ray tracer, on both backends;
 its two backends land on two different points in the painter's-algorithm

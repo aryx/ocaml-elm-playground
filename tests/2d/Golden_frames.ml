@@ -295,6 +295,10 @@ let scenes : Testutil_golden.scene list =
      * libs/graphics/tests/icfp2000/) *)
     ("examples/software/PovrayMarble", "", 10);
     ("examples/software/PovrayFib", "", 8);
+    (* claude: the Cornell box path traced, 2 x 2 paths a pixel: the red
+     * and green walls bleeding onto the blocks, the soft shadows, the
+     * noise; 160,000 rays, done by the eighth *)
+    ("examples/software/PovrayCornell", "", 12);
     (* the first question, the gallows empty *)
     ("examples/software/TeletypeHangman", "", 3);
     (* the snake, its food, and the bytes of the first frame: all of it *)
@@ -1580,11 +1584,12 @@ let flagged : Testutil_golden.flagged list =
   [
     ("games/platform/software/TinyMario", "shapes", 5, [ "artwork=shapes" ]);
     (* claude: the same spheres by each of the ray tracer's algorithms,
-     * side by side, the four made together: done by the sixteenth *)
-    ("examples/software/PovraySpheres", "evolution", 24, [ "evolution" ]);
-    (* claude: and Whitted's by each: 4 x 120,000 rays, done by the 24th *)
-    ("examples/software/PovrayWhitted", "evolution", 30, [ "evolution" ]);
-    ("examples/software/PovrayCsg", "evolution", 30, [ "evolution" ]);
+     * side by side, the six made together: 6 x 76,800 rays, done by the
+     * 24th *)
+    ("examples/software/PovraySpheres", "evolution", 30, [ "evolution" ]);
+    (* claude: and Whitted's by each: 6 x 120,000 rays, done by the 36th *)
+    ("examples/software/PovrayWhitted", "evolution", 45, [ "evolution" ]);
+    ("examples/software/PovrayCsg", "evolution", 45, [ "evolution" ]);
     ("games/platform/software/TinyCeleste", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyVVVVVV", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyMarioGalaxy2D", "shapes", 5, [ "artwork=shapes" ]);

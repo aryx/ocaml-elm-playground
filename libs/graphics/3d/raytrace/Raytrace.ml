@@ -17,15 +17,23 @@
 type rgb = float * float * float
 type light =
   | Sun of { towards : Vec3.t; color : rgb }
-  | Lamp of { position : Vec3.t; color : rgb }
+  | Lamp of { position : Vec3.t; radius : float; color : rgb }
   | Spot of { position : Vec3.t; aim : Vec3.t; angle : float; falloff : float; color : rgb }
 
 type scene = { camera : Camera.t; solids : Solid.t list; lights : light list; ambient : float; background : int }
 
-type algorithm = Ray_casting | Lambert | Shadow_rays | Whitted
+type algorithm = Ray_casting | Lambert | Shadow_rays | Whitted | Soft_shadows | Path_tracing
 
-let algorithms = [ Ray_casting; Lambert; Shadow_rays; Whitted ]
-let latest = Whitted
+let algorithms = [ Ray_casting; Lambert; Shadow_rays; Whitted; Soft_shadows; Path_tracing ]
+let latest = Path_tracing
+let default_algorithm = Whitted
+
+(* each algorithm is the one before plus an idea: "a or a later one" *)
+let rank (a : algorithm) : int =
+  let rec go i = function [] -> 0 | x :: rest -> if x = a then i else go (i + 1) rest in
+  go 0 algorithms
+
+let at_least (w : algorithm) (a : algorithm) : bool = rank w >= rank a
 
 let name (algorithm : algorithm) : string =
   match algorithm with
@@ -33,6 +41,8 @@ let name (algorithm : algorithm) : string =
   | Lambert -> "Lambert's light"
   | Shadow_rays -> "shadow rays"
   | Whitted -> "Whitted: mirrors and glass"
+  | Soft_shadows -> "soft shadows"
+  | Path_tracing -> "path tracing"
 
 type acceleration = Brute_force | Bvh of Bvh.split
 
@@ -43,10 +53,12 @@ type options = {
   depth : int;
   cutoff : float;
   samples : int;
+  seed : int;
 }
 
 let default_options =
-  { algorithm = latest; epsilon = 1e-4; acceleration = Bvh Sah; depth = 3; cutoff = 1. /. 256.; samples = 1 }
+  { algorithm = default_algorithm; epsilon = 1e-4; acceleration = Bvh Sah; depth = 3; cutoff = 1. /. 256.; samples = 1;
+    seed = 1 }
 
 (*****************************************************************************)
 (* Camera rays *)
@@ -179,22 +191,68 @@ let int_of_color ((r, g, b) : color) : int =
 let add ((r1, g1, b1) : color) ((r2, g2, b2) : color) : color = (r1 +. r2, g1 +. g2, b1 +. b2)
 let times (k : float) ((r, g, b) : color) : color = (k *. r, k *. g, k *. b)
 
+(* A pixel's own random numbers: its seed from its place in the
+ * picture (and the options' seed), not from a generator shared by all,
+ * so that the picture is the same whatever order its pixels are made
+ * in (the progressive picture's "same bytes") *)
+type rng = Lehmer.t ref
+
+let uniform (rng : rng) : float =
+  rng := Lehmer.next !rng;
+  Lehmer.to_unit !rng
+
+(* a point in the unit ball, by rejection: in the cube, kept if inside *)
+let rec in_ball (rng : rng) : Vec3.t =
+  let p = ((2. *. uniform rng) -. 1., (2. *. uniform rng) -. 1., (2. *. uniform rng) -. 1.) in
+  if Vec3.dot p p <= 1. then p else in_ball rng
+
+(* soft shadows: of a lamp of radius r, the share of [shadow_rays] rays
+ * to random points of it that reach it (Cook, Porter and Carpenter
+ * 1984) -- 1 or 0 for a point, anything between in the penumbra. Path
+ * tracing shoots one: its many paths a pixel average the penumbra out
+ * anyway, at a sixteenth of the cost *)
+let shadow_rays (w : world) : int = if w.options.algorithm = Path_tracing then 1 else 16
+
+let reaching (w : world) (rng : rng) (point : Vec3.t) (light : light) : float =
+  match light with
+  | Lamp { position; radius; _ } when radius > 0. && at_least w.options.algorithm Soft_shadows ->
+      let through = ref 0 and rays = shadow_rays w in
+      for _ = 1 to rays do
+        let target = Vec3.add position (Vec3.scale radius (in_ball rng)) in
+        let d = Vec3.sub target point in
+        let dist = Vec3.length d in
+        let ray = Ray.make point d in
+        let hidden =
+          match w.bvh with
+          | Some bvh -> Bvh.any bvh ~min_t:w.options.epsilon ~max_t:dist ray
+          | None -> List.exists (fun s -> match Solid.hit ~min_t:w.options.epsilon ray s with Some t -> t < dist | None -> false) w.scene.solids
+        in
+        if not hidden then incr through
+      done;
+      float_of_int !through /. float_of_int rays
+  | _ -> if blocked w point light then 0. else 1.
+
 (* the point's own light: its colour times the ambient and each light
- * that reaches it (Lambert), as the rasterizer's Render.scale_channel *)
-let lit (w : world) (point : Vec3.t) (n : Vec3.t) (color : int) : color =
+ * that reaches it (Lambert), as the rasterizer's Render.scale_channel;
+ * path tracing has no ambient: it computes the light that bounces, the
+ * ambient's guess, instead (see [radiance]) *)
+let lit (w : world) (rng : rng) (point : Vec3.t) (n : Vec3.t) (color : int) : color =
   let r, g, b =
     List.fold_left
       (fun ((r, g, b) as sum) light ->
         let dir, _ = towards_light point light in
         let cos = Vec3.dot n dir *. spot_factor point light in
         if cos <= 0. then sum
-        else if w.options.algorithm <> Lambert && blocked w point light then sum
         else
-          let lr, lg, lb = match light with Sun { color; _ } | Lamp { color; _ } | Spot { color; _ } -> color in
-          (r +. (lr *. cos), g +. (lg *. cos), b +. (lb *. cos)))
+          let share = if w.options.algorithm = Lambert then 1. else reaching w rng point light in
+          if share = 0. then sum
+          else
+            let lr, lg, lb = match light with Sun { color; _ } | Lamp { color; _ } | Spot { color; _ } -> color in
+            let k = cos *. share in
+            (r +. (lr *. k), g +. (lg *. k), b +. (lb *. k)))
       (0., 0., 0.) w.scene.lights
   in
-  let a = w.scene.ambient in
+  let a = if w.options.algorithm = Path_tracing then 0. else w.scene.ambient in
   let cr, cg, cb = color_of_int color in
   (cr *. (a +. r), cg *. (a +. g), cb *. (a +. b))
 
@@ -223,7 +281,19 @@ let schlick ~(n1 : float) ~(n2 : float) (cos : float) : float =
 
 (* the colour seen along a ray: [depth] the bounces so far, [weight]
  * the share of the pixel this ray's colour will be *)
-let rec radiance (w : world) (ray : Ray.t) ~(min_t : float) ~(max_t : float) ~(depth : int) ~(weight : float) : color =
+(* a direction around the normal n, cosine weighted: more of them
+ * near n, where a matte surface gathers the most light from (Malley's
+ * method: a point of the unit disc, lifted onto the hemisphere) *)
+let cosine_direction (rng : rng) (n : Vec3.t) : Vec3.t =
+  let a = if Float.abs (let x, _, _ = n in x) > 0.9 then (0., 1., 0.) else (1., 0., 0.) in
+  let t = Vec3.normalize (Vec3.cross a n) in
+  let b = Vec3.cross n t in
+  let r1 = uniform rng and r2 = uniform rng in
+  let phi = 2. *. Float.pi *. r1 and r = sqrt r2 in
+  Vec3.add (Vec3.add (Vec3.scale (r *. cos phi) t) (Vec3.scale (r *. sin phi) b)) (Vec3.scale (sqrt (1. -. r2)) n)
+
+let rec radiance (w : world) (rng : rng) (ray : Ray.t) ~(min_t : float) ~(max_t : float) ~(depth : int) ~(weight : float) :
+    color =
   match find_nearest w ~min_t ~max_t ray with
   | None -> color_of_int w.scene.background
   | Some (t, solid) -> (
@@ -239,16 +309,35 @@ let rec radiance (w : world) (ray : Ray.t) ~(min_t : float) ~(max_t : float) ~(d
       let color = Solid.color leaf ray t in
       match w.options.algorithm with
       | Ray_casting -> color_of_int color
-      | Lambert | Shadow_rays | Whitted -> (
+      | Lambert | Shadow_rays | Whitted | Soft_shadows | Path_tracing -> (
           (* the side the eye sees: a plane from below, a sphere from
            * inside *)
           let n = Solid.normal leaf ray t in
           let n = if flipped then Vec3.scale (-1.) n else n in
           let inside = Vec3.dot n ray.direction > 0. in
           let n = if inside then Vec3.scale (-1.) n else n in
-          let local = lit w point n color in
+          let direct = lit w rng point n color in
+          (* path tracing: the light from everything else, one random
+           * bounce off the matte surface, the rest of its path traced
+           * the same way -- Kajiya's rendering equation, estimated one
+           * path at a time; the sky lights what it reaches *)
+          let local =
+            if w.options.algorithm <> Path_tracing || depth >= w.options.depth then direct
+            else
+              let cr, cg, cb = color_of_int color in
+              let albedo = Float.max cr (Float.max cg cb) /. 255. in
+              if weight *. albedo < w.options.cutoff then direct
+              else begin
+                w.secondary <- w.secondary + 1;
+                let ir, ig, ib =
+                  radiance w rng (Ray.make point (cosine_direction rng n)) ~min_t:w.options.epsilon ~max_t:infinity
+                    ~depth:(depth + 1) ~weight:(weight *. albedo)
+                in
+                add direct (ir *. cr /. 255., ig *. cg /. 255., ib *. cb /. 255.)
+              end
+          in
           let m = surface.material in
-          if w.options.algorithm <> Whitted || depth >= w.options.depth then local
+          if (not (at_least w.options.algorithm Whitted)) || depth >= w.options.depth then local
           else
             (* one more ray, if what it can add is worth it: the
              * attenuation cutoff (Camls 'R Us, ICFP 2000) *)
@@ -259,7 +348,7 @@ let rec radiance (w : world) (ray : Ray.t) ~(min_t : float) ~(max_t : float) ~(d
               end
               else begin
                 w.secondary <- w.secondary + 1;
-                radiance w (Ray.make point dir) ~min_t:w.options.epsilon ~max_t:infinity ~depth:(depth + 1)
+                radiance w rng (Ray.make point dir) ~min_t:w.options.epsilon ~max_t:infinity ~depth:(depth + 1)
                   ~weight:(weight *. share)
               end
             in
@@ -282,7 +371,7 @@ let rec radiance (w : world) (ray : Ray.t) ~(min_t : float) ~(max_t : float) ~(d
                 else add (times (1. -. m.shiny) local) (times m.shiny (bounce (reflect ray.direction n) m.shiny))))
 
 let trace (w : world) (ray : Ray.t) ~(min_t : float) ~(max_t : float) : int =
-  int_of_color (radiance w ray ~min_t ~max_t ~depth:0 ~weight:1.)
+  int_of_color (radiance w (ref (Lehmer.scramble w.options.seed)) ray ~min_t ~max_t ~depth:0 ~weight:1.)
 
 (*****************************************************************************)
 (* Entry point *)
@@ -300,9 +389,11 @@ let set_pixel (img : Rgba_image.t) ~(x : int) ~(y : int) (rgb : int) : unit =
  * (stratified: one sample in each cell, rather than n^2 anywhere) *)
 let pixel (w : world) ~(width : int) ~(height : int) ~(x : int) ~(y : int) : int =
   let n = w.options.samples in
+  (* the pixel's own random numbers, from where it is *)
+  let rng = ref (Lehmer.scramble ((w.options.seed * 1_000_003) + (y * width) + x)) in
   if n <= 1 then
     let ray, min_t, max_t = camera_ray w.scene.camera ~width ~height ~x ~y in
-    trace w ray ~min_t ~max_t
+    int_of_color (radiance w rng ray ~min_t ~max_t ~depth:0 ~weight:1.)
   else
     let sum = ref (0., 0., 0.) in
     for j = 0 to n - 1 do
@@ -312,7 +403,7 @@ let pixel (w : world) ~(width : int) ~(height : int) ~(x : int) ~(y : int) : int
         let ray, min_t, max_t = camera_ray_through w.scene.camera ~width ~height px py in
         (* each sample clamped first, as one ray's pixel would be: three
          * suns on a sample must not make it count three times *)
-        let r, g, b = radiance w ray ~min_t ~max_t ~depth:0 ~weight:1. in
+        let r, g, b = radiance w rng ray ~min_t ~max_t ~depth:0 ~weight:1. in
         sum := add !sum (Float.min r 255., Float.min g 255., Float.min b 255.)
       done
     done;

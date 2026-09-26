@@ -11,6 +11,7 @@
  (package elm_playground)
  (wrapped false)
  (libraries
+   random ; Lehmer, the soft shadows' and the path tracer's numbers
    graphics_3d_geometry ; Vec3, Camera, Ray, Material
    graphics_rgba ; Rgba_image, the picture made
  )

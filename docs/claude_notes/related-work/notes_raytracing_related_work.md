@@ -9,7 +9,7 @@ and [`notes_vs_doom_quake.md`](notes_vs_doom_quake.md); this note is
 the other renderer's. Companions:
 [`notes_raytracing.md`](../tutorials/notes_raytracing.md) (how it
 works) and
-[`plan_raytracing_teaching.md`](../plans/plan_raytracing_teaching.md)
+[`plan_raytracing_teaching.md`](../plans/done/plan_raytracing_teaching.md)
 (what gets built, in what order).
 
 ## The one-line version

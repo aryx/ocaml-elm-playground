@@ -172,6 +172,12 @@ val sun : Playground.color -> Playground.number -> Playground.number -> Playgrou
  * around -- GML's "pointlight", POV-Ray's light_source *)
 val lamp : Playground.color -> Playground.number -> Playground.number -> Playground.number -> light
 
+(* [area_lamp r lamp]: the lamp a ball of radius r, not a point: its
+ * shadows soft, a penumbra where part of it is hidden -- seen by the
+ * soft shadows and path tracing algorithms (Raytrace.mli), the others
+ * seeing a point *)
+val area_lamp : Playground.number -> light -> light
+
 (* [spot color ~at ~towards angle]: a lamp at [at] lighting a cone
  * pointed at [towards], [angle] degrees wide on each side of its axis,
  * fading to its edge as cos^[falloff] (default 1) -- GML's spotlight *)
@@ -208,6 +214,9 @@ type model
  * - [rays_per_frame] (default 20,000): the camera rays shot each
  *   frame, a fixed number so that a frame's picture is the same on
  *   every run (the golden frames), however fast the computer;
+ * - [algorithm] (default Raytrace.default_algorithm, Whitted's) and
+ *   [samples] (default 1): what the picture starts with, before the
+ *   arrows and the keys 1 to 4 change them;
  * - [export]: the capability to write a file; given, "s" saves the
  *   picture as [file] (default "povray.png"), a PNG, from the
  *   program's main, [Cap.main (fun caps -> ... ~export:(caps :> ...))].
@@ -223,6 +232,8 @@ val still :
   ?file:string ->
   ?rays_per_frame:int ->
   ?size:int * int ->
+  ?algorithm:Raytrace.algorithm ->
+  ?samples:int ->
   scene ->
   (model Playground.game, Playground.msg) Playground.app
 
@@ -236,5 +247,26 @@ val orbit :
   ?file:string ->
   ?rays_per_frame:int ->
   ?size:int * int ->
+  ?algorithm:Raytrace.algorithm ->
+  ?samples:int ->
   scene ->
   (model Playground.game, Playground.msg) Playground.app
+
+(*****************************************************************************)
+(* {1 A scene in a program of its own} *)
+(*****************************************************************************)
+(* For a program that is more than a picture, and draws its scenes
+ * itself (TinyMyst: an island, a still per place). *)
+
+(* the scene as the ray tracer takes it, for Raytrace.render and
+ * Raytrace.start *)
+val raytrace_scene : scene -> Raytrace.scene
+
+(* [pick scene ~width ~height x y]: the solid of the scene's list seen
+ * at the point (x, y) of a width x height picture of it, in pixels
+ * from its top left corner, if any -- the very solid given to
+ * [scene], so that a program can tell which of its own it is by
+ * physical equality (==). A click is a ray, the renderer's primitive
+ * used again: what can be clicked in a ray-traced picture is the
+ * objects themselves, not rectangles drawn over it by hand. *)
+val pick : scene -> width:int -> height:int -> Playground.number -> Playground.number -> obj option

@@ -73,7 +73,8 @@ independent, for both GPU backends:
 ## 6. Ray tracing, the other renderer
 
 Its own plan now:
-[`plan_raytracing_teaching.md`](plan_raytracing_teaching.md) --
+[`done/plan_raytracing_teaching.md`](done/plan_raytracing_teaching.md), done, and
+[`plan_raytracing_remaining.md`](plan_raytracing_remaining.md) --
 `graphics/3d/Raytrace` over the same `Render.face list` the rasterizer
 takes, for `-dump-frame` stills and a low-resolution preview key, with
 the shadows, mirrors and glass the rasterizer cannot do; the tutorial

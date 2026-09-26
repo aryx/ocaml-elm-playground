@@ -44,7 +44,7 @@ let app (caps : < Cap.open_out >) =
   orbit ~export:caps ~file:"whitted.png" ~size:(400, 300)
     (scene ~ambient:0.3 ~sky:(rgb 110 160 230)
        ~camera:(camera ~fov:45. ~eye:(0., 1.8, 4.) ~target:(0., 0.9, -2.) ())
-       [ lamp (rgb 230 230 230) 4. 8. 4. ]
+       [ area_lamp 0.6 (lamp (rgb 230 230 230) 4. 8. 4.) ]
        [ move 0. 0. 0. (plane board);
          move 0.9 1.1 (-3.5) (sphere (shiny 0.85 (color (rgb 200 200 210))));
          move (-0.8) 1. (-1.3) (sphere (glassy 1.5 (color white))) ])

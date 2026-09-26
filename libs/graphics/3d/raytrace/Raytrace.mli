@@ -37,6 +37,14 @@
  *                  light: a second ray, towards it (phase 2)
  *   Whitted        and what a mirror reflects, what glass lets
  *                  through: more rays, from the point on (phase 5)
+ *   Soft_shadows   a lamp with a size, and its shadow's soft edge:
+ *                  several shadow rays, to random points of it (phase 9)
+ *   Path_tracing   and the light bounced from everything else: one
+ *                  random ray more at each point, the ambient's guess
+ *                  computed instead (phase 9)
+ *
+ * The default is Whitted's, the last one with no noise: the two after
+ * it are estimates, noisy at one ray a pixel.
  *
  * {1 Ray casting}
  *
@@ -177,6 +185,46 @@
  * within its cell, trading the grid's regular leftovers for noise:
  * phase 9's, with an explicit seed.
  *
+ * {1 Randomness: soft shadows, and paths}
+ *
+ * A lamp is not a point, and a shadow's edge is not sharp: a point in
+ * the penumbra sees part of the lamp. Which part is an integral over
+ * the lamp's surface, and Cook, Porter and Carpenter (1984) estimated
+ * such integrals with a few rays each at random -- here 16 shadow rays
+ * to random points of the lamp, the share that reach it. The same idea
+ * gives glossy reflections, motion blur and depth of field (random
+ * reflected rays, random times, random points of a lens): "distributed
+ * ray tracing".
+ *
+ * Kajiya (1986) went all the way. The light leaving a point is what it
+ * emits plus what it reflects of the light arriving from every
+ * direction -- which left other points the same way: the rendering
+ * equation, an integral over the hemisphere, recursive. Estimate it
+ * with one random direction per point, followed from point to point: a
+ * path. The ambient term (a constant, a guess at the light bouncing
+ * around) is gone: that light is computed, from the sky and from the
+ * other surfaces -- a red wall's light tints what faces it (colour
+ * bleeding), a corner is darker than an open floor. The price is
+ * noise: each pixel an estimate from few paths, its error shrinking as
+ * 1 / sqrt samples -- four times the rays for half the noise.
+ *
+ *        eye                    sky
+ *          \     p2 ---------> x
+ *           \   /
+ *            p1       each bounce a random direction around the
+ *                     normal, more of them near it (cosine weighted)
+ *
+ * Random, but deterministic: each pixel's numbers come from its own
+ * seed (Lehmer), from its place in the picture and [options.seed], so
+ * a picture is the same on every run and whatever order its pixels
+ * are made in.
+ *
+ * Its references: Robert L. Cook, Thomas Porter and Loren Carpenter,
+ * "Distributed Ray Tracing" (SIGGRAPH 1984); James T. Kajiya, "The
+ * Rendering Equation" (SIGGRAPH 1986); Tom Malley's cosine-weighted
+ * directions (1988), and Kevin Beason's smallpt (2007), a path tracer in
+ * 99 lines of C++, the size to compare with.
+ *
  * References: Arthur Appel, "Some Techniques for Shading Machine
  * Renderings of Solids" (AFIPS 1968), ray casting and shadows; Andrew
  * S. Glassner (ed.), An Introduction to Ray Tracing (1989), the book
@@ -197,7 +245,8 @@ type light =
    * [towards] it, a unit vector *)
   | Sun of { towards : Vec3.t; color : rgb }
   (* at a point: seen in a direction of its own from each point *)
-  | Lamp of { position : Vec3.t; color : rgb }
+  (* ... of [radius] (0: a point), seen as a ball by the soft shadows *)
+  | Lamp of { position : Vec3.t; radius : float; color : rgb }
   (* a lamp that lights a cone only: [aim] its axis (a unit vector),
    * [angle] its half-angle in degrees, and inside it cos^[falloff] of
    * the angle off the axis -- GML's spotlight, the ICFP task's third
@@ -218,13 +267,16 @@ type scene = {
 (* {1 The algorithms} *)
 (*****************************************************************************)
 
-type algorithm = Ray_casting | Lambert | Shadow_rays | Whitted
+type algorithm = Ray_casting | Lambert | Shadow_rays | Whitted | Soft_shadows | Path_tracing
 
 (* in the order they were written, each the one before plus an idea *)
 val algorithms : algorithm list
 
-(* the last of them, the default *)
+(* the last of them *)
 val latest : algorithm
+
+(* Whitted's: the last without noise, the default *)
+val default_algorithm : algorithm
 
 (* e.g. "shadow rays" *)
 val name : algorithm -> string
@@ -245,10 +297,12 @@ type options = {
   (* rays per pixel: n x n, one through each cell of a grid over the
    * pixel, averaged -- antialiasing (see below) *)
   samples : int;
+  (* the random numbers' seed (soft shadows, path tracing) *)
+  seed : int;
 }
 
-(* [latest], an epsilon of 1e-4, a BVH cut by the surface area
- * heuristic, 3 bounces, a cutoff of 1/256, 1 sample *)
+(* [default_algorithm], an epsilon of 1e-4, a BVH cut by the surface
+ * area heuristic, 3 bounces, a cutoff of 1/256, 1 sample, seed 1 *)
 val default_options : options
 
 (*****************************************************************************)
