@@ -63,6 +63,7 @@
    %{project_root}/games/flight/software/TinyComanche3d.exe
    %{project_root}/games/flight/software/TinyDescent3d.exe
    %{project_root}/games/fps/software/TinyQuake.exe
+   %{project_root}/games/fps/software/TinyFortnite.exe
    %{project_root}/games/puzzle/software/TinyBlockout.exe
    %{project_root}/games/adventure/software/TinyTombRaider.exe
    %{project_root}/games/arcade/software/TinyBoomerangFu.exe

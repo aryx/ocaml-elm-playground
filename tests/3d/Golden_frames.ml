@@ -145,6 +145,8 @@ let scenes : Testutil_golden.scene list =
     ("games/flight/software/TinyDescent3d", "", 5);
     (* claude: the start room, its pillar's shadow, the lit doorway *)
     ("games/fps/software/TinyQuake", "", 5);
+    (* claude: the island from out at sea, the bus crossing it *)
+    ("games/fps/software/TinyFortnite", "", 5);
     ("games/puzzle/software/TinyBlockout", "", 5);
     ("games/adventure/software/TinyTombRaider", "", 5);
     (* claude: frame 60, not 5: the world's chunks are built a few per
@@ -304,6 +306,16 @@ let scripted : Testutil_golden.scripted list =
      * to a few leaves, and "v" (the second one) draws the whole level *)
     ("games/fps/software/TinyQuake", "doorway", 60, "w:1-60");
     ("games/fps/software/TinyQuake", "everything", 60, "v:2,w:1-60");
+    (* claude: out of the bus as soon as it takes off, diving head
+     * first towards the island, the storm's curtain round it *)
+    ("games/fps/software/TinyFortnite", "dive", 60, "space:1,space:30");
+    (* out of the bus over the middle, glided down to the hill, then a
+     * ramp rush: w and x held with the ramp, a staircase of ramps up
+     * the slope, the next one's ghost at the top *)
+    ( "games/fps/software/TinyFortnite",
+      "rush",
+      830,
+      "space:1,space:350,w:351-689,left:690-699,4:700,w:701-829,x:701-829" );
     (* four seconds in: thrown about the middle axis the handle has
      * turned itself over once, with nothing acting on it; thrown about
      * the largest axis it has not, and will not. The purple arrow (L)

@@ -17,13 +17,15 @@
 )
 
 (executables
-  (names TinyBattlezone3d TinyCyberSled TinyDoom3d TinyHalfLife2 TinyMinecraft
-    TinyQuake TinyTeardown TinyWolfenstein3d)
-  (modules TinyBattlezone3d TinyCyberSled TinyDoom3d TinyHalfLife2 TinyMinecraft
-    TinyQuake TinyTeardown TinyWolfenstein3d Texture_atlas)
+  (names TinyBattlezone3d TinyCyberSled TinyDoom3d TinyFortnite TinyHalfLife2
+    TinyMinecraft TinyQuake TinyTeardown TinyWolfenstein3d)
+  (modules TinyBattlezone3d TinyCyberSled TinyDoom3d TinyFortnite TinyHalfLife2
+    TinyMinecraft TinyQuake TinyTeardown TinyWolfenstein3d Texture_atlas)
   (libraries
     elm_core
     kit_sectors
+    kit_heightmap
+    ai
     elm_playground
     elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
     elm_playground_3d

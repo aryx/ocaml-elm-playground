@@ -13,13 +13,15 @@
 )
 
 (executables
-  (names TinyBattlezone3d TinyCyberSled TinyDoom3d TinyHalfLife2 TinyMinecraft
-    TinyQuake TinyTeardown TinyWolfenstein3d)
-  (modules TinyBattlezone3d TinyCyberSled TinyDoom3d TinyHalfLife2 TinyMinecraft
-    TinyQuake TinyTeardown TinyWolfenstein3d Texture_atlas)
+  (names TinyBattlezone3d TinyCyberSled TinyDoom3d TinyFortnite TinyHalfLife2
+    TinyMinecraft TinyQuake TinyTeardown TinyWolfenstein3d)
+  (modules TinyBattlezone3d TinyCyberSled TinyDoom3d TinyFortnite TinyHalfLife2
+    TinyMinecraft TinyQuake TinyTeardown TinyWolfenstein3d Texture_atlas)
   (libraries
     elm_core
     kit_sectors ; TinyDoom3d's level, TinyDoom's own
+    kit_heightmap ; TinyFortnite's island
+    ai ; TinyFortnite's bots (Bot, Sense)
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d
     elm_playground_3d_opengl ; implem of virtual elm_playground_3d

@@ -240,6 +240,7 @@ about its view, from a raycaster to a real 3D renderer.
 | [TinyHalfLife2](games/fps/TinyHalfLife2.ml) | 3D | Half-Life 2 (Valve, 2004) | A yard of Ravenholm, two zombies, and the gravity gun. | Physics as the game: the gravity gun, a hinged seesaw, floating barrels, zombies that go limp as ragdolls. |
 | [TinyMinecraft](games/fps/TinyMinecraft.ml) | 3D | Minecraft (Markus Persson, 2009) | Walk, jump, fly, and remove and place blocks. | A voxel world in a hash table: chunks cached on the GPU, hidden faces culled, blocks picked by a ray, one texture atlas. |
 | [TinyTeardown](games/fps/TinyTeardown.ml) | 3D | Teardown (Dennis Gustafsson, Tuxedo Labs, 2020) | A heist in a level of voxels, every one of which can be knocked out. | Destructible voxels: greedy meshing, a flood fill finding what is loose, and loose pieces turned into rigid bodies of the 3D engine. |
+| [TinyFortnite](games/fps/TinyFortnite.ml) | 3D | Fortnite Battle Royale (Epic Games, 2017) | Sixteen out of a flying bus onto an island, a storm closing in, and walls, floors and ramps built in a second. | A battle royale: the bus, the glide, chests and a storm that shrinks on a timetable; building snapped to a grid, structural integrity as a flood fill over the pieces' shared edges; bots on libs/ai's Bot and Sense that wall up when shot. |
 
 ## Flight and space
 
