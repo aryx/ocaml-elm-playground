@@ -3055,70 +3055,125 @@ let blockout_walls () =
 (* TinyTombRaider *)
 (*****************************************************************************)
 
-(* The tomb can be got out of, and this is the route: every move the
- * raider has, in order, from the entrance to the idol and back. It is
- * worth reading as the level's answer written down -- which is the
- * point of a game whose moves are fixed lengths (see the header of
- * TinyTombRaider.ml). Each move is asked for and must be
- * granted: a refusal here means the tomb cannot be finished. *)
+(* The raider is driven here as the player drives her, by what is held
+ * each frame: [tr_go] turns her towards a point and runs her there (a
+ * small autopilot, the arrows only), [tr_hold] holds some keys for a
+ * while. Nothing is placed by hand, so what these tests check is that
+ * the tomb can really be played. *)
+let tr_frames (g : TinyTombRaider.game) (n : int) (inp : TinyTombRaider.input) : TinyTombRaider.game =
+  let rec go g i = if i = 0 then g else go (TinyTombRaider.step g inp) (i - 1) in
+  go g n
+
+let tr_turn_to (l : TinyTombRaider.lara) (h : float) : float =
+  Float.rem (h -. l.heading +. 540.) 360. -. 180.
+
+let tr_go (g : TinyTombRaider.game) ((tx, tz) : float * float) : TinyTombRaider.game =
+  let open TinyTombRaider in
+  let rec go (g : game) n =
+    let l = g.lara in
+    let dx = tx -. l.x and dz = tz -. l.z in
+    if Float.hypot dx dz < 0.15 || n = 0 || g.dead <> None then tr_frames g 12 idle
+    else
+      let d = tr_turn_to l (Float.atan2 dx (-.dz) *. 180. /. Float.pi) in
+      let inp = { idle with left = d < -3.; right = d > 3.; up = Float.abs d < 40. } in
+      go (step g inp) (n - 1)
+  in
+  go g 900
+
+(* turned in place to [h] degrees, to the nearest turn *)
+let tr_face (g : TinyTombRaider.game) (h : float) : TinyTombRaider.game =
+  let open TinyTombRaider in
+  let rec go (g : game) n =
+    let d = tr_turn_to g.lara h in
+    if Float.abs d <= 2. || n = 0 then g else go (step g { idle with left = d < 0.; right = d > 0. }) (n - 1)
+  in
+  go g 200
+
+(* running along [h] until [past] says she is where she should jump *)
+let tr_run_jump (g : TinyTombRaider.game) (h : float) (past : TinyTombRaider.lara -> bool) : TinyTombRaider.game =
+  let open TinyTombRaider in
+  let g = tr_face g h in
+  let rec run (g : game) n = if past g.lara || n = 0 then g else run (step g { idle with up = true }) (n - 1) in
+  let g = run g 400 in
+  tr_frames (step g { idle with up = true; jump = true }) 60 idle
+
+(* [inp] held until [stop] *)
+let tr_until (g : TinyTombRaider.game) (inp : TinyTombRaider.input) (stop : TinyTombRaider.game -> bool) :
+    TinyTombRaider.game =
+  let rec go g n = if stop g || n = 0 then g else go (TinyTombRaider.step g inp) (n - 1) in
+  go g 300
+
+let tr_where (g : TinyTombRaider.game) : string =
+  let l = g.lara in
+  Printf.sprintf "at (%.2f, %.2f, %.2f) heading %.0f, dead: %s" l.x l.y l.z l.heading
+    (Option.value g.dead ~default:"no")
+
+(* The tomb can be got out of, and this is the route, the level's answer
+ * written down: down the ramp and the slide into the cave, a running
+ * jump over the chasm, the block pushed three times to the plinth,
+ * climbed, the plinth climbed from it; back over the chasm, a jump up to
+ * the platform's ledge, a pull-up, and up the ramp to the corridor, the
+ * boulder behind. *)
 let tomb_raider_route () =
   let open TinyTombRaider in
-  let fwd g = attempt g `Forward and right g = attempt g `Right and left g = attempt g `Left in
-  let hands g = attempt g `Hands and jump2 g = jump g 2 in
-  let times n move = List.init n (fun _ -> move) in
-  let route =
-    List.concat
-      [ times 12 fwd (* east down the entrance corridor *);
-        [ right ] @ times 3 fwd (* south, into the chamber's door *);
-        [ right; fwd ] (* west, up to the ledge *);
-        [ fwd; fwd ] (* her hands catch it, then she pulls up *);
-        [ fwd; fwd ] (* along the ledge, then down off its far end *);
-        [ left; fwd; fwd ] (* south to the row the chasm can be crossed on *);
-        [ right ] @ times 3 fwd (* west to its edge *);
-        [ jump2 ] (* the running jump: two squares, over the chasm *);
-        [ right; hands ] (* face the block and push it beside the plinth *);
-        [ fwd; fwd ] (* grab the block, pull up onto it *);
-        [ left; fwd; fwd ] (* from it, grab the plinth and pull up: the idol *);
-        [ right; right; fwd ] (* about turn, down onto the block *);
-        [ left; fwd ] (* off it, onto the floor *);
-        [ right; jump2 ] (* the chasm again, eastwards *);
-        times 5 fwd (* east across the chamber *);
-        [ right; fwd; fwd ] (* up the ledge again *);
-        [ left; fwd; fwd ] (* down it and out of the chamber *);
-        [ left ] @ times 3 fwd (* north, up the corridor *);
-        [ left ] @ times 12 fwd (* west, the whole way out *) ]
-  in
-  let g =
-    List.fold_left
-      (fun g move ->
-        match move g with
-        | Some d -> finish g d
-        | None -> Alcotest.failf "the tomb refused a move at (%d, %d)" g.at.cx g.at.cz)
-      (new_game ()) route
-  in
-  Alcotest.(check bool) "the idol is off its plinth" false g.idol;
-  Alcotest.(check bool) "and she is out with it" true g.out;
-  Alcotest.(check (option string)) "alive" None g.dead
+  let check what ok g = if not ok then Alcotest.failf "%s: %s" what (tr_where g) in
+  let g = new_game () in
+  let g = tr_go g (13.5, 1.5) in
+  let g = tr_go g (13.5, 3.5) in
+  check "down the ramp, on the platform" (Float.abs (g.lara.y -. 1.5) < 0.1) g;
+  let g = tr_go g (13.5, 6.5) in
+  check "down the slide, in the cave" (g.lara.y < 0.2 && g.lara.state = Ground) g;
+  let g = tr_go g (14.5, 6.5) in
+  let g = tr_run_jump g 270. (fun l -> l.x <= 10.35) in
+  check "over the chasm" (g.lara.x < 8. && g.dead = None && g.lara.state = Ground) g;
+  let g = tr_go g (6.5, 10.5) in
+  let g = tr_go g (4.5, 10.5) in
+  let g = tr_face g 0. in
+  (* x and up held: three pushes, and the fourth, against the rock,
+   * climbs the block instead *)
+  let g = tr_frames g 260 { idle with up = true; action = true } in
+  check "the block by the plinth" (g.block = (4, 6)) g;
+  check "and she on it" (Float.abs (g.lara.y -. 1.) < 0.05) g;
+  let g = tr_face g 270. in
+  let climbing (g : game) = match g.lara.state with Climb _ -> true | _ -> false in
+  let g = tr_frames (tr_until g { idle with up = true; action = true } climbing) 45 idle in
+  check "up on the plinth" (Float.abs (g.lara.y -. 2.) < 0.05) g;
+  check "the idol taken" (not g.idol) g;
+  let g = tr_go g (4.5, 6.5) in
+  let g = tr_go g (5.5, 8.5) in
+  let g = tr_go g (3.5, 8.5) in
+  let g = tr_run_jump g 90. (fun l -> l.x >= 7.65) in
+  check "back over the chasm" (g.lara.x > 10. && g.dead = None && g.lara.state = Ground) g;
+  let g = tr_go g (11.5, 4.6) in
+  let g = tr_face g 0. in
+  let g = tr_frames g 20 { idle with up = true } in
+  (* a jump straight up, x held: her hands catch the ledge *)
+  let g = tr_frames (step g { idle with jump = true; action = true }) 40 { idle with action = true } in
+  check "hanging from the platform" (match g.lara.state with Hang _ -> true | _ -> false) g;
+  let g = tr_frames g 60 { idle with up = true; action = true } in
+  check "pulled up" (Float.abs (g.lara.y -. 1.5) < 0.1 && g.lara.state = Ground) g;
+  let g = tr_go g (13.5, 3.5) in
+  let g = tr_go g (13.5, 1.5) in
+  check "the boulder let go" (g.boulder <> None) g;
+  let g = tr_go g (1.2, 1.5) in
+  check "out, with the idol" g.out g
 
 (* The two jumps are the two lengths there are, and the chasm is exactly
  * wide enough to tell them apart: that is the whole of the design (see
  * the header). A standing jump into it lands in the spikes. *)
 let tomb_raider_jumps () =
   let open TinyTombRaider in
-  (* on the chamber floor, at the chasm's edge, looking across it *)
-  let g = { (new_game ()) with at = { cx = 6; cz = 6; y = 0; facing = West; hanging = false } } in
-  (match jump g 2 with
-  | Some d ->
-      let g = finish g d in
-      Alcotest.(check (pair int int)) "the running jump crosses it" (4, 6) (g.at.cx, g.at.cz);
-      Alcotest.(check (option string)) "and she lives" None g.dead
-  | None -> Alcotest.fail "the running jump was refused");
-  match jump g 1 with
-  | Some d ->
-      let g = finish g d in
-      Alcotest.(check (pair int int)) "the standing jump falls short" (5, 6) (g.at.cx, g.at.cz);
-      Alcotest.(check (option string)) "into the spikes" (Some "the spikes") g.dead
-  | None -> Alcotest.fail "the standing jump was refused"
+  let g = tr_go (new_game ()) (13.5, 1.5) in
+  let g = tr_go g (13.5, 3.5) in
+  let g = tr_go g (13.5, 6.5) in
+  let g = tr_go g (14.5, 6.5) in
+  let over = tr_run_jump g 270. (fun l -> l.x <= 10.35) in
+  Alcotest.(check (option string)) "the running jump crosses it" None over.dead;
+  Alcotest.(check bool) ("and lands beyond " ^ tr_where over) true (over.lara.x < 8.);
+  let g = tr_go g (10.5, 6.5) in
+  let g = tr_face g 270. in
+  let g = tr_frames (step g { idle with up = true; jump = true }) 120 idle in
+  Alcotest.(check (option string)) "the standing jump falls into the spikes" (Some "the spikes") g.dead
 
 (*****************************************************************************)
 (* TinyZeldaLinkPast *)

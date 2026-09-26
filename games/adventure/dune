@@ -52,7 +52,7 @@
   (modules TinyAloneInTheDark TinyTombRaider TinyZeldaOcarina Tomb_atlas)
   (libraries
     elm_core
-    kit_brawler3d ; TinyAloneInTheDark's Skeleton
+    kit_brawler3d ; TinyAloneInTheDark's and TinyTombRaider's Skeleton
     kit_brawler ; TinyZeldaOcarina's Frame_data
     kit_heightmap ; TinyZeldaOcarina's Hyrule Field
     kit_puzzle ; TinyTombRaider's Push, the same one TinySokoban uses
