@@ -1658,5 +1658,5 @@ let app = game3d view update initial_model
 (* flat shading, Virtua Racing's look; the back faces drawn too, for the
  * sky (see [sky_and_floor]) and the thin things seen from both sides
  * (the cables, the Ferris wheel, the sails) *)
-let main =
-  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false } app
+let main = Program.main __MODULE__ (fun () ->
+  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false } app)

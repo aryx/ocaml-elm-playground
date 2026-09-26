@@ -63,8 +63,8 @@ This is a one-line change per program. A small module in `elm_core`,
  * .bc.js), [run ()] at once, as today; inside the launcher, only
  * recorded under [name], run later if chosen. *)
 val main : string -> (unit -> unit) -> unit
-val registered : unit -> (string * (unit -> unit)) list
-val launcher_mode : bool ref   (* set by the launcher's library, initialized before any game *)
+val collect : unit -> unit      (* from now on, record instead of running *)
+val collected : unit -> (string * (unit -> unit)) list
 ```
 
 Each program's last line goes from
@@ -81,10 +81,14 @@ let main = Program.main __MODULE__ (fun () ->
 ```
 
 The executables' names, the web builds (`copy_files`), the golden tests
-and `CATALOG.md` do not change. `launcher_mode` is set by a
-one-module library, `launcher_mode`, that only the launcher links.
+and `CATALOG.md` do not change. `collect ()` is called by a
+one-module library of the launcher's, which only tinybox links.
 Libraries are initialized before the executable's modules, so it is
-true before any game's `main` runs.
+called before any game's `main` runs. (Step 1, done 2026-09-27:
+`Program` in `elm_core`, the 199 mains rewritten, `games/template.ml`
+included, and semgrep's `main-through-program` rule. Top-level work
+found on the way, for step 3: TinyTetris seeds `Random` from its flags
+in a `let () =`, and TinyMinecraft queues its world's sectors.)
 
 The change is mechanical: a script over `games/*/*.ml apps/*/*.ml`,
 checked by one full build and `make test-lite`. A semgrep rule in
@@ -227,7 +231,7 @@ the linker already fails anyway.
   parsed with the parser `tests/catalog/Unit_catalog.ml` already has
   (moved into a small library both use). Each row gives the name,
   genre, 2D/2.5D/3D, After, In one line and What it brought. Programs
-  missing from `Program.registered ()` are greyed out. The catalog test
+  missing from `Program.collected ()` are greyed out. The catalog test
   already guarantees every program has a row.
 - **The screenshots**: the first golden frame of each program,
   `tests/2d/golden/<Name>.png` or `tests/3d/golden/<Name>.png`. A
@@ -308,7 +312,7 @@ under a "system" or new "launcher" row, with its golden frame:
 
 ## Steps
 
-1. `Program.main` (a `unit -> unit`, the programs' own `Cap.main` inside) + `launcher_mode`, the script
+1. `Program.main` (a `unit -> unit`, the programs' own `Cap.main` inside) + `collect`, the script
    over every program (the `Cap.main` ones included), one build, `make
    test-lite`. (Pure refactor, no behaviour change.)
 2. `Program.argv ()`, `flags` and the native loops reading

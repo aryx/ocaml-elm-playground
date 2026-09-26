@@ -668,4 +668,4 @@ let view (computer : computer) (m : model) : shape list =
   | Game_over -> [ text (rgb 230 90 90) 4. "GAME OVER" |> move_y 30.; text white 2. "space" |> move_y (-40.) ])
 
 let app = game view update initial_model
-let main = Playground_platform.run_app app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)

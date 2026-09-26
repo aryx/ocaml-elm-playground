@@ -172,6 +172,6 @@ let help = {|TinyCrush
 
 let app = game view update initial_model
 
-let main =
+let main = Program.main __MODULE__ (fun () ->
   print_string help;
-  Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+  Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

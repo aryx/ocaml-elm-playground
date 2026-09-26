@@ -308,6 +308,6 @@ let view (computer : computer) (s : model) : camera * shape3d list =
 let app = game3d view update initial_model
 
 (* flat shading; the back faces drawn too, for the sky (Camera3d.sky) *)
-let main =
+let main = Program.main __MODULE__ (fun () ->
   Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false }
-    ~flags:(Playground_platform.flags ()) app
+    ~flags:(Playground_platform.flags ()) app)

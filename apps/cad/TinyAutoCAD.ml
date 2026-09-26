@@ -432,4 +432,4 @@ let view (computer : computer) m =
   @ List.concat (List.mapi (fun i l -> text_left (rgb 220 220 220) 15. l (-490., -400. -. (float_of_int i *. 26.))) lines)
 
 let app caps = game view (update caps) initial
-let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> caps)))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app (app (caps :> caps))))

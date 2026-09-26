@@ -686,7 +686,7 @@ let app = game3d view update initial_model
 
 (* flat shading, which shows the voxels' faces apart; the back faces
  * drawn, for the sky (seen from below, see Camera3d.sky) *)
-let main =
+let main = Program.main __MODULE__ (fun () ->
   Playground3d_platform.run_app3d
     ~rendering:{ default_rendering with shading = Flat; backface_culling = false }
-    ~capture_mouse:true app
+    ~capture_mouse:true app)

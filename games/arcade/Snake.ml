@@ -279,10 +279,10 @@ let update computer model =
 let app = 
   game view update initial_model
 
-let main =
+let main = Program.main __MODULE__ (fun () ->
   (* claude: seed=n (see Playground.flags), e.g. for the golden frame
    * tests: the same food positions every run *)
   (match List.assoc_opt "seed" (Playground_platform.flags ()) with
   | Some n -> Random.init (int_of_string n)
   | None -> Random.self_init ());
-  Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+  Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

@@ -238,4 +238,4 @@ let view (computer : computer) (_player : int) (model : model) : shape list =
 (* the network granted, for net=host and net=join only (plan_caps.md):
  * the rest of the game can't reach it *)
 let app (network : < Cap.network ; .. >) = Multiplayer.game ~network ~players:2 view update initial_model
-let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app caps))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app caps)))

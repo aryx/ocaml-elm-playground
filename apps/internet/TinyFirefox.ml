@@ -488,8 +488,8 @@ let app (network : < Cap.network ; .. >) =
 
 (* threads on, as in TinyNetscape (N2): a name resolved, an https://
  * page fetched, on the platform's threads *)
-let main =
+let main = Program.main __MODULE__ (fun () ->
   Cap.main (fun caps ->
       let flags = Playground_platform.flags () in
       let flags = if List.mem_assoc "threads" flags then flags else ("threads", "on") :: flags in
-      Playground_platform.run_app ~flags (app caps))
+      Playground_platform.run_app ~flags (app caps)))

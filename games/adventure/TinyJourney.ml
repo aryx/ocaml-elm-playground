@@ -326,4 +326,4 @@ let view (computer : computer) (s : model) : shape list =
       @ if n > 90 then Scene2d.blink 1. s [ text (rgb 150 120 80) 2.5 "PRESS SPACE" |> move_y (-150.) ] else []
 
 let app = game view update initial_model
-let main = Playground_platform.run_app app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)

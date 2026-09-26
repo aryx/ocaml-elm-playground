@@ -177,5 +177,5 @@ let view (computer : computer) (m : model) : camera * shape3d list =
 let app = game3d view update { game = Lightcycles.initial_model; view = Chase; cam = None }
 
 (* flat shading; the back faces drawn too, for the sky (see Camera3d.sky) *)
-let main =
-  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false } app
+let main = Program.main __MODULE__ (fun () ->
+  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false } app)

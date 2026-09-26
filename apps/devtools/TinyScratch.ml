@@ -178,4 +178,4 @@ let project () =
   let pencil = R.sprite ~name:"Pencil" ~costumes:1 ~radius:14. (Ide.column config pencil_scripts) in
   R.stage [ { cat with x = -120.; y = -80. }; { pencil with x = 0.; y = 20.; pen_hue = 0. } ]
 
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) (Ide.app config (project ()) ~current:"Cat")
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (Ide.app config (project ()) ~current:"Cat"))

@@ -387,4 +387,4 @@ let view (computer : computer) (s : model) : shape list =
   | Out _ -> [ rectangle (rgb 255 250 225) screen.width screen.height; text (rgb 90 80 60) 5. "OUT OF THE CASTLE"; text (rgb 90 80 60) 2.5 "the two of them, into the light" |> move_y (-70.) ] @ Scene2d.blink 1. s [ text (rgb 90 80 60) 3. "PRESS SPACE" |> move_y (-150.) ]
 
 let app = game view update initial_model
-let main = Playground_platform.run_app app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)

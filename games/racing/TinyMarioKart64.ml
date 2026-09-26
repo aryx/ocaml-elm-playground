@@ -1733,7 +1733,7 @@ let app = split3d view update initial_model
  * whatever way the camera looks at them, so this game lights its
  * polygons itself ([solid], [shade]) -- see the header. The back faces
  * are drawn too, for the sky (Camera3d.sky). *)
-let main =
+let main = Program.main __MODULE__ (fun () ->
   Playground3d_platform.run_app3d
     ~rendering:{ default_rendering with shading = No_lighting; backface_culling = false }
-    app
+    app)

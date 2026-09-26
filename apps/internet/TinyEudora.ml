@@ -1180,4 +1180,4 @@ let view (_ : computer) (m : model) : shape list =
   @ Gui.draw ()
 
 let app (caps : caps) = game view (update caps) initial
-let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> caps)))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> caps))))

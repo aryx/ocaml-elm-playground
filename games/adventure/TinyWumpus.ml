@@ -34,4 +34,4 @@
  *)
 
 let app = Teletype.teletype Tty_wumpus.program
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

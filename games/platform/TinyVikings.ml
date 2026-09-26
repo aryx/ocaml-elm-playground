@@ -496,4 +496,4 @@ let view (computer : computer) (s : model) : shape list =
   | Home -> [ text (rgb 240 200 60) 6. "HOME AGAIN!"; text white 2.5 "Erik, Baleog and Olaf made it out of the spaceship" |> move_y (-80.) ] @ Scene2d.blink 1. s [ text yellow 3. "PRESS SPACE" |> move_y (-160.) ])
 
 let app = game view update initial_model
-let main = Playground_platform.run_app app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)

@@ -597,4 +597,4 @@ let view (computer : computer) m =
   @ text_left black 13. shown (300., -478.)
 
 let app = game view update initial
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

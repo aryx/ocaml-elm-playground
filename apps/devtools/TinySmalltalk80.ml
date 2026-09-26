@@ -1318,4 +1318,4 @@ let view (computer : computer) (m : model) : shape list =
   (rectangle black computer.screen.width computer.screen.height :: box s desktop screen :: windows) @ display @ busy @ menu
 
 let app (caps : caps) = game view (update caps) initial
-let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> caps)))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> caps))))

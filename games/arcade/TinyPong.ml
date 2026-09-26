@@ -182,4 +182,4 @@ let view (computer : computer) (model : model) : shape list =
       @ [ text 5. (string_of_int g.left_score) |> move (-100.) 400.; text 5. (string_of_int g.right_score) |> move 100. 400. ]
 
 let app = game view update initial_model
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

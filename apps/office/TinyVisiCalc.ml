@@ -345,4 +345,4 @@ let view _computer model =
     ]
 
 let app caps = game view (update caps) initial
-let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> < Cap.open_in ; Cap.open_out >)))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app (app (caps :> < Cap.open_in ; Cap.open_out >))))

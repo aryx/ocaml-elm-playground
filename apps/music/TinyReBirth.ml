@@ -256,4 +256,4 @@ let view (computer : computer) (m : model) : shape list =
   @ Gui.draw ()
 
 let app = game view update initial_model
-let main = Playground_platform.run_app app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)

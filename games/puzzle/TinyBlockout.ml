@@ -408,8 +408,8 @@ let app = game3d view update (Scene2d.start Title)
  *
  * Flat shading: every face of every cube gets its own shade, which is
  * one more thing telling you which way a cube is facing. *)
-let main =
+let main = Program.main __MODULE__ (fun () ->
   (match List.assoc_opt "seed" (Playground_platform.flags ()) with
   | Some n -> Random.init (int_of_string n)
   | None -> Random.self_init ());
-  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat } app
+  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat } app)

@@ -703,8 +703,8 @@ let net_app (network : < Cap.network ; .. >) = Multiplayer3d.game3d ~network ~pl
  * (seen from below, see Camera3d.sky) *)
 let rendering = { default_rendering with shading = Flat; backface_culling = false }
 
-let main =
+let main = Program.main __MODULE__ (fun () ->
   Cap.main (fun caps ->
       let flags = Playground_platform.flags () in
       if List.mem_assoc "net" flags then Playground3d_platform.run_app3d ~flags ~network:caps ~rendering (net_app caps)
-      else Playground3d_platform.run_app3d ~flags ~rendering app)
+      else Playground3d_platform.run_app3d ~flags ~rendering app))

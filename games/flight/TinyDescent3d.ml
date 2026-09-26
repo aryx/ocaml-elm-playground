@@ -242,4 +242,4 @@ let app = game3d view update initial_model
 (* the colors are the mine's own, as in TinyDescent: no
  * lighting, so the two pictures differ only in how what is hidden is
  * decided *)
-let main = Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = No_lighting } app
+let main = Program.main __MODULE__ (fun () -> Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = No_lighting } app)

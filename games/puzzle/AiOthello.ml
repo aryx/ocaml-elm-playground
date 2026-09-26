@@ -254,4 +254,4 @@ let view (computer : computer) (s : model) : shape list =
     | None -> [ text (rgb 200 220 200) 2. "v: the computer's view of your moves" |> move_y (-475.) ])
 
 let app = game view update initial_model
-let main = Playground_platform.run_app app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)

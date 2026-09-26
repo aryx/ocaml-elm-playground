@@ -766,4 +766,4 @@ let view _computer m =
   @ File_menu.view m.file @ Gui.draw ()
 
 let app caps = game view (update caps) initial
-let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> caps)))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> caps))))

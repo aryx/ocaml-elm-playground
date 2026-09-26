@@ -764,6 +764,6 @@ let app = game3d view update initial_model
 (* claude: sharp texels, like the original's GL_NEAREST: bilinear
  * filtering blurs the pixel-art blocks, and blends each atlas cell with
  * its neighbors in the atlas along its borders *)
-let main =
+let main = Program.main __MODULE__ (fun () ->
   Playground3d_platform.run_app3d ~rendering:{ default_rendering with smooth_textures = false } ~capture_mouse:true
-    ~flags:(Playground_platform.flags ()) app
+    ~flags:(Playground_platform.flags ()) app)

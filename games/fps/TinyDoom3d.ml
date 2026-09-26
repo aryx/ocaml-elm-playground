@@ -174,4 +174,4 @@ let view (computer : computer) (m : model) : camera * shape3d list =
 
 let app = game3d view update initial_model
 
-let main = Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = No_lighting } app
+let main = Program.main __MODULE__ (fun () -> Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = No_lighting } app)

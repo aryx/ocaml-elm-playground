@@ -388,4 +388,4 @@ let view (computer : computer) (model : model) : shape list =
            @ [ rectangle black 400. 120. |> fade 0.8 |> move well_x 0.; text red 5. "GAME OVER" |> move well_x 0. ])
 
 let app = game view update initial_model
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

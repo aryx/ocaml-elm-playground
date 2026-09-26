@@ -1047,4 +1047,4 @@ let view (computer : computer) (s : model) : camera * shape3d list =
         s [ text white 2.5 "PRESS SPACE" |> move_y 60. ]
 
 let app = game3d view update (Scene2d.start Title)
-let main = Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat } app
+let main = Program.main __MODULE__ (fun () -> Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat } app)

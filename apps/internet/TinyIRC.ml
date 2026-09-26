@@ -235,4 +235,4 @@ let app (network : < Cap.network ; .. >) =
   let network = (network :> Cap.network) in
   game view (update network) initial
 
-let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app caps))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app caps)))

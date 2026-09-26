@@ -390,6 +390,6 @@ let help = {|TinyPerspective
 
 let app = game3d view update initial_model
 
-let main =
+let main = Program.main __MODULE__ (fun () ->
   print_string help;
-  Playground3d_platform.run_app3d app
+  Playground3d_platform.run_app3d app)

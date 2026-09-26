@@ -468,6 +468,6 @@ let view (computer : computer) (m : model) : shape list =
 
 let app caps = game view (update caps) initial
 
-let main =
+let main = Program.main __MODULE__ (fun () ->
   Cap.main (fun caps ->
-      Playground_platform.run_app ~rendering:{ antialiasing = true; smooth_images = false } (app (caps :> File_menu.caps)))
+      Playground_platform.run_app ~rendering:{ antialiasing = true; smooth_images = false } (app (caps :> File_menu.caps))))

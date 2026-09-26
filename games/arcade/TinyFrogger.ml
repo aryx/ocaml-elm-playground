@@ -476,4 +476,4 @@ let view (computer : computer) (model : model) : shape list =
           text white 3. (Printf.sprintf "BEST %d" model.best) |> move_y (row_y median_row - 40.) ])
 
 let app = game view update initial_model
-let main = Playground_platform.run_app app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)

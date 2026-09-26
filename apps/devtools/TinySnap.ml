@@ -180,4 +180,4 @@ let project () =
   let turtle = R.sprite ~name:"Turtle" ~costumes:1 ~radius:14. scripts in
   R.stage [ { turtle with direction = 0.; y = -150. } ]
 
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) (Ide.app config (project ()) ~current:"Turtle")
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (Ide.app config (project ()) ~current:"Turtle"))

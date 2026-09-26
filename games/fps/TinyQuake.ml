@@ -619,4 +619,4 @@ let app = game3d view update initial_model
 
 (* the light is baked into the patches' colors: the renderer must not
  * add its own *)
-let main = Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = No_lighting } app
+let main = Program.main __MODULE__ (fun () -> Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = No_lighting } app)

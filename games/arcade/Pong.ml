@@ -236,5 +236,5 @@ let update computer (game, last_tick) =
 let app = 
   game view update (default_game, Unix.gettimeofday())
 
-let main = 
-  Playground_platform.run_app app
+let main = Program.main __MODULE__ (fun () ->
+  Playground_platform.run_app app)

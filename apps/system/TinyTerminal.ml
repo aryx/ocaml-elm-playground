@@ -148,4 +148,4 @@ let view (computer : Playground.computer) (m : machine) : Playground.shape list 
 
 let app = Teletype.teletype ~view session
 
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

@@ -1165,5 +1165,5 @@ let app = game3d view update (Scene2d.start Title)
 (* flat shading, each triangle of the island lit by its slope; the back
  * faces drawn too, for the sky (seen from below, see Camera3d.sky) and
  * for the pieces, one quad seen from both sides *)
-let main =
-  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false } ~capture_mouse:true app
+let main = Program.main __MODULE__ (fun () ->
+  Playground3d_platform.run_app3d ~rendering:{ default_rendering with shading = Flat; backface_culling = false } ~capture_mouse:true app)

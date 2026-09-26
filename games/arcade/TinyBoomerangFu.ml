@@ -1546,4 +1546,4 @@ let app = game3d view update initial_model
  * here needs the back faces (no sky: the arena floats over a void).
  * The flags map=river, juice=off and music=off come from the command line, or the
  * page's URL *)
-let main = Playground3d_platform.run_app3d ~flags:(Playground_platform.flags ()) app
+let main = Program.main __MODULE__ (fun () -> Playground3d_platform.run_app3d ~flags:(Playground_platform.flags ()) app)

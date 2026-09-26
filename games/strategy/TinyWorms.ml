@@ -505,10 +505,10 @@ let view (computer : computer) (model : model) : shape list =
 
 let app = game view update initial_model
 
-let main =
+let main = Program.main __MODULE__ (fun () ->
   (* seed=n (see Playground.flags): the same island and winds every run,
    * e.g. for golden frames *)
   (match List.assoc_opt "seed" (Playground_platform.flags ()) with
   | Some n -> Random.init (int_of_string n)
   | None -> Random.self_init ());
-  Playground_platform.run_app app
+  Playground_platform.run_app app)

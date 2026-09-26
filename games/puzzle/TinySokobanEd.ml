@@ -306,4 +306,4 @@ let view (computer : computer) (s : model) : shape list =
 
 let app (caps : < Cap.open_out >) = game view (update caps) initial_model
 
-let main = Cap.main (fun caps -> Playground_platform.run_app (app (caps :> < Cap.open_out >)))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app (app (caps :> < Cap.open_out >))))

@@ -45,4 +45,4 @@ let phosphor (flags : Playground.flags) : Playground.color option =
   | _ -> None
 
 let app = Textmode.textmode ?phosphor:(phosphor (Playground_platform.flags ())) Tui_vi.program
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

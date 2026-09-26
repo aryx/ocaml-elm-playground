@@ -622,4 +622,4 @@ let view computer m =
   @ Gui.draw ()
 
 let app = game view update initial
-let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

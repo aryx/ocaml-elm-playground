@@ -209,4 +209,4 @@ let view (computer : computer) (m : model) : shape list =
   @ List.concat_map button hard_buttons
 
 let app caps = game view (update caps) initial
-let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> < Cap.open_in ; Cap.open_out >)))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> < Cap.open_in ; Cap.open_out >))))

@@ -450,8 +450,8 @@ let app (network : < Cap.network ; .. >) =
 
 (* claude: threads on unless the command line says otherwise (N2):
  * what blocks, on the platform's threads *)
-let main =
+let main = Program.main __MODULE__ (fun () ->
   Cap.main (fun caps ->
       let flags = Playground_platform.flags () in
       let flags = if List.mem_assoc "threads" flags then flags else ("threads", "on") :: flags in
-      Playground_platform.run_app ~flags (app caps))
+      Playground_platform.run_app ~flags (app caps)))

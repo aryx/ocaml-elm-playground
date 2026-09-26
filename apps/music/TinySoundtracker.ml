@@ -318,4 +318,4 @@ let view (_computer : computer) (m : model) : shape list =
   @ order_view m @ instruments_view m @ pattern_view m
 
 let app (caps : < Cap.open_out >) = game view (update caps) initial_model
-let main = Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> < Cap.open_out >)))
+let main = Program.main __MODULE__ (fun () -> Cap.main (fun caps -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app (caps :> < Cap.open_out >))))
