@@ -309,6 +309,31 @@ Shoup's 4-bit tables for GCM's GHASH (it is a bit at a time, 300 ms for
 tried chose, is 31 ms), the P-256 prime's special reduction. Each
 would cost the readable version its place in the code.
 
+## 13. One general pixel loop for everything: memdraw in OCaml
+
+**Symptom**: ix's mini-9pi (kernel/9pi, PIXEL=ocaml: Plan 9's memdraw
+ported to OCaml) boots to rc's prompt under mini-qemu in 323 s, the C
+memdraw it replaces in 17 s: the console's drawing.
+
+**Why**: the port's one general loop (lib_graphics/ocaml/Memdraw.ml's
+`general`) does every drawing pixel by pixel: the source, the mask and
+the destination read into 8-bit channels (a list of channels walked, a
+tuple a pixel), composed, written back. Right for every chan and op,
+and the reference; but a background filled, a window copied to its
+screen, a character drawn are most of the pixels, and memdraw's C
+never does those the general way either (its memoptdraw, chardraw).
+
+**Fix**: a separate, switchable section (`Memdraw.fast`, the general
+loop's pixels, sooner): a 1x1 colour through an opaque mask, its bytes
+made once and blitted row after row; an image copied to one of its
+chan, `String.blit` a row; a colour through a 1-bit mask (a
+character), the colour's bytes where the bit is set. The general loop
+stays, and still does the rest.
+
+**Where**: ix's kernel/9pi/lib_graphics/ocaml/Memdraw.ml, 2026-09-27:
+323 s to the prompt, then 17.6 (the C: 17.2); rio's 11 screens the C
+9pi's with either path.
+
 ## The .mpg decoder, step by step
 
 60 frames of a 352 x 288 VCD .mpg (`albator_78_debut.mpg`), video only,
