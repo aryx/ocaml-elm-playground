@@ -51,6 +51,31 @@ traced live by the Povray way (half resolution, six bounces), F12
 larger with two rays a pixel. TinyPovray, the scene as text, is still
 to do; it would give TinyBlender a file format of its own.
 
+What TinyBlender left, most worth doing first:
+
+- **TinyPovray**: POV-Ray's scene language parsed
+  (`libs/languages/povray`: `#declare`, the solids and their blocks,
+  `texture`, `pigment`, `finish`, `light_source`, `camera`, CSG), an
+  editor pane (`appkits/editor`) beside the progressive render, F5 to
+  render, a parse error at its line; a disk of scenes (the Cornell
+  box, the CSG examples, TinyMyst's island). And TinyBlender's File >
+  Export and Import as `.pov`: the scene built with the mouse, read as
+  text.
+- **Keyframes and the timeline**: a location, rotation and scale per
+  frame for an object, interpolated between them, the animation
+  rendered frame by frame (and written as a clip by `graphics/videos`)
+  -- what NeoGeo wrote Blender for.
+- **A rotation matrix per object** instead of Euler angles, so that R
+  about x after a turn about z is exact (today only z is); then the
+  camera's own rotation instead of its looking at the origin, and the
+  3D cursor where objects are added.
+- **Edit mode** (Tab): meshes of vertices, edges and faces, extruded
+  -- drawn by the ray tracer as its `Triangle` solids through its BVH
+  (Solid.mli); the exact solids stay for what Booleans need, since a
+  triangle has no inside.
+- The viewport at full resolution while nothing moves, and the path
+  tracer as F12's choice (Raytrace.algorithms); area lights.
+
 ## 3. Small things the phases left
 
 - **The way's `image`**: a texture file on a way's solid. Loading a

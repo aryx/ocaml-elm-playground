@@ -43,6 +43,15 @@ come after (the author's other idea: plan_raytracing_remaining.md).
   (lengths, distances), the bridge's forces; copying constraint
   types themselves as pictures.
 
+DONE (2026-09-26): `TinySketchpad.ml` and `appkits/sketch` (`Sketch`,
+`Relax`, seven unit tests), as planned but for sheet D, which is the
+rough hexagon's construction rather than blank (sheet B is that
+construction relaxed, its circle erased). Two things the plan did not
+foresee: a dragged point is not held but put where the pen is, the
+constraints pulling it back (a crank's end slides round its circle);
+and a relaxation step is kept no longer than the worst error it fixes,
+or two nearly tangent circles throw a point off to infinity.
+
 ## Phase 2: TinyAutoCAD (AutoCAD, 1982)
 
 - The command line as the main input, the mouse as the other
