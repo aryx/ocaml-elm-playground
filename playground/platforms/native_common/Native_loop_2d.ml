@@ -146,6 +146,10 @@ let parsed_cli : string list Lazy.t = lazy (
     " (3D, software backend) ray trace instead of rasterizing, as the \"y\" key";
     "-rt-brute", Arg.Unit (fun () -> ()),
     " (3D, software backend) the ray tracer without its BVH";
+    "-rt-samples", Arg.Int ignore, "<n> (3D, software backend) the ray tracer's n x n rays a pixel";
+    "-rt-bounces", Arg.Int ignore, "<n> (3D, software backend) the ray tracer's depth";
+    "-dump-size", Arg.Tuple [ Arg.Int ignore; Arg.Int ignore ], "<w> <h> (3D, software backend) with -dump-frame, the frame at that size";
+    "-no-hud", Arg.Unit (fun () -> ()), " (3D, software backend) with -dump-frame, no HUD";
   ] in
   let usage =
     spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-dump-audio file] [name=value|name]..."

@@ -967,8 +967,28 @@ lossless PNG): 76,770 of 76,800 pixels the same, none more than 1
 apart** -- a regression test twenty-six years long. bigfib and the
 other scenes: the entry's folder keeps no other picture.
 
-Next, phase 8, the still-image pipeline: `-dump-size`, supersampling,
-the optional HUD pass.
+**Phase 8 done** (2026-09-26): the still-image pipeline.
+`Raytrace.options.samples`, n x n stratified rays a pixel, each sample
+clamped before the average, n = 1 the very arithmetic of before (no
+golden frame moved); `camera_ray_through` (any point of the picture),
+`pixel` public. The software backend: `-rt-samples n`, `-rt-bounces
+n`, **`-dump-size w h`** (the dumped frame made again offscreen at its
+own size, its HUD scaled), **`-no-hud`**; `render_frame`, what the
+window, "r" and the dump share; the key **"v"**, versus: the frame
+rasterized, its right half ray traced over it (`?from_x`), a line
+between, and the time each took (hidden under `-fixed-time`, for the
+golden frames). The way: keys 1 to 4, the samples. Examples:
+`RaytracingSplit3d.ml` (a textured crate, a mirror, a glass ball: 15 ms
+rasterized, 470 ms ray traced, at a third of the resolution). Checked:
+an edge through a pixel's middle, 2 x 2 samples, exactly 127; the
+progressive picture with samples, the same bytes; a 480 x 360 still
+from a 1000 x 1000 window, 3 x 3 samples, by eye. Not done:
+`PovrayQuake` and the way's `shapes` (dropped in the phase 0 review:
+TinyQuake's level is not a value outside the game); a dump at -dump-size
+also draws the window's own frame first, at the window's size, a cost
+paid twice.
+
+Next, phase 9 (optional), distributed and path tracing.
 
 Written as the specification, with
 [`notes_raytracing.md`](../tutorials/notes_raytracing.md) beside it.

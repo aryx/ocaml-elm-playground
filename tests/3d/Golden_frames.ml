@@ -41,6 +41,9 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/RaytracingShadows3d", "rrryyy", 1);
     (* claude: and Whitted's, the ball a mirror *)
     ("examples/software/RaytracingShadows3d", "rrryyyy", 1);
+    (* claude: "v", the rasterizer and the ray tracer side by side, at a
+     * third of the resolution; their times not shown under -fixed-time *)
+    ("examples/software/RaytracingSplit3d", "rrv", 1);
     ("examples/software/Spheres3d", "", 3);
     ("examples/software/Spheres3d", "m", 3);
     ("examples/software/Spheres3d", "mm", 3);

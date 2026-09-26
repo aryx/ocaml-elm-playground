@@ -213,7 +213,8 @@ type model
  *   program's main, [Cap.main (fun caps -> ... ~export:(caps :> ...))].
  *
  * Keys: space makes the picture again; the left and right arrows, the
- * algorithm (see above); "s", see [export]. A line under the picture
+ * algorithm (see above); 1 to 4, the rays a pixel, n x n, averaged
+ * (antialiasing: Raytrace.mli, n^2 times the work); "s", see [export]. A line under the picture
  * says the pass, the rays shot and the time taken. The flag
  * [evolution]: see above; the program's main must hand the flags over,
  * [run_app ~flags:(Playground_platform.flags ())]. *)

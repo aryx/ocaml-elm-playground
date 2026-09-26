@@ -42,21 +42,25 @@ type options = {
   acceleration : acceleration;
   depth : int;
   cutoff : float;
+  samples : int;
 }
 
-let default_options = { algorithm = latest; epsilon = 1e-4; acceleration = Bvh Sah; depth = 3; cutoff = 1. /. 256. }
+let default_options =
+  { algorithm = latest; epsilon = 1e-4; acceleration = Bvh Sah; depth = 3; cutoff = 1. /. 256.; samples = 1 }
 
 (*****************************************************************************)
 (* Camera rays *)
 (*****************************************************************************)
 
-let camera_ray (camera : Camera.t) ~(width : int) ~(height : int) ~(x : int) ~(y : int) : Ray.t * float * float =
+(* through the point (px, py) of the picture, in pixels from its top
+ * left corner: a pixel's centre is (x + 0.5, y + 0.5) *)
+let camera_ray_through (camera : Camera.t) ~(width : int) ~(height : int) (px : float) (py : float) :
+    Ray.t * float * float =
   let right, up, forward = Camera.basis ~up:camera.up ~eye:camera.eye ~target:camera.target () in
   let w = float_of_int width and h = float_of_int height in
   let aspect = w /. h in
-  (* the pixel's centre, as Triangle.fill samples it, in ndc *)
-  let ndc_x = (float_of_int x +. 0.5 -. (w /. 2.)) /. (w /. 2.) in
-  let ndc_y = ((h /. 2.) -. (float_of_int y +. 0.5)) /. (h /. 2.) in
+  let ndc_x = (px -. (w /. 2.)) /. (w /. 2.) in
+  let ndc_y = ((h /. 2.) -. py) /. (h /. 2.) in
   let along (sx : float) (sy : float) : Vec3.t = Vec3.add (Vec3.scale sx right) (Vec3.scale sy up) in
   let ray =
     if camera.ortho > 0. then
@@ -69,6 +73,10 @@ let camera_ray (camera : Camera.t) ~(width : int) ~(height : int) ~(x : int) ~(y
   (* depth = t cos angle, so the depth d is at t = d / cos angle *)
   let cos_angle = Vec3.dot ray.direction forward in
   (ray, camera.near /. cos_angle, camera.far /. cos_angle)
+
+(* the pixel's centre, as Triangle.fill samples it *)
+let camera_ray (camera : Camera.t) ~(width : int) ~(height : int) ~(x : int) ~(y : int) : Ray.t * float * float =
+  camera_ray_through camera ~width ~height (float_of_int x +. 0.5) (float_of_int y +. 0.5)
 
 (*****************************************************************************)
 (* What a ray meets *)
@@ -287,13 +295,35 @@ let set_pixel (img : Rgba_image.t) ~(x : int) ~(y : int) (rgb : int) : unit =
   img.rgba.{i + 2} <- rgb land 0xFF;
   img.rgba.{i + 3} <- 0xFF
 
+(* a pixel's colour: its centre's ray, or with n samples the n x n
+ * cells of a grid over it, a ray through each cell's centre, averaged
+ * (stratified: one sample in each cell, rather than n^2 anywhere) *)
+let pixel (w : world) ~(width : int) ~(height : int) ~(x : int) ~(y : int) : int =
+  let n = w.options.samples in
+  if n <= 1 then
+    let ray, min_t, max_t = camera_ray w.scene.camera ~width ~height ~x ~y in
+    trace w ray ~min_t ~max_t
+  else
+    let sum = ref (0., 0., 0.) in
+    for j = 0 to n - 1 do
+      for i = 0 to n - 1 do
+        let px = float_of_int x +. ((float_of_int i +. 0.5) /. float_of_int n)
+        and py = float_of_int y +. ((float_of_int j +. 0.5) /. float_of_int n) in
+        let ray, min_t, max_t = camera_ray_through w.scene.camera ~width ~height px py in
+        (* each sample clamped first, as one ray's pixel would be: three
+         * suns on a sample must not make it count three times *)
+        let r, g, b = radiance w ray ~min_t ~max_t ~depth:0 ~weight:1. in
+        sum := add !sum (Float.min r 255., Float.min g 255., Float.min b 255.)
+      done
+    done;
+    int_of_color (times (1. /. float_of_int (n * n)) !sum)
+
 let render ?options (scene : scene) ~(width : int) ~(height : int) : Rgba_image.t =
   let w = world ?options scene in
   let img = Rgba_image.create ~width ~height in
   for y = 0 to height - 1 do
     for x = 0 to width - 1 do
-      let ray, min_t, max_t = camera_ray scene.camera ~width ~height ~x ~y in
-      set_pixel img ~x ~y (trace w ray ~min_t ~max_t)
+      set_pixel img ~x ~y (pixel w ~width ~height ~x ~y)
     done
   done;
   img
@@ -344,16 +374,15 @@ let advance (p : progress) ~(rays : int) : unit =
           (* a corner of the pass before (twice the size) has its ray *)
           let done_before = s < List.hd passes && x mod (2 * s) = 0 && y mod (2 * s) = 0 in
           if not done_before then begin
-            let ray, min_t, max_t = camera_ray p.world.scene.camera ~width ~height ~x ~y in
-            let rgb = trace p.world ray ~min_t ~max_t in
+            let rgb = pixel p.world ~width ~height ~x ~y in
             for by = y to Int.min height (y + s) - 1 do
               for bx = x to Int.min width (x + s) - 1 do
                 set_pixel p.img ~x:bx ~y:by rgb
               done
             done;
-            p.rays <- p.rays + 1;
+            p.rays <- p.rays + (p.world.options.samples * p.world.options.samples);
             p.changed <- true;
-            decr budget
+            budget := !budget - (p.world.options.samples * p.world.options.samples)
           end
         end
   done

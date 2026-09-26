@@ -81,6 +81,7 @@
 (copy_files ../LogoFractals3d.ml)
 (copy_files ../StarCollector3d.ml)
 (copy_files ../RaytracingShadows3d.ml)
+(copy_files ../RaytracingSplit3d.ml)
 
 (executables
   (names
@@ -105,7 +106,7 @@
     InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
     CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
     PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
-    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d RaytracingShadows3d)
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d RaytracingShadows3d RaytracingSplit3d)
   (libraries
     graphics_font ; AiDigits trains on digits this font draws
     graphics_rgba graphics_png graphics_gif graphics_jpeg ; the Image* examples take them apart
@@ -147,12 +148,13 @@
     LogoFractals3d
     StarCollector3d
     RaytracingShadows3d
+    RaytracingSplit3d
   )
   (modules Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
     InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
     CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
     PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
-    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d RaytracingShadows3d)
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d RaytracingShadows3d RaytracingSplit3d)
   (libraries
     elm_core ; Set_.mem, Basics.clamp
     elm_playground

@@ -82,6 +82,10 @@ open Playground3d
  *    Lambert's light, then shadow rays...), and last the shadow acne
  *    bug, the latest one with no epsilon; slow, so try it with "r"
  *    first. Also -raytrace, the latest from the first frame
+ *  - "v": versus, the frame split down the middle, the rasterizer's on
+ *    the left and the ray tracer's on the right (the algorithm "y"
+ *    chose, or the latest), with the time each took; with "r", or it
+ *    is slow
  *  - "h": this list, with each key's state, over the frame
  *  - Ctrl + any of them: the debug key alone, not given to the game
  *    (playground/platforms/software/Help_overlay)
@@ -98,9 +102,18 @@ let renderers : Raytrace.options option list =
 
 let renderer = ref 0
 let raytraced () : Raytrace.options option =
-  match List.nth renderers !renderer with
-  | Some o when Native_loop_3d.raytrace_brute_force () -> Some { o with acceleration = Brute_force }
-  | r -> r
+  (* claude: -rt-brute, -rt-samples, -rt-bounces *)
+  Option.map
+    (fun (o : Raytrace.options) ->
+      { o with
+        acceleration = (if Native_loop_3d.raytrace_brute_force () then Brute_force else o.acceleration);
+        samples = Native_loop_3d.raytrace_samples ();
+        depth = Native_loop_3d.raytrace_bounces () })
+    (List.nth renderers !renderer)
+
+(* claude: "v", the split view, and the two times it measured, in ms *)
+let split = ref false
+let split_times : (float * float) option ref = ref None
 
 let renderer_name () : string =
   match raytraced () with
@@ -144,6 +157,7 @@ let on_key_press (key : string) =
   | "x" -> magnifier := not !magnifier
   | "r" -> Pixelate.next ()
   | "y" -> renderer := (!renderer + 1) mod List.length renderers
+  | "v" -> split := not !split
   | "h" -> help := not !help
   | _ -> ()
 
@@ -197,6 +211,7 @@ let help_lines () =
       ^ Pixelate.name ~width:(int_of_float Playground.default_width) ~height:(int_of_float Playground.default_height) );
     ("x", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
     ("y", "renderer: " ^ renderer_name ());
+    ("v", "the rasterizer and the ray tracer side by side: " ^ on_off !split);
     ("Ctrl", "+ a key: that key's debug action only, not the game's");
     ("Q", "quit");
   ]
@@ -287,10 +302,25 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * row at a time; one for each size, made once *)
   (* claude: the scene of a view, by the renderer "y" chose *)
   let render_scene (fb : Framebuffer.t) (zb : Zbuffer.t) (v : Playground3d.view) : unit =
-    match raytraced () with
-    | Some rt ->
-        Shape3d_render_software.raytrace ~options:rt ~bilinear:!options.bilinear fb v.camera (Playground3d.group3d v.shapes)
-    | None -> Shape3d_render_software.render ~options:!options fb zb v.camera (Playground3d.group3d v.shapes)
+    let shape = Playground3d.group3d v.shapes in
+    let raster () = Shape3d_render_software.render ~options:!options fb zb v.camera shape in
+    let ray_trace ?from_x rt = Shape3d_render_software.raytrace ~options:rt ~bilinear:!options.bilinear ?from_x fb v.camera shape in
+    if !split then begin
+      (* claude: the whole frame rasterized, then its right half ray
+       * traced over it: the two renderers on the same frame, timed *)
+      let rt = match raytraced () with Some rt -> rt | None -> { Raytrace.default_options with samples = Native_loop_3d.raytrace_samples () } in
+      let t0 = Unix.gettimeofday () in
+      raster ();
+      let t1 = Unix.gettimeofday () in
+      ray_trace ~from_x:(fb.width / 2) rt;
+      let t2 = Unix.gettimeofday () in
+      (* the ray tracer did half the pixels: twice that for the frame *)
+      split_times := Some ((t1 -. t0) *. 1000., 2. *. (t2 -. t1) *. 1000.);
+      for y = 0 to fb.height - 1 do
+        Framebuffer.plot fb ~x:(fb.width / 2) ~y ~rgb:0 ~alpha:1.
+      done
+    end
+    else match raytraced () with Some rt -> ray_trace rt | None -> raster ()
   in
   let view_buffers : (int * int, Framebuffer.t * Zbuffer.t) Hashtbl.t = Hashtbl.create 4 in
   let view_buffer (w : int) (h : int) : Framebuffer.t * Zbuffer.t =
@@ -318,7 +348,30 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
       done
     end
   in
+  (* claude: a frame's scene and HUD into [fb], whatever its size (the
+   * window's, "r"'s smaller one, or -dump-size's) *)
+  let render_frame (fb : Framebuffer.t) (zb : Zbuffer.t) (computer : Playground.computer) (views : Playground3d.view list)
+      ~(hud : bool) ~(hud_options : Shape_render_software.options) ~(scale : float) : unit =
+    Framebuffer.clear fb ~rgb:0xFFFFFF;
+    (match views with
+    | [ v ] when v.area = Playground3d.whole -> render_scene fb zb v
+    | views -> List.iter (draw_view fb) views);
+    (* claude: a HUD pass, once the 3D scene above is fully rasterized
+     * into [fb] for this frame: the 2D shapes drawn on top by the 2D
+     * software rasterizer (playground/platforms/software/Shape_render_software,
+     * graphics/2d/), into the same framebuffer. No clear here (unlike
+     * the 2D backend's per-frame one) -- this must only add pixels on
+     * top, never erase the 3D frame underneath. See
+     * docs/claude_notes/done/plan_hud.md. *)
+    if hud then
+      match Playground3d.views_hud computer.screen views with
+      | [] -> ()
+      | hud_shapes -> Shape_render_software.render ~options:hud_options ~scale fb hud_shapes
+  in
+  (* the last frame, for -dump-size to make again *)
+  let last_frame : (Playground.computer * Playground3d.view list) option ref = ref None in
   let draw (computer : Playground.computer) (views : Playground3d.view list) : unit =
+    last_frame := Some (computer, views);
     (* at the resolution of "r", the scene and its HUD, then blown up
      * (Pixelate); the HUD without antialiasing then, as in the 2D
      * backend: big pixels, no seams *)
@@ -326,20 +379,16 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
       { Shape_render_software.default_options with antialiasing = !Pixelate.factor = 1 }
     in
     Pixelate.draw fb (fun fb ~scale ->
-        Framebuffer.clear fb ~rgb:0xFFFFFF;
-        (match views with
-        | [ v ] when v.area = Playground3d.whole -> render_scene fb (zbuffer_for fb) v
-        | views -> List.iter (draw_view fb) views);
-        (* claude: a HUD pass, once the 3D scene above is fully rasterized
-         * into [fb] for this frame: the 2D shapes drawn on top by the 2D
-         * software rasterizer (playground/platforms/software/Shape_render_software,
-         * graphics/2d/), into the same framebuffer. No clear here (unlike
-         * the 2D backend's per-frame one) -- this must only add pixels on
-         * top, never erase the 3D frame underneath. See
-         * docs/claude_notes/done/plan_hud.md. *)
-        match Playground3d.views_hud computer.screen views with
-        | [] -> ()
-        | hud_shapes -> Shape_render_software.render ~options:hud_options ~scale fb hud_shapes);
+        render_frame fb (zbuffer_for fb) computer views ~hud:true ~hud_options ~scale);
+    (* claude: the split view's two times; not measured, as far as
+     * anyone reading a golden frame can tell, under -fixed-time *)
+    (if !split then
+       let ms t = if Native_loop_3d.deterministic () then "(not timed: -fixed-time)" else Printf.sprintf "%.0f ms" t in
+       match !split_times with
+       | Some (raster, rt) ->
+           let name = match raytraced () with Some _ -> renderer_name () | None -> "the ray tracer, " ^ Raytrace.name Raytrace.latest in
+           Help_overlay.draw fb [ ("left", "the rasterizer: " ^ ms raster); ("right", name ^ ": " ^ ms rt) ]
+       | None -> ());
     if !help then Help_overlay.draw fb (help_lines ());
     if !magnifier then begin
       (* SDL keeps track of the mouse position, in window pixels *)
@@ -353,7 +402,18 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   in
   (* claude: -dump-frame (see Native_loop_3d): the frame as a PPM or a
    * PNG (Native_loop_2d.write_frame) *)
-  let dump_frame file = Native_loop_2d.write_frame ~width:sx ~height:sy (fun x y -> Framebuffer.get_rgb fb ~x ~y) file in
+  let dump_frame file =
+    match (Native_loop_3d.dump_size (), Native_loop_3d.dump_hud (), !last_frame) with
+    | None, true, _ | _, _, None -> Native_loop_2d.write_frame ~width:sx ~height:sy (fun x y -> Framebuffer.get_rgb fb ~x ~y) file
+    | size, hud, Some (computer, views) ->
+        (* claude: -dump-size, -no-hud: the frame made again offscreen,
+         * at its own size, its HUD scaled to it *)
+        let w, h = Option.value size ~default:(sx, sy) in
+        let big = Framebuffer.create ~width:w ~height:h in
+        render_frame big (Zbuffer.create ~width:w ~height:h) computer views ~hud
+          ~hud_options:Shape_render_software.default_options ~scale:(float_of_int w /. float_of_int sx);
+        Native_loop_2d.write_frame ~width:w ~height:h (fun x y -> Framebuffer.get_rgb big ~x ~y) file
+  in
   Native_loop_3d.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.views3d app3d)
     ~draw ~present ~dump_frame

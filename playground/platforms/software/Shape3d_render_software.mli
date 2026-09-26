@@ -26,4 +26,12 @@ val solids : ?bilinear:bool -> Playground3d.shape3d -> Solid.t list
  * same white background and in the same light, Lighting's sun and
  * ambient: the "y" key and -raytrace *)
 val raytrace :
-  ?options:Raytrace.options -> ?bilinear:bool -> Framebuffer.t -> Playground3d.camera -> Playground3d.shape3d -> unit
+  ?options:Raytrace.options ->
+  ?bilinear:bool ->
+  ?from_x:int ->
+  Framebuffer.t ->
+  Playground3d.camera ->
+  Playground3d.shape3d ->
+  unit
+(* claude: [from_x]: only the columns from it on (the split view: the
+ * rasterizer's frame on the left, the ray tracer's on the right) *)

@@ -76,6 +76,20 @@ val raytrace_at_start : unit -> bool
  * BVH (Bvh.mli), for the comparison: the same picture, slower *)
 val raytrace_brute_force : unit -> bool
 
+(* claude: -rt-samples n (default 1) and -rt-bounces n (default 3): the
+ * ray tracer's rays a pixel, n x n, and Whitted's depth *)
+val raytrace_samples : unit -> int
+val raytrace_bounces : unit -> int
+
+(* claude: -dump-size w h: -dump-frame's frame made again offscreen at
+ * that size; -no-hud: without its HUD ([dump_hud] false) *)
+val dump_size : unit -> (int * int) option
+val dump_hud : unit -> bool
+
+(* claude: -fixed-time was given: what must be the same on every run
+ * (the golden frames) must not show a time measured *)
+val deterministic : unit -> bool
+
 (*****************************************************************************)
 (* {1 The mouse and the keyboard} *)
 (*****************************************************************************)

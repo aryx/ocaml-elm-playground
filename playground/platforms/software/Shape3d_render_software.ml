@@ -125,15 +125,14 @@ let sun : Raytrace.light =
   let s = 1. -. Lighting.ambient in
   Sun { towards = Lighting.light_dir; color = (s, s, s) }
 
-let raytrace ?options ?bilinear (fb : Framebuffer.t) (cam : Playground3d.camera) (shape : Playground3d.shape3d) : unit =
+let raytrace ?options ?bilinear ?(from_x = 0) (fb : Framebuffer.t) (cam : Playground3d.camera)
+    (shape : Playground3d.shape3d) : unit =
   let scene : Raytrace.scene =
     { camera = camera cam; solids = solids ?bilinear shape; lights = [ sun ]; ambient = Lighting.ambient; background = 0xFFFFFF }
   in
-  let img = Raytrace.render ?options scene ~width:fb.width ~height:fb.height in
+  let world = Raytrace.world ?options scene in
   for y = 0 to fb.height - 1 do
-    for x = 0 to fb.width - 1 do
-      let i = 4 * ((y * img.width) + x) in
-      let rgb = (img.rgba.{i} lsl 16) lor (img.rgba.{i + 1} lsl 8) lor img.rgba.{i + 2} in
-      Framebuffer.plot fb ~x ~y ~rgb ~alpha:1.
+    for x = from_x to fb.width - 1 do
+      Framebuffer.plot fb ~x ~y ~rgb:(Raytrace.pixel world ~width:fb.width ~height:fb.height ~x ~y) ~alpha:1.
     done
   done

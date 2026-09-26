@@ -705,6 +705,41 @@ let test_icfp_2000 () =
   Alcotest.(check bool) "99.9% of the pixels the same as the 2000 entry's" true (!same * 1000 >= 76800 * 999);
   Alcotest.(check bool) "and none more than 1 apart" true (!worst <= 1)
 
+(*****************************************************************************)
+(* Several rays a pixel *)
+(*****************************************************************************)
+
+(* a black triangle whose edge x = 0.25 runs down the middle of pixel 2
+ * (an orthographic camera 2 high, 4 x 4 pixels: 0.5 a pixel, pixel 2
+ * from x = 0 to 0.5); 2 x 2 samples at x = 0.125 and 0.375: half in,
+ * half out, (0 + 255) / 2 *)
+let test_supersampling () =
+  let black : Solid.t =
+    Triangle
+      { points = ((0.25, -10., 0.), (0.25, 10., 0.), (-20., 0., 0.)); normals = ((0., 0., 1.), (0., 0., 1.), (0., 0., 1.));
+        uvs = ((0., 0.), (0., 0.), (0., 0.)); surface = matte 0 }
+  in
+  let scene : Raytrace.scene =
+    { camera = { eye = (0., 0., 5.); target = (0., 0., 0.); up = (0., 1., 0.); fov = 60.; ortho = 2.; near = 0.; far = 100. };
+      solids = [ black ]; lights = []; ambient = 1.; background = 0xFFFFFF }
+  in
+  let at samples x =
+    let img = Raytrace.render ~options:{ Raytrace.default_options with samples } scene ~width:4 ~height:4 in
+    img.rgba.{4 * ((1 * 4) + x)}
+  in
+  Alcotest.(check int) "2 x 2 on the edge: half black, 127" 127 (at 2 2);
+  Alcotest.(check int) "left of it: black" 0 (at 2 1);
+  Alcotest.(check int) "right of it: white" 255 (at 2 3);
+  (* progressive, with samples: the same bytes still *)
+  let options = { Raytrace.default_options with samples = 2 } in
+  let expected = bytes (Raytrace.render ~options small_scene ~width:21 ~height:13) in
+  let p = Raytrace.start ~options small_scene ~width:21 ~height:13 in
+  while not (Raytrace.finished p) do
+    Raytrace.advance p ~rays:37
+  done;
+  Alcotest.(check bool) "2 x 2, a slice at a time: the same bytes" true (bytes (Raytrace.picture p) = expected);
+  Alcotest.(check int) "4 rays a pixel" (21 * 13 * 4) (Raytrace.rays_shot p)
+
 let tests =
   Testo.categorize "Raytrace"
     [ t "Solid.hit: in front, from inside, moved" test_hit; t "the camera rays" test_camera_ray;
@@ -720,4 +755,5 @@ let tests =
       t "the unit primitives, along a ray" test_primitives; t "Transform, the ellipsoid's normal" test_transform;
       t "CSG: the blind hole" test_csg; t "CSG: point membership, random solids" test_membership;
       t "CSG: the BVH" test_bvh_csg; t "spots" test_spot; t "Perlin's noise" test_perlin;
-      t "patterns, textures" test_patterns; t "a texture, rasterized and ray cast" test_texture_same_picture; t "fib.gml, against the ICFP 2000 entry's picture" test_icfp_2000 ]
+      t "patterns, textures" test_patterns; t "a texture, rasterized and ray cast" test_texture_same_picture; t "fib.gml, against the ICFP 2000 entry's picture" test_icfp_2000;
+      t "several rays a pixel" test_supersampling ]

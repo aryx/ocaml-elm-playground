@@ -125,6 +125,8 @@ type model = {
   camera : camera;
   (* the algorithm [still] shows, moved by the arrows *)
   algorithm : Raytrace.algorithm;
+  (* rays a pixel, n x n: the keys 1 to 4 *)
+  samples : int;
   (* the pictures under way or made, by algorithm; each a mutable
    * Raytrace.progress, advanced in place -- the one thing in this
    * model that is not a value, because a picture half made is large
@@ -153,7 +155,7 @@ let step (a : Raytrace.algorithm) (by : int) : Raytrace.algorithm =
   List.nth all (Int.max 0 (Int.min (List.length all - 1) (index 0 all + by)))
 
 let initial (scene : scene) : model =
-  { camera = scene.camera; algorithm = Raytrace.latest; progresses = []; keys_before = Set_.empty; elapsed = 0.;
+  { camera = scene.camera; algorithm = Raytrace.latest; samples = 1; progresses = []; keys_before = Set_.empty; elapsed = 0.;
     clock = None; said = ""; dragged_from = None }
 
 (* all the pictures thrown away, to be made again from the coarsest
@@ -190,6 +192,12 @@ let update ~(orbit : bool) ?export ~(file : string) ~(rays_per_frame : int) ?siz
     else model
   in
   let model = if pressed "space" then restart model else model in
+  (* 1 to 4: rays a pixel, n x n, the pictures made again *)
+  let model =
+    match List.find_opt (fun n -> pressed (string_of_int n)) [ 1; 2; 3; 4 ] with
+    | Some n when n <> model.samples -> restart { model with samples = n }
+    | _ -> model
+  in
   let model =
     match if orbit then orbit_camera computer model.dragged_from model.camera else None with
     | Some camera -> restart { model with camera }
@@ -208,7 +216,7 @@ let update ~(orbit : bool) ?export ~(file : string) ~(rays_per_frame : int) ?siz
         (fun a ->
           if List.mem_assoc a model.progresses then None
           else
-            let options = { Raytrace.default_options with algorithm = a } in
+            let options = { Raytrace.default_options with algorithm = a; samples = model.samples } in
             Some (a, Raytrace.start ~options (raytrace_scene { scene with camera = model.camera }) ~width ~height))
         wanted
   in
@@ -257,10 +265,11 @@ let status (model : model) : string =
   let rec thousands n = if n < 1000 then string_of_int n else thousands (n / 1000) ^ Printf.sprintf ",%03d" (n mod 1000) in
   let sum f = List.fold_left (fun n (_, p) -> n + f (Raytrace.world_of p)) 0 model.progresses in
   let secondary = sum Raytrace.secondary_rays and saved = sum Raytrace.saved_rays in
-  Printf.sprintf "%s, %s rays%s, %.1f s%s" (if done_ then "done" else Printf.sprintf "pass %d x %d" pass pass)
+  Printf.sprintf "%s, %s rays%s%s, %.1f s%s" (if done_ then "done" else Printf.sprintf "pass %d x %d" pass pass)
     (thousands rays)
     (if secondary + saved = 0 then ""
      else Printf.sprintf " + %s reflected or refracted (%s saved by the cutoff)" (thousands secondary) (thousands saved))
+    (if model.samples = 1 then "" else Printf.sprintf " (%d x %d a pixel)" model.samples model.samples)
     model.elapsed (if model.said = "" then "" else " -- " ^ model.said)
 
 let view ~(orbit : bool) ~(export : bool) (computer : Playground.computer) (model : model) : Playground.shape list =
@@ -301,7 +310,7 @@ let view ~(orbit : bool) ~(export : bool) (computer : Playground.computer) (mode
   let keys =
     String.concat "   "
       ((if evolution computer then [] else [ "left/right: the algorithm" ])
-      @ [ "space: again" ]
+      @ [ "space: again"; "1-4: rays a pixel" ]
       @ (if export then [ "s: save" ] else [])
       @ if orbit then [ "drag: turn, wheel: nearer" ] else [])
   in

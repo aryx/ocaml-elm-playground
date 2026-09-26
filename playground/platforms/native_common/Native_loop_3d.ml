@@ -57,6 +57,25 @@ let raytrace_at_start () = !raytrace
 let rt_brute : bool ref = ref false
 let raytrace_brute_force () = !rt_brute
 
+(* claude: -rt-samples n (n x n rays a pixel, antialiasing) and
+ * -rt-bounces n (Whitted's depth), for the ray tracer's stills *)
+let rt_samples : int ref = ref 1
+let rt_bounces : int ref = ref 3
+let raytrace_samples () = !rt_samples
+let raytrace_bounces () = !rt_bounces
+
+(* claude: -dump-size w h, -dump-frame's picture made offscreen at that
+ * size, whatever the window's (a 1600 x 1200 still from a 1000 x 1000
+ * window); -no-hud, without the HUD pass (the art shot) *)
+let dump_size_ref : (int * int) option ref = ref None
+let no_hud : bool ref = ref false
+let dump_size () = !dump_size_ref
+let dump_hud () = not !no_hud
+
+(* claude: the clock frozen: what must be the same on every run (the
+ * golden frames) cannot show a time measured *)
+let deterministic () = !fixed_time <> None
+
 let parse_cli_and_setup_logging () =
   let level = ref (Some Logs.Warning) in
   let cli_flags =
@@ -76,12 +95,17 @@ let parse_cli_and_setup_logging () =
       ("-dump-audio", Arg.Set_string dump_audio_file, "<file> with -dump-frame, the sound of those frames, as a WAV");
       ("-debug-keys", Arg.Set debug_keys, " the backend's debug keys (e.g. h for help), off by default");
       ("-raytrace", Arg.Set raytrace, " (software backend) ray trace instead of rasterizing, as the \"y\" key");
-      ("-rt-brute", Arg.Set rt_brute, " (software backend) the ray tracer without its BVH, every solid tested")
+      ("-rt-brute", Arg.Set rt_brute, " (software backend) the ray tracer without its BVH, every solid tested");
+      ("-rt-samples", Arg.Set_int rt_samples, "<n> (software backend) the ray tracer's n x n rays a pixel");
+      ("-rt-bounces", Arg.Set_int rt_bounces, "<n> (software backend) the ray tracer's reflections and refractions, deep");
+      ("-dump-size", Arg.Tuple [ Arg.Int (fun w -> dump_size_ref := Some (w, 0)); Arg.Int (fun h -> dump_size_ref := Option.map (fun (w, _) -> (w, h)) !dump_size_ref) ],
+       "<w> <h> with -dump-frame, the frame made offscreen at that size");
+      ("-no-hud", Arg.Set no_hud, " with -dump-frame, the frame without its HUD")
     ]
   in
   let usage =
     Printf.sprintf
-      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-dump-audio file] [-debug-keys] [-raytrace] [-rt-brute] [name=value|name]..."
+      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-dump-audio file] [-debug-keys] [-raytrace] [-rt-brute] [-rt-samples n] [-rt-bounces n] [-dump-size w h] [-no-hud] [name=value|name]..."
       Sys.argv.(0)
   in
   (* claude: the arguments without a dash are the app's flags (see

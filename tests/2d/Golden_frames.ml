@@ -457,6 +457,9 @@ let scripted : Testutil_golden.scripted list =
     ("examples/software/PovraySpheres", "orbit", 12, "at(0;0):1-3,click:2-8,at(-120;-30):4-8");
     (* claude: the CSG scene from above: the lens a sliver, edge on *)
     ("examples/software/PovrayCsg", "orbit", 16, "at(0;0):1-3,click:2-8,at(-150;-60):4-8");
+    (* claude: "2": 2 x 2 rays a pixel, the edges smooth, the board's
+     * aliasing at the horizon calmed: 4 x 120,000 rays, 24 frames *)
+    ("examples/software/PovrayWhitted", "samples", 30, "2:1");
     ( "games/shmup/software/TinyInvaders",
       "play",
       300,

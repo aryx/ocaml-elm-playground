@@ -155,6 +155,28 @@
  * caustic) needs rays from the lights, not from the eye -- out of
  * scope (photon mapping, Jensen 1996).
  *
+ * {1 Several rays a pixel}
+ *
+ * One ray through a pixel's centre sees one point, and a pixel is a
+ * square: an edge across it is all or nothing, a staircase, and a
+ * pattern finer than the pixels (a checkerboard to the horizon, a
+ * texture seen from far) turns to noise, the high frequencies folded
+ * onto low ones -- aliasing. More rays a pixel, averaged, is the ray
+ * tracer's antialiasing, [options.samples] n: n x n of them, one in
+ * each cell of a grid over the pixel (stratified: never two in the same
+ * corner, as n^2 random ones could be):
+ *
+ *        +-----+-----+     n = 2: four rays, at the cells' centres,
+ *        |  x  |  x  |     (x + 1/4, y + 1/4), (x + 3/4, y + 1/4) ...
+ *        +-----+-----+     n^2 times the work: 4 x 4 is 16 times
+ *        |  x  |  x  |     slower, for the still picture, not the
+ *        +-----+-----+     window
+ *
+ * Each sample is clamped before the average, as a lone ray's pixel
+ * would be. Cook's jittered samples (1984) move each ray at random
+ * within its cell, trading the grid's regular leftovers for noise:
+ * phase 9's, with an explicit seed.
+ *
  * References: Arthur Appel, "Some Techniques for Shading Machine
  * Renderings of Solids" (AFIPS 1968), ray casting and shadows; Andrew
  * S. Glassner (ed.), An Introduction to Ray Tracing (1989), the book
@@ -220,15 +242,23 @@ type options = {
    * pixel worth another ray *)
   depth : int;
   cutoff : float;
+  (* rays per pixel: n x n, one through each cell of a grid over the
+   * pixel, averaged -- antialiasing (see below) *)
+  samples : int;
 }
 
 (* [latest], an epsilon of 1e-4, a BVH cut by the surface area
- * heuristic, 3 bounces, a cutoff of 1/256 *)
+ * heuristic, 3 bounces, a cutoff of 1/256, 1 sample *)
 val default_options : options
 
 (*****************************************************************************)
 (* {1 The rays} *)
 (*****************************************************************************)
+
+(* [camera_ray_through camera ~width ~height px py]: the ray through
+ * the point (px, py) of the picture, in pixels from its top left
+ * corner; and the t of the near and far planes *)
+val camera_ray_through : Camera.t -> width:int -> height:int -> float -> float -> Ray.t * float * float
 
 (* [camera_ray camera ~width ~height ~x ~y]: the ray through the centre
  * of pixel (x, y) of a width x height picture, (0, 0) the top left;
@@ -294,6 +324,10 @@ val saved_rays : world -> int
 (* {1 The picture} *)
 (*****************************************************************************)
 
+(* [pixel world ~width ~height ~x ~y]: the 0xRRGGBB colour of one pixel
+ * of a width x height picture, with the world's samples *)
+val pixel : world -> width:int -> height:int -> x:int -> y:int -> int
+
 (* [render scene ~width ~height]: the picture, opaque, a ray per pixel
  * in reading order -- the definition of the picture, which [start]
  * and [advance] below make too, in another order *)
@@ -337,8 +371,9 @@ type progress
 (* [start scene ~width ~height]: nothing shot yet *)
 val start : ?options:options -> scene -> width:int -> height:int -> progress
 
-(* [advance progress ~rays]: that many more rays (camera rays; each
- * may shoot shadow rays of its own), fewer when the picture is done *)
+(* [advance progress ~rays]: that many more camera rays (n^2 a pixel
+ * with n samples; each may shoot shadow rays of its own), fewer when
+ * the picture is done *)
 val advance : progress -> rays:int -> unit
 
 val finished : progress -> bool
