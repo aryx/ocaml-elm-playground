@@ -191,6 +191,7 @@
    %{project_root}/games/adventure/software/TinyGTA.exe
    %{project_root}/games/adventure/software/TinyZork.exe
    %{project_root}/games/adventure/software/TinyManiacMansion.exe
+   %{project_root}/games/adventure/software/TinyMyst.exe
    %{project_root}/games/strategy/software/TinyHamurabi.exe
    %{project_root}/games/sports/software/TinyTennisForTwo.exe
    %{project_root}/games/sports/software/TinyTonyHawk.exe

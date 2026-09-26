@@ -1,0 +1,24 @@
+; claude: TinyMyst's island (Myst_island: its scenes, cards and
+; scripts) and its stills, ray traced once by make_stills.exe into
+; stills/, embedded as strings so that the game has them in a browser
+; too (Myst_stills: the list of their names and bytes).
+(library
+ (name myst)
+ (wrapped false)
+ (modules Myst_island Myst_stills)
+ (libraries elm_playground graphics_raytrace))
+
+(rule
+ (targets Myst_stills.ml)
+ (deps
+  (glob_files stills/*.jpg)
+  make_stills_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{dep:make_stills_ml.ml} %{deps}))))
+
+(executable
+ (name make_stills)
+ (modules make_stills)
+ (libraries unix caps myst graphics_raytrace graphics_jpeg elm_playground_software))

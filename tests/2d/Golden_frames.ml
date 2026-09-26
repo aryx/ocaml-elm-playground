@@ -331,6 +331,7 @@ let scenes : Testutil_golden.scene list =
     ("games/adventure/software/TinyGTA", "", 5);
     ("games/adventure/software/TinyZork", "", 5);
     ("games/adventure/software/TinyManiacMansion", "", 5);
+    ("games/adventure/software/TinyMyst", "", 5);
     ("games/strategy/software/TinyHamurabi", "", 5);
     ("games/sports/software/TinyTennisForTwo", "", 5);
     ("games/sports/software/TinyTonyHawk", "", 5);
@@ -464,6 +465,9 @@ let scripted : Testutil_golden.scripted list =
     (* claude: "2": 2 x 2 rays a pixel, the edges smooth, the board's
      * aliasing at the horizon calmed: 4 x 120,000 rays, 24 frames *)
     ("examples/software/PovrayWhitted", "samples", 30, "2:1");
+    (* claude: TinyMyst's dock switch clicked -- a ray through the
+     * pixel finding the button -- and its still with the lever up *)
+    ("games/adventure/software/TinyMyst", "switch", 40, "at(72;-86):1-40,click:5");
     ( "games/shmup/software/TinyInvaders",
       "play",
       300,

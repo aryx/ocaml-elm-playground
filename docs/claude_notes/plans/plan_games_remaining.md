@@ -274,6 +274,16 @@ longer true. See Adventure below.
   world of pre-rendered nodes, a click to go to the next; in 3D, every
   node a fixed camera -- TinyAloneInTheDark's cuts with the character
   taken out -- and the puzzle as the machines on the island.
+  (DONE, 2026-09-26: `TinyMyst.ml` and `myst/`, the ray-tracing
+  plan's phase 10 -- the island a Povray scene, 13 cards, 17 stills
+  ray traced once by `myst/make_stills.exe` into committed JPEGs
+  (384 KB, a few minutes), the logic HyperTalk scripts (the author's
+  choice over OCaml data), a button a named solid found by
+  `Povray.pick`, the four marker switches and the dial opening the
+  shelf; `render=live` traces the stills in the game; a test that
+  fails when the island changes and the stills are not made again.
+  Next, the author's idea: a TinyPovray or TinyBlender in
+  `apps/graphics/`, a scene edited and ray traced.)
 - **TinyZeldaOcarina** (P3, ~500; The Legend of Zelda: Ocarina of
   Time, Nintendo, 1998): what 3D sword fighting needed,
   **Z-targeting** -- the lock-on, the camera and the controls turning

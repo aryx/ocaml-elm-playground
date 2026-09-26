@@ -1,0 +1,16 @@
+; claude: TinyMyst's island checked, run by 'make test': the scripts
+; parse and solve the puzzle, a click finds its button, and the
+; embedded stills are still the scene's (Unit_myst.ml)
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   myst
+   appkit_hypertalk
+   graphics_raytrace
+   graphics_jpeg
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
+)
