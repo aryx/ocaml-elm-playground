@@ -25,30 +25,44 @@ type pop = {
   mutable deleted : int list; (* the numbers marked, 1 for the first *)
 }
 
+(* where a side listens: WebSocket, for a browser, and plain TCP, for
+   telnet and the mail clients of the world; a session is known by the
+   server it came in on and its id there *)
 type t = {
-  smtp_server : Server.t;
-  pop_server : Server.t;
+  smtp_servers : Server.t list;
+  pop_servers : Server.t list;
   domain : string;
   passwords : (string * string) list option;
   changed : string -> Mbox.entry list -> unit;
   mutable drops : (string * Mbox.entry list) list;
-  smtps : (int, smtp) Hashtbl.t;
-  pops : (int, pop) Hashtbl.t;
+  smtps : (int * int, smtp) Hashtbl.t;
+  pops : (int * int, pop) Hashtbl.t;
   mutable queued : int; (* the messages taken, for "queued as" *)
 }
 
-let create (caps : < Cap.network ; .. >) ?(bind = "127.0.0.1") ?(smtp_port = 8025) ?(pop_port = 8110) ?(domain = "tiny") ?passwords ?(maildrops = [])
-    ?(changed = fun _ _ -> ()) () : t * int * int =
-  let smtp_server, smtp_port = Server.listen caps ~bind ~port:smtp_port in
-  let pop_server, pop_port = Server.listen caps ~bind ~port:pop_port in
-  ( { smtp_server; pop_server; domain; passwords; changed; drops = maildrops; smtps = Hashtbl.create 8; pops = Hashtbl.create 8; queued = 0 },
-    smtp_port,
-    pop_port )
+type ports = { smtp : int; pop : int; smtp_plain : int; pop_plain : int }
+
+let create (caps : < Cap.network ; .. >) ?(bind = "127.0.0.1") ?(ports = { smtp = 8025; pop = 8110; smtp_plain = 2525; pop_plain = 1100 }) ?(domain = "tiny")
+    ?passwords ?(maildrops = []) ?(changed = fun _ _ -> ()) () : t * ports =
+  let listen lines port = Server.listen caps ~lines ~bind ~port () in
+  let smtp_ws, smtp = listen false ports.smtp and smtp_tcp, smtp_plain = listen true ports.smtp_plain in
+  let pop_ws, pop = listen false ports.pop and pop_tcp, pop_plain = listen true ports.pop_plain in
+  ( {
+      smtp_servers = [ smtp_ws; smtp_tcp ];
+      pop_servers = [ pop_ws; pop_tcp ];
+      domain;
+      passwords;
+      changed;
+      drops = maildrops;
+      smtps = Hashtbl.create 8;
+      pops = Hashtbl.create 8;
+      queued = 0;
+    },
+    { smtp; pop; smtp_plain; pop_plain } )
 
 let wait (t : t) (timeout : float) : unit =
-  (* the two servers' sockets: a short sleep on each *)
-  Server.wait t.smtp_server (timeout /. 2.);
-  Server.wait t.pop_server (timeout /. 2.)
+  (* the four servers' sockets: a short sleep on each *)
+  List.iter (fun s -> Server.wait s (timeout /. 4.)) (t.smtp_servers @ t.pop_servers)
 
 let maildrop (t : t) (user : string) : Mbox.entry list = Option.value (List.assoc_opt user t.drops) ~default:[]
 
@@ -85,8 +99,8 @@ let deliver (t : t) (s : smtp) (lines : string list) (now : float) : string =
   t.queued <- t.queued + 1;
   Printf.sprintf "OK: queued as %d" t.queued
 
-let smtp_line (t : t) (id : int) (s : smtp) (line : string) (now : float) : unit =
-  let answer code text = List.iter (Server.send t.smtp_server id) (Smtp.reply code [ text ]) in
+let smtp_line (t : t) (server : Server.t) (id : int) (s : smtp) (line : string) (now : float) : unit =
+  let answer code text = List.iter (Server.send server id) (Smtp.reply code [ text ]) in
   match s.data with
   | Some lines when line = "." ->
       answer 250 (deliver t s (List.rev lines) now);
@@ -101,7 +115,7 @@ let smtp_line (t : t) (id : int) (s : smtp) (line : string) (now : float) : unit
           answer 250 t.domain
       | Ehlo d ->
           s.hello <- Some d;
-          List.iter (Server.send t.smtp_server id) (Smtp.reply 250 [ Printf.sprintf "%s greets %s" t.domain d; "HELP" ])
+          List.iter (Server.send server id) (Smtp.reply 250 [ Printf.sprintf "%s greets %s" t.domain d; "HELP" ])
       | Mail_from a ->
           s.sender <- Some a;
           s.recipients <- [];
@@ -122,7 +136,7 @@ let smtp_line (t : t) (id : int) (s : smtp) (line : string) (now : float) : unit
       | Noop -> answer 250 "OK"
       | Quit ->
           answer 221 "Bye";
-          Server.close t.smtp_server id
+          Server.close server id
       | Unknown _ -> answer 500 "Command not recognized")
 
 (*****************************************************************************)
@@ -134,8 +148,8 @@ let text (e : Mbox.entry) : string = Mail.to_string e.mail
 (* a message's unique id, the same in every session: a digest of it *)
 let uid (e : Mbox.entry) : string = String.sub (Digest.to_hex (Digest.string (e.envelope ^ text e))) 0 16
 
-let pop_line (t : t) (id : int) (p : pop) (line : string) : unit =
-  let say s = Server.send t.pop_server id s in
+let pop_line (t : t) (server : Server.t) (id : int) (p : pop) (line : string) : unit =
+  let say s = Server.send server id s in
   let ok s = say ("+OK " ^ s) and err s = say ("-ERR " ^ s) in
   let words = String.split_on_char ' ' (String.trim line) in
   let verb = String.uppercase_ascii (List.hd words) and arg = List.nth_opt words 1 in
@@ -162,7 +176,7 @@ let pop_line (t : t) (id : int) (p : pop) (line : string) : unit =
           else err "invalid password")
   | "QUIT", None ->
       ok "bye";
-      Server.close t.pop_server id
+      Server.close server id
   | _, None -> err "log in first: USER and PASS"
   | "STAT", Some drop ->
       let l = live drop in
@@ -198,7 +212,7 @@ let pop_line (t : t) (id : int) (p : pop) (line : string) : unit =
       let u = Option.get p.user in
       if gone <> [] then set_maildrop t u (List.filter (fun e -> not (List.memq e gone)) (maildrop t u));
       ok "bye";
-      Server.close t.pop_server id
+      Server.close server id
   | _ -> err "command not recognized"
 
 (*****************************************************************************)
@@ -209,24 +223,30 @@ let lines (payload : string) : string list =
   String.split_on_char '\n' payload |> List.map (fun l -> if l <> "" && l.[String.length l - 1] = '\r' then String.sub l 0 (String.length l - 1) else l)
 
 let step (t : t) ~(now : float) : unit =
-  List.iter
-    (fun (e : Server.event) ->
-      match e with
-      | Joined id ->
-          Hashtbl.replace t.smtps id { hello = None; sender = None; recipients = []; data = None };
-          List.iter (Server.send t.smtp_server id) (Smtp.reply 220 [ t.domain ^ " ESMTP tiny_maild" ])
-      | Message (id, payload) -> Option.iter (fun s -> List.iter (fun l -> smtp_line t id s l now) (lines payload)) (Hashtbl.find_opt t.smtps id)
-      | Left id -> Hashtbl.remove t.smtps id)
-    (Server.step t.smtp_server);
-  Server.flush t.smtp_server;
-  List.iter
-    (fun (e : Server.event) ->
-      match e with
-      | Joined id ->
-          Hashtbl.replace t.pops id { user = None; drop = None; deleted = [] };
-          Server.send t.pop_server id "+OK tiny_maild POP3 ready"
-      | Message (id, payload) -> Option.iter (fun p -> List.iter (pop_line t id p) (lines payload)) (Hashtbl.find_opt t.pops id)
-      (* dropped before QUIT: nothing deleted *)
-      | Left id -> Hashtbl.remove t.pops id)
-    (Server.step t.pop_server);
-  Server.flush t.pop_server
+  List.iteri
+    (fun k server ->
+      List.iter
+        (fun (e : Server.event) ->
+          match e with
+          | Joined id ->
+              Hashtbl.replace t.smtps (k, id) { hello = None; sender = None; recipients = []; data = None };
+              List.iter (Server.send server id) (Smtp.reply 220 [ t.domain ^ " ESMTP tiny_maild" ])
+          | Message (id, payload) -> Option.iter (fun s -> List.iter (fun l -> smtp_line t server id s l now) (lines payload)) (Hashtbl.find_opt t.smtps (k, id))
+          | Left id -> Hashtbl.remove t.smtps (k, id))
+        (Server.step server);
+      Server.flush server)
+    t.smtp_servers;
+  List.iteri
+    (fun k server ->
+      List.iter
+        (fun (e : Server.event) ->
+          match e with
+          | Joined id ->
+              Hashtbl.replace t.pops (k, id) { user = None; drop = None; deleted = [] };
+              Server.send server id "+OK tiny_maild POP3 ready"
+          | Message (id, payload) -> Option.iter (fun p -> List.iter (pop_line t server id p) (lines payload)) (Hashtbl.find_opt t.pops (k, id))
+          (* dropped before QUIT: nothing deleted *)
+          | Left id -> Hashtbl.remove t.pops (k, id))
+        (Server.step server);
+      Server.flush server)
+    t.pop_servers

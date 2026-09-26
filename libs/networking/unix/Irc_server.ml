@@ -22,7 +22,7 @@ type t = {
 }
 
 let create (caps : < Cap.network ; .. >) ?(bind = "127.0.0.1") ?(port = 6667) () : t * int =
-  let server, port = Server.listen caps ~bind ~port in
+  let server, port = Server.listen caps ~bind ~port () in
   ({ server; users = Hashtbl.create 16; channels = [] }, port)
 
 let wait (t : t) (timeout : float) : unit = Server.wait t.server timeout

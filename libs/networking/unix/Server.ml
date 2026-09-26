@@ -20,9 +20,14 @@ type client = {
 }
 
 type event = Joined of int | Message of int * string | Left of int
-type t = { listener : Unix.file_descr; mutable clients : client list; mutable next_id : int }
+type t = {
+  listener : Unix.file_descr;
+  lines : bool; (* plain TCP, a message a line, rather than WebSocket *)
+  mutable clients : client list;
+  mutable next_id : int;
+}
 
-let listen (caps : < Cap.network ; .. >) ~(bind : string) ~(port : int) : t * int =
+let listen (caps : < Cap.network ; .. >) ?(lines = false) ~(bind : string) ~(port : int) () : t * int =
   let (_ : Cap.Network.t) = caps#network bind in
   let fd = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
   Unix.setsockopt fd Unix.SO_REUSEADDR true;
@@ -30,19 +35,23 @@ let listen (caps : < Cap.network ; .. >) ~(bind : string) ~(port : int) : t * in
   Unix.listen fd 16;
   Unix.set_nonblock fd;
   let port = match Unix.getsockname fd with Unix.ADDR_INET (_, p) -> p | _ -> port in
-  ({ listener = fd; clients = []; next_id = 0 }, port)
+  ({ listener = fd; lines; clients = []; next_id = 0 }, port)
 
 let clients (t : t) : int list = List.filter_map (fun c -> if c.upgraded && not c.closing then Some c.id else None) t.clients
 let frame (c : client) (f : Websocket.frame) : unit = c.outbox <- c.outbox ^ Websocket.encode f
 
 let send (t : t) (id : int) (payload : string) : unit =
-  List.iter (fun c -> if c.id = id && not c.closing then frame c { fin = true; opcode = Binary; payload }) t.clients
+  List.iter
+    (fun c ->
+      if c.id = id && not c.closing then
+        if t.lines then c.outbox <- c.outbox ^ payload ^ "\r\n" else frame c { fin = true; opcode = Binary; payload })
+    t.clients
 
 let close (t : t) (id : int) : unit =
   List.iter
     (fun c ->
       if c.id = id && not c.closing then begin
-        frame c { fin = true; opcode = Close; payload = "" };
+        if not t.lines then frame c { fin = true; opcode = Close; payload = "" };
         c.closing <- true
       end)
     t.clients
@@ -92,6 +101,17 @@ let upgrade (c : client) : event list =
           c.upgraded <- true;
           [ Joined c.id ])
 
+(* in lines mode: every whole line, its CR LF (or LF: a telnet on Unix)
+   taken off *)
+let rec lines_of (c : client) (acc : event list) : event list =
+  match String.index_opt c.inbox '\n' with
+  | None -> List.rev acc
+  | Some i ->
+      let line = String.sub c.inbox 0 i in
+      let line = if line <> "" && line.[String.length line - 1] = '\r' then String.sub line 0 (String.length line - 1) else line in
+      c.inbox <- String.sub c.inbox (i + 1) (String.length c.inbox - i - 1);
+      lines_of c (Message (c.id, line) :: acc)
+
 (* every whole frame: a message, a ping answered, a close *)
 let rec frames (c : client) (acc : event list) : event list =
   match Websocket.decode c.inbox with
@@ -129,8 +149,13 @@ let step (t : t) : event list =
     List.concat_map
       (fun c ->
         read c;
-        let joined = if c.upgraded then [] else upgrade c in
-        joined @ if c.upgraded then frames c [] else [])
+        if t.lines then (
+          (* no handshake: a client as soon as it is accepted *)
+          let joined = if c.upgraded then [] else (c.upgraded <- true; [ Joined c.id ]) in
+          joined @ lines_of c [])
+        else
+          let joined = if c.upgraded then [] else upgrade c in
+          joined @ if c.upgraded then frames c [] else [])
       t.clients
   in
   List.iter write t.clients;

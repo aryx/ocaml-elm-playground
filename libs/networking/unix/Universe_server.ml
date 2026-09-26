@@ -27,7 +27,7 @@ let nothing (u : 'u) : 'u bundle = (u, [], [])
 let create (caps : < Cap.network ; .. >) ?(bind = "127.0.0.1") ?(port = 4567) (state : 'u)
     ?(on_new = fun u _ -> nothing u) ?(on_msg = fun u _ _ -> nothing u) ?(on_disconnect = fun u _ -> nothing u) () :
     'u t * int =
-  let server, port = Server.listen caps ~bind ~port in
+  let server, port = Server.listen caps ~bind ~port () in
   ({ server; state; on_new; on_msg; on_disconnect }, port)
 
 let state (t : 'u t) : 'u = t.state

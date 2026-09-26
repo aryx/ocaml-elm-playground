@@ -28,8 +28,11 @@
 type t
 
 (* a server listening on [bind]:[port] (0: a free port), and the port
- * it got *)
-val listen : < Cap.network ; .. > -> bind:string -> port:int -> t * int
+ * it got. With [~lines:true], plain TCP instead, for the protocols a
+ * person can type into telnet (SMTP, POP3: Mail_server.mli): no
+ * handshake, a client as soon as it connects, a message a line (its CR
+ * LF taken off), and [send] adding the CR LF *)
+val listen : < Cap.network ; .. > -> ?lines:bool -> bind:string -> port:int -> unit -> t * int
 
 type event =
   | Joined of int (* a client connected (its handshake done), with its id *)

@@ -8,8 +8,10 @@
  * 2 of the License, or (at your option) any later version.
  *)
 (* The mail server of TinyEudora (networking/unix/Mail_server.mli):
- * SMTP in, POP3 out, a maildrop per user, over WebSocket. Its
- * parameters as name=value: smtp (8025) and pop (8110), the ports; bind
+ * SMTP in, POP3 out, a maildrop per user, over WebSocket and over
+ * plain TCP. Its parameters as name=value: smtp (8025) and pop (8110),
+ * the WebSocket ports, smtp_tcp (2525) and pop_tcp (1100), the plain
+ * ones (telnet localhost 2525, a mail client's); bind
  * (127.0.0.1: this computer only); domain (tiny: mail for bob@tiny is
  * bob's); users (alice:x,bob:y -- passwords checked; any, without it);
  * spool (a directory: each maildrop an mbox file there, user.mbox,
@@ -54,11 +56,11 @@ let () =
       let bind = flag "bind" "127.0.0.1" and domain = flag "domain" "tiny" and spool = flag "spool" "" in
       let maildrops = if spool = "" then [] else read_spool caps spool in
       let changed = if spool = "" then fun _ _ -> () else write_spool caps spool in
-      let server, smtp, pop =
-        Mail_server.create caps ~bind ~smtp_port:(int_of_string (flag "smtp" "8025")) ~pop_port:(int_of_string (flag "pop" "8110")) ~domain
-          ?passwords:(users (flag "users" "")) ~maildrops ~changed ()
-      in
-      Printf.printf "TinyEudora's mail server for @%s: SMTP on %s:%d, POP3 on %s:%d%s\n%!" domain bind smtp bind pop
+      let port name default = int_of_string (flag name default) in
+      let ports : Mail_server.ports = { smtp = port "smtp" "8025"; pop = port "pop" "8110"; smtp_plain = port "smtp_tcp" "2525"; pop_plain = port "pop_tcp" "1100" } in
+      let server, p = Mail_server.create caps ~bind ~ports ~domain ?passwords:(users (flag "users" "")) ~maildrops ~changed () in
+      Printf.printf "TinyEudora's mail server for @%s, on %s: SMTP on %d (WebSocket) and %d (TCP), POP3 on %d and %d%s\n%!" domain bind p.smtp p.smtp_plain p.pop
+        p.pop_plain
         (if spool = "" then " (in memory)" else ", spool " ^ spool);
       while true do
         Mail_server.wait server 0.1;

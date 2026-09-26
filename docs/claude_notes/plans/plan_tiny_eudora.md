@@ -420,6 +420,21 @@ accepted", the message staying queued -- the whole path, TLS
 included, working; reading a real mailbox is for the author, with
 their app password.
 
+**Phase 6 done** (2026-09-26): `Server.listen ?lines:true`, plain TCP
+-- no handshake, a message a line, CR LF taken off and put back -- so
+`Mail_server` listens four times, SMTP and POP3 each over WebSocket
+(8025, 8110) and plain TCP (2525, 1100), the sessions keyed by the
+server they came in on; `tiny_maild` flags `smtp_tcp=` and `pop_tcp=`.
+`Unit_mail_server`'s telnet session: SMTP and POP3 typed over plain
+TCP, all the lines at once, the codes and the message read back.
+Instead of Thunderbird (no screen here), two mail clients of the
+world, by hand once: curl's `smtp://` and `pop3://` (a message with a
+line starting with a dot, sent, listed and fetched intact) and
+Python's smtplib and poplib (a relay refused with our 550, STAT, UIDL,
+RETR). Thunderbird itself is for the author: account at localhost,
+POP3 1100, SMTP 2525, no encryption, any password. Next: 7, filters
+and threads.
+
 **Phase 5b, added (2026-09-26): your own mailbox, Gmail.** The
 author would like to read their own mail. Gmail speaks POP3 and SMTP
 only over TLS (`pop.gmail.com:995`, `smtp.gmail.com:465`) and takes

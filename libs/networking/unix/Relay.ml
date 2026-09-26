@@ -19,7 +19,7 @@ type t = {
 }
 
 let listen (caps : < Cap.network ; .. >) ~(bind : string) ~(port : int) ~(players : int) : t * int =
-  let server, port = Server.listen caps ~bind ~port in
+  let server, port = Server.listen caps ~bind ~port () in
   ({ server; seats = players; seated = []; forwarded = 0 }, port)
 
 let players (t : t) : int list = List.map snd t.seated

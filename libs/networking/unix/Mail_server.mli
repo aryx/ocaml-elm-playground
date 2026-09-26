@@ -23,10 +23,19 @@
    accepted unless [passwords] says otherwise (a teaching server on
    127.0.0.1).
 
-   Over WebSocket (Server.mli), a line a frame, as Irc_server is, so
-   that a TinyEudora in a browser can connect -- a web page has no
-   plain TCP. The ports: 8025 for SMTP, 8110 for POP3 (the real ones,
-   25 and 110, speak plain TCP, and are for root).
+   Each side listens twice (Server.mli): over WebSocket, a line a
+   frame, as Irc_server does, so that a TinyEudora in a browser can
+   connect -- a web page has no plain TCP -- on 8025 (SMTP) and 8110
+   (POP3); and over plain TCP, a line each way, on 2525 and 1100 (the
+   real ports, 25 and 110, are for root), for telnet and for the mail
+   clients of the world:
+
+       $ telnet localhost 2525
+       220 tiny ESMTP tiny_maild
+       HELO me
+       250 tiny
+       MAIL FROM:<alice@tiny>
+       ...
 
    The server keeps nothing on disk: [changed] is called with a user's
    maildrop each time it changes, for tiny_maild to write it as an mbox
@@ -35,20 +44,22 @@
 
 type t
 
-(* [create caps ~domain ?passwords ?maildrops ?changed ()]: the two
- * servers listening (8025 and 8110 on 127.0.0.1 unless said
+(* the ports: SMTP and POP3 over WebSocket, and over plain TCP *)
+type ports = { smtp : int; pop : int; smtp_plain : int; pop_plain : int }
+
+(* [create caps ~domain ?passwords ?maildrops ?changed ()]: the four
+ * servers listening (8025, 8110, 2525, 1100 on 127.0.0.1 unless said
  * otherwise, 0 for free ports), and the ports they got *)
 val create :
   < Cap.network ; .. > ->
   ?bind:string ->
-  ?smtp_port:int ->
-  ?pop_port:int ->
+  ?ports:ports ->
   ?domain:string ->
   ?passwords:(string * string) list ->
   ?maildrops:(string * Mbox.entry list) list ->
   ?changed:(string -> Mbox.entry list -> unit) ->
   unit ->
-  t * int * int
+  t * ports
 
 (* the events of now, on both sides, answered; [now]: the seconds since
  * the epoch, for the Received: lines and the envelopes *)
