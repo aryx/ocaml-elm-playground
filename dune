@@ -1,3 +1,9 @@
+; claude: bin is a symlink to _build/install/default/bin, where dune
+; installs the executables (their public_name): ./bin/tinybox after a
+; make. Dune must not follow it: it points into _build, and is dead
+; before the first build.
+(dirs :standard \ bin)
+
 (env
   (dev
       ;TODO FIX! remove all those -xxx
