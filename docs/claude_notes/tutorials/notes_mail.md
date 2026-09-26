@@ -6,7 +6,7 @@ send and one to fetch. All of it is text a person can read, and type:
 by the end you will have sent mail by hand, with telnet, the way
 people did in 1985 -- and seen why anybody can send mail as anybody.
 
-It goes with [`plan_tiny_eudora.md`](../plans/plan_tiny_eudora.md), which built it, and
+It goes with [`plan_tiny_eudora.md`](../plans/done/plan_tiny_eudora.md), which built it, and
 [`notes_networking.md`](notes_networking.md) §13, the other protocols
 a person can read (HTTP, IRC).
 
