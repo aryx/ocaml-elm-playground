@@ -33,11 +33,13 @@ let rec slot_text part a =
   | Lit s, _ -> "[" ^ s ^ "]"
 
 and reporter (b : block) =
-  match (b.op, b.args) with
-  | "data_variable", [ Lit name ] -> "(" ^ name ^ ")"
-  | _ ->
-      let inner = line b in
-      if (spec b.op).shape = Predicate then "<" ^ inner ^ ">" else "(" ^ inner ^ ")"
+  match (b.op, b.args, (spec b.op).shape) with
+  | "data_variable", [ Lit name ], _ -> "(" ^ name ^ ")"
+  (* a ring round a script, on one line, its blocks between ;s *)
+  | _, _, Command_ring -> (
+      match List.map String.trim (stack 0 (List.concat b.mouths)) with [] -> "({ })" | body -> "({ " ^ String.concat "; " body ^ " })")
+  | _, _, Predicate -> "<" ^ line b ^ ">"
+  | _ -> "(" ^ line b ^ ")"
 
 (* the lines of a block's template, the arguments given out in turn *)
 and lines (b : block) =
@@ -47,11 +49,13 @@ and lines (b : block) =
 
 and line b = List.hd (lines b)
 
-let rec stack indent blocks = List.concat_map (block indent) blocks
+and stack indent blocks = List.concat_map (block indent) blocks
 
 and block indent (b : block) =
   let pad = String.make indent ' ' in
   match lines b with
+  (* a loose reporter, in its brackets *)
+  | _ when List.mem (spec b.op).shape [ Reporter; Predicate; Ring; Command_ring ] -> [ pad ^ reporter b ]
   | first :: others when b.mouths <> [] ->
       let rec mouths ms ls =
         match (ms, ls) with
@@ -113,76 +117,97 @@ let tokenize s =
 
 let is_number s = s = "" || float_of_string_opt s <> None
 
-(* the arguments a line's tokens give a template's parts, if they fit *)
-let rec fit parts toks =
-  match (parts, toks) with
-  | [], [] -> Some []
-  | Word w :: parts, W t :: toks when String.lowercase_ascii w = String.lowercase_ascii t -> fit parts toks
-  | (Num _ | Text _ | Menu _) :: parts, ((P _ | S _ | A _) as t) :: toks -> Option.map (fun rest -> arg t :: rest) (fit parts toks)
-  | Bool :: parts, (A _ as t) :: toks -> Option.map (fun rest -> arg t :: rest) (fit parts toks)
-  | _ -> None
-
-and arg = function
-  | S s ->
-      let l = String.length s in
-      Lit (if l >= 2 && String.sub s (l - 2) 2 = " v" then String.sub s 0 (l - 2) else s)
-  | P s -> if is_number (String.trim s) then Lit (String.trim s) else Block (inside s [ Reporter; Predicate ])
-  | A s -> if String.trim s = "" then Lit "" else Block (inside s [ Predicate ])
-  | W w -> Lit w
-
-(* a bracket's inside: a reporter's words, else (round) a variable *)
-and inside s shapes =
-  match find (tokenize s) shapes with
-  | Some b -> b
-  | None -> if List.mem Reporter shapes then variable (String.trim s) else raise (Bad ("I don't know the block <" ^ s ^ ">"))
-
-and find toks shapes =
-  List.find_map
-    (fun (sp : spec) ->
-      if sp.op = "data_variable" || not (List.mem sp.shape shapes) then None
-      else Option.map (fun args -> { (make sp.op) with args }) (fit (List.hd sp.lines) toks))
-    specs
-
-(*****************************************************************************)
-(* Reading scripts *)
-(*****************************************************************************)
+(* a ring's script: its lines, split at the ;s that are not inside a
+   bracket *)
+let semicolons s =
+  let n = String.length s in
+  let rec go i depth start acc =
+    if i >= n then List.rev (String.sub s start (n - start) :: acc)
+    else
+      match s.[i] with
+      | '(' | '[' | '{' -> go (i + 1) (depth + 1) start acc
+      | ')' | ']' | '}' -> go (i + 1) (depth - 1) start acc
+      | ';' when depth = 0 -> go (i + 1) depth (i + 1) (String.sub s start (i - start) :: acc)
+      | _ -> go (i + 1) depth start acc
+  in
+  List.filter (( <> ) "") (List.map String.trim (go 0 0 0 []))
 
 let stack_shapes = [ Hat; Stack; Cap; C_block; C_cap ]
 
-(* the blocks a line can be: "if <> then" is the if, and the if-else
-   when an else comes before its end *)
-let candidates l =
-  let toks = tokenize l in
-  match
-    List.filter_map
-      (fun (sp : spec) -> if List.mem sp.shape stack_shapes then Option.map (fun args -> { (make sp.op) with args }) (fit (List.hd sp.lines) toks) else None)
-      specs
-  with
-  | [] -> raise (Bad ("I don't know the block: " ^ l))
-  | bs -> bs
+(* The reading functions take [extra]: the specs of the custom blocks
+   the text defines, and their parameters' names, which a round bracket
+   means before any reporter's words -- (size) in "define [command v]
+   [grow %size]" is the parameter, not Looks' size *)
+type extra = { customs : spec list; names : string list }
 
-(* a stack, up to the "end" or "else" of the block it is in *)
-let rec stack lines =
+(* the arguments a line's tokens give a template's parts, if they fit *)
+let rec fit extra parts toks =
+  match (parts, toks) with
+  | [], [] -> Some []
+  | Word w :: parts, W t :: toks when String.lowercase_ascii w = String.lowercase_ascii t -> fit extra parts toks
+  | (Num _ | Text _ | Menu _ | Lambda _) :: parts, ((P _ | S _ | A _) as t) :: toks -> Option.map (fun rest -> arg extra t :: rest) (fit extra parts toks)
+  | Bool :: parts, (A _ as t) :: toks -> Option.map (fun rest -> arg extra t :: rest) (fit extra parts toks)
+  | _ -> None
+
+and arg extra = function
+  | S s ->
+      let l = String.length s in
+      Lit (if l >= 2 && String.sub s (l - 2) 2 = " v" then String.sub s 0 (l - 2) else s)
+  | P s -> if is_number (String.trim s) then Lit (String.trim s) else Block (inside extra s [ Reporter; Predicate; Ring ])
+  | A s -> if String.trim s = "" then Lit "" else Block (inside extra s [ Predicate ])
+  | W w -> Lit w
+
+(* a bracket's inside: a reporter's words, a ring round a script, else
+   (round) a variable *)
+and inside extra s shapes =
+  let t = String.trim s in
+  match find extra (tokenize s) shapes with
+  | _ when List.mem Reporter shapes && List.mem t extra.names -> variable t
+  | Some b -> b
+  | None when List.mem Ring shapes && String.length t >= 2 && t.[0] = '{' && t.[String.length t - 1] = '}' ->
+      let body, _ = stack extra (semicolons (String.sub t 1 (String.length t - 2))) in
+      { (make "snap_reifyscript") with mouths = [ body ] }
+  | None -> if List.mem Reporter shapes then variable t else raise (Bad ("I don't know the block <" ^ s ^ ">"))
+
+and matches extra toks shapes =
+  List.filter_map
+    (fun (sp : spec) ->
+      if sp.op = "data_variable" || not (List.mem sp.shape shapes) then None
+      else Option.map (fun args -> { (make sp.op) with args }) (fit extra (List.hd sp.lines) toks))
+    (specs @ snap_specs @ extra.customs)
+
+and find extra toks shapes = match matches extra toks shapes with b :: _ -> Some b | [] -> None
+
+(* a stack, up to the "end" or "else" of the block it is in; a line
+   can be several blocks ("if <> then" is the if, and the if-else when
+   an else comes before its end) *)
+and stack extra lines =
   match lines with
   | [] -> ([], [])
   | ("end" | "else") :: _ -> ([], lines)
   | l :: rest ->
       let rec first = function
-        | [ b ] -> mouths b rest
-        | b :: others -> ( try mouths b rest with Bad _ -> first others)
-        | [] -> raise (Bad l)
+        | [ b ] -> mouths extra b rest
+        | b :: others -> ( try mouths extra b rest with Bad _ -> first others)
+        | [] -> raise (Bad ("I don't know the block: " ^ l))
       in
-      let b, rest = first (candidates l) in
-      let tail, rest = stack rest in
+      let candidates =
+        match tokenize l with
+        (* a loose reporter, a line of its own in its brackets *)
+        | [ ((P _ | A _) as tok) ] -> ( match arg extra tok with Block b -> [ b ] | Lit _ -> [])
+        | toks -> matches extra toks stack_shapes
+      in
+      let b, rest = first candidates in
+      let tail, rest = stack extra rest in
       (b :: tail, rest)
 
 (* a C block's mouths, and the lines after its end *)
-and mouths b rest =
+and mouths extra b rest =
   if b.mouths = [] then (b, rest)
   else
     let n = List.length b.mouths in
     let rec go k rest acc =
-      let body, rest = stack rest in
+      let body, rest = stack extra rest in
       match rest with
       | "else" :: rest when k < n - 1 -> go (k + 1) rest (body :: acc)
       | "end" :: rest -> (List.rev (body :: acc), rest)
@@ -193,6 +218,22 @@ and mouths b rest =
     let ms, rest = go 0 rest [] in
     ({ b with mouths = ms @ List.init (n - List.length ms) (fun _ -> []) }, rest)
 
+(* the custom blocks the text defines, from its "define" lines, and
+   their parameters *)
+let definitions lines =
+  let defined =
+    List.filter_map
+      (fun l ->
+        match tokenize l with
+        | [ W "define"; S kind; S template ] ->
+            let kind = if String.length kind > 2 && String.sub kind (String.length kind - 2) 2 = " v" then String.sub kind 0 (String.length kind - 2) else kind in
+            Some (spec (custom_op kind template), params template)
+        | _ -> None
+        | exception Bad _ -> None)
+      lines
+  in
+  { customs = List.map fst defined; names = List.concat_map snd defined }
+
 let parse text =
   let strip l = match String.index_opt l '/' with Some i when i + 1 < String.length l && l.[i + 1] = '/' -> String.sub l 0 i | _ -> l in
   let lines = List.map (fun l -> String.trim (strip l)) (String.split_on_char '\n' text) in
@@ -201,10 +242,11 @@ let parse text =
   let group, groups = List.fold_left (fun (group, groups) l -> if l = "" then ([], close group groups) else (l :: group, groups)) ([], []) lines in
   let groups = List.rev (close group groups) in
   try
+    let extra = definitions lines in
     Ok
       (List.map
          (fun g ->
-           match stack g with
+           match stack extra g with
            | blocks, [] -> { x = 0.; y = 0.; blocks }
            | _, l :: _ -> raise (Bad ("an " ^ l ^ " without its block")))
          groups)

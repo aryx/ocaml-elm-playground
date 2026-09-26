@@ -8,7 +8,9 @@
 ; TinySmalltalk80, Smalltalk-80's environment (the Browser, Workspace,
 ; Inspector, Debugger), over libs/languages/smalltalk; TinyScratch,
 ; Scratch 2's blocks, stage and sprites, over libs/languages/scratch and
-; appkits/blocks. Laid
+; appkits/blocks, and TinySnap, Snap!'s blocks of one's own, rings and
+; lists, over the same -- one environment for both, Scratch_ide and
+; Scratch_look, shared modules. Laid
 ; out like office/: the programs here, software/ for the golden frames,
 ; web/ for the browser, tty/ for the editors in a real terminal.
 ;
@@ -17,15 +19,15 @@
 ;    what they print, pictures included.
 ; Built on gui/ and the appkits (richtext, document).
 (executables
-  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch)
-  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch)
+  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap)
+  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap Scratch_look Scratch_ide)
   (libraries
     basic ; Basic_parse, Basic_run, Basic_session
     appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
     smalltalk ; the Blue Book's Smalltalk-80, St_*
     caps ; TinySmalltalk80's image and file outs, in the store
     graphics_rgba ; the Smalltalk Display's pixels, a picture
-    scratch ; Scratch_blocks, Scratch_text, Scratch_run (TinyScratch)
+    scratch ; Scratch_blocks, Scratch_text, Scratch_run (TinyScratch, TinySnap)
     appkit_blocks ; Block_layout, Block_edit
     graphics_font ; Hershey, the blocks' words measured
     elm_playground

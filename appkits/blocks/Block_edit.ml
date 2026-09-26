@@ -15,19 +15,26 @@ open Block_layout
 
 type dragged = Stack of block list | Reporter of block
 
-(* a path's steps: those down the stacks, then those into the slots *)
+(* a path's steps: those to a block (to its last At: a block in a
+   ring's mouth is down the stacks, into an argument, into its mouth),
+   then those into its slots *)
 let split steps =
-  let rec go acc = function Arg _ :: _ as args -> (List.rev acc, args) | s :: rest -> go (s :: acc) rest | [] -> (List.rev acc, []) in
-  go [] steps
+  let last_at = List.fold_left (fun (i, last) s -> (i + 1, match s with At _ -> i | _ -> last)) (0, -1) steps |> snd in
+  (List.filteri (fun i _ -> i <= last_at) steps, List.filteri (fun i _ -> i > last_at) steps)
 
-let replace_nth i x l = List.mapi (fun k y -> if k = i then x else y) l
-
-(* the stack the steps end in, changed by f *)
+(* the stack the steps end in, changed by f: down the stacks by At,
+   into a block by its mouths and its arguments *)
 let rec map_stack steps f blocks =
   match steps with
   | [] -> f blocks
-  | At i :: Mouth m :: rest -> List.mapi (fun k (b : block) -> if k = i then { b with mouths = List.mapi (fun j ms -> if j = m then map_stack rest f ms else ms) b.mouths } else b) blocks
+  | At i :: rest -> List.mapi (fun k b -> if k = i then map_in rest f b else b) blocks
   | _ -> blocks
+
+and map_in steps f (b : block) =
+  match steps with
+  | Mouth m :: rest -> { b with mouths = List.mapi (fun j ms -> if j = m then map_stack rest f ms else ms) b.mouths }
+  | Arg a :: rest -> { b with args = List.mapi (fun k x -> match x with Block inner when k = a -> Block (map_in rest f inner) | _ -> x) b.args }
+  | _ -> b
 
 (* the block the steps end at, changed by g *)
 let map_block steps g blocks =
@@ -43,7 +50,13 @@ let rec map_arg args h (b : block) =
 let rec get_stack steps blocks =
   match steps with
   | [] -> Some blocks
-  | At i :: Mouth m :: rest -> Option.bind (List.nth_opt blocks i) (fun (b : block) -> Option.bind (List.nth_opt b.mouths m) (get_stack rest))
+  | At i :: rest -> Option.bind (List.nth_opt blocks i) (get_in rest)
+  | _ -> None
+
+and get_in steps (b : block) =
+  match steps with
+  | Mouth m :: rest -> Option.bind (List.nth_opt b.mouths m) (get_stack rest)
+  | Arg a :: rest -> ( match List.nth_opt b.args a with Some (Block inner) -> get_in rest inner | _ -> None)
   | _ -> None
 
 let get_block steps blocks =

@@ -30,6 +30,7 @@
    %{project_root}/apps/internet/software/TinyMosaic.exe
    %{project_root}/apps/internet/software/TinyNetscape.exe
    %{project_root}/apps/internet/software/TinyFirefox.exe
+   %{project_root}/apps/internet/software/TinyChrome.exe
    %{project_root}/apps/internet/software/TinyEudora.exe
    %{project_root}/apps/pim/software/TinyClock.exe
    %{project_root}/apps/pim/software/TinyCalendar.exe
@@ -39,7 +40,9 @@
    %{project_root}/apps/devtools/software/TinyVi.exe
    %{project_root}/apps/devtools/software/TinyEmacs.exe
    %{project_root}/apps/devtools/software/TinyTurboPascal.exe
+   %{project_root}/apps/devtools/software/TinySmalltalk80.exe
    %{project_root}/apps/devtools/software/TinyScratch.exe
+   %{project_root}/apps/devtools/software/TinySnap.exe
    %{project_root}/apps/music/software/TinyMinimoog.exe
    %{project_root}/apps/music/software/TinyHammond.exe
    %{project_root}/apps/music/software/TinyTB303.exe

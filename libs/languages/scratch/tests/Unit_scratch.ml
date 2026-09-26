@@ -119,6 +119,80 @@ let test_bounce () =
   let a = R.find (frames 1 t) "A" in
   Alcotest.(check (pair (float 1e-9) (float 1e-9))) "back inside, turned round" (220., -90.) (a.x, a.direction)
 
+(*****************************************************************************)
+(* Snap! *)
+(*****************************************************************************)
+
+(* the globals a flag script leaves, shown *)
+let after_flag text names =
+  let t = frames 1 (R.green_flag (stage [ ("A", text) ])) in
+  List.map (fun n -> R.show t (R.variable t n)) names
+
+let test_custom_reporter () =
+  let text =
+    {|define [reporter v] [factorial %n]
+if <(n) < (2)> then
+  report (1)
+end
+report ((n) * (factorial ((n) - (1))))
+
+when flag clicked
+set [r v] to (factorial (10))|}
+  in
+  Alcotest.(check (list string)) "recursion, by a report" [ "3628800" ] (after_flag text [ "r" ])
+
+let test_higher_order () =
+  let text =
+    {|when flag clicked
+set [squares v] to (map ({ (() * ()) }) over (numbers from (1) to (4)))
+set [evens v] to (keep items ({ <(() mod (2)) = (0)> }) from (numbers from (1) to (10)))
+set [sum v] to (combine (numbers from (1) to (5)) using ({ (() + ()) }))
+set [first v] to (item (2) of (squares))|}
+  in
+  Alcotest.(check (list string)) "Scratch_run.mli's worked example, keep, combine, item"
+    [ "(1 4 9 16)"; "(2 4 6 8 10)"; "15"; "4" ] (after_flag text [ "squares"; "evens"; "sum"; "first" ])
+
+let test_closure () =
+  let text =
+    {|when flag clicked
+script variables [c v]
+set [c v] to (0)
+set [counter v] to ({ change [c v] by (1); report (c) })
+set [a v] to (call (counter))
+set [b v] to (call (counter))
+set [c v] to (99)
+set [d v] to (call (counter))|}
+  in
+  Alcotest.(check (list string)) "the ring keeps the cell itself, not its value; the global c is another" [ "1"; "2"; "100"; "0" ]
+    (after_flag text [ "a"; "b"; "d"; "c" ])
+
+let test_shared_list () =
+  let text = "when flag clicked\nset [a v] to (list [x] [y] [])\nset [b v] to (a)\nadd [z] to (b)\nset [n v] to (length of (a))" in
+  Alcotest.(check (list string)) "one list, two names; the empty slot at the end no item" [ "3"; "(x y z)" ] (after_flag text [ "n"; "a" ])
+
+let test_snap_round_trip () =
+  let text =
+    {|define [command v] [tree %size]
+if <(size) > (5)> then
+  move (size) steps
+  tree ((size) * (0.5))
+  run ({ turn right (180) degrees; move (size) steps }) with inputs (1)
+end
+
+when flag clicked
+tree (40)
+|}
+  in
+  Alcotest.(check string) "a definition, a call, a ring round a script" text (Scratch_text.print (parse text));
+  let t = frames 1 (R.green_flag (stage [ ("A", text) ])) in
+  Alcotest.(check int) "the custom command's lines, drawn in one frame" 0 (List.length t.ink);
+  Alcotest.(check bool) "and done" true (t.threads = []);
+  (* (size), the parameter: 40, 20 and 10 forward (70); then, the
+     calls returning, each turns round and moves its size: 10 back
+     (60), 20 on (80), 40 back *)
+  let a = R.find t "A" in
+  Alcotest.(check (pair (float 1e-9) (float 1e-9))) "each level's own size" (40., -90.) (a.x, a.direction)
+
 let tests =
   [
     t "scratch: Scratch_text.mli's worked example" test_worked_example;
@@ -131,4 +205,9 @@ let tests =
     t "scratch: a broadcast heard the frame after" test_broadcast;
     t "scratch: a wait, and the pen" test_wait_and_pen;
     t "scratch: if on edge, bounce" test_bounce;
+    t "snap: a custom reporter, recursive" test_custom_reporter;
+    t "snap: map, keep, combine, and implicit parameters" test_higher_order;
+    t "snap: a closure" test_closure;
+    t "snap: a list is an object" test_shared_list;
+    t "snap: a program printed back as it was read" test_snap_round_trip;
   ]

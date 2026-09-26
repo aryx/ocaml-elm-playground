@@ -328,6 +328,11 @@ let scenes : Testutil_golden.scene list =
      * the Motion palette, the cat's three scripts and, under the
      * sprites, the same scripts as scratchblocks text *)
     ("apps/devtools/software/TinyScratch", "", 5);
+    (* claude: Snap!'s screen, dark, the stage on the right: the flag
+     * script, the loose combine, the two definitions -- a recursive
+     * reporter and a recursive command -- the zebra-coloured ring in
+     * map *)
+    ("apps/devtools/software/TinySnap", "", 5);
     ("games/rpg/software/TinyGauntlet2", "", 5);
     ("games/sports/software/TinyKickOff2", "", 5);
     ("games/sports/software/TinySpeedball2", "", 5);
@@ -1843,6 +1848,14 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
      * chosen, the Control palette, its script clicked, run alone *)
     ("apps/devtools/software/TinyScratch", "flag", 90, "at(-200;452):1-3,click:2,at(300;-400):4-90", []);
     ("apps/devtools/software/TinyScratch", "edit", 26, "at(-80;-160):1-3,click:2-8,at(50;100):4,at(200;307):5-12,at(120;280):13-15,click:14-20,at(40;200):16,at(-50;100):17-26", []);
+    (* claude: TinySnap: the flag -- the tree drawn by the recursive
+     * custom command, the squares by map said as a list, a table; the
+     * turtle clicked, 10 factorial by the recursive custom reporter,
+     * and the loose combine clicked, 55; Make a block, a new
+     * definition, and the custom blocks in the Other palette *)
+    ("apps/devtools/software/TinySnap", "flag", 12, "at(400;485):1-3,click:2,at(300;-400):4-12", []);
+    ("apps/devtools/software/TinySnap", "click", 12, "at(328;236):1-3,click:2,at(-200;55):5-7,click:6,at(300;-400):8-12", []);
+    ("apps/devtools/software/TinySnap", "make", 16, "at(-440;337):1-3,click:2,at(-440;311):5-7,click:6,at(300;-400):8-16", []);
     ("apps/devtools/software/TinyScratch", "pencil", 80, "at(-350;110):1-3,click:2,at(38;403):4-6,click:5,at(150;330):7-9,click:8,at(300;-400):10-80", []);
     (* claude: TinyWumpus: the instructions, then the first room and
      * what its neighbours give away (seed 1's cave) *)

@@ -56,9 +56,10 @@ val arm : float
 val snap_distance : float
 
 (* a block's width and height (its C mouths' stacks included); a
-   stack's height *)
+   stack's height, and its width, its widest block's *)
 val size : measure:(string -> float) -> Scratch_blocks.block -> float * float
 val height : measure:(string -> float) -> Scratch_blocks.block list -> float
+val width : measure:(string -> float) -> Scratch_blocks.block list -> float
 
 (* the pieces of the scripts, a parent before what is in it, and the
    places a stack can go, each with the point to match *)

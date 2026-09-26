@@ -10,15 +10,19 @@
 
 (* See Scratch_blocks.mli *)
 
-type category = Motion | Looks | Events | Control | Sensing | Operators | Variables | Pen
-type shape = Hat | Stack | Cap | C_block | C_cap | Reporter | Predicate
-type part = Word of string | Num of string | Text of string | Menu of string | Bool
+type category = Motion | Looks | Events | Control | Sensing | Operators | Variables | Pen | Lists | Other
+type shape = Hat | Stack | Cap | C_block | C_cap | Reporter | Predicate | Ring | Command_ring
+type part = Word of string | Num of string | Text of string | Menu of string | Bool | Lambda of string
 type spec = { op : string; category : category; shape : shape; lines : part list list }
 type arg = Lit of string | Block of block
 and block = { op : string; args : arg list; mouths : block list list }
 type script = { x : float; y : float; blocks : block list }
 
 let categories = [ Motion; Looks; Events; Control; Sensing; Operators; Variables; Pen ]
+
+(* Snap!'s palette: the events with the control blocks, the lists and
+   the custom blocks (Other) added *)
+let snap_categories = [ Motion; Looks; Control; Sensing; Operators; Variables; Pen; Lists; Other ]
 
 let category_name = function
   | Motion -> "Motion"
@@ -29,6 +33,8 @@ let category_name = function
   | Operators -> "Operators"
   | Variables -> "Variables"
   | Pen -> "Pen"
+  | Lists -> "Lists"
+  | Other -> "Other"
 
 (* "move %n steps" with ["10"]: the words, and the slots taking the
    defaults in turn; | between the lines of a C block *)
@@ -41,6 +47,9 @@ let define op category shape template defaults : spec =
     | "%s" -> Text (next ())
     | "%m" -> Menu (next ())
     | "%b" -> Bool
+    | "%r" -> Lambda "snap_reifyreporter"
+    | "%p" -> Lambda "snap_reifypredicate"
+    | "%c" -> Lambda "snap_reifyscript"
     | w -> Word w
   in
   let line l = List.map part (List.filter (( <> ) "") (String.split_on_char ' ' l)) in
@@ -120,13 +129,67 @@ let specs =
     define "pen_changepensizeby" Pen Stack "change pen size by %n" [ "1" ];
   ]
 
-let spec op = List.find (fun (s : spec) -> s.op = op) specs
+(*****************************************************************************)
+(* Snap!'s *)
+(*****************************************************************************)
+
+let snap_specs =
+  [
+    define "procedures_definition" Other Hat "define %m %s" [ "command"; "my block %input" ];
+    define "procedures_report" Control Cap "report %s" [];
+    define "snap_scriptvariables" Variables Stack "script variables %m" [ "a" ];
+    define "snap_reifyreporter" Operators Ring "{ %s }" [];
+    define "snap_reifypredicate" Operators Ring "{ %b }" [];
+    define "snap_reifyscript" Operators Command_ring "{ }" [];
+    define "snap_call" Control Reporter "call %r" [];
+    define "snap_callwith" Control Reporter "call %r with inputs %s" [];
+    define "snap_run" Control Stack "run %c" [];
+    define "snap_runwith" Control Stack "run %c with inputs %s" [];
+    define "snap_list" Lists Reporter "list %s %s %s" [];
+    define "snap_numbers" Lists Reporter "numbers from %n to %n" [ "1"; "10" ];
+    define "snap_item" Lists Reporter "item %n of %s" [ "1" ];
+    define "snap_length" Lists Reporter "length of %s" [];
+    define "snap_cons" Lists Reporter "%s in front of %s" [];
+    define "snap_cdr" Lists Reporter "all but first of %s" [];
+    define "snap_isempty" Lists Predicate "is %s empty?" [];
+    define "snap_contains" Lists Predicate "%s contains %s" [ ""; "thing" ];
+    define "snap_add" Lists Stack "add %s to %s" [ "thing" ];
+    define "snap_delete" Lists Stack "delete %n of %s" [ "1" ];
+    define "snap_replace" Lists Stack "replace item %n of %s with %s" [ "1"; ""; "thing" ];
+    define "snap_map" Lists Reporter "map %r over %s" [];
+    define "snap_keep" Lists Reporter "keep items %p from %s" [];
+    define "snap_combine" Lists Reporter "combine %s using %r" [];
+  ]
+
+(* a custom block's op: "custom:reporter:factorial %s" -- its kind and
+   its template, each parameter's name made a slot *)
+let is_param w = String.length w > 1 && w.[0] = '%'
+let params template = List.filter_map (fun w -> if is_param w then Some (String.sub w 1 (String.length w - 1)) else None) (String.split_on_char ' ' template)
+
+let custom_op kind template =
+  "custom:" ^ kind ^ ":" ^ String.concat " " (List.map (fun w -> if is_param w then "%s" else w) (List.filter (( <> ) "") (String.split_on_char ' ' template)))
+
+let custom_spec op =
+  match String.split_on_char ':' op with
+  | "custom" :: kind :: rest ->
+      let shape = match kind with "reporter" -> Reporter | "predicate" -> Predicate | _ -> Stack in
+      Some (define op Other shape (String.concat ":" rest) [])
+  | _ -> None
+
+let spec op =
+  match List.find_opt (fun (s : spec) -> s.op = op) specs with
+  | Some s -> s
+  | None -> (
+      match List.find_opt (fun (s : spec) -> s.op = op) snap_specs with
+      | Some s -> s
+      | None -> ( match custom_spec op with Some s -> s | None -> raise Not_found))
+
 let slots (s : spec) = List.filter (function Word _ -> false | _ -> true) (List.concat s.lines)
 
-let make op =
+let rec make op =
   let s = spec op in
-  let arg = function Num d | Text d | Menu d -> Lit d | Bool | Word _ -> Lit "" in
-  let mouths = match s.shape with C_block | C_cap -> List.map (fun _ -> []) s.lines | _ -> [] in
+  let arg = function Num d | Text d | Menu d -> Lit d | Lambda ring -> Block (make ring) | Bool | Word _ -> Lit "" in
+  let mouths = match s.shape with C_block | C_cap | Command_ring -> List.map (fun _ -> []) s.lines | _ -> [] in
   { op; args = List.map arg (slots s); mouths }
 
 let variable name = { op = "data_variable"; args = [ Lit name ]; mouths = [] }

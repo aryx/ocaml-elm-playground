@@ -25,6 +25,9 @@
  * closes one unless a space precedes it -- so (a) < (b) compares and
  * <(a) < (b)> is a predicate that does.
  *
+ * A reporter on its own in the scripts area, which can be clicked for
+ * its value, is a line of its own in its brackets: "(x position)".
+ *
  * Worked example: "move (10) steps" is the block motion_movesteps with
  * the argument Lit "10"; "say (join [hi ] (score))" is looks_say whose
  * argument is the block operator_join, itself with Lit "hi " and the

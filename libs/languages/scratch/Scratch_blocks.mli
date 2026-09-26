@@ -35,9 +35,26 @@
  * The program is a tree: a block is an opcode, its arguments (a
  * literal typed in the slot, or a reporter block dropped on it) and
  * its mouths' stacks. A variable is the reporter "data_variable" whose
- * one argument is its name. *)
+ * one argument is its name.
+ *
+ * Snap! (Jens Monig and Brian Harvey, Berkeley, 2011; BYOB, "Build
+ * Your Own Blocks", 2008) is Scratch with what Scratch left out on
+ * purpose, and its blocks are here too ([snap_specs]):
+ *
+ * - blocks of one's own: a script under a "define" hat whose template
+ *   names the parameters ("factorial %n", n the parameter), a command,
+ *   a reporter ("report") or a predicate. A call is the block
+ *   "custom:reporter:factorial %s" -- its op is its kind and its
+ *   template, so a call needs no table to be read or drawn, as a Snap!
+ *   project's XML names a custom block by its spec;
+ * - rings, the lambda: a reporter, a predicate or a script with a grey
+ *   ring round it is not run but reported, a value to call, to run, to
+ *   pass to map -- a Ring or a Command_ring in a slot of kind %r, %p
+ *   or %c, which comes with an empty ring in it;
+ * - lists, first class: in a variable, in a list, reported by a
+ *   custom block. *)
 
-type category = Motion | Looks | Events | Control | Sensing | Operators | Variables | Pen
+type category = Motion | Looks | Events | Control | Sensing | Operators | Variables | Pen | Lists | Other
 
 type shape =
   | Hat (* starts a script *)
@@ -47,9 +64,12 @@ type shape =
   | C_cap (* mouths, nothing below: forever *)
   | Reporter (* round, a value *)
   | Predicate (* pointed, a boolean *)
+  | Ring (* Snap!'s ring round a reporter or a predicate: a function *)
+  | Command_ring (* round a script: a procedure *)
 
-(* a template's parts; a slot with its default *)
-type part = Word of string | Num of string | Text of string | Menu of string | Bool
+(* a template's parts; a slot with its default; a ring slot comes with
+   the empty ring of that op in it *)
+type part = Word of string | Num of string | Text of string | Menu of string | Bool | Lambda of string
 
 type spec = {
   op : string;
@@ -64,13 +84,24 @@ and block = { op : string; args : arg list; mouths : block list list }
 (* a stack of blocks where it lies in the scripts area *)
 type script = { x : float; y : float; blocks : block list }
 
+(* Scratch's blocks, Snap!'s, and the two palettes' categories *)
 val specs : spec list
+val snap_specs : spec list
 val categories : category list
+val snap_categories : category list
 val category_name : category -> string
 
-(* the spec of an opcode; the variable reporter has one, a menu slot
-   for its name *)
+(* the spec of an opcode, a custom block's read from its op; the
+   variable reporter has one, a menu slot for its name. Not_found for
+   an op neither Scratch nor Snap! has *)
 val spec : string -> spec
+
+(* [custom_op kind template]: the op of the block a "define" hat of that
+   kind ("command", "reporter", "predicate") and template ("factorial
+   %n") defines, "custom:reporter:factorial %s"; the template's
+   parameters, ["n"] *)
+val custom_op : string -> string -> string
+val params : string -> string list
 
 (* the slots of a spec, in order, which are its block's arguments *)
 val slots : spec -> part list
