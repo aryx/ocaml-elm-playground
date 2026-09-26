@@ -4,22 +4,25 @@
 ; and TinyEmacs, the two text editors, full-screen programs of the
 ; terminal over appkits/editor and the Textmode way (Emacs's Lisp is
 ; libs/languages/lisp); TinyTurboPascal, Turbo Pascal 7's IDE in text
-; mode, over the same appkit and libs/languages/pascal's P-code. Laid
+; mode, over the same appkit and libs/languages/pascal's P-code;
+; TinySmalltalk80, Smalltalk-80's environment (the Browser, Workspace,
+; Inspector, Debugger), over libs/languages/smalltalk. Laid
 ; out like office/: the programs here, software/ for the golden frames,
 ; web/ for the browser, tty/ for the editors in a real terminal.
 ;
 ; What else it might contain, each Tiny and after a famous original:
-;  - a debugger (the Smalltalk-80 one): a running program's stack and
-;    state, the inspector of plan_inspect_teaching.md;
 ;  - a notebook or REPL (Mathematica 1988, Jupyter): cells of code and
 ;    what they print, pictures included.
 ; Built on gui/ and the appkits (richtext, document).
 (executables
-  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal)
-  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal)
+  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80)
+  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80)
   (libraries
     basic ; Basic_parse, Basic_run, Basic_session
     appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
+    smalltalk ; the Blue Book's Smalltalk-80, St_*
+    caps ; TinySmalltalk80's image and file outs, in the store
+    graphics_rgba ; the Smalltalk Display's pixels, a picture
     elm_playground
     elm_playground_native ; implem of virtual elm_playground
   )

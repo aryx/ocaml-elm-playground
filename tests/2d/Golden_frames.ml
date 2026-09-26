@@ -316,6 +316,10 @@ let scenes : Testutil_golden.scene list =
     (* claude: Turbo Pascal 7's IDE, Wirth's eight queens in its blue
      * window: the PC's colours and its box-drawing characters *)
     ("apps/devtools/software/TinyTurboPascal", "", 3);
+    (* claude: Smalltalk-80's screen: the System Browser on the Blue
+     * Book's Rectangle>>center, a Workspace of things to try, the
+     * Transcript *)
+    ("apps/devtools/software/TinySmalltalk80", "", 3);
     ("games/rpg/software/TinyGauntlet2", "", 5);
     ("games/sports/software/TinyKickOff2", "", 5);
     ("games/sports/software/TinySpeedball2", "", 5);
@@ -1735,6 +1739,46 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
       32,
       "Alt:2-3,s:3,type(g22):5,Enter:6,Control:8-9,F8:9,Control:11-12,F9:12,Control:15-16,F9:16,Control:19-20,F7:20,type(x):22,Enter:23,Control:25-26,F7:26,type(j):28,Enter:29",
       [] );
+    (* claude: TinySmalltalk80 (the Smalltalk screen is 800 by 600 at a
+     * scale of 1.25: a point (x, y) of it is at ((x - 400) * 1.25; (300 -
+     * y) * 1.25)). Print it on 3 + 4 * 2, the answer inserted and
+     * selected; the Browser on Point's arithmetic, a method accepted
+     * into it, and one with a mistake, the compiler's complaint
+     * inserted where it is; (3@4) inspect, and the Transcript shown to;
+     * the Pen's dragon drawn over the windows; 3 halt, its notifier's
+     * debug, the DoIt's frame and its send in progress; [true]
+     * whileTrue interrupted by Control-C *)
+    ("apps/devtools/software/TinySmalltalk80", "print", 8, "at(-425;-105):1-10,click:2,Control:4-5,p:5", []);
+    ( "apps/devtools/software/TinySmalltalk80",
+      "accept",
+      16,
+      "at(-250;323):1-4,click:2,at(0;300):5-7,click:6,at(-375;62):8-16,click:9,Control:10-11,a:11,type(double ^self * 2):12,Control:13-14,s:14",
+      [] );
+    ( "apps/devtools/software/TinySmalltalk80",
+      "error",
+      16,
+      "at(-250;323):1-4,click:2,at(0;300):5-7,click:6,at(-375;62):8-16,click:9,Control:10-11,a:11,type(triple ^self * 3 +):12,Control:13-14,s:14",
+      [] );
+    ( "apps/devtools/software/TinySmalltalk80",
+      "inspect",
+      16,
+      "at(-425;-202):1-6,click:2,Control:4-5,d:5,at(-425;-235):7-16,click:8,Control:10-11,d:11",
+      [] );
+    ("apps/devtools/software/TinySmalltalk80", "dragon", 20, "at(-425;-251):1-10,click:2,Control:4-5,d:5", []);
+    ( "apps/devtools/software/TinySmalltalk80",
+      "halt",
+      12,
+      "at(-425;-332):1-6,click:2,Control:4-5,d:5,at(-12;75):6-8,click:7,at(-125;161):9-12,click:10",
+      [] );
+    ("apps/devtools/software/TinySmalltalk80", "interrupt", 14, "at(-425;-348):1-6,click:2,Control:4-5,d:5,Control:9-10,c:10", []);
+    (* claude: its classic session: 10 fib not understood, its notifier's
+     * define, the method typed into the debugger and accepted (the DoIt
+     * restarted), proceed -- and 55 printed in the Workspace *)
+    ( "apps/devtools/software/TinySmalltalk80",
+      "define",
+      16,
+      "at(52;75):1-5,click:4,type(fib self < 2 ifTrue: [^self]. ^(self - 1) fib + (self - 2) fib):6,Control:8-9,s:9,at(-205;45):10-16,click:12",
+      [ "window=debugger" ] );
     (* claude: TinyWumpus: the instructions, then the first room and
      * what its neighbours give away (seed 1's cave) *)
     ("games/adventure/software/TinyWumpus", "first", 8, "type(y):2,Enter:3", []);

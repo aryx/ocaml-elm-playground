@@ -4,11 +4,14 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal)
-  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal)
+  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80)
+  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80)
   (libraries
     basic ; Basic_parse, Basic_run, Basic_session
     appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
+    smalltalk ; the Blue Book's Smalltalk-80, St_*
+    caps ; TinySmalltalk80's image and file outs, in the store
+    graphics_rgba ; the Smalltalk Display's pixels, a picture
     elm_playground
     elm_playground_software ; implem of virtual elm_playground
   )

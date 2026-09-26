@@ -1,0 +1,56 @@
+; claude: Smalltalk-80 from the Blue Book (plan_tiny_smalltalk.md,
+; notes_smalltalk.md): St_lexer, St_ast, St_parse (the text read),
+; St_chunk (the file format), St_memory (the object table), St_class
+; (a class as the machine reads it), St_bytecode (the instruction set,
+; a CompiledMethod), St_compile (the tree to bytecodes), St_interp (the
+; interpreter: contexts, sends, returns, processes), St_primitives,
+; St_boot (the kernel/*.st files bootstrapped into a running system),
+; St_debug (what a debugger asks of a suspended process), St_image
+; (the whole memory saved and loaded), St_bitblt (Form and BitBlt, the
+; display). TinySmalltalk80 (apps/devtools/) is its environment.
+;
+; Pure OCaml, no Playground (libs/languages/README.md). A private
+; library, installed as part of elm_playground.
+(library
+ (name smalltalk)
+ (package elm_playground)
+ (wrapped false)
+)
+
+; claude: the kernel's source, the chunk files of kernel/, embedded as
+; strings (St_kernel.mli), in the order they are bootstrapped
+(rule
+ (targets St_kernel.ml)
+ (deps kernel/Definitions.st kernel/Objects.st kernel/Classes.st kernel/Numbers.st
+       kernel/Collections.st kernel/Streams.st kernel/Graphics.st kernel/System.st)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from kernel/*.st by libs/languages/smalltalk/dune *)\n")
+    (echo "let files = [\n")
+    (echo "(\"Definitions.st\", {st|")
+    (cat kernel/Definitions.st)
+    (echo "|st});\n")
+    (echo "(\"Objects.st\", {st|")
+    (cat kernel/Objects.st)
+    (echo "|st});\n")
+    (echo "(\"Classes.st\", {st|")
+    (cat kernel/Classes.st)
+    (echo "|st});\n")
+    (echo "(\"Numbers.st\", {st|")
+    (cat kernel/Numbers.st)
+    (echo "|st});\n")
+    (echo "(\"Collections.st\", {st|")
+    (cat kernel/Collections.st)
+    (echo "|st});\n")
+    (echo "(\"Streams.st\", {st|")
+    (cat kernel/Streams.st)
+    (echo "|st});\n")
+    (echo "(\"Graphics.st\", {st|")
+    (cat kernel/Graphics.st)
+    (echo "|st});\n")
+    (echo "(\"System.st\", {st|")
+    (cat kernel/System.st)
+    (echo "|st});\n")
+    (echo "]\n")))))
