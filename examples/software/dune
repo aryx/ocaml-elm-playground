@@ -19,7 +19,7 @@
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
     ImageJpeg ImagePng ImageLzw
     JuiceCurves JuiceSquash
-    LogoFractals KarelHarvest TeletypeHangman TextmodeSnake PovraySpheres PovrayWhitted
+    LogoFractals KarelHarvest TeletypeHangman TextmodeSnake PovraySpheres PovrayWhitted PovrayCsg
     BigBangRocket
     BigBangWorm
     UniverseBall

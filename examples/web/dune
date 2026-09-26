@@ -47,6 +47,7 @@
 (copy_files ../KarelHarvest.ml)
 (copy_files ../PovraySpheres.ml)
 (copy_files ../PovrayWhitted.ml)
+(copy_files ../PovrayCsg.ml)
 (copy_files ../TeletypeHangman.ml)
 (copy_files ../TextmodeSnake.ml)
 (copy_files ../BigBangRocket.ml)
@@ -91,7 +92,7 @@
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
     ImageJpeg ImagePng ImageLzw
     JuiceCurves JuiceSquash
-    LogoFractals KarelHarvest TeletypeHangman TextmodeSnake PovraySpheres PovrayWhitted
+    LogoFractals KarelHarvest TeletypeHangman TextmodeSnake PovraySpheres PovrayWhitted PovrayCsg
     BigBangRocket
     BigBangWorm
     UniverseBall

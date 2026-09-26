@@ -288,6 +288,8 @@ let scenes : Testutil_golden.scene list =
     ("examples/software/PovraySpheres", "", 6);
     (* Whitted's 1980 picture: 120,000 rays, done by the sixth *)
     ("examples/software/PovrayWhitted", "", 10);
+    (* claude: solids made of solids: the drilled cube, the die, the lens *)
+    ("examples/software/PovrayCsg", "", 10);
     (* the first question, the gallows empty *)
     ("examples/software/TeletypeHangman", "", 3);
     (* the snake, its food, and the bytes of the first frame: all of it *)
@@ -448,6 +450,8 @@ let scripted : Testutil_golden.scripted list =
      * dragged round the spheres, the picture made again *)
     ("examples/software/PovraySpheres", "coarse", 1, "at(0;0):1");
     ("examples/software/PovraySpheres", "orbit", 12, "at(0;0):1-3,click:2-8,at(-120;-30):4-8");
+    (* claude: the CSG scene from above: the lens a sliver, edge on *)
+    ("examples/software/PovrayCsg", "orbit", 16, "at(0;0):1-3,click:2-8,at(-150;-60):4-8");
     ( "games/shmup/software/TinyInvaders",
       "play",
       300,
@@ -1572,6 +1576,7 @@ let flagged : Testutil_golden.flagged list =
     ("examples/software/PovraySpheres", "evolution", 24, [ "evolution" ]);
     (* claude: and Whitted's by each: 4 x 120,000 rays, done by the 24th *)
     ("examples/software/PovrayWhitted", "evolution", 30, [ "evolution" ]);
+    ("examples/software/PovrayCsg", "evolution", 30, [ "evolution" ]);
     ("games/platform/software/TinyCeleste", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyVVVVVV", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyMarioGalaxy2D", "shapes", 5, [ "artwork=shapes" ]);

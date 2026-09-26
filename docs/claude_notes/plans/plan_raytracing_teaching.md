@@ -921,7 +921,33 @@ counted (facing mirrors: 3 bounces; a thousandth of a mirror: not
 shot); glass of index 1 invisible. Not done: glass casts a full
 shadow (as in Whitted's picture), caustics being out of scope.
 
-Next, phase 6, the other solids and CSG.
+**Phase 6 done** (2026-09-26): the other solids and CSG.
+`Transform` (an affine map kept with its inverse, built step by step:
+no matrix is ever inverted; normals by the inverse transpose); `Solid`'s
+unit primitives through it, `Placed` (ball, cube, cylinder, cone,
+torus, half-space), `Csg` nodes, `intervals`, `first_hit` (the boundary
+with the leaf whose surface is seen and whether its normal is turned
+round), `contains` (point membership from each definition), `bounds`
+through transforms and CSG; `Csg.combine`, one sweep and one rule for
+the normal (an operand's exit as the result's entry, or its entry as
+the result's exit, flips it), worked on a blind hole in `Csg.mli`; the
+torus's quartic by bracketing and bisection rather than Ferrari's
+formula; `Raytrace.Spot` (GML's spotlight). The way: `box`,
+`cylinder`, `cone`, `torus`, `union`, `inter`, `diff`, `scale`,
+`rotate`, `spot`. `examples/PovrayCsg.ml`: the drilled cube, a die, a
+glass lens, a torus, a spot. Checked: each primitive's intervals by
+hand; the ellipsoid's normal (the inverse transpose); the blind hole's
+flipped normal; **point membership, 14,376 points on random CSG trees
+of transformed primitives, the intervals and the definitions agreeing**;
+the BVH against brute force on CSG scenes; a spot's cone. Met on the
+way: a ray down a cone's axis passes through its apex, where the double
+cone's two roots are one and the "outside the roots" halves touch
+(merged); and the first lens drew nothing -- two unit spheres 2.4
+apart, an empty intersection, the example's own bug, kept in its
+comment.
+
+Next, phase 7, surfaces: textures at the hit point, patterns over
+noise, `pattern` closures.
 
 Written as the specification, with
 [`notes_raytracing.md`](../tutorials/notes_raytracing.md) beside it.
