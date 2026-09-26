@@ -291,13 +291,70 @@ under a "system" or new "launcher" row, with its golden frame:
 - **Flags**: a small line editor for the flags passed to the game
   (`artwork=shapes`, `-debug-keys`), remembered per game.
 
+### After Batocera and RetroBox: browsing a big collection
+
+The author's direction (2026-09-27): take the retro front ends as the
+model -- Batocera and RetroBox (both on EmulationStation's ideas, as are
+Recalbox and RetroPie), which make thousands of games browsable. With
+~200 programs, the section-by-section grid is enough to start with, but
+it is not how one *finds* something: "a 2-player game", "something from
+the 80s", "what did id Software make", "what did I play yesterday".
+What they have, and what it would be here:
+
+| Their feature | Here | Data needed |
+|---|---|---|
+| Systems carousel (a big logo per console) | the shelves and sections as a carousel of big titles, the section's thumbnails as its background | none |
+| Gamelist metadata (`gamelist.xml`: name, description, image, genre, players, release date, developer, publisher, rating) | name, One line, What it brought, the golden frame, the section; **players** new; **year**, **developer/publisher** parsed from After ("(Shigeru Miyamoto, Nintendo, 1985)"); a twin ("After TinyDoom") takes its twin's | a Players column (below) |
+| Filters: genre, players, decade, favourites, played or not, developer | a filter bar: players (1, 2, 3, 4+, online), era (70s, 80s, 90s, 2000s, 2010s+), look (2D, 2.5D, 3D, app), favourites, never played, developer; filters combine, the grid shows what passes, the count says how many | players, year, developer |
+| Sort: name, year, players, last played, times played | the same, and the catalogue's order (the default: the sections' own order, the genres' history) | the store's counts |
+| Automatic collections: All, Favourites, Last played; dynamic ones by genre, decade, developer | "collections" as extra sections before the genres: Favourites, Last played, Most played, 2 players, the 80s, Nintendo, id Software, Twins (a 2.5D game and its 3D twin side by side), and the author's own (TinyTronscroll, 1997) | as above |
+| Custom collections (the player's own lists) | a collection made in the menu, kept in the store | the store |
+| Video snaps playing in the detail view | the program's other golden frames (`<Name>_<scene>.png`, a game deep in play) shown in turn after a second on it: a slideshow of the game playing, from frames that `make test` already guarantees | more thumbnails (a few per program, ~25 KB each) |
+| Screensaver / attract mode (random games' videos when idle) | after a minute idle, random programs' frames full screen, with their name and After: an arcade's attract mode | the slideshow's frames |
+| "Random game" button | `r`: a random program, among those the filters pass | none |
+| Jump to a letter | a letter typed (outside search) jumps to the first name starting with it | none |
+| Per-game settings (Batocera's advanced settings) | the flags line, remembered per program (`artwork=shapes`, `juice=off`, `net=host`) | the store |
+| Play count, last played, game time | counted by the menu around its child process (it knows when one starts and ends) | the store |
+| Kid mode / kiosk | a flag of the menu's: no apps, no flags line, a whitelist | none |
+| Netplay menu (host or join a game) | for the games with `Multiplayer` (TinySpacewar, TinyTronscroll): "host" and "join" in the detail panel, i.e. `net=host` / `net=join` flags | an "online" mark (Players: `2 (online)`) |
+| Gamepad navigation | the playground's gamepad, if it has one; else a plan item of its own | -- |
+| Menu music, navigation sounds, themes | `Audio`'s chiptunes and clicks; the palette as a theme, chosen in the menu | none |
+| Scraper (metadata fetched from the web) | not needed: our "scraper" is the build, CATALOG.md and the golden frames read at build time | -- |
+
+And one thing they cannot have, because theirs are ROMs: **the source**.
+A key (`s`) opens the program's header comment (what it is after, the
+trick it writes out, what it uses and what it leaves as exercises),
+embedded at build time like the thumbnails, scrollable: the
+repository's point, a toy you can read, one key away from playing it.
+
+**The data: decided (2026-09-27), the catalogue is improved** -- new
+columns in `CATALOG.md`, checked by `tests/catalog`, rather than lines
+in the programs' headers. Players is the only field that cannot be
+computed from what exists; the original's platform (arcade, console,
+home computer, PC: Batocera's "systems", for a filter) and its URL
+("open the original", step 7) are the other candidates. The two ways
+that were weighed:
+- a **Players column in `CATALOG.md`** (`1`, `1-2`, `2`, `1-4`,
+  `2 (online)`), filled once from the programs' headers and code (their
+  `Multiplayer`, their second player's keys), checked by `tests/catalog`
+  like the other columns: one place, readable in the table;
+- or a line in each program's header comment (`Players: 1-2`), read at
+  build time: the data next to the code, but 198 files touched and
+  parsed from comments.
+The first is recommended. Year and developer are parsed from After,
+with a test that every game's After gives a year (an app's After is a
+program, which has one too). The original's platform (arcade, console,
+home computer, PC) would be one more column, later, if filters by
+platform are wanted (Batocera's "systems").
+
 ## Packaging
 
-- `dune-project`: a tenth `(package (name elm_playground_games) ...)`
-  whose dependencies are the backend packages. The launcher's
-  `executable` gets `(public_name tinybox) (package
-  elm_playground_games)`. Nothing else is installed: no per-game
-  executables, no `share/` (screenshots and data are embedded).
+- `dune-project`: a tenth package, `tinybox` (decided 2026-09-27),
+  whose dependencies are the backend packages; the launcher's
+  `executable` is `(public_name tinybox) (package tinybox)`. Nothing
+  else is installed: no per-game executables, no `share/` (screenshots
+  and data are embedded). After a `make`, also `./bin/tinybox` (`bin`
+  a committed symlink to `_build/install/default/bin`).
 - The launcher's directory: `launcher/` at the top level, beside
   `games/` and `apps/`. Its dune file lists every program's library
   dependencies, which is the union of the genres' stanzas. To keep that
@@ -347,22 +404,50 @@ under a "system" or new "launcher" row, with its golden frame:
    - Not yet: `tinybox --install <dir>`, the links for BusyBox's way.
 4. `opam install .` in a scratch switch; check `tinybox` is the only
    thing in `bin/`.
-5. The catalog parser as a library; thumbnails at build time.
-6. The front end: grid, detail panel, filter, child process, crash
-   report.
+5. The catalog parser as a library; thumbnails at build time. Done
+   2026-09-27: `launcher/catalogue/` (`Catalogue`, the sections with
+   their intro and rows, Markdown taken out); `launcher/data/`'s
+   `make_tinybox_data`, the first golden frame halved twice (250 by
+   250), in 8 shards dune runs side by side (a thumbnail is 0.3 s,
+   mostly our PNG decoder: 55 s alone, 8 s so).
+6. The front end: grid, detail panel, search, child process, the exit
+   status. Done 2026-09-27: `Tinybox_menu`, a 2D Playground game;
+   `tinybox` alone (or with platform flags, `-dump-frame`) opens it.
+   The menu is a program registered as "tinybox", run by `Program.run`
+   like the others. 3 by 4 thumbnails, the chosen one at 400 by 400,
+   After, One line, What it brought; Tab and Shift-Tab across the 29
+   sections, g/a the shelves, `/` search, Enter or a double click
+   starts `tinybox <Name>` as a child process, polled each frame ("is
+   running", "exited with n"). Text is left-aligned by an estimate
+   (0.47 em for Cairo's sans-serif).
 7. URLs of the originals (the `CATALOG.md` column), "open original".
 8. Juice: CRT look, sounds, last played and favourites.
 9. `CATALOG.md` row and golden frame for TinyBox itself.
 10. TinyWinamp's `dir=`, and then its narrowed `open_in`. This does not
     need tinybox and can come any time after step 2.
+11. After Batocera, the data: the Players column (once decided), year
+    and developer parsed from After, their tests.
+12. Filters, sorts, and the collections as sections (Favourites, Last
+    played, 2 players, the 80s, a developer, Twins); `r` random, a
+    letter to jump.
+13. The store: favourites, play counts, last played, time played,
+    flags per program, custom collections.
+14. The slideshow of a program's golden frames in the detail panel,
+    and the attract mode when idle.
+15. The source view (`s`): the header comment, embedded.
+16. Host and join for the `Multiplayer` games; kid mode; themes, menu
+    music and sounds (with step 8); the gamepad.
+17. `tinybox --install <dir>`: the links for BusyBox's way.
 
 ## Open questions for the author
 
 - **Genre libraries** (the dependency union) before the launcher, or
-  `copy_files` and a hand-kept list?
+  `copy_files` and a hand-kept list? `copy_files` for now (step 3);
+  genre libraries if the list becomes a burden.
+- **Which new `CATALOG.md` columns** (decided: the catalogue grows,
+  rather than the headers): Players surely; the original's platform and
+  its URL too? And their spelling (`1-2`, `2 (online)`).
 - **URLs**: a new `CATALOG.md` column (another thing its test checks),
   or a table private to the launcher?
-- **Package name**: `elm_playground_games` installs the apps too.
-  Simply `tinybox`? Then `opam install tinybox` gives `tinybox`.
 - **Examples**: in the launcher too (their own section), or games and
   apps only, as `CATALOG.md`?

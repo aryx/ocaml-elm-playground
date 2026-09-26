@@ -12,8 +12,9 @@
  * BusyBox (one multi-call binary instead of hundreds) and the retro
  * boxes (a menu of games). See plan_launcher.md.
  *
- *   tinybox                        the programs, by name
- *   tinybox list                   the same
+ *   tinybox [menu flags]           the menu (Tinybox_menu): the catalogue,
+ *                                  its screenshots, Enter to play
+ *   tinybox list                   the programs, by name
  *   tinybox TinyMario [args]       run one, with its own command line
  *   tinybox mario [args]           a name found case-insensitively,
  *                                  "Tiny" optional, or any unique part
@@ -31,16 +32,21 @@
  * Cap.main itself, if it needs any), never both -- Cap.main can be
  * called once.
  *
- * What it uses: Program (elm_core), Tty_unix and appkits/editor for
- * -tty. To come (plan_launcher.md): the menu, a Playground app with
- * the catalogue's screenshots, run when no name is given.
+ * The menu is a program too, registered as "tinybox" (it goes through
+ * Program.run like the others, so that the platform reads its command
+ * line, Program.argv), and left out of the lists.
+ *
+ * What it uses: Program (elm_core), Tinybox_menu, Tty_unix and
+ * appkits/editor for -tty.
  *)
 
 (*****************************************************************************)
 (* The programs *)
 (*****************************************************************************)
 
-let programs () : string list = List.map fst (Program.collected ())
+let menu = "tinybox"
+
+let programs () : string list = List.filter (( <> ) menu) (List.map fst (Program.collected ()))
 
 (* The editors that also run in a terminal (apps/devtools/tty/, whose
  * modules can't be linked here: they have the GUI versions' names). *)
@@ -89,7 +95,7 @@ let columns (names : string list) : string =
   Buffer.contents b
 
 let usage =
-  "usage: tinybox [list | <program> [args] | <program> -tty]\n\
+  "usage: tinybox [-platform flags | list | <program> [args] | <program> -tty]\n\
   \  <program>: its name, case-insensitive, \"Tiny\" optional, or a unique part of it\n\
   \  args: the program's own, e.g. -debug-keys, artwork=shapes\n"
 
@@ -123,12 +129,19 @@ let start (query : string) (args : string list) : unit =
       | None -> fail (Printf.sprintf "%s has no terminal version (-tty: %s)" name (String.concat ", " (List.map fst tty_programs))))
   | Ok name -> Program.run name ~argv:(Array.of_list (name :: args))
 
+(* the menu, one more program: its entry, Cap.main and all *)
+let () = Program.main menu (fun () -> Cap.main (fun caps -> Tinybox_menu.run caps (programs ())))
+
 let () =
   let invoked = Filename.remove_extension (Filename.basename Sys.argv.(0)) in
   match Array.to_list Sys.argv with
   (* BusyBox's way: tinybox under another name *)
   | _ :: args when String.lowercase_ascii invoked <> "tinybox" -> start invoked args
-  | [ _ ] | [ _; "list" ] -> list_programs ()
+  | [ _; "list" ] -> list_programs ()
   | [ _; ("-h" | "-help" | "--help") ] -> Cap.main (fun caps -> print caps usage)
+  (* the menu, with the platform's flags if any (-fixed-time, -dump-frame) *)
+  | [ exe ] -> Program.run menu ~argv:[| exe |]
+  | exe :: (flag :: _ as args) when String.length flag > 1 && flag.[0] = '-' ->
+      Program.run menu ~argv:(Array.of_list (exe :: args))
   | _ :: query :: args -> start query args
   | [] -> fail usage

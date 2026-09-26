@@ -58,7 +58,8 @@
 
 (library
  (name tinybox_programs)
- (modules :standard \ Tinybox Tinybox_collect)
+ (modules :standard \ Tinybox Tinybox_collect Tinybox_menu Tinybox_data
+   Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
  (wrapped false)
  (library_flags (-linkall))
  (libraries
@@ -80,14 +81,65 @@
    physics_2d physics_3d random scratch smalltalk unix web
  ))
 
+; claude: the menu's data, made at build time: the catalogue, and each
+; program's first golden frame shrunk to a thumbnail, in 8 shards made
+; side by side (a thumbnail takes 0.3 s: make_tinybox_data.ml)
+(rule
+ (alias tinybox_frames)
+ (deps
+  %{project_root}/CATALOG.md
+  (glob_files %{project_root}/tests/2d/golden/*.png)
+  (glob_files %{project_root}/tests/3d/golden/*.png))
+ (action (progn)))
+
+(rule
+ (targets Tinybox_data.ml)
+ (deps %{project_root}/CATALOG.md)
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} catalogue 8)))))
+(rule
+ (targets Tinybox_thumbs_0.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 0 8)))))
+(rule
+ (targets Tinybox_thumbs_1.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 1 8)))))
+(rule
+ (targets Tinybox_thumbs_2.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 2 8)))))
+(rule
+ (targets Tinybox_thumbs_3.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 3 8)))))
+(rule
+ (targets Tinybox_thumbs_4.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 4 8)))))
+(rule
+ (targets Tinybox_thumbs_5.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 5 8)))))
+(rule
+ (targets Tinybox_thumbs_6.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 6 8)))))
+(rule
+ (targets Tinybox_thumbs_7.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 7 8)))))
+
 (executable
  (name Tinybox)
  (public_name tinybox)
  (package tinybox)
- (modules Tinybox)
+ (modules Tinybox Tinybox_menu Tinybox_data
+   Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
  (libraries
    tinybox_programs
    caps
+   unix ; the menu's child process
+   catalogue graphics_png graphics_rgba ; the menu's data
    terminal_unix ; Tty_unix, for -tty
    appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
    elm_playground_native ; implem of virtual elm_playground: Cairo

@@ -1,0 +1,6 @@
+; claude: the build-time program that makes tinybox's Tinybox_data.ml
+; (the catalogue and the thumbnails), see make_tinybox_data.ml and
+; ../dune's rule
+(executable
+ (name make_tinybox_data)
+ (libraries catalogue graphics_rgba graphics_png graphics_imaging))
