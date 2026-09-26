@@ -178,8 +178,8 @@
   (synopsis "Native 3D playground platform on the GPU (OpenGL 3.3 core)")
   (description "\
   The desktop platform for a 3D program: the scenes handed to the GPU
-  through OpenGL, the HUD drawn by elm_playground_software, its 2D
-  platform.
+  through OpenGL, the HUD drawn by the software 2D rasterizer, over
+  either 2D platform (elm_playground_software or elm_playground_native).
 ")
   ; claude: see plan_opengl.md and notes_opengl.md
   (depends
@@ -187,7 +187,7 @@
     tsdl
     tgls
     (elm_playground_3d (= :version))
-    (elm_playground_software (= :version)) ; the HUD: Shape_render_software, graphics/core (Matting); the SDL loop; graphics/images (Texture_decode)
+    (elm_playground_software (= :version)) ; the private libraries it installs: graphics/2d (the HUD's rasterizer, compiled here as Hud_render), graphics/core (Matting); the SDL loop; graphics/images (Texture_decode)
   )
 )
 (package (name elm_playground_3d_webgl)

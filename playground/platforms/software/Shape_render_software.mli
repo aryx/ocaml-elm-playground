@@ -3,6 +3,10 @@
  * rasterizer's counterpart of playground/platforms/native/Shape_render_native.ml,
  * which asks Cairo to do the same job. *)
 
+(* claude: also compiled as Hud_render in elm_playground_3d_opengl, the
+ * OpenGL backend's HUD, by a copy rule (see platforms/native/dune for
+ * why): this file must keep using nothing of its own library. *)
+
 (* Rendering features that can be turned on or off, to see what each
  * one does (see the keys in Playground_platform.ml) *)
 type options = {

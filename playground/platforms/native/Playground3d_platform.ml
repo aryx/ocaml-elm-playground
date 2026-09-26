@@ -432,7 +432,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * GPU as a texture over a rectangle covering the window, blended
    * over the scene:
    *
-   *   HUD shapes --Shape_render_software, twice (Matting)--> RGBA image
+   *   HUD shapes --Hud_render (Shape_render_software), twice (Matting)--> RGBA image
    *     --tex_image2d--> texture --hud program, blending--> window
    *
    * Only when the shapes change: the image stays in the texture, and on
@@ -505,7 +505,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
        * overlapping would redraw their shared pixels twice, and the
        * shapes in them once per box). The simple version, one box:
        *
-       *   (match Shape_render_software.pixel_bounds ~width:sx ~height:sy changed with
+       *   (match Hud_render.pixel_bounds ~width:sx ~height:sy changed with
        *   | None -> ()
        *   | Some (x0, y0, x1, y1) -> ... (the same redraw of the box as below))
        *)
@@ -519,21 +519,21 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
             | [], _ -> b :: merge rest
             | hits, others -> merge (List.fold_left union b hits :: others))
       in
-      let boxes = merge (List.filter_map (fun s -> Shape_render_software.pixel_bounds ~width:sx ~height:sy [ s ]) changed) in
+      let boxes = merge (List.filter_map (fun s -> Hud_render.pixel_bounds ~width:sx ~height:sy [ s ]) changed) in
       Logs.debug (fun m ->
           m "hud: %s redrawn" (String.concat ", " (List.map (fun (x0, y0, x1, y1) -> Printf.sprintf "%dx%d at (%d, %d)" (x1 - x0) (y1 - y0) x0 y0) boxes)));
       boxes
       |> List.iter (fun (x0, y0, x1, y1) ->
           let w = x1 - x0 and h = y1 - y0 in
           let touching (s : Playground.shape) =
-            match Shape_render_software.pixel_bounds ~width:sx ~height:sy [ s ] with
+            match Hud_render.pixel_bounds ~width:sx ~height:sy [ s ] with
             | Some (a0, b0, a1, b1) -> a0 < x1 && x0 < a1 && b0 < y1 && y0 < b1
             | None -> false
           in
           let visible = List.filter touching shapes in
           let rgba =
             Matting.premultiplied_rgba ~width:w ~height:h (fun fb ->
-                Shape_render_software.render_region ~window:(sx, sy) ~origin:(x0, y0) fb visible)
+                Hud_render.render_region ~window:(sx, sy) ~origin:(x0, y0) fb visible)
           in
           Gl.pixel_storei Gl.unpack_alignment 1;
           (* the image's rows from the top, as the texture's (see the
