@@ -1148,7 +1148,7 @@ let quake_walk () =
  * neighbour is taken away *)
 let minecraft_world () =
   let open TinyMinecraft in
-  let m = world in
+  let m = Lazy.force world in
   Alcotest.(check bool) "the world is not empty" true (Hashtbl.length m.blocks > 0);
   Alcotest.(check bool) "every shown block exists and is exposed" true
     (Hashtbl.fold (fun p _ ok -> ok && Hashtbl.mem m.blocks p && exposed m p) m.shown true);

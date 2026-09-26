@@ -572,7 +572,10 @@ let chunk_shape (m : world) (sector : pos) : shape3d =
  * sector -> its cached3d. The rest of the state (the player, what's
  * selected) is an ordinary immutable model, below. *)
 
-let world = create_world ()
+(* claude: lazy, made on first use (the first frame), with [to_build]:
+ * tinybox links every game, and its 85000 blocks took a fifth of its
+ * start (plan_launcher.md) *)
+let world : world Lazy.t = lazy (create_world ())
 let chunks : (pos, shape3d) Hashtbl.t = Hashtbl.create 128
 
 (* claude: the chunks are not all built at once. Building one means
@@ -584,13 +587,15 @@ let chunks : (pos, shape3d) Hashtbl.t = Hashtbl.create 128
  * in over a couple of seconds, which is what the original's queue does
  * too (see the note on [init_shown]: this is the one thing that queue
  * was for that is worth keeping). *)
-let to_build : pos Queue.t = Queue.create ()
-let () = Hashtbl.iter (fun sector _ -> Queue.push sector to_build) world.sectors
+let to_build : pos Queue.t Lazy.t =
+  lazy (let q = Queue.create () in
+        Hashtbl.iter (fun sector _ -> Queue.push sector q) (Lazy.force world).sectors;
+        q)
 
 let build_some () : unit =
   for _ = 1 to 2 do
-    match Queue.take_opt to_build with
-    | Some sector -> Hashtbl.replace chunks sector (chunk_shape world sector)
+    match Queue.take_opt (Lazy.force to_build) with
+    | Some sector -> Hashtbl.replace chunks sector (chunk_shape (Lazy.force world) sector)
     | None -> ()
   done
 
@@ -603,7 +608,7 @@ let rebuild_chunks_around ((x, y, z) : pos) : unit =
   (x, y, z) :: List.map (fun (dx, dy, dz) -> (x + dx, y + dy, z + dz)) neighbours
   |> List.map sectorize
   |> List.sort_uniq compare
-  |> List.iter (fun sector -> Hashtbl.replace chunks sector (chunk_shape world sector))
+  |> List.iter (fun sector -> Hashtbl.replace chunks sector (chunk_shape (Lazy.force world) sector))
 
 (*****************************************************************************)
 (* The game *)
@@ -663,17 +668,17 @@ let look (computer : computer) (m : model) : number * number =
 let key_down (computer : computer) (key : string) : bool = Set_.mem key computer.keyboard.keys
 
 (* the block under the crosshair, and the empty cell in front of it *)
-let target (m : model) = hit_test world ~position:m.player.position ~vector:(sight_vector m.player) ()
+let target (m : model) = hit_test (Lazy.force world) ~position:m.player.position ~vector:(sight_vector m.player) ()
 
 let edit (computer : computer) (m : model) : unit =
   let clicked = computer.mouse.mdown && not m.was_down in
   let right_clicked = computer.mouse.mrdown && not m.was_right_down in
   match target m with
-  | Some (block_pos, _) when clicked && Hashtbl.find world.blocks block_pos <> Stone ->
-      remove_block world block_pos;
+  | Some (block_pos, _) when clicked && Hashtbl.find (Lazy.force world).blocks block_pos <> Stone ->
+      remove_block (Lazy.force world) block_pos;
       rebuild_chunks_around block_pos
   | Some (_, Some empty_pos) when right_clicked ->
-      add_block world empty_pos m.block;
+      add_block (Lazy.force world) empty_pos m.block;
       rebuild_chunks_around empty_pos
   | _ -> ()
 
@@ -693,9 +698,9 @@ let update (computer : computer) (m : model) : model =
     match (engine_of computer.flags, player.flying) with
     | Engine, false ->
         let c = match m.walker with Some c -> c | None -> walker_of player in
-        let c, player = step_engine world input c player in
+        let c, player = step_engine (Lazy.force world) input c player in
         (Some c, player)
-    | _ -> (None, step world ~dt input player)
+    | _ -> (None, step (Lazy.force world) ~dt input player)
   in
   let m = { m with player; walker; block } in
   build_some ();
@@ -743,7 +748,7 @@ let crosshair : shape3d =
 let status (computer : computer) (m : model) : shape3d =
   let (x, y, z) = m.player.position in
   let block = match m.block with Brick -> "brick" | Grass -> "grass" | Sand -> "sand" | Stone -> "stone" in
-  let building = Queue.length to_build in
+  let building = Queue.length (Lazy.force to_build) in
   hud
     (words black
        (Printf.sprintf "%s  (%.0f, %.0f, %.0f)%s%s" block x y z

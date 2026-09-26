@@ -322,9 +322,31 @@ under a "system" or new "launcher" row, with its golden frame:
    inside the entry, so after `run`); `Unit_program` in core's tests.
 3. `launcher/` with a text-only launcher: `tinybox list`, `tinybox
    <Name>`. The binary exists and every program runs from it. Measure
-   start time and binary size, and fix slow top levels.
-4. The package in `dune-project`; `opam install .` in a scratch switch;
-   check `tinybox` is the only thing in `bin/`.
+   start time and binary size, and fix slow top levels. Done
+   2026-09-27, with the package (step 4's first half, installed by `make
+   install`) and `-tty` (TinyVi, TinyEmacs, TinyTurboPascal in the
+   terminal, a table in `Tinybox.ml`, since `apps/devtools/tty/`'s
+   modules have the GUI versions' names):
+   - 198 programs, a 41 MB binary. A frame dumped through tinybox is
+     byte-identical to the program's own .exe's (TinyTron, TinyTron3d
+     on OpenGL over Cairo, TinyFirefox with its `Cap.main`), and so is
+     one started BusyBox's way, through a link named `tinytron`.
+   - `copy_files` of the genres' and apps' folders, `Tiny*` only where
+     a folder has a library of its own (music, media, internet) or
+     shares a generated module (gamedev's `Mario_xpm`, platform's).
+   - Start: 2.4 s, then 0.9 s once TinyVirtuaRacing's meshes and
+     TinyMinecraft's world were made lazy. Left, if it matters:
+     TinyVirtuaRacing's courses (0.23 s) and TinyMediaPlayer's first
+     item, opened by its `initial_model` (0.18 s); the rest is a long
+     tail of under 0.1 s each.
+   - Top-level reads of the command line, which got tinybox's words:
+     TinyTetris's seed, TinyVi's and TinyEmacs's `phosphor`, moved into
+     their mains. `Program.argv` now fails if called while collecting,
+     and `launcher/dune` runs `tinybox list` in `make test`, so a new
+     one fails the tests.
+   - Not yet: `tinybox --install <dir>`, the links for BusyBox's way.
+4. `opam install .` in a scratch switch; check `tinybox` is the only
+   thing in `bin/`.
 5. The catalog parser as a library; thumbnails at build time.
 6. The front end: grid, detail panel, filter, child process, crash
    report.

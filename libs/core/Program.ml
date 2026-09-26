@@ -31,6 +31,11 @@ let given_argv : string array option ref = ref None
 let argv () : string array =
   match !given_argv with
   | Some a -> a
+  (* claude: read while tinybox is still collecting: a program reading
+   * the command line at its top level (Playground_platform.flags ()
+   * outside its main), which would get tinybox's words, not its own *)
+  | None when !collecting ->
+      failwith "Program.argv: the command line read at the top level of a program, not in its main"
   | None -> Sys.argv
 
 let run (name : string) ~(argv : string array) : unit =

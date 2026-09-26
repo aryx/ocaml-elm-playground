@@ -49,5 +49,7 @@ let phosphor (flags : Playground.flags) : Playground.color option =
   | Some "amber" -> Some (Playground.rgb 255 176 0)
   | _ -> None
 
-let app = Textmode.textmode ?phosphor:(phosphor (Playground_platform.flags ())) Tui_emacs.program
-let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)
+(* claude: a function, the flags read when run (not at the top level,
+ * before tinybox gives the program its command line, Program.argv) *)
+let app () = Textmode.textmode ?phosphor:(phosphor (Playground_platform.flags ())) Tui_emacs.program
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) (app ()))

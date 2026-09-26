@@ -210,3 +210,18 @@
     (elm_playground_web (= :version))
   )
 )
+(package (name tinybox)
+  (synopsis "Every game and app of elm-playground in one binary")
+  (description "\
+  tinybox, after BusyBox and the retro game boxes: the 200 or so toy
+  versions of famous games and programs (Pong to TinyDoom3d, TinyVisiCalc
+  to TinySmalltalk80), run by name, `tinybox TinyMario`. 2D on Cairo,
+  3D on OpenGL.
+")
+  ; claude: see launcher/dune and plan_launcher.md
+  (depends
+    (ocaml (>= "4.08.0"))
+    (elm_playground_native (= :version))
+    (elm_playground_3d_opengl (= :version))
+  )
+)

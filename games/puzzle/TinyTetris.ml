@@ -174,8 +174,10 @@ type model = {
 }
 
 (* seed=n (see Playground.flags), e.g. for the golden frame tests: the
- * same pieces every run *)
-let () =
+ * same pieces every run. claude: called by main, not at the top level,
+ * where it would read the command line before tinybox gives the
+ * program its own (Program.argv) *)
+let seed_random () : unit =
   match List.assoc_opt "seed" (Playground_platform.flags ()) with
   | Some n -> Random.init (int_of_string n)
   | None -> Random.self_init ()
@@ -388,4 +390,4 @@ let view (computer : computer) (model : model) : shape list =
            @ [ rectangle black 400. 120. |> fade 0.8 |> move well_x 0.; text red 5. "GAME OVER" |> move well_x 0. ])
 
 let app = game view update initial_model
-let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)
+let main = Program.main __MODULE__ (fun () -> seed_random (); Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

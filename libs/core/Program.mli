@@ -48,5 +48,7 @@ val run : string -> argv:string array -> unit
  *
  *   tinybox TinyWinamp dir=~/Music   ->  [| "TinyWinamp"; "dir=~/Music" |]
  *
- * -- so that the launcher's own words never reach the program. *)
+ * -- so that the launcher's own words never reach the program.
+ * Fails if called between [collect] and [run]: a program reading its
+ * command line at its top level instead of in its main. *)
 val argv : unit -> string array

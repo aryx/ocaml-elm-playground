@@ -1,0 +1,104 @@
+; claude: tinybox, every game and app in one binary (plan_launcher.md):
+;   tinybox                       the programs, by name
+;   tinybox TinyMario [flags]     run one ("mario" is enough)
+;   tinybox TinyTurboPascal -tty  an editor in this terminal
+; Installed by `make install` (dune install), package tinybox.
+;
+; How one binary holds 200 programs that each start when linked: every
+; program's main is Program.main (elm_core), which only records the
+; entry once Program.collect () was called. Tinybox_collect calls it,
+; in a library of its own that the programs' library depends on, so it
+; is initialized first; both are -linkall, as nothing refers to their
+; modules by name. Tinybox then runs the one chosen (Program.run).
+;
+; The programs are the genres' and apps' sources, copied (as their
+; web/ do); apps/music, apps/media and apps/internet keep libraries of
+; their own in the same folder, so only their Tiny*.ml. The libraries
+; below are the union of the native stanzas' in those folders: a new
+; program needing a new library makes this link fail until it is added.
+;
+; The platforms: Cairo for 2D (the software rasterizer would be too slow
+; for the 2D games), OpenGL for 3D. They link together since the OpenGL
+; backend compiles its own copy of the HUD's rasterizer (Hud_render, see
+; playground/platforms/native/dune).
+
+(copy_files# ../games/shmup/*.{ml,mli})
+(copy_files# ../games/fighting/*.{ml,mli})
+(copy_files# ../games/platform/*.{ml,mli})
+(copy_files# ../games/arcade/*.{ml,mli})
+(copy_files# ../games/puzzle/*.{ml,mli})
+(copy_files# ../games/cards/*.{ml,mli})
+(copy_files# ../games/adventure/*.{ml,mli})
+(copy_files# ../games/rpg/*.{ml,mli})
+(copy_files# ../games/fps/*.{ml,mli})
+(copy_files# ../games/flight/*.{ml,mli})
+(copy_files# ../games/racing/*.{ml,mli})
+(copy_files# ../games/sports/*.{ml,mli})
+(copy_files# ../games/strategy/*.{ml,mli})
+(copy_files# ../games/rhythm/*.{ml,mli})
+(copy_files# ../games/programming/*.{ml,mli})
+(copy_files# ../apps/cad/*.{ml,mli})
+(copy_files# ../apps/devtools/*.{ml,mli})
+(copy_files# ../apps/education/*.{ml,mli})
+(copy_files# ../apps/gamedev/Tiny*.{ml,mli}) ; its Mario_xpm is games/platform's, the same
+(copy_files# ../apps/graphics/*.{ml,mli})
+(copy_files# ../apps/internet/Tiny*.{ml,mli}) ; its other modules are its library's
+(copy_files# ../apps/media/Tiny*.{ml,mli}) ; its other modules are its library's
+(copy_files# ../apps/music/Tiny*.{ml,mli}) ; its other modules are its library's
+(copy_files# ../apps/office/*.{ml,mli})
+(copy_files# ../apps/pim/*.{ml,mli})
+(copy_files# ../apps/system/*.{ml,mli})
+
+(library
+ (name tinybox_collect)
+ (modules Tinybox_collect)
+ (wrapped false)
+ (library_flags (-linkall))
+ (libraries elm_core))
+
+(library
+ (name tinybox_programs)
+ (modules :standard \ Tinybox Tinybox_collect)
+ (wrapped false)
+ (library_flags (-linkall))
+ (libraries
+   tinybox_collect ; first: Program.collect () before any program's main
+   ai appkit_astronomy appkit_blocks appkit_browser appkit_cad
+   appkit_document appkit_draw appkit_draw_view appkit_editor
+   appkit_embed appkit_file_menu appkit_indexed appkit_modeler
+   appkit_paint appkit_pim appkit_pushpull appkit_richtext appkit_sheet
+   appkit_sheet_view appkit_sketch appkit_slides appkit_stroke_text
+   appkit_teletype basic caps elm_core elm_playground elm_playground_3d
+   graphics_2d_geometry graphics_3d_geometry graphics_font graphics_gif
+   graphics_ilbm graphics_imaging graphics_jpeg graphics_png
+   graphics_raytrace graphics_rgba gui hypertalk internet_mail
+   internet_media internet_site kit_adventure kit_brawler kit_brawler3d
+   kit_cards kit_crush kit_heightmap kit_isometric kit_lightcycles
+   kit_maze kit_platformer kit_puzzle kit_racing kit_racing3d
+   kit_rhythm kit_rts kit_sectors kit_segments kit_shmup kit_sports
+   media_player music_voices myst networking networking_mail photos
+   physics_2d physics_3d random scratch smalltalk unix web
+ ))
+
+(executable
+ (name Tinybox)
+ (public_name tinybox)
+ (package tinybox)
+ (modules Tinybox)
+ (libraries
+   tinybox_programs
+   caps
+   terminal_unix ; Tty_unix, for -tty
+   appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
+   elm_playground_native ; implem of virtual elm_playground: Cairo
+   elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+ ))
+
+; claude: `tinybox list` in make test: every program initialized, as
+; tinybox starts, so that a program doing at its top level what belongs
+; in its main (reading the command line, Program.argv's failure; two
+; programs of one name, Program.main's) fails the tests, not the user
+(rule
+ (alias runtest)
+ (action
+  (with-stdout-to tinybox_list.out (run %{exe:Tinybox.exe} list))))

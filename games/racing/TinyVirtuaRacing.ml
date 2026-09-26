@@ -958,8 +958,11 @@ let segment_shapes (c : course) (i : int) : shape3d list =
 (* the chunks, each with its middle: the road near the car is drawn by
  * its place on the lap, the road near the eye by its place in the
  * world (an overpass, the other side of a hairpin) *)
-let chunks : (shape3d * (number * number)) array array =
-  Array.map
+(* claude: this and the tables below are lazy, built when first drawn:
+ * tinybox links every game, and at the top level they took a third of
+ * its start (plan_launcher.md) *)
+let chunks : (shape3d * (number * number)) array array Lazy.t =
+  lazy (Array.map
     (fun c ->
       let segments = Track3d.segments c.ribbon in
       Array.init ((segments + chunk_size - 1) / chunk_size) (fun k ->
@@ -968,10 +971,10 @@ let chunks : (shape3d * (number * number)) array array =
           let mid = Track3d.at c.ribbon (segment_of c ((first + last) / 2)) in
           ( cached3d (List.concat (List.init (last - first + 1) (fun j -> segment_shapes c (first + j) @ c.scenery (first + j)))),
             (mid.px, mid.pz) )))
-    courses
+    courses)
 
-let landscapes : shape3d array = Array.map (fun c -> cached3d c.landscape) courses
-let lands : ((number * number) * shape3d) list array = Array.map (fun c -> land_tiles c.terrain 1) courses
+let landscapes : shape3d array Lazy.t = lazy (Array.map (fun c -> cached3d c.landscape) courses)
+let lands : ((number * number) * shape3d) list array Lazy.t = lazy (Array.map (fun c -> land_tiles c.terrain 1) courses)
 
 (* The course select's model of the course -- the arcade showed each
  * course in 3D: the land (a facet every two cells), the road as a band
@@ -992,8 +995,8 @@ let miniature_center (c : course) : number * number =
   let x0, x1, z0, z1 = bounds c in
   ((x0 +. x1) /. 2., (z0 +. z1) /. 2.)
 
-let miniatures : shape3d array =
-  Array.map
+let miniatures : shape3d array Lazy.t =
+  lazy (Array.map
     (fun c ->
       let cx, cz = miniature_center c in
       let n = Track3d.segments c.ribbon in
@@ -1007,7 +1010,7 @@ let miniatures : shape3d array =
       in
       let tiles = List.map snd (land_tiles c.terrain 2) in
       cached3d [ group3d (tiles @ band @ c.landscape) |> move3d (-.cx) 0. (-.cz) |> scale3d miniature_scale ])
-    courses
+    courses)
 
 (*****************************************************************************)
 (* The car *)
@@ -1478,21 +1481,21 @@ let sky_and_floor ?(ground = ground) (floor : color) (cam : camera) : shape3d li
 (* the land's tiles within sight of the eye *)
 let land_near (i : int) (cam : camera) : shape3d list =
   let ex, _, ez = cam.eye in
-  List.filter_map (fun ((x, z), tile) -> if Float.hypot (x -. ex) (z -. ez) < 1300. then Some tile else None) lands.(i)
+  List.filter_map (fun ((x, z), tile) -> if Float.hypot (x -. ex) (z -. ez) < 1300. then Some tile else None) (Lazy.force lands).(i)
 
 (* the chunks of road around the car along the lap, and any near the
  * eye (an overpass, the other side of a hairpin) *)
 let road_near (i : int) (c : course) (s : number) (cam : camera) : shape3d list =
   let chunk = int_of_float (wrap c s /. Track3d.step c.ribbon) / chunk_size in
-  let n = Array.length chunks.(i) in
+  let n = Array.length (Lazy.force chunks).(i) in
   let closed = c.laps > 1 in
   let ex, _, ez = cam.eye in
   List.filteri
     (fun k _ ->
       let ahead = if closed then ((k - chunk + 1) mod n + n) mod n else k - chunk + 1 in
-      let _, (x, z) = chunks.(i).(k) in
+      let _, (x, z) = (Lazy.force chunks).(i).(k) in
       (ahead >= 0 && ahead < 7) || Float.hypot (x -. ex) (z -. ez) < 160.)
-    (Array.to_list chunks.(i))
+    (Array.to_list (Lazy.force chunks).(i))
   |> List.map fst
 
 let text color size str = words color str |> scale size
@@ -1597,7 +1600,7 @@ let view (computer : computer) (s : model) : camera * shape3d list =
       let (x, y, z), _ = world c r.drive in
       let cam = Camera3d.orbit ~distance:11. ~height:3.5 ~look:0.8 (spin 12. computer.time) (x, y, z) in
       ( cam,
-        sky_and_floor (snd c.grass) cam @ land_near 0 cam @ [ landscapes.(0) ] @ c.animated computer.time @ road_near 0 c r.drive.s cam
+        sky_and_floor (snd c.grass) cam @ land_near 0 cam @ [ (Lazy.force landscapes).(0) ] @ c.animated computer.time @ road_near 0 c r.drive.s cam
         @ cars c cam r ~braking:false
         @ List.map hud
             ([ text (rgb 250 60 40) 7. "TINY VIRTUA RACING" |> move_y 300.;
@@ -1610,7 +1613,7 @@ let view (computer : computer) (s : model) : camera * shape3d list =
       let cx, cz = miniature_center c in
       let moving = List.map (fun sh -> sh |> move3d (-.cx) 0. (-.cz) |> scale3d miniature_scale) (c.animated computer.time) in
       ( cam,
-        sky_and_floor ~ground:(-40.) (rgb 40 80 50) cam @ [ miniatures.(i) ] @ moving
+        sky_and_floor ~ground:(-40.) (rgb 40 80 50) cam @ [ (Lazy.force miniatures).(i) ] @ moving
         @ List.map hud
             ([ text white 4. "SELECT COURSE" |> move_y (screen.top -. 60.);
                text (rgb 250 140 30) 7. (Printf.sprintf "<  %s  >" c.name) |> move_y (screen.bottom +. 170.);
@@ -1650,7 +1653,7 @@ let view (computer : computer) (s : model) : camera * shape3d list =
         | _ -> hud_race screen s c r
       in
       ( cam,
-        sky_and_floor (snd c.grass) cam @ land_near r.course cam @ [ landscapes.(r.course) ] @ c.animated computer.time
+        sky_and_floor (snd c.grass) cam @ land_near r.course cam @ [ (Lazy.force landscapes).(r.course) ] @ c.animated computer.time
         @ road_near r.course c d.s cam @ cars c cam r ~braking @ List.map hud huds )
 
 let app = game3d view update initial_model
