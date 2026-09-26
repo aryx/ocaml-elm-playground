@@ -411,6 +411,9 @@ let scenes : Testutil_golden.scene list =
      * red center lines, the green dimensions, the cyan bolts (a block
      * inserted four times); the screen menu, the command line *)
     ("apps/cad/software/TinyAutoCAD", "", 5);
+    (* claude: Blender's default cube, its light and camera, in the quad
+     * view: three plans as wireframes, the camera's view ray traced *)
+    ("apps/graphics/software/TinyBlender", "", 5);
   ]
 
 (* claude: TinySimCity's starter town, built with the keys: a road, a
@@ -1555,6 +1558,9 @@ let scripted : Testutil_golden.scripted list =
     ("apps/cad/software/TinyAutoCAD", "line", 20, "type(l):2,Enter:3,at(102.4;327.1):4-6,click:5,type(@40<0):8,Enter:9,type(@40<120):11,Enter:12,type(c):14,Enter:15,at(250;-300):16-20");
     ("apps/cad/software/TinyAutoCAD", "trim", 20, "type(tr):2,Enter:3,at(-58.8;95.6):4-6,click:5,Enter:8,at(-143.6;45.9):9-11,click:10,at(-108.5;81.1):12-14,click:13,Enter:16,at(250;-300):17-20");
     ("apps/cad/software/TinyAutoCAD", "snap", 12, "type(l):2,Enter:3,at(-312.4;45.9):4-6,click:5,at(-104;252):7-12");
+    (* claude: TinyBlender: G, X, 3, Enter -- the cube moved three units
+     * along x, in all four views *)
+    ("apps/graphics/software/TinyBlender", "grab", 12, "at(-250;200):1-12,g:3,x:5,type(3):6,Enter:8");
     ("apps/cad/software/TinyAutoCAD", "layers", 14, "type(la):2,Enter:3,type(off):5,Enter:6,type(dim):8,Enter:9,Enter:11,at(250;-300):1-14");
     (* claude: TinyPhotoshop: Hue/Saturation's preview, the hue turned a
      * third of the way; the magic wand on space, then Invert through
@@ -1691,6 +1697,10 @@ let flagged : Testutil_golden.flagged list =
      * its corners on a circle and its sides equal, relaxed to a regular
      * one, a sweep a frame *)
     ("apps/cad/software/TinySketchpad", "relaxed", 30, [ "sheet=d" ]);
+    (* claude: TinyBlender's demo: a cube bored through by a Boolean, a
+     * glass ball, a marble ring, a mirror sphere, on a checkered
+     * ground, the camera's view ray traced as it sharpens *)
+    ("apps/graphics/software/TinyBlender", "demo", 20, [ "scene=demo" ]);
   ]
 
 (* claude: played and flagged: the games whose juice was written by
@@ -1861,6 +1871,9 @@ let scripted_flagged : Testutil_golden.scripted_flagged list =
      * drawn with the pen, closed on its first corner, then made a
      * rectangle by HORIZONTAL, VERTICAL, EQUAL LENGTH and PARALLEL,
      * their symbols by what they hold *)
+    (* claude: TinyBlender's F12: the demo rendered larger, two rays a
+     * pixel, done by frame 30 *)
+    ("apps/graphics/software/TinyBlender", "render", 30, "F12:2", [ "scene=demo" ]);
     ( "apps/cad/software/TinySketchpad",
       "linkage",
       40,

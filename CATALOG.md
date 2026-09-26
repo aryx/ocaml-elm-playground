@@ -380,13 +380,15 @@ of keeping one, as dots (TinyMacPaint) and as objects (TinyMacDraw),
 both Apple's of 1984; the Amiga's dots, each a colour's number in a
 palette that can turn (TinyDeluxePaint); and what the dots became with
 24 bits each (TinyPhotoshop, over `libs/graphics/imaging`:
-`plan_photoshop.md`).
+`plan_photoshop.md`); and a 3D scene built and ray traced
+(TinyBlender, over `appkits/modeler` and the Povray way).
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinyMacPaint](apps/graphics/TinyMacPaint.ml) | app | MacPaint (Bill Atkinson, Apple, 1984) | Paint with dots: pencil, brush, shapes, bucket, and a selection to move. | The picture as bits: palettes of tools and patterns, the seed fill, marching ants, one undo per stroke. |
 | [TinyMacDraw](apps/graphics/TinyMacDraw.ml) | app | MacDraw (Apple, 1984) | A picture made of objects you can select, move and group. | The picture as a list of objects: the order is the depth, handles, grouping, hollow shapes clicked through. |
 | [TinyDeluxePaint](apps/graphics/TinyDeluxePaint.ml) | app | Deluxe Paint (Dan Silva, Electronic Arts, 1985, on the Amiga) | A picture of 32 colours whose waterfall and fire move by the palette alone: Tab, and the colours cycle. | Indexed colour, a dot the number of a colour in a palette of the Amiga's 12 bits; colour cycling, a range of the palette turning at each frame, the picture untouched; the brush cut from the picture, its transparent colour the background's; symmetry; its file IFF ILBM, chunks (RIFF's ancestor), bitplanes, ByteRun1 (MacPaint's PackBits) and the cycling ranges. |
+| [TinyBlender](apps/graphics/TinyBlender.ml) | app | Blender 2.8 (Ton Roosendaal, NeoGeo 1994, open source 2002; 2.8 in 2019) | Blender's default cube in the quad view, moved with G, R and S, the camera's view ray traced live. | The quad view, three plans and the camera (Sketchpad III's four); objects as primitives placed by location, rotation and scale; modal transforms locked to an axis, a number typed; the Boolean modifier as the ray tracer's exact CSG; the rendered viewport sharpening as you watch, its wires on the solids by the ray tracer's own projection; materials (mirror, glass, solid textures); F12. |
 | [TinyPhotoshop](apps/graphics/TinyPhotoshop.ml) | app | Photoshop 1.0 (Thomas and John Knoll, Adobe, 1990) | NASA's Blue Marble to retouch: select with the magic wand, adjust Levels or Hue/Saturation, filter, paint. | A photograph's 24 bits a dot and image processing as menus: point operations as tables of 256 (Levels with its histogram, Curves, Hue/Saturation in HSL), convolutions (blur, sharpen, emboss; the Gaussian separable; unsharp mask), Sobel's Find Edges, the median, interpolation (nearest, bilinear, bicubic); the selection as a mask a byte a dot, every operation applied through it, the wand a flood fill with a tolerance, feathering a blur of the mask; brushes as dabs with a hardness, a stroke's opacity uniform, the airbrush, rubber stamp and smudge; dialogs with a live preview; the picture drawn as tiles, only the changed ones sent again; and Photoshop 3.0's layers, each with its opacity and blend mode (Multiply, Screen, Overlay, Color...), flattened by Porter and Duff's over, a Layers palette, a photograph placed as a layer. |
 
 ## CAD

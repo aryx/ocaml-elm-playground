@@ -223,5 +223,6 @@
    %{project_root}/games/adventure/software/TinyWumpus.exe
    %{project_root}/apps/cad/software/TinySketchpad.exe
    %{project_root}/apps/cad/software/TinyAutoCAD.exe
+   %{project_root}/apps/graphics/software/TinyBlender.exe
  )
 )

@@ -45,6 +45,12 @@ made by `myst/make_stills.exe`, checked against the scene by
 `myst/tests/`. Next, the author's idea: a TinyPovray or TinyBlender
 (`apps/graphics/`), a scene edited and ray traced.
 
+DONE (2026-09-26): `TinyBlender.ml`, Blender 2.8's quad view over
+`appkits/modeler` (`Modeler`, `Modeler_view`), the camera's view ray
+traced live by the Povray way (half resolution, six bounces), F12
+larger with two rays a pixel. TinyPovray, the scene as text, is still
+to do; it would give TinyBlender a file format of its own.
+
 ## 3. Small things the phases left
 
 - **The way's `image`**: a texture file on a way's solid. Loading a

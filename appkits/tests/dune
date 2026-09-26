@@ -17,6 +17,9 @@
    appkit_draw
    appkit_sketch ; Sketch, Relax
    appkit_cad ; Cad_geom, Cad_drawing, Cad_edit, Cad_snap, Dxf, Cad_session
+   appkit_modeler ; Modeler, Modeler_view
+   graphics_raytrace ; Raytrace, the rays the camera's projection must agree with
+   graphics_3d_geometry ; Vec3
    appkit_pim ; Ics, Vcard
    appkit_teletype ; Tty_hangman, Tty_guess
    basic ; Basic_parse, Basic_run, Basic_session

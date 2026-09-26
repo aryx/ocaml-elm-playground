@@ -4,7 +4,7 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyMacPaint TinyMacDraw TinyPhotoshop TinyDeluxePaint)
+  (names TinyMacPaint TinyMacDraw TinyPhotoshop TinyDeluxePaint TinyBlender)
   (libraries
     elm_playground
     caps ; the File menu's authority to save (File_menu, plan_caps.md)
@@ -23,6 +23,9 @@
     appkit_indexed ; a picture of colour numbers, and cycling (TinyDeluxePaint)
     graphics_ilbm ; its file, IFF ILBM
     random ; Lehmer, the airbrush's dots
+    appkit_modeler ; a 3D scene, its views (TinyBlender)
+    graphics_raytrace ; Raytrace, its rendered viewport
+    graphics_3d_geometry ; Camera, Vec3
     elm_playground_software ; implem of virtual elm_playground
   )
 )
