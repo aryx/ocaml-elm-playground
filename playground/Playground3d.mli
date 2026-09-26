@@ -47,7 +47,19 @@ type number = Playground.number
 
 (** {2 Shapes} *)
 
-type shape3d = { alpha : number; form : form3d }
+(** claude: what a surface does with light beyond its colour, for the
+    ray tracer only (the software backend's "y" key,
+    plan_raytracing_teaching.md): [shiny], how much of a mirror it is,
+    0. to 1.; [glassy], the index of refraction light is bent by going
+    through it, if it does. Every other renderer ignores it: a scene
+    with glass still runs everywhere, the glass drawn opaque. Set by
+    {!shiny} and {!glassy}. *)
+type material = { shiny : number; glassy : number option }
+
+(** neither: what every shape is made with *)
+val matte : material
+
+type shape3d = { alpha : number; material : material; form : form3d }
 and form3d =
   | Polygon3d of Playground.color * (number * number * number) list
   | TexturedPolygon3d of string * ((number * number * number) * (number * number)) list
@@ -195,6 +207,17 @@ val scale3d : number -> shape3d -> shape3d
     with a parent's alpha) -- same simplification lucamug's
     elm-playground-3d makes. *)
 val fade3d : number -> shape3d -> shape3d
+
+(** [shiny s shape]: every leaf polygon of [shape] a mirror, [s] of it
+    (0. none, 1. a perfect mirror), as {!fade3d} sets alpha. Only the
+    ray tracer shows it (see {!material}). *)
+val shiny : number -> shape3d -> shape3d
+
+(** [glassy n shape]: every leaf polygon of [shape] glass of index of
+    refraction [n] (1.5 glass, 1.33 water), coloured by its own colour.
+    Only the ray tracer shows it (see {!material}); a closed shape,
+    so that light has an inside to go through. *)
+val glassy : number -> shape3d -> shape3d
 
 (** {2 HUD}
 

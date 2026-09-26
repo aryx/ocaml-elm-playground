@@ -283,6 +283,11 @@ let scenes : Testutil_golden.scene list =
     ("games/programming/software/TinyKarel", "", 5);
     (* a row and a half harvested, six steps a second *)
     ("examples/software/KarelHarvest", "", 90);
+    (* the ICFP 2000 task's spheres.gml, by the ray tracer's latest
+     * algorithm: 76,800 rays, 20,000 a frame, done by the fourth *)
+    ("examples/software/PovraySpheres", "", 6);
+    (* Whitted's 1980 picture: 120,000 rays, done by the sixth *)
+    ("examples/software/PovrayWhitted", "", 10);
     (* the first question, the gallows empty *)
     ("examples/software/TeletypeHangman", "", 3);
     (* the snake, its food, and the bytes of the first frame: all of it *)
@@ -438,6 +443,11 @@ let mario_world_keyhole =
 let scripted : Testutil_golden.scripted list =
   [
     ("games/platform/software/TinyMario", "run", 150, "right:1-150,up:30-34,up:95-99");
+    (* claude: the Povray way's picture made coarse to fine: the first
+     * frame, three passes of four done (2 x 2 blocks); and the camera
+     * dragged round the spheres, the picture made again *)
+    ("examples/software/PovraySpheres", "coarse", 1, "at(0;0):1");
+    ("examples/software/PovraySpheres", "orbit", 12, "at(0;0):1-3,click:2-8,at(-120;-30):4-8");
     ( "games/shmup/software/TinyInvaders",
       "play",
       300,
@@ -1557,6 +1567,11 @@ let scripted : Testutil_golden.scripted list =
 let flagged : Testutil_golden.flagged list =
   [
     ("games/platform/software/TinyMario", "shapes", 5, [ "artwork=shapes" ]);
+    (* claude: the same spheres by each of the ray tracer's algorithms,
+     * side by side, the four made together: done by the sixteenth *)
+    ("examples/software/PovraySpheres", "evolution", 24, [ "evolution" ]);
+    (* claude: and Whitted's by each: 4 x 120,000 rays, done by the 24th *)
+    ("examples/software/PovrayWhitted", "evolution", 30, [ "evolution" ]);
     ("games/platform/software/TinyCeleste", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyVVVVVV", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyMarioGalaxy2D", "shapes", 5, [ "artwork=shapes" ]);

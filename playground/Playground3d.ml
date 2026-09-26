@@ -60,7 +60,11 @@ let normalize = Vec3.normalize
 (* Shapes *)
 (*****************************************************************************)
 
-type shape3d = { alpha : number; form : form3d }
+type material = { shiny : number; glassy : number option }
+
+let matte : material = { shiny = 0.; glassy = None }
+
+type shape3d = { alpha : number; material : material; form : form3d }
 and form3d =
   | Polygon3d of Playground.color * vec3 list
   | TexturedPolygon3d of string * (vec3 * (number * number)) list
@@ -73,14 +77,14 @@ and cached = { id : int; content : shape3d; huds : Playground.shape list }
 
 let polygon3d color points =
   if List.length points < 3 then failwith "polygon3d needs at least 3 points";
-  { alpha = 1.; form = Polygon3d (color, points) }
+  { alpha = 1.; material = matte; form = Polygon3d (color, points) }
 
-let group3d shapes = { alpha = 1.; form = Group3d shapes }
+let group3d shapes = { alpha = 1.; material = matte; form = Group3d shapes }
 
-let hud (s : Playground.shape) : shape3d = { alpha = 1.; form = Hud s }
+let hud (s : Playground.shape) : shape3d = { alpha = 1.; material = matte; form = Hud s }
 
 let textured_quad src p0 p1 p2 p3 =
-  { alpha = 1.; form = TexturedPolygon3d (src, [ (p0, (0., 0.)); (p1, (1., 0.)); (p2, (1., 1.)); (p3, (0., 1.)) ]) }
+  { alpha = 1.; material = matte; form = TexturedPolygon3d (src, [ (p0, (0., 0.)); (p1, (1., 0.)); (p2, (1., 1.)); (p3, (0., 1.)) ]) }
 
 (*-------------------------------------------------------------------*)
 (* Basic 3D shapes *)
@@ -162,7 +166,7 @@ let sphere color radius =
         [ point_at lat lon; point_at lat (lon +.. 1); point_at (lat +.. 1) (lon +.. 1); point_at (lat +.. 1) lon ]
       in
       let points_and_normals = corners |> List.map (fun p -> (scale_vec3 radius p, p (* already unit length *))) in
-      faces := { alpha = 1.; form = SmoothPolygon3d (color, points_and_normals) } :: !faces
+      faces := { alpha = 1.; material = matte; form = SmoothPolygon3d (color, points_and_normals) } :: !faces
     done
   done;
   group3d !faces
@@ -250,6 +254,16 @@ let rec fade3d alpha shape =
   | Group3d shapes -> { shape with form = Group3d (List.map (fade3d alpha) shapes) }
   | Cached3d c -> fade3d alpha c.content (* uncached, like map_points *)
 
+(* claude: the same walk as fade3d, for the ray tracer's material *)
+let rec with_material (f : material -> material) (shape : shape3d) : shape3d =
+  match shape.form with
+  | Polygon3d _ | TexturedPolygon3d _ | SmoothPolygon3d _ | Hud _ -> { shape with material = f shape.material }
+  | Group3d shapes -> { shape with form = Group3d (List.map (with_material f) shapes) }
+  | Cached3d c -> with_material f c.content
+
+let shiny (s : number) : shape3d -> shape3d = with_material (fun m -> { m with shiny = s })
+let glassy (n : number) : shape3d -> shape3d = with_material (fun m -> { m with glassy = Some n })
+
 (* shared by both backends -- see Hud's doc comment in Playground3d.mli
  * and docs/claude_notes/done/plan_hud.md. [Playground.fade shape.alpha s]
  * reuses the exact per-leaf alpha fade3d already sets, so a Hud shape
@@ -277,7 +291,7 @@ let next_cached_id = ref 0
 let cached3d (shapes : shape3d list) : shape3d =
   incr next_cached_id;
   let content = group3d shapes in
-  { alpha = 1.; form = Cached3d { id = !next_cached_id; content; huds = collect_hud_shapes content } }
+  { alpha = 1.; material = matte; form = Cached3d { id = !next_cached_id; content; huds = collect_hud_shapes content } }
 
 (*****************************************************************************)
 (* Camera *)

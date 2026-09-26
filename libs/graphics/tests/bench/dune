@@ -1,0 +1,13 @@
+; claude: how fast the ray tracer is, brute force against its BVH
+; (plan_raytracing_teaching.md, phase 4; the numbers are in Bvh.mli):
+; not a test, run by hand, natively and under node (the browser's
+; JavaScript engine), from the repository's root:
+;   dune build libs/graphics/tests/bench/Raytrace_bench.exe \
+;     libs/graphics/tests/bench/Raytrace_bench.bc.js
+;   ./_build/default/libs/graphics/tests/bench/Raytrace_bench.exe
+;   node ./_build/default/libs/graphics/tests/bench/Raytrace_bench.bc.js
+(executable
+ (name Raytrace_bench)
+ (modes native js)
+ (libraries graphics_raytrace graphics_3d_geometry)
+)

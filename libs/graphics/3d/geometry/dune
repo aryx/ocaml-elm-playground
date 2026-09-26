@@ -1,10 +1,14 @@
 ; claude: what all the 3D backends share (the 3D Playground's web one,
-; the software rasterizer, OpenGL): vectors (Vec3), the camera (Camera)
-; and its matrices (Mat4), and the lighting formula (Lighting). Depends
-; on nothing. A private library (see graphics/core/dune), installed as
-; part of elm_playground_3d, the package all the 3D backends depend on.
+; the software rasterizer, OpenGL) and the ray tracer: vectors (Vec3),
+; the camera (Camera) and its matrices (Mat4), the lighting formula
+; (Lighting), rays and what they hit (Ray, shared with physics/3d) and
+; what a surface does with light (Material). Depends on nothing. A
+; private library (see graphics/core/dune), installed as part of
+; elm_playground, not elm_playground_3d: the Povray way, in the 2D
+; playground, needs it too (plan_raytracing_teaching.md, the phase 0
+; review), and every 3D package depends on elm_playground anyway.
 (library
  (name graphics_3d_geometry)
- (package elm_playground_3d)
+ (package elm_playground)
  (wrapped false)
 )

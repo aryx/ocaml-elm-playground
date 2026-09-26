@@ -11,7 +11,7 @@
 (* See Render.mli *)
 
 type paint = Color of int | Texture of Texture.image
-type face = { paint : paint; points : (Vec3.t * (float * float) * Vec3.t) list }
+type face = { paint : paint; points : (Vec3.t * (float * float) * Vec3.t) list; material : Material.t }
 type visibility = Z_buffer | Painters_algorithm
 
 type options = {

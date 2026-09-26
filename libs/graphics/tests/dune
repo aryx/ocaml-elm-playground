@@ -14,6 +14,7 @@
    graphics_font
    graphics_3d_geometry
    graphics_3d
+   graphics_raytrace ; Raytrace, Solid (Unit_raytrace)
    graphics_images
    graphics_rgba
    compression

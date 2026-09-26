@@ -75,6 +75,13 @@ open Playground3d
  *    pixel shown as a 2x2, 3x3, 4x4 block (graphics/core/Pixelate):
  *    faster (a z-buffer test, shading, texturing per pixel: about k^2
  *    times less of them), and the look of 320x200 games
+ *  - "y": the renderer, this rasterizer or the ray tracer
+ *    (graphics/3d/raytrace/, plan_raytracing_teaching.md): the same
+ *    scene, drawn the other way, by each of the ray tracer's
+ *    algorithms in turn (Raytrace.algorithms: ray casting, then
+ *    Lambert's light, then shadow rays...), and last the shadow acne
+ *    bug, the latest one with no epsilon; slow, so try it with "r"
+ *    first. Also -raytrace, the latest from the first frame
  *  - "h": this list, with each key's state, over the frame
  *  - Ctrl + any of them: the debug key alone, not given to the game
  *    (playground/platforms/software/Help_overlay)
@@ -83,6 +90,23 @@ open Playground3d
 let options = ref Render.default_options
 let magnifier = ref false
 let help = ref false
+(* claude: "y", the ray tracer instead of the rasterizer: None, the
+ * rasterizer, or the ray tracer's options, cycled through by "y" *)
+let renderers : Raytrace.options option list =
+  (None :: List.map (fun algorithm -> Some { Raytrace.default_options with algorithm }) Raytrace.algorithms)
+  @ [ Some { Raytrace.default_options with epsilon = 0. } ]
+
+let renderer = ref 0
+let raytraced () : Raytrace.options option =
+  match List.nth renderers !renderer with
+  | Some o when Native_loop_3d.raytrace_brute_force () -> Some { o with acceleration = Brute_force }
+  | r -> r
+
+let renderer_name () : string =
+  match raytraced () with
+  | None -> "the rasterizer"
+  | Some { algorithm; epsilon; _ } ->
+      "the ray tracer, " ^ Raytrace.name algorithm ^ if epsilon = 0. then " (epsilon 0: acne)" else ""
 
 let on_key_press (key : string) =
   let o = !options in
@@ -119,15 +143,16 @@ let on_key_press (key : string) =
   | "o" -> Opti.enabled := not !Opti.enabled
   | "x" -> magnifier := not !magnifier
   | "r" -> Pixelate.next ()
+  | "y" -> renderer := (!renderer + 1) mod List.length renderers
   | "h" -> help := not !help
   | _ -> ()
 
 (* e.g. "m:phong b:cull=on f:wire=off z:zbuffer p:perspective
- * i:bilinear c:clip=on t:epsilon o:opti=on x:zoom=off h:help" *)
+ * i:bilinear c:clip=on t:epsilon o:opti=on x:zoom=off y:raster h:help" *)
 let title_keys () =
   let o = !options in
   let on_off b = if b then "on" else "off" in
-  Printf.sprintf "m:%s b:cull=%s f:wire=%s z:%s p:%s i:%s c:clip=%s t:%s o:opti=%s x:zoom=%s r:%s h:help"
+  Printf.sprintf "m:%s b:cull=%s f:wire=%s z:%s p:%s i:%s c:clip=%s t:%s o:opti=%s x:zoom=%s r:%s y:%s h:help"
     (match o.shading with
     | Shading.Flat_color -> "nolight"
     | Flat_shading -> "flat"
@@ -141,6 +166,7 @@ let title_keys () =
     (match o.fill_rule with Triangle.Epsilon -> "epsilon" | Top_left -> "topleft")
     (on_off !Opti.enabled) (on_off !magnifier)
     (Pixelate.name ~width:(int_of_float Playground.default_width) ~height:(int_of_float Playground.default_height))
+    (match raytraced () with None -> "raster" | Some _ -> "raytrace" ^ string_of_int !renderer)
 
 (* the same, one line per key, for "h" (Help_overlay) *)
 let help_lines () =
@@ -170,6 +196,7 @@ let help_lines () =
       "resolution: "
       ^ Pixelate.name ~width:(int_of_float Playground.default_width) ~height:(int_of_float Playground.default_height) );
     ("x", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
+    ("y", "renderer: " ^ renderer_name ());
     ("Ctrl", "+ a key: that key's debug action only, not the game's");
     ("Q", "quit");
   ]
@@ -195,6 +222,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   (* claude: -v, -debug, and the -fixed-time/-keys/-dump-frame flags (see
    * Native_loop_3d) *)
   Native_loop_3d.parse_cli_and_setup_logging ();
+  if Native_loop_3d.raytrace_at_start () then renderer := List.length Raytrace.algorithms;
   (* claude: the app's choices are the starting values of the options;
    * the debug keys can still change them (e.g. "m" also cycles through
    * Gouraud, which the portable hints don't name) *)
@@ -257,6 +285,12 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * drawn in a framebuffer of their own size -- the camera then gets
    * the aspect of its rectangle for free -- and copied into theirs, a
    * row at a time; one for each size, made once *)
+  (* claude: the scene of a view, by the renderer "y" chose *)
+  let render_scene (fb : Framebuffer.t) (zb : Zbuffer.t) (v : Playground3d.view) : unit =
+    match raytraced () with
+    | Some options -> Shape3d_render_software.raytrace ~options fb v.camera (Playground3d.group3d v.shapes)
+    | None -> Shape3d_render_software.render ~options:!options fb zb v.camera (Playground3d.group3d v.shapes)
+  in
   let view_buffers : (int * int, Framebuffer.t * Zbuffer.t) Hashtbl.t = Hashtbl.create 4 in
   let view_buffer (w : int) (h : int) : Framebuffer.t * Zbuffer.t =
     match Hashtbl.find_opt view_buffers (w, h) with
@@ -276,7 +310,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     if w > 0 && h > 0 then begin
       let sub, zb = view_buffer w h in
       Framebuffer.clear sub ~rgb:0xFFFFFF;
-      Shape3d_render_software.render ~options:!options sub zb v.camera (Playground3d.group3d v.shapes);
+      render_scene sub zb v;
       for r = 0 to h - 1 do
         Bigarray.Array1.blit (Bigarray.Array2.slice_left sub.pixels r)
           (Bigarray.Array1.sub (Bigarray.Array2.slice_left fb.pixels (y0 + r)) x0 w)
@@ -293,8 +327,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     Pixelate.draw fb (fun fb ~scale ->
         Framebuffer.clear fb ~rgb:0xFFFFFF;
         (match views with
-        | [ v ] when v.area = Playground3d.whole ->
-            Shape3d_render_software.render ~options:!options fb (zbuffer_for fb) v.camera (Playground3d.group3d v.shapes)
+        | [ v ] when v.area = Playground3d.whole -> render_scene fb (zbuffer_for fb) v
         | views -> List.iter (draw_view fb) views);
         (* claude: a HUD pass, once the 3D scene above is fully rasterized
          * into [fb] for this frame: the 2D shapes drawn on top by the 2D

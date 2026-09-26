@@ -36,6 +36,7 @@
    %{project_root}/examples/software/Corridor3d.exe
    %{project_root}/examples/software/CachedGrid3d.exe
    %{project_root}/examples/software/StarCollector3d.exe
+   %{project_root}/examples/software/RaytracingShadows3d.exe
    %{project_root}/games/fps/software/TinyBattlezone3d.exe
    %{project_root}/games/fps/software/TinyCyberSled.exe
    %{project_root}/games/flight/software/TinyElite3d.exe

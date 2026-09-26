@@ -18,6 +18,7 @@ let square : Render.face =
   {
     paint = Color 0xFF0000;
     points = List.map (fun p -> (p, (0., 0.), normal)) [ (-1., -1., 0.); (1., -1., 0.); (1., 1., 0.); (-1., 1., 0.) ];
+    material = Material.matte;
   }
 
 (* the pixel at the center of a 20x20 frame, with the camera on +z or -z *)

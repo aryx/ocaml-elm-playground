@@ -341,41 +341,30 @@ let manifold (a : placed) (b : placed) : Contact3d.t list =
 (* Rays *)
 (*****************************************************************************)
 
+(* claude: the arithmetic is graphics/3d/geometry's Ray, shared with the
+ * ray tracer, which answers the whole line; physics asks for the first
+ * hit in front, 0 when the ray starts inside. A zero direction is no
+ * ray: it hits nothing. *)
+let first_hit_in_front ((t_in, t_out) : float * float) : float option =
+  if t_out < 0. then None else Some (Float.max 0. t_in)
+
+let with_ray ~(from : Vec3.t) ~(direction : Vec3.t) (f : Ray.t -> float option) : float option =
+  if Vec3.length direction < eps then None else f (Ray.make from direction)
+
 let ray_sphere ~(from : Vec3.t) ~(direction : Vec3.t) ((c, r) : Vec3.t * float) : float option =
-  let u = Vec3.normalize direction in
-  let m = Vec3.sub from c in
-  let b = Vec3.dot m u and cc = Vec3.dot m m -. (r *. r) in
-  if cc > 0. && b > 0. then None
-  else
-    let disc = (b *. b) -. cc in
-    if disc < 0. then None
-    else
-      let t = -.b -. sqrt disc in
-      Some (Float.max 0. t)
+  with_ray ~from ~direction (fun ray -> Option.bind (Ray.sphere ray (c, r)) first_hit_in_front)
 
 let ray_plane ~(from : Vec3.t) ~(direction : Vec3.t) ((n, d) : Vec3.t * float) : float option =
-  let u = Vec3.normalize direction in
-  let denom = Vec3.dot n u in
-  if Float.abs denom < eps then None
-  else
-    let t = (d -. Vec3.dot n from) /. denom in
-    if t < 0. then None else Some t
+  with_ray ~from ~direction (fun ray ->
+      match Ray.plane ray (n, d) with Some t when t >= 0. -> Some t | _ -> None)
 
 (* the slab test, in the box's own frame *)
 let ray_box ~(from : Vec3.t) ~(direction : Vec3.t) (b : placed) : float option =
   match b.shape with
   | Box (hx, hy, hz) ->
       let inv = Quat.conjugate b.orientation in
-      let ox, oy, oz = Quat.rotate inv (Vec3.sub from b.pos) in
-      let dx, dy, dz = Quat.rotate inv (Vec3.normalize direction) in
-      let slab o d h (lo, hi) =
-        if Float.abs d < eps then if o < -.h || o > h then (infinity, neg_infinity) else (lo, hi)
-        else
-          let t1 = (-.h -. o) /. d and t2 = (h -. o) /. d in
-          (Float.max lo (Float.min t1 t2), Float.min hi (Float.max t1 t2))
-      in
-      let lo, hi = slab oz dz hz (slab oy dy hy (slab ox dx hx (neg_infinity, infinity))) in
-      if lo > hi || hi < 0. then None else Some (Float.max 0. lo)
+      with_ray ~from:(Quat.rotate inv (Vec3.sub from b.pos)) ~direction:(Quat.rotate inv direction) (fun ray ->
+          Option.bind (Ray.box ray ((-.hx, -.hy, -.hz), (hx, hy, hz))) first_hit_in_front)
   | _ -> None
 
 (* a swept sphere: the side of the cylinder, then the two caps *)
@@ -408,26 +397,10 @@ let ray_capsule ~(from : Vec3.t) ~(direction : Vec3.t) (cap : placed) : float op
       (match all with [] -> None | t :: ts -> Some (List.fold_left Float.min t ts))
   | _ -> None
 
-(* Moller and Trumbore (1997): no plane equation, no precomputation --
- * the barycentric coordinates fall out of one cross product each *)
-let ray_triangle ~(from : Vec3.t) ~(direction : Vec3.t) ((a, b, c) : Vec3.t * Vec3.t * Vec3.t) : float option =
-  let u = Vec3.normalize direction in
-  let e1 = Vec3.sub b a and e2 = Vec3.sub c a in
-  let p = Vec3.cross u e2 in
-  let det = Vec3.dot e1 p in
-  if Float.abs det < eps then None
-  else
-    let inv = 1. /. det in
-    let s = Vec3.sub from a in
-    let bu = Vec3.dot s p *. inv in
-    if bu < 0. || bu > 1. then None
-    else
-      let q = Vec3.cross s e1 in
-      let bv = Vec3.dot u q *. inv in
-      if bv < 0. || bu +. bv > 1. then None
-      else
-        let t = Vec3.dot e2 q *. inv in
-        if t < 0. then None else Some t
+(* Moller and Trumbore (1997), see Ray.triangle *)
+let ray_triangle ~(from : Vec3.t) ~(direction : Vec3.t) (tri : Vec3.t * Vec3.t * Vec3.t) : float option =
+  with_ray ~from ~direction (fun ray ->
+      match Ray.triangle ray tri with Some (t, _, _) when t >= 0. -> Some t | _ -> None)
 
 let ray ~(from : Vec3.t) ~(direction : Vec3.t) (p : placed) : float option =
   match p.shape with

@@ -45,6 +45,18 @@ let debug_keys_enabled () = !debug_keys
  * as Native_loop_2d's *)
 let dump_audio_file : string ref = ref ""
 
+(* claude: -raytrace, the software backend's frames made by the ray
+ * tracer rather than the rasterizer, from the first one (its "y" key
+ * switches between them); the other backends have no ray tracer and
+ * ignore it (plan_raytracing_teaching.md) *)
+let raytrace : bool ref = ref false
+let raytrace_at_start () = !raytrace
+
+(* claude: -rt-brute, the ray tracer without its BVH: every solid tested
+ * by every ray, the slow and readable way, the same picture *)
+let rt_brute : bool ref = ref false
+let raytrace_brute_force () = !rt_brute
+
 let parse_cli_and_setup_logging () =
   let level = ref (Some Logs.Warning) in
   let cli_flags =
@@ -62,12 +74,14 @@ let parse_cli_and_setup_logging () =
        "<script> game keys held over frames, e.g. \"up:1-60,space:30\"");
       ("-uncapped", Arg.Set uncapped, " no 60 fps cap, to measure speed");
       ("-dump-audio", Arg.Set_string dump_audio_file, "<file> with -dump-frame, the sound of those frames, as a WAV");
-      ("-debug-keys", Arg.Set debug_keys, " the backend's debug keys (e.g. h for help), off by default")
+      ("-debug-keys", Arg.Set debug_keys, " the backend's debug keys (e.g. h for help), off by default");
+      ("-raytrace", Arg.Set raytrace, " (software backend) ray trace instead of rasterizing, as the \"y\" key");
+      ("-rt-brute", Arg.Set rt_brute, " (software backend) the ray tracer without its BVH, every solid tested")
     ]
   in
   let usage =
     Printf.sprintf
-      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-dump-audio file] [-debug-keys] [name=value|name]..."
+      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-dump-audio file] [-debug-keys] [-raytrace] [-rt-brute] [name=value|name]..."
       Sys.argv.(0)
   in
   (* claude: the arguments without a dash are the app's flags (see

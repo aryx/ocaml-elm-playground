@@ -34,6 +34,8 @@ let () =
           Unit_painter.tests;
           Unit_clip.tests;
           Unit_render.tests;
+          Unit_ray.tests;
+          Unit_raytrace.tests;
           Unit_png.tests;
           Unit_gif.tests;
           Unit_jpeg.tests;

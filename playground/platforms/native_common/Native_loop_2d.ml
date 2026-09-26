@@ -140,6 +140,12 @@ let parsed_cli : string list Lazy.t = lazy (
     "<script> what the person does over frames, e.g. \"right:1-60,space:30,at(0;80):1-60,click:30\"";
     "-dump-audio", Arg.Set_string dump_audio_file,
     "<file> with -dump-frame, also write the sound of those frames to file (a WAV)";
+    (* claude: the 3D software backend's (Native_loop_3d), known here
+     * too because both parse the same command line *)
+    "-raytrace", Arg.Unit (fun () -> ()),
+    " (3D, software backend) ray trace instead of rasterizing, as the \"y\" key";
+    "-rt-brute", Arg.Unit (fun () -> ()),
+    " (3D, software backend) the ray tracer without its BVH";
   ] in
   let usage =
     spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-dump-audio file] [name=value|name]..."

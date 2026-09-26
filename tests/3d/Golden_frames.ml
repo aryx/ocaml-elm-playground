@@ -13,7 +13,8 @@
 (* the keys: f wireframe, z painter's algorithm, b culling off, m the
  * next shading mode, p linear interpolation, i nearest texture
  * filtering, t the top-left fill rule, c clipping off, o the simple code instead of the
- * optimized one (Opti), h the help.
+ * optimized one (Opti), h the help, r the resolution (a half, a
+ * third, a quarter), y the ray tracer instead of the rasterizer.
  * Not x (the magnifier): it follows the mouse. *)
 let scenes : Testutil_golden.scene list =
   [
@@ -29,6 +30,17 @@ let scenes : Testutil_golden.scene list =
     (* the same golden frame as without "o", on purpose: an optimization
      * must not change a single pixel *)
     ("examples/software/Cubes3d", "o", 3);
+    (* claude: the same scene ray cast (plan_raytracing_teaching.md,
+     * phase 1), at a quarter of the resolution: brute force, a ray per
+     * pixel against every triangle, is 30 s a frame at full size and
+     * 2 s at this one; the first frame only *)
+    ("examples/software/Cubes3d", "rrry", 1);
+    (* claude: the shadows, the rasterizer's frame then the ray tracer's
+     * shadow rays (the third "y"), at a quarter of the resolution *)
+    ("examples/software/RaytracingShadows3d", "", 3);
+    ("examples/software/RaytracingShadows3d", "rrryyy", 1);
+    (* claude: and Whitted's, the ball a mirror *)
+    ("examples/software/RaytracingShadows3d", "rrryyyy", 1);
     ("examples/software/Spheres3d", "", 3);
     ("examples/software/Spheres3d", "m", 3);
     ("examples/software/Spheres3d", "mm", 3);

@@ -519,7 +519,7 @@ let block_faces (size : number) : (number * number * number) list list =
 let textured_face (cell : int * int) = function
   | [ p0; p1; p2; p3 ] ->
       let (u0, v0, u1, v1) = uv_rect_of_cell cell in
-      { alpha = 1.; form = TexturedPolygon3d (atlas_src, [ (p0, (u0, v0)); (p1, (u1, v0)); (p2, (u1, v1)); (p3, (u0, v1)) ]) }
+      { alpha = 1.; material = matte; form = TexturedPolygon3d (atlas_src, [ (p0, (u0, v0)); (p1, (u1, v0)); (p2, (u1, v1)); (p3, (u0, v1)) ]) }
   | _ -> assert false
 
 (* claude: the direction of each of block_faces's faces, in the same

@@ -56,6 +56,11 @@
    ; under Textmode.ml (private, pure OCaml, this same package), see
    ; docs/claude_notes/plans/plan_terminal.md
    terminal
+   ; claude: the ray tracer under the Povray way (private, pure OCaml,
+   ; this same package), and the 3D geometry it is made of, see
+   ; docs/claude_notes/plans/plan_raytracing_teaching.md
+   graphics_raytrace graphics_3d_geometry
+   graphics_png ; Png.encode, the picture saved by "s"
  )
  ; (preprocess (pps profiling.ppx))
 )

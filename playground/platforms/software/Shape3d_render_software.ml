@@ -65,15 +65,17 @@ let paint_of_texture (src : string) : Render.paint =
  * robust to repeated points like a sphere's pole; see there for the
  * bug the obvious formula caused (spheres drawn "cut" at the top). *)
 let rec faces (shape : Playground3d.shape3d) : Render.face list =
+  (* claude: shiny and glassy, which only the ray tracer reads *)
+  let material : Material.t = { shiny = shape.material.shiny; glassy = shape.material.glassy } in
   match shape.form with
   | Polygon3d (color, points) ->
       let normal = Vec3.face_normal points in
-      [ { paint = Color (rgb_of_color color); points = List.map (fun p -> (p, (0., 0.), normal)) points } ]
+      [ { paint = Color (rgb_of_color color); points = List.map (fun p -> (p, (0., 0.), normal)) points; material } ]
   | TexturedPolygon3d (src, points) ->
       let normal = Vec3.face_normal (List.map fst points) in
-      [ { paint = paint_of_texture src; points = List.map (fun (p, uv) -> (p, uv, normal)) points } ]
+      [ { paint = paint_of_texture src; points = List.map (fun (p, uv) -> (p, uv, normal)) points; material } ]
   | SmoothPolygon3d (color, points) ->
-      [ { paint = Color (rgb_of_color color); points = List.map (fun (p, n) -> (p, (0., 0.), n)) points } ]
+      [ { paint = Color (rgb_of_color color); points = List.map (fun (p, n) -> (p, (0., 0.), n)) points; material } ]
   | Hud _ -> [] (* collected separately by Playground3d.collect_hud_shapes, contributes no geometry *)
   | Group3d shapes -> List.concat_map faces shapes
   (* claude: a group like any other here: the rasterizer draws every face
@@ -83,3 +85,47 @@ let rec faces (shape : Playground3d.shape3d) : Render.face list =
 let render ?options (fb : Framebuffer.t) (zbuffer : Zbuffer.t) (cam : Playground3d.camera)
     (shape : Playground3d.shape3d) : unit =
   Render.render ?options fb zbuffer (camera cam) (faces shape)
+
+(*****************************************************************************)
+(* The ray tracer *)
+(*****************************************************************************)
+
+(* claude: until textures are sampled at the hit point (phase 7) *)
+let untextured_color = 0x808080
+
+let solids (shape : Playground3d.shape3d) : Solid.t list =
+  faces shape
+  |> List.concat_map (fun (face : Render.face) ->
+         let surface : Solid.surface =
+           { color = (match face.paint with Color c -> c | Texture _ -> untextured_color); pattern = Plain; material = face.material }
+         in
+         (* fanned as the rasterizer does: (p0,p1,p2), (p0,p2,p3), ... *)
+         match face.points with
+         | [] -> []
+         | (p0, _, n0) :: rest ->
+             let rec fan = function
+               | (p1, _, n1) :: ((p2, _, n2) :: _ as rest) ->
+                   Solid.Triangle { points = (p0, p1, p2); normals = (n0, n1, n2); surface } :: fan rest
+               | _ -> []
+             in
+             fan rest)
+
+(* claude: the rasterizer's light as the ray tracer's: Lighting's
+ * brightness, ambient + (1 - ambient) max (0, n . light_dir), is one sun
+ * of strength 1 - ambient *)
+let sun : Raytrace.light =
+  let s = 1. -. Lighting.ambient in
+  Sun { towards = Lighting.light_dir; color = (s, s, s) }
+
+let raytrace ?options (fb : Framebuffer.t) (cam : Playground3d.camera) (shape : Playground3d.shape3d) : unit =
+  let scene : Raytrace.scene =
+    { camera = camera cam; solids = solids shape; lights = [ sun ]; ambient = Lighting.ambient; background = 0xFFFFFF }
+  in
+  let img = Raytrace.render ?options scene ~width:fb.width ~height:fb.height in
+  for y = 0 to fb.height - 1 do
+    for x = 0 to fb.width - 1 do
+      let i = 4 * ((y * img.width) + x) in
+      let rgb = (img.rgba.{i} lsl 16) lor (img.rgba.{i + 1} lsl 8) lor img.rgba.{i + 2} in
+      Framebuffer.plot fb ~x ~y ~rgb ~alpha:1.
+    done
+  done

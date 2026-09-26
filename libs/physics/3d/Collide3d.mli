@@ -59,6 +59,11 @@
  * precomputation, the barycentric coordinates falling out of one cross
  * product each. All of them answer in metres along the ray.
  *
+ * claude: the arithmetic of all but the capsule is graphics/3d/
+ * geometry's Ray, shared with the ray tracer, which answers the whole
+ * line (both points where it crosses a sphere, even behind the start);
+ * these keep physics's question on top, the first hit in front.
+ *
  * {1 The honest limits}
  *
  * - **A moving body must be convex.** A concave shape is either

@@ -21,6 +21,14 @@ let make (mode : mode) (v0 : Project.vertex) (v1 : Project.vertex) (v2 : Project
         let u = (l0 *. v0.u) +. (l1 *. v1.u) +. (l2 *. v2.u) in
         let v = (l0 *. v0.v) +. (l1 *. v1.v) +. (l2 *. v2.v) in
         (z, u, v)
+  (* claude: TODO: wrong with an orthographic camera (camera.ortho > 0).
+   * There the depth is linear on the screen, and interpolating 1/z
+   * bends it between the vertices: where two faces cross, the one
+   * behind can win. Found by the ray tracer's A/B test
+   * (graphics/tests/Unit_raytrace.ml: 162 pixels apart, 1 with Linear).
+   * The fix is to interpolate linearly when the camera is orthographic;
+   * it changes the golden frames of TinyMonumentValley, TinyPerspective
+   * and TinyFez, so it waits (plan_raytracing_teaching.md, phase 1). *)
   | Perspective_correct ->
       fun ~l0 ~l1 ~l2 ->
         let inv_z = (l0 *. v0.inv_z) +. (l1 *. v1.inv_z) +. (l2 *. v2.inv_z) in

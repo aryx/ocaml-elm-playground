@@ -67,6 +67,15 @@ val parse_cli_and_setup_logging : unit -> unit
  * a game using "h"). *)
 val debug_keys_enabled : unit -> bool
 
+(* claude: -raytrace was given: the software backend draws with the ray
+ * tracer from the first frame, as if its "y" key had been pressed
+ * (plan_raytracing_teaching.md). The other backends ignore it. *)
+val raytrace_at_start : unit -> bool
+
+(* claude: -rt-brute was given: the ray tracer tests every solid, no
+ * BVH (Bvh.mli), for the comparison: the same picture, slower *)
+val raytrace_brute_force : unit -> bool
+
 (*****************************************************************************)
 (* {1 The mouse and the keyboard} *)
 (*****************************************************************************)

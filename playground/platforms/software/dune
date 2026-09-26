@@ -36,6 +36,7 @@
    networking_unix ; Connect, for Multiplayer3d's net=host, net=join, net=relay
    graphics_3d_geometry ; Vec3, Camera
    graphics_3d ; Render, and the modules of its pipeline
+   graphics_raytrace ; Raytrace, Solid: the "y" key and -raytrace
    graphics_core ; Framebuffer, Opti
    graphics_2d ; Magnifier
    graphics_images ; Texture_decode

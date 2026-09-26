@@ -211,6 +211,8 @@
    %{project_root}/games/programming/software/TinyCoreWar.exe
    %{project_root}/examples/software/LogoFractals.exe
    %{project_root}/examples/software/KarelHarvest.exe
+   %{project_root}/examples/software/PovraySpheres.exe
+   %{project_root}/examples/software/PovrayWhitted.exe
    %{project_root}/examples/software/TeletypeHangman.exe
    %{project_root}/examples/software/TextmodeSnake.exe
    %{project_root}/games/adventure/software/TinyWumpus.exe

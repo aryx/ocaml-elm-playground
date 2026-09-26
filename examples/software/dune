@@ -19,7 +19,7 @@
     AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
     ImageJpeg ImagePng ImageLzw
     JuiceCurves JuiceSquash
-    LogoFractals KarelHarvest TeletypeHangman TextmodeSnake
+    LogoFractals KarelHarvest TeletypeHangman TextmodeSnake PovraySpheres PovrayWhitted
     BigBangRocket
     BigBangWorm
     UniverseBall
@@ -30,7 +30,7 @@
     InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
     CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
     PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
-    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d)
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d RaytracingShadows3d)
   (libraries
     graphics_font ; AiDigits trains on digits this font draws
     graphics_rgba graphics_png graphics_gif graphics_jpeg ; the Image* examples take them apart
@@ -76,12 +76,13 @@
     PhysicsRagdoll3d
     LogoFractals3d
     StarCollector3d
+    RaytracingShadows3d
   )
   (modules Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
     InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
     CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
     PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
-    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d)
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d RaytracingShadows3d)
   (libraries
     elm_core ; Set_.mem, Basics.clamp
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)

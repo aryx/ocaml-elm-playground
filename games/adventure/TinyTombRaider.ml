@@ -466,7 +466,7 @@ let uv ((col, row) : int * int) : number * number * number * number =
  * keeps it. *)
 let face (cell : int * int) ((tl, bl, br, tr) : _ * _ * _ * _) : shape3d =
   let u0, v0, u1, v1 = uv cell in
-  { alpha = 1.; form = TexturedPolygon3d (atlas, [ (tl, (u0, v0)); (bl, (u0, v1)); (br, (u1, v1)); (tr, (u1, v0)) ]) }
+  { alpha = 1.; material = matte; form = TexturedPolygon3d (atlas, [ (tl, (u0, v0)); (bl, (u0, v1)); (br, (u1, v1)); (tr, (u1, v0)) ]) }
 
 (* the flat top of a square, at height [h] *)
 let top_face (cell : int * int) (cx : int) (cz : int) (h : number) : shape3d =

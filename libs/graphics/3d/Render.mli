@@ -35,8 +35,13 @@ type paint = Color of int | Texture of Texture.image
 
 (* A convex polygon in world coordinates, counterclockwise seen from its
  * front (see Cull), each point with its texture coordinates (u, v)
- * (ignored for a Color) and its normal (see Shading) *)
-type face = { paint : paint; points : (Vec3.t * (float * float) * Vec3.t) list }
+ * (ignored for a Color) and its normal (see Shading).
+ *
+ * claude: and its [material], how shiny or glassy it is: carried, not
+ * read. The rasterizer has no reflected or refracted rays to use it
+ * with; the ray tracer (graphics/3d/raytrace/), which reads the same
+ * faces, has (Material.mli). *)
+type face = { paint : paint; points : (Vec3.t * (float * float) * Vec3.t) list; material : Material.t }
 
 (* Which faces are visible where: the z-buffer (see Zbuffer), or the
  * painter's algorithm (see Painter) *)

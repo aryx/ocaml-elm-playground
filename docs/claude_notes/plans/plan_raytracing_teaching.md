@@ -171,6 +171,14 @@ own:
   `Cubes3d.exe` is *the same picture, with shadows*. The `shape3d`
   scenes get two opt-in verbs (`shiny`, `glassy`, below) that the
   rasterizer ignores; everything else expressive lives in the way.
+- **Every algorithm kept, side by side** (the author's, 2026-09-26).
+  Each phase adds an algorithm to `Raytrace.algorithms` (ray casting,
+  Lambert's light, shadow rays, then Whitted's recursion...) rather than
+  replacing the one before, so that the same scene can be drawn by each:
+  the `Povray` way's arrows step back through them, its flag
+  `evolution` shows them all at once, and the software backend's "y"
+  cycles through them on any `shape3d` scene. The evolution of the
+  picture is the lesson, and it must stay runnable.
 - **Deterministic, whatever the slicing.** A picture rendered in one go
   and the same picture rendered a row per frame, or coarse-to-fine,
   are the same bytes (a test). No `Random`; seeds are explicit.
@@ -292,14 +300,21 @@ the rows done, the rays shot, and the time so far.
 ## Target layout
 
 ```
-graphics/3d/geometry/
+libs/graphics/3d/geometry/  (moves to the elm_playground package, see
+                        Groundwork: the way is 2D)
   Ray                   NEW: a ray (origin, unit direction), and the
                         intersections: ray/triangle (Moller-Trumbore),
-                        ray/sphere, ray/plane, ray/AABB (slabs).
-                        In geometry/ because physics/3d's Collide3d
-                        needs the same ray/triangle (see Groundwork)
-graphics/3d/raytrace/   NEW, its own library (graphics_raytrace),
-                        pure, over geometry/ and images' Rgba_image
+                        ray/sphere, ray/plane, ray/AABB (slabs), each
+                        answering the whole line (both roots, a signed
+                        t), what CSG needs. Moved out of physics/3d's
+                        Collide3d, which already had them (see
+                        Groundwork) and now calls them
+  Material              NEW: matte / shiny / glassy, the data only --
+                        here so that Render.face can carry one without
+                        the rasterizer depending on the ray tracer
+libs/graphics/3d/raytrace/  NEW, its own library (graphics_raytrace),
+                        pure, over geometry/ and images' Rgba_image,
+                        in the elm_playground package
   Solid                 the object type: primitives (sphere, box,
                         cylinder, cone, torus, plane, triangle), CSG
                         nodes, transforms; each solid's hit *intervals*
@@ -311,8 +326,8 @@ graphics/3d/raytrace/   NEW, its own library (graphics_raytrace),
   Bvh                   a bounding volume hierarchy over solids: build
                         (median split, then SAH), traverse; beside the
                         brute-force "test them all"
-  Material              matte / shiny / glassy, and the reflection and
-                        refraction directions (Snell, Schlick)
+  Optics                the reflection and refraction directions
+                        (Snell, Schlick), over geometry's Material
   Pattern               checker, marble, wood, over Noise (Perlin 1985)
   Raytrace              the renderer: camera rays, the recursive shade
                         (shadow, reflection, refraction), the depth
@@ -376,17 +391,30 @@ triangles.
 ### Where the way sits, and what it depends on
 
 `Povray` is a way (it builds the `app`: `playground/README.md`'s rule),
-so it goes in `playground/ways/`. It uses `Playground3d.camera` (the
-same camera record, so a scene can be framed as the `shape3d` scenes
-are) and `shapes` takes `shape3d`s, so it belongs to the 3D stanza of
-`playground/dune`, listed by name as `Logo3d` is. Its app is
-nevertheless a 2D `app` (a bitmap), so a `Povray` program runs on the
-2D backends; whether that needs the 3D library to stop being virtual
-for such a program, or `shapes` to move out, is **to be settled in
-phase 0** by trying it -- the fallback is to drop `shapes` from the
-way and keep it in `examples/`. `graphics_raytrace` depends only on
-`graphics_3d_geometry` and `Rgba_image`, both pure, so it compiles to
-JavaScript.
+so it goes in `playground/ways/`. Its app is a 2D `app` (a bitmap),
+so a `Povray` program runs on the 2D backends.
+
+**Settled in review (2026-09-26), without the trial**: the way is in
+the **2D library**, `elm_playground`, and does not use `Playground3d`
+at all. `elm_playground_3d`'s `Playground3d_platform` is virtual, so a
+way in the 3D stanza would make every `Povray` program link a 3D
+backend to show a bitmap. So:
+
+- the way has **its own camera** (`Povray.camera`: an eye, a target, a
+  field of view), which is geometry's `Camera.t` underneath -- the
+  same record `Playground3d.camera` is turned into, so nothing is
+  lost but the name;
+- **`shapes` leaves the way**: a `shape3d` scene in a `Povray` picture
+  is `PovrayQuake.ml`'s business, in `examples/`, built with the
+  software backend's `Shape3d_render_software.solids` (phase 8);
+- `graphics_3d_geometry` and `graphics_raytrace` are in the
+  **`elm_playground` package**, as `physics_2d` and
+  `graphics_2d_geometry` already are, since the 2D library now needs
+  them. Every 3D package depends on `elm_playground`, so nothing that
+  had geometry loses it.
+
+`graphics_raytrace` depends only on `graphics_3d_geometry` and
+`Rgba_image`, both pure, so it compiles to JavaScript.
 
 ### Progressive rendering
 
@@ -416,6 +444,27 @@ gravity gun, and `physics_3d` already depends on `graphics_3d_geometry`
 and on nothing else. One implementation, tested once, used by the
 renderer and by the engine -- and the `.mli` says both.
 
+**Settled in review (2026-09-26): `Collide3d` already had them.** Its
+`ray_sphere`, `ray_plane`, `ray_box` and `ray_triangle` (Möller-Trumbore)
+were written and tested for the physics plan, so `Ray` is a move, not
+new code: the arithmetic goes to `Ray`, and `Collide3d` keeps its
+signatures as thin wrappers (its tests unchanged, and passing, are the
+check that nothing moved but the code). Two differences in contract,
+both because the renderer needs more than physics does:
+
+- `Ray.t`'s direction is **a unit vector, made so once** by `Ray.make`,
+  so `t` is a distance -- the ICFP entry's first bug, removed by
+  construction. `Collide3d` took any direction and normalized inside
+  every test; it now builds a `Ray.t`.
+- `Ray` answers **the whole line**, not the first hit in front: both
+  roots of the sphere (entering and leaving, possibly behind the eye),
+  a signed `t` for the plane and the triangle, the slab interval for
+  the box. That is what CSG's intervals are made of (phase 6).
+  `Collide3d` keeps "the first hit in front, 0 if inside" on top.
+
+`ray_capsule` stays in `Collide3d` (a capsule is physics's shape, not
+the renderer's; phase 6's cylinder is its own quadric).
+
 ### CSG with intervals
 
 A solid's intersection with a ray is not one point but a list of
@@ -436,6 +485,13 @@ mesh are refused with a message (a closed mesh could have an inside by
 ray parity -- an exercise).
 
 ### Materials without breaking the other backends
+
+`Material` is data (how shiny, how glassy) and lives in
+`graphics/3d/geometry/` (settled in review, 2026-09-26): `Render.face`
+is the rasterizer's type, and the ray tracer reads faces, so the type
+of their material cannot live in the ray tracer's library without the
+rasterizer depending on it. What *uses* a material -- Snell, Schlick,
+the reflected direction -- is the ray tracer's own, `Optics` (phase 5).
 
 `Render.face` gains `material : Material.t`, defaulting to matte, set
 by `shiny`/`glassy` through `Shape3d_render_software.faces`. The
@@ -651,12 +707,12 @@ like any game.
 ## Phasing
 
 0. **Groundwork**: `Ray` in `graphics/3d/geometry/` (ray/triangle,
-   ray/sphere, ray/plane, ray/AABB) with its tests; the
-   `graphics/3d/raytrace/` library with `Solid`, `Raytrace` and
-   `Material` skeletons; `Render.face`'s `material` field; the
-   `-raytrace` flag and the "y" key wired to a stub; `Povray`'s empty
-   app showing a bitmap, and the dune question (where the way sits)
-   settled.
+   ray/sphere, ray/plane, ray/AABB), moved out of `Collide3d`, with its
+   tests; `Material` beside it; `Render.face`'s `material` field; the
+   `graphics/3d/raytrace/` library with `Solid` and `Raytrace`
+   skeletons; the `-raytrace` flag and the "y" key wired to a stub;
+   `Povray`'s empty app showing a bitmap, in the 2D library, with its
+   own camera.
 1. **Ray casting** (Appel 1968): camera rays from `Camera.t`, nearest
    hit by brute force, the flat colour. No lighting, no shadows. On
    both paths: a `shape3d` scene in silhouette, and `PovraySpheres.ml`
@@ -710,7 +766,164 @@ like any game.
 
 ## Status
 
-**Not started.** Written as the specification, with
+**Phase 0 done** (2026-09-26): `Ray` and `Material` in
+`libs/graphics/3d/geometry/` (with `graphics/tests/Unit_ray.ml`;
+`Collide3d`'s rays now wrappers over `Ray`, their tests unchanged and
+passing); `Render.face.material`; `libs/graphics/3d/raytrace/`
+(`graphics_raytrace`: `Solid`'s type, `Raytrace.render` drawing only
+the background); `Shape3d_render_software.solids` and `.raytrace`; the
+software backend's "y" key and `-raytrace` (known to `Native_loop_2d`
+too, which parses the same command line); `playground/ways/Povray`, a
+camera, an empty scene and `still`. Checked: `make test` (one golden
+frame re-approved, `Cubes3d_h`, the help's new "y" line), and
+`Cubes3d -raytrace -dump-frame` all white where the rasterizer's frame
+has 19 colours.
+
+**Phase 1 done** (2026-09-26): `Raytrace.camera_ray` (the
+rasterizer's projection run backwards, pixel centres, near and far
+planes as distances along the ray) and `nearest` by brute force;
+`Solid.hit` (the first root in front, `?min_t`) and `Solid.move`; the
+way's solids (`sphere`, `plane`, `move`, `color`), its lights (data
+until phase 2) and `still ?size`; `examples/PovraySpheres.ml`, the
+ICFP `spheres.gml` (its left-handed world and horizontal field of
+view converted, as its header says), golden in `tests/2d/`;
+`Cubes3d -keys rrry`, the `shape3d` path ray cast at a quarter of the
+resolution, golden in `tests/3d/`. Checked:
+
+- **the A/B**: `graphics/tests/Unit_raytrace.ml` renders the same faces
+  both ways, 2 pixels in 19,200 apart (ties on shared edges); and
+  `Cubes3d` itself, `-raytrace` against `-keys m` (no lighting) at
+  `-fixed-time 1`: **1 pixel in 1,000,000**.
+- **the first timing**: `Cubes3d` ray cast at 1000 x 1000, a million
+  rays against 300 triangles, brute force: **29 s**, about 10 million
+  ray/triangle tests a second natively. `PovraySpheres` at 320 x 240:
+  0.7 s, startup included.
+- **a rasterizer bug, found by the A/B**: with an orthographic camera
+  the two renderers were 162 pixels apart, all where two faces cross,
+  the rasterizer drawing the one behind. `Interpolate.Perspective_correct`
+  (the default) interpolates 1/z, right for a perspective camera and
+  wrong for an orthographic one, whose depth is linear on the screen;
+  with `Interpolate.Linear` they agree again (1 pixel). Affects
+  `TinyMonumentValley`, `TinyPerspective` and `TinyFez` wherever faces
+  intersect. **Not fixed yet, for the author**: the fix (interpolate
+  linearly when `camera.ortho > 0`) changes those games' golden frames.
+  The test asserts the ortho case with `Linear`, and says why.
+
+**Phase 2 done** (2026-09-26): lights and shadows, and the
+algorithms kept (principle above). `Raytrace.algorithm`
+(`Ray_casting | Lambert | Shadow_rays`), `options` (the algorithm, the
+shadow ray's `epsilon`), lights (`Sun`, `Lamp`, coloured), `ambient`;
+`shade`: Lambert light by light, the clamp; `shadowed`: any solid
+between the point and the light, the sun's distance infinite;
+`Solid.normal` (the triangle's normals mixed by the hit's u, v). The
+`shape3d` path gets `Lighting`'s sun as one `Sun` of strength
+1 - ambient, so Lambert's picture is the rasterizer's Phong one; "y"
+cycles the rasterizer, each algorithm, then the acne bug. The way:
+`sun` and `lamp` now light; the arrows step through the algorithms, and
+the flag `evolution` puts them side by side, one picture made per
+frame. `examples/RaytracingShadows3d.ml`, a floor, a crate, a pillar
+and a ball. Checked:
+
+- the three ICFP bugs as tests (`Unit_raytrace.ml`): **acne**, 31% of a
+  floor in its own shadow with epsilon 0, none with 1e-4 -- but only
+  on a *tilted* plane: against y = 0 the arithmetic came out exact or
+  above, 0 points in 10,000, a lesson in itself (real scenes are not
+  axis-aligned); **the clamp**, three suns on grey give white, not a
+  wrapped 128; **the infinite sun**, a sphere 1000 up still shades,
+  from a sun and not from a lamp below it;
+- the lit A/B: the rasterizer's Phong against `Lambert`, same faces, at
+  most a few pixels apart;
+- golden frames: `PovraySpheres` (the latest), `PovraySpheres_evolution`,
+  `RaytracingShadows3d` (the rasterizer) and `_rrryyy` (shadow rays);
+  `Cubes3d_rrry` unchanged, its "y" now the first algorithm, ray casting.
+
+**Phase 3 done** (2026-09-26): the progressive app.
+`Raytrace.start`/`advance`/`picture` (and `passes`, `pass`,
+`rays_shot`, `finished`): coarse to fine, passes of 8, 4, 2 and 1, no
+ray shot twice, `render` kept as the reading-order definition. The way:
+a fixed ray budget per frame (`?rays_per_frame`, 20,000), not one
+adjusted from the frame time as planned -- deterministic frames, for
+the golden tests, over a steadier 30 fps (an exercise to add it, off
+by default); space again, "s" saves a PNG (`?export`, the
+capability, `?file`), a status line (pass, rays, time); `evolution`
+fills all its pictures together, the budget shared; **`orbit`**: drag
+to turn round the target, wheel nearer, each move back to pass 8.
+`PovraySpheres` is an `orbit` now, its target moved to the scene's
+middle, (0, 0, -3) (the same picture, byte for byte: only the line of
+sight counts). Checked:
+
+- **same bytes, whatever the slices**: `render` against `start` and
+  `advance` by 1, 7, 64, 1000 and all the rays, at 37 x 23, 64 x 48,
+  1 x 1 and 9 x 17, and one ray per pixel; the first pass's 20 rays
+  fill a 40 x 30 picture;
+- a problem met: the Cairo and web backends keep a bitmap's conversion
+  by the image's identity, so a picture advanced in place would have
+  stayed its first frame there (the software backend redraws, and would
+  have hidden it). `Raytrace.picture` hands out a copy when the pixels
+  changed, the same image when not;
+- another: a `-script`'s mouse moves set `mx`/`my`, not `mdx`/`mdy`
+  (SDL's relative motion, for a captured mouse), so `orbit` measures a
+  drag from the pointer's last position, which works for both;
+- golden frames: `PovraySpheres` (done, frame 6), `_coarse` (frame 1,
+  the 2 x 2 blocks), `_orbit` (dragged), `_evolution` (frame 15).
+
+**Phase 4 done** (2026-09-26): `Bvh`, the median split and the
+surface area heuristic (binned), the planes beside the tree;
+`Raytrace.acceleration` (`Brute_force | Bvh of split`, SAH the
+default), `Raytrace.world` (a scene with its tree built, once per
+picture), `tests`/`boxes` counters; `Solid.bounds`; `-rt-brute` on the
+software backend; `graphics/tests/bench/Raytrace_bench.ml`, natively
+and under node. The numbers, in `Bvh.mli`: Cubes3d's 300 triangles,
+583 tests a ray by brute force, 2.5 with SAH, 43 times faster;
+102,400 triangles in 0.57 s natively, 2.6 s under node; `Cubes3d` at
+1000 x 1000 with shadows, **38 s brute force, 1.5 s with the tree,
+the same PNG byte for byte**. Checked: the property test, the tree's
+hit against brute force's on random scenes (0 to 500 solids, a strip
+of triangles sharing edges, rays at its corners), `nearest` and `any`,
+both splits; the same picture bytes; fewer tests. Three things met:
+
+- **a box must never say no** when its solid says yes: the property
+  test's rays aimed at a triangle's corner missed its box, the slabs'
+  intervals apart by the last bit after rounding. Boxes are padded by
+  a billionth of their size (PBRT widens the slab test instead);
+- **ties** (the edge two triangles share) are broken as brute force
+  breaks them, the first in the list, so that the pictures are the
+  same bytes, not just the same picture;
+- **the browser's stack**: the build overflowed node's on 100,000
+  triangles, in `List.filter` and friends; it works on arrays now. And
+  the exact SAH (a sort per level) took 16 s to build them, binned
+  1 s.
+
+Not done from the plan's phase: the numbers are the benchmark's, not
+measured in a browser window (node is the browser's engine; a page
+has the DOM's cost on top).
+
+**Phase 5 done** (2026-09-26): Whitted's algorithm, the fourth, kept
+beside the three before it. `Raytrace.radiance`, recursive, colours as
+floats until one clamp at the end (so the older algorithms' pixels are
+the same bytes: their goldens unchanged); `reflect`, `refract` (Snell,
+total internal reflection), `schlick` (Fresnel), exposed and tested
+with their numbers -- in `Raytrace` rather than the planned `Optics`
+module, three functions of a few lines each; `options.depth` (3) and
+`options.cutoff` (1/256), `secondary_rays` and `saved_rays` counted and
+shown under the way's picture. `Solid.pattern` with `Checker`, the
+first of phase 7's patterns, for Whitted's board (a solid texture, a
+millionth of a square added before the floor, or a floor at y = 0
+speckles: rounding again). The way: `checker`, `shiny`, `glassy`.
+`Playground3d.material`, `shiny` and `glassy`, a field of `shape3d`
+set as `fade3d` sets alpha (two games built the record by hand,
+TinyTombRaider and TinyMinecraft, a field added to each), read by the
+software backend's faces only. `examples/PovrayWhitted.ml`, the 1980
+picture; `RaytracingShadows3d`'s ball a mirror. Checked: the optics'
+numbers (Snell at 30 degrees, the critical angle 41.8, 4% head on);
+a perfect mirror and half a one to the bit; the depth and the cutoff
+counted (facing mirrors: 3 bounces; a thousandth of a mirror: not
+shot); glass of index 1 invisible. Not done: glass casts a full
+shadow (as in Whitted's picture), caustics being out of scope.
+
+Next, phase 6, the other solids and CSG.
+
+Written as the specification, with
 [`notes_raytracing.md`](../tutorials/notes_raytracing.md) beside it.
 Decisions taken, with their reasons, so they are not re-argued:
 
@@ -742,7 +955,14 @@ Decisions taken, with their reasons, so they are not re-argued:
   way, GML's vocabulary without its parser; the renderer's input
   widened from faces to solids; `lamp` moved from `Playground3d` to
   the way; the progressive app; TinyMyst as the payoff (the author
-  liked Myst's idea in the same conversation).
+  liked Myst's idea in the same conversation);
+- **the phase 0 review (2026-09-26)**, the author agreeing with each:
+  `Ray` moved out of `Collide3d` rather than written again; `Material`
+  in `geometry/`, the dependency the right way round; `Povray` in the
+  2D library with its own camera, and `shapes` out of the way;
+  `graphics_3d_geometry` and `graphics_raytrace` in the `elm_playground`
+  package. The paths in this plan were `graphics/...` for what is
+  `libs/graphics/...`.
 
 Open, for the author:
 
@@ -752,8 +972,7 @@ Open, for the author:
 - **TinyMyst's logic**: OCaml data, or HyperTalk cards through
   `appkits/hypertalk` (truer to 1993, and a second user for the
   appkit, but HyperTalk's subset may need a verb or two);
-- **where `Povray` sits** if the 3D stanza turns out to be awkward for
-  a 2D app (phase 0 decides by trying; moving a module is asked first).
+- ~~where `Povray` sits~~: settled in review, 2026-09-26 (Groundwork).
 
 ## Verification
 
