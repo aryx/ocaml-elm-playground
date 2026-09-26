@@ -4,11 +4,13 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinySketchpad)
+  (names TinySketchpad TinyAutoCAD)
   (libraries
     elm_playground
-    gui ; Widget, the knobs and the switch
+    gui ; Widget, the knobs and the switch (TinySketchpad)
     appkit_sketch ; Sketch, Relax
+    appkit_cad ; Cad_geom, Cad_drawing, Cad_edit, Cad_snap, Dxf, Cad_session
+    caps ; the DXF files' authority to be written and read
     elm_playground_software ; implem of virtual elm_playground
   )
 )

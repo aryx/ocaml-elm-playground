@@ -55,6 +55,15 @@ come after (the author's other idea: plan_raytracing_remaining.md).
   INSERT), a text format; an appkit `appkits/cad` for the geometry the
   commands share (intersections, offsets, trims).
 
+DONE (2026-09-26): `TinyAutoCAD.ml`, Release 12 for DOS's screen,
+over `appkits/cad`: `Cad_geom`, `Cad_drawing`, `Cad_edit`, `Cad_snap`,
+`Dxf` and `Cad_session` (the command line as a pure machine, unit
+tested: LINE, CIRCLE, ARC, ERASE, MOVE, COPY, OFFSET, TRIM, EXTEND,
+FILLET, DIMLINEAR, BLOCK, INSERT, LAYER, ZOOM, PAN, ID, DIST, U, REDO,
+DXFOUT, DXFIN). Left out: polylines, text, hatching, linetypes, ARC
+and CIRCLE's other ways, grips; TRIM with no edge chosen takes every
+entity (AutoCAD 2000's behaviour, not Release 12's).
+
 ## Later
 
 A parametric solid modeller (CATIA, 1977; Pro/ENGINEER, 1988: the

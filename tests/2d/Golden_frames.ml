@@ -407,6 +407,10 @@ let scenes : Testutil_golden.scene list =
      * hexagon, three of them sized and turned; the TX-2's scope drawing
      * dots, the push buttons, the knobs *)
     ("apps/cad/software/TinySketchpad", "", 5);
+    (* claude: 1992: a bracket drawn on four layers -- the outline, the
+     * red center lines, the green dimensions, the cyan bolts (a block
+     * inserted four times); the screen menu, the command line *)
+    ("apps/cad/software/TinyAutoCAD", "", 5);
   ]
 
 (* claude: TinySimCity's starter town, built with the keys: a road, a
@@ -1542,6 +1546,16 @@ let scripted : Testutil_golden.scripted list =
     (* a click in the middle of the hollow rectangle goes through it,
      * and selects the grey oval behind *)
     ("apps/graphics/software/TinyMacDraw", "through", 8, "at(-140;135):1-4,click:2,at(600;-600):5-8");
+    (* claude: TinyAutoCAD: a triangle by the command line, its first
+     * point clicked, the others typed as polar coordinates (@40<120),
+     * closed by C; the center lines trimmed at the big hole, the hole
+     * picked as the cutting edge; a LINE from a hole's crossing, the
+     * rubber band caught by the top edge's Midpoint snap; LAYER OFF
+     * DIM, the dimensions gone *)
+    ("apps/cad/software/TinyAutoCAD", "line", 20, "type(l):2,Enter:3,at(102.4;327.1):4-6,click:5,type(@40<0):8,Enter:9,type(@40<120):11,Enter:12,type(c):14,Enter:15,at(250;-300):16-20");
+    ("apps/cad/software/TinyAutoCAD", "trim", 20, "type(tr):2,Enter:3,at(-58.8;95.6):4-6,click:5,Enter:8,at(-143.6;45.9):9-11,click:10,at(-108.5;81.1):12-14,click:13,Enter:16,at(250;-300):17-20");
+    ("apps/cad/software/TinyAutoCAD", "snap", 12, "type(l):2,Enter:3,at(-312.4;45.9):4-6,click:5,at(-104;252):7-12");
+    ("apps/cad/software/TinyAutoCAD", "layers", 14, "type(la):2,Enter:3,type(off):5,Enter:6,type(dim):8,Enter:9,Enter:11,at(250;-300):1-14");
     (* claude: TinyPhotoshop: Hue/Saturation's preview, the hue turned a
      * third of the way; the magic wand on space, then Invert through
      * the selection, the Earth untouched, the marching ants; a soft

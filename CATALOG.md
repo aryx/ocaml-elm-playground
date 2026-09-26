@@ -398,6 +398,7 @@ parts placed as instances of other drawings (`plan_cad.md`).
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinySketchpad](apps/cad/TinySketchpad.ml) | app | Sketchpad (Ivan Sutherland, MIT Lincoln Laboratory's TX-2, 1963) | Draw with the light pen, then tell the drawing its rules: a rough hexagon becomes regular, a linkage moves. | The first interactive graphics program: the pen aiming at points and lines; items sharing their points; constraints kept by relaxation, one point at a time by least squares on numerical derivatives; masters and instances, a honeycomb of one hexagon; the window zoomed over a sheet bigger than the screen; the scope's dots. |
+| [TinyAutoCAD](apps/cad/TinyAutoCAD.ml) | app | AutoCAD Release 12 (Autodesk, 1992; AutoCAD 1982) | A bracket drawn on layers, by a command line that asks and a crosshair that snaps. | Drafting by conversation: commands asking for points typed (absolute, @relative, @polar) or picked; object snaps and ORTHO; TRIM, EXTEND, OFFSET and FILLET as crossings of lines and circles; window and crossing selection; layers; blocks inserted; dimensions that measure; undo by command; DXF, the drawing as text read and written. |
 
 ## PIM
 
