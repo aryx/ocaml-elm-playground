@@ -20,9 +20,9 @@
   (modules TinyBigRedRacing TinyIgnition TinyMarioKart64 TinySSX TinyVirtuaRacing)
   (libraries
     elm_core
-    kit_racing ; TinyVirtuaRacing's Road and Car, TinyMarioKart64's Topdown, TinyIgnition's and TinySSX's Offroad
+    kit_racing ; TinyVirtuaRacing's Road and Topdown, TinyMarioKart64's Topdown, TinyIgnition's and TinySSX's Offroad
     kit_racing3d ; their courses (Track3d), and TinyIgnition's and TinySSX's
-    kit_heightmap ; TinyBigRedRacing's ground
+    kit_heightmap ; TinyBigRedRacing's ground, TinyVirtuaRacing's land
     elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
     elm_playground_3d
     elm_playground_3d_opengl ; implem of virtual elm_playground_3d

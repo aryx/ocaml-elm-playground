@@ -8,9 +8,10 @@
      - a curve pushes it outwards, more at speed: the "centrifugal force"
        you must steer against (in a curve right, the car drifts left);
      - off the road, on the grass, it slows down to a crawl.
-   Its position is along the track and across it, not in space: the same
-   car drives in a pseudo-3D game and a polygon one, the games drawing it
-   their way.
+   Its position is along the track and across it, not in space: the car
+   of a road drawn in pseudo-3D (TinyOutRun), where the road turns and
+   the car does not. A polygon racer's car points somewhere of its own
+   (TinyVirtuaRacing drives a Topdown on the road in space).
 
    Part of the racing kit (gamekits/racing/, see Road.mli).
 *)

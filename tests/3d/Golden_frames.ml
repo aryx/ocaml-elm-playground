@@ -211,8 +211,12 @@ let scripted : Testutil_golden.scripted list =
     );
     (* the same walk as TinyWolfenstein's *)
     ("games/fps/software/TinyWolfenstein3d", "treasure", 60, "right:1-16,up:20-60");
-    (* the same drive as TinyOutRun's golden frame, in polygons *)
-    ("games/racing/software/TinyVirtuaRacing", "curve", 230, "space:1,up:2-230");
+    (* claude: the course select: Bay Bridge as a turning model, its
+     * bridge over the inlet, the land and its mountains *)
+    ("games/racing/software/TinyVirtuaRacing", "select", 40, "space:1,right:3");
+    (* the same drive as TinyOutRun's golden frame, in polygons (the
+     * coast chosen, left of Big Forest, and the countdown first) *)
+    ("games/racing/software/TinyVirtuaRacing", "curve", 415, "space:1,left:3,space:5,up:6-415");
     (* the grid, on the last second of the countdown: eight karts drawn
      * four abreast, the chequered line under them, and the road
      * climbing away to the crest *)
@@ -269,8 +273,10 @@ let scripted : Testutil_golden.scripted list =
     (* claude: landed straight: the trick named and scored, the boost
      * meter filling *)
     ("games/racing/software/TinySSX", "landed", 605, "space:1,up:182-479,up:599-606,up:615-617,up:636,up:676-682,up:686-696,up:701-711,up:716-725,up:729-738,up:741-750,up:752-814,up:866-900,left:182-186,left:215,left:599-606,left:615-617,left:636,left:676-682,left:686-688,left:720-721,left:750,left:767,left:778,left:803,left:866,space:490-519,right:310,right:331-332,right:344,right:358,right:363,right:366,right:377,right:387,right:390,right:392,right:401,right:409,right:413-414,right:421,right:428,right:434-435,right:443,right:450,right:460,right:484-523");
-    (* v three times: the view from above *)
-    ("games/racing/software/TinyVirtuaRacing", "above", 300, "space:1,up:2-300,v:100,v:150,v:200");
+    (* claude: Big Forest's grid on the countdown, from behind and above
+     * (v once): fifteen rivals ahead and behind, the gantry, the
+     * grandstand, the HUD's place, clock, tachometer and map *)
+    ("games/racing/software/TinyVirtuaRacing", "grid", 120, "space:1,space:3,v:10");
     (* TinyTron's "computer" game, seen from behind the blue cycle,
      * then from above *)
     ("games/arcade/software/TinyTron3d", "behind", 150, "1:1,up:40,right:80,down:120,right:150");

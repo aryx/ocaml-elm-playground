@@ -148,7 +148,7 @@ engine (playground3d: triangles, a camera, a z-buffer), for comparison:
 | Pseudo-3D | Real 3D | Shared |
 | --- | --- | --- |
 | `TinyWolfenstein` | `TinyWolfenstein3d` | the map (a copy, a `Tilemap`) |
-| `TinyOutRun` | `TinyVirtuaRacing` | the course and the car (`gamekits/racing`: `Road`, `Car`) |
+| `TinyOutRun` | `TinyVirtuaRacing` | the course, its coast stage (`gamekits/racing`: `Road`) |
 | `TinyDoom` | `TinyDoom3d` | the level (`gamekits/sectors`: `Sectors`) |
 | `TinyComanche` | `TinyComanche3d` | the island (`gamekits/heightmap`: `Heightmap`) |
 | `TinyDescent` | `TinyDescent3d` | the mine and the ship (`gamekits/segments`: `Segments`, `Sixdof`) |
