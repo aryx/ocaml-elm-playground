@@ -395,12 +395,14 @@ palette that can turn (TinyDeluxePaint); and what the dots became with
 
 `apps/cad/`: the drawings that are models rather than pictures --
 geometry that keeps its own rules, constraints the program maintains,
-parts placed as instances of other drawings (`plan_cad.md`).
+parts placed as instances of other drawings (`plan_cad.md`), faces that
+appear where lines close a loop.
 
 | Program | Dir | After | In one line | What it brought |
 |---|---|---|---|---|
 | [TinySketchpad](apps/cad/TinySketchpad.ml) | app | Sketchpad (Ivan Sutherland, MIT Lincoln Laboratory's TX-2, 1963) | Draw with the light pen, then tell the drawing its rules: a rough hexagon becomes regular, a linkage moves. | The first interactive graphics program: the pen aiming at points and lines; items sharing their points; constraints kept by relaxation, one point at a time by least squares on numerical derivatives; masters and instances, a honeycomb of one hexagon; the window zoomed over a sheet bigger than the screen; the scope's dots. |
 | [TinyAutoCAD](apps/cad/TinyAutoCAD.ml) | app | AutoCAD Release 12 (Autodesk, 1992; AutoCAD 1982) | A bracket drawn on layers, by a command line that asks and a crosshair that snaps. | Drafting by conversation: commands asking for points typed (absolute, @relative, @polar) or picked; object snaps and ORTHO; TRIM, EXTEND, OFFSET and FILLET as crossings of lines and circles; window and crossing selection; layers; blocks inserted; dimensions that measure; undo by command; DXF, the drawing as text read and written. |
+| [TinySketchup](apps/cad/TinySketchup.ml) | app | SketchUp (Brad Schell and Joe Esch, @Last Software, 2000; Google SketchUp 8, 2010) | A house pushed and pulled out of a rectangle: draw a line across a face, pull the face, lift the ridge. | 3D for everyone: the model as edges and the faces they close, found by themselves in a plane; sticky geometry, vertices shared and edges split; push/pull, a face swept along its normal, sliding, extruding, merging into its neighbours or notching them; holes, the Euler-Poincare formula kept; the inference engine, a 3D point guessed from the screen (endpoint, midpoint, on edge, on face, the red, green and blue axes) and said; the Measurements box; soft edges; orbit, pan, zoom; the faces ordered by a BSP tree, no z-buffer. |
 
 ## PIM
 

@@ -11,6 +11,12 @@ TRIM, EXTEND, FILLET; `Cad_snap`; `Dxf`; `Cad_session`, the command
 line as a machine, tested without a screen). TinyBlender, the 3D
 modeller, is `apps/graphics/`'s (plan_raytracing_remaining.md).
 
+Since then (2026-09-26): TinySketchup (SketchUp, 2000) over
+`appkits/pushpull` (`Skp_model`, `Skp_infer`, `Skp_view`, `Bsp`),
+beyond the plan; its exercises are in its header (inference locked
+with Shift, edges split where they cross, Follow Me, OBJ export,
+profiles).
+
 What's left, roughly from most to least worth doing. Like the rest,
 each piece with its worked example in its `.mli` and its test.
 

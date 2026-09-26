@@ -419,6 +419,10 @@ let scenes : Testutil_golden.scene list =
      * red center lines, the green dimensions, the cyan bolts (a block
      * inserted four times); the screen menu, the command line *)
     ("apps/cad/software/TinyAutoCAD", "", 5);
+    (* claude: 2000: the house, a rectangle pulled up, its ridge lifted,
+     * two windows pushed in -- the faces ordered by a BSP tree, the
+     * mouse's inference On Face *)
+    ("apps/cad/software/TinySketchup", "", 5);
     (* claude: Blender's default cube, its light and camera, in the quad
      * view: three plans as wireframes, the camera's view ray traced *)
     ("apps/graphics/software/TinyBlender", "", 5);
@@ -1571,6 +1575,15 @@ let scripted : Testutil_golden.scripted list =
      * DIM, the dimensions gone *)
     ("apps/cad/software/TinyAutoCAD", "line", 20, "type(l):2,Enter:3,at(102.4;327.1):4-6,click:5,type(@40<0):8,Enter:9,type(@40<120):11,Enter:12,type(c):14,Enter:15,at(250;-300):16-20");
     ("apps/cad/software/TinyAutoCAD", "trim", 20, "type(tr):2,Enter:3,at(-58.8;95.6):4-6,click:5,Enter:8,at(-143.6;45.9):9-11,click:10,at(-108.5;81.1):12-14,click:13,Enter:16,at(250;-300):17-20");
+    (* claude: TinySketchup: a rectangle on the ground pulled up 2
+     * metres, typed; the side wall pulled out 2, the annex's front
+     * merged into the wall with the windows; the ridge picked at its
+     * Midpoint and lifted 1 along the blue axis; the right slope pushed
+     * in, the gables notched *)
+    ("apps/cad/software/TinySketchup", "rectangle", 16, "r:1,at(-380;-250):2-4,click:3,at(-220;-360):5-7,click:6,p:8,at(-300;-300):9-11,click:10,at(-300;-150):12-16,type(2):13,Enter:14");
+    ("apps/cad/software/TinySketchup", "annex", 12, "at(170;-80):1-3,click:2,at(250;-90):4-12,type(2):6,Enter:8");
+    ("apps/cad/software/TinySketchup", "ridge", 12, "m:1,at(-5;175):2-4,click:3,at(-5;260):5-12,type(1):7,Enter:9");
+    ("apps/cad/software/TinySketchup", "notch", 10, "at(100;100):2-4,click:3,at(170;-50):5-7,click:6,at(300;300):8-10");
     ("apps/cad/software/TinyAutoCAD", "snap", 12, "type(l):2,Enter:3,at(-312.4;45.9):4-6,click:5,at(-104;252):7-12");
     (* claude: TinyBlender: G, X, 3, Enter -- the cube moved three units
      * along x, in all four views *)
