@@ -97,6 +97,27 @@ let script : Input_script.t option ref = ref None
 (* claude: -dump-audio, with -dump-frame: the sound of those frames *)
 let dump_audio_file : string ref = ref ""
 
+(* claude: the window, for a platform whose window can change size
+ * (create_window ~resizable, run ~on_resize: the Cairo one): -size WxH,
+ * its size at the start, and -fullscreen; Alt+Enter toggles full screen *)
+let window_size : (int * int) option ref = ref None
+let fullscreen = ref false
+let set_fullscreen () = fullscreen := true
+
+(* claude: the window's size and full screen at the start, for a platform
+ * that makes its window itself (OpenGL's) *)
+let window_start ~(sx : int) ~(sy : int) : int * int * bool =
+  let w, h = Option.value !window_size ~default:(sx, sy) in
+  (w, h, !fullscreen)
+
+let set_window_size (s : string) : unit =
+  match String.split_on_char 'x' (String.lowercase_ascii s) with
+  | [ w; h ] -> (
+      match (int_of_string_opt w, int_of_string_opt h) with
+      | Some w, Some h when w > 0 && h > 0 -> window_size := Some (w, h)
+      | _ -> raise (Arg.Bad ("-size: " ^ s)))
+  | _ -> raise (Arg.Bad ("-size WxH, e.g. -size 1600x1000: " ^ s))
+
 let set_script (s : string) : unit =
   match Input_script.parse s with
   | Ok sc -> script := Some sc
@@ -140,6 +161,8 @@ let parsed_cli : string list Lazy.t = lazy (
     "<script> what the person does over frames, e.g. \"right:1-60,space:30,at(0;80):1-60,click:30\"";
     "-dump-audio", Arg.Set_string dump_audio_file,
     "<file> with -dump-frame, also write the sound of those frames to file (a WAV)";
+    "-size", Arg.String set_window_size, "<w>x<h> the window's size at the start (the picture scaled to fit)";
+    "-fullscreen", Arg.Set fullscreen, " start in full screen (Alt+Enter toggles it)";
     (* claude: the 3D software backend's (Native_loop_3d), known here
      * too because both parse the same command line *)
     "-raytrace", Arg.Unit (fun () -> ()),
@@ -155,7 +178,7 @@ let parsed_cli : string list Lazy.t = lazy (
    * without the launcher's own words (Program.argv) *)
   let argv = Program.argv () in
   let usage =
-    spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-dump-audio file] [name=value|name]..."
+    spf "usage: %s [-v|-verbose|-debug|-quiet|-uncapped|-debug-keys] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-dump-audio file] [-size wxh] [-fullscreen] [name=value|name]..."
       argv.(0)
   in
   (* what Arg.parse does on an error or -help *)
@@ -214,29 +237,33 @@ end
 
 type pixels = (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array2.t
 
-let create_window ~title ~sx ~sy : Sdl.window * pixels =
-  let* () = Sdl.init Sdl.Init.(video + events) in
-  let* sdl_window = Sdl.create_window ~w:sx ~h:sy title
-    Sdl.Window.shown in
-
+(* claude: the window surface's pixels at its current size; after a
+ * resize SDL makes a new surface, and the old pixels must not be used *)
+let window_pixels (sdl_window : Sdl.window) : pixels =
   let* window_surface = Sdl.get_window_surface sdl_window in
-
   let pixels = Sdl.get_surface_pixels window_surface Bigarray.int32 in
+  let sx, sy = Sdl.get_surface_size window_surface in
   assert (Bigarray.Array1.dim pixels = sx * sy);
 
   (* less? need that? *)
   Bigarray.Array1.fill pixels 0xFFFFFFFFl ;
-  let pixels =
-    try
-      let genarray = Bigarray.genarray_of_array1 pixels in
-      Bigarray.reshape_2 genarray sy sx
-    with _ ->
-      let len = Bigarray.Array1.dim pixels in
-      failwith (spf
-        "Error while reshaping pixel array of length %d to screen size %d x %d"
-        len sx sy)
-  in
-  sdl_window, pixels
+  try
+    let genarray = Bigarray.genarray_of_array1 pixels in
+    Bigarray.reshape_2 genarray sy sx
+  with _ ->
+    let len = Bigarray.Array1.dim pixels in
+    failwith (spf
+      "Error while reshaping pixel array of length %d to screen size %d x %d"
+      len sx sy)
+
+let create_window ?(resizable = false) ~title ~sx ~sy () : Sdl.window * pixels =
+  let* () = Sdl.init Sdl.Init.(video + events) in
+  (* claude: a resizable window starts at -size's size if given *)
+  let w, h = match (resizable, !window_size) with true, Some (w, h) -> (w, h) | _ -> (sx, sy) in
+  let flags = if resizable then Sdl.Window.(shown + resizable) else Sdl.Window.shown in
+  let* sdl_window = Sdl.create_window ~w ~h title flags in
+  if resizable && !fullscreen then ignore (Sdl.set_window_fullscreen sdl_window Sdl.Window.fullscreen_desktop);
+  sdl_window, window_pixels sdl_window
 
 let present sdl_window =
   let* () = Sdl.update_window_surface sdl_window in
@@ -324,7 +351,16 @@ let queue_samples (device : Sdl.audio_device_id) ((left, right) : float array * 
   | Ok () -> ()
   | Error (`Msg msg) -> Logs.warn (fun m -> m "queue_audio: %s" msg)
 
-let run ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
+(* claude: [scale ~sx ~sy (w, h)]: how much the picture of [sx] by
+ * [sy] is enlarged to fit a window of [w] by [h], whole, centred (the
+ * rest black bars): a letterbox, as an emulator's *)
+let scale ~sx ~sy ((w, h) : int * int) : float = Float.min (float w /. float sx) (float h /. float sy)
+
+let toggle_fullscreen (sdl_window : Sdl.window) : unit =
+  let full = Sdl.Window.test (Sdl.get_window_flags sdl_window) Sdl.Window.fullscreen_desktop in
+  ignore (Sdl.set_window_fullscreen sdl_window (if full then Sdl.Window.windowed else Sdl.Window.fullscreen_desktop))
+
+let run ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(update : 'msg -> 'model -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
     ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
@@ -369,6 +405,20 @@ let run ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
   let target_fps = 60. in
   let target_frame_time = 1. /. target_fps in
 
+  (* claude: the window's size, the picture scaled to it (a platform
+   * given [on_resize]); a fixed one keeps sx by sy, scale 1 *)
+  let window = ref (sx, sy) in
+  let check_size () =
+    match on_resize with
+    | None -> ()
+    | Some resized ->
+        let size = Sdl.get_window_size sdl_window in
+        if size <> !window then (
+          window := size;
+          resized (fst size) (snd size))
+  in
+  check_size ();
+
   (* typing "Q" will cause an 'exit 0' that will exit the loop *)
   while true do
     let frame_start = Unix.gettimeofday () in
@@ -402,14 +452,17 @@ let run ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
           let x = Sdl.Event.(get sdl_event mouse_motion_x) in
           let y = Sdl.Event.(get sdl_event mouse_motion_y) in
           (* claude: window pixel coordinates (origin top-left, y down)
-           * to Elm's (origin at the center, y up) *)
-          let x = float x -. (float sx /. 2.) in
-          let y = -.(float y -. (float sy /. 2.)) in
+           * to Elm's (origin at the center, y up), the window's scale
+           * undone (1 for a window of sx by sy) *)
+          let w, h = !window in
+          let k = scale ~sx ~sy !window in
+          let x = (float x -. (float w /. 2.)) /. k in
+          let y = -.(float y -. (float h /. 2.)) /. k in
           apply_playground_event (E.EMouseMove (int_of_float x, int_of_float y));
           (* claude: the relative move too, y up (mdx/mdy) *)
           let dx = Sdl.Event.(get sdl_event mouse_motion_xrel) in
           let dy = Sdl.Event.(get sdl_event mouse_motion_yrel) in
-          apply_playground_event (E.EMouseMoveBy (float dx, -.(float dy)))
+          apply_playground_event (E.EMouseMoveBy (float dx /. k, -.(float dy) /. k))
 
         | x when x = Sdl.Event.mouse_button_down ->
           apply_playground_event (mouse_button_event sdl_event true);
@@ -457,7 +510,12 @@ let run ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
            * the app: the way to reach a debug key the game uses itself
            * (AudioPiano's "h") *)
           let ctrl = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.ctrl <> 0 in
-          if !debug_keys && ctrl then (if first then on_key_press str)
+          (* claude: Alt+Enter, full screen or not, the platform's (a
+           * resizable window's), not the app's *)
+          let alt = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.alt <> 0 in
+          if on_resize <> None && alt && Sdl.Event.(get sdl_event keyboard_keycode) = Sdl.K.return then (
+            if first then toggle_fullscreen sdl_window)
+          else if !debug_keys && ctrl then (if first then on_key_press str)
           else begin
             if !debug_keys && first then on_key_press str;
             apply_playground_event (E.EKeyChanged (true, str))
@@ -484,6 +542,7 @@ let run ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
       end
     in
     drain_sdl_events ();
+    check_size ();
     (* claude: -script, what the person does at this frame: the keys
      * going down or up, where the pointer is, and its buttons *)
     (match !script with

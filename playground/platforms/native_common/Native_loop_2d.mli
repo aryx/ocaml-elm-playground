@@ -51,8 +51,32 @@ val scancode_to_keystring : string -> string
  * [present]. *)
 type pixels = (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array2.t
 
-(* Sdl.init + a shown window of size [sx] x [sy], filled with white. *)
-val create_window : title:string -> sx:int -> sy:int -> Tsdl.Sdl.window * pixels
+(* Sdl.init + a shown window of size [sx] x [sy], filled with white.
+ * claude: [resizable] (default false), a window that can change size,
+ * the picture scaled to fit it ([run ~on_resize:(Some ...)]): then -size WxH gives
+ * its size at the start, and -fullscreen starts it in full screen; the
+ * pixels are the window's, whatever its size. *)
+val create_window : ?resizable:bool -> title:string -> sx:int -> sy:int -> unit -> Tsdl.Sdl.window * pixels
+
+(* claude: -size WxH and -fullscreen, for Native_loop_3d, which parses
+ * the same command line; and what they asked for, for a platform that
+ * makes its window itself (OpenGL's): its size and full screen at the
+ * start, [sx] by [sy] if no -size *)
+val set_window_size : string -> unit
+val set_fullscreen : unit -> unit
+val window_start : sx:int -> sy:int -> int * int * bool
+
+(* claude: full screen, or back to a window (Alt+Enter) *)
+val toggle_fullscreen : Tsdl.Sdl.window -> unit
+
+(* claude: the window surface's pixels at the window's current size, a
+ * new surface after a resize (the old pixels are then not to be used) *)
+val window_pixels : Tsdl.Sdl.window -> pixels
+
+(* claude: [scale ~sx ~sy (w, h)]: how much a picture of [sx] by [sy]
+ * is enlarged to fit whole in a window of [w] by [h], centred, the
+ * rest black bars (a letterbox): min (w / sx) (h / sy) *)
+val scale : sx:int -> sy:int -> int * int -> float
 
 (* Copy the window surface's pixels to the screen. *)
 val present : Tsdl.Sdl.window -> unit
@@ -126,8 +150,18 @@ val queue_samples : Tsdl.Sdl.audio_device_id -> float array * float array -> uni
  * reason Native_loop_3d.mli is generic).
  *
  * With [threads] (the flag threads=on), the
- * commands' blocking calls are made on a pool of threads (Commands.mli). *)
+ * commands' blocking calls are made on a pool of threads (Commands.mli).
+ *
+ * claude: [on_resize] (Some, for a window made [~resizable]): the window can
+ * change size -- dragged, Alt+Enter's full screen, -size, -fullscreen --
+ * and [on_resize w h] is called, once before the first frame if it is
+ * not [sx] by [sy] and after each change, for the platform to take the
+ * new [window_pixels] and draw the [sx] by [sy] picture scaled by
+ * [scale], centred; mouse positions are mapped back through that scale.
+ * Alt+Enter is then the platform's (full screen or not), not the app's.
+ * None: the window stays [sx] by [sy]. *)
 val run :
+  on_resize:(int -> int -> unit) option ->
   threads:bool ->
   sdl_window:Tsdl.Sdl.window ->
   sx:int ->

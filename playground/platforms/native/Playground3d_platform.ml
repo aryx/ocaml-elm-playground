@@ -333,9 +333,24 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   let* () = Sdl.gl_set_attribute Sdl.Gl.context_profile_mask Sdl.Gl.context_profile_core in
   let* () = Sdl.gl_set_attribute Sdl.Gl.context_major_version 3 in
   let* () = Sdl.gl_set_attribute Sdl.Gl.context_minor_version 3 in
+  (* claude: a window that can change size (-size, -fullscreen,
+   * Alt+Enter, dragged), the sx by sy picture scaled to fit, centred, as
+   * the Cairo platform's (Native_loop_2d.scale) *)
+  let w0, h0, full = Native_loop_2d.window_start ~sx ~sy in
   let* sdl_window =
-    Sdl.create_window ~w:sx ~h:sy "Playground3D (OpenGL)" Sdl.Window.(opengl + shown)
+    Sdl.create_window ~w:w0 ~h:h0 "Playground3D (OpenGL)" Sdl.Window.(opengl + shown + resizable)
   in
+  if full then Native_loop_2d.toggle_fullscreen sdl_window;
+  (* claude: the picture's square in the window, in GL's coordinates (y
+   * up): every viewport, the clear and the dump go through it *)
+  let frame = ref (0, 0, sx, sy) in
+  let set_frame (w, h) =
+    let k = Native_loop_2d.scale ~sx ~sy (w, h) in
+    let fw = int_of_float (Float.round (k *. float_of_int sx)) and fh = int_of_float (Float.round (k *. float_of_int sy)) in
+    frame := ((w - fw) / 2, (h - fh) / 2, fw, fh)
+  in
+  set_frame (Sdl.get_window_size sdl_window);
+  let frame_viewport () = let fx, fy, fw, fh = !frame in Gl.viewport fx fy fw fh in
   let* gl_context = Sdl.gl_create_context sdl_window in
   let* () = Sdl.gl_make_current sdl_window gl_context in
 
@@ -561,7 +576,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     Gl.enable Gl.depth_test
   in
 
-  Gl.viewport 0 0 sx sy;
+  frame_viewport ();
 
   let on_key_press (str : string) : unit =
     if str = "f" then cycle_render_mode ();
@@ -634,8 +649,10 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   let draw_view (v : Playground3d.view) : unit =
     let camera = v.camera and shapes = v.shapes in
     let px f n = int_of_float (Float.round (f *. float_of_int n)) in
-    let vx = px v.area.x sx and vy = px v.area.y sy in
-    let vw = px (v.area.x +. v.area.w) sx - vx and vh = px (v.area.y +. v.area.h) sy - vy in
+    let fx, fy, fw, fh = !frame in
+    let vx = px v.area.x fw and vy = px v.area.y fh in
+    let vw = px (v.area.x +. v.area.w) fw - vx and vh = px (v.area.y +. v.area.h) fh - vy in
+    let vx = fx + vx and vy = fy + vy in
     Gl.viewport vx vy vw vh;
     Gl.enable Gl.scissor_test;
     Gl.scissor vx vy vw vh;
@@ -664,13 +681,20 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     |> List.iter (fun (c : Playground3d.cached) -> draw_mesh (Mesh_cache.find_or_build meshes c.id (build_mesh c)))
   in
   let draw (computer : Playground.computer) (views : Playground3d.view list) : unit =
-    Gl.viewport 0 0 sx sy;
-    Gl.clear_color 1.0 1.0 1.0 1.0;
+    (* claude: black round the picture's square, white in it *)
+    let fx, fy, fw, fh = !frame in
+    Gl.clear_color 0.0 0.0 0.0 1.0;
     Gl.clear (Gl.color_buffer_bit lor Gl.depth_buffer_bit);
+    Gl.enable Gl.scissor_test;
+    Gl.scissor fx fy fw fh;
+    Gl.clear_color 1.0 1.0 1.0 1.0;
+    Gl.clear Gl.color_buffer_bit;
+    Gl.disable Gl.scissor_test;
+    frame_viewport ();
     draw_calls := 0;
     vertices_uploaded := 0;
     List.iter draw_view views;
-    Gl.viewport 0 0 sx sy;
+    frame_viewport ();
     (* once all the views are drawn: a mesh one view didn't use may be
      * another's *)
     Mesh_cache.sweep meshes ~free:free_mesh;
@@ -691,9 +715,11 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * its driver: only compare frames from the same machine (e.g. with
    * and without -keys o). *)
   let dump_frame file =
+    (* claude: the picture's square, at the size it is drawn *)
+    let fx, fy, sx, sy = !frame in
     let pixels = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (sx * sy * 3) in
     Gl.pixel_storei Gl.pack_alignment 1;
-    Gl.read_pixels 0 0 sx sy Gl.rgb Gl.unsigned_byte (`Data pixels);
+    Gl.read_pixels fx fy sx sy Gl.rgb Gl.unsigned_byte (`Data pixels);
     Native_loop_2d.write_frame ~width:sx ~height:sy
       (fun x y ->
         let i = ((((sy - 1 - y) * sx) + x) * 3) in
@@ -702,4 +728,4 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   in
   Native_loop_3d.run ~sdl_window ~sx ~sy ~title_prefix:"Playground3D (OpenGL)" ~on_key_press
     ~init:(Playground3d.init3d app3d) ~update:(Playground3d.update3d app3d) ~view:(Playground3d.views3d app3d) ~draw
-    ~present ~dump_frame ?capture_mouse ?flags ()
+    ~present ~dump_frame ?capture_mouse ?flags ~on_resize:(fun w h -> set_frame (w, h)) ()

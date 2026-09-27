@@ -100,14 +100,17 @@ let parse_cli_and_setup_logging () =
       ("-rt-bounces", Arg.Set_int rt_bounces, "<n> (software backend) the ray tracer's reflections and refractions, deep");
       ("-dump-size", Arg.Tuple [ Arg.Int (fun w -> dump_size_ref := Some (w, 0)); Arg.Int (fun h -> dump_size_ref := Option.map (fun (w, _) -> (w, h)) !dump_size_ref) ],
        "<w> <h> with -dump-frame, the frame made offscreen at that size");
-      ("-no-hud", Arg.Set no_hud, " with -dump-frame, the frame without its HUD")
+      ("-no-hud", Arg.Set no_hud, " with -dump-frame, the frame without its HUD");
+      (* claude: Native_loop_2d's, the same command line *)
+      ("-size", Arg.String Native_loop_2d.set_window_size, "<w>x<h> the window's size at the start (the picture scaled to fit)");
+      ("-fullscreen", Arg.Unit Native_loop_2d.set_fullscreen, " start in full screen (Alt+Enter toggles it)")
     ]
   in
   (* claude: the program's command line (Program.argv), as Native_loop_2d *)
   let argv = Program.argv () in
   let usage =
     Printf.sprintf
-      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-dump-audio file] [-debug-keys] [-raytrace] [-rt-brute] [-rt-samples n] [-rt-bounces n] [-dump-size w h] [-no-hud] [name=value|name]..."
+      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-dump-audio file] [-debug-keys] [-raytrace] [-rt-brute] [-rt-samples n] [-rt-bounces n] [-dump-size w h] [-no-hud] [-size wxh] [-fullscreen] [name=value|name]..."
       argv.(0)
   in
   (* claude: the arguments without a dash are the app's flags (see
@@ -208,7 +211,8 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
     ~(on_key_press : string -> unit) ~(init : unit -> 'model)
     ~(update : Playground.computer -> 'model -> 'model) ~(view : Playground.computer -> 'model -> 'view)
     ~(draw : Playground.computer -> 'view -> unit) ~(present : unit -> unit) ?(dump_frame : (string -> unit) option)
-    ?(title_keys : (unit -> string) option) ?(capture_mouse = false) ?(flags = []) () : unit =
+    ?(title_keys : (unit -> string) option) ?(capture_mouse = false) ?(flags = [])
+    ?(on_resize : (int -> int -> unit) option) () : unit =
   (* claude: without this, SDL sends no text_input events at all (it is
    * off until a program says it wants text); with it, every key press
    * that produces a character also produces one, which is what
@@ -246,6 +250,20 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
   let target_fps = 60. in
   let target_frame_time = 1. /. target_fps in
 
+  (* claude: a window that can change size (on_resize), as in
+   * Native_loop_2d: its size, checked each frame, the picture scaled *)
+  let window = ref (sx, sy) in
+  let check_size () =
+    match on_resize with
+    | None -> ()
+    | Some resized ->
+        let size = Sdl.get_window_size sdl_window in
+        if size <> !window then (
+          window := size;
+          resized (fst size) (snd size))
+  in
+  check_size ();
+
   while true do
     let frame_start = Unix.gettimeofday () in
 
@@ -261,13 +279,16 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
         | x when x = Sdl.Event.mouse_motion ->
             let mx = Sdl.Event.(get sdl_event mouse_motion_x) in
             let my = Sdl.Event.(get sdl_event mouse_motion_y) in
-            let px = float_of_int mx -. (float_of_int sx /. 2.) in
-            let py = (float_of_int sy /. 2.) -. float_of_int my in
+            (* claude: the window's scale undone (1 for sx by sy) *)
+            let w, h = !window in
+            let k = Native_loop_2d.scale ~sx ~sy !window in
+            let px = (float_of_int mx -. (float_of_int w /. 2.)) /. k in
+            let py = ((float_of_int h /. 2.) -. float_of_int my) /. k in
             (* claude: and the relative move (mdx/mdy, y up), summed
              * until the next update: the only one that keeps counting
              * when the mouse is captured *)
-            let dx = float_of_int Sdl.Event.(get sdl_event mouse_motion_xrel) in
-            let dy = -.float_of_int Sdl.Event.(get sdl_event mouse_motion_yrel) in
+            let dx = float_of_int Sdl.Event.(get sdl_event mouse_motion_xrel) /. k in
+            let dy = -.float_of_int Sdl.Event.(get sdl_event mouse_motion_yrel) /. k in
             let m = (!computer).mouse in
             computer := { !computer with mouse = { (mouse_move px py m) with mdx = m.mdx +. dx; mdy = m.mdy +. dy } }
         (* claude: capture_mouse, released (Escape): a click captures the
@@ -328,7 +349,11 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
              * the app: the way to reach a debug key the game uses
              * itself *)
             let ctrl = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.ctrl <> 0 in
-            if !debug_keys && ctrl then (if first then on_key_press str)
+            (* claude: Alt+Enter, the platform's (a resizable window's) *)
+            let alt = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.alt <> 0 in
+            if on_resize <> None && alt && Sdl.Event.(get sdl_event keyboard_keycode) = Sdl.K.return then (
+              if first then Native_loop_2d.toggle_fullscreen sdl_window)
+            else if !debug_keys && ctrl then (if first then on_key_press str)
             else begin
               if !debug_keys && first then on_key_press str;
               (* claude: capture_mouse: Escape gives the mouse back *)
@@ -345,6 +370,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
       end
     in
     drain_sdl_events ();
+    check_size ();
     (* claude: -script, the keys going down or up at this frame *)
     (match !script with
     | Some sc ->

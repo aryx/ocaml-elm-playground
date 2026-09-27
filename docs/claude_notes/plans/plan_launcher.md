@@ -547,7 +547,18 @@ platform are wanted (Batocera's "systems").
     `-size WxH` and `-fullscreen`, and a key, `f`, that toggles full
     screen while a program runs -- the platform's, like its debug keys,
     so every program has it. The menu's layout, written for 1000 by 1000,
-    to be made relative to the screen.
+    to be made relative to the screen. Done 2026-09-27, as the author
+    chose (approach A, and Alt+Enter rather than `f`, which 14 programs
+    use): the program's screen stays 1000 by 1000, scaled to the window,
+    centred, black bars round it (`Native_loop_2d.scale`); the Cairo
+    platform clips to the square and scales; the OpenGL one puts every
+    viewport, the clear and the dump in the square (`frame`); both
+    loops map the mouse back and toggle full screen on Alt+Enter; flags
+    `-size WxH` and `-fullscreen`. The software platforms stay 1000 by
+    1000 (the golden frames). A window of 1000 by 1000 is pixel-identical
+    to before (checked: TinyTron, TinyTron3d). Later, as an opt-in: B,
+    the program's screen following the window (`game`'s `Resized`, a
+    `failwith "Todo"` today), for the apps that want the room.
 19. tinybox on the web (the author: "even though the .bc.js might be too
     big", "a split approach for the js world"): not one bundle of 198
     programs, but the menu as a page of its own, small (the catalogue

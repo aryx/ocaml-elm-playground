@@ -44,7 +44,12 @@ The native software backends' debug keys (rendering toggles, "h" for
 help) only work when run with `-debug-keys` (e.g.
 `dune exec examples/Cubes3d.exe -- -debug-keys`); other flags:
 `-uncapped`, `-fixed-time t`, `-keys k`, `-dump-frame n file`,
-`-script "right:1-60,space:30"` (game keys held over frames).
+`-script "right:1-60,space:30"` (game keys held over frames). The
+native Cairo and OpenGL windows can change size (dragged, `-size WxH`,
+`-fullscreen`, Alt+Enter toggling full screen): the program's screen
+stays 1000 by 1000, drawn scaled to fit, centred, black bars round it
+(`Native_loop_2d.scale`); the software platforms' windows stay 1000 by
+1000, the golden frames' size.
 
 `make check` runs the project's semgrep config (`semgrep.jsonnet`) via a local `osemgrep` binary — not generally runnable outside the author's machine.
 

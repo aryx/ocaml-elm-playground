@@ -180,7 +180,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network (
   let sx = int_of_float Playground.default_width in
   let sy = int_of_float Playground.default_height in
 
-  let (sdl_window, pixels) = Native_loop_2d.create_window ~title ~sx ~sy in
+  let (sdl_window, pixels) = Native_loop_2d.create_window ~title ~sx ~sy () in
   let fb = Framebuffer.of_pixels pixels in
 
   (* show something right away while images download *)
@@ -211,7 +211,9 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network (
   in
   (* claude: threads=on, the commands' blocking calls on threads *)
   let threads = List.assoc_opt "threads" flags = Some "on" in
-  Native_loop_2d.run ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_pixels pixels)
+  (* claude: no ~on_resize: this platform's window stays sx by sy (the
+   * golden frames' size) *)
+  Native_loop_2d.run ~on_resize:None ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_pixels pixels)
     ~pull_audio:(fun n -> let s = Audio.pull n in Audio_debug.record (Signal.mono s); (s.left, s.right))
     ~dump_audio:(fun file (left, right) -> Wav.write_stereo file { left; right })
     ~audio_latency:Audio.set_latency

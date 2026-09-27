@@ -159,8 +159,15 @@ val run :
   ?title_keys:(unit -> string) ->
   ?capture_mouse:bool ->
   ?flags:Playground.flags ->
+  ?on_resize:(int -> int -> unit) ->
   unit ->
   unit
+(* claude: [on_resize] (a resizable window, the OpenGL platform's): as
+ * Native_loop_2d.run's -- called before the first frame if the window
+ * is not [sx] by [sy] (-size, -fullscreen) and after each change of its
+ * size (dragged, Alt+Enter, which is then the platform's), for the
+ * platform to draw its [sx] by [sy] picture scaled to fit
+ * (Native_loop_2d.scale), centred; mouse positions are mapped back. *)
 (* claude: [capture_mouse] (default false): see
  * Playground3d_platform.run_app3d's; Escape gives the mouse back, a
  * click captures it again. [flags] (default none): the computer's
