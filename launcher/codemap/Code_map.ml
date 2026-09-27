@@ -549,11 +549,13 @@ let labels (t : t) (c : camera) (q : float) : shape list =
                * being at their left); only a directory with files of its
                * own, as the path says its parents' names *)
               let size = 13. in
-              let tw = (0.5 *. size *. float_of_int (String.length p.path)) +. 8. in
+              (* claude: with a / at its end, a directory's *)
+              let dir = p.path ^ "/" in
+              let tw = (0.5 *. size *. float_of_int (String.length dir)) +. 8. in
               let has_files = List.exists (function Treemap.File _ -> true | Dir _ -> false) kids in
               if has_files && w >= tw && h >= 40. then begin
                 let tx = Float.min (float_of_int x1 -. tw -. 2.) (float_of_int a.pw -. tw) and ty = Float.max 0. (to_py c p.rect.y +. 2.) in
-                let box, shape = tab a ~alpha:1. (lighter (archi p.path)) size tx ty p.path in
+                let box, shape = tab a ~alpha:1. (lighter (archi p.path)) size tx ty dir in
                 files := { rank = 300. -. float_of_int p.depth; box; shape } :: !files
               end
           | File (_, _, e), Some g ->

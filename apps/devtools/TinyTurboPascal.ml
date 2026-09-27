@@ -23,7 +23,7 @@
  * Turbo Pascal's lesson is the one keystroke from the text to the
  * program running, or to the error with the cursor on it: the editor,
  * the compiler and the program in one place, the "integrated
- * development environment". Here the compiler is libs/languages/pascal's,
+ * development environment". Here the compiler is languages/pascal's,
  * one pass to P-code as Wirth's Pascal-P did it (Pascal_compile.mli),
  * and the program runs on its P-machine (Pmachine.mli) -- where the
  * real one compiled to the 8086's own code, which is why it was fast.
@@ -34,7 +34,7 @@
  * terminal the same: dune exec apps/devtools/tty/TinyTurboPascal.exe.
  *
  * What it uses: the Playground, its Textmode way (over libs/terminal),
- * appkits/editor's Tui_turbo and libs/languages/pascal. No gui/: the
+ * appkits/editor's Tui_turbo and languages/pascal. No gui/: the
  * menus and dialogs are drawn cell by cell (the cell Look for gui/ of
  * plan_terminal.md, Turbo Vision's way, would be the other way).
  *

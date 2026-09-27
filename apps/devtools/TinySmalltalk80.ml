@@ -40,7 +40,7 @@
  * there. Everything runs a budget of bytecodes a frame, so an endless
  * loop leaves the screen alive and Control-C stops it.
  *
- * The Smalltalk is libs/languages/smalltalk: the Blue Book's language,
+ * The Smalltalk is languages/smalltalk: the Blue Book's language,
  * its compiler to the Blue Book's bytecodes, its interpreter over an
  * object table, its kernel written in Smalltalk (kernel/*.st) and
  * bootstrapped when the program starts (St_boot.mli). The display is a
@@ -56,7 +56,7 @@
  *
  * What it uses: the Playground, Caps (the store, for the image and the
  * file outs), graphics_rgba (the Display's pixels as a picture) and
- * libs/languages/smalltalk. Not libs/gui: the 1980 look, list panes,
+ * languages/smalltalk. Not libs/gui: the 1980 look, list panes,
  * text panes with their selections reversed and pop-up menus, is drawn
  * here, a character to a cell.
  *

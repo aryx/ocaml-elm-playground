@@ -16,7 +16,7 @@
 ; What else it might contain, each Tiny and after a famous original:
 ;  - PLATO (University of Illinois, 1960; TUTOR, 1967): lessons written
 ;    in TUTOR on the orange plasma screen, the first computer-based
-;    teaching system, with libs/languages/tutor/ beside basic/;
+;    teaching system, with languages/tutor/ beside basic/;
 ;  - The Geometer's Sketchpad (1991) and Cabri Geometre (1988): a
 ;    construction that follows the point dragged, over appkits/sketch's
 ;    constraints and appkits/cad's crossings of lines and circles;

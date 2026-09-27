@@ -5,7 +5,7 @@
  * and coloured by a [config], Scratch 2's or Snap!'s.
  *
  * The editing is appkits/blocks' (Block_layout, Block_edit), the
- * running libs/languages/scratch's (Scratch_run), the drawing
+ * running languages/scratch's (Scratch_run), the drawing
  * Scratch_look's. The stage steps every other frame (Scratch 2's 30 a
  * second), its clock counting the steps, so that a run is the same run
  * every time. *)

@@ -19,10 +19,10 @@ val modules_used : string -> string list
 
 val count_lines : string -> int
 
-(* [own program_path p]: [p] is the program's own code -- its folder's
-   and the kits' (gamekits/, appkits/); not the Playground's nor the
-   from-scratch libraries' (libs/). What a program's budget counts (at
-   most 5,000 lines, tests/catalog) *)
+(* [own program_path p]: [p] is the program's own code -- its folder's,
+   the kits' (gamekits/, appkits/) and the languages' (languages/); not
+   the Playground's nor the from-scratch libraries' (libs/). What a
+   program's budget counts (at most 5,000 lines, tests/catalog) *)
 val own : string -> string -> bool
 
 (* [closure ~keep sources path]: [path] and the modules it names that
@@ -40,7 +40,7 @@ val own_size : (string * string) list -> string -> int * int
 val budget : int
 
 (* [repository_sources ~root]: the repository's sources under [root]
-   (games/, apps/, gamekits/, appkits/, playground/, libs/, and
+   (games/, apps/, gamekits/, appkits/, languages/, playground/, libs/, and
    tinybox's own, launcher/), not the
    build's copies of them (web/, software/, svg/, tests/) nor generated
    modules: what tinybox embeds, and what budgets are counted over *)

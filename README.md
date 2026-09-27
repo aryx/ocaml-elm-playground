@@ -64,18 +64,23 @@ a working version of a famous original:
   with its panel of knobs: 400 lines.
 
 **A budget.** No program may be longer than **5,000 lines of its own
-code**. That counts its file and every module of its folder and of the
-kits (`gamekits/`, `appkits/`) that it uses, found by following the
-modules it names; tinybox's code map shows it, and `make test` checks
-it (`tests/catalog/`, counted by `launcher/codemap/deps/Code_deps`).
-It leaves out the library (`libs/`, `playground/`), and this is not
-cheating: the library is truly general, the pixels, sounds, physics
-and parsers any program could use, while an appkit or a gamekit is the
-engine of a few particular programs, a spreadsheet's recalculation or
-a genre's rules, so it is theirs and counts. The biggest program,
-[TinyOffice](apps/office/TinyOffice.ml), an office suite whose
-documents, sheets, presentations, pictures and drawings each hold the
-others, is 4,800 lines.
+code**. That counts its file and every module of its folder, of the
+kits (`gamekits/`, `appkits/`) and of the languages (`languages/`)
+that it uses, found by following the modules it names; tinybox's code
+map shows it, and `make test` checks it (`tests/catalog/`, counted by
+`launcher/codemap/deps/Code_deps`). It leaves out the library (`libs/`,
+`playground/`), and this is not cheating: the library is truly general,
+the pixels, sounds, physics and codecs any program could use, while an
+appkit, a gamekit or a language is made for a few particular programs,
+a spreadsheet's recalculation, a genre's rules, Emacs's Lisp, so it is
+theirs and counts. Five programs are over it, each for a whole language
+it carries, and listed as exceptions in the test (which says when one
+comes back under): [TinySmalltalk80](apps/devtools/TinySmalltalk80.ml)
+(Smalltalk-80), [TinyChrome](apps/internet/TinyChrome.ml),
+[TinyFirefox](apps/internet/TinyFirefox.ml) and
+[TinyNetscape](apps/internet/TinyNetscape.ml) (JavaScript and the
+browser's engine), and [TinyOffice](apps/office/TinyOffice.ml) (the
+spreadsheet's formulas and HyperTalk).
 
 There are 126 games and 14 applications like these, listed in
 [CATALOG.md](CATALOG.md). Each one starts with a header about its

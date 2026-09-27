@@ -12,7 +12,7 @@
 ; TinyTurboPascal (apps/devtools/, appkits/editor's Tui_turbo;
 ; plan_terminal.md, section 6).
 ;
-; Pure OCaml, no Playground (libs/languages/README.md). A private
+; Pure OCaml, no Playground (languages/README.md). A private
 ; library, installed as part of elm_playground.
 (library
  (name pascal)

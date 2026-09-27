@@ -37,7 +37,7 @@
  *
  * What it uses: the Playground, its Teletype way (over libs/terminal's
  * Talk, Vt and Line_discipline), appkits/teletype's programs, and
- * libs/languages' BASIC. Not gui/: a terminal's only widget is the
+ * languages' BASIC. Not gui/: a terminal's only widget is the
  * screen.
  *
  * Left undone, exercises: pipes and $VARIABLES (the Bourne shell's

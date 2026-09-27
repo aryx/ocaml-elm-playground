@@ -23,7 +23,7 @@
  *   predicate) and its template ("tree %size": size is a parameter),
  *   hang the body under it, and the new block is in the palette.
  *   Recursion comes free: the tree draws itself with two smaller trees
- *   (libs/languages/scratch, Scratch_blocks.mli);
+ *   (languages/scratch, Scratch_blocks.mli);
  * - **rings, the lambda**: a grey ring round a reporter or a script
  *   makes it a value -- to call, to run, to keep in a variable, to give
  *   to another block. Its empty slots are its parameters: map
@@ -46,7 +46,7 @@
  * right, the palette on the left, dark -- and Snap!'s colours, with its
  * zebra colouring (a block in a block of its colour, lighter).
  *
- * What it uses: libs/languages/scratch (Scratch_blocks, Scratch_text,
+ * What it uses: languages/scratch (Scratch_blocks, Scratch_text,
  * Scratch_run, Snap!'s blocks and runtime included), appkits/blocks
  * (Block_layout, Block_edit, rings and all), Scratch_ide and
  * Scratch_look.

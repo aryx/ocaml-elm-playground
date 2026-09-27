@@ -21,7 +21,7 @@
  * - **no syntax errors**: a program is blocks whose shapes say where
  *   they fit -- a notch above, a tab below, a mouth, a round or a
  *   pointed slot -- so every program that can be built can run
- *   (libs/languages/scratch, Scratch_blocks.mli). The blocks are one
+ *   (languages/scratch, Scratch_blocks.mli). The blocks are one
  *   table, which the palette, the editor, the runtime and the text
  *   all read;
  * - **tinkering**: click any script, even while the project runs, and
@@ -57,7 +57,7 @@
  * Flags: sprite=pencil opens the pencil's scripts; run=on clicks the
  * green flag at the start.
  *
- * What it uses: libs/languages/scratch (Scratch_blocks, Scratch_text,
+ * What it uses: languages/scratch (Scratch_blocks, Scratch_text,
  * Scratch_run), appkits/blocks (Block_layout, Block_edit), and the
  * environment it shares with TinySnap, Scratch_ide (the panes, the
  * mouse, the keys) and Scratch_look (the blocks and the stage drawn),

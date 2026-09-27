@@ -122,18 +122,41 @@ let rows_test =
  * folder's and the kits' modules it uses, as tinybox's code map shows
  * it -- at most Code_deps.budget lines, the libraries (libs/) and the
  * Playground not counted *)
+(* claude: the exceptions, over the budget and allowed to be, each for
+ * a language (languages/) it is the program of; one back under the
+ * budget is taken off this list (the test says so) *)
+let over_budget =
+  [
+    ("apps/internet/TinyChrome.ml", "JavaScript, and the browser's engine");
+    ("apps/internet/TinyFirefox.ml", "JavaScript, and the browser's engine");
+    ("apps/internet/TinyNetscape.ml", "JavaScript, through appkits/browser, which it shares with TinyFirefox");
+    ("apps/office/TinyOffice.ml", "the spreadsheet's formulas and HyperTalk, every office part in one");
+    ("apps/devtools/TinySmalltalk80.ml", "Smalltalk-80, a whole system");
+  ]
+
 let budget_test =
   Testo.create "every program within its budget" (fun () ->
       let sources = Code_deps.repository_sources ~root in
+      let sizes = Lazy.force catalogue |> List.map (fun source -> (source, Code_deps.own_size sources source)) in
       let over =
-        Lazy.force catalogue
-        |> List.filter_map (fun source ->
-               let files, lines = Code_deps.own_size sources source in
-               if lines > Code_deps.budget then Some (Printf.sprintf "%s: %d lines in %d files" source lines files) else None)
+        sizes
+        |> List.filter_map (fun (source, (files, lines)) ->
+               if lines > Code_deps.budget && not (List.mem_assoc source over_budget) then
+                 Some (Printf.sprintf "%s: %d lines in %d files" source lines files)
+               else None)
+      in
+      let back =
+        sizes
+        |> List.filter_map (fun (source, (_, lines)) ->
+               if lines <= Code_deps.budget && List.mem_assoc source over_budget then Some (Printf.sprintf "%s: %d lines" source lines)
+               else None)
       in
       if over <> [] then
         Alcotest.failf
-          "over the budget of %d lines of a program's own code (its folder's and kits' modules; README, \"A budget\"):\n  %s"
-          Code_deps.budget (String.concat "\n  " over))
+          "over the budget of %d lines of a program's own code (its folder's, kits' and languages' modules; README, \"A budget\"):\n  %s"
+          Code_deps.budget (String.concat "\n  " over);
+      if back <> [] then
+        Alcotest.failf "back within the budget of %d lines: take it off over_budget (tests/catalog/Unit_catalog.ml):\n  %s"
+          Code_deps.budget (String.concat "\n  " back))
 
 let tests = rows_test :: budget_test :: List.map program_test (Lazy.force programs)

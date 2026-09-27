@@ -1,7 +1,7 @@
 (* Browser_script: a page's scripts, and the page they see -- the DOM.
 
    (notes_javascript.md section 9, plan_tiny_firefox.md J3.) The engine
-   (libs/languages/javascript) knows nothing of pages; this module gives
+   (languages/javascript) knows nothing of pages; this module gives
    it one. A script reaches the page through **host objects**:
    [document], and an object per element it asks for, whose properties
    and methods are OCaml functions over the page's tree:
@@ -47,7 +47,7 @@
    one calls event.stopPropagation(); event.preventDefault() -- or an
    onclick="..." returning false, Netscape 2's way -- cancels what the
    browser would have done next (follow the link). HyperCard's path,
-   a quarter century before (libs/languages/hypertalk):
+   a quarter century before (languages/hypertalk):
 
      HyperCard (1987)                        the DOM (1998)
      button -> card -> background -> stack   element -> parents -> body -> document

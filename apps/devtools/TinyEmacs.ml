@@ -22,7 +22,7 @@
  * Lisp (Emacs_simple.mli), and the user's own .emacs is loaded when it
  * starts -- visit it (C-x C-f .emacs) to see a key bound and a command
  * defined, change it, M-x eval-buffer, and the editor has changed.
- * The Lisp is libs/languages/lisp's, dynamically scoped as Emacs's
+ * The Lisp is languages/lisp's, dynamically scoped as Emacs's
  * was; the core it drives, buffers over a gap buffer, the undo list
  * and the kill ring, is Emacs_editor.mli; the command loop and the
  * display Tui_emacs.mli.
@@ -33,7 +33,7 @@
  *
  * What it uses: the Playground, its Textmode way (over libs/terminal),
  * appkits/editor (Tui_emacs, Emacs_editor, Emacs_simple, Gap_buffer)
- * and libs/languages/lisp. No kit, no gui/.
+ * and languages/lisp. No kit, no gui/.
  *
  * Left undone, exercises: windows (C-x 2, two views of buffers);
  * keyboard macros (C-x ( C-x ) C-x e: keys recorded and replayed, the

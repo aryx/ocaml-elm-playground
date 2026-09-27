@@ -30,11 +30,11 @@ let module_name (path : string) : string = String.capitalize_ascii (Filename.rem
 let starts (prefix : string) (s : string) : bool = String.length s >= String.length prefix && String.sub s 0 (String.length prefix) = prefix
 
 (* the program's own code: its folder's, and the kits' (games' and
- * apps'), not the Playground's nor libs/' (the from-scratch libraries,
- * the repository's, not a program's: its budget, 5,000 lines, counts
- * this, tests/catalog) *)
+ * apps') and the languages' (each made for a program or a few), not the
+ * Playground's nor libs/' (the from-scratch libraries, truly general):
+ * its budget, 5,000 lines, counts this, tests/catalog *)
 let own (program_path : string) (p : string) : bool =
-  Filename.dirname p = Filename.dirname program_path || starts "gamekits/" p || starts "appkits/" p
+  Filename.dirname p = Filename.dirname program_path || starts "gamekits/" p || starts "appkits/" p || starts "languages/" p
 
 let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : string) : string list =
   let by_name : (string, string list) Hashtbl.t = Hashtbl.create 1024 in
@@ -80,7 +80,7 @@ let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : s
  * software/) nor the modules rules make (dune's alias modules, the
  * embedded pictures and pages, ocamllex's output), which say so on their
  * first line *)
-let source_roots = [ "games"; "apps"; "gamekits"; "appkits"; "playground"; "libs"; "launcher" ]
+let source_roots = [ "games"; "apps"; "gamekits"; "appkits"; "languages"; "playground"; "libs"; "launcher" ]
 let skipped_dirs = [ "web"; "software"; "svg"; "tests" ]
 
 let read (path : string) : string = In_channel.with_open_bin path In_channel.input_all

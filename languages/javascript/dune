@@ -7,7 +7,7 @@
 ; touch outside itself is its host's, a record of functions, so
 ; TinyFirefox gives it a page and a test gives it nothing.
 ;
-; Pure OCaml, no Playground (libs/languages/README.md); the modules
+; Pure OCaml, no Playground (languages/README.md); the modules
 ; are Js_ because the libraries are unwrapped and js_of_ocaml's own
 ; module is Js. A private library, installed as part of elm_playground.
 (library

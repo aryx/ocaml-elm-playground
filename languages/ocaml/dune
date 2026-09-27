@@ -5,7 +5,7 @@
 ; from its neighbours). The parser (ocamlyacc, after ocaml-light's
 ; parser.mly) is to come.
 ;
-; Pure OCaml, no Playground (libs/languages/README.md). A private
+; Pure OCaml, no Playground (languages/README.md). A private
 ; library, installed as part of elm_playground.
 (library
  (name lang_ocaml)

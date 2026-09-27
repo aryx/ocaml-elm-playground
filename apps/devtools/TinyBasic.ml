@@ -36,7 +36,7 @@
  * Control-C breaks it.
  *
  * What it uses: the Playground, its Teletype way (over libs/terminal's
- * Talk, Vt and Line_discipline), and libs/languages/basic. TinyTerminal's shell
+ * Talk, Vt and Line_discipline), and languages/basic. TinyTerminal's shell
  * runs the same BASIC as its command basic.
  *
  * Left undone, exercises: a BASIC listing of Hunt the Wumpus to play

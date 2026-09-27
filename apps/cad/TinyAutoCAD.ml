@@ -56,7 +56,7 @@
  * layouts; UCS (the icon is only the world's); ARC by anything but
  * three points, CIRCLE by anything but its center; grips (Release 13);
  * AutoLISP, with which AutoCAD users programmed it (the one the
- * repository has, libs/languages/lisp, is Emacs's).
+ * repository has, languages/lisp, is Emacs's).
  *
  * Exercises: POLYLINE and its widths; TEXT with Hershey's strokes
  * (graphics/font, AutoCAD's own SHX fonts were strokes too); OFFSET

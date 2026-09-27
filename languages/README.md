@@ -1,4 +1,14 @@
-# libs/languages/: languages as text, parsed and run
+# languages/: languages as text, parsed and run
+
+claude: at the top of the repository, beside `appkits/` and
+`gamekits/`, not in `libs/`: each language is made for a program or a
+few (the table's last column), as a kit is, so tinybox's code map shows
+it as their code and it counts toward their budget of 5,000 lines
+(README's "A budget"). Five programs are over it for their languages,
+and allowed to be, listed in `tests/catalog/`: TinySmalltalk80
+(Smalltalk-80, a whole system), TinyChrome, TinyFirefox and TinyNetscape
+(JavaScript, with the browser's engine), and TinyOffice (the formulas
+and HyperTalk).
 
 A language here is text, read by a parser and run by an evaluator,
 with nothing of the Playground: what a program can touch outside
@@ -25,4 +35,4 @@ Logo, Big Bang, PuzzleScript, Karel) are OCaml APIs that build an app,
 not text. A language that talks with a person (BASIC's
 INPUT) does so as a `Talk` value, and the Playground's `Teletype` way
 puts it on a screen. The analysis is in `plan_tiny_firefox.md`,
-section "libs/languages/".
+section "languages/".

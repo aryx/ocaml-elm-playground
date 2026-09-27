@@ -1,13 +1,13 @@
 ; claude: the programming tools (CATALOG.md's section): TinyBasic, Tiny
-; BASIC (1976) on a 1977 home computer's screen, over libs/languages/basic and
+; BASIC (1976) on a 1977 home computer's screen, over languages/basic and
 ; the playground's Teletype way (plan_terminal.md, section 5); TinyVi
 ; and TinyEmacs, the two text editors, full-screen programs of the
 ; terminal over appkits/editor and the Textmode way (Emacs's Lisp is
-; libs/languages/lisp); TinyTurboPascal, Turbo Pascal 7's IDE in text
-; mode, over the same appkit and libs/languages/pascal's P-code;
+; languages/lisp); TinyTurboPascal, Turbo Pascal 7's IDE in text
+; mode, over the same appkit and languages/pascal's P-code;
 ; TinySmalltalk80, Smalltalk-80's environment (the Browser, Workspace,
-; Inspector, Debugger), over libs/languages/smalltalk; TinyScratch,
-; Scratch 2's blocks, stage and sprites, over libs/languages/scratch and
+; Inspector, Debugger), over languages/smalltalk; TinyScratch,
+; Scratch 2's blocks, stage and sprites, over languages/scratch and
 ; appkits/blocks, and TinySnap, Snap!'s blocks of one's own, rings and
 ; lists, over the same -- one environment for both, Scratch_ide and
 ; Scratch_look, shared modules. Laid

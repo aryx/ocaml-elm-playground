@@ -3,7 +3,7 @@
 ; and a file as lines of coloured spans. A language's highlighter
 ; (ocaml/'s Highlight_ml) turns its tokens into these categories.
 ;
-; Pure OCaml, no Playground (libs/languages/README.md). A private
+; Pure OCaml, no Playground (languages/README.md). A private
 ; library, installed as part of elm_playground.
 (library
  (name highlight_code)

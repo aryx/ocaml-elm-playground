@@ -12,7 +12,7 @@
  * 7b).
  *
  * What it uses: appkits/sheet (Sheet, the engine) and its formula
- * language (Formula, libs/languages), and the playground's shapes. What it deliberately uses *nothing* of:
+ * language (Formula, languages), and the playground's shapes. What it deliberately uses *nothing* of:
  * gui/ -- no widget, no layout, no focus, no mouse. That is not
  * minimalism, it is the subject: VisiCalc ran on a 40-column
  * character display with no mouse to point at anything, and every

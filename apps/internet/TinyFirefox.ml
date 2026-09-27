@@ -15,7 +15,7 @@
  * asked, and did not wait (TinyNetscape); since Netscape 2 (1995) a
  * page is also a program, in JavaScript, which the browser runs. This
  * one runs it with an engine written from scratch
- * (libs/languages/javascript: a lexer, a Pratt parser, a tree walker)
+ * (languages/javascript: a lexer, a Pratt parser, a tree walker)
  * over the page's tree (appkits/browser's Browser_script: the DOM, the
  * events, the timers), and shows what the scripts do in a panel under
  * the page, after Firebug (Joe Hewitt, 2006, a Firefox extension, the
@@ -51,7 +51,7 @@
  * seed=n, Math.random's.
  *
  * Uses: appkits/browser (the page, the tab, the scripts, the drawing,
- * the forms), libs/languages/javascript through it, the built-in site
+ * the forms), languages/javascript through it, the built-in site
  * (Site); web's Hit. Its own: the chrome, the panel, the dialogs.
  *
  * Exercises: tabs (a list of Browser_tab.t, the one shown chosen by a

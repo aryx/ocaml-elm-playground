@@ -6,7 +6,7 @@
 ; 1977), Basic_disk (the floppy of listings). Run by TinyBasic
 ; (apps/devtools/) and by TinyTerminal's shell as its command basic.
 ;
-; Over libs/terminal's Talk, no Playground (libs/languages/README.md):
+; Over libs/terminal's Talk, no Playground (languages/README.md):
 ; the Teletype way is what puts it on a screen. A private library,
 ; installed as part of elm_playground.
 (library

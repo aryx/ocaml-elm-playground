@@ -9,7 +9,7 @@
 ; (the whole memory saved and loaded), St_bitblt (Form and BitBlt, the
 ; display). TinySmalltalk80 (apps/devtools/) is its environment.
 ;
-; Pure OCaml, no Playground (libs/languages/README.md). A private
+; Pure OCaml, no Playground (languages/README.md). A private
 ; library, installed as part of elm_playground.
 (library
  (name smalltalk)
@@ -27,7 +27,7 @@
   (with-stdout-to
    %{targets}
    (progn
-    (echo "(* generated from kernel/*.st by libs/languages/smalltalk/dune *)\n")
+    (echo "(* generated from kernel/*.st by languages/smalltalk/dune *)\n")
     (echo "let files = [\n")
     (echo "(\"Definitions.st\", {st|")
     (cat kernel/Definitions.st)

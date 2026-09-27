@@ -5,7 +5,7 @@
    Multics Emacs (Bernard Greenberg, 1978) and GNU Emacs (Stallman,
    1985). Its idea: an editor whose every command is a function of a
    programming language the user has too, so that extending it is
-   writing more of it. Here, the language is libs/languages/lisp; the
+   writing more of it. Here, the language is languages/lisp; the
    core that Lisp drives is Emacs_editor.mli; most commands and all key
    bindings are Emacs_simple.mli's Lisp. This module is what is left:
    the command loop (keyboard.c) and the display (xdisp.c).
