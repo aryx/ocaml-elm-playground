@@ -26,7 +26,7 @@
  *   ...                               |  its code (Codemap.preview),   |
  *                                     |  a click (or s) opens it all   |
  *                                     +--------------------------------+
- *   arrows move  tab section  enter play  / search  s code
+ *   arrows move  tab section  / search  s read its code  enter play it
  *
  * Keys: the arrows, Tab and Shift-Tab (the next section, across both
  * shelves), g and a (the games' and the apps' first section), Enter
@@ -645,9 +645,9 @@ let bar_key (computer : computer) (m : model) (key : string) : model =
 let open_code (screen : screen) (m : model) : model =
   match chosen m with
   | Some p ->
-      (* the whole screen, but for the title above and the status and keys
-       * below *)
-      let area = (screen.left +. 20., screen.top -. 80., int_of_float screen.width - 40, int_of_float screen.height - 150) in
+      (* the whole screen, but for the title and what the program brought
+       * above and the status and keys below *)
+      let area = (screen.left +. 20., screen.top -. 92., int_of_float screen.width - 40, int_of_float screen.height - 162) in
       { m with code = Some (Codemap.make ~area ~sources:Tinybox_sources.sources ~program:p.name ~path:p.source) }
   | None -> m
 
@@ -842,6 +842,13 @@ let filter_bar (m : model) : shape list =
     bar
 
 let grid (computer : computer) (runnable : string list) (m : model) : shape list =
+  (* claude: by genre, the section's smallest program: where to start
+   * reading it (tinybox is first for learning) *)
+  let start =
+    match (m.grouping, m.search, shown m) with
+    | By_genre, None, (_ :: _ :: _ as ps) -> Some (List.hd (by_lines ps)).name
+    | _ -> None
+  in
   shown m
   |> List.mapi (fun i (p : Catalogue.program) -> (i, p))
   |> List.concat_map (fun (i, (p : Catalogue.program)) ->
@@ -863,6 +870,9 @@ let grid (computer : computer) (runnable : string list) (m : model) : shape list
                    let w = (7. *. float_of_int (String.length s)) +. 8. in
                    [ rectangle black w 17. |> fade 0.8 |> move ((thumb /. 2.) -. (w /. 2.) -. 2.) (-.(thumb /. 2.) +. 10.5);
                      centred ~size:12. yellow ((thumb /. 2.) -. (w /. 2.) -. 2.) (-.(thumb /. 2.) +. 10.5) s ]
+                 else if start = Some p.name then
+                   [ rectangle (rgb 30 150 70) 74. 17. |> move ((-.thumb /. 2.) +. 39.) ((thumb /. 2.) -. 10.5);
+                     centred ~size:12. white ((-.thumb /. 2.) +. 39.) ((thumb /. 2.) -. 10.5) "start here" ]
                  else [])
                |> move x y;
                centred ~size:13. (if on then yellow else if ok then ink else grey) x (y -. (thumb /. 2.) -. 16.) (cut ~size:13. ~width:cell_w p.name);
@@ -904,7 +914,7 @@ let code_panel (computer : computer) (p : Catalogue.program) : shape list =
   (match code_of p with
   | Some c -> Code_map.view ~chrome:false computer c
   | None -> [ rectangle panel w h |> move cx cy; centred ~size:14. dim cx cy "its code..." ])
-  @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) ("its code" ^ size ^ ": a click, or s, explores it   o: the glass (" ^ Code_map.glass_name () ^ ")") ]
+  @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) ("its code" ^ size ^ ": a click, or s, to read it   o: the glass (" ^ Code_map.glass_name () ^ ")") ]
   (* claude: the mouse over it: a magnifying glass, the code under it
    * readable (Code_map.glass), over everything else *)
   @ match code_of p with Some c -> Code_map.glass computer c | None -> []
@@ -941,7 +951,7 @@ let details (computer : computer) (runnable : string list) (m : model) : shape l
 
 let footer (m : model) : shape list =
   let playing = match m.child with Some c -> [ text ~size:18. yellow left_edge (-440.) ("> " ^ c.name ^ " is running") ] | None -> [] in
-  [ text ~size:13. dim left_edge (-475.) "arrows move   tab section   g/a games/apps   b group   p e m l filter   / search   s code   enter play" ]
+  [ text ~size:13. dim left_edge (-475.) "arrows move   tab section   g/a games/apps   b group   p e m l filter   / search   s read its code   enter play it" ]
   @ playing
   @ if m.status = "" then [] else [ text ~size:16. magenta (-400.) (-440.) (cut ~size:16. ~width:340. m.status) ]
 
@@ -971,7 +981,14 @@ let live (screen : screen) (m : model) : shape list =
 let view (runnable : string list) (computer : computer) (m : model) : shape list =
   let screen = computer.screen in
   match m.code with
-  | Some code -> Codemap.view computer code
+  | Some code ->
+      Codemap.view computer code
+      (* claude: under the map's title, what the program brought (the
+       * catalogue's): what to look for in its code *)
+      @ (match chosen m with
+        | Some p when not (Codemap.file_open code) ->
+            [ centred ~size:13. cyan 0. (screen.top -. 72.) (cut ~size:13. ~width:(screen.width -. 80.) p.brought) ]
+        | _ -> [])
   | None ->
   [ rectangle background screen.width screen.height ]
   @ live screen m

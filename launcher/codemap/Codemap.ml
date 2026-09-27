@@ -140,6 +140,8 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
         | map, Stay -> Some { t with map }
         | map, Open (f, line) -> Some { t with map; file = Some (Code_view.make ~line f) })
 
+let file_open (t : t) : bool = t.file <> None
+
 let view (computer : Playground.computer) (t : t) : Playground.shape list =
   match t.file with
   | Some v -> Code_view.view computer v

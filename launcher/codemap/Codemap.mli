@@ -35,3 +35,6 @@ val own_size : sources:(string * string) list -> path:string -> int * int
 val update : Playground.computer -> pressed:(string -> bool) -> arrow:string option -> t -> t option
 
 val view : Playground.computer -> t -> Playground.shape list
+
+(* a file read (Code_view), not the map *)
+val file_open : t -> bool
