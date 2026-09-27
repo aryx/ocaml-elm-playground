@@ -43,8 +43,7 @@ val view : ?chrome:bool -> Playground.computer -> t -> Playground.shape list
    80 columns and some 16 lines, lined up with the start of the lines
    under the mouse, to read whole lines; or none. o (in update, or
    cycle_glass) goes from one to the next, one setting for every map.
-   Nothing when the
-   mouse is elsewhere, or the map already close enough to read. *)
+   Nothing when the mouse is elsewhere. *)
 val glass : Playground.computer -> t -> Playground.shape list
 
 val cycle_glass : unit -> unit

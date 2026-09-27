@@ -623,9 +623,9 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
  * reading glass, the rectangular
  * kind laid over a page, where one reads: 80 columns of 8 units (640,
  * and a margin) by some 16 lines, whole lines of code rather than a
- * keyhole of them. o goes from one to the other, and to none. Neither when the map
- * is already close enough for the code to be read (the explorer zoomed
- * in). *)
+ * keyhole of them. o goes from one to the other, and to none (the
+ * glass always enlarges, even over code big enough to read: none is the
+ * way to be rid of it). *)
 
 (* the file under the mouse (its rectangle and geometry), and the power
  * that makes its lines 16 units high; None when the mouse is off the map *)
@@ -673,7 +673,6 @@ let lens_radius = 185.
 let lens (computer : computer) (t : t) : shape list =
   match under_glass computer t with
   | None -> []
-  | Some (_, _, _, power) when power < 1.3 -> []
   | Some (u, v, _, power) ->
       let power = Float.max 2. (Float.min 10. power) in
       let d = int_of_float (2. *. lens_radius) in
@@ -725,9 +724,8 @@ let rounded (color : color) (w : number) (h : number) (r : number) : shape =
 let reading_glass (computer : computer) (t : t) : shape list =
   match under_glass computer t with
   | None -> []
-  | Some (_, _, _, power) when power < 1.3 -> []
   | Some (u, v, file, power) ->
-      let power = Float.min 10. power in
+      let power = Float.max 1.5 (Float.min 10. power) in
       let c = t.cam in
       let a = c.a in
       let mouse = computer.mouse in
