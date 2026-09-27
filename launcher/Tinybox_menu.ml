@@ -53,6 +53,10 @@
  * shown; a backend keeps the last 32 bitmaps it converted, so the grid
  * shows 12 at a time, plus the chosen one enlarged (the same bitmap).
  *
+ * The code: s opens the chosen program's code map (codemap/, after
+ * codemap), its files and what it uses as a treemap to zoom into, a file
+ * read by clicking on it; Escape comes back.
+ *
  * The previews: a second (60 frames) on a program, and its picture comes
  * alive -- the program itself, playing its golden scene's script in the
  * detail panel, run by the menu (see "Previews" below).
@@ -192,10 +196,11 @@ type model = {
   repeat : (string * float) option; (* an arrow held, when it moves again *)
   child : child option; (* the program running *)
   status : string; (* what happened to the last one *)
+  code : Codemap.t option; (* the chosen one's code, shown instead of the menu *)
 }
 
 let initial_model : model =
-  { grouping = By_genre; filters = no_filters; section = 0; pos = 0; search = None; before = Set_.empty; repeat = None; child = None; status = "" }
+  { grouping = By_genre; filters = no_filters; section = 0; pos = 0; search = None; before = Set_.empty; repeat = None; child = None; status = ""; code = None }
 
 (* the section shown, if any passes the filters *)
 let current_group (m : model) : group option =
@@ -590,9 +595,22 @@ let bar_key (computer : computer) (m : model) (key : string) : model =
       if n = 0 then m else { m with pos = Hashtbl.hash (int_of_float (now computer *. 1000.)) mod n }
   | _ -> m
 
+(* the chosen program's code map *)
+let open_code (m : model) : model =
+  match chosen m with
+  | Some p -> { m with code = Some (Codemap.make ~sources:Tinybox_sources.sources ~program:p.name ~path:p.source) }
+  | None -> m
+
 let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) (computer : computer) (m : model) :
     model =
   let m = wait caps m in
+  match m.code with
+  | Some code ->
+      let keys = computer.keyboard.keys in
+      let pressed k = Set_.mem k keys && not (Set_.mem k m.before) in
+      let key, repeat = arrow computer m in
+      { m with code = Codemap.update computer ~pressed ~arrow:key code; repeat; before = keys }
+  | None ->
   let keys = computer.keyboard.keys in
   let pressed k = Set_.mem k keys && not (Set_.mem k m.before) in
   let shift = Set_.mem "Shift" keys in
@@ -616,6 +634,7 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
         else if pressed "PageUp" then to_section m (step_section m (-1))
         else if pressed "g" then to_shelf m true
         else if pressed "a" then to_shelf m false
+        else if pressed "s" then open_code m
         else
           match List.find_opt pressed [ "b"; "p"; "e"; "m"; "l"; "c"; "r" ] with
           | Some k -> bar_key computer m k
@@ -819,7 +838,7 @@ let details (runnable : string list) (m : model) : shape list =
 
 let footer (m : model) : shape list =
   let playing = match m.child with Some c -> [ text ~size:18. yellow (-480.) (-440.) ("> " ^ c.name ^ " is running") ] | None -> [] in
-  [ text ~size:13. dim (-480.) (-475.) "arrows move   tab section   g/a games/apps   b group   p e m l filter   / search   enter play" ]
+  [ text ~size:13. dim (-480.) (-475.) "arrows move   tab section   g/a games/apps   b group   p e m l filter   / search   s code   enter play" ]
   @ playing
   @ if m.status = "" then [] else [ text ~size:16. magenta 60. (-440.) (cut ~size:16. ~width:420. m.status) ]
 
@@ -848,6 +867,9 @@ let live (screen : screen) (m : model) : shape list =
 
 let view (runnable : string list) (computer : computer) (m : model) : shape list =
   let screen = computer.screen in
+  match m.code with
+  | Some code -> Codemap.view computer code
+  | None ->
   [ rectangle background screen.width screen.height ]
   @ live screen m
   @ header computer m @ section_bar m @ filter_bar m @ grid computer runnable m @ details runnable m @ footer m @ scanlines screen

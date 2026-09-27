@@ -58,7 +58,7 @@
 
 (library
  (name tinybox_programs)
- (modules :standard \ Tinybox Tinybox_collect Tinybox_menu Tinybox_data Preview3d_render
+ (modules :standard \ Tinybox Tinybox_collect Tinybox_menu Tinybox_data Tinybox_sources Preview3d_render
    Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
  (wrapped false)
  (library_flags (-linkall))
@@ -96,6 +96,21 @@
  (targets Tinybox_data.ml)
  (deps %{project_root}/CATALOG.md)
  (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} catalogue 8)))))
+; claude: the repository's sources, for the code map (codemap/): the
+; games', the apps', the kits', the playground's and the libraries' (see
+; make_tinybox_data.ml for which), 10 MB
+(rule
+ (targets Tinybox_sources.ml)
+ (deps
+  %{project_root}/CATALOG.md
+  (glob_files_rec %{project_root}/games/*.{ml,mli})
+  (glob_files_rec %{project_root}/apps/*.{ml,mli})
+  (glob_files_rec %{project_root}/gamekits/*.{ml,mli})
+  (glob_files_rec %{project_root}/appkits/*.{ml,mli})
+  (glob_files_rec %{project_root}/playground/*.{ml,mli})
+  (glob_files_rec %{project_root}/libs/*.{ml,mli}))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} sources)))))
+
 (rule
  (targets Tinybox_thumbs_0.ml)
  (deps (alias tinybox_frames))
@@ -147,13 +162,14 @@
  (name Tinybox)
  (public_name tinybox)
  (package tinybox)
- (modules Tinybox Tinybox_menu Tinybox_data Preview3d_render
+ (modules Tinybox Tinybox_menu Tinybox_data Tinybox_sources Preview3d_render
    Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
  (libraries
    tinybox_programs
    caps
    unix ; the menu's child process
    catalogue graphics_png graphics_rgba ; the menu's data
+   tinybox_codemap ; the code map
    golden_scenes elm_playground_native_common ; the previews: the scenes' scripts, Input_script
    graphics_core graphics_3d graphics_3d_geometry graphics_raytrace graphics_images ; the 3D previews' renderer (Preview3d_render)
    terminal_unix ; Tty_unix, for -tty

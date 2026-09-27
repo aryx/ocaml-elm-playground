@@ -1,0 +1,11 @@
+; claude: what a code view needs to colour a file, in any language
+; (plan_tinybox_codemap.md): the categories, their colours (codemap's)
+; and a file as lines of coloured spans. A language's highlighter
+; (ocaml/'s Highlight_ml) turns its tokens into these categories.
+;
+; Pure OCaml, no Playground (libs/languages/README.md). A private
+; library, installed as part of elm_playground.
+(library
+ (name highlight_code)
+ (package elm_playground)
+ (wrapped false))

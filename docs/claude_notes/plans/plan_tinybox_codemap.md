@@ -240,6 +240,26 @@ a library's directory, a program's libraries, their closure.
    batch PNG output (Cairo's `write_to_png` of its main map) added to
    codemap first, in its own repository.
 
+## Progress
+
+2026-09-27: steps 1, 5 and a first 6, laid out differently from the
+plan at the author's request (a `launcher/codemap/` imitating codemap,
+the treemap in it, a program's several files, zooming smoothly):
+- `libs/languages/ocaml/` (library `lang_ocaml`): `Token_ml`,
+  `Lexer_ml.mll`, `Highlight_ml` (tokens only); and, language
+  independent (the author: C may come), `libs/languages/highlight/`'s
+  `Highlight_code`. Every `.ml`/`.mli` of the repository lexed: 2.1M
+  tokens, no error, 1.5 s with the highlighting.
+- `launcher/codemap/` (library `tinybox_codemap`): `Treemap` (squarified
+  and slice-and-dice, pure), `Code_file`, `Code_map` (the treemap under
+  an eased camera: the wheel at the mouse, drag, click to fly in, the
+  code turning into text up close, definitions placed greedily without
+  overlap from afar), `Code_view` (a file, SeeSoft's overview beside
+  it), `Codemap` (which files: the program's and the modules it names,
+  transitively, the platforms left out). tinybox's `s`; `w` the whole
+  repository. The code is drawn with `words`, a shape per character:
+  the font (step 2) is still to come.
+
 ## Open questions for the author
 
 - The font: the VGA's 8 by 16 (CP437, crisp and retro, the menu's look),

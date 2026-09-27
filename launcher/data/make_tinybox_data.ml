@@ -34,7 +34,11 @@
  *   make_tinybox_data thumbnails k n   Tinybox_thumbs_k.ml, every n-th
  *                                      program from the k-th
  *   make_tinybox_data catalogue n      Tinybox_data.ml, the catalogue
- *                                      and the n shards' lists joined *)
+ *                                      and the n shards' lists joined
+ *   make_tinybox_data sources          Tinybox_sources.ml, the sources of
+ *                                      the games, apps, kits, playground
+ *                                      and libs, for the code map
+ *                                      (codemap/) *)
 
 let read (path : string) : string =
   let ic = open_in_bin path in
@@ -59,6 +63,31 @@ let frame (p : Catalogue.program) : string =
   | Some f, _ | None, Some f when Sys.file_exists f -> f
   | _ -> Catalogue.golden_frame p
 
+(* claude: the repository's own sources, as they are in _build: its
+ * source files, and not the build's copies of them (a genre's web/ and
+ * software/) nor the modules rules make (dune's alias modules, the
+ * embedded pictures and pages, ocamllex's output), which say so on their
+ * first line *)
+let source_roots = [ "games"; "apps"; "gamekits"; "appkits"; "playground"; "libs" ]
+let skipped_dirs = [ "web"; "software"; "svg"; "tests" ]
+
+let generated (path : string) : bool =
+  let text = read path in
+  let first = match String.index_opt text '\n' with Some i -> String.sub text 0 i | None -> text in
+  let starts p = String.length first >= String.length p && String.sub first 0 (String.length p) = p in
+  starts "(* Auto-generated" || starts "(* generated" || starts "# " || Filename.basename path = "Hud_render.ml"
+  || Filename.basename path = "Hud_render.mli"
+
+let rec walk (dir : string) : string list =
+  Sys.readdir dir |> Array.to_list |> List.sort compare
+  |> List.concat_map (fun f ->
+         let path = Filename.concat dir f in
+         if Sys.is_directory path then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
+         else if (Filename.check_suffix f ".ml" || Filename.check_suffix f ".mli") && not (generated path) then [ path ]
+         else [])
+
+let sources () : string list = List.concat_map walk (List.filter Sys.file_exists source_roots)
+
 let () =
   let catalogue = read "CATALOG.md" in
   print_string "(* generated from CATALOG.md and the golden frames by launcher/data/make_tinybox_data.ml *)\n";
@@ -76,4 +105,8 @@ let () =
              let frame = frame p in
              if i mod n = k && Sys.file_exists frame then Printf.printf "  (%S, %S);\n" p.name (thumbnail (read frame)));
       print_string "]\n"
-  | _ -> failwith "usage: make_tinybox_data (catalogue n | thumbnails k n)"
+  | [ _; "sources" ] ->
+      print_string "let sources = [\n";
+      List.iter (fun path -> Printf.printf "  (%S, %S);\n" path (read path)) (sources ());
+      print_string "]\n"
+  | _ -> failwith "usage: make_tinybox_data (catalogue n | thumbnails k n | sources)"
