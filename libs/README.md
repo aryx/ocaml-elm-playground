@@ -23,7 +23,7 @@ place a game meets them.
 | `ai/` | game AI: movement, decisions, bots, search, learning ([`ai/README.md`](ai/README.md)) | `notes_ai.md`, `notes_ai_learning.md` |
 | `networking/` | the protocols, the netcode, the sockets ([`networking/README.md`](networking/README.md)) | `notes_networking.md` |
 | `gui/` | a GUI toolkit: widgets, the four architectures, layout, text | `notes_gui.md` |
-| `program_analysis/` | what analyses programs whatever their language: `highlight/` (`Highlight_code`, the categories and colours a language's highlighter turns tokens into, codemap's); to come, the modules a file uses, a generic AST, dataflow | `plan_tinybox_codemap.md` |
+| `code/` | code itself as the object, whatever its language (codemap's and codegraph's ground): `highlight/` (`Highlight_code`, the categories and colours a language's highlighter turns tokens into, codemap's); to come, the modules a file uses, a generic AST, dataflow | `plan_tinybox_codemap.md` |
 | `juice/` | game feel: easing, tweens, squash, trauma, particles | `notes_juice.md` |
 | `terminal/` | the VT100's screen (`Vt`: bytes and escape sequences into a grid of cells), the tty's line discipline (`Line_discipline`: echo, Backspace, a line on Enter), `Talk` (the programs that ask and wait, as values, and the machine playing one on a `Vt`), `Curses` (a screen drawn whole, sent as what changed) and `Tui` (a full-screen program, Model-View-Update); `unix/`'s `Tty_unix` runs one in a real terminal, native only | `plan_terminal.md` |
 

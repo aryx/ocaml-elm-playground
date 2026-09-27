@@ -3,7 +3,7 @@
 ; and a file as lines of coloured spans. A language's highlighter
 ; (ocaml/'s Highlight_ml) turns its tokens into these categories.
 ;
-; claude: in libs/program_analysis/, what analyses programs whatever their
+; claude: in libs/code/, code itself as the object, whatever its
 ; language (to come: the modules a file uses, a generic AST, dataflow),
 ; not in languages/: not a language.
 ;
