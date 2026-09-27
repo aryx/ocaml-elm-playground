@@ -200,7 +200,7 @@ js:
 check:
 	osemgrep --config semgrep.jsonnet .
 
-# lines of OCaml: library, games, apps, examples, tests (loc-v: per
+# lines of OCaml: library, games, apps, launcher, examples, tests (loc-v: per
 # subdirectory)
 loc:
 	scripts/stats/loc.py

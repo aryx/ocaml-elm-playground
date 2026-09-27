@@ -10,10 +10,11 @@
 #
 # Lines of OCaml across the project (.ml and .mli), grouped by what
 # they are: the library (libs/ and playground/), the games (gamekits/
-# and games/), the apps (appkits/ and apps/), the examples, and apart
-# from all of them the tests (every tests/ directory, and the top
-# tests/). Each line is counted once, as code (it has some code, maybe
-# a comment too), comment (only a comment, or inside one) or blank.
+# and games/), the apps (appkits/ and apps/), tinybox (launcher/), the
+# examples, and apart from all of them the tests (every tests/
+# directory, and the top tests/). Each line is counted once, as code
+# (it has some code, maybe a comment too), comment (only a comment, or
+# inside one) or blank.
 #
 # The files are git's (tracked, and new ones not ignored), so _build/
 # and the generated web copies are never counted twice.
@@ -23,7 +24,8 @@
 #       rather than one line per group (libs/'s are always listed)
 #
 # The lines come first, next to the name they count; files, .ml,
-# .mli, code, comment and blank lines after the name.
+# .mli, code, comment and blank lines after the name. A group's total
+# comes first, its parts indented under it.
 
 import re
 import subprocess
@@ -123,6 +125,7 @@ GROUPS = [
     ("library", ["playground", "libs"]),
     ("games", ["gamekits", "games"]),
     ("apps", ["appkits", "apps"]),
+    ("launcher", ["launcher"]),
     ("examples", ["examples"]),
 ]
 # the top directories whose subdirectories are listed even without -v
@@ -201,23 +204,27 @@ def main():
         subs = stats.get(group, {})
         if not subs:
             continue
-        if verbose:
+        if verbose and group != order[0]:
             print()
+        row(group, total(subs.values()))
+        if verbose:
             for sub in sorted(subs):
                 row(sub, subs[sub], 2)
         elif group != "tests":
-            # the two halves of a group: its kits, its programs
+            # the two halves of a group: its kits, its programs (none
+            # for a group of one directory, its total already said)
             tops = dict(GROUPS).get(group, [])
+            if len(tops) < 2:
+                continue
             for top in tops:
                 mine = {k: s for k, s in subs.items()
                         if k.split("/")[0] == top}
+                row(top + "/", total(mine.values()), 2)
                 # libs/'s libraries are independent of each other: how
                 # much is ai/, audio/, graphics/, ...
                 if top in DETAILED:
                     for sub in sorted(mine):
                         row(sub, mine[sub], 4)
-                row(top + "/", total(mine.values()), 2)
-        row(group, total(subs.values()))
     print()
     row("total", total(s for g in stats.values() for s in g.values()))
     row("total without tests",
