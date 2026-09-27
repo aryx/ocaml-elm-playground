@@ -478,7 +478,10 @@ platform are wanted (Batocera's "systems").
       without one. Done 2026-09-27. A scene that is a debug view rather
       than play (AiOthello's "values") could get an override, with the
       catalogue's new columns.
-15. The source view (`s`), after codemap (the author's code
+15. The source view (`s`) -- now a plan of its own,
+    `plan_tinybox_codemap.md` (a code visualizer of the whole
+    repository, TinyCodemap, started by `s` on the chosen program); what
+    was written here first: after codemap (the author's code
     visualizer, the author's wish, 2026-09-27): the program's code shown
     "in a nice way" -- the files it is made of (the program, its kits,
     appkits, layers and libraries: its dune stanza's) as a treemap sized
