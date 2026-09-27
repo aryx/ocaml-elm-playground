@@ -479,3 +479,7 @@ let split3d views update_memory initial_memory =
 let init3d app = app.init3d_
 let update3d app = app.update3d_
 let views3d app = app.views3d_
+
+(* claude: see Playground3d.mli *)
+type any_app3d = Any_app3d : ('model, 'msg) app3d -> any_app3d
+let capture3d : (any_app3d -> rendering -> unit) option ref = ref None

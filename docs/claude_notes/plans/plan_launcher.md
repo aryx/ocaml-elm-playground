@@ -487,6 +487,22 @@ platform are wanted (Batocera's "systems").
       (its burst), TinyMario (scrolled), TinyDoom (the 2.5D renderer);
       TinyFirefox keeps its picture (its Cap.main). A main that prints
       its help prints it once, to the terminal, when first previewed.
+    - Done 2026-09-27, the 3D previews: `Playground3d.capture3d` (the
+      app and its rendering), checked by the OpenGL platform's
+      `run_app3d`; `Playground.update_keyboard` exported (hidden); the
+      menu builds the program's computer (the script's keys, a
+      1000-by-1000 screen) and steps `update3d`; its views rasterized
+      at 400 by 400 by the software rasterizer, compiled into the
+      launcher as `Preview3d_render` (a copy of
+      `Shape3d_render_software`, as `Hud_render`), shown as a bitmap,
+      the HUD's shapes over it; the program's rendering (shading,
+      culling: TinyStarFox's sky is back faces) as the software backend
+      makes its options. **A stress test of the rasterizer** (the
+      author): every 3D game drawn live, its time a frame in the panel
+      -- TinyStarFox 30 ms, TinyMarioKart64 31 ms, TinyMinecraft 236 ms;
+      a scene over 20 ms rasterized one frame in n (its program still
+      updated every frame), so the menu stays smooth. To do: every 3D
+      game's time, a ranking (the rasterizer's to-do list).
     - **Full-screen demos** (the attract mode when idle, and `d` on
       demand) stay child processes, the one place a second of loading
       is fine: `tinybox <Name> -script <scene>` with a new `-demo` flag

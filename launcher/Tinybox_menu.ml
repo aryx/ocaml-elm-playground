@@ -243,6 +243,24 @@ type preview =
       length : int; (* the frames before it starts over *)
     }
       -> preview
+  (* claude: a 3D program: no messages, a computer given each frame, its
+   * keyboard kept here; its views drawn by the software rasterizer *)
+  | Playing3d : {
+      name : string;
+      app : ('model, 'msg) Playground3d.app3d;
+      mutable model : 'model;
+      mutable frame : int;
+      script : Input_script.t option;
+      length : int;
+      mutable keyboard : keyboard;
+      mutable computer : computer; (* the last one, for its views *)
+      mutable ms : float; (* the rasterizer's time a frame, averaged *)
+      options : Render.options; (* the program's rendering, as the software backend makes it *)
+      mutable image : Rgba_image.t option; (* the last frame rasterized *)
+    }
+      -> preview
+
+let preview_name = function Playing p -> p.name | Playing3d p -> p.name
 
 (* the menu's frames, counted by update: the previews' clock, frames
  * rather than seconds, so that -fixed-time shows them too *)
@@ -252,22 +270,24 @@ let frames = ref 0
 let chosen_since : (string * int) ref = ref ("", 0)
 let preview : preview option ref = ref None
 
-(* the apps taken from the programs' mains, None for those that give none *)
-let captured : (string, any_app option) Hashtbl.t = Hashtbl.create 16
+(* what a program's main gave, taken once *)
+type captured = App of any_app | App3d of Playground3d.any_app3d * Playground3d.rendering
+let captured : (string, captured option) Hashtbl.t = Hashtbl.create 16
 
-let capture (p : Catalogue.program) : any_app option =
+let capture (p : Catalogue.program) : captured option =
   match Hashtbl.find_opt captured p.name with
   | Some a -> a
   | None ->
       let got = ref None in
-      (if p.look <> "3D" then
-         match List.assoc_opt p.name (Program.collected ()) with
-         | None -> ()
-         | Some entry -> (
-             Playground.capture := Some (fun a -> got := Some a);
-             (* claude: a main calling Cap.main fails here, by design *)
-             (try Audio.silently entry with _ -> ());
-             Playground.capture := None));
+      (match List.assoc_opt p.name (Program.collected ()) with
+      | None -> ()
+      | Some entry ->
+          Playground.capture := Some (fun a -> got := Some (App a));
+          Playground3d.capture3d := Some (fun a rendering -> got := Some (App3d (a, rendering)));
+          (* claude: a main calling Cap.main fails here, by design *)
+          (try Audio.silently entry with _ -> ());
+          Playground.capture := None;
+          Playground3d.capture3d := None);
       Hashtbl.replace captured p.name !got;
       !got
 
@@ -277,33 +297,68 @@ let scene (name : string) : (Input_script.t * int) option =
     (fun ((exe, _, frame, script) : Golden_scene.scripted) ->
       if Filename.basename exe <> name then None
       else match Input_script.parse script with Ok sc -> Some (sc, frame) | Error _ -> None)
-    Scenes_2d.scripted
+    (Scenes_2d.scripted @ Scenes_3d.scripted)
 
-let start_preview (name : string) (Any_app app : any_app) : preview option =
-  match Audio.silently (fun () -> app.init []) with
-  | model, _cmd ->
-      let script, length = match scene name with Some (sc, n) -> (Some sc, n + 90) | None -> (None, 600) in
-      Some (Playing { name; app; model; frame = 0; script; length })
-  | exception _ -> None
+(* the screen a preview's program sees: the window it would have had *)
+let preview_screen = to_screen 1000. 1000.
+
+let start_preview (name : string) (c : captured) : preview option =
+  let script, length = match scene name with Some (sc, n) -> (Some sc, n + 90) | None -> (None, 600) in
+  match c with
+  | App (Any_app app) -> (
+      match Audio.silently (fun () -> app.init []) with
+      | model, _cmd -> Some (Playing { name; app; model; frame = 0; script; length })
+      | exception _ -> None)
+  | App3d (Playground3d.Any_app3d app, rendering) -> (
+      match Audio.silently (fun () -> Playground3d.init3d app ()) with
+      | model ->
+          let computer = { initial_computer with screen = preview_screen } in
+          (* claude: as software/Playground3d_platform.ml makes its options *)
+          let options =
+            {
+              Render.default_options with
+              shading =
+                (match rendering.shading with
+                | No_lighting -> Shading.Flat_color
+                | Flat -> Shading.Flat_shading
+                | Smooth -> Shading.Phong);
+              backface_culling = rendering.backface_culling;
+              bilinear = rendering.smooth_textures;
+            }
+          in
+          Some
+            (Playing3d { name; app; model; frame = 0; script; length; keyboard = computer.keyboard; computer; ms = 0.; options; image = None })
+      | exception _ -> None)
 
 (* one frame of the preview: the script's keys, then a tick *)
-let step_preview (now : number) (Playing p : preview) : unit =
-  let apply event =
-    match Sub.event_to_msgopt event (p.app.subscriptions p.model) with
-    | Some msg -> p.model <- fst (p.app.update msg p.model)
-    | None -> ()
-  in
-  p.frame <- p.frame + 1;
-  Audio.silently (fun () ->
+let step_preview (now : number) (pv : preview) : unit =
+  match pv with
+  | Playing p ->
+      let apply event =
+        match Sub.event_to_msgopt event (p.app.subscriptions p.model) with
+        | Some msg -> p.model <- fst (p.app.update msg p.model)
+        | None -> ()
+      in
+      p.frame <- p.frame + 1;
+      Audio.silently (fun () ->
+          Option.iter
+            (fun sc -> List.iter (fun (key, down) -> apply (Sub.EKeyChanged (down, key))) (Input_script.changes sc p.frame))
+            p.script;
+          apply (Sub.ETick now))
+  | Playing3d p ->
+      p.frame <- p.frame + 1;
       Option.iter
-        (fun sc -> List.iter (fun (key, down) -> apply (Sub.EKeyChanged (down, key))) (Input_script.changes sc p.frame))
+        (fun sc ->
+          List.iter (fun (key, down) -> p.keyboard <- update_keyboard down key p.keyboard) (Input_script.changes sc p.frame))
         p.script;
-      apply (Sub.ETick now))
+      p.computer <- { p.computer with keyboard = p.keyboard; time = Time now };
+      p.model <- Audio.silently (fun () -> Playground3d.update3d p.app p.computer p.model)
 
 (* the preview of the program chosen: started after 60 frames on it,
  * started again when its scene is over, stopped on a failure *)
 let preview_of (now : number) (chosen : Catalogue.program option) : unit =
   incr frames;
+  let frame_length = function Playing q -> (q.frame, q.length) | Playing3d q -> (q.frame, q.length) in
   match chosen with
   | None -> preview := None
   | Some p -> (
@@ -311,17 +366,100 @@ let preview_of (now : number) (chosen : Catalogue.program option) : unit =
         chosen_since := (p.name, !frames);
         preview := None);
       match !preview with
-      | Some (Playing q as pv) when q.name = p.name ->
-          if q.frame >= q.length then preview := Option.bind (capture p) (start_preview p.name)
+      | Some pv when preview_name pv = p.name ->
+          let frame, length = frame_length pv in
+          if frame >= length then preview := Option.bind (capture p) (start_preview p.name)
           else (try step_preview now pv with _ -> preview := None)
       | _ ->
           if !frames - snd !chosen_since >= 60 then preview := Option.bind (capture p) (start_preview p.name))
 
-(* the preview's view, if it is the program's *)
+(* claude: the 3D previews' drawing: a view at a time into a framebuffer
+ * the panel's size (a split screen's views each into their area, as
+ * the software backend's draw_view), then the pixels as an image *)
+let buffers : (int * int, Framebuffer.t * Zbuffer.t) Hashtbl.t = Hashtbl.create 4
+
+let buffer (w : int) (h : int) : Framebuffer.t * Zbuffer.t =
+  match Hashtbl.find_opt buffers (w, h) with
+  | Some b -> b
+  | None ->
+      let b = (Framebuffer.create ~width:w ~height:h, Zbuffer.create ~width:w ~height:h) in
+      Hashtbl.replace buffers (w, h) b;
+      b
+
+let image_of (fb : Framebuffer.t) : Rgba_image.t =
+  let img = Rgba_image.create ~width:fb.width ~height:fb.height in
+  for y = 0 to fb.height - 1 do
+    for x = 0 to fb.width - 1 do
+      let c = Framebuffer.get_rgb fb ~x ~y and i = 4 * ((y * fb.width) + x) in
+      Bigarray.Array1.unsafe_set img.rgba i ((c lsr 16) land 0xFF);
+      Bigarray.Array1.unsafe_set img.rgba (i + 1) ((c lsr 8) land 0xFF);
+      Bigarray.Array1.unsafe_set img.rgba (i + 2) (c land 0xFF);
+      Bigarray.Array1.unsafe_set img.rgba (i + 3) 0xFF
+    done
+  done;
+  img
+
+let render3d (options : Render.options) (size : int) (views : Playground3d.view list) : Rgba_image.t =
+  let fb, _ = buffer size size in
+  Texture_decode.load_queued ();
+  Framebuffer.clear fb ~rgb:0xFFFFFF;
+  List.iter
+    (fun (v : Playground3d.view) ->
+      let x0 = int_of_float (Float.round (v.area.x *. float_of_int size)) in
+      let x1 = int_of_float (Float.round ((v.area.x +. v.area.w) *. float_of_int size)) in
+      (* the framebuffer's rows go down, the area's y up *)
+      let y0 = int_of_float (Float.round ((1. -. v.area.y -. v.area.h) *. float_of_int size)) in
+      let y1 = int_of_float (Float.round ((1. -. v.area.y) *. float_of_int size)) in
+      let w = x1 - x0 and h = y1 - y0 in
+      if w > 0 && h > 0 then begin
+        let sub, zb = buffer w h in
+        if sub != fb then Framebuffer.clear sub ~rgb:0xFFFFFF;
+        Preview3d_render.render ~options sub zb v.camera (Playground3d.group3d v.shapes);
+        if sub != fb then
+          for r = 0 to h - 1 do
+            Bigarray.Array1.blit (Bigarray.Array2.slice_left sub.pixels r)
+              (Bigarray.Array1.sub (Bigarray.Array2.slice_left fb.pixels (y0 + r)) x0 w)
+          done
+      end)
+    views;
+  image_of fb
+
+(* the panel's size in pixels (Layout's [shot]) *)
+let preview_pixels = 400
+
+(* claude: a scene slower than this to rasterize is rasterized every
+ * n-th frame only (its program still updated every frame), the last
+ * picture shown between: the menu stays smooth (TinyMinecraft: 236 ms) *)
+let budget_ms = 20.
+
+let every (ms : float) : int = max 1 (int_of_float (ms /. budget_ms))
+
+(* the preview's view, in the program's 1000 by 1000, if it is the
+ * program's: a 2D program's shapes; a 3D program's frame, rasterized at
+ * the panel's size and shown at 1000 (so, in the panel, pixel for pixel),
+ * and its HUD's shapes over it *)
 let preview_shapes (p : Catalogue.program) : shape list option =
   match !preview with
   | Some (Playing q) when q.name = p.name -> ( try Some (q.app.view q.model) with _ -> None)
+  | Some (Playing3d q) when q.name = p.name -> (
+      try
+        let views = Playground3d.views3d q.app q.computer q.model in
+        (match q.image with
+        | Some _ when q.frame mod every q.ms <> 0 -> ()
+        | _ ->
+            let t0 = Unix.gettimeofday () in
+            q.image <- Some (render3d q.options preview_pixels views);
+            let ms = (Unix.gettimeofday () -. t0) *. 1000. in
+            q.ms <- (if q.ms = 0. then ms else (0.8 *. q.ms) +. (0.2 *. ms)));
+        match q.image with
+        | Some img -> Some (bitmap 1000. 1000. img :: Playground3d.views_hud preview_screen views)
+        | None -> None
+      with _ -> None)
   | _ -> None
+
+(* the 3D preview's rasterizer time, for the panel *)
+let preview_ms (p : Catalogue.program) : float option =
+  match !preview with Some (Playing3d q) when q.name = p.name && q.frame > 10 -> Some q.ms | _ -> None
 
 (*****************************************************************************)
 (* Layout *)
@@ -666,6 +804,14 @@ let details (runnable : string list) (m : model) : shape list =
           text ~size:16. yellow (left +. shot -. 60.) (-150.) p.look;
           text ~size:13. yellow left (-178.) (Printf.sprintf "%d   %s   %s" p.year p.platform (players_text p));
         ]
+      (* claude: the software rasterizer's time on a 3D preview: tinybox
+       * as its stress test, every 3D game drawn live *)
+      @ (match preview_ms p with
+        | Some ms ->
+            let n = every ms in
+            [ text ~size:11. dim (left +. shot -. 230.) (-178.)
+                (Printf.sprintf "rasterized in %.0f ms%s" ms (if n = 1 then "" else Printf.sprintf ", one frame in %d" n)) ]
+        | None -> [])
       @ paragraph ~size:14. cyan left (-205.) ~width:shot ~lines:2 ("After " ^ p.after)
       @ paragraph ~size:15. ink left (-252.) ~width:shot ~lines:2 p.one_line
       @ paragraph ~size:13. dim left (-300.) ~width:shot ~lines:5 p.brought

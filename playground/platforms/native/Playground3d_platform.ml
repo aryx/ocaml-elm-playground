@@ -308,6 +308,10 @@ let preload_texture : string -> unit = Texture_decode.preload
 
 let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flags ?network
     (app3d : ('model, 'msg) Playground3d.app3d) : unit =
+  (* claude: tinybox taking the app for a preview (Playground3d.capture3d) *)
+  match !Playground3d.capture3d with
+  | Some give -> give (Playground3d.Any_app3d app3d) rendering
+  | None ->
   Option.iter Download.grant network;
   (* claude: Multiplayer3d's net=host, net=join and net=relay, as the 2D
    * platform's run_app *)

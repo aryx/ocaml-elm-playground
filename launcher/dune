@@ -58,7 +58,7 @@
 
 (library
  (name tinybox_programs)
- (modules :standard \ Tinybox Tinybox_collect Tinybox_menu Tinybox_data
+ (modules :standard \ Tinybox Tinybox_collect Tinybox_menu Tinybox_data Preview3d_render
    Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
  (wrapped false)
  (library_flags (-linkall))
@@ -129,11 +129,25 @@
  (deps (alias tinybox_frames))
  (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 7 8)))))
 
+; claude: the 3D previews are drawn by the software rasterizer, into an
+; image shown in the menu's panel (Tinybox_menu, "Previews"): a copy of
+; software/'s Shape3d_render_software, as the OpenGL backend compiles its
+; own copy of the 2D one for its HUD (Hud_render, see
+; playground/platforms/native/dune). Not a dependency: that module lives in
+; elm_playground_3d_software, which implements elm_playground_3d, and
+; tinybox links the OpenGL implementation. The module uses nothing else
+; of its library, only graphics/'s, so the copy compiles alone. Edit the
+; original, never Preview3d_render.ml (it is in _build only).
+(rule
+ (action (copy ../playground/platforms/software/Shape3d_render_software.ml Preview3d_render.ml)))
+(rule
+ (action (copy ../playground/platforms/software/Shape3d_render_software.mli Preview3d_render.mli)))
+
 (executable
  (name Tinybox)
  (public_name tinybox)
  (package tinybox)
- (modules Tinybox Tinybox_menu Tinybox_data
+ (modules Tinybox Tinybox_menu Tinybox_data Preview3d_render
    Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
  (libraries
    tinybox_programs
@@ -141,6 +155,7 @@
    unix ; the menu's child process
    catalogue graphics_png graphics_rgba ; the menu's data
    golden_scenes elm_playground_native_common ; the previews: the scenes' scripts, Input_script
+   graphics_core graphics_3d graphics_3d_geometry graphics_raytrace graphics_images ; the 3D previews' renderer (Preview3d_render)
    terminal_unix ; Tty_unix, for -tty
    appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
    elm_playground_native ; implem of virtual elm_playground: Cairo

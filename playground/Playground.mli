@@ -902,6 +902,13 @@ and flags = (string * string) list
 val initial_computer : computer
 
 (**/**)
+(* claude: [update_keyboard is_down key keyboard]: the keyboard after a
+ * key went down or up, as the platforms make it from their events;
+ * exported for tinybox's 3D previews, which make a computer themselves *)
+val update_keyboard : bool -> string -> keyboard -> keyboard
+(**/**)
+
+(**/**)
 (* claude: ["level=5"; "fast"] -> [("level", "5"); ("fast", "")] (split
  * at the first '=', empty strings skipped): how the backends turn
  * command-line arguments or URL parameters into flags; not meant to be

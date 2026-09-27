@@ -481,6 +481,14 @@ val init3d : ('model, 'msg) app3d -> unit -> 'model
 val update3d : ('model, 'msg) app3d -> Playground.computer -> 'model -> 'model
 val views3d : ('model, 'msg) app3d -> Playground.computer -> 'model -> view list
 
+(* claude: tinybox's, as Playground.capture for 2D (plan_launcher.md,
+ * the previews): an app3d of any model, and a hook; when set, the
+ * OpenGL platform's run_app3d gives it the app and its rendering and
+ * returns, instead of opening a window -- tinybox's menu then plays it
+ * itself, drawn by the software rasterizer in its detail panel *)
+type any_app3d = Any_app3d : ('model, 'msg) app3d -> any_app3d
+val capture3d : (any_app3d -> rendering -> unit) option ref
+
 (* claude: for the backends: where an area's middle is on the screen
  * (the offset from the window's middle), and the views' HUD shapes, each
  * moved there, as one window-wide HUD *)
