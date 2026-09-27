@@ -83,15 +83,18 @@ let lowercase = String.lowercase_ascii
 (* Groups and filters *)
 (*****************************************************************************)
 
-type grouping = By_genre | By_era | By_platform | By_players
+type grouping = By_genre | By_era | By_platform | By_players | By_size
 
-let groupings = [ By_genre; By_era; By_platform; By_players ]
+(* claude: size second: tinybox is first for learning, the smallest
+ * programs the first to read *)
+let groupings = [ By_genre; By_size; By_era; By_platform; By_players ]
 
 let grouping_name = function
   | By_genre -> "genre"
   | By_era -> "era"
   | By_platform -> "machine"
   | By_players -> "players"
+  | By_size -> "size"
 
 (* None: any *)
 type filters = { players : string option; (* "1", "2", "net" *) era : int option; platform : string option; look : string option }
@@ -138,6 +141,26 @@ type group = { title : string; intro : string; games : bool option; programs : C
  * sections are in that order too, this in case a row is added out of it *)
 let by_year (ps : Catalogue.program list) = List.stable_sort (fun (a : Catalogue.program) b -> compare a.year b.year) ps
 
+(* claude: the size of a program's own code (files, lines), as its code
+ * map in the panel shows it: found the first time it is asked (lexing
+ * the files for the modules they name), kept *)
+let sizes : (string, int * int) Hashtbl.t = Hashtbl.create 256
+
+let size_of (p : Catalogue.program) : int * int =
+  match Hashtbl.find_opt sizes p.name with
+  | Some s -> s
+  | None ->
+      let s = Codemap.own_size ~sources:Tinybox_sources.sources ~path:p.source in
+      Hashtbl.replace sizes p.name s;
+      s
+
+let lines_of p = snd (size_of p)
+let by_lines (ps : Catalogue.program list) = List.stable_sort (fun a b -> compare (lines_of a) (lines_of b)) ps
+
+(* the sizes' sections: at most [hi] lines *)
+let size_classes =
+  [ ("Under 500 lines", 500); ("500 to 1,000 lines", 1000); ("1,000 to 2,000 lines", 2000); ("2,000 to 5,000 lines", 5000); ("Over 5,000 lines", max_int) ]
+
 let groups (grouping : grouping) (f : filters) : group array =
   let keep ps = List.filter (passes f) ps in
   let make title intro programs = { title; intro; games = None; programs } in
@@ -163,7 +186,14 @@ let groups (grouping : grouping) (f : filters) : group array =
         make "Two players" "Two on one keyboard (or split screen)." (by_year (keep (List.filter (fun p -> Catalogue.plays p 2) everything)));
         make "Over the network" "Two computers, one game: net=host on one, net=join on the other (Multiplayer)."
           (by_year (keep (List.filter Catalogue.online everything)));
-      ])
+      ]
+  | By_size ->
+      snd
+        (List.fold_left
+           (fun (lo, acc) (title, hi) ->
+             let ps = List.filter (fun p -> let n = lines_of p in n > lo && n <= hi) everything in
+             (hi, acc @ [ make title "The programs by the size of their own code (its files and kits', as the code map shows it), the smallest first: the first to read." (by_lines (keep ps)) ]))
+           (0, []) size_classes))
   |> List.filter (fun g -> g.programs <> [])
   |> Array.of_list
 
@@ -824,7 +854,16 @@ let grid (computer : computer) (runnable : string list) (m : model) : shape list
              [
                group
                  ((if on then [ frame cyan thumb thumb 4. |> fade glow ] else [ frame grey thumb thumb 1. ])
-                 @ [ picture p thumb |> fade (if ok then 1. else 0.35) ])
+                 @ [ picture p thumb |> fade (if ok then 1. else 0.35) ]
+                 (* claude: grouped by size, its lines on a badge at the
+                  * thumbnail's bottom right *)
+                 @
+                 if m.grouping = By_size && m.search = None then
+                   let s = string_of_int (lines_of p) in
+                   let w = (7. *. float_of_int (String.length s)) +. 8. in
+                   [ rectangle black w 17. |> fade 0.8 |> move ((thumb /. 2.) -. (w /. 2.) -. 2.) (-.(thumb /. 2.) +. 10.5);
+                     centred ~size:12. yellow ((thumb /. 2.) -. (w /. 2.) -. 2.) (-.(thumb /. 2.) +. 10.5) s ]
+                 else [])
                |> move x y;
                centred ~size:13. (if on then yellow else if ok then ink else grey) x (y -. (thumb /. 2.) -. 16.) (cut ~size:13. ~width:cell_w p.name);
              ])
@@ -856,10 +895,16 @@ let code_panel (computer : computer) (p : Catalogue.program) : shape list =
   let x, y, w, h = code_area in
   let w = float_of_int w and h = float_of_int h in
   let cx = x +. (w /. 2.) and cy = y -. (h /. 2.) in
+  (* claude: how much code, all the files shown, once the map is made *)
+  let size =
+    match code_of p with
+    | Some c -> Printf.sprintf " (%d file%s, %s)" (Code_map.files c) (if Code_map.files c = 1 then "" else "s") (Code_map.lines_text (Code_map.lines c))
+    | None -> ""
+  in
   (match code_of p with
   | Some c -> Code_map.view ~chrome:false computer c
   | None -> [ rectangle panel w h |> move cx cy; centred ~size:14. dim cx cy "its code..." ])
-  @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) ("its code: a click, or s, explores it   o: the glass (" ^ Code_map.glass_name () ^ ")") ]
+  @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) ("its code" ^ size ^ ": a click, or s, explores it   o: the glass (" ^ Code_map.glass_name () ^ ")") ]
   (* claude: the mouse over it: a magnifying glass, the code under it
    * readable (Code_map.glass), over everything else *)
   @ match code_of p with Some c -> Code_map.glass computer c | None -> []
@@ -876,7 +921,9 @@ let details (computer : computer) (runnable : string list) (m : model) : shape l
       @ [
           text ~size:24. ink left 410. (cut ~size:24. ~width:(text_w -. 60.) p.name);
           text ~size:16. yellow (left +. text_w -. 40.) 410. p.look;
-          text ~size:13. yellow left 380. (Printf.sprintf "%d   %s   %s" p.year p.platform (players_text p));
+          (* claude: and the size of its own code, as its code map shows it *)
+          text ~size:13. yellow left 380.
+            (Printf.sprintf "%d   %s   %s   %s" p.year p.platform (players_text p) (Code_map.lines_text (lines_of p)));
         ]
       (* claude: the software rasterizer's time on a 3D preview: tinybox
        * as its stress test, every 3D game drawn live *)

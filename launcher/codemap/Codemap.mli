@@ -27,6 +27,10 @@ val make : area:float * float * int * int -> sources:(string * string) list -> p
    panel: Code_map.view ~chrome:false) *)
 val preview : area:float * float * int * int -> sources:(string * string) list -> program:string -> path:string -> Code_map.t
 
+(* [own_size ~sources ~path]: the files of the program's own code (as
+   preview's map shows them) and their lines, without making the map *)
+val own_size : sources:(string * string) list -> path:string -> int * int
+
 (* None: closed (Escape on the map) *)
 val update : Playground.computer -> pressed:(string -> bool) -> arrow:string option -> t -> t option
 

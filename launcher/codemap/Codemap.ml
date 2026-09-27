@@ -99,7 +99,8 @@ let map_of ~(area : float * float * int * int) ~(sources : (string * string) lis
   in
   let entries = List.filter_map (fun p -> Option.map (entry p) (List.assoc_opt p sources)) paths in
   let n = List.length entries in
-  let files = if n = 1 then "1 file" else Printf.sprintf "%d files" n in
+  (* claude: and their lines, all of them, not only the program's file's *)
+  let files = Printf.sprintf "%s, %s" (if n = 1 then "1 file" else Printf.sprintf "%d files" n) (Code_map.lines_text (Code_map.lines_of entries)) in
   let title =
     match scope with
     | Own -> Printf.sprintf "%s: its code, %s   (w: with what it uses)" program files
@@ -107,6 +108,12 @@ let map_of ~(area : float * float * int * int) ~(sources : (string * string) lis
     | Whole -> Printf.sprintf "the whole repository: %s   (w: %s's code)" files program
   in
   Code_map.make ~area ~title ~marked:[ path ] entries
+
+(* claude: the size of a program's own code, without making its map:
+ * its files and their lines *)
+let own_size ~(sources : (string * string) list) ~(path : string) : int * int =
+  let paths = closure ~keep:(own path) sources path in
+  (List.length paths, List.fold_left (fun n p -> n + match List.assoc_opt p sources with Some src -> count_lines src | None -> 0) 0 paths)
 
 let make ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
   { program; path; sources; scope = Own; area; map = map_of ~area ~sources ~program ~path ~scope:Own; file = None }

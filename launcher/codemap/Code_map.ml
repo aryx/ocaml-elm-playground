@@ -102,6 +102,20 @@ let make ~(area : float * float * int * int) ~(title : string) ~(marked : string
   { title; marked; entries; algo = Squarified; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; lens = None }
 
+(* claude: the lines of the files shown, for a title *)
+let lines_of (entries : entry list) : int = List.fold_left (fun n (e : entry) -> n + e.nlines) 0 entries
+let lines (t : t) : int = lines_of t.entries
+
+(* 12345 as "12,345 lines" *)
+let lines_text (n : int) : string =
+  let s = string_of_int n in
+  let len = String.length s in
+  let b = Buffer.create (len + 8) in
+  String.iteri (fun i c -> if i > 0 && (len - i) mod 3 = 0 then Buffer.add_char b ','; Buffer.add_char b c) s;
+  Buffer.contents b ^ if n = 1 then " line" else " lines"
+
+let files (t : t) : int = List.length t.entries
+
 (* screen <-> units *)
 let to_px (c : camera) (u : float) : float = ((u -. c.cx) *. c.z) +. (float_of_int c.a.pw /. 2.)
 let to_py (c : camera) (v : float) : float = ((v -. c.cy) *. c.z) +. (float_of_int c.a.ph /. 2.)

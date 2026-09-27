@@ -36,6 +36,13 @@ val update : Playground.computer -> pressed:(string -> bool) -> arrow:string opt
    map alone, where the caller shows it (tinybox's panel) *)
 val view : ?chrome:bool -> Playground.computer -> t -> Playground.shape list
 
+(* the number of files shown, and of their lines; lines_text 12345 is
+   "12,345 lines" *)
+val files : t -> int
+val lines : t -> int
+val lines_of : entry list -> int
+val lines_text : int -> string
+
 (* A magnifying glass at the mouse, when it is over the map: the part
    under it painted again closer (enough for its code to be read: its
    lines about 16 units high, the VGA font's size), with a rim and a
