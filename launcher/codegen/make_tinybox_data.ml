@@ -90,7 +90,7 @@ let sources () : string list = List.concat_map walk (List.filter Sys.file_exists
 
 let () =
   let catalogue = read "CATALOG.md" in
-  print_string "(* generated from CATALOG.md and the golden frames by launcher/data/make_tinybox_data.ml *)\n";
+  print_string "(* generated from CATALOG.md and the golden frames by launcher/codegen/make_tinybox_data.ml *)\n";
   match Array.to_list Sys.argv with
   | [ _; "catalogue"; n ] ->
       Printf.printf "let catalogue = %S\n\n" catalogue;

@@ -406,7 +406,7 @@ platform are wanted (Batocera's "systems").
    thing in `bin/`.
 5. The catalog parser as a library; thumbnails at build time. Done
    2026-09-27: `launcher/catalogue/` (`Catalogue`, the sections with
-   their intro and rows, Markdown taken out); `launcher/data/`'s
+   their intro and rows, Markdown taken out); `launcher/codegen/`'s
    `make_tinybox_data`, the first golden frame halved twice (250 by
    250), in 8 shards dune runs side by side (a thumbnail is 0.3 s,
    mostly our PNG decoder: 55 s alone, 8 s so).

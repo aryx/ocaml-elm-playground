@@ -95,7 +95,7 @@
 (rule
  (targets Tinybox_data.ml)
  (deps %{project_root}/CATALOG.md)
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} catalogue 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} catalogue 8)))))
 ; claude: the repository's sources, for the code map (codemap/): the
 ; games', the apps', the kits', the playground's and the libraries' (see
 ; make_tinybox_data.ml for which), 10 MB
@@ -109,40 +109,40 @@
   (glob_files_rec %{project_root}/appkits/*.{ml,mli})
   (glob_files_rec %{project_root}/playground/*.{ml,mli})
   (glob_files_rec %{project_root}/libs/*.{ml,mli}))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} sources)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} sources)))))
 
 (rule
  (targets Tinybox_thumbs_0.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 0 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 0 8)))))
 (rule
  (targets Tinybox_thumbs_1.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 1 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 1 8)))))
 (rule
  (targets Tinybox_thumbs_2.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 2 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 2 8)))))
 (rule
  (targets Tinybox_thumbs_3.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 3 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 3 8)))))
 (rule
  (targets Tinybox_thumbs_4.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 4 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 4 8)))))
 (rule
  (targets Tinybox_thumbs_5.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 5 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 5 8)))))
 (rule
  (targets Tinybox_thumbs_6.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 6 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 6 8)))))
 (rule
  (targets Tinybox_thumbs_7.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:data/make_tinybox_data.exe} thumbnails 7 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 7 8)))))
 
 ; claude: the 3D previews are drawn by the software rasterizer, into an
 ; image shown in the menu's panel (Tinybox_menu, "Previews"): a copy of
