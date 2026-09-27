@@ -1,7 +1,7 @@
 # Plan: what's left for TinySmalltalk80
 
 The plan is done: see [`done/plan_tiny_smalltalk.md`](../done/plan_tiny_smalltalk.md)
--- `libs/languages/smalltalk/` (the Blue Book's language, compiled to
+-- `languages/smalltalk/` (the Blue Book's language, compiled to
 its bytecodes, run by its interpreter over an object table, the kernel
 in Smalltalk bootstrapped from `kernel/*.st`, `St_debug`, `St_image`,
 `St_bitblt`), `apps/devtools/TinySmalltalk80.ml` (the Browser,

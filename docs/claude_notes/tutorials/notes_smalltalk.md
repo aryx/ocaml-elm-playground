@@ -4,7 +4,7 @@ TinySmalltalk80 is Smalltalk-80 and its environment, the language and
 the programs it is written with in one live system
 (`plan_tiny_smalltalk.md`). This tutorial explains how it works, in
 the order the code is written: the language read
-(`libs/languages/smalltalk/`), the object memory, the compiler to the
+(`languages/smalltalk/`), the object memory, the compiler to the
 Blue Book's bytecodes, the interpreter, the kernel written in
 Smalltalk and bootstrapped, the debugger, the image, BitBlt, then the
 environment (`apps/devtools/TinySmalltalk80.ml`). Each section ends

@@ -3,7 +3,7 @@
 TinyMosaic and TinyNetscape read a page; TinyFirefox also runs it.
 This tutorial explains how, stage by stage, in the order the code is
 written (`plan_tiny_firefox.md`): first a language engine, knowing
-nothing of pages (`libs/languages/javascript/`), then what joins it to
+nothing of pages (`languages/javascript/`), then what joins it to
 the browser (`appkits/browser/`'s `Browser_script`), then the browser.
 Each section ends with the worked example its tests check.
 
@@ -42,7 +42,7 @@ to run (a click's handler, a timer's function), one at a time.
 | `Browser_script` | the page seen by a script: the mutable tree, the host objects, the events and timers, the console | 9, 10 |
 | `TinyFirefox` | the browser, its console and live tree | 11 |
 
-Read `Formula.mli` (`libs/languages/formula/`) first if you have never
+Read `Formula.mli` (`languages/formula/`) first if you have never
 written a parser: a spreadsheet's arithmetic by recursive descent, 250
 lines. This tutorial starts where it stops.
 
@@ -394,7 +394,7 @@ the element it fell on, and **bubbles**: the handlers of that element
 run, then of its parent, and so on up to `document`, unless one calls
 `event.stopPropagation()`. `event.preventDefault()` cancels what the
 browser would have done after (follow the link, send the form). That
-path is HyperCard's (`libs/languages/hypertalk`), a quarter century apart:
+path is HyperCard's (`languages/hypertalk`), a quarter century apart:
 
 ```
 HyperCard (1987)                   the DOM (1998)

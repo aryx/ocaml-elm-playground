@@ -37,7 +37,7 @@ one puzzle, `games/adventure/`. A game more than a lesson in rendering
 
 DONE (2026-09-26): `TinyMyst.ml` and `games/adventure/myst/`. The
 logic HyperTalk cards (the author's choice), through
-`libs/languages/hypertalk`. No `named` verb: `Povray.pick` returns the
+`languages/hypertalk`. No `named` verb: `Povray.pick` returns the
 very solid given to the scene, and the game keeps each button's name
 beside its solid, found by `==`; a card lists its own buttons, so a
 switch seen from afar is not one. The stills are JPEGs (17, 384 KB),
@@ -54,7 +54,7 @@ to do; it would give TinyBlender a file format of its own.
 What TinyBlender left, most worth doing first:
 
 - **TinyPovray**: POV-Ray's scene language parsed
-  (`libs/languages/povray`: `#declare`, the solids and their blocks,
+  (`languages/povray`: `#declare`, the solids and their blocks,
   `texture`, `pigment`, `finish`, `light_source`, `camera`, CSG), an
   editor pane (`appkits/editor`) beside the progressive render, F5 to
   render, a parse error at its line; a disk of scenes (the Cornell

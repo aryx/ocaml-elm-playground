@@ -48,7 +48,7 @@ with everything left out listed.
 - **Squeak 1.x first** (1996-1998: Morphic arriving, colour); Etoys a
   later phase; the Squeak 3.x years (Monticello, traits) out.
 - **One library, two kernels**: TinySqueak on the same
-  `libs/languages/smalltalk`, booted from a second set of kernel files
+  `languages/smalltalk`, booted from a second set of kernel files
   (the Blue Book's kernel, plus closures, colour and Morphic), so that
   the interpreter's improvements serve both. The alternative, a frozen
   Blue Book library and a diverging copy for Squeak, keeps
@@ -118,7 +118,7 @@ in `dev/notes_opti_ocaml.md`.
 
 ## Where it goes
 
-- `libs/languages/smalltalk/`: the interpreter's closures and speed;
+- `languages/smalltalk/`: the interpreter's closures and speed;
   `kernel/` the Blue Book's kernel as now; a second set,
   `kernel/squeak/` (closures, Color, Morphic, the tools), booted by
   `St_boot.boot ~kernel:`.

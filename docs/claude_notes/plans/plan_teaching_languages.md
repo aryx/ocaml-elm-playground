@@ -42,8 +42,8 @@ Which one depends on who writes the program, and in what language:
 One language can live in more than one place: the world and the
 interpreter are written once, and the playground layer, the game and
 the environment each put a different surface on them. The text
-languages already here are `libs/languages/formula`'s `Formula`,
-`libs/languages/hypertalk` and TinyCoreWar's Redcode assembler, so a parser
+languages already here are `languages/formula`'s `Formula`,
+`languages/hypertalk` and TinyCoreWar's Redcode assembler, so a parser
 with its errors shown on their lines is a solved problem to copy, not
 a new one.
 
@@ -210,8 +210,8 @@ left and not on the right is taken away" is, with a theory behind it.
 
 [`plan_gui_teaching.md`](done/plan_gui_teaching.md) gave the
 repository its first two text languages: TinyVisiCalc's formulas
-(`libs/languages/formula`'s `Formula`, the smallest useful language here) and
-TinyHyperCard's HyperTalk (`libs/languages/hypertalk`, cards and scripts, the
+(`languages/formula`'s `Formula`, the smallest useful language here) and
+TinyHyperCard's HyperTalk (`languages/hypertalk`, cards and scripts, the
 closest thing to a "way of programming" that a document can be). With
 TinyCoreWar's Redcode they are what a new parser should look like.
 `apps/devtools/`'s integrated environment (Turbo Pascal: edit, compile,

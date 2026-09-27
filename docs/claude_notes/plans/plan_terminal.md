@@ -360,7 +360,7 @@ returns **a grid of cells instead of shapes**.
    listing's sources in its first REMs. Left: an Ahl listing of our own against its
    OCaml port (Wumpus's needs RND(20)'s draws in the same order as
    Tty_wumpus's). Then (2026-09-25, plan_tiny_firefox.md) BASIC moved
-   to `libs/languages/basic` (the library `basic`), once `Teletype`'s
+   to `languages/basic` (the library `basic`), once `Teletype`'s
    pure half -- the programs as values, `run`, the machine -- became
    `libs/terminal/Talk`, `Teletype` keeping the keyboard, the drawing
    and the app.
@@ -368,11 +368,11 @@ returns **a grid of cells instead of shapes**.
    terminal), then TinyRogue. The editors done (2026-09-25): TinyVi and TinyEmacs in
    `apps/devtools/`, their programs in `appkits/editor` (`Tui_vi`;
    `Tui_emacs` over `Emacs_editor`, `Emacs_simple`, `Gap_buffer`), Emacs's
-   Lisp `libs/languages/lisp`, both also in a real terminal
+   Lisp `languages/lisp`, both also in a real terminal
    (`apps/devtools/tty/`).
 7. Later: the pty (native, then WebSocket); the cell Look for `gui/`,
    then TinyTurboPascal. Its language done first (2026-09-25):
-   `libs/languages/pascal`, Pascal-P's scheme -- a one-pass compiler to
+   `languages/pascal`, Pascal-P's scheme -- a one-pass compiler to
    P-code (`Pascal_compile`, `Pcode`), the P-machine (`Pmachine`, a Talk
    program: readln waits, loops run a slice a frame) and a disk of
    programs (`Pascal_disk`: Wirth's eight queens, Hanoi, the sieve). Then TinyTurboPascal

@@ -176,7 +176,7 @@ Some famous pages carry small scripts of the old kind -- functions,
 So, for these, a **site's scripts on**: Chrome's per-site setting
 ("JavaScript allowed for news.ycombinator.com"), a list the omnibox's
 page icon toggles, Hacker News and Gutenberg on it by default. And the
-**ES5 core** the engine then needs (`libs/languages/javascript`,
+**ES5 core** the engine then needs (`languages/javascript`,
 ~800 lines more, its own tests):
 
 - `new`, constructor functions and **prototypes** (a property looked up
@@ -286,7 +286,7 @@ which already reads video and sound:
   `getElementsBy...`, `classList`, `XMLHttpRequest`; the per-site
   setting: Hacker News' comments folding with its own `hn.js`.
   Refined by reading `hn.js` (5 KB, 2026-09-25), in two steps:
-  - *the engine* (`libs/languages/javascript`): `new`, a prototype
+  - *the engine* (`languages/javascript`): `new`, a prototype
     chain on every object (a function's `prototype` made when first
     read), `instanceof`, `Function.prototype.call`, `apply`, `bind`
     (`Array.prototype.indexOf.call(a, x)`, `slice.call`,

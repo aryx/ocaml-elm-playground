@@ -1,4 +1,4 @@
-# Plan: TinySmalltalk80, and libs/languages/smalltalk/
+# Plan: TinySmalltalk80, and languages/smalltalk/
 
 ## Context
 
@@ -39,10 +39,10 @@ with everything left out listed, each item an exercise or a "never".
 
 | Part | What it is | Where |
 |---|---|---|
-| the language | lexer, parser, AST: Smalltalk-80's syntax, the chunk file format | `libs/languages/smalltalk/` |
+| the language | lexer, parser, AST: Smalltalk-80's syntax, the chunk file format | `languages/smalltalk/` |
 | the compiler | the AST to the Blue Book's bytecodes, in `CompiledMethod` objects | same |
 | the virtual machine | the object memory, the interpreter over contexts that are objects, the primitives | same |
-| the kernel | the classes, written in Smalltalk (`.st` files embedded by dune), bootstrapped at startup | `libs/languages/smalltalk/kernel/` |
+| the kernel | the classes, written in Smalltalk (`.st` files embedded by dune), bootstrapped at startup | `languages/smalltalk/kernel/` |
 | the environment | the screen, windows, Browser, Workspace, Transcript, Inspector, Debugger | `apps/devtools/TinySmalltalk80.ml` |
 
 ### The language: Smalltalk-80 as the Blue Book gives it
@@ -240,7 +240,7 @@ main exercise, and the header says so first.
 
 ## Where it goes
 
-- **`libs/languages/smalltalk/`**, the library `smalltalk`, pure OCaml,
+- **`languages/smalltalk/`**, the library `smalltalk`, pure OCaml,
   no Playground (the `libs/` rule). The modules are prefixed `St_`
   because the libraries are unwrapped (no `St_` module exists yet):
   `St_lexer`, `St_ast`, `St_parse` (recursive descent; its `.mli`
@@ -260,7 +260,7 @@ main exercise, and the header says so first.
   an appkit (`appkits/smalltalk`, asked first). Its `software/`
   and `web/` twins, its CATALOG row, its golden frames.
 - The `apps/devtools/dune` comment ("a debugger (the Smalltalk-80
-  one)") is updated when the program exists. `libs/languages/README.md`
+  one)") is updated when the program exists. `languages/README.md`
   gains its row.
 
 The web build is the joke that teaches, as TinyFirefox's is: Xerox's
@@ -378,7 +378,7 @@ browser (SqueakJS did it by hand in 2014).
 
 ## Verification
 
-- `libs/languages/smalltalk/tests/`: the notes' worked examples (a
+- `languages/smalltalk/tests/`: the notes' worked examples (a
   parse, the metaclass chain, a method's bytes, a non-local return,
   `100 factorial`, a debugger session scripted), each phase adding its
   own.

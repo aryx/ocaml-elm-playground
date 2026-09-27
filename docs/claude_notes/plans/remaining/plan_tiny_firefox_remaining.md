@@ -1,8 +1,8 @@
-# Plan: what's left for TinyFirefox and libs/languages/
+# Plan: what's left for TinyFirefox and languages/
 
 The plan is done: see
 [`done/plan_tiny_firefox.md`](../done/plan_tiny_firefox.md) -- the
-JavaScript engine `libs/languages/javascript/` (`Js_lexer`, `Js_ast`,
+JavaScript engine `languages/javascript/` (`Js_lexer`, `Js_ast`,
 `Js_parse`, a Pratt parser; `Js_value`; `Js_eval`, a tree walker with
 a budget of steps; `Js_builtins`), the page's side in `appkits/browser`
 (`Browser_script`: the mutable copy of the tree frozen after each
@@ -12,7 +12,7 @@ TinyFirefox (Firefox 1.0, 2004) over them, its panel after Firebug
 (the console and its command line, the live tree), its pages
 `about:counter`, `about:todo`, `about:timer`, `about:tictactoe`; with
 the tutorial [`notes_javascript.md`](../../tutorials/notes_javascript.md).
-And `libs/languages/` opened, `Formula`, BASIC and HyperTalk moved in.
+And `languages/` opened, `Formula`, BASIC and HyperTalk moved in.
 TinyChrome's C8 since added the ES5 core (prototypes and `new`, `var`
 hoisted, `==`, regular expressions, `Date`, `<script src>`); the
 language's next tier is in `plan_tiny_chrome_remaining.md`.
@@ -72,17 +72,17 @@ TinyChrome's remaining (its section 5); not repeated here. Left:
   measured against it; the house has two models, Pascal's P-code
   (`Pcode`, `Pmachine`) and Smalltalk's bytecodes.
 
-## 5. libs/languages/: the extractions
+## 5. languages/: the extractions
 
 The plan's table, what it proposed and was not done:
 
 - **Karel's language**: its parser out of `TinyKarel.ml` into
-  `libs/languages/karel/`, with an AST of its own; the game translating
+  `languages/karel/`, with an AST of its own; the game translating
   it to the `Karel` way's commands.
 - **Redcode**: the assembler and the machine (MARS) out of
   `TinyCoreWar.ml` into a library, the game its screen.
 - **Logo's text**: `repeat 4 [fd 100 rt 90]` read into the `Logo`
-  way's commands, a new `libs/languages/logo/` (the way stays: an
+  way's commands, a new `languages/logo/` (the way stays: an
   OCaml API).
 - **`Formula` grown** into a general expression evaluator: strings,
   comparisons and `IF` (what the spreadsheets added after VisiCalc;

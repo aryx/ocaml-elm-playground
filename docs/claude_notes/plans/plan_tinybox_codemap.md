@@ -11,7 +11,7 @@ Bell Labs, 1992: every line of a program as a coloured row, a whole
 system on one screen).
 
 The author's directions, in order:
-- a `libs/languages/ocaml/` (decided: `ocaml/`) that **parses, no eval or
+- a `languages/ocaml/` (decided: `ocaml/`) that **parses, no eval or
   compile**;
 - "maybe a bit more than ocaml-light, but ideally the Playground at some
   point can be compiled by ocaml-light (which has restrictions)":
@@ -110,7 +110,7 @@ semgrep-pfff-langs as inspiration". Surveyed 2026-09-27 (paths under
 
 ## Design
 
-### 1. `libs/languages/ocaml/`: the parser (library `ocaml`... or `lang_ocaml`)
+### 1. `languages/ocaml/`: the parser (library `ocaml`... or `lang_ocaml`)
 
 Parse only, as its README entry will say (the folder's rule is "parsed
 and run": this one is a visualizer's).
@@ -273,9 +273,9 @@ a library's directory, a program's libraries, their closure.
 2026-09-27: steps 1, 5 and a first 6, laid out differently from the
 plan at the author's request (a `launcher/codemap/` imitating codemap,
 the treemap in it, a program's several files, zooming smoothly):
-- `libs/languages/ocaml/` (library `lang_ocaml`): `Token_ml`,
+- `languages/ocaml/` (library `lang_ocaml`): `Token_ml`,
   `Lexer_ml.mll`, `Highlight_ml` (tokens only); and, language
-  independent (the author: C may come), `libs/languages/highlight/`'s
+  independent (the author: C may come), `languages/highlight/`'s
   `Highlight_code`. Every `.ml`/`.mli` of the repository lexed: 2.1M
   tokens, no error, 1.5 s with the highlighting.
 - `launcher/codemap/` (library `tinybox_codemap`): `Treemap` (squarified
