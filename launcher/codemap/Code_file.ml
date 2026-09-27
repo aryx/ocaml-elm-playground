@@ -14,6 +14,7 @@ type t = {
   path : string;
   lines : Highlight_code.span list array;
   grid : Bytes.t;
+  chars : Bytes.t;
   defs : (int * string * Highlight_code.category) list;
 }
 
@@ -27,13 +28,23 @@ let make (path : string) (src : string) : t =
   let lines = if ocaml then Highlight_ml.lines src else plain src in
   let n = Array.length lines in
   let grid = Bytes.make (n * cols) '\000' in
+  let chars = Bytes.make (n * cols) '\000' in
   let defs = ref [] in
   Array.iteri
     (fun y spans ->
       List.iter
         (fun (s : Highlight_code.span) ->
           let code = Char.chr (1 + Highlight_code.index s.category) in
-          String.iteri (fun k c -> if s.col + k < cols && c <> ' ' && c <> '\t' then Bytes.set grid ((y * cols) + s.col + k) code) s.text;
+          let k = ref 0 in
+          while !k < String.length s.text do
+            let c, len = Vga_font.decode s.text !k in
+            let x = s.col + !k in
+            if x < cols && s.text.[!k] <> ' ' && s.text.[!k] <> '\t' then begin
+              Bytes.set grid ((y * cols) + x) code;
+              Bytes.set chars ((y * cols) + x) (Char.chr c)
+            end;
+            k := !k + len
+          done;
           match s.category with
           | Def_function | Def_value | Def_type | Def_module -> defs := (y, s.text, s.category) :: !defs
           | Comment_section when String.length s.text > 4 && s.text.[3] <> '*' ->
@@ -43,7 +54,7 @@ let make (path : string) (src : string) : t =
           | _ -> ())
         spans)
     lines;
-  { path; lines; grid; defs = List.rev !defs }
+  { path; lines; grid; chars; defs = List.rev !defs }
 
 let nlines (f : t) : int = Array.length f.lines
 

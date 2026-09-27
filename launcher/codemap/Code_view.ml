@@ -17,16 +17,15 @@
  *   |=====  |  |  1  let move (p : point) ~dx =             |
  *   |==     |  |  2    Point.add p dx                        |
  *   |[====] |  |  3                                           |
- *   |[==   ]|  |     the code, a character per cell           |
+ *   |[==   ]|  |     the code, the VGA's 8 by 16 font          |
  *   |===    |  |                                             |
  *   +-------+  +---------------------------------------------+
  *   the overview        arrows scroll ... esc back
  *
- * The overview is one bitmap, made once per file; the code is a
- * [words] per character, on a grid, as Teletype draws a terminal (the
- * playground's font is not a fixed-width one): some 2000 shapes a
- * frame. A font of our own, glyphs blitted into one image, is the
- * plan's step 2.
+ * The overview is one bitmap, made once per file; the page of code is
+ * another, its characters copied from the VGA's font (Vga_font), a
+ * screen pixel per glyph pixel -- 100 columns of 8 pixels, 53 lines of
+ * 16 -- made again only when it scrolls.
  *)
 
 open Playground
@@ -36,17 +35,17 @@ open Playground
 (*****************************************************************************)
 
 let top_y = 420. (* the panels' top edge *)
-let bottom_y = -440.
 let map_left = -480.
-let map_w = 150.
-let code_left = -310.
-let code_right = 490.
-let line_h = 16.
-let visible = int_of_float ((top_y -. bottom_y) /. line_h)
+let map_w = 110.
 let gutter = 5 (* the line numbers' columns *)
 let cols = 100 (* shown; the rest of a longer line is cut *)
-let cell_w = (code_right -. code_left) /. float_of_int (cols + gutter + 1)
-let font = 13.
+let visible = 53
+let line_h = float_of_int Vga_font.height
+let page_w = (cols + gutter + 1) * Vga_font.width
+let page_h = visible * Vga_font.height
+let code_left = -360.
+let code_right = code_left +. float_of_int page_w
+let bottom_y = top_y -. float_of_int page_h
 
 (*****************************************************************************)
 (* Model *)
@@ -57,9 +56,8 @@ type t = {
   lines : Highlight_code.span list array;
   overview : Rgba_image.t;
   top : int; (* the first line shown, from 0 *)
+  mutable page : (int * Rgba_image.t) option; (* the page from a top line *)
 }
-
-let color_of ((r, g, b) : int * int * int) : color = rgb r g b
 
 (* SeeSoft's picture: a pixel per character, its category's colour *)
 let overview_of (f : Code_file.t) : Rgba_image.t =
@@ -78,7 +76,7 @@ let overview_of (f : Code_file.t) : Rgba_image.t =
   img
 
 let make ?(line = 0) (file : Code_file.t) : t =
-  let v = { file; lines = file.lines; overview = overview_of file; top = 0 } in
+  let v = { file; lines = file.lines; overview = overview_of file; top = 0; page = None } in
   { v with top = max 0 (min (Array.length v.lines - visible) (line - (visible / 2))) }
 
 let clamp (v : t) (top : int) : t = { v with top = max 0 (min (Array.length v.lines - visible) top) }
@@ -118,7 +116,6 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
 (* View *)
 (*****************************************************************************)
 
-let ink = rgb 228 228 240
 let dim = rgb 140 140 180
 let yellow = rgb 255 215 70
 let cyan = rgb 0 225 255
@@ -129,31 +126,70 @@ let text ?(size = 16.) (color : color) (x : number) (y : number) (s : string) : 
   let w = 0.47 *. size *. float_of_int (String.length s) in
   words color s |> scale (size /. words_font_size) |> move (x +. (w /. 2.)) y
 
-(* a character in the cell of column [col] (from 0) of the row at [y] *)
-let glyph (color : color) (col : int) (y : number) (c : char) : shape =
-  words color (String.make 1 c)
-  |> scale (font /. words_font_size)
-  |> move (code_left +. ((float_of_int (col + gutter + 1) +. 0.5) *. cell_w)) y
+(* the character [c] (code page 437) copied into [img] at the cell
+ * ([col], [row]), its ink in [rgb] *)
+let blit (img : Rgba_image.t) (col : int) (row : int) ((r, g, b) : int * int * int) (c : int) : unit =
+  for y = 0 to Vga_font.height - 1 do
+    let bits = Vga_font.row c y in
+    if bits <> 0 then
+      for x = 0 to Vga_font.width - 1 do
+        if (bits lsr (7 - x)) land 1 = 1 then begin
+          let i = 4 * ((((row * Vga_font.height) + y) * img.width) + (col * Vga_font.width) + x) in
+          Bigarray.Array1.unsafe_set img.rgba i r;
+          Bigarray.Array1.unsafe_set img.rgba (i + 1) g;
+          Bigarray.Array1.unsafe_set img.rgba (i + 2) b
+        end
+      done
+  done
+
+(* the lines from [v.top], numbered, into one image *)
+let page_of (v : t) : Rgba_image.t =
+  let img = Rgba_image.create ~width:page_w ~height:page_h in
+  let br, bg, bb = Highlight_code.background in
+  for i = 0 to (page_w * page_h) - 1 do
+    Bigarray.Array1.unsafe_set img.rgba (4 * i) br;
+    Bigarray.Array1.unsafe_set img.rgba ((4 * i) + 1) bg;
+    Bigarray.Array1.unsafe_set img.rgba ((4 * i) + 2) bb;
+    Bigarray.Array1.unsafe_set img.rgba ((4 * i) + 3) 255
+  done;
+  for r = 0 to min visible (Array.length v.lines - v.top) - 1 do
+    let n = v.top + r in
+    let number = string_of_int (n + 1) in
+    String.iteri (fun k c -> blit img (gutter - String.length number + k) r (110, 140, 140) (Char.code c)) number;
+    List.iter
+      (fun (s : Highlight_code.span) ->
+        let rgb = Highlight_code.rgb s.category in
+        (* a column per byte, as Code_file's grids: a character of several
+         * bytes in its first *)
+        let k = ref 0 in
+        while !k < String.length s.text do
+          let c, len = Vga_font.decode s.text !k in
+          let col = s.col + !k in
+          if col < cols && s.text.[!k] <> '\t' then blit img (gutter + 1 + col) r rgb c;
+          k := !k + len
+        done)
+      v.lines.(n)
+  done;
+  img
 
 let code_lines (computer : computer) (v : t) : shape list =
+  let img =
+    match v.page with
+    | Some (top, img) when top = v.top -> img
+    | _ ->
+        let img = page_of v in
+        v.page <- Some (v.top, img);
+        img
+  in
   let mouse = computer.mouse in
-  List.concat
-    (List.init (min visible (Array.length v.lines - v.top)) (fun r ->
-         let n = v.top + r in
-         let y = top_y -. ((float_of_int r +. 0.5) *. line_h) in
-         (* the line under the mouse, lit *)
-         let under = mouse.mx >= code_left && mouse.mx <= code_right && Float.abs (mouse.my -. y) < line_h /. 2. in
-         let number = string_of_int (n + 1) in
-         (if under then [ rectangle (rgb 70 110 110) (code_right -. code_left) line_h |> move ((code_left +. code_right) /. 2.) y ] else [])
-         @ List.mapi (fun k c -> glyph (rgb 110 140 140) (k - String.length number - 1) y c) (List.of_seq (String.to_seq number))
-         @ List.concat_map
-             (fun (s : Highlight_code.span) ->
-               let color = color_of (Highlight_code.rgb s.category) in
-               List.concat
-                 (List.mapi
-                    (fun k c -> if c = ' ' || c = '\t' || s.col + k >= cols then [] else [ glyph color (s.col + k) y c ])
-                    (List.of_seq (String.to_seq s.text))))
-             v.lines.(n)))
+  let cx = (code_left +. code_right) /. 2. in
+  (* the line under the mouse, lit *)
+  let r = int_of_float ((top_y -. mouse.my) /. line_h) in
+  [ bitmap (float_of_int page_w) (float_of_int page_h) img |> move cx ((top_y +. bottom_y) /. 2.) ]
+  @
+  if mouse.mx >= code_left && mouse.mx <= code_right && mouse.my <= top_y && r >= 0 && r < visible then
+    [ rectangle white (code_right -. code_left) line_h |> move cx (top_y -. ((float_of_int r +. 0.5) *. line_h)) |> fade 0.12 ]
+  else []
 
 let overview (v : t) : shape list =
   let h = map_h v in
@@ -171,17 +207,15 @@ let overview (v : t) : shape list =
 
 let view (computer : computer) (v : t) : shape list =
   let screen = computer.screen in
-  let br, bg, bb = Highlight_code.background in
   [
     rectangle (rgb 12 10 28) screen.width screen.height;
-    rectangle (rgb br bg bb) (code_right -. code_left) (top_y -. bottom_y) |> move ((code_left +. code_right) /. 2.) ((top_y +. bottom_y) /. 2.);
     text ~size:22. yellow map_left 452. v.file.path;
     text ~size:14. dim 330. 452. (Printf.sprintf "%d lines" (Array.length v.lines));
   ]
   @ overview v @ code_lines computer v
   @ [
-      text ~size:13. dim map_left (-475.)
+      text ~size:13. dim map_left (-470.)
         "arrows wheel pgup pgdn home end scroll   click the overview to go there   esc back to the map";
-      text ~size:11. cyan (map_left +. map_w +. 10.) (-455.)
+      text ~size:11. cyan (map_left +. map_w +. 10.) (bottom_y -. 14.)
         (Printf.sprintf "%d-%d" (v.top + 1) (min (Array.length v.lines) (v.top + visible)));
     ]

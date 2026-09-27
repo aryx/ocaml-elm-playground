@@ -13,9 +13,9 @@
    large (a function's, a type's, a section's), and close enough, its
    code turns into text that can be read on the map itself.
 
-   The picture is painted into one image per camera (a file's code is
-   thousands of pixels, not shapes), the names and labels over it as
-   shapes. *)
+   The picture is painted into one image per camera, the code's letters
+   included (the VGA's font, Vga_font: a file is thousands of characters,
+   not shapes), the names and labels over it as shapes. *)
 
 type entry = { path : string; nlines : int; file : Code_file.t Lazy.t }
 

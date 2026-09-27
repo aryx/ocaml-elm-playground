@@ -20,11 +20,10 @@
  *
  * A file's rectangle holds its lines in k columns of [Code_file.cols]
  * characters, k chosen once (from the rectangle's shape, so the same at
- * every zoom) to make a character's cell about twice as high as wide;
- * a pixel's colour is the category of the character under it. The
- * cells are big enough to read at some zoom: from then on the file's
- * pixels are only its background, and its characters are drawn as
- * words over it.
+ * every zoom) to make a character's cell about twice as high as wide,
+ * the VGA font's 8 by 16; a pixel's colour is the category of the
+ * character under it, and, once the cells are big enough to read, only
+ * where the character's glyph has ink (paint_code).
  *)
 
 open Playground
@@ -52,7 +51,7 @@ type t = {
   drag : (float * float * camera) option; (* where the press began, and the camera then *)
   dragged : bool; (* the press moved: its release is no click *)
   before_right : bool;
-  mutable painted : (camera * Rgba_image.t * shape list) option; (* the picture of [cam], and its text *)
+  mutable painted : (camera * Rgba_image.t) option; (* the picture of [cam] *)
 }
 
 type action = Stay | Open of Code_file.t * int | Close
@@ -153,9 +152,12 @@ let palette : (int * int * int) array = Array.map Highlight_code.rgb Highlight_c
 (* Painting *)
 (*****************************************************************************)
 
-(* text from a cell this high on the screen *)
-let text_px = 9.
-let glyph_budget = 6000
+(* claude: the characters drawn (Vga_font's glyphs) from a cell this high
+ * on the screen; below it, a cell is a block of its category's colour,
+ * SeeSoft's picture *)
+let text_px = 7.
+
+let readable (c : camera) (g : geometry) : bool = g.cell_h *. c.z >= text_px
 
 let fill (img : Rgba_image.t) (x0 : int) (y0 : int) (x1 : int) (y1 : int) ((r, g, b) : int * int * int) : unit =
   for y = y0 to y1 - 1 do
@@ -174,23 +176,40 @@ let clip (c : camera) (r : Treemap.rect) : (int * int * int * int) option =
   let y0 = max 0 (int_of_float (Float.round (to_py c r.y))) and y1 = min ph (int_of_float (Float.round (to_py c (r.y +. r.h)))) in
   if x1 <= x0 || y1 <= y0 then None else Some (x0, y0, x1, y1)
 
-(* a file's code in miniature: each pixel the category of its character *)
+(* A file's code, each pixel found from the layout: the cell under it
+ * (its column of lines, its line, its character), then, far away, the
+ * cell's colour, and near, the pixel of the character's glyph under it
+ * (a cell is 8 by 16 of the glyph's pixels, scaled: nearest neighbour).
+ * So zooming in turns the blocks into letters with no text drawn: the
+ * same loop, one more lookup. *)
 let paint_code (img : Rgba_image.t) (c : camera) (r : Treemap.rect) (g : geometry) (f : Code_file.t) ((x0, y0, x1, y1) : int * int * int * int)
     (bg : int * int * int) : unit =
   let n = Code_file.nlines f in
-  (* claude: the column and character of each pixel's x, once *)
-  let colx = Array.init (x1 - x0) (fun i ->
-      let u = to_u c (float_of_int (x0 + i) +. 0.5) -. r.x in
-      let col = int_of_float (u /. g.colw) in
-      (col, int_of_float ((u -. (float_of_int col *. g.colw)) /. g.cell_w)))
-  in
+  let glyphs = readable c g in
+  (* claude: for each pixel's x, once: its column of lines, its character,
+   * and the glyph's pixel column in it *)
+  let colx = Array.make (x1 - x0) 0 and chx = Array.make (x1 - x0) 0 and gx = Array.make (x1 - x0) 0 in
+  for i = 0 to x1 - x0 - 1 do
+    let u = to_u c (float_of_int (x0 + i) +. 0.5) -. r.x in
+    let col = int_of_float (u /. g.colw) in
+    let fc = (u -. (float_of_int col *. g.colw)) /. g.cell_w in
+    colx.(i) <- col;
+    chx.(i) <- int_of_float fc;
+    gx.(i) <- int_of_float ((fc -. Float.of_int (int_of_float fc)) *. float_of_int Vga_font.width)
+  done;
   let br, bgc, bb = bg in
   for y = y0 to y1 - 1 do
-    let lc = int_of_float ((to_v c (float_of_int y +. 0.5) -. r.y) /. g.cell_h) in
+    let fl = (to_v c (float_of_int y +. 0.5) -. r.y) /. g.cell_h in
+    let lc = int_of_float fl in
+    let gy = int_of_float ((fl -. Float.of_int lc) *. float_of_int Vga_font.height) in
     for x = x0 to x1 - 1 do
-      let col, ch = colx.(x - x0) in
+      let col = colx.(x - x0) and ch = chx.(x - x0) in
       let line = (col * g.lpc) + lc in
-      let code = if line < n && lc < g.lpc && ch < Code_file.cols && ch >= 0 then Char.code (Bytes.unsafe_get f.grid ((line * Code_file.cols) + ch)) else 0 in
+      let cell = (line * Code_file.cols) + ch in
+      let code = if line < n && lc < g.lpc && ch < Code_file.cols && ch >= 0 then Char.code (Bytes.unsafe_get f.grid cell) else 0 in
+      let code =
+        if code <> 0 && glyphs && not (Vga_font.bit (Char.code (Bytes.unsafe_get f.chars cell)) gx.(x - x0) gy) then 0 else code
+      in
       let i = 4 * ((y * pw) + x) in
       let r, gg, b = if code = 0 then (br, bgc, bb) else palette.(code - 1) in
       Bigarray.Array1.unsafe_set img.rgba i r;
@@ -200,58 +219,9 @@ let paint_code (img : Rgba_image.t) (c : camera) (r : Treemap.rect) (g : geometr
     done
   done
 
-(* a file's characters as words, for a file close enough to read *)
-let glyphs (c : camera) (r : Treemap.rect) (g : geometry) (f : Code_file.t) ((x0, y0, x1, y1) : int * int * int * int) : shape list =
-  let n = Code_file.nlines f in
-  let cw = g.cell_w *. c.z and chh = g.cell_h *. c.z in
-  let size = Float.min (chh *. 0.8) (cw /. 0.5) in
-  let out = ref [] in
-  for col = 0 to g.k - 1 do
-    let cx0 = r.x +. (float_of_int col *. g.colw) in
-    (* the lines and characters of this column on the screen *)
-    let l0 = max 0 (int_of_float ((to_v c (float_of_int y0) -. r.y) /. g.cell_h)) in
-    let l1 = min (g.lpc - 1) (int_of_float ((to_v c (float_of_int y1) -. r.y) /. g.cell_h)) in
-    let c0 = max 0 (int_of_float ((to_u c (float_of_int x0) -. cx0) /. g.cell_w)) in
-    let c1 = min (Code_file.cols - 1) (int_of_float ((to_u c (float_of_int x1) -. cx0) /. g.cell_w)) in
-    for lc = l0 to l1 do
-      let line = (col * g.lpc) + lc in
-      if line < n then
-        List.iter
-          (fun (s : Highlight_code.span) ->
-            let rr, gg, bb = Highlight_code.rgb s.category in
-            let color = rgb rr gg bb in
-            String.iteri
-              (fun k ch ->
-                let cc = s.col + k in
-                if cc >= c0 && cc <= c1 && ch <> ' ' && ch <> '\t' then
-                  let px = to_px c (cx0 +. ((float_of_int cc +. 0.5) *. g.cell_w)) and py = to_py c (r.y +. ((float_of_int lc +. 0.5) *. g.cell_h)) in
-                  out := (words color (String.make 1 ch) |> scale (size /. words_font_size) |> move (sx px) (sy py)) :: !out)
-              s.text)
-          f.lines.(line)
-    done
-  done;
-  !out
-
-(* the files near enough to read, if their characters fit the budget *)
-let readable (t : t) (c : camera) : bool array =
-  let chosen = Array.make (Array.length t.placed) false in
-  let cost = ref 0 in
-  Array.iteri
-    (fun i (p : entry Treemap.placed) ->
-      match (p.node, t.geometry.(i), clip c p.rect) with
-      | File _, Some g, Some (_, y0, _, y1) when g.cell_h *. c.z >= text_px ->
-          chosen.(i) <- true;
-          (* about 30 characters a line *)
-          cost := !cost + (30 * g.k * int_of_float (float_of_int (y1 - y0) /. (g.cell_h *. c.z)))
-      | _ -> ())
-    t.placed;
-  if !cost > glyph_budget * 2 then Array.make (Array.length t.placed) false else chosen
-
-let paint (t : t) (c : camera) : Rgba_image.t * shape list =
+let paint (t : t) (c : camera) : Rgba_image.t =
   let img = Rgba_image.create ~width:pw ~height:ph in
   fill img 0 0 pw ph dark;
-  let text = readable t c in
-  let words = ref [] in
   Array.iteri
     (fun i (p : entry Treemap.placed) ->
       match clip c p.rect with
@@ -264,10 +234,6 @@ let paint (t : t) (c : camera) : Rgba_image.t * shape list =
               (* claude: a file too small to show anything is not lexed:
                * the whole repository's map opens without lexing it all *)
               if (x1 - x0) * (y1 - y0) < 40 && not (Lazy.is_val e.file) then fill img x0 y0 x1 y1 (mix (archi p.path) 0.5 bg)
-              else if text.(i) then begin
-                fill img x0 y0 x1 y1 bg;
-                if List.length !words < glyph_budget then words := glyphs c p.rect g (Lazy.force e.file) box @ !words
-              end
               else paint_code img c p.rect g (Lazy.force e.file) box bg;
               (* a dark line on its top and left edges, between files *)
               if x1 - x0 > 6 && y1 - y0 > 6 then begin
@@ -276,7 +242,7 @@ let paint (t : t) (c : camera) : Rgba_image.t * shape list =
               end
           | File _, None -> ()))
     t.placed;
-  (img, !words)
+  img
 
 (*****************************************************************************)
 (* Update *)
@@ -423,7 +389,7 @@ let candidate ~(rank : float) ?alpha (color : color) (size : float) (px : float)
 
 (* the names over the map: directories', big and faint (codemap's); files';
  * and, from afar, what each file defines, bigger the more it matters *)
-let labels (t : t) (c : camera) (text : bool array) : shape list =
+let labels (t : t) (c : camera) : shape list =
   let dirs = ref [] and files = ref [] and defs = ref [] in
   Array.iteri
     (fun i (p : entry Treemap.placed) ->
@@ -439,12 +405,12 @@ let labels (t : t) (c : camera) (text : bool array) : shape list =
               if s >= 12. then dirs := label ~alpha:0.35 ink s ((float_of_int x0 +. float_of_int x1) /. 2.) ((float_of_int y0 +. float_of_int y1) /. 2.) name :: !dirs
           | File (_, _, e), Some g ->
               let s = Float.min (fit_size (String.length name)) (Float.min (h /. 3.) 20.) in
-              if text.(i) then
+              if readable c g then
                 files := candidate ~rank:100. yellow (Float.min 14. s) (to_px c p.rect.x +. (0.25 *. float_of_int (String.length name) *. Float.min 14. s) +. 4.) (to_py c p.rect.y +. 8.) name :: !files
               else if s >= 10. then
                 files := candidate ~rank:(50. +. s) ~alpha:0.9 ink s ((float_of_int x0 +. float_of_int x1) /. 2.) ((float_of_int y0 +. float_of_int y1) /. 2.) name :: !files;
               (* the semantic zoom: definitions written over the code *)
-              if (not text.(i)) && Lazy.is_val e.file then
+              if (not (readable c g)) && Lazy.is_val e.file then
                 List.iter
                   (fun (line, def, cat) ->
                     let size = Float.min 22. (g.cell_h *. c.z *. Highlight_code.emphasis cat *. 1.6) in
@@ -463,15 +429,14 @@ let labels (t : t) (c : camera) (text : bool array) : shape list =
 
 let view (computer : computer) (t : t) : shape list =
   let c = t.cam in
-  let img, glyphs =
+  let img =
     match t.painted with
-    | Some (pc, img, g) when pc = c -> (img, g)
+    | Some (pc, img) when pc = c -> img
     | _ ->
-        let img, g = paint t c in
-        t.painted <- Some (c, img, g);
-        (img, g)
+        let img = paint t c in
+        t.painted <- Some (c, img);
+        img
   in
-  let text = readable t c in
   let mouse = computer.mouse in
   let mpx = px_of mouse.mx and mpy = py_of mouse.my in
   let u = to_u c mpx and v = to_v c mpy in
@@ -506,7 +471,7 @@ let view (computer : computer) (t : t) : shape list =
     rectangle (rgb 12 10 28) computer.screen.width computer.screen.height;
     bitmap (float_of_int pw) (float_of_int ph) img |> move (sx (float_of_int pw /. 2.)) (sy (float_of_int ph /. 2.));
   ]
-  @ glyphs @ labels t c text @ marks @ hover
+  @ labels t c @ marks @ hover
   @ [
       words yellow t.title |> scale (22. /. words_font_size) |> move 0. 455.;
       words ink status |> scale (14. /. words_font_size) |> move 0. (-455.);

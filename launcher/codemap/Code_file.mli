@@ -8,10 +8,13 @@ type t = {
   path : string; (* "games/platform/TinyMario.ml" *)
   lines : Highlight_code.span list array;
   grid : Bytes.t; (* [cols] a line: 0 a space, else 1 + Highlight_code.index *)
+  chars : Bytes.t; (* the same cells' characters, code page 437 (Vga_font) *)
   defs : (int * string * Highlight_code.category) list; (* line (from 0), name, category: the top-level ones *)
 }
 
-(* the grid's width: longer lines are cut *)
+(* the grids' width: longer lines are cut. A cell is a byte of the
+   line: a character of several bytes in UTF-8 is in its first cell, the
+   others blank *)
 val cols : int
 
 (* [make path src]: [src] highlighted by its language's highlighter,
