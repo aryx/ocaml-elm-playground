@@ -10,11 +10,14 @@
 
 (* See Codemap.mli *)
 
+(* which files: the program's own code, then with all it uses, then all *)
+type scope = Own | Uses | Whole
+
 type t = {
   program : string;
   path : string;
   sources : (string * string) list;
-  whole : bool; (* the whole repository, not the program's files *)
+  scope : scope;
   map : Code_map.t;
   file : Code_view.t option; (* a file open over the map *)
 }
@@ -45,8 +48,16 @@ let entry (path : string) (src : string) : Code_map.entry =
   in
   { path; nlines = count_lines src; file }
 
-(* the program's file and the modules it uses, transitively *)
-let closure (sources : (string * string) list) (path : string) : string list =
+let starts (prefix : string) (s : string) : bool = String.length s >= String.length prefix && String.sub s 0 (String.length prefix) = prefix
+
+(* the program's own code: its folder's, and the kits' (games' and
+ * apps'), not the Playground's nor libs/', which every program shares *)
+let own (program_path : string) (p : string) : bool =
+  Filename.dirname p = Filename.dirname program_path || starts "gamekits/" p || starts "appkits/" p
+
+(* the program's file and the modules it uses, transitively, those that
+ * pass [keep] *)
+let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : string) : string list =
   let by_name : (string, string list) Hashtbl.t = Hashtbl.create 1024 in
   (* claude: not the platforms: every program runs on one, and through
    * it (the native one's downloads) reaches TLS and its cryptography *)
@@ -68,7 +79,7 @@ let closure (sources : (string * string) list) (path : string) : string list =
           | None -> []
           | Some src ->
               Code_file.modules_used src
-              |> List.filter_map (fun m -> match Hashtbl.find_opt by_name m with Some [ q ] -> Some q | _ -> None)
+              |> List.filter_map (fun m -> match Hashtbl.find_opt by_name m with Some [ q ] when keep q -> Some q | _ -> None)
         in
         visit (used @ rest)
   in
@@ -77,17 +88,26 @@ let closure (sources : (string * string) list) (path : string) : string list =
   List.filter (fun (p, _) -> Hashtbl.mem seen p || (Filename.check_suffix p ".mli" && Hashtbl.mem seen (Filename.remove_extension p ^ ".ml"))) sources
   |> List.map fst
 
-let map_of ~(sources : (string * string) list) ~(program : string) ~(path : string) ~(whole : bool) : Code_map.t =
-  let paths = if whole then List.map fst sources else closure sources path in
+let map_of ~(sources : (string * string) list) ~(program : string) ~(path : string) ~(scope : scope) : Code_map.t =
+  let paths =
+    match scope with
+    | Own -> closure ~keep:(own path) sources path
+    | Uses -> closure sources path
+    | Whole -> List.map fst sources
+  in
   let entries = List.filter_map (fun p -> Option.map (entry p) (List.assoc_opt p sources)) paths in
+  let n = List.length entries in
+  let files = if n = 1 then "1 file" else Printf.sprintf "%d files" n in
   let title =
-    if whole then Printf.sprintf "the whole repository: %d files" (List.length entries)
-    else Printf.sprintf "%s: %d files, its own and what it uses" program (List.length entries)
+    match scope with
+    | Own -> Printf.sprintf "%s: its code, %s   (w: with what it uses)" program files
+    | Uses -> Printf.sprintf "%s and what it uses: %s   (w: the whole repository)" program files
+    | Whole -> Printf.sprintf "the whole repository: %s   (w: %s's code)" files program
   in
   Code_map.make ~title ~marked:[ path ] entries
 
 let make ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
-  { program; path; sources; whole = false; map = map_of ~sources ~program ~path ~whole:false; file = None }
+  { program; path; sources; scope = Own; map = map_of ~sources ~program ~path ~scope:Own; file = None }
 
 (*****************************************************************************)
 (* Update and view *)
@@ -100,8 +120,8 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
       else Some { t with file = Some (Code_view.update computer ~pressed ~arrow v) }
   | None ->
       if pressed "w" then
-        let whole = not t.whole in
-        Some { t with whole; map = map_of ~sources:t.sources ~program:t.program ~path:t.path ~whole }
+        let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole -> Own in
+        Some { t with scope; map = map_of ~sources:t.sources ~program:t.program ~path:t.path ~scope }
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
         | _, Close -> None

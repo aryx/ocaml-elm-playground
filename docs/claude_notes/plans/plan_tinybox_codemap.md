@@ -288,11 +288,21 @@ the treemap in it, a program's several files, zooming smoothly):
   repository. The code is drawn with `words`, a shape per character:
   the font (step 2) is still to come.
 
+Then, the same day: step 2, the font, the VGA's 8 by 16 (the author's
+choice, "we can always offer the option for the xterm one later"):
+`libs/graphics/font/Vga_font`, code page 437 from the Linux console's
+u_vga16 fonts; the map paints the glyphs in its one image (a pixel samples
+its character's glyph once a line is 6 pixels high), the file view is a
+1:1 page. And the map's scopes (the author: "by default a simpler view
+with just the program and really the related necessary code"): its own
+code by default (its folder's and the kits' modules), then, `w`, all it
+uses, then the whole repository; each folder with files of its own has
+its path on a tab, for finding it later in the repository.
+
 ## Open questions for the author
 
-- The font: the VGA's 8 by 16 (CP437, crisp and retro, the menu's look),
-  or glyphs rasterized from a TrueType font at build time (smoother,
-  heavier)?
+- The font: decided, the VGA's 8 by 16; xterm's misc-fixed maybe
+  later, as an option.
 - The modules' names: pfff's style (`Lexer_ml`, `Parser_ml`,
   `Highlight_ml`, as codemap's) was chosen here; the library's name
   (`ocaml` clashes with nothing in dune, but reads oddly).

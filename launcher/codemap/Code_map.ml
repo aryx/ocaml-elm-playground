@@ -155,7 +155,7 @@ let palette : (int * int * int) array = Array.map Highlight_code.rgb Highlight_c
 (* claude: the characters drawn (Vga_font's glyphs) from a cell this high
  * on the screen; below it, a cell is a block of its category's colour,
  * SeeSoft's picture *)
-let text_px = 7.
+let text_px = 6.
 
 let readable (c : camera) (g : geometry) : bool = g.cell_h *. c.z >= text_px
 
@@ -400,9 +400,31 @@ let labels (t : t) (c : camera) : shape list =
           let name = match p.node with Dir (n, _) -> n | File (n, _, _) -> n in
           let fit_size len = w /. (0.55 *. float_of_int (max 1 len)) in
           match (p.node, t.geometry.(i)) with
-          | Dir _, _ when p.depth > 0 && w *. h < 0.4 *. float_of_int (pw * ph) ->
+          | Dir (_, kids), _ when p.depth > 0 || p.path <> "" ->
+              (* codemap's: the name big and faint over the directory,
+               * but for one filling the map *)
               let s = Float.min (fit_size (String.length name)) (Float.min (h /. 4.) 90.) in
-              if s >= 12. then dirs := label ~alpha:0.35 ink s ((float_of_int x0 +. float_of_int x1) /. 2.) ((float_of_int y0 +. float_of_int y1) /. 2.) name :: !dirs
+              if s >= 12. && w *. h < 0.4 *. float_of_int (pw * ph) then
+                dirs := candidate ~rank:s ~alpha:0.35 ink s ((float_of_int x0 +. float_of_int x1) /. 2.) ((float_of_int y0 +. float_of_int y1) /. 2.) name :: !dirs;
+              (* ours: its path on a tab at its top left, the way back to it in
+               * the repository; only a directory with files of its own, as
+               * the path says its parents' names *)
+              let size = 13. in
+              let tw = (0.5 *. size *. float_of_int (String.length p.path)) +. 8. in
+              let has_files = List.exists (function Treemap.File _ -> true | Dir _ -> false) kids in
+              if has_files && w >= tw && h >= 40. then begin
+                let tx = to_px c p.rect.x +. 2. and ty = to_py c p.rect.y +. 2. in
+                let tx = Float.max 0. tx and ty = Float.max 0. ty in
+                let r, gg, b = archi p.path in
+                let shape =
+                  group
+                    [
+                      rectangle (rgb 12 10 28) tw (size +. 6.) |> move (sx (tx +. (tw /. 2.))) (sy (ty +. ((size +. 6.) /. 2.)));
+                      label (rgb (min 255 (r + 60)) (min 255 (gg + 60)) (min 255 (b + 60))) size (tx +. (tw /. 2.)) (ty +. ((size +. 6.) /. 2.)) p.path;
+                    ]
+                in
+                files := { rank = 300. -. float_of_int p.depth; box = (tx, ty, tx +. tw, ty +. size +. 6.); shape } :: !files
+              end
           | File (_, _, e), Some g ->
               let s = Float.min (fit_size (String.length name)) (Float.min (h /. 3.) 20.) in
               if readable c g then
@@ -425,7 +447,8 @@ let labels (t : t) (c : camera) : shape list =
                   (Lazy.force e.file).defs
           | _ -> ()))
     t.placed;
-  List.rev !dirs @ place (!files @ !defs)
+  (* the directories' names faint under the rest, placed among themselves *)
+  place !dirs @ place (!files @ !defs)
 
 let view (computer : computer) (t : t) : shape list =
   let c = t.cam in
