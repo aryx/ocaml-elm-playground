@@ -71,7 +71,7 @@ let fetch_file (source : string) (k : string option -> unit) : unit =
       Logs.warn (fun m -> m "can't get %s: %s" source (Printexc.to_string e));
       k None
 
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network app =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?screen app =
   (* claude: tinybox taking the app for a preview (Playground.capture) *)
   match !Playground.capture with
   | Some give -> give (Playground.Any_app app)
@@ -84,8 +84,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network a
   Transport.set_tunnel Tls_tunnel.connect;
   Transport.set_tls (fun caps ~host ~port -> Tls_client.connect_lines caps ~host ~port);
   Native_loop_2d.parse_cli_and_setup_logging ();
-  let sx = int_of_float Playground.default_width in
-  let sy = int_of_float Playground.default_height in
+  let sx, sy = match screen with Some wh -> wh | None -> (int_of_float Playground.default_width, int_of_float Playground.default_height) in
 
   (* claude: a window that can change size (-size, -fullscreen,
    * Alt+Enter, dragged), the program's sx by sy picture scaled to fit it,
@@ -172,4 +171,16 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network a
     ~pull_audio:(fun n -> let s = Audio.pull n in (s.left, s.right))
     ~dump_audio:(fun file (left, right) -> Wav.write_stereo file { left; right })
     ~audio_latency:Audio.set_latency
-    ~init:(fun () -> app.init flags) ~update:app.update ~subscriptions:app.subscriptions ~view:app.view
+    ~init:(fun () ->
+      let model, cmd = app.init flags in
+      (* claude: a screen other than the default, said to the program
+       * before its first frame, through its own subscriptions *)
+      match screen with
+      | None -> (model, cmd)
+      | Some (w, h) -> (
+          match Sub.event_to_msgopt (Sub.EResized (w, h)) (app.subscriptions model) with
+          | Some msg ->
+              let model, cmd2 = app.update msg model in
+              (model, Cmd.batch [ cmd; cmd2 ])
+          | None -> (model, cmd)))
+    ~update:app.update ~subscriptions:app.subscriptions ~view:app.view

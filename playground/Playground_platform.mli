@@ -8,7 +8,14 @@
  * Playground.flags *)
 val run_app:
   ?rendering:Playground.rendering -> ?flags:Playground.flags -> ?network:< Cap.network ; .. > ->
-  ('a, 'b) Playground.app -> unit
+  ?screen:int * int -> ('a, 'b) Playground.app -> unit
+(* claude: [screen] (default: Playground.default_width by
+ * default_height, 1000 by 1000), the program's screen, for a program
+ * made for another shape (tinybox's menu, 16:9): the window starts at
+ * that shape and the program is told its size at once (Sub.on_resize,
+ * which Playground.game follows: computer.screen). The window still
+ * scales the picture to fit it, whatever its size. The native Cairo
+ * platform only, for now; the others keep 1000 by 1000. *)
 (* claude: [network], the program's capability to reach the network
  * (plan_caps.md), for what the platform does on its behalf: download
  * an image given by URL (Download.grant). A program granting it says

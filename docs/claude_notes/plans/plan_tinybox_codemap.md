@@ -299,6 +299,14 @@ code by default (its folder's and the kits' modules), then, `w`, all it
 uses, then the whole repository; each folder with files of its own has
 its path on a tab, for finding it later in the repository.
 
+And tinybox itself went wide (the author: "start the tinybox in a wide
+setting ... proportional to modern screen"): `run_app ~screen` (a shared
+change, reviewed first), the menu at 1778 by 1000, the grid of 5 columns
+on the left, on the right the live preview, the catalogue's text beside
+it, and under both its code: the program's own code's map,
+`Codemap.preview`, a click (or `s`) opening the full map, which fills
+the wide screen (`Code_map`'s area now a parameter).
+
 ## Open questions for the author
 
 - The font: decided, the VGA's 8 by 16; xterm's misc-fixed maybe

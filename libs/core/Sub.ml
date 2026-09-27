@@ -18,6 +18,10 @@ type 'msg onesub =
   | SubTyped of (string -> 'msg)
   | SubMouseWheel of (float -> 'msg)
   | SubMouseDouble of (unit -> 'msg)
+  (* claude: the program's screen, its width and height, when the platform
+   * gives it one other than the default (Playground_platform.run_app's
+   * ?screen) *)
+  | SubResize of (int -> int -> 'msg)
 
 
 type 'msg t = 'msg onesub list
@@ -62,6 +66,9 @@ let (on_mouse_wheel: (float -> 'msg) -> 'msg t) = fun f ->
 let (on_mouse_double: (unit -> 'msg) -> 'msg t) = fun f ->
   [SubMouseDouble f]
 
+let (on_resize: (int -> int -> 'msg) -> 'msg t) = fun f ->
+  [SubResize f]
+
 
 
 
@@ -77,6 +84,7 @@ type event =
   (* claude: notches up (positive) or down since the last frame *)
   | EMouseWheel of float
   | EMouseDouble
+  | EResized of (int * int)
 
 let rec find_map_opt f = function
   | [] -> None
@@ -153,5 +161,10 @@ let event_to_msgopt event subs =
   | EMouseDouble ->
       subs |> find_map_opt (function
         | SubMouseDouble f -> Some (f ())
+        | _ -> None
+      )
+  | EResized (w, h) ->
+      subs |> find_map_opt (function
+        | SubResize f -> Some (f w h)
         | _ -> None
       )

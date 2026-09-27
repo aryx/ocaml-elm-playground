@@ -12,22 +12,21 @@
  *
  * A Playground game like the others, its world the catalogue
  * (Tinybox_data, made at build time from CATALOG.md and the golden
- * frames). The screen, for the default 1000 by 1000 window:
+ * frames). The screen, 16:9, 1778 by 1000 (run_app's ~screen, scaled
+ * to the window):
  *
- *   TINYBOX                                GAMES  APPS     / search
- *   < Platform >                                              3 / 15
- *   Run and jump from platform to platform... (the section's intro)
- *   +------+ +------+ +------+    +---------------------------+
- *   |      | |      | |      |    |                           |
- *   +------+ +------+ +------+    |   the chosen one's        |
- *   TinyMario TinySonic ...       |   screenshot              |
- *   +------+ +------+ +------+    |                           |
- *   ...                           +---------------------------+
- *                                 TinyMario  2D
- *                                 After Super Mario Bros. (...)
- *                                 Run, jump, stomp...
- *                                 The side-scroller: ...
- *   arrows move  tab section  enter play  / search
+ *   TINYBOX  GAMES  APPS  / search
+ *   < Platform >              3 / 15  +-------------+  TinyMario  2D
+ *   Run and jump from platform to...  |             |  After Super Mario
+ *   +----+ +----+ +----+ +----+ +----+|  the chosen |  Bros. (...)
+ *   |    | |    | |    | |    | |    ||  one, live  |  Run, jump, stomp...
+ *   +----+ +----+ +----+ +----+ +----+|             |  The side-scroller:
+ *   TinyMario TinySonic ...           +-------------+  ...
+ *   +----+ +----+ +----+ +----+ +----++--------------------------------+
+ *   ...                               |  its code (Codemap.preview),   |
+ *                                     |  a click (or s) opens it all   |
+ *                                     +--------------------------------+
+ *   arrows move  tab section  enter play  / search  s code
  *
  * Keys: the arrows, Tab and Shift-Tab (the next section, across both
  * shelves), g and a (the games' and the apps' first section), Enter
@@ -470,16 +469,31 @@ let preview_ms (p : Catalogue.program) : float option =
 (* Layout *)
 (*****************************************************************************)
 
-let cols = 3
+(* claude: the menu's screen, 16:9 (run_app's ~screen): the grid on the
+ * left, the chosen one on the right *)
+let screen_w = 1778
+let screen_h = 1000
+let left_edge = -869. (* the left margin's end *)
+
+let cols = 5
 let rows = 4
 let thumb = 132.
 let cell_w = 160.
 let cell_h = 172.
-let grid_left = -480. (* the first column's left edge *)
+let grid_left = left_edge (* the first column's left edge *)
 let grid_top = 285. (* the first row's top edge *)
 let shot = 400. (* the chosen one's screenshot *)
-let shot_x = 275.
-let shot_y = 85.
+let shot_x = 160.
+let shot_y = 230.
+let text_x = 385. (* what the catalogue says, right of the screenshot *)
+let text_w = 480.
+
+(* its code, under both: where Code_map draws it (its top left, pixels) *)
+let code_area = (-40., 10., 909, 440)
+
+let in_code_area ((mx, my) : number * number) : bool =
+  let x, y, w, h = code_area in
+  mx >= x && mx <= x +. float_of_int w && my <= y && my >= y -. float_of_int h
 
 (* the first row shown: the chosen one's row kept in view *)
 let first_row (m : model) : int = max 0 ((m.pos / cols) - rows + 1)
@@ -494,15 +508,15 @@ let cell_centre (m : model) (i : int) : (number * number) option =
     Some (grid_left +. (float_of_int c *. cell_w) +. (thumb /. 2.), grid_top -. (float_of_int r *. cell_h) -. (thumb /. 2.))
 
 (* the buttons at the top: the two shelves, the section's arrows *)
-let games_tab = (140., 455.)
-let apps_tab = (240., 455.)
-let prev_arrow = (-470., 400.)
-let next_arrow = (-110., 400.)
+let games_tab = (-560., 455.)
+let apps_tab = (-460., 455.)
+let prev_arrow = (-859., 400.)
+let next_arrow = (-499., 400.)
 
 (* the filter bar: each word's left end, and its key *)
 let bar_y = 322.
-let bar = [ ("b", -480.); ("p", -300.); ("e", -135.); ("m", 10.); ("l", 190.); ("c", 330.) ]
-let bar_width = 150.
+let bar = [ ("b", -869.); ("p", -709.); ("e", -559.); ("m", -434.); ("l", -284.); ("c", -164.) ]
+let bar_width = 120.
 
 let near ((x, y) : number * number) ((mx, my) : number * number) ~(w : number) ~(h : number) : bool =
   Float.abs (mx -. x) <= w /. 2. && Float.abs (my -. y) <= h /. 2.
@@ -596,9 +610,13 @@ let bar_key (computer : computer) (m : model) (key : string) : model =
   | _ -> m
 
 (* the chosen program's code map *)
-let open_code (m : model) : model =
+let open_code (screen : screen) (m : model) : model =
   match chosen m with
-  | Some p -> { m with code = Some (Codemap.make ~sources:Tinybox_sources.sources ~program:p.name ~path:p.source) }
+  | Some p ->
+      (* the whole screen, but for the title above and the status and keys
+       * below *)
+      let area = (screen.left +. 20., screen.top -. 80., int_of_float screen.width - 40, int_of_float screen.height - 150) in
+      { m with code = Some (Codemap.make ~area ~sources:Tinybox_sources.sources ~program:p.name ~path:p.source) }
   | None -> m
 
 let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) (computer : computer) (m : model) :
@@ -634,7 +652,7 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
         else if pressed "PageUp" then to_section m (step_section m (-1))
         else if pressed "g" then to_shelf m true
         else if pressed "a" then to_shelf m false
-        else if pressed "s" then open_code m
+        else if pressed "s" then open_code computer.screen m
         else
           match List.find_opt pressed [ "b"; "p"; "e"; "m"; "l"; "c"; "r" ] with
           | Some k -> bar_key computer m k
@@ -651,6 +669,7 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
     if not (mouse.mclick || mouse.mdouble) then m
     else if near games_tab at ~w:90. ~h:36. then to_shelf m true
     else if near apps_tab at ~w:80. ~h:36. then to_shelf m false
+    else if in_code_area at then open_code computer.screen m
     else if near prev_arrow at ~w:40. ~h:40. then to_section m (step_section m (-1))
     else if near next_arrow at ~w:40. ~h:40. then to_section m (step_section m 1)
     else
@@ -736,33 +755,33 @@ let header (computer : computer) (m : model) : shape list =
   let shelf = match (m.search, current_group m) with None, Some g -> g.games | _ -> None in
   let games = shelf = Some true and apps = shelf = Some false in
   let tab on (x, y) label = [ text ~size:22. (if on then yellow else dim) (x -. 40.) y label ] @ if on then [ rectangle yellow 70. 3. |> move (x -. 2.) (y -. 17.) ] else [] in
-  [ text ~size:40. magenta (-482.) 452. "TINY"; text ~size:40. cyan (-386.) 452. "BOX" ]
+  [ text ~size:40. magenta left_edge 452. "TINY"; text ~size:40. cyan (left_edge +. 96.) 452. "BOX" ]
   @ tab games games_tab "GAMES"
   @ tab apps apps_tab "APPS"
   @ [
       (match m.search with
       | Some q ->
           let cursor = if Float.rem (now computer) 1. < 0.5 then "_" else " " in
-          text ~size:18. yellow 320. 452. (cut ~size:18. ~width:170. ("/" ^ q ^ cursor))
-      | None -> text ~size:14. dim 330. 452. "/ to search");
+          text ~size:18. yellow (-340.) 452. (cut ~size:18. ~width:250. ("/" ^ q ^ cursor))
+      | None -> text ~size:14. dim (-330.) 452. "/ to search");
     ]
 
 let section_bar (m : model) : shape list =
   let n = List.length (shown m) in
   match m.search with
-  | Some q -> [ text ~size:24. yellow (-480.) 400. (Printf.sprintf "Search: %s" q); text ~size:14. dim 400. 400. (Printf.sprintf "%d found" n) ]
+  | Some q -> [ text ~size:24. yellow left_edge 400. (Printf.sprintf "Search: %s" q); text ~size:14. dim (-150.) 400. (Printf.sprintf "%d found" n) ]
   | None -> (
       let gs = groups m.grouping m.filters in
       match current_group m with
-      | None -> [ text ~size:24. magenta (-480.) 400. "Nothing passes the filters"; text ~size:13. dim (-480.) 360. "c clears them" ]
+      | None -> [ text ~size:24. magenta left_edge 400. "Nothing passes the filters"; text ~size:13. dim left_edge 360. "c clears them" ]
       | Some g ->
           [
             centred ~size:24. cyan (fst prev_arrow) (snd prev_arrow) "<";
-            text ~size:24. yellow (-445.) 400. (cut ~size:24. ~width:320. g.title);
+            text ~size:24. yellow (-834.) 400. (cut ~size:24. ~width:320. g.title);
             centred ~size:24. cyan (fst next_arrow) (snd next_arrow) ">";
-            text ~size:14. dim 400. 400. (Printf.sprintf "%d / %d" (min m.section (Array.length gs - 1) + 1) (Array.length gs));
+            text ~size:14. dim (-150.) 400. (Printf.sprintf "%d / %d" (min m.section (Array.length gs - 1) + 1) (Array.length gs));
           ]
-          @ paragraph ~size:13. dim (-480.) 360. ~width:960. ~lines:1 g.intro)
+          @ paragraph ~size:13. dim left_edge 360. ~width:800. ~lines:1 g.intro)
 
 (* the filter bar: each key, what it chooses, its value (yellow when it
  * filters) *)
@@ -809,38 +828,66 @@ let players_text (p : Catalogue.program) : string =
   let count = match String.index_opt p.players ' ' with Some i -> String.sub p.players 0 i | None -> p.players in
   (count ^ if count = "1" then " player" else " players") ^ if Catalogue.online p then ", over the network" else ""
 
+(* claude: the chosen one's code at a glance, its own code's map
+ * (Codemap.preview) in the panel under its picture: made once it has
+ * been chosen for 20 frames (lexing its files is not free while the
+ * arrows run through the grid), the last one kept (a map keeps its
+ * picture) *)
+let code_preview : (string * Code_map.t) option ref = ref None
+
+let code_of (p : Catalogue.program) : Code_map.t option =
+  match !code_preview with
+  | Some (name, c) when name = p.name -> Some c
+  | _ ->
+      if fst !chosen_since = p.name && !frames - snd !chosen_since >= 20 then begin
+        let c = Codemap.preview ~area:code_area ~sources:Tinybox_sources.sources ~program:p.name ~path:p.source in
+        code_preview := Some (p.name, c);
+        Some c
+      end
+      else None
+
+let code_panel (computer : computer) (p : Catalogue.program) : shape list =
+  let x, y, w, h = code_area in
+  let w = float_of_int w and h = float_of_int h in
+  let cx = x +. (w /. 2.) and cy = y -. (h /. 2.) in
+  (match code_of p with
+  | Some c -> Code_map.view ~chrome:false computer c
+  | None -> [ rectangle panel w h |> move cx cy; centred ~size:14. dim cx cy "its code..." ])
+  @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) "its code: a click, or s, explores it" ]
+
 (* the chosen one, large, and what the catalogue says of it *)
-let details (runnable : string list) (m : model) : shape list =
+let details (computer : computer) (runnable : string list) (m : model) : shape list =
   match chosen m with
   | None -> [ centred ~size:18. dim shot_x shot_y "nothing here" ]
   | Some p ->
-      let left = shot_x -. (shot /. 2.) in
+      let left = text_x in
       let ok = List.mem p.name runnable in
       [ frame magenta shot shot 3. |> move shot_x shot_y ]
       @ (match preview_shapes p with Some _ -> [] | None -> [ picture p shot |> move shot_x shot_y ])
       @ [
-          text ~size:26. ink left (-150.) (cut ~size:26. ~width:300. p.name);
-          text ~size:16. yellow (left +. shot -. 60.) (-150.) p.look;
-          text ~size:13. yellow left (-178.) (Printf.sprintf "%d   %s   %s" p.year p.platform (players_text p));
+          text ~size:24. ink left 410. (cut ~size:24. ~width:(text_w -. 60.) p.name);
+          text ~size:16. yellow (left +. text_w -. 40.) 410. p.look;
+          text ~size:13. yellow left 380. (Printf.sprintf "%d   %s   %s" p.year p.platform (players_text p));
         ]
       (* claude: the software rasterizer's time on a 3D preview: tinybox
        * as its stress test, every 3D game drawn live *)
       @ (match preview_ms p with
         | Some ms ->
             let n = every ms in
-            [ text ~size:11. dim (left +. shot -. 230.) (-178.)
+            [ text ~size:11. dim left 358.
                 (Printf.sprintf "rasterized in %.0f ms%s" ms (if n = 1 then "" else Printf.sprintf ", one frame in %d" n)) ]
         | None -> [])
-      @ paragraph ~size:14. cyan left (-205.) ~width:shot ~lines:2 ("After " ^ p.after)
-      @ paragraph ~size:15. ink left (-252.) ~width:shot ~lines:2 p.one_line
-      @ paragraph ~size:13. dim left (-300.) ~width:shot ~lines:5 p.brought
-      @ if ok then [] else [ text ~size:14. magenta left (-400.) "not in this tinybox" ]
+      @ paragraph ~size:14. cyan left 330. ~width:text_w ~lines:2 ("After " ^ p.after)
+      @ paragraph ~size:14. ink left 280. ~width:text_w ~lines:3 p.one_line
+      @ paragraph ~size:12. dim left 210. ~width:text_w ~lines:9 p.brought
+      @ (if ok then [] else [ text ~size:14. magenta left 45. "not in this tinybox" ])
+      @ code_panel computer p
 
 let footer (m : model) : shape list =
-  let playing = match m.child with Some c -> [ text ~size:18. yellow (-480.) (-440.) ("> " ^ c.name ^ " is running") ] | None -> [] in
-  [ text ~size:13. dim (-480.) (-475.) "arrows move   tab section   g/a games/apps   b group   p e m l filter   / search   s code   enter play" ]
+  let playing = match m.child with Some c -> [ text ~size:18. yellow left_edge (-440.) ("> " ^ c.name ^ " is running") ] | None -> [] in
+  [ text ~size:13. dim left_edge (-475.) "arrows move   tab section   g/a games/apps   b group   p e m l filter   / search   s code   enter play" ]
   @ playing
-  @ if m.status = "" then [] else [ text ~size:16. magenta 60. (-440.) (cut ~size:16. ~width:420. m.status) ]
+  @ if m.status = "" then [] else [ text ~size:16. magenta (-400.) (-440.) (cut ~size:16. ~width:340. m.status) ]
 
 (* claude: a CRT's lines, every 4 pixels a darker one over everything *)
 let scanlines (screen : screen) : shape list =
@@ -872,7 +919,7 @@ let view (runnable : string list) (computer : computer) (m : model) : shape list
   | None ->
   [ rectangle background screen.width screen.height ]
   @ live screen m
-  @ header computer m @ section_bar m @ filter_bar m @ grid computer runnable m @ details runnable m @ footer m @ scanlines screen
+  @ header computer m @ section_bar m @ filter_bar m @ grid computer runnable m @ details computer runnable m @ footer m @ scanlines screen
 
 (*****************************************************************************)
 (* Entry point *)
@@ -880,4 +927,4 @@ let view (runnable : string list) (computer : computer) (m : model) : shape list
 
 let run (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) : unit =
   let caps = (caps :> < Cap.fork ; Cap.exec ; Cap.wait >) in
-  Playground_platform.run_app ~flags:(Playground_platform.flags ()) (game (view runnable) (update caps runnable) initial_model)
+  Playground_platform.run_app ~screen:(screen_w, screen_h) ~flags:(Playground_platform.flags ()) (game (view runnable) (update caps runnable) initial_model)

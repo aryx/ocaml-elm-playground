@@ -47,7 +47,10 @@ help) only work when run with `-debug-keys` (e.g.
 `-script "right:1-60,space:30"` (game keys held over frames). The
 native Cairo and OpenGL windows can change size (dragged, `-size WxH`,
 `-fullscreen`, Alt+Enter toggling full screen): the program's screen
-stays 1000 by 1000, drawn scaled to fit, centred, black bars round it
+stays 1000 by 1000 -- or the shape a program asks for, `run_app
+~screen:(w, h)`, told to it by a first `Resized` (`Sub.on_resize`,
+which `game` follows), native Cairo only (tinybox's menu: 1778 by
+1000, 16:9) -- drawn scaled to fit, centred, black bars round it
 (`Native_loop_2d.scale`); the software platforms' windows stay 1000 by
 1000, the golden frames' size.
 

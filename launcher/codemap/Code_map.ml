@@ -34,7 +34,12 @@ open Playground
 
 type entry = { path : string; nlines : int; file : Code_file.t Lazy.t }
 
-type camera = { cx : float; cy : float; z : float }
+(* where the map is on the screen: its top left corner in the
+ * playground's coordinates, its size in pixels *)
+type area = { left : float; top : float; pw : int; ph : int }
+
+(* [a] rides along: every function given the camera knows where it draws *)
+type camera = { cx : float; cy : float; z : float; a : area }
 
 (* a file's geometry in its rectangle, in units *)
 type geometry = { k : int; lpc : int; (* lines per column *) colw : float; cell_w : float; cell_h : float }
@@ -60,13 +65,9 @@ type action = Stay | Open of Code_file.t * int | Close
 (* Layout *)
 (*****************************************************************************)
 
-(* the map on the screen, for the menu's 1000 by 1000 *)
-let left = -480.
-let top = 420.
-let pw = 960
-let ph = 860
-
-let root_rect : Treemap.rect = { x = 0.; y = 0.; w = float_of_int pw; h = float_of_int ph }
+(* the layout is in a rectangle the map's size, its units its pixels at
+ * the first zoom *)
+let root_rect (a : area) : Treemap.rect = { x = 0.; y = 0.; w = float_of_int a.pw; h = float_of_int a.ph }
 
 let geometry_of (r : Treemap.rect) (nlines : int) : geometry =
   let n = max 1 nlines in
@@ -80,34 +81,37 @@ let geometry_of (r : Treemap.rect) (nlines : int) : geometry =
   let rec best k acc = if k > min n 64 then acc else best (k + 1) (let g = make k in if score g < score acc then g else acc) in
   best 2 (make 1)
 
-let relayout (algo : Treemap.algo) (entries : entry list) : entry Treemap.placed array * geometry option array =
+let relayout (a : area) (algo : Treemap.algo) (entries : entry list) : entry Treemap.placed array * geometry option array =
   let tree =
     Treemap.fold_singletons (Treemap.of_paths (List.map (fun e -> (e.path, float_of_int (max 1 e.nlines), e)) entries))
   in
-  let placed = Array.of_list (Treemap.layout algo root_rect tree) in
+  let placed = Array.of_list (Treemap.layout algo (root_rect a) tree) in
   (placed, Array.map (fun (p : entry Treemap.placed) -> match p.node with File (_, _, e) -> Some (geometry_of p.rect e.nlines) | Dir _ -> None) placed)
 
-let fit (r : Treemap.rect) : camera =
-  { cx = r.x +. (r.w /. 2.); cy = r.y +. (r.h /. 2.); z = 0.96 *. Float.min (float_of_int pw /. r.w) (float_of_int ph /. r.h) }
+let fit (a : area) (r : Treemap.rect) : camera =
+  { cx = r.x +. (r.w /. 2.); cy = r.y +. (r.h /. 2.); z = 0.96 *. Float.min (float_of_int a.pw /. r.w) (float_of_int a.ph /. r.h); a }
 
-let home : camera = { (fit root_rect) with z = 1. }
+let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 
-let make ~(title : string) ~(marked : string list) (entries : entry list) : t =
-  let placed, geometry = relayout Squarified entries in
-  { title; marked; entries; algo = Squarified; placed; geometry; cam = home; target = home; drag = None; dragged = false;
+let make ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
+  let left, top, pw, ph = area in
+  let a = { left; top; pw; ph } in
+  let placed, geometry = relayout a Squarified entries in
+  { title; marked; entries; algo = Squarified; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None }
 
 (* screen <-> units *)
-let to_px (c : camera) (u : float) : float = ((u -. c.cx) *. c.z) +. (float_of_int pw /. 2.)
-let to_py (c : camera) (v : float) : float = ((v -. c.cy) *. c.z) +. (float_of_int ph /. 2.)
-let to_u (c : camera) (px : float) : float = c.cx +. ((px -. (float_of_int pw /. 2.)) /. c.z)
-let to_v (c : camera) (py : float) : float = c.cy +. ((py -. (float_of_int ph /. 2.)) /. c.z)
+let to_px (c : camera) (u : float) : float = ((u -. c.cx) *. c.z) +. (float_of_int c.a.pw /. 2.)
+let to_py (c : camera) (v : float) : float = ((v -. c.cy) *. c.z) +. (float_of_int c.a.ph /. 2.)
+let to_u (c : camera) (px : float) : float = c.cx +. ((px -. (float_of_int c.a.pw /. 2.)) /. c.z)
+let to_v (c : camera) (py : float) : float = c.cy +. ((py -. (float_of_int c.a.ph /. 2.)) /. c.z)
 
 (* the playground's coordinates of a pixel of the map, and back *)
-let sx (px : float) : number = left +. px
-let sy (py : float) : number = top -. py
-let px_of (x : number) : float = x -. left
-let py_of (y : number) : float = top -. y
+let sx (a : area) (px : float) : number = a.left +. px
+let sy (a : area) (py : float) : number = a.top -. py
+let px_of (a : area) (x : number) : float = x -. a.left
+let py_of (a : area) (y : number) : float = a.top -. y
+let on (a : area) (px : float) (py : float) : bool = px >= 0. && px < float_of_int a.pw && py >= 0. && py < float_of_int a.ph
 
 let inside (r : Treemap.rect) (u : float) (v : float) : bool = u >= r.x && u < r.x +. r.w && v >= r.y && v < r.y +. r.h
 
@@ -162,7 +166,7 @@ let readable (c : camera) (g : geometry) : bool = g.cell_h *. c.z >= text_px
 let fill (img : Rgba_image.t) (x0 : int) (y0 : int) (x1 : int) (y1 : int) ((r, g, b) : int * int * int) : unit =
   for y = y0 to y1 - 1 do
     for x = x0 to x1 - 1 do
-      let i = 4 * ((y * pw) + x) in
+      let i = 4 * ((y * img.width) + x) in
       Bigarray.Array1.unsafe_set img.rgba i r;
       Bigarray.Array1.unsafe_set img.rgba (i + 1) g;
       Bigarray.Array1.unsafe_set img.rgba (i + 2) b;
@@ -172,8 +176,8 @@ let fill (img : Rgba_image.t) (x0 : int) (y0 : int) (x1 : int) (y1 : int) ((r, g
 
 (* a rectangle's pixels on the map, clipped: None if off it *)
 let clip (c : camera) (r : Treemap.rect) : (int * int * int * int) option =
-  let x0 = max 0 (int_of_float (Float.round (to_px c r.x))) and x1 = min pw (int_of_float (Float.round (to_px c (r.x +. r.w)))) in
-  let y0 = max 0 (int_of_float (Float.round (to_py c r.y))) and y1 = min ph (int_of_float (Float.round (to_py c (r.y +. r.h)))) in
+  let x0 = max 0 (int_of_float (Float.round (to_px c r.x))) and x1 = min c.a.pw (int_of_float (Float.round (to_px c (r.x +. r.w)))) in
+  let y0 = max 0 (int_of_float (Float.round (to_py c r.y))) and y1 = min c.a.ph (int_of_float (Float.round (to_py c (r.y +. r.h)))) in
   if x1 <= x0 || y1 <= y0 then None else Some (x0, y0, x1, y1)
 
 (* A file's code, each pixel found from the layout: the cell under it
@@ -210,7 +214,7 @@ let paint_code (img : Rgba_image.t) (c : camera) (r : Treemap.rect) (g : geometr
       let code =
         if code <> 0 && glyphs && not (Vga_font.bit (Char.code (Bytes.unsafe_get f.chars cell)) gx.(x - x0) gy) then 0 else code
       in
-      let i = 4 * ((y * pw) + x) in
+      let i = 4 * ((y * img.width) + x) in
       let r, gg, b = if code = 0 then (br, bgc, bb) else palette.(code - 1) in
       Bigarray.Array1.unsafe_set img.rgba i r;
       Bigarray.Array1.unsafe_set img.rgba (i + 1) gg;
@@ -220,8 +224,8 @@ let paint_code (img : Rgba_image.t) (c : camera) (r : Treemap.rect) (g : geometr
   done
 
 let paint (t : t) (c : camera) : Rgba_image.t =
-  let img = Rgba_image.create ~width:pw ~height:ph in
-  fill img 0 0 pw ph dark;
+  let img = Rgba_image.create ~width:c.a.pw ~height:c.a.ph in
+  fill img 0 0 c.a.pw c.a.ph dark;
   Array.iteri
     (fun i (p : entry Treemap.placed) ->
       match clip c p.rect with
@@ -258,12 +262,12 @@ let ease (c : camera) (target : camera) : camera =
   (* the centre moves so that the point the zoom goes to stays put: a
    * straight line in the layout at a rate scaled by the zoom's *)
   let near = Float.abs (Float.log (z /. target.z)) < 0.002 && Float.abs (c.cx -. target.cx) *. z < 0.3 && Float.abs (c.cy -. target.cy) *. z < 0.3 in
-  if near then target else { cx = c.cx +. (a *. (target.cx -. c.cx)); cy = c.cy +. (a *. (target.cy -. c.cy)); z }
+  if near then target else { c with cx = c.cx +. (a *. (target.cx -. c.cx)); cy = c.cy +. (a *. (target.cy -. c.cy)); z }
 
 (* the directory round the view, a size bigger: where going up goes *)
 let up (t : t) : camera =
   let c = t.target in
-  let vw = float_of_int pw /. c.z and vh = float_of_int ph /. c.z in
+  let vw = float_of_int c.a.pw /. c.z and vh = float_of_int c.a.ph /. c.z in
   let best = ref None in
   Array.iter
     (fun (p : entry Treemap.placed) ->
@@ -274,12 +278,13 @@ let up (t : t) : camera =
           | _ -> best := Some p)
       | _ -> ())
     t.placed;
-  match !best with Some p when p.depth > 0 -> fit p.rect | _ -> home
+  match !best with Some p when p.depth > 0 -> fit c.a p.rect | _ -> home c.a
 
 let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   let mouse = computer.mouse in
-  let mpx = px_of mouse.mx and mpy = py_of mouse.my in
-  let on_map = mpx >= 0. && mpx < float_of_int pw && mpy >= 0. && mpy < float_of_int ph in
+  let a = t.target.a in
+  let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
+  let on_map = on a mpx mpy in
   let target = t.target in
   (* the keys *)
   let pan dx dy = { target with cx = target.cx +. (dx /. target.z); cy = target.cy +. (dy /. target.z) } in
@@ -294,11 +299,11 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   let t =
     if pressed "t" then
       let algo : Treemap.algo = match t.algo with Squarified -> Slice_and_dice | Slice_and_dice -> Squarified in
-      let placed, geometry = relayout algo t.entries in
+      let placed, geometry = relayout a algo t.entries in
       { t with algo; placed; geometry; painted = None }
     else t
   in
-  let target = if pressed "Home" || pressed "0" || pressed "t" then home else target in
+  let target = if pressed "Home" || pressed "0" || pressed "t" then home a else target in
   let target = if pressed "Backspace" || (mouse.mrdown && not t.before_right) then up { t with target } else target in
   let target = if pressed "=" || pressed "+" then { target with z = target.z *. 1.5 } else if pressed "-" then { target with z = target.z /. 1.5 } else target in
   (* the wheel: zoom at the mouse, the point under it staying under it *)
@@ -306,7 +311,7 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
     if mouse.mwheel <> 0. && on_map then
       let u = to_u target mpx and v = to_v target mpy in
       let z = (clamp_cam { target with z = target.z *. (1.25 ** mouse.mwheel) }).z in
-      { cx = u -. ((mpx -. (float_of_int pw /. 2.)) /. z); cy = v -. ((mpy -. (float_of_int ph /. 2.)) /. z); z }
+      { target with cx = u -. ((mpx -. (float_of_int a.pw /. 2.)) /. z); cy = v -. ((mpy -. (float_of_int a.ph /. 2.)) /. z); z }
     else target
   in
   (* a drag pans, at once *)
@@ -333,10 +338,10 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
           let p = t.placed.(i) in
           match (p.node, t.geometry.(i)) with
           | File (_, _, e), Some g ->
-              let there = fit p.rect in
+              let there = fit a p.rect in
               let close_enough = g.cell_h *. t.cam.z >= text_px || Float.abs (Float.log (t.cam.z /. there.z)) < 0.1 in
               if close_enough || mouse.mdouble || pressed "Enter" then (target, Open (Lazy.force e.file, line_at g p.rect u v)) else (there, Stay)
-          | Dir _, _ -> (fit p.rect, Stay)
+          | Dir _, _ -> (fit a p.rect, Stay)
           | _ -> (target, Stay))
     else (target, Stay)
   in
@@ -352,19 +357,19 @@ let yellow = rgb 255 215 70
 let ink = rgb 228 228 240
 let dim = rgb 140 140 180
 
-let frame (color : color) (x0 : float) (y0 : float) (x1 : float) (y1 : float) (th : float) : shape list =
+let frame (a : area) (color : color) (x0 : float) (y0 : float) (x1 : float) (y1 : float) (th : float) : shape list =
   let w = x1 -. x0 and h = y1 -. y0 in
-  let cx = sx ((x0 +. x1) /. 2.) and cy = sy ((y0 +. y1) /. 2.) in
+  let cx = sx a ((x0 +. x1) /. 2.) and cy = sy a ((y0 +. y1) /. 2.) in
   [
-    rectangle color w th |> move cx (sy y0);
-    rectangle color w th |> move cx (sy y1);
-    rectangle color th h |> move (sx x0) cy;
-    rectangle color th h |> move (sx x1) cy;
+    rectangle color w th |> move cx (sy a y0);
+    rectangle color w th |> move cx (sy a y1);
+    rectangle color th h |> move (sx a x0) cy;
+    rectangle color th h |> move (sx a x1) cy;
   ]
 
 (* words centred at a pixel of the map, [size] high *)
-let label ?(alpha = 1.) (color : color) (size : float) (px : float) (py : float) (s : string) : shape =
-  words color s |> scale (size /. words_font_size) |> move (sx px) (sy py) |> fade alpha
+let label (a : area) ?(alpha = 1.) (color : color) (size : float) (px : float) (py : float) (s : string) : shape =
+  words color s |> scale (size /. words_font_size) |> move (sx a px) (sy a py) |> fade alpha
 
 let basename (path : string) : string = match String.rindex_opt path '/' with Some i -> String.sub path (i + 1) (String.length path - i - 1) | None -> path
 
@@ -373,9 +378,9 @@ let basename (path : string) : string = match String.rindex_opt path '/' with So
  * (codemap draws them all, over each other) *)
 type candidate = { rank : float; box : float * float * float * float; shape : shape }
 
-let place (cands : candidate list) : shape list =
+let place (a : area) (cands : candidate list) : shape list =
   let overlaps (a0, b0, a1, b1) (c0, d0, c1, d1) = a0 < c1 && c0 < a1 && b0 < d1 && d0 < b1 in
-  let on_map (x0, y0, x1, y1) = x0 >= 0. && y0 >= 0. && x1 <= float_of_int pw && y1 <= float_of_int ph in
+  let on_map (x0, y0, x1, y1) = x0 >= 0. && y0 >= 0. && x1 <= float_of_int a.pw && y1 <= float_of_int a.ph in
   let placed = ref [] in
   List.iter
     (fun c -> if on_map c.box && not (List.exists (overlaps c.box) !placed) then placed := c.box :: !placed)
@@ -383,13 +388,15 @@ let place (cands : candidate list) : shape list =
   List.filter_map (fun c -> if List.memq c.box !placed then Some c.shape else None) cands
 
 (* a label's candidate, centred at (px, py), [size] high *)
-let candidate ~(rank : float) ?alpha (color : color) (size : float) (px : float) (py : float) (s : string) : candidate =
+let candidate (a : area) ~(rank : float) ?alpha (color : color) (size : float) (px : float) (py : float) (s : string) : candidate =
   let w = 0.5 *. size *. float_of_int (String.length s) in
-  { rank; box = (px -. (w /. 2.), py -. (size /. 2.), px +. (w /. 2.), py +. (size /. 2.)); shape = label ?alpha color size px py s }
+  { rank; box = (px -. (w /. 2.), py -. (size /. 2.), px +. (w /. 2.), py +. (size /. 2.)); shape = label a ?alpha color size px py s }
 
 (* the names over the map: directories', big and faint (codemap's); files';
  * and, from afar, what each file defines, bigger the more it matters *)
 let labels (t : t) (c : camera) : shape list =
+  let a = c.a in
+  let candidate = candidate a and label = label a in
   let dirs = ref [] and files = ref [] and defs = ref [] in
   Array.iteri
     (fun i (p : entry Treemap.placed) ->
@@ -404,7 +411,7 @@ let labels (t : t) (c : camera) : shape list =
               (* codemap's: the name big and faint over the directory,
                * but for one filling the map *)
               let s = Float.min (fit_size (String.length name)) (Float.min (h /. 4.) 90.) in
-              if s >= 12. && w *. h < 0.4 *. float_of_int (pw * ph) then
+              if s >= 12. && w *. h < 0.4 *. float_of_int (a.pw * a.ph) then
                 dirs := candidate ~rank:s ~alpha:0.35 ink s ((float_of_int x0 +. float_of_int x1) /. 2.) ((float_of_int y0 +. float_of_int y1) /. 2.) name :: !dirs;
               (* ours: its path on a tab at its top left, the way back to it in
                * the repository; only a directory with files of its own, as
@@ -419,7 +426,7 @@ let labels (t : t) (c : camera) : shape list =
                 let shape =
                   group
                     [
-                      rectangle (rgb 12 10 28) tw (size +. 6.) |> move (sx (tx +. (tw /. 2.))) (sy (ty +. ((size +. 6.) /. 2.)));
+                      rectangle (rgb 12 10 28) tw (size +. 6.) |> move (sx a (tx +. (tw /. 2.))) (sy a (ty +. ((size +. 6.) /. 2.)));
                       label (rgb (min 255 (r + 60)) (min 255 (gg + 60)) (min 255 (b + 60))) size (tx +. (tw /. 2.)) (ty +. ((size +. 6.) /. 2.)) p.path;
                     ]
                 in
@@ -440,7 +447,7 @@ let labels (t : t) (c : camera) : shape list =
                       let col = line / g.lpc and lc = line mod g.lpc in
                       let px = to_px c (p.rect.x +. (float_of_int col *. g.colw)) and py = to_py c (p.rect.y +. ((float_of_int lc +. 0.5) *. g.cell_h)) in
                       let wd = 0.5 *. size *. float_of_int (String.length def) in
-                      if py >= 0. && py < float_of_int ph && px +. wd > 0. && px < float_of_int pw then
+                      if py >= 0. && py < float_of_int a.ph && px +. wd > 0. && px < float_of_int a.pw then
                         let r, gg, b = Highlight_code.rgb cat in
                         defs := candidate ~rank:(Highlight_code.emphasis cat *. size) (rgb r gg b) size (px +. (wd /. 2.)) py def :: !defs
                     end)
@@ -448,10 +455,11 @@ let labels (t : t) (c : camera) : shape list =
           | _ -> ()))
     t.placed;
   (* the directories' names faint under the rest, placed among themselves *)
-  place !dirs @ place (!files @ !defs)
+  place a !dirs @ place a (!files @ !defs)
 
-let view (computer : computer) (t : t) : shape list =
+let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let c = t.cam in
+  let a = c.a in
   let img =
     match t.painted with
     | Some (pc, img) when pc = c -> img
@@ -461,22 +469,22 @@ let view (computer : computer) (t : t) : shape list =
         img
   in
   let mouse = computer.mouse in
-  let mpx = px_of mouse.mx and mpy = py_of mouse.my in
+  let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
   let u = to_u c mpx and v = to_v c mpy in
-  let hovered = if mpx >= 0. && mpx < float_of_int pw && mpy >= 0. && mpy < float_of_int ph then under t u v else None in
+  let hovered = if on a mpx mpy then under t u v else None in
+  let box color th (x0, y0, x1, y1) = frame a color (float_of_int x0) (float_of_int y0) (float_of_int x1) (float_of_int y1) th in
   let marks =
     Array.to_list t.placed
     |> List.concat_map (fun (p : entry Treemap.placed) ->
            match p.node with
-           | File (_, _, e) when List.mem e.path t.marked -> (
-               match clip c p.rect with Some (x0, y0, x1, y1) -> frame yellow (float_of_int x0) (float_of_int y0) (float_of_int x1) (float_of_int y1) 3. | None -> [])
+           | File (_, _, e) when List.mem e.path t.marked -> ( match clip c p.rect with Some b -> box yellow 3. b | None -> [])
            | _ -> [])
   in
   let hover, status =
     match hovered with
     | Some i -> (
         let p = t.placed.(i) in
-        let box = match clip c p.rect with Some (x0, y0, x1, y1) -> frame white (float_of_int x0) (float_of_int y0) (float_of_int x1) (float_of_int y1) 1.5 | None -> [] in
+        let frame = match clip c p.rect with Some b -> box white 1.5 b | None -> [] in
         match (p.node, t.geometry.(i)) with
         | File (_, _, e), Some g ->
             let line = line_at g p.rect u v in
@@ -485,21 +493,24 @@ let view (computer : computer) (t : t) : shape list =
                 List.fold_left (fun acc (l, name, _) -> if l <= line then Some name else acc) None (Lazy.force e.file).defs
               else None
             in
-            (box, Printf.sprintf "%s:%d%s   (%d lines)" e.path (line + 1) (match def with Some d -> "   " ^ d | None -> "") e.nlines)
-        | _ -> (box, p.path))
+            (frame, Printf.sprintf "%s:%d%s   (%d lines)" e.path (line + 1) (match def with Some d -> "   " ^ d | None -> "") e.nlines)
+        | _ -> (frame, p.path))
     | None -> ([], "")
   in
   let algo = match t.algo with Squarified -> "squarified" | Slice_and_dice -> "slice and dice" in
-  [
-    rectangle (rgb 12 10 28) computer.screen.width computer.screen.height;
-    bitmap (float_of_int pw) (float_of_int ph) img |> move (sx (float_of_int pw /. 2.)) (sy (float_of_int ph /. 2.));
-  ]
-  @ labels t c @ marks @ hover
-  @ [
-      words yellow t.title |> scale (22. /. words_font_size) |> move 0. 455.;
-      words ink status |> scale (14. /. words_font_size) |> move 0. (-455.);
-      words dim
-        (Printf.sprintf "wheel zoom   drag pan   click fly in, again open   right click up   t layout (%s)   0 all   esc back" algo)
-      |> scale (12. /. words_font_size)
-      |> move 0. (-482.);
-    ]
+  let screen = computer.screen in
+  (if chrome then [ rectangle (rgb 12 10 28) screen.width screen.height ] else [])
+  @ [ bitmap (float_of_int a.pw) (float_of_int a.ph) img |> move (sx a (float_of_int a.pw /. 2.)) (sy a (float_of_int a.ph /. 2.)) ]
+  @ labels t c @ marks
+  @
+  if not chrome then []
+  else
+    hover
+    @ [
+        words yellow t.title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.);
+        words ink status |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
+        words dim
+          (Printf.sprintf "wheel zoom   drag pan   click fly in, again open   right click up   t layout (%s)   0 all   esc back" algo)
+        |> scale (12. /. words_font_size)
+        |> move 0. (screen.bottom +. 18.);
+      ]

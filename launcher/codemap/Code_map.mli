@@ -21,13 +21,17 @@ type entry = { path : string; nlines : int; file : Code_file.t Lazy.t }
 
 type t
 
-(* [make ~title ~marked entries]: the map of [entries]; [marked] (paths)
-   framed, the program's own files *)
-val make : title:string -> marked:string list -> entry list -> t
+(* [make ~area ~title ~marked entries]: the map of [entries] in [area],
+   its top left corner (in the playground's coordinates) and its width and
+   height in pixels; [marked] (paths) framed, the program's own files *)
+val make : area:float * float * int * int -> title:string -> marked:string list -> entry list -> t
 
 type action = Stay | Open of Code_file.t * int (* its line, from 0 *) | Close
 
 (* keys as Code_view's; the mouse; Escape closes *)
 val update : Playground.computer -> pressed:(string -> bool) -> arrow:string option -> t -> t * action
 
-val view : Playground.computer -> t -> Playground.shape list
+(* the map, and with [chrome] (the default) the screen round it: its
+   background, the title, what is under the mouse, the keys; without, the
+   map alone, where the caller shows it (tinybox's panel) *)
+val view : ?chrome:bool -> Playground.computer -> t -> Playground.shape list

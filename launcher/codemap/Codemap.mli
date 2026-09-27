@@ -18,9 +18,14 @@
 
 type t
 
-(* [make ~sources ~program ~path]: the map of [program], whose main file
-   is [path], among [sources] (paths and contents) *)
-val make : sources:(string * string) list -> program:string -> path:string -> t
+(* [make ~area ~sources ~program ~path]: the map of [program], whose main
+   file is [path], among [sources] (paths and contents), in [area] (see
+   Code_map.make) *)
+val make : area:float * float * int * int -> sources:(string * string) list -> program:string -> path:string -> t
+
+(* the map of the program's own code alone, for a glance (tinybox's
+   panel: Code_map.view ~chrome:false) *)
+val preview : area:float * float * int * int -> sources:(string * string) list -> program:string -> path:string -> Code_map.t
 
 (* None: closed (Escape on the map) *)
 val update : Playground.computer -> pressed:(string -> bool) -> arrow:string option -> t -> t option

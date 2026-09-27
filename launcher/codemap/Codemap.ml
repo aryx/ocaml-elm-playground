@@ -18,6 +18,7 @@ type t = {
   path : string;
   sources : (string * string) list;
   scope : scope;
+  area : float * float * int * int;
   map : Code_map.t;
   file : Code_view.t option; (* a file open over the map *)
 }
@@ -88,7 +89,8 @@ let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : s
   List.filter (fun (p, _) -> Hashtbl.mem seen p || (Filename.check_suffix p ".mli" && Hashtbl.mem seen (Filename.remove_extension p ^ ".ml"))) sources
   |> List.map fst
 
-let map_of ~(sources : (string * string) list) ~(program : string) ~(path : string) ~(scope : scope) : Code_map.t =
+let map_of ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) ~(scope : scope) :
+    Code_map.t =
   let paths =
     match scope with
     | Own -> closure ~keep:(own path) sources path
@@ -104,10 +106,13 @@ let map_of ~(sources : (string * string) list) ~(program : string) ~(path : stri
     | Uses -> Printf.sprintf "%s and what it uses: %s   (w: the whole repository)" program files
     | Whole -> Printf.sprintf "the whole repository: %s   (w: %s's code)" files program
   in
-  Code_map.make ~title ~marked:[ path ] entries
+  Code_map.make ~area ~title ~marked:[ path ] entries
 
-let make ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
-  { program; path; sources; scope = Own; map = map_of ~sources ~program ~path ~scope:Own; file = None }
+let make ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
+  { program; path; sources; scope = Own; area; map = map_of ~area ~sources ~program ~path ~scope:Own; file = None }
+
+let preview ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : Code_map.t =
+  map_of ~area ~sources ~program ~path ~scope:Own
 
 (*****************************************************************************)
 (* Update and view *)
@@ -121,7 +126,7 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
   | None ->
       if pressed "w" then
         let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole -> Own in
-        Some { t with scope; map = map_of ~sources:t.sources ~program:t.program ~path:t.path ~scope }
+        Some { t with scope; map = map_of ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope }
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
         | _, Close -> None

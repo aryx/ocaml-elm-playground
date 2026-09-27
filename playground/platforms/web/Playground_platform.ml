@@ -897,7 +897,7 @@ let fetch_response ?post (url : string) (k : (Cmd.http_response, Cmd.http_error)
 (* when using the simple DOM *)
 (* claude: [network] unused: the browser downloads the images, by its
  * own rules (the page's site, or CORS) *)
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_ app =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_ ?screen:_ app =
   Audio.set_fetcher fetch_web;
   Transport.set_connect Web_connect.connect;
   Window.set_onload window (fun () ->

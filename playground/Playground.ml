@@ -691,8 +691,10 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
           { computer with time = Time time;
             mouse = mouse_moves_reset computer.mouse;
             keyboard = keyboard_typed_reset computer.keyboard })
-    | Resized (_w, _h) ->
-        failwith "Todo"
+    | Resized (w, h) ->
+        (* claude: the screen the platform gives the program, when not
+         * the default (Playground_platform.run_app's ?screen) *)
+        Game (memory, { computer with screen = to_screen (float w) (float h) })
     (* we assume the x, y is in playground coordinate system (0,0) at the
      * center of the screen.
      *)
@@ -761,7 +763,7 @@ let (game:
       Cmd.none
   in
   let subscriptions _ = Sub.batch [
-      (* TODO: on_resize *)
+      Sub.on_resize (fun w h -> Resized (w, h));
       Sub.on_animation_frame (fun x -> Tick x);
       Sub.on_mouse_move (fun x -> MouseMove x);
       Sub.on_mouse_move_by (fun d -> MouseMoveBy d);
