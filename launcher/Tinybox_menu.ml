@@ -35,6 +35,16 @@
  * leaves it). The mouse: a click chooses, a double click plays, the
  * wheel scrolls, the tabs and arrows at the top are buttons.
  *
+ * Groups and filters, after Batocera's and RetroBox's (the catalogue's
+ * Year, Platform and Players columns): b groups the programs by genre
+ * (the catalogue's sections, the default), by era (a decade a
+ * section, oldest first), by platform or by players; p, e, m and l
+ * filter by players (1, 2, over the network), era, machine and look
+ * (2D, 2.5D, 3D, app), each key going through the values and back to
+ * any; c clears them; r jumps to a random program of the grid. The
+ * filter bar under the section's title says what is chosen, and a click
+ * on one of its words does what its key does.
+ *
  * The look: a dark cabinet's colours, the chosen thumbnail's frame
  * pulsing, scanlines over everything (thin translucent rectangles, a
  * CRT's gaps between its lines).
@@ -62,6 +72,100 @@ let everything : Catalogue.program list =
 
 let lowercase = String.lowercase_ascii
 
+(*****************************************************************************)
+(* Groups and filters *)
+(*****************************************************************************)
+
+type grouping = By_genre | By_era | By_platform | By_players
+
+let groupings = [ By_genre; By_era; By_platform; By_players ]
+
+let grouping_name = function
+  | By_genre -> "genre"
+  | By_era -> "era"
+  | By_platform -> "machine"
+  | By_players -> "players"
+
+(* None: any *)
+type filters = { players : string option; (* "1", "2", "net" *) era : int option; platform : string option; look : string option }
+
+let no_filters = { players = None; era = None; platform = None; look = None }
+
+let passes (f : filters) (p : Catalogue.program) : bool =
+  (match f.players with
+  | None -> true
+  | Some "net" -> Catalogue.online p
+  | Some "2" -> Catalogue.plays p 2
+  | Some _ -> Catalogue.plays p 1)
+  && (match f.era with None -> true | Some d -> Catalogue.decade p = d)
+  && (match f.platform with None -> true | Some pf -> p.platform = pf)
+  && match f.look with None -> true | Some l -> p.look = l
+
+(* the values a filter goes through: only those some program has *)
+let decades : int list = List.sort_uniq compare (List.map Catalogue.decade everything)
+
+let platforms : string list =
+  List.filter (fun pf -> List.exists (fun (p : Catalogue.program) -> p.platform = pf) everything) Catalogue.platforms
+
+let looks = [ "2D"; "2.5D"; "3D"; "app" ]
+
+let platform_title = function
+  | "arcade" -> "Arcade"
+  | "console" -> "Consoles"
+  | "handheld" -> "Handhelds"
+  | "computer" -> "Home computers"
+  | "PC" -> "The PC"
+  | "Mac" -> "The Macintosh"
+  | "workstation" -> "Workstations"
+  | "mainframe" -> "Mainframes and minicomputers"
+  | "web" -> "The web"
+  | "phone" -> "Phones"
+  | "tabletop" -> "Tabletop"
+  | "instrument" -> "Instruments"
+  | pf -> String.capitalize_ascii pf
+
+(* a section of the grid: the catalogue's, or made by a grouping *)
+type group = { title : string; intro : string; games : bool option; programs : Catalogue.program list }
+
+let by_year (ps : Catalogue.program list) = List.stable_sort (fun (a : Catalogue.program) b -> compare a.year b.year) ps
+
+let groups (grouping : grouping) (f : filters) : group array =
+  let keep ps = List.filter (passes f) ps in
+  let make title intro programs = { title; intro; games = None; programs } in
+  (match grouping with
+  | By_genre ->
+      Array.to_list sections
+      |> List.map (fun (s : Catalogue.section) -> { title = s.title; intro = s.intro; games = Some s.games; programs = keep s.programs })
+  | By_era ->
+      decades
+      |> List.map (fun d ->
+             make (Printf.sprintf "The %ds" d)
+               (Printf.sprintf "The programs whose original came out in the %ds, the oldest first." d)
+               (by_year (keep (List.filter (fun p -> Catalogue.decade p = d) everything))))
+  | By_platform ->
+      platforms
+      |> List.map (fun pf ->
+             make (platform_title pf)
+               (Printf.sprintf "The programs whose original ran on: %s. The oldest first." pf)
+               (by_year (keep (List.filter (fun (p : Catalogue.program) -> p.platform = pf) everything))))
+  | By_players ->
+      [
+        make "One player" "Alone, or against the computer." (keep (List.filter (fun p -> Catalogue.plays p 1) everything));
+        make "Two players" "Two on one keyboard (or split screen)." (keep (List.filter (fun p -> Catalogue.plays p 2) everything));
+        make "Over the network" "Two computers, one game: net=host on one, net=join on the other (Multiplayer)."
+          (keep (List.filter Catalogue.online everything));
+      ])
+  |> List.filter (fun g -> g.programs <> [])
+  |> Array.of_list
+
+(* the value after [cur] in [values], and after the last one, any *)
+let cycle (values : 'a list) (cur : 'a option) : 'a option =
+  match cur with
+  | None -> List.nth_opt values 0
+  | Some v ->
+      let rec after = function [] | [ _ ] -> None | x :: (y :: _ as rest) -> if x = v then Some y else after rest in
+      after values
+
 let contains (s : string) (q : string) : bool =
   let s = lowercase s and q = lowercase q in
   let n = String.length q in
@@ -75,7 +179,9 @@ let contains (s : string) (q : string) : bool =
 type child = { pid : int; name : string }
 
 type model = {
-  section : int; (* in [sections] *)
+  grouping : grouping;
+  filters : filters;
+  section : int; (* in [groups m.grouping m.filters] *)
   pos : int; (* in [shown] *)
   search : string option; (* Some q: searching, the grid is every match *)
   before : string Set_.t; (* the keys down the frame before *)
@@ -85,14 +191,21 @@ type model = {
 }
 
 let initial_model : model =
-  { section = 0; pos = 0; search = None; before = Set_.empty; repeat = None; child = None; status = "" }
+  { grouping = By_genre; filters = no_filters; section = 0; pos = 0; search = None; before = Set_.empty; repeat = None; child = None; status = "" }
+
+(* the section shown, if any passes the filters *)
+let current_group (m : model) : group option =
+  let gs = groups m.grouping m.filters in
+  if gs = [||] then None else Some gs.(min m.section (Array.length gs - 1))
 
 (* the programs in the grid *)
 let shown (m : model) : Catalogue.program list =
   match m.search with
   | Some q when q <> "" ->
-      List.filter (fun (p : Catalogue.program) -> contains p.name q || contains p.after q || contains p.one_line q) everything
-  | _ -> sections.(m.section).programs
+      List.filter
+        (fun (p : Catalogue.program) -> passes m.filters p && (contains p.name q || contains p.after q || contains p.one_line q))
+        everything
+  | _ -> ( match current_group m with Some g -> g.programs | None -> [])
 
 let chosen (m : model) : Catalogue.program option = List.nth_opt (shown m) m.pos
 
@@ -129,6 +242,11 @@ let apps_tab = (240., 455.)
 let prev_arrow = (-470., 400.)
 let next_arrow = (-110., 400.)
 
+(* the filter bar: each word's left end, and its key *)
+let bar_y = 322.
+let bar = [ ("b", -480.); ("p", -300.); ("e", -135.); ("m", 10.); ("l", 190.); ("c", 330.) ]
+let bar_width = 150.
+
 let near ((x, y) : number * number) ((mx, my) : number * number) ~(w : number) ~(h : number) : bool =
   Float.abs (mx -. x) <= w /. 2. && Float.abs (my -. y) <= h /. 2.
 
@@ -140,14 +258,16 @@ let now (computer : computer) : number =
   let (Time t) = computer.time in
   t
 
-(* the section after (or before) [i], across both shelves *)
-let step_section (i : int) (d : int) : int =
-  let n = Array.length sections in
-  (i + d + n) mod n
+(* the section after (or before) the one shown, across both shelves *)
+let step_section (m : model) (d : int) : int =
+  let n = max 1 (Array.length (groups m.grouping m.filters)) in
+  (min m.section (n - 1) + d + n) mod n
 
-let first_of_shelf (games : bool) : int =
-  let rec go i = if i >= Array.length sections || sections.(i).games = games then i else go (i + 1) in
-  min (go 0) (Array.length sections - 1)
+(* the first section of a shelf, the programs grouped by genre again *)
+let to_shelf (m : model) (games : bool) : model =
+  let gs = groups By_genre m.filters in
+  let rec go i = if i >= Array.length gs || gs.(i).games = Some games then i else go (i + 1) in
+  { m with grouping = By_genre; section = min (go 0) (max 0 (Array.length gs - 1)); pos = 0; search = None }
 
 (* claude: the program started in a process of its own, this same
  * binary under its name (tinybox <Name>): its window, its Cap.main, and
@@ -200,6 +320,24 @@ let move_pos (m : model) (key : string) : model =
 
 let to_section (m : model) (i : int) : model = { m with section = i; pos = 0; search = None }
 
+(* a key of the filter bar *)
+let bar_key (computer : computer) (m : model) (key : string) : model =
+  let f = m.filters in
+  let refilter filters = { m with filters; section = 0; pos = 0 } in
+  match key with
+  | "b" -> { m with grouping = Option.value ~default:By_genre (cycle groupings (Some m.grouping)); section = 0; pos = 0 }
+  | "p" -> refilter { f with players = cycle [ "1"; "2"; "net" ] f.players }
+  | "e" -> refilter { f with era = cycle decades f.era }
+  | "m" -> refilter { f with platform = cycle platforms f.platform }
+  | "l" -> refilter { f with look = cycle looks f.look }
+  | "c" -> refilter no_filters
+  | "r" ->
+      (* claude: a random program of the grid, from the clock (the same
+       * one under -fixed-time, so a golden frame could show it) *)
+      let n = List.length (shown m) in
+      if n = 0 then m else { m with pos = Hashtbl.hash (int_of_float (now computer *. 1000.)) mod n }
+  | _ -> m
+
 let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) (computer : computer) (m : model) :
     model =
   let m = wait caps m in
@@ -221,12 +359,15 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
         else m
     | None ->
         if pressed "/" then { m with search = Some ""; pos = 0 }
-        else if pressed "Tab" then to_section m (step_section m.section (if shift then -1 else 1))
-        else if pressed "PageDown" then to_section m (step_section m.section 1)
-        else if pressed "PageUp" then to_section m (step_section m.section (-1))
-        else if pressed "g" then to_section m (first_of_shelf true)
-        else if pressed "a" then to_section m (first_of_shelf false)
-        else m
+        else if pressed "Tab" then to_section m (step_section m (if shift then -1 else 1))
+        else if pressed "PageDown" then to_section m (step_section m 1)
+        else if pressed "PageUp" then to_section m (step_section m (-1))
+        else if pressed "g" then to_shelf m true
+        else if pressed "a" then to_shelf m false
+        else
+          match List.find_opt pressed [ "b"; "p"; "e"; "m"; "l"; "c"; "r" ] with
+          | Some k -> bar_key computer m k
+          | None -> m
   in
   let m = if pressed "Enter" then start caps runnable m else m in
   (* the mouse *)
@@ -237,11 +378,14 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
   in
   let m =
     if not (mouse.mclick || mouse.mdouble) then m
-    else if near games_tab at ~w:90. ~h:36. then to_section m (first_of_shelf true)
-    else if near apps_tab at ~w:80. ~h:36. then to_section m (first_of_shelf false)
-    else if near prev_arrow at ~w:40. ~h:40. then to_section m (step_section m.section (-1))
-    else if near next_arrow at ~w:40. ~h:40. then to_section m (step_section m.section 1)
+    else if near games_tab at ~w:90. ~h:36. then to_shelf m true
+    else if near apps_tab at ~w:80. ~h:36. then to_shelf m false
+    else if near prev_arrow at ~w:40. ~h:40. then to_section m (step_section m (-1))
+    else if near next_arrow at ~w:40. ~h:40. then to_section m (step_section m 1)
     else
+      match List.find_opt (fun (_, x) -> near (x +. (bar_width /. 2.), bar_y) at ~w:bar_width ~h:24.) bar with
+      | Some (k, _) -> bar_key computer m k
+      | None ->
       let n = List.length (shown m) in
       match List.find_opt (fun i -> match cell_centre m i with Some c -> near c at ~w:thumb ~h:(thumb +. 30.) | None -> false) (List.init n Fun.id) with
       | Some i -> if mouse.mdouble then start caps runnable { m with pos = i } else { m with pos = i }
@@ -317,8 +461,8 @@ let picture (p : Catalogue.program) (size : number) : shape =
   | None -> group [ rectangle panel size size; centred dim 0. 0. "no picture" ]
 
 let header (computer : computer) (m : model) : shape list =
-  let games = sections.(m.section).games && m.search = None in
-  let apps = (not sections.(m.section).games) && m.search = None in
+  let shelf = match (m.search, current_group m) with None, Some g -> g.games | _ -> None in
+  let games = shelf = Some true and apps = shelf = Some false in
   let tab on (x, y) label = [ text ~size:22. (if on then yellow else dim) (x -. 40.) y label ] @ if on then [ rectangle yellow 70. 3. |> move (x -. 2.) (y -. 17.) ] else [] in
   [ text ~size:40. magenta (-482.) 452. "TINY"; text ~size:40. cyan (-386.) 452. "BOX" ]
   @ tab games games_tab "GAMES"
@@ -335,15 +479,40 @@ let section_bar (m : model) : shape list =
   let n = List.length (shown m) in
   match m.search with
   | Some q -> [ text ~size:24. yellow (-480.) 400. (Printf.sprintf "Search: %s" q); text ~size:14. dim 400. 400. (Printf.sprintf "%d found" n) ]
-  | None ->
-      let s = sections.(m.section) in
-      [
-        centred ~size:24. cyan (fst prev_arrow) (snd prev_arrow) "<";
-        text ~size:24. yellow (-445.) 400. (cut ~size:24. ~width:320. s.title);
-        centred ~size:24. cyan (fst next_arrow) (snd next_arrow) ">";
-        text ~size:14. dim 400. 400. (Printf.sprintf "%d / %d" (m.section + 1) (Array.length sections));
-      ]
-      @ paragraph ~size:13. dim (-480.) 355. ~width:960. ~lines:2 s.intro
+  | None -> (
+      let gs = groups m.grouping m.filters in
+      match current_group m with
+      | None -> [ text ~size:24. magenta (-480.) 400. "Nothing passes the filters"; text ~size:13. dim (-480.) 360. "c clears them" ]
+      | Some g ->
+          [
+            centred ~size:24. cyan (fst prev_arrow) (snd prev_arrow) "<";
+            text ~size:24. yellow (-445.) 400. (cut ~size:24. ~width:320. g.title);
+            centred ~size:24. cyan (fst next_arrow) (snd next_arrow) ">";
+            text ~size:14. dim 400. 400. (Printf.sprintf "%d / %d" (min m.section (Array.length gs - 1) + 1) (Array.length gs));
+          ]
+          @ paragraph ~size:13. dim (-480.) 360. ~width:960. ~lines:1 g.intro)
+
+(* the filter bar: each key, what it chooses, its value (yellow when it
+ * filters) *)
+let filter_bar (m : model) : shape list =
+  let f = m.filters in
+  let any = function Some v -> (v, true) | None -> ("any", false) in
+  let words = function
+    | "b" -> ("group", (grouping_name m.grouping, m.grouping <> By_genre))
+    | "p" -> ("players", any f.players)
+    | "e" -> ("era", any (Option.map (fun d -> Printf.sprintf "%ds" d) f.era))
+    | "m" -> ("machine", any f.platform)
+    | "l" -> ("look", any f.look)
+    | _ -> ("clear  r random", ("", false))
+  in
+  List.concat_map
+    (fun (k, x) ->
+      let label, (value, on) = words k in
+      (* claude: each word placed on its own, with room to spare: short
+       * words' widths are the estimate's worst *)
+      [ text ~size:13. cyan x bar_y k; text ~size:13. dim (x +. 16.) bar_y (if value = "" then label else label ^ ":");
+        text ~size:13. (if on then yellow else ink) (x +. 24. +. (8. *. float_of_int (String.length label))) bar_y value ])
+    bar
 
 let grid (computer : computer) (runnable : string list) (m : model) : shape list =
   shown m
@@ -363,6 +532,11 @@ let grid (computer : computer) (runnable : string list) (m : model) : shape list
                centred ~size:13. (if on then yellow else if ok then ink else grey) x (y -. (thumb /. 2.) -. 16.) (cut ~size:13. ~width:cell_w p.name);
              ])
 
+(* "1 player", "1-2 players, over the network" *)
+let players_text (p : Catalogue.program) : string =
+  let count = match String.index_opt p.players ' ' with Some i -> String.sub p.players 0 i | None -> p.players in
+  (count ^ if count = "1" then " player" else " players") ^ if Catalogue.online p then ", over the network" else ""
+
 (* the chosen one, large, and what the catalogue says of it *)
 let details (runnable : string list) (m : model) : shape list =
   match chosen m with
@@ -374,15 +548,16 @@ let details (runnable : string list) (m : model) : shape list =
       @ [
           text ~size:26. ink left (-150.) (cut ~size:26. ~width:300. p.name);
           text ~size:16. yellow (left +. shot -. 60.) (-150.) p.look;
+          text ~size:13. yellow left (-178.) (Printf.sprintf "%d   %s   %s" p.year p.platform (players_text p));
         ]
-      @ paragraph ~size:14. cyan left (-185.) ~width:shot ~lines:2 ("After " ^ p.after)
-      @ paragraph ~size:15. ink left (-235.) ~width:shot ~lines:2 p.one_line
-      @ paragraph ~size:13. dim left (-285.) ~width:shot ~lines:6 p.brought
+      @ paragraph ~size:14. cyan left (-205.) ~width:shot ~lines:2 ("After " ^ p.after)
+      @ paragraph ~size:15. ink left (-252.) ~width:shot ~lines:2 p.one_line
+      @ paragraph ~size:13. dim left (-300.) ~width:shot ~lines:5 p.brought
       @ if ok then [] else [ text ~size:14. magenta left (-400.) "not in this tinybox" ]
 
 let footer (m : model) : shape list =
   let playing = match m.child with Some c -> [ text ~size:18. yellow (-480.) (-440.) ("> " ^ c.name ^ " is running") ] | None -> [] in
-  [ text ~size:13. dim (-480.) (-475.) "arrows move   tab section   g/a games/apps   enter play   / search   double click play" ]
+  [ text ~size:13. dim (-480.) (-475.) "arrows move   tab section   g/a games/apps   b group   p e m l filter   / search   enter play" ]
   @ playing
   @ if m.status = "" then [] else [ text ~size:16. magenta 60. (-440.) (cut ~size:16. ~width:420. m.status) ]
 
@@ -394,7 +569,7 @@ let scanlines (screen : screen) : shape list =
 let view (runnable : string list) (computer : computer) (m : model) : shape list =
   let screen = computer.screen in
   [ rectangle background screen.width screen.height ]
-  @ header computer m @ section_bar m @ grid computer runnable m @ details runnable m @ footer m @ scanlines screen
+  @ header computer m @ section_bar m @ filter_bar m @ grid computer runnable m @ details runnable m @ footer m @ scanlines screen
 
 (*****************************************************************************)
 (* Entry point *)

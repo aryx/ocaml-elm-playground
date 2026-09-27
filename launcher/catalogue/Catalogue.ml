@@ -10,7 +10,17 @@
 
 (* See Catalogue.mli *)
 
-type program = { name : string; source : string; look : string; after : string; one_line : string; brought : string }
+type program = {
+  name : string;
+  source : string;
+  look : string;
+  year : int;
+  platform : string;
+  players : string;
+  after : string;
+  one_line : string;
+  brought : string;
+}
 type section = { title : string; games : bool; intro : string; programs : program list }
 
 (*****************************************************************************)
@@ -45,17 +55,20 @@ let plain (s : string) : string =
 (* The rows *)
 (*****************************************************************************)
 
-(* "| [Name](source) | look | after | one line | brought |" *)
+(* "| [Name](source) | look | year | platform | players | after | one line | brought |" *)
 let program_of_row (line : string) : program option =
   match List.map String.trim (String.split_on_char '|' line) with
-  | [ ""; link; look; after; one_line; brought; "" ] -> (
-      match (String.index_opt link ']', String.index_opt link '(', String.index_opt link ')') with
-      | Some j, Some k, Some l when String.length link > 0 && link.[0] = '[' && k = j + 1 ->
+  | [ ""; link; look; year; platform; players; after; one_line; brought; "" ] -> (
+      match (String.index_opt link ']', String.index_opt link '(', String.index_opt link ')', int_of_string_opt year) with
+      | Some j, Some k, Some l, Some year when String.length link > 0 && link.[0] = '[' && k = j + 1 ->
           Some
             {
               name = String.sub link 1 (j - 1);
               source = String.sub link (k + 1) (l - k - 1);
               look;
+              year;
+              platform;
+              players;
               after = plain after;
               one_line = plain one_line;
               brought = plain brought;
@@ -99,3 +112,21 @@ let parse (text : string) : section list =
 
 let golden_frame (p : program) : string =
   Printf.sprintf "tests/%s/golden/%s.png" (if p.look = "3D" then "3d" else "2d") p.name
+
+(*****************************************************************************)
+(* What a menu filters by *)
+(*****************************************************************************)
+
+let platforms =
+  [ "arcade"; "console"; "handheld"; "computer"; "PC"; "Mac"; "workstation"; "mainframe"; "web"; "phone"; "tabletop"; "instrument"; "analog" ]
+
+let online (p : program) : bool = String.ends_with ~suffix:" (net)" p.players
+
+let plays (p : program) (n : int) : bool =
+  let count = match String.index_opt p.players ' ' with Some i -> String.sub p.players 0 i | None -> p.players in
+  match (count, n) with
+  | ("1" | "1-2"), 1 -> true
+  | ("2" | "1-2"), 2 -> true
+  | _ -> false
+
+let decade (p : program) : int = p.year / 10 * 10

@@ -429,10 +429,23 @@ platform are wanted (Batocera's "systems").
     2026-09-27: Players, Platform (arcade, console, home computer, PC,
     handheld) and Year (explicit, rather than parsed from After); the
     developer parsed from After; `tests/catalog` checks them. No URL
-    column (step 7 waits).
+    column (step 7 waits). Done 2026-09-27: the three columns in all
+    198 rows, their words in CATALOG.md's introduction (Players: `1`,
+    `2`, `1-2`, and ` (net)`; the 13 platforms); `Catalogue` reads them
+    (`plays`, `online`, `decade`, `platforms`), and `Unit_catalogue`
+    checks every row's. Players found in each program's code (a second
+    player's keys, a "2: two players" menu, `Multiplayer`): 17 play with
+    two (12 of them alone too), 3 of those over the network. The developer, parsed from After, is left
+    for later.
 12. Filters, sorts, and the collections as sections (Favourites, Last
     played, 2 players, the 80s, a developer, Twins); `r` random, a
-    letter to jump.
+    letter to jump. Done 2026-09-27, the first half: `b` groups by
+    genre (the default), era (a decade a section, oldest first), machine
+    or players; `p`, `e`, `m`, `l` filter by players, era, machine and
+    look, `c` clears, `r` a random program of the grid; a filter bar
+    under the section's title, its words clickable; the year, machine and
+    players in the detail panel. Left: sorts, the store's collections
+    (step 13), Twins, the jump to a letter.
 13. The store: favourites, play counts, last played, time played,
     flags per program, custom collections.
 14. Previews and demos (revised 2026-09-27, after the author: "we
@@ -500,6 +513,21 @@ platform are wanted (Batocera's "systems").
 16. Host and join for the `Multiplayer` games; kid mode; themes, menu
     music and sounds (with step 8); the gamepad.
 17. `tinybox --install <dir>`: the links for BusyBox's way.
+18. More pixels (the author, 2026-09-27): the native window is 1000 by
+    1000, not resizable (Native_loop_2d ignores SDL's resize events).
+    For every program, not only tinybox: a resizable window whose size
+    reaches `computer.screen` (the menu's layout then follows it), flags
+    `-size WxH` and `-fullscreen`, and a key, `f`, that toggles full
+    screen while a program runs -- the platform's, like its debug keys,
+    so every program has it. The menu's layout, written for 1000 by 1000,
+    to be made relative to the screen.
+19. tinybox on the web (the author: "even though the .bc.js might be too
+    big", "a split approach for the js world"): not one bundle of 198
+    programs, but the menu as a page of its own, small (the catalogue
+    and the thumbnails), and a program chosen loads its own page,
+    `<dir>/web/<Name>.html`, which `make js` already builds: on the web,
+    the child process is the page. The previews (step 14) then only
+    natively, or the chosen program's page in an iframe.
 
 ## Open questions for the author
 
