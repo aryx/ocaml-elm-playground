@@ -85,7 +85,7 @@ let debug_keys = ref false
 let debug_keys_enabled () = !debug_keys
 
 (* claude: deterministic frames, for the golden frame tests (see
- * tests/2d/Golden_frames.ml): the clock the app sees can be frozen,
+ * Scenes_2d.ml): the clock the app sees can be frozen,
  * debug keys pressed before the first frame, and a given frame dumped
  * to a file -- the same flags as playground3d's Native_loop_3d *)
 let fixed_time : float option ref = ref None

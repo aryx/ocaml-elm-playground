@@ -69,7 +69,7 @@ a message in the page, kept there by `ensure_in_page`, and one console
 error.
 
 Verified by screenshotting, through `make serve-build`'s kind of
-server, every scene of `tests/3d/Golden_frames.ml` at 1000x1000 with
+server, every scene of `Scenes_3d.ml` at 1000x1000 with
 `?fixed-time=1000&keys=...`, compared with its software golden frame
 (pixels differing by more than 24 in some channel):
 

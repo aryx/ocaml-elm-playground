@@ -3,4 +3,4 @@
 ; ../dune's rule
 (executable
  (name make_tinybox_data)
- (libraries catalogue graphics_rgba graphics_png graphics_imaging))
+ (libraries catalogue golden_scenes graphics_rgba graphics_png graphics_imaging))

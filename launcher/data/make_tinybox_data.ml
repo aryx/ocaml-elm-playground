@@ -15,9 +15,11 @@
  *   let catalogue = "# Catalogue of the games and apps\n..."
  *   let thumbnails = [ ("TinyMario", "\137PNG..."); ... ]
  *
- * a thumbnail being a program's first golden frame (its screenshot, as
- * CATALOG.md's introduction says), 1000 by 1000, halved twice: 250 by
- * 250. Twice, and not once to a quarter: at exactly half, bilinear's
+ * a thumbnail being one of the program's golden frames, 1000 by 1000,
+ * halved twice: 250 by 250. Which one: the game being played, not its
+ * title screen -- its first scripted scene (Scenes_2d's and Scenes_3d's
+ * [scripted], a few seconds of play: TinyMario's "run"); else, for the
+ * programs without one, its first frame (CATALOG.md's screenshot). Twice, and not once to a quarter: at exactly half, bilinear's
  * point falls between four pixels, so each new pixel is their average,
  * and nothing is skipped (a quarter at once would read only 4 pixels of
  * each 16, and the thin lines of the vector games would flicker away).
@@ -45,6 +47,18 @@ let halve (img : Rgba_image.t) : Rgba_image.t =
 
 let thumbnail (png : string) : string = Png.encode (halve (halve (Png.decode png)))
 
+(* the program's frame: its first scripted scene's, else its first *)
+let frame (p : Catalogue.program) : string =
+  let played (dir : string) (scenes : Golden_scene.scripted list) =
+    List.find_map
+      (fun ((exe, label, _, _) : Golden_scene.scripted) ->
+        if Filename.basename exe = p.name then Some (Printf.sprintf "tests/%s/golden/%s_%s.png" dir p.name label) else None)
+      scenes
+  in
+  match (played "2d" Scenes_2d.scripted, played "3d" Scenes_3d.scripted) with
+  | Some f, _ | None, Some f when Sys.file_exists f -> f
+  | _ -> Catalogue.golden_frame p
+
 let () =
   let catalogue = read "CATALOG.md" in
   print_string "(* generated from CATALOG.md and the golden frames by launcher/data/make_tinybox_data.ml *)\n";
@@ -59,7 +73,7 @@ let () =
       Catalogue.parse catalogue
       |> List.concat_map (fun (s : Catalogue.section) -> s.programs)
       |> List.iteri (fun i (p : Catalogue.program) ->
-             let frame = Catalogue.golden_frame p in
+             let frame = frame p in
              if i mod n = k && Sys.file_exists frame then Printf.printf "  (%S, %S);\n" p.name (thumbnail (read frame)));
       print_string "]\n"
   | _ -> failwith "usage: make_tinybox_data (catalogue n | thumbnails k n)"

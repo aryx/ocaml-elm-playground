@@ -8,5 +8,6 @@
    testo
    graphics_png ; reading and writing the golden frames' PNGs
    graphics_rgba
+   golden_scenes ; the scenes' types
  )
 )

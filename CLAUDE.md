@@ -28,7 +28,9 @@ Web (`js/`) targets are executables built in `(modes js)`; after building, the r
 `make test` also runs the golden frame tests (`tests/2d/`, `tests/3d/`,
 see `tests/common/Testutil_golden.mli`): every software-rasterizer
 example rendered offscreen (SDL's dummy video driver) and compared pixel
-by pixel with `tests/*/golden/*.png`. After an intended pixel change,
+by pixel with `tests/*/golden/*.png`. The scenes are data,
+`tests/common/scenes/Scenes_2d.ml` and `Scenes_3d.ml` (a new game adds
+its own there), which tinybox's menu reads too. After an intended pixel change,
 look at the new frames in `_build/default/tests/*/actual/`, then
 `make approve-golden2d` / `make approve-golden3d`.
 

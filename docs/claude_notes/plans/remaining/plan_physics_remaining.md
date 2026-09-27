@@ -65,7 +65,7 @@ difference (`solver=off`, `rotation=off`).
   (`seed=1` only), so the `physics=engine` modes of Mario, TinyMario
   and Asteroid have no golden frame (the games with a key for it,
   Pyramid and TinySlingshot, do). A flags field in
-  `tests/2d/Golden_frames.ml`'s scenes.
+  `Scenes_2d.ml`'s scenes.
 - **The keys at launch for every game**: TinyCameltry, Pyramid,
   Elastic, TinySlingshot and TinySoldat print theirs; an optional
   `~help` to `run_app` would make it one mechanism.

@@ -1,8 +1,8 @@
 ; claude: golden frames of the 2D software rasterizer, run by 'make
-; test' (dune runtest); see Golden_frames.ml
+; test' (dune runtest); see Golden_frames.ml, and the scenes in Scenes_2d.ml
 (test
  (name Test)
- (libraries testo testutil)
+ (libraries testo testutil golden_scenes)
  (deps
    (glob_files golden/*.png)
    %{project_root}/examples/software/Picture.exe

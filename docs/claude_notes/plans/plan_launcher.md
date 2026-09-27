@@ -425,16 +425,75 @@ platform are wanted (Batocera's "systems").
 9. `CATALOG.md` row and golden frame for TinyBox itself.
 10. TinyWinamp's `dir=`, and then its narrowed `open_in`. This does not
     need tinybox and can come any time after step 2.
-11. After Batocera, the data: the Players column (once decided), year
-    and developer parsed from After, their tests.
+11. After Batocera, the data: `CATALOG.md`'s new columns, decided
+    2026-09-27: Players, Platform (arcade, console, home computer, PC,
+    handheld) and Year (explicit, rather than parsed from After); the
+    developer parsed from After; `tests/catalog` checks them. No URL
+    column (step 7 waits).
 12. Filters, sorts, and the collections as sections (Favourites, Last
     played, 2 players, the 80s, a developer, Twins); `r` random, a
     letter to jump.
 13. The store: favourites, play counts, last played, time played,
     flags per program, custom collections.
-14. The slideshow of a program's golden frames in the detail panel,
-    and the attract mode when idle.
-15. The source view (`s`): the header comment, embedded.
+14. Previews and demos (revised 2026-09-27, after the author: "we
+    could just run the game and it would render", within the second
+    after which Netflix starts its autoplay):
+    - **The grid keeps its embedded first frames** (decided): instant,
+      5 MB; rendering 12 thumbnails means 12 programs started. The
+      extra embedded frames (a slideshow of the golden scenes: 441
+      frames, 11 MB, 25 s of build) are dropped.
+    - **The detail panel's preview runs the program, in the menu's
+      process**: a child process is out (tinybox's start alone is
+      0.9 s, then the window), but inside tinybox every program is
+      already linked and initialized. An `app` is a record of functions
+      (`init`, `update`, `view`, `subscriptions`): the native platform's
+      `run_app` gets a capture hook, set only by tinybox, which hands
+      the app over packed (`Any : ('m, 'msg) app -> any_app`) instead of
+      opening a window; the menu calls the program's entry with it on,
+      then plays the app itself -- a small platform: the `computer`
+      (1000 by 1000, the time, the keys of the program's golden scene
+      script through `Input_script`) turned into its messages by its
+      `subscriptions`, as `Native_loop_2d` does from SDL's events -- and
+      draws its `view` scaled by 0.4 into the 400 by 400 panel, after
+      about a second on it.
+    - Its limits: the 25 programs calling `Cap.main` keep their image
+      (their entry's Cap.main would be the process's second: a preview
+      gets no authority, by design); 3D games keep theirs, unless the
+      SVG backend's compiler (a scene to 2D shapes) can be reused;
+      `Audio` needs a mute switch, since games play sounds from
+      `update`; 40 programs have no scripted scene, and preview their
+      title screen.
+    - **Full-screen demos** (the attract mode when idle, and `d` on
+      demand) stay child processes, the one place a second of loading
+      is fine: `tinybox <Name> -script <scene>` with a new `-demo` flag
+      of the native loops, quitting on the first real key or click;
+      the arcade's attract loop, and Doom's demos.
+    - The scenes' scripts, which tinybox needs at run time: decided and
+      done (2026-09-27), moved out of the tests into data both read,
+      `tests/common/scenes/` (`Golden_scene`, `Scenes_2d`, `Scenes_3d`,
+      library `golden_scenes`).
+    - **The grid's thumbnail is the game being played** (the author):
+      a program's first scripted scene's golden frame (TinyMario's
+      "run", Donkey Kong's barrels), its first frame only for the 40
+      without one. Done 2026-09-27. A scene that is a debug view rather
+      than play (AiOthello's "values") could get an override, with the
+      catalogue's new columns.
+15. The source view (`s`), after codemap (the author's code
+    visualizer, the author's wish, 2026-09-27): the program's code shown
+    "in a nice way" -- the files it is made of (the program, its kits,
+    appkits, layers and libraries: its dune stanza's) as a treemap sized
+    by lines, a click going into one; the code itself highlighted
+    (keywords, comments, strings; the syncweb-free OCaml of this
+    repository), the header comment first, as the page one reads before
+    playing. Embedded at build time like the thumbnails (the sources are
+    text, a few MB for all). A program of the menu itself, or a view of
+    its own? The menu's detail panel opens it; it could also become an
+    app of its own (TinyCodemap in `apps/devtools/`), which tinybox
+    starts on the chosen program. The cheapest first version (the
+    author): a screenshot of the real codemap per program, taken by a
+    make target over the program's files (codemap is in ~/github/, if it
+    can write its picture without a window) and embedded like the
+    thumbnails; a picture, not a view one can go into.
 16. Host and join for the `Multiplayer` games; kid mode; themes, menu
     music and sounds (with step 8); the gamepad.
 17. `tinybox --install <dir>`: the links for BusyBox's way.
@@ -444,9 +503,9 @@ platform are wanted (Batocera's "systems").
 - **Genre libraries** (the dependency union) before the launcher, or
   `copy_files` and a hand-kept list? `copy_files` for now (step 3);
   genre libraries if the list becomes a burden.
-- **Which new `CATALOG.md` columns** (decided: the catalogue grows,
-  rather than the headers): Players surely; the original's platform and
-  its URL too? And their spelling (`1-2`, `2 (online)`).
+- **The spelling of the new columns** (decided 2026-09-27: Players,
+  Platform and Year; no URL column): `1`, `1-2`, `1-4`, and a mark for
+  network play; the platforms' names.
 - **URLs**: a new `CATALOG.md` column (another thing its test checks),
   or a table private to the launcher?
 - **Examples**: in the launcher too (their own section), or games and

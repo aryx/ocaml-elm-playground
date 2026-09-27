@@ -8,8 +8,9 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* See Golden_frames.mli *)
+(* See Golden_scene.mli *)
 
-let tests =
-  Testutil_golden.tests ~dir:"tests/2d" ~approve:"approve-golden2d" ~scripted:Scenes_2d.scripted ~flagged:Scenes_2d.flagged
-    ~scripted_flagged:Scenes_2d.scripted_flagged Scenes_2d.scenes
+type scene = string * string * int
+type scripted = string * string * int * string
+type flagged = string * string * int * string list
+type scripted_flagged = string * string * int * string * string list

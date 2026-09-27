@@ -1,7 +1,7 @@
 (* Scripted inputs: what the person does, frame by frame, for
  * reproducible runs of a game or an application (-script, see
  * Native_loop_2d and playground3d's Native_loop_3d), e.g. the golden
- * frame of a game after 2 seconds of play (tests/2d/Golden_frames.ml).
+ * frame of a game after 2 seconds of play (Scenes_2d.ml).
  *
  * A script is a comma-separated list of what:frames, the frames a
  * single frame n or a range a-b (both included), counted from 1 like

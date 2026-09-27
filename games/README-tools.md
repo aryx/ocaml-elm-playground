@@ -79,7 +79,7 @@ Checklist for a new tool
 - its header says what it edits, the keys, and where its file goes, as
   a game's header does (what it uses, and not; its exercises);
 - its row in `CATALOG.md`, with its genre for a `Tiny<Game>Ed`, and its
-  golden frames (`tests/2d/Golden_frames.ml`: at rest, and a few
+  golden frames (`Scenes_2d.ml`: at rest, and a few
   scripted ones, since a script can type characters and click);
 - keyboard first: the golden frames' scripts hold keys and type
   characters, and so can a player without a mouse;

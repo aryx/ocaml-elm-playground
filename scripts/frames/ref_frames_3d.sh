@@ -16,7 +16,7 @@
 # (-dump-frame), then compared byte for byte.
 #
 # claude: 'make test' checks the same scenes automatically, against the
-# golden frames in tests/3d/golden/ (see tests/3d/Golden_frames.ml),
+# golden frames in tests/3d/golden/ (see Scenes_3d.ml),
 # all but TinyMinecraft; this script is for a manual check including it.
 #
 # Usage:

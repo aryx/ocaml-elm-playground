@@ -11,7 +11,7 @@ val ( let* ) : ('a, [ `Msg of string ]) result -> ('a -> 'b) -> 'b
 (* -v/-verbose/-debug/-quiet, and installs a Logs reporter; also
  * -uncapped (no 60 fps pacing), -debug-keys (see [debug_keys_enabled])
  * and, for reproducible frames (see
- * tests/2d/Golden_frames.ml), -fixed-time t (the app's clock stays at
+ * Scenes_2d.ml), -fixed-time t (the app's clock stays at
  * t), -keys k (the debug keys k pressed, through [run]'s
  * [on_key_press], before the first frame), -dump-frame n file (after
  * drawing frame n, counted from 1, [run] calls its [dump_frame file],
