@@ -56,6 +56,7 @@ type t = {
   lines : Highlight_code.span list array;
   overview : Rgba_image.t;
   top : int; (* the first line shown, from 0 *)
+  lit : int option; (* claude: a line lit (the tour's stop) *)
   mutable page : (int * float * Rgba_image.t) option; (* the page from a top line, at a pixel ratio *)
 }
 
@@ -75,9 +76,12 @@ let overview_of (f : Code_file.t) : Rgba_image.t =
   done;
   img
 
-let make ?(line = 0) (file : Code_file.t) : t =
-  let v = { file; lines = file.lines; overview = overview_of file; top = 0; page = None } in
-  { v with top = max 0 (min (Array.length v.lines - visible) (line - (visible / 2))) }
+let make ?(line = 0) ?lit (file : Code_file.t) : t =
+  let v = { file; lines = file.lines; overview = overview_of file; top = 0; lit; page = None } in
+  (* claude: a lit line near the top, what follows it below; else in
+   * the middle *)
+  let top = match lit with Some _ -> line - 2 | None -> line - (visible / 2) in
+  { v with top = max 0 (min (Array.length v.lines - visible) top) }
 
 let clamp (v : t) (top : int) : t = { v with top = max 0 (min (Array.length v.lines - visible) top) }
 
@@ -254,6 +258,10 @@ let code_lines (computer : computer) (v : t) : shape list =
   (* the line under the mouse, lit *)
   let r = int_of_float ((top_y -. mouse.my) /. lh) in
   [ bitmap pw ph img |> move cx (top_y -. (ph /. 2.)) ]
+  @ (match v.lit with
+    | Some l when l >= v.top && l < v.top + visible ->
+        [ rectangle (rgb 90 210 120) pw lh |> move cx (top_y -. ((float_of_int (l - v.top) +. 0.5) *. lh)) |> fade 0.22 ]
+    | _ -> [])
   @
   if mouse.mx >= code_left && mouse.mx <= code_left +. pw && mouse.my <= top_y && r >= 0 && r < visible then
     [ rectangle white pw lh |> move cx (top_y -. ((float_of_int r +. 0.5) *. lh)) |> fade 0.12 ]

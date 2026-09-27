@@ -9,9 +9,10 @@
 
 type t
 
-(* [make ?line file]: the view of [file], [line] (from 0, by default
-   the first) in the middle *)
-val make : ?line:int -> Code_file.t -> t
+(* [make ?line ?lit file]: the view of [file], [line] (from 0, by
+   default the first) in the middle; claude: with [lit], that line lit
+   and near the top instead (Codemap's tour) *)
+val make : ?line:int -> ?lit:int -> Code_file.t -> t
 
 (* a frame's keys ([pressed]: down this frame and not the last; [arrow]:
    an arrow pressed, or held long enough to repeat) and the mouse *)

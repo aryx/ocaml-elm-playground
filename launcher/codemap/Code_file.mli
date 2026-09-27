@@ -10,7 +10,12 @@ type t = {
   grid : Bytes.t; (* [cols] a line: 0 a space, else 1 + Highlight_code.index *)
   chars : Bytes.t; (* the same cells' characters, code page 437 (Vga_font) *)
   defs : (int * string * Highlight_code.category) list; (* line (from 0), name, category: the top-level ones *)
+  marks : int list; (* claude: the lines (from 0) saying [trick] *)
 }
+
+(* claude: "the trick of this game", what a game faking 3D (and a few
+   others) writes where its trick is (games/README-2.5d.md) *)
+val trick : string
 
 (* the grids' width: longer lines are cut. A cell is a byte of the
    line: a character of several bytes in UTF-8 is in its first cell, the

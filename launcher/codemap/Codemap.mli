@@ -14,7 +14,18 @@
    among the repository's sources (the libraries are unwrapped: a
    module's name is its file's), with its interface; a name that is
    several files' (Test) is left out, and so are the platforms (every
-   program runs on one). *)
+   program runs on one). Code_deps finds them (launcher/codemap/deps),
+   and counts a program's own code, its budget: 5,000 lines (README).
+
+   claude: the files come in reading order -- the program's, then breadth
+   first what it names, each .mli before its .ml -- numbered on the map
+   (but the whole repository's). And the tour reads them in that order:
+   n, from the map or a file, opens the next stop in the file view, its
+   line lit near the top, p the one before, Escape the map. A file's
+   stops are its header, its sections (the (* Model *) between rules of
+   stars) and the lines saying "the trick of this game"
+   (Code_map.stops): nothing written for the tour, the author's own
+   sections and marks. *)
 
 type t
 

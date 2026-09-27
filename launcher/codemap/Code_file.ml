@@ -16,9 +16,11 @@ type t = {
   grid : Bytes.t;
   chars : Bytes.t;
   defs : (int * string * Highlight_code.category) list;
+  marks : int list;
 }
 
 let cols = 80
+let trick = "the trick of this game"
 
 let plain (src : string) : Highlight_code.span list array =
   String.split_on_char '\n' src |> List.map (fun l -> if l = "" then [] else [ { Highlight_code.col = 0; text = l; category = Normal } ]) |> Array.of_list
@@ -54,7 +56,14 @@ let make (path : string) (src : string) : t =
           | _ -> ())
         spans)
     lines;
-  { path; lines; grid; chars; defs = List.rev !defs }
+  (* claude: the lines saying "the trick of this game" *)
+  let has s sub =
+    let n = String.length sub in
+    let rec at i = i + n <= String.length s && (String.sub s i n = sub || at (i + 1)) in
+    at 0
+  in
+  let marks = String.split_on_char '\n' src |> List.mapi (fun i l -> (i, l)) |> List.filter_map (fun (i, l) -> if has l trick then Some i else None) in
+  { path; lines; grid; chars; defs = List.rev !defs; marks }
 
 let nlines (f : t) : int = Array.length f.lines
 

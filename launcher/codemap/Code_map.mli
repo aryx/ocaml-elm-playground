@@ -23,8 +23,10 @@ type t
 
 (* [make ~area ~title ~marked entries]: the map of [entries] in [area],
    its top left corner (in the playground's coordinates) and its width and
-   height in pixels; [marked] (paths) framed, the program's own files *)
-val make : area:float * float * int * int -> title:string -> marked:string list -> entry list -> t
+   height in pixels; [marked] (paths) framed, the program's own files;
+   [numbered] (default false), each file's tab numbered by its place in
+   [entries], the order to read them in *)
+val make : ?numbered:bool -> area:float * float * int * int -> title:string -> marked:string list -> entry list -> t
 
 type action = Stay | Open of Code_file.t * int (* its line, from 0 *) | Close
 
@@ -35,6 +37,14 @@ val update : Playground.computer -> pressed:(string -> bool) -> arrow:string opt
    background, the title, what is under the mouse, the keys; without, the
    map alone, where the caller shows it (tinybox's panel) *)
 val view : ?chrome:bool -> Playground.computer -> t -> Playground.shape list
+
+(* claude: the files in the map's order (the reading order, Codemap's),
+   a file's number in it if numbered, and the stops of Codemap's tour in
+   a file (line from 0, what is there): its header, its sections, and the
+   places saying Code_file.trick; lexes the file *)
+val entries : t -> entry list
+val number : t -> string -> int option
+val stops : entry -> (int * string) list
 
 (* the number of files shown, and of their lines; lines_text 12345 is
    "12,345 lines" *)

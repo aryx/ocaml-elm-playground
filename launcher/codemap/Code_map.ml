@@ -59,6 +59,7 @@ type t = {
   mutable painted : (camera * float * Rgba_image.t) option; (* the picture of [cam], at a pixel ratio *)
   mutable last : camera option; (* the camera the frame before: is it still? *)
   mutable lens : (camera * Rgba_image.t) option; (* the magnifying glass's last picture, and its camera *)
+  order : (string, int) Hashtbl.t; (* claude: a file's place in the reading order, when numbered *)
 }
 
 type action = Stay | Open of Code_file.t * int | Close
@@ -95,12 +96,14 @@ let fit (a : area) (r : Treemap.rect) : camera =
 
 let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 
-let make ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
+let make ?(numbered = false) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
   let left, top, pw, ph = area in
   let a = { left; top; pw; ph } in
   let placed, geometry = relayout a Squarified entries in
+  let order = Hashtbl.create 64 in
+  if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Squarified; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
-    before_right = false; painted = None; last = None; lens = None }
+    before_right = false; painted = None; last = None; lens = None; order }
 
 (* claude: the lines of the files shown, for a title *)
 let lines_of (entries : entry list) : int = List.fold_left (fun n (e : entry) -> n + e.nlines) 0 entries
@@ -362,6 +365,22 @@ let up (t : t) : camera =
     t.placed;
   match !best with Some p when p.depth > 0 -> fit c.a p.rect | _ -> home c.a
 
+(* claude: the stops of Codemap's tour in a file: its header, its
+ * sections (the (* Model *) between rules of stars), and the places
+ * saying "the trick of this game"; lexes the file *)
+let stops (e : entry) : (int * string) list =
+  let f = Lazy.force e.file in
+  let sections = List.filter_map (fun (l, name, cat) -> if cat = Highlight_code.Comment_section && l > 0 then Some (l, name) else None) f.defs in
+  let marks = List.filter_map (fun l -> if l > 0 then Some (l, Code_file.trick) else None) f.marks in
+  (0, "its header") :: List.sort_uniq (fun (a, _) (b, _) -> compare a b) (sections @ marks)
+
+let entries (t : t) : entry list = t.entries
+let number (t : t) (path : string) : int option = Hashtbl.find_opt t.order path
+
+(* where a line of a file is in the layout: its column's left, its top *)
+let line_pos (r : Treemap.rect) (g : geometry) (line : int) : float * float =
+  (r.x +. (float_of_int (line / g.lpc) *. g.colw), r.y +. (float_of_int (line mod g.lpc) *. g.cell_h))
+
 (* claude: the magnifying glass (below): round, a reading glass (80
  * columns), or none, o going from one to the next, one setting for every
  * map (tinybox's panel and its explorer) *)
@@ -543,12 +562,24 @@ let labels (t : t) (c : camera) (q : float) : shape list =
                * as big as the file allows, up to 18; the program's own in
                * yellow, first *)
               let main = List.mem e.path t.marked in
+              (* claude: numbered, its place in the reading order *)
+              let name = match Hashtbl.find_opt t.order e.path with Some n -> Printf.sprintf "%d  %s" n name | None -> name in
               let s = Float.min (fit_size (String.length name + 2)) (Float.min ((h -. 6.) /. 2.) 18.) in
               let s = if main then Float.max s 12. else s in
               if s >= 9. then begin
                 let box, shape = tab a (if main then yellow else lighter (archi p.path)) s (float_of_int x0 +. 1.) (float_of_int y0 +. 1.) name in
                 files := { rank = (if main then 1000. else 100. +. s); box; shape } :: !files
               end;
+              (* claude: the trick of this game, marked where it is *)
+              if Lazy.is_val e.file && h >= 30. then
+                List.iter
+                  (fun line ->
+                    if line < g.lpc * g.k then begin
+                      let x, y = line_pos p.rect g line in
+                      let box, shape = tab a ~alpha:1. (rgb 230 80 200) 13. (to_px c x) (to_py c y -. 19.) ("* " ^ Code_file.trick) in
+                      files := { rank = 800.; box; shape } :: !files
+                    end)
+                  (Lazy.force e.file).marks;
               (* the semantic zoom: definitions written over the code *)
               if (not (readable c g)) && Lazy.is_val e.file then
                 List.iter
@@ -631,7 +662,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words yellow t.title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.);
         words ink status |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
-          (Printf.sprintf "wheel zoom   drag pan   click fly in, again open   right click up   t layout (%s)   o glass (%s)   0 all   esc back" algo (glass_name ()))
+          (Printf.sprintf "wheel zoom   drag pan   click fly in, again open   right click up   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" algo (glass_name ()))
         |> scale (12. /. words_font_size)
         |> move 0. (screen.bottom +. 18.);
       ]
