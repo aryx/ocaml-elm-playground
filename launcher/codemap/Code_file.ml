@@ -26,8 +26,10 @@ let plain (src : string) : Highlight_code.span list array =
   String.split_on_char '\n' src |> List.map (fun l -> if l = "" then [] else [ { Highlight_code.col = 0; text = l; category = Normal } ]) |> Array.of_list
 
 let make (path : string) (src : string) : t =
-  let ocaml = Filename.check_suffix path ".ml" || Filename.check_suffix path ".mli" in
-  let lines = if ocaml then Highlight_ml.lines src else plain src in
+  (* claude: an ocamllex or ocamlyacc file too, mostly OCaml; plain if
+   * OCaml's lexer gives up on it *)
+  let ocaml = List.exists (Filename.check_suffix path) [ ".ml"; ".mli"; ".mll"; ".mly" ] in
+  let lines = if ocaml then (try Highlight_ml.lines src with _ -> plain src) else plain src in
   let n = Array.length lines in
   let grid = Bytes.make (n * cols) '\000' in
   let chars = Bytes.make (n * cols) '\000' in

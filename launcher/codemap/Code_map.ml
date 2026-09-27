@@ -160,6 +160,9 @@ let archi (path : string) : int * int * int =
   | "appkits" -> (60, 170, 100)
   | "playground" -> (220, 170, 50)
   | "libs" -> (200, 90, 60)
+  (* claude: tinybox's own, its logo's magenta; the languages grey *)
+  | "launcher" -> (220, 70, 150)
+  | "languages" -> (120, 120, 120)
   | _ -> (120, 120, 120)
 
 let mix ((r, g, b) : int * int * int) (a : float) ((r2, g2, b2) : int * int * int) : int * int * int =

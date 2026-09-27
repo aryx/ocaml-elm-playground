@@ -36,6 +36,11 @@ let starts (prefix : string) (s : string) : bool = String.length s >= String.len
 let own (program_path : string) (p : string) : bool =
   Filename.dirname p = Filename.dirname program_path || starts "gamekits/" p || starts "appkits/" p || starts "languages/" p
 
+(* claude: a module's implementation: its .ml, or the lexer or parser
+ * its .ml is generated from (Lexer_ml.mll) *)
+let source_suffixes = [ ".ml"; ".mll"; ".mly" ]
+let is_impl (p : string) : bool = List.exists (Filename.check_suffix p) source_suffixes
+
 let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : string) : string list =
   let by_name : (string, string list) Hashtbl.t = Hashtbl.create 1024 in
   let contents : (string, string) Hashtbl.t = Hashtbl.create 4096 in
@@ -45,7 +50,7 @@ let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : s
   List.iter
     (fun (p, src) ->
       Hashtbl.replace contents p src;
-      if Filename.check_suffix p ".ml" && not (platform p) then
+      if is_impl p && not (platform p) then
         let m = module_name p in
         Hashtbl.replace by_name m (p :: Option.value ~default:[] (Hashtbl.find_opt by_name m)))
     sources;
@@ -73,7 +78,7 @@ let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : s
   List.rev !order
   |> List.concat_map (fun p ->
          let mli = Filename.remove_extension p ^ ".mli" in
-         if Filename.check_suffix p ".ml" && Hashtbl.mem contents mli then [ mli; p ] else [ p ])
+         if is_impl p && Hashtbl.mem contents mli then [ mli; p ] else [ p ])
 
 (* claude: the repository's own sources, as they are in _build: its
  * source files, and not the build's copies of them (a genre's web/ and
@@ -106,7 +111,7 @@ let repository_sources ~(root : string) : (string * string) list =
            let path = Filename.concat dir f in
            if Sys.is_directory (Filename.concat root path) then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
            else if dir = "launcher" && not (launcher_own f) then []
-           else if Filename.check_suffix f ".ml" || Filename.check_suffix f ".mli" then
+           else if is_impl f || Filename.check_suffix f ".mli" then
              let text = read (Filename.concat root path) in
              if generated path text then [] else [ (path, text) ]
            else [])
