@@ -839,14 +839,18 @@ let filter_bar (m : model) : shape list =
         text ~size:13. (if on then yellow else ink) (x +. 24. +. (8. *. float_of_int (String.length label))) bar_y value ])
     bar
 
+(* claude: by genre, the section's smallest program: where to start
+ * reading it (tinybox is first for learning); its badge in the grid,
+ * and in the details why *)
+let start_here (m : model) : string option =
+  match (m.grouping, m.search, shown m) with
+  | By_genre, None, (_ :: _ :: _ as ps) -> Some (List.hd (by_lines ps)).name
+  | _ -> None
+
 let grid (computer : computer) (runnable : string list) (m : model) : shape list =
   (* claude: by genre, the section's smallest program: where to start
    * reading it (tinybox is first for learning) *)
-  let start =
-    match (m.grouping, m.search, shown m) with
-    | By_genre, None, (_ :: _ :: _ as ps) -> Some (List.hd (by_lines ps)).name
-    | _ -> None
-  in
+  let start = start_here m in
   shown m
   |> List.mapi (fun i (p : Catalogue.program) -> (i, p))
   |> List.concat_map (fun (i, (p : Catalogue.program)) ->
@@ -933,6 +937,15 @@ let details (computer : computer) (runnable : string list) (m : model) : shape l
           text ~size:13. yellow left 380.
             (Printf.sprintf "%d   %s   %s   %s" p.year p.platform (players_text p) (Code_map.lines_text (lines_of p)));
         ]
+      (* claude: why "start here": the smallest of its section, and what
+       * is counted (not the library: a program over libs/ can look
+       * smaller than it is) *)
+      @ (match (start_here m, current_group m) with
+        | Some name, Some g when name = p.name ->
+            [ text ~size:12. (rgb 90 210 120) left 358.
+                (cut ~size:12. ~width:text_w
+                   (Printf.sprintf "start here: the smallest in %s (its own code: libs/ not counted)" g.title)) ]
+        | _ -> [])
       (* claude: the software rasterizer's time on a 3D preview: tinybox
        * as its stress test, every 3D game drawn live *)
       @ (match preview_ms p with
