@@ -55,7 +55,9 @@ type pixels = (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array2.t
  * claude: [resizable] (default false), a window that can change size,
  * the picture scaled to fit it ([run ~on_resize:(Some ...)]): then -size WxH gives
  * its size at the start, and -fullscreen starts it in full screen; the
- * pixels are the window's, whatever its size. *)
+ * pixels are the window's, whatever its size, at the display's own
+ * resolution (on a Retina display, two pixels per point: the pixels
+ * twice the window's size), but for -dump-frame. *)
 val create_window : ?resizable:bool -> title:string -> sx:int -> sy:int -> unit -> Tsdl.Sdl.window * pixels
 
 (* claude: -size WxH and -fullscreen, for Native_loop_3d, which parses

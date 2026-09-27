@@ -260,7 +260,14 @@ let create_window ?(resizable = false) ~title ~sx ~sy () : Sdl.window * pixels =
   let* () = Sdl.init Sdl.Init.(video + events) in
   (* claude: a resizable window starts at -size's size if given *)
   let w, h = match (resizable, !window_size) with true, Some (w, h) -> (w, h) | _ -> (sx, sy) in
-  let flags = if resizable then Sdl.Window.(shown + resizable) else Sdl.Window.shown in
+  (* claude: a resizable window at the display's own pixels (a Retina's
+   * two per point): its surface is then in pixels, twice the window's
+   * size in points, and the platform draws at that resolution (the
+   * pixels' size, not the window's, is what it scales to); mouse
+   * positions stay in points, mapped back through the window's size. Not
+   * with -dump-frame: a frame the same whatever the display *)
+  let hidpi = if !dump_frame_number = None then Sdl.Window.allow_highdpi else Sdl.Window.windowed in
+  let flags = if resizable then Sdl.Window.(shown + resizable + hidpi) else Sdl.Window.shown in
   let* sdl_window = Sdl.create_window ~w ~h title flags in
   if resizable && !fullscreen then ignore (Sdl.set_window_fullscreen sdl_window Sdl.Window.fullscreen_desktop);
   sdl_window, window_pixels sdl_window
