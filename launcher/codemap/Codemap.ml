@@ -134,4 +134,7 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
         | map, Open (f, line) -> Some { t with map; file = Some (Code_view.make ~line f) })
 
 let view (computer : Playground.computer) (t : t) : Playground.shape list =
-  match t.file with Some v -> Code_view.view computer v | None -> Code_map.view computer t.map
+  match t.file with
+  | Some v -> Code_view.view computer v
+  (* claude: over the map, the magnifying glass *)
+  | None -> Code_map.view computer t.map @ Code_map.glass computer t.map

@@ -344,6 +344,14 @@ let up (t : t) : camera =
     t.placed;
   match !best with Some p when p.depth > 0 -> fit c.a p.rect | _ -> home c.a
 
+(* claude: the magnifying glass (below) is round or a reading glass (80
+ * columns), toggled by o, one setting for every map (tinybox's panel and
+ * its explorer) *)
+type glass = Round | Reading
+
+let glass_shape = ref Round
+let toggle_glass () = glass_shape := match !glass_shape with Round -> Reading | Reading -> Round
+
 let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   let mouse = computer.mouse in
   let a = t.target.a in
@@ -360,6 +368,8 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
     | Some "ArrowDown" -> pan 0. 80.
     | _ -> target
   in
+  (* claude: the glass's shape, the panel's too *)
+  if pressed "o" then toggle_glass ();
   let t =
     if pressed "t" then
       let algo : Treemap.algo = match t.algo with Squarified -> Slice_and_dice | Slice_and_dice -> Squarified in
@@ -588,7 +598,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words yellow t.title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.);
         words ink status |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
-          (Printf.sprintf "wheel zoom   drag pan   click fly in, again open   right click up   t layout (%s)   0 all   esc back" algo)
+          (Printf.sprintf "wheel zoom   drag pan   click fly in, again open   right click up   t layout (%s)   o glass   0 all   esc back" algo)
         |> scale (12. /. words_font_size)
         |> move 0. (screen.bottom +. 18.);
       ]
@@ -597,30 +607,106 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
 (* The magnifying glass *)
 (*****************************************************************************)
 
-(* claude: a glass over the map, the part under the cursor closer --
- * for tinybox's panel, where the map is small and a program's code at a
- * glance is too fine to read. Not a zoom of the map's picture (that would
- * only enlarge its pixels, blurred, the problem pixel_ratio solved): the
- * part under the glass painted again, by the same paint, with a camera
- * [power] times closer, at the window's resolution, anti-aliased. The
- * power is chosen for the file under the cursor, so that its lines come
- * out about 16 units high, the VGA font's own size: readable whatever the
- * file's size.
+(* claude: a glass over the map, the part under the cursor closer. Not a
+ * zoom of the map's picture (that would only enlarge its pixels, blurred,
+ * the problem pixel_ratio solved): the part under the glass painted
+ * again, by the same paint, with a camera [power] times closer, at the
+ * window's resolution, anti-aliased. The power is chosen for the file
+ * under the cursor, so that its lines come out about 16 units high, the
+ * VGA font's own size: readable whatever the file's size. The glass's
+ * shape is its picture's pixels made transparent (alpha 0, a soft edge):
+ * the playground has no clipping. Painted again only when the cursor
+ * moves.
  *
- * A reading glass, the rectangular kind laid over a page, rather than a
- * round one: 80 columns of 8 units (640, and a margin) by some 16 lines,
- * so that whole lines of code are read, not a keyhole of them (a round
- * glass that wide would be bigger than the panel). Over a file, the glass
- * lines up with the start of the column of lines under the mouse (a file
- * is laid out in several), so it shows whole lines from their first
- * character, not the end of one column and the start of the next; up and
- * down, the line under the mouse is drawn where the mouse is. The glass
- * stays on the screen. Its picture's corners are made transparent (alpha 0, a
- * soft edge): the playground has no clipping. Painted again only when the
- * cursor moves. *)
-let lens_w = 660.
-let lens_h = 272.
-let lens_corner = 22.
+ * Two glasses. A round one, a glance at the code under the mouse. A
+ * reading glass, the rectangular
+ * kind laid over a page, where one reads: 80 columns of 8 units (640,
+ * and a margin) by some 16 lines, whole lines of code rather than a
+ * keyhole of them. o switches from one to the other. Neither when the map
+ * is already close enough for the code to be read (the explorer zoomed
+ * in). *)
+
+(* the file under the mouse (its rectangle and geometry), and the power
+ * that makes its lines 16 units high; None when the mouse is off the map *)
+let under_glass (computer : computer) (t : t) =
+  let c = t.cam in
+  let a = c.a in
+  let mouse = computer.mouse in
+  let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
+  if not (on a mpx mpy) then None
+  else
+    let u = to_u c mpx and v = to_v c mpy in
+    let file = match under t u v with Some i -> ( match t.geometry.(i) with Some g -> Some (t.placed.(i).rect, g) | None -> None) | None -> None in
+    let power = match file with Some (_, g) -> float_of_int Vga_font.height /. (g.cell_h *. c.z) | None -> 4. in
+    Some (u, v, file, power)
+
+(* the part of the map [lc] sees, painted, the pixels of its picture out
+ * of the glass's shape transparent: [alpha w h fx fy], w and h the
+ * picture's size, fx fy a pixel's centre, gives its alpha *)
+let glass_picture (t : t) (lc : camera) (alpha : float -> float -> float -> float -> int option) : Rgba_image.t * float =
+  let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
+  let img =
+    match t.lens with
+    | Some (pc, img) when pc = lc && img.width = (at_ratio lc q).a.pw -> img
+    | _ ->
+        let img = paint ~aa:true t (at_ratio lc q) in
+        let w = float_of_int img.width and h = float_of_int img.height in
+        for y = 0 to img.height - 1 do
+          for x = 0 to img.width - 1 do
+            match alpha w h (float_of_int x +. 0.5) (float_of_int y +. 0.5) with
+            | Some al -> Bigarray.Array1.unsafe_set img.rgba ((4 * ((y * img.width) + x)) + 3) al
+            | None -> ()
+          done
+        done;
+        t.lens <- Some (lc, img);
+        img
+  in
+  (img, q)
+
+(* one pixel of soft edge, [dist] from a circle's centre of radius [r] *)
+let soft_edge (r : float) (dist : float) : int = if dist <= r -. 1. then 255 else if dist >= r then 0 else int_of_float ((r -. dist) *. 255.)
+
+(* the round glass: centred on the point under the cursor *)
+let lens_radius = 185.
+
+let lens (computer : computer) (t : t) : shape list =
+  match under_glass computer t with
+  | None -> []
+  | Some (_, _, _, power) when power < 1.3 -> []
+  | Some (u, v, _, power) ->
+      let power = Float.max 2. (Float.min 10. power) in
+      let d = int_of_float (2. *. lens_radius) in
+      let lc = { cx = u; cy = v; z = t.cam.z *. power; a = { (t.cam.a) with pw = d; ph = d } } in
+      let img, _ =
+        glass_picture t lc (fun w _ fx fy ->
+            let r = w /. 2. in
+            let dx = fx -. r and dy = fy -. r in
+            Some (soft_edge r (Float.sqrt ((dx *. dx) +. (dy *. dy)))))
+      in
+      let x = computer.mouse.mx and y = computer.mouse.my in
+      let r = lens_radius in
+      [
+        (* the handle, down and to the right, as a magnifying glass is held *)
+        rectangle (rgb 90 60 30) 22. 110. |> move 0. (-.(r +. 50.)) |> rotate 45. |> move x y;
+        rectangle (rgb 150 150 160) 26. 18. |> move 0. (-.(r +. 4.)) |> rotate 45. |> move x y;
+        (* the rim *)
+        circle (rgb 40 40 50) (r +. 9.) |> move x y;
+        circle (rgb 190 190 205) (r +. 6.) |> move x y;
+        circle (rgb 12 10 28) (r +. 1.) |> move x y;
+        bitmap (2. *. r) (2. *. r) img |> move x y;
+        (* a glint on the glass *)
+        oval white (r *. 0.5) (r *. 0.18) |> rotate 35. |> move (x -. (r *. 0.45)) (y +. (r *. 0.55)) |> fade 0.12;
+        words (rgb 190 190 205) (Printf.sprintf "x%.0f" power) |> scale (12. /. words_font_size) |> move (x +. (r *. 0.62)) (y -. (r *. 0.85));
+      ]
+
+(* the reading glass. Over a file, it lines up with the start of the
+ * column of lines under the mouse (a file is laid out in several), so it
+ * shows whole lines from their first character, not the end of one column
+ * and the start of the next; up and down, the line under the mouse is
+ * drawn where the mouse is. It stays on the screen. *)
+let reading_w = 660.
+let reading_h = 272.
+let reading_corner = 22.
 
 (* a rectangle with rounded corners, from rectangles and circles (the
  * playground has no rounded rectangle) *)
@@ -635,72 +721,55 @@ let rounded (color : color) (w : number) (h : number) (r : number) : shape =
       circle color r |> move (-.((w /. 2.) -. r)) (-.((h /. 2.) -. r));
     ]
 
-let lens (computer : computer) (t : t) : shape list =
-  let c = t.cam in
-  let a = c.a in
-  let mouse = computer.mouse in
-  let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
-  if not (on a mpx mpy) then []
-  else
-    let u = to_u c mpx and v = to_v c mpy in
-    (* the file under the cursor: its lines 16 units high (the power),
-     * and where its column of lines starts *)
-    let file = match under t u v with Some i -> ( match t.geometry.(i) with Some g -> Some (t.placed.(i).rect, g) | None -> None) | None -> None in
-    let power = match file with Some (_, g) -> Float.max 2. (Float.min 10. (float_of_int Vga_font.height /. (g.cell_h *. c.z))) | None -> 4. in
-    let z = c.z *. power in
-    let margin = 10. in
-    let screen = computer.screen in
-    let keep lo hi x = Float.max lo (Float.min hi x) in
-    let on_screen_x x = keep (screen.left +. (lens_w /. 2.) +. 4.) (screen.right -. (lens_w /. 2.) -. 4.) x in
-    let gy = keep (screen.bottom +. (lens_h /. 2.) +. 4.) (screen.top -. (lens_h /. 2.) -. 4.) mouse.my in
-    (* across: the column's start at the glass's left margin, the glass
-     * over the column on the map; else the point under the mouse where the
-     * mouse is *)
-    let gx, cx =
-      match file with
-      | Some (r, g) ->
-          let start = r.x +. (Float.floor ((u -. r.x) /. g.colw) *. g.colw) in
-          (on_screen_x (sx a (to_px c start) +. (lens_w /. 2.) -. margin), start +. (((lens_w /. 2.) -. margin) /. z))
-      | None ->
-          let gx = on_screen_x mouse.mx in
-          (gx, u +. ((gx -. mouse.mx) /. z))
-    in
-    (* down: the line under the mouse drawn where the mouse is *)
-    let lc = { cx; cy = v -. ((gy -. mouse.my) /. z); z; a = { a with pw = int_of_float lens_w; ph = int_of_float lens_h } } in
-    let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
-    let img =
-      match t.lens with
-      | Some (pc, img) when pc = lc && img.width = (at_ratio lc q).a.pw -> img
-      | _ ->
-          let img = paint ~aa:true t (at_ratio lc q) in
-          (* rounded corners: alpha by the distance to the corner's
-           * centre, one pixel of soft edge *)
-          let r = lens_corner *. q in
-          let w = float_of_int img.width and h = float_of_int img.height in
-          for y = 0 to img.height - 1 do
-            for x = 0 to img.width - 1 do
-              let fx = float_of_int x +. 0.5 and fy = float_of_int y +. 0.5 in
-              let dx = Float.max 0. (Float.max (r -. fx) (fx -. (w -. r))) and dy = Float.max 0. (Float.max (r -. fy) (fy -. (h -. r))) in
-              if dx > 0. && dy > 0. then begin
-                let dist = Float.sqrt ((dx *. dx) +. (dy *. dy)) in
-                let alpha = if dist <= r -. 1. then 255 else if dist >= r then 0 else int_of_float ((r -. dist) *. 255.) in
-                Bigarray.Array1.unsafe_set img.rgba ((4 * ((y * img.width) + x)) + 3) alpha
-              end
-            done
-          done;
-          t.lens <- Some (lc, img);
-          img
-    in
-    let w = lens_w and h = lens_h and r = lens_corner in
-    [
-      (* the handle, from the bottom right corner, as a reading glass is held *)
-      rectangle (rgb 90 60 30) 24. 120. |> move 0. (-60.) |> rotate 45. |> move (gx +. (w /. 2.) -. 10.) (gy -. (h /. 2.) +. 10.);
-      (* the rim *)
-      rounded (rgb 40 40 50) (w +. 18.) (h +. 18.) (r +. 9.) |> move gx gy;
-      rounded (rgb 190 190 205) (w +. 12.) (h +. 12.) (r +. 6.) |> move gx gy;
-      rounded (rgb 12 10 28) (w +. 2.) (h +. 2.) (r +. 1.) |> move gx gy;
-      bitmap w h img |> move gx gy;
-      (* a glint on the glass *)
-      oval white (w *. 0.3) (h *. 0.1) |> rotate 8. |> move (gx -. (w *. 0.28)) (gy +. (h *. 0.36)) |> fade 0.1;
-      words (rgb 190 190 205) (Printf.sprintf "x%.0f" power) |> scale (12. /. words_font_size) |> move (gx +. (w /. 2.) -. 24.) (gy +. (h /. 2.) +. 1.);
-    ]
+let reading_glass (computer : computer) (t : t) : shape list =
+  match under_glass computer t with
+  | None -> []
+  | Some (_, _, _, power) when power < 1.3 -> []
+  | Some (u, v, file, power) ->
+      let power = Float.min 10. power in
+      let c = t.cam in
+      let a = c.a in
+      let mouse = computer.mouse in
+      let z = c.z *. power in
+      let margin = 10. in
+      let screen = computer.screen in
+      let keep lo hi x = Float.max lo (Float.min hi x) in
+      let on_screen_x x = keep (screen.left +. (reading_w /. 2.) +. 4.) (screen.right -. (reading_w /. 2.) -. 4.) x in
+      let gy = keep (screen.bottom +. (reading_h /. 2.) +. 4.) (screen.top -. (reading_h /. 2.) -. 4.) mouse.my in
+      (* across: the column's start at the glass's left margin, the glass
+       * over the column on the map; else the point under the mouse where
+       * the mouse is *)
+      let gx, cx =
+        match file with
+        | Some (r, g) ->
+            let start = r.x +. (Float.floor ((u -. r.x) /. g.colw) *. g.colw) in
+            (on_screen_x (sx a (to_px c start) +. (reading_w /. 2.) -. margin), start +. (((reading_w /. 2.) -. margin) /. z))
+        | None ->
+            let gx = on_screen_x mouse.mx in
+            (gx, u +. ((gx -. mouse.mx) /. z))
+      in
+      (* down: the line under the mouse drawn where the mouse is *)
+      let lc = { cx; cy = v -. ((gy -. mouse.my) /. z); z; a = { a with pw = int_of_float reading_w; ph = int_of_float reading_h } } in
+      let img, _ =
+        glass_picture t lc (fun w h fx fy ->
+            (* rounded corners: the distance to the corner's centre *)
+            let r = reading_corner *. (w /. reading_w) in
+            let dx = Float.max 0. (Float.max (r -. fx) (fx -. (w -. r))) and dy = Float.max 0. (Float.max (r -. fy) (fy -. (h -. r))) in
+            if dx > 0. && dy > 0. then Some (soft_edge r (Float.sqrt ((dx *. dx) +. (dy *. dy)))) else None)
+      in
+      let w = reading_w and h = reading_h and r = reading_corner in
+      [
+        (* the handle, from the bottom right corner, as a reading glass is held *)
+        rectangle (rgb 90 60 30) 24. 120. |> move 0. (-60.) |> rotate 45. |> move (gx +. (w /. 2.) -. 10.) (gy -. (h /. 2.) +. 10.);
+        (* the rim *)
+        rounded (rgb 40 40 50) (w +. 18.) (h +. 18.) (r +. 9.) |> move gx gy;
+        rounded (rgb 190 190 205) (w +. 12.) (h +. 12.) (r +. 6.) |> move gx gy;
+        rounded (rgb 12 10 28) (w +. 2.) (h +. 2.) (r +. 1.) |> move gx gy;
+        bitmap w h img |> move gx gy;
+        (* a glint on the glass *)
+        oval white (w *. 0.3) (h *. 0.1) |> rotate 8. |> move (gx -. (w *. 0.28)) (gy +. (h *. 0.36)) |> fade 0.1;
+        words (rgb 190 190 205) (Printf.sprintf "x%.1f" power) |> scale (12. /. words_font_size) |> move (gx +. (w /. 2.) -. 24.) (gy +. (h /. 2.) +. 1.);
+      ]
+
+let glass (computer : computer) (t : t) : shape list =
+  match !glass_shape with Round -> lens computer t | Reading -> reading_glass computer t
