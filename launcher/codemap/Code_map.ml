@@ -303,10 +303,14 @@ let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
                * the whole repository's map opens without lexing it all *)
               if (x1 - x0) * (y1 - y0) < 40 && not (Lazy.is_val e.file) then fill img x0 y0 x1 y1 (mix (archi p.path) 0.5 bg)
               else paint_code ~aa img c p.rect g (Lazy.force e.file) box bg;
-              (* a dark line on its top and left edges, between files *)
+              (* claude: its outline, in its part's colour, a file told
+               * apart from its neighbours (the layout's gap between them) *)
               if x1 - x0 > 6 && y1 - y0 > 6 then begin
-                fill img x0 y0 x1 (y0 + 1) dark;
-                fill img x0 y0 (x0 + 1) y1 dark
+                let edge = mix (archi p.path) 0.6 dark in
+                fill img x0 y0 x1 (y0 + 1) edge;
+                fill img x0 (y1 - 1) x1 y1 edge;
+                fill img x0 y0 (x0 + 1) y1 edge;
+                fill img (x1 - 1) y0 x1 y1 edge
               end
           | File _, None -> ()))
     t.placed;
@@ -469,13 +473,28 @@ let candidate (a : area) ~(rank : float) ?alpha (color : color) (size : float) (
   let w = 0.5 *. size *. float_of_int (String.length s) in
   { rank; box = (px -. (w /. 2.), py -. (size /. 2.), px +. (w /. 2.), py +. (size /. 2.)); shape = label a ?alpha color size px py s }
 
-(* the names over the map: directories', big and faint (codemap's); files';
- * and, from afar, what each file defines, bigger the more it matters *)
+(* claude: a name on a tab, [size] high, its box's top left corner at
+ * (tx, ty) *)
+let tab (a : area) ?(alpha = 0.85) (color : color) (size : float) (tx : float) (ty : float) (s : string) : (float * float * float * float) * shape =
+  let tw = (0.5 *. size *. float_of_int (String.length s)) +. 8. and th = size +. 6. in
+  ( (tx, ty, tx +. tw, ty +. th),
+    group
+      [
+        rectangle (rgb 12 10 28) tw th |> move (sx a (tx +. (tw /. 2.))) (sy a (ty +. (th /. 2.))) |> fade alpha;
+        label a color size (tx +. (tw /. 2.)) (ty +. (th /. 2.)) s;
+      ] )
+
+let lighter ((r, g, b) : int * int * int) : color = rgb (min 255 (r + 60)) (min 255 (g + 60)) (min 255 (b + 60))
+
+(* the names over the map: directories', big and faint (codemap's), and
+ * their paths on a tab at their top right; files' on a tab at their top
+ * left (the program's own in yellow, never left out); and, from afar,
+ * what each file defines, bigger the more it matters *)
 let labels (t : t) (c : camera) (q : float) : shape list =
   let a = c.a in
   (* readable as painted: in the window's pixels *)
   let readable c g = readable (at_ratio c q) g in
-  let candidate = candidate a and label = label a in
+  let candidate = candidate a in
   let dirs = ref [] and files = ref [] and defs = ref [] in
   Array.iteri
     (fun i (p : entry Treemap.placed) ->
@@ -492,31 +511,30 @@ let labels (t : t) (c : camera) (q : float) : shape list =
               let s = Float.min (fit_size (String.length name)) (Float.min (h /. 4.) 90.) in
               if s >= 12. && w *. h < 0.4 *. float_of_int (a.pw * a.ph) then
                 dirs := candidate ~rank:s ~alpha:0.35 ink s ((float_of_int x0 +. float_of_int x1) /. 2.) ((float_of_int y0 +. float_of_int y1) /. 2.) name :: !dirs;
-              (* ours: its path on a tab at its top left, the way back to it in
-               * the repository; only a directory with files of its own, as
-               * the path says its parents' names *)
+              (* ours: its path on a tab at its top right, the way back to
+               * it in the repository (claude: the right, the files' names
+               * being at their left); only a directory with files of its
+               * own, as the path says its parents' names *)
               let size = 13. in
               let tw = (0.5 *. size *. float_of_int (String.length p.path)) +. 8. in
               let has_files = List.exists (function Treemap.File _ -> true | Dir _ -> false) kids in
               if has_files && w >= tw && h >= 40. then begin
-                let tx = to_px c p.rect.x +. 2. and ty = to_py c p.rect.y +. 2. in
-                let tx = Float.max 0. tx and ty = Float.max 0. ty in
-                let r, gg, b = archi p.path in
-                let shape =
-                  group
-                    [
-                      rectangle (rgb 12 10 28) tw (size +. 6.) |> move (sx a (tx +. (tw /. 2.))) (sy a (ty +. ((size +. 6.) /. 2.)));
-                      label (rgb (min 255 (r + 60)) (min 255 (gg + 60)) (min 255 (b + 60))) size (tx +. (tw /. 2.)) (ty +. ((size +. 6.) /. 2.)) p.path;
-                    ]
-                in
-                files := { rank = 300. -. float_of_int p.depth; box = (tx, ty, tx +. tw, ty +. size +. 6.); shape } :: !files
+                let tx = Float.min (float_of_int x1 -. tw -. 2.) (float_of_int a.pw -. tw) and ty = Float.max 0. (to_py c p.rect.y +. 2.) in
+                let box, shape = tab a ~alpha:1. (lighter (archi p.path)) size tx ty p.path in
+                files := { rank = 300. -. float_of_int p.depth; box; shape } :: !files
               end
           | File (_, _, e), Some g ->
-              let s = Float.min (fit_size (String.length name)) (Float.min (h /. 3.) 20.) in
-              if readable c g then
-                files := candidate ~rank:100. yellow (Float.min 14. s) (to_px c p.rect.x +. (0.25 *. float_of_int (String.length name) *. Float.min 14. s) +. 4.) (to_py c p.rect.y +. 8.) name :: !files
-              else if s >= 10. then
-                files := candidate ~rank:(50. +. s) ~alpha:0.9 ink s ((float_of_int x0 +. float_of_int x1) /. 2.) ((float_of_int y0 +. float_of_int y1) /. 2.) name :: !files;
+              (* claude: its name on a tab at its top left, always there
+               * (the corner in view when the file is partly off the map),
+               * as big as the file allows, up to 18; the program's own in
+               * yellow, first *)
+              let main = List.mem e.path t.marked in
+              let s = Float.min (fit_size (String.length name + 2)) (Float.min ((h -. 6.) /. 2.) 18.) in
+              let s = if main then Float.max s 12. else s in
+              if s >= 9. then begin
+                let box, shape = tab a (if main then yellow else lighter (archi p.path)) s (float_of_int x0 +. 1.) (float_of_int y0 +. 1.) name in
+                files := { rank = (if main then 1000. else 100. +. s); box; shape } :: !files
+              end;
               (* the semantic zoom: definitions written over the code *)
               if (not (readable c g)) && Lazy.is_val e.file then
                 List.iter

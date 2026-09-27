@@ -32,7 +32,8 @@
 
    Nesting: a directory's children go inside its rectangle less a
    border, so the directory shows round them (codemap paints it dark
-   and lays its children out in it shrunk). *)
+   and lays its children out in it shrunk); and a file's rectangle is a
+   little less than its share, a gap between neighbouring files. *)
 
 type rect = { x : float; y : float; w : float; h : float } (* y downwards *)
 

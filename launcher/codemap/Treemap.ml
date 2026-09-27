@@ -112,9 +112,16 @@ let inset (depth : int) (r : rect) : rect =
   let b = Float.min r.w r.h *. if depth <= 1 then 0.012 else 0.02 in
   { x = r.x +. b; y = r.y +. b; w = Float.max 0. (r.w -. (2. *. b)); h = Float.max 0. (r.h -. (2. *. b)) }
 
+(* claude: a file's rectangle a little less than its share, so that
+ * neighbouring files stand apart, the directory's colour between them *)
+let gap (r : rect) : rect =
+  let b = Float.min r.w r.h *. 0.015 in
+  { x = r.x +. b; y = r.y +. b; w = Float.max 0. (r.w -. (2. *. b)); h = Float.max 0. (r.h -. (2. *. b)) }
+
 let layout (algo : algo) (r : rect) (tree : 'a tree) : 'a placed list =
   let rec go depth path rect node acc =
     let path = if path = "" then name_of node else if name_of node = "" then path else path ^ "/" ^ name_of node in
+    let rect = match node with File _ when depth > 0 -> gap rect | _ -> rect in
     let acc = { rect; depth; path; node } :: acc in
     match node with
     | File _ -> acc
