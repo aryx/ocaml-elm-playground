@@ -78,7 +78,7 @@
    kit_maze kit_platformer kit_puzzle kit_racing kit_racing3d
    kit_rhythm kit_rts kit_sectors kit_segments kit_shmup kit_sports
    media_player music_voices myst networking networking_mail photos
-   physics_2d physics_3d random scratch smalltalk unix web
+   physics_2d physics_3d random scratch smalltalk unix lang_html lang_css browser_layout
  ))
 
 ; claude: the menu's data, made at build time: the catalogue, and each

@@ -244,11 +244,11 @@ which already reads video and sound:
 
 ## Where it goes
 
-- `libs/web/css/` (new folder of `web_style`): `Css_syntax`,
+- `languages/css/` (new folder of `web_style`): `Css_syntax`,
   `Selectors`, `Css_values`, `Cascade`, `Computed`, `ua.css` (embedded
   by dune); N5's `Css` rewritten over them, `Looks` kept for the
   teaching browsers.
-- `libs/web/layout/`: `Box_layout`, `Flex_layout`, beside
+- `appkits/browser/layout/`: `Box_layout`, `Flex_layout`, beside
   `Html_layout` and `Table_layout`.
 - `libs/graphics/images/svg/`: `Svg`, a library like `png/` and `gif/`,
   `Image_decode` recognizing SVG's text.
@@ -327,7 +327,7 @@ which already reads video and sound:
   declarations, which the cascade puts over the rest): TinyNetscape's
   and TinyFirefox's frames unchanged. Tests: the notes' worked examples,
   `Unit_css_syntax` and `Unit_selectors`. About 700 lines, within C1's
-  budget. The style modules stay in `libs/web/style/` (not a `css/`
+  budget. The style modules stay in `languages/css/` (not a `css/`
   folder: one library, three modules more).
 - **C2 done** (2026-09-25): `Css_values` (a length computed as pixels
   plus a percentage of the containing block, which `calc()` adds to;
@@ -621,7 +621,7 @@ no survey showed. Added to as each phase finishes.
 
 ## Verification
 
-- Each module's worked examples as tests (`libs/web/tests/`, the notes'
+- Each module's worked examples as tests (`appkits/browser/layout/tests/`, the notes'
   numbers): a selector's specificity, a `var()` resolved, a `calc()`, a
   margin collapsed, a flex row's widths, an SVG path's pixels.
 - **Golden frames of pages of our own** built to look like the targets

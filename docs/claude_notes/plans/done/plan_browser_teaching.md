@@ -415,8 +415,8 @@ on the web); 6-7 make it Mosaic; 8-10 each stand alone.
 `Cmd.http_response` (the final URL, the status, the headers, the
 body's bytes) on both backends -- one command, always bytes, read as
 text by `Playground.Http.expect_string` and whole by the new
-`expect_response`; `libs/web/html/` has `Charset` and `Entities`, with
-their tests (`libs/web/tests/`); `TinyMosaic` shows a page's source,
+`expect_response`; `languages/html/` has `Charset` and `Entities`, with
+their tests (`appkits/browser/layout/tests/`); `TinyMosaic` shows a page's source,
 `about:home` embedded from `apps/internet/site/`, or `http://` (tried
 on `info.cern.ch`: it still answers over plain HTTP, 646 bytes, no
 redirection), with its golden frame, web page and catalogue row.
@@ -440,7 +440,7 @@ tables), `Html_tree` (the stack of open elements; html, head and body
 made at once; `</p>` alone an empty p; a newline after `<pre>`
 dropped; misnesting ours, the adoption agency the exercise),
 `Line_mode` (the tree as text at 80 columns, links numbered), each with
-its tests (14 more, 37 in `libs/web/tests/`). TinyMosaic: `d` the
+its tests (14 more, 37 in `appkits/browser/layout/tests/`). TinyMosaic: `d` the
 tree, `l` line mode, a link followed by typing its number and Return
 (resolved by `Url.resolve`), `h` home; the title now from the tree;
 a second built-in page, `about:history`; golden frames `_tree`,
@@ -450,11 +450,11 @@ way: `Sub.on_key_down` gives SDL's lowercased names natively
 lowercases before matching (phase 0's Page Up/Down worked only on the
 web). Next: phase 3, looks and blocks -- the first page drawn.
 
-**Phase 3 done** (2026-09-25): `libs/web/style/` (`web_style`) with
+**Phase 3 done** (2026-09-25): `languages/css/` (`web_style`) with
 `Looks` (the look inherited down the tree, the box not; CSS 2.1
 appendix D's numbers; HTML 3.2's `align=`; a box's `indent` and
 `right`, since the body's 8 and a blockquote's 40 are on both sides),
-`libs/web/layout/` (`web_layout`) with `Html_layout` (blocks stacked,
+`appkits/browser/layout/` (`web_layout`) with `Html_layout` (blocks stacked,
 siblings' margins collapsed, anonymous blocks around runs of inline
 content, words on lines sharing a baseline with CSS's half-leading, a
 line broken only at `<br>` and `<pre>`'s newlines), 8 tests (45 in
@@ -487,7 +487,7 @@ before which greedy leaves a loose line; golden frames `_narrow` and
 difference. Next: phase 5, links clicked and the history. Committed
 as 5228bc3.
 
-**Phase 5 done** (2026-09-25): `Hit` (`libs/web/layout/`): `link_at`,
+**Phase 5 done** (2026-09-25): `Hit` (`appkits/browser/layout/`): `link_at`,
 the line holding a point, the fragment on it, its look's link (a space
 between two words of one link counts); `anchor`, a name to its y. The
 layout now keeps anchors -- `<a name>` and inline `id=` as items of no
@@ -581,7 +581,7 @@ CGI, `/cgi-bin/NAME` runs root/cgi-bin/NAME (the request in its
 environment and on its standard input, its output the answer, a
 Status: header honoured); `site/cgi-bin/echo`, a shell script. Tests:
 4 (Urlencoded), 5 (Forms), 1 (layout), 1 (Hit), 1 (a POST over
-sockets, and 303 then GET); 64 in `libs/web/tests/`. TinyMosaic: the
+sockets, and 303 then GET); 64 in `appkits/browser/layout/tests/`. TinyMosaic: the
 controls drawn in Motif's look every frame (not in the page's glyphs
 made once: their values change as you type), their values kept with
 the page, a focus taking the keys (Return sends, Escape gives up),
@@ -828,7 +828,7 @@ watched: when a third browser would need it too, it moves.
 
 ## Verification
 
-- Unit tests per module (`libs/web/tests/`), each `.mli`'s worked
+- Unit tests per module (`appkits/browser/layout/tests/`), each `.mli`'s worked
   example first; the soup cases compared once, by hand, with what
   html5lib builds (recorded in the tests, no dependency).
 - Layout tests with ten-unit metrics: the boxes' positions of the

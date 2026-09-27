@@ -103,7 +103,7 @@
   (modules TinyMosaic TinyNetscape TinyFirefox)
   (libraries
     caps ; the authority to reach the network
-    web ; the engine: Hit, Dom, Html_lexer (the views)
+    lang_html lang_css browser_layout ; the engine: Hit, Dom, Html_lexer (the views)
     appkit_browser ; a page read, laid out, drawn; the history; forms
     internet_site ; the about: pages
     elm_playground
@@ -119,7 +119,7 @@
  (name internet_media)
  (wrapped false)
  (modules Browser_media Tube)
- (libraries elm_playground web appkit_browser media_player)
+ (libraries elm_playground lang_html lang_css browser_layout appkit_browser media_player)
 )
 
 (executables
@@ -127,7 +127,7 @@
   (modules TinyChrome)
   (libraries
     caps
-    web
+    lang_html lang_css browser_layout
     appkit_browser
     internet_site
     internet_media ; <video>, <audio>, about:tube

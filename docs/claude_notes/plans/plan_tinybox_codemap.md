@@ -275,7 +275,7 @@ plan at the author's request (a `launcher/codemap/` imitating codemap,
 the treemap in it, a program's several files, zooming smoothly):
 - `languages/ocaml/` (library `lang_ocaml`): `Token_ml`,
   `Lexer_ml.mll`, `Highlight_ml` (tokens only); and, language
-  independent (the author: C may come), `languages/highlight/`'s
+  independent (the author: C may come), `libs/program_analysis/highlight/`'s
   `Highlight_code`. Every `.ml`/`.mli` of the repository lexed: 2.1M
   tokens, no error, 1.5 s with the highlighting.
 - `launcher/codemap/` (library `tinybox_codemap`): `Treemap` (squarified

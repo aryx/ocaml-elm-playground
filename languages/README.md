@@ -4,11 +4,11 @@ claude: at the top of the repository, beside `appkits/` and
 `gamekits/`, not in `libs/`: each language is made for a program or a
 few (the table's last column), as a kit is, so tinybox's code map shows
 it as their code and it counts toward their budget of 5,000 lines
-(README's "A budget"). Five programs are over it for their languages,
+(README's "A budget"). Six programs are over it for their languages,
 and allowed to be, listed in `tests/catalog/`: TinySmalltalk80
 (Smalltalk-80, a whole system), TinyChrome, TinyFirefox and TinyNetscape
-(JavaScript, with the browser's engine), and TinyOffice (the formulas
-and HyperTalk).
+(JavaScript, with the browser's engine: HTML, CSS, the layout),
+TinyMosaic (the engine), and TinyOffice (the formulas and HyperTalk).
 
 A language here is text, read by a parser and run by an evaluator,
 with nothing of the Playground: what a program can touch outside
@@ -27,8 +27,9 @@ strings and an app against its screen. One library per language, each
 | `smalltalk/` | Smalltalk-80 from the Blue Book (Goldberg and Robson, 1983): read (`St_lexer`, `St_parse`, message precedence by recursive descent), compiled to the Blue Book's bytecodes (`St_compile`, the inlined ifTrue: and whileTrue:), run by its interpreter over an object table (`St_memory`, `St_interp`: contexts as objects, the method cache, non-local return, become:), the kernel's classes written in Smalltalk and bootstrapped from their text (`kernel/*.st`, `St_boot`), the debugger's questions (`St_debug`), the image (`St_image`), BitBlt (`St_bitblt`); the host gives the Transcript, the clock and the mouse | TinySmalltalk80 (`plan_tiny_smalltalk.md`) |
 | `scratch/` | Scratch (MIT, 2007) and Snap! (Berkeley, 2011): the blocks as one table of specs, as Scratch 3's opcodes are, Snap!'s custom blocks named by their template (`Scratch_blocks`); their text, the forums' scratchblocks notation, read by matching a line against the templates and printed back, a ring round a script on one line (`Scratch_text`); a project run, sprites on a stage, each script a green thread yielding at the end of a loop's turn, and Snap!'s heap of lists and cells, environments, closures, custom reporters run to their report (`Scratch_run`) -- a language whose programs are made with the mouse, and have a text all the same | TinyScratch and TinySnap (`appkits/blocks`, the editor's geometry) |
 | `ocaml/` | OCaml read, not run, for a code visualizer (`plan_tinybox_codemap.md`): `Lexer_ml`, ocamllex after ocaml-light's (OCaml 1.07's) lexer, every token kept, comments included, with its place; `Highlight_ml`, each token's category from its neighbours (codemap's token pass); the parser, ocamlyacc, to come | tinybox's code map (`launcher/codemap/`) |
-| `highlight/` | not a language: what colouring any language's code needs (`Highlight_code`: codemap's categories, their colours, a file as lines of coloured spans); a language's highlighter (`ocaml/`'s `Highlight_ml`, later C's) turns its tokens into these | the same |
 | `javascript/` | a small modern core of JavaScript, for TinyFirefox: read (`Js_lexer`, `Js_ast`, `Js_parse`: recursive descent and Pratt, and why not yacc) and run (`Js_value`, `Js_eval`, a tree walker with closures, `this` and the coercions; `Js_builtins`); the DOM is `appkits/browser`'s `Browser_script` | TinyFirefox (`plan_tiny_firefox.md`) |
+| `html/` | HTML read, not run (from `libs/web/html`): the bytes to text (`Charset`), the entities, the tokens (`Html_lexer`, the WHATWG's state machine), the tree (`Dom`, `Dtd`, `Html_tree`, the stack of open elements), the tree as the Line Mode Browser showed it (`Line_mode`), the forms (`Forms`) | the browsers (`appkits/browser`), TinyMosaic to TinyChrome |
+| `css/` | what a page's elements look like (from `libs/web/style`): Mosaic's fixed table (`Looks`), style sheets read (`Css_syntax`), `Selectors`, the cascade (`Css`), and TinyChrome's values, cascade and computed styles (`Css_values`, `Cascade`, `Computed`, over `ua.css`) | the same; laid out by `appkits/browser/layout` |
 
 What is not here, and why: the Playground's *ways* (`playground/ways/`:
 Logo, Big Bang, PuzzleScript, Karel) are OCaml APIs that build an app,

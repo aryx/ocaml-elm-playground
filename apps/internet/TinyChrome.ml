@@ -13,8 +13,8 @@
  * TinyMosaic, TinyNetscape and TinyFirefox show how a browser grew;
  * this one tries to show real pages mostly right, as TinyOffice is the
  * office grown whole (plan_tiny_chrome.md: which sites, and what they
- * ask). Its engine is CSS's own, from scratch in libs/web/style and
- * libs/web/layout:
+ * ask). Its engine is CSS's own, from scratch in languages/css and
+ * appkits/browser/layout:
  *
  *   bytes -> tree -> Cascade (the page's sheets over the browser's,
  *   ua.css; @media, var(), the attributes' hints) -> Computed (a record
@@ -64,7 +64,7 @@
  * engine (wikipedia).
  *
  * Uses: appkits/browser (the tab, the page, Browser_boxes,
- * Browser_devtools, the forms), libs/web (Cascade, Computed, Box_layout,
+ * Browser_devtools, the forms), the web engine (Cascade, Computed, Box_layout,
  * Flex_layout, and Hit through the page's Html_layout view),
  * graphics/images/svg (Svg) through Browser_boxes and Browser_picture,
  * the built-in site (Site). Its own: the chrome, the tabs, the panel.

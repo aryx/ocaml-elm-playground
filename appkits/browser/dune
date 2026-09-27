@@ -1,4 +1,4 @@
-; claude: what a web browser is made of, beyond the engine (libs/web/):
+; claude: what a web browser is made of, beyond the engine (languages/html, languages/css, and layout/ here):
 ; a page read and laid out (Browser_page), drawn (Browser_draw: Hershey's
 ; letters, pictures, Motif's controls), its pictures (Browser_picture),
 ; its links (Browser_url), the history's two stacks (Browser_history),
@@ -14,7 +14,7 @@
  (wrapped false)
  (libraries
    elm_playground ; the shapes it draws
-   web ; the engine: Charset ... Html_layout, Hit, Forms
+   lang_html lang_css browser_layout ; the engine: languages/html, languages/css, layout/
    networking ; Url, Urlencoded
    javascript ; the scripts' engine, for Browser_script
    appkit_stroke_text ; the letters

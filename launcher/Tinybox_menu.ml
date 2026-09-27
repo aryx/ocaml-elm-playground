@@ -650,12 +650,14 @@ let open_code (screen : screen) (m : model) : model =
   | None -> m
 
 (* claude: tinybox's own code map, the menu and the code map showing
- * themselves: all of launcher/ its own code, from its main, and the
- * languages it uses (OCaml's lexer and highlighter); not the kits, which
- * it names only to run the programs they are (the editors, -tty) *)
+ * themselves: all of launcher/ its own code, from its main, the
+ * languages it uses (OCaml's lexer and highlighter) and the program
+ * analysis it does (libs/program_analysis: Highlight_code); not the
+ * kits, which it names only to run the programs they are (the editors,
+ * -tty) *)
 let tinybox_code (screen : screen) (m : model) : model =
   let starts pre p = String.length p >= String.length pre && String.sub p 0 (String.length pre) = pre in
-  let own p = starts "launcher/" p || starts "languages/" p in
+  let own p = starts "launcher/" p || starts "languages/" p || starts "libs/program_analysis/" p in
   { m with code = Some (Codemap.make_own ~own ~area:(code_map_area screen) ~sources:Tinybox_sources.sources ~program:"tinybox" ~path:"launcher/Tinybox.ml") }
 
 let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) (computer : computer) (m : model) :

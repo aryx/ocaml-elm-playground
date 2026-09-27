@@ -21,7 +21,7 @@
   (modules TinyMosaic TinyNetscape TinyFirefox)
   (libraries
     caps
-    web
+    lang_html lang_css browser_layout
     appkit_browser
     internet_site
     elm_playground
@@ -36,7 +36,7 @@
   (modules TinyChrome)
   (libraries
     caps
-    web
+    lang_html lang_css browser_layout
     appkit_browser
     internet_site
     internet_media

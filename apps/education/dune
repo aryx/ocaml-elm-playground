@@ -29,7 +29,7 @@
 ;  - Celestia (Chris Laurel, 2001): Stellarium's sky flown through in 3D,
 ;    over appkits/astronomy and the 3D playground;
 ;  - Encarta (Microsoft, 1993): an encyclopedia on a CD-ROM, articles,
-;    pictures, sounds and links, over libs/web/.
+;    pictures, sounds and links, over the web engine (languages/html, languages/css, appkits/browser/layout).
 (executables
   (names TinyStellarium TinyInteractivePhysics)
   (modules TinyStellarium TinyInteractivePhysics)

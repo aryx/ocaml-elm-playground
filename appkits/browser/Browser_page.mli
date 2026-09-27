@@ -1,5 +1,5 @@
 (* Browser_page: a page, read and laid out -- the whole pipeline of
- * libs/web/ in one place, from the bytes a server sent to the shapes
+ * the web engine (languages/html, languages/css, appkits/browser/layout) in one place, from the bytes a server sent to the shapes
  * a browser shows:
  *
  *   bytes -Charset-> text -Html_lexer-> tokens -Html_tree-> tree

@@ -23,7 +23,7 @@ place a game meets them.
 | `ai/` | game AI: movement, decisions, bots, search, learning ([`ai/README.md`](ai/README.md)) | `notes_ai.md`, `notes_ai_learning.md` |
 | `networking/` | the protocols, the netcode, the sockets ([`networking/README.md`](networking/README.md)) | `notes_networking.md` |
 | `gui/` | a GUI toolkit: widgets, the four architectures, layout, text | `notes_gui.md` |
-| `web/` | a browser's engine: a page's encoding, tokens and tree (tag soup repaired), its looks, its layout (blocks, lines, pictures), and back from a click ([`web/README.md`](web/README.md)) | `notes_browser.md` |
+| `program_analysis/` | what analyses programs whatever their language: `highlight/` (`Highlight_code`, the categories and colours a language's highlighter turns tokens into, codemap's); to come, the modules a file uses, a generic AST, dataflow | `plan_tinybox_codemap.md` |
 | `juice/` | game feel: easing, tweens, squash, trauma, particles | `notes_juice.md` |
 | `terminal/` | the VT100's screen (`Vt`: bytes and escape sequences into a grid of cells), the tty's line discipline (`Line_discipline`: echo, Backspace, a line on Enter), `Talk` (the programs that ask and wait, as values, and the machine playing one on a `Vt`), `Curses` (a screen drawn whole, sent as what changed) and `Tui` (a full-screen program, Model-View-Update); `unix/`'s `Tty_unix` runs one in a real terminal, native only | `plan_terminal.md` |
 
@@ -38,12 +38,14 @@ Among themselves they depend little: `core/`, `random/`, `crypto/` and
 on `audio/`'s samples (a video's sound) and on `networking/` (an image
 downloaded); `physics/` on `graphics/`' geometry; `gui/` on `core/`;
 `audio/` on `compression/` (MP3's codes); `terminal/` on `random/` (`Talk`'s
-seeded numbers); `ai/`, `juice/` and `web/` on nothing of the others.
+seeded numbers); `ai/` and `juice/` on nothing of the others.
 
 The languages were here, and moved to the top, to `languages/`, beside
 `appkits/` and `gamekits/`: a language is made for a program or two
 (Lisp for TinyEmacs, BASIC for TinyBasic), as a kit is, so it is part
 of their code, and counts toward their budget (README's "A budget"),
-where these libraries, truly general, do not. dune finds a
+where these libraries, truly general, do not. So did the browsers'
+engine, `web/`: HTML and CSS to `languages/html` and `languages/css`,
+the layout to `appkits/browser/layout` (its README). dune finds a
 library by its name, not its folder, so a program says `(libraries
 audio ai)`, whatever `libs/` looks like.
