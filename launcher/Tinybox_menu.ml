@@ -134,6 +134,8 @@ let platform_title = function
 (* a section of the grid: the catalogue's, or made by a grouping *)
 type group = { title : string; intro : string; games : bool option; programs : Catalogue.program list }
 
+(* claude: every grouping's programs by year, oldest first -- CATALOG.md's
+ * sections are in that order too, this in case a row is added out of it *)
 let by_year (ps : Catalogue.program list) = List.stable_sort (fun (a : Catalogue.program) b -> compare a.year b.year) ps
 
 let groups (grouping : grouping) (f : filters) : group array =
@@ -142,7 +144,7 @@ let groups (grouping : grouping) (f : filters) : group array =
   (match grouping with
   | By_genre ->
       Array.to_list sections
-      |> List.map (fun (s : Catalogue.section) -> { title = s.title; intro = s.intro; games = Some s.games; programs = keep s.programs })
+      |> List.map (fun (s : Catalogue.section) -> { title = s.title; intro = s.intro; games = Some s.games; programs = by_year (keep s.programs) })
   | By_era ->
       decades
       |> List.map (fun d ->
@@ -157,10 +159,10 @@ let groups (grouping : grouping) (f : filters) : group array =
                (by_year (keep (List.filter (fun (p : Catalogue.program) -> p.platform = pf) everything))))
   | By_players ->
       [
-        make "One player" "Alone, or against the computer." (keep (List.filter (fun p -> Catalogue.plays p 1) everything));
-        make "Two players" "Two on one keyboard (or split screen)." (keep (List.filter (fun p -> Catalogue.plays p 2) everything));
+        make "One player" "Alone, or against the computer." (by_year (keep (List.filter (fun p -> Catalogue.plays p 1) everything)));
+        make "Two players" "Two on one keyboard (or split screen)." (by_year (keep (List.filter (fun p -> Catalogue.plays p 2) everything)));
         make "Over the network" "Two computers, one game: net=host on one, net=join on the other (Multiplayer)."
-          (keep (List.filter Catalogue.online everything));
+          (by_year (keep (List.filter Catalogue.online everything)));
       ])
   |> List.filter (fun g -> g.programs <> [])
   |> Array.of_list
