@@ -639,15 +639,21 @@ let bar_key (computer : computer) (m : model) (key : string) : model =
       if n = 0 then m else { m with pos = Hashtbl.hash (int_of_float (now computer *. 1000.)) mod n }
   | _ -> m
 
+(* the whole screen, but for the title and what the program brought
+ * above and the status and keys below *)
+let code_map_area (screen : screen) = (screen.left +. 20., screen.top -. 92., int_of_float screen.width - 40, int_of_float screen.height - 162)
+
 (* the chosen program's code map *)
 let open_code (screen : screen) (m : model) : model =
   match chosen m with
-  | Some p ->
-      (* the whole screen, but for the title and what the program brought
-       * above and the status and keys below *)
-      let area = (screen.left +. 20., screen.top -. 92., int_of_float screen.width - 40, int_of_float screen.height - 162) in
-      { m with code = Some (Codemap.make ~area ~sources:Tinybox_sources.sources ~program:p.name ~path:p.source) }
+  | Some p -> { m with code = Some (Codemap.make ~area:(code_map_area screen) ~sources:Tinybox_sources.sources ~program:p.name ~path:p.source) }
   | None -> m
+
+(* claude: tinybox's own code map, the menu and the code map showing
+ * themselves: all of launcher/ its own code, from its main *)
+let tinybox_code (screen : screen) (m : model) : model =
+  let own p = String.length p > 9 && String.sub p 0 9 = "launcher/" in
+  { m with code = Some (Codemap.make_own ~own ~area:(code_map_area screen) ~sources:Tinybox_sources.sources ~program:"tinybox" ~path:"launcher/Tinybox.ml") }
 
 let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) (computer : computer) (m : model) :
     model =
@@ -701,6 +707,7 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
   in
   let m =
     if not (mouse.mclick || mouse.mdouble) then m
+    else if near (left_edge +. 90., 452.) at ~w:190. ~h:44. then tinybox_code computer.screen m
     else if near games_tab at ~w:90. ~h:36. then to_shelf m true
     else if near apps_tab at ~w:80. ~h:36. then to_shelf m false
     else if in_code_area at then open_code computer.screen m
@@ -797,7 +804,7 @@ let header (computer : computer) (m : model) : shape list =
       | Some q ->
           let cursor = if Float.rem (now computer) 1. < 0.5 then "_" else " " in
           text ~size:18. yellow (-340.) 452. (cut ~size:18. ~width:250. ("/" ^ q ^ cursor))
-      | None -> text ~size:14. dim (-330.) 452. "/ to search");
+      | None -> text ~size:14. dim (-330.) 452. "/ to search   click TINYBOX: its own code");
     ]
 
 let section_bar (m : model) : shape list =
@@ -997,6 +1004,9 @@ let view (runnable : string list) (computer : computer) (m : model) : shape list
       (* claude: under the map's title, what the program brought (the
        * catalogue's): what to look for in its code *)
       @ (match chosen m with
+        | _ when Codemap.program code = "tinybox" && not (Codemap.file_open code) ->
+            [ centred ~size:13. cyan 0. (screen.top -. 72.)
+                "every program in one binary (after BusyBox), its menu (after Batocera's), and this code map (after codemap and SeeSoft)" ]
         | Some p when not (Codemap.file_open code) ->
             [ centred ~size:13. cyan 0. (screen.top -. 72.) (cut ~size:13. ~width:(screen.width -. 80.) p.brought) ]
         | _ -> [])

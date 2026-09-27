@@ -22,6 +22,7 @@ type t = {
   map : Code_map.t;
   file : Code_view.t option; (* a file open over the map *)
   tour : (int * int) option; (* claude: the tour's stop: a file (its place in the map's entries), a stop in it *)
+  own : string -> bool; (* claude: its own code's files *)
 }
 
 (*****************************************************************************)
@@ -43,11 +44,11 @@ let entry (path : string) (src : string) : Code_map.entry =
   in
   { path; nlines = Code_deps.count_lines src; file }
 
-let map_of ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) ~(scope : scope) :
-    Code_map.t =
+let map_of ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string)
+    ~(scope : scope) : Code_map.t =
   let paths =
     match scope with
-    | Own -> Code_deps.closure ~keep:(Code_deps.own path) sources path
+    | Own -> Code_deps.closure ~keep:own sources path
     | Uses -> Code_deps.closure sources path
     | Whole -> List.map fst sources
   in
@@ -65,11 +66,13 @@ let map_of ~(area : float * float * int * int) ~(sources : (string * string) lis
    * the whole repository's *)
   Code_map.make ~numbered:(scope <> Whole) ~area ~title ~marked:[ path ] entries
 
-let make ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
-  { program; path; sources; scope = Own; area; map = map_of ~area ~sources ~program ~path ~scope:Own; file = None; tour = None }
+let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
+  { program; path; sources; scope = Own; area; map = map_of ~own ~area ~sources ~program ~path ~scope:Own; file = None; tour = None; own }
+
+let make ~area ~sources ~program ~path : t = make_own ~own:(Code_deps.own path) ~area ~sources ~program ~path
 
 let preview ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : Code_map.t =
-  map_of ~area ~sources ~program ~path ~scope:Own
+  map_of ~own:(Code_deps.own path) ~area ~sources ~program ~path ~scope:Own
 
 (*****************************************************************************)
 (* Update and view *)
@@ -115,7 +118,7 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
   | None ->
       if pressed "w" then
         let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole -> Own in
-        Some { t with scope; map = map_of ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
+        Some { t with scope; map = map_of ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
         | _, Close -> None
@@ -124,6 +127,7 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
         | map, Open (f, line) -> Some { t with map; file = Some (Code_view.make ~line f); tour = None })
 
 let file_open (t : t) : bool = t.file <> None
+let program (t : t) : string = t.program
 
 let view (computer : Playground.computer) (t : t) : Playground.shape list =
   match t.file with

@@ -570,7 +570,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
                 let box, shape = tab a (if main then yellow else lighter (archi p.path)) s (float_of_int x0 +. 1.) (float_of_int y0 +. 1.) name in
                 files := { rank = (if main then 1000. else 100. +. s); box; shape } :: !files
               end;
-              (* claude: the trick of this game, marked where it is *)
+              (* claude: the tricks (Code_file.marks), marked where they are *)
               if Lazy.is_val e.file && h >= 30. then
                 List.iter
                   (fun line ->

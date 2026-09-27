@@ -34,6 +34,11 @@ type t
    Code_map.make) *)
 val make : area:float * float * int * int -> sources:(string * string) list -> program:string -> path:string -> t
 
+(* claude: the same, [own] saying which files are its own code, instead
+   of Code_deps.own (tinybox's: all of launcher/) *)
+val make_own :
+  own:(string -> bool) -> area:float * float * int * int -> sources:(string * string) list -> program:string -> path:string -> t
+
 (* the map of the program's own code alone, for a glance (tinybox's
    panel: Code_map.view ~chrome:false) *)
 val preview : area:float * float * int * int -> sources:(string * string) list -> program:string -> path:string -> Code_map.t
@@ -45,3 +50,6 @@ val view : Playground.computer -> t -> Playground.shape list
 
 (* a file read (Code_view), not the map *)
 val file_open : t -> bool
+
+(* the program whose map it is *)
+val program : t -> string

@@ -80,7 +80,7 @@ let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : s
  * software/) nor the modules rules make (dune's alias modules, the
  * embedded pictures and pages, ocamllex's output), which say so on their
  * first line *)
-let source_roots = [ "games"; "apps"; "gamekits"; "appkits"; "playground"; "libs" ]
+let source_roots = [ "games"; "apps"; "gamekits"; "appkits"; "playground"; "libs"; "launcher" ]
 let skipped_dirs = [ "web"; "software"; "svg"; "tests" ]
 
 let read (path : string) : string = In_channel.with_open_bin path In_channel.input_all
@@ -91,12 +91,21 @@ let generated (path : string) (text : string) : bool =
   || Filename.basename path = "Hud_render.ml"
   || Filename.basename path = "Hud_render.mli"
 
+(* claude: tinybox's own code too, the code map showing itself: in
+ * _build, launcher/ also holds the programs it copies in (copy_files)
+ * and the modules it generates, among them the one being written from
+ * this list; so of its top level only its own modules, Tinybox*, but
+ * the generated ones *)
+let launcher_own (f : string) : bool =
+  starts "Tinybox" f && not (List.exists (fun p -> starts p f) [ "Tinybox_data"; "Tinybox_sources"; "Tinybox_thumbs" ])
+
 let repository_sources ~(root : string) : (string * string) list =
   let rec walk (dir : string) : (string * string) list =
     Sys.readdir (Filename.concat root dir) |> Array.to_list |> List.sort compare
     |> List.concat_map (fun f ->
            let path = Filename.concat dir f in
            if Sys.is_directory (Filename.concat root path) then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
+           else if dir = "launcher" && not (launcher_own f) then []
            else if Filename.check_suffix f ".ml" || Filename.check_suffix f ".mli" then
              let text = read (Filename.concat root path) in
              if generated path text then [] else [ (path, text) ]

@@ -56,13 +56,24 @@ let make (path : string) (src : string) : t =
           | _ -> ())
         spans)
     lines;
-  (* claude: the lines saying "the trick of this game" *)
-  let has s sub =
-    let n = String.length sub in
-    let rec at i = i + n <= String.length s && (String.sub s i n = sub || at (i + 1)) in
+  (* claude: the lines saying the trick is here: [trick] in a comment,
+   * not in quotes (a comment about the marker, or a string, is not one:
+   * tinybox's own code has both) *)
+  let says (text : string) : bool =
+    let n = String.length trick in
+    let rec at i =
+      i + n <= String.length text && ((String.sub text i n = trick && (i = 0 || text.[i - 1] <> '"')) || at (i + 1))
+    in
     at 0
   in
-  let marks = String.split_on_char '\n' src |> List.mapi (fun i l -> (i, l)) |> List.filter_map (fun (i, l) -> if has l trick then Some i else None) in
+  let marks =
+    List.filter_map
+      (fun y ->
+        if List.exists (fun (s : Highlight_code.span) -> (s.category = Comment || s.category = Comment_section) && says s.text) lines.(y)
+        then Some y
+        else None)
+      (List.init n Fun.id)
+  in
   { path; lines; grid; chars; defs = List.rev !defs; marks }
 
 let nlines (f : t) : int = Array.length f.lines

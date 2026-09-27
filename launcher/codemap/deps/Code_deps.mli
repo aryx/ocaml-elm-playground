@@ -40,7 +40,8 @@ val own_size : (string * string) list -> string -> int * int
 val budget : int
 
 (* [repository_sources ~root]: the repository's sources under [root]
-   (games/, apps/, gamekits/, appkits/, playground/, libs/), not the
+   (games/, apps/, gamekits/, appkits/, playground/, libs/, and
+   tinybox's own, launcher/), not the
    build's copies of them (web/, software/, svg/, tests/) nor generated
    modules: what tinybox embeds, and what budgets are counted over *)
 val repository_sources : root:string -> (string * string) list

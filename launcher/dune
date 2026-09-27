@@ -108,7 +108,12 @@
   (glob_files_rec %{project_root}/gamekits/*.{ml,mli})
   (glob_files_rec %{project_root}/appkits/*.{ml,mli})
   (glob_files_rec %{project_root}/playground/*.{ml,mli})
-  (glob_files_rec %{project_root}/libs/*.{ml,mli}))
+  (glob_files_rec %{project_root}/libs/*.{ml,mli})
+  ; claude: and tinybox's own (not a glob of launcher/: this target is there)
+  Tinybox.ml Tinybox_collect.ml Tinybox_collect.mli Tinybox_menu.ml Tinybox_menu.mli
+  (glob_files_rec %{project_root}/launcher/catalogue/*.{ml,mli})
+  (glob_files_rec %{project_root}/launcher/codegen/*.{ml,mli})
+  (glob_files_rec %{project_root}/launcher/codemap/*.{ml,mli}))
  (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} sources)))))
 
 (rule
