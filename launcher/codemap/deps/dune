@@ -1,0 +1,7 @@
+; claude: which files are a program's code (Code_deps), pure: no
+; Playground, so that the build-time generator (../../codegen) can count
+; every program's lines, as well as the code map
+(library
+ (name tinybox_codedeps)
+ (wrapped false)
+ (libraries lang_ocaml))

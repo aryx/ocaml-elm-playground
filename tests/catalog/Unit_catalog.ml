@@ -118,4 +118,22 @@ let rows_test =
                Alcotest.failf "CATALOG.md has a row for %s, which no dune file of %s builds" row
                  (String.concat ", " (List.map (fun (d, _, _) -> d) dirs))))
 
-let tests = rows_test :: List.map program_test (Lazy.force programs)
+(* claude: the budget, README's: a program's own code -- its file, its
+ * folder's and the kits' modules it uses, as tinybox's code map shows
+ * it -- at most Code_deps.budget lines, the libraries (libs/) and the
+ * Playground not counted *)
+let budget_test =
+  Testo.create "every program within its budget" (fun () ->
+      let sources = Code_deps.repository_sources ~root in
+      let over =
+        Lazy.force catalogue
+        |> List.filter_map (fun source ->
+               let files, lines = Code_deps.own_size sources source in
+               if lines > Code_deps.budget then Some (Printf.sprintf "%s: %d lines in %d files" source lines files) else None)
+      in
+      if over <> [] then
+        Alcotest.failf
+          "over the budget of %d lines of a program's own code (its folder's and kits' modules; README, \"A budget\"):\n  %s"
+          Code_deps.budget (String.concat "\n  " over))
+
+let tests = rows_test :: budget_test :: List.map program_test (Lazy.force programs)

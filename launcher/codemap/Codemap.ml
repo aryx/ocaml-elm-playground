@@ -27,13 +27,6 @@ type t = {
 (* Which files *)
 (*****************************************************************************)
 
-let module_name (path : string) : string = String.capitalize_ascii (Filename.remove_extension (Filename.basename path))
-
-let count_lines (s : string) : int =
-  let n = ref 1 in
-  String.iter (fun c -> if c = '\n' then incr n) s;
-  !n
-
 (* claude: the lexed files, kept: a map shown again, or another program's
  * sharing the Playground's, costs nothing *)
 let lexed : (string, Code_file.t Lazy.t) Hashtbl.t = Hashtbl.create 256
@@ -47,54 +40,14 @@ let entry (path : string) (src : string) : Code_map.entry =
         Hashtbl.replace lexed path f;
         f
   in
-  { path; nlines = count_lines src; file }
-
-let starts (prefix : string) (s : string) : bool = String.length s >= String.length prefix && String.sub s 0 (String.length prefix) = prefix
-
-(* the program's own code: its folder's, and the kits' (games' and
- * apps'), not the Playground's nor libs/', which every program shares *)
-let own (program_path : string) (p : string) : bool =
-  Filename.dirname p = Filename.dirname program_path || starts "gamekits/" p || starts "appkits/" p
-
-(* the program's file and the modules it uses, transitively, those that
- * pass [keep] *)
-let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : string) : string list =
-  let by_name : (string, string list) Hashtbl.t = Hashtbl.create 1024 in
-  (* claude: not the platforms: every program runs on one, and through
-   * it (the native one's downloads) reaches TLS and its cryptography *)
-  let platform p = String.length p > 20 && String.sub p 0 20 = "playground/platforms" in
-  List.iter
-    (fun (p, _) ->
-      if Filename.check_suffix p ".ml" && not (platform p) then
-        let m = module_name p in
-        Hashtbl.replace by_name m (p :: Option.value ~default:[] (Hashtbl.find_opt by_name m)))
-    sources;
-  let seen = Hashtbl.create 256 in
-  let rec visit = function
-    | [] -> ()
-    | p :: rest when Hashtbl.mem seen p -> visit rest
-    | p :: rest ->
-        Hashtbl.replace seen p ();
-        let used =
-          match List.assoc_opt p sources with
-          | None -> []
-          | Some src ->
-              Code_file.modules_used src
-              |> List.filter_map (fun m -> match Hashtbl.find_opt by_name m with Some [ q ] when keep q -> Some q | _ -> None)
-        in
-        visit (used @ rest)
-  in
-  visit [ path ];
-  (* each .ml with its .mli *)
-  List.filter (fun (p, _) -> Hashtbl.mem seen p || (Filename.check_suffix p ".mli" && Hashtbl.mem seen (Filename.remove_extension p ^ ".ml"))) sources
-  |> List.map fst
+  { path; nlines = Code_deps.count_lines src; file }
 
 let map_of ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) ~(scope : scope) :
     Code_map.t =
   let paths =
     match scope with
-    | Own -> closure ~keep:(own path) sources path
-    | Uses -> closure sources path
+    | Own -> Code_deps.closure ~keep:(Code_deps.own path) sources path
+    | Uses -> Code_deps.closure sources path
     | Whole -> List.map fst sources
   in
   let entries = List.filter_map (fun p -> Option.map (entry p) (List.assoc_opt p sources)) paths in
@@ -108,12 +61,6 @@ let map_of ~(area : float * float * int * int) ~(sources : (string * string) lis
     | Whole -> Printf.sprintf "the whole repository: %s   (w: %s's code)" files program
   in
   Code_map.make ~area ~title ~marked:[ path ] entries
-
-(* claude: the size of a program's own code, without making its map:
- * its files and their lines *)
-let own_size ~(sources : (string * string) list) ~(path : string) : int * int =
-  let paths = closure ~keep:(own path) sources path in
-  (List.length paths, List.fold_left (fun n p -> n + match List.assoc_opt p sources with Some src -> count_lines src | None -> 0) 0 paths)
 
 let make ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
   { program; path; sources; scope = Own; area; map = map_of ~area ~sources ~program ~path ~scope:Own; file = None }

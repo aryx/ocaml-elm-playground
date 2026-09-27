@@ -64,12 +64,4 @@ let at (f : t) (line : int) (col : int) : Highlight_code.category option =
     let c = Char.code (Bytes.get f.grid ((line * cols) + col)) in
     if c = 0 then None else Some Highlight_code.all.(c - 1)
 
-let modules_used (src : string) : string list =
-  let rec go acc = function
-    | (a : Token_ml.t) :: (b :: _ as rest) when a.kind = Uident && b.text = "." -> go (a.text :: acc) rest
-    | (a : Token_ml.t) :: ((b : Token_ml.t) :: _ as rest) when (a.text = "open" || a.text = "include") && b.kind = Uident ->
-        go (b.text :: acc) rest
-    | _ :: rest -> go acc rest
-    | [] -> acc
-  in
-  List.sort_uniq compare (go [] (Lexer_ml.tokens src))
+let modules_used = Code_deps.modules_used

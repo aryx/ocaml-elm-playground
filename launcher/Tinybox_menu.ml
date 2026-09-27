@@ -142,17 +142,15 @@ type group = { title : string; intro : string; games : bool option; programs : C
 let by_year (ps : Catalogue.program list) = List.stable_sort (fun (a : Catalogue.program) b -> compare a.year b.year) ps
 
 (* claude: the size of a program's own code (files, lines), as its code
- * map in the panel shows it: found the first time it is asked (lexing
- * the files for the modules they name), kept *)
-let sizes : (string, int * int) Hashtbl.t = Hashtbl.create 256
+ * map in the panel shows it: counted at build time (Tinybox_sources.sizes,
+ * launcher/codegen) *)
+let sizes : (string, int * int) Hashtbl.t Lazy.t =
+  lazy
+    (let h = Hashtbl.create 256 in
+     List.iter (fun (name, s) -> Hashtbl.replace h name s) Tinybox_sources.sizes;
+     h)
 
-let size_of (p : Catalogue.program) : int * int =
-  match Hashtbl.find_opt sizes p.name with
-  | Some s -> s
-  | None ->
-      let s = Codemap.own_size ~sources:Tinybox_sources.sources ~path:p.source in
-      Hashtbl.replace sizes p.name s;
-      s
+let size_of (p : Catalogue.program) : int * int = Option.value ~default:(0, 0) (Hashtbl.find_opt (Lazy.force sizes) p.name)
 
 let lines_of p = snd (size_of p)
 let by_lines (ps : Catalogue.program list) = List.stable_sort (fun a b -> compare (lines_of a) (lines_of b)) ps
