@@ -334,6 +334,58 @@ stays, and still does the rest.
 323 s to the prompt, then 17.6 (the C: 17.2); rio's 11 screens the C
 9pi's with either path.
 
+## 14. No divide instruction: division is a function call
+
+mini-9pi's OCaml pixels after section 13 were still 6 times slower
+than the C ones: 61 s for `ls -l /bin` on the drawn console, the C
+10 s. A sampling profiler in mini-qemu (every 1024th instruction's PC,
+mapped to the kernel ELF's symbols) gave:
+
+| function | share |
+|---|---|
+| `__aeabi_idivmod` | 38% |
+| `memmove` | 18% |
+| the major GC (`mark_slice`, `sweep_slice`) | 14% |
+
+The Pi1's ARMv6 has no divide instruction: every `/` and `mod` is a
+call to libgcc's division loop, tens of instructions. `Memimage.byteaddr`
+divided by 8 (`fdiv (x * depth) 8`); it ran per row of every draw
+and per pixel of every character. The row patterns were built a byte
+at a time with `i mod n`, and `fill` did two `mod`s a byte.
+
+The fixes, each with its `old:` code kept in a comment:
+
+1. **Shifts, not divisions.** Every divisor was a power of 2 (8 bits a
+   byte, 32 a word), so `a asr 3` replaces `fdiv a 8`. `asr` floors, as
+   `fdiv` did, negative numbers included. `units` takes a shift, not
+   a divisor.
+2. **Hoist the address out of the pixel loop.** The character path now
+   computes each row's mask and destination addresses once. A pixel
+   is then an offset: `mrow + (lx asr 3)`, `drow + i * n`.
+3. **Build a row by doubling.** `Memimage.repeat pat len` copies the
+   pattern, then the bytes already there after themselves, so it
+   takes log2 of the repetitions blits.
+4. **No copy to flush.** `Phys.write_sub pa s off n` writes a row from
+   where it is. Before, `String.sub` made a 1280-byte row per row,
+   which went to the major heap, then was marked and swept.
+5. **memmove a word at a time whenever both ends share an
+   alignment.** Before, it copied words only if both ends and the
+   length were all aligned. Rows of 16-bit pixels at odd pixels
+   went a byte at a time.
+6. **`max` and `min` on ints.** The Stdlib's are polymorphic: each is a
+   call to `compare_val`.
+
+The result: 61 s, then 45 (1), 32 (2), 28.6 (3, 4, 6); the C takes
+14 s under the profiler. Lesson: on a CPU without a divider, a
+division in a per-pixel or per-row helper costs more than the whole
+pixel operation. The profile names it at once (`__aeabi_idivmod` is
+not in your code). Look at the target's instruction set before
+optimizing the algorithm.
+
+The full case, with the tools behind these numbers (mini-qemu's
+`-prof`, `pcprof.py`, `timecmd.py`), is in ix's
+`docs/notes_performance.md`.
+
 ## The .mpg decoder, step by step
 
 60 frames of a 352 x 288 VCD .mpg (`albator_78_debut.mpg`), video only,
