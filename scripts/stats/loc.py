@@ -122,7 +122,7 @@ def count(text):
 # (group, its top directories), in the order printed; the rest is
 # "other" (scripts/, docs/'s toy examples, ...)
 GROUPS = [
-    ("library", ["playground", "libs"]),
+    ("library", ["playground", "libs", "languages"]),
     ("games", ["gamekits", "games"]),
     ("apps", ["appkits", "apps"]),
     ("launcher", ["launcher"]),
