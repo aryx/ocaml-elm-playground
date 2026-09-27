@@ -56,7 +56,8 @@ type t = {
   drag : (float * float * camera) option; (* where the press began, and the camera then *)
   dragged : bool; (* the press moved: its release is no click *)
   before_right : bool;
-  mutable painted : (camera * Rgba_image.t) option; (* the picture of [cam] *)
+  mutable painted : (camera * float * Rgba_image.t) option; (* the picture of [cam], at a pixel ratio *)
+  mutable last : camera option; (* the camera the frame before: is it still? *)
 }
 
 type action = Stay | Open of Code_file.t * int | Close
@@ -98,7 +99,7 @@ let make ~(area : float * float * int * int) ~(title : string) ~(marked : string
   let a = { left; top; pw; ph } in
   let placed, geometry = relayout a Squarified entries in
   { title; marked; entries; algo = Squarified; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
-    before_right = false; painted = None }
+    before_right = false; painted = None; last = None }
 
 (* screen <-> units *)
 let to_px (c : camera) (u : float) : float = ((u -. c.cx) *. c.z) +. (float_of_int c.a.pw /. 2.)
@@ -163,6 +164,20 @@ let text_px = 6.
 
 let readable (c : camera) (g : geometry) : bool = g.cell_h *. c.z >= text_px
 
+(* claude: the camera of the picture painted with [q] of the window's
+ * pixels to a unit (Playground_platform.pixel_ratio): the same view, [q]
+ * times more pixels -- a bigger zoom and a bigger area, so that every
+ * function given it (to_px, clip, paint_code, readable) counts the
+ * window's pixels. Why: the platform enlarges a bitmap to the window;
+ * painted at the screen's units, a map on a big monitor had its letters
+ * squeezed into a few pixels, then blown up and blurred. Painted at the
+ * window's pixels, a line 6 units high is 13 pixels on a 4K monitor, its
+ * glyph drawn nearly whole, and the platform shrinks the image back by [q]:
+ * one of its pixels, one of the window's. *)
+let at_ratio (c : camera) (q : float) : camera =
+  let n x = max 1 (int_of_float (Float.round (float_of_int x *. q))) in
+  { c with z = c.z *. q; a = { c.a with pw = n c.a.pw; ph = n c.a.ph } }
+
 let fill (img : Rgba_image.t) (x0 : int) (y0 : int) (x1 : int) (y1 : int) ((r, g, b) : int * int * int) : unit =
   for y = y0 to y1 - 1 do
     for x = x0 to x1 - 1 do
@@ -183,47 +198,95 @@ let clip (c : camera) (r : Treemap.rect) : (int * int * int * int) option =
 (* A file's code, each pixel found from the layout: the cell under it
  * (its column of lines, its line, its character), then, far away, the
  * cell's colour, and near, the pixel of the character's glyph under it
- * (a cell is 8 by 16 of the glyph's pixels, scaled: nearest neighbour).
- * So zooming in turns the blocks into letters with no text drawn: the
- * same loop, one more lookup. *)
-let paint_code (img : Rgba_image.t) (c : camera) (r : Treemap.rect) (g : geometry) (f : Code_file.t) ((x0, y0, x1, y1) : int * int * int * int)
-    (bg : int * int * int) : unit =
+ * (a cell is 8 by 16 of the glyph's pixels, scaled). So zooming in turns
+ * the blocks into letters with no text drawn: the same loop, one more
+ * lookup.
+ *
+ * claude: the letters anti-aliased. A cell is rarely 8 by 16 pixels on
+ * the screen: at 13 pixels high, one sample a pixel (nearest neighbour)
+ * skips 3 of the glyph's 16 rows, a different 3 on each line, and the
+ * letters come out ragged, their strokes appearing and vanishing -- hard
+ * to read at exactly the sizes where there is just enough room. So in
+ * glyph mode each pixel takes 2 by 2 samples, and its colour is the
+ * character's blended over the background by how many of the 4 hit ink:
+ * a stroke half on a pixel lights it half, as a font rasterizer does
+ * (supersampling, a box filter). Far away, blocks, one sample is enough. *)
+let pal_r = Array.map (fun (r, _, _) -> r) palette
+let pal_g = Array.map (fun (_, g, _) -> g) palette
+let pal_b = Array.map (fun (_, _, b) -> b) palette
+
+let paint_code ~(aa : bool) (img : Rgba_image.t) (c : camera) (r : Treemap.rect) (g : geometry) (f : Code_file.t)
+    ((x0, y0, x1, y1) : int * int * int * int) (bg : int * int * int) : unit =
   let n = Code_file.nlines f in
   let glyphs = readable c g in
-  (* claude: for each pixel's x, once: its column of lines, its character,
-   * and the glyph's pixel column in it *)
-  let colx = Array.make (x1 - x0) 0 and chx = Array.make (x1 - x0) 0 and gx = Array.make (x1 - x0) 0 in
-  for i = 0 to x1 - x0 - 1 do
-    let u = to_u c (float_of_int (x0 + i) +. 0.5) -. r.x in
-    let col = int_of_float (u /. g.colw) in
+  let ss = if glyphs && aa then 2 else 1 (* samples per pixel, each way *) in
+  let sub k = (float_of_int k +. 0.5) /. float_of_int ss in
+  (* claude: for each sample's x, once: its column of lines, its
+   * character, and the glyph's pixel column in it *)
+  let nx = (x1 - x0) * ss in
+  let colx = Array.make nx 0 and chx = Array.make nx 0 and gx = Array.make nx 0 in
+  for i = 0 to nx - 1 do
+    let u = to_u c (float_of_int (x0 + (i / ss)) +. sub (i mod ss)) -. r.x in
+    let col = int_of_float (Float.floor (u /. g.colw)) in
     let fc = (u -. (float_of_int col *. g.colw)) /. g.cell_w in
     colx.(i) <- col;
     chx.(i) <- int_of_float fc;
-    gx.(i) <- int_of_float ((fc -. Float.of_int (int_of_float fc)) *. float_of_int Vga_font.width)
+    gx.(i) <- min (Vga_font.width - 1) (int_of_float ((fc -. Float.of_int (int_of_float fc)) *. float_of_int Vga_font.width))
   done;
+  let lcs = Array.make ss 0 and gys = Array.make ss 0 in
   let br, bgc, bb = bg in
+  let rgba = img.rgba and cols = Code_file.cols and lpc = g.lpc in
+  (* claude: the loops below allocate nothing (no tuples, no closures
+   * returning pairs): at 4K they visit 7 million pixels, 4 samples each;
+   * the cell of a sample is [(col * lpc + lc) * cols + ch], its category
+   * [grid]'s byte, -1 off the file *)
+  let cell_of xi lc =
+    let col = Array.unsafe_get colx xi and ch = Array.unsafe_get chx xi in
+    let line = (col * lpc) + lc in
+    if line >= 0 && line < n && lc >= 0 && lc < lpc && ch < cols && ch >= 0 then (line * cols) + ch else -1
+  in
   for y = y0 to y1 - 1 do
-    let fl = (to_v c (float_of_int y +. 0.5) -. r.y) /. g.cell_h in
-    let lc = int_of_float fl in
-    let gy = int_of_float ((fl -. Float.of_int lc) *. float_of_int Vga_font.height) in
+    for k = 0 to ss - 1 do
+      let fl = (to_v c (float_of_int y +. sub k) -. r.y) /. g.cell_h in
+      let lc = int_of_float (Float.floor fl) in
+      lcs.(k) <- lc;
+      gys.(k) <- min (Vga_font.height - 1) (int_of_float ((fl -. Float.of_int lc) *. float_of_int Vga_font.height))
+    done;
     for x = x0 to x1 - 1 do
-      let col = colx.(x - x0) and ch = chx.(x - x0) in
-      let line = (col * g.lpc) + lc in
-      let cell = (line * Code_file.cols) + ch in
-      let code = if line < n && lc < g.lpc && ch < Code_file.cols && ch >= 0 then Char.code (Bytes.unsafe_get f.grid cell) else 0 in
-      let code =
-        if code <> 0 && glyphs && not (Vga_font.bit (Char.code (Bytes.unsafe_get f.chars cell)) gx.(x - x0) gy) then 0 else code
-      in
       let i = 4 * ((y * img.width) + x) in
-      let r, gg, b = if code = 0 then (br, bgc, bb) else palette.(code - 1) in
-      Bigarray.Array1.unsafe_set img.rgba i r;
-      Bigarray.Array1.unsafe_set img.rgba (i + 1) gg;
-      Bigarray.Array1.unsafe_set img.rgba (i + 2) b;
-      Bigarray.Array1.unsafe_set img.rgba (i + 3) 255
+      (* the samples: how many hit ink (or, far away, a character), and
+       * whose colour *)
+      let hits = ref 0 and ink = ref 0 in
+      for ky = 0 to ss - 1 do
+        for kx = 0 to ss - 1 do
+          let xi = ((x - x0) * ss) + kx in
+          let cell = cell_of xi lcs.(ky) in
+          if cell >= 0 then begin
+            let code = Char.code (Bytes.unsafe_get f.grid cell) in
+            if code <> 0 && ((not glyphs) || Vga_font.bit (Char.code (Bytes.unsafe_get f.chars cell)) gx.(xi) gys.(ky)) then begin
+              incr hits;
+              ink := code
+            end
+          end
+        done
+      done;
+      let all = ss * ss and h = !hits in
+      if h = 0 then begin
+        Bigarray.Array1.unsafe_set rgba i br;
+        Bigarray.Array1.unsafe_set rgba (i + 1) bgc;
+        Bigarray.Array1.unsafe_set rgba (i + 2) bb
+      end
+      else begin
+        let k = !ink - 1 in
+        Bigarray.Array1.unsafe_set rgba i (br + ((pal_r.(k) - br) * h / all));
+        Bigarray.Array1.unsafe_set rgba (i + 1) (bgc + ((pal_g.(k) - bgc) * h / all));
+        Bigarray.Array1.unsafe_set rgba (i + 2) (bb + ((pal_b.(k) - bb) * h / all))
+      end;
+      Bigarray.Array1.unsafe_set rgba (i + 3) 255
     done
   done
 
-let paint (t : t) (c : camera) : Rgba_image.t =
+let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
   let img = Rgba_image.create ~width:c.a.pw ~height:c.a.ph in
   fill img 0 0 c.a.pw c.a.ph dark;
   Array.iteri
@@ -238,7 +301,7 @@ let paint (t : t) (c : camera) : Rgba_image.t =
               (* claude: a file too small to show anything is not lexed:
                * the whole repository's map opens without lexing it all *)
               if (x1 - x0) * (y1 - y0) < 40 && not (Lazy.is_val e.file) then fill img x0 y0 x1 y1 (mix (archi p.path) 0.5 bg)
-              else paint_code img c p.rect g (Lazy.force e.file) box bg;
+              else paint_code ~aa img c p.rect g (Lazy.force e.file) box bg;
               (* a dark line on its top and left edges, between files *)
               if x1 - x0 > 6 && y1 - y0 > 6 then begin
                 fill img x0 y0 x1 (y0 + 1) dark;
@@ -339,7 +402,9 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
           match (p.node, t.geometry.(i)) with
           | File (_, _, e), Some g ->
               let there = fit a p.rect in
-              let close_enough = g.cell_h *. t.cam.z >= text_px || Float.abs (Float.log (t.cam.z /. there.z)) < 0.1 in
+              let close_enough =
+                readable (at_ratio t.cam (Playground_platform.pixel_ratio ())) g || Float.abs (Float.log (t.cam.z /. there.z)) < 0.1
+              in
               if close_enough || mouse.mdouble || pressed "Enter" then (target, Open (Lazy.force e.file, line_at g p.rect u v)) else (there, Stay)
           | Dir _, _ -> (fit a p.rect, Stay)
           | _ -> (target, Stay))
@@ -394,8 +459,10 @@ let candidate (a : area) ~(rank : float) ?alpha (color : color) (size : float) (
 
 (* the names over the map: directories', big and faint (codemap's); files';
  * and, from afar, what each file defines, bigger the more it matters *)
-let labels (t : t) (c : camera) : shape list =
+let labels (t : t) (c : camera) (q : float) : shape list =
   let a = c.a in
+  (* readable as painted: in the window's pixels *)
+  let readable c g = readable (at_ratio c q) g in
   let candidate = candidate a and label = label a in
   let dirs = ref [] and files = ref [] and defs = ref [] in
   Array.iteri
@@ -460,12 +527,22 @@ let labels (t : t) (c : camera) : shape list =
 let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let c = t.cam in
   let a = c.a in
+  (* claude: the picture at the window's resolution (at_ratio),
+   * anti-aliased, when the camera is still; while it moves, a quick one:
+   * half the screen's resolution, one sample a pixel -- a zoom repaints
+   * every frame, and the sharp picture (7 million pixels at 4K, 4 samples
+   * each) would make it stutter; it comes the frame after the camera
+   * stops *)
+  let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
+  let still = t.last = Some c in
+  t.last <- Some c;
+  let want = if still then q else Float.min q 0.5 in
   let img =
     match t.painted with
-    | Some (pc, img) when pc = c -> img
+    | Some (pc, pq, img) when pc = c && pq = want -> img
     | _ ->
-        let img = paint t c in
-        t.painted <- Some (c, img);
+        let img = paint ~aa:still t (at_ratio c want) in
+        t.painted <- Some (c, want, img);
         img
   in
   let mouse = computer.mouse in
@@ -501,7 +578,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let screen = computer.screen in
   (if chrome then [ rectangle (rgb 12 10 28) screen.width screen.height ] else [])
   @ [ bitmap (float_of_int a.pw) (float_of_int a.ph) img |> move (sx a (float_of_int a.pw /. 2.)) (sy a (float_of_int a.ph /. 2.)) ]
-  @ labels t c @ marks
+  @ labels t c q @ marks
   @
   if not chrome then []
   else

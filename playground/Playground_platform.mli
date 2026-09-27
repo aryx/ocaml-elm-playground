@@ -48,6 +48,33 @@ val flags: unit -> Playground.flags
 val utc_offset: Playground.time -> int
 
 (*****************************************************************************)
+(* {1 The window's pixels} *)
+(*****************************************************************************)
+
+(* claude: [pixel_ratio ()]: how many of the window's own pixels one unit
+ * of the program's screen is, now -- 1. for a window the screen's size,
+ * 2.16 for tinybox's 1778 by 1000 screen in a 3840-pixel-wide window.
+ *
+ * Why: a program draws in its screen's units, and the platform scales the
+ * whole picture to fit the window (run_app). Shapes and words are drawn by
+ * the platform at the window's resolution, so they stay sharp at any size;
+ * but a [bitmap] is pixels the program made, at the size it chose, and the
+ * platform can only enlarge it (smoothed: blurred) to fill the window. A
+ * program making its own pixels (tinybox's code map, whose letters are the
+ * VGA font's, painted into one image) wants to make as many as the window
+ * really shows, not fewer: with this ratio it makes its image [ratio]
+ * times bigger than the units it covers, the platform shrinks it back by
+ * [ratio], and each of its pixels is one of the window's. Before it, on a
+ * big monitor, the map's code was painted at the screen's resolution and
+ * blown up: a line 6 units high, each glyph squeezed into 4 by 7 pixels
+ * then enlarged, unreadable, however many pixels the monitor had.
+ *
+ * It changes when the window does (dragged, full screen), so ask each
+ * frame. Natively the Cairo window's scale; the software platform draws at
+ * the screen's size (1.); the web says 1. for now. *)
+val pixel_ratio: unit -> float
+
+(*****************************************************************************)
 (* {1 Images, loaded ahead} *)
 (*****************************************************************************)
 

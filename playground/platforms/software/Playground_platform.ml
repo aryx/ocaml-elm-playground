@@ -149,6 +149,10 @@ let flags () : Playground.flags = Playground.flags_of_strings (Native_loop_2d.ap
 
 let utc_offset (Playground.Time t) : int = Native_loop_2d.utc_offset t
 
+(* claude: see Playground_platform.mli: this platform's framebuffer is the
+ * screen's size, a unit a pixel *)
+let pixel_ratio () : float = 1.
+
 (* claude: documents, in a directory (native_common/Store); the
  * capability is the caller's proof it may, see the .mli *)
 let store (_ : < Cap.open_out; .. >) name bytes = Store.store name bytes

@@ -55,6 +55,11 @@ let flags () : Playground.flags = Playground.flags_of_strings (Native_loop_2d.ap
 
 let utc_offset (Playground.Time t) : int = Native_loop_2d.utc_offset t
 
+(* claude: see Playground_platform.mli; set by run_app's draw, each frame,
+ * to the scale it draws the picture with *)
+let ratio = ref 1.
+let pixel_ratio () : float = !ratio
+
 (* claude: documents, in a directory (native_common/Store); the
  * capability is the caller's proof it may, see the .mli *)
 let store (_ : < Cap.open_out; .. >) name bytes = Store.store name bytes
@@ -128,6 +133,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
   let draw ~fps shapes =
     let (_, sdl_surface, cr, (w, h)) = !current in
     let k = Native_loop_2d.scale ~sx ~sy (w, h) in
+    ratio := k;
     Cairo.save cr;
 
     (* claude: black round the picture, when the window isn't sx by sy *)

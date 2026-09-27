@@ -23,9 +23,9 @@
  *   the overview        arrows scroll ... esc back
  *
  * The overview is one bitmap, made once per file; the page of code is
- * another, its characters copied from the VGA's font (Vga_font), a
- * screen pixel per glyph pixel -- 100 columns of 8 pixels, 53 lines of
- * 16 -- made again only when it scrolls.
+ * another, its characters from the VGA's font (Vga_font) -- 100 columns
+ * of 8 units, 53 lines of 16 -- painted at the window's resolution
+ * (page_of) and made again only when it scrolls.
  *)
 
 open Playground
@@ -56,7 +56,7 @@ type t = {
   lines : Highlight_code.span list array;
   overview : Rgba_image.t;
   top : int; (* the first line shown, from 0 *)
-  mutable page : (int * Rgba_image.t) option; (* the page from a top line *)
+  mutable page : (int * float * Rgba_image.t) option; (* the page from a top line, at a pixel ratio *)
 }
 
 (* SeeSoft's picture: a pixel per character, its category's colour *)
@@ -126,36 +126,37 @@ let text ?(size = 16.) (color : color) (x : number) (y : number) (s : string) : 
   let w = 0.47 *. size *. float_of_int (String.length s) in
   words color s |> scale (size /. words_font_size) |> move (x +. (w /. 2.)) y
 
-(* the character [c] (code page 437) copied into [img] at the cell
- * ([col], [row]), its ink in [rgb] *)
-let blit (img : Rgba_image.t) (col : int) (row : int) ((r, g, b) : int * int * int) (c : int) : unit =
-  for y = 0 to Vga_font.height - 1 do
-    let bits = Vga_font.row c y in
-    if bits <> 0 then
-      for x = 0 to Vga_font.width - 1 do
-        if (bits lsr (7 - x)) land 1 = 1 then begin
-          let i = 4 * ((((row * Vga_font.height) + y) * img.width) + (col * Vga_font.width) + x) in
-          Bigarray.Array1.unsafe_set img.rgba i r;
-          Bigarray.Array1.unsafe_set img.rgba (i + 1) g;
-          Bigarray.Array1.unsafe_set img.rgba (i + 2) b
-        end
-      done
-  done
-
-(* the lines from [v.top], numbered, into one image *)
-let page_of (v : t) : Rgba_image.t =
-  let img = Rgba_image.create ~width:page_w ~height:page_h in
-  let br, bg, bb = Highlight_code.background in
-  for i = 0 to (page_w * page_h) - 1 do
-    Bigarray.Array1.unsafe_set img.rgba (4 * i) br;
-    Bigarray.Array1.unsafe_set img.rgba ((4 * i) + 1) bg;
-    Bigarray.Array1.unsafe_set img.rgba ((4 * i) + 2) bb;
-    Bigarray.Array1.unsafe_set img.rgba ((4 * i) + 3) 255
-  done;
+(* The page: the lines from [v.top], numbered, into one image, painted
+ * at the window's resolution.
+ *
+ * claude: why not at the screen's, 8 by 16 pixels a character: the
+ * platform enlarges a bitmap to fill the window, smoothing it, so on a
+ * monitor with more pixels than the screen's units (tinybox's 1778 by
+ * 1000 on a 4K monitor: 2.16 of the window's pixels a unit) the VGA font
+ * came out enlarged and blurred. So the page is made
+ * Playground_platform.pixel_ratio times bigger, one of its pixels one of
+ * the window's, each pixel's colour from 2 by 2 samples of the font (a
+ * box filter, as the map's paint_code): at a whole ratio, 2 say, each of
+ * the font's pixels is exactly 2 by 2 of the window's, crisp; at 2.16,
+ * the strokes' edges are blended, not jagged. *)
+let page_of (v : t) (q : float) : Rgba_image.t =
+  let w = max 1 (int_of_float (Float.round (float_of_int page_w *. q))) in
+  let h = max 1 (int_of_float (Float.round (float_of_int page_h *. q))) in
+  let img = Rgba_image.create ~width:w ~height:h in
+  (* the page as characters first: a code page 437 number and a colour a
+   * cell, 0 a space *)
+  let gcols = cols + gutter + 1 in
+  let chars = Array.make (gcols * visible) 0 and inks = Array.make (gcols * visible) (0, 0, 0) in
+  let put_char col row rgb c =
+    if col >= 0 && col < gcols then begin
+      chars.((row * gcols) + col) <- c;
+      inks.((row * gcols) + col) <- rgb
+    end
+  in
   for r = 0 to min visible (Array.length v.lines - v.top) - 1 do
     let n = v.top + r in
     let number = string_of_int (n + 1) in
-    String.iteri (fun k c -> blit img (gutter - String.length number + k) r (110, 140, 140) (Char.code c)) number;
+    String.iteri (fun k c -> put_char (gutter - String.length number + k) r (110, 140, 140) (Char.code c)) number;
     List.iter
       (fun (s : Highlight_code.span) ->
         let rgb = Highlight_code.rgb s.category in
@@ -165,26 +166,59 @@ let page_of (v : t) : Rgba_image.t =
         while !k < String.length s.text do
           let c, len = Vga_font.decode s.text !k in
           let col = s.col + !k in
-          if col < cols && s.text.[!k] <> '\t' then blit img (gutter + 1 + col) r rgb c;
+          if col < cols && s.text.[!k] <> '\t' then put_char (gutter + 1 + col) r rgb c;
           k := !k + len
         done)
       v.lines.(n)
   done;
+  (* then each of the window's pixels, from 2 by 2 samples of the font *)
+  let br, bg, bb = Highlight_code.background in
+  let fw = float_of_int Vga_font.width and fh = float_of_int Vga_font.height in
+  let sample (p : int) (k : int) : float = (float_of_int p +. (float_of_int k +. 0.5) /. 2.) /. q in
+  for y = 0 to h - 1 do
+    for x = 0 to w - 1 do
+      let hits = ref 0 and ink = ref (0, 0, 0) in
+      for ky = 0 to 1 do
+        let py = sample y ky in
+        let row = int_of_float (py /. fh) and gy = int_of_float (Float.rem py fh) in
+        for kx = 0 to 1 do
+          let px = sample x kx in
+          let col = int_of_float (px /. fw) and gx = int_of_float (Float.rem px fw) in
+          if row < visible && col < gcols then begin
+            let c = chars.((row * gcols) + col) in
+            if c <> 0 && Vga_font.bit c (min 7 gx) (min 15 gy) then begin
+              incr hits;
+              ink := inks.((row * gcols) + col)
+            end
+          end
+        done
+      done;
+      let fr, fg, fb = !ink in
+      let mixc a b = b + ((a - b) * !hits / 4) in
+      let i = 4 * ((y * w) + x) in
+      Bigarray.Array1.unsafe_set img.rgba i (mixc fr br);
+      Bigarray.Array1.unsafe_set img.rgba (i + 1) (mixc fg bg);
+      Bigarray.Array1.unsafe_set img.rgba (i + 2) (mixc fb bb);
+      Bigarray.Array1.unsafe_set img.rgba (i + 3) 255
+    done
+  done;
   img
 
 let code_lines (computer : computer) (v : t) : shape list =
+  let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
   let img =
     match v.page with
-    | Some (top, img) when top = v.top -> img
+    | Some (top, pq, img) when top = v.top && pq = q -> img
     | _ ->
-        let img = page_of v in
-        v.page <- Some (v.top, img);
+        let img = page_of v q in
+        v.page <- Some (v.top, q, img);
         img
   in
   let mouse = computer.mouse in
   let cx = (code_left +. code_right) /. 2. in
   (* the line under the mouse, lit *)
   let r = int_of_float ((top_y -. mouse.my) /. line_h) in
+  (* drawn at the page's size in units: the platform shrinks it back by q *)
   [ bitmap (float_of_int page_w) (float_of_int page_h) img |> move cx ((top_y +. bottom_y) /. 2.) ]
   @
   if mouse.mx >= code_left && mouse.mx <= code_right && mouse.my <= top_y && r >= 0 && r < visible then

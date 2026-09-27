@@ -737,6 +737,10 @@ let flags () : Playground.flags =
 
 (* claude: the browser's zone; getTimezoneOffset counts the other way,
  * the minutes UTC is ahead of the local time (-120 in Paris in summer) *)
+(* claude: see Playground_platform.mli; 1. for now (the browser's
+ * devicePixelRatio and the page's scaling would say more) *)
+let pixel_ratio () : float = 1.
+
 let utc_offset (Playground.Time t) : int =
   Stdlib.( ~- ) (Date.get_timezone_offset (Date.new_date (t *. 1000.)))
 
