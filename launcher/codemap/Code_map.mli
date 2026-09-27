@@ -38,7 +38,8 @@ val view : ?chrome:bool -> Playground.computer -> t -> Playground.shape list
 
 (* A magnifying glass at the mouse, when it is over the map: the part
    under it painted again closer (enough for its code to be read: its
-   lines about 16 units high, the VGA font's size), round, with a rim and
-   a handle. For a map shown small (tinybox's panel), where the code at a
-   glance is too fine to read. Nothing when the mouse is elsewhere. *)
+   lines about 16 units high, the VGA font's size), a reading glass wide
+   enough for 80 columns and some 16 lines, with a rim and a handle. For a
+   map shown small (tinybox's panel), where the code at a glance is too
+   fine to read. Nothing when the mouse is elsewhere. *)
 val lens : Playground.computer -> t -> Playground.shape list
