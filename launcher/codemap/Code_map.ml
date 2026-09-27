@@ -58,6 +58,7 @@ type t = {
   before_right : bool;
   mutable painted : (camera * float * Rgba_image.t) option; (* the picture of [cam], at a pixel ratio *)
   mutable last : camera option; (* the camera the frame before: is it still? *)
+  mutable lens : (camera * Rgba_image.t) option; (* the magnifying glass's last picture, and its camera *)
 }
 
 type action = Stay | Open of Code_file.t * int | Close
@@ -99,7 +100,7 @@ let make ~(area : float * float * int * int) ~(title : string) ~(marked : string
   let a = { left; top; pw; ph } in
   let placed, geometry = relayout a Squarified entries in
   { title; marked; entries; algo = Squarified; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
-    before_right = false; painted = None; last = None }
+    before_right = false; painted = None; last = None; lens = None }
 
 (* screen <-> units *)
 let to_px (c : camera) (u : float) : float = ((u -. c.cx) *. c.z) +. (float_of_int c.a.pw /. 2.)
@@ -591,3 +592,76 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         |> scale (12. /. words_font_size)
         |> move 0. (screen.bottom +. 18.);
       ]
+
+(*****************************************************************************)
+(* The magnifying glass *)
+(*****************************************************************************)
+
+(* claude: a glass over the map, the part under the cursor closer --
+ * for tinybox's panel, where the map is small and a program's code at a
+ * glance is too fine to read. Not a zoom of the map's picture (that would
+ * only enlarge its pixels, blurred, the problem pixel_ratio solved): the
+ * part under the glass painted again, by the same paint, with a camera
+ * centred on the point under the cursor and [power] times closer, at the
+ * window's resolution, anti-aliased. The glass's power is chosen for the
+ * file under the cursor, so that its lines come out about 16 units high,
+ * the VGA font's own size: readable whatever the file's size. The corners
+ * of the square picture are made transparent (alpha 0, a soft edge), so
+ * the glass is round: the playground has no clipping. Painted again only
+ * when the cursor moves. *)
+let lens_radius = 150.
+
+let lens (computer : computer) (t : t) : shape list =
+  let c = t.cam in
+  let a = c.a in
+  let mouse = computer.mouse in
+  let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
+  if not (on a mpx mpy) then []
+  else
+    let u = to_u c mpx and v = to_v c mpy in
+    (* the power: the file under the cursor's lines 16 units high *)
+    let power =
+      match under t u v with
+      | Some i -> (
+          match t.geometry.(i) with
+          | Some g -> Float.max 2. (Float.min 10. (float_of_int Vga_font.height /. (g.cell_h *. c.z)))
+          | None -> 4.)
+      | None -> 4.
+    in
+    let d = int_of_float (2. *. lens_radius) in
+    let lc = { cx = u; cy = v; z = c.z *. power; a = { a with pw = d; ph = d } } in
+    let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
+    let img =
+      match t.lens with
+      | Some (pc, img) when pc = lc && img.width = (at_ratio lc q).a.pw -> img
+      | _ ->
+          let img = paint ~aa:true t (at_ratio lc q) in
+          (* round: alpha by the distance to the centre, one pixel of
+           * soft edge *)
+          let r = float_of_int img.width /. 2. in
+          for y = 0 to img.height - 1 do
+            for x = 0 to img.width - 1 do
+              let dx = float_of_int x +. 0.5 -. r and dy = float_of_int y +. 0.5 -. r in
+              let dist = Float.sqrt ((dx *. dx) +. (dy *. dy)) in
+              let alpha = if dist <= r -. 1. then 255 else if dist >= r then 0 else int_of_float ((r -. dist) *. 255.) in
+              Bigarray.Array1.unsafe_set img.rgba ((4 * ((y * img.width) + x)) + 3) alpha
+            done
+          done;
+          t.lens <- Some (lc, img);
+          img
+    in
+    let x = mouse.mx and y = mouse.my in
+    let r = lens_radius in
+    [
+      (* the handle, down and to the right, as a magnifying glass is held *)
+      rectangle (rgb 90 60 30) 22. 110. |> move 0. (-.(r +. 50.)) |> rotate 45. |> move x y;
+      rectangle (rgb 150 150 160) 26. 18. |> move 0. (-.(r +. 4.)) |> rotate 45. |> move x y;
+      (* the rim *)
+      circle (rgb 40 40 50) (r +. 9.) |> move x y;
+      circle (rgb 190 190 205) (r +. 6.) |> move x y;
+      circle (rgb 12 10 28) (r +. 1.) |> move x y;
+      bitmap (2. *. r) (2. *. r) img |> move x y;
+      (* a glint on the glass *)
+      oval white (r *. 0.5) (r *. 0.18) |> rotate 35. |> move (x -. (r *. 0.45)) (y +. (r *. 0.55)) |> fade 0.12;
+      words (rgb 190 190 205) (Printf.sprintf "x%.0f" power) |> scale (12. /. words_font_size) |> move (x +. (r *. 0.62)) (y -. (r *. 0.85));
+    ]

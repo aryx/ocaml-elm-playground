@@ -854,6 +854,9 @@ let code_panel (computer : computer) (p : Catalogue.program) : shape list =
   | Some c -> Code_map.view ~chrome:false computer c
   | None -> [ rectangle panel w h |> move cx cy; centred ~size:14. dim cx cy "its code..." ])
   @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) "its code: a click, or s, explores it" ]
+  (* claude: the mouse over it: a magnifying glass, the code under it
+   * readable (Code_map.lens), over everything else *)
+  @ match code_of p with Some c -> Code_map.lens computer c | None -> []
 
 (* the chosen one, large, and what the catalogue says of it *)
 let details (computer : computer) (runnable : string list) (m : model) : shape list =

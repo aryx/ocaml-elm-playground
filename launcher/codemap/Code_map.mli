@@ -35,3 +35,10 @@ val update : Playground.computer -> pressed:(string -> bool) -> arrow:string opt
    background, the title, what is under the mouse, the keys; without, the
    map alone, where the caller shows it (tinybox's panel) *)
 val view : ?chrome:bool -> Playground.computer -> t -> Playground.shape list
+
+(* A magnifying glass at the mouse, when it is over the map: the part
+   under it painted again closer (enough for its code to be read: its
+   lines about 16 units high, the VGA font's size), round, with a rim and
+   a handle. For a map shown small (tinybox's panel), where the code at a
+   glance is too fine to read. Nothing when the mouse is elsewhere. *)
+val lens : Playground.computer -> t -> Playground.shape list
