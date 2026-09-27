@@ -239,6 +239,34 @@ a library's directory, a program's libraries, their closure.
    per program. codemap cannot write one without a window today: a
    batch PNG output (Cairo's `write_to_png` of its main map) added to
    codemap first, in its own repository.
+8. Optional, later (the author, 2026-09-27: "for later, let's keep with
+   what we have for now"): codemap's own fonts. Codemap draws its code
+   in **serif**, proportional (`Style.font_text`), each line token after
+   token with Cairo's `show_text`, so the text flows (hence its 41
+   characters a column, not 80); its definitions *inline* bigger, 5 for
+   a module or a type, 3.5 a function, 3 a global, more if much used
+   (`Style.size_font_multiplier_of_categ`), damped as one zooms in; its
+   directories' and files' labels serif **bold**, size and alpha by
+   depth (`draw_labels.ml`: 0.1 of the map at depth 1, 0.05, 0.03...);
+   its overlays serif. The Playground cannot say that today: `words`
+   has one family (`words_font_family`, sans-serif) and nothing places
+   coloured runs one after the other (no measuring). So, a shared change
+   (plan it, have it reviewed, then):
+   - the Playground: flowing text,
+     `run : ?font:font -> ?bold:bool -> ?size:number -> color -> string -> run`
+     and `runs : run list -> shape` (left-aligned at the origin, each run
+     after the last; `type font = Sans | Serif | Mono`), `words`
+     unchanged. Cairo: `select_font_face` per run, `show_text` advances;
+     the web: SVG `<text>` with `<tspan>`s; the software rasterizer and
+     OpenGL's HUD (`Hud_render`): Hershey's widths advance, serif its
+     Times-like faces if there;
+   - the map and the view: a line one `runs` in serif, the definitions'
+     multipliers inline, the labels serif bold by codemap's depth table,
+     the overlays serif, 41 characters a column.
+   To decide then: the file view in serif too (codemap's), or kept on a
+   fixed grid, the indentation exact. An alternative to step 2's bitmap
+   font, or on top of it (the map's far text in serif, the view's in the
+   bitmap font).
 
 ## Progress
 
