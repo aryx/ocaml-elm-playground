@@ -415,13 +415,20 @@ let run ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy 
   (* claude: the window's size, the picture scaled to it (a platform
    * given [on_resize]); a fixed one keeps sx by sy, scale 1 *)
   let window = ref (sx, sy) in
+  (* claude: and its size in pixels, which alone changes when the window
+   * goes to a display of another density (a Retina to an ordinary
+   * monitor: the same points, half the pixels) *)
+  let surface_size () = match Sdl.get_window_surface sdl_window with Ok s -> Sdl.get_surface_size s | Error _ -> (0, 0) in
+  let pixels = ref (surface_size ()) in
   let check_size () =
     match on_resize with
     | None -> ()
     | Some resized ->
         let size = Sdl.get_window_size sdl_window in
-        if size <> !window then (
+        let px = surface_size () in
+        if size <> !window || px <> !pixels then (
           window := size;
+          pixels := px;
           resized (fst size) (snd size))
   in
   check_size ();
