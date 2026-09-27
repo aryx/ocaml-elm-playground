@@ -276,6 +276,11 @@ val sfx : Sfx.t -> sound
 (* [play s]: from now until its end (see the top) *)
 val play : sound -> unit
 
+(* claude: [silently f]: [f ()], the sounds it starts (play, loop,
+ * keep_playing, instruments) not played -- tinybox runs a program's
+ * update in its menu to preview it, and the preview is not heard *)
+val silently : (unit -> 'a) -> 'a
+
 (* [keep_playing name s]: [s] playing while this is called every frame
    (its pan too, gliding when it changes: a car going by),
    [name] saying it's the same sound from frame to frame (its length

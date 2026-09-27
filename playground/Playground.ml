@@ -542,6 +542,10 @@ type ('model, 'msg) app =
   }
 
 (* claude: see Playground.mli *)
+type any_app = Any_app : ('model, 'msg) app -> any_app
+let capture : (any_app -> unit) option ref = ref None
+
+(* claude: see Playground.mli *)
 module Http = struct
   type error = Cmd.http_error =
     | Bad_url of string

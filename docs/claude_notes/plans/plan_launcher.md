@@ -476,6 +476,17 @@ platform are wanted (Batocera's "systems").
       `Audio` needs a mute switch, since games play sounds from
       `update`; 40 programs have no scripted scene, and preview their
       title screen.
+    - Done 2026-09-27, the preview: `Playground.capture` (hidden from the
+      docs), checked by the native platform's `run_app`;
+      `Audio.silently`; `Tinybox_menu`'s "Previews": after 60 frames on a
+      program (frames, not seconds: `-fixed-time` shows them), its main
+      called with the hook set, its app cached, played a frame per menu
+      frame on its first scripted scene's keys, started over at the
+      scene's end plus 90 frames, drawn scaled by 0.4 with bands of the
+      background round the panel. Checked on dumped frames: TinyInvaders
+      (its burst), TinyMario (scrolled), TinyDoom (the 2.5D renderer);
+      TinyFirefox keeps its picture (its Cap.main). A main that prints
+      its help prints it once, to the terminal, when first previewed.
     - **Full-screen demos** (the attract mode when idle, and `d` on
       demand) stay child processes, the one place a second of loading
       is fine: `tinybox <Name> -script <scene>` with a new `-demo` flag
@@ -528,6 +539,12 @@ platform are wanted (Batocera's "systems").
     `<dir>/web/<Name>.html`, which `make js` already builds: on the web,
     the child process is the page. The previews (step 14) then only
     natively, or the chosen program's page in an iframe.
+20. Sounds for the silent games (the author noticed TinyPacman's
+    silence, 2026-09-27): 95 of the games never call `Audio` (TinyPacman,
+    TinyInvaders, TinyDoom, TinyTetris...); a pass giving each its
+    original's sounds (Pac-Man's waka, Space Invaders' four-note march),
+    `Audio.play` inline where the events happen. Not tinybox's, but its
+    menu makes the silence plain.
 
 ## Open questions for the author
 

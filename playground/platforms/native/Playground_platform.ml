@@ -72,6 +72,10 @@ let fetch_file (source : string) (k : string option -> unit) : unit =
       k None
 
 let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network app =
+  (* claude: tinybox taking the app for a preview (Playground.capture) *)
+  match !Playground.capture with
+  | Some give -> give (Playground.Any_app app)
+  | None ->
   Option.iter Download.grant network;
   Audio.set_fetcher fetch_file;
   (* claude: Multiplayer's net=host and net=join (UDP), net=relay

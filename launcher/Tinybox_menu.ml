@@ -52,6 +52,10 @@
  * The thumbnails are PNGs (250 by 250) in the binary, decoded when first
  * shown; a backend keeps the last 32 bitmaps it converted, so the grid
  * shows 12 at a time, plus the chosen one enlarged (the same bitmap).
+ *
+ * The previews: a second (60 frames) on a program, and its picture comes
+ * alive -- the program itself, playing its golden scene's script in the
+ * detail panel, run by the menu (see "Previews" below).
  *)
 
 open Playground
@@ -208,6 +212,116 @@ let shown (m : model) : Catalogue.program list =
   | _ -> ( match current_group m with Some g -> g.programs | None -> [])
 
 let chosen (m : model) : Catalogue.program option = List.nth_opt (shown m) m.pos
+
+(*****************************************************************************)
+(* Previews *)
+(*****************************************************************************)
+
+(* claude: the chosen program playing in the detail panel, after
+ * Netflix's autoplay: every program is linked in tinybox and already
+ * initialized, so starting one is instant -- no process, no window. Its
+ * main is called with Playground.capture set, and the native platform's
+ * run_app hands its app over instead of opening a window; the menu then
+ * plays the app itself, a small platform: each frame the keys its golden
+ * scene's script presses (Scenes_2d, Input_script), then a tick, each
+ * turned into the app's messages by its subscriptions (Sub.event), as
+ * Native_loop_2d turns SDL's events; its view scaled into the panel.
+ * Silently (Audio.silently): a preview is seen, not heard.
+ *
+ * Not previewed, kept as pictures: the 3D programs (their main would open
+ * an OpenGL window), and the programs whose main calls Cap.main (a second
+ * Cap.main fails: a preview gets no authority, by design). A program
+ * without a scripted scene previews its title screen, animated. *)
+
+type preview =
+  | Playing : {
+      name : string;
+      app : ('model, 'msg) app;
+      mutable model : 'model;
+      mutable frame : int;
+      script : Input_script.t option;
+      length : int; (* the frames before it starts over *)
+    }
+      -> preview
+
+(* the menu's frames, counted by update: the previews' clock, frames
+ * rather than seconds, so that -fixed-time shows them too *)
+let frames = ref 0
+
+(* the program chosen, and the frame it was *)
+let chosen_since : (string * int) ref = ref ("", 0)
+let preview : preview option ref = ref None
+
+(* the apps taken from the programs' mains, None for those that give none *)
+let captured : (string, any_app option) Hashtbl.t = Hashtbl.create 16
+
+let capture (p : Catalogue.program) : any_app option =
+  match Hashtbl.find_opt captured p.name with
+  | Some a -> a
+  | None ->
+      let got = ref None in
+      (if p.look <> "3D" then
+         match List.assoc_opt p.name (Program.collected ()) with
+         | None -> ()
+         | Some entry -> (
+             Playground.capture := Some (fun a -> got := Some a);
+             (* claude: a main calling Cap.main fails here, by design *)
+             (try Audio.silently entry with _ -> ());
+             Playground.capture := None));
+      Hashtbl.replace captured p.name !got;
+      !got
+
+(* the program's first scripted scene: its keys, and how long it lasts *)
+let scene (name : string) : (Input_script.t * int) option =
+  List.find_map
+    (fun ((exe, _, frame, script) : Golden_scene.scripted) ->
+      if Filename.basename exe <> name then None
+      else match Input_script.parse script with Ok sc -> Some (sc, frame) | Error _ -> None)
+    Scenes_2d.scripted
+
+let start_preview (name : string) (Any_app app : any_app) : preview option =
+  match Audio.silently (fun () -> app.init []) with
+  | model, _cmd ->
+      let script, length = match scene name with Some (sc, n) -> (Some sc, n + 90) | None -> (None, 600) in
+      Some (Playing { name; app; model; frame = 0; script; length })
+  | exception _ -> None
+
+(* one frame of the preview: the script's keys, then a tick *)
+let step_preview (now : number) (Playing p : preview) : unit =
+  let apply event =
+    match Sub.event_to_msgopt event (p.app.subscriptions p.model) with
+    | Some msg -> p.model <- fst (p.app.update msg p.model)
+    | None -> ()
+  in
+  p.frame <- p.frame + 1;
+  Audio.silently (fun () ->
+      Option.iter
+        (fun sc -> List.iter (fun (key, down) -> apply (Sub.EKeyChanged (down, key))) (Input_script.changes sc p.frame))
+        p.script;
+      apply (Sub.ETick now))
+
+(* the preview of the program chosen: started after 60 frames on it,
+ * started again when its scene is over, stopped on a failure *)
+let preview_of (now : number) (chosen : Catalogue.program option) : unit =
+  incr frames;
+  match chosen with
+  | None -> preview := None
+  | Some p -> (
+      if fst !chosen_since <> p.name then (
+        chosen_since := (p.name, !frames);
+        preview := None);
+      match !preview with
+      | Some (Playing q as pv) when q.name = p.name ->
+          if q.frame >= q.length then preview := Option.bind (capture p) (start_preview p.name)
+          else (try step_preview now pv with _ -> preview := None)
+      | _ ->
+          if !frames - snd !chosen_since >= 60 then preview := Option.bind (capture p) (start_preview p.name))
+
+(* the preview's view, if it is the program's *)
+let preview_shapes (p : Catalogue.program) : shape list option =
+  match !preview with
+  | Some (Playing q) when q.name = p.name -> ( try Some (q.app.view q.model) with _ -> None)
+  | _ -> None
 
 (*****************************************************************************)
 (* Layout *)
@@ -391,6 +505,7 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
       | Some i -> if mouse.mdouble then start caps runnable { m with pos = i } else { m with pos = i }
       | None -> m
   in
+  preview_of (now computer) (chosen m);
   { m with before = keys }
 
 (*****************************************************************************)
@@ -544,7 +659,8 @@ let details (runnable : string list) (m : model) : shape list =
   | Some p ->
       let left = shot_x -. (shot /. 2.) in
       let ok = List.mem p.name runnable in
-      [ frame magenta shot shot 3. |> move shot_x shot_y; picture p shot |> move shot_x shot_y ]
+      [ frame magenta shot shot 3. |> move shot_x shot_y ]
+      @ (match preview_shapes p with Some _ -> [] | None -> [ picture p shot |> move shot_x shot_y ])
       @ [
           text ~size:26. ink left (-150.) (cut ~size:26. ~width:300. p.name);
           text ~size:16. yellow (left +. shot -. 60.) (-150.) p.look;
@@ -566,9 +682,28 @@ let scanlines (screen : screen) : shape list =
   List.init (int_of_float (screen.height /. 4.)) (fun i ->
       rectangle black screen.width 1.5 |> move_y (screen.top -. (float_of_int i *. 4.)) |> fade 0.18)
 
+(* claude: the preview, its 1000 by 1000 scaled to the panel's 400, and
+ * then the background's colour all round the panel, over whatever the
+ * program draws beyond its screen (the playground has no clipping) *)
+let live (screen : screen) (m : model) : shape list =
+  match Option.bind (chosen m) preview_shapes with
+  | None -> []
+  | Some shapes ->
+      let half = shot /. 2. in
+      let band w h x y = rectangle background w h |> move x y in
+      [
+        rectangle black shot shot |> move shot_x shot_y;
+        group shapes |> scale (shot /. 1000.) |> move shot_x shot_y;
+        band screen.width (screen.top -. (shot_y +. half)) 0. ((screen.top +. shot_y +. half) /. 2.);
+        band screen.width ((shot_y -. half) -. screen.bottom) 0. ((screen.bottom +. shot_y -. half) /. 2.);
+        band ((shot_x -. half) -. screen.left) shot ((screen.left +. shot_x -. half) /. 2.) shot_y;
+        band (screen.right -. (shot_x +. half)) shot ((screen.right +. shot_x +. half) /. 2.) shot_y;
+      ]
+
 let view (runnable : string list) (computer : computer) (m : model) : shape list =
   let screen = computer.screen in
   [ rectangle background screen.width screen.height ]
+  @ live screen m
   @ header computer m @ section_bar m @ filter_bar m @ grid computer runnable m @ details runnable m @ footer m @ scanlines screen
 
 (*****************************************************************************)

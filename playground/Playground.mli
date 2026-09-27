@@ -964,6 +964,17 @@ type ('model, 'msg) app = {
   subscriptions : 'model -> 'msg Sub.t;
 }
 
+(**/**)
+(* claude: not for programs: tinybox's (plan_launcher.md, the previews).
+ * An app of any model and msg, and a hook: when set, the native
+ * platform's run_app gives it the app and returns, instead of opening
+ * a window and running it -- so that tinybox's menu, where every
+ * program is linked, can take a program's app from its main and play it
+ * itself, in its own window, a preview. *)
+type any_app = Any_app : ('model, 'msg) app -> any_app
+val capture : (any_app -> unit) option ref
+(**/**)
+
 (** claude: Elm's [Http], asking a server for something from [init] or
     [update]: a command ({!Cmd.t}) the platform performs, the answer
     coming back as a message, without the frames stopping meanwhile.

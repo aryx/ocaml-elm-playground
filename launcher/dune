@@ -140,6 +140,7 @@
    caps
    unix ; the menu's child process
    catalogue graphics_png graphics_rgba ; the menu's data
+   golden_scenes elm_playground_native_common ; the previews: the scenes' scripts, Input_script
    terminal_unix ; Tty_unix, for -tty
    appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
    elm_playground_native ; implem of virtual elm_playground: Cairo

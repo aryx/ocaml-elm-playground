@@ -125,7 +125,17 @@ let varied (name : string) (seed : int) : sound =
 
 (* the mixer every sound goes to; the platform pulls its samples *)
 let mixer = Mixer.create ()
-let play (s : sound) : unit = Mixer.play mixer (Synth.render_stereo s)
+
+(* claude: while true, nothing starts playing (silently, for tinybox's
+ * previews: a program run in the menu's process, heard by no one) *)
+let muted = ref false
+
+let silently (f : unit -> 'a) : 'a =
+  let before = !muted in
+  muted := true;
+  Fun.protect ~finally:(fun () -> muted := before) f
+
+let play (s : sound) : unit = if not !muted then Mixer.play mixer (Synth.render_stereo s)
 
 (* a continuous sound's voices, each kept under its own name, with the
    filter it's under and its pan (after: only the first sound goes on;
@@ -140,12 +150,13 @@ let rec voices ?filter ?pan (s : sound) : (Synth.voice * Synth.filter option * f
   | After [] | Samples _ -> []
 
 let keep_playing (name : string) (s : sound) : unit =
-  List.iteri (fun i (v, filter, pan) -> Mixer.keep ?filter ?pan mixer (Printf.sprintf "%s#%d" name i) v) (voices s)
+  if not !muted then
+    List.iteri (fun i (v, filter, pan) -> Mixer.keep ?filter ?pan mixer (Printf.sprintf "%s#%d" name i) v) (voices s)
 
 (* a loop's samples, rendered once (a tune of a minute: 2.6 million
  * samples, rendered each frame it's asked for would be too slow) *)
 let loop (name : string) (s : sound) : unit =
-  if not (List.mem name (Mixer.looping mixer)) then Mixer.loop mixer name (Synth.render_stereo s)
+  if not !muted && not (List.mem name (Mixer.looping mixer)) then Mixer.loop mixer name (Synth.render_stereo s)
 
 (* the platform's way to get a file's bytes; none until run_app *)
 let fetcher : (string -> (string option -> unit) -> unit) ref = ref (fun _ k -> k None)
@@ -168,7 +179,7 @@ let play_module (name : string) (bytes : string) : unit =
         { note_on = (fun _ _ -> ()); note_off = ignore; set = (fun _ _ -> ()); fill = Mod_player.fill p }
 
 let loop_from (name : string) (source : string) : unit =
-  if not (Hashtbl.mem requested name) then (
+  if not !muted && not (Hashtbl.mem requested name) then (
     Hashtbl.replace requested name ();
     !fetcher source (function
       | None ->
@@ -187,7 +198,7 @@ let loop_from (name : string) (source : string) : unit =
             Mixer.loop mixer name (Synth.render_stereo (read bytes))))
 
 let faster = Synth.faster
-let change_loop (name : string) (s : sound) : unit = Mixer.change mixer name (Synth.render_stereo s)
+let change_loop (name : string) (s : sound) : unit = if not !muted then Mixer.change mixer name (Synth.render_stereo s)
 
 let pan (p : float) (s : sound) : sound = Synth.Panned (p, s)
 let pitched = Synth.pitched
@@ -204,6 +215,8 @@ type instrument = Instrument.t
 let instruments : (string, Instrument.t) Hashtbl.t = Hashtbl.create 2
 
 let instrument (name : string) (make : unit -> Instrument.t) : instrument =
+  (* claude: muted, an instrument of its own, which the mixer never pulls *)
+  if !muted then make () else
   match Hashtbl.find_opt instruments name with
   | Some i when List.mem name (Mixer.instruments mixer) -> i
   | _ ->
