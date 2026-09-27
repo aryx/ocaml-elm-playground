@@ -344,13 +344,14 @@ let up (t : t) : camera =
     t.placed;
   match !best with Some p when p.depth > 0 -> fit c.a p.rect | _ -> home c.a
 
-(* claude: the magnifying glass (below) is round or a reading glass (80
- * columns), toggled by o, one setting for every map (tinybox's panel and
- * its explorer) *)
-type glass = Round | Reading
+(* claude: the magnifying glass (below): round, a reading glass (80
+ * columns), or none, o going from one to the next, one setting for every
+ * map (tinybox's panel and its explorer) *)
+type glass = Round | Reading | No_glass
 
 let glass_shape = ref Round
-let toggle_glass () = glass_shape := match !glass_shape with Round -> Reading | Reading -> Round
+let cycle_glass () = glass_shape := match !glass_shape with Round -> Reading | Reading -> No_glass | No_glass -> Round
+let glass_name () = match !glass_shape with Round -> "round" | Reading -> "wide" | No_glass -> "none"
 
 let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   let mouse = computer.mouse in
@@ -369,7 +370,7 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
     | _ -> target
   in
   (* claude: the glass's shape, the panel's too *)
-  if pressed "o" then toggle_glass ();
+  if pressed "o" then cycle_glass ();
   let t =
     if pressed "t" then
       let algo : Treemap.algo = match t.algo with Squarified -> Slice_and_dice | Slice_and_dice -> Squarified in
@@ -598,7 +599,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words yellow t.title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.);
         words ink status |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
-          (Printf.sprintf "wheel zoom   drag pan   click fly in, again open   right click up   t layout (%s)   o glass   0 all   esc back" algo)
+          (Printf.sprintf "wheel zoom   drag pan   click fly in, again open   right click up   t layout (%s)   o glass (%s)   0 all   esc back" algo (glass_name ()))
         |> scale (12. /. words_font_size)
         |> move 0. (screen.bottom +. 18.);
       ]
@@ -622,7 +623,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
  * reading glass, the rectangular
  * kind laid over a page, where one reads: 80 columns of 8 units (640,
  * and a margin) by some 16 lines, whole lines of code rather than a
- * keyhole of them. o switches from one to the other. Neither when the map
+ * keyhole of them. o goes from one to the other, and to none. Neither when the map
  * is already close enough for the code to be read (the explorer zoomed
  * in). *)
 
@@ -772,4 +773,4 @@ let reading_glass (computer : computer) (t : t) : shape list =
       ]
 
 let glass (computer : computer) (t : t) : shape list =
-  match !glass_shape with Round -> lens computer t | Reading -> reading_glass computer t
+  match !glass_shape with Round -> lens computer t | Reading -> reading_glass computer t | No_glass -> []

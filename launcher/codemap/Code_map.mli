@@ -41,9 +41,13 @@ val view : ?chrome:bool -> Playground.computer -> t -> Playground.shape list
    lines about 16 units high, the VGA font's size), with a rim and a
    handle. Round, a glance at the code; or a reading glass wide enough for
    80 columns and some 16 lines, lined up with the start of the lines
-   under the mouse, to read whole lines. o (in update, or toggle_glass)
-   switches between them, one setting for every map. Nothing when the
+   under the mouse, to read whole lines; or none. o (in update, or
+   cycle_glass) goes from one to the next, one setting for every map.
+   Nothing when the
    mouse is elsewhere, or the map already close enough to read. *)
 val glass : Playground.computer -> t -> Playground.shape list
 
-val toggle_glass : unit -> unit
+val cycle_glass : unit -> unit
+
+(* the glass now, for a hint: "round", "wide" or "none" *)
+val glass_name : unit -> string

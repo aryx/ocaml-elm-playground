@@ -654,8 +654,8 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
         else if pressed "a" then to_shelf m false
         else if pressed "s" then open_code computer.screen m
         else if pressed "o" then (
-          (* claude: the panel's magnifying glass, round or reading *)
-          Code_map.toggle_glass ();
+          (* claude: the panel's magnifying glass: round, wide, none *)
+          Code_map.cycle_glass ();
           m)
         else
           match List.find_opt pressed [ "b"; "p"; "e"; "m"; "l"; "c"; "r" ] with
@@ -857,7 +857,7 @@ let code_panel (computer : computer) (p : Catalogue.program) : shape list =
   (match code_of p with
   | Some c -> Code_map.view ~chrome:false computer c
   | None -> [ rectangle panel w h |> move cx cy; centred ~size:14. dim cx cy "its code..." ])
-  @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) "its code: a click, or s, explores it   o: the glass round or wide" ]
+  @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) ("its code: a click, or s, explores it   o: the glass (" ^ Code_map.glass_name () ^ ")") ]
   (* claude: the mouse over it: a magnifying glass, the code under it
    * readable (Code_map.glass), over everything else *)
   @ match code_of p with Some c -> Code_map.glass computer c | None -> []
