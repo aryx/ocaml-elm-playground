@@ -33,6 +33,28 @@ where, when, and what the menu does with them. The same harness as the
 web tinybox's measurements (headless Chrome, screenshots). Settles what
 "a tap does not seem to work" is before anything is changed.
 
+Measured (2026-09-28, headless Chrome as a Pixel 8, 412 by 915, touch,
+on the live tinybox; `cdp_touch.py` in the session's scratchpad):
+
+- The page is laid out 981 pixels wide and shown at 42% upright (no
+  `viewport` tag): the 16:9 menu a band a fifth of the screen high. On
+  its side, 980 by 442 at 93%: the menu fills it.
+- A tap gives the page pointerdown/up, touchstart/end, then mousemove,
+  mousedown, mouseup, click at the finger: Chrome's taps reach the
+  menu, and one chose the tapped program. A double tap gave a
+  dblclick: the program played.
+- A drag gives pointer and touch events only, no mouse event: nothing
+  in the menu moves.
+- Not measurable here, known: Safari on iOS synthesizes mouse events
+  for a tap only on an element that looks clickable (with a click
+  handler of its own); the platform listens on the window, so on an
+  iPhone a tap likely gives the program nothing -- the "a tap does not
+  seem to work". And a real Android phone zooms on a double tap on a
+  page without a `viewport` tag, which the emulation does not.
+
+So step 1's pointer events fix both the iPhone's taps and the drags,
+and the `viewport` tag the size and the zoom.
+
 ## Step 1: taps and drags as the mouse (the web platform)
 
 - The page gets `<meta name="viewport" content="width=device-width">` and
