@@ -306,6 +306,9 @@ let scenes : Golden_scene.scene list =
      * and green walls bleeding onto the blocks, the soft shadows, the
      * noise; 160,000 rays, done by the eighth *)
     ("examples/software/PovrayCornell", "", 12);
+    (* claude: TinyQuake's start room, a still of the Myst-style walk:
+     * 64,000 rays, done by the fourth *)
+    ("examples/software/PovrayQuake", "", 5);
     (* the first question, the gallows empty *)
     ("examples/software/TeletypeHangman", "", 3);
     (* the snake, its food, and the bytes of the first frame: all of it *)

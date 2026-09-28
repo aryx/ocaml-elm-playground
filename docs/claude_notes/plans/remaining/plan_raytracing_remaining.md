@@ -82,11 +82,12 @@ What TinyBlender left, most worth doing first:
   file is the platform's (`Image_decode`, natively and on the web), not
   the pure library's; `Uv_function` is ready for it, and a solid needs
   (u, v) (a sphere's latitude and longitude, a box's faces).
-- **`PovrayQuake`, and `shapes`**: a `shape3d` scene inside a `Povray`
-  one. Dropped in the phase 0 review (the way is in the 2D library,
+- **`shapes`**: a `shape3d` scene inside a `Povray` one. Dropped in
+  the phase 0 review (the way is in the 2D library,
   `Shape3d_render_software` in the 3D one); a program in the software 3D
-  stanza could still do it with `Shape3d_render_software.solids`, if
-  TinyQuake's level were a value outside the game.
+  stanza could still do it with `Shape3d_render_software.solids`.
+  `PovrayQuake.ml` (2026-09-28) did without it: TinyQuake's boxes
+  copied as the way's exact boxes, walked through as Myst's stills.
 - **`-dump-size`'s double render**: `-dump-frame` draws the window's
   frame at the window's size before making the still again at its own;
   a supersampled still pays twice.
