@@ -67,7 +67,7 @@
    ai appkit_astronomy appkit_blocks appkit_browser appkit_cad
    appkit_document appkit_draw appkit_draw_view appkit_editor
    appkit_embed appkit_file_menu appkit_indexed appkit_modeler
-   appkit_paint appkit_pim appkit_pushpull appkit_richtext appkit_sheet
+   appkit_money appkit_paint appkit_pim appkit_pushpull appkit_richtext appkit_sheet
    appkit_sheet_view appkit_sketch appkit_slides appkit_stroke_text
    appkit_teletype basic caps elm_core elm_playground elm_playground_3d
    graphics_2d_geometry graphics_3d_geometry graphics_font graphics_gif

@@ -36,6 +36,7 @@
    %{project_root}/apps/pim/software/TinyClock.exe
    %{project_root}/apps/pim/software/TinyCalendar.exe
    %{project_root}/apps/pim/software/TinyPalmPilot.exe
+   %{project_root}/apps/pim/software/TinyQuicken.exe
    %{project_root}/apps/system/software/TinyTerminal.exe
    %{project_root}/apps/devtools/software/TinyBasic.exe
    %{project_root}/apps/devtools/software/TinyVi.exe

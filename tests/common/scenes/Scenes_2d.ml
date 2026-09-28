@@ -118,6 +118,10 @@ let scenes : Golden_scene.scene list =
     (* 1996: the Date Book on -fixed-time's day, its events of the day
      * (a Thursday: the standup repeats on it), in the Palm's own font *)
     ("apps/pim/software/TinyPalmPilot", "", 5);
+    (* 1984: the register as on paper, white on DOS's blue: the running
+     * balance, the opening balance reconciled (R), the new line's date
+     * lit *)
+    ("apps/pim/software/TinyQuicken", "", 5);
     (* 1970: the Model D's panel, black between wooden cheeks, left to
      * right; the bass preset *)
     ("apps/music/software/TinyMinimoog", "", 5);
@@ -1153,6 +1157,21 @@ let scripted : Golden_scene.scripted list =
      * few keys a frame -- /Graph Reset, Type Bar, the X, A and B
      * ranges, View -- and the PC switched to its CGA graph *)
     ("apps/office/software/TinyLotus123", "macro", 60, "Alt:3-4,type(g):3");
+    (* QuickFill: "saf" typed as check 107's payee, "eway" offered dim
+     * from the register, then Tab -- Safeway, Groceries and the 40.00
+     * of last time *)
+    ("apps/pim/software/TinyQuicken", "quickfill", 15, "tab:3,type(107):5,tab:7,type(saf):9,tab:12");
+    (* the check: "pac" completed to Pacific Gas & Electric and its
+     * 61.30, spelled out beneath as the bank reads it *)
+    ("apps/pim/software/TinyQuicken", "check", 15, "escape:3,type(1):5,tab:7,type(pac):9,tab:11");
+    (* reconciling against a statement of 1,603.89, six lines marked:
+     * 9.00 off, a multiple of 9, and the hint finding check 105's
+     * swapped digits, 45.10 for 54.10 *)
+    ( "apps/pim/software/TinyQuicken",
+      "reconcile",
+      34,
+      "escape:3,type(3):5,type(1603.89):7,return:9,space:11,down:13,space:15,down:17,space:19,down:21,space:23,down:25,space:27,down:29,space:31"
+    );
     (* what 1985 bought, in one scripted run: a range dragged out with
      * the mouse (D2 to D5), Edit > Fill Down copying the formula into
      * it -- =B2*C2 becoming =B3*C3, =B4*C4, =B5*C5, which is what

@@ -1,0 +1,15 @@
+; claude: money as a person keeps it (TinyQuicken, apps/pim/): amounts
+; in whole cents (Money), the register of a checking account and what
+; it remembers (Ledger), balancing it against the bank's statement
+; (Reconcile), and the file every personal finance program exchanged
+; (Qif). The dates are core's Civil.
+;
+; Pure OCaml, no gui, no playground: a private library, installed as
+; part of elm_playground, so every backend, the web one included, can
+; use it; tested without a screen in appkits/tests/.
+(library
+ (name appkit_money)
+ (package elm_playground)
+ (wrapped false)
+ (libraries elm_core)
+)

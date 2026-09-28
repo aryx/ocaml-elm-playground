@@ -439,12 +439,14 @@ programming tools), and so are the educational games, which are played.
 
 `apps/pim/`: the personal information managers -- the time, the
 calendar, and the Palm Pilot's address book and to-do list to come
-(`plan_pim.md`), over core's `Civil` and `Clock`.
+(`plan_pim.md`), over core's `Civil` and `Clock`; and the checkbook,
+over `appkits/money`.
 
 | Program | Dir | Year | Platform | Players | After | In one line | What it brought |
 |---|---|---|---|---|---|---|---|
 | [TinyCalendar](apps/pim/TinyCalendar.ml) | app | 1971 | mainframe | 1 | cal (Unix, 1971), iCal (Apple, 2002) | A month or a week of events, dragged, stretched and repeated; September 1752 as England lived it. | The calendar computed, not looked up (a date a day number); the Julian calendar before the switch, cal's eleven missing days; a repetition as a rule (RRULE), its occurrences computed for the days shown; iCalendar files, read and written. |
 | [TinyClock](apps/pim/TinyClock.ml) | app | 1984 | Mac | 1 | the Alarm Clock (Apple, Macintosh, 1984), xclock (X Window System, mid-1980s) | The time here and in six cities, on hands or in a strip, and an alarm. | The wall clock's time, seconds since 1970 and the offset only the platform knows; hands keeping every fraction where the strip truncates; cities with no daylight saving, so one offset all year. |
+| [TinyQuicken](apps/pim/TinyQuicken.ml) | app | 1984 | PC | 1 | Quicken (Scott Cook and Tom Proulx, Intuit, 1984, on DOS) | A checkbook's register, its checks and its monthly statement on the screen, for people who are not accountants. | The register and the check as they look on paper; QuickFill, a payee and its line completed from the register itself; reconciling, the difference explained -- a line not marked, a sign, two digits swapped and its multiple of 9; money in whole cents; QIF. |
 | [TinyPalmPilot](apps/pim/TinyPalmPilot.ml) | app | 1996 | handheld | 1 | the Pilot (Jeff Hawkins, Donna Dubinsky and Ed Colligan, Palm Computing, 1996) | A Date Book, an Address book, a To Do list and a Memo Pad behind four buttons, on a 160 x 160 screen. | Four things done and nothing else; no Save and no waiting, every change kept at once; written straight on the screen (an event on its hour, a name in the Look Up line); the data in the world's formats, iCalendar and vCard, for HotSync. |
 
 ## Game making
