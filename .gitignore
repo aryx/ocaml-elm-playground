@@ -1,6 +1,10 @@
 _build/
 .merlin
 *.bc.js
+# claude: but the website's examples, which make website puts in docs/
+# (the games' and apps' programs are in the assets repository)
+!/docs/examples/*.bc.js
+!/docs/examples/svg/*.bc.js
 docs/toy-native-example/bin/
 
 todo.txt
