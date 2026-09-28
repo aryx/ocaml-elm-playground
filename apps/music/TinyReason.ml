@@ -39,7 +39,8 @@
  * why not said by the pointer). Anywhere: Tab turns the rack round,
  * space starts and stops every sequencer on one clock, Backspace takes
  * the selected device out (an effect inserted leaving its two sides
- * joined), the wheel scrolls.
+ * joined), the wheel, the arrows, the page keys and the scrollbar
+ * scroll.
  *
  * Uses: Studio_reason (the rack, its graph and its sound), Rack_module,
  * Rack_device, Rack_mixer, Rack_matrix, Rack_cable (over Particles),
@@ -218,8 +219,24 @@ let width = 880.
 let unit = 40.
 let rack_top = 430.
 let rack_bottom = -430.
+let scrollbar_x = 485.
 
-let height (m : Rack_module.t) : number = Float.ceil (Component.fitted_height ~scaled:true m.front width / unit) * unit
+(* a front as wide as the rack, unless that makes it taller than
+ * [tallest]: then narrower, centred -- so that the mixer, a synthesizer
+ * and the Matrix fit on the screen together *)
+let tallest = 320.
+
+let front_scale (m : Rack_module.t) : number =
+  match m.front.natural with Some (nw, nh) -> Float.min (width / nw) (tallest / nh) | None -> 1.
+
+let height (m : Rack_module.t) : number =
+  match m.front.natural with
+  | Some (_, nh) -> Float.ceil (nh * front_scale m / unit) * unit
+  | None -> Float.ceil (Component.fitted_height ~scaled:true m.front width / unit) * unit
+
+(* the room a front is drawn in, inside its device's box *)
+let front_box (m : Rack_module.t) (b : Widget.box) : Widget.box =
+  match m.front.natural with Some (nw, _) -> { b with w = nw * front_scale m } | None -> b
 
 (* each device's box, top to bottom, scrolled *)
 let boxes (m : model) : (int * Widget.box) list =
@@ -348,7 +365,7 @@ let front_input (computer : computer) (m : model) : model =
     List.map
       (fun (id, (md : Rack_module.t)) ->
         match (Some id = active, List.assoc_opt id bs) with
-        | true, Some b -> (id, { md with front = Component.input_in ~scaled:true md.front computer b })
+        | true, Some b -> (id, { md with front = Component.input_in ~scaled:true md.front computer (front_box md b) })
         | _ -> (id, md))
       m.modules
   in
@@ -395,9 +412,14 @@ let update (computer : computer) (m : model) : model =
         { m with patch = Studio_reason.remove (Studio_reason.lookup s) m.patch id; modules = List.remove_assoc id m.modules; selected = None }
     | _ -> m
   in
-  (* the wheel scrolls, within the rack *)
+  (* the wheel scrolls (60 pixels a notch), the arrows and the page keys
+   * too, and the scrollbar pressed puts that part of the rack in view *)
   let room = Float.max 0. (total_height m - (rack_top - rack_bottom)) in
-  let m = { m with scroll = Float.max 0. (Float.min room (m.scroll - (computer.mouse.mwheel * 0.5))) } in
+  let mouse = computer.mouse in
+  let keys = (if List.mem "ArrowDown" now then 20. else 0.) - (if List.mem "ArrowUp" now then 20. else 0.) + (if pressed "PageDown" then 400. else 0.) - if pressed "PageUp" then 400. else 0. in
+  let on_bar = mouse.mdown && Float.abs (mouse.mx - scrollbar_x) <= 12. && mouse.my <= rack_top && mouse.my >= rack_bottom in
+  let scroll = if on_bar then ((rack_top - mouse.my) / (rack_top - rack_bottom) * total_height m) - ((rack_top - rack_bottom) / 2.) else m.scroll - (mouse.mwheel * 60.) + keys in
+  let m = { m with scroll = Float.max 0. (Float.min room scroll) } in
   (* the mouse, unless a menu has it or the rack is turning *)
   let m = if Gui.modal () || m.flip > 0 then m else if m.side = Back then back_input computer m else front_input computer m in
   (* the letters play the selected device *)
@@ -431,7 +453,7 @@ let front_view (m : model) (id : int) (b : Widget.box) : shape list =
   | None -> []
   | Some md ->
       [ rectangle (rgb 25 25 28) b.w b.h |> move b.x b.y ]
-      @ Component.draw_in ~scaled:true md.front b ~active:(m.selected = Some id)
+      @ Component.draw_in ~scaled:true md.front (front_box md b) ~active:(m.selected = Some id)
       @ (if m.selected = Some id then [ rectangle md.color 4. b.h |> move (b.x - (b.w / 2.) + 2.) b.y ] else [])
       @ ears b
 
@@ -520,7 +542,7 @@ let view (computer : computer) (m : model) : shape list =
      if total <= room then []
      else
        let h = room * room / total in
-       [ rectangle (rgb 60 60 66) 8. room |> move 485. 0.; rectangle (rgb 160 160 170) 8. h |> move 485. (rack_top - (h / 2.) - (m.scroll * room / total)) ])
+       [ rectangle (rgb 60 60 66) 12. room |> move scrollbar_x 0.; rectangle (rgb 160 160 170) 12. h |> move scrollbar_x (rack_top - (h / 2.) - (m.scroll * room / total)) ])
   (* the bars *)
   @ [ rectangle (rgb 50 50 56) computer.screen.width 60. |> move 0. 470.; rectangle (rgb 50 50 56) computer.screen.width 60. |> move 0. transport_y ]
   @ [

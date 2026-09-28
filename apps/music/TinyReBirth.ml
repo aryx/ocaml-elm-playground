@@ -277,14 +277,23 @@ let strips_view (m : model) : shape list =
          (* the 909's orange line under its steps *)
          @ (if k = 3 then [ rectangle (rgb 235 120 40) 480. 3. |> move (cell_x 0 + 225.) (y - 30.) ] else [])
          @ ears y 80.
-         @ List.concat
+         @
+         let cells =
+           List.concat
              (List.init 16 (fun s ->
                   let lit = running && steps.(k) = s in
                   match k with
                   | 0 -> step_303 m.patch.bass1.pattern y s lit
                   | 1 -> step_303 m.patch.bass2.pattern y s lit
                   | 2 -> step_drum k y s (step_on m.patch.drums808 m.instruments.(k) s) lit
-                  | _ -> step_drum k y s (step_on m.patch.drums909 m.instruments.(k) s) lit))))
+                  | _ -> step_drum k y s (step_on m.patch.drums909 m.instruments.(k) s) lit))
+         in
+         (* a machine muted: its steps faded, said so -- edited, they are
+          * heard once it is unmuted *)
+         if m.patch.mutes.(k) then
+           cells
+           @ [ rectangle face 484. 76. |> fade 0.7 |> move (cell_x 0 + 225.) y; words (rgb 230 60 40) "MUTED" |> scale 2. |> move (cell_x 0 + 225.) y ]
+         else cells))
 
 let effects_view (m : model) : shape list =
   let label word x = words ink word |> scale 0.9 |> move x (-62.) in

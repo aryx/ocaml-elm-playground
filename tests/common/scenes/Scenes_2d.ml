@@ -1267,9 +1267,12 @@ let scripted : Golden_scene.scripted list =
      * hand, the jack it may go into ringed green; let go on the
      * Matrix's Curve CV, plugged and still swinging; the rack played *)
     ("apps/music/software/TinyReason", "back", 20, "Tab:2");
-    ("apps/music/software/TinyReason", "drag", 30, "Tab:2,at(88;-45):16-20,at(300;-200):21-40,click:18-40");
-    ("apps/music/software/TinyReason", "plugged", 50, "Tab:2,at(88;-45):16-20,at(300;-200):21-30,at(57;-365):31-50,click:18-34");
+    ("apps/music/software/TinyReason", "drag", 30, "Tab:2,at(88;-5):16-20,at(300;-200):21-40,click:18-40");
+    ("apps/music/software/TinyReason", "plugged", 50, "Tab:2,at(88;-5):16-20,at(300;-200):21-30,at(57;-285):31-50,click:18-34");
     ("apps/music/software/TinyReason", "running", 40, "space:3");
+    (* claude: the rack scrolled a page down (the page key): the 808, the
+     * Hammond and the delay under the Matrix *)
+    ("apps/music/software/TinyReason", "scrolled", 10, "PageDown:3");
     (* claude: steps edited by clicks: a note high on 303 #1's step 5,
      * the 808's instrument clicked from BD to LT, two LT hits added *)
     ( "apps/music/software/TinyReBirth",
