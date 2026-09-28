@@ -6,7 +6,9 @@
 # 2026-09-16 that OCaml 5.2.0 through 5.5.1 all build and pass the tests) -
 # see 'make build-docker-ocaml5', which tries the latest OCaml 5.
 
-FROM ubuntu:22.04
+# claude: 24.04, not 22.04: tsdl calls SDL_RenderGetWindow, SDL 2.0.22's,
+# and 22.04 has SDL 2.0.20 ("undefined symbol" as tinybox list runs)
+FROM ubuntu:24.04
 
 # Setup a basic C dev environment
 RUN apt-get update # needed otherwise can't find any package
