@@ -14,8 +14,9 @@
    archi_code did: a program's main (Tiny*.ml, main.c), a test, a lexer
    or a parser; else their part's colour (Code_map_base.archi).
 
-   The names over the map: Map_classic's, for now (the plan's step 1);
-   by their uses and placed once, level by level, next (steps 2 and 3). *)
+   The names over the map: Map_classic's, a definition's sized and chosen
+   by its uses (Code_rank, the plan's step 2); placed once, level by
+   level, next (step 3). *)
 
 (* the level for a line this high on the screen (window pixels): 0 to 4 *)
 val level : float -> int
@@ -24,4 +25,10 @@ val level : float -> int
 val file_colour : Code_map_base.t -> string -> int * int * int
 
 val paint : aa:bool -> Code_map_base.t -> Code_map_base.camera -> Rgba_image.t
+
+(* a definition's weight on Highlight_code.emphasis's scale, from its
+   uses (Code_rank.score); a section's title's, its category's *)
+val emphasis : Code_map_base.t -> string -> int -> string -> Highlight_code.category -> float
+val labels : Code_map_base.t -> Code_map_base.camera -> float -> Playground.shape list
+
 val style : Code_map_base.style

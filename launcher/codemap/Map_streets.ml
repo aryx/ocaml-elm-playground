@@ -162,5 +162,22 @@ let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
     t.placed;
   img
 
-(* the names: Map_classic's, for now (the plan's steps 2 and 3 next) *)
-let style : style = { sname = "streets"; paint; labels = Map_classic.labels }
+(*****************************************************************************)
+(* The names *)
+(*****************************************************************************)
+
+(* claude: how much a definition matters, its population (Code_rank,
+ * the plan's step 2): codemap's weight by kind times its bucket of uses,
+ * over 2.1 (the middle bucket) to be on Highlight_code.emphasis's scale
+ * -- a function used 5 to 19 times as classic's 3.5, unused about 1.5,
+ * used by a hundred about 5.5; a section's title as classic's *)
+let emphasis (t : t) (path : string) (line : int) (name : string) (cat : Highlight_code.category) : float =
+  match cat with
+  | Def_module | Def_type | Def_function | Def_value -> Code_rank.score (rank_of t) path line name cat /. 2.1
+  | _ -> Highlight_code.emphasis cat
+
+(* the names: Map_classic's, sized and chosen by their uses; placed once,
+ * level by level, next (the plan's step 3) *)
+let labels (t : t) = Map_classic.labels_by ~emphasis:(emphasis t) t
+
+let style : style = { sname = "streets"; paint; labels }

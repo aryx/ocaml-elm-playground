@@ -54,8 +54,11 @@ let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
 (* the names over the map: directories', big and faint (codemap's), and
  * their paths on a tab at their top right; files' on a tab at their top
  * left (the program's own in yellow, never left out); and, from afar,
- * what each file defines, bigger the more it matters *)
-let labels (t : t) (c : camera) (q : float) : shape list =
+ * what each file defines, bigger the more it matters. claude: how much
+ * it matters, [emphasis] of its file, line, name and category: here, its
+ * category's (Highlight_code.emphasis); the street map's, its uses
+ * (Map_streets) *)
+let labels_by ~(emphasis : string -> int -> string -> Highlight_code.category -> float) (t : t) (c : camera) (q : float) : shape list =
   let a = c.a in
   (* readable as painted: in the window's pixels *)
   let readable c g = readable (at_ratio c q) g in
@@ -118,19 +121,22 @@ let labels (t : t) (c : camera) (q : float) : shape list =
               if (not (readable c g)) && Lazy.is_val e.file then
                 List.iter
                   (fun (line, def, cat) ->
-                    let size = Float.min 22. (g.cell_h *. c.z *. Highlight_code.emphasis cat *. 1.6) in
+                    let emph = emphasis e.path line def cat in
+                    let size = Float.min 22. (g.cell_h *. c.z *. emph *. 1.6) in
                     if size >= 9. && line < Code_file.nlines (Lazy.force e.file) then begin
                       let col = line / g.lpc and lc = line mod g.lpc in
                       let px = to_px c (p.rect.x +. (float_of_int col *. g.colw)) and py = to_py c (p.rect.y +. ((float_of_int lc +. 0.5) *. g.cell_h)) in
                       let wd = 0.5 *. size *. float_of_int (String.length def) in
                       if py >= 0. && py < float_of_int a.ph && px +. wd > 0. && px < float_of_int a.pw then
                         let r, gg, b = Highlight_code.rgb cat in
-                        defs := candidate ~rank:(Highlight_code.emphasis cat *. size) (rgb r gg b) size (px +. (wd /. 2.)) py def :: !defs
+                        defs := candidate ~rank:(emph *. size) (rgb r gg b) size (px +. (wd /. 2.)) py def :: !defs
                     end)
                   (Lazy.force e.file).defs
           | _ -> ()))
     t.placed;
   (* the directories' names faint under the rest, placed among themselves *)
   place a !dirs @ place a (!files @ !defs)
+
+let labels = labels_by ~emphasis:(fun _ _ _ cat -> Highlight_code.emphasis cat)
 
 let style : style = { sname = "classic"; paint; labels }

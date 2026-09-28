@@ -55,6 +55,8 @@ type t = {
   mutable found : ((string * int * int) * (Code_names.candidate list * bool)) option; (* the last search *)
   roots : string list; (* the projects' tops (Code_names.find) *)
   style : style; (* how the map is drawn *)
+  mutable index : Code_names.index option; (* its files indexed, once (index_of) *)
+  mutable rank : Code_rank.t option; (* its definitions' uses, once (rank_of) *)
 }
 
 (* a style: the map's picture (the directories, the files, their code),
@@ -92,6 +94,13 @@ val make :
   marked:string list ->
   entry list ->
   t
+
+(* the map's files, indexed for finding a name (Code_names.index) and
+   their definitions' uses counted (Code_rank), each made once, when
+   first asked for *)
+val files_of : t -> (string * Code_file.t Lazy.t) list
+val index_of : t -> Code_names.index
+val rank_of : t -> Code_rank.t
 
 (* the files shown and their lines; 12345 as "12,345 lines" *)
 val lines_of : entry list -> int

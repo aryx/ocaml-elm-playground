@@ -10,4 +10,14 @@
 val paint : aa:bool -> Code_map_base.t -> Code_map_base.camera -> Rgba_image.t
 val labels : Code_map_base.t -> Code_map_base.camera -> float -> Playground.shape list
 
+(* claude: the same names, how much a definition matters (its label's
+   size and rank) given by [emphasis] of its file, line, name and
+   category; [labels] passes Highlight_code.emphasis, its category's *)
+val labels_by :
+  emphasis:(string -> int -> string -> Highlight_code.category -> float) ->
+  Code_map_base.t ->
+  Code_map_base.camera ->
+  float ->
+  Playground.shape list
+
 val style : Code_map_base.style

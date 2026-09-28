@@ -107,6 +107,23 @@ let tests =
           Alcotest.(check string) "without roots: the nearest path" "src/vendor/h.c:1 tools/h.c:1 !" (where p "src/main.c" "helper");
           Alcotest.(check string) "with roots: its own project first" "tools/h.c:1 src/vendor/h.c:1(other) !"
             (where ~roots:[ ""; "src/vendor" ] p "src/main.c" "helper"));
+      (* claude: Code_rank.mli's worked example *)
+      Testo.create "a definition's population" (fun () ->
+          let files =
+            List.map
+              (fun (p, src) -> (p, lazy (Code_file.make p src)))
+              [
+                ("games/Road.ml", "let straight x = x\nlet curve x = straight x\n");
+                ("games/Main.ml", "open Road\nlet a = Road.curve 1\nlet b = Road.curve 2\nlet c = straight 3\n");
+                ("games/Other.ml", "let d = Road.curve 4\n");
+              ]
+          in
+          let r = Code_rank.compute files in
+          let show (u : Code_rank.use) = Printf.sprintf "others %d in %d files, own %d" u.others u.files u.own in
+          Alcotest.(check string) "curve" "others 3 in 2 files, own 0" (show (Code_rank.uses r "games/Road.ml" 1 "curve"));
+          Alcotest.(check string) "straight" "others 1 in 1 files, own 1" (show (Code_rank.uses r "games/Road.ml" 0 "straight"));
+          Alcotest.(check bool) "curve scores above straight" true
+            (Code_rank.score r "games/Road.ml" 1 "curve" Def_function > Code_rank.score r "games/Road.ml" 0 "straight" Def_function));
       Testo.create "a file's grid and definitions" (fun () ->
           let f = Code_file.make "x.ml" "(*****)\n(* Model *)\n(*****)\nlet move p = p\ntype t = int\n" in
           Alcotest.(check (list (pair int string))) "the section, the function, the type"

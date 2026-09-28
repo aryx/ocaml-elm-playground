@@ -73,6 +73,8 @@ type t = {
   mutable found : ((string * int * int) * (Code_names.candidate list * bool)) option;
   roots : string list; (* claude: the projects' tops (Code_names.find) *)
   style : style; (* claude: how the map is drawn (Map_classic, ...) *)
+  mutable index : Code_names.index option; (* claude: its files indexed, once (index_of) *)
+  mutable rank : Code_rank.t option; (* claude: its definitions' uses, once (rank_of) *)
 }
 
 (* claude: a style: the map's picture (the directories, the files, their
@@ -124,7 +126,26 @@ let make ?(numbered = false) ?(colours = []) ?(roots = []) ~(style : style) ~(ar
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
-    back = []; choices = None; note = ""; found = None; roots; style }
+    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None }
+
+(* claude: the map's files for Code_names and Code_rank *)
+let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries
+
+let index_of (t : t) : Code_names.index =
+  match t.index with
+  | Some ix -> ix
+  | None ->
+      let ix = Code_names.index (files_of t) in
+      t.index <- Some ix;
+      ix
+
+let rank_of (t : t) : Code_rank.t =
+  match t.rank with
+  | Some r -> r
+  | None ->
+      let r = Code_rank.compute ~roots:t.roots (files_of t) in
+      t.rank <- Some r;
+      r
 
 (* claude: the lines of the files shown, for a title *)
 let lines_of (entries : entry list) : int = List.fold_left (fun n (e : entry) -> n + e.nlines) 0 entries

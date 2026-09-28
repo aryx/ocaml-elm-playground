@@ -40,6 +40,30 @@ let project (roots : string list) (p : string) : string =
       if under && String.length r > String.length best then r else best)
     "" roots
 
+(* claude: the map's files, found without scanning them all: OCaml's by
+ * module name (Hashtbl.find_all: two Parser.ml), C's definitions by name
+ * and namespace, made on the first C search (it lexes every C file) *)
+type index = {
+  ml : (string, string * Code_file.t Lazy.t) Hashtbl.t;
+  c : (string * Highlight_code.space, string * Highlight_code.definition) Hashtbl.t Lazy.t;
+}
+
+let index (files : (string * Code_file.t Lazy.t) list) : index =
+  let ml = Hashtbl.create 256 in
+  List.iter (fun (p, lf) -> if is_ml p then Hashtbl.add ml (module_of p) (p, lf)) files;
+  let c =
+    lazy
+      (let h = Hashtbl.create 1024 in
+       List.iter
+         (fun (p, lf) ->
+           if is_c p then
+             let (f : Code_file.t) = Lazy.force lf in
+             List.iter (fun (d : Highlight_code.definition) -> Hashtbl.add h (d.dname, d.dspace) (p, d)) f.definitions)
+         files;
+       h)
+  in
+  { ml; c }
+
 (* sorted, and whether the first is alone at its rank *)
 let ranked (cs : candidate list) : candidate list * bool =
   let cs = List.stable_sort (fun a b -> compare (a.near, a.path) (b.near, b.path)) cs in
@@ -59,7 +83,7 @@ let tries (f : Code_file.t) (r : Highlight_code.reference) : (string * string) l
   | [] -> List.map (fun m -> (m, r.rname)) (r.ropens @ List.rev f.opens)
   | m :: rest -> (m, String.concat "." (rest @ [ r.rname ])) :: (match List.rev rest with n :: _ -> [ (n, r.rname) ] | [] -> [])
 
-let find_ml ~other files ~from (f : Code_file.t) (r : Highlight_code.reference) =
+let find_ml ~other (ix : index) ~from (f : Code_file.t) (r : Highlight_code.reference) =
   (* the first place, in that order, that defines it *)
   let rec first = function
     | [] -> []
@@ -67,14 +91,14 @@ let find_ml ~other files ~from (f : Code_file.t) (r : Highlight_code.reference) 
         let cs =
           List.concat_map
             (fun (p, lf) ->
-              if is_ml p && module_of p = m && p <> from then
+              if p <> from then
                 (* its latest definition (ranked by path too: x.ml
                  * before x.mli) *)
                 match List.rev (defined (Lazy.force lf) name r.rspace) with
                 | d :: _ -> [ candidate p d ((if other p then 1 else 0), - shared p from) (other p) ]
                 | [] -> []
               else [])
-            files
+            (Hashtbl.find_all ix.ml m)
         in
         match cs with [] -> first rest | cs -> cs)
   in
@@ -97,18 +121,14 @@ let normalize (p : string) : string =
   in
   String.concat "/" (List.rev parts)
 
-let find_c ~other files ~from (f : Code_file.t) (r : Highlight_code.reference) =
+let find_c ~other (ix : index) ~from (f : Code_file.t) (r : Highlight_code.reference) =
   let dir = Filename.dirname from in
   (* the program's own: its directory, and the headers it includes by a
    * path from it (#include "../port/lib.h") *)
   let included = List.map (fun i -> normalize (Filename.concat dir i)) f.includes in
   let own_header p = Filename.dirname p = dir || List.mem (normalize p) included in
   let library p = List.exists (fun d -> String.length d >= 3 && (String.sub d 0 3 = "lib" || d = "include")) (String.split_on_char '/' (Filename.dirname p)) in
-  let all =
-    List.concat_map
-      (fun (p, lf) -> if is_c p && p <> from then List.map (fun d -> (p, d)) (defined (Lazy.force lf) r.rname r.rspace) else [])
-      files
-  in
+  let all = List.filter (fun (p, _) -> p <> from) (Hashtbl.find_all (Lazy.force ix.c) (r.rname, r.rspace)) in
   (* the definitions, if any, over the declarations *)
   let best = List.fold_left (fun m (_, (d : Highlight_code.definition)) -> max m d.drank) 0 all in
   let cs =
@@ -123,7 +143,9 @@ let find_c ~other files ~from (f : Code_file.t) (r : Highlight_code.reference) =
   in
   ranked cs
 
-let find ?(roots = []) files ~from f r =
+let find_in ?(roots = []) (ix : index) ~from f r =
   let here = project roots from in
   let other p = project roots p <> here in
-  if is_c from then find_c ~other files ~from f r else find_ml ~other files ~from f r
+  if is_c from then find_c ~other ix ~from f r else find_ml ~other ix ~from f r
+
+let find ?roots files ~from f r = find_in ?roots (index files) ~from f r

@@ -121,7 +121,7 @@ let found (t : t) (i : int) (path : string) (r : Highlight_code.reference) : Cod
   | Some (k, res) when k = key -> res
   | _ ->
       let f = match t.placed.(i).node with File (_, _, e) -> Lazy.force e.file | Dir _ -> assert false in
-      let res = Code_names.find ~roots:t.roots (List.map (fun (e : entry) -> (e.path, e.file)) t.entries) ~from:path f r in
+      let res = Code_names.find_in ~roots:t.roots (index_of t) ~from:path f r in
       t.found <- Some (key, res);
       res
 

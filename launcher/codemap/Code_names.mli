@@ -46,3 +46,12 @@ type candidate = {
    candidates come after all of the use's own, marked *)
 val find :
   ?roots:string list -> (string * Code_file.t Lazy.t) list -> from:string -> Code_file.t -> Highlight_code.reference -> candidate list * bool
+
+(* claude: the same, many times over the same files (a map's hovers,
+   Code_rank's counting every name): the files indexed once -- OCaml's
+   by module name, C's definitions by name (made on the first C search,
+   lexing every C file) -- and searched there *)
+type index
+
+val index : (string * Code_file.t Lazy.t) list -> index
+val find_in : ?roots:string list -> index -> from:string -> Code_file.t -> Highlight_code.reference -> candidate list * bool
