@@ -1,0 +1,540 @@
+(* Claude Code
+ *
+ * Copyright (C) 2026 Yoann Padioleau
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public License
+ * (LGPL) as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ *)
+
+(* A toy version of Propellerhead's Reason (2000), the studio as a rack:
+ * a mixer, synthesizers, a drum machine, a pattern sequencer and
+ * effects, stacked between the rack's rails -- and Tab turns the rack
+ * round, to its back, where every device has its jacks and the sound
+ * goes where the cables say, cables dragged from jack to jack, sagging
+ * and swinging (plan_tiny_reason.md).
+ *
+ * The idea to teach is the architecture. A device is a *module*
+ * (Rack_module.mli), two halves over one sound: its front, a part
+ * (Component.mli, the office's embedded parts) -- the very panels
+ * TinyJuno, TinyHammond and TinyTR808 show full size, scaled here to
+ * the rack's width -- and its back and sound, a Rack_device (jacks,
+ * stages). This program knows no module in particular: the Create menu
+ * is its catalogue, a name and a maker each, and a new module is a line
+ * there. The rack is a graph (Studio_reason.mli): each chunk of 64
+ * samples, the devices' stages in topological order, a cable closing a
+ * loop refused; a device added cabled by itself, as Reason does it.
+ *
+ * The cables (Rack_cable.mli) are ropes of particles, Jakobsen's
+ * position Verlet: pinned at their jacks, under gravity, they sag,
+ * trail behind a dragged end, bounce when plugged, swing and settle.
+ *
+ * On the front: the panels, each played with the mouse in place; a
+ * click selects a device, the letters play it (a s d f g h j k, w e t
+ * y u, z x an octave), its presets in the top bar. On the back: a jack
+ * pressed pulls a new cable out of it, or picks up the cable in it;
+ * shift and a press pulls a cable off, falling; let go on a jack, it
+ * plugs in (the jacks it may go into ringed green, the others dimmed,
+ * why not said by the pointer). Anywhere: Tab turns the rack round,
+ * space starts and stops every sequencer on one clock, Backspace takes
+ * the selected device out (an effect inserted leaving its two sides
+ * joined), the wheel scrolls.
+ *
+ * Uses: Studio_reason (the rack, its graph and its sound), Rack_module,
+ * Rack_device, Rack_mixer, Rack_matrix, Rack_cable (over Particles),
+ * Part_juno, Part_hammond, Part_tr808, Part_mixer, Part_matrix,
+ * Part_effect (the fronts), Voice_juno, Voice_hammond, Voice_tr808,
+ * Delay, Reverb, Drive, Dynamics, Eq, Modulation (the effects),
+ * Component, Piano (the letters), Gui (the menus, the transport). Not:
+ * Scene2d, Sprite, File_menu.
+ *
+ * Ours, and said so: the SubTractor's place taken by the Juno-106 (a
+ * polyphonic subtractive synthesizer, as it is) and the Redrum's by the
+ * TR-808; a stereo cable per jack; one aux send; the rack's width 880,
+ * its unit 40 pixels; the flip a box narrowing, not a turn in 3D.
+ *
+ * Exercises: the rack saved and loaded (each front's save, a registry
+ * of kinds, Component's placeholder for a kind this build lacks); the
+ * Spider, one output into several inputs; a device dragged to another
+ * place, its cables following; more modules -- the other Tiny voices
+ * (Part_minimoog, Part_dx7...), a line each, within the budget;
+ * TinyReBirth plugged in whole, Reason's ReBirth Input Machine.
+ *)
+open Playground
+open Basics (* float arithmetics *)
+
+(*****************************************************************************)
+(* The catalogue *)
+(*****************************************************************************)
+
+let voice_module ~name ~color ~(front : Component.part) ?cv ?transport (inst : Instrument.t) ~kind : Rack_module.t =
+  { name; color; front; device = Rack_device.of_instrument ~kind ?cv ?transport inst }
+
+let juno () : Rack_module.t =
+  let v = Voice_juno.create (snd (List.hd Voice_juno.presets)) in
+  voice_module ~kind:"juno" ~name:"Juno-106" ~color:(rgb 235 120 50) ~front:(Part_juno.make v)
+    ~cv:[ ("Filter CV", "vcf.cutoff", (0., 1.)) ]
+    (Voice_juno.instrument v)
+
+let hammond () : Rack_module.t =
+  let v = Voice_hammond.create (snd (List.hd Voice_hammond.presets)) in
+  voice_module ~kind:"hammond" ~name:"Hammond B-3" ~color:(rgb 150 90 50) ~front:(Part_hammond.make v) (Voice_hammond.instrument v)
+
+(* the Redrum's place: the 808, its own sequencer on the rack's clock *)
+let redrum () : Rack_module.t =
+  let v = Voice_tr808.create (snd (List.hd Voice_tr808.presets)) in
+  let tempo bpm = Voice_tr808.set_patch v { (Voice_tr808.patch v) with tempo = bpm } in
+  let step () = if Voice_tr808.running v then Some (Voice_tr808.step v) else None in
+  voice_module ~kind:"tr808" ~name:"TR-808" ~color:(rgb 205 55 45) ~front:(Part_tr808.make v)
+    ~transport:(Voice_tr808.run v, tempo, step)
+    (Voice_tr808.instrument v)
+
+let effect kind name color fx () = Rack_module.of_effect ~kind ~name ~color (fx ())
+
+(* the rack, the studio: made when first asked for (tinybox) *)
+let studio = lazy (Studio_reason.create Studio_reason.empty)
+let ids : (int * Rack_device.t) list ref = ref []
+
+(* the level coming into a mixer's channel, or out of its master *)
+let mixer_peak (d : Rack_device.t) (k : int) : number =
+  let s = Lazy.force studio in
+  match List.find_opt (fun (_, d') -> d' == d) !ids with
+  | None -> 0.
+  | Some (id, _) -> (
+      if k = Rack_mixer.channels then Studio_reason.peak s { device = id; jack = Rack_mixer.master_out }
+      else match Studio_reason.cable_at (Studio_reason.patch s) { device = id; jack = k } with Some c -> Studio_reason.peak s c.out | None -> 0.)
+
+let catalogue : Rack_module.catalogue =
+  [
+    ("Mixer 14:2", fun () -> Rack_module.mixer ~peak:mixer_peak);
+    ("Juno-106", juno);
+    ("Hammond B-3", hammond);
+    ("TR-808 (Redrum)", redrum);
+    ("Matrix", Rack_module.matrix);
+    ("DDL-1 Delay", effect "ddl1" "DDL-1" (rgb 90 170 230) Delay.fx);
+    ("RV-7 Reverb", effect "rv7" "RV-7" (rgb 120 200 150) Reverb.fx);
+    ("D-11 Distortion", effect "d11" "D-11" (rgb 230 80 60) Drive.fx);
+    ("COMP-01", effect "comp01" "COMP-01" (rgb 200 200 90) Dynamics.fx);
+    ("PEQ-2", effect "peq2" "PEQ-2" (rgb 170 130 220) Eq.fx);
+    ("CF-101 Chorus", effect "cf101" "CF-101" (rgb 90 210 210) Modulation.fx);
+  ]
+
+(* the Hardware Interface's front: its name and the level going out *)
+let rec hardware_front : Component.part =
+  {
+    kind = "hardware";
+    height = (fun _ -> 40.);
+    natural = Some (880., 40.);
+    draw =
+      (fun b ~active:_ ->
+        let level = Array.fold_left (fun m x -> Float.max m (Float.abs x)) 0. (Studio_reason.recent (Lazy.force studio)) in
+        [
+          rectangle (rgb 35 35 40) b.w b.h |> move b.x b.y;
+          words (rgb 220 220 220) "HARDWARE INTERFACE" |> scale 1.1 |> move (b.x - (b.w / 2.) + 110.) b.y;
+          rectangle (rgb 20 20 20) 200. 10. |> move (b.x + 250.) b.y;
+          rectangle (rgb 90 220 110) (200. * Float.min 1. level) 10. |> move (b.x + 150. + (100. * Float.min 1. level)) b.y;
+        ]);
+    input = (fun _ _ -> hardware_front);
+    menu = [];
+    command = (fun _ -> hardware_front);
+    save = (fun () -> "");
+  }
+
+let hardware_module : Rack_module.t = { name = "Hardware Interface"; color = rgb 200 200 200; front = hardware_front; device = Studio_reason.hardware_device }
+
+(*****************************************************************************)
+(* The model *)
+(*****************************************************************************)
+
+type side = Front | Back
+
+(* a cable in the hand: the end still plugged, and its rope *)
+type drag = { fixed : Studio_reason.port; rope : Rack_cable.t }
+
+type model = {
+  patch : Studio_reason.patch;
+  modules : (int * Rack_module.t) list; (* by id, their fronts as they are now *)
+  selected : int option;
+  side : side;
+  flip : int; (* frames left of the rack turning *)
+  scroll : number;
+  ropes : (Studio_reason.cable * Rack_cable.t) list;
+  drag : drag option;
+  falling : (Rack_cable.t * int) list; (* cables pulled off, frames left *)
+  active : int option; (* the front holding the mouse *)
+  piano : Piano.t;
+  message : (string * int) option;
+  was_down : bool;
+  keys : string list; (* held at the last frame *)
+}
+
+(* a module made, put in the rack under [below], cabled by itself *)
+let add_module (patch : Studio_reason.patch) (modules : (int * Rack_module.t) list) (name : string) ~(below : int option) ~(selected : int option) =
+  let s = Lazy.force studio in
+  let m = (List.assoc name catalogue) () in
+  let patch, id = Studio_reason.add patch ~kind:m.device.kind ~below in
+  Studio_reason.attach s id m.device;
+  ids := (id, m.device) :: !ids;
+  let patch = Studio_reason.route (Studio_reason.lookup s) patch id ~selected in
+  (patch, modules @ [ (id, m) ], id)
+
+(* the default rack: a mixer, the Juno played by the Matrix, the 808,
+ * the Hammond, a delay on the mixer's send *)
+let initial_model : model =
+  let add (p, ms, _) name ~selected = add_module p ms name ~below:None ~selected in
+  let r = (Studio_reason.empty, [ (Studio_reason.hardware, hardware_module) ], 0) in
+  let r = add r "Mixer 14:2" ~selected:None in
+  let _, _, mixer = r in
+  let r = add r "Juno-106" ~selected:None in
+  let _, _, juno = r in
+  let r = add r "Matrix" ~selected:(Some juno) in
+  let r = add r "TR-808 (Redrum)" ~selected:None in
+  let r = add r "Hammond B-3" ~selected:None in
+  let patch, modules, _ = add r "DDL-1 Delay" ~selected:(Some mixer) in
+  Studio_reason.set_patch (Lazy.force studio) patch;
+  {
+    patch;
+    modules;
+    selected = Some juno;
+    side = Front;
+    flip = 0;
+    scroll = 0.;
+    ropes = [];
+    drag = None;
+    falling = [];
+    active = None;
+    piano = Piano.initial ~octave:3;
+    message = None;
+    was_down = false;
+    keys = [];
+  }
+
+(*****************************************************************************)
+(* The layout *)
+(*****************************************************************************)
+
+let width = 880.
+let unit = 40.
+let rack_top = 430.
+let rack_bottom = -430.
+
+let height (m : Rack_module.t) : number = Float.ceil (Component.fitted_height ~scaled:true m.front width / unit) * unit
+
+(* each device's box, top to bottom, scrolled *)
+let boxes (m : model) : (int * Widget.box) list =
+  let y = ref (rack_top + m.scroll) in
+  List.filter_map
+    (fun (id, _) ->
+      match List.assoc_opt id m.modules with
+      | None -> None
+      | Some md ->
+          let h = height md in
+          let b = { Widget.x = 0.; y = !y - (h / 2.); w = width; h } in
+          y := !y - h;
+          Some (id, b))
+    m.patch.devices
+
+let total_height (m : model) : number = List.fold_left (fun t (_, md) -> t + height md) 0. m.modules
+let visible (b : Widget.box) : bool = b.y - (b.h / 2.) < rack_top && b.y + (b.h / 2.) > rack_bottom
+
+(* a jack's place on a device's back: in rows of 14, centred *)
+let jack_pos (b : Widget.box) (count : int) (j : int) : number * number =
+  let rows = (count +.. 13) /.. 14 in
+  let row = j /.. 14 and col = j mod 14 in
+  let in_row = if row = rows -.. 1 then count -.. (row *.. 14) else 14 in
+  (b.x - (float_of_int (in_row -.. 1) * 29.) + (float_of_int col * 58.), b.y + (float_of_int (rows -.. 1) * 21.) - (float_of_int row * 42.) + 4.)
+
+let port_pos (m : model) (p : Studio_reason.port) : (number * number) option =
+  match (List.assoc_opt p.device (boxes m), List.assoc_opt p.device m.modules) with
+  | Some b, Some md -> Some (jack_pos b (Array.length md.device.jacks) p.jack)
+  | _ -> None
+
+(* the jack under the mouse *)
+let jack_at (m : model) (x : number) (y : number) : Studio_reason.port option =
+  List.find_map
+    (fun (id, b) ->
+      match List.assoc_opt id m.modules with
+      | None -> None
+      | Some md ->
+          let n = Array.length md.device.jacks in
+          List.find_map
+            (fun j ->
+              let jx, jy = jack_pos b n j in
+              if Float.abs (x - jx) <= 13. && Float.abs (y - jy) <= 13. then Some { Studio_reason.device = id; jack = j } else None)
+            (List.init n (fun j -> j)))
+    (boxes m)
+
+(* the cable from the jack in the hand to [p], its ends the right way *)
+let cable_to (fixed : Studio_reason.port) (p : Studio_reason.port) (m : model) : Studio_reason.cable =
+  match List.assoc_opt fixed.device m.modules with
+  | Some md when md.device.jacks.(fixed.jack).dir = Out -> { out = fixed; into = p }
+  | _ -> { out = p; into = fixed }
+
+(* the ropes following the patch's cables: kept for the cables still
+ * there, made for the new, stepped with their ends where their jacks
+ * are now *)
+let ropes_of (m : model) : (Studio_reason.cable * Rack_cable.t) list =
+  List.filter_map
+    (fun (c : Studio_reason.cable) ->
+      match (port_pos m c.out, port_pos m c.into) with
+      | Some a, Some b -> Some (c, match List.assoc_opt c m.ropes with Some r -> Rack_cable.step r a b | None -> Rack_cable.make a b)
+      | _ -> None)
+    m.patch.cables
+
+(*****************************************************************************)
+(* update *)
+(*****************************************************************************)
+
+(* the letters play the selected device, the keyboard itself not drawn *)
+let letters : Piano.look =
+  {
+    keys = 0; left = -1e6; top = -1e6; white_width = 1.; white_height = 1.; black_height = 1.; letters_from = 0; velocity = 0.9; octaves = (1, 6); by_depth = false;
+    white_key = white; black_key = black; letter_on_white = black; letter_scale = 1.; letter_lift = 0.;
+  }
+
+let transport_y = -470.
+
+(* the cables in the hand, plugged, picked up or pulled off *)
+let back_input (computer : computer) (m : model) : model =
+  let mouse = computer.mouse in
+  let press = mouse.mdown && not m.was_down and release = (not mouse.mdown) && m.was_down in
+  let s = Lazy.force studio in
+  let hand = (mouse.mx, mouse.my) in
+  match (m.drag, press, release) with
+  | None, true, _ -> (
+      match jack_at m mouse.mx mouse.my with
+      | None -> m
+      | Some p -> (
+          match Studio_reason.cable_at m.patch p with
+          | Some c when computer.keyboard.kshift ->
+              (* pulled off: it falls *)
+              let rope = match List.assoc_opt c m.ropes with Some r -> Rack_cable.release r | None -> Rack_cable.release (Rack_cable.make hand hand) in
+              { m with patch = Studio_reason.disconnect m.patch p; falling = (rope, 60) :: m.falling }
+          | Some c ->
+              (* picked up by the end pressed: the other stays plugged *)
+              let fixed = if c.out = p then c.into else c.out in
+              let rope = match List.assoc_opt c m.ropes with Some r -> r | None -> Rack_cable.make hand hand in
+              { m with patch = Studio_reason.disconnect m.patch p; drag = Some { fixed; rope } }
+          | None -> (
+              match port_pos m p with Some a -> { m with drag = Some { fixed = p; rope = Rack_cable.make a hand } } | None -> m)))
+  | Some d, _, true -> (
+      let dropped = { m with drag = None; falling = (Rack_cable.release d.rope, 60) :: m.falling } in
+      match jack_at m mouse.mx mouse.my with
+      | None -> dropped
+      | Some p -> (
+          let c = cable_to d.fixed p m in
+          match Studio_reason.connect (Studio_reason.lookup s) m.patch c with
+          | Ok patch -> { m with patch; drag = None; ropes = (c, d.rope) :: m.ropes }
+          | Error why -> { dropped with message = Some (why, 90) }))
+  | Some d, _, _ -> (
+      match port_pos m d.fixed with
+      | Some a ->
+          (* near an edge, the rack scrolls under the cable *)
+          let scroll = if mouse.my > rack_top - 40. then m.scroll - 8. else if mouse.my < rack_bottom + 40. then m.scroll + 8. else m.scroll in
+          { m with scroll; drag = Some { d with rope = Rack_cable.step d.rope a hand } }
+      | None -> m)
+  | _ -> m
+
+(* the front under the mouse, in place; it keeps the mouse while held *)
+let front_input (computer : computer) (m : model) : model =
+  let mouse = computer.mouse in
+  let press = mouse.mdown && not m.was_down in
+  let bs = boxes m in
+  let under = List.find_map (fun (id, (b : Widget.box)) -> if visible b && Widget.contains b mouse.mx mouse.my then Some id else None) bs in
+  let active = if press then under else if mouse.mdown then m.active else under in
+  let selected = if press && under <> None && under <> Some Studio_reason.hardware then under else m.selected in
+  let modules =
+    List.map
+      (fun (id, (md : Rack_module.t)) ->
+        match (Some id = active, List.assoc_opt id bs) with
+        | true, Some b -> (id, { md with front = Component.input_in ~scaled:true md.front computer b })
+        | _ -> (id, md))
+      m.modules
+  in
+  { m with modules; active; selected }
+
+let update (computer : computer) (m : model) : model =
+  let s = Lazy.force studio in
+  ignore (Audio.instrument "reason" (fun () -> Studio_reason.instrument s));
+  Gui.set_theme Theme.default;
+  let kb = computer.keyboard in
+  let now = Set_.elements kb.keys in
+  let pressed k = List.mem k now && not (List.mem k m.keys) in
+  (* the top bar: Create, and the selected device's presets *)
+  let created = Gui.menu computer ~at:(-80., 475.) ("Create..." :: List.map fst catalogue) 0 in
+  let m =
+    if created > 0 then
+      let patch, modules, id = add_module m.patch m.modules (fst (List.nth catalogue (created -.. 1))) ~below:m.selected ~selected:m.selected in
+      { m with patch; modules; selected = Some id }
+    else m
+  in
+  let m =
+    match m.selected with
+    | Some id -> (
+        match List.assoc_opt id m.modules with
+        | Some md when md.front.menu <> [] ->
+            let names = List.tl md.front.menu in
+            let chosen = Gui.menu computer ~at:(250., 475.) ("Preset..." :: names) 0 in
+            if chosen > 0 then { m with modules = List.map (fun (i, x) -> if i = id then (i, { x with Rack_module.front = md.front.command (List.nth names (chosen -.. 1)) }) else (i, x)) m.modules } else m
+        | _ -> m)
+    | None -> m
+  in
+  (* the transport *)
+  let running = Studio_reason.running s in
+  if Gui.button computer ~at:(-400., transport_y) (if running then "STOP" else "PLAY") || pressed "space" then
+    Studio_reason.run s (not running);
+  let tempo = Float.round (Gui.knob computer ~at:(-280., transport_y + 4.) ~from:60. ~to_:180. m.patch.tempo) in
+  let volume = Gui.knob computer ~at:(-160., transport_y + 4.) ~from:0. ~to_:1. m.patch.volume in
+  let m = { m with patch = { m.patch with tempo; volume } } in
+  (* Tab turns the rack round; Backspace takes the selected device out *)
+  let m = if pressed "Tab" && m.flip = 0 then { m with side = (if m.side = Front then Back else Front); flip = 12; drag = None } else { m with flip = max 0 (m.flip -.. 1) } in
+  let m =
+    match m.selected with
+    | Some id when kb.kbackspace && not (List.mem "Backspace" m.keys) && id <> Studio_reason.hardware ->
+        { m with patch = Studio_reason.remove (Studio_reason.lookup s) m.patch id; modules = List.remove_assoc id m.modules; selected = None }
+    | _ -> m
+  in
+  (* the wheel scrolls, within the rack *)
+  let room = Float.max 0. (total_height m - (rack_top - rack_bottom)) in
+  let m = { m with scroll = Float.max 0. (Float.min room (m.scroll - (computer.mouse.mwheel * 0.5))) } in
+  (* the mouse, unless a menu has it or the rack is turning *)
+  let m = if Gui.modal () || m.flip > 0 then m else if m.side = Back then back_input computer m else front_input computer m in
+  (* the letters play the selected device *)
+  let piano =
+    match Option.bind m.selected (fun id -> List.assoc_opt id m.modules) with
+    | Some md -> Piano.update letters computer m.piano { note_on = md.device.note_on; note_off = md.device.note_off; set = md.device.set; fill = (fun _ -> ()) }
+    | None -> m.piano
+  in
+  if m.patch != Studio_reason.patch s then Studio_reason.set_patch s m.patch;
+  let ropes = if m.side = Back then ropes_of m else m.ropes in
+  let falling = List.filter_map (fun (r, n) -> if n <= 0 then None else Some (Rack_cable.step r (0., 0.) (0., 0.), n -.. 1)) m.falling in
+  let message = match m.message with Some (w, n) when n > 0 -> Some (w, n -.. 1) | _ -> None in
+  { m with ropes; falling; piano; message; was_down = computer.mouse.mdown; keys = now }
+
+(*****************************************************************************)
+(* view *)
+(*****************************************************************************)
+
+let rail = rgb 70 70 76
+
+(* the rack's rails and each device's ears, screwed *)
+let ears (b : Widget.box) : shape list =
+  List.concat_map
+    (fun x ->
+      [ rectangle (rgb 150 150 158) 30. b.h |> move x b.y ]
+      @ List.map (fun dy -> circle (rgb 90 90 96) 4. |> move x (b.y + dy)) (if b.h > unit then [ (b.h / 2.) - 12.; 12. - (b.h / 2.) ] else [ 0. ]))
+    [ -.((width / 2.) + 15.); (width / 2.) + 15. ]
+
+let front_view (m : model) (id : int) (b : Widget.box) : shape list =
+  match List.assoc_opt id m.modules with
+  | None -> []
+  | Some md ->
+      [ rectangle (rgb 25 25 28) b.w b.h |> move b.x b.y ]
+      @ Component.draw_in ~scaled:true md.front b ~active:(m.selected = Some id)
+      @ (if m.selected = Some id then [ rectangle md.color 4. b.h |> move (b.x - (b.w / 2.) + 2.) b.y ] else [])
+      @ ears b
+
+(* a jack: a hole in a silver ring, its label under; while a cable is in
+ * the hand, ringed green if it may go in, dimmed if not *)
+let jack_view (m : model) (id : int) (md : Rack_module.t) (b : Widget.box) (j : int) : shape list =
+  let x, y = jack_pos b (Array.length md.device.jacks) j in
+  let jack = md.device.jacks.(j) in
+  let s = Lazy.force studio in
+  let verdict =
+    match m.drag with
+    | Some d when d.fixed <> { device = id; jack = j } -> Some (Studio_reason.connect (Studio_reason.lookup s) m.patch (cable_to d.fixed { device = id; jack = j } m))
+    | _ -> None
+  in
+  let ring = match verdict with Some (Ok _) -> rgb 90 230 110 | Some (Error _) -> rgb 70 70 70 | None -> rgb 190 190 195 in
+  [
+    circle ring 12. |> move x y;
+    circle (rgb 10 10 10) 8. |> move x y;
+    circle (match jack.signal with Audio -> rgb 200 60 50 | Cv -> rgb 230 200 60) 2. |> move (x + 9.) (y + 9.);
+    words (rgb 210 210 210) jack.label |> scale 0.55 |> move x (y - 19.);
+  ]
+
+let back_view (m : model) (id : int) (b : Widget.box) : shape list =
+  match List.assoc_opt id m.modules with
+  | None -> []
+  | Some md ->
+      (* its back plate, edged, its name stencilled *)
+      [
+        rectangle (rgb 22 22 26) b.w b.h |> move b.x b.y;
+        rectangle (rgb 52 52 58) (b.w - 8.) (b.h - 6.) |> move b.x b.y;
+        words (rgb 110 110 118) (String.uppercase_ascii md.name) |> scale 1.6 |> move (b.x + 330.) (b.y + (b.h / 2.) - 18.);
+      ]
+      @ List.concat_map (jack_view m id md b) (List.init (Array.length md.device.jacks) (fun j -> j))
+      @ ears b
+
+(* the audio cables red and orange, the CV yellow and green, a shade a
+ * cable, the same each time *)
+let cable_color (c : Studio_reason.cable) (signal : Rack_device.signal) : color =
+  let shades = match signal with Audio -> [| rgb 200 50 45; rgb 230 110 40; rgb 180 40 90 |] | Cv -> [| rgb 230 200 50; rgb 120 200 70; rgb 60 170 120 |] in
+  shades.(((c.out.device *.. 7) +.. (c.out.jack *.. 3) +.. c.into.device) mod 3)
+
+let rope_view (color : color) (r : Rack_cable.t) : shape list =
+  let pts = Rack_cable.points r in
+  let plug (x, y) (x', y') =
+    let angle = atan2 (y' - y) (x' - x) * 180. / Float.pi in
+    group [ rectangle (rgb 30 30 30) 26. 12.; rectangle color 8. 12. |> move 9. 0. ] |> rotate angle |> move x y
+  in
+  let ends = match (pts, List.rev pts) with a :: a' :: _, b :: b' :: _ -> [ plug a a'; plug b b' ] | _ -> [] in
+  [
+    polygon black (Rack_cable.ribbon r ~width:8.) |> move 6. (-8.) |> fade 0.3;
+    polygon color (Rack_cable.ribbon r ~width:8.);
+    polygon (rgb 255 255 255) (Rack_cable.ribbon r ~width:2.) |> move 1.5 1.5 |> fade 0.35;
+  ]
+  @ ends
+
+let cables_view (m : model) : shape list =
+  List.concat_map
+    (fun ((c : Studio_reason.cable), r) ->
+      let signal = match List.assoc_opt c.out.device m.modules with Some md -> md.device.jacks.(c.out.jack).signal | None -> Audio in
+      rope_view (cable_color c signal) r)
+    m.ropes
+  @ List.concat_map (fun (r, _) -> rope_view (rgb 150 150 150) r) m.falling
+  @ match m.drag with Some d -> rope_view (rgb 240 240 240) d.rope | None -> []
+
+(* the rack turning: each device a box narrowing to nothing and
+ * widening again, the other side's colour after the middle *)
+let flip_view (m : model) : shape list =
+  let k = 12 -.. m.flip in
+  let w = width * Float.abs (cos (Float.pi * float_of_int k / 12.)) in
+  let showing = if k < 6 then (if m.side = Front then Back else Front) else m.side in
+  List.concat_map
+    (fun (_, (b : Widget.box)) ->
+      [ rectangle (if showing = Front then rgb 90 90 96 else rgb 48 48 54) w b.h |> move b.x b.y; rectangle (rgb 20 20 20) w 2. |> move b.x (b.y + (b.h / 2.)) ])
+    (List.filter (fun (_, b) -> visible b) (boxes m))
+
+let view (computer : computer) (m : model) : shape list =
+  let bs = List.filter (fun (_, b) -> visible b) (boxes m) in
+  let running = Studio_reason.running (Lazy.force studio) in
+  [ rectangle (rgb 30 30 34) computer.screen.width computer.screen.height ]
+  @ [ rectangle rail 18. 1000. |> move (-.((width / 2.) + 15.)) 0.; rectangle rail 18. 1000. |> move ((width / 2.) + 15.) 0. ]
+  @ (if m.flip > 0 then flip_view m
+     else if m.side = Front then List.concat_map (fun (id, b) -> front_view m id b) bs
+     else List.concat_map (fun (id, b) -> back_view m id b) bs @ cables_view m)
+  (* the scrollbar *)
+  @ (let total = total_height m and room = rack_top - rack_bottom in
+     if total <= room then []
+     else
+       let h = room * room / total in
+       [ rectangle (rgb 60 60 66) 8. room |> move 485. 0.; rectangle (rgb 160 160 170) 8. h |> move 485. (rack_top - (h / 2.) - (m.scroll * room / total)) ])
+  (* the bars *)
+  @ [ rectangle (rgb 50 50 56) computer.screen.width 60. |> move 0. 470.; rectangle (rgb 50 50 56) computer.screen.width 60. |> move 0. transport_y ]
+  @ [
+      words white "TinyReason" |> scale 2. |> move (-380.) 475.;
+      words (rgb 200 200 200) (if m.side = Front then "Tab: the back" else "Tab: the front") |> scale 1.1 |> move 400. 475.;
+      words (rgb 200 200 200) (Printf.sprintf "TEMPO %.0f" m.patch.tempo) |> scale 0.9 |> move (-280.) (transport_y - 22.);
+      words (rgb 200 200 200) "VOLUME" |> scale 0.9 |> move (-160.) (transport_y - 22.);
+      words (rgb 200 200 200)
+        (Printf.sprintf "%s   space: play   letters: the %s   Backspace: out" (if running then "playing" else "stopped")
+           (match Option.bind m.selected (fun id -> List.assoc_opt id m.modules) with Some md -> md.name | None -> "selected"))
+      |> scale 1. |> move 180. transport_y;
+    ]
+  @ (match m.message with Some (why, _) -> [ words (rgb 250 120 100) why |> scale 1.3 |> move (computer.mouse.mx + 10.) (computer.mouse.my + 28.) ] | None -> [])
+  @ Gui.draw ()
+
+let app = game view update initial_model
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)

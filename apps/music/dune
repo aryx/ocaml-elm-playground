@@ -28,9 +28,9 @@
 (library
  (name music_voices)
  (wrapped false)
- (modules Patch_text Voice Voice_minimoog Tonewheel Voice_hammond Voice_tb303 Voice_dx7 Voice_rhodes Voice_cs80 Voice_juno Voice_tr808 Studio_rebirth Op1_engine Studio_op1 Opxy_engine Studio_opxy Our_songs)
+ (modules Patch_text Voice Voice_minimoog Tonewheel Voice_hammond Voice_tb303 Voice_dx7 Voice_rhodes Voice_cs80 Voice_juno Voice_tr808 Studio_rebirth Op1_engine Studio_op1 Opxy_engine Studio_opxy Our_songs Rack_device Rack_mixer Rack_matrix Studio_reason Rack_cable)
  (modules_without_implementation Voice)
- (libraries audio audio_instruments audio_effects audio_mod))
+ (libraries audio audio_signal audio_instruments audio_effects audio_mod physics_2d graphics_2d_geometry))
 
 ; the instruments' panels as parts (Component.mli, the office's idea),
 ; hosted by the stand-alone apps, TinyReface and a rack
@@ -40,12 +40,12 @@
 (library
  (name music_parts)
  (wrapped false)
- (modules Panel Piano Meters Part_voice Part_hammond Part_juno Part_tr808 Part_rhodes Part_cs80 Part_dx7 Part_minimoog Part_tb303)
+ (modules Panel Piano Meters Part_voice Part_hammond Part_juno Part_tr808 Part_rhodes Part_cs80 Part_dx7 Part_minimoog Part_tb303 Part_effect Part_mixer Part_matrix Rack_module)
  (libraries elm_core elm_playground gui appkit_embed audio audio_signal music_voices))
 
 (executables
-  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker)
-  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker)
+  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker TinyReason)
+  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker TinyReason)
   (libraries
     caps ; TinySoundtracker's authority to export its song
     elm_core

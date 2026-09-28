@@ -141,6 +141,9 @@ let scenes : Golden_scene.scene list =
     (* claude: 1997: ReBirth's four machines as strips, the mixer, the
      * effects and the PCF's bars *)
     ("apps/music/software/TinyReBirth", "", 5);
+    (* claude: 2000: Reason's rack, the Tiny instruments' own panels
+     * scaled between its rails: the mixer, the Juno, the Matrix *)
+    ("apps/music/software/TinyReason", "", 5);
     (* claude: 2011: the OP-1's screen on T1, FM's four values in the
      * encoders' colours, the keys 1 to 8 *)
     ("apps/music/software/TinyOp1", "", 5);
@@ -1259,6 +1262,14 @@ let scripted : Golden_scene.scripted list =
     (* claude: ReBirth started (space): the four machines' step 6 lit
      * together -- the one clock -- and the PCF's *)
     ("apps/music/software/TinyReBirth", "running", 40, "space:3");
+    (* claude: the rack turned round (Tab): the jacks, the cables hanging
+     * from them; then a cable pulled out of the Juno's Filter CV, in the
+     * hand, the jack it may go into ringed green; let go on the
+     * Matrix's Curve CV, plugged and still swinging; the rack played *)
+    ("apps/music/software/TinyReason", "back", 20, "Tab:2");
+    ("apps/music/software/TinyReason", "drag", 30, "Tab:2,at(88;-45):16-20,at(300;-200):21-40,click:18-40");
+    ("apps/music/software/TinyReason", "plugged", 50, "Tab:2,at(88;-45):16-20,at(300;-200):21-30,at(57;-365):31-50,click:18-34");
+    ("apps/music/software/TinyReason", "running", 40, "space:3");
     (* claude: steps edited by clicks: a note high on 303 #1's step 5,
      * the 808's instrument clicked from BD to LT, two LT hits added *)
     ( "apps/music/software/TinyReBirth",

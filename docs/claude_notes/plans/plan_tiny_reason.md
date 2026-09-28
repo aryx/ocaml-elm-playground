@@ -4,7 +4,14 @@ Status: step A done (2026-09-28): Panel, Piano, Meters, Part_hammond,
 Part_voice in music_parts; TinyHammond over them (golden frames
 identical), TinyReface's YC face TinyHammond's panel scaled. Step B.4
 done: Part_juno, Part_tr808, TinyJuno and TinyTR808 over them (golden
-frames identical). Next: B.5 or C.
+frames identical). B.5 done: Part_minimoog, Part_rhodes, Part_dx7,
+Part_cs80, Part_tb303, their apps over them (frames identical),
+TinyReface's CP, DX, CS the originals' panels. C done: Rack_device,
+Rack_mixer, Rack_matrix, Studio_reason, Rack_cable (music_voices, tested
+by Unit_reason and Unit_rack_cable), Part_effect, Part_mixer,
+Part_matrix, Rack_module (music_parts), TinyReason (front, back, cables
+dragged, Tab's flip, Create, Backspace; five golden scenes). Left: the
+exercises in TinyReason's header.
 
 ## The goal: a module added in one file
 
