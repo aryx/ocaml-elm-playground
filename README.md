@@ -80,33 +80,34 @@ short enough to read in one sitting. It is not a toy sketch either, but
 a working version of a famous original:
 
 - [TinyMario](games/platform/TinyMario.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/platform/TinyMario.html)):
-  **[350 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyMario)**;
+  **[419 lines in 3 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyMario)**;
 - [TinyStreetFighter](games/fighting/TinyStreetFighter.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/fighting/TinyStreetFighter.html)):
-  [450 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyStreetFighter);
+  [738 lines in 7 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyStreetFighter);
 - [TinyZelda](games/adventure/TinyZelda.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/adventure/TinyZelda.html)):
-  [380 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyZelda);
+  [535 lines in 5 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyZelda);
 - [TinyDoom](games/fps/TinyDoom.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/fps/TinyDoom.html)):
-  [500 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyDoom), and its 3D twin
+  [806 lines in 3 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyDoom), and its 3D twin
   [TinyDoom3d](games/fps/TinyDoom3d.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/fps/TinyDoom3d.html)),
-  over the same level: [180](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyDoom3d);
+  over the same level: [484 lines in 3 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyDoom3d);
 - [TinyQuake](games/fps/TinyQuake.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/fps/TinyQuake.html)),
   whose level is compiled by its own qbsp, vis and light at startup:
-  [600 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyQuake);
+  [623 lines, in one file](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyQuake);
 - [TinySimCity](games/strategy/TinySimCity.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/strategy/TinySimCity.html)):
-  [530 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinySimCity);
+  [528 lines, in one file](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinySimCity);
 - [TinyExcel](apps/office/TinyExcel.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/office/TinyExcel.html)),
   a spreadsheet with a menu bar, a formula bar and range selection:
-  **[300 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyExcel)**. It uses the same
-  engine as [TinyVisiCalc](apps/office/TinyVisiCalc.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/office/TinyVisiCalc.html)),
+  **[1,587 lines in 11 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyExcel)**, most of them
+  the engine it shares with [TinyVisiCalc](apps/office/TinyVisiCalc.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/office/TinyVisiCalc.html),
+  [1,192 lines in 7 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyVisiCalc)),
   and the header explains what changed between 1979 and 1985;
 - [TinyWord](apps/office/TinyWord.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/office/TinyWord.html)),
-  a word processor: [450 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyWord);
+  a word processor: [1,771 lines in 17 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyWord);
 - [TinyMacPaint](apps/graphics/TinyMacPaint.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/graphics/TinyMacPaint.html)),
   with its patterns and flood fill:
-  [540 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyMacPaint);
+  [1,526 lines in 17 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyMacPaint);
 - [TinyMinimoog](apps/music/TinyMinimoog.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/music/TinyMinimoog.html)),
   the Model D synthesizer with its panel of knobs:
-  [400 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyMinimoog).
+  [1,367 lines in 5 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyMinimoog).
 
 **A budget.** No program may be longer than **5,000 lines of its own
 code**. That counts its file and every module of its folder, of the
