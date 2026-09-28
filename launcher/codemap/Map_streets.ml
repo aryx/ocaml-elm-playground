@@ -216,9 +216,21 @@ let build (t : t) : Code_labels.label array =
           let px, rk, color = dir_classes.(p.depth - 1) in
           let r = p.rect in
           let text = if p.depth = 1 then String.uppercase_ascii name else name ^ "/" in
+          (* claude: every country named, a small one smaller: its class's
+           * size, or what fits its rectangle at the zoom it is first
+           * shown (the whole map for a country, 3 times closer for a
+           * region), down to 11 pixels *)
+          let z0 = 3. ** float_of_int (p.depth - 1) in
+          let len = 0.5 *. float_of_int (String.length text) in
+          let fits = Float.min (r.w *. z0 /. 1.15 /. len) (r.h *. z0 /. 1.6) in
+          (* a tall, narrow one's name upwards, when it is bigger so (a
+           * river's name follows the river) *)
+          let fits_up = Float.min (r.h *. z0 /. 1.15 /. len) (r.w *. z0 /. 1.6) in
+          let rotated = fits < px && fits_up > 1.3 *. fits in
+          let px = Float.max 11. (Float.min px (if rotated then fits_up else fits)) in
           let from_level = float_of_int (p.depth - 1) -. (if p.depth = 1 then 0. else 0.2) in
           add
-            (Code_labels.label Dir text ~x:(r.x +. (r.w /. 2.)) ~y:(r.y +. (r.h /. 2.)) ~left:false ~px ~rank:(rk +. (r.w *. r.h /. 100.)) ~from_level
+            (Code_labels.label Dir text ~x:(r.x +. (r.w /. 2.)) ~y:(r.y +. (r.h /. 2.)) ~left:false ~rotated ~px ~rank:(rk +. (r.w *. r.h /. 100.)) ~from_level
                ~to_level:(from_level +. 1.4) ~fw:r.w ~fh:r.h color)
       | File (_, _, e), Some g ->
           let f = Lazy.force e.file and r = p.rect in
@@ -331,10 +343,16 @@ let labels (t : t) (c : camera) (q : float) : shape list =
                     * a street map's thick outline *)
                    let cx = x0 +. (w /. 2.) and o = Float.max 1.5 (l.px /. 14.) in
                    let dark = Playground.rgb 12 10 28 in
+                   (* claude: drawn round the playground's origin (the map's
+                    * pixel (-left, top)), turned if it reads upwards, then
+                    * moved to its place *)
+                   let ox = -.a.left and oy = a.top in
                    Some
                      (group
-                        (List.map (fun (dx, dy) -> label a ~alpha:(0.8 *. al) dark l.px (cx +. dx) (py +. dy) l.text) [ (-.o, 0.); (o, 0.); (0., -.o); (0., o); (-.o, -.o); (o, o); (-.o, o); (o, -.o) ]
-                        @ [ label a ~alpha:al color l.px cx py l.text ]))
+                        (List.map (fun (dx, dy) -> label a ~alpha:(0.8 *. al) dark l.px (ox +. dx) (oy +. dy) l.text) [ (-.o, 0.); (o, 0.); (0., -.o); (0., o); (-.o, -.o); (o, o); (-.o, o); (o, -.o) ]
+                        @ [ label a ~alpha:al color l.px ox oy l.text ])
+                     |> rotate (if l.rotated then 90. else 0.)
+                     |> move (sx a cx) (sy a py))
                | _ ->
                    Some
                      (group

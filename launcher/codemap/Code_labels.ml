@@ -26,23 +26,30 @@ type label = {
   fh : float;
   color : int * int * int;
   target : (string * int * string) option;
+  rotated : bool; (* claude: read upwards, a tall and narrow directory's *)
   mutable minz : float;
   mutable maxz : float;
 }
 
-let label kind text ~x ~y ?(left = true) ~px ~rank ~from_level ~to_level ~fw ~fh ?target color =
-  { kind; text; x; y; left; px; rank; from_level; to_level; fw; fh; color; target; minz = Float.infinity; maxz = 0. }
+let label kind text ~x ~y ?(left = true) ?(rotated = false) ~px ~rank ~from_level ~to_level ~fw ~fh ?target color =
+  { kind; text; x; y; left; px; rank; from_level; to_level; fw; fh; color; target; rotated; minz = Float.infinity; maxz = 0. }
 
 (* as the map's words are drawn: half their height a character; a tab a
  * little bigger, its margins *)
 let size (l : label) : float * float =
   let w = 0.5 *. l.px *. float_of_int (String.length l.text) in
-  match l.kind with Tab | Landmark -> (w +. 8., l.px +. 6.) | _ -> (w, l.px)
+  match l.kind with Tab | Landmark -> (w +. 8., l.px +. 6.) | _ -> if l.rotated then (l.px, w) else (w, l.px)
 
 (* the room kept round a label: the map's density; the bigger the label,
  * the more (a street map's "donut" round a capital: nothing small
  * crowding it) *)
-let margins (l : label) : float * float = (Float.max 22. (1.2 *. l.px), Float.max 10. (0.8 *. l.px))
+let margins (l : label) : float * float =
+  match l.kind with
+  (* claude: a directory's name is inside its own rectangle, which no
+   * other directory's overlaps: a thin margin, or a big country's donut
+   * would hide its small neighbour's name *)
+  | Dir -> (4., 2.)
+  | _ -> (Float.max 22. (1.2 *. l.px), Float.max 10. (0.8 *. l.px))
 
 (* its box at zoom z, in the pixels of the whole layout at that zoom *)
 let box (l : label) (z : float) : float * float * float * float =
@@ -57,7 +64,7 @@ let eligible (l : label) (z : float) (lv : float) : bool =
   &&
   let w, h = size l in
   match l.kind with
-  | Dir -> l.fw *. z >= w *. 1.1 && l.fh *. z >= h *. 1.5
+  | Dir -> if l.rotated then l.fw *. z >= w *. 1.5 && l.fh *. z >= h *. 1.1 else l.fw *. z >= w *. 1.1 && l.fh *. z >= h *. 1.5
   | Tab -> l.fw *. z >= w +. 6. && l.fh *. z >= h *. 1.8
   | Def | Section | City -> l.fw *. z > 40.
   | Landmark | Capital -> true

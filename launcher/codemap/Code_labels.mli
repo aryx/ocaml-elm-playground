@@ -44,6 +44,7 @@ type label = {
   fh : float;
   color : int * int * int;
   target : (string * int * string) option; (* the definition it names: its file, line, name *)
+  rotated : bool; (* read upwards (a tall, narrow directory's name, as a river's on a map): its box turned *)
   mutable minz : float; (* infinity: never placed *)
   mutable maxz : float;
 }
@@ -54,6 +55,7 @@ val label :
   x:float ->
   y:float ->
   ?left:bool ->
+  ?rotated:bool ->
   px:float ->
   rank:float ->
   from_level:float ->

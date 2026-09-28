@@ -36,9 +36,17 @@ let cycle_style () =
   let rec next = function s :: (n :: _ as rest) -> if s == !chosen then n else next rest | _ -> List.hd styles in
   chosen := next styles
 
+(* claude: the layout a style wants: the atlas's layered by who uses
+ * whom (Code_layers), the others' by name *)
+let laid_out (t : t) (style : style) (algo : Treemap.algo) : t =
+  let links = if style.sname = "atlas" then Some (Code_rank.links (rank_of t)) else None in
+  let placed, geometry = relayout ?links t.cam.a algo t.entries in
+  { t with style; algo; placed; geometry; painted = None; lens = None }
+
 (* a map in the chosen style *)
 let make ?numbered ?colours ?roots ~area ~title ~marked entries : t =
-  Code_map_base.make ?numbered ?colours ?roots ~style:!chosen ~area ~title ~marked entries
+  let t = Code_map_base.make ?numbered ?colours ?roots ~style:!chosen ~area ~title ~marked entries in
+  if !chosen.sname = "atlas" then laid_out t !chosen t.algo else t
 
 (*****************************************************************************)
 (* Update *)
@@ -178,21 +186,22 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   (* claude: the glass's shape, the panel's too *)
   if pressed "o" then cycle_glass ();
   (* claude: the style, the next one, for this map and those to come *)
+  let before = t.placed in
   let t =
     if pressed "m" then begin
       cycle_style ();
-      { t with style = !chosen; painted = None; lens = None }
+      if t.style.sname = "atlas" || !chosen.sname = "atlas" then laid_out t !chosen t.algo else { t with style = !chosen; painted = None; lens = None }
     end
     else t
   in
   let t =
     if pressed "t" then
       let algo : Treemap.algo = match t.algo with Ordered -> Squarified | Squarified -> Slice_and_dice | Slice_and_dice -> Ordered in
-      let placed, geometry = relayout a algo t.entries in
-      { t with algo; placed; geometry; painted = None }
+      laid_out t t.style algo
     else t
   in
-  let target = if pressed "Home" || pressed "0" || pressed "t" then home a else target in
+  (* a new layout: back to the whole map *)
+  let target = if pressed "Home" || pressed "0" || t.placed != before then home a else target in
   let target = if pressed "Backspace" || (mouse.mrdown && not t.before_right) then up { t with target } else target in
   let target = if pressed "=" || pressed "+" then { target with z = target.z *. 1.5 } else if pressed "-" then { target with z = target.z /. 1.5 } else target in
   (* the wheel: zoom at the mouse, the point under it staying under it *)

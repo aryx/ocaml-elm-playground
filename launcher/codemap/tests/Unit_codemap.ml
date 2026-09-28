@@ -172,6 +172,13 @@ let tests =
       Testo.create "a config's mistake" (fun () ->
           Alcotest.(check (result unit string)) "not a colour" (Error {|kernel: "orange" is no #rrggbb|})
             (Result.map ignore (Code_config.make ~ignore:None ~config:(Some {|{ "colors": { "kernel": "orange" } }|}))));
+      (* claude: Code_layers' worked example *)
+      Testo.create "layers: the users above the used" (fun () ->
+          let tree = Treemap.of_paths [ ("games/A.ml", 10., ()); ("playground/P.ml", 10., ()); ("libs/L.ml", 10., ()) ] in
+          let band =
+            Code_layers.compute [ ("games/A.ml", "playground/P.ml", 3); ("games/A.ml", "libs/L.ml", 1); ("playground/P.ml", "libs/L.ml", 2) ] tree
+          in
+          Alcotest.(check (list int)) "games/, playground/, libs/" [ 0; 1; 2 ] (List.map band [ "games"; "playground"; "libs" ]));
       (* claude: a road's spline starts and ends at its parts, and passes
        * near, not through, the directories between (Holten's bundles) *)
       Testo.create "a road's B-spline" (fun () ->

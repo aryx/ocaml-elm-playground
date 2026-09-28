@@ -88,7 +88,9 @@ val root_rect : area -> Treemap.rect
 
 (* a file's columns: characters about twice as high as wide *)
 val geometry_of : Treemap.rect -> int -> geometry
-val relayout : area -> Treemap.algo -> entry list -> entry Treemap.placed array * geometry option array
+(* with [links] (Code_rank.links), layered: the users above the used
+   (Code_layers) *)
+val relayout : ?links:(string * string * int) list -> area -> Treemap.algo -> entry list -> entry Treemap.placed array * geometry option array
 
 (* the camera fitting a rectangle; the whole map's *)
 val fit : area -> Treemap.rect -> camera

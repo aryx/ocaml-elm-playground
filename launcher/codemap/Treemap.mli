@@ -76,4 +76,11 @@ type 'a placed = { rect : rect; depth : int; path : string; node : 'a tree }
 
 (* [layout algo r tree]: every node of [tree] placed in [r], the root's
    children at depth 1 *)
-val layout : algo -> rect -> 'a tree -> 'a placed list
+(* a child's path in its parent's ([path]), as the layout names it *)
+val child_path : string -> 'a tree -> string
+
+(* claude: with [bands] (a node's band, by its path), a directory's
+   children are cut into horizontal bands, the lowest band on top, each
+   as high as its share, laid out inside by [algo]: a layered map
+   (Code_layers) *)
+val layout : ?bands:(string -> int) -> algo -> rect -> 'a tree -> 'a placed list

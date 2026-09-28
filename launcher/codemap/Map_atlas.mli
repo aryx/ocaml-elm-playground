@@ -16,7 +16,10 @@
      on one. The direction without arrows: green at the user, red at the
      used, and a taper (Holten and van Wijk, 2009).
 
-   The names are the street map's. *)
+   Its map is laid out in layers (Code_layers, Code_map's laid_out): in
+   each directory the users above the used, so that the roads run
+   downhill and one going up stands out. The names are the street
+   map's. *)
 
 (* the part a file is in at a zoom's depth (1 the countries, 2 the
    regions, max_int the files), a road's control points and the
