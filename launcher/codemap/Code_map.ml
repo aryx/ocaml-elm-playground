@@ -25,9 +25,20 @@ include Code_map_base
 
 type action = Stay | Open of Code_file.t * int | Close
 
-(* claude: a map in today's style, the only one yet *)
+(* claude: the styles, m going from one to the next, one setting for
+ * every map (as the glass's), a flag's at the start (style=) *)
+let styles = [ Map_classic.style; Map_streets.style ]
+let chosen = ref Map_classic.style
+let choose_style (name : string) = match List.find_opt (fun s -> s.sname = name) styles with Some s -> chosen := s | None -> ()
+let style_name () = !chosen.sname
+
+let cycle_style () =
+  let rec next = function s :: (n :: _ as rest) -> if s == !chosen then n else next rest | _ -> List.hd styles in
+  chosen := next styles
+
+(* a map in the chosen style *)
 let make ?numbered ?colours ?roots ~area ~title ~marked entries : t =
-  Code_map_base.make ?numbered ?colours ?roots ~style:Map_classic.style ~area ~title ~marked entries
+  Code_map_base.make ?numbered ?colours ?roots ~style:!chosen ~area ~title ~marked entries
 
 (*****************************************************************************)
 (* Update *)
@@ -166,6 +177,14 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   in
   (* claude: the glass's shape, the panel's too *)
   if pressed "o" then cycle_glass ();
+  (* claude: the style, the next one, for this map and those to come *)
+  let t =
+    if pressed "m" then begin
+      cycle_style ();
+      { t with style = !chosen; painted = None; lens = None }
+    end
+    else t
+  in
   let t =
     if pressed "t" then
       let algo : Treemap.algo = match t.algo with Ordered -> Squarified | Squarified -> Slice_and_dice | Slice_and_dice -> Ordered in
@@ -425,7 +444,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words yellow t.title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.);
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
-          (Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" algo (glass_name ()))
+          (Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
         |> scale (12. /. words_font_size)
         |> move 0. (screen.bottom +. 18.);
       ]

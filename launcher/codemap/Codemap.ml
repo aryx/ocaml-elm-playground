@@ -191,5 +191,8 @@ let run_directory ?colours ?roots ~(name : string) ~(sources : (string * string)
     { code = Some (Option.value (update computer ~pressed ~arrow code) ~default:code); before = keys; repeat }
   in
   let view (computer : Playground.computer) (m : alone) = match m.code with Some c -> view computer c | None -> [] in
-  Playground_platform.run_app ~screen:(1778, 1000) ~flags:(Playground_platform.flags ())
+  let flags = Playground_platform.flags () in
+  (* claude: style=streets, the map's style (Code_map) *)
+  Option.iter Code_map.choose_style (List.assoc_opt "style" flags);
+  Playground_platform.run_app ~screen:(1778, 1000) ~flags
     (Playground.game view update { code = None; before = Set_.empty; repeat = None })
